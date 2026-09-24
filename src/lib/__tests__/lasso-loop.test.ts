@@ -11,6 +11,7 @@ import {
   cohesionAt,
   loopStamps,
   motionPhaseAt,
+  resolvedLinework,
   resolvedFormAt,
   settledLassoStamps,
   stampRadiusFor,
@@ -125,6 +126,17 @@ describe("Ask Lasso signature loop maths", () => {
       for (const form of [0, 1, 2, 3, 4] as const) {
         expect(settledLassoStamps(size, form).every(({ x, y }) => x >= 0 && x <= size && y >= 0 && y <= size)).toBe(true);
       }
+    }
+  });
+
+  it("provides connected final linework for every resolved form", () => {
+    for (const form of [0, 1, 2, 3, 4] as const) {
+      const paths = resolvedLinework(LOOP_SIZE_TITLE, form);
+      expect(paths.length).toBeGreaterThan(0);
+      expect(paths.some(({ points }) => points.length > 10)).toBe(true);
+      expect(paths.flatMap(({ points }) => points).every(({ x, y }) =>
+        x >= 0 && x <= LOOP_SIZE_TITLE && y >= 0 && y <= LOOP_SIZE_TITLE
+      )).toBe(true);
     }
   });
 

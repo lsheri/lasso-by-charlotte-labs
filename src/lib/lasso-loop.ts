@@ -26,6 +26,10 @@ export type LassoMotionPhase = "clock" | "horizon" | "loose" | "lasso";
 export type LassoResolvedForm = 0 | 1 | 2 | 3 | 4;
 
 type ShapePoint = { x: number; y: number; z?: number };
+export type LassoLinePath = {
+  points: Array<{ x: number; y: number }>;
+  closed?: boolean;
+};
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
@@ -122,18 +126,81 @@ function arcPoint(
   return { x: cx + rx * Math.cos(angle), y: cy + ry * Math.sin(angle), z: Math.sin(angle) };
 }
 
-function targetForForm(index: number, form: LassoResolvedForm): ShapePoint {
+function sampledArc(
+  cx: number,
+  cy: number,
+  rx: number,
+  ry: number,
+  start: number,
+  sweep: number,
+  steps = 28,
+): ShapePoint[] {
+  return Array.from({ length: steps + 1 }, (_, index) =>
+    arcPoint(index / steps, cx, cy, rx, ry, start, sweep),
+  );
+}
+
+function formLinePaths(form: LassoResolvedForm): ShapePoint[][] {
   if (form === 0) {
-    return polylinePoint([
-      { x: 0.72, y: 0.18 }, { x: 0.62, y: 0.1 }, { x: 0.45, y: 0.11 },
-      { x: 0.31, y: 0.2 }, { x: 0.27, y: 0.32 }, { x: 0.33, y: 0.39 },
-      { x: 0.46, y: 0.38 }, { x: 0.57, y: 0.29 }, { x: 0.61, y: 0.15 },
-      { x: 0.58, y: 0.32 }, { x: 0.52, y: 0.51 }, { x: 0.43, y: 0.7 },
-      { x: 0.33, y: 0.8 }, { x: 0.24, y: 0.78 }, { x: 0.34, y: 0.7 },
-      { x: 0.49, y: 0.68 }, { x: 0.65, y: 0.73 }, { x: 0.79, y: 0.68 },
-      { x: 0.87, y: 0.58 },
-    ], index / (LOOP_STAMPS - 1));
+    return [[
+      { x: 0.74, y: 0.2 }, { x: 0.66, y: 0.12 }, { x: 0.53, y: 0.1 },
+      { x: 0.39, y: 0.14 }, { x: 0.29, y: 0.24 }, { x: 0.27, y: 0.34 },
+      { x: 0.32, y: 0.4 }, { x: 0.43, y: 0.39 }, { x: 0.54, y: 0.3 },
+      { x: 0.61, y: 0.16 }, { x: 0.59, y: 0.31 }, { x: 0.54, y: 0.48 },
+      { x: 0.46, y: 0.65 }, { x: 0.36, y: 0.77 }, { x: 0.27, y: 0.8 },
+      { x: 0.35, y: 0.72 }, { x: 0.48, y: 0.69 }, { x: 0.63, y: 0.73 },
+      { x: 0.76, y: 0.7 }, { x: 0.86, y: 0.59 },
+    ]];
   }
+
+  if (form === 1) {
+    return [
+      sampledArc(0.49, 0.48, 0.29, 0.31, -0.82, -4.65),
+      [{ x: 0.49, y: 0.11 }, { x: 0.46, y: 0.36 }, { x: 0.49, y: 0.73 }, { x: 0.49, y: 0.9 }],
+      [{ x: 0.36, y: 0.49 }, { x: 0.36, y: 0.72 }, { x: 0.38, y: 0.88 }],
+      [{ x: 0.57, y: 0.5 }, { x: 0.57, y: 0.73 }, { x: 0.57, y: 0.88 }],
+    ];
+  }
+
+  if (form === 2) {
+    return [
+      sampledArc(0.5, 0.57, 0.28, 0.29, 0.12, -3.38),
+      [{ x: 0.5, y: 0.2 }, { x: 0.47, y: 0.43 }, { x: 0.5, y: 0.84 }, { x: 0.53, y: 0.43 }, { x: 0.5, y: 0.2 }],
+      sampledArc(0.5, 0.1, 0.035, 0.035, 0, Math.PI * 2, 10),
+    ];
+  }
+
+  if (form === 3) {
+    return [
+      sampledArc(0.5, 0.56, 0.3, 0.26, 0.04, Math.PI - 0.08),
+      [{ x: 0.2, y: 0.55 }, { x: 0.22, y: 0.33 }, { x: 0.34, y: 0.47 },
+        { x: 0.29, y: 0.19 }, { x: 0.45, y: 0.4 }, { x: 0.5, y: 0.1 },
+        { x: 0.55, y: 0.4 }, { x: 0.71, y: 0.19 }, { x: 0.66, y: 0.47 },
+        { x: 0.78, y: 0.33 }, { x: 0.8, y: 0.55 }],
+    ];
+  }
+
+  return [
+    sampledArc(0.48, 0.48, 0.29, 0.31, -0.72, -4.88),
+    [{ x: 0.47, y: 0.16 }, { x: 0.5, y: 0.06 }, { x: 0.52, y: 0.22 }],
+    [{ x: 0.42, y: 0.77 }, { x: 0.46, y: 0.91 }, { x: 0.53, y: 0.78 }],
+    sampledArc(0.88, 0.48, 0.035, 0.035, 0, Math.PI * 2, 10),
+  ];
+}
+
+/** Connected linework used when the moving particles resolve into a complete mark. */
+export function resolvedLinework(size: number, form: LassoResolvedForm): LassoLinePath[] {
+  return formLinePaths(form).map((path) => ({
+    points: path.map(({ x, y }) => ({ x: x * size, y: y * size })),
+    closed: path.length > 2 && Math.hypot(
+      (path[0]?.x ?? 0) - (path[path.length - 1]?.x ?? 0),
+      (path[0]?.y ?? 0) - (path[path.length - 1]?.y ?? 0),
+    ) < 0.01,
+  }));
+}
+
+function targetForForm(index: number, form: LassoResolvedForm): ShapePoint {
+  if (form === 0) return polylinePoint(formLinePaths(form)[0] ?? [], index / (LOOP_STAMPS - 1));
 
   if (form === 1) {
     if (index < 25) return arcPoint(index / 24, 0.49, 0.48, 0.29, 0.31, -0.82, -4.65);

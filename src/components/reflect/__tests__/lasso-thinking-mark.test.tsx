@@ -9,14 +9,18 @@ const context = {
   arc: vi.fn(),
   beginPath: vi.fn(),
   clearRect: vi.fn(),
+  closePath: vi.fn(),
   fill: vi.fn(),
   lineTo: vi.fn(),
   moveTo: vi.fn(),
   setTransform: vi.fn(),
+  restore: vi.fn(),
+  save: vi.fn(),
   stroke: vi.fn(),
   fillStyle: "",
   globalAlpha: 1,
   lineCap: "butt",
+  lineJoin: "miter",
   lineWidth: 1,
   strokeStyle: "",
 };
@@ -62,6 +66,7 @@ describe("LassoThinkingMark", () => {
     } as unknown as MediaQueryList);
     render(<LassoThinkingMark kind="loop" size={24} />);
     expect(context.clearRect).toHaveBeenCalled();
+    expect(context.stroke).toHaveBeenCalled();
     expect(requestAnimationFrame).not.toHaveBeenCalled();
   });
 
