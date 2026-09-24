@@ -84,7 +84,7 @@ export async function runReflectTurn(
     throw new Response("Forbidden", { status: 403 });
   }
 
-  const { parseScope, titleFromMessage, REFLECT_SYSTEM_PROMPT, ASK_LASSO_MAKING_RULES } = await import("./reflect-shared");
+  const { parseScope, scopeLabel, titleFromMessage, REFLECT_SYSTEM_PROMPT, ASK_LASSO_MAKING_RULES } = await import("./reflect-shared");
   const { analysisPreset } = await import("./analysis-presets");
   const sessionScope = parseScope(session.context_scope);
   let scope = sessionScope;
@@ -113,10 +113,29 @@ export async function runReflectTurn(
     role: (m.role === "assistant" ? "assistant" : "user") as "assistant" | "user",
     content: m.content,
   }));
+  // Where the person is asking from. The request carries no page, so this is
+  // derived from the session scope: one engagement names it, otherwise the
+  // whole record (no board open).
+  let whereLine: string | null = null;
+  if (surface === "ask_lasso") {
+    let place = "Ask Lasso, across their whole record, with no board open";
+    if (sessionScope.mode === "engagements" && sessionScope.ids.length === 1) {
+      const { data: engagement } = await supabase
+        .from("engagements")
+        .select("title")
+        .eq("id", sessionScope.ids[0]!)
+        .maybeSingle();
+      if (engagement?.title) place = `Ask Lasso, on the engagement ${engagement.title}`;
+    } else if (sessionScope.mode !== "whole" && sessionScope.ids.length > 0) {
+      place = `Ask Lasso, on a chosen set of ${scopeLabel(sessionScope).toLowerCase()}`;
+    }
+    whereLine = `WHERE THE PERSON IS: ${place}.`;
+  }
   const prompts = [
     { role: "system" as const, content: REFLECT_SYSTEM_PROMPT },
     ...(preset ? [{ role: "system" as const, content: preset.systemPrompt }] : []),
     ...(surface === "ask_lasso" ? [{ role: "system" as const, content: ASK_LASSO_MAKING_RULES }] : []),
+    ...(whereLine ? [{ role: "system" as const, content: whereLine }] : []),
   ];
 
   const { chatComplete, streamChat, resolveAiMeta } = await import("./ai.server");
@@ -228,6 +247,7 @@ export async function runReflectTurn(
         quote_repairs: qb(guardedCat.repairs),
         suppressed_quotes: qb(guardedCat.suppressed),
         finish_reason: run.finishReason,
+        answer_retried: run.answerRetried,
         ...(preset ? { preset: preset.id } : {}),
       },
     });

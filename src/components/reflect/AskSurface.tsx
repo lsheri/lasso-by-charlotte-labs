@@ -320,6 +320,23 @@ function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions?: Reac
           );
         })}
 
+        {(() => {
+          // Shown on send, before the server answers. Hidden once the saved
+          // copy of the same question is back in the thread.
+          const asked = (ask as AskLasso & { asked?: string | null }).asked;
+          const last = messages[messages.length - 1];
+          if (!ask.pending || !asked || (last?.role === "user" && last.content === asked)) return null;
+          return (
+            <div className="nb-conversation-message max-w-none flex-row items-start gap-3" data-testid="asked-now">
+              <div className="grid w-7 shrink-0 grid-rows-[28px]">{speakerAvatar("user")}</div>
+              <div className="nb-conversation-body w-full flex-1 gap-0 overflow-visible">
+                {speakerName("user", new Date())}
+                <p className="nb-binder-line whitespace-pre-wrap text-sm text-foreground">{asked}</p>
+              </div>
+            </div>
+          );
+        })()}
+
         {ask.pending ? (
           <div className="nb-binder-line flex items-center gap-2">
             <LassoThinkingMark kind="gather" size={56} count={ask.liveManifest?.items.length ?? 0} />
