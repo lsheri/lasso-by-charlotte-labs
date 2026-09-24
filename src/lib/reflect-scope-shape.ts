@@ -53,6 +53,17 @@ export function mappedItemsForEngagement(all: WorkItemRow[], engagementId: strin
   return all.filter((i) => i.visibility === "mapped" && engagementIdsOf(i).includes(engagementId));
 }
 
+export function boardSelectionScope(input: {
+  engagementId: string;
+  hasBoardPicks: boolean;
+  mappedIds: string[];
+}): ContextScope {
+  if (!input.hasBoardPicks || input.mappedIds.length === 0) {
+    return { mode: "engagements", ids: [input.engagementId] };
+  }
+  return { mode: "items", ids: input.mappedIds };
+}
+
 export type ChipShape =
   | { kind: "item"; item: WorkItemRow; scope: "thread" | "deliverable" }
   | { kind: "engagement"; engagementId: string; itemCount: number }

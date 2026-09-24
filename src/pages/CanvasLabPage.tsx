@@ -2752,7 +2752,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
         </div>
         {boardReady && opening ? <div className={`pointer-events-none absolute inset-0 z-40 flex ${unfold.className}`} aria-hidden={!unfold.still}>{unfold.still ? <span className="sr-only">{unfold.reduced}</span> : null}<span className="canvas-lab-unfold-panel" /><span className="canvas-lab-unfold-panel" /><span className="canvas-lab-unfold-panel" /></div> : null}
       </main>
-      {profile?.id && orgId ? <BoardAsk open={askOpen} onOpenChange={setAskOpen} engagementId={engagementId} engagementTitle={title} profileId={profile.id} orgId={orgId} canKeep={canAddWork} onKeep={(answer, via) => void keepAnswerAsCard(answer, { via: via ?? "button" })} boardContextItemIds={contextNodes.flatMap((node) => { const item = itemByNode(node); return item ? [item.id] : []; })} /> : null}
+      {profile?.id && orgId ? <BoardAsk open={askOpen} onOpenChange={setAskOpen} engagementId={engagementId} engagementTitle={title} profileId={profile.id} orgId={orgId} canKeep={canAddWork} onKeep={(answer, via) => void keepAnswerAsCard(answer, { via: via ?? "button" })} boardContextHasPicks={contextNodes.length > 0} boardContextItemIds={contextNodes.flatMap((node) => { const item = itemByNode(node); return item ? [item.id] : []; })} /> : null}
       <p className="sr-only" aria-live="polite">{announcement}</p>
       {exampleOpen ? <ExampleBoardOverlay onClose={() => setExampleOpen(false)} /> : null}
       {canAddWork ? <AddWorkPanel open={addWorkOpen} onOpenChange={(next) => { setAddWorkOpen(next); if (!next) { setAddWorkAnchor(null); setAddWorkTarget("board"); } }} onPlace={addWorkToBoard} busy={addWorkBusy} /> : null}

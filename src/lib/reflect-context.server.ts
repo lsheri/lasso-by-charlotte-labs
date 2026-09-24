@@ -323,6 +323,9 @@ export async function loadScopeData(
   ownerId: string,
   scope: ContextScope,
 ): Promise<{ tasks: TaskRow[]; linkRows: LinkRow[]; items: ItemRow[] }> {
+  if (scope.mode !== "whole" && scope.ids.length === 0) {
+    return { tasks: [], linkRows: [], items: [] };
+  }
   async function loadTasksAndLinks(): Promise<{ tasks: TaskRow[]; linkRows: LinkRow[] }> {
     let taskQuery = supabase
       .from("tasks")
@@ -465,16 +468,19 @@ export async function assembleReflectContext(
   supabase: Db,
   profileId: string,
   scope: ContextScope,
-  options?: { ownerProfileId?: string; readerRole?: AiReadRole; pointedAt?: boolean },
+  options?: { ownerProfileId?: string; readerRole?: AiReadRole; pointedAt?: boolean; briefOnly?: boolean },
 ): Promise<AssembledContext> {
   const ownerId = options?.ownerProfileId ?? profileId;
 
   // 1 to 3. Tasks, mapping links, and the work items themselves. The brief is
   // an independent read, so it happens alongside rather than after.
-  const [{ tasks, linkRows, items: allItems }, brief] = await Promise.all([
-    loadScopeData(supabase, ownerId, scope),
+  const [{ tasks, linkRows, items: loadedItems }, brief] = await Promise.all([
+    options?.briefOnly
+      ? Promise.resolve({ tasks: [] as TaskRow[], linkRows: [] as LinkRow[], items: [] as ItemRow[] })
+      : loadScopeData(supabase, ownerId, scope),
     loadBriefContext(supabase, ownerId, scope),
   ]);
+  const allItems = loadedItems;
 
   // Tier 0. The brief is never budgeted away, and is removed from the ordinary
   // item list so it cannot also appear as an extract.

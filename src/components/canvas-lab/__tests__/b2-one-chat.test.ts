@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { boardSelectionScope } from "@/lib/reflect-scope-shape";
 
 const read = (p: string) => readFileSync(resolve(process.cwd(), p), "utf8");
 const page = read("src/pages/CanvasLabPage.tsx");
@@ -22,8 +23,31 @@ describe("B2 one chat on the board", () => {
 
   it("feeds the board selection into Ask Lasso", () => {
     expect(boardAsk).toContain("boardContextItemIds: string[]");
-    expect(boardAsk).toContain("ask.setSelected(");
+    expect(boardAsk).toContain("ask.setBoardSelection(");
     expect(page).toContain("boardContextItemIds={");
+  });
+
+  it("keeps the complete board scope matrix narrow", () => {
+    expect(boardSelectionScope({ engagementId: "e", hasBoardPicks: false, mappedIds: [] })).toEqual({ mode: "engagements", ids: ["e"] });
+    expect(boardSelectionScope({ engagementId: "e", hasBoardPicks: true, mappedIds: ["a"] })).toEqual({ mode: "items", ids: ["a"] });
+    expect(boardSelectionScope({ engagementId: "e", hasBoardPicks: true, mappedIds: ["a", "b", "c", "d"] })).toEqual({ mode: "items", ids: ["a", "b", "c", "d"] });
+    expect(boardSelectionScope({ engagementId: "e", hasBoardPicks: true, mappedIds: [] })).toEqual({ mode: "engagements", ids: ["e"] });
+  });
+
+  it("labels a board pick distinctly from the picker and all-work states", () => {
+    const surface = read("src/components/reflect/AskSurface.tsx");
+    expect(surface).toContain("Brief only: nothing picked has work to read");
+    expect(surface).toContain("${ask.boardPickedCount} picked on the board");
+    expect(surface).toContain("All work in this engagement");
+    expect(surface.indexOf("boardPicked && ask.boardPickedCount === 0")).toBeLessThan(surface.indexOf('"All work in this engagement"'));
+  });
+
+  it("keeps the live board pick through New chat and restores all work only after clear", () => {
+    expect(boardAsk).toContain("props.boardContextHasPicks");
+    expect(page).toContain("boardContextHasPicks={contextNodes.length > 0}");
+    const hook = read("src/components/reflect/use-ask-lasso.ts");
+    expect(hook).toContain("boardSelection.active ? boardSelection.ids : mapped.map");
+    expect(hook).toContain('setScopeSource(hasPicks ? (ids.length > 0 ? "board_pick" : "board_pick_brief_only") : "all")');
   });
 
   it("keeps removed cards reachable from the board menu", () => {

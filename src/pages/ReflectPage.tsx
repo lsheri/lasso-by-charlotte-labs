@@ -324,7 +324,7 @@ export function ReflectPage({
       setLiveManifest(null);
       const result = await streamChatRequest<ReflectResult>(
         "/api/reflect/stream",
-        { session_id: activeId, message, profile_id: profile.id, surface: "reflect" },
+        { session_id: activeId, message, profile_id: profile.id, surface: "reflect", scope_source: "all" },
         (delta) => setStreamed((prev) => prev + delta),
       );
       setCoverage({

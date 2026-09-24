@@ -28,9 +28,10 @@ async function scopeIds(
   ownerId: string,
   scope: ContextScope,
 ): Promise<{ whole: boolean; engagements: Set<string>; tasks: Set<string> }> {
-  if (scope.mode === "whole" || scope.ids.length === 0) {
+  if (scope.mode === "whole") {
     return { whole: true, engagements: new Set(), tasks: new Set() };
   }
+  if (scope.ids.length === 0) return { whole: false, engagements: new Set(), tasks: new Set() };
 
   if (scope.mode === "engagements") {
     const { data } = await supabase
