@@ -19,7 +19,7 @@ export const HERO_H1 = "Your firm bought AI. The human judgment, process, and th
 
 const BEAT_KEYS = ["thinking", "source", "answer", "share"] as const;
 
-type UseCaseKey = "bring_work_in" | "every_number" | "check_sources" | "find_lost_idea" | "share_deliverable" | "reasoning_stays";
+type UseCaseKey = "every_number" | "reasoning_stays" | "bring_work_in";
 type AssetPointer = { url: string };
 type AssetModule = { default?: AssetPointer } | AssetPointer;
 
@@ -33,27 +33,22 @@ function useCaseAssetUrl(filename: string, fallback: string) {
 }
 
 const USE_CASES: { key: UseCaseKey; file: string; title: string; body: string }[] = [
-  { key: "bring_work_in", file: "use-bring-work-in", title: "Your chats, docs and decks on one board.", body: "Claude, ChatGPT, Gemini, Granola and Drive land as cards. Drag them into workstreams. No setup." },
-  { key: "every_number", file: "use-every-number-has-a-source", title: "Every number has a source.", body: "Ask where the figure on slide 3 came from. Get the chat, the turn, and the model it came out of." },
-  { key: "check_sources", file: "use-check-the-sources", title: "Check the sources before the room.", body: "Under every answer: what was read, what was not. Nothing invented, nothing implied." },
-  { key: "find_lost_idea", file: "use-find-the-idea-that-got-lost", title: "Find the idea that got lost.", body: "Something good was set aside in week two. Lasso finds the turn, and the reason." },
-  { key: "share_deliverable", file: "use-share-the-deliverable", title: "Share the deliverable, not the drafts.", body: "Send one read-only board. Your reviewer opens what you chose. The link closes itself in 48 hours." },
-  { key: "reasoning_stays", file: "use-reasoning-stays-with-the-firm", title: "The reasoning stays with the firm.", body: "When the consultant moves on, the record does not. The next team starts from the decisions, not from zero." },
+  { key: "every_number", file: "use-every-number-has-a-source", title: "Every number has a source.", body: "Lasso a few cards and ask where the figure came from. You get the chat, the turn, and what was read to answer." },
+  { key: "reasoning_stays", file: "use-reasoning-stays-with-the-firm", title: "Every AI conversation, on the record.", body: "Claude, ChatGPT and Gemini chats land in one place, filtered by tool and mapped to the engagement. The record stays with the firm when the consultant moves on." },
+  { key: "bring_work_in", file: "use-bring-work-in", title: "Push work in with one sentence.", body: "Add Lasso to Claude or ChatGPT once. At the end of a session say push this to Lasso. Drive and Gmail connect the same way." },
 ];
 
-const TRUST = [
-  { title: "Notes are never a source.", body: "The record refuses it. Not a filter, a rule the server enforces." },
-  { title: "You choose what a reviewer opens.", body: "A shared board is read only, and its link closes after 48 hours." },
-  { title: "The record is yours.", body: "Leave the pilot with everything you brought in and everything Lasso wrote." },
+const SHARE_AUDIENCES = [
+  { label: "Teammates", body: "Pick up the engagement with the decisions already made. Nobody starts from zero." },
+  { label: "Managers", body: "One review pass on the board instead of five drafts by email. Their questions are answered from the record." },
+  { label: "Clients", body: "A read-only link that closes itself in 48 hours. They open what you chose, nothing else." },
+  { label: "Mentors", body: "The thinking behind the work, shown when you are ready to show it." },
 ] as const;
 
 function UseCaseIcon({ card }: { card: UseCaseKey }) {
   const paths: Record<UseCaseKey, ReactNode> = {
     bring_work_in: <><rect x="3" y="4" width="7" height="6" rx="1" /><rect x="14" y="4" width="7" height="6" rx="1" /><rect x="8" y="14" width="8" height="6" rx="1" /></>,
     every_number: <><path d="M4 20V10M10 20V6M16 20v-8" /><path d="M3 20h18" /></>,
-    check_sources: <><circle cx="11" cy="11" r="6" /><path d="M20 20l-4.5-4.5" /></>,
-    find_lost_idea: <><path d="M12 3a6 6 0 0 0-3.5 10.9V16h7v-2.1A6 6 0 0 0 12 3z" /><path d="M9.5 20h5" /></>,
-    share_deliverable: <><path d="M6 12v7h12v-7" /><path d="M12 4v11M8 8l4-4 4 4" /></>,
     reasoning_stays: <><path d="M5 4h11l3 3v13H5z" /><path d="M9 10h6M9 14h6" /></>,
   };
   return <svg className="landing-usecase-icon" viewBox="0 0 24 24" aria-hidden="true">{paths[card]}</svg>;
@@ -385,15 +380,21 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
             </div>
           </section>
 
-          <section className="landing-trust mx-auto mt-24 max-w-[1200px] px-4 md:px-6" aria-label="What the record promises">
-            <div className="landing-trust-row">
-              {TRUST.map((item) => (
-                <div key={item.title} className="landing-trust-item">
-                  <h3>{item.title}</h3>
-                  <p>{item.body}</p>
+          <section className="landing-share mx-auto mt-24 max-w-[1200px] px-4 md:px-6" aria-label="Sharing">
+            <div className="landing-section-head">
+              <p className="micro-label">Sharing</p>
+              <h2 className="pencil-title">Share the deliverable, not the drafts.</h2>
+              <p className="landing-share-intro">One read-only board. You choose who opens it and what they see.</p>
+            </div>
+            <div className="landing-share-grid">
+              {SHARE_AUDIENCES.map((audience) => (
+                <div key={audience.label} className="landing-share-item">
+                  <h3>{audience.label}</h3>
+                  <p>{audience.body}</p>
                 </div>
               ))}
             </div>
+            <p className="landing-share-note">Notes are never a source · a shared board is read only · the record is yours</p>
           </section>
 
           <section ref={closeRef} className="landing-close mx-auto max-w-4xl px-6 md:px-10" data-resolved={closeResolved} onPointerDown={() => { if (window.matchMedia("(max-width: 767px)").matches) setCloseResolved(true); }}>

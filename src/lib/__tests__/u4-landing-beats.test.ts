@@ -145,21 +145,34 @@ describe("Unit 10 landing", () => {
     expect(page.match(/landing-close-particles landing-close-particles-[abc]/g)).toHaveLength(3);
   });
 
-  it("has the six use-case cards and fires landing.usecase_played once per card", () => {
-    for (const key of ["bring_work_in", "every_number", "check_sources", "find_lost_idea", "share_deliverable", "reasoning_stays"]) {
-      expect(page).toContain(`key: "${key}"`);
-    }
-    for (const file of ["use-bring-work-in", "use-every-number-has-a-source", "use-check-the-sources", "use-find-the-idea-that-got-lost", "use-share-the-deliverable", "use-reasoning-stays-with-the-firm"]) {
+  it("has the three ordered use-case cards and fires landing.usecase_played once per card", () => {
+    const keys = Array.from(page.matchAll(/\{ key: "([a-z_]+)", file: "use-/g), (match) => match[1]);
+    expect(keys).toEqual(["every_number", "reasoning_stays", "bring_work_in"]);
+    for (const file of ["use-every-number-has-a-source", "use-reasoning-stays-with-the-firm", "use-bring-work-in"]) {
       expect(page).toContain(`file: "${file}"`);
+    }
+    for (const removed of ["check_sources", "find_lost_idea", "share_deliverable"]) {
+      expect(page).not.toContain(`key: "${removed}"`);
     }
     expect(page).toContain('event_type: "landing.usecase_played"');
     expect(page).toContain("dims: { card, input_mode: inputMode }");
     expect(page).toContain("playedCards.current.has(card)");
   });
 
-  it("carries the trust row", () => {
-    expect(page).toContain("Notes are never a source.");
-    expect(page).toContain("You choose what a reviewer opens.");
-    expect(page).toContain("The record is yours.");
+  it("replaces the trust row with the sharing section", () => {
+    expect(page).toContain('aria-label="Sharing"');
+    expect(page).toContain("Share the deliverable, not the drafts.");
+    for (const audience of ["Teammates", "Managers", "Clients", "Mentors"]) {
+      expect(page).toContain(`label: "${audience}"`);
+    }
+    expect(page).toContain("Notes are never a source · a shared board is read only · the record is yours");
+    expect(page).not.toContain("Notes are never a source.");
+    expect(page).not.toContain("landing-trust");
+  });
+
+  it("lets the swirl path animation own the visible opacity", () => {
+    const css = readFileSync("src/styles.css", "utf8");
+    expect(css).toContain(".lw-word-swirl { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }");
+    expect(css).not.toMatch(/\.lw-word-swirl\s*\{[^}]*opacity/s);
   });
 });
