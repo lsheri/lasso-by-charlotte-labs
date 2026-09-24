@@ -5171,8 +5171,8 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 @keyframes landing-hero-highlight {
   0% { background-size: 0% .42em; opacity: 0; }
   3% { opacity: 1; }
-  10%, 72% { background-size: 100% .42em; opacity: .68; }
-  79%, 100% { background-size: 100% .42em; opacity: 0; }
+  10%, 30% { background-size: 100% .42em; opacity: .68; }
+  36%, 100% { background-size: 100% .42em; opacity: 0; }
 }
 .landing-story-shell { width: 100%; border-top: 1px solid var(--landing-beats-hairline); border-bottom: 1px solid var(--landing-beats-hairline); background: var(--landing-beats-page); }
 .landing-story-canvas { position: relative; display: grid; grid-template-columns: minmax(210px, .72fr) minmax(116px, .4fr) minmax(400px, 1.4fr) minmax(250px, .9fr); gap: 18px; min-height: 590px; padding: 46px; overflow: hidden; }
