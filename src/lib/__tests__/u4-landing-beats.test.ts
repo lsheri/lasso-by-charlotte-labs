@@ -59,5 +59,6 @@ describe("Unit 4 public page", () => {
     expect(hero).toContain("Lasso answers");
     expect(hero).toContain("landing-story-response");
     expect(page.match(/HOW IT WORKS/g)).toHaveLength(2);
+    expect(page).toContain("landing-story-beat-motion");
   });
 });

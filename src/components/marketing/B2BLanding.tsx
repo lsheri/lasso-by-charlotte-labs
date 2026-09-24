@@ -254,6 +254,9 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
                     <h3 className="pencil-title mt-4">{beat.title}</h3>
                     <p className="mt-5 max-w-xl text-base leading-relaxed text-foreground">{beat.body}</p>
                     {index === 3 ? <p className="mt-5 font-mono text-[11.5px] text-muted-foreground">Shared boards are read only. Their links close after 48 hours.</p> : null}
+                    <div className="landing-story-beat-motion">
+                      <HeroMotion activeSlide={index} onSlideChange={(nextIndex) => { inputMode.current = "control"; setActiveBeat(nextIndex); }} />
+                    </div>
                   </article>
                 ))}
               </div>
