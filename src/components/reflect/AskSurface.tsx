@@ -100,7 +100,7 @@ export function AnswerKeepControl({
         variant="outline"
         size="sm"
         onClick={() => keep(answer, "button")}
-        className="nb-put-on-board h-8 rounded-l-[var(--radius-md)] rounded-r-none border-graphite bg-background px-3 font-sans text-[13px] font-normal text-foreground shadow-none hover:border-graphite hover:bg-secondary focus-visible:z-10"
+        className={`nb-put-on-board h-8 rounded-l-[var(--radius-md)] border-graphite bg-background px-3 font-sans text-[13px] font-normal text-foreground shadow-none hover:border-graphite hover:bg-secondary focus-visible:z-10 ${canDrag ? "rounded-r-none" : "rounded-r-[var(--radius-md)]"}`}
       >
         <GraphiteIcon name="example-board" size={16} />
         {KEEP_ANSWER_LABEL}
