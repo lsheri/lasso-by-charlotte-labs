@@ -1554,8 +1554,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   outline: calc(2px * var(--lab-inverse-zoom, 1)) solid var(--nb-green);
   outline-offset: calc(1px * var(--lab-inverse-zoom, 1));
 }
-.canvas-lab-card-paper::before,
-.canvas-lab-card-paper::after {
+.canvas-lab-card-paper::before {
   content: "";
   position: absolute;
   inset: calc(-1px * var(--lab-inverse-zoom, 1));
@@ -1563,36 +1562,69 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   border-radius: inherit;
   pointer-events: none;
 }
-.canvas-lab-card-paper::before {
   border: calc(2px * var(--lab-inverse-zoom, 1)) solid var(--nb-lasso-green);
-  box-shadow: 0 0 calc(14px * var(--lab-inverse-zoom, 1)) calc(2px * var(--lab-inverse-zoom, 1)) color-mix(in srgb, var(--nb-lasso-green) 45%, transparent);
+  box-shadow: 0 0 calc(18px * var(--lab-inverse-zoom, 1)) calc(3px * var(--lab-inverse-zoom, 1)) color-mix(in srgb, var(--nb-lasso-green) 55%, transparent);
   opacity: 0;
   transition: opacity 180ms ease-out;
 }
 .canvas-lab-card-paper[data-selected="true"]::before { opacity: 1; }
 .canvas-lab-card-paper[data-marquee-preview="true"]::before { opacity: .5; }
-.canvas-lab-card-paper::after {
+.canvas-lab-flare {
+  position: absolute;
   inset: calc(-3px * var(--lab-inverse-zoom, 1));
+  z-index: 12;
+  overflow: hidden;
   padding: calc(3px * var(--lab-inverse-zoom, 1));
-  background: conic-gradient(from 0deg, transparent 0 74%, var(--nb-lasso-green) 87%, transparent 100%);
-  box-shadow: 0 0 calc(28px * var(--lab-inverse-zoom, 1)) calc(5px * var(--lab-inverse-zoom, 1)) color-mix(in srgb, var(--nb-lasso-green) 45%, transparent);
+  border-radius: inherit;
+  pointer-events: none;
   opacity: 0;
-  transform: rotate(0deg);
-  -webkit-mask: linear-gradient(var(--nb-white) 0 0) content-box, linear-gradient(var(--nb-white) 0 0);
+  -webkit-mask: linear-gradient(var(--nb-ink) 0 0) content-box, linear-gradient(var(--nb-ink) 0 0);
   -webkit-mask-composite: xor;
-  mask-composite: exclude;
+  mask: linear-gradient(var(--nb-ink) 0 0) content-box exclude, linear-gradient(var(--nb-ink) 0 0);
 }
-@keyframes canvas-lab-context-flare-kf {
-  0% { opacity: 0; transform: rotate(0deg); }
-  14% { opacity: 1; transform: rotate(38deg); }
-  78% { opacity: .82; transform: rotate(360deg); }
-  100% { opacity: 0; transform: rotate(420deg); }
+.canvas-lab-flare-beam {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 300%;
+  aspect-ratio: 1;
+  background: conic-gradient(from 0deg, transparent 0 82%, var(--nb-lasso-green) 88% 93%, transparent 99% 100%);
+  transform: translate(-50%, -50%) rotate(0deg);
 }
-.canvas-lab-context-flare .canvas-lab-card-paper[data-context-entering="true"]::after {
-  animation: canvas-lab-context-flare-kf 900ms cubic-bezier(.22,.61,.36,1) var(--context-flare-delay, 0ms) both;
+.canvas-lab-flare-bloom {
+  position: absolute;
+  inset: 0;
+  z-index: 11;
+  border-radius: inherit;
+  box-shadow: 0 0 calc(28px * var(--lab-inverse-zoom, 1)) calc(5px * var(--lab-inverse-zoom, 1)) color-mix(in srgb, var(--nb-lasso-green) 45%, transparent);
+  pointer-events: none;
+  opacity: 0;
+}
+@keyframes canvas-lab-flare-ring-kf {
+  0% { opacity: 0; }
+  10% { opacity: 1; }
+  85% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes canvas-lab-flare-beam-kf {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+@keyframes canvas-lab-flare-bloom-kf {
+  0% { opacity: 0; }
+  30% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.canvas-lab-context-flare .canvas-lab-flare {
+  animation: canvas-lab-flare-ring-kf 700ms ease-out var(--context-flare-delay, 0ms) both;
+}
+.canvas-lab-context-flare .canvas-lab-flare-beam {
+  animation: canvas-lab-flare-beam-kf 700ms ease-out var(--context-flare-delay, 0ms) both;
+}
+.canvas-lab-context-flare .canvas-lab-flare-bloom {
+  animation: canvas-lab-flare-bloom-kf 900ms ease-out var(--context-flare-delay, 0ms) both;
 }
 @media (prefers-reduced-motion: reduce) {
-  .canvas-lab-context-flare .canvas-lab-card-paper[data-context-entering="true"]::after { animation: none; }
   .canvas-lab-card-paper::before { transition: none; }
 }
 .canvas-lab-context-mark {
