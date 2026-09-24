@@ -1,6 +1,14 @@
 import { useEffect, useRef } from "react";
 
-import { loopStamps, settledLassoStamps, type LoopStamp } from "@/lib/lasso-loop";
+import {
+  LOOP_CYCLE_MS,
+  cohesionAt,
+  loopStamps,
+  resolvedFormAt,
+  resolvedLinework,
+  settledLassoStamps,
+  type LoopStamp,
+} from "@/lib/lasso-loop";
 
 export type LassoThinkingMarkKind = "orbit" | "loop" | "gather" | "trace" | "signature";
 
@@ -41,6 +49,24 @@ function particle(context: CanvasRenderingContext2D, stamp: LoopStamp, halo = tr
     dot(context, stamp, stamp.radius * 2.25, stamp.alpha * 0.1);
   }
   dot(context, stamp, stamp.radius, stamp.alpha);
+}
+
+function drawResolvedMark(context: CanvasRenderingContext2D, time: number, size: number, alpha: number) {
+  if (alpha <= 0) return;
+  context.save();
+  context.globalAlpha = alpha;
+  context.lineWidth = Math.max(1.35, size * 0.034);
+  context.lineJoin = "round";
+  for (const path of resolvedLinework(size, resolvedFormAt(time))) {
+    const first = path.points[0];
+    if (!first) continue;
+    context.beginPath();
+    context.moveTo(first.x, first.y);
+    for (const point of path.points.slice(1)) context.lineTo(point.x, point.y);
+    if (path.closed) context.closePath();
+    context.stroke();
+  }
+  context.restore();
 }
 
 export function LassoThinkingMark({ kind, size, count = 0, className }: LassoThinkingMarkProps) {
@@ -111,9 +137,11 @@ export function LassoThinkingMark({ kind, size, count = 0, className }: LassoThi
 
     function drawGather(t: number) {
       const n = syncArrivals(t);
+      const resolved = cohesionAt(t / (LOOP_CYCLE_MS / 1000));
       for (const stamp of loopStamps(t, size)) {
-        particle(context, { ...stamp, alpha: stamp.alpha * 0.72, radius: stamp.radius * 0.88 });
+        particle(context, { ...stamp, alpha: stamp.alpha * 0.72 * (1 - resolved), radius: stamp.radius * 0.88 });
       }
+      drawResolvedMark(context, t, size, resolved);
       for (const arrival of arrivalsRef.current) {
         const home = ring(cx, cy, radius, t * 1.1 + arrival.slot * ((2 * Math.PI) / n));
         const progress = Math.max(0, Math.min((t - arrival.born) / 0.62, 1));
@@ -152,9 +180,11 @@ export function LassoThinkingMark({ kind, size, count = 0, className }: LassoThi
     }
 
     function drawSignature(t: number) {
+      const resolved = cohesionAt(t / (LOOP_CYCLE_MS / 1000));
       for (const stamp of loopStamps(t, size)) {
-        particle(context, stamp);
+        particle(context, { ...stamp, alpha: stamp.alpha * (1 - resolved) });
       }
+      drawResolvedMark(context, t, size, resolved);
     }
 
     function draw(timestamp: number) {
@@ -172,7 +202,7 @@ export function LassoThinkingMark({ kind, size, count = 0, className }: LassoThi
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reducedMotion) {
       context.clearRect(0, 0, width, height);
-      for (const stamp of settledLassoStamps(size)) particle(context, stamp, false);
+      drawResolvedMark(context, 0, size, 1);
       context.globalAlpha = 1;
       return;
     }

@@ -57,6 +57,7 @@
 - [x] Remove only superseded Ask drift CSS and verify all affected checks.
 - [x] Extend the dimensional signature motion with a fixed five-form sequence: cursive L, then the four supplied symbols.
 - [x] Verify sequence order, compact containment, reduced motion, focused checks, and live visual stability.
+- [x] Resolve each cycle into connected lime linework matching the cursive L and four supplied symbols.
 
 ## P2 Inbox board lanes
 - [x] Render the four existing work-type columns as fixed lanes in BoardShell.
