@@ -38,8 +38,7 @@ describe("Unit 4 public page", () => {
     }
   });
 
-  it("animates with CSS only", () => {
-    expect(hero).not.toContain("requestAnimationFrame");
+  it("keeps component colours token-based", () => {
     expect(beats).not.toContain("requestAnimationFrame");
     expect(hero).not.toMatch(/#[0-9a-fA-F]{3,6}\b/);
     expect(beats).not.toMatch(/#[0-9a-fA-F]{3,6}\b/);
@@ -112,11 +111,26 @@ describe("Unit 8 placement dim", () => {
 
 describe("Unit 10 landing", () => {
   it("plays the hero video with both sources, a poster and a reduced-motion play button", () => {
-    expect(page).toContain('poster="/videos/lasso-hero-poster.jpg"');
-    expect(page).toContain('<source src="/videos/lasso-hero-landing-1440.webm" type="video/webm" />');
-    expect(page).toContain('<source src="/videos/lasso-hero-landing-1440.mp4" type="video/mp4" />');
+    expect(page).toContain('poster={heroPosterAsset.url}');
+    expect(page).toContain('<source src={heroWebmAsset.url} type="video/webm" />');
+    expect(page).toContain('<source src={heroMp4Asset.url} type="video/mp4" />');
+    expect(page).not.toContain("/videos/lasso-hero-landing-1440");
     expect(page).toContain('aria-label="Play"');
     expect(page).toContain("Illustrative engagement · every figure is made up");
+  });
+
+  it("inverts walkthrough emphasis and streams source words into the active highlight", () => {
+    expect(hero).toContain('"Manager question": "Question from your manager"');
+    expect(hero).toContain("lw-role-label");
+    expect(hero).toContain("lw-word-stream");
+    expect(hero).toContain("lw-flying-word");
+    expect(hero).toContain("lw-word-swirl");
+    expect(hero).toContain("getBoundingClientRect");
+    expect(hero).toContain("animation.finished");
+  });
+
+  it("uses three invisible-ink particle layers", () => {
+    expect(page.match(/landing-close-particles landing-close-particles-[abc]/g)).toHaveLength(3);
   });
 
   it("has the six use-case cards and fires landing.usecase_played once per card", () => {

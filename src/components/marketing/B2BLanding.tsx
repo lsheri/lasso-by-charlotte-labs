@@ -6,6 +6,9 @@ import { PublicHeader } from "@/components/layout/PublicHeader";
 import { FocusSection } from "@/components/marketing/FocusSection";
 import { DeckWalkthrough } from "@/components/marketing/HeroMotion";
 import { Button } from "@/components/ui/button";
+import heroMp4Asset from "@/assets/lasso-hero-1440.mp4.asset.json";
+import heroPosterAsset from "@/assets/lasso-hero-poster.jpg.asset.json";
+import heroWebmAsset from "@/assets/lasso-hero-1440.webm.asset.json";
 import { startSessionReplay, stopSessionReplay } from "@/lib/posthog-client";
 import { submitPilotRequestFn } from "@/lib/pilot-request.functions";
 import { recordAnonymousEventFn } from "@/lib/telemetry.functions";
@@ -125,11 +128,12 @@ function HeroVideo() {
           loop
           playsInline
           preload="metadata"
-          poster="/videos/lasso-hero-poster.jpg"
+          poster={heroPosterAsset.url}
           onPlaying={() => setStarted(true)}
         >
-          <source src="/videos/lasso-hero-landing-1440.webm" type="video/webm" />
-          <source src="/videos/lasso-hero-landing-1440.mp4" type="video/mp4" />
+          {/* Unit 11 phone-source slot: add a vertical WebM/MP4 pair here with media="(max-width: 767px)" when supplied. */}
+          <source src={heroWebmAsset.url} type="video/webm" />
+          <source src={heroMp4Asset.url} type="video/mp4" />
         </video>
         {reduced && !started ? (
           <button type="button" aria-label="Play" className="landing-hero-play" onClick={() => { void ref.current?.play().catch(() => {}); }}>
@@ -383,7 +387,9 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
             <h2 className="landing-close-line1 landing-close-wordmark">Deliverables you can defend to a client, a partner, or a board.</h2>
             <div className="landing-close-ink-wrap">
               <p className="landing-close-line2">The work, judgment, thinking. Visible.</p>
-              <span className="landing-close-particles" aria-hidden="true" />
+              <span className="landing-close-particles landing-close-particles-a" aria-hidden="true" />
+              <span className="landing-close-particles landing-close-particles-b" aria-hidden="true" />
+              <span className="landing-close-particles landing-close-particles-c" aria-hidden="true" />
             </div>
             <div className="mt-10">
               <Button asChild>

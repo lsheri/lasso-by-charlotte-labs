@@ -118,6 +118,7 @@
 - [x] Simplify the phone sequence, pause its timer after a question choice, and remove scroll-bound story scaling.
 - [x] Add the once-per-load invisible-ink close with an immediate reduced-motion state.
 - [x] Preserve controls and event payloads, then verify all four states at desktop and phone sizes.
+- [x] Unit 11: Wire stored hero media, invert walkthrough emphasis, add source word streams, and rebuild the close reveal.
 
 - [x] U2+U3 Pass A: derive chat bundles, dock pieces below their chat, redirect drag and keyboard move, bundle lines, bundles dim on workboard.opened.
 - [ ] U2+U3 Pass A follow-up: move a chat and its pieces to a workstream as one undo step (waiting on a decision: needs a grouped undo entry).
