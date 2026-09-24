@@ -57,7 +57,11 @@ describe("Unit 4 public page", () => {
     expect(hero).toContain("ConversationTunnel");
     expect(hero).toContain("landing-story-vortex-rings");
     expect(hero).toContain("landing-story-vortex-fragment");
-    expect(hero.match(/<VendorMark/g)?.length).toBeGreaterThanOrEqual(2);
+    expect(hero.match(/<SourceGlyph/g)?.length).toBeGreaterThanOrEqual(2);
+    expect(hero).toContain('vendor: "granola"');
+    expect(hero).toContain('vendor: "lovable"');
+    expect(hero).toContain("landing-story-doodle");
+    expect(hero).toContain("landing-story-reach");
   });
 
   it("makes each incoming question and Lasso answer explicit", () => {
