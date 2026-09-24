@@ -7,6 +7,10 @@
  * opens no board.
  */
 
+import type { WorkboardDto } from "./canvas-lab-shared";
+import type { WorkItemRow } from "./work-types";
+import type { WorkboardCardPreview, WorkboardFilePreview } from "./workboard-card-preview.shared";
+
 /** The one window. A link lives 48 hours from the moment it is made. */
 export const SHARE_WINDOW_HOURS = 48;
 export const SHARE_WINDOW_MS = SHARE_WINDOW_HOURS * 60 * 60 * 1000;
@@ -81,61 +85,41 @@ export function shareLinkNotes(): [string, string] {
 /** What the viewer is told when a link no longer opens. One answer for all. */
 export const SHARE_CLOSED_MESSAGE = "This link has expired.";
 
-export type SharedBoardFrame = {
-  id: string;
-  kind: string;
-  label: string | null;
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-  ord: number;
+/**
+ * S3a: the shared board carries exactly what the live board page feeds its
+ * model: the saved board in the live loader's shape, and the canonical seed
+ * inputs the virtual base is built from. Nothing names a person or an org:
+ * author ids are replaced with an opaque index made fresh for each response,
+ * and the viewer is nobody.
+ */
+export type SharedWorkboard = Omit<WorkboardDto, "viewerProfileId"> & { viewerProfileId: null };
+
+export type SharedSeedTask = { id: string; name: string; detail: string | null };
+export type SharedSeedWork = WorkItemRow & { taskIds: string[] };
+export type SharedSeedDecision = { id: string; call: string; situation: string };
+
+export type SharedBoardSeed = {
+  brief: { text: string | null } | null;
+  tasks: SharedSeedTask[];
+  work: SharedSeedWork[];
+  decisions: SharedSeedDecision[];
 };
 
-export type SharedBoardNode = {
+export type SharedBoardTurn = {
   id: string;
-  frameId: string | null;
-  kind: string;
-  title: string | null;
-  body: string | null;
-  judgmentType: string | null;
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-  workItemId: string | null;
-  decisionId: string | null;
-};
-
-export type SharedBoardLink = {
-  id: string;
-  fromNodeId: string;
-  toNodeId: string;
-  relation: string;
-};
-
-export type SharedBoardTurn = { turnNo: number; role: string; content: string };
-
-export type SharedBoardItem = {
-  id: string;
-  title: string;
-  type: string;
-  turns: SharedBoardTurn[];
-};
-
-export type SharedBoardDecision = {
-  id: string;
-  call: string;
-  situation: string;
-  why: string;
+  turn_no: number;
+  role: string;
+  content: string;
+  ts: string | null;
+  model: string | null;
 };
 
 export type SharedBoardDto = {
-  frames: SharedBoardFrame[];
-  nodes: SharedBoardNode[];
-  links: SharedBoardLink[];
-  items: SharedBoardItem[];
-  decisions: SharedBoardDecision[];
+  board: SharedWorkboard;
+  seed: SharedBoardSeed;
+  cardPreviews: Record<string, WorkboardCardPreview>;
+  filePreviews: Record<string, WorkboardFilePreview>;
+  turns: Record<string, SharedBoardTurn[]>;
   expiresAt: string;
 };
 
@@ -144,21 +128,3 @@ export type SharedBoardDto = {
  * answer cannot be read to learn which links exist.
  */
 export type SharedBoardResult = { status: "open"; board: SharedBoardDto } | { status: "closed" };
-
-/** The stage a read only board is drawn on, from its own contents. */
-export function sharedBoardBounds(
-  frames: Pick<SharedBoardFrame, "x" | "y" | "w" | "h">[],
-  nodes: Pick<SharedBoardNode, "x" | "y" | "w" | "h">[],
-): { width: number; height: number } {
-  const rects = [...frames, ...nodes];
-  const width = rects.reduce((max, rect) => Math.max(max, rect.x + rect.w), 0);
-  const height = rects.reduce((max, rect) => Math.max(max, rect.y + rect.h), 0);
-  return { width: Math.max(960, width + 120), height: Math.max(600, height + 120) };
-}
-
-export function sharedNodeCentre(node: Pick<SharedBoardNode, "x" | "y" | "w" | "h">): {
-  x: number;
-  y: number;
-} {
-  return { x: node.x + node.w / 2, y: node.y + node.h / 2 };
-}

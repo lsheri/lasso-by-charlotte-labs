@@ -4,9 +4,12 @@ import { readFileSync } from "node:fs";
 import { cleanup, render, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { SharedBoardView } from "@/components/canvas-lab/SharedBoardView";
-import { fitWorkboardViewport } from "@/components/canvas-lab/canvas-lab-model";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+import { SharedBoardView, buildSharedBoardModel } from "@/components/canvas-lab/SharedBoardView";
+import { CARD_HEIGHT, CARD_WIDTH, fitWorkboardViewport } from "@/components/canvas-lab/canvas-lab-model";
 import type { SharedBoardDto } from "@/lib/board-share-shared";
+import { serializeWorkboardTextBody, type WorkboardNodeDto } from "@/lib/canvas-lab-shared";
 
 const SHARED_VIEW = readFileSync("src/components/canvas-lab/SharedBoardView.tsx", "utf8");
 const SHARE_DIALOG = readFileSync("src/components/canvas-lab/ShareDialog.tsx", "utf8");
@@ -51,22 +54,74 @@ describe("R6 shared board opening", () => {
   });
 
   it("renders the shared stage with a fitted transform before exposing its cards", async () => {
-    const board: SharedBoardDto = {
-      frames: [],
+    const rendered = renderShared(sharedBoard());
+    const stage = rendered.getByTestId("shared-board-stage");
+    await waitFor(() => expect(stage.style.visibility).toBe("visible"));
+    expect(stage.style.transform).toMatch(/^translate\([^)]*px, [^)]*px\) scale\([^)]+\)$/);
+  });
+});
+
+function renderShared(board: SharedBoardDto) {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(
+    <QueryClientProvider client={client}>
+      <SharedBoardView board={board} />
+    </QueryClientProvider>,
+  );
+}
+
+function node(partial: Partial<WorkboardNodeDto> & Pick<WorkboardNodeDto, "id" | "kind">): WorkboardNodeDto {
+  return {
+    frameId: null, workItemId: null, decisionId: null, authorProfileId: "author-1", authorName: "A teammate",
+    title: "", body: "", judgmentType: null, x: 0, y: 0, w: 0, h: 0, hidden: false, version: 1,
+    referenceReadable: true, createdAt: null, linkedItemRemovedAt: null, ...partial,
+  };
+}
+
+function sharedBoard(): SharedBoardDto {
+  return {
+    board: {
+      id: "shared", engagementId: "", version: 1, frames: [], links: [], viewerProfileId: null,
+      canEditStructure: false, archivedContextFrame: null,
       nodes: [
-        { id: "left", frameId: null, kind: "text", title: "Left card", body: null, judgmentType: null, x: -240, y: -100, w: 280, h: 220, workItemId: null, decisionId: null },
-        { id: "right", frameId: null, kind: "text", title: "Right card", body: null, judgmentType: null, x: 680, y: 420, w: 280, h: 220, workItemId: null, decisionId: null },
+        node({ id: "n-chat", kind: "work_item", workItemId: "w-chat", x: -240, y: -100 }),
+        node({ id: "n-text", kind: "text", body: serializeWorkboardTextBody({ text: "Plain words", size: "label", weight: "medium", colour: "ink" }), x: 680, y: 420, w: 240, h: 60 }),
       ],
-      links: [],
-      items: [],
+    },
+    seed: {
+      brief: null,
+      tasks: [],
       decisions: [],
-      expiresAt: "2026-09-23T00:00:00.000Z",
-    };
-    const rendered = render(<SharedBoardView board={board} />);
-    const stage = rendered.getByText("Left card").closest("article")?.parentElement;
-    expect(stage).toBeTruthy();
-    await waitFor(() => expect(stage?.style.visibility).toBe("visible"));
-    expect(stage?.style.transform).toMatch(/^translate\([^)]*px, [^)]*px\) scale\([^)]+\)$/);
+      work: [{ id: "w-chat", title: "Pricing chat", type: "ai_thread", source: "claude", visibility: "mapped", captured_at: "2026-09-20T00:00:00.000Z", content_ref: null, taskIds: [] } as unknown as SharedBoardDto["seed"]["work"][number]],
+    },
+    cardPreviews: {},
+    filePreviews: {},
+    turns: { "w-chat": [{ id: "t1", turn_no: 1, role: "user", content: "Hello", ts: null, model: null }] },
+    expiresAt: "2026-09-23T00:00:00.000Z",
+  };
+}
+
+describe("S3a shared board is the owner's board, read only", () => {
+  it("sizes a card stored at 0 by 0 the way the live board does", () => {
+    const model = buildSharedBoardModel(sharedBoard());
+    const chat = model.nodes.find((entry) => entry.workItemId === "w-chat");
+    expect(chat?.width).toBe(CARD_WIDTH);
+    expect(chat?.height).toBe(CARD_HEIGHT);
+    expect(chat?.ownership).toBe("teammate");
+  });
+
+  it("shows a text block's words, never its stored JSON", () => {
+    const rendered = renderShared(sharedBoard());
+    expect((rendered.getByLabelText("Text block words") as HTMLTextAreaElement).value).toBe("Plain words");
+    expect(rendered.getByTestId("shared-board-view").textContent ?? "").not.toContain("{");
+  });
+
+  it("offers no anchor, handle, menu or card writing control", () => {
+    const rendered = renderShared(sharedBoard());
+    const root = rendered.getByTestId("shared-board-view");
+    expect(root.querySelectorAll(".canvas-lab-anchor, .canvas-lab-resize-handle, [data-testid='answer-drag-grip']")).toHaveLength(0);
+    expect(root.querySelector("[data-read-only='false']")).toBeNull();
+    expect(SHARED_VIEW).not.toMatch(/useServerFn|persist|mutate/);
   });
 });
 

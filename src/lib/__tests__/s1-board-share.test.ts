@@ -120,11 +120,14 @@ describe("S1 — resolving a link", () => {
 
   it("the elevated path reaches only the board's own records", () => {
     const tables = [...new Set([...OPEN.matchAll(/\.from\("([a-z_]+)"\)/g)].map((m) => m[1]))].sort();
+    // S3a: the live board's own inputs, so tasks and the engagement brief join.
     expect(tables).toEqual([
       "board_share_links",
       "decisions",
+      "document_versions",
+      "engagements",
+      "tasks",
       "turns",
-      "work_items",
       "workboard_frames",
       "workboard_links",
       "workboard_nodes",
@@ -207,10 +210,16 @@ describe("S1 — the read only view", () => {
   it("has no way to write, and no way off the board", () => {
     for (const source of [VIEW, PAGE]) {
       expect(source).not.toMatch(/mutateCanvasLabBoardFn|useMutation|createServerFn/);
-      expect(source).not.toMatch(/onDrop|onPointerDown|onDragStart|contentEditable/);
+      expect(source).not.toMatch(/onDrop|contentEditable/);
       expect(source).not.toMatch(/<Link\b|useNavigate|AppSidebar/);
     }
-    expect(VIEW).toContain('import { fitWorkboardViewport } from "@/components/canvas-lab/canvas-lab-model"');
+    expect(PAGE).not.toMatch(/onPointerDown|onDragStart/);
+    // S3a: the live components are reused, and every writing handler is a no-op.
+    expect(VIEW).not.toMatch(/onDragStart=\{(?!noop\})/);
+    expect(VIEW).not.toMatch(/onPointerDown=\{(?!noop\}|onPointerDown\})/);
+    expect(VIEW).not.toMatch(/useServerFn/);
+    expect(VIEW).toContain("fitWorkboardViewport");
+    expect(VIEW).toContain("applyDurableBoard");
     expect(VIEW).not.toMatch(/mutateCanvasLabBoardFn|saveCanvasLab|deleteCanvasLab/);
   });
 
@@ -229,7 +238,7 @@ describe("S1 — the read only view", () => {
   });
 
   it("shows everything on the board, transcripts included", () => {
-    expect(VIEW).toContain("item.turns.map");
+    expect(VIEW).toContain("board.turns");
     expect(OPEN).toContain('.from("turns")');
   });
 });

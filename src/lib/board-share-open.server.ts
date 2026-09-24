@@ -5,7 +5,7 @@
  * that it is narrow by construction:
  *   - it takes a token and nothing else, and it never returns a board id, an
  *     org id, a person, an owner, or the link row itself;
- *   - it reads exactly one board and the records already drawn on it;
+ *   - it reads exactly one board and the records the live board draws from;
  *   - the only write it can make is bumping opened_count and last_opened_at
  *     on the link row that was just presented;
  *   - a wrong token, an expired one and a revoked one all return the same
@@ -16,14 +16,26 @@
 
 import type { Database } from "@/integrations/supabase/types";
 
+import type { WorkboardFrameDto, WorkboardLinkDto, WorkboardNodeDto } from "./canvas-lab-shared";
 import {
   looksLikeShareToken,
-  type SharedBoardDecision,
   type SharedBoardDto,
-  type SharedBoardItem,
   type SharedBoardResult,
   type SharedBoardTurn,
+  type SharedSeedWork,
+  type SharedWorkboard,
 } from "./board-share-shared";
+import { isBoardDefaultTask } from "./board-default-task";
+import type { WorkItemRow } from "./work-types";
+import type { WorkboardFilePreview } from "./workboard-card-preview.shared";
+import { readWorkboardCardPreviews } from "./workboard-card-preview.server";
+import {
+  artifactPreviewKind,
+  fallbackFilePreview,
+  filePreviewKind,
+  slidesFromMap,
+  wrapSvgArtifact,
+} from "./workboard-file-preview";
 import { sha256Hex } from "./telemetry.server";
 
 type Refusal = "expired" | "revoked" | "unknown";
@@ -66,7 +78,7 @@ export async function openSharedBoard(token: string): Promise<SharedBoardResult>
 
   const { data: link } = await supabaseAdmin
     .from("board_share_links")
-    .select("id, workboard_id, org_id, expires_at, revoked_at, opened_count")
+    .select("id, workboard_id, org_id, created_by, expires_at, revoked_at, opened_count")
     .eq("token_hash", tokenHash)
     .maybeSingle();
 
@@ -83,7 +95,7 @@ export async function openSharedBoard(token: string): Promise<SharedBoardResult>
     return { status: "closed" };
   }
 
-  const board = await readBoard(supabaseAdmin, link.workboard_id, link.expires_at);
+  const board = await readBoard(supabaseAdmin, link.workboard_id, link);
   if (!board) {
     await noteShareEvent("refused", link.org_id, "unknown");
     return { status: "closed" };
@@ -102,114 +114,253 @@ type AdminDb = Awaited<
   typeof import("@/integrations/supabase/client.server")
 >["supabaseAdmin"];
 
+type FrameRow = Database["public"]["Tables"]["workboard_frames"]["Row"];
+type NodeRow = Database["public"]["Tables"]["workboard_nodes"]["Row"];
+type LinkRow = Database["public"]["Tables"]["workboard_links"]["Row"];
+
+const WORK_SELECT =
+  "id, owner_id, orig_conversation_id, ungrouped_at, title, type, source, visibility, captured_at, content_ref, created_at_source, work_date, content_fidelity, source_vendor, source_meta, meta, work_item_extracts(summary)";
+const TASKS_SELECT = `id, name, detail, is_wrap, is_board_default, work_item_tasks(work_items(${WORK_SELECT}))`;
+const FILE_PREVIEW_LIMIT = 40;
+const MAX_ARTIFACT_BYTES = 1024 * 1024;
+
+type TaskRow = {
+  id: string;
+  name: string;
+  detail: string | null;
+  is_wrap?: boolean | null;
+  is_board_default?: boolean | null;
+  work_item_tasks: { work_items: (WorkItemRow & { owner_id?: string | null }) | null }[] | null;
+};
+
+/**
+ * The same inputs the live board page feeds its model, read for one board.
+ *
+ * What travels is what the person who made the link could see on the board:
+ * work the engagement can read (mapped) or that is theirs, decisions that are
+ * confirmed or that are their own drafts. Anything hidden on the board is not
+ * on the board, so it travels nowhere, including its seed record.
+ */
 async function readBoard(
   db: AdminDb,
   workboardId: string,
-  expiresAt: string,
+  link: { expires_at: string; created_by: string; org_id: string },
 ): Promise<SharedBoardDto | null> {
   const { data: boardRow } = await db
     .from("workboards")
-    .select("id")
+    .select("id, engagement_id, version")
     .eq("id", workboardId)
     .maybeSingle();
   if (!boardRow) return null;
 
-  const [framesRes, nodesRes, linksRes] = await Promise.all([
+  const [engagementRes, framesRes, nodesRes, linksRes, tasksRes, decisionsRes] = await Promise.all([
+    db.from("engagements").select("id, org_id, brief").eq("id", boardRow.engagement_id).maybeSingle(),
+    db.from("workboard_frames").select("*").eq("workboard_id", workboardId).is("deleted_at", null).order("ord"),
+    db.from("workboard_nodes").select("*").eq("workboard_id", workboardId).is("deleted_at", null),
+    db.from("workboard_links").select("*").eq("workboard_id", workboardId).is("deleted_at", null),
     db
-      .from("workboard_frames")
-      .select("id, kind, label, x, y, w, h, ord")
-      .eq("workboard_id", workboardId)
-      .is("deleted_at", null)
-      .order("ord"),
+      .from("tasks")
+      .select(TASKS_SELECT)
+      .eq("engagement_id", boardRow.engagement_id)
+      .order("position", { ascending: true })
+      .order("created_at", { ascending: true }),
     db
-      .from("workboard_nodes")
-      .select("id, frame_id, kind, title, body, judgment_type, x, y, w, h, work_item_id, decision_id, hidden")
-      .eq("workboard_id", workboardId)
-      .is("deleted_at", null),
-    db
-      .from("workboard_links")
-      .select("id, from_node_id, to_node_id, relation")
-      .eq("workboard_id", workboardId)
-      .is("deleted_at", null),
+      .from("decisions")
+      .select("id, call_text, situation, status, owner_id")
+      .eq("engagement_id", boardRow.engagement_id)
+      .in("status", ["draft", "confirmed"])
+      .order("created_at", { ascending: true }),
   ]);
+  const engagement = engagementRes.data;
+  if (!engagement || engagement.org_id !== link.org_id) return null;
 
-  const frames = (framesRes.data ?? []).map((row) => ({
-    id: row.id,
-    kind: row.kind,
-    label: row.label,
-    x: row.x,
-    y: row.y,
-    w: row.w,
-    h: row.h,
-    ord: row.ord,
-  }));
-  // A card hidden on the board is not on the board, so it does not travel.
-  const nodeRows = (nodesRes.data ?? []).filter((row) => !row.hidden);
-  const nodes = nodeRows.map((row) => ({
-    id: row.id,
-    frameId: row.frame_id,
-    kind: row.kind,
-    title: row.title,
-    body: row.body,
-    judgmentType: row.judgment_type,
-    x: row.x,
-    y: row.y,
-    w: row.w,
-    h: row.h,
-    workItemId: row.work_item_id,
-    decisionId: row.decision_id,
-  }));
-  const visible = new Set(nodes.map((node) => node.id));
-  const links = (linksRes.data ?? [])
-    .filter((row) => visible.has(row.from_node_id) && visible.has(row.to_node_id))
-    .map((row) => ({
+  const allNodeRows = (nodesRes.data ?? []) as NodeRow[];
+  const hiddenRows = allNodeRows.filter((row) => row.hidden);
+  const hiddenWork = new Set(hiddenRows.map((row) => row.work_item_id).filter((id): id is string => !!id));
+  const hiddenDecisions = new Set(hiddenRows.map((row) => row.decision_id).filter((id): id is string => !!id));
+  const briefHidden = hiddenRows.some((row) => row.kind === "brief");
+
+  const readable = (item: { visibility: string; owner_id?: string | null }) =>
+    item.visibility === "mapped" || item.owner_id === link.created_by;
+
+  const taskRows = ((tasksRes.data ?? []) as unknown as TaskRow[]).filter((task) => !isBoardDefaultTask(task));
+  const allTaskRows = (tasksRes.data ?? []) as unknown as TaskRow[];
+  const workById = new Map<string, SharedSeedWork>();
+  for (const task of allTaskRows) {
+    for (const entry of task.work_item_tasks ?? []) {
+      const item = entry.work_items;
+      if (!item || hiddenWork.has(item.id) || !readable(item)) continue;
+      const existing = workById.get(item.id);
+      if (existing) {
+        existing.taskIds.push(task.id);
+        continue;
+      }
+      // No person travels: the owner is dropped, and so is the client claim.
+      const { owner_id: _owner, client_id: _client, ...rest } = item as WorkItemRow;
+      workById.set(item.id, { ...rest, taskIds: [task.id] });
+    }
+  }
+  const work = [...workById.values()];
+
+  const decisions = ((decisionsRes.data ?? []) as { id: string; call_text: string; situation: string; status: string; owner_id: string | null }[])
+    .filter((row) => !hiddenDecisions.has(row.id))
+    .filter((row) => row.status === "confirmed" || row.owner_id === link.created_by)
+    .map((row) => ({ id: row.id, call: row.call_text, situation: row.situation }));
+  const decisionIds = new Set(decisions.map((row) => row.id));
+
+  const nodeRows = allNodeRows.filter((row) => {
+    if (row.hidden) return false;
+    if (row.work_item_id) return workById.has(row.work_item_id);
+    if (row.decision_id) return decisionIds.has(row.decision_id);
+    return true;
+  });
+  const frameRows = (framesRes.data ?? []) as FrameRow[];
+  const frameIds = new Set(frameRows.map((row) => row.id));
+  const visibleIds = new Set(nodeRows.map((row) => row.id));
+
+  // An opaque index, fresh per response: ownership reads as "teammate" and no
+  // profile id leaves the server.
+  const authorIndex = new Map<string, string>();
+  const authorOf = (id: string) => {
+    let opaque = authorIndex.get(id);
+    if (!opaque) {
+      opaque = `author-${authorIndex.size + 1}`;
+      authorIndex.set(id, opaque);
+    }
+    return opaque;
+  };
+
+  const board: SharedWorkboard = {
+    id: "shared",
+    engagementId: "",
+    version: boardRow.version,
+    frames: frameRows.map((row) => ({
       id: row.id,
-      fromNodeId: row.from_node_id,
-      toNodeId: row.to_node_id,
-      relation: row.relation,
-    }));
+      key: row.key,
+      kind: row.kind as WorkboardFrameDto["kind"],
+      taskId: row.task_id,
+      label: row.label,
+      fill: row.fill ?? null,
+      x: row.x,
+      y: row.y,
+      w: row.w,
+      h: row.h,
+      ord: row.ord,
+      version: row.version,
+    })),
+    nodes: nodeRows.map((row): WorkboardNodeDto => ({
+      id: row.id,
+      frameId: row.frame_id && frameIds.has(row.frame_id) ? row.frame_id : null,
+      kind: row.kind as WorkboardNodeDto["kind"],
+      workItemId: row.work_item_id,
+      decisionId: row.decision_id,
+      authorProfileId: authorOf(row.author_profile_id),
+      authorName: "A teammate",
+      title: row.title,
+      body: row.body,
+      judgmentType: (row.judgment_type as WorkboardNodeDto["judgmentType"]) ?? null,
+      x: row.x,
+      y: row.y,
+      w: row.w,
+      h: row.h,
+      hidden: false,
+      version: row.version,
+      referenceReadable: true,
+      createdAt: row.created_at ?? null,
+      linkedItemRemovedAt: row.linked_item_removed_at ?? null,
+    })),
+    links: ((linksRes.data ?? []) as LinkRow[])
+      .filter((row) => visibleIds.has(row.from_node_id) && visibleIds.has(row.to_node_id))
+      .map((row): WorkboardLinkDto => ({
+        id: row.id,
+        fromNodeId: row.from_node_id,
+        toNodeId: row.to_node_id,
+        fromAnchor: row.from_anchor as WorkboardLinkDto["fromAnchor"],
+        toAnchor: row.to_anchor as WorkboardLinkDto["toAnchor"],
+        relation: row.relation as WorkboardLinkDto["relation"],
+        authorProfileId: authorOf(row.author_profile_id),
+        version: row.version,
+      })),
+    viewerProfileId: null,
+    canEditStructure: false,
+    archivedContextFrame: null,
+  };
 
-  const workIds = [...new Set(nodes.map((node) => node.workItemId).filter((id): id is string => !!id))];
-  const decisionIds = [
-    ...new Set(nodes.map((node) => node.decisionId).filter((id): id is string => !!id)),
-  ];
-
-  const [itemsRes, turnsRes, decisionsRes] = await Promise.all([
-    workIds.length > 0
-      ? db.from("work_items").select("id, title, type").in("id", workIds)
-      : Promise.resolve({ data: [] as { id: string; title: string; type: string }[] }),
-    workIds.length > 0
+  const chatIds = work.filter((item) => item.type === "ai_thread").map((item) => item.id);
+  const [cardPreviewRows, turnsRes, filePreviews] = await Promise.all([
+    chatIds.length > 0 ? readWorkboardCardPreviews(db, chatIds).catch(() => []) : Promise.resolve([]),
+    chatIds.length > 0
       ? db
           .from("turns")
-          .select("work_item_id, turn_no, role, content")
-          .in("work_item_id", workIds)
+          .select("id, work_item_id, turn_no, role, content, ts, model")
+          .in("work_item_id", chatIds)
           .order("turn_no", { ascending: true })
           .limit(TURN_LIMIT)
-      : Promise.resolve({ data: [] as { work_item_id: string; turn_no: number; role: string; content: string }[] }),
-    decisionIds.length > 0
-      ? db.from("decisions").select("id, call_text, situation, why").in("id", decisionIds)
-      : Promise.resolve({ data: [] as { id: string; call_text: string; situation: string; why: string }[] }),
+      : Promise.resolve({ data: [] as (SharedBoardTurn & { work_item_id: string })[] }),
+    readFilePreviews(db, work.filter((item) => item.type !== "ai_thread").slice(0, FILE_PREVIEW_LIMIT)),
   ]);
 
-  const turnsByItem = new Map<string, SharedBoardTurn[]>();
-  for (const row of turnsRes.data ?? []) {
-    const list = turnsByItem.get(row.work_item_id) ?? [];
-    list.push({ turnNo: row.turn_no, role: row.role, content: row.content });
-    turnsByItem.set(row.work_item_id, list);
+  const turns: Record<string, SharedBoardTurn[]> = {};
+  for (const row of (turnsRes.data ?? []) as (SharedBoardTurn & { work_item_id: string })[]) {
+    (turns[row.work_item_id] ??= []).push({
+      id: row.id,
+      turn_no: row.turn_no,
+      role: row.role,
+      content: row.content,
+      ts: row.ts,
+      model: row.model,
+    });
   }
 
-  const items: SharedBoardItem[] = (itemsRes.data ?? []).map((row) => ({
-    id: row.id,
-    title: row.title,
-    type: row.type,
-    turns: turnsByItem.get(row.id) ?? [],
-  }));
-  const decisions: SharedBoardDecision[] = (decisionsRes.data ?? []).map((row) => ({
-    id: row.id,
-    call: row.call_text,
-    situation: row.situation,
-    why: row.why,
-  }));
+  return {
+    board,
+    seed: {
+      brief: briefHidden ? null : { text: engagement.brief },
+      tasks: taskRows.map((task) => ({ id: task.id, name: task.name, detail: task.detail })),
+      work,
+      decisions,
+    },
+    cardPreviews: Object.fromEntries(cardPreviewRows.map((row) => [row.workItemId, row])),
+    filePreviews,
+    turns,
+    expiresAt: link.expires_at,
+  };
+}
 
-  return { frames, nodes, links, items, decisions, expiresAt };
+/** The live board's document and artifact previews, read without writing. */
+async function readFilePreviews(db: AdminDb, items: SharedSeedWork[]): Promise<Record<string, WorkboardFilePreview>> {
+  const entries = await Promise.all(items.map(async (item): Promise<[string, WorkboardFilePreview]> => {
+    try {
+      const { data: versions } = await db
+        .from("document_versions")
+        .select("slide_map, version_no")
+        .eq("work_item_id", item.id)
+        .order("version_no", { ascending: false });
+      const versionCount = versions?.length ?? 0;
+      const artifactKind = artifactPreviewKind(item);
+      if (artifactKind && item.content_ref) {
+        const stored = await db.storage.from("work-files").download(item.content_ref);
+        if (!stored.error && stored.data && stored.data.size <= MAX_ARTIFACT_BYTES) {
+          const text = await stored.data.text();
+          const html = artifactKind === "svg" ? wrapSvgArtifact(text) : text;
+          return [item.id, { workItemId: item.id, kind: artifactKind === "mermaid" ? "mermaid" : "html", url: null, html, lines: [], slideTitle: null, versionCount }];
+        }
+      }
+      const pages = item.type === "deck" ? slidesFromMap(versions?.[0]?.slide_map ?? null) : [];
+      const slide = pages[0] ?? null;
+      if (slide) {
+        return [item.id, { workItemId: item.id, kind: "slide", url: null, lines: slide.lines, slideTitle: slide.title, pages, versionCount }];
+      }
+      if (filePreviewKind(item) === "pdf" && item.content_ref) {
+        const signed = await db.storage.from("work-files").createSignedUrl(item.content_ref, 600);
+        if (!signed.error && signed.data?.signedUrl) {
+          return [item.id, { workItemId: item.id, kind: "pdf", url: signed.data.signedUrl, lines: [], slideTitle: null, versionCount }];
+        }
+      }
+      return [item.id, fallbackFilePreview(item, versionCount)];
+    } catch {
+      return [item.id, fallbackFilePreview(item)];
+    }
+  }));
+  return Object.fromEntries(entries);
 }

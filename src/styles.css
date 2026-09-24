@@ -5569,3 +5569,9 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .canvas-lab-bundle-edge { position: absolute; z-index: 0; border: 1.4px solid var(--nb-pencil); border-radius: 8px; background: var(--nb-white); pointer-events: none; }
 .canvas-lab-bundle-control:focus-visible,
 .canvas-lab-bundle-more:focus-visible { outline: 2px solid var(--nb-green); outline-offset: 2px; }
+
+/* S3a: a shared board reads only, so the move edges on text, stickies and colour blocks are not offered. */
+.shared-board-stage .canvas-lab-text-block-edge,
+.shared-board-stage .canvas-lab-colour-block-edge {
+  display: none;
+}

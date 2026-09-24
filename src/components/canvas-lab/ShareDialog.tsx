@@ -2,8 +2,7 @@
  * S2: one Share button holding both ways to share this board.
  *
  * Section one gives someone in the workspace one of two things. Section two is
- * the expiring link, unchanged from S1. Section three is something we are
- * building, shown as not available rather than as a control that does nothing.
+ * the expiring link, unchanged from S1.
  */
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -22,9 +21,6 @@ import {
 } from "@/components/ui/dialog";
 import {
   ACCESS_CHOICES,
-  COMING_LINE,
-  COMING_STATE,
-  COMING_TITLE,
   accessLabel,
   type EngagementAccessChoice,
 } from "@/lib/engagement-access-shared";
@@ -63,8 +59,6 @@ export function ShareDialog({
             </p>
             <BoardLinkSection engagementId={engagementId} profileId={profileId} open={open} />
           </section>
-
-          <ComingSection />
         </div>
       </DialogContent>
     </Dialog>
@@ -123,6 +117,11 @@ function PeopleSection({
     <section className="flex flex-col gap-3">
       <p className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">People</p>
 
+      {people.data && canPick.length === 0 ? (
+        <p className="nb-type-small text-foreground" data-testid="share-nobody-to-pick">
+          Nobody else is in your workspace yet. Invite people from Settings, People.
+        </p>
+      ) : (
       <div className="flex flex-col gap-2">
         <label className="nb-type-small text-muted" htmlFor="share-person">
           Choose someone from your workspace
@@ -158,6 +157,7 @@ function PeopleSection({
           ))}
         </div>
       </div>
+      )}
 
       {problem ? <p className="nb-type-small text-foreground">{problem}</p> : null}
 
@@ -194,17 +194,6 @@ function PeopleSection({
           </ul>
         )}
       </div>
-    </section>
-  );
-}
-
-/** Not a control. Nothing to press, and it never says this exists today. */
-function ComingSection() {
-  return (
-    <section aria-disabled="true" className="flex flex-col gap-2 opacity-60">
-      <p className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{COMING_STATE}</p>
-      <p className="nb-type-small text-foreground">{COMING_TITLE}</p>
-      <p className="nb-type-small text-muted">{COMING_LINE}</p>
     </section>
   );
 }
