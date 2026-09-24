@@ -122,6 +122,7 @@
 - [x] Unit 12: Update landing headings, hero media framing, continuous source streams, and use-case asset resolution.
 - [x] Unit 13: Reduce landing use cases to three clips, replace the trust row with Sharing, and correct swirl opacity.
 - [x] Unit 13 media: Store and connect the three supplied product clips with posters and browser-compatible sources.
+- [x] Unit 14: Select the walkthrough step whose visible body is nearest the viewport centre.
 
 - [x] U2+U3 Pass A: derive chat bundles, dock pieces below their chat, redirect drag and keyboard move, bundle lines, bundles dim on workboard.opened.
 - [ ] U2+U3 Pass A follow-up: move a chat and its pieces to a workstream as one undo step (waiting on a decision: needs a grouped undo entry).
