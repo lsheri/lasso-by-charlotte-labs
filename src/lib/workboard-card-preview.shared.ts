@@ -36,7 +36,7 @@ export function readWorkboardDisplayMode(value: string | null): WorkboardDisplay
   return value === "sticky" ? "sticky" : "preview";
 }
 
-export const PREVIEW_CSP = "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com data:; img-src data: https:; connect-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'";
+export const PREVIEW_CSP = "default-src 'none'; script-src 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; font-src https://fonts.gstatic.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net data:; img-src data: https:; connect-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'";
 
 const CSP_META = `<meta http-equiv="Content-Security-Policy" content="${PREVIEW_CSP}">`;
 

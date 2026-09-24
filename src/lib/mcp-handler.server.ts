@@ -182,7 +182,8 @@ export type AttachmentOutcome = {
     | "kept_stored"
     | "rejected"
     | "failed"
-    | "reference_created";
+    | "reference_created"
+    | "held";
   chars: number;
   version_no?: number;
   reason?: string;
@@ -200,6 +201,7 @@ export function attachmentSummaryLine(outcomes: readonly AttachmentOutcome[]): s
     rejected: ["not taken", "not taken"],
     failed: ["failed", "failed"],
     reference_created: ["file placeholder", "file placeholders"],
+    held: ["held back", "held back"],
   };
   const versions = outcomes
     .filter((one) => one.outcome === "new_version" && one.version_no)
@@ -230,7 +232,21 @@ export type ParsedAttachment = {
   sourceArtifactId: string;
   language?: string;
   fileRef?: FileRef;
+  origin: "made_in_chat" | "seen_in_chat";
+  include: boolean;
 };
+
+const TEXT_EXTENSIONS = new Set([
+  "html", "htm", "svg", "md", "markdown", "mmd", "csv", "tsv", "txt", "json",
+  "xml", "yaml", "yml", "css", "js", "jsx", "ts", "tsx", "py",
+]);
+
+/** U1. A filename whose bytes are plain text and could travel as content. */
+export function isTextFilename(name: string): boolean {
+  const dot = name.lastIndexOf(".");
+  if (dot < 0) return false;
+  return TEXT_EXTENSIONS.has(name.slice(dot + 1).toLowerCase());
+}
 
 /** P1b item 1. Validates one incoming attachment; file_ref carries no content. */
 export function parseIncomingAttachment(
@@ -246,6 +262,9 @@ export function parseIncomingAttachment(
   const sourceArtifactId =
     typeof a["source_artifact_id"] === "string" ? a["source_artifact_id"].trim() : "";
   const language = typeof a["language"] === "string" ? { language: a["language"] } : {};
+  const origin: "made_in_chat" | "seen_in_chat" =
+    a["origin"] === "seen_in_chat" ? "seen_in_chat" : "made_in_chat";
+  const include = a["include"] === true;
   if (kind === "file_ref") {
     if (a["content"] !== undefined && a["content"] !== null && a["content"] !== "") {
       return { ok: false, message: "file_ref carries no content; send filename and sha256 in file_ref" };
@@ -269,12 +288,12 @@ export function parseIncomingAttachment(
       ...(sha ? { sha256: sha } : {}),
       ...(url ? { download_url: url } : {}),
     };
-    return { ok: true, attachment: { kind, title, content: "", sourceArtifactId, fileRef, ...language } };
+    return { ok: true, attachment: { kind, title, content: "", sourceArtifactId, fileRef, origin, include, ...language } };
   }
   if (typeof a["content"] !== "string") {
     return { ok: false, message: "Each attachment needs kind, verbatim title, and content" };
   }
-  return { ok: true, attachment: { kind, title, content: a["content"], sourceArtifactId, ...language } };
+  return { ok: true, attachment: { kind, title, content: a["content"], sourceArtifactId, origin, include, ...language } };
 }
 
 /** P1b item 1. The note when this push created file placeholders. */
@@ -398,7 +417,7 @@ const pushTools = (vocab: McpVocab) => [
     title: "Push a conversation",
     icons: ICONS,
     description:
-      `When the user says 'Push to Lasso', 'send to Lasso', or similar: call push_conversation with the ENTIRE conversation, every message, verbatim, unabridged, plus any artifact, canvas or file that already existed as its own object in this app, as attachments. Never summarize the transcript. Never compose new summaries, recaps or section write-ups and send them as attachments. Never use push_document for conversation artifacts. Verbatim is non-negotiable: never substitute a summary, paraphrase, or shortened version of a message at any position, the server rejects shrunken overwrites. Before pushing, assess how many messages you can reproduce word-for-word in a single call given their actual lengths. If the whole conversation fits, push it whole. If not, push it in consecutive windows using window {from, to, total}: start with the first window sized to what you can reproduce verbatim, then follow the server's response, which tells you the next starting position, until all messages are stored. When re-pushing a conversation that grew, push only the new messages as a window, never re-send earlier messages unless correcting them. A smaller window is always the answer; a shorter message never is. Push at natural checkpoints during long work rather than only at the end, so nothing is lost if your context is compacted; re-pushing is safe and only sends what changed. For assistant turns that ran tools or wrote files, include what was done as a role: 'tool' message at that position, plainly, rather than omitting it. A binary file this chat generated (pptx, docx, xlsx, pdf, png) is sent as an attachment of kind file_ref with its filename and, when you can compute it, its sha256; never as content and never as base64. Lasso makes a card for it and the person adds the file. If part of the conversation is no longer in your context word for word, send that span as ONE message with fidelity: summary and covers: {from, to}; never send a summary as verbatim and never leave the span out. If the conversation made decisions, send each as a draft in decisions[] citing the message positions where it was made; never send a decision the chat did not make. ${placementLine(vocab)}`,
+      `When the user says 'Push to Lasso', 'send to Lasso', or similar: call push_conversation with the ENTIRE conversation, every message, verbatim, unabridged, plus any artifact, canvas or file that already existed as its own object in this app, as attachments. Never summarize the transcript. Never compose new summaries, recaps or section write-ups and send them as attachments. Never use push_document for conversation artifacts. Verbatim is non-negotiable: never substitute a summary, paraphrase, or shortened version of a message at any position, the server rejects shrunken overwrites. Before pushing, assess how many messages you can reproduce word-for-word in a single call given their actual lengths. If the whole conversation fits, push it whole. If not, push it in consecutive windows using window {from, to, total}: start with the first window sized to what you can reproduce verbatim, then follow the server's response, which tells you the next starting position, until all messages are stored. When re-pushing a conversation that grew, push only the new messages as a window, never re-send earlier messages unless correcting them. A smaller window is always the answer; a shorter message never is. Push at natural checkpoints during long work rather than only at the end, so nothing is lost if your context is compacted; re-pushing is safe and only sends what changed. For assistant turns that ran tools or wrote files, include what was done as a role: 'tool' message at that position, plainly, rather than omitting it. Attachments are only things this chat made: an artifact, a canvas, or a file you generated here. Never attach a file the person uploaded or one from project or knowledge files, even if you read or quoted it; if the person explicitly asks to include one, send it with origin: 'seen_in_chat' and include: true. Before calling push_conversation with any attachments, list them for the person in one short message, name any file you saw but did not make as left out, and ask which to include; push after they answer. If there are no attachments, push without asking. On a re-push, ask only about attachments you have not asked about before. Text files under about 40 KB go as content so they render at once: HTML as artifact_html, SVG as artifact_svg, Markdown as artifact_markdown, Mermaid as artifact_mermaid, code as artifact_code, CSV and other plain text as file, each with its verbatim text in content. A text file over about 40 KB, and every binary file (pptx, docx, xlsx, pdf, png, jpg), goes as kind file_ref with its filename and, when you can compute it, its sha256; never as base64. Lasso makes a placeholder for it and the person adds the file. For a turn that wrote a file, the role 'tool' message names the file and what it is; the file's content goes only in its attachment. If part of the conversation is no longer in your context word for word, send that span as ONE message with fidelity: summary and covers: {from, to}; never send a summary as verbatim and never leave the span out. If the conversation made decisions about the work itself, send each as a draft in decisions[] citing the message positions where it was made. Never send a decision the chat did not make, and never send one about Lasso: where to file this chat, what to create or name in Lasso, or how to push are not decisions. ${placementLine(vocab)}`,
     // Windowing is the only sanctioned way to split a push, and only because
     // the alternative the model reaches for otherwise is shortening messages.
     inputSchema: {
@@ -459,7 +478,7 @@ const pushTools = (vocab: McpVocab) => [
           type: "array",
           maxItems: MAX_ATTACHMENTS,
           description:
-            "ONLY objects that already existed as a separate, addressable thing in the source app before this push: a Claude artifact, a ChatGPT canvas, a generated or downloadable file. Each one must carry its own source_artifact_id from that app. The server rejects attachments that duplicate message content. Rejected content is still captured in the transcript.",
+            "ONLY things this chat made that exist as their own object in the source app: a Claude artifact, a ChatGPT canvas, or a file generated in this chat. Never a file the person uploaded or a project or knowledge file, unless the person asked for it (then origin: 'seen_in_chat' and include: true). Each one carries its own source_artifact_id from that app. The server rejects attachments that duplicate message content; rejected content is still captured in the transcript.",
           items: {
             type: "object",
             properties: {
@@ -479,10 +498,20 @@ const pushTools = (vocab: McpVocab) => [
                 description: "Verbatim source or text. Required for every kind except file_ref.",
               },
               language: { type: "string" },
+              origin: {
+                type: "string",
+                enum: ["made_in_chat", "seen_in_chat"],
+                description:
+                  "Where this came from. made_in_chat (the default): this chat created it. seen_in_chat: the person uploaded it, or it came from project or knowledge files. A seen_in_chat attachment is held back unless include is true.",
+              },
+              include: {
+                type: "boolean",
+                description: "True only when the person explicitly asked to include a seen_in_chat file.",
+              },
               file_ref: {
                 type: "object",
                 description:
-                  "For a file this chat generated that is not plain text (pptx, docx, xlsx, pdf, png): send kind file_ref with its filename and, when you can compute it, its sha256 and size. Never send binary content as text or base64. Lasso creates a card on the board; the person adds the file to it.",
+                  "For a binary file this chat generated (pptx, docx, xlsx, pdf, png, jpg), or a text file over about 40 KB: send kind file_ref with its filename and, when you can compute it, its sha256 and size. HTML, SVG, Markdown, CSV and code under about 40 KB go as content instead, never as file_ref. Never send binary content as text or base64. Lasso creates a placeholder on the board; the person adds the file.",
                 properties: {
                   filename: { type: "string" },
                   mime_type: { type: "string" },
@@ -1862,6 +1891,9 @@ async function pushConversation(
   /** P1b: file_ref attachments in this call, and the placeholders created. */
   let fileRefCount = 0;
   let fileRefsCreated = 0;
+  /** U1: attachments held back as not made in this chat, and text-file refs. */
+  let heldCount = 0;
+  let textRefCount = 0;
   const transcriptText = messages.map((m) => m.content).join("\n\n");
   const messageTexts = messages.map((m) => m.content);
   if (attachments.length > 0 && !owner.userId) {
@@ -1875,11 +1907,24 @@ async function pushConversation(
       .neq("type", "ai_thread");
 
     for (const attachment of attachments) {
+      // U1. Something the chat only saw is held back unless the person asked.
+      if (attachment.origin === "seen_in_chat" && attachment.include !== true) {
+        heldCount += 1;
+        attachmentOutcomes.push({
+          title: attachment.title,
+          source_artifact_id: attachment.sourceArtifactId,
+          outcome: "held",
+          chars: 0,
+          reason: "not made in this chat; send include: true only if the person asked for it",
+        });
+        continue;
+      }
       // P1b item 1. A generated binary file: a card without bytes, matched
       // like any attachment, placed with the thread, completed by the person.
       if (attachment.kind === "file_ref" && attachment.fileRef) {
         fileRefCount += 1;
         const ref = attachment.fileRef;
+        if (isTextFilename(ref.filename)) textRefCount += 1;
         const refMatch =
           (existingAttachments ?? []).find(
             (row) =>
@@ -2300,6 +2345,8 @@ async function pushConversation(
       summary_spans: versionRowsBucket(summarySpans),
       file_refs: versionRowsBucket(fileRefCount),
       decisions: versionRowsBucket(decisionsDrafted),
+      attachments_held: versionRowsBucket(heldCount),
+      text_refs: versionRowsBucket(textRefCount),
     },
   });
   await recordEvent(supabaseAdmin, {
