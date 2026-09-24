@@ -1,8 +1,16 @@
 // @vitest-environment jsdom
 import { render } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 
 import { LabCard } from "../LabCard";
+
+beforeAll(() => {
+  globalThis.ResizeObserver = class {
+    observe() {}
+    disconnect() {}
+    unobserve() {}
+  };
+});
 
 const props = {
   node: { id: "n", kind: "judgment" as const, frame: "f", title: "Judgment", summary: "Reason", typeLabel: "judgment", ownership: "draft" as const, local: true, x: 0, y: 0, width: 232, height: 112 },
