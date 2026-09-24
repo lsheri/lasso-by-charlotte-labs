@@ -154,10 +154,16 @@ describe("bundle-aware seed (Pass A.3)", () => {
     });
   }
   it("a seeded piece never gets its own slot", () => {
-    const withPieces = seedCanvas(input, createLabFrames(input.tasks));
-    const without = seedCanvas({ ...input, work: input.work.filter((w) => !w.id.startsWith("a")) }, createLabFrames(input.tasks));
-    const at = (nodes: LabNode[], id: string) => nodes.find((node) => node.id === `work:${id}`)!;
-    // B takes the slot right after A, as if the pieces were not there.
-    expect([at(withPieces, "B").x, at(withPieces, "B").y]).toEqual([at(without, "B").x, at(without, "B").y]);
+    const seeded = seedCanvas(input, createLabFrames(input.tasks));
+    const at = (id: string) => seeded.find((node) => node.id === `work:${id}`)!;
+    const a = at("A");
+    // Pieces sit in the chat's dock, off the slot grid, and the grid slots go to A, B, C only.
+    expect([at("a1").x, at("a1").y]).toEqual([a.x + 24, a.y + a.height + 18]);
+    expect([at("a2").x, at("a2").y]).toEqual([a.x + 24, a.y + 2 * (a.height + 18)]);
+    const slots = new Set(["A", "B", "C"].map((id) => `${at(id).x},${at(id).y}`));
+    expect(slots.size).toBe(3);
+    for (const id of ["a1", "a2"]) expect(slots.has(`${at(id).x},${at(id).y}`)).toBe(false);
+    // B starts below A's whole block.
+    expect(at("B").y >= at("a2").y + at("a2").height || at("B").x >= a.x + a.width).toBe(true);
   });
 });
