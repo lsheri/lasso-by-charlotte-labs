@@ -211,7 +211,7 @@ export function ContextAudit({
   const [openItem, setOpenItem] = useState<string | null>(null);
   const reduced = useReducedMotion();
   if (!givenManifest && reads.length === 0) return null;
-  const manifest: ContextManifest = givenManifest ?? { engagement: null, brief_included: false, firm_checks_applied: 0, items: [], excluded: [], assembled_at: null };
+  const manifest: ContextManifest = givenManifest ?? { engagement: null, brief_included: false, firm_checks_applied: 0, items: [], excluded: [], assembled_at: "" };
   const readRows = auditReadRows(manifest, reads);
   const total = readRows.length + (manifest.brief_included ? 1 : 0) + (manifest.firm_checks_applied > 0 ? 1 : 0) + manifest.excluded.length;
 
