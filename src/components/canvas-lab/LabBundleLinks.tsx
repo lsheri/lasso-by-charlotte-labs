@@ -13,7 +13,7 @@ export function LabBundleLinks({ nodes, bundles }: { nodes: readonly LabNode[]; 
         const pieces = pieceIds.map((id) => byId.get(id)).filter((node): node is LabNode => Boolean(node));
         const last = pieces[pieces.length - 1];
         if (!chat || !last) return null;
-        const spineX = chat.x + 12;
+        const spineX = chat.x + 9;
         const branchY = (piece: LabNode) => piece.y + Math.min(28, piece.height / 2);
         return (
           <g key={chatId}>
