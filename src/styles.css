@@ -5204,3 +5204,15 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .canvas-lab-sticky-swatch[data-fill="pink"] { background: var(--sticky-pink); border-color: var(--sticky-pink-edge); }
 .canvas-lab-sticky-swatch[data-fill="grey"] { background: var(--sticky-grey); border-color: var(--sticky-grey-edge); }
 .canvas-lab-sticky-swatch[aria-pressed="true"] { outline: 1.4px solid var(--nb-ink); outline-offset: 1px; }
+
+/* Unit 6: the Ask Lasso answer rail. Lime while working, hairline once done. */
+.nb-answer-rail {
+  border-left: 2px solid var(--nb-lasso-green);
+  padding-left: 12px;
+  transition: border-color 420ms cubic-bezier(.22,.61,.36,1);
+}
+.nb-answer-rail[data-rail-state="done"] { border-left-color: var(--border); }
+.nb-answer-rail .nb-answer-rail { border-left: 0; padding-left: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .nb-answer-rail { transition: none; }
+}
