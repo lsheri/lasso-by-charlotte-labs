@@ -1,5 +1,5 @@
 import { AskSheet } from "@/components/reflect/AskSheet";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 
 import { AskBoardPickedContext, AskSurface } from "@/components/reflect/AskSurface";
 import { AnswerKeepProvider, type KeptAnswer } from "@/components/reflect/answer-keep-context";
@@ -19,6 +19,7 @@ type Props = {
   onKeep: (answer: KeptAnswer, via?: "button" | "drag") => void;
   /** Work item ids of the cards picked "in context" on the board. */
   boardContextItemIds: string[];
+  boardContextHasPicks: boolean;
 };
 
 /**
@@ -35,22 +36,15 @@ function BoardAskPanel(props: Props) {
   // reads; clearing the board selection puts the whole engagement back.
   const idsKey = props.boardContextItemIds.join("|");
   const mappedKey = ask.mapped.map((i) => i.id).join("|");
-  const hadPicks = useRef(false);
   const inMapped = props.boardContextItemIds.filter((id) => ask.mapped.some((i) => i.id === id));
   useEffect(() => {
     if (ask.mapped.length === 0) return;
-    if (props.boardContextItemIds.length > 0) {
-      hadPicks.current = true;
-      ask.setSelected(new Set(props.boardContextItemIds.filter((id) => ask.mapped.some((i) => i.id === id))));
-    } else if (hadPicks.current) {
-      hadPicks.current = false;
-      ask.setSelected(new Set(ask.mapped.map((i) => i.id)));
-    }
+    ask.setBoardSelection(props.boardContextHasPicks, inMapped);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [idsKey, mappedKey]);
+  }, [props.boardContextHasPicks, idsKey, mappedKey]);
 
   return (
-    <AskBoardPickedContext.Provider value={inMapped.length > 0}>
+    <AskBoardPickedContext.Provider value={props.boardContextHasPicks}>
     <aside
       aria-label="Ask Lasso"
       className="z-20 flex min-h-0 shrink-0 flex-col border-l border-border bg-background"

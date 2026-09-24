@@ -11,7 +11,7 @@ type AskForSlash = {
   draft: string;
   composerRef: React.RefObject<HTMLTextAreaElement | null>;
   onDraftChange: (value: string, caret: number) => void;
-  setSelected: (next: Set<string>) => void;
+  setSelected: (next: Set<string>, source?: "workstream") => void;
 };
 
 /** B3: "/" names a workstream; choosing one narrows the chat to its work. */
@@ -37,7 +37,7 @@ export function useSlashMenu(ask: AskForSlash, engagementId: string, onChosen?: 
     setSlash(null);
     const ids = ask.mapped.filter((item) => taskIdsOf(item).includes(task.id)).map((item) => item.id);
     if (ids.length > 0) {
-      ask.setSelected(new Set(ids));
+      ask.setSelected(new Set(ids), "workstream");
       setChosen({ name: task.name, ids });
     }
     onChosen?.();

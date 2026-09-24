@@ -11,12 +11,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { streamChatRequest } from "@/lib/stream-client";
 import type { ReflectResult } from "@/lib/reflect-run.server";
 import {
+  boardSelectionScope,
   mappedItemsForEngagement,
   pointedAtIds,
   sessionRelatedToEngagement,
 } from "@/lib/reflect-scope-shape";
 import { logEvent } from "@/lib/telemetry";
-import { parseScope, type ContextScope } from "@/lib/reflect-shared";
+import { parseScope, type ContextScope, type ScopeSource } from "@/lib/reflect-shared";
 import type { ContextManifest } from "@/lib/context-manifest";
 import type { WorkItemRow } from "@/lib/work-types";
 
@@ -56,6 +57,8 @@ export function useAskLasso({
   const [streamed, setStreamed] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string> | null>(null);
+  const [boardSelection, setBoardSelectionState] = useState<{ active: boolean; ids: string[] }>({ active: false, ids: [] });
+  const [scopeSource, setScopeSource] = useState<ScopeSource>("all");
   const [pickerOpen, setPickerOpen] = useState(false);
   const [saveTarget, setSaveTarget] = useState<SaveForOneOnOneTarget | null>(null);
   const [mention, setMention] = useState<{ query: string; start: number } | null>(null);
@@ -137,10 +140,10 @@ export function useAskLasso({
     },
   });
 
-  /** A fresh chat: no session, the whole engagement again. */
+  /** A fresh chat keeps any live board pick; otherwise it reads the engagement. */
   function newSession() {
     setSessionId(null);
-    setSelected(new Set(mapped.map((i) => i.id)));
+    setSelected(new Set(boardSelection.active ? boardSelection.ids : mapped.map((i) => i.id)));
     setCoverage(null);
     setError(null);
     setDraft("");
@@ -185,10 +188,14 @@ export function useAskLasso({
     const next = `${draft.slice(0, mention.start)}@${item.title} ${draft.slice(caret)}`;
     setDraft(next);
     setMention(null);
+    setScopeSource("pointed");
     composerRef.current?.focus();
   }
 
   function scopeForSelection(): ContextScope {
+    if (boardSelection.active) {
+      return boardSelectionScope({ engagementId, hasBoardPicks: true, mappedIds: boardSelection.ids });
+    }
     if (!selected || selectedItems.length === 0 || selectedItems.length === mapped.length) {
       return { mode: "engagements", ids: [engagementId] };
     }
@@ -206,6 +213,26 @@ export function useAskLasso({
       .eq("id", sessionId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId, scopeKey]);
+
+  function applyBoardSelection(hasPicks: boolean, ids: string[]) {
+    setBoardSelectionState({ active: hasPicks, ids });
+    setScopeSource(hasPicks ? (ids.length > 0 ? "board_pick" : "board_pick_brief_only") : "all");
+    setSelected(new Set(hasPicks ? ids : mapped.map((item) => item.id)));
+  }
+
+  function applyPickerSelection(next: Set<string> | null | ((previous: Set<string> | null) => Set<string> | null), source: ScopeSource = "picker") {
+    setBoardSelectionState({ active: false, ids: [] });
+    setScopeSource(source);
+    setSelected((previous) => typeof next === "function" ? next(previous) : next);
+  }
+
+  async function writeCurrentScope(id: string) {
+    const { error: scopeError } = await supabase
+      .from("chat_sessions")
+      .update({ context_scope: scopeForSelection() })
+      .eq("id", id);
+    if (scopeError) throw new Error(scopeError.message);
+  }
 
   const { data: messages } = useQuery({
     queryKey: ["reflect-messages", sessionId],
@@ -264,6 +291,7 @@ export function useAskLasso({
     try {
       const id = await ensureSession();
       if (!id) return;
+      await writeCurrentScope(id);
       setStreamed("");
       setDraft("");
       const result = await streamChatRequest<ReflectResult>(
@@ -274,6 +302,7 @@ export function useAskLasso({
           profile_id: profileId,
           surface: "ask_lasso",
           pointed_at: pointedItems.map((i) => i.id),
+          scope_source: scopeSource,
         },
         (delta) => setStreamed((prev) => prev + delta),
       );
@@ -321,13 +350,16 @@ export function useAskLasso({
     saveTarget,
     selected,
     selectedItems,
+    boardPickActive: boardSelection.active,
+    boardPickedCount: boardSelection.ids.length,
     sessionId,
     sessions,
     setMention,
     setMentionIndex,
     setPickerOpen,
     setSaveTarget,
-    setSelected,
+    setSelected: applyPickerSelection,
+    setBoardSelection: applyBoardSelection,
     sourcesByMessage,
     streamed,
     submit,

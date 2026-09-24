@@ -95,10 +95,12 @@ export function AskScopeChip({ ask, block, workstream }: { ask: AskLasso; block?
       ? `Pointed at: ${ask.draftPointed.length} ${ask.draftPointed.length === 1 ? "item" : "items"}`
       : onWorkstream
         ? `Workstream: ${workstream.name}`
+        : boardPicked && ask.boardPickedCount === 0
+          ? "Brief only: nothing picked has work to read"
+        : boardPicked
+          ? `${ask.boardPickedCount} picked on the board`
         : ask.selectedItems.length === ask.mapped.length
         ? "All work in this engagement"
-        : boardPicked
-          ? `${ask.selectedItems.length} picked on the board`
           : ask.selectedItems.length === 1
           ? "1 piece of work selected"
           : `${ask.selectedItems.length} pieces of work selected`;
