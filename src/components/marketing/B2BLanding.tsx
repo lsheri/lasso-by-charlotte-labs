@@ -1,10 +1,10 @@
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { type FormEvent, useEffect, useRef, useState } from "react";
+import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "react";
 
 import { PublicHeader } from "@/components/layout/PublicHeader";
 import { FocusSection } from "@/components/marketing/FocusSection";
-import { HeroMotion } from "@/components/marketing/HeroMotion";
+import { DeckWalkthrough, STORY } from "@/components/marketing/HeroMotion";
 import { Button } from "@/components/ui/button";
 import { startSessionReplay, stopSessionReplay } from "@/lib/posthog-client";
 import { submitPilotRequestFn } from "@/lib/pilot-request.functions";
@@ -14,32 +14,133 @@ import { recordAnonymousEventFn } from "@/lib/telemetry.functions";
 export const HERO_H1_FALLBACK = "Your firm bought AI. Now nobody can say where a number came from.";
 export const HERO_H1 = "Your firm bought AI. The human judgment, process, and thinking in your team's work went invisible.";
 
-const BEATS = [
-  {
-    key: "thinking",
-    label: "01 · THE NUMBER",
-    title: "Show where the $1.4M scenario came from.",
-    body: "The finished slide stays connected to the scenario and pipeline work that shaped it.",
-  },
-  {
-    key: "source",
-    label: "02 · THE COMPARABLES",
-    title: "Keep the five organizations with the research behind them.",
-    body: "The board-chair conversation and research thread remain beside the benchmark slide.",
-  },
-  {
-    key: "answer",
-    label: "03 · THE EXACT TURN",
-    title: "Return to the choice, not just the finished wording.",
-    body: "The chair-term decision opens at the exact conversation turn where the team chose it.",
-  },
-  {
-    key: "share",
-    label: "04 · THE RECOMMENDATION",
-    title: "Keep the conversations that shaped the recommendation in order.",
-    body: "The constraint, structure choice, and merger scenario remain connected to the final slide.",
-  },
+const BEAT_KEYS = ["thinking", "source", "answer", "share"] as const;
+
+type UseCaseKey = "bring_work_in" | "every_number" | "check_sources" | "find_lost_idea" | "share_deliverable" | "reasoning_stays";
+const USE_CASES: { key: UseCaseKey; file: string; title: string; body: string }[] = [
+  { key: "bring_work_in", file: "use-bring-work-in", title: "Your chats, docs and decks on one board.", body: "Claude, ChatGPT, Gemini, Granola and Drive land as cards. Drag them into workstreams. No setup." },
+  { key: "every_number", file: "use-every-number-has-a-source", title: "Every number has a source.", body: "Ask where the figure on slide 3 came from. Get the chat, the turn, and the model it came out of." },
+  { key: "check_sources", file: "use-check-the-sources", title: "Check the sources before the room.", body: "Under every answer: what was read, what was not. Nothing invented, nothing implied." },
+  { key: "find_lost_idea", file: "use-find-the-idea-that-got-lost", title: "Find the idea that got lost.", body: "Something good was set aside in week two. Lasso finds the turn, and the reason." },
+  { key: "share_deliverable", file: "use-share-the-deliverable", title: "Share the deliverable, not the drafts.", body: "Send one read-only board. Your reviewer opens what you chose. The link closes itself in 48 hours." },
+  { key: "reasoning_stays", file: "use-reasoning-stays-with-the-firm", title: "The reasoning stays with the firm.", body: "When the consultant moves on, the record does not. The next team starts from the decisions, not from zero." },
+];
+
+const TRUST = [
+  { title: "Notes are never a source.", body: "The record refuses it. Not a filter, a rule the server enforces." },
+  { title: "You choose what a reviewer opens.", body: "A shared board is read only, and its link closes after 48 hours." },
+  { title: "The record is yours.", body: "Leave the pilot with everything you brought in and everything Lasso wrote." },
 ] as const;
+
+function UseCaseIcon({ card }: { card: UseCaseKey }) {
+  const paths: Record<UseCaseKey, ReactNode> = {
+    bring_work_in: <><rect x="3" y="4" width="7" height="6" rx="1" /><rect x="14" y="4" width="7" height="6" rx="1" /><rect x="8" y="14" width="8" height="6" rx="1" /></>,
+    every_number: <><path d="M4 20V10M10 20V6M16 20v-8" /><path d="M3 20h18" /></>,
+    check_sources: <><circle cx="11" cy="11" r="6" /><path d="M20 20l-4.5-4.5" /></>,
+    find_lost_idea: <><path d="M12 3a6 6 0 0 0-3.5 10.9V16h7v-2.1A6 6 0 0 0 12 3z" /><path d="M9.5 20h5" /></>,
+    share_deliverable: <><path d="M6 12v7h12v-7" /><path d="M12 4v11M8 8l4-4 4 4" /></>,
+    reasoning_stays: <><path d="M5 4h11l3 3v13H5z" /><path d="M9 10h6M9 14h6" /></>,
+  };
+  return <svg className="landing-usecase-icon" viewBox="0 0 24 24" aria-hidden="true">{paths[card]}</svg>;
+}
+
+function UseCaseCard({ card, onPlayed }: { card: (typeof USE_CASES)[number]; onPlayed: (key: UseCaseKey, mode: "hover" | "tap") => void }) {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const mode = useRef<"hover" | "tap">("hover");
+  const [posterOk, setPosterOk] = useState(false);
+  const [videoFailed, setVideoFailed] = useState(false);
+  const [playing, setPlaying] = useState(false);
+  const poster = `/videos/${card.file}-poster.jpg`;
+
+  useEffect(() => {
+    const probe = new Image();
+    probe.onload = () => setPosterOk(true);
+    probe.onerror = () => setPosterOk(false);
+    probe.src = poster;
+  }, [poster]);
+
+  function play(next: "hover" | "tap") {
+    const el = videoRef.current;
+    if (!el || videoFailed) return;
+    mode.current = next;
+    void el.play().catch(() => setVideoFailed(true));
+  }
+  function pause() {
+    videoRef.current?.pause();
+  }
+
+  return (
+    <article className="landing-usecase" data-usecase={card.key}>
+      <button
+        type="button"
+        className="landing-usecase-media"
+        aria-label={`Play: ${card.title}`}
+        data-playing={playing}
+        onPointerEnter={(event) => { if (event.pointerType === "mouse") play("hover"); }}
+        onPointerLeave={(event) => { if (event.pointerType === "mouse") pause(); }}
+        onClick={() => {
+          if (window.matchMedia("(hover: hover)").matches) return;
+          if (playing) pause(); else play("tap");
+        }}
+      >
+        <span className="landing-usecase-placeholder" aria-hidden="true">{card.title}</span>
+        {posterOk ? <img className="landing-usecase-poster" src={poster} alt="" aria-hidden="true" /> : null}
+        {videoFailed ? null : (
+          <video
+            ref={videoRef}
+            className="landing-usecase-video"
+            src={`/videos/${card.file}.mp4`}
+            muted
+            playsInline
+            preload="none"
+            poster={posterOk ? poster : undefined}
+            onPlaying={() => { setPlaying(true); onPlayed(card.key, mode.current); }}
+            onPause={() => setPlaying(false)}
+            onEnded={() => setPlaying(false)}
+            onError={() => setVideoFailed(true)}
+          />
+        )}
+      </button>
+      <div className="landing-usecase-copy">
+        <UseCaseIcon card={card.key} />
+        <h3>{card.title}</h3>
+        <p>{card.body}</p>
+      </div>
+    </article>
+  );
+}
+
+function HeroVideo() {
+  const ref = useRef<HTMLVideoElement | null>(null);
+  const [reduced] = useState(() => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  const [started, setStarted] = useState(false);
+  return (
+    <figure className="landing-hero-media">
+      <div className="landing-hero-video-box">
+        <video
+          ref={ref}
+          className="landing-hero-video"
+          autoPlay={!reduced}
+          muted
+          loop
+          playsInline
+          preload="metadata"
+          poster="/videos/lasso-hero-poster.jpg"
+          onPlaying={() => setStarted(true)}
+        >
+          <source src="/videos/lasso-hero-landing-1440.webm" type="video/webm" />
+          <source src="/videos/lasso-hero-landing-1440.mp4" type="video/mp4" />
+        </video>
+        {reduced && !started ? (
+          <button type="button" aria-label="Play" className="landing-hero-play" onClick={() => { void ref.current?.play().catch(() => {}); }}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+          </button>
+        ) : null}
+      </div>
+      <figcaption className="landing-hero-caption">Illustrative engagement · every figure is made up</figcaption>
+    </figure>
+  );
+}
 
 export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
   const viewId = useRef<string>(crypto.randomUUID());
@@ -48,9 +149,7 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
   const [submitError, setSubmitError] = useState(false);
   const [activeBeat, setActiveBeat] = useState(0);
   const seenBeats = useRef(new Set<number>());
-  const inputMode = useRef<"scroll" | "control" | "timer">("scroll");
-  const storyRef = useRef<HTMLElement | null>(null);
-  const pauseTimer = useRef<() => void>(() => {});
+  const playedCards = useRef(new Set<UseCaseKey>());
   const closeRef = useRef<HTMLElement | null>(null);
   const [closeResolved, setCloseResolved] = useState(false);
   const submitPilot = useServerFn(submitPilotRequestFn);
@@ -68,80 +167,15 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
   }, []);
 
   useEffect(() => {
-    // Desktop: the section is pinned for four viewport heights, one step per
-    // quarter of scroll. Phone: no pinning, steps advance every 8 seconds
-    // while the section is on screen.
-    const section = storyRef.current;
-    if (!section) return;
-    const phone = window.matchMedia("(max-width: 767px)");
-    let timer: ReturnType<typeof setInterval> | null = null;
-    let visible = false;
-
-    const onScroll = () => {
-      if (phone.matches) return;
-      const rect = section.getBoundingClientRect();
-      const travel = section.offsetHeight - window.innerHeight;
-      if (travel <= 0) return;
-      const progress = Math.min(0.999, Math.max(0, -rect.top / travel));
-      const next = Math.floor(progress * 4);
-      setActiveBeat((prev) => {
-        if (prev !== next) inputMode.current = "scroll";
-        return next;
-      });
-    };
-    const startTimer = () => {
-      if (timer || !phone.matches || !visible) return;
-      timer = setInterval(() => {
-        inputMode.current = "timer";
-        setActiveBeat((prev) => (prev + 1) % BEATS.length);
-      }, 8000);
-    };
-    const stopTimer = () => {
-      if (timer) clearInterval(timer);
-      timer = null;
-    };
-    pauseTimer.current = stopTimer;
-
-    const observer = typeof IntersectionObserver === "undefined" ? null : new IntersectionObserver((entries) => {
-      visible = entries.some((entry) => entry.isIntersecting);
-      if (visible) startTimer(); else stopTimer();
-    }, { threshold: 0.2 });
-    observer?.observe(section);
-    const onMode = () => { stopTimer(); startTimer(); onScroll(); };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    phone.addEventListener("change", onMode);
-    onScroll();
-    return () => {
-      stopTimer();
-      observer?.disconnect();
-      window.removeEventListener("scroll", onScroll);
-      phone.removeEventListener("change", onMode);
-    };
-  }, []);
-
-  function goToStep(index: number) {
-    inputMode.current = "control";
-    const section = storyRef.current;
-    if (section && !window.matchMedia("(max-width: 767px)").matches) {
-      const travel = section.offsetHeight - window.innerHeight;
-      const top = section.getBoundingClientRect().top + window.scrollY;
-      window.scrollTo({ top: top + ((index + 0.5) / 4) * travel, behavior: "smooth" });
-    } else {
-      pauseTimer.current();
-    }
-    setActiveBeat(index);
-  }
-
-  useEffect(() => {
     if (seenBeats.current.has(activeBeat)) return;
     seenBeats.current.add(activeBeat);
-    const beat = BEATS[activeBeat];
+    const beat = BEAT_KEYS[activeBeat];
     if (!beat) return;
     void recordAnonymousEventFn({
       data: {
         event_type: "landing.story_section_viewed",
         view_id: viewId.current,
-        dims: { section: beat.key, input_mode: inputMode.current },
+        dims: { section: beat, input_mode: "scroll" },
       },
     }).catch(() => {
       /* This signal must never surface to the visitor. */
@@ -170,6 +204,20 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
     stopSessionReplay();
     return () => startSessionReplay();
   }, []);
+
+  function noteUseCasePlayed(card: UseCaseKey, inputMode: "hover" | "tap") {
+    if (playedCards.current.has(card)) return;
+    playedCards.current.add(card);
+    void recordAnonymousEventFn({
+      data: {
+        event_type: "landing.usecase_played",
+        view_id: viewId.current,
+        dims: { card, input_mode: inputMode },
+      },
+    }).catch(() => {
+      /* This signal must never surface to the visitor. */
+    });
+  }
 
   function notePilotClick(location: "hero" | "pilot") {
     void recordAnonymousEventFn({
@@ -298,21 +346,35 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
               </Link>
             </section>
           </div>
+          <div className="mx-auto mt-14 max-w-[1200px] px-4 md:px-6">
+            <HeroVideo />
+          </div>
 
-          <section id="beats" ref={storyRef} className="landing-story-pin mt-16" aria-label="How Lasso works">
-            <div className="landing-story-pin-inner mx-auto max-w-[1480px] px-4 md:px-6">
-              <div className="landing-story-pin-head">
-                <p className="micro-label">HOW IT WORKS</p>
-                <h2 className="pencil-title">The work stays connected from first thought to final answer.</h2>
-              </div>
-              <HeroMotion step={activeBeat} onStepChange={goToStep} />
-              {BEATS.map((beat, index) => (
-                <article key={beat.key} className="landing-story-beat" data-story-index={index} data-active={activeBeat === index} hidden={activeBeat !== index}>
-                  <p className="micro-label">{beat.label}</p>
-                  <h3>{beat.title}</h3>
-                  <p>{beat.body}</p>
-                  {index === 3 ? <p className="font-mono text-[11.5px] text-muted-foreground">Shared boards are read only. Their links close after 48 hours.</p> : null}
-                </article>
+          <section id="beats" className="landing-walkthrough mx-auto mt-24 max-w-[1320px] px-4 md:px-6" aria-label="How Lasso works">
+            <div className="landing-section-head">
+              <p className="micro-label">How it works</p>
+              <h2 className="pencil-title">The deliverable stays. The questions walk past it.</h2>
+            </div>
+            <DeckWalkthrough onActiveChange={setActiveBeat} />
+          </section>
+
+          <section className="landing-usecases mx-auto mt-24 max-w-[1200px] px-4 md:px-6" aria-label="What consultants use it for">
+            <div className="landing-section-head">
+              <p className="micro-label">What consultants use it for</p>
+              <h2 className="pencil-title">Built for the questions that come after the deliverable.</h2>
+            </div>
+            <div className="landing-usecase-grid">
+              {USE_CASES.map((card) => <UseCaseCard key={card.key} card={card} onPlayed={noteUseCasePlayed} />)}
+            </div>
+          </section>
+
+          <section className="landing-trust mx-auto mt-24 max-w-[1200px] px-4 md:px-6" aria-label="What the record promises">
+            <div className="landing-trust-row">
+              {TRUST.map((item) => (
+                <div key={item.title} className="landing-trust-item">
+                  <h3>{item.title}</h3>
+                  <p>{item.body}</p>
+                </div>
               ))}
             </div>
           </section>
@@ -330,7 +392,7 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
                 </a>
               </Button>
             </div>
-            <p className="mt-6 text-base text-foreground">Three months. Your firm's real work. No prompts shown to anyone.</p>
+            <p className="mt-6 text-base text-foreground">Three months. Your firm's real work. Share what you choose, when you choose: one review pass instead of five, and a record the firm keeps.</p>
             <p className="mt-2 font-mono text-[11.5px] text-muted-foreground">A 30-minute call · we set up one engagement with you · you keep the record either way</p>
           </section>
 
@@ -340,7 +402,7 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
               <p className="micro-label">PILOT</p>
               <h2 className="pencil-title mt-4">Run it on one engagement.</h2>
               <p className="mt-5 max-w-2xl text-base leading-relaxed text-foreground">
-                Four months, one real engagement, your team, your tools. You keep every record whether
+                Three months, one real engagement, your team, your tools. You keep every record whether
                 or not you continue.
               </p>
               <p className="mt-3 max-w-2xl font-mono text-[11.5px] text-muted-foreground">
