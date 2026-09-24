@@ -50,7 +50,6 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
   const seenBeats = useRef(new Set<number>());
   const inputMode = useRef<"scroll" | "control" | "timer">("scroll");
   const storyRef = useRef<HTMLElement | null>(null);
-  const restartTimer = useRef<() => void>(() => {});
   const pauseTimer = useRef<() => void>(() => {});
   const closeRef = useRef<HTMLElement | null>(null);
   const [closeResolved, setCloseResolved] = useState(false);
@@ -101,7 +100,6 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
       if (timer) clearInterval(timer);
       timer = null;
     };
-    restartTimer.current = () => { stopTimer(); startTimer(); };
     pauseTimer.current = stopTimer;
 
     const observer = typeof IntersectionObserver === "undefined" ? null : new IntersectionObserver((entries) => {
