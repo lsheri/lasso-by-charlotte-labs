@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 
 import { actionsFor, type LabNode } from "@/components/canvas-lab/canvas-lab-model";
+import { WorkboardFilePreview } from "@/components/canvas-lab/WorkboardFilePreview";
+import type { WorkboardFilePreview as WorkboardFilePreviewData } from "@/lib/workboard-card-preview.shared";
 import { RenderedContent } from "@/components/peek/RenderedContent";
 import { ThreadBody } from "@/components/peek/ThreadBody";
 import { Button } from "@/components/ui/button";
@@ -136,6 +138,8 @@ export function FocusOverlay({
   openComments = false,
   origin,
   onContentScroll,
+  readOnly = false,
+  filePreview,
 }: {
   node: LabNode;
   item: WorkItemRow | null;
@@ -163,6 +167,10 @@ export function FocusOverlay({
   openComments?: boolean;
   origin?: { left: number; top: number; width: number; height: number } | null;
   onContentScroll?: (() => void) | undefined;
+  /** S3a: a shared board reads only. No Summarize, no Branch, no server reads. */
+  readOnly?: boolean;
+  /** S3a: the preview the shared board was handed, used in place of a server read. */
+  filePreview?: WorkboardFilePreviewData | undefined;
 }) {
   const [quote, setQuote] = useState("");
   const [turnSelection, setTurnSelection] = useState<TurnSelection | null>(null);
@@ -247,12 +255,12 @@ export function FocusOverlay({
             <h1 className="page-title truncate">{node.title}</h1>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            {actions.includes("Summarize") ? (
+            {!readOnly && actions.includes("Summarize") ? (
               <Button size="sm" variant="outline" onClick={onSummarize}>
                 Summarize
               </Button>
             ) : null}
-            {actions.includes("Branch") ? (
+            {!readOnly && actions.includes("Branch") ? (
               <Button size="sm" variant="outline" onClick={onBranch}>
                 Branch
               </Button>
@@ -281,7 +289,11 @@ export function FocusOverlay({
               <ThreadBody item={item} enabled highlights={myHighlights} commentMarks={commentMarks} />
             </ChatBorderFrame> : item ? (
               <div ref={readerRef} className="focus-paper-reader h-full px-5 py-4" onMouseUp={captureSelection} onKeyUp={captureSelection}>
-              <RenderedContent item={item} onDownload={() => undefined} canEdit={false} />
+              {readOnly ? (
+                filePreview && filePreview.kind !== "fallback"
+                  ? <WorkboardFilePreview preview={filePreview} title={node.title} onFailure={() => undefined} />
+                  : <p className="whitespace-pre-wrap text-[13px] leading-[20px] text-foreground">{node.summary}</p>
+              ) : <RenderedContent item={item} onDownload={() => undefined} canEdit={false} />}
               </div>
             ) : (
               <div ref={readerRef} className="focus-paper-reader flex h-full flex-col gap-2 px-5 py-4" onMouseUp={captureSelection} onKeyUp={captureSelection}>
