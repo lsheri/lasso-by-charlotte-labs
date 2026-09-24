@@ -142,6 +142,30 @@ function SourceCardView({ card, index, active }: { card: SourceCard; index: numb
   );
 }
 
+function ConversationTunnel() {
+  const fragments = [
+    { vendor: "claude" as const, excerpt: "Rule-change moments…" },
+    { vendor: "chatgpt" as const, excerpt: "Short-form clips…" },
+    { vendor: "gemini" as const, excerpt: "18% bundle uplift…" },
+  ];
+
+  return (
+    <div className="landing-story-flow" aria-hidden="true">
+      <div className="landing-story-vortex-core" />
+      <div className="landing-story-vortex-rings">
+        <i /><i /><i /><i /><i />
+      </div>
+      <div className="landing-story-vortex-streams"><i /><i /><i /></div>
+      {fragments.map((fragment, index) => (
+        <div className="landing-story-vortex-fragment" data-fragment={index + 1} key={fragment.vendor}>
+          <VendorMark vendor={fragment.vendor} size={18} />
+          <span>{fragment.excerpt}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function ClosedAuditLine({ count }: { count: number }) {
   return <div className="landing-story-evidence-line"><span>Open the exact source</span><small>{count} source{count === 1 ? "" : "s"}</small></div>;
 }
@@ -179,7 +203,7 @@ export function HeroMotion({ activeSlide = 0, onSlideChange }: { activeSlide?: n
           {SOURCES.map((card, index) => <SourceCardView key={card.vendor} card={card} index={index} active={activeSlide} />)}
         </section>
 
-        <div className="landing-story-flow" aria-hidden="true"><i /><i /><i /></div>
+        <ConversationTunnel />
 
         <section className="landing-story-deck" aria-label="Four-slide illustrative client deck">
           <div className="landing-story-deck-bar"><span>Illustrative client recommendation</span><small>4 slides</small></div>
