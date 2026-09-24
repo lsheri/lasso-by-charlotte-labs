@@ -708,7 +708,7 @@ export function AiRecordPage() {
       ) : null}
       </div>
 
-      <div className="nb-chatview-pane h-[calc(100vh-6.5rem)] overflow-y-auto">
+      <div className={`nb-chatview-pane ${selected && desktopReader ? "h-[calc(100vh-6.5rem)] overflow-y-auto" : "hidden"}`}>
         {selected ? (
           <GraphiteSeam className="w-[6px] shrink-0 self-stretch text-[var(--nb-pencil)]" />
         ) : null}
