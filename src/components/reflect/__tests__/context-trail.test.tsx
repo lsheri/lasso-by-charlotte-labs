@@ -63,7 +63,7 @@ describe("ThinkingTrail", () => {
     expect([...rows].map((row) => row.textContent)).toEqual(["Selected 4", "Selected 5", "Selected 6"]);
     expect(container.querySelectorAll("[data-trail-state].live")).toHaveLength(1);
     expect(rows[2]?.classList.contains("live")).toBe(true);
-    expect(screen.getByText("Reading your work")).toBeInTheDocument();
+    expect(screen.getByText("Reading your work")).toBeTruthy();
   });
 
   it("uses only the last three server-confirmed rows and summarizes confirmed inputs", () => {
@@ -73,19 +73,19 @@ describe("ThinkingTrail", () => {
     };
     const { container } = render(<ThinkingTrail items={[]} finalPhase="Writing…" manifest={sevenItemManifest} />);
     expect(container.querySelectorAll('[data-trail-state="read"]')).toHaveLength(3);
-    expect(screen.getByText("Read 7 pieces of work, the brief, 2 firm checks")).toBeInTheDocument();
-    expect(screen.getByText("Writing…")).toBeInTheDocument();
-    expect(screen.queryByText("Private note")).not.toBeInTheDocument();
+    expect(screen.getByText("Read 7 pieces of work, the brief, 2 firm checks")).toBeTruthy();
+    expect(screen.getByText("Writing…")).toBeTruthy();
+    expect(screen.queryByText("Private note")).toBeNull();
   });
 
   it("counts only real wall-clock elapsed time", () => {
     render(<ThinkingTrail items={[]} finalPhase="Writing…" />);
-    expect(screen.getByText("0:00")).toBeInTheDocument();
+    expect(screen.getByText("0:00")).toBeTruthy();
     act(() => {
       vi.setSystemTime(new Date("2026-09-24T01:01:05.000Z"));
       vi.advanceTimersByTime(65_000);
     });
-    expect(screen.getByText("1:05")).toBeInTheDocument();
+    expect(screen.getByText("1:05")).toBeTruthy();
   });
 
   it("adds no motion classes under reduced motion", () => {
@@ -106,19 +106,19 @@ describe("ContextAudit", () => {
 
   it("is closed by default and shows the complete line count", () => {
     render(<ContextAudit manifest={manifest} />);
-    const button = screen.getByRole("button", { name: /Read what went into this response 5/i });
-    expect(button).toHaveAttribute("aria-expanded", "false");
-    expect(screen.queryByRole("heading", { name: "Read" })).not.toBeInTheDocument();
+    const button = screen.getByRole("button", { name: /Read what went into this response5/i });
+    expect(button.getAttribute("aria-expanded")).toBe("false");
+    expect(screen.queryByRole("heading", { name: "Read" })).toBeNull();
   });
 
   it("opens grouped rows and emits count bands once without titles or reasons", () => {
     const { container } = render(<ContextAudit manifest={manifest} />);
-    const button = screen.getByRole("button", { name: /Read what went into this response 5/i });
+    const button = screen.getByRole("button", { name: /Read what went into this response5/i });
     fireEvent.click(button);
-    expect(button).toHaveAttribute("aria-expanded", "true");
-    expect(screen.getByRole("heading", { name: "Read" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Also in" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Not read" })).toBeInTheDocument();
+    expect(button.getAttribute("aria-expanded")).toBe("true");
+    expect(screen.getByRole("heading", { name: "Read" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Also in" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Not read" })).toBeTruthy();
     expect(container.querySelector('[data-audit-group="read"]')?.querySelectorAll("p")).toHaveLength(2);
     expect(container.querySelector('[data-audit-group="also-in"]')?.querySelectorAll("p")).toHaveLength(2);
     expect(container.querySelector('[data-audit-group="not-read"]')?.querySelectorAll("p")).toHaveLength(1);
@@ -135,7 +135,7 @@ describe("ContextAudit", () => {
   it("honours a custom label and omits settle motion when reduced", () => {
     setReducedMotion(true);
     const { container } = render(<ContextAudit manifest={manifest} buttonLabel="Response inputs" />);
-    expect(screen.getByRole("button", { name: /Response inputs 5/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Response inputs5/i })).toBeTruthy();
     expect(container.querySelector(".nb-audit-settle")).toBeNull();
   });
 });
