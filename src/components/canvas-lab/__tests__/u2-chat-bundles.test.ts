@@ -91,3 +91,31 @@ describe("board wiring", () => {
     expect(page).toContain("dragRef.current = { id: node.id");
   });
 });
+
+describe("page-shaped read (Pass A.2)", () => {
+  it("the engagement page select carries the bundle columns", () => {
+    const src = readFileSync("src/lib/engagement-page.server.ts", "utf8");
+    expect(src).toContain("work_items(id, owner_id, orig_conversation_id, ungrouped_at,");
+  });
+  it("builds workItems like the page and forms one bundle", () => {
+    const conv = "u5-verify-2026-09-24";
+    const owner = "owner-1";
+    const page = {
+      tasks: [{
+        id: "task-1",
+        work_item_tasks: [
+          { work_items: { id: "c393", type: "ai_thread", owner_id: owner, orig_conversation_id: conv, ungrouped_at: null, source_meta: { role: "transcript" } } },
+          { work_items: { id: "0e92", type: "document", owner_id: owner, orig_conversation_id: conv, ungrouped_at: null, source_meta: { role: "attachment" } } },
+        ],
+      }],
+    };
+    const byId = new Map<string, BundleItem>();
+    for (const task of page.tasks) for (const link of task.work_item_tasks) {
+      const item = link.work_items;
+      if (item && !byId.has(item.id)) byId.set(item.id, item as BundleItem);
+    }
+    const result = chatBundles([n("c393"), n("0e92")], [...byId.values()]);
+    expect(result.size).toBe(1);
+    expect(result.get("n-c393")).toEqual(["n-0e92"]);
+  });
+});
