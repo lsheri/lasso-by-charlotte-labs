@@ -47,10 +47,26 @@ export type StoryStep = {
 };
 
 export const STORY: StoryStep[] = [
-  { speaker: "Board chair", question: "Where did the $1.4M on slide 3 come from?", litSources: ["scenarios", "pipeline"], slide: 2, highlight: "$1.4M", answer: "A scenario built in ChatGPT on 9 Sep from the pipeline prototype's tier sizes. A model, not a forecast.", sourceCount: 2 },
-  { speaker: "Manager question", question: "Which comparable organizations did we research?", litSources: ["research", "call"], slide: 1, highlight: "Five organizations", answer: "Riverbend, Two Rivers, Northgate, Cedar Coast, Meridian. The chair named Riverbend on the 3 Sep call; the other four came from the research thread.", sourceCount: 2 },
-  { speaker: "Client CEO", question: "Send me the link to the chat where we settled on two-term limits for the chair.", litSources: ["board"], slide: 3, highlight: "two terms of three years", answer: "Claude, 2 Sep, turn 18. That turn is where two terms of three years was chosen over one of five.", sourceCount: 1 },
-  { speaker: "Manager question", question: "Which conversations shaped the recommendation?", litSources: ["board", "call", "scenarios"], slide: 5, highlight: "Set aside the merger", answer: "Three, in order: the chair call set the constraint, the board-structure thread chose the shape, the scenario thread costed the merger and set it aside.", sourceCount: 3 },
+  {
+    speaker: "Board chair", question: "Where did the $1.4M on slide 3 come from?", litSources: ["scenarios", "pipeline"],
+    slide: 2,
+    highlight: "$1.4M", answer: "A scenario built in ChatGPT on 9 Sep from the pipeline prototype's tier sizes. A model, not a forecast.", sourceCount: 2,
+  },
+  {
+    speaker: "Manager question", question: "Which comparable organizations did we research?", litSources: ["research", "call"],
+    slide: 1,
+    highlight: "Five organizations", answer: "Riverbend, Two Rivers, Northgate, Cedar Coast, Meridian. The chair named Riverbend on the 3 Sep call; the other four came from the research thread.", sourceCount: 2,
+  },
+  {
+    speaker: "Client CEO", question: "Send me the link to the chat where we settled on two-term limits for the chair.", litSources: ["board"],
+    slide: 3,
+    highlight: "two terms of three years", answer: "Claude, 2 Sep, turn 18. That turn is where two terms of three years was chosen over one of five.", sourceCount: 1,
+  },
+  {
+    speaker: "Manager question", question: "Which conversations shaped the recommendation?", litSources: ["board", "call", "scenarios"],
+    slide: 5,
+    highlight: "Set aside the merger", answer: "Three, in order: the chair call set the constraint, the board-structure thread chose the shape, the scenario thread costed the merger and set it aside.", sourceCount: 3,
+  },
 ];
 
 const SLIDE_TITLES = ["Harborline at a turning point.", "Five organizations we benchmarked.", "Partnership revenue to $1.4M by FY27.", "Eleven seats, three committees.", "Eight prospects, three tiers.", "Seat the partners. Set aside the merger."] as const;
