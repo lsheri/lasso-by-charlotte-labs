@@ -23,6 +23,8 @@ export type TelemetryEvent =
   | "work.import_menu_opened"
   /** Inbox: an arrivals or reading panel was opened. Closed panel word only. */
   | "work.panel_opened"
+  /** Chat library: a filter or supporting panel was opened. Closed panel word only. */
+  | "chatlib.panel_opened"
   | "workitem.captured"
   | "workitem.mapped"
   | "workitem.marked_private"
