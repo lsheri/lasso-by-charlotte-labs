@@ -5182,7 +5182,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   color: var(--nb-ink);
   text-decoration-line: underline;
   text-decoration-color: var(--nb-lasso-green);
-  text-decoration-thickness: var(--nb-pencil-stroke);
+  text-decoration-thickness: var(--stroke-pencil);
   text-underline-offset: 0.12em;
   text-decoration-skip-ink: auto;
   will-change: opacity;
