@@ -206,7 +206,7 @@ export function MobileTabBar() {
               <Link
                 key={`${item.to}:${item.label}`}
                 to={item.to}
-                search={item.search}
+                {...(item.search ? { search: item.search } : {})}
                 onClick={() => setYouOpen(false)}
                 className="nb-nav-item min-h-[48px]"
                 activeProps={{ className: "nb-nav-item-active" }}

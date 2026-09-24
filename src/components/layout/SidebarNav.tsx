@@ -416,7 +416,7 @@ export function SidebarNav({
               <Link
                  key={`${item.to}:${item.label}`}
                 to={item.to}
-                 search={item.search}
+                 {...(item.search ? { search: item.search } : {})}
                 onClick={onNavigate}
                 className={item.nested ? `${linkClass} nb-nav-item-nested` : linkClass}
                 activeProps={activeProps}
