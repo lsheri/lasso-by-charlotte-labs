@@ -65,7 +65,7 @@ describe("LassoThinkingMark", () => {
     expect(requestAnimationFrame).not.toHaveBeenCalled();
   });
 
-  it("breathes the zero-source gather centre dot without inventing points", () => {
+  it("keeps the dimensional loop visible before any verified source arrives", () => {
     vi.spyOn(performance, "now").mockReturnValue(1_000);
     let nextFrame: FrameRequestCallback | undefined;
     vi.mocked(requestAnimationFrame).mockImplementation((callback) => {
@@ -73,11 +73,10 @@ describe("LassoThinkingMark", () => {
       return 17;
     });
     render(<LassoThinkingMark kind="gather" size={56} count={0} />);
-    const firstRadius = context.arc.mock.calls.at(-1)?.[2];
+    const firstCount = context.arc.mock.calls.length;
     act(() => nextFrame?.(2_000));
-    const breathedRadius = context.arc.mock.calls.at(-1)?.[2];
-    expect(firstRadius).toBeCloseTo(2.55);
-    expect(breathedRadius).not.toBe(firstRadius);
+    expect(firstCount).toBeGreaterThanOrEqual(48);
+    expect(context.arc.mock.calls.length).toBeGreaterThan(firstCount);
     expect(context.globalAlpha).toBe(1);
   });
 
@@ -86,8 +85,9 @@ describe("LassoThinkingMark", () => {
     const { rerender } = render(<LassoThinkingMark kind="gather" size={56} count={1} />);
     context.arc.mockClear();
     rerender(<LassoThinkingMark kind="gather" size={56} count={2} />);
-    expect(context.arc.mock.calls[0]?.[2]).toBeGreaterThan(0);
-    expect(context.arc.mock.calls[1]?.[2]).toBe(0);
+    const radii = context.arc.mock.calls.map((call) => Number(call[2]));
+    expect(radii.some((radius) => radius > 0)).toBe(true);
+    expect(radii.some((radius) => radius === 0)).toBe(true);
   });
 
   it("stops scheduling while outside the viewport", () => {
