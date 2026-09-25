@@ -154,7 +154,7 @@ describe("Unit 10 landing", () => {
 
   it("has the three ordered use-case cards and fires landing.usecase_played once per card", () => {
     const keys = Array.from(page.matchAll(/\{ key: "([a-z_]+)", file: "use-/g), (match) => match[1]);
-    expect(keys).toEqual(["every_number", "reasoning_stays", "bring_work_in"]);
+    expect(keys).toEqual(["bring_work_in", "reasoning_stays", "every_number"]);
     for (const file of ["use-every-number-has-a-source", "use-reasoning-stays-with-the-firm", "use-bring-work-in"]) {
       expect(page).toContain(`file: "${file}"`);
     }
