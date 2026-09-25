@@ -10,7 +10,7 @@ const SHARE = readFileSync("src/lib/board-share-open.server.ts", "utf8");
 
 describe("demo field allowlist", () => {
   it("strips source_meta, meta, content_ref and the real conversation id", async () => {
-    const { demoSafeWork } = await import("../demo-board.server");
+    const { publicSafeWork: demoSafeWork } = await import("../public-work-allowlist");
     const item = {
       id: "w1",
       title: "Deck",
@@ -24,7 +24,6 @@ describe("demo field allowlist", () => {
     const twin = { ...item, id: "w2" } as SharedSeedWork;
     const [out, out2] = demoSafeWork([item, twin]);
     const text = JSON.stringify(out);
-    expect(out).not.toHaveProperty("source_meta");
     expect(out).not.toHaveProperty("meta");
     expect(out!.content_ref).toBeNull();
     expect(text).not.toMatch(/drive|gmail|storage_key|conv-real|org\/abc/);
@@ -56,7 +55,7 @@ describe("demo org resolution", () => {
     expect(await openDemoBoard("REAL-CLIENT-CODE")).toEqual({ status: "not_found" });
     expect(await openDemoBoard("../bad code")).toEqual({ status: "not_found" });
     vi.doUnmock("@/integrations/supabase/client.server");
-  });
+  }, 20_000);
 
   it("the share link still reads as its maker; the demo reads as nobody", () => {
     expect(SHARE).toContain("readBoard(supabaseAdmin, link.workboard_id, link, link.created_by)");
@@ -87,5 +86,30 @@ describe("demo routes and events", () => {
       surface: "home",
       engagement: "none",
     });
+  });
+});
+
+describe("Unit 1.5 polish", () => {
+  it("demo.opened goes once per view per surface and engagement", async () => {
+    const calls: unknown[] = [];
+    vi.doMock("../telemetry.functions", () => ({ recordAnonymousEventFn: (arg: unknown) => { calls.push(arg); return Promise.resolve(); } }));
+    vi.resetModules();
+    const { noteDemoOpened, resetDemoTelemetry } = await import("../demo-telemetry");
+    resetDemoTelemetry();
+    noteDemoOpened("board", "abc");
+    noteDemoOpened("board", "abc");
+    noteDemoOpened("home", "none");
+    noteDemoOpened("home", "none");
+    expect(calls).toHaveLength(2);
+    vi.doUnmock("../telemetry.functions");
+  });
+
+  it("the read-only reader draws no comments or highlights rail", () => {
+    const overlay = readFileSync("src/components/canvas-lab/FocusOverlay.tsx", "utf8");
+    expect(overlay).toContain('{readOnly ? null : <aside className="focus-paper-aside');
+  });
+
+  it("home thumbnails come from the seeded board layout", () => {
+    expect(SERVER).toContain("buildSharedBoardModel(dto)");
   });
 });

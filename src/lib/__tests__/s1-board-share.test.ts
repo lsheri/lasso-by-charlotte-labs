@@ -262,3 +262,31 @@ describe("S1 — coverage", () => {
     expect(OPEN).toContain('await import("./telemetry.server")');
   });
 });
+
+describe("Unit 1.5: the share payload carries no urls, storage keys or real conversation ids", () => {
+  it("the open path runs every work item through the public allowlist", () => {
+    expect(OPEN).toContain('import { publicSafeWork } from "./public-work-allowlist"');
+    expect(OPEN).toContain("work: publicSafeWork(board.seed.work)");
+  });
+
+  it("the allowlist drops urls, storage keys, ids and the real conversation id", async () => {
+    const { publicSafeWork } = await import("@/lib/public-work-allowlist");
+    const [out] = publicSafeWork([
+      {
+        id: "w1",
+        type: "document",
+        content_ref: "org-1/private/file.pdf",
+        orig_conversation_id: "real-conv-123",
+        source_meta: { vendor: "claude", url: "https://claude.ai/chat/abc", storage_key: "k/1", drive_file_id: "d", gmail_id: "g", notes: "private", role: "attachment", produced_at_turn: 3 },
+        meta: { web_view_link: "https://docs.google.com/x", storage_path: "s/1", source_mime: "application/pdf" },
+        taskIds: [],
+      } as never,
+    ]);
+    const text = JSON.stringify(out);
+    expect(text).not.toMatch(/https?:|claude\.ai|docs\.google|storage|drive_file_id|gmail_id|private|real-conv-123|org-1/);
+    expect(out!.content_ref).toBeNull();
+    expect(out!.orig_conversation_id).toBe("group-1");
+    expect(out!.source_meta).toEqual({ vendor: "claude", role: "attachment", produced_at_turn: 3 });
+    expect(out!.meta).toEqual({ source_mime: "application/pdf" });
+  });
+});
