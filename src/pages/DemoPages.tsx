@@ -80,7 +80,7 @@ export function DemoHomePage() {
       <PublicHeader cta={<PilotLink />} />
       <main className="mx-auto w-full max-w-6xl px-4 pb-16 sm:px-8 md:px-12">
         <p className="mb-6 text-[13px] text-muted-foreground">{DEMO_LINE}</p>
-        <div ref={ref}>
+        <div ref={ref} className={tour.step === 1 ? "pt-28" : undefined}>
           {query.isPending ? (
             <p className="text-[13px] text-muted-foreground">Opening the demo.</p>
           ) : cards.length === 0 ? (
