@@ -106,6 +106,36 @@ describe("demo margin note", () => {
     blockingText.remove();
   });
 
+  it("samples a dense grid and rejects a side that crosses the preset bar", () => {
+    vi.stubGlobal("innerWidth", 1200);
+    vi.stubGlobal("innerHeight", 800);
+    const anchor = document.createElement("button");
+    document.body.appendChild(anchor);
+    vi.spyOn(anchor, "getBoundingClientRect").mockReturnValue({ left: 450, right: 550, top: 300, bottom: 340, width: 100, height: 40, x: 450, y: 300, toJSON: () => ({}) });
+    const bar = document.createElement("div");
+    bar.setAttribute("data-demo-tour-collision-bar", "");
+    document.body.appendChild(bar);
+    vi.spyOn(bar, "getBoundingClientRect").mockReturnValue({ left: 562, right: 848, top: 330, bottom: 380, width: 286, height: 50, x: 562, y: 330, toJSON: () => ({}) });
+
+    expect(chooseDemoNotePosition(anchor, 286)?.placement).toBe("left");
+    expect(vi.mocked(document.elementsFromPoint).mock.calls.length).toBeGreaterThan(9);
+  });
+
+  it("docks on phones and scrolls the anchor above the strip", () => {
+    vi.stubGlobal("innerWidth", 390);
+    vi.stubGlobal("innerHeight", 844);
+    const scrollIntoView = vi.fn();
+    const anchor = document.createElement("button");
+    anchor.dataset.testid = "phone-anchor";
+    anchor.scrollIntoView = scrollIntoView;
+    document.body.appendChild(anchor);
+    render(<DemoTourNote step={2} anchorTestId="phone-anchor" onDismiss={() => undefined}>Ask the CFO's question.</DemoTourNote>);
+
+    expect(screen.getByTestId("demo-tour-note-2").getAttribute("data-placement")).toBe("dock");
+    expect(scrollIntoView).toHaveBeenCalledWith({ block: "center", behavior: "auto" });
+    expect(document.documentElement.getAttribute("data-demo-tour-docked")).toBe("true");
+  });
+
   it("places a wide anchor beside its shorter visible text", () => {
     vi.stubGlobal("innerWidth", 1372);
     vi.stubGlobal("innerHeight", 732);
