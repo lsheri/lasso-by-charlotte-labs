@@ -19,12 +19,7 @@ export function PublicHeader({ current, cta }: { current?: "/" | "/why" | "/trus
           aria-current={current === "/" ? "page" : undefined}
         >
           <LassoLoopMark className="h-10 w-10 text-lasso-green" />
-          <span className="flex min-w-0 flex-col leading-none">
-            <span className="truncate">LASSO</span>
-            <span className="mt-2 whitespace-nowrap font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground sm:text-[15px]">
-              by Charlotte Labs
-            </span>
-          </span>
+          <span className="truncate">LASSO</span>
         </Link>
         <nav className="flex shrink-0 items-center gap-3 sm:gap-10">
           {LINKS.filter((link) => link.to !== current).map((link) => (
