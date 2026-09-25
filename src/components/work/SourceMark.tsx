@@ -11,7 +11,7 @@ import {
   siNotion,
 } from "simple-icons";
 
-import { BrandLogo, brandForToolkit, type BrandKey } from "@/components/connectors/BrandLogo";
+import { BrandLogo, brandForToolkit, brandLabel, type BrandKey } from "@/components/connectors/BrandLogo";
 import { hashId } from "@/components/work/pile-scatter";
 import { useVendorVisible } from "@/hooks/use-vendor-display";
 import { vendorLabel } from "@/lib/conversation-shared";
@@ -274,7 +274,12 @@ export function VendorMark({ item }: { item: SourceItem }) {
       ? vendorLabel(vendor)
       : "AI"
     : item.source
-      ? sourceLabel(item.source)
+      ? /^(mcp|connector|import):/.test(item.source)
+        ? (() => {
+            const brand = sourceBrandKey(item);
+            return brand === "unknown" ? "Document" : brandLabel(brand);
+          })()
+        : sourceLabel(item.source)
       : null;
   if (!label || label === "mcp" || label === "manual") return null;
   return (

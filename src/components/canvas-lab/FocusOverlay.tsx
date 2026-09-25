@@ -308,7 +308,7 @@ export function FocusOverlay({
             )}
           </div>
 
-          <aside className="focus-paper-aside w-full shrink-0 overflow-y-auto border-t border-border px-4 py-4 lg:w-[320px] lg:border-l lg:border-t-0">
+          {readOnly ? null : <aside className="focus-paper-aside w-full shrink-0 overflow-y-auto border-t border-border px-4 py-4 lg:w-[320px] lg:border-l lg:border-t-0">
             {isThread ? (
               <section ref={commentsRef} className="mb-5 border-b border-border pb-4">
                 <h2 className="section-title mb-2">comments</h2>

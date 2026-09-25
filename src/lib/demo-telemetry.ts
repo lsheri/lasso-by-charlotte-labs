@@ -15,7 +15,18 @@ function demoViewId(): string {
 const SAFE = /^[a-z0-9_.:-]{1,40}$/i;
 const safe = (value: string) => (SAFE.test(value) ? value.toLowerCase() : "other");
 
+const opened = new Set<string>();
+/** Test seam. */
+export function resetDemoTelemetry(): void {
+  opened.clear();
+  viewId = null;
+}
+
+/** Once per page view per surface and engagement, however often React mounts. */
 export function noteDemoOpened(surface: "home" | "board", engagement: string): void {
+  const key = `${surface}:${engagement}`;
+  if (opened.has(key)) return;
+  opened.add(key);
   void recordAnonymousEventFn({
     data: { event_type: "demo.opened", view_id: demoViewId(), dims: { surface, engagement: safe(engagement) } },
   }).catch(() => undefined);

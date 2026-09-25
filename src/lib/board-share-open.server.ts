@@ -38,6 +38,7 @@ import {
   wrapSvgArtifact,
 } from "./workboard-file-preview";
 import { sha256Hex } from "./telemetry.server";
+import { publicSafeWork } from "./public-work-allowlist";
 
 type Refusal = "expired" | "revoked" | "unknown";
 
@@ -108,7 +109,7 @@ export async function openSharedBoard(token: string): Promise<SharedBoardResult>
     .eq("id", link.id);
   await noteShareEvent("opened", link.org_id);
 
-  return { status: "open", board };
+  return { status: "open", board: { ...board, seed: { ...board.seed, work: publicSafeWork(board.seed.work) } } };
 }
 
 type AdminDb = Awaited<

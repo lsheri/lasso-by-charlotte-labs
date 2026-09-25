@@ -1,4 +1,7 @@
-import type { SharedBoardDto, SharedSeedWork } from "./board-share-shared";
+import { buildSharedBoardModel } from "@/components/canvas-lab/SharedBoardView";
+
+import type { SharedBoardDto } from "./board-share-shared";
+import { publicSafeWork } from "./public-work-allowlist";
 import { readBoard } from "./board-share-open.server";
 
 type AdminDb = Awaited<typeof import("@/integrations/supabase/client.server")>["supabaseAdmin"];
@@ -54,10 +57,7 @@ export async function openDemoHome(): Promise<DemoHomeResult> {
         title: row.title,
         clientLabel: row.client_label,
         workCount: dto?.seed.work.length ?? 0,
-        preview: {
-          frames: (dto?.board.frames ?? []).slice(0, 12).map((f) => ({ x: f.x, y: f.y, w: f.w, h: f.h, fill: f.fill ?? null })),
-          nodes: (dto?.board.nodes ?? []).slice(0, 60).map((n) => ({ x: n.x, y: n.y, w: n.w, h: n.h })),
-        },
+        preview: dto ? seededPreview(dto) : { frames: [], nodes: [] },
       };
     }),
   );
@@ -81,31 +81,19 @@ export async function openDemoBoard(code: string): Promise<DemoBoardResult> {
   return { status: "open", board, engagement: { code: row.code, title: row.title, clientLabel: row.client_label } };
 }
 
-/**
- * The demo field allowlist. Whatever a work item carries in source_meta and
- * meta (urls, notes, storage keys, Drive and Gmail ids) never travels, nor do
- * content_ref or orig_conversation_id. Chats pushed together keep bundling
- * through an opaque per-response group key instead of the real id.
- */
-export function demoSafeWork(items: readonly SharedSeedWork[]): SharedSeedWork[] {
-  const groups = new Map<string, string>();
-  return items.map((item) => {
-    const {
-      source_meta: _sourceMeta,
-      meta: _meta,
-      content_ref: _contentRef,
-      orig_conversation_id: origId,
-      ...rest
-    } = item;
-    let group: string | null = null;
-    if (origId) {
-      group = groups.get(origId) ?? `group-${groups.size + 1}`;
-      groups.set(origId, group);
-    }
-    return { ...rest, content_ref: null, orig_conversation_id: group } as SharedSeedWork;
-  });
+function demoSafeBoard(dto: SharedBoardDto): SharedBoardDto {
+  return { ...dto, seed: { ...dto.seed, work: publicSafeWork(dto.seed.work) } };
 }
 
-function demoSafeBoard(dto: SharedBoardDto): SharedBoardDto {
-  return { ...dto, seed: { ...dto.seed, work: demoSafeWork(dto.seed.work) } };
+/** The same seeded layout the board draws, reduced to Home thumbnail rects. */
+function seededPreview(dto: SharedBoardDto): DemoEngagementCard["preview"] {
+  try {
+    const model = buildSharedBoardModel(dto);
+    return {
+      frames: model.frames.slice(0, 12).map((f) => ({ x: f.x, y: f.y, w: f.width, h: f.height, fill: f.fill ?? null })),
+      nodes: model.nodes.slice(0, 60).map((n) => ({ x: n.x, y: n.y, w: n.width, h: n.height })),
+    };
+  } catch {
+    return { frames: [], nodes: [] };
+  }
 }
