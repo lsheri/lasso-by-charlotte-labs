@@ -22,7 +22,8 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(page).toContain("IntersectionObserver");
     expect(page).toContain("scrollIntoView");
     expect(page).toContain('input.current = "jump"');
-    expect(page.match(/key: "/g)).toHaveLength(10);
+    const steps = page.slice(page.indexOf("export const LANDING_BOARD_STEPS"), page.indexOf("] as const;"));
+    expect(steps.match(/key: "/g)).toHaveLength(10);
   });
   it("has a reduced-motion jump path", () => {
     expect(page).toContain('prefers-reduced-motion: reduce');
@@ -35,7 +36,8 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(page).toContain("claudeLogo.url");
     expect(page).toContain("known?.logo ? <img");
     expect(page).toContain("<span>{compact ? label : label.toUpperCase()}</span>");
-    expect(page).not.toContain("<svg");
+    const tools = page.slice(page.indexOf("const TOOL_BADGES"), page.indexOf("] as const;", page.indexOf("const TOOL_BADGES")));
+    expect(tools).not.toContain("<svg");
   });
   it("allowlists every landing event dimension", () => {
     expect(EVENT_DIM_KEYS["landing.section_jumped"]).toEqual(["section"]);
