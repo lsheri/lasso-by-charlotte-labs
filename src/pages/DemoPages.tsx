@@ -63,9 +63,9 @@ export function DemoBoardPage({ code }: { code: string }) {
   useEffect(() => noteDemoOpened("board", code), [code]);
   const [openTurn, setOpenTurn] = useState<{ workItemId: string; turnNo: number; nonce: number } | null>(null);
   const tour = useDemoTour();
-  const { session } = useSession();
+  const { session, loading: sessionLoading } = useSession();
 
-  const back = session ? (
+  const back = session || sessionLoading ? (
     <Link to="/demo" className="font-mono text-[11.5px] uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground">Back to the demo</Link>
   ) : (
     <Link to="/" hash="demo" className="font-mono text-[11.5px] uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground">Back to the demo</Link>

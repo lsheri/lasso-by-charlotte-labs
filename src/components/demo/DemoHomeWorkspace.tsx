@@ -20,8 +20,10 @@ export function useDemoHomeOpened(surface: DemoHomeSurface, ref: RefObject<HTMLE
     }
     const section = ref.current;
     if (!section || typeof IntersectionObserver === "undefined") return;
+    let recorded = false;
     const observer = new IntersectionObserver((entries) => {
-      if (!entries.some((entry) => entry.isIntersecting)) return;
+      if (recorded || !entries.some((entry) => entry.isIntersecting)) return;
+      recorded = true;
       noteDemoOpened("landing", "none");
       observer.disconnect();
     });
