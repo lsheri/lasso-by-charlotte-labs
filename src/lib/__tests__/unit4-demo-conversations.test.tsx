@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
 import { EVENT_DIM_KEYS, guardEventDims } from "../event-dim-allowlist";
+import { demoConversationItem } from "../demo-board.server";
 import { publicSafeWork } from "../public-work-allowlist";
 
 const sent: unknown[] = [];
@@ -19,7 +20,7 @@ describe("unit 4 demo conversations and sources", () => {
   });
 
   it("the conversations payload carries no urls, refs or real ids", () => {
-    const [out] = publicSafeWork([
+    const [safe] = publicSafeWork([
       {
         id: "w1",
         type: "ai_thread",
@@ -29,11 +30,13 @@ describe("unit 4 demo conversations and sources", () => {
         orig_conversation_id: "conv-real",
         source_meta: { vendor: "claude", drive_file_id: "d1", url: "https://x" },
         meta: { owner_profile_id: "p1" },
-        taskIds: [],
+        owner_id: "u-real",
+        client_id: "c-real",
+        taskIds: ["t-real"],
       } as never,
     ]);
-    const json = JSON.stringify(out);
-    expect(json).not.toMatch(/https?:|storage\/key|conv-real|drive_file_id|owner_profile_id/);
+    const json = JSON.stringify(demoConversationItem(safe!));
+    expect(json).not.toMatch(/https?:|storage\/key|conv-real|drive_file_id|owner_profile_id|u-real|c-real|t-real/);
   });
 
   it("the server path reaches only the one is_demo org", () => {
