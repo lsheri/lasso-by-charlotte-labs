@@ -1,5 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { earlierReadsNote } from "@/lib/earlier-reads";
+
 import type { Database } from "@/integrations/supabase/types";
 import type { ContextSource, ScopeSource } from "@/lib/reflect-shared";
 import type { AnalysisPresetId } from "@/lib/analysis-presets";
