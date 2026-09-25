@@ -15,11 +15,17 @@ import { noteDemoStepCompleted, noteDemoTourSkipped, resetDemoTelemetry } from "
 const KEY = "lasso.demo.tour.step.v1";
 
 beforeEach(() => {
+  document.body.innerHTML = "";
   window.sessionStorage.clear();
   recordAnonymousEventFn.mockClear();
   resetDemoTelemetry();
   vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => { callback(0); return 1; });
   vi.stubGlobal("cancelAnimationFrame", () => undefined);
+  Object.defineProperty(document, "elementsFromPoint", {
+    configurable: true,
+    value: vi.fn(() => [document.body]),
+  });
+  vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({ left: 120, right: 220, top: 240, bottom: 280, width: 100, height: 40, x: 120, y: 240, toJSON: () => ({}) });
   window.matchMedia = vi.fn((query: string) => ({
     matches: query.includes("reduce"),
     media: query,
@@ -88,7 +94,7 @@ describe("demo margin note", () => {
     const blockingText = document.createElement("p");
     blockingText.textContent = "Occupied";
     document.body.appendChild(blockingText);
-    const points = vi.spyOn(document, "elementsFromPoint").mockImplementation((x) => x > 550 ? [blockingText, document.body] : [document.body]);
+    const points = vi.mocked(document.elementsFromPoint).mockImplementation((x) => x > 550 ? [blockingText, document.body] : [document.body]);
 
     expect(chooseDemoNotePosition(anchor, 286)?.placement).toBe("left");
     expect(points).toHaveBeenCalled();
