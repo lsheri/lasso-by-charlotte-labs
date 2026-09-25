@@ -88,3 +88,28 @@ describe("demo routes and events", () => {
     });
   });
 });
+
+describe("Unit 1.5 polish", () => {
+  it("demo.opened goes once per view per surface and engagement", async () => {
+    const calls: unknown[] = [];
+    vi.doMock("../telemetry.functions", () => ({ recordAnonymousEventFn: (arg: unknown) => { calls.push(arg); return Promise.resolve(); } }));
+    vi.resetModules();
+    const { noteDemoOpened, resetDemoTelemetry } = await import("../demo-telemetry");
+    resetDemoTelemetry();
+    noteDemoOpened("board", "abc");
+    noteDemoOpened("board", "abc");
+    noteDemoOpened("home", "none");
+    noteDemoOpened("home", "none");
+    expect(calls).toHaveLength(2);
+    vi.doUnmock("../telemetry.functions");
+  });
+
+  it("the read-only reader draws no comments or highlights rail", () => {
+    const overlay = readFileSync("src/components/canvas-lab/FocusOverlay.tsx", "utf8");
+    expect(overlay).toContain('{readOnly ? null : <aside className="focus-paper-aside');
+  });
+
+  it("home thumbnails come from the seeded board layout", () => {
+    expect(SERVER).toContain("buildSharedBoardModel(dto)");
+  });
+});
