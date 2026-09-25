@@ -2,7 +2,9 @@
 import { act, cleanup, fireEvent, render, renderHook, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const recordAnonymousEventFn = vi.fn(() => Promise.resolve({ ok: true }));
+const { recordAnonymousEventFn } = vi.hoisted(() => ({
+  recordAnonymousEventFn: vi.fn(() => Promise.resolve({ ok: true })),
+}));
 vi.mock("@/lib/telemetry.functions", () => ({ recordAnonymousEventFn }));
 
 import { DemoTourNote } from "@/components/demo/DemoTourNote";
