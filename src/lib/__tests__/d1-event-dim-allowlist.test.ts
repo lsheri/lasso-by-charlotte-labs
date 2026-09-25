@@ -169,6 +169,7 @@ const LIVE_KEYS_BY_EVENT: Record<string, readonly string[]> = {
   "demo.step_completed": ["step", "engagement"],
   "demo.tour_skipped": ["step"],
   "demo.filter_changed": ["tool"],
+  "landing.section_jumped": ["section"],
 };
 
 /** Every name in the canonical union, read as data rather than as wording. */
