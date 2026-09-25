@@ -11,3 +11,5 @@
 
 - Keep the public demo guide route-local and persist only its numeric step in guarded session storage, because it must never affect signed-in product state.
 - Render both public demo entrances through DemoHomeWorkspace so their cards, previews, loading states, and guide behavior stay identical.
+
+- Keep `/landing-board` as an unlinked, public, read-only composition fed only by `openDemoBoardFn`; it must not share state or styles with the production landing or signed-in boards.
