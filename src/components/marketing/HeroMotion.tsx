@@ -63,15 +63,15 @@ export const STORY: StoryStep[] = [
     highlight: "two terms of three years", answer: "Claude, 2 Sep, turn 18. That turn is where two terms of three years was chosen over one of five.", sourceCount: 1,
   },
   {
-    speaker: "Manager question", question: "Which conversations shaped the recommendation?", litSources: ["board", "call", "scenarios"],
+    speaker: "Manager question", question: "Which LLM conversations shaped this recommendation? I need to find that...", litSources: ["board", "call", "scenarios"],
     slide: 5,
     highlight: "Set aside the merger", answer: "Three, in order: the chair call set the constraint, the board-structure thread chose the shape, the scenario thread costed the merger and set it aside.", sourceCount: 3,
   },
 ];
 
 const ROLE_LABELS: Record<StoryStep["speaker"], string> = {
-  "Board chair": "Question from the board",
-  "Manager question": "Question from your manager",
+  "Board chair": "Question from the board of directors",
+  "Manager question": "Question from **Yourself",
   "Client CEO": "Question from the client",
 };
 
