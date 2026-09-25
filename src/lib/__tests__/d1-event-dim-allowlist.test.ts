@@ -168,6 +168,7 @@ const LIVE_KEYS_BY_EVENT: Record<string, readonly string[]> = {
   "work.preview_mode_changed": ["mode", "kind"],
   "demo.step_completed": ["step", "engagement"],
   "demo.tour_skipped": ["step"],
+  "demo.filter_changed": ["tool"],
 };
 
 /** Every name in the canonical union, read as data rather than as wording. */

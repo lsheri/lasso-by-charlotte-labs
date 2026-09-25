@@ -26,7 +26,7 @@ export function resetDemoTelemetry(): void {
 }
 
 /** Once per page view per surface and engagement: a remount inside the same view (strict mode, refetch) does not send it again. */
-export function noteDemoOpened(surface: "home" | "board" | "landing", engagement: string): void {
+export function noteDemoOpened(surface: "home" | "board" | "landing" | "conversations" | "sources", engagement: string): void {
   const key = `${surface}:${engagement}`;
   const now = Date.now();
   const last = opened.get(key);
@@ -86,4 +86,13 @@ export function noteDemoStepCompleted(step: number, engagement: string): void {
 
 export function noteDemoTourSkipped(step: number): void {
   noteTourEvent("demo.tour_skipped", step);
+}
+
+const DEMO_TOOLS = new Set(["all", "claude", "chatgpt", "gemini", "document"]);
+
+/** Unit 4: a tool chip on /demo/conversations. Closed tool word only. */
+export function noteDemoFilterChanged(tool: string): void {
+  void recordAnonymousEventFn({
+    data: { event_type: "demo.filter_changed", view_id: demoViewId(), dims: { tool: DEMO_TOOLS.has(tool) ? tool : "other" } },
+  }).catch(() => undefined);
 }

@@ -150,3 +150,5 @@
 
 - [x] Unit 6: Put the shared demo Home below the logged-out landing hero, preserve signed-in redirect and landing sections, extend demo.opened surface, and verify both viewports.
 - [ ] Portal: add `landing` as an allowed `demo.opened.surface` value (architect-owned).
+
+- [x] Unit 4 (reduced): /demo/conversations + /demo/sources. Portal: demo.opened.surface adds "conversations","sources"; new event demo.filter_changed {tool} (architect-owned).

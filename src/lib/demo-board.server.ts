@@ -126,3 +126,56 @@ export async function loadDemoPresets(
   const workIds = new Set(board.seed.work.map((w) => w.id));
   return publicDemoPresets((data ?? []) as DemoPresetRow[], workIds);
 }
+
+/* ------------------------------------------------------------------------ */
+/* Unit 4: the public demo "All AI Conversations". Built only from the demo  */
+/* boards above, so every item already passed publicSafeWork and the reader. */
+/* ------------------------------------------------------------------------ */
+
+export type DemoConversationItem = { code: string; item: SharedBoardDto["seed"]["work"][number] };
+export type DemoConversationsResult = {
+  items: DemoConversationItem[];
+  turns: SharedBoardDto["turns"];
+  filePreviews: SharedBoardDto["filePreviews"];
+};
+
+export async function openDemoConversations(): Promise<DemoConversationsResult> {
+  const empty: DemoConversationsResult = { items: [], turns: {}, filePreviews: {} };
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const orgId = await demoOrgId(supabaseAdmin);
+  if (!orgId) return empty;
+  const { data: rows } = await supabaseAdmin
+    .from("engagements")
+    .select("id, code")
+    .eq("org_id", orgId)
+    .order("created_at", { ascending: true })
+    .limit(12);
+  const out: DemoConversationsResult = { items: [], turns: {}, filePreviews: {} };
+  const seen = new Set<string>();
+  for (const row of rows ?? []) {
+    const dto = await demoBoard(supabaseAdmin, orgId, row.id).catch(() => null);
+    if (!dto) continue;
+    for (const item of dto.seed.work) {
+      if (seen.has(item.id)) continue;
+      if (item.type !== "ai_thread" && item.type !== "document") continue;
+      seen.add(item.id);
+      out.items.push({ code: row.code, item: demoConversationItem(item) });
+      if (dto.turns[item.id]) out.turns[item.id] = dto.turns[item.id]!;
+      if (dto.filePreviews[item.id]) out.filePreviews[item.id] = dto.filePreviews[item.id]!;
+    }
+  }
+  return out;
+}
+
+/** Unit 4: beyond publicSafeWork, no owner/org/client/task ids and no url-valued field. */
+export function demoConversationItem(item: DemoConversationItem["item"]): DemoConversationItem["item"] {
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(item)) {
+    if (key !== "id" && (key.endsWith("_id") || key === "url" || key === "taskIds")) continue;
+    if (typeof value === "string" && /^(https?:|\/\/)/i.test(value)) continue;
+    out[key] = value;
+  }
+  out["taskIds"] = [];
+  out["orig_conversation_id"] = (item as { orig_conversation_id?: string | null }).orig_conversation_id ?? null;
+  return out as DemoConversationItem["item"];
+}

@@ -7,13 +7,20 @@ import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-import type { DemoBoardResult, DemoHomeResult } from "./demo-board.server";
+import type { DemoBoardResult, DemoConversationsResult, DemoHomeResult } from "./demo-board.server";
 import type { DemoAdminStatus } from "./demo-presets.server";
 
 export const openDemoHomeFn = createServerFn({ method: "POST" }).handler(async (): Promise<DemoHomeResult> => {
   const { openDemoHome } = await import("./demo-board.server");
   return openDemoHome();
 });
+
+export const openDemoConversationsFn = createServerFn({ method: "POST" }).handler(
+  async (): Promise<DemoConversationsResult> => {
+    const { openDemoConversations } = await import("./demo-board.server");
+    return openDemoConversations();
+  },
+);
 
 export const openDemoBoardFn = createServerFn({ method: "POST" })
   .inputValidator((input: { code: string }) => ({
