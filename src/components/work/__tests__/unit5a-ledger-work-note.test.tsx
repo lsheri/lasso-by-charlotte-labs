@@ -61,8 +61,8 @@ describe("Unit 5a Ledger WorkNote", () => {
   it("names a document without recorded tool plumbing as Document", () => {
     const unknown = item("mcp", "document");
     unknown.source_vendor = null;
-    const { getByText } = render(<WorkNote item={unknown} filePreview={preview} />);
-    expect(getByText("Document")).toBeTruthy();
+    const { container } = render(<WorkNote item={unknown} filePreview={preview} />);
+    expect(container.querySelector(".nb-paper-body > div:first-child > span")?.textContent).toBe("Document");
   });
 
   it("prefers a stored summary and falls back to the first user turn", () => {
