@@ -221,13 +221,12 @@ export function LandingBoard() {
   }
   function pilot(placement: string) { event(viewId.current, "landing.pilot_cta_clicked", { placement }); }
   const result = query.data;
-  const data = result?.status === "open" ? result : null;
   return (
     <div className="landing-board-page">
       <LandingBoardHeader active={LANDING_BOARD_STEPS[active]?.key ?? "problem"} onJump={jump} onPilot={() => pilot("header")} />
       <main className="lb-story">
         <div className="lb-sticky-stage">
-          {data ? <StoryBoard board={data.board} presets={data.presets} step={active} /> : <div className="lb-stage-window lb-loading">{query.isPending ? "Opening the demo board." : "The demo board is not available right now."}</div>}
+          {result?.status === "open" && "board" in result ? <StoryBoard board={result.board} presets={result.presets} step={active} /> : <div className="lb-stage-window lb-loading">{query.isPending ? "Opening the demo board." : "The demo board is not available right now."}</div>}
         </div>
         <div className="lb-scroll-sections">
           {LANDING_BOARD_STEPS.map((step, index) => (
