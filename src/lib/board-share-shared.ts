@@ -95,7 +95,8 @@ export const SHARE_CLOSED_MESSAGE = "This link has expired.";
 export type SharedWorkboard = Omit<WorkboardDto, "viewerProfileId"> & { viewerProfileId: null };
 
 export type SharedSeedTask = { id: string; name: string; detail: string | null };
-export type SharedSeedWork = WorkItemRow & { taskIds: string[] };
+/** Private reads carry taskIds; publicSafeWork output carries placedIn instead. */
+export type SharedSeedWork = WorkItemRow & { taskIds?: string[]; placedIn?: string[] };
 export type SharedSeedDecision = { id: string; call: string; situation: string };
 
 export type SharedBoardSeed = {
