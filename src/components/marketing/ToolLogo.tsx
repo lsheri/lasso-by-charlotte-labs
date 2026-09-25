@@ -1,11 +1,15 @@
 import claudeLogo from "@/assets/claude-logo.png.asset.json";
+import chatgptLogo from "@/assets/chatgpt-logo.png.asset.json";
+import geminiLogo from "@/assets/gemini-logo.png.asset.json";
+import googleDriveLogo from "@/assets/google-drive-logo.png.asset.json";
+import gmailLogo from "@/assets/gmail-logo.png.asset.json";
 
 const TOOL_LOGO_ASSETS: Record<string, string | undefined> = {
   claude: claudeLogo.url,
-  chatgpt: undefined,
-  gemini: undefined,
-  googledrive: undefined,
-  gmail: undefined,
+  chatgpt: chatgptLogo.url,
+  gemini: geminiLogo.url,
+  googledrive: googleDriveLogo.url,
+  gmail: gmailLogo.url,
 };
 
 const TOOL_LABELS: Record<string, string> = {
