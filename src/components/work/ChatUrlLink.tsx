@@ -1,7 +1,7 @@
 import { ExternalLink } from "lucide-react";
 
 import { chatUrlLabel, effectiveChatUrl } from "@/lib/chat-url";
-import { NO_SOURCE_LINK_LABEL } from "@/lib/work-open";
+import { keptContentLabel } from "@/lib/work-open";
 import type { WorkItemRow } from "@/lib/work-types";
 
 /**
@@ -11,10 +11,13 @@ import type { WorkItemRow } from "@/lib/work-types";
 export function ChatUrlLink({
   item,
   showAbsence = false,
+  turnCount,
 }: {
   item: WorkItemRow | null | undefined;
   /** Cards say plainly when there is no way back, so nobody is surprised. */
   showAbsence?: boolean;
+  /** Already-loaded card data; this never triggers another read. */
+  turnCount?: number | null;
 }) {
   const url = effectiveChatUrl(
     item?.source_meta?.url,
@@ -24,7 +27,7 @@ export function ChatUrlLink({
   if (!url) {
     if (!showAbsence) return null;
     return (
-      <span className="text-xs text-muted-foreground">{NO_SOURCE_LINK_LABEL}</span>
+      <span className="text-xs text-muted-foreground">{keptContentLabel(item, turnCount)}</span>
     );
   }
 

@@ -44,6 +44,11 @@ describe("pass 139: the page is named Past work", () => {
     expect(page).toContain("nothing here is deleted");
   });
 
+  it("states the access effect without coach-first wording", () => {
+    expect(page).toContain("Closing changes nobody's access. It adds no one.");
+    expect(page).not.toContain("Coaches keep exactly the access they already had");
+  });
+
   it('the old "The archive" heading is gone from the page', () => {
     expect(page).not.toContain("ARCHIVE_TITLE");
     expect(page).not.toContain("The archive");
