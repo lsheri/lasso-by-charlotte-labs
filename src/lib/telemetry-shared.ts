@@ -27,6 +27,8 @@ export type TelemetryEvent =
   | "demo.step_completed"
   /** Unit 3: a visitor ended the public demo guide. Step only. */
   | "demo.tour_skipped"
+  /** Unit 4: a tool filter chip was chosen on the public demo conversations page. Closed tool word only. */
+  | "demo.filter_changed"
   /** P4a: the signed-in Home board was opened. Content-free. */
   | "home.opened"
   /** P4a: the new-engagement dialog was opened from Home. Content-free. */
