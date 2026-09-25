@@ -116,6 +116,8 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "landing.story_section_viewed": ["input_mode", "section"],
   "landing.usecase_played": ["card", "input_mode"],
   "landing.viewed": ["surface", "variant"],
+  "demo.opened": ["surface", "engagement"],
+  "demo.card_opened": ["engagement", "kind"],
   "link.drafted": ["action", "considered", "cost_bucket", "count", "relation", "scope", "source", "surface", "tokens_in_bucket"],
   "link.drawn": ["action", "considered", "cost_bucket", "count", "relation", "scope", "source", "surface", "tokens_in_bucket"],
   "link.reviewed": ["action", "considered", "cost_bucket", "count", "relation", "scope", "source", "surface", "tokens_in_bucket"],
