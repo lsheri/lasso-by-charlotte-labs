@@ -405,7 +405,7 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
             <h2 className="landing-close-line1 landing-close-wordmark">Every claim, traced to the work behind it.</h2>
             <div className="landing-close-ink-wrap">
               <p className="landing-close-line2">
-                <LandingParticlePhrase text="The work, judgment, thinking. Visible." />
+                <LandingParticlePhrase text="The judgement, thinking, work... *Visible*" />
               </p>
             </div>
             <div className="mt-10">
