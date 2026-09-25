@@ -79,7 +79,7 @@ describe("Unit 4 public page", () => {
     expect(hero).toContain("Client CEO");
     expect(hero).toContain("Manager question");
     expect(hero).toContain("lw-answer");
-    expect(page.match(/>How it works</g)).toHaveLength(1);
+    expect(page.match(/>HOW IT WORKS</g)).toHaveLength(1);
     expect(page).toContain("Deliverables you can defend to a client, a partner, or a board.");
     expect(page).toContain("Every claim, traced to the work behind it.");
     expect(page).not.toContain("The deliverable stays");
@@ -127,7 +127,7 @@ describe("Unit 10 landing", () => {
   });
 
   it("inverts walkthrough emphasis and continuously streams source words into the active highlight", () => {
-    expect(hero).toContain('"Manager question": "Question from your manager"');
+    expect(hero).toContain('"Manager question": "Question from **Yourself"');
     expect(hero).toContain("lw-role-label");
     expect(hero).toContain("lw-word-stream");
     expect(hero).toContain("lw-flying-word");
