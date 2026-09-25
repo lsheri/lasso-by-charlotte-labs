@@ -115,7 +115,7 @@ describe("demo margin note", () => {
     const bar = document.createElement("div");
     bar.setAttribute("data-demo-tour-collision-bar", "");
     document.body.appendChild(bar);
-    vi.spyOn(bar, "getBoundingClientRect").mockReturnValue({ left: 562, right: 848, top: 330, bottom: 380, width: 286, height: 50, x: 562, y: 330, toJSON: () => ({}) });
+    vi.spyOn(bar, "getBoundingClientRect").mockReturnValue({ left: 551, right: 1000, top: 200, bottom: 500, width: 449, height: 300, x: 551, y: 200, toJSON: () => ({}) });
     vi.mocked(document.elementsFromPoint).mockImplementation((x, y) => x >= 590 && x <= 620 && y >= 300 && y <= 320 ? [bar, document.body] : [document.body]);
 
     expect(chooseDemoNotePosition(anchor, 286)?.placement).toBe("left");
