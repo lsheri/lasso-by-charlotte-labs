@@ -74,6 +74,16 @@ describe("Unit 4 public page", () => {
     expect(hero).toContain("What Lasso read");
   });
 
+  it("keeps one question crisp and gives phone scenes room to breathe", () => {
+    const css = readFileSync("src/styles.css", "utf8");
+    expect(css).toContain(".lw-step { min-height: 88vh");
+    expect(css).toContain("opacity: .18; filter: blur(5px)");
+    expect(css).toContain('.lw-step[data-active="true"] { opacity: 1; filter: none; }');
+    expect(css).toContain("min-height: 120svh; padding-block: 18svh");
+    expect(css).toContain("opacity: .12; filter: blur(6px)");
+    expect(css).toContain(".lw-step { transition: none; }");
+  });
+
   it("makes each incoming question and Lasso answer explicit", () => {
     expect(hero).toContain("Board chair");
     expect(hero).toContain("Client CEO");
