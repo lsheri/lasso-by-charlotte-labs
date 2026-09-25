@@ -21,13 +21,14 @@ describe("Unit L1 scroll-driven landing board", () => {
   it("renders ten observed reversible steps and jump controls", () => {
     expect(page).toContain("IntersectionObserver");
     expect(page).toContain("scrollIntoView");
-    expect(page).toContain('input.current = "jump"');
+    expect(page).toContain('jumpTarget.current = index');
+    expect(page).toContain('behavior: "auto"');
     const steps = page.slice(page.indexOf("export const LANDING_BOARD_STEPS"), page.indexOf("] as const;"));
     expect(steps.match(/key: "/g)).toHaveLength(10);
   });
   it("has a reduced-motion jump path", () => {
     expect(page).toContain('prefers-reduced-motion: reduce');
-    expect(page).toContain('? "auto" : "smooth"');
+    expect(page).toContain('scroll-behavior: auto !important');
   });
   it("contains no write controls", () => {
     for (const copy of ["Delete", "Share link", "Add work", "Comment", "Push to"]) expect(page).not.toContain(copy);
@@ -49,5 +50,17 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(item).toMatchObject({ id: "w1", title: "Deck", type: "deck" });
     expect(item).not.toHaveProperty("content_ref");
     expect(item).not.toHaveProperty("owner_id");
+  });
+  it("uses product labels, a single deliverable, and citation-aware pins", () => {
+    expect(page).toContain('<VendorMark item={item} />');
+    expect(page).toContain('keptContentLabel(item, turnCount)');
+    expect(page).toContain('item.id !== deckItem?.id');
+    expect(page).toContain('citedIds.has(item.id)');
+    expect(page).toContain('className="lb-read-dot"');
+  });
+  it("hides the redundant first caption and locks jump state", () => {
+    expect(page).toContain('{index === 0 ? null : <article className="lb-caption">');
+    expect(page).toContain('if (jumpTarget.current !== null) return;');
+    expect(page).toContain('input_mode: "jump"');
   });
 });
