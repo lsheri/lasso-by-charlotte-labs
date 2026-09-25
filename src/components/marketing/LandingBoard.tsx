@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { type CSSProperties, type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type CSSProperties, type FormEvent, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
 import { LandingParticlePhrase } from "@/components/marketing/LandingParticlePhrase";
@@ -62,7 +62,7 @@ function ToolIdentity({ tool, compact = false }: { tool: string; compact?: boole
 function BoardCard({ item, index, step, pin, read, turnCount, position }: { item: SharedSeedWork; index: number; step: number; pin: number | undefined; read: boolean; turnCount: number | null; position: { left: number; top: number } }) {
   return (
     <article className="lb-board-card" data-arrived={step >= 1} style={{ "--lb-card-index": index, "--lb-card-left": `${position.left}px`, "--lb-card-top": `${position.top}px` } as CSSProperties}>
-      <VendorMark item={item} />
+      <ToolLogo vendor={toolKey(item)} />
       <strong>{item.title}</strong>
       <small>{keptContentLabel(item, turnCount)}</small>
       {pin ? <span className="lb-pin" aria-label={`Source ${pin}`}>{pin}</span> : read ? <span className="lb-read-dot" aria-label="Read for this response" /> : null}
@@ -159,15 +159,21 @@ function ReplayAnswer({ preset, finished = true }: { preset: DemoPreset; finishe
 
 function AskReplay({ presets, step, onFinished }: { presets: DemoPreset[]; step: number; onFinished: (finished: boolean) => void }) {
   const replay = usePresetReplay(step, presets);
+  const threadRef = useRef<HTMLDivElement>(null);
   const shownPositions = step === 5 ? [1] : step === 6 ? [1, 2] : [1, 2, 4];
   const liveItems = replay.preset?.manifest?.items.slice(0, replay.readCount) ?? [];
   useEffect(() => {
     onFinished(replay.phase === "done");
   }, [onFinished, replay.phase]);
+  useLayoutEffect(() => {
+    const thread = threadRef.current;
+    if (!thread) return;
+    thread.scrollTo({ top: thread.scrollHeight, behavior: replay.phase === "done" ? "auto" : "smooth" });
+  }, [replay.phase, replay.readCount, replay.streamed, replay.typed]);
   return (
-    <aside className="lb-answer-sheet" aria-label="Ask Lasso replay" data-replay-phase={replay.phase}>
+    <aside className="lb-answer-sheet" aria-label="Ask Lasso replay" data-replay-phase={replay.phase} data-story-scroll="locked">
       <header className="lb-ask-header"><LassoThinkingMark kind="signature" size={44} /><div><p className="lb-micro">ASK LASSO</p><h3>YellowSigil Mobility</h3></div></header>
-      <div className="lb-replay-thread nb-binder">
+      <div ref={threadRef} className="lb-replay-thread nb-binder">
         {shownPositions.map((position) => {
           const preset = presets.find((entry) => entry.position === position);
           if (!preset) return null;
@@ -189,6 +195,17 @@ function AskReplay({ presets, step, onFinished }: { presets: DemoPreset[]; step:
   );
 }
 
+type LassoBox = { left: number; top: number; width: number; height: number };
+
+function DeckSlide({ index, clientName, numberRef }: { index: number; clientName: string; numberRef: React.RefObject<HTMLSpanElement | null> }) {
+  if (index === 0) return <section className="lb-deck-slide lb-slide-cover"><small>1</small><div className="lb-slide-cover-copy"><b>FY27 growth partnerships</b><span>{clientName}</span></div><svg viewBox="0 0 100 64" aria-hidden="true"><path d="M8 50 35 12l18 29 17-22 22 31Z" /><circle cx="69" cy="17" r="7" /></svg></section>;
+  if (index === 1) return <section className="lb-deck-slide lb-slide-scenarios"><small>2</small><b>Three scenarios</b><div>{["A", "B", "C"].map((label) => <span key={label} data-picked={label === "B"}><i />{label}</span>)}</div></section>;
+  if (index === 2) return <section className="lb-deck-slide lb-slide-number"><small>3</small><b>Year-two net benefit</b><div className="lb-waterfall"><span><i />$2.1M<br />savings</span><span><i />$0.7M<br />costs</span><span><i />$1.4M<br />net</span></div><span ref={numberRef} className="lb-number" data-testid="landing-board-number">$1.4M</span></section>;
+  if (index === 3) return <section className="lb-deck-slide lb-slide-governance"><small>4</small><b>Board structure</b><div><i /><i /><i /></div><span>Chair: two-term limit</span></section>;
+  if (index === 4) return <section className="lb-deck-slide lb-slide-alliances"><small>5</small><b>Comparable alliances</b><div>{[1, 2, 3, 4, 5].map((item) => <i key={item} />)}</div></section>;
+  return <section className="lb-deck-slide lb-slide-decision"><small>6</small><b>Decision asked for Oct 1</b><span aria-hidden="true" /></section>;
+}
+
 function ExactTurn({ board, preset }: { board: SharedBoardDto; preset: DemoPreset | undefined }) {
   const ref = preset?.turnRefs.find((entry) => entry.turn_no === 5) ?? preset?.turnRefs[0];
   const item = ref ? board.seed.work.find((entry) => entry.id === ref.work_item_id) : undefined;
@@ -204,18 +221,18 @@ function ExactTurn({ board, preset }: { board: SharedBoardDto; preset: DemoPrese
   );
 }
 
-function StoryBoard({ board, presets, step }: { board: SharedBoardDto; presets: DemoPreset[]; step: number }) {
+function StoryBoard({ board, presets, step, attentionStep, attentionNonce }: { board: SharedBoardDto; presets: DemoPreset[]; step: number; attentionStep: number; attentionNonce: number }) {
   const [replayFinished, setReplayFinished] = useState(false);
+  const [lassoBox, setLassoBox] = useState<LassoBox | null>(null);
+  const layerRef = useRef<HTMLDivElement>(null);
+  const numberRef = useRef<HTMLSpanElement>(null);
   const onReplayFinished = useCallback((finished: boolean) => setReplayFinished(finished), []);
   useEffect(() => {
     setReplayFinished(false);
   }, [step]);
   const deckItem = board.seed.work.find((item) => /board deck/i.test(item.title));
   const items = board.seed.work.filter((item) => item.id !== deckItem?.id).slice(0, 9);
-  const slides = useMemo(() => {
-    const pages = deckItem ? board.filePreviews[deckItem.id]?.pages : undefined;
-    return Array.from({ length: 6 }, (_, index) => pages?.[index]?.title || pages?.[index]?.lines[0] || FALLBACK_SLIDES[index] || `Slide ${index + 1}`);
-  }, [board, deckItem]);
+  const slides = useMemo(() => Array.from({ length: 6 }, (_, index) => FALLBACK_SLIDES[index] || `Slide ${index + 1}`), []);
   const foundNumberSlide = slides.findIndex((slide) => /\$1\.4m/i.test(slide));
   const numberSlideIndex = foundNumberSlide >= 0 ? foundNumberSlide : 2;
   const first = presets.find((preset) => preset.position === 1);
@@ -232,14 +249,45 @@ function StoryBoard({ board, presets, step }: { board: SharedBoardDto; presets: 
     taskSlots.set(visibleTasks[taskIndex]?.id ?? "", slot + 1);
     return { left: taskIndex === 0 ? 188 : 500, top: 176 + slot * 140 };
   });
+  const measureLasso = useCallback(() => {
+    const layer = layerRef.current;
+    const number = numberRef.current;
+    if (!layer || !number) return;
+    const layerRect = layer.getBoundingClientRect();
+    const numberRect = number.getBoundingClientRect();
+    const scale = layerRect.width / layer.offsetWidth;
+    if (!Number.isFinite(scale) || scale <= 0) return;
+    const padX = 10;
+    const padY = 6;
+    setLassoBox({
+      left: (numberRect.left - layerRect.left) / scale - padX,
+      top: (numberRect.top - layerRect.top) / scale - padY,
+      width: numberRect.width / scale + padX * 2,
+      height: numberRect.height / scale + padY * 2,
+    });
+  }, []);
+  useLayoutEffect(() => {
+    const layer = layerRef.current;
+    if (!layer) return;
+    const frame = window.requestAnimationFrame(measureLasso);
+    const onTransitionEnd = (event: TransitionEvent) => { if (event.propertyName === "transform") measureLasso(); };
+    layer.addEventListener("transitionend", onTransitionEnd);
+    window.addEventListener("resize", measureLasso);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      layer.removeEventListener("transitionend", onTransitionEnd);
+      window.removeEventListener("resize", measureLasso);
+    };
+  }, [measureLasso, step]);
+  const pulse = (target: number) => attentionStep === target ? " lb-target-pulse" : "";
   return (
     <div className="lb-stage-window" data-step={step + 1} data-testid="landing-board-stage">
-      <div className="lb-board-layer">
+      <div ref={layerRef} className="lb-board-layer">
         <div className="lb-dot-grid" />
-        <div className="lb-tool-dock" aria-label="Sources">
+        <div key={`tools-${attentionNonce}`} className={`lb-tool-dock${pulse(1)}`} aria-label="Sources">
           {TOOL_BADGES.map((tool) => <div key={tool.key}><ToolLogo vendor={tool.key} compact /></div>)}
         </div>
-        <div className="lb-frames">
+        <div key={`frames-${attentionNonce}`} className={`lb-frames${pulse(2)}`}>
           {visibleTasks.map((task, index) => <section key={task.id} style={{ "--lb-frame-index": index } as CSSProperties}><h3>{task.name}</h3><p>{task.detail}</p></section>)}
         </div>
         <div className="lb-cards">
@@ -248,20 +296,18 @@ function StoryBoard({ board, presets, step }: { board: SharedBoardDto; presets: 
         <svg className="lb-connectors" viewBox="0 0 1000 620" preserveAspectRatio="none" aria-hidden="true">
           <path d="M260 230 C470 220 570 280 735 350" /><path d="M260 390 C470 390 590 380 735 350" /><path d="M540 485 C620 470 680 410 735 350" />
         </svg>
-        <article className="lb-deck">
-          <header><span>DELIVERABLE</span><strong>{deckItem?.title ?? "FY27 board deck v3"}</strong></header>
-          <div>{slides.map((slide, index) => {
-            const numberSlide = index === numberSlideIndex;
-            return <section key={`${slide}-${index}`} data-slide={index + 1}><small>{index + 1}</small><p>{slide}</p>{numberSlide ? <span className="lb-number">$1.4M</span> : null}{numberSlide ? <span className="lb-slide-lasso" aria-hidden="true" /> : null}</section>;
-          })}</div>
+        <article key={`deck-${attentionNonce}`} className={`lb-deck${pulse(3)}`}>
+          <header><ToolLogo vendor="powerpoint" compact /><strong>{deckItem?.title ?? "FY27 board deck v3"}</strong></header>
+          <div>{slides.map((slide, index) => <DeckSlide key={`${slide}-${index}`} index={index} clientName={board.engagement.clientLabel ?? "YellowSigil Mobility"} numberRef={numberRef} />)}</div>
           {step >= 5 && replayFinished && deckItem && citedIds.has(deckItem.id) ? <span className="lb-pin" aria-label={`Source ${trailNumbers.get(deckItem.id)}`}>{trailNumbers.get(deckItem.id)}</span> : step >= 5 && replayFinished && deckItem && readIds.has(deckItem.id) ? <span className="lb-read-dot" aria-label="Read for this response" /> : null}
         </article>
+        {lassoBox ? <span key={`lasso-${attentionNonce}`} className={`lb-slide-lasso${pulse(4)}`} data-testid="landing-board-lasso" style={{ left: lassoBox.left, top: lassoBox.top, width: lassoBox.width, height: lassoBox.height }} aria-hidden="true" /> : null}
         <div className="lb-circle-question"><p>Where did the $1.4M on slide 3 come from?</p></div>
-        {step === 7 && replayFinished ? <div className="lb-open-notes"><p>Confirm the vendor extension assumption.</p><p>Confirm approval by Oct 1.</p></div> : null}
+        {step === 7 && replayFinished ? <div key={`notes-${attentionNonce}`} className={`lb-open-notes${pulse(7)}`}><p>Confirm the vendor extension assumption.</p><p>Confirm approval by Oct 1.</p></div> : null}
       </div>
-      {step >= 5 && step <= 7 ? <AskReplay presets={presets} step={step} onFinished={onReplayFinished} /> : null}
-      {step === 6 && replayFinished ? <ExactTurn board={board} preset={second} /> : null}
-      {step === 8 ? <div className="lb-share-dialog"><p className="lb-micro">READ ONLY</p><h3>Share this board</h3><p>They open the deliverable, source cards, and the conversations behind them.</p><p>They do not open private drafts or anything outside this board.</p><strong>Closes in 48 hours</strong><small>In the demo this is shown, not issued.</small></div> : null}
+      {step >= 5 && step <= 7 ? <div key={`ask-${attentionNonce}`} className={pulse(5)}><AskReplay presets={presets} step={step} onFinished={onReplayFinished} /></div> : null}
+      {step === 6 && replayFinished ? <div key={`turn-${attentionNonce}`} className={pulse(6)}><ExactTurn board={board} preset={second} /></div> : null}
+      {step === 8 ? <div key={`share-${attentionNonce}`} className={`lb-share-dialog${pulse(8)}`}><p className="lb-micro">READ ONLY</p><h3>Share this board</h3><p>They open the deliverable, source cards, and the conversations behind them.</p><p>They do not open private drafts or anything outside this board.</p><strong>Closes in 48 hours</strong><small>In the demo this is shown, not issued.</small></div> : null}
     </div>
   );
 }
@@ -315,6 +361,8 @@ export function LandingBoard() {
   const query = useQuery({ queryKey: ["landing-board", "YSM-01"], queryFn: () => open({ data: { code: "YSM-01" } }), staleTime: 60_000, retry: false });
   const viewId = useRef(typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : String(Date.now()));
   const [active, setActive] = useState(0);
+  const [settledStep, setSettledStep] = useState(0);
+  const [attentionNonce, setAttentionNonce] = useState(0);
   const activeRef = useRef(0);
   const transitioning = useRef(false);
   const queued = useRef<{ index: number; input: StoryInput } | null>(null);
@@ -328,6 +376,11 @@ export function LandingBoard() {
     if (settleTimer.current !== null) window.clearTimeout(settleTimer.current);
     settleTimer.current = window.setTimeout(() => {
       if (activeRef.current !== index || transitioning.current || queued.current) return;
+      setSettledStep((current) => {
+        if (current === index) return current;
+        setAttentionNonce((nonce) => nonce + 1);
+        return index;
+      });
       const key = LANDING_BOARD_STEPS[index]?.key;
       if (!key || seen.current.has(`${key}:${inputMode}`)) return;
       seen.current.add(`${key}:${inputMode}`);
@@ -406,8 +459,8 @@ export function LandingBoard() {
       <LandingBoardHeader active={LANDING_BOARD_STEPS[active]?.key ?? "problem"} onJump={jump} onPilot={() => pilot("header")} />
       <main className="lb-story">
         <div className="lb-sticky-stage">
-          {result?.status === "open" && "board" in result ? <StoryBoard board={result.board} presets={result.presets} step={active} /> : <div className="lb-stage-window lb-loading">{query.isPending ? "Opening the demo board." : "The demo board is not available right now."}</div>}
-          {active > 0 ? <article className="lb-caption lb-active-caption"><span>{String(active + 1).padStart(2, "0")} · {LANDING_BOARD_STEPS[active]?.label}</span><h2>{LANDING_BOARD_STEPS[active]?.headline}</h2><p>{LANDING_BOARD_STEPS[active]?.line}</p>{active === 9 ? <div><Button asChild><Link to="/demo/$code" params={{ code: "YSM-01" }}>Open the board yourself</Link></Button><Button asChild variant="outline"><a href="#pilot" onClick={() => pilot("try_it")}>Book a pilot</a></Button></div> : null}</article> : null}
+          {result?.status === "open" && "board" in result ? <StoryBoard board={result.board} presets={result.presets} step={active} attentionStep={settledStep} attentionNonce={attentionNonce} /> : <div className="lb-stage-window lb-loading">{query.isPending ? "Opening the demo board." : "The demo board is not available right now."}</div>}
+          {settledStep > 0 ? <article key={`${settledStep}-${attentionNonce}`} className="lb-caption lb-caption-attention" aria-live="polite"><div className="lb-caption-text"><span>{String(settledStep + 1).padStart(2, "0")} · {LANDING_BOARD_STEPS[settledStep]?.label}</span><h2>{LANDING_BOARD_STEPS[settledStep]?.headline}</h2><p>{LANDING_BOARD_STEPS[settledStep]?.line}</p></div>{settledStep === 9 ? <div><Button asChild><Link to="/demo/$code" params={{ code: "YSM-01" }}>Open the board yourself</Link></Button><Button asChild variant="outline"><a href="#pilot" onClick={() => pilot("try_it")}>Book a pilot</a></Button></div> : null}</article> : null}
         </div>
         <div className="lb-scroll-sections">
           {LANDING_BOARD_STEPS.map((step, index) => (
