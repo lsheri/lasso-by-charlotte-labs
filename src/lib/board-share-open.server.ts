@@ -12,7 +12,7 @@
  *     closed answer, so the response cannot be read to learn what exists.
  *
  * Nothing else in the product may call into this module, except the public
- * demo (demo-board.server.ts), which reuses readBoard with a null viewer.
+ * demo (demo-board.server.ts), which reuses the board reader with a null viewer.
  */
 
 import type { Database } from "@/integrations/supabase/types";
