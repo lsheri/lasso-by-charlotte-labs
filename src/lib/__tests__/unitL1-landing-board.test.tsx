@@ -62,7 +62,7 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(page).toContain('className="lb-read-dot"');
   });
   it("hides the redundant first caption and locks jump state", () => {
-    expect(page).toContain('{index === 0 ? null : <article className="lb-caption">');
+    expect(page).toContain('{active > 0 ? <article className="lb-caption lb-active-caption">');
     expect(page).toContain('if (jumpTarget.current !== null) return;');
     expect(page).toContain('activate(index, "jump", true)');
   });
@@ -82,6 +82,7 @@ describe("Unit L1 scroll-driven landing board", () => {
   it("anchors the lasso to the number slide and limits open notes", () => {
     expect(page).toContain('/\\$1\\.4m/i.test(slide)');
     expect(page).toContain('className="lb-slide-lasso"');
-    expect(page).toContain('wordsThrough(fourth?.answer.split(".")[0]');
+    expect(page).toContain("Confirm the vendor extension assumption.");
+    expect(page).toContain("Confirm approval by Oct 1.");
   });
 });
