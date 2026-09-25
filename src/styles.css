@@ -5604,6 +5604,10 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   --lb-client-white: #FFFFFF;
   --lb-client-grey: #D7DBE5;
   --lb-powerpoint: #C43E1C;
+  --lb-brand-claude: #D97757;
+  --lb-brand-gemini: #8E75B2;
+  --lb-brand-drive: #4285F4;
+  --lb-brand-gmail: #EA4335;
   min-height: 100vh;
   background: var(--nb-paper);
   color: var(--nb-ink);
@@ -5647,6 +5651,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .lb-tool-dock { position: absolute; z-index: 8; left: 16px; top: 116px; display: grid; gap: 8px; }
 .lb-tool-dock div { display: flex; width: 116px; align-items: center; gap: 8px; border: 1px solid var(--nb-rule); border-radius: var(--radius-control); background: var(--nb-white); padding: 7px 9px; font-family: var(--font-mono); font-size: 9px; text-transform: uppercase; box-shadow: var(--nb-paper-shadow-contact); transform: translateX(-150px); opacity: 0; transition: transform 550ms var(--nb-ease), opacity 300ms ease; transition-delay: calc(var(--lb-card-index, 0) * 45ms); }
 .lb-tool-dock img, .lb-tool-identity img, .lb-tool-identity svg { width: 16px; height: 16px; flex: 0 0 16px; object-fit: contain; }
+.lb-tool-identity svg[data-simple-icon="claude"] { color: var(--lb-brand-claude); }.lb-tool-identity svg[data-simple-icon="gemini"] { color: var(--lb-brand-gemini); }.lb-tool-identity svg[data-simple-icon="googledrive"] { color: var(--lb-brand-drive); }.lb-tool-identity svg[data-simple-icon="gmail"] { color: var(--lb-brand-gmail); }
 .lb-tool-identity { display: flex; align-items: center; gap: 5px; color: var(--nb-mid); font-family: var(--font-mono); font-size: 8px; }
 .lb-powerpoint-badge { display: grid; width: 16px; height: 16px; flex: 0 0 16px; place-items: center; border-radius: 2px; background: var(--lb-powerpoint); color: var(--lb-client-white); font-family: var(--font-sans); font-size: 11px; font-weight: 700; }
 .lb-frames section { position: absolute; width: 286px; height: 430px; border: 2px dashed var(--nb-pencil); border-radius: var(--radius-lg); background: color-mix(in oklab, var(--nb-white) 34%, transparent); opacity: 0; transform: scale(.96); transition: opacity 420ms ease, transform 550ms var(--nb-ease); }

@@ -51,7 +51,7 @@ export function ToolLogo({ vendor, compact = false }: { vendor: string; compact?
   return (
     <span className="lb-tool-identity" data-tool={key}>
       {logo ? <img src={logo} alt="" aria-hidden="true" /> : simpleIcon ? (
-        <svg viewBox="0 0 24 24" aria-hidden="true" style={{ color: `#${simpleIcon.hex}` }}>
+        <svg viewBox="0 0 24 24" aria-hidden="true" data-simple-icon={key}>
           <path fill="currentColor" d={simpleIcon.path} />
         </svg>
       ) : key === "powerpoint" ? <span className="lb-powerpoint-badge" aria-hidden="true">P</span> : null}
