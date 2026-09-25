@@ -40,13 +40,13 @@ export function WorkNote({
   const when = resolveWorkDate(item);
   const date = when.byArrival ? `added ${formatDate(when.iso)}` : formatDate(when.iso);
   const brand = sourceBrandKey(item);
-  const sourceLabel = brand === "unknown" && isFile ? "Document" : brandLabel(brand);
   const summary = item.work_item_extracts?.find((extract) => extract.summary)?.summary
     ?? chatPreview?.summary
     ?? chatPreview?.firstUserTurn?.content
     ?? chatPreview?.turns.find((turn) => turn.role.trim().toLowerCase() === "user")?.content
     ?? "No summary available.";
   const isFile = item.type === "document" || item.type === "deck" || item.type === "sheet";
+  const sourceLabel = brand === "unknown" && isFile ? "Document" : brandLabel(brand);
   const hasFilePreview = Boolean(filePreview && filePreview.kind !== "fallback");
   const detail = item.type === "deck" && filePreview?.pages?.length
     ? `${filePreview.pages.length} ${filePreview.pages.length === 1 ? "slide" : "slides"}`
