@@ -43,6 +43,7 @@ import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedWorkRouteImport } from './routes/_authenticated/work'
 import { Route as JoinEduRouteImport } from './routes/join_.edu'
 import { Route as SharedBoardTokenRouteImport } from './routes/shared-board.$token'
+import { Route as AuthenticatedArchiveLanding20260925RouteImport } from './routes/_authenticated/archive.landing-2026-09-25'
 import { Route as AuthenticatedClientsIdRouteImport } from './routes/_authenticated/clients.$id'
 import { Route as AuthenticatedCoachingIndexRouteImport } from './routes/_authenticated/coaching.index'
 import { Route as AuthenticatedDesignIconsRouteImport } from './routes/_authenticated/design.icons'
@@ -231,6 +232,12 @@ const SharedBoardTokenRoute = SharedBoardTokenRouteImport.update({
   path: '/shared-board/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedArchiveLanding20260925Route =
+  AuthenticatedArchiveLanding20260925RouteImport.update({
+    id: '/landing-2026-09-25',
+    path: '/landing-2026-09-25',
+    getParentRoute: () => AuthenticatedArchiveRoute,
+  } as any)
 const AuthenticatedClientsIdRoute = AuthenticatedClientsIdRouteImport.update({
   id: '/clients/$id',
   path: '/clients/$id',
@@ -327,7 +334,7 @@ export interface FileRoutesByFullPath {
   '/why': typeof WhyRoute
   '/affiliation': typeof AuthenticatedAffiliationRoute
   '/ai-record': typeof AuthenticatedAiRecordRoute
-  '/archive': typeof AuthenticatedArchiveRoute
+  '/archive': typeof AuthenticatedArchiveRouteWithChildren
   '/assignments': typeof AuthenticatedAssignmentsRoute
   '/classes': typeof AuthenticatedClassesRoute
   '/coach-notes': typeof AuthenticatedCoachNotesRoute
@@ -348,6 +355,7 @@ export interface FileRoutesByFullPath {
   '/work': typeof AuthenticatedWorkRoute
   '/join/edu': typeof JoinEduRoute
   '/shared-board/$token': typeof SharedBoardTokenRoute
+  '/archive/landing-2026-09-25': typeof AuthenticatedArchiveLanding20260925Route
   '/clients/$id': typeof AuthenticatedClientsIdRoute
   '/design/icons': typeof AuthenticatedDesignIconsRoute
   '/engagements/$id': typeof AuthenticatedEngagementsIdRoute
@@ -377,7 +385,7 @@ export interface FileRoutesByTo {
   '/why': typeof WhyRoute
   '/affiliation': typeof AuthenticatedAffiliationRoute
   '/ai-record': typeof AuthenticatedAiRecordRoute
-  '/archive': typeof AuthenticatedArchiveRoute
+  '/archive': typeof AuthenticatedArchiveRouteWithChildren
   '/assignments': typeof AuthenticatedAssignmentsRoute
   '/classes': typeof AuthenticatedClassesRoute
   '/coach-notes': typeof AuthenticatedCoachNotesRoute
@@ -398,6 +406,7 @@ export interface FileRoutesByTo {
   '/work': typeof AuthenticatedWorkRoute
   '/join/edu': typeof JoinEduRoute
   '/shared-board/$token': typeof SharedBoardTokenRoute
+  '/archive/landing-2026-09-25': typeof AuthenticatedArchiveLanding20260925Route
   '/clients/$id': typeof AuthenticatedClientsIdRoute
   '/design/icons': typeof AuthenticatedDesignIconsRoute
   '/engagements/$id': typeof AuthenticatedEngagementsIdRoute
@@ -429,7 +438,7 @@ export interface FileRoutesById {
   '/why': typeof WhyRoute
   '/_authenticated/affiliation': typeof AuthenticatedAffiliationRoute
   '/_authenticated/ai-record': typeof AuthenticatedAiRecordRoute
-  '/_authenticated/archive': typeof AuthenticatedArchiveRoute
+  '/_authenticated/archive': typeof AuthenticatedArchiveRouteWithChildren
   '/_authenticated/assignments': typeof AuthenticatedAssignmentsRoute
   '/_authenticated/classes': typeof AuthenticatedClassesRoute
   '/_authenticated/coach-notes': typeof AuthenticatedCoachNotesRoute
@@ -450,6 +459,7 @@ export interface FileRoutesById {
   '/_authenticated/work': typeof AuthenticatedWorkRoute
   '/join_/edu': typeof JoinEduRoute
   '/shared-board/$token': typeof SharedBoardTokenRoute
+  '/_authenticated/archive/landing-2026-09-25': typeof AuthenticatedArchiveLanding20260925Route
   '/_authenticated/clients/$id': typeof AuthenticatedClientsIdRoute
   '/_authenticated/design/icons': typeof AuthenticatedDesignIconsRoute
   '/_authenticated/engagements/$id': typeof AuthenticatedEngagementsIdRoute
@@ -502,6 +512,7 @@ export interface FileRouteTypes {
     | '/work'
     | '/join/edu'
     | '/shared-board/$token'
+    | '/archive/landing-2026-09-25'
     | '/clients/$id'
     | '/design/icons'
     | '/engagements/$id'
@@ -552,6 +563,7 @@ export interface FileRouteTypes {
     | '/work'
     | '/join/edu'
     | '/shared-board/$token'
+    | '/archive/landing-2026-09-25'
     | '/clients/$id'
     | '/design/icons'
     | '/engagements/$id'
@@ -603,6 +615,7 @@ export interface FileRouteTypes {
     | '/_authenticated/work'
     | '/join_/edu'
     | '/shared-board/$token'
+    | '/_authenticated/archive/landing-2026-09-25'
     | '/_authenticated/clients/$id'
     | '/_authenticated/design/icons'
     | '/_authenticated/engagements/$id'
@@ -884,6 +897,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SharedBoardTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/archive/landing-2026-09-25': {
+      id: '/_authenticated/archive/landing-2026-09-25'
+      path: '/landing-2026-09-25'
+      fullPath: '/archive/landing-2026-09-25'
+      preLoaderRoute: typeof AuthenticatedArchiveLanding20260925RouteImport
+      parentRoute: typeof AuthenticatedArchiveRoute
+    }
     '/_authenticated/clients/$id': {
       id: '/_authenticated/clients/$id'
       path: '/clients/$id'
@@ -992,10 +1012,22 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedArchiveRouteChildren {
+  AuthenticatedArchiveLanding20260925Route: typeof AuthenticatedArchiveLanding20260925Route
+}
+
+const AuthenticatedArchiveRouteChildren: AuthenticatedArchiveRouteChildren = {
+  AuthenticatedArchiveLanding20260925Route:
+    AuthenticatedArchiveLanding20260925Route,
+}
+
+const AuthenticatedArchiveRouteWithChildren =
+  AuthenticatedArchiveRoute._addFileChildren(AuthenticatedArchiveRouteChildren)
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAffiliationRoute: typeof AuthenticatedAffiliationRoute
   AuthenticatedAiRecordRoute: typeof AuthenticatedAiRecordRoute
-  AuthenticatedArchiveRoute: typeof AuthenticatedArchiveRoute
+  AuthenticatedArchiveRoute: typeof AuthenticatedArchiveRouteWithChildren
   AuthenticatedAssignmentsRoute: typeof AuthenticatedAssignmentsRoute
   AuthenticatedClassesRoute: typeof AuthenticatedClassesRoute
   AuthenticatedCoachNotesRoute: typeof AuthenticatedCoachNotesRoute
@@ -1026,7 +1058,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAffiliationRoute: AuthenticatedAffiliationRoute,
   AuthenticatedAiRecordRoute: AuthenticatedAiRecordRoute,
-  AuthenticatedArchiveRoute: AuthenticatedArchiveRoute,
+  AuthenticatedArchiveRoute: AuthenticatedArchiveRouteWithChildren,
   AuthenticatedAssignmentsRoute: AuthenticatedAssignmentsRoute,
   AuthenticatedClassesRoute: AuthenticatedClassesRoute,
   AuthenticatedCoachNotesRoute: AuthenticatedCoachNotesRoute,
