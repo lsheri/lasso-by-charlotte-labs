@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { noteDemoStepCompleted, noteDemoTourSkipped } from "@/lib/demo-telemetry";
 
@@ -25,7 +25,9 @@ function writeStep(step: number): void {
 }
 
 export function useDemoTour() {
-  const [step, setStep] = useState(readStep);
+  const [step, setStep] = useState(0);
+
+  useEffect(() => setStep(readStep()), []);
 
   const complete = useCallback((expected: number, engagement: string) => {
     setStep((current) => {

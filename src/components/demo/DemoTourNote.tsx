@@ -68,7 +68,9 @@ export function DemoTourNote({
       style={{ "--demo-note-left": `${position.left}px`, "--demo-note-top": `${position.top}px` } as CSSProperties}
       aria-label={`Demo guide step ${step}`}
     >
-      <span className="demo-tour-note-mark" aria-hidden>↳</span>
+      <svg className="demo-tour-note-mark" viewBox="0 0 34 28" aria-hidden>
+        <path d="M2 3c8 1 17 5 22 13m0 0-9-2m9 2-3-9" />
+      </svg>
       <p>{children}</p>
       <Button type="button" variant="link" className="demo-tour-note-skip" onClick={onDismiss}>
         {final ? "Done" : "Skip the tour"}

@@ -247,18 +247,16 @@ export function ContextAudit({
   const closedTag = manifest.scope ? scopeClosedTag(manifest.scope, manifest.brief_included) : null;
 
   const toggle = () => {
-    setOpen((current) => {
-      if (!current && !readOnly) {
-        emitClientEvent("reflect.trail_opened", {
-          read_band: bucket(readRows.length),
-          also_in_band: bucket((manifest.brief_included ? 1 : 0) + (manifest.firm_checks_applied > 0 ? 1 : 0)),
-          not_read_band: bucket(manifest.excluded.length),
-        });
-      }
-      const next = !current;
-      onOpenChange?.(next);
-      return next;
-    });
+    const next = !open;
+    if (next && !readOnly) {
+      emitClientEvent("reflect.trail_opened", {
+        read_band: bucket(readRows.length),
+        also_in_band: bucket((manifest.brief_included ? 1 : 0) + (manifest.firm_checks_applied > 0 ? 1 : 0)),
+        not_read_band: bucket(manifest.excluded.length),
+      });
+    }
+    setOpen(next);
+    onOpenChange?.(next);
   };
 
   return (
