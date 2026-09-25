@@ -101,10 +101,13 @@ function frameKindOf(frame: LabFrame): "foundation" | "task" | "decisions" | "ou
 export function SharedBoardView({
   board,
   onNodeOpened,
+  openTurn,
 }: {
   board: SharedBoardDto;
   /** Optional: told the kind of a card opened to read. The share page passes nothing. */
   onNodeOpened?: (kind: string) => void;
+  /** Unit 2: open this work item's card in the reader at this turn. nonce reopens the same turn. */
+  openTurn?: { workItemId: string; turnNo: number; nonce: number } | null;
 }) {
   const queryClient = useQueryClient();
   const model = useMemo(() => buildSharedBoardModel(board), [board]);
@@ -113,6 +116,7 @@ export function SharedBoardView({
   const fittedRef = useRef(false);
   const [view, setView] = useState<{ zoom: number; pan: { x: number; y: number } } | null>(null);
   const [focusId, setFocusId] = useState<string | null>(null);
+  const [focusTurnNo, setFocusTurnNo] = useState<number | null>(null);
   const [origin, setOrigin] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
   const panRef = useRef<{ x: number; y: number; startX: number; startY: number } | null>(null);
 
@@ -202,8 +206,18 @@ export function SharedBoardView({
   function openNode(node: LabNode, rect?: DOMRect) {
     setOrigin(rect ? { left: rect.left, top: rect.top, width: rect.width, height: rect.height } : null);
     setFocusId(node.id);
+    setFocusTurnNo(null);
     onNodeOpened?.(node.kind);
   }
+
+  useEffect(() => {
+    if (!openTurn) return;
+    const node = model.nodes.find((n) => n.workItemId === openTurn.workItemId);
+    if (!node) return;
+    setOrigin(null);
+    setFocusId(node.id);
+    setFocusTurnNo(openTurn.turnNo);
+  }, [openTurn, model.nodes]);
 
   const focusNode = model.nodes.find((node) => node.id === focusId) ?? null;
   const focusItem = focusNode?.workItemId ? itemsById.get(focusNode.workItemId) ?? null : null;
@@ -329,9 +343,10 @@ export function SharedBoardView({
             origin={origin}
             readOnly
             filePreview={focusItem ? board.filePreviews[focusItem.id] : undefined}
+            focusTurnNo={focusTurnNo}
             onSummarize={noop}
             onBranch={noop}
-            onClose={() => { setFocusId(null); setOrigin(null); }}
+            onClose={() => { setFocusId(null); setOrigin(null); setFocusTurnNo(null); }}
           />
         </div>
       ) : null}

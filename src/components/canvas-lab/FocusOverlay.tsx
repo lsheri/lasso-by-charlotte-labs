@@ -140,6 +140,7 @@ export function FocusOverlay({
   onContentScroll,
   readOnly = false,
   filePreview,
+  focusTurnNo,
 }: {
   node: LabNode;
   item: WorkItemRow | null;

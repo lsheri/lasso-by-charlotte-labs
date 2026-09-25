@@ -224,9 +224,12 @@ export function ContextAudit({
   manifest: givenManifest,
   buttonLabel,
   reads = [],
+  readOnly = false,
 }: {
   manifest: ContextManifest | null;
   buttonLabel?: string;
+  /** Unit 2: the public demo. Nothing opens and nothing is sent. */
+  readOnly?: boolean;
   /** What the answer read and how deeply. Merged into the READ group. */
   reads?: ContextSource[];
 }) {
@@ -241,7 +244,7 @@ export function ContextAudit({
 
   const toggle = () => {
     setOpen((current) => {
-      if (!current) {
+      if (!current && !readOnly) {
         emitClientEvent("reflect.trail_opened", {
           read_band: bucket(readRows.length),
           also_in_band: bucket((manifest.brief_included ? 1 : 0) + (manifest.firm_checks_applied > 0 ? 1 : 0)),
@@ -270,7 +273,7 @@ export function ContextAudit({
                 {readRows.map((row) => (
                   <p key={row.key} className="flex min-w-0 items-center" data-audit-row={row.key}>
                     <AuditGlyph kind={row.kind} />
-                    {row.openId ? (
+                    {row.openId && !readOnly ? (
                       <button type="button" onClick={() => setOpenItem(row.openId)} className="ml-[9px] min-w-0 break-words text-left hover:underline">{row.title}</button>
                     ) : (
                       <span className="ml-[9px] min-w-0 break-words">{row.title}</span>
@@ -301,7 +304,7 @@ export function ContextAudit({
           {manifest.assembled_at ? <p className="font-mono text-[10px] uppercase text-muted-foreground opacity-60 tracking-[0.04em]">Assembled {new Date(manifest.assembled_at).toLocaleString("en-GB")}</p> : null}
         </div>
       ) : null}
-      {openItem ? <ThreadViewerById workItemId={openItem} onClose={() => setOpenItem(null)} /> : null}
+      {openItem && !readOnly ? <ThreadViewerById workItemId={openItem} onClose={() => setOpenItem(null)} /> : null}
     </div>
   );
 }
