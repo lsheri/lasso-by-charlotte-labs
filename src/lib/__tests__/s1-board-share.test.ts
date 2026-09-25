@@ -284,7 +284,7 @@ describe("Unit 1.5: the share payload carries no urls, storage keys or real conv
     ]);
     const text = JSON.stringify(out);
     expect(text).not.toMatch(/https?:|claude\.ai|docs\.google|storage|drive_file_id|gmail_id|private|real-conv-123|org-1/);
-    expect(out!.content_ref).toBeNull();
+    expect("content_ref" in out!).toBe(false);
     expect(out!.orig_conversation_id).toBe("group-1");
     expect(out!.source_meta).toEqual({ vendor: "claude", role: "attachment", produced_at_turn: 3 });
     expect(out!.meta).toEqual({ source_mime: "application/pdf" });

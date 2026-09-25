@@ -25,7 +25,7 @@ describe("demo field allowlist", () => {
     const [out, out2] = demoSafeWork([item, twin]);
     const text = JSON.stringify(out);
     expect(out).not.toHaveProperty("meta");
-    expect(out!.content_ref).toBeNull();
+    expect("content_ref" in out!).toBe(false);
     expect(text).not.toMatch(/drive|gmail|storage_key|conv-real|org\/abc/);
     expect(out!.orig_conversation_id).toBe("group-1");
     expect(out2!.orig_conversation_id).toBe("group-1");
