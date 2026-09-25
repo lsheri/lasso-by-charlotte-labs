@@ -135,6 +135,7 @@ describe("W1 — the card is honest about it", () => {
     expect(keptContentLabel(item(), 12)).toBe("12 turns kept in full");
     expect(keptContentLabel(item({ type: "document", content_fidelity: "verbatim" }))).toBe("Kept in full");
     expect(keptContentLabel(item({ type: "document", content_fidelity: "summary" }))).toBe("Summary kept");
+    expect(keptContentLabel(item({ type: "document", content_fidelity: "reference" }))).toBe("File reference kept");
   });
 
   it("stays silent where it always was silent", () => {

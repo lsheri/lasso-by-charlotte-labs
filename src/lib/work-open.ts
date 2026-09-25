@@ -41,6 +41,7 @@ export function keptContentLabel(
   turnCount?: number | null,
 ): string {
   if (item?.content_fidelity === "summary") return "Summary kept";
+  if (item?.content_fidelity === "reference") return "File reference kept";
   if (item?.type === "ai_thread" && typeof turnCount === "number" && turnCount > 0) {
     return `${turnCount} ${turnCount === 1 ? "turn" : "turns"} kept in full`;
   }
