@@ -60,7 +60,7 @@ function ToolIdentity({ tool, compact = false }: { tool: string; compact?: boole
   );
 }
 
-function BoardCard({ item, index, step, pin }: { item: SharedSeedWork; index: number; step: number; pin?: number }) {
+function BoardCard({ item, index, step, pin }: { item: SharedSeedWork; index: number; step: number; pin: number | undefined }) {
   return (
     <article className="lb-board-card" data-arrived={step >= 1} style={{ "--lb-card-index": index } as CSSProperties}>
       <ToolIdentity tool={toolKey(item)} />
@@ -201,7 +201,7 @@ export function LandingBoard() {
     const observer = new IntersectionObserver((entries) => {
       const visible = entries.filter((entry) => entry.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
       if (!visible) return;
-      const index = Number((visible.target as HTMLElement).dataset.lbStep ?? 0);
+      const index = Number((visible.target as HTMLElement).dataset["lbStep"] ?? 0);
       setActive(index);
       const key = LANDING_BOARD_STEPS[index]?.key;
       if (key && !seen.current.has(`${key}:${input.current}`)) {
@@ -220,7 +220,8 @@ export function LandingBoard() {
     document.getElementById(`lb-${key}`)?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
   }
   function pilot(placement: string) { event(viewId.current, "landing.pilot_cta_clicked", { placement }); }
-  const data = query.data?.status === "open" ? query.data : null;
+  const result = query.data;
+  const data = result?.status === "open" ? result : null;
   return (
     <div className="landing-board-page">
       <LandingBoardHeader active={LANDING_BOARD_STEPS[active]?.key ?? "problem"} onJump={jump} onPilot={() => pilot("header")} />
