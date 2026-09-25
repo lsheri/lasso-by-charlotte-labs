@@ -103,14 +103,14 @@ describe("Unit 8 story system", () => {
     expect(hero).toContain("Open the exact turn · 1");
   });
 
-  it("closes with the pilot line and an invisible-ink layer", () => {
+  it("closes with the pilot line and the shared particle phrase", () => {
     expect(page).toContain("Three months. Your firm's real work. Share what you choose, when you choose: one review pass instead of five, and a record the firm keeps.");
     expect(page).toContain("Three months, one real engagement");
     expect(page).not.toContain("No prompts shown");
     expect(page).not.toMatch(/Four months/i);
     expect(page).toContain("The work, judgment, thinking. Visible.");
     expect(page).toContain("landing-close-wordmark");
-    expect(page).toContain("landing-close-particles");
+    expect(page).toContain('<LandingParticlePhrase text="The work, judgment, thinking. Visible." />');
     expect(page).not.toContain("ParticleReveal");
     expect(page).toContain('notePlacedPilotClick("header")');
     expect(page).toContain('notePlacedPilotClick("close")');
@@ -158,8 +158,10 @@ describe("Unit 10 landing", () => {
     expect(page).toContain('<source src={mp4Clip} type="video/mp4" />');
   });
 
-  it("uses three invisible-ink particle layers", () => {
-    expect(page.match(/landing-close-particles landing-close-particles-[abc]/g)).toHaveLength(3);
+  it("keeps the green glow around the resolved closing phrase", () => {
+    expect(styles).toContain(".landing-close-line2 .landing-particle-word-text");
+    expect(styles).toContain("color-mix(in srgb, var(--nb-lasso-green) 55%, transparent)");
+    expect(page).not.toContain("landing-close-particles-a");
   });
 
   it("has the three ordered use-case cards and fires landing.usecase_played once per card", () => {
