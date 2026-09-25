@@ -19,8 +19,8 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(page).not.toContain("supabase");
   });
   it("renders ten observed reversible steps and jump controls", () => {
-    expect(page).toContain("IntersectionObserver");
-    expect(page).toContain("scrollIntoView");
+    expect(page).toContain('window.addEventListener("scroll"');
+    expect(page).toContain("window.innerHeight * 0.55");
     expect(page).toContain('jumpTarget.current = index');
     expect(page).toContain('behavior: "auto"');
     const steps = page.slice(page.indexOf("export const LANDING_BOARD_STEPS"), page.indexOf("] as const;"));
@@ -35,9 +35,10 @@ describe("Unit L1 scroll-driven landing board", () => {
     for (const copy of ["Delete", "Share link", "Add work", "Comment", "Push to"]) expect(page).not.toContain(copy);
   });
   it("uses an asset image or text fallback for every tool identity", () => {
-    expect(page).toContain("claudeLogo.url");
-    expect(page).toContain("known?.logo ? <img");
-    expect(page).toContain("<span>{compact ? label : label.toUpperCase()}</span>");
+    const logo = readFileSync("src/components/marketing/ToolLogo.tsx", "utf8");
+    expect(logo).toContain("claudeLogo.url");
+    expect(logo).toContain("logo ? <img");
+    expect(logo).toContain("compact ? label : label.toUpperCase()");
     const tools = page.slice(page.indexOf("const TOOL_BADGES"), page.indexOf("] as const;", page.indexOf("const TOOL_BADGES")));
     expect(tools).not.toContain("<svg");
   });
@@ -63,6 +64,24 @@ describe("Unit L1 scroll-driven landing board", () => {
   it("hides the redundant first caption and locks jump state", () => {
     expect(page).toContain('{index === 0 ? null : <article className="lb-caption">');
     expect(page).toContain('if (jumpTarget.current !== null) return;');
-    expect(page).toContain('input_mode: "jump"');
+    expect(page).toContain('activate(index, "jump", true)');
+  });
+  it("holds scenes, settles events, and reuses Ask Lasso presentation pieces", () => {
+    const css = readFileSync("src/styles.css", "utf8");
+    expect(css).toContain("min-height: 170vh");
+    expect(css).toContain("scroll-snap-type: y proximity");
+    expect(css).toContain("scroll-snap-align: start");
+    expect(page).toContain("setTimeout(finish, 700)");
+    expect(page).toContain("}, 800)");
+    expect(page).toContain("<ThinkingTrail");
+    expect(page).toContain("<AnswerRail");
+    expect(page).toContain("<ContextAudit");
+    expect(page).toContain("<MarkdownMessage");
+    expect(page).toContain("<Textarea");
+  });
+  it("anchors the lasso to the number slide and limits open notes", () => {
+    expect(page).toContain('/\\$1\\.4m/i.test(slide)');
+    expect(page).toContain('className="lb-slide-lasso"');
+    expect(page).toContain('wordsThrough(fourth?.answer.split(".")[0]');
   });
 });

@@ -13,3 +13,4 @@
 - Render both public demo entrances through DemoHomeWorkspace so their cards, previews, loading states, and guide behavior stay identical.
 
 - Keep `/landing-board` as an unlinked, public, read-only composition fed only by `openDemoBoardFn`; it must not share state or styles with the production landing or signed-in boards.
+- Keep `/landing-board` story state transition-queued and dwell-based; saved Ask answers replay locally through shared presentation components without sending requests.
