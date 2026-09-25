@@ -126,7 +126,7 @@ describe("demo margin note", () => {
     vi.stubGlobal("innerHeight", 844);
     const scrollIntoView = vi.fn();
     const anchor = document.createElement("button");
-    anchor.dataset.testid = "phone-anchor";
+    anchor.setAttribute("data-testid", "phone-anchor");
     anchor.scrollIntoView = scrollIntoView;
     document.body.appendChild(anchor);
     render(<DemoTourNote step={2} anchorTestId="phone-anchor" onDismiss={() => undefined}>Ask the CFO's question.</DemoTourNote>);

@@ -132,17 +132,18 @@ function rectsIntersect(position: PositionCandidate, rect: DOMRect): boolean {
 }
 
 function visibleCollisionBars(anchor: HTMLElement): Element[] {
-  return Array.from(document.querySelectorAll<HTMLElement>("[data-demo-tour-collision-bar], body *")).filter((element) => {
+  const explicit = Array.from(document.querySelectorAll<HTMLElement>("[data-demo-tour-collision-bar]"));
+  const positioned = Array.from(document.querySelectorAll<HTMLElement>("body *")).filter((element) => {
     if (element === anchor || anchor.contains(element) || element.closest(".demo-tour-note")) return false;
     const style = window.getComputedStyle(element);
     if (style.visibility === "hidden" || style.display === "none") return false;
     const rect = element.getBoundingClientRect();
-    const explicit = element.hasAttribute("data-demo-tour-collision-bar");
     const viewportBar = (style.position === "fixed" || style.position === "sticky")
       && rect.width >= window.innerWidth * 0.4
       && rect.height <= 200;
-    return (explicit || viewportBar) && rect.width > 0 && rect.height > 0;
+    return viewportBar && rect.width > 0 && rect.height > 0;
   });
+  return [...new Set([...explicit, ...positioned])];
 }
 
 function collisionCount(position: PositionCandidate, anchor: HTMLElement): number {
@@ -160,7 +161,10 @@ function collisionCount(position: PositionCandidate, anchor: HTMLElement): numbe
 
 export function chooseDemoNotePosition(anchor: HTMLElement, width: number): NotePosition | null {
   const rect = visibleContentRect(anchor);
-  if (window.innerWidth < MOBILE_BREAKPOINT) return { ...candidatePositions(rect, width, "dock")[0], hits: 0 };
+  if (window.innerWidth < MOBILE_BREAKPOINT) {
+    const dock = candidatePositions(rect, width, "dock")[0];
+    return dock ? { ...dock, hits: 0 } : null;
+  }
   const order: Placement[] = ["right", "left", "above", "below"];
   const candidates = order
     .flatMap((placement) => candidatePositions(rect, width, placement))
