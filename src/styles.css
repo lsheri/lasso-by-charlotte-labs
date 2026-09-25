@@ -5570,7 +5570,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   from { clip-path: inset(0 100% 0 0); opacity: 0; }
   to { clip-path: inset(0); opacity: 1; }
 }
-.demo-tour-note { position: fixed; left: var(--demo-note-left); top: var(--demo-note-top); z-index: 80; width: min(286px, calc(100vw - 24px)); min-height: 92px; border-bottom: var(--stroke-pencil) solid var(--nb-pencil); background: var(--nb-paper); padding: 9px 34px 8px 12px; color: var(--nb-graphite); font-family: var(--font-hand); font-size: 18px; line-height: 1.08; animation: demo-note-draw var(--nb-dur-enter) var(--nb-ease) both; }
+.demo-tour-note { position: fixed; left: var(--demo-note-left); top: var(--demo-note-top); z-index: 80; width: var(--demo-note-width); min-height: 92px; border-bottom: var(--stroke-pencil) solid var(--nb-pencil); background: var(--nb-paper); padding: 9px 34px 8px 12px; color: var(--nb-graphite); font-family: var(--font-hand); font-size: 18px; line-height: 1.08; animation: demo-note-draw var(--nb-dur-enter) var(--nb-ease) both; }
 .demo-tour-note-mark { position: absolute; right: 7px; bottom: 7px; width: 30px; height: 25px; overflow: visible; color: var(--nb-green); transform: rotate(12deg); }
 .demo-tour-note-mark path { fill: none; stroke: currentColor; stroke-width: var(--stroke-pencil); stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 48; animation: demo-note-stroke var(--nb-dur-enter) var(--nb-ease) both; }
 @keyframes demo-note-stroke { from { stroke-dashoffset: 48; } to { stroke-dashoffset: 0; } }

@@ -25,6 +25,7 @@ beforeEach(() => {
     configurable: true,
     value: vi.fn(() => [document.body]),
   });
+  vi.spyOn(Range.prototype, "getClientRects").mockReturnValue([] as unknown as DOMRectList);
   vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({ left: 120, right: 220, top: 240, bottom: 280, width: 100, height: 40, x: 120, y: 240, toJSON: () => ({}) });
   window.matchMedia = vi.fn((query: string) => ({
     matches: query.includes("reduce"),
@@ -100,6 +101,23 @@ describe("demo margin note", () => {
     expect(points).toHaveBeenCalled();
     anchor.remove();
     blockingText.remove();
+  });
+
+  it("places a wide anchor beside its shorter visible text", () => {
+    vi.stubGlobal("innerWidth", 1372);
+    vi.stubGlobal("innerHeight", 732);
+    const anchor = document.createElement("button");
+    anchor.textContent = "Read what went into this response 4";
+    document.body.appendChild(anchor);
+    vi.spyOn(anchor, "getBoundingClientRect").mockReturnValue({ left: 302, right: 1070, top: 635, bottom: 665, width: 768, height: 30, x: 302, y: 635, toJSON: () => ({}) });
+    vi.mocked(Range.prototype.getClientRects).mockReturnValue([
+      { left: 318, right: 580, top: 640, bottom: 660, width: 262, height: 20, x: 318, y: 640, toJSON: () => ({}) },
+    ] as unknown as DOMRectList);
+
+    const position = chooseDemoNotePosition(anchor, 286);
+
+    expect(position).toMatchObject({ placement: "right", left: 592, width: 286, hits: 0 });
+    anchor.remove();
   });
 
   it("anchors one reduced-motion note and dismisses it", () => {

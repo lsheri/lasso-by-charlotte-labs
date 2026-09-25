@@ -5,23 +5,67 @@ import { Button } from "@/components/ui/button";
 import { useReducedMotion } from "@/hooks/use-motion";
 
 type Placement = "right" | "left" | "above" | "below";
-type NotePosition = { left: number; top: number; placement: Placement };
+type NotePosition = { left: number; top: number; width: number; placement: Placement; hits: number };
+type PositionCandidate = Omit<NotePosition, "hits">;
 
 const VIEWPORT_EDGE = 12;
 const NOTE_GAP = 12;
 const NOTE_HEIGHT = 92;
+const NOTE_MIN_WIDTH = 200;
 
-function candidatePosition(anchor: DOMRect, width: number, placement: Placement): NotePosition {
-  if (placement === "right") return { left: anchor.right + NOTE_GAP, top: anchor.top + (anchor.height - NOTE_HEIGHT) / 2, placement };
-  if (placement === "left") return { left: anchor.left - width - NOTE_GAP, top: anchor.top + (anchor.height - NOTE_HEIGHT) / 2, placement };
-  if (placement === "above") return { left: anchor.left + (anchor.width - width) / 2, top: anchor.top - NOTE_HEIGHT - NOTE_GAP, placement };
-  return { left: anchor.left + (anchor.width - width) / 2, top: anchor.bottom + NOTE_GAP, placement };
+function rectFromEdges(left: number, top: number, right: number, bottom: number): DOMRect {
+  return { left, top, right, bottom, width: right - left, height: bottom - top, x: left, y: top, toJSON: () => ({}) };
 }
 
-function isInsideViewport(position: NotePosition, width: number): boolean {
+function visibleContentRect(anchor: HTMLElement): DOMRect {
+  const rects: DOMRect[] = [];
+  const walker = document.createTreeWalker(anchor, NodeFilter.SHOW_TEXT);
+  let node = walker.nextNode();
+  while (node) {
+    if (node.textContent?.trim()) {
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      for (const rect of Array.from(range.getClientRects())) {
+        if (rect.width > 0 && rect.height > 0) rects.push(rect);
+      }
+      range.detach();
+    }
+    node = walker.nextNode();
+  }
+  for (const inline of anchor.querySelectorAll<HTMLElement>("svg, img, [data-demo-tour-inline-icon]")) {
+    const rect = inline.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) rects.push(rect);
+  }
+  if (rects.length === 0) return anchor.getBoundingClientRect();
+  return rectFromEdges(
+    Math.min(...rects.map((rect) => rect.left)),
+    Math.min(...rects.map((rect) => rect.top)),
+    Math.max(...rects.map((rect) => rect.right)),
+    Math.max(...rects.map((rect) => rect.bottom)),
+  );
+}
+
+function candidatePositions(anchor: DOMRect, requestedWidth: number, placement: Placement): PositionCandidate[] {
+  if (placement === "right") {
+    const width = Math.min(requestedWidth, window.innerWidth - VIEWPORT_EDGE - anchor.right - NOTE_GAP);
+    return width < NOTE_MIN_WIDTH ? [] : [{ left: anchor.right + NOTE_GAP, top: anchor.top + (anchor.height - NOTE_HEIGHT) / 2, width, placement }];
+  }
+  if (placement === "left") {
+    const width = Math.min(requestedWidth, anchor.left - NOTE_GAP - VIEWPORT_EDGE);
+    return width < NOTE_MIN_WIDTH ? [] : [{ left: anchor.left - width - NOTE_GAP, top: anchor.top + (anchor.height - NOTE_HEIGHT) / 2, width, placement }];
+  }
+  const top = placement === "above" ? anchor.top - NOTE_HEIGHT - NOTE_GAP : anchor.bottom + NOTE_GAP;
+  const width = requestedWidth;
+  const centered = anchor.left + (anchor.width - width) / 2;
+  const positions = [centered, anchor.left, anchor.right - width]
+    .map((left) => Math.max(VIEWPORT_EDGE, Math.min(left, window.innerWidth - VIEWPORT_EDGE - width)));
+  return [...new Set(positions)].map((left) => ({ left, top, width, placement }));
+}
+
+function isInsideViewport(position: PositionCandidate): boolean {
   return position.left >= VIEWPORT_EDGE
     && position.top >= VIEWPORT_EDGE
-    && position.left + width <= window.innerWidth - VIEWPORT_EDGE
+    && position.left + position.width <= window.innerWidth - VIEWPORT_EDGE
     && position.top + NOTE_HEIGHT <= window.innerHeight - VIEWPORT_EDGE;
 }
 
@@ -36,14 +80,14 @@ function isMeaningfulHit(element: Element, anchor: HTMLElement): boolean {
   return Array.from(element.childNodes).some((node) => node.nodeType === Node.TEXT_NODE && Boolean(node.textContent?.trim()));
 }
 
-function collisionCount(position: NotePosition, width: number, anchor: HTMLElement): number {
+function collisionCount(position: PositionCandidate, anchor: HTMLElement): number {
   const { left, top } = position;
-  const right = left + width;
+  const right = left + position.width;
   const bottom = top + NOTE_HEIGHT;
   const points: Array<[number, number]> = [
-    [left, top], [left + width / 2, top], [right, top],
-    [left, top + NOTE_HEIGHT / 2], [left + width / 2, top + NOTE_HEIGHT / 2], [right, top + NOTE_HEIGHT / 2],
-    [left, bottom], [left + width / 2, bottom], [right, bottom],
+    [left, top], [left + position.width / 2, top], [right, top],
+    [left, top + NOTE_HEIGHT / 2], [left + position.width / 2, top + NOTE_HEIGHT / 2], [right, top + NOTE_HEIGHT / 2],
+    [left, bottom], [left + position.width / 2, bottom], [right, bottom],
   ];
   const hits = new Set<Element>();
   for (const [x, y] of points) {
@@ -55,17 +99,17 @@ function collisionCount(position: NotePosition, width: number, anchor: HTMLEleme
 }
 
 export function chooseDemoNotePosition(anchor: HTMLElement, width: number): NotePosition | null {
-  const rect = anchor.getBoundingClientRect();
+  const rect = visibleContentRect(anchor);
   const verticalOrder: Placement[] = rect.top >= NOTE_HEIGHT + NOTE_GAP + VIEWPORT_EDGE ? ["above", "below"] : ["below", "above"];
   const order: Placement[] = window.innerWidth < 640 ? verticalOrder : ["right", "left", "above", "below"];
   const candidates = order
-    .map((placement) => candidatePosition(rect, width, placement))
-    .filter((position) => isInsideViewport(position, width))
-    .map((position) => ({ position, hits: collisionCount(position, width, anchor) }));
+    .flatMap((placement) => candidatePositions(rect, width, placement))
+    .filter(isInsideViewport)
+    .map((position) => ({ ...position, hits: collisionCount(position, anchor) }));
   const clear = candidates.find(({ hits }) => hits === 0);
-  if (clear) return clear.position;
+  if (clear) return clear;
   return candidates.sort((a, b) => a.hits - b.hits
-    || Number(!["above", "below"].includes(a.position.placement)) - Number(!["above", "below"].includes(b.position.placement)))[0]?.position ?? null;
+    || Number(!["above", "below"].includes(a.placement)) - Number(!["above", "below"].includes(b.placement)))[0] ?? null;
 }
 
 export function DemoTourNote({
@@ -119,9 +163,14 @@ export function DemoTourNote({
     <aside
       data-testid={`demo-tour-note-${step}`}
       data-placement={position.placement}
+      data-collision-count={position.hits}
       data-reduced-motion={reduced ? "true" : "false"}
       className="demo-tour-note"
-      style={{ "--demo-note-left": `${position.left}px`, "--demo-note-top": `${position.top}px` } as CSSProperties}
+      style={{
+        "--demo-note-left": `${position.left}px`,
+        "--demo-note-top": `${position.top}px`,
+        "--demo-note-width": `${position.width}px`,
+      } as CSSProperties}
       aria-label={`Demo guide step ${step}`}
     >
       <svg className="demo-tour-note-mark" viewBox="0 0 34 28" aria-hidden>
