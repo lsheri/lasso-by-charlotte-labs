@@ -159,6 +159,7 @@ describe("Unit 10 landing", () => {
   });
 
   it("keeps the green glow around the resolved closing phrase", () => {
+    const styles = readFileSync("src/styles.css", "utf8");
     expect(styles).toContain(".landing-close-line2 .landing-particle-word-text");
     expect(styles).toContain("color-mix(in srgb, var(--nb-lasso-green) 55%, transparent)");
     expect(page).not.toContain("landing-close-particles-a");
