@@ -108,7 +108,7 @@ export async function runReflectTurn(
 
   const { data: history } = await supabase
     .from("chat_messages")
-    .select("role, content")
+    .select("role, content, context_manifest")
     .eq("session_id", session.id)
     .order("created_at", { ascending: true })
     .limit(40);
@@ -136,11 +136,15 @@ export async function runReflectTurn(
     }
     whereLine = `WHERE THE PERSON IS: ${place}.`;
   }
+  const earlierReads = earlierReadsNote(
+    (history ?? []) as { role: string; content: string; context_manifest?: unknown }[],
+  );
   const prompts = [
     { role: "system" as const, content: REFLECT_SYSTEM_PROMPT },
     ...(preset ? [{ role: "system" as const, content: preset.systemPrompt }] : []),
     ...(surface === "ask_lasso" ? [{ role: "system" as const, content: ASK_LASSO_MAKING_RULES }] : []),
     ...(whereLine ? [{ role: "system" as const, content: whereLine }] : []),
+    ...(earlierReads ? [{ role: "system" as const, content: earlierReads }] : []),
   ];
 
   const { chatComplete, streamChat, resolveAiMeta } = await import("./ai.server");

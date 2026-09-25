@@ -437,7 +437,9 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
     </div>
   ) : null;
 
-  if (engagementQuery.isLoading) {
+  // isPending, not isLoading: while the profile loads the query is disabled,
+  // isLoading is false, and the page would flash "not available".
+  if (engagementQuery.isPending && !engagementQuery.error) {
     return <p className="text-sm text-muted-foreground">Loading…</p>;
   }
 

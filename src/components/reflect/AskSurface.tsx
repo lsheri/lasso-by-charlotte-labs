@@ -25,6 +25,7 @@ import type { AskLasso } from "@/components/reflect/use-ask-lasso";
 import { LassoThinkingMark } from "@/components/reflect/LassoThinkingMark";
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
 import { LOOP_SIZE_CHAT } from "@/lib/lasso-loop";
+import { useHasLiveCoachLink } from "@/hooks/use-coaching-links";
 
 /** Three grey dots used by compact loading and sending states inside Ask Lasso. */
 export function NbDots({ label = "Thinking" }: { label?: string }) {
@@ -262,9 +263,7 @@ function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions?: Reac
       <div className="nb-binder-body px-4 sm:px-5">
         {messages.length === 0 ? (
           <>
-            <p className="nb-binder-line text-sm text-foreground">
-              Ask about this engagement. Private to you, your coach never sees this.
-            </p>
+            <AskPrivacyLine />
             <div className="nb-binder-inset mt-[1.75rem] space-y-[1.75rem]">
               <p className="text-sm text-foreground">
                 Try: what did I decide here, and what did I decide it on?
@@ -403,7 +402,20 @@ function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions?: Reac
 /** Only the chats that belong to this engagement, and nothing until we know. */
 const HISTORY_DEFAULT_SHOWN = 2;
 
-function HistoryTab({ ask }: { ask: AskLasso }) {
+export const ASK_PRIVATE_SHORT = "Ask about this engagement. Private to you.";
+export const ASK_PRIVATE_COACH = "Ask about this engagement. Private to you, your coach never sees this.";
+
+/** The coach clause shows only when the viewer really has a live coach link. */
+export function AskPrivacyLine() {
+  const hasCoach = useHasLiveCoachLink(true);
+  return (
+    <p className="nb-binder-line text-sm text-foreground">
+      {hasCoach ? ASK_PRIVATE_COACH : ASK_PRIVATE_SHORT}
+    </p>
+  );
+}
+
+function HistoryTab({ ask, onTab }: { ask: AskLasso; onTab: (tab: AskTab) => void }) {
   const [expanded, setExpanded] = useState(false);
   const sessions = ask.sessions ?? [];
   const shown = expanded ? sessions : sessions.slice(0, HISTORY_DEFAULT_SHOWN);
@@ -412,7 +424,10 @@ function HistoryTab({ ask }: { ask: AskLasso }) {
     <div className="min-h-0 flex-1 space-y-1 overflow-y-auto px-4 py-4">
       <button
         type="button"
-        onClick={ask.newSession}
+        onClick={() => {
+          ask.newSession();
+          onTab("messages");
+        }}
         className="mb-2 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
       >
         New session
@@ -430,7 +445,10 @@ function HistoryTab({ ask }: { ask: AskLasso }) {
             <button
               key={row.id}
               type="button"
-              onClick={() => ask.openSession(row.id)}
+              onClick={() => {
+                ask.openSession(row.id);
+                onTab("messages");
+              }}
               className={`block min-h-11 w-full truncate text-left text-sm transition-colors hover:text-foreground ${
                 row.id === ask.sessionId ? "text-foreground" : "text-muted-foreground"
               }`}
@@ -648,7 +666,7 @@ export function AskSurface({
       <WorkPicker ask={ask} engagementId={engagementId} />
 
       {tab === "messages" ? <MessagesTab ask={ask} emptyActions={emptyActions} /> : null}
-      {tab === "history" ? <HistoryTab ask={ask} /> : null}
+      {tab === "history" ? <HistoryTab ask={ask} onTab={onTab} /> : null}
 
       {ask.error ? <p className="px-4 pb-2 text-sm text-destructive">{ask.error}</p> : null}
 
