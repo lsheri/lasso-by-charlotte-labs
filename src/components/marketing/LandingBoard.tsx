@@ -1,14 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { type CSSProperties, type FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { type CSSProperties, type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import claudeLogo from "@/assets/claude-logo.png.asset.json";
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
 import { LandingParticlePhrase } from "@/components/marketing/LandingParticlePhrase";
 import { FocusSection } from "@/components/marketing/FocusSection";
+import { ToolLogo } from "@/components/marketing/ToolLogo";
+import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
+import { AnswerRail, ContextAudit, ThinkingTrail } from "@/components/reflect/ContextTrail";
 import { LassoThinkingMark } from "@/components/reflect/LassoThinkingMark";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { VendorMark } from "@/components/work/SourceMark";
 import { openDemoBoardFn } from "@/lib/demo.functions";
 import type { DemoPreset } from "@/lib/demo-presets-shared";
@@ -35,11 +38,11 @@ type StepKey = (typeof LANDING_BOARD_STEPS)[number]["key"];
 type StoryInput = "scroll" | "jump";
 
 const TOOL_BADGES = [
-  { key: "claude", label: "Claude", logo: claudeLogo.url },
-  { key: "chatgpt", label: "ChatGPT", logo: null },
-  { key: "gemini", label: "Gemini", logo: null },
-  { key: "googledrive", label: "Drive", logo: null },
-  { key: "gmail", label: "Gmail", logo: null },
+  { key: "claude", label: "Claude" },
+  { key: "chatgpt", label: "ChatGPT" },
+  { key: "gemini", label: "Gemini" },
+  { key: "googledrive", label: "Drive" },
+  { key: "gmail", label: "Gmail" },
 ] as const;
 
 const FALLBACK_SLIDES = ["Partnership model", "Board structure", "$1.4M year-two net benefit", "Comparable health alliances", "Chair terms", "FY27 recommendation"];
@@ -53,14 +56,7 @@ function toolKey(item: SharedSeedWork): string {
 }
 
 function ToolIdentity({ tool, compact = false }: { tool: string; compact?: boolean }) {
-  const known = TOOL_BADGES.find((entry) => tool.includes(entry.key));
-  const label = known?.label ?? (tool === "document" || tool === "upload" ? "Document" : tool);
-  return (
-    <span className="lb-tool-identity">
-      {known?.logo ? <img src={known.logo} alt="" aria-hidden="true" /> : null}
-      <span>{compact ? label : label.toUpperCase()}</span>
-    </span>
-  );
+  return <ToolLogo vendor={tool} compact={compact} />;
 }
 
 function BoardCard({ item, index, step, pin, read, turnCount, position }: { item: SharedSeedWork; index: number; step: number; pin: number | undefined; read: boolean; turnCount: number | null; position: { left: number; top: number } }) {
@@ -74,18 +70,121 @@ function BoardCard({ item, index, step, pin, read, turnCount, position }: { item
   );
 }
 
-function SavedAnswer({ preset, title }: { preset: DemoPreset | undefined; title: string }) {
+type ReplayPhase = "typing" | "reading" | "streaming" | "done";
+
+function wordsThrough(text: string, count: number): string {
+  return text.split(/\s+/).slice(0, count).join(" ");
+}
+
+function usePresetReplay(step: number, presets: DemoPreset[]) {
+  const reduced = useRef(false);
+  const started = useRef(new Set<number>());
+  const [phase, setPhase] = useState<ReplayPhase>("done");
+  const [typed, setTyped] = useState("");
+  const [streamed, setStreamed] = useState("");
+  const [readCount, setReadCount] = useState(0);
+  const position = step === 5 ? 1 : step === 6 ? 2 : step === 7 ? 4 : null;
+  const preset = position ? presets.find((entry) => entry.position === position) : undefined;
+
+  useEffect(() => {
+    reduced.current = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  }, []);
+
+  useEffect(() => {
+    if (!position || !preset) return;
+    if (reduced.current || started.current.has(position)) {
+      setTyped("");
+      setStreamed(preset.answer);
+      setReadCount(preset.manifest?.items.length ?? 0);
+      setPhase("done");
+      return;
+    }
+    started.current.add(position);
+    setTyped("");
+    setStreamed("");
+    setReadCount(0);
+    setPhase("typing");
+    const timers: number[] = [];
+    const questionChars = preset.question.length;
+    let char = 0;
+    const typing = window.setInterval(() => {
+      char += 1;
+      setTyped(preset.question.slice(0, char));
+      if (char < questionChars) return;
+      window.clearInterval(typing);
+      setPhase("reading");
+      const itemCount = preset.manifest?.items.length ?? 0;
+      const reading = window.setInterval(() => setReadCount((count) => Math.min(itemCount, count + 1)), Math.max(300, 2_200 / Math.max(itemCount, 1)));
+      timers.push(reading);
+      timers.push(window.setTimeout(() => {
+        window.clearInterval(reading);
+        setReadCount(itemCount);
+        setPhase("streaming");
+        const words = preset.answer.split(/\s+/);
+        let word = 0;
+        const stream = window.setInterval(() => {
+          word += 1;
+          setStreamed(wordsThrough(preset.answer, word));
+          if (word < words.length) return;
+          window.clearInterval(stream);
+          setPhase("done");
+        }, 40);
+        timers.push(stream);
+      }, 2_500));
+    }, 35);
+    timers.push(typing);
+    return () => timers.forEach((timer) => {
+      window.clearTimeout(timer);
+      window.clearInterval(timer);
+    });
+  }, [position, preset]);
+
+  return { phase, preset, readCount, streamed, typed, position };
+}
+
+function ReplayAnswer({ preset, finished = true }: { preset: DemoPreset; finished?: boolean }) {
   return (
-    <aside className="lb-answer-sheet" aria-label={title}>
-      <p className="lb-micro">ASK LASSO</p>
-      <h3>{preset?.question ?? title}</h3>
-      <div className="lb-answer-copy">{preset?.answer || "This saved demo answer is not available right now."}</div>
-      {preset?.manifest ? (
-        <div className="lb-trail">
-          <strong>Read for this response</strong>
-          {preset.manifest.items.map((item, index) => <span key={`${item.id}-${index}`}><b>{index + 1}</b>{item.title}{item.detail ? ` · ${item.detail}` : ""}</span>)}
-        </div>
-      ) : null}
+    <div className="nb-conversation-message max-w-none flex-row items-start gap-3">
+      <LassoLoopMark className="size-7 shrink-0 text-lasso-green" />
+      <div className="nb-conversation-body min-w-0 flex-1 gap-0">
+        <span className="nb-binder-line font-sans text-[13px] font-semibold text-ink">Lasso</span>
+        <AnswerRail state="done">
+          <MarkdownMessage content={preset.answer} variant="binder" />
+          {finished && preset.manifest ? <ContextAudit manifest={preset.manifest} readOnly initialOpen /> : null}
+        </AnswerRail>
+      </div>
+    </div>
+  );
+}
+
+function AskReplay({ presets, step, onFinished }: { presets: DemoPreset[]; step: number; onFinished: (finished: boolean) => void }) {
+  const replay = usePresetReplay(step, presets);
+  const shownPositions = step === 5 ? [1] : step === 6 ? [1, 2] : [1, 2, 4];
+  const liveItems = replay.preset?.manifest?.items.slice(0, replay.readCount) ?? [];
+  useEffect(() => {
+    onFinished(replay.phase === "done");
+  }, [onFinished, replay.phase]);
+  return (
+    <aside className="lb-answer-sheet" aria-label="Ask Lasso replay" data-replay-phase={replay.phase}>
+      <header className="lb-ask-header"><LassoThinkingMark kind="signature" size={44} /><div><p className="lb-micro">ASK LASSO</p><h3>YellowSigil Mobility</h3></div></header>
+      <div className="lb-replay-thread nb-binder">
+        {shownPositions.map((position) => {
+          const preset = presets.find((entry) => entry.position === position);
+          if (!preset) return null;
+          const current = replay.position === position;
+          const showQuestion = !current || replay.phase !== "typing";
+          const answerText = current ? replay.streamed : preset.answer;
+          return <div key={position} className="lb-replay-turn">
+            {showQuestion ? <div className="lb-replay-question"><span>You</span><p>{preset.question}</p></div> : null}
+            {current && replay.phase === "reading" ? <AnswerRail state="working"><ThinkingTrail items={preset.manifest?.items.map((item) => ({ id: item.id, title: item.title })) ?? []} finalPhase="Writing" manifest={liveItems.length > 0 && preset.manifest ? { ...preset.manifest, items: liveItems } : null} /></AnswerRail> : null}
+            {answerText ? <ReplayAnswer preset={{ ...preset, answer: answerText }} finished={!current || replay.phase === "done"} /> : null}
+          </div>;
+        })}
+      </div>
+      <footer className="lb-replay-composer">
+        <Textarea value={replay.phase === "typing" ? replay.typed : ""} readOnly rows={2} aria-label="Ask Lasso question" />
+        <Button disabled data-replay-send={replay.phase === "reading" ? "pressed" : undefined}>{replay.phase === "reading" ? "Sending" : "Send"}</Button>
+      </footer>
     </aside>
   );
 }
@@ -106,15 +205,21 @@ function ExactTurn({ board, preset }: { board: SharedBoardDto; preset: DemoPrese
 }
 
 function StoryBoard({ board, presets, step }: { board: SharedBoardDto; presets: DemoPreset[]; step: number }) {
+  const [replayFinished, setReplayFinished] = useState(false);
+  const onReplayFinished = useCallback((finished: boolean) => setReplayFinished(finished), []);
+  useEffect(() => {
+    setReplayFinished(false);
+  }, [step]);
   const deckItem = board.seed.work.find((item) => /board deck/i.test(item.title));
   const items = board.seed.work.filter((item) => item.id !== deckItem?.id).slice(0, 9);
   const slides = useMemo(() => {
     const pages = deckItem ? board.filePreviews[deckItem.id]?.pages : undefined;
-    return Array.from({ length: 6 }, (_, index) => pages?.[index]?.title || pages?.[index]?.lines[0] || FALLBACK_SLIDES[index]);
+    return Array.from({ length: 6 }, (_, index) => pages?.[index]?.title || pages?.[index]?.lines[0] || FALLBACK_SLIDES[index] || `Slide ${index + 1}`);
   }, [board, deckItem]);
+  const foundNumberSlide = slides.findIndex((slide) => /\$1\.4m/i.test(slide));
+  const numberSlideIndex = foundNumberSlide >= 0 ? foundNumberSlide : 2;
   const first = presets.find((preset) => preset.position === 1);
   const second = presets.find((preset) => preset.position === 2);
-  const fourth = presets.find((preset) => preset.position === 4);
   const trailNumbers = new Map(first?.manifest?.items.map((item, index) => [item.id, index + 1]) ?? []);
   const citedIds = new Set(first?.turnRefs.map((ref) => ref.work_item_id) ?? []);
   const readIds = new Set(first?.manifest?.items.map((item) => item.id) ?? []);
@@ -132,27 +237,30 @@ function StoryBoard({ board, presets, step }: { board: SharedBoardDto; presets: 
       <div className="lb-board-layer">
         <div className="lb-dot-grid" />
         <div className="lb-tool-dock" aria-label="Sources">
-          {TOOL_BADGES.map((tool) => <div key={tool.key}>{tool.logo ? <img src={tool.logo} alt="" aria-hidden="true" /> : null}<span>{tool.label}</span></div>)}
+          {TOOL_BADGES.map((tool) => <div key={tool.key}><ToolLogo vendor={tool.key} compact /></div>)}
         </div>
         <div className="lb-frames">
           {visibleTasks.map((task, index) => <section key={task.id} style={{ "--lb-frame-index": index } as CSSProperties}><h3>{task.name}</h3><p>{task.detail}</p></section>)}
         </div>
         <div className="lb-cards">
-          {items.map((item, index) => <BoardCard key={item.id} item={item} index={index} step={step} pin={step >= 5 && citedIds.has(item.id) ? trailNumbers.get(item.id) : undefined} read={step >= 5 && readIds.has(item.id)} turnCount={item.type === "ai_thread" ? board.turns[item.id]?.length ?? null : null} position={cardPositions[index] ?? { left: 188, top: 438 }} />)}
+          {items.map((item, index) => <BoardCard key={item.id} item={item} index={index} step={step} pin={step >= 5 && replayFinished && citedIds.has(item.id) ? trailNumbers.get(item.id) : undefined} read={step >= 5 && replayFinished && readIds.has(item.id)} turnCount={item.type === "ai_thread" ? board.turns[item.id]?.length ?? null : null} position={cardPositions[index] ?? { left: 188, top: 438 }} />)}
         </div>
         <svg className="lb-connectors" viewBox="0 0 1000 620" preserveAspectRatio="none" aria-hidden="true">
           <path d="M260 230 C470 220 570 280 735 350" /><path d="M260 390 C470 390 590 380 735 350" /><path d="M540 485 C620 470 680 410 735 350" />
         </svg>
         <article className="lb-deck">
           <header><span>DELIVERABLE</span><strong>{deckItem?.title ?? "FY27 board deck v3"}</strong></header>
-          <div>{slides.map((slide, index) => <section key={`${slide}-${index}`} data-slide={index + 1}><small>{index + 1}</small><p>{slide}</p>{index === 2 ? <span className="lb-number">$1.4M</span> : null}</section>)}</div>
-          {step >= 5 && deckItem && citedIds.has(deckItem.id) ? <span className="lb-pin" aria-label={`Source ${trailNumbers.get(deckItem.id)}`}>{trailNumbers.get(deckItem.id)}</span> : step >= 5 && deckItem && readIds.has(deckItem.id) ? <span className="lb-read-dot" aria-label="Read for this response" /> : null}
+          <div>{slides.map((slide, index) => {
+            const numberSlide = index === numberSlideIndex;
+            return <section key={`${slide}-${index}`} data-slide={index + 1}><small>{index + 1}</small><p>{slide}</p>{numberSlide ? <span className="lb-number">$1.4M</span> : null}{numberSlide ? <span className="lb-slide-lasso" aria-hidden="true" /> : null}</section>;
+          })}</div>
+          {step >= 5 && replayFinished && deckItem && citedIds.has(deckItem.id) ? <span className="lb-pin" aria-label={`Source ${trailNumbers.get(deckItem.id)}`}>{trailNumbers.get(deckItem.id)}</span> : step >= 5 && replayFinished && deckItem && readIds.has(deckItem.id) ? <span className="lb-read-dot" aria-label="Read for this response" /> : null}
         </article>
-        <div className="lb-circle-question"><span /><p>Where did the $1.4M on slide 3 come from?</p></div>
+        <div className="lb-circle-question"><p>Where did the $1.4M on slide 3 come from?</p></div>
+        {step === 7 && replayFinished ? <div className="lb-open-notes"><p>Confirm the vendor extension assumption.</p><p>Confirm approval by Oct 1.</p></div> : null}
       </div>
-      {step === 5 ? <SavedAnswer preset={first} title="Where did the $1.4M on slide 3 come from?" /> : null}
-      {step === 6 ? <><SavedAnswer preset={second} title="Find the conversation where the board settled it." /><ExactTurn board={board} preset={second} /></> : null}
-      {step === 7 ? <><SavedAnswer preset={fourth} title="What is still open?" /><div className="lb-open-notes"><p>{fourth?.answer.split(".")[0] || "Confirm the final assumption."}</p><p>{fourth?.answer.split(".")[1] || "Settle the remaining board choice."}</p></div></> : null}
+      {step >= 5 && step <= 7 ? <AskReplay presets={presets} step={step} onFinished={onReplayFinished} /> : null}
+      {step === 6 && replayFinished ? <ExactTurn board={board} preset={second} /> : null}
       {step === 8 ? <div className="lb-share-dialog"><p className="lb-micro">READ ONLY</p><h3>Share this board</h3><p>They open the deliverable, source cards, and the conversations behind them.</p><p>They do not open private drafts or anything outside this board.</p><strong>Closes in 48 hours</strong><small>In the demo this is shown, not issued.</small></div> : null}
     </div>
   );
@@ -207,46 +315,89 @@ export function LandingBoard() {
   const query = useQuery({ queryKey: ["landing-board", "YSM-01"], queryFn: () => open({ data: { code: "YSM-01" } }), staleTime: 60_000, retry: false });
   const viewId = useRef(typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : String(Date.now()));
   const [active, setActive] = useState(0);
-  const input = useRef<StoryInput>("scroll");
+  const activeRef = useRef(0);
+  const transitioning = useRef(false);
+  const queued = useRef<{ index: number; input: StoryInput } | null>(null);
   const jumpTarget = useRef<number | null>(null);
   const seen = useRef(new Set<string>());
+  const settleTimer = useRef<number | null>(null);
+  const transitionTimer = useRef<number | null>(null);
 
   useEffect(() => { event(viewId.current, "landing.viewed", { variant: "b2b", surface: "landing-board" }); }, []);
-  useEffect(() => {
-    const sections = Array.from(document.querySelectorAll<HTMLElement>("[data-lb-step]"));
-    const observer = new IntersectionObserver((entries) => {
-      if (jumpTarget.current !== null) return;
-      const visible = entries.filter((entry) => entry.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-      if (!visible) return;
-      const index = Number((visible.target as HTMLElement).dataset["lbStep"] ?? 0);
-      setActive(index);
+  const settle = useCallback((index: number, inputMode: StoryInput) => {
+    if (settleTimer.current !== null) window.clearTimeout(settleTimer.current);
+    settleTimer.current = window.setTimeout(() => {
+      if (activeRef.current !== index || transitioning.current || queued.current) return;
       const key = LANDING_BOARD_STEPS[index]?.key;
-      if (key && !seen.current.has(`${key}:${input.current}`)) {
-        seen.current.add(`${key}:${input.current}`);
-        event(viewId.current, "landing.story_section_viewed", { section: key, input_mode: input.current });
-      }
-      input.current = "scroll";
-    }, { rootMargin: "-42% 0px -42% 0px", threshold: [0, 0.01, 0.5] });
-    sections.forEach((section) => observer.observe(section));
-    return () => observer.disconnect();
+      if (!key || seen.current.has(`${key}:${inputMode}`)) return;
+      seen.current.add(`${key}:${inputMode}`);
+      event(viewId.current, "landing.story_section_viewed", { section: key, input_mode: inputMode });
+    }, 800);
   }, []);
+
+  const activate = useCallback((index: number, inputMode: StoryInput, immediate = false) => {
+    if (index === activeRef.current && !transitioning.current) {
+      settle(index, inputMode);
+      return;
+    }
+    if (transitioning.current && !immediate) {
+      queued.current = { index, input: inputMode };
+      return;
+    }
+    if (transitionTimer.current !== null) window.clearTimeout(transitionTimer.current);
+    if (settleTimer.current !== null) window.clearTimeout(settleTimer.current);
+    queued.current = null;
+    activeRef.current = index;
+    setActive(index);
+    transitioning.current = !immediate;
+    const finish = () => {
+      transitioning.current = false;
+      const next = queued.current;
+      queued.current = null;
+      if (next && next.index !== activeRef.current) activate(next.index, next.input);
+      else settle(index, inputMode);
+    };
+    if (immediate) finish();
+    else transitionTimer.current = window.setTimeout(finish, 700);
+  }, [settle]);
+
+  useEffect(() => {
+    document.documentElement.classList.add("lb-scroll-root");
+    const sections = Array.from(document.querySelectorAll<HTMLElement>("[data-lb-step]"));
+    let frame = 0;
+    const readStep = () => {
+      frame = 0;
+      if (jumpTarget.current !== null) return;
+      const threshold = window.innerHeight * 0.55;
+      let latest = 0;
+      for (const section of sections) {
+        if (section.getBoundingClientRect().top <= threshold) latest = Number(section.dataset["lbStep"] ?? latest);
+      }
+      activate(latest, "scroll");
+    };
+    const onScroll = () => { if (!frame) frame = window.requestAnimationFrame(readStep); };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    readStep();
+    return () => {
+      document.documentElement.classList.remove("lb-scroll-root");
+      window.removeEventListener("scroll", onScroll);
+      if (frame) window.cancelAnimationFrame(frame);
+      if (settleTimer.current !== null) window.clearTimeout(settleTimer.current);
+      if (transitionTimer.current !== null) window.clearTimeout(transitionTimer.current);
+    };
+  }, [activate]);
 
   function jump(key: StepKey) {
     const index = LANDING_BOARD_STEPS.findIndex((step) => step.key === key);
     if (index < 0) return;
-    input.current = "jump";
     jumpTarget.current = index;
-    setActive(index);
+    activate(index, "jump", true);
     event(viewId.current, "landing.section_jumped", { section: key });
-    if (!seen.current.has(`${key}:jump`)) {
-      seen.current.add(`${key}:jump`);
-      event(viewId.current, "landing.story_section_viewed", { section: key, input_mode: "jump" });
-    }
-    document.getElementById(`lb-${key}`)?.scrollIntoView({ behavior: "auto", block: "start" });
+    const target = document.getElementById(`lb-${key}`);
+    if (target) window.scrollTo({ top: window.scrollY + target.getBoundingClientRect().top - window.innerHeight * 0.54, behavior: "auto" });
     window.setTimeout(() => {
       jumpTarget.current = null;
-      input.current = "scroll";
-    }, 80);
+    }, 120);
   }
   function pilot(placement: string) { event(viewId.current, "landing.pilot_cta_clicked", { placement }); }
   const result = query.data;
@@ -256,12 +407,12 @@ export function LandingBoard() {
       <main className="lb-story">
         <div className="lb-sticky-stage">
           {result?.status === "open" && "board" in result ? <StoryBoard board={result.board} presets={result.presets} step={active} /> : <div className="lb-stage-window lb-loading">{query.isPending ? "Opening the demo board." : "The demo board is not available right now."}</div>}
+          {active > 0 ? <article className="lb-caption lb-active-caption"><span>{String(active + 1).padStart(2, "0")} · {LANDING_BOARD_STEPS[active]?.label}</span><h2>{LANDING_BOARD_STEPS[active]?.headline}</h2><p>{LANDING_BOARD_STEPS[active]?.line}</p>{active === 9 ? <div><Button asChild><Link to="/demo/$code" params={{ code: "YSM-01" }}>Open the board yourself</Link></Button><Button asChild variant="outline"><a href="#pilot" onClick={() => pilot("try_it")}>Book a pilot</a></Button></div> : null}</article> : null}
         </div>
         <div className="lb-scroll-sections">
           {LANDING_BOARD_STEPS.map((step, index) => (
             <section id={`lb-${step.key}`} data-lb-step={index} key={step.key} className="lb-scroll-step">
               {index === 0 ? <div className="lb-hero-copy"><LassoThinkingMark kind="signature" size={150} /><div><h1>Your firm bought AI. <LandingParticlePhrase text="The human judgment, process, and thinking" /> in your team's work went invisible.</h1><h2>Lasso is the reasoning and judgment layer for AI-assisted consulting. It connects the work across tools to the client deliverable and keeps the decisions your team made, so they can show where a claim came from and why it stayed.</h2><div><Button onClick={() => jump("canvas")}>Watch it work</Button><Button asChild variant="outline"><a href="#pilot" onClick={() => pilot("hero")}>Book a pilot</a></Button></div></div></div> : null}
-               {index === 0 ? null : <article className="lb-caption"><span>{String(index + 1).padStart(2, "0")} · {step.label}</span><h2>{step.headline}</h2><p>{step.line}</p>{index === 9 ? <div><Button asChild><Link to="/demo/$code" params={{ code: "YSM-01" }}>Open the board yourself</Link></Button><Button asChild variant="outline"><a href="#pilot" onClick={() => pilot("try_it")}>Book a pilot</a></Button></div> : null}</article>}
             </section>
           ))}
         </div>

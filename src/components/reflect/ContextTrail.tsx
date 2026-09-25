@@ -225,6 +225,7 @@ export function ContextAudit({
   buttonLabel,
   reads = [],
   readOnly = false,
+  initialOpen = false,
   testId,
   onOpenChange,
 }: {
@@ -232,12 +233,14 @@ export function ContextAudit({
   buttonLabel?: string;
   /** Unit 2: the public demo. Nothing opens and nothing is sent. */
   readOnly?: boolean;
+  /** Saved-answer replays may begin with the disclosure already open. */
+  initialOpen?: boolean;
   testId?: string;
   onOpenChange?: (open: boolean) => void;
   /** What the answer read and how deeply. Merged into the READ group. */
   reads?: ContextSource[];
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(initialOpen);
   const [openItem, setOpenItem] = useState<string | null>(null);
   const reduced = useReducedMotion();
   if (!givenManifest && reads.length === 0) return null;

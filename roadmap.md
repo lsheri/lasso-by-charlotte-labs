@@ -158,4 +158,5 @@
 - [x] Add additive landing event coverage and route tests.
 - [x] Verify steps 1, 4, 6, and 7 at desktop and phone widths.
 - [x] Unit L1.1: Correct workstream geometry, labels, captions, Ask docking, jump synchronization, and trail pins.
+- [x] Unit L2: Add dwell-based story steps, settled view events, saved-answer Ask replay, number anchoring, and logo mapping.
 - [ ] Portal: add `landing-board`, ten story section values, and `landing.section_jumped` (architect-owned).
