@@ -34,9 +34,9 @@ function useCaseAssetUrl(filename: string, fallback: string) {
 }
 
 const USE_CASES: { key: UseCaseKey; file: string; title: string; body: string }[] = [
-  { key: "bring_work_in", file: "use-bring-work-in", title: "Push work in with one sentence.", body: "Add Lasso to Claude or ChatGPT once. At the end of a session say push this to Lasso. Drive and Gmail connect the same way." },
-  { key: "reasoning_stays", file: "use-reasoning-stays-with-the-firm", title: "Every AI conversation, on the record.", body: "Claude, ChatGPT and Gemini chats land in one place, filtered by tool and mapped to the engagement. The record stays with the firm when the consultant moves on." },
   { key: "every_number", file: "use-every-number-has-a-source", title: "Every number has a source.", body: "Lasso a few cards and ask where the figure came from. You get the chat, the turn, and what was read to answer." },
+  { key: "reasoning_stays", file: "use-reasoning-stays-with-the-firm", title: "Every AI conversation, on the record.", body: "Claude, ChatGPT and Gemini chats land in one place, filtered by tool and mapped to the engagement. The record stays with the firm when the consultant moves on." },
+  { key: "bring_work_in", file: "use-bring-work-in", title: "Push work in with one sentence.", body: "Add Lasso to Claude or ChatGPT once. At the end of a session say push this to Lasso. Drive and Gmail connect the same way." },
 ];
 
 const SHARE_AUDIENCES = [
@@ -366,6 +366,14 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
             <HeroVideo />
           </div>
 
+          <section id="beats" className="landing-walkthrough mx-auto mt-24 max-w-[1320px] px-4 md:px-6" aria-label="How Lasso works">
+            <div className="landing-section-head">
+              <p className="micro-label">How it works</p>
+              <h2 className="pencil-title">Deliverables you can defend to a client, a partner, or a board.</h2>
+            </div>
+            <DeckWalkthrough onActiveChange={setActiveBeat} />
+          </section>
+
           <section className="landing-usecases mx-auto mt-24 max-w-[1200px] px-4 md:px-6" aria-label="What consultants use it for">
             <div className="landing-section-head">
               <p className="micro-label">What consultants use it for</p>
@@ -374,14 +382,6 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
             <div className="landing-usecase-grid">
               {USE_CASES.map((card) => <UseCaseCard key={card.key} card={card} onPlayed={noteUseCasePlayed} />)}
             </div>
-          </section>
-
-          <section id="beats" className="landing-walkthrough mx-auto mt-24 max-w-[1320px] px-4 md:px-6" aria-label="How Lasso works">
-            <div className="landing-section-head">
-              <p className="micro-label">How it works</p>
-              <h2 className="pencil-title">Deliverables you can defend to a client, a partner, or a board.</h2>
-            </div>
-            <DeckWalkthrough onActiveChange={setActiveBeat} />
           </section>
 
           <section className="landing-share mx-auto mt-24 max-w-[1200px] px-4 md:px-6" aria-label="Sharing">
