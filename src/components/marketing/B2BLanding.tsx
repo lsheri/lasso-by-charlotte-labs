@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "react";
+import { type FormEvent, type MouseEvent, type ReactNode, useEffect, useRef, useState } from "react";
 
 import { PublicHeader } from "@/components/layout/PublicHeader";
 import { DemoHomeWorkspace } from "@/components/demo/DemoHomeWorkspace";
@@ -272,7 +272,7 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
     });
   }
 
-  function openDemoWorkspace(event: React.MouseEvent<HTMLAnchorElement>) {
+  function openDemoWorkspace(event: MouseEvent<HTMLAnchorElement>) {
     event.preventDefault();
     noteSeeItWorkClick();
     document.querySelector("#demo")?.scrollIntoView({ behavior: "smooth", block: "start" });
