@@ -5,10 +5,10 @@
 
 import { createServerFn } from "@tanstack/react-start";
 
-import type { DemoBoardResult, DemoHomeResult } from "./board-share-open.server";
+import type { DemoBoardResult, DemoHomeResult } from "./demo-board.server";
 
 export const openDemoHomeFn = createServerFn({ method: "POST" }).handler(async (): Promise<DemoHomeResult> => {
-  const { openDemoHome } = await import("./board-share-open.server");
+  const { openDemoHome } = await import("./demo-board.server");
   return openDemoHome();
 });
 
@@ -17,6 +17,6 @@ export const openDemoBoardFn = createServerFn({ method: "POST" })
     code: typeof input?.code === "string" ? input.code.slice(0, 64) : "",
   }))
   .handler(async ({ data }): Promise<DemoBoardResult> => {
-    const { openDemoBoard } = await import("./board-share-open.server");
+    const { openDemoBoard } = await import("./demo-board.server");
     return openDemoBoard(data.code);
   });

@@ -5,11 +5,12 @@ import { describe, expect, it, vi } from "vitest";
 import type { SharedSeedWork } from "../board-share-shared";
 import { EVENT_DIM_KEYS, guardEventDims } from "../event-dim-allowlist";
 
-const SERVER = readFileSync("src/lib/board-share-open.server.ts", "utf8");
+const SERVER = readFileSync("src/lib/demo-board.server.ts", "utf8");
+const SHARE = readFileSync("src/lib/board-share-open.server.ts", "utf8");
 
 describe("demo field allowlist", () => {
   it("strips source_meta, meta, content_ref and the real conversation id", async () => {
-    const { demoSafeWork } = await import("../board-share-open.server");
+    const { demoSafeWork } = await import("../demo-board.server");
     const item = {
       id: "w1",
       title: "Deck",
@@ -51,14 +52,14 @@ describe("demo org resolution", () => {
     });
     vi.doMock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: { from: () => builder } }));
     vi.resetModules();
-    const { openDemoBoard } = await import("../board-share-open.server");
+    const { openDemoBoard } = await import("../demo-board.server");
     expect(await openDemoBoard("REAL-CLIENT-CODE")).toEqual({ status: "not_found" });
     expect(await openDemoBoard("../bad code")).toEqual({ status: "not_found" });
     vi.doUnmock("@/integrations/supabase/client.server");
   });
 
   it("the share link still reads as its maker; the demo reads as nobody", () => {
-    expect(SERVER).toContain("readBoard(supabaseAdmin, link.workboard_id, link, link.created_by)");
+    expect(SHARE).toContain("readBoard(supabaseAdmin, link.workboard_id, link, link.created_by)");
     expect(SERVER).toMatch(/readBoard\(db, wb\.id, \{[^}]*\}, null\)/);
   });
 });
