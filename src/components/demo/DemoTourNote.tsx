@@ -1,10 +1,10 @@
-import { useEffect, useLayoutEffect, useState, type CSSProperties } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 
 import { Button } from "@/components/ui/button";
 import { useReducedMotion } from "@/hooks/use-motion";
 
-type Placement = "right" | "left" | "above" | "below";
+type Placement = "right" | "left" | "above" | "below" | "dock";
 type NotePosition = { left: number; top: number; width: number; placement: Placement; arrowOffset: number; hits: number };
 type PositionCandidate = Omit<NotePosition, "hits">;
 
@@ -12,6 +12,8 @@ const VIEWPORT_EDGE = 12;
 const NOTE_GAP = 12;
 const NOTE_HEIGHT = 92;
 const NOTE_MIN_WIDTH = 200;
+const MOBILE_BREAKPOINT = 640;
+const SAMPLE_GAP = 40;
 
 function rectFromEdges(left: number, top: number, right: number, bottom: number): DOMRect {
   return { left, top, right, bottom, width: right - left, height: bottom - top, x: left, y: top, toJSON: () => ({}) };
@@ -46,6 +48,15 @@ function visibleContentRect(anchor: HTMLElement): DOMRect {
 }
 
 function candidatePositions(anchor: DOMRect, requestedWidth: number, placement: Placement): PositionCandidate[] {
+  if (placement === "dock") {
+    return [{
+      left: VIEWPORT_EDGE,
+      top: window.innerHeight - NOTE_HEIGHT - VIEWPORT_EDGE,
+      width: window.innerWidth - VIEWPORT_EDGE * 2,
+      placement,
+      arrowOffset: Math.max(18, Math.min(anchor.left + anchor.width / 2 - VIEWPORT_EDGE - 15, window.innerWidth - VIEWPORT_EDGE * 2 - 48)),
+    }];
+  }
   if (placement === "right") {
     const width = Math.min(requestedWidth, window.innerWidth - VIEWPORT_EDGE - anchor.right - NOTE_GAP);
     if (width < NOTE_MIN_WIDTH) return [];
@@ -100,28 +111,61 @@ function isMeaningfulHit(element: Element, anchor: HTMLElement): boolean {
   return Array.from(element.childNodes).some((node) => node.nodeType === Node.TEXT_NODE && Boolean(node.textContent?.trim()));
 }
 
+function densePoints(position: PositionCandidate): Array<[number, number]> {
+  const points: Array<[number, number]> = [];
+  const right = position.left + position.width;
+  const bottom = position.top + NOTE_HEIGHT;
+  for (let x = position.left; x < right; x += SAMPLE_GAP) {
+    for (let y = position.top; y < bottom; y += SAMPLE_GAP) points.push([x, y]);
+    points.push([x, bottom]);
+  }
+  for (let y = position.top; y < bottom; y += SAMPLE_GAP) points.push([right, y]);
+  points.push([right, bottom]);
+  return points;
+}
+
+function rectsIntersect(position: PositionCandidate, rect: DOMRect): boolean {
+  return position.left < rect.right
+    && position.left + position.width > rect.left
+    && position.top < rect.bottom
+    && position.top + NOTE_HEIGHT > rect.top;
+}
+
+function visibleCollisionBars(anchor: HTMLElement): Element[] {
+  const explicit = Array.from(document.querySelectorAll<HTMLElement>("[data-demo-tour-collision-bar]"));
+  const positioned = Array.from(document.querySelectorAll<HTMLElement>("body *")).filter((element) => {
+    if (element === anchor || anchor.contains(element) || element.closest(".demo-tour-note")) return false;
+    const style = window.getComputedStyle(element);
+    if (style.visibility === "hidden" || style.display === "none") return false;
+    const rect = element.getBoundingClientRect();
+    const viewportBar = (style.position === "fixed" || style.position === "sticky")
+      && rect.width >= window.innerWidth * 0.4
+      && rect.height <= 200;
+    return viewportBar && rect.width > 0 && rect.height > 0;
+  });
+  return [...new Set([...explicit, ...positioned])];
+}
+
 function collisionCount(position: PositionCandidate, anchor: HTMLElement): number {
-  const { left, top } = position;
-  const right = left + position.width;
-  const bottom = top + NOTE_HEIGHT;
-  const points: Array<[number, number]> = [
-    [left, top], [left + position.width / 2, top], [right, top],
-    [left, top + NOTE_HEIGHT / 2], [left + position.width / 2, top + NOTE_HEIGHT / 2], [right, top + NOTE_HEIGHT / 2],
-    [left, bottom], [left + position.width / 2, bottom], [right, bottom],
-  ];
   const hits = new Set<Element>();
-  for (const [x, y] of points) {
+  for (const [x, y] of densePoints(position)) {
     for (const element of document.elementsFromPoint(x, y)) {
       if (isMeaningfulHit(element, anchor)) hits.add(element);
     }
+  }
+  for (const bar of visibleCollisionBars(anchor)) {
+    if (rectsIntersect(position, bar.getBoundingClientRect())) hits.add(bar);
   }
   return hits.size;
 }
 
 export function chooseDemoNotePosition(anchor: HTMLElement, width: number): NotePosition | null {
   const rect = visibleContentRect(anchor);
-  const verticalOrder: Placement[] = rect.top >= NOTE_HEIGHT + NOTE_GAP + VIEWPORT_EDGE ? ["above", "below"] : ["below", "above"];
-  const order: Placement[] = window.innerWidth < 640 ? verticalOrder : ["right", "left", "above", "below"];
+  if (window.innerWidth < MOBILE_BREAKPOINT) {
+    const dock = candidatePositions(rect, width, "dock")[0];
+    return dock ? { ...dock, hits: 0 } : null;
+  }
+  const order: Placement[] = ["right", "left", "above", "below"];
   const candidates = order
     .flatMap((placement) => candidatePositions(rect, width, placement))
     .filter(isInsideViewport)
@@ -147,6 +191,7 @@ export function DemoTourNote({
 }) {
   const reduced = useReducedMotion();
   const [position, setPosition] = useState<NotePosition | null>(null);
+  const noteRef = useRef<HTMLElement | null>(null);
 
   useLayoutEffect(() => {
     let frame = 0;
@@ -172,6 +217,25 @@ export function DemoTourNote({
     };
   }, [anchorTestId]);
 
+  useLayoutEffect(() => {
+    if (position?.placement !== "dock") return;
+    const root = document.documentElement;
+    const note = noteRef.current;
+    const anchor = document.querySelector<HTMLElement>(`[data-testid="${anchorTestId}"]`);
+    if (!note || !anchor) return;
+    const setClearance = () => root.style.setProperty("--demo-tour-clearance", `${note.getBoundingClientRect().height + VIEWPORT_EDGE}px`);
+    root.setAttribute("data-demo-tour-docked", "true");
+    setClearance();
+    anchor.scrollIntoView({ block: "center", behavior: reduced ? "auto" : "smooth" });
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(setClearance);
+    observer?.observe(note);
+    return () => {
+      observer?.disconnect();
+      root.removeAttribute("data-demo-tour-docked");
+      root.style.removeProperty("--demo-tour-clearance");
+    };
+  }, [anchorTestId, position?.placement, reduced]);
+
   useEffect(() => {
     if (!position) return;
     document.querySelector<HTMLElement>(`[data-testid="${anchorTestId}"]`)?.setAttribute("data-demo-tour-anchor", "true");
@@ -181,6 +245,7 @@ export function DemoTourNote({
   if (!position || typeof document === "undefined") return null;
   return createPortal(
     <aside
+      ref={noteRef}
       data-testid={`demo-tour-note-${step}`}
       data-placement={position.placement}
       data-collision-count={position.hits}

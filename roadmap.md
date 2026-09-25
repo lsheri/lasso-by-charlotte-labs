@@ -1,5 +1,7 @@
 # Roadmap
 
+- [x] Unit 3.3: Dock phone tour notes, clear the preset bar, densify desktop collision checks, and verify all seven steps.
+
 - [x] M1: Replace the board Ask mark with the signature loop and reuse the sidebar loop for Lasso reply avatars.
 - [x] M1: Add deterministic signature-loop maths, reduced-motion behavior, and focused guards.
 - [x] M1.1: Correct signature travel, easing, continuous breath, and single panel-header placement.

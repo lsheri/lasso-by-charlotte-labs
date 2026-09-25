@@ -78,7 +78,7 @@ export function DemoHomePage() {
   return (
     <div className="min-h-dvh bg-background">
       <PublicHeader cta={<PilotLink />} />
-      <main className="mx-auto w-full max-w-6xl px-4 pb-16 sm:px-8 md:px-12">
+      <main className="demo-tour-page mx-auto w-full max-w-6xl px-4 pb-16 sm:px-8 md:px-12">
         <p className="mb-6 text-[13px] text-muted-foreground">{DEMO_LINE}</p>
         <div ref={ref} className={tour.step === 1 ? "pt-28" : undefined}>
           {query.isPending ? (
@@ -150,7 +150,7 @@ export function DemoBoardPage({ code }: { code: string }) {
       (tour.step === 5 && (!positions.has(2) || (second?.turnRefs.length ?? 0) === 0)));
   if (stepMissing) queueMicrotask(() => tour.skipMissing(tour.step));
   return (
-    <main className="flex h-dvh w-full flex-col bg-background">
+    <main className="demo-tour-page flex h-dvh w-full flex-col bg-background">
       <header className="flex h-[52px] shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-4">
         {back}
         <span className="min-w-0 truncate text-[13px] font-medium text-foreground">
@@ -251,7 +251,7 @@ export function DemoPresetBar({
           </div>
         </div>
       ) : null}
-      <div className="flex gap-2 overflow-x-auto px-4 py-3" data-testid="demo-preset-chips">
+      <div className="flex gap-2 overflow-x-auto px-4 py-3" data-testid="demo-preset-chips" data-demo-tour-collision-bar>
         {answered.map((p) => (
           <button
             key={p.position}

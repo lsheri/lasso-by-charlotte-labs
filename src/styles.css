@@ -5578,8 +5578,13 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .demo-tour-note[data-placement="below"] .demo-tour-note-mark { top: -18px; bottom: auto; transform: rotate(224deg); }
 .demo-tour-note[data-placement="right"] .demo-tour-note-mark { left: -20px; right: auto; top: var(--demo-note-arrow-offset); bottom: auto; transform: rotate(148deg); }
 .demo-tour-note[data-placement="left"] .demo-tour-note-mark { right: -20px; top: var(--demo-note-arrow-offset); bottom: auto; transform: rotate(-32deg); }
+.demo-tour-note[data-placement="dock"] { left: 12px; right: 12px; top: auto; bottom: max(0px, env(safe-area-inset-bottom)); width: auto; min-height: 92px; }
+.demo-tour-note[data-placement="dock"] .demo-tour-note-mark { left: var(--demo-note-arrow-offset); right: auto; top: -18px; bottom: auto; transform: rotate(224deg); }
 .demo-tour-note-skip { height: auto; min-height: 24px; margin-top: 5px; padding: 0; color: var(--nb-mid); font-family: var(--font-sans); font-size: 11.5px; font-weight: 400; pointer-events: auto; text-decoration: underline; text-underline-offset: 2px; }
 [data-demo-tour-anchor="true"] { outline: var(--stroke-pencil) solid var(--nb-green); outline-offset: 4px; }
+@media (max-width: 639px) {
+  [data-demo-tour-docked="true"] .demo-tour-page { padding-bottom: var(--demo-tour-clearance, 116px); }
+}
 @media (prefers-reduced-motion: reduce) {
   .demo-tour-note, .demo-tour-note-mark path { animation: none; }
 }
