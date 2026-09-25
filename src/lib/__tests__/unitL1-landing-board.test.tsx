@@ -34,10 +34,11 @@ describe("Unit L1 scroll-driven landing board", () => {
   it("contains no write controls", () => {
     for (const copy of ["Delete", "Share link", "Add work", "Comment", "Push to"]) expect(page).not.toContain(copy);
   });
-  it("uses an asset image or text fallback for every tool identity", () => {
+  it("maps every board tool to an official asset or Simple Icons path", () => {
     const logo = readFileSync("src/components/marketing/ToolLogo.tsx", "utf8");
-    expect(logo).toContain("claudeLogo.url");
-    expect(logo).toContain("logo ? <img");
+    for (const mark of ["siClaude", "siGooglegemini", "siGoogledrive", "siGmail"]) expect(logo).toContain(mark);
+    for (const tool of ["claude", "chatgpt", "gemini", "googledrive", "gmail", "powerpoint"]) expect(logo).toContain(`${tool}:`);
+    expect(logo).toContain('key === "powerpoint"');
     expect(logo).toContain("compact ? label : label.toUpperCase()");
     const tools = page.slice(page.indexOf("const TOOL_BADGES"), page.indexOf("] as const;", page.indexOf("const TOOL_BADGES")));
     expect(tools).not.toContain("<svg");
@@ -62,7 +63,7 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(page).toContain('className="lb-read-dot"');
   });
   it("hides the redundant first caption and locks jump state", () => {
-    expect(page).toContain('{active > 0 ? <article className="lb-caption lb-active-caption">');
+    expect(page).toContain('{settledStep > 0 ? <article key={`${settledStep}-${attentionNonce}`} className="lb-caption lb-caption-attention"');
     expect(page).toContain('if (jumpTarget.current !== null) return;');
     expect(page).toContain('activate(index, "jump", true)');
   });
@@ -80,9 +81,27 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(page).toContain("<Textarea");
   });
   it("anchors the lasso to the number slide and limits open notes", () => {
-    expect(page).toContain('/\\$1\\.4m/i.test(slide)');
-    expect(page).toContain('className="lb-slide-lasso"');
+    expect(page).toContain('data-testid="landing-board-number"');
+    expect(page).toContain('className={`lb-slide-lasso${pulse(4)}`}');
     expect(page).toContain("Confirm the vendor extension assumption.");
     expect(page).toContain("Confirm approval by Oct 1.");
+  });
+  it("measures the number after transforms and keeps Ask out of the page scroll path", () => {
+    const css = readFileSync("src/styles.css", "utf8");
+    expect(page).toContain("getBoundingClientRect()");
+    expect(page).toContain('event.propertyName === "transform"');
+    expect(page).toContain("layerRect.width / layer.offsetWidth");
+    expect(page).toContain("thread.scrollTo");
+    expect(css).toContain(".lb-replay-thread { min-height: 0; flex: 1; overflow: hidden;");
+    expect(page).toContain('data-story-scroll="locked"');
+  });
+  it("announces and animates only settled captions with a reduced-motion answer", () => {
+    const css = readFileSync("src/styles.css", "utf8");
+    expect(page).toContain('aria-live="polite"');
+    expect(page).toContain("setAttentionNonce");
+    expect(page).toContain("lb-caption-attention");
+    expect(css).toContain("lb-caption-attention 400ms");
+    expect(css).toContain("lb-caption-crossfade 150ms");
+    expect(css).toContain("lb-target-ring 600ms");
   });
 });
