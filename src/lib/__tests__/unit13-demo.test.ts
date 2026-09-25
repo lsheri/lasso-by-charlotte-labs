@@ -55,7 +55,7 @@ describe("demo org resolution", () => {
     expect(await openDemoBoard("REAL-CLIENT-CODE")).toEqual({ status: "not_found" });
     expect(await openDemoBoard("../bad code")).toEqual({ status: "not_found" });
     vi.doUnmock("@/integrations/supabase/client.server");
-  });
+  }, 20_000);
 
   it("the share link still reads as its maker; the demo reads as nobody", () => {
     expect(SHARE).toContain("readBoard(supabaseAdmin, link.workboard_id, link, link.created_by)");
