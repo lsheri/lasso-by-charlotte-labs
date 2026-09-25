@@ -17,6 +17,12 @@ export type TelemetryEvent =
   | "demo.opened"
   /** Product shell 1.3: a card on a demo board was opened to read. Invented demo code and node kind only. */
   | "demo.card_opened"
+  /** Unit 2: a saved preset answer was opened on a demo board. Invented demo code and position only. */
+  | "demo.preset_opened"
+  /** Unit 2: "Open the exact turn" was chosen from a saved demo answer. Invented demo code and position only. */
+  | "demo.turn_opened"
+  /** Unit 2: a demo org admin regenerated the saved demo answers. Invented demo code and answered count only. */
+  | "demo.presets_regenerated"
   /** P4a: the signed-in Home board was opened. Content-free. */
   | "home.opened"
   /** P4a: the new-engagement dialog was opened from Home. Content-free. */
