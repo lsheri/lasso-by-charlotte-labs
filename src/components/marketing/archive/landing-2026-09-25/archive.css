@@ -1,4 +1,16 @@
 /* Archived landing styles from commit 196f5296. Every selector is scoped. */
+/* D.2 resets: properties newer global rules add that commit 196f5296 never set. Placed before the archived rules. */
+.landing-archive-2026-09-25 .landing-close-line2 .landing-particle-word-text { text-decoration-line: none; }
+.landing-archive-2026-09-25 .landing-close-line2 .landing-particle-word-text { text-shadow: inherit; }
+@media (max-width: 767px) { .landing-archive-2026-09-25 .landing-close-line2 .landing-particle-word-text { text-shadow: inherit; } }
+@media (prefers-reduced-motion: reduce) { .landing-archive-2026-09-25 .landing-close-line2 .landing-particle-word-text { text-shadow: inherit; } }
+.landing-archive-2026-09-25 .lw-step { filter: none; }
+.landing-archive-2026-09-25 .lw-step[data-active="true"] { filter: none; }
+@media (max-width: 767px) { .landing-archive-2026-09-25 .lw-step { box-sizing: border-box; } }
+@media (max-width: 767px) { .landing-archive-2026-09-25 .lw-step { filter: none; } }
+@media (max-width: 767px) { .landing-archive-2026-09-25 .lw-step[data-active="true"] { opacity: 1; } }
+@media (max-width: 767px) { .landing-archive-2026-09-25 .lw-step[data-active="true"] { filter: none; } }
+@media (prefers-reduced-motion: reduce) { .landing-archive-2026-09-25 .lw-step { transition: opacity 300ms ease; } }
 @layer nb {
 @media (prefers-reduced-motion: reduce) {
 .landing-archive-2026-09-25 .focus-section-dim,
