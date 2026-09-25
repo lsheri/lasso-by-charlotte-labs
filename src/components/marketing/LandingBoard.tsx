@@ -148,11 +148,11 @@ function StoryBoard({ board, presets, step }: { board: SharedBoardDto; presets: 
           <div>{slides.map((slide, index) => <section key={`${slide}-${index}`} data-slide={index + 1}><small>{index + 1}</small><p>{slide}</p>{index === 2 ? <span className="lb-number">$1.4M</span> : null}</section>)}</div>
         </article>
         <div className="lb-circle-question"><span /><p>Where did the $1.4M on slide 3 come from?</p></div>
-        {step === 5 ? <SavedAnswer preset={first} title="Where did the $1.4M on slide 3 come from?" /> : null}
-        {step === 6 ? <><SavedAnswer preset={second} title="Find the conversation where the board settled it." /><ExactTurn board={board} preset={second} /></> : null}
-        {step === 7 ? <><SavedAnswer preset={fourth} title="What is still open?" /><div className="lb-open-notes"><p>{fourth?.answer.split(".")[0] || "Confirm the final assumption."}</p><p>{fourth?.answer.split(".")[1] || "Settle the remaining board choice."}</p></div></> : null}
-        {step === 8 ? <div className="lb-share-dialog"><p className="lb-micro">READ ONLY</p><h3>Share this board</h3><p>They open the deliverable, source cards, and the conversations behind them.</p><p>They do not open private drafts or anything outside this board.</p><strong>Closes in 48 hours</strong><small>In the demo this is shown, not issued.</small></div> : null}
       </div>
+      {step === 5 ? <SavedAnswer preset={first} title="Where did the $1.4M on slide 3 come from?" /> : null}
+      {step === 6 ? <><SavedAnswer preset={second} title="Find the conversation where the board settled it." /><ExactTurn board={board} preset={second} /></> : null}
+      {step === 7 ? <><SavedAnswer preset={fourth} title="What is still open?" /><div className="lb-open-notes"><p>{fourth?.answer.split(".")[0] || "Confirm the final assumption."}</p><p>{fourth?.answer.split(".")[1] || "Settle the remaining board choice."}</p></div></> : null}
+      {step === 8 ? <div className="lb-share-dialog"><p className="lb-micro">READ ONLY</p><h3>Share this board</h3><p>They open the deliverable, source cards, and the conversations behind them.</p><p>They do not open private drafts or anything outside this board.</p><strong>Closes in 48 hours</strong><small>In the demo this is shown, not issued.</small></div> : null}
     </div>
   );
 }
