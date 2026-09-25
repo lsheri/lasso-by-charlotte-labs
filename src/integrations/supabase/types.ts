@@ -1219,6 +1219,50 @@ export type Database = {
           },
         ]
       }
+      demo_presets: {
+        Row: {
+          answer: string | null
+          context_manifest: Json | null
+          engagement_id: string
+          generated_at: string | null
+          generated_from_commit: string | null
+          id: string
+          position: number
+          question: string
+          turn_refs: Json
+        }
+        Insert: {
+          answer?: string | null
+          context_manifest?: Json | null
+          engagement_id: string
+          generated_at?: string | null
+          generated_from_commit?: string | null
+          id?: string
+          position: number
+          question: string
+          turn_refs?: Json
+        }
+        Update: {
+          answer?: string | null
+          context_manifest?: Json | null
+          engagement_id?: string
+          generated_at?: string | null
+          generated_from_commit?: string | null
+          id?: string
+          position?: number
+          question?: string
+          turn_refs?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demo_presets_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "engagements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_versions: {
         Row: {
           content_hash: string

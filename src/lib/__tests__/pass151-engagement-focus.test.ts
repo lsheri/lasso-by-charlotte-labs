@@ -17,7 +17,7 @@ describe("pass 151 engagement focus", () => {
 
   it("keeps engagement actions and the existing Share view", () => {
     expect(page).toContain("Add a wrap-up");
-    const headerAction = page.slice(page.indexOf("const headerAction"), page.indexOf("if (engagementQuery.isLoading)"));
+    const headerAction = page.slice(page.indexOf("const headerAction"), page.indexOf("if (engagementQuery.isPending"));
     expect(headerAction).not.toContain("<CanvasDeliverableActions");
     expect(page).toMatch(/view === "share"[\s\S]*?<CanvasDeliverableActions/);
     expect(page).toContain("SharedWithSection");

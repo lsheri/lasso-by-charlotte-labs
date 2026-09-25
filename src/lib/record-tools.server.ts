@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 
 import { getItemText } from "./item-text.server";
+import { naturalTurnLabels } from "./turn-labels";
 import type { Catalogue } from "./record-catalogue.server";
 import { catalogueLine, extractBlock } from "./record-catalogue.server";
 import { EXTRACT_COLUMNS, headAndTail, unreadableLine } from "./reflect-context.server";
@@ -248,7 +249,7 @@ async function readItems(state: ToolState, ids: string[]): Promise<string> {
       continue;
     }
     const remaining = state.rawBudget - state.rawUsed;
-    const clipped = headAndTail(text, Math.min(40_000, remaining));
+    const clipped = headAndTail(naturalTurnLabels(text), Math.min(40_000, remaining));
     state.rawUsed += clipped.text.length;
     state.readFull.add(id);
     state.quotable.push(clipped.text);
@@ -285,7 +286,7 @@ async function readTurns(
     .map((turn) => `TURN ${turn.turn_no} · ${turn.role.toUpperCase()}\n${turn.content}`)
     .join("\n\n");
   const remaining = Math.max(0, state.rawBudget - state.rawUsed);
-  const clipped = headAndTail(body, Math.min(40_000, remaining || 4_000));
+  const clipped = headAndTail(naturalTurnLabels(body), Math.min(40_000, remaining || 4_000));
   state.rawUsed += clipped.text.length;
   state.readFull.add(target.id);
   state.quotable.push(clipped.text);

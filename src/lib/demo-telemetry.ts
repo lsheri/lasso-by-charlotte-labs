@@ -20,6 +20,7 @@ const SAME_VIEW_MS = 1500;
 /** Test seam. */
 export function resetDemoTelemetry(): void {
   opened.clear();
+  presetOpened.clear();
   viewId = null;
 }
 
@@ -38,5 +39,25 @@ export function noteDemoOpened(surface: "home" | "board", engagement: string): v
 export function noteDemoCardOpened(engagement: string, kind: string): void {
   void recordAnonymousEventFn({
     data: { event_type: "demo.card_opened", view_id: demoViewId(), dims: { engagement: safe(engagement), kind: safe(kind) } },
+  }).catch(() => undefined);
+}
+
+const presetOpened = new Map<string, number>();
+
+/** Unit 2: a saved answer opened. Same 1.5s dedupe per code and position. */
+export function noteDemoPresetOpened(code: string, position: number): void {
+  const key = `${code}:${position}`;
+  const now = Date.now();
+  const last = presetOpened.get(key);
+  if (last !== undefined && now - last < SAME_VIEW_MS) return;
+  presetOpened.set(key, now);
+  void recordAnonymousEventFn({
+    data: { event_type: "demo.preset_opened", view_id: demoViewId(), dims: { code: safe(code), position } },
+  }).catch(() => undefined);
+}
+
+export function noteDemoTurnOpened(code: string, position: number): void {
+  void recordAnonymousEventFn({
+    data: { event_type: "demo.turn_opened", view_id: demoViewId(), dims: { code: safe(code), position } },
   }).catch(() => undefined);
 }

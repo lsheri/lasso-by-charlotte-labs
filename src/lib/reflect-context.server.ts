@@ -19,6 +19,7 @@ import {
 import { ensureExtract, type ClassifiableItem } from "./extract.server";
 import { ITEM_TEXT_COLUMNS, getItemText, type ItemTextStatus } from "./item-text.server";
 import type { ContextScope, ContextSource } from "./reflect-shared";
+import { naturalTurnLabels } from "./turn-labels";
 
 /** Tier 2 is the expensive tier: raw text, bounded hard. */
 const RAW_BUDGET = 120_000;
@@ -600,8 +601,10 @@ export async function assembleReflectContext(
     }
     const blocked = unreadable.get(item.id);
     if (raw) {
-      lines.push(`  Full text:\n${raw}`);
-      quotableParts.push(raw);
+      // Unit 2: turns reach the model in plain words it can cite.
+      const shown = item.type === "ai_thread" ? naturalTurnLabels(raw) : raw;
+      lines.push(`  Full text:\n${shown}`);
+      quotableParts.push(shown);
       tier2 += 1;
       reads.push({ workItemId: item.id, ownerId, depth: "full" });
       sources.push({

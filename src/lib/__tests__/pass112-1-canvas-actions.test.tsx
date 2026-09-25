@@ -118,7 +118,7 @@ describe("pass 112.1 · journey and ship on the canvas", () => {
     const source = readFileSync("src/components/engagements/CanvasDeliverableActions.tsx", "utf8");
     expect(source).not.toContain("nb-web-cta");
     const page = readFileSync("src/pages/EngagementPage.tsx", "utf8");
-    const headerAction = page.slice(page.indexOf("const headerAction"), page.indexOf("if (engagementQuery.isLoading)"));
+    const headerAction = page.slice(page.indexOf("const headerAction"), page.indexOf("if (engagementQuery.isPending"));
     expect(headerAction).not.toContain("<CanvasDeliverableActions");
     expect(page).toMatch(/view === "share"[\s\S]*?<CanvasDeliverableActions/);
     expect(page).toContain("flex flex-wrap items-center gap-2");

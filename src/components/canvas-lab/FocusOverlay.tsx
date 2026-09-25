@@ -140,6 +140,7 @@ export function FocusOverlay({
   onContentScroll,
   readOnly = false,
   filePreview,
+  focusTurnNo,
 }: {
   node: LabNode;
   item: WorkItemRow | null;
@@ -171,6 +172,8 @@ export function FocusOverlay({
   readOnly?: boolean;
   /** S3a: the preview the shared board was handed, used in place of a server read. */
   filePreview?: WorkboardFilePreviewData | undefined;
+  /** Unit 2: open scrolled to this turn, lit. */
+  focusTurnNo?: number | null | undefined;
 }) {
   const [quote, setQuote] = useState("");
   const [turnSelection, setTurnSelection] = useState<TurnSelection | null>(null);
@@ -195,6 +198,31 @@ export function FocusOverlay({
       CSS.highlights?.delete("canvas-lab-selection");
     };
   }, []);
+
+  useEffect(() => {
+    if (!focusTurnNo) return;
+    let tries = 0;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let lit: Element | null = null;
+    const find = () => {
+      const el = readerRef.current?.querySelector(`[data-turn-no="${focusTurnNo}"]`) ?? null;
+      if (el) {
+        el.scrollIntoView({ block: "center" });
+        el.classList.add("nb-turn-lit");
+        el.setAttribute("data-turn-focus", "true");
+        lit = el;
+        return;
+      }
+      tries += 1;
+      if (tries < 40) timer = setTimeout(find, 100);
+    };
+    find();
+    return () => {
+      if (timer) clearTimeout(timer);
+      lit?.classList.remove("nb-turn-lit");
+      lit?.removeAttribute("data-turn-focus");
+    };
+  }, [focusTurnNo]);
 
   useEffect(() => {
     if (!openComments) return;
