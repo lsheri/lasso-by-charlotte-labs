@@ -17,7 +17,7 @@ export function ChatUrlLink({
   /** Cards say plainly when there is no way back, so nobody is surprised. */
   showAbsence?: boolean;
   /** Already-loaded card data; this never triggers another read. */
-  turnCount?: number | null;
+  turnCount?: number | null | undefined;
 }) {
   const url = effectiveChatUrl(
     item?.source_meta?.url,
