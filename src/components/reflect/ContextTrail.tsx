@@ -225,11 +225,15 @@ export function ContextAudit({
   buttonLabel,
   reads = [],
   readOnly = false,
+  testId,
+  onOpenChange,
 }: {
   manifest: ContextManifest | null;
   buttonLabel?: string;
   /** Unit 2: the public demo. Nothing opens and nothing is sent. */
   readOnly?: boolean;
+  testId?: string;
+  onOpenChange?: (open: boolean) => void;
   /** What the answer read and how deeply. Merged into the READ group. */
   reads?: ContextSource[];
 }) {
@@ -243,21 +247,21 @@ export function ContextAudit({
   const closedTag = manifest.scope ? scopeClosedTag(manifest.scope, manifest.brief_included) : null;
 
   const toggle = () => {
-    setOpen((current) => {
-      if (!current && !readOnly) {
-        emitClientEvent("reflect.trail_opened", {
-          read_band: bucket(readRows.length),
-          also_in_band: bucket((manifest.brief_included ? 1 : 0) + (manifest.firm_checks_applied > 0 ? 1 : 0)),
-          not_read_band: bucket(manifest.excluded.length),
-        });
-      }
-      return !current;
-    });
+    const next = !open;
+    if (next && !readOnly) {
+      emitClientEvent("reflect.trail_opened", {
+        read_band: bucket(readRows.length),
+        also_in_band: bucket((manifest.brief_included ? 1 : 0) + (manifest.firm_checks_applied > 0 ? 1 : 0)),
+        not_read_band: bucket(manifest.excluded.length),
+      });
+    }
+    setOpen(next);
+    onOpenChange?.(next);
   };
 
   return (
     <div className={`text-foreground ${reduced ? "" : "nb-audit-settle"}`}>
-      <Button type="button" variant="ghost" onClick={toggle} aria-expanded={open} className="h-[30px] w-full justify-start gap-2 px-0 text-left text-[13px] font-normal hover:bg-transparent">
+      <Button data-testid={testId} type="button" variant="ghost" onClick={toggle} aria-expanded={open} className="h-[30px] w-full justify-start gap-2 px-0 text-left text-[13px] font-normal hover:bg-transparent">
         <span aria-hidden className={`inline-block text-[11px] text-muted-foreground transition-transform duration-200 ${open ? "rotate-90" : ""}`}>›</span>
         <span className="min-w-0 truncate">{buttonLabel ?? "Read what went into this response"}</span>
         <span className="font-mono text-[10.5px] text-muted-foreground">{total}</span>

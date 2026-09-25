@@ -102,12 +102,16 @@ export function SharedBoardView({
   board,
   onNodeOpened,
   openTurn,
+  onReaderClosed,
+  focusedTurnTestId,
 }: {
   board: SharedBoardDto;
   /** Optional: told the kind of a card opened to read. The share page passes nothing. */
   onNodeOpened?: (kind: string) => void;
   /** Unit 2: open this work item's card in the reader at this turn. nonce reopens the same turn. */
   openTurn?: { workItemId: string; turnNo: number; nonce: number } | null;
+  onReaderClosed?: () => void;
+  focusedTurnTestId?: string;
 }) {
   const queryClient = useQueryClient();
   const model = useMemo(() => buildSharedBoardModel(board), [board]);
@@ -344,9 +348,10 @@ export function SharedBoardView({
             readOnly
             filePreview={focusItem ? board.filePreviews[focusItem.id] : undefined}
             focusTurnNo={focusTurnNo}
+            focusedTurnTestId={focusedTurnTestId}
             onSummarize={noop}
             onBranch={noop}
-            onClose={() => { setFocusId(null); setOrigin(null); setFocusTurnNo(null); }}
+            onClose={() => { setFocusId(null); setOrigin(null); setFocusTurnNo(null); onReaderClosed?.(); }}
           />
         </div>
       ) : null}

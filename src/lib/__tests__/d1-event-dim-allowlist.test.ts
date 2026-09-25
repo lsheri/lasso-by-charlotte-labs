@@ -55,6 +55,7 @@ const LIVE_KEYS_BY_FAMILY: Record<string, readonly string[]> = {
   ],
   chatlib: ["filter", "how", "selected", "vendor", "view"],
   client: ["engagements", "error_name", "fingerprint", "items", "route_class", "source", "unplaced"],
+  demo: [],
   coach: ["role"],
   coachlink: ["access_level", "basis", "relation", "scope"],
   coachnote: ["by", "newest_age_band", "notes_shown_band", "surface"],
@@ -165,6 +166,8 @@ const LIVE_KEYS_BY_EVENT: Record<string, readonly string[]> = {
   "work.import_menu_opened": [],
   "work.panel_opened": ["panel"],
   "work.preview_mode_changed": ["mode", "kind"],
+  "demo.step_completed": ["step", "engagement"],
+  "demo.tour_skipped": ["step"],
 };
 
 /** Every name in the canonical union, read as data rather than as wording. */

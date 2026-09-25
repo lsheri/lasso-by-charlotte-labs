@@ -23,6 +23,10 @@ export type TelemetryEvent =
   | "demo.turn_opened"
   /** Unit 2: a demo org admin regenerated the saved demo answers. Invented demo code and answered count only. */
   | "demo.presets_regenerated"
+  /** Unit 3: a visitor completed one real action in the public demo guide. Step and invented demo code only. */
+  | "demo.step_completed"
+  /** Unit 3: a visitor ended the public demo guide. Step only. */
+  | "demo.tour_skipped"
   /** P4a: the signed-in Home board was opened. Content-free. */
   | "home.opened"
   /** P4a: the new-engagement dialog was opened from Home. Content-free. */

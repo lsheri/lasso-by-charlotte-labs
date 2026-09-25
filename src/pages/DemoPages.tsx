@@ -9,11 +9,13 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { SharedBoardView } from "@/components/canvas-lab/SharedBoardView";
+import { DemoTourNote } from "@/components/demo/DemoTourNote";
 import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
 import { ContextAudit } from "@/components/reflect/ContextTrail";
 import { HomeEngagementGrid } from "@/components/home/HomeEngagementGrid";
 import { PublicHeader } from "@/components/layout/PublicHeader";
 import { openDemoBoardFn, openDemoHomeFn } from "@/lib/demo.functions";
+import { useDemoTour } from "@/hooks/use-demo-tour";
 import { DEMO_CHAT_LINK_NOTE, isChatLinkQuestion, type DemoPreset } from "@/lib/demo-presets-shared";
 import { noteDemoCardOpened, noteDemoOpened, noteDemoPresetOpened, noteDemoTurnOpened } from "@/lib/demo-telemetry";
 import type { HomeGridEngagement } from "@/lib/home-grid";
@@ -21,11 +23,13 @@ import type { HomePreviewState } from "@/lib/home-board-preview";
 
 export const DEMO_LINE = "A demo workspace. Every figure is invented.";
 
-function PilotLink({ className }: { className?: string }) {
+function PilotLink({ className, onChoose }: { className?: string; onChoose?: () => void }) {
   return (
     <Link
       to="/"
       hash="pilot"
+      data-testid="demo-book-pilot"
+      onClick={onChoose}
       className={
         className ??
         "flex min-h-11 items-center justify-center rounded-[var(--radius)] bg-primary px-3 py-2 font-mono text-[13px] uppercase tracking-[0.08em] text-primary-foreground sm:px-6 sm:py-3 sm:text-[18px]"
@@ -41,6 +45,7 @@ export function DemoHomePage() {
   const query = useQuery({ queryKey: ["demo-home"], queryFn: () => open(), staleTime: 60_000 });
   const ref = useRef<HTMLDivElement | null>(null);
   const [width, setWidth] = useState(960);
+  const tour = useDemoTour();
 
   useEffect(() => noteDemoOpened("home", "none"), []);
   useEffect(() => {
@@ -75,15 +80,26 @@ export function DemoHomePage() {
       <PublicHeader cta={<PilotLink />} />
       <main className="mx-auto w-full max-w-6xl px-4 pb-16 sm:px-8 md:px-12">
         <p className="mb-6 text-[13px] text-muted-foreground">{DEMO_LINE}</p>
-        <div ref={ref}>
+        <div ref={ref} className={tour.step === 1 ? "pt-28" : undefined}>
           {query.isPending ? (
             <p className="text-[13px] text-muted-foreground">Opening the demo.</p>
           ) : cards.length === 0 ? (
             <p className="text-[13px] text-foreground">The demo is not available right now.</p>
           ) : (
-            <HomeEngagementGrid cards={cards} availableWidth={width} previews={previews} demo />
+            <HomeEngagementGrid
+              cards={cards}
+              availableWidth={width}
+              previews={previews}
+              demo
+              onDemoOpen={(code) => { if (code === "YSM-01") tour.complete(1, "home"); }}
+            />
           )}
         </div>
+        {tour.step === 1 && cards.some((card) => card.code === "YSM-01") ? (
+          <DemoTourNote step={1} anchorTestId="demo-engagement-YSM-01" onDismiss={tour.dismiss}>
+            Start here: the CFO asked where a number came from.
+          </DemoTourNote>
+        ) : null}
       </main>
     </div>
   );
@@ -100,6 +116,7 @@ export function DemoBoardPage({ code }: { code: string }) {
 
   useEffect(() => noteDemoOpened("board", code), [code]);
   const [openTurn, setOpenTurn] = useState<{ workItemId: string; turnNo: number; nonce: number } | null>(null);
+  const tour = useDemoTour();
 
   const back = (
     <Link to="/demo" className="font-mono text-[11.5px] uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground">
@@ -122,6 +139,16 @@ export function DemoBoardPage({ code }: { code: string }) {
 
   const { board, engagement } = query.data;
   const presets = query.data.presets ?? [];
+  const positions = new Set(presets.filter((preset) => preset.answer.trim().length > 0).map((preset) => preset.position));
+  const first = presets.find((preset) => preset.position === 1);
+  const second = presets.find((preset) => preset.position === 2);
+  const stepMissing =
+    code === "YSM-01" &&
+    ((tour.step === 2 && !positions.has(1)) ||
+      (tour.step === 3 && (!positions.has(1) || !first?.manifest)) ||
+      (tour.step === 4 && !positions.has(2)) ||
+      (tour.step === 5 && (!positions.has(2) || (second?.turnRefs.length ?? 0) === 0)));
+  if (stepMissing) queueMicrotask(() => tour.skipMissing(tour.step));
   return (
     <main className="flex h-dvh w-full flex-col bg-background">
       <header className="flex h-[52px] shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-4">
@@ -129,19 +156,34 @@ export function DemoBoardPage({ code }: { code: string }) {
         <span className="min-w-0 truncate text-[13px] font-medium text-foreground">
           {engagement.clientLabel ?? engagement.title}
         </span>
-        <PilotLink className="rounded-[var(--radius)] bg-primary px-3 py-1.5 font-mono text-[11.5px] uppercase tracking-[0.08em] text-primary-foreground" />
+        <PilotLink onChoose={() => tour.complete(7, code)} className="rounded-[var(--radius)] bg-primary px-3 py-1.5 font-mono text-[11.5px] uppercase tracking-[0.08em] text-primary-foreground" />
       </header>
       <div className="min-h-0 flex-1">
-        <SharedBoardView board={board} openTurn={openTurn} onNodeOpened={(kind) => noteDemoCardOpened(code, kind)} />
+        <SharedBoardView
+          board={board}
+          openTurn={openTurn}
+          focusedTurnTestId="demo-highlighted-turn"
+          onReaderClosed={() => tour.complete(6, code)}
+          onNodeOpened={(kind) => noteDemoCardOpened(code, kind)}
+        />
       </div>
       <DemoPresetBar
         code={code}
         presets={presets}
+        onPresetOpened={(position) => tour.complete(position === 1 ? 2 : position === 2 ? 4 : -1, code)}
+        onTrailOpened={(position) => { if (position === 1) tour.complete(3, code); }}
         onOpenTurn={(workItemId, turnNo, position) => {
           noteDemoTurnOpened(code, position);
           setOpenTurn({ workItemId, turnNo, nonce: Date.now() });
+          if (position === 2) tour.complete(5, code);
         }}
       />
+      {code === "YSM-01" && tour.step === 2 && positions.has(1) ? <DemoTourNote step={2} anchorTestId="demo-preset-1" onDismiss={tour.dismiss}>Ask the CFO's question.</DemoTourNote> : null}
+      {code === "YSM-01" && tour.step === 3 && positions.has(1) && first?.manifest ? <DemoTourNote step={3} anchorTestId="demo-context-trail" onDismiss={tour.dismiss}>See exactly what Lasso read.</DemoTourNote> : null}
+      {code === "YSM-01" && tour.step === 4 && positions.has(2) ? <DemoTourNote step={4} anchorTestId="demo-preset-2" onDismiss={tour.dismiss}>Now find the chat where the board settled it.</DemoTourNote> : null}
+      {code === "YSM-01" && tour.step === 5 && (second?.turnRefs.length ?? 0) > 0 ? <DemoTourNote step={5} anchorTestId="demo-open-turn-2" onDismiss={tour.dismiss}>Open the turn itself.</DemoTourNote> : null}
+      {code === "YSM-01" && tour.step === 6 && openTurn ? <DemoTourNote step={6} anchorTestId="demo-highlighted-turn" onDismiss={tour.dismiss}>This is the turn. Every answer points back to one.</DemoTourNote> : null}
+      {tour.step === 7 ? <DemoTourNote step={7} anchorTestId="demo-book-pilot" onDismiss={() => tour.complete(7, code)} final>Want this on your team's work? Book a pilot.</DemoTourNote> : null}
     </main>
   );
 }
@@ -157,10 +199,14 @@ export function DemoPresetBar({
   code,
   presets,
   onOpenTurn,
+  onPresetOpened,
+  onTrailOpened,
 }: {
   code: string;
   presets: DemoPreset[];
   onOpenTurn: (workItemId: string, turnNo: number, position: number) => void;
+  onPresetOpened?: (position: number) => void;
+  onTrailOpened?: (position: number) => void;
 }) {
   const [active, setActive] = useState<number | null>(null);
   const answered = presets.filter((p) => p.answer.trim().length > 0);
@@ -188,6 +234,7 @@ export function DemoPresetBar({
                     <button
                       type="button"
                       onClick={() => onOpenTurn(ref.work_item_id, ref.turn_no, open.position)}
+                      data-testid={`demo-open-turn-${open.position}`}
                       className="text-left text-[13px] text-foreground underline underline-offset-2 hover:text-muted-foreground"
                     >
                       Open the exact turn
@@ -200,7 +247,7 @@ export function DemoPresetBar({
                 ))}
               </div>
             ) : null}
-            <ContextAudit manifest={open.manifest} readOnly />
+            <ContextAudit manifest={open.manifest} readOnly testId="demo-context-trail" onOpenChange={(next) => { if (next) onTrailOpened?.(open.position); }} />
           </div>
         </div>
       ) : null}
@@ -210,10 +257,12 @@ export function DemoPresetBar({
             key={p.position}
             type="button"
             aria-pressed={p.position === active}
+            data-testid={`demo-preset-${p.position}`}
             onClick={() => {
               if (p.position === active) return setActive(null);
               setActive(p.position);
               noteDemoPresetOpened(code, p.position);
+              onPresetOpened?.(p.position);
             }}
             className={`shrink-0 rounded-[var(--radius)] border px-3 py-1.5 text-left text-[11.5px] ${p.position === active ? "border-foreground text-foreground" : "border-border text-muted-foreground hover:text-foreground"}`}
           >
