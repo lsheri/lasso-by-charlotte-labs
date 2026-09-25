@@ -24,7 +24,7 @@ describe("unit D landing archive", () => {
   it("archive.css has only scoped selectors and suffixed keyframes", () => {
     const css = readFileSync(`${DIR}/archive.css`, "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
     const selectors = [...css.matchAll(/(?:^|[{}])\s*([^{}@]+?)\s*\{/g)].map((m) => m[1]!.trim());
-    const ruleSelectors = selectors.filter((s) => !/^(from|to|\d+%)/.test(s) && !/^[\d%,\s]+$/.test(s));
+    const ruleSelectors = selectors.filter((s) => !/^(from|to|\d+%)/.test(s) && !/^[\d.%,\s]+$/.test(s));
     expect(ruleSelectors.length).toBeGreaterThan(100);
     for (const group of ruleSelectors)
       for (const s of group.split(",")) expect(s).toContain(".landing-archive-2026-09-25");
