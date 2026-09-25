@@ -369,7 +369,7 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
           <section id="beats" className="landing-walkthrough mx-auto mt-24 max-w-[1320px] px-4 md:px-6" aria-label="How Lasso works">
             <div className="landing-section-head">
               <p className="micro-label">{"\n"}</p>
-              <h2 className="pencil-title">Deliverables you can defend to a client, a partner, or a board.</h2>
+              <h2 className="pencil-title">Built for the questions that come after the deliverable.</h2>
             </div>
             <DeckWalkthrough onActiveChange={setActiveBeat} />
           </section>
@@ -377,7 +377,7 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
           <section className="landing-usecases mx-auto mt-24 max-w-[1200px] px-4 md:px-6" aria-label="What consultants use it for">
             <div className="landing-section-head">
               <p className="micro-label">HOW IT WORKS</p>
-              <h2 className="pencil-title">Built for the questions that come after the deliverable.</h2>
+              <h2 className="pencil-title">Deliverables you can defend to a client, a partner, or a board.</h2>
             </div>
             <div className="landing-usecase-grid">
               {USE_CASES.map((card) => <UseCaseCard key={card.key} card={card} onPlayed={noteUseCasePlayed} />)}
