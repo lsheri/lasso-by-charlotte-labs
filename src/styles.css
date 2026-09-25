@@ -5717,14 +5717,15 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   .landing-board-page *, .landing-board-page *::before, .landing-board-page *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
 }
 @media (max-width: 639px) {
-  .landing-board-page { --lb-header-h: 116px; }
+  .landing-board-page { --lb-header-h: 116px; padding-top: var(--lb-header-h); }
+  .lb-header { position: fixed; right: 0; left: 0; }
   .lb-header-main { grid-template-columns: 1fr auto; gap: 8px; padding: calc(8px + env(safe-area-inset-top)) 12px 8px; }
   .lb-brand { font-size: 14px; }.lb-brand svg { width: 28px; height: 28px; }
   .lb-step-nav { grid-column: 1 / -1; grid-row: 2; justify-content: flex-start; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
   .lb-step-nav button { flex: none; }
-  .lb-sticky-stage { height: 55vh; min-height: 390px; }
+  .lb-sticky-stage { position: fixed; top: var(--lb-header-h); right: 0; left: 0; height: 55vh; min-height: 390px; }
   .lb-board-layer { width: 940px; height: 570px; transform: translate(-51%, -50%) scale(.43); }
-  .lb-scroll-sections { margin-top: calc(-55vh); }
+  .lb-scroll-sections { margin-top: 0; }
   .lb-scroll-step { min-height: 100vh; padding: calc(55vh + 18px) 12px 28px; }
   .lb-caption { position: relative; left: auto; bottom: auto; width: 100%; min-height: 190px; padding: 16px; }
   .lb-caption h2 { font-size: 25px; }.lb-caption > div { display: grid; }
