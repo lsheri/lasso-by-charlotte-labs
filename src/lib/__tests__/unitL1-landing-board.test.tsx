@@ -27,8 +27,9 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(steps.match(/key: "/g)).toHaveLength(10);
   });
   it("has a reduced-motion jump path", () => {
-    expect(page).toContain('prefers-reduced-motion: reduce');
-    expect(page).toContain('scroll-behavior: auto !important');
+    const css = readFileSync("src/styles.css", "utf8");
+    expect(css).toContain('@media (prefers-reduced-motion: reduce)');
+    expect(css).toContain('scroll-behavior: auto !important');
   });
   it("contains no write controls", () => {
     for (const copy of ["Delete", "Share link", "Add work", "Comment", "Push to"]) expect(page).not.toContain(copy);
@@ -54,6 +55,7 @@ describe("Unit L1 scroll-driven landing board", () => {
   it("uses product labels, a single deliverable, and citation-aware pins", () => {
     expect(page).toContain('<VendorMark item={item} />');
     expect(page).toContain('keptContentLabel(item, turnCount)');
+    expect(page).toContain('board.turns[item.id]?.length');
     expect(page).toContain('item.id !== deckItem?.id');
     expect(page).toContain('citedIds.has(item.id)');
     expect(page).toContain('className="lb-read-dot"');

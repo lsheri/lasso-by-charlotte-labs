@@ -5650,15 +5650,9 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .lb-board-card { position: absolute; z-index: 5; width: 174px; min-height: 92px; border: 1.5px solid var(--nb-graphite); border-radius: var(--radius-card); background: var(--nb-white); padding: 10px; box-shadow: var(--nb-paper-shadow-contact), var(--nb-paper-shadow-ambient); opacity: .22; transition: left 620ms var(--nb-ease), top 620ms var(--nb-ease), transform 620ms var(--nb-ease), opacity 420ms ease; }
 .lb-board-card strong { display: block; margin-top: 9px; font-size: 11.5px; line-height: 1.25; }
 .lb-board-card small { display: block; margin-top: 7px; font-size: 9px; color: var(--nb-mid); }
-.lb-board-card:nth-child(1) { left: 188px; top: 176px; transform: rotate(-2deg); }
-.lb-board-card:nth-child(2) { left: 500px; top: 176px; transform: rotate(2deg); }
-.lb-board-card:nth-child(3) { left: 500px; top: 316px; transform: rotate(-1deg); }
-.lb-board-card:nth-child(4) { left: 188px; top: 332px; transform: rotate(1deg); }
-.lb-board-card:nth-child(5) { left: 500px; top: 438px; transform: rotate(-2deg); }
-.lb-board-card:nth-child(6) { left: 188px; top: 438px; transform: rotate(2deg); }
-.lb-board-card:nth-child(7) { left: 500px; top: 438px; transform: rotate(-1deg); }
-.lb-board-card:nth-child(8) { left: 188px; top: 438px; transform: rotate(1deg); }
-.lb-board-card:nth-child(9) { left: 500px; top: 438px; transform: rotate(-1deg); }
+.lb-board-card { left: var(--lb-card-left); top: var(--lb-card-top); }
+.lb-board-card:nth-child(odd) { transform: rotate(-1deg); }
+.lb-board-card:nth-child(even) { transform: rotate(1deg); }
 .lb-pin { position: absolute; right: -10px; top: -10px; display: grid; width: 24px; height: 24px; place-items: center; border-radius: 50%; background: var(--nb-lasso-green); color: var(--nb-ink); font-family: var(--font-mono); font-size: 10px; font-weight: 700; }
 .lb-read-dot { position: absolute; right: -6px; top: -6px; width: 12px; height: 12px; border: 2px solid var(--nb-lasso-green); border-radius: 50%; background: var(--nb-white); }
 .lb-connectors { position: absolute; z-index: 3; inset: 0; opacity: 0; transition: opacity 350ms ease; }
@@ -5682,7 +5676,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .lb-trail { display: grid; gap: 7px; margin-top: 16px; border-top: 1px solid var(--nb-rule); padding-top: 12px; font-size: 10px; }
 .lb-trail span { display: flex; gap: 7px; align-items: center; }
 .lb-trail b { display: grid; width: 18px; height: 18px; place-items: center; border-radius: 50%; background: var(--nb-lasso-green); }
-.lb-turn-reader { position: absolute; z-index: 42; inset: 42px 90px; border: 1px solid var(--nb-graphite); background: var(--nb-white); box-shadow: var(--shadow-modal); animation: lb-reader-in 420ms var(--nb-ease) both; }
+.lb-turn-reader { position: absolute; z-index: 42; top: 42px; right: 456px; bottom: 42px; left: 24px; border: 1px solid var(--nb-graphite); background: var(--nb-white); box-shadow: var(--shadow-modal); animation: lb-reader-in 420ms var(--nb-ease) both; }
 .lb-turn-reader header { display: flex; justify-content: space-between; border-bottom: 1px solid var(--nb-rule); padding: 12px 16px; }
 .lb-turn-reader header h3 { margin-top: 4px; font-family: var(--font-serif); font-size: 23px; }
 .lb-turn-reader header > span { font-family: var(--font-mono); font-size: 8px; color: var(--nb-mid); }
@@ -5733,7 +5727,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   .lb-stage-window[data-step="5"] .lb-board-layer { transform: translate(-73%, -68%) scale(.72); }
   .lb-stage-window[data-step="6"] .lb-board-layer,.lb-stage-window[data-step="8"] .lb-board-layer { transform: translate(-51%, -50%) scale(.43); }
   .lb-answer-sheet { position: absolute; inset: auto 0 0; width: 100%; max-height: 52%; border-top: 2px solid var(--nb-graphite); border-left: 0; padding: 13px; }.lb-answer-sheet h3 { font-size: 19px; }.lb-answer-copy { font-size: 10px; }.lb-trail { font-size: 9px; }
-  .lb-turn-reader { inset: 24px; }.lb-turn-body { padding: 18px; }.lb-highlight-turn { padding: 12px; }
+  .lb-turn-reader { inset: 18px 18px 54%; }.lb-turn-body { padding: 18px; }.lb-highlight-turn { padding: 12px; }
   .lb-share-dialog { width: calc(100vw / .43 - 48px); max-width: 410px; }
   .lb-open-notes p { font-size: 16px; }
   .lb-continuation { padding-top: 64px; }

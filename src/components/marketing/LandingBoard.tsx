@@ -15,6 +15,7 @@ import type { DemoPreset } from "@/lib/demo-presets-shared";
 import { submitPilotRequestFn } from "@/lib/pilot-request.functions";
 import { recordAnonymousEventFn } from "@/lib/telemetry.functions";
 import type { SharedBoardDto, SharedSeedWork } from "@/lib/board-share-shared";
+import { seedPlacement } from "@/lib/public-work-allowlist";
 import { keptContentLabel } from "@/lib/work-open";
 
 export const LANDING_BOARD_STEPS = [
@@ -62,10 +63,9 @@ function ToolIdentity({ tool, compact = false }: { tool: string; compact?: boole
   );
 }
 
-function BoardCard({ item, index, step, pin, read }: { item: SharedSeedWork; index: number; step: number; pin: number | undefined; read: boolean }) {
-  const turnCount = item.type === "ai_thread" ? undefined : null;
+function BoardCard({ item, index, step, pin, read, turnCount, position }: { item: SharedSeedWork; index: number; step: number; pin: number | undefined; read: boolean; turnCount: number | null; position: { left: number; top: number } }) {
   return (
-    <article className="lb-board-card" data-arrived={step >= 1} style={{ "--lb-card-index": index } as CSSProperties}>
+    <article className="lb-board-card" data-arrived={step >= 1} style={{ "--lb-card-index": index, "--lb-card-left": `${position.left}px`, "--lb-card-top": `${position.top}px` } as CSSProperties}>
       <VendorMark item={item} />
       <strong>{item.title}</strong>
       <small>{keptContentLabel(item, turnCount)}</small>
@@ -119,6 +119,14 @@ function StoryBoard({ board, presets, step }: { board: SharedBoardDto; presets: 
   const citedIds = new Set(first?.turnRefs.map((ref) => ref.work_item_id) ?? []);
   const readIds = new Set(first?.manifest?.items.map((item) => item.id) ?? []);
   const visibleTasks = board.seed.tasks.filter((task) => !/board deck/i.test(task.name)).slice(0, 2);
+  const taskSlots = new Map<string, number>();
+  const cardPositions = items.map((item, index) => {
+    const taskIndex = visibleTasks.findIndex((task) => seedPlacement(item).includes(task.id));
+    if (taskIndex < 0) return { left: 188 + (index % 2) * 312, top: 438 };
+    const slot = taskSlots.get(visibleTasks[taskIndex]?.id ?? "") ?? 0;
+    taskSlots.set(visibleTasks[taskIndex]?.id ?? "", slot + 1);
+    return { left: taskIndex === 0 ? 188 : 500, top: 176 + slot * 140 };
+  });
   return (
     <div className="lb-stage-window" data-step={step + 1} data-testid="landing-board-stage">
       <div className="lb-board-layer">
@@ -130,7 +138,7 @@ function StoryBoard({ board, presets, step }: { board: SharedBoardDto; presets: 
           {visibleTasks.map((task, index) => <section key={task.id} style={{ "--lb-frame-index": index } as CSSProperties}><h3>{task.name}</h3><p>{task.detail}</p></section>)}
         </div>
         <div className="lb-cards">
-          {items.map((item, index) => <BoardCard key={item.id} item={item} index={index} step={step} pin={step >= 5 && citedIds.has(item.id) ? trailNumbers.get(item.id) : undefined} read={step >= 5 && readIds.has(item.id)} />)}
+          {items.map((item, index) => <BoardCard key={item.id} item={item} index={index} step={step} pin={step >= 5 && citedIds.has(item.id) ? trailNumbers.get(item.id) : undefined} read={step >= 5 && readIds.has(item.id)} turnCount={item.type === "ai_thread" ? board.turns[item.id]?.length ?? null : null} position={cardPositions[index] ?? { left: 188, top: 438 }} />)}
         </div>
         <svg className="lb-connectors" viewBox="0 0 1000 620" preserveAspectRatio="none" aria-hidden="true">
           <path d="M260 230 C470 220 570 280 735 350" /><path d="M260 390 C470 390 590 380 735 350" /><path d="M540 485 C620 470 680 410 735 350" />
