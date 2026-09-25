@@ -79,7 +79,7 @@ describe("Unit 6 demo plus landing", () => {
   });
 
   it("changes the board back destination by auth state and keeps pilot on the landing", () => {
-    expect(DEMO_PAGE).toContain("const { session } = useSession()");
+    expect(DEMO_PAGE).toContain("const { session, loading: sessionLoading } = useSession()");
     expect(DEMO_PAGE).toContain('<Link to="/demo"');
     expect(DEMO_PAGE).toContain('<Link to="/" hash="demo"');
     expect(DEMO_PAGE).toContain('to="/"');
