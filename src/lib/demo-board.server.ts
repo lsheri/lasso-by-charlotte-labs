@@ -160,7 +160,7 @@ export async function openDemoConversations(): Promise<DemoConversationsResult> 
       if (item.type !== "ai_thread" && item.type !== "document") continue;
       seen.add(item.id);
       // Already passed publicSafeWork inside demoBoard.
-      out.items.push({ code: row.code, item });
+      out.items.push({ code: row.code, item: { ...item, placedIn: [] } });
       if (dto.turns[item.id]) out.turns[item.id] = dto.turns[item.id]!;
       if (dto.filePreviews[item.id]) out.filePreviews[item.id] = dto.filePreviews[item.id]!;
     }
