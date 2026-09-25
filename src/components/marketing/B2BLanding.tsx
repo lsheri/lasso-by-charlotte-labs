@@ -323,7 +323,7 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
             <a
               href="#pilot"
               onClick={() => notePlacedPilotClick("header")}
-              className="landing-header-cta rounded-[var(--radius)] bg-foreground px-4 py-3 font-mono text-[13px] uppercase tracking-[0.08em] text-background transition-opacity hover:opacity-85 sm:px-6 sm:text-[18px]"
+              className="landing-header-cta flex min-h-11 min-w-0 items-center justify-center rounded-[var(--radius)] bg-foreground px-3 py-2 text-center font-mono text-[13px] uppercase tracking-[0.08em] text-background transition-opacity hover:opacity-85 sm:px-6 sm:py-3 sm:text-[18px]"
             >
               Book a pilot
             </a>
