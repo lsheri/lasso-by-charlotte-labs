@@ -13,6 +13,10 @@ export type TelemetryEvent =
   | "landing.usecase_played"
   /** B2B landing: a pilot request was saved. Team-size band only. */
   | "landing.pilot_requested"
+  /** Product shell 1.3: the public demo Home or a demo board was opened. Closed surface word and invented demo code only. */
+  | "demo.opened"
+  /** Product shell 1.3: a card on a demo board was opened to read. Invented demo code and node kind only. */
+  | "demo.card_opened"
   /** P4a: the signed-in Home board was opened. Content-free. */
   | "home.opened"
   /** P4a: the new-engagement dialog was opened from Home. Content-free. */

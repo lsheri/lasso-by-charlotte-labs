@@ -98,7 +98,14 @@ function frameKindOf(frame: LabFrame): "foundation" | "task" | "decisions" | "ou
   return frame.id.startsWith("task:") ? "task" : "custom";
 }
 
-export function SharedBoardView({ board }: { board: SharedBoardDto }) {
+export function SharedBoardView({
+  board,
+  onNodeOpened,
+}: {
+  board: SharedBoardDto;
+  /** Optional: told the kind of a card opened to read. The share page passes nothing. */
+  onNodeOpened?: (kind: string) => void;
+}) {
   const queryClient = useQueryClient();
   const model = useMemo(() => buildSharedBoardModel(board), [board]);
   const viewportRef = useRef<HTMLDivElement | null>(null);
@@ -195,6 +202,7 @@ export function SharedBoardView({ board }: { board: SharedBoardDto }) {
   function openNode(node: LabNode, rect?: DOMRect) {
     setOrigin(rect ? { left: rect.left, top: rect.top, width: rect.width, height: rect.height } : null);
     setFocusId(node.id);
+    onNodeOpened?.(node.kind);
   }
 
   const focusNode = model.nodes.find((node) => node.id === focusId) ?? null;

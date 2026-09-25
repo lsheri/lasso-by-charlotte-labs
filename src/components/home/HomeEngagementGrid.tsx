@@ -108,10 +108,13 @@ export function HomeEngagementGrid({
   cards,
   availableWidth,
   previews,
+  demo = false,
 }: {
   cards: readonly HomeGridEngagement[];
   availableWidth: number;
   previews?: ReadonlyMap<string, HomePreviewState>;
+  /** Public demo: cards open the read-only demo board and carry no "last opened" line. */
+  demo?: boolean;
 }) {
   if (cards.length === 0) return null;
   const ordered = orderHomeGrid(cards);
@@ -126,6 +129,24 @@ export function HomeEngagementGrid({
       >
         {ordered.map((card) => (
           <li key={card.id} className="h-[228px] min-w-0">
+            {demo ? (
+              <Link to="/demo/$code" params={{ code: card.code }} className="block h-full rounded-[var(--radius-control)] border border-border bg-card p-3 transition-colors hover:border-foreground/40 focus:outline-none focus:ring-2 focus:ring-ring">
+              <HomeBoardPreview state={previews?.get(card.id) ?? { status: "loading" }} />
+              <p className="mt-3 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
+                {card.clientLabel ?? card.code}
+              </p>
+              <p className="mt-1 truncate text-[14px] leading-[1.4] text-foreground">{card.title}</p>
+              <p className="mt-1 text-xs leading-[1.5] text-muted-foreground">
+                {demo ? null : <span data-testid={`home-card-when-${card.id}`}>{lastOpenedLabel(card.lastViewedAt)}</span>}
+                {card.workCount === null ? null : (
+                  <span>
+                    {demo ? "" : " · "}
+                    {card.workCount} {card.workCount === 1 ? "piece of work" : "pieces of work"}
+                  </span>
+                )}
+              </p>
+              </Link>
+            ) : (
             <Link
               to="/engagements/$id/canvas-lab"
               params={{ id: card.id }}
@@ -148,6 +169,7 @@ export function HomeEngagementGrid({
                 )}
               </p>
             </Link>
+            )}
           </li>
         ))}
       </ul>

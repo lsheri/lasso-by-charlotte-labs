@@ -41,6 +41,8 @@ import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedReflectRouteImport } from './routes/_authenticated/reflect'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedWorkRouteImport } from './routes/_authenticated/work'
+import { Route as DemoIndexRouteImport } from './routes/demo.index'
+import { Route as DemoCodeRouteImport } from './routes/demo.$code'
 import { Route as JoinEduRouteImport } from './routes/join_.edu'
 import { Route as LandingArchive20260925RouteImport } from './routes/landing-archive.2026-09-25'
 import { Route as SharedBoardTokenRouteImport } from './routes/shared-board.$token'
@@ -222,6 +224,16 @@ const AuthenticatedWorkRoute = AuthenticatedWorkRouteImport.update({
   path: '/work',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const DemoIndexRoute = DemoIndexRouteImport.update({
+  id: '/demo/',
+  path: '/demo/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemoCodeRoute = DemoCodeRouteImport.update({
+  id: '/demo/$code',
+  path: '/demo/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const JoinEduRoute = JoinEduRouteImport.update({
   id: '/join_/edu',
   path: '/join/edu',
@@ -352,9 +364,11 @@ export interface FileRoutesByFullPath {
   '/reflect': typeof AuthenticatedReflectRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/work': typeof AuthenticatedWorkRoute
+  '/demo/$code': typeof DemoCodeRoute
   '/join/edu': typeof JoinEduRoute
   '/landing-archive/2026-09-25': typeof LandingArchive20260925Route
   '/shared-board/$token': typeof SharedBoardTokenRoute
+  '/demo/': typeof DemoIndexRoute
   '/clients/$id': typeof AuthenticatedClientsIdRoute
   '/design/icons': typeof AuthenticatedDesignIconsRoute
   '/engagements/$id': typeof AuthenticatedEngagementsIdRoute
@@ -403,9 +417,11 @@ export interface FileRoutesByTo {
   '/reflect': typeof AuthenticatedReflectRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/work': typeof AuthenticatedWorkRoute
+  '/demo/$code': typeof DemoCodeRoute
   '/join/edu': typeof JoinEduRoute
   '/landing-archive/2026-09-25': typeof LandingArchive20260925Route
   '/shared-board/$token': typeof SharedBoardTokenRoute
+  '/demo': typeof DemoIndexRoute
   '/clients/$id': typeof AuthenticatedClientsIdRoute
   '/design/icons': typeof AuthenticatedDesignIconsRoute
   '/engagements/$id': typeof AuthenticatedEngagementsIdRoute
@@ -456,9 +472,11 @@ export interface FileRoutesById {
   '/_authenticated/reflect': typeof AuthenticatedReflectRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/work': typeof AuthenticatedWorkRoute
+  '/demo/$code': typeof DemoCodeRoute
   '/join_/edu': typeof JoinEduRoute
   '/landing-archive/2026-09-25': typeof LandingArchive20260925Route
   '/shared-board/$token': typeof SharedBoardTokenRoute
+  '/demo/': typeof DemoIndexRoute
   '/_authenticated/clients/$id': typeof AuthenticatedClientsIdRoute
   '/_authenticated/design/icons': typeof AuthenticatedDesignIconsRoute
   '/_authenticated/engagements/$id': typeof AuthenticatedEngagementsIdRoute
@@ -509,9 +527,11 @@ export interface FileRouteTypes {
     | '/reflect'
     | '/settings'
     | '/work'
+    | '/demo/$code'
     | '/join/edu'
     | '/landing-archive/2026-09-25'
     | '/shared-board/$token'
+    | '/demo/'
     | '/clients/$id'
     | '/design/icons'
     | '/engagements/$id'
@@ -560,9 +580,11 @@ export interface FileRouteTypes {
     | '/reflect'
     | '/settings'
     | '/work'
+    | '/demo/$code'
     | '/join/edu'
     | '/landing-archive/2026-09-25'
     | '/shared-board/$token'
+    | '/demo'
     | '/clients/$id'
     | '/design/icons'
     | '/engagements/$id'
@@ -612,9 +634,11 @@ export interface FileRouteTypes {
     | '/_authenticated/reflect'
     | '/_authenticated/settings'
     | '/_authenticated/work'
+    | '/demo/$code'
     | '/join_/edu'
     | '/landing-archive/2026-09-25'
     | '/shared-board/$token'
+    | '/demo/'
     | '/_authenticated/clients/$id'
     | '/_authenticated/design/icons'
     | '/_authenticated/engagements/$id'
@@ -644,9 +668,11 @@ export interface RootRouteChildren {
   PersonalRoute: typeof PersonalRoute
   TrustRoute: typeof TrustRoute
   WhyRoute: typeof WhyRoute
+  DemoCodeRoute: typeof DemoCodeRoute
   JoinEduRoute: typeof JoinEduRoute
   LandingArchive20260925Route: typeof LandingArchive20260925Route
   SharedBoardTokenRoute: typeof SharedBoardTokenRoute
+  DemoIndexRoute: typeof DemoIndexRoute
   ApiAnalysisStreamRoute: typeof ApiAnalysisStreamRoute
   ApiCoachChatStreamRoute: typeof ApiCoachChatStreamRoute
   ApiMcpTokenRoute: typeof ApiMcpTokenRoute
@@ -883,6 +909,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWorkRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/demo/': {
+      id: '/demo/'
+      path: '/demo'
+      fullPath: '/demo/'
+      preLoaderRoute: typeof DemoIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo/$code': {
+      id: '/demo/$code'
+      path: '/demo/$code'
+      fullPath: '/demo/$code'
+      preLoaderRoute: typeof DemoCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/join_/edu': {
       id: '/join_/edu'
       path: '/join/edu'
@@ -1091,9 +1131,11 @@ const rootRouteChildren: RootRouteChildren = {
   PersonalRoute: PersonalRoute,
   TrustRoute: TrustRoute,
   WhyRoute: WhyRoute,
+  DemoCodeRoute: DemoCodeRoute,
   JoinEduRoute: JoinEduRoute,
   LandingArchive20260925Route: LandingArchive20260925Route,
   SharedBoardTokenRoute: SharedBoardTokenRoute,
+  DemoIndexRoute: DemoIndexRoute,
   ApiAnalysisStreamRoute: ApiAnalysisStreamRoute,
   ApiCoachChatStreamRoute: ApiCoachChatStreamRoute,
   ApiMcpTokenRoute: ApiMcpTokenRoute,

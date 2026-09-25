@@ -11,7 +11,8 @@
  *   - a wrong token, an expired one and a revoked one all return the same
  *     closed answer, so the response cannot be read to learn what exists.
  *
- * Nothing else in the product may call into this module.
+ * Nothing else in the product may call into this module, except the public
+ * demo (demo-board.server.ts), which reuses the board reader with a null viewer.
  */
 
 import type { Database } from "@/integrations/supabase/types";
@@ -95,7 +96,7 @@ export async function openSharedBoard(token: string): Promise<SharedBoardResult>
     return { status: "closed" };
   }
 
-  const board = await readBoard(supabaseAdmin, link.workboard_id, link);
+  const board = await readBoard(supabaseAdmin, link.workboard_id, link, link.created_by);
   if (!board) {
     await noteShareEvent("refused", link.org_id, "unknown");
     return { status: "closed" };
@@ -141,10 +142,11 @@ type TaskRow = {
  * confirmed or that are their own drafts. Anything hidden on the board is not
  * on the board, so it travels nowhere, including its seed record.
  */
-async function readBoard(
+export async function readBoard(
   db: AdminDb,
   workboardId: string,
-  link: { expires_at: string; created_by: string; org_id: string },
+  link: { expires_at: string; org_id: string },
+  viewerProfileId: string | null = null,
 ): Promise<SharedBoardDto | null> {
   const { data: boardRow } = await db
     .from("workboards")
@@ -181,7 +183,7 @@ async function readBoard(
   const briefHidden = hiddenRows.some((row) => row.kind === "brief");
 
   const readable = (item: { visibility: string; owner_id?: string | null }) =>
-    item.visibility === "mapped" || item.owner_id === link.created_by;
+    item.visibility === "mapped" || (viewerProfileId !== null && item.owner_id === viewerProfileId);
 
   const taskRows = ((tasksRes.data ?? []) as unknown as TaskRow[]).filter((task) => !isBoardDefaultTask(task));
   const allTaskRows = (tasksRes.data ?? []) as unknown as TaskRow[];
@@ -204,7 +206,7 @@ async function readBoard(
 
   const decisions = ((decisionsRes.data ?? []) as { id: string; call_text: string; situation: string; status: string; owner_id: string | null }[])
     .filter((row) => !hiddenDecisions.has(row.id))
-    .filter((row) => row.status === "confirmed" || row.owner_id === link.created_by)
+    .filter((row) => row.status === "confirmed" || (viewerProfileId !== null && row.owner_id === viewerProfileId))
     .map((row) => ({ id: row.id, call: row.call_text, situation: row.situation }));
   const decisionIds = new Set(decisions.map((row) => row.id));
 
@@ -364,3 +366,4 @@ async function readFilePreviews(db: AdminDb, items: SharedSeedWork[]): Promise<R
   }));
   return Object.fromEntries(entries);
 }
+
