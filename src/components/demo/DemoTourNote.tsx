@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useReducedMotion } from "@/hooks/use-motion";
 
 type Placement = "right" | "left" | "above" | "below";
-type NotePosition = { left: number; top: number; width: number; placement: Placement; hits: number };
+type NotePosition = { left: number; top: number; width: number; placement: Placement; arrowOffset: number; hits: number };
 type PositionCandidate = Omit<NotePosition, "hits">;
 
 const VIEWPORT_EDGE = 12;
@@ -48,18 +48,38 @@ function visibleContentRect(anchor: HTMLElement): DOMRect {
 function candidatePositions(anchor: DOMRect, requestedWidth: number, placement: Placement): PositionCandidate[] {
   if (placement === "right") {
     const width = Math.min(requestedWidth, window.innerWidth - VIEWPORT_EDGE - anchor.right - NOTE_GAP);
-    return width < NOTE_MIN_WIDTH ? [] : [{ left: anchor.right + NOTE_GAP, top: anchor.top + (anchor.height - NOTE_HEIGHT) / 2, width, placement }];
+    if (width < NOTE_MIN_WIDTH) return [];
+    const centered = anchor.top + (anchor.height - NOTE_HEIGHT) / 2;
+    const tops = [centered, anchor.bottom - NOTE_HEIGHT, anchor.top]
+      .map((top) => Math.max(VIEWPORT_EDGE, Math.min(top, window.innerHeight - VIEWPORT_EDGE - NOTE_HEIGHT)));
+    return [...new Set(tops)].map((top) => ({
+      left: anchor.right + NOTE_GAP,
+      top,
+      width,
+      placement,
+      arrowOffset: Math.max(12, Math.min(anchor.top + anchor.height / 2 - top - 12, NOTE_HEIGHT - 36)),
+    }));
   }
   if (placement === "left") {
     const width = Math.min(requestedWidth, anchor.left - NOTE_GAP - VIEWPORT_EDGE);
-    return width < NOTE_MIN_WIDTH ? [] : [{ left: anchor.left - width - NOTE_GAP, top: anchor.top + (anchor.height - NOTE_HEIGHT) / 2, width, placement }];
+    if (width < NOTE_MIN_WIDTH) return [];
+    const centered = anchor.top + (anchor.height - NOTE_HEIGHT) / 2;
+    const tops = [centered, anchor.bottom - NOTE_HEIGHT, anchor.top]
+      .map((top) => Math.max(VIEWPORT_EDGE, Math.min(top, window.innerHeight - VIEWPORT_EDGE - NOTE_HEIGHT)));
+    return [...new Set(tops)].map((top) => ({
+      left: anchor.left - width - NOTE_GAP,
+      top,
+      width,
+      placement,
+      arrowOffset: Math.max(12, Math.min(anchor.top + anchor.height / 2 - top - 12, NOTE_HEIGHT - 36)),
+    }));
   }
   const top = placement === "above" ? anchor.top - NOTE_HEIGHT - NOTE_GAP : anchor.bottom + NOTE_GAP;
   const width = requestedWidth;
   const centered = anchor.left + (anchor.width - width) / 2;
   const positions = [centered, anchor.left, anchor.right - width]
     .map((left) => Math.max(VIEWPORT_EDGE, Math.min(left, window.innerWidth - VIEWPORT_EDGE - width)));
-  return [...new Set(positions)].map((left) => ({ left, top, width, placement }));
+  return [...new Set(positions)].map((left) => ({ left, top, width, placement, arrowOffset: 0 }));
 }
 
 function isInsideViewport(position: PositionCandidate): boolean {
@@ -170,6 +190,7 @@ export function DemoTourNote({
         "--demo-note-left": `${position.left}px`,
         "--demo-note-top": `${position.top}px`,
         "--demo-note-width": `${position.width}px`,
+        "--demo-note-arrow-offset": `${position.arrowOffset}px`,
       } as CSSProperties}
       aria-label={`Demo guide step ${step}`}
     >
