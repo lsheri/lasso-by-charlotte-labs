@@ -157,6 +157,7 @@ import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
 import { GraphiteIcon } from "@/components/notebook/icons";
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
 import { BoardDetailsContent } from "@/components/canvas-lab/BoardDetailsPopover";
+import { DemoPresetsAdmin } from "@/components/engagements/DemoPresetsAdmin";
 import { SidebarNav } from "@/components/layout/SidebarNav";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -2697,6 +2698,10 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
                 members={page?.members ?? []}
                 engagementId={engagementId}
               />
+              {/* Unit 2.1: the engagement page redirects here, so this is where a
+                  demo-org admin can reach the regenerate control. Renders nothing
+                  for non-demo engagements and non-admins; the server re-checks. */}
+              <DemoPresetsAdmin engagementId={engagementId} />
             </PopoverContent>
           </Popover>
           {drawTool ? <div className="canvas-lab-region-palette"><RegionColourSwatches value={regionFill} onChange={setRegionFill} /></div> : null}
