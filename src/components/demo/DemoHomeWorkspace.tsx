@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 
 import { DemoTourNote } from "@/components/demo/DemoTourNote";
@@ -85,6 +86,12 @@ export function DemoHomeWorkspace({ surface }: { surface: DemoHomeSurface }) {
           />
         )}
       </div>
+      <p className="mt-4 text-[13px] text-muted-foreground" data-testid="demo-also-row">
+        Also in this workspace:{" "}
+        <Link to="/demo/conversations" className="text-foreground underline underline-offset-2">All AI Conversations</Link>
+        {" · "}
+        <Link to="/demo/sources" className="text-foreground underline underline-offset-2">Where work comes from</Link>
+      </p>
       {tour.step === 1 && cards.some((card) => card.code === "YSM-01") ? (
         <DemoTourNote step={1} anchorTestId="demo-engagement-YSM-01" onDismiss={tour.dismiss}>
           Start here: the CFO asked where a number came from.
