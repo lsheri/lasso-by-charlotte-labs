@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { type CSSProperties, type FormEvent, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { type CSSProperties, type FormEvent, type RefObject, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
 import { LandingParticlePhrase } from "@/components/marketing/LandingParticlePhrase";
@@ -197,7 +197,7 @@ function AskReplay({ presets, step, onFinished }: { presets: DemoPreset[]; step:
 
 type LassoBox = { left: number; top: number; width: number; height: number };
 
-function DeckSlide({ index, clientName, numberRef }: { index: number; clientName: string; numberRef: React.RefObject<HTMLSpanElement | null> }) {
+function DeckSlide({ index, clientName, numberRef }: { index: number; clientName: string; numberRef: RefObject<HTMLSpanElement | null> }) {
   if (index === 0) return <section className="lb-deck-slide lb-slide-cover"><small>1</small><div className="lb-slide-cover-copy"><b>FY27 growth partnerships</b><span>{clientName}</span></div><svg viewBox="0 0 100 64" aria-hidden="true"><path d="M8 50 35 12l18 29 17-22 22 31Z" /><circle cx="69" cy="17" r="7" /></svg></section>;
   if (index === 1) return <section className="lb-deck-slide lb-slide-scenarios"><small>2</small><b>Three scenarios</b><div>{["A", "B", "C"].map((label) => <span key={label} data-picked={label === "B"}><i />{label}</span>)}</div></section>;
   if (index === 2) return <section className="lb-deck-slide lb-slide-number"><small>3</small><b>Year-two net benefit</b><div className="lb-waterfall"><span><i />$2.1M<br />savings</span><span><i />$0.7M<br />costs</span><span><i />$1.4M<br />net</span></div><span ref={numberRef} className="lb-number" data-testid="landing-board-number">$1.4M</span></section>;
@@ -221,7 +221,7 @@ function ExactTurn({ board, preset }: { board: SharedBoardDto; preset: DemoPrese
   );
 }
 
-function StoryBoard({ board, presets, step, attentionStep, attentionNonce }: { board: SharedBoardDto; presets: DemoPreset[]; step: number; attentionStep: number; attentionNonce: number }) {
+function StoryBoard({ board, presets, step, attentionStep, attentionNonce, clientName }: { board: SharedBoardDto; presets: DemoPreset[]; step: number; attentionStep: number; attentionNonce: number; clientName: string }) {
   const [replayFinished, setReplayFinished] = useState(false);
   const [lassoBox, setLassoBox] = useState<LassoBox | null>(null);
   const layerRef = useRef<HTMLDivElement>(null);
@@ -298,7 +298,7 @@ function StoryBoard({ board, presets, step, attentionStep, attentionNonce }: { b
         </svg>
         <article key={`deck-${attentionNonce}`} className={`lb-deck${pulse(3)}`}>
           <header><ToolLogo vendor="powerpoint" compact /><strong>{deckItem?.title ?? "FY27 board deck v3"}</strong></header>
-          <div>{slides.map((slide, index) => <DeckSlide key={`${slide}-${index}`} index={index} clientName={board.engagement.clientLabel ?? "YellowSigil Mobility"} numberRef={numberRef} />)}</div>
+          <div>{slides.map((slide, index) => <DeckSlide key={`${slide}-${index}`} index={index} clientName={clientName} numberRef={numberRef} />)}</div>
           {step >= 5 && replayFinished && deckItem && citedIds.has(deckItem.id) ? <span className="lb-pin" aria-label={`Source ${trailNumbers.get(deckItem.id)}`}>{trailNumbers.get(deckItem.id)}</span> : step >= 5 && replayFinished && deckItem && readIds.has(deckItem.id) ? <span className="lb-read-dot" aria-label="Read for this response" /> : null}
         </article>
         {lassoBox ? <span key={`lasso-${attentionNonce}`} className={`lb-slide-lasso${pulse(4)}`} data-testid="landing-board-lasso" style={{ left: lassoBox.left, top: lassoBox.top, width: lassoBox.width, height: lassoBox.height }} aria-hidden="true" /> : null}
@@ -459,7 +459,7 @@ export function LandingBoard() {
       <LandingBoardHeader active={LANDING_BOARD_STEPS[active]?.key ?? "problem"} onJump={jump} onPilot={() => pilot("header")} />
       <main className="lb-story">
         <div className="lb-sticky-stage">
-          {result?.status === "open" && "board" in result ? <StoryBoard board={result.board} presets={result.presets} step={active} attentionStep={settledStep} attentionNonce={attentionNonce} /> : <div className="lb-stage-window lb-loading">{query.isPending ? "Opening the demo board." : "The demo board is not available right now."}</div>}
+          {result?.status === "open" && "board" in result ? <StoryBoard board={result.board} presets={result.presets} step={active} attentionStep={settledStep} attentionNonce={attentionNonce} clientName={result.engagement.clientLabel ?? "YellowSigil Mobility"} /> : <div className="lb-stage-window lb-loading">{query.isPending ? "Opening the demo board." : "The demo board is not available right now."}</div>}
           {settledStep > 0 ? <article key={`${settledStep}-${attentionNonce}`} className="lb-caption lb-caption-attention" aria-live="polite"><div className="lb-caption-text"><span>{String(settledStep + 1).padStart(2, "0")} · {LANDING_BOARD_STEPS[settledStep]?.label}</span><h2>{LANDING_BOARD_STEPS[settledStep]?.headline}</h2><p>{LANDING_BOARD_STEPS[settledStep]?.line}</p></div>{settledStep === 9 ? <div><Button asChild><Link to="/demo/$code" params={{ code: "YSM-01" }}>Open the board yourself</Link></Button><Button asChild variant="outline"><a href="#pilot" onClick={() => pilot("try_it")}>Book a pilot</a></Button></div> : null}</article> : null}
         </div>
         <div className="lb-scroll-sections">
