@@ -40,7 +40,7 @@ function collisionCount(position: NotePosition, width: number, anchor: HTMLEleme
   const { left, top } = position;
   const right = left + width;
   const bottom = top + NOTE_HEIGHT;
-  const points = [
+  const points: Array<[number, number]> = [
     [left, top], [left + width / 2, top], [right, top],
     [left, top + NOTE_HEIGHT / 2], [left + width / 2, top + NOTE_HEIGHT / 2], [right, top + NOTE_HEIGHT / 2],
     [left, bottom], [left + width / 2, bottom], [right, bottom],
