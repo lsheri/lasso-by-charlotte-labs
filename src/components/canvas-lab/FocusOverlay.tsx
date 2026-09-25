@@ -142,6 +142,7 @@ export function FocusOverlay({
   filePreview,
   focusTurnNo,
   focusedTurnTestId,
+  closeLabel,
 }: {
   node: LabNode;
   item: WorkItemRow | null;
