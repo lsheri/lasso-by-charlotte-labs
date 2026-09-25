@@ -148,5 +148,5 @@
 
 - [x] Unit 3: build the seven-step /demo margin-note path, including step 7 Done completion
 
-- [ ] Unit 6: Put the shared demo Home below the logged-out landing hero, preserve signed-in redirect and landing sections, extend demo.opened surface, and verify both viewports.
+- [x] Unit 6: Put the shared demo Home below the logged-out landing hero, preserve signed-in redirect and landing sections, extend demo.opened surface, and verify both viewports.
 - [ ] Portal: add `landing` as an allowed `demo.opened.surface` value (architect-owned).
