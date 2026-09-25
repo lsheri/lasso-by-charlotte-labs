@@ -4,7 +4,69 @@ import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { useReducedMotion } from "@/hooks/use-motion";
 
-type NotePosition = { left: number; top: number; placement: "above" | "below" };
+type Placement = "right" | "left" | "above" | "below";
+type NotePosition = { left: number; top: number; placement: Placement };
+
+const VIEWPORT_EDGE = 12;
+const NOTE_GAP = 12;
+const NOTE_HEIGHT = 92;
+
+function candidatePosition(anchor: DOMRect, width: number, placement: Placement): NotePosition {
+  if (placement === "right") return { left: anchor.right + NOTE_GAP, top: anchor.top + (anchor.height - NOTE_HEIGHT) / 2, placement };
+  if (placement === "left") return { left: anchor.left - width - NOTE_GAP, top: anchor.top + (anchor.height - NOTE_HEIGHT) / 2, placement };
+  if (placement === "above") return { left: anchor.left + (anchor.width - width) / 2, top: anchor.top - NOTE_HEIGHT - NOTE_GAP, placement };
+  return { left: anchor.left + (anchor.width - width) / 2, top: anchor.bottom + NOTE_GAP, placement };
+}
+
+function isInsideViewport(position: NotePosition, width: number): boolean {
+  return position.left >= VIEWPORT_EDGE
+    && position.top >= VIEWPORT_EDGE
+    && position.left + width <= window.innerWidth - VIEWPORT_EDGE
+    && position.top + NOTE_HEIGHT <= window.innerHeight - VIEWPORT_EDGE;
+}
+
+function isMeaningfulHit(element: Element, anchor: HTMLElement): boolean {
+  if (element === anchor || anchor.contains(element)) return false;
+  if (element.closest(".demo-tour-note")) return false;
+  if (element === document.body || element === document.documentElement) return false;
+  const html = element as HTMLElement;
+  const style = window.getComputedStyle(html);
+  if (style.visibility === "hidden" || style.display === "none" || style.pointerEvents === "none") return false;
+  if (element.matches("button, a, input, textarea, select, summary, [role='button'], [role='link']")) return true;
+  return Array.from(element.childNodes).some((node) => node.nodeType === Node.TEXT_NODE && Boolean(node.textContent?.trim()));
+}
+
+function collisionCount(position: NotePosition, width: number, anchor: HTMLElement): number {
+  const { left, top } = position;
+  const right = left + width;
+  const bottom = top + NOTE_HEIGHT;
+  const points = [
+    [left, top], [left + width / 2, top], [right, top],
+    [left, top + NOTE_HEIGHT / 2], [left + width / 2, top + NOTE_HEIGHT / 2], [right, top + NOTE_HEIGHT / 2],
+    [left, bottom], [left + width / 2, bottom], [right, bottom],
+  ];
+  const hits = new Set<Element>();
+  for (const [x, y] of points) {
+    for (const element of document.elementsFromPoint(x, y)) {
+      if (isMeaningfulHit(element, anchor)) hits.add(element);
+    }
+  }
+  return hits.size;
+}
+
+export function chooseDemoNotePosition(anchor: HTMLElement, width: number): NotePosition | null {
+  const rect = anchor.getBoundingClientRect();
+  const verticalOrder: Placement[] = rect.top >= NOTE_HEIGHT + NOTE_GAP + VIEWPORT_EDGE ? ["above", "below"] : ["below", "above"];
+  const order: Placement[] = window.innerWidth < 640 ? verticalOrder : ["right", "left", "above", "below"];
+  const candidates = order
+    .map((placement) => candidatePosition(rect, width, placement))
+    .filter((position) => isInsideViewport(position, width))
+    .map((position) => ({ position, hits: collisionCount(position, width, anchor) }));
+  const clear = candidates.find(({ hits }) => hits === 0);
+  if (clear) return clear.position;
+  return candidates.sort((a, b) => a.hits - b.hits
+    || Number(!["above", "below"].includes(a.position.placement)) - Number(!["above", "below"].includes(b.position.placement)))[0]?.position ?? null;
+}
 
 export function DemoTourNote({
   step,
@@ -29,14 +91,8 @@ export function DemoTourNote({
       frame = requestAnimationFrame(() => {
         const anchor = document.querySelector<HTMLElement>(`[data-testid="${anchorTestId}"]`);
         if (!anchor) return setPosition(null);
-        const rect = anchor.getBoundingClientRect();
         const width = Math.min(286, window.innerWidth - 24);
-        const height = 92;
-        const gap = 12;
-        const placement = rect.top >= height + gap + 12 ? "above" : "below";
-        const top = placement === "above" ? rect.top - height - gap : rect.bottom + gap;
-        const left = Math.max(12, Math.min(rect.left + rect.width / 2 - width / 2, window.innerWidth - width - 12));
-        setPosition({ left, top: Math.max(12, Math.min(top, window.innerHeight - height - 12)), placement });
+        setPosition(chooseDemoNotePosition(anchor, width));
       });
     };
     place();

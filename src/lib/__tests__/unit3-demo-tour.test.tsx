@@ -7,7 +7,7 @@ const { recordAnonymousEventFn } = vi.hoisted(() => ({
 }));
 vi.mock("@/lib/telemetry.functions", () => ({ recordAnonymousEventFn }));
 
-import { DemoTourNote } from "@/components/demo/DemoTourNote";
+import { chooseDemoNotePosition, DemoTourNote } from "@/components/demo/DemoTourNote";
 import { DEMO_TOUR_DONE, useDemoTour } from "@/hooks/use-demo-tour";
 import { guardEventDims } from "@/lib/event-dim-allowlist";
 import { noteDemoStepCompleted, noteDemoTourSkipped, resetDemoTelemetry } from "@/lib/demo-telemetry";
@@ -79,6 +79,23 @@ describe("demo tour progress", () => {
 });
 
 describe("demo margin note", () => {
+  it("chooses the first clear side using elementsFromPoint", () => {
+    vi.stubGlobal("innerWidth", 1200);
+    vi.stubGlobal("innerHeight", 800);
+    const anchor = document.createElement("button");
+    document.body.appendChild(anchor);
+    vi.spyOn(anchor, "getBoundingClientRect").mockReturnValue({ left: 450, right: 550, top: 300, bottom: 340, width: 100, height: 40, x: 450, y: 300, toJSON: () => ({}) });
+    const blockingText = document.createElement("p");
+    blockingText.textContent = "Occupied";
+    document.body.appendChild(blockingText);
+    const points = vi.spyOn(document, "elementsFromPoint").mockImplementation((x) => x > 550 ? [blockingText, document.body] : [document.body]);
+
+    expect(chooseDemoNotePosition(anchor, 286)?.placement).toBe("left");
+    expect(points).toHaveBeenCalled();
+    anchor.remove();
+    blockingText.remove();
+  });
+
   it("anchors one reduced-motion note and dismisses it", () => {
     const dismiss = vi.fn();
     render(<><button data-testid="anchor">Anchor</button><DemoTourNote step={1} anchorTestId="anchor" onDismiss={dismiss}>Start here: the CFO asked where a number came from.</DemoTourNote></>);
