@@ -592,7 +592,7 @@ export function FocusOverlay({
               </section>
 
             ) : null}
-          </aside>
+          </aside>}
         </div>
       </div>
     </div>

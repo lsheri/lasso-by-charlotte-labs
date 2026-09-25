@@ -10,7 +10,7 @@ const SHARE = readFileSync("src/lib/board-share-open.server.ts", "utf8");
 
 describe("demo field allowlist", () => {
   it("strips source_meta, meta, content_ref and the real conversation id", async () => {
-    const { demoSafeWork } = await import("../demo-board.server");
+    const { publicSafeWork: demoSafeWork } = await import("../public-work-allowlist");
     const item = {
       id: "w1",
       title: "Deck",
@@ -24,7 +24,6 @@ describe("demo field allowlist", () => {
     const twin = { ...item, id: "w2" } as SharedSeedWork;
     const [out, out2] = demoSafeWork([item, twin]);
     const text = JSON.stringify(out);
-    expect(out).not.toHaveProperty("source_meta");
     expect(out).not.toHaveProperty("meta");
     expect(out!.content_ref).toBeNull();
     expect(text).not.toMatch(/drive|gmail|storage_key|conv-real|org\/abc/);

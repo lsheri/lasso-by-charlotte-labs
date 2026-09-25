@@ -15,18 +15,21 @@ function demoViewId(): string {
 const SAFE = /^[a-z0-9_.:-]{1,40}$/i;
 const safe = (value: string) => (SAFE.test(value) ? value.toLowerCase() : "other");
 
-const opened = new Set<string>();
+const opened = new Map<string, number>();
+const SAME_VIEW_MS = 1500;
 /** Test seam. */
 export function resetDemoTelemetry(): void {
   opened.clear();
   viewId = null;
 }
 
-/** Once per page view per surface and engagement, however often React mounts. */
+/** Once per page view per surface and engagement: a remount inside the same view (strict mode, refetch) does not send it again. */
 export function noteDemoOpened(surface: "home" | "board", engagement: string): void {
   const key = `${surface}:${engagement}`;
-  if (opened.has(key)) return;
-  opened.add(key);
+  const now = Date.now();
+  const last = opened.get(key);
+  if (last !== undefined && now - last < SAME_VIEW_MS) return;
+  opened.set(key, now);
   void recordAnonymousEventFn({
     data: { event_type: "demo.opened", view_id: demoViewId(), dims: { surface, engagement: safe(engagement) } },
   }).catch(() => undefined);
