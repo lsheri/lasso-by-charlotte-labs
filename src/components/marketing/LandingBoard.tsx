@@ -96,7 +96,7 @@ function ExactTurn({ board, preset }: { board: SharedBoardDto; preset: DemoPrese
   const turn = ref ? board.turns[ref.work_item_id]?.find((entry) => entry.turn_no === ref.turn_no) : undefined;
   return (
     <aside className="lb-turn-reader" aria-label="Exact turn reader">
-      <header><div><ToolIdentity tool={item ? toolKey(item) : "document"} /><h3>{item?.title ?? "Source conversation"}</h3></div><span>READ ONLY</span></header>
+      <header><div>{item ? <VendorMark item={item} /> : <ToolIdentity tool="document" />}<h3>{item?.title ?? "Source conversation"}</h3></div><span>READ ONLY</span></header>
       <div className="lb-turn-body">
         <p className="lb-turn-muted">Earlier turns are kept above.</p>
         <article className="lb-highlight-turn"><span>TURN {turn?.turn_no ?? ref?.turn_no ?? 5}</span><p>{turn?.content ?? preset?.answer ?? "The saved source turn is not available right now."}</p></article>
@@ -146,6 +146,7 @@ function StoryBoard({ board, presets, step }: { board: SharedBoardDto; presets: 
         <article className="lb-deck">
           <header><span>DELIVERABLE</span><strong>{deckItem?.title ?? "FY27 board deck v3"}</strong></header>
           <div>{slides.map((slide, index) => <section key={`${slide}-${index}`} data-slide={index + 1}><small>{index + 1}</small><p>{slide}</p>{index === 2 ? <span className="lb-number">$1.4M</span> : null}</section>)}</div>
+          {step >= 5 && deckItem && citedIds.has(deckItem.id) ? <span className="lb-pin" aria-label={`Source ${trailNumbers.get(deckItem.id)}`}>{trailNumbers.get(deckItem.id)}</span> : step >= 5 && deckItem && readIds.has(deckItem.id) ? <span className="lb-read-dot" aria-label="Read for this response" /> : null}
         </article>
         <div className="lb-circle-question"><span /><p>Where did the $1.4M on slide 3 come from?</p></div>
       </div>
