@@ -3,13 +3,24 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const DIR = "src/components/marketing/archive/landing-2026-09-25";
-const ROUTE = "src/routes/_authenticated/archive.landing-2026-09-25.tsx";
+const ROUTE = "src/routes/landing-archive.2026-09-25.tsx";
 
 describe("unit D landing archive", () => {
   it("route is noindex and signed-in only", () => {
     const route = readFileSync(ROUTE, "utf8");
     expect(route).toContain('{ name: "robots", content: "noindex,nofollow" }');
-    expect(route).toContain('createFileRoute("/_authenticated/archive/landing-2026-09-25")');
+    expect(route).toContain('createFileRoute("/landing-archive/2026-09-25")');
+  });
+
+  it("route is top-level, not under _authenticated, and sends signed-out users to /auth", () => {
+    expect(ROUTE.startsWith("src/routes/_authenticated/")).toBe(false);
+    expect(existsSync("src/routes/_authenticated/archive.landing-2026-09-25.tsx")).toBe(false);
+    const route = readFileSync(ROUTE, "utf8");
+    expect(route).toContain("ssr: false");
+    expect(route).toContain('supabase.auth.getUser()');
+    expect(route).toContain('if (!data.user) throw redirect({ to: "/auth" });');
+    expect(route.indexOf('if (!data.user)')).toBeGreaterThan(-1);
+    expect(route).not.toContain('if (data.user) throw redirect');
   });
 
   it("archived components carry no telemetry and send nothing", () => {
