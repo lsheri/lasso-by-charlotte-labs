@@ -10,3 +10,4 @@
 <!-- LOVABLE:END -->
 
 - Keep the public demo guide route-local and persist only its numeric step in guarded session storage, because it must never affect signed-in product state.
+- Render both public demo entrances through DemoHomeWorkspace so their cards, previews, loading states, and guide behavior stay identical.

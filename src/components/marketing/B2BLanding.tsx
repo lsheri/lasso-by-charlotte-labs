@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "react";
 
 import { PublicHeader } from "@/components/layout/PublicHeader";
+import { DemoHomeWorkspace } from "@/components/demo/DemoHomeWorkspace";
 import { FocusSection } from "@/components/marketing/FocusSection";
 import { DeckWalkthrough } from "@/components/marketing/HeroMotion";
 import { LandingParticlePhrase } from "@/components/marketing/LandingParticlePhrase";
@@ -271,6 +272,13 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
     });
   }
 
+  function openDemoWorkspace(event: React.MouseEvent<HTMLAnchorElement>) {
+    event.preventDefault();
+    noteSeeItWorkClick();
+    document.querySelector("#demo")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    window.history.replaceState(null, "", "#demo");
+  }
+
   async function submitPilotRequest(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     notePilotClick("pilot");
@@ -330,7 +338,7 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
           }
         />
 
-        <main className="landing-beats-root pb-24 pt-16 md:pt-20">
+        <main className="demo-tour-page landing-beats-root pb-24 pt-16 md:pt-20">
           <div className="mx-auto max-w-5xl px-6 md:px-10">
             <section className="landing-next-hero">
               <h1 className="pencil-title mt-5 text-foreground">
@@ -341,17 +349,13 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
               </h2>
               <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-3">
                 <Button asChild>
-                  <a href="#pilot" onClick={() => notePilotClick("hero")}>
-                    Book a pilot
+                  <a href="#demo" onClick={openDemoWorkspace}>
+                    Open the demo workspace
                   </a>
                 </Button>
-                <a
-                  href="#beats"
-                  onClick={noteSeeItWorkClick}
-                  className="story-link text-sm text-foreground transition-colors hover:text-muted-foreground"
-                >
-                  See it work ↓
-                </a>
+                <Button asChild variant="outline">
+                  <a href="#pilot" onClick={() => notePilotClick("hero")}>Book a pilot</a>
+                </Button>
               </div>
               <Link
                 to="/auth"
@@ -362,6 +366,15 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
               </Link>
             </section>
           </div>
+          <section id="demo" className="scroll-mt-6 mx-auto mt-20 max-w-[1200px] px-4 md:px-6" aria-labelledby="landing-demo-heading">
+            <div className="landing-section-head">
+              <p className="micro-label">DEMO WORKSPACE</p>
+              <h2 id="landing-demo-heading" className="pencil-title">Open a real workspace. Every figure is invented.</h2>
+            </div>
+            <div className="mt-8">
+              <DemoHomeWorkspace surface="landing" />
+            </div>
+          </section>
           <div className="mx-auto mt-14 max-w-[1200px] px-4 md:px-6">
             <HeroVideo />
           </div>

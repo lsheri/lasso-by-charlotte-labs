@@ -26,7 +26,7 @@ export function resetDemoTelemetry(): void {
 }
 
 /** Once per page view per surface and engagement: a remount inside the same view (strict mode, refetch) does not send it again. */
-export function noteDemoOpened(surface: "home" | "board", engagement: string): void {
+export function noteDemoOpened(surface: "home" | "board" | "landing", engagement: string): void {
   const key = `${surface}:${engagement}`;
   const now = Date.now();
   const last = opened.get(key);
