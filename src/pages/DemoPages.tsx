@@ -213,7 +213,7 @@ export function DemoPresetBar({
   if (answered.length === 0) return null;
   const open = answered.find((p) => p.position === active) ?? null;
   return (
-    <section aria-label="Ask Lasso, saved answers" data-demo-tour-collision-bar className="shrink-0 border-t border-border bg-card">
+    <section aria-label="Ask Lasso, saved answers" className="shrink-0 border-t border-border bg-card">
       {open ? (
         <div className="max-h-[45dvh] overflow-y-auto px-4 pb-3 pt-4" data-testid="demo-preset-panel">
           <div className="mx-auto max-w-3xl space-y-3">
@@ -251,7 +251,7 @@ export function DemoPresetBar({
           </div>
         </div>
       ) : null}
-      <div className="flex gap-2 overflow-x-auto px-4 py-3" data-testid="demo-preset-chips">
+      <div className="flex gap-2 overflow-x-auto px-4 py-3" data-testid="demo-preset-chips" data-demo-tour-collision-bar>
         {answered.map((p) => (
           <button
             key={p.position}
