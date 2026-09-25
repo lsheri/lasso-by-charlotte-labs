@@ -25,7 +25,10 @@ beforeEach(() => {
     configurable: true,
     value: vi.fn(() => [document.body]),
   });
-  vi.spyOn(Range.prototype, "getClientRects").mockReturnValue([] as unknown as DOMRectList);
+  Object.defineProperty(Range.prototype, "getClientRects", {
+    configurable: true,
+    value: vi.fn(() => []),
+  });
   vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({ left: 120, right: 220, top: 240, bottom: 280, width: 100, height: 40, x: 120, y: 240, toJSON: () => ({}) });
   window.matchMedia = vi.fn((query: string) => ({
     matches: query.includes("reduce"),
