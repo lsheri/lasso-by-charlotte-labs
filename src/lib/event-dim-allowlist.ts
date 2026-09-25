@@ -113,6 +113,7 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "landing.pilot_cta_clicked": ["location", "placement"],
   "landing.pilot_requested": ["team_size"],
   "landing.see_it_work_clicked": ["location"],
+  "landing.section_jumped": ["section"],
   "landing.story_section_viewed": ["input_mode", "section"],
   "landing.usecase_played": ["card", "input_mode"],
   "landing.viewed": ["surface", "variant"],

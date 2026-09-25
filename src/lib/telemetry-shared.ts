@@ -9,6 +9,8 @@ export type TelemetryEvent =
   | "landing.see_it_work_clicked"
   /** B2B landing: one story section became visible. Closed section and input mode only. */
   | "landing.story_section_viewed"
+  /** Unit L1: a visitor chose one of the closed story-section jump controls. */
+  | "landing.section_jumped"
   /** Unit 10: a use-case card's clip started on hover or tap. Closed card key and input mode only. */
   | "landing.usecase_played"
   /** B2B landing: a pilot request was saved. Team-size band only. */
