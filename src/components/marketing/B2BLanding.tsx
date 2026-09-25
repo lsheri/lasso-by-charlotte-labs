@@ -369,7 +369,7 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
           <section id="beats" className="landing-walkthrough mx-auto mt-24 max-w-[1320px] px-4 md:px-6" aria-label="How Lasso works">
             <div className="landing-section-head">
               <p className="micro-label">{"\n"}</p>
-              <h2 className="pencil-title">Deliverables you can defend to a client, a partner, or a board.</h2>
+              <h2 className="pencil-title font-mono font-bold tracking-[0.02em]">Deliverables you can defend to a client, a partner, or a board.</h2>
             </div>
             <DeckWalkthrough onActiveChange={setActiveBeat} />
           </section>
