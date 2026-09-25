@@ -9,11 +9,14 @@ import { LandingParticlePhrase } from "@/components/marketing/LandingParticlePhr
 import { FocusSection } from "@/components/marketing/FocusSection";
 import { LassoThinkingMark } from "@/components/reflect/LassoThinkingMark";
 import { Button } from "@/components/ui/button";
+import { VendorMark } from "@/components/work/SourceMark";
 import { openDemoBoardFn } from "@/lib/demo.functions";
 import type { DemoPreset } from "@/lib/demo-presets-shared";
 import { submitPilotRequestFn } from "@/lib/pilot-request.functions";
 import { recordAnonymousEventFn } from "@/lib/telemetry.functions";
 import type { SharedBoardDto, SharedSeedWork } from "@/lib/board-share-shared";
+import { seedPlacement } from "@/lib/public-work-allowlist";
+import { keptContentLabel } from "@/lib/work-open";
 
 export const LANDING_BOARD_STEPS = [
   { key: "problem", label: "Problem", headline: "Your firm's thinking went invisible.", line: "The work is scattered across tools, tabs, and drafts." },
@@ -60,13 +63,13 @@ function ToolIdentity({ tool, compact = false }: { tool: string; compact?: boole
   );
 }
 
-function BoardCard({ item, index, step, pin }: { item: SharedSeedWork; index: number; step: number; pin: number | undefined }) {
+function BoardCard({ item, index, step, pin, read, turnCount, position }: { item: SharedSeedWork; index: number; step: number; pin: number | undefined; read: boolean; turnCount: number | null; position: { left: number; top: number } }) {
   return (
-    <article className="lb-board-card" data-arrived={step >= 1} style={{ "--lb-card-index": index } as CSSProperties}>
-      <ToolIdentity tool={toolKey(item)} />
+    <article className="lb-board-card" data-arrived={step >= 1} style={{ "--lb-card-index": index, "--lb-card-left": `${position.left}px`, "--lb-card-top": `${position.top}px` } as CSSProperties}>
+      <VendorMark item={item} />
       <strong>{item.title}</strong>
-      <small>{item.type === "ai_thread" ? "Conversation kept in full" : "Source document"}</small>
-      {pin ? <span className="lb-pin" aria-label={`Source ${pin}`}>{pin}</span> : null}
+      <small>{keptContentLabel(item, turnCount)}</small>
+      {pin ? <span className="lb-pin" aria-label={`Source ${pin}`}>{pin}</span> : read ? <span className="lb-read-dot" aria-label="Read for this response" /> : null}
     </article>
   );
 }
@@ -93,7 +96,7 @@ function ExactTurn({ board, preset }: { board: SharedBoardDto; preset: DemoPrese
   const turn = ref ? board.turns[ref.work_item_id]?.find((entry) => entry.turn_no === ref.turn_no) : undefined;
   return (
     <aside className="lb-turn-reader" aria-label="Exact turn reader">
-      <header><div><ToolIdentity tool={item ? toolKey(item) : "document"} /><h3>{item?.title ?? "Source conversation"}</h3></div><span>READ ONLY</span></header>
+      <header><div>{item ? <VendorMark item={item} /> : <ToolIdentity tool="document" />}<h3>{item?.title ?? "Source conversation"}</h3></div><span>READ ONLY</span></header>
       <div className="lb-turn-body">
         <p className="lb-turn-muted">Earlier turns are kept above.</p>
         <article className="lb-highlight-turn"><span>TURN {turn?.turn_no ?? ref?.turn_no ?? 5}</span><p>{turn?.content ?? preset?.answer ?? "The saved source turn is not available right now."}</p></article>
@@ -103,16 +106,27 @@ function ExactTurn({ board, preset }: { board: SharedBoardDto; preset: DemoPrese
 }
 
 function StoryBoard({ board, presets, step }: { board: SharedBoardDto; presets: DemoPreset[]; step: number }) {
-  const items = board.seed.work.slice(0, 9);
+  const deckItem = board.seed.work.find((item) => /board deck/i.test(item.title));
+  const items = board.seed.work.filter((item) => item.id !== deckItem?.id).slice(0, 9);
   const slides = useMemo(() => {
-    const deck = board.seed.work.find((item) => /board deck/i.test(item.title));
-    const pages = deck ? board.filePreviews[deck.id]?.pages : undefined;
+    const pages = deckItem ? board.filePreviews[deckItem.id]?.pages : undefined;
     return Array.from({ length: 6 }, (_, index) => pages?.[index]?.title || pages?.[index]?.lines[0] || FALLBACK_SLIDES[index]);
-  }, [board]);
+  }, [board, deckItem]);
   const first = presets.find((preset) => preset.position === 1);
   const second = presets.find((preset) => preset.position === 2);
   const fourth = presets.find((preset) => preset.position === 4);
-  const pins = new Map(first?.manifest?.items.map((item, index) => [item.id, index + 1]) ?? []);
+  const trailNumbers = new Map(first?.manifest?.items.map((item, index) => [item.id, index + 1]) ?? []);
+  const citedIds = new Set(first?.turnRefs.map((ref) => ref.work_item_id) ?? []);
+  const readIds = new Set(first?.manifest?.items.map((item) => item.id) ?? []);
+  const visibleTasks = board.seed.tasks.filter((task) => !/board deck/i.test(task.name)).slice(0, 2);
+  const taskSlots = new Map<string, number>();
+  const cardPositions = items.map((item, index) => {
+    const taskIndex = visibleTasks.findIndex((task) => seedPlacement(item).includes(task.id));
+    if (taskIndex < 0) return { left: 188 + (index % 2) * 312, top: 438 };
+    const slot = taskSlots.get(visibleTasks[taskIndex]?.id ?? "") ?? 0;
+    taskSlots.set(visibleTasks[taskIndex]?.id ?? "", slot + 1);
+    return { left: taskIndex === 0 ? 188 : 500, top: 176 + slot * 140 };
+  });
   return (
     <div className="lb-stage-window" data-step={step + 1} data-testid="landing-board-stage">
       <div className="lb-board-layer">
@@ -121,24 +135,25 @@ function StoryBoard({ board, presets, step }: { board: SharedBoardDto; presets: 
           {TOOL_BADGES.map((tool) => <div key={tool.key}>{tool.logo ? <img src={tool.logo} alt="" aria-hidden="true" /> : null}<span>{tool.label}</span></div>)}
         </div>
         <div className="lb-frames">
-          {board.seed.tasks.slice(0, 3).map((task, index) => <section key={task.id} style={{ "--lb-frame-index": index } as CSSProperties}><h3>{task.name}</h3><p>{task.detail}</p></section>)}
+          {visibleTasks.map((task, index) => <section key={task.id} style={{ "--lb-frame-index": index } as CSSProperties}><h3>{task.name}</h3><p>{task.detail}</p></section>)}
         </div>
         <div className="lb-cards">
-          {items.map((item, index) => <BoardCard key={item.id} item={item} index={index} step={step} pin={step >= 5 ? pins.get(item.id) : undefined} />)}
+          {items.map((item, index) => <BoardCard key={item.id} item={item} index={index} step={step} pin={step >= 5 && citedIds.has(item.id) ? trailNumbers.get(item.id) : undefined} read={step >= 5 && readIds.has(item.id)} turnCount={item.type === "ai_thread" ? board.turns[item.id]?.length ?? null : null} position={cardPositions[index] ?? { left: 188, top: 438 }} />)}
         </div>
         <svg className="lb-connectors" viewBox="0 0 1000 620" preserveAspectRatio="none" aria-hidden="true">
           <path d="M260 230 C470 220 570 280 735 350" /><path d="M260 390 C470 390 590 380 735 350" /><path d="M540 485 C620 470 680 410 735 350" />
         </svg>
         <article className="lb-deck">
-          <header><span>DELIVERABLE</span><strong>{board.seed.work.find((item) => /board deck/i.test(item.title))?.title ?? "FY27 board deck v3"}</strong></header>
+          <header><span>DELIVERABLE</span><strong>{deckItem?.title ?? "FY27 board deck v3"}</strong></header>
           <div>{slides.map((slide, index) => <section key={`${slide}-${index}`} data-slide={index + 1}><small>{index + 1}</small><p>{slide}</p>{index === 2 ? <span className="lb-number">$1.4M</span> : null}</section>)}</div>
+          {step >= 5 && deckItem && citedIds.has(deckItem.id) ? <span className="lb-pin" aria-label={`Source ${trailNumbers.get(deckItem.id)}`}>{trailNumbers.get(deckItem.id)}</span> : step >= 5 && deckItem && readIds.has(deckItem.id) ? <span className="lb-read-dot" aria-label="Read for this response" /> : null}
         </article>
         <div className="lb-circle-question"><span /><p>Where did the $1.4M on slide 3 come from?</p></div>
-        {step === 5 ? <SavedAnswer preset={first} title="Where did the $1.4M on slide 3 come from?" /> : null}
-        {step === 6 ? <><SavedAnswer preset={second} title="Find the conversation where the board settled it." /><ExactTurn board={board} preset={second} /></> : null}
-        {step === 7 ? <><SavedAnswer preset={fourth} title="What is still open?" /><div className="lb-open-notes"><p>{fourth?.answer.split(".")[0] || "Confirm the final assumption."}</p><p>{fourth?.answer.split(".")[1] || "Settle the remaining board choice."}</p></div></> : null}
-        {step === 8 ? <div className="lb-share-dialog"><p className="lb-micro">READ ONLY</p><h3>Share this board</h3><p>They open the deliverable, source cards, and the conversations behind them.</p><p>They do not open private drafts or anything outside this board.</p><strong>Closes in 48 hours</strong><small>In the demo this is shown, not issued.</small></div> : null}
       </div>
+      {step === 5 ? <SavedAnswer preset={first} title="Where did the $1.4M on slide 3 come from?" /> : null}
+      {step === 6 ? <><SavedAnswer preset={second} title="Find the conversation where the board settled it." /><ExactTurn board={board} preset={second} /></> : null}
+      {step === 7 ? <><SavedAnswer preset={fourth} title="What is still open?" /><div className="lb-open-notes"><p>{fourth?.answer.split(".")[0] || "Confirm the final assumption."}</p><p>{fourth?.answer.split(".")[1] || "Settle the remaining board choice."}</p></div></> : null}
+      {step === 8 ? <div className="lb-share-dialog"><p className="lb-micro">READ ONLY</p><h3>Share this board</h3><p>They open the deliverable, source cards, and the conversations behind them.</p><p>They do not open private drafts or anything outside this board.</p><strong>Closes in 48 hours</strong><small>In the demo this is shown, not issued.</small></div> : null}
     </div>
   );
 }
@@ -193,12 +208,14 @@ export function LandingBoard() {
   const viewId = useRef(typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : String(Date.now()));
   const [active, setActive] = useState(0);
   const input = useRef<StoryInput>("scroll");
+  const jumpTarget = useRef<number | null>(null);
   const seen = useRef(new Set<string>());
 
   useEffect(() => { event(viewId.current, "landing.viewed", { variant: "b2b", surface: "landing-board" }); }, []);
   useEffect(() => {
     const sections = Array.from(document.querySelectorAll<HTMLElement>("[data-lb-step]"));
     const observer = new IntersectionObserver((entries) => {
+      if (jumpTarget.current !== null) return;
       const visible = entries.filter((entry) => entry.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
       if (!visible) return;
       const index = Number((visible.target as HTMLElement).dataset["lbStep"] ?? 0);
@@ -215,9 +232,21 @@ export function LandingBoard() {
   }, []);
 
   function jump(key: StepKey) {
+    const index = LANDING_BOARD_STEPS.findIndex((step) => step.key === key);
+    if (index < 0) return;
     input.current = "jump";
+    jumpTarget.current = index;
+    setActive(index);
     event(viewId.current, "landing.section_jumped", { section: key });
-    document.getElementById(`lb-${key}`)?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+    if (!seen.current.has(`${key}:jump`)) {
+      seen.current.add(`${key}:jump`);
+      event(viewId.current, "landing.story_section_viewed", { section: key, input_mode: "jump" });
+    }
+    document.getElementById(`lb-${key}`)?.scrollIntoView({ behavior: "auto", block: "start" });
+    window.setTimeout(() => {
+      jumpTarget.current = null;
+      input.current = "scroll";
+    }, 80);
   }
   function pilot(placement: string) { event(viewId.current, "landing.pilot_cta_clicked", { placement }); }
   const result = query.data;
@@ -232,7 +261,7 @@ export function LandingBoard() {
           {LANDING_BOARD_STEPS.map((step, index) => (
             <section id={`lb-${step.key}`} data-lb-step={index} key={step.key} className="lb-scroll-step">
               {index === 0 ? <div className="lb-hero-copy"><LassoThinkingMark kind="signature" size={150} /><div><h1>Your firm bought AI. <LandingParticlePhrase text="The human judgment, process, and thinking" /> in your team's work went invisible.</h1><h2>Lasso is the reasoning and judgment layer for AI-assisted consulting. It connects the work across tools to the client deliverable and keeps the decisions your team made, so they can show where a claim came from and why it stayed.</h2><div><Button onClick={() => jump("canvas")}>Watch it work</Button><Button asChild variant="outline"><a href="#pilot" onClick={() => pilot("hero")}>Book a pilot</a></Button></div></div></div> : null}
-              <article className="lb-caption"><span>{String(index + 1).padStart(2, "0")} · {step.label}</span><h2>{step.headline}</h2><p>{step.line}</p>{index === 9 ? <div><Button asChild><Link to="/demo/$code" params={{ code: "YSM-01" }}>Open the board yourself</Link></Button><Button asChild variant="outline"><a href="#pilot" onClick={() => pilot("try_it")}>Book a pilot</a></Button></div> : null}</article>
+               {index === 0 ? null : <article className="lb-caption"><span>{String(index + 1).padStart(2, "0")} · {step.label}</span><h2>{step.headline}</h2><p>{step.line}</p>{index === 9 ? <div><Button asChild><Link to="/demo/$code" params={{ code: "YSM-01" }}>Open the board yourself</Link></Button><Button asChild variant="outline"><a href="#pilot" onClick={() => pilot("try_it")}>Book a pilot</a></Button></div> : null}</article>}
             </section>
           ))}
         </div>

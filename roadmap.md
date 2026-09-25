@@ -155,6 +155,7 @@
 
 ## Unit L1 landing board
 - [x] Build the isolated `/landing-board` scroll story from public-safe YSM-01 data.
-- [ ] Add additive landing event coverage and route tests.
-- [ ] Verify steps 1, 4, 6, and 7 at desktop and phone widths.
+- [x] Add additive landing event coverage and route tests.
+- [x] Verify steps 1, 4, 6, and 7 at desktop and phone widths.
+- [x] Unit L1.1: Correct workstream geometry, labels, captions, Ask docking, jump synchronization, and trail pins.
 - [ ] Portal: add `landing-board`, ten story section values, and `landing.section_jumped` (architect-owned).
