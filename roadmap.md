@@ -147,3 +147,6 @@
 - [ ] Optimize every landing section for phone widths and verify desktop, phone, and narrow-phone layouts.
 
 - [x] Unit 3: build the seven-step /demo margin-note path, including step 7 Done completion
+
+- [x] Unit 6: Put the shared demo Home below the logged-out landing hero, preserve signed-in redirect and landing sections, extend demo.opened surface, and verify both viewports.
+- [ ] Portal: add `landing` as an allowed `demo.opened.surface` value (architect-owned).
