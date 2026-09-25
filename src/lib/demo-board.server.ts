@@ -1,6 +1,7 @@
 import { buildSharedBoardModel } from "@/components/canvas-lab/SharedBoardView";
 
 import type { SharedBoardDto } from "./board-share-shared";
+import { publicDemoPresets, type DemoPreset, type DemoPresetRow } from "./demo-presets-shared";
 import { publicSafeWork } from "./public-work-allowlist";
 import { readBoard } from "./board-share-open.server";
 
@@ -22,12 +23,18 @@ export type DemoEngagementCard = {
 
 export type DemoHomeResult = { engagements: DemoEngagementCard[] };
 export type DemoBoardResult =
-  | { status: "open"; board: SharedBoardDto; engagement: { code: string; title: string; clientLabel: string | null } }
+  | {
+      status: "open";
+      board: SharedBoardDto;
+      engagement: { code: string; title: string; clientLabel: string | null };
+      /** Unit 2: saved Ask Lasso answers, answered rows only. */
+      presets: DemoPreset[];
+    }
   | { status: "not_found" };
 
 const DEMO_EXPIRY_MS = 48 * 60 * 60 * 1000;
 
-async function demoOrgId(db: AdminDb): Promise<string | null> {
+export async function demoOrgId(db: AdminDb): Promise<string | null> {
   const { data } = await db.from("orgs").select("id").eq("is_demo", true).limit(2);
   return data && data.length === 1 ? data[0]!.id : null;
 }
@@ -78,7 +85,8 @@ export async function openDemoBoard(code: string): Promise<DemoBoardResult> {
   if (!row) return { status: "not_found" };
   const board = await demoBoard(supabaseAdmin, orgId, row.id).catch(() => null);
   if (!board) return { status: "not_found" };
-  return { status: "open", board, engagement: { code: row.code, title: row.title, clientLabel: row.client_label } };
+  const presets = await loadDemoPresets(supabaseAdmin, orgId, row.id, board).catch(() => []);
+  return { status: "open", board, engagement: { code: row.code, title: row.title, clientLabel: row.client_label }, presets };
 }
 
 function demoSafeBoard(dto: SharedBoardDto): SharedBoardDto {
@@ -96,4 +104,25 @@ function seededPreview(dto: SharedBoardDto): DemoEngagementCard["preview"] {
   } catch {
     return { frames: [], nodes: [] };
   }
+}
+
+/**
+ * Unit 2: preset rows are read only here, and only after the engagement is
+ * proven to sit in the one demo org. Any other engagement gets nothing.
+ */
+export async function loadDemoPresets(
+  db: AdminDb,
+  orgId: string,
+  engagementId: string,
+  board: SharedBoardDto,
+): Promise<DemoPreset[]> {
+  const { data: eng } = await db.from("engagements").select("id, org_id").eq("id", engagementId).maybeSingle();
+  if (!eng || eng.org_id !== orgId) return [];
+  const { data } = await db
+    .from("demo_presets")
+    .select("position, question, answer, context_manifest, turn_refs, generated_at")
+    .eq("engagement_id", engagementId)
+    .order("position", { ascending: true });
+  const workIds = new Set(board.seed.work.map((w) => w.id));
+  return publicDemoPresets((data ?? []) as DemoPresetRow[], workIds);
 }
