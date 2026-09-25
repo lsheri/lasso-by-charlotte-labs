@@ -1,6 +1,5 @@
 /* Archived landing styles from commit 196f5296. Every selector is scoped. */
 /* D.2 resets: properties newer global rules add that commit 196f5296 never set. Placed before the archived rules. */
-.landing-archive-2026-09-25 .landing-close-line2 { filter: none; }
 .landing-archive-2026-09-25 .landing-close-line2 .landing-particle-word-text { text-decoration-line: none; }
 .landing-archive-2026-09-25 .landing-close-line2 .landing-particle-word-text { text-shadow: inherit; }
 @media (max-width: 767px) { .landing-archive-2026-09-25 .landing-close-line2 .landing-particle-word-text { text-shadow: inherit; } }

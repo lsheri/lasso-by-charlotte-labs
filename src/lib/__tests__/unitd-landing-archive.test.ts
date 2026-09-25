@@ -51,7 +51,7 @@ describe("unit D landing archive", () => {
     const css = readFileSync(`${DIR}/archive.css`, "utf8");
     const old = execSync("git show 196f5296:src/styles.css", { encoding: "utf8" });
     const firstLayer = css.indexOf("@layer nb {");
-    for (const sel of [".lw-step", '.lw-step[data-active="true"]', ".landing-close-line2"]) {
+    for (const sel of [".lw-step", '.lw-step[data-active="true"]']) {
       const esc = sel.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       const oldRule = old.match(new RegExp(`(?:^|\\n)${esc}\\s*\\{([^}]*)\\}`));
       expect(oldRule?.[1] ?? "").not.toMatch(/(^|[;\s])filter\s*:/);
@@ -59,5 +59,9 @@ describe("unit D landing archive", () => {
       expect(reset).toBeGreaterThan(-1);
       expect(reset).toBeLessThan(firstLayer);
     }
+    // .landing-close-line2 DID set a filter in 196f5296 (blur that resolves), so it keeps that, not none.
+    expect(old).toMatch(/\n\.landing-close-line2 \{[^}]*filter: blur\(10px\)/);
+    expect(css).toMatch(/\.landing-archive-2026-09-25 \.landing-close-line2 \{[^}]*filter: blur\(10px\)/);
+    expect(css).not.toContain(".landing-archive-2026-09-25 .landing-close-line2 { filter: none; }");
   });
 });
