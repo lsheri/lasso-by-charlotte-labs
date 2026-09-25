@@ -177,6 +177,8 @@ export function FocusOverlay({
   focusTurnNo?: number | null | undefined;
   /** Public demo tour: stable selector placed on the focused turn once found. */
   focusedTurnTestId?: string | undefined;
+  /** Close button words; defaults to "Back to the workboard". */
+  closeLabel?: string | undefined;
 }) {
   const [quote, setQuote] = useState("");
   const [turnSelection, setTurnSelection] = useState<TurnSelection | null>(null);
@@ -299,7 +301,7 @@ export function FocusOverlay({
               </Button>
             ) : null}
             <Button data-testid={readOnly ? "demo-reader-close" : undefined} size="sm" variant="ghost" onClick={onClose}>
-              Back to the workboard
+              {closeLabel ?? "Back to the workboard"}
             </Button>
           </div>
         </header>

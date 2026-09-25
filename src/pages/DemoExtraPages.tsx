@@ -170,6 +170,7 @@ export function DemoConversationsPage() {
             node={node}
             item={focus.item}
             readOnly
+            closeLabel="Back to conversations"
             filePreview={query.data?.filePreviews[focus.item.id]}
             onSummarize={() => undefined}
             onBranch={() => undefined}

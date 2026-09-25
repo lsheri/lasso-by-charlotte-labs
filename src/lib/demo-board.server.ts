@@ -159,7 +159,8 @@ export async function openDemoConversations(): Promise<DemoConversationsResult> 
       if (seen.has(item.id)) continue;
       if (item.type !== "ai_thread" && item.type !== "document") continue;
       seen.add(item.id);
-      out.items.push({ code: row.code, item: demoConversationItem(item) });
+      // Already passed publicSafeWork inside demoBoard.
+      out.items.push({ code: row.code, item });
       if (dto.turns[item.id]) out.turns[item.id] = dto.turns[item.id]!;
       if (dto.filePreviews[item.id]) out.filePreviews[item.id] = dto.filePreviews[item.id]!;
     }
@@ -167,15 +168,5 @@ export async function openDemoConversations(): Promise<DemoConversationsResult> 
   return out;
 }
 
-/** Unit 4: beyond publicSafeWork, no owner/org/client/task ids and no url-valued field. */
-export function demoConversationItem(item: DemoConversationItem["item"]): DemoConversationItem["item"] {
-  const out: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(item)) {
-    if (key !== "id" && (key.endsWith("_id") || key === "url" || key === "taskIds")) continue;
-    if (typeof value === "string" && /^(https?:|\/\/)/i.test(value)) continue;
-    out[key] = value;
-  }
-  out["taskIds"] = [];
-  out["orig_conversation_id"] = (item as { orig_conversation_id?: string | null }).orig_conversation_id ?? null;
-  return out as DemoConversationItem["item"];
-}
+/** Exported for the public payload test. */
+export { demoSafeBoard, seededPreview };

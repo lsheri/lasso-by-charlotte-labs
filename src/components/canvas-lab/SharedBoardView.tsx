@@ -72,7 +72,7 @@ export function buildSharedBoardModel(dto: SharedBoardDto): SharedBoardModel {
       typeLabel: item.type.replaceAll("_", " "),
       source: item.source,
       ownedByViewer: false,
-      taskIds: item.taskIds,
+      taskIds: item.placedIn ?? item.taskIds ?? [],
       deliverable: isDeliverableType(item.type),
       bundle: item,
     })),

@@ -3,7 +3,6 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
 import { EVENT_DIM_KEYS, guardEventDims } from "../event-dim-allowlist";
-import { demoConversationItem } from "../demo-board.server";
 import { publicSafeWork } from "../public-work-allowlist";
 
 const sent: unknown[] = [];
@@ -35,7 +34,7 @@ describe("unit 4 demo conversations and sources", () => {
         taskIds: ["t-real"],
       } as never,
     ]);
-    const json = JSON.stringify(demoConversationItem(safe!));
+    const json = JSON.stringify(safe!);
     expect(json).not.toMatch(/https?:|storage\/key|conv-real|drive_file_id|owner_profile_id|u-real|c-real|t-real/);
   });
 

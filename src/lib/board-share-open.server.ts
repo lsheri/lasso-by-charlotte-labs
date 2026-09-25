@@ -195,7 +195,7 @@ export async function readBoard(
       if (!item || hiddenWork.has(item.id) || !readable(item)) continue;
       const existing = workById.get(item.id);
       if (existing) {
-        existing.taskIds.push(task.id);
+        (existing.taskIds ??= []).push(task.id);
         continue;
       }
       // No person travels: the owner is dropped, and so is the client claim.
