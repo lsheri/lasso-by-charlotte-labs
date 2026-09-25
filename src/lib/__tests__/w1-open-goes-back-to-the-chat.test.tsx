@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { ChatUrlLink } from "@/components/work/ChatUrlLink";
 import { deriveChatUrl, effectiveChatUrl, safeChatUrl } from "@/lib/chat-url";
-import { NO_SOURCE_LINK_LABEL, canOpenAtSource, resolveWorkOpen } from "@/lib/work-open";
+import { NO_SOURCE_LINK_LABEL, canOpenAtSource, keptContentLabel, resolveWorkOpen } from "@/lib/work-open";
 import type { WorkItemRow } from "@/lib/work-types";
 
 const CPT_CONVERSATION_ID = "04883dd3-81b8-5032-ab6e-029f37fedaa7";
@@ -128,6 +128,14 @@ describe("W1 — the card is honest about it", () => {
     render(<ChatUrlLink item={orphan} showAbsence />);
     expect(screen.getByText(NO_SOURCE_LINK_LABEL)).toBeTruthy();
     expect(screen.queryByRole("link")).toBeNull();
+  });
+
+  it("states what was kept from already-loaded card data", () => {
+    expect(keptContentLabel(item(), 1)).toBe("1 turn kept in full");
+    expect(keptContentLabel(item(), 12)).toBe("12 turns kept in full");
+    expect(keptContentLabel(item({ type: "document", content_fidelity: "verbatim" }))).toBe("Kept in full");
+    expect(keptContentLabel(item({ type: "document", content_fidelity: "summary" }))).toBe("Summary kept");
+    expect(keptContentLabel(item({ type: "document", content_fidelity: "reference" }))).toBe("File reference kept");
   });
 
   it("stays silent where it always was silent", () => {

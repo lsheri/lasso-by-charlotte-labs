@@ -33,4 +33,17 @@ export function canOpenAtSource(item: WorkItemRow | null | undefined): boolean {
 }
 
 /** A few plain words for a card that cannot go back to its source. */
-export const NO_SOURCE_LINK_LABEL = "No link back to the chat";
+export const NO_SOURCE_LINK_LABEL = "Kept in full";
+
+/** What remains readable here when there is no honest route back to its source. */
+export function keptContentLabel(
+  item: Pick<WorkItemRow, "content_fidelity" | "type"> | null | undefined,
+  turnCount?: number | null,
+): string {
+  if (item?.content_fidelity === "summary") return "Summary kept";
+  if (item?.content_fidelity === "reference") return "File reference kept";
+  if (item?.type === "ai_thread" && typeof turnCount === "number" && turnCount > 0) {
+    return `${turnCount} ${turnCount === 1 ? "turn" : "turns"} kept in full`;
+  }
+  return NO_SOURCE_LINK_LABEL;
+}

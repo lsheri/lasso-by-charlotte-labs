@@ -58,6 +58,13 @@ describe("Unit 5a Ledger WorkNote", () => {
     expect(getByTestId("file-thumbnail")).toBeTruthy();
   });
 
+  it("names a document without recorded tool plumbing as Document", () => {
+    const unknown = item("mcp", "document");
+    unknown.source_vendor = null;
+    const { container } = render(<WorkNote item={unknown} filePreview={preview} />);
+    expect(container.querySelector(".nb-paper-body > div:first-child > span")?.textContent).toBe("Document");
+  });
+
   it("prefers a stored summary and falls back to the first user turn", () => {
     const stored = render(<WorkNote item={item("claude")} chatPreview={{ workItemId: "stored", summary: "Stored extract", turnCount: 1, model: null, firstUserTurn: { turnNo: 1, role: "user", content: "First turn" }, turns: [] }} />);
     expect(stored.getByText("Stored extract")).toBeTruthy();

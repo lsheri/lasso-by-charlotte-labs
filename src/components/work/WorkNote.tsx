@@ -46,6 +46,7 @@ export function WorkNote({
     ?? chatPreview?.turns.find((turn) => turn.role.trim().toLowerCase() === "user")?.content
     ?? "No summary available.";
   const isFile = item.type === "document" || item.type === "deck" || item.type === "sheet";
+  const sourceLabel = brand === "unknown" && isFile ? "Document" : brandLabel(brand);
   const hasFilePreview = Boolean(filePreview && filePreview.kind !== "fallback");
   const detail = item.type === "deck" && filePreview?.pages?.length
     ? `${filePreview.pages.length} ${filePreview.pages.length === 1 ? "slide" : "slides"}`
@@ -86,7 +87,7 @@ export function WorkNote({
         <div className={`flex h-[14px] shrink-0 select-none items-center gap-2 ${contextSelected ? "canvas-lab-context-header" : ""}`}>
           {lead ? <span className="shrink-0">{lead}</span> : null}
           <BrandLogo brand={brand} size={13} />
-          <span className="min-w-0 flex-1 truncate font-mono text-[8.5px] uppercase tracking-[0.08em] text-muted-foreground">{brandLabel(brand)}</span>
+          <span className="min-w-0 flex-1 truncate font-mono text-[8.5px] uppercase tracking-[0.08em] text-muted-foreground">{sourceLabel}</span>
           <span className="shrink-0 font-mono text-[8.5px] uppercase tracking-[0.08em] text-soft">{date}</span>
           {actions ? <span className="shrink-0 select-none" onClick={(event) => event.stopPropagation()}>{actions}</span> : null}
         </div>
@@ -110,14 +111,14 @@ export function WorkNote({
         <div className="mt-1 flex h-[16px] shrink-0 select-none items-center gap-2 border-t border-hairline pt-1">
           <span className="min-w-0 flex-1 truncate text-[9px] text-muted-foreground" onClick={(event) => event.stopPropagation()}>
             {item.type === "ai_thread" ? (
-              <ChatUrlLink item={item as WorkItemRow} showAbsence />
+              <ChatUrlLink item={item as WorkItemRow} showAbsence turnCount={chatPreview?.turnCount} />
             ) : sourceUrl ? (
               <a href={sourceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex max-w-full items-center gap-1">
                 <ExternalLink className="h-2.5 w-2.5 shrink-0" aria-hidden />
                 <span className="truncate">{sourceUrl}</span>
               </a>
             ) : (
-              <ChatUrlLink item={item as WorkItemRow} showAbsence />
+              <ChatUrlLink item={item as WorkItemRow} showAbsence turnCount={chatPreview?.turnCount} />
             )}
           </span>
           {mapping?.engagements?.code ? <span className="shrink-0 rounded-[3px] border border-hairline px-1 font-mono text-[8.5px] uppercase tracking-[0.08em] text-muted-foreground">{mapping.engagements.code}</span> : null}

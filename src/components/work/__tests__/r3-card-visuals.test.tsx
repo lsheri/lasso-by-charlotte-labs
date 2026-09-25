@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { ChatPreviewWindow, chatBorderTreatment } from "@/components/work/ChatPreviewWindow";
+import { WorkboardFilePreview } from "@/components/canvas-lab/WorkboardFilePreview";
 import { sourceVendorKey } from "@/components/work/SourceMark";
 const styles = readFileSync(resolve(process.cwd(), "src/styles.css"), "utf8");
 
@@ -91,5 +92,12 @@ describe("R4 paper preview craft pass", () => {
 
   it("gives document preview bodies the thinner graphite edge", () => {
     expect(styles).toMatch(/\.nb-document-preview-body[\s\S]*border:\s*var\(--nb-document-border-width\) solid var\(--nb-graphite\)/);
+  });
+
+  it("renders markdown document previews as plain text", () => {
+    render(<WorkboardFilePreview preview={{ workItemId: "doc", kind: "text", url: null, lines: ["# YellowSigil", "- **Decision** with [source](https://example.com)"], slideTitle: null, versionCount: 1 }} title="Document" onFailure={() => {}} />);
+    expect(screen.getByText("YellowSigil")).toBeTruthy();
+    expect(screen.getByText("Decision with source")).toBeTruthy();
+    expect(screen.queryByText("# YellowSigil")).toBeNull();
   });
 });

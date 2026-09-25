@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { renderMermaidPreview } from "@/lib/mermaid-preview";
+import { stripMarkdown } from "@/lib/turn-story-shared";
 import { loadPdfjs } from "@/lib/pdfjs-client";
 import { withPreviewCsp, type WorkboardFilePreview as FilePreview } from "@/lib/workboard-card-preview.shared";
 
@@ -85,14 +86,17 @@ export function WorkboardFilePreview({ preview, title, focused = true, onFailure
   if (preview.kind === "slide") {
     const pages = preview.pages?.length ? preview.pages : [{ title: preview.slideTitle, lines: preview.lines }];
     const page = pages[Math.min(slide - 1, pages.length - 1)] ?? pages[0];
+    const pageTitle = stripMarkdown(page?.title ?? "");
+    const lines = (page?.lines ?? []).map(stripMarkdown).filter(Boolean);
     return <div data-testid="workboard-slide-preview" className="canvas-lab-file-preview canvas-lab-slide-preview">
-      <div className="canvas-lab-file-page">{page?.title ? <strong>{page.title}</strong> : null}{(page?.lines ?? []).map((line, index) => <p key={`${index}:${line}`}>{line}</p>)}</div>
+      <div className="canvas-lab-file-page">{pageTitle ? <strong>{pageTitle}</strong> : null}{lines.map((line, index) => <p key={`${index}:${line}`}>{line}</p>)}</div>
       <PageControls page={slide} count={pages.length} onPage={(pageNumber) => { setSlide(pageNumber); onPageChange?.(); }} />
     </div>;
   }
   if (preview.kind === "text") {
+    const lines = preview.lines.map(stripMarkdown).filter(Boolean);
     return <div data-testid="workboard-text-preview" className="canvas-lab-file-preview canvas-lab-text-preview">
-      {preview.lines.map((line, index) => <p key={`${index}:${line}`}>{line}</p>)}
+      {lines.map((line, index) => <p key={`${index}:${line}`}>{line}</p>)}
     </div>;
   }
   return null;

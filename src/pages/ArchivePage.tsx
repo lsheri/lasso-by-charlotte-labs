@@ -125,7 +125,7 @@ export function ArchivePage() {
               The engagement becomes read-only. Nobody can add to it, including you.
             </p>
             <p className="mt-2 leading-[19px]">
-              Coaches keep exactly the access they already had. Closing gives nobody new access.
+              Closing changes nobody's access. It adds no one.
             </p>
           </ToneCard>
 
