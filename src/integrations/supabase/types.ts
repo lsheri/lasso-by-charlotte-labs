@@ -2577,6 +2577,7 @@ export type Database = {
           data_use_tier: string | null
           id: string
           industry: string | null
+          is_demo: boolean
           name: string
           org_mode: string | null
           settings: Json
@@ -2591,6 +2592,7 @@ export type Database = {
           data_use_tier?: string | null
           id?: string
           industry?: string | null
+          is_demo?: boolean
           name: string
           org_mode?: string | null
           settings?: Json
@@ -2605,6 +2607,7 @@ export type Database = {
           data_use_tier?: string | null
           id?: string
           industry?: string | null
+          is_demo?: boolean
           name?: string
           org_mode?: string | null
           settings?: Json
