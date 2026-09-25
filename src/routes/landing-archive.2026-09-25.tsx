@@ -1,11 +1,17 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
 import { ArchivedB2BLanding } from "@/components/marketing/archive/landing-2026-09-25/ArchivedB2BLanding";
+import { supabase } from "@/integrations/supabase/client";
 import "@/components/marketing/archive/landing-2026-09-25/archive.css";
 
 const TITLE = "Lasso landing, archived 25 Sep 2026";
 
-export const Route = createFileRoute("/_authenticated/archive/landing-2026-09-25")({
+export const Route = createFileRoute("/landing-archive/2026-09-25")({
+  ssr: false,
+  beforeLoad: async () => {
+    const { data } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
+    if (!data.user) throw redirect({ to: "/auth" });
+  },
   head: () => ({
     meta: [
       { title: TITLE },
