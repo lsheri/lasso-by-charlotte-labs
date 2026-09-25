@@ -133,7 +133,10 @@ function usePresetReplay(step: number, presets: DemoPreset[]) {
       }, 2_500));
     }, 35);
     timers.push(typing);
-    return () => timers.forEach((timer) => window.clearTimeout(timer));
+    return () => timers.forEach((timer) => {
+      window.clearTimeout(timer);
+      window.clearInterval(timer);
+    });
   }, [position, preset]);
 
   return { phase, preset, readCount, streamed, typed, position };
@@ -217,7 +220,6 @@ function StoryBoard({ board, presets, step }: { board: SharedBoardDto; presets: 
   const numberSlideIndex = foundNumberSlide >= 0 ? foundNumberSlide : 2;
   const first = presets.find((preset) => preset.position === 1);
   const second = presets.find((preset) => preset.position === 2);
-  const fourth = presets.find((preset) => preset.position === 4);
   const trailNumbers = new Map(first?.manifest?.items.map((item, index) => [item.id, index + 1]) ?? []);
   const citedIds = new Set(first?.turnRefs.map((ref) => ref.work_item_id) ?? []);
   const readIds = new Set(first?.manifest?.items.map((item) => item.id) ?? []);
@@ -255,10 +257,10 @@ function StoryBoard({ board, presets, step }: { board: SharedBoardDto; presets: 
           {step >= 5 && replayFinished && deckItem && citedIds.has(deckItem.id) ? <span className="lb-pin" aria-label={`Source ${trailNumbers.get(deckItem.id)}`}>{trailNumbers.get(deckItem.id)}</span> : step >= 5 && replayFinished && deckItem && readIds.has(deckItem.id) ? <span className="lb-read-dot" aria-label="Read for this response" /> : null}
         </article>
         <div className="lb-circle-question"><p>Where did the $1.4M on slide 3 come from?</p></div>
+        {step === 7 && replayFinished ? <div className="lb-open-notes"><p>Confirm the vendor extension assumption.</p><p>Confirm approval by Oct 1.</p></div> : null}
       </div>
       {step >= 5 && step <= 7 ? <AskReplay presets={presets} step={step} onFinished={onReplayFinished} /> : null}
       {step === 6 && replayFinished ? <ExactTurn board={board} preset={second} /> : null}
-      {step === 7 && replayFinished ? <div className="lb-open-notes"><p>{wordsThrough(fourth?.answer.split(".")[0] || "Confirm the final assumption.", 12)}</p><p>{wordsThrough(fourth?.answer.split(".")[1] || "Settle the remaining board choice.", 12)}</p></div> : null}
       {step === 8 ? <div className="lb-share-dialog"><p className="lb-micro">READ ONLY</p><h3>Share this board</h3><p>They open the deliverable, source cards, and the conversations behind them.</p><p>They do not open private drafts or anything outside this board.</p><strong>Closes in 48 hours</strong><small>In the demo this is shown, not issued.</small></div> : null}
     </div>
   );
@@ -391,7 +393,8 @@ export function LandingBoard() {
     jumpTarget.current = index;
     activate(index, "jump", true);
     event(viewId.current, "landing.section_jumped", { section: key });
-    document.getElementById(`lb-${key}`)?.scrollIntoView({ behavior: "auto", block: "start" });
+    const target = document.getElementById(`lb-${key}`);
+    if (target) window.scrollTo({ top: window.scrollY + target.getBoundingClientRect().top - window.innerHeight * 0.54, behavior: "auto" });
     window.setTimeout(() => {
       jumpTarget.current = null;
     }, 120);
@@ -404,12 +407,12 @@ export function LandingBoard() {
       <main className="lb-story">
         <div className="lb-sticky-stage">
           {result?.status === "open" && "board" in result ? <StoryBoard board={result.board} presets={result.presets} step={active} /> : <div className="lb-stage-window lb-loading">{query.isPending ? "Opening the demo board." : "The demo board is not available right now."}</div>}
+          {active > 0 ? <article className="lb-caption lb-active-caption"><span>{String(active + 1).padStart(2, "0")} · {LANDING_BOARD_STEPS[active]?.label}</span><h2>{LANDING_BOARD_STEPS[active]?.headline}</h2><p>{LANDING_BOARD_STEPS[active]?.line}</p>{active === 9 ? <div><Button asChild><Link to="/demo/$code" params={{ code: "YSM-01" }}>Open the board yourself</Link></Button><Button asChild variant="outline"><a href="#pilot" onClick={() => pilot("try_it")}>Book a pilot</a></Button></div> : null}</article> : null}
         </div>
         <div className="lb-scroll-sections">
           {LANDING_BOARD_STEPS.map((step, index) => (
             <section id={`lb-${step.key}`} data-lb-step={index} key={step.key} className="lb-scroll-step">
               {index === 0 ? <div className="lb-hero-copy"><LassoThinkingMark kind="signature" size={150} /><div><h1>Your firm bought AI. <LandingParticlePhrase text="The human judgment, process, and thinking" /> in your team's work went invisible.</h1><h2>Lasso is the reasoning and judgment layer for AI-assisted consulting. It connects the work across tools to the client deliverable and keeps the decisions your team made, so they can show where a claim came from and why it stayed.</h2><div><Button onClick={() => jump("canvas")}>Watch it work</Button><Button asChild variant="outline"><a href="#pilot" onClick={() => pilot("hero")}>Book a pilot</a></Button></div></div></div> : null}
-               {index === 0 ? null : <article className="lb-caption"><span>{String(index + 1).padStart(2, "0")} · {step.label}</span><h2>{step.headline}</h2><p>{step.line}</p>{index === 9 ? <div><Button asChild><Link to="/demo/$code" params={{ code: "YSM-01" }}>Open the board yourself</Link></Button><Button asChild variant="outline"><a href="#pilot" onClick={() => pilot("try_it")}>Book a pilot</a></Button></div> : null}</article>}
             </section>
           ))}
         </div>
