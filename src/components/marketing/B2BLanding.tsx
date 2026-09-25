@@ -34,9 +34,9 @@ function useCaseAssetUrl(filename: string, fallback: string) {
 }
 
 const USE_CASES: { key: UseCaseKey; file: string; title: string; body: string }[] = [
-  { key: "every_number", file: "use-every-number-has-a-source", title: "Every number has a source.", body: "Lasso a few cards and ask where the figure came from. You get the chat, the turn, and what was read to answer." },
-  { key: "reasoning_stays", file: "use-reasoning-stays-with-the-firm", title: "Every AI conversation, on the record.", body: "Claude, ChatGPT and Gemini chats land in one place, filtered by tool and mapped to the engagement. The record stays with the firm when the consultant moves on." },
   { key: "bring_work_in", file: "use-bring-work-in", title: "Push work in with one sentence.", body: "Add Lasso to Claude or ChatGPT once. At the end of a session say push this to Lasso. Drive and Gmail connect the same way." },
+  { key: "reasoning_stays", file: "use-reasoning-stays-with-the-firm", title: "Every AI conversation, on the record.", body: "Claude, ChatGPT and Gemini chats land in one place, filtered by tool and mapped to the engagement. The record stays with the firm when the consultant moves on." },
+  { key: "every_number", file: "use-every-number-has-a-source", title: "Every number has a source.", body: "Lasso a few cards and ask where the figure came from. You get the chat, the turn, and what was read to answer." },
 ];
 
 const SHARE_AUDIENCES = [
