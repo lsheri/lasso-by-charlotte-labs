@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { earlierReadsNote } from "@/lib/earlier-reads";
+import { extractTurnRefs, stripTurnTags, TURN_CITATION_RULE, type TurnRef } from "@/lib/turn-labels";
 
 import type { Database } from "@/integrations/supabase/types";
 import type { ContextSource, ScopeSource } from "@/lib/reflect-shared";
@@ -31,6 +32,8 @@ export type ReflectResult = {
   contextMode: "inline" | "catalogue";
   /** Exactly what was read to produce this answer. Null when unknown. */
   manifest: ContextManifest | null;
+  /** Unit 2: the turns this answer cites, by work item and turn number. */
+  turnRefs: TurnRef[];
 };
 
 /** Bucketed so an exact count never leaves as a dimension. */
@@ -147,6 +150,7 @@ export async function runReflectTurn(
     ...(surface === "ask_lasso" ? [{ role: "system" as const, content: ASK_LASSO_MAKING_RULES }] : []),
     ...(whereLine ? [{ role: "system" as const, content: whereLine }] : []),
     ...(earlierReads ? [{ role: "system" as const, content: earlierReads }] : []),
+    { role: "system" as const, content: TURN_CITATION_RULE },
   ];
 
   const { chatComplete, streamChat, resolveAiMeta } = await import("./ai.server");
@@ -189,7 +193,11 @@ export async function runReflectTurn(
       [...prompts, { role: "user" as const, content: message }],
       aiMeta,
     );
-    const answerCat = cutOffCat ? `${guardedCat.answer}\n\n${CUT_OFF}` : guardedCat.answer;
+    const answerCat = stripTurnTags(cutOffCat ? `${guardedCat.answer}\n\n${CUT_OFF}` : guardedCat.answer);
+    const turnRefsCat = extractTurnRefs(
+      answerCat,
+      run.sources.filter((src) => src.type === "ai_thread" && src.depth === "full"),
+    );
 
     const { manifestFromSources } = await import("./context-manifest");
     const catalogueManifest = manifestFromSources(run.sources, {
@@ -284,6 +292,7 @@ export async function runReflectTurn(
       cutOff: cutOffCat,
       contextMode,
       manifest: catalogueManifest,
+      turnRefs: turnRefsCat,
     };
   }
 
@@ -357,7 +366,11 @@ export async function runReflectTurn(
   // Verified against verbatim text only: an extract is not a quotable source.
   const guarded = await guardQuotes(raw, assembled.quotable, cutOff, conversation, aiMeta);
   // Never present a cut-off answer as if it were complete, and never discard it.
-  const answer = cutOff ? `${guarded.answer}\n\n${CUT_OFF_NOTE}` : guarded.answer;
+  const answer = stripTurnTags(cutOff ? `${guarded.answer}\n\n${CUT_OFF_NOTE}` : guarded.answer);
+  const turnRefs = extractTurnRefs(
+    answer,
+    assembled.sources.filter((src) => src.type === "ai_thread" && src.depth === "full"),
+  );
 
   const { data: written, error: insertError } = await supabase
     .from("chat_messages")
@@ -439,6 +452,7 @@ export async function runReflectTurn(
     cutOff,
     contextMode,
     manifest: assembled.manifest,
+    turnRefs,
   };
 }
 
