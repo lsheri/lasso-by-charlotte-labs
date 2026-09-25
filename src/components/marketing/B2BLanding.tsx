@@ -404,10 +404,9 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
           <section ref={closeRef} className="landing-close mx-auto max-w-4xl px-6 md:px-10" data-resolved={closeResolved} onPointerDown={() => { if (window.matchMedia("(max-width: 767px)").matches) setCloseResolved(true); }}>
             <h2 className="landing-close-line1 landing-close-wordmark">Every claim, traced to the work behind it.</h2>
             <div className="landing-close-ink-wrap">
-              <p className="landing-close-line2">The work, judgment, thinking. Visible.</p>
-              <span className="landing-close-particles landing-close-particles-a" aria-hidden="true" />
-              <span className="landing-close-particles landing-close-particles-b" aria-hidden="true" />
-              <span className="landing-close-particles landing-close-particles-c" aria-hidden="true" />
+              <p className="landing-close-line2">
+                <LandingParticlePhrase text="The work, judgment, thinking. Visible." />
+              </p>
             </div>
             <div className="mt-10">
               <Button asChild>
