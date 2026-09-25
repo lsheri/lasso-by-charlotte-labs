@@ -21,6 +21,7 @@ const SAME_VIEW_MS = 1500;
 export function resetDemoTelemetry(): void {
   opened.clear();
   presetOpened.clear();
+  tourEvents.clear();
   viewId = null;
 }
 
@@ -60,4 +61,29 @@ export function noteDemoTurnOpened(code: string, position: number): void {
   void recordAnonymousEventFn({
     data: { event_type: "demo.turn_opened", view_id: demoViewId(), dims: { code: safe(code), position } },
   }).catch(() => undefined);
+}
+
+const tourEvents = new Map<string, number>();
+
+function noteTourEvent(eventType: "demo.step_completed" | "demo.tour_skipped", step: number, engagement?: string): void {
+  const key = `${eventType}:${step}:${engagement ?? ""}`;
+  const now = Date.now();
+  const last = tourEvents.get(key);
+  if (last !== undefined && now - last < SAME_VIEW_MS) return;
+  tourEvents.set(key, now);
+  void recordAnonymousEventFn({
+    data: {
+      event_type: eventType,
+      view_id: demoViewId(),
+      dims: eventType === "demo.step_completed" ? { step, engagement: safe(engagement ?? "home") } : { step },
+    },
+  }).catch(() => undefined);
+}
+
+export function noteDemoStepCompleted(step: number, engagement: string): void {
+  noteTourEvent("demo.step_completed", step, engagement);
+}
+
+export function noteDemoTourSkipped(step: number): void {
+  noteTourEvent("demo.tour_skipped", step);
 }

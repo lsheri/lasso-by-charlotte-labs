@@ -121,6 +121,8 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "demo.preset_opened": ["code", "position"],
   "demo.turn_opened": ["code", "position"],
   "demo.presets_regenerated": ["code", "answered"],
+  "demo.step_completed": ["step", "engagement"],
+  "demo.tour_skipped": ["step"],
   "link.drafted": ["action", "considered", "cost_bucket", "count", "relation", "scope", "source", "surface", "tokens_in_bucket"],
   "link.drawn": ["action", "considered", "cost_bucket", "count", "relation", "scope", "source", "surface", "tokens_in_bucket"],
   "link.reviewed": ["action", "considered", "cost_bucket", "count", "relation", "scope", "source", "surface", "tokens_in_bucket"],

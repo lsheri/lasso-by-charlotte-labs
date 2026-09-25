@@ -141,6 +141,7 @@ export function FocusOverlay({
   readOnly = false,
   filePreview,
   focusTurnNo,
+  focusedTurnTestId,
 }: {
   node: LabNode;
   item: WorkItemRow | null;
@@ -174,6 +175,8 @@ export function FocusOverlay({
   filePreview?: WorkboardFilePreviewData | undefined;
   /** Unit 2: open scrolled to this turn, lit. */
   focusTurnNo?: number | null | undefined;
+  /** Public demo tour: stable selector placed on the focused turn once found. */
+  focusedTurnTestId?: string | undefined;
 }) {
   const [quote, setQuote] = useState("");
   const [turnSelection, setTurnSelection] = useState<TurnSelection | null>(null);
@@ -210,6 +213,7 @@ export function FocusOverlay({
         el.scrollIntoView({ block: "center" });
         el.classList.add("nb-turn-lit");
         el.setAttribute("data-turn-focus", "true");
+        if (focusedTurnTestId) el.setAttribute("data-testid", focusedTurnTestId);
         lit = el;
         return;
       }
@@ -221,8 +225,9 @@ export function FocusOverlay({
       if (timer) clearTimeout(timer);
       lit?.classList.remove("nb-turn-lit");
       lit?.removeAttribute("data-turn-focus");
+      if (focusedTurnTestId) lit?.removeAttribute("data-testid");
     };
-  }, [focusTurnNo]);
+  }, [focusTurnNo, focusedTurnTestId]);
 
   useEffect(() => {
     if (!openComments) return;
@@ -293,7 +298,7 @@ export function FocusOverlay({
                 Branch
               </Button>
             ) : null}
-            <Button size="sm" variant="ghost" onClick={onClose}>
+            <Button data-testid={readOnly ? "demo-reader-close" : undefined} size="sm" variant="ghost" onClick={onClose}>
               Back to the workboard
             </Button>
           </div>

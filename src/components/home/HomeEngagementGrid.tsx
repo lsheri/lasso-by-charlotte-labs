@@ -109,12 +109,14 @@ export function HomeEngagementGrid({
   availableWidth,
   previews,
   demo = false,
+  onDemoOpen,
 }: {
   cards: readonly HomeGridEngagement[];
   availableWidth: number;
   previews?: ReadonlyMap<string, HomePreviewState>;
   /** Public demo: cards open the read-only demo board and carry no "last opened" line. */
   demo?: boolean;
+  onDemoOpen?: (code: string) => void;
 }) {
   if (cards.length === 0) return null;
   const ordered = orderHomeGrid(cards);
@@ -130,7 +132,13 @@ export function HomeEngagementGrid({
         {ordered.map((card) => (
           <li key={card.id} className="h-[228px] min-w-0">
             {demo ? (
-              <Link to="/demo/$code" params={{ code: card.code }} className="block h-full rounded-[var(--radius-control)] border border-border bg-card p-3 transition-colors hover:border-foreground/40 focus:outline-none focus:ring-2 focus:ring-ring">
+              <Link
+                to="/demo/$code"
+                params={{ code: card.code }}
+                data-testid={`demo-engagement-${card.code}`}
+                onClick={() => onDemoOpen?.(card.code)}
+                className="block h-full rounded-[var(--radius-control)] border border-border bg-card p-3 transition-colors hover:border-foreground/40 focus:outline-none focus:ring-2 focus:ring-ring"
+              >
               <HomeBoardPreview state={previews?.get(card.id) ?? { status: "loading" }} />
               <p className="mt-3 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
                 {card.clientLabel ?? card.code}
