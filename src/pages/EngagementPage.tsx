@@ -3,6 +3,7 @@ import { getRouteApi, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { GraphiteRule } from "@/components/notebook/marks";
+import { DemoPresetsAdmin } from "@/components/engagements/DemoPresetsAdmin";
 import { useReducedMotion } from "@/hooks/use-motion";
 import { EngagementCanvasView } from "@/components/canvas/EngagementCanvasView";
 import { PeekBody } from "@/components/peek/PeekPanel";
@@ -497,6 +498,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
             <p className="mt-1.5 text-[13px] leading-[19px] text-muted-foreground">
               <EngagementStats engagementId={engagement.id} tasks={tasksQuery.data ?? []} />
             </p>
+            <DemoPresetsAdmin engagementId={engagement.id} />
           </div>
         </div>
 
