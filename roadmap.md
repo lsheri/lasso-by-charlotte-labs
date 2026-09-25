@@ -154,7 +154,7 @@
 - [x] Unit 4 (reduced): /demo/conversations + /demo/sources. Portal: demo.opened.surface adds "conversations","sources"; new event demo.filter_changed {tool} (architect-owned).
 
 ## Unit L1 landing board
-- [ ] Build the isolated `/landing-board` scroll story from public-safe YSM-01 data.
+- [x] Build the isolated `/landing-board` scroll story from public-safe YSM-01 data.
 - [ ] Add additive landing event coverage and route tests.
 - [ ] Verify steps 1, 4, 6, and 7 at desktop and phone widths.
 - [ ] Portal: add `landing-board`, ten story section values, and `landing.section_jumped` (architect-owned).

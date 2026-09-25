@@ -16,7 +16,7 @@ describe("Unit L1 scroll-driven landing board", () => {
   it("loads YSM-01 only through the public demo function", () => {
     expect(page).toContain("openDemoBoardFn");
     expect(page).toContain('code: "YSM-01"');
-    expect(page).toContain("public-safe YSM-01").not;
+    expect(page).not.toContain("supabase");
   });
   it("renders ten observed reversible steps and jump controls", () => {
     expect(page).toContain("IntersectionObserver");

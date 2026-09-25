@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { type FormEvent, type MouseEvent, useEffect, useMemo, useRef, useState } from "react";
+import { type CSSProperties, type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 
 import claudeLogo from "@/assets/claude-logo.png.asset.json";
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
@@ -62,7 +62,7 @@ function ToolIdentity({ tool, compact = false }: { tool: string; compact?: boole
 
 function BoardCard({ item, index, step, pin }: { item: SharedSeedWork; index: number; step: number; pin?: number }) {
   return (
-    <article className="lb-board-card" data-arrived={step >= 1} style={{ "--lb-card-index": index } as React.CSSProperties}>
+    <article className="lb-board-card" data-arrived={step >= 1} style={{ "--lb-card-index": index } as CSSProperties}>
       <ToolIdentity tool={toolKey(item)} />
       <strong>{item.title}</strong>
       <small>{item.type === "ai_thread" ? "Conversation kept in full" : "Source document"}</small>
@@ -88,7 +88,7 @@ function SavedAnswer({ preset, title }: { preset: DemoPreset | undefined; title:
 }
 
 function ExactTurn({ board, preset }: { board: SharedBoardDto; preset: DemoPreset | undefined }) {
-  const ref = preset?.turnRefs[0];
+  const ref = preset?.turnRefs.find((entry) => entry.turn_no === 5) ?? preset?.turnRefs[0];
   const item = ref ? board.seed.work.find((entry) => entry.id === ref.work_item_id) : undefined;
   const turn = ref ? board.turns[ref.work_item_id]?.find((entry) => entry.turn_no === ref.turn_no) : undefined;
   return (
@@ -121,7 +121,7 @@ function StoryBoard({ board, presets, step }: { board: SharedBoardDto; presets: 
           {TOOL_BADGES.map((tool) => <div key={tool.key}>{tool.logo ? <img src={tool.logo} alt="" aria-hidden="true" /> : null}<span>{tool.label}</span></div>)}
         </div>
         <div className="lb-frames">
-          {board.seed.tasks.slice(0, 3).map((task, index) => <section key={task.id} style={{ "--lb-frame-index": index } as React.CSSProperties}><h3>{task.name}</h3><p>{task.detail}</p></section>)}
+          {board.seed.tasks.slice(0, 3).map((task, index) => <section key={task.id} style={{ "--lb-frame-index": index } as CSSProperties}><h3>{task.name}</h3><p>{task.detail}</p></section>)}
         </div>
         <div className="lb-cards">
           {items.map((item, index) => <BoardCard key={item.id} item={item} index={index} step={step} pin={step >= 5 ? pins.get(item.id) : undefined} />)}

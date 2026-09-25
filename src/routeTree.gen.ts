@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as JoinRouteImport } from './routes/join'
+import { Route as LandingBoardRouteImport } from './routes/landing-board'
 import { Route as LandingNextRouteImport } from './routes/landing-next'
 import { Route as NextRouteImport } from './routes/next'
 import { Route as NoAccessRouteImport } from './routes/no-access'
@@ -81,6 +82,11 @@ const AuthRoute = AuthRouteImport.update({
 const JoinRoute = JoinRouteImport.update({
   id: '/join',
   path: '/join',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LandingBoardRoute = LandingBoardRouteImport.update({
+  id: '/landing-board',
+  path: '/landing-board',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LandingNextRoute = LandingNextRouteImport.update({
@@ -348,6 +354,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/join': typeof JoinRoute
+  '/landing-board': typeof LandingBoardRoute
   '/landing-next': typeof LandingNextRoute
   '/next': typeof NextRoute
   '/no-access': typeof NoAccessRoute
@@ -403,6 +410,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/join': typeof JoinRoute
+  '/landing-board': typeof LandingBoardRoute
   '/landing-next': typeof LandingNextRoute
   '/next': typeof NextRoute
   '/no-access': typeof NoAccessRoute
@@ -460,6 +468,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/join': typeof JoinRoute
+  '/landing-board': typeof LandingBoardRoute
   '/landing-next': typeof LandingNextRoute
   '/next': typeof NextRoute
   '/no-access': typeof NoAccessRoute
@@ -517,6 +526,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/join'
+    | '/landing-board'
     | '/landing-next'
     | '/next'
     | '/no-access'
@@ -572,6 +582,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/join'
+    | '/landing-board'
     | '/landing-next'
     | '/next'
     | '/no-access'
@@ -628,6 +639,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/join'
+    | '/landing-board'
     | '/landing-next'
     | '/next'
     | '/no-access'
@@ -685,6 +697,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   JoinRoute: typeof JoinRoute
+  LandingBoardRoute: typeof LandingBoardRoute
   LandingNextRoute: typeof LandingNextRoute
   NextRoute: typeof NextRoute
   NoAccessRoute: typeof NoAccessRoute
@@ -737,6 +750,13 @@ declare module '@tanstack/react-router' {
       path: '/join'
       fullPath: '/join'
       preLoaderRoute: typeof JoinRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/landing-board': {
+      id: '/landing-board'
+      path: '/landing-board'
+      fullPath: '/landing-board'
+      preLoaderRoute: typeof LandingBoardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/landing-next': {
@@ -1164,6 +1184,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   JoinRoute: JoinRoute,
+  LandingBoardRoute: LandingBoardRoute,
   LandingNextRoute: LandingNextRoute,
   NextRoute: NextRoute,
   NoAccessRoute: NoAccessRoute,
