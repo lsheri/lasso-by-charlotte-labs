@@ -63,14 +63,13 @@ export function extractTurnRefs(
       let best: { id: string; title: string } | null = null;
       let bestAt = -1;
       for (const c of usable) {
-        const t = c.title.toLowerCase();
-        let idx = lower.lastIndexOf(t, at);
-        if (idx < 0) idx = lower.indexOf(t) >= 0 && bestAt < 0 && !best ? lower.indexOf(t) : -1;
+        const idx = lower.lastIndexOf(c.title.toLowerCase(), at);
         if (idx >= 0 && idx > bestAt) {
           best = c;
           bestAt = idx;
         }
       }
+      if (!best) best = usable.find((c) => lower.includes(c.title.toLowerCase())) ?? null;
       if (!best && usable.length === 1) best = usable[0]!;
       if (!best) continue;
       const nums = [Number(match[1])];
