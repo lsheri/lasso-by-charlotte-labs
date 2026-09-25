@@ -26,11 +26,11 @@ export function DemoPresetsAdmin({ engagementId }: { engagementId: string }) {
         {run.isPending ? "Regenerating demo answers" : "Regenerate demo answers"}
       </Button>
       {run.isSuccess ? (
-        <span className="text-[11.5px] text-muted-foreground">
+        <span className="text-xs text-muted-foreground">
           {run.data.answered} of {run.data.total} answers saved.
         </span>
       ) : null}
-      {run.isError ? <span className="text-[11.5px] text-muted-foreground">That did not finish. Try again.</span> : null}
+      {run.isError ? <span className="text-xs text-muted-foreground">That did not finish. Try again.</span> : null}
     </div>
   );
 }

@@ -88,7 +88,8 @@ describe("resolveProfile", () => {
  * invites.server.ts reads every profile a viewer holds on purpose, to answer a
  * cross workspace membership question. It is not a single acting profile read.
  */
-const ALLOWED = new Set(["invites.server.ts"]);
+// demo-presets.server.ts looks up the caller's profile in the demo org specifically, not the acting profile.
+const ALLOWED = new Set(["invites.server.ts", "demo-presets.server.ts"]);
 
 describe("one way to resolve who is acting", () => {
   it("no server module hand-rolls the acting profile lookup", () => {

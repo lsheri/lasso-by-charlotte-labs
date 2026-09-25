@@ -13,6 +13,9 @@ import { guardEventDims } from "../event-dim-allowlist";
 import { extractTurnRefs, naturalTurnLabels, RAW_TURN_TAG, stripTurnTags } from "../turn-labels";
 
 afterEach(cleanup);
+if (typeof window !== "undefined" && !window.matchMedia) {
+  window.matchMedia = ((q: string) => ({ matches: false, media: q, addEventListener() {}, removeEventListener() {} })) as unknown as typeof window.matchMedia;
+}
 
 const WORK = "11111111-1111-4111-8111-111111111111";
 const OTHER = "22222222-2222-4222-8222-222222222222";
