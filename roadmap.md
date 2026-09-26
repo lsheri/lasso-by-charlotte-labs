@@ -214,4 +214,4 @@
 - [x] Center and enlarge settled captions within the visible board area at desktop and phone sizes.
 - [x] Add one-shot caption exit, spring entry, word reveal, underline, and step progress motion with a reduced-motion crossfade.
 - [x] Raise story, board, Ask, proof, chip, and micro-label text to the requested readable floors.
-- [ ] Verify all settled steps at 1372x732 and the caption body at 390x844.
+- [x] Verify all settled steps at 1372x732 and the caption body at 390x844.
