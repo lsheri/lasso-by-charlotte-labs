@@ -5263,22 +5263,13 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   display: inline-block;
   color: var(--nb-ink);
   text-decoration-line: underline;
-  text-decoration-color: currentColor;
-  text-decoration-thickness: var(--stroke-pencil);
-  text-underline-offset: 0.12em;
-  text-decoration-skip-ink: auto;
-  animation: landing-particle-ink-to-orange 7.6s ease-in-out infinite;
-  will-change: opacity, color;
-}
-@keyframes landing-particle-ink-to-orange {
-  0% { opacity: 0; color: var(--nb-ink); text-shadow: 0 0 12px transparent; }
-  13% { opacity: 1; color: var(--nb-ink); text-shadow: 0 0 12px transparent; }
-  24% { color: var(--lb-neon-orange); text-shadow: 0 0 14px var(--lb-neon-orange-glow); }
-  89% { opacity: 1; color: var(--lb-neon-orange); text-shadow: 0 0 14px var(--lb-neon-orange-glow); }
-  100% { opacity: 0; color: var(--lb-neon-orange); text-shadow: 0 0 12px transparent; }
+  text-decoration-color: var(--nb-lasso-green);
+  text-decoration-thickness: 0.1em;
+  text-underline-offset: 0.15em;
+  text-decoration-skip-ink: none;
 }
 @media (prefers-reduced-motion: reduce) {
-  .landing-particle-word-text { opacity: 1 !important; animation: none; color: var(--lb-neon-orange); text-shadow: 0 0 14px var(--lb-neon-orange-glow); }
+  .landing-particle-word-text { opacity: 1 !important; animation: none; color: var(--nb-ink); }
 }
 
 /* Beat loops: one loop per beat, 7s. */
@@ -5526,13 +5517,22 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   .landing-story-fragment { display: none; }
 }
 
-/* Unit 9: the close shares the hero phrase's ink-to-neon-orange move with a resolved orange glow. */
+/* The close keeps its own resolved orange move; the hero phrase is static ink with a lime underline. */
 .landing-close { padding-top: 96px; padding-bottom: 24px; text-align: center; }
 .landing-close-wordmark { color: var(--foreground); font-family: var(--font-mono); font-size: 18px; font-weight: 400; letter-spacing: .18em; line-height: 1.4; text-transform: uppercase; }
 .landing-close-ink-wrap { position: relative; isolation: isolate; }
 .landing-close-line2 { position: relative; z-index: 1; margin-top: 12px; color: var(--foreground); font-family: var(--font-hand); font-size: 64px; line-height: 1.05; }
 .landing-close-line2 .landing-particle-word-text {
   text-decoration-line: none;
+  animation: landing-particle-ink-to-orange 7.6s ease-in-out infinite;
+  will-change: opacity, color;
+}
+@keyframes landing-particle-ink-to-orange {
+  0% { opacity: 0; color: var(--nb-ink); text-shadow: 0 0 12px transparent; }
+  13% { opacity: 1; color: var(--nb-ink); text-shadow: 0 0 12px transparent; }
+  24% { color: var(--lb-neon-orange); text-shadow: 0 0 14px var(--lb-neon-orange-glow); }
+  89% { opacity: 1; color: var(--lb-neon-orange); text-shadow: 0 0 14px var(--lb-neon-orange-glow); }
+  100% { opacity: 0; color: var(--lb-neon-orange); text-shadow: 0 0 12px transparent; }
 }
 @media (max-width: 767px) {
   .landing-close { padding-top: 64px; }
