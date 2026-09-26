@@ -340,7 +340,7 @@ describe("Unit L1 scroll-driven landing board", () => {
     const costsBackground = css
       .match(/\.lb-waterfall-costs i \{[^}]*background: ([^;]+);/)?.[1]
       ?.trim();
-    expect(costsBackground).toBe("var(--nb-red)");
+    expect(costsBackground).toBe("var(--nb-ink-ember)");
     expect(costsBackground).not.toBe("transparent");
   });
   it("sources the Ask client and engagement labels rather than inventing a client name", () => {

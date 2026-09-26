@@ -55,6 +55,8 @@ describe("Unit P1 playable finished board", () => {
 
   it("contains the deliverable and swaps its six local slide thumbnails", () => {
     expect(board).toContain('className="demo-deliverable-main"');
+    expect(board).toContain("<DeckSlide");
+    expect(board).not.toContain("function DemoDeckSlide");
     expect(board).toContain("Array.from({ length: 6 }");
     expect(board).toContain('emit("slide_selected")');
   });
