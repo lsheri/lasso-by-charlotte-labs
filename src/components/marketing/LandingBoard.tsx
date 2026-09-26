@@ -2576,7 +2576,6 @@ export function LandingBoard() {
       <main className="lb-story">
         <section className="lb-desktop-hero" aria-labelledby="lb-home-title">
           <div className="lb-hero-copy">
-            <LassoThinkingMark kind="signature" size={150} />
             <div>
               <h1 id="lb-home-title">
                 Your firm bought AI.{" "}

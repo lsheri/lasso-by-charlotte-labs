@@ -425,8 +425,13 @@ test("settled attention steps keep one spotlight and one caption", async ({ brow
   });
   const page = await context.newPage();
   await page.goto("/", { waitUntil: "networkidle" });
-  for (const name of ["Deliverable", "A number", "Ask Lasso", "The chat"]) {
-    await page.locator(`.lb-progress-dot[aria-label="${name}"]`).click({ force: true });
+  for (const [index, name] of [
+    [3, "Deliverable"],
+    [4, "A number"],
+    [5, "Ask Lasso"],
+    [6, "The chat"],
+  ] as const) {
+    await page.locator(".lb-progress-dot").nth(index).click({ force: true });
     await page.waitForTimeout(800);
     const baseline = await page.evaluate(
       () =>
