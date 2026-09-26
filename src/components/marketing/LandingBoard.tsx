@@ -2119,6 +2119,7 @@ function LandingBoardUseCase({
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const inputMode = useRef<"hover" | "tap">("hover");
+  const posterTimer = useRef<number | null>(null);
   const [playing, setPlaying] = useState(false);
   const [ended, setEnded] = useState(false);
   const [videoFailed, setVideoFailed] = useState(false);
@@ -2126,6 +2127,7 @@ function LandingBoardUseCase({
   function play(mode: "hover" | "tap") {
     const video = videoRef.current;
     if (!video || videoFailed) return;
+    if (posterTimer.current !== null) window.clearTimeout(posterTimer.current);
     inputMode.current = mode;
     if (video.ended) video.currentTime = 0;
     setEnded(false);
@@ -2135,6 +2137,13 @@ function LandingBoardUseCase({
   function pause() {
     videoRef.current?.pause();
   }
+
+  useEffect(
+    () => () => {
+      if (posterTimer.current !== null) window.clearTimeout(posterTimer.current);
+    },
+    [],
+  );
 
   return (
     <article className="landing-usecase" data-usecase={card.key}>
@@ -2171,7 +2180,6 @@ function LandingBoardUseCase({
             ref={videoRef}
             className="landing-usecase-video"
             muted
-            loop
             playsInline
             preload="none"
             poster={card.poster}
@@ -2186,6 +2194,13 @@ function LandingBoardUseCase({
             onEnded={() => {
               setPlaying(false);
               setEnded(true);
+              posterTimer.current = window.setTimeout(() => {
+                const video = videoRef.current;
+                if (!video) return;
+                video.load();
+                setEnded(false);
+                posterTimer.current = null;
+              }, 2000);
             }}
             onError={() => setVideoFailed(true)}
           >

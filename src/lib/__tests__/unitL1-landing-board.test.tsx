@@ -79,6 +79,8 @@ describe("Unit L1 scroll-driven landing board", () => {
       'event(viewId.current, "landing.usecase_played", { card, input_mode: inputMode })',
     );
     expect(page).toContain("aria-label={`Play: ${card.title}`}");
+    expect(page).not.toContain("            loop\n            playsInline");
+    expect(page).toContain("}, 2000);");
   });
   it("places the use cases between the hero and Canvas without card jump controls", () => {
     expect(page.indexOf('className="lb-desktop-hero"')).toBeLessThan(
