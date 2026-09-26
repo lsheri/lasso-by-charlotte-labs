@@ -128,7 +128,7 @@ test("story spotlights only the three settled attention moments", async ({ brows
   const layers = await page.evaluate(() => ({
     board: Number(getComputedStyle(document.querySelector<HTMLElement>(".lb-board-layer") as HTMLElement).zIndex) || 0,
     overlay: Number(getComputedStyle(document.querySelector<HTMLElement>(".lb-spotlight-overlay") as HTMLElement).zIndex),
-    ask: Number(getComputedStyle(document.querySelector<HTMLElement>(".lb-ask-spotlight") as HTMLElement).zIndex),
+    ask: Number(getComputedStyle(document.querySelector<HTMLElement>(".lb-answer-sheet") as HTMLElement).zIndex),
   }));
   expect(layers.board).toBeLessThan(layers.overlay);
   expect(layers.ask).toBeGreaterThan(layers.overlay);
