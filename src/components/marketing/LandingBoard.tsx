@@ -20,7 +20,6 @@ import { FocusSection } from "@/components/marketing/FocusSection";
 import { ToolLogo } from "@/components/marketing/ToolLogo";
 import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
 import { AnswerRail, ContextAudit, ThinkingTrail } from "@/components/reflect/ContextTrail";
-import { LassoThinkingMark } from "@/components/reflect/LassoThinkingMark";
 import { AnswerTurnLinks } from "@/components/reflect/AnswerTurnLinks";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -795,7 +794,6 @@ export function PlayableDemoBoard({
             className="demo-play-ask-toggle"
             onClick={() => setAskOpen((open) => !open)}
           >
-            <LassoThinkingMark kind="signature" size={34} />
             <span>
               <b>Ask Lasso</b>
               <small>{engagementTitle}</small>
@@ -902,7 +900,6 @@ function AskReplay({
       data-story-scroll="locked"
     >
       <header className="lb-ask-header">
-        <LassoThinkingMark kind="signature" size={44} />
         <div>
           <p className="lb-micro">ASK LASSO</p>
           <h3>{clientLabel}</h3>
@@ -1364,7 +1361,6 @@ function PhoneStory({
         data-entered="true"
       >
         <div className="lb-phone-hero">
-          <LassoThinkingMark kind="signature" size={62} />
           <h1>
             Your firm bought AI.{" "}
             <LandingParticlePhrase text="The human judgment, process, and thinking" /> in your
@@ -1380,6 +1376,7 @@ function PhoneStory({
               <Link to="/demo">View a Workboard</Link>
             </Button>
           </div>
+          <PhoneHeroAssemble />
         </div>
       </section>
       <UseCaseSection
@@ -1938,6 +1935,8 @@ const HERO_ASSEMBLE_CARDS = [
   { tool: "googledrive", label: "Pricing approach" },
 ] as const;
 
+const PHONE_HERO_ASSEMBLE_CARDS = HERO_ASSEMBLE_CARDS.slice(0, 3);
+
 /** Inert desktop decoration showing scattered AI work settling onto a finished board. */
 function HeroAssemble() {
   return (
@@ -1956,6 +1955,32 @@ function HeroAssemble() {
             <span /><span /><span />
           </article>
         ))}
+      </div>
+    </div>
+  );
+}
+
+/** Inert phone sequence: three chats settle once into a close crop of the board. */
+function PhoneHeroAssemble() {
+  return (
+    <div className="lb-phone-hero-sequence" aria-hidden="true" inert>
+      <div className="lb-phone-hero-assemble">
+        <img className="lb-phone-hero-board" src={finishedWorkboardAsset.url} alt="" />
+        <div className="lb-phone-hero-cards">
+          {PHONE_HERO_ASSEMBLE_CARDS.map((card, index) => (
+            <article key={card.tool} className="lb-phone-hero-chat" data-card={index + 1}>
+              <ToolLogo vendor={card.tool} compact />
+              <strong>{card.label}</strong>
+              <span />
+              <span />
+            </article>
+          ))}
+        </div>
+      </div>
+      <p className="micro-label lb-phone-hero-caption">CHATS FROM EVERY TOOL, ON ONE BOARD</p>
+      <div className="lb-phone-hero-line">
+        <p className="micro-label">WHAT IT IS</p>
+        <p>ONE INFINITE CANVAS WHERE YOUR AI WORK, AND THE THINKING BEHIND IT, LIVES</p>
       </div>
     </div>
   );
@@ -1984,52 +2009,6 @@ function LandingBoardHeader({ onPilot }: { onPilot: () => void }) {
         </div>
       </div>
     </header>
-  );
-}
-
-function StoryProgressRail({
-  active,
-  phoneStop,
-  visible,
-  onJump,
-}: {
-  active: number;
-  phoneStop: number;
-  visible: boolean;
-  onJump: (key: StepKey) => void;
-}) {
-  const current = phoneStop >= 2 ? phoneStop - 1 : active;
-  const item = LANDING_BOARD_STEPS[current] ?? LANDING_BOARD_STEPS[0];
-  return (
-    <nav
-      className="lb-progress-rail"
-      data-visible={visible ? "true" : "false"}
-      data-step={current + 1}
-      aria-label="Story progress"
-    >
-      <div className="lb-progress-dots">
-        {LANDING_BOARD_STEPS.map((step, index) => (
-          <Button
-            key={step.key}
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="lb-progress-dot"
-            data-current={index === current ? "true" : undefined}
-            data-visited={index < current ? "true" : undefined}
-            aria-label={step.label}
-            aria-current={index === current ? "step" : undefined}
-            title={step.label}
-            onClick={() => onJump(step.key)}
-          >
-            <span aria-hidden="true" />
-          </Button>
-        ))}
-      </div>
-      <span className="lb-progress-status" aria-live="polite">
-        {item.label} · {current + 1} / {LANDING_BOARD_STEPS.length}
-      </span>
-    </nav>
   );
 }
 
@@ -2394,7 +2373,6 @@ export function LandingBoard() {
   const [settledStep, setSettledStep] = useState(0);
   const [attentionNonce, setAttentionNonce] = useState(0);
   const [phoneStop, setPhoneStop] = useState(0);
-  const [railVisible, setRailVisible] = useState(false);
   const activeRef = useRef(0);
   const settledStepRef = useRef(0);
   const transitioning = useRef(false);
@@ -2412,31 +2390,6 @@ export function LandingBoard() {
       input_mode: window.matchMedia("(max-width: 639px)").matches ? "scroll" : "scroll",
     });
   }, []);
-  useEffect(() => {
-    let frame = 0;
-    const readRail = () => {
-      frame = 0;
-      if (window.matchMedia("(max-width: 639px)").matches) {
-        setRailVisible(phoneStop >= 2 && phoneStop <= 10);
-        return;
-      }
-      const story = document.querySelector<HTMLElement>(".lb-how-it-works");
-      if (!story) return;
-      const box = story.getBoundingClientRect();
-      setRailVisible(active > 0 && box.bottom > 118);
-    };
-    const onScroll = () => {
-      if (!frame) frame = window.requestAnimationFrame(readRail);
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
-    readRail();
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
-      if (frame) window.cancelAnimationFrame(frame);
-    };
-  }, [active, phoneStop]);
   const settle = useCallback((index: number, inputMode: StoryInput) => {
     if (settleTimer.current !== null) window.clearTimeout(settleTimer.current);
     settleTimer.current = window.setTimeout(() => {
@@ -2593,12 +2546,6 @@ export function LandingBoard() {
   return (
     <div className="landing-board-page">
       <LandingBoardHeader onPilot={() => pilot("header")} />
-      <StoryProgressRail
-        active={active}
-        phoneStop={phoneStop}
-        visible={railVisible}
-        onJump={jump}
-      />
       <main className="lb-story">
         <section
           className="lb-desktop-hero"
@@ -2609,7 +2556,6 @@ export function LandingBoard() {
           }}
         >
           <div className="lb-hero-copy">
-            <LassoThinkingMark kind="signature" size={150} />
             <div>
               <h1 id="lb-home-title">
                 Your firm bought AI.{" "}

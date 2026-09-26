@@ -5,7 +5,7 @@ const desktopSizes = [
   { width: 1512, height: 807 },
 ];
 
-test("landing header, progress rail, and paper caption keep the S4 contract", async ({
+test("landing header and paper caption keep the story contract without a progress rail", async ({
   browser,
 }) => {
   const context = await browser.newContext({
@@ -15,14 +15,10 @@ test("landing header, progress rail, and paper caption keep the S4 contract", as
   const page = await context.newPage();
   await page.goto("/", { waitUntil: "domcontentloaded" });
   await expect(page.locator(".lb-header .lb-step-nav")).toHaveCount(0);
-  await expect(page.locator(".lb-progress-dot")).toHaveCount(10);
+  await expect(page.locator(".lb-progress-rail")).toHaveCount(0);
   expect((await page.locator(".lb-header").boundingBox())?.height ?? 999).toBeLessThanOrEqual(64);
-  await page.getByRole("button", { name: "Circle", exact: true }).last().click();
-  await expect(page.locator(".lb-progress-rail")).toHaveAttribute("data-step", "5");
-  await expect(page.locator('.lb-progress-dot[data-current="true"]')).toHaveAttribute(
-    "aria-label",
-    "Circle",
-  );
+  await page.locator("#lb-circle").scrollIntoViewIfNeeded();
+  await expect(page.locator('.lb-caption[data-phase="incoming"]')).toHaveAttribute("data-step", "5");
   const caption = page.locator('.lb-caption[data-phase="incoming"]');
   await expect(caption).toHaveCSS("background-color", "rgb(255, 255, 255)");
   await expect(caption).not.toHaveCSS("background-color", "rgb(22, 24, 26)");
@@ -186,8 +182,7 @@ for (const viewport of [
     for (let index = 0; index < 11; index += 1) {
       const section = sections.nth(index);
       await section.scrollIntoViewIfNeeded();
-      if (index >= 2)
-        await expect(page.locator(".lb-progress-rail")).toHaveAttribute("data-step", `${index}`);
+      await expect(page.locator(".lb-progress-rail")).toHaveCount(0);
       const result = await section.evaluate((element) => {
         const visibleText = Array.from(
           element.querySelectorAll<HTMLElement>("span,p,strong,small,h1,h2,h3,a,button"),
@@ -431,7 +426,9 @@ test("settled attention steps keep one spotlight and one caption", async ({ brow
     [5, "Ask Lasso"],
     [6, "The chat"],
   ] as const) {
-    await page.locator(".lb-progress-dot").nth(index).click({ force: true });
+    const key = ["problem", "canvas", "workstreams", "deliverable", "circle", "ask", "the-turn"][index];
+    if (!key) throw new Error(`Missing story key for index ${index}`);
+    await page.locator(`#lb-${key}`).scrollIntoViewIfNeeded();
     await page.waitForTimeout(800);
     const baseline = await page.evaluate(
       () =>

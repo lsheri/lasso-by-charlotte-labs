@@ -1,4 +1,5 @@
 - [ ] S5 architect-owned: regenerate the four YSM-01 presets after the prompt update, then confirm preset 2 has no link disclaimer and still resolves turn 5.
+- [x] M1 landing: remove the landing morphing mark and story progress rail, then repair phone clearance, containment, offsets, and the one-play hero sequence.
 - [x] S5 app work: add exact-turn chips to Ask answers, remove link disclaimers from the prompt, and replace story labels with approved plain-language copy.
 
 # Roadmap
