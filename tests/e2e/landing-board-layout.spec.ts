@@ -19,6 +19,49 @@ for (const viewport of desktopSizes) {
   });
 }
 
+test("story captions and visible text stay readable across settled desktop steps", async ({ browser }) => {
+  test.setTimeout(120_000);
+  const context = await browser.newContext({ viewport: { width: 1372, height: 732 }, reducedMotion: "reduce" });
+  const page = await context.newPage();
+  await page.goto("/", { waitUntil: "networkidle" });
+  for (const name of ["Canvas", "Workstreams", "Deliverable", "Circle", "Ask", "The turn", "Still open", "Share", "Try it"]) {
+    await page.getByRole("button", { name, exact: true }).click();
+    const caption = page.locator('.lb-caption[data-phase="incoming"]');
+    await expect(caption).toBeVisible();
+    const geometry = await page.evaluate(() => {
+      const card = document.querySelector<HTMLElement>('.lb-caption[data-phase="incoming"]');
+      const stage = document.querySelector<HTMLElement>(".lb-stage-window");
+      if (!card || !stage) return null;
+      const cardBox = card.getBoundingClientRect();
+      const stageBox = stage.getBoundingClientRect();
+      const panel = document.querySelector<HTMLElement>(".lb-answer-sheet");
+      const boardRight = panel && getComputedStyle(panel).display !== "none" ? panel.getBoundingClientRect().left : stageBox.right;
+      const body = card.querySelector("p");
+      const visible = Array.from(stage.querySelectorAll<HTMLElement>("span,p,strong,small,h3,b,a,button"))
+        .filter((element) => { const box = element.getBoundingClientRect(); const style = getComputedStyle(element); return box.width > 0 && box.height > 0 && style.visibility !== "hidden" && style.opacity !== "0" && !element.closest(".lb-deck-slide:not(.lb-slide-number)"); })
+        .slice(0, 20)
+        .map((element) => { const style = getComputedStyle(element); return { text: element.textContent?.trim(), size: Number.parseFloat(style.fontSize), height: element.getBoundingClientRect().height }; });
+      return { delta: Math.abs((cardBox.left + cardBox.width / 2) - (stageBox.left + (boardRight - stageBox.left) / 2)), bodySize: body ? Number.parseFloat(getComputedStyle(body).fontSize) : 0, visible };
+    });
+    expect(geometry).not.toBeNull();
+    expect(geometry?.delta ?? 999).toBeLessThanOrEqual(24);
+    expect(geometry?.bodySize ?? 0).toBeGreaterThanOrEqual(19);
+    for (const node of geometry?.visible ?? []) expect(Math.min(node.size, node.height), node.text).toBeGreaterThanOrEqual(12);
+  }
+  await context.close();
+});
+
+test("story caption body is readable on phone", async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: "reduce" });
+  const page = await context.newPage();
+  await page.goto("/", { waitUntil: "networkidle" });
+  await page.getByRole("button", { name: "Canvas", exact: true }).click();
+  const body = page.locator('.lb-caption[data-phase="incoming"] p');
+  await expect(body).toBeVisible();
+  expect(await body.evaluate((element) => Number.parseFloat(getComputedStyle(element).fontSize))).toBeGreaterThanOrEqual(17);
+  await context.close();
+});
+
 for (const viewport of [...desktopSizes, { width: 390, height: 844 }]) {
   test(`landing page has no horizontal overflow at ${viewport.width}x${viewport.height}`, async ({ browser }) => {
     const context = await browser.newContext({ viewport, reducedMotion: "no-preference" });

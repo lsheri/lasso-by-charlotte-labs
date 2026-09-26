@@ -209,3 +209,9 @@
 - [x] Fit the finished board to the available canvas on load and after every reset, capped at 100%.
 - [x] Remove the deck's slide-notes suffix, stack narrow proof actions, and clear the hint below the toolbar.
 - [x] Verify zoom, proof labels, and deck title at 1372x732 and 1512x807.
+
+### Unit S1 home story readability
+- [x] Center and enlarge settled captions within the visible board area at desktop and phone sizes.
+- [x] Add one-shot caption exit, spring entry, word reveal, underline, and step progress motion with a reduced-motion crossfade.
+- [x] Raise story, board, Ask, proof, chip, and micro-label text to the requested readable floors.
+- [ ] Verify all settled steps at 1372x732 and the caption body at 390x844.

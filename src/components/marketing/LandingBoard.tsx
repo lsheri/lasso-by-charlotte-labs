@@ -582,6 +582,33 @@ function LandingBoardHeader({ active, onJump, onPilot }: { active: StepKey; onJu
   );
 }
 
+function CaptionWords({ text }: { text: string }) {
+  return text.split(/\s+/).map((word, index) => <span key={`${word}-${index}`} style={{ "--lb-word-index": index } as CSSProperties}>{word}{index < text.split(/\s+/).length - 1 ? " " : ""}</span>);
+}
+
+function StoryCaption({ step, nonce, onPilot }: { step: number; nonce: number; onPilot: () => void }) {
+  const [outgoing, setOutgoing] = useState<number | null>(null);
+  const previousStep = useRef(step);
+  useEffect(() => {
+    if (previousStep.current === step) return;
+    setOutgoing(previousStep.current);
+    previousStep.current = step;
+    const timer = window.setTimeout(() => setOutgoing(null), 160);
+    return () => window.clearTimeout(timer);
+  }, [step]);
+  const renderCaption = (index: number, phase: "incoming" | "outgoing") => {
+    const item = LANDING_BOARD_STEPS[index];
+    if (!item) return null;
+    const words = item.headline.split(/\s+/).length;
+    return <article key={`${phase}-${index}-${nonce}`} className="lb-caption" data-phase={phase} aria-live={phase === "incoming" ? "polite" : undefined} aria-hidden={phase === "outgoing" ? "true" : undefined} style={{ "--lb-progress-from": `${Math.max(0, index) * 10}%`, "--lb-progress-to": `${(index + 1) * 10}%`, "--lb-underline-delay": `${words * 40 + 80}ms` } as CSSProperties}>
+      <span className="lb-caption-progress" aria-label={`${index + 1} of ${LANDING_BOARD_STEPS.length}`} />
+      <div className="lb-caption-text"><span>{String(index + 1).padStart(2, "0")} · {item.label}</span><h2><CaptionWords text={item.headline} /></h2><p>{item.line}</p></div>
+      {index === 9 ? <div><Button asChild><Link to="/demo">Open the board yourself</Link></Button><Button asChild variant="outline"><a href="#pilot" onClick={onPilot}>Book a pilot</a></Button></div> : null}
+    </article>;
+  };
+  return <div className="lb-caption-stack">{outgoing !== null ? renderCaption(outgoing, "outgoing") : null}{renderCaption(step, "incoming")}</div>;
+}
+
 function LandingBoardUseCase({ card, onPlayed }: { card: (typeof LANDING_BOARD_USE_CASES)[number]; onPlayed: (key: UseCaseKey, inputMode: "hover" | "tap") => void }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const inputMode = useRef<"hover" | "tap">("hover");
@@ -777,7 +804,7 @@ export function LandingBoard() {
       <main className="lb-story">
         <div className="lb-sticky-stage">
           {result?.status === "open" && "board" in result ? <StoryBoard board={result.board} presets={result.presets} proof={result.proof} step={active} attentionStep={settledStep} attentionNonce={attentionNonce} clientLabel={result.engagement.clientLabel ?? ""} engagementTitle={result.engagement.title} onShowSlide={() => { event(viewId.current, "landing.proof_link_opened", { step: "6", target: "slide" }); jump("circle"); }} onOpenTurn={() => event(viewId.current, "landing.proof_link_opened", { step: "6", target: "turn" })} onOpenDecisionTurn={() => event(viewId.current, "landing.proof_link_opened", { step: "7", target: "turn" })} /> : <div className="lb-stage-window lb-loading">{query.isPending ? "Opening the demo board." : "The demo board is not available right now."}</div>}
-          {settledStep > 0 ? <article key={`${settledStep}-${attentionNonce}`} className="lb-caption lb-caption-attention" aria-live="polite"><div className="lb-caption-text"><span>{String(settledStep + 1).padStart(2, "0")} · {LANDING_BOARD_STEPS[settledStep]?.label}</span><h2>{LANDING_BOARD_STEPS[settledStep]?.headline}</h2><p>{LANDING_BOARD_STEPS[settledStep]?.line}</p></div>{settledStep === 9 ? <div><Button asChild><Link to="/demo">Open the board yourself</Link></Button><Button asChild variant="outline"><a href="#pilot" onClick={() => pilot("try_it")}>Book a pilot</a></Button></div> : null}</article> : null}
+          {settledStep > 0 ? <StoryCaption step={settledStep} nonce={attentionNonce} onPilot={() => pilot("try_it")} /> : null}
           <div className="lb-scroll-cue" data-visible={active === 0 ? "true" : "false"} data-testid="landing-scroll-cue" aria-hidden={active !== 0}>
             <span>Scroll to watch it work</span>
             <svg viewBox="0 0 16 10" aria-hidden="true"><path d="m2 2 6 6 6-6" /></svg>

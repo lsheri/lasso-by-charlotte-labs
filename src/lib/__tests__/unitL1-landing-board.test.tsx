@@ -80,7 +80,7 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(page).toContain("sourceRef");
     expect(page.toLowerCase()).not.toContain("verified by lasso");
     expect(css).toContain("translate(-65%, -58%) scale(.66)");
-    expect(css).toContain(".lb-caption { position: fixed; left: 12px; right: 12px;");
+    expect(css).toContain(".lb-caption-stack,.lb-sticky-stage:has");
   });
   it("renders the full decision chat at step seven with one marked turn", () => {
     expect(page).toContain('data-testid="landing-decision-transcript"');
@@ -125,7 +125,7 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(page).toContain('className="lb-read-dot"');
   });
   it("hides the redundant first caption and locks jump state", () => {
-    expect(page).toContain('{settledStep > 0 ? <article key={`${settledStep}-${attentionNonce}`} className="lb-caption lb-caption-attention"');
+    expect(page).toContain('{settledStep > 0 ? <StoryCaption step={settledStep} nonce={attentionNonce}');
     expect(page).toContain('if (jumpTarget.current !== null) return;');
     expect(page).toContain('activate(index, "jump", true)');
   });
@@ -183,8 +183,10 @@ describe("Unit L1 scroll-driven landing board", () => {
     const css = readFileSync("src/styles.css", "utf8");
     expect(page).toContain('aria-live="polite"');
     expect(page).toContain("setAttentionNonce");
-    expect(page).toContain("lb-caption-attention");
-    expect(css).toContain("lb-caption-attention 400ms");
+    expect(page).toContain('data-phase={phase}');
+    expect(css).toContain("lb-caption-in 360ms");
+    expect(css).toContain("lb-caption-out 160ms");
+    expect(css).toContain("var(--lb-word-index) * 40ms");
     expect(css).toContain("lb-caption-crossfade 150ms");
     expect(css).toContain("lb-target-ring 600ms");
   });
