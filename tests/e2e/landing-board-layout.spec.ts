@@ -99,6 +99,11 @@ test("story captions and visible text stay readable across settled desktop steps
     reducedMotion: "reduce",
   });
   const page = await context.newPage();
+  const telemetryBodies: string[] = [];
+  page.on("request", (request) => {
+    const body = request.postData();
+    if (body?.includes("landing.usecase_played")) telemetryBodies.push(body);
+  });
   await page.goto("/", { waitUntil: "networkidle" });
   for (const name of [
     "One canvas",
@@ -384,6 +389,11 @@ test("use cases sit before the story with one-line titles and no jump controls",
   await expect(
     page.locator('#usecases [data-usecase="bring_work_in"] video source[type="video/mp4"]'),
   ).toHaveAttribute("src", /use-bring-work-in\.mp4/);
+  await page
+    .locator('#usecases [data-usecase="bring_work_in"]')
+    .getByRole("button", { name: /Play:/ })
+    .click();
+  await expect.poll(() => telemetryBodies.length).toBeGreaterThan(0);
   await page
     .locator("#usecases")
     .screenshot({ path: testInfo.outputPath("landing-usecases-1372x732.png") });
