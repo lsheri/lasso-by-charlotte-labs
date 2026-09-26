@@ -19,6 +19,29 @@ for (const viewport of desktopSizes) {
   });
 }
 
+test("playable demo rail and board text meet the buyer-readable floor", async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 1372, height: 732 }, reducedMotion: "reduce" });
+  const page = await context.newPage();
+  await page.goto("/demo", { waitUntil: "networkidle" });
+  const sample = await page.evaluate(() => {
+    const stage = document.querySelector<HTMLElement>(".demo-sandbox-stage");
+    const scale = stage ? stage.getBoundingClientRect().width / stage.offsetWidth : 1;
+    const visibleLeaves = (root: string, board: boolean) => Array.from(document.querySelectorAll<HTMLElement>(`${root} *`))
+      .filter((element) => {
+        const box = element.getBoundingClientRect();
+        const style = getComputedStyle(element);
+        return element.children.length === 0 && Boolean(element.textContent?.trim()) && box.width > 0 && box.height > 0 && style.display !== "none" && style.visibility !== "hidden" && style.opacity !== "0" && !element.closest(".demo-sandbox-deck-art");
+      })
+      .slice(0, 20)
+      .map((element) => ({ text: element.textContent?.trim(), effective: Number.parseFloat(getComputedStyle(element).fontSize) * (board ? scale : 1) }));
+    return { rail: visibleLeaves(".demo-sandbox-ask", false), board: visibleLeaves(".demo-sandbox-stage", true) };
+  });
+  expect(sample.rail).toHaveLength(20);
+  expect(sample.board).toHaveLength(20);
+  for (const node of [...sample.rail, ...sample.board]) expect(node.effective, node.text).toBeGreaterThanOrEqual(12);
+  await context.close();
+});
+
 test("story captions and visible text stay readable across settled desktop steps", async ({ browser }) => {
   test.setTimeout(120_000);
   const context = await browser.newContext({ viewport: { width: 1372, height: 732 }, reducedMotion: "reduce" });
