@@ -97,7 +97,7 @@ describe("Unit L1 scroll-driven landing board", () => {
   it("sources the Ask client and engagement labels rather than inventing a client name", () => {
     expect(page).toContain("<h3>{clientLabel}</h3>");
     expect(page).toContain('{engagementTitle}');
-    expect(page).toContain("clientLabel={result.engagement.clientLabel}");
+    expect(page).toContain('clientLabel={result.engagement.clientLabel ?? ""}');
     expect(page).toContain("engagementTitle={result.engagement.title}");
     expect(page).not.toContain("YellowSigil Mobility");
   });
