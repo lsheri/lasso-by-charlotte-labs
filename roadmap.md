@@ -243,4 +243,4 @@
 ### Unit S3 home order and use cases
 - [x] Place the three use-case cards between the hero and the desktop story, with the story beginning at Canvas.
 - [x] Add the phone use-case stop as 2 of 11 while preserving the focused M1 sections.
-- [ ] Verify card media, story jumps, telemetry, ordering, and screenshots at 1372x732 and 390x844.
+- [x] Verify card media, story jumps, telemetry, ordering, and screenshots at 1372x732 and 390x844.
