@@ -153,8 +153,7 @@ export function DemoWorkboardSandbox({ board, presets, proof, clientLabel, engag
     if ((event.target as HTMLElement).closest("button,textarea,input,select")) return;
     event.stopPropagation(); clearTimer(); setHint(false); setSelected(id);
     const node = nodes.find((entry) => entry.id === id); if (!node) return;
-    const grouped = node.frame ? nodes.filter((entry) => entry.frame === node.frame) : [node];
-    setDrag({ kind: "node", id, from: { x: event.clientX, y: event.clientY }, origins: Object.fromEntries(grouped.map((entry) => [entry.id, { x: entry.x, y: entry.y }])) });
+    setDrag({ kind: "node", id, from: { x: event.clientX, y: event.clientY }, origins: { [id]: { x: node.x, y: node.y } } });
     (event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId);
   };
   const beginFrameDrag = (event: ReactPointerEvent, id: string) => {
