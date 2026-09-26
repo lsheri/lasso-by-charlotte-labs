@@ -186,6 +186,9 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(page).toContain("const showProof = step === 5");
     expect(page).toContain("The full conversation, with the decision highlighted.");
     expect(page).toContain('testId="landing-answer-turn-link"');
+    expect(page).toContain(
+      "onOpenTurn={step === 6 && position === 2 ? onOpenDecisionTurn : undefined}",
+    );
     expect(page).toContain('target: "turn"');
   });
   it("uses the approved plain-language story titles", () => {

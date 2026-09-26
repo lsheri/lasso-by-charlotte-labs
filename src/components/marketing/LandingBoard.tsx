@@ -854,6 +854,7 @@ function AskReplay({
   proofModel,
   onShowSlide,
   onOpenTurn,
+  onOpenDecisionTurn,
 }: {
   presets: DemoPreset[];
   step: number;
@@ -864,6 +865,7 @@ function AskReplay({
   proofModel: LandingProofModel | null;
   onShowSlide: () => void;
   onOpenTurn: () => void;
+  onOpenDecisionTurn: () => void;
 }) {
   const replay = usePresetReplay(step, presets);
   const threadRef = useRef<HTMLDivElement>(null);
@@ -954,7 +956,7 @@ function AskReplay({
                     preset={{ ...preset, answer: answerText }}
                     finished={!current || replay.phase === "done"}
                     showAudit={position !== 1}
-                    onOpenTurn={position === 2 ? onOpenTurn : undefined}
+                    onOpenTurn={step === 6 && position === 2 ? onOpenDecisionTurn : undefined}
                   />
                 ) : null}
               </div>
@@ -1875,6 +1877,7 @@ function StoryBoard({
             proofModel={proofModel}
             onShowSlide={onShowSlide}
             onOpenTurn={onOpenTurn}
+            onOpenDecisionTurn={onOpenDecisionTurn}
           />
         </div>
       ) : null}
