@@ -9,7 +9,7 @@ import { buildSharedBoardModel } from "@/components/canvas-lab/SharedBoardView";
 import { fitWorkboardViewport, type LabFrame, type LabLink, type LabNode, type LabResizeCorner, labInverseZoom, stageBounds } from "@/components/canvas-lab/canvas-lab-model";
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
 import { GraphiteIcon } from "@/components/notebook/icons";
-import { PlaygroundProofCard, PlaygroundReplayAnswer } from "@/components/marketing/LandingBoard";
+import { DeckSlide, PlaygroundProofCard, PlaygroundReplayAnswer } from "@/components/marketing/LandingBoard";
 import { LassoThinkingMark } from "@/components/reflect/LassoThinkingMark";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -112,21 +112,13 @@ function finishedModel(board: SharedBoardDto): { frames: LabFrame[]; nodes: LabN
   return { frames, nodes: [...nodes, ...stickies], links };
 }
 
-function DemoDeckSlide({ index, clientLabel }: { index: number; clientLabel: string }) {
-  if (index === 0) return <div className="demo-deck-slide demo-deck-cover"><strong>FY27 growth partnerships</strong><span>{clientLabel}</span><i /></div>;
-  if (index === 1) return <div className="demo-deck-slide demo-deck-scenarios"><strong>Three scenarios</strong><div><span>A<br />$0.3M</span><span data-picked="true">B<br />$1.4M</span><span>C<br />$1.2M</span></div></div>;
-  if (index === 2) return <div className="demo-deck-slide demo-deck-waterfall"><strong>Year-two net benefit</strong><b>$1.4M</b><div><span><i />$2.1M savings</span><span><i />-$0.7M costs</span><span><i />$1.4M net</span></div></div>;
-  if (index === 3) return <div className="demo-deck-slide demo-deck-structure"><strong>Board structure</strong><div><i /><i /><i /></div><span>Chair: two-term limit</span></div>;
-  if (index === 4) return <div className="demo-deck-slide demo-deck-alliances"><strong>Comparable alliances</strong><div>{[1, 2, 3, 4, 5].map((item) => <i key={item} />)}</div></div>;
-  return <div className="demo-deck-slide demo-deck-decision"><strong>Decision asked for Oct 1</strong><i /></div>;
-}
-
-function DemoDeliverable({ node, clientLabel, activeSlide, onSelectSlide, onPointerDown, onFocus }: { node: LabNode; clientLabel: string; activeSlide: number; onSelectSlide: (index: number) => void; onPointerDown: (event: ReactPointerEvent) => void; onFocus: () => void }) {
+function DemoDeliverable({ node, clientLabel, proof, activeSlide, onSelectSlide, onPointerDown, onFocus }: { node: LabNode; clientLabel: string; proof: LandingProof | null; activeSlide: number; onSelectSlide: (index: number) => void; onPointerDown: (event: ReactPointerEvent) => void; onFocus: () => void }) {
+  const proofModel = proof ? parseLandingProof(proof) : null;
   return <article className="canvas-lab-card demo-deliverable-node absolute" data-testid={`lab-card-${node.id}`} data-node-id={node.id} style={{ left: node.x, top: node.y, width: node.width, height: node.height }} tabIndex={0} onPointerDown={onPointerDown} onFocus={onFocus}>
     <header><GraphiteIcon name="example-board" /><span>Added Sep 24, 2026</span><strong>{node.title}</strong></header>
-    <div className="demo-deliverable-main"><DemoDeckSlide index={activeSlide} clientLabel={clientLabel} /></div>
+    <div className="demo-deliverable-main"><DeckSlide index={activeSlide} clientName={clientLabel} proof={proofModel} /></div>
     <div className="demo-deliverable-thumbnails" aria-label="Deliverable slides">
-      {Array.from({ length: 6 }, (_, index) => <button key={index} type="button" aria-label={`Show slide ${index + 1}`} aria-pressed={activeSlide === index} onPointerDown={(event) => event.stopPropagation()} onClick={() => onSelectSlide(index)}><span data-slide={index + 1} /></button>)}
+      {Array.from({ length: 6 }, (_, index) => <button key={index} type="button" aria-label={`Show slide ${index + 1}`} aria-pressed={activeSlide === index} onPointerDown={(event) => event.stopPropagation()} onClick={() => onSelectSlide(index)}><DeckSlide index={index} clientName={clientLabel} proof={proofModel} /></button>)}
     </div>
     <footer><span>PowerPoint</span><span>6 slides</span></footer>
   </article>;
@@ -285,7 +277,7 @@ export function DemoWorkboardSandbox({ board, presets, proof, clientLabel, engag
                 const item = sourceItem && node.deliverable ? { ...sourceItem, title: demoTitle(sourceItem.title) } : sourceItem;
                 return <LabCard key={node.id} node={node} item={item} preview={item ? board.cardPreviews[item.id] : undefined} filePreview={item ? board.filePreviews[item.id] : undefined} selected={selected === node.id} focused={selected === node.id} connecting={false} connectSourceAnchor={null} onSelect={() => setSelected(node.id)} onOpen={noop} onBranch={noop} onHide={noop} onDelete={noop} onEdit={noop} onEditCommitted={noop} onAnchorPointerDown={noop} onAnchorActivate={noop} onMenuOpened={noop} onMenuOpenChange={noop} onMeasure={noop} onPointerDown={(event) => beginNodeDrag(event, node.id)} onFocus={() => setSelected(node.id)} onKeyDown={noop} canResize onResizeStart={(corner, event) => beginResize(node, corner, event)} onFit={noop} onResizeKeyDown={noop} onResizeKeyUp={noop} frameChoices={[]} structured={false} onMoveToFrame={noop} />;
               })}
-              {deck ? <DemoDeliverable node={deck} clientLabel={clientLabel} activeSlide={activeSlide} onSelectSlide={(index) => { setActiveSlide(index); setHint(false); emit("slide_selected"); scheduleReset(); }} onPointerDown={(event) => beginNodeDrag(event, deck.id)} onFocus={() => setSelected(deck.id)} /> : null}
+              {deck ? <DemoDeliverable node={deck} clientLabel={clientLabel} proof={proof} activeSlide={activeSlide} onSelectSlide={(index) => { setActiveSlide(index); setHint(false); emit("slide_selected"); scheduleReset(); }} onPointerDown={(event) => beginNodeDrag(event, deck.id)} onFocus={() => setSelected(deck.id)} /> : null}
             </div>
           </div>
           <div className="demo-workboard-zoom" aria-label="Zoom controls"><Button size="icon" variant="outline" aria-label="Zoom out" onClick={() => { setHint(false); setView((current) => ({ ...current, zoom: stepZoom(current.zoom, "out") })); }}><GraphiteIcon name="minus" /></Button><span>{Math.round(view.zoom * 100)}%</span><Button size="icon" variant="outline" aria-label="Zoom in" onClick={() => { setHint(false); setView((current) => ({ ...current, zoom: stepZoom(current.zoom, "in") })); }}><GraphiteIcon name="plus" /></Button><Button size="icon" variant="outline" aria-label="Fit board" onClick={() => { setHint(false); setView(fittedDemoView(viewportRef.current, frames, nodes)); }}><GraphiteIcon name="fit" /></Button></div>

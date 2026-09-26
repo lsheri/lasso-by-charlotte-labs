@@ -987,7 +987,7 @@ function AskReplay({
 
 type LassoBox = { left: number; top: number; width: number; height: number };
 
-function DeckSlide({
+export function DeckSlide({
   index,
   clientName,
   numberRef,
@@ -995,7 +995,7 @@ function DeckSlide({
 }: {
   index: number;
   clientName: string;
-  numberRef: RefObject<HTMLSpanElement | null>;
+  numberRef?: RefObject<HTMLSpanElement | null>;
   proof: LandingProofModel | null;
 }) {
   if (index === 0)
