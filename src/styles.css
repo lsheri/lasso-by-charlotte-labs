@@ -6114,7 +6114,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   .lb-hero-line { display: grid; justify-items: center; gap: 4px; max-width: 760px; margin: 4px auto 0; }
   .lb-hero-line .micro-label { color: var(--nb-mid); }
   .lb-hero-line-text { font-size: 20px; line-height: 1.5; color: var(--nb-ink); text-wrap: balance; }
-  .lb-hero-assemble { position: relative; display: block; width: min(980px, 88vw, calc((100svh - 400px) * 2)); min-width: min(560px, 88vw); aspect-ratio: 16 / 8; margin: 20px auto 0; overflow: visible; border: 1px solid var(--nb-rule); border-radius: 8px; background: var(--nb-white); box-shadow: 0 10px 24px color-mix(in oklab, var(--nb-ink) 10%, transparent); pointer-events: none; user-select: none; isolation: isolate; }
+  .lb-hero-assemble { position: relative; display: block; width: min(980px, 88vw, calc((100svh - 344px) * 2)); min-width: min(420px, 88vw); container-type: inline-size; aspect-ratio: 16 / 8; margin: 20px auto 0; overflow: visible; border: 1px solid var(--nb-rule); border-radius: 8px; background: var(--nb-white); box-shadow: 0 10px 24px color-mix(in oklab, var(--nb-ink) 10%, transparent); pointer-events: none; user-select: none; isolation: isolate; }
   .lb-hero-assemble-board { position: absolute; z-index: 1; inset: 0; width: 100%; height: 100%; border-radius: 8px; object-fit: cover; object-position: center; }
   .lb-hero-assemble-cards { position: absolute; z-index: 2; inset: 0; }
   .lb-hero-chat { position: absolute; display: grid; align-content: start; width: 20.6%; height: 25.8%; gap: 7px; overflow: hidden; border: 1px solid var(--nb-graphite); border-radius: 6px; background: var(--nb-white); padding: 10px 12px; text-align: left; box-shadow: var(--nb-paper-shadow-contact); opacity: 0; transform-origin: center; animation: lb-hero-card-land 8s var(--nb-ease) infinite both; animation-delay: calc(var(--lb-hero-card-delay) * 1ms); }
@@ -6131,6 +6131,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   .lb-hero-chat > span { display: block; height: 2px; background: var(--nb-rule); }
   .lb-hero-chat > span:last-child { width: 62%; }
   .lb-hero-assemble-caption { margin: 10px auto 0; color: var(--nb-mid); }
+  @container (max-width: 640px) { .lb-hero-chat { gap: 4px; padding: 6px 8px; } .lb-hero-chat > span { display: none; } .lb-hero-chat-tool .lb-tool-identity { font-size: 11.5px; } }
   @keyframes lb-hero-card-land { 0% { opacity: 0; transform: translate(var(--lb-hero-from-x), var(--lb-hero-from-y)) rotate(var(--lb-hero-from-r)) scale(1.18); } 6%,14% { opacity: 1; transform: translate(var(--lb-hero-from-x), var(--lb-hero-from-y)) rotate(var(--lb-hero-from-r)) scale(1.18); } 40% { opacity: 1; transform: translate(0,0) rotate(0) scale(1.04); } 46%,58% { opacity: 1; transform: translate(0,0) rotate(0) scale(1); } 70%,100% { opacity: 0; transform: translate(0,0) rotate(0) scale(.96); } }
 }
 @media (min-width: 640px) and (prefers-reduced-motion: reduce) {
