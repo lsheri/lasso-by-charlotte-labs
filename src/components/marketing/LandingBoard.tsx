@@ -120,33 +120,30 @@ function useCaseAsset(name: string): string {
 const LANDING_BOARD_USE_CASES = [
   {
     key: "bring_work_in",
-    title: "Push work in.",
-    body: "Add Lasso to Claude or ChatGPT once. Then say push this to Lasso.",
+    title: "Connect every tool over MCP.",
+    body: "All your work tools and AI chats, connected once.",
     poster: useCaseAsset("use-bring-work-in-poster.jpg"),
     webm: useCaseAsset("use-bring-work-in.webm"),
     mp4: useCaseAsset("use-bring-work-in.mp4"),
     tools: ["claude", "chatgpt", "gemini"],
-    step: "workstreams",
   },
   {
     key: "every_number",
-    title: "Chat with your work.",
-    body: "Drag to select the cards that matter, then ask Lasso about exactly that.",
+    title: "All your work becomes context.",
+    body: "Ask about the whole process, from research in ChatGPT to the final deck.",
     poster: useCaseAsset("use-every-number-has-a-source-poster.jpg"),
     webm: useCaseAsset("use-every-number-has-a-source.webm"),
     mp4: useCaseAsset("use-every-number-has-a-source.mp4"),
     tools: ["claude", "powerpoint"],
-    step: "ask",
   },
   {
     key: "reasoning_stays",
-    title: "Every chat, on the record.",
-    body: "Claude, ChatGPT and Gemini chats, mapped to the engagement and kept by the firm.",
+    title: "Every AI conversation, searchable.",
+    body: "One view of the chats that mattered, so you can find them later.",
     poster: useCaseAsset("use-reasoning-stays-with-the-firm-poster.jpg"),
     webm: useCaseAsset("use-reasoning-stays-with-the-firm.webm"),
     mp4: useCaseAsset("use-reasoning-stays-with-the-firm.mp4"),
     tools: ["claude", "chatgpt", "gemini"],
-    step: "canvas",
   },
 ] as const satisfies ReadonlyArray<{
   key: UseCaseKey;
@@ -156,8 +153,18 @@ const LANDING_BOARD_USE_CASES = [
   webm?: string;
   mp4: string;
   tools: readonly string[];
-  step: StepKey;
 }>;
+
+function boxesMatch(a: LassoBox | null, b: LassoBox | null): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  return (
+    Math.abs(a.left - b.left) < 0.5 &&
+    Math.abs(a.top - b.top) < 0.5 &&
+    Math.abs(a.width - b.width) < 0.5 &&
+    Math.abs(a.height - b.height) < 0.5
+  );
+}
 
 const TOOL_BADGES = [
   { key: "claude", label: "Claude" },
@@ -1518,24 +1525,25 @@ function StorySpotlight({
       frame = 0;
       const element = container.querySelector<HTMLElement>(selector);
       if (!element) {
-        setBox(null);
+        setBox((current) => (current === null ? current : null));
         return;
       }
       const containerRect = container.getBoundingClientRect();
       const targetRect = element.getBoundingClientRect();
       if (targetRect.width <= 0 || targetRect.height <= 0) {
-        setBox(null);
+        setBox((current) => (current === null ? current : null));
         return;
       }
       const scale = containerRect.width / container.offsetWidth;
       if (!Number.isFinite(scale) || scale <= 0) return;
       const inset = 8 / scale;
-      setBox({
+      const next = {
         left: (targetRect.left - containerRect.left) / scale - inset,
         top: (targetRect.top - containerRect.top) / scale - inset,
         width: targetRect.width / scale + inset * 2,
         height: targetRect.height / scale + inset * 2,
-      });
+      };
+      setBox((current) => (boxesMatch(current, next) ? current : next));
     };
     const schedule = () => {
       if (frame) window.cancelAnimationFrame(frame);
@@ -1543,14 +1551,18 @@ function StorySpotlight({
     };
     const observer = new ResizeObserver(schedule);
     observer.observe(container);
-    const mutation = new MutationObserver(schedule);
-    mutation.observe(container, { childList: true, subtree: true });
+    const element = container.querySelector<HTMLElement>(selector);
+    if (element && element !== container) observer.observe(element);
+    const onTransitionEnd = (event: TransitionEvent) => {
+      if (event.target === container || event.target === element) schedule();
+    };
+    container.addEventListener("transitionend", onTransitionEnd);
     schedule();
     window.addEventListener("resize", schedule);
     return () => {
       if (frame) window.cancelAnimationFrame(frame);
       observer.disconnect();
-      mutation.disconnect();
+      container.removeEventListener("transitionend", onTransitionEnd);
       window.removeEventListener("resize", schedule);
     };
   }, [containerRef, target]);
@@ -1600,6 +1612,12 @@ function StoryBoard({
   onOpenTurn: () => void;
   onOpenDecisionTurn: () => void;
 }) {
+  const renderCount = useRef(0);
+  renderCount.current += 1;
+  if (import.meta.env.DEV && typeof window !== "undefined") {
+    (window as Window & { __landingStoryBoardRenderCount?: number }).__landingStoryBoardRenderCount =
+      renderCount.current;
+  }
   const [replayFinished, setReplayFinished] = useState(false);
   const [lassoBox, setLassoBox] = useState<LassoBox | null>(null);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -1655,24 +1673,36 @@ function StoryBoard({
       return false;
     const padX = 10;
     const padY = 6;
-    setLassoBox({
+    const nextLassoBox = {
       left: (numberRect.left - layerRect.left) / scale - padX,
       top: (numberRect.top - layerRect.top) / scale - padY,
       width: numberRect.width / scale + padX * 2,
       height: numberRect.height / scale + padY * 2,
-    });
+    };
+    setLassoBox((current) => (boxesMatch(current, nextLassoBox) ? current : nextLassoBox));
     const source = sourceRef.current;
     if (!source) {
-      setProofLine(null);
+      setProofLine((current) => (current === null ? current : null));
       return true;
     }
     const sourceRect = source.getBoundingClientRect();
     if (sourceRect.width <= 0 || sourceRect.height <= 0) return false;
-    setProofLine({
+    const nextProofLine = {
       x1: (numberRect.left - layerRect.left) / scale - padX,
       y1: (numberRect.top + numberRect.height / 2 - layerRect.top) / scale,
       x2: (sourceRect.right - layerRect.left) / scale,
       y2: (sourceRect.top + sourceRect.height / 2 - layerRect.top) / scale,
+    };
+    setProofLine((current) => {
+      if (
+        current &&
+        Math.abs(current.x1 - nextProofLine.x1) < 0.5 &&
+        Math.abs(current.y1 - nextProofLine.y1) < 0.5 &&
+        Math.abs(current.x2 - nextProofLine.x2) < 0.5 &&
+        Math.abs(current.y2 - nextProofLine.y2) < 0.5
+      )
+        return current;
+      return nextProofLine;
     });
     return true;
   }, []);
@@ -1681,8 +1711,8 @@ function StoryBoard({
     const layer = layerRef.current;
     if (!stage || !layer) return;
     if (step < 4 || attentionStep !== step) {
-      setLassoBox(null);
-      setProofLine(null);
+      setLassoBox((current) => (current === null ? current : null));
+      setProofLine((current) => (current === null ? current : null));
       return;
     }
     const stopRetry = () => {
@@ -1992,13 +2022,23 @@ function StoryCaption({
 }) {
   const [outgoing, setOutgoing] = useState<number | null>(null);
   const previousStep = useRef(step);
+  const outgoingTimer = useRef<number | null>(null);
   useEffect(() => {
     if (previousStep.current === step) return;
+    if (outgoingTimer.current !== null) window.clearTimeout(outgoingTimer.current);
     setOutgoing(previousStep.current);
     previousStep.current = step;
-    const timer = window.setTimeout(() => setOutgoing(null), 160);
-    return () => window.clearTimeout(timer);
+    outgoingTimer.current = window.setTimeout(() => {
+      setOutgoing(null);
+      outgoingTimer.current = null;
+    }, 160);
   }, [step]);
+  useEffect(
+    () => () => {
+      if (outgoingTimer.current !== null) window.clearTimeout(outgoingTimer.current);
+    },
+    [],
+  );
   const renderCaption = (index: number, phase: "incoming" | "outgoing") => {
     const item = LANDING_BOARD_STEPS[index];
     if (!item) return null;
@@ -2062,11 +2102,9 @@ function StoryCaption({
 function LandingBoardUseCase({
   card,
   onPlayed,
-  onJump,
 }: {
   card: (typeof LANDING_BOARD_USE_CASES)[number];
   onPlayed: (key: UseCaseKey, inputMode: "hover" | "tap") => void;
-  onJump: (key: StepKey) => void;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const inputMode = useRef<"hover" | "tap">("hover");
@@ -2145,9 +2183,6 @@ function LandingBoardUseCase({
         </div>
         <h3>{card.title}</h3>
         <p>{card.body}</p>
-        <Button variant="link" onClick={() => onJump(card.step)}>
-          See it in the story →
-        </Button>
       </div>
     </article>
   );
@@ -2157,12 +2192,10 @@ function UseCaseSection({
   id = "usecases",
   phone = false,
   onPlayed,
-  onJump,
 }: {
   id?: string;
   phone?: boolean;
   onPlayed: (key: UseCaseKey, inputMode: "hover" | "tap") => void;
-  onJump: (key: StepKey) => void;
 }) {
   return (
     <section
@@ -2178,7 +2211,7 @@ function UseCaseSection({
       </div>
       <div className="landing-usecase-grid">
         {LANDING_BOARD_USE_CASES.map((card) => (
-          <LandingBoardUseCase key={card.key} card={card} onPlayed={onPlayed} onJump={onJump} />
+          <LandingBoardUseCase key={card.key} card={card} onPlayed={onPlayed} />
         ))}
       </div>
     </section>
@@ -2332,6 +2365,7 @@ export function LandingBoard() {
   const [phoneStop, setPhoneStop] = useState(0);
   const [railVisible, setRailVisible] = useState(false);
   const activeRef = useRef(0);
+  const settledStepRef = useRef(0);
   const transitioning = useRef(false);
   const queued = useRef<{ index: number; input: StoryInput } | null>(null);
   const jumpTarget = useRef<number | null>(null);
@@ -2376,11 +2410,11 @@ export function LandingBoard() {
     if (settleTimer.current !== null) window.clearTimeout(settleTimer.current);
     settleTimer.current = window.setTimeout(() => {
       if (activeRef.current !== index || transitioning.current || queued.current) return;
-      setSettledStep((current) => {
-        if (current === index) return current;
+      if (settledStepRef.current !== index) {
+        settledStepRef.current = index;
+        setSettledStep(index);
         setAttentionNonce((nonce) => nonce + 1);
-        return index;
-      });
+      }
       const key = LANDING_BOARD_STEPS[index]?.key;
       if (!key || seen.current.has(`${key}:${inputMode}`)) return;
       seen.current.add(`${key}:${inputMode}`);
@@ -2456,6 +2490,7 @@ export function LandingBoard() {
     const index = stop === 0 ? 0 : stop - 1;
     activeRef.current = index;
     setActive(index);
+    settledStepRef.current = index;
     setSettledStep(index);
     const key = LANDING_BOARD_STEPS[index]?.key;
     if (!key || seen.current.has(`${key}:scroll`)) return;
@@ -2556,7 +2591,7 @@ export function LandingBoard() {
             </svg>
           </div>
         </section>
-        <UseCaseSection onPlayed={noteUseCasePlayed} onJump={jump} />
+        <UseCaseSection onPlayed={noteUseCasePlayed} />
         <section className="lb-how-it-works">
           <div className="lb-how-it-works-head">
             <p className="micro-label">HOW IT WORKS</p>
@@ -2594,7 +2629,11 @@ export function LandingBoard() {
                   : "The demo board is not available right now."}
               </div>
             )}
-            <StoryCaption step={active} nonce={attentionNonce} onPilot={() => pilot("try_it")} />
+            <StoryCaption
+              step={settledStep}
+              nonce={attentionNonce}
+              onPilot={() => pilot("try_it")}
+            />
           </div>
           <div className="lb-scroll-sections">
             {LANDING_BOARD_STEPS.slice(1).map((step, itemIndex) => {
