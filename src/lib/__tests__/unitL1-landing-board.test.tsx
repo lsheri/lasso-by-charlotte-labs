@@ -300,14 +300,19 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(page).toContain('key: "try-it"');
     expect(page).toContain('onPilot={() => pilot("try_it")}');
   });
-  it("keeps all five hero arrivals in three safe pre-composed image frames", () => {
+  it("renders inert recorded hero assemblies without emitting play telemetry", () => {
     const css = readFileSync("src/styles.css", "utf8");
-    expect(page).toContain("HERO_ASSEMBLE_FRAMES.map");
-    expect(page).toContain("PHONE_HERO_ASSEMBLE_FRAMES.map");
-    expect(page).not.toContain("HERO_ASSEMBLE_CARDS.map");
-    expect(css).toContain("@keyframes lb-hero-frame-scattered");
-    expect(css).toContain("@keyframes lb-hero-frame-settled");
-    expect(css).toContain('.lb-desktop-hero[data-hero-focus="1"] .lb-hero-assemble-frame { animation-play-state: paused; }');
+    expect(page).toContain('poster="/videos/landing-hero-assemble-poster.png"');
+    expect(page).toContain('poster="/videos/landing-hero-assemble-phone-poster.png"');
+    expect(page.match(/preload="metadata"/g)).toHaveLength(3);
+    expect(page.match(/autoPlay/g)).toHaveLength(2);
+    expect(page.match(/playsInline/g)).toHaveLength(3);
+    expect(page).toContain("<HeroAssemble paused={heroFocus === 1} />");
+    expect(page).toContain('(prefers-reduced-motion: reduce)');
+    expect(page).not.toContain("HERO_ASSEMBLE_FRAMES");
+    expect(page).not.toContain("PHONE_HERO_ASSEMBLE_FRAMES");
+    expect(css).not.toContain("@keyframes lb-hero-frame-scattered");
+    expect(css).not.toContain("lb-hero-assemble-frame");
   });
   it("keeps the step-one hero on a clean background", () => {
     const css = readFileSync("src/styles.css", "utf8");
@@ -320,7 +325,8 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(page).toContain("data-phone-step={stop}");
     expect(page).toContain('id="lb-phone-usecases"');
     expect(page).toContain("<PhoneHeroAssemble />");
-    expect(page).toContain("PHONE_HERO_ASSEMBLE_FRAMES.map");
+    expect(page).toContain('src="/videos/landing-hero-assemble-phone.webm"');
+    expect(page).toContain('src="/videos/landing-hero-assemble-phone.mp4"');
     expect(page).not.toContain("PHONE_HERO_ASSEMBLE_CARDS");
     expect(page).toContain("new IntersectionObserver");
     expect(page).toContain("threshold: 0.6");

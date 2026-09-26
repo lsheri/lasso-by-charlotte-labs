@@ -5950,11 +5950,8 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   .lb-phone-hero > p { margin-top: 12px; font-size: 17px; line-height: 1.42; }
   .lb-phone-hero > div:not(.lb-phone-hero-sequence) { display: grid; width: 100%; gap: 8px; margin-top: 16px; }
   .lb-phone-hero-sequence { display: grid; width: 100%; justify-items: center; margin-top: 28px; pointer-events: none; }
-  .lb-phone-hero-assemble { display: grid; width: 100%; overflow: clip; border: 1px solid var(--nb-rule); border-radius: var(--radius-lg); background: var(--nb-white); box-shadow: var(--nb-paper-shadow-contact); }
-  .lb-phone-hero-frame { grid-area: 1 / 1; display: block; width: 100%; height: auto; opacity: 0; animation-duration: 9s; animation-timing-function: ease-in-out; animation-iteration-count: infinite; animation-fill-mode: both; }
-  .lb-phone-hero-frame[data-frame="1"] { animation-name: lb-hero-frame-scattered; }
-  .lb-phone-hero-frame[data-frame="2"] { animation-name: lb-hero-frame-mid; }
-  .lb-phone-hero-frame[data-frame="3"] { animation-name: lb-hero-frame-settled; }
+  .lb-phone-hero-assemble { display: block; width: 100%; aspect-ratio: 3 / 2; overflow: clip; border: 1px solid var(--nb-rule); border-radius: var(--radius-lg); background: var(--nb-white); box-shadow: var(--nb-paper-shadow-contact); }
+  .lb-phone-hero-video { display: block; width: 100%; height: 100%; object-fit: cover; }
   .lb-phone-hero-caption { margin-top: 12px; font-size: 13px; color: var(--nb-mid); }
   .lb-phone-hero-line { display: grid; gap: 6px; margin-top: 14px; text-align: center; }
   .lb-phone-hero-line .micro-label { font-size: 13px; color: var(--nb-mid); }
@@ -6117,19 +6114,9 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   .lb-hero-line { display: grid; justify-items: center; gap: 4px; max-width: 760px; margin: 4px auto 0; }
   .lb-hero-line .micro-label { color: var(--nb-mid); }
   .lb-hero-line-text { font-size: 20px; line-height: 1.5; color: var(--nb-ink); text-wrap: balance; }
-  .lb-hero-assemble { position: relative; display: grid; width: min(980px, 88vw, calc((100svh - 344px) * 2)); min-width: min(420px, 88vw); aspect-ratio: 16 / 8; margin: 96px auto 0; overflow: hidden; border: 1px solid var(--nb-rule); border-radius: 8px; background: var(--nb-white); box-shadow: 0 10px 24px color-mix(in oklab, var(--nb-ink) 10%, transparent); pointer-events: none; user-select: none; isolation: isolate; }
-  .lb-hero-assemble-frame { grid-area: 1 / 1; display: block; width: 100%; height: 100%; object-fit: cover; opacity: 0; animation-duration: 9s; animation-timing-function: ease-in-out; animation-iteration-count: infinite; animation-fill-mode: both; }
-  .lb-hero-assemble-frame[data-frame="1"] { animation-name: lb-hero-frame-scattered; }
-  .lb-hero-assemble-frame[data-frame="2"] { animation-name: lb-hero-frame-mid; }
-  .lb-hero-assemble-frame[data-frame="3"] { animation-name: lb-hero-frame-settled; }
+  .lb-hero-assemble { position: relative; display: block; width: min(980px, 88vw, calc((100svh - 344px) * 2)); min-width: min(420px, 88vw); aspect-ratio: 1960 / 982; margin: 96px auto 0; overflow: hidden; border: 1px solid var(--nb-rule); border-radius: 8px; background: var(--nb-white); box-shadow: 0 10px 24px color-mix(in oklab, var(--nb-ink) 10%, transparent); pointer-events: none; user-select: none; isolation: isolate; }
+  .lb-hero-assemble-video { display: block; width: 100%; height: 100%; object-fit: cover; }
   .lb-hero-assemble-caption { margin: 10px auto 0; color: var(--nb-mid); }
-}
-@keyframes lb-hero-frame-scattered { 0%, 22% { opacity: 1; } 34%, 88% { opacity: 0; } 100% { opacity: 1; } }
-@keyframes lb-hero-frame-mid { 0%, 22% { opacity: 0; } 34%, 48% { opacity: 1; } 60%, 100% { opacity: 0; } }
-@keyframes lb-hero-frame-settled { 0%, 48% { opacity: 0; } 60%, 88% { opacity: 1; } 100% { opacity: 0; } }
-@media (prefers-reduced-motion: reduce) {
-  .lb-hero-assemble-frame,.lb-phone-hero-frame { opacity: 0; animation: none; }
-  .lb-hero-assemble-frame[data-frame="3"],.lb-phone-hero-frame[data-frame="3"] { opacity: 1; }
 }
 
 /* R6: hero focus rule, one zone sharp at a time. Desktop only. */
@@ -6139,7 +6126,6 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   .lb-desktop-hero .lb-hero-copy h1,.lb-desktop-hero .lb-hero-copy h2,.lb-hero-zone-1,.lb-hero-assemble,.lb-hero-assemble-caption,.lb-hero-line { transition: filter 520ms var(--nb-ease), opacity 520ms var(--nb-ease); }
   .lb-desktop-hero[data-hero-focus="1"] :is(.lb-hero-assemble,.lb-hero-assemble-caption,.lb-hero-line),
   .lb-desktop-hero[data-hero-focus="2"] :is(.lb-hero-copy h1,.lb-hero-copy h2,.lb-hero-zone-1) { filter: blur(6px); opacity: .45; }
-  .lb-desktop-hero[data-hero-focus="1"] .lb-hero-assemble-frame { animation-play-state: paused; }
 }
 @media (min-width: 640px) and (prefers-reduced-motion: reduce) {
   .lb-desktop-hero .lb-hero-copy *, .lb-desktop-hero .lb-hero-copy > * { transition: none !important; }
