@@ -1916,7 +1916,7 @@ function StoryBoard({
       ) : null}
       {step === 8 ? (
         <div key={`share-${attentionNonce}`} className={`lb-share-dialog${pulse(8)}`}>
-          <p className="lb-micro">CHECK</p>
+          <p className="lb-micro">CHECK THIS OUT</p>
           <h3>Share this board</h3>
           <p>Share your work with your team, manager, client, or bestie!</p>
           <p>Decide whether they can see full context and transcripts or just the outline of your process.</p>
