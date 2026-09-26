@@ -305,7 +305,8 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(page).toContain("HERO_ASSEMBLE_FRAMES.map");
     expect(page).toContain("PHONE_HERO_ASSEMBLE_FRAMES.map");
     expect(page).not.toContain("HERO_ASSEMBLE_CARDS.map");
-    expect(css).toContain("@keyframes lb-hero-frame-cycle");
+    expect(css).toContain("@keyframes lb-hero-frame-scattered");
+    expect(css).toContain("@keyframes lb-hero-frame-settled");
     expect(css).toContain('.lb-desktop-hero[data-hero-focus="1"] .lb-hero-assemble-frame { animation-play-state: paused; }');
   });
   it("keeps the step-one hero on a clean background", () => {
