@@ -291,3 +291,5 @@
 - [x] Stop settled story measurement and caption churn without changing story controls or events.
 - [x] Replace the three use-case titles and bodies, remove only their jump controls, and keep clip playback events.
 - [x] Add desktop stability and desktop/phone one-line title browser guards, then verify focused checks.
+- [x] Remove LassoThinkingMark canvas from landing hero (done)
+- [x] Failing e2e was pre-existing: user copy edits changed step labels; test now clicks dots by index and unit title assertions updated to current copy

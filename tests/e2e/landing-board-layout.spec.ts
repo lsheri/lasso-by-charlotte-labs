@@ -316,17 +316,15 @@ for (const viewport of [
 }
 
 for (const viewport of [{ width: 1372, height: 732 }]) {
-  test(`landing hero actions and scroll cue work at ${viewport.width}x${viewport.height}`, async ({
+  test(`landing hero actions work at ${viewport.width}x${viewport.height}`, async ({
     browser,
   }) => {
     const context = await browser.newContext({ viewport, reducedMotion: "no-preference" });
     const page = await context.newPage();
     await page.goto("/", { waitUntil: "networkidle" });
-    const cue = page.getByTestId("landing-scroll-cue");
-    await expect(cue).toBeVisible();
+    await expect(page.getByTestId("landing-scroll-cue")).toHaveCount(0);
     await page.getByRole("button", { name: "Watch it work", exact: true }).click();
     await expect(page.locator("#usecases")).toBeInViewport();
-    await expect(cue).toBeHidden();
     await page.goto("/", { waitUntil: "networkidle" });
     await page.getByRole("link", { name: "View a Workboard", exact: true }).click();
     await expect(page).toHaveURL(/\/demo$/);
@@ -427,8 +425,13 @@ test("settled attention steps keep one spotlight and one caption", async ({ brow
   });
   const page = await context.newPage();
   await page.goto("/", { waitUntil: "networkidle" });
-  for (const name of ["Deliverable", "A number", "Ask Lasso", "The chat"]) {
-    await page.locator(`.lb-progress-dot[aria-label="${name}"]`).click({ force: true });
+  for (const [index, name] of [
+    [3, "Deliverable"],
+    [4, "A number"],
+    [5, "Ask Lasso"],
+    [6, "The chat"],
+  ] as const) {
+    await page.locator(".lb-progress-dot").nth(index).click({ force: true });
     await page.waitForTimeout(800);
     const baseline = await page.evaluate(
       () =>

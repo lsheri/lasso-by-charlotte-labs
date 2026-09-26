@@ -186,7 +186,7 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(page).toContain('step: "7", target: "turn"');
     expect(page).toContain("const shownPositions = step === 5 ? [1] : step === 6 ? [2]");
     expect(page).toContain("const showProof = step === 5");
-    expect(page).toContain("The full conversation, with the decision highlighted.");
+    expect(page).toContain("<strong>The decision</strong>");
     expect(page).toContain('testId="landing-answer-turn-link"');
     expect(page).toContain(
       "onOpenTurn={step === 6 && position === 2 ? onOpenDecisionTurn : undefined}",
@@ -206,13 +206,13 @@ describe("Unit L1 scroll-driven landing board", () => {
     for (const title of [
       "Your team's AI work is scattered.",
       "Every AI chat in one place.",
-      "Grouped the way your team splits the work.",
-      "Each group connects to the deck it fed.",
+      "Group AI conversation by different workstreams...combine context across chats.",
+      "combine all the context across chats..everything that went in to a draft or final deliverable",
       "Pick any number in the deck.",
       "Ask where a number came from.",
-      "Open the chat and read it yourself.",
-      "Open questions stay on the board.",
-      "Share the deliverable, not the drafts.",
+      "Open individual AI conversations to find lost information or verify facts and sources",
+      "Add stickys (actual human written notes)",
+      "Share deliverable, context and all!",
       "Open the board yourself.",
     ])
       expect(page).toContain(title);
