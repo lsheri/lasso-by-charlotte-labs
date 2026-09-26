@@ -5727,7 +5727,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   min-height: var(--lb-header-h);
   padding: 8px 28px;
 }
-.lb-brand { display: inline-flex; align-items: center; gap: 9px; color: var(--nb-ink); font-family: var(--font-mono); font-weight: 700; letter-spacing: .18em; }
+.lb-brand { display: inline-flex; align-items: center; gap: 9px; color: var(--nb-ink); font-family: var(--font-mono); font-weight: 400; letter-spacing: .18em; }
 .lb-brand svg { width: 34px; height: 34px; color: var(--nb-lasso-green); }
 .lb-header-nav { display: flex; min-width: 0; justify-content: center; gap: 24px; font-family: var(--font-mono); font-size: 12px; text-transform: uppercase; }
 .lb-header-nav a { color: var(--nb-mid); white-space: nowrap; }
