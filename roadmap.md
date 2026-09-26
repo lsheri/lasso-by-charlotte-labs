@@ -239,3 +239,8 @@
 - [x] Spotlight only Circle, Ask, and The turn with one dimming overlay and phone/reduced-motion fallbacks.
 - [x] Verify incremental scrolling, step-caption agreement, and spotlight layering at 1372x732.
 - [x] Keep the step-one hero background clean by fully hiding board content through the Canvas transition.
+
+### Unit S3 home order and use cases
+- [x] Place the three use-case cards between the hero and the desktop story, with the story beginning at Canvas.
+- [x] Add the phone use-case stop as 2 of 11 while preserving the focused M1 sections.
+- [x] Verify card media, story jumps, telemetry, ordering, and screenshots at 1372x732 and 390x844.

@@ -51,10 +51,10 @@ type UseCaseKey = "bring_work_in" | "reasoning_stays" | "every_number";
 type SpotlightTarget = "deck" | "ask" | "turn";
 
 const LANDING_BOARD_USE_CASES = [
-  { key: "bring_work_in", title: "Push work in with one sentence.", body: "Bring work from your AI tools into one shared place.", poster: bringWorkPoster.url, webm: bringWorkWebm.url, mp4: bringWorkMp4.url },
-  { key: "reasoning_stays", title: "Every AI conversation, on the record.", body: "Keep the conversations that shaped the engagement.", poster: reasoningPoster.url, webm: reasoningWebm.url, mp4: reasoningMp4.url },
-  { key: "every_number", title: "Every number has a source.", body: "Open the source behind a figure or claim.", poster: everyNumberPoster.url, webm: everyNumberWebm.url, mp4: everyNumberMp4.url },
-] as const satisfies ReadonlyArray<{ key: UseCaseKey; title: string; body: string; poster: string; webm: string; mp4: string }>;
+  { key: "bring_work_in", title: "Push work in with one sentence.", body: "Bring work from your AI tools into one shared place.", poster: bringWorkPoster.url, webm: bringWorkWebm.url, mp4: bringWorkMp4.url, tools: ["claude", "chatgpt", "gemini"], step: "workstreams" },
+  { key: "reasoning_stays", title: "Every AI conversation, on the record.", body: "Keep the conversations that shaped the engagement.", poster: reasoningPoster.url, webm: reasoningWebm.url, mp4: reasoningMp4.url, tools: ["claude", "chatgpt"], step: "canvas" },
+  { key: "every_number", title: "Every number has a source.", body: "Open the source behind a figure or claim.", poster: everyNumberPoster.url, webm: everyNumberWebm.url, mp4: everyNumberMp4.url, tools: ["powerpoint", "claude"], step: "circle" },
+] as const satisfies ReadonlyArray<{ key: UseCaseKey; title: string; body: string; poster: string; webm: string; mp4: string; tools: readonly string[]; step: StepKey }>;
 
 const TOOL_BADGES = [
   { key: "claude", label: "Claude" },
@@ -452,7 +452,7 @@ function PhoneDeck({ clientLabel, proof, lasso = false }: { clientLabel: string;
   </article>;
 }
 
-function PhoneStory({ board, presets, proof, clientLabel, active, onActive, onWatch, onPilot, onShowSlide, onOpenTurn, onOpenDecisionTurn }: { board: SharedBoardDto; presets: DemoPreset[]; proof: LandingProof | null; clientLabel: string; active: number; onActive: (index: number) => void; onWatch: () => void; onPilot: () => void; onShowSlide: () => void; onOpenTurn: () => void; onOpenDecisionTurn: () => void }) {
+function PhoneStory({ board, presets, proof, clientLabel, active, onActive, onWatch, onPilot, onShowSlide, onOpenTurn, onOpenDecisionTurn, onUseCasePlayed, onUseCaseJump }: { board: SharedBoardDto; presets: DemoPreset[]; proof: LandingProof | null; clientLabel: string; active: number; onActive: (stop: number) => void; onWatch: () => void; onPilot: () => void; onShowSlide: () => void; onOpenTurn: () => void; onOpenDecisionTurn: () => void; onUseCasePlayed: (key: UseCaseKey, inputMode: "hover" | "tap") => void; onUseCaseJump: (key: StepKey) => void }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const proofModel = proof ? parseLandingProof(proof) : null;
   const deckItem = board.seed.work.find((item) => /board deck/i.test(item.title));
@@ -479,8 +479,12 @@ function PhoneStory({ board, presets, proof, clientLabel, active, onActive, onWa
 
   const card = (item: SharedSeedWork, key: string) => <article key={key} className="lb-phone-source-card"><ToolLogo vendor={toolKey(item)} /><strong>{item.title}</strong><small>{keptContentLabel(item, item.type === "ai_thread" ? board.turns[item.id]?.length ?? null : null)}</small></article>;
   return <div ref={rootRef} className="lb-phone-story" data-active-step={active + 1}>
-    {LANDING_BOARD_STEPS.map((step, index) => <section key={step.key} id={`lb-phone-${step.key}`} className="lb-phone-step" data-phone-step={index} data-entered={index === 0 ? "true" : undefined}>
-      {index === 0 ? <div className="lb-phone-hero"><LassoThinkingMark kind="signature" size={62} /><h1>Your firm bought AI. <LandingParticlePhrase text="The human judgment, process, and thinking" /> in your team's work went invisible.</h1><p>Lasso is the reasoning and judgment layer for AI-assisted consulting. It connects the work across tools to the client deliverable and keeps the decisions your team made.</p><div><Button onClick={onWatch}>Watch it work</Button><Button asChild variant="outline"><Link to="/demo">View a Workboard</Link></Button></div></div> : <PhoneCaption index={index} />}
+    <section id="lb-phone-problem" className="lb-phone-step" data-phone-step={0} data-entered="true">
+      <div className="lb-phone-hero"><LassoThinkingMark kind="signature" size={62} /><h1>Your firm bought AI. <LandingParticlePhrase text="The human judgment, process, and thinking" /> in your team's work went invisible.</h1><p>Lasso is the reasoning and judgment layer for AI-assisted consulting. It connects the work across tools to the client deliverable and keeps the decisions your team made.</p><div><Button onClick={onWatch}>Watch it work</Button><Button asChild variant="outline"><Link to="/demo">View a Workboard</Link></Button></div></div>
+    </section>
+    <UseCaseSection id="lb-phone-usecases" phone onPlayed={onUseCasePlayed} onJump={onUseCaseJump} />
+    {LANDING_BOARD_STEPS.slice(1).map((step, itemIndex) => { const index = itemIndex + 1; const stop = index + 1; return <section key={step.key} id={`lb-phone-${step.key}`} className="lb-phone-step" data-phone-step={stop}>
+      <PhoneCaption index={index} />
       <div className="lb-phone-visual">
         {index === 1 ? <><div className="lb-phone-tools">{TOOL_BADGES.map((tool) => <span key={tool.key}><ToolLogo vendor={tool.key} compact /></span>)}</div><div className="lb-phone-card-stack">{conversations.map((item, itemIndex) => card(item, `conversation-${itemIndex}`))}</div></> : null}
         {index === 2 ? <div className="lb-phone-workstreams">{visibleTasks.map((task) => <section key={task.id}><h3>{task.name}</h3><p>{task.detail}</p>{items.filter((item) => seedPlacement(item).includes(task.id)).slice(0, 2).map((item) => card(item, `${task.id}-${item.id}`))}</section>)}</div> : null}
@@ -492,7 +496,7 @@ function PhoneStory({ board, presets, proof, clientLabel, active, onActive, onWa
         {index === 8 ? <div className="lb-phone-share"><p className="lb-micro">READ ONLY</p><h3>Share this board</h3><p>They open the deliverable, source cards, and the conversations behind them.</p><p>They do not open private drafts or anything outside this board.</p><strong>Closes in 48 hours</strong><small>In the demo this is shown, not issued.</small></div> : null}
         {index === 9 ? <div className="lb-phone-final-actions"><Button asChild><Link to="/demo">Open the board yourself</Link></Button><Button asChild variant="outline"><a href="#pilot" onClick={onPilot}>Book a pilot</a></Button></div> : null}
       </div>
-    </section>)}
+    </section>; })}
   </div>;
 }
 
@@ -694,13 +698,12 @@ function StoryBoard({ board, presets, proof, step, attentionStep, attentionNonce
   );
 }
 
-function LandingBoardHeader({ active, onJump, onPilot }: { active: StepKey; onJump: (key: StepKey) => void; onPilot: () => void }) {
-  const stepNumber = LANDING_BOARD_STEPS.findIndex((item) => item.key === active) + 1;
+function LandingBoardHeader({ active, phoneStop, onJump, onPilot }: { active: StepKey; phoneStop: number; onJump: (key: StepKey) => void; onPilot: () => void }) {
   return (
     <header className="lb-header">
       <div className="lb-header-main">
         <Link to="/" className="lb-brand"><LassoLoopMark /> <span>LASSO</span></Link>
-        <span className="lb-phone-counter" aria-live="polite">{stepNumber} / {LANDING_BOARD_STEPS.length}</span>
+        <span className="lb-phone-counter" aria-live="polite">{phoneStop + 1} / 11</span>
         <nav className="lb-step-nav" aria-label="Story sections">
           {LANDING_BOARD_STEPS.map((item) => <Button key={item.key} size="sm" variant="ghost" aria-current={active === item.key ? "step" : undefined} onClick={() => onJump(item.key)}>{item.label}</Button>)}
         </nav>
@@ -739,16 +742,19 @@ function StoryCaption({ step, nonce, onPilot }: { step: number; nonce: number; o
   return <div className="lb-caption-stack">{outgoing !== null ? renderCaption(outgoing, "outgoing") : null}{renderCaption(step, "incoming")}</div>;
 }
 
-function LandingBoardUseCase({ card, onPlayed }: { card: (typeof LANDING_BOARD_USE_CASES)[number]; onPlayed: (key: UseCaseKey, inputMode: "hover" | "tap") => void }) {
+function LandingBoardUseCase({ card, onPlayed, onJump }: { card: (typeof LANDING_BOARD_USE_CASES)[number]; onPlayed: (key: UseCaseKey, inputMode: "hover" | "tap") => void; onJump: (key: StepKey) => void }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const inputMode = useRef<"hover" | "tap">("hover");
   const [playing, setPlaying] = useState(false);
+  const [ended, setEnded] = useState(false);
   const [videoFailed, setVideoFailed] = useState(false);
 
   function play(mode: "hover" | "tap") {
     const video = videoRef.current;
     if (!video || videoFailed) return;
     inputMode.current = mode;
+    if (video.ended) video.currentTime = 0;
+    setEnded(false);
     void video.play().catch(() => setVideoFailed(true));
   }
 
@@ -758,8 +764,9 @@ function LandingBoardUseCase({ card, onPlayed }: { card: (typeof LANDING_BOARD_U
 
   return (
     <article className="landing-usecase" data-usecase={card.key}>
-      <button
+      <Button
         type="button"
+        variant="ghost"
         className="landing-usecase-media"
         aria-label={`Play: ${card.title}`}
         data-playing={playing}
@@ -776,33 +783,36 @@ function LandingBoardUseCase({ card, onPlayed }: { card: (typeof LANDING_BOARD_U
             ref={videoRef}
             className="landing-usecase-video"
             muted
+            loop
             playsInline
             preload="none"
             poster={card.poster}
             onPlaying={() => { setPlaying(true); onPlayed(card.key, inputMode.current); }}
-            onPause={() => setPlaying(false)}
-            onEnded={() => setPlaying(false)}
+            onPause={() => { setPlaying(false); if ((videoRef.current?.currentTime ?? 0) > 0) setEnded(true); }}
+            onEnded={() => { setPlaying(false); setEnded(true); }}
             onError={() => setVideoFailed(true)}
           >
             <source src={card.webm} type="video/webm" />
             <source src={card.mp4} type="video/mp4" />
           </video>
         )}
-      </button>
-      <div className="landing-usecase-copy"><h3>{card.title}</h3><p>{card.body}</p></div>
+        {ended ? <span className="landing-usecase-replay">Replay</span> : null}
+      </Button>
+      <div className="landing-usecase-copy"><div className="landing-usecase-tools" aria-label="Tools shown">{card.tools.map((tool) => <ToolLogo key={tool} vendor={tool} compact />)}</div><h3>{card.title}</h3><p>{card.body}</p><Button variant="link" onClick={() => onJump(card.step)}>See it in the story →</Button></div>
     </article>
   );
+}
+
+function UseCaseSection({ id = "usecases", phone = false, onPlayed, onJump }: { id?: string; phone?: boolean; onPlayed: (key: UseCaseKey, inputMode: "hover" | "tap") => void; onJump: (key: StepKey) => void }) {
+  return <section id={id} className={`landing-usecases${phone ? " lb-phone-step lb-phone-usecases" : ""}`} data-phone-step={phone ? 1 : undefined} aria-label="What Lasso does">
+    <div className="landing-section-head"><p className="micro-label">WHAT LASSO DOES</p><h2>Deliverables you can defend to a client, a partner, or a board.</h2><p>Three things a buyer asks for. Here is what each looks like.</p></div>
+    <div className="landing-usecase-grid">{LANDING_BOARD_USE_CASES.map((card) => <LandingBoardUseCase key={card.key} card={card} onPlayed={onPlayed} onJump={onJump} />)}</div>
+  </section>;
 }
 
 function LandingBoardContinuation({ viewId, onPilot }: { viewId: string; onPilot: (placement: string) => void }) {
   const submitPilot = useServerFn(submitPilotRequestFn);
   const [state, setState] = useState<"idle" | "sending" | "sent" | "error">("idle");
-  const playedCards = useRef(new Set<UseCaseKey>());
-  function noteUseCasePlayed(card: UseCaseKey, inputMode: "hover" | "tap") {
-    if (playedCards.current.has(card)) return;
-    playedCards.current.add(card);
-    event(viewId, "landing.usecase_played", { card, input_mode: inputMode });
-  }
   async function submit(eventValue: FormEvent<HTMLFormElement>) {
     eventValue.preventDefault();
     setState("sending");
@@ -817,12 +827,6 @@ function LandingBoardContinuation({ viewId, onPilot }: { viewId: string; onPilot
   }
   return (
     <div className="landing-next lb-continuation">
-      <section className="landing-usecases mx-auto max-w-[1200px] px-4 md:px-6" aria-label="What consultants use it for">
-        <div className="landing-section-head"><p className="micro-label">HOW IT WORKS</p><h2 className="pencil-title">Deliverables you can defend to a client, a partner, or a board.</h2></div>
-        <div className="landing-usecase-grid">
-          {LANDING_BOARD_USE_CASES.map((card) => <LandingBoardUseCase key={card.key} card={card} onPlayed={noteUseCasePlayed} />)}
-        </div>
-      </section>
       <section className="landing-close mx-auto max-w-4xl px-6 md:px-10" data-resolved="true"><h2 className="landing-close-line1 landing-close-wordmark">Every claim, traced to the work behind it.</h2><p className="landing-close-line2"><LandingParticlePhrase text="The judgement, thinking, work... *Visible*" /></p><div className="mt-10"><Button asChild><a href="#pilot" onClick={() => onPilot("close")}>Book a pilot</a></Button></div></section>
       <div className="mx-auto max-w-3xl px-6 pb-24 md:px-10"><div id="pilot"><FocusSection className="mt-20 border-t border-rule pt-10"><p className="micro-label">PILOT</p><h2 className="pencil-title mt-4">Run it on one engagement.</h2>{state === "sent" ? <p className="mt-8 border-l-2 border-green pl-4">Thanks. Liam will be in touch within a day.</p> : <form className="landing-next-pilot-form mt-8 grid gap-5" onSubmit={submit}><label className="sr-only" aria-hidden="true"><span>Website</span><input name="website" tabIndex={-1} autoComplete="off" /></label><label><span>Name</span><input name="name" required /></label><label><span>Firm</span><input name="firm" required /></label><label><span>Work email</span><input name="email" type="email" required /></label><label><span>Team size</span><select name="teamSize" required defaultValue=""><option value="" disabled>Select team size</option><option value="1-5">1 to 5</option><option value="6-15">6 to 15</option><option value="16-40">16 to 40</option><option value="40+">40+</option></select></label><label><span>Anything we should know</span><textarea name="note" rows={4} /></label><div><Button type="submit" disabled={state === "sending"} onClick={() => onPilot("form")}>{state === "sending" ? "Sending…" : "Book a pilot"}</Button></div>{state === "error" ? <p role="alert">That didn't go through. Email liam@charlotte-labs.com and we'll pick it up.</p> : null}</form>}</FocusSection></div></div>
       <footer className="border-t border-rule"><div className="mx-auto flex max-w-3xl flex-wrap gap-4 px-6 py-8 font-mono text-[11px] text-muted-foreground"><span>Charlotte Labs</span><a href="https://charlotte-labs.com">charlotte-labs.com</a><a href="mailto:liam@charlotte-labs.com">liam@charlotte-labs.com</a><Link to="/trust">Trust &amp; data</Link></div></footer>
@@ -837,6 +841,7 @@ export function LandingBoard() {
   const [active, setActive] = useState(0);
   const [settledStep, setSettledStep] = useState(0);
   const [attentionNonce, setAttentionNonce] = useState(0);
+  const [phoneStop, setPhoneStop] = useState(0);
   const activeRef = useRef(0);
   const transitioning = useRef(false);
   const queued = useRef<{ index: number; input: StoryInput } | null>(null);
@@ -844,6 +849,7 @@ export function LandingBoard() {
   const seen = useRef(new Set<string>());
   const settleTimer = useRef<number | null>(null);
   const transitionTimer = useRef<number | null>(null);
+  const playedCards = useRef(new Set<UseCaseKey>());
 
   useEffect(() => { event(viewId.current, "landing.viewed", { variant: "b2b", surface: "landing-board", input_mode: window.matchMedia("(max-width: 639px)").matches ? "scroll" : "scroll" }); }, []);
   const settle = useCallback((index: number, inputMode: StoryInput) => {
@@ -915,7 +921,10 @@ export function LandingBoard() {
     };
   }, [activate]);
 
-  const activatePhone = useCallback((index: number) => {
+  const activatePhone = useCallback((stop: number) => {
+    setPhoneStop(stop);
+    if (stop === 1) return;
+    const index = stop === 0 ? 0 : stop - 1;
     activeRef.current = index;
     setActive(index);
     setSettledStep(index);
@@ -941,30 +950,43 @@ export function LandingBoard() {
       jumpTarget.current = null;
     }, 120);
   }
+  function noteUseCasePlayed(card: UseCaseKey, inputMode: "hover" | "tap") {
+    if (playedCards.current.has(card)) return;
+    playedCards.current.add(card);
+    event(viewId.current, "landing.usecase_played", { card, input_mode: inputMode });
+  }
+  function jumpToUseCases() {
+    const id = window.matchMedia("(max-width: 639px)").matches ? "lb-phone-usecases" : "usecases";
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
   function pilot(placement: string) { event(viewId.current, "landing.pilot_cta_clicked", { placement }); }
   const result = query.data;
   return (
     <div className="landing-board-page">
-      <LandingBoardHeader active={LANDING_BOARD_STEPS[active]?.key ?? "problem"} onJump={jump} onPilot={() => pilot("header")} />
+      <LandingBoardHeader active={LANDING_BOARD_STEPS[active]?.key ?? "problem"} phoneStop={phoneStop} onJump={jump} onPilot={() => pilot("header")} />
       <main className="lb-story">
-        <div className="lb-sticky-stage">
-          {result?.status === "open" && "board" in result ? <StoryBoard board={result.board} presets={result.presets} proof={result.proof} step={active} attentionStep={settledStep} attentionNonce={attentionNonce} clientLabel={result.engagement.clientLabel ?? ""} engagementTitle={result.engagement.title} onShowSlide={() => { event(viewId.current, "landing.proof_link_opened", { step: "6", target: "slide" }); jump("circle"); }} onOpenTurn={() => event(viewId.current, "landing.proof_link_opened", { step: "6", target: "turn" })} onOpenDecisionTurn={() => event(viewId.current, "landing.proof_link_opened", { step: "7", target: "turn" })} /> : <div className="lb-stage-window lb-loading">{query.isPending ? "Opening the demo board." : "The demo board is not available right now."}</div>}
-          <StoryCaption step={active} nonce={attentionNonce} onPilot={() => pilot("try_it")} />
+        <section className="lb-desktop-hero" aria-labelledby="lb-home-title"><div className="lb-hero-copy"><LassoThinkingMark kind="signature" size={150} /><div><h1 id="lb-home-title">Your firm bought AI. <LandingParticlePhrase text="The human judgment, process, and thinking" /> in your team's work went invisible.</h1><h2>Lasso is the reasoning and judgment layer for AI-assisted consulting. It connects the work across tools to the client deliverable and keeps the decisions your team made, so they can show where a claim came from and why it stayed.</h2><div><Button onClick={jumpToUseCases}>Watch it work</Button><Button asChild variant="outline"><Link to="/demo" onClick={() => event(viewId.current, "landing.see_it_work_clicked", { location: "hero_workboard" })}>View a Workboard</Link></Button><Button asChild variant="outline"><a href="#pilot" onClick={() => pilot("hero")}>Book a pilot</a></Button></div></div></div>
           <div className="lb-scroll-cue" data-visible={active === 0 ? "true" : "false"} data-testid="landing-scroll-cue" aria-hidden={active !== 0}>
             <span>Scroll to watch it work</span>
             <svg viewBox="0 0 16 10" aria-hidden="true"><path d="m2 2 6 6 6-6" /></svg>
           </div>
-        </div>
-        <div className="lb-scroll-sections">
-          {LANDING_BOARD_STEPS.map((step, index) => (
+        </section>
+        <UseCaseSection onPlayed={noteUseCasePlayed} onJump={jump} />
+        <section className="lb-how-it-works"><div className="lb-how-it-works-head"><p className="micro-label">HOW IT WORKS</p><h2>Follow the work from source to deliverable.</h2></div>
+          <div className="lb-sticky-stage">
+            {result?.status === "open" && "board" in result ? <StoryBoard board={result.board} presets={result.presets} proof={result.proof} step={active} attentionStep={settledStep} attentionNonce={attentionNonce} clientLabel={result.engagement.clientLabel ?? ""} engagementTitle={result.engagement.title} onShowSlide={() => { event(viewId.current, "landing.proof_link_opened", { step: "6", target: "slide" }); jump("circle"); }} onOpenTurn={() => event(viewId.current, "landing.proof_link_opened", { step: "6", target: "turn" })} onOpenDecisionTurn={() => event(viewId.current, "landing.proof_link_opened", { step: "7", target: "turn" })} /> : <div className="lb-stage-window lb-loading">{query.isPending ? "Opening the demo board." : "The demo board is not available right now."}</div>}
+            <StoryCaption step={active} nonce={attentionNonce} onPilot={() => pilot("try_it")} />
+          </div>
+          <div className="lb-scroll-sections">
+          {LANDING_BOARD_STEPS.slice(1).map((step, itemIndex) => { const index = itemIndex + 1; return (
             <section id={`lb-${step.key}`} data-lb-step={index} key={step.key} className="lb-scroll-step">
-              {index === 0 ? <div className="lb-hero-copy"><LassoThinkingMark kind="signature" size={150} /><div><h1>Your firm bought AI. <LandingParticlePhrase text="The human judgment, process, and thinking" /> in your team's work went invisible.</h1><h2>Lasso is the reasoning and judgment layer for AI-assisted consulting. It connects the work across tools to the client deliverable and keeps the decisions your team made, so they can show where a claim came from and why it stayed.</h2><div><Button onClick={() => jump("canvas")}>Watch it work</Button><Button asChild variant="outline"><Link to="/demo" onClick={() => event(viewId.current, "landing.see_it_work_clicked", { location: "hero_workboard" })}>View a Workboard</Link></Button><Button asChild variant="outline"><a href="#pilot" onClick={() => pilot("hero")}>Book a pilot</a></Button></div></div></div> : null}
             </section>
-          ))}
-        </div>
-        {result?.status === "open" && "board" in result ? <PhoneStory board={result.board} presets={result.presets} proof={result.proof} clientLabel={result.engagement.clientLabel ?? ""} active={active} onActive={activatePhone} onWatch={() => jump("canvas")} onPilot={() => pilot("try_it")} onShowSlide={() => { event(viewId.current, "landing.proof_link_opened", { step: "6", target: "slide" }); jump("circle"); }} onOpenTurn={() => event(viewId.current, "landing.proof_link_opened", { step: "6", target: "turn" })} onOpenDecisionTurn={() => event(viewId.current, "landing.proof_link_opened", { step: "7", target: "turn" })} /> : <div className="lb-phone-loading">{query.isPending ? "Opening the demo board." : "The demo board is not available right now."}</div>}
+          ); })}
+          </div>
+        </section>
+        {result?.status === "open" && "board" in result ? <PhoneStory board={result.board} presets={result.presets} proof={result.proof} clientLabel={result.engagement.clientLabel ?? ""} active={phoneStop} onActive={activatePhone} onWatch={jumpToUseCases} onPilot={() => pilot("try_it")} onShowSlide={() => { event(viewId.current, "landing.proof_link_opened", { step: "6", target: "slide" }); jump("circle"); }} onOpenTurn={() => event(viewId.current, "landing.proof_link_opened", { step: "6", target: "turn" })} onOpenDecisionTurn={() => event(viewId.current, "landing.proof_link_opened", { step: "7", target: "turn" })} onUseCasePlayed={noteUseCasePlayed} onUseCaseJump={jump} /> : <div className="lb-phone-loading">{query.isPending ? "Opening the demo board." : "The demo board is not available right now."}</div>}
       </main>
-      <div className="lb-phone-pilot" data-visible={active > 0 ? "true" : "false"}><Button asChild size="sm"><a href="#pilot" onClick={() => pilot("phone_bar")}>Book a pilot</a></Button></div>
+      <div className="lb-phone-pilot" data-visible={phoneStop > 0 ? "true" : "false"}><Button asChild size="sm"><a href="#pilot" onClick={() => pilot("phone_bar")}>Book a pilot</a></Button></div>
       <LandingBoardContinuation viewId={viewId.current} onPilot={pilot} />
     </div>
   );
