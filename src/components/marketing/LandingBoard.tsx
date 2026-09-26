@@ -220,7 +220,7 @@ function AskReplay({ presets, step, onFinished, clientLabel, engagementTitle, pr
             {showQuestion ? <div className="lb-replay-question"><span>You</span><p>{preset.question}</p></div> : null}
             {current && replay.phase === "reading" ? <AnswerRail state="working"><ThinkingTrail items={preset.manifest?.items.map((item) => ({ id: item.id, title: item.title })) ?? []} finalPhase="Writing" manifest={liveItems.length > 0 && preset.manifest ? { ...preset.manifest, items: liveItems } : null} /></AnswerRail> : null}
             {answerText ? <ReplayAnswer preset={{ ...preset, answer: answerText }} finished={!current || replay.phase === "done"} showAudit={position !== 1} /> : null}
-            {position === 1 && step >= 6 && proof && proofModel && (!current || replay.phase === "done") ? <><ProofCard proof={proof} model={proofModel} onShowSlide={onShowSlide} onOpenTurn={onOpenTurn} onToggleTurn={onToggleTurn} />{preset.manifest ? <ContextAudit manifest={preset.manifest} readOnly initialOpen={false} buttonLabel="Show the full read list" /> : null}</> : null}
+            {position === 1 && step >= 5 && proof && proofModel && (!current || replay.phase === "done") ? <><ProofCard proof={proof} model={proofModel} onShowSlide={onShowSlide} onOpenTurn={onOpenTurn} onToggleTurn={onToggleTurn} />{preset.manifest ? <ContextAudit manifest={preset.manifest} readOnly initialOpen={false} buttonLabel="Show the full read list" /> : null}</> : null}
           </div>;
         })}
       </div>
