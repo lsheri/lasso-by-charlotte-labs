@@ -40,8 +40,8 @@ function demoTitle(title: string): string {
 function fittedDemoView(viewport: HTMLDivElement | null, frames: LabFrame[], nodes: LabNode[]) {
   if (!viewport) return { zoom: 1, pan: { x: 0, y: 82 } };
   const toolbarClearance = 82;
-  // Card titles render at 16px; 0.7 keeps them at about 11px on screen, still legible.
-  const readableFloor = 0.7;
+  // Card titles render at 16px; 0.58 keeps them at about 9.3px on screen, still legible.
+  const readableFloor = 0.58;
   const fit = fitWorkboardViewport(
     { width: Math.max(320, viewport.clientWidth), height: Math.max(280, viewport.clientHeight - toolbarClearance) },
     frames,
