@@ -302,13 +302,17 @@ describe("Unit L1 scroll-driven landing board", () => {
   });
   it("renders inert recorded hero assemblies without emitting play telemetry", () => {
     const css = readFileSync("src/styles.css", "utf8");
-    expect(page).toContain('poster="/videos/landing-hero-assemble-poster.png"');
-    expect(page).toContain('poster="/videos/landing-hero-assemble-phone-poster.png"');
+    expect(page).toContain('poster={headerVideoPoster.url}');
+    expect(page).toContain('<source src={headerVideoMp4.url} type="video/mp4" />');
+    expect(page).toContain('<source src={headerVideoWebm.url} type="video/webm" />');
     // S2 adds the self-contained workstreams clip: metadata-only and inline, never autoPlay.
     expect(page.match(/preload="metadata"/g)).toHaveLength(4);
-    expect(page.match(/autoPlay/g)).toHaveLength(2);
+    expect(page).not.toContain("autoPlay");
     expect(page.match(/playsInline/g)).toHaveLength(4);
-    expect(page).toContain("<HeroAssemble paused={heroFocus === 1} />");
+    expect(page).toContain("<HeroAssemble />");
+    expect(page).toContain("video.currentTime = 0");
+    expect(page).toContain("observer.observe(video)");
+    expect(page).not.toMatch(/className="lb-hero-assemble-video"[\s\S]{0,180}\bloop\b/);
     expect(page).toContain('(prefers-reduced-motion: reduce)');
     expect(page).not.toContain("HERO_ASSEMBLE_FRAMES");
     expect(page).not.toContain("PHONE_HERO_ASSEMBLE_FRAMES");
@@ -326,8 +330,8 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(page).toContain("data-phone-step={stop}");
     expect(page).toContain('id="lb-phone-usecases"');
     expect(page).toContain("<PhoneHeroAssemble />");
-    expect(page).toContain('src="/videos/landing-hero-assemble-phone.webm"');
-    expect(page).toContain('src="/videos/landing-hero-assemble-phone.mp4"');
+    expect(page).toContain('<source src={headerVideoMp4.url} type="video/mp4" />');
+    expect(page).toContain('<source src={headerVideoWebm.url} type="video/webm" />');
     expect(page).not.toContain("PHONE_HERO_ASSEMBLE_CARDS");
     expect(page).toContain("new IntersectionObserver");
     expect(page).toContain("threshold: 0.6");

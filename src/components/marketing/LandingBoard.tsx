@@ -37,6 +37,9 @@ import {
 import { seedPlacement } from "@/lib/public-work-allowlist";
 import { keptContentLabel } from "@/lib/work-open";
 import { noteDemoOpened, noteDemoPlayInteracted, type DemoPlayAction } from "@/lib/demo-telemetry";
+import headerVideoMp4 from "@/assets/landing/lasso-board-header.mp4.asset.json";
+import headerVideoPoster from "@/assets/landing/lasso-board-header-poster.webp.asset.json";
+import headerVideoWebm from "@/assets/landing/lasso-board-header.webm.asset.json";
 
 export const LANDING_BOARD_STEPS = [
   {
@@ -1931,43 +1934,65 @@ function StoryBoard({
   );
 }
 
-function useDecorativeHeroVideo(paused = false) {
+function useDecorativeHeroVideo() {
   const videoRef = useRef<HTMLVideoElement>(null);
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
     const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const sync = () => {
-      if (paused || motion.matches) {
+    let armed = true;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry) return;
+        if (!entry.isIntersecting) {
+          video.pause();
+          video.currentTime = 0;
+          armed = true;
+          return;
+        }
+        if (armed && !motion.matches) {
+          armed = false;
+          void video.play().catch(() => undefined);
+        }
+      },
+      { threshold: 0.2 },
+    );
+    const syncMotion = () => {
+      if (motion.matches) {
         video.pause();
         return;
       }
-      void video.play().catch(() => undefined);
+      if (armed && video.getBoundingClientRect().bottom > 0) {
+        armed = false;
+        video.currentTime = 0;
+        void video.play().catch(() => undefined);
+      }
     };
-    sync();
-    motion.addEventListener("change", sync);
-    return () => motion.removeEventListener("change", sync);
-  }, [paused]);
+    observer.observe(video);
+    motion.addEventListener("change", syncMotion);
+    return () => {
+      observer.disconnect();
+      motion.removeEventListener("change", syncMotion);
+    };
+  }, []);
   return videoRef;
 }
 
-/** Inert recorded sequence showing scattered AI work settling onto a finished board. */
-function HeroAssemble({ paused }: { paused: boolean }) {
-  const videoRef = useDecorativeHeroVideo(paused);
+/** Inert full board recording that holds its final frame and rearms off-screen. */
+function HeroAssemble() {
+  const videoRef = useDecorativeHeroVideo();
   return (
     <div className="lb-hero-assemble" aria-hidden="true" inert>
       <video
         ref={videoRef}
         className="lb-hero-assemble-video"
-        autoPlay
         muted
         playsInline
-        loop
         preload="metadata"
-        poster="/videos/landing-hero-assemble-poster.png"
+        poster={headerVideoPoster.url}
       >
-        <source src="/videos/landing-hero-assemble.webm" type="video/webm" />
-        <source src="/videos/landing-hero-assemble.mp4" type="video/mp4" />
+        <source src={headerVideoMp4.url} type="video/mp4" />
+        <source src={headerVideoWebm.url} type="video/webm" />
       </video>
     </div>
   );
@@ -2067,15 +2092,13 @@ function PhoneHeroAssemble() {
         <video
           ref={videoRef}
           className="lb-phone-hero-video"
-          autoPlay
           muted
           playsInline
-          loop
           preload="metadata"
-          poster="/videos/landing-hero-assemble-phone-poster.png"
+          poster={headerVideoPoster.url}
         >
-          <source src="/videos/landing-hero-assemble-phone.webm" type="video/webm" />
-          <source src="/videos/landing-hero-assemble-phone.mp4" type="video/mp4" />
+          <source src={headerVideoMp4.url} type="video/mp4" />
+          <source src={headerVideoWebm.url} type="video/webm" />
         </video>
       </div>
       <p className="micro-label lb-phone-hero-caption">CHATS FROM EVERY TOOL, ON ONE BOARD</p>
@@ -2784,7 +2807,7 @@ export function LandingBoard() {
                 </Button>
               </div>
               <div className="lb-hero-stage">
-                <HeroAssemble paused={heroFocus === 1} />
+                <HeroAssemble />
               </div>
               <p className="micro-label lb-hero-assemble-caption" aria-hidden="true">CHATS FROM EVERY TOOL, ON ONE BOARD</p>
               <div className="lb-hero-line">
