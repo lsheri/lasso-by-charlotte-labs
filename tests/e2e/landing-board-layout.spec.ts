@@ -30,6 +30,23 @@ for (const viewport of [...desktopSizes, { width: 390, height: 844 }]) {
 }
 
 for (const viewport of [{ width: 1372, height: 732 }, { width: 390, height: 844 }]) {
+  test(`landing hero actions and scroll cue work at ${viewport.width}x${viewport.height}`, async ({ browser }) => {
+    const context = await browser.newContext({ viewport, reducedMotion: "no-preference" });
+    const page = await context.newPage();
+    await page.goto("/landing-board", { waitUntil: "networkidle" });
+    const cue = page.getByTestId("landing-scroll-cue");
+    await expect(cue).toBeVisible();
+    await page.getByRole("button", { name: "Watch it work", exact: true }).click();
+    await expect(page.locator(".lb-stage-window")).toHaveAttribute("data-step", "2");
+    await expect(cue).toBeHidden();
+    await page.goto("/landing-board", { waitUntil: "networkidle" });
+    await page.getByRole("link", { name: "View a Workboard", exact: true }).click();
+    await expect(page).toHaveURL(/\/demo$/);
+    await context.close();
+  });
+}
+
+for (const viewport of [{ width: 1372, height: 732 }, { width: 390, height: 844 }]) {
   test(`playable demo restores a dragged card at ${viewport.width}x${viewport.height}`, async ({ browser }) => {
     test.setTimeout(30_000);
     const context = await browser.newContext({ viewport, reducedMotion: "no-preference" });

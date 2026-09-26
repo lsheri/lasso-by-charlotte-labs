@@ -15,6 +15,9 @@
 import type { TelemetryDims, TelemetryEvent } from "./telemetry-shared";
 import { WORKBOARD_EVENT_DIMS } from "./workboard-event-allowlist";
 
+/** Closed landing.see_it_work_clicked.location vocabulary. */
+export const LANDING_SEE_IT_WORK_LOCATIONS = ["hero", "hero_workboard"] as const;
+
 /** Every non-workboard event name mapped to the dim keys it may carry. */
 export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "admin.dashboard_viewed": ["panels_shown"],

@@ -49,7 +49,7 @@ const TOOL_BADGES = [
 
 const FALLBACK_SLIDES = ["Partnership model", "Board structure", "$1.4M year-two net benefit", "Comparable health alliances", "Chair terms", "FY27 recommendation"];
 
-function event(viewId: string, eventType: "landing.viewed" | "landing.story_section_viewed" | "landing.section_jumped" | "landing.proof_link_opened" | "landing.pilot_cta_clicked" | "landing.pilot_requested" | "landing.usecase_played", dims: Record<string, string>) {
+function event(viewId: string, eventType: "landing.viewed" | "landing.story_section_viewed" | "landing.section_jumped" | "landing.proof_link_opened" | "landing.pilot_cta_clicked" | "landing.pilot_requested" | "landing.see_it_work_clicked" | "landing.usecase_played", dims: Record<string, string>) {
   void recordAnonymousEventFn({ data: { event_type: eventType, view_id: viewId, dims } }).catch(() => undefined);
 }
 
@@ -673,11 +673,15 @@ export function LandingBoard() {
         <div className="lb-sticky-stage">
           {result?.status === "open" && "board" in result ? <StoryBoard board={result.board} presets={result.presets} proof={result.proof} step={active} attentionStep={settledStep} attentionNonce={attentionNonce} clientLabel={result.engagement.clientLabel ?? ""} engagementTitle={result.engagement.title} onShowSlide={() => { event(viewId.current, "landing.proof_link_opened", { step: "6", target: "slide" }); jump("circle"); }} onOpenTurn={() => event(viewId.current, "landing.proof_link_opened", { step: "6", target: "turn" })} /> : <div className="lb-stage-window lb-loading">{query.isPending ? "Opening the demo board." : "The demo board is not available right now."}</div>}
           {settledStep > 0 ? <article key={`${settledStep}-${attentionNonce}`} className="lb-caption lb-caption-attention" aria-live="polite"><div className="lb-caption-text"><span>{String(settledStep + 1).padStart(2, "0")} · {LANDING_BOARD_STEPS[settledStep]?.label}</span><h2>{LANDING_BOARD_STEPS[settledStep]?.headline}</h2><p>{LANDING_BOARD_STEPS[settledStep]?.line}</p></div>{settledStep === 9 ? <div><Button asChild><Link to="/demo">Open the board yourself</Link></Button><Button asChild variant="outline"><a href="#pilot" onClick={() => pilot("try_it")}>Book a pilot</a></Button></div> : null}</article> : null}
+          <div className="lb-scroll-cue" data-visible={active === 0 ? "true" : "false"} data-testid="landing-scroll-cue" aria-hidden={active !== 0}>
+            <span>Scroll to watch it work</span>
+            <svg viewBox="0 0 16 10" aria-hidden="true"><path d="m2 2 6 6 6-6" /></svg>
+          </div>
         </div>
         <div className="lb-scroll-sections">
           {LANDING_BOARD_STEPS.map((step, index) => (
             <section id={`lb-${step.key}`} data-lb-step={index} key={step.key} className="lb-scroll-step">
-              {index === 0 ? <div className="lb-hero-copy"><LassoThinkingMark kind="signature" size={150} /><div><h1>Your firm bought AI. <LandingParticlePhrase text="The human judgment, process, and thinking" /> in your team's work went invisible.</h1><h2>Lasso is the reasoning and judgment layer for AI-assisted consulting. It connects the work across tools to the client deliverable and keeps the decisions your team made, so they can show where a claim came from and why it stayed.</h2><div><Button onClick={() => jump("canvas")}>Watch it work</Button><Button asChild variant="outline"><a href="#pilot" onClick={() => pilot("hero")}>Book a pilot</a></Button></div></div></div> : null}
+              {index === 0 ? <div className="lb-hero-copy"><LassoThinkingMark kind="signature" size={150} /><div><h1>Your firm bought AI. <LandingParticlePhrase text="The human judgment, process, and thinking" /> in your team's work went invisible.</h1><h2>Lasso is the reasoning and judgment layer for AI-assisted consulting. It connects the work across tools to the client deliverable and keeps the decisions your team made, so they can show where a claim came from and why it stayed.</h2><div><Button onClick={() => jump("canvas")}>Watch it work</Button><Button asChild variant="outline"><Link to="/demo" onClick={() => event(viewId.current, "landing.see_it_work_clicked", { location: "hero_workboard" })}>View a Workboard</Link></Button><Button asChild variant="outline"><a href="#pilot" onClick={() => pilot("hero")}>Book a pilot</a></Button></div></div></div> : null}
             </section>
           ))}
         </div>
