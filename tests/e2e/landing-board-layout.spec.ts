@@ -433,10 +433,10 @@ test("settled attention steps keep one spotlight and one caption", async ({ brow
   const page = await context.newPage();
   await page.goto("/", { waitUntil: "networkidle" });
   for (const [index, name] of [
-    [3, "Deliverable"],
-    [4, "A number"],
+    [3, "The deliverable"],
+    [4, "Pick a number"],
     [5, "Ask Lasso"],
-    [6, "The chat"],
+    [6, "Open the chat"],
   ] as const) {
     const key = ["problem", "canvas", "workstreams", "deliverable", "circle", "ask", "the-turn"][index];
     if (!key) throw new Error(`Missing story key for index ${index}`);
