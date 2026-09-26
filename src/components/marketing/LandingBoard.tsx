@@ -1974,27 +1974,48 @@ function HeroAssemble({ paused }: { paused: boolean }) {
 }
 
 /**
- * S2 proof: a story step that owns its card and its clip. Reads no shared story
- * state (active, settledStep, attentionNonce, phoneStop). Plays once at ~50%
- * visibility, holds the last frame, and rearms only after fully leaving view.
+ * S2/S4a: a story step that owns its card and its media. Reads no shared story
+ * state (active, settledStep, attentionNonce, phoneStop). Video steps play once
+ * at ~50% visibility, hold the last frame, and rearm only after fully leaving view.
+ * Still steps render their poster as an image.
  */
-function WorkstreamsSection({ onViewed }: { onViewed: () => void }) {
+type StandaloneStepKey = "problem" | "canvas" | "workstreams" | "deliverable" | "circle";
+const STANDALONE_STEPS: Record<StandaloneStepKey, { number: number; still?: true }> = {
+  problem: { number: 1, still: true },
+  canvas: { number: 2 },
+  workstreams: { number: 3 },
+  deliverable: { number: 4 },
+  circle: { number: 5 },
+};
+function isStandaloneStep(key: string): key is StandaloneStepKey {
+  return key in STANDALONE_STEPS;
+}
+
+function StandaloneStorySection({
+  stepKey,
+  onViewed,
+}: {
+  stepKey: StandaloneStepKey;
+  onViewed: (key: StandaloneStepKey) => void;
+}) {
   const sectionRef = useRef<HTMLElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const onViewedRef = useRef(onViewed);
   onViewedRef.current = onViewed;
-  const item = LANDING_BOARD_STEPS[2]!;
+  const index = LANDING_BOARD_STEPS.findIndex((step) => step.key === stepKey);
+  const item = LANDING_BOARD_STEPS[index]!;
+  const { number, still } = STANDALONE_STEPS[stepKey];
   useEffect(() => {
     const section = sectionRef.current;
+    if (!section) return;
     const video = videoRef.current;
-    if (!section || !video) return;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let armed = true;
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
           if (!entry.isIntersecting) {
-            if (!armed && !reduced) {
+            if (!armed && !reduced && video) {
               video.pause();
               video.currentTime = 0;
             }
@@ -2003,8 +2024,8 @@ function WorkstreamsSection({ onViewed }: { onViewed: () => void }) {
           }
           if (entry.intersectionRatio >= 0.5 && armed) {
             armed = false;
-            onViewedRef.current();
-            if (!reduced) {
+            onViewedRef.current(stepKey);
+            if (!reduced && video) {
               video.currentTime = 0;
               void video.play().catch(() => undefined);
             }
@@ -2015,26 +2036,30 @@ function WorkstreamsSection({ onViewed }: { onViewed: () => void }) {
     );
     observer.observe(section);
     return () => observer.disconnect();
-  }, []);
+  }, [stepKey]);
+  const poster = `/videos/landing-story-${stepKey}-poster.webp`;
   return (
     <section
       ref={sectionRef}
       id={`lb-${item.key}`}
       className="lb-scroll-step lb-standalone-step"
-      data-testid="landing-standalone-workstreams"
+      data-testid={`landing-standalone-${stepKey}`}
     >
       <article
         className="lb-caption lb-standalone-caption"
-        style={{ "--lb-progress-to": "30%" } as CSSProperties}
+        style={{ "--lb-progress-to": `${(index + 1) * 10}%` } as CSSProperties}
       >
-        <span className="lb-caption-progress" aria-label={`2 of ${LANDING_BOARD_STEPS.length}`} />
+        <span
+          className="lb-caption-progress"
+          aria-label={`${number} of ${LANDING_BOARD_STEPS.length}`}
+        />
         <div className="lb-caption-text">
           <div className="lb-caption-heading">
             <span className="lb-step-ring">
               <svg viewBox="0 0 34 34" aria-hidden="true">
                 <ellipse cx="17" cy="17" rx="14" ry="12.5" pathLength="1" />
               </svg>
-              <span>2</span>
+              <span>{number}</span>
             </span>
             <span>{item.label}</span>
           </div>
@@ -2043,16 +2068,14 @@ function WorkstreamsSection({ onViewed }: { onViewed: () => void }) {
         </div>
       </article>
       <div className="lb-standalone-media" aria-hidden="true" inert>
-        <video
-          ref={videoRef}
-          muted
-          playsInline
-          preload="metadata"
-          poster="/videos/landing-story-workstreams-poster.webp"
-        >
-          <source src="/videos/landing-story-workstreams.webm" type="video/webm" />
-          <source src="/videos/landing-story-workstreams.mp4" type="video/mp4" />
-        </video>
+        {still ? (
+          <img src={poster} alt="" loading="lazy" decoding="async" />
+        ) : (
+          <video ref={videoRef} muted playsInline preload="metadata" poster={poster}>
+            <source src={`/videos/landing-story-${stepKey}.webm`} type="video/webm" />
+            <source src={`/videos/landing-story-${stepKey}.mp4`} type="video/mp4" />
+          </video>
+        )}
       </div>
     </section>
   );
@@ -2153,7 +2176,7 @@ function StoryCaption({
   const renderCaption = (index: number, phase: "incoming" | "outgoing") => {
     const item = LANDING_BOARD_STEPS[index];
     if (!item) return null;
-    const displayStep = index;
+    const displayStep = index + 1;
     // "Try it" is the closing card, not a step in the process: it carries no numeral.
     const closing = item.key === "try-it";
     return (
@@ -2575,6 +2598,9 @@ export function LandingBoard() {
       input_mode: window.matchMedia("(max-width: 639px)").matches ? "scroll" : "scroll",
     });
   }, []);
+  // S4a: true while no remaining stage step has reached the threshold, so the
+  // stage is only pre-drawn behind the standalone sections and must not emit.
+  const stagePreview = useRef(true);
   const settle = useCallback((index: number, inputMode: StoryInput) => {
     if (settleTimer.current !== null) window.clearTimeout(settleTimer.current);
     settleTimer.current = window.setTimeout(() => {
@@ -2584,6 +2610,7 @@ export function LandingBoard() {
         setSettledStep(index);
         setAttentionNonce((nonce) => nonce + 1);
       }
+      if (stagePreview.current && inputMode === "scroll") return;
       const key = LANDING_BOARD_STEPS[index]?.key;
       if (!key || seen.current.has(`${key}:${inputMode}`)) return;
       seen.current.add(`${key}:${inputMode}`);
@@ -2632,11 +2659,16 @@ export function LandingBoard() {
       frame = 0;
       if (jumpTarget.current !== null) return;
       const threshold = window.innerHeight * 0.55;
-      let latest = 0;
+      const first = Number(sections[0]?.dataset["lbStep"] ?? 0);
+      let latest = first;
+      let reached = false;
       for (const section of sections) {
-        if (section.getBoundingClientRect().top <= threshold)
+        if (section.getBoundingClientRect().top <= threshold) {
           latest = Number(section.dataset["lbStep"] ?? latest);
+          reached = true;
+        }
       }
+      stagePreview.current = !reached;
       activate(latest, "scroll");
     };
     const onScroll = () => {
@@ -2693,13 +2725,13 @@ export function LandingBoard() {
     event(viewId.current, "landing.story_section_viewed", { section: key, input_mode: "scroll" });
   }, []);
 
-  // S2: same event, same payload and the same once-per-view dedupe key as the
-  // old scroll-index path; only the trigger (the section's own observer) changed.
-  const noteWorkstreamsViewed = useCallback(() => {
-    if (seen.current.has("workstreams:scroll")) return;
-    seen.current.add("workstreams:scroll");
+  // S2/S4a: same event, same payload and the same once-per-view dedupe key as
+  // the old scroll-index path; only the trigger (the section's own observer) changed.
+  const noteStandaloneViewed = useCallback((key: StandaloneStepKey) => {
+    if (seen.current.has(`${key}:scroll`)) return;
+    seen.current.add(`${key}:scroll`);
     event(viewId.current, "landing.story_section_viewed", {
-      section: "workstreams",
+      section: key,
       input_mode: "scroll",
     });
   }, []);
@@ -2707,9 +2739,16 @@ export function LandingBoard() {
   function jump(key: StepKey) {
     const index = LANDING_BOARD_STEPS.findIndex((step) => step.key === key);
     if (index < 0) return;
+    const standalone = isStandaloneStep(key);
     jumpTarget.current = index;
-    activate(index, "jump", true);
+    if (!standalone) activate(index, "jump", true);
     event(viewId.current, "landing.section_jumped", { section: key });
+    // S4a: standalone steps are off the stage, so the jump emits the same
+    // story_section_viewed payload the stage settle used to produce for them.
+    if (standalone && !seen.current.has(`${key}:jump`)) {
+      seen.current.add(`${key}:jump`);
+      event(viewId.current, "landing.story_section_viewed", { section: key, input_mode: "jump" });
+    }
     if (window.matchMedia("(max-width: 639px)").matches) {
       document
         .getElementById(`lb-phone-${key}`)
@@ -2717,9 +2756,12 @@ export function LandingBoard() {
       return;
     }
     const target = document.getElementById(`lb-${key}`);
+    const headerOffset = standalone
+      ? (document.querySelector<HTMLElement>(".landing-board-header")?.offsetHeight ?? 0)
+      : window.innerHeight * 0.54;
     if (target)
       window.scrollTo({
-        top: window.scrollY + target.getBoundingClientRect().top - window.innerHeight * 0.54,
+        top: window.scrollY + target.getBoundingClientRect().top - headerOffset,
         behavior: "auto",
       });
     window.setTimeout(() => {
@@ -2841,11 +2883,16 @@ export function LandingBoard() {
             />
           </div>
           <div className="lb-scroll-sections">
-            {LANDING_BOARD_STEPS.slice(1).map((step, itemIndex) => {
-              const index = itemIndex + 1;
-              // S2: workstreams is a self-contained section, not a shared-stage step.
-              if (step.key === "workstreams")
-                return <WorkstreamsSection key={step.key} onViewed={noteWorkstreamsViewed} />;
+            {LANDING_BOARD_STEPS.map((step, index) => {
+              // S2/S4a: these steps are self-contained sections, not shared-stage steps.
+              if (isStandaloneStep(step.key))
+                return (
+                  <StandaloneStorySection
+                    key={step.key}
+                    stepKey={step.key}
+                    onViewed={noteStandaloneViewed}
+                  />
+                );
               return (
                 <section
                   id={`lb-${step.key}`}
