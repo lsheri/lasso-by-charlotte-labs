@@ -12,6 +12,6 @@
 - Keep the public demo guide route-local and persist only its numeric step in guarded session storage, because it must never affect signed-in product state.
 - Render both public demo entrances through DemoHomeWorkspace so their cards, previews, loading states, and guide behavior stay identical.
 
-- Keep `/landing-board` as an unlinked, public, read-only composition fed only by `openDemoBoardFn`; it must not share state or styles with the production landing or signed-in boards.
+- Keep `/landing-board` as an unlinked, public, read-only composition fed only by `openDemoBoardFn`; its proof excerpts are derived server-side from demo-org turns through the public allowlist.
 - Keep `/landing-board` story state transition-queued and dwell-based; saved Ask answers replay locally through shared presentation components without sending requests.
 - Keep `/landing-board` tool marks behind ToolLogo, deck art self-contained, and attention motion keyed only to settled story steps.

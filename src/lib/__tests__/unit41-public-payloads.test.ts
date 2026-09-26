@@ -1,9 +1,11 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import type { SharedBoardDto, SharedSeedWork } from "../board-share-shared";
 import { demoSafeBoard, seededPreview } from "../demo-board.server";
 import { publicDemoPresets } from "../demo-presets-shared";
 import { publicSafeWork } from "../public-work-allowlist";
+import { publicSafeTurnExcerpts } from "../public-work-allowlist";
 
 const BAD_KEY = /(owner|org|client|task|profile|user|import_session)_?id|url|link|content_ref|content_hash|storage/i;
 
@@ -81,6 +83,21 @@ describe("unit 4.1 every public payload passes the allowlist", () => {
   it("demo conversations", () => {
     const items = demoSafeBoard(board).seed.work.map((item) => ({ code: "YSM-01", item }));
     clean("conversations", { items, turns: {}, filePreviews: {} });
+  });
+
+  it("landing proof carries demo-only safe turn excerpts without private ids", () => {
+    const proof = {
+      itemId: "w1",
+      title: "Partnership scenarios: year-two net benefit",
+      vendor: "claude",
+      turns: publicSafeTurnExcerpts([
+        { id: "turn-private", turn_no: 2, role: "assistant", content: "From https://private.example for 6d3262dc-32c2-4910-b951-ccee79d82135", ts: "2026-08-28T23:07:00Z", model: "private-model" },
+      ], 2, 6),
+    };
+    clean("landing.proof", proof);
+    expect(proof.turns[0]).toEqual({ turn_no: 2, role: "assistant", content: "From for", ts: "2026-08-28T23:07:00Z" });
+    expect(readFileSync("src/lib/demo-board.server.ts", "utf8")).toContain("proofItem ?");
+    expect(readFileSync("src/lib/demo-board.server.ts", "utf8")).toContain("publicSafeTurnExcerpts(board.turns[proofItem.id] ?? [], 2, 6)");
   });
 
   it("keeps what visible features read", () => {

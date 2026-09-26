@@ -18,6 +18,7 @@ import type { DemoPreset } from "@/lib/demo-presets-shared";
 import { submitPilotRequestFn } from "@/lib/pilot-request.functions";
 import { recordAnonymousEventFn } from "@/lib/telemetry.functions";
 import type { SharedBoardDto, SharedSeedWork } from "@/lib/board-share-shared";
+import { parseLandingProof, type LandingProof, type LandingProofModel } from "@/lib/landing-proof-shared";
 import { seedPlacement } from "@/lib/public-work-allowlist";
 import { keptContentLabel } from "@/lib/work-open";
 
@@ -27,8 +28,8 @@ export const LANDING_BOARD_STEPS = [
   { key: "workstreams", label: "Workstreams", headline: "Grouped into workstreams, the way your team actually splits the work.", line: "The shape of the engagement becomes visible without changing the source material." },
   { key: "deliverable", label: "Deliverable", headline: "Every workstream wired to the deliverable it fed.", line: "The finished deck stays connected to the work behind it." },
   { key: "circle", label: "Circle", headline: "A number worth asking about.", line: "Where did the $1.4M on slide 3 come from?" },
-  { key: "ask", label: "Ask", headline: "Every answer shows what it read.", line: "The saved response opens with its source trail already visible." },
-  { key: "the-turn", label: "The turn", headline: "Back to the exact turn where it was decided.", line: "The answer points to the source conversation, not a reconstructed summary." },
+  { key: "ask", label: "Ask", headline: "Every number in the deck has a trail.", line: "Where it came from, what your team checked, what's still open. Open the chat and check it yourself." },
+  { key: "the-turn", label: "The turn", headline: "Hand-check the actual chat.", line: "The proof card opens turn 4 in context, with turns 2 through 6 highlighted." },
   { key: "still-open", label: "Still open", headline: "And what's still open, pinned where it came from.", line: "Questions stay beside the work that raised them." },
   { key: "share", label: "Share", headline: "Share the deliverable, not the drafts.", line: "A read-only view closes in 48 hours and opens only what you chose." },
   { key: "try-it", label: "Try it", headline: "Your turn.", line: "Open the invented workspace and inspect the board yourself." },
@@ -47,7 +48,7 @@ const TOOL_BADGES = [
 
 const FALLBACK_SLIDES = ["Partnership model", "Board structure", "$1.4M year-two net benefit", "Comparable health alliances", "Chair terms", "FY27 recommendation"];
 
-function event(viewId: string, eventType: "landing.viewed" | "landing.story_section_viewed" | "landing.section_jumped" | "landing.pilot_cta_clicked" | "landing.pilot_requested" | "landing.usecase_played", dims: Record<string, string>) {
+function event(viewId: string, eventType: "landing.viewed" | "landing.story_section_viewed" | "landing.section_jumped" | "landing.proof_link_opened" | "landing.pilot_cta_clicked" | "landing.pilot_requested" | "landing.usecase_played", dims: Record<string, string>) {
   void recordAnonymousEventFn({ data: { event_type: eventType, view_id: viewId, dims } }).catch(() => undefined);
 }
 
@@ -59,9 +60,9 @@ function ToolIdentity({ tool, compact = false }: { tool: string; compact?: boole
   return <ToolLogo vendor={tool} compact={compact} />;
 }
 
-function BoardCard({ item, index, step, pin, read, turnCount, position }: { item: SharedSeedWork; index: number; step: number; pin: number | undefined; read: boolean; turnCount: number | null; position: { left: number; top: number } }) {
+function BoardCard({ item, index, step, pin, read, turnCount, position, articleRef, proofSource }: { item: SharedSeedWork; index: number; step: number; pin: number | undefined; read: boolean; turnCount: number | null; position: { left: number; top: number }; articleRef?: RefObject<HTMLElement | null> | undefined; proofSource?: boolean | undefined }) {
   return (
-    <article className="lb-board-card" data-arrived={step >= 1} style={{ "--lb-card-index": index, "--lb-card-left": `${position.left}px`, "--lb-card-top": `${position.top}px` } as CSSProperties}>
+    <article ref={articleRef} className={`lb-board-card${proofSource ? " lb-proof-source-card" : ""}`} data-arrived={step >= 1} style={{ "--lb-card-index": index, "--lb-card-left": `${position.left}px`, "--lb-card-top": `${position.top}px` } as CSSProperties}>
       <ToolLogo vendor={toolKey(item)} />
       <strong>{item.title}</strong>
       <small>{keptContentLabel(item, turnCount)}</small>
@@ -142,7 +143,7 @@ function usePresetReplay(step: number, presets: DemoPreset[]) {
   return { phase, preset, readCount, streamed, typed, position };
 }
 
-function ReplayAnswer({ preset, finished = true }: { preset: DemoPreset; finished?: boolean }) {
+function ReplayAnswer({ preset, finished = true, showAudit = true }: { preset: DemoPreset; finished?: boolean; showAudit?: boolean }) {
   return (
     <div className="nb-conversation-message max-w-none flex-row items-start gap-3">
       <LassoLoopMark className="size-7 shrink-0 text-lasso-green" />
@@ -150,14 +151,37 @@ function ReplayAnswer({ preset, finished = true }: { preset: DemoPreset; finishe
         <span className="nb-binder-line font-sans text-[13px] font-semibold text-ink">Lasso</span>
         <AnswerRail state="done">
           <MarkdownMessage content={preset.answer} variant="binder" />
-          {finished && preset.manifest ? <ContextAudit manifest={preset.manifest} readOnly initialOpen /> : null}
+          {showAudit && finished && preset.manifest ? <ContextAudit manifest={preset.manifest} readOnly initialOpen /> : null}
         </AnswerRail>
       </div>
     </div>
   );
 }
 
-function AskReplay({ presets, step, onFinished, clientLabel, engagementTitle }: { presets: DemoPreset[]; step: number; onFinished: (finished: boolean) => void; clientLabel: string; engagementTitle: string }) {
+function proofDate(proof: LandingProof): string {
+  const value = proof.turns.find((turn) => turn.turn_no === 2)?.ts;
+  if (!value) return "";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "" : date.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+}
+
+function ProofCard({ proof, model, onShowSlide, onOpenTurn }: { proof: LandingProof; model: LandingProofModel; onShowSlide: () => void; onOpenTurn: () => void }) {
+  const turn = (number: number) => proof.turns.find((entry) => entry.turn_no === number);
+  const role = (number: number) => turn(number)?.role === "user" ? "you said" : "Claude said";
+  return (
+    <section className="lb-proof-card lb-caption-attention" data-testid="landing-proof-card">
+      <h4>${model.scenarioB.toFixed(1)}M = ${model.savings.toFixed(1)}M savings − ${model.transition.toFixed(1)}M transition</h4>
+      <div className="lb-proof-origin"><p className="lb-micro">WHERE IT CAME FROM</p><ToolLogo vendor={proof.vendor} /><strong>{proof.title}</strong><span>Turn 2 · {proofDate(proof)}</span><ul>{model.inputs.map((input) => <li key={input}>{input}</li>)}</ul></div>
+      <div className="lb-proof-timeline"><p className="lb-micro">WHAT WAS CHECKED AFTER</p>
+        {[3, 4, 5, 6].map((number, index) => <article key={number} style={{ "--lb-proof-row": index } as CSSProperties}><span>Turn {number} · {role(number)}</span>{number === 4 ? <div><p>{turn(number)?.content}</p><div className="lb-proof-bars">{model.lines.map((line) => <span key={line.label}><i style={{ "--lb-proof-bar": `${(line.amount / Math.max(...model.lines.map((entry) => entry.amount))) * 100}%` } as CSSProperties} />{line.label} ${line.amount.toFixed(1)}M</span>)}</div></div> : <p>{turn(number)?.content}</p>}</article>)}
+      </div>
+      <div className="lb-proof-open"><p className="lb-micro">STILL UNCONFIRMED</p><p>{model.unconfirmed}</p></div>
+      <div className="lb-proof-actions"><Button asChild size="sm"><Link to="/demo/conversations" search={{ item: proof.itemId, turn: 4, from: "story" }} onClick={onOpenTurn}>Open the chat at turn 4 to hand-check</Link></Button><Button type="button" size="sm" variant="outline" onClick={onShowSlide}>Show slide 3</Button></div>
+    </section>
+  );
+}
+
+function AskReplay({ presets, step, onFinished, clientLabel, engagementTitle, proof, proofModel, onShowSlide, onOpenTurn }: { presets: DemoPreset[]; step: number; onFinished: (finished: boolean) => void; clientLabel: string; engagementTitle: string; proof: LandingProof | null; proofModel: LandingProofModel | null; onShowSlide: () => void; onOpenTurn: () => void }) {
   const replay = usePresetReplay(step, presets);
   const threadRef = useRef<HTMLDivElement>(null);
   const shownPositions = step === 5 ? [1] : step === 6 ? [1, 2] : [1, 2, 4];
@@ -183,7 +207,8 @@ function AskReplay({ presets, step, onFinished, clientLabel, engagementTitle }: 
           return <div key={position} className="lb-replay-turn">
             {showQuestion ? <div className="lb-replay-question"><span>You</span><p>{preset.question}</p></div> : null}
             {current && replay.phase === "reading" ? <AnswerRail state="working"><ThinkingTrail items={preset.manifest?.items.map((item) => ({ id: item.id, title: item.title })) ?? []} finalPhase="Writing" manifest={liveItems.length > 0 && preset.manifest ? { ...preset.manifest, items: liveItems } : null} /></AnswerRail> : null}
-            {answerText ? <ReplayAnswer preset={{ ...preset, answer: answerText }} finished={!current || replay.phase === "done"} /> : null}
+            {answerText ? <ReplayAnswer preset={{ ...preset, answer: answerText }} finished={!current || replay.phase === "done"} showAudit={position !== 1} /> : null}
+            {position === 1 && proof && proofModel && (!current || replay.phase === "done") ? <><ProofCard proof={proof} model={proofModel} onShowSlide={onShowSlide} onOpenTurn={onOpenTurn} />{preset.manifest ? <ContextAudit manifest={preset.manifest} readOnly initialOpen={false} buttonLabel="Show the full read list" /> : null}</> : null}
           </div>;
         })}
       </div>
@@ -197,9 +222,9 @@ function AskReplay({ presets, step, onFinished, clientLabel, engagementTitle }: 
 
 type LassoBox = { left: number; top: number; width: number; height: number };
 
-function DeckSlide({ index, clientName, numberRef }: { index: number; clientName: string; numberRef: RefObject<HTMLSpanElement | null> }) {
+function DeckSlide({ index, clientName, numberRef, proof }: { index: number; clientName: string; numberRef: RefObject<HTMLSpanElement | null>; proof: LandingProofModel | null }) {
   if (index === 0) return <section className="lb-deck-slide lb-slide-cover"><small>1</small><div className="lb-slide-cover-copy"><b>FY27 growth partnerships</b><span>{clientName}</span></div><svg viewBox="0 0 100 64" aria-hidden="true"><path d="M8 50 35 12l18 29 17-22 22 31Z" /><circle cx="69" cy="17" r="7" /></svg></section>;
-  if (index === 1) return <section className="lb-deck-slide lb-slide-scenarios"><small>2</small><b>Three scenarios</b><div>{["A", "B", "C"].map((label) => <span key={label} data-picked={label === "B"}><i />{label}</span>)}</div></section>;
+  if (index === 1) { const values = proof ? [proof.scenarioA, proof.scenarioB, proof.scenarioC] : [0.3, 1.4, 1.2]; const max = Math.max(...values); return <section className="lb-deck-slide lb-slide-scenarios"><small>2</small><b>Three scenarios</b><div>{["A", "B", "C"].map((label, itemIndex) => <span key={label} data-picked={label === "B"}><i style={{ "--lb-scenario-height": `${((values[itemIndex] ?? 0) / max) * 100}%` } as CSSProperties} />{label} ${values[itemIndex]?.toFixed(1)}M</span>)}</div></section>; }
   if (index === 2) return <section className="lb-deck-slide lb-slide-number"><small>3</small><b>Year-two net benefit</b><span ref={numberRef} className="lb-number" data-testid="landing-board-number">$1.4M</span><div className="lb-waterfall" aria-label="$2.1M savings minus $0.7M costs equals $1.4M year-two net benefit"><span className="lb-waterfall-savings"><i data-units="2.1" />$2.1M<br />savings</span><span className="lb-waterfall-costs"><i data-units="0.7" />-$0.7M<br />costs</span><span className="lb-waterfall-net"><i data-units="1.4" />$1.4M<br />net</span></div></section>;
   if (index === 3) return <section className="lb-deck-slide lb-slide-governance"><small>4</small><b>Board structure</b><div><i /><i /><i /></div><span>Chair: two-term limit</span></section>;
   if (index === 4) return <section className="lb-deck-slide lb-slide-alliances"><small>5</small><b>Comparable alliances</b><div>{[1, 2, 3, 4, 5].map((item) => <i key={item} />)}</div></section>;
@@ -221,11 +246,12 @@ function ExactTurn({ board, preset }: { board: SharedBoardDto; preset: DemoPrese
   );
 }
 
-function StoryBoard({ board, presets, step, attentionStep, attentionNonce, clientLabel, engagementTitle }: { board: SharedBoardDto; presets: DemoPreset[]; step: number; attentionStep: number; attentionNonce: number; clientLabel: string; engagementTitle: string }) {
+function StoryBoard({ board, presets, proof, step, attentionStep, attentionNonce, clientLabel, engagementTitle, onShowSlide, onOpenTurn }: { board: SharedBoardDto; presets: DemoPreset[]; proof: LandingProof | null; step: number; attentionStep: number; attentionNonce: number; clientLabel: string; engagementTitle: string; onShowSlide: () => void; onOpenTurn: () => void }) {
   const [replayFinished, setReplayFinished] = useState(false);
   const [lassoBox, setLassoBox] = useState<LassoBox | null>(null);
   const layerRef = useRef<HTMLDivElement>(null);
   const numberRef = useRef<HTMLSpanElement>(null);
+  const sourceRef = useRef<HTMLElement>(null);
   const onReplayFinished = useCallback((finished: boolean) => setReplayFinished(finished), []);
   useEffect(() => {
     setReplayFinished(false);
@@ -236,6 +262,7 @@ function StoryBoard({ board, presets, step, attentionStep, attentionNonce, clien
   const foundNumberSlide = slides.findIndex((slide) => /\$1\.4m/i.test(slide));
   const numberSlideIndex = foundNumberSlide >= 0 ? foundNumberSlide : 2;
   const first = presets.find((preset) => preset.position === 1);
+  const proofModel = proof ? parseLandingProof(proof) : null;
   const second = presets.find((preset) => preset.position === 2);
   const trailNumbers = new Map(first?.manifest?.items.map((item, index) => [item.id, index + 1]) ?? []);
   const citedIds = new Set(first?.turnRefs.map((ref) => ref.work_item_id) ?? []);
@@ -249,6 +276,7 @@ function StoryBoard({ board, presets, step, attentionStep, attentionNonce, clien
     taskSlots.set(visibleTasks[taskIndex]?.id ?? "", slot + 1);
     return { left: taskIndex === 0 ? 188 : 500, top: 176 + slot * 140 };
   });
+  const [proofLine, setProofLine] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(null);
   const measureLasso = useCallback(() => {
     const layer = layerRef.current;
     const number = numberRef.current;
@@ -265,6 +293,11 @@ function StoryBoard({ board, presets, step, attentionStep, attentionNonce, clien
       width: numberRect.width / scale + padX * 2,
       height: numberRect.height / scale + padY * 2,
     });
+    const source = sourceRef.current;
+    if (source) {
+      const sourceRect = source.getBoundingClientRect();
+      setProofLine({ x1: (numberRect.left + numberRect.width / 2 - layerRect.left) / scale, y1: (numberRect.top + numberRect.height / 2 - layerRect.top) / scale, x2: (sourceRect.left + sourceRect.width / 2 - layerRect.left) / scale, y2: (sourceRect.top + sourceRect.height / 2 - layerRect.top) / scale });
+    }
   }, []);
   useLayoutEffect(() => {
     const layer = layerRef.current;
@@ -291,21 +324,23 @@ function StoryBoard({ board, presets, step, attentionStep, attentionNonce, clien
           {visibleTasks.map((task, index) => <section key={task.id} style={{ "--lb-frame-index": index } as CSSProperties}><h3>{task.name}</h3><p>{task.detail}</p></section>)}
         </div>
         <div className="lb-cards">
-          {items.map((item, index) => <BoardCard key={item.id} item={item} index={index} step={step} pin={step >= 5 && replayFinished && citedIds.has(item.id) ? trailNumbers.get(item.id) : undefined} read={step >= 5 && replayFinished && readIds.has(item.id)} turnCount={item.type === "ai_thread" ? board.turns[item.id]?.length ?? null : null} position={cardPositions[index] ?? { left: 188, top: 438 }} />)}
+          {items.map((item, index) => <BoardCard key={item.id} item={item} index={index} step={step} pin={step >= 5 && replayFinished && citedIds.has(item.id) ? trailNumbers.get(item.id) : undefined} read={step >= 5 && replayFinished && readIds.has(item.id)} turnCount={item.type === "ai_thread" ? board.turns[item.id]?.length ?? null : null} position={cardPositions[index] ?? { left: 188, top: 438 }} articleRef={item.id === proof?.itemId ? sourceRef : undefined} proofSource={item.id === proof?.itemId && step >= 5 && step <= 7 && replayFinished} />)}
         </div>
         <svg className="lb-connectors" viewBox="0 0 1000 620" preserveAspectRatio="none" aria-hidden="true">
           <path d="M260 230 C470 220 570 280 735 350" /><path d="M260 390 C470 390 590 380 735 350" /><path d="M540 485 C620 470 680 410 735 350" />
         </svg>
+        {proofLine && step >= 5 && step <= 7 && replayFinished ? <svg className="lb-proof-connector" viewBox="0 0 1120 680" aria-hidden="true"><path d={`M ${proofLine.x1} ${proofLine.y1} C ${proofLine.x1 - 80} ${proofLine.y1}, ${proofLine.x2 + 90} ${proofLine.y2}, ${proofLine.x2} ${proofLine.y2}`} /></svg> : null}
         <article key={`deck-${attentionNonce}`} className={`lb-deck${pulse(3)}`}>
-          <header><ToolLogo vendor="powerpoint" compact /><strong>{deckItem?.title ?? "FY27 board deck v3"}</strong></header>
-          <div>{slides.map((slide, index) => <DeckSlide key={`${slide}-${index}`} index={index} clientName={clientLabel} numberRef={numberRef} />)}</div>
+          <header><ToolLogo vendor="powerpoint" compact /><strong>{(deckItem?.title ?? "FY27 board deck v3").replace(/\s*\(slide notes\)\s*/i, "").trim()}</strong></header>
+          <div>{slides.map((slide, index) => <DeckSlide key={`${slide}-${index}`} index={index} clientName={clientLabel} numberRef={numberRef} proof={proofModel} />)}</div>
           {step >= 5 && replayFinished && deckItem && citedIds.has(deckItem.id) ? <span className="lb-pin" aria-label={`Source ${trailNumbers.get(deckItem.id)}`}>{trailNumbers.get(deckItem.id)}</span> : step >= 5 && replayFinished && deckItem && readIds.has(deckItem.id) ? <span className="lb-read-dot" aria-label="Read for this response" /> : null}
         </article>
         {lassoBox ? <span key={`lasso-${attentionNonce}`} className={`lb-slide-lasso${pulse(4)}`} data-testid="landing-board-lasso" style={{ left: lassoBox.left, top: lassoBox.top, width: lassoBox.width, height: lassoBox.height }} aria-hidden="true" /> : null}
+        {lassoBox ? <svg className="lb-circle-link" viewBox="0 0 1120 680" aria-hidden="true"><line x1={lassoBox.left + lassoBox.width / 2} y1={lassoBox.top + lassoBox.height / 2} x2="932" y2="482" /></svg> : null}
         <div className="lb-circle-question"><p>Where did the $1.4M on slide 3 come from?</p></div>
         {step === 7 && replayFinished ? <div key={`notes-${attentionNonce}`} className={`lb-open-notes${pulse(7)}`}><p>Confirm the vendor extension assumption.</p><p>Confirm approval by Oct 1.</p></div> : null}
       </div>
-      {step >= 5 && step <= 7 ? <div key={`ask-${attentionNonce}`} className={pulse(5)}><AskReplay presets={presets} step={step} onFinished={onReplayFinished} clientLabel={clientLabel} engagementTitle={engagementTitle} /></div> : null}
+      {step >= 5 && step <= 7 ? <div key={`ask-${attentionNonce}`} className={pulse(5)}><AskReplay presets={presets} step={step} onFinished={onReplayFinished} clientLabel={clientLabel} engagementTitle={engagementTitle} proof={proof} proofModel={proofModel} onShowSlide={onShowSlide} onOpenTurn={onOpenTurn} /></div> : null}
       {step === 6 && replayFinished ? <div key={`turn-${attentionNonce}`} className={pulse(6)}><ExactTurn board={board} preset={second} /></div> : null}
       {step === 8 ? <div key={`share-${attentionNonce}`} className={`lb-share-dialog${pulse(8)}`}><p className="lb-micro">READ ONLY</p><h3>Share this board</h3><p>They open the deliverable, source cards, and the conversations behind them.</p><p>They do not open private drafts or anything outside this board.</p><strong>Closes in 48 hours</strong><small>In the demo this is shown, not issued.</small></div> : null}
     </div>
@@ -459,7 +494,7 @@ export function LandingBoard() {
       <LandingBoardHeader active={LANDING_BOARD_STEPS[active]?.key ?? "problem"} onJump={jump} onPilot={() => pilot("header")} />
       <main className="lb-story">
         <div className="lb-sticky-stage">
-          {result?.status === "open" && "board" in result ? <StoryBoard board={result.board} presets={result.presets} step={active} attentionStep={settledStep} attentionNonce={attentionNonce} clientLabel={result.engagement.clientLabel ?? ""} engagementTitle={result.engagement.title} /> : <div className="lb-stage-window lb-loading">{query.isPending ? "Opening the demo board." : "The demo board is not available right now."}</div>}
+          {result?.status === "open" && "board" in result ? <StoryBoard board={result.board} presets={result.presets} proof={result.proof} step={active} attentionStep={settledStep} attentionNonce={attentionNonce} clientLabel={result.engagement.clientLabel ?? ""} engagementTitle={result.engagement.title} onShowSlide={() => { event(viewId.current, "landing.proof_link_opened", { step: "6", target: "slide" }); jump("circle"); }} onOpenTurn={() => event(viewId.current, "landing.proof_link_opened", { step: "6", target: "turn" })} /> : <div className="lb-stage-window lb-loading">{query.isPending ? "Opening the demo board." : "The demo board is not available right now."}</div>}
           {settledStep > 0 ? <article key={`${settledStep}-${attentionNonce}`} className="lb-caption lb-caption-attention" aria-live="polite"><div className="lb-caption-text"><span>{String(settledStep + 1).padStart(2, "0")} · {LANDING_BOARD_STEPS[settledStep]?.label}</span><h2>{LANDING_BOARD_STEPS[settledStep]?.headline}</h2><p>{LANDING_BOARD_STEPS[settledStep]?.line}</p></div>{settledStep === 9 ? <div><Button asChild><Link to="/demo/$code" params={{ code: "YSM-01" }}>Open the board yourself</Link></Button><Button asChild variant="outline"><a href="#pilot" onClick={() => pilot("try_it")}>Book a pilot</a></Button></div> : null}</article> : null}
         </div>
         <div className="lb-scroll-sections">

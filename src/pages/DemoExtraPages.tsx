@@ -4,7 +4,7 @@
  */
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useLayoutEffect, useMemo, useState, type ReactNode } from "react";
 
@@ -17,6 +17,7 @@ import { noteDemoCardOpened, noteDemoFilterChanged, noteDemoOpened } from "@/lib
 import type { DemoConversationItem } from "@/lib/demo-board.server";
 import { effectiveWorkDate } from "@/lib/work-types";
 import { vendorFromSource } from "@/lib/work-taxonomy";
+import { Route as DemoConversationsRoute } from "@/routes/demo.conversations";
 
 export const DEMO_TOOLS = [
   { key: "all", label: "All" },
@@ -95,6 +96,8 @@ export function DemoConversationsPage() {
   const open = useServerFn(openDemoConversationsFn);
   const query = useQuery({ queryKey: ["demo-conversations"], queryFn: () => open(), staleTime: 60_000 });
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const search = DemoConversationsRoute.useSearch();
   const [tool, setTool] = useState<DemoTool>("all");
   const [focus, setFocus] = useState<DemoConversationItem | null>(null);
 
@@ -105,6 +108,14 @@ export function DemoConversationsPage() {
     for (const [id, turns] of Object.entries(query.data.turns)) queryClient.setQueryData(["turns", id], turns);
   }, [query.data, queryClient]);
 
+  useEffect(() => {
+    if (!query.data || focus || !search.turn) return;
+    const requested = search.item
+      ? query.data.items.find((entry) => entry.item.id === search.item)
+      : query.data.items.find((entry) => entry.item.title === "Partnership scenarios: year-two net benefit");
+    if (requested) setFocus(requested);
+  }, [focus, query.data, search.item, search.turn]);
+
   const items = query.data?.items ?? [];
   const shown = useMemo(() => items.filter((e) => tool === "all" || demoToolOf(e) === tool), [items, tool]);
   const lanes = useMemo(() => monthLanes(shown), [shown]);
@@ -112,6 +123,15 @@ export function DemoConversationsPage() {
   function openItem(entry: DemoConversationItem) {
     setFocus(entry);
     noteDemoCardOpened(entry.code, entry.item.type === "document" ? "document" : "ai_thread");
+  }
+
+  function closeReader() {
+    if (search.from === "story") {
+      void navigate({ to: "/landing-board", hash: "lb-ask" });
+      return;
+    }
+    setFocus(null);
+    void navigate({ to: "/demo/conversations", search: {}, replace: true });
   }
 
   const node: LabNode | null = focus
@@ -170,11 +190,14 @@ export function DemoConversationsPage() {
             node={node}
             item={focus.item}
             readOnly
-            closeLabel="Back to conversations"
+            closeLabel={search.from === "story" ? "Back to the story" : "Back to conversations"}
+            focusTurnNo={search.turn}
+            highlightTurnRange={search.from === "story" ? [2, 6] : undefined}
+            focusedTurnTestId={search.turn ? `demo-proof-turn-${search.turn}` : undefined}
             filePreview={query.data?.filePreviews[focus.item.id]}
             onSummarize={() => undefined}
             onBranch={() => undefined}
-            onClose={() => setFocus(null)}
+            onClose={closeReader}
           />
         </div>
       ) : null}

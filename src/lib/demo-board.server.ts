@@ -2,7 +2,8 @@ import { buildSharedBoardModel } from "@/components/canvas-lab/SharedBoardView";
 
 import type { SharedBoardDto } from "./board-share-shared";
 import { publicDemoPresets, type DemoPreset, type DemoPresetRow } from "./demo-presets-shared";
-import { publicSafeWork } from "./public-work-allowlist";
+import type { LandingProof } from "./landing-proof-shared";
+import { publicSafeTurnExcerpts, publicSafeWork } from "./public-work-allowlist";
 import { readBoard } from "./board-share-open.server";
 
 type AdminDb = Awaited<typeof import("@/integrations/supabase/client.server")>["supabaseAdmin"];
@@ -29,6 +30,7 @@ export type DemoBoardResult =
       engagement: { code: string; title: string; clientLabel: string | null };
       /** Unit 2: saved Ask Lasso answers, answered rows only. */
       presets: DemoPreset[];
+      proof: LandingProof | null;
     }
   | { status: "not_found" };
 
@@ -86,7 +88,14 @@ export async function openDemoBoard(code: string): Promise<DemoBoardResult> {
   const board = await demoBoard(supabaseAdmin, orgId, row.id).catch(() => null);
   if (!board) return { status: "not_found" };
   const presets = await loadDemoPresets(supabaseAdmin, orgId, row.id, board).catch(() => []);
-  return { status: "open", board, engagement: { code: row.code, title: row.title, clientLabel: row.client_label }, presets };
+  const proofItem = board.seed.work.find((item) => item.type === "ai_thread" && item.title === "Partnership scenarios: year-two net benefit");
+  const proof: LandingProof | null = proofItem ? {
+    itemId: proofItem.id,
+    title: proofItem.title,
+    vendor: proofItem.source_vendor ?? proofItem.source_meta?.vendor ?? proofItem.source,
+    turns: publicSafeTurnExcerpts(board.turns[proofItem.id] ?? [], 2, 6),
+  } : null;
+  return { status: "open", board, engagement: { code: row.code, title: row.title, clientLabel: row.client_label }, presets, proof };
 }
 
 function demoSafeBoard(dto: SharedBoardDto): SharedBoardDto {

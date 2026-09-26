@@ -1,18 +1,16 @@
-# Unit L3 plan
+# Unit L4 plan
 
 ## Scope and data impact
-- Change only `/landing-board` presentation and replay behavior.
-- Keep all existing event names, dimensions, dwell timing, snap behavior, and consent handling unchanged.
-- No database work and no publishing.
+- Change `/landing-board` and the existing public demo conversations view only.
+- Add `landing.proof_link_opened` with closed dimensions `step` and `target`; no existing event changes.
+- Expose only demo-org turn excerpts already passed through the public-safe demo path; no database or consent changes.
 
 ## Build
-- Route all board tool identities through one Simple Icons backed map, with a PowerPoint text fallback and one-line PNG overrides.
-- Replace the six generic tiles with compact, truthful 16:9 client-deck compositions.
-- Measure the visible `$1.4M` callout against the transformed board layer and position the ellipse from unscaled coordinates.
-- Keep Ask replay non-scrollable through story steps, pin streamed content to its bottom, and restore scrolling only for the handoff.
-- Key caption and target attention motion to settled steps, with reduced-motion equivalents.
+- Add a compact provenance proof card to the saved Ask replay, sourced from the demo conversation turns and preset.
+- Add board-to-source emphasis, honest scenario bars, deck-title trim, and corrected phone framing.
+- Deep-link the existing demo conversation reader with `?item=<public work id>&turn=4&from=story`, highlight turns 2 through 6, and provide a return link to `/landing-board#lb-ask`.
+- Extend event and payload allowlists without renaming or repurposing existing fields.
 
 ## Verify
-- Extend focused source tests for logo coverage, caption settling, reduced motion, and Ask overflow behavior.
-- Check steps 3, 5, 6, and 8 at desktop and phone sizes.
-- Measure lasso and number centers at 1372x732, 1440x900, and 390x844.
+- Add focused tests for source-derived figures, deep-link behavior, safe excerpts, wording, connector anchors, and phone fit.
+- Check the proof scene and deep-linked reader on desktop and phone.
