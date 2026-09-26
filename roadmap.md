@@ -146,6 +146,7 @@
 - [ ] Play the three product clips automatically, one at a time, with desktop sequencing and phone viewport selection.
 - [ ] Optimize every landing section for phone widths and verify desktop, phone, and narrow-phone layouts.
 - [x] Restore the three existing product clips and posters on `/landing-board` with hover and tap playback.
+- [x] Unit S4: Replace the landing step menu with a fixed progress rail and restyle desktop and phone captions as paper cards.
 
 - [x] Unit 3: build the seven-step /demo margin-note path, including step 7 Done completion
 

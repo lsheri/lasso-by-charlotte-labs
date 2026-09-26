@@ -431,8 +431,9 @@ function PhoneCaption({ index }: { index: number }) {
   const item = LANDING_BOARD_STEPS[index];
   if (!item) return null;
   return <article className="lb-phone-caption">
-    <span>{String(index + 1).padStart(2, "0")} · {item.label}</span>
-    <h2>{item.headline}</h2>
+    <span className="lb-caption-progress" aria-label={`${index + 1} of ${LANDING_BOARD_STEPS.length}`} style={{ "--lb-progress-to": `${(index + 1) * 10}%` } as CSSProperties} />
+    <div className="lb-caption-heading"><span className="lb-step-ring"><svg viewBox="0 0 34 34" aria-hidden="true"><ellipse cx="17" cy="17" rx="14" ry="12.5" pathLength="1" /></svg><span>{index + 1}</span></span><span>{item.label}</span></div>
+    <h2><CaptionWords text={item.headline} /></h2>
     <p>{item.line}</p>
   </article>;
 }
@@ -693,20 +694,30 @@ function StoryBoard({ board, presets, proof, step, attentionStep, attentionNonce
   );
 }
 
-function LandingBoardHeader({ active, phoneStop, onJump, onPilot }: { active: StepKey; phoneStop: number; onJump: (key: StepKey) => void; onPilot: () => void }) {
+function LandingBoardHeader({ onPilot }: { onPilot: () => void }) {
   return (
     <header className="lb-header">
       <div className="lb-header-main">
         <Link to="/" className="lb-brand"><LassoLoopMark /> <span>LASSO</span></Link>
-        <span className="lb-phone-counter" aria-live="polite">{phoneStop + 1} / 11</span>
-        <nav className="lb-step-nav" aria-label="Story sections">
-          {LANDING_BOARD_STEPS.map((item) => <Button key={item.key} size="sm" variant="ghost" aria-current={active === item.key ? "step" : undefined} onClick={() => onJump(item.key)}>{item.label}</Button>)}
+        <nav className="lb-header-nav" aria-label="Primary navigation">
+          <a href="#lb-canvas">How it works</a>
+          <Link to="/trust">Trust &amp; data</Link>
         </nav>
-        <Button asChild size="sm" variant="outline"><Link to="/auth">Sign in</Link></Button>
-        <Button asChild size="sm"><a href="#pilot" onClick={onPilot}>Book a pilot</a></Button>
+        <div className="lb-header-actions"><Button asChild size="sm" variant="outline"><Link to="/auth">Sign in</Link></Button><Button asChild size="sm"><a href="#pilot" onClick={onPilot}>Book a pilot</a></Button></div>
       </div>
     </header>
   );
+}
+
+function StoryProgressRail({ active, phoneStop, visible, onJump }: { active: number; phoneStop: number; visible: boolean; onJump: (key: StepKey) => void }) {
+  const current = typeof window !== "undefined" && window.matchMedia("(max-width: 639px)").matches ? Math.max(0, phoneStop - 1) : active;
+  const item = LANDING_BOARD_STEPS[current] ?? LANDING_BOARD_STEPS[0];
+  return <nav className="lb-progress-rail" data-visible={visible ? "true" : "false"} data-step={current + 1} aria-label="Story progress">
+    <div className="lb-progress-dots">
+      {LANDING_BOARD_STEPS.map((step, index) => <Button key={step.key} type="button" variant="ghost" size="icon" className="lb-progress-dot" data-current={index === current ? "true" : undefined} data-visited={index < current ? "true" : undefined} aria-label={step.label} aria-current={index === current ? "step" : undefined} title={step.label} onClick={() => onJump(step.key)}><span aria-hidden="true" /></Button>)}
+    </div>
+    <span className="lb-progress-status" aria-live="polite">{item.label} · {current + 1} / {LANDING_BOARD_STEPS.length}</span>
+  </nav>;
 }
 
 function CaptionWords({ text }: { text: string }) {
@@ -727,10 +738,9 @@ function StoryCaption({ step, nonce, onPilot }: { step: number; nonce: number; o
   const renderCaption = (index: number, phase: "incoming" | "outgoing") => {
     const item = LANDING_BOARD_STEPS[index];
     if (!item) return null;
-    const words = item.headline.split(/\s+/).length;
-    return <article key={`${phase}-${index}-${nonce}`} className="lb-caption" data-phase={phase} data-step={index + 1} aria-live={phase === "incoming" ? "polite" : undefined} aria-hidden={phase === "outgoing" ? "true" : undefined} style={{ "--lb-progress-from": `${Math.max(0, index) * 10}%`, "--lb-progress-to": `${(index + 1) * 10}%`, "--lb-underline-delay": `${words * 40 + 80}ms` } as CSSProperties}>
+    return <article key={`${phase}-${index}-${nonce}`} className="lb-caption" data-phase={phase} data-step={index + 1} aria-live={phase === "incoming" ? "polite" : undefined} aria-hidden={phase === "outgoing" ? "true" : undefined} style={{ "--lb-progress-from": `${Math.max(0, index) * 10}%`, "--lb-progress-to": `${(index + 1) * 10}%` } as CSSProperties}>
       <span className="lb-caption-progress" aria-label={`${index + 1} of ${LANDING_BOARD_STEPS.length}`} />
-      <div className="lb-caption-text"><span>{String(index + 1).padStart(2, "0")} · {item.label}</span><h2><CaptionWords text={item.headline} /></h2><p>{item.line}</p></div>
+      <div className="lb-caption-text"><div className="lb-caption-heading"><span className="lb-step-ring"><svg viewBox="0 0 34 34" aria-hidden="true"><ellipse cx="17" cy="17" rx="14" ry="12.5" pathLength="1" /></svg><span>{index + 1}</span></span><span>{item.label}</span></div><h2><CaptionWords text={item.headline} /></h2><p>{item.line}</p></div>
       {index === 9 ? <div><Button asChild><Link to="/demo">Open the board yourself</Link></Button><Button asChild variant="outline"><a href="#pilot" onClick={onPilot}>Book a pilot</a></Button></div> : null}
     </article>;
   };
@@ -837,6 +847,7 @@ export function LandingBoard() {
   const [settledStep, setSettledStep] = useState(0);
   const [attentionNonce, setAttentionNonce] = useState(0);
   const [phoneStop, setPhoneStop] = useState(0);
+  const [railVisible, setRailVisible] = useState(false);
   const activeRef = useRef(0);
   const transitioning = useRef(false);
   const queued = useRef<{ index: number; input: StoryInput } | null>(null);
@@ -847,6 +858,25 @@ export function LandingBoard() {
   const playedCards = useRef(new Set<UseCaseKey>());
 
   useEffect(() => { event(viewId.current, "landing.viewed", { variant: "b2b", surface: "landing-board", input_mode: window.matchMedia("(max-width: 639px)").matches ? "scroll" : "scroll" }); }, []);
+  useEffect(() => {
+    let frame = 0;
+    const readRail = () => {
+      frame = 0;
+      if (window.matchMedia("(max-width: 639px)").matches) {
+        setRailVisible(phoneStop >= 2 && phoneStop <= 10);
+        return;
+      }
+      const story = document.querySelector<HTMLElement>(".lb-how-it-works");
+      if (!story) return;
+      const box = story.getBoundingClientRect();
+      setRailVisible(box.top <= 118 && box.bottom > 118);
+    };
+    const onScroll = () => { if (!frame) frame = window.requestAnimationFrame(readRail); };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    readRail();
+    return () => { window.removeEventListener("scroll", onScroll); window.removeEventListener("resize", onScroll); if (frame) window.cancelAnimationFrame(frame); };
+  }, [phoneStop]);
   const settle = useCallback((index: number, inputMode: StoryInput) => {
     if (settleTimer.current !== null) window.clearTimeout(settleTimer.current);
     settleTimer.current = window.setTimeout(() => {
@@ -958,7 +988,8 @@ export function LandingBoard() {
   const result = query.data;
   return (
     <div className="landing-board-page">
-      <LandingBoardHeader active={LANDING_BOARD_STEPS[active]?.key ?? "problem"} phoneStop={phoneStop} onJump={jump} onPilot={() => pilot("header")} />
+      <LandingBoardHeader onPilot={() => pilot("header")} />
+      <StoryProgressRail active={active} phoneStop={phoneStop} visible={railVisible} onJump={jump} />
       <main className="lb-story">
         <section className="lb-desktop-hero" aria-labelledby="lb-home-title"><div className="lb-hero-copy"><LassoThinkingMark kind="signature" size={150} /><div><h1 id="lb-home-title">Your firm bought AI. <LandingParticlePhrase text="The human judgment, process, and thinking" /> in your team's work went invisible.</h1><h2>Lasso is the reasoning and judgment layer for AI-assisted consulting. It connects the work across tools to the client deliverable and keeps the decisions your team made, so they can show where a claim came from and why it stayed.</h2><div><Button onClick={jumpToUseCases}>Watch it work</Button><Button asChild variant="outline"><Link to="/demo" onClick={() => event(viewId.current, "landing.see_it_work_clicked", { location: "hero_workboard" })}>View a Workboard</Link></Button><Button asChild variant="outline"><a href="#pilot" onClick={() => pilot("hero")}>Book a pilot</a></Button></div></div></div>
           <div className="lb-scroll-cue" data-visible={active === 0 ? "true" : "false"} data-testid="landing-scroll-cue" aria-hidden={active !== 0}>
