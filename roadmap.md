@@ -219,4 +219,4 @@
 ### Unit S1.1 demo readability
 - [x] Raise the Ask rail presets, subline, composer, answers, proof rows, and mono labels to buyer-readable sizes.
 - [x] Use the compact demo sidebar below 1440px so fitted board card text remains readable.
-- [ ] Verify 20 visible rail and board text nodes at 1372x732.
+- [x] Verify 20 visible rail and board text nodes at 1372x732.
