@@ -1,22 +1,32 @@
-# Unit L4.1 proof polish
+# Landing hero spacing fix
+
+Two spacing changes on the desktop landing hero, per the annotated screenshots.
+
+## Changes (src/styles.css only, all inside `@media (min-width: 640px)`)
+
+1. **2 inches between header and title**
+   - `.lb-desktop-hero .lb-hero-copy` currently sits `top: 12px` below the header (line 6110).
+   - Change to `top: 192px` (2 inches) so "Your firm bought AI." starts well clear of the header.
+
+2. **1 inch between the CTA buttons and the board animation**
+   - `.lb-hero-assemble` currently has `margin: 20px auto 0` (line 6117).
+   - Change top margin to `96px` (1 inch).
+
+## Constraints honored
+
+- Desktop only: both rules already live inside `@media (min-width: 640px)`; phone view (`.lb-phone-hero`, PhoneStory) untouched.
+- No changes to the h1, LandingParticlePhrase, subline, buttons, or any component file. CSS only, no shared token/font/component edits.
+
+## Risk to flag
+
+The hero is `height: calc(100vh - header)` with `overflow: hidden`. Pushing the copy down 192px plus 96px before the board adds ~268px of vertical space. At your viewport (1587x1090) the hero is ~1026px tall, so the board and caption should still fit. On shorter screens (e.g. 1372x732, hero ~668px) the board animation and caption will be pushed partly or fully below the fold and clipped. I will verify at 1587x1090, 1372x732 and 390x844 and report what is visible at each size; if the board is fully clipped at short heights I will report it rather than shrink anything.
+
+## Verification
+
+- Playwright screenshots at 1587x1090, 1372x732 and 390x844 (phone must be unchanged).
+- Confirm computed `top` = 192px on the copy block and `margin-top` = 96px on the assemble plane.
+- Build check via /tmp/observability/build-errors.log.
 
 ## Data impact
-- Presentation-only changes to the existing proof card, board framing, and public conversation reader.
-- No user action, flow, event name, payload, or dimension changes. Existing `landing.proof_link_opened { step, target }` coverage remains unchanged.
-- No consent or database work.
 
-## Current controls and states
-- Proof card controls: four collapsed turn rows, open turn 4, show slide 3.
-- Reader control: Back to the story.
-- Existing Ask replay states: typing, reading, streaming, done; loading and unavailable board states remain unchanged.
-- Existing telemetry calls remain identical: `landing.viewed`, `landing.story_section_viewed`, `landing.section_jumped`, `landing.proof_link_opened`, `landing.pilot_cta_clicked`, `landing.pilot_requested`, and `landing.usecase_played` with their current payloads.
-
-## Changes
-- Recompose the proof card into a compact fixed-height presentation with a large `$1.4M`, concise source line, four expandable turn rows, proportional 2.1-total bar, corrected unconfirmed sentence, and unchanged actions.
-- Keep the proof card top fixed beneath the Ask panel header after it appears, instead of scrolling the thread to its bottom.
-- Reframe step 6 so the source card is fully visible and terminate the connector at its nearest edge. Restrict the question connector to step 5.
-- Restyle deep-linked turns 2 through 6 with a soft green tint. Give turn 4 a 3px left bar, a start label, and a 96px scroll offset.
-- Add focused tests for bar proportions, card viewport position, connector step isolation, and capitalization. Verify at 1372×732 and 1512×807.
-
-## After-change control check
-- Re-list the controls, render states, and telemetry calls to confirm no existing behavior was removed or renamed.
+None. Pure spacing change: no new user action, surface or flow; no telemetry events added or changed; nothing consent-related; no database work.
