@@ -3,6 +3,7 @@
 - [x] M1 landing: remove the landing morphing mark and story progress rail, then repair phone clearance, containment, offsets, and the one-play hero sequence.
 - [x] M2 landing: reflow phone cards, use accessible icon-only tool badges, remove text scaling, and close excess story gaps.
 - [x] M3 landing: remove the scroll cue card while preserving focus, story order, controls, and events.
+- [x] M4 landing: replace the phone hero coordinate layout with one still, clear the fixed header, and remove the decorative phone card highlight.
 - [x] S5 app work: add exact-turn chips to Ask answers, remove link disclaimers from the prompt, and replace story labels with approved plain-language copy.
 
 # Roadmap
