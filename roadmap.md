@@ -208,4 +208,4 @@
 ### Unit P2.1 framing polish
 - [x] Fit the finished board to the available canvas on load and after every reset, capped at 100%.
 - [x] Remove the deck's slide-notes suffix, stack narrow proof actions, and clear the hint below the toolbar.
-- [ ] Verify zoom, proof labels, and deck title at 1372x732 and 1512x807.
+- [x] Verify zoom, proof labels, and deck title at 1372x732 and 1512x807.

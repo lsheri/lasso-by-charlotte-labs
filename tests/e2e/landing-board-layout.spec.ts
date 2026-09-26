@@ -60,6 +60,9 @@ for (const viewport of desktopSizes) {
     }
     await expect(page.locator('[data-testid^="lab-card-demo:"]').filter({ hasText: "slide notes" })).toHaveCount(0);
     await expect(page.getByText("(slide notes)", { exact: false })).toHaveCount(0);
+    await page.getByRole("button", { name: "Zoom out" }).click();
+    await page.getByRole("button", { name: "Reset", exact: true }).click();
+    await expect.poll(async () => Number((await zoomText.textContent())?.replace("%", "") ?? 0)).toBeGreaterThanOrEqual(80);
     await context.close();
   });
 }
