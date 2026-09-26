@@ -99,11 +99,6 @@ test("story captions and visible text stay readable across settled desktop steps
     reducedMotion: "reduce",
   });
   const page = await context.newPage();
-  const telemetryBodies: string[] = [];
-  page.on("request", (request) => {
-    const body = request.postData();
-    if (body?.includes("landing.usecase_played")) telemetryBodies.push(body);
-  });
   await page.goto("/", { waitUntil: "networkidle" });
   for (const name of [
     "One canvas",
@@ -275,6 +270,11 @@ test("story zones always resolve to one matching visible step", async ({ browser
     reducedMotion: "reduce",
   });
   const page = await context.newPage();
+  const telemetryBodies: string[] = [];
+  page.on("request", (request) => {
+    const body = request.postData();
+    if (body?.includes("landing.usecase_played")) telemetryBodies.push(body);
+  });
   await page.goto("/", { waitUntil: "networkidle" });
   const pageHeight = await page.evaluate(() => {
     const lastZone = document.querySelector<HTMLElement>('[data-lb-step="9"]');
