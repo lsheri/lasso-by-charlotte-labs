@@ -39,5 +39,5 @@ describe("landing headline particle phrase", () => {
     const reduced = styles.slice(styles.indexOf("landing-particle-word-text { opacity: 1 !important"));
     expect(reduced).toContain("animation: none");
     expect(reduced).toContain("color: var(--lb-neon-orange)");
-ed  });
+  });
 });

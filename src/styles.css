@@ -217,6 +217,8 @@
   --nb-lasso-green-wash: #98f9b9;
   --lb-neon-turquoise: #19f5e1;
   --lb-neon-glow: rgba(25, 245, 225, .55);
+  --lb-neon-orange: #ff5f1f;
+  --lb-neon-orange-glow: rgba(255, 95, 31, .55);
   /* Granola's own mark: dark spiral on its green square. */
   --brand-granola: #7cb342;
   --brand-granola-ink: #111111;
