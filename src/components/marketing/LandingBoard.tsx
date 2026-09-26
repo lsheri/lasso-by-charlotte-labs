@@ -79,7 +79,7 @@ export const LANDING_BOARD_STEPS = [
   {
     key: "the-turn",
     label: "\n",
-    headline: "Open individuals Ai conversations to find lost information",
+    headline: "Open individual AI conversations to find lost information or verify facts and sources",
     line: "Re-discover all the great ideas that got lost in the thread.",
   },
   {
