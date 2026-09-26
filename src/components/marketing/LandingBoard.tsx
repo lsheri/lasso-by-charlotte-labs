@@ -2050,8 +2050,8 @@ function WorkstreamsSection({ onViewed }: { onViewed: () => void }) {
           preload="metadata"
           poster="/videos/landing-story-workstreams-poster.webp"
         >
-          <source src="/videos/landing-story-workstreams.webm" type="video/webm" />
           <source src="/videos/landing-story-workstreams.mp4" type="video/mp4" />
+          <source src="/videos/landing-story-workstreams.webm" type="video/webm" />
         </video>
       </div>
     </section>
