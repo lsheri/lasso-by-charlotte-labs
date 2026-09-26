@@ -6135,3 +6135,4 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 }
 @media (min-width: 640px) and (prefers-reduced-motion: reduce) {
   .lb-hero-chat { opacity: 0; transform: none; animation: none; }
+}
