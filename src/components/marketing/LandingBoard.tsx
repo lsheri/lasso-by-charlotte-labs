@@ -62,7 +62,7 @@ export const LANDING_BOARD_STEPS = [
     key: "deliverable",
     label: "Deliverable",
     headline: "Group AI conversation by different workstreams.",
-    line: "The finished deck stays tied to the work behind it.",
+    line: "combine all the context across chats..everything that went in to a draft or final deliverable",
   },
   {
     key: "circle",
