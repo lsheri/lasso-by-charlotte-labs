@@ -305,11 +305,14 @@ test("story spotlights only the three settled attention moments", async ({ brows
   const page = await context.newPage();
   await page.goto("/", { waitUntil: "networkidle" });
   await page.locator('.lb-progress-dot[aria-label="Workstreams"]').click({ force: true });
-  await page.waitForTimeout(900);
+  await expect(page.locator('.lb-caption[data-phase="incoming"]')).toHaveAttribute("data-step", "3", {
+    timeout: 3_000,
+  });
   await expect(page.getByTestId("landing-story-spotlight")).toHaveCount(0);
+  await page.reload({ waitUntil: "networkidle" });
   await page.locator('.lb-progress-dot[aria-label="Ask Lasso"]').click({ force: true });
   const overlay = page.getByTestId("landing-story-spotlight");
-  await expect(overlay).toHaveAttribute("data-spotlight", "ask", { timeout: 6_000 });
+  await expect(overlay).toHaveAttribute("data-spotlight", "ask", { timeout: 3_000 });
   const layers = await page.evaluate(() => ({
     board:
       Number(
