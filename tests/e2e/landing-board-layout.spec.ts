@@ -5,6 +5,22 @@ const desktopSizes = [
   { width: 1512, height: 807 },
 ];
 
+test("landing header, progress rail, and paper caption keep the S4 contract", async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 1372, height: 732 }, reducedMotion: "reduce" });
+  const page = await context.newPage();
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await expect(page.locator(".lb-header .lb-step-nav")).toHaveCount(0);
+  await expect(page.locator(".lb-progress-dot")).toHaveCount(10);
+  expect((await page.locator(".lb-header").boundingBox())?.height ?? 999).toBeLessThanOrEqual(64);
+  await page.getByRole("button", { name: "Circle", exact: true }).last().click();
+  await expect(page.locator(".lb-progress-rail")).toHaveAttribute("data-step", "5");
+  await expect(page.locator('.lb-progress-dot[data-current="true"]')).toHaveAttribute("aria-label", "Circle");
+  const caption = page.locator('.lb-caption[data-phase="incoming"]');
+  await expect(caption).toHaveCSS("background-color", "rgb(255, 255, 255)");
+  await expect(caption).not.toHaveCSS("background-color", "rgb(22, 24, 26)");
+  await context.close();
+});
+
 for (const viewport of desktopSizes) {
   test(`landing proof connector renders with normal motion at ${viewport.width}x${viewport.height}`, async ({ browser }) => {
     test.setTimeout(45_000);

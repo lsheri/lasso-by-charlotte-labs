@@ -5691,7 +5691,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 /* Unit L1: isolated scroll-driven demo board landing. */
 @layer nb {
 .landing-board-page {
-  --lb-header-h: 64px;
+  --lb-header-h: 63px;
   --lb-client-navy: #1D2B4F;
   --lb-client-yellow: #F2C94C;
   --lb-client-white: #FFFFFF;
@@ -5918,7 +5918,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 @keyframes lb-caption-crossfade { from { opacity: 0; } to { opacity: 1; } }
 @media (max-width: 639px) {
   .landing-board-page { --lb-header-h: 56px; padding-top: 0; }
-  html:has(.landing-board-page) { scroll-snap-type: y mandatory; scroll-padding-top: var(--lb-header-h); }
+  html:has(.landing-board-page) { scroll-snap-type: y mandatory; scroll-padding-top: calc(var(--lb-header-h) + 32px); }
   .lb-header { position: fixed; right: 0; left: 0; height: 56px; min-height: 56px; overflow: hidden; }
   .lb-header-main { grid-template-columns: minmax(0,1fr) auto; gap: 12px; min-height: 56px; padding: env(safe-area-inset-top) 12px 0; }
   .lb-brand { font-size: 14px; }.lb-brand svg { width: 28px; height: 28px; }
@@ -5932,7 +5932,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   .lb-sticky-stage,.lb-scroll-sections { display: none; }
   .lb-desktop-hero,.lb-story > .landing-usecases,.lb-how-it-works { display: none; }
   .lb-phone-story { display: block; padding-top: var(--lb-header-h); }
-  .lb-phone-step { display: flex; min-height: calc(100svh - var(--lb-header-h)); max-height: calc(100svh - var(--lb-header-h)); flex-direction: column; gap: 12px; overflow: hidden; scroll-snap-align: start; scroll-snap-stop: always; padding: 12px 12px 64px; }
+  .lb-phone-step { display: flex; min-height: calc(100svh - var(--lb-header-h)); max-height: calc(100svh - var(--lb-header-h)); flex-direction: column; gap: 12px; overflow: hidden; scroll-margin-top: 32px; scroll-snap-align: start; scroll-snap-stop: always; padding: 12px 12px 64px; }
   .lb-phone-caption { position: relative; flex: 0 0 auto; width: 100%; border: 1px solid color-mix(in oklab, var(--nb-graphite) 60%, transparent); border-radius: 14px; background: var(--nb-white); padding: 24px 28px; color: var(--nb-ink); box-shadow: var(--nb-paper-shadow-contact), var(--nb-paper-shadow-ambient); opacity: 0; transform: translateY(16px) scale(1.01); }
   .lb-phone-caption .lb-caption-heading { font-size: 22px; }
   .lb-phone-caption h2 { margin-top: 8px; font-family: var(--font-serif); font-size: 28px; line-height: 1.05; }
