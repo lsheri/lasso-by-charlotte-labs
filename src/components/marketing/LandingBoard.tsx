@@ -2747,6 +2747,9 @@ export function LandingBoard() {
           <div className="lb-scroll-sections">
             {LANDING_BOARD_STEPS.slice(1).map((step, itemIndex) => {
               const index = itemIndex + 1;
+              // S2: workstreams is a self-contained section, not a shared-stage step.
+              if (step.key === "workstreams")
+                return <WorkstreamsSection key={step.key} onViewed={noteWorkstreamsViewed} />;
               return (
                 <section
                   id={`lb-${step.key}`}
