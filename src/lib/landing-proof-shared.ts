@@ -43,13 +43,13 @@ export function parseLandingProof(proof: LandingProof): LandingProofModel | null
     scenarioC: scenarioC as number,
     savings: savings as number,
     transition: transition as number,
-    inputs: [inputMatch[1] ?? "", `${inputMatch[2] ?? ""} ${inputMatch[3] ?? ""}`],
+    inputs: [inputMatch[1] ?? "", `${inputMatch[2] ?? ""} (${(inputMatch[3] ?? "").replace("August", "Aug")})`],
     lines: [
       { label: "Finance", amount: Number(lineMatch[1]) },
       { label: "HR", amount: Number(lineMatch[2]) },
       { label: "IT", amount: Number(lineMatch[3]) },
       { label: "Revenue cycle", amount: Number(lineMatch[4]) },
     ],
-    unconfirmed: `$${lineMatch[4]}M revenue cycle depends on Meridian's vendor contract. ${unconfirmedMatch?.[1] ?? "Unconfirmed as of 14 August."}`,
+    unconfirmed: `$${lineMatch[4]}M revenue cycle depends on Meridian's vendor contract. ${(unconfirmedMatch?.[1] ?? "Unconfirmed as of 14 August.").replace(/^unconfirmed/i, "Unconfirmed").replace("14 August", "14 Aug")}`,
   };
 }

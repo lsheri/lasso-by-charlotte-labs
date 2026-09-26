@@ -216,7 +216,8 @@ export function FocusOverlay({
     const find = () => {
       const el = readerRef.current?.querySelector(`[data-turn-no="${focusTurnNo}"]`) ?? null;
       if (el) {
-        el.scrollIntoView({ block: "center" });
+        el.scrollIntoView({ block: "start" });
+        readerRef.current?.scrollBy({ top: -96, behavior: "auto" });
         el.classList.add("nb-turn-lit");
         el.setAttribute("data-turn-focus", "true");
         if (focusedTurnTestId) el.setAttribute("data-testid", focusedTurnTestId);

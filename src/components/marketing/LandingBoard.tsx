@@ -48,7 +48,7 @@ const TOOL_BADGES = [
 
 const FALLBACK_SLIDES = ["Partnership model", "Board structure", "$1.4M year-two net benefit", "Comparable health alliances", "Chair terms", "FY27 recommendation"];
 
-function event(viewId: string, eventType: "landing.viewed" | "landing.story_section_viewed" | "landing.section_jumped" | "landing.proof_link_opened" | "landing.pilot_cta_clicked" | "landing.pilot_requested" | "landing.usecase_played", dims: Record<string, string>) {
+function event(viewId: string, eventType: "landing.viewed" | "landing.story_section_viewed" | "landing.section_jumped" | "landing.proof_link_opened" | "landing.proof_turn_toggled" | "landing.pilot_cta_clicked" | "landing.pilot_requested" | "landing.usecase_played", dims: Record<string, string>) {
   void recordAnonymousEventFn({ data: { event_type: eventType, view_id: viewId, dims } }).catch(() => undefined);
 }
 
@@ -165,23 +165,30 @@ function proofDate(proof: LandingProof): string {
   return Number.isNaN(date.getTime()) ? "" : date.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 }
 
-function ProofCard({ proof, model, onShowSlide, onOpenTurn }: { proof: LandingProof; model: LandingProofModel; onShowSlide: () => void; onOpenTurn: () => void }) {
+const PROOF_TURN_SUMMARIES: Readonly<Record<number, string>> = {
+  3: "asked where the $2.1M comes from.",
+  4: "split it into four lines.",
+  5: "approved it as the slide 3 headline.",
+  6: "assumption noted under the chart.",
+};
+
+function ProofCard({ proof, model, onShowSlide, onOpenTurn, onToggleTurn }: { proof: LandingProof; model: LandingProofModel; onShowSlide: () => void; onOpenTurn: () => void; onToggleTurn: (turn: number, state: "open" | "closed") => void }) {
   const turn = (number: number) => proof.turns.find((entry) => entry.turn_no === number);
   const role = (number: number) => turn(number)?.role === "user" ? "you said" : "Claude said";
   return (
     <section className="lb-proof-card lb-caption-attention" data-testid="landing-proof-card">
-      <h4>${model.scenarioB.toFixed(1)}M = ${model.savings.toFixed(1)}M savings − ${model.transition.toFixed(1)}M transition</h4>
-      <div className="lb-proof-origin"><p className="lb-micro">WHERE IT CAME FROM</p><ToolLogo vendor={proof.vendor} /><strong>{proof.title}</strong><span>Turn 2 · {proofDate(proof)}</span><ul>{model.inputs.map((input) => <li key={input}>{input}</li>)}</ul></div>
-      <div className="lb-proof-timeline"><p className="lb-micro">WHAT WAS CHECKED AFTER</p>
-        {[3, 4, 5, 6].map((number, index) => <article key={number} style={{ "--lb-proof-row": index } as CSSProperties}><span>Turn {number} · {role(number)}</span>{number === 4 ? <div><p>{turn(number)?.content}</p><div className="lb-proof-bars">{model.lines.map((line) => <span key={line.label}><i style={{ "--lb-proof-bar": `${(line.amount / Math.max(...model.lines.map((entry) => entry.amount))) * 100}%` } as CSSProperties} />{line.label} ${line.amount.toFixed(1)}M</span>)}</div></div> : <p>{turn(number)?.content}</p>}</article>)}
+      <h4><strong>${model.scenarioB.toFixed(1)}M</strong><span>= ${model.savings.toFixed(1)}M savings − ${model.transition.toFixed(1)}M transition</span></h4>
+      <div className="lb-proof-origin"><ToolLogo vendor={proof.vendor} compact /><strong>{proof.title.replace(/: year-two net benefit/i, "")}</strong><span>Turn 2 · {proofDate(proof)}</span><p>{model.inputs.join(", ")}</p></div>
+      <div className="lb-proof-timeline"><p className="lb-micro">CHECKED AFTER · 4 TURNS</p>
+        {[3, 4, 5, 6].map((number, index) => <details key={number} style={{ "--lb-proof-row": index } as CSSProperties} onToggle={(change) => onToggleTurn(number, change.currentTarget.open ? "open" : "closed")}><summary><span>Turn {number} · {role(number)}</span><b>{PROOF_TURN_SUMMARIES[number]}</b></summary>{number === 4 ? <div><p>{turn(number)?.content}</p><div className="lb-proof-bars" aria-label="Finance 0.6, HR 0.4, IT 0.7, revenue cycle 0.4 of 2.1 million">{model.lines.map((line) => <span key={line.label} data-unconfirmed={line.label === "Revenue cycle"}><i style={{ "--lb-proof-segment": `${(line.amount / model.savings) * 100}%` } as CSSProperties} />{line.label}</span>)}</div></div> : <p>{turn(number)?.content}</p>}</details>)}
       </div>
-      <div className="lb-proof-open"><p className="lb-micro">STILL UNCONFIRMED</p><p>{model.unconfirmed}</p></div>
+      <div className="lb-proof-open"><p><strong>1 still unconfirmed:</strong> {model.unconfirmed}</p></div>
       <div className="lb-proof-actions"><Button asChild size="sm"><Link to="/demo/conversations" search={{ item: proof.itemId, turn: 4, from: "story" }} onClick={onOpenTurn}>Open the chat at turn 4 to hand-check</Link></Button><Button type="button" size="sm" variant="outline" onClick={onShowSlide}>Show slide 3</Button></div>
     </section>
   );
 }
 
-function AskReplay({ presets, step, onFinished, clientLabel, engagementTitle, proof, proofModel, onShowSlide, onOpenTurn }: { presets: DemoPreset[]; step: number; onFinished: (finished: boolean) => void; clientLabel: string; engagementTitle: string; proof: LandingProof | null; proofModel: LandingProofModel | null; onShowSlide: () => void; onOpenTurn: () => void }) {
+function AskReplay({ presets, step, onFinished, clientLabel, engagementTitle, proof, proofModel, onShowSlide, onOpenTurn, onToggleTurn }: { presets: DemoPreset[]; step: number; onFinished: (finished: boolean) => void; clientLabel: string; engagementTitle: string; proof: LandingProof | null; proofModel: LandingProofModel | null; onShowSlide: () => void; onOpenTurn: () => void; onToggleTurn: (turn: number, state: "open" | "closed") => void }) {
   const replay = usePresetReplay(step, presets);
   const threadRef = useRef<HTMLDivElement>(null);
   const shownPositions = step === 5 ? [1] : step === 6 ? [1, 2] : [1, 2, 4];
@@ -192,7 +199,12 @@ function AskReplay({ presets, step, onFinished, clientLabel, engagementTitle, pr
   useLayoutEffect(() => {
     const thread = threadRef.current;
     if (!thread) return;
-    thread.scrollTo({ top: thread.scrollHeight, behavior: replay.phase === "done" ? "auto" : "smooth" });
+    const proofCard = thread.querySelector<HTMLElement>("[data-testid=landing-proof-card]");
+    if (proofCard && replay.phase === "done") {
+      thread.scrollTo({ top: proofCard.offsetTop, behavior: "auto" });
+      return;
+    }
+    thread.scrollTo({ top: thread.scrollHeight, behavior: "smooth" });
   }, [replay.phase, replay.readCount, replay.streamed, replay.typed]);
   return (
     <aside className="lb-answer-sheet" aria-label="Ask Lasso replay" data-replay-phase={replay.phase} data-story-scroll="locked">
@@ -208,7 +220,7 @@ function AskReplay({ presets, step, onFinished, clientLabel, engagementTitle, pr
             {showQuestion ? <div className="lb-replay-question"><span>You</span><p>{preset.question}</p></div> : null}
             {current && replay.phase === "reading" ? <AnswerRail state="working"><ThinkingTrail items={preset.manifest?.items.map((item) => ({ id: item.id, title: item.title })) ?? []} finalPhase="Writing" manifest={liveItems.length > 0 && preset.manifest ? { ...preset.manifest, items: liveItems } : null} /></AnswerRail> : null}
             {answerText ? <ReplayAnswer preset={{ ...preset, answer: answerText }} finished={!current || replay.phase === "done"} showAudit={position !== 1} /> : null}
-            {position === 1 && proof && proofModel && (!current || replay.phase === "done") ? <><ProofCard proof={proof} model={proofModel} onShowSlide={onShowSlide} onOpenTurn={onOpenTurn} />{preset.manifest ? <ContextAudit manifest={preset.manifest} readOnly initialOpen={false} buttonLabel="Show the full read list" /> : null}</> : null}
+            {position === 1 && proof && proofModel && (!current || replay.phase === "done") ? <><ProofCard proof={proof} model={proofModel} onShowSlide={onShowSlide} onOpenTurn={onOpenTurn} onToggleTurn={onToggleTurn} />{preset.manifest ? <ContextAudit manifest={preset.manifest} readOnly initialOpen={false} buttonLabel="Show the full read list" /> : null}</> : null}
           </div>;
         })}
       </div>
@@ -340,7 +352,7 @@ function StoryBoard({ board, presets, proof, step, attentionStep, attentionNonce
         <div className="lb-circle-question"><p>Where did the $1.4M on slide 3 come from?</p></div>
         {step === 7 && replayFinished ? <div key={`notes-${attentionNonce}`} className={`lb-open-notes${pulse(7)}`}><p>Confirm the vendor extension assumption.</p><p>Confirm approval by Oct 1.</p></div> : null}
       </div>
-      {step >= 5 && step <= 7 ? <div key={`ask-${attentionNonce}`} className={pulse(5)}><AskReplay presets={presets} step={step} onFinished={onReplayFinished} clientLabel={clientLabel} engagementTitle={engagementTitle} proof={proof} proofModel={proofModel} onShowSlide={onShowSlide} onOpenTurn={onOpenTurn} /></div> : null}
+      {step >= 5 && step <= 7 ? <div key={`ask-${attentionNonce}`} className={pulse(5)}><AskReplay presets={presets} step={step} onFinished={onReplayFinished} clientLabel={clientLabel} engagementTitle={engagementTitle} proof={proof} proofModel={proofModel} onShowSlide={onShowSlide} onOpenTurn={onOpenTurn} onToggleTurn={(turn, state) => event("landing-board-proof", "landing.proof_turn_toggled", { turn: String(turn), state })} /></div> : null}
       {step === 6 && replayFinished ? <div key={`turn-${attentionNonce}`} className={pulse(6)}><ExactTurn board={board} preset={second} /></div> : null}
       {step === 8 ? <div key={`share-${attentionNonce}`} className={`lb-share-dialog${pulse(8)}`}><p className="lb-micro">READ ONLY</p><h3>Share this board</h3><p>They open the deliverable, source cards, and the conversations behind them.</p><p>They do not open private drafts or anything outside this board.</p><strong>Closes in 48 hours</strong><small>In the demo this is shown, not issued.</small></div> : null}
     </div>
