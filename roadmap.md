@@ -218,6 +218,12 @@
 
 ### Unit S1.1 demo readability
 - [x] Raise the Ask rail presets, subline, composer, answers, proof rows, and mono labels to buyer-readable sizes.
+
+### Unit M1 phone-first home story
+- [x] Replace the sticky phone board with ten viewport-snapped focused sections fed by the public demo payload.
+- [x] Compact the phone header, add the step counter, and move the pilot action to a step-aware bottom bar.
+- [x] Verify all ten sections at 390x844 and 430x932, including sizing, text floors, overflow, and counters.
+- [ ] Portal: add `input_mode` to `landing.viewed` dimensions for the phone-first story (architect-owned).
 - [x] Use the compact demo sidebar below 1440px so fitted board card text remains readable.
 - [x] Verify 20 visible rail and board text nodes at 1372x732.
 
