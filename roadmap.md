@@ -182,4 +182,4 @@
 - [x] Render the board story at `/` for signed-out visitors while preserving the signed-in workspace redirect.
 - [x] Redirect `/landing-board` to `/` with its hash and repoint internal story returns.
 - [x] Keep the prior B2B page at unlinked, noindex `/landing-classic` with additive surface coverage.
-- [ ] Verify route behavior, focused checks, and the existing landing-board browser suite against `/`.
+- [x] Verify route behavior, focused checks, and the existing landing-board browser suite against `/`.
