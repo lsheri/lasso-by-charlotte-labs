@@ -140,17 +140,60 @@ function sampledArc(
   );
 }
 
+function sampledCubic(
+  from: ShapePoint,
+  controlA: ShapePoint,
+  controlB: ShapePoint,
+  to: ShapePoint,
+  steps = 12,
+): ShapePoint[] {
+  return Array.from({ length: steps + 1 }, (_, index) => {
+    const progress = index / steps;
+    const remaining = 1 - progress;
+    return {
+      x: remaining ** 3 * from.x
+        + 3 * remaining ** 2 * progress * controlA.x
+        + 3 * remaining * progress ** 2 * controlB.x
+        + progress ** 3 * to.x,
+      y: remaining ** 3 * from.y
+        + 3 * remaining ** 2 * progress * controlA.y
+        + 3 * remaining * progress ** 2 * controlB.y
+        + progress ** 3 * to.y,
+    };
+  });
+}
+
+function connectedCubics(
+  start: ShapePoint,
+  curves: Array<[ShapePoint, ShapePoint, ShapePoint]>,
+): ShapePoint[] {
+  const points: ShapePoint[] = [start];
+  let from = start;
+  for (const [controlA, controlB, to] of curves) {
+    points.push(...sampledCubic(from, controlA, controlB, to).slice(1));
+    from = to;
+  }
+  return points;
+}
+
 function formLinePaths(form: LassoResolvedForm): ShapePoint[][] {
   if (form === 0) {
-    return [[
-      { x: 0.74, y: 0.2 }, { x: 0.66, y: 0.12 }, { x: 0.53, y: 0.1 },
-      { x: 0.39, y: 0.14 }, { x: 0.29, y: 0.24 }, { x: 0.27, y: 0.34 },
-      { x: 0.32, y: 0.4 }, { x: 0.43, y: 0.39 }, { x: 0.54, y: 0.3 },
-      { x: 0.61, y: 0.16 }, { x: 0.59, y: 0.31 }, { x: 0.54, y: 0.48 },
-      { x: 0.46, y: 0.65 }, { x: 0.36, y: 0.77 }, { x: 0.27, y: 0.8 },
-      { x: 0.35, y: 0.72 }, { x: 0.48, y: 0.69 }, { x: 0.63, y: 0.73 },
-      { x: 0.76, y: 0.7 }, { x: 0.86, y: 0.59 },
-    ]];
+    // A single pen line: restrained entry, high oval, crossing waist,
+    // open lower loop, then the long rising terminal of the reference L.
+    return [connectedCubics(
+      { x: 0.47, y: 0.16 },
+      [
+        [{ x: 0.39, y: 0.11 }, { x: 0.27, y: 0.15 }, { x: 0.25, y: 0.29 }],
+        [{ x: 0.22, y: 0.43 }, { x: 0.31, y: 0.49 }, { x: 0.41, y: 0.43 }],
+        [{ x: 0.52, y: 0.36 }, { x: 0.61, y: 0.15 }, { x: 0.59, y: 0.1 }],
+        [{ x: 0.57, y: 0.06 }, { x: 0.51, y: 0.22 }, { x: 0.47, y: 0.4 }],
+        [{ x: 0.43, y: 0.56 }, { x: 0.38, y: 0.67 }, { x: 0.31, y: 0.74 }],
+        [{ x: 0.22, y: 0.84 }, { x: 0.09, y: 0.78 }, { x: 0.1, y: 0.68 }],
+        [{ x: 0.11, y: 0.58 }, { x: 0.25, y: 0.57 }, { x: 0.35, y: 0.64 }],
+        [{ x: 0.48, y: 0.74 }, { x: 0.62, y: 0.84 }, { x: 0.75, y: 0.83 }],
+        [{ x: 0.84, y: 0.83 }, { x: 0.89, y: 0.76 }, { x: 0.89, y: 0.68 }],
+      ],
+    )];
   }
 
   if (form === 1) {

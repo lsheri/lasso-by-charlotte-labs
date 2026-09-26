@@ -140,6 +140,13 @@ describe("Ask Lasso signature loop maths", () => {
     }
   });
 
+  it("draws the first capital L as one detailed continuous pen line", () => {
+    const paths = resolvedLinework(LOOP_SIZE_TITLE, 0);
+    expect(paths).toHaveLength(1);
+    expect(paths[0]?.closed).toBe(false);
+    expect(paths[0]?.points.length).toBeGreaterThan(90);
+  });
+
   it("compresses into a horizon and loosens asymmetrically without leaving its square", () => {
     const cycleSeconds = LOOP_CYCLE_MS / 1000;
     const horizon = loopStamps(cycleSeconds * 0.29, LOOP_SIZE_TITLE);
