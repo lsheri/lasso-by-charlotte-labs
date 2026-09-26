@@ -12,17 +12,17 @@ describe("landing headline particle phrase", () => {
     expect(styles).not.toContain("landing-hero-highlight");
   });
 
-  it("appears in ink, turns neon orange, and holds orange for five seconds", () => {
+  it("sits in static ink with a bold lime green underline and no loop", () => {
     expect(particle).toContain("export const PARTICLE_TEXT_HOLD_MS = 5000");
     expect(particle).toContain("export const PARTICLE_TEXT_CYCLE_MS = 7600");
-    expect(styles).toContain("@keyframes landing-particle-ink-to-orange");
-    expect(styles).toContain("animation: landing-particle-ink-to-orange 7.6s ease-in-out infinite");
     expect(styles).toContain("color: var(--nb-ink)");
-    expect(styles).toContain("color: var(--lb-neon-orange)");
+    const base = styles.slice(styles.indexOf(".landing-particle-word-text {"), styles.indexOf("@media (prefers-reduced-motion: reduce)"));
+    expect(base).toContain("text-decoration-color: var(--nb-lasso-green)");
+    expect(base).toContain("text-decoration-thickness: 0.1em");
+    expect(base).not.toContain("animation: landing-particle-ink-to-orange");
   });
 
-  it("keeps the phrase underlined with the moving colour", () => {
-    expect(styles).toContain("text-decoration-color: currentColor");
+  it("keeps the phrase underlined with the lime green line", () => {
     expect(styles).toContain("text-decoration-line: underline");
   });
 
@@ -35,9 +35,9 @@ describe("landing headline particle phrase", () => {
     expect(particle).not.toContain("emitClientEvent");
   });
 
-  it("answers reduced motion with the settled orange state", () => {
-    const reduced = styles.slice(styles.indexOf("landing-particle-word-text { opacity: 1 !important"));
+  it("answers reduced motion with the same static ink state", () => {
+    const reduced = styles.slice(styles.indexOf("landing-particle-word-text { opacity: 1 !important"), styles.indexOf("/* Beat loops"));
     expect(reduced).toContain("animation: none");
-    expect(reduced).toContain("color: var(--lb-neon-orange)");
+    expect(reduced).not.toContain("var(--lb-neon-orange)");
   });
 });
