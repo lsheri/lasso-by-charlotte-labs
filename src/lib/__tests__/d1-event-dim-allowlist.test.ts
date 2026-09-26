@@ -55,7 +55,7 @@ const LIVE_KEYS_BY_FAMILY: Record<string, readonly string[]> = {
   ],
   chatlib: ["filter", "how", "selected", "vendor", "view"],
   client: ["engagements", "error_name", "fingerprint", "items", "route_class", "source", "unplaced"],
-  demo: [],
+  demo: ["action", "surface"],
   coach: ["role"],
   coachlink: ["access_level", "basis", "relation", "scope"],
   coachnote: ["by", "newest_age_band", "notes_shown_band", "surface"],
