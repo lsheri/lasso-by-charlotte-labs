@@ -402,7 +402,7 @@ function ExactTurn({ board, preset, onOpenTurn }: { board: SharedBoardDto; prese
   }, [item?.id]);
   return (
     <aside className="lb-turn-reader" aria-label="Exact turn reader">
-      <header><div>{item ? <VendorMark item={item} /> : <ToolIdentity tool="document" />}<h3>{item?.title ?? "Source conversation"}</h3></div><Button asChild size="sm" variant="ghost"><Link to="/demo/conversations" search={{ item: item?.id, turn: 5, from: "story" }} onClick={onOpenTurn}>Open this chat</Link></Button></header>
+      <header><div>{item ? <VendorMark item={item} /> : <ToolIdentity tool="document" />}<h3>{item?.title ?? "Source conversation"}</h3></div>{item ? <Button asChild size="sm" variant="ghost"><Link to="/demo/conversations" search={{ item: item.id, turn: 5, from: "story" }} onClick={onOpenTurn}>Open this chat</Link></Button> : null}</header>
       <div ref={bodyRef} className="lb-turn-body" data-testid="landing-decision-transcript">
         {turns.map((turn) => {
           const user = turn.role === "user";
