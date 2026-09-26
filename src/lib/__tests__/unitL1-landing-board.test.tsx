@@ -93,7 +93,9 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(page.indexOf("<UseCaseSection onPlayed")).toBeLessThan(
       page.indexOf('className="lb-how-it-works"'),
     );
-    expect(page).toContain("WHAT LASSO DOES");
+    expect(page).not.toContain("WHAT LASSO DOES");
+    expect(page).not.toContain("WHAT IT IS");
+    expect(page.match(/lb-section-label-space/g)?.length).toBe(2);
     expect(page).toContain("Three things a buyer asks for. Here is what each looks like.");
     expect(page).not.toContain("See it in the story");
     expect(page).not.toContain("onClick={() => onJump(card.step)}");
