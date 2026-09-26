@@ -6107,7 +6107,8 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 
 /* R3a: desktop hero category line, inert board assembly, step-card scroll cue. Desktop only. */
 @media (min-width: 640px) {
-  .lb-desktop-hero .lb-hero-copy { top: 192px; gap: 10px; }
+  .lb-desktop-hero { height: auto; min-height: calc(100vh - var(--lb-header-h)); overflow: visible; padding: clamp(40px, 14vh, 192px) 0 clamp(48px, 9vh, 96px); }
+  .lb-desktop-hero .lb-hero-copy { position: relative; top: auto; left: auto; margin: 0 auto; transform: none; gap: 10px; }
   .lb-desktop-hero .lb-hero-copy > div { margin-top: 0; }
   .lb-desktop-hero .lb-hero-copy h2 { margin-top: 12px; line-height: 1.35; }
   .lb-desktop-hero .lb-hero-copy > div > div:not(.lb-hero-line):not(.lb-hero-assemble) { margin-top: 14px; }
