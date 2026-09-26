@@ -280,10 +280,16 @@ describe("Unit L1 scroll-driven landing board", () => {
   it("offsets only visible story numbering after the cue removal", () => {
     expect(page.match(/const displayStep = index;/g)).toHaveLength(2);
     expect(page.match(/<span>\{displayStep\}<\/span>/g)).toHaveLength(2);
-    expect(page).toContain('aria-label={`${displayStep} of ${LANDING_BOARD_STEPS.length}`}');
+    expect(page).toContain('closing ? item.label : `${displayStep} of ${LANDING_BOARD_STEPS.length}`');
+    expect(page.match(/const closing = item\.key === "try-it";/g)).toHaveLength(2);
+    expect(page.match(/\{closing \? null : \(/g)).toHaveLength(2);
     expect(page).toContain('event(viewId.current, "landing.story_section_viewed", {');
     expect(page).toContain('event(viewId.current, "landing.section_jumped", { section: key })');
     expect(page).toContain("section: key,");
+  });
+  it("keeps the closing card numbered-free on both breakpoints", () => {
+    expect(page).toContain('key: "try-it"');
+    expect(page).toContain('onPilot={() => pilot("try_it")}');
   });
   it("keeps the step-one hero on a clean background", () => {
     const css = readFileSync("src/styles.css", "utf8");
