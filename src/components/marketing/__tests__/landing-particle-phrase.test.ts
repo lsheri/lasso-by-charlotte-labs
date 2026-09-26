@@ -16,7 +16,8 @@ describe("landing headline particle phrase", () => {
     expect(particle).toContain("export const PARTICLE_TEXT_HOLD_MS = 5000");
     expect(particle).toContain("export const PARTICLE_TEXT_CYCLE_MS = 7600");
     expect(styles).toContain("color: var(--nb-ink)");
-    const base = styles.slice(styles.indexOf(".landing-particle-word-text {"), styles.indexOf("@media (prefers-reduced-motion: reduce)"));
+    const baseStart = styles.indexOf(".landing-particle-word-text {");
+    const base = styles.slice(baseStart, styles.indexOf("@media (prefers-reduced-motion: reduce)", baseStart));
     expect(base).toContain("text-decoration-color: var(--nb-lasso-green)");
     expect(base).toContain("text-decoration-thickness: 0.1em");
     expect(base).not.toContain("animation: landing-particle-ink-to-orange");
