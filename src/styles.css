@@ -5925,12 +5925,12 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   .lb-phone-step:first-child { justify-content: center; padding-bottom: 20px; }
   .lb-phone-usecases { display: flex; width: 100%; margin: 0; padding: 12px 12px 64px; }
   .lb-phone-usecases .landing-section-head { flex: 0 0 auto; gap: 5px; margin-bottom: 0; }
-  .lb-phone-usecases .landing-section-head h2 { font-size: 32px; font-weight: 500; line-height: 1.08; }
+  .lb-phone-usecases .landing-section-head h2 { font-size: 32px !important; font-weight: 500; line-height: 1.08; }
   .lb-phone-usecases .landing-section-head .micro-label { font-size: 14px; }
   .lb-phone-usecases .landing-section-head > p:last-child { font-size: 14px; line-height: 1.25; }
   .lb-phone-usecases .landing-usecase-grid { min-height: 0; flex: 1; grid-template-rows: repeat(3,minmax(0,1fr)); gap: 6px; }
-  .lb-phone-usecases .landing-usecase { display: grid; min-height: 0; grid-template-columns: 92px minmax(0,1fr); align-items: center; gap: 8px; border-radius: 12px; padding: 6px; overflow: hidden; }
-  .lb-phone-usecases .landing-usecase-media { width: 92px; height: 51.75px; min-height: 51.75px; align-self: center; aspect-ratio: 16 / 9; }
+  .lb-phone-usecases .landing-usecase { display: grid !important; min-height: 0; grid-template-columns: 92px minmax(0,1fr); align-items: center; gap: 8px; border-radius: 12px; padding: 6px; overflow: hidden; }
+  .lb-phone-usecases .landing-usecase-media { width: 92px !important; height: 51.75px; min-height: 51.75px; align-self: center; aspect-ratio: 16 / 9; }
   .lb-phone-usecases .landing-usecase-copy { min-width: 0; align-self: center; }
   .lb-phone-usecases .landing-usecase-tools { min-height: 18px; gap: 5px; }
   .lb-phone-usecases .landing-usecase-tools .lb-tool-identity { font-size: 0; gap: 0; }
