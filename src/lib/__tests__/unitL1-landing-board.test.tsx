@@ -113,9 +113,10 @@ describe("Unit L1 scroll-driven landing board", () => {
     const logo = readFileSync("src/components/marketing/ToolLogo.tsx", "utf8");
     for (const mark of ["siClaude", "siGooglegemini", "siGoogledrive", "siGmail"])
       expect(logo).toContain(mark);
-    for (const tool of ["claude", "chatgpt", "gemini", "googledrive", "gmail", "powerpoint"])
+    for (const tool of ["claude", "chatgpt", "gemini", "googledrive", "gmail", "powerpoint", "granola"])
       expect(logo).toContain(`${tool}:`);
     expect(logo).toContain('key === "powerpoint"');
+    expect(logo).toContain('brand="granola"');
     expect(logo).toContain("compact ? label : label.toUpperCase()");
     const tools = page.slice(
       page.indexOf("const TOOL_BADGES"),
