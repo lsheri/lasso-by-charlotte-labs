@@ -5,6 +5,7 @@ const board = readFileSync("src/components/demo/DemoWorkboardSandbox.tsx", "utf8
 const pages = readFileSync("src/pages/DemoPages.tsx", "utf8");
 const landing = readFileSync("src/components/marketing/B2BLanding.tsx", "utf8");
 const story = readFileSync("src/components/marketing/LandingBoard.tsx", "utf8");
+const styles = readFileSync("src/styles.css", "utf8");
 
 describe("Unit P1 playable finished board", () => {
   it("opens the finished proof state and keeps the classic demo", () => {
@@ -39,6 +40,23 @@ describe("Unit P1 playable finished board", () => {
     expect(board).toContain("if (!resetAt || drag || resize || editing) return");
     expect(board).toContain("clearTimer(); setEditing(true)");
     expect(board).toContain("setEditing(false); scheduleReset()");
+  });
+
+  it("supports one-finger board pan and two-finger pan and pinch without changing telemetry", () => {
+    expect(styles).toContain('.demo-sandbox-viewport { position: absolute; inset: 0; overflow: hidden; touch-action: none;');
+    expect(board).toContain("onPointerDownCapture={beginTouchGesture}");
+    expect(board).toContain('event.pointerType !== "touch"');
+    expect(board).toContain("touchRef.current.size >= 2");
+    expect(board).toContain("gesture.pan");
+    expect(board).toContain("centre.x - gesture.centre.x");
+    expect(board).toContain("clampZoom(gesture.zoom * distance");
+    expect(board).not.toContain('emit("pan_view")');
+  });
+
+  it("keeps the demo honesty banner and both destinations", () => {
+    expect(board).toContain("Demo workspace · every figure is invented · changes reset");
+    expect(board).toContain('<Link to="/" hash="lb-try-it">Back to the story</Link>');
+    expect(board).toContain('<Link to="/" hash="pilot">Book a pilot</Link>');
   });
 
   it("uses the engagement workboard components through a local adapter", () => {
