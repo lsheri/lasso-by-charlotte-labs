@@ -1,3 +1,4 @@
+import { BrandLogo } from "@/components/connectors/BrandLogo";
 import claudeLogo from "@/assets/claude-logo.png.asset.json";
 import chatgptLogo from "@/assets/chatgpt-logo.png.asset.json";
 import geminiLogo from "@/assets/gemini-logo.png.asset.json";
@@ -30,6 +31,7 @@ const TOOL_LABELS: Record<string, string> = {
   document: "Document",
   upload: "Document",
   powerpoint: "PowerPoint",
+  granola: "Granola",
 };
 
 function normaliseTool(tool: string): string {
@@ -54,6 +56,8 @@ export function ToolLogo({ vendor, compact = false }: { vendor: string; compact?
         <svg viewBox="0 0 24 24" aria-hidden="true" data-simple-icon={key}>
           <path fill="currentColor" d={simpleIcon.path} />
         </svg>
+      ) : key === "granola" ? (
+        <BrandLogo brand="granola" size={16} />
       ) : key === "powerpoint" ? <span className="lb-powerpoint-badge" aria-hidden="true">P</span> : null}
       <span>{compact ? label : label.toUpperCase()}</span>
     </span>
