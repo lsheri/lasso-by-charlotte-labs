@@ -41,6 +41,23 @@ describe("Unit P1 playable finished board", () => {
     expect(board).toContain("setEditing(false); scheduleReset()");
   });
 
+  it("supports one-finger board pan and two-finger pan and pinch without changing telemetry", () => {
+    expect(board).toContain('touch-action: none');
+    expect(board).toContain("onPointerDownCapture={beginTouchGesture}");
+    expect(board).toContain('event.pointerType !== "touch"');
+    expect(board).toContain("touchRef.current.size >= 2");
+    expect(board).toContain("gesture.pan");
+    expect(board).toContain("centre.x - gesture.centre.x");
+    expect(board).toContain("clampZoom(gesture.zoom * distance");
+    expect(board).not.toContain('emit("pan_view")');
+  });
+
+  it("keeps the demo honesty banner and both destinations", () => {
+    expect(board).toContain("Demo workspace · every figure is invented · changes reset");
+    expect(board).toContain('<Link to="/" hash="lb-try-it">Back to the story</Link>');
+    expect(board).toContain('<Link to="/" hash="pilot">Book a pilot</Link>');
+  });
+
   it("uses the engagement workboard components through a local adapter", () => {
     for (const component of ["LabCard", "LabFrameElement", "LabSticky", "LabRelationships", "buildSharedBoardModel"]) expect(board).toContain(component);
     expect(board).toContain('data-component="CanvasLabPage"');
