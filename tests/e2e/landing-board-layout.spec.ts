@@ -393,7 +393,7 @@ test("use cases sit before the story with one-line titles and no jump controls",
   await context.close();
 });
 
-test("phone use-case titles stay on one line and cards have no jump controls", async ({ browser }) => {
+test("phone use-case titles reflow without clipping and cards have no jump controls", async ({ browser }) => {
   const context = await browser.newContext({
     viewport: { width: 390, height: 844 },
     reducedMotion: "reduce",
@@ -404,10 +404,23 @@ test("phone use-case titles stay on one line and cards have no jump controls", a
   const titles = page.locator("#lb-phone-usecases .landing-usecase h3");
   await expect(titles).toHaveCount(3);
   for (const title of await titles.all()) {
-    const lines = await title.evaluate((element) =>
-      Math.round(element.getBoundingClientRect().height / Number.parseFloat(getComputedStyle(element).lineHeight)),
-    );
-    expect(lines).toBe(1);
+    const layout = await title.evaluate((element) => ({
+      clientWidth: element.clientWidth,
+      scrollWidth: element.scrollWidth,
+      whiteSpace: getComputedStyle(element).whiteSpace,
+      overflow: getComputedStyle(element).overflow,
+    }));
+    expect(layout.scrollWidth).toBeLessThanOrEqual(layout.clientWidth);
+    expect(layout.whiteSpace).toBe("normal");
+    expect(layout.overflow).toBe("visible");
+  }
+  const badges = page.locator(".lb-phone-tools > span[role=img]");
+  await expect(badges).toHaveCount(5);
+  for (const badge of await badges.all()) {
+    const box = await badge.boundingBox();
+    expect(box?.width ?? 0).toBeGreaterThanOrEqual(44);
+    expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);
+    await expect(badge).toHaveAccessibleName(/Claude|ChatGPT|Gemini|Drive|Gmail/);
   }
   await context.close();
 });
