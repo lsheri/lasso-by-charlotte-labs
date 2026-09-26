@@ -2119,12 +2119,14 @@ function LandingBoardUseCase({
   rotationActive,
   rotationEnabled,
   onRotationAdvance,
+  onBeforeUserPlay,
   onPlayed,
 }: {
   card: (typeof LANDING_BOARD_USE_CASES)[number];
   rotationActive: boolean;
   rotationEnabled: boolean;
   onRotationAdvance: () => void;
+  onBeforeUserPlay: (video: HTMLVideoElement) => void;
   onPlayed: (key: UseCaseKey, inputMode: "hover" | "tap") => void;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -2137,9 +2139,11 @@ function LandingBoardUseCase({
   function play(mode: "hover" | "tap") {
     const video = videoRef.current;
     if (!video || videoFailed) return;
+    onBeforeUserPlay(video);
+    video.pause();
     playIntent.current = "user";
     inputMode.current = mode;
-    if (video.ended) video.currentTime = 0;
+    video.currentTime = 0;
     setEnded(false);
     void video.play().catch(() => setVideoFailed(true));
   }
@@ -2163,7 +2167,6 @@ function LandingBoardUseCase({
     setEnded(false);
     void video.play().catch(() => {
       setVideoFailed(true);
-      onRotationAdvance();
     });
   }, [onRotationAdvance, rotationActive, rotationEnabled, videoFailed]);
 
@@ -2220,7 +2223,6 @@ function LandingBoardUseCase({
             }}
             onError={() => {
               setVideoFailed(true);
-              if (rotationActive && rotationEnabled) onRotationAdvance();
             }}
           >
             {"webm" in card ? <source src={card.webm} type="video/webm" /> : null}
@@ -2270,6 +2272,14 @@ function UseCaseSection({
     () => setActiveClip((current) => (current + 1) % LANDING_BOARD_USE_CASES.length),
     [],
   );
+  const beforeUserPlay = useCallback((nextVideo: HTMLVideoElement) => {
+    sectionRef.current?.querySelectorAll("video").forEach((video) => {
+      if (video !== nextVideo) video.pause();
+    });
+    const card = nextVideo.closest<HTMLElement>("[data-usecase]")?.dataset["usecase"];
+    const index = LANDING_BOARD_USE_CASES.findIndex((item) => item.key === card);
+    if (index >= 0) setActiveClip(index);
+  }, []);
   const rotationEnabled = sectionVisible && !reducedMotion;
 
   return (
@@ -2293,6 +2303,7 @@ function UseCaseSection({
             rotationActive={activeClip === index}
             rotationEnabled={rotationEnabled}
             onRotationAdvance={advanceRotation}
+            onBeforeUserPlay={beforeUserPlay}
             onPlayed={onPlayed}
           />
         ))}
