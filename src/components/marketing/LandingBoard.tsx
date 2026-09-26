@@ -51,8 +51,8 @@ export const LANDING_BOARD_STEPS = [
   {
     key: "canvas",
     label: "One canvas",
-    headline: "Every AI chat in one place.",
-    line: "Claude, ChatGPT and Gemini conversations land on one board.",
+    headline: "Every AI conversation and every work tool, in one organized place.",
+    line: "Claude, ChatGPT, Gemini, Drive and the rest land on one board, grouped by the work they belong to.",
   },
   {
     key: "workstreams",
@@ -2138,6 +2138,15 @@ function LandingBoardUseCase({
 
   return (
     <article className="landing-usecase" data-usecase={card.key}>
+      <div className="landing-usecase-copy">
+        <div className="landing-usecase-tools" aria-label="Tools shown">
+          {card.tools.map((tool) => (
+            <ToolLogo key={tool} vendor={tool} compact />
+          ))}
+        </div>
+        <h3>{card.title}</h3>
+        <p>{card.body}</p>
+      </div>
       <Button
         type="button"
         variant="ghost"
@@ -2186,15 +2195,6 @@ function LandingBoardUseCase({
         )}
         {ended ? <span className="landing-usecase-replay">Replay</span> : null}
       </Button>
-      <div className="landing-usecase-copy">
-        <div className="landing-usecase-tools" aria-label="Tools shown">
-          {card.tools.map((tool) => (
-            <ToolLogo key={tool} vendor={tool} compact />
-          ))}
-        </div>
-        <h3>{card.title}</h3>
-        <p>{card.body}</p>
-      </div>
     </article>
   );
 }
