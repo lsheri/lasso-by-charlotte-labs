@@ -79,7 +79,7 @@ export const LANDING_BOARD_STEPS = [
   {
     key: "the-turn",
     label: "\n",
-    headline: "Open the chat and read it yourself.",
+    headline: "Open individuals Ai conversations to find lost information",
     line: "The full conversation, with the decision highlighted.",
   },
   {
