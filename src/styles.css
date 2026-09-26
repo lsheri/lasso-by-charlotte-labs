@@ -5904,7 +5904,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 @keyframes lb-caption-crossfade { from { opacity: 0; } to { opacity: 1; } }
 @media (max-width: 639px) {
   .landing-board-page { --lb-header-h: 56px; padding-top: 0; }
-  html:has(.landing-board-page) { scroll-snap-type: y mandatory; scroll-padding-top: calc(var(--lb-header-h) + env(safe-area-inset-top, 0px)); }
+  :root:has(.landing-board-page) { scroll-snap-type: y mandatory; scroll-padding-top: calc(56px + env(safe-area-inset-top, 0px)); }
   .lb-header { position: fixed; right: 0; left: 0; height: calc(var(--lb-header-h) + env(safe-area-inset-top, 0px)); min-height: calc(var(--lb-header-h) + env(safe-area-inset-top, 0px)); overflow: hidden; }
   .lb-header-main { grid-template-columns: minmax(0,1fr) auto; gap: 12px; min-height: calc(var(--lb-header-h) + env(safe-area-inset-top, 0px)); padding: env(safe-area-inset-top, 0px) 12px 0; }
   .lb-brand { font-size: 14px; }.lb-brand svg { width: 28px; height: 28px; }
