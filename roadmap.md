@@ -160,4 +160,5 @@
 - [x] Unit L1.1: Correct workstream geometry, labels, captions, Ask docking, jump synchronization, and trail pins.
 - [x] Unit L2: Add dwell-based story steps, settled view events, saved-answer Ask replay, number anchoring, and logo mapping.
 - [x] Unit L3: Add official tool marks, designed deck slides, measured number lasso, page-led Ask scrolling, and settled-step attention.
+- [x] Unit L3.1: Correct the slide 3 waterfall, source the Ask labels, and clear the Circle deck below the header.
 - [ ] Portal: add `landing-board`, ten story section values, and `landing.section_jumped` (architect-owned).

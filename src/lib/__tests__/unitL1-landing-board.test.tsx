@@ -86,6 +86,21 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(page).toContain("Confirm the vendor extension assumption.");
     expect(page).toContain("Confirm approval by Oct 1.");
   });
+  it("draws the net waterfall bar at the honest 1.4 to 2.1 ratio", () => {
+    const css = readFileSync("src/styles.css", "utf8");
+    const savings = Number(css.match(/\.lb-waterfall-savings i \{ height: (\d+)px;/)?.[1]);
+    const net = Number(css.match(/\.lb-waterfall-net i \{ height: (\d+)px;/)?.[1]);
+    expect(net / savings).toBeCloseTo(1.4 / 2.1, 2);
+    expect(page).toContain('className="lb-waterfall-costs"');
+    expect(page).toContain('data-units="0.7"');
+  });
+  it("sources the Ask client and engagement labels rather than inventing a client name", () => {
+    expect(page).toContain("<h3>{clientLabel}</h3>");
+    expect(page).toContain('{engagementTitle}');
+    expect(page).toContain("clientLabel={result.engagement.clientLabel}");
+    expect(page).toContain("engagementTitle={result.engagement.title}");
+    expect(page).not.toContain("YellowSigil Mobility");
+  });
   it("measures the number after transforms and keeps Ask out of the page scroll path", () => {
     const css = readFileSync("src/styles.css", "utf8");
     expect(page).toContain("getBoundingClientRect()");
