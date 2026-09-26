@@ -220,6 +220,7 @@ export function FocusOverlay({
         readerRef.current?.scrollBy({ top: -96, behavior: "auto" });
         el.classList.add("nb-turn-lit");
         el.setAttribute("data-turn-focus", "true");
+        el.setAttribute("data-focus-label", "Start here: where $2.1M came from");
         if (focusedTurnTestId) el.setAttribute("data-testid", focusedTurnTestId);
         lit = el;
         return;
@@ -232,6 +233,7 @@ export function FocusOverlay({
       if (timer) clearTimeout(timer);
       lit?.classList.remove("nb-turn-lit");
       lit?.removeAttribute("data-turn-focus");
+      lit?.removeAttribute("data-focus-label");
       if (focusedTurnTestId) lit?.removeAttribute("data-testid");
     };
   }, [focusTurnNo, focusedTurnTestId]);

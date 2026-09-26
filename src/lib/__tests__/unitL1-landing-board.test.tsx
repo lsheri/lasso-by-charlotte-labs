@@ -47,6 +47,7 @@ describe("Unit L1 scroll-driven landing board", () => {
   it("allowlists every landing event dimension", () => {
     expect(EVENT_DIM_KEYS["landing.section_jumped"]).toEqual(["section"]);
     expect(EVENT_DIM_KEYS["landing.proof_link_opened"]).toEqual(["step", "target"]);
+    expect(EVENT_DIM_KEYS["landing.proof_turn_toggled"]).toEqual(["turn", "state"]);
     expect(guardEventDims("landing.story_section_viewed", { section: "ask", input_mode: "jump", content: "no" }).dims).toEqual({ section: "ask", input_mode: "jump" });
     expect(guardEventDims("landing.pilot_cta_clicked", { placement: "header" }).dims).toEqual({ placement: "header" });
   });
@@ -67,6 +68,15 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(page.toLowerCase()).not.toContain("verified by lasso");
     expect(css).toContain("translate(-65%, -58%) scale(.66)");
     expect(css).toContain(".lb-caption { position: fixed; left: 12px; right: 12px;");
+  });
+  it("keeps the proof compact, proportional, capitalized, and connector-isolated", () => {
+    const css = readFileSync("src/styles.css", "utf8");
+    expect(page).toContain("(line.amount / model.savings) * 100");
+    expect(page).toContain('step === 4 ? <svg className="lb-circle-link"');
+    expect(page).toContain('thread.scrollTo({ top: proofCard.offsetTop, behavior: "auto" })');
+    expect(page).toContain("Unconfirmed as of 14 Aug");
+    expect(css).toContain(".lb-proof-card h4 strong { font-size: 40px;");
+    expect(css).toContain('background: color-mix(in srgb, var(--nb-lasso-green) 8%, transparent)');
   });
   it("keeps representative board work inside the public allowlist", () => {
     const [item] = publicSafeWork([{ id: "w1", title: "Deck", type: "deck", source: "upload", visibility: "mapped", captured_at: "2026-09-25", content_ref: "storage/private", owner_id: "person", work_item_tasks: [] }]);

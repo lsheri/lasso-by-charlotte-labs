@@ -220,7 +220,7 @@ function AskReplay({ presets, step, onFinished, clientLabel, engagementTitle, pr
             {showQuestion ? <div className="lb-replay-question"><span>You</span><p>{preset.question}</p></div> : null}
             {current && replay.phase === "reading" ? <AnswerRail state="working"><ThinkingTrail items={preset.manifest?.items.map((item) => ({ id: item.id, title: item.title })) ?? []} finalPhase="Writing" manifest={liveItems.length > 0 && preset.manifest ? { ...preset.manifest, items: liveItems } : null} /></AnswerRail> : null}
             {answerText ? <ReplayAnswer preset={{ ...preset, answer: answerText }} finished={!current || replay.phase === "done"} showAudit={position !== 1} /> : null}
-            {position === 1 && proof && proofModel && (!current || replay.phase === "done") ? <><ProofCard proof={proof} model={proofModel} onShowSlide={onShowSlide} onOpenTurn={onOpenTurn} onToggleTurn={onToggleTurn} />{preset.manifest ? <ContextAudit manifest={preset.manifest} readOnly initialOpen={false} buttonLabel="Show the full read list" /> : null}</> : null}
+            {position === 1 && step >= 6 && proof && proofModel && (!current || replay.phase === "done") ? <><ProofCard proof={proof} model={proofModel} onShowSlide={onShowSlide} onOpenTurn={onOpenTurn} onToggleTurn={onToggleTurn} />{preset.manifest ? <ContextAudit manifest={preset.manifest} readOnly initialOpen={false} buttonLabel="Show the full read list" /> : null}</> : null}
           </div>;
         })}
       </div>
@@ -258,7 +258,7 @@ function ExactTurn({ board, preset }: { board: SharedBoardDto; preset: DemoPrese
   );
 }
 
-function StoryBoard({ board, presets, proof, step, attentionStep, attentionNonce, clientLabel, engagementTitle, onShowSlide, onOpenTurn }: { board: SharedBoardDto; presets: DemoPreset[]; proof: LandingProof | null; step: number; attentionStep: number; attentionNonce: number; clientLabel: string; engagementTitle: string; onShowSlide: () => void; onOpenTurn: () => void }) {
+function StoryBoard({ board, presets, proof, step, attentionStep, attentionNonce, clientLabel, engagementTitle, onShowSlide, onOpenTurn, onToggleTurn }: { board: SharedBoardDto; presets: DemoPreset[]; proof: LandingProof | null; step: number; attentionStep: number; attentionNonce: number; clientLabel: string; engagementTitle: string; onShowSlide: () => void; onOpenTurn: () => void; onToggleTurn: (turn: number, state: "open" | "closed") => void }) {
   const [replayFinished, setReplayFinished] = useState(false);
   const [lassoBox, setLassoBox] = useState<LassoBox | null>(null);
   const layerRef = useRef<HTMLDivElement>(null);
@@ -308,7 +308,7 @@ function StoryBoard({ board, presets, proof, step, attentionStep, attentionNonce
     const source = sourceRef.current;
     if (source) {
       const sourceRect = source.getBoundingClientRect();
-      setProofLine({ x1: (numberRect.left + numberRect.width / 2 - layerRect.left) / scale, y1: (numberRect.top + numberRect.height / 2 - layerRect.top) / scale, x2: (sourceRect.left + sourceRect.width / 2 - layerRect.left) / scale, y2: (sourceRect.top + sourceRect.height / 2 - layerRect.top) / scale });
+       setProofLine({ x1: (numberRect.left + numberRect.width / 2 - layerRect.left) / scale, y1: (numberRect.top + numberRect.height / 2 - layerRect.top) / scale, x2: (sourceRect.right - layerRect.left) / scale, y2: (sourceRect.top + sourceRect.height / 2 - layerRect.top) / scale });
     }
   }, []);
   useLayoutEffect(() => {
@@ -348,11 +348,11 @@ function StoryBoard({ board, presets, proof, step, attentionStep, attentionNonce
           {step >= 5 && replayFinished && deckItem && citedIds.has(deckItem.id) ? <span className="lb-pin" aria-label={`Source ${trailNumbers.get(deckItem.id)}`}>{trailNumbers.get(deckItem.id)}</span> : step >= 5 && replayFinished && deckItem && readIds.has(deckItem.id) ? <span className="lb-read-dot" aria-label="Read for this response" /> : null}
         </article>
         {lassoBox ? <span key={`lasso-${attentionNonce}`} className={`lb-slide-lasso${pulse(4)}`} data-testid="landing-board-lasso" style={{ left: lassoBox.left, top: lassoBox.top, width: lassoBox.width, height: lassoBox.height }} aria-hidden="true" /> : null}
-        {lassoBox ? <svg className="lb-circle-link" viewBox="0 0 1120 680" aria-hidden="true"><line x1={lassoBox.left + lassoBox.width / 2} y1={lassoBox.top + lassoBox.height / 2} x2="932" y2="482" /></svg> : null}
+        {lassoBox && step === 4 ? <svg className="lb-circle-link" viewBox="0 0 1120 680" aria-hidden="true"><line x1={lassoBox.left + lassoBox.width / 2} y1={lassoBox.top + lassoBox.height / 2} x2="932" y2="482" /></svg> : null}
         <div className="lb-circle-question"><p>Where did the $1.4M on slide 3 come from?</p></div>
         {step === 7 && replayFinished ? <div key={`notes-${attentionNonce}`} className={`lb-open-notes${pulse(7)}`}><p>Confirm the vendor extension assumption.</p><p>Confirm approval by Oct 1.</p></div> : null}
       </div>
-      {step >= 5 && step <= 7 ? <div key={`ask-${attentionNonce}`} className={pulse(5)}><AskReplay presets={presets} step={step} onFinished={onReplayFinished} clientLabel={clientLabel} engagementTitle={engagementTitle} proof={proof} proofModel={proofModel} onShowSlide={onShowSlide} onOpenTurn={onOpenTurn} onToggleTurn={(turn, state) => event("landing-board-proof", "landing.proof_turn_toggled", { turn: String(turn), state })} /></div> : null}
+      {step >= 5 && step <= 7 ? <div key={`ask-${attentionNonce}`} className={pulse(5)}><AskReplay presets={presets} step={step} onFinished={onReplayFinished} clientLabel={clientLabel} engagementTitle={engagementTitle} proof={proof} proofModel={proofModel} onShowSlide={onShowSlide} onOpenTurn={onOpenTurn} onToggleTurn={onToggleTurn} /></div> : null}
       {step === 6 && replayFinished ? <div key={`turn-${attentionNonce}`} className={pulse(6)}><ExactTurn board={board} preset={second} /></div> : null}
       {step === 8 ? <div key={`share-${attentionNonce}`} className={`lb-share-dialog${pulse(8)}`}><p className="lb-micro">READ ONLY</p><h3>Share this board</h3><p>They open the deliverable, source cards, and the conversations behind them.</p><p>They do not open private drafts or anything outside this board.</p><strong>Closes in 48 hours</strong><small>In the demo this is shown, not issued.</small></div> : null}
     </div>
@@ -506,7 +506,7 @@ export function LandingBoard() {
       <LandingBoardHeader active={LANDING_BOARD_STEPS[active]?.key ?? "problem"} onJump={jump} onPilot={() => pilot("header")} />
       <main className="lb-story">
         <div className="lb-sticky-stage">
-          {result?.status === "open" && "board" in result ? <StoryBoard board={result.board} presets={result.presets} proof={result.proof} step={active} attentionStep={settledStep} attentionNonce={attentionNonce} clientLabel={result.engagement.clientLabel ?? ""} engagementTitle={result.engagement.title} onShowSlide={() => { event(viewId.current, "landing.proof_link_opened", { step: "6", target: "slide" }); jump("circle"); }} onOpenTurn={() => event(viewId.current, "landing.proof_link_opened", { step: "6", target: "turn" })} /> : <div className="lb-stage-window lb-loading">{query.isPending ? "Opening the demo board." : "The demo board is not available right now."}</div>}
+          {result?.status === "open" && "board" in result ? <StoryBoard board={result.board} presets={result.presets} proof={result.proof} step={active} attentionStep={settledStep} attentionNonce={attentionNonce} clientLabel={result.engagement.clientLabel ?? ""} engagementTitle={result.engagement.title} onShowSlide={() => { event(viewId.current, "landing.proof_link_opened", { step: "6", target: "slide" }); jump("circle"); }} onOpenTurn={() => event(viewId.current, "landing.proof_link_opened", { step: "6", target: "turn" })} onToggleTurn={(turn, state) => event(viewId.current, "landing.proof_turn_toggled", { turn: String(turn), state })} /> : <div className="lb-stage-window lb-loading">{query.isPending ? "Opening the demo board." : "The demo board is not available right now."}</div>}
           {settledStep > 0 ? <article key={`${settledStep}-${attentionNonce}`} className="lb-caption lb-caption-attention" aria-live="polite"><div className="lb-caption-text"><span>{String(settledStep + 1).padStart(2, "0")} · {LANDING_BOARD_STEPS[settledStep]?.label}</span><h2>{LANDING_BOARD_STEPS[settledStep]?.headline}</h2><p>{LANDING_BOARD_STEPS[settledStep]?.line}</p></div>{settledStep === 9 ? <div><Button asChild><Link to="/demo/$code" params={{ code: "YSM-01" }}>Open the board yourself</Link></Button><Button asChild variant="outline"><a href="#pilot" onClick={() => pilot("try_it")}>Book a pilot</a></Button></div> : null}</article> : null}
         </div>
         <div className="lb-scroll-sections">
