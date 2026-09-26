@@ -86,6 +86,47 @@ test("story caption body is readable on phone", async ({ browser }) => {
   await context.close();
 });
 
+test("story zones always resolve to one matching visible step", async ({ browser }) => {
+  test.setTimeout(180_000);
+  const context = await browser.newContext({ viewport: { width: 1372, height: 732 }, reducedMotion: "reduce" });
+  const page = await context.newPage();
+  await page.goto("/", { waitUntil: "networkidle" });
+  const pageHeight = await page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight);
+  for (let y = 0; y <= pageHeight; y += 80) {
+    await page.evaluate((top) => window.scrollTo({ top, behavior: "auto" }), y);
+    await page.waitForTimeout(20);
+    const captions = page.locator('.lb-caption[data-phase="incoming"]:visible');
+    await expect(captions).toHaveCount(1);
+    await page.waitForTimeout(720);
+    const state = await page.evaluate(() => ({
+      board: document.querySelector<HTMLElement>('[data-testid="landing-board-stage"]')?.dataset.step,
+      caption: document.querySelector<HTMLElement>('.lb-caption[data-phase="incoming"]')?.dataset.step,
+    }));
+    expect(state.board).toBe(state.caption);
+  }
+  await context.close();
+});
+
+test("story spotlights only the three settled attention moments", async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 1372, height: 732 }, reducedMotion: "no-preference" });
+  const page = await context.newPage();
+  await page.goto("/", { waitUntil: "networkidle" });
+  await page.getByRole("button", { name: "Workstreams", exact: true }).click();
+  await page.waitForTimeout(900);
+  await expect(page.getByTestId("landing-story-spotlight")).toHaveCount(0);
+  await page.getByRole("button", { name: "Ask", exact: true }).click();
+  const overlay = page.getByTestId("landing-story-spotlight");
+  await expect(overlay).toHaveAttribute("data-spotlight", "ask", { timeout: 2_000 });
+  const layers = await page.evaluate(() => ({
+    board: Number(getComputedStyle(document.querySelector<HTMLElement>(".lb-board-layer") as HTMLElement).zIndex) || 0,
+    overlay: Number(getComputedStyle(document.querySelector<HTMLElement>(".lb-spotlight-overlay") as HTMLElement).zIndex),
+    ask: Number(getComputedStyle(document.querySelector<HTMLElement>(".lb-ask-spotlight") as HTMLElement).zIndex),
+  }));
+  expect(layers.board).toBeLessThan(layers.overlay);
+  expect(layers.ask).toBeGreaterThan(layers.overlay);
+  await context.close();
+});
+
 for (const viewport of [...desktopSizes, { width: 390, height: 844 }]) {
   test(`landing page has no horizontal overflow at ${viewport.width}x${viewport.height}`, async ({ browser }) => {
     const context = await browser.newContext({ viewport, reducedMotion: "no-preference" });
