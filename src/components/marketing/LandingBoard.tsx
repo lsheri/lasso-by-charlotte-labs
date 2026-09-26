@@ -85,7 +85,7 @@ export const LANDING_BOARD_STEPS = [
   {
     key: "still-open",
     label: "Open questions",
-    headline: "Open questions stay on the board.",
+    headline: "Add stickys (actual human written notes)",
     line: "Each one sits beside the work that raised it.",
   },
   {
