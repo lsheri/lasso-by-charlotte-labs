@@ -248,11 +248,11 @@ test("use cases sit before the story and link into matching steps", async ({ bro
     expect(metrics.height).toBeLessThanOrEqual(metrics.size * 1.3);
   }
   await expect(page.locator("#usecases .landing-section-head h2")).toHaveCSS("font-size", "52px");
-  await expect(page.locator('#usecases [data-usecase="bring_work_in"] video source[type="video/mp4"]')).toHaveAttribute("src", /lasso-claude\.mp4/);
+  await expect(page.locator('#usecases [data-usecase="bring_work_in"] video source[type="video/mp4"]')).toHaveAttribute("src", /use-bring-work-in\.mp4/);
   await page.locator("#usecases").screenshot({ path: testInfo.outputPath("landing-usecases-1372x732.png") });
   await page.locator('#usecases [data-usecase="bring_work_in"]').getByRole("button", { name: /See it in the story/ }).click();
   await expect(page.locator('.lb-stage-window')).toHaveAttribute("data-step", "3");
-  await page.locator('#usecases [data-usecase="reasoning_stays"]').getByRole("button", { name: /See it in the story/ }).click();
+  await page.locator('#usecases [data-usecase="every_number"]').getByRole("button", { name: /See it in the story/ }).click();
   await expect(page.locator('.lb-stage-window')).toHaveAttribute("data-step", "6");
   await context.close();
 });

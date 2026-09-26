@@ -42,12 +42,13 @@ describe("Unit L1 scroll-driven landing board", () => {
     for (const copy of ["Delete", "Share link", "Add work", "Comment", "Push to"]) expect(page).not.toContain(copy);
   });
   it("restores all three product clips with posters and existing play-event coverage", () => {
-    expect(page).toContain('/videos/lasso-claude.mp4');
-    expect(page).toContain('/videos/poster-claude.jpg');
-    expect(page).toContain('/videos/find-it.mp4');
-    expect(page).toContain('/videos/poster-find-it.jpg');
-    expect(page).toContain('use-every-number-has-a-source.mp4.asset.json');
-    expect(page).toContain('use-every-number-has-a-source-poster.jpg.asset.json');
+    for (const clip of ["use-bring-work-in", "use-every-number-has-a-source", "use-reasoning-stays-with-the-firm"]) {
+      expect(page).toContain(`useCaseAsset("${clip}.mp4")`);
+      expect(page).toContain(`useCaseAsset("${clip}.webm")`);
+      expect(page).toContain(`useCaseAsset("${clip}-poster.jpg")`);
+    }
+    expect(page).not.toContain('/videos/lasso-claude.mp4');
+    expect(page).not.toContain('/videos/find-it.mp4');
     expect(page).toContain("LANDING_BOARD_USE_CASES.map");
     expect(page).toContain('event(viewId.current, "landing.usecase_played", { card, input_mode: inputMode })');
     expect(page).toContain('aria-label={`Play: ${card.title}`}');
@@ -61,10 +62,10 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(page).toContain('onClick={() => onJump(card.step)}');
     expect(page).toContain('step: "workstreams"');
     expect(page).toContain('step: "ask"');
-    expect(page).toContain('step: "circle"');
+    expect(page).toContain('step: "canvas"');
     expect(page).toContain('Push work in.');
     expect(page).toContain('Chat with your work.');
-    expect(page).toContain('Open the chat behind any figure and check it yourself.');
+    expect(page).toContain('Every chat, on the record.');
     expect(page).toContain('Watch one engagement, start to finish.');
   });
   it("maps every board tool to an official asset or Simple Icons path", () => {
