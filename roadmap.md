@@ -163,5 +163,6 @@
 - [x] Unit L3.1: Correct the slide 3 waterfall, source the Ask labels, and clear the Circle deck below the header.
 - [x] Unit L3.2: Restore the costs bar and move the Circle question clear of the slides.
 - [x] Unit L4: Add the source-derived number proof, board trail, and public conversation deep link.
+- [x] Unit L4.1: Polish proof-card hierarchy, source-card framing, and deep-link turn emphasis.
 - [ ] Portal: add `landing.proof_link_opened` with `step` and `target` dimensions (architect-owned).
 - [ ] Portal: add `landing-board`, ten story section values, and `landing.section_jumped` (architect-owned).

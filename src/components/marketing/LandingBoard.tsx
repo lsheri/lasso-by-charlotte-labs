@@ -165,17 +165,24 @@ function proofDate(proof: LandingProof): string {
   return Number.isNaN(date.getTime()) ? "" : date.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 }
 
+const PROOF_TURN_SUMMARIES: Readonly<Record<number, string>> = {
+  3: "asked where the $2.1M comes from.",
+  4: "split it into four lines.",
+  5: "approved it as the slide 3 headline.",
+  6: "assumption noted under the chart.",
+};
+
 function ProofCard({ proof, model, onShowSlide, onOpenTurn }: { proof: LandingProof; model: LandingProofModel; onShowSlide: () => void; onOpenTurn: () => void }) {
   const turn = (number: number) => proof.turns.find((entry) => entry.turn_no === number);
   const role = (number: number) => turn(number)?.role === "user" ? "you said" : "Claude said";
   return (
     <section className="lb-proof-card lb-caption-attention" data-testid="landing-proof-card">
-      <h4>${model.scenarioB.toFixed(1)}M = ${model.savings.toFixed(1)}M savings − ${model.transition.toFixed(1)}M transition</h4>
-      <div className="lb-proof-origin"><p className="lb-micro">WHERE IT CAME FROM</p><ToolLogo vendor={proof.vendor} /><strong>{proof.title}</strong><span>Turn 2 · {proofDate(proof)}</span><ul>{model.inputs.map((input) => <li key={input}>{input}</li>)}</ul></div>
-      <div className="lb-proof-timeline"><p className="lb-micro">WHAT WAS CHECKED AFTER</p>
-        {[3, 4, 5, 6].map((number, index) => <article key={number} style={{ "--lb-proof-row": index } as CSSProperties}><span>Turn {number} · {role(number)}</span>{number === 4 ? <div><p>{turn(number)?.content}</p><div className="lb-proof-bars">{model.lines.map((line) => <span key={line.label}><i style={{ "--lb-proof-bar": `${(line.amount / Math.max(...model.lines.map((entry) => entry.amount))) * 100}%` } as CSSProperties} />{line.label} ${line.amount.toFixed(1)}M</span>)}</div></div> : <p>{turn(number)?.content}</p>}</article>)}
+      <h4><strong>${model.scenarioB.toFixed(1)}M</strong><span>= ${model.savings.toFixed(1)}M savings − ${model.transition.toFixed(1)}M transition</span></h4>
+      <div className="lb-proof-origin"><ToolLogo vendor={proof.vendor} compact /><strong>{proof.title.replace(/: year-two net benefit/i, "")}</strong><span>Turn 2 · {proofDate(proof)}</span><p>{model.inputs.join(", ")}</p></div>
+      <div className="lb-proof-timeline"><p className="lb-micro">CHECKED AFTER · 4 TURNS</p>
+        {[3, 4, 5, 6].map((number, index) => <details key={number} style={{ "--lb-proof-row": index } as CSSProperties}><summary><span>Turn {number} · {role(number)}</span><b>{PROOF_TURN_SUMMARIES[number]}</b></summary>{number === 4 ? <div><p>{turn(number)?.content}</p><div className="lb-proof-bars" aria-label="Finance 0.6, HR 0.4, IT 0.7, revenue cycle 0.4 of 2.1 million">{model.lines.map((line) => <span key={line.label} data-unconfirmed={line.label === "Revenue cycle"}><i style={{ "--lb-proof-segment": `${(line.amount / model.savings) * 100}%` } as CSSProperties} />{line.label}</span>)}</div></div> : <p>{turn(number)?.content}</p>}</details>)}
       </div>
-      <div className="lb-proof-open"><p className="lb-micro">STILL UNCONFIRMED</p><p>{model.unconfirmed}</p></div>
+      <div className="lb-proof-open"><p><strong>1 still unconfirmed:</strong> {model.unconfirmed}</p></div>
       <div className="lb-proof-actions"><Button asChild size="sm"><Link to="/demo/conversations" search={{ item: proof.itemId, turn: 4, from: "story" }} onClick={onOpenTurn}>Open the chat at turn 4 to hand-check</Link></Button><Button type="button" size="sm" variant="outline" onClick={onShowSlide}>Show slide 3</Button></div>
     </section>
   );
@@ -186,19 +193,25 @@ function AskReplay({ presets, step, onFinished, clientLabel, engagementTitle, pr
   const threadRef = useRef<HTMLDivElement>(null);
   const shownPositions = step === 5 ? [1] : step === 6 ? [1, 2] : [1, 2, 4];
   const liveItems = replay.preset?.manifest?.items.slice(0, replay.readCount) ?? [];
+  const showProof = step >= 5 && replay.phase === "done" && proof && proofModel;
   useEffect(() => {
     onFinished(replay.phase === "done");
   }, [onFinished, replay.phase]);
   useLayoutEffect(() => {
     const thread = threadRef.current;
     if (!thread) return;
-    thread.scrollTo({ top: thread.scrollHeight, behavior: replay.phase === "done" ? "auto" : "smooth" });
+    const proofCard = thread.querySelector<HTMLElement>("[data-testid=landing-proof-card]");
+    if (proofCard && replay.phase === "done") {
+      thread.scrollTo({ top: proofCard.offsetTop, behavior: "auto" });
+      return;
+    }
+    thread.scrollTo({ top: thread.scrollHeight, behavior: "smooth" });
   }, [replay.phase, replay.readCount, replay.streamed, replay.typed]);
   return (
     <aside className="lb-answer-sheet" aria-label="Ask Lasso replay" data-replay-phase={replay.phase} data-story-scroll="locked">
       <header className="lb-ask-header"><LassoThinkingMark kind="signature" size={44} /><div><p className="lb-micro">ASK LASSO</p><h3>{clientLabel}</h3><p className="lb-ask-engagement-title">{engagementTitle}</p></div></header>
       <div ref={threadRef} className="lb-replay-thread nb-binder">
-        {shownPositions.map((position) => {
+        {showProof ? <><ProofCard proof={proof} model={proofModel} onShowSlide={onShowSlide} onOpenTurn={onOpenTurn} />{presets.find((entry) => entry.position === 1)?.manifest ? <ContextAudit manifest={presets.find((entry) => entry.position === 1)?.manifest ?? null} readOnly initialOpen={false} buttonLabel="Show the full read list" /> : null}</> : shownPositions.map((position) => {
           const preset = presets.find((entry) => entry.position === position);
           if (!preset) return null;
           const current = replay.position === position;
@@ -208,7 +221,6 @@ function AskReplay({ presets, step, onFinished, clientLabel, engagementTitle, pr
             {showQuestion ? <div className="lb-replay-question"><span>You</span><p>{preset.question}</p></div> : null}
             {current && replay.phase === "reading" ? <AnswerRail state="working"><ThinkingTrail items={preset.manifest?.items.map((item) => ({ id: item.id, title: item.title })) ?? []} finalPhase="Writing" manifest={liveItems.length > 0 && preset.manifest ? { ...preset.manifest, items: liveItems } : null} /></AnswerRail> : null}
             {answerText ? <ReplayAnswer preset={{ ...preset, answer: answerText }} finished={!current || replay.phase === "done"} showAudit={position !== 1} /> : null}
-            {position === 1 && proof && proofModel && (!current || replay.phase === "done") ? <><ProofCard proof={proof} model={proofModel} onShowSlide={onShowSlide} onOpenTurn={onOpenTurn} />{preset.manifest ? <ContextAudit manifest={preset.manifest} readOnly initialOpen={false} buttonLabel="Show the full read list" /> : null}</> : null}
           </div>;
         })}
       </div>
@@ -296,7 +308,7 @@ function StoryBoard({ board, presets, proof, step, attentionStep, attentionNonce
     const source = sourceRef.current;
     if (source) {
       const sourceRect = source.getBoundingClientRect();
-      setProofLine({ x1: (numberRect.left + numberRect.width / 2 - layerRect.left) / scale, y1: (numberRect.top + numberRect.height / 2 - layerRect.top) / scale, x2: (sourceRect.left + sourceRect.width / 2 - layerRect.left) / scale, y2: (sourceRect.top + sourceRect.height / 2 - layerRect.top) / scale });
+       setProofLine({ x1: (numberRect.left + numberRect.width / 2 - layerRect.left) / scale, y1: (numberRect.top + numberRect.height / 2 - layerRect.top) / scale, x2: (sourceRect.right - layerRect.left) / scale, y2: (sourceRect.top + sourceRect.height / 2 - layerRect.top) / scale });
     }
   }, []);
   useLayoutEffect(() => {
@@ -336,7 +348,7 @@ function StoryBoard({ board, presets, proof, step, attentionStep, attentionNonce
           {step >= 5 && replayFinished && deckItem && citedIds.has(deckItem.id) ? <span className="lb-pin" aria-label={`Source ${trailNumbers.get(deckItem.id)}`}>{trailNumbers.get(deckItem.id)}</span> : step >= 5 && replayFinished && deckItem && readIds.has(deckItem.id) ? <span className="lb-read-dot" aria-label="Read for this response" /> : null}
         </article>
         {lassoBox ? <span key={`lasso-${attentionNonce}`} className={`lb-slide-lasso${pulse(4)}`} data-testid="landing-board-lasso" style={{ left: lassoBox.left, top: lassoBox.top, width: lassoBox.width, height: lassoBox.height }} aria-hidden="true" /> : null}
-        {lassoBox ? <svg className="lb-circle-link" viewBox="0 0 1120 680" aria-hidden="true"><line x1={lassoBox.left + lassoBox.width / 2} y1={lassoBox.top + lassoBox.height / 2} x2="932" y2="482" /></svg> : null}
+        {lassoBox && step === 4 ? <svg className="lb-circle-link" viewBox="0 0 1120 680" aria-hidden="true"><line x1={lassoBox.left + lassoBox.width / 2} y1={lassoBox.top + lassoBox.height / 2} x2="932" y2="482" /></svg> : null}
         <div className="lb-circle-question"><p>Where did the $1.4M on slide 3 come from?</p></div>
         {step === 7 && replayFinished ? <div key={`notes-${attentionNonce}`} className={`lb-open-notes${pulse(7)}`}><p>Confirm the vendor extension assumption.</p><p>Confirm approval by Oct 1.</p></div> : null}
       </div>

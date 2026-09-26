@@ -68,6 +68,17 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(css).toContain("translate(-65%, -58%) scale(.66)");
     expect(css).toContain(".lb-caption { position: fixed; left: 12px; right: 12px;");
   });
+  it("keeps the proof compact, proportional, capitalized, and connector-isolated", () => {
+    const css = readFileSync("src/styles.css", "utf8");
+    expect(page).toContain("(line.amount / model.savings) * 100");
+    expect(page).toContain('step === 4 ? <svg className="lb-circle-link"');
+    expect(page).toContain('thread.scrollTo({ top: proofCard.offsetTop, behavior: "auto" })');
+    expect(page).toContain('const showProof = step >= 5 && replay.phase === "done" && proof && proofModel');
+    const parser = readFileSync("src/lib/landing-proof-shared.ts", "utf8");
+    expect(parser).toContain('replace(/^unconfirmed/i, "Unconfirmed").replace("14 August", "14 Aug")');
+    expect(css).toContain(".lb-proof-card h4 strong { font-size: 40px;");
+    expect(css).toContain('background: color-mix(in srgb, var(--nb-lasso-green) 8%, transparent)');
+  });
   it("keeps representative board work inside the public allowlist", () => {
     const [item] = publicSafeWork([{ id: "w1", title: "Deck", type: "deck", source: "upload", visibility: "mapped", captured_at: "2026-09-25", content_ref: "storage/private", owner_id: "person", work_item_tasks: [] }]);
     expect(item).toMatchObject({ id: "w1", title: "Deck", type: "deck" });
