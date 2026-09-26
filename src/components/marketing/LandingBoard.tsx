@@ -261,9 +261,11 @@ function ExactTurn({ board, preset }: { board: SharedBoardDto; preset: DemoPrese
 function StoryBoard({ board, presets, proof, step, attentionStep, attentionNonce, clientLabel, engagementTitle, onShowSlide, onOpenTurn }: { board: SharedBoardDto; presets: DemoPreset[]; proof: LandingProof | null; step: number; attentionStep: number; attentionNonce: number; clientLabel: string; engagementTitle: string; onShowSlide: () => void; onOpenTurn: () => void }) {
   const [replayFinished, setReplayFinished] = useState(false);
   const [lassoBox, setLassoBox] = useState<LassoBox | null>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
   const layerRef = useRef<HTMLDivElement>(null);
   const numberRef = useRef<HTMLSpanElement>(null);
   const sourceRef = useRef<HTMLElement>(null);
+  const measureFrameRef = useRef<number | null>(null);
   const onReplayFinished = useCallback((finished: boolean) => setReplayFinished(finished), []);
   useEffect(() => {
     setReplayFinished(false);
@@ -292,11 +294,11 @@ function StoryBoard({ board, presets, proof, step, attentionStep, attentionNonce
   const measureLasso = useCallback(() => {
     const layer = layerRef.current;
     const number = numberRef.current;
-    if (!layer || !number) return;
+    if (!layer || !number) return false;
     const layerRect = layer.getBoundingClientRect();
     const numberRect = number.getBoundingClientRect();
     const scale = layerRect.width / layer.offsetWidth;
-    if (!Number.isFinite(scale) || scale <= 0) return;
+    if (!Number.isFinite(scale) || scale <= 0 || numberRect.width <= 0 || numberRect.height <= 0) return false;
     const padX = 10;
     const padY = 6;
     setLassoBox({
@@ -306,32 +308,60 @@ function StoryBoard({ board, presets, proof, step, attentionStep, attentionNonce
       height: numberRect.height / scale + padY * 2,
     });
     const source = sourceRef.current;
-    if (source) {
-      const sourceRect = source.getBoundingClientRect();
-      setProofLine({
-        x1: (numberRect.left - layerRect.left) / scale - padX,
-        y1: (numberRect.top + numberRect.height / 2 - layerRect.top) / scale,
-        x2: (sourceRect.right - layerRect.left) / scale,
-        y2: (sourceRect.top + sourceRect.height / 2 - layerRect.top) / scale,
-      });
-    }
+    if (!source) return false;
+    const sourceRect = source.getBoundingClientRect();
+    if (sourceRect.width <= 0 || sourceRect.height <= 0) return false;
+    setProofLine({
+      x1: (numberRect.left - layerRect.left) / scale - padX,
+      y1: (numberRect.top + numberRect.height / 2 - layerRect.top) / scale,
+      x2: (sourceRect.right - layerRect.left) / scale,
+      y2: (sourceRect.top + sourceRect.height / 2 - layerRect.top) / scale,
+    });
+    return true;
   }, []);
   useLayoutEffect(() => {
+    const stage = stageRef.current;
     const layer = layerRef.current;
-    if (!layer) return;
-    const frame = window.requestAnimationFrame(measureLasso);
-    const onTransitionEnd = (event: TransitionEvent) => { if (event.propertyName === "transform") measureLasso(); };
+    if (!stage || !layer) return;
+    const stopRetry = () => {
+      if (measureFrameRef.current !== null) window.cancelAnimationFrame(measureFrameRef.current);
+      measureFrameRef.current = null;
+    };
+    const retryMeasure = () => {
+      stopRetry();
+      const tick = () => {
+        if (measureLasso()) {
+          measureFrameRef.current = null;
+          return;
+        }
+        measureFrameRef.current = window.requestAnimationFrame(tick);
+      };
+      measureFrameRef.current = window.requestAnimationFrame(tick);
+    };
+    const frame = window.requestAnimationFrame(() => {
+      measureLasso();
+      if (step >= 5 && step <= 7 && replayFinished) retryMeasure();
+    });
+    const onTransitionEnd = (event: TransitionEvent) => {
+      if (event.target === layer && event.propertyName === "transform") retryMeasure();
+    };
+    const proofObserver = new MutationObserver(() => {
+      if (stage.querySelector("[data-testid=landing-proof-card]")) retryMeasure();
+    });
+    proofObserver.observe(stage, { childList: true, subtree: true });
     layer.addEventListener("transitionend", onTransitionEnd);
     window.addEventListener("resize", measureLasso);
     return () => {
       window.cancelAnimationFrame(frame);
+      stopRetry();
+      proofObserver.disconnect();
       layer.removeEventListener("transitionend", onTransitionEnd);
       window.removeEventListener("resize", measureLasso);
     };
-  }, [measureLasso, step]);
+  }, [measureLasso, replayFinished, step]);
   const pulse = (target: number) => attentionStep === target ? " lb-target-pulse" : "";
   return (
-    <div className="lb-stage-window" data-step={step + 1} data-testid="landing-board-stage">
+    <div ref={stageRef} className="lb-stage-window" data-step={step + 1} data-testid="landing-board-stage">
       <div ref={layerRef} className="lb-board-layer">
         <div className="lb-dot-grid" />
         <div key={`tools-${attentionNonce}`} className={`lb-tool-dock${pulse(1)}`} aria-label="Sources">

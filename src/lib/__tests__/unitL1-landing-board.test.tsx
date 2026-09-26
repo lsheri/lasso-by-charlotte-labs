@@ -146,6 +146,10 @@ describe("Unit L1 scroll-driven landing board", () => {
     const css = readFileSync("src/styles.css", "utf8");
     expect(page).toContain("getBoundingClientRect()");
     expect(page).toContain('event.propertyName === "transform"');
+    expect(page).toContain('new MutationObserver');
+    expect(page).toContain('[data-testid=landing-proof-card]');
+    expect(page).toContain('measureFrameRef.current = window.requestAnimationFrame(tick)');
+    expect(page).toContain('sourceRect.width <= 0 || sourceRect.height <= 0');
     expect(page).toContain("layerRect.width / layer.offsetWidth");
     expect(page).toContain("thread.scrollTo");
     expect(css).toContain(".lb-replay-thread { min-height: 0; flex: 1; overflow: hidden;");

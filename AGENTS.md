@@ -15,3 +15,4 @@
 - Keep `/landing-board` as an unlinked, public, read-only composition fed only by `openDemoBoardFn`; its proof excerpts are derived server-side from demo-org turns through the public allowlist.
 - Keep `/landing-board` story state transition-queued and dwell-based; saved Ask answers replay locally through shared presentation components without sending requests.
 - Keep `/landing-board` tool marks behind ToolLogo, deck art self-contained, and attention motion keyed only to settled story steps.
+- Keep the `/landing-board` connector browser check in normal motion at both desktop sizes, because reduced motion bypasses its live replay timing.

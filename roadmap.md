@@ -165,5 +165,6 @@
 - [x] Unit L4: Add the source-derived number proof, board trail, and public conversation deep link.
 - [x] Unit L4.1: Polish proof-card hierarchy, source-card framing, and deep-link turn emphasis.
 - [x] Unit L4.2: Restore the proof connector on story steps 6 through 8 only.
+- [x] Unit L4.3: Re-measure the live proof connector, contain page width, and clear all ten phone story steps.
 - [ ] Portal: add `landing.proof_link_opened` with `step` and `target` dimensions (architect-owned).
 - [ ] Portal: add `landing-board`, ten story section values, and `landing.section_jumped` (architect-owned).
