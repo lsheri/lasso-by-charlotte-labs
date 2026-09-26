@@ -79,6 +79,13 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(css).toContain(".lb-proof-card h4 strong { font-size: 40px;");
     expect(css).toContain('background: color-mix(in srgb, var(--nb-lasso-green) 8%, transparent)');
   });
+  it("shows the proof connector on story steps 6 to 8, but not step 5", () => {
+    const css = readFileSync("src/styles.css", "utf8");
+    expect(page).toContain('step >= 5 && step <= 7 ? <path data-testid="landing-proof-connector"');
+    expect(page).not.toContain('step === 4 ? <path data-testid="landing-proof-connector"');
+    expect(css).toContain('.lb-stage-window:is([data-step="6"],[data-step="7"],[data-step="8"]) .lb-connectors { opacity: 1; }');
+    expect(css).toContain('.lb-proof-connector { stroke: var(--nb-lasso-green); stroke-width: 1.5; stroke-dasharray: 6 4; }');
+  });
   it("keeps representative board work inside the public allowlist", () => {
     const [item] = publicSafeWork([{ id: "w1", title: "Deck", type: "deck", source: "upload", visibility: "mapped", captured_at: "2026-09-25", content_ref: "storage/private", owner_id: "person", work_item_tasks: [] }]);
     expect(item).toMatchObject({ id: "w1", title: "Deck", type: "deck" });
