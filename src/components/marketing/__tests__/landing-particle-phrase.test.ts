@@ -12,28 +12,32 @@ describe("landing headline particle phrase", () => {
     expect(styles).not.toContain("landing-hero-highlight");
   });
 
-  it("loops through a seven-second resolved hold and a reduced-motion fallback", () => {
-    expect(particle).toContain("export const PARTICLE_TEXT_HOLD_MS = 7000");
-    expect(particle).toContain("const CYCLE_MS = 12500");
-    expect(particle).toContain('matchMedia("(prefers-reduced-motion: reduce)")');
-    expect(styles).toContain("@media (prefers-reduced-motion: reduce)");
+  it("appears in ink, turns neon orange, and holds orange for five seconds", () => {
+    expect(particle).toContain("export const PARTICLE_TEXT_HOLD_MS = 5000");
+    expect(particle).toContain("export const PARTICLE_TEXT_CYCLE_MS = 7600");
+    expect(styles).toContain("@keyframes landing-particle-ink-to-orange");
+    expect(styles).toContain("animation: landing-particle-ink-to-orange 7.6s ease-in-out infinite");
+    expect(styles).toContain("color: var(--nb-ink)");
+    expect(styles).toContain("color: var(--lb-neon-orange)");
   });
 
-  it("keeps the resolved phrase underlined in Lasso green", () => {
-    expect(styles).toContain("text-decoration-color: var(--nb-lasso-green)");
+  it("keeps the phrase underlined with the moving colour", () => {
+    expect(styles).toContain("text-decoration-color: currentColor");
     expect(styles).toContain("text-decoration-line: underline");
   });
 
-  it("holds the green particles around the full letter outlines while the phrase is visible", () => {
-    expect(particle).toContain('sampleContext.strokeText(word, 0, baseline)');
-    expect(particle).toContain("if (gathering || holding || dispersing)");
-    expect(particle).toContain("const local = holding ? 0");
-    expect(particle).toContain("holding\n              ? holdPulse");
-  });
-
-  it("adds no action or event", () => {
+  it("renders plain spans with no canvas, particles, or network calls", () => {
+    expect(particle).not.toContain("canvas");
+    expect(particle).not.toContain("strokeText");
+    expect(particle).not.toContain("useEffect");
     expect(particle).not.toContain("onClick");
     expect(particle).not.toContain("recordAnonymousEventFn");
     expect(particle).not.toContain("emitClientEvent");
   });
+
+  it("answers reduced motion with the settled orange state", () => {
+    const reduced = styles.slice(styles.indexOf("landing-particle-word-text { opacity: 1 !important"));
+    expect(reduced).toContain("animation: none");
+    expect(reduced).toContain("color: var(--lb-neon-orange)");
+ed  });
 });
