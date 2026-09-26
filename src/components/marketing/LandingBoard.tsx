@@ -91,8 +91,8 @@ export const LANDING_BOARD_STEPS = [
   {
     key: "share",
     label: "\n",
-    headline: "Share the deliverable, not the drafts.",
-    line: "A read-only view closes in 48 hours and opens only what you chose.",
+    headline: "Share deliverable, context and all!",
+    line: "Share your work & context so the team can continue where you left off or pass it off to getting coaching on your AI Fluency.",
   },
   {
     key: "try-it",
