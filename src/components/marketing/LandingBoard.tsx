@@ -2575,18 +2575,36 @@ export function LandingBoard() {
                   </a>
                 </Button>
               </div>
+              <div className="lb-hero-line">
+                <p className="micro-label">WHAT IT IS</p>
+                <p className="lb-hero-line-text font-mono font-bold uppercase tracking-[0.18em]">
+                  ONE INFINITE CANVAS WHERE YOUR AI WORK, AND THE THINKING BEHIND IT, LIVES
+                </p>
+              </div>
             </div>
           </div>
+          <HeroRails />
           <div
             className="lb-scroll-cue"
             data-visible={active === 0 ? "true" : "false"}
             data-testid="landing-scroll-cue"
             aria-hidden={active !== 0}
           >
-            <span>Scroll to watch it work</span>
-            <svg viewBox="0 0 16 10" aria-hidden="true">
-              <path d="m2 2 6 6 6-6" />
-            </svg>
+            <span className="lb-scroll-cue-rail" />
+            <span className="lb-scroll-cue-num">
+              1
+              <svg viewBox="0 0 40 40" className="lb-scroll-cue-ring" aria-hidden="true">
+                <path d="M20 4c9 0 16 6 16 15s-7 17-17 17S4 29 4 20 11 5 21 5" />
+              </svg>
+            </span>
+            <span className="lb-scroll-cue-label">Start here</span>
+            <span className="lb-scroll-cue-head">Watch one engagement, start to finish.</span>
+            <span className="lb-scroll-cue-micro">
+              SCROLL
+              <svg viewBox="0 0 16 10" aria-hidden="true">
+                <path d="m2 2 6 6 6-6" />
+              </svg>
+            </span>
           </div>
         </section>
         <UseCaseSection onPlayed={noteUseCasePlayed} />
