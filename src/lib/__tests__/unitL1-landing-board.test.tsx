@@ -58,6 +58,22 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(css).toContain("@media (prefers-reduced-motion: reduce)");
     expect(css).toContain("scroll-behavior: auto !important");
   });
+  it("replaces loading copy with a timed, reduced-motion-safe logo rain", () => {
+    const css = readFileSync("src/styles.css", "utf8");
+    expect(page).toContain("function LandingLogoRain()")
+    expect(page).toContain("LANDING_INTRO_DURATION_MS = 2500")
+    expect(page).toContain('data-testid="landing-logo-rain"')
+    expect(page).toContain("[...marks, ...marks].map")
+    for (const brand of [
+      "claude", "chatgpt", "gemini", "copilot", "granola", "wispr", "googledrive",
+      "gmail", "googledocs", "googlesheets", "googleslides", "googlecalendar", "onedrive",
+      "sharepoint", "notion", "slack", "powerpoint",
+    ]) expect(page).toContain(`"${brand}"`)
+    expect(page).not.toContain("Opening the demo board.")
+    expect(css).toContain("@keyframes lb-logo-rain")
+    expect(css).toContain(".lb-intro-brand { animation: none !important; }")
+    expect(css).toContain(".lb-intro-drop:nth-child(n + 19) { display: none; }")
+  });
   it("contains no write controls", () => {
     for (const copy of ["Delete", "Share link", "Add work", "Comment", "Push to"])
       expect(page).not.toContain(copy);
