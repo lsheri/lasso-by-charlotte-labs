@@ -5945,6 +5945,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   .lb-phone-proof .lb-proof-card :is(span,p,strong,b,a,button) { font-size: max(14px, 1em); }
   .lb-phone-proof .lb-proof-card h4 strong { font-size: 34px; }
   .lb-phone-proof .lb-proof-card h4 span { font-size: 14px; }
+  .lb-phone-proof .lb-proof-actions a { font-size: 14px !important; }
   .lb-phone-step .lb-turn-reader { position: relative; inset: auto; display: flex; height: 100%; flex-direction: column; animation: none; }
   .lb-phone-step .lb-turn-reader header { display: grid; grid-template-columns: minmax(0,1fr) auto; padding: 9px 10px; }
   .lb-phone-step .lb-turn-reader header h3 { font-size: 18px; }.lb-phone-step .lb-turn-reader header > div > div > p { font-size: 14px; }
