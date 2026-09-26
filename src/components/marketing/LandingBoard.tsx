@@ -55,7 +55,7 @@ export const LANDING_BOARD_STEPS = [
   {
     key: "workstreams",
     label: "Workstreams",
-    headline: "Grouped the way your team splits the work.",
+    headline: "Group AI conversation by different workstreams...combine context across chats.",
     line: "The shape of the engagement, without changing the source material.",
   },
   {
