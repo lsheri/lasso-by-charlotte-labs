@@ -172,7 +172,7 @@ for (const viewport of desktopSizes) {
     await page.getByRole("button", { name: "Show slide 1" }).click();
     await expect(page.getByRole("button", { name: "Show slide 1" })).toHaveAttribute("aria-pressed", "true");
     await page.getByRole("button", { name: "Reset", exact: true }).click();
-    await expect(page.getByRole("button", { name: "Show slide 3" })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.locator('.demo-deliverable-thumbnails').getByRole("button", { name: "Show slide 3" })).toHaveAttribute("aria-pressed", "true");
     await page.screenshot({ path: testInfo.outputPath(`demo-contained-${viewport.width}x${viewport.height}.png`) });
     await context.close();
   });
