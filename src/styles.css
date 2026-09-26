@@ -5939,6 +5939,9 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   .lb-phone-usecases .landing-usecase-copy > p { margin-top: 1px; overflow: hidden; font-size: 14px; line-height: 1.05; white-space: nowrap; text-overflow: ellipsis; }
   .lb-phone-usecases .landing-usecase-copy > button { margin-top: 1px; font-size: 14px; line-height: 1; }
   .lb-phone-usecases .landing-usecase-replay { right: 5px; bottom: 5px; font-size: 12px; }
+  .lb-phone-how { width: 100%; flex: 0 0 auto; }
+  .lb-phone-how .micro-label { font-size: 14px; }
+  .lb-phone-how h2 { margin-top: 4px; font-family: var(--font-serif); font-size: 32px; font-weight: 500; line-height: 1.08; }
   .lb-phone-hero { display: grid; justify-items: center; text-align: center; }
   .lb-phone-hero > svg,.lb-phone-hero > canvas { width: 62px !important; height: 62px !important; }
   .lb-phone-hero h1 { margin-top: 9px; font-family: var(--font-hand); font-size: 34px; font-weight: 700; line-height: 1; }

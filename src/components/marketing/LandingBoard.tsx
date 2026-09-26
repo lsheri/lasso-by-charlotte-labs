@@ -47,7 +47,7 @@ type SpotlightTarget = "deck" | "ask" | "turn";
 const LANDING_BOARD_USE_CASES = [
   { key: "bring_work_in", title: "Push work in.", body: "One sentence from Claude, ChatGPT or Gemini, and it lands on the board.", poster: "/videos/poster-claude.jpg", mp4: "/videos/lasso-claude.mp4", tools: ["claude"], step: "workstreams" },
   { key: "reasoning_stays", title: "Chat with your work.", body: "Drag to select the cards that matter, then ask Lasso about exactly that.", poster: "/videos/poster-find-it.jpg", mp4: "/videos/find-it.mp4", tools: ["claude", "chatgpt", "gemini"], step: "ask" },
-  { key: "every_number", title: "Every number has a source.", body: "Open the source behind a figure or claim.", poster: everyNumberPoster.url, webm: everyNumberWebm.url, mp4: everyNumberMp4.url, tools: ["powerpoint", "claude"], step: "circle" },
+  { key: "every_number", title: "Every number has a source.", body: "Open the chat behind any figure and check it yourself.", poster: everyNumberPoster.url, webm: everyNumberWebm.url, mp4: everyNumberMp4.url, tools: ["powerpoint", "claude"], step: "circle" },
 ] as const satisfies ReadonlyArray<{ key: UseCaseKey; title: string; body: string; poster: string; webm?: string; mp4: string; tools: readonly string[]; step: StepKey }>;
 
 const TOOL_BADGES = [
@@ -478,6 +478,7 @@ function PhoneStory({ board, presets, proof, clientLabel, active, onActive, onWa
     </section>
     <UseCaseSection id="lb-phone-usecases" phone onPlayed={onUseCasePlayed} onJump={onUseCaseJump} />
     {LANDING_BOARD_STEPS.slice(1).map((step, itemIndex) => { const index = itemIndex + 1; const stop = index + 1; return <section key={step.key} id={`lb-phone-${step.key}`} className="lb-phone-step" data-phone-step={stop}>
+      {index === 1 ? <div className="lb-phone-how"><p className="micro-label">HOW IT WORKS</p><h2>Watch one engagement, start to finish.</h2></div> : null}
       <PhoneCaption index={index} />
       <div className="lb-phone-visual">
         {index === 1 ? <><div className="lb-phone-tools">{TOOL_BADGES.map((tool) => <span key={tool.key}><ToolLogo vendor={tool.key} compact /></span>)}</div><div className="lb-phone-card-stack">{conversations.map((item, itemIndex) => card(item, `conversation-${itemIndex}`))}</div></> : null}
