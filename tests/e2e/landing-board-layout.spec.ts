@@ -97,14 +97,14 @@ test("story captions and visible text stay readable across settled desktop steps
   const page = await context.newPage();
   await page.goto("/", { waitUntil: "networkidle" });
   for (const name of [
-    "One canvas",
+    "One place",
     "Workstreams",
-    "Deliverable",
-    "A number",
+    "The deliverable",
+    "Pick a number",
     "Ask Lasso",
-    "The chat",
-    "Open questions",
-    "Share",
+    "Open the chat",
+    "Notes",
+    "Share it",
     "Try it",
   ]) {
     await page.getByRole("button", { name, exact: true }).last().click();
@@ -433,10 +433,10 @@ test("settled attention steps keep one spotlight and one caption", async ({ brow
   const page = await context.newPage();
   await page.goto("/", { waitUntil: "networkidle" });
   for (const [index, name] of [
-    [3, "Deliverable"],
-    [4, "A number"],
+    [3, "The deliverable"],
+    [4, "Pick a number"],
     [5, "Ask Lasso"],
-    [6, "The chat"],
+    [6, "Open the chat"],
   ] as const) {
     const key = ["problem", "canvas", "workstreams", "deliverable", "circle", "ask", "the-turn"][index];
     if (!key) throw new Error(`Missing story key for index ${index}`);

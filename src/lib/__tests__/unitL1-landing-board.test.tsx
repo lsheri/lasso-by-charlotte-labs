@@ -212,13 +212,13 @@ describe("Unit L1 scroll-driven landing board", () => {
     for (const title of [
       "Your team's AI work is scattered.",
       "Every AI conversation and every work tool, in one organized place.",
-      "Group AI conversation by different workstreams...combine context across chats.",
-      "combine all the context across chats..everything that went in to a draft or final deliverable",
+      "Group the work by workstream.",
+      "See everything that went into the deck.",
       "Pick any number in the deck.",
       "Ask where a number came from.",
-      "Open individual AI conversations to find lost information or verify facts and sources",
-      "Add stickys (actual human written notes)",
-      "Share deliverable, context and all!",
+      "Open the conversation it came from.",
+      "Add your own notes.",
+      "Share the work with the context attached.",
       "Open the board yourself.",
     ])
       expect(page).toContain(title);
