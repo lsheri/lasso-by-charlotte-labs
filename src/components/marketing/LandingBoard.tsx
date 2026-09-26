@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { type CSSProperties, type FormEvent, type RefObject, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { type CSSProperties, type FormEvent, type PointerEvent as ReactPointerEvent, type RefObject, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
 import { LandingParticlePhrase } from "@/components/marketing/LandingParticlePhrase";
@@ -21,6 +21,7 @@ import type { SharedBoardDto, SharedSeedWork } from "@/lib/board-share-shared";
 import { parseLandingProof, type LandingProof, type LandingProofModel } from "@/lib/landing-proof-shared";
 import { seedPlacement } from "@/lib/public-work-allowlist";
 import { keptContentLabel } from "@/lib/work-open";
+import { noteDemoOpened, noteDemoPlayInteracted, type DemoPlayAction } from "@/lib/demo-telemetry";
 
 export const LANDING_BOARD_STEPS = [
   { key: "problem", label: "Problem", headline: "Your firm's thinking went invisible.", line: "The work is scattered across tools, tabs, and drafts." },
@@ -172,7 +173,7 @@ const PROOF_TURN_SUMMARIES: Readonly<Record<number, string>> = {
   6: "assumption noted under the chart.",
 };
 
-function ProofCard({ proof, model, onShowSlide, onOpenTurn }: { proof: LandingProof; model: LandingProofModel; onShowSlide: () => void; onOpenTurn: () => void }) {
+function ProofCard({ proof, model, onShowSlide, onOpenTurn, returnTo = "story" }: { proof: LandingProof; model: LandingProofModel; onShowSlide: () => void; onOpenTurn: () => void; returnTo?: "story" | "demo" }) {
   const turn = (number: number) => proof.turns.find((entry) => entry.turn_no === number);
   const role = (number: number) => turn(number)?.role === "user" ? "you said" : "Claude said";
   return (
@@ -183,8 +184,137 @@ function ProofCard({ proof, model, onShowSlide, onOpenTurn }: { proof: LandingPr
         {[3, 4, 5, 6].map((number, index) => <details key={number} style={{ "--lb-proof-row": index } as CSSProperties}><summary><span>Turn {number} · {role(number)}</span><b>{PROOF_TURN_SUMMARIES[number]}</b></summary>{number === 4 ? <div><p>{turn(number)?.content}</p><div className="lb-proof-bars" aria-label="Finance 0.6, HR 0.4, IT 0.7, revenue cycle 0.4 of 2.1 million">{model.lines.map((line) => <span key={line.label} data-unconfirmed={line.label === "Revenue cycle"}><i style={{ "--lb-proof-segment": `${(line.amount / model.savings) * 100}%` } as CSSProperties} />{line.label}</span>)}</div></div> : <p>{turn(number)?.content}</p>}</details>)}
       </div>
       <div className="lb-proof-open"><p><strong>1 still unconfirmed:</strong> {model.unconfirmed}</p></div>
-      <div className="lb-proof-actions"><Button asChild size="sm"><Link to="/demo/conversations" search={{ item: proof.itemId, turn: 4, from: "story" }} onClick={onOpenTurn}>Open the chat at turn 4 to hand-check</Link></Button><Button type="button" size="sm" variant="outline" onClick={onShowSlide}>Show slide 3</Button></div>
+      <div className="lb-proof-actions"><Button asChild size="sm"><Link to="/demo/conversations" search={{ item: proof.itemId, turn: 4, from: returnTo }} onClick={onOpenTurn}>Open the chat at turn 4 to hand-check</Link></Button><Button type="button" size="sm" variant="outline" onClick={onShowSlide}>Show slide 3</Button></div>
     </section>
+  );
+}
+
+type PlaygroundPosition = { x: number; y: number };
+type PlaygroundDrag = { key: string; startX: number; startY: number; origin: PlaygroundPosition; action: "drag_card" | "drag_group" };
+type PlaygroundSticky = { id: string; text: string; x: number; y: number };
+
+export function PlayableDemoBoard({ board, presets, proof, clientLabel, engagementTitle }: { board: SharedBoardDto; presets: DemoPreset[]; proof: LandingProof | null; clientLabel: string; engagementTitle: string }) {
+  const deckItem = board.seed.work.find((item) => /board deck/i.test(item.title));
+  const items = board.seed.work.filter((item) => item.id !== deckItem?.id).slice(0, 8);
+  const visibleTasks = board.seed.tasks.filter((task) => !/board deck/i.test(task.name)).slice(0, 2);
+  const proofModel = proof ? parseLandingProof(proof) : null;
+  const [offsets, setOffsets] = useState<Record<string, PlaygroundPosition>>({});
+  const [stickies, setStickies] = useState<PlaygroundSticky[]>([]);
+  const [drag, setDrag] = useState<PlaygroundDrag | null>(null);
+  const [resetAt, setResetAt] = useState<number | null>(null);
+  const [remaining, setRemaining] = useState(5);
+  const [resetting, setResetting] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [hint, setHint] = useState(true);
+  const [askOpen, setAskOpen] = useState(true);
+  const [activePreset, setActivePreset] = useState(presets.find((entry) => entry.position === 1)?.position ?? presets[0]?.position ?? 1);
+  const resetTimer = useRef<number | null>(null);
+  const surface = () => window.matchMedia("(max-width: 639px)").matches ? "phone" as const : "desktop" as const;
+  const emit = (action: DemoPlayAction) => noteDemoPlayInteracted(action, surface());
+
+  useEffect(() => {
+    noteDemoOpened("playground", "ysm-01");
+    if (window.matchMedia("(max-width: 639px)").matches) setAskOpen(false);
+  }, []);
+
+  const clearResetTimer = useCallback(() => {
+    if (resetTimer.current !== null) window.clearTimeout(resetTimer.current);
+    resetTimer.current = null;
+  }, []);
+  const resetBoard = useCallback((automatic: boolean) => {
+    clearResetTimer();
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    setResetting(!reduced);
+    setOffsets({});
+    setStickies([]);
+    setResetAt(null);
+    setRemaining(5);
+    if (!reduced) window.setTimeout(() => setResetting(false), 600);
+    emit(automatic ? "reset_auto" : "reset_manual");
+  }, [clearResetTimer]);
+  const scheduleReset = useCallback(() => {
+    clearResetTimer();
+    const at = Date.now() + 5_000;
+    setResetAt(at);
+    setRemaining(5);
+    resetTimer.current = window.setTimeout(() => resetBoard(true), 5_000);
+  }, [clearResetTimer, resetBoard]);
+  useEffect(() => {
+    if (!resetAt || drag || editing) return;
+    const interval = window.setInterval(() => setRemaining(Math.max(0, Math.ceil((resetAt - Date.now()) / 1000))), 200);
+    return () => window.clearInterval(interval);
+  }, [drag, editing, resetAt]);
+  useEffect(() => () => clearResetTimer(), [clearResetTimer]);
+
+  const beginDrag = (eventValue: ReactPointerEvent<HTMLElement>, key: string, action: "drag_card" | "drag_group") => {
+    if ((eventValue.target as HTMLElement).closest("input")) return;
+    eventValue.currentTarget.setPointerCapture(eventValue.pointerId);
+    clearResetTimer();
+    setHint(false);
+    setDrag({ key, action, startX: eventValue.clientX, startY: eventValue.clientY, origin: offsets[key] ?? { x: 0, y: 0 } });
+  };
+  const moveDrag = (eventValue: ReactPointerEvent<HTMLElement>) => {
+    if (!drag) return;
+    setOffsets((current) => ({ ...current, [drag.key]: { x: drag.origin.x + eventValue.clientX - drag.startX, y: drag.origin.y + eventValue.clientY - drag.startY } }));
+  };
+  const endDrag = () => {
+    if (!drag) return;
+    emit(drag.action);
+    setDrag(null);
+    scheduleReset();
+  };
+  const transform = (key: string, extra?: PlaygroundPosition) => {
+    const group = extra ?? { x: 0, y: 0 };
+    const own = offsets[key] ?? { x: 0, y: 0 };
+    return `translate(${own.x + group.x}px, ${own.y + group.y}px)`;
+  };
+  const addSticky = () => {
+    const id = `sticky-${Date.now()}`;
+    setStickies((current) => [...current, { id, text: "New note", x: 530 + current.length * 18, y: 330 + current.length * 14 }]);
+    setHint(false);
+    emit("sticky_added");
+    scheduleReset();
+  };
+  const active = presets.find((entry) => entry.position === activePreset);
+  const showProof = active?.position === 1 && proof && proofModel;
+  const groupOffsets = visibleTasks.map((task) => offsets[`group:${task.id}`] ?? { x: 0, y: 0 });
+
+  return (
+    <div className="demo-playground" data-resetting={resetting}>
+      {hint ? <p className="demo-play-hint">Drag anything. Add a sticky. It all goes back in 5 seconds.</p> : null}
+      <div className="demo-play-toolbar" aria-label="Board tools">
+        <Button size="sm" variant="outline" onClick={addSticky}>Add sticky</Button>
+        <Button size="sm" variant="outline" onClick={() => setAskOpen((open) => !open)}>Ask Lasso</Button>
+        <Button size="sm" variant="outline" onClick={() => resetBoard(false)}>Reset</Button>
+        {resetAt && !drag && !editing ? <span className="demo-reset-countdown"><i style={{ "--demo-reset-progress": `${remaining / 5}` } as CSSProperties} />Back to the finished board in {remaining}s</span> : null}
+      </div>
+      <div className="demo-play-canvas" data-ask-open={askOpen}>
+        <div className="demo-play-board" onPointerMove={moveDrag} onPointerUp={endDrag} onPointerCancel={endDrag}>
+          <div className="lb-dot-grid" />
+          {visibleTasks.map((task, groupIndex) => <section key={task.id} className="demo-play-group" style={{ left: groupIndex === 0 ? 80 : 390, top: 92, transform: transform(`group:${task.id}`) }}>
+            <h3 onPointerDown={(eventValue) => beginDrag(eventValue, `group:${task.id}`, "drag_group")}>{task.name}</h3><p>{task.detail}</p>
+          </section>)}
+          {items.map((item, index) => {
+            const taskIndex = visibleTasks.findIndex((task) => seedPlacement(item).includes(task.id));
+            const groupOffset = taskIndex >= 0 ? groupOffsets[taskIndex] : undefined;
+            const left = taskIndex === 1 ? 414 : 104;
+            const top = 166 + Math.floor(index / 2) * 116;
+            return <article key={item.id} className="lb-board-card demo-play-card" style={{ left, top, transform: transform(`card:${item.id}`, groupOffset) }} onPointerDown={(eventValue) => beginDrag(eventValue, `card:${item.id}`, "drag_card")}><ToolLogo vendor={toolKey(item)} /><strong>{item.title}</strong><small>{keptContentLabel(item, item.type === "ai_thread" ? board.turns[item.id]?.length ?? null : null)}</small></article>;
+          })}
+          <article className="lb-deck demo-play-deck" style={{ transform: transform("deck") }} onPointerDown={(eventValue) => beginDrag(eventValue, "deck", "drag_card")}><header><ToolLogo vendor="powerpoint" compact /><strong>{(deckItem?.title ?? "FY27 board deck v3").replace(/\s*\(slide notes\)\s*/i, "").trim()}</strong></header><div>{Array.from({ length: 6 }, (_, index) => <DeckSlide key={index} index={index} clientName={clientLabel} numberRef={{ current: null }} proof={proofModel} />)}</div><span className="demo-play-lasso" aria-hidden="true" /></article>
+          <div className="lb-open-notes demo-play-notes"><p>Confirm the vendor extension assumption.</p><p>Confirm approval by Oct 1.</p></div>
+          {stickies.map((sticky) => <article key={sticky.id} className="demo-play-sticky" style={{ left: sticky.x, top: sticky.y, transform: transform(sticky.id) }} onPointerDown={(eventValue) => beginDrag(eventValue, sticky.id, "drag_card")}><input value={sticky.text} maxLength={80} aria-label="Sticky note" onFocus={() => { clearResetTimer(); setEditing(true); }} onBlur={() => { setEditing(false); emit("sticky_edited"); scheduleReset(); }} onChange={(eventValue) => setStickies((current) => current.map((entry) => entry.id === sticky.id ? { ...entry, text: eventValue.target.value.slice(0, 80) } : entry))} /></article>)}
+        </div>
+        <aside className="demo-play-ask" data-open={askOpen} aria-label="Ask Lasso">
+          <button type="button" className="demo-play-ask-toggle" onClick={() => setAskOpen((open) => !open)}><LassoThinkingMark kind="signature" size={34} /><span><b>Ask Lasso</b><small>{engagementTitle}</small></span></button>
+          <div className="demo-play-ask-body">
+            <div className="demo-play-presets">{presets.map((preset) => <Button key={preset.position} size="sm" variant={preset.position === activePreset ? "secondary" : "outline"} onClick={() => { setActivePreset(preset.position); emit("preset_opened"); }}>{preset.question}</Button>)}</div>
+            <div className="demo-play-answer">{showProof ? <ProofCard proof={proof} model={proofModel} returnTo="demo" onOpenTurn={() => emit("proof_link_opened")} onShowSlide={() => emit("proof_link_opened")} /> : active ? <><div className="lb-replay-question"><span>You</span><p>{active.question}</p></div><ReplayAnswer preset={active} /></> : <p>The saved answer is not available right now.</p>}</div>
+            <div className="demo-play-composer"><Textarea disabled placeholder="Ask your own questions in a pilot" rows={2} /><Button disabled>Send</Button></div>
+          </div>
+        </aside>
+      </div>
+    </div>
   );
 }
 

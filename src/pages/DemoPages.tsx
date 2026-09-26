@@ -11,6 +11,8 @@ import { useEffect, useState } from "react";
 import { SharedBoardView } from "@/components/canvas-lab/SharedBoardView";
 import { DemoHomeWorkspace } from "@/components/demo/DemoHomeWorkspace";
 import { DemoTourNote } from "@/components/demo/DemoTourNote";
+import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
+import { PlayableDemoBoard } from "@/components/marketing/LandingBoard";
 import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
 import { ContextAudit } from "@/components/reflect/ContextTrail";
 import { PublicHeader } from "@/components/layout/PublicHeader";
@@ -49,6 +51,15 @@ export function DemoHomePage() {
       </main>
     </div>
   );
+}
+
+export function DemoPlaygroundPage() {
+  const open = useServerFn(openDemoBoardFn);
+  const query = useQuery({ queryKey: ["demo-board", "YSM-01"], queryFn: () => open({ data: { code: "YSM-01" } }), staleTime: 60_000, retry: false });
+  return <div className="demo-play-page">
+    <header className="demo-play-header"><Link to="/" aria-label="Lasso home"><LassoLoopMark /><strong>LASSO</strong></Link><p>YellowSigil Medical Group (demo) · every figure is invented</p><nav><Link to="/landing-board" hash="lb-try-it">Back to the story</Link><PilotLink /></nav></header>
+    {query.isLoading ? <main className="demo-play-state">Opening the finished board…</main> : query.isError || !query.data || query.data.status !== "open" ? <main className="demo-play-state"><h1>The demo board is unavailable.</h1><p>Please try again shortly.</p></main> : <main><PlayableDemoBoard board={query.data.board} presets={query.data.presets} proof={query.data.proof} clientLabel={query.data.engagement.client_name ?? "YellowSigil Medical Group"} engagementTitle={query.data.engagement.title} /></main>}
+  </div>;
 }
 
 export function DemoBoardPage({ code }: { code: string }) {
