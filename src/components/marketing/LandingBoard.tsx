@@ -66,7 +66,7 @@ export const LANDING_BOARD_STEPS = [
   },
   {
     key: "circle",
-    label: "A number",
+    label: "\n",
     headline: "Pick any number in the deck.",
     line: "Where did the $1.4M on slide 3 come from?",
   },
