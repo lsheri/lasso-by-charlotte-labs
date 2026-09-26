@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-import { EVENT_DIM_KEYS, LANDING_SEE_IT_WORK_LOCATIONS, guardEventDims } from "../event-dim-allowlist";
+import { EVENT_DIM_KEYS, LANDING_SEE_IT_WORK_LOCATIONS, LANDING_VIEW_SURFACES, guardEventDims } from "../event-dim-allowlist";
 import { parseLandingProof } from "../landing-proof-shared";
 import { publicSafeWork } from "../public-work-allowlist";
 
@@ -60,6 +60,7 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(EVENT_DIM_KEYS["landing.section_jumped"]).toEqual(["section"]);
     expect(EVENT_DIM_KEYS["landing.proof_link_opened"]).toEqual(["step", "target"]);
     expect(LANDING_SEE_IT_WORK_LOCATIONS).toEqual(["hero", "hero_workboard"]);
+    expect(LANDING_VIEW_SURFACES).toContain("landing-classic");
     expect(guardEventDims("landing.story_section_viewed", { section: "ask", input_mode: "jump", content: "no" }).dims).toEqual({ section: "ask", input_mode: "jump" });
     expect(guardEventDims("landing.pilot_cta_clicked", { placement: "header" }).dims).toEqual({ placement: "header" });
   });
