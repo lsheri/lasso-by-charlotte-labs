@@ -325,7 +325,8 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(page).toContain("data-phone-step={stop}");
     expect(page).toContain('id="lb-phone-usecases"');
     expect(page).toContain("<PhoneHeroAssemble />");
-    expect(page).toContain("PHONE_HERO_ASSEMBLE_FRAMES.map");
+    expect(page).toContain('src="/videos/landing-hero-assemble-phone.webm"');
+    expect(page).toContain('src="/videos/landing-hero-assemble-phone.mp4"');
     expect(page).not.toContain("PHONE_HERO_ASSEMBLE_CARDS");
     expect(page).toContain("new IntersectionObserver");
     expect(page).toContain("threshold: 0.6");
