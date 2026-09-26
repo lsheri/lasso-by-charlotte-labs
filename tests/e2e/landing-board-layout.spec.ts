@@ -63,7 +63,7 @@ test("story captions and visible text stay readable across settled desktop steps
   const context = await browser.newContext({ viewport: { width: 1372, height: 732 }, reducedMotion: "reduce" });
   const page = await context.newPage();
   await page.goto("/", { waitUntil: "networkidle" });
-  for (const name of ["Canvas", "Workstreams", "Deliverable", "Circle", "Ask", "The turn", "Still open", "Share", "Try it"]) {
+  for (const name of ["One canvas", "Workstreams", "Deliverable", "A number", "Ask Lasso", "The chat", "Open questions", "Share", "Try it"]) {
     await page.getByRole("button", { name, exact: true }).last().click();
     const caption = page.locator('.lb-caption[data-phase="incoming"]');
     await expect(caption).toBeVisible();

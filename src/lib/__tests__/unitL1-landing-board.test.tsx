@@ -215,7 +215,7 @@ describe("Unit L1 scroll-driven landing board", () => {
   it("keeps the proof compact, proportional, capitalized, and connector-isolated", () => {
     const css = readFileSync("src/styles.css", "utf8");
     expect(page).toContain("(line.amount / model.savings) * 100");
-    expect(page).toContain('step === 4 ? <svg className="lb-circle-link"');
+    expect(page).toMatch(/step === 4\s*\? \(\s*<svg className="lb-circle-link"/);
     expect(page).toContain('thread.scrollTo({ top: proofCard.offsetTop, behavior: "auto" })');
     expect(page).toContain(
       'const showProof = step === 5 && replay.phase === "done" && proof && proofModel',
@@ -229,7 +229,9 @@ describe("Unit L1 scroll-driven landing board", () => {
   });
   it("shows the proof connector on story steps 6 to 8, but not step 5", () => {
     const css = readFileSync("src/styles.css", "utf8");
-    expect(page).toContain('step >= 5 && step <= 7 ? <path data-testid="landing-proof-connector"');
+    expect(page).toMatch(
+      /step >= 5 && step <= 7\s*\? \(\s*<path\s*data-testid="landing-proof-connector"/,
+    );
     expect(page).not.toContain('step === 4 ? <path data-testid="landing-proof-connector"');
     expect(css).toContain(
       '.lb-stage-window:is([data-step="6"],[data-step="7"],[data-step="8"]) .lb-connectors { opacity: 1; }',
@@ -289,7 +291,7 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(css).toContain("scroll-snap-type: y mandatory");
     expect(css).toContain("max-height: calc(100svh - var(--lb-header-h))");
     expect(css).toContain(".lb-progress-status { display: none;");
-    expect(page).toContain('surface: "landing-board", input_mode:');
+    expect(page).toMatch(/surface: "landing-board",\s*input_mode:/);
   });
   it("holds scenes, settles events, and reuses Ask Lasso presentation pieces", () => {
     const css = readFileSync("src/styles.css", "utf8");
@@ -314,7 +316,9 @@ describe("Unit L1 scroll-driven landing board", () => {
   });
   it("uses one settled spotlight on the deck, Ask panel, and decision turn", () => {
     const css = readFileSync("src/styles.css", "utf8");
-    expect(page).toContain('step === 4 ? "deck" : step === 5 ? "ask" : step === 6 ? "turn"');
+    expect(page).toMatch(
+      /step === 4\s*\? "deck"\s*: step === 5\s*\? "ask"\s*: step === 6\s*\? "turn"/,
+    );
     expect(page).toContain('data-testid="landing-story-spotlight"');
     expect(css).toContain("backdrop-filter: blur(3px)");
     expect(css).toContain("color-mix(in srgb, var(--nb-ink) 30%, transparent)");

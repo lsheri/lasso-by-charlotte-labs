@@ -95,7 +95,7 @@ describe("answer turn links", () => {
 
   it("renders cited turns below product answers", () => {
     expect(surface).toContain("<AnswerTurnLinks");
-    expect(surface).toContain("extractTurnRefs(message.content");
-    expect(surface).toContain("focus={openTurn ? { turnNo: openTurn.turn_no } : undefined}");
+    expect(surface).toMatch(/extractTurnRefs\(\s*message\.content,/);
+    expect(surface).toContain("turnNo: openTurn.turn_no");
   });
 });
