@@ -205,6 +205,10 @@ function ProofCard({ proof, model, onShowSlide, onOpenTurn, returnTo = "story" }
   );
 }
 
+export function PlaygroundProofCard({ proof, model, emit }: { proof: LandingProof; model: LandingProofModel; emit: (action: DemoPlayAction) => void }) {
+  return <ProofCard proof={proof} model={model} returnTo="demo" onOpenTurn={() => emit("proof_link_opened")} onShowSlide={() => emit("proof_link_opened")} />;
+}
+
 type PlaygroundPosition = { x: number; y: number };
 type PlaygroundDrag = { key: string; startX: number; startY: number; origin: PlaygroundPosition; action: "drag_card" | "drag_group" };
 type PlaygroundSticky = { id: string; text: string; x: number; y: number };
@@ -334,6 +338,10 @@ export function PlayableDemoBoard({ board, presets, proof, clientLabel, engageme
   );
 }
 
+export function PlaygroundReplayAnswer({ preset }: { preset: DemoPreset }) {
+  return <ReplayAnswer preset={preset} />;
+}
+
 function AskReplay({ presets, step, onFinished, clientLabel, engagementTitle, proof, proofModel, onShowSlide, onOpenTurn }: { presets: DemoPreset[]; step: number; onFinished: (finished: boolean) => void; clientLabel: string; engagementTitle: string; proof: LandingProof | null; proofModel: LandingProofModel | null; onShowSlide: () => void; onOpenTurn: () => void }) {
   const replay = usePresetReplay(step, presets);
   const threadRef = useRef<HTMLDivElement>(null);
@@ -387,6 +395,11 @@ function DeckSlide({ index, clientName, numberRef, proof }: { index: number; cli
   if (index === 3) return <section className="lb-deck-slide lb-slide-governance"><small>4</small><b>Board structure</b><div><i /><i /><i /></div><span>Chair: two-term limit</span></section>;
   if (index === 4) return <section className="lb-deck-slide lb-slide-alliances"><small>5</small><b>Comparable alliances</b><div>{[1, 2, 3, 4, 5].map((item) => <i key={item} />)}</div></section>;
   return <section className="lb-deck-slide lb-slide-decision"><small>6</small><b>Decision asked for Oct 1</b><span aria-hidden="true" /></section>;
+}
+
+export function LandingDemoDeck({ clientName, proof }: { clientName: string; proof: LandingProofModel | null }) {
+  const numberRef = useRef<HTMLSpanElement>(null);
+  return <div className="landing-demo-deck-grid">{Array.from({ length: 6 }, (_, index) => <DeckSlide key={index} index={index} clientName={clientName} numberRef={numberRef} proof={proof} />)}</div>;
 }
 
 function ExactTurn({ board, preset, onOpenTurn }: { board: SharedBoardDto; preset: DemoPreset | undefined; onOpenTurn: () => void }) {

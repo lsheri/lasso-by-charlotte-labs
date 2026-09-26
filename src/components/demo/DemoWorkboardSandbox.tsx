@@ -33,7 +33,7 @@ function itemMap(board: SharedBoardDto) {
   return new Map(board.seed.work.map((item) => [item.id, item]));
 }
 
-function finishedModel(board: SharedBoardDto) {
+function finishedModel(board: SharedBoardDto): { frames: LabFrame[]; nodes: LabNode[]; links: LabLink[] } {
   const model = buildSharedBoardModel(board);
   const tasks = board.seed.tasks.filter((task) => !/board deck/i.test(task.name)).slice(0, 2);
   const frames = tasks.map((task, index): LabFrame => ({
@@ -45,7 +45,7 @@ function finishedModel(board: SharedBoardDto) {
     height: 610,
   }));
   const counts = new Map<string, number>();
-  const nodes = model.nodes.flatMap((node) => {
+  const nodes: LabNode[] = model.nodes.flatMap<LabNode>((node) => {
     if (node.kind !== "work" || !node.workItemId) return [];
     const item = board.seed.work.find((entry) => entry.id === node.workItemId);
     if (!item) return [];
@@ -62,7 +62,7 @@ function finishedModel(board: SharedBoardDto) {
   });
   const deck = nodes.find((node) => node.deliverable);
   const source = nodes.find((node) => !node.deliverable && /partnership|scenario/i.test(node.title)) ?? nodes.find((node) => !node.deliverable);
-  const links: LabLink[] = source && deck ? [{ id: "demo-proof-link", fromId: source.id, toId: deck.id, fromAnchor: "right", toAnchor: "left", relation: "evidence" }] : [];
+  const links: LabLink[] = source && deck ? [{ id: "demo-proof-link", fromId: source.id, toId: deck.id, fromAnchor: "right", toAnchor: "left" }] : [];
   const stickies: LabNode[] = [
     { id: "demo-open-1", kind: "sticky", frame: null, title: "Sticky", summary: "Confirm the vendor extension assumption.", typeLabel: "Sticky", ownership: "draft", local: true, stickyFill: "yellow", textSize: "body", textWeight: "regular", textColour: "ink", x: 1060, y: 535, width: 188, height: 132 },
     { id: "demo-open-2", kind: "sticky", frame: null, title: "Sticky", summary: "Confirm approval by Oct 1.", typeLabel: "Sticky", ownership: "draft", local: true, stickyFill: "yellow", textSize: "body", textWeight: "regular", textColour: "ink", x: 1270, y: 565, width: 174, height: 120 },
@@ -97,8 +97,8 @@ export function DemoWorkboardSandbox({ board, presets, proof, clientLabel, engag
   const initial = useMemo(() => finishedModel(board), [board]);
   const items = useMemo(() => itemMap(board), [board]);
   const viewportRef = useRef<HTMLDivElement>(null);
-  const [frames, setFrames] = useState(initial.frames);
-  const [nodes, setNodes] = useState(initial.nodes);
+  const [frames, setFrames] = useState<LabFrame[]>(initial.frames);
+  const [nodes, setNodes] = useState<LabNode[]>(initial.nodes);
   const [links] = useState(initial.links);
   const [view, setView] = useState({ zoom: .68, pan: { x: 12, y: 8 } });
   const [selected, setSelected] = useState<string | null>(null);
@@ -171,7 +171,7 @@ export function DemoWorkboardSandbox({ board, presets, proof, clientLabel, engag
     }
     if (drag) {
       const dx = (event.clientX - drag.from.x) / view.zoom; const dy = (event.clientY - drag.from.y) / view.zoom;
-      const moved = (entry: { id: string; x: number; y: number }) => drag.origins[entry.id] ? { ...entry, x: (drag.origins[entry.id]?.x ?? entry.x) + dx, y: (drag.origins[entry.id]?.y ?? entry.y) + dy } : entry;
+      const moved = <T extends { id: string; x: number; y: number }>(entry: T): T => drag.origins[entry.id] ? { ...entry, x: (drag.origins[entry.id]?.x ?? entry.x) + dx, y: (drag.origins[entry.id]?.y ?? entry.y) + dy } : entry;
       setNodes((current) => current.map(moved)); if (drag.kind === "frame") setFrames((current) => current.map(moved)); return;
     }
     const point = { x: event.clientX, y: event.clientY }; touchRef.current.set(event.pointerId, point);
