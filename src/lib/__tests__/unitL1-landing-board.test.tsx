@@ -1,7 +1,12 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-import { EVENT_DIM_KEYS, LANDING_SEE_IT_WORK_LOCATIONS, LANDING_VIEW_SURFACES, guardEventDims } from "../event-dim-allowlist";
+import {
+  EVENT_DIM_KEYS,
+  LANDING_SEE_IT_WORK_LOCATIONS,
+  LANDING_VIEW_SURFACES,
+  guardEventDims,
+} from "../event-dim-allowlist";
 import { parseLandingProof } from "../landing-proof-shared";
 import { publicSafeWork } from "../public-work-allowlist";
 
@@ -24,57 +29,88 @@ describe("Unit L1 scroll-driven landing board", () => {
   it("renders ten observed reversible steps and jump controls", () => {
     expect(page).toContain('window.addEventListener("scroll"');
     expect(page).toContain("window.innerHeight * 0.55");
-    expect(page).toContain('jumpTarget.current = index');
+    expect(page).toContain("jumpTarget.current = index");
     expect(page).toContain('behavior: "auto"');
-    const steps = page.slice(page.indexOf("export const LANDING_BOARD_STEPS"), page.indexOf("] as const;"));
+    const steps = page.slice(
+      page.indexOf("export const LANDING_BOARD_STEPS"),
+      page.indexOf("] as const;"),
+    );
     expect(steps.match(/key: "/g)).toHaveLength(10);
     expect(page).toContain('className="lb-progress-rail"');
-    expect(page).toContain('aria-label={step.label}');
+    expect(page).toContain("aria-label={step.label}");
     expect(page).toContain('event(viewId.current, "landing.section_jumped", { section: key })');
     expect(page).not.toContain('className="lb-step-nav"');
+    expect([...page.matchAll(/key: "([^"]+)"/g)].slice(0, 10).map((match) => match[1])).toEqual([
+      "problem",
+      "canvas",
+      "workstreams",
+      "deliverable",
+      "circle",
+      "ask",
+      "the-turn",
+      "still-open",
+      "share",
+      "try-it",
+    ]);
   });
   it("has a reduced-motion jump path", () => {
     const css = readFileSync("src/styles.css", "utf8");
-    expect(css).toContain('@media (prefers-reduced-motion: reduce)');
-    expect(css).toContain('scroll-behavior: auto !important');
+    expect(css).toContain("@media (prefers-reduced-motion: reduce)");
+    expect(css).toContain("scroll-behavior: auto !important");
   });
   it("contains no write controls", () => {
-    for (const copy of ["Delete", "Share link", "Add work", "Comment", "Push to"]) expect(page).not.toContain(copy);
+    for (const copy of ["Delete", "Share link", "Add work", "Comment", "Push to"])
+      expect(page).not.toContain(copy);
   });
   it("restores all three product clips with posters and existing play-event coverage", () => {
-    for (const clip of ["use-bring-work-in", "use-every-number-has-a-source", "use-reasoning-stays-with-the-firm"]) {
+    for (const clip of [
+      "use-bring-work-in",
+      "use-every-number-has-a-source",
+      "use-reasoning-stays-with-the-firm",
+    ]) {
       expect(page).toContain(`useCaseAsset("${clip}.mp4")`);
       expect(page).toContain(`useCaseAsset("${clip}.webm")`);
       expect(page).toContain(`useCaseAsset("${clip}-poster.jpg")`);
     }
-    expect(page).not.toContain('/videos/lasso-claude.mp4');
-    expect(page).not.toContain('/videos/find-it.mp4');
+    expect(page).not.toContain("/videos/lasso-claude.mp4");
+    expect(page).not.toContain("/videos/find-it.mp4");
     expect(page).toContain("LANDING_BOARD_USE_CASES.map");
-    expect(page).toContain('event(viewId.current, "landing.usecase_played", { card, input_mode: inputMode })');
-    expect(page).toContain('aria-label={`Play: ${card.title}`}');
+    expect(page).toContain(
+      'event(viewId.current, "landing.usecase_played", { card, input_mode: inputMode })',
+    );
+    expect(page).toContain("aria-label={`Play: ${card.title}`}");
   });
   it("places the use cases between the hero and Canvas with story jump coverage", () => {
-    expect(page.indexOf('className="lb-desktop-hero"')).toBeLessThan(page.indexOf('<UseCaseSection onPlayed'));
-    expect(page.indexOf('<UseCaseSection onPlayed')).toBeLessThan(page.indexOf('className="lb-how-it-works"'));
-    expect(page).toContain('WHAT LASSO DOES');
-    expect(page).toContain('Three things a buyer asks for. Here is what each looks like.');
-    expect(page).toContain('See it in the story →');
-    expect(page).toContain('onClick={() => onJump(card.step)}');
+    expect(page.indexOf('className="lb-desktop-hero"')).toBeLessThan(
+      page.indexOf("<UseCaseSection onPlayed"),
+    );
+    expect(page.indexOf("<UseCaseSection onPlayed")).toBeLessThan(
+      page.indexOf('className="lb-how-it-works"'),
+    );
+    expect(page).toContain("WHAT LASSO DOES");
+    expect(page).toContain("Three things a buyer asks for. Here is what each looks like.");
+    expect(page).toContain("See it in the story →");
+    expect(page).toContain("onClick={() => onJump(card.step)}");
     expect(page).toContain('step: "workstreams"');
     expect(page).toContain('step: "ask"');
     expect(page).toContain('step: "canvas"');
-    expect(page).toContain('Push work in.');
-    expect(page).toContain('Chat with your work.');
-    expect(page).toContain('Every chat, on the record.');
-    expect(page).toContain('Watch one engagement, start to finish.');
+    expect(page).toContain("Push work in.");
+    expect(page).toContain("Chat with your work.");
+    expect(page).toContain("Every chat, on the record.");
+    expect(page).toContain("Watch one engagement, start to finish.");
   });
   it("maps every board tool to an official asset or Simple Icons path", () => {
     const logo = readFileSync("src/components/marketing/ToolLogo.tsx", "utf8");
-    for (const mark of ["siClaude", "siGooglegemini", "siGoogledrive", "siGmail"]) expect(logo).toContain(mark);
-    for (const tool of ["claude", "chatgpt", "gemini", "googledrive", "gmail", "powerpoint"]) expect(logo).toContain(`${tool}:`);
+    for (const mark of ["siClaude", "siGooglegemini", "siGoogledrive", "siGmail"])
+      expect(logo).toContain(mark);
+    for (const tool of ["claude", "chatgpt", "gemini", "googledrive", "gmail", "powerpoint"])
+      expect(logo).toContain(`${tool}:`);
     expect(logo).toContain('key === "powerpoint"');
     expect(logo).toContain("compact ? label : label.toUpperCase()");
-    const tools = page.slice(page.indexOf("const TOOL_BADGES"), page.indexOf("] as const;", page.indexOf("const TOOL_BADGES")));
+    const tools = page.slice(
+      page.indexOf("const TOOL_BADGES"),
+      page.indexOf("] as const;", page.indexOf("const TOOL_BADGES")),
+    );
     expect(tools).not.toContain("<svg");
   });
   it("allowlists every landing event dimension", () => {
@@ -82,21 +118,58 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(EVENT_DIM_KEYS["landing.proof_link_opened"]).toEqual(["step", "target"]);
     expect(LANDING_SEE_IT_WORK_LOCATIONS).toEqual(["hero", "hero_workboard"]);
     expect(LANDING_VIEW_SURFACES).toContain("landing-classic");
-    expect(guardEventDims("landing.story_section_viewed", { section: "ask", input_mode: "jump", content: "no" }).dims).toEqual({ section: "ask", input_mode: "jump" });
-    expect(guardEventDims("landing.pilot_cta_clicked", { placement: "header" }).dims).toEqual({ placement: "header" });
+    expect(
+      guardEventDims("landing.story_section_viewed", {
+        section: "ask",
+        input_mode: "jump",
+        content: "no",
+      }).dims,
+    ).toEqual({ section: "ask", input_mode: "jump" });
+    expect(guardEventDims("landing.pilot_cta_clicked", { placement: "header" }).dims).toEqual({
+      placement: "header",
+    });
   });
   it("derives every proof figure from turns 2, 4, and 6", () => {
-    const proof = parseLandingProof({ itemId: "public-item", title: "Partnership scenarios: year-two net benefit", vendor: "claude", turns: [
-      { turn_no: 2, role: "assistant", ts: "2026-08-28T23:07:00Z", content: "Working from the FY25 audited statements you shared and the Meridian cost sheet from the 14 August call: Scenario A, marketing affiliation with Northgate. Year-two net benefit about $0.3M. Scenario B, shared services with Meridian. Combined back-office savings of $2.1M in year two, less $0.7M of transition cost. Net $1.4M in year two. Scenario C, full merger with Meridian. Net about $1.2M in year two." },
-      { turn_no: 4, role: "assistant", ts: null, content: "Four lines from the Meridian cost sheet, each matched to YellowSigil's FY25 actuals: finance and accounting $0.6M, HR and benefits administration $0.4M, IT and licensing $0.7M, revenue cycle $0.4M. Total $2.1M." },
-      { turn_no: 6, role: "assistant", ts: null, content: "Note under the chart: revenue cycle savings ($0.4M) depend on Meridian's vendor contract extending to YellowSigil volumes; unconfirmed as of 14 August." },
-    ] });
-    expect(proof).toMatchObject({ scenarioA: 0.3, scenarioB: 1.4, scenarioC: 1.2, savings: 2.1, transition: 0.7 });
+    const proof = parseLandingProof({
+      itemId: "public-item",
+      title: "Partnership scenarios: year-two net benefit",
+      vendor: "claude",
+      turns: [
+        {
+          turn_no: 2,
+          role: "assistant",
+          ts: "2026-08-28T23:07:00Z",
+          content:
+            "Working from the FY25 audited statements you shared and the Meridian cost sheet from the 14 August call: Scenario A, marketing affiliation with Northgate. Year-two net benefit about $0.3M. Scenario B, shared services with Meridian. Combined back-office savings of $2.1M in year two, less $0.7M of transition cost. Net $1.4M in year two. Scenario C, full merger with Meridian. Net about $1.2M in year two.",
+        },
+        {
+          turn_no: 4,
+          role: "assistant",
+          ts: null,
+          content:
+            "Four lines from the Meridian cost sheet, each matched to YellowSigil's FY25 actuals: finance and accounting $0.6M, HR and benefits administration $0.4M, IT and licensing $0.7M, revenue cycle $0.4M. Total $2.1M.",
+        },
+        {
+          turn_no: 6,
+          role: "assistant",
+          ts: null,
+          content:
+            "Note under the chart: revenue cycle savings ($0.4M) depend on Meridian's vendor contract extending to YellowSigil volumes; unconfirmed as of 14 August.",
+        },
+      ],
+    });
+    expect(proof).toMatchObject({
+      scenarioA: 0.3,
+      scenarioB: 1.4,
+      scenarioC: 1.2,
+      savings: 2.1,
+      transition: 0.7,
+    });
     expect(proof?.lines.map((line) => line.amount)).toEqual([0.6, 0.4, 0.7, 0.4]);
   });
   it("keeps the proof link, source connector, honest wording, and phone gutters", () => {
     const css = readFileSync("src/styles.css", "utf8");
-    expect(page).toContain('search={{ item: proof.itemId, turn: 4, from: returnTo }}');
+    expect(page).toContain("search={{ item: proof.itemId, turn: 4, from: returnTo }}");
     expect(page).toContain("lb-proof-connector");
     expect(page).toContain("sourceRef");
     expect(page.toLowerCase()).not.toContain("verified by lasso");
@@ -105,50 +178,101 @@ describe("Unit L1 scroll-driven landing board", () => {
   });
   it("renders the full decision chat at step seven with one marked turn", () => {
     expect(page).toContain('data-testid="landing-decision-transcript"');
-    expect(page).toContain('turns.map((turn)');
+    expect(page).toContain("turns.map((turn)");
     expect(page).toContain('data-decision={turn.turn_no === 5 ? "true" : undefined}');
     expect(page).toContain('turn: 5, from: "story"');
     expect(page).toContain('step: "7", target: "turn"');
-    expect(page).toContain('const shownPositions = step === 5 ? [1] : step === 6 ? [2]');
-    expect(page).toContain('const showProof = step === 5');
-    expect(page).toContain('The full chat, with the decision highlighted. Open it and read it yourself.');
+    expect(page).toContain("const shownPositions = step === 5 ? [1] : step === 6 ? [2]");
+    expect(page).toContain("const showProof = step === 5");
+    expect(page).toContain("The full conversation, with the decision highlighted.");
+    expect(page).toContain('testId="landing-answer-turn-link"');
+    expect(page).toContain(
+      "onOpenTurn={step === 6 && position === 2 ? onOpenDecisionTurn : undefined}",
+    );
+    expect(page).toContain('target: "turn"');
+  });
+  it("uses the approved plain-language story titles", () => {
+    for (const old of [
+      "Your firm's thinking went invisible.",
+      "A number worth asking about.",
+      "Every number in the deck has a trail.",
+      "Hand-check the actual chat.",
+      "And what's still open, pinned where it came from.",
+      "Your turn.",
+    ])
+      expect(page).not.toContain(old);
+    for (const title of [
+      "Your team's AI work is scattered.",
+      "Every AI chat in one place.",
+      "Grouped the way your team splits the work.",
+      "Each group connects to the deck it fed.",
+      "Pick any number in the deck.",
+      "Ask where a number came from.",
+      "Open the chat and read it yourself.",
+      "Open questions stay on the board.",
+      "Share the deliverable, not the drafts.",
+      "Open the board yourself.",
+    ])
+      expect(page).toContain(title);
   });
   it("keeps the proof compact, proportional, capitalized, and connector-isolated", () => {
     const css = readFileSync("src/styles.css", "utf8");
     expect(page).toContain("(line.amount / model.savings) * 100");
-    expect(page).toContain('step === 4 ? <svg className="lb-circle-link"');
+    expect(page).toMatch(/step === 4\s*\? \(\s*<svg className="lb-circle-link"/);
     expect(page).toContain('thread.scrollTo({ top: proofCard.offsetTop, behavior: "auto" })');
-    expect(page).toContain('const showProof = step === 5 && replay.phase === "done" && proof && proofModel');
+    expect(page).toContain(
+      'const showProof = step === 5 && replay.phase === "done" && proof && proofModel',
+    );
     const parser = readFileSync("src/lib/landing-proof-shared.ts", "utf8");
-    expect(parser).toContain('replace(/^unconfirmed/i, "Unconfirmed").replace("14 August", "14 Aug")');
+    expect(parser).toContain(
+      'replace(/^unconfirmed/i, "Unconfirmed").replace("14 August", "14 Aug")',
+    );
     expect(css).toContain(".lb-proof-card h4 strong { font-size: 40px;");
-    expect(css).toContain('background: color-mix(in srgb, var(--nb-lasso-green) 8%, transparent)');
+    expect(css).toContain("background: color-mix(in srgb, var(--nb-lasso-green) 8%, transparent)");
   });
   it("shows the proof connector on story steps 6 to 8, but not step 5", () => {
     const css = readFileSync("src/styles.css", "utf8");
-    expect(page).toContain('step >= 5 && step <= 7 ? <path data-testid="landing-proof-connector"');
+    expect(page).toMatch(
+      /step >= 5 && step <= 7\s*\? \(\s*<path\s*data-testid="landing-proof-connector"/,
+    );
     expect(page).not.toContain('step === 4 ? <path data-testid="landing-proof-connector"');
-    expect(css).toContain('.lb-stage-window:is([data-step="6"],[data-step="7"],[data-step="8"]) .lb-connectors { opacity: 1; }');
-    expect(css).toContain('.lb-proof-connector { stroke: var(--nb-lasso-green); stroke-width: 1.5; stroke-dasharray: 6 4; }');
+    expect(css).toContain(
+      '.lb-stage-window:is([data-step="6"],[data-step="7"],[data-step="8"]) .lb-connectors { opacity: 1; }',
+    );
+    expect(css).toContain(
+      ".lb-proof-connector { stroke: var(--nb-lasso-green); stroke-width: 1.5; stroke-dasharray: 6 4; }",
+    );
   });
   it("keeps representative board work inside the public allowlist", () => {
-    const [item] = publicSafeWork([{ id: "w1", title: "Deck", type: "deck", source: "upload", visibility: "mapped", captured_at: "2026-09-25", content_ref: "storage/private", owner_id: "person", work_item_tasks: [] }]);
+    const [item] = publicSafeWork([
+      {
+        id: "w1",
+        title: "Deck",
+        type: "deck",
+        source: "upload",
+        visibility: "mapped",
+        captured_at: "2026-09-25",
+        content_ref: "storage/private",
+        owner_id: "person",
+        work_item_tasks: [],
+      },
+    ]);
     expect(item).toMatchObject({ id: "w1", title: "Deck", type: "deck" });
     expect(item).not.toHaveProperty("content_ref");
     expect(item).not.toHaveProperty("owner_id");
   });
   it("uses product labels, a single deliverable, and citation-aware pins", () => {
-    expect(page).toContain('<VendorMark item={item} />');
-    expect(page).toContain('keptContentLabel(item, turnCount)');
-    expect(page).toContain('board.turns[item.id]?.length');
-    expect(page).toContain('item.id !== deckItem?.id');
-    expect(page).toContain('citedIds.has(item.id)');
+    expect(page).toContain("<VendorMark item={item} />");
+    expect(page).toContain("keptContentLabel(item, turnCount)");
+    expect(page).toContain("board.turns[item.id]?.length");
+    expect(page).toContain("item.id !== deckItem?.id");
+    expect(page).toContain("citedIds.has(item.id)");
     expect(page).toContain('className="lb-read-dot"');
   });
   it("keeps the active caption visible and locks jump state", () => {
-    expect(page).toContain('<StoryCaption step={active} nonce={attentionNonce}');
-    expect(page).toContain('data-step={index + 1}');
-    expect(page).toContain('if (jumpTarget.current !== null) return;');
+    expect(page).toContain("<StoryCaption step={active} nonce={attentionNonce}");
+    expect(page).toContain("data-step={index + 1}");
+    expect(page).toContain("if (jumpTarget.current !== null) return;");
     expect(page).toContain('activate(index, "jump", true)');
   });
   it("keeps the step-one hero on a clean background", () => {
@@ -159,16 +283,18 @@ describe("Unit L1 scroll-driven landing board", () => {
   it("uses a separate phone-first eleven-stop story", () => {
     const css = readFileSync("src/styles.css", "utf8");
     expect(page).toContain('className="lb-phone-story"');
-    expect(page).toContain('data-phone-step={stop}');
+    expect(page).toContain("data-phone-step={stop}");
     expect(page).toContain('id="lb-phone-usecases"');
-    expect(page).toContain('phoneStop >= 2 && phoneStop <= 10');
-    expect(page).toContain('new IntersectionObserver');
-    expect(page).toContain('threshold: 0.6');
-    expect(page).toContain('<ExactTurn board={board} preset={second} onOpenTurn={onOpenDecisionTurn} phone />');
+    expect(page).toContain("phoneStop >= 2 && phoneStop <= 10");
+    expect(page).toContain("new IntersectionObserver");
+    expect(page).toContain("threshold: 0.6");
+    expect(page).toContain(
+      "<ExactTurn board={board} preset={second} onOpenTurn={onOpenDecisionTurn} phone />",
+    );
     expect(css).toContain("scroll-snap-type: y mandatory");
     expect(css).toContain("max-height: calc(100svh - var(--lb-header-h))");
     expect(css).toContain(".lb-progress-status { display: none;");
-    expect(page).toContain('surface: "landing-board", input_mode:');
+    expect(page).toMatch(/surface: "landing-board",\s*input_mode:/);
   });
   it("holds scenes, settles events, and reuses Ask Lasso presentation pieces", () => {
     const css = readFileSync("src/styles.css", "utf8");
@@ -186,14 +312,16 @@ describe("Unit L1 scroll-driven landing board", () => {
   });
   it("anchors the lasso to the number slide and limits open notes", () => {
     expect(page).toContain('data-testid="landing-board-number"');
-    expect(page).toContain('lassoBox && step >= 4 && attentionStep === step');
+    expect(page).toContain("lassoBox && step >= 4 && attentionStep === step");
     expect(page).toContain('pathLength="1"');
     expect(page).toContain("Confirm the vendor extension assumption.");
     expect(page).toContain("Confirm approval by Oct 1.");
   });
   it("uses one settled spotlight on the deck, Ask panel, and decision turn", () => {
     const css = readFileSync("src/styles.css", "utf8");
-    expect(page).toContain('step === 4 ? "deck" : step === 5 ? "ask" : step === 6 ? "turn"');
+    expect(page).toMatch(
+      /step === 4\s*\? "deck"\s*: step === 5\s*\? "ask"\s*: step === 6\s*\? "turn"/,
+    );
     expect(page).toContain('data-testid="landing-story-spotlight"');
     expect(css).toContain("backdrop-filter: blur(3px)");
     expect(css).toContain("color-mix(in srgb, var(--nb-ink) 30%, transparent)");
@@ -206,13 +334,15 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(net / savings).toBeCloseTo(1.4 / 2.1, 2);
     expect(page).toContain('className="lb-waterfall-costs"');
     expect(page).toContain('data-units="0.7"');
-    const costsBackground = css.match(/\.lb-waterfall-costs i \{[^}]*background: ([^;]+);/)?.[1]?.trim();
+    const costsBackground = css
+      .match(/\.lb-waterfall-costs i \{[^}]*background: ([^;]+);/)?.[1]
+      ?.trim();
     expect(costsBackground).toBe("var(--nb-red)");
     expect(costsBackground).not.toBe("transparent");
   });
   it("sources the Ask client and engagement labels rather than inventing a client name", () => {
     expect(page).toContain("<h3>{clientLabel}</h3>");
-    expect(page).toContain('{engagementTitle}');
+    expect(page).toContain("{engagementTitle}");
     expect(page).toContain('clientLabel={result.engagement.clientLabel ?? ""}');
     expect(page).toContain("engagementTitle={result.engagement.title}");
     expect(page).not.toContain("YellowSigil Mobility");
@@ -221,10 +351,10 @@ describe("Unit L1 scroll-driven landing board", () => {
     const css = readFileSync("src/styles.css", "utf8");
     expect(page).toContain("getBoundingClientRect()");
     expect(page).toContain('event.propertyName === "transform"');
-    expect(page).toContain('new MutationObserver');
-    expect(page).toContain('[data-testid=landing-proof-card]');
-    expect(page).toContain('measureFrameRef.current = window.requestAnimationFrame(tick)');
-    expect(page).toContain('sourceRect.width <= 0 || sourceRect.height <= 0');
+    expect(page).toContain("new MutationObserver");
+    expect(page).toContain("[data-testid=landing-proof-card]");
+    expect(page).toContain("measureFrameRef.current = window.requestAnimationFrame(tick)");
+    expect(page).toContain("sourceRect.width <= 0 || sourceRect.height <= 0");
     expect(page).toContain("layerRect.width / layer.offsetWidth");
     expect(page).toContain("thread.scrollTo");
     expect(css).toContain(".lb-replay-thread { min-height: 0; flex: 1; overflow: hidden;");
@@ -234,7 +364,7 @@ describe("Unit L1 scroll-driven landing board", () => {
     const css = readFileSync("src/styles.css", "utf8");
     expect(page).toContain('aria-live={phase === "incoming" ? "polite" : undefined}');
     expect(page).toContain("setAttentionNonce");
-    expect(page).toContain('data-phase={phase}');
+    expect(page).toContain("data-phase={phase}");
     expect(css).toContain("lb-caption-in 360ms");
     expect(css).toContain("lb-caption-out 160ms");
     expect(css).toContain("var(--lb-word-index) * 40ms");

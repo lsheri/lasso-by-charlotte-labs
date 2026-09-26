@@ -14,7 +14,7 @@ export const RAW_TURN_TAG = /TURN \d+ (?:·\s*)?(?:USER|ASSISTANT|TOOL)\b/;
 const RAW_TURN_TAG_G = /\bTURN (\d+) (?:·\s*)?(?:USER|ASSISTANT|TOOL)\b:?/g;
 
 export const TURN_CITATION_RULE =
-  'HOW TO REFER TO TURNS: conversations are shown with labels like "(turn 5, you said)" and "(turn 6, the assistant replied)". When you point at a turn, name the conversation by its title and the turn number in plain words, for example: in "Board charter options", turn 6. Never print internal tag names such as TURN 5 USER or TURN 6 ASSISTANT.';
+  'HOW TO REFER TO TURNS: conversations are shown with labels like "(turn 5, you said)" and "(turn 6, the assistant replied)". When you point at a turn, name the conversation by its title and the turn number in plain words, for example: in "Board charter options", turn 6. Never say you cannot link, have no link, or cannot provide a link. The product attaches the link to every cited item and turn. Never print internal tag names such as TURN 5 USER or TURN 6 ASSISTANT.';
 
 function roleWords(role: string): string {
   if (role === "USER") return "you said";
@@ -24,7 +24,10 @@ function roleWords(role: string): string {
 
 /** Relabels "TURN 5 USER: ..." and "TURN 5 · USER\n..." as "(turn 5, you said) ...". */
 export function naturalTurnLabels(text: string): string {
-  return text.replace(TAG_LINE, (_m, n: string, role: string) => `(turn ${n}, ${roleWords(role)}) `);
+  return text.replace(
+    TAG_LINE,
+    (_m, n: string, role: string) => `(turn ${n}, ${roleWords(role)}) `,
+  );
 }
 
 /** The safety net: a tag that reaches an answer is rewritten as "turn N". */
@@ -58,7 +61,9 @@ export function extractTurnRefs(
   if (usable.length === 0) return refs;
   for (const paragraph of answer.split(/\n\s*\n/)) {
     const lower = paragraph.toLowerCase();
-    for (const match of paragraph.matchAll(/\bturns? (\d{1,4})(?:\s*(?:-|\u2013|to|and)\s*(\d{1,4}))?/gi)) {
+    for (const match of paragraph.matchAll(
+      /\bturns? (\d{1,4})(?:\s*(?:-|\u2013|to|and)\s*(\d{1,4}))?/gi,
+    )) {
       const at = match.index ?? 0;
       let best: { id: string; title: string } | null = null;
       let bestAt = -1;

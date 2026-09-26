@@ -32,10 +32,13 @@ describe("sessionRelatedToEngagement", () => {
       expect(sessionRelatedToEngagement({ mode, ids: [] }, WHERE)).toBe(false);
     }
     expect(
-      sessionRelatedToEngagement({ mode: "items", ids: ["i1"] }, {
-        ...WHERE,
-        mappedItemIds: [],
-      }),
+      sessionRelatedToEngagement(
+        { mode: "items", ids: ["i1"] },
+        {
+          ...WHERE,
+          mappedItemIds: [],
+        },
+      ),
     ).toBe(false);
   });
 });
@@ -62,7 +65,7 @@ describe("ask lasso reads stay gated", () => {
   });
 
   it("keeps the live session following the selection", () => {
-    expect(src).toContain('.update({ context_scope: scopeForSelection() })');
+    expect(src).toContain(".update({ context_scope: scopeForSelection() })");
     expect(src).toContain("await writeCurrentScope(id)");
     expect(src).toContain("if (scopeError) throw new Error(scopeError.message)");
   });
@@ -78,5 +81,21 @@ describe("binder baseline law", () => {
 
   it("gives non grid content the white inset ring", () => {
     expect(css).toContain("box-shadow: 0 0 0 4px var(--nb-white)");
+  });
+});
+
+describe("answer turn links", () => {
+  const prompt = readFileSync("src/lib/turn-labels.ts", "utf8");
+  const surface = readFileSync("src/components/reflect/AskSurface.tsx", "utf8");
+
+  it("tells the model to cite turns without disclaiming links", () => {
+    expect(prompt).toContain("The product attaches the link to every cited item and turn.");
+    expect(prompt).toContain("Never say you cannot link, have no link, or cannot provide a link.");
+  });
+
+  it("renders cited turns below product answers", () => {
+    expect(surface).toContain("<AnswerTurnLinks");
+    expect(surface).toMatch(/extractTurnRefs\(\s*message\.content,/);
+    expect(surface).toContain("turnNo: openTurn.turn_no");
   });
 });

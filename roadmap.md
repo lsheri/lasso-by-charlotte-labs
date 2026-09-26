@@ -1,3 +1,6 @@
+- [ ] S5 architect-owned: regenerate the four YSM-01 presets after the prompt update, then confirm preset 2 has no link disclaimer and still resolves turn 5.
+- [x] S5 app work: add exact-turn chips to Ask answers, remove link disclaimers from the prompt, and replace story labels with approved plain-language copy.
+
 # Roadmap
 
 - [x] Unit 3.3: Dock phone tour notes, clear the preset bar, densify desktop collision checks, and verify all seven steps.
@@ -52,8 +55,8 @@
 - [x] R6: Raise required share-dialog copy to readable existing text tokens.
 - [x] R6: Let conversation previews grow from a 112px minimum and remove their fade.
 
-
 ## R7 Ask Lasso thinking marks
+
 - [x] Add the four exact canvas marks with lifecycle and reduced-motion safeguards.
 - [x] Replace toolbar drift with loop and pending dots with honest-count gather.
 - [x] Remove only superseded Ask drift CSS and verify all affected checks.
@@ -63,34 +66,42 @@
 - [x] Add the supplied fox mark as the sixth connected finish before the sequence returns to the cursive L.
 
 ## P2 Inbox board lanes
+
 - [x] Render the four existing work-type columns as fixed lanes in BoardShell.
 - [x] Move only the Preview/Sticky control, filter chips, and count line into the shell toolbar.
 - [x] Preserve page-level teaching copy, card dimming/inert behavior, paging, and every surrounding section.
 - [x] Replace only obsolete cg1 markup selectors and mutation-check every inbox congruency behavior.
 
 ## P3.2 Conversation board density
+
 - [x] Render missing months as narrow timeline spines without card wells.
 - [x] Derive month height from visible cards, gaps, padding, header, and overflow row.
 - [x] Mutation-check density, fit, and preserved conversation filtering behavior.
 - [x] P4c: Render real, text-free workboard geometry in Home card previews from one bounded read.
 - [ ] P4c: Verify preview geometry, empty/loading paper states, and the Home grid in a real browser.
+
 ## P2 HTML and SVG board previews
+
 - [x] Read stored HTML/SVG artifacts safely and shape them as HTML previews.
 - [x] Render sandboxed previews without breaking board interactions.
 - [x] Verify CSP injection, fallback behavior, event kind reuse, and preserved controls/states.
 
 ## C1 Board context visibility
+
 - [x] Make cards in Ask Lasso context unmistakably lime while preserving the paperclip cue.
 - [x] Add one-time registry-led entry flares, ordered marquee staggering, and still reduced-motion behavior.
 - [x] Clarify marquee preview and sticky keyboard focus without changing controls or event payloads.
 - [x] C2: Replace one-shot flares with capped, interaction-paused living coronas beneath context cards.
 
 ## Unit 2 All conversations shell
+
 - [x] Replace the page shell while preserving controls, states, and existing calls.
 - [x] Add the engagement-panel event guard and focused geometry tests.
 - [x] Run focused checks and type check.
 - [ ] Run live four-size interaction verification. Blocked because the required Liam session could not be minted and the available QA sign-in remained on the sign-in page after two attempts.
+
 ## UNIT 5a
+
 - [ ] Inventory card surfaces, controls, states, mode reads, pinned tests, summary and thumbnail paths
 - [ ] Unify Ledger preview card through WorkNote and remove sticky mode UI/branches/storage reads-writes
 - [ ] Fix marquee drag text selection lifecycle
@@ -98,6 +109,7 @@
 - [ ] Run requested tests, typecheck, unchanged live shell specs, and Playwright visual/interaction checks
 
 ## UNIT 5a.1
+
 - [ ] Replace workboard item faces with shared WorkNote while preserving all board interactions
 - [ ] Remove Canvas Lab card-display control, preference use, and emissions while retaining event schema
 - [ ] Read existing stored summaries with card previews and prefer them over first-user-turn fallback
@@ -105,6 +117,7 @@
 - [ ] Verify authenticated workboard drag, resize, marquee, styling, summary use, and screenshot
 
 ## Landing question story and shared lime mark
+
 - [x] Make all four client questions and Lasso answers the visual payoff.
 - [x] Keep How it works present and tighten desktop scroll pacing.
 - [x] Recompose the story for phone widths with no overflow.
@@ -112,10 +125,12 @@
 - [x] Verify focused checks, type safety, preview build, and live desktop/mobile behavior.
 
 ## Landing conversation vortex
+
 - [x] Replace the flat connector with a lime perspective tunnel carrying branded conversation excerpts into the deck.
 - [x] Verify motion, reduced-motion clarity, controls, and overflow on desktop and mobile.
 
 ## Unit 9 landing deliverable
+
 - [x] Replace the sports story with the six-slide Harborline illustrative deliverable and five keyed source cards.
 - [x] Simplify the phone sequence, pause its timer after a question choice, and remove scroll-bound story scaling.
 - [x] Add the once-per-load invisible-ink close with an immediate reduced-motion state.
@@ -132,17 +147,20 @@
 - [x] Pass C3: Replace the C2 CSS corona with the approved viewport-bounded WebGL sun corona and verify all required tests.
 
 ## Unit S1 scope truth
+
 - [x] Make live board picks authoritative, including all-mapped and brief-only picks.
 - [x] Preserve board picks across New chat and await existing-session scope writes before send.
 - [x] Add `reflect.message_sent.scope_source` and additive manifest scope metadata.
 - [x] Update scope, server, chip, guard, and tripwire tests; run the requested suites.
 
 ## Unit S2 answer actions and read disclosure
+
 - [x] Make Put on board the clear secondary split button without changing keep or drag behavior.
 - [x] Explain the stored scope source in open and closed read disclosures.
 - [x] Cover footer behavior, all six scope reasons, old manifests, and requested suites.
 
 ## Landing scroll playback and phone pass
+
 - [ ] Play the three product clips automatically, one at a time, with desktop sequencing and phone viewport selection.
 - [ ] Optimize every landing section for phone widths and verify desktop, phone, and narrow-phone layouts.
 - [x] Restore the three existing product clips and posters on `/landing-board` with hover and tap playback.
@@ -157,6 +175,7 @@
 - [x] Unit 4 (reduced): /demo/conversations + /demo/sources. Portal: demo.opened.surface adds "conversations","sources"; new event demo.filter_changed {tool} (architect-owned).
 
 ## Unit L1 landing board
+
 - [x] Build the isolated `/landing-board` scroll story from public-safe YSM-01 data.
 - [x] Add additive landing event coverage and route tests.
 - [x] Verify steps 1, 4, 6, and 7 at desktop and phone widths.
@@ -171,7 +190,9 @@
 - [x] Unit L4.3: Re-measure the live proof connector, contain page width, and clear all ten phone story steps.
 - [ ] Portal: add `landing.proof_link_opened` with `step` and `target` dimensions (architect-owned).
 - [ ] Portal: add `landing-board`, ten story section values, and `landing.section_jumped` (architect-owned).
+
 ## Unit P1 playable demo board
+
 - [x] Inventory current demo controls, states, and event calls
 - [x] Move classic demo to /demo/classic and route all demo entrances to /demo
 - [x] Reuse the landing StoryBoard presentation pieces in interactive playground mode
@@ -181,47 +202,56 @@
 - [x] P1 addendum correction: preserve Watch it work, add View a Workboard, and show the step-one scroll cue
 
 ## Unit H1 board story home
+
 - [x] Render the board story at `/` for signed-out visitors while preserving the signed-in workspace redirect.
 - [x] Redirect `/landing-board` to `/` with its hash and repoint internal story returns.
 - [x] Keep the prior B2B page at unlinked, noindex `/landing-classic` with additive surface coverage.
 - [x] Verify route behavior, focused checks, and the existing landing-board browser suite against `/`.
 
 ## Unit T1 full decision chat
+
 - [ ] Render all six public-safe turns in the step 7 reader and highlight only turn 5.
 - [ ] Match the step 7 Ask replay to the two-term-limits preset and add the turn 5 deep link.
 - [ ] Add focused story tests and verify the updated step at desktop and phone sizes.
 
 ## Unit P2 real demo workboard
+
 - [ ] Replace the landing replica with a local-state sandbox built from the real workboard primitives.
 - [ ] Add real demo chrome, local drag/resize/stickies, reset timing, zoom/pan, and the saved Ask rail.
 - [ ] Preserve P1 event vocabulary and prove that play makes no network writes.
 - [ ] Verify the real workboard DOM, reset behavior, and desktop/phone screenshots.
 
 ### Unit T1 completion
+
 - [x] Step 7 reads the complete public-safe six-turn Scenario B chair-terms conversation.
 - [x] Turn 5 alone carries the decision treatment and the reader deep-links to turn 5.
 - [x] Step 7 Ask uses the matching saved preset while the $1.4M proof remains on step 6.
 
 ### Unit P2 completion
+
 - [x] `/demo` now renders a local sandbox built from Canvas Lab frames, cards, stickies, connectors, model adapter, canvas gestures and zoom controls.
 - [x] The workboard shell includes demo sidebar, engagement chrome, reset banner, finished deck art and phone Ask sheet.
 - [x] All play mutations remain component state only and preserve the existing demo event vocabulary and reset behavior.
 
 ### Unit P2.1 framing polish
+
 - [x] Fit the finished board to the available canvas on load and after every reset, capped at 100%.
 - [x] Remove the deck's slide-notes suffix, stack narrow proof actions, and clear the hint below the toolbar.
 - [x] Verify zoom, proof labels, and deck title at 1372x732 and 1512x807.
 
 ### Unit S1 home story readability
+
 - [x] Center and enlarge settled captions within the visible board area at desktop and phone sizes.
 - [x] Add one-shot caption exit, spring entry, word reveal, underline, and step progress motion with a reduced-motion crossfade.
 - [x] Raise story, board, Ask, proof, chip, and micro-label text to the requested readable floors.
 - [x] Verify all settled steps at 1372x732 and the caption body at 390x844.
 
 ### Unit S1.1 demo readability
+
 - [x] Raise the Ask rail presets, subline, composer, answers, proof rows, and mono labels to buyer-readable sizes.
 
 ### Unit M1 phone-first home story
+
 - [x] Replace the sticky phone board with ten viewport-snapped focused sections fed by the public demo payload.
 - [x] Compact the phone header, add the step counter, and move the pilot action to a step-aware bottom bar.
 - [x] Verify all ten sections at 390x844 and 430x932, including sizing, text floors, overflow, and counters.
@@ -230,12 +260,14 @@
 - [x] Verify 20 visible rail and board text nodes at 1372x732.
 
 ### Unit P2.2 demo content containment
+
 - [x] Restore the Lab card hierarchy and enlarge cards and frames to contain full metadata, titles, summaries, and footers.
 - [x] Replace the deck overlay with a contained deliverable, one large 16:9 slide, and six local thumbnail controls.
 - [x] Fit with 48px clearance, a 90% cap, and the 12px effective text floor.
 - [x] Verify every card, deliverable, and sticky at 1372x732 and 1512x807.
 
 ### Unit S2 home story lock and spotlight
+
 - [x] Keep one complete active step and caption visible across 1.6-viewport desktop and 1.3-viewport phone zones.
 - [x] Draw the measured $1.4M lasso only after Circle settles.
 - [x] Spotlight only Circle, Ask, and The turn with one dimming overlay and phone/reduced-motion fallbacks.
@@ -243,11 +275,13 @@
 - [x] Keep the step-one hero background clean by fully hiding board content through the Canvas transition.
 
 ### Unit S3 home order and use cases
+
 - [x] Place the three use-case cards between the hero and the desktop story, with the story beginning at Canvas.
 - [x] Add the phone use-case stop as 2 of 11 while preserving the focused M1 sections.
 - [x] Verify card media, story jumps, telemetry, ordering, and screenshots at 1372x732 and 390x844.
 
 ### Unit S3.1 use-case review
+
 - [x] Tighten the three card headlines and bodies, then point each story link at the reviewed step.
 - [x] Swap in the Claude MCP push and drag-select Ask clips while retaining the source-trail clip.
 - [x] Raise both section introductions to the reviewed display sizes and verify desktop and phone screenshots.
