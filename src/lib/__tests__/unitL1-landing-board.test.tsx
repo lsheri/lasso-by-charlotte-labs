@@ -181,7 +181,7 @@ describe("Unit L1 scroll-driven landing board", () => {
   });
   it("announces and animates only settled captions with a reduced-motion answer", () => {
     const css = readFileSync("src/styles.css", "utf8");
-    expect(page).toContain('aria-live="polite"');
+    expect(page).toContain('aria-live={phase === "incoming" ? "polite" : undefined}');
     expect(page).toContain("setAttentionNonce");
     expect(page).toContain('data-phase={phase}');
     expect(css).toContain("lb-caption-in 360ms");

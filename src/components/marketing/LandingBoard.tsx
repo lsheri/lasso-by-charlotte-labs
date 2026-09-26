@@ -583,7 +583,8 @@ function LandingBoardHeader({ active, onJump, onPilot }: { active: StepKey; onJu
 }
 
 function CaptionWords({ text }: { text: string }) {
-  return text.split(/\s+/).map((word, index) => <span key={`${word}-${index}`} style={{ "--lb-word-index": index } as CSSProperties}>{word}{index < text.split(/\s+/).length - 1 ? " " : ""}</span>);
+  const words = text.split(/\s+/);
+  return words.map((word, index) => <span key={`${word}-${index}`} style={{ "--lb-word-index": index } as CSSProperties}>{word}</span>);
 }
 
 function StoryCaption({ step, nonce, onPilot }: { step: number; nonce: number; onPilot: () => void }) {
