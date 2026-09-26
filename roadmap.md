@@ -4,6 +4,7 @@
 - [x] M2 landing: reflow phone cards, use accessible icon-only tool badges, remove text scaling, and close excess story gaps.
 - [x] M3 landing: remove the scroll cue card while preserving focus, story order, controls, and events.
 - [x] M4 landing: replace the phone hero coordinate layout with one still, clear the fixed header, and remove the decorative phone card highlight.
+- [x] M5 landing: renumber only the visible story cards from 1 through 9 while preserving internal step identities and event payloads.
 - [x] S5 app work: add exact-turn chips to Ask answers, remove link disclaimers from the prompt, and replace story labels with approved plain-language copy.
 
 # Roadmap

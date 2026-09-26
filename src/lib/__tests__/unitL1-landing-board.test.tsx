@@ -277,6 +277,14 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(page).toContain("if (jumpTarget.current !== null) return;");
     expect(page).toContain('activate(index, "jump", true)');
   });
+  it("offsets only visible story numbering after the cue removal", () => {
+    expect(page.match(/const displayStep = index;/g)).toHaveLength(2);
+    expect(page.match(/<span>\{displayStep\}<\/span>/g)).toHaveLength(2);
+    expect(page).toContain('aria-label={`${displayStep} of ${LANDING_BOARD_STEPS.length - 1}`}');
+    expect(page).toContain('event(viewId.current, "landing.story_section_viewed", {');
+    expect(page).toContain('event(viewId.current, "landing.section_jumped", { section: key })');
+    expect(page).toContain("section: key,");
+  });
   it("keeps the step-one hero on a clean background", () => {
     const css = readFileSync("src/styles.css", "utf8");
     expect(css).toContain('.lb-stage-window[data-step="1"] .lb-board-layer { opacity: 0;');
