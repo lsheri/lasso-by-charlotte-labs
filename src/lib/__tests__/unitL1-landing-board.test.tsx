@@ -369,13 +369,22 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(css).toContain("color-mix(in srgb, var(--nb-ink) 30%, transparent)");
     expect(css).toContain("lb-spotlight-in 300ms");
   });
-  it("draws the net waterfall bar at the honest 1.4 to 2.1 ratio", () => {
+  it("derives every deck figure and waterfall bar from proof, with a figure-free null state", () => {
     const css = readFileSync("src/styles.css", "utf8");
-    const savings = Number(css.match(/\.lb-waterfall-savings i \{ height: (\d+)px;/)?.[1]);
-    const net = Number(css.match(/\.lb-waterfall-net i \{ height: (\d+)px;/)?.[1]);
-    expect(net / savings).toBeCloseTo(1.4 / 2.1, 2);
+    expect(page).not.toContain("[0.3, 1.4, 1.2]");
+    expect(page).not.toContain('data-units="0.7"');
+    expect(page).toContain("proof ? [proof.scenarioA, proof.scenarioB, proof.scenarioC] : null");
+    expect(page).toContain("const net = proof?.scenarioB");
+    expect(page).toContain('"--lb-waterfall-units": proof.savings');
+    expect(page).toContain('"--lb-waterfall-units": proof.transition');
+    expect(page).toContain('"--lb-waterfall-units": net');
+    expect(page).toContain('data-testid="landing-board-number"');
+    expect(page).toContain('transition cost equals ${figure(net)}');
+    expect(page).toContain('"Year-two net benefit figures unavailable"');
     expect(page).toContain('className="lb-waterfall-costs"');
-    expect(page).toContain('data-units="0.7"');
+    expect(css).toContain("height: calc(var(--lb-waterfall-units) * var(--lb-waterfall-unit))");
+    expect(css).toContain("--lb-waterfall-unit: 20px");
+    expect(css).toContain("--lb-waterfall-unit: 41.9px");
     const costsBackground = css
       .match(/\.lb-waterfall-costs i \{[^}]*background: ([^;]+);/)?.[1]
       ?.trim();

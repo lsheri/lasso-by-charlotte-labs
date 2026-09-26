@@ -1011,8 +1011,8 @@ export function DeckSlide({
       </section>
     );
   if (index === 1) {
-    const values = proof ? [proof.scenarioA, proof.scenarioB, proof.scenarioC] : [0.3, 1.4, 1.2];
-    const max = Math.max(...values);
+    const values = proof ? [proof.scenarioA, proof.scenarioB, proof.scenarioC] : null;
+    const max = values ? Math.max(...values) : null;
     return (
       <section className="lb-deck-slide lb-slide-scenarios">
         <small>2</small>
@@ -1020,53 +1020,52 @@ export function DeckSlide({
         <div>
           {["A", "B", "C"].map((label, itemIndex) => (
             <span key={label} data-picked={label === "B"}>
-              <i
-                style={
-                  {
-                    "--lb-scenario-height": `${((values[itemIndex] ?? 0) / max) * 100}%`,
-                  } as CSSProperties
-                }
-              />
-              {label} ${values[itemIndex]?.toFixed(1)}M
+              {values && max ? (
+                <i
+                  style={
+                    {
+                      "--lb-scenario-height": `${((values[itemIndex] ?? 0) / max) * 100}%`,
+                    } as CSSProperties
+                  }
+                />
+              ) : null}
+              {label}{values ? ` $${values[itemIndex]?.toFixed(1)}M` : ""}
             </span>
           ))}
         </div>
       </section>
     );
   }
-  if (index === 2)
+  if (index === 2) {
+    const net = proof?.scenarioB;
+    const figure = (value: number) => `$${value.toFixed(1)}M`;
     return (
       <section className="lb-deck-slide lb-slide-number">
         <small>3</small>
         <b>Year-two net benefit</b>
         <span ref={numberRef} className="lb-number" data-testid="landing-board-number">
-          $1.4M
+          {net === undefined ? "" : figure(net)}
         </span>
         <div
           className="lb-waterfall"
-          aria-label="$2.1M savings minus $0.7M costs equals $1.4M year-two net benefit"
+          aria-label={proof ? `${figure(proof.savings)} savings minus ${figure(proof.transition)} transition cost equals ${figure(net)} year-two net benefit` : "Year-two net benefit figures unavailable"}
         >
           <span className="lb-waterfall-savings">
-            <i data-units="2.1" />
-            $2.1M
-            <br />
+            {proof ? <><i style={{ "--lb-waterfall-units": proof.savings } as CSSProperties} />{figure(proof.savings)}<br /></> : null}
             savings
           </span>
           <span className="lb-waterfall-costs">
-            <i data-units="0.7" />
-            -$0.7M
-            <br />
-            costs
+            {proof ? <><i style={{ "--lb-waterfall-units": proof.transition, "--lb-waterfall-net-units": net } as CSSProperties} />-{figure(proof.transition)}<br /></> : null}
+            transition
           </span>
           <span className="lb-waterfall-net">
-            <i data-units="1.4" />
-            $1.4M
-            <br />
+            {proof ? <><i style={{ "--lb-waterfall-units": net } as CSSProperties} />{figure(net)}<br /></> : null}
             net
           </span>
         </div>
       </section>
     );
+  }
   if (index === 3)
     return (
       <section className="lb-deck-slide lb-slide-governance">
