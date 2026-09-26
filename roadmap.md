@@ -1,4 +1,5 @@
-- [x] S5: add exact-turn chips to Ask answers, remove link disclaimers from the prompt, regenerate YSM-01 presets, and replace story labels with approved plain-language copy.
+- [ ] S5 architect-owned: regenerate the four YSM-01 presets after the prompt update, then confirm preset 2 has no link disclaimer and still resolves turn 5.
+- [x] S5 app work: add exact-turn chips to Ask answers, remove link disclaimers from the prompt, and replace story labels with approved plain-language copy.
 
 # Roadmap
 
