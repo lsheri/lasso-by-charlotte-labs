@@ -24,9 +24,12 @@ import { AnswerTurnLinks } from "@/components/reflect/AnswerTurnLinks";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { VendorMark } from "@/components/work/SourceMark";
-import finishedWorkboardAsset from "@/assets/landing-finished-workboard.png.asset.json";
+import heroMidAsset from "@/assets/landing-hero-mid.png.asset.json";
+import heroScatteredAsset from "@/assets/landing-hero-scattered.png.asset.json";
+import heroSettledAsset from "@/assets/landing-hero-settled.png.asset.json";
+import phoneHeroMidAsset from "@/assets/landing-phone-hero-mid.png.asset.json";
+import phoneHeroScatteredAsset from "@/assets/landing-phone-hero-scattered.png.asset.json";
 import phoneHeroSettledAsset from "@/assets/landing-phone-hero-settled.png.asset.json";
-import lovableLogoAsset from "@/assets/lovable-logo.png.asset.json";
 import { openDemoBoardFn } from "@/lib/demo.functions";
 import type { DemoPreset } from "@/lib/demo-presets-shared";
 import { submitPilotRequestFn } from "@/lib/pilot-request.functions";
@@ -1935,43 +1938,44 @@ function StoryBoard({
   );
 }
 
-const HERO_ASSEMBLE_CARDS = [
-  { tool: "chatgpt", label: "Chair terms" },
-  { tool: "claude", label: "Rate build" },
-  { tool: "gemini", label: "Board readout" },
-  { tool: "lovable", label: "Client brief" },
-  { tool: "googledrive", label: "Pricing approach" },
+const HERO_ASSEMBLE_FRAMES = [heroScatteredAsset, heroMidAsset, heroSettledAsset] as const;
+const PHONE_HERO_ASSEMBLE_FRAMES = [
+  phoneHeroScatteredAsset,
+  phoneHeroMidAsset,
+  phoneHeroSettledAsset,
 ] as const;
 
-/** Inert desktop decoration showing scattered AI work settling onto a finished board. */
+/** Inert image-only sequence showing scattered AI work settling onto a finished board. */
 function HeroAssemble() {
   return (
     <div className="lb-hero-assemble" aria-hidden="true" inert>
-      <img className="lb-hero-assemble-board" src={finishedWorkboardAsset.url} alt="" />
-      <div className="lb-hero-assemble-cards">
-        {HERO_ASSEMBLE_CARDS.map((card, index) => (
-          <article key={card.tool} className="lb-hero-chat" data-card={index + 1}>
-            <div className="lb-hero-chat-tool">
-              {card.tool === "lovable" ? (
-                <img src={lovableLogoAsset.url} alt="" />
-              ) : null}
-              <ToolLogo vendor={card.tool} compact />
-            </div>
-            <strong>{card.label}</strong>
-            <span /><span /><span />
-          </article>
-        ))}
-      </div>
+      {HERO_ASSEMBLE_FRAMES.map((frame, index) => (
+        <img
+          key={frame.url}
+          className="lb-hero-assemble-frame"
+          data-frame={index + 1}
+          src={frame.url}
+          alt=""
+        />
+      ))}
     </div>
   );
 }
 
-/** Inert phone still: the settled board and chats are one image with no positioned children. */
+/** Inert phone sequence: every state is a pre-composed image with no positioned card children. */
 function PhoneHeroAssemble() {
   return (
     <div className="lb-phone-hero-sequence" aria-hidden="true" inert>
       <div className="lb-phone-hero-assemble">
-        <img className="lb-phone-hero-board" src={phoneHeroSettledAsset.url} alt="" />
+        {PHONE_HERO_ASSEMBLE_FRAMES.map((frame, index) => (
+          <img
+            key={frame.url}
+            className="lb-phone-hero-frame"
+            data-frame={index + 1}
+            src={frame.url}
+            alt=""
+          />
+        ))}
       </div>
       <p className="micro-label lb-phone-hero-caption">CHATS FROM EVERY TOOL, ON ONE BOARD</p>
       <div className="lb-phone-hero-line">
@@ -2112,14 +2116,22 @@ function StoryCaption({
 
 function LandingBoardUseCase({
   card,
+  rotationActive,
+  rotationEnabled,
+  onRotationAdvance,
+  onBeforeUserPlay,
   onPlayed,
 }: {
   card: (typeof LANDING_BOARD_USE_CASES)[number];
+  rotationActive: boolean;
+  rotationEnabled: boolean;
+  onRotationAdvance: () => void;
+  onBeforeUserPlay: (video: HTMLVideoElement) => void;
   onPlayed: (key: UseCaseKey, inputMode: "hover" | "tap") => void;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const inputMode = useRef<"hover" | "tap">("hover");
-  const posterTimer = useRef<number | null>(null);
+  const playIntent = useRef<"auto" | "user">("auto");
   const [playing, setPlaying] = useState(false);
   const [ended, setEnded] = useState(false);
   const [videoFailed, setVideoFailed] = useState(false);
@@ -2127,9 +2139,11 @@ function LandingBoardUseCase({
   function play(mode: "hover" | "tap") {
     const video = videoRef.current;
     if (!video || videoFailed) return;
-    if (posterTimer.current !== null) window.clearTimeout(posterTimer.current);
+    onBeforeUserPlay(video);
+    video.pause();
+    playIntent.current = "user";
     inputMode.current = mode;
-    if (video.ended) video.currentTime = 0;
+    video.currentTime = 0;
     setEnded(false);
     void video.play().catch(() => setVideoFailed(true));
   }
@@ -2138,12 +2152,23 @@ function LandingBoardUseCase({
     videoRef.current?.pause();
   }
 
-  useEffect(
-    () => () => {
-      if (posterTimer.current !== null) window.clearTimeout(posterTimer.current);
-    },
-    [],
-  );
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || videoFailed) {
+      if (rotationActive && rotationEnabled) onRotationAdvance();
+      return;
+    }
+    if (!rotationActive || !rotationEnabled) {
+      video.pause();
+      return;
+    }
+    playIntent.current = "auto";
+    video.currentTime = 0;
+    setEnded(false);
+    void video.play().catch(() => {
+      setVideoFailed(true);
+    });
+  }, [onRotationAdvance, rotationActive, rotationEnabled, videoFailed]);
 
   return (
     <article className="landing-usecase" data-usecase={card.key}>
@@ -2181,11 +2206,11 @@ function LandingBoardUseCase({
             className="landing-usecase-video"
             muted
             playsInline
-            preload="none"
+            preload="metadata"
             poster={card.poster}
             onPlaying={() => {
               setPlaying(true);
-              onPlayed(card.key, inputMode.current);
+              if (playIntent.current === "user") onPlayed(card.key, inputMode.current);
             }}
             onPause={() => {
               setPlaying(false);
@@ -2194,15 +2219,11 @@ function LandingBoardUseCase({
             onEnded={() => {
               setPlaying(false);
               setEnded(true);
-              posterTimer.current = window.setTimeout(() => {
-                const video = videoRef.current;
-                if (!video) return;
-                video.load();
-                setEnded(false);
-                posterTimer.current = null;
-              }, 2000);
+              if (rotationActive && rotationEnabled) onRotationAdvance();
             }}
-            onError={() => setVideoFailed(true)}
+            onError={() => {
+              setVideoFailed(true);
+            }}
           >
             {"webm" in card ? <source src={card.webm} type="video/webm" /> : null}
             <source src={card.mp4} type="video/mp4" />
@@ -2223,8 +2244,47 @@ function UseCaseSection({
   phone?: boolean;
   onPlayed: (key: UseCaseKey, inputMode: "hover" | "tap") => void;
 }) {
+  const sectionRef = useRef<HTMLElement | null>(null);
+  const [activeClip, setActiveClip] = useState(0);
+  const [sectionVisible, setSectionVisible] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
+
+  useEffect(() => {
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setReducedMotion(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
+
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setSectionVisible(Boolean(entry?.isIntersecting)),
+      { threshold: 0.05 },
+    );
+    observer.observe(section);
+    return () => observer.disconnect();
+  }, []);
+
+  const advanceRotation = useCallback(
+    () => setActiveClip((current) => (current + 1) % LANDING_BOARD_USE_CASES.length),
+    [],
+  );
+  const beforeUserPlay = useCallback((nextVideo: HTMLVideoElement) => {
+    sectionRef.current?.querySelectorAll("video").forEach((video) => {
+      if (video !== nextVideo) video.pause();
+    });
+    const card = nextVideo.closest<HTMLElement>("[data-usecase]")?.dataset["usecase"];
+    const index = LANDING_BOARD_USE_CASES.findIndex((item) => item.key === card);
+    if (index >= 0) setActiveClip(index);
+  }, []);
+  const rotationEnabled = sectionVisible && !reducedMotion;
+
   return (
     <section
+      ref={sectionRef}
       id={id}
       className={`landing-usecases${phone ? " lb-phone-step lb-phone-usecases" : ""}`}
       data-phone-step={phone ? 1 : undefined}
@@ -2236,8 +2296,16 @@ function UseCaseSection({
         <p>Three things a buyer asks for. Here is what each looks like.</p>
       </div>
       <div className="landing-usecase-grid">
-        {LANDING_BOARD_USE_CASES.map((card) => (
-          <LandingBoardUseCase key={card.key} card={card} onPlayed={onPlayed} />
+        {LANDING_BOARD_USE_CASES.map((card, index) => (
+          <LandingBoardUseCase
+            key={card.key}
+            card={card}
+            rotationActive={activeClip === index}
+            rotationEnabled={rotationEnabled}
+            onRotationAdvance={advanceRotation}
+            onBeforeUserPlay={beforeUserPlay}
+            onPlayed={onPlayed}
+          />
         ))}
       </div>
     </section>
