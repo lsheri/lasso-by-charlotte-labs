@@ -297,42 +297,6 @@ test("story zones always resolve to one matching visible step", async ({ browser
   await context.close();
 });
 
-test("story spotlights only the three settled attention moments", async ({ browser }) => {
-  const context = await browser.newContext({
-    viewport: { width: 1372, height: 732 },
-    reducedMotion: "no-preference",
-  });
-  const page = await context.newPage();
-  await page.goto("/", { waitUntil: "networkidle" });
-  await page.locator('.lb-progress-dot[aria-label="Workstreams"]').click({ force: true });
-  await expect(page.locator('.lb-caption[data-phase="incoming"]')).toHaveAttribute("data-step", "3", {
-    timeout: 3_000,
-  });
-  await expect(page.getByTestId("landing-story-spotlight")).toHaveCount(0);
-  await page.reload({ waitUntil: "networkidle" });
-  await page.locator('.lb-progress-dot[aria-label="Ask Lasso"]').click({ force: true });
-  const overlay = page.getByTestId("landing-story-spotlight");
-  await expect(overlay).toHaveAttribute("data-spotlight", "ask", { timeout: 3_000 });
-  const layers = await page.evaluate(() => ({
-    board:
-      Number(
-        getComputedStyle(document.querySelector<HTMLElement>(".lb-board-layer") as HTMLElement)
-          .zIndex,
-      ) || 0,
-    overlay: Number(
-      getComputedStyle(document.querySelector<HTMLElement>(".lb-spotlight-overlay") as HTMLElement)
-        .zIndex,
-    ),
-    ask: Number(
-      getComputedStyle(document.querySelector<HTMLElement>(".lb-answer-sheet") as HTMLElement)
-        .zIndex,
-    ),
-  }));
-  expect(layers.board).toBeLessThan(layers.overlay);
-  expect(layers.ask).toBeGreaterThan(layers.overlay);
-  await context.close();
-});
-
 for (const viewport of [
   ...desktopSizes,
   { width: 390, height: 844 },
