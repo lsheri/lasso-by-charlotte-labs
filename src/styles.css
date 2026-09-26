@@ -5949,6 +5949,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   .lb-phone-step .lb-turn-reader { position: relative; inset: auto; display: flex; height: 100%; flex-direction: column; animation: none; }
   .lb-phone-step .lb-turn-reader header { display: grid; grid-template-columns: minmax(0,1fr) auto; padding: 9px 10px; }
   .lb-phone-step .lb-turn-reader header h3 { font-size: 18px; }.lb-phone-step .lb-turn-reader header > div > div > p { font-size: 14px; }
+  .lb-phone-step .lb-turn-reader header :is(span,a,button) { font-size: 14px !important; }
   .lb-phone-step .lb-turn-body { min-height: 0; height: auto; flex: 1; padding: 10px; }
   .lb-phone-step .lb-chat-turn { width: 94%; margin-bottom: 8px; padding: 8px 10px; }.lb-phone-step .lb-chat-turn > p { font-size: 14px; line-height: 1.35; }.lb-phone-step .lb-chat-turn > span,.lb-phone-step .lb-chat-turn > strong { font-size: 14px; }
   .lb-phone-open-items { display: grid; height: 100%; grid-template-rows: repeat(2,minmax(0,1fr)); gap: 10px; }
@@ -5986,6 +5987,9 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   .lb-continuation { padding-top: 64px; }
 }
 @keyframes lb-phone-visual-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@media (max-width: 639px) and (prefers-reduced-motion: reduce) {
+  .lb-phone-caption,.lb-phone-visual { opacity: 1; transform: none; animation: none !important; }
+}
 }
 
 /* Final playground overrides follow the landing story selectors. */
