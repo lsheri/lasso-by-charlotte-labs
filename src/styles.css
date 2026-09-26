@@ -6113,7 +6113,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 }
 @media (prefers-reduced-motion: reduce) { .demo-sandbox-stage,.demo-sandbox-ask { transition: none; } }
 
-/* R3a: desktop hero category line, inert board assembly, step-card scroll cue. Desktop only. */
+/* R3a: desktop hero category line and inert board assembly. Desktop only. */
 @media (min-width: 640px) {
   .lb-desktop-hero { height: auto; min-height: calc(100vh - var(--lb-header-h)); overflow: visible; padding: clamp(40px, 14vh, 192px) 0 clamp(48px, 9vh, 96px); }
   .lb-desktop-hero .lb-hero-copy { position: relative; top: auto; left: auto; margin: 0 auto; transform: none; gap: 10px; }
@@ -6147,7 +6147,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   .lb-hero-chat { opacity: 0; transform: none; animation: none; }
 }
 
-/* R6: hero focus rule (one zone sharp at a time) and the single scroll cue card. Desktop only. */
+/* R6: hero focus rule, one zone sharp at a time. Desktop only. */
 @media (min-width: 640px) {
   .lb-desktop-hero .lb-hero-copy > div > div.lb-hero-stage { position: relative; display: block; margin: clamp(32px, 9vh, 96px) 0 0; }
   .lb-hero-stage .lb-hero-assemble { margin-top: 0; }
@@ -6155,21 +6155,8 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   .lb-desktop-hero[data-hero-focus="1"] :is(.lb-hero-assemble,.lb-hero-assemble-caption,.lb-hero-line),
   .lb-desktop-hero[data-hero-focus="2"] :is(.lb-hero-copy h1,.lb-hero-copy h2,.lb-hero-zone-1) { filter: blur(6px); opacity: .45; }
   .lb-desktop-hero[data-hero-focus="1"] .lb-hero-assemble .lb-hero-chat { opacity: 0; animation: none; }
-  .lb-scroll-cue { position: absolute; z-index: 20; top: 50%; left: 50%; display: grid; width: 280px; grid-template-columns: auto 1fr; column-gap: 12px; row-gap: 4px; justify-items: start; align-items: center; overflow: hidden; border: 1px solid var(--nb-rule); border-radius: 8px; background: var(--nb-white); padding: 14px 16px 10px; color: var(--nb-ink); font-family: var(--font-sans); font-size: 13px; text-align: left; box-shadow: 0 8px 18px color-mix(in oklab, var(--nb-ink) 10%, transparent); pointer-events: none; top: clamp(24px, 12%, 96px); transform: translateX(-50%); animation: lb-cue-in-center 420ms var(--nb-ease) both; }
-  .lb-desktop-hero[data-hero-focus="2"] .lb-scroll-cue { position: fixed; top: auto; left: auto; right: 24px; bottom: 14px; transform: none; animation: lb-cue-in-corner 420ms var(--nb-ease) both; }
-  .lb-scroll-cue[data-visible="false"] { visibility: hidden; opacity: 0; animation: none; }
-  .lb-scroll-cue-rail { position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--nb-green) 10%, color-mix(in oklab, var(--nb-green) 15%, transparent) 10%); }
-  .lb-scroll-cue-num { position: relative; grid-row: span 2; display: grid; place-items: center; width: 36px; height: 36px; font-family: var(--font-serif); font-size: 20px; }
-  .lb-scroll-cue-num .lb-scroll-cue-ring { position: absolute; inset: 0; width: 36px; height: 36px; fill: none; stroke: var(--nb-green); stroke-width: 1.4; }
-  .lb-scroll-cue-label { font-family: var(--font-hand); font-size: 16px; line-height: 1; color: var(--nb-green); }
-  .lb-scroll-cue-head { font-family: var(--font-serif); font-size: 18px; line-height: 1.15; }
-  .lb-scroll-cue-micro { grid-column: 1 / -1; display: flex; align-items: center; gap: 6px; margin-top: 6px; font-family: var(--font-mono); font-size: 9px; letter-spacing: .14em; color: var(--nb-mid); }
-  .lb-scroll-cue-micro svg { width: 12px; height: 8px; fill: none; stroke: currentColor; stroke-width: 1.4; }
-  @keyframes lb-cue-in-center { from { opacity: 0; } to { opacity: 1; } }
-  @keyframes lb-cue-in-corner { from { opacity: 0; } to { opacity: 1; } }
 }
 @media (min-width: 640px) and (prefers-reduced-motion: reduce) {
   .lb-desktop-hero .lb-hero-copy *, .lb-desktop-hero .lb-hero-copy > * { transition: none !important; }
   .lb-desktop-hero[data-hero-focus] :is(.lb-hero-assemble,.lb-hero-assemble-caption,.lb-hero-line,.lb-hero-copy h1,.lb-hero-copy h2,.lb-hero-zone-1) { filter: none; opacity: 1; }
-  .lb-scroll-cue { animation: none !important; }
 }
