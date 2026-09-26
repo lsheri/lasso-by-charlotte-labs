@@ -2610,7 +2610,7 @@ export function LandingBoard() {
               </div>
               <HeroAssemble />
               <div className="lb-hero-line">
-                <p className="micro-label">WHAT IT IS</p>
+                <p className="micro-label">{"\n"}</p>
                 <p className="lb-hero-line-text font-mono font-bold uppercase tracking-[0.18em]">
                   ONE INFINITE CANVAS WHERE YOUR AI WORK, AND THE THINKING BEHIND IT, LIVES
                 </p>
