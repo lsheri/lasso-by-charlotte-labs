@@ -161,7 +161,7 @@ for (const viewport of desktopSizes) {
         }
       }
       const slide = document.querySelector<HTMLElement>(".demo-deliverable-main")?.getBoundingClientRect();
-      const dates = Array.from(document.querySelectorAll<HTMLElement>('.canvas-lab-card:not(.demo-deliverable-node) .nb-paper-body > div:first-child > span:nth-last-child(2)'));
+      const dates = Array.from(document.querySelectorAll<HTMLElement>('.canvas-lab-card:not(.demo-deliverable-node) .nb-paper-body > div:first-child > span:not(:first-of-type)'));
       return { failures, ratio: slide ? slide.width / slide.height : 0, dates: dates.map((date) => date.textContent?.trim()), zoom: scale };
     });
     expect(result.failures).toEqual([]);
