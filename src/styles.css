@@ -5827,7 +5827,8 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .lb-ask-spotlight,.lb-turn-spotlight { display: contents; }
 @supports (backdrop-filter: blur(3px)) { .lb-spotlight-overlay { backdrop-filter: blur(3px); } }
 .lb-share-dialog h3 { margin-top: 6px; font-family: var(--font-serif); font-size: 30px; }.lb-share-dialog p { margin-top: 12px; font-size: 16px; line-height: 1.45; }.lb-share-dialog strong,.lb-share-dialog small { display: block; margin-top: 14px; }.lb-share-dialog strong { font-size: 16px; }.lb-share-dialog small { font-size: 13px; }
-.lb-stage-window[data-step="1"] .lb-board-layer { opacity: .22; filter: blur(1.5px); transform: translate(-50%, -50%) scale(.82); }
+.lb-stage-window[data-step="1"] .lb-board-layer { opacity: 0; filter: none; transform: translate(-50%, -50%) scale(.82); }
+.lb-stage-window[data-step="1"] .lb-board-card { opacity: 0; }
 .lb-stage-window[data-step="2"] .lb-tool-dock div { opacity: 1; transform: none; }.lb-stage-window[data-step="2"] .lb-board-card { opacity: 1; }
 .lb-stage-window[data-step="3"] .lb-tool-dock div { opacity: .6; transform: none; }.lb-stage-window[data-step="3"] .lb-board-card { opacity: 1; }.lb-stage-window[data-step="3"] .lb-frames section { opacity: 1; transform: none; }
 .lb-stage-window[data-step="4"] :is(.lb-board-card,.lb-frames section,.lb-deck) { opacity: 1; transform: none; }.lb-stage-window[data-step="4"] .lb-connectors { opacity: 1; }

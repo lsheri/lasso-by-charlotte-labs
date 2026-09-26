@@ -130,6 +130,11 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(page).toContain('if (jumpTarget.current !== null) return;');
     expect(page).toContain('activate(index, "jump", true)');
   });
+  it("keeps the step-one hero on a clean background", () => {
+    const css = readFileSync("src/styles.css", "utf8");
+    expect(css).toContain('.lb-stage-window[data-step="1"] .lb-board-layer { opacity: 0;');
+    expect(css).toContain('.lb-stage-window[data-step="1"] .lb-board-card { opacity: 0; }');
+  });
   it("holds scenes, settles events, and reuses Ask Lasso presentation pieces", () => {
     const css = readFileSync("src/styles.css", "utf8");
     expect(css).toContain("min-height: 160vh");

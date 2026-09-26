@@ -86,6 +86,30 @@ test("story caption body is readable on phone", async ({ browser }) => {
   await context.close();
 });
 
+for (const viewport of [{ width: 1372, height: 732 }, { width: 1512, height: 807 }, { width: 1920, height: 1080 }]) {
+  test(`step-one hero has no visible board-card ghosting at ${viewport.width}x${viewport.height}`, async ({ browser }) => {
+    const context = await browser.newContext({ viewport, reducedMotion: "no-preference" });
+    const page = await context.newPage();
+    await page.goto("/", { waitUntil: "networkidle" });
+    await expect(page.locator('[data-testid="landing-board-stage"]')).toHaveAttribute("data-step", "1");
+    const result = await page.evaluate(() => {
+      const hero = document.querySelector<HTMLElement>(".lb-hero-copy")?.getBoundingClientRect();
+      const cards = Array.from(document.querySelectorAll<HTMLElement>(".lb-board-card"));
+      if (!hero) return { layerOpacity: 1, intersections: cards.length };
+      const intersections = cards.filter((card) => {
+        const box = card.getBoundingClientRect();
+        const opacity = Number.parseFloat(getComputedStyle(card).opacity);
+        return opacity > 0 && box.left < hero.right && box.right > hero.left && box.top < hero.bottom && box.bottom > hero.top;
+      }).length;
+      const layer = document.querySelector<HTMLElement>(".lb-board-layer");
+      return { layerOpacity: layer ? Number.parseFloat(getComputedStyle(layer).opacity) : 1, intersections };
+    });
+    expect(result.layerOpacity).toBe(0);
+    expect(result.intersections).toBe(0);
+    await context.close();
+  });
+}
+
 test("story zones always resolve to one matching visible step", async ({ browser }) => {
   test.setTimeout(180_000);
   const context = await browser.newContext({ viewport: { width: 1372, height: 732 }, reducedMotion: "reduce" });

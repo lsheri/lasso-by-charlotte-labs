@@ -232,3 +232,4 @@
 - [x] Draw the measured $1.4M lasso only after Circle settles.
 - [x] Spotlight only Circle, Ask, and The turn with one dimming overlay and phone/reduced-motion fallbacks.
 - [x] Verify incremental scrolling, step-caption agreement, and spotlight layering at 1372x732.
+- [x] Keep the step-one hero background clean by fully hiding board content through the Canvas transition.
