@@ -20,6 +20,8 @@ export type TelemetryEvent =
   | "landing.pilot_requested"
   /** Product shell 1.3: the public demo Home or a demo board was opened. Closed surface word and invented demo code only. */
   | "demo.opened"
+  /** P1: one content-free interaction in the local-only public demo playground. */
+  | "demo.play_interacted"
   /** Product shell 1.3: a card on a demo board was opened to read. Invented demo code and node kind only. */
   | "demo.card_opened"
   /** Unit 2: a saved preset answer was opened on a demo board. Invented demo code and position only. */

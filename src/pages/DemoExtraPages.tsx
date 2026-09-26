@@ -126,6 +126,10 @@ export function DemoConversationsPage() {
   }
 
   function closeReader() {
+    if (search.from === "demo") {
+      void navigate({ to: "/demo" });
+      return;
+    }
     if (search.from === "story") {
       void navigate({ to: "/landing-board", hash: "lb-ask" });
       return;

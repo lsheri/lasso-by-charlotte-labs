@@ -26,7 +26,7 @@ export function resetDemoTelemetry(): void {
 }
 
 /** Once per page view per surface and engagement: a remount inside the same view (strict mode, refetch) does not send it again. */
-export function noteDemoOpened(surface: "home" | "board" | "landing" | "conversations" | "sources", engagement: string): void {
+export function noteDemoOpened(surface: "home" | "board" | "landing" | "conversations" | "sources" | "playground", engagement: string): void {
   const key = `${surface}:${engagement}`;
   const now = Date.now();
   const last = opened.get(key);
@@ -34,6 +34,14 @@ export function noteDemoOpened(surface: "home" | "board" | "landing" | "conversa
   opened.set(key, now);
   void recordAnonymousEventFn({
     data: { event_type: "demo.opened", view_id: demoViewId(), dims: { surface, engagement: safe(engagement) } },
+  }).catch(() => undefined);
+}
+
+export type DemoPlayAction = "drag_card" | "drag_group" | "sticky_added" | "sticky_edited" | "reset_auto" | "reset_manual" | "preset_opened" | "proof_link_opened";
+
+export function noteDemoPlayInteracted(action: DemoPlayAction, surface: "desktop" | "phone"): void {
+  void recordAnonymousEventFn({
+    data: { event_type: "demo.play_interacted", view_id: demoViewId(), dims: { action, surface } },
   }).catch(() => undefined);
 }
 
