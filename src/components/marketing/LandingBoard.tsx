@@ -78,7 +78,7 @@ export const LANDING_BOARD_STEPS = [
   },
   {
     key: "the-turn",
-    label: "The chat",
+    label: "\n",
     headline: "Open the chat and read it yourself.",
     line: "The full conversation, with the decision highlighted.",
   },
