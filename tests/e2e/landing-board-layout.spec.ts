@@ -95,12 +95,17 @@ test("story zones always resolve to one matching visible step", async ({ browser
     const lastZone = document.querySelector<HTMLElement>('[data-lb-step="9"]');
     return lastZone ? lastZone.offsetTop + lastZone.offsetHeight - window.innerHeight : 0;
   });
+  let previousStep = "";
   for (let y = 0; y <= pageHeight; y += 80) {
     await page.evaluate((top) => window.scrollTo({ top, behavior: "auto" }), y);
     await page.waitForTimeout(20);
     const captions = page.locator('.lb-caption[data-phase="incoming"]:visible');
     await expect(captions).toHaveCount(1);
-    await page.waitForTimeout(720);
+    const captionStep = await captions.getAttribute("data-step");
+    if (captionStep !== previousStep) {
+      await page.waitForTimeout(720);
+      previousStep = captionStep ?? "";
+    }
     const state = await page.evaluate(() => ({
       board: document.querySelector<HTMLElement>('[data-testid="landing-board-stage"]')?.dataset.step,
       caption: document.querySelector<HTMLElement>('.lb-caption[data-phase="incoming"]')?.dataset.step,
