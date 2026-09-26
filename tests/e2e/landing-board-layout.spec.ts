@@ -5,13 +5,29 @@ const desktopSizes = [
   { width: 1512, height: 807 },
 ];
 
+test("landing header, progress rail, and paper caption keep the S4 contract", async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 1372, height: 732 }, reducedMotion: "reduce" });
+  const page = await context.newPage();
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await expect(page.locator(".lb-header .lb-step-nav")).toHaveCount(0);
+  await expect(page.locator(".lb-progress-dot")).toHaveCount(10);
+  expect((await page.locator(".lb-header").boundingBox())?.height ?? 999).toBeLessThanOrEqual(64);
+  await page.getByRole("button", { name: "Circle", exact: true }).last().click();
+  await expect(page.locator(".lb-progress-rail")).toHaveAttribute("data-step", "5");
+  await expect(page.locator('.lb-progress-dot[data-current="true"]')).toHaveAttribute("aria-label", "Circle");
+  const caption = page.locator('.lb-caption[data-phase="incoming"]');
+  await expect(caption).toHaveCSS("background-color", "rgb(255, 255, 255)");
+  await expect(caption).not.toHaveCSS("background-color", "rgb(22, 24, 26)");
+  await context.close();
+});
+
 for (const viewport of desktopSizes) {
   test(`landing proof connector renders with normal motion at ${viewport.width}x${viewport.height}`, async ({ browser }) => {
     test.setTimeout(45_000);
     const context = await browser.newContext({ viewport, reducedMotion: "no-preference" });
     const page = await context.newPage();
     await page.goto("/", { waitUntil: "networkidle" });
-    await page.getByRole("button", { name: "Ask", exact: true }).click();
+    await page.getByRole("button", { name: "Ask", exact: true }).last().click();
     await expect(page.getByTestId("landing-proof-card")).toBeVisible({ timeout: 20_000 });
     await expect(page.getByTestId("landing-proof-connector")).toHaveCount(1);
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBe(viewport.width);
@@ -48,7 +64,7 @@ test("story captions and visible text stay readable across settled desktop steps
   const page = await context.newPage();
   await page.goto("/", { waitUntil: "networkidle" });
   for (const name of ["Canvas", "Workstreams", "Deliverable", "Circle", "Ask", "The turn", "Still open", "Share", "Try it"]) {
-    await page.getByRole("button", { name, exact: true }).click();
+    await page.getByRole("button", { name, exact: true }).last().click();
     const caption = page.locator('.lb-caption[data-phase="incoming"]');
     await expect(caption).toBeVisible();
     await expect(caption.locator(".lb-caption-text > span")).toContainText(new RegExp(name, "i"));
@@ -88,7 +104,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 430, height: 932 }
     for (let index = 0; index < 11; index += 1) {
       const section = sections.nth(index);
       await section.scrollIntoViewIfNeeded();
-      await expect(page.locator(".lb-phone-counter")).toHaveText(`${index + 1} / 11`);
+      if (index >= 2) await expect(page.locator(".lb-progress-rail")).toHaveAttribute("data-step", `${index}`);
       const result = await section.evaluate((element) => {
         const visibleText = Array.from(element.querySelectorAll<HTMLElement>("span,p,strong,small,h1,h2,h3,a,button"))
           .filter((node) => { const box = node.getBoundingClientRect(); const style = getComputedStyle(node); return Boolean(node.textContent?.trim()) && box.width > 0 && box.height > 0 && style.visibility !== "hidden"; })
@@ -165,10 +181,10 @@ test("story spotlights only the three settled attention moments", async ({ brows
   const context = await browser.newContext({ viewport: { width: 1372, height: 732 }, reducedMotion: "no-preference" });
   const page = await context.newPage();
   await page.goto("/", { waitUntil: "networkidle" });
-  await page.getByRole("button", { name: "Workstreams", exact: true }).click();
+  await page.getByRole("button", { name: "Workstreams", exact: true }).last().click();
   await page.waitForTimeout(900);
   await expect(page.getByTestId("landing-story-spotlight")).toHaveCount(0);
-  await page.getByRole("button", { name: "Ask", exact: true }).click();
+  await page.getByRole("button", { name: "Ask", exact: true }).last().click();
   const overlay = page.getByTestId("landing-story-spotlight");
   await expect(overlay).toHaveAttribute("data-spotlight", "ask", { timeout: 2_000 });
   const layers = await page.evaluate(() => ({

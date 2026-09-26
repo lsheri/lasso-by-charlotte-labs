@@ -28,6 +28,10 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(page).toContain('behavior: "auto"');
     const steps = page.slice(page.indexOf("export const LANDING_BOARD_STEPS"), page.indexOf("] as const;"));
     expect(steps.match(/key: "/g)).toHaveLength(10);
+    expect(page).toContain('className="lb-progress-rail"');
+    expect(page).toContain('aria-label={step.label}');
+    expect(page).toContain('event(viewId.current, "landing.section_jumped", { section: key })');
+    expect(page).not.toContain('className="lb-step-nav"');
   });
   it("has a reduced-motion jump path", () => {
     const css = readFileSync("src/styles.css", "utf8");
@@ -156,13 +160,13 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(page).toContain('className="lb-phone-story"');
     expect(page).toContain('data-phone-step={stop}');
     expect(page).toContain('id="lb-phone-usecases"');
-    expect(page).toContain('{phoneStop + 1} / 11');
+    expect(page).toContain('phoneStop >= 2 && phoneStop <= 10');
     expect(page).toContain('new IntersectionObserver');
     expect(page).toContain('threshold: 0.6');
     expect(page).toContain('<ExactTurn board={board} preset={second} onOpenTurn={onOpenDecisionTurn} phone />');
     expect(css).toContain("scroll-snap-type: y mandatory");
     expect(css).toContain("max-height: calc(100svh - var(--lb-header-h))");
-    expect(css).toContain(".lb-phone-counter");
+    expect(css).toContain(".lb-progress-status { display: none;");
     expect(page).toContain('surface: "landing-board", input_mode:');
   });
   it("holds scenes, settles events, and reuses Ask Lasso presentation pieces", () => {
