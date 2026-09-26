@@ -200,7 +200,7 @@ export function DemoWorkboardSandbox({ board, presets, proof, clientLabel, engag
   const beginResize = (node: LabNode, corner: LabResizeCorner, event: ReactPointerEvent<HTMLButtonElement>) => { event.stopPropagation(); clearTimer(); setResize({ id: node.id, corner, from: { x: event.clientX, y: event.clientY }, start: { x: node.x, y: node.y, width: node.width, height: node.height } }); event.currentTarget.setPointerCapture?.(event.pointerId); };
   const deck = nodes.find((node) => node.deliverable);
 
-  return <div className="demo-workboard-shell" data-testid="canvas-lab-shell" data-interaction={drag ? "drag" : resize ? "resize" : "idle"} data-component="CanvasLabPage">
+  return <div className="demo-workboard-shell" data-testid="canvas-lab-shell" data-resetting={resetting} data-interaction={drag ? "drag" : resize ? "resize" : "idle"} data-component="CanvasLabPage" onFocusCapture={(event) => { if ((event.target as HTMLElement).matches("textarea[aria-label='Sticky words']")) { clearTimer(); setEditing(true); } }} onBlurCapture={(event) => { if ((event.target as HTMLElement).matches("textarea[aria-label='Sticky words']")) { setEditing(false); scheduleReset(); } }}>
     <DemoSidebar clientLabel={clientLabel} />
     <div className="demo-workboard-main">
       <div className="demo-workboard-banner"><span>Demo workspace · every figure is invented · changes reset</span><nav><Link to="/" hash="lb-try-it">Back to the story</Link><Link to="/" hash="pilot">Book a pilot</Link></nav></div>
