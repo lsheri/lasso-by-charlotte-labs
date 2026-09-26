@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import { EVENT_DIM_KEYS, guardEventDims } from "../event-dim-allowlist";
+import { parseLandingProof } from "../landing-proof-shared";
 import { publicSafeWork } from "../public-work-allowlist";
 
 const page = readFileSync("src/components/marketing/LandingBoard.tsx", "utf8");
@@ -45,8 +46,27 @@ describe("Unit L1 scroll-driven landing board", () => {
   });
   it("allowlists every landing event dimension", () => {
     expect(EVENT_DIM_KEYS["landing.section_jumped"]).toEqual(["section"]);
+    expect(EVENT_DIM_KEYS["landing.proof_link_opened"]).toEqual(["step", "target"]);
     expect(guardEventDims("landing.story_section_viewed", { section: "ask", input_mode: "jump", content: "no" }).dims).toEqual({ section: "ask", input_mode: "jump" });
     expect(guardEventDims("landing.pilot_cta_clicked", { placement: "header" }).dims).toEqual({ placement: "header" });
+  });
+  it("derives every proof figure from turns 2, 4, and 6", () => {
+    const proof = parseLandingProof({ itemId: "public-item", title: "Partnership scenarios: year-two net benefit", vendor: "claude", turns: [
+      { turn_no: 2, role: "assistant", ts: "2026-08-28T23:07:00Z", content: "Working from the FY25 audited statements you shared and the Meridian cost sheet from the 14 August call: Scenario A, marketing affiliation with Northgate. Year-two net benefit about $0.3M. Scenario B, shared services with Meridian. Combined back-office savings of $2.1M in year two, less $0.7M of transition cost. Net $1.4M in year two. Scenario C, full merger with Meridian. Net about $1.2M in year two." },
+      { turn_no: 4, role: "assistant", ts: null, content: "Four lines from the Meridian cost sheet, each matched to YellowSigil's FY25 actuals: finance and accounting $0.6M, HR and benefits administration $0.4M, IT and licensing $0.7M, revenue cycle $0.4M. Total $2.1M." },
+      { turn_no: 6, role: "assistant", ts: null, content: "Note under the chart: revenue cycle savings ($0.4M) depend on Meridian's vendor contract extending to YellowSigil volumes; unconfirmed as of 14 August." },
+    ] });
+    expect(proof).toMatchObject({ scenarioA: 0.3, scenarioB: 1.4, scenarioC: 1.2, savings: 2.1, transition: 0.7 });
+    expect(proof?.lines.map((line) => line.amount)).toEqual([0.6, 0.4, 0.7, 0.4]);
+  });
+  it("keeps the proof link, source connector, honest wording, and phone gutters", () => {
+    const css = readFileSync("src/styles.css", "utf8");
+    expect(page).toContain('search={{ item: proof.itemId, turn: 4, from: "story" }}');
+    expect(page).toContain("lb-proof-connector");
+    expect(page).toContain("sourceRef");
+    expect(page.toLowerCase()).not.toContain("verified by lasso");
+    expect(css).toContain("translate(-65%, -58%) scale(.66)");
+    expect(css).toContain(".lb-caption { position: fixed; left: 12px; right: 12px;");
   });
   it("keeps representative board work inside the public allowlist", () => {
     const [item] = publicSafeWork([{ id: "w1", title: "Deck", type: "deck", source: "upload", visibility: "mapped", captured_at: "2026-09-25", content_ref: "storage/private", owner_id: "person", work_item_tasks: [] }]);
@@ -94,7 +114,7 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(page).toContain('className="lb-waterfall-costs"');
     expect(page).toContain('data-units="0.7"');
     const costsBackground = css.match(/\.lb-waterfall-costs i \{[^}]*background: ([^;]+);/)?.[1]?.trim();
-    expect(costsBackground).toBe("#C8553D");
+    expect(costsBackground).toBe("var(--nb-red)");
     expect(costsBackground).not.toBe("transparent");
   });
   it("sources the Ask client and engagement labels rather than inventing a client name", () => {
