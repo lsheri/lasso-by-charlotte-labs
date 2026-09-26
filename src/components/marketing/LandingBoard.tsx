@@ -193,7 +193,7 @@ function AskReplay({ presets, step, onFinished, clientLabel, engagementTitle, pr
   const threadRef = useRef<HTMLDivElement>(null);
   const shownPositions = step === 5 ? [1] : step === 6 ? [1, 2] : [1, 2, 4];
   const liveItems = replay.preset?.manifest?.items.slice(0, replay.readCount) ?? [];
-  const showProof = step >= 6 && replay.phase === "done" && proof && proofModel;
+  const showProof = step >= 5 && replay.phase === "done" && proof && proofModel;
   useEffect(() => {
     onFinished(replay.phase === "done");
   }, [onFinished, replay.phase]);

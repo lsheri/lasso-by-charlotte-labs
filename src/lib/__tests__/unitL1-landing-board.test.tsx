@@ -74,7 +74,7 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(page).toContain("(line.amount / model.savings) * 100");
     expect(page).toContain('step === 4 ? <svg className="lb-circle-link"');
     expect(page).toContain('thread.scrollTo({ top: proofCard.offsetTop, behavior: "auto" })');
-    expect(page).toContain('const showProof = step >= 6 && replay.phase === "done" && proof && proofModel');
+    expect(page).toContain('const showProof = step >= 5 && replay.phase === "done" && proof && proofModel');
     const parser = readFileSync("src/lib/landing-proof-shared.ts", "utf8");
     expect(parser).toContain('replace(/^unconfirmed/i, "Unconfirmed").replace("14 August", "14 Aug")');
     expect(css).toContain(".lb-proof-card h4 strong { font-size: 40px;");
