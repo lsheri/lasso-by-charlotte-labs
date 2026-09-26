@@ -217,6 +217,7 @@ export function FocusOverlay({
       const el = readerRef.current?.querySelector(`[data-turn-no="${focusTurnNo}"]`) ?? null;
       if (el) {
         const reader = readerRef.current;
+        if (!reader) return;
         const readerRect = reader.getBoundingClientRect();
         const turnRect = el.getBoundingClientRect();
         reader.scrollTo({ top: reader.scrollTop + turnRect.top - readerRect.top - 96, behavior: "auto" });
