@@ -194,3 +194,13 @@
 - [ ] Add real demo chrome, local drag/resize/stickies, reset timing, zoom/pan, and the saved Ask rail.
 - [ ] Preserve P1 event vocabulary and prove that play makes no network writes.
 - [ ] Verify the real workboard DOM, reset behavior, and desktop/phone screenshots.
+
+### Unit T1 completion
+- [x] Step 7 reads the complete public-safe six-turn Scenario B chair-terms conversation.
+- [x] Turn 5 alone carries the decision treatment and the reader deep-links to turn 5.
+- [x] Step 7 Ask uses the matching saved preset while the $1.4M proof remains on step 6.
+
+### Unit P2 completion
+- [x] `/demo` now renders a local sandbox built from Canvas Lab frames, cards, stickies, connectors, model adapter, canvas gestures and zoom controls.
+- [x] The workboard shell includes demo sidebar, engagement chrome, reset banner, finished deck art and phone Ask sheet.
+- [x] All play mutations remain component state only and preserve the existing demo event vocabulary and reset behavior.
