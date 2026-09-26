@@ -183,3 +183,14 @@
 - [x] Redirect `/landing-board` to `/` with its hash and repoint internal story returns.
 - [x] Keep the prior B2B page at unlinked, noindex `/landing-classic` with additive surface coverage.
 - [x] Verify route behavior, focused checks, and the existing landing-board browser suite against `/`.
+
+## Unit T1 full decision chat
+- [ ] Render all six public-safe turns in the step 7 reader and highlight only turn 5.
+- [ ] Match the step 7 Ask replay to the two-term-limits preset and add the turn 5 deep link.
+- [ ] Add focused story tests and verify the updated step at desktop and phone sizes.
+
+## Unit P2 real demo workboard
+- [ ] Replace the landing replica with a local-state sandbox built from the real workboard primitives.
+- [ ] Add real demo chrome, local drag/resize/stickies, reset timing, zoom/pan, and the saved Ask rail.
+- [ ] Preserve P1 event vocabulary and prove that play makes no network writes.
+- [ ] Verify the real workboard DOM, reset behavior, and desktop/phone screenshots.
