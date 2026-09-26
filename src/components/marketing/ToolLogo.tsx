@@ -1,3 +1,4 @@
+import { BrandLogo } from "@/components/connectors/BrandLogo";
 import claudeLogo from "@/assets/claude-logo.png.asset.json";
 import chatgptLogo from "@/assets/chatgpt-logo.png.asset.json";
 import geminiLogo from "@/assets/gemini-logo.png.asset.json";

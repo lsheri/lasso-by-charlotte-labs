@@ -136,7 +136,7 @@ const LANDING_BOARD_USE_CASES = [
     poster: useCaseAsset("use-every-number-has-a-source-poster.jpg"),
     webm: useCaseAsset("use-every-number-has-a-source.webm"),
     mp4: useCaseAsset("use-every-number-has-a-source.mp4"),
-    tools: ["claude", "powerpoint"],
+    tools: ["claude", "powerpoint", "granola", "googledrive"],
   },
   {
     key: "reasoning_stays",
