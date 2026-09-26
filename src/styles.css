@@ -32,6 +32,25 @@
 
 }
 
+/* Final playground visibility overrides must follow the landing story selectors. */
+.demo-play-board .demo-play-card,
+.demo-play-board .demo-play-deck { opacity: 1; }
+.demo-play-board .demo-play-deck { transform: none; }
+.demo-play-board .demo-play-notes { inset: 0; right: auto; bottom: auto; opacity: 1; transform: none; }
+.demo-play-board .demo-play-notes p { width: 172px; height: 82px; min-height: 82px; }
+.demo-play-board .demo-play-notes p:first-child { left: 606px; right: auto; top: 474px; bottom: auto; }
+.demo-play-board .demo-play-notes p:last-child { left: 780px; right: auto; top: 506px; bottom: auto; }
+.demo-play-presets button { width: 176px; min-width: 176px; overflow: hidden; white-space: normal; }
+
+@media (max-width: 639px) {
+  .demo-play-board .demo-play-card,
+  .demo-play-board .demo-play-deck,
+  .demo-play-board .demo-play-notes { opacity: 1; }
+  .demo-play-board .demo-play-notes p:first-child { left: 40px; top: 510px; }
+  .demo-play-board .demo-play-notes p:last-child { left: 210px; top: 530px; }
+  .demo-play-presets button { width: 160px; min-width: 160px; font-size: 9px; line-height: 1.15; }
+}
+
 /* P1 overrides follow the landing story rules so playground items stay fully shown. */
 .demo-play-board .demo-play-card,
 .demo-play-board .demo-play-deck { opacity: 1; }
