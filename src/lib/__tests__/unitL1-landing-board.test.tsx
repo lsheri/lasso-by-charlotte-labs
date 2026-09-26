@@ -377,7 +377,7 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(page).toContain("const net = proof ? proof.scenarioB : null");
     expect(page).toContain('"--lb-waterfall-units": proof.savings');
     expect(page).toContain('"--lb-waterfall-units": proof.transition');
-    expect(page).toContain('"--lb-waterfall-units": net');
+    expect(page).toContain('"--lb-waterfall-units": proof.scenarioB');
     expect(page).toContain('data-testid="landing-board-number"');
     expect(page).toContain('transition cost equals ${figure(net)}');
     expect(page).toContain('"Year-two net benefit figures unavailable"');
