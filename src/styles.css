@@ -5892,10 +5892,10 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 @media (max-width: 639px) {
   .landing-board-page { --lb-header-h: 56px; padding-top: 0; }
   html:has(.landing-board-page) { scroll-snap-type: y mandatory; scroll-padding-top: var(--lb-header-h); }
-  .lb-header { position: fixed; right: 0; left: 0; }
+  .lb-header { position: fixed; right: 0; left: 0; height: 56px; min-height: 56px; overflow: hidden; }
   .lb-header-main { grid-template-columns: minmax(0,1fr) auto auto; gap: 12px; min-height: 56px; padding: env(safe-area-inset-top) 12px 0; }
   .lb-brand { font-size: 14px; }.lb-brand svg { width: 28px; height: 28px; }
-  .lb-step-nav,.lb-header-main > :last-child { display: none; }
+  .lb-step-nav,.lb-header-main > a[href="#pilot"] { display: none !important; }
   .lb-phone-counter { display: block; min-width: 52px; color: var(--nb-mid); font-family: var(--font-mono); font-size: 14px; text-align: center; }
   .lb-sticky-stage,.lb-scroll-sections { display: none; }
   .lb-phone-story { display: block; padding-top: var(--lb-header-h); }
