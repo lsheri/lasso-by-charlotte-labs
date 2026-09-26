@@ -26,7 +26,9 @@ export function AnswerTurnLinks({
         >
           <LassoLoopMark className="size-4 shrink-0 text-green" />
           <span className="min-w-0 break-words">{ref.label}</span>
-          <span aria-hidden className="shrink-0">→</span>
+          <span aria-hidden className="shrink-0">
+            →
+          </span>
         </Button>
       ))}
     </div>

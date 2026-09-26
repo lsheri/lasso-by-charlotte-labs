@@ -4,8 +4,12 @@ import { readFileSync } from "node:fs";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@/lib/telemetry.functions", () => ({ recordAnonymousEventFn: vi.fn(() => Promise.resolve({ ok: true })) }));
-vi.mock("@/components/markdown/MarkdownMessage", () => ({ MarkdownMessage: ({ content }: { content: string }) => <div data-testid="md">{content}</div> }));
+vi.mock("@/lib/telemetry.functions", () => ({
+  recordAnonymousEventFn: vi.fn(() => Promise.resolve({ ok: true })),
+}));
+vi.mock("@/components/markdown/MarkdownMessage", () => ({
+  MarkdownMessage: ({ content }: { content: string }) => <div data-testid="md">{content}</div>,
+}));
 
 import { DemoPresetBar } from "@/pages/DemoPages";
 import { publicDemoPresets, publicSafeText, type DemoPresetRow } from "../demo-presets-shared";
@@ -14,7 +18,12 @@ import { extractTurnRefs, naturalTurnLabels, RAW_TURN_TAG, stripTurnTags } from 
 
 afterEach(cleanup);
 if (typeof window !== "undefined" && !window.matchMedia) {
-  window.matchMedia = ((q: string) => ({ matches: false, media: q, addEventListener() {}, removeEventListener() {} })) as unknown as typeof window.matchMedia;
+  window.matchMedia = ((q: string) => ({
+    matches: false,
+    media: q,
+    addEventListener() {},
+    removeEventListener() {},
+  })) as unknown as typeof window.matchMedia;
 }
 
 const WORK = "11111111-1111-4111-8111-111111111111";
@@ -31,7 +40,9 @@ const row = (over: Partial<DemoPresetRow>): DemoPresetRow => ({
 
 describe("turn labels", () => {
   it("relabels both internal tag shapes in plain words", () => {
-    const text = naturalTurnLabels("TURN 5 USER: hi\n\nTURN 6 ASSISTANT: hello\n\nTURN 7 · USER\nnext");
+    const text = naturalTurnLabels(
+      "TURN 5 USER: hi\n\nTURN 6 ASSISTANT: hello\n\nTURN 7 · USER\nnext",
+    );
     expect(text).toContain("(turn 5, you said) hi");
     expect(text).toContain("(turn 6, the assistant replied) hello");
     expect(text).toContain("(turn 7, you said) next");
@@ -43,11 +54,18 @@ describe("turn labels", () => {
     expect(/TURN \d+ (USER|ASSISTANT)/.test(publicSafeText("See TURN 2 ASSISTANT"))).toBe(false);
   });
   it("ties a cited turn to the conversation named before it", () => {
-    const refs = extractTurnRefs('In "Board charter options", turn 6 settled it. Pricing chat, turns 2 to 3.', [
-      { id: WORK, title: "Board charter options" },
-      { id: OTHER, title: "Pricing chat" },
+    const refs = extractTurnRefs(
+      'In "Board charter options", turn 6 settled it. Pricing chat, turns 2 to 3.',
+      [
+        { id: WORK, title: "Board charter options" },
+        { id: OTHER, title: "Pricing chat" },
+      ],
+    );
+    expect(refs.map((r) => [r.work_item_id, r.turn_no])).toEqual([
+      [WORK, 6],
+      [OTHER, 2],
+      [OTHER, 3],
     ]);
-    expect(refs.map((r) => [r.work_item_id, r.turn_no])).toEqual([[WORK, 6], [OTHER, 2], [OTHER, 3]]);
   });
   it("the pipeline tells the model the rule and rewrites stray tags", () => {
     const src = readFileSync("src/lib/reflect-run.server.ts", "utf8");
@@ -58,7 +76,10 @@ describe("turn labels", () => {
 
 describe("public preset payload", () => {
   it("only answered rows travel", () => {
-    const out = publicDemoPresets([row({}), row({ position: 2, answer: null }), row({ position: 3, answer: "  " })], new Set([WORK]));
+    const out = publicDemoPresets(
+      [row({}), row({ position: 2, answer: null }), row({ position: 3, answer: "  " })],
+      new Set([WORK]),
+    );
     expect(out.map((p) => p.position)).toEqual([1]);
   });
   it("carries no urls or ids beyond work already on the board", () => {
@@ -71,7 +92,12 @@ describe("public preset payload", () => {
             brief_included: true,
             firm_checks_applied: 0,
             items: [
-              { id: WORK, title: "Board charter options", kind: "conversation", detail: "turns 1-8" },
+              {
+                id: WORK,
+                title: "Board charter options",
+                kind: "conversation",
+                detail: "turns 1-8",
+              },
               { id: OTHER, title: "Hidden", kind: "document", detail: "" },
             ],
             excluded: [],
@@ -89,7 +115,9 @@ describe("public preset payload", () => {
     expect(json).not.toMatch(/https?:|\/\//);
     expect(json).not.toContain(OTHER);
     expect(json).not.toContain("33333333");
-    expect(out[0]!.turnRefs).toEqual([{ work_item_id: WORK, turn_no: 6, label: "Turn 6 in Board charter options" }]);
+    expect(out[0]!.turnRefs).toEqual([
+      { work_item_id: WORK, turn_no: 6, label: "Turn 6 in Board charter options" },
+    ]);
   });
 });
 
@@ -101,7 +129,11 @@ describe("server boundaries", () => {
     expect(fn.indexOf("eng.org_id !== orgId")).toBeLessThan(fn.indexOf('from("demo_presets")'));
   });
   it("no anonymous path can reach the Ask pipeline", () => {
-    for (const file of ["src/lib/demo-board.server.ts", "src/lib/demo-presets-shared.ts", "src/pages/DemoPages.tsx"]) {
+    for (const file of [
+      "src/lib/demo-board.server.ts",
+      "src/lib/demo-presets-shared.ts",
+      "src/pages/DemoPages.tsx",
+    ]) {
       const src = readFileSync(file, "utf8");
       expect(src).not.toMatch(/runReflectTurn|reflect-run|regenerateDemoPresets/);
     }
@@ -112,17 +144,31 @@ describe("server boundaries", () => {
     expect(server).toContain('has_org_role", { p_org: orgId, p_roles: ["admin"]');
   });
   it("the three demo events keep only their dims", () => {
-    expect(guardEventDims("demo.preset_opened", { code: "ysm-01", position: 1, q: "x" }).dims).toEqual({ code: "ysm-01", position: 1 });
-    expect(guardEventDims("demo.turn_opened", { code: "ysm-01", position: 2 }).dims).toEqual({ code: "ysm-01", position: 2 });
-    expect(guardEventDims("demo.presets_regenerated", { code: "ysm-01", answered: 4 }).dims).toEqual({ code: "ysm-01", answered: 4 });
+    expect(
+      guardEventDims("demo.preset_opened", { code: "ysm-01", position: 1, q: "x" }).dims,
+    ).toEqual({ code: "ysm-01", position: 1 });
+    expect(guardEventDims("demo.turn_opened", { code: "ysm-01", position: 2 }).dims).toEqual({
+      code: "ysm-01",
+      position: 2,
+    });
+    expect(
+      guardEventDims("demo.presets_regenerated", { code: "ysm-01", answered: 4 }).dims,
+    ).toEqual({ code: "ysm-01", answered: 4 });
   });
 });
 
 describe("demo preset bar", () => {
   const presets = publicDemoPresets(
     [
-      row({ turn_refs: [{ work_item_id: WORK, turn_no: 6, label: "Turn 6 in Board charter options" }] }),
-      row({ position: 2, question: "Send me the link to the chat where we settled it.", answer: "Here.", turn_refs: [{ work_item_id: WORK, turn_no: 4, label: "Turn 4" }] }),
+      row({
+        turn_refs: [{ work_item_id: WORK, turn_no: 6, label: "Turn 6 in Board charter options" }],
+      }),
+      row({
+        position: 2,
+        question: "Send me the link to the chat where we settled it.",
+        answer: "Here.",
+        turn_refs: [{ work_item_id: WORK, turn_no: 4, label: "Turn 4" }],
+      }),
       row({ position: 3, question: "Unanswered", answer: null }),
     ],
     new Set([WORK]),

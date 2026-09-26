@@ -24,7 +24,10 @@ function roleWords(role: string): string {
 
 /** Relabels "TURN 5 USER: ..." and "TURN 5 · USER\n..." as "(turn 5, you said) ...". */
 export function naturalTurnLabels(text: string): string {
-  return text.replace(TAG_LINE, (_m, n: string, role: string) => `(turn ${n}, ${roleWords(role)}) `);
+  return text.replace(
+    TAG_LINE,
+    (_m, n: string, role: string) => `(turn ${n}, ${roleWords(role)}) `,
+  );
 }
 
 /** The safety net: a tag that reaches an answer is rewritten as "turn N". */
@@ -58,7 +61,9 @@ export function extractTurnRefs(
   if (usable.length === 0) return refs;
   for (const paragraph of answer.split(/\n\s*\n/)) {
     const lower = paragraph.toLowerCase();
-    for (const match of paragraph.matchAll(/\bturns? (\d{1,4})(?:\s*(?:-|\u2013|to|and)\s*(\d{1,4}))?/gi)) {
+    for (const match of paragraph.matchAll(
+      /\bturns? (\d{1,4})(?:\s*(?:-|\u2013|to|and)\s*(\d{1,4}))?/gi,
+    )) {
       const at = match.index ?? 0;
       let best: { id: string; title: string } | null = null;
       let bestAt = -1;

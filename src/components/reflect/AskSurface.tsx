@@ -135,7 +135,15 @@ export function AnswerKeepControl({
 }
 
 /** The scope chip: what Lasso will read on the next message. */
-export function AskScopeChip({ ask, block, workstream }: { ask: AskLasso; block?: boolean; workstream?: { name: string; ids: string[] } | null }) {
+export function AskScopeChip({
+  ask,
+  block,
+  workstream,
+}: {
+  ask: AskLasso;
+  block?: boolean;
+  workstream?: { name: string; ids: string[] } | null;
+}) {
   const boardPicked = useContext(AskBoardPickedContext);
   const onWorkstream =
     workstream != null &&
@@ -145,16 +153,18 @@ export function AskScopeChip({ ask, block, workstream }: { ask: AskLasso; block?
     ask.draftPointed.length > 0
       ? `Pointed at: ${ask.draftPointed.length} ${ask.draftPointed.length === 1 ? "item" : "items"}`
       : boardPicked && ask.boardPickedCount === 0
-          ? (ask.engagementBrief ? "Brief only" : "Nothing readable picked")
+        ? ask.engagementBrief
+          ? "Brief only"
+          : "Nothing readable picked"
         : boardPicked
           ? `${ask.boardPickedCount} picked on the board`
-        : onWorkstream
-        ? `Workstream: ${workstream.name}`
-        : ask.selectedItems.length === ask.mapped.length
-        ? "All work in this engagement"
-          : ask.selectedItems.length === 1
-          ? "1 piece of work selected"
-          : `${ask.selectedItems.length} pieces of work selected`;
+          : onWorkstream
+            ? `Workstream: ${workstream.name}`
+            : ask.selectedItems.length === ask.mapped.length
+              ? "All work in this engagement"
+              : ask.selectedItems.length === 1
+                ? "1 piece of work selected"
+                : `${ask.selectedItems.length} pieces of work selected`;
   const title =
     ask.draftPointed.length === 0 && boardPicked && ask.boardPickedCount === 0
       ? ask.engagementBrief
@@ -304,7 +314,10 @@ function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions?: Reac
                   <AnswerRail state="done">
                     <MarkdownMessage content={message.content} variant="binder" />
                     <AnswerTurnLinks
-                      refs={extractTurnRefs(message.content, ask.sourcesByMessage?.[Number(message.id)] ?? [])}
+                      refs={extractTurnRefs(
+                        message.content,
+                        ask.sourcesByMessage?.[Number(message.id)] ?? [],
+                      )}
                       onOpen={setOpenTurn}
                     />
                     <div className="nb-binder-inset">
@@ -318,10 +331,12 @@ function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions?: Reac
                             answer={{
                               messageId: Number(message.id),
                               text: message.content,
-                              reads: (ask.sourcesByMessage?.[Number(message.id)] ?? []).map((source) => ({
-                                id: source.id,
-                                depth: source.depth,
-                              })),
+                              reads: (ask.sourcesByMessage?.[Number(message.id)] ?? []).map(
+                                (source) => ({
+                                  id: source.id,
+                                  depth: source.depth,
+                                }),
+                              ),
                             }}
                             keep={keep}
                             canDrag={canDragAnswer}
@@ -350,13 +365,19 @@ function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions?: Reac
           // copy of the same question is back in the thread.
           const asked = (ask as AskLasso & { asked?: string | null }).asked;
           const last = messages[messages.length - 1];
-          if (!ask.pending || !asked || (last?.role === "user" && last.content === asked)) return null;
+          if (!ask.pending || !asked || (last?.role === "user" && last.content === asked))
+            return null;
           return (
-            <div className="nb-conversation-message max-w-none flex-row items-start gap-3" data-testid="asked-now">
+            <div
+              className="nb-conversation-message max-w-none flex-row items-start gap-3"
+              data-testid="asked-now"
+            >
               <div className="grid w-7 shrink-0 grid-rows-[28px]">{speakerAvatar("user")}</div>
               <div className="nb-conversation-body w-full flex-1 gap-0 overflow-visible">
                 {speakerName("user", new Date())}
-                <p className="nb-binder-line whitespace-pre-wrap text-sm text-foreground">{asked}</p>
+                <p className="nb-binder-line whitespace-pre-wrap text-sm text-foreground">
+                  {asked}
+                </p>
               </div>
             </div>
           );
@@ -364,7 +385,11 @@ function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions?: Reac
 
         {ask.pending ? (
           <div className="nb-binder-line flex items-center gap-2">
-            <LassoThinkingMark kind="gather" size={56} count={ask.liveManifest?.items.length ?? 0} />
+            <LassoThinkingMark
+              kind="gather"
+              size={56}
+              count={ask.liveManifest?.items.length ?? 0}
+            />
             <span className="text-sm text-muted-foreground">
               {ask.streamed ? "Writing" : "Reading your work"}
             </span>
@@ -416,7 +441,8 @@ function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions?: Reac
 const HISTORY_DEFAULT_SHOWN = 2;
 
 export const ASK_PRIVATE_SHORT = "Ask about this engagement. Private to you.";
-export const ASK_PRIVATE_COACH = "Ask about this engagement. Private to you, your coach never sees this.";
+export const ASK_PRIVATE_COACH =
+  "Ask about this engagement. Private to you, your coach never sees this.";
 
 /** The coach clause shows only when the viewer really has a live coach link. */
 export function AskPrivacyLine() {
@@ -494,14 +520,30 @@ function HistoryTab({ ask, onTab }: { ask: AskLasso; onTab: (tab: AskTab) => voi
 }
 
 /** The composer, scope chip and send. Send is the one filled green here. */
-export function AskComposer({ ask, mobile, engagementId, orgId }: { ask: AskLasso; mobile?: boolean; engagementId: string; orgId?: string }) {
-  const slash = useSlashMenu(ask, engagementId, () => noteWorkboardContextChanged(orgId, "workstream"));
+export function AskComposer({
+  ask,
+  mobile,
+  engagementId,
+  orgId,
+}: {
+  ask: AskLasso;
+  mobile?: boolean;
+  engagementId: string;
+  orgId?: string;
+}) {
+  const slash = useSlashMenu(ask, engagementId, () =>
+    noteWorkboardContextChanged(orgId, "workstream"),
+  );
   return (
     <footer className="shrink-0 border-t border-border bg-card">
       {mobile ? <AskScopeChip ask={ask} block workstream={slash.chosen} /> : null}
       <div className="px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3">
         {slash.open ? (
-          <div role="listbox" aria-label="Workstreams" className="mb-2 max-h-52 w-full max-w-full overflow-y-auto overscroll-contain rounded-[var(--radius-md)] border border-border bg-card">
+          <div
+            role="listbox"
+            aria-label="Workstreams"
+            className="mb-2 max-h-52 w-full max-w-full overflow-y-auto overscroll-contain rounded-[var(--radius-md)] border border-border bg-card"
+          >
             {slash.matches.map((task, index) => (
               <button
                 key={task.id}
@@ -639,11 +681,7 @@ export function AskSurface({
     <>
       <header className="shrink-0 border-b border-border px-4 pb-2 pt-[calc(1rem+env(safe-area-inset-top))]">
         <div className={`flex min-w-0 gap-2 ${inline ? "items-center" : "items-start"}`}>
-          <LassoThinkingMark
-            kind="signature"
-            size={LOOP_SIZE_CHAT}
-            className="shrink-0"
-          />
+          <LassoThinkingMark kind="signature" size={LOOP_SIZE_CHAT} className="shrink-0" />
           <div className="min-w-0 flex-1">
             {inline ? (
               <AskTabs
@@ -684,7 +722,14 @@ export function AskSurface({
       {ask.error ? <p className="px-4 pb-2 text-sm text-destructive">{ask.error}</p> : null}
 
       <div className={inline ? "sticky bottom-0 z-10" : undefined}>
-        {tab === "messages" ? <AskComposer ask={ask} mobile={mobile ?? false} engagementId={engagementId} orgId={orgId} /> : null}
+        {tab === "messages" ? (
+          <AskComposer
+            ask={ask}
+            mobile={mobile ?? false}
+            engagementId={engagementId}
+            orgId={orgId}
+          />
+        ) : null}
       </div>
 
       {!mobile ? (
