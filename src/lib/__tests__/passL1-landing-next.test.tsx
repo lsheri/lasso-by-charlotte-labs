@@ -68,14 +68,17 @@ describe("pass L1 hidden landing route", () => {
     expect(route).toContain("export const HERO_H1_FALLBACK");
   });
 
-  it("is the indexable home page, with the old path redirecting to it", () => {
+  it("is retained as the unlinked noindex classic page", () => {
     const home = readFileSync("src/routes/index.tsx", "utf8");
+    const classic = readFileSync("src/routes/landing-classic.tsx", "utf8");
     const old = readFileSync("src/routes/landing-next.tsx", "utf8");
-    expect(home).toContain("<B2BLanding surface=\"home\" />");
+    expect(home).toContain("<LandingBoard />");
     expect(home).not.toContain("noindex");
     expect(home).toContain(
       "Lasso: the human judgment in your team's AI work, traced",
     );
+    expect(classic).toContain('<B2BLanding surface="landing-classic" />');
+    expect(classic).toContain("noindex, nofollow");
     expect(old).toContain('redirect({ to: "/", replace: true })');
     expect(route).not.toContain('to="/landing-next"');
   });
@@ -88,6 +91,7 @@ describe("pass L1 hidden landing route", () => {
   it("reuses the existing event with additive dimensions", () => {
     expect(route).toContain('event_type: "landing.viewed"');
     expect(route).toContain('dims: { variant: "b2b", surface }');
+    expect(route).toContain('surface: "landing-classic" | "landing-next"');
     expect(route).toContain('event_type: "landing.pilot_cta_clicked"');
     expect(route).toContain('dims: { location }');
     expect(route).toContain('event_type: "landing.see_it_work_clicked"');

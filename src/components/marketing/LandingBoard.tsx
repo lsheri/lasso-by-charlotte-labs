@@ -548,6 +548,7 @@ function LandingBoardHeader({ active, onJump, onPilot }: { active: StepKey; onJu
         <nav className="lb-step-nav" aria-label="Story sections">
           {LANDING_BOARD_STEPS.map((item) => <Button key={item.key} size="sm" variant="ghost" aria-current={active === item.key ? "step" : undefined} onClick={() => onJump(item.key)}>{item.label}</Button>)}
         </nav>
+        <Button asChild size="sm" variant="outline"><Link to="/auth">Sign in</Link></Button>
         <Button asChild size="sm"><a href="#pilot" onClick={onPilot}>Book a pilot</a></Button>
       </div>
     </header>

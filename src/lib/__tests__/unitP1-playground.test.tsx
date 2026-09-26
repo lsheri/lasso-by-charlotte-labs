@@ -19,6 +19,11 @@ describe("Unit P1 playable finished board", () => {
     expect(story).toContain('<Link to="/demo">Open the board yourself</Link>');
   });
 
+  it("returns every story link to the real home page", () => {
+    expect(pages).toContain('<Link to="/" hash="lb-try-it">Back to the story</Link>');
+    expect(readFileSync("src/pages/DemoExtraPages.tsx", "utf8")).toContain('navigate({ to: "/", hash: "lb-ask" })');
+  });
+
   it("keeps all play state local and schedules the requested reset", () => {
     expect(board).toContain("const [offsets, setOffsets] = useState");
     expect(board).toContain("const [stickies, setStickies] = useState");

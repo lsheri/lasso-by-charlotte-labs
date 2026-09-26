@@ -1,18 +1,20 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-import { EVENT_DIM_KEYS, LANDING_SEE_IT_WORK_LOCATIONS, guardEventDims } from "../event-dim-allowlist";
+import { EVENT_DIM_KEYS, LANDING_SEE_IT_WORK_LOCATIONS, LANDING_VIEW_SURFACES, guardEventDims } from "../event-dim-allowlist";
 import { parseLandingProof } from "../landing-proof-shared";
 import { publicSafeWork } from "../public-work-allowlist";
 
 const page = readFileSync("src/components/marketing/LandingBoard.tsx", "utf8");
 const route = readFileSync("src/routes/landing-board.tsx", "utf8");
+const home = readFileSync("src/routes/index.tsx", "utf8");
 
 describe("Unit L1 scroll-driven landing board", () => {
-  it("is an isolated public noindex route", () => {
+  it("is the signed-out home while the old path redirects with its hash", () => {
     expect(route).toContain('createFileRoute("/landing-board")');
-    expect(route).toContain("noindex, nofollow");
-    expect(route).not.toContain("beforeLoad");
+    expect(route).toContain('redirect({ to: "/", ...(hash ? { hash } : {}), replace: true })');
+    expect(home).toContain("<LandingBoard />");
+    expect(home).toContain('if (data.user) throw redirect({ to: "/home" })');
   });
   it("loads YSM-01 only through the public demo function", () => {
     expect(page).toContain("openDemoBoardFn");
@@ -58,6 +60,7 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(EVENT_DIM_KEYS["landing.section_jumped"]).toEqual(["section"]);
     expect(EVENT_DIM_KEYS["landing.proof_link_opened"]).toEqual(["step", "target"]);
     expect(LANDING_SEE_IT_WORK_LOCATIONS).toEqual(["hero", "hero_workboard"]);
+    expect(LANDING_VIEW_SURFACES).toContain("landing-classic");
     expect(guardEventDims("landing.story_section_viewed", { section: "ask", input_mode: "jump", content: "no" }).dims).toEqual({ section: "ask", input_mode: "jump" });
     expect(guardEventDims("landing.pilot_cta_clicked", { placement: "header" }).dims).toEqual({ placement: "header" });
   });

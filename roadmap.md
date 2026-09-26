@@ -177,3 +177,9 @@
 - [x] Add additive anonymous event vocabulary and allowlists
 - [x] Add focused tests and normal-motion browser checks
 - [x] P1 addendum correction: preserve Watch it work, add View a Workboard, and show the step-one scroll cue
+
+## Unit H1 board story home
+- [x] Render the board story at `/` for signed-out visitors while preserving the signed-in workspace redirect.
+- [x] Redirect `/landing-board` to `/` with its hash and repoint internal story returns.
+- [x] Keep the prior B2B page at unlinked, noindex `/landing-classic` with additive surface coverage.
+- [x] Verify route behavior, focused checks, and the existing landing-board browser suite against `/`.
