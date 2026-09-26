@@ -153,7 +153,8 @@ export function DemoWorkboardSandbox({ board, presets, proof, clientLabel, engag
     if ((event.target as HTMLElement).closest("button,textarea,input,select")) return;
     event.stopPropagation(); clearTimer(); setHint(false); setSelected(id);
     const node = nodes.find((entry) => entry.id === id); if (!node) return;
-    setDrag({ kind: "node", id, from: { x: event.clientX, y: event.clientY }, origins: { [id]: { x: node.x, y: node.y } } });
+    const grouped = node.frame ? nodes.filter((entry) => entry.frame === node.frame) : [node];
+    setDrag({ kind: "node", id, from: { x: event.clientX, y: event.clientY }, origins: Object.fromEntries(grouped.map((entry) => [entry.id, { x: entry.x, y: entry.y }])) });
     (event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId);
   };
   const beginFrameDrag = (event: ReactPointerEvent, id: string) => {
@@ -187,7 +188,14 @@ export function DemoWorkboardSandbox({ board, presets, proof, clientLabel, engag
   const endGesture = (event: ReactPointerEvent<HTMLDivElement>) => {
     touchRef.current.delete(event.pointerId); if (touchRef.current.size < 2) pinchRef.current = null;
     if (resize) { setResize(null); emit("drag_card"); scheduleReset(); return; }
-    if (drag) { emit(drag.kind === "frame" ? "drag_group" : "drag_card"); setDrag(null); scheduleReset(); return; }
+    if (drag) {
+      if (drag.kind === "node") {
+        const moved = nodes.find((node) => node.id === drag.id);
+        const origin = drag.origins[drag.id];
+        if (moved && origin && Math.hypot(moved.x - origin.x, moved.y - origin.y) > 72) setNodes((current) => current.map((node) => node.id === drag.id ? { ...node, frame: null } : node));
+      }
+      emit(drag.kind === "frame" ? "drag_group" : "drag_card"); setDrag(null); scheduleReset(); return;
+    }
     panRef.current = null;
   };
   const addSticky = () => {
