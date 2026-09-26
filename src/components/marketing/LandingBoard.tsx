@@ -86,7 +86,7 @@ export const LANDING_BOARD_STEPS = [
     key: "still-open",
     label: "Open questions",
     headline: "Add stickys (actual human written notes)",
-    line: "Each one sits beside the work that raised it.",
+    line: "Notes help you organize your work and if you share your work, your teammates can catch up quicker.",
   },
   {
     key: "share",
