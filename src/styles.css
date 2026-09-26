@@ -1262,7 +1262,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .demo-play-deck { z-index: 5; left: auto; right: 40px; top: 92px; cursor: grab; transition: transform 600ms ease-out; touch-action: none; }
 .demo-play-lasso { position: absolute; z-index: 5; left: 181px; top: 46px; width: 58px; height: 30px; border: 2.4px solid var(--text-hand); border-radius: 46% 54% 50% 47%; transform: rotate(-5deg); pointer-events: none; }
 .demo-play-notes { display: block; z-index: 6; right: 42px; bottom: 32px; opacity: 1; transform: none; }
-.demo-play-sticky { position: absolute; z-index: 12; width: 140px; min-height: 112px; padding: 12px; background: var(--nb-sticky-yellow); box-shadow: var(--shadow-sm); transform: rotate(-1deg); transition: transform 600ms ease-out, opacity 600ms ease-out; touch-action: none; }
+.demo-play-sticky { position: absolute; z-index: 12; width: 140px; min-height: 112px; padding: 12px; background: var(--sticky-yellow); box-shadow: var(--shadow-card); transform: rotate(-1deg); transition: transform 600ms ease-out, opacity 600ms ease-out; touch-action: none; }
 .demo-play-sticky input { width: 100%; border: 0; outline: 0; background: transparent; font: 16px/1.25 Caveat, cursive; }
 .demo-playground[data-resetting="true"] .demo-play-sticky { opacity: 0; }
 .demo-play-ask { z-index: 30; display: flex; min-width: 0; flex-direction: column; border-left: 1px solid var(--line-pencil); background: var(--surface-raised); }
