@@ -35,6 +35,16 @@ describe("Unit L1 scroll-driven landing board", () => {
   it("contains no write controls", () => {
     for (const copy of ["Delete", "Share link", "Add work", "Comment", "Push to"]) expect(page).not.toContain(copy);
   });
+  it("restores all three product clips with posters and existing play-event coverage", () => {
+    for (const asset of ["use-bring-work-in", "use-reasoning-stays-with-the-firm", "use-every-number-has-a-source"]) {
+      expect(page).toContain(`${asset}.mp4.asset.json`);
+      expect(page).toContain(`${asset}.webm.asset.json`);
+      expect(page).toContain(`${asset}-poster.jpg.asset.json`);
+    }
+    expect(page).toContain("LANDING_BOARD_USE_CASES.map");
+    expect(page).toContain('event(viewId, "landing.usecase_played", { card, input_mode: inputMode })');
+    expect(page).toContain('aria-label={`Play: ${card.title}`}');
+  });
   it("maps every board tool to an official asset or Simple Icons path", () => {
     const logo = readFileSync("src/components/marketing/ToolLogo.tsx", "utf8");
     for (const mark of ["siClaude", "siGooglegemini", "siGoogledrive", "siGmail"]) expect(logo).toContain(mark);

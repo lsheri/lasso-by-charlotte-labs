@@ -3,6 +3,15 @@ import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { type CSSProperties, type FormEvent, type PointerEvent as ReactPointerEvent, type RefObject, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
+import bringWorkMp4 from "@/assets/use-bring-work-in.mp4.asset.json";
+import bringWorkPoster from "@/assets/use-bring-work-in-poster.jpg.asset.json";
+import bringWorkWebm from "@/assets/use-bring-work-in.webm.asset.json";
+import everyNumberMp4 from "@/assets/use-every-number-has-a-source.mp4.asset.json";
+import everyNumberPoster from "@/assets/use-every-number-has-a-source-poster.jpg.asset.json";
+import everyNumberWebm from "@/assets/use-every-number-has-a-source.webm.asset.json";
+import reasoningMp4 from "@/assets/use-reasoning-stays-with-the-firm.mp4.asset.json";
+import reasoningPoster from "@/assets/use-reasoning-stays-with-the-firm-poster.jpg.asset.json";
+import reasoningWebm from "@/assets/use-reasoning-stays-with-the-firm.webm.asset.json";
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
 import { LandingParticlePhrase } from "@/components/marketing/LandingParticlePhrase";
 import { FocusSection } from "@/components/marketing/FocusSection";
@@ -38,6 +47,13 @@ export const LANDING_BOARD_STEPS = [
 
 type StepKey = (typeof LANDING_BOARD_STEPS)[number]["key"];
 type StoryInput = "scroll" | "jump";
+type UseCaseKey = "bring_work_in" | "reasoning_stays" | "every_number";
+
+const LANDING_BOARD_USE_CASES = [
+  { key: "bring_work_in", title: "Push work in with one sentence.", body: "Bring work from your AI tools into one shared place.", poster: bringWorkPoster.url, webm: bringWorkWebm.url, mp4: bringWorkMp4.url },
+  { key: "reasoning_stays", title: "Every AI conversation, on the record.", body: "Keep the conversations that shaped the engagement.", poster: reasoningPoster.url, webm: reasoningWebm.url, mp4: reasoningMp4.url },
+  { key: "every_number", title: "Every number has a source.", body: "Open the source behind a figure or claim.", poster: everyNumberPoster.url, webm: everyNumberWebm.url, mp4: everyNumberMp4.url },
+] as const satisfies ReadonlyArray<{ key: UseCaseKey; title: string; body: string; poster: string; webm: string; mp4: string }>;
 
 const TOOL_BADGES = [
   { key: "claude", label: "Claude" },
@@ -538,9 +554,70 @@ function LandingBoardHeader({ active, onJump, onPilot }: { active: StepKey; onJu
   );
 }
 
+function LandingBoardUseCase({ card, onPlayed }: { card: (typeof LANDING_BOARD_USE_CASES)[number]; onPlayed: (key: UseCaseKey, inputMode: "hover" | "tap") => void }) {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const inputMode = useRef<"hover" | "tap">("hover");
+  const [playing, setPlaying] = useState(false);
+  const [videoFailed, setVideoFailed] = useState(false);
+
+  function play(mode: "hover" | "tap") {
+    const video = videoRef.current;
+    if (!video || videoFailed) return;
+    inputMode.current = mode;
+    void video.play().catch(() => setVideoFailed(true));
+  }
+
+  function pause() {
+    videoRef.current?.pause();
+  }
+
+  return (
+    <article className="landing-usecase" data-usecase={card.key}>
+      <button
+        type="button"
+        className="landing-usecase-media"
+        aria-label={`Play: ${card.title}`}
+        data-playing={playing}
+        onPointerEnter={(pointerEvent) => { if (pointerEvent.pointerType === "mouse") play("hover"); }}
+        onPointerLeave={(pointerEvent) => { if (pointerEvent.pointerType === "mouse") pause(); }}
+        onClick={() => {
+          if (window.matchMedia("(hover: hover)").matches) return;
+          if (playing) pause(); else play("tap");
+        }}
+      >
+        <img className="landing-usecase-poster" src={card.poster} alt="" aria-hidden="true" />
+        {videoFailed ? null : (
+          <video
+            ref={videoRef}
+            className="landing-usecase-video"
+            muted
+            playsInline
+            preload="none"
+            poster={card.poster}
+            onPlaying={() => { setPlaying(true); onPlayed(card.key, inputMode.current); }}
+            onPause={() => setPlaying(false)}
+            onEnded={() => setPlaying(false)}
+            onError={() => setVideoFailed(true)}
+          >
+            <source src={card.webm} type="video/webm" />
+            <source src={card.mp4} type="video/mp4" />
+          </video>
+        )}
+      </button>
+      <div className="landing-usecase-copy"><h3>{card.title}</h3><p>{card.body}</p></div>
+    </article>
+  );
+}
+
 function LandingBoardContinuation({ viewId, onPilot }: { viewId: string; onPilot: (placement: string) => void }) {
   const submitPilot = useServerFn(submitPilotRequestFn);
   const [state, setState] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const playedCards = useRef(new Set<UseCaseKey>());
+  function noteUseCasePlayed(card: UseCaseKey, inputMode: "hover" | "tap") {
+    if (playedCards.current.has(card)) return;
+    playedCards.current.add(card);
+    event(viewId, "landing.usecase_played", { card, input_mode: inputMode });
+  }
   async function submit(eventValue: FormEvent<HTMLFormElement>) {
     eventValue.preventDefault();
     setState("sending");
@@ -558,7 +635,7 @@ function LandingBoardContinuation({ viewId, onPilot }: { viewId: string; onPilot
       <section className="landing-usecases mx-auto max-w-[1200px] px-4 md:px-6" aria-label="What consultants use it for">
         <div className="landing-section-head"><p className="micro-label">HOW IT WORKS</p><h2 className="pencil-title">Deliverables you can defend to a client, a partner, or a board.</h2></div>
         <div className="landing-usecase-grid">
-          {["Push work in with one sentence.", "Every AI conversation, on the record.", "Every number has a source."].map((title, index) => <article className="landing-usecase" key={title}><div className="landing-usecase-media lb-usecase-art"><LassoThinkingMark kind={index === 2 ? "trace" : "signature"} size={92} /></div><div className="landing-usecase-copy"><h3>{title}</h3><p>{["Bring work from your AI tools into one shared place.", "Keep the conversations that shaped the engagement.", "Open the source behind a figure or claim."][index]}</p></div></article>)}
+          {LANDING_BOARD_USE_CASES.map((card) => <LandingBoardUseCase key={card.key} card={card} onPlayed={noteUseCasePlayed} />)}
         </div>
       </section>
       <section className="landing-close mx-auto max-w-4xl px-6 md:px-10" data-resolved="true"><h2 className="landing-close-line1 landing-close-wordmark">Every claim, traced to the work behind it.</h2><p className="landing-close-line2"><LandingParticlePhrase text="The judgement, thinking, work... *Visible*" /></p><div className="mt-10"><Button asChild><a href="#pilot" onClick={() => onPilot("close")}>Book a pilot</a></Button></div></section>
