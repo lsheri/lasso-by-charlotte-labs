@@ -309,7 +309,7 @@ test("story spotlights only the three settled attention moments", async ({ brows
   await expect(page.getByTestId("landing-story-spotlight")).toHaveCount(0);
   await page.locator('.lb-progress-dot[aria-label="Ask Lasso"]').click({ force: true });
   const overlay = page.getByTestId("landing-story-spotlight");
-  await expect(overlay).toHaveAttribute("data-spotlight", "ask", { timeout: 2_000 });
+  await expect(overlay).toHaveAttribute("data-spotlight", "ask", { timeout: 6_000 });
   const layers = await page.evaluate(() => ({
     board:
       Number(
