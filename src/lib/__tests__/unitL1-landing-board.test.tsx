@@ -304,9 +304,10 @@ describe("Unit L1 scroll-driven landing board", () => {
     const css = readFileSync("src/styles.css", "utf8");
     expect(page).toContain('poster="/videos/landing-hero-assemble-poster.png"');
     expect(page).toContain('poster="/videos/landing-hero-assemble-phone-poster.png"');
-    expect(page.match(/preload="metadata"/g)).toHaveLength(3);
+    // S2 adds the self-contained workstreams clip: metadata-only and inline, never autoPlay.
+    expect(page.match(/preload="metadata"/g)).toHaveLength(4);
     expect(page.match(/autoPlay/g)).toHaveLength(2);
-    expect(page.match(/playsInline/g)).toHaveLength(3);
+    expect(page.match(/playsInline/g)).toHaveLength(4);
     expect(page).toContain("<HeroAssemble paused={heroFocus === 1} />");
     expect(page).toContain('(prefers-reduced-motion: reduce)');
     expect(page).not.toContain("HERO_ASSEMBLE_FRAMES");
