@@ -5946,9 +5946,9 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .demo-sandbox-ask .demo-play-answer :is(p,strong,b) { font-size: max(15px, 1em); }
 .demo-sandbox-ask .demo-play-answer :is(.lb-micro,small) { font-size: 12px; }
 .demo-sandbox-ask .demo-play-composer textarea { font-size: 15px; line-height: 1.4; }
-.demo-sandbox-stage .canvas-lab-card :is(p,span,strong,small,b) { font-size: 14px; }
-.demo-sandbox-stage .canvas-lab-frame > div:first-child > span { font-size: 13px; }
-.demo-sandbox-stage .canvas-lab-sticky textarea { font-size: 14px; }
+.demo-sandbox-stage .canvas-lab-card :is(p,span,strong,small,b) { font-size: 16px; }
+.demo-sandbox-stage .canvas-lab-frame > div:first-child > span { font-size: 15px; }
+.demo-sandbox-stage .canvas-lab-sticky textarea { font-size: 16px; }
 @media (min-width: 640px) and (max-width: 1439px) {
   .demo-workboard-shell { grid-template-columns: 58px minmax(0, 1fr); }
   .demo-sandbox-sidebar { align-items: center; padding-inline: 7px; }
