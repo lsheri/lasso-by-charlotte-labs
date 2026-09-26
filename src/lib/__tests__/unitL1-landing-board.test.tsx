@@ -26,7 +26,7 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(page).toContain('code: "YSM-01"');
     expect(page).not.toContain("supabase");
   });
-  it("renders ten observed reversible steps and jump controls", () => {
+  it("renders ten observed reversible steps without the removed progress rail", () => {
     expect(page).toContain('window.addEventListener("scroll"');
     expect(page).toContain("window.innerHeight * 0.55");
     expect(page).toContain("jumpTarget.current = index");
@@ -36,8 +36,8 @@ describe("Unit L1 scroll-driven landing board", () => {
       page.indexOf("] as const;"),
     );
     expect(steps.match(/key: "/g)).toHaveLength(10);
-    expect(page).toContain('className="lb-progress-rail"');
-    expect(page).toContain("aria-label={step.label}");
+    expect(page).not.toContain("StoryProgressRail");
+    expect(page).not.toContain('className="lb-progress-rail"');
     expect(page).toContain('event(viewId.current, "landing.section_jumped", { section: key })');
     expect(page).not.toContain('className="lb-step-nav"');
     expect([...page.matchAll(/key: "([^"]+)"/g)].slice(0, 10).map((match) => match[1])).toEqual([
@@ -287,15 +287,16 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(page).toContain('className="lb-phone-story"');
     expect(page).toContain("data-phone-step={stop}");
     expect(page).toContain('id="lb-phone-usecases"');
-    expect(page).toContain("phoneStop >= 2 && phoneStop <= 10");
+    expect(page).toContain("<PhoneHeroAssemble />");
+    expect(page).toContain("PHONE_HERO_ASSEMBLE_CARDS");
     expect(page).toContain("new IntersectionObserver");
     expect(page).toContain("threshold: 0.6");
     expect(page).toContain(
       "<ExactTurn board={board} preset={second} onOpenTurn={onOpenDecisionTurn} phone />",
     );
     expect(css).toContain("scroll-snap-type: y mandatory");
-    expect(css).toContain("max-height: calc(100svh - var(--lb-header-h))");
-    expect(css).toContain(".lb-progress-status { display: none;");
+    expect(css).toContain("padding-bottom: calc(124px + env(safe-area-inset-bottom, 0px))");
+    expect(css).toContain("scroll-margin-top: calc(var(--lb-header-h) + 12px)");
     expect(page).toMatch(/surface: "landing-board",\s*input_mode:/);
   });
   it("holds scenes, settles events, and reuses Ask Lasso presentation pieces", () => {
