@@ -2591,30 +2591,6 @@ export function LandingBoard() {
               </div>
               <div className="lb-hero-stage">
                 <HeroAssemble />
-                <div
-                  className="lb-scroll-cue"
-                  data-visible={active === 0 ? "true" : "false"}
-                  data-testid="landing-scroll-cue"
-                  aria-hidden={active !== 0}
-                >
-                  <span className="lb-scroll-cue-rail" />
-                  <span className="lb-scroll-cue-num">
-                    1
-                    <svg viewBox="0 0 40 40" className="lb-scroll-cue-ring" aria-hidden="true">
-                      <path d="M20 4c9 0 16 6 16 15s-7 17-17 17S4 29 4 20 11 5 21 5" />
-                    </svg>
-                  </span>
-                  <span className="lb-scroll-cue-label">
-                    {heroFocus === 1 ? "Scroll to learn more" : "Start here"}
-                  </span>
-                  <span className="lb-scroll-cue-head">Watch one engagement, start to finish.</span>
-                  <span className="lb-scroll-cue-micro">
-                    SCROLL
-                    <svg viewBox="0 0 16 10" aria-hidden="true">
-                      <path d="m2 2 6 6 6-6" />
-                    </svg>
-                  </span>
-                </div>
               </div>
               <p className="micro-label lb-hero-assemble-caption" aria-hidden="true">CHATS FROM EVERY TOOL, ON ONE BOARD</p>
               <div className="lb-hero-line">
