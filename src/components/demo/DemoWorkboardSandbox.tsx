@@ -42,10 +42,24 @@ function fittedDemoView(viewport: HTMLDivElement | null, frames: LabFrame[], nod
   const toolbarClearance = 82;
   // Card titles render at 16px; 0.58 keeps them at about 9.3px on screen, still legible.
   const readableFloor = 0.58;
+  // Rendered pieces (the deliverable, measured cards) can be larger than their seed rects,
+  // so fold their on-screen boxes back into board space before fitting.
+  const rendered: LabNode[] = [];
+  const stage = viewport.querySelector<HTMLElement>("[data-testid=canvas-lab-stage]");
+  if (stage) {
+    const stageRect = stage.getBoundingClientRect();
+    const scale = stageRect.width / Math.max(1, stage.offsetWidth) || 1;
+    Array.from(stage.children).forEach((child, index) => {
+      if (child.tagName.toLowerCase() === "svg") return;
+      const rect = child.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+      rendered.push({ id: `__rendered-${index}`, x: (rect.left - stageRect.left) / scale, y: (rect.top - stageRect.top) / scale, width: rect.width / scale, height: rect.height / scale } as LabNode);
+    });
+  }
   const fit = fitWorkboardViewport(
     { width: Math.max(320, viewport.clientWidth), height: Math.max(280, viewport.clientHeight - toolbarClearance) },
     frames,
-    nodes,
+    [...nodes, ...rendered],
     new Map(),
     null,
     48,
