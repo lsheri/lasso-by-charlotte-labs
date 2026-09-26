@@ -288,15 +288,16 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(page).toContain("data-phone-step={stop}");
     expect(page).toContain('id="lb-phone-usecases"');
     expect(page).toContain("<PhoneHeroAssemble />");
-    expect(page).toContain("PHONE_HERO_ASSEMBLE_CARDS");
+    expect(page).toContain("phoneHeroSettledAsset.url");
+    expect(page).not.toContain("PHONE_HERO_ASSEMBLE_CARDS");
     expect(page).toContain("new IntersectionObserver");
     expect(page).toContain("threshold: 0.6");
     expect(page).toContain(
       "<ExactTurn board={board} preset={second} onOpenTurn={onOpenDecisionTurn} phone />",
     );
     expect(css).toContain("scroll-snap-type: y mandatory");
-    expect(css).toContain("padding: 12px 12px calc(124px + env(safe-area-inset-bottom, 0px));");
-    expect(css).toContain("scroll-margin-top: calc(var(--lb-header-h) + 12px)");
+    expect(css).toContain("padding: 12px 12px calc(72px + env(safe-area-inset-bottom, 0px));");
+    expect(css).toContain("scroll-margin-top: calc(var(--lb-header-h) + env(safe-area-inset-top, 0px))");
     expect(page).toMatch(/surface: "landing-board",\s*input_mode:/);
   });
   it("holds scenes, settles events, and reuses Ask Lasso presentation pieces", () => {

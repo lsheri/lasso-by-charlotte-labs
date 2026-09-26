@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { VendorMark } from "@/components/work/SourceMark";
 import finishedWorkboardAsset from "@/assets/landing-finished-workboard.png.asset.json";
+import phoneHeroSettledAsset from "@/assets/landing-phone-hero-settled.png.asset.json";
 import lovableLogoAsset from "@/assets/lovable-logo.png.asset.json";
 import { openDemoBoardFn } from "@/lib/demo.functions";
 import type { DemoPreset } from "@/lib/demo-presets-shared";
@@ -1937,8 +1938,6 @@ const HERO_ASSEMBLE_CARDS = [
   { tool: "googledrive", label: "Pricing approach" },
 ] as const;
 
-const PHONE_HERO_ASSEMBLE_CARDS = HERO_ASSEMBLE_CARDS.slice(0, 3);
-
 /** Inert desktop decoration showing scattered AI work settling onto a finished board. */
 function HeroAssemble() {
   return (
@@ -1962,22 +1961,12 @@ function HeroAssemble() {
   );
 }
 
-/** Inert phone sequence: three chats settle once into a close crop of the board. */
+/** Inert phone still: the settled board and chats are one image with no positioned children. */
 function PhoneHeroAssemble() {
   return (
     <div className="lb-phone-hero-sequence" aria-hidden="true" inert>
       <div className="lb-phone-hero-assemble">
-        <img className="lb-phone-hero-board" src={finishedWorkboardAsset.url} alt="" />
-        <div className="lb-phone-hero-cards">
-          {PHONE_HERO_ASSEMBLE_CARDS.map((card, index) => (
-            <article key={card.tool} className="lb-phone-hero-chat" data-card={index + 1}>
-              <ToolLogo vendor={card.tool} compact />
-              <strong>{card.label}</strong>
-              <span />
-              <span />
-            </article>
-          ))}
-        </div>
+        <img className="lb-phone-hero-board" src={phoneHeroSettledAsset.url} alt="" />
       </div>
       <p className="micro-label lb-phone-hero-caption">CHATS FROM EVERY TOOL, ON ONE BOARD</p>
       <div className="lb-phone-hero-line">
