@@ -270,11 +270,6 @@ test("story zones always resolve to one matching visible step", async ({ browser
     reducedMotion: "reduce",
   });
   const page = await context.newPage();
-  const telemetryBodies: string[] = [];
-  page.on("request", (request) => {
-    const body = request.postData();
-    if (body?.includes("landing.usecase_played")) telemetryBodies.push(body);
-  });
   await page.goto("/", { waitUntil: "networkidle" });
   const pageHeight = await page.evaluate(() => {
     const lastZone = document.querySelector<HTMLElement>('[data-lb-step="9"]');
@@ -347,6 +342,11 @@ test("use cases sit before the story with one-line titles and no jump controls",
     reducedMotion: "reduce",
   });
   const page = await context.newPage();
+  const telemetryBodies: string[] = [];
+  page.on("request", (request) => {
+    const body = request.postData();
+    if (body?.includes("landing.usecase_played")) telemetryBodies.push(body);
+  });
   await page.goto("/", { waitUntil: "networkidle" });
   const order = await page.evaluate(() => {
     const hero = document.querySelector(".lb-desktop-hero");
