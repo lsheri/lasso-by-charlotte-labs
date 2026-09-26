@@ -166,6 +166,15 @@ describe("Unit 10 landing", () => {
     expect(page).not.toContain("landing-close-particles-a");
   });
 
+  it("builds the underlined phrase from particles, then holds it for three seconds", () => {
+    const particle = readFileSync("src/components/marketing/LandingParticlePhrase.tsx", "utf8");
+    const styles = readFileSync("src/styles.css", "utf8");
+    expect(particle).toContain("export const PARTICLE_TEXT_HOLD_MS = 3000");
+    expect(particle).toContain("<canvas ref={canvasRef} className=\"landing-particle-word-canvas\" />");
+    expect(particle).toContain("const local = holding ? 1");
+    expect(styles).toContain(".landing-particle-word-canvas");
+  });
+
   it("has the three ordered use-case cards and fires landing.usecase_played once per card", () => {
     const keys = Array.from(page.matchAll(/\{ key: "([a-z_]+)", file: "use-/g), (match) => match[1]);
     expect(keys).toEqual(["bring_work_in", "reasoning_stays", "every_number"]);
