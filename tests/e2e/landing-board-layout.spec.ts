@@ -97,14 +97,14 @@ test("story captions and visible text stay readable across settled desktop steps
   const page = await context.newPage();
   await page.goto("/", { waitUntil: "networkidle" });
   for (const name of [
-    "One canvas",
+    "One place",
     "Workstreams",
-    "Deliverable",
-    "A number",
+    "The deliverable",
+    "Pick a number",
     "Ask Lasso",
-    "The chat",
-    "Open questions",
-    "Share",
+    "Open the chat",
+    "Notes",
+    "Share it",
     "Try it",
   ]) {
     await page.getByRole("button", { name, exact: true }).last().click();
