@@ -24,7 +24,7 @@ describe("Unit 4 public page", () => {
 
   it("carries the hero H1 and the beats anchor", () => {
     expect(page).toContain("Your firm bought AI. The human judgment, process, and thinking in your team's work went invisible.");
-    expect(page).toContain('href="#demo"');
+    expect(page).toContain('<a href="/demo" onClick={openDemoWorkspace}>');
     expect(page).toContain('id="beats"');
   });
 
@@ -108,9 +108,9 @@ describe("Unit 8 story system", () => {
     expect(page).toContain("Three months, one real engagement");
     expect(page).not.toContain("No prompts shown");
     expect(page).not.toMatch(/Four months/i);
-    expect(page).toContain("The work, judgment, thinking. Visible.");
+    expect(page).toContain("The judgement, thinking, work... *Visible*");
     expect(page).toContain("landing-close-wordmark");
-    expect(page).toContain('<LandingParticlePhrase text="The work, judgment, thinking. Visible." />');
+    expect(page).toContain('<LandingParticlePhrase text="The judgement, thinking, work... *Visible*" />');
     expect(page).not.toContain("ParticleReveal");
     expect(page).toContain('notePlacedPilotClick("header")');
     expect(page).toContain('notePlacedPilotClick("close")');
@@ -162,7 +162,7 @@ describe("Unit 10 landing", () => {
     const styles = readFileSync("src/styles.css", "utf8");
     expect(styles).toContain(".landing-close-line2 .landing-particle-word-text");
     expect(styles).toContain("var(--lb-neon-orange)");
-    expect(styles).not.toContain("color-mix(in srgb, var(--nb-lasso-green) 55%, transparent)");
+    expect(styles).toContain("--lb-neon-orange: #ff5f1f");
     expect(page).not.toContain("landing-close-particles-a");
   });
 
