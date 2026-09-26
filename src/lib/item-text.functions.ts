@@ -28,8 +28,11 @@ export const getItemTextPane = createServerFn({ method: "POST" })
       .select(ITEM_TEXT_COLUMNS)
       .eq("id", data.work_item_id)
       .maybeSingle();
-    if (error) throw new Error(error.message);
-    if (!item) throw new Error("That item is not available to you.");
+    // Unreadable is a normal outcome (signed out, or no access): answer plainly
+    // instead of throwing, so the reading pane never blanks the screen.
+    if (error || !item) {
+      return { text: null, status: "failed", note: "That item is not available to you." };
+    }
 
     const result = await getItemText(context.supabase, item as unknown as TextItem);
     return {
