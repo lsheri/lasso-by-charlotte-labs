@@ -6118,14 +6118,14 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   .lb-hero-line { display: grid; justify-items: center; gap: 8px; max-width: 760px; margin: 26px auto 0; }
   .lb-hero-line .micro-label { color: var(--nb-mid); }
   .lb-hero-line-text { font-size: 20px; line-height: 1.5; color: var(--nb-ink); text-wrap: balance; }
-  .lb-hero-rails { position: absolute; inset: 0; z-index: 2; pointer-events: none; user-select: none; background-image: radial-gradient(color-mix(in oklab, var(--nb-ink) 14%, transparent) 1px, transparent 1px); background-size: 22px 22px; -webkit-mask-image: linear-gradient(90deg, black 0 16%, transparent 24% 76%, black 84%); mask-image: linear-gradient(90deg, black 0 16%, transparent 24% 76%, black 84%); }
+  .lb-hero-rails { position: absolute; inset: 0; z-index: 2; pointer-events: none; user-select: none; background-image: radial-gradient(color-mix(in oklab, var(--nb-ink) 14%, transparent) 1px, transparent 1px); background-size: 22px 22px; -webkit-mask-image: linear-gradient(90deg, var(--nb-ink) 0 16%, transparent 24% 76%, var(--nb-ink) 84%); mask-image: linear-gradient(90deg, var(--nb-ink) 0 16%, transparent 24% 76%, var(--nb-ink) 84%); }
   .lb-hero-rail { position: absolute; top: 10%; bottom: 8%; width: 180px; display: flex; flex-direction: column; justify-content: space-between; opacity: .5; }
   .lb-hero-rail[data-side="left"] { left: 24px; }
   .lb-hero-rail[data-side="right"] { right: 24px; justify-content: space-around; }
   .lb-hero-rail-card { width: 220px; height: 136px; transform: scale(.82); transform-origin: top left; border-radius: 8px; }
   .lb-hero-rail-card .canvas-lab-paper { height: 100%; }
-  .lb-hero-rail[data-side="left"] .lb-hero-rail-card[data-index="2"],
-  .lb-hero-rail[data-side="right"] .lb-hero-rail-card[data-index="1"] { animation: lb-rail-glow 9s ease-in-out infinite; }
+  .lb-hero-rail[data-side="left"] .lb-hero-rail-card[data-index="2"] .canvas-lab-paper,
+  .lb-hero-rail[data-side="right"] .lb-hero-rail-card[data-index="1"] .canvas-lab-paper { animation: lb-rail-glow 9s ease-in-out infinite; }
   .lb-hero-rail-link { position: absolute; left: 50%; bottom: 30%; width: 1.4px; height: 60px; background: var(--nb-green); transform-origin: top; transform: scaleY(0); animation: lb-rail-link 9s ease-in-out infinite; }
   .lb-hero-rail[data-side="left"] .lb-hero-rail-link { bottom: 26%; }
   @keyframes lb-rail-glow { 0%,20%,85%,100% { box-shadow: 0 0 0 0 transparent; } 40%,70% { box-shadow: 0 0 0 2.4px color-mix(in oklab, var(--nb-green) 55%, transparent), 0 0 22px color-mix(in oklab, var(--nb-green) 35%, transparent); } }
@@ -6144,6 +6144,6 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   .lb-hero-rails { display: none; }
 }
 @media (min-width: 640px) and (prefers-reduced-motion: reduce) {
-  .lb-hero-rail-card, .lb-hero-rail-link { animation: none !important; }
+  .lb-hero-rail-card .canvas-lab-paper, .lb-hero-rail-link { animation: none !important; }
   .lb-hero-rail-link { transform: scaleY(1); }
 }
