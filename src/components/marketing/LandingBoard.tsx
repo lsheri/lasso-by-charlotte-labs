@@ -73,7 +73,7 @@ export const LANDING_BOARD_STEPS = [
   {
     key: "ask",
     label: "Ask Lasso",
-    headline: "Ask where a number came from.",
+    headline: "\nAsk where a number came from.",
     line: "The source, what your team checked after, and what is still unconfirmed.",
   },
   {
