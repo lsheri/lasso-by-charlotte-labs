@@ -367,7 +367,7 @@ for (const viewport of [{ width: 1372, height: 732 }]) {
   });
 }
 
-test("use cases sit before the story and link into matching steps", async ({
+test("use cases sit before the story with one-line titles and no jump controls", async ({
   browser,
 }, testInfo) => {
   const context = await browser.newContext({
@@ -387,6 +387,7 @@ test("use cases sit before the story and link into matching steps", async ({
   });
   expect(order).toBe(true);
   await expect(page.locator("#usecases video")).toHaveCount(3);
+  await expect(page.getByRole("button", { name: /See it in the story/ })).toHaveCount(0);
   for (const video of await page.locator("#usecases video").all()) {
     await expect(video).toHaveAttribute("poster", /.+/);
     const ratio = await video.locator("xpath=..").evaluate((element) => {
@@ -411,16 +412,65 @@ test("use cases sit before the story and link into matching steps", async ({
   await page
     .locator("#usecases")
     .screenshot({ path: testInfo.outputPath("landing-usecases-1372x732.png") });
-  await page
-    .locator('#usecases [data-usecase="bring_work_in"]')
-    .getByRole("button", { name: /See it in the story/ })
-    .click();
-  await expect(page.locator(".lb-stage-window")).toHaveAttribute("data-step", "3");
-  await page
-    .locator('#usecases [data-usecase="every_number"]')
-    .getByRole("button", { name: /See it in the story/ })
-    .click();
-  await expect(page.locator(".lb-stage-window")).toHaveAttribute("data-step", "6");
+  await context.close();
+});
+
+test("phone use-case titles stay on one line and cards have no jump controls", async ({ browser }) => {
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    reducedMotion: "reduce",
+  });
+  const page = await context.newPage();
+  await page.goto("/", { waitUntil: "networkidle" });
+  await expect(page.getByRole("button", { name: /See it in the story/ })).toHaveCount(0);
+  const titles = page.locator("#lb-phone-usecases .landing-usecase h3");
+  await expect(titles).toHaveCount(3);
+  for (const title of await titles.all()) {
+    const lines = await title.evaluate((element) =>
+      Math.round(element.getBoundingClientRect().height / Number.parseFloat(getComputedStyle(element).lineHeight)),
+    );
+    expect(lines).toBe(1);
+  }
+  await context.close();
+});
+
+test("settled attention steps keep one spotlight and one caption", async ({ browser }) => {
+  test.setTimeout(45_000);
+  const context = await browser.newContext({
+    viewport: { width: 1372, height: 732 },
+    reducedMotion: "no-preference",
+  });
+  const page = await context.newPage();
+  await page.goto("/", { waitUntil: "networkidle" });
+  for (const name of ["Deliverable", "Circle", "Ask", "The turn"]) {
+    await page.getByRole("button", { name, exact: true }).last().click();
+    await page.waitForTimeout(800);
+    const baseline = await page.evaluate(
+      () =>
+        (window as Window & { __landingStoryBoardRenderCount?: number })
+          .__landingStoryBoardRenderCount ?? 0,
+    );
+    const samples = await page.evaluate(async () => {
+      const values: Array<{ spotlight: number; caption: string | undefined }> = [];
+      for (let elapsed = 0; elapsed <= 3_000; elapsed += 100) {
+        values.push({
+          spotlight: document.querySelectorAll('[data-testid="landing-story-spotlight"]').length,
+          caption: document.querySelector<HTMLElement>('.lb-caption[data-phase="incoming"]')?.dataset
+            .step,
+        });
+        await new Promise((resolve) => window.setTimeout(resolve, 100));
+      }
+      return values;
+    });
+    expect(new Set(samples.map((sample) => sample.spotlight)).size, name).toBe(1);
+    expect(new Set(samples.map((sample) => sample.caption)).size, name).toBe(1);
+    const renders = await page.evaluate(
+      () =>
+        (window as Window & { __landingStoryBoardRenderCount?: number })
+          .__landingStoryBoardRenderCount ?? 0,
+    );
+    expect(renders - baseline, name).toBeLessThan(10);
+  }
   await context.close();
 });
 

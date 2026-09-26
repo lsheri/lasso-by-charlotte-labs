@@ -5608,7 +5608,6 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .landing-usecase-tools .lb-tool-identity { font-size: 12px; }
 .landing-usecase-copy h3 { margin-top: 10px; overflow: hidden; font-family: var(--font-serif); font-size: 26px; font-weight: 700; line-height: 1.15; white-space: nowrap; }
 .landing-usecase-copy > p { margin-top: 6px; color: var(--nb-mid); font-size: 15px; line-height: 1.45; }
-.landing-usecase-copy > button { height: auto; margin-top: 12px; padding: 0; color: var(--nb-green); font-family: var(--font-mono); font-size: 12px; justify-content: flex-start; text-decoration: underline; text-underline-offset: 3px; }
 .landing-usecase-icon { width: 20px; height: 20px; fill: none; stroke: var(--foreground); stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
 
 .landing-share-intro { max-width: 680px; color: var(--foreground); font-size: 13px; line-height: 1.5; }
@@ -5954,9 +5953,8 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   .lb-phone-usecases .landing-usecase-tools { min-height: 18px; gap: 5px; }
   .lb-phone-usecases .landing-usecase-tools .lb-tool-identity { font-size: 0; gap: 0; }
   .lb-phone-usecases .landing-usecase-tools img,.lb-phone-usecases .landing-usecase-tools svg { width: 16px; height: 16px; }
-  .lb-phone-usecases .landing-usecase-copy h3 { margin-top: 1px; font-size: 18px; font-weight: 700; line-height: 1.02; }
+  .lb-phone-usecases .landing-usecase-copy h3 { margin-top: 1px; font-size: 15px; font-weight: 700; line-height: 1.02; }
   .lb-phone-usecases .landing-usecase-copy > p { margin-top: 1px; overflow: hidden; font-size: 14px; line-height: 1.05; white-space: nowrap; text-overflow: ellipsis; }
-  .lb-phone-usecases .landing-usecase-copy > button { margin-top: 1px; font-size: 14px; line-height: 1; }
   .lb-phone-usecases .landing-usecase-replay { right: 5px; bottom: 5px; font-size: 12px; }
   .lb-phone-how { width: 100%; flex: 0 0 auto; }
   .lb-phone-how .micro-label { font-size: 14px; }

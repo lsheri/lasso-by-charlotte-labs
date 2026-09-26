@@ -80,7 +80,7 @@ describe("Unit L1 scroll-driven landing board", () => {
     );
     expect(page).toContain("aria-label={`Play: ${card.title}`}");
   });
-  it("places the use cases between the hero and Canvas with story jump coverage", () => {
+  it("places the use cases between the hero and Canvas without card jump controls", () => {
     expect(page.indexOf('className="lb-desktop-hero"')).toBeLessThan(
       page.indexOf("<UseCaseSection onPlayed"),
     );
@@ -89,14 +89,16 @@ describe("Unit L1 scroll-driven landing board", () => {
     );
     expect(page).toContain("WHAT LASSO DOES");
     expect(page).toContain("Three things a buyer asks for. Here is what each looks like.");
-    expect(page).toContain("See it in the story →");
-    expect(page).toContain("onClick={() => onJump(card.step)}");
-    expect(page).toContain('step: "workstreams"');
-    expect(page).toContain('step: "ask"');
-    expect(page).toContain('step: "canvas"');
-    expect(page).toContain("Push work in.");
-    expect(page).toContain("Chat with your work.");
-    expect(page).toContain("Every chat, on the record.");
+    expect(page).not.toContain("See it in the story");
+    expect(page).not.toContain("onClick={() => onJump(card.step)}");
+    expect(page).toContain("Connect every tool over MCP.");
+    expect(page).toContain("All your work becomes context.");
+    expect(page).toContain("Every AI conversation, searchable.");
+    expect(page).toContain("All your work tools and AI chats, connected once.");
+    expect(page).toContain(
+      "Ask about the whole process, from research in ChatGPT to the final deck.",
+    );
+    expect(page).toContain("One view of the chats that mattered, so you can find them later.");
     expect(page).toContain("Watch one engagement, start to finish.");
   });
   it("maps every board tool to an official asset or Simple Icons path", () => {
@@ -270,7 +272,7 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(page).toContain('className="lb-read-dot"');
   });
   it("keeps the active caption visible and locks jump state", () => {
-    expect(page).toContain("<StoryCaption step={active} nonce={attentionNonce}");
+    expect(page).toContain("step={settledStep}");
     expect(page).toContain("data-step={index + 1}");
     expect(page).toContain("if (jumpTarget.current !== null) return;");
     expect(page).toContain('activate(index, "jump", true)');
@@ -351,7 +353,8 @@ describe("Unit L1 scroll-driven landing board", () => {
     const css = readFileSync("src/styles.css", "utf8");
     expect(page).toContain("getBoundingClientRect()");
     expect(page).toContain('event.propertyName === "transform"');
-    expect(page).toContain("new MutationObserver");
+    expect(page).toContain("boxesMatch(current, next)");
+    expect(page).toContain("boxesMatch(current, nextLassoBox)");
     expect(page).toContain("[data-testid=landing-proof-card]");
     expect(page).toContain("measureFrameRef.current = window.requestAnimationFrame(tick)");
     expect(page).toContain("sourceRect.width <= 0 || sourceRect.height <= 0");

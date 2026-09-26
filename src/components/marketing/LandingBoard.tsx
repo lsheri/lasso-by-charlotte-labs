@@ -1293,7 +1293,6 @@ function PhoneStory({
   onOpenTurn,
   onOpenDecisionTurn,
   onUseCasePlayed,
-  onUseCaseJump,
 }: {
   board: SharedBoardDto;
   presets: DemoPreset[];
@@ -1307,7 +1306,6 @@ function PhoneStory({
   onOpenTurn: () => void;
   onOpenDecisionTurn: () => void;
   onUseCasePlayed: (key: UseCaseKey, inputMode: "hover" | "tap") => void;
-  onUseCaseJump: (key: StepKey) => void;
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const proofModel = proof ? parseLandingProof(proof) : null;
@@ -1386,7 +1384,6 @@ function PhoneStory({
         id="lb-phone-usecases"
         phone
         onPlayed={onUseCasePlayed}
-        onJump={onUseCaseJump}
       />
       {LANDING_BOARD_STEPS.slice(1).map((step, itemIndex) => {
         const index = itemIndex + 1;
@@ -2670,7 +2667,6 @@ export function LandingBoard() {
               event(viewId.current, "landing.proof_link_opened", { step: "7", target: "turn" })
             }
             onUseCasePlayed={noteUseCasePlayed}
-            onUseCaseJump={jump}
           />
         ) : (
           <div className="lb-phone-loading">
