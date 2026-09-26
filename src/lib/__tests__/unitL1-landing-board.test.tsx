@@ -295,7 +295,7 @@ describe("Unit L1 scroll-driven landing board", () => {
       "<ExactTurn board={board} preset={second} onOpenTurn={onOpenDecisionTurn} phone />",
     );
     expect(css).toContain("scroll-snap-type: y mandatory");
-    expect(css).toContain("padding-bottom: calc(124px + env(safe-area-inset-bottom, 0px))");
+    expect(css).toContain("padding-bottom: calc(124px + env(safe-area-inset-bottom, 0px));");
     expect(css).toContain("scroll-margin-top: calc(var(--lb-header-h) + 12px)");
     expect(page).toMatch(/surface: "landing-board",\s*input_mode:/);
   });
