@@ -204,3 +204,8 @@
 - [x] `/demo` now renders a local sandbox built from Canvas Lab frames, cards, stickies, connectors, model adapter, canvas gestures and zoom controls.
 - [x] The workboard shell includes demo sidebar, engagement chrome, reset banner, finished deck art and phone Ask sheet.
 - [x] All play mutations remain component state only and preserve the existing demo event vocabulary and reset behavior.
+
+### Unit P2.1 framing polish
+- [x] Fit the finished board to the available canvas on load and after every reset, capped at 100%.
+- [x] Remove the deck's slide-notes suffix, stack narrow proof actions, and clear the hint below the toolbar.
+- [x] Verify zoom, proof labels, and deck title at 1372x732 and 1512x807.

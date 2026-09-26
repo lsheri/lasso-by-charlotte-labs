@@ -6,7 +6,7 @@ import { LabFrame as LabFrameElement } from "@/components/canvas-lab/LabFrame";
 import { LabRelationships } from "@/components/canvas-lab/LabRelationships";
 import { LabSticky, stickyBodyOf } from "@/components/canvas-lab/LabSticky";
 import { buildSharedBoardModel } from "@/components/canvas-lab/SharedBoardView";
-import { type LabFrame, type LabLink, type LabNode, type LabResizeCorner, labInverseZoom, stageBounds } from "@/components/canvas-lab/canvas-lab-model";
+import { fitWorkboardViewport, type LabFrame, type LabLink, type LabNode, type LabResizeCorner, labInverseZoom, stageBounds } from "@/components/canvas-lab/canvas-lab-model";
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
 import { GraphiteIcon } from "@/components/notebook/icons";
 import { LandingDemoDeck, PlaygroundProofCard, PlaygroundReplayAnswer } from "@/components/marketing/LandingBoard";
@@ -33,16 +33,34 @@ function itemMap(board: SharedBoardDto) {
   return new Map(board.seed.work.map((item) => [item.id, item]));
 }
 
+function demoTitle(title: string): string {
+  return title.replace(/\s*\(slide notes\)\s*/i, "").trim();
+}
+
+function fittedDemoView(viewport: HTMLDivElement | null, frames: LabFrame[], nodes: LabNode[]) {
+  if (!viewport) return { zoom: 1, pan: { x: 0, y: 82 } };
+  const toolbarClearance = 82;
+  const fit = fitWorkboardViewport(
+    { width: Math.max(320, viewport.clientWidth), height: Math.max(280, viewport.clientHeight - toolbarClearance) },
+    frames,
+    nodes,
+    new Map(),
+    null,
+    40,
+  );
+  return { zoom: Math.min(1, fit.zoom), pan: { x: fit.pan.x, y: fit.pan.y + toolbarClearance } };
+}
+
 function finishedModel(board: SharedBoardDto): { frames: LabFrame[]; nodes: LabNode[]; links: LabLink[] } {
   const model = buildSharedBoardModel(board);
   const tasks = board.seed.tasks.filter((task) => !/board deck/i.test(task.name)).slice(0, 2);
   const frames = tasks.map((task, index): LabFrame => ({
     id: `task:${task.id}`,
     name: task.name,
-    x: index === 0 ? 80 : 560,
-    y: 130,
-    width: 420,
-    height: 610,
+    x: index === 0 ? 30 : 330,
+    y: 110,
+    width: 280,
+    height: 540,
   }));
   const counts = new Map<string, number>();
   const nodes: LabNode[] = model.nodes.flatMap<LabNode>((node) => {
@@ -50,7 +68,7 @@ function finishedModel(board: SharedBoardDto): { frames: LabFrame[]; nodes: LabN
     const item = board.seed.work.find((entry) => entry.id === node.workItemId);
     if (!item) return [];
     const deliverable = node.deliverable || /board deck/i.test(item.title);
-    if (deliverable) return [{ ...node, id: `demo:${node.id}`, frame: null, x: 1050, y: 170, width: 380, height: 310, deliverable: true }];
+    if (deliverable) return [{ ...node, id: `demo:${node.id}`, title: demoTitle(node.title), frame: null, x: 630, y: 130, width: 270, height: 290, deliverable: true }];
     const taskIndex = tasks.findIndex((task) => (item.placedIn ?? item.taskIds ?? []).includes(task.id));
     const picked = Math.max(0, taskIndex);
     const frame = frames[picked];
@@ -58,14 +76,14 @@ function finishedModel(board: SharedBoardDto): { frames: LabFrame[]; nodes: LabN
     const slot = counts.get(frame.id) ?? 0;
     counts.set(frame.id, slot + 1);
     if (slot >= 3) return [];
-    return [{ ...node, id: `demo:${node.id}`, frame: frame.id, x: frame.x + 28, y: frame.y + 62 + slot * 168, width: 364, height: 140 }];
+    return [{ ...node, id: `demo:${node.id}`, frame: frame.id, x: frame.x + 22, y: frame.y + 62 + slot * 154, width: 236, height: 130 }];
   });
   const deck = nodes.find((node) => node.deliverable);
   const source = nodes.find((node) => !node.deliverable && /partnership|scenario/i.test(node.title)) ?? nodes.find((node) => !node.deliverable);
   const links: LabLink[] = source && deck ? [{ id: "demo-proof-link", fromId: source.id, toId: deck.id, fromAnchor: "right", toAnchor: "left" }] : [];
   const stickies: LabNode[] = [
-    { id: "demo-open-1", kind: "sticky", frame: null, title: "Sticky", summary: "Confirm the vendor extension assumption.", typeLabel: "Sticky", ownership: "draft", local: true, stickyFill: "yellow", textSize: "body", textWeight: "regular", textColour: "ink", x: 1060, y: 535, width: 188, height: 132 },
-    { id: "demo-open-2", kind: "sticky", frame: null, title: "Sticky", summary: "Confirm approval by Oct 1.", typeLabel: "Sticky", ownership: "draft", local: true, stickyFill: "yellow", textSize: "body", textWeight: "regular", textColour: "ink", x: 1270, y: 565, width: 174, height: 120 },
+    { id: "demo-open-1", kind: "sticky", frame: null, title: "Sticky", summary: "Confirm the vendor extension assumption.", typeLabel: "Sticky", ownership: "draft", local: true, stickyFill: "yellow", textSize: "body", textWeight: "regular", textColour: "ink", x: 630, y: 465, width: 125, height: 120 },
+    { id: "demo-open-2", kind: "sticky", frame: null, title: "Sticky", summary: "Confirm approval by Oct 1.", typeLabel: "Sticky", ownership: "draft", local: true, stickyFill: "yellow", textSize: "body", textWeight: "regular", textColour: "ink", x: 775, y: 485, width: 125, height: 120 },
   ];
   return { frames, nodes: [...nodes, ...stickies], links };
 }
@@ -100,7 +118,7 @@ export function DemoWorkboardSandbox({ board, presets, proof, clientLabel, engag
   const [frames, setFrames] = useState<LabFrame[]>(initial.frames);
   const [nodes, setNodes] = useState<LabNode[]>(initial.nodes);
   const [links] = useState(initial.links);
-  const [view, setView] = useState({ zoom: .68, pan: { x: 12, y: 8 } });
+  const [view, setView] = useState({ zoom: 1, pan: { x: 0, y: 82 } });
   const [selected, setSelected] = useState<string | null>(null);
   const [drag, setDrag] = useState<DragState | null>(null);
   const [resize, setResize] = useState<ResizeState | null>(null);
@@ -125,6 +143,7 @@ export function DemoWorkboardSandbox({ board, presets, proof, clientLabel, engag
     clearTimer();
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     setResetting(!reduced); setFrames(initial.frames); setNodes(initial.nodes); setSelected(null); setResetAt(null); setRemaining(5);
+    setView(fittedDemoView(viewportRef.current, initial.frames, initial.nodes));
     if (!reduced) window.setTimeout(() => setResetting(false), 600);
     emit(automatic ? "reset_auto" : "reset_manual");
   }, [clearTimer, emit, initial]);
@@ -139,12 +158,7 @@ export function DemoWorkboardSandbox({ board, presets, proof, clientLabel, engag
   useLayoutEffect(() => {
     const viewport = viewportRef.current;
     if (!viewport) return;
-    const fit = () => {
-      const width = Math.max(320, viewport.clientWidth);
-      const height = Math.max(280, viewport.clientHeight);
-      const zoom = clampZoom(Math.min((width - 40) / 1500, (height - 40) / 800));
-      setView({ zoom, pan: { x: 20, y: 20 } });
-    };
+    const fit = () => setView(fittedDemoView(viewport, initial.frames, initial.nodes));
     fit();
     const observer = new ResizeObserver(fit); observer.observe(viewport); return () => observer.disconnect();
   }, []);
@@ -214,7 +228,7 @@ export function DemoWorkboardSandbox({ board, presets, proof, clientLabel, engag
       <header className="demo-workboard-header"><div><p>YSM-01 · WORKBOARD</p><h1>{engagementTitle}</h1></div></header>
       <div className="demo-workboard-row">
         <section className="demo-workboard-board" aria-label="Workboard">
-          {hint ? <p className="demo-play-hint">Drag anything. Add a sticky. It all goes back in 5 seconds.</p> : null}
+          <p className="demo-play-hint" data-visible={hint}>Drag anything. Add a sticky. It all goes back in 5 seconds.</p>
           <div className="demo-workboard-toolbar" aria-label="Board tools"><Button size="sm" variant="outline" onClick={addSticky}><GraphiteIcon name="sticky" />Add sticky</Button><Button size="sm" variant="outline" onClick={() => setAskOpen((open) => !open)}><GraphiteIcon name="ask-lasso" />Ask Lasso</Button><Button size="sm" variant="outline" onClick={() => resetBoard(false)}><GraphiteIcon name="history" />Reset</Button>{resetAt && !drag && !resize && !editing ? <span className="demo-reset-countdown"><i style={{ "--demo-reset-progress": `${remaining / 5}` } as CSSProperties} />Back to the finished board in {remaining}s</span> : null}</div>
           <div ref={viewportRef} className="canvas-lab-surface demo-sandbox-viewport" data-testid="canvas-lab-viewport" onPointerDown={(event) => { if (event.target !== event.currentTarget) return; touchRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY }); panRef.current = { from: { x: event.clientX, y: event.clientY }, origin: view.pan }; event.currentTarget.setPointerCapture?.(event.pointerId); }} onPointerMove={moveGesture} onPointerUp={endGesture} onPointerCancel={endGesture} onWheel={(event) => { event.preventDefault(); if (event.ctrlKey || event.metaKey) { const rect = event.currentTarget.getBoundingClientRect(); const next = workboardPinchZoom(view.zoom, event.deltaY, event.deltaMode); setView((current) => ({ zoom: next, pan: zoomAbout(current.pan, current.zoom, next, { x: event.clientX - rect.left, y: event.clientY - rect.top }) })); } else { const delta = wheelPanVector(event); setView((current) => ({ ...current, pan: { x: current.pan.x - delta.x, y: current.pan.y - delta.y } })); } }}>
             <div className="canvas-lab-stage demo-sandbox-stage" data-testid="canvas-lab-stage" style={{ width: Math.max(bounds.width, 1500), height: Math.max(bounds.height, 820), transform: `translate(${view.pan.x}px, ${view.pan.y}px) scale(${view.zoom})`, "--lab-inverse-zoom": labInverseZoom(view.zoom) } as CSSProperties}>
@@ -222,13 +236,14 @@ export function DemoWorkboardSandbox({ board, presets, proof, clientLabel, engag
               <svg className="canvas-lab-relationships pointer-events-none absolute inset-0 overflow-visible" width={Math.max(bounds.width, 1500)} height={Math.max(bounds.height, 820)} aria-hidden="true"><LabRelationships links={links} nodes={nodes} measuredHeights={heightMap} selectedLinkId={null} inverseZoom={labInverseZoom(view.zoom)} onSelect={noop} /></svg>
               {nodes.filter((node) => node.kind === "sticky").map((node) => <LabSticky key={node.id} node={node} selected={selected === node.id} editable layoutEditable onSelect={() => setSelected(node.id)} onDragStart={(event) => beginNodeDrag(event, node.id)} onResizeStart={(corner, event) => beginResize(node, corner, event)} onResizeKeyDown={noop} onResizeKeyUp={noop} onChange={(body) => changeSticky(node.id, body)} onCommit={(body, field) => { changeSticky(node.id, body); if (field === "text") emit("sticky_edited"); setEditing(false); scheduleReset(); }} onRemove={() => removeSticky(node.id)} />)}
               {nodes.filter((node) => node.kind !== "sticky").map((node) => {
-                const item = node.workItemId ? items.get(node.workItemId) : undefined;
+                const sourceItem = node.workItemId ? items.get(node.workItemId) : undefined;
+                const item = sourceItem && node.deliverable ? { ...sourceItem, title: demoTitle(sourceItem.title) } : sourceItem;
                 return <LabCard key={node.id} node={node} item={item} preview={item ? board.cardPreviews[item.id] : undefined} filePreview={item ? board.filePreviews[item.id] : undefined} selected={selected === node.id} focused={selected === node.id} connecting={false} connectSourceAnchor={null} onSelect={() => setSelected(node.id)} onOpen={noop} onBranch={noop} onHide={noop} onDelete={noop} onEdit={noop} onEditCommitted={noop} onAnchorPointerDown={noop} onAnchorActivate={noop} onMenuOpened={noop} onMenuOpenChange={noop} onMeasure={noop} onPointerDown={(event) => beginNodeDrag(event, node.id)} onFocus={() => setSelected(node.id)} onKeyDown={noop} canResize onResizeStart={(corner, event) => beginResize(node, corner, event)} onFit={noop} onResizeKeyDown={noop} onResizeKeyUp={noop} frameChoices={[]} structured={false} onMoveToFrame={noop} />;
               })}
               {deck ? <div className="demo-sandbox-deck-art" style={{ left: deck.x + 12, top: deck.y + 54, width: deck.width - 24 }} aria-label="Designed board deck thumbnails"><LandingDemoDeck clientName={clientLabel} proof={proof ? parseLandingProof(proof) : null} /></div> : null}
             </div>
           </div>
-          <div className="demo-workboard-zoom" aria-label="Zoom controls"><Button size="icon" variant="outline" aria-label="Zoom out" onClick={() => setView((current) => ({ ...current, zoom: stepZoom(current.zoom, "out") }))}><GraphiteIcon name="minus" /></Button><span>{Math.round(view.zoom * 100)}%</span><Button size="icon" variant="outline" aria-label="Zoom in" onClick={() => setView((current) => ({ ...current, zoom: stepZoom(current.zoom, "in") }))}><GraphiteIcon name="plus" /></Button><Button size="icon" variant="outline" aria-label="Fit board" onClick={() => setView({ zoom: .68, pan: { x: 12, y: 8 } })}><GraphiteIcon name="fit" /></Button></div>
+          <div className="demo-workboard-zoom" aria-label="Zoom controls"><Button size="icon" variant="outline" aria-label="Zoom out" onClick={() => { setHint(false); setView((current) => ({ ...current, zoom: stepZoom(current.zoom, "out") })); }}><GraphiteIcon name="minus" /></Button><span>{Math.round(view.zoom * 100)}%</span><Button size="icon" variant="outline" aria-label="Zoom in" onClick={() => { setHint(false); setView((current) => ({ ...current, zoom: stepZoom(current.zoom, "in") })); }}><GraphiteIcon name="plus" /></Button><Button size="icon" variant="outline" aria-label="Fit board" onClick={() => { setHint(false); setView(fittedDemoView(viewportRef.current, frames, nodes)); }}><GraphiteIcon name="fit" /></Button></div>
         </section>
         <DemoAskRail presets={presets} proof={proof} engagementTitle={engagementTitle} open={askOpen} onOpenChange={setAskOpen} emit={emit} />
       </div>

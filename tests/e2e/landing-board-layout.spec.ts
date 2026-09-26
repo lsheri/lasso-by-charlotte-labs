@@ -46,6 +46,27 @@ for (const viewport of [{ width: 1372, height: 732 }, { width: 390, height: 844 
   });
 }
 
+for (const viewport of desktopSizes) {
+  test(`playable demo fits readable content at ${viewport.width}x${viewport.height}`, async ({ browser }) => {
+    const context = await browser.newContext({ viewport, reducedMotion: "no-preference" });
+    const page = await context.newPage();
+    await page.goto("/demo", { waitUntil: "domcontentloaded" });
+    const zoomText = page.locator(".demo-workboard-zoom span");
+    await expect.poll(async () => Number((await zoomText.textContent())?.replace("%", "") ?? 0)).toBeGreaterThanOrEqual(80);
+    const proofButtons = page.locator(".demo-sandbox-ask .lb-proof-actions a, .demo-sandbox-ask .lb-proof-actions button");
+    await expect(proofButtons).toHaveCount(2);
+    for (const button of await proofButtons.all()) {
+      expect(await button.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+    }
+    await expect(page.locator('[data-testid^="lab-card-demo:"]').filter({ hasText: "slide notes" })).toHaveCount(0);
+    await expect(page.getByText("(slide notes)", { exact: false })).toHaveCount(0);
+    await page.getByRole("button", { name: "Zoom out" }).click();
+    await page.getByRole("button", { name: "Reset", exact: true }).click();
+    await expect.poll(async () => Number((await zoomText.textContent())?.replace("%", "") ?? 0)).toBeGreaterThanOrEqual(80);
+    await context.close();
+  });
+}
+
 for (const viewport of [{ width: 1372, height: 732 }, { width: 390, height: 844 }]) {
   test(`playable demo restores a dragged card at ${viewport.width}x${viewport.height}`, async ({ browser }) => {
     test.setTimeout(30_000);
