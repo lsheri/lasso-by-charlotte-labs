@@ -1,6 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { LabPaper } from "@/components/canvas-lab/LabPaper";
-import { EXAMPLE_NODES } from "@/components/canvas-lab/example-board";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -27,6 +25,8 @@ import { AnswerTurnLinks } from "@/components/reflect/AnswerTurnLinks";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { VendorMark } from "@/components/work/SourceMark";
+import finishedWorkboardAsset from "@/assets/landing-finished-workboard.png.asset.json";
+import lovableLogoAsset from "@/assets/lovable-logo.png.asset.json";
 import { openDemoBoardFn } from "@/lib/demo.functions";
 import type { DemoPreset } from "@/lib/demo-presets-shared";
 import { submitPilotRequestFn } from "@/lib/pilot-request.functions";
@@ -1930,37 +1930,33 @@ function StoryBoard({
   );
 }
 
-const HERO_RAIL_IDS = {
-  left: ["example-brief", "example-volumes", "example-judgment"],
-  right: ["example-decision", "example-deck"],
-} as const;
-const railNoop = () => {};
+const HERO_ASSEMBLE_CARDS = [
+  { tool: "chatgpt", label: "Chair terms" },
+  { tool: "claude", label: "Rate build" },
+  { tool: "gemini", label: "Board readout" },
+  { tool: "lovable", label: "Client brief" },
+  { tool: "googledrive", label: "Pricing approach" },
+] as const;
 
-/** Inert decoration: real LabPaper faces from the example seed, never interactive. */
-function HeroRails() {
-  const pick = (ids: readonly string[]) =>
-    ids.flatMap((id) => {
-      const node = EXAMPLE_NODES.find((n) => n.id === id);
-      return node ? [{ ...node, local: false, width: 220, height: 136 }] : [];
-    });
+/** Inert desktop decoration showing scattered AI work settling onto a finished board. */
+function HeroAssemble() {
   return (
-    <div className="lb-hero-rails" aria-hidden="true" inert>
-      {(["left", "right"] as const).map((side) => (
-        <div key={side} className="lb-hero-rail" data-side={side}>
-          {pick(HERO_RAIL_IDS[side]).map((node, index) => (
-            <div key={node.id} className="lb-hero-rail-card" data-index={index}>
-              <LabPaper
-                node={node}
-                selected={false}
-                onEdit={railNoop}
-                onEditCommitted={railNoop}
-                showOwnership={false}
-              />
+    <div className="lb-hero-assemble" aria-hidden="true" inert>
+      <img className="lb-hero-assemble-board" src={finishedWorkboardAsset.url} alt="" />
+      <div className="lb-hero-assemble-cards">
+        {HERO_ASSEMBLE_CARDS.map((card, index) => (
+          <article key={card.tool} className="lb-hero-chat" data-card={index + 1}>
+            <div className="lb-hero-chat-tool">
+              {card.tool === "lovable" ? (
+                <img src={lovableLogoAsset.url} alt="" />
+              ) : null}
+              <ToolLogo vendor={card.tool} compact />
             </div>
-          ))}
-          <span className="lb-hero-rail-link" />
-        </div>
-      ))}
+            <strong>{card.label}</strong>
+            <span /><span /><span />
+          </article>
+        ))}
+      </div>
     </div>
   );
 }
@@ -2618,9 +2614,9 @@ export function LandingBoard() {
                   ONE INFINITE CANVAS WHERE YOUR AI WORK, AND THE THINKING BEHIND IT, LIVES
                 </p>
               </div>
+              <HeroAssemble />
             </div>
           </div>
-          <HeroRails />
           <div
             className="lb-scroll-cue"
             data-visible={active === 0 ? "true" : "false"}
