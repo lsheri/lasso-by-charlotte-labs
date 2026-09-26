@@ -24,6 +24,7 @@ afterEach(() => {
 describe("Unit 6 demo plus landing", () => {
   it("keeps the signed-in redirect and renders the shared demo on both public entrances", () => {
     expect(INDEX).toContain('if (data.user) throw redirect({ to: "/home" })');
+    expect(INDEX).toContain("<LandingBoard />");
     expect(LANDING).toContain('<DemoHomeWorkspace surface="landing" />');
     expect(DEMO_PAGE).toContain('<DemoHomeWorkspace surface="home" />');
     expect(DEMO_ROUTE).toContain("DemoPlaygroundPage");

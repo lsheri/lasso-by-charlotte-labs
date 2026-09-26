@@ -7,12 +7,14 @@ import { publicSafeWork } from "../public-work-allowlist";
 
 const page = readFileSync("src/components/marketing/LandingBoard.tsx", "utf8");
 const route = readFileSync("src/routes/landing-board.tsx", "utf8");
+const home = readFileSync("src/routes/index.tsx", "utf8");
 
 describe("Unit L1 scroll-driven landing board", () => {
-  it("is an isolated public noindex route", () => {
+  it("is the signed-out home while the old path redirects with its hash", () => {
     expect(route).toContain('createFileRoute("/landing-board")');
-    expect(route).toContain("noindex, nofollow");
-    expect(route).not.toContain("beforeLoad");
+    expect(route).toContain('redirect({ to: "/", ...(hash ? { hash } : {}), replace: true })');
+    expect(home).toContain("<LandingBoard />");
+    expect(home).toContain('if (data.user) throw redirect({ to: "/home" })');
   });
   it("loads YSM-01 only through the public demo function", () => {
     expect(page).toContain("openDemoBoardFn");
