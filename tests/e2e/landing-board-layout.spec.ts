@@ -322,7 +322,7 @@ for (const viewport of [{ width: 1372, height: 732 }]) {
     const context = await browser.newContext({ viewport, reducedMotion: "no-preference" });
     const page = await context.newPage();
     await page.goto("/", { waitUntil: "networkidle" });
-    await expect(page.getByTestId("landing-scroll-cue")).toHaveCount(0);
+    await expect(page.getByTestId("landing-scroll-cue")).toHaveCount(1);
     await page.getByRole("button", { name: "Watch it work", exact: true }).click();
     await expect(page.locator("#usecases")).toBeInViewport();
     await page.goto("/", { waitUntil: "networkidle" });

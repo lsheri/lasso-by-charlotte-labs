@@ -2515,6 +2515,32 @@ export function LandingBoard() {
     };
   }, [activate]);
 
+  // R6 focus rule: one hero zone in focus at a time, with hysteresis so small
+  // scrolls settle in one state. Render state only, no events.
+  const [heroFocus, setHeroFocus] = useState<1 | 2>(1);
+  useEffect(() => {
+    if (window.matchMedia("(max-width: 639px)").matches) return;
+    const ENTER_ZONE_2 = 160;
+    const RETURN_ZONE_1 = 80;
+    let frame = 0;
+    const read = () => {
+      frame = 0;
+      const y = window.scrollY;
+      setHeroFocus((current) =>
+        current === 1 ? (y > ENTER_ZONE_2 ? 2 : 1) : y < RETURN_ZONE_1 ? 1 : 2,
+      );
+    };
+    const onScroll = () => {
+      if (!frame) frame = window.requestAnimationFrame(read);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    read();
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, []);
+
   const activatePhone = useCallback((stop: number) => {
     setPhoneStop(stop);
     if (stop === 1) return;
@@ -2574,8 +2600,16 @@ export function LandingBoard() {
         onJump={jump}
       />
       <main className="lb-story">
-        <section className="lb-desktop-hero" aria-labelledby="lb-home-title">
+        <section
+          className="lb-desktop-hero"
+          aria-labelledby="lb-home-title"
+          data-hero-focus={heroFocus}
+          onFocus={(focusEvent) => {
+            if ((focusEvent.target as HTMLElement).closest(".lb-hero-zone-1")) setHeroFocus(1);
+          }}
+        >
           <div className="lb-hero-copy">
+            <LassoThinkingMark kind="signature" size={150} />
             <div>
               <h1 id="lb-home-title">
                 Your firm bought AI.{" "}
@@ -2587,7 +2621,7 @@ export function LandingBoard() {
                 the work across tools to the client deliverable and keeps the decisions your team
                 made, so they can show where a claim came from and why it stayed.
               </h2>
-              <div>
+              <div className="lb-hero-zone-1">
                 <Button onClick={jumpToUseCases}>Watch it work</Button>
                 <Button asChild variant="outline">
                   <Link
@@ -2607,7 +2641,33 @@ export function LandingBoard() {
                   </a>
                 </Button>
               </div>
-              <HeroAssemble />
+              <div className="lb-hero-stage">
+                <HeroAssemble />
+                <div
+                  className="lb-scroll-cue"
+                  data-visible={active === 0 ? "true" : "false"}
+                  data-testid="landing-scroll-cue"
+                  aria-hidden={active !== 0}
+                >
+                  <span className="lb-scroll-cue-rail" />
+                  <span className="lb-scroll-cue-num">
+                    1
+                    <svg viewBox="0 0 40 40" className="lb-scroll-cue-ring" aria-hidden="true">
+                      <path d="M20 4c9 0 16 6 16 15s-7 17-17 17S4 29 4 20 11 5 21 5" />
+                    </svg>
+                  </span>
+                  <span className="lb-scroll-cue-label">
+                    {heroFocus === 1 ? "Scroll to learn more" : "Start here"}
+                  </span>
+                  <span className="lb-scroll-cue-head">Watch one engagement, start to finish.</span>
+                  <span className="lb-scroll-cue-micro">
+                    SCROLL
+                    <svg viewBox="0 0 16 10" aria-hidden="true">
+                      <path d="m2 2 6 6 6-6" />
+                    </svg>
+                  </span>
+                </div>
+              </div>
               <p className="micro-label lb-hero-assemble-caption" aria-hidden="true">CHATS FROM EVERY TOOL, ON ONE BOARD</p>
               <div className="lb-hero-line">
                 <p className="micro-label">{"\n"}</p>
