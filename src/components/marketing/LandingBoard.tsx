@@ -812,12 +812,6 @@ function UseCaseSection({ id = "usecases", phone = false, onPlayed, onJump }: { 
 function LandingBoardContinuation({ viewId, onPilot }: { viewId: string; onPilot: (placement: string) => void }) {
   const submitPilot = useServerFn(submitPilotRequestFn);
   const [state, setState] = useState<"idle" | "sending" | "sent" | "error">("idle");
-  const playedCards = useRef(new Set<UseCaseKey>());
-  function noteUseCasePlayed(card: UseCaseKey, inputMode: "hover" | "tap") {
-    if (playedCards.current.has(card)) return;
-    playedCards.current.add(card);
-    event(viewId, "landing.usecase_played", { card, input_mode: inputMode });
-  }
   async function submit(eventValue: FormEvent<HTMLFormElement>) {
     eventValue.preventDefault();
     setState("sending");
@@ -846,6 +840,7 @@ export function LandingBoard() {
   const [active, setActive] = useState(0);
   const [settledStep, setSettledStep] = useState(0);
   const [attentionNonce, setAttentionNonce] = useState(0);
+  const [phoneStop, setPhoneStop] = useState(0);
   const activeRef = useRef(0);
   const transitioning = useRef(false);
   const queued = useRef<{ index: number; input: StoryInput } | null>(null);
@@ -853,6 +848,7 @@ export function LandingBoard() {
   const seen = useRef(new Set<string>());
   const settleTimer = useRef<number | null>(null);
   const transitionTimer = useRef<number | null>(null);
+  const playedCards = useRef(new Set<UseCaseKey>());
 
   useEffect(() => { event(viewId.current, "landing.viewed", { variant: "b2b", surface: "landing-board", input_mode: window.matchMedia("(max-width: 639px)").matches ? "scroll" : "scroll" }); }, []);
   const settle = useCallback((index: number, inputMode: StoryInput) => {
@@ -906,7 +902,7 @@ export function LandingBoard() {
       frame = 0;
       if (jumpTarget.current !== null) return;
       const threshold = window.innerHeight * 0.55;
-      let latest = 0;
+      let latest = 1;
       for (const section of sections) {
         if (section.getBoundingClientRect().top <= threshold) latest = Number(section.dataset["lbStep"] ?? latest);
       }
@@ -924,7 +920,10 @@ export function LandingBoard() {
     };
   }, [activate]);
 
-  const activatePhone = useCallback((index: number) => {
+  const activatePhone = useCallback((stop: number) => {
+    setPhoneStop(stop);
+    if (stop === 1) return;
+    const index = stop === 0 ? 0 : stop - 1;
     activeRef.current = index;
     setActive(index);
     setSettledStep(index);
@@ -950,28 +949,41 @@ export function LandingBoard() {
       jumpTarget.current = null;
     }, 120);
   }
+  function noteUseCasePlayed(card: UseCaseKey, inputMode: "hover" | "tap") {
+    if (playedCards.current.has(card)) return;
+    playedCards.current.add(card);
+    event(viewId.current, "landing.usecase_played", { card, input_mode: inputMode });
+  }
+  function jumpToUseCases() {
+    const id = window.matchMedia("(max-width: 639px)").matches ? "lb-phone-usecases" : "usecases";
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
   function pilot(placement: string) { event(viewId.current, "landing.pilot_cta_clicked", { placement }); }
   const result = query.data;
   return (
     <div className="landing-board-page">
-      <LandingBoardHeader active={LANDING_BOARD_STEPS[active]?.key ?? "problem"} onJump={jump} onPilot={() => pilot("header")} />
+      <LandingBoardHeader active={LANDING_BOARD_STEPS[active]?.key ?? "problem"} phoneStop={phoneStop} onJump={jump} onPilot={() => pilot("header")} />
       <main className="lb-story">
-        <div className="lb-sticky-stage">
-          {result?.status === "open" && "board" in result ? <StoryBoard board={result.board} presets={result.presets} proof={result.proof} step={active} attentionStep={settledStep} attentionNonce={attentionNonce} clientLabel={result.engagement.clientLabel ?? ""} engagementTitle={result.engagement.title} onShowSlide={() => { event(viewId.current, "landing.proof_link_opened", { step: "6", target: "slide" }); jump("circle"); }} onOpenTurn={() => event(viewId.current, "landing.proof_link_opened", { step: "6", target: "turn" })} onOpenDecisionTurn={() => event(viewId.current, "landing.proof_link_opened", { step: "7", target: "turn" })} /> : <div className="lb-stage-window lb-loading">{query.isPending ? "Opening the demo board." : "The demo board is not available right now."}</div>}
-          <StoryCaption step={active} nonce={attentionNonce} onPilot={() => pilot("try_it")} />
+        <section className="lb-desktop-hero" aria-labelledby="lb-home-title"><div className="lb-hero-copy"><LassoThinkingMark kind="signature" size={150} /><div><h1 id="lb-home-title">Your firm bought AI. <LandingParticlePhrase text="The human judgment, process, and thinking" /> in your team's work went invisible.</h1><h2>Lasso is the reasoning and judgment layer for AI-assisted consulting. It connects the work across tools to the client deliverable and keeps the decisions your team made, so they can show where a claim came from and why it stayed.</h2><div><Button onClick={jumpToUseCases}>Watch it work</Button><Button asChild variant="outline"><Link to="/demo" onClick={() => event(viewId.current, "landing.see_it_work_clicked", { location: "hero_workboard" })}>View a Workboard</Link></Button><Button asChild variant="outline"><a href="#pilot" onClick={() => pilot("hero")}>Book a pilot</a></Button></div></div></div>
           <div className="lb-scroll-cue" data-visible={active === 0 ? "true" : "false"} data-testid="landing-scroll-cue" aria-hidden={active !== 0}>
             <span>Scroll to watch it work</span>
             <svg viewBox="0 0 16 10" aria-hidden="true"><path d="m2 2 6 6 6-6" /></svg>
           </div>
-        </div>
-        <div className="lb-scroll-sections">
-          {LANDING_BOARD_STEPS.map((step, index) => (
+        </section>
+        <UseCaseSection onPlayed={noteUseCasePlayed} onJump={jump} />
+        <section className="lb-how-it-works"><div className="lb-how-it-works-head"><p className="micro-label">HOW IT WORKS</p><h2>Follow the work from source to deliverable.</h2></div>
+          <div className="lb-sticky-stage">
+            {result?.status === "open" && "board" in result ? <StoryBoard board={result.board} presets={result.presets} proof={result.proof} step={active} attentionStep={settledStep} attentionNonce={attentionNonce} clientLabel={result.engagement.clientLabel ?? ""} engagementTitle={result.engagement.title} onShowSlide={() => { event(viewId.current, "landing.proof_link_opened", { step: "6", target: "slide" }); jump("circle"); }} onOpenTurn={() => event(viewId.current, "landing.proof_link_opened", { step: "6", target: "turn" })} onOpenDecisionTurn={() => event(viewId.current, "landing.proof_link_opened", { step: "7", target: "turn" })} /> : <div className="lb-stage-window lb-loading">{query.isPending ? "Opening the demo board." : "The demo board is not available right now."}</div>}
+            <StoryCaption step={active} nonce={attentionNonce} onPilot={() => pilot("try_it")} />
+          </div>
+          <div className="lb-scroll-sections">
+          {LANDING_BOARD_STEPS.slice(1).map((step, itemIndex) => { const index = itemIndex + 1; return (
             <section id={`lb-${step.key}`} data-lb-step={index} key={step.key} className="lb-scroll-step">
-              {index === 0 ? <div className="lb-hero-copy"><LassoThinkingMark kind="signature" size={150} /><div><h1>Your firm bought AI. <LandingParticlePhrase text="The human judgment, process, and thinking" /> in your team's work went invisible.</h1><h2>Lasso is the reasoning and judgment layer for AI-assisted consulting. It connects the work across tools to the client deliverable and keeps the decisions your team made, so they can show where a claim came from and why it stayed.</h2><div><Button onClick={() => jump("canvas")}>Watch it work</Button><Button asChild variant="outline"><Link to="/demo" onClick={() => event(viewId.current, "landing.see_it_work_clicked", { location: "hero_workboard" })}>View a Workboard</Link></Button><Button asChild variant="outline"><a href="#pilot" onClick={() => pilot("hero")}>Book a pilot</a></Button></div></div></div> : null}
             </section>
-          ))}
-        </div>
-        {result?.status === "open" && "board" in result ? <PhoneStory board={result.board} presets={result.presets} proof={result.proof} clientLabel={result.engagement.clientLabel ?? ""} active={active} onActive={activatePhone} onWatch={() => jump("canvas")} onPilot={() => pilot("try_it")} onShowSlide={() => { event(viewId.current, "landing.proof_link_opened", { step: "6", target: "slide" }); jump("circle"); }} onOpenTurn={() => event(viewId.current, "landing.proof_link_opened", { step: "6", target: "turn" })} onOpenDecisionTurn={() => event(viewId.current, "landing.proof_link_opened", { step: "7", target: "turn" })} /> : <div className="lb-phone-loading">{query.isPending ? "Opening the demo board." : "The demo board is not available right now."}</div>}
+          ); })}
+          </div>
+        </section>
+        {result?.status === "open" && "board" in result ? <PhoneStory board={result.board} presets={result.presets} proof={result.proof} clientLabel={result.engagement.clientLabel ?? ""} active={phoneStop} onActive={activatePhone} onWatch={jumpToUseCases} onPilot={() => pilot("try_it")} onShowSlide={() => { event(viewId.current, "landing.proof_link_opened", { step: "6", target: "slide" }); jump("circle"); }} onOpenTurn={() => event(viewId.current, "landing.proof_link_opened", { step: "6", target: "turn" })} onOpenDecisionTurn={() => event(viewId.current, "landing.proof_link_opened", { step: "7", target: "turn" })} onUseCasePlayed={noteUseCasePlayed} onUseCaseJump={jump} /> : <div className="lb-phone-loading">{query.isPending ? "Opening the demo board." : "The demo board is not available right now."}</div>}
       </main>
       <div className="lb-phone-pilot" data-visible={active > 0 ? "true" : "false"}><Button asChild size="sm"><a href="#pilot" onClick={() => pilot("phone_bar")}>Book a pilot</a></Button></div>
       <LandingBoardContinuation viewId={viewId.current} onPilot={pilot} />
