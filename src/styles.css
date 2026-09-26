@@ -6063,7 +6063,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 }
 
 /* P2: the public sandbox uses the same workboard paper, frames, cards and geometry. */
-.demo-workboard-shell { height: 100dvh; display: grid; grid-template-columns: 216px minmax(0, 1fr); overflow: hidden; background: var(--nb-paper); color: var(--nb-ink); }
+.demo-workboard-shell { --lb-client-navy: var(--nb-ink); --lb-client-yellow: var(--nb-yellow-edge); --lb-client-white: var(--nb-white); --lb-client-grey: var(--nb-grey-2); height: 100dvh; display: grid; grid-template-columns: 216px minmax(0, 1fr); overflow: hidden; background: var(--nb-paper); color: var(--nb-ink); }
 .demo-sandbox-sidebar { z-index: 4; display: flex; min-height: 0; flex-direction: column; border-right: 1px solid var(--nb-rule); background: #f7f5ef; padding: 18px 12px; }
 .demo-sandbox-brand { display: flex; align-items: center; gap: 10px; padding: 0 8px 22px; font: 600 18px/1 var(--font-mono); letter-spacing: .16em; }.demo-sandbox-brand svg { width: 30px; height: 30px; color: var(--nb-green); }
 .demo-sandbox-person { display: flex; align-items: center; gap: 9px; border-block: 1px solid var(--nb-rule); padding: 14px 7px; }.demo-sandbox-person > span { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 50%; background: var(--nb-ink); color: white; font: 11px var(--font-mono); }.demo-sandbox-person strong,.demo-sandbox-person small { display: block; }.demo-sandbox-person strong { font-size: 12px; }.demo-sandbox-person small { margin-top: 2px; color: var(--nb-mid); font-size: 10px; }
