@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import type { SharedBoardDto, SharedSeedWork } from "../board-share-shared";

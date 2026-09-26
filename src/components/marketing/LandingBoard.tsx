@@ -60,7 +60,7 @@ function ToolIdentity({ tool, compact = false }: { tool: string; compact?: boole
   return <ToolLogo vendor={tool} compact={compact} />;
 }
 
-function BoardCard({ item, index, step, pin, read, turnCount, position, articleRef, proofSource }: { item: SharedSeedWork; index: number; step: number; pin: number | undefined; read: boolean; turnCount: number | null; position: { left: number; top: number }; articleRef?: RefObject<HTMLElement | null>; proofSource?: boolean }) {
+function BoardCard({ item, index, step, pin, read, turnCount, position, articleRef, proofSource }: { item: SharedSeedWork; index: number; step: number; pin: number | undefined; read: boolean; turnCount: number | null; position: { left: number; top: number }; articleRef?: RefObject<HTMLElement | null> | undefined; proofSource?: boolean | undefined }) {
   return (
     <article ref={articleRef} className={`lb-board-card${proofSource ? " lb-proof-source-card" : ""}`} data-arrived={step >= 1} style={{ "--lb-card-index": index, "--lb-card-left": `${position.left}px`, "--lb-card-top": `${position.top}px` } as CSSProperties}>
       <ToolLogo vendor={toolKey(item)} />
