@@ -39,7 +39,7 @@ export const LANDING_BOARD_STEPS = [
   { key: "deliverable", label: "Deliverable", headline: "Every workstream wired to the deliverable it fed.", line: "The finished deck stays connected to the work behind it." },
   { key: "circle", label: "Circle", headline: "A number worth asking about.", line: "Where did the $1.4M on slide 3 come from?" },
   { key: "ask", label: "Ask", headline: "Every number in the deck has a trail.", line: "Where it came from, what your team checked, what's still open. Open the chat and check it yourself." },
-  { key: "the-turn", label: "The turn", headline: "Hand-check the actual chat.", line: "The proof card opens turn 4 in context, with turns 2 through 6 highlighted." },
+  { key: "the-turn", label: "The turn", headline: "Hand-check the actual chat.", line: "The full chat, with the decision highlighted. Open it and read it yourself." },
   { key: "still-open", label: "Still open", headline: "And what's still open, pinned where it came from.", line: "Questions stay beside the work that raised them." },
   { key: "share", label: "Share", headline: "Share the deliverable, not the drafts.", line: "A read-only view closes in 48 hours and opens only what you chose." },
   { key: "try-it", label: "Try it", headline: "Your turn.", line: "Open the invented workspace and inspect the board yourself." },
@@ -205,6 +205,10 @@ function ProofCard({ proof, model, onShowSlide, onOpenTurn, returnTo = "story" }
   );
 }
 
+export function PlaygroundProofCard({ proof, model, emit }: { proof: LandingProof; model: LandingProofModel; emit: (action: DemoPlayAction) => void }) {
+  return <ProofCard proof={proof} model={model} returnTo="demo" onOpenTurn={() => emit("proof_link_opened")} onShowSlide={() => emit("proof_link_opened")} />;
+}
+
 type PlaygroundPosition = { x: number; y: number };
 type PlaygroundDrag = { key: string; startX: number; startY: number; origin: PlaygroundPosition; action: "drag_card" | "drag_group" };
 type PlaygroundSticky = { id: string; text: string; x: number; y: number };
@@ -334,12 +338,16 @@ export function PlayableDemoBoard({ board, presets, proof, clientLabel, engageme
   );
 }
 
+export function PlaygroundReplayAnswer({ preset }: { preset: DemoPreset }) {
+  return <ReplayAnswer preset={preset} />;
+}
+
 function AskReplay({ presets, step, onFinished, clientLabel, engagementTitle, proof, proofModel, onShowSlide, onOpenTurn }: { presets: DemoPreset[]; step: number; onFinished: (finished: boolean) => void; clientLabel: string; engagementTitle: string; proof: LandingProof | null; proofModel: LandingProofModel | null; onShowSlide: () => void; onOpenTurn: () => void }) {
   const replay = usePresetReplay(step, presets);
   const threadRef = useRef<HTMLDivElement>(null);
-  const shownPositions = step === 5 ? [1] : step === 6 ? [1, 2] : [1, 2, 4];
+  const shownPositions = step === 5 ? [1] : step === 6 ? [2] : [1, 2, 4];
   const liveItems = replay.preset?.manifest?.items.slice(0, replay.readCount) ?? [];
-  const showProof = step >= 5 && replay.phase === "done" && proof && proofModel;
+  const showProof = step === 5 && replay.phase === "done" && proof && proofModel;
   useEffect(() => {
     onFinished(replay.phase === "done");
   }, [onFinished, replay.phase]);
@@ -389,22 +397,41 @@ function DeckSlide({ index, clientName, numberRef, proof }: { index: number; cli
   return <section className="lb-deck-slide lb-slide-decision"><small>6</small><b>Decision asked for Oct 1</b><span aria-hidden="true" /></section>;
 }
 
-function ExactTurn({ board, preset }: { board: SharedBoardDto; preset: DemoPreset | undefined }) {
+export function LandingDemoDeck({ clientName, proof }: { clientName: string; proof: LandingProofModel | null }) {
+  const numberRef = useRef<HTMLSpanElement>(null);
+  return <div className="landing-demo-deck-grid">{Array.from({ length: 6 }, (_, index) => <DeckSlide key={index} index={index} clientName={clientName} numberRef={numberRef} proof={proof} />)}</div>;
+}
+
+function ExactTurn({ board, preset, onOpenTurn }: { board: SharedBoardDto; preset: DemoPreset | undefined; onOpenTurn: () => void }) {
   const ref = preset?.turnRefs.find((entry) => entry.turn_no === 5) ?? preset?.turnRefs[0];
   const item = ref ? board.seed.work.find((entry) => entry.id === ref.work_item_id) : undefined;
-  const turn = ref ? board.turns[ref.work_item_id]?.find((entry) => entry.turn_no === ref.turn_no) : undefined;
+  const turns = ref ? [...(board.turns[ref.work_item_id] ?? [])].sort((a, b) => a.turn_no - b.turn_no) : [];
+  const bodyRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const body = bodyRef.current;
+    const decision = body?.querySelector<HTMLElement>('[data-decision="true"]');
+    if (!body || !decision) return;
+    body.scrollTop = Math.max(0, decision.offsetTop - body.clientHeight / 3);
+  }, [item?.id]);
   return (
     <aside className="lb-turn-reader" aria-label="Exact turn reader">
-      <header><div>{item ? <VendorMark item={item} /> : <ToolIdentity tool="document" />}<h3>{item?.title ?? "Source conversation"}</h3></div><span>READ ONLY</span></header>
-      <div className="lb-turn-body">
-        <p className="lb-turn-muted">Earlier turns are kept above.</p>
-        <article className="lb-highlight-turn"><span>TURN {turn?.turn_no ?? ref?.turn_no ?? 5}</span><p>{turn?.content ?? preset?.answer ?? "The saved source turn is not available right now."}</p></article>
+      <header><div>{item ? <VendorMark item={item} /> : <ToolIdentity tool="document" />}<div><h3>{item?.title ?? "Source conversation"}</h3>{item ? <p>{item.source_vendor ?? item.source_meta?.vendor ?? "Claude"} · {proofDate({ turns: [{ ts: item.work_date ?? item.created_at_source ?? item.captured_at }] } as LandingProof)}</p> : null}</div></div>{item ? <Button asChild size="sm" variant="ghost"><Link to="/demo/conversations" search={{ item: item.id, turn: 5, from: "story" }} onClick={onOpenTurn}>Open this chat</Link></Button> : null}</header>
+      <div ref={bodyRef} className="lb-turn-body" data-testid="landing-decision-transcript">
+        {turns.map((turn) => {
+          const user = turn.role === "user";
+          return <article key={turn.id} className="lb-chat-turn" data-speaker={user ? "user" : "assistant"} data-decision={turn.turn_no === 5 ? "true" : undefined}>
+            <span>Turn {turn.turn_no} · {user ? "you said" : "Claude said"}</span>
+            {turn.turn_no === 5 ? <strong>The decision</strong> : null}
+            <p>{turn.content}</p>
+          </article>;
+        })}
+        {turns.length === 0 ? <p className="lb-turn-muted">The saved conversation is not available right now.</p> : null}
       </div>
     </aside>
   );
 }
 
-function StoryBoard({ board, presets, proof, step, attentionStep, attentionNonce, clientLabel, engagementTitle, onShowSlide, onOpenTurn }: { board: SharedBoardDto; presets: DemoPreset[]; proof: LandingProof | null; step: number; attentionStep: number; attentionNonce: number; clientLabel: string; engagementTitle: string; onShowSlide: () => void; onOpenTurn: () => void }) {
+function StoryBoard({ board, presets, proof, step, attentionStep, attentionNonce, clientLabel, engagementTitle, onShowSlide, onOpenTurn, onOpenDecisionTurn }: { board: SharedBoardDto; presets: DemoPreset[]; proof: LandingProof | null; step: number; attentionStep: number; attentionNonce: number; clientLabel: string; engagementTitle: string; onShowSlide: () => void; onOpenTurn: () => void; onOpenDecisionTurn: () => void }) {
   const [replayFinished, setReplayFinished] = useState(false);
   const [lassoBox, setLassoBox] = useState<LassoBox | null>(null);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -534,7 +561,7 @@ function StoryBoard({ board, presets, proof, step, attentionStep, attentionNonce
         {step === 7 && replayFinished ? <div key={`notes-${attentionNonce}`} className={`lb-open-notes${pulse(7)}`}><p>Confirm the vendor extension assumption.</p><p>Confirm approval by Oct 1.</p></div> : null}
       </div>
       {step >= 5 && step <= 7 ? <div key={`ask-${attentionNonce}`} className={pulse(5)}><AskReplay presets={presets} step={step} onFinished={onReplayFinished} clientLabel={clientLabel} engagementTitle={engagementTitle} proof={proof} proofModel={proofModel} onShowSlide={onShowSlide} onOpenTurn={onOpenTurn} /></div> : null}
-      {step === 6 && replayFinished ? <div key={`turn-${attentionNonce}`} className={pulse(6)}><ExactTurn board={board} preset={second} /></div> : null}
+      {step === 6 && replayFinished ? <div key={`turn-${attentionNonce}`} className={pulse(6)}><ExactTurn board={board} preset={second} onOpenTurn={onOpenDecisionTurn} /></div> : null}
       {step === 8 ? <div key={`share-${attentionNonce}`} className={`lb-share-dialog${pulse(8)}`}><p className="lb-micro">READ ONLY</p><h3>Share this board</h3><p>They open the deliverable, source cards, and the conversations behind them.</p><p>They do not open private drafts or anything outside this board.</p><strong>Closes in 48 hours</strong><small>In the demo this is shown, not issued.</small></div> : null}
     </div>
   );
@@ -749,7 +776,7 @@ export function LandingBoard() {
       <LandingBoardHeader active={LANDING_BOARD_STEPS[active]?.key ?? "problem"} onJump={jump} onPilot={() => pilot("header")} />
       <main className="lb-story">
         <div className="lb-sticky-stage">
-          {result?.status === "open" && "board" in result ? <StoryBoard board={result.board} presets={result.presets} proof={result.proof} step={active} attentionStep={settledStep} attentionNonce={attentionNonce} clientLabel={result.engagement.clientLabel ?? ""} engagementTitle={result.engagement.title} onShowSlide={() => { event(viewId.current, "landing.proof_link_opened", { step: "6", target: "slide" }); jump("circle"); }} onOpenTurn={() => event(viewId.current, "landing.proof_link_opened", { step: "6", target: "turn" })} /> : <div className="lb-stage-window lb-loading">{query.isPending ? "Opening the demo board." : "The demo board is not available right now."}</div>}
+          {result?.status === "open" && "board" in result ? <StoryBoard board={result.board} presets={result.presets} proof={result.proof} step={active} attentionStep={settledStep} attentionNonce={attentionNonce} clientLabel={result.engagement.clientLabel ?? ""} engagementTitle={result.engagement.title} onShowSlide={() => { event(viewId.current, "landing.proof_link_opened", { step: "6", target: "slide" }); jump("circle"); }} onOpenTurn={() => event(viewId.current, "landing.proof_link_opened", { step: "6", target: "turn" })} onOpenDecisionTurn={() => event(viewId.current, "landing.proof_link_opened", { step: "7", target: "turn" })} /> : <div className="lb-stage-window lb-loading">{query.isPending ? "Opening the demo board." : "The demo board is not available right now."}</div>}
           {settledStep > 0 ? <article key={`${settledStep}-${attentionNonce}`} className="lb-caption lb-caption-attention" aria-live="polite"><div className="lb-caption-text"><span>{String(settledStep + 1).padStart(2, "0")} · {LANDING_BOARD_STEPS[settledStep]?.label}</span><h2>{LANDING_BOARD_STEPS[settledStep]?.headline}</h2><p>{LANDING_BOARD_STEPS[settledStep]?.line}</p></div>{settledStep === 9 ? <div><Button asChild><Link to="/demo">Open the board yourself</Link></Button><Button asChild variant="outline"><a href="#pilot" onClick={() => pilot("try_it")}>Book a pilot</a></Button></div> : null}</article> : null}
           <div className="lb-scroll-cue" data-visible={active === 0 ? "true" : "false"} data-testid="landing-scroll-cue" aria-hidden={active !== 0}>
             <span>Scroll to watch it work</span>

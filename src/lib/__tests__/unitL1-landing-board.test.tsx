@@ -82,12 +82,22 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(css).toContain("translate(-65%, -58%) scale(.66)");
     expect(css).toContain(".lb-caption { position: fixed; left: 12px; right: 12px;");
   });
+  it("renders the full decision chat at step seven with one marked turn", () => {
+    expect(page).toContain('data-testid="landing-decision-transcript"');
+    expect(page).toContain('turns.map((turn)');
+    expect(page).toContain('data-decision={turn.turn_no === 5 ? "true" : undefined}');
+    expect(page).toContain('turn: 5, from: "story"');
+    expect(page).toContain('step: "7", target: "turn"');
+    expect(page).toContain('const shownPositions = step === 5 ? [1] : step === 6 ? [2]');
+    expect(page).toContain('const showProof = step === 5');
+    expect(page).toContain('The full chat, with the decision highlighted. Open it and read it yourself.');
+  });
   it("keeps the proof compact, proportional, capitalized, and connector-isolated", () => {
     const css = readFileSync("src/styles.css", "utf8");
     expect(page).toContain("(line.amount / model.savings) * 100");
     expect(page).toContain('step === 4 ? <svg className="lb-circle-link"');
     expect(page).toContain('thread.scrollTo({ top: proofCard.offsetTop, behavior: "auto" })');
-    expect(page).toContain('const showProof = step >= 5 && replay.phase === "done" && proof && proofModel');
+    expect(page).toContain('const showProof = step === 5 && replay.phase === "done" && proof && proofModel');
     const parser = readFileSync("src/lib/landing-proof-shared.ts", "utf8");
     expect(parser).toContain('replace(/^unconfirmed/i, "Unconfirmed").replace("14 August", "14 Aug")');
     expect(css).toContain(".lb-proof-card h4 strong { font-size: 40px;");

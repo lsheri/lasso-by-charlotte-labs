@@ -99,7 +99,15 @@ export async function openDemoBoard(code: string): Promise<DemoBoardResult> {
 }
 
 function demoSafeBoard(dto: SharedBoardDto): SharedBoardDto {
-  return { ...dto, seed: { ...dto.seed, work: publicSafeWork(dto.seed.work) } };
+  return {
+    ...dto,
+    seed: { ...dto.seed, work: publicSafeWork(dto.seed.work) },
+    turns: Object.fromEntries(Object.entries(dto.turns).map(([itemId, turns]) => [itemId, publicSafeTurnExcerpts(turns).map((turn) => ({
+      ...turn,
+      id: `public-turn-${turn.turn_no}`,
+      model: null,
+    }))])),
+  };
 }
 
 /** The same seeded layout the board draws, reduced to Home thumbnail rects. */

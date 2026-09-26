@@ -51,8 +51,8 @@ for (const viewport of [{ width: 1372, height: 732 }, { width: 390, height: 844 
     test.setTimeout(30_000);
     const context = await browser.newContext({ viewport, reducedMotion: "no-preference" });
     const page = await context.newPage();
-    await page.goto("/demo", { waitUntil: "networkidle" });
-    const card = page.getByTestId("demo-play-card-0");
+    await page.goto("/demo", { waitUntil: "domcontentloaded" });
+    const card = page.locator('[data-testid^="lab-card-demo:"]').first();
     await expect(card).toBeVisible();
     const before = await card.boundingBox();
     if (!before) throw new Error("Demo card has no rendered bounds");
