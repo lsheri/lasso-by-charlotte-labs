@@ -406,7 +406,8 @@ export function LandingDemoDeck({ clientName, proof }: { clientName: string; pro
 function ExactTurn({ board, preset, onOpenTurn, phone = false }: { board: SharedBoardDto; preset: DemoPreset | undefined; onOpenTurn: () => void; phone?: boolean }) {
   const ref = preset?.turnRefs.find((entry) => entry.turn_no === 5) ?? preset?.turnRefs[0];
   const item = ref ? board.seed.work.find((entry) => entry.id === ref.work_item_id) : undefined;
-  const turns = ref ? [...(board.turns[ref.work_item_id] ?? [])].sort((a, b) => a.turn_no - b.turn_no) : [];
+  const allTurns = ref ? [...(board.turns[ref.work_item_id] ?? [])].sort((a, b) => a.turn_no - b.turn_no) : [];
+  const turns = phone ? allTurns.filter((turn) => turn.turn_no >= 4) : allTurns;
   const bodyRef = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     const body = bodyRef.current;
@@ -418,7 +419,7 @@ function ExactTurn({ board, preset, onOpenTurn, phone = false }: { board: Shared
     <aside className="lb-turn-reader" aria-label="Exact turn reader">
       <header><div>{item ? <VendorMark item={item} /> : <ToolIdentity tool="document" />}<div><h3>{item?.title ?? "Source conversation"}</h3>{item ? <p>{item.source_vendor ?? item.source_meta?.vendor ?? "Claude"} · {proofDate({ turns: [{ ts: item.work_date ?? item.created_at_source ?? item.captured_at }] } as LandingProof)}</p> : null}</div></div>{item ? <Button asChild size="sm" variant="ghost"><Link to="/demo/conversations" search={{ item: item.id, turn: 5, from: "story" }} onClick={onOpenTurn}>Open this chat</Link></Button> : null}</header>
       <div ref={bodyRef} className="lb-turn-body" data-testid="landing-decision-transcript">
-        {turns.filter((turn) => !phone || turn.turn_no >= 4).map((turn) => {
+        {turns.map((turn) => {
           const user = turn.role === "user";
           return <article key={turn.id} className="lb-chat-turn" data-speaker={user ? "user" : "assistant"} data-decision={turn.turn_no === 5 ? "true" : undefined}>
             <span>Turn {turn.turn_no} · {user ? "you said" : "Claude said"}</span>
@@ -451,7 +452,7 @@ function PhoneDeck({ clientLabel, proof, lasso = false }: { clientLabel: string;
   </article>;
 }
 
-function PhoneStory({ board, presets, proof, active, onActive, onWatch, onPilot, onShowSlide, onOpenTurn, onOpenDecisionTurn }: { board: SharedBoardDto; presets: DemoPreset[]; proof: LandingProof | null; active: number; onActive: (index: number) => void; onWatch: () => void; onPilot: () => void; onShowSlide: () => void; onOpenTurn: () => void; onOpenDecisionTurn: () => void }) {
+function PhoneStory({ board, presets, proof, clientLabel, active, onActive, onWatch, onPilot, onShowSlide, onOpenTurn, onOpenDecisionTurn }: { board: SharedBoardDto; presets: DemoPreset[]; proof: LandingProof | null; clientLabel: string; active: number; onActive: (index: number) => void; onWatch: () => void; onPilot: () => void; onShowSlide: () => void; onOpenTurn: () => void; onOpenDecisionTurn: () => void }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const proofModel = proof ? parseLandingProof(proof) : null;
   const deckItem = board.seed.work.find((item) => /board deck/i.test(item.title));
@@ -483,8 +484,8 @@ function PhoneStory({ board, presets, proof, active, onActive, onWatch, onPilot,
       <div className="lb-phone-visual">
         {index === 1 ? <><div className="lb-phone-tools">{TOOL_BADGES.map((tool) => <span key={tool.key}><ToolLogo vendor={tool.key} compact /></span>)}</div><div className="lb-phone-card-stack">{conversations.map((item, itemIndex) => card(item, `conversation-${itemIndex}`))}</div></> : null}
         {index === 2 ? <div className="lb-phone-workstreams">{visibleTasks.map((task) => <section key={task.id}><h3>{task.name}</h3><p>{task.detail}</p>{items.filter((item) => seedPlacement(item).includes(task.id)).slice(0, 2).map((item) => card(item, `${task.id}-${item.id}`))}</section>)}</div> : null}
-        {index === 3 ? <PhoneDeck clientLabel={board.seed.clientLabel ?? ""} proof={proofModel} /> : null}
-        {index === 4 ? <PhoneDeck clientLabel={board.seed.clientLabel ?? ""} proof={proofModel} lasso /> : null}
+        {index === 3 ? <PhoneDeck clientLabel={clientLabel} proof={proofModel} /> : null}
+        {index === 4 ? <PhoneDeck clientLabel={clientLabel} proof={proofModel} lasso /> : null}
         {index === 5 ? <div className="lb-phone-proof">{presets.find((preset) => preset.position === 1) ? <p className="lb-phone-question">{presets.find((preset) => preset.position === 1)?.question}</p> : null}{proof && proofModel ? <ProofCard proof={proof} model={proofModel} onShowSlide={onShowSlide} onOpenTurn={onOpenTurn} showSlideAction={false} /> : <p>The saved proof is not available right now.</p>}</div> : null}
         {index === 6 ? <ExactTurn board={board} preset={second} onOpenTurn={onOpenDecisionTurn} phone /> : null}
         {index === 7 ? <div className="lb-phone-open-items">{["Confirm the vendor extension assumption.", "Confirm approval by Oct 1."].map((note, noteIndex) => <div key={note}><p>{note}</p>{sourceItems[noteIndex] ? card(sourceItems[noteIndex], `open-${noteIndex}`) : null}</div>)}</div> : null}
@@ -961,7 +962,7 @@ export function LandingBoard() {
             </section>
           ))}
         </div>
-        {result?.status === "open" && "board" in result ? <PhoneStory board={result.board} presets={result.presets} proof={result.proof} active={active} onActive={activatePhone} onWatch={() => jump("canvas")} onPilot={() => pilot("try_it")} onShowSlide={() => { event(viewId.current, "landing.proof_link_opened", { step: "6", target: "slide" }); jump("circle"); }} onOpenTurn={() => event(viewId.current, "landing.proof_link_opened", { step: "6", target: "turn" })} onOpenDecisionTurn={() => event(viewId.current, "landing.proof_link_opened", { step: "7", target: "turn" })} /> : <div className="lb-phone-loading">{query.isPending ? "Opening the demo board." : "The demo board is not available right now."}</div>}
+        {result?.status === "open" && "board" in result ? <PhoneStory board={result.board} presets={result.presets} proof={result.proof} clientLabel={result.engagement.clientLabel ?? ""} active={active} onActive={activatePhone} onWatch={() => jump("canvas")} onPilot={() => pilot("try_it")} onShowSlide={() => { event(viewId.current, "landing.proof_link_opened", { step: "6", target: "slide" }); jump("circle"); }} onOpenTurn={() => event(viewId.current, "landing.proof_link_opened", { step: "6", target: "turn" })} onOpenDecisionTurn={() => event(viewId.current, "landing.proof_link_opened", { step: "7", target: "turn" })} /> : <div className="lb-phone-loading">{query.isPending ? "Opening the demo board." : "The demo board is not available right now."}</div>}
       </main>
       <div className="lb-phone-pilot" data-visible={active > 0 ? "true" : "false"}><Button asChild size="sm"><a href="#pilot" onClick={() => pilot("phone_bar")}>Book a pilot</a></Button></div>
       <LandingBoardContinuation viewId={viewId.current} onPilot={pilot} />
