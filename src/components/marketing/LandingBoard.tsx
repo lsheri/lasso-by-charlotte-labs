@@ -2757,7 +2757,7 @@ export function LandingBoard() {
     }
     const target = document.getElementById(`lb-${key}`);
     const headerOffset = standalone
-      ? (document.querySelector<HTMLElement>(".landing-board-header")?.offsetHeight ?? 0)
+      ? (document.querySelector<HTMLElement>(".lb-header")?.offsetHeight ?? 0)
       : window.innerHeight * 0.54;
     if (target)
       window.scrollTo({
