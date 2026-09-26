@@ -168,3 +168,10 @@
 - [x] Unit L4.3: Re-measure the live proof connector, contain page width, and clear all ten phone story steps.
 - [ ] Portal: add `landing.proof_link_opened` with `step` and `target` dimensions (architect-owned).
 - [ ] Portal: add `landing-board`, ten story section values, and `landing.section_jumped` (architect-owned).
+## Unit P1 playable demo board
+- [ ] Inventory current demo controls, states, and event calls
+- [ ] Move classic demo to /demo/classic and route all demo entrances to /demo
+- [ ] Reuse the landing StoryBoard in interactive playground mode
+- [ ] Add local drag, sticky, reset timer, Ask replay, and responsive panel behavior
+- [ ] Add additive anonymous event vocabulary and allowlists
+- [ ] Add focused tests and normal-motion browser checks
