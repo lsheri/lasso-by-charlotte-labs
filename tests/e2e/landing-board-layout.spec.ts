@@ -442,7 +442,7 @@ test("settled attention steps keep one spotlight and one caption", async ({ brow
   });
   const page = await context.newPage();
   await page.goto("/", { waitUntil: "networkidle" });
-  for (const name of ["Deliverable", "Circle", "Ask", "The turn"]) {
+  for (const name of ["Deliverable", "A number", "Ask Lasso", "The chat"]) {
     await page.getByRole("button", { name, exact: true }).last().click();
     await page.waitForTimeout(800);
     const baseline = await page.evaluate(
