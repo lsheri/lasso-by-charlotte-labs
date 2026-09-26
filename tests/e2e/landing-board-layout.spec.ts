@@ -153,7 +153,7 @@ for (const viewport of desktopSizes) {
           if (box.width === 0 || box.height === 0 || style.display === "none" || style.visibility === "hidden") continue;
           if (box.left < rootBox.left - 1 || box.right > rootBox.right + 1 || box.top < rootBox.top - 1 || box.bottom > rootBox.bottom + 1) failures.push(`${root.dataset.testid}: ${child.tagName} escaped`);
         }
-        for (const text of Array.from(root.querySelectorAll<HTMLElement>>("span,p,strong,small,b,textarea"))) {
+        for (const text of Array.from(root.querySelectorAll<HTMLElement>("span,p,strong,small,b,textarea"))) {
           const box = text.getBoundingClientRect();
           if (box.width === 0 || box.height === 0) continue;
           if (text.scrollWidth > text.clientWidth + 1) failures.push(`${root.dataset.testid}: ${text.textContent?.trim()} overflowed`);
@@ -169,6 +169,10 @@ for (const viewport of desktopSizes) {
     expect(result.ratio).toBeLessThanOrEqual(16 / 9 * 1.02);
     expect(result.dates).toContain("Aug 28, 2026");
     expect(result.zoom).toBeLessThanOrEqual(0.9);
+    await page.getByRole("button", { name: "Show slide 1" }).click();
+    await expect(page.getByRole("button", { name: "Show slide 1" })).toHaveAttribute("aria-pressed", "true");
+    await page.getByRole("button", { name: "Reset", exact: true }).click();
+    await expect(page.getByRole("button", { name: "Show slide 3" })).toHaveAttribute("aria-pressed", "true");
     await page.screenshot({ path: testInfo.outputPath(`demo-contained-${viewport.width}x${viewport.height}.png`) });
     await context.close();
   });
