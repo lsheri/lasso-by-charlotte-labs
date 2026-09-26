@@ -307,7 +307,7 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(page).toContain('<source src={headerVideoWebm.url} type="video/webm" />');
     // S2 adds the self-contained workstreams clip: metadata-only and inline, never autoPlay.
     expect(page.match(/preload="metadata"/g)).toHaveLength(4);
-    expect(page.match(/autoPlay/g)).toHaveLength(0);
+    expect(page).not.toContain("autoPlay");
     expect(page.match(/playsInline/g)).toHaveLength(4);
     expect(page).toContain("<HeroAssemble />");
     expect(page).toContain("video.currentTime = 0");
