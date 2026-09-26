@@ -15,7 +15,7 @@ export function PublicHeader({ current, cta }: { current?: "/" | "/why" | "/trus
       <div className="grid w-full grid-cols-1 items-center gap-3 px-4 pb-4 pt-[calc(1rem+env(safe-area-inset-top))] sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-6 sm:px-8 sm:pb-6 sm:pt-[calc(1.5rem+env(safe-area-inset-top))] md:px-12">
         <Link
           to="/"
-          className="flex min-w-0 items-center gap-2 font-mono text-base font-bold tracking-[0.18em] text-foreground sm:gap-4 sm:text-2xl sm:tracking-[0.24em]"
+          className="flex min-w-0 items-center gap-2 font-mono text-base font-normal tracking-[0.18em] text-foreground sm:gap-4 sm:text-2xl sm:tracking-[0.24em]"
           aria-current={current === "/" ? "page" : undefined}
         >
           <LassoLoopMark className="h-8 w-8 shrink-0 text-lasso-green sm:h-10 sm:w-10" />
