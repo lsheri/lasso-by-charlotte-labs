@@ -141,6 +141,7 @@ export function FocusOverlay({
   readOnly = false,
   filePreview,
   focusTurnNo,
+  highlightTurnRange,
   focusedTurnTestId,
   closeLabel,
 }: {
@@ -176,6 +177,8 @@ export function FocusOverlay({
   filePreview?: WorkboardFilePreviewData | undefined;
   /** Unit 2: open scrolled to this turn, lit. */
   focusTurnNo?: number | null | undefined;
+  /** Public proof link: quietly marks the surrounding source sequence. */
+  highlightTurnRange?: readonly [number, number] | undefined;
   /** Public demo tour: stable selector placed on the focused turn once found. */
   focusedTurnTestId?: string | undefined;
   /** Close button words; defaults to "Back to the workboard". */
@@ -231,6 +234,31 @@ export function FocusOverlay({
       if (focusedTurnTestId) lit?.removeAttribute("data-testid");
     };
   }, [focusTurnNo, focusedTurnTestId]);
+
+  useEffect(() => {
+    if (!highlightTurnRange) return;
+    const [from, to] = highlightTurnRange;
+    let tries = 0;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let marked: Element[] = [];
+    const find = () => {
+      marked = Array.from(readerRef.current?.querySelectorAll("[data-turn-no]") ?? []).filter((element) => {
+        const turn = Number(element.getAttribute("data-turn-no"));
+        return turn >= from && turn <= to;
+      });
+      if (marked.length > 0) {
+        marked.forEach((element) => element.classList.add("nb-turn-proof-range"));
+        return;
+      }
+      tries += 1;
+      if (tries < 40) timer = setTimeout(find, 100);
+    };
+    find();
+    return () => {
+      if (timer) clearTimeout(timer);
+      marked.forEach((element) => element.classList.remove("nb-turn-proof-range"));
+    };
+  }, [highlightTurnRange]);
 
   useEffect(() => {
     if (!openComments) return;
