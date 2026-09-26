@@ -20,6 +20,7 @@ import { FocusSection } from "@/components/marketing/FocusSection";
 import { ToolLogo } from "@/components/marketing/ToolLogo";
 import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
 import { AnswerRail, ContextAudit, ThinkingTrail } from "@/components/reflect/ContextTrail";
+import { LassoThinkingMark } from "@/components/reflect/LassoThinkingMark";
 import { AnswerTurnLinks } from "@/components/reflect/AnswerTurnLinks";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -794,6 +795,7 @@ export function PlayableDemoBoard({
             className="demo-play-ask-toggle"
             onClick={() => setAskOpen((open) => !open)}
           >
+            <LassoThinkingMark kind="signature" size={34} />
             <span>
               <b>Ask Lasso</b>
               <small>{engagementTitle}</small>
@@ -900,6 +902,7 @@ function AskReplay({
       data-story-scroll="locked"
     >
       <header className="lb-ask-header">
+        <LassoThinkingMark kind="signature" size={44} />
         <div>
           <p className="lb-micro">ASK LASSO</p>
           <h3>{clientLabel}</h3>

@@ -18,6 +18,7 @@ test("landing header and paper caption keep the story contract without a progres
   await expect(page.locator(".lb-progress-rail")).toHaveCount(0);
   expect((await page.locator(".lb-header").boundingBox())?.height ?? 999).toBeLessThanOrEqual(64);
   await page.locator("#lb-circle").scrollIntoViewIfNeeded();
+  await expect(page.locator('.lb-caption[data-phase="incoming"]')).toHaveAttribute("data-step", "5");
   const caption = page.locator('.lb-caption[data-phase="incoming"]');
   await expect(caption).toHaveCSS("background-color", "rgb(255, 255, 255)");
   await expect(caption).not.toHaveCSS("background-color", "rgb(22, 24, 26)");
