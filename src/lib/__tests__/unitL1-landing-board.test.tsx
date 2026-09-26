@@ -79,6 +79,8 @@ describe("Unit L1 scroll-driven landing board", () => {
       'event(viewId.current, "landing.usecase_played", { card, input_mode: inputMode })',
     );
     expect(page).toContain("aria-label={`Play: ${card.title}`}");
+    expect(page).not.toContain("            loop\n            playsInline");
+    expect(page).toContain("}, 2000);");
   });
   it("places the use cases between the hero and Canvas without card jump controls", () => {
     expect(page.indexOf('className="lb-desktop-hero"')).toBeLessThan(
@@ -205,7 +207,7 @@ describe("Unit L1 scroll-driven landing board", () => {
       expect(page).not.toContain(old);
     for (const title of [
       "Your team's AI work is scattered.",
-      "Every AI chat in one place.",
+      "Every AI conversation and every work tool, in one organized place.",
       "Group AI conversation by different workstreams...combine context across chats.",
       "combine all the context across chats..everything that went in to a draft or final deliverable",
       "Pick any number in the deck.",
@@ -216,6 +218,9 @@ describe("Unit L1 scroll-driven landing board", () => {
       "Open the board yourself.",
     ])
       expect(page).toContain(title);
+    expect(page).toContain(
+      "Claude, ChatGPT, Gemini, Drive and the rest land on one board, grouped by the work they belong to.",
+    );
   });
   it("keeps the proof compact, proportional, capitalized, and connector-isolated", () => {
     const css = readFileSync("src/styles.css", "utf8");
@@ -290,6 +295,12 @@ describe("Unit L1 scroll-driven landing board", () => {
   it("keeps the closing card numbered-free on both breakpoints", () => {
     expect(page).toContain('key: "try-it"');
     expect(page).toContain('onPilot={() => pilot("try_it")}');
+  });
+  it("keeps all five hero arrivals readable while making the board the subject", () => {
+    const css = readFileSync("src/styles.css", "utf8");
+    expect(page.match(/label: "(Chair terms|Rate build|Board readout|Client brief|Pricing approach)"/g)).toHaveLength(5);
+    expect(css).toContain("width: 15.8%; height: 20.4%");
+    expect(css).toContain(".lb-hero-chat-tool .lb-tool-identity { min-width: 0; font-size: 13px; }");
   });
   it("keeps the step-one hero on a clean background", () => {
     const css = readFileSync("src/styles.css", "utf8");

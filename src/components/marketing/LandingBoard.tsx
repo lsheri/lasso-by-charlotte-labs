@@ -51,8 +51,8 @@ export const LANDING_BOARD_STEPS = [
   {
     key: "canvas",
     label: "One canvas",
-    headline: "Every AI chat in one place.",
-    line: "Claude, ChatGPT and Gemini conversations land on one board.",
+    headline: "Every AI conversation and every work tool, in one organized place.",
+    line: "Claude, ChatGPT, Gemini, Drive and the rest land on one board, grouped by the work they belong to.",
   },
   {
     key: "workstreams",
@@ -2119,6 +2119,7 @@ function LandingBoardUseCase({
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const inputMode = useRef<"hover" | "tap">("hover");
+  const posterTimer = useRef<number | null>(null);
   const [playing, setPlaying] = useState(false);
   const [ended, setEnded] = useState(false);
   const [videoFailed, setVideoFailed] = useState(false);
@@ -2126,6 +2127,7 @@ function LandingBoardUseCase({
   function play(mode: "hover" | "tap") {
     const video = videoRef.current;
     if (!video || videoFailed) return;
+    if (posterTimer.current !== null) window.clearTimeout(posterTimer.current);
     inputMode.current = mode;
     if (video.ended) video.currentTime = 0;
     setEnded(false);
@@ -2136,8 +2138,24 @@ function LandingBoardUseCase({
     videoRef.current?.pause();
   }
 
+  useEffect(
+    () => () => {
+      if (posterTimer.current !== null) window.clearTimeout(posterTimer.current);
+    },
+    [],
+  );
+
   return (
     <article className="landing-usecase" data-usecase={card.key}>
+      <div className="landing-usecase-copy">
+        <div className="landing-usecase-tools" aria-label="Tools shown">
+          {card.tools.map((tool) => (
+            <ToolLogo key={tool} vendor={tool} compact />
+          ))}
+        </div>
+        <h3>{card.title}</h3>
+        <p>{card.body}</p>
+      </div>
       <Button
         type="button"
         variant="ghost"
@@ -2162,7 +2180,6 @@ function LandingBoardUseCase({
             ref={videoRef}
             className="landing-usecase-video"
             muted
-            loop
             playsInline
             preload="none"
             poster={card.poster}
@@ -2177,6 +2194,13 @@ function LandingBoardUseCase({
             onEnded={() => {
               setPlaying(false);
               setEnded(true);
+              posterTimer.current = window.setTimeout(() => {
+                const video = videoRef.current;
+                if (!video) return;
+                video.load();
+                setEnded(false);
+                posterTimer.current = null;
+              }, 2000);
             }}
             onError={() => setVideoFailed(true)}
           >
@@ -2186,15 +2210,6 @@ function LandingBoardUseCase({
         )}
         {ended ? <span className="landing-usecase-replay">Replay</span> : null}
       </Button>
-      <div className="landing-usecase-copy">
-        <div className="landing-usecase-tools" aria-label="Tools shown">
-          {card.tools.map((tool) => (
-            <ToolLogo key={tool} vendor={tool} compact />
-          ))}
-        </div>
-        <h3>{card.title}</h3>
-        <p>{card.body}</p>
-      </div>
     </article>
   );
 }
