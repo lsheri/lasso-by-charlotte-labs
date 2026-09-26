@@ -3,15 +3,9 @@ import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { type CSSProperties, type FormEvent, type PointerEvent as ReactPointerEvent, type RefObject, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
-import bringWorkMp4 from "@/assets/use-bring-work-in.mp4.asset.json";
-import bringWorkPoster from "@/assets/use-bring-work-in-poster.jpg.asset.json";
-import bringWorkWebm from "@/assets/use-bring-work-in.webm.asset.json";
 import everyNumberMp4 from "@/assets/use-every-number-has-a-source.mp4.asset.json";
 import everyNumberPoster from "@/assets/use-every-number-has-a-source-poster.jpg.asset.json";
 import everyNumberWebm from "@/assets/use-every-number-has-a-source.webm.asset.json";
-import reasoningMp4 from "@/assets/use-reasoning-stays-with-the-firm.mp4.asset.json";
-import reasoningPoster from "@/assets/use-reasoning-stays-with-the-firm-poster.jpg.asset.json";
-import reasoningWebm from "@/assets/use-reasoning-stays-with-the-firm.webm.asset.json";
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
 import { LandingParticlePhrase } from "@/components/marketing/LandingParticlePhrase";
 import { FocusSection } from "@/components/marketing/FocusSection";
@@ -51,10 +45,10 @@ type UseCaseKey = "bring_work_in" | "reasoning_stays" | "every_number";
 type SpotlightTarget = "deck" | "ask" | "turn";
 
 const LANDING_BOARD_USE_CASES = [
-  { key: "bring_work_in", title: "Push work in with one sentence.", body: "Bring work from your AI tools into one shared place.", poster: bringWorkPoster.url, webm: bringWorkWebm.url, mp4: bringWorkMp4.url, tools: ["claude", "chatgpt", "gemini"], step: "workstreams" },
-  { key: "reasoning_stays", title: "Every AI conversation, on the record.", body: "Keep the conversations that shaped the engagement.", poster: reasoningPoster.url, webm: reasoningWebm.url, mp4: reasoningMp4.url, tools: ["claude", "chatgpt"], step: "canvas" },
-  { key: "every_number", title: "Every number has a source.", body: "Open the source behind a figure or claim.", poster: everyNumberPoster.url, webm: everyNumberWebm.url, mp4: everyNumberMp4.url, tools: ["powerpoint", "claude"], step: "circle" },
-] as const satisfies ReadonlyArray<{ key: UseCaseKey; title: string; body: string; poster: string; webm: string; mp4: string; tools: readonly string[]; step: StepKey }>;
+  { key: "bring_work_in", title: "Push work in.", body: "One sentence from Claude, ChatGPT or Gemini, and it lands on the board.", poster: "/videos/poster-claude.jpg", mp4: "/videos/lasso-claude.mp4", tools: ["claude"], step: "workstreams" },
+  { key: "reasoning_stays", title: "Chat with your work.", body: "Drag to select the cards that matter, then ask Lasso about exactly that.", poster: "/videos/poster-find-it.jpg", mp4: "/videos/find-it.mp4", tools: ["claude", "chatgpt", "gemini"], step: "ask" },
+  { key: "every_number", title: "Every number has a source.", body: "Open the chat behind any figure and check it yourself.", poster: everyNumberPoster.url, webm: everyNumberWebm.url, mp4: everyNumberMp4.url, tools: ["powerpoint", "claude"], step: "circle" },
+] as const satisfies ReadonlyArray<{ key: UseCaseKey; title: string; body: string; poster: string; webm?: string; mp4: string; tools: readonly string[]; step: StepKey }>;
 
 const TOOL_BADGES = [
   { key: "claude", label: "Claude" },
@@ -484,6 +478,7 @@ function PhoneStory({ board, presets, proof, clientLabel, active, onActive, onWa
     </section>
     <UseCaseSection id="lb-phone-usecases" phone onPlayed={onUseCasePlayed} onJump={onUseCaseJump} />
     {LANDING_BOARD_STEPS.slice(1).map((step, itemIndex) => { const index = itemIndex + 1; const stop = index + 1; return <section key={step.key} id={`lb-phone-${step.key}`} className="lb-phone-step" data-phone-step={stop}>
+      {index === 1 ? <div className="lb-phone-how"><p className="micro-label">HOW IT WORKS</p><h2>Watch one engagement, start to finish.</h2></div> : null}
       <PhoneCaption index={index} />
       <div className="lb-phone-visual">
         {index === 1 ? <><div className="lb-phone-tools">{TOOL_BADGES.map((tool) => <span key={tool.key}><ToolLogo vendor={tool.key} compact /></span>)}</div><div className="lb-phone-card-stack">{conversations.map((item, itemIndex) => card(item, `conversation-${itemIndex}`))}</div></> : null}
@@ -792,7 +787,7 @@ function LandingBoardUseCase({ card, onPlayed, onJump }: { card: (typeof LANDING
             onEnded={() => { setPlaying(false); setEnded(true); }}
             onError={() => setVideoFailed(true)}
           >
-            <source src={card.webm} type="video/webm" />
+            {"webm" in card ? <source src={card.webm} type="video/webm" /> : null}
             <source src={card.mp4} type="video/mp4" />
           </video>
         )}
@@ -972,7 +967,7 @@ export function LandingBoard() {
           </div>
         </section>
         <UseCaseSection onPlayed={noteUseCasePlayed} onJump={jump} />
-        <section className="lb-how-it-works"><div className="lb-how-it-works-head"><p className="micro-label">HOW IT WORKS</p><h2>Follow the work from source to deliverable.</h2></div>
+        <section className="lb-how-it-works"><div className="lb-how-it-works-head"><p className="micro-label">HOW IT WORKS</p><h2>Watch one engagement, start to finish.</h2></div>
           <div className="lb-sticky-stage">
             {result?.status === "open" && "board" in result ? <StoryBoard board={result.board} presets={result.presets} proof={result.proof} step={active} attentionStep={settledStep} attentionNonce={attentionNonce} clientLabel={result.engagement.clientLabel ?? ""} engagementTitle={result.engagement.title} onShowSlide={() => { event(viewId.current, "landing.proof_link_opened", { step: "6", target: "slide" }); jump("circle"); }} onOpenTurn={() => event(viewId.current, "landing.proof_link_opened", { step: "6", target: "turn" })} onOpenDecisionTurn={() => event(viewId.current, "landing.proof_link_opened", { step: "7", target: "turn" })} /> : <div className="lb-stage-window lb-loading">{query.isPending ? "Opening the demo board." : "The demo board is not available right now."}</div>}
             <StoryCaption step={active} nonce={attentionNonce} onPilot={() => pilot("try_it")} />
