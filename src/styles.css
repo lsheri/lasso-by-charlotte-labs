@@ -6114,26 +6114,26 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   .lb-hero-line { display: grid; justify-items: center; gap: 4px; max-width: 760px; margin: 4px auto 0; }
   .lb-hero-line .micro-label { color: var(--nb-mid); }
   .lb-hero-line-text { font-size: 20px; line-height: 1.5; color: var(--nb-ink); text-wrap: balance; }
-  .lb-hero-assemble { position: relative; display: block; width: min(980px, 88vw); aspect-ratio: 16 / 7; margin: 20px auto 0; overflow: hidden; border: 1px solid var(--nb-rule); border-radius: 8px; background: var(--nb-white); box-shadow: 0 10px 24px color-mix(in oklab, var(--nb-ink) 10%, transparent); pointer-events: none; user-select: none; isolation: isolate; }
-  .lb-hero-assemble-board { position: absolute; z-index: 1; inset: 0; width: 100%; height: 100%; object-fit: contain; object-position: center; opacity: 0; transform: scale(.97); animation: lb-hero-board-land 8s var(--nb-ease) infinite; }
+  .lb-hero-assemble { position: relative; display: block; width: min(980px, 88vw, calc((100svh - 344px) * 2)); min-width: min(420px, 88vw); container-type: inline-size; aspect-ratio: 16 / 8; margin: 20px auto 0; overflow: visible; border: 1px solid var(--nb-rule); border-radius: 8px; background: var(--nb-white); box-shadow: 0 10px 24px color-mix(in oklab, var(--nb-ink) 10%, transparent); pointer-events: none; user-select: none; isolation: isolate; }
+  .lb-hero-assemble-board { position: absolute; z-index: 1; inset: 0; width: 100%; height: 100%; border-radius: 8px; object-fit: cover; object-position: center; }
   .lb-hero-assemble-cards { position: absolute; z-index: 2; inset: 0; }
-  .lb-hero-chat { position: absolute; display: grid; width: 152px; min-height: 104px; gap: 7px; border: 1px solid var(--nb-graphite); border-radius: 6px; background: var(--nb-white); padding: 12px; text-align: left; box-shadow: var(--nb-paper-shadow-contact); animation: lb-hero-card-shuffle 8s var(--nb-ease) infinite; animation-delay: calc(var(--lb-hero-card-delay) * 1ms); }
-  .lb-hero-chat[data-card="1"] { --lb-hero-card-delay: 0; --lb-hero-from-x: -58px; --lb-hero-from-y: 38px; --lb-hero-from-r: -7deg; left: 4%; top: 10%; }
-  .lb-hero-chat[data-card="2"] { --lb-hero-card-delay: 120; --lb-hero-from-x: 52px; --lb-hero-from-y: -26px; --lb-hero-from-r: 6deg; left: 24%; top: 45%; }
-  .lb-hero-chat[data-card="3"] { --lb-hero-card-delay: 240; --lb-hero-from-x: -22px; --lb-hero-from-y: -36px; --lb-hero-from-r: -5deg; left: 43%; top: 8%; }
-  .lb-hero-chat[data-card="4"] { --lb-hero-card-delay: 360; --lb-hero-from-x: 62px; --lb-hero-from-y: 30px; --lb-hero-from-r: 7deg; left: 61%; top: 45%; }
-  .lb-hero-chat[data-card="5"] { --lb-hero-card-delay: 480; --lb-hero-from-x: 48px; --lb-hero-from-y: -30px; --lb-hero-from-r: 5deg; left: 79%; top: 10%; }
+  .lb-hero-chat { position: absolute; display: grid; align-content: start; width: 20.6%; height: 25.8%; gap: 7px; overflow: hidden; border: 1px solid var(--nb-graphite); border-radius: 6px; background: var(--nb-white); padding: 10px 12px; text-align: left; box-shadow: var(--nb-paper-shadow-contact); opacity: 0; transform-origin: center; animation: lb-hero-card-land 8s var(--nb-ease) infinite both; animation-delay: calc(var(--lb-hero-card-delay) * 1ms); }
+  .lb-hero-chat[data-card="1"] { --lb-hero-card-delay: 0; --lb-hero-from-x: 40%; --lb-hero-from-y: -150%; --lb-hero-from-r: -7deg; left: 37.1%; top: 10.4%; }
+  .lb-hero-chat[data-card="2"] { --lb-hero-card-delay: 120; --lb-hero-from-x: -30%; --lb-hero-from-y: -120%; --lb-hero-from-r: 6deg; left: 12.4%; top: 10.4%; }
+  .lb-hero-chat[data-card="3"] { --lb-hero-card-delay: 240; --lb-hero-from-x: -80%; --lb-hero-from-y: -230%; --lb-hero-from-r: -5deg; left: 37.1%; top: 38.6%; }
+  .lb-hero-chat[data-card="4"] { --lb-hero-card-delay: 360; --lb-hero-from-x: 60%; --lb-hero-from-y: -130%; --lb-hero-from-r: 7deg; left: 63.6%; top: 18%; }
+  .lb-hero-chat[data-card="5"] { --lb-hero-card-delay: 480; --lb-hero-from-x: 30%; --lb-hero-from-y: -330%; --lb-hero-from-r: 5deg; left: 60.5%; top: 72%; }
   .lb-hero-chat-tool { display: flex; align-items: center; gap: 8px; min-width: 0; }
-  .lb-hero-chat-tool > img { width: 28px; height: 28px; object-fit: contain; }
+  .lb-hero-chat-tool > img { width: 24px; height: 24px; object-fit: contain; }
   .lb-hero-chat-tool .lb-tool-identity { min-width: 0; font-size: 13px; }
   .lb-hero-chat[data-card="4"] .lb-tool-identity::first-letter { font-size: 0; }
   .lb-hero-chat strong { overflow: hidden; font-size: 13px; line-height: 1.2; white-space: nowrap; text-overflow: ellipsis; }
   .lb-hero-chat > span { display: block; height: 2px; background: var(--nb-rule); }
   .lb-hero-chat > span:last-child { width: 62%; }
-  @keyframes lb-hero-card-shuffle { 0%,12% { opacity: .78; transform: translate(var(--lb-hero-from-x), var(--lb-hero-from-y)) rotate(var(--lb-hero-from-r)); } 17% { transform: translate(calc(var(--lb-hero-from-x) * -.18), calc(var(--lb-hero-from-y) * .2)) rotate(calc(var(--lb-hero-from-r) * -.35)); } 31%,76% { opacity: .92; transform: translate(0,0) rotate(0); } 86%,100% { opacity: .78; transform: translate(var(--lb-hero-from-x), var(--lb-hero-from-y)) rotate(var(--lb-hero-from-r)); } }
-  @keyframes lb-hero-board-land { 0%,23% { opacity: 0; transform: scale(.97); } 36%,76% { opacity: .72; transform: scale(1); } 86%,100% { opacity: 0; transform: scale(.97); } }
+  .lb-hero-assemble-caption { margin: 10px auto 0; color: var(--nb-mid); }
+  @container (max-width: 640px) { .lb-hero-chat { gap: 4px; padding: 6px 8px; } .lb-hero-chat > span { display: none; } .lb-hero-chat-tool .lb-tool-identity { font-size: 11.5px; } }
+  @keyframes lb-hero-card-land { 0% { opacity: 0; transform: translate(var(--lb-hero-from-x), var(--lb-hero-from-y)) rotate(var(--lb-hero-from-r)) scale(1.18); } 6%,14% { opacity: 1; transform: translate(var(--lb-hero-from-x), var(--lb-hero-from-y)) rotate(var(--lb-hero-from-r)) scale(1.18); } 40% { opacity: 1; transform: translate(0,0) rotate(0) scale(1.04); } 46%,58% { opacity: 1; transform: translate(0,0) rotate(0) scale(1); } 70%,100% { opacity: 0; transform: translate(0,0) rotate(0) scale(.96); } }
 }
 @media (min-width: 640px) and (prefers-reduced-motion: reduce) {
-  .lb-hero-assemble-board { opacity: .72; transform: scale(1); animation: none; }
-  .lb-hero-chat { opacity: .92; transform: translate(0,0) rotate(0); animation: none; }
+  .lb-hero-chat { opacity: 0; transform: none; animation: none; }
 }

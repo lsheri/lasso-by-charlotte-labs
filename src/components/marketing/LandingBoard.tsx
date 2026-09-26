@@ -2608,6 +2608,7 @@ export function LandingBoard() {
                 </Button>
               </div>
               <HeroAssemble />
+              <p className="micro-label lb-hero-assemble-caption" aria-hidden="true">CHATS FROM EVERY TOOL, ON ONE BOARD</p>
               <div className="lb-hero-line">
                 <p className="micro-label">{"\n"}</p>
                 <p className="lb-hero-line-text font-mono font-bold uppercase tracking-[0.18em]">
