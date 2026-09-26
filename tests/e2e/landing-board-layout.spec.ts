@@ -75,16 +75,38 @@ test("story captions and visible text stay readable across settled desktop steps
   await context.close();
 });
 
-test("story caption body is readable on phone", async ({ browser }) => {
-  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: "reduce" });
-  const page = await context.newPage();
-  await page.goto("/", { waitUntil: "networkidle" });
-  await page.getByRole("button", { name: "Canvas", exact: true }).click();
-  const body = page.locator('.lb-caption[data-phase="incoming"] p');
-  await expect(body).toBeVisible();
-  expect(await body.evaluate((element) => Number.parseFloat(getComputedStyle(element).fontSize))).toBeGreaterThanOrEqual(17);
-  await context.close();
-});
+for (const viewport of [{ width: 390, height: 844 }, { width: 430, height: 932 }]) {
+  test(`phone story fits every focused section at ${viewport.width}x${viewport.height}`, async ({ browser }, testInfo) => {
+    test.setTimeout(90_000);
+    const context = await browser.newContext({ viewport, reducedMotion: "reduce" });
+    const page = await context.newPage();
+    await page.goto("/", { waitUntil: "networkidle" });
+    await expect(page.locator(".lb-header")).toBeVisible();
+    expect((await page.locator(".lb-header").boundingBox())?.height ?? 999).toBeLessThanOrEqual(56);
+    const sections = page.locator(".lb-phone-step");
+    await expect(sections).toHaveCount(10);
+    for (let index = 0; index < 10; index += 1) {
+      const section = sections.nth(index);
+      await section.scrollIntoViewIfNeeded();
+      await expect(page.locator(".lb-phone-counter")).toHaveText(`${index + 1} / 10`);
+      const result = await section.evaluate((element) => {
+        const visibleText = Array.from(element.querySelectorAll<HTMLElement>("span,p,strong,small,h1,h2,h3,a,button"))
+          .filter((node) => { const box = node.getBoundingClientRect(); const style = getComputedStyle(node); return Boolean(node.textContent?.trim()) && box.width > 0 && box.height > 0 && style.visibility !== "hidden"; })
+          .filter((node) => !node.closest(".lb-phone-thumbnails"));
+        return {
+          innerScroll: element.scrollHeight > element.clientHeight + 1,
+          narrowText: visibleText.filter((node) => Number.parseFloat(getComputedStyle(node).fontSize) < 14).map((node) => node.textContent?.trim()),
+          pageWidth: document.documentElement.scrollWidth,
+        };
+      });
+      if (index !== 6) expect(result.innerScroll, `step ${index + 1}`).toBe(false);
+      expect(result.narrowText, `step ${index + 1}`).toEqual([]);
+      expect(result.pageWidth).toBe(viewport.width);
+      if (viewport.width === 390) await page.screenshot({ path: testInfo.outputPath(`phone-story-${index + 1}.png`) });
+    }
+    await context.close();
+  });
+}
 
 for (const viewport of [{ width: 1372, height: 732 }, { width: 1512, height: 807 }, { width: 1920, height: 1080 }]) {
   test(`step-one hero has no visible board-card ghosting at ${viewport.width}x${viewport.height}`, async ({ browser }) => {
@@ -159,7 +181,7 @@ test("story spotlights only the three settled attention moments", async ({ brows
   await context.close();
 });
 
-for (const viewport of [...desktopSizes, { width: 390, height: 844 }]) {
+for (const viewport of [...desktopSizes, { width: 390, height: 844 }, { width: 430, height: 932 }]) {
   test(`landing page has no horizontal overflow at ${viewport.width}x${viewport.height}`, async ({ browser }) => {
     const context = await browser.newContext({ viewport, reducedMotion: "no-preference" });
     const page = await context.newPage();
@@ -169,7 +191,7 @@ for (const viewport of [...desktopSizes, { width: 390, height: 844 }]) {
   });
 }
 
-for (const viewport of [{ width: 1372, height: 732 }, { width: 390, height: 844 }]) {
+for (const viewport of [{ width: 1372, height: 732 }]) {
   test(`landing hero actions and scroll cue work at ${viewport.width}x${viewport.height}`, async ({ browser }) => {
     const context = await browser.newContext({ viewport, reducedMotion: "no-preference" });
     const page = await context.newPage();

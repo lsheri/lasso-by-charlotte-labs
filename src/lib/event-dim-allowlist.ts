@@ -123,7 +123,7 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "landing.section_jumped": ["section"],
   "landing.story_section_viewed": ["input_mode", "section"],
   "landing.usecase_played": ["card", "input_mode"],
-  "landing.viewed": ["surface", "variant"],
+  "landing.viewed": ["input_mode", "surface", "variant"],
   "demo.opened": ["surface", "engagement"],
   "demo.play_interacted": ["action", "surface"],
   "demo.card_opened": ["engagement", "kind"],

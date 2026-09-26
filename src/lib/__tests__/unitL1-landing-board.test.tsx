@@ -145,6 +145,7 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(css).toContain("scroll-snap-type: y mandatory");
     expect(css).toContain("max-height: calc(100svh - var(--lb-header-h))");
     expect(css).toContain(".lb-phone-counter");
+    expect(page).toContain('surface: "landing-board", input_mode:');
   });
   it("holds scenes, settles events, and reuses Ask Lasso presentation pieces", () => {
     const css = readFileSync("src/styles.css", "utf8");

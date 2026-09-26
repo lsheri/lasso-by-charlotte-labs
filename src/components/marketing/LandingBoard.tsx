@@ -845,7 +845,7 @@ export function LandingBoard() {
   const settleTimer = useRef<number | null>(null);
   const transitionTimer = useRef<number | null>(null);
 
-  useEffect(() => { event(viewId.current, "landing.viewed", { variant: "b2b", surface: "landing-board" }); }, []);
+  useEffect(() => { event(viewId.current, "landing.viewed", { variant: "b2b", surface: "landing-board", input_mode: window.matchMedia("(max-width: 639px)").matches ? "scroll" : "scroll" }); }, []);
   const settle = useCallback((index: number, inputMode: StoryInput) => {
     if (settleTimer.current !== null) window.clearTimeout(settleTimer.current);
     settleTimer.current = window.setTimeout(() => {
