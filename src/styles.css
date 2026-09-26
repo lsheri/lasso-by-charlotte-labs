@@ -217,6 +217,8 @@
   --nb-lasso-green-wash: #98f9b9;
   --lb-neon-turquoise: #19f5e1;
   --lb-neon-glow: rgba(25, 245, 225, .55);
+  --lb-neon-orange: #ff5f1f;
+  --lb-neon-orange-glow: rgba(255, 95, 31, .55);
   /* Granola's own mark: dark spiral on its green square. */
   --brand-granola: #7cb342;
   --brand-granola-ink: #111111;
@@ -5261,16 +5263,22 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   display: inline-block;
   color: var(--nb-ink);
   text-decoration-line: underline;
-  text-decoration-color: var(--nb-lasso-green);
+  text-decoration-color: currentColor;
   text-decoration-thickness: var(--stroke-pencil);
   text-underline-offset: 0.12em;
   text-decoration-skip-ink: auto;
-  will-change: opacity;
+  animation: landing-particle-ink-to-orange 7.6s ease-in-out infinite;
+  will-change: opacity, color;
 }
-.landing-particle-word-canvas { position: absolute; z-index: 1; pointer-events: none; }
+@keyframes landing-particle-ink-to-orange {
+  0% { opacity: 0; color: var(--nb-ink); text-shadow: 0 0 12px transparent; }
+  13% { opacity: 1; color: var(--nb-ink); text-shadow: 0 0 12px transparent; }
+  24% { color: var(--lb-neon-orange); text-shadow: 0 0 14px var(--lb-neon-orange-glow); }
+  89% { opacity: 1; color: var(--lb-neon-orange); text-shadow: 0 0 14px var(--lb-neon-orange-glow); }
+  100% { opacity: 0; color: var(--lb-neon-orange); text-shadow: 0 0 12px transparent; }
+}
 @media (prefers-reduced-motion: reduce) {
-  .landing-particle-word-text { opacity: 1 !important; }
-  .landing-particle-word-canvas { display: none; }
+  .landing-particle-word-text { opacity: 1 !important; animation: none; color: var(--lb-neon-orange); text-shadow: 0 0 14px var(--lb-neon-orange-glow); }
 }
 
 /* Beat loops: one loop per beat, 7s. */
@@ -5518,23 +5526,21 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   .landing-story-fragment { display: none; }
 }
 
-/* Unit 9: the close uses the hero particle language with a resolved green glow. */
+/* Unit 9: the close shares the hero phrase's ink-to-neon-orange move with a resolved orange glow. */
 .landing-close { padding-top: 96px; padding-bottom: 24px; text-align: center; }
 .landing-close-wordmark { color: var(--foreground); font-family: var(--font-mono); font-size: 18px; font-weight: 400; letter-spacing: .18em; line-height: 1.4; text-transform: uppercase; }
 .landing-close-ink-wrap { position: relative; isolation: isolate; }
 .landing-close-line2 { position: relative; z-index: 1; margin-top: 12px; color: var(--foreground); font-family: var(--font-hand); font-size: 64px; line-height: 1.05; }
 .landing-close-line2 .landing-particle-word-text {
   text-decoration-line: none;
-  text-shadow: 0 10px 34px color-mix(in srgb, var(--nb-lasso-green) 55%, transparent);
 }
 @media (max-width: 767px) {
   .landing-close { padding-top: 64px; }
   .landing-close-wordmark { font-size: 15px; }
   .landing-close-line2 { font-size: 40px; }
-  .landing-close-line2 .landing-particle-word-text { text-shadow: 0 10px 18px color-mix(in srgb, var(--nb-lasso-green) 55%, transparent); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .landing-close-line2 .landing-particle-word-text { text-shadow: 0 10px 34px color-mix(in srgb, var(--nb-lasso-green) 55%, transparent); }
+  .landing-close-line2 .landing-particle-word-text { color: var(--lb-neon-orange); text-shadow: 0 10px 34px var(--lb-neon-orange-glow); }
 }
 
 /* Unit 10: hero video, deck-pinned walkthrough, use cases, sharing. */
