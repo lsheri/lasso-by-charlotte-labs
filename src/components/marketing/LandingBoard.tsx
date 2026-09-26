@@ -1209,21 +1209,25 @@ function ExactTurn({
 function PhoneCaption({ index }: { index: number }) {
   const item = LANDING_BOARD_STEPS[index];
   if (!item) return null;
-  const displayStep = index + 1;
+  const displayStep = index;
+  // "Try it" is the closing card, not a step in the process: it carries no numeral.
+  const closing = item.key === "try-it";
   return (
     <article className="lb-phone-caption">
       <span
         className="lb-caption-progress"
-        aria-label={`${displayStep} of ${LANDING_BOARD_STEPS.length}`}
+        aria-label={closing ? item.label : `${displayStep} of ${LANDING_BOARD_STEPS.length}`}
         style={{ "--lb-progress-to": `${(index + 1) * 10}%` } as CSSProperties}
       />
       <div className="lb-caption-heading">
-        <span className="lb-step-ring">
-          <svg viewBox="0 0 34 34" aria-hidden="true">
-            <ellipse cx="17" cy="17" rx="14" ry="12.5" pathLength="1" />
-          </svg>
-          <span>{displayStep}</span>
-        </span>
+        {closing ? null : (
+          <span className="lb-step-ring">
+            <svg viewBox="0 0 34 34" aria-hidden="true">
+              <ellipse cx="17" cy="17" rx="14" ry="12.5" pathLength="1" />
+            </svg>
+            <span>{displayStep}</span>
+          </span>
+        )}
         <span>{item.label}</span>
       </div>
       <h2>
@@ -2044,7 +2048,9 @@ function StoryCaption({
   const renderCaption = (index: number, phase: "incoming" | "outgoing") => {
     const item = LANDING_BOARD_STEPS[index];
     if (!item) return null;
-    const displayStep = index + 1;
+    const displayStep = index;
+    // "Try it" is the closing card, not a step in the process: it carries no numeral.
+    const closing = item.key === "try-it";
     return (
       <article
         key={`${phase}-${index}-${nonce}`}
@@ -2062,16 +2068,18 @@ function StoryCaption({
       >
         <span
           className="lb-caption-progress"
-          aria-label={`${displayStep} of ${LANDING_BOARD_STEPS.length}`}
+          aria-label={closing ? item.label : `${displayStep} of ${LANDING_BOARD_STEPS.length}`}
         />
         <div className="lb-caption-text">
           <div className="lb-caption-heading">
-            <span className="lb-step-ring">
-              <svg viewBox="0 0 34 34" aria-hidden="true">
-                <ellipse cx="17" cy="17" rx="14" ry="12.5" pathLength="1" />
-              </svg>
-              <span>{displayStep}</span>
-            </span>
+            {closing ? null : (
+              <span className="lb-step-ring">
+                <svg viewBox="0 0 34 34" aria-hidden="true">
+                  <ellipse cx="17" cy="17" rx="14" ry="12.5" pathLength="1" />
+                </svg>
+                <span>{displayStep}</span>
+              </span>
+            )}
             <span>{item.label}</span>
           </div>
           <h2>
