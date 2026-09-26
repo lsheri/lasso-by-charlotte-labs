@@ -15,6 +15,7 @@ import {
 } from "react";
 
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
+import { BrandLogo, type BrandKey } from "@/components/connectors/BrandLogo";
 import { LandingParticlePhrase } from "@/components/marketing/LandingParticlePhrase";
 import { FocusSection } from "@/components/marketing/FocusSection";
 import { ToolLogo } from "@/components/marketing/ToolLogo";
@@ -175,6 +176,50 @@ const TOOL_BADGES = [
   { key: "googledrive", label: "Drive" },
   { key: "gmail", label: "Gmail" },
 ] as const;
+
+const LANDING_INTRO_BRANDS = [
+  "claude",
+  "chatgpt",
+  "gemini",
+  "copilot",
+  "granola",
+  "wispr",
+  "googledrive",
+  "gmail",
+  "googledocs",
+  "googlesheets",
+  "googleslides",
+  "googlecalendar",
+  "onedrive",
+  "sharepoint",
+  "notion",
+  "slack",
+] as const satisfies readonly BrandKey[];
+
+const LANDING_INTRO_DURATION_MS = 2500;
+
+function LandingLogoRain() {
+  const marks = [...LANDING_INTRO_BRANDS, "powerpoint" as const];
+  return (
+    <main className="lb-intro" aria-label="Opening Lasso" data-testid="landing-logo-rain">
+      <div className="lb-intro-rain" aria-hidden="true">
+        {[...marks, ...marks].map((brand, index) => (
+          <span className="lb-intro-drop" key={`${brand}-${index}`}>
+            {brand === "powerpoint" ? (
+              <span className="lb-powerpoint-badge">P</span>
+            ) : (
+              <BrandLogo brand={brand} size={28} />
+            )}
+          </span>
+        ))}
+      </div>
+      <div className="lb-intro-brand" aria-hidden="true">
+        <LassoLoopMark />
+        <span>LASSO</span>
+      </div>
+    </main>
+  );
+}
 
 const FALLBACK_SLIDES = [
   "Partnership model",
@@ -2581,6 +2626,7 @@ export function LandingBoard() {
   const [settledStep, setSettledStep] = useState(0);
   const [attentionNonce, setAttentionNonce] = useState(0);
   const [phoneStop, setPhoneStop] = useState(0);
+  const [introElapsed, setIntroElapsed] = useState(false);
   const activeRef = useRef(0);
   const settledStepRef = useRef(0);
   const transitioning = useRef(false);
@@ -2590,6 +2636,11 @@ export function LandingBoard() {
   const settleTimer = useRef<number | null>(null);
   const transitionTimer = useRef<number | null>(null);
   const playedCards = useRef(new Set<UseCaseKey>());
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setIntroElapsed(true), LANDING_INTRO_DURATION_MS);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     event(viewId.current, "landing.viewed", {
@@ -2762,6 +2813,7 @@ export function LandingBoard() {
     event(viewId.current, "landing.pilot_cta_clicked", { placement });
   }
   const result = query.data;
+  if (!introElapsed || query.isPending) return <LandingLogoRain />;
   return (
     <div className="landing-board-page">
       <LandingBoardHeader onPilot={() => pilot("header")} />
@@ -2852,9 +2904,7 @@ export function LandingBoard() {
               />
             ) : (
               <div className="lb-stage-window lb-loading">
-                {query.isPending
-                  ? "Opening the demo board."
-                  : "The demo board is not available right now."}
+                The demo board is not available right now.
               </div>
             )}
             <StoryCaption
@@ -2904,9 +2954,7 @@ export function LandingBoard() {
           />
         ) : (
           <div className="lb-phone-loading">
-            {query.isPending
-              ? "Opening the demo board."
-              : "The demo board is not available right now."}
+            The demo board is not available right now.
           </div>
         )}
       </main>
