@@ -379,7 +379,7 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(page).toContain('"--lb-waterfall-units": proof.transition');
     expect(page).toContain('"--lb-waterfall-units": proof.scenarioB');
     expect(page).toContain('data-testid="landing-board-number"');
-    expect(page).toContain('transition cost equals ${figure(net)}');
+    expect(page).toContain('transition cost equals ${figure(proof.scenarioB)}');
     expect(page).toContain('"Year-two net benefit figures unavailable"');
     expect(page).toContain('className="lb-waterfall-costs"');
     expect(css).toContain("height: calc(var(--lb-waterfall-units) * var(--lb-waterfall-unit))");
