@@ -291,3 +291,5 @@
 - [x] Stop settled story measurement and caption churn without changing story controls or events.
 - [x] Replace the three use-case titles and bodies, remove only their jump controls, and keep clip playback events.
 - [x] Add desktop stability and desktop/phone one-line title browser guards, then verify focused checks.
+- [ ] Remove LassoThinkingMark canvas from landing hero (user selected canvas at src/components/reflect/LassoThinkingMark.tsx:232, said "remove")
+- [ ] Investigate failing e2e "settled attention steps keep one spotlight and one caption" (line 429) - confirm whether related to scroll cue removal
