@@ -3,7 +3,7 @@
 /**
  * Landing phrase treatment: each word appears in ink, then shifts to neon
  * orange, holds for five seconds, fades out, and the loop repeats.
- * No canvas and no particles; the colour move is a CSS keyframe loop.
+ * The colour move is a pure CSS keyframe loop; no drawing surface involved.
  */
 export const PARTICLE_TEXT_HOLD_MS = 5000;
 export const PARTICLE_TEXT_CYCLE_MS = 7600;
