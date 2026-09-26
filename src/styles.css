@@ -1259,9 +1259,12 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .demo-play-group h3 { min-height: 38px; margin: 0; border-bottom: 1px solid var(--line-hairline); padding: 9px 12px; cursor: grab; font: 16px/1 Caveat, cursive; color: var(--text-hand); touch-action: none; }
 .demo-play-group p { margin: 5px 12px; color: var(--text-muted); font: 9px/1.2 "JetBrains Mono", monospace; text-transform: uppercase; }
 .demo-play-card { z-index: 4; width: 230px; height: 92px; cursor: grab; transition: transform 600ms ease-out; touch-action: none; }
-.demo-play-deck { z-index: 5; left: auto; right: 40px; top: 92px; cursor: grab; transition: transform 600ms ease-out; touch-action: none; }
+.demo-play-board .demo-play-card { opacity: 1; }
+.demo-play-deck { z-index: 5; left: auto; right: 40px; top: 92px; cursor: grab; opacity: 1; transition: transform 600ms ease-out; touch-action: none; }
 .demo-play-lasso { position: absolute; z-index: 5; left: 181px; top: 46px; width: 58px; height: 30px; border: 2.4px solid var(--text-hand); border-radius: 46% 54% 50% 47%; transform: rotate(-5deg); pointer-events: none; }
 .demo-play-notes { display: block; z-index: 6; right: 42px; bottom: 32px; opacity: 1; transform: none; }
+.demo-play-notes p:first-child { left: auto; right: 8px; top: auto; bottom: 104px; }
+.demo-play-notes p:last-child { left: auto; right: 8px; top: auto; bottom: 0; }
 .demo-play-sticky { position: absolute; z-index: 12; width: 140px; min-height: 112px; padding: 12px; background: var(--sticky-yellow); box-shadow: var(--shadow-card); transform: rotate(-1deg); transition: transform 600ms ease-out, opacity 600ms ease-out; touch-action: none; }
 .demo-play-sticky input { width: 100%; border: 0; outline: 0; background: transparent; font: 16px/1.25 Caveat, cursive; }
 .demo-playground[data-resetting="true"] .demo-play-sticky { opacity: 0; }
@@ -1304,6 +1307,8 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   .demo-play-ask[data-open="true"] .demo-play-ask-body { display: grid; }
   .demo-play-ask-toggle { min-height: 56px; }
   .demo-play-answer .lb-proof-card { font-size: 11.5px; }
+  .demo-play-presets { gap: 5px; padding: 7px 9px; }
+  .demo-play-presets button { max-width: 180px; font-size: 9px; line-height: 1.15; }
 }
 
 @media (prefers-reduced-motion: reduce) {
