@@ -285,3 +285,9 @@
 - [x] Tighten the three card headlines and bodies, then point each story link at the reviewed step.
 - [x] Swap in the Claude MCP push and drag-select Ask clips while retaining the source-trail clip.
 - [x] Raise both section introductions to the reviewed display sizes and verify desktop and phone screenshots.
+
+## Unit S6 landing stability and use-case copy
+
+- [x] Stop settled story measurement and caption churn without changing story controls or events.
+- [x] Replace the three use-case titles and bodies, remove only their jump controls, and keep clip playback events.
+- [x] Add desktop stability and desktop/phone one-line title browser guards, then verify focused checks.
