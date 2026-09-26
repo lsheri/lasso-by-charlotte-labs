@@ -220,3 +220,9 @@
 - [x] Raise the Ask rail presets, subline, composer, answers, proof rows, and mono labels to buyer-readable sizes.
 - [x] Use the compact demo sidebar below 1440px so fitted board card text remains readable.
 - [x] Verify 20 visible rail and board text nodes at 1372x732.
+
+### Unit P2.2 demo content containment
+- [x] Restore the Lab card hierarchy and enlarge cards and frames to contain full metadata, titles, summaries, and footers.
+- [x] Replace the deck overlay with a contained deliverable, one large 16:9 slide, and six local thumbnail controls.
+- [x] Fit with 48px clearance, a 90% cap, and the 12px effective text floor.
+- [x] Verify every card, deliverable, and sticky at 1372x732 and 1512x807.

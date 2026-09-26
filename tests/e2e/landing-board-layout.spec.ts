@@ -134,6 +134,50 @@ for (const viewport of desktopSizes) {
   });
 }
 
+for (const viewport of desktopSizes) {
+  test(`playable demo content stays contained at ${viewport.width}x${viewport.height}`, async ({ browser }, testInfo) => {
+    const context = await browser.newContext({ viewport, reducedMotion: "reduce" });
+    const page = await context.newPage();
+    await page.goto("/demo", { waitUntil: "networkidle" });
+    await expect(page.locator(".demo-deliverable-main")).toBeVisible();
+    const result = await page.evaluate(() => {
+      const stage = document.querySelector<HTMLElement>(".demo-sandbox-stage");
+      const scale = stage ? stage.getBoundingClientRect().width / stage.offsetWidth : 1;
+      const roots = Array.from(document.querySelectorAll<HTMLElement>('[data-testid^="lab-card-demo:"], [data-testid^="sticky-demo-"]'));
+      const failures: string[] = [];
+      for (const root of roots) {
+        const rootBox = root.getBoundingClientRect();
+        for (const child of Array.from(root.querySelectorAll<HTMLElement>("*"))) {
+          const box = child.getBoundingClientRect();
+          const style = getComputedStyle(child);
+          if (box.width === 0 || box.height === 0 || style.display === "none" || style.visibility === "hidden") continue;
+          if (box.left < rootBox.left - 1 || box.right > rootBox.right + 1 || box.top < rootBox.top - 1 || box.bottom > rootBox.bottom + 1) failures.push(`${root.dataset.testid}: ${child.tagName} escaped`);
+        }
+        for (const text of Array.from(root.querySelectorAll<HTMLElement>("span,p,strong,small,b,textarea"))) {
+          const box = text.getBoundingClientRect();
+          if (box.width === 0 || box.height === 0) continue;
+          if (text.scrollWidth > text.clientWidth + 1) failures.push(`${root.dataset.testid}: ${text.textContent?.trim()} overflowed`);
+          if (Number.parseFloat(getComputedStyle(text).fontSize) * scale < 12) failures.push(`${root.dataset.testid}: ${text.textContent?.trim()} was too small`);
+        }
+      }
+      const slide = document.querySelector<HTMLElement>(".demo-deliverable-main")?.getBoundingClientRect();
+      const dates = Array.from(document.querySelectorAll<HTMLElement>('.canvas-lab-card:not(.demo-deliverable-node) .nb-paper-body > div:first-child > span:not(:first-of-type)'));
+      return { failures, ratio: slide ? slide.width / slide.height : 0, dates: dates.map((date) => date.textContent?.trim()), zoom: scale };
+    });
+    expect(result.failures).toEqual([]);
+    expect(result.ratio).toBeGreaterThanOrEqual(16 / 9 * 0.98);
+    expect(result.ratio).toBeLessThanOrEqual(16 / 9 * 1.02);
+    expect(result.dates).toContain("Aug 28, 2026");
+    expect(result.zoom).toBeLessThanOrEqual(0.9);
+    await page.getByRole("button", { name: "Show slide 1" }).click();
+    await expect(page.getByRole("button", { name: "Show slide 1" })).toHaveAttribute("aria-pressed", "true");
+    await page.getByRole("button", { name: "Reset", exact: true }).click();
+    await expect(page.locator('.demo-deliverable-thumbnails').getByRole("button", { name: "Show slide 3" })).toHaveAttribute("aria-pressed", "true");
+    await page.screenshot({ path: testInfo.outputPath(`demo-contained-${viewport.width}x${viewport.height}.png`) });
+    await context.close();
+  });
+}
+
 for (const viewport of [{ width: 1372, height: 732 }, { width: 390, height: 844 }]) {
   test(`playable demo restores a dragged card at ${viewport.width}x${viewport.height}`, async ({ browser }) => {
     test.setTimeout(30_000);

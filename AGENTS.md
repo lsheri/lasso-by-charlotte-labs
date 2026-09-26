@@ -18,3 +18,4 @@
 - Keep the home story connector browser check in normal motion at both desktop sizes, because reduced motion bypasses its live replay timing.
 - Render home story captions through the settled-step caption presenter so exit, entry, word reveal, progress, and reduced-motion states stay synchronized with the 800ms dwell.
 - Keep `/demo` as a local-state-only playground built from the landing board presentation pieces; preserve the original guided demo at unlinked `/demo/classic`.
+- Keep the `/demo` deliverable as a self-contained local slide viewer whose selected slide resets with the board, because its artwork must never overflow the workboard node.
