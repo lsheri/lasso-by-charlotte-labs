@@ -5,6 +5,7 @@ const board = readFileSync("src/components/demo/DemoWorkboardSandbox.tsx", "utf8
 const pages = readFileSync("src/pages/DemoPages.tsx", "utf8");
 const landing = readFileSync("src/components/marketing/B2BLanding.tsx", "utf8");
 const story = readFileSync("src/components/marketing/LandingBoard.tsx", "utf8");
+const styles = readFileSync("src/styles.css", "utf8");
 
 describe("Unit P1 playable finished board", () => {
   it("opens the finished proof state and keeps the classic demo", () => {
@@ -42,7 +43,7 @@ describe("Unit P1 playable finished board", () => {
   });
 
   it("supports one-finger board pan and two-finger pan and pinch without changing telemetry", () => {
-    expect(board).toContain('touch-action: none');
+    expect(styles).toContain('.demo-sandbox-viewport { position: absolute; inset: 0; overflow: hidden; touch-action: none;');
     expect(board).toContain("onPointerDownCapture={beginTouchGesture}");
     expect(board).toContain('event.pointerType !== "touch"');
     expect(board).toContain("touchRef.current.size >= 2");
