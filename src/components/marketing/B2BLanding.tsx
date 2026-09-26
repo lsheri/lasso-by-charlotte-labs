@@ -159,7 +159,7 @@ function HeroVideo() {
   );
 }
 
-export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
+export function B2BLanding({ surface }: { surface: "landing-classic" | "landing-next" }) {
   const navigate = useNavigate();
   const viewId = useRef<string>(crypto.randomUUID());
   const [submitted, setSubmitted] = useState(false);

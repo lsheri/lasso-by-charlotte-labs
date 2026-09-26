@@ -131,7 +131,7 @@ export function DemoConversationsPage() {
       return;
     }
     if (search.from === "story") {
-      void navigate({ to: "/landing-board", hash: "lb-ask" });
+      void navigate({ to: "/", hash: "lb-ask" });
       return;
     }
     setFocus(null);
