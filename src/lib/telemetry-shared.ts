@@ -11,6 +11,8 @@ export type TelemetryEvent =
   | "landing.story_section_viewed"
   /** Unit L1: a visitor chose one of the closed story-section jump controls. */
   | "landing.section_jumped"
+  /** Unit L4: a visitor opened the source turn or returned to slide 3 from the proof card. */
+  | "landing.proof_link_opened"
   /** Unit 10: a use-case card's clip started on hover or tap. Closed card key and input mode only. */
   | "landing.usecase_played"
   /** B2B landing: a pilot request was saved. Team-size band only. */

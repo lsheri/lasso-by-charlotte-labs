@@ -14,7 +14,8 @@
  *   placedIn: which board frames the card sits in (replaces task ids by name)
  */
 
-import type { SharedSeedWork } from "./board-share-shared";
+import type { SharedBoardTurn, SharedSeedWork } from "./board-share-shared";
+import { publicSafeText } from "./demo-presets-shared";
 
 const TOP_KEYS = [
   "id",
@@ -75,6 +76,20 @@ export function publicSafeWork(items: readonly SharedSeedWork[]): SharedSeedWork
     if (m) out["meta"] = m;
     return out as SharedSeedWork;
   });
+}
+
+export type PublicTurnExcerpt = Pick<SharedBoardTurn, "turn_no" | "role" | "content" | "ts">;
+
+/** Demo-only turn text with row ids, model metadata, web addresses and UUIDs removed. */
+export function publicSafeTurnExcerpts(turns: readonly SharedBoardTurn[], from = 1, to = 999): PublicTurnExcerpt[] {
+  return turns
+    .filter((turn) => turn.turn_no >= from && turn.turn_no <= to)
+    .map((turn) => ({
+      turn_no: turn.turn_no,
+      role: turn.role === "user" ? "user" : "assistant",
+      content: publicSafeText(turn.content),
+      ts: turn.ts,
+    }));
 }
 
 /** The frames a seed card is placed in, from either the private or public shape. */
