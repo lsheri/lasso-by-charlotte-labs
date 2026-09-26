@@ -308,7 +308,12 @@ function StoryBoard({ board, presets, proof, step, attentionStep, attentionNonce
     const source = sourceRef.current;
     if (source) {
       const sourceRect = source.getBoundingClientRect();
-       setProofLine({ x1: (numberRect.left + numberRect.width / 2 - layerRect.left) / scale, y1: (numberRect.top + numberRect.height / 2 - layerRect.top) / scale, x2: (sourceRect.right - layerRect.left) / scale, y2: (sourceRect.top + sourceRect.height / 2 - layerRect.top) / scale });
+      setProofLine({
+        x1: (numberRect.left - layerRect.left) / scale - padX,
+        y1: (numberRect.top + numberRect.height / 2 - layerRect.top) / scale,
+        x2: (sourceRect.right - layerRect.left) / scale,
+        y2: (sourceRect.top + sourceRect.height / 2 - layerRect.top) / scale,
+      });
     }
   }, []);
   useLayoutEffect(() => {
@@ -338,10 +343,10 @@ function StoryBoard({ board, presets, proof, step, attentionStep, attentionNonce
         <div className="lb-cards">
           {items.map((item, index) => <BoardCard key={item.id} item={item} index={index} step={step} pin={step >= 5 && replayFinished && citedIds.has(item.id) ? trailNumbers.get(item.id) : undefined} read={step >= 5 && replayFinished && readIds.has(item.id)} turnCount={item.type === "ai_thread" ? board.turns[item.id]?.length ?? null : null} position={cardPositions[index] ?? { left: 188, top: 438 }} articleRef={item.id === proof?.itemId ? sourceRef : undefined} proofSource={item.id === proof?.itemId && step >= 5 && step <= 7 && replayFinished} />)}
         </div>
-        <svg className="lb-connectors" viewBox="0 0 1000 620" preserveAspectRatio="none" aria-hidden="true">
-          <path d="M260 230 C470 220 570 280 735 350" /><path d="M260 390 C470 390 590 380 735 350" /><path d="M540 485 C620 470 680 410 735 350" />
+        <svg className="lb-connectors" viewBox="0 0 1120 680" aria-hidden="true">
+          <g className="lb-workstream-connectors"><path d="M260 230 C470 220 570 280 735 350" /><path d="M260 390 C470 390 590 380 735 350" /><path d="M540 485 C620 470 680 410 735 350" /></g>
+          {proofLine && step >= 5 && step <= 7 ? <path data-testid="landing-proof-connector" className="lb-proof-connector" d={`M ${proofLine.x1} ${proofLine.y1} C ${proofLine.x1 - 80} ${proofLine.y1}, ${proofLine.x2 + 90} ${proofLine.y2}, ${proofLine.x2} ${proofLine.y2}`} /> : null}
         </svg>
-        {proofLine && step >= 5 && step <= 7 && replayFinished ? <svg className="lb-proof-connector" viewBox="0 0 1120 680" aria-hidden="true"><path d={`M ${proofLine.x1} ${proofLine.y1} C ${proofLine.x1 - 80} ${proofLine.y1}, ${proofLine.x2 + 90} ${proofLine.y2}, ${proofLine.x2} ${proofLine.y2}`} /></svg> : null}
         <article key={`deck-${attentionNonce}`} className={`lb-deck${pulse(3)}`}>
           <header><ToolLogo vendor="powerpoint" compact /><strong>{(deckItem?.title ?? "FY27 board deck v3").replace(/\s*\(slide notes\)\s*/i, "").trim()}</strong></header>
           <div>{slides.map((slide, index) => <DeckSlide key={`${slide}-${index}`} index={index} clientName={clientLabel} numberRef={numberRef} proof={proofModel} />)}</div>
