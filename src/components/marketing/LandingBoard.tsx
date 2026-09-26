@@ -1916,12 +1916,12 @@ function StoryBoard({
       ) : null}
       {step === 8 ? (
         <div key={`share-${attentionNonce}`} className={`lb-share-dialog${pulse(8)}`}>
-          <p className="lb-micro">READ ONLY</p>
+          <p className="lb-micro">CHECK</p>
           <h3>Share this board</h3>
-          <p>They open the deliverable, source cards, and the conversations behind them.</p>
-          <p>They do not open private drafts or anything outside this board.</p>
-          <strong>Closes in 48 hours</strong>
-          <small>In the demo this is shown, not issued.</small>
+          <p>Share your work with your team, manager, client, or bestie!</p>
+          <p>Decide whether they can see full context and transcripts or just the outline of your process.</p>
+          <strong>Closes in 48 hours - Or grant unlimited access</strong>
+          <small>Sharing can always be revoked.</small>
         </div>
       ) : null}
     </div>
