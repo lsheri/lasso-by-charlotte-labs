@@ -196,7 +196,7 @@ const LANDING_INTRO_BRANDS = [
   "slack",
 ] as const satisfies readonly BrandKey[];
 
-const LANDING_INTRO_DURATION_MS = 2500;
+const LANDING_INTRO_DURATION_MS = 4000;
 
 function LandingLogoRain() {
   const marks = [...LANDING_INTRO_BRANDS, "powerpoint" as const];

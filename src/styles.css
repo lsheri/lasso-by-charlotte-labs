@@ -5752,24 +5752,24 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .lb-intro-drop { position: absolute; top: -64px; left: calc(var(--lb-rain-column) * 5.26% + 1.5%); display: grid; width: clamp(42px, 4.2vw, 58px); height: clamp(42px, 4.2vw, 58px); place-items: center; border: 1px solid var(--nb-rule); border-radius: var(--radius-lg); background: var(--nb-white); box-shadow: var(--nb-paper-shadow-contact); opacity: 0; animation: lb-logo-rain var(--lb-rain-duration) linear var(--lb-rain-delay) both; }
 .lb-intro-drop svg { width: 58%; height: 58%; }
 .lb-intro-drop .lb-powerpoint-badge { width: 58%; height: 58%; flex-basis: auto; font-size: 16px; }
-.lb-intro-drop:nth-child(18n + 1) { --lb-rain-column: 0; --lb-rain-delay: 40ms; --lb-rain-duration: 2050ms; }
-.lb-intro-drop:nth-child(18n + 2) { --lb-rain-column: 2; --lb-rain-delay: 420ms; --lb-rain-duration: 1840ms; }
-.lb-intro-drop:nth-child(18n + 3) { --lb-rain-column: 4; --lb-rain-delay: 120ms; --lb-rain-duration: 2240ms; }
-.lb-intro-drop:nth-child(18n + 4) { --lb-rain-column: 6; --lb-rain-delay: 680ms; --lb-rain-duration: 1750ms; }
-.lb-intro-drop:nth-child(18n + 5) { --lb-rain-column: 8; --lb-rain-delay: 260ms; --lb-rain-duration: 2110ms; }
-.lb-intro-drop:nth-child(18n + 6) { --lb-rain-column: 10; --lb-rain-delay: 520ms; --lb-rain-duration: 1900ms; }
-.lb-intro-drop:nth-child(18n + 7) { --lb-rain-column: 12; --lb-rain-delay: 80ms; --lb-rain-duration: 2180ms; }
-.lb-intro-drop:nth-child(18n + 8) { --lb-rain-column: 14; --lb-rain-delay: 760ms; --lb-rain-duration: 1680ms; }
-.lb-intro-drop:nth-child(18n + 9) { --lb-rain-column: 16; --lb-rain-delay: 330ms; --lb-rain-duration: 2020ms; }
-.lb-intro-drop:nth-child(18n + 10) { --lb-rain-column: 18; --lb-rain-delay: 600ms; --lb-rain-duration: 1810ms; }
-.lb-intro-drop:nth-child(18n + 11) { --lb-rain-column: 1; --lb-rain-delay: 860ms; --lb-rain-duration: 1540ms; }
-.lb-intro-drop:nth-child(18n + 12) { --lb-rain-column: 3; --lb-rain-delay: 980ms; --lb-rain-duration: 1460ms; }
-.lb-intro-drop:nth-child(18n + 13) { --lb-rain-column: 5; --lb-rain-delay: 780ms; --lb-rain-duration: 1640ms; }
-.lb-intro-drop:nth-child(18n + 14) { --lb-rain-column: 9; --lb-rain-delay: 1080ms; --lb-rain-duration: 1360ms; }
-.lb-intro-drop:nth-child(18n + 15) { --lb-rain-column: 11; --lb-rain-delay: 900ms; --lb-rain-duration: 1510ms; }
-.lb-intro-drop:nth-child(18n + 16) { --lb-rain-column: 13; --lb-rain-delay: 1120ms; --lb-rain-duration: 1290ms; }
-.lb-intro-drop:nth-child(18n + 17) { --lb-rain-column: 15; --lb-rain-delay: 830ms; --lb-rain-duration: 1590ms; }
-.lb-intro-drop:nth-child(18n + 18) { --lb-rain-column: 17; --lb-rain-delay: 1040ms; --lb-rain-duration: 1400ms; }
+.lb-intro-drop:nth-child(18n + 1) { --lb-rain-column: 0; --lb-rain-delay: 64ms; --lb-rain-duration: 3280ms; }
+.lb-intro-drop:nth-child(18n + 2) { --lb-rain-column: 2; --lb-rain-delay: 672ms; --lb-rain-duration: 2944ms; }
+.lb-intro-drop:nth-child(18n + 3) { --lb-rain-column: 4; --lb-rain-delay: 192ms; --lb-rain-duration: 3584ms; }
+.lb-intro-drop:nth-child(18n + 4) { --lb-rain-column: 6; --lb-rain-delay: 1088ms; --lb-rain-duration: 2800ms; }
+.lb-intro-drop:nth-child(18n + 5) { --lb-rain-column: 8; --lb-rain-delay: 416ms; --lb-rain-duration: 3376ms; }
+.lb-intro-drop:nth-child(18n + 6) { --lb-rain-column: 10; --lb-rain-delay: 832ms; --lb-rain-duration: 3040ms; }
+.lb-intro-drop:nth-child(18n + 7) { --lb-rain-column: 12; --lb-rain-delay: 128ms; --lb-rain-duration: 3488ms; }
+.lb-intro-drop:nth-child(18n + 8) { --lb-rain-column: 14; --lb-rain-delay: 1216ms; --lb-rain-duration: 2688ms; }
+.lb-intro-drop:nth-child(18n + 9) { --lb-rain-column: 16; --lb-rain-delay: 528ms; --lb-rain-duration: 3232ms; }
+.lb-intro-drop:nth-child(18n + 10) { --lb-rain-column: 18; --lb-rain-delay: 960ms; --lb-rain-duration: 2896ms; }
+.lb-intro-drop:nth-child(18n + 11) { --lb-rain-column: 1; --lb-rain-delay: 1376ms; --lb-rain-duration: 2464ms; }
+.lb-intro-drop:nth-child(18n + 12) { --lb-rain-column: 3; --lb-rain-delay: 1568ms; --lb-rain-duration: 2336ms; }
+.lb-intro-drop:nth-child(18n + 13) { --lb-rain-column: 5; --lb-rain-delay: 1248ms; --lb-rain-duration: 2624ms; }
+.lb-intro-drop:nth-child(18n + 14) { --lb-rain-column: 9; --lb-rain-delay: 1728ms; --lb-rain-duration: 2176ms; }
+.lb-intro-drop:nth-child(18n + 15) { --lb-rain-column: 11; --lb-rain-delay: 1440ms; --lb-rain-duration: 2416ms; }
+.lb-intro-drop:nth-child(18n + 16) { --lb-rain-column: 13; --lb-rain-delay: 1792ms; --lb-rain-duration: 2064ms; }
+.lb-intro-drop:nth-child(18n + 17) { --lb-rain-column: 15; --lb-rain-delay: 1328ms; --lb-rain-duration: 2544ms; }
+.lb-intro-drop:nth-child(18n + 18) { --lb-rain-column: 17; --lb-rain-delay: 1664ms; --lb-rain-duration: 2240ms; }
 .lb-intro-drop:nth-child(n + 19) { margin-top: -48vh; }
 @keyframes lb-logo-rain { 0% { opacity: 0; transform: translate3d(-8px,-8vh,0) rotate(-5deg); } 8% { opacity: .92; } 92% { opacity: .92; } 100% { opacity: 0; transform: translate3d(12px,116vh,0) rotate(9deg); } }
 @keyframes lb-intro-brand-in { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: none; } }

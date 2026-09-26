@@ -61,7 +61,7 @@ describe("Unit L1 scroll-driven landing board", () => {
   it("replaces loading copy with a timed, reduced-motion-safe logo rain", () => {
     const css = readFileSync("src/styles.css", "utf8");
     expect(page).toContain("function LandingLogoRain()")
-    expect(page).toContain("LANDING_INTRO_DURATION_MS = 2500")
+    expect(page).toContain("LANDING_INTRO_DURATION_MS = 4000")
     expect(page).toContain('data-testid="landing-logo-rain"')
     expect(page).toContain("[...marks, ...marks].map")
     for (const brand of [
