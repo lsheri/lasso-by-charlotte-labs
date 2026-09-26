@@ -9,6 +9,7 @@
 - [x] M7 landing: shrink all five hero arrival cards, reflow product cards above 16:9 clips, and update One canvas copy without changing controls or events.
 - [x] M8 landing: rotate product clips only while visible and cross-fade three pre-composed hero frames without changing controls or events.
 - [x] M9 landing: replace hero frame cross-fades with recorded desktop and phone assembly videos, preserving focus, reduced motion, controls, and events.
+- [x] D2 demo: enable one-finger empty-board pan plus two-finger pan and pinch, and restyle the honesty banner with current tokens.
 - [x] S5 app work: add exact-turn chips to Ask answers, remove link disclaimers from the prompt, and replace story labels with approved plain-language copy.
 
 # Roadmap
