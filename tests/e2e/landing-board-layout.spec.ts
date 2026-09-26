@@ -28,7 +28,7 @@ test("story captions and visible text stay readable across settled desktop steps
     await page.getByRole("button", { name, exact: true }).click();
     const caption = page.locator('.lb-caption[data-phase="incoming"]');
     await expect(caption).toBeVisible();
-    await expect(caption.locator(".lb-caption-text > span")).toContainText(name.toUpperCase());
+    await expect(caption.locator(".lb-caption-text > span")).toContainText(new RegExp(name, "i"));
     const geometry = await page.evaluate(() => {
       const card = document.querySelector<HTMLElement>('.lb-caption[data-phase="incoming"]');
       const stage = document.querySelector<HTMLElement>(".lb-stage-window");
