@@ -93,6 +93,9 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(net / savings).toBeCloseTo(1.4 / 2.1, 2);
     expect(page).toContain('className="lb-waterfall-costs"');
     expect(page).toContain('data-units="0.7"');
+    const costsBackground = css.match(/\.lb-waterfall-costs i \{[^}]*background: ([^;]+);/)?.[1]?.trim();
+    expect(costsBackground).toBe("#C8553D");
+    expect(costsBackground).not.toBe("transparent");
   });
   it("sources the Ask client and engagement labels rather than inventing a client name", () => {
     expect(page).toContain("<h3>{clientLabel}</h3>");
