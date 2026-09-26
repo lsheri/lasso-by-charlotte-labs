@@ -1,4 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
+import { LabPaper } from "@/components/canvas-lab/LabPaper";
+import { EXAMPLE_NODES } from "@/components/canvas-lab/example-board";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -1924,6 +1926,41 @@ function StoryBoard({
           <small>Sharing can always be revoked.</small>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+const HERO_RAIL_IDS = {
+  left: ["example-brief", "example-volumes", "example-judgment"],
+  right: ["example-decision", "example-deck"],
+} as const;
+const railNoop = () => {};
+
+/** Inert decoration: real LabPaper faces from the example seed, never interactive. */
+function HeroRails() {
+  const pick = (ids: readonly string[]) =>
+    ids.flatMap((id) => {
+      const node = EXAMPLE_NODES.find((n) => n.id === id);
+      return node ? [{ ...node, local: false, width: 220, height: 136 }] : [];
+    });
+  return (
+    <div className="lb-hero-rails" aria-hidden="true" inert>
+      {(["left", "right"] as const).map((side) => (
+        <div key={side} className="lb-hero-rail" data-side={side}>
+          {pick(HERO_RAIL_IDS[side]).map((node, index) => (
+            <div key={node.id} className="lb-hero-rail-card" data-index={index}>
+              <LabPaper
+                node={node}
+                selected={false}
+                onEdit={railNoop}
+                onEditCommitted={railNoop}
+                showOwnership={false}
+              />
+            </div>
+          ))}
+          <span className="lb-hero-rail-link" />
+        </div>
+      ))}
     </div>
   );
 }
