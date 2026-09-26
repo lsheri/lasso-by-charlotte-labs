@@ -1,3 +1,4 @@
+- Ask answers that cite a conversation turn render an exact-turn chip; the model names the item and turn while the product supplies navigation, preventing stale link disclaimers.
 <!-- LOVABLE:BEGIN -->
 > [!IMPORTANT]
 > This project is connected to [Lovable](https://lovable.dev). Avoid rewriting

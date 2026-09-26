@@ -15,6 +15,7 @@ import { DemoTourNote } from "@/components/demo/DemoTourNote";
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
 import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
 import { ContextAudit } from "@/components/reflect/ContextTrail";
+import { AnswerTurnLinks } from "@/components/reflect/AnswerTurnLinks";
 import { PublicHeader } from "@/components/layout/PublicHeader";
 import { useSession } from "@/hooks/use-session";
 import { openDemoBoardFn } from "@/lib/demo.functions";
@@ -184,22 +185,8 @@ export function DemoPresetBar({
             <MarkdownMessage content={open.answer} className="text-[13px]" />
             {open.turnRefs.length > 0 ? (
               <div className="space-y-1">
-                {open.turnRefs.map((ref) => (
-                  <div key={`${ref.work_item_id}:${ref.turn_no}`}>
-                    <button
-                      type="button"
-                      onClick={() => onOpenTurn(ref.work_item_id, ref.turn_no, open.position)}
-                      data-testid={`demo-open-turn-${open.position}`}
-                      className="text-left text-[13px] text-foreground underline underline-offset-2 hover:text-muted-foreground"
-                    >
-                      Open the exact turn
-                    </button>
-                    <span className="ml-2 text-[11.5px] text-muted-foreground">{ref.label}</span>
-                    {isChatLinkQuestion(open.question) ? (
-                      <p className="text-[11.5px] text-muted-foreground">{DEMO_CHAT_LINK_NOTE}</p>
-                    ) : null}
-                  </div>
-                ))}
+                <AnswerTurnLinks refs={open.turnRefs} onOpen={(ref) => onOpenTurn(ref.work_item_id, ref.turn_no, open.position)} testId={`demo-open-turn-${open.position}`} />
+                {isChatLinkQuestion(open.question) ? <p className="text-[11.5px] text-muted-foreground">{DEMO_CHAT_LINK_NOTE}</p> : null}
               </div>
             ) : null}
             <ContextAudit manifest={open.manifest} readOnly testId="demo-context-trail" onOpenChange={(next) => { if (next) onTrailOpened?.(open.position); }} />

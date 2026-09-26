@@ -1,3 +1,4 @@
+- [x] S5: add exact-turn chips to Ask answers, remove link disclaimers from the prompt, regenerate YSM-01 presets, and replace story labels with approved plain-language copy.
 # Roadmap
 
 - [x] Unit 3.3: Dock phone tour notes, clear the preset bar, densify desktop collision checks, and verify all seven steps.

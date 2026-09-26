@@ -26,6 +26,9 @@ import { LassoThinkingMark } from "@/components/reflect/LassoThinkingMark";
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
 import { LOOP_SIZE_CHAT } from "@/lib/lasso-loop";
 import { useHasLiveCoachLink } from "@/hooks/use-coaching-links";
+import { extractTurnRefs, type TurnRef } from "@/lib/turn-labels";
+import { AnswerTurnLinks } from "@/components/reflect/AnswerTurnLinks";
+import { ThreadViewerById } from "@/components/work/ThreadViewerById";
 
 /** Three grey dots used by compact loading and sending states inside Ask Lasso. */
 export function NbDots({ label = "Thinking" }: { label?: string }) {
@@ -211,6 +214,7 @@ function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions?: Reac
   // Dragging an answer onto the board is for a fine pointer on a wide screen.
   const isMobile = useIsMobile();
   const [coarse, setCoarse] = useState(false);
+  const [openTurn, setOpenTurn] = useState<TurnRef | null>(null);
   useEffect(() => {
     if (typeof window === "undefined" || !window.matchMedia) return;
     const query = window.matchMedia("(pointer: coarse)");
@@ -299,6 +303,10 @@ function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions?: Reac
                 ) : (
                   <AnswerRail state="done">
                     <MarkdownMessage content={message.content} variant="binder" />
+                    <AnswerTurnLinks
+                      refs={extractTurnRefs(message.content, ask.sourcesByMessage?.[Number(message.id)] ?? [])}
+                      onOpen={setOpenTurn}
+                    />
                     <div className="nb-binder-inset">
                       <ContextAudit
                         manifest={parseManifest(message.context_manifest)}
@@ -395,6 +403,11 @@ function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions?: Reac
         ) : null}
         <div ref={ask.bottomRef} />
       </div>
+      <ThreadViewerById
+        workItemId={openTurn?.work_item_id ?? null}
+        focus={openTurn ? { turnNo: openTurn.turn_no } : undefined}
+        onClose={() => setOpenTurn(null)}
+      />
     </div>
   );
 }

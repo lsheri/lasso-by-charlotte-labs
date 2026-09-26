@@ -10,6 +10,7 @@ import { ToolLogo } from "@/components/marketing/ToolLogo";
 import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
 import { AnswerRail, ContextAudit, ThinkingTrail } from "@/components/reflect/ContextTrail";
 import { LassoThinkingMark } from "@/components/reflect/LassoThinkingMark";
+import { AnswerTurnLinks } from "@/components/reflect/AnswerTurnLinks";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { VendorMark } from "@/components/work/SourceMark";
@@ -24,16 +25,16 @@ import { keptContentLabel } from "@/lib/work-open";
 import { noteDemoOpened, noteDemoPlayInteracted, type DemoPlayAction } from "@/lib/demo-telemetry";
 
 export const LANDING_BOARD_STEPS = [
-  { key: "problem", label: "Problem", headline: "Your firm's thinking went invisible.", line: "The work is scattered across tools, tabs, and drafts." },
-  { key: "canvas", label: "Canvas", headline: "All your AI research and conversations, on one infinite canvas.", line: "Today your team's thinking is spread across four AI tools and a hundred tabs." },
-  { key: "workstreams", label: "Workstreams", headline: "Grouped into workstreams, the way your team actually splits the work.", line: "The shape of the engagement becomes visible without changing the source material." },
-  { key: "deliverable", label: "Deliverable", headline: "Every workstream wired to the deliverable it fed.", line: "The finished deck stays connected to the work behind it." },
-  { key: "circle", label: "Circle", headline: "A number worth asking about.", line: "Where did the $1.4M on slide 3 come from?" },
-  { key: "ask", label: "Ask", headline: "Every number in the deck has a trail.", line: "Where it came from, what your team checked, what's still open. Open the chat and check it yourself." },
-  { key: "the-turn", label: "The turn", headline: "Hand-check the actual chat.", line: "The full chat, with the decision highlighted. Open it and read it yourself." },
-  { key: "still-open", label: "Still open", headline: "And what's still open, pinned where it came from.", line: "Questions stay beside the work that raised them." },
+  { key: "problem", label: "The problem", headline: "Your team's AI work is scattered.", line: "Four tools, a hundred tabs, and none of it connects to the deliverable." },
+  { key: "canvas", label: "One canvas", headline: "Every AI chat in one place.", line: "Claude, ChatGPT and Gemini conversations land on one board." },
+  { key: "workstreams", label: "Workstreams", headline: "Grouped the way your team splits the work.", line: "The shape of the engagement, without changing the source material." },
+  { key: "deliverable", label: "Deliverable", headline: "Each group connects to the deck it fed.", line: "The finished deck stays tied to the work behind it." },
+  { key: "circle", label: "A number", headline: "Pick any number in the deck.", line: "Where did the $1.4M on slide 3 come from?" },
+  { key: "ask", label: "Ask Lasso", headline: "Ask where a number came from.", line: "The source, what your team checked after, and what is still unconfirmed." },
+  { key: "the-turn", label: "The chat", headline: "Open the chat and read it yourself.", line: "The full conversation, with the decision highlighted." },
+  { key: "still-open", label: "Open questions", headline: "Open questions stay on the board.", line: "Each one sits beside the work that raised it." },
   { key: "share", label: "Share", headline: "Share the deliverable, not the drafts.", line: "A read-only view closes in 48 hours and opens only what you chose." },
-  { key: "try-it", label: "Try it", headline: "Your turn.", line: "Open the invented workspace and inspect the board yourself." },
+  { key: "try-it", label: "Try it", headline: "Open the board yourself.", line: "Every figure in this workspace is invented." },
 ] as const;
 
 type StepKey = (typeof LANDING_BOARD_STEPS)[number]["key"];
@@ -159,7 +160,7 @@ function usePresetReplay(step: number, presets: DemoPreset[]) {
   return { phase, preset, readCount, streamed, typed, position };
 }
 
-function ReplayAnswer({ preset, finished = true, showAudit = true }: { preset: DemoPreset; finished?: boolean; showAudit?: boolean }) {
+function ReplayAnswer({ preset, finished = true, showAudit = true, onOpenTurn }: { preset: DemoPreset; finished?: boolean; showAudit?: boolean; onOpenTurn?: (() => void) | undefined }) {
   return (
     <div className="nb-conversation-message max-w-none flex-row items-start gap-3">
       <LassoLoopMark className="size-7 shrink-0 text-lasso-green" />
@@ -167,6 +168,10 @@ function ReplayAnswer({ preset, finished = true, showAudit = true }: { preset: D
         <span className="nb-binder-line font-sans text-[13px] font-semibold text-ink">Lasso</span>
         <AnswerRail state="done">
           <MarkdownMessage content={preset.answer} variant="binder" />
+          {finished && onOpenTurn ? <AnswerTurnLinks refs={preset.turnRefs} onOpen={(ref) => {
+            onOpenTurn();
+            window.location.assign(`/demo/conversations?item=${encodeURIComponent(ref.work_item_id)}&turn=${ref.turn_no}&from=story`);
+          }} testId="landing-answer-turn-link" /> : null}
           {showAudit && finished && preset.manifest ? <ContextAudit manifest={preset.manifest} readOnly initialOpen /> : null}
         </AnswerRail>
       </div>
@@ -373,7 +378,7 @@ function AskReplay({ presets, step, onFinished, clientLabel, engagementTitle, pr
           return <div key={position} className="lb-replay-turn">
             {showQuestion ? <div className="lb-replay-question"><span>You</span><p>{preset.question}</p></div> : null}
             {current && replay.phase === "reading" ? <AnswerRail state="working"><ThinkingTrail items={preset.manifest?.items.map((item) => ({ id: item.id, title: item.title })) ?? []} finalPhase="Writing" manifest={liveItems.length > 0 && preset.manifest ? { ...preset.manifest, items: liveItems } : null} /></AnswerRail> : null}
-            {answerText ? <ReplayAnswer preset={{ ...preset, answer: answerText }} finished={!current || replay.phase === "done"} showAudit={position !== 1} /> : null}
+            {answerText ? <ReplayAnswer preset={{ ...preset, answer: answerText }} finished={!current || replay.phase === "done"} showAudit={position !== 1} onOpenTurn={position === 2 ? onOpenTurn : undefined} /> : null}
           </div>;
         })}
       </div>

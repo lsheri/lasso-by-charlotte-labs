@@ -80,3 +80,19 @@ describe("binder baseline law", () => {
     expect(css).toContain("box-shadow: 0 0 0 4px var(--nb-white)");
   });
 });
+
+describe("answer turn links", () => {
+  const prompt = readFileSync("src/lib/turn-labels.ts", "utf8");
+  const surface = readFileSync("src/components/reflect/AskSurface.tsx", "utf8");
+
+  it("tells the model to cite turns without disclaiming links", () => {
+    expect(prompt).toContain("The product attaches the link to every cited item and turn.");
+    expect(prompt).toContain("Never say you cannot link, have no link, or cannot provide a link.");
+  });
+
+  it("renders cited turns below product answers", () => {
+    expect(surface).toContain("<AnswerTurnLinks");
+    expect(surface).toContain("extractTurnRefs(message.content");
+    expect(surface).toContain("focus={openTurn ? { turnNo: openTurn.turn_no } : undefined}");
+  });
+});

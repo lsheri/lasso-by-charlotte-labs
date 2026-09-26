@@ -14,7 +14,7 @@ export const RAW_TURN_TAG = /TURN \d+ (?:·\s*)?(?:USER|ASSISTANT|TOOL)\b/;
 const RAW_TURN_TAG_G = /\bTURN (\d+) (?:·\s*)?(?:USER|ASSISTANT|TOOL)\b:?/g;
 
 export const TURN_CITATION_RULE =
-  'HOW TO REFER TO TURNS: conversations are shown with labels like "(turn 5, you said)" and "(turn 6, the assistant replied)". When you point at a turn, name the conversation by its title and the turn number in plain words, for example: in "Board charter options", turn 6. Never print internal tag names such as TURN 5 USER or TURN 6 ASSISTANT.';
+  'HOW TO REFER TO TURNS: conversations are shown with labels like "(turn 5, you said)" and "(turn 6, the assistant replied)". When you point at a turn, name the conversation by its title and the turn number in plain words, for example: in "Board charter options", turn 6. Never say you cannot link, have no link, or cannot provide a link. The product attaches the link to every cited item and turn. Never print internal tag names such as TURN 5 USER or TURN 6 ASSISTANT.';
 
 function roleWords(role: string): string {
   if (role === "USER") return "you said";
