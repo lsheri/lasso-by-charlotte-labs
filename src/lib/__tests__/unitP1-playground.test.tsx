@@ -31,6 +31,7 @@ describe("Unit P1 playable finished board", () => {
     expect(board).toContain("window.setTimeout(() => resetBoard(true), 5_000)");
     expect(board).toContain("setFrames(initial.frames)");
     expect(board).toContain("setNodes(initial.nodes)");
+    expect(board).toContain("setActiveSlide(2)");
     expect(board).not.toMatch(/localStorage|sessionStorage|useMutation/);
   });
 
@@ -50,5 +51,11 @@ describe("Unit P1 playable finished board", () => {
   it("emits the closed additive vocabulary", () => {
     const telemetry = readFileSync("src/lib/demo-telemetry.ts", "utf8");
     for (const action of ["drag_card", "drag_group", "sticky_added", "sticky_edited", "reset_auto", "reset_manual", "preset_opened", "proof_link_opened", "slide_selected"]) expect(telemetry).toContain(`\"${action}\"`);
+  });
+
+  it("contains the deliverable and swaps its six local slide thumbnails", () => {
+    expect(board).toContain('className="demo-deliverable-main"');
+    expect(board).toContain("Array.from({ length: 6 }");
+    expect(board).toContain('emit("slide_selected")');
   });
 });
