@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { type FormEvent, type MouseEvent, type ReactNode, useEffect, useRef, useState } from "react";
 
@@ -160,6 +160,7 @@ function HeroVideo() {
 }
 
 export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
+  const navigate = useNavigate();
   const viewId = useRef<string>(crypto.randomUUID());
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -275,8 +276,7 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
   function openDemoWorkspace(event: MouseEvent<HTMLAnchorElement>) {
     event.preventDefault();
     noteSeeItWorkClick();
-    document.querySelector("#demo")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    window.history.replaceState(null, "", "#demo");
+    void navigate({ to: "/demo" });
   }
 
   async function submitPilotRequest(event: FormEvent<HTMLFormElement>) {
@@ -349,7 +349,7 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
               </h2>
               <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-3">
                 <Button asChild>
-                  <a href="#demo" onClick={openDemoWorkspace}>
+                  <a href="/demo" onClick={openDemoWorkspace}>
                     Open the demo workspace
                   </a>
                 </Button>

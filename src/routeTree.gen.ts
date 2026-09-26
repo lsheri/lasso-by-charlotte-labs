@@ -44,6 +44,7 @@ import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedWorkRouteImport } from './routes/_authenticated/work'
 import { Route as DemoIndexRouteImport } from './routes/demo.index'
 import { Route as DemoCodeRouteImport } from './routes/demo.$code'
+import { Route as DemoClassicRouteImport } from './routes/demo.classic'
 import { Route as DemoConversationsRouteImport } from './routes/demo.conversations'
 import { Route as DemoSourcesRouteImport } from './routes/demo.sources'
 import { Route as JoinEduRouteImport } from './routes/join_.edu'
@@ -242,6 +243,11 @@ const DemoCodeRoute = DemoCodeRouteImport.update({
   path: '/demo/$code',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DemoClassicRoute = DemoClassicRouteImport.update({
+  id: '/demo/classic',
+  path: '/demo/classic',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DemoConversationsRoute = DemoConversationsRouteImport.update({
   id: '/demo/conversations',
   path: '/demo/conversations',
@@ -384,6 +390,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRoute
   '/work': typeof AuthenticatedWorkRoute
   '/demo/$code': typeof DemoCodeRoute
+  '/demo/classic': typeof DemoClassicRoute
   '/demo/conversations': typeof DemoConversationsRoute
   '/demo/sources': typeof DemoSourcesRoute
   '/join/edu': typeof JoinEduRoute
@@ -440,6 +447,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsRoute
   '/work': typeof AuthenticatedWorkRoute
   '/demo/$code': typeof DemoCodeRoute
+  '/demo/classic': typeof DemoClassicRoute
   '/demo/conversations': typeof DemoConversationsRoute
   '/demo/sources': typeof DemoSourcesRoute
   '/join/edu': typeof JoinEduRoute
@@ -498,6 +506,7 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/work': typeof AuthenticatedWorkRoute
   '/demo/$code': typeof DemoCodeRoute
+  '/demo/classic': typeof DemoClassicRoute
   '/demo/conversations': typeof DemoConversationsRoute
   '/demo/sources': typeof DemoSourcesRoute
   '/join_/edu': typeof JoinEduRoute
@@ -556,6 +565,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/work'
     | '/demo/$code'
+    | '/demo/classic'
     | '/demo/conversations'
     | '/demo/sources'
     | '/join/edu'
@@ -612,6 +622,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/work'
     | '/demo/$code'
+    | '/demo/classic'
     | '/demo/conversations'
     | '/demo/sources'
     | '/join/edu'
@@ -669,6 +680,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/_authenticated/work'
     | '/demo/$code'
+    | '/demo/classic'
     | '/demo/conversations'
     | '/demo/sources'
     | '/join_/edu'
@@ -706,6 +718,7 @@ export interface RootRouteChildren {
   TrustRoute: typeof TrustRoute
   WhyRoute: typeof WhyRoute
   DemoCodeRoute: typeof DemoCodeRoute
+  DemoClassicRoute: typeof DemoClassicRoute
   DemoConversationsRoute: typeof DemoConversationsRoute
   DemoSourcesRoute: typeof DemoSourcesRoute
   JoinEduRoute: typeof JoinEduRoute
@@ -969,6 +982,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DemoCodeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/demo/classic': {
+      id: '/demo/classic'
+      path: '/demo/classic'
+      fullPath: '/demo/classic'
+      preLoaderRoute: typeof DemoClassicRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/demo/conversations': {
       id: '/demo/conversations'
       path: '/demo/conversations'
@@ -1193,6 +1213,7 @@ const rootRouteChildren: RootRouteChildren = {
   TrustRoute: TrustRoute,
   WhyRoute: WhyRoute,
   DemoCodeRoute: DemoCodeRoute,
+  DemoClassicRoute: DemoClassicRoute,
   DemoConversationsRoute: DemoConversationsRoute,
   DemoSourcesRoute: DemoSourcesRoute,
   JoinEduRoute: JoinEduRoute,

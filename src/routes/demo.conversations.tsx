@@ -4,13 +4,13 @@ import { DemoConversationsPage } from "@/pages/DemoExtraPages";
 
 export const Route = createFileRoute("/demo/conversations")({
   ssr: false,
-  validateSearch: (search: Record<string, unknown>): { item?: string; turn?: number; from?: "story" } => {
+  validateSearch: (search: Record<string, unknown>): { item?: string; turn?: number; from?: "story" | "demo" } => {
     const rawTurn = Number(search["turn"]);
     const item = typeof search["item"] === "string" ? search["item"].slice(0, 64) : undefined;
     return {
       ...(item ? { item } : {}),
       ...(Number.isInteger(rawTurn) && rawTurn > 0 && rawTurn < 1000 ? { turn: rawTurn } : {}),
-      ...(search["from"] === "story" ? { from: "story" as const } : {}),
+      ...(search["from"] === "story" || search["from"] === "demo" ? { from: search["from"] } : {}),
     };
   },
   head: () => ({

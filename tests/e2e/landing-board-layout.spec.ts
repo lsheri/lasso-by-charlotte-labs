@@ -28,3 +28,25 @@ for (const viewport of [...desktopSizes, { width: 390, height: 844 }]) {
     await context.close();
   });
 }
+
+for (const viewport of [{ width: 1372, height: 732 }, { width: 390, height: 844 }]) {
+  test(`playable demo restores a dragged card at ${viewport.width}x${viewport.height}`, async ({ browser }) => {
+    test.setTimeout(30_000);
+    const context = await browser.newContext({ viewport, reducedMotion: "no-preference" });
+    const page = await context.newPage();
+    await page.goto("/demo", { waitUntil: "networkidle" });
+    const card = page.getByTestId("demo-play-card-0");
+    await expect(card).toBeVisible();
+    const before = await card.boundingBox();
+    if (!before) throw new Error("Demo card has no rendered bounds");
+    await card.hover();
+    await page.mouse.down();
+    await page.mouse.move(before.x + 80, before.y + 55, { steps: 5 });
+    await page.mouse.up();
+    await expect.poll(async () => (await card.boundingBox())?.x).not.toBeCloseTo(before.x, 0);
+    await page.waitForTimeout(6_000);
+    await expect.poll(async () => (await card.boundingBox())?.x, { timeout: 2_000 }).toBeCloseTo(before.x, 0);
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBe(viewport.width);
+    await context.close();
+  });
+}

@@ -61,7 +61,7 @@ describe("Unit L1 scroll-driven landing board", () => {
   });
   it("keeps the proof link, source connector, honest wording, and phone gutters", () => {
     const css = readFileSync("src/styles.css", "utf8");
-    expect(page).toContain('search={{ item: proof.itemId, turn: 4, from: "story" }}');
+    expect(page).toContain('search={{ item: proof.itemId, turn: 4, from: returnTo }}');
     expect(page).toContain("lb-proof-connector");
     expect(page).toContain("sourceRef");
     expect(page.toLowerCase()).not.toContain("verified by lasso");

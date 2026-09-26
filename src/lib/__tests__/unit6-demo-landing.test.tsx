@@ -26,7 +26,8 @@ describe("Unit 6 demo plus landing", () => {
     expect(INDEX).toContain('if (data.user) throw redirect({ to: "/home" })');
     expect(LANDING).toContain('<DemoHomeWorkspace surface="landing" />');
     expect(DEMO_PAGE).toContain('<DemoHomeWorkspace surface="home" />');
-    expect(DEMO_ROUTE).toContain("DemoHomePage");
+    expect(DEMO_ROUTE).toContain("DemoPlaygroundPage");
+    expect(readFileSync("src/routes/demo.classic.tsx", "utf8")).toContain("DemoHomePage");
   });
 
   it("places the demo between the hero and hero video, followed by every existing section", () => {
@@ -46,10 +47,10 @@ describe("Unit 6 demo plus landing", () => {
     expect(LANDING).toContain("Open a real workspace. Every figure is invented.");
   });
 
-  it("uses the new primary action for a smooth demo scroll and preserves its existing event", () => {
+  it("uses the primary action for the playable demo and preserves its existing event", () => {
     expect(LANDING).toContain("Open the demo workspace");
     expect(LANDING).not.toContain("See it work ↓");
-    expect(LANDING).toContain('document.querySelector("#demo")?.scrollIntoView({ behavior: "smooth", block: "start" })');
+    expect(LANDING).toContain('void navigate({ to: "/demo" })');
     expect(LANDING).toContain('event_type: "landing.see_it_work_clicked"');
     expect(LANDING).toContain('dims: { location: "hero" }');
   });

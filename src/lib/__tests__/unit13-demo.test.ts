@@ -81,6 +81,7 @@ describe("demo routes and events", () => {
 
   it("registers the two anonymous events with closed dims", () => {
     expect(EVENT_DIM_KEYS["demo.opened"]).toEqual(["surface", "engagement"]);
+    expect(EVENT_DIM_KEYS["demo.play_interacted"]).toEqual(["action", "surface"]);
     expect(EVENT_DIM_KEYS["demo.card_opened"]).toEqual(["engagement", "kind"]);
     expect(guardEventDims("demo.opened", { surface: "home", engagement: "none", title: "x" }).dims).toEqual({
       surface: "home",
