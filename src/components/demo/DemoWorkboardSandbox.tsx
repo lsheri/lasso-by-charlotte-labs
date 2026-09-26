@@ -24,6 +24,7 @@ const noop = () => undefined;
 type Point = { x: number; y: number };
 type DragState = { kind: "node" | "frame"; id: string; from: Point; origins: Record<string, Point> };
 type ResizeState = { id: string; corner: LabResizeCorner; from: Point; start: { x: number; y: number; width: number; height: number } };
+type TouchViewportGesture = { centre: Point; distance: number; zoom: number; pan: Point };
 
 function surface(): "desktop" | "phone" {
   return window.matchMedia("(max-width: 639px)").matches ? "phone" : "desktop";
@@ -169,7 +170,7 @@ export function DemoWorkboardSandbox({ board, presets, proof, clientLabel, engag
   const addedCounter = useRef(0);
   const panRef = useRef<{ from: Point; origin: Point } | null>(null);
   const touchRef = useRef(new Map<number, Point>());
-  const pinchRef = useRef<{ distance: number; zoom: number } | null>(null);
+  const touchViewportRef = useRef<TouchViewportGesture | null>(null);
   const emit = useCallback((action: DemoPlayAction) => noteDemoPlayInteracted(action, surface()), []);
   const bounds = stageBounds(frames, nodes);
   const heightMap = useMemo(() => new Map(nodes.map((node) => [node.id, node.height])), [nodes]);
