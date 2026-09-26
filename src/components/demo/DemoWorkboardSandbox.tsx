@@ -171,11 +171,13 @@ export function DemoWorkboardSandbox({ board, presets, proof, clientLabel, engag
   const panRef = useRef<{ from: Point; origin: Point } | null>(null);
   const touchRef = useRef(new Map<number, Point>());
   const touchViewportRef = useRef<TouchViewportGesture | null>(null);
+  const viewRef = useRef(view);
   const emit = useCallback((action: DemoPlayAction) => noteDemoPlayInteracted(action, surface()), []);
   const bounds = stageBounds(frames, nodes);
   const heightMap = useMemo(() => new Map(nodes.map((node) => [node.id, node.height])), [nodes]);
 
   useEffect(() => { noteDemoOpened("playground", "ysm-01"); if (surface() === "phone") setAskOpen(false); }, []);
+  useEffect(() => { viewRef.current = view; }, [view]);
   const clearTimer = useCallback(() => { if (resetTimer.current !== null) window.clearTimeout(resetTimer.current); resetTimer.current = null; }, []);
   const resetBoard = useCallback((automatic: boolean) => {
     clearTimer();
@@ -203,19 +205,48 @@ export function DemoWorkboardSandbox({ board, presets, proof, clientLabel, engag
 
   const beginNodeDrag = (event: ReactPointerEvent, id: string) => {
     if ((event.target as HTMLElement).closest("button,textarea,input,select")) return;
+    if (event.pointerType === "touch" && touchRef.current.size >= 2) { event.stopPropagation(); return; }
     event.stopPropagation(); clearTimer(); setHint(false); setSelected(id);
     const node = nodes.find((entry) => entry.id === id); if (!node) return;
     setDrag({ kind: "node", id, from: { x: event.clientX, y: event.clientY }, origins: { [id]: { x: node.x, y: node.y } } });
     (event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId);
   };
   const beginFrameDrag = (event: ReactPointerEvent, id: string) => {
+    if (event.pointerType === "touch" && touchRef.current.size >= 2) { event.stopPropagation(); return; }
     event.stopPropagation(); clearTimer(); setHint(false); setSelected(id);
     const frame = frames.find((entry) => entry.id === id); if (!frame) return;
     const origins = Object.fromEntries([frame, ...nodes.filter((node) => node.frame === id)].map((entry) => [entry.id, { x: entry.x, y: entry.y }]));
     setDrag({ kind: "frame", id, from: { x: event.clientX, y: event.clientY }, origins });
     (event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId);
   };
+  const beginTouchGesture = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (event.pointerType !== "touch") return;
+    touchRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (touchRef.current.size < 2) return;
+    const pair = [...touchRef.current.values()].slice(0, 2);
+    const a = pair[0]; const b = pair[1];
+    if (!a || !b) return;
+    const centre = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+    touchViewportRef.current = { centre, distance: Math.hypot(a.x - b.x, a.y - b.y), zoom: viewRef.current.zoom, pan: viewRef.current.pan };
+    panRef.current = null;
+    setDrag(null);
+    setResize(null);
+    for (const pointerId of touchRef.current.keys()) event.currentTarget.setPointerCapture?.(pointerId);
+  };
   const moveGesture = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === "touch") touchRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (touchRef.current.size >= 2) {
+      const pair = [...touchRef.current.values()].slice(0, 2); const a = pair[0]; const b = pair[1]; const gesture = touchViewportRef.current;
+      if (!a || !b || !gesture) return;
+      const centre = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+      const distance = Math.hypot(a.x - b.x, a.y - b.y);
+      const nextZoom = clampZoom(gesture.zoom * distance / Math.max(1, gesture.distance));
+      const rect = event.currentTarget.getBoundingClientRect();
+      const anchor = { x: gesture.centre.x - rect.left, y: gesture.centre.y - rect.top };
+      const scaledPan = zoomAbout(gesture.pan, gesture.zoom, nextZoom, anchor);
+      setView({ zoom: nextZoom, pan: { x: scaledPan.x + centre.x - gesture.centre.x, y: scaledPan.y + centre.y - gesture.centre.y } });
+      return;
+    }
     if (resize) {
       const dx = (event.clientX - resize.from.x) / view.zoom; const dy = (event.clientY - resize.from.y) / view.zoom;
       setNodes((current) => current.map((node) => node.id === resize.id ? { ...node, width: Math.max(180, resize.start.width + (resize.corner.includes("e") ? dx : -dx)), height: Math.max(100, resize.start.height + (resize.corner.includes("s") ? dy : -dy)), x: resize.corner.includes("w") ? resize.start.x + dx : node.x, y: resize.corner.includes("n") ? resize.start.y + dy : node.y } : node));
@@ -226,14 +257,6 @@ export function DemoWorkboardSandbox({ board, presets, proof, clientLabel, engag
       const moved = <T extends { id: string; x: number; y: number }>(entry: T): T => drag.origins[entry.id] ? { ...entry, x: (drag.origins[entry.id]?.x ?? entry.x) + dx, y: (drag.origins[entry.id]?.y ?? entry.y) + dy } : entry;
       setNodes((current) => current.map(moved)); if (drag.kind === "frame") setFrames((current) => current.map(moved)); return;
     }
-    const point = { x: event.clientX, y: event.clientY }; touchRef.current.set(event.pointerId, point);
-    if (touchRef.current.size >= 2) {
-      const pair = [...touchRef.current.values()].slice(0, 2); const a = pair[0]; const b = pair[1]; if (!a || !b) return;
-      const distance = Math.hypot(a.x - b.x, a.y - b.y); const prior = pinchRef.current;
-      if (!prior) { pinchRef.current = { distance, zoom: view.zoom }; return; }
-      const rect = event.currentTarget.getBoundingClientRect(); const centre = { x: (a.x + b.x) / 2 - rect.left, y: (a.y + b.y) / 2 - rect.top };
-      const nextZoom = clampZoom(prior.zoom * distance / Math.max(1, prior.distance)); setView((current) => ({ zoom: nextZoom, pan: zoomAbout(current.pan, current.zoom, nextZoom, centre) })); return;
-    }
     const pan = panRef.current;
     if (pan) {
       const x = pan.origin.x + event.clientX - pan.from.x;
@@ -242,7 +265,14 @@ export function DemoWorkboardSandbox({ board, presets, proof, clientLabel, engag
     }
   };
   const endGesture = (event: ReactPointerEvent<HTMLDivElement>) => {
-    touchRef.current.delete(event.pointerId); if (touchRef.current.size < 2) pinchRef.current = null;
+    const wasViewportTouch = touchViewportRef.current !== null;
+    touchRef.current.delete(event.pointerId);
+    if (wasViewportTouch) {
+      touchViewportRef.current = null;
+      const remainingTouch = [...touchRef.current.values()][0];
+      panRef.current = remainingTouch ? { from: remainingTouch, origin: viewRef.current.pan } : null;
+      return;
+    }
     if (resize) { setResize(null); emit("drag_card"); scheduleReset(); return; }
     if (drag) {
       if (drag.kind === "node") {
@@ -273,7 +303,7 @@ export function DemoWorkboardSandbox({ board, presets, proof, clientLabel, engag
         <section className="demo-workboard-board" aria-label="Workboard">
           <p className="demo-play-hint" data-visible={hint}>Drag anything. Add a sticky. It all goes back in 5 seconds.</p>
           <div className="demo-workboard-toolbar" aria-label="Board tools"><Button size="sm" variant="outline" onClick={addSticky}><GraphiteIcon name="sticky" />Add sticky</Button><Button size="sm" variant="outline" onClick={() => setAskOpen((open) => !open)}><GraphiteIcon name="ask-lasso" />Ask Lasso</Button><Button size="sm" variant="outline" onClick={() => resetBoard(false)}><GraphiteIcon name="history" />Reset</Button>{resetAt && !drag && !resize && !editing ? <span className="demo-reset-countdown"><i style={{ "--demo-reset-progress": `${remaining / 5}` } as CSSProperties} />Back to the finished board in {remaining}s</span> : null}</div>
-          <div ref={viewportRef} className="canvas-lab-surface demo-sandbox-viewport" data-testid="canvas-lab-viewport" onPointerDown={(event) => { if (event.target !== event.currentTarget) return; touchRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY }); panRef.current = { from: { x: event.clientX, y: event.clientY }, origin: view.pan }; event.currentTarget.setPointerCapture?.(event.pointerId); }} onPointerMove={moveGesture} onPointerUp={endGesture} onPointerCancel={endGesture} onWheel={(event) => { event.preventDefault(); if (event.ctrlKey || event.metaKey) { const rect = event.currentTarget.getBoundingClientRect(); const next = workboardPinchZoom(view.zoom, event.deltaY, event.deltaMode); setView((current) => ({ zoom: next, pan: zoomAbout(current.pan, current.zoom, next, { x: event.clientX - rect.left, y: event.clientY - rect.top }) })); } else { const delta = wheelPanVector(event); setView((current) => ({ ...current, pan: { x: current.pan.x - delta.x, y: current.pan.y - delta.y } })); } }}>
+          <div ref={viewportRef} className="canvas-lab-surface demo-sandbox-viewport" data-testid="canvas-lab-viewport" onPointerDownCapture={beginTouchGesture} onPointerDown={(event) => { if ((event.target as HTMLElement).closest("[data-node-id],.canvas-lab-frame")) return; if (event.pointerType === "touch") touchRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY }); panRef.current = { from: { x: event.clientX, y: event.clientY }, origin: view.pan }; event.currentTarget.setPointerCapture?.(event.pointerId); }} onPointerMove={moveGesture} onPointerUp={endGesture} onPointerCancel={endGesture} onWheel={(event) => { event.preventDefault(); if (event.ctrlKey || event.metaKey) { const rect = event.currentTarget.getBoundingClientRect(); const next = workboardPinchZoom(view.zoom, event.deltaY, event.deltaMode); setView((current) => ({ zoom: next, pan: zoomAbout(current.pan, current.zoom, next, { x: event.clientX - rect.left, y: event.clientY - rect.top }) })); } else { const delta = wheelPanVector(event); setView((current) => ({ ...current, pan: { x: current.pan.x - delta.x, y: current.pan.y - delta.y } })); } }}>
             <div className="canvas-lab-stage demo-sandbox-stage" data-testid="canvas-lab-stage" style={{ width: Math.max(bounds.width, 1500), height: Math.max(bounds.height, 820), transform: `translate(${view.pan.x}px, ${view.pan.y}px) scale(${view.zoom})`, "--lab-inverse-zoom": labInverseZoom(view.zoom) } as CSSProperties}>
               {frames.map((frame) => <LabFrameElement key={frame.id} frame={frame} count={nodes.filter((node) => node.frame === frame.id).length} kind="task" selected={selected === frame.id} editable={false} custom={false} namedByWorkstream removable={false} onSelect={() => setSelected(frame.id)} onDragStart={(event) => beginFrameDrag(event, frame.id)} onResizeStart={noop} onFit={noop} onRename={noop} onRemove={noop} onMenuOpened={noop} onMenuOpenChange={noop} />)}
               <svg className="canvas-lab-relationships pointer-events-none absolute inset-0 overflow-visible" width={Math.max(bounds.width, 1500)} height={Math.max(bounds.height, 820)} aria-hidden="true"><LabRelationships links={links} nodes={nodes} measuredHeights={heightMap} selectedLinkId={null} inverseZoom={labInverseZoom(view.zoom)} onSelect={noop} /></svg>
