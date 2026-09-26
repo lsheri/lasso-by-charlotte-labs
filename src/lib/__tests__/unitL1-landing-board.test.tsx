@@ -135,6 +135,17 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(css).toContain('.lb-stage-window[data-step="1"] .lb-board-layer { opacity: 0;');
     expect(css).toContain('.lb-stage-window[data-step="1"] .lb-board-card { opacity: 0; }');
   });
+  it("uses a separate phone-first ten-section story", () => {
+    const css = readFileSync("src/styles.css", "utf8");
+    expect(page).toContain('className="lb-phone-story"');
+    expect(page).toContain('data-phone-step={index}');
+    expect(page).toContain('new IntersectionObserver');
+    expect(page).toContain('threshold: 0.6');
+    expect(page).toContain('<ExactTurn board={board} preset={second} onOpenTurn={onOpenDecisionTurn} phone />');
+    expect(css).toContain("scroll-snap-type: y mandatory");
+    expect(css).toContain("max-height: calc(100svh - var(--lb-header-h))");
+    expect(css).toContain(".lb-phone-counter");
+  });
   it("holds scenes, settles events, and reuses Ask Lasso presentation pieces", () => {
     const css = readFileSync("src/styles.css", "utf8");
     expect(css).toContain("min-height: 160vh");
