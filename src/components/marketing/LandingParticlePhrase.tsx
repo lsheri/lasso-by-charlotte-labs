@@ -139,7 +139,6 @@ function ParticleWord({ word, index }: { word: string; index: number }) {
           const toY = gathering ? particle.y : particle.endY;
           const x = fromX + (toX - fromX) * local;
           const y = fromY + (toY - fromY) * local;
-          const holdPulse = 0.78 + Math.sin(timestamp / 430 + particle.delay * Math.PI * 2) * 0.18;
           const alpha = gathering
             ? Math.sin(local * Math.PI) * 0.72 + (1 - local) * 0.18
             : (1 - local) * 0.92;
