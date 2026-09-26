@@ -38,7 +38,7 @@ test("story captions and visible text stay readable across settled desktop steps
       const boardRight = panel && getComputedStyle(panel).display !== "none" ? panel.getBoundingClientRect().left : stageBox.right;
       const body = card.querySelector("p");
       const visible = Array.from(stage.querySelectorAll<HTMLElement>("span,p,strong,small,h3,b,a,button"))
-        .filter((element) => { const box = element.getBoundingClientRect(); const style = getComputedStyle(element); return box.width > 0 && box.height > 0 && style.visibility !== "hidden" && style.opacity !== "0" && !element.closest(".lb-deck-slide:not(.lb-slide-number)"); })
+        .filter((element) => { const box = element.getBoundingClientRect(); const style = getComputedStyle(element); return Boolean(element.textContent?.trim()) && box.width > 0 && box.height > 0 && style.visibility !== "hidden" && style.opacity !== "0" && !element.closest(".lb-deck-slide:not(.lb-slide-number)"); })
         .slice(0, 20)
         .map((element) => { const style = getComputedStyle(element); return { text: element.textContent?.trim(), size: Number.parseFloat(style.fontSize), height: element.getBoundingClientRect().height }; });
       return { delta: Math.abs((cardBox.left + cardBox.width / 2) - (stageBox.left + (boardRight - stageBox.left) / 2)), bodySize: body ? Number.parseFloat(getComputedStyle(body).fontSize) : 0, visible };
