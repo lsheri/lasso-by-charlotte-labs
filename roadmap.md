@@ -10,6 +10,7 @@
 - [x] M8 landing: rotate product clips only while visible and cross-fade three pre-composed hero frames without changing controls or events.
 - [x] M9 landing: replace hero frame cross-fades with recorded desktop and phone assembly videos, preserving focus, reduced motion, controls, and events.
 - [x] D2 demo: enable one-finger empty-board pan plus two-finger pan and pinch, and restyle the honesty banner with current tokens.
+- [x] H1 honesty: derive every shared deck figure from proof and render both numeric slides figure-free when proof is absent.
 - [x] S5 app work: add exact-turn chips to Ask answers, remove link disclaimers from the prompt, and replace story labels with approved plain-language copy.
 
 # Roadmap
