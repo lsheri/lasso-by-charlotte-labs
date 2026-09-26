@@ -175,4 +175,4 @@
 - [x] Add local drag, sticky, reset timer, Ask replay, and responsive panel behavior
 - [x] Add additive anonymous event vocabulary and allowlists
 - [x] Add focused tests and normal-motion browser checks
-- [ ] P1 addendum correction: preserve Watch it work, add View a Workboard, and show the step-one scroll cue
+- [x] P1 addendum correction: preserve Watch it work, add View a Workboard, and show the step-one scroll cue
