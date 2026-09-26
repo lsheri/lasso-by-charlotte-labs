@@ -869,14 +869,14 @@ export function LandingBoard() {
       const story = document.querySelector<HTMLElement>(".lb-how-it-works");
       if (!story) return;
       const box = story.getBoundingClientRect();
-      setRailVisible(box.top <= 118 && box.bottom > 118);
+      setRailVisible(active > 0 && box.bottom > 118);
     };
     const onScroll = () => { if (!frame) frame = window.requestAnimationFrame(readRail); };
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onScroll);
     readRail();
     return () => { window.removeEventListener("scroll", onScroll); window.removeEventListener("resize", onScroll); if (frame) window.cancelAnimationFrame(frame); };
-  }, [phoneStop]);
+  }, [active, phoneStop]);
   const settle = useCallback((index: number, inputMode: StoryInput) => {
     if (settleTimer.current !== null) window.clearTimeout(settleTimer.current);
     settleTimer.current = window.setTimeout(() => {
