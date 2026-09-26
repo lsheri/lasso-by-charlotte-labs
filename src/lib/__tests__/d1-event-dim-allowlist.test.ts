@@ -169,6 +169,7 @@ const LIVE_KEYS_BY_EVENT: Record<string, readonly string[]> = {
   "demo.step_completed": ["step", "engagement"],
   "demo.tour_skipped": ["step"],
   "demo.filter_changed": ["tool"],
+  "demo.play_interacted": ["action", "surface"],
   "landing.section_jumped": ["section"],
   "landing.proof_link_opened": ["step", "target"],
 };
