@@ -5924,17 +5924,17 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   .lb-phone-usecases { display: flex; width: 100%; margin: 0; padding: 12px 12px 64px; }
   .lb-phone-usecases .landing-section-head { flex: 0 0 auto; gap: 5px; margin-bottom: 0; }
   .lb-phone-usecases .landing-section-head h2 { font-size: 28px; line-height: 1.05; }
-  .lb-phone-usecases .landing-section-head > p:last-child { font-size: 15px; line-height: 1.3; }
-  .lb-phone-usecases .landing-usecase-grid { min-height: 0; flex: 1; gap: 7px; }
-  .lb-phone-usecases .landing-usecase { display: grid; min-height: 0; grid-template-columns: 132px minmax(0,1fr); gap: 10px; border-radius: 12px; padding: 9px; }
-  .lb-phone-usecases .landing-usecase-media { align-self: center; }
-  .lb-phone-usecases .landing-usecase-copy { align-self: center; }
+  .lb-phone-usecases .landing-section-head > p:last-child { font-size: 14px; line-height: 1.25; }
+  .lb-phone-usecases .landing-usecase-grid { min-height: 0; flex: 1; gap: 6px; }
+  .lb-phone-usecases .landing-usecase { display: grid; min-height: 0; grid-template-columns: 116px minmax(0,1fr); gap: 9px; border-radius: 12px; padding: 7px; }
+  .lb-phone-usecases .landing-usecase-media { height: auto; min-height: 0; align-self: center; aspect-ratio: 16 / 9; }
+  .lb-phone-usecases .landing-usecase-copy { min-width: 0; align-self: center; }
   .lb-phone-usecases .landing-usecase-tools { min-height: 18px; gap: 5px; }
   .lb-phone-usecases .landing-usecase-tools .lb-tool-identity { font-size: 0; gap: 0; }
   .lb-phone-usecases .landing-usecase-tools img,.lb-phone-usecases .landing-usecase-tools svg { width: 16px; height: 16px; }
-  .lb-phone-usecases .landing-usecase-copy h3 { margin-top: 4px; font-size: 18px; line-height: 1.05; }
-  .lb-phone-usecases .landing-usecase-copy > p { margin-top: 3px; font-size: 14px; line-height: 1.2; }
-  .lb-phone-usecases .landing-usecase-copy > button { margin-top: 5px; font-size: 14px; }
+  .lb-phone-usecases .landing-usecase-copy h3 { margin-top: 3px; font-size: 16px; line-height: 1.05; }
+  .lb-phone-usecases .landing-usecase-copy > p { margin-top: 2px; font-size: 14px; line-height: 1.15; }
+  .lb-phone-usecases .landing-usecase-copy > button { margin-top: 3px; font-size: 14px; }
   .lb-phone-usecases .landing-usecase-replay { right: 5px; bottom: 5px; font-size: 12px; }
   .lb-phone-hero { display: grid; justify-items: center; text-align: center; }
   .lb-phone-hero > svg,.lb-phone-hero > canvas { width: 62px !important; height: 62px !important; }
