@@ -303,3 +303,4 @@
 ### Deferred (parked by founder, Sep 26 2026) - demo preset answers
 
 - [ ] UNIT S7 revisit (PARKED, read only until founder says go): the four YSM-01 demo presets on engagement f3f06f24-c860-4446-966b-baf635ee9b8c regenerated with empty context (turn_refs 0, "nothing was provided to read"). Blocked on linking demo admin profile 9560f7ef-e4e3-47cc-9be5-6c676274df44 to an auth user so the control can read the ten demo items, or the founder running Details -> "Regenerate demo answers" as demo admin profile 5b1d0000-0000-4000-8000-0000000000a1 on https://lasso.charlotte-labs.com/engagements/f3f06f24-c860-4446-966b-baf635ee9b8c/canvas-lab. Purpose is unclear to founder; no work until re-briefed.
+- [x] M6 landing: remove the number from the Try it card only, keeping 1-8 contiguous with an unnumbered closing card; display only; story events unchanged
