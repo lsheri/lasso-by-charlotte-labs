@@ -6107,14 +6107,14 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 
 /* R3a: desktop hero category line, inert board assembly, step-card scroll cue. Desktop only. */
 @media (min-width: 640px) {
-  .lb-desktop-hero .lb-hero-copy { top: 12px; gap: 10px; }
+  .lb-desktop-hero .lb-hero-copy { top: 192px; gap: 10px; }
   .lb-desktop-hero .lb-hero-copy > div { margin-top: 0; }
   .lb-desktop-hero .lb-hero-copy h2 { margin-top: 12px; line-height: 1.35; }
   .lb-desktop-hero .lb-hero-copy > div > div:not(.lb-hero-line):not(.lb-hero-assemble) { margin-top: 14px; }
   .lb-hero-line { display: grid; justify-items: center; gap: 4px; max-width: 760px; margin: 4px auto 0; }
   .lb-hero-line .micro-label { color: var(--nb-mid); }
   .lb-hero-line-text { font-size: 20px; line-height: 1.5; color: var(--nb-ink); text-wrap: balance; }
-  .lb-hero-assemble { position: relative; display: block; width: min(980px, 88vw, calc((100svh - 344px) * 2)); min-width: min(420px, 88vw); container-type: inline-size; aspect-ratio: 16 / 8; margin: 20px auto 0; overflow: visible; border: 1px solid var(--nb-rule); border-radius: 8px; background: var(--nb-white); box-shadow: 0 10px 24px color-mix(in oklab, var(--nb-ink) 10%, transparent); pointer-events: none; user-select: none; isolation: isolate; }
+  .lb-hero-assemble { position: relative; display: block; width: min(980px, 88vw, calc((100svh - 344px) * 2)); min-width: min(420px, 88vw); container-type: inline-size; aspect-ratio: 16 / 8; margin: 96px auto 0; overflow: visible; border: 1px solid var(--nb-rule); border-radius: 8px; background: var(--nb-white); box-shadow: 0 10px 24px color-mix(in oklab, var(--nb-ink) 10%, transparent); pointer-events: none; user-select: none; isolation: isolate; }
   .lb-hero-assemble-board { position: absolute; z-index: 1; inset: 0; width: 100%; height: 100%; border-radius: 8px; object-fit: cover; object-position: center; }
   .lb-hero-assemble-cards { position: absolute; z-index: 2; inset: 0; }
   .lb-hero-chat { position: absolute; display: grid; align-content: start; width: 20.6%; height: 25.8%; gap: 7px; overflow: hidden; border: 1px solid var(--nb-graphite); border-radius: 6px; background: var(--nb-white); padding: 10px 12px; text-align: left; box-shadow: var(--nb-paper-shadow-contact); opacity: 0; transform-origin: center; animation: lb-hero-card-land 8s var(--nb-ease) infinite both; animation-delay: calc(var(--lb-hero-card-delay) * 1ms); }
