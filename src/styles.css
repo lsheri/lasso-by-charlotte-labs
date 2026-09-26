@@ -5267,9 +5267,12 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   text-decoration-thickness: 0.1em;
   text-underline-offset: 0.15em;
   text-decoration-skip-ink: none;
+  will-change: opacity;
 }
+.landing-particle-word-canvas { position: absolute; z-index: 1; pointer-events: none; }
 @media (prefers-reduced-motion: reduce) {
   .landing-particle-word-text { opacity: 1 !important; animation: none; color: var(--nb-ink); }
+  .landing-particle-word-canvas { display: none; }
 }
 
 /* Beat loops: one loop per beat, 7s. */
