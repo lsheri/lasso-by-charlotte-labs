@@ -5929,6 +5929,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   .lb-phone-deck { overflow: hidden; border: 1.5px solid var(--nb-graphite); border-radius: var(--radius-lg); background: var(--nb-white); box-shadow: var(--nb-paper-shadow-contact); }
   .lb-phone-deck > header { display: flex; align-items: center; gap: 8px; padding: 9px 10px; border-bottom: 1px solid var(--nb-rule); }
   .lb-phone-deck > header strong { min-width: 0; font-size: 15px; }
+  .lb-phone-deck > header .lb-powerpoint-badge,.lb-phone-deck-main .lb-deck-slide > small { font-size: 14px; }
   .lb-phone-deck-main { position: relative; padding: 8px; }
   .lb-phone-deck-main > .lb-deck-slide { width: 100%; }
   .lb-phone-deck-main .lb-deck-slide b { font-size: 16px; }.lb-phone-deck-main .lb-number { font-size: 25px; }.lb-phone-deck-main .lb-waterfall { height: 104px; }.lb-phone-deck-main .lb-waterfall span { height: 104px; padding-top: 84px; font-size: 14px; }.lb-phone-deck-main .lb-waterfall-savings i { height: 76px; }.lb-phone-deck-main .lb-waterfall-costs i { bottom: 55px; height: 28px; }.lb-phone-deck-main .lb-waterfall-net i { height: 51px; }
