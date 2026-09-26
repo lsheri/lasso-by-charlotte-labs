@@ -3,9 +3,6 @@ import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { type CSSProperties, type FormEvent, type PointerEvent as ReactPointerEvent, type RefObject, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
-import everyNumberMp4 from "@/assets/use-every-number-has-a-source.mp4.asset.json";
-import everyNumberPoster from "@/assets/use-every-number-has-a-source-poster.jpg.asset.json";
-import everyNumberWebm from "@/assets/use-every-number-has-a-source.webm.asset.json";
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
 import { LandingParticlePhrase } from "@/components/marketing/LandingParticlePhrase";
 import { FocusSection } from "@/components/marketing/FocusSection";
@@ -44,10 +41,17 @@ type StoryInput = "scroll" | "jump";
 type UseCaseKey = "bring_work_in" | "reasoning_stays" | "every_number";
 type SpotlightTarget = "deck" | "ask" | "turn";
 
+type UseCaseAsset = { url: string };
+const USE_CASE_ASSETS = import.meta.glob<UseCaseAsset>("/src/assets/use-*.asset.json", { eager: true, import: "default" });
+
+function useCaseAsset(name: string): string {
+  return USE_CASE_ASSETS[`/src/assets/${name}.asset.json`]?.url ?? "";
+}
+
 const LANDING_BOARD_USE_CASES = [
-  { key: "bring_work_in", title: "Push work in.", body: "One sentence from Claude, ChatGPT or Gemini, and it lands on the board.", poster: "/videos/poster-claude.jpg", mp4: "/videos/lasso-claude.mp4", tools: ["claude"], step: "workstreams" },
-  { key: "reasoning_stays", title: "Chat with your work.", body: "Drag to select the cards that matter, then ask Lasso about exactly that.", poster: "/videos/poster-find-it.jpg", mp4: "/videos/find-it.mp4", tools: ["claude", "chatgpt", "gemini"], step: "ask" },
-  { key: "every_number", title: "Every number has a source.", body: "Open the chat behind any figure and check it yourself.", poster: everyNumberPoster.url, webm: everyNumberWebm.url, mp4: everyNumberMp4.url, tools: ["powerpoint", "claude"], step: "circle" },
+  { key: "bring_work_in", title: "Push work in.", body: "Add Lasso to Claude or ChatGPT once. Then say push this to Lasso.", poster: useCaseAsset("use-bring-work-in-poster.jpg"), webm: useCaseAsset("use-bring-work-in.webm"), mp4: useCaseAsset("use-bring-work-in.mp4"), tools: ["claude", "chatgpt", "gemini"], step: "workstreams" },
+  { key: "every_number", title: "Chat with your work.", body: "Drag to select the cards that matter, then ask Lasso about exactly that.", poster: useCaseAsset("use-every-number-has-a-source-poster.jpg"), webm: useCaseAsset("use-every-number-has-a-source.webm"), mp4: useCaseAsset("use-every-number-has-a-source.mp4"), tools: ["claude", "powerpoint"], step: "ask" },
+  { key: "reasoning_stays", title: "Every chat, on the record.", body: "Claude, ChatGPT and Gemini chats, mapped to the engagement and kept by the firm.", poster: useCaseAsset("use-reasoning-stays-with-the-firm-poster.jpg"), webm: useCaseAsset("use-reasoning-stays-with-the-firm.webm"), mp4: useCaseAsset("use-reasoning-stays-with-the-firm.mp4"), tools: ["claude", "chatgpt", "gemini"], step: "canvas" },
 ] as const satisfies ReadonlyArray<{ key: UseCaseKey; title: string; body: string; poster: string; webm?: string; mp4: string; tools: readonly string[]; step: StepKey }>;
 
 const TOOL_BADGES = [
