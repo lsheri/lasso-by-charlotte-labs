@@ -2103,7 +2103,7 @@ function PhoneHeroAssemble() {
       </div>
       <p className="micro-label lb-phone-hero-caption">CHATS FROM EVERY TOOL, ON ONE BOARD</p>
       <div className="lb-phone-hero-line">
-        <p className="micro-label">WHAT IT IS</p>
+        <span className="lb-section-label-space" aria-hidden="true" />
         <p>ONE INFINITE CANVAS WHERE YOUR AI WORK, AND THE THINKING BEHIND IT, LIVES</p>
       </div>
     </div>
@@ -2415,7 +2415,7 @@ function UseCaseSection({
       aria-label="What Lasso does"
     >
       <div className="landing-section-head">
-        <p className="micro-label">WHAT LASSO DOES</p>
+        <span className="lb-section-label-space" aria-hidden="true" />
         <h2>Deliverables you can defend to a client, a partner, or a board.</h2>
         <p>Three things a buyer asks for. Here is what each looks like.</p>
       </div>
