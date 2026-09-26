@@ -158,10 +158,11 @@ describe("Unit 10 landing", () => {
     expect(page).toContain('<source src={mp4Clip} type="video/mp4" />');
   });
 
-  it("keeps the green glow around the resolved closing phrase", () => {
+  it("closes the resolved phrase in neon orange with a matching glow", () => {
     const styles = readFileSync("src/styles.css", "utf8");
     expect(styles).toContain(".landing-close-line2 .landing-particle-word-text");
-    expect(styles).toContain("color-mix(in srgb, var(--nb-lasso-green) 55%, transparent)");
+    expect(styles).toContain("var(--lb-neon-orange)");
+    expect(styles).not.toContain("color-mix(in srgb, var(--nb-lasso-green) 55%, transparent)");
     expect(page).not.toContain("landing-close-particles-a");
   });
 
