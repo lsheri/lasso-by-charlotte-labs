@@ -165,5 +165,4 @@
 - [x] Unit L4: Add the source-derived number proof, board trail, and public conversation deep link.
 - [x] Unit L4.1: Polish proof-card hierarchy, source-card framing, and deep-link turn emphasis.
 - [ ] Portal: add `landing.proof_link_opened` with `step` and `target` dimensions (architect-owned).
-- [ ] Portal: add `landing.proof_turn_toggled` with `turn` and `state` dimensions (architect-owned).
 - [ ] Portal: add `landing-board`, ten story section values, and `landing.section_jumped` (architect-owned).

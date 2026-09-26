@@ -47,7 +47,6 @@ describe("Unit L1 scroll-driven landing board", () => {
   it("allowlists every landing event dimension", () => {
     expect(EVENT_DIM_KEYS["landing.section_jumped"]).toEqual(["section"]);
     expect(EVENT_DIM_KEYS["landing.proof_link_opened"]).toEqual(["step", "target"]);
-    expect(EVENT_DIM_KEYS["landing.proof_turn_toggled"]).toEqual(["turn", "state"]);
     expect(guardEventDims("landing.story_section_viewed", { section: "ask", input_mode: "jump", content: "no" }).dims).toEqual({ section: "ask", input_mode: "jump" });
     expect(guardEventDims("landing.pilot_cta_clicked", { placement: "header" }).dims).toEqual({ placement: "header" });
   });

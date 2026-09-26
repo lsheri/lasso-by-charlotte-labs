@@ -171,7 +171,6 @@ const LIVE_KEYS_BY_EVENT: Record<string, readonly string[]> = {
   "demo.filter_changed": ["tool"],
   "landing.section_jumped": ["section"],
   "landing.proof_link_opened": ["step", "target"],
-  "landing.proof_turn_toggled": ["turn", "state"],
 };
 
 /** Every name in the canonical union, read as data rather than as wording. */
