@@ -62,7 +62,7 @@ describe("Unit L1 scroll-driven landing board", () => {
     for (const copy of ["Delete", "Share link", "Add work", "Comment", "Push to"])
       expect(page).not.toContain(copy);
   });
-  it("restores all three product clips with posters and existing play-event coverage", () => {
+  it("rotates all three product clips while preserving user-play event coverage", () => {
     for (const clip of [
       "use-bring-work-in",
       "use-every-number-has-a-source",
@@ -80,7 +80,11 @@ describe("Unit L1 scroll-driven landing board", () => {
     );
     expect(page).toContain("aria-label={`Play: ${card.title}`}");
     expect(page).not.toContain("            loop\n            playsInline");
-    expect(page).toContain("}, 2000);");
+    expect(page).toContain('preload="metadata"');
+    expect(page).toContain('playIntent.current = "auto"');
+    expect(page).toContain('if (playIntent.current === "user") onPlayed(card.key, inputMode.current)');
+    expect(page).toContain("new IntersectionObserver");
+    expect(page).toContain('(prefers-reduced-motion: reduce)');
   });
   it("places the use cases between the hero and Canvas without card jump controls", () => {
     expect(page.indexOf('className="lb-desktop-hero"')).toBeLessThan(
@@ -296,11 +300,13 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(page).toContain('key: "try-it"');
     expect(page).toContain('onPilot={() => pilot("try_it")}');
   });
-  it("keeps all five hero arrivals readable while making the board the subject", () => {
+  it("keeps all five hero arrivals in three safe pre-composed image frames", () => {
     const css = readFileSync("src/styles.css", "utf8");
-    expect(page.match(/label: "(Chair terms|Rate build|Board readout|Client brief|Pricing approach)"/g)).toHaveLength(5);
-    expect(css).toContain("width: 15.8%; height: 20.4%");
-    expect(css).toContain(".lb-hero-chat-tool .lb-tool-identity { min-width: 0; font-size: 13px; }");
+    expect(page).toContain("HERO_ASSEMBLE_FRAMES.map");
+    expect(page).toContain("PHONE_HERO_ASSEMBLE_FRAMES.map");
+    expect(page).not.toContain("HERO_ASSEMBLE_CARDS.map");
+    expect(css).toContain("@keyframes lb-hero-frame-cycle");
+    expect(css).toContain('.lb-desktop-hero[data-hero-focus="1"] .lb-hero-assemble-frame { animation-play-state: paused; }');
   });
   it("keeps the step-one hero on a clean background", () => {
     const css = readFileSync("src/styles.css", "utf8");
@@ -313,7 +319,7 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(page).toContain("data-phone-step={stop}");
     expect(page).toContain('id="lb-phone-usecases"');
     expect(page).toContain("<PhoneHeroAssemble />");
-    expect(page).toContain("phoneHeroSettledAsset.url");
+    expect(page).toContain("PHONE_HERO_ASSEMBLE_FRAMES.map");
     expect(page).not.toContain("PHONE_HERO_ASSEMBLE_CARDS");
     expect(page).toContain("new IntersectionObserver");
     expect(page).toContain("threshold: 0.6");

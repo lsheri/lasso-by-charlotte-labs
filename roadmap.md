@@ -7,6 +7,7 @@
 - [x] M5 landing: renumber only the visible story cards from 1 through 9 while preserving internal step identities and event payloads.
 - [x] M6 landing: keep steps 1 through 8 numbered and make Try it an unnumbered closing card without changing internal identities or events.
 - [x] M7 landing: shrink all five hero arrival cards, reflow product cards above 16:9 clips, and update One canvas copy without changing controls or events.
+- [ ] M8 landing: rotate product clips only while visible and cross-fade three pre-composed hero frames without changing controls or events.
 - [x] S5 app work: add exact-turn chips to Ask answers, remove link disclaimers from the prompt, and replace story labels with approved plain-language copy.
 
 # Roadmap
