@@ -1406,8 +1406,10 @@ function PhoneStory({
                 <>
                   <div className="lb-phone-tools">
                     {TOOL_BADGES.map((tool) => (
-                      <span key={tool.key}>
-                        <ToolLogo vendor={tool.key} compact />
+                      <span key={tool.key} role="img" aria-label={tool.label}>
+                        <span aria-hidden="true">
+                          <ToolLogo vendor={tool.key} compact />
+                        </span>
                       </span>
                     ))}
                   </div>
