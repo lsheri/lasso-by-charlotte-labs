@@ -1,7 +1,7 @@
 import { buildSharedBoardModel } from "@/components/canvas-lab/SharedBoardView";
 
 import type { SharedBoardDto } from "./board-share-shared";
-import { publicDemoPresets, type DemoPreset, type DemoPresetRow } from "./demo-presets-shared";
+import { publicDemoPresets, publicSafeText, type DemoPreset, type DemoPresetRow } from "./demo-presets-shared";
 import type { LandingProof } from "./landing-proof-shared";
 import { publicSafeTurnExcerpts, publicSafeWork } from "./public-work-allowlist";
 import { readBoard } from "./board-share-open.server";
