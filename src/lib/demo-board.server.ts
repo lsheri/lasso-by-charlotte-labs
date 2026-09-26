@@ -1,7 +1,7 @@
 import { buildSharedBoardModel } from "@/components/canvas-lab/SharedBoardView";
 
 import type { SharedBoardDto } from "./board-share-shared";
-import { publicDemoPresets, publicSafeText, type DemoPreset, type DemoPresetRow } from "./demo-presets-shared";
+import { publicDemoPresets, type DemoPreset, type DemoPresetRow } from "./demo-presets-shared";
 import type { LandingProof } from "./landing-proof-shared";
 import { publicSafeTurnExcerpts, publicSafeWork } from "./public-work-allowlist";
 import { readBoard } from "./board-share-open.server";
@@ -102,7 +102,11 @@ function demoSafeBoard(dto: SharedBoardDto): SharedBoardDto {
   return {
     ...dto,
     seed: { ...dto.seed, work: publicSafeWork(dto.seed.work) },
-    turns: Object.fromEntries(Object.entries(dto.turns).map(([itemId, turns]) => [itemId, turns.map((turn) => ({ ...turn, role: turn.role === "user" ? "user" : "assistant", content: publicSafeText(turn.content) }))])),
+    turns: Object.fromEntries(Object.entries(dto.turns).map(([itemId, turns]) => [itemId, publicSafeTurnExcerpts(turns).map((turn) => ({
+      ...turn,
+      id: `public-turn-${turn.turn_no}`,
+      model: null,
+    }))])),
   };
 }
 
