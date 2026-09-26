@@ -1209,12 +1209,12 @@ function ExactTurn({
 function PhoneCaption({ index }: { index: number }) {
   const item = LANDING_BOARD_STEPS[index];
   if (!item) return null;
-  const displayStep = index + 1;
+  const displayStep = index;
   return (
     <article className="lb-phone-caption">
       <span
         className="lb-caption-progress"
-        aria-label={`${displayStep} of ${LANDING_BOARD_STEPS.length}`}
+        aria-label={`${displayStep} of ${LANDING_BOARD_STEPS.length - 1}`}
         style={{ "--lb-progress-to": `${(index + 1) * 10}%` } as CSSProperties}
       />
       <div className="lb-caption-heading">
@@ -2044,7 +2044,7 @@ function StoryCaption({
   const renderCaption = (index: number, phase: "incoming" | "outgoing") => {
     const item = LANDING_BOARD_STEPS[index];
     if (!item) return null;
-    const displayStep = index + 1;
+    const displayStep = index;
     return (
       <article
         key={`${phase}-${index}-${nonce}`}
@@ -2062,7 +2062,7 @@ function StoryCaption({
       >
         <span
           className="lb-caption-progress"
-          aria-label={`${displayStep} of ${LANDING_BOARD_STEPS.length}`}
+          aria-label={`${displayStep} of ${LANDING_BOARD_STEPS.length - 1}`}
         />
         <div className="lb-caption-text">
           <div className="lb-caption-heading">
