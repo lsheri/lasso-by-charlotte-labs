@@ -6131,3 +6131,9 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   .lb-desktop-hero .lb-hero-copy *, .lb-desktop-hero .lb-hero-copy > * { transition: none !important; }
   .lb-desktop-hero[data-hero-focus] :is(.lb-hero-assemble,.lb-hero-assemble-caption,.lb-hero-line,.lb-hero-copy h1,.lb-hero-copy h2,.lb-hero-zone-1) { filter: none; opacity: 1; }
 }
+
+/* S2: self-contained workstreams section, drawn over the sticky stage. */
+.lb-scroll-step.lb-standalone-step { z-index: 6; display: flex; min-height: calc(100vh - var(--lb-header-h)); flex-direction: column; align-items: center; justify-content: center; gap: 20px; padding: 32px 4vw; background: var(--nb-paper); pointer-events: auto; scroll-margin-top: calc(var(--lb-header-h) - 55vh); }
+.lb-standalone-caption { width: min(620px, 100%); max-height: none; }
+.lb-standalone-media { width: min(1040px, 100%, calc((100vh - var(--lb-header-h) - 300px) * 1920 / 936)); aspect-ratio: 1920 / 936; overflow: hidden; border: 1px solid var(--nb-rule); border-radius: var(--radius-lg); background: var(--nb-grey-1); }
+.lb-standalone-media video { display: block; width: 100%; height: 100%; object-fit: cover; }

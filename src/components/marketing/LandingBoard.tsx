@@ -1973,6 +1973,91 @@ function HeroAssemble({ paused }: { paused: boolean }) {
   );
 }
 
+/**
+ * S2 proof: a story step that owns its card and its clip. Reads no shared story
+ * state (active, settledStep, attentionNonce, phoneStop). Plays once at ~50%
+ * visibility, holds the last frame, and rearms only after fully leaving view.
+ */
+function WorkstreamsSection({ onViewed }: { onViewed: () => void }) {
+  const sectionRef = useRef<HTMLElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const onViewedRef = useRef(onViewed);
+  onViewedRef.current = onViewed;
+  const item = LANDING_BOARD_STEPS[2]!;
+  useEffect(() => {
+    const section = sectionRef.current;
+    const video = videoRef.current;
+    if (!section || !video) return;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let armed = true;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) {
+            if (!armed && !reduced) {
+              video.pause();
+              video.currentTime = 0;
+            }
+            armed = true;
+            continue;
+          }
+          if (entry.intersectionRatio >= 0.5 && armed) {
+            armed = false;
+            onViewedRef.current();
+            if (!reduced) {
+              video.currentTime = 0;
+              void video.play().catch(() => undefined);
+            }
+          }
+        }
+      },
+      { threshold: [0, 0.5] },
+    );
+    observer.observe(section);
+    return () => observer.disconnect();
+  }, []);
+  return (
+    <section
+      ref={sectionRef}
+      id={`lb-${item.key}`}
+      className="lb-scroll-step lb-standalone-step"
+      data-testid="landing-standalone-workstreams"
+    >
+      <article
+        className="lb-caption lb-standalone-caption"
+        style={{ "--lb-progress-to": "30%" } as CSSProperties}
+      >
+        <span className="lb-caption-progress" aria-label={`2 of ${LANDING_BOARD_STEPS.length}`} />
+        <div className="lb-caption-text">
+          <div className="lb-caption-heading">
+            <span className="lb-step-ring">
+              <svg viewBox="0 0 34 34" aria-hidden="true">
+                <ellipse cx="17" cy="17" rx="14" ry="12.5" pathLength="1" />
+              </svg>
+              <span>2</span>
+            </span>
+            <span>{item.label}</span>
+          </div>
+          <h2>{item.headline}</h2>
+          <p>{item.line}</p>
+        </div>
+      </article>
+      <div className="lb-standalone-media" aria-hidden="true" inert>
+        <video
+          ref={videoRef}
+          muted
+          playsInline
+          preload="metadata"
+          poster="/videos/landing-story-workstreams-poster.png"
+        >
+          <source src="/videos/landing-story-workstreams.webm" type="video/webm" />
+          <source src="/videos/landing-story-workstreams.mp4" type="video/mp4" />
+        </video>
+      </div>
+    </section>
+  );
+}
+
 /** Inert phone-framed recording with three readable cards and no positioned children. */
 function PhoneHeroAssemble() {
   const videoRef = useDecorativeHeroVideo();
@@ -2608,6 +2693,17 @@ export function LandingBoard() {
     event(viewId.current, "landing.story_section_viewed", { section: key, input_mode: "scroll" });
   }, []);
 
+  // S2: same event, same payload and the same once-per-view dedupe key as the
+  // old scroll-index path; only the trigger (the section's own observer) changed.
+  const noteWorkstreamsViewed = useCallback(() => {
+    if (seen.current.has("workstreams:scroll")) return;
+    seen.current.add("workstreams:scroll");
+    event(viewId.current, "landing.story_section_viewed", {
+      section: "workstreams",
+      input_mode: "scroll",
+    });
+  }, []);
+
   function jump(key: StepKey) {
     const index = LANDING_BOARD_STEPS.findIndex((step) => step.key === key);
     if (index < 0) return;
@@ -2747,6 +2843,9 @@ export function LandingBoard() {
           <div className="lb-scroll-sections">
             {LANDING_BOARD_STEPS.slice(1).map((step, itemIndex) => {
               const index = itemIndex + 1;
+              // S2: workstreams is a self-contained section, not a shared-stage step.
+              if (step.key === "workstreams")
+                return <WorkstreamsSection key={step.key} onViewed={noteWorkstreamsViewed} />;
               return (
                 <section
                   id={`lb-${step.key}`}
