@@ -44,7 +44,7 @@ describe("Unit L1 scroll-driven landing board", () => {
       expect(page).toContain(`${asset}-poster.jpg.asset.json`);
     }
     expect(page).toContain("LANDING_BOARD_USE_CASES.map");
-    expect(page).toContain('event(viewId, "landing.usecase_played", { card, input_mode: inputMode })');
+    expect(page).toContain('event(viewId.current, "landing.usecase_played", { card, input_mode: inputMode })');
     expect(page).toContain('aria-label={`Play: ${card.title}`}');
   });
   it("places the use cases between the hero and Canvas with story jump coverage", () => {
@@ -149,7 +149,7 @@ describe("Unit L1 scroll-driven landing board", () => {
   it("uses a separate phone-first eleven-stop story", () => {
     const css = readFileSync("src/styles.css", "utf8");
     expect(page).toContain('className="lb-phone-story"');
-    expect(page).toContain('data-phone-step={index}');
+    expect(page).toContain('data-phone-step={stop}');
     expect(page).toContain('id="lb-phone-usecases"');
     expect(page).toContain('{phoneStop + 1} / 11');
     expect(page).toContain('new IntersectionObserver');

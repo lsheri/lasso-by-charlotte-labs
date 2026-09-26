@@ -783,11 +783,12 @@ function LandingBoardUseCase({ card, onPlayed, onJump }: { card: (typeof LANDING
             ref={videoRef}
             className="landing-usecase-video"
             muted
+            loop
             playsInline
             preload="none"
             poster={card.poster}
             onPlaying={() => { setPlaying(true); onPlayed(card.key, inputMode.current); }}
-            onPause={() => setPlaying(false)}
+            onPause={() => { setPlaying(false); if ((videoRef.current?.currentTime ?? 0) > 0) setEnded(true); }}
             onEnded={() => { setPlaying(false); setEnded(true); }}
             onError={() => setVideoFailed(true)}
           >
