@@ -216,8 +216,10 @@ export function FocusOverlay({
     const find = () => {
       const el = readerRef.current?.querySelector(`[data-turn-no="${focusTurnNo}"]`) ?? null;
       if (el) {
-        el.scrollIntoView({ block: "start" });
-        readerRef.current?.scrollBy({ top: -96, behavior: "auto" });
+        const reader = readerRef.current;
+        const readerRect = reader.getBoundingClientRect();
+        const turnRect = el.getBoundingClientRect();
+        reader.scrollTo({ top: reader.scrollTop + turnRect.top - readerRect.top - 96, behavior: "auto" });
         el.classList.add("nb-turn-lit");
         el.setAttribute("data-turn-focus", "true");
         el.setAttribute("data-focus-label", "Start here: where $2.1M came from");

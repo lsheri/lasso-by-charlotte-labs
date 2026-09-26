@@ -193,6 +193,7 @@ function AskReplay({ presets, step, onFinished, clientLabel, engagementTitle, pr
   const threadRef = useRef<HTMLDivElement>(null);
   const shownPositions = step === 5 ? [1] : step === 6 ? [1, 2] : [1, 2, 4];
   const liveItems = replay.preset?.manifest?.items.slice(0, replay.readCount) ?? [];
+  const showProof = step >= 6 && replay.phase === "done" && proof && proofModel;
   useEffect(() => {
     onFinished(replay.phase === "done");
   }, [onFinished, replay.phase]);
@@ -210,7 +211,7 @@ function AskReplay({ presets, step, onFinished, clientLabel, engagementTitle, pr
     <aside className="lb-answer-sheet" aria-label="Ask Lasso replay" data-replay-phase={replay.phase} data-story-scroll="locked">
       <header className="lb-ask-header"><LassoThinkingMark kind="signature" size={44} /><div><p className="lb-micro">ASK LASSO</p><h3>{clientLabel}</h3><p className="lb-ask-engagement-title">{engagementTitle}</p></div></header>
       <div ref={threadRef} className="lb-replay-thread nb-binder">
-        {shownPositions.map((position) => {
+        {showProof ? <><ProofCard proof={proof} model={proofModel} onShowSlide={onShowSlide} onOpenTurn={onOpenTurn} onToggleTurn={onToggleTurn} />{presets.find((entry) => entry.position === 1)?.manifest ? <ContextAudit manifest={presets.find((entry) => entry.position === 1)?.manifest ?? null} readOnly initialOpen={false} buttonLabel="Show the full read list" /> : null}</> : shownPositions.map((position) => {
           const preset = presets.find((entry) => entry.position === position);
           if (!preset) return null;
           const current = replay.position === position;
@@ -220,7 +221,6 @@ function AskReplay({ presets, step, onFinished, clientLabel, engagementTitle, pr
             {showQuestion ? <div className="lb-replay-question"><span>You</span><p>{preset.question}</p></div> : null}
             {current && replay.phase === "reading" ? <AnswerRail state="working"><ThinkingTrail items={preset.manifest?.items.map((item) => ({ id: item.id, title: item.title })) ?? []} finalPhase="Writing" manifest={liveItems.length > 0 && preset.manifest ? { ...preset.manifest, items: liveItems } : null} /></AnswerRail> : null}
             {answerText ? <ReplayAnswer preset={{ ...preset, answer: answerText }} finished={!current || replay.phase === "done"} showAudit={position !== 1} /> : null}
-            {position === 1 && step >= 5 && proof && proofModel && (!current || replay.phase === "done") ? <><ProofCard proof={proof} model={proofModel} onShowSlide={onShowSlide} onOpenTurn={onOpenTurn} onToggleTurn={onToggleTurn} />{preset.manifest ? <ContextAudit manifest={preset.manifest} readOnly initialOpen={false} buttonLabel="Show the full read list" /> : null}</> : null}
           </div>;
         })}
       </div>
