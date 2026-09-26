@@ -710,7 +710,7 @@ function LandingBoardHeader({ onPilot }: { onPilot: () => void }) {
 }
 
 function StoryProgressRail({ active, phoneStop, visible, onJump }: { active: number; phoneStop: number; visible: boolean; onJump: (key: StepKey) => void }) {
-  const current = typeof window !== "undefined" && window.matchMedia("(max-width: 639px)").matches ? Math.max(0, phoneStop - 1) : active;
+  const current = phoneStop >= 2 ? phoneStop - 1 : active;
   const item = LANDING_BOARD_STEPS[current] ?? LANDING_BOARD_STEPS[0];
   return <nav className="lb-progress-rail" data-visible={visible ? "true" : "false"} data-step={current + 1} aria-label="Story progress">
     <div className="lb-progress-dots">
