@@ -226,3 +226,9 @@
 - [x] Replace the deck overlay with a contained deliverable, one large 16:9 slide, and six local thumbnail controls.
 - [x] Fit with 48px clearance, a 90% cap, and the 12px effective text floor.
 - [x] Verify every card, deliverable, and sticky at 1372x732 and 1512x807.
+
+### Unit S2 home story lock and spotlight
+- [x] Keep one complete active step and caption visible across 1.6-viewport desktop and 1.3-viewport phone zones.
+- [x] Draw the measured $1.4M lasso only after Circle settles.
+- [x] Spotlight only Circle, Ask, and The turn with one dimming overlay and phone/reduced-motion fallbacks.
+- [x] Verify incremental scrolling, step-caption agreement, and spotlight layering at 1372x732.

@@ -13,7 +13,7 @@
 - Render both public demo entrances through DemoHomeWorkspace so their cards, previews, loading states, and guide behavior stay identical.
 
 - Keep the signed-out `/` story as a public, read-only composition fed only by `openDemoBoardFn`; `/landing-board` redirects to it and preserves hashes.
-- Keep the home story state transition-queued and dwell-based; saved Ask answers replay locally through shared presentation components without sending requests.
+- Keep the home story zone-selected, transition-queued, and dwell-based; captions follow the active zone while settled state controls attention and telemetry, and saved Ask answers replay locally without requests.
 - Keep the home story tool marks behind ToolLogo, deck art self-contained, and attention motion keyed only to settled story steps.
 - Keep the home story connector browser check in normal motion at both desktop sizes, because reduced motion bypasses its live replay timing.
 - Render home story captions through the settled-step caption presenter so exit, entry, word reveal, progress, and reduced-motion states stay synchronized with the 800ms dwell.

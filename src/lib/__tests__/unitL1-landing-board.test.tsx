@@ -124,14 +124,16 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(page).toContain('citedIds.has(item.id)');
     expect(page).toContain('className="lb-read-dot"');
   });
-  it("hides the redundant first caption and locks jump state", () => {
-    expect(page).toContain('{settledStep > 0 ? <StoryCaption step={settledStep} nonce={attentionNonce}');
+  it("keeps the active caption visible and locks jump state", () => {
+    expect(page).toContain('<StoryCaption step={active} nonce={attentionNonce}');
+    expect(page).toContain('data-step={index + 1}');
     expect(page).toContain('if (jumpTarget.current !== null) return;');
     expect(page).toContain('activate(index, "jump", true)');
   });
   it("holds scenes, settles events, and reuses Ask Lasso presentation pieces", () => {
     const css = readFileSync("src/styles.css", "utf8");
-    expect(css).toContain("min-height: 170vh");
+    expect(css).toContain("min-height: 160vh");
+    expect(css).toContain("min-height: 130vh");
     expect(css).toContain("scroll-snap-type: y proximity");
     expect(css).toContain("scroll-snap-align: start");
     expect(page).toContain("setTimeout(finish, 700)");
@@ -144,9 +146,18 @@ describe("Unit L1 scroll-driven landing board", () => {
   });
   it("anchors the lasso to the number slide and limits open notes", () => {
     expect(page).toContain('data-testid="landing-board-number"');
-    expect(page).toContain('className={`lb-slide-lasso${pulse(4)}`}');
+    expect(page).toContain('lassoBox && step >= 4 && attentionStep === step');
+    expect(page).toContain('pathLength="1"');
     expect(page).toContain("Confirm the vendor extension assumption.");
     expect(page).toContain("Confirm approval by Oct 1.");
+  });
+  it("uses one settled spotlight on the deck, Ask panel, and decision turn", () => {
+    const css = readFileSync("src/styles.css", "utf8");
+    expect(page).toContain('step === 4 ? "deck" : step === 5 ? "ask" : step === 6 ? "turn"');
+    expect(page).toContain('data-testid="landing-story-spotlight"');
+    expect(css).toContain("backdrop-filter: blur(3px)");
+    expect(css).toContain("color-mix(in srgb, var(--nb-ink) 30%, transparent)");
+    expect(css).toContain("lb-spotlight-in 300ms");
   });
   it("draws the net waterfall bar at the honest 1.4 to 2.1 ratio", () => {
     const css = readFileSync("src/styles.css", "utf8");

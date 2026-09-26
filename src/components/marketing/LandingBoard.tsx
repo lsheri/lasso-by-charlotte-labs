@@ -48,6 +48,7 @@ export const LANDING_BOARD_STEPS = [
 type StepKey = (typeof LANDING_BOARD_STEPS)[number]["key"];
 type StoryInput = "scroll" | "jump";
 type UseCaseKey = "bring_work_in" | "reasoning_stays" | "every_number";
+type SpotlightTarget = "deck" | "ask" | "turn";
 
 const LANDING_BOARD_USE_CASES = [
   { key: "bring_work_in", title: "Push work in with one sentence.", body: "Bring work from your AI tools into one shared place.", poster: bringWorkPoster.url, webm: bringWorkWebm.url, mp4: bringWorkMp4.url },
@@ -431,6 +432,57 @@ function ExactTurn({ board, preset, onOpenTurn }: { board: SharedBoardDto; prese
   );
 }
 
+function StorySpotlight({ containerRef, target }: { containerRef: RefObject<HTMLElement | null>; target: SpotlightTarget }) {
+  const [box, setBox] = useState<LassoBox | null>(null);
+  useLayoutEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const selector = target === "deck" ? ".lb-deck" : target === "ask" ? ".lb-answer-sheet" : ".lb-turn-reader";
+    let frame = 0;
+    const measure = () => {
+      frame = 0;
+      const element = container.querySelector<HTMLElement>(selector);
+      if (!element) {
+        setBox(null);
+        return;
+      }
+      const containerRect = container.getBoundingClientRect();
+      const targetRect = element.getBoundingClientRect();
+      if (targetRect.width <= 0 || targetRect.height <= 0) {
+        setBox(null);
+        return;
+      }
+      const scale = containerRect.width / container.offsetWidth;
+      if (!Number.isFinite(scale) || scale <= 0) return;
+      const inset = 8 / scale;
+      setBox({
+        left: (targetRect.left - containerRect.left) / scale - inset,
+        top: (targetRect.top - containerRect.top) / scale - inset,
+        width: targetRect.width / scale + inset * 2,
+        height: targetRect.height / scale + inset * 2,
+      });
+    };
+    const schedule = () => {
+      if (frame) window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(measure);
+    };
+    const observer = new ResizeObserver(schedule);
+    observer.observe(container);
+    const mutation = new MutationObserver(schedule);
+    mutation.observe(container, { childList: true, subtree: true });
+    schedule();
+    window.addEventListener("resize", schedule);
+    return () => {
+      if (frame) window.cancelAnimationFrame(frame);
+      observer.disconnect();
+      mutation.disconnect();
+      window.removeEventListener("resize", schedule);
+    };
+  }, [containerRef, target]);
+  if (!box) return null;
+  return <div className="lb-spotlight-overlay" data-testid="landing-story-spotlight" data-spotlight={target} style={{ "--lb-spot-left": `${box.left}px`, "--lb-spot-top": `${box.top}px`, "--lb-spot-right": `${box.left + box.width}px`, "--lb-spot-bottom": `${box.top + box.height}px`, "--lb-spot-width": `${box.width}px`, "--lb-spot-height": `${box.height}px` } as CSSProperties} aria-hidden="true" />;
+}
+
 function StoryBoard({ board, presets, proof, step, attentionStep, attentionNonce, clientLabel, engagementTitle, onShowSlide, onOpenTurn, onOpenDecisionTurn }: { board: SharedBoardDto; presets: DemoPreset[]; proof: LandingProof | null; step: number; attentionStep: number; attentionNonce: number; clientLabel: string; engagementTitle: string; onShowSlide: () => void; onOpenTurn: () => void; onOpenDecisionTurn: () => void }) {
   const [replayFinished, setReplayFinished] = useState(false);
   const [lassoBox, setLassoBox] = useState<LassoBox | null>(null);
@@ -481,7 +533,10 @@ function StoryBoard({ board, presets, proof, step, attentionStep, attentionNonce
       height: numberRect.height / scale + padY * 2,
     });
     const source = sourceRef.current;
-    if (!source) return false;
+    if (!source) {
+      setProofLine(null);
+      return true;
+    }
     const sourceRect = source.getBoundingClientRect();
     if (sourceRect.width <= 0 || sourceRect.height <= 0) return false;
     setProofLine({
@@ -496,6 +551,11 @@ function StoryBoard({ board, presets, proof, step, attentionStep, attentionNonce
     const stage = stageRef.current;
     const layer = layerRef.current;
     if (!stage || !layer) return;
+    if (step < 4 || attentionStep !== step) {
+      setLassoBox(null);
+      setProofLine(null);
+      return;
+    }
     const stopRetry = () => {
       if (measureFrameRef.current !== null) window.cancelAnimationFrame(measureFrameRef.current);
       measureFrameRef.current = null;
@@ -531,10 +591,11 @@ function StoryBoard({ board, presets, proof, step, attentionStep, attentionNonce
       layer.removeEventListener("transitionend", onTransitionEnd);
       window.removeEventListener("resize", measureLasso);
     };
-  }, [measureLasso, replayFinished, step]);
+  }, [attentionStep, measureLasso, replayFinished, step]);
   const pulse = (target: number) => attentionStep === target ? " lb-target-pulse" : "";
+  const spotlight = attentionStep === step ? (step === 4 ? "deck" : step === 5 ? "ask" : step === 6 ? "turn" : null) : null;
   return (
-    <div ref={stageRef} className="lb-stage-window" data-step={step + 1} data-testid="landing-board-stage">
+    <div ref={stageRef} className="lb-stage-window" data-step={step + 1} data-spotlight={spotlight ?? undefined} data-testid="landing-board-stage">
       <div ref={layerRef} className="lb-board-layer">
         <div className="lb-dot-grid" />
         <div key={`tools-${attentionNonce}`} className={`lb-tool-dock${pulse(1)}`} aria-label="Sources">
@@ -550,18 +611,20 @@ function StoryBoard({ board, presets, proof, step, attentionStep, attentionNonce
           <g className="lb-workstream-connectors"><path d="M260 230 C470 220 570 280 735 350" /><path d="M260 390 C470 390 590 380 735 350" /><path d="M540 485 C620 470 680 410 735 350" /></g>
           {proofLine && step >= 5 && step <= 7 ? <path data-testid="landing-proof-connector" className="lb-proof-connector" d={`M ${proofLine.x1} ${proofLine.y1} C ${proofLine.x1 - 80} ${proofLine.y1}, ${proofLine.x2 + 90} ${proofLine.y2}, ${proofLine.x2} ${proofLine.y2}`} /> : null}
         </svg>
+        {spotlight === "deck" ? <StorySpotlight containerRef={layerRef} target="deck" /> : null}
         <article key={`deck-${attentionNonce}`} className={`lb-deck${pulse(3)}`}>
           <header><ToolLogo vendor="powerpoint" compact /><strong>{(deckItem?.title ?? "FY27 board deck v3").replace(/\s*\(slide notes\)\s*/i, "").trim()}</strong></header>
           <div>{slides.map((slide, index) => <DeckSlide key={`${slide}-${index}`} index={index} clientName={clientLabel} numberRef={numberRef} proof={proofModel} />)}</div>
           {step >= 5 && replayFinished && deckItem && citedIds.has(deckItem.id) ? <span className="lb-pin" aria-label={`Source ${trailNumbers.get(deckItem.id)}`}>{trailNumbers.get(deckItem.id)}</span> : step >= 5 && replayFinished && deckItem && readIds.has(deckItem.id) ? <span className="lb-read-dot" aria-label="Read for this response" /> : null}
         </article>
-        {lassoBox ? <span key={`lasso-${attentionNonce}`} className={`lb-slide-lasso${pulse(4)}`} data-testid="landing-board-lasso" style={{ left: lassoBox.left, top: lassoBox.top, width: lassoBox.width, height: lassoBox.height }} aria-hidden="true" /> : null}
+        {lassoBox && step >= 4 && attentionStep === step ? <svg key={`lasso-${attentionNonce}`} className={`lb-slide-lasso${pulse(4)}`} data-testid="landing-board-lasso" style={{ left: lassoBox.left, top: lassoBox.top, width: lassoBox.width, height: lassoBox.height }} viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><ellipse cx="50" cy="50" rx="46" ry="42" pathLength="1" /></svg> : null}
         {lassoBox && step === 4 ? <svg className="lb-circle-link" viewBox="0 0 1120 680" aria-hidden="true"><line x1={lassoBox.left + lassoBox.width / 2} y1={lassoBox.top + lassoBox.height / 2} x2="932" y2="482" /></svg> : null}
         <div className="lb-circle-question"><p>Where did the $1.4M on slide 3 come from?</p></div>
         {step === 7 && replayFinished ? <div key={`notes-${attentionNonce}`} className={`lb-open-notes${pulse(7)}`}><p>Confirm the vendor extension assumption.</p><p>Confirm approval by Oct 1.</p></div> : null}
       </div>
-      {step >= 5 && step <= 7 ? <div key={`ask-${attentionNonce}`} className={pulse(5)}><AskReplay presets={presets} step={step} onFinished={onReplayFinished} clientLabel={clientLabel} engagementTitle={engagementTitle} proof={proof} proofModel={proofModel} onShowSlide={onShowSlide} onOpenTurn={onOpenTurn} /></div> : null}
-      {step === 6 && replayFinished ? <div key={`turn-${attentionNonce}`} className={pulse(6)}><ExactTurn board={board} preset={second} onOpenTurn={onOpenDecisionTurn} /></div> : null}
+      {spotlight === "ask" || spotlight === "turn" ? <StorySpotlight containerRef={stageRef} target={spotlight} /> : null}
+      {step >= 5 && step <= 7 ? <div key={`ask-${attentionNonce}`} className={`lb-ask-spotlight${pulse(5)}`}><AskReplay presets={presets} step={step} onFinished={onReplayFinished} clientLabel={clientLabel} engagementTitle={engagementTitle} proof={proof} proofModel={proofModel} onShowSlide={onShowSlide} onOpenTurn={onOpenTurn} /></div> : null}
+      {step === 6 && replayFinished ? <div key={`turn-${attentionNonce}`} className={`lb-turn-spotlight${pulse(6)}`}><ExactTurn board={board} preset={second} onOpenTurn={onOpenDecisionTurn} /></div> : null}
       {step === 8 ? <div key={`share-${attentionNonce}`} className={`lb-share-dialog${pulse(8)}`}><p className="lb-micro">READ ONLY</p><h3>Share this board</h3><p>They open the deliverable, source cards, and the conversations behind them.</p><p>They do not open private drafts or anything outside this board.</p><strong>Closes in 48 hours</strong><small>In the demo this is shown, not issued.</small></div> : null}
     </div>
   );
@@ -601,7 +664,7 @@ function StoryCaption({ step, nonce, onPilot }: { step: number; nonce: number; o
     const item = LANDING_BOARD_STEPS[index];
     if (!item) return null;
     const words = item.headline.split(/\s+/).length;
-    return <article key={`${phase}-${index}-${nonce}`} className="lb-caption" data-phase={phase} aria-live={phase === "incoming" ? "polite" : undefined} aria-hidden={phase === "outgoing" ? "true" : undefined} style={{ "--lb-progress-from": `${Math.max(0, index) * 10}%`, "--lb-progress-to": `${(index + 1) * 10}%`, "--lb-underline-delay": `${words * 40 + 80}ms` } as CSSProperties}>
+    return <article key={`${phase}-${index}-${nonce}`} className="lb-caption" data-phase={phase} data-step={index + 1} aria-live={phase === "incoming" ? "polite" : undefined} aria-hidden={phase === "outgoing" ? "true" : undefined} style={{ "--lb-progress-from": `${Math.max(0, index) * 10}%`, "--lb-progress-to": `${(index + 1) * 10}%`, "--lb-underline-delay": `${words * 40 + 80}ms` } as CSSProperties}>
       <span className="lb-caption-progress" aria-label={`${index + 1} of ${LANDING_BOARD_STEPS.length}`} />
       <div className="lb-caption-text"><span>{String(index + 1).padStart(2, "0")} · {item.label}</span><h2><CaptionWords text={item.headline} /></h2><p>{item.line}</p></div>
       {index === 9 ? <div><Button asChild><Link to="/demo">Open the board yourself</Link></Button><Button asChild variant="outline"><a href="#pilot" onClick={onPilot}>Book a pilot</a></Button></div> : null}
@@ -805,7 +868,7 @@ export function LandingBoard() {
       <main className="lb-story">
         <div className="lb-sticky-stage">
           {result?.status === "open" && "board" in result ? <StoryBoard board={result.board} presets={result.presets} proof={result.proof} step={active} attentionStep={settledStep} attentionNonce={attentionNonce} clientLabel={result.engagement.clientLabel ?? ""} engagementTitle={result.engagement.title} onShowSlide={() => { event(viewId.current, "landing.proof_link_opened", { step: "6", target: "slide" }); jump("circle"); }} onOpenTurn={() => event(viewId.current, "landing.proof_link_opened", { step: "6", target: "turn" })} onOpenDecisionTurn={() => event(viewId.current, "landing.proof_link_opened", { step: "7", target: "turn" })} /> : <div className="lb-stage-window lb-loading">{query.isPending ? "Opening the demo board." : "The demo board is not available right now."}</div>}
-          {settledStep > 0 ? <StoryCaption step={settledStep} nonce={attentionNonce} onPilot={() => pilot("try_it")} /> : null}
+          <StoryCaption step={active} nonce={attentionNonce} onPilot={() => pilot("try_it")} />
           <div className="lb-scroll-cue" data-visible={active === 0 ? "true" : "false"} data-testid="landing-scroll-cue" aria-hidden={active !== 0}>
             <span>Scroll to watch it work</span>
             <svg viewBox="0 0 16 10" aria-hidden="true"><path d="m2 2 6 6 6-6" /></svg>
