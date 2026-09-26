@@ -24,6 +24,12 @@ describe("landing headline particle phrase", () => {
     expect(styles).toContain("text-decoration-line: underline");
   });
 
+  it("holds the green particles around the full letter outlines while the phrase is visible", () => {
+    expect(particle).toContain('sampleContext.strokeText(word, 0, baseline)');
+    expect(particle).toContain("if (gathering || holding || dispersing)");
+    expect(particle).toContain("holding\n+              ? holdPulse");
+  });
+
   it("adds no action or event", () => {
     expect(particle).not.toContain("onClick");
     expect(particle).not.toContain("recordAnonymousEventFn");

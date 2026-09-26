@@ -72,9 +72,11 @@ function ParticleWord({ word, index }: { word: string; index: number }) {
       sampleContext.scale(dpr, dpr);
       sampleContext.font = computed.font;
       sampleContext.textBaseline = "alphabetic";
-      sampleContext.fillStyle = "currentColor";
+      sampleContext.strokeStyle = "currentColor";
+      sampleContext.lineWidth = Math.max(1.4, Number.parseFloat(computed.fontSize) * 0.035);
+      sampleContext.lineJoin = "round";
       const baseline = height - Math.max(1, Number.parseFloat(computed.fontSize) * 0.12);
-      sampleContext.fillText(word, 0, baseline);
+      sampleContext.strokeText(word, 0, baseline);
       const pixels = sampleContext.getImageData(0, 0, sample.width, sample.height).data;
       const targets: { x: number; y: number }[] = [];
       const step = Math.max(3, Math.round(Number.parseFloat(computed.fontSize) / 15));
@@ -84,7 +86,7 @@ function ParticleWord({ word, index }: { word: string; index: number }) {
           if (alpha > 72) targets.push({ x: x / dpr, y: y / dpr });
         }
       }
-      const stride = Math.max(1, Math.ceil(targets.length / 420));
+      const stride = Math.max(1, Math.ceil(targets.length / 520));
       particles = targets.filter((_, targetIndex) => targetIndex % stride === 0).map((target, particleIndex) => {
         const angle = seeded(particleIndex + index * 431, 1) * Math.PI * 2;
         const distance = width * (0.45 + seeded(particleIndex + index * 431, 2) * 1.15);
@@ -124,16 +126,21 @@ function ParticleWord({ word, index }: { word: string; index: number }) {
       context.fillStyle = green;
       const rawProgress = gathering ? elapsed / GATHER_END_MS : dispersing ? (elapsed - HOLD_END_MS) / (DISPERSE_END_MS - HOLD_END_MS) : 1;
 
-      if (gathering || dispersing) {
+      if (gathering || holding || dispersing) {
         for (const particle of particles) {
-          const local = easeOutCubic((rawProgress - particle.delay) / (1 - particle.delay));
+          const local = holding ? 1 : easeOutCubic((rawProgress - particle.delay) / (1 - particle.delay));
           const fromX = gathering ? particle.startX : particle.x;
           const fromY = gathering ? particle.startY : particle.y;
           const toX = gathering ? particle.x : particle.endX;
           const toY = gathering ? particle.y : particle.endY;
           const x = fromX + (toX - fromX) * local;
           const y = fromY + (toY - fromY) * local;
-          const alpha = gathering ? Math.sin(local * Math.PI) * 0.72 + (1 - local) * 0.18 : (1 - local) * 0.92;
+          const holdPulse = 0.78 + Math.sin(timestamp / 430 + particle.delay * Math.PI * 2) * 0.18;
+          const alpha = gathering
+            ? Math.sin(local * Math.PI) * 0.72 + (1 - local) * 0.18
+            : holding
+              ? holdPulse
+              : (1 - local) * 0.92;
           context.globalAlpha = clamp(alpha);
           context.beginPath();
           context.arc(x, y, particle.radius, 0, Math.PI * 2);
