@@ -171,7 +171,7 @@ describe("Unit 10 landing", () => {
     const styles = readFileSync("src/styles.css", "utf8");
     expect(particle).toContain("export const PARTICLE_TEXT_HOLD_MS = 3000");
     expect(particle).toContain("<canvas ref={canvasRef} className=\"landing-particle-word-canvas\" />");
-    expect(particle).toContain("const local = holding ? 0");
+    expect(particle).toContain("if (gathering || dispersing) {");
     expect(styles).toContain(".landing-particle-word-canvas");
   });
 
