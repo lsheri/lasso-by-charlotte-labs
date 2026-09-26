@@ -1037,29 +1037,29 @@ export function DeckSlide({
     );
   }
   if (index === 2) {
-    const net = proof?.scenarioB;
+    const net = proof ? proof.scenarioB : null;
     const figure = (value: number) => `$${value.toFixed(1)}M`;
     return (
       <section className="lb-deck-slide lb-slide-number">
         <small>3</small>
         <b>Year-two net benefit</b>
         <span ref={numberRef} className="lb-number" data-testid="landing-board-number">
-          {net === undefined ? "" : figure(net)}
+          {net === null ? "" : figure(net)}
         </span>
         <div
           className="lb-waterfall"
-          aria-label={proof ? `${figure(proof.savings)} savings minus ${figure(proof.transition)} transition cost equals ${figure(net)} year-two net benefit` : "Year-two net benefit figures unavailable"}
+          aria-label={proof ? `${figure(proof.savings)} savings minus ${figure(proof.transition)} transition cost equals ${figure(proof.scenarioB)} year-two net benefit` : "Year-two net benefit figures unavailable"}
         >
           <span className="lb-waterfall-savings">
             {proof ? <><i style={{ "--lb-waterfall-units": proof.savings } as CSSProperties} />{figure(proof.savings)}<br /></> : null}
             savings
           </span>
           <span className="lb-waterfall-costs">
-            {proof ? <><i style={{ "--lb-waterfall-units": proof.transition, "--lb-waterfall-net-units": net } as CSSProperties} />-{figure(proof.transition)}<br /></> : null}
+            {proof ? <><i style={{ "--lb-waterfall-units": proof.transition, "--lb-waterfall-net-units": proof.scenarioB } as CSSProperties} />-{figure(proof.transition)}<br /></> : null}
             transition
           </span>
           <span className="lb-waterfall-net">
-            {proof ? <><i style={{ "--lb-waterfall-units": net } as CSSProperties} />{figure(net)}<br /></> : null}
+            {proof ? <><i style={{ "--lb-waterfall-units": proof.scenarioB } as CSSProperties} />{figure(proof.scenarioB)}<br /></> : null}
             net
           </span>
         </div>

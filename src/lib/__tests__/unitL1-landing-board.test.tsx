@@ -374,7 +374,7 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(page).not.toContain("[0.3, 1.4, 1.2]");
     expect(page).not.toContain('data-units="0.7"');
     expect(page).toContain("proof ? [proof.scenarioA, proof.scenarioB, proof.scenarioC] : null");
-    expect(page).toContain("const net = proof?.scenarioB");
+    expect(page).toContain("const net = proof ? proof.scenarioB : null");
     expect(page).toContain('"--lb-waterfall-units": proof.savings');
     expect(page).toContain('"--lb-waterfall-units": proof.transition');
     expect(page).toContain('"--lb-waterfall-units": net');
