@@ -92,7 +92,7 @@ function DemoSidebar({ clientLabel }: { clientLabel: string }) {
   return <aside className="demo-sandbox-sidebar" aria-label="Demo workspace navigation">
     <div className="demo-sandbox-brand"><LassoLoopMark /><span>LASSO</span></div>
     <div className="demo-sandbox-person"><span>YS</span><div><strong>YellowSigil</strong><small>Demo workspace</small></div></div>
-    <nav><p>Your organization</p><span><GraphiteIcon name="overview" />Overview</span><span><GraphiteIcon name="work" />Work</span><span data-current="true"><GraphiteIcon name="engagement" />YSM-01</span><p>Engagement</p><span><GraphiteIcon name="example-board" />Workboard</span><span><GraphiteIcon name="messages" />Conversations</span></nav>
+    <nav><p>Your organization</p><span aria-label="Overview"><GraphiteIcon name="overview" /><b>Overview</b></span><span aria-label="Work"><GraphiteIcon name="work" /><b>Work</b></span><span data-current="true" aria-label="YSM-01"><GraphiteIcon name="engagement" /><b>YSM-01</b></span><p>Engagement</p><span aria-label="Workboard"><GraphiteIcon name="example-board" /><b>Workboard</b></span><span aria-label="Conversations"><GraphiteIcon name="messages" /><b>Conversations</b></span></nav>
     <div className="demo-sandbox-client">{clientLabel}</div>
   </aside>;
 }

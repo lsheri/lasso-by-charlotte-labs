@@ -215,3 +215,8 @@
 - [x] Add one-shot caption exit, spring entry, word reveal, underline, and step progress motion with a reduced-motion crossfade.
 - [x] Raise story, board, Ask, proof, chip, and micro-label text to the requested readable floors.
 - [x] Verify all settled steps at 1372x732 and the caption body at 390x844.
+
+### Unit S1.1 demo readability
+- [x] Raise the Ask rail presets, subline, composer, answers, proof rows, and mono labels to buyer-readable sizes.
+- [x] Use the compact demo sidebar below 1440px so fitted board card text remains readable.
+- [ ] Verify 20 visible rail and board text nodes at 1372x732.
