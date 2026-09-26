@@ -244,3 +244,8 @@
 - [x] Place the three use-case cards between the hero and the desktop story, with the story beginning at Canvas.
 - [x] Add the phone use-case stop as 2 of 11 while preserving the focused M1 sections.
 - [x] Verify card media, story jumps, telemetry, ordering, and screenshots at 1372x732 and 390x844.
+
+### Unit S3.1 use-case review
+- [x] Tighten the three card headlines and bodies, then point each story link at the reviewed step.
+- [x] Swap in the Claude MCP push and drag-select Ask clips while retaining the source-trail clip.
+- [x] Raise both section introductions to the reviewed display sizes and verify desktop and phone screenshots.
