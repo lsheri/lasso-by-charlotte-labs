@@ -280,7 +280,7 @@ describe("Unit L1 scroll-driven landing board", () => {
   it("offsets only visible story numbering after the cue removal", () => {
     expect(page.match(/const displayStep = index;/g)).toHaveLength(2);
     expect(page.match(/<span>\{displayStep\}<\/span>/g)).toHaveLength(2);
-    expect(page).toContain('aria-label={`${displayStep} of ${LANDING_BOARD_STEPS.length - 1}`}');
+    expect(page).toContain('aria-label={`${displayStep} of ${LANDING_BOARD_STEPS.length}`}');
     expect(page).toContain('event(viewId.current, "landing.story_section_viewed", {');
     expect(page).toContain('event(viewId.current, "landing.section_jumped", { section: key })');
     expect(page).toContain("section: key,");
