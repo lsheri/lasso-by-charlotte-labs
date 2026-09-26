@@ -37,7 +37,7 @@ export function noteDemoOpened(surface: "home" | "board" | "landing" | "conversa
   }).catch(() => undefined);
 }
 
-export type DemoPlayAction = "drag_card" | "drag_group" | "sticky_added" | "sticky_edited" | "reset_auto" | "reset_manual" | "preset_opened" | "proof_link_opened";
+export type DemoPlayAction = "drag_card" | "drag_group" | "sticky_added" | "sticky_edited" | "reset_auto" | "reset_manual" | "preset_opened" | "proof_link_opened" | "slide_selected";
 
 export function noteDemoPlayInteracted(action: DemoPlayAction, surface: "desktop" | "phone"): void {
   void recordAnonymousEventFn({

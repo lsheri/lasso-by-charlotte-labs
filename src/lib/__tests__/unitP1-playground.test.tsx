@@ -49,6 +49,6 @@ describe("Unit P1 playable finished board", () => {
 
   it("emits the closed additive vocabulary", () => {
     const telemetry = readFileSync("src/lib/demo-telemetry.ts", "utf8");
-    for (const action of ["drag_card", "drag_group", "sticky_added", "sticky_edited", "reset_auto", "reset_manual", "preset_opened", "proof_link_opened"]) expect(telemetry).toContain(`\"${action}\"`);
+    for (const action of ["drag_card", "drag_group", "sticky_added", "sticky_edited", "reset_auto", "reset_manual", "preset_opened", "proof_link_opened", "slide_selected"]) expect(telemetry).toContain(`\"${action}\"`);
   });
 });
