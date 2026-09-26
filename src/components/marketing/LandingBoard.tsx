@@ -595,7 +595,7 @@ function StoryBoard({ board, presets, proof, step, attentionStep, attentionNonce
   const pulse = (target: number) => attentionStep === target ? " lb-target-pulse" : "";
   const spotlight = attentionStep === step ? (step === 4 ? "deck" : step === 5 ? "ask" : step === 6 ? "turn" : null) : null;
   return (
-    <div ref={stageRef} className="lb-stage-window" data-step={step + 1} data-testid="landing-board-stage">
+    <div ref={stageRef} className="lb-stage-window" data-step={step + 1} data-spotlight={spotlight ?? undefined} data-testid="landing-board-stage">
       <div ref={layerRef} className="lb-board-layer">
         <div className="lb-dot-grid" />
         <div key={`tools-${attentionNonce}`} className={`lb-tool-dock${pulse(1)}`} aria-label="Sources">

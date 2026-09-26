@@ -91,7 +91,10 @@ test("story zones always resolve to one matching visible step", async ({ browser
   const context = await browser.newContext({ viewport: { width: 1372, height: 732 }, reducedMotion: "reduce" });
   const page = await context.newPage();
   await page.goto("/", { waitUntil: "networkidle" });
-  const pageHeight = await page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight);
+  const pageHeight = await page.evaluate(() => {
+    const lastZone = document.querySelector<HTMLElement>('[data-lb-step="9"]');
+    return lastZone ? lastZone.offsetTop + lastZone.offsetHeight - window.innerHeight : 0;
+  });
   for (let y = 0; y <= pageHeight; y += 80) {
     await page.evaluate((top) => window.scrollTo({ top, behavior: "auto" }), y);
     await page.waitForTimeout(20);
