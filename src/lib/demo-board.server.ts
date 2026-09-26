@@ -99,7 +99,11 @@ export async function openDemoBoard(code: string): Promise<DemoBoardResult> {
 }
 
 function demoSafeBoard(dto: SharedBoardDto): SharedBoardDto {
-  return { ...dto, seed: { ...dto.seed, work: publicSafeWork(dto.seed.work) } };
+  return {
+    ...dto,
+    seed: { ...dto.seed, work: publicSafeWork(dto.seed.work) },
+    turns: Object.fromEntries(Object.entries(dto.turns).map(([itemId, turns]) => [itemId, turns.map((turn) => ({ ...turn, role: turn.role === "user" ? "user" : "assistant", content: publicSafeText(turn.content) }))])),
+  };
 }
 
 /** The same seeded layout the board draws, reduced to Home thumbnail rects. */
