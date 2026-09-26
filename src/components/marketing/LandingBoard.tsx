@@ -24,12 +24,6 @@ import { AnswerTurnLinks } from "@/components/reflect/AnswerTurnLinks";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { VendorMark } from "@/components/work/SourceMark";
-import heroMidAsset from "@/assets/landing-hero-mid.png.asset.json";
-import heroScatteredAsset from "@/assets/landing-hero-scattered.png.asset.json";
-import heroSettledAsset from "@/assets/landing-hero-settled.png.asset.json";
-import phoneHeroMidAsset from "@/assets/landing-phone-hero-mid.png.asset.json";
-import phoneHeroScatteredAsset from "@/assets/landing-phone-hero-scattered.png.asset.json";
-import phoneHeroSettledAsset from "@/assets/landing-phone-hero-settled.png.asset.json";
 import { openDemoBoardFn } from "@/lib/demo.functions";
 import type { DemoPreset } from "@/lib/demo-presets-shared";
 import { submitPilotRequestFn } from "@/lib/pilot-request.functions";
@@ -1938,44 +1932,67 @@ function StoryBoard({
   );
 }
 
-const HERO_ASSEMBLE_FRAMES = [heroScatteredAsset, heroMidAsset, heroSettledAsset] as const;
-const PHONE_HERO_ASSEMBLE_FRAMES = [
-  phoneHeroScatteredAsset,
-  phoneHeroMidAsset,
-  phoneHeroSettledAsset,
-] as const;
+function useDecorativeHeroVideo(paused = false) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const sync = () => {
+      if (paused || motion.matches) {
+        video.pause();
+        return;
+      }
+      void video.play().catch(() => undefined);
+    };
+    sync();
+    motion.addEventListener("change", sync);
+    return () => motion.removeEventListener("change", sync);
+  }, [paused]);
+  return videoRef;
+}
 
-/** Inert image-only sequence showing scattered AI work settling onto a finished board. */
-function HeroAssemble() {
+/** Inert recorded sequence showing scattered AI work settling onto a finished board. */
+function HeroAssemble({ paused }: { paused: boolean }) {
+  const videoRef = useDecorativeHeroVideo(paused);
   return (
     <div className="lb-hero-assemble" aria-hidden="true" inert>
-      {HERO_ASSEMBLE_FRAMES.map((frame, index) => (
-        <img
-          key={frame.url}
-          className="lb-hero-assemble-frame"
-          data-frame={index + 1}
-          src={frame.url}
-          alt=""
-        />
-      ))}
+      <video
+        ref={videoRef}
+        className="lb-hero-assemble-video"
+        autoPlay
+        muted
+        playsInline
+        loop
+        preload="metadata"
+        poster="/videos/landing-hero-assemble-poster.png"
+      >
+        <source src="/videos/landing-hero-assemble.webm" type="video/webm" />
+        <source src="/videos/landing-hero-assemble.mp4" type="video/mp4" />
+      </video>
     </div>
   );
 }
 
-/** Inert phone sequence: every state is a pre-composed image with no positioned card children. */
+/** Inert phone-framed recording with three readable cards and no positioned children. */
 function PhoneHeroAssemble() {
+  const videoRef = useDecorativeHeroVideo();
   return (
     <div className="lb-phone-hero-sequence" aria-hidden="true" inert>
       <div className="lb-phone-hero-assemble">
-        {PHONE_HERO_ASSEMBLE_FRAMES.map((frame, index) => (
-          <img
-            key={frame.url}
-            className="lb-phone-hero-frame"
-            data-frame={index + 1}
-            src={frame.url}
-            alt=""
-          />
-        ))}
+        <video
+          ref={videoRef}
+          className="lb-phone-hero-video"
+          autoPlay
+          muted
+          playsInline
+          loop
+          preload="metadata"
+          poster="/videos/landing-hero-assemble-phone-poster.png"
+        >
+          <source src="/videos/landing-hero-assemble-phone.webm" type="video/webm" />
+          <source src="/videos/landing-hero-assemble-phone.mp4" type="video/mp4" />
+        </video>
       </div>
       <p className="micro-label lb-phone-hero-caption">CHATS FROM EVERY TOOL, ON ONE BOARD</p>
       <div className="lb-phone-hero-line">
@@ -2672,7 +2689,7 @@ export function LandingBoard() {
                 </Button>
               </div>
               <div className="lb-hero-stage">
-                <HeroAssemble />
+                <HeroAssemble paused={heroFocus === 1} />
               </div>
               <p className="micro-label lb-hero-assemble-caption" aria-hidden="true">CHATS FROM EVERY TOOL, ON ONE BOARD</p>
               <div className="lb-hero-line">
