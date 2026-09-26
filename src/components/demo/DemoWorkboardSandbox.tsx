@@ -233,7 +233,12 @@ export function DemoWorkboardSandbox({ board, presets, proof, clientLabel, engag
       const rect = event.currentTarget.getBoundingClientRect(); const centre = { x: (a.x + b.x) / 2 - rect.left, y: (a.y + b.y) / 2 - rect.top };
       const nextZoom = clampZoom(prior.zoom * distance / Math.max(1, prior.distance)); setView((current) => ({ zoom: nextZoom, pan: zoomAbout(current.pan, current.zoom, nextZoom, centre) })); return;
     }
-    if (panRef.current) setView((current) => ({ ...current, pan: { x: panRef.current!.origin.x + event.clientX - panRef.current!.from.x, y: panRef.current!.origin.y + event.clientY - panRef.current!.from.y } }));
+    const pan = panRef.current;
+    if (pan) {
+      const x = pan.origin.x + event.clientX - pan.from.x;
+      const y = pan.origin.y + event.clientY - pan.from.y;
+      setView((current) => ({ ...current, pan: { x, y } }));
+    }
   };
   const endGesture = (event: ReactPointerEvent<HTMLDivElement>) => {
     touchRef.current.delete(event.pointerId); if (touchRef.current.size < 2) pinchRef.current = null;
