@@ -27,6 +27,7 @@ describe("landing headline particle phrase", () => {
   it("holds the green particles around the full letter outlines while the phrase is visible", () => {
     expect(particle).toContain('sampleContext.strokeText(word, 0, baseline)');
     expect(particle).toContain("if (gathering || holding || dispersing)");
+    expect(particle).toContain("const local = holding ? 0");
     expect(particle).toContain("holding\n              ? holdPulse");
   });
 

@@ -128,7 +128,7 @@ function ParticleWord({ word, index }: { word: string; index: number }) {
 
       if (gathering || holding || dispersing) {
         for (const particle of particles) {
-          const local = holding ? 1 : easeOutCubic((rawProgress - particle.delay) / (1 - particle.delay));
+          const local = holding ? 0 : easeOutCubic((rawProgress - particle.delay) / (1 - particle.delay));
           const fromX = gathering ? particle.startX : particle.x;
           const fromY = gathering ? particle.startY : particle.y;
           const toX = gathering ? particle.x : particle.endX;
