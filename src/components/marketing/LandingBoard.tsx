@@ -90,7 +90,7 @@ export const LANDING_BOARD_STEPS = [
   },
   {
     key: "share",
-    label: "Share",
+    label: "\n",
     headline: "Share the deliverable, not the drafts.",
     line: "A read-only view closes in 48 hours and opens only what you chose.",
   },
