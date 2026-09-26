@@ -304,10 +304,10 @@ test("story spotlights only the three settled attention moments", async ({ brows
   });
   const page = await context.newPage();
   await page.goto("/", { waitUntil: "networkidle" });
-  await page.getByRole("button", { name: "Workstreams", exact: true }).last().click();
+  await page.locator('.lb-progress-dot[aria-label="Workstreams"]').click({ force: true });
   await page.waitForTimeout(900);
   await expect(page.getByTestId("landing-story-spotlight")).toHaveCount(0);
-  await page.getByRole("button", { name: "Ask", exact: true }).last().click();
+  await page.locator('.lb-progress-dot[aria-label="Ask Lasso"]').click({ force: true });
   const overlay = page.getByTestId("landing-story-spotlight");
   await expect(overlay).toHaveAttribute("data-spotlight", "ask", { timeout: 2_000 });
   const layers = await page.evaluate(() => ({
@@ -388,6 +388,14 @@ test("use cases sit before the story with one-line titles and no jump controls",
   expect(order).toBe(true);
   await expect(page.locator("#usecases video")).toHaveCount(3);
   await expect(page.getByRole("button", { name: /See it in the story/ })).toHaveCount(0);
+  const titles = page.locator("#usecases .landing-usecase h3");
+  await expect(titles).toHaveCount(3);
+  for (const title of await titles.all()) {
+    const lines = await title.evaluate((element) =>
+      Math.round(element.getBoundingClientRect().height / Number.parseFloat(getComputedStyle(element).lineHeight)),
+    );
+    expect(lines).toBe(1);
+  }
   for (const video of await page.locator("#usecases video").all()) {
     await expect(video).toHaveAttribute("poster", /.+/);
     const ratio = await video.locator("xpath=..").evaluate((element) => {
@@ -443,7 +451,7 @@ test("settled attention steps keep one spotlight and one caption", async ({ brow
   const page = await context.newPage();
   await page.goto("/", { waitUntil: "networkidle" });
   for (const name of ["Deliverable", "A number", "Ask Lasso", "The chat"]) {
-    await page.getByRole("button", { name, exact: true }).last().click();
+    await page.locator(`.lb-progress-dot[aria-label="${name}"]`).click({ force: true });
     await page.waitForTimeout(800);
     const baseline = await page.evaluate(
       () =>

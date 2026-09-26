@@ -1734,16 +1734,17 @@ function StoryBoard({
     const onTransitionEnd = (event: TransitionEvent) => {
       if (event.target === layer && event.propertyName === "transform") retryMeasure();
     };
-    const proofObserver = new MutationObserver(() => {
-      if (stage.querySelector("[data-testid=landing-proof-card]")) retryMeasure();
-    });
-    proofObserver.observe(stage, { childList: true, subtree: true });
+    const geometryObserver = new ResizeObserver(retryMeasure);
+    geometryObserver.observe(stage);
+    geometryObserver.observe(layer);
+    if (numberRef.current) geometryObserver.observe(numberRef.current);
+    if (sourceRef.current) geometryObserver.observe(sourceRef.current);
     layer.addEventListener("transitionend", onTransitionEnd);
     window.addEventListener("resize", measureLasso);
     return () => {
       window.cancelAnimationFrame(frame);
       stopRetry();
-      proofObserver.disconnect();
+      geometryObserver.disconnect();
       layer.removeEventListener("transitionend", onTransitionEnd);
       window.removeEventListener("resize", measureLasso);
     };

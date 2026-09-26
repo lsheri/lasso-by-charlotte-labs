@@ -288,6 +288,6 @@
 
 ## Unit S6 landing stability and use-case copy
 
-- [ ] Stop settled story measurement and caption churn without changing story controls or events.
-- [ ] Replace the three use-case titles and bodies, remove only their jump controls, and keep clip playback events.
-- [ ] Add desktop stability and desktop/phone one-line title browser guards, then verify focused checks.
+- [x] Stop settled story measurement and caption churn without changing story controls or events.
+- [x] Replace the three use-case titles and bodies, remove only their jump controls, and keep clip playback events.
+- [x] Add desktop stability and desktop/phone one-line title browser guards, then verify focused checks.
