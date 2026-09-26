@@ -142,9 +142,7 @@ function ParticleWord({ word, index }: { word: string; index: number }) {
           const holdPulse = 0.78 + Math.sin(timestamp / 430 + particle.delay * Math.PI * 2) * 0.18;
           const alpha = gathering
             ? Math.sin(local * Math.PI) * 0.72 + (1 - local) * 0.18
-            : holding
-              ? holdPulse
-              : (1 - local) * 0.92;
+            : (1 - local) * 0.92;
           context.globalAlpha = clamp(alpha);
           context.beginPath();
           context.arc(x, y, particle.radius, 0, Math.PI * 2);
