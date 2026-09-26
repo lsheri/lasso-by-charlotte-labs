@@ -84,11 +84,11 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 430, height: 932 }
     await expect(page.locator(".lb-header")).toBeVisible();
     expect((await page.locator(".lb-header").boundingBox())?.height ?? 999).toBeLessThanOrEqual(56);
     const sections = page.locator(".lb-phone-step");
-    await expect(sections).toHaveCount(10);
-    for (let index = 0; index < 10; index += 1) {
+    await expect(sections).toHaveCount(11);
+    for (let index = 0; index < 11; index += 1) {
       const section = sections.nth(index);
       await section.scrollIntoViewIfNeeded();
-      await expect(page.locator(".lb-phone-counter")).toHaveText(`${index + 1} / 10`);
+      await expect(page.locator(".lb-phone-counter")).toHaveText(`${index + 1} / 11`);
       const result = await section.evaluate((element) => {
         const visibleText = Array.from(element.querySelectorAll<HTMLElement>("span,p,strong,small,h1,h2,h3,a,button"))
           .filter((node) => { const box = node.getBoundingClientRect(); const style = getComputedStyle(node); return Boolean(node.textContent?.trim()) && box.width > 0 && box.height > 0 && style.visibility !== "hidden"; })
@@ -99,7 +99,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 430, height: 932 }
           pageWidth: document.documentElement.scrollWidth,
         };
       });
-      if (index !== 6) expect(result.innerScroll, `step ${index + 1}`).toBe(false);
+      if (index !== 7) expect(result.innerScroll, `step ${index + 1}`).toBe(false);
       expect(result.narrowText, `step ${index + 1}`).toEqual([]);
       expect(result.pageWidth).toBe(viewport.width);
       if (viewport.width === 390) await page.screenshot({ path: testInfo.outputPath(`phone-story-${index + 1}.png`) });
@@ -199,7 +199,7 @@ for (const viewport of [{ width: 1372, height: 732 }]) {
     const cue = page.getByTestId("landing-scroll-cue");
     await expect(cue).toBeVisible();
     await page.getByRole("button", { name: "Watch it work", exact: true }).click();
-    await expect(page.locator(".lb-stage-window")).toHaveAttribute("data-step", "2");
+    await expect(page.locator("#usecases")).toBeInViewport();
     await expect(cue).toBeHidden();
     await page.goto("/", { waitUntil: "networkidle" });
     await page.getByRole("link", { name: "View a Workboard", exact: true }).click();
@@ -207,6 +207,29 @@ for (const viewport of [{ width: 1372, height: 732 }]) {
     await context.close();
   });
 }
+
+test("use cases sit before the story and link into matching steps", async ({ browser }, testInfo) => {
+  const context = await browser.newContext({ viewport: { width: 1372, height: 732 }, reducedMotion: "reduce" });
+  const page = await context.newPage();
+  await page.goto("/", { waitUntil: "networkidle" });
+  const order = await page.evaluate(() => {
+    const hero = document.querySelector(".lb-desktop-hero");
+    const usecases = document.querySelector("#usecases");
+    const story = document.querySelector(".lb-how-it-works");
+    return hero && usecases && story ? Boolean(hero.compareDocumentPosition(usecases) & Node.DOCUMENT_POSITION_FOLLOWING) && Boolean(usecases.compareDocumentPosition(story) & Node.DOCUMENT_POSITION_FOLLOWING) : false;
+  });
+  expect(order).toBe(true);
+  await expect(page.locator("#usecases video")).toHaveCount(3);
+  for (const video of await page.locator("#usecases video").all()) {
+    await expect(video).toHaveAttribute("poster", /.+/);
+    const ratio = await video.locator("xpath=..").evaluate((element) => { const box = element.getBoundingClientRect(); return box.width / box.height; });
+    expect(ratio).toBeCloseTo(16 / 9, 1);
+  }
+  await page.locator('#usecases [data-usecase="bring_work_in"]').getByRole("button", { name: /See it in the story/ }).click();
+  await expect(page.locator('.lb-stage-window')).toHaveAttribute("data-step", "3");
+  await page.screenshot({ path: testInfo.outputPath("landing-usecases-1372x732.png") });
+  await context.close();
+});
 
 for (const viewport of desktopSizes) {
   test(`playable demo fits readable content at ${viewport.width}x${viewport.height}`, async ({ browser }) => {

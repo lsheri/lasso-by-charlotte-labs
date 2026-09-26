@@ -47,6 +47,17 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(page).toContain('event(viewId, "landing.usecase_played", { card, input_mode: inputMode })');
     expect(page).toContain('aria-label={`Play: ${card.title}`}');
   });
+  it("places the use cases between the hero and Canvas with story jump coverage", () => {
+    expect(page.indexOf('className="lb-desktop-hero"')).toBeLessThan(page.indexOf('<UseCaseSection onPlayed'));
+    expect(page.indexOf('<UseCaseSection onPlayed')).toBeLessThan(page.indexOf('className="lb-how-it-works"'));
+    expect(page).toContain('WHAT LASSO DOES');
+    expect(page).toContain('Three things a buyer asks for. Here is what each looks like.');
+    expect(page).toContain('See it in the story →');
+    expect(page).toContain('onClick={() => onJump(card.step)}');
+    expect(page).toContain('step: "workstreams"');
+    expect(page).toContain('step: "canvas"');
+    expect(page).toContain('step: "circle"');
+  });
   it("maps every board tool to an official asset or Simple Icons path", () => {
     const logo = readFileSync("src/components/marketing/ToolLogo.tsx", "utf8");
     for (const mark of ["siClaude", "siGooglegemini", "siGoogledrive", "siGmail"]) expect(logo).toContain(mark);
@@ -135,10 +146,12 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(css).toContain('.lb-stage-window[data-step="1"] .lb-board-layer { opacity: 0;');
     expect(css).toContain('.lb-stage-window[data-step="1"] .lb-board-card { opacity: 0; }');
   });
-  it("uses a separate phone-first ten-section story", () => {
+  it("uses a separate phone-first eleven-stop story", () => {
     const css = readFileSync("src/styles.css", "utf8");
     expect(page).toContain('className="lb-phone-story"');
     expect(page).toContain('data-phone-step={index}');
+    expect(page).toContain('id="lb-phone-usecases"');
+    expect(page).toContain('{phoneStop + 1} / 11');
     expect(page).toContain('new IntersectionObserver');
     expect(page).toContain('threshold: 0.6');
     expect(page).toContain('<ExactTurn board={board} preset={second} onOpenTurn={onOpenDecisionTurn} phone />');

@@ -902,7 +902,7 @@ export function LandingBoard() {
       frame = 0;
       if (jumpTarget.current !== null) return;
       const threshold = window.innerHeight * 0.55;
-      let latest = 1;
+      let latest = 0;
       for (const section of sections) {
         if (section.getBoundingClientRect().top <= threshold) latest = Number(section.dataset["lbStep"] ?? latest);
       }
@@ -985,7 +985,7 @@ export function LandingBoard() {
         </section>
         {result?.status === "open" && "board" in result ? <PhoneStory board={result.board} presets={result.presets} proof={result.proof} clientLabel={result.engagement.clientLabel ?? ""} active={phoneStop} onActive={activatePhone} onWatch={jumpToUseCases} onPilot={() => pilot("try_it")} onShowSlide={() => { event(viewId.current, "landing.proof_link_opened", { step: "6", target: "slide" }); jump("circle"); }} onOpenTurn={() => event(viewId.current, "landing.proof_link_opened", { step: "6", target: "turn" })} onOpenDecisionTurn={() => event(viewId.current, "landing.proof_link_opened", { step: "7", target: "turn" })} onUseCasePlayed={noteUseCasePlayed} onUseCaseJump={jump} /> : <div className="lb-phone-loading">{query.isPending ? "Opening the demo board." : "The demo board is not available right now."}</div>}
       </main>
-      <div className="lb-phone-pilot" data-visible={active > 0 ? "true" : "false"}><Button asChild size="sm"><a href="#pilot" onClick={() => pilot("phone_bar")}>Book a pilot</a></Button></div>
+      <div className="lb-phone-pilot" data-visible={phoneStop > 0 ? "true" : "false"}><Button asChild size="sm"><a href="#pilot" onClick={() => pilot("phone_bar")}>Book a pilot</a></Button></div>
       <LandingBoardContinuation viewId={viewId.current} onPilot={pilot} />
     </div>
   );
