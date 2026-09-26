@@ -20,7 +20,7 @@ describe("Unit P1 playable finished board", () => {
   });
 
   it("returns every story link to the real home page", () => {
-    expect(pages).toContain('<Link to="/" hash="lb-try-it">Back to the story</Link>');
+    expect(board).toContain('<Link to="/" hash="lb-try-it">Back to the story</Link>');
     expect(readFileSync("src/pages/DemoExtraPages.tsx", "utf8")).toContain('navigate({ to: "/", hash: "lb-ask" })');
   });
 
@@ -48,6 +48,7 @@ describe("Unit P1 playable finished board", () => {
   });
 
   it("emits the closed additive vocabulary", () => {
-    for (const action of ["drag_card", "drag_group", "sticky_added", "sticky_edited", "reset_auto", "reset_manual", "preset_opened", "proof_link_opened"]) expect(board).toContain(`\"${action}\"`);
+    const telemetry = readFileSync("src/lib/demo-telemetry.ts", "utf8");
+    for (const action of ["drag_card", "drag_group", "sticky_added", "sticky_edited", "reset_auto", "reset_manual", "preset_opened", "proof_link_opened"]) expect(telemetry).toContain(`\"${action}\"`);
   });
 });
