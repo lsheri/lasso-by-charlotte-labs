@@ -1986,7 +1986,6 @@ function HeroAssemble() {
       <video
         ref={videoRef}
         className="lb-hero-assemble-video"
-        autoPlay
         muted
         playsInline
         preload="metadata"
@@ -2093,7 +2092,6 @@ function PhoneHeroAssemble() {
         <video
           ref={videoRef}
           className="lb-phone-hero-video"
-          autoPlay
           muted
           playsInline
           preload="metadata"
