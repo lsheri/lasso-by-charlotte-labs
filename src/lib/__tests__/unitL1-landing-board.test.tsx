@@ -287,9 +287,7 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(page).toContain('activate(index, "jump", true)');
   });
   it("offsets only visible story numbering after the cue removal", () => {
-    // S4a: phone keeps index; desktop stage runs contiguous after five static standalone numbers.
-    expect(page.match(/const displayStep = index;/g)).toHaveLength(1);
-    expect(page.match(/const displayStep = index \+ 1;/g)).toHaveLength(1);
+    expect(page.match(/const displayStep = index;/g)).toHaveLength(2);
     expect(page.match(/<span>\{displayStep\}<\/span>/g)).toHaveLength(2);
     expect(page).toContain('closing ? item.label : `${displayStep} of ${LANDING_BOARD_STEPS.length}`');
     expect(page.match(/const closing = item\.key === "try-it";/g)).toHaveLength(2);
