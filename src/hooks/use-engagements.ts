@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { supabase } from "@/integrations/supabase/client";
+import { CLIENT_JOIN } from "@/lib/clients";
 
 export type EngagementSummary = {
   id: string;
@@ -9,14 +10,20 @@ export type EngagementSummary = {
   client_label: string | null;
   brief: string | null;
   term_label: string | null;
-  clients: { id: string; name: string; quick_folder: boolean } | null;
+  clients: {
+    id: string;
+    name: string;
+    quick_folder: boolean;
+    kind?: "client" | "folder";
+    parent_id?: string | null;
+  } | null;
 };
 
 export async function fetchMyEngagements(profileId: string): Promise<EngagementSummary[]> {
   const { data, error } = await supabase
     .from("engagement_members")
     .select(
-      "engagements(id, code, title, client_label, brief, term_label, clients(id, name, quick_folder))",
+      `engagements(id, code, title, client_label, brief, term_label, ${CLIENT_JOIN})`,
     )
     .eq("profile_id", profileId);
   if (error) throw error;

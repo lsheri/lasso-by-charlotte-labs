@@ -6,7 +6,18 @@
  * engagements that were shared with them.
  */
 
-export type NavClientRef = { id: string; name: string; quick_folder: boolean } | null | undefined;
+export type NavClientRef =
+  | {
+      id: string;
+      name: string;
+      quick_folder: boolean;
+      /** Optional: absent means "client". */
+      kind?: "client" | "folder";
+      /** Optional: absent means null (a root). */
+      parent_id?: string | null;
+    }
+  | null
+  | undefined;
 
 export type NavEngagement = {
   id: string;
@@ -233,4 +244,61 @@ export function buildContainerTree<T extends NavEngagement>(
   }
 
   return roots.sort(byName);
+}
+
+/** How many container levels the sidebar draws. Deliberately lower than
+ *  MAX_CONTAINER_DEPTH: that one is a safety limit against a cycle the database
+ *  cannot refuse, this one is a legibility limit on a narrow rail. Two container
+ *  levels plus an engagement plus its tasks is already four levels of indent. */
+export const MAX_SIDEBAR_CONTAINER_DEPTH = 2;
+
+export type FlatContainerRow<T extends NavEngagement = NavEngagement> = {
+  node: ContainerNode<T>;
+  depth: number;
+};
+
+/**
+ * Flattens the container tree into sidebar rows.
+ * Depth first, parents before children, sibling order preserved as given.
+ * A node past MAX_SIDEBAR_CONTAINER_DEPTH is emitted AT the cap and never
+ * dropped, so nothing becomes unreachable through a display limit.
+ * The returned depth is the clamped render depth.
+ */
+export function flattenForSidebar<T extends NavEngagement>(
+  roots: readonly ContainerNode<T>[],
+): FlatContainerRow<T>[] {
+  const out: FlatContainerRow<T>[] = [];
+  const walk = (node: ContainerNode<T>, depth: number) => {
+    out.push({ node, depth: Math.min(depth, MAX_SIDEBAR_CONTAINER_DEPTH) });
+    for (const child of node.children) walk(child, depth + 1);
+  };
+  for (const root of roots) walk(root, 0);
+  return out;
+}
+
+/**
+ * Container rows derived only from the clients relation already joined onto
+ * each engagement, never from a read of the clients table. This is what keeps
+ * the coach rule true: a coach only ever sees the containers behind
+ * engagements that were shared with them.
+ * Skips null and quick folders, dedupes by id, sorts by name.
+ * Absent kind defaults to "client" (every existing row is a client); absent
+ * parent_id defaults to null.
+ */
+export function containerRowsFromEngagements<T extends NavEngagement>(
+  engagements: readonly T[],
+): ContainerRow[] {
+  const byId = new Map<string, ContainerRow>();
+  for (const engagement of engagements) {
+    const client = engagement.clients;
+    if (!client || client.quick_folder === true || !client.id || byId.has(client.id)) continue;
+    byId.set(client.id, {
+      id: client.id,
+      name: client.name,
+      kind: client.kind ?? "client",
+      parent_id: client.parent_id ?? null,
+      quick_folder: false,
+    });
+  }
+  return [...byId.values()].sort(byName);
 }
