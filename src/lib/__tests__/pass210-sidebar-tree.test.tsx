@@ -29,7 +29,8 @@ vi.mock("@tanstack/react-router", () => ({
 vi.mock("@tanstack/react-query", () => ({
   useQueryClient: () => ({ getQueryData: () => undefined, getQueryCache: () => ({ subscribe: () => () => {} }) }),
 }));
-vi.mock("@/hooks/use-profile", () => ({
+vi.mock("@/hooks/use-profile", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
   useProfile: () => ({ data: mocks.profile, profiles: [mocks.profile] }),
 }));
 vi.mock("@/hooks/use-engagements", () => ({
