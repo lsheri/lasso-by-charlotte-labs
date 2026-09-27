@@ -145,4 +145,47 @@ describe("pass 212 sidebar rendering", () => {
     expect(screen.queryByText("Folders")).toBeNull();
     for (const id of ["e1", "e2", "e3"]) expect(screen.getByText(`Title ${id}`)).toBeTruthy();
   });
+
+  it("renders a personal workspace root folder as an ordinary shelf with no Folders header", () => {
+    mocks.profile["org_type"] = "personal";
+    const folder = { ...row("folder", "folder", null), name: "Field notes" };
+    mocks.engagements = [eng("e1", folder)];
+    render(<SidebarNav />);
+    expect(screen.getByText("Field notes")).toBeTruthy();
+    expect(screen.getByText("Title e1")).toBeTruthy();
+    expect(screen.queryByText("Folders")).toBeNull();
+    mocks.profile["org_type"] = "company";
+  });
+
+  it("renders a company root folder exactly once, inside the Folders section", () => {
+    mocks.profile["org_type"] = "company";
+    const folder = { ...row("folder", "folder", null), name: "Field notes" };
+    mocks.engagements = [eng("e1", folder)];
+    render(<SidebarNav />);
+    expect(screen.getAllByText("Folders")).toHaveLength(1);
+    expect(screen.getAllByText("Field notes")).toHaveLength(1);
+    expect(screen.getByText("Title e1")).toBeTruthy();
+  });
+
+  it("renders a nested folder and a root folder once each, with the nested one outside the Folders section", () => {
+    mocks.profile["org_type"] = "company";
+    const client = { ...row("client", "client", null), name: "Acme" };
+    const nested = { ...row("nested", "folder", client.id), name: "Nested folder" };
+    const root = { ...row("root", "folder", null), name: "Root folder" };
+    mocks.engagements = [eng("e1", client), eng("e2", nested), eng("e3", root)];
+    render(<SidebarNav />);
+    expect(screen.getAllByText("Nested folder")).toHaveLength(1);
+    expect(screen.getAllByText("Root folder")).toHaveLength(1);
+    // The mock Link keeps real anchors, so document order proves the boundary:
+    // the nested shelf precedes the Folders header, the root folder follows it.
+    const header = screen.getByText("Folders");
+    const nestedA = screen.getByText("Nested folder").closest("a")!;
+    const rootA = screen.getByText("Root folder").closest("a")!;
+    expect(
+      (nestedA.compareDocumentPosition(header) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0,
+    ).toBe(true);
+    expect(
+      (header.compareDocumentPosition(rootA) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0,
+    ).toBe(true);
+  });
 });
