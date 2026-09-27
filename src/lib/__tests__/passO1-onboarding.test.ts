@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { DEFAULT_VOCAB, EDU_VOCAB, vocabFor } from "@/lib/edu-vocab";
+import { DEFAULT_VOCAB, EDU_VOCAB, PERSONAL_VOCAB, vocabFor } from "@/lib/edu-vocab";
 import { orgTypeForChoice } from "@/lib/org-type";
 
 describe("passO1 the door decides the workspace type", () => {
