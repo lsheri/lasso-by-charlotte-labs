@@ -16,13 +16,17 @@ import { useDecisions } from "@/hooks/use-decisions";
 import { useEngagements } from "@/hooks/use-engagements";
 import { useProfile } from "@/hooks/use-profile";
 import * as roles from "@/lib/role-access";
-import { isEduOrg, vocabFor } from "@/lib/edu-vocab";
+import { isEduOrg, splitsByKind, vocabFor } from "@/lib/edu-vocab";
 import { bucket, logEvent } from "@/lib/telemetry";
 
 
 import {
+  buildContainerTree,
+  containerRowsFromEngagements,
+  flattenForSidebar,
   groupEngagementsByClient,
   isSyntheticShelf,
+  type ContainerNode,
   UNMAPPED_SHELF_ID,
   readCollapsedClients,
   writeCollapsedClients,
@@ -288,6 +292,28 @@ export function SidebarNav({
   const { groups, flat } = groupEngagementsByClient(
     (engagements ?? []) as unknown as NavEngagement[],
   );
+  // Folders get their own section only where the split means something and a
+  // folder actually exists. Rows come from the joined relation only.
+  const containerRows = containerRowsFromEngagements(
+    (engagements ?? []) as unknown as NavEngagement[],
+  );
+  const folderIds = new Set(
+    containerRows.filter((row) => row.kind === "folder").map((row) => row.id),
+  );
+  const showFolders = splitsByKind(vocab) && folderIds.size > 0;
+  const folderRows = showFolders
+    ? flattenForSidebar(
+        buildContainerTree(
+          containerRows.filter((row) => row.kind === "folder"),
+          (engagements ?? []) as unknown as NavEngagement[],
+        ),
+      )
+    : [];
+  // With a Folders section, folder shelves move there instead of rendering twice.
+  const clientShelves = groups.filter(
+    (shelf) => !isSyntheticShelf(shelf.clientId) && !(showFolders && folderIds.has(shelf.clientId)),
+  );
+  const syntheticShelves = groups.filter((shelf) => isSyntheticShelf(shelf.clientId));
   const [collapsedClients, setCollapsedClients] = useState<string[]>(() => readCollapsedClients());
   function toggleClient(clientId: string) {
     setCollapsedClients((prev) => {
@@ -463,7 +489,7 @@ export function SidebarNav({
                       scope={scopeFor(engagement.id)}
                     />
                   ))}
-                  {groups.map((shelf) => {
+                  {[...clientShelves, ...(showFolders ? [] : []), ...syntheticShelves.slice(0, 0)].map((shelf) => {
                     const collapsed = collapsedClients.includes(shelf.clientId);
                     // A synthetic shelf is a grouping, not a client, so it has
                     // nowhere to go: it stays a plain toggle.
@@ -548,6 +574,17 @@ export function SidebarNav({
                       </div>
                     );
                   })}
+                  {showFolders ? (
+                    <FolderSection
+                      rows={folderRows}
+                      collapsedIds={collapsedClients}
+                      onToggle={toggleClient}
+                      onNavigate={onNavigate}
+                      newEngagementLabel={vocab.newEngagement}
+                      scopeFor={scopeFor}
+                    />
+                  ) : null}
+                  {syntheticShelves.map((shelf) => renderShelf(shelf))}
                   {engagements && engagements.length === 0 ? (
                     <p className="px-2 py-1.5 text-sm text-muted-foreground">
                       {vocab.noEngagements}
