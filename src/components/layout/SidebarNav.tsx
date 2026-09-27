@@ -300,13 +300,19 @@ export function SidebarNav({
     containerRows,
     (engagements ?? []) as unknown as NavEngagement[],
   );
-  const folderIds = new Set(
-    containerRows.filter((row) => row.kind === "folder").map((row) => row.id),
-  );
   const showFolders = splitsByKind(vocab) && topLevelFolders.length > 0;
-  // With a Folders section, folder shelves move there instead of rendering twice.
+  // A shelf is removed from this list only because another section draws it,
+  // never merely because it is a folder. Where nothing else renders a folder,
+  // its ordinary client shelf is the only place its work can appear.
+  const renderedElsewhere = new Set<string>();
+  for (const rows of foldersUnderClient.values()) {
+    for (const { node } of rows) renderedElsewhere.add(node.clientId);
+  }
+  if (showFolders) {
+    for (const { node } of topLevelFolders) renderedElsewhere.add(node.clientId);
+  }
   const clientShelves = groups.filter(
-    (shelf) => !isSyntheticShelf(shelf.clientId) && !folderIds.has(shelf.clientId),
+    (shelf) => !isSyntheticShelf(shelf.clientId) && !renderedElsewhere.has(shelf.clientId),
   );
   const syntheticShelves = groups.filter((shelf) => isSyntheticShelf(shelf.clientId));
   const [collapsedClients, setCollapsedClients] = useState<string[]>(() => readCollapsedClients());
