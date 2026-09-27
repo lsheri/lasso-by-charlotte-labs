@@ -45,6 +45,7 @@ describe("pass 185: sources", () => {
     // V4 moved the affiliation write server side; onboarding now calls the
     // server function for a partner slug and swallows its failure.
     expect(src).not.toContain("org_affiliations");
+    expect(src).toContain("if (isPartnerSlug(source)) {");
     expect(src).toContain(
       "await affiliateWorkspaceFn({ data: { institution: source, profile_id: profileId } }).catch(() => {});",
     );
