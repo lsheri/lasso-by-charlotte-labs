@@ -699,27 +699,41 @@ export type Database = {
           code: string | null
           created_at: string
           id: string
+          kind: string
           name: string
           org_id: string
+          parent_id: string | null
           quick_folder: boolean
         }
         Insert: {
           code?: string | null
           created_at?: string
           id?: string
+          kind?: string
           name: string
           org_id: string
+          parent_id?: string | null
           quick_folder?: boolean
         }
         Update: {
           code?: string | null
           created_at?: string
           id?: string
+          kind?: string
           name?: string
           org_id?: string
+          parent_id?: string | null
           quick_folder?: boolean
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "clients_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       coaching_item_exclusions: {
         Row: {
