@@ -21,11 +21,10 @@ import { bucket, logEvent } from "@/lib/telemetry";
 
 
 import {
-  buildContainerTree,
   containerRowsFromEngagements,
-  flattenForSidebar,
   groupEngagementsByClient,
   isSyntheticShelf,
+  partitionContainers,
   type ContainerNode,
   UNMAPPED_SHELF_ID,
   readCollapsedClients,
@@ -297,18 +296,14 @@ export function SidebarNav({
   const containerRows = containerRowsFromEngagements(
     (engagements ?? []) as unknown as NavEngagement[],
   );
+  const { foldersUnderClient, topLevelFolders } = partitionContainers(
+    containerRows,
+    (engagements ?? []) as unknown as NavEngagement[],
+  );
   const folderIds = new Set(
     containerRows.filter((row) => row.kind === "folder").map((row) => row.id),
   );
-  const showFolders = splitsByKind(vocab) && folderIds.size > 0;
-  const folderRows = showFolders
-    ? flattenForSidebar(
-        buildContainerTree(
-          containerRows.filter((row) => row.kind === "folder"),
-          (engagements ?? []) as unknown as NavEngagement[],
-        ),
-      )
-    : [];
+  const showFolders = splitsByKind(vocab) && topLevelFolders.length > 0;
   // With a Folders section, folder shelves move there instead of rendering twice.
   const clientShelves = groups.filter(
     (shelf) => !isSyntheticShelf(shelf.clientId) && !(showFolders && folderIds.has(shelf.clientId)),
@@ -395,18 +390,30 @@ export function SidebarNav({
                           </div>
                         )}
 
-                        {collapsed
-                          ? null
-                          : shelf.engagements.map((engagement) => (
-                              <EngagementRow
-                                key={engagement.id}
-                                engagement={engagement}
-                                nested
-                                hideCode={shelf.clientId === UNMAPPED_SHELF_ID}
+                        {collapsed ? null : (
+                          <>
+                            {shelf.engagements.map((engagement) => (
+                                <EngagementRow
+                                  key={engagement.id}
+                                  engagement={engagement}
+                                  nested
+                                  hideCode={shelf.clientId === UNMAPPED_SHELF_ID}
+                                  onNavigate={onNavigate}
+                                  scope={scopeFor(engagement.id)}
+                                />
+                              ))}
+                            {!synthetic && foldersUnderClient.has(shelf.clientId) ? (
+                              <FolderRows
+                                rows={foldersUnderClient.get(shelf.clientId) ?? []}
+                                collapsedIds={collapsedClients}
+                                onToggle={toggleClient}
                                 onNavigate={onNavigate}
-                                scope={scopeFor(engagement.id)}
+                                newEngagementLabel={vocab.newEngagement}
+                                scopeFor={scopeFor}
                               />
-                            ))}
+                            ) : null}
+                          </>
+                        )}
                       </div>
                     );
   }
@@ -578,7 +585,7 @@ export function SidebarNav({
                   {clientShelves.map((shelf) => renderShelf(shelf))}
                   {showFolders ? (
                     <FolderSection
-                      rows={folderRows}
+                      rows={topLevelFolders}
                       collapsedIds={collapsedClients}
                       onToggle={toggleClient}
                       onNavigate={onNavigate}
@@ -626,9 +633,8 @@ export function SidebarNav({
   );
 }
 
-/** The Folders section. Same shelf row markup as a client shelf; a nested
-    folder swaps its icon for the pencil indent the way a nested engagement does. */
-function FolderSection({
+/** Folder shelf rows shared by client shelves and the top-level Folders section. */
+function FolderRows({
   rows,
   collapsedIds,
   onToggle,
@@ -652,16 +658,20 @@ function FolderSection({
     }
   };
   for (const { node } of rows) if (collapsedIds.includes(node.clientId)) hideBelow(node);
-  return (
-    <>
-      <div className="px-2 pt-2 text-sm text-muted-foreground">Folders</div>
-      {rows.map(({ node, depth }) => {
+  return rows.map(({ node, depth }) => {
         if (hidden.has(node.clientId)) return null;
         const collapsed = collapsedIds.includes(node.clientId);
         return (
           <div key={node.clientId}>
             <div className={`${linkClass} nb-nav-shelf group/shelf w-full text-left`}>
-              {depth > 0 ? <PencilIndent /> : <GraphiteIcon name="engagement" size={20} />}
+              {depth > 0 ? (
+                <>
+                  <PencilIndent />
+                  <GraphiteIcon name="engagement" size={16} />
+                </>
+              ) : (
+                <GraphiteIcon name="engagement" size={20} />
+              )}
               <Link
                 to="/clients/$id"
                 params={{ id: node.clientId }}
@@ -707,7 +717,15 @@ function FolderSection({
                 ))}
           </div>
         );
-      })}
+      });
+}
+
+/** The top-level Folders section. */
+function FolderSection(props: Parameters<typeof FolderRows>[0]) {
+  return (
+    <>
+      <div className="px-2 pt-2 text-sm text-muted-foreground">Folders</div>
+      <FolderRows {...props} />
     </>
   );
 }

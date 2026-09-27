@@ -363,3 +363,66 @@ export function eligibleParents(rows: readonly ContainerRow[], moving: string): 
     })
     .sort(byName);
 }
+
+/** Root depth is 0. A missing parent or a cycle ends the walk. */
+export function containerDepth(rows: readonly ContainerRow[], id: string): number {
+  const byId = new Map(rows.map((row) => [row.id, row]));
+  const visited = new Set<string>([id]);
+  let depth = 0;
+  let current = byId.get(id);
+  while (current?.parent_id && byId.has(current.parent_id) && !visited.has(current.parent_id)) {
+    visited.add(current.parent_id);
+    depth += 1;
+    current = byId.get(current.parent_id);
+  }
+  return depth;
+}
+
+/**
+ * Partitions the one visible container tree without reading any other rows.
+ * Every folder appears in exactly one output: beneath its visible client, or
+ * in the top-level list when it is a root or its parent is not visible.
+ * Client nesting is deliberately not represented here; client shelves keep
+ * rendering through groupEngagementsByClient as they do today.
+ */
+export function partitionContainers<T extends NavEngagement>(
+  rows: readonly ContainerRow[],
+  engagements: readonly T[],
+): {
+  foldersUnderClient: Map<string, FlatContainerRow<T>[]>;
+  topLevelFolders: FlatContainerRow<T>[];
+} {
+  const roots = buildContainerTree(rows, engagements);
+  const foldersUnderClient = new Map<string, FlatContainerRow<T>[]>();
+
+  const folderOnly = (node: ContainerNode<T>): ContainerNode<T> | null => {
+    if (node.kind !== "folder") return null;
+    return {
+      ...node,
+      children: node.children
+        .map(folderOnly)
+        .filter((child): child is ContainerNode<T> => child !== null),
+    };
+  };
+
+  const visitClients = (node: ContainerNode<T>) => {
+    if (node.kind === "client") {
+      const folderRoots = node.children
+        .map(folderOnly)
+        .filter((child): child is ContainerNode<T> => child !== null);
+      if (folderRoots.length > 0) {
+        foldersUnderClient.set(node.clientId, flattenForSidebar(folderRoots));
+      }
+    }
+    for (const child of node.children) visitClients(child);
+  };
+  for (const root of roots) visitClients(root);
+
+  const topLevelFolders = flattenForSidebar(
+    roots
+      .map(folderOnly)
+      .filter((node): node is ContainerNode<T> => node !== null),
+  );
+
+  return { foldersUnderClient, topLevelFolders };
+}
