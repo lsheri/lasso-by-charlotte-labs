@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { DEFAULT_VOCAB, EDU_VOCAB, vocabFor } from "@/lib/edu-vocab";
+import { DEFAULT_VOCAB, EDU_VOCAB, PERSONAL_VOCAB, vocabFor } from "@/lib/edu-vocab";
 import { orgTypeForChoice } from "@/lib/org-type";
 
 describe("passO1 the door decides the workspace type", () => {
@@ -28,9 +28,10 @@ describe("passO1 school words in the work list", () => {
   });
 
   it("leaves every other workspace reading exactly what it read before", () => {
-    for (const profile of [null, { org_type: "company" }, { org_type: "personal" }]) {
+    for (const profile of [null, { org_type: "company" }]) {
       expect(vocabFor(profile)).toEqual(DEFAULT_VOCAB);
     }
+    expect(vocabFor({ org_type: "personal" })).toEqual(PERSONAL_VOCAB);
     expect(DEFAULT_VOCAB.noEngagements).toBe("No engagements yet");
     expect(DEFAULT_VOCAB.newEngagement).toBe("New engagement");
     expect(DEFAULT_VOCAB.fullEngagement).toBe("Full engagement");
