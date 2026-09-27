@@ -8,7 +8,10 @@
 /** The hidden engagement behind a quick folder. Never shown to anyone. */
 export const QUICK_FOLDER_ENGAGEMENT_TITLE = "General work";
 
-export type ClientRef = { name: string; quick_folder: boolean } | null | undefined;
+export type ClientRef =
+  | { name: string; quick_folder: boolean; kind: "client" | "folder"; parent_id: string | null }
+  | null
+  | undefined;
 
 export type EngagementLike = {
   title: string;
@@ -39,7 +42,7 @@ export function isQuickFolder(engagement: EngagementLike): boolean {
 }
 
 /** Selected wherever an engagement is read alongside its client. */
-export const CLIENT_JOIN = "clients(id, name, quick_folder)";
+export const CLIENT_JOIN = "clients(id, name, quick_folder, kind, parent_id)";
 
 /** The one label used wherever an engagement is listed to a person. */
 export function engagementLabel(engagement: EngagementLike): string {
