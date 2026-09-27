@@ -35,6 +35,11 @@ export function ClientPicker({
 
   const picked = (clients ?? []).find((client) => client.id === value) ?? null;
 
+  /** The client/folder split only means something where the container word is
+   *  not already "folder". In a personal workspace there are no clients, so the
+   *  two groups would both read "Folders". */
+  const splitByKind = vocab.client !== "Folder";
+
   async function create() {
     if (!orgId || !name.trim()) return;
     setPending(true);
