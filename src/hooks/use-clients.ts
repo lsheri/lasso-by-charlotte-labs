@@ -71,6 +71,24 @@ export async function renameClient(input: { clientId: string; name: string }): P
 }
 
 /**
+ * Moves a client under another container, or back to the top with null. The
+ * row comes back so a refusal cannot read as a save. This does NOT call
+ * eligibleParents: the caller checks eligibility, this performs the write.
+ */
+export async function reparentClient(input: {
+  clientId: string;
+  parentId: string | null;
+}): Promise<void> {
+  const result = await supabase
+    .from("clients")
+    .update({ parent_id: input.parentId })
+    .eq("id", input.clientId)
+    .select("id");
+  const outcome = saveOutcome(result, CLIENT_RENAME_REFUSAL);
+  if (!outcome.ok) throw new Error(outcome.message);
+}
+
+/**
  * A quick folder in one step: the client, then the hidden engagement that
  * carries its work. The engagement title is never surfaced anywhere.
  */

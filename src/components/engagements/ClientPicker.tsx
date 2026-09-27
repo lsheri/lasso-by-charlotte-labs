@@ -131,11 +131,11 @@ export function ClientPicker({
           >
             <option value="">{`No ${vocab.client.toLowerCase()}`}</option>
             {(clients ?? []).some(
-              (client) => !client.quick_folder && client.kind === "client",
+              (client) => !client.quick_folder && (client.kind ?? "client") === "client",
             ) && splitByKind ? (
               <optgroup label={vocab.clients}>
                 {(clients ?? [])
-                  .filter((client) => !client.quick_folder && client.kind === "client")
+                  .filter((client) => !client.quick_folder && (client.kind ?? "client") === "client")
                   .map((client) => (
                     <option key={client.id} value={client.id}>
                       {client.name}
@@ -144,11 +144,11 @@ export function ClientPicker({
               </optgroup>
             ) : null}
             {(clients ?? []).some(
-              (client) => !client.quick_folder && client.kind === "folder",
+              (client) => !client.quick_folder && (client.kind ?? "client") === "folder",
             ) && splitByKind ? (
               <optgroup label="Folders">
                 {(clients ?? [])
-                  .filter((client) => !client.quick_folder && client.kind === "folder")
+                  .filter((client) => !client.quick_folder && (client.kind ?? "client") === "folder")
                   .map((client) => (
                     <option key={client.id} value={client.id}>
                       {client.name}

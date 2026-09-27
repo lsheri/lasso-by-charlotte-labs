@@ -302,3 +302,64 @@ export function containerRowsFromEngagements<T extends NavEngagement>(
   }
   return [...byId.values()].sort(byName);
 }
+
+/**
+ * The containers `moving` may be re-parented to. Pure. The rows may already
+ * contain a cycle, so every walk tracks visited ids and terminates.
+ */
+export function eligibleParents(rows: readonly ContainerRow[], moving: string): ContainerRow[] {
+  const byId = new Map(rows.map((row) => [row.id, row]));
+  const childrenOf = new Map<string, ContainerRow[]>();
+  for (const row of rows) {
+    if (row.parent_id && row.parent_id !== row.id) {
+      const list = childrenOf.get(row.parent_id) ?? [];
+      list.push(row);
+      childrenOf.set(row.parent_id, list);
+    }
+  }
+
+  // Descendants of `moving` and the height of its subtree (a lone node is 0).
+  const descendants = new Set<string>();
+  function height(id: string, path: Set<string>): number {
+    let best = 0;
+    for (const child of childrenOf.get(id) ?? []) {
+      if (path.has(child.id) || child.id === moving) continue;
+      descendants.add(child.id);
+      const next = new Set(path).add(child.id);
+      best = Math.max(best, 1 + height(child.id, next));
+    }
+    return best;
+  }
+  const movingHeight = height(moving, new Set([moving]));
+
+  // A candidate's own depth from the visible rows. Root depth is 0; a missing
+  // parent or a cycle ends the walk.
+  function depthOf(id: string): number {
+    const seen = new Set<string>([id]);
+    let depth = 0;
+    let current = byId.get(id);
+    while (current?.parent_id && byId.has(current.parent_id) && !seen.has(current.parent_id)) {
+      seen.add(current.parent_id);
+      depth += 1;
+      current = byId.get(current.parent_id);
+    }
+    return depth;
+  }
+
+  return rows
+    .filter((row) => {
+      // Rule 1: a container cannot be its own parent.
+      if (row.id === moving) return false;
+      // Rule 2: the cycle refusal. A descendant of `moving` can never become
+      // its parent. This is the whole point of the function.
+      if (descendants.has(row.id)) return false;
+      // Rule 3: quick folders never hold other containers.
+      if (row.quick_folder === true) return false;
+      // Rule 4: the depth budget is the candidate's depth plus one plus the
+      // moving subtree's height, not just the candidate's depth. Refuse if
+      // any node of the subtree would land past MAX_CONTAINER_DEPTH.
+      if (depthOf(row.id) + 1 + movingHeight > MAX_CONTAINER_DEPTH) return false;
+      return true;
+    })
+    .sort(byName);
+}
