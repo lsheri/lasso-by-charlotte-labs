@@ -9,6 +9,7 @@ export type ClientRow = {
   name: string;
   code: string | null;
   quick_folder: boolean;
+  kind: "client" | "folder";
 };
 
 export function useClients(orgId: string | undefined) {
@@ -19,7 +20,7 @@ export function useClients(orgId: string | undefined) {
     queryFn: async (): Promise<ClientRow[]> => {
       const { data, error } = await supabase
         .from("clients")
-        .select("id, name, code, quick_folder")
+        .select("id, name, code, quick_folder, kind")
         .eq("org_id", orgId as string)
         .order("name", { ascending: true });
       if (error) throw error;
@@ -41,6 +42,7 @@ export async function createClient(input: {
   orgId: string;
   name: string;
   quickFolder: boolean;
+  kind?: "client" | "folder";
 }): Promise<string> {
   const id = crypto.randomUUID();
   const { error } = await supabase.from("clients").insert({
@@ -48,6 +50,7 @@ export async function createClient(input: {
     org_id: input.orgId,
     name: input.name,
     quick_folder: input.quickFolder,
+    ...(input.kind ? { kind: input.kind } : {}),
   });
   if (error) throw new Error(error.message);
   return id;

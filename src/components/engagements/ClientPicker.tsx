@@ -27,7 +27,7 @@ export function ClientPicker({
   const { data: profile } = useProfile();
   const vocab = vocabFor(profile);
   const invalidate = useInvalidateClients();
-  const [creating, setCreating] = useState(false);
+  const [creating, setCreating] = useState<null | "client" | "folder">(null);
   const [renaming, setRenaming] = useState(false);
   const [name, setName] = useState("");
   const [pending, setPending] = useState(false);
@@ -39,10 +39,15 @@ export function ClientPicker({
     if (!orgId || !name.trim()) return;
     setPending(true);
     try {
-      const clientId = await createClient({ orgId, name: name.trim(), quickFolder: false });
+      const clientId = await createClient({
+        orgId,
+        name: name.trim(),
+        quickFolder: false,
+        ...(creating === "folder" ? { kind: "folder" as const } : {}),
+      });
       invalidate();
       onChange(clientId);
-      setCreating(false);
+      setCreating(null);
       setName("");
     } finally {
       setPending(false);
@@ -82,7 +87,11 @@ export function ClientPicker({
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder={
-              renaming ? `New ${vocab.client.toLowerCase()} name` : `${vocab.client} name`
+              renaming
+                ? `New ${vocab.client.toLowerCase()} name`
+                : creating === "folder"
+                  ? "Folder name"
+                  : `${vocab.client} name`
             }
             onKeyDown={(e) => {
               if (e.key === "Enter") {
@@ -109,13 +118,32 @@ export function ClientPicker({
             className="h-10 w-full rounded-[var(--radius)] border border-border bg-card px-3 text-sm text-foreground"
           >
             <option value="">{`No ${vocab.client.toLowerCase()}`}</option>
-            {(clients ?? [])
-              .filter((client) => !client.quick_folder)
-              .map((client) => (
+            {(clients ?? []).some(
+              (client) => !client.quick_folder && client.kind === "client",
+            ) ? (
+              <optgroup label={vocab.clients}>
+                {(clients ?? [])
+                  .filter((client) => !client.quick_folder && client.kind === "client")
+                  .map((client) => (
+                    <option key={client.id} value={client.id}>
+                      {client.name}
+                    </option>
+                  ))}
+              </optgroup>
+            ) : null}
+            {(clients ?? []).some(
+              (client) => !client.quick_folder && client.kind === "folder",
+            ) ? (
+              <optgroup label="Folders">
+                {(clients ?? [])
+                  .filter((client) => !client.quick_folder && client.kind === "folder")
+                  .map((client) => (
                 <option key={client.id} value={client.id}>
                   {client.name}
                 </option>
-              ))}
+                  ))}
+              </optgroup>
+            ) : null}
           </select>
           {picked ? (
             <button
@@ -133,10 +161,17 @@ export function ClientPicker({
           ) : null}
           <button
             type="button"
-            onClick={() => setCreating(true)}
+            onClick={() => setCreating("client")}
             className="shrink-0 rounded-full border border-border bg-card px-3 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
           >
             New
+          </button>
+          <button
+            type="button"
+            onClick={() => setCreating("folder")}
+            className="shrink-0 rounded-full border border-border bg-card px-3 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+          >
+            New folder
           </button>
         </div>
       )}
