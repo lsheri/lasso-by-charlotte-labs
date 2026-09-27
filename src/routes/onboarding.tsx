@@ -19,7 +19,8 @@ import {
   readSignupSource,
   clearSignupSource,
 } from "@/lib/edu-entry";
-import { noteAffiliatedFn } from "@/lib/affiliation.functions";
+import { affiliateWorkspaceFn } from "@/lib/affiliation.functions";
+import { isPartnerSlug } from "@/lib/partners";
 import { readPendingInvite } from "@/lib/pending-invite";
 import { logEvent } from "@/lib/telemetry";
 import {
@@ -70,36 +71,10 @@ async function applyOrgType(profileId: string, type: OrgType): Promise<string | 
   await supabase.from("orgs").update({ signup_source: source }).eq("id", profile.org_id);
   clearSignupSource();
 
-  if (source === "ceiba_uni") {
-    await affiliate(profile.org_id, profileId);
+  if (isPartnerSlug(source)) {
+    await affiliateWorkspaceFn({ data: { institution: source, profile_id: profileId } }).catch(() => {});
   }
   return profile.org_id;
-}
-
-/**
- * The institution affiliation implied by the front door. Upserted on the
- * unique org_id so a retry cannot make a second row, and silent on any
- * failure: nothing here may stop someone finishing sign up.
- */
-async function affiliate(orgId: string, profileId: string): Promise<void> {
-  try {
-    const { data: institution } = await supabase
-      .from("institutions")
-      .select("id")
-      .eq("slug", "ceiba_uni")
-      .maybeSingle();
-    if (!institution?.id) return;
-    const { error } = await supabase
-      .from("org_affiliations")
-      .upsert(
-        { org_id: orgId, institution_id: institution.id, created_by: profileId },
-        { onConflict: "org_id" },
-      );
-    if (error) return;
-    void noteAffiliatedFn({ data: { institution: "ceiba_uni", profile_id: profileId } }).catch(() => {});
-  } catch {
-    /* an affiliation is never a gate on finishing sign up */
-  }
 }
 
 export const Route = createFileRoute("/onboarding")({
