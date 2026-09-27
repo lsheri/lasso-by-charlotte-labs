@@ -110,6 +110,7 @@ describe("pass 207 folder kind", () => {
   });
 
   it("names both create buttons for a company workspace", () => {
+    mocks.profile = { org_type: "company" };
     renderPicker();
     expect(screen.getByRole("button", { name: "New client" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "New folder" })).toBeTruthy();
@@ -136,7 +137,7 @@ describe("pass 207 folder kind", () => {
   it("puts the personal New control in client mode", () => {
     mocks.profile = { org_type: "personal" };
     renderPicker();
-    screen.getByRole("button", { name: "New folder" }).click();
+    fireEvent.click(screen.getByRole("button", { name: "New folder" }));
     // In personal, both creating === "client" and creating === "folder" render
     // the placeholder "Folder name", so the mode itself is not observable from
     // the markup; the placeholder is all the render can assert.
