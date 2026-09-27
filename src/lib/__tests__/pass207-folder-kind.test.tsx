@@ -114,7 +114,7 @@ describe("pass 207 folder kind", () => {
     renderPicker();
     expect(screen.getByRole("button", { name: "New client" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "New folder" })).toBeTruthy();
-    expect(screen.queryByRole("button", { name: "New", exact: true })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^New$/ })).toBeNull();
   });
 
   it("names both create buttons for a school workspace", () => {
