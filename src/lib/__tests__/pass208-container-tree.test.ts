@@ -36,7 +36,7 @@ describe("buildContainerTree", () => {
     const tree = buildContainerTree(rows, work);
     expect(tree.map((n) => n.name)).toEqual(["Alder", "Birch", "Cedar"]);
     expect(tree.every((n) => n.depth === 0)).toBe(true);
-    expect(tree[0].engagements.map((e) => e.code)).toEqual(["A1", "B2"]);
+    expect(tree[0]!.engagements.map((e) => e.code)).toEqual(["A1", "B2"]);
     expect(countWork(tree)).toBe(work.length);
   });
 
@@ -44,14 +44,14 @@ describe("buildContainerTree", () => {
     const work = [eng("e1", "A", "c"), eng("e2", "B", "f")];
     const tree = buildContainerTree([row("f", "Folder", "c", "folder"), row("c", "Client")], work);
     expect(tree).toHaveLength(1);
-    expect(tree[0].children[0]).toMatchObject({ clientId: "f", depth: 1, kind: "folder" });
+    expect(tree[0]!.children[0]).toMatchObject({ clientId: "f", depth: 1, kind: "folder" });
     expect(countWork(tree)).toBe(work.length);
   });
 
   it("two levels", () => {
     const work = [eng("e1", "A", "g")];
     const tree = buildContainerTree([row("c", "C"), row("f", "F", "c"), row("g", "G", "f")], work);
-    expect(tree[0].children[0].children[0]).toMatchObject({ clientId: "g", depth: 2 });
+    expect(tree[0]!.children[0]!.children[0]).toMatchObject({ clientId: "g", depth: 2 });
     expect(countWork(tree)).toBe(work.length);
   });
 
