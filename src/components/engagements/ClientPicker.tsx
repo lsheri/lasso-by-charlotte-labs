@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { createClient, renameClient, useClients, useInvalidateClients } from "@/hooks/use-clients";
 import { useProfile } from "@/hooks/use-profile";
 import { vocabFor } from "@/lib/edu-vocab";
+import { logEvent } from "@/lib/telemetry";
 
 /**
  * Client is optional everywhere. Pick one, make one on the spot, or leave it
@@ -17,11 +18,13 @@ export function ClientPicker({
   value,
   onChange,
   id = "client-picker",
+  from,
 }: {
   orgId: string | undefined;
   value: string | null;
   onChange: (clientId: string | null) => void;
   id?: string;
+  from?: string;
 }) {
   const { data: clients } = useClients(orgId);
   const { data: profile } = useProfile();
@@ -51,6 +54,10 @@ export function ClientPicker({
         ...(creating === "folder" ? { kind: "folder" as const } : {}),
       });
       invalidate();
+      logEvent("container.created", orgId, {
+        kind: creating === "folder" ? "folder" : "client",
+        from: from ?? "picker",
+      });
       onChange(clientId);
       setCreating(null);
       setName("");
