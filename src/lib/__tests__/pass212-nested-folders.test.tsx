@@ -147,18 +147,18 @@ describe("pass 212 sidebar rendering", () => {
   });
 
   it("renders a personal workspace root folder as an ordinary shelf with no Folders header", () => {
-    mocks.profile.org_type = "personal";
+    mocks.profile["org_type"] = "personal";
     const folder = { ...row("folder", "folder", null), name: "Field notes" };
     mocks.engagements = [eng("e1", folder)];
     render(<SidebarNav />);
     expect(screen.getByText("Field notes")).toBeTruthy();
     expect(screen.getByText("Title e1")).toBeTruthy();
     expect(screen.queryByText("Folders")).toBeNull();
-    mocks.profile.org_type = "company";
+    mocks.profile["org_type"] = "company";
   });
 
   it("renders a company root folder exactly once, inside the Folders section", () => {
-    mocks.profile.org_type = "company";
+    mocks.profile["org_type"] = "company";
     const folder = { ...row("folder", "folder", null), name: "Field notes" };
     mocks.engagements = [eng("e1", folder)];
     render(<SidebarNav />);
@@ -168,7 +168,7 @@ describe("pass 212 sidebar rendering", () => {
   });
 
   it("renders a nested folder and a root folder once each, with the nested one outside the Folders section", () => {
-    mocks.profile.org_type = "company";
+    mocks.profile["org_type"] = "company";
     const client = { ...row("client", "client", null), name: "Acme" };
     const nested = { ...row("nested", "folder", client.id), name: "Nested folder" };
     const root = { ...row("root", "folder", null), name: "Root folder" };
