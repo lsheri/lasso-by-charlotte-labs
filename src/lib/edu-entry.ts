@@ -37,7 +37,7 @@ export function clearEduIntent(): void {
  */
 
 const SOURCE_KEY = "lasso.signup_source";
-const KNOWN_SOURCES = ["ceiba_uni", "edu", "direct"] as const;
+const KNOWN_SOURCES = [...PARTNER_SLUGS, "edu", "direct"] as const;
 export type SignupSource = (typeof KNOWN_SOURCES)[number];
 
 export function markSignupSource(raw: unknown): void {
