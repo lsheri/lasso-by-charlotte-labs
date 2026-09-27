@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef } from "react";
 
+import { MoveContainer } from "@/components/clients/MoveContainer";
 import { NewEngagementDialog } from "@/components/engagements/NewEngagementDialog";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,14 @@ import { bucket } from "@/lib/telemetry-shared";
 import { logEvent } from "@/lib/telemetry";
 import type { WorkItemRow } from "@/lib/work-types";
 
-type ClientRecord = { id: string; name: string; code: string | null; quick_folder: boolean };
+type ClientRecord = {
+  id: string;
+  name: string;
+  code: string | null;
+  quick_folder: boolean;
+  kind: "client" | "folder" | null;
+  parent_id: string | null;
+};
 type ClientEngagement = { id: string; code: string | null; title: string | null };
 
 function plural(n: number, one: string, many: string): string {
@@ -36,7 +44,7 @@ export function ClientPage({ clientId }: { clientId: string }) {
     queryFn: async (): Promise<ClientRecord | null> => {
       const { data, error } = await supabase
         .from("clients")
-        .select("id, name, code, quick_folder")
+        .select("id, name, code, quick_folder, kind, parent_id")
         .eq("id", clientId)
         .maybeSingle();
       if (error) throw error;
@@ -137,15 +145,23 @@ export function ClientPage({ clientId }: { clientId: string }) {
       <PageHeader
         title={client.name}
         action={
-          <NewEngagementDialog
-            initialClientId={clientId}
-            from="client_page"
-            trigger={
-              <Button type="button" variant="outline" size="sm">
-                {vocab.newEngagement}
-              </Button>
-            }
-          />
+          <div className="flex items-center gap-3">
+            <MoveContainer
+              clientId={clientId}
+              kind={client.kind}
+              parentId={client.parent_id}
+              quickFolder={client.quick_folder}
+            />
+            <NewEngagementDialog
+              initialClientId={clientId}
+              from="client_page"
+              trigger={
+                <Button type="button" variant="outline" size="sm">
+                  {vocab.newEngagement}
+                </Button>
+              }
+            />
+          </div>
         }
         subtitle={
           <>

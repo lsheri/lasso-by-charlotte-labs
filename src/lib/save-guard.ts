@@ -18,6 +18,9 @@ export const WORKSTREAM_RENAME_REFUSAL =
 export const CLIENT_RENAME_REFUSAL =
   "That did not save. Only someone in this workspace can rename a client.";
 
+export const CLIENT_MOVE_REFUSAL =
+  "That did not move. Only someone in this workspace can move a folder.";
+
 /** Zero rows back is a refusal, never a success, and never a telemetry event. */
 export function saveOutcome(result: UpdateResult, refusal: string): SaveOutcome {
   if (result.error) return { ok: false, message: result.error.message };
