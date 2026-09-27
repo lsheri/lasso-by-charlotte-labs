@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createClient, renameClient, useClients, useInvalidateClients } from "@/hooks/use-clients";
+import { useProfile } from "@/hooks/use-profile";
+import { vocabFor } from "@/lib/edu-vocab";
 
 /**
  * Client is optional everywhere. Pick one, make one on the spot, or leave it
@@ -22,6 +24,8 @@ export function ClientPicker({
   id?: string;
 }) {
   const { data: clients } = useClients(orgId);
+  const { data: profile } = useProfile();
+  const vocab = vocabFor(profile);
   const invalidate = useInvalidateClients();
   const [creating, setCreating] = useState(false);
   const [renaming, setRenaming] = useState(false);
@@ -55,7 +59,7 @@ export function ClientPicker({
       invalidate();
       setRenaming(false);
       setName("");
-      toast.success("Client renamed.");
+      toast.success(`${vocab.client} renamed.`);
     } catch (e) {
       const message = (e as Error).message;
       setError(message);
@@ -68,7 +72,7 @@ export function ClientPicker({
   return (
     <div className="space-y-1.5">
       <Label htmlFor={id} className="micro-label">
-        Client (optional)
+        {`${vocab.client} (optional)`}
       </Label>
       {creating || renaming ? (
         <div className="flex gap-2">
@@ -77,7 +81,9 @@ export function ClientPicker({
             autoFocus
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder={renaming ? "New client name" : "Client name"}
+            placeholder={
+              renaming ? `New ${vocab.client.toLowerCase()} name` : `${vocab.client} name`
+            }
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();
@@ -102,7 +108,7 @@ export function ClientPicker({
             onChange={(e) => onChange(e.target.value || null)}
             className="h-10 w-full rounded-[var(--radius)] border border-border bg-card px-3 text-sm text-foreground"
           >
-            <option value="">No client</option>
+            <option value="">{`No ${vocab.client.toLowerCase()}`}</option>
             {(clients ?? [])
               .filter((client) => !client.quick_folder)
               .map((client) => (
