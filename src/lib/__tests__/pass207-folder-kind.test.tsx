@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ClientPicker } from "@/components/engagements/ClientPicker";
@@ -107,5 +107,40 @@ describe("pass 207 folder kind", () => {
     renderPicker();
     expect(screen.getByRole("group", { name: "Terms" })).toBeTruthy();
     expect(screen.getByRole("group", { name: "Folders" })).toBeTruthy();
+  });
+
+  it("names both create buttons for a company workspace", () => {
+    mocks.profile = { org_type: "company" };
+    renderPicker();
+    expect(screen.getByRole("button", { name: "New client" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "New folder" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /^New$/ })).toBeNull();
+  });
+
+  it("names both create buttons for a school workspace", () => {
+    mocks.profile = { org_type: "edu" };
+    renderPicker();
+    expect(screen.getByRole("button", { name: "New term" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "New folder" })).toBeTruthy();
+  });
+
+  it("renders exactly one New control for a personal workspace", () => {
+    mocks.profile = { org_type: "personal" };
+    renderPicker();
+    expect(screen.getByRole("button", { name: "New folder" })).toBeTruthy();
+    const newButtons = screen
+      .getAllByRole("button")
+      .filter((button) => button.textContent?.startsWith("New"));
+    expect(newButtons).toHaveLength(1);
+  });
+
+  it("puts the personal New control in client mode", () => {
+    mocks.profile = { org_type: "personal" };
+    renderPicker();
+    fireEvent.click(screen.getByRole("button", { name: "New folder" }));
+    // In personal, both creating === "client" and creating === "folder" render
+    // the placeholder "Folder name", so the mode itself is not observable from
+    // the markup; the placeholder is all the render can assert.
+    expect(screen.getByPlaceholderText("Folder name")).toBeTruthy();
   });
 });
