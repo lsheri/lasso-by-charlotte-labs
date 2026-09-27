@@ -14,6 +14,119 @@ export type Database = {
   }
   public: {
     Tables: {
+      activation_key_redemptions: {
+        Row: {
+          code: string
+          id: string
+          org_id: string
+          profile_id: string
+          redeemed_at: string
+          user_id: string
+        }
+        Insert: {
+          code: string
+          id?: string
+          org_id: string
+          profile_id: string
+          redeemed_at?: string
+          user_id: string
+        }
+        Update: {
+          code?: string
+          id?: string
+          org_id?: string
+          profile_id?: string
+          redeemed_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activation_key_redemptions_code_fkey"
+            columns: ["code"]
+            isOneToOne: false
+            referencedRelation: "activation_keys"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "activation_key_redemptions_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activation_key_redemptions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      activation_keys: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          institution_id: string
+          kind: string
+          label: string | null
+          max_uses: number | null
+          org_id: string | null
+          revoked_at: string | null
+          uses: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          institution_id: string
+          kind: string
+          label?: string | null
+          max_uses?: number | null
+          org_id?: string | null
+          revoked_at?: string | null
+          uses?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          institution_id?: string
+          kind?: string
+          label?: string | null
+          max_uses?: number | null
+          org_id?: string | null
+          revoked_at?: string | null
+          uses?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activation_keys_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activation_keys_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activation_keys_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_costs_daily: {
         Row: {
           amount_usd: number
