@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { supabase } from "@/integrations/supabase/client";
 import { QUICK_FOLDER_ENGAGEMENT_TITLE } from "@/lib/clients";
-import { CLIENT_RENAME_REFUSAL, saveOutcome } from "@/lib/save-guard";
+import { CLIENT_MOVE_REFUSAL, CLIENT_RENAME_REFUSAL, saveOutcome } from "@/lib/save-guard";
 
 export type ClientRow = {
   id: string;
@@ -84,7 +84,7 @@ export async function reparentClient(input: {
     .update({ parent_id: input.parentId })
     .eq("id", input.clientId)
     .select("id");
-  const outcome = saveOutcome(result, CLIENT_RENAME_REFUSAL);
+  const outcome = saveOutcome(result, CLIENT_MOVE_REFUSAL);
   if (!outcome.ok) throw new Error(outcome.message);
 }
 
