@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { createClient, renameClient, useClients, useInvalidateClients } from "@/hooks/use-clients";
 import { useProfile } from "@/hooks/use-profile";
 import { vocabFor } from "@/lib/edu-vocab";
+import { logEvent } from "@/lib/telemetry";
 
 /**
  * Client is optional everywhere. Pick one, make one on the spot, or leave it

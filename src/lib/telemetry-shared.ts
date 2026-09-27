@@ -89,6 +89,10 @@ export type TelemetryEvent =
   | "mcp.push_options_requested"
   /** M2a: a place was made through MCP. Shape only, never a name. */
   | "mcp.container_created"
+  /** B1d: a container was made in the app, client or folder. Kind and the closed
+   *  entry point only. Never a name, never an id. Compare mcp.container_created,
+   *  which is the same act performed by an outside model. */
+  | "container.created"
   | "workflow.reordered"
   | "workflow.reset"
   | "coach.invite_created"
