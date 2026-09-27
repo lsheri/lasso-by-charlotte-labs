@@ -71,4 +71,41 @@ describe("pass 207 folder kind", () => {
     expect(screen.getByText("Client (optional)")).toBeTruthy();
     expect(screen.getByRole("option", { name: "No client" })).toBeTruthy();
   });
+
+  it("renders personal rows flat with no optgroup at all", () => {
+    mocks.profile = { org_type: "personal" };
+    mocks.clients = [row("client-1", "Acme", "client"), row("folder-1", "Internal", "folder")];
+    const { container } = renderPicker();
+    expect(container.querySelectorAll("optgroup")).toHaveLength(0);
+    expect(screen.getByRole("option", { name: "Acme" })).toBeTruthy();
+    expect(screen.getByRole("option", { name: "Internal" })).toBeTruthy();
+  });
+
+  it("never renders more than one group named Folders for personal", () => {
+    mocks.profile = { org_type: "personal" };
+    mocks.clients = [row("client-1", "Acme", "client"), row("folder-1", "Internal", "folder")];
+    const { container } = renderPicker();
+    const folders = Array.from(container.querySelectorAll("optgroup")).filter(
+      (group) => group.getAttribute("label") === "Folders",
+    );
+    expect(folders).toHaveLength(0);
+  });
+
+  it("renders exactly one of each group for a company workspace", () => {
+    mocks.profile = { org_type: "company" };
+    mocks.clients = [row("client-1", "Acme", "client"), row("folder-1", "Internal", "folder")];
+    const { container } = renderPicker();
+    const clients = container.querySelectorAll('optgroup[label="Clients"]');
+    const folders = container.querySelectorAll('optgroup[label="Folders"]');
+    expect(clients).toHaveLength(1);
+    expect(folders).toHaveLength(1);
+  });
+
+  it("reads Terms and Folders for a school workspace", () => {
+    mocks.profile = { org_type: "edu" };
+    mocks.clients = [row("client-1", "Acme", "client"), row("folder-1", "Internal", "folder")];
+    renderPicker();
+    expect(screen.getByRole("group", { name: "Terms" })).toBeTruthy();
+    expect(screen.getByRole("group", { name: "Folders" })).toBeTruthy();
+  });
 });
