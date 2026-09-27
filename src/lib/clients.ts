@@ -8,10 +8,7 @@
 /** The hidden engagement behind a quick folder. Never shown to anyone. */
 export const QUICK_FOLDER_ENGAGEMENT_TITLE = "General work";
 
-export type ClientRef =
-  | { name: string; quick_folder: boolean; kind: "client" | "folder"; parent_id: string | null }
-  | null
-  | undefined;
+export type ClientRef = { name: string; quick_folder: boolean } | null | undefined;
 
 export type EngagementLike = {
   title: string;
