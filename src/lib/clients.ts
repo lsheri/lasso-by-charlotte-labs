@@ -39,7 +39,7 @@ export function isQuickFolder(engagement: EngagementLike): boolean {
 }
 
 /** Selected wherever an engagement is read alongside its client. */
-export const CLIENT_JOIN = "clients(id, name, quick_folder)";
+export const CLIENT_JOIN = "clients(id, name, quick_folder, kind, parent_id)";
 
 /** The one label used wherever an engagement is listed to a person. */
 export function engagementLabel(engagement: EngagementLike): string {

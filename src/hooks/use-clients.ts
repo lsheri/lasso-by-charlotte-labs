@@ -10,6 +10,7 @@ export type ClientRow = {
   code: string | null;
   quick_folder: boolean;
   kind: "client" | "folder";
+  parent_id: string | null;
 };
 
 export function useClients(orgId: string | undefined) {
@@ -20,7 +21,7 @@ export function useClients(orgId: string | undefined) {
     queryFn: async (): Promise<ClientRow[]> => {
       const { data, error } = await supabase
         .from("clients")
-        .select("id, name, code, quick_folder, kind")
+        .select("id, name, code, quick_folder, kind, parent_id")
         .eq("org_id", orgId as string)
         .order("name", { ascending: true });
       if (error) throw error;
