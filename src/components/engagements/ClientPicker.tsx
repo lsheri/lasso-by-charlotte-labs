@@ -18,11 +18,13 @@ export function ClientPicker({
   value,
   onChange,
   id = "client-picker",
+  from,
 }: {
   orgId: string | undefined;
   value: string | null;
   onChange: (clientId: string | null) => void;
   id?: string;
+  from?: string;
 }) {
   const { data: clients } = useClients(orgId);
   const { data: profile } = useProfile();
