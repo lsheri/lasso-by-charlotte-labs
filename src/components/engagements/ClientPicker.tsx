@@ -54,6 +54,10 @@ export function ClientPicker({
         ...(creating === "folder" ? { kind: "folder" as const } : {}),
       });
       invalidate();
+      logEvent("container.created", orgId, {
+        kind: creating === "folder" ? "folder" : "client",
+        from: from ?? "picker",
+      });
       onChange(clientId);
       setCreating(null);
       setName("");

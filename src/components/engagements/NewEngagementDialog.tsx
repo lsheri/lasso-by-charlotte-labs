@@ -350,6 +350,7 @@ export function NewEngagementDialog({
               value={clientId}
               onChange={setClientId}
               id="eng-client"
+              from={from}
             />
 
             <div className="space-y-1.5">
