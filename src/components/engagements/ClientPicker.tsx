@@ -178,17 +178,15 @@ export function ClientPicker({
             onClick={() => setCreating("client")}
             className="shrink-0 rounded-full border border-border bg-card px-3 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
           >
-            {`New ${vocab.client.toLowerCase()}`}
+            New
           </button>
-          {splitByKind ? (
-            <button
-              type="button"
-              onClick={() => setCreating("folder")}
-              className="shrink-0 rounded-full border border-border bg-card px-3 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
-            >
-              New folder
-            </button>
-          ) : null}
+          <button
+            type="button"
+            onClick={() => setCreating("folder")}
+            className="shrink-0 rounded-full border border-border bg-card px-3 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+          >
+            New folder
+          </button>
         </div>
       )}
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
