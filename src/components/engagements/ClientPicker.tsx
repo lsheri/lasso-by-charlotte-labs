@@ -35,6 +35,11 @@ export function ClientPicker({
 
   const picked = (clients ?? []).find((client) => client.id === value) ?? null;
 
+  /** The client/folder split only means something where the container word is
+   *  not already "folder". In a personal workspace there are no clients, so the
+   *  two groups would both read "Folders". */
+  const splitByKind = vocab.client !== "Folder";
+
   async function create() {
     if (!orgId || !name.trim()) return;
     setPending(true);
@@ -120,7 +125,7 @@ export function ClientPicker({
             <option value="">{`No ${vocab.client.toLowerCase()}`}</option>
             {(clients ?? []).some(
               (client) => !client.quick_folder && client.kind === "client",
-            ) ? (
+            ) && splitByKind ? (
               <optgroup label={vocab.clients}>
                 {(clients ?? [])
                   .filter((client) => !client.quick_folder && client.kind === "client")
@@ -133,17 +138,26 @@ export function ClientPicker({
             ) : null}
             {(clients ?? []).some(
               (client) => !client.quick_folder && client.kind === "folder",
-            ) ? (
+            ) && splitByKind ? (
               <optgroup label="Folders">
                 {(clients ?? [])
                   .filter((client) => !client.quick_folder && client.kind === "folder")
                   .map((client) => (
-                <option key={client.id} value={client.id}>
-                  {client.name}
-                </option>
+                    <option key={client.id} value={client.id}>
+                      {client.name}
+                    </option>
                   ))}
               </optgroup>
             ) : null}
+            {!splitByKind
+              ? (clients ?? [])
+                  .filter((client) => !client.quick_folder)
+                  .map((client) => (
+                    <option key={client.id} value={client.id}>
+                      {client.name}
+                    </option>
+                  ))
+              : null}
           </select>
           {picked ? (
             <button
