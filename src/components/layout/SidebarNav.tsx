@@ -325,6 +325,92 @@ export function SidebarNav({
     });
   }
 
+  function renderShelf(shelf: (typeof groups)[number]) {
+                    const collapsed = collapsedClients.includes(shelf.clientId);
+                    // A synthetic shelf is a grouping, not a client, so it has
+                    // nowhere to go: it stays a plain toggle.
+                    const synthetic = isSyntheticShelf(shelf.clientId);
+                    return (
+                      <div key={shelf.clientId}>
+                        {synthetic ? (
+                          <button
+                            type="button"
+                            aria-expanded={!collapsed}
+                            onClick={() => toggleClient(shelf.clientId)}
+                            className={`${linkClass} nb-nav-shelf w-full text-left`}
+                          >
+                            <GraphiteIcon name="engagement" size={20} />
+                            <span className="flex min-w-0 flex-1 items-center gap-1.5">
+                              <span className="truncate">{shelf.clientId === UNMAPPED_SHELF_ID ? `No ${vocab.client.toLowerCase()}` : shelf.name}</span>
+                              <span className="font-mono text-[10px] text-muted-foreground">
+                                · {shelf.engagements.length}
+                              </span>
+                            </span>
+                            <GraphiteIcon
+                              name="chevron-right"
+                              size={13}
+                              className={collapsed ? "" : "rotate-90"}
+                            />
+                          </button>
+                        ) : (
+                          <div
+                            className={`${linkClass} nb-nav-shelf group/shelf w-full text-left`}
+                          >
+                            <GraphiteIcon name="engagement" size={20} />
+                            <Link
+                              to="/clients/$id"
+                              params={{ id: shelf.clientId }}
+                              onClick={onNavigate}
+                              className="flex min-w-0 flex-1 items-center gap-1.5"
+                            >
+                              <span className="truncate">{shelf.name}</span>
+                            </Link>
+                            <NewEngagementDialog
+                              onDone={onNavigate}
+                              initialClientId={shelf.clientId}
+                              from="sidebar_client"
+                              trigger={
+                                <button
+                                  type="button"
+                                  aria-label={`${vocab.newEngagement} in ${shelf.name}`}
+                                  className="shrink-0 opacity-0 transition-opacity focus-visible:opacity-100 group-hover/shelf:opacity-100 group-focus-within/shelf:opacity-100"
+                                >
+                                  <GraphiteIcon name="plus" size={14} />
+                                </button>
+                              }
+                            />
+                            <button
+                              type="button"
+                              aria-expanded={!collapsed}
+                              aria-label={collapsed ? "Expand" : "Collapse"}
+                              onClick={() => toggleClient(shelf.clientId)}
+                              className="shrink-0"
+                            >
+                              <GraphiteIcon
+                                name="chevron-right"
+                                size={13}
+                                className={collapsed ? "" : "rotate-90"}
+                              />
+                            </button>
+                          </div>
+                        )}
+
+                        {collapsed
+                          ? null
+                          : shelf.engagements.map((engagement) => (
+                              <EngagementRow
+                                key={engagement.id}
+                                engagement={engagement}
+                                nested
+                                hideCode={shelf.clientId === UNMAPPED_SHELF_ID}
+                                onNavigate={onNavigate}
+                                scope={scopeFor(engagement.id)}
+                              />
+                            ))}
+                      </div>
+                    );
+  }
+
   // A guest gets their own short nav. Worker and admin items are unchanged.
   // The coaching destination sits on top of it only when a board was shared.
   if (guestNav) {
@@ -489,91 +575,7 @@ export function SidebarNav({
                       scope={scopeFor(engagement.id)}
                     />
                   ))}
-                  {[...clientShelves, ...(showFolders ? [] : []), ...syntheticShelves.slice(0, 0)].map((shelf) => {
-                    const collapsed = collapsedClients.includes(shelf.clientId);
-                    // A synthetic shelf is a grouping, not a client, so it has
-                    // nowhere to go: it stays a plain toggle.
-                    const synthetic = isSyntheticShelf(shelf.clientId);
-                    return (
-                      <div key={shelf.clientId}>
-                        {synthetic ? (
-                          <button
-                            type="button"
-                            aria-expanded={!collapsed}
-                            onClick={() => toggleClient(shelf.clientId)}
-                            className={`${linkClass} nb-nav-shelf w-full text-left`}
-                          >
-                            <GraphiteIcon name="engagement" size={20} />
-                            <span className="flex min-w-0 flex-1 items-center gap-1.5">
-                              <span className="truncate">{shelf.clientId === UNMAPPED_SHELF_ID ? `No ${vocab.client.toLowerCase()}` : shelf.name}</span>
-                              <span className="font-mono text-[10px] text-muted-foreground">
-                                · {shelf.engagements.length}
-                              </span>
-                            </span>
-                            <GraphiteIcon
-                              name="chevron-right"
-                              size={13}
-                              className={collapsed ? "" : "rotate-90"}
-                            />
-                          </button>
-                        ) : (
-                          <div
-                            className={`${linkClass} nb-nav-shelf group/shelf w-full text-left`}
-                          >
-                            <GraphiteIcon name="engagement" size={20} />
-                            <Link
-                              to="/clients/$id"
-                              params={{ id: shelf.clientId }}
-                              onClick={onNavigate}
-                              className="flex min-w-0 flex-1 items-center gap-1.5"
-                            >
-                              <span className="truncate">{shelf.name}</span>
-                            </Link>
-                            <NewEngagementDialog
-                              onDone={onNavigate}
-                              initialClientId={shelf.clientId}
-                              from="sidebar_client"
-                              trigger={
-                                <button
-                                  type="button"
-                                  aria-label={`${vocab.newEngagement} in ${shelf.name}`}
-                                  className="shrink-0 opacity-0 transition-opacity focus-visible:opacity-100 group-hover/shelf:opacity-100 group-focus-within/shelf:opacity-100"
-                                >
-                                  <GraphiteIcon name="plus" size={14} />
-                                </button>
-                              }
-                            />
-                            <button
-                              type="button"
-                              aria-expanded={!collapsed}
-                              aria-label={collapsed ? "Expand" : "Collapse"}
-                              onClick={() => toggleClient(shelf.clientId)}
-                              className="shrink-0"
-                            >
-                              <GraphiteIcon
-                                name="chevron-right"
-                                size={13}
-                                className={collapsed ? "" : "rotate-90"}
-                              />
-                            </button>
-                          </div>
-                        )}
-
-                        {collapsed
-                          ? null
-                          : shelf.engagements.map((engagement) => (
-                              <EngagementRow
-                                key={engagement.id}
-                                engagement={engagement}
-                                nested
-                                hideCode={shelf.clientId === UNMAPPED_SHELF_ID}
-                                onNavigate={onNavigate}
-                                scope={scopeFor(engagement.id)}
-                              />
-                            ))}
-                      </div>
-                    );
-                  })}
+                  {clientShelves.map((shelf) => renderShelf(shelf))}
                   {showFolders ? (
                     <FolderSection
                       rows={folderRows}
@@ -621,5 +623,91 @@ export function SidebarNav({
         );
       })}
     </nav>
+  );
+}
+
+/** The Folders section. Same shelf row markup as a client shelf; a nested
+    folder swaps its icon for the pencil indent the way a nested engagement does. */
+function FolderSection({
+  rows,
+  collapsedIds,
+  onToggle,
+  onNavigate,
+  newEngagementLabel,
+  scopeFor,
+}: {
+  rows: { node: ContainerNode<NavEngagement>; depth: number }[];
+  collapsedIds: string[];
+  onToggle: (id: string) => void;
+  onNavigate?: (() => void) | undefined;
+  newEngagementLabel: string;
+  scopeFor: (id: string) => { tasks: CachedNavTask[]; workId: string | undefined } | undefined;
+}) {
+  // A collapsed folder hides its descendants as well as its own work.
+  const hidden = new Set<string>();
+  const hideBelow = (node: ContainerNode<NavEngagement>) => {
+    for (const child of node.children) {
+      hidden.add(child.clientId);
+      hideBelow(child);
+    }
+  };
+  for (const { node } of rows) if (collapsedIds.includes(node.clientId)) hideBelow(node);
+  return (
+    <>
+      <div className="px-2 pt-2 text-sm text-muted-foreground">Folders</div>
+      {rows.map(({ node, depth }) => {
+        if (hidden.has(node.clientId)) return null;
+        const collapsed = collapsedIds.includes(node.clientId);
+        return (
+          <div key={node.clientId}>
+            <div className={`${linkClass} nb-nav-shelf group/shelf w-full text-left`}>
+              {depth > 0 ? <PencilIndent /> : <GraphiteIcon name="engagement" size={20} />}
+              <Link
+                to="/clients/$id"
+                params={{ id: node.clientId }}
+                onClick={onNavigate}
+                className="flex min-w-0 flex-1 items-center gap-1.5"
+              >
+                <span className="truncate">{node.name}</span>
+              </Link>
+              <NewEngagementDialog
+                onDone={onNavigate}
+                initialClientId={node.clientId}
+                from="sidebar_client"
+                trigger={
+                  <button
+                    type="button"
+                    aria-label={`${newEngagementLabel} in ${node.name}`}
+                    className="shrink-0 opacity-0 transition-opacity focus-visible:opacity-100 group-hover/shelf:opacity-100 group-focus-within/shelf:opacity-100"
+                  >
+                    <GraphiteIcon name="plus" size={14} />
+                  </button>
+                }
+              />
+              <button
+                type="button"
+                aria-expanded={!collapsed}
+                aria-label={collapsed ? "Expand" : "Collapse"}
+                onClick={() => onToggle(node.clientId)}
+                className="shrink-0"
+              >
+                <GraphiteIcon name="chevron-right" size={13} className={collapsed ? "" : "rotate-90"} />
+              </button>
+            </div>
+            {collapsed
+              ? null
+              : node.engagements.map((engagement) => (
+                  <EngagementRow
+                    key={engagement.id}
+                    engagement={engagement}
+                    nested
+                    onNavigate={onNavigate}
+                    scope={scopeFor(engagement.id)}
+                  />
+                ))}
+          </div>
+        );
+      })}
+    </>
   );
 }
