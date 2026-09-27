@@ -20,7 +20,7 @@ vi.mock("@/hooks/use-profile", () => ({
 }));
 
 vi.mock("@/hooks/use-clients", () => ({
-  useClients: () => ({ data: [{ id: "cl1", name: "Northwind", quick_folder: false }] }),
+  useClients: () => ({ data: [{ id: "cl1", name: "Northwind", quick_folder: false, kind: "client" }] }),
   useInvalidateClients: () => () => {},
   createClient: async () => "cl2",
   renameClient: async () => {},
