@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { openAiKeyFor, DEFAULT_KEY_NAME, EDU_KEY_NAME } from "@/lib/ai-key";
 import { kindOf, readKinds, withKind, KIND_QUESTION } from "@/lib/edu-kinds";
-import { DEFAULT_VOCAB, EDU_VOCAB, isEduOrg, vocabFor } from "@/lib/edu-vocab";
+import { DEFAULT_VOCAB, EDU_VOCAB, isEduOrg, PERSONAL_VOCAB, vocabFor } from "@/lib/edu-vocab";
 import {
   isInPortfolio,
   PORTFOLIO_ADD_LABEL,
@@ -39,7 +39,7 @@ describe("pass172 vocabulary", () => {
   it("leaves every non school workspace byte identical", () => {
     expect(vocabFor(null)).toEqual(DEFAULT_VOCAB);
     expect(vocabFor({ org_type: "company" })).toEqual(DEFAULT_VOCAB);
-    expect(vocabFor({ org_type: "personal" })).toEqual(DEFAULT_VOCAB);
+    expect(vocabFor({ org_type: "personal" })).toEqual(PERSONAL_VOCAB);
     expect(DEFAULT_VOCAB.engagements).toBe("Engagements");
     expect(DEFAULT_VOCAB.orgGroup).toBe("Your organization");
     expect(DEFAULT_VOCAB.pastWork).toBe("Past work");
