@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { earlierReadsNote, EARLIER_READS_HEADING } from "@/lib/earlier-reads";
 
@@ -50,6 +50,9 @@ describe("earlierReadsNote", () => {
 });
 
 describe("AskPrivacyLine", () => {
+  beforeEach(() => {
+    vi.resetModules();
+  });
   it("short line without a live coach link", async () => {
     live = false;
     const { AskPrivacyLine } = await import("@/components/reflect/AskSurface");
