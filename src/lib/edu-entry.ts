@@ -2,6 +2,7 @@
  * The school entry door remembers itself across sign in. /join/edu marks the
  * intent, onboarding reads it once and stamps the workspace type at creation.
  */
+import { PARTNER_SLUGS } from "@/lib/partners";
 
 const KEY = "lasso.edu_intent";
 

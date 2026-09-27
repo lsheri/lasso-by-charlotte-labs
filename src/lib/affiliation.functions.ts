@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { isPartnerSlug } from "@/lib/partners";
 import { resolveProfile } from "@/lib/profile-resolve";
 
 /**
