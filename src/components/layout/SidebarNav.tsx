@@ -306,7 +306,7 @@ export function SidebarNav({
   const showFolders = splitsByKind(vocab) && topLevelFolders.length > 0;
   // With a Folders section, folder shelves move there instead of rendering twice.
   const clientShelves = groups.filter(
-    (shelf) => !isSyntheticShelf(shelf.clientId) && !(showFolders && folderIds.has(shelf.clientId)),
+    (shelf) => !isSyntheticShelf(shelf.clientId) && !folderIds.has(shelf.clientId),
   );
   const syntheticShelves = groups.filter((shelf) => isSyntheticShelf(shelf.clientId));
   const [collapsedClients, setCollapsedClients] = useState<string[]>(() => readCollapsedClients());
