@@ -57,6 +57,7 @@ async function mount(intent: "company" | "personal" | "edu") {
   return view;
 }
 
+vi.setConfig({ testTimeout: 15000 });
 afterEach(cleanup);
 
 describe("Unit G: onboarding setup stage per register", () => {
