@@ -127,6 +127,21 @@ export type Database = {
           },
         ]
       }
+      actor_hash_bridge: {
+        Row: {
+          new_hash: string
+          old_hash: string
+        }
+        Insert: {
+          new_hash: string
+          old_hash: string
+        }
+        Update: {
+          new_hash?: string
+          old_hash?: string
+        }
+        Relationships: []
+      }
       ai_costs_daily: {
         Row: {
           amount_usd: number
