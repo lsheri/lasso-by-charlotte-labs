@@ -37,7 +37,7 @@ export const Route = createFileRoute("/join_/edu")({
       {
         name: "description",
         content:
-          "A private place for university students to keep every class and project in one place, keep the work they are proud of, and share only what they choose.",
+          "A private place for university students, with every class and project in one place. Keep the work you are proud of, and share only what you choose.",
       },
       { property: "og:title", content: "Lasso for students | Your work record, yours" },
       {
