@@ -2325,7 +2325,7 @@ function LandingBoardUseCase({
   onBeforeUserPlay,
   onPlayed,
 }: {
-  card: (typeof LANDING_BOARD_USE_CASES)[number];
+  card: LandingVideoUseCase;
   rotationActive: boolean;
   rotationEnabled: boolean;
   onRotationAdvance: () => void;
@@ -2438,6 +2438,25 @@ function LandingBoardUseCase({
   );
 }
 
+function LandingBoardImageUseCase({ card }: { card: Extract<LandingUseCase, { kind: "image" }> }) {
+  return (
+    <article className="landing-usecase" data-usecase={card.key} data-usecase-kind="image">
+      <div className="landing-usecase-copy">
+        <div className="landing-usecase-tools" aria-label="Tools shown">
+          {card.tools.map((tool) => (
+            <ToolLogo key={tool} vendor={tool} compact />
+          ))}
+        </div>
+        <h3>{card.title}</h3>
+        <p>{card.body}</p>
+      </div>
+      <div className="landing-usecase-media landing-usecase-media-still">
+        <img className="landing-usecase-poster" src={card.image} alt="" aria-hidden="true" />
+      </div>
+    </article>
+  );
+}
+
 function UseCaseSection({
   id = "usecases",
   phone = false,
@@ -2472,7 +2491,7 @@ function UseCaseSection({
   }, []);
 
   const advanceRotation = useCallback(
-    () => setActiveClip((current) => (current + 1) % LANDING_BOARD_USE_CASES.length),
+    () => setActiveClip((current) => nextVideoUseCaseIndex(current)),
     [],
   );
   const beforeUserPlay = useCallback((nextVideo: HTMLVideoElement) => {
@@ -2499,17 +2518,21 @@ function UseCaseSection({
         <p>{"\n"}</p>
       </div>
       <div className="landing-usecase-grid">
-        {LANDING_BOARD_USE_CASES.map((card, index) => (
-          <LandingBoardUseCase
-            key={card.key}
-            card={card}
-            rotationActive={activeClip === index}
-            rotationEnabled={rotationEnabled}
-            onRotationAdvance={advanceRotation}
-            onBeforeUserPlay={beforeUserPlay}
-            onPlayed={onPlayed}
-          />
-        ))}
+        {LANDING_BOARD_USE_CASES.map((card, index) =>
+          card.kind === "image" ? (
+            <LandingBoardImageUseCase key={card.key} card={card} />
+          ) : (
+            <LandingBoardUseCase
+              key={card.key}
+              card={card}
+              rotationActive={activeClip === index}
+              rotationEnabled={rotationEnabled}
+              onRotationAdvance={advanceRotation}
+              onBeforeUserPlay={beforeUserPlay}
+              onPlayed={onPlayed}
+            />
+          ),
+        )}
       </div>
     </section>
   );
