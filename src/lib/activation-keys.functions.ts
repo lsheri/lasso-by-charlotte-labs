@@ -19,35 +19,61 @@ function outcome(reason: RedeemReason): RedeemOutcome & { institution_name?: str
 }
 
 /**
- * The client sends the code and nothing else. Identity comes from the verified
- * bearer token (requireSupabaseAuth); profile and org are read server side.
- * Never throws at the caller, never logs the code, never returns an id.
+ * The client sends the code and, optionally, the id of the workspace it is
+ * looking at. Identity comes from the verified bearer token
+ * (requireSupabaseAuth): `userId` is read from the verified claims and is
+ * NEVER taken from the request body. The workspace is named by the client
+ * and verified on the server — a claim that is checked is not a claim that
+ * is trusted. Never throws at the caller, never logs the code, never
+ * returns an id.
  */
 export const redeemActivationKeyFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { code: string }) => ({
+  .inputValidator((input: { code: string; profile_id?: string }) => ({
     code: typeof input?.code === "string" ? input.code.slice(0, 200) : "",
+    profile_id: typeof input?.profile_id === "string" ? input.profile_id : undefined,
   }))
   .handler(async ({ data, context }): Promise<RedeemOutcome & { institution_name?: string }> => {
     try {
       const userId = context.userId;
       if (!userId) return outcome("error");
 
+      // Keyed on the user, never on the workspace: a per-profile key would
+      // hand one person five fresh tries for every workspace they are in.
       if (!allowAttempt(userId)) return outcome("rate_limited");
 
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-      // Oldest active profile for this user, same rule resolveProfile uses
-      // when no active profile id is supplied. Nothing from the request.
-      const { data: profile, error: profileError } = await supabaseAdmin
-        .from("profiles")
-        .select("id, org_id")
-        .eq("user_id", userId)
-        .is("deactivated_at", null)
-        .order("created_at", { ascending: true })
-        .limit(1)
-        .maybeSingle();
-      if (profileError || !profile) return outcome("error");
+      let profileRows: { id: string; org_id: string }[];
+      if (data.profile_id) {
+        // Verify the named workspace belongs to the caller. If it does not
+        // come back, refuse and do NOT fall back to any other profile: a
+        // silent fallback is the bug this unit exists to remove, because it
+        // would affiliate a workspace the person was not looking at.
+        const named = await supabaseAdmin
+          .from("profiles")
+          .select("id, org_id")
+          .eq("id", data.profile_id)
+          .eq("user_id", userId)
+          .is("deactivated_at", null)
+          .limit(1);
+        profileRows = (named.data as { id: string; org_id: string }[] | null) ?? [];
+      } else {
+        // No workspace named: oldest active profile for this user, same
+        // fallback rule as before. Nothing else from the request.
+        const oldest = await supabaseAdmin
+          .from("profiles")
+          .select("id, org_id")
+          .eq("user_id", userId)
+          .is("deactivated_at", null)
+          .order("created_at", { ascending: true })
+          .limit(1);
+        profileRows = (oldest.data as { id: string; org_id: string }[] | null) ?? [];
+      }
+
+      const choice = chooseProfile(data.profile_id, profileRows[0] ?? null, profileErrorUnreadable(namedOrOldestError));
+      if (choice.action === "refuse") return outcome("error");
+      const profile = choice.profile;
 
       const { data: result, error } = await supabaseAdmin.rpc("redeem_activation_key", {
         p_code: data.code,
