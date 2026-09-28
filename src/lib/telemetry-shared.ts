@@ -93,6 +93,10 @@ export type TelemetryEvent =
    *  entry point only. Never a name, never an id. Compare mcp.container_created,
    *  which is the same act performed by an outside model. */
   | "container.created"
+  /** K2: someone submitted an activation key, and what came back. The returned
+   *  reason and the closed entry point only. Never the key, never an
+   *  institution, never an id. */
+  | "activation_key.submitted"
   /** A container was moved under another container, or moved back to the
    *  top. Kind, resulting depth and whether a parent was set or cleared.
    *  Never a name, never an id. */

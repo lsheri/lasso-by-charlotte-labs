@@ -6,6 +6,7 @@ import { NamingConventionsCard } from "@/components/settings/NamingConventionsCa
 import { OrgDimensionsCard } from "@/components/settings/OrgDimensionsCard";
 import { YourWorkCard } from "@/components/settings/YourWorkCard";
 import { AccountEmailCard } from "@/components/settings/AccountEmailCard";
+import { ActivationKeyCard } from "@/components/settings/ActivationKeyCard";
 import { SettingsShell, type SettingsSection } from "@/components/settings/SettingsShell";
 import { InviteDialog } from "@/components/invites/InviteDialog";
 import { EnterInviteCode } from "@/components/invites/EnterInviteCode";
@@ -54,6 +55,7 @@ const SECTIONS: SettingsSection[] = [
       <div className="space-y-8">
         <OrgDimensionsCard />
         <NamingConventionsCard />
+        <ActivationKeyCard />
       </div>
     ),
   },
