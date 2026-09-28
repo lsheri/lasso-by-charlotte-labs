@@ -13,7 +13,7 @@ export const EDU_JOIN_COPY = {
   sub: "Keep every class, project and late night draft in one place you own.",
   points: [
     [
-      "Organize your classes and projects",
+      "Every class and project in one place",
       "Your AI threads, docs and notes land in the place they belong, so a term of work reads as one story.",
     ],
     [
@@ -22,11 +22,11 @@ export const EDU_JOIN_COPY = {
     ],
     [
       "Share only what you choose",
-      "Nothing leaves your workspace by itself. Pick a mentor, pick what they see, change your mind whenever you like.",
+      "Nothing leaves your workspace by itself. Share one piece of work with a coach when you choose, and change your mind whenever you like.",
     ],
   ] as const,
   cta: "Create my workspace",
-  reassurance: "Free to start. Your workspace belongs to you, not to your school.",
+  reassurance: "Free while in beta. Your workspace belongs to you, not to your school.",
 };
 
 export const Route = createFileRoute("/join_/edu")({
