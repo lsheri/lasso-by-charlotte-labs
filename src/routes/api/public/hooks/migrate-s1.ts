@@ -123,7 +123,7 @@ async function copyStorage(dryRun: boolean, limit: number): Promise<Response> {
     }
     const { error: upErr } = await target.storage
       .from(BUCKET)
-      .upload(obj.path, blob, { upsert: true, contentType: blob.type || undefined });
+      .upload(obj.path, blob, blob.type ? { upsert: true, contentType: blob.type } : { upsert: true });
     if (upErr) failed++;
     else copied++;
   }
