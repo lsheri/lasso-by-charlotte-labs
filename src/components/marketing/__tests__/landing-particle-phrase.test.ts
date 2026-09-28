@@ -13,14 +13,16 @@ describe("landing headline particle phrase", () => {
   });
 
   it("runs the hide, particle-form, reveal cycle on a canvas", () => {
-    expect(particle).toContain("export const PARTICLE_TEXT_HOLD_MS = 3000");
-    expect(particle).toContain("export const PARTICLE_TEXT_CYCLE_MS = 8500");
+    expect(particle).toContain("export const PARTICLE_GATHER_MS = 1600");
     expect(particle).toContain("canvas");
     expect(particle).toContain("strokeText");
-    // The word is hidden while particles gather, revealed for the hold,
-    // and faded as they disperse.
-    expect(particle).toMatch(/if \(gathering\) \{\s*wordNode\.style\.opacity = "0"/);
-    expect(particle).toContain("dispersing");
+    // The word text eases up from 0 during the gather: every sub-1 opacity
+    // write is an eased value, never a hard literal cut.
+    const writes = [...particle.matchAll(/style\.opacity\s*=\s*([^;]+);/g)].map((m) => m[1]!.trim());
+    expect(writes.some((value) => /ease\w*\(/.test(value))).toBe(true);
+    expect(writes.filter((value) => value !== '"1"').every((value) => /ease\w*\(/.test(value))).toBe(true);
+    // No disperse phase: particles only gather in.
+    expect(particle).not.toMatch(/dispers/i);
   });
 
   it("keeps the phrase in ink with the lime green underline", () => {

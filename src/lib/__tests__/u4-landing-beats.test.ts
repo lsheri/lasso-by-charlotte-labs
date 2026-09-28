@@ -169,9 +169,13 @@ describe("Unit 10 landing", () => {
   it("builds the underlined phrase from particles, then holds it for three seconds", () => {
     const particle = readFileSync("src/components/marketing/LandingParticlePhrase.tsx", "utf8");
     const styles = readFileSync("src/styles.css", "utf8");
-    expect(particle).toContain("export const PARTICLE_TEXT_HOLD_MS = 3000");
+    expect(particle).toContain("export const PARTICLE_GATHER_MS = 1600");
     expect(particle).toContain("<canvas ref={canvasRef} className=\"landing-particle-word-canvas\" />");
-    expect(particle).toContain("if (gathering || dispersing) {");
+    // Particles are drawn only during the gather: progress is measured
+    // against PARTICLE_GATHER_MS and the run finishes once it reaches 1.
+    expect(particle).toMatch(/\/\s*PARTICLE_GATHER_MS/);
+    expect(particle).toMatch(/progress\s*>=\s*1/);
+    expect(particle).not.toMatch(/dispers/i);
     expect(styles).toContain(".landing-particle-word-canvas");
   });
 
