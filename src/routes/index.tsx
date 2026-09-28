@@ -3,9 +3,9 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { LandingBoard } from "@/components/marketing/LandingBoard";
 import { supabase } from "@/integrations/supabase/client";
 
-const TITLE = "Lasso: the human judgment behind AI-assisted work, traced";
+const TITLE = "Lasso: the human judgment in your team's AI work, traced";
 const DESCRIPTION =
-  "Lasso keeps the record of AI-assisted consulting work, the sources behind it, and the judgment made on top of it.";
+  "Lasso keeps the record of AI-assisted consulting work, the sources behind it, and the judgment your people made on top of it.";
 
 export const Route = createFileRoute("/")({
   ssr: false,
