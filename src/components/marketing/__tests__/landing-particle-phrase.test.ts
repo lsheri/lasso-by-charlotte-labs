@@ -13,16 +13,20 @@ describe("landing headline particle phrase", () => {
   });
 
   it("runs the hide, particle-form, reveal cycle on a canvas", () => {
-    expect(particle).toContain("export const PARTICLE_GATHER_MS = 1600");
+    expect(particle).toContain("export const PARTICLE_CYCLE_MS = 5000");
+    expect(particle).toContain("export const PARTICLE_GATHER_MS = 2200");
+    expect(particle).toContain("const PARTICLE_HOLD_END_MS = 4000");
     expect(particle).toContain("canvas");
     expect(particle).toContain("strokeText");
-    // The word text eases up from 0 during the gather: every sub-1 opacity
-    // write is an eased value, never a hard literal cut.
+    // The word eases up during gather and down during disperse. Every sub-1
+    // opacity write is an eased value, never a hard literal cut.
     const writes = [...particle.matchAll(/style\.opacity\s*=\s*([^;]+);/g)].map((m) => m[1]!.trim());
     expect(writes.some((value) => /ease\w*\(/.test(value))).toBe(true);
     expect(writes.filter((value) => value !== '"1"').every((value) => /ease\w*\(/.test(value))).toBe(true);
-    // No disperse phase: particles only gather in.
-    expect(particle).not.toMatch(/dispers/i);
+    expect(particle).toContain("disperseProgress");
+    expect(particle).toMatch(/particle\.endX\s*-\s*particle\.x/);
+    expect(particle).toMatch(/particle\.endY\s*-\s*particle\.y/);
+    expect(particle).not.toMatch(/else\s*\{\s*wordNode\.style\.opacity\s*=\s*["'][0-9.]+["']/s);
   });
 
   it("keeps the phrase in ink with the lime green underline", () => {
@@ -45,5 +49,11 @@ describe("landing headline particle phrase", () => {
     expect(reduced).toContain(".landing-particle-word-text { opacity: 1 !important");
     expect(reduced).toContain(".landing-particle-word-canvas { display: none");
     expect(particle).toContain('wordNode.style.opacity = "1"');
+  });
+
+  it("pauses offscreen and restarts every word from one shared timestamp", () => {
+    expect(particle).toContain("setStartAt(isIntersecting ? performance.now() : null)");
+    expect(particle).toContain("startAt={startAt}");
+    expect(particle).toContain("data-particle-start={startAt ?? undefined}");
   });
 });

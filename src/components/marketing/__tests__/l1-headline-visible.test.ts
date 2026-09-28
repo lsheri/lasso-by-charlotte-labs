@@ -1,6 +1,6 @@
 // Guard: the hero headline words may drop below full opacity ONLY inside
-// the one particle run the component is driving. The stylesheet never hides
-// them, and every exit path (completion, stop, cleanup, reduced motion)
+// the visible particle loop the component is driving. The stylesheet never
+// hides them, and every exit path (pause, stop, cleanup, reduced motion)
 // restores opacity 1, so a stopped, throttled or failed run can never leave
 // the headline unreadable.
 import { readFileSync } from "node:fs";
@@ -20,9 +20,11 @@ function rulesFor(selectorFragment: string) {
 }
 
 describe("L1 hero headline stays visible", () => {
-  it("runs once: there is no repeating cycle", () => {
-    expect(particle).not.toMatch(/%\s*[A-Z_]*CYCLE/);
-    expect(particle).not.toMatch(/CYCLE_MS/);
+  it("runs the specified continuous cycle", () => {
+    expect(particle).toContain("export const PARTICLE_CYCLE_MS = 5000");
+    expect(particle).toContain("export const PARTICLE_GATHER_MS = 2200");
+    expect(particle).toContain("const PARTICLE_HOLD_END_MS = 4000");
+    expect(particle).toMatch(/%\s*PARTICLE_CYCLE_MS/);
     expect(particle).not.toMatch(/setInterval/);
   });
 
@@ -34,6 +36,7 @@ describe("L1 hero headline stays visible", () => {
       expect(value).not.toMatch(/^["'][0-9.]+["']$/);
       expect(value).toMatch(/ease\w*\(/);
     }
+    expect(particle).not.toMatch(/else\s*\{\s*wordNode\.style\.opacity\s*=\s*["'][0-9.]+["']/s);
   });
 
   it("the reduced-motion path sets opacity 1", () => {
@@ -43,15 +46,17 @@ describe("L1 hero headline stays visible", () => {
   });
 
   it("the stop/cleanup path sets opacity 1 and is called on cleanup", () => {
-    const body = particle.slice(particle.indexOf("const finish = () =>"), particle.indexOf("const draw ="));
+    const body = particle.slice(particle.indexOf("const stop = () =>"), particle.indexOf("const draw ="));
     expect(body).toContain('style.opacity = "1"');
     expect(body).toContain("cancelAnimationFrame");
     expect(body).toContain("clearRect");
-    expect(particle).toMatch(/return \(\) => \{\s*finish\(\);/);
+    expect(particle).toMatch(/return \(\) => \{\s*stop\(\);/);
   });
 
-  it("the run-completion path sets opacity 1 and schedules no further frame", () => {
-    expect(particle).toMatch(/progress >= 1[^{]*\{\s*finish\(\);\s*return;/);
+  it("the paused path sets opacity 1 and re-entry starts a fresh shared cycle", () => {
+    expect(particle).toContain("setStartAt(isIntersecting ? performance.now() : null)");
+    expect(particle).toContain("setStartAt(null)");
+    expect(particle).toMatch(/document\.hidden[\s\S]*stop\(\)/);
   });
 
   it("the animation never hides a word by visibility, display or clip", () => {

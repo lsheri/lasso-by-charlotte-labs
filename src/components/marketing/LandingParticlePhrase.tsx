@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 
-// One gather per page load. The word text eases up over the last part of
-// the gather so it arrives as the particles land, then the run ends.
-export const PARTICLE_GATHER_MS = 1600;
+// One continuous cycle while the phrase is visible. The word text eases in
+// as particles gather, holds solid, then eases out as particles disperse.
+export const PARTICLE_CYCLE_MS = 5000;
+export const PARTICLE_GATHER_MS = 2200;
+const PARTICLE_HOLD_END_MS = 4000;
 const TEXT_FADE_START = 0.55;
 
 type Particle = {
@@ -22,6 +24,10 @@ function clamp(value: number) {
 
 function easeOutCubic(value: number) {
   return 1 - Math.pow(1 - clamp(value), 3);
+}
+
+function easeInCubic(value: number) {
+  return Math.pow(clamp(value), 3);
 }
 
 function seeded(index: number, salt: number) {
@@ -48,7 +54,7 @@ function ParticleWord({ word, index, startAt }: { word: string; index: number; s
     }
     let particles: Particle[] = [];
     let frameId: number | null = null;
-    let finished = false;
+    let stopped = false;
 
     const rebuild = () => {
       const rect = wordNode.getBoundingClientRect();
@@ -106,10 +112,10 @@ function ParticleWord({ word, index, startAt }: { word: string; index: number; s
       });
     };
 
-    // Every exit path lands here: completion, cancel, cleanup, reduced
-    // motion, a hidden tab or a thrown frame. The word always ends readable.
-    const finish = () => {
-      finished = true;
+    // Every exit path lands here: pause, cancel, cleanup, reduced motion,
+    // a hidden tab or a thrown frame. The word always ends readable.
+    const stop = () => {
+      stopped = true;
       if (frameId !== null) window.cancelAnimationFrame(frameId);
       frameId = null;
       wordNode.style.opacity = "1";
@@ -118,39 +124,60 @@ function ParticleWord({ word, index, startAt }: { word: string; index: number; s
 
     const draw = (timestamp: number) => {
       frameId = null;
-      if (finished) return;
+      if (stopped) return;
       try {
-        const progress = clamp((timestamp - startAt) / PARTICLE_GATHER_MS);
-        if (progress >= 1 || reducedMotion.matches) {
-          finish();
+        if (reducedMotion.matches || document.hidden) {
+          stop();
           return;
         }
+        const cycleElapsed = (timestamp - startAt) % PARTICLE_CYCLE_MS;
+        const gatherProgress = clamp(cycleElapsed / PARTICLE_GATHER_MS);
+        const textProgress = clamp(
+          (gatherProgress - TEXT_FADE_START) / (1 - TEXT_FADE_START),
+        );
+        const disperseProgress = clamp(
+          (cycleElapsed - PARTICLE_HOLD_END_MS) / (PARTICLE_CYCLE_MS - PARTICLE_HOLD_END_MS),
+        );
         // Opacity drops below 1 only here, inside a frame that has fired.
-        const textProgress = clamp((progress - TEXT_FADE_START) / (1 - TEXT_FADE_START));
-        wordNode.style.opacity = String(easeOutCubic(textProgress));
+        wordNode.style.opacity = String(
+          cycleElapsed >= PARTICLE_HOLD_END_MS
+            ? 1 - easeInCubic(disperseProgress)
+            : easeOutCubic(textProgress),
+        );
 
         const width = canvas.clientWidth;
         const height = canvas.clientHeight;
         context.clearRect(0, 0, width, height);
         context.fillStyle = window.getComputedStyle(wordNode).getPropertyValue("--nb-lasso-green").trim();
-        for (const particle of particles) {
-          const local = easeOutCubic((progress - particle.delay) / (1 - particle.delay));
-          const x = particle.startX + (particle.x - particle.startX) * local;
-          const y = particle.startY + (particle.y - particle.startY) * local;
-          context.globalAlpha = clamp(Math.sin(local * Math.PI) * 0.72 + (1 - local) * 0.18);
-          context.beginPath();
-          context.arc(x, y, particle.radius, 0, Math.PI * 2);
-          context.fill();
+        if (cycleElapsed < PARTICLE_GATHER_MS || cycleElapsed >= PARTICLE_HOLD_END_MS) {
+          for (const particle of particles) {
+            const gathering = cycleElapsed < PARTICLE_GATHER_MS;
+            const local = gathering
+              ? easeOutCubic((gatherProgress - particle.delay) / (1 - particle.delay))
+              : easeInCubic(disperseProgress);
+            const x = gathering
+              ? particle.startX + (particle.x - particle.startX) * local
+              : particle.x + (particle.endX - particle.x) * local;
+            const y = gathering
+              ? particle.startY + (particle.y - particle.startY) * local
+              : particle.y + (particle.endY - particle.y) * local;
+            context.globalAlpha = gathering
+              ? clamp(Math.sin(local * Math.PI) * 0.72 + (1 - local) * 0.18)
+              : clamp(Math.sin(local * Math.PI) * 0.72);
+            context.beginPath();
+            context.arc(x, y, particle.radius, 0, Math.PI * 2);
+            context.fill();
+          }
         }
         context.globalAlpha = 1;
         frameId = window.requestAnimationFrame(draw);
       } catch {
-        finish();
+        stop();
       }
     };
 
-    const onMotionChange = () => { if (reducedMotion.matches) finish(); };
-    const onVisibility = () => { if (document.hidden) finish(); };
+    const onMotionChange = () => { if (reducedMotion.matches) stop(); };
+    const onVisibility = () => { if (document.hidden) stop(); };
 
     rebuild();
     reducedMotion.addEventListener("change", onMotionChange);
@@ -158,7 +185,7 @@ function ParticleWord({ word, index, startAt }: { word: string; index: number; s
     frameId = window.requestAnimationFrame(draw);
 
     return () => {
-      finish();
+      stop();
       reducedMotion.removeEventListener("change", onMotionChange);
       document.removeEventListener("visibilitychange", onVisibility);
     };
@@ -175,6 +202,7 @@ function ParticleWord({ word, index, startAt }: { word: string; index: number; s
 export function LandingParticlePhrase({ text }: { text: string }) {
   const words = text.split(" ");
   const phraseRef = useRef<HTMLSpanElement | null>(null);
+  const isIntersectingRef = useRef(false);
   // The phrase owns one start timestamp so every word moves as one unit.
   const [startAt, setStartAt] = useState<number | null>(null);
 
@@ -187,13 +215,24 @@ export function LandingParticlePhrase({ text }: { text: string }) {
       return;
     }
     const observer = new IntersectionObserver((entries) => {
-      if (!entries.some((entry) => entry.isIntersecting)) return;
-      // One run per page load: re-entering the viewport never replays it.
-      observer.disconnect();
-      setStartAt(performance.now());
+      const isIntersecting = entries.some((entry) => entry.isIntersecting);
+      isIntersectingRef.current = isIntersecting;
+      // Pausing restores solid text. Re-entry starts one fresh shared cycle.
+      setStartAt(isIntersecting ? performance.now() : null);
     });
+    const onVisibility = () => {
+      if (document.hidden) {
+        setStartAt(null);
+      } else if (isIntersectingRef.current) {
+        setStartAt(performance.now());
+      }
+    };
     observer.observe(node);
-    return () => observer.disconnect();
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      observer.disconnect();
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
   }, []);
 
   return (
