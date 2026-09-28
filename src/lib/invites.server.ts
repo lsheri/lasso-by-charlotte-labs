@@ -21,7 +21,7 @@ export type ResendResult = { ok: true } | { ok: false; status: number; detail: s
 /** The one Resend sender, plain fetch, shared by invites and the auth email hook. */
 export async function sendViaResend(
   apiKey: string,
-  mail: { from: string; to: string; subject: string; html: string; text: string },
+  mail: { from: string; to: string; subject: string; html: string; text: string; replyTo?: string | undefined },
 ): Promise<ResendResult> {
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -32,6 +32,7 @@ export async function sendViaResend(
       subject: mail.subject,
       html: mail.html,
       text: mail.text,
+      ...(mail.replyTo ? { reply_to: mail.replyTo } : {}),
     }),
   });
   if (!response.ok) {
