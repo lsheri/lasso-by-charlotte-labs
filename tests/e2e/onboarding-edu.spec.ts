@@ -31,7 +31,7 @@ test("teacher walks the school setup and reads school words", async ({ page }) =
 
   if (needsSetup) {
     await check("chooser offers a school card", 'card "For my school work"', async () => {
-      await expect(page.getByText(/school/i).first()).toBeVisible({ timeout: 5_000 });
+      await expect(page.getByText("For my school work", { exact: true })).toBeVisible({ timeout: 5_000 });
     });
 
     await run(page, "take the school door", "/onboarding?intent=edu", async () => {
