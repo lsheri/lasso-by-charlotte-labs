@@ -101,8 +101,9 @@ export function withinAffiliationWindow(
   return now - created <= AFFILIATION_WINDOW_MS;
 }
 
-// V6: affiliateWorkspaceFn is deleted. It trusted a client-supplied
-// profile_id and slug with no entitlement check, so any signed-in person
-// could self-affiliate. The activation key (redeemActivationKeyFn) is now
-// the only way an affiliation is written. The workspace.affiliated event
-// stays registered; its call site is the redemption path.
+// V6: the self-serve affiliation server function is deleted. It trusted a
+// client-supplied profile_id and slug with no entitlement check, so any
+// signed-in person could self-affiliate. The activation key
+// (redeemActivationKeyFn) is now the only way an affiliation is written.
+// The workspace.affiliated event stays registered; its call site is the
+// redemption path.
