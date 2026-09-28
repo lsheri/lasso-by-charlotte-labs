@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen } from "@testing-library/react";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
@@ -47,7 +47,14 @@ async function mount(intent: "company" | "personal" | "edu") {
   // Signed-in check with no profile: must not redirect.
   await expect(opts.beforeLoad({ search: mocks.search })).resolves.toBeUndefined();
   const Component = opts.component;
-  return render(<Component />);
+  const view = render(
+    <Suspense fallback={null}>
+      <Component />
+    </Suspense>,
+  );
+  // The route component is code-split; wait for the setup heading.
+  await screen.findByText("What should we call you?");
+  return view;
 }
 
 afterEach(cleanup);
