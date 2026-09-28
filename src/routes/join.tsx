@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { SessionHeader } from "@/components/layout/SessionHeader";
-import { Wordmark } from "@/components/layout/Wordmark";
+import { BrandLockup } from "@/components/layout/BrandLockup";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -144,7 +144,7 @@ function JoinPage() {
         <SessionHeader />
         <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background px-4 pb-16 pt-[calc(4rem+env(safe-area-inset-top))]">
           <div className="w-full max-w-md">
-            <Wordmark size="lg" />
+            <BrandLockup className="[&_svg]:size-14" />
             {children}
           </div>
         </main>

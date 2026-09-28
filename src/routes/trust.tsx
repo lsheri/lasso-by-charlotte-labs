@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 
 import { PublicHeader } from "@/components/layout/PublicHeader";
-import { Wordmark } from "@/components/layout/Wordmark";
+import { BrandLockup } from "@/components/layout/BrandLockup";
 
 export const Route = createFileRoute("/trust")({
   head: () => ({
@@ -74,7 +74,7 @@ function TrustPage() {
       <PublicHeader current="/trust" />
       <main className="min-h-screen bg-background px-6 py-16 md:px-12">
         <div className="mx-auto max-w-2xl">
-          <Wordmark size="lg" />
+          <BrandLockup className="[&_svg]:size-14" />
           <p className="micro-label mt-8 text-[9px]">Trust &amp; data</p>
           <h1 className="page-title mt-2">How Lasso handles your work</h1>
           <p className="mt-2 text-sm text-muted-foreground">
