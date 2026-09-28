@@ -166,16 +166,18 @@ describe("Unit 10 landing", () => {
     expect(page).not.toContain("landing-close-particles-a");
   });
 
-  it("builds the underlined phrase from particles, then holds it for three seconds", () => {
+  it("builds and disperses the underlined phrase on a continuous five-second cycle", () => {
     const particle = readFileSync("src/components/marketing/LandingParticlePhrase.tsx", "utf8");
     const styles = readFileSync("src/styles.css", "utf8");
-    expect(particle).toContain("export const PARTICLE_GATHER_MS = 1600");
+    expect(particle).toContain("export const PARTICLE_CYCLE_MS = 5000");
+    expect(particle).toContain("export const PARTICLE_GATHER_MS = 2200");
+    expect(particle).toContain("const PARTICLE_HOLD_END_MS = 4000");
     expect(particle).toContain("<canvas ref={canvasRef} className=\"landing-particle-word-canvas\" />");
-    // Particles are drawn only during the gather: progress is measured
-    // against PARTICLE_GATHER_MS and the run finishes once it reaches 1.
-    expect(particle).toMatch(/\/\s*PARTICLE_GATHER_MS/);
-    expect(particle).toMatch(/progress\s*>=\s*1/);
-    expect(particle).not.toMatch(/dispers/i);
+    // Particles draw during gather and disperse, while the canvas stays clear
+    // through the hold between PARTICLE_GATHER_MS and PARTICLE_HOLD_END_MS.
+    expect(particle).toMatch(/%\s*PARTICLE_CYCLE_MS/);
+    expect(particle).toMatch(/cycleElapsed\s*<\s*PARTICLE_GATHER_MS\s*\|\|\s*cycleElapsed\s*>=\s*PARTICLE_HOLD_END_MS/);
+    expect(particle).toContain("disperseProgress");
     expect(styles).toContain(".landing-particle-word-canvas");
   });
 
