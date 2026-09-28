@@ -19,8 +19,6 @@ import {
   readSignupSource,
   clearSignupSource,
 } from "@/lib/edu-entry";
-import { affiliateWorkspaceFn } from "@/lib/affiliation.functions";
-import { isPartnerSlug } from "@/lib/partners";
 import { readPendingInvite } from "@/lib/pending-invite";
 import { logEvent } from "@/lib/telemetry";
 import {
@@ -71,9 +69,9 @@ async function applyOrgType(profileId: string, type: OrgType): Promise<string | 
   await supabase.from("orgs").update({ signup_source: source }).eq("id", profile.org_id);
   clearSignupSource();
 
-  if (isPartnerSlug(source)) {
-    await affiliateWorkspaceFn({ data: { institution: source, profile_id: profileId } }).catch(() => {});
-  }
+  // V6: arriving from a partner front door no longer affiliates. An
+  // affiliation is entitlement, and entitlement comes only from a redeemed
+  // activation key. signup_source stays recorded above as attribution.
   return profile.org_id;
 }
 
