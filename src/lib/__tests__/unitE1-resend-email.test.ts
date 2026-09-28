@@ -114,6 +114,8 @@ describe("invite email transport", () => {
     const result = await sendInviteEmail(args);
     expect(result.sent).toBe(true);
     expect(fetchMock.mock.calls[0]![0]).toBe("https://api.resend.com/emails");
+    const sent = JSON.parse(fetchMock.mock.calls[0]![1]!.body as string);
+    expect("reply_to" in sent).toBe(false);
     expect(sendLovableEmail).not.toHaveBeenCalled();
   });
 
@@ -142,12 +144,14 @@ describe("pilot-request sender transport", () => {
     vi.stubEnv("LOVABLE_API_KEY", "");
     const result = await sendTemplateEmail("pilot-request", "liam@charlotte-labs.com", {
       templateData,
+      replyTo: "alex@example.com",
     });
     expect(result.sent).toBe(true);
     expect(fetchMock.mock.calls[0]![0]).toBe("https://api.resend.com/emails");
     const sent = JSON.parse(fetchMock.mock.calls[0]![1]!.body as string);
     expect(sent.from).toBe("Lasso <noreply@lasso.charlotte-labs.com>");
     expect(sent.to).toEqual(["liam@charlotte-labs.com"]);
+    expect(sent.reply_to).toBe("alex@example.com");
     expect(sendLovableEmail).not.toHaveBeenCalled();
   });
 
