@@ -64,7 +64,6 @@ import { Route as ApiReflectStreamRouteImport } from './routes/api/reflect.strea
 import { Route as AuthenticatedCoachingEngagementIdSubjectIdRouteImport } from './routes/_authenticated/coaching.$engagementId.$subjectId'
 import { Route as AuthenticatedEngagementsIdCanvasLabRouteImport } from './routes/_authenticated/engagements.$id_.canvas-lab'
 import { Route as ApiPublicHooksEgressSweepRouteImport } from './routes/api/public/hooks/egress-sweep'
-import { Route as ApiPublicHooksMigrateS1RouteImport } from './routes/api/public/hooks/migrate-s1'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
@@ -352,11 +351,6 @@ const ApiPublicHooksEgressSweepRoute =
     path: '/api/public/hooks/egress-sweep',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicHooksMigrateS1Route = ApiPublicHooksMigrateS1RouteImport.update({
-  id: '/api/public/hooks/migrate-s1',
-  path: '/api/public/hooks/migrate-s1',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
   id: '/lovable/email/auth/preview',
   path: '/lovable/email/auth/preview',
@@ -429,7 +423,6 @@ export interface FileRoutesByFullPath {
   '/coaching/$engagementId/$subjectId': typeof AuthenticatedCoachingEngagementIdSubjectIdRoute
   '/engagements/$id/canvas-lab': typeof AuthenticatedEngagementsIdCanvasLabRoute
   '/api/public/hooks/egress-sweep': typeof ApiPublicHooksEgressSweepRoute
-  '/api/public/hooks/migrate-s1': typeof ApiPublicHooksMigrateS1Route
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
@@ -489,7 +482,6 @@ export interface FileRoutesByTo {
   '/coaching/$engagementId/$subjectId': typeof AuthenticatedCoachingEngagementIdSubjectIdRoute
   '/engagements/$id/canvas-lab': typeof AuthenticatedEngagementsIdCanvasLabRoute
   '/api/public/hooks/egress-sweep': typeof ApiPublicHooksEgressSweepRoute
-  '/api/public/hooks/migrate-s1': typeof ApiPublicHooksMigrateS1Route
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
@@ -551,7 +543,6 @@ export interface FileRoutesById {
   '/_authenticated/coaching/$engagementId/$subjectId': typeof AuthenticatedCoachingEngagementIdSubjectIdRoute
   '/_authenticated/engagements/$id_/canvas-lab': typeof AuthenticatedEngagementsIdCanvasLabRoute
   '/api/public/hooks/egress-sweep': typeof ApiPublicHooksEgressSweepRoute
-  '/api/public/hooks/migrate-s1': typeof ApiPublicHooksMigrateS1Route
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
@@ -613,7 +604,6 @@ export interface FileRouteTypes {
     | '/coaching/$engagementId/$subjectId'
     | '/engagements/$id/canvas-lab'
     | '/api/public/hooks/egress-sweep'
-    | '/api/public/hooks/migrate-s1'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
@@ -673,7 +663,6 @@ export interface FileRouteTypes {
     | '/coaching/$engagementId/$subjectId'
     | '/engagements/$id/canvas-lab'
     | '/api/public/hooks/egress-sweep'
-    | '/api/public/hooks/migrate-s1'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
@@ -734,7 +723,6 @@ export interface FileRouteTypes {
     | '/_authenticated/coaching/$engagementId/$subjectId'
     | '/_authenticated/engagements/$id_/canvas-lab'
     | '/api/public/hooks/egress-sweep'
-    | '/api/public/hooks/migrate-s1'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
@@ -768,7 +756,6 @@ export interface RootRouteChildren {
   ApiPublicAuthEmailHookRoute: typeof ApiPublicAuthEmailHookRoute
   ApiReflectStreamRoute: typeof ApiReflectStreamRoute
   ApiPublicHooksEgressSweepRoute: typeof ApiPublicHooksEgressSweepRoute
-  ApiPublicHooksMigrateS1Route: typeof ApiPublicHooksMigrateS1Route
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
@@ -1161,13 +1148,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksEgressSweepRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/migrate-s1': {
-      id: '/api/public/hooks/migrate-s1'
-      path: '/api/public/hooks/migrate-s1'
-      fullPath: '/api/public/hooks/migrate-s1'
-      preLoaderRoute: typeof ApiPublicHooksMigrateS1RouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/lovable/email/auth/preview': {
       id: '/lovable/email/auth/preview'
       path: '/lovable/email/auth/preview'
@@ -1287,7 +1267,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicAuthEmailHookRoute: ApiPublicAuthEmailHookRoute,
   ApiReflectStreamRoute: ApiReflectStreamRoute,
   ApiPublicHooksEgressSweepRoute: ApiPublicHooksEgressSweepRoute,
-  ApiPublicHooksMigrateS1Route: ApiPublicHooksMigrateS1Route,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
