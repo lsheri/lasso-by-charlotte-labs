@@ -43,7 +43,6 @@ import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedReflectRouteImport } from './routes/_authenticated/reflect'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedWorkRouteImport } from './routes/_authenticated/work'
-import { Route as ApiAuthEmailHookRouteImport } from './routes/api/auth-email-hook'
 import { Route as DemoIndexRouteImport } from './routes/demo.index'
 import { Route as DemoCodeRouteImport } from './routes/demo.$code'
 import { Route as DemoClassicRouteImport } from './routes/demo.classic'
@@ -60,6 +59,7 @@ import { Route as AuthenticatedQaSeedRouteImport } from './routes/_authenticated
 import { Route as ApiAnalysisStreamRouteImport } from './routes/api/analysis.stream'
 import { Route as ApiCoachChatStreamRouteImport } from './routes/api/coach-chat.stream'
 import { Route as ApiMcpTokenRouteImport } from './routes/api/mcp.$token'
+import { Route as ApiPublicAuthEmailHookRouteImport } from './routes/api/public/auth-email-hook'
 import { Route as ApiReflectStreamRouteImport } from './routes/api/reflect.stream'
 import { Route as AuthenticatedCoachingEngagementIdSubjectIdRouteImport } from './routes/_authenticated/coaching.$engagementId.$subjectId'
 import { Route as AuthenticatedEngagementsIdCanvasLabRouteImport } from './routes/_authenticated/engagements.$id_.canvas-lab'
@@ -240,11 +240,6 @@ const AuthenticatedWorkRoute = AuthenticatedWorkRouteImport.update({
   path: '/work',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const ApiAuthEmailHookRoute = ApiAuthEmailHookRouteImport.update({
-  id: '/api/auth-email-hook',
-  path: '/api/auth-email-hook',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const DemoIndexRoute = DemoIndexRouteImport.update({
   id: '/demo/',
   path: '/demo/',
@@ -328,6 +323,11 @@ const ApiMcpTokenRoute = ApiMcpTokenRouteImport.update({
   path: '/api/mcp/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicAuthEmailHookRoute = ApiPublicAuthEmailHookRouteImport.update({
+  id: '/api/public/auth-email-hook',
+  path: '/api/public/auth-email-hook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiReflectStreamRoute = ApiReflectStreamRouteImport.update({
   id: '/api/reflect/stream',
   path: '/api/reflect/stream',
@@ -402,7 +402,6 @@ export interface FileRoutesByFullPath {
   '/reflect': typeof AuthenticatedReflectRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/work': typeof AuthenticatedWorkRoute
-  '/api/auth-email-hook': typeof ApiAuthEmailHookRoute
   '/demo/$code': typeof DemoCodeRoute
   '/demo/classic': typeof DemoClassicRoute
   '/demo/conversations': typeof DemoConversationsRoute
@@ -418,6 +417,7 @@ export interface FileRoutesByFullPath {
   '/api/analysis/stream': typeof ApiAnalysisStreamRoute
   '/api/coach-chat/stream': typeof ApiCoachChatStreamRoute
   '/api/mcp/$token': typeof ApiMcpTokenRoute
+  '/api/public/auth-email-hook': typeof ApiPublicAuthEmailHookRoute
   '/api/reflect/stream': typeof ApiReflectStreamRoute
   '/coaching/': typeof AuthenticatedCoachingIndexRoute
   '/coaching/$engagementId/$subjectId': typeof AuthenticatedCoachingEngagementIdSubjectIdRoute
@@ -461,7 +461,6 @@ export interface FileRoutesByTo {
   '/reflect': typeof AuthenticatedReflectRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/work': typeof AuthenticatedWorkRoute
-  '/api/auth-email-hook': typeof ApiAuthEmailHookRoute
   '/demo/$code': typeof DemoCodeRoute
   '/demo/classic': typeof DemoClassicRoute
   '/demo/conversations': typeof DemoConversationsRoute
@@ -477,6 +476,7 @@ export interface FileRoutesByTo {
   '/api/analysis/stream': typeof ApiAnalysisStreamRoute
   '/api/coach-chat/stream': typeof ApiCoachChatStreamRoute
   '/api/mcp/$token': typeof ApiMcpTokenRoute
+  '/api/public/auth-email-hook': typeof ApiPublicAuthEmailHookRoute
   '/api/reflect/stream': typeof ApiReflectStreamRoute
   '/coaching': typeof AuthenticatedCoachingIndexRoute
   '/coaching/$engagementId/$subjectId': typeof AuthenticatedCoachingEngagementIdSubjectIdRoute
@@ -522,7 +522,6 @@ export interface FileRoutesById {
   '/_authenticated/reflect': typeof AuthenticatedReflectRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/work': typeof AuthenticatedWorkRoute
-  '/api/auth-email-hook': typeof ApiAuthEmailHookRoute
   '/demo/$code': typeof DemoCodeRoute
   '/demo/classic': typeof DemoClassicRoute
   '/demo/conversations': typeof DemoConversationsRoute
@@ -538,6 +537,7 @@ export interface FileRoutesById {
   '/api/analysis/stream': typeof ApiAnalysisStreamRoute
   '/api/coach-chat/stream': typeof ApiCoachChatStreamRoute
   '/api/mcp/$token': typeof ApiMcpTokenRoute
+  '/api/public/auth-email-hook': typeof ApiPublicAuthEmailHookRoute
   '/api/reflect/stream': typeof ApiReflectStreamRoute
   '/_authenticated/coaching/': typeof AuthenticatedCoachingIndexRoute
   '/_authenticated/coaching/$engagementId/$subjectId': typeof AuthenticatedCoachingEngagementIdSubjectIdRoute
@@ -583,7 +583,6 @@ export interface FileRouteTypes {
     | '/reflect'
     | '/settings'
     | '/work'
-    | '/api/auth-email-hook'
     | '/demo/$code'
     | '/demo/classic'
     | '/demo/conversations'
@@ -599,6 +598,7 @@ export interface FileRouteTypes {
     | '/api/analysis/stream'
     | '/api/coach-chat/stream'
     | '/api/mcp/$token'
+    | '/api/public/auth-email-hook'
     | '/api/reflect/stream'
     | '/coaching/'
     | '/coaching/$engagementId/$subjectId'
@@ -642,7 +642,6 @@ export interface FileRouteTypes {
     | '/reflect'
     | '/settings'
     | '/work'
-    | '/api/auth-email-hook'
     | '/demo/$code'
     | '/demo/classic'
     | '/demo/conversations'
@@ -658,6 +657,7 @@ export interface FileRouteTypes {
     | '/api/analysis/stream'
     | '/api/coach-chat/stream'
     | '/api/mcp/$token'
+    | '/api/public/auth-email-hook'
     | '/api/reflect/stream'
     | '/coaching'
     | '/coaching/$engagementId/$subjectId'
@@ -702,7 +702,6 @@ export interface FileRouteTypes {
     | '/_authenticated/reflect'
     | '/_authenticated/settings'
     | '/_authenticated/work'
-    | '/api/auth-email-hook'
     | '/demo/$code'
     | '/demo/classic'
     | '/demo/conversations'
@@ -718,6 +717,7 @@ export interface FileRouteTypes {
     | '/api/analysis/stream'
     | '/api/coach-chat/stream'
     | '/api/mcp/$token'
+    | '/api/public/auth-email-hook'
     | '/api/reflect/stream'
     | '/_authenticated/coaching/'
     | '/_authenticated/coaching/$engagementId/$subjectId'
@@ -742,7 +742,6 @@ export interface RootRouteChildren {
   PersonalRoute: typeof PersonalRoute
   TrustRoute: typeof TrustRoute
   WhyRoute: typeof WhyRoute
-  ApiAuthEmailHookRoute: typeof ApiAuthEmailHookRoute
   DemoCodeRoute: typeof DemoCodeRoute
   DemoClassicRoute: typeof DemoClassicRoute
   DemoConversationsRoute: typeof DemoConversationsRoute
@@ -754,6 +753,7 @@ export interface RootRouteChildren {
   ApiAnalysisStreamRoute: typeof ApiAnalysisStreamRoute
   ApiCoachChatStreamRoute: typeof ApiCoachChatStreamRoute
   ApiMcpTokenRoute: typeof ApiMcpTokenRoute
+  ApiPublicAuthEmailHookRoute: typeof ApiPublicAuthEmailHookRoute
   ApiReflectStreamRoute: typeof ApiReflectStreamRoute
   ApiPublicHooksEgressSweepRoute: typeof ApiPublicHooksEgressSweepRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
@@ -1001,13 +1001,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWorkRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/api/auth-email-hook': {
-      id: '/api/auth-email-hook'
-      path: '/api/auth-email-hook'
-      fullPath: '/api/auth-email-hook'
-      preLoaderRoute: typeof ApiAuthEmailHookRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/demo/': {
       id: '/demo/'
       path: '/demo'
@@ -1118,6 +1111,13 @@ declare module '@tanstack/react-router' {
       path: '/api/mcp/$token'
       fullPath: '/api/mcp/$token'
       preLoaderRoute: typeof ApiMcpTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/auth-email-hook': {
+      id: '/api/public/auth-email-hook'
+      path: '/api/public/auth-email-hook'
+      fullPath: '/api/public/auth-email-hook'
+      preLoaderRoute: typeof ApiPublicAuthEmailHookRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/reflect/stream': {
@@ -1253,7 +1253,6 @@ const rootRouteChildren: RootRouteChildren = {
   PersonalRoute: PersonalRoute,
   TrustRoute: TrustRoute,
   WhyRoute: WhyRoute,
-  ApiAuthEmailHookRoute: ApiAuthEmailHookRoute,
   DemoCodeRoute: DemoCodeRoute,
   DemoClassicRoute: DemoClassicRoute,
   DemoConversationsRoute: DemoConversationsRoute,
@@ -1265,6 +1264,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAnalysisStreamRoute: ApiAnalysisStreamRoute,
   ApiCoachChatStreamRoute: ApiCoachChatStreamRoute,
   ApiMcpTokenRoute: ApiMcpTokenRoute,
+  ApiPublicAuthEmailHookRoute: ApiPublicAuthEmailHookRoute,
   ApiReflectStreamRoute: ApiReflectStreamRoute,
   ApiPublicHooksEgressSweepRoute: ApiPublicHooksEgressSweepRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
