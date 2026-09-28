@@ -221,6 +221,7 @@ describe("Unit L1 scroll-driven landing board", () => {
   it("uses the approved plain-language story titles", () => {
     for (const old of [
       "Your firm's thinking went invisible.",
+      "Your team's AI work is scattered.",
       "A number worth asking about.",
       "Every number in the deck has a trail.",
       "Hand-check the actual chat.",
@@ -229,7 +230,7 @@ describe("Unit L1 scroll-driven landing board", () => {
     ])
       expect(page).not.toContain(old);
     for (const title of [
-      "Your team's AI work is scattered.",
+      "Your AI work is scattered.",
       "Every AI conversation and every work tool, in one organized place.",
       "Group the work by workstream.",
       "See everything that went into the deck.",
