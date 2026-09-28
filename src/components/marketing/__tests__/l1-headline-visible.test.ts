@@ -1,5 +1,8 @@
-// Guard: the hero headline words must be readable whether or not the
-// particle animation runs. The animation may only draw on top of them.
+// Guard: the hero headline words may be hidden ONLY by the running particle
+// loop while it gathers or disperses. The stylesheet never hides them, and
+// every exit path (stop, reduced motion, observer offscreen) restores
+// opacity 1, so a stopped, throttled or failed animation can never leave
+// the headline unreadable.
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
@@ -17,9 +20,21 @@ function rulesFor(selectorFragment: string) {
 }
 
 describe("L1 hero headline stays visible", () => {
-  it("the animation never writes an opacity other than 1 onto a word", () => {
+  it("hides a word only inside the running gather/disperse phases", () => {
     const writes = [...particle.matchAll(/style\.opacity\s*=\s*([^;]+);/g)].map((m) => m[1]!.trim());
-    for (const value of writes) expect(value).toBe('"1"');
+    // Allowed writes: full reveal, the gather hide, and the disperse fade.
+    for (const value of writes) {
+      expect(['"1"', '"0"', "String(1 - easeOutCubic((elapsed - HOLD_END_MS) / (DISPERSE_END_MS - HOLD_END_MS)))"]).toContain(value);
+    }
+    // The hide must be gated on the gathering phase of the running loop.
+    expect(particle).toMatch(/if \(gathering\) \{\s*wordNode\.style\.opacity = "0"/);
+  });
+
+  it("restores full visibility on stop and on reduced motion", () => {
+    const stopBody = particle.slice(particle.indexOf("const stop = () =>"), particle.indexOf("const onMotionChange"));
+    expect(stopBody).toContain('wordNode.style.opacity = "1"');
+    expect(stopBody).toContain("clearRect");
+    expect(particle).toContain("reducedMotion.matches");
   });
 
   it("the animation never hides a word by visibility, display or clip", () => {
