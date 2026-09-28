@@ -217,6 +217,11 @@ export function MobileTabBar() {
               </Link>
             ))}
           </div>
+          {profiles.length > 1 ? (
+            <div className="mt-4" data-testid="mobile-workspace-switcher">
+              <OrgSwitcher profiles={profiles} active={profile} />
+            </div>
+          ) : null}
           <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border pt-3">
             <Link
               to="/trust"
