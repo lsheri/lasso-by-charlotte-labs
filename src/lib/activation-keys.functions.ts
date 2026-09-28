@@ -46,12 +46,12 @@ export function chooseProfile(
 }
 
 /**
+ * The client sends the code and, optionally, the id of the workspace it is
  * looking at. Identity comes from the verified bearer token
  * (requireSupabaseAuth): `userId` is read from the verified claims and is
  * NEVER taken from the request body. The workspace is named by the client
- * and verified on the server — a claim that is checked is not a claim that
- * is trusted. Never throws at the caller, never logs the code, never
- * returns an id.
+ * and verified on the server. Never throws at the caller, never logs the
+ * code, never returns an id.
  */
 export const redeemActivationKeyFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -70,12 +70,15 @@ export const redeemActivationKeyFn = createServerFn({ method: "POST" })
 
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-      let profileRows: { id: string; org_id: string }[];
+      let profileRows: { id: string; org_id: string }[] = [];
+      let queryFailed = false;
       if (data.profile_id) {
-        // Verify the named workspace belongs to the caller. If it does not
-        // come back, refuse and do NOT fall back to any other profile: a
-        // silent fallback is the bug this unit exists to remove, because it
-        // would affiliate a workspace the person was not looking at.
+        // The named workspace must belong to the caller: user_id = userId is
+        // the security boundary, and userId comes from the verified token,
+        // never from the request body. If it does not come back, refuse and
+        // do NOT fall back to any other profile: a silent fallback is the
+        // bug this unit exists to remove, because it would affiliate a
+        // workspace the person was not looking at.
         const named = await supabaseAdmin
           .from("profiles")
           .select("id, org_id")
@@ -83,6 +86,7 @@ export const redeemActivationKeyFn = createServerFn({ method: "POST" })
           .eq("user_id", userId)
           .is("deactivated_at", null)
           .limit(1);
+        if (named.error) queryFailed = true;
         profileRows = (named.data as { id: string; org_id: string }[] | null) ?? [];
       } else {
         // No workspace named: oldest active profile for this user, same
@@ -94,6 +98,7 @@ export const redeemActivationKeyFn = createServerFn({ method: "POST" })
           .is("deactivated_at", null)
           .order("created_at", { ascending: true })
           .limit(1);
+        if (oldest.error) queryFailed = true;
         profileRows = (oldest.data as { id: string; org_id: string }[] | null) ?? [];
       }
 
