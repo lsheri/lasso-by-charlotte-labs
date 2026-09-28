@@ -27,6 +27,12 @@ import {
   type ToolId,
 } from "@/lib/onboarding-tools";
 import { orgTypeForChoice, type OrgType } from "@/lib/org-type";
+import {
+  deriveRegister,
+  REGISTER_COPY,
+  REGISTER_SHARED_COPY,
+  type EntryDoor,
+} from "@/lib/register";
 
 
 /** The RPC creates the org; the type is workspace settings we write after. */
@@ -138,13 +144,23 @@ function OnboardingInner() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { intent, setup } = Route.useSearch();
-  const [stage, setStage] = useState<"choose" | "setup" | "why" | "tools" | "capture">(
-    setup ? "tools" : intent === "edu" || readEduIntent() ? "setup" : "choose",
+  // Unit C: the register comes from the door. The chooser is only the
+  // fallback for someone who arrived with no door signal at all.
+  const [derived] = useState(() => deriveRegister(intent));
+  const [entryDoor] = useState<EntryDoor>(() =>
+    intent === "company" || intent === "personal" || intent === "edu"
+      ? "intent"
+      : readEduIntent()
+        ? "edu_flag"
+        : intent === "invite"
+          ? "invite"
+          : "chooser",
+  );
+  const [stage, setStage] = useState<"choose" | "setup" | "tools" | "capture">(
+    setup ? "tools" : derived ? "setup" : "choose",
   );
   const [tools, setTools] = useState<Set<ToolId>>(new Set());
-  const [orgType, setOrgType] = useState<OrgType>(
-    orgTypeForChoice(intent ?? (readEduIntent() ? "edu" : null)),
-  );
+  const [orgType, setOrgType] = useState<OrgType>(orgTypeForChoice(derived));
 
   const [selected, setSelected] = useState<"company" | "personal" | "edu" | "invite" | null>(
     intent ?? (readEduIntent() ? "edu" : null),
@@ -203,7 +219,13 @@ function OnboardingInner() {
     const profile = await fetchProfile();
     if (profile) {
       const orgId = await applyOrgType(profile.id, orgType);
-      if (orgId) logEvent("org.created", orgId, { org_type: orgType });
+      if (orgId) {
+        logEvent("org.created", orgId, {
+          org_type: orgType,
+          register: derived ?? "none",
+          entry_door: derived ? entryDoor : entryDoor === "invite" ? "invite" : "chooser",
+        });
+      }
       clearEduIntent();
     }
 
@@ -215,63 +237,12 @@ function OnboardingInner() {
       queryClient.invalidateQueries({ queryKey: ["engagements"] }),
     ]);
     setPending(false);
-    setStage(orgType === "company" ? "why" : "tools");
+    setStage("tools");
   }
 
   function finish() {
     navigate({ to: "/work", replace: true });
   }
-
-  if (stage === "why") {
-    return (
-      <>
-        <SessionHeader />
-        <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background px-4 py-16">
-          <div className="w-full max-w-3xl">
-            <p className="micro-label">Why Lasso</p>
-            <h1 className="page-title mt-2">The point of all this</h1>
-            <div className="mt-6 grid gap-4 md:grid-cols-3">
-              {[
-                [
-                  "See your own thinking",
-                  "your decisions, drafted from your real work, confirmed by you.",
-                ],
-                [
-                  "Grow on purpose",
-                  "coaching that finally has the full picture, without anyone reading your raw files.",
-                ],
-                [
-                  "Own your record",
-                  "private by default. You choose what's shared, piece by piece. It stays yours.",
-                ],
-              ].map(([title, body]) => (
-                <div
-                  key={title}
-                  className="rounded-[var(--radius)] border border-border bg-card p-5 shadow-card"
-                >
-                  <p className="text-sm font-medium text-foreground">{title}</p>
-                  <p className="mt-2 text-sm text-muted-foreground">{body}</p>
-                </div>
-              ))}
-            </div>
-            <div className="mt-8 flex items-center gap-6">
-              <Button type="button" onClick={() => setStage("tools")}>
-                Continue
-              </Button>
-              <button
-                type="button"
-                onClick={finish}
-                className="text-xs text-muted-foreground hover:text-foreground"
-              >
-                I'll do this later
-              </button>
-            </div>
-          </div>
-        </main>
-      </>
-    );
-  }
-
 
   if (stage === "tools") {
     return (
@@ -360,7 +331,7 @@ function OnboardingInner() {
               You can change this later. It only decides who owns the workspace.
             </p>
 
-            <div className="mt-6 grid gap-3 md:grid-cols-3">
+            <div className="mt-6 grid gap-3 md:grid-cols-2">
               {(
                 [
                   [
@@ -372,6 +343,11 @@ function OnboardingInner() {
                     "personal",
                     "Just for me",
                     "Your work, your record. You own everything here. Invite a coach whenever you're ready.",
+                  ],
+                  [
+                    "edu",
+                    "For my school work",
+                    "Your work, your record, and your school never sees it.",
                   ],
                 ] as const
               ).map(([value, title, body]) => (
@@ -433,51 +409,43 @@ function OnboardingInner() {
     );
   }
 
+  const copy = REGISTER_COPY[orgType];
+
   return (
     <>
       <SessionHeader />
       <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background px-4 py-16">
         <div className="w-full max-w-md">
           <div className="rounded-[var(--radius)] border border-border bg-card p-6 shadow-card">
-            <p className="micro-label">
-              {orgType === "company"
-                ? "For my company"
-                : orgType === "edu"
-                  ? "For my school work"
-                  : "Just for me"}
-            </p>
-            <h1 className="page-title mt-2">Set up your workspace</h1>
-            <p className="mt-1.5 text-sm text-muted-foreground">
-              {orgType !== "company"
-                ? "One detail and you're in. You can change it later."
-                : "Two details and you're in. You can change them later."}
-            </p>
+            <p className="micro-label">{copy.microLabel}</p>
+            <h1 className="page-title mt-2">{REGISTER_SHARED_COPY.setupTitle}</h1>
+            <p className="mt-1.5 text-sm text-muted-foreground">{copy.setupBody}</p>
 
             <form onSubmit={handleSubmit} className="mt-6 space-y-5">
               <div className="space-y-1.5">
                 <Label htmlFor="display-name" className="micro-label">
-                  Display name
+                  {REGISTER_SHARED_COPY.nameLabel}
                 </Label>
                 <Input
                   id="display-name"
                   required
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
-                  placeholder="Jordan Reyes"
+                  placeholder={REGISTER_SHARED_COPY.namePlaceholder}
                 />
               </div>
 
-              {orgType === "company" ? (
+              {copy.workspaceField ? (
                 <div className="space-y-1.5">
                   <Label htmlFor="org-name" className="micro-label">
-                    Workspace name
+                    {copy.workspaceLabel}
                   </Label>
                   <Input
                     id="org-name"
                     required
                     value={orgName}
                     onChange={(e) => setOrgName(e.target.value)}
-                    placeholder="Charlotte Labs"
+                    placeholder={copy.workspacePlaceholder}
                   />
                 </div>
               ) : null}
@@ -485,8 +453,9 @@ function OnboardingInner() {
               {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
               <Button type="submit" className="w-full" disabled={pending}>
-                {pending ? "Setting up…" : "Create workspace"}
+                {pending ? "Setting up…" : REGISTER_SHARED_COPY.submit}
               </Button>
+              <p className="text-sm text-muted-foreground">{copy.claim}</p>
               <button
                 type="button"
                 onClick={() => setStage("choose")}
