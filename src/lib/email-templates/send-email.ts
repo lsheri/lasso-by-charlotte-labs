@@ -69,6 +69,7 @@ export async function sendTemplateEmail(
       subject,
       html,
       text,
+      ...(options.replyTo ? { replyTo: options.replyTo } : {}),
     })
     if (!result.ok) {
       throw new Error(`Email provider returned ${result.status}: ${result.detail}`)
