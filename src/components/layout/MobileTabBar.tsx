@@ -10,6 +10,7 @@ import { useCoachingReach } from "@/hooks/use-coaching-reach";
 import { useEngagements } from "@/hooks/use-engagements";
 
 import { useProfile } from "@/hooks/use-profile";
+import { OrgSwitcher } from "./OrgSwitcher";
 import { vocabFor } from "@/lib/edu-vocab";
 import * as roles from "@/lib/role-access";
 import { engagementDisplayCode, engagementDisplayTitle } from "@/lib/clients";
@@ -216,6 +217,11 @@ export function MobileTabBar() {
               </Link>
             ))}
           </div>
+          {profiles.length > 1 ? (
+            <div className="mt-4" data-testid="mobile-workspace-switcher">
+              <OrgSwitcher profiles={profiles} active={profile} />
+            </div>
+          ) : null}
           <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border pt-3">
             <Link
               to="/trust"
