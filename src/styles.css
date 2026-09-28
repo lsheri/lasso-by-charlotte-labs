@@ -5645,6 +5645,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   .lw-chips { display: none; }
   .lw-phone-only { display: flex; flex-direction: column; gap: 10px; }
   .landing-usecase-grid, .landing-share-grid { grid-template-columns: 1fr; }
+  .landing-usecase-grid { grid-auto-rows: auto; }
 }
 
 @media (prefers-reduced-motion: reduce) {
