@@ -2725,7 +2725,7 @@ export function LandingBoard() {
       if (settleTimer.current !== null) window.clearTimeout(settleTimer.current);
       if (transitionTimer.current !== null) window.clearTimeout(transitionTimer.current);
     };
-  }, [activate]);
+  }, [activate, introElapsed, query.isPending]);
 
   // R6 focus rule: one hero zone in focus at a time, with hysteresis so small
   // scrolls settle in one state. Render state only, no events.
