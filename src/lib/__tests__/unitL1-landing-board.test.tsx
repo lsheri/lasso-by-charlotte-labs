@@ -112,7 +112,7 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(page).not.toContain("WHAT LASSO DOES");
     expect(page).not.toContain("WHAT IT IS");
     expect(page.match(/lb-section-label-space/g)?.length).toBe(2);
-    expect(page).toContain("Three things a buyer asks for. Here is what each looks like.");
+    expect(page).toContain("Four things a buyer asks for. Here is what each looks like.");
     expect(page).not.toContain("See it in the story");
     expect(page).not.toContain("onClick={() => onJump(card.step)}");
     expect(page).toContain("Point Lasso at the places your work already lives.");
