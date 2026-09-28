@@ -2,8 +2,9 @@ import * as React from 'react'
 import { render } from '@react-email/render'
 import { EmailAPIError, sendLovableEmail } from '@lovable.dev/email-js'
 import { TEMPLATES } from './registry'
+import { sendViaResend } from '../invites.server'
 
-// Server-only: reads LOVABLE_API_KEY. Never import from client components.
+// Server-only: reads LOVABLE_API_KEY or RESEND_API_KEY. Never import from client components.
 
 // Configuration baked in at scaffold time
 const SITE_NAME = "Lasso"
@@ -37,10 +38,6 @@ export async function sendTemplateEmail(
   to: string,
   options: SendTemplateEmailOptions = {}
 ): Promise<SendTemplateEmailResult> {
-  const apiKey = process.env['LOVABLE_API_KEY']
-  if (!apiKey) {
-    throw new Error('LOVABLE_API_KEY is not configured')
-  }
 
   const template = TEMPLATES[templateName]
   if (!template) {
@@ -64,6 +61,25 @@ export async function sendTemplateEmail(
     typeof template.subject === 'function'
       ? template.subject(templateData)
       : template.subject
+  const resendKey = process.env['RESEND_API_KEY']
+  if (resendKey) {
+    const result = await sendViaResend(resendKey, {
+      from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
+      to: recipient,
+      subject,
+      html,
+      text,
+    })
+    if (!result.ok) {
+      throw new Error(`Email provider returned ${result.status}: ${result.detail}`)
+    }
+    return { sent: true }
+  }
+
+  const apiKey = process.env['LOVABLE_API_KEY']
+  if (!apiKey) {
+    throw new Error('LOVABLE_API_KEY is not configured')
+  }
 
   try {
     await sendLovableEmail(
