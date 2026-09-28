@@ -17,7 +17,7 @@ import { ToolBadge } from "./ToolBadge";
  * Real OAuth in the first session. On success the folder-first picker opens
  * inline, the user picks files themselves. Nothing arrives unselected.
  */
-type ConnectTool = Extract<ToolId, "googledrive" | "granola" | "transcripts">;
+type ConnectTool = Extract<ToolId, "googledrive" | "granola" | "transcripts" | "gmail">;
 
 export function LiveConnectCard({ tool }: { tool: ConnectTool }) {
   // Granola authenticates with a pasted API key, so it gets its own card.
@@ -27,8 +27,11 @@ export function LiveConnectCard({ tool }: { tool: ConnectTool }) {
 
 function OAuthConnectCard({ tool }: { tool: ConnectTool }) {
   // Call transcripts reuse the same Google Drive connection, no second OAuth.
-  const toolkit = tool === "granola" ? "granola_mcp" : "googledrive";
-  const pickerKind = tool === "transcripts" ? "transcripts" : "googledrive";
+  // Gmail values match PICKER_KIND / toolkit ids in ConnectorsSection.tsx.
+  const toolkit =
+    tool === "gmail" ? "gmail" : tool === "granola" ? "granola_mcp" : "googledrive";
+  const pickerKind =
+    tool === "gmail" ? "gmail" : tool === "transcripts" ? "transcripts" : "googledrive";
   const meta = TOOLS[tool];
   const { data: profile } = useProfile();
   const { data: accounts } = useConnectorAccounts();
@@ -89,7 +92,9 @@ function OAuthConnectCard({ tool }: { tool: ConnectTool }) {
           <p className="mt-1 text-sm text-muted-foreground">
             {tool === "transcripts"
               ? "Uses your Google Drive connection. Lasso looks where recordings usually live, then you tick the ones you want."
-              : "Connect once, then browse your folders and tick only the files you want."}
+              : tool === "gmail"
+                ? "Connect once, then pick the threads you want."
+                : "Connect once, then browse your folders and tick only the files you want."}
           </p>
         </div>
       </div>
@@ -111,8 +116,12 @@ function OAuthConnectCard({ tool }: { tool: ConnectTool }) {
             open={pickerOpen}
             onOpenChange={setPickerOpen}
             trigger={
-              <Button type="button">
-                {tool === "transcripts" ? "Find call transcripts" : "Pick files to bring in"}
+              <Button type="button" data-picker-kind={pickerKind} data-toolkit={toolkit}>
+                {tool === "transcripts"
+                  ? "Find call transcripts"
+                  : tool === "gmail"
+                    ? "Pick threads to bring in"
+                    : "Pick files to bring in"}
               </Button>
             }
           />
