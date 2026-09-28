@@ -61,6 +61,25 @@ export async function sendTemplateEmail(
     typeof template.subject === 'function'
       ? template.subject(templateData)
       : template.subject
+  const resendKey = process.env['RESEND_API_KEY']
+  if (resendKey) {
+    const result = await sendViaResend(resendKey, {
+      from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
+      to: recipient,
+      subject,
+      html,
+      text,
+    })
+    if (!result.ok) {
+      throw new Error(`Email provider returned ${result.status}: ${result.detail}`)
+    }
+    return { sent: true }
+  }
+
+  const apiKey = process.env['LOVABLE_API_KEY']
+  if (!apiKey) {
+    throw new Error('LOVABLE_API_KEY is not configured')
+  }
 
   try {
     await sendLovableEmail(
