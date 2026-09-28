@@ -70,6 +70,10 @@ export const redeemActivationKeyFn = createServerFn({ method: "POST" })
 
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+      // Deliberately not resolveProfile: it falls back to the oldest active
+      // profile when a requested id is not the caller's, which is exactly
+      // the silent fallback this unit removes. A named workspace that does
+      // not belong to the caller must refuse, never fall back.
       let profileRows: { id: string; org_id: string }[] = [];
       let queryFailed = false;
       if (data.profile_id) {
