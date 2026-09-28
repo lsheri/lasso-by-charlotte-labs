@@ -42,13 +42,11 @@ describe("pass 185: sources", () => {
   it("onboarding writes the column, not the settings blob", () => {
     const src = read("src/routes/onboarding.tsx");
     expect(src).toContain("signup_source");
-    // V4 moved the affiliation write server side; onboarding now calls the
-    // server function for a partner slug and swallows its failure.
+    // V6 closed the self-serve path: onboarding records the source as
+    // attribution and never affiliates. Affiliation needs a redeemed key.
     expect(src).not.toContain("org_affiliations");
-    expect(src).toContain("if (isPartnerSlug(source)) {");
-    expect(src).toContain(
-      "await affiliateWorkspaceFn({ data: { institution: source, profile_id: profileId } }).catch(() => {});",
-    );
+    expect(src).not.toContain("affiliateWorkspaceFn");
+    expect(src).not.toContain("isPartnerSlug");
     expect(src).not.toMatch(/settings[^\n]*signup_source/);
   });
 
