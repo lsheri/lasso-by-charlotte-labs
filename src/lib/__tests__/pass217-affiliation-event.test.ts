@@ -41,7 +41,14 @@ describe("pass 217: workspace.affiliated has one server-side call site", () => {
     const between = src.slice(guard, call);
     expect(between).not.toContain("||");
     expect(between).not.toContain("already_redeemed");
-    expect(between).not.toContain("}"); // still inside the guard's block
+    // Still inside the guard's block: braces opened after the guard are never
+    // closed below its own depth before the call.
+    let depth = 0;
+    for (const ch of between) {
+      if (ch === "{") depth++;
+      if (ch === "}") depth--;
+      expect(depth).toBeGreaterThan(0);
+    }
     expect(src.match(/"workspace\.affiliated"/g)?.length).toBe(1);
   });
 
@@ -50,12 +57,12 @@ describe("pass 217: workspace.affiliated has one server-side call site", () => {
       /"workspace\.affiliated":\s*\[([^\]]*)\]/,
     );
     expect(allow).not.toBeNull();
-    const allowed = [...allow![1].matchAll(/"([^"]+)"/g)].map((m) => m[1]);
+    const allowed = [...(allow![1] ?? "").matchAll(/"([^"]+)"/g)].map((m) => m[1] ?? "");
     const dims = affiliatedCall(redeem()).match(/dims:\s*\{([^}]*)\}/);
     expect(dims).not.toBeNull();
-    const passed = dims![1]
+    const passed = (dims![1] ?? "")
       .split(",")
-      .map((s) => s.split(":")[0].trim())
+      .map((s) => (s.split(":")[0] ?? "").trim())
       .filter(Boolean);
     expect(passed.length).toBeGreaterThan(0);
     for (const d of passed) expect(allowed).toContain(d);
