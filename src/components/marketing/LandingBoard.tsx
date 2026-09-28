@@ -46,7 +46,7 @@ export const LANDING_BOARD_STEPS = [
   {
     key: "problem",
     label: "The problem",
-    headline: "Your team's AI work is scattered.",
+    headline: "Your AI work is scattered.",
     line: "Four tools, a hundred tabs, and none of it connects to the deliverable.",
   },
   {
@@ -77,7 +77,7 @@ export const LANDING_BOARD_STEPS = [
     key: "ask",
     label: "\n",
     headline: "Ask where a number came from.",
-    line: "The source, what your team checked after, and what is still unconfirmed.",
+    line: "The source, what was checked after, and what is still unconfirmed.",
   },
   {
     key: "the-turn",
@@ -89,7 +89,7 @@ export const LANDING_BOARD_STEPS = [
     key: "still-open",
     label: "Notes",
     headline: "Add your own notes.",
-    line: "Written by people, so a teammate can pick the work up where you left it.",
+    line: "Written by people, so whoever picks it up next can see where you left it.",
   },
   {
     key: "share",
@@ -1412,13 +1412,13 @@ function PhoneStory({
       >
         <div className="lb-phone-hero">
           <h1>
-            Your firm bought AI.{" "}
-            <LandingParticlePhrase text="The human judgment, process, and thinking" /> in your
-            team's work went invisible.
+            You use AI. The{" "}
+            <LandingParticlePhrase text="judgment, process and thinking" /> behind your work went
+            invisible.
           </h1>
           <p>
             Lasso is the reasoning and judgment layer for AI-assisted consulting. It connects the
-            work across tools to the client deliverable and keeps the decisions your team made.
+            work across tools to the finished deliverable and keeps the decisions behind it.
           </p>
           <div>
             <Button onClick={onWatch}>Watch it work</Button>
@@ -2557,7 +2557,7 @@ function LandingBoardContinuation({
                   <input name="name" required />
                 </label>
                 <label>
-                  <span>Firm</span>
+                  <span>Organization</span>
                   <input name="firm" required />
                 </label>
                 <label>
@@ -2565,10 +2565,10 @@ function LandingBoardContinuation({
                   <input name="email" type="email" required />
                 </label>
                 <label>
-                  <span>Team size</span>
+                  <span>How many people</span>
                   <select name="teamSize" required defaultValue="">
                     <option value="" disabled>
-                      Select team size
+                      Select a size
                     </option>
                     <option value="1-5">1 to 5</option>
                     <option value="6-15">6 to 15</option>
@@ -2829,14 +2829,14 @@ export function LandingBoard() {
           <div className="lb-hero-copy">
             <div>
               <h1 id="lb-home-title">
-                Your firm bought AI.{" "}
-                <LandingParticlePhrase text="The human judgment, process, and thinking" /> in your
-                team's work went invisible.
+                You use AI. The{" "}
+                <LandingParticlePhrase text="judgment, process and thinking" /> behind your work
+                went invisible.
               </h1>
               <h2>
                 Lasso is the reasoning and judgment layer for AI-assisted consulting. It connects
-                the work across tools to the client deliverable and keeps the decisions your team
-                made, so they can show where a claim came from and why it stayed.
+                the work across tools to the finished deliverable and keeps the decisions behind
+                it, so you can show where a claim came from and why it stayed.
               </h2>
               <div className="lb-hero-zone-1">
                 <Button onClick={jumpToUseCases}>Watch it work</Button>
