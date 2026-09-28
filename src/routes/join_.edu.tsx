@@ -2,7 +2,6 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
 import { PublicHeader } from "@/components/layout/PublicHeader";
-import { BrandLockup } from "@/components/layout/BrandLockup";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { markEduIntent } from "@/lib/edu-entry";
@@ -78,8 +77,7 @@ function EduJoinPage() {
       <PublicHeader />
       <main className="min-h-screen bg-background px-4 py-16">
         <div className="mx-auto w-full max-w-3xl">
-          <BrandLockup className="[&_svg]:size-14" />
-          <p className="micro-label mt-6">{EDU_JOIN_COPY.eyebrow}</p>
+          <p className="micro-label">{EDU_JOIN_COPY.eyebrow}</p>
           <h1 className="page-title mt-2 text-3xl leading-tight">{EDU_JOIN_COPY.headline}</h1>
           <p className="mt-3 text-base text-muted-foreground">{EDU_JOIN_COPY.sub}</p>
 

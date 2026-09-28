@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { StepRail } from "@/components/onboarding/StepRail";
 import { SetupTools } from "@/components/onboarding/SetupTools";
 import { ToolPicker } from "@/components/onboarding/ToolPicker";
-import { BrandLockup } from "@/components/layout/BrandLockup";
 import { SessionHeader } from "@/components/layout/SessionHeader";
 import { EnterInviteCode } from "@/components/invites/EnterInviteCode";
 import { Button } from "@/components/ui/button";
@@ -229,8 +228,7 @@ function OnboardingInner() {
         <SessionHeader />
         <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background px-4 py-16">
           <div className="w-full max-w-3xl">
-            <BrandLockup className="[&_svg]:size-14" />
-            <p className="micro-label mt-6">Why Lasso</p>
+            <p className="micro-label">Why Lasso</p>
             <h1 className="page-title mt-2">The point of all this</h1>
             <div className="mt-6 grid gap-4 md:grid-cols-3">
               {[
@@ -281,8 +279,7 @@ function OnboardingInner() {
         <SessionHeader />
         <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background px-4 py-16">
           <div className="w-full max-w-3xl">
-            <BrandLockup className="[&_svg]:size-14" />
-            <div className="mt-6">
+            <div>
               <StepRail current={0} />
             </div>
             <h1 className="page-title mt-2">Where do you work with AI?</h1>
@@ -319,8 +316,7 @@ function OnboardingInner() {
         <SessionHeader />
         <main className="flex min-h-[calc(100vh-4rem)] justify-center bg-background px-4 py-16">
           <div className="w-full max-w-3xl">
-            <BrandLockup className="[&_svg]:size-14" />
-            <div className="mt-6">
+            <div>
               <StepRail current={1} />
             </div>
             <h1 className="page-title mt-2">Set up your first work</h1>
@@ -358,8 +354,7 @@ function OnboardingInner() {
         <SessionHeader />
         <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background px-4 py-16">
           <div className="w-full max-w-3xl">
-            <BrandLockup className="[&_svg]:size-14" />
-            <p className="micro-label mt-6">Welcome</p>
+            <p className="micro-label">Welcome</p>
             <h1 className="page-title mt-2">Who is this for?</h1>
             <p className="mt-1.5 text-sm text-muted-foreground">
               You can change this later. It only decides who owns the workspace.
@@ -443,9 +438,7 @@ function OnboardingInner() {
       <SessionHeader />
       <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background px-4 py-16">
         <div className="w-full max-w-md">
-          <BrandLockup className="[&_svg]:size-14" />
-
-          <div className="mt-6 rounded-[var(--radius)] border border-border bg-card p-6 shadow-card">
+          <div className="rounded-[var(--radius)] border border-border bg-card p-6 shadow-card">
             <p className="micro-label">
               {orgType === "company"
                 ? "For my company"
