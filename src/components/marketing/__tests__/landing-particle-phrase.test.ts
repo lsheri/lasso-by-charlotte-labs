@@ -12,33 +12,36 @@ describe("landing headline particle phrase", () => {
     expect(styles).not.toContain("landing-hero-highlight");
   });
 
-  it("sits in static ink with a bold lime green underline and no loop", () => {
-    expect(particle).toContain("export const PARTICLE_TEXT_HOLD_MS = 5000");
-    expect(particle).toContain("export const PARTICLE_TEXT_CYCLE_MS = 7600");
+  it("runs the hide, particle-form, reveal cycle on a canvas", () => {
+    expect(particle).toContain("export const PARTICLE_TEXT_HOLD_MS = 3000");
+    expect(particle).toContain("export const PARTICLE_TEXT_CYCLE_MS = 8500");
+    expect(particle).toContain("canvas");
+    expect(particle).toContain("strokeText");
+    // The word is hidden while particles gather, revealed for the hold,
+    // and faded as they disperse.
+    expect(particle).toMatch(/if \(gathering\) \{\s*wordNode\.style\.opacity = "0"/);
+    expect(particle).toContain("dispersing");
+  });
+
+  it("keeps the phrase in ink with the lime green underline", () => {
     expect(styles).toContain("color: var(--nb-ink)");
+    expect(styles).toContain("text-decoration-line: underline");
     const baseStart = styles.indexOf(".landing-particle-word-text {");
     const base = styles.slice(baseStart, styles.indexOf("@media (prefers-reduced-motion: reduce)", baseStart));
     expect(base).toContain("text-decoration-color: var(--nb-lasso-green)");
     expect(base).toContain("text-decoration-thickness: 0.1em");
-    expect(base).not.toContain("animation: landing-particle-ink-to-orange");
   });
 
-  it("keeps the phrase underlined with the lime green line", () => {
-    expect(styles).toContain("text-decoration-line: underline");
-  });
-
-  it("renders plain spans with no canvas, particles, or network calls", () => {
-    expect(particle).not.toContain("canvas");
-    expect(particle).not.toContain("strokeText");
-    expect(particle).not.toContain("useEffect");
+  it("makes no network calls and records no events", () => {
     expect(particle).not.toContain("onClick");
     expect(particle).not.toContain("recordAnonymousEventFn");
     expect(particle).not.toContain("emitClientEvent");
   });
 
-  it("answers reduced motion with the same static ink state", () => {
-    const reduced = styles.slice(styles.indexOf("landing-particle-word-text { opacity: 1 !important"), styles.indexOf("/* Beat loops"));
-    expect(reduced).toContain("animation: none");
-    expect(reduced).not.toContain("var(--lb-neon-orange)");
+  it("answers reduced motion with the words fully visible and no canvas", () => {
+    const reduced = styles.slice(styles.indexOf("@media (prefers-reduced-motion: reduce)"), styles.indexOf("/* Beat loops"));
+    expect(reduced).toContain(".landing-particle-word-text { opacity: 1 !important");
+    expect(reduced).toContain(".landing-particle-word-canvas { display: none");
+    expect(particle).toContain('wordNode.style.opacity = "1"');
   });
 });
