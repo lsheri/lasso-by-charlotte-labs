@@ -5599,7 +5599,8 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .lw-phone-sources .landing-story-source { --x: 0px; --r: 0deg; flex: 0 0 72%; margin-top: 0; transform: none; animation: none; }
 .lw-phone-slide .landing-story-slide-frame { width: 100%; }
 
-.landing-usecase-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.landing-usecase-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: 1fr; gap: 24px; }
+.landing-usecase-media-still { cursor: default; }
 .landing-usecases { width: min(1200px, calc(100% - 48px)); margin-inline: auto; padding-block: 88px 96px; }
 .landing-usecase { display: flex; min-width: 0; flex-direction: column; gap: 12px; border: 1px solid var(--nb-rule); border-radius: 14px; background: var(--nb-white); padding: 16px; box-shadow: var(--nb-paper-shadow-contact), var(--nb-paper-shadow-ambient); transition: transform 180ms ease, border-color 180ms ease; }
 .landing-usecase:hover { border-color: var(--nb-lasso-green); transform: translateY(-2px); }
@@ -5644,6 +5645,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   .lw-chips { display: none; }
   .lw-phone-only { display: flex; flex-direction: column; gap: 10px; }
   .landing-usecase-grid, .landing-share-grid { grid-template-columns: 1fr; }
+  .landing-usecase-grid { grid-auto-rows: auto; }
 }
 
 @media (prefers-reduced-motion: reduce) {

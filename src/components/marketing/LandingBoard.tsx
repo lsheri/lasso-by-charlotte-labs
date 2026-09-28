@@ -107,7 +107,7 @@ export const LANDING_BOARD_STEPS = [
 
 type StepKey = (typeof LANDING_BOARD_STEPS)[number]["key"];
 type StoryInput = "scroll" | "jump";
-type UseCaseKey = "bring_work_in" | "reasoning_stays" | "every_number";
+type UseCaseKey = "connect_once" | "every_chat" | "name_the_work" | "finished_work";
 type SpotlightTarget = "deck" | "ask" | "turn";
 
 type UseCaseAsset = { url: string };
@@ -122,41 +122,75 @@ function useCaseAsset(name: string): string {
 
 const LANDING_BOARD_USE_CASES = [
   {
-    key: "bring_work_in",
-    title: "Connect every tool over MCP.",
-    body: "All your work tools and AI chats, connected once.",
-    poster: useCaseAsset("use-bring-work-in-poster.jpg"),
-    webm: useCaseAsset("use-bring-work-in.webm"),
-    mp4: useCaseAsset("use-bring-work-in.mp4"),
+    key: "connect_once",
+    kind: "video",
+    title: "Point Lasso at the places your work already lives.",
+    body: "Drive, Notion, Gmail, Slack, voice notes, call transcripts. One connection, and Lasso sits inside Claude and ChatGPT too. It reads only what you point it at, and the switch that turns a source off is in the same place you turned it on.",
+    poster: useCaseAsset("use-connect-once-poster.jpg"),
+    webm: useCaseAsset("use-connect-once.webm"),
+    mp4: useCaseAsset("use-connect-once.mp4"),
     tools: ["claude", "chatgpt", "gemini"],
   },
   {
-    key: "every_number",
-    title: "All your work becomes context.",
-    body: "Ask about the whole process, from research in ChatGPT to the final deck.",
-    poster: useCaseAsset("use-every-number-has-a-source-poster.jpg"),
-    webm: useCaseAsset("use-every-number-has-a-source.webm"),
-    mp4: useCaseAsset("use-every-number-has-a-source.mp4"),
+    key: "every_chat",
+    kind: "video",
+    title: "You remember the conversation, not the tool.",
+    body: "Claude on Tuesday, ChatGPT last month, Gemini on the call. They all land in one library here, sitting with the work they belong to, and you can search the lot at once.",
+    poster: useCaseAsset("use-every-chat-poster.jpg"),
+    webm: useCaseAsset("use-every-chat.webm"),
+    mp4: useCaseAsset("use-every-chat.mp4"),
+    tools: ["claude", "chatgpt", "gemini"],
+  },
+  {
+    key: "name_the_work",
+    kind: "image",
+    title: "Group or name your workstreams.",
+    body: "Draw a box around what belongs together and give it a name. That group becomes a context-aware workstream you can chat with. Ask it where an idea came from, which source you were reading, what you decided and why.",
+    image: useCaseAsset("use-name-the-work.webp"),
+    tools: ["claude", "chatgpt", "googledrive"],
+  },
+  {
+    key: "finished_work",
+    kind: "video",
+    title: "The deck is done. Where did the 17% come from?",
+    body: "The board holds the thinking, the research and the brainstorming next to the finished work. Pick the cards you mean, ask in plain words, and Lasso names the conversation the figure came out of. The answer stays on the board, next to the work.",
+    poster: useCaseAsset("use-finished-work-poster.jpg"),
+    webm: useCaseAsset("use-finished-work.webm"),
+    mp4: useCaseAsset("use-finished-work.mp4"),
     tools: ["claude", "powerpoint", "granola", "googledrive"],
   },
-  {
-    key: "reasoning_stays",
-    title: "Every AI conversation, searchable.",
-    body: "One view of the chats that mattered, so you can find them later.",
-    poster: useCaseAsset("use-reasoning-stays-with-the-firm-poster.jpg"),
-    webm: useCaseAsset("use-reasoning-stays-with-the-firm.webm"),
-    mp4: useCaseAsset("use-reasoning-stays-with-the-firm.mp4"),
-    tools: ["claude", "chatgpt", "gemini"],
-  },
-] as const satisfies ReadonlyArray<{
-  key: UseCaseKey;
-  title: string;
-  body: string;
-  poster: string;
-  webm?: string;
-  mp4: string;
-  tools: readonly string[];
-}>;
+] as const satisfies ReadonlyArray<
+  | {
+      key: UseCaseKey;
+      kind: "video";
+      title: string;
+      body: string;
+      poster: string;
+      webm?: string;
+      mp4: string;
+      tools: readonly string[];
+    }
+  | {
+      key: UseCaseKey;
+      kind: "image";
+      title: string;
+      body: string;
+      image: string;
+      tools: readonly string[];
+    }
+>;
+
+type LandingUseCase = (typeof LANDING_BOARD_USE_CASES)[number];
+type LandingVideoUseCase = Extract<LandingUseCase, { kind: "video" }>;
+
+function nextVideoUseCaseIndex(current: number): number {
+  const total = LANDING_BOARD_USE_CASES.length;
+  for (let step = 1; step <= total; step += 1) {
+    const index = (current + step) % total;
+    if (LANDING_BOARD_USE_CASES[index]?.kind === "video") return index;
+  }
+  return current;
+}
 
 function boxesMatch(a: LassoBox | null, b: LassoBox | null): boolean {
   if (a === b) return true;
@@ -2291,7 +2325,7 @@ function LandingBoardUseCase({
   onBeforeUserPlay,
   onPlayed,
 }: {
-  card: (typeof LANDING_BOARD_USE_CASES)[number];
+  card: LandingVideoUseCase;
   rotationActive: boolean;
   rotationEnabled: boolean;
   onRotationAdvance: () => void;
@@ -2404,6 +2438,25 @@ function LandingBoardUseCase({
   );
 }
 
+function LandingBoardImageUseCase({ card }: { card: Extract<LandingUseCase, { kind: "image" }> }) {
+  return (
+    <article className="landing-usecase" data-usecase={card.key} data-usecase-kind="image">
+      <div className="landing-usecase-copy">
+        <div className="landing-usecase-tools" aria-label="Tools shown">
+          {card.tools.map((tool) => (
+            <ToolLogo key={tool} vendor={tool} compact />
+          ))}
+        </div>
+        <h3>{card.title}</h3>
+        <p>{card.body}</p>
+      </div>
+      <div className="landing-usecase-media landing-usecase-media-still">
+        <img className="landing-usecase-poster" src={card.image} alt="" aria-hidden="true" />
+      </div>
+    </article>
+  );
+}
+
 function UseCaseSection({
   id = "usecases",
   phone = false,
@@ -2438,7 +2491,7 @@ function UseCaseSection({
   }, []);
 
   const advanceRotation = useCallback(
-    () => setActiveClip((current) => (current + 1) % LANDING_BOARD_USE_CASES.length),
+    () => setActiveClip((current) => nextVideoUseCaseIndex(current)),
     [],
   );
   const beforeUserPlay = useCallback((nextVideo: HTMLVideoElement) => {
@@ -2465,17 +2518,21 @@ function UseCaseSection({
         <p>{"\n"}</p>
       </div>
       <div className="landing-usecase-grid">
-        {LANDING_BOARD_USE_CASES.map((card, index) => (
-          <LandingBoardUseCase
-            key={card.key}
-            card={card}
-            rotationActive={activeClip === index}
-            rotationEnabled={rotationEnabled}
-            onRotationAdvance={advanceRotation}
-            onBeforeUserPlay={beforeUserPlay}
-            onPlayed={onPlayed}
-          />
-        ))}
+        {LANDING_BOARD_USE_CASES.map((card, index) =>
+          card.kind === "image" ? (
+            <LandingBoardImageUseCase key={card.key} card={card} />
+          ) : (
+            <LandingBoardUseCase
+              key={card.key}
+              card={card}
+              rotationActive={activeClip === index}
+              rotationEnabled={rotationEnabled}
+              onRotationAdvance={advanceRotation}
+              onBeforeUserPlay={beforeUserPlay}
+              onPlayed={onPlayed}
+            />
+          ),
+        )}
       </div>
     </section>
   );

@@ -80,9 +80,9 @@ describe("Unit L1 scroll-driven landing board", () => {
   });
   it("rotates all three product clips while preserving user-play event coverage", () => {
     for (const clip of [
-      "use-bring-work-in",
-      "use-every-number-has-a-source",
-      "use-reasoning-stays-with-the-firm",
+      "use-connect-once",
+      "use-every-chat",
+      "use-finished-work",
     ]) {
       expect(page).toContain(`useCaseAsset("${clip}.mp4")`);
       expect(page).toContain(`useCaseAsset("${clip}.webm")`);
@@ -115,14 +115,22 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(page).toContain("Three things a buyer asks for. Here is what each looks like.");
     expect(page).not.toContain("See it in the story");
     expect(page).not.toContain("onClick={() => onJump(card.step)}");
-    expect(page).toContain("Connect every tool over MCP.");
-    expect(page).toContain("All your work becomes context.");
-    expect(page).toContain("Every AI conversation, searchable.");
-    expect(page).toContain("All your work tools and AI chats, connected once.");
+    expect(page).toContain("Point Lasso at the places your work already lives.");
+    expect(page).toContain("You remember the conversation, not the tool.");
+    expect(page).toContain("Group or name your workstreams.");
+    expect(page).toContain("The deck is done. Where did the 17% come from?");
     expect(page).toContain(
-      "Ask about the whole process, from research in ChatGPT to the final deck.",
+      "Drive, Notion, Gmail, Slack, voice notes, call transcripts. One connection, and Lasso sits inside Claude and ChatGPT too. It reads only what you point it at, and the switch that turns a source off is in the same place you turned it on.",
     );
-    expect(page).toContain("One view of the chats that mattered, so you can find them later.");
+    expect(page).toContain(
+      "Claude on Tuesday, ChatGPT last month, Gemini on the call. They all land in one library here, sitting with the work they belong to, and you can search the lot at once.",
+    );
+    expect(page).toContain(
+      "Draw a box around what belongs together and give it a name. That group becomes a context-aware workstream you can chat with. Ask it where an idea came from, which source you were reading, what you decided and why.",
+    );
+    expect(page).toContain(
+      "The board holds the thinking, the research and the brainstorming next to the finished work. Pick the cards you mean, ask in plain words, and Lasso names the conversation the figure came out of. The answer stays on the board, next to the work.",
+    );
     expect(page).toContain("Watch one engagement, start to finish.");
   });
   it("maps every board tool to an official asset or Simple Icons path", () => {
