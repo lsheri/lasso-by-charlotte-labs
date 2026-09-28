@@ -10,6 +10,7 @@ import { useCoachingReach } from "@/hooks/use-coaching-reach";
 import { useEngagements } from "@/hooks/use-engagements";
 
 import { useProfile } from "@/hooks/use-profile";
+import { OrgSwitcher } from "./OrgSwitcher";
 import { vocabFor } from "@/lib/edu-vocab";
 import * as roles from "@/lib/role-access";
 import { engagementDisplayCode, engagementDisplayTitle } from "@/lib/clients";

@@ -57,18 +57,62 @@ let sharedQueryClient: QueryClient | null = null;
 const seededUsers = new Set<string>();
 
 
+/** One auth listener per page, not per hook instance. */
+let authUnsubscribe: (() => void) | null = null;
+
+/**
+ * Unit X: an identity change drops the cached identity and profile list, so a
+ * value saved before a sign-in can never be served after it. A SIGNED_IN for
+ * the same person who is already cached (supabase re-emits it on tab focus)
+ * is left alone, so focus does not wipe a good cache.
+ */
+function handleIdentityChange(event: string, nextUserId: string | null): void {
+  if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
+  const client = sharedQueryClient;
+  if (event === "SIGNED_IN" && client) {
+    const cached = client.getQueryData<{ id: string } | null>(AUTH_USER_KEY);
+    if (cached && nextUserId && cached.id === nextUserId) return;
+  }
+  seededUsers.clear();
+  if (!client) return;
+  client.removeQueries({ queryKey: AUTH_USER_KEY });
+  client.removeQueries({ queryKey: ["profiles"] });
+}
+
+function subscribeToIdentityChanges(): void {
+  if (authUnsubscribe) return;
+  const auth = supabase.auth as { onAuthStateChange?: typeof supabase.auth.onAuthStateChange };
+  if (typeof auth.onAuthStateChange !== "function") return;
+  const { data } = auth.onAuthStateChange((event, session) => {
+    handleIdentityChange(event, session?.user?.id ?? null);
+  });
+  authUnsubscribe = () => data.subscription.unsubscribe();
+}
+
 export function registerProfileQueryClient(client: QueryClient): void {
   sharedQueryClient = client;
+  subscribeToIdentityChanges();
 }
 
 /** Test seam. */
 export function resetProfileIdentityState(): void {
+  authUnsubscribe?.();
+  authUnsubscribe = null;
   sharedQueryClient = null;
   seededUsers.clear();
 }
 
+/**
+ * A missing session is a real "signed out" and is returned as null. Any other
+ * error is thrown, so the query fails and retries instead of saving a false
+ * "no user" that would make a member look like they have no workspace.
+ */
 async function fetchAuthUser(): Promise<{ id: string } | null> {
-  const { data } = await supabase.auth.getUser();
+  const { data, error } = await supabase.auth.getUser();
+  if (error) {
+    if (error.name === "AuthSessionMissingError") return null;
+    throw error;
+  }
   return data.user ? { id: data.user.id } : null;
 }
 
