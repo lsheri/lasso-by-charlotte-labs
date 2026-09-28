@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
 
-import { LassoLogo } from "./LassoLogo";
+import { LassoLoopMark } from "./LassoLoopMark";
 
 /** Slim header for pre-workspace pages: identity plus a way out. */
 export function SessionHeader() {
@@ -37,7 +37,7 @@ export function SessionHeader() {
           to="/"
           className="flex min-w-0 items-center gap-2 font-mono text-sm tracking-[0.24em] text-foreground"
         >
-          <LassoLogo size="sm" />
+          <LassoLoopMark className="h-6 w-6 shrink-0 text-lasso-green" />
           <span className="truncate">LASSO</span>
         </Link>
         <div className="flex shrink-0 items-center gap-3">

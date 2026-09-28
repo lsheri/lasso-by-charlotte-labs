@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 
 import { Button } from "@/components/ui/button";
+import { BrandLockup } from "@/components/layout/BrandLockup";
 import { PublicHeader } from "@/components/layout/PublicHeader";
-import { Wordmark } from "@/components/layout/Wordmark";
 
 export const Route = createFileRoute("/why")({
   head: () => ({
@@ -57,7 +57,7 @@ function WhyPage() {
 
       <main className="mx-auto max-w-3xl px-6 py-16 md:px-10 md:py-24">
         <div className="max-w-xs">
-          <Wordmark />
+          <BrandLockup />
         </div>
         <h1 className="mt-10 text-4xl font-semibold leading-tight tracking-tight text-foreground md:text-5xl">
           The best coach you didn't know you needed.

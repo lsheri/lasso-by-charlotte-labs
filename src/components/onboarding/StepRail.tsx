@@ -1,10 +1,8 @@
 import { Fragment } from "react";
 
 /**
- * The first-run journey rail from the design system. Three named steps, of
- * which only the first happens inside /onboarding: steps two and three are
- * completed later in the workspace, so they always render as future steps
- * here and `current` is only ever 0 on this route.
+ * The first-run journey rail from the design system. Both named steps happen
+ * inside /onboarding, with the rail advancing when capture setup begins.
  *
  * Measured from Figma "S · /onboarding · Connect one tool" (node 43:511):
  * 20px dots, 10px from dot to label, a 20px 1px rule between steps, Archivo
@@ -12,7 +10,7 @@ import { Fragment } from "react";
  * future. Active dot is action/primary-bg with an inverse numeral; future dots
  * are unfilled with a 1px line/pencil ring.
  */
-const STEPS = ["Connect one tool", "Map your first work", "See your first receipt"] as const;
+const STEPS = ["Pick your tools", "Bring one thing in"] as const;
 
 export function StepRail({ current = 0 }: { current?: number }) {
   return (
