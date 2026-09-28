@@ -60,8 +60,8 @@ async function mount(intent: "company" | "personal" | "edu") {
 vi.setConfig({ testTimeout: 30000 });
 // The code-split route chunk loads cold on first mount; warm it once.
 beforeAll(async () => {
-  await mount("personal");
-  cleanup();
+  const c = opts.component as unknown as { preload?: () => Promise<unknown> };
+  await c.preload?.();
 }, 30000);
 afterEach(cleanup);
 
