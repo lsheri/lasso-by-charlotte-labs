@@ -137,6 +137,6 @@ export async function handleAuthEmailHook(request: Request): Promise<Response> {
   return Response.json({});
 }
 
-export const Route = createFileRoute("/api/auth-email-hook")({
+export const Route = createFileRoute("/api/public/auth-email-hook")({
   server: { handlers: { POST: ({ request }) => handleAuthEmailHook(request) } },
 });
