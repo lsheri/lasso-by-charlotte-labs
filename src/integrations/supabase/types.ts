@@ -4550,6 +4550,15 @@ export type Database = {
         Args: { p_actor_profile_id?: string; p_link_id: string }
         Returns: undefined
       }
+      redeem_activation_key: {
+        Args: {
+          p_code: string
+          p_org_id: string
+          p_profile_id: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       set_data_consent: {
         Args: {
           p_consent_text_version?: string
