@@ -50,7 +50,7 @@ test("company person walks setup, pastes a thread and sets their data level", as
   });
 
   await run(page, "sign in", 'input#email, input[type="password"]', async () => {
-    await page.getByPlaceholder("you@yourfirm.com").fill(EMAIL);
+    await page.locator("input#email").fill(EMAIL);
     await page.locator('input[type="password"]').fill(PASSWORD);
     await page.getByRole("button", { name: /^sign in$/i }).click();
     await page.waitForURL(/\/(onboarding|work)/, { timeout: 60_000 });
@@ -64,15 +64,15 @@ test("company person walks setup, pastes a thread and sets their data level", as
 
   if (needsSetup) {
     await run(page, "choose for my company", 'heading "Who is this for?"', async () => {
-      // The company card is the first of the three.
+      // The company card is the first of the four.
       await page.getByRole("button", { name: /^continue$/i }).first().click();
       await expect(page.getByLabel("Workspace name")).toBeVisible();
     });
 
-    await run(page, "create workspace", 'button "Create workspace"', async () => {
-      await page.getByLabel("Display name").fill("QA Company Admin");
+    await run(page, "create workspace", 'button "Create my workspace"', async () => {
+      await page.getByLabel("Your name").fill("QA Company Admin");
       await page.getByLabel("Workspace name").fill("QA Firm");
-      await page.getByRole("button", { name: /create workspace/i }).click();
+      await page.getByRole("button", { name: /create my workspace/i }).click();
       await expect(page.getByRole("button", { name: /i'll do this later/i }).first()).toBeVisible({
         timeout: 60_000,
       });

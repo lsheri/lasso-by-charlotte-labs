@@ -36,17 +36,19 @@ test("teacher walks the school setup and reads school words", async ({ page }) =
 
     await run(page, "take the school door", "/onboarding?intent=edu", async () => {
       await page.goto("/onboarding?intent=edu", { waitUntil: "domcontentloaded" });
-      await expect(page.getByText("For my school work")).toBeVisible({ timeout: 60_000 });
+      await expect(page.getByText("Your school work")).toBeVisible({ timeout: 60_000 });
     });
 
-    await check("school setup can be named", 'label "Workspace name"', async () => {
-      await expect(page.getByLabel("Workspace name")).toBeVisible({ timeout: 5_000 });
-      await page.getByLabel("Workspace name").fill("QA School");
+    // Unit C: a school workspace asks one detail only. The old intent here
+    // (naming the workspace) no longer exists for edu, so this pins its absence.
+    await check("school setup asks only a name", 'label "Your name"', async () => {
+      await expect(page.getByLabel("Your name")).toBeVisible({ timeout: 5_000 });
+      await expect(page.getByLabel("Workspace name")).toHaveCount(0);
     });
 
-    await run(page, "create the workspace", 'button "Create workspace"', async () => {
-      await page.getByLabel("Display name").fill("QA School Teacher");
-      await page.getByRole("button", { name: /create workspace/i }).click();
+    await run(page, "create the workspace", 'button "Create my workspace"', async () => {
+      await page.getByLabel("Your name").fill("QA School Teacher");
+      await page.getByRole("button", { name: /create my workspace/i }).click();
       await page
         .getByRole("button", { name: /(i'll do this later|continue)/i })
         .first()
@@ -112,7 +114,7 @@ test("teacher walks the school setup and reads school words", async ({ page }) =
   step("screenshot Inbox", `${SHOTS}/edu-inbox.png`, true);
 
   findings.push(
-    'the "Who is this for?" chooser offers company, just for me and an invite code only, so a school person has no school door there',
+    'the "Who is this for?" chooser now offers a school door ("For my school work") beside company, just for me and an invite code',
   );
   reportFindings("edu");
 });

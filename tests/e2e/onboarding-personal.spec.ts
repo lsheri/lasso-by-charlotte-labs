@@ -28,14 +28,15 @@ test("solo person walks setup and sets a full data level", async ({ page }) => {
 
   if (needsSetup) {
     await run(page, "choose just for me", 'card "Just for me"', async () => {
-      // Second card of the three on the chooser.
+      // Second card of the four on the chooser.
       await page.getByRole("button", { name: /^continue$/i }).nth(1).click();
-      await expect(page.getByLabel("Display name")).toBeVisible();
+      await expect(page.getByLabel("Your name")).toBeVisible();
+      await expect(page.getByLabel("Workspace name")).toHaveCount(0);
     });
 
-    await run(page, "create the workspace", 'button "Create workspace"', async () => {
-      await page.getByLabel("Display name").fill("QA Solo");
-      await page.getByRole("button", { name: /create workspace/i }).click();
+    await run(page, "create the workspace", 'button "Create my workspace"', async () => {
+      await page.getByLabel("Your name").fill("QA Solo");
+      await page.getByRole("button", { name: /create my workspace/i }).click();
       await page.waitForURL(/\/(work|onboarding)/, { timeout: 60_000 });
     });
 
