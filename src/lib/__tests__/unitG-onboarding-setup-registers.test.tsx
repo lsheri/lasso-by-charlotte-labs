@@ -7,7 +7,8 @@ const mocks = vi.hoisted(() => ({
   search: {} as Record<string, unknown>,
 }));
 
-vi.mock("@tanstack/react-router", () => ({
+vi.mock("@tanstack/react-router", async (orig) => ({
+  ...(await orig<object>()),
   createFileRoute: () => (opts: Record<string, unknown>) => ({
     options: opts,
     useSearch: () => mocks.search,

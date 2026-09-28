@@ -92,7 +92,9 @@ function OAuthConnectCard({ tool }: { tool: ConnectTool }) {
           <p className="mt-1 text-sm text-muted-foreground">
             {tool === "transcripts"
               ? "Uses your Google Drive connection. Lasso looks where recordings usually live, then you tick the ones you want."
-              : "Connect once, then browse your folders and tick only the files you want."}
+              : tool === "gmail"
+                ? "Connect once, then pick the threads you want."
+                : "Connect once, then browse your folders and tick only the files you want."}
           </p>
         </div>
       </div>
@@ -114,8 +116,12 @@ function OAuthConnectCard({ tool }: { tool: ConnectTool }) {
             open={pickerOpen}
             onOpenChange={setPickerOpen}
             trigger={
-              <Button type="button">
-                {tool === "transcripts" ? "Find call transcripts" : "Pick files to bring in"}
+              <Button type="button" data-picker-kind={pickerKind} data-toolkit={toolkit}>
+                {tool === "transcripts"
+                  ? "Find call transcripts"
+                  : tool === "gmail"
+                    ? "Pick threads to bring in"
+                    : "Pick files to bring in"}
               </Button>
             }
           />
