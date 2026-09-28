@@ -17,7 +17,7 @@ import { ToolBadge } from "./ToolBadge";
  * Real OAuth in the first session. On success the folder-first picker opens
  * inline, the user picks files themselves. Nothing arrives unselected.
  */
-type ConnectTool = Extract<ToolId, "googledrive" | "granola" | "transcripts">;
+type ConnectTool = Extract<ToolId, "googledrive" | "granola" | "transcripts" | "gmail">;
 
 export function LiveConnectCard({ tool }: { tool: ConnectTool }) {
   // Granola authenticates with a pasted API key, so it gets its own card.
@@ -27,8 +27,11 @@ export function LiveConnectCard({ tool }: { tool: ConnectTool }) {
 
 function OAuthConnectCard({ tool }: { tool: ConnectTool }) {
   // Call transcripts reuse the same Google Drive connection, no second OAuth.
-  const toolkit = tool === "granola" ? "granola_mcp" : "googledrive";
-  const pickerKind = tool === "transcripts" ? "transcripts" : "googledrive";
+  // Gmail values match PICKER_KIND / toolkit ids in ConnectorsSection.tsx.
+  const toolkit =
+    tool === "gmail" ? "gmail" : tool === "granola" ? "granola_mcp" : "googledrive";
+  const pickerKind =
+    tool === "gmail" ? "gmail" : tool === "transcripts" ? "transcripts" : "googledrive";
   const meta = TOOLS[tool];
   const { data: profile } = useProfile();
   const { data: accounts } = useConnectorAccounts();
