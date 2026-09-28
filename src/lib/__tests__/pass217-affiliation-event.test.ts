@@ -46,9 +46,12 @@ describe("pass 217: workspace.affiliated has one server-side call site", () => {
     let depth = 0;
     for (const ch of between) {
       if (ch === "{") depth++;
-      if (ch === "}") depth--;
-      expect(depth).toBeGreaterThan(0);
+      if (ch === "}") {
+        depth--;
+        expect(depth).toBeGreaterThan(0);
+      }
     }
+    expect(depth).toBeGreaterThan(0);
     expect(src.match(/"workspace\.affiliated"/g)?.length).toBe(1);
   });
 
