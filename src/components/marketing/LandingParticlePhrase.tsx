@@ -116,9 +116,17 @@ function ParticleWord({ word, index }: { word: string; index: number }) {
       const elapsed = (timestamp - cycleStartedAt) % PARTICLE_TEXT_CYCLE_MS;
       const gathering = elapsed < GATHER_END_MS;
       const dispersing = elapsed >= HOLD_END_MS && elapsed < DISPERSE_END_MS;
-      // The words are never hidden by this loop. Particles are drawn on the
-      // canvas over words that stay fully visible, so a stopped, throttled or
-      // failed animation can never leave the headline unreadable.
+      // The word is hidden ONLY while this loop is provably running: the
+      // stylesheet never hides it, stop() and the reduced-motion path restore
+      // opacity 1, so a stopped, throttled or failed animation can never
+      // leave the headline unreadable.
+      if (gathering) {
+        wordNode.style.opacity = "0";
+      } else if (dispersing) {
+        wordNode.style.opacity = String(1 - easeOutCubic((elapsed - HOLD_END_MS) / (DISPERSE_END_MS - HOLD_END_MS)));
+      } else {
+        wordNode.style.opacity = "1";
+      }
 
       const styles = window.getComputedStyle(wordNode);
       const green = styles.getPropertyValue("--nb-lasso-green").trim();
@@ -160,6 +168,8 @@ function ParticleWord({ word, index }: { word: string; index: number }) {
       if (frameId === null) return;
       window.cancelAnimationFrame(frameId);
       frameId = null;
+      wordNode.style.opacity = "1";
+      context.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
     };
     const onMotionChange = () => {
       stop();
