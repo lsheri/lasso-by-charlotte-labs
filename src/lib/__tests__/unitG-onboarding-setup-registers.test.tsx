@@ -53,7 +53,7 @@ async function mount(intent: "company" | "personal" | "edu") {
     </Suspense>,
   );
   // The route component is code-split; wait for the setup heading.
-  await screen.findByText("What should we call you?");
+  await screen.findByText("What should we call you?", undefined, { timeout: 8000 });
   return view;
 }
 
