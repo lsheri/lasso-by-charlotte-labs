@@ -5,7 +5,6 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { SessionHeader } from "@/components/layout/SessionHeader";
-import { BrandLockup } from "@/components/layout/BrandLockup";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -66,7 +65,7 @@ function StateCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="mt-8 rounded-[var(--radius)] border border-border bg-card px-6 py-6 shadow-card">
+    <div className="rounded-[var(--radius)] border border-border bg-card px-6 py-6 shadow-card">
       <p className="micro-label">{label}</p>
       <h1 className="mt-2 page-title">{title}</h1>
       <div className="mt-3 space-y-3 text-sm text-muted-foreground">{children}</div>
@@ -144,7 +143,6 @@ function JoinPage() {
         <SessionHeader />
         <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background px-4 pb-16 pt-[calc(4rem+env(safe-area-inset-top))]">
           <div className="w-full max-w-md">
-            <BrandLockup className="[&_svg]:size-14" />
             {children}
           </div>
         </main>
