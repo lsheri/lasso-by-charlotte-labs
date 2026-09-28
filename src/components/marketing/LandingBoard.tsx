@@ -2515,7 +2515,7 @@ function UseCaseSection({
       <div className="landing-section-head">
         <span className="lb-section-label-space" aria-hidden="true" />
         <h2>Deliverables you can defend to a client, a partner, or a board.</h2>
-        <p>{"\n"}</p>
+        <p>Four things a buyer asks for. Here is what each looks like.</p>
       </div>
       <div className="landing-usecase-grid">
         {LANDING_BOARD_USE_CASES.map((card, index) =>
@@ -2918,7 +2918,7 @@ export function LandingBoard() {
               <div className="lb-hero-stage">
                 <HeroAssemble />
               </div>
-              <p className="micro-label lb-hero-assemble-caption" aria-hidden="true">{"\n"}</p>
+              <p className="micro-label lb-hero-assemble-caption" aria-hidden="true">CHATS FROM EVERY TOOL, ON ONE BOARD</p>
               <div className="lb-hero-line">
                 <p className="micro-label">{"\n"}</p>
                 <p className="lb-hero-line-text font-mono font-bold uppercase tracking-[0.18em]">
