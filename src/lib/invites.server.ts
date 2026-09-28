@@ -16,9 +16,33 @@ export function inviteSenderAddress(): string {
 const SENDER_DOMAIN = "notify.lasso.charlotte-labs.com";
 const PLATFORM_FROM = "Lasso <noreply@lasso.charlotte-labs.com>";
 
+export type ResendResult = { ok: true } | { ok: false; status: number; detail: string };
+
+/** The one Resend sender, plain fetch, shared by invites and the auth email hook. */
+export async function sendViaResend(
+  apiKey: string,
+  mail: { from: string; to: string; subject: string; html: string; text: string },
+): Promise<ResendResult> {
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+    body: JSON.stringify({
+      from: mail.from,
+      to: [mail.to],
+      subject: mail.subject,
+      html: mail.html,
+      text: mail.text,
+    }),
+  });
+  if (!response.ok) {
+    return { ok: false, status: response.status, detail: (await response.text()).slice(0, 300) };
+  }
+  return { ok: true };
+}
+
 /**
- * Sends the invitation. The platform path is primary, a directly configured
- * Resend key is the secondary path, and no transport at all is not an error:
+ * Sends the invitation. Resend is primary when RESEND_API_KEY is set; otherwise
+ * the platform path is used unchanged. No transport at all is not an error:
  * the caller shows the copyable link instead.
  */
 export async function sendInviteEmail(args: {
@@ -41,59 +65,48 @@ export async function sendInviteEmail(args: {
     subjectNames: args.subjectNames,
   });
 
-  const platformKey = process.env["LOVABLE_API_KEY"];
-  if (platformKey) {
-    try {
-      const { sendLovableEmail } = await import("@lovable.dev/email-js");
-      await sendLovableEmail(
-        {
-          to: args.to,
-          from: PLATFORM_FROM,
-          sender_domain: SENDER_DOMAIN,
-          subject,
-          html,
-          text,
-          purpose: "transactional",
-          label: "org-invite",
-          idempotency_key: `org-invite-${args.acceptUrl}`,
-        },
-        { apiKey: platformKey, sendUrl: process.env["LOVABLE_SEND_URL"] },
-      );
-      return { sent: true, reason: "sent", message: null };
-    } catch (error) {
-      const detail = error instanceof Error ? error.message : String(error);
-      if (!process.env["RESEND_API_KEY"]) {
-        return { sent: false, reason: "failed", message: detail.slice(0, 300) };
-      }
-    }
-  }
-
-  const apiKey = process.env["RESEND_API_KEY"];
-  if (!apiKey) {
-    return { sent: false, reason: "not_configured", message: null };
-  }
-
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({
+  const resendKey = process.env["RESEND_API_KEY"];
+  if (resendKey) {
+    const result = await sendViaResend(resendKey, {
       from: inviteSenderAddress(),
-      to: [args.to],
+      to: args.to,
       subject,
       html,
       text,
-    }),
-  });
-
-  if (!response.ok) {
-    const detail = await response.text();
+    });
+    if (result.ok) return { sent: true, reason: "sent", message: null };
     return {
       sent: false,
       reason: "failed",
-      message: `Email provider returned ${response.status}: ${detail.slice(0, 300)}`,
+      message: `Email provider returned ${result.status}: ${result.detail}`,
     };
   }
-  return { sent: true, reason: "sent", message: null };
+
+  const platformKey = process.env["LOVABLE_API_KEY"];
+  if (!platformKey) {
+    return { sent: false, reason: "not_configured", message: null };
+  }
+  try {
+    const { sendLovableEmail } = await import("@lovable.dev/email-js");
+    await sendLovableEmail(
+      {
+        to: args.to,
+        from: PLATFORM_FROM,
+        sender_domain: SENDER_DOMAIN,
+        subject,
+        html,
+        text,
+        purpose: "transactional",
+        label: "org-invite",
+        idempotency_key: `org-invite-${args.acceptUrl}`,
+      },
+      { apiKey: platformKey, sendUrl: process.env["LOVABLE_SEND_URL"] },
+    );
+    return { sent: true, reason: "sent", message: null };
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    return { sent: false, reason: "failed", message: detail.slice(0, 300) };
+  }
 }
 
 /**

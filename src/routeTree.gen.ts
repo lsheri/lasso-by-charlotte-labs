@@ -43,6 +43,7 @@ import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedReflectRouteImport } from './routes/_authenticated/reflect'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedWorkRouteImport } from './routes/_authenticated/work'
+import { Route as ApiAuthEmailHookRouteImport } from './routes/api/auth-email-hook'
 import { Route as DemoIndexRouteImport } from './routes/demo.index'
 import { Route as DemoCodeRouteImport } from './routes/demo.$code'
 import { Route as DemoClassicRouteImport } from './routes/demo.classic'
@@ -239,6 +240,11 @@ const AuthenticatedWorkRoute = AuthenticatedWorkRouteImport.update({
   path: '/work',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiAuthEmailHookRoute = ApiAuthEmailHookRouteImport.update({
+  id: '/api/auth-email-hook',
+  path: '/api/auth-email-hook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DemoIndexRoute = DemoIndexRouteImport.update({
   id: '/demo/',
   path: '/demo/',
@@ -396,6 +402,7 @@ export interface FileRoutesByFullPath {
   '/reflect': typeof AuthenticatedReflectRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/work': typeof AuthenticatedWorkRoute
+  '/api/auth-email-hook': typeof ApiAuthEmailHookRoute
   '/demo/$code': typeof DemoCodeRoute
   '/demo/classic': typeof DemoClassicRoute
   '/demo/conversations': typeof DemoConversationsRoute
@@ -454,6 +461,7 @@ export interface FileRoutesByTo {
   '/reflect': typeof AuthenticatedReflectRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/work': typeof AuthenticatedWorkRoute
+  '/api/auth-email-hook': typeof ApiAuthEmailHookRoute
   '/demo/$code': typeof DemoCodeRoute
   '/demo/classic': typeof DemoClassicRoute
   '/demo/conversations': typeof DemoConversationsRoute
@@ -514,6 +522,7 @@ export interface FileRoutesById {
   '/_authenticated/reflect': typeof AuthenticatedReflectRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/work': typeof AuthenticatedWorkRoute
+  '/api/auth-email-hook': typeof ApiAuthEmailHookRoute
   '/demo/$code': typeof DemoCodeRoute
   '/demo/classic': typeof DemoClassicRoute
   '/demo/conversations': typeof DemoConversationsRoute
@@ -574,6 +583,7 @@ export interface FileRouteTypes {
     | '/reflect'
     | '/settings'
     | '/work'
+    | '/api/auth-email-hook'
     | '/demo/$code'
     | '/demo/classic'
     | '/demo/conversations'
@@ -632,6 +642,7 @@ export interface FileRouteTypes {
     | '/reflect'
     | '/settings'
     | '/work'
+    | '/api/auth-email-hook'
     | '/demo/$code'
     | '/demo/classic'
     | '/demo/conversations'
@@ -691,6 +702,7 @@ export interface FileRouteTypes {
     | '/_authenticated/reflect'
     | '/_authenticated/settings'
     | '/_authenticated/work'
+    | '/api/auth-email-hook'
     | '/demo/$code'
     | '/demo/classic'
     | '/demo/conversations'
@@ -730,6 +742,7 @@ export interface RootRouteChildren {
   PersonalRoute: typeof PersonalRoute
   TrustRoute: typeof TrustRoute
   WhyRoute: typeof WhyRoute
+  ApiAuthEmailHookRoute: typeof ApiAuthEmailHookRoute
   DemoCodeRoute: typeof DemoCodeRoute
   DemoClassicRoute: typeof DemoClassicRoute
   DemoConversationsRoute: typeof DemoConversationsRoute
@@ -988,6 +1001,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWorkRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/auth-email-hook': {
+      id: '/api/auth-email-hook'
+      path: '/api/auth-email-hook'
+      fullPath: '/api/auth-email-hook'
+      preLoaderRoute: typeof ApiAuthEmailHookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/demo/': {
       id: '/demo/'
       path: '/demo'
@@ -1233,6 +1253,7 @@ const rootRouteChildren: RootRouteChildren = {
   PersonalRoute: PersonalRoute,
   TrustRoute: TrustRoute,
   WhyRoute: WhyRoute,
+  ApiAuthEmailHookRoute: ApiAuthEmailHookRoute,
   DemoCodeRoute: DemoCodeRoute,
   DemoClassicRoute: DemoClassicRoute,
   DemoConversationsRoute: DemoConversationsRoute,
