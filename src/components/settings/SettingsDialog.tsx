@@ -11,6 +11,7 @@ import { NamingConventionsCard } from "./NamingConventionsCard";
 import { OrgDimensionsCard } from "./OrgDimensionsCard";
 import { YourWorkCard } from "./YourWorkCard";
 import { AccountEmailCard } from "./AccountEmailCard";
+import { ActivationKeyCard } from "./ActivationKeyCard";
 import { InviteDialog } from "@/components/invites/InviteDialog";
 import { EnterInviteCode } from "@/components/invites/EnterInviteCode";
 import { Button } from "@/components/ui/button";
@@ -54,6 +55,7 @@ const SECTIONS: SettingsSection[] = [
       <div className="space-y-8">
         <OrgDimensionsCard />
         <NamingConventionsCard />
+        <ActivationKeyCard />
       </div>
     ),
   },
