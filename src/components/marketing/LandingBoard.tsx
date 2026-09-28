@@ -2515,7 +2515,7 @@ function UseCaseSection({
       <div className="landing-section-head">
         <span className="lb-section-label-space" aria-hidden="true" />
         <h2>Deliverables you can defend to a client, a partner, or a board.</h2>
-        <p>{"\n"}</p>
+        <p>Four things a buyer asks for. Here is what each looks like.</p>
       </div>
       <div className="landing-usecase-grid">
         {LANDING_BOARD_USE_CASES.map((card, index) =>
