@@ -12,6 +12,7 @@ import {
   type AuthEmailType,
 } from "@/routes/api/public/auth-email-hook";
 import { sendInviteEmail } from "@/lib/invites.server";
+import { sendTemplateEmail } from "@/lib/email-templates/send-email";
 
 const RAW = Buffer.from("unit-e1-test-secret-0123456789ab").toString("base64");
 const SECRET = `v1,whsec_${RAW}`;
@@ -116,10 +117,36 @@ describe("invite email transport", () => {
     expect(sendLovableEmail).not.toHaveBeenCalled();
   });
 
-  it("falls back to the platform path when RESEND_API_KEY is unset", async () => {
+describe("pilot-request sender transport", () => {
+  const templateData = {
+    name: "Alex Morgan",
+    firm: "Northwind Advisory",
+    email: "alex@example.com",
+    teamSize: "6-15",
+    teamSizeLabel: "6 to 15",
+    createdAt: "20 September 2026, 05:32 UTC",
+  };
+
+  it("uses Resend when RESEND_API_KEY is set", async () => {
+    vi.stubEnv("RESEND_API_KEY", "re_test");
+    vi.stubEnv("LOVABLE_API_KEY", "");
+    const result = await sendTemplateEmail("pilot-request", "liam@charlotte-labs.com", {
+      templateData,
+    });
+    expect(result.sent).toBe(true);
+    expect(fetchMock.mock.calls[0]![0]).toBe("https://api.resend.com/emails");
+    const sent = JSON.parse(fetchMock.mock.calls[0]![1]!.body as string);
+    expect(sent.from).toBe("Lasso <noreply@lasso.charlotte-labs.com>");
+    expect(sent.to).toEqual(["liam@charlotte-labs.com"]);
+    expect(sendLovableEmail).not.toHaveBeenCalled();
+  });
+
+  it("falls back to the current path when RESEND_API_KEY is unset", async () => {
     vi.stubEnv("RESEND_API_KEY", "");
     vi.stubEnv("LOVABLE_API_KEY", "lov");
-    const result = await sendInviteEmail(args);
+    const result = await sendTemplateEmail("pilot-request", "liam@charlotte-labs.com", {
+      templateData,
+    });
     expect(result.sent).toBe(true);
     expect(sendLovableEmail).toHaveBeenCalledTimes(1);
     expect(fetchMock).not.toHaveBeenCalled();
