@@ -7,6 +7,10 @@ import {
   normalizeCode,
   type RedeemReason,
 } from "@/lib/activation-keys";
+import { chooseProfile } from "@/lib/activation-keys.functions";
+
+const owned = { id: "p-1", org_id: "o-1" };
+const other = { id: "p-2", org_id: "o-2" };
 
 // Compile-time exhaustiveness: adding a reason to the union without adding it
 // to REDEEM_REASONS fails this assignment.
@@ -41,5 +45,21 @@ describe("pass214 activation keys", () => {
     expect(allow("u1", 2000)).toBe(false);
     expect(allow("u2", 2000)).toBe(true);
     expect(allow("u1", 1000 + 60_001 + 5)).toBe(true);
+  });
+
+  it("chooseProfile uses a supplied profile id that belongs to the caller", () => {
+    expect(chooseProfile("p-1", owned, false)).toEqual({ action: "use", profile: owned });
+  });
+
+  it("chooseProfile refuses a supplied profile id that does not belong to the caller, never falling back", () => {
+    expect(chooseProfile("p-1", other, false)).toEqual({ action: "refuse" });
+    expect(chooseProfile("p-1", null, false)).toEqual({ action: "refuse" });
+    expect(chooseProfile("p-1", owned, true)).toEqual({ action: "refuse" });
+  });
+
+  it("chooseProfile falls back to the oldest profile when none is supplied", () => {
+    expect(chooseProfile(undefined, other, false)).toEqual({ action: "use", profile: other });
+    expect(chooseProfile(undefined, null, false)).toEqual({ action: "refuse" });
+    expect(chooseProfile(undefined, other, true)).toEqual({ action: "refuse" });
   });
 });
