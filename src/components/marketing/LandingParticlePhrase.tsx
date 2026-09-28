@@ -115,11 +115,10 @@ function ParticleWord({ word, index }: { word: string; index: number }) {
 
       const elapsed = (timestamp - cycleStartedAt) % PARTICLE_TEXT_CYCLE_MS;
       const gathering = elapsed < GATHER_END_MS;
-      const holding = elapsed >= GATHER_END_MS && elapsed < HOLD_END_MS;
       const dispersing = elapsed >= HOLD_END_MS && elapsed < DISPERSE_END_MS;
-      const textIn = clamp((elapsed - 2350) / 650);
-      const textOut = clamp((elapsed - HOLD_END_MS) / 260);
-      wordNode.style.opacity = holding ? "1" : gathering ? String(textIn) : dispersing ? String(1 - textOut) : "0";
+      // The words are never hidden by this loop. Particles are drawn on the
+      // canvas over words that stay fully visible, so a stopped, throttled or
+      // failed animation can never leave the headline unreadable.
 
       const styles = window.getComputedStyle(wordNode);
       const green = styles.getPropertyValue("--nb-lasso-green").trim();
