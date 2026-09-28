@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen } from "@testing-library/react";
 import { Suspense, type ReactNode } from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   search: {} as Record<string, unknown>,
@@ -53,11 +53,16 @@ async function mount(intent: "company" | "personal" | "edu") {
     </Suspense>,
   );
   // The route component is code-split; wait for the setup heading.
-  await screen.findByText("What should we call you?", undefined, { timeout: 8000 });
+  await screen.findByText("What should we call you?", undefined, { timeout: 25000 });
   return view;
 }
 
-vi.setConfig({ testTimeout: 15000 });
+vi.setConfig({ testTimeout: 30000 });
+// The code-split route chunk loads cold on first mount; warm it once.
+beforeAll(async () => {
+  await mount("personal");
+  cleanup();
+}, 30000);
 afterEach(cleanup);
 
 describe("Unit G: onboarding setup stage per register", () => {
