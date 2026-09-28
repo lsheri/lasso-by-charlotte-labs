@@ -8,6 +8,7 @@ import {
   type RedeemOutcome,
   type RedeemReason,
 } from "@/lib/activation-keys";
+import { institutionToRecord } from "@/lib/affiliation.functions";
 
 // Best-effort only: five attempts per sixty seconds per user, held in this
 // module's memory. Per instance, resets on redeploy, not shared across
@@ -127,9 +128,34 @@ export const redeemActivationKeyFn = createServerFn({ method: "POST" })
       if (base.ok && typeof row.institution_id === "string") {
         const { data: inst } = await supabaseAdmin
           .from("institutions")
-          .select("name")
+          .select("name, slug")
           .eq("id", row.institution_id)
           .maybeSingle();
+
+        // workspace.affiliated is recorded ONLY here, ONLY when the database
+        // reports "redeemed": that is the one reason on which
+        // redeem_activation_key wrote an org_affiliations row. "already_redeemed"
+        // burns no seat and creates no row, so it never records. The dim is
+        // the institution slug through the same closed-set mapping the old
+        // endpoint used, matching the allowlist entry ["institution"].
+        // Wrapped so a telemetry failure can never change what the person
+        // sees: a redeemed key stays redeemed even if the event fails.
+        if (reason === "redeemed") {
+          try {
+            const institution = institutionToRecord(inst?.slug) ?? "unknown";
+            const { recordEvent } = await import("./telemetry.server");
+            await recordEvent(context.supabase, {
+              eventType: "workspace.affiliated",
+              orgId: profile.org_id,
+              userId,
+              profileId: profile.id,
+              dims: { institution },
+            });
+          } catch {
+            // Deliberately swallowed; see above.
+          }
+        }
+
         if (inst?.name) return { ...base, institution_name: inst.name };
       }
       return base;

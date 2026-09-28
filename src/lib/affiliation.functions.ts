@@ -16,43 +16,9 @@ export function institutionToRecord(value: unknown): PartnerSlug | "unknown" | n
 }
 
 /**
- * Pass 185: a workspace was affiliated with an institution at creation. Only
- * the slug travels, from a closed set, and it goes through the ordinary
- * stamped recordEvent path. Never surfaced on failure.
- */
-export const noteAffiliatedFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: { institution: string; profile_id?: string | undefined }) => ({
-    institution: institutionToRecord(input?.institution),
-    profile_id: input?.profile_id ?? null,
-  }))
-  .handler(async ({ data, context }): Promise<{ ok: true }> => {
-    const { supabase, userId } = context;
-    if (data.institution === null) return { ok: true };
-
-    const profile = await resolveProfile(supabase, userId, data.profile_id);
-    if (!profile) return { ok: true };
-
-    // An unrecognised slug is recorded as "unknown", never dropped. This is
-    // the precedent org-type.server.ts sets with workspaceStamp: a failed
-    // read and a real value must be tellable apart later, and a dropped
-    // event cannot be told apart from an event that never happened.
-    // "unknown" makes the gap visible in the dataset.
-    const { recordEvent } = await import("./telemetry.server");
-    await recordEvent(supabase, {
-      eventType: "workspace.affiliated",
-      orgId: profile.org_id,
-      userId,
-      profileId: profile.id,
-      dims: { institution: data.institution },
-    });
-    return { ok: true };
-  });
-
-/**
  * Pass 186: the student opened the page describing what their school sees.
- * Same shape as noteAffiliatedFn: the slug only, from a closed set, through
- * the ordinary stamped recordEvent path, never surfaced on failure.
+ * The slug only, from a closed set, through the ordinary stamped
+ * recordEvent path, never surfaced on failure.
  */
 export const noteDisclosureReadFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -101,9 +67,10 @@ export function withinAffiliationWindow(
   return now - created <= AFFILIATION_WINDOW_MS;
 }
 
-// V6: the self-serve affiliation server function is deleted. It trusted a
-// client-supplied profile_id and slug with no entitlement check, so any
-// signed-in person could self-affiliate. The activation key
-// (redeemActivationKeyFn) is now the only way an affiliation is written.
-// The workspace.affiliated event stays registered; its call site is the
-// redemption path.
+// V6/V7: the self-serve affiliation function and the client-callable
+// affiliation event endpoint are both gone. Each trusted a client-supplied
+// slug with no entitlement check. An affiliation row is written only by the
+// database function redeem_activation_key, and workspace.affiliated is
+// recorded only by the redemption server function (redeemActivationKeyFn),
+// server side, when that call reports "redeemed", meaning a row was
+// actually created. No client can cause the event.

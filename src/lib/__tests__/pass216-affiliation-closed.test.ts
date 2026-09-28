@@ -26,9 +26,11 @@ describe("pass 216: the self-serve affiliation path is closed", () => {
     expect(read("src/routes/onboarding.tsx")).not.toContain("org_affiliations");
   });
 
-  it("the module no longer exports affiliateWorkspaceFn", () => {
+  it("the module no longer exports affiliateWorkspaceFn or noteAffiliatedFn", () => {
     expect("affiliateWorkspaceFn" in affiliationModule).toBe(false);
+    expect("noteAffiliatedFn" in affiliationModule).toBe(false);
     expect(read("src/lib/affiliation.functions.ts")).not.toContain("affiliateWorkspaceFn");
+    expect(read("src/lib/affiliation.functions.ts")).not.toContain("noteAffiliatedFn");
   });
 
   it("the helpers other modules import still export and behave as before", () => {
