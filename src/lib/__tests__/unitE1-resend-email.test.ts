@@ -117,6 +117,16 @@ describe("invite email transport", () => {
     expect(sendLovableEmail).not.toHaveBeenCalled();
   });
 
+  it("falls back to the platform path when RESEND_API_KEY is unset", async () => {
+    vi.stubEnv("RESEND_API_KEY", "");
+    vi.stubEnv("LOVABLE_API_KEY", "lov");
+    const result = await sendInviteEmail(args);
+    expect(result.sent).toBe(true);
+    expect(sendLovableEmail).toHaveBeenCalledTimes(1);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
 describe("pilot-request sender transport", () => {
   const templateData = {
     name: "Alex Morgan",
