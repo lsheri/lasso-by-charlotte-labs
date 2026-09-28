@@ -10,7 +10,7 @@ import {
   buildAuthEmails,
   handleAuthEmailHook,
   type AuthEmailType,
-} from "@/routes/api/auth-email-hook";
+} from "@/routes/api/public/auth-email-hook";
 import { sendInviteEmail } from "@/lib/invites.server";
 
 const RAW = Buffer.from("unit-e1-test-secret-0123456789ab").toString("base64");
@@ -27,7 +27,7 @@ function signedRequest(body: string, secret = RAW) {
   const id = "msg_1";
   const ts = new Date();
   const sig = new Webhook(secret).sign(id, ts, body);
-  return new Request("http://x/api/auth-email-hook", {
+  return new Request("http://x/api/public/auth-email-hook", {
     method: "POST",
     body,
     headers: { "webhook-id": id, "webhook-timestamp": String(Math.floor(ts.getTime() / 1000)), "webhook-signature": sig },
