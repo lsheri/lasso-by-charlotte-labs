@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
-import { fetchProfile } from "@/hooks/use-profile";
+import { AUTH_USER_KEY, fetchProfile } from "@/hooks/use-profile";
 import {
   readEduIntent,
   clearEduIntent,
@@ -198,6 +198,34 @@ function OnboardingInner() {
     event.preventDefault();
     setPending(true);
     setError(null);
+
+    // Unit W: a fresh read of the caller's workspaces, straight from the
+    // database and never from the query cache, before anything is created.
+    // A stale cached identity once sent an existing member here and minted a
+    // phantom workspace. Anyone who already has one goes to their work, and
+    // anyone who cannot be checked is never given a new one.
+    const { data: freshUser, error: freshUserError } = await supabase.auth.getUser();
+    const freshRead =
+      freshUserError || !freshUser.user
+        ? null
+        : await supabase
+            .from("profiles")
+            .select("id")
+            .eq("user_id", freshUser.user.id)
+            .is("deactivated_at", null);
+    if (!freshRead || freshRead.error || !freshRead.data) {
+      setError("We could not check your account just now. Nothing was created. Please try again.");
+      setPending(false);
+      return;
+    }
+    if (freshRead.data.length > 0) {
+      // Drop the cached identity so the gate on /work reads the real one.
+      queryClient.removeQueries({ queryKey: AUTH_USER_KEY });
+      queryClient.removeQueries({ queryKey: ["profiles"] });
+      setPending(false);
+      navigate({ to: "/work", replace: true });
+      return;
+    }
 
     // Redeeming an invite belongs to /join, which owns every honest state.
     // This surface only ever creates a workspace, so no database message
