@@ -239,7 +239,7 @@ function JoinPage() {
             >
               Copy link
             </Button>
-            <Button type="button" variant="outline" onClick={() => navigate({ to: "/work" })}>
+            <Button type="button" variant="outline" onClick={() => navigate({ to: "/home" })}>
               Go to workspace
             </Button>
           </div>
@@ -305,7 +305,7 @@ function JoinPage() {
             valid until it expires.
           </p>
           <div className="flex flex-wrap gap-2 pt-1">
-            <Button type="button" onClick={() => navigate({ to: "/work" })}>
+            <Button type="button" onClick={() => navigate({ to: "/home" })}>
               Go to workspace
             </Button>
             <Button type="button" variant="outline" onClick={() => void signOutAndStay()}>
@@ -333,7 +333,7 @@ function JoinPage() {
             <Button type="button" onClick={() => void signOutAndStay()}>
               Sign out and continue
             </Button>
-            <Button type="button" variant="outline" onClick={() => navigate({ to: "/work" })}>
+            <Button type="button" variant="outline" onClick={() => navigate({ to: "/home" })}>
               Go to workspace
             </Button>
           </div>
@@ -475,7 +475,7 @@ function AcceptForm({
     }
     if (eng) navigate({ to: "/engagements/$id", params: { id: eng }, replace: true });
     else if (memberRole === "coach") navigate({ to: "/coaching", replace: true });
-    else navigate({ to: "/work", replace: true });
+    else navigate({ to: "/home", replace: true });
   }
 
   return (

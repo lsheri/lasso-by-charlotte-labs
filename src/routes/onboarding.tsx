@@ -102,7 +102,7 @@ export const Route = createFileRoute("/onboarding")({
     if (error || !data.user) throw redirect({ to: "/auth" });
     const profile = await fetchProfile();
     // `?setup=1` is how an existing member reopens the tool setup from Connectors.
-    if (profile && !search.setup) throw redirect({ to: "/work" });
+    if (profile && !search.setup) throw redirect({ to: "/home" });
     // Someone who arrived on an invite should never be asked for the code
     // again. The accept page owns every invite state, including redeemed.
     if (!profile && !search.setup) {
@@ -269,7 +269,9 @@ function OnboardingInner() {
   }
 
   function finish() {
-    navigate({ to: "/work", replace: true });
+    // Unit Y2: the same place sign-in lands, so the first visit and every
+    // later one start on the same screen.
+    navigate({ to: "/home", replace: true });
   }
 
   if (stage === "tools") {
@@ -325,7 +327,7 @@ function OnboardingInner() {
             </p>
 
             <div className="mt-6">
-              <SetupTools tools={[...tools]} />
+              <SetupTools tools={[...tools]} {...(setup ? {} : { register: orgType })} />
             </div>
 
             <div className="mt-8 flex items-center gap-6">

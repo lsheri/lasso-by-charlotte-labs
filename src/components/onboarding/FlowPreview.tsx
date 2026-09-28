@@ -1,11 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
-const STAGES = [
-  { label: "You work in your AI tools", body: "Claude, ChatGPT, Drive, meetings." },
-  { label: "It flows into Lasso", body: "Only what you choose. Private on arrival." },
-  { label: "You map it", body: "Give it an engagement and a workstream. It becomes a record." },
-  { label: "A coach sees what you share", body: "Never your raw files. Only the shared view." },
-];
+import { FLOW_PREVIEW_COPY, type Register } from "@/lib/register";
+
 
 function usePrefersReducedMotion(): boolean {
   const [reduced, setReduced] = useState(false);
@@ -23,7 +19,15 @@ function usePrefersReducedMotion(): boolean {
  * A ~20 second, plays-once look at the loop. No data, no screenshots, four
  * abstract beats. Reduced motion gets the same four beats, all at once.
  */
-export function FlowPreview({ onSkip }: { onSkip?: () => void }) {
+export function FlowPreview({
+  onSkip,
+  register = "company",
+}: {
+  onSkip?: () => void;
+  /** Which audience the captions speak to. Defaults to the original set. */
+  register?: Register;
+}) {
+  const STAGES = FLOW_PREVIEW_COPY[register];
   const reduced = usePrefersReducedMotion();
   const [stage, setStage] = useState(reduced ? STAGES.length - 1 : 0);
   const [done, setDone] = useState(reduced);

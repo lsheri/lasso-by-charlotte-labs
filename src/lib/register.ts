@@ -68,3 +68,27 @@ export const REGISTER_SHARED_COPY = {
 /** Closed org.created.entry_door vocabulary. */
 export const ENTRY_DOORS = ["intent", "edu_flag", "chooser", "invite"] as const;
 export type EntryDoor = (typeof ENTRY_DOORS)[number];
+
+/** Unit Y1: the four FlowPreview beats, one set per register. */
+export type FlowPreviewStage = { label: string; body: string };
+
+export const FLOW_PREVIEW_COPY: Readonly<Record<Register, readonly FlowPreviewStage[]>> = {
+  company: [
+    { label: "You work in your AI tools", body: "Claude, ChatGPT, Drive, meetings." },
+    { label: "It flows into Lasso", body: "Only what you choose. Private on arrival." },
+    { label: "You map it", body: "Give it an engagement and a workstream. It becomes a record." },
+    { label: "A coach sees what you share", body: "Never your raw files. Only the shared view." },
+  ],
+  personal: [
+    { label: "You work in your AI tools", body: "Claude, ChatGPT, Drive, your own notes." },
+    { label: "It flows into Lasso", body: "Only what you choose. Private on arrival." },
+    { label: "You file it", body: "Put it under one of your projects. It becomes part of your record." },
+    { label: "The record stays yours", body: "Nothing leaves unless you choose to share it." },
+  ],
+  edu: [
+    { label: "You work in your AI tools", body: "Claude, ChatGPT, Drive, lecture notes." },
+    { label: "It flows into Lasso", body: "Only what you choose. Private on arrival." },
+    { label: "You file it", body: "Put it under a class or project, next to the coursework it belongs to." },
+    { label: "You choose what to share", body: "Nothing leaves your workspace by itself. Share one piece when you want to." },
+  ],
+};
