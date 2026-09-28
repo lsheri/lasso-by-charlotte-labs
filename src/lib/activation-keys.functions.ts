@@ -18,8 +18,34 @@ function outcome(reason: RedeemReason): RedeemOutcome & { institution_name?: str
   return { ok: reason === "redeemed" || reason === "already_redeemed", reason, message: messageForReason(reason) };
 }
 
+export type ProfileChoice =
+  | { action: "use"; profile: { id: string; org_id: string } }
+  | { action: "refuse" };
+
 /**
- * The client sends the code and, optionally, the id of the workspace it is
+ * Pure decision for which workspace the redemption targets.
+ *
+ * A workspace named by the client is used only when it comes back from a
+ * query that required it to belong to the caller; otherwise the call
+ * refuses. There is no fallback when a workspace is named: a silent
+ * fallback is the bug this unit exists to remove, because it would
+ * affiliate a workspace the person was not looking at.
+ */
+export function chooseProfile(
+  suppliedProfileId: string | undefined,
+  owned: { id: string; org_id: string } | null,
+  queryFailed: boolean
+): ProfileChoice {
+  if (queryFailed) return { action: "refuse" };
+  if (suppliedProfileId) {
+    if (owned && owned.id === suppliedProfileId) return { action: "use", profile: owned };
+    return { action: "refuse" };
+  }
+  if (owned) return { action: "use", profile: owned };
+  return { action: "refuse" };
+}
+
+/**
  * looking at. Identity comes from the verified bearer token
  * (requireSupabaseAuth): `userId` is read from the verified claims and is
  * NEVER taken from the request body. The workspace is named by the client
@@ -71,7 +97,7 @@ export const redeemActivationKeyFn = createServerFn({ method: "POST" })
         profileRows = (oldest.data as { id: string; org_id: string }[] | null) ?? [];
       }
 
-      const choice = chooseProfile(data.profile_id, profileRows[0] ?? null, profileErrorUnreadable(namedOrOldestError));
+      const choice = chooseProfile(data.profile_id, profileRows[0] ?? null, queryFailed);
       if (choice.action === "refuse") return outcome("error");
       const profile = choice.profile;
 
