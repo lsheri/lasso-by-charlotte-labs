@@ -12,6 +12,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { checkSignupInvite } from "@/lib/invites.functions";
 import { type SignupInviteCheck } from "@/lib/signup-invite";
 import { markSignupSource, type SignupSource } from "@/lib/edu-entry";
+import { isPartnerSlug } from "@/lib/partners";
+import { deriveRegister, REGISTER_COPY } from "@/lib/register";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -20,7 +22,7 @@ export const Route = createFileRoute("/auth")({
   ): {
     next?: string | undefined;
     invite?: string | undefined;
-    intent?: "company" | "personal" | "invite" | undefined;
+    intent?: "company" | "personal" | "edu" | "invite" | undefined;
     from?: SignupSource | undefined;
   } => {
     const next = search["next"];
@@ -28,10 +30,15 @@ export const Route = createFileRoute("/auth")({
     const invite = search["invite"];
     const from = search["from"];
     return {
-      ...(from === "ceiba_uni" || from === "edu" || from === "direct" ? { from } : {}),
+      ...(isPartnerSlug(from) || from === "edu" || from === "direct" ? { from } : {}),
       ...(typeof invite === "string" && invite ? { invite } : {}),
       ...(typeof next === "string" && next.startsWith("/") ? { next } : {}),
-      ...(intent === "company" || intent === "personal" || intent === "invite" ? { intent } : {}),
+      ...(intent === "company" ||
+      intent === "personal" ||
+      intent === "edu" ||
+      intent === "invite"
+        ? { intent }
+        : {}),
     };
   },
   beforeLoad: async ({ search }) => {
@@ -46,12 +53,12 @@ export const Route = createFileRoute("/auth")({
       { title: "Sign in | Lasso by Charlotte Labs" },
       {
         name: "description",
-        content: "Sign in to Lasso, the coaching platform for consultancies.",
+        content: "Sign in to Lasso by Charlotte Labs.",
       },
       { property: "og:title", content: "Sign in | Lasso" },
       {
         property: "og:description",
-        content: "Sign in to Lasso, the coaching platform for consultancies.",
+        content: "Sign in to Lasso by Charlotte Labs.",
       },
     ],
   }),
@@ -79,6 +86,8 @@ function AuthPage() {
     markSignupSource(from);
   }, [from]);
   const checkInvite = useServerFn(checkSignupInvite);
+  // Unit C: the email field speaks the register; no signal reads as company.
+  const emailCopy = REGISTER_COPY[deriveRegister(intent) ?? "company"];
   // An invite can arrive as its own param or inside the join destination.
   const inviteCode = invite ?? joinTarget(next)?.code;
   // Arriving from an invite: the page should read as the next step of that
@@ -136,7 +145,10 @@ function AuthPage() {
           return;
         }
       }
-      const onboardingPath = intent ? `/onboarding?intent=${intent}` : "/onboarding";
+      // Unit C: the derived register rides the confirmation link, so it
+      // survives being opened on another device. No signal, nothing carried.
+      const register = deriveRegister(intent);
+      const onboardingPath = register ? `/onboarding?intent=${register}` : "/onboarding";
       const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -186,14 +198,14 @@ function AuthPage() {
           <form onSubmit={handleSubmit} className="mt-8 space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="email" className="micro-label">
-                WORK EMAIL
+                {emailCopy.emailLabel}
               </Label>
               <Input
                 id="email"
                 type="email"
                 required
                 autoComplete="email"
-                placeholder="you@yourfirm.com"
+                placeholder={emailCopy.emailPlaceholder}
                 value={email}
                 readOnly={mode === "signup" && Boolean(lockedEmail)}
                 onChange={(e) => setEmail(e.target.value)}

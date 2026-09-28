@@ -70,7 +70,8 @@ export async function signIn(page: Page, email: string, from: RegExp): Promise<v
   });
 
   await run(page, "sign in", 'input#email, input[type="password"]', async () => {
-    await page.getByPlaceholder("you@yourfirm.com").fill(email);
+    // Unit C: the placeholder now follows the register, so the field is found by id.
+    await page.locator("input#email").fill(email);
     await page.locator('input[type="password"]').fill(PASSWORD);
     await page.getByRole("button", { name: /^sign in$/i }).click();
     await page.waitForURL(/\/(onboarding|work)/, { timeout: 60_000 });
