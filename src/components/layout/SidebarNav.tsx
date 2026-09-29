@@ -101,11 +101,11 @@ function useCachedEngagementTasks(engagementId: string | undefined) {
   );
 }
 
-/** Unit 4a: move, rename and delete are offered to workers and admins, never
- *  to a coach or guest. The database still decides every write. */
+/** Unit 4a: move, rename and delete are offered to anyone on the member nav, never
+// to a guest (coaches use the guest nav). The database decides every write.
 function useCanEditContainers(): boolean {
   const { data: profile } = useProfile();
-  return Boolean(profile) && !roles.usesGuestNav(profile) && !roles.isCoach(profile);
+  return Boolean(profile) && !roles.usesGuestNav(profile);
 }
 
 /** One engagement row, at top level or nested under a client shelf. */
