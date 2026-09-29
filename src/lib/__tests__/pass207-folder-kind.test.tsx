@@ -76,7 +76,7 @@ describe("pass 207 folder kind", () => {
   });
 
   it("renders personal rows flat with no optgroup at all", () => {
-    mocks.profile = { org_type: "personal" };
+    mocks.profile = { org_type: "personal", role: "admin" };
     mocks.clients = [row("client-1", "Acme", "client"), row("folder-1", "Internal", "folder")];
     const { container } = renderPicker();
     expect(container.querySelectorAll("optgroup")).toHaveLength(0);
@@ -85,7 +85,7 @@ describe("pass 207 folder kind", () => {
   });
 
   it("never renders more than one group named Folders for personal", () => {
-    mocks.profile = { org_type: "personal" };
+    mocks.profile = { org_type: "personal", role: "admin" };
     mocks.clients = [row("client-1", "Acme", "client"), row("folder-1", "Internal", "folder")];
     const { container } = renderPicker();
     const folders = Array.from(container.querySelectorAll("optgroup")).filter(
@@ -95,7 +95,7 @@ describe("pass 207 folder kind", () => {
   });
 
   it("renders exactly one of each group for a company workspace", () => {
-    mocks.profile = { org_type: "company" };
+    mocks.profile = { org_type: "company", role: "admin" };
     mocks.clients = [row("client-1", "Acme", "client"), row("folder-1", "Internal", "folder")];
     const { container } = renderPicker();
     const clients = container.querySelectorAll('optgroup[label="Clients"]');
@@ -105,7 +105,7 @@ describe("pass 207 folder kind", () => {
   });
 
   it("reads Terms and Folders for a school workspace", () => {
-    mocks.profile = { org_type: "edu" };
+    mocks.profile = { org_type: "edu", role: "admin" };
     mocks.clients = [row("client-1", "Acme", "client"), row("folder-1", "Internal", "folder")];
     renderPicker();
     expect(screen.getByRole("group", { name: "Terms" })).toBeTruthy();
@@ -113,7 +113,7 @@ describe("pass 207 folder kind", () => {
   });
 
   it("names both create buttons for a company workspace", () => {
-    mocks.profile = { org_type: "company" };
+    mocks.profile = { org_type: "company", role: "admin" };
     renderPicker();
     expect(screen.getByRole("button", { name: "New client" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "New folder" })).toBeTruthy();
@@ -121,14 +121,14 @@ describe("pass 207 folder kind", () => {
   });
 
   it("names both create buttons for a school workspace", () => {
-    mocks.profile = { org_type: "edu" };
+    mocks.profile = { org_type: "edu", role: "admin" };
     renderPicker();
     expect(screen.getByRole("button", { name: "New term" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "New folder" })).toBeTruthy();
   });
 
   it("renders exactly one New control for a personal workspace", () => {
-    mocks.profile = { org_type: "personal" };
+    mocks.profile = { org_type: "personal", role: "admin" };
     renderPicker();
     expect(screen.getByRole("button", { name: "New folder" })).toBeTruthy();
     const newButtons = screen
@@ -138,7 +138,7 @@ describe("pass 207 folder kind", () => {
   });
 
   it("puts the personal New control in client mode", () => {
-    mocks.profile = { org_type: "personal" };
+    mocks.profile = { org_type: "personal", role: "admin" };
     renderPicker();
     fireEvent.click(screen.getByRole("button", { name: "New folder" }));
     // In personal, both creating === "client" and creating === "folder" render

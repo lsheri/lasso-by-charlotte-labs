@@ -28,21 +28,21 @@ function renderPicker() {
 
 describe("pass 203 client picker vocabulary", () => {
   it("keeps the company picker byte identical", () => {
-    mocks.profile = { org_type: "company" };
+    mocks.profile = { org_type: "company", role: "admin" };
     renderPicker();
     expect(screen.getByText("Client (optional)")).toBeTruthy();
     expect(screen.getByRole("option", { name: "No client" })).toBeTruthy();
   });
 
   it("uses personal workspace words", () => {
-    mocks.profile = { org_type: "personal" };
+    mocks.profile = { org_type: "personal", role: "admin" };
     renderPicker();
     expect(screen.getByText("Folder (optional)")).toBeTruthy();
     expect(screen.getByRole("option", { name: "No folder" })).toBeTruthy();
   });
 
   it("uses school workspace words", () => {
-    mocks.profile = { org_type: "edu" };
+    mocks.profile = { org_type: "edu", role: "admin" };
     renderPicker();
     expect(screen.getByText("Term (optional)")).toBeTruthy();
     expect(screen.getByRole("option", { name: "No term" })).toBeTruthy();
