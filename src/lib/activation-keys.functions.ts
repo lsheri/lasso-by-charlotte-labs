@@ -16,11 +16,16 @@ import { institutionToRecord } from "@/lib/affiliation.functions";
 const allowAttempt = createRateLimiter(5, 60_000);
 
 function outcome(reason: RedeemReason): RedeemOutcome & { institution_name?: string } {
-  return { ok: reason === "redeemed" || reason === "already_redeemed", reason, message: messageForReason(reason) };
+  return {
+    ok: reason === "redeemed" || reason === "already_redeemed" || reason === "already_member",
+    reason,
+    message: messageForReason(reason),
+  };
 }
 
 export type ProfileChoice =
   | { action: "use"; profile: { id: string; org_id: string } }
+  | { action: "none" }
   | { action: "refuse" };
 
 /**
@@ -43,7 +48,9 @@ export function chooseProfile(
     return { action: "refuse" };
   }
   if (owned) return { action: "use", profile: owned };
-  return { action: "refuse" };
+  // No workspace at all: legitimate for an org key. The database decides
+  // whether the key allows it.
+  return { action: "none" };
 }
 
 /**
