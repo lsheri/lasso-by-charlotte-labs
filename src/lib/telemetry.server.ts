@@ -73,6 +73,48 @@ export async function mirrorToPostHog(
 }
 
 /**
+ * Unit D7: join the anonymous signup funnel to the account, once, at sign-up.
+ *
+ * Exempt from the "every custom event goes through logEvent" rule because an
+ * alias is not a custom event: it is PostHog's identity merge instruction
+ * ($create_alias), it carries no dimensions, and it writes nothing to the
+ * events table. It goes out through the same server ingest as the mirror, so
+ * this file stays the one server place that talks to PostHog.
+ *
+ * The anonymous side is the same salted hash recordAnonymousEvent already
+ * sends (computeActorHash(`anon:${visitorId}`)). The raw visitor id is used
+ * only in memory to recompute it and is never stored. The account side is the
+ * auth user id the browser already identifies with. Idempotent at PostHog:
+ * re-aliasing the same pair is a no-op. Never throws.
+ */
+export async function aliasAnonymousVisitor(visitorId: string, userId: string): Promise<boolean> {
+  try {
+    if (!visitorId || !userId) return false;
+    const anonHash = await computeActorHash(`anon:${visitorId}`);
+    if (!anonHash) return false;
+    const response = await fetch(`${POSTHOG_HOST}/i/v0/e/`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      signal: AbortSignal.timeout(3000),
+      body: JSON.stringify({
+        api_key: POSTHOG_KEY,
+        event: "$create_alias",
+        distinct_id: userId,
+        properties: { alias: anonHash },
+      }),
+    });
+    if (!response.ok) {
+      console.error(`[telemetry] alias failed: ${response.status} ${await response.text()}`);
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error("[telemetry] alias threw:", (e as Error).message);
+    return false;
+  }
+}
+
+/**
  * Anonymous marketing views have no org and no user, so they get a constant
  * tenant bucket and a salted per-view actor hash. Still content-free.
  */

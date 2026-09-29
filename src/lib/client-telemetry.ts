@@ -1,4 +1,4 @@
-import { recordAnonymousEventFn } from "./telemetry.functions";
+import { aliasSignupVisitorFn, recordAnonymousEventFn } from "./telemetry.functions";
 import { logEvent } from "./telemetry";
 import { getPostHogDistinctId } from "./posthog-client";
 import type { TelemetryDims, TelemetryEvent } from "./telemetry-shared";
@@ -68,4 +68,30 @@ export function emitClientEvent(
   }).catch(() => {
     /* telemetry must never surface to the user */
   });
+}
+
+let aliasedUserId: string | null = null;
+
+/** Test seam. */
+export function resetSignupAlias(): void {
+  aliasedUserId = null;
+}
+
+/**
+ * Unit D7: at sign-up success only. Sends the browser's visitor id once per
+ * account so the server can alias the salted anonymous hash to the account.
+ * Missing visitor id means no alias. Never throws.
+ */
+export function aliasSignupVisitor(userId: string): void {
+  try {
+    if (!userId || aliasedUserId === userId) return;
+    const visitor = visitorField().visitor_id;
+    if (!visitor) return;
+    aliasedUserId = userId;
+    void aliasSignupVisitorFn({ data: { user_id: userId, visitor_id: visitor } }).catch(() => {
+      /* a failed alias loses a join, never an account */
+    });
+  } catch {
+    /* a failed alias loses a join, never an account */
+  }
 }
