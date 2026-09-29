@@ -446,6 +446,9 @@ export function SidebarNav({
         {coachingGroups.length === 0 ? shared : null}
         {[...coachingGroups, ...coachNavGroups].map((group) => (
           <Fragment key={group.label}>
+            {/* In a partner workspace Shared with me is the primary surface,
+                so it renders above the coaching group rather than after it. */}
+            {isPartnerOrg && group.id === "coaching" ? shared : null}
             <div>
               <div className="nb-group-header px-2">{group.label}</div>
               <div className="mt-2 flex flex-col gap-0.5">
@@ -478,7 +481,7 @@ export function SidebarNav({
                 )}
               </div>
             </div>
-            {group.id === "coaching" ? shared : null}
+            {!isPartnerOrg && group.id === "coaching" ? shared : null}
           </Fragment>
         ))}
       </nav>
