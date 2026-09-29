@@ -169,7 +169,7 @@ export function WelcomeBoardView({
           {WELCOME_COPY.askButton}
         </Button>
       </form>
-      {circled.size === 0 ? <p className="mt-1 text-[11.5px] text-muted-foreground">{WELCOME_COPY.askHint}</p> : null}
+      {circled.size === 0 ? <p className="mt-1 nb-type-small text-muted-foreground">{WELCOME_COPY.askHint}</p> : null}
       {answer ? (
         <div data-testid="welcome-answer" className="mt-3 rounded-[var(--radius-control)] border border-border bg-card p-3">
           <p className="font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">{WELCOME_COPY.answerLabel}</p>
@@ -180,7 +180,7 @@ export function WelcomeBoardView({
               </li>
             ))}
           </ul>
-          <p className="mt-2 text-[11.5px] text-muted-foreground">
+          <p className="mt-2 nb-type-small text-muted-foreground">
             {WELCOME_COPY.answerUsed}: {answer.map((c) => c.title).join(", ")}
           </p>
         </div>
