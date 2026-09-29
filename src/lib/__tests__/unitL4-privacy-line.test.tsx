@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen } from "@testing-library/react";
-import { type ReactNode } from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { Suspense, type ReactNode } from "react";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { NEUTRAL_COPY, REGISTER_COPY, type Register } from "@/lib/register";
 
@@ -54,21 +54,34 @@ const authOptions = (AuthRoute as unknown as { options: RouteOptions }).options;
 const onboardingOptions = (OnboardingRoute as unknown as { options: RouteOptions }).options;
 const registers = Object.keys(REGISTER_COPY) as Register[];
 
+beforeAll(async () => {
+  const auth = authOptions.component as unknown as { preload?: () => Promise<unknown> };
+  const onboarding = onboardingOptions.component as unknown as { preload?: () => Promise<unknown> };
+  await Promise.all([auth.preload?.(), onboarding.preload?.()]);
+}, 30_000);
 afterEach(cleanup);
 
 describe("Unit L4: register privacy line", () => {
   it.each(registers)("setup renders the %s privacy line", (register) => {
     mocks.search = { intent: register };
     const Setup = onboardingOptions.component;
-    render(<Setup />);
-    expect(screen.getByText(REGISTER_COPY[register].privacy)).toBeTruthy();
+    render(
+      <Suspense fallback={null}>
+        <Setup />
+      </Suspense>,
+    );
+    expect(await screen.findByText(REGISTER_COPY[register].privacy)).toBeTruthy();
   });
 
   it("auth without a door signal renders the neutral privacy line", () => {
     mocks.search = {};
     const Auth = authOptions.component;
-    render(<Auth />);
-    expect(screen.getByText(NEUTRAL_COPY.privacy)).toBeTruthy();
+    render(
+      <Suspense fallback={null}>
+        <Auth />
+      </Suspense>,
+    );
+    expect(await screen.findByText(NEUTRAL_COPY.privacy)).toBeTruthy();
   });
 
   it("changes only the company privacy string", () => {

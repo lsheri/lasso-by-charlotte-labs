@@ -448,7 +448,7 @@ function OnboardingInner() {
               <Button type="submit" className="w-full" disabled={pending}>
                 {pending ? "Setting up…" : REGISTER_SHARED_COPY.submit}
               </Button>
-              <p className="text-sm text-muted-foreground">{copy.privacy}</p>
+              <p className="text-base text-muted-foreground">{copy.privacy}</p>
               <p className="text-sm text-muted-foreground">{copy.claim}</p>
               <button
                 type="button"
