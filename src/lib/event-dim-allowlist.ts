@@ -154,6 +154,8 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "oneonone.saved_to_drive": ["kind"],
   "oneonone.session_created": ["kind"],
   "org.created": ["org_type", "register", "entry_door"],
+  "plans.action_clicked": ["action", "plan", "source"],
+  "plans.viewed": ["source"],
   "packet.viewed": [],
   "perf.interaction": ["dom_ready_ms", "duration_ms", "fcp_ms", "lcp_ms", "load_ms", "name", "phase", "route_class", "state", "surface", "ttfb_ms"],
   "perf.pageload": ["dom_ready_ms", "duration_ms", "fcp_ms", "lcp_ms", "load_ms", "name", "phase", "route_class", "state", "surface", "ttfb_ms"],
