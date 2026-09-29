@@ -14,7 +14,8 @@ vi.mock("@tanstack/react-router", async (orig) => ({
   },
   useNavigate: () => vi.fn(),
 }));
-vi.mock("@tanstack/react-start", () => ({
+vi.mock("@tanstack/react-start", async (orig) => ({
+  ...(await orig<object>()),
   useServerFn: () => vi.fn().mockResolvedValue({ ok: true }),
 }));
 
