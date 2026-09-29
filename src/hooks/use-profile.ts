@@ -3,6 +3,7 @@ import { useEffect, useSyncExternalStore } from "react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
+import type { OrgType } from "@/lib/org-type";
 
 
 export type Profile = {
@@ -14,7 +15,7 @@ export type Profile = {
   title_band: string | null;
   org_name: string;
   /** "company" for a firm, "edu" for a school workspace, "personal" otherwise. */
-  org_type: "company" | "personal" | "edu";
+  org_type: OrgType;
 
   onboarding: unknown;
   /** When this profile was created. Used for banded age only, never shown. */
@@ -220,7 +221,7 @@ export async function fetchProfileState(): Promise<ProfileState> {
         ? "company"
         : orgs?.settings?.["type"] === "edu"
           ? "edu"
-          : "personal") as "company" | "personal" | "edu",
+          : "personal") as OrgType,
 
     }));
   return { profiles, hasDeactivated: rows.some((row) => row.deactivated_at) };

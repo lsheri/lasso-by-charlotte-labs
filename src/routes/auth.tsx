@@ -15,6 +15,7 @@ import { markSignupSource, type SignupSource } from "@/lib/edu-entry";
 import { isPartnerSlug } from "@/lib/partners";
 import { cleanActivationKey, markActivationKey, readActivationKey } from "@/lib/key-entry";
 import { deriveRegister, NEUTRAL_COPY, REGISTER_COPY } from "@/lib/register";
+import type { IntentParam } from "@/lib/org-type";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -23,7 +24,7 @@ export const Route = createFileRoute("/auth")({
   ): {
     next?: string | undefined;
     invite?: string | undefined;
-    intent?: "company" | "personal" | "edu" | "invite" | undefined;
+    intent?: IntentParam | undefined;
     from?: SignupSource | undefined;
     key?: string | undefined;
   } => {
