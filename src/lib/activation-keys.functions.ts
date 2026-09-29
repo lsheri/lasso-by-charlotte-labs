@@ -158,14 +158,19 @@ export const redeemActivationKeyFn = createServerFn({ method: "POST" })
         if (reason === "redeemed") {
           try {
             const institution = institutionToRecord(inst?.slug) ?? "unknown";
-            const { recordEvent } = await import("./telemetry.server");
-            await recordEvent(context.supabase, {
-              eventType: "workspace.affiliated",
-              orgId: profile.org_id,
-              userId,
-              profileId: profile.id,
-              dims: { institution },
-            });
+            // With no local workspace (the "none" path) the org comes back in
+            // the database's result; the profile id simply does not exist yet.
+            const orgId = profile?.org_id ?? (typeof row.org_id === "string" ? row.org_id : undefined);
+            if (orgId) {
+              const { recordEvent } = await import("./telemetry.server");
+              await recordEvent(context.supabase, {
+                eventType: "workspace.affiliated",
+                orgId,
+                userId,
+                profileId: profile?.id,
+                dims: { institution },
+              });
+            }
           } catch {
             // Deliberately swallowed; see above.
           }
