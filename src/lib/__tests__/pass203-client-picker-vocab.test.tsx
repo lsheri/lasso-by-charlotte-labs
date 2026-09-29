@@ -6,7 +6,10 @@ import { ClientPicker } from "@/components/engagements/ClientPicker";
 import { DEFAULT_VOCAB } from "@/lib/edu-vocab";
 
 const mocks = vi.hoisted(() => ({
-  profile: { org_type: "company" } as { org_type: "company" | "personal" | "edu" },
+  profile: { org_type: "company", role: "admin" } as {
+    org_type: "company" | "personal" | "edu";
+    role: string;
+  },
 }));
 
 vi.mock("@/hooks/use-profile", () => ({
