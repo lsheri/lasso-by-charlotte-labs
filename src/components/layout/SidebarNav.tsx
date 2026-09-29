@@ -298,34 +298,24 @@ export function SidebarNav({
       ? { tasks: cachedTasks, workId: activeWorkId }
       : undefined;
 
-  // Engagements sit under their client, with quick folders and clientless
-  // engagements flat at top level. Grouping reads only the joined relation.
-  const { groups, flat } = groupEngagementsByClient(
-    (engagements ?? []) as unknown as NavEngagement[],
+  const engagementList = (engagements ?? []) as unknown as NavEngagement[];
+  // Only the synthetic groupings (clientless work, quick folders) come from here.
+  const { groups } = groupEngagementsByClient(engagementList);
+  // Unit 3c: the container tree is built from the workspace's own container
+  // rows plus workboards. Built from workboard joins alone, a client or folder
+  // with nothing in it was in no group and rendered nothing. A guest never
+  // reads the clients table: they see only containers behind shared boards.
+  const { data: clientRows } = useClients(guestNav ? undefined : profile?.org_id);
+  const containerRows = mergeContainerRows(clientRows ?? [], engagementList);
+  const containerRoots = buildContainerTree(containerRows, engagementList);
+  const split = splitsByKind(vocab);
+  const clientRoots = flattenForSidebar(
+    containerRoots.filter((node) => !split || node.kind === "client"),
   );
-  // Folders get their own section only where the split means something and a
-  // folder actually exists. Rows come from the joined relation only.
-  const containerRows = containerRowsFromEngagements(
-    (engagements ?? []) as unknown as NavEngagement[],
-  );
-  const { foldersUnderClient, topLevelFolders } = partitionContainers(
-    containerRows,
-    (engagements ?? []) as unknown as NavEngagement[],
-  );
-  const showFolders = splitsByKind(vocab) && topLevelFolders.length > 0;
-  // A shelf is removed from this list only because another section draws it,
-  // never merely because it is a folder. Where nothing else renders a folder,
-  // its ordinary client shelf is the only place its work can appear.
-  const renderedElsewhere = new Set<string>();
-  for (const rows of foldersUnderClient.values()) {
-    for (const { node } of rows) renderedElsewhere.add(node.clientId);
-  }
-  if (showFolders) {
-    for (const { node } of topLevelFolders) renderedElsewhere.add(node.clientId);
-  }
-  const clientShelves = groups.filter(
-    (shelf) => !isSyntheticShelf(shelf.clientId) && !renderedElsewhere.has(shelf.clientId),
-  );
+  const topLevelFolders = split
+    ? flattenForSidebar(containerRoots.filter((node) => node.kind === "folder"))
+    : [];
+  const showFolders = topLevelFolders.length > 0;
   const syntheticShelves = groups.filter((shelf) => isSyntheticShelf(shelf.clientId));
   const [collapsedClients, setCollapsedClients] = useState<string[]>(() => readCollapsedClients());
   function toggleClient(clientId: string) {
@@ -603,7 +593,14 @@ export function SidebarNav({
                       scope={scopeFor(engagement.id)}
                     />
                   ))}
-                  {clientShelves.map((shelf) => renderShelf(shelf))}
+                  <FolderRows
+                    rows={clientRoots}
+                    collapsedIds={collapsedClients}
+                    onToggle={toggleClient}
+                    onNavigate={onNavigate}
+                    newEngagementLabel={vocab.newEngagement}
+                    scopeFor={scopeFor}
+                  />
                   {showFolders ? (
                     <FolderSection
                       rows={topLevelFolders}
