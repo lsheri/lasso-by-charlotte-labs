@@ -137,7 +137,7 @@ export function KeyRequestsPage() {
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!canSubmit || !profile || kind === "" || submit.isPending) return;
+    if (!canSubmit || !profile || submit.isPending) return;
     setResult(null);
     submit.mutate({
       partner_org_id: profile.org_id,

@@ -16,6 +16,7 @@ const { requirePartnerWorkspace } = await import("@/lib/partner-guard");
 const { KeyRequestsPage, adminLink, attendeeLink, parseEmails } = await import("@/pages/KeyRequestsPage");
 
 afterEach(cleanup);
+globalThis.ResizeObserver ??= class { observe() {} unobserve() {} disconnect() {} };
 
 describe("partner key requests", () => {
   it("redirects a non-partner workspace away", async () => {
