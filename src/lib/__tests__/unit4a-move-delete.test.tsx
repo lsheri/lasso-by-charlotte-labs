@@ -1,7 +1,6 @@
 // @vitest-environment jsdom
 import { readFileSync } from "node:fs";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { deleteConfirmLine, deletedLine } from "@/lib/container-actions";
@@ -103,15 +102,14 @@ describe("unit 4a status replies", () => {
 
 describe("unit 4a keyboard path and events", () => {
   it("opens the menu from the keyboard and deletes with the lifted confirmation", async () => {
-    const user = userEvent.setup();
     mocks.deleteContainer.mockResolvedValue({ status: "deleted", lifted_workboards: 2, lifted_folders: 1, lifted_items: 0, lifted_to: "c1" });
     render(<Harness target={folder} />);
     const trigger = screen.getByRole("button", { name: "More actions for Folder One" });
     trigger.focus();
-    await user.keyboard("{Enter}");
-    await user.click(await screen.findByRole("menuitem", { name: "Delete" }));
+    fireEvent.keyDown(trigger, { key: "Enter" });
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Delete" }));
     expect(await screen.findByText("Folder One is removed. The 2 workboards and 1 folder inside it move up to ABC Co.")).toBeTruthy();
-    await user.click(screen.getByRole("button", { name: "Remove" }));
+    fireEvent.click(screen.getByRole("button", { name: "Remove" }));
     await waitFor(() => expect(mocks.toastSuccess).toHaveBeenCalled());
     expect(mocks.toastSuccess).toHaveBeenCalledWith("Folder One removed. 2 workboards and 1 folder moved up to ABC Co.");
     expect(mocks.logEvent).toHaveBeenCalledWith("container.deleted", "o1", {
@@ -122,27 +120,27 @@ describe("unit 4a keyboard path and events", () => {
   });
 
   it("fires no event on a refusal and shows the database's words", async () => {
-    const user = userEvent.setup();
     mocks.moveWorkboard.mockRejectedValue(new Error("You cannot move that."));
     render(<Harness target={{ type: "workboard", id: "e1", name: "Board", clientId: "f1" }} />);
-    screen.getByRole("button", { name: "More actions for Board" }).focus();
-    await user.keyboard("{Enter}");
-    await user.click(await screen.findByRole("menuitem", { name: "Move to…" }));
+    const trigger = screen.getByRole("button", { name: "More actions for Board" });
+    trigger.focus();
+    fireEvent.keyDown(trigger, { key: "Enter" });
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Move to…" }));
     fireEvent.change(await screen.findByLabelText("Destination"), { target: { value: "" } });
-    await user.click(screen.getByRole("button", { name: "Move" }));
+    fireEvent.click(screen.getByRole("button", { name: "Move" }));
     await waitFor(() => expect(mocks.toastError).toHaveBeenCalledWith("You cannot move that."));
     expect(mocks.logEvent).not.toHaveBeenCalled();
   });
 
   it("moves a workboard to top level with the added dims", async () => {
-    const user = userEvent.setup();
     mocks.moveWorkboard.mockResolvedValue(undefined);
     render(<Harness target={{ type: "workboard", id: "e1", name: "Board", clientId: "f1" }} />);
-    screen.getByRole("button", { name: "More actions for Board" }).focus();
-    await user.keyboard("{Enter}");
-    await user.click(await screen.findByRole("menuitem", { name: "Move to…" }));
+    const trigger = screen.getByRole("button", { name: "More actions for Board" });
+    trigger.focus();
+    fireEvent.keyDown(trigger, { key: "Enter" });
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Move to…" }));
     fireEvent.change(await screen.findByLabelText("Destination"), { target: { value: "" } });
-    await user.click(screen.getByRole("button", { name: "Move" }));
+    fireEvent.click(screen.getByRole("button", { name: "Move" }));
     await waitFor(() => expect(mocks.moveWorkboard).toHaveBeenCalledWith({ engagementId: "e1", clientId: null }));
     expect(mocks.logEvent).toHaveBeenCalledWith("engagement.updated", "o1", { moved: "true", to_container: "false" });
   });
