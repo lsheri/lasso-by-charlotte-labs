@@ -148,6 +148,39 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_actions: {
+        Row: {
+          action: string
+          actor_user_id: string | null
+          created_at: string
+          id: string
+          payload: Json
+          target_id: string | null
+          target_kind: string | null
+          target_label: string | null
+        }
+        Insert: {
+          action: string
+          actor_user_id?: string | null
+          created_at?: string
+          id?: string
+          payload?: Json
+          target_id?: string | null
+          target_kind?: string | null
+          target_label?: string | null
+        }
+        Update: {
+          action?: string
+          actor_user_id?: string | null
+          created_at?: string
+          id?: string
+          payload?: Json
+          target_id?: string | null
+          target_kind?: string | null
+          target_label?: string | null
+        }
+        Relationships: []
+      }
       ai_costs_daily: {
         Row: {
           amount_usd: number
@@ -2527,6 +2560,97 @@ export type Database = {
           },
         ]
       }
+      key_requests: {
+        Row: {
+          admin_email: string | null
+          admin_invite_code: string | null
+          allowed_domains: string[] | null
+          client_name: string
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          decision_note: string | null
+          emails: string[]
+          ends_on: string | null
+          id: string
+          issued_code: string | null
+          note: string | null
+          partner_org_id: string
+          requested_by: string | null
+          seat_count: number
+          starts_on: string | null
+          status: string
+          updated_at: string
+          workspace_kind: string
+        }
+        Insert: {
+          admin_email?: string | null
+          admin_invite_code?: string | null
+          allowed_domains?: string[] | null
+          client_name: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          emails?: string[]
+          ends_on?: string | null
+          id?: string
+          issued_code?: string | null
+          note?: string | null
+          partner_org_id: string
+          requested_by?: string | null
+          seat_count: number
+          starts_on?: string | null
+          status?: string
+          updated_at?: string
+          workspace_kind: string
+        }
+        Update: {
+          admin_email?: string | null
+          admin_invite_code?: string | null
+          allowed_domains?: string[] | null
+          client_name?: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          emails?: string[]
+          ends_on?: string | null
+          id?: string
+          issued_code?: string | null
+          note?: string | null
+          partner_org_id?: string
+          requested_by?: string | null
+          seat_count?: number
+          starts_on?: string | null
+          status?: string
+          updated_at?: string
+          workspace_kind?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "key_requests_issued_code_fkey"
+            columns: ["issued_code"]
+            isOneToOne: false
+            referencedRelation: "activation_keys"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "key_requests_partner_org_id_fkey"
+            columns: ["partner_org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "key_requests_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mcp_tokens: {
         Row: {
           created_at: string
@@ -2842,6 +2966,36 @@ export type Database = {
           note?: string | null
           notify_status?: string
           team_size?: string
+        }
+        Relationships: []
+      }
+      platform_admins: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          disabled_at: string | null
+          display_name: string | null
+          id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          disabled_at?: string | null
+          display_name?: string | null
+          id?: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          disabled_at?: string | null
+          display_name?: string | null
+          id?: string
+          role?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -4412,6 +4566,139 @@ export type Database = {
     Functions: {
       active_org_id: { Args: never; Returns: string }
       active_profile_id: { Args: never; Returns: string }
+      admin_approve_request: {
+        Args: {
+          p_admin_link_days?: number
+          p_institution_id: string
+          p_note?: string
+          p_request_id: string
+        }
+        Returns: Json
+      }
+      admin_create_workspace: {
+        Args: {
+          p_admin_email?: string
+          p_admin_link_days?: number
+          p_allowed_domains?: string[]
+          p_ends_at?: string
+          p_name: string
+          p_plan?: string
+          p_seats: number
+          p_signup_source?: string
+          p_source?: string
+          p_type: string
+          p_with_admin_link?: boolean
+        }
+        Returns: Json
+      }
+      admin_decide_request: {
+        Args: {
+          p_code?: string
+          p_note?: string
+          p_request_id: string
+          p_status: string
+        }
+        Returns: undefined
+      }
+      admin_entitlement_summary: { Args: never; Returns: Json }
+      admin_institutions: {
+        Args: never
+        Returns: {
+          id: string
+          name: string
+          slug: string
+        }[]
+      }
+      admin_key_overview: {
+        Args: never
+        Returns: {
+          code: string
+          expires_at: string
+          institution_slug: string
+          kind: string
+          label: string
+          max_uses: number
+          register: string
+          revoked_at: string
+          seats: number
+          state: string
+          target_org_id: string
+          target_org_name: string
+          target_org_type: string
+          uses: number
+        }[]
+      }
+      admin_log: {
+        Args: {
+          p_action: string
+          p_id: string
+          p_kind: string
+          p_label: string
+          p_payload: Json
+        }
+        Returns: undefined
+      }
+      admin_mint_key: {
+        Args: {
+          p_code?: string
+          p_expires_at?: string
+          p_institution_id?: string
+          p_kind?: string
+          p_label?: string
+          p_max_uses?: number
+          p_org_id?: string
+          p_register?: string
+          p_seats?: number
+        }
+        Returns: string
+      }
+      admin_revoke_key: {
+        Args: { p_code: string; p_reason?: string }
+        Returns: boolean
+      }
+      admin_workspace_activity: {
+        Args: never
+        Returns: {
+          actors_30d: number
+          days_quiet: number
+          ent_plan: string
+          events_30d: number
+          events_total: number
+          first_event: string
+          last_event: string
+          members_active: number
+          org_id: string
+          org_name: string
+          org_type: string
+        }[]
+      }
+      admin_workspaces: {
+        Args: never
+        Returns: {
+          active_days: number
+          active_for: string
+          admins: number
+          allowed_domains: string
+          created_at: string
+          days_to_expiry: number
+          ent_ends_at: string
+          ent_plan: string
+          ent_seats: number
+          ent_source: string
+          ent_starts_at: string
+          ent_status: string
+          institution_slug: string
+          is_demo: boolean
+          lifecycle: string
+          members_active: number
+          members_deactivated: number
+          org_id: string
+          org_name: string
+          org_type: string
+          seats_free: number
+          signup_source: string
+        }[]
+      }
       analytics_insert: {
         Args: { p_row: Json; p_table: string }
         Returns: undefined
@@ -4512,9 +4799,14 @@ export type Database = {
       is_active_org: { Args: { o: string }; Returns: boolean }
       is_engagement_editor: { Args: { eng: string }; Returns: boolean }
       is_engagement_member: { Args: { eng: string }; Returns: boolean }
+      is_free_mail: { Args: { p_domain: string }; Returns: boolean }
       is_member_of: { Args: { p_org: string }; Returns: boolean }
       is_my_active_profile: { Args: { p: string }; Returns: boolean }
       is_my_profile: { Args: { p: string }; Returns: boolean }
+      is_platform_admin: {
+        Args: { p_min_role?: string; p_user: string }
+        Returns: boolean
+      }
       join_org_with_invite: {
         Args: { p_code: string; p_display_name: string }
         Returns: string
@@ -4570,6 +4862,10 @@ export type Database = {
       my_profile_id: { Args: never; Returns: string }
       my_profile_ids: { Args: never; Returns: string[] }
       my_role: { Args: never; Returns: Database["public"]["Enums"]["app_role"] }
+      org_key_target_ok: {
+        Args: { p_type: string }
+        Returns: Record<string, unknown>
+      }
       purge_workboard_annotations: { Args: never; Returns: number }
       reactivate_member: { Args: { p_profile: string }; Returns: undefined }
       record_coaching_disclosure: {
