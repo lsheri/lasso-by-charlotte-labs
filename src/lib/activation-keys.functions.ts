@@ -131,7 +131,12 @@ export const redeemActivationKeyFn = createServerFn({ method: "POST" })
         return outcome("error");
       }
 
-      const row = result as { ok?: unknown; reason?: unknown; institution_id?: unknown };
+      const row = result as {
+        ok?: unknown;
+        reason?: unknown;
+        institution_id?: unknown;
+        org_id?: unknown;
+      };
       const reason: RedeemReason = isRedeemReason(row.reason) ? row.reason : "error";
       const base = { ok: row.ok === true, reason, message: messageForReason(reason) };
 
