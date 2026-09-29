@@ -13,6 +13,7 @@ import { checkSignupInvite } from "@/lib/invites.functions";
 import { type SignupInviteCheck } from "@/lib/signup-invite";
 import { markSignupSource, type SignupSource } from "@/lib/edu-entry";
 import { isPartnerSlug } from "@/lib/partners";
+import { cleanActivationKey, markActivationKey, readActivationKey } from "@/lib/key-entry";
 import { deriveRegister, NEUTRAL_COPY, REGISTER_COPY } from "@/lib/register";
 
 export const Route = createFileRoute("/auth")({
@@ -24,12 +25,15 @@ export const Route = createFileRoute("/auth")({
     invite?: string | undefined;
     intent?: "company" | "personal" | "edu" | "invite" | undefined;
     from?: SignupSource | undefined;
+    key?: string | undefined;
   } => {
     const next = search["next"];
     const intent = search["intent"];
     const invite = search["invite"];
     const from = search["from"];
+    const key = cleanActivationKey(search["key"]);
     return {
+      ...(key ? { key } : {}),
       ...(isPartnerSlug(from) || from === "edu" || from === "direct" ? { from } : {}),
       ...(typeof invite === "string" && invite ? { invite } : {}),
       ...(typeof next === "string" && next.startsWith("/") ? { next } : {}),
@@ -79,12 +83,15 @@ function joinTarget(next: string | undefined) {
 
 function AuthPage() {
   const navigate = useNavigate();
-  const { next, intent, invite, from } = Route.useSearch();
+  const { next, intent, invite, from, key } = Route.useSearch();
   // Pass 185: the front door someone came through, remembered until the
   // workspace is created. Nothing else about the page changes.
   useEffect(() => {
     markSignupSource(from);
   }, [from]);
+  useEffect(() => {
+    markActivationKey(key);
+  }, [key]);
   const checkInvite = useServerFn(checkSignupInvite);
   // Unit C: the email field speaks the register; with no signal it implies
   // nothing at all, rather than reading as a company.
@@ -150,7 +157,11 @@ function AuthPage() {
       // Unit C: the derived register rides the confirmation link, so it
       // survives being opened on another device. No signal, nothing carried.
       const register = deriveRegister(intent);
-      const onboardingPath = register ? `/onboarding?intent=${register}` : "/onboarding";
+      const basePath = register ? `/onboarding?intent=${register}` : "/onboarding";
+      const carriedKey = key ?? readActivationKey();
+      const onboardingPath = carriedKey
+        ? `${basePath}${register ? "&" : "?"}key=${encodeURIComponent(carriedKey)}`
+        : basePath;
       const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
