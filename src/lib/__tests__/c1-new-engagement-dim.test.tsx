@@ -86,7 +86,7 @@ describe("C1 the from dim", () => {
     fireEvent.change(screen.getByLabelText("Code"), { target: { value: "NW-1" } });
     fireEvent.change(screen.getByLabelText("Title"), { target: { value: "Pricing" } });
     fireEvent.change(screen.getByLabelText("Brief (optional)"), { target: { value: "A brief." } });
-    fireEvent.click(screen.getByText("Create engagement"));
+    fireEvent.click(screen.getByText("Create workboard"));
 
     await waitFor(() => expect(mocks.events.length).toBe(1));
     expect(mocks.events[0]).toEqual({
