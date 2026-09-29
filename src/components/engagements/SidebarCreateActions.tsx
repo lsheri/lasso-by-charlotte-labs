@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { useInvalidateClients } from "@/hooks/use-clients";
 import { useProfile } from "@/hooks/use-profile";
 import { splitsByKind, vocabFor } from "@/lib/edu-vocab";
+import { canManageMembers } from "@/lib/role-access";
 
 /**
  * Standing create actions in the sidebar, beside New workboard, shown
@@ -76,7 +77,7 @@ export function SidebarCreateActions({ empty }: { empty: boolean }) {
 
   return (
     <>
-      {splitsByKind(vocab) ? (
+      {splitsByKind(vocab) && canManageMembers(profile) ? (
         <button type="button" className="nb-nav-item w-full text-left" onClick={() => setCreating("client")}>
           <GraphiteIcon name="plus" size={20} />
           <span>{`New ${vocab.client.toLowerCase()}`}</span>

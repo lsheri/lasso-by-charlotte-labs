@@ -16,8 +16,8 @@ export type ContainerActionsCopy = {
 };
 
 export const CONTAINER_ACTIONS_COPY: ContainerActionsCopy = {
-  confirmTitle: (name) => `Remove ${name}?`,
-  confirmAction: "Remove",
+  confirmTitle: (name) => `Delete ${name}?`,
+  confirmAction: "Delete",
   cancel: "Cancel",
   rename: "Rename",
   moveTo: "Move to…",
