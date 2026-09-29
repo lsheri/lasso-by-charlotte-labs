@@ -41,6 +41,7 @@ export const Route = createFileRoute("/auth")({
       ...(intent === "company" ||
       intent === "personal" ||
       intent === "edu" ||
+      intent === "partner" ||
       intent === "invite"
         ? { intent }
         : {}),

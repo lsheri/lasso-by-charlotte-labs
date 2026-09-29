@@ -9,7 +9,8 @@ export type Register = OrgType;
 
 /** Returns the register a door implies, or null when there is no door signal. */
 export function deriveRegister(intent: unknown): Register | null {
-  if (intent === "company" || intent === "personal" || intent === "edu") return intent;
+  if (intent === "company" || intent === "personal" || intent === "edu" || intent === "partner")
+    return intent;
   if (readEduIntent()) return "edu";
   return null;
 }
@@ -55,6 +56,17 @@ export const REGISTER_COPY: Readonly<Record<Register, RegisterCopy>> = {
     workspaceField: false,
     claim: "Your AI chats are where the thinking happened. Put them where the work is.",
     privacy: "Not your professor, not your school.",
+  },
+  partner: {
+    emailLabel: "WORK EMAIL",
+    emailPlaceholder: "you@yourfirm.com",
+    microLabel: "Your firm",
+    setupBody: "Two details and you are in. Both are yours to change later.",
+    workspaceField: true,
+    workspaceLabel: "Workspace name",
+    workspacePlaceholder: "Harbor Practice",
+    claim: "Every engagement in one place, with the work people shared next to it.",
+    privacy: "You see what people send you, and nothing else.",
   },
 };
 
@@ -105,5 +117,11 @@ export const FLOW_PREVIEW_COPY: Readonly<Record<Register, readonly FlowPreviewSt
     { label: "It flows into Lasso", body: "Only what you choose. Private on arrival." },
     { label: "You file it", body: "Put it under a class or project, next to the coursework it belongs to." },
     { label: "You choose what to share", body: "Nothing leaves your workspace by itself. Share one piece when you want to." },
+  ],
+  partner: [
+    { label: "You set up the engagement", body: "A client, a cohort, the workstreams you will run." },
+    { label: "People join with a link", body: "Their workspace stays theirs. Yours holds the engagement." },
+    { label: "They share what they choose", body: "A board, a transcript, or nothing at all, at the depth they agreed to." },
+    { label: "You coach from what arrived", body: "Never their raw files. Only what they sent you." },
   ],
 };

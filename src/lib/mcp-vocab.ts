@@ -60,6 +60,17 @@ export const MCP_VOCAB: Record<McpWorkspaceType, McpVocab> = {
     createBoardTool: "create_assignment",
     shared: false,
   },
+  // A partner firm runs client engagements, so it speaks the consulting words. What differs is who is on the board, not what the board is called.
+  partner: {
+    container: "client",
+    containers: "clients",
+    board: "engagement",
+    boards: "engagements",
+    workstream: "workstream",
+    createContainerTool: "create_client",
+    createBoardTool: "create_engagement",
+    shared: true,
+  },
 };
 
 /**
