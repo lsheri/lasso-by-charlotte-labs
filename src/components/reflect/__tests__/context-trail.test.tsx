@@ -160,7 +160,7 @@ describe("ContextAudit", () => {
     ["picker", 2, "Your choice in the work list", "YOUR LIST"],
     ["pointed", 1, "What you pointed at with @", "@"],
     ["workstream", 3, "One workstream", "WORKSTREAM"],
-    ["all", null, "Nothing picked: everything in this engagement", null],
+    ["all", null, "Nothing picked: everything in this workboard", null],
   ] as const)("explains %s scope and applies its closed tag rule", (source, picked, why, tag) => {
     render(<ContextAudit manifest={{ ...manifest, scope: { source, picked } }} />);
     if (tag) expect(screen.getByTestId("scope-closed-tag").textContent).toBe(tag);

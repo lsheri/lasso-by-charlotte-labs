@@ -137,7 +137,7 @@ describe("Home", () => {
 
     mocks.engagements = [{ id: "one" }, { id: "two" }, { id: "three" }];
     render(<HomeBoard />);
-    expect(screen.getByText("HOME · 3 ENGAGEMENTS")).toBeTruthy();
+    expect(screen.getByText("HOME · 3 WORKBOARDS")).toBeTruthy();
     expect(document.querySelectorAll('[data-lasso-thinking-mark="signature"]')).toHaveLength(1);
   });
 
