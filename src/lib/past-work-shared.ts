@@ -66,7 +66,7 @@ export type PastWorkSearchResult = {
 
 export const PAST_WORK_PROMPT = `You are helping a colleague find work this firm has already shipped that resembles the work they are about to do.
 
-You are given a description of their work and a list of shipped pieces. Each piece has an id, a title, a deliverable kind, the engagement it belongs to, the engagement brief where one exists, and a short summary where one exists.
+You are given a description of their work and a list of shipped pieces. Each piece has an id, a title, a deliverable kind, the workboard it belongs to, the workboard brief where one exists, and a short summary where one exists.
 
 Return STRICT JSON and nothing else:
 { "matches": [{ "work_item_id": string, "why": string, "look_at": string }] }
@@ -91,7 +91,7 @@ export function buildPastWorkMessages(
         `TITLE: ${candidate.title}`,
         `KIND: ${candidate.kind}`,
         candidate.engagement_title
-          ? `ENGAGEMENT: ${[candidate.engagement_code, candidate.engagement_title]
+          ? `WORKBOARD: ${[candidate.engagement_code, candidate.engagement_title]
               .filter(Boolean)
               .join(" ")}`
           : null,

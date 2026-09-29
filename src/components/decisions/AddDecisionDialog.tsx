@@ -99,13 +99,13 @@ export function AddDecisionDialog({
             <Textarea rows={3} value={why} onChange={(e) => setWhy(e.target.value)} />
           </div>
           <div>
-            <div className="micro-label mb-1.5">Engagement (optional)</div>
+            <div className="micro-label mb-1.5">Workboard (optional)</div>
             <select
               value={engagementId}
               onChange={(e) => setEngagementId(e.target.value)}
               className="w-full rounded-[var(--radius)] border border-border bg-card px-3 py-2 text-sm"
             >
-              <option value="">No engagement</option>
+              <option value="">No workboard</option>
               {(engagements ?? []).map((e) => (
                 <option key={e.id} value={e.id}>
                   {engagementLabel(e)}

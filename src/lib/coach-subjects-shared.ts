@@ -114,7 +114,7 @@ export function composeCoachSubjects(
           : "Not set",
         engagement_title: engagement?.engagements
           ? engagementDisplayTitle(engagement.engagements)
-          : "Engagement",
+          : "Workboard",
         subject_id: row.profile_id,
         subject_name: row.profiles?.display_name ?? "Colleague",
         access_level: accessLevel,

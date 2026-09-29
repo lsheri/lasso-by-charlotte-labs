@@ -16,7 +16,7 @@ export const WHAT_FED_THIS_EMPTY_HINT =
   "Add a finished deliverable to trace where its facts came from.";
 
 export const WHAT_FED_THIS_INFO =
-  "Circle any fact on your finished work and Lasso finds where it came from in this engagement's record.";
+  "Circle any fact on your finished work and Lasso finds where it came from in this workboard's record.";
 
 /** A fuller spider web mark, larger and more recognisable, drawn in graphite. */
 export function WebMark({ size = 18 }: { size?: number } = {}) {

@@ -152,7 +152,7 @@ export async function buildEngagementCorpus(
   }
 
   const header = [
-    `ENGAGEMENT ${engagement ? (engagementDisplayCode(engagement) ?? "(folder)") : ""}: ${engagement ? engagementDisplayTitle(engagement) : ""}`,
+    `WORKBOARD ${engagement ? (engagementDisplayCode(engagement) ?? "(folder)") : ""}: ${engagement ? engagementDisplayTitle(engagement) : ""}`,
     engagement && clientDisplayName(engagement) ? `Client: ${clientDisplayName(engagement)}` : null,
     engagement?.term_label ? `Term: ${engagement.term_label}` : null,
     engagement?.brief ? `Brief: ${engagement.brief}` : null,

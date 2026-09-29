@@ -180,7 +180,7 @@ const companyMember: Walkthrough = {
   variant: "company_member",
   title: "How Lasso works",
   intro:
-    "Your work is captured from the AI you already use, it lands private, and you decide what gets mapped to an engagement. Ten minutes here saves you a week of guessing.",
+    "Your work is captured from the AI you already use, it lands private, and you decide what gets mapped to a workboard. Ten minutes here saves you a week of guessing.",
   sections: [
     sayTheSentence(),
     connectAi(),
@@ -189,17 +189,17 @@ const companyMember: Walkthrough = {
     ),
     {
       id: "engagements",
-      title: "What an engagement is",
+      title: "What a workboard is",
       body: [
-        "An engagement is one body of client work, held by your organization. It has workstreams inside it, and the people who work on it.",
-        "Engagements are the shape your organization already thinks in, so the record reads the same way for everyone.",
+        "An workboard is one body of client work, held by your organization. It has workstreams inside it, and the people who work on it.",
+        "Workboards are the shape your organization already thinks in, so the record reads the same way for everyone.",
       ],
     },
     {
       id: "mapping",
       title: "Mapping, and who can see it",
       body: [
-        "Mapping an item to an engagement is the moment it stops being only yours. From then on it can be read by the people on that engagement and by anyone the engagement is shared with.",
+        "Mapping an item to a workboard is the moment it stops being only yours. From then on it can be read by the people on that workboard and by anyone the workboard is shared with.",
         "Unmapped work is never included, and marking an item private keeps it out even after mapping.",
       ],
       video: VIDEO_FED_THIS,
@@ -208,7 +208,7 @@ const companyMember: Walkthrough = {
       id: "notes_about_your_work",
       title: "Where notes about your work appear",
       body: [
-        "When a coach or a lead writes about your work, it appears under Notes about your work, and on the engagement it came from. Newest first, in their words.",
+        "When a coach or a lead writes about your work, it appears under Notes about your work, and on the workboard it came from. Newest first, in their words.",
         "Nobody is shown whether you read a note.",
       ],
     },
@@ -216,7 +216,7 @@ const companyMember: Walkthrough = {
   next: {
     label: "Map your first piece of work",
     to: "/work",
-    note: "Pick one item in Work and give it a home on an engagement.",
+    note: "Pick one item in Work and give it a home on a workboard.",
   },
 };
 
@@ -230,7 +230,7 @@ const coach: Walkthrough = {
       id: "what_you_can_see",
       title: "What you can and cannot see",
       body: [
-        "You see the engagements someone shared with you, and the work they mapped to those engagements. That is the whole of it.",
+        "You see the workboards someone shared with you, and the work they mapped to those workboards. That is the whole of it.",
         "Private work, unmapped work and raw files stay with the person. You are not shown who read what, and neither is anyone else.",
       ],
     },

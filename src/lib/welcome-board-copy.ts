@@ -36,24 +36,24 @@ const C3: ByRegister = {
 };
 const C4 = shared({ title: "Circle a few cards and ask", body: "Select any items on this board, then ask a question about them. Lasso answers from those items only, and shows you which ones it used." });
 const C5: ByRegister = {
-  company: { title: "Map work to an engagement and a workstream", body: "Nothing is mapped until you map it. Drag an item onto a workstream and it becomes part of that record." },
-  partner: { title: "Map work to an engagement and a workstream", body: "Nothing is mapped until you map it. Drag an item onto a workstream and it becomes part of that record." },
-  personal: { title: "File work into a project and a step", body: "Nothing is filed until you file it. Drag an item onto a step and it becomes part of that project." },
-  edu: { title: "File work into a class and an assignment", body: "Nothing is filed until you file it. Drag an item onto an assignment and it becomes part of that class." },
+  company: { title: "Map work to a workboard and a workstream", body: "Nothing is mapped until you map it. Drag an item onto a workstream and it becomes part of that record." },
+  partner: { title: "Map work to a workboard and a workstream", body: "Nothing is mapped until you map it. Drag an item onto a workstream and it becomes part of that record." },
+  personal: { title: "File work into a workboard and a step", body: "Nothing is filed until you file it. Drag an item onto a step and it becomes part of that project." },
+  edu: { title: "File work into a class and a workboard", body: "Nothing is filed until you file it. Drag an item onto a workboard and it becomes part of that class." },
 };
 const C6 = shared({ title: "Open the exact turn a claim came from", body: "Every captured conversation keeps its turns in order. Open one and you land on the exact message, not a summary of it." });
 const C7 = shared({ title: "Nothing leaves without your yes", body: "No prompt, transcript, document, draft or board leaves your workspace unless you send it. The yes is per item and you can take it back." });
 const C8: ByRegister = {
-  company: { title: "What a coach sees, and when", body: "A coach sees what you share with them, on the engagement you shared it on. They never see your raw files, and never anything you have not sent." },
+  company: { title: "What a coach sees, and when", body: "A coach sees what you share with them, on the workboard you shared it on. They never see your raw files, and never anything you have not sent." },
   personal: { title: "Invite a coach whenever you want", body: "There is nobody looking at this workspace. If you want a second pair of eyes, you invite them, and you choose what they see." },
   edu: { title: "Share one piece of work when you choose", body: "Sharing is one item at a time, chosen by you, and reversible. Nothing is shared by default." },
-  partner: { title: "People join with a link", body: "Each attendee gets their own workspace. You set up the engagement, they choose what to share into it." },
+  partner: { title: "People join with a link", body: "Each attendee gets their own workspace. You set up the workboard, they choose what to share into it." },
 };
 const C9: ByRegister = {
   company: { title: "Your organization sees patterns, never your threads", body: "Anything your organization sees is aggregate and floored, so no one person can be read out of it. There is no ranking of people here and no number to ask for." },
   personal: { title: "Nobody reads your threads", body: "Not us, not anyone else. There is no view of this workspace that belongs to someone other than you." },
   edu: { title: "Not your professor, not your school", body: "Your institution has no view into this workspace. Not your drafts, not your prompts, not how long you spent." },
-  partner: { title: "You see what people send you, and nothing else", body: "Every attendee owns their own workspace. What arrives on your side is what they chose to send, and they keep all of it when the engagement ends." },
+  partner: { title: "You see what people send you, and nothing else", body: "Every attendee owns their own workspace. What arrives on your side is what they chose to send, and they keep all of it when the workboard ends." },
 };
 const C10 = shared({ title: "Push from Claude or ChatGPT", body: "Set up the connector once, then say \"push this conversation to Lasso\" at the end of a session. The whole conversation arrives. Files it produced land in your inbox for you to place." });
 const C11 = shared({ title: "Paste a conversation", body: "For anything without a connector. Paste the thread and it lands here at full fidelity, with its turns intact." });

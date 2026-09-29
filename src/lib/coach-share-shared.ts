@@ -16,7 +16,7 @@ export type ShareableEngagement = {
 };
 
 export const ADMIN_HONESTY_LINE =
-  "Only engagements you work on are listed. Sharing is done by the people doing the work.";
+  "Only workboards you work on are listed. Sharing is done by the people doing the work.";
 
 /**
  * A quick folder is the catch all behind a personal workspace. It holds
@@ -73,7 +73,7 @@ export function coachResultsLine(results: ShareResult[]): string {
   const failed = results.filter((row) => !row.ok);
   if (results.length === 0) return "Nothing left to share.";
   if (failed.length === 0)
-    return `Shared with ${results.length} coaches. They can see this engagement now.`;
+    return `Shared with ${results.length} coaches. They can see this workboard now.`;
   const ok = results.length - failed.length;
   return [`Shared with ${ok} of ${results.length} coaches.`, ...failureLines(failed)].join(" ");
 }
@@ -205,7 +205,7 @@ export type RosterRow = {
 
 /**
  * One row per active coach in the workspace, in name order, carrying whether
- * this engagement is already shared with them. Optimistic overrides win so a
+ * this workboard is already shared with them. Optimistic overrides win so a
  * tap reads immediately and rolls back cleanly when the RPC refuses.
  */
 export function rosterFor(
@@ -229,12 +229,12 @@ export function rosterFor(
 }
 
 export function sharedSuccessLine(name: string): string {
-  return `Shared. ${name} can now see this engagement.`;
+  return `Shared. ${name} can now see this workboard.`;
 }
 
 /** Removal is a change of sight, not a deletion, and it says so. */
 export function removalLine(name: string): string {
-  return `Removed. ${name} no longer sees this engagement. Nothing is deleted, and their past notes remain theirs.`;
+  return `Removed. ${name} no longer sees this workboard. Nothing is deleted, and their past notes remain theirs.`;
 }
 
 /**

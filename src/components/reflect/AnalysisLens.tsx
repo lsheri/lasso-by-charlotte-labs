@@ -277,7 +277,7 @@ export function AnalysisLensPanel({
 
   const readsDetail =
     target.kind === "engagement"
-      ? `the ${target.itemCount} ${target.itemCount === 1 ? "piece" : "pieces"} of work mapped into this engagement, oldest first`
+      ? `the ${target.itemCount} ${target.itemCount === 1 ? "piece" : "pieces"} of work mapped into this workboard, oldest first`
       : target.scope === "deliverable"
         ? "this piece of work, the conversations linked to it, and the brief when there is one"
         : `this conversation only, ${turnCount ?? 0} message${

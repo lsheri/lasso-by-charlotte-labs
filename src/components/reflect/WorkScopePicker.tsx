@@ -102,7 +102,7 @@ export function WorkScopePicker({
 
         {engagements.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            Map some work to an engagement and it will appear here.
+            Map some work to a workboard and it will appear here.
           </p>
         ) : (
           <>

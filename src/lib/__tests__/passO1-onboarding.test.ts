@@ -20,10 +20,10 @@ describe("passO1 the door decides the workspace type", () => {
 describe("passO1 school words in the work list", () => {
   it("gives a school workspace school words for the empty line and the button", () => {
     const vocab = vocabFor({ org_type: "edu" });
-    expect(vocab.noEngagements).toBe("No classes or projects yet");
-    expect(vocab.newEngagement).toBe("New class or project");
-    expect(vocab.fullEngagement).toBe("Full class or project");
-    expect(vocab.createEngagement).toBe("Create class or project");
+    expect(vocab.noEngagements).toBe("No workboards yet");
+    expect(vocab.newEngagement).toBe("New workboard");
+    expect(vocab.fullEngagement).toBe("Full workboard");
+    expect(vocab.createEngagement).toBe("Create workboard");
     expect(vocab).toEqual(EDU_VOCAB);
   });
 
@@ -32,9 +32,9 @@ describe("passO1 school words in the work list", () => {
       expect(vocabFor(profile)).toEqual(DEFAULT_VOCAB);
     }
     expect(vocabFor({ org_type: "personal" })).toEqual(PERSONAL_VOCAB);
-    expect(DEFAULT_VOCAB.noEngagements).toBe("No engagements yet");
-    expect(DEFAULT_VOCAB.newEngagement).toBe("New engagement");
-    expect(DEFAULT_VOCAB.fullEngagement).toBe("Full engagement");
-    expect(DEFAULT_VOCAB.createEngagement).toBe("Create engagement");
+    expect(DEFAULT_VOCAB.noEngagements).toBe("No workboards yet");
+    expect(DEFAULT_VOCAB.newEngagement).toBe("New workboard");
+    expect(DEFAULT_VOCAB.fullEngagement).toBe("Full workboard");
+    expect(DEFAULT_VOCAB.createEngagement).toBe("Create workboard");
   });
 });

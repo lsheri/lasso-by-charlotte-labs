@@ -125,7 +125,7 @@ export function CoachNotesPage() {
             {(
               [
                 [rows.length, "notes about your work"],
-                [rows.filter((row) => row.engagement_id).length, "point at an engagement"],
+                [rows.filter((row) => row.engagement_id).length, "point at a workboard"],
                 [0, "you are not allowed to see"],
               ] as Array<[number, string]>
             ).map(([value, caption]) => (

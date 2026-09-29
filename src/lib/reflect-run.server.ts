@@ -135,7 +135,7 @@ export async function runReflectTurn(
         .select("title")
         .eq("id", sessionScope.ids[0]!)
         .maybeSingle();
-      if (engagement?.title) place = `Ask Lasso, on the engagement ${engagement.title}`;
+      if (engagement?.title) place = `Ask Lasso, on the workboard ${engagement.title}`;
     } else if (sessionScope.mode !== "whole" && sessionScope.ids.length > 0) {
       place = `Ask Lasso, on a chosen set of ${scopeLabel(sessionScope).toLowerCase()}`;
     }

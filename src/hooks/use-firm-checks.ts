@@ -20,7 +20,7 @@ const COLUMNS =
 /** Plain words for who a check applies to. A check is guidance, never a hidden test. */
 export function firmCheckAppliesTo(check: FirmCheck): string {
   if (check.subject_profile_id) return "For one person";
-  if (check.engagement_id) return "For this engagement";
+  if (check.engagement_id) return "For this workboard";
   return "For the whole firm";
 }
 

@@ -21,7 +21,7 @@ type ReviewDraft = { key: string; title: string; body: string; error: string | n
 
 const SCOPE_WORD = {
   firm: "For the whole firm",
-  engagement: "For one engagement",
+  engagement: "For one workboard",
   person: "For one person",
 } as const;
 
@@ -157,7 +157,7 @@ export function ChecksLibrary({
           <h2 className="micro-label micro-label-section">Checks library</h2>
           <p className="mt-1 text-xs text-muted-foreground">
             What this firm asks of its work. Everyone the check applies to can read it. Admins and
-            leads write firm wide checks here; narrower checks are written on an engagement or in a
+            leads write firm wide checks here; narrower checks are written on a workboard or in a
             coaching packet.
           </p>
         </div>

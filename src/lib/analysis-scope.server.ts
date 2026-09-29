@@ -99,7 +99,7 @@ export async function resolveAnalysisTarget(
       .select("id, title, client_label, code, clients(id, name, quick_folder)")
       .eq("id", args.engagementId)
       .maybeSingle();
-    if (!engagement) throw new Error("That engagement is gone.");
+    if (!engagement) throw new Error("That workboard is gone.");
     const ids = await engagementItemIds(supabase, args.profileId, engagement.id);
     return {
       ownerId: args.profileId,

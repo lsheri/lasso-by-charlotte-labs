@@ -208,7 +208,7 @@ export async function runSpanProvenance(
   const { loadSpanScope, sectionFor } = await import("./span-audit.server");
   const scope = await loadSpanScope(supabase, anchor.id, anchor.owner_id);
   if (scope.upstream.length === 0) {
-    throw new Error("There is no other work in this engagement to trace this back to.");
+    throw new Error("There is no other work in this workboard to trace this back to.");
   }
   const section = sectionFor(scope.anchorText, input.locator);
 

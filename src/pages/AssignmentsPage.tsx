@@ -40,7 +40,7 @@ export function AssignmentsPage() {
     <div className="space-y-8">
       <PageHeader
         title={EDU_VOCAB.assignments}
-        subtitle="Everything you have open, grouped by the class or project it belongs to."
+        subtitle="Everything you have open, grouped by the class or workboard it belongs to."
       />
       {(engagements ?? []).map((engagement) => {
         const list = byEngagement.get(engagement.id) ?? [];

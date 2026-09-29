@@ -88,7 +88,7 @@ export function MobileTabBar() {
       ]
     : [
         { label: "Work", to: "/work", icon: "work" },
-        { label: "Engagements", icon: "engagement", action: "engagements" },
+        { label: "Workboards", icon: "engagement", action: "engagements" },
         { label: "Ask", icon: "ask-lasso", action: "ask" },
         { label: "You", icon: "overview", action: "you" },
       ];
@@ -155,7 +155,7 @@ export function MobileTabBar() {
           className="max-h-[85vh] overflow-y-auto border-border bg-card pb-[calc(1rem+env(safe-area-inset-bottom))]"
         >
           <SheetTitle className="font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
-            Engagements
+            Workboards
           </SheetTitle>
           <div className="mt-3 flex flex-col gap-0.5">
             {(engagements ?? []).map((engagement) => (

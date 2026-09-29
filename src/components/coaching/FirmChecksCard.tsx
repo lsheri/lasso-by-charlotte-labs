@@ -105,7 +105,7 @@ export function FirmChecksCard({
             {(
               [
                 { key: "org" as const, label: "Whole firm", show: true },
-                { key: "engagement" as const, label: "This engagement", show: Boolean(engagementId) },
+                { key: "engagement" as const, label: "This workboard", show: Boolean(engagementId) },
                 {
                   key: "person" as const,
                   label: subjectName ? `Just ${subjectName}` : "This person",

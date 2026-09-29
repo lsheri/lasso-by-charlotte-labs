@@ -55,8 +55,8 @@ export function NamingConventionsCard() {
       <h2 className="micro-label micro-label-section">Naming conventions</h2>
       <div className="mt-3 space-y-3 rounded-[var(--radius)] border border-border bg-card px-4 py-4 shadow-card">
         <p className="text-sm text-muted-foreground">
-          Teach Lasso your team&apos;s labels, engagement codes, client shorthand, folder patterns.
-          Suggestions get sharper. e.g. &quot;EMP-COAL = Employer Coalition engagement. Client
+          Teach Lasso your team&apos;s labels, workboard codes, client shorthand, folder patterns.
+          Suggestions get sharper. e.g. &quot;EMP-COAL = Employer Coalition workboard. Client
           folders look like /Clients/&lt;code&gt;/…&quot;
         </p>
         {!canEdit ? (
@@ -68,7 +68,7 @@ export function NamingConventionsCard() {
             rows={5}
             value={value}
             onChange={(e) => setValue(e.target.value)}
-            placeholder="Teach Lasso your labels. e.g. EMP-COAL = Employer Coalition engagement; files starting WM_ belong to Weight Management; decks named *_client are final versions."
+            placeholder="Teach Lasso your labels. e.g. EMP-COAL = Employer Coalition workboard; files starting WM_ belong to Weight Management; decks named *_client are final versions."
           />
         )}
         {canEdit ? (

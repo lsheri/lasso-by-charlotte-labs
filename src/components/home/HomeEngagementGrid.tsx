@@ -123,7 +123,7 @@ export function HomeEngagementGrid({
   const columns = homeGridColumnCount(availableWidth);
 
   return (
-    <section aria-label="Your engagements" className="h-full w-full text-left">
+    <section aria-label="Your workboards" className="h-full w-full text-left">
       <ul
         data-testid="home-engagement-grid"
         className="grid gap-6"

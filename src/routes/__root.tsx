@@ -94,13 +94,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "Lasso by Charlotte Labs" },
       {
         name: "description",
-        content: "Coaching context for engagement managers: connect your work, map it, review it.",
+        content: "Coaching context for workboard managers: connect your work, map it, review it.",
       },
       { name: "author", content: "Charlotte Labs" },
       { property: "og:title", content: "Lasso by Charlotte Labs" },
       {
         property: "og:description",
-        content: "Coaching context for engagement managers: connect your work, map it, review it.",
+        content: "Coaching context for workboard managers: connect your work, map it, review it.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

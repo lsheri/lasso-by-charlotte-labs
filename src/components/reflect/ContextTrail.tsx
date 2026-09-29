@@ -201,12 +201,12 @@ function AuditGlyph({ kind }: { kind: ManifestKind | "brief" | "checks" }) {
 
 export function scopeWhyLine(scope: NonNullable<ContextManifest["scope"]>, briefIncluded = true): string {
   if (scope.source === "board_pick") return `You picked ${scope.picked ?? 0} on the board`;
-  if (scope.source === "board_pick_brief_only" && !briefIncluded) return "Nothing you picked has work to read, and this engagement has no brief yet. Nothing was read.";
+  if (scope.source === "board_pick_brief_only" && !briefIncluded) return "Nothing you picked has work to read, and this workboard has no brief yet. Nothing was read.";
   if (scope.source === "board_pick_brief_only") return "Nothing you picked has work to read, so only the brief";
   if (scope.source === "picker") return "Your choice in the work list";
   if (scope.source === "pointed") return "What you pointed at with @";
   if (scope.source === "workstream") return "One workstream";
-  return "Nothing picked: everything in this engagement";
+  return "Nothing picked: everything in this workboard";
 }
 
 export function scopeClosedTag(scope: NonNullable<ContextManifest["scope"]>, briefIncluded = true): string | null {

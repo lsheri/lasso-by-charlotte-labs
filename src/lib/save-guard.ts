@@ -10,7 +10,7 @@ export type UpdateResult = { data: unknown[] | null; error: { message: string } 
 export type SaveOutcome = { ok: true } | { ok: false; message: string };
 
 export const ENGAGEMENT_RENAME_REFUSAL =
-  "That did not save. Only someone on this engagement can rename it.";
+  "That did not save. Only someone on this workboard can rename it.";
 
 export const WORKSTREAM_RENAME_REFUSAL =
   "That did not save. Only the owner of this workstream can rename it.";

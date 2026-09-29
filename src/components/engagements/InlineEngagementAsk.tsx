@@ -10,7 +10,7 @@ import { usePerfOpenFinish } from "@/hooks/use-perf-timer";
 
 const SUGGESTIONS = [
   "What did I decide here, and what did I decide it on?",
-  "Where has this engagement drifted from the brief?",
+  "Where has this workboard drifted from the brief?",
 ];
 
 function InlineAsk(props: {

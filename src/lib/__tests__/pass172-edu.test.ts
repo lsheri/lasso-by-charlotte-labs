@@ -40,7 +40,7 @@ describe("pass172 vocabulary", () => {
     expect(vocabFor(null)).toEqual(DEFAULT_VOCAB);
     expect(vocabFor({ org_type: "company" })).toEqual(DEFAULT_VOCAB);
     expect(vocabFor({ org_type: "personal" })).toEqual(PERSONAL_VOCAB);
-    expect(DEFAULT_VOCAB.engagements).toBe("Engagements");
+    expect(DEFAULT_VOCAB.engagements).toBe("Workboards");
     expect(DEFAULT_VOCAB.orgGroup).toBe("Your organization");
     expect(DEFAULT_VOCAB.pastWork).toBe("Past work");
   });
@@ -49,7 +49,7 @@ describe("pass172 vocabulary", () => {
     expect(isEduOrg({ org_type: "edu" })).toBe(true);
     expect(vocabFor({ org_type: "edu" })).toEqual(EDU_VOCAB);
     expect(EDU_VOCAB.classes).toBe("Classes");
-    expect(EDU_VOCAB.assignments).toBe("Assignments");
+    expect(EDU_VOCAB.assignments).toBe("Workboards");
   });
 });
 

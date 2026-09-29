@@ -95,9 +95,9 @@ export function LabFrame({ frame, count, selected, editable, custom, namedByWork
     : !editable
     ? "Nothing here yet."
     : kind === "decisions"
-      ? "No decisions recorded on this engagement yet."
+      ? "No decisions recorded on this workboard yet."
       : kind === "outputs"
-        ? "No deliverables on this engagement yet."
+        ? "No deliverables on this workboard yet."
         : frame.id === "workstreams"
           ? "No workstreams yet."
           : kind === "task" || kind === "custom"

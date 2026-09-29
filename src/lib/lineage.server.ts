@@ -243,7 +243,7 @@ export async function draftLineageFor(
     "",
     scope === "all_mine"
       ? "CANDIDATE ITEMS FROM EVERYTHING YOU HAVE:"
-      : "CANDIDATE ITEMS FROM THE SAME ENGAGEMENT:",
+      : "CANDIDATE ITEMS FROM THE SAME Workboard:",
     ...blocks,
   ].join("\n\n---\n\n");
 

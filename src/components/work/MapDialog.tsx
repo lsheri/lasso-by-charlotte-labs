@@ -135,7 +135,7 @@ export function MapDialog({
           <DialogTitle className="page-title">Map to a workstream</DialogTitle>
         </DialogHeader>
         <p className="-mt-1 nb-type-small leading-[17px] text-muted-foreground">
-          Your engagement team can see mapped work.
+          Your workboard team can see mapped work.
         </p>
 
 
@@ -153,7 +153,7 @@ export function MapDialog({
 
         {!engagementId ? (
           <div className="space-y-2">
-            <p className="micro-label">Choose an engagement</p>
+            <p className="micro-label">Choose a workboard</p>
             {(engagements ?? []).map((engagement) => (
               <button
                 key={engagement.id}
@@ -176,7 +176,7 @@ export function MapDialog({
             ))}
             {engagements && engagements.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                Create an engagement in the sidebar first.
+                Create a workboard in the sidebar first.
               </p>
             ) : null}
           </div>
@@ -187,7 +187,7 @@ export function MapDialog({
               onClick={() => setEngagementId(null)}
               className="micro-label text-accent-deep"
             >
-              ← Engagements
+              ← Workboards
             </button>
             <p className="micro-label">Choose a workstream</p>
             {(tasks ?? []).map((task) => (

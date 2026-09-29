@@ -21,7 +21,7 @@ import { useSettingsDialogOptional } from "@/lib/settings-dialog-context";
 
 export type AddWorkSource = "inbox" | "upload" | "connector";
 
-const SHARE_LINE = "Adding work here shares it with the people on this engagement.";
+const SHARE_LINE = "Adding work here shares it with the people on this workboard.";
 
 function isConnected(status: string | undefined): boolean {
   return Boolean(status) && status !== "not_connected" && status !== "disconnected";

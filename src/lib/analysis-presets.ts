@@ -201,7 +201,7 @@ For each item that genuinely fed the deliverable, give:
 - RELATION, exactly one of: PRODUCED (this item is where the deliverable was drafted), INFORMED (material or reasoning from it reached the deliverable), REVISED (it changed an existing version), CITED (the deliverable quotes or references it).
 - THE EVIDENCE: the specific overlap, quoted verbatim from both sides where possible, or the concrete reason with its location.
 
-WHAT NOT TO LINK. Shared vocabulary is not a link. Same client, same week, or same engagement is not a link. If the only thing connecting an item to the deliverable is topic, do not link it. An over-linked record is worse than a sparse one, because a link the person cannot recognise teaches them the whole feature is guesswork.
+WHAT NOT TO LINK. Shared vocabulary is not a link. Same client, same week, or same workboard is not a link. If the only thing connecting an item to the deliverable is topic, do not link it. An over-linked record is worse than a sparse one, because a link the person cannot recognise teaches them the whole feature is guesswork.
 
 If nothing fed it that you can evidence, say exactly that. An empty result is a true result.
 
@@ -389,7 +389,7 @@ const RAW_ANALYSIS_PRESETS: AnalysisPreset[] = [
     dbPreset: "what_fed_this",
     label: "What fed this",
     description:
-      "Opens the two-pane provenance audit: this deliverable's record beside the engagement's other work. Circle or select a span to trace where it came from.",
+      "Opens the two-pane provenance audit: this deliverable's record beside the workboard's other work. Circle or select a span to trace where it came from.",
     scope: "deliverable",
     systemPrompt: WHAT_FED_THIS_PROMPT,
     openingMessage: "Reconstruct what fed this piece of work, with the evidence for each link.",
@@ -442,9 +442,9 @@ export const ANALYSIS_PRESETS: AnalysisPreset[] = RAW_ANALYSIS_PRESETS.map((pres
 export const NO_FIRM_CHECKS_LINE = "no firm checks written yet";
 
 /** Kept for historical run rows whose preset no longer exists. */
-export const NOT_ENOUGH_WORK_LINE = "There is not enough work in this engagement yet.";
+export const NOT_ENOUGH_WORK_LINE = "There is not enough work in this workboard yet.";
 export const NOT_ENOUGH_FOR_SEQUENCE_LINE =
-  "There is not enough work in this engagement to show a sequence yet.";
+  "There is not enough work in this workboard to show a sequence yet.";
 
 /**
  * The minimum this preset can honestly read, and the plain reason when the

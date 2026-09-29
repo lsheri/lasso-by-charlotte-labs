@@ -240,7 +240,7 @@ export function AnalysisConfirm({
     shape === "thread"
       ? "Reads this one conversation."
       : shape === "engagement"
-        ? "Reads every mapped piece of work in this engagement."
+        ? "Reads every mapped piece of work in this workboard."
         : "Reads the work and the record behind it.";
   const sentExtraIds = shape === "thread" ? [] : extraIds;
   const contextLabel =
@@ -283,7 +283,7 @@ export function AnalysisConfirm({
         >
           <div>
             <p className="micro-label mb-2">
-              {shape === "thread" ? "The conversation" : shape === "engagement" ? "The engagement" : "The work"}
+              {shape === "thread" ? "The conversation" : shape === "engagement" ? "The workboard" : "The work"}
             </p>
             <ul className="space-y-2">
               {target.kind === "item" ? (
@@ -329,8 +329,8 @@ export function AnalysisConfirm({
                   {target.title}
                   <span className="ml-1 text-muted-foreground">
                     {readableCount === 1
-                      ? "(1 piece of work mapped into this engagement)"
-                      : `(${readableCount} pieces of work mapped into this engagement)`}
+                      ? "(1 piece of work mapped into this workboard)"
+                      : `(${readableCount} pieces of work mapped into this workboard)`}
                   </span>
                   {engagementUnread > 0 ? (
                     <span className="mt-1 block text-xs text-muted-foreground">
@@ -349,7 +349,7 @@ export function AnalysisConfirm({
               ) : null}
               {includesBrief ? (
                 <li className="rounded-[var(--radius)] border border-border px-3 py-2 text-sm text-muted-foreground">
-                  The engagement brief, when one is written.
+                  The workboard brief, when one is written.
                 </li>
               ) : null}
               {isFirmChecks ? (

@@ -47,14 +47,14 @@ const workerSteps: ChecklistStepDef[] = [
   {
     id: "invite-coach",
     label: "Share work with a coach",
-    hint: "Optional. Share an engagement with a coach who is already here, or invite a new one. They see only what you share.",
+    hint: "Optional. Share a workboard with a coach who is already here, or invite a new one. They see only what you share.",
     optional: true,
     to: "/members",
     // Sharing is the point of the step, so a share counts before an invite
     // does. Both are read from the record, and both are scoped to this person.
     done: (p) =>
       p.counts.shared_by_me > 0
-        ? `${p.counts.shared_by_me} engagements shared`
+        ? `${p.counts.shared_by_me} workboards shared`
         : p.counts.invites_by_me > 0
           ? `${p.counts.invites_by_me} invites created`
           : null,
@@ -68,27 +68,27 @@ const workerSteps: ChecklistStepDef[] = [
 const shareOnlyCoachStep: ChecklistStepDef = {
   id: "invite-coach",
   label: "Share work with a coach",
-  hint: "Optional. Share an engagement with a coach who is already here. They see only what you share.",
+  hint: "Optional. Share a workboard with a coach who is already here. They see only what you share.",
   optional: true,
   to: "/engagements",
-  done: (p) => (p.counts.shared_by_me > 0 ? `${p.counts.shared_by_me} engagements shared` : null),
+  done: (p) => (p.counts.shared_by_me > 0 ? `${p.counts.shared_by_me} workboards shared` : null),
 };
 
 const coachSteps: ChecklistStepDef[] = [
   {
     id: "shared-engagement",
-    label: "Open an engagement shared with you",
+    label: "Open a workboard shared with you",
     hint: "Shared work is the only work you can open.",
     to: "/coaching",
     done: (p) =>
       p.counts.shared_engagements > 0
-        ? `${p.counts.shared_engagements} engagements shared with you`
+        ? `${p.counts.shared_engagements} workboards shared with you`
         : null,
   },
   {
     id: "coach-analysis",
     label: "Run an analysis on shared work",
-    hint: "Scoped to one engagement, never to a person.",
+    hint: "Scoped to one workboard, never to a person.",
     to: "/coaching",
     done: (p) => (p.counts.analyses > 0 ? `${p.counts.analyses} analyses run` : null),
   },
@@ -112,7 +112,7 @@ const adminSteps: ChecklistStepDef[] = [
   {
     id: "naming",
     label: "Set your naming conventions",
-    hint: "So engagements read the same way for everyone.",
+    hint: "So workboards read the same way for everyone.",
     to: "/settings",
     done: (p) => (p.naming_set ? "Naming conventions saved" : null),
   },

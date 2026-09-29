@@ -459,7 +459,7 @@ export function AnalysisChips({
         </div>
         {target.reason === "empty" || engagementOptions.length === 0 ? (
           <p className="mt-2 text-xs text-muted-foreground">
-            Map work to an engagement and analyses will appear here.{" "}
+            Map work to a workboard and analyses will appear here.{" "}
             <Link to="/work" className="text-accent-deep underline underline-offset-2">
               Go to Work
             </Link>
@@ -467,7 +467,7 @@ export function AnalysisChips({
         ) : (
           <>
             <p className="mt-2 text-xs text-muted-foreground">
-              Pick one engagement or one piece of work to run an analysis.
+              Pick one workboard or one piece of work to run an analysis.
             </p>
             <div className="mt-2 flex flex-wrap gap-2">
               {engagementOptions.slice(0, MAX_ENGAGEMENT_CHIPS).map((engagement) => (
@@ -606,7 +606,7 @@ export function selectionChips(
         return { preset, target: null, reason: "needs a finished deliverable in the selection" };
       }
       if (preset.id === "still_on_brief" && !hasBrief) {
-        return { preset, target: null, reason: "needs a brief linked to this engagement" };
+        return { preset, target: null, reason: "needs a brief linked to this workboard" };
       }
       if (preset.id === "firm_checks" && firmCheckCount === 0) {
         return { preset, target: null, reason: NO_FIRM_CHECKS_LINE };

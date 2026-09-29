@@ -157,7 +157,7 @@ export function PastWorkSearch() {
                           >
                             {[card.engagement_code, card.engagement_title]
                               .filter(Boolean)
-                              .join(" ") || "Engagement"}
+                              .join(" ") || "Workboard"}
                           </Link>
                         </div>
                       ) : null}

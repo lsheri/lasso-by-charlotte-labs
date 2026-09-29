@@ -447,7 +447,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   if (engagementQuery.error) {
     return (
       <p className="text-sm text-muted-foreground">
-        We could not load this engagement just now. Try again in a moment.
+        We could not load this workboard just now. Try again in a moment.
       </p>
     );
   }
@@ -455,7 +455,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   if (!engagement) {
     return (
       <p className="text-sm text-muted-foreground">
-        This engagement is not available to you. It may no longer be shared.
+        This workboard is not available to you. It may no longer be shared.
       </p>
     );
   }
@@ -505,7 +505,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
       </header>
 
       <div className="mb-2 flex items-end gap-2 border-b border-[var(--nb-rule)]">
-        <div ref={tabBarRef} className="relative flex min-w-0 overflow-x-auto" role="group" aria-label="Engagement views">
+        <div ref={tabBarRef} className="relative flex min-w-0 overflow-x-auto" role="group" aria-label="Workboard views">
           <button
             ref={(node) => {
               if (node) tabRefs.current.brief = node;
@@ -725,7 +725,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
                     }}
                   >
                     <p className="micro-label" style={{ color: "var(--nb-green)" }}>
-                      WRAPS UP THIS ENGAGEMENT
+                      WRAPS UP THIS Workboard
                     </p>
                     <p className="mt-1.5 text-base font-medium">{wrapTask.name}</p>
                     <p className="micro-label mt-1.5">
@@ -782,7 +782,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
                     <p className="micro-label">WHAT IS NOT HERE YET</p>
                     {showCallsLine ? (
                       <p className="mt-2 text-[13px] text-muted-foreground">
-                        No calls or transcripts have been brought into this engagement. When they are,
+                        No calls or transcripts have been brought into this workboard. When they are,
                         what was asked for and what is still unanswered can be read from them.
                       </p>
                     ) : null}
@@ -800,7 +800,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
               <div className="border-b border-[var(--nb-rule)] pb-3">
                 <h2 className="font-hand text-[16px] text-green">Workboard</h2>
                 <p className="text-[13px] text-muted-foreground">
-                  Arrange this engagement&apos;s work, calls and judgment on one board. Changes save as you go.
+                  Arrange this workboard&apos;s work, calls and judgment on one board. Changes save as you go.
                 </p>
                 <div className="mt-2">
                   <Button asChild>
@@ -850,7 +850,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
       <CaptureCoverage
         profileId={profile?.id}
         itemCount={mappedItemCount}
-        scopeLabel="this engagement"
+        scopeLabel="this workboard"
         isOwner={profile?.role !== "coach"}
       />
       <SubjectCoachingSection
@@ -880,7 +880,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
                   ? "SCOPE · THREAD"
                   : contextScope === "deliverable"
                     ? "SCOPE · DELIVERABLE"
-                    : "SCOPE · ENGAGEMENT"
+                    : "SCOPE · Workboard"
               }
               facts={contextFacts}
               vendors={contextVendors}

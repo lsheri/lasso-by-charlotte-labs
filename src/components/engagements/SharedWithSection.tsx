@@ -88,7 +88,7 @@ export function SharedWithSection({
 
   const readFailed = Boolean(shared.error || orgCoaches.error);
   useEffect(() => {
-    if (readFailed) toast.error("We could not load sharing for this engagement just now.");
+    if (readFailed) toast.error("We could not load sharing for this workboard just now.");
   }, [readFailed]);
 
   const roster = rosterFor(orgCoaches.data ?? [], shared.data ?? [], optimistic);
@@ -195,8 +195,8 @@ export function SharedWithSection({
 
   const heading = personalOrg ? "Your coaches" : "Shared with";
   const intro = personalOrg
-    ? "A coach you share with here can see this engagement. Nothing else in your workspace is visible to them."
-    : "Coaches you choose here can see this engagement. Nothing else in your workspace is visible to them.";
+    ? "A coach you share with here can see this workboard. Nothing else in your workspace is visible to them."
+    : "Coaches you choose here can see this workboard. Nothing else in your workspace is visible to them.";
 
   return (
     <section id="shared-with" className="scroll-mt-24">
@@ -289,13 +289,13 @@ export function SharedWithSection({
       {roster.length === 0 && !orgCoaches.isLoading ? (
         <p className="mt-3 text-sm text-muted-foreground">
           {personalOrg
-            ? "No coaches here yet. Invite one, then share this engagement with them."
-            : "No coaches in this workspace yet. Invite one, then share this engagement with them."}
+            ? "No coaches here yet. Invite one, then share this workboard with them."
+            : "No coaches in this workspace yet. Invite one, then share this workboard with them."}
         </p>
       ) : null}
       {roster.length > 0 && sharedCount === 0 && !shared.isLoading ? (
         <p className="mt-2 text-sm text-muted-foreground">
-          Not shared with anyone. This engagement is yours alone.
+          Not shared with anyone. This workboard is yours alone.
         </p>
       ) : null}
       {confirmation ? <p className="mt-2 text-sm text-accent-deep">{confirmation}</p> : null}
@@ -303,10 +303,10 @@ export function SharedWithSection({
       <AlertDialog open={confirmAll} onOpenChange={setConfirmAll}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Share this engagement with {unshared.length} coaches?</AlertDialogTitle>
+            <AlertDialogTitle>Share this workboard with {unshared.length} coaches?</AlertDialogTitle>
             <AlertDialogDescription>
               {unshared.map((row) => row.display_name).join(", ")} will see the work mapped into this
-              engagement. Nothing else in your workspace becomes visible, and you can take it back
+              workboard. Nothing else in your workspace becomes visible, and you can take it back
               from any of them at any time.
             </AlertDialogDescription>
           </AlertDialogHeader>

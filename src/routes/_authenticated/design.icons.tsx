@@ -50,11 +50,11 @@ const FAMILIES: { family: string; entries: Entry[] }[] = [
       },
       {
         name: "engagement",
-        label: "Engagement",
-        use: "A single client engagement.",
+        label: "Workboard",
+        use: "A single client workboard.",
         wit: "The flap stands slightly open, never fully shut.",
         motion: "Flap: the front opens six degrees and closes.",
-        usedIn: "Sidebar engagement rows, canvas breadcrumbs",
+        usedIn: "Sidebar workboard rows, canvas breadcrumbs",
       },
       {
         name: "overview",
@@ -101,7 +101,7 @@ const FAMILIES: { family: string; entries: Entry[] }[] = [
       {
         name: "firm",
         label: "Firm view",
-        use: "The firm level read across engagements.",
+        use: "The firm level read across workboards.",
         wit: "Flat roof, one door, exactly two windows, nothing else.",
         motion: "Nudge: a single pixel rise.",
         usedIn: "Sidebar, firm page",
@@ -186,7 +186,7 @@ const FAMILIES: { family: string; entries: Entry[] }[] = [
       {
         name: "plus",
         label: "Plus",
-        use: "Add a source, workstream or engagement.",
+        use: "Add a source, workstream or workboard.",
         wit: "The arms are a hair unequal, drawn quickly.",
         motion: "Turn: a quarter rotation.",
         usedIn: "Primary buttons, ghost column",

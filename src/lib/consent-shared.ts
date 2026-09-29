@@ -27,7 +27,7 @@ export const PURPOSE_COPY: PurposeCopy[] = [
   {
     purpose: "operate",
     title: "Operate the product",
-    unlocks: "Keeps your work, your engagements and your history available to you inside Lasso.",
+    unlocks: "Keeps your work, your workboards and your history available to you inside Lasso.",
     declining: "This one cannot be turned off, because without it there is no product to use.",
     alwaysOn: true,
   },

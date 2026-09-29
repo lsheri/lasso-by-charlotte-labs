@@ -87,7 +87,7 @@ export function neutralLabel(
   const h = hash(`${linkId}|${kind}|${key}`);
   const letter = LETTERS[h % LETTERS.length] ?? "A";
   const digit = Math.floor(h / LETTERS.length) % 10;
-  return `${kind === "engagement" ? "Engagement" : "Client"} ${letter}${digit}`;
+  return `${kind === "engagement" ? "Workboard" : "Client"} ${letter}${digit}`;
 }
 
 /** Dimensions every coaching link event carries. Closed vocabulary, no names. */
@@ -125,9 +125,9 @@ export const COACHING_COPY = {
 /** Plain sentence for what a coach would see at the level actually granted. */
 export function accessSentence(row: CoachingLinkRow): string {
   if (row.access_level === "full_transcript") {
-    return "They would see the work you have mapped to engagements, including the full text of those pieces.";
+    return "They would see the work you have mapped to workboards, including the full text of those pieces.";
   }
-  return "They would see the shape of the work you have mapped to engagements: what kind of work it is and how it moved, without client or engagement names.";
+  return "They would see the shape of the work you have mapped to workboards: what kind of work it is and how it moved, without client or workboard names.";
 }
 
 /** Who the link is, said without ceremony. */

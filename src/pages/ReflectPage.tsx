@@ -172,7 +172,7 @@ export function ReflectPage({
             id: shape.engagementId,
             title:
               (engagements ?? []).find((e) => e.id === shape.engagementId)?.title ??
-              "this engagement",
+              "this workboard",
             itemCount: shape.itemCount,
           }
         : { kind: "none", reason: shape.reason };

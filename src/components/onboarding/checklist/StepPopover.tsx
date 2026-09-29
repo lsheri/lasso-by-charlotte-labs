@@ -8,10 +8,10 @@ const NOTES: Record<GuideId, string> = {
   map: "Use Map to a workstream on any row. Mapping is what gives a piece of work a home.",
   analyze: "Open a mapped item and run an analysis. You see the result before anyone else does.",
   "invite-coach": "Create an invite here. A coach sees only the work you have mapped.",
-  naming: "Set how engagements should be named, so the record reads the same way for everyone.",
+  naming: "Set how workboards should be named, so the record reads the same way for everyone.",
   "invite-team": "Invite people here. Each person's work stays private to them.",
-  "shared-engagement": "These are the engagements someone has shared with you. Open one to begin.",
-  "coach-analysis": "Scope the analysis to a shared engagement, then run it.",
+  "shared-engagement": "These are the workboards someone has shared with you. Open one to begin.",
+  "coach-analysis": "Scope the analysis to a shared workboard, then run it.",
   "firm-check": "Write the standard you want the work held to. The person sees it as a chip.",
   "one-on-one": "Build a 1:1 from what has been shared with you.",
 };
