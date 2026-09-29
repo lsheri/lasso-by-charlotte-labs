@@ -80,10 +80,12 @@ export async function recordAnonymousEvent(
   eventType: TelemetryEvent,
   viewId: string,
   dims: TelemetryDims = {},
+  visitorId?: string,
 ): Promise<void> {
   try {
     const tenantHash = await sha256Hex("anonymous");
-    const actorHash = await computeActorHash(`anon:${viewId}`);
+    // Unit D6: a stable browser visitor id, when sent, replaces the per-view id.
+    const actorHash = await computeActorHash(`anon:${visitorId || viewId}`);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("events").insert({
       // This path has no org: an anonymous marketing view.

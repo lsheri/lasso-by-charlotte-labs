@@ -16,7 +16,8 @@ import { isPartnerSlug } from "@/lib/partners";
 import { cleanActivationKey, markActivationKey, readActivationKey } from "@/lib/key-entry";
 import { deriveRegister, NEUTRAL_COPY, REGISTER_COPY } from "@/lib/register";
 import type { IntentParam } from "@/lib/org-type";
-import { captureFunnelEvent } from "@/lib/posthog-client";
+import { emitClientEvent } from "@/lib/client-telemetry";
+import { identifyPostHog } from "@/lib/posthog-client";
 import { parseFunnelSource, type FunnelSource } from "@/lib/funnel-source";
 
 export const Route = createFileRoute("/auth")({
@@ -88,11 +89,20 @@ function joinTarget(next: string | undefined) {
   } as { code?: string | undefined; eng?: string | undefined };
 }
 
+/** Unit D6: one person, one identity. Auth user id only, and only on success. */
+export function noteSignUpIdentity(result: {
+  user: { id: string } | null | undefined;
+  error: unknown;
+}): void {
+  if (result.error || !result.user?.id) return;
+  identifyPostHog(result.user.id);
+}
+
 function AuthPage() {
   const navigate = useNavigate();
   const { next, intent, invite, from, src, key } = Route.useSearch();
   useEffect(() => {
-    if (intent) captureFunnelEvent("signup.started", { intent, src: src ?? "direct" });
+    if (intent) emitClientEvent("signup.started", { intent, src: src ?? "direct" }, { stableVisitor: true });
   }, [intent, src]);
   // Pass 185: the front door someone came through, remembered until the
   // workspace is created. Nothing else about the page changes.
@@ -187,6 +197,7 @@ function AuthPage() {
         },
       });
 
+      noteSignUpIdentity({ user: data.user, error: signUpError });
       if (signUpError) setError(signUpError.message);
       else if (data.session) goOn();
       else setMessage("Check your email to confirm your account.");

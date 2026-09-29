@@ -58,10 +58,24 @@ export const recordEventFn = createServerFn({ method: "POST" })
  */
 export const recordAnonymousEventFn = createServerFn({ method: "POST" })
   .inputValidator(
-    (input: { event_type: TelemetryEvent; view_id: string; dims?: TelemetryDims }) => input,
+    (input: {
+      event_type: TelemetryEvent;
+      view_id: string;
+      dims?: TelemetryDims;
+      visitor_id?: string | undefined;
+    }) => input,
   )
   .handler(async ({ data }) => {
     const { recordAnonymousEvent } = await import("./telemetry.server");
-    await recordAnonymousEvent(data.event_type, String(data.view_id).slice(0, 64), data.dims ?? {});
+    const visitorId =
+      typeof data.visitor_id === "string" && data.visitor_id.length > 0
+        ? data.visitor_id.slice(0, 128)
+        : undefined;
+    await recordAnonymousEvent(
+      data.event_type,
+      String(data.view_id).slice(0, 64),
+      data.dims ?? {},
+      visitorId,
+    );
     return { ok: true };
   });

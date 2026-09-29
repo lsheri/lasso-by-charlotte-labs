@@ -1,5 +1,6 @@
 import { recordAnonymousEventFn } from "./telemetry.functions";
 import { logEvent } from "./telemetry";
+import { getPostHogDistinctId } from "./posthog-client";
 import type { TelemetryDims, TelemetryEvent } from "./telemetry-shared";
 
 /**
@@ -40,14 +41,30 @@ function pageViewId(): string {
   return random;
 }
 
+function visitorField(): { visitor_id?: string } {
+  const id = getPostHogDistinctId();
+  return id ? { visitor_id: id } : {};
+}
+
 /** Fire and forget. Never throws, never surfaces to the user. */
-export function emitClientEvent(event: TelemetryEvent, dims: TelemetryDims): void {
+export function emitClientEvent(
+  event: TelemetryEvent,
+  dims: TelemetryDims,
+  options?: { stableVisitor?: boolean },
+): void {
   if (orgId) {
     logEvent(event, orgId, dims);
     return;
   }
   void recordAnonymousEventFn({
-    data: { event_type: event, view_id: pageViewId(), dims },
+    data: {
+      event_type: event,
+      view_id: pageViewId(),
+      dims,
+      // Unit D6: only the public signup funnel opts in; everything else keeps
+      // the unlinkable per-page id.
+      ...(options?.stableVisitor ? visitorField() : {}),
+    },
   }).catch(() => {
     /* telemetry must never surface to the user */
   });

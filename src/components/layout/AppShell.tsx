@@ -30,6 +30,7 @@ let egressNudged = false;
 function AppShellInner() {
   const { openSettings } = useSettingsDialog();
   const { data: profile, profiles } = useProfile();
+  const { data: authUser } = useAuthUser();
   const navigate = useNavigate();
   // Signed-in client signals (perf.pageload, client.error) carry the org like
   // every other event; before this resolves they take the anonymous path.
@@ -38,8 +39,8 @@ function AppShellInner() {
   }, [profile?.org_id]);
   // Identity only, never person properties.
   useEffect(() => {
-    identifyPostHog(profile?.id ?? null);
-  }, [profile?.id]);
+    identifyPostHog(authUser?.id ?? null);
+  }, [authUser?.id]);
   // Pass 175b: the sending sweep needs a live request to finish inside. This
   // is invisible: no UI, no state, no event, at most once every ten minutes.
   useEffect(() => {
