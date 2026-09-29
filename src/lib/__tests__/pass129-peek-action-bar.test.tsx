@@ -161,7 +161,7 @@ describe("pass 129 — make private and the confirms", () => {
 
   it("states each consequence in one plain line", () => {
     expect(REMOVE_CONSEQUENCE_LINE).toBe(
-      "This takes the work out of this engagement. The work itself stays.",
+      "This takes the work out of this workboard. The work itself stays.",
     );
     expect(DELETE_CONSEQUENCE_LINE).toBe("This deletes the work and its record. There is no undo.");
     expect(REMOVE_CONSEQUENCE_LINE).not.toContain("—");

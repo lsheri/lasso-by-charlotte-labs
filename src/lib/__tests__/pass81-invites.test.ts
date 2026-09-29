@@ -102,7 +102,7 @@ describe("can_invite step gating", () => {
     const steps = stepsFor(progress({ counts: { ...progress().counts, shared_by_me: 2 } }));
     const step = steps.find((s) => s.id === "invite-coach");
     expect(step?.done(progress({ counts: { ...progress().counts, shared_by_me: 2 } }))).toBe(
-      "2 engagements shared",
+      "2 workboards shared",
     );
   });
 

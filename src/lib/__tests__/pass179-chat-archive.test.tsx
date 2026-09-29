@@ -13,7 +13,7 @@ describe("pass 179: the chat archive groups by month", () => {
   });
 
   it("offers the engagement filter row", () => {
-    expect(page).toContain('aria-label="Filter by engagement"');
+    expect(page).toContain('aria-label="Filter by workboard"');
   });
 
   it("keeps What recurs, the only engagement scoped analysis", () => {
