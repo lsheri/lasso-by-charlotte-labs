@@ -4,7 +4,7 @@
  * a choice can never mean one thing in the chooser and another on submit.
  */
 
-export type OrgType = "company" | "personal" | "edu";
+export type OrgType = "company" | "personal" | "edu" | "partner";
 
 export type IntentParam = OrgType | "invite";
 
@@ -17,5 +17,6 @@ export type DoorChoice = IntentParam | null | undefined;
 export function orgTypeForChoice(choice: DoorChoice): OrgType {
   if (choice === "personal") return "personal";
   if (choice === "edu") return "edu";
+  if (choice === "partner") return "partner";
   return "company";
 }

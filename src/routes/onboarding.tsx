@@ -97,7 +97,11 @@ export const Route = createFileRoute("/onboarding")({
     const key = cleanActivationKey(search["key"]);
     return {
       ...(key ? { key } : {}),
-      ...(intent === "company" || intent === "personal" || intent === "edu" || intent === "invite"
+      ...(intent === "company" ||
+      intent === "personal" ||
+      intent === "edu" ||
+      intent === "partner" ||
+      intent === "invite"
         ? { intent }
         : {}),
       ...setup,
@@ -155,7 +159,7 @@ function OnboardingInner() {
   // fallback for someone who arrived with no door signal at all.
   const [derived] = useState(() => deriveRegister(intent));
   const [entryDoor] = useState<EntryDoor>(() =>
-    intent === "company" || intent === "personal" || intent === "edu"
+    intent === "company" || intent === "personal" || intent === "edu" || intent === "partner"
       ? "intent"
       : readEduIntent()
         ? "edu_flag"

@@ -35,6 +35,12 @@ const EXPECTED: Record<Register, string[]> = {
     "You file it", "Put it under a class or project, next to the coursework it belongs to.",
     "You choose what to share", "Nothing leaves your workspace by itself. Share one piece when you want to.",
   ],
+  partner: [
+    "You set up the engagement", "A client, a cohort, the workstreams you will run.",
+    "People join with a link", "Their workspace stays theirs. Yours holds the engagement.",
+    "They share what they choose", "A board, a transcript, or nothing at all, at the depth they agreed to.",
+    "You coach from what arrived", "Never their raw files. Only what they sent you.",
+  ],
 };
 
 const BANNED = /\b(firm|consultancy|consulting|organize|mentor|audit|oversight|governance|monitor|track|surveillance|score)\b/i;
