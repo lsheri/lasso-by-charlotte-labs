@@ -426,3 +426,26 @@ export function partitionContainers<T extends NavEngagement>(
 
   return { foldersUnderClient, topLevelFolders };
 }
+
+/** Unit 3c: the heading over workboards not yet in any container. A grouping, never a row. */
+export function notInContainerLabel(containerWord: string): string {
+  return `Not in a ${containerWord.toLowerCase()} yet`;
+}
+
+/**
+ * Unit 3c: every container row the workspace can read, plus any container only
+ * known through a joined workboard (a shared board). A table row wins over a
+ * joined copy. Quick folders stay out: the synthetic grouping owns them.
+ */
+export function mergeContainerRows<T extends NavEngagement>(
+  rows: readonly ContainerRow[],
+  engagements: readonly T[],
+): ContainerRow[] {
+  const byId = new Map<string, ContainerRow>();
+  for (const row of containerRowsFromEngagements(engagements)) byId.set(row.id, row);
+  for (const row of rows) {
+    if (row.quick_folder === true) continue;
+    byId.set(row.id, { id: row.id, name: row.name, kind: row.kind ?? "client", parent_id: row.parent_id ?? null, quick_folder: false });
+  }
+  return [...byId.values()].sort(byName);
+}

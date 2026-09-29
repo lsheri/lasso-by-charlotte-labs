@@ -21,11 +21,15 @@ import { isEduOrg, splitsByKind, vocabFor } from "@/lib/edu-vocab";
 import { bucket, logEvent } from "@/lib/telemetry";
 
 
+import { useClients } from "@/hooks/use-clients";
 import {
-  containerRowsFromEngagements,
+  buildContainerTree,
+  flattenForSidebar,
   groupEngagementsByClient,
+  INTERNAL_SHELF_ID,
   isSyntheticShelf,
-  partitionContainers,
+  mergeContainerRows,
+  notInContainerLabel,
   type ContainerNode,
   UNMAPPED_SHELF_ID,
   readCollapsedClients,
@@ -723,6 +727,9 @@ function FolderRows({
                 <GraphiteIcon name="chevron-right" size={13} className={collapsed ? "" : "rotate-90"} />
               </button>
             </div>
+            {!collapsed && node.engagements.length === 0 && node.children.length === 0 ? (
+              <p className="px-2 py-1 pl-10 text-sm italic text-muted-foreground">Nothing in here yet</p>
+            ) : null}
             {collapsed
               ? null
               : node.engagements.map((engagement) => (
