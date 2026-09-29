@@ -22,7 +22,9 @@ describe("partner navigation", () => {
       const group = navGroups[i];
       if (!group) throw new Error("group count drifted");
       expect(partner.id).toBe(group.id);
-      expect(partner.items).toEqual(group.items);
+      // Partner-only addition: Workshop keys under the engagements group.
+      const extra = group.id === "engagements" ? [{ label: "Workshop keys", to: "/requests", icon: "members" }] : [];
+      expect(partner.items).toEqual([...group.items, ...extra]);
       expect(partner.emptyState).toEqual(group.emptyState);
       if (partner.label !== group.label) diffs.push(`${group.label} -> ${partner.label}`);
     }
@@ -31,7 +33,7 @@ describe("partner navigation", () => {
 
   it("adds no route and uses no forbidden word", () => {
     const navTos = new Set(flat(navGroups));
-    for (const to of flat(partnerNavGroups)) expect(navTos.has(to)).toBe(true);
+    for (const to of flat(partnerNavGroups)) expect(navTos.has(to) || to === "/requests").toBe(true);
     for (const group of partnerNavGroups) {
       expect(group.label, group.label).not.toMatch(BANNED);
       expect(group.label).not.toContain("—");
