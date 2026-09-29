@@ -42,6 +42,7 @@ export const getCoachSubjects = createServerFn({ method: "POST" })
       supabase,
       mine.map((profile) => ({
         id: profile.id,
+        org_id: profile.org_id,
         org_name: orgName.get(profile.org_id) ?? "",
       })),
     );

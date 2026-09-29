@@ -132,12 +132,11 @@ export function CoachingPage() {
                     </span>
                     <span className="min-w-0 text-[11.5px] leading-[17px] text-muted-foreground">
                       <span className="block">
-                        {subject.total_decisions} confirmed decision
-                        {subject.total_decisions === 1 ? "" : "s"}
-                      </span>
-                      <span className="block">
-                        {subject.total_elements} mapped work element
-                        {subject.total_elements === 1 ? "" : "s"}
+                        {subject.access_level === "full_transcript"
+                          ? "Full transcripts"
+                          : subject.access_level === "structural"
+                            ? "Structure only"
+                            : "What they mapped"}
                       </span>
                       {subject.last_note_at &&
                       (subject.new_decisions > 0 || subject.new_elements > 0) ? (

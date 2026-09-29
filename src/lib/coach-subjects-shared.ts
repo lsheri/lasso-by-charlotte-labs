@@ -22,6 +22,7 @@ export type CoachSubject = {
   engagement_title: string;
   subject_id: string;
   subject_name: string;
+  access_level: "structural" | "full_transcript" | null;
   last_note_at: string | null;
   total_decisions: number;
   total_elements: number;
@@ -53,6 +54,7 @@ export type CoachRoster = {
     profile_id: string;
     profiles: { id: string; display_name: string } | null;
   }[];
+  links: { subject_profile_id: string; access_level: string | null }[];
 };
 
 export type CoachActivity = {
@@ -69,7 +71,7 @@ export function composeCoachSubjects(
   roster: CoachRoster,
   activity: CoachActivity,
 ): CoachSubject[] {
-  const { engagements, subjects } = roster;
+  const { engagements, subjects, links } = roster;
   const lastNote = new Map<string, string>();
   for (const note of activity.notes) {
     const key = `${note.engagement_id ?? ""}:${note.subject_id}`;
@@ -82,6 +84,14 @@ export function composeCoachSubjects(
     .filter((row) => row.profiles !== null && row.profile_id !== coachProfileId)
     .map((row) => {
       const engagement = engagements.find((e) => e.engagement_id === row.engagement_id);
+      const accessLevels = links
+        .filter((link) => link.subject_profile_id === row.profile_id)
+        .map((link) => link.access_level);
+      const accessLevel = accessLevels.includes("full_transcript")
+        ? "full_transcript"
+        : accessLevels.includes("structural")
+          ? "structural"
+          : null;
       const since = lastNote.get(`${row.engagement_id}:${row.profile_id}`) ?? null;
       const after = (iso: string) => (since ? new Date(iso) > new Date(since) : true);
 
@@ -107,6 +117,7 @@ export function composeCoachSubjects(
           : "Engagement",
         subject_id: row.profile_id,
         subject_name: row.profiles?.display_name ?? "Colleague",
+        access_level: accessLevel,
         last_note_at: since,
         total_decisions: subjectDecisions.length,
         total_elements: subjectElements.length,

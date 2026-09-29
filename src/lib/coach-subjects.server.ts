@@ -23,6 +23,7 @@ type Db = SupabaseClient<Database>;
 export async function buildCoachQueue(
   supabase: Db,
   coachProfileId: string,
+  orgId: string,
 ): Promise<{ roster: CoachRoster; activity: CoachActivity }> {
   const { data: coached, error: coachedError } = await supabase
     .from("engagement_members")
@@ -37,11 +38,11 @@ export async function buildCoachQueue(
     (row) => row.engagements !== null,
   );
   if (engagements.length === 0) {
-    return { roster: { engagements: [], subjects: [] }, activity: EMPTY_COACH_ACTIVITY };
+    return { roster: { engagements: [], subjects: [], links: [] }, activity: EMPTY_COACH_ACTIVITY };
   }
   const engagementIds = engagements.map((row) => row.engagement_id);
 
-  const [subjectsRes, notesRes, decisionsRes, linksRes] = await Promise.all([
+  const [subjectsRes, notesRes, decisionsRes, mappedRes, accessLinksRes] = await Promise.all([
     supabase
       .from("engagement_members")
       .select(COACH_SUBJECTS_SELECT)
@@ -61,6 +62,13 @@ export async function buildCoachQueue(
       .from("work_item_tasks")
       .select("mapped_at, tasks!inner(engagement_id, owner_id)")
       .in("tasks.engagement_id", engagementIds),
+    supabase
+      .from("coaching_links")
+      .select("subject_profile_id, access_level")
+      .eq("coach_profile_id", coachProfileId)
+      .eq("org_id", orgId)
+      .is("ended_at", null)
+      .is("consent_withdrawn_at", null),
   ]);
   if (subjectsRes.error) throw new Error(subjectsRes.error.message);
 
@@ -68,11 +76,12 @@ export async function buildCoachQueue(
     roster: {
       engagements,
       subjects: (subjectsRes.data ?? []) as unknown as CoachRoster["subjects"],
+      links: accessLinksRes.error ? [] : (accessLinksRes.data ?? []),
     },
     activity: {
       notes: (notesRes.data ?? []) as CoachActivity["notes"],
       decisions: (decisionsRes.data ?? []) as CoachActivity["decisions"],
-      mapped: (linksRes.data ?? []) as unknown as CoachActivity["mapped"],
+      mapped: (mappedRes.data ?? []) as unknown as CoachActivity["mapped"],
     },
   };
 }
@@ -80,11 +89,11 @@ export async function buildCoachQueue(
 /** The whole queue across every coach profile this person holds. */
 export async function buildCoachSubjects(
   supabase: Db,
-  coaches: { id: string; org_name: string }[],
+  coaches: { id: string; org_id: string; org_name: string }[],
 ): Promise<CoachSubjectAcrossOrgs[]> {
   const queues = await Promise.all(
     coaches.map(async (coach) => {
-      const { roster, activity } = await buildCoachQueue(supabase, coach.id);
+      const { roster, activity } = await buildCoachQueue(supabase, coach.id, coach.org_id);
       return composeCoachSubjects(coach.id, roster, activity).map((subject) => ({
         ...subject,
         coach_profile_id: coach.id,
