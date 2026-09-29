@@ -21,11 +21,15 @@ import { isEduOrg, splitsByKind, vocabFor } from "@/lib/edu-vocab";
 import { bucket, logEvent } from "@/lib/telemetry";
 
 
+import { useClients } from "@/hooks/use-clients";
 import {
-  containerRowsFromEngagements,
+  buildContainerTree,
+  flattenForSidebar,
   groupEngagementsByClient,
+  INTERNAL_SHELF_ID,
   isSyntheticShelf,
-  partitionContainers,
+  mergeContainerRows,
+  notInContainerLabel,
   type ContainerNode,
   UNMAPPED_SHELF_ID,
   readCollapsedClients,
@@ -298,34 +302,24 @@ export function SidebarNav({
       ? { tasks: cachedTasks, workId: activeWorkId }
       : undefined;
 
-  // Engagements sit under their client, with quick folders and clientless
-  // engagements flat at top level. Grouping reads only the joined relation.
-  const { groups, flat } = groupEngagementsByClient(
-    (engagements ?? []) as unknown as NavEngagement[],
+  const engagementList = (engagements ?? []) as unknown as NavEngagement[];
+  // Only the synthetic groupings (clientless work, quick folders) come from here.
+  const { groups } = groupEngagementsByClient(engagementList);
+  // Unit 3c: the container tree is built from the workspace's own container
+  // rows plus workboards. Built from workboard joins alone, a client or folder
+  // with nothing in it was in no group and rendered nothing. A guest never
+  // reads the clients table: they see only containers behind shared boards.
+  const { data: clientRows } = useClients(guestNav ? undefined : profile?.org_id);
+  const containerRows = mergeContainerRows(clientRows ?? [], engagementList);
+  const containerRoots = buildContainerTree(containerRows, engagementList);
+  const split = splitsByKind(vocab);
+  const clientRoots = flattenForSidebar(
+    containerRoots.filter((node) => !split || node.kind === "client"),
   );
-  // Folders get their own section only where the split means something and a
-  // folder actually exists. Rows come from the joined relation only.
-  const containerRows = containerRowsFromEngagements(
-    (engagements ?? []) as unknown as NavEngagement[],
-  );
-  const { foldersUnderClient, topLevelFolders } = partitionContainers(
-    containerRows,
-    (engagements ?? []) as unknown as NavEngagement[],
-  );
-  const showFolders = splitsByKind(vocab) && topLevelFolders.length > 0;
-  // A shelf is removed from this list only because another section draws it,
-  // never merely because it is a folder. Where nothing else renders a folder,
-  // its ordinary client shelf is the only place its work can appear.
-  const renderedElsewhere = new Set<string>();
-  for (const rows of foldersUnderClient.values()) {
-    for (const { node } of rows) renderedElsewhere.add(node.clientId);
-  }
-  if (showFolders) {
-    for (const { node } of topLevelFolders) renderedElsewhere.add(node.clientId);
-  }
-  const clientShelves = groups.filter(
-    (shelf) => !isSyntheticShelf(shelf.clientId) && !renderedElsewhere.has(shelf.clientId),
-  );
+  const topLevelFolders = split
+    ? flattenForSidebar(containerRoots.filter((node) => node.kind === "folder"))
+    : [];
+  const showFolders = topLevelFolders.length > 0;
   const syntheticShelves = groups.filter((shelf) => isSyntheticShelf(shelf.clientId));
   const [collapsedClients, setCollapsedClients] = useState<string[]>(() => readCollapsedClients());
   function toggleClient(clientId: string) {
@@ -350,11 +344,11 @@ export function SidebarNav({
                             type="button"
                             aria-expanded={!collapsed}
                             onClick={() => toggleClient(shelf.clientId)}
-                            className={`${linkClass} nb-nav-shelf w-full text-left`}
+                            className={`${linkClass} w-full text-left text-muted-foreground`}
                           >
-                            <GraphiteIcon name="engagement" size={20} />
+                            {/* A grouping, not a container: no container icon, quiet ink. */}
                             <span className="flex min-w-0 flex-1 items-center gap-1.5">
-                              <span className="truncate">{shelf.clientId === UNMAPPED_SHELF_ID ? `No ${vocab.client.toLowerCase()}` : shelf.name}</span>
+                              <span className="truncate italic">{shelf.clientId === UNMAPPED_SHELF_ID ? `No ${vocab.client.toLowerCase()}` : shelf.clientId === INTERNAL_SHELF_ID ? notInContainerLabel(vocab.client) : shelf.name}</span>
                               <span className="font-mono text-[10px] text-muted-foreground">
                                 · {shelf.engagements.length}
                               </span>
@@ -420,16 +414,6 @@ export function SidebarNav({
                                   scope={scopeFor(engagement.id)}
                                 />
                               ))}
-                            {!synthetic && foldersUnderClient.has(shelf.clientId) ? (
-                              <FolderRows
-                                rows={foldersUnderClient.get(shelf.clientId) ?? []}
-                                collapsedIds={collapsedClients}
-                                onToggle={toggleClient}
-                                onNavigate={onNavigate}
-                                newEngagementLabel={vocab.newEngagement}
-                                scopeFor={scopeFor}
-                              />
-                            ) : null}
                           </>
                         )}
                       </div>
@@ -595,15 +579,14 @@ export function SidebarNav({
 
               {isEngagementGroup ? (
                 <>
-                  {flat.map((engagement) => (
-                    <EngagementRow
-                      key={engagement.id}
-                      engagement={engagement}
-                      onNavigate={onNavigate}
-                      scope={scopeFor(engagement.id)}
-                    />
-                  ))}
-                  {clientShelves.map((shelf) => renderShelf(shelf))}
+                  <FolderRows
+                    rows={clientRoots}
+                    collapsedIds={collapsedClients}
+                    onToggle={toggleClient}
+                    onNavigate={onNavigate}
+                    newEngagementLabel={vocab.newEngagement}
+                    scopeFor={scopeFor}
+                  />
                   {showFolders ? (
                     <FolderSection
                       rows={topLevelFolders}
@@ -726,6 +709,9 @@ function FolderRows({
                 <GraphiteIcon name="chevron-right" size={13} className={collapsed ? "" : "rotate-90"} />
               </button>
             </div>
+            {!collapsed && node.engagements.length === 0 && node.children.length === 0 ? (
+              <p className="px-2 py-1 pl-10 text-sm italic text-muted-foreground">Nothing in here yet</p>
+            ) : null}
             {collapsed
               ? null
               : node.engagements.map((engagement) => (
