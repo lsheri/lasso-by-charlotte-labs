@@ -6,7 +6,7 @@ import { setClientTelemetryOrg } from "@/lib/client-telemetry";
 import { identifyPostHog, resetPostHog } from "@/lib/posthog-client";
 
 import { supabase } from "@/integrations/supabase/client";
-import { useProfile } from "@/hooks/use-profile";
+import { useAuthUser, useProfile } from "@/hooks/use-profile";
 
 import { AppSidebar } from "./AppSidebar";
 import { LassoLoopMark } from "./LassoLoopMark";
