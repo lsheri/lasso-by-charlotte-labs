@@ -60,7 +60,7 @@ describe("LabFrame menu and rename", () => {
   it("shows role-appropriate guidance and inline creation only to editors", () => {
     const onAddWorkstream = vi.fn(() => true);
     const first = renderFrame({ kind: "decisions", custom: false, frame: { ...customFrame, id: "decisions", name: "Decisions" } });
-    expect(screen.getByText("No decisions recorded on this engagement yet.")).toBeTruthy();
+    expect(screen.getByText("No decisions recorded on this workboard yet.")).toBeTruthy();
     first.unmount();
     renderFrame({ editable: false, kind: "outputs", custom: false, frame: { ...customFrame, id: "outputs", name: "Outputs" } });
     expect(screen.getByText("Nothing here yet.")).toBeTruthy();

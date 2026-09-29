@@ -81,7 +81,7 @@ describe("AnalysisConfirm with an unread item", () => {
       preset,
       target: { kind: "engagement", id: "eng-1", title: "Pricing review", itemCount: 3 },
     });
-    expect(await screen.findByText("(2 pieces of work mapped into this engagement)")).toBeTruthy();
+    expect(await screen.findByText("(2 pieces of work mapped into this workboard)")).toBeTruthy();
     expect(
       await screen.findByText("1 more is title only, its contents could not be read."),
     ).toBeTruthy();

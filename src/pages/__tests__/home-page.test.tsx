@@ -146,7 +146,7 @@ describe("Home", () => {
     render(<HomeBoard />);
     expect(mocks.emitClientEvent).toHaveBeenCalledWith("home.opened", {});
 
-    fireEvent.click(screen.getByRole("button", { name: "New engagement" }));
+    fireEvent.click(screen.getByRole("button", { name: "New workboard" }));
     fireEvent.click(screen.getByRole("link", { name: "Past work" }));
     expect(mocks.emitClientEvent).toHaveBeenCalledWith("home.new_engagement_started", {});
     expect(mocks.emitClientEvent).toHaveBeenCalledWith("home.past_work_opened", {});

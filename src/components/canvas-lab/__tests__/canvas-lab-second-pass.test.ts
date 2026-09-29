@@ -44,7 +44,7 @@ describe("Canvas Lab second prototype pass", () => {
     const page = read("src/pages/EngagementPage.tsx");
     expect(page).toContain('search={{ from: "header" }}');
     expect(page).toContain('search={{ from: "canvas_tab" }}');
-    expect(page).toContain("Arrange this engagement&apos;s work, calls and judgment on one board. Changes save as you go.");
+    expect(page).toContain("Arrange this workboard&apos;s work, calls and judgment on one board. Changes save as you go.");
     expect(page).not.toContain("prototype resets");
     expect(page).toContain("Open workboard");
     expect(page).toContain('<EngagementCanvasView engagementId={engagementId} items={scopedItems} onOpen={openPeek} />');

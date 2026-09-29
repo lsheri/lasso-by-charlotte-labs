@@ -174,7 +174,7 @@ describe("ContextAudit", () => {
     render(<ContextAudit manifest={empty} />);
     expect(screen.getByTestId("scope-closed-tag").textContent).toBe("NOTHING READ");
     fireEvent.click(screen.getByRole("button", { expanded: false }));
-    expect(screen.getByTestId("scope-why").textContent).toBe("Nothing you picked has work to read, and this engagement has no brief yet. Nothing was read.");
+    expect(screen.getByTestId("scope-why").textContent).toBe("Nothing you picked has work to read, and this workboard has no brief yet. Nothing was read.");
   });
 
   it("leaves old manifests without a reason line or tag", () => {
