@@ -78,6 +78,7 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "connector.watch_enabled": ["age_filter", "auth_mode", "connected_count", "from", "had_connector", "imported", "page_index", "scope", "source", "surface", "toolkit", "total_count", "type_filter"],
   "consent.research_change": ["ascending", "choice"],
   "container.created": ["kind", "from"],
+  "client.created": ["workspace_type", "kind", "from_empty", "depth"],
   "activation_key.submitted": ["reason", "from"],
   "container.reparented": ["kind", "depth", "action"],
   "decision.confirmed": ["edited", "evidence_count", "status", "surface"],

@@ -1,0 +1,60 @@
+import { toast } from "sonner";
+
+import { createClient, type ClientRow } from "@/hooks/use-clients";
+import { logEvent } from "@/lib/telemetry";
+
+/** Where a container was made from. "empty_state" is the fresh workspace path. */
+export type ContainerFrom = "sidebar" | "sidebar_client" | "client_page" | "home" | "picker" | "empty_state";
+
+/** Level of a new container: 1 at the top, one more than its parent below that.
+ *  Only for the event dim. The database enforces the real rule. */
+export function depthFor(parentId: string | null, rows: ClientRow[]): number {
+  const byId = new Map(rows.map((row) => [row.id, row]));
+  let depth = 1;
+  let cursor = parentId ? byId.get(parentId) : undefined;
+  while (cursor && depth < 10) {
+    depth += 1;
+    cursor = cursor.parent_id ? byId.get(cursor.parent_id) : undefined;
+  }
+  return depth;
+}
+
+/**
+ * Creates a client or folder and records it. The database trigger decides
+ * whether the shape is allowed; its message is shown as it came back.
+ * Returns the new id, or null when the database refused.
+ */
+export async function createContainer(input: {
+  orgId: string;
+  orgType: string | null | undefined;
+  name: string;
+  kind: "client" | "folder";
+  parentId: string | null;
+  rows: ClientRow[];
+  from: ContainerFrom;
+}): Promise<string | null> {
+  const parentId = input.kind === "client" ? null : input.parentId;
+  try {
+    const id = await createClient({
+      orgId: input.orgId,
+      name: input.name,
+      kind: input.kind,
+      parentId,
+    });
+    // The earlier entry-point event keeps its series; client.created is additive.
+    logEvent("container.created", input.orgId, {
+      kind: input.kind,
+      from: input.from === "empty_state" ? "picker" : input.from,
+    });
+    logEvent("client.created", input.orgId, {
+      workspace_type: input.orgType ?? "company",
+      kind: input.kind,
+      from_empty: input.from === "empty_state" ? "true" : "false",
+      depth: String(depthFor(parentId, input.rows)),
+    });
+    return id;
+  } catch (e) {
+    toast.error((e as Error).message);
+    return null;
+  }
+}

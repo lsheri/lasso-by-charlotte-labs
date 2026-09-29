@@ -109,6 +109,12 @@ export type TelemetryEvent =
    *  entry point only. Never a name, never an id. Compare mcp.container_created,
    *  which is the same act performed by an outside model. */
   | "container.created"
+  /** Unit 3: a client or folder was made in the app. Workspace type, kind,
+   *  whether it came from the empty state, and its level. Never a name. */
+  | "client.created"
+  /** Unit 3: a workboard was made. Workspace type, whether a container was
+   *  chosen, and whether that container was made inline. Never a title. */
+  | "workboard.created"
   /** K2: someone submitted an activation key, and what came back. The returned
    *  reason and the closed entry point only. Never the key, never an
    *  institution, never an id. */

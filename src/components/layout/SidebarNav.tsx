@@ -3,6 +3,7 @@ import { Link, useMatchRoute, useSearch } from "@tanstack/react-router";
 import { Fragment, useState, useSyncExternalStore } from "react";
 
 import { NewEngagementDialog } from "@/components/engagements/NewEngagementDialog";
+import { EmptyContainerActions } from "@/components/engagements/EmptyContainerActions";
 import { GraphiteIcon } from "@/components/notebook/icons";
 import { CircleMark } from "@/components/notebook/CircleMark";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -615,9 +616,12 @@ export function SidebarNav({
                   ) : null}
                   {syntheticShelves.map((shelf) => renderShelf(shelf))}
                   {engagements && engagements.length === 0 ? (
-                    <p className="px-2 py-1.5 text-sm text-muted-foreground">
-                      {vocab.noEngagements}
-                    </p>
+                    <>
+                      <p className="px-2 py-1.5 text-sm text-muted-foreground">
+                        {vocab.noEngagements}
+                      </p>
+                      <EmptyContainerActions />
+                    </>
                   ) : null}
                   <NewEngagementDialog
                     onDone={onNavigate}
