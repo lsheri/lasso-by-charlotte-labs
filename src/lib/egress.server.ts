@@ -37,6 +37,11 @@ export async function selectPending(admin: Admin): Promise<EgressEventRow[]> {
     .select(EVENT_COLUMNS)
     .is("egressed_at", null)
     .is("egress_skipped_reason", null)
+    // Workspace-less pre-account events (plans.viewed, plan.picked,
+    // signup.started) have no consent tier and no owner. PostHog holds them;
+    // the portal does not. Excluded in the query so they are never loaded,
+    // and the filter itself means they are never re-read.
+    .not("org_id", "is", null)
     .order("id", { ascending: true })
     .limit(EGRESS_BATCH_SIZE);
   if (error) {
