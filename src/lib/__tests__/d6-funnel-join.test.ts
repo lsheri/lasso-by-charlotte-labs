@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const inserts = vi.hoisted(() => [] as Array<Record<string, unknown>>);
