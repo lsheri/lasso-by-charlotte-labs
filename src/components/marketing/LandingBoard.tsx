@@ -26,6 +26,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { VendorMark } from "@/components/work/SourceMark";
 import { openDemoBoardFn } from "@/lib/demo.functions";
+import { neutralDemoCopy } from "@/lib/demo-neutral-copy";
 import type { DemoPreset } from "@/lib/demo-presets-shared";
 import { submitPilotRequestFn } from "@/lib/pilot-request.functions";
 import { recordAnonymousEventFn } from "@/lib/telemetry.functions";
@@ -2679,6 +2680,7 @@ export function LandingBoard() {
   const query = useQuery({
     queryKey: ["landing-board", "YSM-01"],
     queryFn: () => open({ data: { code: "YSM-01" } }),
+    select: neutralDemoCopy,
     staleTime: 60_000,
     retry: false,
   });

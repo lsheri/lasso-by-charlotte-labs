@@ -19,6 +19,7 @@ import { AnswerTurnLinks } from "@/components/reflect/AnswerTurnLinks";
 import { PublicHeader } from "@/components/layout/PublicHeader";
 import { useSession } from "@/hooks/use-session";
 import { openDemoBoardFn } from "@/lib/demo.functions";
+import { neutralDemoCopy } from "@/lib/demo-neutral-copy";
 import { useDemoTour } from "@/hooks/use-demo-tour";
 import {
   DEMO_CHAT_LINK_NOTE,
@@ -68,6 +69,7 @@ export function DemoPlaygroundPage() {
   const query = useQuery({
     queryKey: ["demo-board", "YSM-01"],
     queryFn: () => open({ data: { code: "YSM-01" } }),
+    select: neutralDemoCopy,
     staleTime: 60_000,
     retry: false,
   });

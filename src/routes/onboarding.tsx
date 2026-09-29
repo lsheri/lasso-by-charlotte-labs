@@ -1,4 +1,4 @@
-import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
@@ -6,7 +6,6 @@ import { StepRail } from "@/components/onboarding/StepRail";
 import { SetupTools } from "@/components/onboarding/SetupTools";
 import { ToolPicker } from "@/components/onboarding/ToolPicker";
 import { SessionHeader } from "@/components/layout/SessionHeader";
-import { EnterInviteCode } from "@/components/invites/EnterInviteCode";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,6 +29,8 @@ import {
   type ToolId,
 } from "@/lib/onboarding-tools";
 import { orgTypeForChoice, type IntentParam, type OrgType } from "@/lib/org-type";
+import { parseFunnelSource, type FunnelSource } from "@/lib/funnel-source";
+import type { SignupSource } from "@/lib/edu-entry";
 import {
   deriveRegister,
   REGISTER_COPY,
@@ -83,16 +84,43 @@ async function applyOrgType(profileId: string, type: OrgType): Promise<string | 
   return profile.org_id;
 }
 
+type OnboardingSearch = {
+  intent?: IntentParam | undefined;
+  setup?: boolean | undefined;
+  key?: string | undefined;
+  from?: SignupSource | undefined;
+  src?: FunnelSource | undefined;
+};
+
+/**
+ * Unit B5X: /plans is the door that sets the register. Someone who reaches
+ * onboarding with no intent, no invite and no edu flag goes there to choose,
+ * with from and src carried through untouched. Returns the /plans search, or
+ * null when onboarding should continue.
+ */
+export function plansRedirectSearch(
+  search: OnboardingSearch,
+  hasEduFlag: boolean,
+): { from?: SignupSource; src?: FunnelSource } | null {
+  // intent=invite with no pending invite behind it (beforeLoad checks that
+  // first) carries no register either, so it goes to /plans as well, where
+  // the invite code entry lives.
+  if (search.setup || hasEduFlag) return null;
+  if (search.intent && search.intent !== "invite") return null;
+  return {
+    ...(search.from ? { from: search.from } : {}),
+    ...(search.src ? { src: search.src } : {}),
+  };
+}
+
 export const Route = createFileRoute("/onboarding")({
   ssr: false,
   validateSearch: (
     search: Record<string, unknown>,
-  ): {
-    intent?: IntentParam | undefined;
-    setup?: boolean | undefined;
-    key?: string | undefined;
-  } => {
+  ): OnboardingSearch => {
     const intent = search["intent"];
+    const from = search["from"];
+    const src = parseFunnelSource(search["src"]);
     const setup = search["setup"] === true || search["setup"] === "1" ? { setup: true } : {};
     const key = cleanActivationKey(search["key"]);
     return {
@@ -105,6 +133,11 @@ export const Route = createFileRoute("/onboarding")({
         ? { intent }
         : {}),
       ...setup,
+      // Carried through untouched; /plans applies its own closed vocabulary.
+      ...(typeof from === "string" && from.length > 0 && from.length <= 64
+        ? { from: from as SignupSource }
+        : {}),
+      ...(src ? { src } : {}),
     };
   },
   beforeLoad: async ({ search }) => {
@@ -124,6 +157,8 @@ export const Route = createFileRoute("/onboarding")({
           replace: true,
         });
       }
+      const plans = plansRedirectSearch(search, readEduIntent());
+      if (plans) throw redirect({ to: "/plans", search: plans, replace: true });
     }
   },
   head: () => ({
@@ -153,10 +188,10 @@ function OnboardingPage() {
 function OnboardingInner() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { intent, setup, key } = Route.useSearch();
+  const { intent, setup, key, from, src } = Route.useSearch();
   const redeemKey = useServerFn(redeemActivationKeyFn);
-  // Unit C: the register comes from the door. The chooser is only the
-  // fallback for someone who arrived with no door signal at all.
+  // Unit C: the register comes from the door. Unit B5X: with no door signal
+  // at all, beforeLoad sends the person to /plans to choose.
   const [derived] = useState(() => deriveRegister(intent));
   const [entryDoor] = useState<EntryDoor>(() =>
     intent === "company" || intent === "personal" || intent === "edu" || intent === "partner"
@@ -167,15 +202,9 @@ function OnboardingInner() {
           ? "invite"
           : "chooser",
   );
-  const [stage, setStage] = useState<"choose" | "setup" | "tools" | "capture">(
-    setup ? "tools" : derived ? "setup" : "choose",
-  );
+  const [stage, setStage] = useState<"setup" | "tools" | "capture">(setup ? "tools" : "setup");
   const [tools, setTools] = useState<Set<ToolId>>(new Set());
-  const [orgType, setOrgType] = useState<OrgType>(orgTypeForChoice(derived));
-
-  const [selected, setSelected] = useState<IntentParam | null>(
-    intent ?? (readEduIntent() ? "edu" : null),
-  );
+  const [orgType] = useState<OrgType>(orgTypeForChoice(derived));
   const [displayName, setDisplayName] = useState("");
   const [orgName, setOrgName] = useState("");
   const [pending, setPending] = useState(false);
@@ -373,96 +402,6 @@ function OnboardingInner() {
   }
 
 
-  if (stage === "choose") {
-    return (
-      <>
-        <SessionHeader />
-        <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background px-4 py-16">
-          <div className="w-full max-w-3xl">
-            <p className="micro-label">Welcome</p>
-            <h1 className="page-title mt-2">Who is this for?</h1>
-            <p className="mt-1.5 text-sm text-muted-foreground">
-              You can change this later. It only decides who owns the workspace.
-            </p>
-
-            <div className="mt-6 grid gap-3 md:grid-cols-2">
-              {(
-                [
-                  [
-                    "company",
-                    "For my company",
-                    "Your organization owns the tenancy. Each person's work stays private to them.",
-                  ],
-                  [
-                    "personal",
-                    "Just for me",
-                    "Your work, your record. You own everything here. Invite a coach whenever you're ready.",
-                  ],
-                  [
-                    "edu",
-                    "For my school work",
-                    "Your work, your record, and your school never sees it.",
-                  ],
-                ] as const
-              ).map(([value, title, body]) => (
-                <div
-                  key={value}
-                  className={
-                    selected === value
-                      ? "flex flex-col rounded-[var(--radius)] border border-accent bg-card p-5 shadow-card ring-1 ring-accent"
-                      : "flex flex-col rounded-[var(--radius)] border border-border bg-card p-5 shadow-card"
-                  }
-                >
-                  <p className="text-sm font-medium text-foreground">{title}</p>
-                  <p className="mt-2 flex-1 text-sm text-muted-foreground">{body}</p>
-                  <Button
-                    type="button"
-                    className="mt-4"
-                    onClick={() => {
-                      setSelected(value);
-                      setOrgType(orgTypeForChoice(value));
-                      setStage("setup");
-                    }}
-                  >
-                    Continue
-                  </Button>
-                  <Link
-                    to="/trust"
-                    className="mt-3 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
-                  >
-                    How your data works →
-                  </Link>
-                </div>
-              ))}
-
-              <div
-                className={
-                  selected === "invite"
-                    ? "flex flex-col rounded-[var(--radius)] border border-accent bg-card p-5 shadow-card ring-1 ring-accent"
-                    : "flex flex-col rounded-[var(--radius)] border border-border bg-card p-5 shadow-card"
-                }
-              >
-                <p className="text-sm font-medium text-foreground">I have an invite</p>
-                <p className="mt-2 flex-1 text-sm text-muted-foreground">
-                  Someone already set up a workspace for you. Paste the code or link they sent.
-                </p>
-                <div className="mt-4">
-                  <EnterInviteCode label="Invite code or link" bare />
-                </div>
-                <Link
-                  to="/trust"
-                  className="mt-3 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  How your data works →
-                </Link>
-              </div>
-            </div>
-          </div>
-        </main>
-      </>
-    );
-  }
-
   const copy = REGISTER_COPY[orgType];
 
   return (
@@ -512,7 +451,12 @@ function OnboardingInner() {
               <p className="text-sm text-muted-foreground">{copy.claim}</p>
               <button
                 type="button"
-                onClick={() => setStage("choose")}
+                onClick={() =>
+                  navigate({
+                    to: "/plans",
+                    search: { ...(from ? { from } : {}), ...(src ? { src } : {}) },
+                  })
+                }
                 className="text-xs text-muted-foreground transition-colors hover:text-foreground"
               >
                 ← Back

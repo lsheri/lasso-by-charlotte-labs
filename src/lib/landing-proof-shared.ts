@@ -33,7 +33,7 @@ export function parseLandingProof(proof: LandingProof): LandingProofModel | null
   const scenarioC = amount(turn2, /Scenario C[\s\S]*?Net about \$(\d+(?:\.\d+)?)M in year two/i);
   const savings = amount(turn2, /savings[\s\S]*?of \$(\d+(?:\.\d+)?)M in year two/i);
   const transition = amount(turn2, /less \$(\d+(?:\.\d+)?)M of transition cost/i);
-  const inputMatch = turn2.match(/Working from the (FY25 audited statements)[\s\S]*?and the (Meridian cost sheet) from the (14 August) call/i);
+  const inputMatch = turn2.match(/Working from the (FY25 (?:audited|year-end) statements)[\s\S]*?and the (Meridian cost sheet) from the (14 August) call/i);
   const lineMatch = turn4.match(/finance and accounting \$(\d+(?:\.\d+)?)M, HR and benefits administration \$(\d+(?:\.\d+)?)M, IT and licensing \$(\d+(?:\.\d+)?)M, revenue cycle \$(\d+(?:\.\d+)?)M/i);
   const unconfirmedMatch = turn6.match(/revenue cycle savings \([^)]*\)[^;]*;\s*([^.]*(?:unconfirmed)[^.]*\.)/i);
   if ([scenarioA, scenarioB, scenarioC, savings, transition].some((value) => value === null) || !inputMatch || !lineMatch) return null;
