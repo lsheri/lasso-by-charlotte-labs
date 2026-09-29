@@ -8,6 +8,7 @@ import { createContainer, type ContainerFrom } from "@/components/engagements/cr
 import { renameClient, useClients, useInvalidateClients } from "@/hooks/use-clients";
 import { useProfile } from "@/hooks/use-profile";
 import { vocabFor } from "@/lib/edu-vocab";
+import { canManageMembers } from "@/lib/role-access";
 
 /**
  * Client is optional everywhere. Pick one, make one on the spot, or leave it
@@ -43,6 +44,11 @@ export function ClientPicker({
    *  not already "folder". In a personal workspace there are no clients, so the
    *  two groups would both read "Folders". */
   const splitByKind = vocab.client !== "Folder";
+
+  /** A client is canonical and billable: only an admin or lead mints one.
+   *  A folder is free to every member, always. The database enforces the
+   *  rule; this only hides the action, and its refusal still shows verbatim. */
+  const canCreateClient = canManageMembers(profile);
 
   /** A new folder sits inside the container picked right now, or at the top. */
   async function create() {
@@ -184,13 +190,15 @@ export function ClientPicker({
               <Pencil className="h-3.5 w-3.5" aria-hidden />
             </button>
           ) : null}
-          <button
-            type="button"
-            onClick={() => setCreating(splitByKind ? "client" : "folder")}
-            className="shrink-0 rounded-full border border-border bg-card px-3 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
-          >
-            {`New ${vocab.client.toLowerCase()}`}
-          </button>
+          {canCreateClient || !splitByKind ? (
+            <button
+              type="button"
+              onClick={() => setCreating(splitByKind ? "client" : "folder")}
+              className="shrink-0 rounded-full border border-border bg-card px-3 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+            >
+              {`New ${vocab.client.toLowerCase()}`}
+            </button>
+          ) : null}
           {splitByKind ? (
             <button
               type="button"

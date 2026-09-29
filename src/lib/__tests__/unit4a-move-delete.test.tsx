@@ -109,7 +109,7 @@ describe("unit 4a keyboard path and events", () => {
     fireEvent.keyDown(trigger, { key: "Enter" });
     fireEvent.click(await screen.findByRole("menuitem", { name: "Delete" }));
     expect(await screen.findByText("Folder One is removed. The 2 workboards and 1 folder inside it move up to ABC Co.")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Remove" }));
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
     await waitFor(() => expect(mocks.toastSuccess).toHaveBeenCalled());
     expect(mocks.toastSuccess).toHaveBeenCalledWith("Folder One removed. 2 workboards and 1 folder moved up to ABC Co.");
     expect(mocks.logEvent).toHaveBeenCalledWith("container.deleted", "o1", {

@@ -6,7 +6,10 @@ import { ClientPicker } from "@/components/engagements/ClientPicker";
 import { DEFAULT_VOCAB } from "@/lib/edu-vocab";
 
 const mocks = vi.hoisted(() => ({
-  profile: { org_type: "company" } as { org_type: "company" | "personal" | "edu" },
+  profile: { org_type: "company", role: "admin" } as {
+    org_type: "company" | "personal" | "edu";
+    role: string;
+  },
 }));
 
 vi.mock("@/hooks/use-profile", () => ({
@@ -28,21 +31,21 @@ function renderPicker() {
 
 describe("pass 203 client picker vocabulary", () => {
   it("keeps the company picker byte identical", () => {
-    mocks.profile = { org_type: "company" };
+    mocks.profile = { org_type: "company", role: "admin" };
     renderPicker();
     expect(screen.getByText("Client (optional)")).toBeTruthy();
     expect(screen.getByRole("option", { name: "No client" })).toBeTruthy();
   });
 
   it("uses personal workspace words", () => {
-    mocks.profile = { org_type: "personal" };
+    mocks.profile = { org_type: "personal", role: "admin" };
     renderPicker();
     expect(screen.getByText("Folder (optional)")).toBeTruthy();
     expect(screen.getByRole("option", { name: "No folder" })).toBeTruthy();
   });
 
   it("uses school workspace words", () => {
-    mocks.profile = { org_type: "edu" };
+    mocks.profile = { org_type: "edu", role: "admin" };
     renderPicker();
     expect(screen.getByText("Term (optional)")).toBeTruthy();
     expect(screen.getByRole("option", { name: "No term" })).toBeTruthy();
