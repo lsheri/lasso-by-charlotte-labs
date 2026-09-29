@@ -79,7 +79,6 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "consent.research_change": ["ascending", "choice"],
   "container.created": ["kind", "from"],
   "client.created": ["workspace_type", "kind", "from_empty", "depth"],
-  "workboard.created": ["workspace_type", "has_client", "client_inline"],
   "activation_key.submitted": ["reason", "from"],
   "container.reparented": ["kind", "depth", "action"],
   "decision.confirmed": ["edited", "evidence_count", "status", "surface"],
