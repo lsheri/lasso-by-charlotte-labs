@@ -5,6 +5,8 @@ export type RedeemReason =
   | "exhausted"
   | "redeemed"
   | "already_redeemed"
+  | "already_member"
+  | "domain_not_allowed"
   | "rate_limited"
   | "error";
 
@@ -17,6 +19,8 @@ export const REDEEM_REASONS: readonly RedeemReason[] = [
   "exhausted",
   "redeemed",
   "already_redeemed",
+  "already_member",
+  "domain_not_allowed",
   "rate_limited",
   "error",
 ];
@@ -28,6 +32,8 @@ const MESSAGES: Record<RedeemReason, string> = {
   exhausted: "That key has already been used the number of times it allows.",
   redeemed: "Key accepted. Your workspace is now linked.",
   already_redeemed: "You have already used this key. Your workspace is linked.",
+  already_member: "You are already part of that workspace.",
+  domain_not_allowed: "That link needs a work email address from the organisation that issued it.",
   rate_limited: "Too many tries. Wait a minute and try again.",
   error: "Something went wrong. Try again in a moment.",
 };

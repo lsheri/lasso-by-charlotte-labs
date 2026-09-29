@@ -16,11 +16,16 @@ import { institutionToRecord } from "@/lib/affiliation.functions";
 const allowAttempt = createRateLimiter(5, 60_000);
 
 function outcome(reason: RedeemReason): RedeemOutcome & { institution_name?: string } {
-  return { ok: reason === "redeemed" || reason === "already_redeemed", reason, message: messageForReason(reason) };
+  return {
+    ok: reason === "redeemed" || reason === "already_redeemed" || reason === "already_member",
+    reason,
+    message: messageForReason(reason),
+  };
 }
 
 export type ProfileChoice =
   | { action: "use"; profile: { id: string; org_id: string } }
+  | { action: "none" }
   | { action: "refuse" };
 
 /**
@@ -43,7 +48,9 @@ export function chooseProfile(
     return { action: "refuse" };
   }
   if (owned) return { action: "use", profile: owned };
-  return { action: "refuse" };
+  // No workspace at all: legitimate for an org key. The database decides
+  // whether the key allows it.
+  return { action: "none" };
 }
 
 /**
@@ -108,7 +115,14 @@ export const redeemActivationKeyFn = createServerFn({ method: "POST" })
       }
 
       const choice = chooseProfile(data.profile_id, profileRows[0] ?? null, queryFailed);
-      if (choice.action === "refuse") return outcome("error");
+      // "none" (caller has no workspace) is a legitimate state for an org
+      // key, but the generated types for redeem_activation_key still declare
+      // p_profile_id and p_org_id as non-null strings. Until the types are
+      // regenerated against the replaced database function, this handler
+      // cannot pass nulls without a cast, and casts are not allowed here.
+      // The none path therefore refuses for now; chooseProfile and its tests
+      // carry the new decision so only this call site changes afterwards.
+      if (choice.action !== "use") return outcome("error");
       const profile = choice.profile;
 
       const { data: result, error } = await supabaseAdmin.rpc("redeem_activation_key", {
