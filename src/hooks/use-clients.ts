@@ -38,20 +38,26 @@ export function useInvalidateClients() {
   };
 }
 
-/** Creates a client row and returns its id. Ordinary member insert, no SQL. */
+/**
+ * Creates a client or folder row and returns its id. Ordinary member insert,
+ * no SQL. quick_folder is never written: the column keeps its default. The
+ * database trigger owns the nesting rules and its message is thrown as is.
+ */
 export async function createClient(input: {
   orgId: string;
   name: string;
-  quickFolder: boolean;
+  /** Accepted for older callers and ignored. Nothing writes quick_folder now. */
+  quickFolder?: boolean;
   kind?: "client" | "folder";
+  parentId?: string | null;
 }): Promise<string> {
   const id = crypto.randomUUID();
   const { error } = await supabase.from("clients").insert({
     id,
     org_id: input.orgId,
     name: input.name,
-    quick_folder: input.quickFolder,
     ...(input.kind ? { kind: input.kind } : {}),
+    ...(input.parentId ? { parent_id: input.parentId } : {}),
   });
   if (error) throw new Error(error.message);
   return id;
@@ -86,33 +92,4 @@ export async function reparentClient(input: {
     .select("id");
   const outcome = saveOutcome(result, CLIENT_MOVE_REFUSAL);
   if (!outcome.ok) throw new Error(outcome.message);
-}
-
-/**
- * A quick folder in one step: the client, then the hidden engagement that
- * carries its work. The engagement title is never surfaced anywhere.
- */
-export async function createQuickFolder(input: {
-  orgId: string;
-  profileId: string;
-  name: string;
-}): Promise<{ clientId: string; engagementId: string }> {
-  const clientId = await createClient({ orgId: input.orgId, name: input.name, quickFolder: true });
-  const engagementId = crypto.randomUUID();
-  const code = `QF-${input.name.replace(/[^A-Za-z0-9]/g, "").slice(0, 6).toUpperCase() || "FOLDER"}-${engagementId.slice(0, 4).toUpperCase()}`;
-  const { error } = await supabase.from("engagements").insert({
-    id: engagementId,
-    org_id: input.orgId,
-    client_id: clientId,
-    code,
-    title: QUICK_FOLDER_ENGAGEMENT_TITLE,
-  });
-  if (error) throw new Error(error.message);
-  const { error: memberError } = await supabase.from("engagement_members").insert({
-    engagement_id: engagementId,
-    profile_id: input.profileId,
-    member_role: "em",
-  });
-  if (memberError) throw new Error(memberError.message);
-  return { clientId, engagementId };
 }
