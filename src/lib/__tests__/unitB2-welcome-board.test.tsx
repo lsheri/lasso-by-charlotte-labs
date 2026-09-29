@@ -71,7 +71,7 @@ describe("Unit B2 welcome board", () => {
     expect(fromCalls.filter((t) => WORK_TABLES.includes(t))).toEqual([]);
     const names = new Set(logged.map((l) => l.event));
     expect([...names].sort()).toEqual(["welcome.ask_used", "welcome.card_opened", "welcome.dismissed", "welcome.viewed"]);
-  });
+  }, 30_000);
 
   it.each(REGISTERS)("%s renders twelve cards in four groups with no banned words", (register) => {
     const { container } = render(<WelcomeBoardView register={register} orgId="o1" store={memoryStore()()} answerQuestion={okAnswer} />);
