@@ -26,7 +26,10 @@ vi.mock("@tanstack/react-query", () => ({
     removeQueries: () => {},
   }),
 }));
-vi.mock("@tanstack/react-start", () => ({ useServerFn: (fn: unknown) => fn }));
+vi.mock("@tanstack/react-start", async (orig) => ({
+  ...(await orig<object>()),
+  useServerFn: (fn: unknown) => fn,
+}));
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
     auth: { getUser: async () => ({ data: { user: { id: "u1" } }, error: null }) },
