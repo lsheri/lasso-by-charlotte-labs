@@ -17,6 +17,7 @@ import {
 const mocks = vi.hoisted(() => ({
   profile: { id: "p1", org_id: "o1", org_type: "company", role: "worker" } as Record<string, unknown>,
   engagements: [] as unknown[],
+  clientRows: [] as unknown[],
 }));
 
 vi.mock("@tanstack/react-router", () => ({
@@ -36,6 +37,11 @@ vi.mock("@/hooks/use-profile", async (importOriginal) => ({
 vi.mock("@/hooks/use-engagements", () => ({
   useEngagements: () => ({ data: mocks.engagements }),
 }));
+vi.mock("@/hooks/use-clients", () => ({
+  useClients: () => ({ data: mocks.clientRows }),
+  useInvalidateClients: () => () => {},
+}));
+vi.mock("@/components/engagements/SidebarCreateActions", () => ({ SidebarCreateActions: () => null }));
 vi.mock("@/hooks/use-affiliation", () => ({ useAffiliation: () => ({ data: null }) }));
 vi.mock("@/hooks/use-coach-note-thread", () => ({ useUnreadNotesAboutMe: () => ({ data: [] }) }));
 vi.mock("@/hooks/use-coaching-links", () => ({ useHasLiveCoachLink: () => false }));
@@ -139,5 +145,37 @@ describe("pass 210 sidebar rendering", () => {
     render(<SidebarNav />);
     expect(screen.queryByText("Folders")).toBeNull();
     for (const id of ["e1", "e2", "e3"]) expect(screen.getByText(`Title ${id}`)).toBeTruthy();
+  });
+});
+
+describe("unit 3c containers render without workboards", () => {
+  it("shows an empty client and two nested folders the workboard list never mentions", async () => {
+    const clientRows: ContainerRow[] = [
+      { id: "c-empty", name: "Lonely Co", kind: "client", parent_id: null },
+      { id: "c-top", name: "Top Co", kind: "client", parent_id: null },
+      { id: "f-1", name: "Folder One", kind: "folder", parent_id: "c-top" },
+      { id: "f-2", name: "Folder Two", kind: "folder", parent_id: "f-1" },
+    ];
+    mocks.clientRows = clientRows;
+    mocks.profile = { id: "p1", org_id: "o1", org_type: "partner", role: "worker" };
+    mocks.engagements = [eng("e9", null)];
+    const { container } = render(<SidebarNav />);
+    for (const name of ["Lonely Co", "Top Co", "Folder One", "Folder Two"]) {
+      expect(screen.getAllByText(name)).toHaveLength(1);
+    }
+    expect(screen.getByText("Not in a client yet")).toBeTruthy();
+    expect(screen.getAllByText("Nothing in here yet").length).toBe(2);
+    // Order proves nesting: Top Co, then Folder One, then Folder Two.
+    const text = container.textContent ?? "";
+    expect(text.indexOf("Top Co")).toBeLessThan(text.indexOf("Folder One"));
+    expect(text.indexOf("Folder One")).toBeLessThan(text.indexOf("Folder Two"));
+    const { flattenForSidebar: flat, buildContainerTree: tree } = await import("@/lib/nav-groups");
+    expect(flat(tree(clientRows, [])).map((r) => [r.node.name, r.depth])).toEqual([
+      ["Lonely Co", 0],
+      ["Top Co", 0],
+      ["Folder One", 1],
+      ["Folder Two", 2],
+    ]);
+    mocks.clientRows = [];
   });
 });

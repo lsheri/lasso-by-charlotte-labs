@@ -414,16 +414,6 @@ export function SidebarNav({
                                   scope={scopeFor(engagement.id)}
                                 />
                               ))}
-                            {!synthetic && foldersUnderClient.has(shelf.clientId) ? (
-                              <FolderRows
-                                rows={foldersUnderClient.get(shelf.clientId) ?? []}
-                                collapsedIds={collapsedClients}
-                                onToggle={toggleClient}
-                                onNavigate={onNavigate}
-                                newEngagementLabel={vocab.newEngagement}
-                                scopeFor={scopeFor}
-                              />
-                            ) : null}
                           </>
                         )}
                       </div>
@@ -589,14 +579,6 @@ export function SidebarNav({
 
               {isEngagementGroup ? (
                 <>
-                  {flat.map((engagement) => (
-                    <EngagementRow
-                      key={engagement.id}
-                      engagement={engagement}
-                      onNavigate={onNavigate}
-                      scope={scopeFor(engagement.id)}
-                    />
-                  ))}
                   <FolderRows
                     rows={clientRoots}
                     collapsedIds={collapsedClients}
