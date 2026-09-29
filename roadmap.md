@@ -4,4 +4,4 @@
 - [x] Unit D5a: cookie domain in app-host.ts
 - [x] Unit D6: server path restored, stable visitor id, identify by auth user id
 - [ ] Join hashed server funnel events to the identified person (needs founder scoping, see D6 report)
-- [ ] Unit L4: render register privacy copy on account setup and auth
+- [x] Unit L4: render register privacy copy on account setup and auth
