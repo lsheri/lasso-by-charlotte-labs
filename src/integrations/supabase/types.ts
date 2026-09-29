@@ -74,7 +74,9 @@ export type Database = {
           label: string | null
           max_uses: number | null
           org_id: string | null
+          register: string | null
           revoked_at: string | null
+          seats: number | null
           uses: number
         }
         Insert: {
@@ -87,7 +89,9 @@ export type Database = {
           label?: string | null
           max_uses?: number | null
           org_id?: string | null
+          register?: string | null
           revoked_at?: string | null
+          seats?: number | null
           uses?: number
         }
         Update: {
@@ -100,7 +104,9 @@ export type Database = {
           label?: string | null
           max_uses?: number | null
           org_id?: string | null
+          register?: string | null
           revoked_at?: string | null
+          seats?: number | null
           uses?: number
         }
         Relationships: [
@@ -4475,7 +4481,12 @@ export type Database = {
         Returns: string
       }
       create_org_with_profile: {
-        Args: { p_display_name: string; p_org_name: string }
+        Args: {
+          p_display_name: string
+          p_org_name: string
+          p_signup_source?: string
+          p_type?: string
+        }
         Returns: string
       }
       deactivate_member: { Args: { p_profile: string }; Returns: undefined }
