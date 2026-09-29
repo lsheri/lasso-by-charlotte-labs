@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { supabase } from "@/integrations/supabase/client";
-import { CLIENT_MOVE_REFUSAL, CLIENT_RENAME_REFUSAL, saveOutcome } from "@/lib/save-guard";
+import { CLIENT_MOVE_REFUSAL, CLIENT_RENAME_REFUSAL, rpcOutcome, saveOutcome, type RpcStatus } from "@/lib/save-guard";
 
 export type ClientRow = {
   id: string;
@@ -90,5 +90,35 @@ export async function reparentClient(input: {
     .eq("id", input.clientId)
     .select("id");
   const outcome = saveOutcome(result, CLIENT_MOVE_REFUSAL);
+  if (!outcome.ok) throw new Error(outcome.message);
+}
+
+/** Shown only when the database refuses without a reason of its own. */
+const DELETE_FALLBACK = "That was not removed.";
+const WORKBOARD_MOVE_FALLBACK = "That did not move.";
+
+/**
+ * Removes a container through delete_container, never a raw delete: the
+ * clients table has no delete policy, so a direct delete removes nothing and
+ * reports nothing. Contents lift one level; the returned counts say where.
+ */
+export async function deleteContainer(id: string): Promise<RpcStatus> {
+  const result = await supabase.rpc("delete_container", { p_id: id });
+  const outcome = rpcOutcome(result, "deleted", DELETE_FALLBACK);
+  if (!outcome.ok) throw new Error(outcome.message);
+  return outcome.value;
+}
+
+/** Sets a workboard's container. Null is top level, a real move. */
+export async function moveWorkboard(input: {
+  engagementId: string;
+  clientId: string | null;
+}): Promise<void> {
+  const result = await supabase.rpc("move_workboard", {
+    p_engagement: input.engagementId,
+    // The generated type says string; the function accepts null for top level.
+    p_client: input.clientId as string,
+  });
+  const outcome = rpcOutcome(result, "moved", WORKBOARD_MOVE_FALLBACK);
   if (!outcome.ok) throw new Error(outcome.message);
 }

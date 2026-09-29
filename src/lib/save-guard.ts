@@ -21,6 +21,24 @@ export const CLIENT_RENAME_REFUSAL =
 export const CLIENT_MOVE_REFUSAL =
   "That did not move. Only someone in this workspace can move a folder.";
 
+/** What delete_container and move_workboard return: a status, never a throw. */
+export type RpcStatus = { status?: string; reason?: string } & Record<string, unknown>;
+
+/**
+ * The RPC twin of saveOutcome. Only the named success status is a save; any
+ * other status is a refusal and its reason is shown exactly as written.
+ */
+export function rpcOutcome(
+  result: { data: unknown; error: { message: string } | null },
+  success: string,
+  fallback: string,
+): { ok: true; value: RpcStatus } | { ok: false; message: string } {
+  if (result.error) return { ok: false, message: result.error.message };
+  const value = (result.data ?? {}) as RpcStatus;
+  if (value.status === success) return { ok: true, value };
+  return { ok: false, message: typeof value.reason === "string" && value.reason ? value.reason : fallback };
+}
+
 /** Zero rows back is a refusal, never a success, and never a telemetry event. */
 export function saveOutcome(result: UpdateResult, refusal: string): SaveOutcome {
   if (result.error) return { ok: false, message: result.error.message };
