@@ -7,4 +7,4 @@
 - [x] Unit L4: render register privacy copy on account setup and auth
 - [x] Unit 3c: every saved container visible in the sidebar, nested, with honest ungrouped label
 - [x] Unit 4a: sidebar menu to rename, move and delete containers; move workboards
-- [ ] Unit 4c: gate New client behind canManageMembers, keep New folder open to all, unify delete verb
+- [x] Unit 4c: gate New client behind canManageMembers, keep New folder open to all, unify delete verb
