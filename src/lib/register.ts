@@ -59,8 +59,8 @@ export const REGISTER_COPY: Readonly<Record<Register, RegisterCopy>> = {
   },
   partner: {
     emailLabel: "WORK EMAIL",
-    emailPlaceholder: "you@yourfirm.com",
-    microLabel: "Your firm",
+    emailPlaceholder: "you@yourpractice.com",
+    microLabel: "Your practice",
     setupBody: "Two details and you are in. Both are yours to change later.",
     workspaceField: true,
     workspaceLabel: "Workspace name",

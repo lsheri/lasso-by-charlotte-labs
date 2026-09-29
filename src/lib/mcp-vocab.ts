@@ -83,6 +83,7 @@ export function mcpWorkspaceType(
 ): McpWorkspaceType {
   if (orgType === "company") return "company";
   if (orgType === "edu") return "edu";
+  if (orgType === "partner") return "partner";
   return "personal";
 }
 

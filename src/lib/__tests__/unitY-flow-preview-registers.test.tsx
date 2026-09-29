@@ -46,7 +46,7 @@ const EXPECTED: Record<Register, string[]> = {
 const BANNED = /\b(firm|consultancy|consulting|organize|mentor|audit|oversight|governance|monitor|track|surveillance|score)\b/i;
 
 describe("Unit Y1: FlowPreview captions follow the register", () => {
-  for (const register of ["company", "personal", "edu"] as const) {
+  for (const register of ["company", "personal", "edu", "partner"] as const) {
     it(register, () => {
       const { container } = render(<FlowPreview register={register} />);
       const text = container.textContent ?? "";

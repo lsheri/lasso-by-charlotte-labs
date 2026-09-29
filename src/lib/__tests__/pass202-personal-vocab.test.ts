@@ -10,9 +10,10 @@ describe("pass202 personal vocab", () => {
     expect(vocabFor({ org_type: "company" })).toEqual(DEFAULT_VOCAB);
   });
 
-  it("falls back to the consulting words for no profile and an unknown type", () => {
+  it("falls back to the consulting words for no profile, and gives partner the consulting words on purpose", () => {
     expect(vocabFor(null)).toEqual(DEFAULT_VOCAB);
     expect(vocabFor(undefined)).toEqual(DEFAULT_VOCAB);
+    // partner is a real workspace type; it takes the consulting words deliberately, not as an unknown-type fallback.
     expect(vocabFor({ org_type: "partner" })).toEqual(DEFAULT_VOCAB);
   });
 
