@@ -128,7 +128,7 @@ export const redeemActivationKeyFn = createServerFn({ method: "POST" })
         return outcome("error");
       }
 
-      const row = result as { ok?: unknown; reason?: unknown; institution_id?: unknown };
+      const row = result as { ok?: unknown; reason?: unknown; institution_id?: unknown; org_id?: unknown };
       const reason: RedeemReason = isRedeemReason(row.reason) ? row.reason : "error";
       const base = { ok: row.ok === true, reason, message: messageForReason(reason) };
 
@@ -151,13 +151,18 @@ export const redeemActivationKeyFn = createServerFn({ method: "POST" })
           try {
             const institution = institutionToRecord(inst?.slug) ?? "unknown";
             const { recordEvent } = await import("./telemetry.server");
-            await recordEvent(context.supabase, {
-              eventType: "workspace.affiliated",
-              orgId: profile.org_id,
-              userId,
-              profileId: profile.id,
-              dims: { institution },
-            });
+            // On the "none" path there is no local profile; the database
+            // returns org_id in its result on every successful outcome.
+            const orgId = profile ? profile.org_id : typeof row.org_id === "string" ? row.org_id : undefined;
+            if (orgId) {
+              await recordEvent(context.supabase, {
+                eventType: "workspace.affiliated",
+                orgId,
+                userId,
+                profileId: profile ? profile.id : undefined,
+                dims: { institution },
+              });
+            }
           } catch {
             // Deliberately swallowed; see above.
           }
