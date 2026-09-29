@@ -7,6 +7,7 @@
  */
 
 import type { WorkItemRow } from "./work-types";
+import type { OrgType } from "./org-type";
 
 export const ARRIVAL_WINDOW_DAYS = 7;
 export const ARRIVAL_WINDOW_MS = ARRIVAL_WINDOW_DAYS * 24 * 60 * 60 * 1000;
