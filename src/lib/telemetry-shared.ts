@@ -117,6 +117,9 @@ export type TelemetryEvent =
    *  top. Kind, resulting depth and whether a parent was set or cleared.
    *  Never a name, never an id. */
   | "container.reparented"
+  /** Unit 4a: a container was removed through delete_container. Its contents
+   *  lift one level. Kind and two booleans only. Never a name, id or count. */
+  | "container.deleted"
   | "workflow.reordered"
   | "workflow.reset"
   | "coach.invite_created"

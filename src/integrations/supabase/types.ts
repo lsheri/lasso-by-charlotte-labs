@@ -4777,6 +4777,7 @@ export type Database = {
         Returns: string
       }
       deactivate_member: { Args: { p_profile: string }; Returns: undefined }
+      delete_container: { Args: { p_id: string }; Returns: Json }
       end_coaching_link: {
         Args: { p_actor_profile_id?: string; p_link_id: string }
         Returns: undefined
@@ -4856,6 +4857,10 @@ export type Database = {
       }
       move_item_to_workstream: {
         Args: { p_item: string; p_task: string }
+        Returns: Json
+      }
+      move_workboard: {
+        Args: { p_client: string; p_engagement: string }
         Returns: Json
       }
       my_org_id: { Args: never; Returns: string }

@@ -5,6 +5,7 @@ import { Fragment, useState, useSyncExternalStore } from "react";
 import { NewEngagementDialog } from "@/components/engagements/NewEngagementDialog";
 import { SidebarCreateActions } from "@/components/engagements/SidebarCreateActions";
 import { GraphiteIcon } from "@/components/notebook/icons";
+import { SidebarItemMenu } from "@/components/layout/SidebarItemMenu";
 import { CircleMark } from "@/components/notebook/CircleMark";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAffiliation } from "@/hooks/use-affiliation";
@@ -100,6 +101,13 @@ function useCachedEngagementTasks(engagementId: string | undefined) {
   );
 }
 
+/** Unit 4a: move, rename and delete are offered on the member nav, never to a
+ *  guest (coaches use the guest nav). The database decides every write. */
+function useCanEditContainers(): boolean {
+  const { data: profile } = useProfile();
+  return Boolean(profile) && !roles.usesGuestNav(profile);
+}
+
 /** One engagement row, at top level or nested under a client shelf. */
 function EngagementRow({
   engagement,
@@ -116,8 +124,9 @@ function EngagementRow({
   scope?: { tasks: CachedNavTask[]; workId: string | undefined } | undefined;
 }) {
   const code = hideCode ? null : (engagementDisplayCode(engagement) ?? "Folder");
-  return (
-    <>
+  const canEdit = useCanEditContainers();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const link = (
       <Link
         to="/engagements/$id"
         params={{ id: engagement.id }}
@@ -133,6 +142,32 @@ function EngagementRow({
           <span className="truncate">{engagementDisplayTitle(engagement)}</span>
         </span>
       </Link>
+  );
+  return (
+    <>
+      {canEdit ? (
+        <div
+          className="flex items-center gap-1 pr-1"
+          onContextMenu={(event) => {
+            event.preventDefault();
+            setMenuOpen(true);
+          }}
+        >
+          <div className="min-w-0 flex-1">{link}</div>
+          <SidebarItemMenu
+            open={menuOpen}
+            onOpenChange={setMenuOpen}
+            target={{
+              type: "workboard",
+              id: engagement.id,
+              name: engagementDisplayTitle(engagement),
+              clientId: engagement.clients?.id ?? null,
+            }}
+          />
+        </div>
+      ) : (
+        link
+      )}
       {scope ? (
         <div>
           <Link
@@ -663,12 +698,54 @@ function FolderRows({
     }
   };
   for (const { node } of rows) if (collapsedIds.includes(node.clientId)) hideBelow(node);
-  return rows.map(({ node, depth }) => {
-        if (hidden.has(node.clientId)) return null;
-        const collapsed = collapsedIds.includes(node.clientId);
+  return rows.map(({ node, depth }) =>
+    hidden.has(node.clientId) ? null : (
+      <ContainerShelfRow
+        key={node.clientId}
+        node={node}
+        depth={depth}
+        collapsed={collapsedIds.includes(node.clientId)}
+        onToggle={onToggle}
+        onNavigate={onNavigate}
+        newEngagementLabel={newEngagementLabel}
+        scopeFor={scopeFor}
+      />
+    ),
+  );
+}
+
+function ContainerShelfRow({
+  node,
+  depth,
+  collapsed,
+  onToggle,
+  onNavigate,
+  newEngagementLabel,
+  scopeFor,
+}: {
+  node: ContainerNode<NavEngagement>;
+  depth: number;
+  collapsed: boolean;
+  onToggle: (id: string) => void;
+  onNavigate?: (() => void) | undefined;
+  newEngagementLabel: string;
+  scopeFor: (id: string) => { tasks: CachedNavTask[]; workId: string | undefined } | undefined;
+}) {
+  const canEdit = useCanEditContainers();
+  const [menuOpen, setMenuOpen] = useState(false);
         return (
           <div key={node.clientId}>
-            <div className={`${linkClass} nb-nav-shelf group/shelf w-full text-left`}>
+            <div
+              className={`${linkClass} nb-nav-shelf group/shelf w-full text-left`}
+              onContextMenu={
+                canEdit
+                  ? (event) => {
+                      event.preventDefault();
+                      setMenuOpen(true);
+                    }
+                  : undefined
+              }
+            >
               {depth > 0 ? (
                 <>
                   <PencilIndent />
@@ -699,6 +776,20 @@ function FolderRows({
                   </button>
                 }
               />
+              {canEdit ? (
+                <SidebarItemMenu
+                  open={menuOpen}
+                  onOpenChange={setMenuOpen}
+                  target={{
+                    type: "container",
+                    id: node.clientId,
+                    name: node.name,
+                    kind: node.kind,
+                    workboards: node.engagements.length,
+                    folders: node.children.length,
+                  }}
+                />
+              ) : null}
               <button
                 type="button"
                 aria-expanded={!collapsed}
@@ -725,7 +816,6 @@ function FolderRows({
                 ))}
           </div>
         );
-      });
 }
 
 /** The top-level Folders section. */
@@ -737,3 +827,4 @@ function FolderSection(props: Parameters<typeof FolderRows>[0]) {
     </>
   );
 }
+
