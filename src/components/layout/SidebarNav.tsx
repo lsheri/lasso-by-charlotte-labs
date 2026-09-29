@@ -816,6 +816,15 @@ function ContainerShelfRow({
                 ))}
           </div>
         );
-      });
+}
+
+/** The top-level Folders section. */
+function FolderSection(props: Parameters<typeof FolderRows>[0]) {
+  return (
+    <>
+      <div className="px-2 pt-2 text-sm text-muted-foreground">Folders</div>
+      <FolderRows {...props} />
+    </>
+  );
 }
 
