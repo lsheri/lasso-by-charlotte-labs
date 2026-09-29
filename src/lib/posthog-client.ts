@@ -1,6 +1,6 @@
 import posthog from "posthog-js";
 
-import { isProductionHost } from "@/lib/app-host";
+import { ANALYTICS_COOKIE_DOMAIN, isProductionHost } from "@/lib/app-host";
 
 /**
  * The ONLY file in src that may touch posthog-js.
@@ -16,7 +16,7 @@ export const POSTHOG_TOKEN = "phc_mb9PLASteZ87YA6P34n4Mb9Hp9rW3oXXRQvq6qXiy6mw";
 
 export const POSTHOG_CONFIG = {
   api_host: "https://us.i.posthog.com",
-  cookie_domain: ".charlotte-labs.com",
+  cookie_domain: ANALYTICS_COOKIE_DOMAIN,
   autocapture: true,
   capture_pageview: false, // first-party perf.pageload + landing.viewed own this
   capture_pageleave: false,
@@ -90,6 +90,25 @@ export function startSessionReplay(): void {
   try {
     if (!isProductionHost(window.location.hostname)) return;
     posthog.startSessionRecording();
+  } catch {
+    /* telemetry must never break the app */
+  }
+}
+
+/**
+ * Unit D5: the three public signup funnel events only, so they carry the
+ * browser's own distinct id. Nothing after sign-in and nothing with work
+ * content may use this.
+ */
+export type FunnelEvent =
+  | { name: "plans.viewed"; props: { src: string } }
+  | { name: "plan.picked"; props: { plan: string; src: string } }
+  | { name: "signup.started"; props: { intent: string; src: string } };
+
+export function captureFunnelEvent<E extends FunnelEvent>(name: E["name"], props: E["props"]): void {
+  if (typeof window === "undefined") return;
+  try {
+    posthog.capture(name, props);
   } catch {
     /* telemetry must never break the app */
   }

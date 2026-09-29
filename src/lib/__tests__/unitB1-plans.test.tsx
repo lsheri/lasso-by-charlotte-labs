@@ -20,8 +20,8 @@ vi.mock("@tanstack/react-start", async (orig) => ({
   ...(await orig<object>()),
   useServerFn: () => vi.fn().mockResolvedValue({ ok: true }),
 }));
-vi.mock("@/lib/client-telemetry", () => ({
-  emitClientEvent: (event: string, dims: Record<string, unknown>) => emitted.push([event, dims]),
+vi.mock("@/lib/posthog-client", () => ({
+  captureFunnelEvent: (event: string, dims: Record<string, unknown>) => emitted.push([event, dims]),
 }));
 
 import { PlansPage, validatePlansSearch } from "@/routes/plans";

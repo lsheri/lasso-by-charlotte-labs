@@ -6,7 +6,7 @@ import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { emitClientEvent } from "@/lib/client-telemetry";
+import { captureFunnelEvent } from "@/lib/posthog-client";
 import type { SignupSource } from "@/lib/edu-entry";
 import { parseFunnelSource, type FunnelSource } from "@/lib/funnel-source";
 import { isPartnerSlug } from "@/lib/partners";
@@ -151,7 +151,7 @@ export function PlansPage({ search = {} }: { search?: PlansSearch }) {
   const eventSrc = src ?? "direct";
 
   useEffect(() => {
-    emitClientEvent("plans.viewed", { src: eventSrc });
+    captureFunnelEvent("plans.viewed", { src: eventSrc });
   }, [eventSrc]);
 
   return (
@@ -201,7 +201,7 @@ export function PlansPage({ search = {} }: { search?: PlansSearch }) {
                   <Link
                     to="/auth"
                     search={{ intent: plan.intent, ...(src ? { src } : {}), ...(from ? { from } : {}) }}
-                    onClick={() => emitClientEvent("plan.picked", { plan: plan.intent, src: eventSrc })}
+                    onClick={() => captureFunnelEvent("plan.picked", { plan: plan.intent, src: eventSrc })}
                   >
                     Get started
                   </Link>

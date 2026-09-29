@@ -16,7 +16,7 @@ import { isPartnerSlug } from "@/lib/partners";
 import { cleanActivationKey, markActivationKey, readActivationKey } from "@/lib/key-entry";
 import { deriveRegister, NEUTRAL_COPY, REGISTER_COPY } from "@/lib/register";
 import type { IntentParam } from "@/lib/org-type";
-import { emitClientEvent } from "@/lib/client-telemetry";
+import { captureFunnelEvent } from "@/lib/posthog-client";
 import { parseFunnelSource, type FunnelSource } from "@/lib/funnel-source";
 
 export const Route = createFileRoute("/auth")({
@@ -92,7 +92,7 @@ function AuthPage() {
   const navigate = useNavigate();
   const { next, intent, invite, from, src, key } = Route.useSearch();
   useEffect(() => {
-    if (intent) emitClientEvent("signup.started", { intent, src: src ?? "direct" });
+    if (intent) captureFunnelEvent("signup.started", { intent, src: src ?? "direct" });
   }, [intent, src]);
   // Pass 185: the front door someone came through, remembered until the
   // workspace is created. Nothing else about the page changes.

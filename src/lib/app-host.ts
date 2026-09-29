@@ -22,6 +22,9 @@ export const PRODUCTION_HOSTS = [
 
 export const CANONICAL_ORIGIN = `https://${CANONICAL_HOST}`;
 
+/** Analytics cookie scope, shared with the umbrella site so one visitor stays one visitor. */
+export const ANALYTICS_COOKIE_DOMAIN = ".charlotte-labs.com";
+
 /**
  * Exact match only, case-insensitive. Never a substring or suffix test:
  * "lasso.charlotte-labs.com.attacker.com" is not this app.
