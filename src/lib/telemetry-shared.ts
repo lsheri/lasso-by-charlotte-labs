@@ -20,8 +20,12 @@ export type TelemetryEvent =
   | "landing.pilot_requested"
   /** Unit B1: the public plans page was opened. Content-free. */
   | "plans.viewed"
-  /** Unit B1: a plan, activation key, or invite path was chosen. Closed words only. */
+  /** Unit B1 legacy name. No new callers. */
   | "plans.action_clicked"
+  /** Unit D1: a visitor chose one enabled plan. Closed plan and source only. */
+  | "plan.picked"
+  /** Unit D1: signup opened with a plan intent. Closed intent and source only. */
+  | "signup.started"
   /** Product shell 1.3: the public demo Home or a demo board was opened. Closed surface word and invented demo code only. */
   | "demo.opened"
   /** P1: one content-free interaction in the local-only public demo playground. */

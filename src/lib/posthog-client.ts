@@ -16,6 +16,7 @@ export const POSTHOG_TOKEN = "phc_mb9PLASteZ87YA6P34n4Mb9Hp9rW3oXXRQvq6qXiy6mw";
 
 export const POSTHOG_CONFIG = {
   api_host: "https://us.i.posthog.com",
+  cookie_domain: ".charlotte-labs.com",
   autocapture: true,
   capture_pageview: false, // first-party perf.pageload + landing.viewed own this
   capture_pageleave: false,
