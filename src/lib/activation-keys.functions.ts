@@ -116,13 +116,13 @@ export const redeemActivationKeyFn = createServerFn({ method: "POST" })
 
       const choice = chooseProfile(data.profile_id, profileRows[0] ?? null, queryFailed);
       if (choice.action === "refuse") return outcome("error");
-      const profile = choice.profile;
+      const profile = choice.action === "use" ? choice.profile : null;
 
       const { data: result, error } = await supabaseAdmin.rpc("redeem_activation_key", {
         p_code: data.code,
-        p_profile_id: profile.id,
+        p_profile_id: profile ? profile.id : null,
         p_user_id: userId,
-        p_org_id: profile.org_id,
+        p_org_id: profile ? profile.org_id : null,
       });
       if (error || !result || typeof result !== "object" || Array.isArray(result)) {
         return outcome("error");
