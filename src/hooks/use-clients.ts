@@ -1,7 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { supabase } from "@/integrations/supabase/client";
-import { QUICK_FOLDER_ENGAGEMENT_TITLE } from "@/lib/clients";
 import { CLIENT_MOVE_REFUSAL, CLIENT_RENAME_REFUSAL, saveOutcome } from "@/lib/save-guard";
 
 export type ClientRow = {

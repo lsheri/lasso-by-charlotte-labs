@@ -4,10 +4,10 @@ import { toast } from "sonner";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createClient, renameClient, useClients, useInvalidateClients } from "@/hooks/use-clients";
+import { createContainer, type ContainerFrom } from "@/components/engagements/create-container";
+import { renameClient, useClients, useInvalidateClients } from "@/hooks/use-clients";
 import { useProfile } from "@/hooks/use-profile";
 import { vocabFor } from "@/lib/edu-vocab";
-import { logEvent } from "@/lib/telemetry";
 
 /**
  * Client is optional everywhere. Pick one, make one on the spot, or leave it
@@ -22,9 +22,10 @@ export function ClientPicker({
 }: {
   orgId: string | undefined;
   value: string | null;
-  onChange: (clientId: string | null) => void;
+  /** createdInline is true when the container was made here, in this flow. */
+  onChange: (clientId: string | null, createdInline?: boolean) => void;
   id?: string;
-  from?: string;
+  from?: ContainerFrom;
 }) {
   const { data: clients } = useClients(orgId);
   const { data: profile } = useProfile();
@@ -43,22 +44,23 @@ export function ClientPicker({
    *  two groups would both read "Folders". */
   const splitByKind = vocab.client !== "Folder";
 
+  /** A new folder sits inside the container picked right now, or at the top. */
   async function create() {
-    if (!orgId || !name.trim()) return;
+    if (!orgId || !name.trim() || !creating) return;
     setPending(true);
     try {
-      const clientId = await createClient({
+      const clientId = await createContainer({
         orgId,
+        orgType: profile?.org_type,
         name: name.trim(),
-        quickFolder: false,
-        ...(creating === "folder" ? { kind: "folder" as const } : {}),
-      });
-      invalidate();
-      logEvent("container.created", orgId, {
-        kind: creating === "folder" ? "folder" : "client",
+        kind: creating,
+        parentId: creating === "folder" ? (picked?.id ?? null) : null,
+        rows: clients ?? [],
         from: from ?? "picker",
       });
-      onChange(clientId);
+      if (!clientId) return;
+      invalidate();
+      onChange(clientId, true);
       setCreating(null);
       setName("");
     } finally {
@@ -102,7 +104,9 @@ export function ClientPicker({
               renaming
                 ? `New ${vocab.client.toLowerCase()} name`
                 : creating === "folder"
-                  ? "Folder name"
+                  ? picked
+                    ? `Folder name, inside ${picked.name}`
+                    : "Folder name"
                   : `${vocab.client} name`
             }
             onKeyDown={(e) => {
@@ -182,7 +186,7 @@ export function ClientPicker({
           ) : null}
           <button
             type="button"
-            onClick={() => setCreating("client")}
+            onClick={() => setCreating(splitByKind ? "client" : "folder")}
             className="shrink-0 rounded-full border border-border bg-card px-3 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
           >
             {`New ${vocab.client.toLowerCase()}`}
