@@ -55,7 +55,7 @@ export type ArrivalPlace =
  */
 export function arrivalPlace(
   item: WorkItemRow,
-  orgType: "company" | "personal" | "edu" | null | undefined,
+  orgType: OrgType | null | undefined,
 ): ArrivalPlace {
   const link = item.work_item_tasks[0];
   const task = link?.tasks;
