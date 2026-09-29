@@ -42,6 +42,7 @@ import { Route as AuthenticatedOverviewRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedPortfolioRouteImport } from './routes/_authenticated/portfolio'
 import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
 import { Route as AuthenticatedReflectRouteImport } from './routes/_authenticated/reflect'
+import { Route as AuthenticatedRequestsRouteImport } from './routes/_authenticated/requests'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedWorkRouteImport } from './routes/_authenticated/work'
 import { Route as DemoIndexRouteImport } from './routes/demo.index'
@@ -237,6 +238,11 @@ const AuthenticatedReflectRoute = AuthenticatedReflectRouteImport.update({
   path: '/reflect',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedRequestsRoute = AuthenticatedRequestsRouteImport.update({
+  id: '/requests',
+  path: '/requests',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -413,6 +419,7 @@ export interface FileRoutesByFullPath {
   '/portfolio': typeof AuthenticatedPortfolioRoute
   '/projects': typeof AuthenticatedProjectsRoute
   '/reflect': typeof AuthenticatedReflectRoute
+  '/requests': typeof AuthenticatedRequestsRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/work': typeof AuthenticatedWorkRoute
   '/demo/$code': typeof DemoCodeRoute
@@ -474,6 +481,7 @@ export interface FileRoutesByTo {
   '/portfolio': typeof AuthenticatedPortfolioRoute
   '/projects': typeof AuthenticatedProjectsRoute
   '/reflect': typeof AuthenticatedReflectRoute
+  '/requests': typeof AuthenticatedRequestsRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/work': typeof AuthenticatedWorkRoute
   '/demo/$code': typeof DemoCodeRoute
@@ -537,6 +545,7 @@ export interface FileRoutesById {
   '/_authenticated/portfolio': typeof AuthenticatedPortfolioRoute
   '/_authenticated/projects': typeof AuthenticatedProjectsRoute
   '/_authenticated/reflect': typeof AuthenticatedReflectRoute
+  '/_authenticated/requests': typeof AuthenticatedRequestsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/work': typeof AuthenticatedWorkRoute
   '/demo/$code': typeof DemoCodeRoute
@@ -600,6 +609,7 @@ export interface FileRouteTypes {
     | '/portfolio'
     | '/projects'
     | '/reflect'
+    | '/requests'
     | '/settings'
     | '/work'
     | '/demo/$code'
@@ -661,6 +671,7 @@ export interface FileRouteTypes {
     | '/portfolio'
     | '/projects'
     | '/reflect'
+    | '/requests'
     | '/settings'
     | '/work'
     | '/demo/$code'
@@ -723,6 +734,7 @@ export interface FileRouteTypes {
     | '/_authenticated/portfolio'
     | '/_authenticated/projects'
     | '/_authenticated/reflect'
+    | '/_authenticated/requests'
     | '/_authenticated/settings'
     | '/_authenticated/work'
     | '/demo/$code'
@@ -1020,6 +1032,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReflectRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/requests': {
+      id: '/_authenticated/requests'
+      path: '/requests'
+      fullPath: '/requests'
+      preLoaderRoute: typeof AuthenticatedRequestsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/settings': {
       id: '/_authenticated/settings'
       path: '/settings'
@@ -1232,6 +1251,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPortfolioRoute: typeof AuthenticatedPortfolioRoute
   AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
   AuthenticatedReflectRoute: typeof AuthenticatedReflectRoute
+  AuthenticatedRequestsRoute: typeof AuthenticatedRequestsRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedWorkRoute: typeof AuthenticatedWorkRoute
   AuthenticatedClientsIdRoute: typeof AuthenticatedClientsIdRoute
@@ -1263,6 +1283,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPortfolioRoute: AuthenticatedPortfolioRoute,
   AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,
   AuthenticatedReflectRoute: AuthenticatedReflectRoute,
+  AuthenticatedRequestsRoute: AuthenticatedRequestsRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedWorkRoute: AuthenticatedWorkRoute,
   AuthenticatedClientsIdRoute: AuthenticatedClientsIdRoute,
