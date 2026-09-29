@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 
+import { useServerFn } from "@tanstack/react-start";
+
 import { PasteThreadDialog } from "@/components/work/PasteThreadDialog";
 import { Button } from "@/components/ui/button";
 import { useOnboardingUi } from "@/hooks/use-onboarding-ui";
 import { useProfile } from "@/hooks/use-profile";
 import type { OrgType } from "@/lib/org-type";
+import { answerWelcomeQuestionFn } from "@/lib/welcome-answer.functions";
 import { bucket, logEvent } from "@/lib/telemetry";
 import { WELCOME_COPY, welcomeGroups, type WelcomeCard, type WelcomeCardId } from "@/lib/welcome-board-copy";
 
@@ -18,27 +21,38 @@ export function useWelcomeHiddenStore(): WelcomeHiddenStore {
 
 /**
  * WELCOME-ONLY ANSWER PATH. The real Ask path needs a stored chat session and
- * reads stored work rows, so the guide answers here, from the bundled card
- * text only. Nothing is sent, nothing is written.
+ * reads stored work rows, so the guide asks answerWelcomeQuestionFn, which
+ * sends only card ids and resolves the text server side. Nothing is written.
  */
-export function welcomeOnlyAnswer(cards: readonly WelcomeCard[]): readonly WelcomeCard[] {
-  return cards;
-}
+export type WelcomeAnswerFn = (input: {
+  question: string;
+  cardIds: WelcomeCardId[];
+  register: OrgType;
+  orgId: string;
+}) => Promise<{ text: string }>;
+
+type AnswerState =
+  | { kind: "answered"; text: string; cards: readonly WelcomeCard[] }
+  | { kind: "fallback"; cards: readonly WelcomeCard[] };
 
 export function WelcomeBoardView({
   register,
   orgId,
   store,
+  answerQuestion,
 }: {
   register: OrgType;
   orgId: string;
   store: WelcomeHiddenStore;
+  answerQuestion: WelcomeAnswerFn;
 }) {
   const groups = welcomeGroups(register);
   const [openIds, setOpenIds] = useState<Set<WelcomeCardId>>(new Set());
   const [circled, setCircled] = useState<Set<WelcomeCardId>>(new Set());
   const [question, setQuestion] = useState("");
-  const [answer, setAnswer] = useState<readonly WelcomeCard[] | null>(null);
+  const [answer, setAnswer] = useState<AnswerState | null>(null);
+  const [pending, setPending] = useState(false);
+  const inFlight = useRef(false);
   const viewed = useRef(false);
 
   useEffect(() => {
@@ -76,8 +90,23 @@ export function WelcomeBoardView({
     event.preventDefault();
     const picked = all.filter((c) => circled.has(c.id));
     if (picked.length === 0) return;
-    setAnswer(welcomeOnlyAnswer(picked));
+    if (inFlight.current) return;
+    inFlight.current = true;
+    setPending(true);
     logEvent("welcome.ask_used", orgId, { card_count: bucket(picked.length), register });
+    const q = question.trim() || WELCOME_COPY.defaultQuestion;
+    void (async () => {
+      try {
+        const res = await answerQuestion({ question: q, cardIds: picked.map((c) => c.id), register, orgId });
+        const text = res?.text?.trim();
+        setAnswer(text ? { kind: "answered", text, cards: picked } : { kind: "fallback", cards: picked });
+      } catch {
+        setAnswer({ kind: "fallback", cards: picked });
+      } finally {
+        inFlight.current = false;
+        setPending(false);
+      }
+    })();
   }
 
   function hide() {
@@ -165,23 +194,30 @@ export function WelcomeBoardView({
           placeholder={WELCOME_COPY.askPlaceholder}
           className="h-11 min-w-0 rounded-[var(--radius-control)] border border-input bg-card px-3 text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
         />
-        <Button type="submit" variant="ink" className="h-11" disabled={circled.size === 0}>
-          {WELCOME_COPY.askButton}
+        <Button type="submit" variant="ink" className="h-11" disabled={circled.size === 0 || pending} aria-busy={pending}>
+          {pending ? WELCOME_COPY.askPending : WELCOME_COPY.askButton}
         </Button>
       </form>
       {circled.size === 0 ? <p className="mt-1 nb-type-small text-muted-foreground">{WELCOME_COPY.askHint}</p> : null}
       {answer ? (
         <div data-testid="welcome-answer" className="mt-3 rounded-[var(--radius-control)] border border-border bg-card p-3">
           <p className="font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">{WELCOME_COPY.answerLabel}</p>
-          <ul className="mt-2 space-y-2">
-            {answer.map((c) => (
-              <li key={c.id} className="text-[13px] leading-[1.55] text-foreground">
-                <span className="font-medium">{c.title}.</span> {c.body}
-              </li>
-            ))}
-          </ul>
+          {answer.kind === "answered" ? (
+            <p className="mt-2 text-[13px] leading-[1.55] text-foreground">{answer.text}</p>
+          ) : (
+            <>
+              <p className="mt-2 text-[13px] text-muted-foreground">{WELCOME_COPY.answerFailed}</p>
+              <ul className="mt-2 space-y-2">
+                {answer.cards.map((c) => (
+                  <li key={c.id} className="text-[13px] leading-[1.55] text-foreground">
+                    <span className="font-medium">{c.title}.</span> {c.body}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
           <p className="mt-2 nb-type-small text-muted-foreground">
-            {WELCOME_COPY.answerUsed}: {answer.map((c) => c.title).join(", ")}
+            {WELCOME_COPY.answerUsed}: {answer.cards.map((c) => c.title).join(", ")}
           </p>
         </div>
       ) : null}
@@ -192,6 +228,14 @@ export function WelcomeBoardView({
 export function WelcomeBoard() {
   const { data: profile } = useProfile();
   const store = useWelcomeHiddenStore();
+  const answer = useServerFn(answerWelcomeQuestionFn);
   if (!profile) return null;
-  return <WelcomeBoardView register={profile.org_type} orgId={profile.org_id} store={store} />;
+  return (
+    <WelcomeBoardView
+      register={profile.org_type}
+      orgId={profile.org_id}
+      store={store}
+      answerQuestion={(data) => answer({ data })}
+    />
+  );
 }
