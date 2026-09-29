@@ -340,11 +340,11 @@ export function SidebarNav({
                             type="button"
                             aria-expanded={!collapsed}
                             onClick={() => toggleClient(shelf.clientId)}
-                            className={`${linkClass} nb-nav-shelf w-full text-left`}
+                            className={`${linkClass} w-full text-left text-muted-foreground`}
                           >
-                            <GraphiteIcon name="engagement" size={20} />
+                            {/* A grouping, not a container: no container icon, quiet ink. */}
                             <span className="flex min-w-0 flex-1 items-center gap-1.5">
-                              <span className="truncate">{shelf.clientId === UNMAPPED_SHELF_ID ? `No ${vocab.client.toLowerCase()}` : shelf.name}</span>
+                              <span className="truncate italic">{shelf.clientId === UNMAPPED_SHELF_ID ? `No ${vocab.client.toLowerCase()}` : shelf.clientId === INTERNAL_SHELF_ID ? notInContainerLabel(vocab.client) : shelf.name}</span>
                               <span className="font-mono text-[10px] text-muted-foreground">
                                 · {shelf.engagements.length}
                               </span>
