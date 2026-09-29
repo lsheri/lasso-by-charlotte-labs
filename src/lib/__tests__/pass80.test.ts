@@ -25,6 +25,7 @@ const roster: CoachRoster = {
     { engagement_id: "e1", profile_id: "p1", profiles: { id: "p1", display_name: "Ada" } },
     { engagement_id: "e1", profile_id: "coach", profiles: { id: "coach", display_name: "Me" } },
   ],
+  links: [],
 };
 
 const activity: CoachActivity = {
@@ -40,11 +41,29 @@ describe("coach subjects payload", () => {
     expect(rows[0]).toMatchObject({
       subject_id: "p1",
       subject_name: "Ada",
+      access_level: null,
       total_decisions: 1,
       total_elements: 1,
       new_decisions: 1,
       new_elements: 1,
     });
+  });
+
+  it("uses only recognised matching access levels and prefers full transcripts", () => {
+    const withLinks = (links: CoachRoster["links"]) =>
+      composeCoachSubjects("coach", { ...roster, links }, activity)[0]?.access_level;
+
+    expect(withLinks([{ subject_profile_id: "p1", access_level: "structural" }])).toBe(
+      "structural",
+    );
+    expect(
+      withLinks([
+        { subject_profile_id: "p1", access_level: "structural" },
+        { subject_profile_id: "p1", access_level: "full_transcript" },
+      ]),
+    ).toBe("full_transcript");
+    expect(withLinks([{ subject_profile_id: "other", access_level: "full_transcript" }])).toBeNull();
+    expect(withLinks([{ subject_profile_id: "p1", access_level: "unexpected" }])).toBeNull();
   });
 
   it("never returns the coach themselves as a subject", () => {
@@ -70,6 +89,7 @@ describe("coach subjects payload", () => {
     const rows = composeCoachSubjects("coach", roster, activity);
     expect(Object.keys(rows[0] ?? {}).sort()).toEqual(
       [
+        "access_level",
         "engagement_code",
         "engagement_id",
         "engagement_title",
