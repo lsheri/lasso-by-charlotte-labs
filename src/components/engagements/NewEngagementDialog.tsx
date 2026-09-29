@@ -152,10 +152,6 @@ export function NewEngagementDialog({
       has_client: clientId ? "true" : "false",
       brief_files: bucket(files.length),
       from,
-    });
-    logEvent("workboard.created", profile.org_id, {
-      workspace_type: profile.org_type,
-      has_client: clientId ? "true" : "false",
       client_inline: clientId && clientInline ? "true" : "false",
     });
 

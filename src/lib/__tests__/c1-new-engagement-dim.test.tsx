@@ -86,7 +86,7 @@ describe("C1 the from dim", () => {
     fireEvent.change(screen.getByLabelText("Brief (optional)"), { target: { value: "A brief." } });
     fireEvent.click(screen.getByText("Create workboard"));
 
-    await waitFor(() => expect(mocks.events.length).toBe(2));
+    await waitFor(() => expect(mocks.events.length).toBe(1));
     expect(mocks.events[0]).toEqual({
       name: "engagement.updated",
       dims: {
@@ -96,12 +96,8 @@ describe("C1 the from dim", () => {
         from: "client_page",
         // Banded, never a raw count, the same convention as the other counts.
         brief_files: "0",
+        client_inline: "false",
       },
-    });
-    // Unit 3: the additive creation event, shape only.
-    expect(mocks.events[1]).toEqual({
-      name: "workboard.created",
-      dims: { workspace_type: "company", has_client: "true", client_inline: "false" },
     });
   });
 

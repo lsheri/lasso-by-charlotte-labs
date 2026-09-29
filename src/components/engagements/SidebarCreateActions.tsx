@@ -3,19 +3,20 @@ import { useState } from "react";
 import { createContainer } from "@/components/engagements/create-container";
 import { GraphiteIcon } from "@/components/notebook/icons";
 import { Input } from "@/components/ui/input";
-import { useClients, useInvalidateClients } from "@/hooks/use-clients";
+import { useInvalidateClients } from "@/hooks/use-clients";
 import { useProfile } from "@/hooks/use-profile";
 import { splitsByKind, vocabFor } from "@/lib/edu-vocab";
 
 /**
- * The first containers in a fresh workspace. Where the container word is
- * already "Folder" only the folder action shows, so two actions never read
- * the same. Refusals come back from the database and show as a toast.
+ * Standing create actions in the sidebar, beside New workboard, shown
+ * whatever the workboard count. Where the container word is already "Folder"
+ * only the folder action shows, so two actions never read the same.
+ * With zero workboards the event reads from "empty_state", otherwise "sidebar".
+ * Refusals come back from the database and show as a toast.
  */
-export function EmptyContainerActions() {
+export function SidebarCreateActions({ empty }: { empty: boolean }) {
   const { data: profile } = useProfile();
   const vocab = vocabFor(profile);
-  const { data: clients } = useClients(profile?.org_id);
   const invalidate = useInvalidateClients();
   const [creating, setCreating] = useState<null | "client" | "folder">(null);
   const [name, setName] = useState("");
@@ -31,8 +32,9 @@ export function EmptyContainerActions() {
         name: name.trim(),
         kind: creating,
         parentId: null,
-        rows: clients ?? [],
-        from: "empty_state",
+        // Always top level here, so depth is 1 and no rows are needed.
+        rows: [],
+        from: empty ? "empty_state" : "sidebar",
       });
       if (!id) return;
       invalidate();
