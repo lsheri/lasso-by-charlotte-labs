@@ -13,7 +13,7 @@ import { checkSignupInvite } from "@/lib/invites.functions";
 import { type SignupInviteCheck } from "@/lib/signup-invite";
 import { markSignupSource, type SignupSource } from "@/lib/edu-entry";
 import { isPartnerSlug } from "@/lib/partners";
-import { deriveRegister, REGISTER_COPY } from "@/lib/register";
+import { deriveRegister, NEUTRAL_COPY, REGISTER_COPY } from "@/lib/register";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -86,8 +86,10 @@ function AuthPage() {
     markSignupSource(from);
   }, [from]);
   const checkInvite = useServerFn(checkSignupInvite);
-  // Unit C: the email field speaks the register; no signal reads as company.
-  const emailCopy = REGISTER_COPY[deriveRegister(intent) ?? "company"];
+  // Unit C: the email field speaks the register; with no signal it implies
+  // nothing at all, rather than reading as a company.
+  const register = deriveRegister(intent);
+  const emailCopy = register ? REGISTER_COPY[register] : NEUTRAL_COPY;
   // An invite can arrive as its own param or inside the join destination.
   const inviteCode = invite ?? joinTarget(next)?.code;
   // Arriving from an invite: the page should read as the next step of that
