@@ -59,7 +59,19 @@ describe("pass214 activation keys", () => {
 
   it("chooseProfile falls back to the oldest profile when none is supplied", () => {
     expect(chooseProfile(undefined, other, false)).toEqual({ action: "use", profile: other });
-    expect(chooseProfile(undefined, null, false)).toEqual({ action: "refuse" });
     expect(chooseProfile(undefined, other, true)).toEqual({ action: "refuse" });
+  });
+
+  it("chooseProfile returns none when no id is supplied and the caller has no profile", () => {
+    expect(chooseProfile(undefined, null, false)).toEqual({ action: "none" });
+  });
+
+  it("chooseProfile still refuses a mismatched supplied id, with or without an owned profile", () => {
+    expect(chooseProfile("p-1", other, false)).toEqual({ action: "refuse" });
+    expect(chooseProfile("p-1", null, false)).toEqual({ action: "refuse" });
+  });
+
+  it("chooseProfile refuses on query failure even when owned is null", () => {
+    expect(chooseProfile(undefined, null, true)).toEqual({ action: "refuse" });
   });
 });
