@@ -58,6 +58,21 @@ export const REGISTER_COPY: Readonly<Record<Register, RegisterCopy>> = {
   },
 };
 
+/**
+ * No door signal. The page must not imply who they are, so the email field
+ * says the least it can. Only `/auth` reads this today; the onboarding setup
+ * screen always has a register from the confirmation redirect.
+ */
+export const NEUTRAL_COPY: RegisterCopy = {
+  emailLabel: "EMAIL",
+  emailPlaceholder: "you@example.com",
+  microLabel: "Your workspace",
+  setupBody: "One detail and you are in. Yours to change later.",
+  workspaceField: false,
+  claim: "Every AI conversation you've had, in one place, next to the work it produced.",
+  privacy: "Nobody reads your threads.",
+};
+
 export const REGISTER_SHARED_COPY = {
   setupTitle: "What should we call you?",
   nameLabel: "Your name",
