@@ -4,7 +4,7 @@ import { requireEduWorkspace } from "@/lib/edu-guard";
 
 import { AssignmentsPage } from "@/pages/AssignmentsPage";
 
-const DESCRIPTION = "Everything you have open in Lasso, grouped by the class or project it sits in.";
+const DESCRIPTION = "Everything you have open in Lasso, grouped by the class or workboard it sits in.";
 
 export const Route = createFileRoute("/_authenticated/assignments")({
   beforeLoad: requireEduWorkspace,

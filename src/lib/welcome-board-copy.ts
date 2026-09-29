@@ -38,7 +38,7 @@ const C4 = shared({ title: "Circle a few cards and ask", body: "Select any items
 const C5: ByRegister = {
   company: { title: "Map work to a workboard and a workstream", body: "Nothing is mapped until you map it. Drag an item onto a workstream and it becomes part of that record." },
   partner: { title: "Map work to a workboard and a workstream", body: "Nothing is mapped until you map it. Drag an item onto a workstream and it becomes part of that record." },
-  personal: { title: "File work into a workboard and a step", body: "Nothing is filed until you file it. Drag an item onto a step and it becomes part of that project." },
+  personal: { title: "File work into a workboard and a step", body: "Nothing is filed until you file it. Drag an item onto a step and it becomes part of that workboard." },
   edu: { title: "File work into a class and a workboard", body: "Nothing is filed until you file it. Drag an item onto a workboard and it becomes part of that class." },
 };
 const C6 = shared({ title: "Open the exact turn a claim came from", body: "Every captured conversation keeps its turns in order. Open one and you land on the exact message, not a summary of it." });

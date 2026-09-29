@@ -115,7 +115,7 @@ export const FLOW_PREVIEW_COPY: Readonly<Record<Register, readonly FlowPreviewSt
   edu: [
     { label: "You work in your AI tools", body: "Claude, ChatGPT, Drive, lecture notes." },
     { label: "It flows into Lasso", body: "Only what you choose. Private on arrival." },
-    { label: "You file it", body: "Put it under a class or project, next to the coursework it belongs to." },
+    { label: "You file it", body: "Put it under a class or workboard, next to the coursework it belongs to." },
     { label: "You choose what to share", body: "Nothing leaves your workspace by itself. Share one piece when you want to." },
   ],
   partner: [
