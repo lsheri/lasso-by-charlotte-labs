@@ -1,15 +1,29 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 
 import { EnterInviteCode } from "@/components/invites/EnterInviteCode";
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { recordAnonymousEventFn } from "@/lib/telemetry.functions";
+import { emitClientEvent } from "@/lib/client-telemetry";
+import type { SignupSource } from "@/lib/edu-entry";
+import { parseFunnelSource, type FunnelSource } from "@/lib/funnel-source";
+import { isPartnerSlug } from "@/lib/partners";
+
+export type PlansSearch = { src?: FunnelSource | undefined; from?: SignupSource | undefined };
+
+export function validatePlansSearch(search: Record<string, unknown>): PlansSearch {
+  const src = parseFunnelSource(search["src"]);
+  const from = search["from"];
+  return {
+    ...(src ? { src } : {}),
+    ...(isPartnerSlug(from) || from === "edu" || from === "direct" ? { from } : {}),
+  };
+}
 
 export const Route = createFileRoute("/plans")({
+  validateSearch: validatePlansSearch,
   head: () => ({
     meta: [
       { title: "Plans | Lasso by Charlotte Labs" },
@@ -25,9 +39,14 @@ export const Route = createFileRoute("/plans")({
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
+    links: [{ rel: "canonical", href: "https://lasso.charlotte-labs.com/plans" }],
   }),
-  component: PlansPage,
+  component: PlansRoute,
 });
+
+function PlansRoute() {
+  return <PlansPage search={Route.useSearch()} />;
+}
 
 const PLANS = [
   {
@@ -127,28 +146,13 @@ function ActivationKeyEntry({ onSubmit }: { onSubmit: () => void }) {
   );
 }
 
-export function PlansPage() {
-  const recordAnonymousEvent = useServerFn(recordAnonymousEventFn);
-  const viewId = useRef(
-    typeof crypto !== "undefined" && "randomUUID" in crypto
-      ? crypto.randomUUID()
-      : Math.random().toString(36).slice(2),
-  );
-  const note = (action: string, plan?: string) => {
-    void recordAnonymousEvent({
-      data: {
-        event_type: "plans.action_clicked",
-        view_id: viewId.current,
-        dims: { action, source: "plans", ...(plan ? { plan } : {}) },
-      },
-    }).catch(() => undefined);
-  };
+export function PlansPage({ search = {} }: { search?: PlansSearch }) {
+  const { src, from } = search;
+  const eventSrc = src ?? "direct";
 
   useEffect(() => {
-    void recordAnonymousEvent({
-      data: { event_type: "plans.viewed", view_id: viewId.current, dims: { source: "plans" } },
-    }).catch(() => undefined);
-  }, [recordAnonymousEvent]);
+    emitClientEvent("plans.viewed", { src: eventSrc });
+  }, [eventSrc]);
 
   return (
     <div className="min-h-screen overflow-x-clip bg-background text-foreground">
@@ -196,8 +200,8 @@ export function PlansPage() {
                 >
                   <Link
                     to="/auth"
-                    search={{ intent: plan.intent }}
-                    onClick={() => note("plan_selected", plan.intent)}
+                    search={{ intent: plan.intent, ...(src ? { src } : {}), ...(from ? { from } : {}) }}
+                    onClick={() => emitClientEvent("plan.picked", { plan: plan.intent, src: eventSrc })}
                   >
                     Get started
                   </Link>
@@ -236,14 +240,8 @@ export function PlansPage() {
           ))}
         </div>
 
-        <section
-          className="mt-12 grid gap-8 border-y border-rule py-8 md:grid-cols-2"
-          onSubmitCapture={(event) => {
-            const form = event.target as HTMLFormElement;
-            if (form.querySelector("#invite-entry")) note("invite_submitted");
-          }}
-        >
-          <ActivationKeyEntry onSubmit={() => note("key_submitted")} />
+        <section className="mt-12 grid gap-8 border-y border-rule py-8 md:grid-cols-2">
+          <ActivationKeyEntry onSubmit={() => undefined} />
           <EnterInviteCode label="Got an invite to a workspace?" bare />
         </section>
 
