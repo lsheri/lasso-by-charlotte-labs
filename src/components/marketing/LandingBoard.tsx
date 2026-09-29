@@ -2189,7 +2189,7 @@ function PhoneHeroAssemble() {
   );
 }
 
-function LandingBoardHeader({ onPilot }: { onPilot: () => void }) {
+function LandingBoardHeader() {
   return (
     <header className="lb-header">
       <div className="lb-header-main">
@@ -2198,16 +2198,15 @@ function LandingBoardHeader({ onPilot }: { onPilot: () => void }) {
         </Link>
         <nav className="lb-header-nav" aria-label="Primary navigation">
           <a href="#lb-canvas">How it works</a>
+          <Link to="/plans">Plans</Link>
           <Link to="/trust">Trust &amp; data</Link>
         </nav>
         <div className="lb-header-actions">
-          <Button asChild size="sm" variant="outline">
+          <Button asChild size="sm" variant="outline" className="min-h-11">
             <Link to="/auth">Sign in</Link>
           </Button>
           <Button asChild size="sm">
-            <a href="#pilot" onClick={onPilot}>
-              Book a pilot
-            </a>
+            <Link to="/plans">Get started</Link>
           </Button>
         </div>
       </div>
@@ -2873,7 +2872,7 @@ export function LandingBoard() {
   if (!introElapsed || query.isPending) return <LandingLogoRain />;
   return (
     <div className="landing-board-page">
-      <LandingBoardHeader onPilot={() => pilot("header")} />
+      <LandingBoardHeader />
       <main className="lb-story">
         <section
           className="lb-desktop-hero"
@@ -2896,7 +2895,10 @@ export function LandingBoard() {
                 made, so they can show where a claim came from and why it stayed.
               </h2>
               <div className="lb-hero-zone-1">
-                <Button onClick={jumpToUseCases}>Watch it work</Button>
+                <Button asChild>
+                  <Link to="/plans">Get started, free while we pilot</Link>
+                </Button>
+                <Button variant="outline" onClick={jumpToUseCases}>Watch it work</Button>
                 <Button asChild variant="outline">
                   <Link
                     to="/demo"
@@ -2908,11 +2910,6 @@ export function LandingBoard() {
                   >
                     View a Workboard
                   </Link>
-                </Button>
-                <Button asChild variant="outline">
-                  <a href="#pilot" onClick={() => pilot("hero")}>
-                    Book a pilot
-                  </a>
                 </Button>
               </div>
               <div className="lb-hero-stage">

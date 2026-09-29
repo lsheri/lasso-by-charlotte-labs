@@ -4,6 +4,7 @@ import { afterEach, beforeAll, describe, expect, it } from "vitest";
 
 import { FlowPreview } from "@/components/onboarding/FlowPreview";
 import type { Register } from "@/lib/register";
+import { SIGNUP_BANNED_COPY } from "@/lib/signup-copy-laws";
 
 beforeAll(() => {
   // Reduced motion renders all four beats at once, so every caption is in the DOM.
@@ -43,15 +44,13 @@ const EXPECTED: Record<Register, string[]> = {
   ],
 };
 
-const BANNED = /\b(firm|consultancy|consulting|organize|mentor|audit|oversight|governance|monitor|track|surveillance|score)\b/i;
-
 describe("Unit Y1: FlowPreview captions follow the register", () => {
   for (const register of ["company", "personal", "edu", "partner"] as const) {
     it(register, () => {
       const { container } = render(<FlowPreview register={register} />);
       const text = container.textContent ?? "";
       for (const s of EXPECTED[register]) expect(text).toContain(s);
-      expect(text).not.toMatch(BANNED);
+      expect(text).not.toMatch(SIGNUP_BANNED_COPY);
       expect(text).not.toContain("\u2014");
     });
   }
