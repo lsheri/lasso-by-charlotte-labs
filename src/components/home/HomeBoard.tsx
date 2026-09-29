@@ -101,7 +101,7 @@ export function HomeBoard() {
     emitClientEvent("home.opened", {});
   }, []);
 
-  const countLabel = engagements ? `HOME · ${engagements.length} ENGAGEMENTS` : "HOME";
+  const countLabel = engagements ? `HOME · ${engagements.length} WORKBOARDS` : "HOME";
   const { data: views } = useEngagementViews(profile?.id);
   const { data: workCounts } = useEngagementWorkCounts(engagements?.map((e) => e.id));
   const { previews } = useEngagementBoardPreviews(engagements?.map((e) => e.id));
@@ -141,7 +141,7 @@ export function HomeBoard() {
               from="home"
               trigger={(
                 <Button type="button" variant="ink" className="h-9" onClick={() => emitClientEvent("home.new_engagement_started", {})}>
-                  New engagement
+                  New workboard
                 </Button>
               )}
             />

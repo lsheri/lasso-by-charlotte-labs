@@ -175,7 +175,7 @@ export function EngagementStrip({
         >
           {expanded ? (
             <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-              The engagement
+              The workboard
             </p>
           ) : (
             <>

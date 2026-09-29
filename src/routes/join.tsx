@@ -492,7 +492,7 @@ function AcceptForm({
       <h1 className="page-title">Accept your invite</h1>
       <p className="mt-1.5 text-sm text-muted-foreground">
         {state.engagement_title
-          ? "You'll land straight in the engagement you were invited to."
+          ? "You'll land straight in the workboard you were invited to."
           : "Tell us how your name should appear to your team."}
       </p>
 

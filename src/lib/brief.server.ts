@@ -179,7 +179,7 @@ async function engagementBriefContext(
     chars += clipped.text.length;
     blocks.push(
       [
-        `BRIEF FOR THE ENGAGEMENT: ${row.title}`,
+        `BRIEF FOR THE WORKBOARD: ${row.title}`,
         row.brief_by ? `  Written by: ${row.brief_by}` : "",
         clipped.text,
       ]

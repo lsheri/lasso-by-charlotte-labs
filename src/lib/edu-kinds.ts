@@ -6,10 +6,10 @@
 
 export type EngagementKind = "class" | "project";
 
-export const KIND_QUESTION = "Is this a class or a project?";
+export const KIND_QUESTION = "Is this a class or a workboard?";
 export const KIND_LABELS: Record<EngagementKind, string> = {
   class: "A class",
-  project: "A project",
+  project: "A workboard",
 };
 
 const SETTINGS_KEY = "edu_engagement_kinds";

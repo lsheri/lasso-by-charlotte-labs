@@ -68,7 +68,7 @@ export function OneOnOnePage() {
           <ToneCard tone="paper" label="WHAT YOUR COACH WILL NEVER SEE" className="gap-3 p-4">
             <div className="flex items-center gap-2">
               <span className="w-[18px] border-t border-[var(--nb-pencil)]" aria-hidden="true" />
-              <p>Work you have not mapped to an engagement</p>
+              <p>Work you have not mapped to a workboard</p>
             </div>
             <div className="flex items-center gap-2">
               <span className="w-[18px] border-t border-[var(--nb-pencil)]" aria-hidden="true" />

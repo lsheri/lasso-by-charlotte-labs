@@ -91,7 +91,7 @@ function CommentComposer({
         className="text-[12px]"
       />
       <p className="mt-1 nb-type-small leading-[17px] text-muted-foreground">
-        Visible to your engagement team
+        Visible to your workboard team
       </p>
       <div className="mt-1 flex items-center gap-2">
         <Button size="sm" className="h-7 px-2 nb-type-small" disabled={!ready} onClick={() => onSubmit(body.trim())}>
@@ -630,7 +630,7 @@ export function FocusOverlay({
                           >
                             {highlight.visibility === "just_me"
                               ? "Just me"
-                              : "Visible to your engagement team"}
+                              : "Visible to your workboard team"}
                           </Button>
                         ) : null}
                       </li>

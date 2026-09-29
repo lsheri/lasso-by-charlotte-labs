@@ -333,7 +333,7 @@ export function PacketPage({
             title={`${data.decisions.length} confirmed decision${data.decisions.length === 1 ? "" : "s"}`}
             className="gap-3 p-4"
           >
-            <p>Mapped work in this engagement</p>
+            <p>Mapped work in this workboard</p>
             <p>Confirmed decisions and earlier coaching notes</p>
             <p>Answers come only from what {subjectName} has shared here.</p>
           </ToneCard>

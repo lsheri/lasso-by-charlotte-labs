@@ -124,7 +124,7 @@ export function ConnectToWorkSheet({
         <SheetTitle className="page-title">Connect to work</SheetTitle>
         <SheetDescription className="text-sm text-muted-foreground">
           Anything you bring in here lands in the workstream you pick, which makes it visible to
-          anyone this engagement is shared with.
+          anyone this workboard is shared with.
         </SheetDescription>
 
         <div className="mt-5 space-y-2">

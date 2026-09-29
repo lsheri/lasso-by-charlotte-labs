@@ -161,7 +161,7 @@ export function AskScopeChip({
           : onWorkstream
             ? `Workstream: ${workstream.name}`
             : ask.selectedItems.length === ask.mapped.length
-              ? "All work in this engagement"
+              ? "All work in this workboard"
               : ask.selectedItems.length === 1
                 ? "1 piece of work selected"
                 : `${ask.selectedItems.length} pieces of work selected`;
@@ -169,7 +169,7 @@ export function AskScopeChip({
     ask.draftPointed.length === 0 && boardPicked && ask.boardPickedCount === 0
       ? ask.engagementBrief
         ? "Brief only: nothing picked has work to read"
-        : "Nothing you picked has work to read, and this engagement has no brief yet"
+        : "Nothing you picked has work to read, and this workboard has no brief yet"
       : label;
   return (
     <button
@@ -205,7 +205,7 @@ function WorkPicker({ ask, engagementId }: { ask: AskLasso; engagementId: string
             return next;
           })
         }
-        empty="No work is mapped into this engagement yet."
+        empty="No work is mapped into this workboard yet."
       />
       <p className="text-xs text-muted-foreground">
         Only work you have mapped appears here. Private and unmapped work stays out.
@@ -283,7 +283,7 @@ function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions?: Reac
                 Try: what did I decide here, and what did I decide it on?
               </p>
               <p className="text-sm text-foreground">
-                Try: where has this engagement drifted from the brief?
+                Try: where has this workboard drifted from the brief?
               </p>
             </div>
             {emptyActions}
@@ -440,9 +440,9 @@ function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions?: Reac
 /** Only the chats that belong to this engagement, and nothing until we know. */
 const HISTORY_DEFAULT_SHOWN = 2;
 
-export const ASK_PRIVATE_SHORT = "Ask about this engagement. Private to you.";
+export const ASK_PRIVATE_SHORT = "Ask about this workboard. Private to you.";
 export const ASK_PRIVATE_COACH =
-  "Ask about this engagement. Private to you, your coach never sees this.";
+  "Ask about this workboard. Private to you, your coach never sees this.";
 
 /** The coach clause shows only when the viewer really has a live coach link. */
 export function AskPrivacyLine() {
@@ -474,10 +474,10 @@ function HistoryTab({ ask, onTab }: { ask: AskLasso; onTab: (tab: AskTab) => voi
       {!ask.historySettled ? (
         <div className="flex items-center gap-2 py-2">
           <NbDots label="Loading earlier sessions" />
-          <span className="text-sm text-muted-foreground">Finding this engagement's chats</span>
+          <span className="text-sm text-muted-foreground">Finding this workboard's chats</span>
         </div>
       ) : sessions.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No earlier chats on this engagement yet.</p>
+        <p className="text-sm text-muted-foreground">No earlier chats on this workboard yet.</p>
       ) : (
         <>
           {shown.map((row) => (

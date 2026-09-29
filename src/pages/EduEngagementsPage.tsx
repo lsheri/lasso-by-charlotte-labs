@@ -19,8 +19,8 @@ const COPY: Record<EngagementKind, { title: string; intro: string; empty: string
   },
   project: {
     title: EDU_VOCAB.projects,
-    intro: "Side projects, competitions, research, anything that is not a class.",
-    empty: "No projects yet. Make one and your work can start landing in it.",
+    intro: "Side workboards, competitions, research, anything that is not a class.",
+    empty: "No workboards yet. Make one and your work can start landing in it.",
   },
 };
 

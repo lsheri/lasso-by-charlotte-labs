@@ -111,7 +111,7 @@ describe("the per highlight visibility choice", () => {
     renderOverlay([mine], (highlight, visibility) =>
       calls.push([(highlight as { id: string }).id, visibility]),
     );
-    const toggle = screen.getByText("Visible to your engagement team");
+    const toggle = screen.getByText("Visible to your workboard team");
     fireEvent.click(toggle);
     expect(calls).toEqual([["h1", "just_me"]]);
   });
@@ -128,8 +128,8 @@ describe("the per highlight visibility choice", () => {
   it("uses the team visibility label in the comment composer", () => {
     renderOverlay([mine]);
     const source = readFileSync("src/components/canvas-lab/FocusOverlay.tsx", "utf8");
-    expect(source).toContain("Visible to your engagement team");
-    expect(source).not.toContain("Visible to everyone on this engagement");
+    expect(source).toContain("Visible to your workboard team");
+    expect(source).not.toContain("Visible to everyone on this workboard");
     expect(source).not.toContain("Visible to people who can open this chat");
   });
 

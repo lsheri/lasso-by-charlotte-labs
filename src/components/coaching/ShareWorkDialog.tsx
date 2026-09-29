@@ -177,7 +177,7 @@ export function ShareWorkDialog({
 
   const listFailed = Boolean(list.error);
   useEffect(() => {
-    if (listFailed) toast.error("We could not load your engagements just now.");
+    if (listFailed) toast.error("We could not load your workboards just now.");
   }, [listFailed]);
 
   return (
@@ -187,7 +187,7 @@ export function ShareWorkDialog({
           <DialogHeader>
             <DialogTitle>Share work with {coach.display_name}</DialogTitle>
             <DialogDescription>
-              Share an engagement to let {firstName} see it. Remove to take it back. Nothing else in
+              Share a workboard to let {firstName} see it. Remove to take it back. Nothing else in
               your workspace is visible to them.
             </DialogDescription>
           </DialogHeader>
@@ -195,13 +195,13 @@ export function ShareWorkDialog({
           {list.isLoading ? <p className="text-sm text-muted-foreground">Loading…</p> : null}
           {list.error ? (
             <p className="text-sm text-muted-foreground">
-              We could not load your engagements just now. Close this and try again in a moment.
+              We could not load your workboards just now. Close this and try again in a moment.
             </p>
           ) : null}
 
           {!list.isLoading && rows.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              You are not on any engagement yet, so there is nothing to share.
+              You are not on any workboard yet, so there is nothing to share.
             </p>
           ) : null}
 
@@ -308,7 +308,7 @@ export function ShareWorkDialog({
           <AlertDialogHeader>
             <AlertDialogTitle>
               Share {confirmGroup?.engagements.filter((row) => !isShared(row)).length ?? 0}{" "}
-              engagements with {coach.display_name}?
+              workboards with {coach.display_name}?
             </AlertDialogTitle>
             <AlertDialogDescription>
               {coach.display_name} will see the work mapped into each of them. Nothing else in your

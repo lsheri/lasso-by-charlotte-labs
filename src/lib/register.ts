@@ -65,7 +65,7 @@ export const REGISTER_COPY: Readonly<Record<Register, RegisterCopy>> = {
     workspaceField: true,
     workspaceLabel: "Workspace name",
     workspacePlaceholder: "Harbor Practice",
-    claim: "Every engagement in one place, with the work people shared next to it.",
+    claim: "Every workboard in one place, with the work people shared next to it.",
     privacy: "You see what people send you, and nothing else.",
   },
 };
@@ -103,24 +103,24 @@ export const FLOW_PREVIEW_COPY: Readonly<Record<Register, readonly FlowPreviewSt
   company: [
     { label: "You work in your AI tools", body: "Claude, ChatGPT, Drive, meetings." },
     { label: "It flows into Lasso", body: "Only what you choose. Private on arrival." },
-    { label: "You map it", body: "Give it an engagement and a workstream. It becomes a record." },
+    { label: "You map it", body: "Give it a workboard and a workstream. It becomes a record." },
     { label: "A coach sees what you share", body: "Never your raw files. Only the shared view." },
   ],
   personal: [
     { label: "You work in your AI tools", body: "Claude, ChatGPT, Drive, your own notes." },
     { label: "It flows into Lasso", body: "Only what you choose. Private on arrival." },
-    { label: "You file it", body: "Put it under one of your projects. It becomes part of your record." },
+    { label: "You file it", body: "Put it under one of your workboards. It becomes part of your record." },
     { label: "The record stays yours", body: "Nothing leaves unless you choose to share it." },
   ],
   edu: [
     { label: "You work in your AI tools", body: "Claude, ChatGPT, Drive, lecture notes." },
     { label: "It flows into Lasso", body: "Only what you choose. Private on arrival." },
-    { label: "You file it", body: "Put it under a class or project, next to the coursework it belongs to." },
+    { label: "You file it", body: "Put it under a class or workboard, next to the coursework it belongs to." },
     { label: "You choose what to share", body: "Nothing leaves your workspace by itself. Share one piece when you want to." },
   ],
   partner: [
-    { label: "You set up the engagement", body: "A client, a cohort, the workstreams you will run." },
-    { label: "People join with a link", body: "Their workspace stays theirs. Yours holds the engagement." },
+    { label: "You set up the workboard", body: "A client, a cohort, the workstreams you will run." },
+    { label: "People join with a link", body: "Their workspace stays theirs. Yours holds the workboard." },
     { label: "They share what they choose", body: "A board, a transcript, or nothing at all, at the depth they agreed to." },
     { label: "You coach from what arrived", body: "Never their raw files. Only what they sent you." },
   ],

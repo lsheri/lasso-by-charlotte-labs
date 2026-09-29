@@ -83,10 +83,10 @@ export function EngagementDecisions({
       await queryClient.invalidateQueries({ queryKey: ["decisions"] });
       toast(
         result.scanned === 0
-          ? "Nothing mapped into this engagement yet, so there is nothing to read."
+          ? "Nothing mapped into this workboard yet, so there is nothing to read."
           : result.drafted > 0
             ? `${result.drafted} decision${result.drafted === 1 ? "" : "s"} drafted for you to confirm or correct.`
-            : "Lasso did not find a consequential decision in this engagement yet.",
+            : "Lasso did not find a consequential decision in this workboard yet.",
       );
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Couldn't look for decisions");
@@ -98,7 +98,7 @@ export function EngagementDecisions({
   const findButton = canEdit ? (
     <Button type="button" size="lg" disabled={busy} onClick={() => void findDecisions()}>
       <Sparkle className="mr-2 h-4 w-4" aria-hidden />
-      {busy ? "Reading this engagement…" : "Find decisions in this engagement"}
+      {busy ? "Reading this workboard…" : "Find decisions in this workboard"}
     </Button>
   ) : null;
 
@@ -106,7 +106,7 @@ export function EngagementDecisions({
     <section className="mt-10">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="micro-label micro-label-section">
-          Decisions on this engagement · {rows.length}
+          Decisions on this workboard · {rows.length}
         </h2>
         {rows.length > 0 ? (
           <span className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
@@ -128,7 +128,7 @@ export function EngagementDecisions({
           }}
         >
           <p className="mx-auto max-w-md text-sm text-foreground">
-            No decisions recorded yet. Lasso can look across this engagement and propose what you
+            No decisions recorded yet. Lasso can look across this workboard and propose what you
             decided, for you to confirm or correct.
           </p>
           {findButton ? <div className="mt-5">{findButton}</div> : null}

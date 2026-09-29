@@ -30,7 +30,7 @@ export function EngagementLineage({
       await queryClient.invalidateQueries({ queryKey: ["deliverable-evidence"] });
       toast.success(
         result.deliverables === 0
-          ? "No documents, decks or sheets in this engagement yet"
+          ? "No documents, decks or sheets in this workboard yet"
           : `${result.drafted} link${result.drafted === 1 ? "" : "s"} proposed across ${result.deliverables} deliverable${result.deliverables === 1 ? "" : "s"}, from ${result.considered} item${result.considered === 1 ? "" : "s"} considered`,
       );
     } catch (error) {
@@ -44,7 +44,7 @@ export function EngagementLineage({
     <section className="rounded-[var(--radius)] border border-border bg-card px-5 py-5 shadow-card">
       <h2 className="micro-label micro-label-section">Lineage</h2>
       <p className="mt-1.5 text-sm text-muted-foreground">
-        Lasso can look across this engagement and propose what fed each document, deck and sheet.
+        Lasso can look across this workboard and propose what fed each document, deck and sheet.
         Every proposal is a draft you confirm or discard.
       </p>
       <Button className="mt-4" onClick={() => void start()} disabled={pending}>

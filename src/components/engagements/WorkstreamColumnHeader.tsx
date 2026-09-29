@@ -39,7 +39,7 @@ import {
 const TASK_LINE_PLACEHOLDER = "What is this piece of work meant to do?";
 
 export const DELETE_WORKSTREAM_LINE =
-  "Work mapped here goes back to your Work pile unless it is mapped in another workstream or engagement. Nothing is deleted.";
+  "Work mapped here goes back to your Work pile unless it is mapped in another workstream or workboard. Nothing is deleted.";
 
 /**
  * A column head on the canvas: what the workstream is, how much sits in it,

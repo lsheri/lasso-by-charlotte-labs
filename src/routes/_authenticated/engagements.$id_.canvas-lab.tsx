@@ -14,15 +14,15 @@ export const Route = createFileRoute("/_authenticated/engagements/$id_/canvas-la
   validateSearch: zodValidator(canvasLabSearchSchema),
   head: () => ({
     meta: [
-      { title: "Engagement Workboard | Lasso" },
+      { title: "Workboard Workboard | Lasso" },
       {
         name: "description",
-        content: "A local workboard for understanding the sources, context, judgment, calls, and finished work in one engagement.",
+        content: "A local workboard for understanding the sources, context, judgment, calls, and finished work in one workboard.",
       },
-      { property: "og:title", content: "Engagement Workboard | Lasso" },
+      { property: "og:title", content: "Workboard Workboard | Lasso" },
       {
         property: "og:description",
-        content: "A local workboard for understanding the sources, context, judgment, calls, and finished work in one engagement.",
+        content: "A local workboard for understanding the sources, context, judgment, calls, and finished work in one workboard.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

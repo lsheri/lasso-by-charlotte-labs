@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { HomePage } from "@/pages/HomePage";
 
 const TITLE = "Home | Lasso";
-const DESCRIPTION = "Your Lasso home for starting engagements and returning to past work.";
+const DESCRIPTION = "Your Lasso home for starting workboards and returning to past work.";
 
 export const Route = createFileRoute("/_authenticated/home")({
   head: () => ({

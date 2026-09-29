@@ -63,7 +63,7 @@ function initials(displayName: string): string {
 
 function whatTheyCanSee(role: string, isYou: boolean) {
   if (isYou) return "Your own work, all of it";
-  if (role === "coach") return "Work you shared, on their engagements";
+  if (role === "coach") return "Work you shared, on their workboards";
   if (role === "admin") return "Firm counts only, never a person's work";
   return "Their own work";
 }
@@ -488,7 +488,7 @@ function MembersConsole() {
             className="gap-2"
           >
             <label className="flex items-center gap-2 text-sm text-foreground">
-              <RadioGroupItem value="em" /> Engagement manager
+              <RadioGroupItem value="em" /> Workboard manager
             </label>
             <label className="flex items-center gap-2 text-sm text-foreground">
               <RadioGroupItem value="lead" /> Lead

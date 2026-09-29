@@ -17,10 +17,10 @@ export const Route = createFileRoute("/_authenticated/engagements/$id")({
   }),
   head: () => ({
     meta: [
-      { title: "Engagement | Lasso" },
-      { name: "description", content: "Engagement brief, tasks, and the work mapped to them." },
-      { property: "og:title", content: "Engagement | Lasso" },
-      { property: "og:description", content: "Engagement brief, tasks, and the work mapped to them." },
+      { title: "Workboard | Lasso" },
+      { name: "description", content: "Workboard brief, tasks, and the work mapped to them." },
+      { property: "og:title", content: "Workboard | Lasso" },
+      { property: "og:description", content: "Workboard brief, tasks, and the work mapped to them." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],

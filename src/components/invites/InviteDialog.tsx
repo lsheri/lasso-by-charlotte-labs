@@ -351,7 +351,7 @@ export function InviteDialog({
                   >
                     {sharing
                       ? "Sharing…"
-                      : `Share this engagement with ${shareInstead.display_name.split(" ")[0]}`}
+                      : `Share this workboard with ${shareInstead.display_name.split(" ")[0]}`}
                   </Button>
                 ) : shareInstead && onShareInstead ? (
                   <Button
@@ -367,7 +367,7 @@ export function InviteDialog({
                   </Button>
                 ) : (
                   <p className="text-xs text-muted-foreground">
-                    Use Shared with on the engagement to give them access.
+                    Use Shared with on the workboard to give them access.
                   </p>
                 )}
               </div>
@@ -407,9 +407,9 @@ export function InviteDialog({
 
 
           <p className="rounded-[var(--radius)] border border-border bg-secondary px-4 py-3 text-xs text-muted-foreground">
-            Coaches see only the work you&apos;ve mapped to this engagement. Private and unmapped
+            Coaches see only the work you&apos;ve mapped to this workboard. Private and unmapped
             work is never visible.
-            {engagementId ? " They'll land straight in this engagement when they accept." : ""}
+            {engagementId ? " They'll land straight in this workboard when they accept." : ""}
           </p>
 
           <Button type="submit" disabled={pending || Boolean(existing)}>

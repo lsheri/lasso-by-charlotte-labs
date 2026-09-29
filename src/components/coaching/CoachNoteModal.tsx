@@ -146,7 +146,7 @@ export function CoachNoteModal({
             <div className="mt-5 rounded-[var(--radius-md)] border border-[var(--nb-rule)] bg-muted/40 px-4 py-3">
               <p className="micro-label">{scopeLabel(scope, vocab).toUpperCase()}</p>
               <p className="mt-1 text-[13px] text-foreground">
-                {pointsAt ?? "This engagement"}
+                {pointsAt ?? "This workboard"}
               </p>
               <Link
                 to="/engagements/$id"

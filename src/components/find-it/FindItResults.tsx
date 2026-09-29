@@ -502,7 +502,7 @@ export function FindItResults({ phase, target, scope, candidates, reviewed, cons
       <header className="flex min-w-0 items-center gap-2 px-1 md:px-3">
         <h2 className="shrink-0 font-serif text-[26px] leading-none text-foreground">Find it</h2>
         <span className="flex min-w-0 items-center gap-1.5 rounded-[6px] border border-hairline bg-card px-2 py-1 nb-type-small text-foreground"><SourceMark item={target} size={12} /><span className="truncate">{target.title}</span></span>
-        <span className="hidden shrink-0 rounded-[6px] border border-hairline px-2 py-1 nb-type-small text-muted-foreground sm:inline">{scope === "engagement" ? "This engagement" : "Everything I have"}</span>
+        <span className="hidden shrink-0 rounded-[6px] border border-hairline px-2 py-1 nb-type-small text-muted-foreground sm:inline">{scope === "engagement" ? "This workboard" : "Everything I have"}</span>
         <Button type="button" variant="ghost" size="sm" className="ml-auto shrink-0" onClick={onChooseTarget}>Choose something else</Button>
       </header>
 

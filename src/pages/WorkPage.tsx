@@ -920,7 +920,7 @@ export function WorkPage() {
 
       <div className="flex h-[46px] shrink-0 items-center gap-2 overflow-x-auto border-b border-[var(--nb-rule)] px-5 whitespace-nowrap">
         <button type="button" onClick={() => changeColumnFilter("all")} className={columnFilter === "all" ? chipOn : chipOff}>Everything</button>
-        <button type="button" title="Unmapped work is private and belongs to no engagement. It is not in any receipt, no coach can see it, and it will not appear in the firm view until you map it." onClick={() => changeColumnFilter("unmapped")} className={columnFilter === "unmapped" ? chipOn : chipOff}>Unmapped</button>
+        <button type="button" title="Unmapped work is private and belongs to no workboard. It is not in any receipt, no coach can see it, and it will not appear in the firm view until you map it." onClick={() => changeColumnFilter("unmapped")} className={columnFilter === "unmapped" ? chipOn : chipOff}>Unmapped</button>
         <button type="button" onClick={() => changeColumnFilter("claimed")} className={columnFilter === "claimed" ? chipOn : chipOff}>Claimed by you</button>
         {engagementCodes.map((code) => <button key={code} type="button" onClick={() => changeColumnFilter(code)} className={columnFilter === code ? chipOn : chipOff}>{code}</button>)}
         {priv.length > 0 ? (
@@ -976,7 +976,7 @@ export function WorkPage() {
           <>
             {columnFilter === "unmapped" && matchingEntryCount === 0 ? (
               <p className="absolute inset-x-5 top-3 z-20 rounded-[var(--radius-md)] border border-dashed border-pencil bg-card px-4 py-3 text-center text-[11.5px] text-soft">
-                These landed on their own. Say whose work it is and the rest gets easier. Unmapped work is private and belongs to no engagement. It is not in any receipt, no coach can see it, and it will not appear in the firm view until you map it.
+                These landed on their own. Say whose work it is and the rest gets easier. Unmapped work is private and belongs to no workboard. It is not in any receipt, no coach can see it, and it will not appear in the firm view until you map it.
               </p>
             ) : null}
             <BoardShell

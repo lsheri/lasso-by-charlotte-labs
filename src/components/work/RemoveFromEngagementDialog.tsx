@@ -18,10 +18,10 @@ import {
 import { invalidateAfterWorkChange } from "@/lib/work-invalidation";
 import { removeItemFromEngagement } from "@/lib/work-remove.functions";
 
-export const REMOVE_LABEL = "Remove from this engagement";
+export const REMOVE_LABEL = "Remove from this workboard";
 /** PASS 129 — the consequence, said in one plain line before anything else. */
 export const REMOVE_CONSEQUENCE_LINE =
-  "This takes the work out of this engagement. The work itself stays.";
+  "This takes the work out of this workboard. The work itself stays.";
 export const REMOVE_HELP = "Goes back to your Work pile. Nothing is deleted.";
 
 /**
@@ -75,7 +75,7 @@ export function RemoveFromEngagementDialog({
                 .then(async (result) => {
                   toast.success(
                     result.still_mapped_elsewhere
-                      ? "Removed here. It stays mapped in another engagement."
+                      ? "Removed here. It stays mapped in another workboard."
                       : "Back in your Work pile.",
                   );
                   await invalidateAfterWorkChange(queryClient, workItemId);

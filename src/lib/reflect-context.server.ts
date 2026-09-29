@@ -309,7 +309,7 @@ export async function narrowToPointed(
   if (strays.length > 0) {
     const { data } = await supabase.from("work_items").select("id, title").in("id", strays);
     for (const row of data ?? []) {
-      excluded.push({ title: row.title, reason: "not part of this engagement" });
+      excluded.push({ title: row.title, reason: "not part of this workboard" });
     }
   }
   return { scope: { mode: "items", ids: allowed }, excluded };
@@ -436,7 +436,7 @@ export function buildEngagementBlocks(
     engagementBlocks.set(
       engagement.id,
       [
-        `ENGAGEMENT ${engagementDisplayCode(engagement) ?? "(folder)"}: ${engagementDisplayTitle(engagement)}`,
+        `WORKBOARD ${engagementDisplayCode(engagement) ?? "(folder)"}: ${engagementDisplayTitle(engagement)}`,
         clientDisplayName(engagement) ? `  Client: ${clientDisplayName(engagement)}` : null,
         engagement.term_label ? `  Term: ${engagement.term_label}` : null,
         engagement.brief ? `  Brief: ${engagement.brief}` : null,

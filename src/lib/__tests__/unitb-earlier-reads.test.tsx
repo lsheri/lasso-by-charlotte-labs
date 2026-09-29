@@ -57,12 +57,12 @@ describe("AskPrivacyLine", () => {
     live = false;
     const { AskPrivacyLine } = await import("@/components/reflect/AskSurface");
     render(<AskPrivacyLine />);
-    expect(screen.getByText("Ask about this engagement. Private to you.")).toBeTruthy();
+    expect(screen.getByText("Ask about this workboard. Private to you.")).toBeTruthy();
   });
   it("coach line with a live coach link", async () => {
     live = true;
     const { AskPrivacyLine } = await import("@/components/reflect/AskSurface");
     render(<AskPrivacyLine />);
-    expect(screen.getByText("Ask about this engagement. Private to you, your coach never sees this.")).toBeTruthy();
+    expect(screen.getByText("Ask about this workboard. Private to you, your coach never sees this.")).toBeTruthy();
   });
 });

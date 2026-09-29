@@ -161,7 +161,7 @@ export function WhatFedThis({
       await refresh();
       toast(
         result.considered === 0
-          ? "Nothing else is mapped into this engagement yet, so there is nothing to compare."
+          ? "Nothing else is mapped into this workboard yet, so there is nothing to compare."
           : result.drafted > 0
             ? `${result.drafted} link${result.drafted === 1 ? "" : "s"} proposed from ${result.considered} item${result.considered === 1 ? "" : "s"} considered.`
             : `Lasso read ${result.considered} item${result.considered === 1 ? "" : "s"} and did not find evidence of a connection.`,
@@ -225,7 +225,7 @@ export function WhatFedThis({
     <div className="flex flex-wrap items-center gap-4">
       <Button type="button" disabled={busy} onClick={() => void find()}>
         <Sparkle className="mr-2 h-4 w-4" aria-hidden />
-        {busy ? <WorkingLabel>Reading this engagement</WorkingLabel> : "Find what this came from"}
+        {busy ? <WorkingLabel>Reading this workboard</WorkingLabel> : "Find what this came from"}
       </Button>
       <FindItLink workItemId={workItemId} />
     </div>
@@ -251,7 +251,7 @@ export function WhatFedThis({
           }}
         >
           <p className="text-sm text-foreground">
-            Nothing linked yet. Lasso can look at this engagement and propose what fed this
+            Nothing linked yet. Lasso can look at this workboard and propose what fed this
             deliverable.
           </p>
           {busy ? (

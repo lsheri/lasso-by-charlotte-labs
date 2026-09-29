@@ -12,7 +12,7 @@ const WORKSPACE_INSTRUCTIONS = [
 ];
 
 export const CANVAS_INSTRUCTIONS = [
-  "Use only selected context unless I explicitly ask for the full engagement.",
+  "Use only selected context unless I explicitly ask for the full workboard.",
   "Separate evidence, inference, and recommendation.",
   "Name contradictions and missing evidence.",
   "Never invent a rationale for a human decision.",

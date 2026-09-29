@@ -38,7 +38,7 @@ export const navGroups: NavGroup[] = [
     id: "engagements",
     label: "Where it goes",
     items: [{ label: "Past work", to: "/archive", icon: "firm" }],
-    emptyState: "No engagements yet",
+    emptyState: "No workboards yet",
   },
   {
     id: "lookback",

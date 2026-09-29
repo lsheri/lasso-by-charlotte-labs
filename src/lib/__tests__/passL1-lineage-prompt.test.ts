@@ -5,7 +5,7 @@ describe("LINEAGE_SYSTEM_PROMPT (pass L1 hard-evidence rules)", () => {
   it("keeps the opening sentence", () => {
     expect(
       LINEAGE_SYSTEM_PROMPT.startsWith(
-        "You read one deliverable and a numbered list of other pieces of work from the same engagement, and you say which of them actually fed the deliverable."
+        "You read one deliverable and a numbered list of other pieces of work from the same workboard, and you say which of them actually fed the deliverable."
       )
     ).toBe(true);
   });

@@ -292,7 +292,7 @@ export function buildFirmMetrics(data: FirmDashboard): FirmMetrics {
       key: "coaches_active",
       name: "Coaches active",
       value: String(data.coaching.coaches_active),
-      caveat: `${data.coaching.engagements_shared} engagements shared with a coach. ${data.coaching.one_on_one_preps} 1:1 preps created.`,
+      caveat: `${data.coaching.engagements_shared} workboards shared with a coach. ${data.coaching.one_on_one_preps} 1:1 preps created.`,
     });
   }
 

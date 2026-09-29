@@ -138,7 +138,7 @@ function EngagementRow({
             className={`${linkClass} nb-nav-item-nested-2 ${scope.workId === undefined ? "nb-nav-item-active" : ""}`}
           >
             <PencilIndent />
-            <span className="truncate">Everything in this engagement</span>
+            <span className="truncate">Everything in this workboard</span>
           </Link>
           {/* PASS 143 — a wrap-up sits last whatever its position, marked with
               a green dot rather than any extra label. */}

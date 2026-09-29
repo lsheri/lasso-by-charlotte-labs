@@ -47,7 +47,7 @@ export function ArchivePage() {
   // nothing here is deleted". Every clause here is counted off the cards this
   // page already holds.
   const subtitle = [
-    `${groups.length} closed engagement${groups.length === 1 ? "" : "s"}`,
+    `${groups.length} closed workboard${groups.length === 1 ? "" : "s"}`,
     `${cards.length} piece${cards.length === 1 ? "" : "s"} of work`,
     "nothing here is deleted",
   ].join(" · ");
@@ -100,7 +100,7 @@ export function ArchivePage() {
         </div>
 
         <aside className="space-y-4">
-          <ToneCard tone="record" label="WHAT STAYS WHEN AN ENGAGEMENT CLOSES">
+          <ToneCard tone="record" label="WHAT STAYS WHEN AN Workboard CLOSES">
             {/* The frame ticks these off one by one. It is the same promise the
                 paragraph made, said so you can check it item by item. */}
             <ul className="mt-1 space-y-1.5">
@@ -122,7 +122,7 @@ export function ArchivePage() {
 
           <ToneCard tone="paper" label="WHAT CHANGES">
             <p className="leading-[19px] text-foreground">
-              The engagement becomes read-only. Nobody can add to it, including you.
+              The workboard becomes read-only. Nobody can add to it, including you.
             </p>
             <p className="mt-2 leading-[19px]">
               Closing changes nobody's access. It adds no one.
@@ -138,7 +138,7 @@ export function ArchivePage() {
           <ToneCard tone="paper" label="TAKE IT WITH YOU">
             <p className="leading-[19px]">
               Every piece here opens to the process behind it, and each one can be taken back by
-              the person who shipped it. Exporting a whole closed engagement as one folder is not
+              the person who shipped it. Exporting a whole closed workboard as one folder is not
               built yet.
             </p>
           </ToneCard>

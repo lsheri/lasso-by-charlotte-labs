@@ -64,7 +64,7 @@ export const pilotRequestTemplate = {
     email: "alex@example.com",
     teamSize: "6-15",
     teamSizeLabel: "6 to 15",
-    note: "One live client engagement.",
+    note: "One live client workboard.",
     createdAt: "20 September 2026, 05:32 UTC",
   },
 } satisfies TemplateEntry;

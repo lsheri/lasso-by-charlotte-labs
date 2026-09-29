@@ -125,7 +125,7 @@ export function NewEngagementDialog({
     });
 
     if (insertError) {
-      setError(insertError.message || "Could not create the engagement.");
+      setError(insertError.message || "Could not create the workboard.");
       setPending(false);
       return;
     }
@@ -394,7 +394,7 @@ export function NewEngagementDialog({
                 Attach files
               </Button>
               <p className="text-xs text-muted-foreground">
-                Files you attach here are shared with the people on this engagement.
+                Files you attach here are shared with the people on this workboard.
               </p>
               {files.length > 0 ? (
                 <ul className="space-y-1">
@@ -426,7 +426,7 @@ export function NewEngagementDialog({
             {error ? <p className="text-sm text-destructive">{error}</p> : null}
             <Button type="submit" className="w-full" disabled={pending}>
               {createdId
-                ? "Go to the engagement"
+                ? "Go to the workboard"
                 : pending
                   ? "Creating…"
                   : confirmNoBrief && confirmShape

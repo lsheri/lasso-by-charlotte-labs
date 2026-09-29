@@ -52,7 +52,7 @@ export type ArchiveCorpusEntry = {
 
 export const ARCHIVE_SEARCH_PROMPT = `You are helping a colleague learn from work already shipped to this firm's archive.
 
-You are given a question and the archive: each piece with its id, its title, the engagement it belongs to, the brief where one exists, and the text of its Work Artifact where one was written.
+You are given a question and the archive: each piece with its id, its title, the workboard it belongs to, the brief where one exists, and the text of its Work Artifact where one was written.
 
 Return STRICT JSON and nothing else:
 { "matches": [{ "work_item_id": string, "why": string }], "best_match_id": string | null }
@@ -74,7 +74,7 @@ export function buildArchiveMessages(
       [
         `PIECE ${entry.work_item_id}`,
         `TITLE: ${entry.title}`,
-        entry.engagement_title ? `ENGAGEMENT: ${entry.engagement_title}` : null,
+        entry.engagement_title ? `WORKBOARD: ${entry.engagement_title}` : null,
         entry.brief ? `BRIEF: ${entry.brief}` : null,
         entry.artifact_text ? `WORK ARTIFACT:\n${entry.artifact_text}` : null,
       ]

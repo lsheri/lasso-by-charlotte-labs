@@ -13,7 +13,7 @@ import { engagementDisplayCode, engagementDisplayTitle, engagementLabel } from "
 
 const MODE_LABEL: Record<ScopeMode, string> = {
   whole: "Whole record",
-  engagements: "Pick engagements",
+  engagements: "Pick workboards",
   tasks: "Pick workstreams",
   items: "Pick work items",
 };
@@ -123,7 +123,7 @@ export function ScopePicker({
           </div>
         ) : (
           <p className="text-sm text-muted-foreground">
-            Everything you have recorded, engagements, workstreams, and every work item you own.
+            Everything you have recorded, workboards, workstreams, and every work item you own.
           </p>
         )}
 

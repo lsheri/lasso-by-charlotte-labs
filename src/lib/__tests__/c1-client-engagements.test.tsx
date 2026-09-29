@@ -91,10 +91,10 @@ describe("C1 new engagement from a client", () => {
       engagement("c", null),
     ];
     render(<SidebarNav />);
-    expect(screen.getByLabelText("New engagement in Northwind")).toBeTruthy();
-    expect(screen.queryByLabelText("New engagement in Internal")).toBeNull();
-    expect(screen.queryByLabelText("New engagement in Unmapped")).toBeNull();
-    expect(screen.queryByLabelText("New engagement in Folderish")).toBeNull();
+    expect(screen.getByLabelText("New workboard in Northwind")).toBeTruthy();
+    expect(screen.queryByLabelText("New workboard in Internal")).toBeNull();
+    expect(screen.queryByLabelText("New workboard in Unmapped")).toBeNull();
+    expect(screen.queryByLabelText("New workboard in Folderish")).toBeNull();
   });
 
   it("preselects the client and marks where it started", () => {

@@ -111,7 +111,7 @@ export function EngagementBriefSection({
         <h2 className="micro-label micro-label-section">The brief</h2>
         <p className="mt-2 text-sm font-medium text-foreground">Add the brief.</p>
         <p className="mt-1 text-sm text-muted-foreground">
-          What was this work supposed to do? An SOW, an assignment, a client request, or your own
+          What was this work supposed to do? An SOW, a task, a client request, or your own
           written brief.
         </p>
         <div className="mt-3 flex flex-wrap items-center gap-3">

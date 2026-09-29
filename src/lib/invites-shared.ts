@@ -22,7 +22,7 @@ export type InviteBlockedState = (typeof INVITE_BLOCKED_STATES)[number];
 
 /** Shown where an invite control used to be, for anyone who is not an admin. */
 export const INVITE_ADMIN_ONLY_LINE =
-  "Invites are managed by your workspace admin. You can share your engagements with existing coaches here.";
+  "Invites are managed by your workspace admin. You can share your workboards with existing coaches here.";
 
 /** Shown on a pending invite row for a lead, who can copy and withdraw only. */
 export const INVITE_RESEND_ADMIN_ONLY_LINE = "Only an admin can issue a new link.";

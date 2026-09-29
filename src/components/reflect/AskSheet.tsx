@@ -30,7 +30,7 @@ export function AskSheet(props: {
         className="flex h-[100dvh] max-h-[100dvh] w-full flex-col gap-0 rounded-none border-0 bg-background p-0"
       >
         <SheetTitle className="sr-only">Ask Lasso</SheetTitle>
-        <SheetDescription className="sr-only">Reflect on this engagement</SheetDescription>
+        <SheetDescription className="sr-only">Reflect on this workboard</SheetDescription>
         <AskSurface
           ask={ask}
           tab={tab}

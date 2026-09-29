@@ -59,9 +59,9 @@ describe("roster state", () => {
 
   it("says what removal does and does not do", () => {
     expect(removalLine("Ada")).toBe(
-      "Removed. Ada no longer sees this engagement. Nothing is deleted, and their past notes remain theirs.",
+      "Removed. Ada no longer sees this workboard. Nothing is deleted, and their past notes remain theirs.",
     );
-    expect(sharedSuccessLine("Ada")).toBe("Shared. Ada can now see this engagement.");
+    expect(sharedSuccessLine("Ada")).toBe("Shared. Ada can now see this workboard.");
   });
 
   it("reports partial and total bulk failure honestly", () => {
@@ -73,7 +73,7 @@ describe("roster state", () => {
       "Shared with 1 of 2 coaches. Bea did not share: not permitted.",
     );
     expect(coachResultsLine([results[0]!])).toBe(
-      "Shared with 1 coaches. They can see this engagement now.",
+      "Shared with 1 coaches. They can see this workboard now.",
     );
     expect(coachResultsLine([results[1]!])).toBe(
       "Shared with 0 of 1 coaches. Bea did not share: not permitted.",

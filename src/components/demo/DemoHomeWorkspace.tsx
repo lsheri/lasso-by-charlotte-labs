@@ -70,7 +70,7 @@ export function DemoHomeWorkspace({ surface }: { surface: DemoHomeSurface }) {
   }, [query.data]);
 
   return (
-    <section ref={sectionRef} aria-label="Demo engagements">
+    <section ref={sectionRef} aria-label="Demo workboards">
       <div ref={gridRef} className={tour.step === 1 ? "pt-28" : undefined}>
         {query.isPending ? (
           <p className="text-[13px] text-muted-foreground">Opening the demo.</p>

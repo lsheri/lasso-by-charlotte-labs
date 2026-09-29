@@ -67,7 +67,7 @@ describe("pass 200 — viewport gestures", () => {
 
   it("renders only the reading line while the Workboard reads are pending", () => {
     const html = renderToStaticMarkup(<CanvasLabStatusLine loading unavailable empty />);
-    expect(html).toContain("reading the engagement");
+    expect(html).toContain("reading the workboard");
     expect(html).not.toContain("nothing is on this workboard yet");
     expect(html).not.toContain("This workboard could not be opened.");
     const page = read("src/pages/CanvasLabPage.tsx");

@@ -68,7 +68,7 @@ export function UpstreamPane({
 
       {items.length === 0 ? (
         <p className="text-sm text-muted-foreground">
-          There is no other work mapped into this engagement yet, so there is nothing to trace back
+          There is no other work mapped into this workboard yet, so there is nothing to trace back
           to.
         </p>
       ) : null}

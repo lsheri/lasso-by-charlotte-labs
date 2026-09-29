@@ -111,7 +111,7 @@ export function MarkBriefDialog({
                   {engagementLabel(engagement)}
                 </p>
                 <ChoiceRow
-                  label="The whole engagement"
+                  label="The whole workboard"
                   selected={current?.type === "engagement" && current.id === engagement.id}
                   note={engagementTaken ? `Already briefed by ${engagementTaken}` : null}
                   disabled={pending}
@@ -137,7 +137,7 @@ export function MarkBriefDialog({
           })}
           {(engagements ?? []).length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              Create an engagement first, then come back and mark this as its brief.
+              Create a workboard first, then come back and mark this as its brief.
             </p>
           ) : null}
         </div>

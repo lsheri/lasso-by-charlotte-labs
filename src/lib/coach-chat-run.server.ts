@@ -93,7 +93,7 @@ export async function runCoachChat(
   if (tasks.length === 0 && (decisionsRes.data ?? []).length === 0) {
     return {
       answer:
-        "There's nothing in this record yet, no confirmed decisions and no mapped work for this engagement.",
+        "There's nothing in this record yet, no confirmed decisions and no mapped work for this workboard.",
       truncated: false,
       fullCount: 0,
       summaryCount: 0,

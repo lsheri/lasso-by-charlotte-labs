@@ -271,7 +271,7 @@ export function ConnectorsSection({ from }: { from?: SettingsOpenFrom }) {
               <li>The files you open in a connected tool</li>
               <li>The conversations you send</li>
               <li>The meetings you record</li>
-              <li>The documents you map to an engagement</li>
+              <li>The documents you map to a workboard</li>
             </ul>
           </ToneCard>
 

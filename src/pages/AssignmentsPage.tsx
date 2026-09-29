@@ -40,7 +40,7 @@ export function AssignmentsPage() {
     <div className="space-y-8">
       <PageHeader
         title={EDU_VOCAB.assignments}
-        subtitle="Everything you have open, grouped by the class or project it belongs to."
+        subtitle="Everything you have open, grouped by the class or workboard it belongs to."
       />
       {(engagements ?? []).map((engagement) => {
         const list = byEngagement.get(engagement.id) ?? [];
@@ -69,7 +69,7 @@ export function AssignmentsPage() {
       })}
       {(rows ?? []).length === 0 ? (
         <p className="text-[11.5px] leading-[17px] text-muted-foreground">
-          Nothing open yet. Add one inside a class or a project and it will show up here.
+          Nothing open yet. Add one inside a class or a workboard and it will show up here.
         </p>
       ) : null}
     </div>

@@ -15,7 +15,7 @@ export const RELATION_LABEL: Record<LineageRelation, string> = {
 
 export const MAX_CANDIDATES = 25;
 
-export const LINEAGE_SYSTEM_PROMPT = `You read one deliverable and a numbered list of other pieces of work from the same engagement, and you say which of them actually fed the deliverable.
+export const LINEAGE_SYSTEM_PROMPT = `You read one deliverable and a numbered list of other pieces of work from the same workboard, and you say which of them actually fed the deliverable.
 
 Rules:
 - Propose a link only on hard evidence, which means one of exactly three things: (1) a specific sentence or passage that appears word for word in both texts, (2) the deliverable names the candidate artefact by its name or file name, or (3) the candidate conversation is where the deliverable's text was actually drafted, and you can point to that drafted text inside it.

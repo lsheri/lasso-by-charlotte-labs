@@ -5,7 +5,7 @@ export function windowDim(days: number): "7d" | "14d" | "30d" {
   return days === 30 ? "30d" : days === 14 ? "14d" : "7d";
 }
 
-export const ONEONONE_SYSTEM_PROMPT = `You write a short brief that one person takes into their own 1:1 with their manager. You are given their recorded work for a time window: engagements, workstreams, a compact summary of each work item, the decisions they confirmed, and anything still open.
+export const ONEONONE_SYSTEM_PROMPT = `You write a short brief that one person takes into their own 1:1 with their manager. You are given their recorded work for a time window: workboards, workstreams, a compact summary of each work item, the decisions they confirmed, and anything still open.
 
 Write markdown with exactly these three sections and nothing else:
 

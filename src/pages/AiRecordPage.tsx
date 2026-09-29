@@ -438,12 +438,12 @@ export function AiRecordPage() {
           <Popover onOpenChange={(open) => { if (open) recordPanelOpen("engagements"); }}>
             <PopoverTrigger asChild>
               <Button type="button" variant="outline" className="h-7 rounded-full">
-                {selectedEngagement?.code ?? (engagement === "unmapped" ? "Unmapped" : "Engagements")}
+                {selectedEngagement?.code ?? (engagement === "unmapped" ? "Unmapped" : "Workboards")}
                 {engagement === "all" ? null : <span className="font-mono text-[9px] text-soft">{matchingCount}</span>}
               </Button>
             </PopoverTrigger>
             <PopoverContent align="start" className="w-80">
-              <div role="group" aria-label="Filter by engagement" className="flex flex-wrap items-center gap-2">
+              <div role="group" aria-label="Filter by workboard" className="flex flex-wrap items-center gap-2">
                 <button type="button" aria-pressed={engagement === "all"} onClick={() => chooseEngagement("all")} className={engagement === "all" ? "rounded-full border border-graphite bg-nb-white px-3 py-1 text-[11.5px] font-medium text-foreground" : "rounded-full border border-[var(--nb-pencil)] px-3 py-1 text-[11.5px] text-muted-foreground"}>Everything <span className="ml-1.5 font-mono text-[10px] text-soft">{shown.length}</span></button>
                 {engagementsPresent.map((entry) => (
                   <button key={entry.id} type="button" aria-pressed={engagement === entry.id} onClick={() => chooseEngagement(entry.id)} className={engagement === entry.id ? "rounded-full border border-graphite bg-nb-white px-3 py-1 text-[11.5px] font-medium text-foreground" : "rounded-full border border-[var(--nb-pencil)] px-3 py-1 text-[11.5px] text-muted-foreground"}>
@@ -524,7 +524,7 @@ export function AiRecordPage() {
         <SlideOver open={recursOpen && Boolean(selectedEngagement)} onOpenChange={(open) => setRecursOpen(open)} title="What recurs">
           <div className="space-y-3 overflow-y-auto p-5">
             <h2 className="font-serif text-[19px]">What recurs</h2>
-            {selectedEngagement ? <AnalysisChips target={{ kind: "engagement", id: selectedEngagement.id, title: selectedEngagement.title, itemCount: matchingCount }} readsDetail="every piece of work mapped into this engagement, oldest first" running={analyses.running} orgId={profile?.org_id} profileId={profile?.id} onRun={(preset, checkId) => void analyses.runPreset(preset, { kind: "engagement", id: selectedEngagement.id, title: selectedEngagement.title, itemCount: matchingCount }, "every piece of work mapped into this engagement, oldest first", checkId)} /> : null}
+            {selectedEngagement ? <AnalysisChips target={{ kind: "engagement", id: selectedEngagement.id, title: selectedEngagement.title, itemCount: matchingCount }} readsDetail="every piece of work mapped into this workboard, oldest first" running={analyses.running} orgId={profile?.org_id} profileId={profile?.id} onRun={(preset, checkId) => void analyses.runPreset(preset, { kind: "engagement", id: selectedEngagement.id, title: selectedEngagement.title, itemCount: matchingCount }, "every piece of work mapped into this workboard, oldest first", checkId)} /> : null}
             {analyses.running ? <><ThinkingIndicator />{analyses.streamed ? <MarkdownMessage content={analyses.streamed} /> : null}</> : null}
             {analyses.error ? <p className="text-sm text-destructive">{analyses.error}</p> : null}
             <InlineAnalysisBlocks results={analyses.results} profileId={profile?.id} />

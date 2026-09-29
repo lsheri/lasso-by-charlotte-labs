@@ -172,7 +172,7 @@ export function ReflectPage({
             id: shape.engagementId,
             title:
               (engagements ?? []).find((e) => e.id === shape.engagementId)?.title ??
-              "this engagement",
+              "this workboard",
             itemCount: shape.itemCount,
           }
         : { kind: "none", reason: shape.reason };
@@ -185,7 +185,7 @@ export function ReflectPage({
 
   const readsDetail =
     shape.kind === "engagement"
-      ? `the ${shape.itemCount} ${shape.itemCount === 1 ? "piece" : "pieces"} of work mapped into this engagement, oldest first`
+      ? `the ${shape.itemCount} ${shape.itemCount === 1 ? "piece" : "pieces"} of work mapped into this workboard, oldest first`
       : shape.kind === "item" && shape.scope === "deliverable"
         ? "this piece of work, the conversations linked to it, and the brief when there is one"
         : "this conversation only, read in full";

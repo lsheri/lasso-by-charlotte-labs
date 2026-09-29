@@ -551,7 +551,7 @@ describe("CG2 AI conversations congruency", () => {
     expect(within(stack).getAllByRole("article")).toHaveLength(15);
     expect(screen.getByRole("searchbox", { name: "Search your chats" })).toBeTruthy();
     expect(screen.getByRole("group", { name: "Filter by tool" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: /Engagements/ })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Workboards/ })).toBeTruthy();
     expect(screen.getByRole("button", { name: "15 conversations." })).toBeTruthy();
   });
 
@@ -585,8 +585,8 @@ describe("CG2 AI conversations congruency", () => {
     render(<AiRecordPage />);
 
     fireEvent.click(within(screen.getByRole("group", { name: "Filter by tool" })).getByRole("button", { name: /Claude/i }));
-    fireEvent.click(screen.getByRole("button", { name: /Engagements/ }));
-    fireEvent.click(within(screen.getByRole("group", { name: "Filter by engagement" })).getByRole("button", { name: /BETA/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Workboards/ }));
+    fireEvent.click(within(screen.getByRole("group", { name: "Filter by workboard" })).getByRole("button", { name: /BETA/i }));
 
     expect(recordedChatFilters).toEqual([
       { data: { filter: "tool", selected: "one", profile_id: "profile" } },
@@ -602,8 +602,8 @@ describe("CG2 AI conversations congruency", () => {
     render(<AiRecordPage />);
 
     fireEvent.click(within(screen.getByRole("group", { name: "Filter by tool" })).getByRole("button", { name: /Claude/i }));
-    fireEvent.click(screen.getByRole("button", { name: /Engagements/ }));
-    fireEvent.click(within(screen.getByRole("group", { name: "Filter by engagement" })).getByRole("button", { name: /BETA/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Workboards/ }));
+    fireEvent.click(within(screen.getByRole("group", { name: "Filter by workboard" })).getByRole("button", { name: /BETA/i }));
 
     for (const row of inboxRows) expect(screen.getByText(row.title)).toBeTruthy();
     expect(screen.getAllByTestId("dimmed-disabled")).toHaveLength(inboxRows.length);
@@ -653,8 +653,8 @@ describe("CG2 AI conversations congruency", () => {
     expect(document.body.contains(search)).toBe(true);
     expect((search as HTMLInputElement).value).toBe("nothing here");
     expect(screen.getByRole("group", { name: "Filter by tool" })).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: /Engagements/ }));
-    expect(screen.getByRole("group", { name: "Filter by engagement" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /Workboards/ }));
+    expect(screen.getByRole("group", { name: "Filter by workboard" })).toBeTruthy();
     expect(screen.getByText(`Showing 0 of ${inboxRows.length}. Nothing is deleted here.`)).toBeTruthy();
     expect(screen.queryByTestId("board-shell")).toBeNull();
 

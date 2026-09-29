@@ -13,7 +13,7 @@ export function PortfolioPage() {
     <div className="space-y-8">
       <PageHeader
         title={EDU_VOCAB.portfolio}
-        subtitle="The work you are proud of, kept in one place and still in its class or project."
+        subtitle="The work you are proud of, kept in one place and still in its class or workboard."
       />
       <p className="text-[11.5px] leading-[17px] text-muted-foreground">{PORTFOLIO_PRIVACY_LINE}</p>
 

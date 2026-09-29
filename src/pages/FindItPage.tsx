@@ -70,7 +70,7 @@ const MODE_HELP: Record<Mode, string> = {
 };
 
 const SCOPE_HELP: Record<FindScope, string> = {
-  engagement: "Only conversations mapped to this engagement.",
+  engagement: "Only conversations mapped to this workboard.",
   all_mine: "Every conversation you own.",
 };
 
@@ -458,9 +458,9 @@ export function FindItPage() {
                     className={`${chipClass(effectiveScope === "engagement")} h-auto font-normal hover:bg-card`}
                     aria-pressed={effectiveScope === "engagement"}
                     disabled={!targetMapped}
-                    title={!targetMapped ? "This piece of work is not filed to an engagement." : SCOPE_HELP.engagement}
+                    title={!targetMapped ? "This piece of work is not filed to a workboard." : SCOPE_HELP.engagement}
                   >
-                    This engagement<HelpMark text={SCOPE_HELP.engagement} />
+                    This workboard<HelpMark text={SCOPE_HELP.engagement} />
                   </Button>
                   <Button
                     type="button"

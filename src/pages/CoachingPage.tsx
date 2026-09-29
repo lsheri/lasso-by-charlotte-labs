@@ -90,7 +90,7 @@ export function CoachingPage() {
               <div className="min-w-[720px]">
                 <div className="grid grid-cols-[minmax(180px,1fr)_minmax(190px,1.15fr)_minmax(210px,1.2fr)_130px] gap-4 border-b border-[var(--nb-pencil)] px-2 pb-2 font-mono text-[9px] uppercase tracking-[0.08em] text-soft">
                   <span>Person</span>
-                  <span>Engagement</span>
+                  <span>Workboard</span>
                   <span>Shared with you</span>
                   <span>Last note</span>
                 </div>
@@ -162,7 +162,7 @@ export function CoachingPage() {
                 <p className="micro-label">Nothing shared yet</p>
                 <p className="mt-2 text-sm text-muted-foreground">
                   Nothing has been shared with you so far. That is the normal starting point: work
-                  stays private to the person who did it until they choose to share an engagement.
+                  stays private to the person who did it until they choose to share a workboard.
                 </p>
                 <p className="mt-2 text-sm text-muted-foreground">
                   The moment someone shares one, it appears here. Nothing else is needed from you.
@@ -191,7 +191,7 @@ export function CoachingPage() {
             <p>Drafts</p>
             <p>Unmapped work</p>
             <p>Unsent reflections</p>
-            <p>Other engagements</p>
+            <p>Other workboards</p>
           </ToneCard>
           <p className="font-hand text-green">coach the work, not the person</p>
         </aside>

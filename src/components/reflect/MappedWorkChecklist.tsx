@@ -34,7 +34,7 @@ export function MappedWorkChecklist({
   engagementId,
   checked,
   onToggle,
-  empty = "Nothing is mapped into this engagement yet.",
+  empty = "Nothing is mapped into this workboard yet.",
 }: {
   items: WorkItemRow[];
   engagementId: string;

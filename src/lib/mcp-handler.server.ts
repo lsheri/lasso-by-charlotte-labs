@@ -478,7 +478,7 @@ const pushTools = (vocab: McpVocab) => [
           type: "array",
           maxItems: MAX_ATTACHMENTS,
           description:
-            "ONLY things this chat made that exist as their own object in the source app: a Claude artifact, a ChatGPT canvas, or a file generated in this chat. Never a file the person uploaded or a project or knowledge file, unless the person asked for it (then origin: 'seen_in_chat' and include: true). Each one carries its own source_artifact_id from that app. The server rejects attachments that duplicate message content; rejected content is still captured in the transcript.",
+            "ONLY things this chat made that exist as their own object in the source app: a Claude artifact, a ChatGPT canvas, or a file generated in this chat. Never a file the person uploaded or a workboard or knowledge file, unless the person asked for it (then origin: 'seen_in_chat' and include: true). Each one carries its own source_artifact_id from that app. The server rejects attachments that duplicate message content; rejected content is still captured in the transcript.",
           items: {
             type: "object",
             properties: {
@@ -643,10 +643,10 @@ const pushTools = (vocab: McpVocab) => [
   },
   {
     name: "list_engagements",
-    title: "List engagements",
+    title: "List workboards",
     icons: ICONS,
     description:
-      "List the user's engagements and workstreams so a pushed item can mention where it might belong. Read-only.",
+      "List the user's workboards and workstreams so a pushed item can mention where it might belong. Read-only.",
     inputSchema: { type: "object", properties: {} },
   },
 ];
@@ -1382,7 +1382,7 @@ async function listEngagements(owner: Owner, id: unknown): Promise<Response> {
     .select("engagement_id")
     .eq("profile_id", owner.profileId);
   const ids = (memberships ?? []).map((m) => m.engagement_id);
-  if (ids.length === 0) return textResult(id, "No engagements yet.");
+  if (ids.length === 0) return textResult(id, "No workboards yet.");
 
   const { data: engagements } = await supabaseAdmin
     .from("engagements")
