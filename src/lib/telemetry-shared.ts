@@ -105,16 +105,10 @@ export type TelemetryEvent =
   | "mcp.push_options_requested"
   /** M2a: a place was made through MCP. Shape only, never a name. */
   | "mcp.container_created"
-  /** B1d: a container was made in the app, client or folder. Kind and the closed
-   *  entry point only. Never a name, never an id. Compare mcp.container_created,
+  /** B1d: a container was made in the app, client or folder. Kind, the closed
+   *  entry point (empty_state included), workspace type and level only. Never a name, never an id. Compare mcp.container_created,
    *  which is the same act performed by an outside model. */
   | "container.created"
-  /** Unit 3: a client or folder was made in the app. Workspace type, kind,
-   *  whether it came from the empty state, and its level. Never a name. */
-  | "client.created"
-  /** Unit 3: a workboard was made. Workspace type, whether a container was
-   *  chosen, and whether that container was made inline. Never a title. */
-  | "workboard.created"
   /** K2: someone submitted an activation key, and what came back. The returned
    *  reason and the closed entry point only. Never the key, never an
    *  institution, never an id. */

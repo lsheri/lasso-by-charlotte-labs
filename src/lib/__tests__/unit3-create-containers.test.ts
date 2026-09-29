@@ -45,22 +45,27 @@ describe("unit 3 creating containers", () => {
     expect(depthFor("f2", rows)).toBe(4);
   });
 
-  it("writes a folder under its parent, never quick_folder, and records client.created", async () => {
+  it("writes a folder under its parent, never quick_folder, and records container.created", async () => {
     const id = await createContainer({
       orgId: "o", orgType: "partner", name: "Acme", kind: "folder", parentId: "f1", rows, from: "picker",
     });
     expect(id).toBeTruthy();
     expect(mocks.inserts[0]).toMatchObject({ kind: "folder", parent_id: "f1" });
     expect(mocks.inserts[0]).not.toHaveProperty("quick_folder");
-    const created = mocks.events.find((e) => e.name === "client.created");
-    expect(created?.dims).toEqual({ workspace_type: "partner", kind: "folder", from_empty: "false", depth: "3" });
+    expect(mocks.events).toHaveLength(1);
+    expect(mocks.events[0]).toEqual({
+      name: "container.created",
+      dims: { kind: "folder", from: "picker", workspace_type: "partner", depth: "3" },
+    });
     expect(JSON.stringify(mocks.events)).not.toContain("Acme");
   });
 
   it("keeps a client at the top whatever parent is passed", async () => {
     await createContainer({ orgId: "o", orgType: "company", name: "X", kind: "client", parentId: "c", rows, from: "empty_state" });
     expect(mocks.inserts[0]).not.toHaveProperty("parent_id");
-    expect(mocks.events.find((e) => e.name === "client.created")?.dims).toMatchObject({ from_empty: "true", depth: "1" });
+    expect(mocks.events).toEqual([
+      { name: "container.created", dims: { kind: "client", from: "empty_state", workspace_type: "company", depth: "1" } },
+    ]);
   });
 
   it("shows the database refusal as it came back and records nothing", async () => {

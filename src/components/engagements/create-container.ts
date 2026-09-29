@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { createClient, type ClientRow } from "@/hooks/use-clients";
 import { logEvent } from "@/lib/telemetry";
 
-/** Where a container was made from. "empty_state" is the fresh workspace path. */
+/** Where a container was made from. "empty_state" is the sidebar create actions. */
 export type ContainerFrom = "sidebar" | "sidebar_client" | "client_page" | "home" | "picker" | "empty_state";
 
 /** Level of a new container: 1 at the top, one more than its parent below that.
@@ -41,15 +41,11 @@ export async function createContainer(input: {
       kind: input.kind,
       parentId,
     });
-    // The earlier entry-point event keeps its series; client.created is additive.
+    // One event per container. "empty_state" is sent as its own from value.
     logEvent("container.created", input.orgId, {
       kind: input.kind,
-      from: input.from === "empty_state" ? "picker" : input.from,
-    });
-    logEvent("client.created", input.orgId, {
+      from: input.from,
       workspace_type: input.orgType ?? "company",
-      kind: input.kind,
-      from_empty: input.from === "empty_state" ? "true" : "false",
       depth: String(depthFor(parentId, input.rows)),
     });
     return id;

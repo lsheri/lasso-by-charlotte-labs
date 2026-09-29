@@ -15,11 +15,12 @@ const CONTAINER_CREATED_FROM = [
   "client_page",
   "home",
   "picker",
+  "empty_state",
 ] as const;
 
 describe("pass 209 container.created", () => {
-  it("lists exactly kind and from as its dims", () => {
-    expect(EVENT_DIM_KEYS["container.created"]).toEqual(["kind", "from"]);
+  it("lists exactly kind, from, workspace_type and depth as its dims", () => {
+    expect(EVENT_DIM_KEYS["container.created"]).toEqual(["kind", "from", "workspace_type", "depth"]);
   });
 
   it("keeps both allowed dims", () => {
@@ -44,6 +45,7 @@ describe("pass 209 container.created", () => {
       "client_page",
       "home",
       "picker",
+      "empty_state",
     ]);
   });
 });
