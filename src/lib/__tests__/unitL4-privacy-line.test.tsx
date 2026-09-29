@@ -62,7 +62,7 @@ beforeAll(async () => {
 afterEach(cleanup);
 
 describe("Unit L4: register privacy line", () => {
-  it.each(registers)("setup renders the %s privacy line", (register) => {
+  it.each(registers)("setup renders the %s privacy line", async (register) => {
     mocks.search = { intent: register };
     const Setup = onboardingOptions.component;
     render(
@@ -73,7 +73,7 @@ describe("Unit L4: register privacy line", () => {
     expect(await screen.findByText(REGISTER_COPY[register].privacy)).toBeTruthy();
   });
 
-  it("auth without a door signal renders the neutral privacy line", () => {
+  it("auth without a door signal renders the neutral privacy line", async () => {
     mocks.search = {};
     const Auth = authOptions.component;
     render(
