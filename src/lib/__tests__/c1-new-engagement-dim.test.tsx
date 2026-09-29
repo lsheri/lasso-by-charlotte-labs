@@ -24,7 +24,6 @@ vi.mock("@/hooks/use-clients", () => ({
   useInvalidateClients: () => () => {},
   createClient: async () => "cl2",
   renameClient: async () => {},
-  createQuickFolder: async () => ({ engagementId: "e1" }),
 }));
 
 vi.mock("@tanstack/react-query", () => ({
@@ -81,14 +80,13 @@ describe("C1 the from dim", () => {
       />,
     );
     fireEvent.click(screen.getByText("open"));
-    fireEvent.click(screen.getByText("Full workboard"));
     expect((screen.getByLabelText("Client (optional)") as HTMLSelectElement).value).toBe("cl1");
     fireEvent.change(screen.getByLabelText("Code"), { target: { value: "NW-1" } });
     fireEvent.change(screen.getByLabelText("Title"), { target: { value: "Pricing" } });
     fireEvent.change(screen.getByLabelText("Brief (optional)"), { target: { value: "A brief." } });
     fireEvent.click(screen.getByText("Create workboard"));
 
-    await waitFor(() => expect(mocks.events.length).toBe(1));
+    await waitFor(() => expect(mocks.events.length).toBe(2));
     expect(mocks.events[0]).toEqual({
       name: "engagement.updated",
       dims: {
@@ -100,6 +98,18 @@ describe("C1 the from dim", () => {
         brief_files: "0",
       },
     });
+    // Unit 3: the additive creation event, shape only.
+    expect(mocks.events[1]).toEqual({
+      name: "workboard.created",
+      dims: { workspace_type: "company", has_client: "true", client_inline: "false" },
+    });
+  });
+
+  it("offers one form and no quick folder card", () => {
+    render(<NewEngagementDialog trigger={<button type="button">open</button>} />);
+    fireEvent.click(screen.getByText("open"));
+    expect(screen.queryByText("Quick folder")).toBeNull();
+    expect(screen.getByLabelText("Code")).toBeTruthy();
   });
 });
 
@@ -112,7 +122,6 @@ describe("C1 the client page entry point", () => {
   it("offers a new engagement with the client already chosen", () => {
     render(<ClientPage clientId="cl1" />);
     fireEvent.click(screen.getByText("New workboard"));
-    fireEvent.click(screen.getByText("Full workboard"));
     expect((screen.getByLabelText("Client (optional)") as HTMLSelectElement).value).toBe("cl1");
   });
 });
