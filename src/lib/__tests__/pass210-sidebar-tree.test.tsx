@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -176,6 +176,48 @@ describe("unit 3c containers render without workboards", () => {
       ["Folder One", 1],
       ["Folder Two", 2],
     ]);
+    mocks.clientRows = [];
+  });
+
+  it("renders the live three-level shape on one shared indent scale", () => {
+    const clientRows: ContainerRow[] = [
+      { id: "abc", name: "ABC co", kind: "client", parent_id: null },
+      { id: "folder-01", name: "folder 01", kind: "folder", parent_id: "abc" },
+      { id: "folder-1", name: "folder1", kind: "folder", parent_id: "folder-01" },
+      { id: "test-a", name: "test", kind: "folder", parent_id: null },
+      { id: "test-b", name: "test", kind: "folder", parent_id: null },
+    ];
+    mocks.clientRows = clientRows;
+    mocks.profile = { id: "p1", org_id: "o1", org_type: "partner", role: "worker" };
+    mocks.engagements = [
+      { ...eng("cure", { id: "abc", name: "ABC co", quick_folder: false, kind: "client", parent_id: null }), code: null, title: "CURE test" },
+      { ...eng("b5", { id: "folder-01", name: "folder 01", quick_folder: false, kind: "folder", parent_id: "abc" }), code: null, title: "B5-TEST2 test" },
+    ];
+
+    const { container } = render(<SidebarNav />);
+    const renderedDepth = (label: string) =>
+      Number(screen.getByText(label).closest("[data-tree-depth]")?.getAttribute("data-tree-depth"));
+
+    expect(renderedDepth("ABC co")).toBe(0);
+    expect(renderedDepth("CURE test")).toBe(1);
+    expect(renderedDepth("folder 01")).toBe(1);
+    expect(renderedDepth("B5-TEST2 test")).toBe(2);
+    expect(renderedDepth("folder1")).toBe(2);
+
+    const text = container.textContent ?? "";
+    expect(text.indexOf("ABC co")).toBeLessThan(text.indexOf("CURE test"));
+    expect(text.indexOf("CURE test")).toBeLessThan(text.indexOf("folder 01"));
+    expect(text.indexOf("folder 01")).toBeLessThan(text.indexOf("B5-TEST2 test"));
+    expect(text.indexOf("B5-TEST2 test")).toBeLessThan(text.indexOf("folder1"));
+
+    const folderRow = screen.getByText("folder 01").closest("[data-tree-node]");
+    expect(folderRow).not.toBeNull();
+    if (!folderRow) return;
+    fireEvent.click(within(folderRow as HTMLElement).getByRole("button", { name: "Collapse" }));
+    expect(screen.queryByText("B5-TEST2 test")).toBeNull();
+    expect(screen.queryByText("folder1")).toBeNull();
+    expect(screen.getByText("CURE test")).toBeTruthy();
+
     mocks.clientRows = [];
   });
 });
