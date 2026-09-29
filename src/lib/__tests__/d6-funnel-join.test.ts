@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const inserts = vi.hoisted(() => [] as Array<Record<string, unknown>>);
@@ -52,6 +51,7 @@ describe("Unit D6: stable visitor id", () => {
 });
 
 describe("Unit D6: identify at sign-up", () => {
+  beforeEach(() => vi.stubGlobal("window", {}));
   it("identifies by the auth user id on a successful sign-up", () => {
     noteSignUpIdentity({ user: { id: "auth-user-1" }, error: null });
     expect(identify).toHaveBeenCalledWith("auth-user-1");
