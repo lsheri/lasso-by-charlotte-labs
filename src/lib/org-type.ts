@@ -6,7 +6,9 @@
 
 export type OrgType = "company" | "personal" | "edu";
 
-export type DoorChoice = "company" | "personal" | "edu" | "invite" | null | undefined;
+export type IntentParam = OrgType | "invite";
+
+export type DoorChoice = IntentParam | null | undefined;
 
 /**
  * An invite never creates a workspace here (the accept page owns that), so it

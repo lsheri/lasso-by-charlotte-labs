@@ -29,7 +29,7 @@ import {
   toolCountBucket,
   type ToolId,
 } from "@/lib/onboarding-tools";
-import { orgTypeForChoice, type OrgType } from "@/lib/org-type";
+import { orgTypeForChoice, type IntentParam, type OrgType } from "@/lib/org-type";
 import {
   deriveRegister,
   REGISTER_COPY,
@@ -88,7 +88,7 @@ export const Route = createFileRoute("/onboarding")({
   validateSearch: (
     search: Record<string, unknown>,
   ): {
-    intent?: "company" | "personal" | "edu" | "invite" | undefined;
+    intent?: IntentParam | undefined;
     setup?: boolean | undefined;
     key?: string | undefined;
   } => {
@@ -169,7 +169,7 @@ function OnboardingInner() {
   const [tools, setTools] = useState<Set<ToolId>>(new Set());
   const [orgType, setOrgType] = useState<OrgType>(orgTypeForChoice(derived));
 
-  const [selected, setSelected] = useState<"company" | "personal" | "edu" | "invite" | null>(
+  const [selected, setSelected] = useState<IntentParam | null>(
     intent ?? (readEduIntent() ? "edu" : null),
   );
   const [displayName, setDisplayName] = useState("");

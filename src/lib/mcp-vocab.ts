@@ -7,7 +7,9 @@
  * and the words a person sees cannot drift apart.
  */
 
-export type McpWorkspaceType = "company" | "personal" | "edu";
+import type { OrgType } from "@/lib/org-type";
+
+export type McpWorkspaceType = OrgType;
 
 export type McpVocab = {
   /** What holds boards: a client, a folder, a class. */

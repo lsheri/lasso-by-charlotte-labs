@@ -7,6 +7,7 @@
  */
 
 import type { WorkItemRow } from "./work-types";
+import type { OrgType } from "./org-type";
 
 export const ARRIVAL_WINDOW_DAYS = 7;
 export const ARRIVAL_WINDOW_MS = ARRIVAL_WINDOW_DAYS * 24 * 60 * 60 * 1000;
@@ -55,7 +56,7 @@ export type ArrivalPlace =
  */
 export function arrivalPlace(
   item: WorkItemRow,
-  orgType: "company" | "personal" | "edu" | null | undefined,
+  orgType: OrgType | null | undefined,
 ): ArrivalPlace {
   const link = item.work_item_tasks[0];
   const task = link?.tasks;

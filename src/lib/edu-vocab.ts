@@ -10,8 +10,6 @@
  * so the default output must stay byte identical.
  */
 
-export type OrgTypeName = "company" | "personal" | "edu";
-
 export type VocabProfile = { org_type?: string | null } | null | undefined;
 
 export function isEduOrg(profile: VocabProfile): boolean {
