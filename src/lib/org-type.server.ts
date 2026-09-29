@@ -16,7 +16,8 @@ export function resetOrgTypeCache(): void {
 
 export function orgTypeFromSettings(settings: unknown): string {
   const value = (settings as Record<string, unknown> | null)?.["type"];
-  if (value === "edu" || value === "company") return value;
+  // This stamps events.workspace_type, which is immutable. A partner workspace read as "personal" here is wrong forever, not just until the next deploy.
+  if (value === "edu" || value === "company" || value === "partner") return value;
   return "personal";
 }
 

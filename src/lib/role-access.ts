@@ -29,7 +29,8 @@ export function canManageMembers(profile: RoleProfile): boolean {
 
 /** The firm view aggregates a roster, so a solo workspace never sees it. */
 export function canSeeFirmView(profile: RoleProfile): boolean {
-  return canManageMembers(profile) && isBusinessOrg(profile);
+  // Firm view is company only. A partner workspace holds another company's people, so a workspace-wide roll-up there would aggregate a client's staff. The server refuses it; this keeps the nav honest about that.
+  return canManageMembers(profile) && profile?.org_type === "company";
 }
 
 /**

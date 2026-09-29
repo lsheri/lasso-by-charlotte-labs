@@ -25,7 +25,8 @@ export type Profile = {
 
 /** Business orgs get the members console; personal ones get "Your coaches". */
 export function isBusinessOrg(profile: { org_type: string } | null | undefined): boolean {
-  return profile?.org_type === "company";
+  // A partner firm has members and runs client engagements, so it takes the business vocabulary. Firm view is decided separately, in canSeeFirmView.
+  return profile?.org_type === "company" || profile?.org_type === "partner";
 }
 
 /** Active profiles, plus whether the user holds only deactivated ones. */
@@ -221,7 +222,9 @@ export async function fetchProfileState(): Promise<ProfileState> {
         ? "company"
         : orgs?.settings?.["type"] === "edu"
           ? "edu"
-          : "personal") as OrgType,
+          : orgs?.settings?.["type"] === "partner"
+            ? "partner"
+            : "personal") as OrgType,
 
     }));
   return { profiles, hasDeactivated: rows.some((row) => row.deactivated_at) };

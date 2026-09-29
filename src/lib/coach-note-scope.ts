@@ -37,7 +37,7 @@ export function scopeChoices(
   orgType: string | null | undefined,
   hasTasks: boolean,
 ): NoteScope[] {
-  const workFirst = orgType !== "company";
+  const workFirst = orgType !== "company" && orgType !== "partner";
   const order: NoteScope[] = workFirst
     ? ["work_item", "engagement", "task"]
     : ["engagement", "task", "work_item"];
