@@ -14,6 +14,9 @@ vi.mock("@tanstack/react-router", async (orig) => ({
   },
   useNavigate: () => vi.fn(),
 }));
+vi.mock("@tanstack/react-start", () => ({
+  useServerFn: () => vi.fn().mockResolvedValue({ ok: true }),
+}));
 
 import { PlansPage } from "@/routes/plans";
 

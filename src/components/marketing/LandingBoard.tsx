@@ -2190,7 +2190,7 @@ function PhoneHeroAssemble() {
   );
 }
 
-function LandingBoardHeader() {
+function LandingBoardHeader({ onPlans }: { onPlans: () => void }) {
   return (
     <header className="lb-header">
       <div className="lb-header-main">
@@ -2209,7 +2209,7 @@ function LandingBoardHeader() {
           <Button asChild size="sm">
             <Link
               to="/plans"
-              onClick={() => event(viewId.current, "plans.action_clicked", { action: "opened", source: "landing_header" })}
+              onClick={onPlans}
             >
               Get started
             </Link>
@@ -2878,7 +2878,14 @@ export function LandingBoard() {
   if (!introElapsed || query.isPending) return <LandingLogoRain />;
   return (
     <div className="landing-board-page">
-      <LandingBoardHeader />
+      <LandingBoardHeader
+        onPlans={() =>
+          event(viewId.current, "plans.action_clicked", {
+            action: "opened",
+            source: "landing_header",
+          })
+        }
+      />
       <main className="lb-story">
         <section
           className="lb-desktop-hero"
@@ -2904,7 +2911,12 @@ export function LandingBoard() {
                 <Button asChild>
                   <Link
                     to="/plans"
-                    onClick={() => event(viewId.current, "plans.action_clicked", { action: "opened", source: "landing_hero" })}
+                    onClick={() =>
+                      event(viewId.current, "plans.action_clicked", {
+                        action: "opened",
+                        source: "landing_hero",
+                      })
+                    }
                   >
                     Get started, free while we pilot
                   </Link>
