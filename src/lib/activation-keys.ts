@@ -7,6 +7,8 @@ export type RedeemReason =
   | "already_redeemed"
   | "already_member"
   | "domain_not_allowed"
+  | "partner_target"
+  | "needs_workspace"
   | "rate_limited"
   | "error";
 
@@ -21,6 +23,8 @@ export const REDEEM_REASONS: readonly RedeemReason[] = [
   "already_redeemed",
   "already_member",
   "domain_not_allowed",
+  "partner_target",
+  "needs_workspace",
   "rate_limited",
   "error",
 ];
@@ -34,6 +38,8 @@ const MESSAGES: Record<RedeemReason, string> = {
   already_redeemed: "You have already used this key. Your workspace is linked.",
   already_member: "You are already part of that workspace.",
   domain_not_allowed: "That link needs a work email address from the organisation that issued it.",
+  partner_target: "That link cannot be used to join. Ask whoever sent it for a new one.",
+  needs_workspace: "Finish setting up your workspace and this key will apply.",
   rate_limited: "Too many tries. Wait a minute and try again.",
   error: "Something went wrong. Try again in a moment.",
 };

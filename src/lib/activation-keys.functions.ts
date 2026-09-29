@@ -115,22 +115,18 @@ export const redeemActivationKeyFn = createServerFn({ method: "POST" })
       }
 
       const choice = chooseProfile(data.profile_id, profileRows[0] ?? null, queryFailed);
-      // "none" (caller has no workspace) is a legitimate state for an org
-      // key, but the generated types for redeem_activation_key still declare
-      // p_profile_id and p_org_id as non-null strings. Until the types are
-      // regenerated against the replaced database function, this handler
-      // cannot pass nulls without a cast, and casts are not allowed here.
-      // The none path therefore refuses for now; chooseProfile and its tests
-      // carry the new decision so only this call site changes afterwards.
-      if (choice.action !== "use") return outcome("error");
-      const profile = choice.profile;
+      if (choice.action === "refuse") return outcome("error");
+      const profile = choice.action === "use" ? choice.profile : undefined;
 
-      const { data: result, error } = await supabaseAdmin.rpc("redeem_activation_key", {
+      // One call, conditional args: a caller with a workspace names it, a
+      // caller with none lets the database decide from the code and the
+      // verified user id alone.
+      const rpcArgs = {
         p_code: data.code,
-        p_profile_id: profile.id,
         p_user_id: userId,
-        p_org_id: profile.org_id,
-      });
+        ...(profile ? { p_profile_id: profile.id, p_org_id: profile.org_id } : {}),
+      };
+      const { data: result, error } = await supabaseAdmin.rpc("redeem_activation_key", rpcArgs);
       if (error || !result || typeof result !== "object" || Array.isArray(result)) {
         return outcome("error");
       }
