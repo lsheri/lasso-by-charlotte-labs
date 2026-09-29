@@ -97,7 +97,6 @@ describe("Unit B2 welcome board", () => {
     render(<WelcomeBoardView register="personal" orgId="o1" store={store()} answerQuestion={okAnswer} />);
     expect(screen.queryByTestId("welcome-board")).toBeNull();
   });
-  });
 
   it("sends the question and circled ids, and renders the returned text", async () => {
     const fn = vi.fn(async () => ({ text: "A plain answer." }));
