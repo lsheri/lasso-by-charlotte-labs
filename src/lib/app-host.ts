@@ -22,8 +22,12 @@ export const PRODUCTION_HOSTS = [
 
 export const CANONICAL_ORIGIN = `https://${CANONICAL_HOST}`;
 
-/** Analytics cookie scope, shared with the umbrella site so one visitor stays one visitor. */
-export const ANALYTICS_COOKIE_DOMAIN = ".charlotte-labs.com";
+/*
+ * Analytics cookie scope needs no constant. The shared visitor id across
+ * charlotte-labs.com and its subdomains comes from the analytics SDK's
+ * cross_subdomain_cookie setting, which defaults to true and sets the cookie on the
+ * registrable domain, so nothing needs configuring here.
+ */
 
 /**
  * Exact match only, case-insensitive. Never a substring or suffix test:

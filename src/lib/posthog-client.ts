@@ -1,6 +1,6 @@
 import posthog from "posthog-js";
 
-import { ANALYTICS_COOKIE_DOMAIN, isProductionHost } from "@/lib/app-host";
+import { isProductionHost } from "@/lib/app-host";
 
 /**
  * The ONLY file in src that may touch posthog-js.
@@ -16,7 +16,10 @@ export const POSTHOG_TOKEN = "phc_mb9PLASteZ87YA6P34n4Mb9Hp9rW3oXXRQvq6qXiy6mw";
 
 export const POSTHOG_CONFIG = {
   api_host: "https://us.i.posthog.com",
-  cookie_domain: ANALYTICS_COOKIE_DOMAIN,
+  // No cookie option: cookie_domain is not a posthog-js option. The shared
+  // visitor id across the umbrella domain and its subdomains comes from
+  // cross_subdomain_cookie, which defaults to true and scopes the cookie to
+  // the registrable domain.
   autocapture: true,
   capture_pageview: false, // first-party perf.pageload + landing.viewed own this
   capture_pageleave: false,

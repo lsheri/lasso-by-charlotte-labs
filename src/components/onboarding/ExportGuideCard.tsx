@@ -6,12 +6,15 @@ import { Button } from "@/components/ui/button";
 import { STEPS_VERIFIED, VENDORS, type ImportVendor } from "@/lib/import-vendors";
 import { TOOLS, type ToolId } from "@/lib/onboarding-tools";
 import { ToolBadge } from "./ToolBadge";
+import { useSetupOpened } from "./use-setup-opened";
 
 /** Compact, expandable version of the existing vendor guide. */
 export function ExportGuideCard({ tool }: { tool: Extract<ToolId, "gemini" | "copilot"> }) {
   const vendor: ImportVendor = tool;
   const meta = VENDORS[vendor];
   const [open, setOpen] = useState(false);
+  // Export guides have no live connector behind them.
+  useSetupOpened(false);
 
   return (
     <div className="rounded-[var(--radius)] border border-border bg-card px-5 py-4 shadow-card">

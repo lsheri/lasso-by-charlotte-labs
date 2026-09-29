@@ -12,6 +12,7 @@ import { getConnectionStatus, initiateConnection } from "@/lib/connectors.functi
 import { logEvent } from "@/lib/telemetry";
 import { TOOLS, type ToolId } from "@/lib/onboarding-tools";
 import { ToolBadge } from "./ToolBadge";
+import { useSetupOpened } from "./use-setup-opened";
 
 /**
  * Real OAuth in the first session. On success the folder-first picker opens
@@ -20,6 +21,12 @@ import { ToolBadge } from "./ToolBadge";
 type ConnectTool = Extract<ToolId, "googledrive" | "granola" | "transcripts" | "gmail">;
 
 export function LiveConnectCard({ tool }: { tool: ConnectTool }) {
+  const setupToolkit =
+    tool === "gmail" ? "gmail" : tool === "granola" ? "granola_mcp" : "googledrive";
+  const { data: setupAccounts, isFetched: accountsSettled } = useConnectorAccounts();
+  useSetupOpened(
+    accountsSettled ? setupAccounts?.[setupToolkit]?.status === "connected" : null,
+  );
   // Granola authenticates with a pasted API key, so it gets its own card.
   if (tool === "granola") return <GranolaKeyCard />;
   return <OAuthConnectCard tool={tool} />;
