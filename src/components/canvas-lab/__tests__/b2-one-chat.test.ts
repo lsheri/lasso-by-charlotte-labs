@@ -43,7 +43,7 @@ describe("B2 one chat on the board", () => {
     expect(surface).toContain("title={title}");
     expect(surface).toContain("${ask.boardPickedCount} picked on the board");
     expect(surface).toContain("All work in this workboard");
-    expect(surface.indexOf("boardPicked && ask.boardPickedCount === 0")).toBeLessThan(surface.indexOf('"All work in this engagement"'));
+    expect(surface.indexOf("boardPicked && ask.boardPickedCount === 0")).toBeLessThan(surface.indexOf('"All work in this workboard"'));
   });
 
   it("keeps the live board pick through New chat and restores all work only after clear", () => {
