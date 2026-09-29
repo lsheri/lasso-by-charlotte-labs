@@ -126,3 +126,16 @@ export const eduNavGroups: NavGroup[] = navGroups.flatMap((group) => {
   if (group.id === "engagements") return [{ ...group, label: EDU_VOCAB.engagements }];
   return [group];
 });
+
+/**
+ * A partner firm runs client engagements, so it keeps the consulting
+ * weekly loop and only changes two headings. There is deliberately no
+ * Workshops section: a partner's workshops are engagements under a
+ * client, and a nav row needs a route behind it. When partner-specific
+ * routes exist, they get inserted here the way the school section is.
+ */
+export const partnerNavGroups: NavGroup[] = navGroups.flatMap((group) => {
+  if (group.id === "engagements") return [{ ...group, label: "Your clients" }];
+  if (group.id === "firm") return [{ ...group, label: "Your practice" }];
+  return [group];
+});

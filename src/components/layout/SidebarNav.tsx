@@ -32,7 +32,13 @@ import {
   type NavEngagement,
 } from "@/lib/nav-groups";
 
-import { coachNavGroups, coachingGroup, eduNavGroups, navGroups } from "./nav-config";
+import {
+  coachNavGroups,
+  coachingGroup,
+  eduNavGroups,
+  navGroups,
+  partnerNavGroups,
+} from "./nav-config";
 import { engagementDisplayCode, engagementDisplayTitle } from "@/lib/clients";
 
 const linkClass = "nb-nav-item";
@@ -252,7 +258,12 @@ export function SidebarNav({
   const guestNav = roles.usesGuestNav(profile);
   const canManageMembers = roles.canManageMembers(profile);
   const canSeeFirmView = roles.canSeeFirmView(profile);
-  const groupsForOrg = isEduOrg(profile) ? eduNavGroups : navGroups;
+  const isPartnerOrg = profile?.org_type === "partner";
+  const groupsForOrg = isEduOrg(profile)
+    ? eduNavGroups
+    : isPartnerOrg
+      ? partnerNavGroups
+      : navGroups;
   const vocab = vocabFor(profile);
   // Whether a coaching destination exists at all is decided by what this
   // person was given on a board, never by their workspace role.
