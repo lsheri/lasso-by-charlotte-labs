@@ -1371,6 +1371,7 @@ function PhoneStory({
   clientLabel,
   active,
   onActive,
+  onPlans,
   onWatch,
   onPilot,
   onShowSlide,
@@ -1384,6 +1385,7 @@ function PhoneStory({
   clientLabel: string;
   active: number;
   onActive: (stop: number) => void;
+  onPlans: () => void;
   onWatch: () => void;
   onPilot: () => void;
   onShowSlide: () => void;
@@ -1456,7 +1458,12 @@ function PhoneStory({
             work across tools to the client deliverable and keeps the decisions your team made.
           </p>
           <div>
-            <Button onClick={onWatch}>Watch it work</Button>
+            <Button asChild>
+              <Link to="/plans" onClick={onPlans}>
+                Get started, free while we pilot
+              </Link>
+            </Button>
+            <Button variant="outline" onClick={onWatch}>Watch it work</Button>
             <Button asChild variant="outline">
               <Link to="/demo">View a Workboard</Link>
             </Button>
@@ -3015,6 +3022,12 @@ export function LandingBoard() {
             clientLabel={result.engagement.clientLabel ?? ""}
             active={phoneStop}
             onActive={activatePhone}
+            onPlans={() =>
+              event(viewId.current, "plans.action_clicked", {
+                action: "opened",
+                source: "landing_hero",
+              })
+            }
             onWatch={jumpToUseCases}
             onPilot={() => pilot("try_it")}
             onShowSlide={() => {
