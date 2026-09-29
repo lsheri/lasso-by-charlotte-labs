@@ -5,4 +5,4 @@
 - [x] Unit D6: server path restored, stable visitor id, identify by auth user id
 - [ ] Join hashed server funnel events to the identified person (needs founder scoping, see D6 report)
 - [x] Unit L4: render register privacy copy on account setup and auth
-- [ ] Unit 3c: every saved container visible in the sidebar, nested, with honest ungrouped label
+- [x] Unit 3c: every saved container visible in the sidebar, nested, with honest ungrouped label
