@@ -277,6 +277,7 @@ function AuthPage() {
             <Button type="submit" className="w-full" disabled={pending}>
               {pending ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}
             </Button>
+            <p className="text-sm text-muted-foreground">{emailCopy.privacy}</p>
           </form>
 
           <button

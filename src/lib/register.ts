@@ -37,7 +37,7 @@ export const REGISTER_COPY: Readonly<Record<Register, RegisterCopy>> = {
     workspaceLabel: "Workspace name",
     workspacePlaceholder: "Northwind Group",
     claim: "One board. Every tool. Circle a few chats and ask.",
-    privacy: "Nobody reads your threads.",
+    privacy: "Nobody reads your threads. Your work is private to you until you share it.",
   },
   personal: {
     emailLabel: "EMAIL",
