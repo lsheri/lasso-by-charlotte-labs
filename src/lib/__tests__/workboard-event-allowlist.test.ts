@@ -49,6 +49,11 @@ describe("the workboard allowlist", () => {
         "workboard.context_changed": [
           "action",
         ],
+        "workboard.created": [
+          "workspace_type",
+          "has_client",
+          "client_inline",
+        ],
         "workboard.display_mode_toggled": [
           "mode",
         ],
