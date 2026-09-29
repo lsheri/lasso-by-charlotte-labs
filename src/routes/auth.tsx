@@ -16,7 +16,7 @@ import { isPartnerSlug } from "@/lib/partners";
 import { cleanActivationKey, markActivationKey, readActivationKey } from "@/lib/key-entry";
 import { deriveRegister, NEUTRAL_COPY, REGISTER_COPY } from "@/lib/register";
 import type { IntentParam } from "@/lib/org-type";
-import { emitClientEvent } from "@/lib/client-telemetry";
+import { aliasSignupVisitor, emitClientEvent } from "@/lib/client-telemetry";
 import { identifyPostHog } from "@/lib/posthog-client";
 import { parseFunnelSource, type FunnelSource } from "@/lib/funnel-source";
 
@@ -95,6 +95,12 @@ export function noteSignUpIdentity(result: {
   error: unknown;
 }): void {
   if (result.error || !result.user?.id) return;
+  // Unit D7: alias before identify, so the anonymous funnel joins the account.
+  try {
+    aliasSignupVisitor(result.user.id);
+  } catch {
+    /* never into the sign-up path */
+  }
   identifyPostHog(result.user.id);
 }
 
