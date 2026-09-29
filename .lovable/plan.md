@@ -1,29 +1,30 @@
-# Unit 3c: make saved containers visible
+# Unit 4c: client creation access
 
 ## Data platform gate
-- Coverage: sidebar display and existing create flow only. No user action is added or removed, so no new event is needed.
-- Consent: no consent surface, consent state, ledger, or event stamping changes.
-- Schema and portal: no event name, payload, or dimension changes. No database work.
+- Coverage: changes visibility only. No user action or event is added, removed, or renamed. Existing `container.created` still covers successful client and folder creation.
+- Consent: no consent surface, consent storage, or event stamping changes.
+- Schema and portal: no event name, payload, or dimension changes. No portal update is needed.
 
-## Before and after control rule
+## Control and state contract
+
 ### Before
-- Controls: destination links; client/folder links; workboard links; per-container New workboard; expand/collapse toggles; New workboard, New client/New term, and New folder; settings; disabled destinations with explanations; shared-work links.
-- Render states: guest navigation; standard/partner/school/personal vocabularies; workboards grouped by joined container; top-level folder section; nested folders; quick-folder and clientless synthetic groups; no-workboards line; collapsed shelves; active workboard/task; shared work; empty/hidden role-gated groups.
-- Event calls: `shared.board_opened` only in this sidebar. Existing create actions continue to emit their current events inside their own components.
+- Sidebar: `New client` and `New folder`; creation input; Add button; Enter submits; Escape closes; pending disables Add.
+- Picker: existing-container dropdown; rename button for a selection; `New client`; `New folder`; create/rename input; Add or Save; Enter submits; pending disables submit; refusal/error display.
+- Successful creation calls the existing `container.created`; refused creation emits no event and its database message reaches the existing error toast.
 
 ### After
-- The same controls, render states, and event calls remain reachable.
-- Added normal render coverage for containers with zero workboards and a quiet empty line beneath each expanded empty container.
-- Clientless workboards use a quiet non-container heading derived from workspace vocabulary.
+- Admin or lead: every control and state above remains unchanged.
+- Other roles: `New client` is absent in both places. Every folder, dropdown, rename, workboard, loading, pending, success, and refusal path remains unchanged.
+- The two lists differ only by the explicitly requested removal of `New client` for roles that cannot manage members.
 
 ## Implementation
-1. Read all visible `clients` rows in the signed-in sidebar through `useClients`; keep guest navigation from requesting unrelated container rows.
-2. Build the sidebar container tree from those rows plus workboards, rather than reconstructing containers only from workboard joins.
-3. Render root clients and folders from that tree, preserving existing nesting and its three visible levels, links, create controls, collapse state, and workboard rows.
-4. Label clientless workboards `Not in a client yet`, with `client` replaced by the workspace vocabulary, and style that row as a grouping rather than a created container.
-5. Extend the sidebar regression test with `ClientRow[]` fixtures whose containers are absent from the engagement list, covering an empty client and two nested folders.
-6. Run the focused sidebar tests, typecheck, full suite, copy/quick-folder greps, then inspect the signed-in preview at 1280px and 390px without creating or changing database rows.
+- Import and call the existing `canManageMembers(profile)` in `SidebarCreateActions` and `ClientPicker`; do not introduce another role predicate.
+- Gate only the client action. Keep `New folder` unconditional wherever the workspace vocabulary separates clients from folders.
+- Keep creation writes and error handling unchanged so stale requests still show the database message verbatim.
+- Standardize the container menu and confirmation verb to `Delete` in all three copy fields, and update pinned expectations.
+- Add regression coverage proving `em` cannot see client creation, `lead` can, folders remain available, and the decision flows through `canManageMembers`.
 
-## Assumptions
-- “Three levels deep” means root at level 0 plus two nested folder levels, matching the existing sidebar depth cap.
-- Existing quick-folder rows retain their current read behavior and remain separate from the clientless-workboard heading.
+## Verification
+- Run focused tests, the project typecheck command, and the full test suite.
+- Inspect the preview at 1280px and 390px where authentication permits; report any authentication limitation separately.
+- Confirm the latest preview build result and separate existing failures from new failures.
