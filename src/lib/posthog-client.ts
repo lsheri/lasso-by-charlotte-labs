@@ -55,7 +55,7 @@ export function initPostHog(): void {
 }
 
 /**
- * Accepts ONLY an id. No person properties, ever: no email, no display name,
+ * Accepts ONLY the auth user id. No person properties, ever: no email, no display name,
  * no role. Passing null resets the identity.
  */
 export function identifyPostHog(profileId: string | null): void {
@@ -96,21 +96,16 @@ export function startSessionReplay(): void {
 }
 
 /**
- * Unit D5: the three public signup funnel events only, so they carry the
- * browser's own distinct id. Nothing after sign-in and nothing with work
- * content may use this.
+ * Unit D6: the browser's own anonymous id, read only so the server path can
+ * hash it. Undefined during SSR, before init, or when blocked.
  */
-export type FunnelEvent =
-  | { name: "plans.viewed"; props: { src: string } }
-  | { name: "plan.picked"; props: { plan: string; src: string } }
-  | { name: "signup.started"; props: { intent: string; src: string } };
-
-export function captureFunnelEvent<E extends FunnelEvent>(name: E["name"], props: E["props"]): void {
-  if (typeof window === "undefined") return;
+export function getPostHogDistinctId(): string | undefined {
+  if (typeof window === "undefined") return undefined;
   try {
-    posthog.capture(name, props);
+    const id = posthog.get_distinct_id();
+    return typeof id === "string" && id.length > 0 ? id : undefined;
   } catch {
-    /* telemetry must never break the app */
+    return undefined;
   }
 }
 
