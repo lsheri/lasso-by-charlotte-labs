@@ -37,6 +37,7 @@ describe("SDK config is a trust guarantee", () => {
     const [token, config] = init.mock.calls[0] as [string, Record<string, unknown>];
     expect(token).toBe(POSTHOG_TOKEN);
     expect(config["api_host"]).toBe("https://us.i.posthog.com");
+    expect(config["cookie_domain"]).toBe(".charlotte-labs.com");
     expect(config["autocapture"]).toBe(true);
     expect(config["capture_pageview"]).toBe(false);
     expect(config["capture_pageleave"]).toBe(false);

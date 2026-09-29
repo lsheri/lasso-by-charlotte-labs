@@ -16,6 +16,8 @@ import { isPartnerSlug } from "@/lib/partners";
 import { cleanActivationKey, markActivationKey, readActivationKey } from "@/lib/key-entry";
 import { deriveRegister, NEUTRAL_COPY, REGISTER_COPY } from "@/lib/register";
 import type { IntentParam } from "@/lib/org-type";
+import { emitClientEvent } from "@/lib/client-telemetry";
+import { parseFunnelSource, type FunnelSource } from "@/lib/funnel-source";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -26,16 +28,19 @@ export const Route = createFileRoute("/auth")({
     invite?: string | undefined;
     intent?: IntentParam | undefined;
     from?: SignupSource | undefined;
+    src?: FunnelSource | undefined;
     key?: string | undefined;
   } => {
     const next = search["next"];
     const intent = search["intent"];
     const invite = search["invite"];
     const from = search["from"];
+    const src = parseFunnelSource(search["src"]);
     const key = cleanActivationKey(search["key"]);
     return {
       ...(key ? { key } : {}),
       ...(isPartnerSlug(from) || from === "edu" || from === "direct" ? { from } : {}),
+      ...(src ? { src } : {}),
       ...(typeof invite === "string" && invite ? { invite } : {}),
       ...(typeof next === "string" && next.startsWith("/") ? { next } : {}),
       ...(intent === "company" ||
@@ -85,7 +90,10 @@ function joinTarget(next: string | undefined) {
 
 function AuthPage() {
   const navigate = useNavigate();
-  const { next, intent, invite, from, key } = Route.useSearch();
+  const { next, intent, invite, from, src, key } = Route.useSearch();
+  useEffect(() => {
+    if (intent) emitClientEvent("signup.started", { intent, src: src ?? "direct" });
+  }, [intent, src]);
   // Pass 185: the front door someone came through, remembered until the
   // workspace is created. Nothing else about the page changes.
   useEffect(() => {

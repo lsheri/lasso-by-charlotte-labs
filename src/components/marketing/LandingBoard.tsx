@@ -274,8 +274,7 @@ function event(
     | "landing.pilot_cta_clicked"
     | "landing.pilot_requested"
     | "landing.see_it_work_clicked"
-    | "landing.usecase_played"
-    | "plans.action_clicked",
+    | "landing.usecase_played",
   dims: Record<string, string>,
 ) {
   void recordAnonymousEventFn({ data: { event_type: eventType, view_id: viewId, dims } }).catch(
@@ -1371,7 +1370,6 @@ function PhoneStory({
   clientLabel,
   active,
   onActive,
-  onPlans,
   onWatch,
   onPilot,
   onShowSlide,
@@ -1385,7 +1383,6 @@ function PhoneStory({
   clientLabel: string;
   active: number;
   onActive: (stop: number) => void;
-  onPlans: () => void;
   onWatch: () => void;
   onPilot: () => void;
   onShowSlide: () => void;
@@ -1459,7 +1456,7 @@ function PhoneStory({
           </p>
           <div>
             <Button asChild>
-              <Link to="/plans" onClick={onPlans}>
+              <Link to="/plans" search={{ src: "lasso_landing" }}>
                 Get started, free while we pilot
               </Link>
             </Button>
@@ -2197,7 +2194,7 @@ function PhoneHeroAssemble() {
   );
 }
 
-function LandingBoardHeader({ onPlans }: { onPlans: () => void }) {
+function LandingBoardHeader() {
   return (
     <header className="lb-header">
       <div className="lb-header-main">
@@ -2206,7 +2203,7 @@ function LandingBoardHeader({ onPlans }: { onPlans: () => void }) {
         </Link>
         <nav className="lb-header-nav" aria-label="Primary navigation">
           <a href="#lb-canvas">How it works</a>
-          <Link to="/plans">Plans</Link>
+          <Link to="/plans" search={{ src: "lasso_landing" }}>Plans</Link>
           <Link to="/trust">Trust &amp; data</Link>
         </nav>
         <div className="lb-header-actions">
@@ -2214,10 +2211,7 @@ function LandingBoardHeader({ onPlans }: { onPlans: () => void }) {
             <Link to="/auth">Sign in</Link>
           </Button>
           <Button asChild size="sm">
-            <Link
-              to="/plans"
-              onClick={onPlans}
-            >
+            <Link to="/plans" search={{ src: "lasso_landing" }}>
               Get started
             </Link>
           </Button>
@@ -2885,14 +2879,7 @@ export function LandingBoard() {
   if (!introElapsed || query.isPending) return <LandingLogoRain />;
   return (
     <div className="landing-board-page">
-      <LandingBoardHeader
-        onPlans={() =>
-          event(viewId.current, "plans.action_clicked", {
-            action: "opened",
-            source: "landing_header",
-          })
-        }
-      />
+      <LandingBoardHeader />
       <main className="lb-story">
         <section
           className="lb-desktop-hero"
@@ -2918,12 +2905,7 @@ export function LandingBoard() {
                 <Button asChild>
                   <Link
                     to="/plans"
-                    onClick={() =>
-                      event(viewId.current, "plans.action_clicked", {
-                        action: "opened",
-                        source: "landing_hero",
-                      })
-                    }
+                    search={{ src: "lasso_landing" }}
                   >
                     Get started, free while we pilot
                   </Link>
@@ -3022,12 +3004,6 @@ export function LandingBoard() {
             clientLabel={result.engagement.clientLabel ?? ""}
             active={phoneStop}
             onActive={activatePhone}
-            onPlans={() =>
-              event(viewId.current, "plans.action_clicked", {
-                action: "opened",
-                source: "landing_hero",
-              })
-            }
             onWatch={jumpToUseCases}
             onPilot={() => pilot("try_it")}
             onShowSlide={() => {
