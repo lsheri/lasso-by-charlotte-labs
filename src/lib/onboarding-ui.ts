@@ -9,6 +9,8 @@ export type OnboardingUi = {
   welcome_seen: boolean;
   checklist: ChecklistUiState;
   retired_at?: string;
+  /** Unit B2: the Home welcome guide was hidden for good. Present only when true. */
+  welcome_board_hidden?: true;
 };
 
 export const DEFAULT_ONBOARDING_UI: OnboardingUi = { welcome_seen: false, checklist: "open" };
@@ -23,5 +25,6 @@ export function readOnboardingUi(raw: unknown): OnboardingUi {
         ? checklist
         : "open",
     ...(typeof value["retired_at"] === "string" ? { retired_at: value["retired_at"] } : {}),
+    ...(value["welcome_board_hidden"] === true ? { welcome_board_hidden: true as const } : {}),
   };
 }
