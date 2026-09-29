@@ -17,7 +17,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { createQuickFolder, useInvalidateClients } from "@/hooks/use-clients";
 import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
 import { briefConfirmShape } from "@/lib/brief-files";
@@ -25,8 +24,6 @@ import { vocabFor } from "@/lib/edu-vocab";
 import { logEvent } from "@/lib/telemetry";
 import { bucket } from "@/lib/telemetry-shared";
 import { placeWorkOnBoardFn } from "@/lib/workboard-add-work.functions";
-
-type Mode = "choose" | "engagement" | "folder";
 
 /** Where the person started from. One additive dim on engagement.updated. */
 export type NewEngagementFrom = "sidebar" | "sidebar_client" | "client_page" | "home";
@@ -45,20 +42,19 @@ export function NewEngagementDialog({
 }) {
   const { data: profile } = useProfile();
   const queryClient = useQueryClient();
-  const invalidateClients = useInvalidateClients();
   const navigate = useNavigate();
   const vocab = vocabFor(profile);
   const { captureWithResult } = useCaptureFiles();
   const placeWork = useServerFn(placeWorkOnBoardFn);
   const fileInput = useRef<HTMLInputElement | null>(null);
   const [open, setOpen] = useState(false);
-  const [mode, setMode] = useState<Mode>("choose");
   const [code, setCode] = useState("");
   const [title, setTitle] = useState("");
   const [clientId, setClientId] = useState<string | null>(initialClientId ?? null);
   const [brief, setBrief] = useState("");
   const [files, setFiles] = useState<File[]>([]);
-  const [folderName, setFolderName] = useState("");
+  /** The chosen container was made inline, inside this same form. */
+  const [clientInline, setClientInline] = useState(false);
   const [confirmNoBrief, setConfirmNoBrief] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -71,13 +67,12 @@ export function NewEngagementDialog({
   });
 
   function reset() {
-    setMode("choose");
     setCode("");
     setTitle("");
     setClientId(initialClientId ?? null);
     setBrief("");
     setFiles([]);
-    setFolderName("");
+    setClientInline(false);
     setConfirmNoBrief(false);
     setError(null);
     setCreatedId(null);
@@ -158,6 +153,11 @@ export function NewEngagementDialog({
       brief_files: bucket(files.length),
       from,
     });
+    logEvent("workboard.created", profile.org_id, {
+      workspace_type: profile.org_type,
+      has_client: clientId ? "true" : "false",
+      client_inline: clientId && clientInline ? "true" : "false",
+    });
 
     // The engagement exists now, so nothing below is allowed to roll anything
     // back. Whatever does not come in is named, and the person is sent on.
@@ -220,37 +220,6 @@ export function NewEngagementDialog({
     finish(engagementId);
   }
 
-  async function handleFolder(event: React.FormEvent) {
-    event.preventDefault();
-    if (!profile || !folderName.trim()) return;
-    setPending(true);
-    setError(null);
-    try {
-      const { engagementId } = await createQuickFolder({
-        orgId: profile.org_id,
-        profileId: profile.id,
-        name: folderName.trim(),
-      });
-      logEvent("engagement.updated", profile.org_id, {
-        created: "true",
-        quick_folder: "true",
-        brief_skipped: "true",
-        brief_files: bucket(0),
-        from,
-      });
-      invalidateClients();
-      await queryClient.invalidateQueries({ queryKey: ["engagements"] });
-      setOpen(false);
-      reset();
-      onDone?.();
-      navigate({ to: "/engagements/$id", params: { id: engagementId } });
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setPending(false);
-    }
-  }
-
   return (
     <Dialog
       open={open}
@@ -263,59 +232,10 @@ export function NewEngagementDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="page-title">
-            {mode === "folder" ? "New quick folder" : vocab.newEngagement}
+            {vocab.newEngagement}
           </DialogTitle>
         </DialogHeader>
 
-        {mode === "choose" ? (
-          <div className="space-y-3">
-            <button
-              type="button"
-              onClick={() => setMode("engagement")}
-              className="w-full rounded-[var(--radius)] border border-border bg-card px-4 py-3 text-left shadow-card transition-colors hover:border-accent-deep"
-            >
-              <p className="text-sm font-medium text-foreground">{vocab.fullEngagement}</p>
-              <p className="mt-0.5 text-sm text-muted-foreground">
-                A code, a client, a brief, and workstreams underneath it.
-              </p>
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode("folder")}
-              className="w-full rounded-[var(--radius)] border border-border bg-card px-4 py-3 text-left shadow-card transition-colors hover:border-accent-deep"
-            >
-              <p className="text-sm font-medium text-foreground">Quick folder</p>
-              <p className="mt-0.5 text-sm text-muted-foreground">
-                A simple place to keep and analyze work for one client. You can turn it into a
-                full {vocab.engagement.toLowerCase()} later.
-              </p>
-            </button>
-          </div>
-        ) : null}
-
-        {mode === "folder" ? (
-          <form onSubmit={handleFolder} className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="folder-name" className="micro-label">
-                Client or folder name
-              </Label>
-              <Input
-                id="folder-name"
-                required
-                autoFocus
-                value={folderName}
-                onChange={(e) => setFolderName(e.target.value)}
-                placeholder="Northwind"
-              />
-            </div>
-            {error ? <p className="text-sm text-destructive">{error}</p> : null}
-            <Button type="submit" className="w-full" disabled={pending}>
-              {pending ? "Creating…" : "Create folder"}
-            </Button>
-          </form>
-        ) : null}
-
-        {mode === "engagement" ? (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-3 gap-3">
               <div className="space-y-1.5">
@@ -348,7 +268,10 @@ export function NewEngagementDialog({
             <ClientPicker
               orgId={profile?.org_id}
               value={clientId}
-              onChange={setClientId}
+              onChange={(next, createdInline) => {
+                setClientId(next);
+                setClientInline(Boolean(createdInline));
+              }}
               id="eng-client"
               from={from}
             />
@@ -434,7 +357,6 @@ export function NewEngagementDialog({
                     : vocab.createEngagement}
             </Button>
           </form>
-        ) : null}
       </DialogContent>
     </Dialog>
   );
