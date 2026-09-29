@@ -3,6 +3,7 @@ import { Link, useMatchRoute, useSearch } from "@tanstack/react-router";
 import { Fragment, useState, useSyncExternalStore } from "react";
 
 import { NewEngagementDialog } from "@/components/engagements/NewEngagementDialog";
+import { EmptyContainerActions } from "@/components/engagements/EmptyContainerActions";
 import { GraphiteIcon } from "@/components/notebook/icons";
 import { CircleMark } from "@/components/notebook/CircleMark";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
