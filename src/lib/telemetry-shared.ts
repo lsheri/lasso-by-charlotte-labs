@@ -54,6 +54,14 @@ export type TelemetryEvent =
   | "home.ideas_note_composed"
   /** P4b: an engagement was opened from the Home grid. Content-free. */
   | "home.engagement_opened"
+  /** Unit B2: the welcome guide rendered on Home. Register only. */
+  | "welcome.viewed"
+  /** Unit B2: a welcome guide card was opened. Closed card id and register. */
+  | "welcome.card_opened"
+  /** Unit B2: the welcome-only answer ran over circled guide cards. Bucketed count. */
+  | "welcome.ask_used"
+  /** Unit B2: the welcome guide was hidden for good. Bucketed count. */
+  | "welcome.dismissed"
   /** Inbox: the bring-work menu was opened. Content-free. */
   | "work.import_menu_opened"
   /** Inbox: an arrivals or reading panel was opened. Closed panel word only. */
