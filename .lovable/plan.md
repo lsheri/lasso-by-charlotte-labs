@@ -1,20 +1,20 @@
-# Unit D1: canonical plans funnel
+# Unit L4: privacy line
 
 ## Build
-- Add the canonical URL to `/plans`.
-- Add a closed, analytics-only `src` parameter to `/plans` and `/auth`, preserving valid `from` independently.
-- Carry both parameters from enabled plan choices into `/auth`.
-- Emit `plans.viewed`, `plan.picked`, and `signup.started` through the existing anonymous event path.
-- Configure the existing PostHog browser client cookie for `.charlotte-labs.com`.
-- Update focused tests for parameter parsing, rendered links, event dimensions, and cookie configuration.
+- Change only the company privacy copy in the existing register copy object.
+- Render the selected privacy line directly below the submit action on account setup.
+- Render the selected or neutral privacy line directly below the submit action on `/auth`.
+- Add focused coverage for every register, neutral auth, and unchanged non-company strings.
 
 ## Data impact
-- Adds `plan.picked` and `signup.started`; reshapes `plans.viewed` to use `src`. This requires matching portal-side event vocabulary updates.
-- No consent surfaces or consent stamping change.
-- `src` remains analytics-only and never reaches workspace attribution or database fields.
-- No SQL, schema, migration, RPC, RLS, deployment, or publishing.
+- No user action, flow, consent surface, telemetry event, payload, or dimension changes.
+- No database or schema work.
+
+## Controls and states
+- Preserve every existing control, loading state, success state, error state, redirect, and telemetry call on both screens.
+- The only rendered-state addition is the quiet privacy sentence.
 
 ## Verification
-- Typecheck and focused tests.
-- Full test suite twice, accepting only the stated baseline failures and known flakes.
-- Browser check `/plans?src=front_door&from=artemis` and report all three rendered signup links.
+- Run the focused L4 test and required guards.
+- Run typecheck and one full suite against the stated baseline.
+- Inspect both screens at 1280px and 390px when preview access permits.
