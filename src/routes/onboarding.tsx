@@ -19,6 +19,9 @@ import {
   clearSignupSource,
 } from "@/lib/edu-entry";
 import { readPendingInvite } from "@/lib/pending-invite";
+import { useServerFn } from "@tanstack/react-start";
+import { redeemActivationKeyFn } from "@/lib/activation-keys.functions";
+import { cleanActivationKey, clearActivationKey, readActivationKey } from "@/lib/key-entry";
 import { logEvent } from "@/lib/telemetry";
 import {
   loadToolsUsed,
@@ -87,10 +90,13 @@ export const Route = createFileRoute("/onboarding")({
   ): {
     intent?: "company" | "personal" | "edu" | "invite" | undefined;
     setup?: boolean | undefined;
+    key?: string | undefined;
   } => {
     const intent = search["intent"];
     const setup = search["setup"] === true || search["setup"] === "1" ? { setup: true } : {};
+    const key = cleanActivationKey(search["key"]);
     return {
+      ...(key ? { key } : {}),
       ...(intent === "company" || intent === "personal" || intent === "edu" || intent === "invite"
         ? { intent }
         : {}),
@@ -143,7 +149,8 @@ function OnboardingPage() {
 function OnboardingInner() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { intent, setup } = Route.useSearch();
+  const { intent, setup, key } = Route.useSearch();
+  const redeemKey = useServerFn(redeemActivationKeyFn);
   // Unit C: the register comes from the door. The chooser is only the
   // fallback for someone who arrived with no door signal at all.
   const [derived] = useState(() => deriveRegister(intent));
@@ -255,6 +262,19 @@ function OnboardingInner() {
         });
       }
       clearEduIntent();
+    }
+
+    // Unit J1: a key carried from a /j/<code> link redeems once, here, the
+    // first moment a workspace exists. The outcome never blocks onboarding.
+    const carriedKey = key ?? readActivationKey();
+    if (carriedKey) {
+      try {
+        await redeemKey({ data: { code: carriedKey } });
+      } catch {
+        /* swallowed on purpose: onboarding continues either way */
+      } finally {
+        clearActivationKey();
+      }
     }
 
     // Narrowed on purpose: only the keys this step can have changed.

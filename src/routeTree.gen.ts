@@ -48,6 +48,7 @@ import { Route as DemoCodeRouteImport } from './routes/demo.$code'
 import { Route as DemoClassicRouteImport } from './routes/demo.classic'
 import { Route as DemoConversationsRouteImport } from './routes/demo.conversations'
 import { Route as DemoSourcesRouteImport } from './routes/demo.sources'
+import { Route as JCodeRouteImport } from './routes/j.$code'
 import { Route as JoinEduRouteImport } from './routes/join_.edu'
 import { Route as LandingArchive20260925RouteImport } from './routes/landing-archive.2026-09-25'
 import { Route as SharedBoardTokenRouteImport } from './routes/shared-board.$token'
@@ -265,6 +266,11 @@ const DemoSourcesRoute = DemoSourcesRouteImport.update({
   path: '/demo/sources',
   getParentRoute: () => rootRouteImport,
 } as any)
+const JCodeRoute = JCodeRouteImport.update({
+  id: '/j/$code',
+  path: '/j/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const JoinEduRoute = JoinEduRouteImport.update({
   id: '/join_/edu',
   path: '/join/edu',
@@ -406,6 +412,7 @@ export interface FileRoutesByFullPath {
   '/demo/classic': typeof DemoClassicRoute
   '/demo/conversations': typeof DemoConversationsRoute
   '/demo/sources': typeof DemoSourcesRoute
+  '/j/$code': typeof JCodeRoute
   '/join/edu': typeof JoinEduRoute
   '/landing-archive/2026-09-25': typeof LandingArchive20260925Route
   '/shared-board/$token': typeof SharedBoardTokenRoute
@@ -465,6 +472,7 @@ export interface FileRoutesByTo {
   '/demo/classic': typeof DemoClassicRoute
   '/demo/conversations': typeof DemoConversationsRoute
   '/demo/sources': typeof DemoSourcesRoute
+  '/j/$code': typeof JCodeRoute
   '/join/edu': typeof JoinEduRoute
   '/landing-archive/2026-09-25': typeof LandingArchive20260925Route
   '/shared-board/$token': typeof SharedBoardTokenRoute
@@ -526,6 +534,7 @@ export interface FileRoutesById {
   '/demo/classic': typeof DemoClassicRoute
   '/demo/conversations': typeof DemoConversationsRoute
   '/demo/sources': typeof DemoSourcesRoute
+  '/j/$code': typeof JCodeRoute
   '/join_/edu': typeof JoinEduRoute
   '/landing-archive/2026-09-25': typeof LandingArchive20260925Route
   '/shared-board/$token': typeof SharedBoardTokenRoute
@@ -587,6 +596,7 @@ export interface FileRouteTypes {
     | '/demo/classic'
     | '/demo/conversations'
     | '/demo/sources'
+    | '/j/$code'
     | '/join/edu'
     | '/landing-archive/2026-09-25'
     | '/shared-board/$token'
@@ -646,6 +656,7 @@ export interface FileRouteTypes {
     | '/demo/classic'
     | '/demo/conversations'
     | '/demo/sources'
+    | '/j/$code'
     | '/join/edu'
     | '/landing-archive/2026-09-25'
     | '/shared-board/$token'
@@ -706,6 +717,7 @@ export interface FileRouteTypes {
     | '/demo/classic'
     | '/demo/conversations'
     | '/demo/sources'
+    | '/j/$code'
     | '/join_/edu'
     | '/landing-archive/2026-09-25'
     | '/shared-board/$token'
@@ -746,6 +758,7 @@ export interface RootRouteChildren {
   DemoClassicRoute: typeof DemoClassicRoute
   DemoConversationsRoute: typeof DemoConversationsRoute
   DemoSourcesRoute: typeof DemoSourcesRoute
+  JCodeRoute: typeof JCodeRoute
   JoinEduRoute: typeof JoinEduRoute
   LandingArchive20260925Route: typeof LandingArchive20260925Route
   SharedBoardTokenRoute: typeof SharedBoardTokenRoute
@@ -1036,6 +1049,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DemoSourcesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/j/$code': {
+      id: '/j/$code'
+      path: '/j/$code'
+      fullPath: '/j/$code'
+      preLoaderRoute: typeof JCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/join_/edu': {
       id: '/join_/edu'
       path: '/join/edu'
@@ -1257,6 +1277,7 @@ const rootRouteChildren: RootRouteChildren = {
   DemoClassicRoute: DemoClassicRoute,
   DemoConversationsRoute: DemoConversationsRoute,
   DemoSourcesRoute: DemoSourcesRoute,
+  JCodeRoute: JCodeRoute,
   JoinEduRoute: JoinEduRoute,
   LandingArchive20260925Route: LandingArchive20260925Route,
   SharedBoardTokenRoute: SharedBoardTokenRoute,
