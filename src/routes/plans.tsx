@@ -1,11 +1,13 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState, type FormEvent } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 
 import { EnterInviteCode } from "@/components/invites/EnterInviteCode";
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { recordAnonymousEventFn } from "@/lib/telemetry.functions";
 
 export const Route = createFileRoute("/plans")({
   head: () => ({
@@ -92,7 +94,7 @@ const PLANS = [
   },
 ] as const;
 
-function ActivationKeyEntry() {
+function ActivationKeyEntry({ onSubmit }: { onSubmit: () => void }) {
   const navigate = useNavigate();
   const [code, setCode] = useState("");
 
@@ -100,6 +102,7 @@ function ActivationKeyEntry() {
     event.preventDefault();
     const clean = code.trim();
     if (!clean) return;
+    onSubmit();
     navigate({ to: "/j/$code", params: { code: clean } });
   }
 
@@ -125,6 +128,28 @@ function ActivationKeyEntry() {
 }
 
 export function PlansPage() {
+  const recordAnonymousEvent = useServerFn(recordAnonymousEventFn);
+  const viewId = useRef(
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : Math.random().toString(36).slice(2),
+  );
+  const note = (action: string, plan?: string) => {
+    void recordAnonymousEvent({
+      data: {
+        event_type: "plans.action_clicked",
+        view_id: viewId.current,
+        dims: { action, source: "plans", ...(plan ? { plan } : {}) },
+      },
+    }).catch(() => undefined);
+  };
+
+  useEffect(() => {
+    void recordAnonymousEvent({
+      data: { event_type: "plans.viewed", view_id: viewId.current, dims: { source: "plans" } },
+    }).catch(() => undefined);
+  }, [recordAnonymousEvent]);
+
   return (
     <div className="min-h-screen overflow-x-clip bg-background text-foreground">
       <header className="border-b border-rule">
@@ -169,7 +194,11 @@ export function PlansPage() {
                   variant={"featured" in plan && plan.featured ? "ink" : "outline"}
                   className="mt-4 w-full"
                 >
-                  <Link to="/auth" search={{ intent: plan.intent }}>
+                  <Link
+                    to="/auth"
+                    search={{ intent: plan.intent }}
+                    onClick={() => note("plan_selected", plan.intent)}
+                  >
                     Get started
                   </Link>
                 </Button>
@@ -207,8 +236,14 @@ export function PlansPage() {
           ))}
         </div>
 
-        <section className="mt-12 grid gap-8 border-y border-rule py-8 md:grid-cols-2">
-          <ActivationKeyEntry />
+        <section
+          className="mt-12 grid gap-8 border-y border-rule py-8 md:grid-cols-2"
+          onSubmitCapture={(event) => {
+            const form = event.target as HTMLFormElement;
+            if (form.querySelector("#invite-entry")) note("invite_submitted");
+          }}
+        >
+          <ActivationKeyEntry onSubmit={() => note("key_submitted")} />
           <EnterInviteCode label="Got an invite to a workspace?" bare />
         </section>
 

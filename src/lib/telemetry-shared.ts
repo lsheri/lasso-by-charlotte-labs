@@ -18,6 +18,10 @@ export type TelemetryEvent =
   | "landing.usecase_played"
   /** B2B landing: a pilot request was saved. Team-size band only. */
   | "landing.pilot_requested"
+  /** Unit B1: the public plans page was opened. Content-free. */
+  | "plans.viewed"
+  /** Unit B1: a plan, activation key, or invite path was chosen. Closed words only. */
+  | "plans.action_clicked"
   /** Product shell 1.3: the public demo Home or a demo board was opened. Closed surface word and invented demo code only. */
   | "demo.opened"
   /** P1: one content-free interaction in the local-only public demo playground. */

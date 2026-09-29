@@ -274,7 +274,8 @@ function event(
     | "landing.pilot_cta_clicked"
     | "landing.pilot_requested"
     | "landing.see_it_work_clicked"
-    | "landing.usecase_played",
+    | "landing.usecase_played"
+    | "plans.action_clicked",
   dims: Record<string, string>,
 ) {
   void recordAnonymousEventFn({ data: { event_type: eventType, view_id: viewId, dims } }).catch(
@@ -2206,7 +2207,12 @@ function LandingBoardHeader() {
             <Link to="/auth">Sign in</Link>
           </Button>
           <Button asChild size="sm">
-            <Link to="/plans">Get started</Link>
+            <Link
+              to="/plans"
+              onClick={() => event(viewId.current, "plans.action_clicked", { action: "opened", source: "landing_header" })}
+            >
+              Get started
+            </Link>
           </Button>
         </div>
       </div>
@@ -2896,7 +2902,12 @@ export function LandingBoard() {
               </h2>
               <div className="lb-hero-zone-1">
                 <Button asChild>
-                  <Link to="/plans">Get started, free while we pilot</Link>
+                  <Link
+                    to="/plans"
+                    onClick={() => event(viewId.current, "plans.action_clicked", { action: "opened", source: "landing_hero" })}
+                  >
+                    Get started, free while we pilot
+                  </Link>
                 </Button>
                 <Button variant="outline" onClick={jumpToUseCases}>Watch it work</Button>
                 <Button asChild variant="outline">
