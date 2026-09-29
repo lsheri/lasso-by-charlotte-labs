@@ -16,14 +16,16 @@ describe("partner navigation", () => {
   });
 
   it("changes only the two named headings", () => {
+    expect(partnerNavGroups).toHaveLength(navGroups.length);
     const diffs: string[] = [];
-    navGroups.forEach((group, i) => {
-      const partner = partnerNavGroups[i];
+    for (const [i, partner] of partnerNavGroups.entries()) {
+      const group = navGroups[i];
+      if (!group) throw new Error("group count drifted");
       expect(partner.id).toBe(group.id);
       expect(partner.items).toEqual(group.items);
       expect(partner.emptyState).toEqual(group.emptyState);
       if (partner.label !== group.label) diffs.push(`${group.label} -> ${partner.label}`);
-    });
+    }
     expect(diffs).toEqual(["Where it goes -> Your clients", "Run the firm -> Your practice"]);
   });
 
