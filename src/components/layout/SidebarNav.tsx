@@ -798,7 +798,7 @@ function ContainerShelfRow({
             {collapsed || !hasChildren ? null : (
               <div className="nb-tree-branch">
                 {node.engagements.map((engagement) => (
-                  <div key={engagement.id} className="nb-tree-child">
+                  <div key={engagement.id} className="nb-tree-child" data-tree-depth={depth + 1}>
                   <EngagementRow
                     engagement={engagement}
                     treeDepth={depth + 1}

@@ -213,7 +213,12 @@ describe("unit 3c containers render without workboards", () => {
     const folderRow = screen.getByText("folder 01").closest("[data-tree-node]");
     expect(folderRow).not.toBeNull();
     if (!folderRow) return;
-    fireEvent.click(within(folderRow as HTMLElement).getByRole("button", { name: "Collapse" }));
+    const collapse = (folderRow as HTMLElement).querySelector<HTMLElement>(
+      ':scope > .nb-nav-item > button[aria-label="Collapse"]',
+    );
+    expect(collapse).not.toBeNull();
+    if (!collapse) return;
+    fireEvent.click(collapse);
     expect(screen.queryByText("B5-TEST2 test")).toBeNull();
     expect(screen.queryByText("folder1")).toBeNull();
     expect(screen.getByText("CURE test")).toBeTruthy();
