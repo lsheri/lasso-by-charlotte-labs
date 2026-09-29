@@ -74,4 +74,11 @@ describe("pass214 activation keys", () => {
   it("chooseProfile refuses on query failure even when owned is null", () => {
     expect(chooseProfile(undefined, null, true)).toEqual({ action: "refuse" });
   });
+
+  it("the two database-only reasons are known and carry messages", () => {
+    expect(REDEEM_REASONS).toContain("partner_target");
+    expect(REDEEM_REASONS).toContain("needs_workspace");
+    expect(messageForReason("partner_target").trim().length).toBeGreaterThan(0);
+    expect(messageForReason("needs_workspace").trim().length).toBeGreaterThan(0);
+  });
 });

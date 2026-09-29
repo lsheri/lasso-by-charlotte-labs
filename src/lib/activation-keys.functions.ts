@@ -115,27 +115,28 @@ export const redeemActivationKeyFn = createServerFn({ method: "POST" })
       }
 
       const choice = chooseProfile(data.profile_id, profileRows[0] ?? null, queryFailed);
-      // "none" (caller has no workspace) is a legitimate state for an org
-      // key, but the generated types for redeem_activation_key still declare
-      // p_profile_id and p_org_id as non-null strings. Until the types are
-      // regenerated against the replaced database function, this handler
-      // cannot pass nulls without a cast, and casts are not allowed here.
-      // The none path therefore refuses for now; chooseProfile and its tests
-      // carry the new decision so only this call site changes afterwards.
-      if (choice.action !== "use") return outcome("error");
-      const profile = choice.profile;
+      if (choice.action === "refuse") return outcome("error");
+      const profile = choice.action === "use" ? choice.profile : undefined;
 
-      const { data: result, error } = await supabaseAdmin.rpc("redeem_activation_key", {
+      // One call, conditional args: a caller with a workspace names it, a
+      // caller with none lets the database decide from the code and the
+      // verified user id alone.
+      const rpcArgs = {
         p_code: data.code,
-        p_profile_id: profile.id,
         p_user_id: userId,
-        p_org_id: profile.org_id,
-      });
+        ...(profile ? { p_profile_id: profile.id, p_org_id: profile.org_id } : {}),
+      };
+      const { data: result, error } = await supabaseAdmin.rpc("redeem_activation_key", rpcArgs);
       if (error || !result || typeof result !== "object" || Array.isArray(result)) {
         return outcome("error");
       }
 
-      const row = result as { ok?: unknown; reason?: unknown; institution_id?: unknown };
+      const row = result as {
+        ok?: unknown;
+        reason?: unknown;
+        institution_id?: unknown;
+        org_id?: unknown;
+      };
       const reason: RedeemReason = isRedeemReason(row.reason) ? row.reason : "error";
       const base = { ok: row.ok === true, reason, message: messageForReason(reason) };
 
@@ -157,14 +158,19 @@ export const redeemActivationKeyFn = createServerFn({ method: "POST" })
         if (reason === "redeemed") {
           try {
             const institution = institutionToRecord(inst?.slug) ?? "unknown";
-            const { recordEvent } = await import("./telemetry.server");
-            await recordEvent(context.supabase, {
-              eventType: "workspace.affiliated",
-              orgId: profile.org_id,
-              userId,
-              profileId: profile.id,
-              dims: { institution },
-            });
+            // With no local workspace (the "none" path) the org comes back in
+            // the database's result; the profile id simply does not exist yet.
+            const orgId = profile?.org_id ?? (typeof row.org_id === "string" ? row.org_id : undefined);
+            if (orgId) {
+              const { recordEvent } = await import("./telemetry.server");
+              await recordEvent(context.supabase, {
+                eventType: "workspace.affiliated",
+                orgId,
+                userId,
+                profileId: profile?.id,
+                dims: { institution },
+              });
+            }
           } catch {
             // Deliberately swallowed; see above.
           }
