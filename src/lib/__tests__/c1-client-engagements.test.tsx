@@ -49,6 +49,10 @@ vi.mock("@/components/engagements/NewEngagementDialog", () => ({
   },
 }));
 
+vi.mock("@/hooks/use-clients", () => ({
+  useClients: () => ({ data: [] }),
+  useInvalidateClients: () => () => {},
+}));
 vi.mock("@tanstack/react-query", () => ({
   useQueryClient: () => ({
     getQueryCache: () => ({ subscribe: () => () => {} }),

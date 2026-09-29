@@ -22,6 +22,10 @@ vi.mock("@tanstack/react-router", () => ({
   useMatchRoute: () => () => false,
   useSearch: () => ({}),
 }));
+vi.mock("@/hooks/use-clients", () => ({
+  useClients: () => ({ data: [] }),
+  useInvalidateClients: () => () => {},
+}));
 vi.mock("@tanstack/react-query", () => ({
   useQueryClient: () => ({ getQueryData: () => undefined, getQueryCache: () => ({ subscribe: () => () => {} }) }),
 }));
