@@ -14,7 +14,7 @@ import {
 } from "@/lib/nav-groups";
 
 const mocks = vi.hoisted(() => ({
-  profile: { id: "p1", org_id: "o1", org_type: "company", role: "worker" } as Record<string, unknown>,
+  profile: { id: "p1", org_id: "o1", org_type: "company", clients_enabled: true, role: "worker" } as Record<string, unknown>,
   engagements: [] as unknown[],
   clientRows: [] as unknown[],
 }));
@@ -113,7 +113,7 @@ describe("pass 210 sidebar rendering", () => {
   ];
 
   it("shows a Folders header for a company with a folder", () => {
-    mocks.profile = { id: "p1", org_id: "o1", org_type: "company", role: "worker" };
+    mocks.profile = { id: "p1", org_id: "o1", org_type: "company", clients_enabled: true, role: "worker" };
     mocks.engagements = mixed;
     render(<SidebarNav />);
     expect(screen.getAllByText("Folders")).toHaveLength(1);
@@ -128,7 +128,7 @@ describe("pass 210 sidebar rendering", () => {
   });
 
   it("renders as today when every container is an unparented client", () => {
-    mocks.profile = { id: "p1", org_id: "o1", org_type: "company", role: "worker" };
+    mocks.profile = { id: "p1", org_id: "o1", org_type: "company", clients_enabled: true, role: "worker" };
     mocks.engagements = [
       eng("e1", { id: "c1", name: "Acme", quick_folder: false, kind: "client", parent_id: null }),
       eng("e2", { id: "c2", name: "Beta", quick_folder: false, kind: "client", parent_id: null }),
@@ -149,7 +149,7 @@ describe("unit 3c containers render without workboards", () => {
       { id: "f-2", name: "Folder Two", kind: "folder", parent_id: "f-1" },
     ];
     mocks.clientRows = clientRows;
-    mocks.profile = { id: "p1", org_id: "o1", org_type: "partner", role: "worker" };
+    mocks.profile = { id: "p1", org_id: "o1", org_type: "partner", clients_enabled: true, role: "worker" };
     mocks.engagements = [eng("e9", null)];
     const { container } = render(<SidebarNav />);
     for (const name of ["Lonely Co", "Top Co", "Folder One", "Folder Two"]) {
@@ -180,7 +180,7 @@ describe("unit 3c containers render without workboards", () => {
       { id: "test-b", name: "test", kind: "folder", parent_id: null },
     ];
     mocks.clientRows = clientRows;
-    mocks.profile = { id: "p1", org_id: "o1", org_type: "partner", role: "worker" };
+    mocks.profile = { id: "p1", org_id: "o1", org_type: "partner", clients_enabled: true, role: "worker" };
     mocks.engagements = [
       { ...eng("cure", { id: "abc", name: "ABC co", quick_folder: false, kind: "client", parent_id: null }), code: null, title: "CURE test" },
       { ...eng("b5", { id: "folder-01", name: "folder 01", quick_folder: false, kind: "folder", parent_id: "abc" }), code: null, title: "B5-TEST2 test" },

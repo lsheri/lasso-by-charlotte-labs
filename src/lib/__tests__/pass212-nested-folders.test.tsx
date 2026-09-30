@@ -11,7 +11,7 @@ import {
 } from "@/lib/nav-groups";
 
 const mocks = vi.hoisted(() => ({
-  profile: { id: "p1", org_id: "o1", org_type: "company", role: "worker" } as Record<string, unknown>,
+  profile: { id: "p1", org_id: "o1", org_type: "company", clients_enabled: true, role: "worker" } as Record<string, unknown>,
   engagements: [] as unknown[],
 }));
 
