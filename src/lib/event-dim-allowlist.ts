@@ -165,6 +165,7 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "plan.picked": ["plan", "src"],
   "signup.started": ["intent", "src"],
   "span_link.created": ["via"],
+  "settings.changed": ["section", "setting", "change", "to_level"],
   "packet.viewed": [],
   "perf.interaction": ["dom_ready_ms", "duration_ms", "fcp_ms", "lcp_ms", "load_ms", "name", "phase", "route_class", "state", "surface", "ttfb_ms"],
   "perf.pageload": ["dom_ready_ms", "duration_ms", "fcp_ms", "lcp_ms", "load_ms", "name", "phase", "route_class", "state", "surface", "ttfb_ms"],

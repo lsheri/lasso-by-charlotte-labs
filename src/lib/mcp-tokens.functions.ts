@@ -53,6 +53,12 @@ export const createMcpToken = createServerFn({ method: "POST" })
       label: "AI connector",
     });
     if (error) throw new Error(error.message);
+    const { recordSettingsChanged } = await import("./settings-events.server");
+    await recordSettingsChanged(
+      supabase,
+      { orgId: profile.org_id, userId, profileId: profile.id },
+      { section: "ai_tools", setting: "mcp_url_regenerated", change: "updated" },
+    );
     return { token };
   });
 
@@ -69,5 +75,11 @@ export const revokeMcpToken = createServerFn({ method: "POST" })
       .eq("profile_id", profile.id)
       .is("revoked_at", null);
     if (error) throw new Error(error.message);
+    const { recordSettingsChanged } = await import("./settings-events.server");
+    await recordSettingsChanged(
+      supabase,
+      { orgId: profile.org_id, userId, profileId: profile.id },
+      { section: "ai_tools", setting: "mcp_url", change: "removed" },
+    );
     return { ok: true };
   });

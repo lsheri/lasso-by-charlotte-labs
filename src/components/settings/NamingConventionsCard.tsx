@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
+import { settingsChangedDims } from "@/lib/settings-events";
+import { logEvent } from "@/lib/telemetry";
 
 export function NamingConventionsCard() {
   const { data: profile } = useProfile();
@@ -47,6 +49,12 @@ export function NamingConventionsCard() {
       return;
     }
     await queryClient.invalidateQueries({ queryKey: ["org-settings", profile.org_id] });
+    const dims = settingsChangedDims({
+      section: "workspace",
+      setting: "naming_conventions",
+      change: "updated",
+    });
+    if (dims) logEvent("settings.changed", profile.org_id, dims);
     toast.success("Naming conventions saved");
   }
 

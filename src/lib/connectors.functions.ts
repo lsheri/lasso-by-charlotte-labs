@@ -119,6 +119,12 @@ export const disconnectConnector = createServerFn({ method: "POST" })
       .update({ status: "disconnected", composio_account_id: null, connected_at: null })
       .eq("id", row.id);
     if (upd.error) throw new Error(upd.error.message);
+    const { recordSettingsChanged } = await import("@/lib/settings-events.server");
+    await recordSettingsChanged(
+      supabase,
+      { orgId: profile.org_id, userId, profileId: profile.id },
+      { section: "connectors", setting: "connector", change: "removed" },
+    );
     return { status: "disconnected" as const };
   });
 
