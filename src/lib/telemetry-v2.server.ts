@@ -449,14 +449,49 @@ export async function recordEventV2(
 
     // The mirror leaves bucketed. QA traffic is never mirrored, and neither is
     // an event a v1 call site already captured: one action, one PostHog row.
+    // V2-1: the same consent gate and identity as v1. t0 never leaves.
     if (environment === "production" && !V1_MIRRORED.has(input.eventName)) {
-      const { mirrorToPostHog } = await import("./telemetry.server");
-      await mirrorToPostHog(
-        input.eventName as never,
-        ids.actor,
-        ids.tenant,
-        bucketedMirror(props) as never,
-      );
+      const tel = await import("./telemetry.server");
+      const consent = await tel.resolveConsentStamp(supabase, profile.org_id, profile.id);
+      if (consent.tier !== "t0") {
+        const isSystem = input.actorType === "system";
+        const stableId = isSystem
+          ? await tel.computeActorHash(`system:${profile.org_id}`)
+          : await tel.computeActorHash(userId);
+        const distinctId = tel.mirrorDistinctId(consent.tier, stableId);
+        if (distinctId) {
+          const orgType = await import("./org-type.server");
+          const ws = await orgType.workspaceStamp(profile.org_id);
+          let partner = "none";
+          if (ws.affiliated === true) {
+            try {
+              partner = (await orgType.partnerSlugOf(profile.org_id)) ?? "none";
+            } catch {
+              /* keep "none" */
+            }
+          }
+          let accountStage: string | null = null;
+          try {
+            accountStage = await orgType.accountStageOf(profile.org_id);
+          } catch {
+            /* keep null */
+          }
+          await tel.mirrorToPostHog(
+            input.eventName as never,
+            distinctId,
+            await tel.sha256Hex(profile.org_id),
+            bucketedMirror(props) as never,
+            {
+              environment,
+              workspace_type: ws.workspace_type,
+              affiliated: ws.affiliated,
+              partner,
+              actor_kind: isSystem ? "system" : "person",
+              ...(accountStage ? { account_stage: accountStage } : {}),
+            },
+          );
+        }
+      }
     }
   } catch (e) {
     console.error("[telemetry-v2] recordEventV2 failed:", (e as Error).message);

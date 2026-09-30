@@ -35,6 +35,16 @@ export async function computeActorHash(userId: string | null | undefined): Promi
 }
 
 /**
+ * V2-1: the distinct id a PostHog copy may carry at each level. t0 never
+ * mirrors; "a" gets a fresh id per event so no visit joins the next.
+ */
+export function mirrorDistinctId(tier: DataTier, stableId: string | null): string | null {
+  if (tier === "t0") return null;
+  if (tier === "a") return crypto.randomUUID();
+  return stableId;
+}
+
+/**
  * PH-S1: request and workspace context carried beside the dims. Dims are never
  * altered. The signed-in path sends no IP and disables geo lookup on purpose.
  */
@@ -321,8 +331,10 @@ export async function recordEvent(
       }
       // PH-S2: a system event (no signed-in user) still mirrors, under a
       // stand-in distinct id. The events row keeps actor_hash null either way.
-      const mirrorActorHash = actorHash ?? (await computeActorHash(`system:${input.orgId}`));
+      const stableId = actorHash ?? (await computeActorHash(`system:${input.orgId}`));
       const actorKind = actorHash ? ("person" as const) : ("system" as const);
+      // V2-1: at tier "a" the copy carries a fresh id, never a joinable one.
+      const mirrorActorHash = mirrorDistinctId(consent.tier, stableId);
       if (mirrorActorHash) {
         await mirrorToPostHog(input.eventType, mirrorActorHash, tenantHash, dims, {
           environment: resolveEnvironment(),
