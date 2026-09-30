@@ -57,6 +57,8 @@ type Input = {
   profile_id?: string | undefined;
   code: string;
   email: string;
+  /** Workboard the invite points at; a value, never a URL. */
+  eng?: string | undefined;
 };
 
 function validate(input: Input): Input {
@@ -99,6 +101,7 @@ export const sendInviteEmail = createServerFn({ method: "POST" })
       orgName: org?.name ?? undefined,
       role: invite?.invited_role ?? null,
       orgType,
+      eng: data.eng,
     });
 
     // Content-free: never the recipient address, only whether it went out.

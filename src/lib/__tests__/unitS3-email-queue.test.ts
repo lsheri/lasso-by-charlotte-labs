@@ -37,7 +37,8 @@ vi.mock("@/lib/invites.server", () => ({
   sendResendTemplate: (...a: unknown[]) => sendMock(...a),
 }));
 
-const { runEmailQueue, buildJoinUrl, privacyLineFor } = await import("@/lib/email-queue.server");
+const { runEmailQueue, privacyLineFor } = await import("@/lib/email-queue.server");
+const { buildJoinUrl } = await import("@/lib/join-link");
 
 const row = (over: R = {}): R => ({
   id: "r1",
@@ -72,9 +73,21 @@ describe("Unit S3 email queue", () => {
   });
 
   it("builds JOIN_URL with code as a query parameter, never a path segment", () => {
-    const url = buildJoinUrl("ADM-XXXXXX", "https://example.test");
+    const url = buildJoinUrl("ADM-XXXXXX", undefined, "https://example.test");
     expect(url).toMatch(/\/join\?code=ADM-XXXXXX$/);
     expect(url).not.toContain("/join/ADM");
+  });
+
+  it("keeps the provisioning admin link byte-identical to the live shape", () => {
+    expect(buildJoinUrl("ADM-NDMECQ")).toBe(
+      "https://lasso.charlotte-labs.com/join?code=ADM-NDMECQ",
+    );
+  });
+
+  it("carries a workboard as eng, matching the on-screen copyable link", () => {
+    const url = new URL(buildJoinUrl("ABC-123", { eng: "eng-9" }));
+    expect(url.searchParams.get("code")).toBe("ABC-123");
+    expect(url.searchParams.get("eng")).toBe("eng-9");
   });
 
   it("takes PRIVACY_LINE from REGISTER_COPY for every register, company otherwise", () => {

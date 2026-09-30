@@ -88,12 +88,14 @@ export async function sendInviteEmail(args: {
   role?: string | null | undefined;
   orgType?: "personal" | "business" | null | undefined;
   subjectNames?: string[] | undefined;
+  /** Workboard the invite points at; rides the link as eng, like the copyable one. */
+  eng?: string | undefined;
 }): Promise<InviteEmailResult> {
   const { inviteEmailVariant, INVITE_TEMPLATE_ALIAS, coachScopeLine } = await import("./invites-shared");
   const { buildJoinUrl } = await import("./join-link");
   const variant = inviteEmailVariant(args.role, args.orgType);
   const orgName = args.orgName || "your organization";
-  const acceptUrl = buildJoinUrl(args.code);
+  const acceptUrl = buildJoinUrl(args.code, { eng: args.eng });
 
   const variables: Record<string, string> = { INVITER_NAME: args.inviterName, ACCEPT_URL: acceptUrl };
   if (variant !== "coach_personal") variables["ORG_NAME"] = orgName;

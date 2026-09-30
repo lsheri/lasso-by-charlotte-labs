@@ -3,8 +3,7 @@
  * Service role only. Rows are claimed atomically before sending so two
  * sweeps never send the same email twice. Operational, not a product event.
  */
-import { CANONICAL_ORIGIN, appOrigin } from "./app-host";
-import { adminLink } from "./join-link";
+import { buildJoinUrl } from "./join-link";
 import { REGISTER_COPY, type Register } from "./register";
 
 export const EMAIL_BATCH = 10;
@@ -21,10 +20,6 @@ type Row = {
 };
 
 type Db = { from: (t: string) => any };
-
-export function buildJoinUrl(code: string, origin: string = appOrigin() ?? CANONICAL_ORIGIN): string {
-  return adminLink(code, origin);
-}
 
 /** Unknown or missing register falls back to the company promise, never an empty line. */
 export function privacyLineFor(register: unknown): string {

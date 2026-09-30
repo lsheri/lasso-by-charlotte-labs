@@ -250,6 +250,7 @@ export function InviteDialog({
             profile_id: profile.id,
             code,
             email: recipient,
+            eng: engagementId,
           },
         });
         setEmailState(result.reason);
