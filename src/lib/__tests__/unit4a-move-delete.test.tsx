@@ -188,8 +188,11 @@ describe("unit 4a keyboard path and events", () => {
     for (const enabled of [true, false]) {
       mocks.clientsEnabled = enabled;
       const { container, unmount } = render(<Harness target={{ type: "workboard", id: "e1", name: "Board", clientId: null }} />);
-      fireEvent.keyDown(screen.getByRole("button", { name: /options/i }), { key: "Enter" });
+      const trigger = screen.getByRole("button", { name: "More actions for Board" });
+      trigger.focus();
+      fireEvent.keyDown(trigger, { key: "Enter" });
       fireEvent.click(await screen.findByRole("menuitem", { name: "Move to…" }));
+      await screen.findByLabelText("Destination");
       const labels = [...container.ownerDocument.querySelectorAll("optgroup")].map((g) => g.getAttribute("label"));
       if (enabled) {
         expect(labels).toEqual(["Clients", "Folders"]);
