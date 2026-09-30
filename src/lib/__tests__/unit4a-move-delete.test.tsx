@@ -15,6 +15,12 @@ const mocks = vi.hoisted(() => ({
   moveWorkboard: vi.fn(),
   reparentClient: vi.fn(),
   clientsEnabled: true,
+  // Stable references: a fresh object per render would recompute the memo
+  // regardless of its dependency array, and the test would catch nothing.
+  clientRows: [
+    { id: "c1", name: "ABC Co", kind: "client", parent_id: null, quick_folder: false },
+    { id: "f1", name: "Folder One", kind: "folder", parent_id: "c1", quick_folder: false },
+  ],
 }));
 
 vi.mock("@/lib/telemetry", () => ({ logEvent: mocks.logEvent }));
@@ -23,12 +29,7 @@ vi.mock("@/hooks/use-profile", () => ({
   useProfile: () => ({ data: { id: "p1", org_id: "o1", org_type: "partner", role: "worker", clients_enabled: mocks.clientsEnabled } }),
 }));
 vi.mock("@/hooks/use-clients", () => ({
-  useClients: () => ({
-    data: [
-      { id: "c1", name: "ABC Co", kind: "client", parent_id: null, quick_folder: false },
-      { id: "f1", name: "Folder One", kind: "folder", parent_id: "c1", quick_folder: false },
-    ],
-  }),
+  useClients: () => ({ data: mocks.clientRows }),
   useInvalidateClients: () => () => {},
   renameClient: vi.fn(),
   reparentClient: mocks.reparentClient,
@@ -52,6 +53,10 @@ const folder = {
   workboards: 2,
   folders: 1,
 };
+
+// One shared target object so the rerender passes an identical reference;
+// a fresh object would recompute every memo and hide a stale dependency.
+const boardTarget = { type: "workboard" as const, id: "e1", name: "Board", clientId: null };
 
 beforeEach(() => {
   for (const fn of Object.values(mocks)) if (typeof fn === "function") fn.mockReset();
@@ -203,5 +208,25 @@ describe("unit 4a keyboard path and events", () => {
       }
       unmount();
     }
+  });
+
+  // Unit 4h-fix: the setting change must be observed on the SAME mounted
+  // tree. Unmounting between cases re-runs the memo from scratch and can
+  // never catch a stale dependency array.
+  it("drops the Clients heading on the same mount when clients are turned off", async () => {
+    mocks.clientsEnabled = true;
+    const view = render(<Harness target={boardTarget} />);
+    const trigger = screen.getByRole("button", { name: "More actions for Board" });
+    trigger.focus();
+    fireEvent.keyDown(trigger, { key: "Enter" });
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Move to…" }));
+    await screen.findByLabelText("Destination");
+    const labels = () => [...view.container.ownerDocument.querySelectorAll("optgroup")].map((g) => g.getAttribute("label"));
+    expect(labels()).toEqual(["Clients", "Folders"]);
+
+    mocks.clientsEnabled = false;
+    // Re-render the same mounted tree; no unmount, no remount.
+    view.rerender(<Harness target={boardTarget} />);
+    await waitFor(() => expect(labels()).toEqual(["Folders"]));
   });
 });
