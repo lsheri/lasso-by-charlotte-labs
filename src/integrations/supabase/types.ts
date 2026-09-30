@@ -2933,6 +2933,59 @@ export type Database = {
         }
         Relationships: []
       }
+      outbound_emails: {
+        Row: {
+          attempts: number
+          created_at: string
+          id: string
+          last_error: string | null
+          org_id: string | null
+          payload: Json
+          provider_id: string | null
+          queued_by: string | null
+          sent_at: string | null
+          status: string
+          template: string
+          to_email: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          org_id?: string | null
+          payload?: Json
+          provider_id?: string | null
+          queued_by?: string | null
+          sent_at?: string | null
+          status?: string
+          template: string
+          to_email: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          org_id?: string | null
+          payload?: Json
+          provider_id?: string | null
+          queued_by?: string | null
+          sent_at?: string | null
+          status?: string
+          template?: string
+          to_email?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "outbound_emails_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pilot_requests: {
         Row: {
           created_at: string
@@ -4652,9 +4705,36 @@ export type Database = {
         }
         Returns: string
       }
+      admin_outbound_emails: {
+        Args: { p_org_id?: string }
+        Returns: {
+          attempts: number
+          created_at: string
+          id: string
+          last_error: string | null
+          org_id: string | null
+          payload: Json
+          provider_id: string | null
+          queued_by: string | null
+          sent_at: string | null
+          status: string
+          template: string
+          to_email: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "outbound_emails"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       admin_revoke_key: {
         Args: { p_code: string; p_reason?: string }
         Returns: boolean
+      }
+      admin_set_seats: {
+        Args: { p_org_id: string; p_reason: string; p_seats: number }
+        Returns: Json
       }
       admin_workspace_activity: {
         Args: never
@@ -4709,6 +4789,7 @@ export type Database = {
       }
       analytics_upsert_episode: { Args: { p_row: Json }; Returns: undefined }
       analytics_upsert_feature: { Args: { p_row: Json }; Returns: undefined }
+      assert_seat_available: { Args: { p_org_id: string }; Returns: undefined }
       can_place_in_task: { Args: { p_task: string }; Returns: boolean }
       can_place_item_in_task: {
         Args: { p_item: string; p_task: string }
