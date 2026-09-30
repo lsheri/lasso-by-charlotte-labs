@@ -99,10 +99,12 @@ export function PeekActionBar({
     analysisPreset(isThread ? "verification_thread" : "verification")?.label ?? "";
   const decisionsLabel = analysisPreset("decision_origin")?.label ?? "";
 
+  // I1: fact checking and decision finding need tied context, which lives on a
+  // workboard. So these two appear only where the peek is read inside one.
   const showFactCheck =
-    !analysesInHeader && canEdit && Boolean(onAnalyse) && (isThread || isDeliverable);
+    Boolean(engagementId) && !analysesInHeader && canEdit && Boolean(onAnalyse) && (isThread || isDeliverable);
   const showDecisions =
-    !analysesInHeader && canEdit && Boolean(onAnalyse) && (isThread || isDeliverable);
+    Boolean(engagementId) && !analysesInHeader && canEdit && Boolean(onAnalyse) && (isThread || isDeliverable);
   const readable = isThread || isDeliverable;
 
   return (
@@ -112,7 +114,7 @@ export function PeekActionBar({
     >
       {canEdit && onMap ? (
         <MapButton onClick={() => onMap(item, group)}>
-          {item.visibility === "mapped" ? "Remap" : "Map to a workstream"}
+          {item.visibility === "mapped" ? "Move to board" : "Map to a workstream"}
         </MapButton>
       ) : null}
       {showFactCheck ? (
