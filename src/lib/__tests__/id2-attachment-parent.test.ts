@@ -90,7 +90,7 @@ async function push(args: Record<string, unknown>) {
   };
 }
 
-const ART = "An artifact the chat made, long enough to stand on its own and not repeat any message.";
+const ART = Array.from({ length: 30 }, (_, i) => `Line ${i + 1} of the plan the chat wrote as its own artifact.`).join("\n");
 const base = (extra: Record<string, unknown> = {}) => ({
   vendor: "claude",
   orig_conversation_id: "conv-1",
@@ -117,7 +117,6 @@ beforeEach(() => {
 describe("ID-2 parent link", () => {
   it("sets parent_work_item_id to the thread on a new attachment", async () => {
     await push(base({ attachments: [{ kind: "artifact_markdown", title: "Plan", source_artifact_id: "a1", content: ART }] }));
-    console.log("DBG", JSON.stringify((await push(base({ orig_conversation_id: "dbg", attachments: [{ kind: "artifact_markdown", title: "Plan", source_artifact_id: "a1", content: ART }] }))).result?.content[0]?.text));
     const [att] = attachmentRows();
     expect(att).toBeDefined();
     expect(att!["parent_work_item_id"]).toBe(thread()["id"]);
