@@ -3039,6 +3039,50 @@ export type Database = {
           },
         ]
       }
+      pilot_accounts: {
+        Row: {
+          annual_value_usd: number | null
+          decision_on: string | null
+          goal: string | null
+          next_step: string | null
+          org_id: string
+          stage: string
+          started_on: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          annual_value_usd?: number | null
+          decision_on?: string | null
+          goal?: string | null
+          next_step?: string | null
+          org_id: string
+          stage?: string
+          started_on?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          annual_value_usd?: number | null
+          decision_on?: string | null
+          goal?: string | null
+          next_step?: string | null
+          org_id?: string
+          stage?: string
+          started_on?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pilot_accounts_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pilot_requests: {
         Row: {
           created_at: string
@@ -4711,6 +4755,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      account_stage: { Args: { p_org: string }; Returns: string }
       active_org_id: { Args: never; Returns: string }
       active_profile_id: { Args: never; Returns: string }
       admin_ai_cost_reconciliation: {
@@ -4849,12 +4894,58 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      admin_pilot_overview: {
+        Args: never
+        Returns: {
+          account_stage: string
+          active_days_7d: number
+          annual_value_usd: number
+          code: string
+          days_in: number
+          days_to_decision: number
+          decision_on: string
+          first_ai_capture: string
+          goal: string
+          last_active: string
+          last_email_status: string
+          members: number
+          next_step: string
+          org_id: string
+          org_name: string
+          org_type: string
+          problems_7d: number
+          s1_showed_up: boolean
+          s2_captured: boolean
+          s3_ai_capture: boolean
+          s4_organized: boolean
+          s5_judgment: boolean
+          s6_asked: boolean
+          s7_traced: boolean
+          s8_shared: boolean
+          seats: number
+          stage: string
+          started_on: string
+          updated_at: string
+        }[]
+      }
       admin_revoke_key: {
         Args: { p_code: string; p_reason?: string }
         Returns: boolean
       }
       admin_set_clients_enabled: {
         Args: { p_enabled: boolean; p_org: string }
+        Returns: Json
+      }
+      admin_set_pilot: {
+        Args: {
+          p_annual_value_usd?: number
+          p_decision_on?: string
+          p_goal?: string
+          p_next_step?: string
+          p_org_id: string
+          p_stage: string
+          p_started_on?: string
+        }
         Returns: Json
       }
       admin_set_seats: {
