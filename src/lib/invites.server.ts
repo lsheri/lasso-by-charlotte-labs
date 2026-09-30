@@ -13,8 +13,6 @@ export function inviteSenderAddress(): string {
   return `Lasso <invites@${domain}>`;
 }
 
-const SENDER_DOMAIN = "notify.lasso.charlotte-labs.com";
-const PLATFORM_FROM = "Lasso <noreply@lasso.charlotte-labs.com>";
 
 export type ResendResult = { ok: true } | { ok: false; status: number; detail: string };
 
@@ -30,7 +28,12 @@ export type ResendTemplateResult =
 /** Sends a published Resend template by alias. The template supplies from and subject. */
 export async function sendResendTemplate(
   apiKey: string,
-  mail: { to: string; template: string; variables: Record<string, string | number> },
+  mail: {
+    to: string;
+    template: string;
+    variables: Record<string, string | number>;
+    replyTo?: string | undefined;
+  },
 ): Promise<ResendTemplateResult> {
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -38,6 +41,7 @@ export async function sendResendTemplate(
     body: JSON.stringify({
       to: [mail.to],
       template: { id: mail.template, variables: mail.variables },
+      ...(mail.replyTo ? { reply_to: mail.replyTo } : {}),
     }),
   });
   if (!response.ok) {
@@ -71,72 +75,46 @@ export async function sendViaResend(
 }
 
 /**
- * Sends the invitation. Resend is primary when RESEND_API_KEY is set; otherwise
- * the platform path is used unchanged. No transport at all is not an error:
- * the caller shows the copyable link instead.
+ * Sends the invitation through the published Resend template for its variant.
+ * The template supplies subject and from. No key is not an error: the caller
+ * shows the copyable link instead.
  */
 export async function sendInviteEmail(args: {
   to: string;
   inviterName: string;
-  acceptUrl: string;
+  code: string;
   orgName?: string | undefined;
   /** The app_role on the invite row, when the caller knows it. */
   role?: string | null | undefined;
   orgType?: "personal" | "business" | null | undefined;
   subjectNames?: string[] | undefined;
 }): Promise<InviteEmailResult> {
-  const { renderInviteEmail } = await import("./invite-email");
-  const { subject, text, html } = renderInviteEmail({
-    inviterName: args.inviterName,
-    orgName: args.orgName || "your organization",
-    acceptUrl: args.acceptUrl,
-    role: args.role,
-    orgType: args.orgType,
-    subjectNames: args.subjectNames,
+  const { inviteEmailVariant, INVITE_TEMPLATE_ALIAS, coachScopeLine } = await import("./invites-shared");
+  const { buildJoinUrl } = await import("./join-link");
+  const variant = inviteEmailVariant(args.role, args.orgType);
+  const orgName = args.orgName || "your organization";
+  const acceptUrl = buildJoinUrl(args.code);
+
+  const variables: Record<string, string> = { INVITER_NAME: args.inviterName, ACCEPT_URL: acceptUrl };
+  if (variant !== "coach_personal") variables["ORG_NAME"] = orgName;
+  if (variant === "coach_business") {
+    const scope = coachScopeLine(args.subjectNames);
+    if (scope) variables["COACH_SCOPE_LINE"] = scope;
+  }
+
+  const resendKey = resendApiKey();
+  if (!resendKey) return { sent: false, reason: "not_configured", message: null };
+  const result = await sendResendTemplate(resendKey, {
+    to: args.to,
+    template: INVITE_TEMPLATE_ALIAS[variant],
+    variables,
   });
-
-  const resendKey = process.env["RESEND_API_KEY"];
-  if (resendKey) {
-    const result = await sendViaResend(resendKey, {
-      from: inviteSenderAddress(),
-      to: args.to,
-      subject,
-      html,
-      text,
-    });
-    if (result.ok) return { sent: true, reason: "sent", message: null };
-    return {
-      sent: false,
-      reason: "failed",
-      message: `Email provider returned ${result.status}: ${result.detail}`,
-    };
-  }
-
-  const platformKey = process.env["LOVABLE_API_KEY"];
-  if (!platformKey) {
-    return { sent: false, reason: "not_configured", message: null };
-  }
-  try {
-    const { sendLovableEmail } = await import("@lovable.dev/email-js");
-    await sendLovableEmail(
-      {
-        to: args.to,
-        from: PLATFORM_FROM,
-        sender_domain: SENDER_DOMAIN,
-        subject,
-        html,
-        text,
-        purpose: "transactional",
-        label: "org-invite",
-        idempotency_key: `org-invite-${args.acceptUrl}`,
-      },
-      { apiKey: platformKey, sendUrl: process.env["LOVABLE_SEND_URL"] },
-    );
-    return { sent: true, reason: "sent", message: null };
-  } catch (error) {
-    const detail = error instanceof Error ? error.message : String(error);
-    return { sent: false, reason: "failed", message: detail.slice(0, 300) };
-  }
+  if (result.ok) return { sent: true, reason: "sent", message: null };
+  return {
+    sent: false,
+    reason: "failed",
+    message: `Email provider returned ${result.status}: ${result.detail}`,
+  };
 }
 
 /**

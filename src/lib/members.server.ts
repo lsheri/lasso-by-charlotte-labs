@@ -92,7 +92,7 @@ export async function resendInviteByCode(
 
   let delivered = false;
   let reason = "no_email";
-  const { inviteEmailVariant } = await import("./invite-email");
+  const { inviteEmailVariant } = await import("./invites-shared");
   let variant: ReturnType<typeof inviteEmailVariant> = "standard";
   if (invite.email) {
     const [{ data: me }, { data: org }] = await Promise.all([
@@ -108,7 +108,7 @@ export async function resendInviteByCode(
     const result = await sendInviteEmail({
       to: invite.email,
       inviterName: me?.display_name || "Someone at your firm",
-      acceptUrl: `${acceptOrigin}/join?code=${encodeURIComponent(minted as string)}`,
+      code: minted as string,
       orgName: org?.name ?? undefined,
       role: invite.invited_role,
       orgType,
