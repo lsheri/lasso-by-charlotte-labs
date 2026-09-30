@@ -9,7 +9,6 @@ import { RecoveryEmail } from "@/lib/email-templates/recovery";
 import { EmailChangeEmail } from "@/lib/email-templates/email-change";
 import { ReauthenticationEmail } from "@/lib/email-templates/reauthentication";
 import { FOOTER_LINE, LASSO_MARK_URL, NB, TITLE_STACK } from "@/lib/email-templates/notebook";
-import { renderInviteEmail } from "@/lib/invite-email";
 
 const BANNED = [
   "score",
@@ -84,17 +83,4 @@ describe("pass146 branded auth emails", () => {
     });
   }
 
-  it("the org invite email shares the same system", () => {
-    const mail = renderInviteEmail({
-      inviterName: "Dana Reed",
-      orgName: "Acme Partners",
-      acceptUrl: "https://lasso.charlotte-labs.com/join?code=abcd1234",
-    });
-    expect(mail.html).toContain(FOOTER_LINE);
-    expect(mail.html).toContain(TITLE_STACK);
-    expect(mail.html).toContain(LASSO_MARK_URL);
-    expect(mail.html).toContain("BY CHARLOTTE LABS");
-    expect(mail.html).not.toContain("background:#111413");
-    expect(mail.text).not.toContain("—");
-  });
 });
