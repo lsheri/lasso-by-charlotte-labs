@@ -22,6 +22,7 @@ import { getInviteState, recordInviteBlocked } from "@/lib/invites.functions";
 import { clearPendingInvite, rememberPendingInvite } from "@/lib/pending-invite";
 
 import { logEvent } from "@/lib/telemetry";
+import { signOutAndReturn } from "@/lib/join-return";
 
 type JoinSearch = { code?: string | undefined; eng?: string | undefined };
 
@@ -122,13 +123,16 @@ function JoinPage() {
   }, [code, blocked, state?.created_by_you, reportBlocked]);
 
   async function signOutAndStay() {
-    await queryClient.cancelQueries();
-    queryClient.clear();
-    await supabase.auth.signOut();
-    navigate({
-      to: "/join",
-      search: eng ? { code, eng } : { code },
-      replace: true,
+    await signOutAndReturn({
+      clearCache: async () => {
+        await queryClient.cancelQueries();
+        queryClient.clear();
+      },
+      signOut: () => supabase.auth.signOut(),
+      go: (url) => window.location.replace(url),
+      origin: window.location.origin,
+      code,
+      eng,
     });
   }
 
