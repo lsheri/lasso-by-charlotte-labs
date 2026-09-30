@@ -170,7 +170,7 @@ function MenuDialogs({
           logEvent("container.reparented", orgId, {
             kind: target.kind,
             depth: to ? containerDepth(rows, to) + 1 : 0,
-            action: to ? "set" : "cleared",
+            action: "menu",
           });
         }
       } else {

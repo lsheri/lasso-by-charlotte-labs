@@ -66,13 +66,11 @@ const keyOf = (target: DropTarget) => (target.type === "top" ? "top" : `containe
 export function SidebarDragProvider({
   rows,
   orgId,
-  pending,
   setPending,
   children,
 }: {
   rows: readonly ContainerRow[];
   orgId: string | undefined;
-  pending: PendingMoves;
   setPending: (update: (prev: PendingMoves) => PendingMoves) => void;
   children: ReactNode;
 }) {
@@ -81,7 +79,6 @@ export function SidebarDragProvider({
   const [overKey, setOverKey] = useState<string | null>(null);
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const suppressClickUntil = useRef(0);
-  void pending;
 
   const clearHover = () => {
     if (hoverTimer.current) clearTimeout(hoverTimer.current);
