@@ -96,28 +96,28 @@ afterEach(cleanup);
 
 describe("unit W2 workboard card click after drag", () => {
   it("a drag that ends on the card does not open it", () => {
-    const { card, onOpen } = renderCard();
-    press(card, { x: 100, y: 100 }, { x: 140, y: 140 });
+    const { card, body, onOpen } = renderCard();
+    press(card, body, { x: 100, y: 100 }, { x: 140, y: 140 });
     expect(onOpen).not.toHaveBeenCalled();
   });
 
   it("a stationary click opens the card", () => {
-    const { card, onOpen } = renderCard();
-    press(card, { x: 100, y: 100 }, { x: 100, y: 100 });
+    const { card, body, onOpen } = renderCard();
+    press(card, body, { x: 100, y: 100 }, { x: 100, y: 100 });
     expect(onOpen).toHaveBeenCalledTimes(1);
   });
 
   it("a wobble inside the threshold still opens the card", () => {
-    const { card, onOpen } = renderCard();
-    press(card, { x: 100, y: 100 }, { x: 102, y: 101 });
+    const { card, body, onOpen } = renderCard();
+    press(card, body, { x: 100, y: 100 }, { x: 102, y: 101 });
     expect(onOpen).toHaveBeenCalledTimes(1);
   });
 
   it("suppression lasts one gesture: the next real click opens", () => {
-    const { card, onOpen } = renderCard();
-    press(card, { x: 100, y: 100 }, { x: 160, y: 160 });
+    const { card, body, onOpen } = renderCard();
+    press(card, body, { x: 100, y: 100 }, { x: 160, y: 160 });
     expect(onOpen).not.toHaveBeenCalled();
-    press(card, { x: 100, y: 100 }, { x: 100, y: 100 });
+    press(card, body, { x: 100, y: 100 }, { x: 100, y: 100 });
     expect(onOpen).toHaveBeenCalledTimes(1);
   });
 
