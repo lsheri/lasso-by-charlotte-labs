@@ -64,8 +64,8 @@ function bar(props: Partial<React.ComponentProps<typeof PeekActionBar>> = {}) {
 }
 
 describe("pass 129 — the peek action bar", () => {
-  it("renders the primary row in a fixed order", () => {
-    bar({ item: item({ type: "document" }) });
+  it("renders the primary row in a fixed order inside an engagement", () => {
+    bar({ item: item({ type: "document" }), engagementId: "e1" });
     const labels = Array.from(document.querySelectorAll(".nb-map-cta, .nb-pencil-cta")).map(
       (node) => node.textContent?.trim(),
     );
@@ -76,13 +76,21 @@ describe("pass 129 — the peek action bar", () => {
     ]);
   });
 
-  it("says Remap once the work is mapped", () => {
+  it("says Move to board once the work is mapped", () => {
     bar({ item: item({ visibility: "mapped" }) });
-    expect(screen.getByText("Remap")).toBeTruthy();
+    expect(screen.getByText("Move to board")).toBeTruthy();
   });
 
-  it("gives a thread both the fact check and the decisions button", () => {
-    bar();
+  it("I1: in the Inbox preview, with no engagement, only Move to board remains", () => {
+    bar({ item: item({ visibility: "mapped", type: "document" }) });
+    const labels = Array.from(document.querySelectorAll(".nb-map-cta, .nb-pencil-cta")).map(
+      (node) => node.textContent?.trim(),
+    );
+    expect(labels).toEqual(["Move to board"]);
+  });
+
+  it("gives a thread both the fact check and the decisions button inside an engagement", () => {
+    bar({ engagementId: "e1" });
     expect(screen.getByText(analysisPreset("verification_thread")!.label)).toBeTruthy();
     expect(screen.getByText(analysisPreset("decision_origin")!.label)).toBeTruthy();
   });
@@ -93,7 +101,7 @@ describe("pass 129 — the peek action bar", () => {
   });
 
   it("uses the small pencil CTA variant with its analysis seeds", () => {
-    bar({ item: item({ type: "document" }) });
+    bar({ item: item({ type: "document" }), engagementId: "e1" });
     const seeds = Array.from(document.querySelectorAll(".nb-pencil-cta--sm")).map((node) =>
       node.getAttribute("data-seed"),
     );

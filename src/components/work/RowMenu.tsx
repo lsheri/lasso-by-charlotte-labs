@@ -68,7 +68,9 @@ export function useRowMenuParts({ item, onFluency, engagementId, onRemoved }: Ro
       <DropdownMenuItem onSelect={() => setBriefOpen(true)}>
         {isBriefItem(item) ? "Change what this briefs" : "Mark as the brief"}
       </DropdownMenuItem>
-      {readable ? (
+      {/* These two need tied context, and that lives on a workboard. So they
+          appear only where the row is read inside an engagement. */}
+      {readable && engagementId ? (
         <DropdownMenuItem disabled={busy} onSelect={() => draft()}>
           {busy
             ? isThread
@@ -79,7 +81,7 @@ export function useRowMenuParts({ item, onFluency, engagementId, onRemoved }: Ro
               : "Find decisions in this document"}
         </DropdownMenuItem>
       ) : null}
-      {onFluency && (isThread || isDeliverable) ? (
+      {onFluency && engagementId && (isThread || isDeliverable) ? (
         <DropdownMenuItem onSelect={() => onFluency(item)}>
           {isThread ? "Analyse this conversation" : "Analyse this work"}
         </DropdownMenuItem>

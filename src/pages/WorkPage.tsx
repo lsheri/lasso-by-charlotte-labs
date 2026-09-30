@@ -115,12 +115,13 @@ const INBOX_LANE_LEFT = 40;
  * exactly the bottom of that row, and the visible bottom gap is also 54.
  */
 const INBOX_LANE_TOP = 76;
-export const INBOX_CARD_HEIGHT = 118;
+/** I1: tall enough for three summary lines, or a thumbnail and its two label lines. */
+export const INBOX_CARD_HEIGHT = 156;
 const INBOX_LANE_PADDING = 12;
 const INBOX_CARD_GAP = 12;
 const INBOX_LANE_HEADER_HEIGHT = 40;
 const INBOX_LANE_PAGING_HEIGHT = 44;
-/** Header 40 + padding 12 * 2 + one 118px card + paging 44: one card is always visible. */
+/** Header 40 + padding 12 * 2 + one card + paging 44: one card is always visible. */
 const INBOX_LANE_MIN_HEIGHT =
   INBOX_LANE_HEADER_HEIGHT + INBOX_LANE_PADDING * 2 + INBOX_CARD_HEIGHT + INBOX_LANE_PAGING_HEIGHT;
 
@@ -528,8 +529,8 @@ export function WorkPage() {
         <MapButton onClick={() => openMap(item, group)} stopPropagation>
           {variant === "mapped"
             ? groupLabel
-              ? "Remap conversation"
-              : "Remap"
+              ? "Move conversation to board"
+              : "Move to board"
             : groupLabel
               ? "Map conversation"
               : "Map to a workstream"}
