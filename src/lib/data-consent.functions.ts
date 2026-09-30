@@ -156,6 +156,26 @@ export const setDataConsent = createServerFn({ method: "POST" })
       p_surface: data.surface,
     });
     if (error) throw new Error(error.message);
+    // S-T1: after the ledger write succeeds. The level is a closed enum.
+    try {
+      const { resolveProfile } = await import("./profile-resolve");
+      const profile = await resolveProfile(context.supabase, context.userId, data.profile_id);
+      if (profile) {
+        const { recordSettingsChanged } = await import("./settings-events.server");
+        await recordSettingsChanged(
+          context.supabase,
+          { orgId: profile.org_id, userId: context.userId, profileId: profile.id },
+          {
+            section: "privacy",
+            setting: data.scope === "org" ? "data_level_workspace" : "data_level_personal",
+            change: "updated",
+            to_level: data.tier,
+          },
+        );
+      }
+    } catch {
+      /* never fail the save */
+    }
     return { ok: true, version: version ?? 0 };
   });
 
