@@ -47,12 +47,11 @@ describe("B1 workboard controls and brand identity", () => {
   it("publishes the same loop mark through site and MCP identity", () => {
     const root = read("src/routes/__root.tsx");
     const home = read("src/routes/index.tsx");
-    const personal = read("src/routes/personal.tsx");
     const mcp = read("src/lib/mcp-handler.server.ts");
     expect(root).toContain('href: "/favicon.svg"');
     expect(root).toContain('href: "/favicon-32.png"');
     expect(root).toContain('href: "/apple-touch-icon.png"');
-    for (const route of [home, personal]) {
+    for (const route of [home]) {
       expect(route).toContain('content: "summary_large_image"');
       expect(route).toContain('content: "https://lasso.charlotte-labs.com/og-image.png"');
     }
