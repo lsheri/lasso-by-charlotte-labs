@@ -232,6 +232,7 @@ export async function runFullSweep(): Promise<{
   // The work itself only ever moves for workspaces that chose full openness.
   const { runContentEgress } = await import("./content-egress.server");
   const content = await runContentEgress();
+  await (await import("./email-queue.server")).runEmailQueue();
   return { events, content };
 }
 
