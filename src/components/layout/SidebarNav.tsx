@@ -725,7 +725,7 @@ function FolderRows({
   rows: { node: ContainerNode<NavEngagement>; depth: number }[];
   collapsedIds: string[];
   onToggle: (id: string) => void;
-  onExpand?: (id: string) => void;
+  onExpand?: ((id: string) => void) | undefined;
   onNavigate?: (() => void) | undefined;
   newEngagementLabel: string;
   scopeFor: (id: string) => { tasks: CachedNavTask[]; workId: string | undefined } | undefined;
@@ -763,7 +763,7 @@ function ContainerShelfRow({
   depth: number;
   collapsedIds: string[];
   onToggle: (id: string) => void;
-  onExpand?: (id: string) => void;
+  onExpand?: ((id: string) => void) | undefined;
   onNavigate?: (() => void) | undefined;
   newEngagementLabel: string;
   scopeFor: (id: string) => { tasks: CachedNavTask[]; workId: string | undefined } | undefined;
