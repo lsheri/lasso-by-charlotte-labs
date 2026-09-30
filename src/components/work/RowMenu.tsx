@@ -65,9 +65,13 @@ export function useRowMenuParts({ item, onFluency, engagementId, onRemoved }: Ro
 
   const items = (
     <>
-      <DropdownMenuItem onSelect={() => setBriefOpen(true)}>
-        {isBriefItem(item) ? "Change what this briefs" : "Mark as the brief"}
-      </DropdownMenuItem>
+      {/* A brief belongs to the board it briefs. It shapes what the AI there is
+          told, so it can only be marked where the row is read inside that board. */}
+      {engagementId ? (
+        <DropdownMenuItem onSelect={() => setBriefOpen(true)}>
+          {isBriefItem(item) ? "Change what this briefs" : "Mark as the brief"}
+        </DropdownMenuItem>
+      ) : null}
       {/* These two need tied context, and that lives on a workboard. So they
           appear only where the row is read inside an engagement. */}
       {readable && engagementId ? (
@@ -117,7 +121,14 @@ export function useRowMenuParts({ item, onFluency, engagementId, onRemoved }: Ro
 
   const dialogs = (
     <>
-      <MarkBriefDialog item={item} open={briefOpen} onOpenChange={setBriefOpen} />
+      {engagementId ? (
+        <MarkBriefDialog
+          item={item}
+          engagementId={engagementId}
+          open={briefOpen}
+          onOpenChange={setBriefOpen}
+        />
+      ) : null}
       {owned && engagementId ? (
         <RemoveFromEngagementDialog
           workItemId={item.id}

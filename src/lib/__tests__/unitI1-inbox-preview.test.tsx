@@ -39,9 +39,10 @@ function Menu({ engagementId }: { engagementId?: string }) {
 }
 
 describe("I1 — AI actions need tied context", () => {
-  it("offers neither decisions nor analyse without an engagement, and keeps Mark as the brief", () => {
+  it("offers neither decisions nor analyse without an engagement", () => {
     render(<Menu />);
-    expect(screen.getByText("Mark as the brief")).toBeTruthy();
+    // I2: Mark as the brief also needs a board now, so it is absent here too.
+    expect(screen.queryByText("Mark as the brief")).toBeNull();
     expect(screen.queryByText("Find decisions in this conversation")).toBeNull();
     expect(screen.queryByText("Analyse this conversation")).toBeNull();
   });

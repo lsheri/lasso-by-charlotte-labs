@@ -27,14 +27,17 @@ function keyOf(scope: BriefScope): string {
 
 /**
  * Marking is a statement about the work, not a change to who can see it.
- * One item briefs exactly one engagement or one task.
+ * One item briefs exactly one scope: this board, or one workstream on it.
  */
 export function MarkBriefDialog({
   item,
+  engagementId,
   open,
   onOpenChange,
 }: {
   item: WorkItemRow | null;
+  /** The one board this item can brief. The dialog never offers another. */
+  engagementId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
@@ -45,13 +48,14 @@ export function MarkBriefDialog({
   const [pending, setPending] = useState(false);
 
   const tasksQuery = useQuery({
-    queryKey: ["brief-tasks", profile?.id],
+    queryKey: ["brief-tasks", profile?.id, engagementId],
     enabled: Boolean(profile?.id) && open,
     queryFn: async (): Promise<TaskRow[]> => {
       const { data, error } = await supabase
         .from("tasks")
         .select("id, name, engagement_id")
         .eq("owner_id", profile!.id)
+        .eq("engagement_id", engagementId)
         .order("position", { ascending: true })
         .order("created_at", { ascending: true });
       if (error) throw error;
@@ -60,12 +64,18 @@ export function MarkBriefDialog({
   });
 
   if (!item) return null;
+  const engagement = (engagements ?? []).find((e) => e.id === engagementId) ?? null;
+  // Belt and braces: the query already asks for this board only.
+  const tasks = (tasksQuery.data ?? []).filter((t) => t.engagement_id === engagementId);
+  const engagementScope: BriefScope = { type: "engagement", id: engagementId };
   const current = briefScopeOf(item.meta);
   const takenBy = new Map(
     (briefs ?? [])
       .filter((brief) => brief.id !== item.id)
       .map((brief) => [keyOf(brief.brief_scope), brief.title]),
   );
+
+  const engagementTaken = takenBy.get(keyOf(engagementScope));
 
   async function apply(scope: BriefScope | null) {
     if (!item || !profile) return;
@@ -95,52 +105,43 @@ export function MarkBriefDialog({
           <DialogTitle className="page-title">Mark as the brief</DialogTitle>
         </DialogHeader>
 
-        <p className="text-sm text-muted-foreground">
-          What was <span className="text-foreground">{item.title}</span> the brief for? A brief says
-          what the work was supposed to do. Marking it changes nothing about who can see it.
-        </p>
-
-        <div className="max-h-[50vh] space-y-4 overflow-y-auto pr-1">
-          {(engagements ?? []).map((engagement) => {
-            const tasks = (tasksQuery.data ?? []).filter((t) => t.engagement_id === engagement.id);
-            const engagementScope: BriefScope = { type: "engagement", id: engagement.id };
-            const engagementTaken = takenBy.get(keyOf(engagementScope));
-            return (
-              <div key={engagement.id} className="space-y-1">
-                <p className="micro-label">
-                  {engagementLabel(engagement)}
-                </p>
-                <ChoiceRow
-                  label="The whole workboard"
-                  selected={current?.type === "engagement" && current.id === engagement.id}
-                  note={engagementTaken ? `Already briefed by ${engagementTaken}` : null}
-                  disabled={pending}
-                  onSelect={() => void apply(engagementScope)}
-                />
-                {tasks.map((task) => {
-                  const scope: BriefScope = { type: "task", id: task.id };
-                  const taken = takenBy.get(keyOf(scope));
-                  return (
-                    <ChoiceRow
-                      key={task.id}
-                      label={task.name}
-                      indent
-                      selected={current?.type === "task" && current.id === task.id}
-                      note={taken ? `Already briefed by ${taken}` : null}
-                      disabled={pending}
-                      onSelect={() => void apply(scope)}
-                    />
-                  );
-                })}
-              </div>
-            );
-          })}
-          {(engagements ?? []).length === 0 ? (
+        {engagement ? (
+          <>
             <p className="text-sm text-muted-foreground">
-              Create a workboard first, then come back and mark this as its brief.
+              What was <span className="text-foreground">{item.title}</span> the brief for on{" "}
+              <span className="text-foreground">{engagementLabel(engagement)}</span>? A brief shapes
+              what the AI on this board is told the work was asked to do. Marking it changes nothing
+              about who can see it.
             </p>
-          ) : null}
-        </div>
+
+            <div className="max-h-[50vh] space-y-1 overflow-y-auto pr-1">
+              <ChoiceRow
+                label="The whole workboard"
+                selected={current?.type === "engagement" && current.id === engagement.id}
+                note={engagementTaken ? `Already briefed by ${engagementTaken}` : null}
+                disabled={pending}
+                onSelect={() => void apply(engagementScope)}
+              />
+              {tasks.map((task) => {
+                const scope: BriefScope = { type: "task", id: task.id };
+                const taken = takenBy.get(keyOf(scope));
+                return (
+                  <ChoiceRow
+                    key={task.id}
+                    label={task.name}
+                    indent
+                    selected={current?.type === "task" && current.id === task.id}
+                    note={taken ? `Already briefed by ${taken}` : null}
+                    disabled={pending}
+                    onSelect={() => void apply(scope)}
+                  />
+                );
+              })}
+            </div>
+          </>
+        ) : (
+          <p className="text-sm text-muted-foreground">This board could not be read.</p>
+        )}
 
         {current ? (
           <Button variant="outline" disabled={pending} onClick={() => void apply(null)}>
