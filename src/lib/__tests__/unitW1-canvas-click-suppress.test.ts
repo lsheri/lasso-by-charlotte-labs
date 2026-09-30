@@ -50,10 +50,12 @@ function harness() {
     },
     true,
   );
+  const at = (type: string, point: { x: number; y: number }) =>
+    new MouseEvent(type, { bubbles: true, clientX: point.x, clientY: point.y });
   const press = (from: { x: number; y: number }, to: { x: number; y: number }) => {
-    card.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true, ...from }));
-    card.dispatchEvent(new MouseEvent("pointerup", { bubbles: true, ...to }));
-    card.dispatchEvent(new MouseEvent("click", { bubbles: true, ...to }));
+    card.dispatchEvent(at("pointerdown", from));
+    card.dispatchEvent(at("pointerup", to));
+    card.dispatchEvent(at("click", to));
   };
   return { card, press, opened: () => opened, suppress };
 }
