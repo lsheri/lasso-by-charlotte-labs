@@ -25,7 +25,7 @@ describe("R5 board toolbar", () => {
   it("keeps Add work visible and labels only the unclear controls", () => {
     expect(toolbar).toMatch(/data-toolbar-control="add-work"[\s\S]*?<GraphiteIcon name="work"[\s\S]*?>Add work<\/Button>/);
     // R9: Details opens the glance popover in place instead of linking away.
-    expect(toolbar).toMatch(/data-toolbar-control="details"[\s\S]*?>Details<\/Button>/);
+    expect(toolbar).toMatch(/data-toolbar-control="details"[\s\S]*?>Info<\/Button>/);
     expect(toolbar).toMatch(/data-toolbar-control="example"[\s\S]*?>See an example board<\/Button>/);
   });
 

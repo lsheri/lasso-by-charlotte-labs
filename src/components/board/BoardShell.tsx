@@ -382,7 +382,7 @@ export function BoardShell<F extends BoardShellFrame, N extends BoardShellNode>(
       className={cn("relative h-full w-full overflow-hidden", className)}
     >
       {toolbar || showViewControls ? (
-        <div data-testid="board-shell-toolbar" className="absolute inset-x-0 top-0 z-20 flex min-w-0 items-center gap-2 overflow-hidden px-3 py-2">
+        <div data-testid="board-shell-toolbar" className="absolute inset-x-0 top-0 z-20 flex min-h-[56px] min-w-0 items-center gap-2.5 overflow-hidden px-4 py-3">
           {toolbar}
           {showViewControls ? (
             <BoardViewControls
