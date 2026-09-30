@@ -13,13 +13,7 @@ export type ResendEventType =
   | "email.clicked";
 
 export type EmailStatus =
-  | "queued"
-  | "sent"
-  | "delayed"
-  | "delivered"
-  | "bounced"
-  | "complained"
-  | "failed";
+  "queued" | "sent" | "delayed" | "delivered" | "bounced" | "complained" | "failed";
 
 const EVENT_STATUS: Record<string, EmailStatus | null> = {
   "email.sent": "sent",
@@ -33,7 +27,9 @@ const EVENT_STATUS: Record<string, EmailStatus | null> = {
 };
 
 export function statusForEvent(type: string): EmailStatus | null {
-  return Object.prototype.hasOwnProperty.call(EVENT_STATUS, type) ? EVENT_STATUS[type] : null;
+  return Object.prototype.hasOwnProperty.call(EVENT_STATUS, type)
+    ? (EVENT_STATUS[type] ?? null)
+    : null;
 }
 
 const RANK: Record<string, number> = { queued: 0, sent: 1, delayed: 2, delivered: 3 };
@@ -48,6 +44,6 @@ export function isTerminalFailure(status: EmailStatus): boolean {
 
 export function shouldApply(current: string | null, incoming: EmailStatus): boolean {
   if (isTerminalFailure(incoming)) return true;
-  const currentRank = current !== null && current in RANK ? RANK[current] : -1;
+  const currentRank = current !== null && current in RANK ? (RANK[current] ?? -1) : -1;
   return statusRank(incoming) > currentRank;
 }
