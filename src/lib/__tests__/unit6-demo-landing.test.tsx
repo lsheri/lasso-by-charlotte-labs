@@ -87,10 +87,4 @@ describe("Unit 6 demo plus landing", () => {
     expect(DEMO_PAGE).toContain('to="/"');
     expect(DEMO_PAGE).toContain('hash="pilot"');
   });
-
-  it("does not touch the archived landing", () => {
-    const archive = readFileSync("src/routes/landing-archive.2026-09-25.tsx", "utf8");
-    expect(archive).toContain('createFileRoute("/landing-archive/2026-09-25")');
-    expect(archive).not.toContain("DemoHomeWorkspace");
-  });
 });

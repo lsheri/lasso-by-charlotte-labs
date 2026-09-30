@@ -12,3 +12,13 @@ Allow: /
 
 User-agent: *
 Allow: /
+Disallow: /personal
+Disallow: /next
+Disallow: /landing-classic
+Disallow: /landing-next
+Disallow: /landing-board
+Disallow: /landing-archive
+Disallow: /demo/classic
+Disallow: /qa
+Disallow: /design
+Disallow: /motion
