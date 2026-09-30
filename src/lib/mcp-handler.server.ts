@@ -1492,7 +1492,7 @@ async function storedAttachmentChars(match: {
  * render them as a single group. Re-pushing the same conversation updates in
  * place rather than duplicating.
  */
-async function pushConversation(
+export async function pushConversation(
   owner: Owner,
   args: Obj,
   id: unknown,
@@ -1934,6 +1934,20 @@ async function pushConversation(
   }
 
   const storedCount = storedBefore + newRows.length;
+
+  // ID-2: turn ids by position, read after this call's turns are written, and
+  // only when an attachment named the position that produced it.
+  let turnIdAtPosition = new Map<number, string>();
+  if (attachments.some((a) => a.producedAtTurn)) {
+    const { data: positionRows } = await supabaseAdmin
+      .from("turns")
+      .select("id, turn_no")
+      .eq("work_item_id", threadId);
+    turnIdAtPosition = new Map((positionRows ?? []).map((t) => [t.turn_no, t.id]));
+  }
+  const linkedTurnId = (a: IncomingAttachment): string | null =>
+    a.producedAtTurn ? (turnIdAtPosition.get(a.producedAtTurn) ?? null) : null;
+  let turnLinkedCount = 0;
   const extraStored = win ? 0 : Math.max(0, storedBefore - messages.length);
 
   // ---- attachments (match by source_artifact_id, then title) ---------------
@@ -1963,7 +1977,7 @@ async function pushConversation(
   } else {
     const { data: existingAttachments } = await supabaseAdmin
       .from("work_items")
-      .select("id, title, content_ref, content_hash, captured_at, source_meta")
+      .select("id, title, content_ref, content_hash, captured_at, source_meta, parent_work_item_id")
       .eq("owner_id", owner.profileId)
       .eq("orig_conversation_id", origId)
       .neq("type", "ai_thread");
@@ -2034,6 +2048,8 @@ async function pushConversation(
               produced_at_turn: null,
             } as unknown as Json,
             meta: { assistant_transcribed: true },
+            parent_work_item_id: threadId,
+            ...(refTurnId ? { produced_at_turn_id: refTurnId } : {}),
           })
           .select("id")
           .maybeSingle();
@@ -2198,6 +2214,7 @@ async function pushConversation(
         }
       }
 
+      const producedTurnId = linkedTurnId(attachment);
       const fields = {
         owner_id: owner.profileId,
         org_id: owner.orgId,
@@ -2223,18 +2240,25 @@ async function pushConversation(
         meta: { assistant_transcribed: true },
       };
 
+      // ID-2: the parent chat is set when missing and never replaced; the
+      // producing turn only when the caller named a position that exists.
+      const linkFields = {
+        ...(!match || !match.parent_work_item_id ? { parent_work_item_id: threadId } : {}),
+        ...(producedTurnId ? { produced_at_turn_id: producedTurnId } : {}),
+      };
       const result = match
         ? await supabaseAdmin
             .from("work_items")
-            .update(fields)
+            .update({ ...fields, ...linkFields })
             .eq("id", match.id)
             .select("id")
             .maybeSingle()
         : await supabaseAdmin
             .from("work_items")
-            .insert({ ...fields, visibility: "unmapped" })
+            .insert({ ...fields, ...linkFields, visibility: "unmapped" })
             .select("id")
             .maybeSingle();
+      if (!result.error && producedTurnId) turnLinkedCount += 1;
       if (result.error) {
         problems.push(`'${attachment.title}': ${result.error.message}`);
         attachmentOutcomes.push({
@@ -2409,6 +2433,7 @@ async function pushConversation(
       decisions: versionRowsBucket(decisionsDrafted),
       attachments_held: versionRowsBucket(heldCount),
       text_refs: versionRowsBucket(textRefCount),
+      turn_linked_attachments: turnLinkedBucket(turnLinkedCount),
     },
   });
   await recordEvent(supabaseAdmin, {
@@ -2591,8 +2616,9 @@ async function pushConversation(
     .map((one) => one.trim())
     .filter((one) => one.length > 0);
   return rpcResult(id, {
-    content: [{ type: "text", text: summary }],
+    content: [{ type: "text", text: `${summary}${conversationIdLines}` }],
     structuredContent: {
+      lasso_conversation_id: threadId,
       summary,
       stored_count: storedCount,
       total: total ?? null,
