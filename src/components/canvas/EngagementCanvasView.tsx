@@ -17,10 +17,14 @@ import {
 } from "@/lib/canvas-layout";
 import {
   DRAG_HOLD_MS,
+  beginClickGesture,
+  cancelClickGesture,
   dragTo,
+  endClickGesture,
   keyTo,
   passedSlop,
   snapPoint,
+  swallowClickIfDrag,
   type Point,
 } from "@/lib/canvas-drag";
 import {
@@ -202,8 +206,7 @@ function CanvasNode({
       onPointerDown={(event) => onGrabPointer(position.id, event)}
       onKeyDown={(event) => onNodeKeyDown(position.id, event)}
       onClickCapture={(event) => {
-        if (suppressClickRef.current) {
-          suppressClickRef.current = false;
+        if (swallowClickIfDrag(suppressClickRef)) {
           event.preventDefault();
           event.stopPropagation();
         }
@@ -664,6 +667,9 @@ export function EngagementCanvasView({
   const startPointerDrag = useCallback(
     (id: string, event: React.PointerEvent) => {
       if (event.button !== 0 && event.pointerType === "mouse") return;
+      // Every press starts a fresh gesture, so a drag that ended off the card
+      // can never swallow the next real click.
+      beginClickGesture(suppressClickRef);
       const origin = positions.get(id) ?? null;
       const startX = event.clientX;
       const startY = event.clientY;
@@ -671,7 +677,6 @@ export function EngagementCanvasView({
       const lift = () => {
         if (lifted) return;
         lifted = true;
-        suppressClickRef.current = true;
         setDrag((current) => (current && current.id === id ? { ...current, lifted: true } : current));
       };
       const hold = window.setTimeout(lift, DRAG_HOLD_MS);
@@ -717,6 +722,13 @@ export function EngagementCanvasView({
           x: (upEvent.clientX - startX) / zoom,
           y: (upEvent.clientY - startY) / zoom,
         };
+        // Moved past the click threshold: the click the browser fires next is
+        // the drag's tail and is swallowed once. A still press clears the flag.
+        endClickGesture(
+          suppressClickRef,
+          { x: startX, y: startY },
+          { x: upEvent.clientX, y: upEvent.clientY },
+        );
         finish();
         if (!wasLifted) return;
         const overShelf = isOver(shelfRef.current, upEvent.clientX, upEvent.clientY);
@@ -743,6 +755,7 @@ export function EngagementCanvasView({
       }
 
       function onCancel() {
+        cancelClickGesture(suppressClickRef);
         finish();
       }
 
@@ -1214,8 +1227,7 @@ export function EngagementCanvasView({
                   }}
                   onPointerDown={(event) => startPointerDrag(item.id, event)}
                   onClickCapture={(event) => {
-                    if (!suppressClickRef.current) return;
-                    suppressClickRef.current = false;
+                    if (!swallowClickIfDrag(suppressClickRef)) return;
                     event.preventDefault();
                     event.stopPropagation();
                   }}
