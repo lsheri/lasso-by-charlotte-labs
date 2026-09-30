@@ -152,6 +152,7 @@ describe("pass 212 sidebar rendering", () => {
 
   it("renders a personal workspace root folder as an ordinary shelf with no Folders header", () => {
     mocks.profile["org_type"] = "personal";
+    mocks.profile["clients_enabled"] = false;
     const folder = { ...row("folder", "folder", null), name: "Field notes" };
     mocks.engagements = [eng("e1", folder)];
     render(<SidebarNav />);
