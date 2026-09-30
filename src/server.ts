@@ -28,11 +28,29 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
   const body = await response.clone().text();
   if (!isH3SwallowedErrorBody(body)) return response;
 
-  console.error(consumeLastCapturedError() ?? new Error(`h3 swallowed SSR error: ${body}`));
+  const swallowed = consumeLastCapturedError() ?? new Error(`h3 swallowed SSR error: ${body}`);
+  console.error(swallowed);
+  await reportServerException(swallowed, "ssr_swallowed");
   return new Response(renderErrorPage(), {
     status: 500,
     headers: { "content-type": "text/html; charset=utf-8" },
   });
+}
+
+// PH-S3a: hand the error to PostHog after the response. Never throws.
+async function reportServerException(
+  error: unknown,
+  where: "ssr_catch" | "ssr_swallowed",
+): Promise<void> {
+  try {
+    const [{ runAfterResponse }, { captureServerException }] = await Promise.all([
+      import("./lib/background"),
+      import("./lib/server-exceptions.server"),
+    ]);
+    runAfterResponse(() => captureServerException(error, where));
+  } catch {
+    /* error reporting must never break the error path */
+  }
 }
 
 function isH3SwallowedErrorBody(body: string): boolean {
@@ -54,6 +72,7 @@ export default {
       return await normalizeCatastrophicSsrResponse(response);
     } catch (error) {
       console.error(error);
+      await reportServerException(error, "ssr_catch");
       return new Response(renderErrorPage(), {
         status: 500,
         headers: { "content-type": "text/html; charset=utf-8" },

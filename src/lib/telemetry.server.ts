@@ -16,8 +16,8 @@ import type { TelemetryDims, TelemetryEvent } from "./telemetry-shared";
 
 
 /** Publishable project key, safe in source, write-only ingest. */
-const POSTHOG_KEY = "phc_mb9PLASteZ87YA6P34n4Mb9Hp9rW3oXXRQvq6qXiy6mw";
-const POSTHOG_HOST = "https://us.i.posthog.com";
+export const POSTHOG_KEY = "phc_mb9PLASteZ87YA6P34n4Mb9Hp9rW3oXXRQvq6qXiy6mw";
+export const POSTHOG_HOST = "https://us.i.posthog.com";
 
 export async function sha256Hex(value: string): Promise<string> {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
