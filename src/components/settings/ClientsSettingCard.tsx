@@ -38,6 +38,7 @@ export function ClientsSettingCard() {
         toast.error(outcome.message);
         return;
       }
+      logEvent("org.clients_changed", profile.org_id, { enabled: next ? "true" : "false" });
       await queryClient.invalidateQueries({ queryKey: ["profiles"] });
     } finally {
       setBusy(false);
