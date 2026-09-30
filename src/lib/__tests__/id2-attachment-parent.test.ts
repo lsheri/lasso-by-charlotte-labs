@@ -117,6 +117,7 @@ beforeEach(() => {
 describe("ID-2 parent link", () => {
   it("sets parent_work_item_id to the thread on a new attachment", async () => {
     await push(base({ attachments: [{ kind: "artifact_markdown", title: "Plan", source_artifact_id: "a1", content: ART }] }));
+    console.log("DBG", JSON.stringify((await push(base({ orig_conversation_id: "dbg", attachments: [{ kind: "artifact_markdown", title: "Plan", source_artifact_id: "a1", content: ART }] }))).result?.content[0]?.text));
     const [att] = attachmentRows();
     expect(att).toBeDefined();
     expect(att!["parent_work_item_id"]).toBe(thread()["id"]);
