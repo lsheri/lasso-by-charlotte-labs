@@ -39,7 +39,7 @@ vi.mock("@/lib/clients", () => ({
 // The fake honours the engagement filter so the test proves the query asks for one board.
 vi.mock("@/integrations/supabase/client", () => {
   const make = (rows: typeof TASKS) => {
-    const q: Record<string, unknown> = {};
+    const q = {} as { select: unknown; eq: unknown; order: unknown; then: unknown };
     q.select = () => q;
     q.eq = (col: string, val: string) => make(col === "engagement_id" ? rows.filter((r) => r.engagement_id === val) : rows);
     q.order = () => q;
