@@ -21,10 +21,6 @@ type Row = {
 
 type Db = { from: (t: string) => any };
 
-export function buildJoinUrl(code: string, origin: string = appOrigin() ?? CANONICAL_ORIGIN): string {
-  return adminLink(code, origin);
-}
-
 /** Unknown or missing register falls back to the company promise, never an empty line. */
 export function privacyLineFor(register: unknown): string {
   if (typeof register === "string" && Object.prototype.hasOwnProperty.call(REGISTER_COPY, register)) {
