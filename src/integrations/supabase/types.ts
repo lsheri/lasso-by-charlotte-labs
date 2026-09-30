@@ -4006,6 +4006,8 @@ export type Database = {
           org_id: string
           orig_conversation_id: string | null
           owner_id: string
+          parent_work_item_id: string | null
+          produced_at_turn_id: string | null
           source: string
           source_meta: Json | null
           source_vendor: string | null
@@ -4031,6 +4033,8 @@ export type Database = {
           org_id: string
           orig_conversation_id?: string | null
           owner_id: string
+          parent_work_item_id?: string | null
+          produced_at_turn_id?: string | null
           source?: string
           source_meta?: Json | null
           source_vendor?: string | null
@@ -4056,6 +4060,8 @@ export type Database = {
           org_id?: string
           orig_conversation_id?: string | null
           owner_id?: string
+          parent_work_item_id?: string | null
+          produced_at_turn_id?: string | null
           source?: string
           source_meta?: Json | null
           source_vendor?: string | null
@@ -4093,6 +4099,20 @@ export type Database = {
             columns: ["owner_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_items_parent_work_item_id_fkey"
+            columns: ["parent_work_item_id"]
+            isOneToOne: false
+            referencedRelation: "work_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_items_produced_at_turn_id_fkey"
+            columns: ["produced_at_turn_id"]
+            isOneToOne: false
+            referencedRelation: "turns"
             referencedColumns: ["id"]
           },
         ]
