@@ -7,7 +7,18 @@ export function adminLink(code: string, origin: string = CANONICAL_ORIGIN): stri
   return url.toString();
 }
 
-/** Server-built join link for an invite code. Never trust a caller-supplied URL. */
-export function buildJoinUrl(code: string, origin: string = CANONICAL_ORIGIN): string {
-  return adminLink(code, origin);
+/**
+ * Server-built join link for an invite code. Never trust a caller-supplied
+ * URL. An optional workboard id rides as the eng query parameter, matching
+ * the on-screen copyable link exactly.
+ */
+export function buildJoinUrl(
+  code: string,
+  opts?: { eng?: string | undefined },
+  origin: string = CANONICAL_ORIGIN,
+): string {
+  const url = new URL("/join", origin);
+  url.searchParams.set("code", code);
+  if (opts?.eng) url.searchParams.set("eng", opts.eng);
+  return url.toString();
 }
