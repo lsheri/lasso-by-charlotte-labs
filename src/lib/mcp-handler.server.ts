@@ -526,6 +526,12 @@ const pushTools = (vocab: McpVocab) => [
                 description: "Verbatim source or text. Required for every kind except file_ref.",
               },
               language: { type: "string" },
+              produced_at_turn: {
+                type: "integer",
+                minimum: 1,
+                description:
+                  "Optional. The 1-indexed position of the turn that produced or first shared this file. Omit it if you are not sure. Never guess.",
+              },
               origin: {
                 type: "string",
                 enum: ["made_in_chat", "seen_in_chat"],
