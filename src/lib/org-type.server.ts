@@ -112,6 +112,42 @@ export async function partnerSlugOf(orgId: string | null | undefined): Promise<s
   }
 }
 
+const accountStageCache = new Map<string, { at: number; value: string | null }>();
+
+/** Test seam. */
+export function resetAccountStageCache(): void {
+  accountStageCache.clear();
+}
+
+/**
+ * A-S2: the account stage of the workspace ('internal' | 'pilot' | 'customer'
+ * | 'free' | 'none'), read through the service-role-only account_stage()
+ * function. Mirror-only: this never lands on the events row. Read only, same
+ * cache window as above. Null when there is no org, the read fails, or
+ * anything throws. Never throws.
+ */
+export async function accountStageOf(orgId: string | null | undefined): Promise<string | null> {
+  if (!orgId) return null;
+  const hit = accountStageCache.get(orgId);
+  if (hit && Date.now() - hit.at < ORG_TYPE_TTL_MS) return hit.value;
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // account_stage is not in the generated types; cast locally at the call site.
+    const { data, error } = await (supabaseAdmin.rpc as unknown as (
+      fn: string,
+      args: Record<string, unknown>,
+    ) => Promise<{ data: unknown; error: { message: string } | null }>)("account_stage", {
+      p_org: orgId,
+    });
+    if (error) return null;
+    const value = typeof data === "string" ? data : null;
+    accountStageCache.set(orgId, { at: Date.now(), value });
+    return value;
+  } catch {
+    return null;
+  }
+}
+
 export async function orgTypeOf(orgId: string | null | undefined): Promise<string> {
   return (await orgTypeOfStrict(orgId)) ?? "personal";
 }

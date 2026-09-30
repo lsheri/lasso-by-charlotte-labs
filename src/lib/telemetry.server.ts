@@ -45,6 +45,8 @@ export type MirrorContext = {
   partner: string;
   /** PH-S2: set on recordEvent mirrors only; the anonymous path never sends it. */
   actor_kind?: "person" | "system";
+  /** A-S2: mirror only. Never stamped on the events row. */
+  account_stage?: string;
   /** Anonymous path only: sends $ip and drops $groups. */
   anonymous?: boolean;
 };
@@ -66,6 +68,7 @@ export function contextProperties(context: MirrorContext): Record<string, unknow
     partner: context.partner,
   };
   if (context.actor_kind) props["actor_kind"] = context.actor_kind;
+  if (context.account_stage) props["account_stage"] = context.account_stage;
   const ua = readHeader("user-agent");
   if (ua) props["$raw_user_agent"] = ua.slice(0, 512);
   if (context.anonymous) {
@@ -308,6 +311,14 @@ export async function recordEvent(
           /* keep "none" */
         }
       }
+      // A-S2: mirror-only context. Never part of the stamp or the insert.
+      let accountStage: string | null = null;
+      try {
+        const { accountStageOf } = await import("./org-type.server");
+        accountStage = await accountStageOf(input.orgId);
+      } catch {
+        /* keep null */
+      }
       // PH-S2: a system event (no signed-in user) still mirrors, under a
       // stand-in distinct id. The events row keeps actor_hash null either way.
       const mirrorActorHash = actorHash ?? (await computeActorHash(`system:${input.orgId}`));
@@ -319,6 +330,7 @@ export async function recordEvent(
           affiliated: stamp.affiliated,
           partner,
           actor_kind: actorKind,
+          ...(accountStage ? { account_stage: accountStage } : {}),
         });
       }
     }
