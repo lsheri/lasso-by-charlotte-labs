@@ -18,6 +18,7 @@ import {
   type PostureStateRow,
 } from "./egress-shared";
 import { runAfterResponse } from "./background";
+import type { EmailQueueResult } from "./email-queue.server";
 import { createSweepState, decideSweep, releaseSweep, tryStartSweep } from "./sweep-guard";
 
 export type EgressResult = { sent: number; skipped: number; failed: number };
@@ -227,13 +228,14 @@ export function resetEgressSchedule(): void {
 export async function runFullSweep(): Promise<{
   events: EgressResult;
   content: Awaited<ReturnType<typeof import("./content-egress.server").runContentEgress>>;
+  emails: EmailQueueResult;
 }> {
   const events = await runEgress();
   // The work itself only ever moves for workspaces that chose full openness.
   const { runContentEgress } = await import("./content-egress.server");
   const content = await runContentEgress();
-  await (await import("./email-queue.server")).runEmailQueue();
-  return { events, content };
+  const emails = await (await import("./email-queue.server")).runEmailQueue();
+  return { events, content, emails };
 }
 
 export type GuardedSweepResult =
