@@ -130,11 +130,8 @@ export const revokeInvite = createServerFn({ method: "POST" })
 /** Mints a replacement invite, withdraws the old one, and emails when it can. */
 export const resendInvite = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: Ctx & { code: string; origin: string }) => {
-    if (!/^https?:\/\//.test(input.origin ?? "")) throw new Error("Missing invite link origin.");
-    return input;
-  })
+  .inputValidator((input: Ctx & { code: string }) => input)
   .handler(async ({ data, context }) => {
     const { resendInviteByCode } = await import("./members.server");
-    return resendInviteByCode(context, data.profile_id, data.code, data.origin.replace(/\/$/, ""));
+    return resendInviteByCode(context, data.profile_id, data.code);
   });

@@ -1,7 +1,5 @@
 import type { ComponentType } from 'react'
 
-import { pilotRequestTemplate } from './pilot-request'
-
 export interface TemplateEntry {
   component: ComponentType<any>
   subject: string | ((data: Record<string, any>) => string)
@@ -20,5 +18,4 @@ export interface TemplateEntry {
  *   // then add to TEMPLATES: 'welcome': welcomeTemplate
  */
 export const TEMPLATES: Record<string, TemplateEntry> = {
-  'pilot-request': pilotRequestTemplate,
 }

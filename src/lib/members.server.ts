@@ -56,7 +56,6 @@ export async function resendInviteByCode(
   context: AuthedContext,
   profileId: string | null | undefined,
   code: string,
-  acceptOrigin: string,
 ): Promise<{ code: string; delivered: boolean; reason: string; old_revoked: boolean }> {
   const { profile, supabaseAdmin } = await requireConsoleAccess(
     context.supabase,
