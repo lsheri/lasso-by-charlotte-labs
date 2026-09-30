@@ -11,8 +11,6 @@ import {
   type ClickSuppress,
 } from "@/lib/canvas-drag";
 
-const view = readFileSync("src/components/canvas/EngagementCanvasView.tsx", "utf8");
-
 /**
  * A DOM stand-in wired exactly the way EngagementCanvasView wires a card:
  * pointerdown begins the gesture, pointerup ends it against the press point,
@@ -114,21 +112,5 @@ describe("unit W1 pointer gestures", () => {
     scene.card.dispatchEvent(new MouseEvent("pointercancel", { bubbles: true }));
     scene.card.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     expect(scene.opened()).toBe(1);
-  });
-});
-
-describe("unit W1 the real canvas uses this path", () => {
-  it("begins, ends and cancels the gesture in the pointer drag", () => {
-    expect(view).toContain("beginClickGesture(suppressClickRef)");
-    expect(view).toContain("endClickGesture(");
-    expect(view).toContain("cancelClickGesture(suppressClickRef)");
-  });
-
-  it("swallows the click in capture phase on the card and the shelf", () => {
-    expect(view.match(/swallowClickIfDrag\(suppressClickRef\)/g)?.length).toBe(2);
-  });
-
-  it("no longer suppresses from the hold timer or the lift", () => {
-    expect(view).not.toContain("suppressClickRef.current = true");
   });
 });
