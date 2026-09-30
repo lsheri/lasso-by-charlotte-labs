@@ -48,7 +48,6 @@ export function NewEngagementDialog({
   const placeWork = useServerFn(placeWorkOnBoardFn);
   const fileInput = useRef<HTMLInputElement | null>(null);
   const [open, setOpen] = useState(false);
-  const [code, setCode] = useState("");
   const [title, setTitle] = useState("");
   const [clientId, setClientId] = useState<string | null>(initialClientId ?? null);
   const [brief, setBrief] = useState("");
@@ -67,7 +66,6 @@ export function NewEngagementDialog({
   });
 
   function reset() {
-    setCode("");
     setTitle("");
     setClientId(initialClientId ?? null);
     setBrief("");
@@ -113,7 +111,6 @@ export function NewEngagementDialog({
     const { error: insertError } = await supabase.from("engagements").insert({
       id: engagementId,
       org_id: profile.org_id,
-      code: code.trim(),
       title: title.trim(),
       client_id: clientId,
       brief: brief.trim() || null,
@@ -233,32 +230,19 @@ export function NewEngagementDialog({
         </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-3 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="eng-code" className="micro-label">
-                  Code
-                </Label>
-                <Input
-                  id="eng-code"
-                  required
-                  value={code}
-                  onChange={(e) => setCode(e.target.value)}
-                  className="font-mono"
-                  placeholder="ACME-1"
-                />
-              </div>
-              <div className="col-span-2 space-y-1.5">
-                <Label htmlFor="eng-title" className="micro-label">
-                  Title
-                </Label>
-                <Input
-                  id="eng-title"
-                  required
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Growth strategy refresh"
-                />
-              </div>
+            {/* No code input: the database names the workboard on insert. It
+                can be changed later from Edit workboard. */}
+            <div className="space-y-1.5">
+              <Label htmlFor="eng-title" className="micro-label">
+                Title
+              </Label>
+              <Input
+                id="eng-title"
+                required
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Growth strategy refresh"
+              />
             </div>
 
             <ClientPicker
