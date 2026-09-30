@@ -116,9 +116,3 @@ export function vocabFor(profile: VocabProfile): Vocab {
   return DEFAULT_VOCAB;
 }
 
-/** Whether the client/folder split means anything in this workspace. Where the
- *  container word is already "folder" there are no clients, so a separate
- *  folder section would read the same as the main one. */
-export function splitsByKind(vocab: Vocab): boolean {
-  return vocab.client !== "Folder";
-}

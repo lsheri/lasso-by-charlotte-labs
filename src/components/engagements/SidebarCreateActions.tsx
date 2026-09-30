@@ -1,3 +1,4 @@
+import { clientsEnabled } from "@/lib/workspace-settings";
 import { useState } from "react";
 
 import { createContainer } from "@/components/engagements/create-container";
@@ -5,7 +6,7 @@ import { GraphiteIcon } from "@/components/notebook/icons";
 import { Input } from "@/components/ui/input";
 import { useInvalidateClients } from "@/hooks/use-clients";
 import { useProfile } from "@/hooks/use-profile";
-import { splitsByKind, vocabFor } from "@/lib/edu-vocab";
+import { vocabFor } from "@/lib/edu-vocab";
 import { canManageMembers } from "@/lib/role-access";
 
 /**
@@ -76,7 +77,7 @@ export function SidebarCreateActions({ empty }: { empty: boolean }) {
 
   return (
     <>
-      {splitsByKind(vocab) && canManageMembers(profile) ? (
+      {clientsEnabled(profile) && canManageMembers(profile) ? (
         <button type="button" className="nb-nav-item w-full text-left" onClick={() => setCreating("client")}>
           <GraphiteIcon name="plus" size={20} />
           <span>{`New ${vocab.client.toLowerCase()}`}</span>

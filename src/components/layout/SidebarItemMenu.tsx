@@ -1,3 +1,4 @@
+import { clientsEnabled } from "@/lib/workspace-settings";
 import { MoreHorizontal } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 import { toast } from "sonner";
@@ -43,7 +44,7 @@ import {
   liftedCount,
   moveDestinationGroups,
 } from "@/lib/container-actions";
-import { splitsByKind, vocabFor } from "@/lib/edu-vocab";
+import { vocabFor } from "@/lib/edu-vocab";
 import { containerDepth, eligibleParents, type ContainerRow } from "@/lib/nav-groups";
 import { logEvent } from "@/lib/telemetry";
 
@@ -143,7 +144,7 @@ function MenuDialogs({
     return rows.filter((row) => row.quick_folder !== true);
   }, [rows, target]);
   const groups = useMemo(
-    () => moveDestinationGroups(destinations, vocab.clients, splitsByKind(vocab)),
+    () => moveDestinationGroups(destinations, vocab.clients, clientsEnabled(profile)),
     [destinations, vocab],
   );
 

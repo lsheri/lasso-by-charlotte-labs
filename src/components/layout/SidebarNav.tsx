@@ -1,3 +1,4 @@
+import { clientsEnabled } from "@/lib/workspace-settings";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link, useMatchRoute, useSearch } from "@tanstack/react-router";
 import { Fragment, useState, useSyncExternalStore, type ReactNode } from "react";
@@ -20,7 +21,7 @@ import { useDecisions } from "@/hooks/use-decisions";
 import { useEngagements } from "@/hooks/use-engagements";
 import { useProfile } from "@/hooks/use-profile";
 import * as roles from "@/lib/role-access";
-import { isEduOrg, splitsByKind, vocabFor } from "@/lib/edu-vocab";
+import { isEduOrg, vocabFor } from "@/lib/edu-vocab";
 import { bucket, logEvent } from "@/lib/telemetry";
 
 
@@ -367,7 +368,7 @@ export function SidebarNav({
   // Only the synthetic groupings (clientless work, quick folders) come from here.
   const { groups } = groupEngagementsByClient(engagementList);
   const containerRoots = buildContainerTree(containerRows, engagementList);
-  const split = splitsByKind(vocab);
+  const split = clientsEnabled(profile);
   const clientRoots = flattenForSidebar(
     containerRoots.filter((node) => !split || node.kind === "client"),
   );
