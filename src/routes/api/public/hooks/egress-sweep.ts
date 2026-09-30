@@ -19,7 +19,7 @@ async function handle(request: Request): Promise<Response> {
   }
 
   const { runFullSweep } = await import("@/lib/egress.server");
-  const { events, content } = await runFullSweep();
+  const { events, content, emails } = await runFullSweep();
   const { runCostsSyncIfDue } = await import("@/lib/openai-costs.server");
   const costs = await runCostsSyncIfDue();
   return Response.json({
@@ -29,6 +29,7 @@ async function handle(request: Request): Promise<Response> {
     samples_sent: content.sent,
     samples_skipped: content.skipped,
     samples_failed: content.failed,
+    emails_drained: { sent: emails.sent, failed: emails.failed, skipped: emails.skipped },
     costs: costs
       ? {
           status: costs.status,
