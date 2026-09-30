@@ -27,32 +27,6 @@ export async function notifyLiamByInkbox(
   throw new Error("Inkbox notification is not configured");
 }
 
-/** Internal notification through the published Resend template. The template supplies from and subject. */
-export async function sendPilotNotification(request: SavedPilotRequest): Promise<boolean> {
-  const { resendApiKey, sendResendTemplate } = await import("./invites.server");
-  const apiKey = resendApiKey();
-  if (!apiKey) return false;
-  const result = await sendResendTemplate(apiKey, {
-    to: PILOT_NOTIFY_TO,
-    template: "pilot-request-notify",
-    replyTo: request.email,
-    variables: {
-      NAME: request.name,
-      FIRM: request.firm,
-      // EMAIL is reserved by Resend for the recipient; the submitter goes here.
-      SUBMITTER_EMAIL: request.email,
-      TEAM_SIZE: TEAM_SIZE_LABELS[request.team_size],
-      CREATED_AT: new Date(request.created_at).toLocaleString("en-GB", {
-        dateStyle: "long",
-        timeStyle: "short",
-        timeZone: "UTC",
-      }),
-      NOTE: request.note || "None provided",
-    },
-  });
-  return result.ok;
-}
-
 export const submitPilotRequestFn = createServerFn({ method: "POST" })
   .inputValidator((input: PilotRequestInput) => pilotRequestSchema.parse(input))
   .handler(async ({ data }) => {
