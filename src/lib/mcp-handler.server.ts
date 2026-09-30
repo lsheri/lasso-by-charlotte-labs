@@ -466,6 +466,11 @@ const pushTools = (vocab: McpVocab) => [
           description:
             "Stable ID for the source thread; all pushes for the same conversation MUST reuse it. Use the source app's REAL conversation UUID when it is visible to you (it appears in the chat's URL). If you cannot see it, use any stable id, and send chat_url as well so the conversation can still be recognised later.",
         },
+        lasso_conversation_id: {
+          type: "string",
+          description:
+            "Optional. The lasso_conversation_id a previous push of this conversation returned; send it to add to that same record.",
+        },
         chat_url: CHAT_URL_FIELD,
         messages: {
           type: "array",
