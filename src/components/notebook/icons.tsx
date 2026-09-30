@@ -1,11 +1,13 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
-export type GraphiteIconName = "connectors" | "work" | "engagement" | "overview" | "reflect" | "ai-record" | "one-on-one" | "decisions" | "firm" | "members" | "settings" | "ask-lasso" | "messages" | "history" | "analyses" | "send" | "attach" | "search" | "plus" | "close" | "chevron-right" | "drag-handle" | "check" | "external-link" | "workstreams" | "preview-cards" | "sticky" | "working-from" | "text" | "grouping" | "example-board" | "share" | "fit" | "expand" | "minus" | "more";
+export type GraphiteIconName = "connectors" | "work" | "engagement" | "folder" | "workboard" | "overview" | "reflect" | "ai-record" | "one-on-one" | "decisions" | "firm" | "members" | "settings" | "ask-lasso" | "messages" | "history" | "analyses" | "send" | "attach" | "search" | "plus" | "close" | "chevron-right" | "drag-handle" | "check" | "external-link" | "workstreams" | "preview-cards" | "sticky" | "working-from" | "text" | "grouping" | "example-board" | "share" | "fit" | "expand" | "minus" | "more";
 type IconDef = { d: string[]; sig: string; sigIndex?: number; origin?: string };
 const ICONS: Record<GraphiteIconName, IconDef> = {
   connectors: { d: ["M7.2 3.8v3.3M12.8 3.7v3.5", "M4.8 7.3h10.5v2.5a5.2 5.2 0 01-5.3 5.2 5.2 5.2 0 01-5.2-5.3V7.3zM10 15.1c.1 1.2-.5 1.7-.4 3.1"], sig: "nb-sig-seat", sigIndex: 1 },
   work: { d: ["M4.4 7.2l5.6-2.9 5.6 2.9-5.6 2.8-5.6-2.8zM13.4 5.8c1.3-.6 1.7-1.4 1.2-2.3", "M4.5 10.4l5.5 2.7 5.6-2.7M4.5 13.4l5.5 2.8 5.6-2.8"], sig: "nb-sig-lift", sigIndex: 0, origin: "6px 8px" },
   engagement: { d: ["M3.3 15.5V5.1h4.3l1.5 2h5.3v2.2", "M3.4 15.5l2-6.3h11.4l-2.1 6.3H3.4z"], sig: "nb-sig-flap", sigIndex: 1, origin: "10px 15px" },
+  folder: { d: ["M3.3 15.5V5.1h4.3l1.5 2h5.3v2.2", "M3.4 15.5l2-6.3h11.4l-2.1 6.3H3.4z"], sig: "nb-sig-flap", sigIndex: 1, origin: "10px 15px" },
+  workboard: { d: ["M3.1 3.6l13.8-.3.2 10.9-14 .3-.2-10.9z", "M5.2 16.4a1.2 1.2 0 11.1-2.4 1.2 1.2 0 01-.1 2.4M14.9 16.4a1.2 1.2 0 11.1-2.4 1.2 1.2 0 01-.1 2.4", "M6 10.8l2.4-3.3 2.2 3.3 2.5-2.6"], sig: "nb-sig-scuff", sigIndex: 2 },
   overview: { d: ["M2.9 13.7h14.2M5.6 13.6h.1", "M6.6 13.6a3.5 3.5 0 016.9-.1"], sig: "nb-sig-rise", sigIndex: 1 },
   reflect: { d: ["M13.4 14.7c3.2-1.5 4.4-5.4 2.1-8-2.4-2.7-7.6-2.8-9.9.1-2 2.5-1 6 1.9 7.2", "M5.9 15.7l1.3 1.9 1.6-1.5"], sig: "nb-sig-tilt", origin: "10px 10px" },
   "ai-record": { d: ["M5 3.6h10v10.6l-3.5 3.2v-3.2H5V3.6zM7.6 7.1h4.8M7.6 10.1h3.1"], sig: "nb-sig-pop", origin: "10px 10px" },

@@ -25,8 +25,8 @@ describe("GraphiteIcon", () => {
     expect(container.querySelectorAll("path.nb-sig").length).toBe(3);
   });
 
-  it("exposes all 36 glyphs", () => {
-    expect(ICON_NAMES.length).toBe(36);
+  it("exposes all 38 glyphs", () => {
+    expect(ICON_NAMES.length).toBe(38);
   });
 });
 
