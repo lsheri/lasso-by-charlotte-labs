@@ -145,7 +145,7 @@ function MenuDialogs({
   }, [rows, target]);
   const groups = useMemo(
     () => moveDestinationGroups(destinations, vocab.clients, clientsEnabled(profile)),
-    [destinations, vocab],
+    [destinations, vocab, profile],
   );
 
   async function run(work: () => Promise<void>) {
