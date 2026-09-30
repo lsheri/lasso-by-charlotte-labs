@@ -41,7 +41,7 @@ describe("B1 workboard controls and brand identity", () => {
     for (const label of labels) expect(label.trim().length).toBeGreaterThan(3);
     expect(cardMenu).toContain('aria-label="Card options"');
     expect(styles).toMatch(/\.canvas-lab-frame-menu-trigger \{[^}]*width: 28px;[^}]*height: 28px;[^}]*opacity: 1;/s);
-    expect(styles).toMatch(/\.canvas-lab-card-menu-trigger \{[^}]*width: 28px;[^}]*height: 28px;[^}]*opacity: 1;/s);
+    expect(styles).toMatch(/\.canvas-lab-card-bar \.canvas-lab-card-menu-trigger,[^}]*\.canvas-lab-card-bar \.canvas-lab-card-open \{[^}]*width: 26px;[^}]*height: 26px;/s);
   });
 
   it("publishes the same loop mark through site and MCP identity", () => {
