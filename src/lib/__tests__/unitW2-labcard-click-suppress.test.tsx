@@ -6,6 +6,14 @@ import { LabCard } from "@/components/canvas-lab/LabCard";
 import type { LabNode } from "@/components/canvas-lab/canvas-lab-model";
 import type { WorkItemRow } from "@/lib/work-types";
 
+// jsdom has no ResizeObserver; the card measures with it, so stub it.
+class ResizeObserverStub {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+(globalThis as { ResizeObserver?: unknown }).ResizeObserver ??= ResizeObserverStub;
+
 /**
  * W2: the workboard card, rendered for real. A drag that ends on the card
  * must not open it; a stationary click, a small wobble inside the threshold,
