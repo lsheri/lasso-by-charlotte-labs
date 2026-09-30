@@ -160,7 +160,7 @@ const LIVE_KEYS_BY_FAMILY: Record<string, readonly string[]> = {
 };
 
 const LIVE_KEYS_BY_EVENT: Record<string, readonly string[]> = {
-  "container.created": ["kind", "from", "workspace_type", "depth"],
+  "container.created": ["kind", "from", "depth"],
   "engagement.updated": ["created", "brief_skipped", "has_client", "brief_files", "from", "client_inline", "quick_folder", "moved", "to_container"],
   "container.deleted": ["kind", "had_workboards", "had_folders"],
   "container.reparented": ["kind", "depth", "action"],
