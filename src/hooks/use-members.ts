@@ -42,7 +42,7 @@ export function useMemberAction(profileId: string | undefined) {
         });
       if (action.kind === "resend")
         return resendInvite({
-          data: { profile_id, code: action.code, origin: window.location.origin },
+          data: { profile_id, code: action.code },
         });
       return revokeInvite({ data: { profile_id, code: action.code } });
     },

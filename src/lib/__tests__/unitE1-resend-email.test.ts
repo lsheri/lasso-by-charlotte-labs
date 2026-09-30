@@ -12,7 +12,7 @@ import {
   type AuthEmailType,
 } from "@/routes/api/public/auth-email-hook";
 import { sendInviteEmail } from "@/lib/invites.server";
-import { sendTemplateEmail } from "@/lib/email-templates/send-email";
+import { sendPilotNotification } from "@/lib/pilot-request.functions";
 
 const RAW = Buffer.from("unit-e1-test-secret-0123456789ab").toString("base64");
 const SECRET = `v1,whsec_${RAW}`;
@@ -106,63 +106,58 @@ describe("auth email hook", () => {
 });
 
 describe("invite email transport", () => {
-  const args = { to: "p@x.com", inviterName: "Dana", acceptUrl: "https://lasso.charlotte-labs.com/join?code=a", orgName: "Acme" };
+  const args = { to: "p@x.com", inviterName: "Dana", code: "a", orgName: "Acme" };
 
-  it("uses Resend when RESEND_API_KEY is set", async () => {
+  it("sends the published template by alias when RESEND_API_KEY is set", async () => {
     vi.stubEnv("RESEND_API_KEY", "re_test");
-    vi.stubEnv("LOVABLE_API_KEY", "lov");
     const result = await sendInviteEmail(args);
     expect(result.sent).toBe(true);
     expect(fetchMock.mock.calls[0]![0]).toBe("https://api.resend.com/emails");
     const sent = JSON.parse(fetchMock.mock.calls[0]![1]!.body as string);
+    expect(sent.template.id).toBe("invite-member");
+    expect(sent.template.variables.ACCEPT_URL).toBe("https://lasso.charlotte-labs.com/join?code=a");
     expect("reply_to" in sent).toBe(false);
     expect(sendLovableEmail).not.toHaveBeenCalled();
   });
 
-  it("falls back to the platform path when RESEND_API_KEY is unset", async () => {
+  it("reports not configured when RESEND_API_KEY is unset", async () => {
     vi.stubEnv("RESEND_API_KEY", "");
-    vi.stubEnv("LOVABLE_API_KEY", "lov");
     const result = await sendInviteEmail(args);
-    expect(result.sent).toBe(true);
-    expect(sendLovableEmail).toHaveBeenCalledTimes(1);
+    expect(result).toEqual({ sent: false, reason: "not_configured", message: null });
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });
 
-describe("pilot-request sender transport", () => {
-  const templateData = {
+describe("pilot-request notification", () => {
+  const request = {
+    id: "1",
+    created_at: "2026-09-20T05:32:00Z",
     name: "Alex Morgan",
     firm: "Northwind Advisory",
     email: "alex@example.com",
-    teamSize: "6-15",
-    teamSizeLabel: "6 to 15",
-    createdAt: "20 September 2026, 05:32 UTC",
+    team_size: "6-15" as const,
+    note: "",
   };
 
-  it("uses Resend when RESEND_API_KEY is set", async () => {
+  it("sends pilot-request-notify with SUBMITTER_EMAIL and the team size label", async () => {
     vi.stubEnv("RESEND_API_KEY", "re_test");
-    vi.stubEnv("LOVABLE_API_KEY", "");
-    const result = await sendTemplateEmail("pilot-request", "liam@charlotte-labs.com", {
-      templateData,
-      replyTo: "alex@example.com",
-    });
-    expect(result.sent).toBe(true);
-    expect(fetchMock.mock.calls[0]![0]).toBe("https://api.resend.com/emails");
+    expect(await sendPilotNotification(request)).toBe(true);
     const sent = JSON.parse(fetchMock.mock.calls[0]![1]!.body as string);
-    expect(sent.from).toBe("Lasso <noreply@lasso.charlotte-labs.com>");
     expect(sent.to).toEqual(["liam@charlotte-labs.com"]);
     expect(sent.reply_to).toBe("alex@example.com");
-    expect(sendLovableEmail).not.toHaveBeenCalled();
+    expect(sent.template.id).toBe("pilot-request-notify");
+    const v = sent.template.variables;
+    expect(v.SUBMITTER_EMAIL).toBe("alex@example.com");
+    expect(v.TEAM_SIZE).toBe("6 to 15");
+    for (const reserved of ["EMAIL", "FIRST_NAME", "LAST_NAME", "RESEND_UNSUBSCRIBE_URL"]) {
+      expect(reserved in v).toBe(false);
+    }
+    expect(Object.keys(v).sort()).toEqual(["CREATED_AT", "FIRM", "NAME", "NOTE", "SUBMITTER_EMAIL", "TEAM_SIZE"]);
   });
 
-  it("falls back to the current path when RESEND_API_KEY is unset", async () => {
+  it("does not send without RESEND_API_KEY", async () => {
     vi.stubEnv("RESEND_API_KEY", "");
-    vi.stubEnv("LOVABLE_API_KEY", "lov");
-    const result = await sendTemplateEmail("pilot-request", "liam@charlotte-labs.com", {
-      templateData,
-    });
-    expect(result.sent).toBe(true);
-    expect(sendLovableEmail).toHaveBeenCalledTimes(1);
+    expect(await sendPilotNotification(request)).toBe(false);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });

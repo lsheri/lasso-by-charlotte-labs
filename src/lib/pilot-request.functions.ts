@@ -21,7 +21,9 @@ const TEAM_SIZE_LABELS: Record<PilotRequestInput["team_size"], string> = {
   "40+": "40+",
 };
 
-type SavedPilotRequest = PilotRequestInput & { id: string; created_at: string };
+export const PILOT_NOTIFY_TO = "liam@charlotte-labs.com";
+
+export type SavedPilotRequest = PilotRequestInput & { id: string; created_at: string };
 
 export async function notifyLiamByInkbox(
   request: SavedPilotRequest,
@@ -32,6 +34,32 @@ export async function notifyLiamByInkbox(
   // TODO: INKBOX_API_KEY is pending. Implement after Inkbox confirms its REST endpoint and request contract.
   void request;
   throw new Error("Inkbox notification is not configured");
+}
+
+/** Internal notification through the published Resend template. The template supplies from and subject. */
+export async function sendPilotNotification(request: SavedPilotRequest): Promise<boolean> {
+  const { resendApiKey, sendResendTemplate } = await import("./invites.server");
+  const apiKey = resendApiKey();
+  if (!apiKey) return false;
+  const result = await sendResendTemplate(apiKey, {
+    to: PILOT_NOTIFY_TO,
+    template: "pilot-request-notify",
+    replyTo: request.email,
+    variables: {
+      NAME: request.name,
+      FIRM: request.firm,
+      // EMAIL is reserved by Resend for the recipient; the submitter goes here.
+      SUBMITTER_EMAIL: request.email,
+      TEAM_SIZE: TEAM_SIZE_LABELS[request.team_size],
+      CREATED_AT: new Date(request.created_at).toLocaleString("en-GB", {
+        dateStyle: "long",
+        timeStyle: "short",
+        timeZone: "UTC",
+      }),
+      NOTE: request.note || "None provided",
+    },
+  });
+  return result.ok;
 }
 
 export const submitPilotRequestFn = createServerFn({ method: "POST" })
@@ -59,25 +87,7 @@ export const submitPilotRequestFn = createServerFn({ method: "POST" })
     const saved: SavedPilotRequest = { ...data, id: row.id, created_at: row.created_at };
     let emailStatus: "sent" | "failed" = "failed";
     try {
-      const { sendTemplateEmail } = await import("./email-templates/send-email");
-      const result = await sendTemplateEmail("pilot-request", "liam@charlotte-labs.com", {
-        replyTo: data.email,
-        idempotencyKey: `pilot-request-${row.id}`,
-        templateData: {
-          name: data.name,
-          firm: data.firm,
-          email: data.email,
-          teamSize: data.team_size,
-          teamSizeLabel: TEAM_SIZE_LABELS[data.team_size],
-          note: data.note,
-          createdAt: new Date(row.created_at).toLocaleString("en-GB", {
-            dateStyle: "long",
-            timeStyle: "short",
-            timeZone: "UTC",
-          }),
-        },
-      });
-      emailStatus = result.sent ? "sent" : "failed";
+      emailStatus = (await sendPilotNotification(saved)) ? "sent" : "failed";
     } catch {
       emailStatus = "failed";
     }

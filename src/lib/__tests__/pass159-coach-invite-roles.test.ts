@@ -1,12 +1,26 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { inviteEmailVariant, joinNames, renderInviteEmail } from "../invite-email";
+import { coachScopeLine, inviteEmailVariant, joinNames } from "../invites-shared";
+import { sendInviteEmail } from "../invites.server";
 import { canManageMembers, canSeeFirmView, isCoach, membersLabel } from "../role-access";
 
 const BANNED =
   /(telemetry|analytics|data collection|scor(e|ed|ing)|monitor|track|oversight|surveillance|—)/i;
 
-const base = { inviterName: "Dana", orgName: "Northline", acceptUrl: "https://x.test/join?code=a" };
+const base = { to: "p@x.test", inviterName: "Dana", orgName: "Northline", code: "a" };
+
+async function sent(extra: Record<string, unknown>) {
+  const fetchMock = vi.fn(async () => new Response(JSON.stringify({ id: "re_1" }), { status: 200 }));
+  vi.stubGlobal("fetch", fetchMock);
+  vi.stubEnv("RESEND_API_KEY", "re_test");
+  await sendInviteEmail({ ...base, ...extra });
+  return JSON.parse((fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body as string);
+}
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
+});
 
 describe("invite variants", () => {
   it("chooses by role and org type", () => {
@@ -23,48 +37,37 @@ describe("invite variants", () => {
     expect(joinNames(["Ada", "Bo", "Cy"])).toBe("Ada, Bo and Cy");
   });
 
-  it("keeps the non-coach email byte identical to the version without new fields", () => {
-    const before = renderInviteEmail(base);
-    const after = renderInviteEmail({ ...base, role: "em", orgType: "business" });
-    expect(after).toEqual(before);
-    expect(before.subject).toBe("You are invited to Northline");
-    expect(before.text).toContain("Accept your invite");
-  });
-
-  it("never renders the generic body for a coach", () => {
-    const personal = renderInviteEmail({ ...base, role: "coach", orgType: "personal" });
-    const business = renderInviteEmail({
-      ...base,
-      role: "coach",
-      orgType: "business",
-      subjectNames: ["Ada", "Bo"],
+  it("sends the member template with inviter, org and a server-built link", async () => {
+    const body = await sent({ role: "em", orgType: "business" });
+    expect(body.template.id).toBe("invite-member");
+    expect(body.template.variables).toEqual({
+      INVITER_NAME: "Dana",
+      ORG_NAME: "Northline",
+      ACCEPT_URL: "https://lasso.charlotte-labs.com/join?code=a",
     });
-    for (const mail of [personal, business]) {
-      expect(mail.text).not.toContain("invited you to join Northline on Lasso");
-      expect(mail.html).not.toContain("Accept your invite<");
-      expect(BANNED.test(mail.text)).toBe(false);
-    }
-    expect(personal.subject).toBe("Dana asked you to coach their work");
-    expect(personal.text).toContain("Accept and take a look");
-    expect(business.subject).toBe("You are invited to coach at Northline");
-    expect(business.text).toContain("Ada and Bo");
-    expect(business.text).toContain("Accept and start coaching");
+    expect("subject" in body).toBe(false);
+    expect("from" in body).toBe(false);
   });
 
-  it("never puts subject names in the subject line", () => {
-    const mail = renderInviteEmail({
-      ...base,
-      role: "coach",
-      orgType: "business",
-      subjectNames: ["Ada", "Bo"],
-    });
-    expect(mail.subject).not.toContain("Ada");
-    expect(mail.subject).not.toContain("Bo");
+  it("sends the personal coach template without an org name", async () => {
+    const body = await sent({ role: "coach", orgType: "personal" });
+    expect(body.template.id).toBe("invite-coach-personal");
+    expect(Object.keys(body.template.variables).sort()).toEqual(["ACCEPT_URL", "INVITER_NAME"]);
   });
 
-  it("falls back to the generic sentence with no subject names", () => {
-    const mail = renderInviteEmail({ ...base, role: "coach", orgType: "business" });
-    expect(mail.text).toContain("the people you were added to, and nothing else in the workspace");
+  it("sends the business coach template with a whole scope sentence", async () => {
+    const body = await sent({ role: "coach", orgType: "business", subjectNames: ["Ada", "Bo"] });
+    expect(body.template.id).toBe("invite-coach-firm");
+    expect(body.template.variables.COACH_SCOPE_LINE).toBe(
+      "You will see the work of the people you were added to: Ada and Bo. Nothing else in the workspace is visible to you.",
+    );
+    expect(BANNED.test(body.template.variables.COACH_SCOPE_LINE)).toBe(false);
+  });
+
+  it("omits the scope line with no subject names so the template falls back", async () => {
+    const body = await sent({ role: "coach", orgType: "business" });
+    expect("COACH_SCOPE_LINE" in body.template.variables).toBe(false);
+    expect(coachScopeLine([])).toBeNull();
   });
 });
 

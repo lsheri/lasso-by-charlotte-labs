@@ -57,13 +57,11 @@ type Input = {
   profile_id?: string | undefined;
   code: string;
   email: string;
-  accept_url: string;
 };
 
 function validate(input: Input): Input {
   if (!input?.code) throw new Error("Missing invite code.");
   if (!input.email || !input.email.includes("@")) throw new Error("Enter a valid email address.");
-  if (!/^https?:\/\//.test(input.accept_url ?? "")) throw new Error("Missing invite link.");
   return input;
 }
 
@@ -91,13 +89,13 @@ export const sendInviteEmail = createServerFn({ method: "POST" })
       ((org?.settings ?? {}) as Record<string, unknown>)["type"] === "company"
         ? ("business" as const)
         : ("personal" as const);
-    const { inviteEmailVariant } = await import("@/lib/invite-email");
+    const { inviteEmailVariant } = await import("@/lib/invites-shared");
     const variant = inviteEmailVariant(invite?.invited_role ?? null, orgType);
 
     const result = await sendInvite({
       to: data.email.trim(),
       inviterName: me?.display_name || "Someone at your firm",
-      acceptUrl: data.accept_url,
+      code: data.code,
       orgName: org?.name ?? undefined,
       role: invite?.invited_role ?? null,
       orgType,
