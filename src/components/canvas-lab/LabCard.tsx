@@ -7,6 +7,14 @@ import { ReferenceFileCard, referenceMatchLine } from "@/components/canvas-lab/R
 import { GraphiteIcon } from "@/components/notebook/icons";
 import { WorkNote } from "@/components/work/WorkNote";
 import { isReferenceItem } from "@/lib/reference-file-shared";
+import {
+  beginClickGesture,
+  cancelClickGesture,
+  endClickGesture,
+  movedBeyondClick,
+  swallowClickIfDrag,
+  type ClickSuppress,
+} from "@/lib/canvas-drag";
 import { cardSizeTier, type LabAnchor, type LabNode, type LabResizeCorner } from "@/components/canvas-lab/canvas-lab-model";
 import type { WorkItemRow } from "@/lib/work-types";
 import type { WorkboardCardPreview, WorkboardFilePreview } from "@/lib/workboard-card-preview.shared";
@@ -111,6 +119,7 @@ export function LabCard({
   const anchorDownRef = useRef<{ x: number; y: number } | null>(null);
   const cardDownRef = useRef<{ x: number; y: number } | null>(null);
   const lastClickMovedRef = useRef(false);
+  const suppressClickRef: ClickSuppress = useRef(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
   useLayoutEffect(() => {
@@ -141,6 +150,7 @@ export function LabCard({
   }
 
   function handleCardPointerDown(event: React.PointerEvent) {
+    beginClickGesture(suppressClickRef);
     cardDownRef.current = { x: event.clientX, y: event.clientY };
     lastClickMovedRef.current = false;
     onPointerDown(event);
@@ -149,7 +159,22 @@ export function LabCard({
   function handleCardPointerUp(event: React.PointerEvent) {
     const down = cardDownRef.current;
     cardDownRef.current = null;
-    if (down && Math.hypot(event.clientX - down.x, event.clientY - down.y) > 4) lastClickMovedRef.current = true;
+    if (!down) return;
+    const up = { x: event.clientX, y: event.clientY };
+    endClickGesture(suppressClickRef, down, up);
+    if (movedBeyondClick(down, up)) lastClickMovedRef.current = true;
+  }
+
+  function handleCardPointerCancel() {
+    cardDownRef.current = null;
+    cancelClickGesture(suppressClickRef);
+  }
+
+  /** A drag that ends on the card must not open it; swallow that click once. */
+  function handleClickCapture(event: React.MouseEvent) {
+    if (!swallowClickIfDrag(suppressClickRef)) return;
+    event.preventDefault();
+    event.stopPropagation();
   }
 
   /** A deliverable opens its trail on a clean double-click; a drag never does. */
@@ -176,6 +201,8 @@ export function LabCard({
       data-read-only={readOnly}
       onPointerDown={readOnly ? undefined : handleCardPointerDown}
       onPointerUp={readOnly ? undefined : handleCardPointerUp}
+      onPointerCancel={readOnly ? undefined : handleCardPointerCancel}
+      onClickCapture={readOnly ? undefined : handleClickCapture}
       onDoubleClick={readOnly ? undefined : handleDoubleClick}
       onFocus={readOnly ? undefined : onFocus}
       onContextMenu={openMenu}
