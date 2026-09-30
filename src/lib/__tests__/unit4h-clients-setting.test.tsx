@@ -7,7 +7,7 @@ describe("unit 4h clientsEnabled", () => {
   it("is true only for an explicit true", () => {
     expect(clientsEnabled({ clients_enabled: true })).toBe(true);
     expect(clientsEnabled({ clients_enabled: false })).toBe(false);
-    expect(clientsEnabled({ clients_enabled: undefined } as { clients_enabled?: boolean })).toBe(false);
+    expect(clientsEnabled({ clients_enabled: undefined } as unknown as { clients_enabled?: boolean })).toBe(false);
     expect(clientsEnabled(null)).toBe(false);
     expect(clientsEnabled(undefined)).toBe(false);
     expect(clientsEnabled({})).toBe(false);
