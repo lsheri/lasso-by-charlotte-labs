@@ -15,6 +15,12 @@ const mocks = vi.hoisted(() => ({
   moveWorkboard: vi.fn(),
   reparentClient: vi.fn(),
   clientsEnabled: true,
+  // Stable references: a fresh object per render would recompute the memo
+  // regardless of its dependency array, and the test would catch nothing.
+  clientRows: [
+    { id: "c1", name: "ABC Co", kind: "client", parent_id: null, quick_folder: false },
+    { id: "f1", name: "Folder One", kind: "folder", parent_id: "c1", quick_folder: false },
+  ],
 }));
 
 vi.mock("@/lib/telemetry", () => ({ logEvent: mocks.logEvent }));
@@ -23,12 +29,7 @@ vi.mock("@/hooks/use-profile", () => ({
   useProfile: () => ({ data: { id: "p1", org_id: "o1", org_type: "partner", role: "worker", clients_enabled: mocks.clientsEnabled } }),
 }));
 vi.mock("@/hooks/use-clients", () => ({
-  useClients: () => ({
-    data: [
-      { id: "c1", name: "ABC Co", kind: "client", parent_id: null, quick_folder: false },
-      { id: "f1", name: "Folder One", kind: "folder", parent_id: "c1", quick_folder: false },
-    ],
-  }),
+  useClients: () => ({ data: mocks.clientRows }),
   useInvalidateClients: () => () => {},
   renameClient: vi.fn(),
   reparentClient: mocks.reparentClient,
