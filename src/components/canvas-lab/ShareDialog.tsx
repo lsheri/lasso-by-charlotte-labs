@@ -42,7 +42,7 @@ export function ShareDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button size="icon" variant="outline" aria-label="Share" title="Share" data-toolbar-control="share">
-          <GraphiteIcon name="share" animate={false} />
+          <GraphiteIcon name="share" size={20} />
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-lg overflow-hidden">
