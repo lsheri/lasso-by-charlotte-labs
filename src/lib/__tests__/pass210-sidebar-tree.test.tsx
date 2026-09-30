@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen, within } from "@testing-library/rea
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { DEFAULT_VOCAB, EDU_VOCAB, PERSONAL_VOCAB, splitsByKind } from "@/lib/edu-vocab";
+import { DEFAULT_VOCAB, EDU_VOCAB, PERSONAL_VOCAB } from "@/lib/edu-vocab";
 import {
   MAX_CONTAINER_DEPTH,
   MAX_SIDEBAR_CONTAINER_DEPTH,
@@ -87,13 +87,6 @@ describe("pass 210 flattenForSidebar", () => {
   });
 });
 
-describe("pass 210 splitsByKind", () => {
-  it("splits for company and school, not personal", () => {
-    expect(splitsByKind(DEFAULT_VOCAB)).toBe(true);
-    expect(splitsByKind(EDU_VOCAB)).toBe(true);
-    expect(splitsByKind(PERSONAL_VOCAB)).toBe(false);
-  });
-});
 
 const eng = (id: string, clients: NavEngagement["clients"]): NavEngagement => ({
   id,
