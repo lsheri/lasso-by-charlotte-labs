@@ -57,7 +57,6 @@ export function ClientPicker({
     try {
       const clientId = await createContainer({
         orgId,
-        orgType: profile?.org_type,
         name: name.trim(),
         kind: creating,
         parentId: creating === "folder" ? (picked?.id ?? null) : null,

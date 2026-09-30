@@ -1288,14 +1288,14 @@ async function pushOptions(owner: Owner, args: Obj, id: unknown): Promise<Respon
 async function noteCreated(
   owner: Owner,
   entity: "container" | "board",
-  type: McpWorkspaceType,
   outcome: "created" | "existing",
 ): Promise<void> {
   await recordEvent(supabaseAdmin, {
     eventType: "mcp.container_created",
     orgId: owner.orgId,
     userId: owner.userId,
-    dims: { entity, workspace_type: type, outcome },
+    // workspace_type is the events column, not a dim.
+    dims: { entity, outcome },
   });
 }
 
@@ -1317,7 +1317,7 @@ async function createContainer(
   if (error) return rpcError(id, -32603, error.message);
   const result = (data ?? {}) as ContainerResult;
   if (result.status === "created" || result.status === "existing") {
-    await noteCreated(owner, "container", type, result.status);
+    await noteCreated(owner, "container", result.status);
   }
   return textResult(id, renderContainerResult(vocab, result));
 }
@@ -1371,7 +1371,7 @@ async function createBoard(
   if (error) return rpcError(id, -32603, error.message);
   const result = (data ?? {}) as BoardResult;
   if (result.status === "created" || result.status === "existing") {
-    await noteCreated(owner, "board", type, result.status);
+    await noteCreated(owner, "board", result.status);
   }
   return textResult(id, renderBoardResult(vocab, result, match.name));
 }

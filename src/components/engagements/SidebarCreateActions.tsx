@@ -29,7 +29,6 @@ export function SidebarCreateActions({ empty }: { empty: boolean }) {
     try {
       const id = await createContainer({
         orgId: profile.org_id,
-        orgType: profile.org_type,
         name: name.trim(),
         kind: creating,
         parentId: null,
