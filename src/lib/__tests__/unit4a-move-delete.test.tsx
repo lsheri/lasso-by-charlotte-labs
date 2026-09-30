@@ -215,7 +215,7 @@ describe("unit 4a keyboard path and events", () => {
   // never catch a stale dependency array.
   it("drops the Clients heading on the same mount when clients are turned off", async () => {
     mocks.clientsEnabled = true;
-    const view = render(<Harness target={{ type: "workboard", id: "e1", name: "Board", clientId: null }} />);
+    const view = render(<Harness target={boardTarget} />);
     const trigger = screen.getByRole("button", { name: "More actions for Board" });
     trigger.focus();
     fireEvent.keyDown(trigger, { key: "Enter" });
@@ -226,7 +226,7 @@ describe("unit 4a keyboard path and events", () => {
 
     mocks.clientsEnabled = false;
     // Re-render the same mounted tree; no unmount, no remount.
-    view.rerender(<Harness target={{ type: "workboard", id: "e1", name: "Board", clientId: null }} />);
+    view.rerender(<Harness target={boardTarget} />);
     await waitFor(() => expect(labels()).toEqual(["Folders"]));
   });
 });
