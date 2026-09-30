@@ -2049,6 +2049,27 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .nb-nav-indent {
   color: var(--nb-pencil);
 }
+.nb-tree-branch {
+  position: relative;
+  margin-left: 15px;
+  border-left: 1px solid var(--nb-pencil);
+}
+.nb-tree-child {
+  position: relative;
+}
+.nb-tree-branch > .nb-tree-child::before {
+  position: absolute;
+  top: 13px;
+  left: 0;
+  width: 8px;
+  border-top: 1px solid var(--nb-pencil);
+  content: "";
+  pointer-events: none;
+}
+.nb-tree-branch > .nb-tree-child > .nb-nav-item,
+.nb-tree-branch > .nb-tree-child > div > .nb-nav-item {
+  padding-left: 11px;
+}
 .nb-nav-item-active .nb-nav-indent {
   color: var(--nb-green);
 }

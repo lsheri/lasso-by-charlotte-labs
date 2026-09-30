@@ -112,12 +112,14 @@ function useCanEditContainers(): boolean {
 function EngagementRow({
   engagement,
   nested,
+  treeDepth,
   hideCode,
   onNavigate,
   scope,
 }: {
   engagement: NavEngagement;
   nested?: boolean;
+  treeDepth?: number;
   /** Inside the Unmapped shelf the shelf already says it; the code adds nothing. */
   hideCode?: boolean;
   onNavigate?: (() => void) | undefined;
@@ -132,7 +134,8 @@ function EngagementRow({
         params={{ id: engagement.id }}
         search={{ work: undefined }}
         onClick={onNavigate}
-        className={nested ? `${linkClass} nb-nav-item-nested` : linkClass}
+        className={treeDepth === undefined && nested ? `${linkClass} nb-nav-item-nested` : linkClass}
+        data-tree-depth={treeDepth}
         activeProps={activeProps}
         activeOptions={{ includeSearch: false }}
       >
@@ -689,35 +692,28 @@ function FolderRows({
   newEngagementLabel: string;
   scopeFor: (id: string) => { tasks: CachedNavTask[]; workId: string | undefined } | undefined;
 }) {
-  // A collapsed folder hides its descendants as well as its own work.
-  const hidden = new Set<string>();
-  const hideBelow = (node: ContainerNode<NavEngagement>) => {
-    for (const child of node.children) {
-      hidden.add(child.clientId);
-      hideBelow(child);
-    }
-  };
-  for (const { node } of rows) if (collapsedIds.includes(node.clientId)) hideBelow(node);
-  return rows.map(({ node, depth }) =>
-    hidden.has(node.clientId) ? null : (
+  // The flat list identifies the visible roots. Descendants render from each
+  // node so one branch wrapper can draw a continuous guide for that level.
+  return rows
+    .filter(({ depth }) => depth === 0)
+    .map(({ node }) => (
       <ContainerShelfRow
         key={node.clientId}
         node={node}
-        depth={depth}
-        collapsed={collapsedIds.includes(node.clientId)}
+        depth={0}
+        collapsedIds={collapsedIds}
         onToggle={onToggle}
         onNavigate={onNavigate}
         newEngagementLabel={newEngagementLabel}
         scopeFor={scopeFor}
       />
-    ),
-  );
+    ));
 }
 
 function ContainerShelfRow({
   node,
   depth,
-  collapsed,
+  collapsedIds,
   onToggle,
   onNavigate,
   newEngagementLabel,
@@ -725,7 +721,7 @@ function ContainerShelfRow({
 }: {
   node: ContainerNode<NavEngagement>;
   depth: number;
-  collapsed: boolean;
+  collapsedIds: string[];
   onToggle: (id: string) => void;
   onNavigate?: (() => void) | undefined;
   newEngagementLabel: string;
@@ -733,10 +729,13 @@ function ContainerShelfRow({
 }) {
   const canEdit = useCanEditContainers();
   const [menuOpen, setMenuOpen] = useState(false);
+  const collapsed = collapsedIds.includes(node.clientId);
+  const hasChildren = node.engagements.length > 0 || node.children.length > 0;
         return (
-          <div key={node.clientId}>
+          <div key={node.clientId} className="nb-tree-child" data-tree-node={node.clientId}>
             <div
               className={`${linkClass} nb-nav-shelf group/shelf w-full text-left`}
+              data-tree-depth={depth}
               onContextMenu={
                 canEdit
                   ? (event) => {
@@ -746,14 +745,7 @@ function ContainerShelfRow({
                   : undefined
               }
             >
-              {depth > 0 ? (
-                <>
-                  <PencilIndent />
-                  <GraphiteIcon name="engagement" size={16} />
-                </>
-              ) : (
-                <GraphiteIcon name="engagement" size={20} />
-              )}
+              <GraphiteIcon name="engagement" size={20} />
               <Link
                 to="/clients/$id"
                 params={{ id: node.clientId }}
@@ -801,19 +793,34 @@ function ContainerShelfRow({
               </button>
             </div>
             {!collapsed && node.engagements.length === 0 && node.children.length === 0 ? (
-              <p className="px-2 py-1 pl-10 text-sm italic text-muted-foreground">Nothing in here yet</p>
+              <p className="px-2 py-1 pl-10 text-sm italic text-muted-foreground" data-tree-depth={depth + 1}>Nothing in here yet</p>
             ) : null}
-            {collapsed
-              ? null
-              : node.engagements.map((engagement) => (
+            {collapsed || !hasChildren ? null : (
+              <div className="nb-tree-branch">
+                {node.engagements.map((engagement) => (
+                  <div key={engagement.id} className="nb-tree-child" data-tree-depth={depth + 1}>
                   <EngagementRow
-                    key={engagement.id}
                     engagement={engagement}
-                    nested
+                    treeDepth={depth + 1}
                     onNavigate={onNavigate}
                     scope={scopeFor(engagement.id)}
                   />
+                  </div>
                 ))}
+                {node.children.map((child) => (
+                  <ContainerShelfRow
+                    key={child.clientId}
+                    node={child}
+                    depth={depth + 1}
+                    collapsedIds={collapsedIds}
+                    onToggle={onToggle}
+                    onNavigate={onNavigate}
+                    newEngagementLabel={newEngagementLabel}
+                    scopeFor={scopeFor}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         );
 }
