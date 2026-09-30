@@ -234,7 +234,28 @@ export type ParsedAttachment = {
   fileRef?: FileRef;
   origin: "made_in_chat" | "seen_in_chat";
   include: boolean;
+  /** ID-2: the 1-indexed message position the caller says produced it, never guessed. */
+  producedAtTurn?: number;
 };
+
+/** ID-2: the produced_at_turn position a caller named, if a positive integer. */
+function namedTurnPosition(a: Record<string, unknown>): number | undefined {
+  const meta = a["source_meta"];
+  const raw =
+    a["produced_at_turn"] ??
+    (meta && typeof meta === "object" && !Array.isArray(meta)
+      ? (meta as Record<string, unknown>)["produced_at_turn"]
+      : undefined);
+  return typeof raw === "number" && Number.isInteger(raw) && raw >= 1 ? raw : undefined;
+}
+
+/** ID-2: turn-linked attachment counts, bucketed. */
+export function turnLinkedBucket(n: number): "0" | "1" | "2-5" | "6+" {
+  if (n <= 0) return "0";
+  if (n === 1) return "1";
+  if (n <= 5) return "2-5";
+  return "6+";
+}
 
 const TEXT_EXTENSIONS = new Set([
   "html", "htm", "svg", "md", "markdown", "mmd", "csv", "tsv", "txt", "json",
@@ -265,6 +286,8 @@ export function parseIncomingAttachment(
   const origin: "made_in_chat" | "seen_in_chat" =
     a["origin"] === "seen_in_chat" ? "seen_in_chat" : "made_in_chat";
   const include = a["include"] === true;
+  const turnPos = namedTurnPosition(a);
+  const produced = turnPos ? { producedAtTurn: turnPos } : {};
   if (kind === "file_ref") {
     if (a["content"] !== undefined && a["content"] !== null && a["content"] !== "") {
       return { ok: false, message: "file_ref carries no content; send filename and sha256 in file_ref" };
@@ -288,12 +311,12 @@ export function parseIncomingAttachment(
       ...(sha ? { sha256: sha } : {}),
       ...(url ? { download_url: url } : {}),
     };
-    return { ok: true, attachment: { kind, title, content: "", sourceArtifactId, fileRef, origin, include, ...language } };
+    return { ok: true, attachment: { kind, title, content: "", sourceArtifactId, fileRef, origin, include, ...language, ...produced } };
   }
   if (typeof a["content"] !== "string") {
     return { ok: false, message: "Each attachment needs kind, verbatim title, and content" };
   }
-  return { ok: true, attachment: { kind, title, content: a["content"], sourceArtifactId, origin, include, ...language } };
+  return { ok: true, attachment: { kind, title, content: a["content"], sourceArtifactId, origin, include, ...language, ...produced } };
 }
 
 /** P1b item 1. The note when this push created file placeholders. */
