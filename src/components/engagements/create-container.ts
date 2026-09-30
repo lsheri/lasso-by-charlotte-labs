@@ -26,7 +26,6 @@ export function depthFor(parentId: string | null, rows: ClientRow[]): number {
  */
 export async function createContainer(input: {
   orgId: string;
-  orgType: string | null | undefined;
   name: string;
   kind: "client" | "folder";
   parentId: string | null;
@@ -42,10 +41,10 @@ export async function createContainer(input: {
       parentId,
     });
     // One event per container. "empty_state" is sent as its own from value.
+    // workspace_type is the events column, not a dim.
     logEvent("container.created", input.orgId, {
       kind: input.kind,
       from: input.from,
-      workspace_type: input.orgType ?? "company",
       depth: String(depthFor(parentId, input.rows)),
     });
     return id;

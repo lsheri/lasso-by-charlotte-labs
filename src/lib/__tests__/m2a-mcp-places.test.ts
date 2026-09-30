@@ -203,7 +203,7 @@ describe("M2a — the handler's own wiring", () => {
     expect(handler).toContain('eventType: "mcp.push_options_requested"');
     expect(handler).toContain('eventType: "mcp.container_created"');
     expect(handler).toContain('dims: { has_suggestion: suggested ? "true" : "false" }');
-    expect(handler).toContain("dims: { entity, workspace_type: type, outcome }");
+    expect(handler).toContain("dims: { entity, outcome }");
   });
 
   it("offers the create pair for the token's workspace only", () => {
