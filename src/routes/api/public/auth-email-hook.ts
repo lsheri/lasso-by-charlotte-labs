@@ -1,21 +1,8 @@
-import * as React from "react";
-import { render } from "@react-email/render";
 import { createFileRoute } from "@tanstack/react-router";
 import { Webhook } from "standardwebhooks";
 
-import { SignupEmail } from "@/lib/email-templates/signup";
-import { InviteEmail } from "@/lib/email-templates/invite";
-import { MagicLinkEmail } from "@/lib/email-templates/magic-link";
-import { RecoveryEmail } from "@/lib/email-templates/recovery";
-import { EmailChangeEmail } from "@/lib/email-templates/email-change";
-import { ReauthenticationEmail } from "@/lib/email-templates/reauthentication";
-
-// Supabase Auth "Send Email Hook" receiver, prepared for the move off the
-// managed email path. Subjects match src/routes/lovable/email/auth/webhook.ts.
-
-const SITE_NAME = "Lasso";
-const SITE_URL = "https://lasso.charlotte-labs.com";
-const DEFAULT_FROM = "Lasso <noreply@lasso.charlotte-labs.com>";
+// Supabase Auth "Send Email Hook" receiver. Each action type sends a published
+// Resend template by alias; the template supplies subject and from.
 
 export type AuthEmailType =
   | "signup"
@@ -25,13 +12,13 @@ export type AuthEmailType =
   | "email_change"
   | "reauthentication";
 
-export const AUTH_EMAIL_SUBJECTS: Record<AuthEmailType, string> = {
-  signup: "Confirm your email",
-  invite: "You are invited",
-  magiclink: "Your sign in link",
-  recovery: "Reset your password",
-  email_change: "Confirm your new email",
-  reauthentication: "Your verification code",
+export const AUTH_EMAIL_ALIASES: Record<AuthEmailType, string> = {
+  signup: "auth-signup",
+  invite: "auth-invite",
+  magiclink: "auth-magiclink",
+  recovery: "auth-recovery",
+  email_change: "auth-email-change",
+  reauthentication: "auth-reauthentication",
 };
 
 export type HookPayload = {
@@ -47,7 +34,8 @@ export type HookPayload = {
   };
 };
 
-type Outgoing = { to: string; subject: string; element: React.ReactElement };
+// Never EMAIL, FIRST_NAME, LAST_NAME or RESEND_UNSUBSCRIBE_URL: Resend reserves them.
+export type Outgoing = { to: string; template: string; variables: Record<string, string> };
 
 function verifyUrl(tokenHash: string, type: string, redirectTo: string | undefined): string {
   const base = process.env["SUPABASE_URL"] ?? "";
@@ -60,30 +48,28 @@ function verifyUrl(tokenHash: string, type: string, redirectTo: string | undefin
 export function buildAuthEmails(payload: HookPayload): Outgoing[] {
   const d = payload.email_data;
   const type = d.email_action_type as AuthEmailType;
-  const subject = AUTH_EMAIL_SUBJECTS[type];
-  if (!subject) return [];
+  const template = AUTH_EMAIL_ALIASES[type];
+  if (!template) return [];
   const email = payload.user.email;
   const url = verifyUrl(d.token_hash ?? "", type, d.redirect_to);
   switch (type) {
     case "signup":
-      return [{ to: email, subject, element: React.createElement(SignupEmail, { siteName: SITE_NAME, siteUrl: SITE_URL, recipient: email, confirmationUrl: url }) }];
-    case "invite":
-      return [{ to: email, subject, element: React.createElement(InviteEmail, { siteName: SITE_NAME, siteUrl: SITE_URL, confirmationUrl: url }) }];
     case "magiclink":
-      return [{ to: email, subject, element: React.createElement(MagicLinkEmail, { siteName: SITE_NAME, confirmationUrl: url }) }];
     case "recovery":
-      return [{ to: email, subject, element: React.createElement(RecoveryEmail, { siteName: SITE_NAME, confirmationUrl: url }) }];
+    // ORG_NAME is optional on auth-invite; nothing supplies it, so it is omitted.
+    case "invite":
+      return [{ to: email, template, variables: { CONFIRMATION_URL: url } }];
     case "reauthentication":
-      return [{ to: email, subject, element: React.createElement(ReauthenticationEmail, { token: d.token ?? "" }) }];
+      return [{ to: email, template, variables: { TOKEN: d.token ?? "" } }];
     case "email_change": {
       const newEmail = payload.user.new_email ?? "";
-      const make = (to: string, link: string) => ({
+      const make = (to: string, link: string): Outgoing => ({
         to,
-        subject,
-        element: React.createElement(EmailChangeEmail, { siteName: SITE_NAME, oldEmail: email, email: to, newEmail, confirmationUrl: link }),
+        template,
+        variables: { CONFIRMATION_URL: link, OLD_EMAIL: email, NEW_EMAIL: newEmail },
       });
       // Secure change: Supabase pairs token_hash_new with the current address
-      // and token_hash with the new one.
+      // and token_hash with the new one. Two sends, never collapsed.
       if (d.token_hash_new && newEmail) {
         return [
           make(email, verifyUrl(d.token_hash_new, type, d.redirect_to)),
@@ -123,12 +109,9 @@ export async function handleAuthEmailHook(request: Request): Promise<Response> {
   if (emails.length === 0) {
     return Response.json({ error: "unknown email type" }, { status: 400 });
   }
-  const { sendViaResend } = await import("@/lib/invites.server");
-  const from = process.env["RESEND_FROM"] || DEFAULT_FROM;
+  const { sendResendTemplate } = await import("@/lib/invites.server");
   for (const mail of emails) {
-    const html = await render(mail.element);
-    const text = await render(mail.element, { plainText: true });
-    const result = await sendViaResend(apiKey, { from, to: mail.to, subject: mail.subject, html, text });
+    const result = await sendResendTemplate(apiKey, mail);
     if (!result.ok) {
       console.error(`[auth-email-hook] Resend ${result.status}: ${result.detail}`);
       return Response.json({ error: `email provider returned ${result.status}` }, { status: 502 });
