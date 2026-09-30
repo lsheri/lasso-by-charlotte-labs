@@ -16,6 +16,9 @@ export type Profile = {
   org_name: string;
   /** "company" for a firm, "edu" for a school workspace, "personal" otherwise. */
   org_type: OrgType;
+  /** Whether this workspace uses clients at all. An admin sets it; the
+   *  vocabulary does not decide it. */
+  clients_enabled: boolean;
 
   onboarding: unknown;
   /** When this profile was created. Used for banded age only, never shown. */
@@ -202,14 +205,14 @@ export async function fetchProfileState(): Promise<ProfileState> {
   const { data, error } = await supabase
     .from("profiles")
     .select(
-      "id, user_id, org_id, role, display_name, title_band, onboarding, created_at, deactivated_at, orgs(name, settings)",
+      "id, user_id, org_id, role, display_name, title_band, onboarding, created_at, deactivated_at, orgs(name, settings, clients_enabled)",
     )
     .eq("user_id", user.id)
     .order("created_at", { ascending: true });
   if (error) throw error;
-  const rows = (data ?? []) as unknown as (Omit<Profile, "org_name" | "org_type"> & {
+  const rows = (data ?? []) as unknown as (Omit<Profile, "org_name" | "org_type" | "clients_enabled"> & {
     deactivated_at: string | null;
-    orgs: { name: string; settings: Record<string, unknown> | null } | null;
+    orgs: { name: string; settings: Record<string, unknown> | null; clients_enabled?: boolean | null } | null;
   })[];
   // A deactivated profile is simply omitted, the switcher and every query
   // behave as if that workspace isn't there.
@@ -225,6 +228,8 @@ export async function fetchProfileState(): Promise<ProfileState> {
           : orgs?.settings?.["type"] === "partner"
             ? "partner"
             : "personal") as OrgType,
+      // NOT NULL in the database; a non-boolean means the row failed to load.
+      clients_enabled: orgs?.clients_enabled === true,
 
     }));
   return { profiles, hasDeactivated: rows.some((row) => row.deactivated_at) };

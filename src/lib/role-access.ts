@@ -52,3 +52,9 @@ export function hasCoachByArrangement(profile: RoleProfile): boolean {
 export function membersLabel(profile: RoleProfile): string {
   return isBusinessOrg(profile) ? "Members" : "Your coaches";
 }
+
+/** Only an admin decides whether this workspace uses clients. A lead can add a
+ *  client; deciding whether the workspace has clients at all is org shape. */
+export function canSetWorkspaceShape(profile: RoleProfile): boolean {
+  return profile?.role === "admin";
+}

@@ -11,7 +11,7 @@ import {
 } from "@/lib/nav-groups";
 
 const mocks = vi.hoisted(() => ({
-  profile: { id: "p1", org_id: "o1", org_type: "company", role: "worker" } as Record<string, unknown>,
+  profile: { id: "p1", org_id: "o1", org_type: "company", clients_enabled: true, role: "worker" } as Record<string, unknown>,
   engagements: [] as unknown[],
 }));
 
@@ -152,6 +152,7 @@ describe("pass 212 sidebar rendering", () => {
 
   it("renders a personal workspace root folder as an ordinary shelf with no Folders header", () => {
     mocks.profile["org_type"] = "personal";
+    mocks.profile["clients_enabled"] = false;
     const folder = { ...row("folder", "folder", null), name: "Field notes" };
     mocks.engagements = [eng("e1", folder)];
     render(<SidebarNav />);
@@ -159,10 +160,12 @@ describe("pass 212 sidebar rendering", () => {
     expect(screen.getByText("Title e1")).toBeTruthy();
     expect(screen.queryByText("Folders")).toBeNull();
     mocks.profile["org_type"] = "company";
+    mocks.profile["clients_enabled"] = true;
   });
 
   it("renders a company root folder exactly once, inside the Folders section", () => {
     mocks.profile["org_type"] = "company";
+    mocks.profile["clients_enabled"] = true;
     const folder = { ...row("folder", "folder", null), name: "Field notes" };
     mocks.engagements = [eng("e1", folder)];
     render(<SidebarNav />);
@@ -173,6 +176,7 @@ describe("pass 212 sidebar rendering", () => {
 
   it("renders a nested folder and a root folder once each, with the nested one outside the Folders section", () => {
     mocks.profile["org_type"] = "company";
+    mocks.profile["clients_enabled"] = true;
     const client = { ...row("client", "client", null), name: "Acme" };
     const nested = { ...row("nested", "folder", client.id), name: "Nested folder" };
     const root = { ...row("root", "folder", null), name: "Root folder" };

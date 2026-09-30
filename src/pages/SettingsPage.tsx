@@ -3,6 +3,7 @@ import { McpSection } from "@/components/settings/McpSection";
 import { DataUseCard } from "@/components/settings/DataUseCard";
 import { PersonalDataCard } from "@/components/settings/YourDataCard";
 import { NamingConventionsCard } from "@/components/settings/NamingConventionsCard";
+import { ClientsSettingCard } from "@/components/settings/ClientsSettingCard";
 import { OrgDimensionsCard } from "@/components/settings/OrgDimensionsCard";
 import { YourWorkCard } from "@/components/settings/YourWorkCard";
 import { AccountEmailCard } from "@/components/settings/AccountEmailCard";
@@ -54,6 +55,7 @@ const SECTIONS: SettingsSection[] = [
     content: (
       <div className="space-y-8">
         <OrgDimensionsCard />
+        <ClientsSettingCard />
         <NamingConventionsCard />
         <ActivationKeyCard />
       </div>

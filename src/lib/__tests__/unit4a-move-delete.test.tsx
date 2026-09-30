@@ -14,12 +14,13 @@ const mocks = vi.hoisted(() => ({
   deleteContainer: vi.fn(),
   moveWorkboard: vi.fn(),
   reparentClient: vi.fn(),
+  clientsEnabled: true,
 }));
 
 vi.mock("@/lib/telemetry", () => ({ logEvent: mocks.logEvent }));
 vi.mock("sonner", () => ({ toast: { error: mocks.toastError, success: mocks.toastSuccess } }));
 vi.mock("@/hooks/use-profile", () => ({
-  useProfile: () => ({ data: { id: "p1", org_id: "o1", org_type: "partner", role: "worker" } }),
+  useProfile: () => ({ data: { id: "p1", org_id: "o1", org_type: "partner", role: "worker", clients_enabled: mocks.clientsEnabled } }),
 }));
 vi.mock("@/hooks/use-clients", () => ({
   useClients: () => ({
@@ -53,7 +54,8 @@ const folder = {
 };
 
 beforeEach(() => {
-  for (const fn of Object.values(mocks)) fn.mockReset();
+  for (const fn of Object.values(mocks)) if (typeof fn === "function") fn.mockReset();
+  mocks.clientsEnabled = true;
 });
 afterEach(() => cleanup());
 
@@ -180,5 +182,26 @@ describe("unit 4a keyboard path and events", () => {
     fireEvent.click(screen.getByRole("button", { name: "Move" }));
     await waitFor(() => expect(mocks.moveWorkboard).toHaveBeenCalledWith({ engagementId: "e1", clientId: null }));
     expect(mocks.logEvent).toHaveBeenCalledWith("engagement.updated", "o1", { moved: "true", to_container: "false" });
+  });
+
+  it("shows Clients and Folders headings only when the workspace uses clients", async () => {
+    for (const enabled of [true, false]) {
+      mocks.clientsEnabled = enabled;
+      const { container, unmount } = render(<Harness target={{ type: "workboard", id: "e1", name: "Board", clientId: null }} />);
+      const trigger = screen.getByRole("button", { name: "More actions for Board" });
+      trigger.focus();
+      fireEvent.keyDown(trigger, { key: "Enter" });
+      fireEvent.click(await screen.findByRole("menuitem", { name: "Move to…" }));
+      await screen.findByLabelText("Destination");
+      const labels = [...container.ownerDocument.querySelectorAll("optgroup")].map((g) => g.getAttribute("label"));
+      if (enabled) {
+        expect(labels).toEqual(["Clients", "Folders"]);
+      } else {
+        expect(labels).toEqual(["Folders"]);
+        const names = [...container.ownerDocument.querySelectorAll("optgroup option")].map((o) => o.textContent);
+        expect(names).toEqual(expect.arrayContaining(["ABC Co", "Folder One"]));
+      }
+      unmount();
+    }
   });
 });

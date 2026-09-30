@@ -3,7 +3,6 @@ import { cleanup, fireEvent, render, screen, within } from "@testing-library/rea
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { DEFAULT_VOCAB, EDU_VOCAB, PERSONAL_VOCAB, splitsByKind } from "@/lib/edu-vocab";
 import {
   MAX_CONTAINER_DEPTH,
   MAX_SIDEBAR_CONTAINER_DEPTH,
@@ -15,7 +14,7 @@ import {
 } from "@/lib/nav-groups";
 
 const mocks = vi.hoisted(() => ({
-  profile: { id: "p1", org_id: "o1", org_type: "company", role: "worker" } as Record<string, unknown>,
+  profile: { id: "p1", org_id: "o1", org_type: "company", clients_enabled: true, role: "worker" } as Record<string, unknown>,
   engagements: [] as unknown[],
   clientRows: [] as unknown[],
 }));
@@ -87,13 +86,6 @@ describe("pass 210 flattenForSidebar", () => {
   });
 });
 
-describe("pass 210 splitsByKind", () => {
-  it("splits for company and school, not personal", () => {
-    expect(splitsByKind(DEFAULT_VOCAB)).toBe(true);
-    expect(splitsByKind(EDU_VOCAB)).toBe(true);
-    expect(splitsByKind(PERSONAL_VOCAB)).toBe(false);
-  });
-});
 
 const eng = (id: string, clients: NavEngagement["clients"]): NavEngagement => ({
   id,
@@ -121,7 +113,7 @@ describe("pass 210 sidebar rendering", () => {
   ];
 
   it("shows a Folders header for a company with a folder", () => {
-    mocks.profile = { id: "p1", org_id: "o1", org_type: "company", role: "worker" };
+    mocks.profile = { id: "p1", org_id: "o1", org_type: "company", clients_enabled: true, role: "worker" };
     mocks.engagements = mixed;
     render(<SidebarNav />);
     expect(screen.getAllByText("Folders")).toHaveLength(1);
@@ -136,7 +128,7 @@ describe("pass 210 sidebar rendering", () => {
   });
 
   it("renders as today when every container is an unparented client", () => {
-    mocks.profile = { id: "p1", org_id: "o1", org_type: "company", role: "worker" };
+    mocks.profile = { id: "p1", org_id: "o1", org_type: "company", clients_enabled: true, role: "worker" };
     mocks.engagements = [
       eng("e1", { id: "c1", name: "Acme", quick_folder: false, kind: "client", parent_id: null }),
       eng("e2", { id: "c2", name: "Beta", quick_folder: false, kind: "client", parent_id: null }),
@@ -145,6 +137,16 @@ describe("pass 210 sidebar rendering", () => {
     render(<SidebarNav />);
     expect(screen.queryByText("Folders")).toBeNull();
     for (const id of ["e1", "e2", "e3"]) expect(screen.getByText(`Title ${id}`)).toBeTruthy();
+  });
+
+  it("keeps every client in the tree when an admin turns clients off", () => {
+    mocks.profile = { id: "p1", org_id: "o1", org_type: "company", clients_enabled: false, role: "worker" };
+    mocks.engagements = mixed;
+    render(<SidebarNav />);
+    expect(screen.queryByText("Folders")).toBeNull();
+    expect(screen.getAllByText("Acme")).toHaveLength(1);
+    expect(screen.getAllByText("Research")).toHaveLength(1);
+    for (const id of ["e1", "e2"]) expect(screen.getByText(`Title ${id}`)).toBeTruthy();
   });
 });
 
@@ -157,7 +159,7 @@ describe("unit 3c containers render without workboards", () => {
       { id: "f-2", name: "Folder Two", kind: "folder", parent_id: "f-1" },
     ];
     mocks.clientRows = clientRows;
-    mocks.profile = { id: "p1", org_id: "o1", org_type: "partner", role: "worker" };
+    mocks.profile = { id: "p1", org_id: "o1", org_type: "partner", clients_enabled: true, role: "worker" };
     mocks.engagements = [eng("e9", null)];
     const { container } = render(<SidebarNav />);
     for (const name of ["Lonely Co", "Top Co", "Folder One", "Folder Two"]) {
@@ -188,7 +190,7 @@ describe("unit 3c containers render without workboards", () => {
       { id: "test-b", name: "test", kind: "folder", parent_id: null },
     ];
     mocks.clientRows = clientRows;
-    mocks.profile = { id: "p1", org_id: "o1", org_type: "partner", role: "worker" };
+    mocks.profile = { id: "p1", org_id: "o1", org_type: "partner", clients_enabled: true, role: "worker" };
     mocks.engagements = [
       { ...eng("cure", { id: "abc", name: "ABC co", quick_folder: false, kind: "client", parent_id: null }), code: null, title: "CURE test" },
       { ...eng("b5", { id: "folder-01", name: "folder 01", quick_folder: false, kind: "folder", parent_id: "abc" }), code: null, title: "B5-TEST2 test" },

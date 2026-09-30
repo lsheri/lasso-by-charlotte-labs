@@ -9,7 +9,7 @@ const mocks = vi.hoisted(() => ({
     id: "p1",
     org_id: "o1",
     role: "worker",
-    org_type: "company",
+    org_type: "company", clients_enabled: true,
     display_name: "Liam",
   } as Record<string, unknown> | null,
   engagements: [] as unknown[],
