@@ -2589,7 +2589,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   });
   toolbarItems.push({
     spec: { id: "working-from", width: 0, pinned: true },
-      row: <ToolbarIcon label="Working from"><Button type="button" size="icon" variant="outline" className="md:hidden" aria-label="Working from" data-toolbar-control="working-from" onClick={() => setAskOpen(true)}><GraphiteIcon name="working-from" size={20} /></Button></ToolbarIcon>,
+      row: <ToolbarIcon label="Working from"><Button type="button" size="icon" variant="outline" className="md:hidden" aria-label="Working from" data-toolbar-control="working-from" onClick={() => setAskOpen(true)}><GraphiteIcon name="ask-lasso" size={20} /></Button></ToolbarIcon>,
   });
   if (selectedLinkId) {
     toolbarItems.push({
