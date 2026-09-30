@@ -365,6 +365,11 @@ export type TelemetryEvent =
    */
   | "board.share_link"
   /**
+   * T1: a traced question was saved to span_links. Dims: via (short fixed
+   * code-path name) only. No ids, text, names or counts.
+   */
+  | "span_link.created"
+  /**
    * S2: someone in the workspace was given, moved between, or taken off the
    * two things a person can have on a board. Closed dims only, no ids, no
    * names, no counts: access (review | work | none) and result (granted |

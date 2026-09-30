@@ -328,5 +328,13 @@ export async function runSpanProvenance(
     )
     .single();
   if (writeError || !written) throw new Error("That answer could not be saved. Try again.");
+  const { recordEvent } = await import("./telemetry.server");
+  await recordEvent(supabase, {
+    eventType: "span_link.created",
+    orgId: anchor.org_id,
+    userId,
+    profileId: profile.id,
+    dims: { via: "span_provenance" },
+  });
   return written as unknown as SpanLinkWritten;
 }
