@@ -1,12 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { render } from "@react-email/render";
 import { Webhook } from "standardwebhooks";
 
 vi.mock("@lovable.dev/email-js", () => ({ sendLovableEmail: vi.fn(async () => ({})) }));
 
 import { sendLovableEmail } from "@lovable.dev/email-js";
 import {
-  AUTH_EMAIL_SUBJECTS,
+  AUTH_EMAIL_ALIASES,
   buildAuthEmails,
   handleAuthEmailHook,
   type AuthEmailType,
@@ -71,38 +70,75 @@ describe("auth email hook", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("sends a verified request through Resend with the default from", async () => {
+  it("sends a verified request as a Resend template with no subject, from or html", async () => {
     vi.stubEnv("SEND_EMAIL_HOOK_SECRET", SECRET);
     vi.stubEnv("RESEND_API_KEY", "re_test");
-    vi.stubEnv("RESEND_FROM", "");
     const res = await handleAuthEmailHook(signedRequest(JSON.stringify(payload("recovery"))));
     expect(res.status).toBe(200);
     const [url, init] = fetchMock.mock.calls[0]!;
     expect(url).toBe("https://api.resend.com/emails");
     const sent = JSON.parse(init.body);
-    expect(sent.from).toBe("Lasso <noreply@lasso.charlotte-labs.com>");
-    expect(sent.subject).toBe("Reset your password");
+    expect(sent.template.id).toBe("auth-recovery");
     expect(sent.to).toEqual(["old@x.com"]);
+    for (const k of ["from", "subject", "html", "text"]) expect(k in sent).toBe(false);
   });
 
-  const expected: Record<AuthEmailType, [string, string]> = {
-    signup: ["Confirm your email", "Confirm your email"],
-    invite: ["You are invited", "Accept your invite"],
-    magiclink: ["Your sign in link", "Sign in"],
-    recovery: ["Reset your password", "Choose a new password"],
-    email_change: ["Confirm your new email", "Confirm the change"],
-    reauthentication: ["Your verification code", "123456"],
+  it("returns 400 on an unknown action type", async () => {
+    vi.stubEnv("SEND_EMAIL_HOOK_SECRET", SECRET);
+    vi.stubEnv("RESEND_API_KEY", "re_test");
+    const body = JSON.stringify({ user: { email: "a@x.com" }, email_data: { email_action_type: "nope" } });
+    const res = await handleAuthEmailHook(signedRequest(body));
+    expect(res.status).toBe(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  const expected: Record<AuthEmailType, [string, string[]]> = {
+    signup: ["auth-signup", ["CONFIRMATION_URL"]],
+    invite: ["auth-invite", ["CONFIRMATION_URL"]],
+    magiclink: ["auth-magiclink", ["CONFIRMATION_URL"]],
+    recovery: ["auth-recovery", ["CONFIRMATION_URL"]],
+    email_change: ["auth-email-change", ["CONFIRMATION_URL", "NEW_EMAIL", "OLD_EMAIL"]],
+    reauthentication: ["auth-reauthentication", ["TOKEN"]],
   };
   for (const type of Object.keys(expected) as AuthEmailType[]) {
-    it(`${type} renders its template and subject`, async () => {
+    it(`${type} maps to its alias and variables, never a reserved name`, () => {
       const mails = buildAuthEmails(payload(type));
-      expect(mails.length).toBeGreaterThan(0);
-      expect(mails[0]!.subject).toBe(AUTH_EMAIL_SUBJECTS[type]);
-      expect(mails[0]!.subject).toBe(expected[type][0]);
-      const html = await render(mails[0]!.element);
-      expect(html).toContain(expected[type][1]);
+      expect(mails.length).toBe(1);
+      expect(AUTH_EMAIL_ALIASES[type]).toBe(expected[type][0]);
+      expect(mails[0]!.template).toBe(expected[type][0]);
+      expect(Object.keys(mails[0]!.variables).sort()).toEqual(expected[type][1]);
+      for (const r of ["EMAIL", "FIRST_NAME", "LAST_NAME", "RESEND_UNSUBSCRIBE_URL", "ORG_NAME"]) {
+        expect(r in mails[0]!.variables).toBe(false);
+      }
     });
   }
+
+  it("verify links keep their query form", () => {
+    const url = buildAuthEmails(payload("signup"))[0]!.variables["CONFIRMATION_URL"]!;
+    expect(url).toContain("/auth/v1/verify?token=hash&type=signup&redirect_to=");
+  });
+
+  it("email_change with token_hash_new sends twice with crossed tokens", () => {
+    const p = payload("email_change");
+    const mails = buildAuthEmails({ ...p, email_data: { ...p.email_data, token_hash_new: "hashnew" } });
+    expect(mails.map((m) => m.to)).toEqual(["old@x.com", "new@x.com"]);
+    expect(mails[0]!.variables["CONFIRMATION_URL"]).toContain("token=hashnew");
+    expect(mails[1]!.variables["CONFIRMATION_URL"]).toContain("token=hash&");
+    expect(mails.every((m) => m.template === "auth-email-change")).toBe(true);
+    expect(mails[0]!.variables["NEW_EMAIL"]).toBe("new@x.com");
+    expect(mails[1]!.variables["OLD_EMAIL"]).toBe("old@x.com");
+  });
+
+  it("email_change hook call posts both sends", async () => {
+    vi.stubEnv("SEND_EMAIL_HOOK_SECRET", SECRET);
+    vi.stubEnv("RESEND_API_KEY", "re_test");
+    const p = payload("email_change");
+    const res = await handleAuthEmailHook(
+      signedRequest(JSON.stringify({ ...p, email_data: { ...p.email_data, token_hash_new: "hashnew" } })),
+    );
+    expect(res.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
 });
 
 describe("invite email transport", () => {
