@@ -1,6 +1,8 @@
 /** Canonical event registry. Every name here is mirrored to PostHog. */
 export type TelemetryEvent =
   | "org.created"
+  /** Unit 4h-a: an admin turned the workspace's client list on or off. The new state only, as "true" or "false". Never a name, never an id. */
+  | "org.clients_changed"
   | "onboarding.tools_selected"
   | "landing.viewed"
   /** B2B landing: a visitor chose either pilot entry point. Location only. */

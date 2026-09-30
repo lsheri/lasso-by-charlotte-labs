@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
+import { logEvent } from "@/lib/telemetry";
 import { useProfile } from "@/hooks/use-profile";
 import { canSetWorkspaceShape } from "@/lib/role-access";
 import { rpcOutcome } from "@/lib/save-guard";
@@ -37,6 +38,7 @@ export function ClientsSettingCard() {
         toast.error(outcome.message);
         return;
       }
+      logEvent("org.clients_changed", profile.org_id, { enabled: next ? "true" : "false" });
       await queryClient.invalidateQueries({ queryKey: ["profiles"] });
     } finally {
       setBusy(false);
