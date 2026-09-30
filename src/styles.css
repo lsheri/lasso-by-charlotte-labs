@@ -6199,3 +6199,21 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .lb-standalone-caption { width: min(620px, 100%); max-height: none; }
 .lb-standalone-media { width: min(1040px, 100%, calc((100vh - var(--lb-header-h) - 300px) * 1920 / 936)); aspect-ratio: 1920 / 936; overflow: hidden; border: 1px solid var(--nb-rule); border-radius: var(--radius-lg); background: var(--nb-grey-1); }
 .lb-standalone-media video { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+/* Unit 4e: drag and drop in the sidebar tree. The row being dropped into is
+   lit as a whole row; a refused target reads as unavailable. */
+[data-drag-row][draggable="true"] {
+  cursor: grab;
+}
+[data-drop-state="over"] {
+  background: color-mix(in oklab, var(--nb-green) 14%, transparent);
+  box-shadow: inset 0 0 0 1px var(--nb-green);
+  border-radius: 6px;
+}
+[data-drop-state="refused"] {
+  cursor: no-drop;
+  opacity: 0.55;
+}
+.nb-drop-zone[data-drop-state="over"] {
+  background: color-mix(in oklab, var(--nb-green) 6%, transparent);
+}

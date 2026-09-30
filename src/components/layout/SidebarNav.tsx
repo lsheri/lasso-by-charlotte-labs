@@ -1,11 +1,13 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Link, useMatchRoute, useSearch } from "@tanstack/react-router";
-import { Fragment, useState, useSyncExternalStore } from "react";
+import { Fragment, useState, useSyncExternalStore, type ReactNode } from "react";
 
 import { NewEngagementDialog } from "@/components/engagements/NewEngagementDialog";
 import { SidebarCreateActions } from "@/components/engagements/SidebarCreateActions";
 import { GraphiteIcon } from "@/components/notebook/icons";
 import { SidebarItemMenu } from "@/components/layout/SidebarItemMenu";
+import { SidebarDragProvider, useSidebarDrag } from "@/components/layout/sidebar-drag";
+import { applyContainerMoves, applyWorkboardMoves, type PendingMoves } from "@/lib/sidebar-drag";
 import { CircleMark } from "@/components/notebook/CircleMark";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAffiliation } from "@/hooks/use-affiliation";
@@ -128,6 +130,7 @@ function EngagementRow({
   const code = hideCode ? null : (engagementDisplayCode(engagement) ?? "Folder");
   const canEdit = useCanEditContainers();
   const [menuOpen, setMenuOpen] = useState(false);
+  const drag = useSidebarDrag();
   const link = (
       <Link
         to="/engagements/$id"
@@ -151,6 +154,14 @@ function EngagementRow({
       {canEdit ? (
         <div
           className="flex items-center gap-1 pr-1"
+          data-drag-row="workboard"
+          {...(drag
+            ? drag.dragSource({
+                type: "workboard",
+                id: engagement.id,
+                clientId: engagement.clients?.quick_folder === false ? engagement.clients.id : null,
+              })
+            : {})}
           onContextMenu={(event) => {
             event.preventDefault();
             setMenuOpen(true);
@@ -340,15 +351,21 @@ export function SidebarNav({
       ? { tasks: cachedTasks, workId: activeWorkId }
       : undefined;
 
-  const engagementList = (engagements ?? []) as unknown as NavEngagement[];
-  // Only the synthetic groupings (clientless work, quick folders) come from here.
-  const { groups } = groupEngagementsByClient(engagementList);
+  const [pendingMoves, setPendingMoves] = useState<PendingMoves>({});
+  const rawEngagementList = (engagements ?? []) as unknown as NavEngagement[];
   // Unit 3c: the container tree is built from the workspace's own container
   // rows plus workboards. Built from workboard joins alone, a client or folder
   // with nothing in it was in no group and rendered nothing. A guest never
   // reads the clients table: they see only containers behind shared boards.
   const { data: clientRows } = useClients(guestNav ? undefined : profile?.org_id);
-  const containerRows = mergeContainerRows(clientRows ?? [], engagementList);
+  // Unit 4e: a drag shows its move at once; the overlay clears on reconcile.
+  const containerRows = applyContainerMoves(
+    mergeContainerRows(clientRows ?? [], rawEngagementList),
+    pendingMoves,
+  );
+  const engagementList = applyWorkboardMoves(rawEngagementList, containerRows, pendingMoves);
+  // Only the synthetic groupings (clientless work, quick folders) come from here.
+  const { groups } = groupEngagementsByClient(engagementList);
   const containerRoots = buildContainerTree(containerRows, engagementList);
   const split = splitsByKind(vocab);
   const clientRoots = flattenForSidebar(
@@ -370,6 +387,15 @@ export function SidebarNav({
     });
   }
 
+  function expandClient(clientId: string) {
+    setCollapsedClients((prev) => {
+      if (!prev.includes(clientId)) return prev;
+      const next = prev.filter((id) => id !== clientId);
+      writeCollapsedClients(next);
+      return next;
+    });
+  }
+
   function renderShelf(shelf: (typeof groups)[number]) {
                     const collapsed = collapsedClients.includes(shelf.clientId);
                     // A synthetic shelf is a grouping, not a client, so it has
@@ -378,6 +404,7 @@ export function SidebarNav({
                     return (
                       <div key={shelf.clientId}>
                         {synthetic ? (
+                          <ShelfDropZone topLevel={shelf.clientId === INTERNAL_SHELF_ID}>
                           <button
                             type="button"
                             aria-expanded={!collapsed}
@@ -397,6 +424,7 @@ export function SidebarNav({
                               className={collapsed ? "" : "rotate-90"}
                             />
                           </button>
+                          </ShelfDropZone>
                         ) : (
                           <div
                             className={`${linkClass} nb-nav-shelf group/shelf w-full text-left`}
@@ -616,11 +644,17 @@ export function SidebarNav({
 
 
               {isEngagementGroup ? (
-                <>
+                <SidebarDragProvider
+                  rows={containerRows}
+                  orgId={profile?.org_id}
+                  setPending={setPendingMoves}
+                >
+                <TopLevelDropZone>
                   <FolderRows
                     rows={clientRoots}
                     collapsedIds={collapsedClients}
                     onToggle={toggleClient}
+                    onExpand={expandClient}
                     onNavigate={onNavigate}
                     newEngagementLabel={vocab.newEngagement}
                     scopeFor={scopeFor}
@@ -630,12 +664,14 @@ export function SidebarNav({
                       rows={topLevelFolders}
                       collapsedIds={collapsedClients}
                       onToggle={toggleClient}
+                      onExpand={expandClient}
                       onNavigate={onNavigate}
                       newEngagementLabel={vocab.newEngagement}
                       scopeFor={scopeFor}
                     />
                   ) : null}
                   {syntheticShelves.map((shelf) => renderShelf(shelf))}
+                </TopLevelDropZone>
                   {engagements && engagements.length === 0 ? (
                     <p className="px-2 py-1.5 text-sm text-muted-foreground">
                       {vocab.noEngagements}
@@ -653,7 +689,7 @@ export function SidebarNav({
                   <SidebarCreateActions empty={!!engagements && engagements.length === 0} />
 
                   {visibleItems}
-                </>
+                </SidebarDragProvider>
               ) : null}
 
 
@@ -681,6 +717,7 @@ function FolderRows({
   rows,
   collapsedIds,
   onToggle,
+  onExpand,
   onNavigate,
   newEngagementLabel,
   scopeFor,
@@ -688,6 +725,7 @@ function FolderRows({
   rows: { node: ContainerNode<NavEngagement>; depth: number }[];
   collapsedIds: string[];
   onToggle: (id: string) => void;
+  onExpand?: ((id: string) => void) | undefined;
   onNavigate?: (() => void) | undefined;
   newEngagementLabel: string;
   scopeFor: (id: string) => { tasks: CachedNavTask[]; workId: string | undefined } | undefined;
@@ -703,6 +741,7 @@ function FolderRows({
         depth={0}
         collapsedIds={collapsedIds}
         onToggle={onToggle}
+        onExpand={onExpand}
         onNavigate={onNavigate}
         newEngagementLabel={newEngagementLabel}
         scopeFor={scopeFor}
@@ -715,6 +754,7 @@ function ContainerShelfRow({
   depth,
   collapsedIds,
   onToggle,
+  onExpand,
   onNavigate,
   newEngagementLabel,
   scopeFor,
@@ -723,6 +763,7 @@ function ContainerShelfRow({
   depth: number;
   collapsedIds: string[];
   onToggle: (id: string) => void;
+  onExpand?: ((id: string) => void) | undefined;
   onNavigate?: (() => void) | undefined;
   newEngagementLabel: string;
   scopeFor: (id: string) => { tasks: CachedNavTask[]; workId: string | undefined } | undefined;
@@ -731,11 +772,21 @@ function ContainerShelfRow({
   const [menuOpen, setMenuOpen] = useState(false);
   const collapsed = collapsedIds.includes(node.clientId);
   const hasChildren = node.engagements.length > 0 || node.children.length > 0;
+  const drag = useSidebarDrag();
         return (
           <div key={node.clientId} className="nb-tree-child" data-tree-node={node.clientId}>
             <div
               className={`${linkClass} nb-nav-shelf group/shelf w-full text-left`}
               data-tree-depth={depth}
+              data-drag-row="container"
+              {...(drag && canEdit
+                ? {
+                    ...drag.dragSource({ type: "container", id: node.clientId, kind: node.kind }),
+                    ...drag.dropTarget({ type: "container", id: node.clientId }, () =>
+                      onExpand?.(node.clientId),
+                    ),
+                  }
+                : {})}
               onContextMenu={
                 canEdit
                   ? (event) => {
@@ -814,6 +865,7 @@ function ContainerShelfRow({
                     depth={depth + 1}
                     collapsedIds={collapsedIds}
                     onToggle={onToggle}
+                    onExpand={onExpand}
                     onNavigate={onNavigate}
                     newEngagementLabel={newEngagementLabel}
                     scopeFor={scopeFor}
@@ -835,3 +887,31 @@ function FolderSection(props: Parameters<typeof FolderRows>[0]) {
   );
 }
 
+
+/** Unit 4e: the whole tree list is the top-level drop target; rows inside
+ *  take their own drops first. Also swallows a click at the end of a drag. */
+function TopLevelDropZone({ children }: { children: ReactNode }) {
+  const drag = useSidebarDrag();
+  if (!drag) return <>{children}</>;
+  return (
+    <div
+      className="nb-drop-zone flex flex-col gap-0.5"
+      data-drop-zone="top"
+      {...drag.dropTarget({ type: "top" })}
+      onClickCapture={drag.onClickCapture}
+    >
+      {children}
+    </div>
+  );
+}
+
+/** "Not in a client yet" takes a drop as top level. Other groupings do not. */
+function ShelfDropZone({ topLevel, children }: { topLevel: boolean; children: ReactNode }) {
+  const drag = useSidebarDrag();
+  if (!drag || !topLevel) return <>{children}</>;
+  return (
+    <div data-drop-zone="not-in-container" {...drag.dropTarget({ type: "top" })}>
+      {children}
+    </div>
+  );
+}
