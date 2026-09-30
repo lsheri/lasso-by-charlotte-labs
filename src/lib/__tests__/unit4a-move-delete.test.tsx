@@ -54,6 +54,10 @@ const folder = {
   folders: 1,
 };
 
+// One shared target object so the rerender passes an identical reference;
+// a fresh object would recompute every memo and hide a stale dependency.
+const boardTarget = { type: "workboard" as const, id: "e1", name: "Board", clientId: null };
+
 beforeEach(() => {
   for (const fn of Object.values(mocks)) if (typeof fn === "function") fn.mockReset();
   mocks.clientsEnabled = true;
