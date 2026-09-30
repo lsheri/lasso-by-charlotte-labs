@@ -62,7 +62,7 @@ describe("Unit S3 email queue", () => {
     const r = await runEmailQueue();
     expect(r.sent).toBe(1);
     expect(rows[0]).toMatchObject({ status: "sent", provider_id: "re_123", attempts: 1 });
-    expect(rows[0]!.sent_at).toBeTruthy();
+    expect(rows[0]!["sent_at"]).toBeTruthy();
     const vars = sendMock.mock.calls[0]![1].variables;
     expect(vars).toMatchObject({ WORKSPACE_NAME: "HowlerCo", SEATS: 3, EXPIRES_DAYS: 14 });
     expect(vars.PRIVACY_LINE).toBe(REGISTER_COPY.partner.privacy);
@@ -90,17 +90,17 @@ describe("Unit S3 email queue", () => {
     sendMock.mockResolvedValue({ ok: false, status: 422, detail: "bad address" });
     await expect(runEmailQueue()).resolves.toMatchObject({ failed: 1 });
     expect(rows[0]).toMatchObject({ status: "failed", attempts: 1 });
-    expect(rows[0]!.last_error).toContain("bad address");
+    expect(rows[0]!["last_error"]).toContain("bad address");
 
     sendMock.mockRejectedValue(new Error("network down"));
     await expect(runEmailQueue()).resolves.toMatchObject({ failed: 1 });
-    expect(rows[0]!.last_error).toContain("network down");
+    expect(rows[0]!["last_error"]).toContain("network down");
   });
 
   it("never selects a row at five attempts", async () => {
     rows.push(row({ status: "failed", attempts: 5 }));
     await runEmailQueue();
     expect(sendMock).not.toHaveBeenCalled();
-    expect(rows[0]!.attempts).toBe(5);
+    expect(rows[0]!["attempts"]).toBe(5);
   });
 });
