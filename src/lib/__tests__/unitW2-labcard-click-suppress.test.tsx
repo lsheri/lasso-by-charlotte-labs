@@ -42,6 +42,7 @@ const item: WorkItemRow = {
   visibility: "private",
   captured_at: "2026-09-01T00:00:00Z",
   content_ref: null,
+  work_item_tasks: [],
 };
 
 function renderCard(onOpen = vi.fn()) {
