@@ -81,7 +81,6 @@ describe("C1 the from dim", () => {
     );
     fireEvent.click(screen.getByText("open"));
     expect((screen.getByLabelText("Client (optional)") as HTMLSelectElement).value).toBe("cl1");
-    fireEvent.change(screen.getByLabelText("Code"), { target: { value: "NW-1" } });
     fireEvent.change(screen.getByLabelText("Title"), { target: { value: "Pricing" } });
     fireEvent.change(screen.getByLabelText("Brief (optional)"), { target: { value: "A brief." } });
     fireEvent.click(screen.getByText("Create workboard"));
@@ -105,7 +104,9 @@ describe("C1 the from dim", () => {
     render(<NewEngagementDialog trigger={<button type="button">open</button>} />);
     fireEvent.click(screen.getByText("open"));
     expect(screen.queryByText("Quick folder")).toBeNull();
-    expect(screen.getByLabelText("Code")).toBeTruthy();
+    // The database names the workboard, so the form never asks for a code.
+    expect(screen.queryByLabelText("Code")).toBeNull();
+    expect(screen.getByLabelText("Title")).toBeTruthy();
   });
 });
 

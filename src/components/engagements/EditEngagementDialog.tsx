@@ -24,6 +24,8 @@ import { ENGAGEMENT_RENAME_REFUSAL, saveOutcome } from "@/lib/save-guard";
 export type EditableEngagement = {
   id: string;
   title: string;
+  /** Optional so older callers keep their shape; when present it is editable. */
+  code?: string | null;
   client_id?: string | null;
   client_label: string | null;
   brief: string | null;
@@ -43,6 +45,7 @@ export function EditEngagementDialog({
   const invalidateClients = useInvalidateClients();
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState(engagement.title);
+  const [code, setCode] = useState(engagement.code ?? "");
   const [clientId, setClientId] = useState<string | null>(engagement.client_id ?? null);
   const [brief, setBrief] = useState(engagement.brief ?? "");
   const [term, setTerm] = useState(engagement.term_label ?? "");
@@ -53,6 +56,7 @@ export function EditEngagementDialog({
   useEffect(() => {
     if (!open) return;
     setTitle(engagement.title);
+    setCode(engagement.code ?? "");
     setClientId(engagement.client_id ?? null);
     setBrief(engagement.brief ?? "");
     setTerm(engagement.term_label ?? "");
@@ -81,9 +85,15 @@ export function EditEngagementDialog({
     event.preventDefault();
     setPending(true);
     setError(null);
+    // The code rides the same update as the name, so a refusal covers both.
+    // A blank code is never sent: the saved one stays as it was.
+    const trimmedCode = code.trim();
+    const codeField =
+      engagement.code !== undefined && trimmedCode ? { code: trimmedCode } : {};
     const result = await supabase
       .from("engagements")
       .update({
+        ...codeField,
         title: title.trim(),
         client_id: clientId,
         brief: brief.trim() || null,
@@ -136,6 +146,20 @@ export function EditEngagementDialog({
               onChange={(e) => setTitle(e.target.value)}
             />
           </div>
+          {engagement.code !== undefined ? (
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-eng-code" className="micro-label">
+                Code
+              </Label>
+              <Input
+                id="edit-eng-code"
+                required
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                className="font-mono"
+              />
+            </div>
+          ) : null}
           <ClientPicker
             orgId={profile?.org_id}
             value={clientId}
