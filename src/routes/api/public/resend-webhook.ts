@@ -56,11 +56,15 @@ export async function handleResendWebhook(request: Request): Promise<Response> {
   if (!emailId) return Response.json({ ok: true, ignored: "no email_id" });
 
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data: row } = await supabaseAdmin
+  const { data: row, error: selectError } = await supabaseAdmin
     .from("outbound_emails")
     .select("id, status")
     .eq("provider_id", emailId)
     .maybeSingle();
+  if (selectError) {
+    console.error("[resend-webhook] select failed for " + emailId + ": " + selectError.message);
+    return Response.json({ error: "update failed" }, { status: 500 });
+  }
   if (!row) return Response.json({ ok: true, unmatched: true });
 
   if (!shouldApply(row.status, status)) return Response.json({ ok: true, skipped: true });
@@ -70,7 +74,11 @@ export async function handleResendWebhook(request: Request): Promise<Response> {
     update.last_error = failureReason(payload, type);
     console.warn("[resend-webhook] " + status + " for " + emailId);
   }
-  await supabaseAdmin.from("outbound_emails").update(update).eq("id", row.id);
+  const { error: updateError } = await supabaseAdmin.from("outbound_emails").update(update).eq("id", row.id);
+  if (updateError) {
+    console.error("[resend-webhook] update failed for " + emailId + ": " + updateError.message);
+    return Response.json({ error: "update failed" }, { status: 500 });
+  }
 
   return Response.json({ ok: true, status });
 }
