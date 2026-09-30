@@ -3430,6 +3430,27 @@ export type Database = {
           },
         ]
       }
+      sweep_runs: {
+        Row: {
+          created_at: string
+          id: number
+          request_id: number | null
+          source: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          request_id?: number | null
+          source: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          request_id?: number | null
+          source?: string
+        }
+        Relationships: []
+      }
       tasks: {
         Row: {
           accepted_at: string | null
@@ -5004,6 +5025,7 @@ export type Database = {
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
       tier_rank: { Args: { t: string }; Returns: number }
+      trigger_egress_sweep: { Args: { p_source?: string }; Returns: number }
       unshare_engagement_coach: {
         Args: { p_coach_profile: string; p_engagement: string }
         Returns: undefined
