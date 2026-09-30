@@ -139,7 +139,7 @@ function EngagementRow({
         activeProps={activeProps}
         activeOptions={{ includeSearch: false }}
       >
-        {treeDepth === undefined && nested ? <PencilIndent /> : <GraphiteIcon name="engagement" size={20} />}
+        {nested ? <PencilIndent /> : <GraphiteIcon name="engagement" size={20} />}
         <span className="flex min-w-0 items-center gap-1.5">
           {code ? <span className="font-mono text-xs text-muted-foreground">{code}</span> : null}
           <span className="truncate">{engagementDisplayTitle(engagement)}</span>
