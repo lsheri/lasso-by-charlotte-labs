@@ -77,12 +77,12 @@ describe("Unit S3 email queue", () => {
     expect(url).not.toContain("/join/ADM");
   });
 
-  it("takes PRIVACY_LINE from REGISTER_COPY for every register, neutral otherwise", () => {
+  it("takes PRIVACY_LINE from REGISTER_COPY for every register, company otherwise", () => {
     for (const key of Object.keys(REGISTER_COPY) as Register[]) {
       expect(privacyLineFor(key)).toBe(REGISTER_COPY[key].privacy);
     }
-    expect(privacyLineFor("nope")).not.toBe("");
-    expect(privacyLineFor(undefined)).toBe(privacyLineFor("nope"));
+    expect(privacyLineFor("nope")).toBe(REGISTER_COPY.company.privacy);
+    expect(privacyLineFor(undefined)).toBe(REGISTER_COPY.company.privacy);
   });
 
   it("marks a failed send failed with last_error and does not throw", async () => {
@@ -97,10 +97,35 @@ describe("Unit S3 email queue", () => {
     expect(rows[0]!["last_error"]).toContain("network down");
   });
 
+  it("retries a throwing send on each sweep until attempts reaches 5, then leaves it", async () => {
+    rows.push(row());
+    sendMock.mockRejectedValue(new Error("boom"));
+    for (let i = 0; i < 7; i++) await runEmailQueue();
+    expect(sendMock).toHaveBeenCalledTimes(5);
+    expect(rows[0]).toMatchObject({ status: "failed", attempts: 5 });
+  });
+
   it("never selects a row at five attempts", async () => {
     rows.push(row({ status: "failed", attempts: 5 }));
     await runEmailQueue();
     expect(sendMock).not.toHaveBeenCalled();
     expect(rows[0]!["attempts"]).toBe(5);
+  });
+
+  it("never picks up a row already sent, or one mid-send", async () => {
+    rows.push(row({ id: "s", status: "sent", attempts: 1, provider_id: "re_1" }));
+    rows.push(row({ id: "m", status: "sending", attempts: 1 }));
+    sendMock.mockResolvedValue({ ok: true, id: "re_2" });
+    await runEmailQueue();
+    await runEmailQueue();
+    expect(sendMock).not.toHaveBeenCalled();
+    expect(rows[0]).toMatchObject({ status: "sent", provider_id: "re_1", attempts: 1 });
+  });
+
+  it("reads SEATS sent as a string", async () => {
+    rows.push(row({ payload: { WORKSPACE_NAME: "X", CODE: "ADM-NDMECQ", SEATS: "3", REGISTER: "partner" } }));
+    sendMock.mockResolvedValue({ ok: true, id: "re_9" });
+    await runEmailQueue();
+    expect(sendMock.mock.calls[0]![1].variables.SEATS).toBe(3);
   });
 });

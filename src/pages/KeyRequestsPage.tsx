@@ -48,11 +48,8 @@ export function attendeeLink(code: string): string {
   return `${ORIGIN}/j/${code}`;
 }
 
-export function adminLink(code: string): string {
-  const url = new URL("/join", ORIGIN);
-  url.searchParams.set("code", code);
-  return url.toString();
-}
+export { adminLink } from "@/lib/join-link";
+import { adminLink } from "@/lib/join-link";
 
 function copy(text: string) {
   void navigator.clipboard.writeText(text).then(
