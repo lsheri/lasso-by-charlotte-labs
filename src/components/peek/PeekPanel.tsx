@@ -337,7 +337,14 @@ export function PeekBody({
         ) : null}
       </div>
 
-      <MarkBriefDialog item={active} open={briefOpen} onOpenChange={setBriefOpen} />
+      {engagementId ? (
+        <MarkBriefDialog
+          item={active}
+          engagementId={engagementId}
+          open={briefOpen}
+          onOpenChange={setBriefOpen}
+        />
+      ) : null}
       {owned && isDeliverableType(active.type) ? (
         <ShipToFirmDialog
           workItemId={active.id}

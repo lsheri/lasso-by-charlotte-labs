@@ -160,7 +160,8 @@ export function PeekActionBar({
                 {PEEK_WORK_DATE_LABEL}
               </DropdownMenuItem>
             ) : null}
-            {canEdit ? (
+            {/* A brief belongs to the board it briefs: no board, no entry. */}
+            {canEdit && engagementId ? (
               <DropdownMenuItem onSelect={() => onBrief()}>
                 {isBriefItem(item) ? "Change what this briefs" : "Mark as the brief"}
               </DropdownMenuItem>

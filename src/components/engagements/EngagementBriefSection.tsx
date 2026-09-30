@@ -223,6 +223,7 @@ export function EngagementBriefSection({
       <PeekPanel entry={brief} open={peekOpen} onOpenChange={setPeekOpen} canEdit />
       <MarkBriefDialog
         item={markItem}
+        engagementId={engagementId}
         open={markItem !== null}
         onOpenChange={(open) => {
           if (!open) setMarkItem(null);
