@@ -43,6 +43,8 @@ export type MirrorContext = {
   workspace_type: string;
   affiliated: boolean | null;
   partner: string;
+  /** PH-S2: set on recordEvent mirrors only; the anonymous path never sends it. */
+  actor_kind?: "person" | "system";
   /** Anonymous path only: sends $ip and drops $groups. */
   anonymous?: boolean;
 };
@@ -63,6 +65,7 @@ export function contextProperties(context: MirrorContext): Record<string, unknow
     affiliated: context.affiliated,
     partner: context.partner,
   };
+  if (context.actor_kind) props["actor_kind"] = context.actor_kind;
   const ua = readHeader("user-agent");
   if (ua) props["$raw_user_agent"] = ua.slice(0, 512);
   if (context.anonymous) {
@@ -305,12 +308,19 @@ export async function recordEvent(
           /* keep "none" */
         }
       }
-      await mirrorToPostHog(input.eventType, actorHash, tenantHash, dims, {
-        environment: resolveEnvironment(),
-        workspace_type: stamp.workspace_type,
-        affiliated: stamp.affiliated,
-        partner,
-      });
+      // PH-S2: a system event (no signed-in user) still mirrors, under a
+      // stand-in distinct id. The events row keeps actor_hash null either way.
+      const mirrorActorHash = actorHash ?? (await computeActorHash(`system:${input.orgId}`));
+      const actorKind = actorHash ? ("person" as const) : ("system" as const);
+      if (mirrorActorHash) {
+        await mirrorToPostHog(input.eventType, mirrorActorHash, tenantHash, dims, {
+          environment: resolveEnvironment(),
+          workspace_type: stamp.workspace_type,
+          affiliated: stamp.affiliated,
+          partner,
+          actor_kind: actorKind,
+        });
+      }
     }
     if (!error) {
       // Post-storage only: the stored row is the source of truth, and the sweep
