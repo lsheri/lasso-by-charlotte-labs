@@ -9,3 +9,5 @@
 - [x] Unit 4a: sidebar menu to rename, move and delete containers; move workboards
 - [x] Unit 4c: gate New client behind canManageMembers, keep New folder open to all, unify delete verb
 - [x] Unit 4d: correct sidebar tree depth, sibling alignment, and continuous guides
+
+- [x] Unit 4e: sidebar drag and drop (native HTML5; container.reparented action "drag", engagement.updated from "drag")
