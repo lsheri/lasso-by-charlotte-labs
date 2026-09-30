@@ -82,7 +82,7 @@ describe("PH-S2 system actor mirror", () => {
       dims: {},
     });
     expect(insertCalls).toHaveLength(1);
-    expect(insertCalls[0]["actor_hash"]).toBeNull();
+    expect(insertCalls[0]?.["actor_hash"]).toBeNull();
   });
 
   it("with a user the mirror carries actor_kind person and the real hash", async () => {
