@@ -4,9 +4,10 @@
  * sweeps never send the same email twice. Operational, not a product event.
  */
 import { CANONICAL_ORIGIN, appOrigin } from "./app-host";
-import { NEUTRAL_COPY, REGISTER_COPY, type Register } from "./register";
+import { adminLink } from "./join-link";
+import { REGISTER_COPY, type Register } from "./register";
 
-export const EMAIL_BATCH = 20;
+export const EMAIL_BATCH = 10;
 export const MAX_ATTEMPTS = 5;
 
 export type EmailQueueResult = { sent: number; failed: number; skipped: number };
@@ -22,16 +23,15 @@ type Row = {
 type Db = { from: (t: string) => any };
 
 export function buildJoinUrl(code: string, origin: string = appOrigin() ?? CANONICAL_ORIGIN): string {
-  const url = new URL("/join", origin);
-  url.searchParams.set("code", code);
-  return url.toString();
+  return adminLink(code, origin);
 }
 
+/** Unknown or missing register falls back to the company promise, never an empty line. */
 export function privacyLineFor(register: unknown): string {
   if (typeof register === "string" && Object.prototype.hasOwnProperty.call(REGISTER_COPY, register)) {
     return REGISTER_COPY[register as Register].privacy;
   }
-  return NEUTRAL_COPY.privacy;
+  return REGISTER_COPY.company.privacy;
 }
 
 export function buildVariables(payload: Record<string, unknown> | null): Record<string, string | number> {
