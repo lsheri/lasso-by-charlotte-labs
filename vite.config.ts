@@ -31,6 +31,9 @@ export default defineConfig({
       },
     } as Record<string, unknown>),
 
+    // PH-S3b: public source maps so PostHog can resolve minified browser frames.
+    build: { sourcemap: true },
+
     resolve: {
       alias: {
         // React Email's html parser needs entities v4.5.0; nested newer copies
