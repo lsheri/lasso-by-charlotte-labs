@@ -2020,6 +2020,7 @@ export async function pushConversation(
           continue;
         }
         const refType = workTypeForFile(ref.filename);
+        const refTurnId = linkedTurnId(attachment);
         const refResult = await supabaseAdmin
           .from("work_items")
           .insert({
@@ -2067,6 +2068,7 @@ export async function pushConversation(
         }
         saved += 1;
         fileRefsCreated += 1;
+        if (refTurnId) turnLinkedCount += 1;
         capturedIds.push(refResult.data.id);
         attachmentIds.push(refResult.data.id);
         createdAttachmentTypes.push(String(refType));
@@ -2525,6 +2527,8 @@ export async function pushConversation(
   }
 
   const verb = existingThread ? "Updated" : "Saved";
+  // ID-2: the record's own id, returned every push so the caller can reuse it.
+  const conversationIdLines = `\nlasso_conversation_id: ${threadId}\nSend this lasso_conversation_id with the next push of this conversation so it adds to the same record.`;
   // P0 item 2. The per-attachment line replaces the old bare count.
   const attachmentLine = attachmentSummaryLine(attachmentOutcomes);
   const warn = problems.length > 0 ? ` Some attachments didn't save: ${problems.join("; ")}.` : "";
