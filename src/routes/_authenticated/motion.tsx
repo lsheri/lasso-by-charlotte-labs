@@ -1,4 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { Navigate, createFileRoute } from "@tanstack/react-router";
+import type React from "react";
+
+import { useProfile } from "@/hooks/use-profile";
+import { QA_SEED_ORG_ID } from "@/lib/qa-seed.functions";
 
 import { MotionPage } from "@/pages/MotionPage";
 
@@ -19,5 +23,22 @@ export const Route = createFileRoute("/_authenticated/motion")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: MotionPage,
+  component: MotionRoute,
 });
+
+function MotionRoute() {
+  return (
+    <FounderAdminOnly>
+      <MotionPage />
+    </FounderAdminOnly>
+  );
+}
+
+function FounderAdminOnly({ children }: { children: React.ReactNode }) {
+  const { data: profile, isPending } = useProfile();
+  if (isPending) return null;
+  const allowed = profile?.role === "admin" && profile?.org_id === QA_SEED_ORG_ID;
+  if (!allowed) return <Navigate to="/home" replace />;
+  return <>{children}</>;
+}
+
