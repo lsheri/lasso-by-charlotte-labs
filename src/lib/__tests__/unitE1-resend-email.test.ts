@@ -12,7 +12,7 @@ import {
   type AuthEmailType,
 } from "@/routes/api/public/auth-email-hook";
 import { sendInviteEmail } from "@/lib/invites.server";
-import { sendTemplateEmail } from "@/lib/email-templates/send-email";
+import { sendPilotNotification } from "@/lib/pilot-request.functions";
 
 const RAW = Buffer.from("unit-e1-test-secret-0123456789ab").toString("base64");
 const SECRET = `v1,whsec_${RAW}`;
