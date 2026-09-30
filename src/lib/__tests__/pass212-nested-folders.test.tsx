@@ -160,10 +160,12 @@ describe("pass 212 sidebar rendering", () => {
     expect(screen.getByText("Title e1")).toBeTruthy();
     expect(screen.queryByText("Folders")).toBeNull();
     mocks.profile["org_type"] = "company";
+    mocks.profile["clients_enabled"] = true;
   });
 
   it("renders a company root folder exactly once, inside the Folders section", () => {
     mocks.profile["org_type"] = "company";
+    mocks.profile["clients_enabled"] = true;
     const folder = { ...row("folder", "folder", null), name: "Field notes" };
     mocks.engagements = [eng("e1", folder)];
     render(<SidebarNav />);
@@ -174,6 +176,7 @@ describe("pass 212 sidebar rendering", () => {
 
   it("renders a nested folder and a root folder once each, with the nested one outside the Folders section", () => {
     mocks.profile["org_type"] = "company";
+    mocks.profile["clients_enabled"] = true;
     const client = { ...row("client", "client", null), name: "Acme" };
     const nested = { ...row("nested", "folder", client.id), name: "Nested folder" };
     const root = { ...row("root", "folder", null), name: "Root folder" };
