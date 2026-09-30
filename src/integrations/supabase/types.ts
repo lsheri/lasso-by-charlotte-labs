@@ -332,6 +332,56 @@ export type Database = {
           },
         ]
       }
+      ai_usage: {
+        Row: {
+          cached_in: number
+          cost_usd: number
+          created_at: string
+          duration_ms: number | null
+          finish_reason: string | null
+          id: number
+          model: string
+          org_id: string | null
+          surface: string
+          tokens_in: number
+          tokens_out: number
+        }
+        Insert: {
+          cached_in?: number
+          cost_usd?: number
+          created_at?: string
+          duration_ms?: number | null
+          finish_reason?: string | null
+          id?: number
+          model: string
+          org_id?: string | null
+          surface: string
+          tokens_in?: number
+          tokens_out?: number
+        }
+        Update: {
+          cached_in?: number
+          cost_usd?: number
+          created_at?: string
+          duration_ms?: number | null
+          finish_reason?: string | null
+          id?: number
+          model?: string
+          org_id?: string | null
+          surface?: string
+          tokens_in?: number
+          tokens_out?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_usage_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       analysis_runs: {
         Row: {
           claims_rendered: number | null
@@ -4640,6 +4690,32 @@ export type Database = {
     Functions: {
       active_org_id: { Args: never; Returns: string }
       active_profile_id: { Args: never; Returns: string }
+      admin_ai_cost_reconciliation: {
+        Args: { p_days?: number }
+        Returns: {
+          billed_usd: number
+          day: string
+          difference_usd: number
+          estimated_usd: number
+          pct_off: number
+        }[]
+      }
+      admin_ai_usage: {
+        Args: { p_days?: number }
+        Returns: {
+          cached_in: number
+          calls: number
+          cost_per_person: number
+          cost_usd: number
+          last_call: string
+          org_id: string
+          org_name: string
+          org_type: string
+          people: number
+          tokens_in: number
+          tokens_out: number
+        }[]
+      }
       admin_approve_request: {
         Args: {
           p_admin_link_days?: number
@@ -4726,6 +4802,7 @@ export type Database = {
         }
         Returns: string
       }
+      admin_ops_health: { Args: never; Returns: Json }
       admin_outbound_emails: {
         Args: { p_org_id?: string }
         Returns: {
