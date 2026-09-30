@@ -11,7 +11,7 @@ import {
 import { workTypeForFile } from "@/lib/work-types";
 import { recordEvent } from "@/lib/telemetry.server";
 import { dateLabel } from "@/lib/decisions-shared";
-import { coercePushArgs } from "@/lib/mcp-args";
+import { coerceJsonArg, coercePushArgs } from "@/lib/mcp-args";
 import {
   DECISION_HELD_REASON,
   DECISION_SKIPPED_REASON,
@@ -78,6 +78,7 @@ const ACCEPTED_PROTOCOLS = new Set([
 const MAX_TURNS = 500;
 const MAX_THREAD_BYTES = 2 * 1024 * 1024;
 const MAX_DOC_BYTES = 5 * 1024 * 1024;
+const MAX_RENDITION_BYTES = 200 * 1024;
 const MAX_ATTACHMENTS = 12;
 /** A re-push may improve the record; it may never shrink it silently. */
 const SHRINK_RATIO = 0.6;
@@ -187,6 +188,9 @@ export type AttachmentOutcome = {
   chars: number;
   version_no?: number;
   reason?: string;
+  /** R1: what happened to a rendition sent with a file_ref. */
+  rendition?: "stored" | "unchanged" | "rejected" | "failed" | "ignored_original_present";
+  rendition_match?: "yes" | "no" | "unknown";
 };
 
 export function attachmentSummaryLine(outcomes: readonly AttachmentOutcome[]): string {
@@ -236,6 +240,10 @@ export type ParsedAttachment = {
   include: boolean;
   /** ID-2: the 1-indexed message position the caller says produced it, never guessed. */
   producedAtTurn?: number;
+  /** R1: a text rendition of a file_ref, extracted in the caller's sandbox. Never the file. */
+  rendition?: { format: "markdown" | "html"; method: "extracted_by_script" | "written_by_model"; content: string; sha256?: string };
+  /** R1: why a sent rendition was not accepted. The placeholder is still made. */
+  renditionIssue?: string;
 };
 
 /** ID-2: the produced_at_turn position a caller named, if a positive integer. */
@@ -267,6 +275,44 @@ export function isTextFilename(name: string): boolean {
   const dot = name.lastIndexOf(".");
   if (dot < 0) return false;
   return TEXT_EXTENSIONS.has(name.slice(dot + 1).toLowerCase());
+}
+
+/** R1: stores a rendition's text beside the placeholder. Never the file. */
+export async function storeRendition(args: {
+  userId: string;
+  origId: string;
+  title: string;
+  rendition: NonNullable<ParsedAttachment["rendition"]>;
+}): Promise<{ ok: true; meta: Record<string, unknown> } | { ok: false; reason: string }> {
+  const { userId, origId, title, rendition } = args;
+  const { format, method, content, sha256 } = rendition;
+  try {
+    const computed = await sha256Hex(content);
+    const match: "yes" | "no" | "unknown" = !sha256 ? "unknown" : sha256 === computed ? "yes" : "no";
+    const path = `${userId}/rendition-${slugify(origId)}-${slugify(title)}-${crypto.randomUUID()}.${format === "html" ? "html" : "md"}`;
+    const bytes = new TextEncoder().encode(content).byteLength;
+    const { error } = await supabaseAdmin.storage.from("work-files").upload(path, content, {
+      contentType: format === "html" ? "text/html; charset=utf-8" : "text/markdown; charset=utf-8",
+      upsert: false,
+    });
+    if (error) return { ok: false, reason: error.message };
+    return {
+      ok: true,
+      meta: {
+        format,
+        method,
+        ref: path,
+        chars: content.length,
+        bytes,
+        sha256_stated: sha256 ?? null,
+        sha256_computed: computed,
+        match,
+        received_at: new Date().toISOString(),
+      },
+    };
+  } catch (err) {
+    return { ok: false, reason: err instanceof Error ? err.message : "rendition not stored" };
+  }
 }
 
 /** P1b item 1. Validates one incoming attachment; file_ref carries no content. */
@@ -311,7 +357,8 @@ export function parseIncomingAttachment(
       ...(sha ? { sha256: sha } : {}),
       ...(url ? { download_url: url } : {}),
     };
-    return { ok: true, attachment: { kind, title, content: "", sourceArtifactId, fileRef, origin, include, ...language, ...produced } };
+    const renditionPart = parseRendition(ref["rendition"]);
+    return { ok: true, attachment: { kind, title, content: "", sourceArtifactId, fileRef, origin, include, ...language, ...produced, ...renditionPart } };
   }
   if (typeof a["content"] !== "string") {
     return { ok: false, message: "Each attachment needs kind, verbatim title, and content" };
@@ -319,10 +366,55 @@ export function parseIncomingAttachment(
   return { ok: true, attachment: { kind, title, content: a["content"], sourceArtifactId, origin, include, ...language, ...produced } };
 }
 
+/** R1: validates a sent rendition. A bad one never fails the push. */
+function parseRendition(raw: unknown): Pick<ParsedAttachment, "rendition" | "renditionIssue"> {
+  if (raw === undefined || raw === null) return {};
+  const value = typeof raw === "string" ? coerceJsonArg(raw) : raw;
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return { renditionIssue: "rendition must be an object" };
+  }
+  const r = value as Record<string, unknown>;
+  const format = r["format"] === undefined || r["format"] === null ? "markdown" : r["format"];
+  if (format !== "markdown" && format !== "html") {
+    return { renditionIssue: "rendition.format must be markdown or html" };
+  }
+  const method = r["method"];
+  if (method !== "extracted_by_script" && method !== "written_by_model") {
+    return { renditionIssue: "rendition.method must be extracted_by_script or written_by_model" };
+  }
+  const content = r["content"];
+  if (typeof content !== "string" || content.length === 0) {
+    return { renditionIssue: "rendition.content must be non-empty text" };
+  }
+  if (new TextEncoder().encode(content).byteLength > MAX_RENDITION_BYTES) {
+    return { renditionIssue: "rendition.content is over 200 KB" };
+  }
+  let sha256: string | undefined;
+  if (r["sha256"] !== undefined && r["sha256"] !== null) {
+    const s = typeof r["sha256"] === "string" ? r["sha256"].trim().toLowerCase() : "";
+    if (!/^[0-9a-f]{64}$/.test(s)) return { renditionIssue: "rendition.sha256 must be 64 hex characters" };
+    sha256 = s;
+  }
+  return { rendition: { format, method, content, ...(sha256 ? { sha256 } : {}) } };
+}
+
 /** P1b item 1. The note when this push created file placeholders. */
 export function fileRefNote(created: number): string {
   if (created <= 0) return "";
   return ` ${created} file placeholder${created === 1 ? "" : "s"} on the board; add the file to complete each one.`;
+}
+
+/** R1: the note for renditions stored with file placeholders. */
+export function renditionNote(outcomes: AttachmentOutcome[]): string {
+  const stored = outcomes.filter((o) => o.rendition === "stored");
+  const changed = outcomes.some((o) => o.rendition_match === "no");
+  if (stored.length === 0 && !changed) return "";
+  const n = stored.length;
+  let note = ` ${n} rendition${n === 1 ? "" : "s"} stored with the file placeholders; they are shown as renditions, never as the files.`;
+  if (stored.some((o) => o.rendition_match === "no")) {
+    note += " A rendition changed after its script made it; send the script's output unchanged.";
+  }
+  return note;
 }
 
 function looksCondensed(incomingChars: number, storedChars: number): boolean {
@@ -440,7 +532,7 @@ const pushTools = (vocab: McpVocab) => [
     title: "Push a conversation",
     icons: ICONS,
     description:
-      `When the user says 'Push to Lasso', 'send to Lasso', or similar: call push_conversation with the ENTIRE conversation, every message, verbatim, unabridged, plus any artifact, canvas or file that already existed as its own object in this app, as attachments. Never summarize the transcript. Never compose new summaries, recaps or section write-ups and send them as attachments. Never use push_document for conversation artifacts. Verbatim is non-negotiable: never substitute a summary, paraphrase, or shortened version of a message at any position, the server rejects shrunken overwrites. Before pushing, assess how many messages you can reproduce word-for-word in a single call given their actual lengths. If the whole conversation fits, push it whole. If not, push it in consecutive windows using window {from, to, total}: start with the first window sized to what you can reproduce verbatim, then follow the server's response, which tells you the next starting position, until all messages are stored. When re-pushing a conversation that grew, push only the new messages as a window, never re-send earlier messages unless correcting them. A smaller window is always the answer; a shorter message never is. Push at natural checkpoints during long work rather than only at the end, so nothing is lost if your context is compacted; re-pushing is safe and only sends what changed. For assistant turns that ran tools or wrote files, include what was done as a role: 'tool' message at that position, plainly, rather than omitting it. Attachments are only things this chat made: an artifact, a canvas, or a file you generated here. Never attach a file the person uploaded or one from project or knowledge files, even if you read or quoted it; if the person explicitly asks to include one, send it with origin: 'seen_in_chat' and include: true. Before calling push_conversation with any attachments, list them for the person in one short message, name any file you saw but did not make as left out, and ask which to include; push after they answer. If there are no attachments, push without asking. On a re-push, ask only about attachments you have not asked about before. Text files under about 40 KB go as content so they render at once: HTML as artifact_html, SVG as artifact_svg, Markdown as artifact_markdown, Mermaid as artifact_mermaid, code as artifact_code, CSV and other plain text as file, each with its verbatim text in content. A text file over about 40 KB, and every binary file (pptx, docx, xlsx, pdf, png, jpg), goes as kind file_ref with its filename and, when you can compute it, its sha256; never as base64. Lasso makes a placeholder for it and the person adds the file. For a turn that wrote a file, the role 'tool' message names the file and what it is; the file's content goes only in its attachment. If part of the conversation is no longer in your context word for word, send that span as ONE message with fidelity: summary and covers: {from, to}; never send a summary as verbatim and never leave the span out. If the conversation made decisions about the work itself, send each as a draft in decisions[] citing the message positions where it was made. Never send a decision the chat did not make, and never send one about Lasso: where to file this chat, what to create or name in Lasso, or how to push are not decisions. For each attachment, set produced_at_turn to the 1-indexed position of the turn that produced or first shared this file. Omit it if you are not sure. Never guess. ${placementLine(vocab)}`,
+      `When the user says 'Push to Lasso', 'send to Lasso', or similar: call push_conversation with the ENTIRE conversation, every message, verbatim, unabridged, plus any artifact, canvas or file that already existed as its own object in this app, as attachments. Never summarize the transcript. Never compose new summaries, recaps or section write-ups and send them as attachments. Never use push_document for conversation artifacts. Verbatim is non-negotiable: never substitute a summary, paraphrase, or shortened version of a message at any position, the server rejects shrunken overwrites. Before pushing, assess how many messages you can reproduce word-for-word in a single call given their actual lengths. If the whole conversation fits, push it whole. If not, push it in consecutive windows using window {from, to, total}: start with the first window sized to what you can reproduce verbatim, then follow the server's response, which tells you the next starting position, until all messages are stored. When re-pushing a conversation that grew, push only the new messages as a window, never re-send earlier messages unless correcting them. A smaller window is always the answer; a shorter message never is. Push at natural checkpoints during long work rather than only at the end, so nothing is lost if your context is compacted; re-pushing is safe and only sends what changed. For assistant turns that ran tools or wrote files, include what was done as a role: 'tool' message at that position, plainly, rather than omitting it. Attachments are only things this chat made: an artifact, a canvas, or a file you generated here. Never attach a file the person uploaded or one from project or knowledge files, even if you read or quoted it; if the person explicitly asks to include one, send it with origin: 'seen_in_chat' and include: true. Before calling push_conversation with any attachments, list them for the person in one short message, name any file you saw but did not make as left out, and ask which to include; push after they answer. If there are no attachments, push without asking. On a re-push, ask only about attachments you have not asked about before. Text files under about 40 KB go as content so they render at once: HTML as artifact_html, SVG as artifact_svg, Markdown as artifact_markdown, Mermaid as artifact_mermaid, code as artifact_code, CSV and other plain text as file, each with its verbatim text in content. A text file over about 40 KB, and every binary file (pptx, docx, xlsx, pdf, png, jpg), goes as kind file_ref with its filename and, when you can compute it, its sha256; never as base64. Lasso makes a placeholder for it and the person adds the file. For a pptx, docx or xlsx, if you can run code, also extract its text in your sandbox with python-pptx, python-docx or openpyxl into Markdown (slide or sheet headings, bullets, speaker notes, tables), compute that Markdown file's sha256, and send it unchanged as file_ref.rendition with method extracted_by_script. Never write, shorten or summarise a rendition yourself; if you cannot run code, leave rendition out. For a turn that wrote a file, the role 'tool' message names the file and what it is; the file's content goes only in its attachment. If part of the conversation is no longer in your context word for word, send that span as ONE message with fidelity: summary and covers: {from, to}; never send a summary as verbatim and never leave the span out. If the conversation made decisions about the work itself, send each as a draft in decisions[] citing the message positions where it was made. Never send a decision the chat did not make, and never send one about Lasso: where to file this chat, what to create or name in Lasso, or how to push are not decisions. For each attachment, set produced_at_turn to the 1-indexed position of the turn that produced or first shared this file. Omit it if you are not sure. Never guess. ${placementLine(vocab)}`,
     // Windowing is the only sanctioned way to split a push, and only because
     // the alternative the model reaches for otherwise is shortening messages.
     inputSchema: {
@@ -552,6 +644,17 @@ const pushTools = (vocab: McpVocab) => [
                   bytes: { type: "integer" },
                   sha256: { type: "string", description: "64 hex characters." },
                   download_url: { type: "string" },
+                  rendition: {
+                    type: "object",
+                    description: "Optional. The file's text, extracted by a script in your sandbox and sent unchanged. Lasso shows it as a rendition, never as the file.",
+                    properties: {
+                      format: { type: "string", enum: ["markdown", "html"] },
+                      method: { type: "string", enum: ["extracted_by_script", "written_by_model"] },
+                      content: { type: "string" },
+                      sha256: { type: "string", description: "64 hex characters, of the rendition text." },
+                    },
+                    required: ["method", "content"],
+                  },
                 },
                 required: ["filename"],
               },
@@ -1976,6 +2079,9 @@ export async function pushConversation(
   /** U1: attachments held back as not made in this chat, and text-file refs. */
   let heldCount = 0;
   let textRefCount = 0;
+  /** R1: renditions stored this push, and those whose stated sha256 differed. */
+  let renditionsStored = 0;
+  let renditionsChanged = 0;
   const transcriptText = messages.map((m) => m.content).join("\n\n");
   const messageTexts = messages.map((m) => m.content);
   if (attachments.length > 0 && !owner.userId) {
@@ -1983,7 +2089,7 @@ export async function pushConversation(
   } else {
     const { data: existingAttachments } = await supabaseAdmin
       .from("work_items")
-      .select("id, title, content_ref, content_hash, captured_at, source_meta, parent_work_item_id")
+      .select("id, title, content_ref, content_hash, captured_at, source_meta, parent_work_item_id, content_fidelity")
       .eq("owner_id", owner.profileId)
       .eq("orig_conversation_id", origId)
       .neq("type", "ai_thread");
@@ -2017,16 +2123,84 @@ export async function pushConversation(
           saved += 1;
           capturedIds.push(refMatch.id);
           attachmentIds.push(refMatch.id);
+          // R1: a rendition only ever joins a placeholder still waiting for its file.
+          const renditionFields: Pick<AttachmentOutcome, "rendition" | "rendition_match" | "reason"> = {};
+          if (attachment.renditionIssue) {
+            renditionFields.rendition = "rejected";
+            renditionFields.reason = attachment.renditionIssue;
+          } else if (attachment.rendition) {
+            const matchRow = refMatch as { content_fidelity?: string | null; source_meta: unknown };
+            if (matchRow.content_fidelity !== "reference") {
+              renditionFields.rendition = "ignored_original_present";
+            } else {
+              const priorMeta =
+                matchRow.source_meta && typeof matchRow.source_meta === "object" && !Array.isArray(matchRow.source_meta)
+                  ? (matchRow.source_meta as Record<string, unknown>)
+                  : {};
+              const prior = priorMeta["rendition"] as { sha256_computed?: string } | undefined;
+              const newSha = await sha256Hex(attachment.rendition.content);
+              if (prior?.sha256_computed && prior.sha256_computed === newSha) {
+                renditionFields.rendition = "unchanged";
+              } else {
+                const stored = await storeRendition({
+                  userId: owner.userId!,
+                  origId,
+                  title: attachment.title,
+                  rendition: attachment.rendition,
+                });
+                if (!stored.ok) {
+                  renditionFields.rendition = "failed";
+                  renditionFields.reason = stored.reason;
+                } else {
+                  const { error: renditionUpdateError } = await supabaseAdmin
+                    .from("work_items")
+                    .update({ source_meta: { ...priorMeta, rendition: stored.meta } as unknown as Json })
+                    .eq("id", refMatch.id);
+                  if (renditionUpdateError) {
+                    renditionFields.rendition = "failed";
+                    renditionFields.reason = renditionUpdateError.message;
+                  } else {
+                    const m = stored.meta["match"] as "yes" | "no" | "unknown";
+                    renditionFields.rendition = "stored";
+                    renditionFields.rendition_match = m;
+                    renditionsStored += 1;
+                    if (m === "no") renditionsChanged += 1;
+                  }
+                }
+              }
+            }
+          }
           attachmentOutcomes.push({
             title: attachment.title,
             source_artifact_id: attachment.sourceArtifactId,
             outcome: "unchanged",
             chars: 0,
+            ...renditionFields,
           });
           continue;
         }
         const refType = workTypeForFile(ref.filename);
         const refTurnId = linkedTurnId(attachment);
+        // R1: store the rendition first; a failure never blocks the placeholder.
+        const newRendition: Pick<AttachmentOutcome, "rendition" | "rendition_match" | "reason"> = {};
+        let renditionMeta: Record<string, unknown> | null = null;
+        if (attachment.renditionIssue) {
+          newRendition.rendition = "rejected";
+          newRendition.reason = attachment.renditionIssue;
+        } else if (attachment.rendition) {
+          const stored = await storeRendition({
+            userId: owner.userId!,
+            origId,
+            title: attachment.title,
+            rendition: attachment.rendition,
+          });
+          if (stored.ok) {
+            renditionMeta = stored.meta;
+          } else {
+            newRendition.rendition = "failed";
+            newRendition.reason = stored.reason;
+          }
+        }
         const refResult = await supabaseAdmin
           .from("work_items")
           .insert({
@@ -2053,6 +2227,7 @@ export async function pushConversation(
               download_url: ref.download_url ?? null,
               source_artifact_id: attachment.sourceArtifactId,
               produced_at_turn: null,
+              ...(renditionMeta ? { rendition: renditionMeta } : {}),
             } as unknown as Json,
             meta: { assistant_transcribed: true },
             parent_work_item_id: threadId,
@@ -2072,6 +2247,13 @@ export async function pushConversation(
           });
           continue;
         }
+        if (renditionMeta) {
+          const m = renditionMeta["match"] as "yes" | "no" | "unknown";
+          newRendition.rendition = "stored";
+          newRendition.rendition_match = m;
+          renditionsStored += 1;
+          if (m === "no") renditionsChanged += 1;
+        }
         saved += 1;
         fileRefsCreated += 1;
         if (refTurnId) turnLinkedCount += 1;
@@ -2083,6 +2265,7 @@ export async function pushConversation(
           source_artifact_id: attachment.sourceArtifactId,
           outcome: "reference_created",
           chars: 0,
+          ...newRendition,
         });
         continue;
       }
@@ -2442,6 +2625,8 @@ export async function pushConversation(
       attachments_held: versionRowsBucket(heldCount),
       text_refs: versionRowsBucket(textRefCount),
       turn_linked_attachments: turnLinkedBucket(turnLinkedCount),
+      renditions: versionRowsBucket(renditionsStored),
+      renditions_changed: versionRowsBucket(renditionsChanged),
     },
   });
   await recordEvent(supabaseAdmin, {
@@ -2612,6 +2797,7 @@ export async function pushConversation(
   const progress = pushProgress(storedCount, total ?? null);
   const notes = [
     placeholderNote,
+    renditionNote(attachmentOutcomes),
     windowNote,
     totalNote,
     degradedNote,
