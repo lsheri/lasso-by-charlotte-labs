@@ -2938,6 +2938,7 @@ export type Database = {
       orgs: {
         Row: {
           ai_maturity: string | null
+          clients_enabled: boolean
           country: string | null
           created_at: string
           data_use_tier: string | null
@@ -2953,6 +2954,7 @@ export type Database = {
         }
         Insert: {
           ai_maturity?: string | null
+          clients_enabled?: boolean
           country?: string | null
           created_at?: string
           data_use_tier?: string | null
@@ -2968,6 +2970,7 @@ export type Database = {
         }
         Update: {
           ai_maturity?: string | null
+          clients_enabled?: boolean
           country?: string | null
           created_at?: string
           data_use_tier?: string | null
@@ -4829,6 +4832,10 @@ export type Database = {
       admin_revoke_key: {
         Args: { p_code: string; p_reason?: string }
         Returns: boolean
+      }
+      admin_set_clients_enabled: {
+        Args: { p_enabled: boolean; p_org: string }
+        Returns: Json
       }
       admin_set_seats: {
         Args: { p_org_id: string; p_reason: string; p_seats: number }
