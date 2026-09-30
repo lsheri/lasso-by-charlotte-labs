@@ -370,6 +370,11 @@ export type TelemetryEvent =
    */
   | "span_link.created"
   /**
+   * S-T1: one saved settings change. Dims: section, setting, change, and
+   * to_level for data levels only. Closed lists in settings-events.ts.
+   */
+  | "settings.changed"
+  /**
    * S2: someone in the workspace was given, moved between, or taken off the
    * two things a person can have on a board. Closed dims only, no ids, no
    * names, no counts: access (review | work | none) and result (granted |
