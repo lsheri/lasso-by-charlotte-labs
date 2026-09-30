@@ -1899,7 +1899,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .canvas-lab-workstream-switch label { color: var(--nb-mid); font-size: 11.5px; }
 .canvas-lab-card-menu-trigger {
   position: absolute;
-  right: 3px;
+  right: 44px;
   top: 3px;
   z-index: 14;
   width: 28px;
@@ -1908,6 +1908,28 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   background: var(--nb-paper);
   color: var(--nb-graphite);
   opacity: 1;
+}
+.canvas-lab-card-open {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  z-index: 15;
+  width: 28px;
+  height: 28px;
+  min-height: 28px;
+  padding: 0;
+  background: transparent;
+  color: var(--nb-graphite);
+  opacity: .55;
+  transition: opacity var(--nb-fast) var(--nb-ease);
+}
+.canvas-lab-card:hover .canvas-lab-card-open,
+.canvas-lab-card-open:focus-visible {
+  opacity: 1;
+}
+.canvas-lab-card-open:focus-visible {
+  outline: 2px solid var(--nb-graphite);
+  outline-offset: 2px;
 }
 .canvas-lab-card:hover .canvas-lab-card-menu-trigger,
 .canvas-lab-card:focus-within .canvas-lab-card-menu-trigger,
@@ -1923,6 +1945,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   .canvas-lab-card-menu-trigger {
     width: 44px;
     height: 44px;
+    right: 46px;
     opacity: 1;
   }
 }

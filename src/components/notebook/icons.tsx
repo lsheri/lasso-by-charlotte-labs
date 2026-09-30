@@ -1,6 +1,6 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
-export type GraphiteIconName = "connectors" | "work" | "engagement" | "overview" | "reflect" | "ai-record" | "one-on-one" | "decisions" | "firm" | "members" | "settings" | "ask-lasso" | "messages" | "history" | "analyses" | "send" | "attach" | "search" | "plus" | "close" | "chevron-right" | "drag-handle" | "check" | "external-link" | "workstreams" | "preview-cards" | "sticky" | "working-from" | "text" | "grouping" | "example-board" | "share" | "fit" | "minus" | "more";
+export type GraphiteIconName = "connectors" | "work" | "engagement" | "overview" | "reflect" | "ai-record" | "one-on-one" | "decisions" | "firm" | "members" | "settings" | "ask-lasso" | "messages" | "history" | "analyses" | "send" | "attach" | "search" | "plus" | "close" | "chevron-right" | "drag-handle" | "check" | "external-link" | "workstreams" | "preview-cards" | "sticky" | "working-from" | "text" | "grouping" | "example-board" | "share" | "fit" | "expand" | "minus" | "more";
 type IconDef = { d: string[]; sig: string; sigIndex?: number; origin?: string };
 const ICONS: Record<GraphiteIconName, IconDef> = {
   connectors: { d: ["M7.2 3.8v3.3M12.8 3.7v3.5", "M4.8 7.3h10.5v2.5a5.2 5.2 0 01-5.3 5.2 5.2 5.2 0 01-5.2-5.3V7.3zM10 15.1c.1 1.2-.5 1.7-.4 3.1"], sig: "nb-sig-seat", sigIndex: 1 },
@@ -36,6 +36,7 @@ const ICONS: Record<GraphiteIconName, IconDef> = {
   "example-board": { d: ["M2.9 4.6l5.9-.4.1 5.1-5.8.2-.2-4.9zM11 3.8l6 .3-.3 4.8-5.7.2V3.8z", "M3.4 12l7.4-.3-.1 4.6-7.3-.1V12zM13 11.4l3.8.2-.2 4.3-3.8.3.2-4.8z"], sig: "nb-sig-flap", sigIndex: 1 },
   share: { d: ["M6.5 10.5l7-4.1M6.5 10.5l7 4", "M5 8.7a2.1 2.1 0 11-.1 4.2A2.1 2.1 0 015 8.7zM15 4.1a2.1 2.1 0 11-.1 4.2 2.1 2.1 0 01.1-4.2zM15 12.4a2.1 2.1 0 11-.1 4.2 2.1 2.1 0 01.1-4.2z"], sig: "nb-sig-lean-in", sigIndex: 0 },
   fit: { d: ["M3.2 7V3.2h3.9M12.9 3.2h3.9V7M16.7 13v3.8h-3.9M7.1 16.8H3.2V13", "M7.3 10l5.4-.1"], sig: "nb-sig-rise", sigIndex: 1 },
+  expand: { d: ["M12.4 3.2c1.6-.2 3.2-.2 4.8.1.2 1.6.2 3.2-.1 4.8", "M17.1 3.4c-1.8 1.7-3.6 3.5-5.3 5.4", "M7.6 16.8c-1.6.2-3.2.2-4.8-.1-.2-1.6-.2-3.2.1-4.8", "M2.9 16.6c1.8-1.7 3.6-3.5 5.3-5.4"], sig: "nb-sig-leap", sigIndex: 1 },
   minus: { d: ["M4 10.2l12-.3"], sig: "nb-sig-slide" },
   more: { d: ["M4.1 10h.1M9.9 10.1h.1M15.8 9.9h.1"], sig: "nb-sig-wave" },
 };

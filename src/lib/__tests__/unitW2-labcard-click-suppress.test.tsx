@@ -45,7 +45,7 @@ const item: WorkItemRow = {
   work_item_tasks: [],
 };
 
-function renderCard(onOpen = vi.fn()) {
+function renderCard({ onOpen = vi.fn(), onPointerDown = vi.fn(), readOnly = false } = {}) {
   const utils = render(
     <LabCard
       node={node}
@@ -66,7 +66,7 @@ function renderCard(onOpen = vi.fn()) {
       onMenuOpened={() => {}}
       onMenuOpenChange={() => {}}
       onMeasure={() => {}}
-      onPointerDown={() => {}}
+      onPointerDown={onPointerDown}
       onFocus={() => {}}
       onKeyDown={() => {}}
       canResize={false}
@@ -77,11 +77,12 @@ function renderCard(onOpen = vi.fn()) {
       frameChoices={[]}
       structured={false}
       onMoveToFrame={() => {}}
+      readOnly={readOnly}
     />,
   );
   const card = utils.getByTestId("lab-card-n1");
   const body = utils.getByRole("button", { name: "A piece of work" });
-  return { ...utils, card, body, onOpen };
+  return { ...utils, card, body, onOpen, onPointerDown };
 }
 
 function press(card: Element, body: Element, from: { x: number; y: number }, to: { x: number; y: number }) {
@@ -126,5 +127,30 @@ describe("unit W2 workboard card click after drag", () => {
     const { body, onOpen } = renderCard();
     fireEvent.keyDown(body, { key: "Enter" });
     expect(onOpen).toHaveBeenCalledTimes(1);
+  });
+
+  it("the Open button opens exactly once without starting a card drag", () => {
+    const { getByRole, onOpen, onPointerDown } = renderCard();
+    const open = getByRole("button", { name: "Open" });
+    fireEvent.pointerDown(open, { clientX: 20, clientY: 20 });
+    fireEvent.click(open);
+    expect(onPointerDown).not.toHaveBeenCalled();
+    expect(onOpen).toHaveBeenCalledTimes(1);
+  });
+
+  it("the Open button works immediately after a suppressed drag", () => {
+    const { card, body, getByRole, onOpen } = renderCard();
+    press(card, body, { x: 100, y: 100 }, { x: 140, y: 140 });
+    fireEvent.pointerDown(getByRole("button", { name: "Open" }), { clientX: 20, clientY: 20 });
+    fireEvent.click(getByRole("button", { name: "Open" }));
+    expect(onOpen).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows Open on an interactive card and omits it in read-only mode", () => {
+    const interactive = renderCard();
+    expect(interactive.getByRole("button", { name: "Open" })).toBeTruthy();
+    interactive.unmount();
+    const readOnly = renderCard({ readOnly: true });
+    expect(readOnly.queryByRole("button", { name: "Open" })).toBeNull();
   });
 });
