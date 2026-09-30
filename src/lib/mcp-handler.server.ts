@@ -1504,7 +1504,7 @@ async function pushConversation(
     ? String(args["vendor"])
     : "other";
 
-  const origId =
+  let origId =
     typeof args["orig_conversation_id"] === "string" ? args["orig_conversation_id"].trim() : "";
   if (!origId) return rpcError(id, -32602, "orig_conversation_id is required");
 
@@ -1630,7 +1630,41 @@ async function pushConversation(
     created_at_source: string | null;
     work_date: string | null;
   } | null = null;
-  if (sourceUrl) {
+  // ID-2: a lasso_conversation_id names the target outright. It must be a
+  // thread this caller owns; otherwise nothing is written.
+  const lassoConversationId =
+    typeof args["lasso_conversation_id"] === "string" ? args["lasso_conversation_id"].trim() : "";
+  if (lassoConversationId) {
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      lassoConversationId,
+    );
+    const { data } = isUuid
+      ? await supabaseAdmin
+          .from("work_items")
+          .select(`${threadColumns}, orig_conversation_id`)
+          .eq("id", lassoConversationId)
+          .eq("owner_id", owner.profileId)
+          .eq("type", "ai_thread")
+          .maybeSingle()
+      : { data: null };
+    if (!data) {
+      return rpcError(
+        id,
+        -32602,
+        `lasso_conversation_id '${lassoConversationId}' does not name a conversation of yours in Lasso. Nothing was saved. Push again without it, or with the lasso_conversation_id an earlier push returned.`,
+      );
+    }
+    // The record keeps the conversation key it already has, so its
+    // attachments stay grouped with it.
+    if (data.orig_conversation_id) origId = data.orig_conversation_id;
+    existingThread = {
+      id: data.id,
+      meta: data.meta,
+      created_at_source: data.created_at_source,
+      work_date: data.work_date,
+    };
+  }
+  if (!existingThread && sourceUrl) {
     const { data } = await supabaseAdmin
       .from("work_items")
       .select(threadColumns)
