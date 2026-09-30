@@ -76,7 +76,9 @@ export async function handleResendWebhook(request: Request): Promise<Response> {
   }
   const { error: updateError } = await supabaseAdmin.from("outbound_emails").update(update).eq("id", row.id);
   if (updateError) {
-    console.error("[resend-webhook] update failed for " + emailId + ": " + updateError.message);
+    console.error(
+      "[resend-webhook] update failed for " + emailId + " (tried status " + status + "): " + updateError.message,
+    );
     return Response.json({ error: "update failed" }, { status: 500 });
   }
 
