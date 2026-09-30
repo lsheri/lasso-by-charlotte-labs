@@ -18,6 +18,35 @@ const PLATFORM_FROM = "Lasso <noreply@lasso.charlotte-labs.com>";
 
 export type ResendResult = { ok: true } | { ok: false; status: number; detail: string };
 
+/** The one place that reads the Resend key for code that has no key of its own. */
+export function resendApiKey(): string | null {
+  return process.env["RESEND_API_KEY"] || null;
+}
+
+export type ResendTemplateResult =
+  | { ok: true; id: string | null }
+  | { ok: false; status: number; detail: string };
+
+/** Sends a published Resend template by alias. The template supplies from and subject. */
+export async function sendResendTemplate(
+  apiKey: string,
+  mail: { to: string; template: string; variables: Record<string, string | number> },
+): Promise<ResendTemplateResult> {
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+    body: JSON.stringify({
+      to: [mail.to],
+      template: { id: mail.template, variables: mail.variables },
+    }),
+  });
+  if (!response.ok) {
+    return { ok: false, status: response.status, detail: (await response.text()).slice(0, 300) };
+  }
+  const body = (await response.json().catch(() => null)) as { id?: string } | null;
+  return { ok: true, id: body?.id ?? null };
+}
+
 /** The one Resend sender, plain fetch, shared by invites and the auth email hook. */
 export async function sendViaResend(
   apiKey: string,
