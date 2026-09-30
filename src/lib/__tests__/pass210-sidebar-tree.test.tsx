@@ -3,7 +3,6 @@ import { cleanup, fireEvent, render, screen, within } from "@testing-library/rea
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { DEFAULT_VOCAB, EDU_VOCAB, PERSONAL_VOCAB } from "@/lib/edu-vocab";
 import {
   MAX_CONTAINER_DEPTH,
   MAX_SIDEBAR_CONTAINER_DEPTH,
