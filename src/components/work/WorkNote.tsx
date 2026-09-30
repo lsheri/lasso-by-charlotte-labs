@@ -22,6 +22,7 @@ export function WorkNote({
   chatPreview,
   filePreview,
   contextSelected = false,
+  headerGutter = false,
 }: {
   item: Omit<WorkItemRow, "work_item_tasks"> & { work_item_tasks?: WorkItemRow["work_item_tasks"] };
   onOpen?: (() => void) | undefined;
@@ -35,6 +36,8 @@ export function WorkNote({
   chatPreview?: WorkboardCardPreview | undefined;
   filePreview?: WorkboardFilePreview | undefined;
   contextSelected?: boolean;
+  /** Reserves the lane the board's control bar occupies, so a control never covers the date. */
+  headerGutter?: boolean;
 }) {
   const mapping = item.work_item_tasks?.[0]?.tasks ?? null;
   const when = resolveWorkDate(item);
@@ -84,10 +87,10 @@ export function WorkNote({
           : {})}
         className={`nb-paper-body flex h-full min-h-0 flex-col ${onOpen ? "cursor-pointer" : ""}`}
       >
-        <div className={`flex h-[14px] shrink-0 select-none items-center gap-2 ${contextSelected ? "canvas-lab-context-header" : ""}`}>
+        <div className={`flex h-[18px] shrink-0 select-none items-center gap-2 ${headerGutter ? "pr-[58px]" : ""} ${contextSelected ? "canvas-lab-context-header" : ""}`}>
           {lead ? <span className="shrink-0">{lead}</span> : null}
-          <BrandLogo brand={brand} size={13} />
-          <span className="min-w-0 flex-1 truncate font-mono text-[8.5px] uppercase tracking-[0.08em] text-muted-foreground">{sourceLabel}</span>
+          <BrandLogo brand={brand} size={16} />
+          <span className="min-w-0 flex-1 truncate font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">{sourceLabel}</span>
           <span className="shrink-0 font-mono text-[8.5px] uppercase tracking-[0.08em] text-soft">{date}</span>
           {actions ? <span className="shrink-0 select-none" onClick={(event) => event.stopPropagation()}>{actions}</span> : null}
         </div>

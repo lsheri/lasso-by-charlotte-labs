@@ -153,4 +153,12 @@ describe("unit W2 workboard card click after drag", () => {
     const readOnly = renderCard({ readOnly: true });
     expect(readOnly.queryByRole("button", { name: "Open" })).toBeNull();
   });
+
+  it("keeps Open and Card options as siblings in one control bar", () => {
+    const { getByRole } = renderCard();
+    const open = getByRole("button", { name: "Open" });
+    const options = getByRole("button", { name: "Card options" });
+    expect(open.parentElement).toBe(options.parentElement);
+    expect(open.parentElement?.classList.contains("canvas-lab-card-bar")).toBe(true);
+  });
 });

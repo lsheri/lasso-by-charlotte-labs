@@ -1897,27 +1897,32 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .canvas-lab-structure-toggle { display: flex; align-items: center; border: 1px solid var(--nb-rule); border-radius: var(--radius-control); padding: 2px; }
 .canvas-lab-workstream-switch { display: flex; min-height: 32px; align-items: center; gap: 7px; padding-inline: 6px; white-space: nowrap; }
 .canvas-lab-workstream-switch label { color: var(--nb-mid); font-size: 11.5px; }
-.canvas-lab-card-menu-trigger {
+.canvas-lab-card-bar {
   position: absolute;
-  right: 44px;
-  top: 3px;
-  z-index: 14;
-  width: 28px;
-  height: 28px;
-  min-height: 28px;
+  top: 4px;
+  right: 6px;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.canvas-lab-card-bar .canvas-lab-card-menu-trigger,
+.canvas-lab-card-bar .canvas-lab-card-open {
+  position: static;
+  right: auto;
+  top: auto;
+  width: 26px;
+  height: 26px;
+  min-height: 26px;
+  padding: 0;
+}
+.canvas-lab-card-menu-trigger {
   background: var(--nb-paper);
   color: var(--nb-graphite);
-  opacity: 1;
+  opacity: .55;
+  transition: opacity var(--nb-fast) var(--nb-ease);
 }
 .canvas-lab-card-open {
-  position: absolute;
-  right: 10px;
-  top: 10px;
-  z-index: 15;
-  width: 28px;
-  height: 28px;
-  min-height: 28px;
-  padding: 0;
   background: transparent;
   color: var(--nb-graphite);
   opacity: .55;
@@ -1942,10 +1947,11 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   background: var(--nb-paper);
 }
 @media (hover: none), (max-width: 767px) {
-  .canvas-lab-card-menu-trigger {
+  .canvas-lab-card-bar .canvas-lab-card-menu-trigger,
+  .canvas-lab-card-bar .canvas-lab-card-open {
     width: 44px;
     height: 44px;
-    right: 46px;
+    min-height: 44px;
     opacity: 1;
   }
 }
