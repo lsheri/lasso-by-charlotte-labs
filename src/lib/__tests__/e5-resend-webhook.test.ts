@@ -46,7 +46,7 @@ function requestFor(payload: R): Request {
   const wh = new Webhook(process.env["RESEND_WEBHOOK_SECRET"]!);
   const id = "msg_test";
   const timestamp = Math.floor(Date.now() / 1000).toString();
-  const signature = wh.sign(id, timestamp, body);
+  const signature = wh.sign(id, new Date(), body);
   return new Request("http://localhost/api/public/resend-webhook", {
     method: "POST",
     headers: {
