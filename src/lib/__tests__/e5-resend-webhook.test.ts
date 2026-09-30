@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Webhook } from "standardwebhooks";
 
 vi.mock("@/integrations/supabase/client.server", () => ({
-  supababaseAdminProxy: undefined,
   supabaseAdmin: {
     from: (t: string) => builder(t),
   },
