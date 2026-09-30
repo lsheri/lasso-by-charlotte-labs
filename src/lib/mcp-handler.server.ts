@@ -11,7 +11,7 @@ import {
 import { workTypeForFile } from "@/lib/work-types";
 import { recordEvent } from "@/lib/telemetry.server";
 import { dateLabel } from "@/lib/decisions-shared";
-import { coercePushArgs } from "@/lib/mcp-args";
+import { coerceJsonArg, coercePushArgs } from "@/lib/mcp-args";
 import {
   DECISION_HELD_REASON,
   DECISION_SKIPPED_REASON,
@@ -78,6 +78,7 @@ const ACCEPTED_PROTOCOLS = new Set([
 const MAX_TURNS = 500;
 const MAX_THREAD_BYTES = 2 * 1024 * 1024;
 const MAX_DOC_BYTES = 5 * 1024 * 1024;
+const MAX_RENDITION_BYTES = 200 * 1024;
 const MAX_ATTACHMENTS = 12;
 /** A re-push may improve the record; it may never shrink it silently. */
 const SHRINK_RATIO = 0.6;
@@ -187,6 +188,9 @@ export type AttachmentOutcome = {
   chars: number;
   version_no?: number;
   reason?: string;
+  /** R1: what happened to a rendition sent with a file_ref. */
+  rendition?: "stored" | "unchanged" | "rejected" | "failed" | "ignored_original_present";
+  rendition_match?: "yes" | "no" | "unknown";
 };
 
 export function attachmentSummaryLine(outcomes: readonly AttachmentOutcome[]): string {
@@ -236,6 +240,10 @@ export type ParsedAttachment = {
   include: boolean;
   /** ID-2: the 1-indexed message position the caller says produced it, never guessed. */
   producedAtTurn?: number;
+  /** R1: a text rendition of a file_ref, extracted in the caller's sandbox. Never the file. */
+  rendition?: { format: "markdown" | "html"; method: "extracted_by_script" | "written_by_model"; content: string; sha256?: string };
+  /** R1: why a sent rendition was not accepted. The placeholder is still made. */
+  renditionIssue?: string;
 };
 
 /** ID-2: the produced_at_turn position a caller named, if a positive integer. */
@@ -267,6 +275,44 @@ export function isTextFilename(name: string): boolean {
   const dot = name.lastIndexOf(".");
   if (dot < 0) return false;
   return TEXT_EXTENSIONS.has(name.slice(dot + 1).toLowerCase());
+}
+
+/** R1: stores a rendition's text beside the placeholder. Never the file. */
+export async function storeRendition(args: {
+  userId: string;
+  origId: string;
+  title: string;
+  rendition: NonNullable<ParsedAttachment["rendition"]>;
+}): Promise<{ ok: true; meta: Record<string, unknown> } | { ok: false; reason: string }> {
+  const { userId, origId, title, rendition } = args;
+  const { format, method, content, sha256 } = rendition;
+  try {
+    const computed = await sha256Hex(content);
+    const match: "yes" | "no" | "unknown" = !sha256 ? "unknown" : sha256 === computed ? "yes" : "no";
+    const path = `${userId}/rendition-${slugify(origId)}-${slugify(title)}-${crypto.randomUUID()}.${format === "html" ? "html" : "md"}`;
+    const bytes = new TextEncoder().encode(content).byteLength;
+    const { error } = await supabaseAdmin.storage.from("work-files").upload(path, content, {
+      contentType: format === "html" ? "text/html; charset=utf-8" : "text/markdown; charset=utf-8",
+      upsert: false,
+    });
+    if (error) return { ok: false, reason: error.message };
+    return {
+      ok: true,
+      meta: {
+        format,
+        method,
+        ref: path,
+        chars: content.length,
+        bytes,
+        sha256_stated: sha256 ?? null,
+        sha256_computed: computed,
+        match,
+        received_at: new Date().toISOString(),
+      },
+    };
+  } catch (err) {
+    return { ok: false, reason: err instanceof Error ? err.message : "rendition not stored" };
+  }
 }
 
 /** P1b item 1. Validates one incoming attachment; file_ref carries no content. */
@@ -311,7 +357,8 @@ export function parseIncomingAttachment(
       ...(sha ? { sha256: sha } : {}),
       ...(url ? { download_url: url } : {}),
     };
-    return { ok: true, attachment: { kind, title, content: "", sourceArtifactId, fileRef, origin, include, ...language, ...produced } };
+    const renditionPart = parseRendition(ref["rendition"]);
+    return { ok: true, attachment: { kind, title, content: "", sourceArtifactId, fileRef, origin, include, ...language, ...produced, ...renditionPart } };
   }
   if (typeof a["content"] !== "string") {
     return { ok: false, message: "Each attachment needs kind, verbatim title, and content" };
@@ -319,10 +366,55 @@ export function parseIncomingAttachment(
   return { ok: true, attachment: { kind, title, content: a["content"], sourceArtifactId, origin, include, ...language, ...produced } };
 }
 
+/** R1: validates a sent rendition. A bad one never fails the push. */
+function parseRendition(raw: unknown): Pick<ParsedAttachment, "rendition" | "renditionIssue"> {
+  if (raw === undefined || raw === null) return {};
+  const value = typeof raw === "string" ? coerceJsonArg(raw) : raw;
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return { renditionIssue: "rendition must be an object" };
+  }
+  const r = value as Record<string, unknown>;
+  const format = r["format"] === undefined || r["format"] === null ? "markdown" : r["format"];
+  if (format !== "markdown" && format !== "html") {
+    return { renditionIssue: "rendition.format must be markdown or html" };
+  }
+  const method = r["method"];
+  if (method !== "extracted_by_script" && method !== "written_by_model") {
+    return { renditionIssue: "rendition.method must be extracted_by_script or written_by_model" };
+  }
+  const content = r["content"];
+  if (typeof content !== "string" || content.length === 0) {
+    return { renditionIssue: "rendition.content must be non-empty text" };
+  }
+  if (new TextEncoder().encode(content).byteLength > MAX_RENDITION_BYTES) {
+    return { renditionIssue: "rendition.content is over 200 KB" };
+  }
+  let sha256: string | undefined;
+  if (r["sha256"] !== undefined && r["sha256"] !== null) {
+    const s = typeof r["sha256"] === "string" ? r["sha256"].trim().toLowerCase() : "";
+    if (!/^[0-9a-f]{64}$/.test(s)) return { renditionIssue: "rendition.sha256 must be 64 hex characters" };
+    sha256 = s;
+  }
+  return { rendition: { format, method, content, ...(sha256 ? { sha256 } : {}) } };
+}
+
 /** P1b item 1. The note when this push created file placeholders. */
 export function fileRefNote(created: number): string {
   if (created <= 0) return "";
   return ` ${created} file placeholder${created === 1 ? "" : "s"} on the board; add the file to complete each one.`;
+}
+
+/** R1: the note for renditions stored with file placeholders. */
+export function renditionNote(outcomes: AttachmentOutcome[]): string {
+  const stored = outcomes.filter((o) => o.rendition === "stored");
+  const changed = outcomes.some((o) => o.rendition_match === "no");
+  if (stored.length === 0 && !changed) return "";
+  const n = stored.length;
+  let note = ` ${n} rendition${n === 1 ? "" : "s"} stored with the file placeholders; they are shown as renditions, never as the files.`;
+  if (stored.some((o) => o.rendition_match === "no")) {
+    note += " A rendition changed after its script made it; send the script's output unchanged.";
+  }
+  return note;
 }
 
 function looksCondensed(incomingChars: number, storedChars: number): boolean {
