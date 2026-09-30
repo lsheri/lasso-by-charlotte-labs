@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { Navigate, createFileRoute } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 
@@ -20,16 +20,15 @@ export const Route = createFileRoute("/_authenticated/qa/seed")({
 });
 
 function QaSeedPage() {
-  const { data: profile } = useProfile();
+  const { data: profile, isPending } = useProfile();
   const run = useServerFn(seedQaPeople);
   const mutation = useMutation<QaSeedResult, Error, void>({
     mutationFn: () => run({ data: { profile_id: profile?.id } }),
   });
 
   const allowed = profile?.role === "admin" && profile?.org_id === QA_SEED_ORG_ID;
-  if (!allowed) {
-    return <p className="p-8 text-sm text-muted-foreground">This page is not for you.</p>;
-  }
+  if (isPending) return null;
+  if (!allowed) return <Navigate to="/home" replace />;
 
   return (
     <div className="max-w-xl space-y-4 p-8">

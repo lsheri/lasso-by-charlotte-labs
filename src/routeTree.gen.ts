@@ -52,7 +52,6 @@ import { Route as DemoConversationsRouteImport } from './routes/demo.conversatio
 import { Route as DemoSourcesRouteImport } from './routes/demo.sources'
 import { Route as JCodeRouteImport } from './routes/j.$code'
 import { Route as JoinEduRouteImport } from './routes/join_.edu'
-import { Route as LandingArchive20260925RouteImport } from './routes/landing-archive.2026-09-25'
 import { Route as SharedBoardTokenRouteImport } from './routes/shared-board.$token'
 import { Route as AuthenticatedClientsIdRouteImport } from './routes/_authenticated/clients.$id'
 import { Route as AuthenticatedCoachingIndexRouteImport } from './routes/_authenticated/coaching.index'
@@ -287,11 +286,6 @@ const JoinEduRoute = JoinEduRouteImport.update({
   path: '/join/edu',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LandingArchive20260925Route = LandingArchive20260925RouteImport.update({
-  id: '/landing-archive/2026-09-25',
-  path: '/landing-archive/2026-09-25',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const SharedBoardTokenRoute = SharedBoardTokenRouteImport.update({
   id: '/shared-board/$token',
   path: '/shared-board/$token',
@@ -422,7 +416,6 @@ export interface FileRoutesByFullPath {
   '/demo/sources': typeof DemoSourcesRoute
   '/j/$code': typeof JCodeRoute
   '/join/edu': typeof JoinEduRoute
-  '/landing-archive/2026-09-25': typeof LandingArchive20260925Route
   '/shared-board/$token': typeof SharedBoardTokenRoute
   '/demo/': typeof DemoIndexRoute
   '/clients/$id': typeof AuthenticatedClientsIdRoute
@@ -483,7 +476,6 @@ export interface FileRoutesByTo {
   '/demo/sources': typeof DemoSourcesRoute
   '/j/$code': typeof JCodeRoute
   '/join/edu': typeof JoinEduRoute
-  '/landing-archive/2026-09-25': typeof LandingArchive20260925Route
   '/shared-board/$token': typeof SharedBoardTokenRoute
   '/demo': typeof DemoIndexRoute
   '/clients/$id': typeof AuthenticatedClientsIdRoute
@@ -546,7 +538,6 @@ export interface FileRoutesById {
   '/demo/sources': typeof DemoSourcesRoute
   '/j/$code': typeof JCodeRoute
   '/join_/edu': typeof JoinEduRoute
-  '/landing-archive/2026-09-25': typeof LandingArchive20260925Route
   '/shared-board/$token': typeof SharedBoardTokenRoute
   '/demo/': typeof DemoIndexRoute
   '/_authenticated/clients/$id': typeof AuthenticatedClientsIdRoute
@@ -609,7 +600,6 @@ export interface FileRouteTypes {
     | '/demo/sources'
     | '/j/$code'
     | '/join/edu'
-    | '/landing-archive/2026-09-25'
     | '/shared-board/$token'
     | '/demo/'
     | '/clients/$id'
@@ -670,7 +660,6 @@ export interface FileRouteTypes {
     | '/demo/sources'
     | '/j/$code'
     | '/join/edu'
-    | '/landing-archive/2026-09-25'
     | '/shared-board/$token'
     | '/demo'
     | '/clients/$id'
@@ -732,7 +721,6 @@ export interface FileRouteTypes {
     | '/demo/sources'
     | '/j/$code'
     | '/join_/edu'
-    | '/landing-archive/2026-09-25'
     | '/shared-board/$token'
     | '/demo/'
     | '/_authenticated/clients/$id'
@@ -773,7 +761,6 @@ export interface RootRouteChildren {
   DemoSourcesRoute: typeof DemoSourcesRoute
   JCodeRoute: typeof JCodeRoute
   JoinEduRoute: typeof JoinEduRoute
-  LandingArchive20260925Route: typeof LandingArchive20260925Route
   SharedBoardTokenRoute: typeof SharedBoardTokenRoute
   DemoIndexRoute: typeof DemoIndexRoute
   ApiAnalysisStreamRoute: typeof ApiAnalysisStreamRoute
@@ -1089,13 +1076,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof JoinEduRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/landing-archive/2026-09-25': {
-      id: '/landing-archive/2026-09-25'
-      path: '/landing-archive/2026-09-25'
-      fullPath: '/landing-archive/2026-09-25'
-      preLoaderRoute: typeof LandingArchive20260925RouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/shared-board/$token': {
       id: '/shared-board/$token'
       path: '/shared-board/$token'
@@ -1301,7 +1281,6 @@ const rootRouteChildren: RootRouteChildren = {
   DemoSourcesRoute: DemoSourcesRoute,
   JCodeRoute: JCodeRoute,
   JoinEduRoute: JoinEduRoute,
-  LandingArchive20260925Route: LandingArchive20260925Route,
   SharedBoardTokenRoute: SharedBoardTokenRoute,
   DemoIndexRoute: DemoIndexRoute,
   ApiAnalysisStreamRoute: ApiAnalysisStreamRoute,

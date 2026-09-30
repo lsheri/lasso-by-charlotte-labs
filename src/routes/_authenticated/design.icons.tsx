@@ -1,9 +1,12 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { Navigate, createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import type React from "react";
 
 import { DrawnCheck, DrawnEllipse, DrawnStrike, useMark } from "@/components/notebook/marks";
 import { GraphiteIcon, getIconSignature, type GraphiteIconName } from "@/components/notebook/icons";
 import { Button } from "@/components/ui/button";
+import { useProfile } from "@/hooks/use-profile";
+import { QA_SEED_ORG_ID } from "@/lib/qa-seed.functions";
 
 export const Route = createFileRoute("/_authenticated/design/icons")({
   head: () => ({
@@ -15,8 +18,25 @@ export const Route = createFileRoute("/_authenticated/design/icons")({
       { property: "og:description", content: "Internal reference for the notebook icon set." },
     ],
   }),
-  component: IconsGallery,
+  component: IconsRoute,
 });
+
+function IconsRoute() {
+  return (
+    <FounderAdminOnly>
+      <IconsGallery />
+    </FounderAdminOnly>
+  );
+}
+
+function FounderAdminOnly({ children }: { children: React.ReactNode }) {
+  const { data: profile, isPending } = useProfile();
+  if (isPending) return null;
+  const allowed = profile?.role === "admin" && profile?.org_id === QA_SEED_ORG_ID;
+  if (!allowed) return <Navigate to="/home" replace />;
+  return <>{children}</>;
+}
+
 
 type Entry = {
   name: GraphiteIconName;

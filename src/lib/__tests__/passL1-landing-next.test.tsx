@@ -77,8 +77,7 @@ describe("pass L1 hidden landing route", () => {
     expect(home).toContain(
       "Lasso: the human judgment in your team's AI work, traced",
     );
-    expect(classic).toContain('<B2BLanding surface="landing-classic" />');
-    expect(classic).toContain("noindex, nofollow");
+    expect(classic).toContain('redirect({ to: "/", replace: true })');
     expect(old).toContain('redirect({ to: "/", replace: true })');
     expect(route).not.toContain('to="/landing-next"');
   });
