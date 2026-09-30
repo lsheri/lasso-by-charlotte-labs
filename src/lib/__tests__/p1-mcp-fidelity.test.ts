@@ -75,7 +75,7 @@ describe("P1 item 0 — the structured response carries everything", () => {
   });
 
   it("returns the summary, counts, placement and notes as fields", () => {
-    expect(handler).toContain("content: [{ type: \"text\", text: summary }],");
+    expect(handler).toContain("content: [{ type: \"text\", text: `${summary}${conversationIdLines}` }],");
     expect(handler).toContain("stored_count: storedCount,");
     expect(handler).toContain("next_from: progress.next_from,");
     expect(handler).toContain("complete: progress.complete,");
