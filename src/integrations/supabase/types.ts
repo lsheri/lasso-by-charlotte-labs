@@ -4750,6 +4750,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      code_prefix: {
+        Args: { p_fallback?: string; p_name: string }
+        Returns: string
+      }
       consent_to_coaching_link: {
         Args: { p_actor_profile_id?: string; p_link_id: string }
         Returns: undefined
