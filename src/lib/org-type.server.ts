@@ -80,6 +80,38 @@ export async function isAffiliatedStrict(orgId: string): Promise<boolean | null>
   }
 }
 
+const partnerCache = new Map<string, { at: number; value: string | null }>();
+
+/** Test seam. */
+export function resetPartnerCache(): void {
+  partnerCache.clear();
+}
+
+/**
+ * PH-S1: the institution slug of the workspace's affiliation, or null when
+ * there is none or the read failed. Read only, same cache window as above.
+ */
+export async function partnerSlugOf(orgId: string | null | undefined): Promise<string | null> {
+  if (!orgId) return null;
+  const hit = partnerCache.get(orgId);
+  if (hit && Date.now() - hit.at < ORG_TYPE_TTL_MS) return hit.value;
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("org_affiliations")
+      .select("institutions(slug)")
+      .eq("org_id", orgId)
+      .maybeSingle();
+    if (error) return null;
+    const row = data as unknown as { institutions: { slug: string } | null } | null;
+    const value = row?.institutions?.slug ?? null;
+    partnerCache.set(orgId, { at: Date.now(), value });
+    return value;
+  } catch {
+    return null;
+  }
+}
+
 export async function orgTypeOf(orgId: string | null | undefined): Promise<string> {
   return (await orgTypeOfStrict(orgId)) ?? "personal";
 }

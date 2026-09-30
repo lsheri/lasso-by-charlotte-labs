@@ -9,6 +9,8 @@ import {
   shouldNotePresence,
   type DataTier,
 } from "./data-consent-shared";
+import { getRequestHeader } from "@tanstack/react-start/server";
+
 import { resolveEnvironment } from "./environment.server";
 import type { TelemetryDims, TelemetryEvent } from "./telemetry-shared";
 
@@ -32,6 +34,46 @@ export async function computeActorHash(userId: string | null | undefined): Promi
   return sha256Hex(salt + userId);
 }
 
+/**
+ * PH-S1: request and workspace context carried beside the dims. Dims are never
+ * altered. The signed-in path sends no IP and disables geo lookup on purpose.
+ */
+export type MirrorContext = {
+  environment: string;
+  workspace_type: string;
+  affiliated: boolean | null;
+  partner: string;
+  /** Anonymous path only: sends $ip and drops $groups. */
+  anonymous?: boolean;
+};
+
+function readHeader(name: string): string | undefined {
+  try {
+    const value = getRequestHeader(name);
+    return typeof value === "string" && value.length > 0 ? value : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+export function contextProperties(context: MirrorContext): Record<string, unknown> {
+  const props: Record<string, unknown> = {
+    environment: context.environment,
+    workspace_type: context.workspace_type,
+    affiliated: context.affiliated,
+    partner: context.partner,
+  };
+  const ua = readHeader("user-agent");
+  if (ua) props["$raw_user_agent"] = ua.slice(0, 512);
+  if (context.anonymous) {
+    const ip = readHeader("cf-connecting-ip") ?? readHeader("x-forwarded-for")?.split(",")[0]?.trim();
+    if (ip) props["$ip"] = ip;
+  } else {
+    props["$geoip_disable"] = true;
+  }
+  return props;
+}
+
 /** Content-free mirror: hashes and dimensions only. Awaited so the edge runtime
  * does not cancel the request when the handler returns. Never throws. */
 export async function mirrorToPostHog(
@@ -39,6 +81,7 @@ export async function mirrorToPostHog(
   actorHash: string | null,
   tenantHash: string,
   dims: TelemetryDims,
+  context?: MirrorContext,
 ): Promise<void> {
   if (!actorHash) {
     console.warn(`[telemetry] mirror skipped for ${eventType}: no actor hash (TELEMETRY_SALT?)`);
@@ -55,9 +98,10 @@ export async function mirrorToPostHog(
         event: eventType,
         distinct_id: actorHash,
         properties: {
+          ...(context ? contextProperties(context) : {}),
           ...dims,
           $process_person_profile: false,
-          $groups: { org: tenantHash },
+          ...(context?.anonymous ? {} : { $groups: { org: tenantHash } }),
         },
       }),
     });
@@ -143,7 +187,13 @@ export async function recordAnonymousEvent(
     });
     if (error)
       console.error(`[telemetry] anonymous insert failed for ${eventType}:`, error.message);
-    await mirrorToPostHog(eventType, actorHash, tenantHash, dims);
+    await mirrorToPostHog(eventType, actorHash, tenantHash, dims, {
+      environment: resolveEnvironment(),
+      workspace_type: "none",
+      affiliated: null,
+      partner: "none",
+      anonymous: true,
+    });
   } catch (e) {
     console.error("[telemetry] recordAnonymousEvent failed:", (e as Error).message);
   }
@@ -245,7 +295,23 @@ export async function recordEvent(
     if (error)
       console.error(`[telemetry] canonical insert failed for ${input.eventType}:`, error.message);
     // Nothing leaves the workspace at the lowest level.
-    if (consent.tier !== "t0") await mirrorToPostHog(input.eventType, actorHash, tenantHash, dims);
+    if (consent.tier !== "t0") {
+      let partner = "none";
+      if (stamp.affiliated === true) {
+        try {
+          const { partnerSlugOf } = await import("./org-type.server");
+          partner = (await partnerSlugOf(input.orgId)) ?? "none";
+        } catch {
+          /* keep "none" */
+        }
+      }
+      await mirrorToPostHog(input.eventType, actorHash, tenantHash, dims, {
+        environment: resolveEnvironment(),
+        workspace_type: stamp.workspace_type,
+        affiliated: stamp.affiliated,
+        partner,
+      });
+    }
     if (!error) {
       // Post-storage only: the stored row is the source of truth, and the sweep
       // decides for itself what each workspace's chosen level allows to leave.
