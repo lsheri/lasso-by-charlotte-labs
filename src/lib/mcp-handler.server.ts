@@ -552,6 +552,17 @@ const pushTools = (vocab: McpVocab) => [
                   bytes: { type: "integer" },
                   sha256: { type: "string", description: "64 hex characters." },
                   download_url: { type: "string" },
+                  rendition: {
+                    type: "object",
+                    description: "Optional. The file's text, extracted by a script in your sandbox and sent unchanged. Lasso shows it as a rendition, never as the file.",
+                    properties: {
+                      format: { type: "string", enum: ["markdown", "html"] },
+                      method: { type: "string", enum: ["extracted_by_script", "written_by_model"] },
+                      content: { type: "string" },
+                      sha256: { type: "string", description: "64 hex characters, of the rendition text." },
+                    },
+                    required: ["method", "content"],
+                  },
                 },
                 required: ["filename"],
               },
@@ -1976,6 +1987,9 @@ export async function pushConversation(
   /** U1: attachments held back as not made in this chat, and text-file refs. */
   let heldCount = 0;
   let textRefCount = 0;
+  /** R1: renditions stored this push, and those whose stated sha256 differed. */
+  let renditionsStored = 0;
+  let renditionsChanged = 0;
   const transcriptText = messages.map((m) => m.content).join("\n\n");
   const messageTexts = messages.map((m) => m.content);
   if (attachments.length > 0 && !owner.userId) {
@@ -1983,7 +1997,7 @@ export async function pushConversation(
   } else {
     const { data: existingAttachments } = await supabaseAdmin
       .from("work_items")
-      .select("id, title, content_ref, content_hash, captured_at, source_meta, parent_work_item_id")
+      .select("id, title, content_ref, content_hash, captured_at, source_meta, parent_work_item_id, content_fidelity")
       .eq("owner_id", owner.profileId)
       .eq("orig_conversation_id", origId)
       .neq("type", "ai_thread");
@@ -2017,16 +2031,84 @@ export async function pushConversation(
           saved += 1;
           capturedIds.push(refMatch.id);
           attachmentIds.push(refMatch.id);
+          // R1: a rendition only ever joins a placeholder still waiting for its file.
+          const renditionFields: Pick<AttachmentOutcome, "rendition" | "rendition_match" | "reason"> = {};
+          if (attachment.renditionIssue) {
+            renditionFields.rendition = "rejected";
+            renditionFields.reason = attachment.renditionIssue;
+          } else if (attachment.rendition) {
+            const matchRow = refMatch as { content_fidelity?: string | null; source_meta: unknown };
+            if (matchRow.content_fidelity !== "reference") {
+              renditionFields.rendition = "ignored_original_present";
+            } else {
+              const priorMeta =
+                matchRow.source_meta && typeof matchRow.source_meta === "object" && !Array.isArray(matchRow.source_meta)
+                  ? (matchRow.source_meta as Record<string, unknown>)
+                  : {};
+              const prior = priorMeta["rendition"] as { sha256_computed?: string } | undefined;
+              const newSha = await sha256Hex(attachment.rendition.content);
+              if (prior?.sha256_computed && prior.sha256_computed === newSha) {
+                renditionFields.rendition = "unchanged";
+              } else {
+                const stored = await storeRendition({
+                  userId: owner.userId!,
+                  origId,
+                  title: attachment.title,
+                  rendition: attachment.rendition,
+                });
+                if (!stored.ok) {
+                  renditionFields.rendition = "failed";
+                  renditionFields.reason = stored.reason;
+                } else {
+                  const { error: renditionUpdateError } = await supabaseAdmin
+                    .from("work_items")
+                    .update({ source_meta: { ...priorMeta, rendition: stored.meta } as unknown as Json })
+                    .eq("id", refMatch.id);
+                  if (renditionUpdateError) {
+                    renditionFields.rendition = "failed";
+                    renditionFields.reason = renditionUpdateError.message;
+                  } else {
+                    const m = stored.meta["match"] as "yes" | "no" | "unknown";
+                    renditionFields.rendition = "stored";
+                    renditionFields.rendition_match = m;
+                    renditionsStored += 1;
+                    if (m === "no") renditionsChanged += 1;
+                  }
+                }
+              }
+            }
+          }
           attachmentOutcomes.push({
             title: attachment.title,
             source_artifact_id: attachment.sourceArtifactId,
             outcome: "unchanged",
             chars: 0,
+            ...renditionFields,
           });
           continue;
         }
         const refType = workTypeForFile(ref.filename);
         const refTurnId = linkedTurnId(attachment);
+        // R1: store the rendition first; a failure never blocks the placeholder.
+        const newRendition: Pick<AttachmentOutcome, "rendition" | "rendition_match" | "reason"> = {};
+        let renditionMeta: Record<string, unknown> | null = null;
+        if (attachment.renditionIssue) {
+          newRendition.rendition = "rejected";
+          newRendition.reason = attachment.renditionIssue;
+        } else if (attachment.rendition) {
+          const stored = await storeRendition({
+            userId: owner.userId!,
+            origId,
+            title: attachment.title,
+            rendition: attachment.rendition,
+          });
+          if (stored.ok) {
+            renditionMeta = stored.meta;
+          } else {
+            newRendition.rendition = "failed";
+            newRendition.reason = stored.reason;
+          }
+        }
         const refResult = await supabaseAdmin
           .from("work_items")
           .insert({
@@ -2053,6 +2135,7 @@ export async function pushConversation(
               download_url: ref.download_url ?? null,
               source_artifact_id: attachment.sourceArtifactId,
               produced_at_turn: null,
+              ...(renditionMeta ? { rendition: renditionMeta } : {}),
             } as unknown as Json,
             meta: { assistant_transcribed: true },
             parent_work_item_id: threadId,
@@ -2072,6 +2155,13 @@ export async function pushConversation(
           });
           continue;
         }
+        if (renditionMeta) {
+          const m = renditionMeta["match"] as "yes" | "no" | "unknown";
+          newRendition.rendition = "stored";
+          newRendition.rendition_match = m;
+          renditionsStored += 1;
+          if (m === "no") renditionsChanged += 1;
+        }
         saved += 1;
         fileRefsCreated += 1;
         if (refTurnId) turnLinkedCount += 1;
@@ -2083,6 +2173,7 @@ export async function pushConversation(
           source_artifact_id: attachment.sourceArtifactId,
           outcome: "reference_created",
           chars: 0,
+          ...newRendition,
         });
         continue;
       }
@@ -2442,6 +2533,8 @@ export async function pushConversation(
       attachments_held: versionRowsBucket(heldCount),
       text_refs: versionRowsBucket(textRefCount),
       turn_linked_attachments: turnLinkedBucket(turnLinkedCount),
+      renditions: versionRowsBucket(renditionsStored),
+      renditions_changed: versionRowsBucket(renditionsChanged),
     },
   });
   await recordEvent(supabaseAdmin, {
@@ -2612,6 +2705,7 @@ export async function pushConversation(
   const progress = pushProgress(storedCount, total ?? null);
   const notes = [
     placeholderNote,
+    renditionNote(attachmentOutcomes),
     windowNote,
     totalNote,
     degradedNote,
