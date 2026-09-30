@@ -83,11 +83,13 @@ function renderCard(onOpen = vi.fn()) {
   return { ...utils, card, body, onOpen };
 }
 
-function press(card: Element, from: { x: number; y: number }, to: { x: number; y: number }) {
+function press(card: Element, body: Element, from: { x: number; y: number }, to: { x: number; y: number }) {
   fireEvent.pointerDown(card, { clientX: from.x, clientY: from.y });
   fireEvent.pointerMove(card, { clientX: to.x, clientY: to.y });
   fireEvent.pointerUp(card, { clientX: to.x, clientY: to.y });
-  fireEvent.click(card, { clientX: to.x, clientY: to.y });
+  // A real click targets the innermost element: the card body. The card's
+  // capture-phase handler sees it on the way down.
+  fireEvent.click(body, { clientX: to.x, clientY: to.y });
 }
 
 afterEach(cleanup);
