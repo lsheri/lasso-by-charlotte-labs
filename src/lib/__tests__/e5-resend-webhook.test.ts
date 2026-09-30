@@ -30,7 +30,7 @@ function builder(table: string) {
         return;
       }
       const hit = rows.filter((r) => filters.every((f) => f(r)));
-      hit.forEach((r) => Object.assign(r, patch));
+      if (!updateError) hit.forEach((r) => Object.assign(r, patch));
       res({ data: hit.map((r) => ({ ...r })), error: updateError });
     },
   };
