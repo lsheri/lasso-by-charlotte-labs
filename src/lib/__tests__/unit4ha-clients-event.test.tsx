@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ClientsSettingCard } from "@/components/settings/ClientsSettingCard";
 import { guardEventDims } from "@/lib/event-dim-allowlist";
@@ -42,6 +42,10 @@ function mount() {
 }
 
 describe("unit 4h-a org.clients_changed", () => {
+  afterEach(() => {
+    cleanup();
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     profile.mockReturnValue({ data: adminProfile() });
