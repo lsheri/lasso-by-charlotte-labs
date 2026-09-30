@@ -63,6 +63,7 @@ import { Route as ApiAnalysisStreamRouteImport } from './routes/api/analysis.str
 import { Route as ApiCoachChatStreamRouteImport } from './routes/api/coach-chat.stream'
 import { Route as ApiMcpTokenRouteImport } from './routes/api/mcp.$token'
 import { Route as ApiPublicAuthEmailHookRouteImport } from './routes/api/public/auth-email-hook'
+import { Route as ApiPublicResendWebhookRouteImport } from './routes/api/public/resend-webhook'
 import { Route as ApiReflectStreamRouteImport } from './routes/api/reflect.stream'
 import { Route as AuthenticatedCoachingEngagementIdSubjectIdRouteImport } from './routes/_authenticated/coaching.$engagementId.$subjectId'
 import { Route as AuthenticatedEngagementsIdCanvasLabRouteImport } from './routes/_authenticated/engagements.$id_.canvas-lab'
@@ -344,6 +345,11 @@ const ApiPublicAuthEmailHookRoute = ApiPublicAuthEmailHookRouteImport.update({
   path: '/api/public/auth-email-hook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicResendWebhookRoute = ApiPublicResendWebhookRouteImport.update({
+  id: '/api/public/resend-webhook',
+  path: '/api/public/resend-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiReflectStreamRoute = ApiReflectStreamRouteImport.update({
   id: '/api/reflect/stream',
   path: '/api/reflect/stream',
@@ -427,6 +433,7 @@ export interface FileRoutesByFullPath {
   '/api/coach-chat/stream': typeof ApiCoachChatStreamRoute
   '/api/mcp/$token': typeof ApiMcpTokenRoute
   '/api/public/auth-email-hook': typeof ApiPublicAuthEmailHookRoute
+  '/api/public/resend-webhook': typeof ApiPublicResendWebhookRoute
   '/api/reflect/stream': typeof ApiReflectStreamRoute
   '/coaching/': typeof AuthenticatedCoachingIndexRoute
   '/coaching/$engagementId/$subjectId': typeof AuthenticatedCoachingEngagementIdSubjectIdRoute
@@ -487,6 +494,7 @@ export interface FileRoutesByTo {
   '/api/coach-chat/stream': typeof ApiCoachChatStreamRoute
   '/api/mcp/$token': typeof ApiMcpTokenRoute
   '/api/public/auth-email-hook': typeof ApiPublicAuthEmailHookRoute
+  '/api/public/resend-webhook': typeof ApiPublicResendWebhookRoute
   '/api/reflect/stream': typeof ApiReflectStreamRoute
   '/coaching': typeof AuthenticatedCoachingIndexRoute
   '/coaching/$engagementId/$subjectId': typeof AuthenticatedCoachingEngagementIdSubjectIdRoute
@@ -549,6 +557,7 @@ export interface FileRoutesById {
   '/api/coach-chat/stream': typeof ApiCoachChatStreamRoute
   '/api/mcp/$token': typeof ApiMcpTokenRoute
   '/api/public/auth-email-hook': typeof ApiPublicAuthEmailHookRoute
+  '/api/public/resend-webhook': typeof ApiPublicResendWebhookRoute
   '/api/reflect/stream': typeof ApiReflectStreamRoute
   '/_authenticated/coaching/': typeof AuthenticatedCoachingIndexRoute
   '/_authenticated/coaching/$engagementId/$subjectId': typeof AuthenticatedCoachingEngagementIdSubjectIdRoute
@@ -611,6 +620,7 @@ export interface FileRouteTypes {
     | '/api/coach-chat/stream'
     | '/api/mcp/$token'
     | '/api/public/auth-email-hook'
+    | '/api/public/resend-webhook'
     | '/api/reflect/stream'
     | '/coaching/'
     | '/coaching/$engagementId/$subjectId'
@@ -671,6 +681,7 @@ export interface FileRouteTypes {
     | '/api/coach-chat/stream'
     | '/api/mcp/$token'
     | '/api/public/auth-email-hook'
+    | '/api/public/resend-webhook'
     | '/api/reflect/stream'
     | '/coaching'
     | '/coaching/$engagementId/$subjectId'
@@ -732,6 +743,7 @@ export interface FileRouteTypes {
     | '/api/coach-chat/stream'
     | '/api/mcp/$token'
     | '/api/public/auth-email-hook'
+    | '/api/public/resend-webhook'
     | '/api/reflect/stream'
     | '/_authenticated/coaching/'
     | '/_authenticated/coaching/$engagementId/$subjectId'
@@ -768,6 +780,7 @@ export interface RootRouteChildren {
   ApiCoachChatStreamRoute: typeof ApiCoachChatStreamRoute
   ApiMcpTokenRoute: typeof ApiMcpTokenRoute
   ApiPublicAuthEmailHookRoute: typeof ApiPublicAuthEmailHookRoute
+  ApiPublicResendWebhookRoute: typeof ApiPublicResendWebhookRoute
   ApiReflectStreamRoute: typeof ApiReflectStreamRoute
   ApiPublicHooksEgressSweepRoute: typeof ApiPublicHooksEgressSweepRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
@@ -1153,6 +1166,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAuthEmailHookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/resend-webhook': {
+      id: '/api/public/resend-webhook'
+      path: '/api/public/resend-webhook'
+      fullPath: '/api/public/resend-webhook'
+      preLoaderRoute: typeof ApiPublicResendWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/reflect/stream': {
       id: '/api/reflect/stream'
       path: '/api/reflect/stream'
@@ -1288,6 +1308,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCoachChatStreamRoute: ApiCoachChatStreamRoute,
   ApiMcpTokenRoute: ApiMcpTokenRoute,
   ApiPublicAuthEmailHookRoute: ApiPublicAuthEmailHookRoute,
+  ApiPublicResendWebhookRoute: ApiPublicResendWebhookRoute,
   ApiReflectStreamRoute: ApiReflectStreamRoute,
   ApiPublicHooksEgressSweepRoute: ApiPublicHooksEgressSweepRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
