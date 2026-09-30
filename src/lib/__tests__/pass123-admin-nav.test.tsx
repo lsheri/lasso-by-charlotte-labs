@@ -10,7 +10,7 @@ const mocks = vi.hoisted(() => ({
   profile: null as {
     id: string;
     role: string;
-    org_type: "company", clients_enabled: true | "personal";
+    org_type: "company" | "personal";
     display_name: string;
   } | null,
   engagements: [] as unknown[],

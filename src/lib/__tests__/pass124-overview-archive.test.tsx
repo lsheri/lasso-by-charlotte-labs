@@ -18,7 +18,7 @@ import {
 import type { ShippedCard } from "@/lib/shipped-work-shared";
 
 const mocks = vi.hoisted(() => ({
-  profile: { id: "p1", role: "member", org_type: "company", clients_enabled: true, display_name: "A" } as {
+  profile: { id: "p1", role: "member", org_type: "company", display_name: "A" } as {
     id: string;
     role: string;
     org_type: string;
@@ -120,7 +120,7 @@ function render(ui: React.ReactElement) {
 
 afterEach(() => {
   cleanup();
-  mocks.profile = { id: "p1", role: "member", org_type: "company", clients_enabled: true, display_name: "A" };
+  mocks.profile = { id: "p1", role: "member", org_type: "company", display_name: "A" };
   mocks.deliverables = [];
   mocks.shipped = [];
 });
@@ -182,12 +182,12 @@ describe("the archive in the nav", () => {
     expect(screen.getByText(PAST_WORK_NAV_LABEL)).toBeTruthy();
     cleanup();
 
-    mocks.profile = { id: "p2", role: "admin", org_type: "company", clients_enabled: true, display_name: "B" };
+    mocks.profile = { id: "p2", role: "admin", org_type: "company", display_name: "B" };
     render(<SidebarNav />);
     expect(screen.getByText(PAST_WORK_NAV_LABEL)).toBeTruthy();
     cleanup();
 
-    mocks.profile = { id: "p3", role: "coach", org_type: "company", clients_enabled: true, display_name: "C" };
+    mocks.profile = { id: "p3", role: "coach", org_type: "company", display_name: "C" };
     render(<SidebarNav />);
     expect(screen.queryByText(PAST_WORK_NAV_LABEL)).toBeNull();
   });
