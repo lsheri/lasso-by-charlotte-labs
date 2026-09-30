@@ -4758,6 +4758,7 @@ export type Database = {
       account_stage: { Args: { p_org: string }; Returns: string }
       active_org_id: { Args: never; Returns: string }
       active_profile_id: { Args: never; Returns: string }
+      admin_account_view: { Args: { p_org_id: string }; Returns: Json }
       admin_ai_cost_reconciliation: {
         Args: { p_days?: number }
         Returns: {
