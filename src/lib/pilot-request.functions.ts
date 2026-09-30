@@ -52,6 +52,7 @@ export const submitPilotRequestFn = createServerFn({ method: "POST" })
     const saved: SavedPilotRequest = { ...data, id: row.id, created_at: row.created_at };
     let emailStatus: "sent" | "failed" = "failed";
     try {
+      const { sendPilotNotification } = await import("./pilot-request.server");
       emailStatus = (await sendPilotNotification(saved)) ? "sent" : "failed";
     } catch {
       emailStatus = "failed";
