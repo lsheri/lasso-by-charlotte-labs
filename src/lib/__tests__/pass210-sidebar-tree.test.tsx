@@ -138,6 +138,16 @@ describe("pass 210 sidebar rendering", () => {
     expect(screen.queryByText("Folders")).toBeNull();
     for (const id of ["e1", "e2", "e3"]) expect(screen.getByText(`Title ${id}`)).toBeTruthy();
   });
+
+  it("keeps every client in the tree when an admin turns clients off", () => {
+    mocks.profile = { id: "p1", org_id: "o1", org_type: "company", clients_enabled: false, role: "worker" };
+    mocks.engagements = mixed;
+    render(<SidebarNav />);
+    expect(screen.queryByText("Folders")).toBeNull();
+    expect(screen.getAllByText("Acme")).toHaveLength(1);
+    expect(screen.getAllByText("Research")).toHaveLength(1);
+    for (const id of ["e1", "e2"]) expect(screen.getByText(`Title ${id}`)).toBeTruthy();
+  });
 });
 
 describe("unit 3c containers render without workboards", () => {

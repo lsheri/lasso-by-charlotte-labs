@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 
-import { buildContainerTree, flattenForSidebar } from "@/lib/nav-groups";
 import { canSetWorkspaceShape } from "@/lib/role-access";
 import { clientsEnabled } from "@/lib/workspace-settings";
 
