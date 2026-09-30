@@ -242,7 +242,42 @@ async function safeLogHealth(input: Parameters<typeof logHealth>[0]): Promise<vo
   }
 }
 
+/** The row S8 writes. Exported so the guard test can assert its keys. */
+export function aiUsageRow(result: ChatResult, meta: AiMeta | undefined) {
+  return {
+    org_id: meta?.orgId ?? null,
+    surface: meta?.surface ?? "unknown",
+    model: result.model,
+    tokens_in: result.tokensIn,
+    cached_in: result.cachedIn,
+    tokens_out: result.tokensOut,
+    cost_usd: result.costUsd,
+    duration_ms: result.durationMs,
+    finish_reason: result.finishReason,
+  };
+}
+
+/**
+ * Unit S8: the per-call cost record. ai_costs_daily is platform level and
+ * cannot say what one workspace costs. This is the same number ChatResult
+ * already computed, written down against the workspace.
+ *
+ * Deliberately no actor hash, no profile id, no user id and no text. Cost is
+ * a fact about a workspace, never about a person. unitS8-ai-usage.test.ts
+ * asserts that stays true.
+ */
+async function recordUsage(result: ChatResult, meta: AiMeta | undefined): Promise<void> {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const db = supabaseAdmin as unknown as { from: (t: string) => any };
+    await db.from("ai_usage").insert(aiUsageRow(result, meta));
+  } catch {
+    // Accounting must never surface as a failure in front of someone.
+  }
+}
+
 function afterCall(result: ChatResult, meta: AiMeta | undefined): void {
+  void recordUsage(result, meta);
   const surface = meta?.surface ?? "unknown";
   if (result.durationMs > SLOW_CALL_MS) {
     void logHealth({
