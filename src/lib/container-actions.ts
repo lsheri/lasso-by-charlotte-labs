@@ -4,6 +4,8 @@
  * one level, to its own parent or to the top level.
  */
 
+import type { ContainerRow } from "@/lib/nav-groups";
+
 export type ContainerActionsCopy = {
   confirmTitle: (name: string) => string;
   confirmAction: string;
@@ -12,6 +14,7 @@ export type ContainerActionsCopy = {
   moveTo: string;
   remove: string;
   topLevel: string;
+  destinationEmpty: (label: string) => string;
   moreActions: (name: string) => string;
 };
 
@@ -23,8 +26,42 @@ export const CONTAINER_ACTIONS_COPY: ContainerActionsCopy = {
   moveTo: "Move to…",
   remove: "Delete",
   topLevel: "Top level",
+  destinationEmpty: (label) => `No ${label.toLowerCase()} yet`,
   moreActions: (name) => `More actions for ${name}`,
 };
+
+export type MoveGroup = {
+  key: "client" | "folder";
+  label: string;
+  rows: ContainerRow[];
+  emptyLine: string;
+};
+
+export function moveDestinationGroups(
+  destinations: readonly ContainerRow[],
+  clientsWord: string,
+  split: boolean,
+): MoveGroup[] {
+  if (!split) {
+    const label = "Folders";
+    return [{ key: "folder", label, rows: [...destinations], emptyLine: CONTAINER_ACTIONS_COPY.destinationEmpty(label) }];
+  }
+
+  return [
+    {
+      key: "client",
+      label: clientsWord,
+      rows: destinations.filter((row) => row.kind === "client"),
+      emptyLine: CONTAINER_ACTIONS_COPY.destinationEmpty(clientsWord),
+    },
+    {
+      key: "folder",
+      label: "Folders",
+      rows: destinations.filter((row) => row.kind === "folder"),
+      emptyLine: CONTAINER_ACTIONS_COPY.destinationEmpty("Folders"),
+    },
+  ];
+}
 
 function plural(count: number, one: string): string {
   return `${count} ${count === 1 ? one : `${one}s`}`;

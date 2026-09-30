@@ -41,8 +41,9 @@ import {
   deleteConfirmLine,
   deletedLine,
   liftedCount,
+  moveDestinationGroups,
 } from "@/lib/container-actions";
-import { vocabFor } from "@/lib/edu-vocab";
+import { splitsByKind, vocabFor } from "@/lib/edu-vocab";
 import { containerDepth, eligibleParents, type ContainerRow } from "@/lib/nav-groups";
 import { logEvent } from "@/lib/telemetry";
 
@@ -141,6 +142,10 @@ function MenuDialogs({
     if (target.type === "container") return eligibleParents(rows, target.id);
     return rows.filter((row) => row.quick_folder !== true);
   }, [rows, target]);
+  const groups = useMemo(
+    () => moveDestinationGroups(destinations, vocab.clients, splitsByKind(vocab)),
+    [destinations, vocab],
+  );
 
   async function run(work: () => Promise<void>) {
     setPending(true);
@@ -273,10 +278,14 @@ function MenuDialogs({
             className="h-10 w-full rounded-[var(--radius)] border border-border bg-card px-3 text-sm text-foreground"
           >
             <option value="">{COPY.topLevel}</option>
-            {destinations.map((row) => (
-              <option key={row.id} value={row.id}>
-                {row.name}
-              </option>
+            {groups.map((group) => (
+              <optgroup key={group.key} label={group.label}>
+                {group.rows.length > 0
+                  ? group.rows.map((row) => (
+                      <option key={row.id} value={row.id}>{row.name}</option>
+                    ))
+                  : <option disabled value="">{group.emptyLine}</option>}
+              </optgroup>
             ))}
           </select>
         )}

@@ -3,7 +3,8 @@ import { readFileSync } from "node:fs";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { deleteConfirmLine, deletedLine } from "@/lib/container-actions";
+import { deleteConfirmLine, deletedLine, moveDestinationGroups } from "@/lib/container-actions";
+import type { ContainerRow } from "@/lib/nav-groups";
 import { rpcOutcome } from "@/lib/save-guard";
 
 const mocks = vi.hoisted(() => ({
@@ -82,6 +83,42 @@ describe("unit 4a copy", () => {
     const src = readFileSync("src/lib/container-actions.ts", "utf8");
     expect(src.toLowerCase()).not.toContain("permanent");
     expect(src).not.toContain("—");
+  });
+});
+
+describe("unit 4f move destination groups", () => {
+  const client: ContainerRow = { id: "c1", name: "Client One", kind: "client", parent_id: null };
+  const folderRow: ContainerRow = { id: "f1", name: "Folder One", kind: "folder", parent_id: "c1" };
+
+  it("splits clients and folders without changing row order", () => {
+    expect(moveDestinationGroups([folderRow, client], "Clients", true)).toEqual([
+      { key: "client", label: "Clients", rows: [client], emptyLine: "No clients yet" },
+      { key: "folder", label: "Folders", rows: [folderRow], emptyLine: "No folders yet" },
+    ]);
+  });
+
+  it("keeps an empty Clients group", () => {
+    expect(moveDestinationGroups([folderRow], "Clients", true)[0]).toEqual({
+      key: "client", label: "Clients", rows: [], emptyLine: "No clients yet",
+    });
+  });
+
+  it("keeps an empty Folders group", () => {
+    expect(moveDestinationGroups([client], "Clients", true)[1]).toEqual({
+      key: "folder", label: "Folders", rows: [], emptyLine: "No folders yet",
+    });
+  });
+
+  it("returns one Folders group with both kinds when unsplit", () => {
+    expect(moveDestinationGroups([folderRow, client], "Folders", false)).toEqual([
+      { key: "folder", label: "Folders", rows: [folderRow, client], emptyLine: "No folders yet" },
+    ]);
+  });
+
+  it("uses the workspace client word in the heading and empty line", () => {
+    expect(moveDestinationGroups([], "Terms", true)[0]).toEqual({
+      key: "client", label: "Terms", rows: [], emptyLine: "No terms yet",
+    });
   });
 });
 

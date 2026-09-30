@@ -62,14 +62,14 @@ describe("93.2 sidebar hierarchy", () => {
   const nav = read("src/components/layout/SidebarNav.tsx");
 
   it("marks a shelf with the folder glyph and a state chevron", () => {
-    expect(nav).toMatch(/nb-nav-shelf[\s\S]{0,400}name="engagement" size=\{20\}/);
+    expect(nav).toMatch(/nb-nav-shelf[\s\S]{0,400}name="folder" size=\{20\}/);
     expect(nav).toMatch(/name="chevron-right"\s*\n\s*size=\{13\}/);
     expect(nav).toContain('className={collapsed ? "" : "rotate-90"}');
     expect(nav).toContain("aria-expanded");
   });
 
   it("marks nested engagement rows with a pencil indent", () => {
-    expect(nav).toContain("{nested ? <PencilIndent /> : <GraphiteIcon name=\"engagement\" size={20} />}");
+    expect(nav).toContain("{nested ? <PencilIndent /> : <GraphiteIcon name=\"workboard\" size={20} />}");
     expect(nav).toContain("nb-nav-item-nested");
     expect(nav).toContain("<PencilIndent");
   });
