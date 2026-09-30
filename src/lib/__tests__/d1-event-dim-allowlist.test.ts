@@ -164,6 +164,7 @@ const LIVE_KEYS_BY_EVENT: Record<string, readonly string[]> = {
   "engagement.updated": ["created", "brief_skipped", "has_client", "brief_files", "from", "client_inline", "quick_folder", "moved", "to_container"],
   "container.deleted": ["kind", "had_workboards", "had_folders"],
   "container.reparented": ["kind", "depth", "action"],
+  "org.clients_changed": ["enabled"],
   "chatlib.panel_opened": ["panel"],
   "reflect.trail_opened": ["read_band", "also_in_band", "not_read_band"],
   "work.filter_changed": ["filter", "selected", "result_band"],
