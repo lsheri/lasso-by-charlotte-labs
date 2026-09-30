@@ -1,3 +1,4 @@
+import type { TablesInsert } from "@/integrations/supabase/types";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -114,7 +115,9 @@ export function NewEngagementDialog({
       title: title.trim(),
       client_id: clientId,
       brief: brief.trim() || null,
-    });
+      // code is left out on purpose: the database fills it on insert. The
+      // generated insert type still marks it required, hence the cast.
+    } as TablesInsert<"engagements">);
 
     if (insertError) {
       setError(insertError.message || "Could not create the workboard.");
