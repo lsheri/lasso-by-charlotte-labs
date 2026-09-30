@@ -14,15 +14,6 @@ export const pilotRequestSchema = z.object({
 
 export type PilotRequestInput = z.infer<typeof pilotRequestSchema>;
 
-const TEAM_SIZE_LABELS: Record<PilotRequestInput["team_size"], string> = {
-  "1-5": "1 to 5",
-  "6-15": "6 to 15",
-  "16-40": "16 to 40",
-  "40+": "40+",
-};
-
-export const PILOT_NOTIFY_TO = "liam@charlotte-labs.com";
-
 export type SavedPilotRequest = PilotRequestInput & { id: string; created_at: string };
 
 export async function notifyLiamByInkbox(
