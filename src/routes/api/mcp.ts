@@ -6,9 +6,18 @@ export function bearerToken(request: Request): string | null {
   return match?.[1] ?? null;
 }
 
+type McpHandlerModule = {
+  CORS_HEADERS: Record<string, string>;
+  handleMcpRequest: (
+    request: Request,
+    token: string,
+    authKind?: "path" | "header",
+  ) => Promise<Response>;
+};
+
 export async function handleHeaderMcp(
   request: Request,
-  loadHandler = () => import("@/lib/mcp-handler.server"),
+  loadHandler: () => Promise<McpHandlerModule> = () => import("@/lib/mcp-handler.server"),
 ): Promise<Response> {
   const { CORS_HEADERS, handleMcpRequest } = await loadHandler();
   if (request.method === "OPTIONS") {
