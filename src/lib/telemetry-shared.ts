@@ -105,6 +105,12 @@ export type TelemetryEvent =
   | "import.completed"
   | "import.abandoned"
   | "mcp.push"
+  /** M2: a named connection was made in Settings. Kind only. */
+  | "mcp.connection_created"
+  /** M2: a connection was disconnected. Kind and where from. */
+  | "mcp.connection_revoked"
+  /** M2: a connection link was shown again. Kind only. */
+  | "mcp.connection_revealed"
   /** M2a: a model asked where a push could go. Whether there was a signal. */
   | "mcp.push_options_requested"
   /** M2a: a place was made through MCP. Shape only, never a name. */
