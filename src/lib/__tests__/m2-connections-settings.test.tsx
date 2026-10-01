@@ -104,14 +104,89 @@ describe("M2 connections settings", () => {
     expect(create).not.toHaveBeenCalled();
   });
 
-  it("5. the revealed URL and Copy carry the masking marker", async () => {
+  it("5. the revealed URL and Copy are excluded from autocapture", async () => {
     rows = [row({})];
     renderCard();
     fireEvent.click(await screen.findByText("Reveal"));
-    const url = await screen.findByTestId("revealed-url");
-    const selector = POSTHOG_CONFIG.session_recording.maskTextSelector;
-    expect(url.matches(selector)).toBe(true);
-    expect(screen.getByTestId("copy-url").matches(selector)).toBe(true);
+    for (const el of [await screen.findByTestId("revealed-url"), screen.getByTestId("copy-url")]) {
+      expect(el.classList.contains("ph-no-autocapture")).toBe(true);
+      expect(el.hasAttribute("data-ph-no-autocapture")).toBe(true);
+    }
+  });
+
+  it("5b. session replay still masks all text", () => {
+    expect(POSTHOG_CONFIG.session_recording.maskTextSelector).toBe("*");
+  });
+
+  it("8. the consent line renders with the revealed URL", async () => {
+    rows = [row({})];
+    renderCard();
+    fireEvent.click(await screen.findByText("Reveal"));
+    expect(
+      await screen.findByText("Anyone with this link can add work to Acme as you. Keep it private."),
+    ).toBeTruthy();
+  });
+
+  it("9. creating a link sends mcp.connection_created", async () => {
+    rows = [];
+    logEvent.mockClear();
+    renderCard();
+    fireEvent.change(await screen.findByLabelText("Name this connection"), { target: { value: "Claude" } });
+    fireEvent.click(screen.getByText("Create link"));
+    await waitFor(() =>
+      expect(logEvent).toHaveBeenCalledWith("mcp.connection_created", "o1", { kind: "link" }),
+    );
+  });
+
+  it("10. Reveal sends mcp.connection_revealed", async () => {
+    rows = [row({})];
+    logEvent.mockClear();
+    renderCard();
+    fireEvent.click(await screen.findByText("Reveal"));
+    await waitFor(() =>
+      expect(logEvent).toHaveBeenCalledWith("mcp.connection_revealed", "o1", { kind: "link" }),
+    );
+  });
+
+  it("11. Disconnect sends mcp.connection_revoked via settings", async () => {
+    rows = [row({})];
+    logEvent.mockClear();
+    renderCard();
+    fireEvent.click(await screen.findByText("Disconnect"));
+    await screen.findByText("Disconnect Claude?");
+    const buttons = screen.getAllByRole("button", { name: "Disconnect" });
+    fireEvent.click(buttons[buttons.length - 1] as HTMLElement);
+    await waitFor(() =>
+      expect(logEvent).toHaveBeenCalledWith("mcp.connection_revoked", "o1", { kind: "link", via: "settings" }),
+    );
+  });
+
+  it("12. Disconnect after Replace sends via replace", async () => {
+    rows = [row({ id: "old", older: true, can_reveal: false, label: null })];
+    logEvent.mockClear();
+    renderCard();
+    fireEvent.change(await screen.findByLabelText("Name this connection"), { target: { value: "Cursor" } });
+    fireEvent.click(screen.getByText("Replace"));
+    expect(
+      await screen.findByText("Your new link is ready. Paste it into your tool, then disconnect the older link."),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByText("Disconnect"));
+    await screen.findByText("Disconnect Older link?");
+    const buttons = screen.getAllByRole("button", { name: "Disconnect" });
+    fireEvent.click(buttons[buttons.length - 1] as HTMLElement);
+    await waitFor(() =>
+      expect(logEvent).toHaveBeenCalledWith("mcp.connection_revoked", "o1", { kind: "link", via: "replace" }),
+    );
+  });
+
+  it("13. Replace with an empty name is refused and calls nothing", async () => {
+    rows = [row({ id: "old", older: true, can_reveal: false, label: null })];
+    logEvent.mockClear();
+    renderCard();
+    fireEvent.click(await screen.findByText("Replace"));
+    expect(await screen.findByText("Give the connection a name, up to 80 characters.")).toBeTruthy();
+    expect(create).not.toHaveBeenCalled();
+    expect(logEvent).not.toHaveBeenCalled();
   });
 
   it("6. renders no Regenerate control", async () => {
