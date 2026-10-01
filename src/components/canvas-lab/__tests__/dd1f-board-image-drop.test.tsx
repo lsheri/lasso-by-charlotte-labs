@@ -27,7 +27,7 @@ import { fitWorkboardImageSize } from "@/lib/canvas-lab-shared";
 import type { LabNode } from "@/components/canvas-lab/canvas-lab-model";
 
 const place = vi.fn();
-const placeImage = vi.fn(async () => true);
+const placeImage = vi.fn(async (_image: { path: string; naturalWidth: number; naturalHeight: number }, _at: { x: number; y: number }) => true);
 function Harness() {
   const drop = useBoardFileDrop({ enabled: true, toBoard: (x, y) => ({ x, y }), place, placeImage, readSize: async () => ({ width: 1600, height: 900 }) });
   return <div data-testid="shell" {...drop.handlers} />;
