@@ -17,8 +17,6 @@ import { VerifyThreadReader } from "@/components/verify/VerifyThreadReader";
 import { JourneyView } from "@/components/journey/JourneyView";
 import { AskLassoProvider } from "@/components/reflect/ask-lasso-context";
 import { AskDockStateProvider } from "@/components/reflect/ask-dock-state";
-import { ChecklistLauncher } from "@/components/onboarding/checklist/ChecklistLauncher";
-import { StepPopover } from "@/components/onboarding/checklist/StepPopover";
 import { SettingsDialogProvider, useSettingsDialog } from "@/lib/settings-dialog-context";
 import { SettingsDialog } from "@/components/settings/SettingsDialog";
 import { EGRESS_NUDGE_KEY, shouldNudgeEgress } from "@/lib/egress-nudge";
@@ -92,7 +90,6 @@ function AppShellInner() {
                 <span className="max-w-[28vw] truncate text-xs text-muted-foreground">
                   {userName}
                 </span>
-                <ChecklistLauncher className="shrink-0 whitespace-nowrap rounded-md px-2 py-3 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground" />
                 <FeedbackDialog
                   trigger={
                     <button
@@ -121,7 +118,6 @@ function AppShellInner() {
           <JourneyView />
           <FeedbackWidget />
           <MobileTabBar />
-          <StepPopover />
         </div>
       </AskDockStateProvider>
     </AskLassoProvider>
