@@ -52,7 +52,7 @@ function AskGlyph({ state }: { state: "thinking" | "settled" }) {
 export function AskThinkingFoot({ answered, reduced, count, elapsed }: { answered: boolean; reduced: boolean; count: number; elapsed: string }) {
   return (
     <div className="mt-2 flex items-center gap-2 text-[13px] text-muted-foreground" data-testid="ask-thinking-foot">
-      <AskGlyph state={answered || reduced ? "settled" : "thinking"} />
+      <AskGlyph state={answered ? "settled" : "thinking"} />
       <span>{answered ? ASK_THINKING_COPY.read(count) : ASK_THINKING_COPY.reading}</span>
       {answered ? null : (
         <span className="inline-flex items-center gap-[3px]" data-testid="ask-thinking-dots" aria-hidden>

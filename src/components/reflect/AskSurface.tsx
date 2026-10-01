@@ -384,27 +384,12 @@ function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions?: Reac
         })()}
 
         {ask.pending ? (
-          <div className="nb-binder-line flex items-center gap-2">
-            <LassoThinkingMark
-              kind="gather"
-              size={56}
-              count={ask.liveManifest?.items.length ?? 0}
-            />
-            <span className="text-sm text-muted-foreground">
-              {ask.streamed ? "Writing" : "Reading your work"}
-            </span>
-          </div>
-        ) : null}
-
-        {ask.pending ? (
           <div className="nb-conversation-message max-w-none flex-row items-start gap-3">
             <div className="grid w-7 shrink-0 grid-rows-[28px]">{speakerAvatar("assistant")}</div>
             <div className="nb-conversation-body w-full flex-1 gap-0 overflow-visible">
-              {speakerName("assistant", new Date())}
+              {ask.streamed && answerStartedAt ? <div className="ask-a1-name-in">{speakerName("assistant", answerStartedAt)}</div> : null}
               <AnswerRail state="working">
-                {ask.streamed ? (
-                  <MarkdownMessage content={ask.streamed} variant="binder" className="nb-stream" />
-                ) : (
+                {(
                   <div className="nb-binder-inset">
                     <ThinkingTrail
                       items={(ask.pointedNow.length > 0 ? ask.pointedNow : ask.selectedItems).map(
@@ -413,9 +398,13 @@ function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions?: Reac
                       finalPhase="Writing"
                       manifest={ask.liveManifest}
                       lead={ask.pointedNow.length > 0 ? "Reading what you pointed at" : undefined}
+                      ask={{ answered: Boolean(ask.streamed) }}
                     />
                   </div>
                 )}
+                {ask.streamed ? (
+                  <MarkdownMessage content={ask.streamed} variant="binder" className="nb-stream" />
+                ) : null}
               </AnswerRail>
             </div>
           </div>
