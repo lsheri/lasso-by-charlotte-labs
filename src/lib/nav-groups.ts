@@ -449,3 +449,43 @@ export function mergeContainerRows<T extends NavEngagement>(
   }
   return [...byId.values()].sort(byName);
 }
+
+/**
+ * SB2: every container id below `id` in the tree, at any depth, never `id`
+ * itself and never a sibling. Empty when `id` is not in the tree.
+ */
+export function descendantContainerIds<T extends NavEngagement>(
+  roots: readonly ContainerNode<T>[],
+  id: string,
+): string[] {
+  const find = (nodes: readonly ContainerNode<T>[]): ContainerNode<T> | null => {
+    for (const node of nodes) {
+      if (node.clientId === id) return node;
+      const hit = find(node.children);
+      if (hit) return hit;
+    }
+    return null;
+  };
+  const start = find(roots);
+  if (!start) return [];
+  const out: string[] = [];
+  const walk = (node: ContainerNode<T>) => {
+    for (const child of node.children) {
+      out.push(child.clientId);
+      walk(child);
+    }
+  };
+  walk(start);
+  return out;
+}
+
+/** SB2: every container id in the tree, nested ones included, roots first. */
+export function allContainerIds<T extends NavEngagement>(roots: readonly ContainerNode<T>[]): string[] {
+  const out: string[] = [];
+  const walk = (node: ContainerNode<T>) => {
+    out.push(node.clientId);
+    for (const child of node.children) walk(child);
+  };
+  for (const root of roots) walk(root);
+  return out;
+}
