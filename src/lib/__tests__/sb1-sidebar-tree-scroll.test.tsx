@@ -96,13 +96,15 @@ describe("SB1 tree scroller and standing separation", () => {
     expect(
       scroller.compareDocumentPosition(actions) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
-    // The standing separation is a hairline rule on the actions block.
-    const sheet = Array.from(document.styleSheets)
-      .flatMap((s) => Array.from(s.cssRules))
-      .map((r) => r.cssText)
-      .join("\n");
-    expect(sheet).toContain(".nb-nav-actions");
-    expect(sheet).toMatch(/\.nb-nav-actions[^}]*border-top/);
+    // The standing separation is a hairline rule on the actions block. jsdom
+    // does not load the stylesheet, so the rule is read from the sheet itself.
+    const css = readFileSync(new URL("../../styles.css", import.meta.url), "utf8");
+    const rule = css.match(/\.nb-nav-actions\s*\{[^}]*\}/);
+    expect(rule).not.toBeNull();
+    expect(rule![0]).toContain("border-top: 1px solid var(--nb-rule)");
+    const scrollRule = css.match(/\.nb-nav-tree-scroll\s*\{[^}]*\}/);
+    expect(scrollRule).not.toBeNull();
+    expect(scrollRule![0]).toContain("overflow-y: auto");
   });
 
   it("keeps New workboard, New folder and Past work present with a long tree", () => {
