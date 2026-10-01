@@ -2189,7 +2189,7 @@ export async function pushConversation(
   } else {
     const { data: existingAttachments } = await supabaseAdmin
       .from("work_items")
-      .select("id, title, content_ref, content_hash, captured_at, source_meta, parent_work_item_id, content_fidelity")
+      .select("id, title, content_ref, content_hash, captured_at, source_meta, parent_work_item_id, content_fidelity, meta")
       .eq("owner_id", owner.profileId)
       .eq("orig_conversation_id", origId)
       .neq("type", "ai_thread");
@@ -2540,7 +2540,14 @@ export async function pushConversation(
           chars: attachment.content.length,
           duplicate_of_transcript: false,
         } as unknown as Json,
-        meta: { assistant_transcribed: true },
+        // CU1: keep what the person set on this row (deliverable kind, portfolio,
+        // chat link, item text) across a re-push, as the thread does above.
+        meta: {
+          ...(match?.meta && typeof match.meta === "object" && !Array.isArray(match.meta)
+            ? (match.meta as Record<string, unknown>)
+            : {}),
+          assistant_transcribed: true,
+        } as unknown as Json,
       };
 
       // ID-2: the parent chat is set when missing and never replaced; the

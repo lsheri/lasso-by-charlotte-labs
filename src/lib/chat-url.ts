@@ -86,3 +86,36 @@ export function effectiveChatUrl(
 ): string | null {
   return safeChatUrl(explicitUrl) ?? deriveChatUrl(vendor, origConversationId);
 }
+
+/**
+ * CU1: a link a person pasted. No host list: any https link to any AI tool is
+ * accepted. Anything else (http, javascript:, data:, unparseable, embedded
+ * credentials, over 2048 characters) is refused. safeChatUrl is unchanged.
+ */
+export function pastedChatUrl(raw: unknown): string | null {
+  if (typeof raw !== "string") return null;
+  const trimmed = raw.trim();
+  if (!trimmed || trimmed.length > 2048) return null;
+  let url: URL;
+  try {
+    url = new URL(trimmed);
+  } catch {
+    return null;
+  }
+  if (url.protocol !== "https:") return null;
+  if (!url.hostname || url.username || url.password) return null;
+  return url.toString();
+}
+
+/** CU1: the pasted link first, then the pushed one, then the derived one. */
+export function itemChatUrl(item: {
+  meta?: { chat_url?: string | null } | null | undefined;
+  source_meta?: { url?: string | null } | null | undefined;
+  source_vendor?: string | null | undefined;
+  orig_conversation_id?: string | null | undefined;
+} | null | undefined): string | null {
+  return (
+    pastedChatUrl(item?.meta?.chat_url) ??
+    effectiveChatUrl(item?.source_meta?.url, item?.source_vendor ?? null, item?.orig_conversation_id ?? null)
+  );
+}
