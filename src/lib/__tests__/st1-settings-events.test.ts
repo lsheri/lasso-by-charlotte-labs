@@ -19,7 +19,7 @@ beforeEach(() => {
 describe("S-T1 closed vocabulary", () => {
   it("keeps a fixed setting list", () => {
     expect(SETTINGS_KEYS).toContain("data_level_workspace");
-    expect(SETTINGS_KEYS).toContain("mcp_url_regenerated");
+    expect(SETTINGS_KEYS).toContain("connector");
   });
 
   it("drops unknown keys, sections, changes and levels", () => {

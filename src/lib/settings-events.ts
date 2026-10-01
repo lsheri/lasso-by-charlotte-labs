@@ -33,8 +33,6 @@ export const SETTINGS_KEYS = [
   "data_level_personal",
   "research_participation",
   "connector",
-  "mcp_url_regenerated",
-  "mcp_url",
 ] as const;
 
 export const SETTINGS_CHANGES = ["on", "off", "updated", "added", "removed"] as const;
