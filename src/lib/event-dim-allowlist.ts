@@ -164,6 +164,7 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "plans.viewed": ["src"],
   "plan.picked": ["plan", "src"],
   "signup.started": ["intent", "src"],
+  "signup.existing_account": ["via"],
   "span_link.created": ["via"],
   "settings.changed": ["section", "setting", "change", "to_level"],
   "packet.viewed": [],
