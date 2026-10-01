@@ -4959,6 +4959,42 @@ export type Database = {
         Returns: undefined
       }
       admin_entitlement_summary: { Args: never; Returns: Json }
+      admin_finance_act: {
+        Args: {
+          p_action: string
+          p_id: string
+          p_kind: string
+          p_note?: string
+        }
+        Returns: Json
+      }
+      admin_finance_confirm_confident: {
+        Args: { p_min?: number }
+        Returns: number
+      }
+      admin_finance_export: {
+        Args: { p_from: string; p_to: string }
+        Returns: {
+          amount_usd: number
+          category: string
+          class: string
+          day: string
+          link: string
+          origin: string
+          paid_by: string
+          vendor: string
+        }[]
+      }
+      admin_finance_month_close: {
+        Args: { p_close: boolean; p_month: string; p_note?: string }
+        Returns: Json
+      }
+      admin_finance_overview: { Args: { p_months?: number }; Returns: Json }
+      admin_finance_review_queue: { Args: never; Returns: Json }
+      admin_finance_vendor_set: {
+        Args: { p_category: string; p_recurring?: boolean; p_vendor: string }
+        Returns: Json
+      }
       admin_institutions: {
         Args: never
         Returns: {
