@@ -205,6 +205,11 @@ export function savedBoxLabFrames(
   return tasks.length > 0 && boxed.length === 0 ? frames.filter((frame) => frame.id !== "workstreams") : frames;
 }
 
+/** WK3: frames materialize may save. A generated task: box (no saved row) is never written. */
+export function materializableFrames<T extends { id: string; durableId?: string }>(frames: T[]): T[] {
+  return frames.filter((frame) => !(frame.id.startsWith("task:") && !frame.durableId));
+}
+
 /** Grow only a fresh virtual seed so every opening card is inside its frame. */
 export function sizeSeedFrames(frames: LabFrame[], nodes: LabNode[]): LabFrame[] {
   return frames.map((frame) => {

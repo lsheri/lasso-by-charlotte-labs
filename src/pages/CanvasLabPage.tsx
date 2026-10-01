@@ -75,6 +75,7 @@ import {
   createChatNode,
   containFrameMembers,
   savedBoxLabFrames,
+  materializableFrames,
   deleteLocalNode,
   draftAnchor,
   fitWorkboardViewport,
