@@ -95,7 +95,7 @@ describe("DD1-a board file drop", () => {
     }));
     render(<Harness />);
     fireEvent.dragOver(screen.getByTestId("shell"), { clientX: 40, clientY: 30, dataTransfer: { types: ["Files"] } });
-    await waitFor(() => expect(screen.getByTestId("board-file-drop").dataset.active).toBe("true"));
+    await waitFor(() => expect(screen.getByTestId("board-file-drop").dataset["active"]).toBe("true"));
     expect(screen.queryAllByTestId("pencil-flake")).toHaveLength(0);
   });
 });

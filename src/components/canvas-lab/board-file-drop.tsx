@@ -24,7 +24,7 @@ type PencilFlake = {
   rotation: number;
   spin: number;
   size: number;
-  opacityClass: string;
+  opacity: number;
   toneClass: string;
   bornAt: number;
   lifetime: number;
@@ -58,7 +58,9 @@ export function useBoardFileDrop({
 
   const localPoint = useCallback((event: DragEvent<HTMLElement>): Point => {
     const rect = event.currentTarget.getBoundingClientRect();
-    return { x: event.clientX - rect.left, y: event.clientY - rect.top };
+    const clientX = Number.isFinite(event.clientX) ? event.clientX : rect.left;
+    const clientY = Number.isFinite(event.clientY) ? event.clientY : rect.top;
+    return { x: clientX - rect.left, y: clientY - rect.top };
   }, []);
 
   const onDragEnter = useCallback((event: DragEvent<HTMLElement>) => {
@@ -111,7 +113,7 @@ export function useBoardFileDrop({
 
 function makeFlakes(point: Point, count: number, firstId: number): PencilFlake[] {
   const tones = ["bg-pencil", "bg-mid", "bg-soft"];
-  const opacities = ["opacity-25", "opacity-40", "opacity-60"];
+  const opacities = [0.25, 0.4, 0.6];
   return Array.from({ length: count }, (_, index) => {
     const angle = Math.random() * Math.PI * 2;
     const speed = 18 + Math.random() * 38;
@@ -124,7 +126,7 @@ function makeFlakes(point: Point, count: number, firstId: number): PencilFlake[]
       rotation: Math.random() * 180,
       spin: (Math.random() - 0.5) * 280,
       size: 2 + Math.random() * 3,
-      opacityClass: opacities[index % opacities.length] ?? "opacity-40",
+      opacity: opacities[index % opacities.length] ?? 0.4,
       toneClass: tones[index % tones.length] ?? "bg-pencil",
       bornAt: performance.now(),
       lifetime: 500 + Math.random() * 400,
@@ -238,10 +240,10 @@ export function BoardFileDropOverlay({
           width: flake.size,
           height: flake.size * (0.55 + (flake.id % 3) * 0.18),
           clipPath: flake.id % 2 === 0 ? "polygon(12% 0, 100% 18%, 82% 100%, 0 76%)" : "polygon(0 22%, 88% 0, 100% 78%, 18% 100%)",
-          opacity: 1 - progress,
+          opacity: flake.opacity * (1 - progress),
           transform: `translate(${flake.vx * elapsed}px, ${flake.vy * elapsed + 58 * elapsed * elapsed}px) rotate(${flake.rotation + flake.spin * elapsed}deg)`,
         } satisfies CSSProperties;
-        return <i key={flake.id} data-testid="pencil-flake" aria-hidden="true" className={`absolute ${flake.toneClass} ${flake.opacityClass}`} style={style} />;
+        return <i key={flake.id} data-testid="pencil-flake" aria-hidden="true" className={`absolute ${flake.toneClass}`} style={style} />;
       }) : null}
     </div>
   );
