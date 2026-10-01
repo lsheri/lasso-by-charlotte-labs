@@ -2471,6 +2471,42 @@ export type Database = {
           },
         ]
       }
+      founder_notes: {
+        Row: {
+          body: string
+          collapsed: boolean
+          color: string
+          created_at: string
+          id: string
+          owner_id: string
+          updated_at: string
+          x_pct: number
+          y_pct: number
+        }
+        Insert: {
+          body?: string
+          collapsed?: boolean
+          color?: string
+          created_at?: string
+          id?: string
+          owner_id: string
+          updated_at?: string
+          x_pct?: number
+          y_pct?: number
+        }
+        Update: {
+          body?: string
+          collapsed?: boolean
+          color?: string
+          created_at?: string
+          id?: string
+          owner_id?: string
+          updated_at?: string
+          x_pct?: number
+          y_pct?: number
+        }
+        Relationships: []
+      }
       import_sessions: {
         Row: {
           created_at: string
@@ -2701,6 +2737,88 @@ export type Database = {
           },
         ]
       }
+      mcp_connections: {
+        Row: {
+          client_name: string | null
+          created_at: string
+          id: string
+          key_hash: string | null
+          key_last4: string | null
+          kind: string
+          label: string
+          last_used_at: string | null
+          legacy_token_id: string | null
+          oauth_client_id: string | null
+          org_id: string
+          profile_id: string
+          revoked_at: string | null
+          revoked_via: string | null
+          scopes: string[]
+          user_id: string
+          vault_secret_id: string | null
+        }
+        Insert: {
+          client_name?: string | null
+          created_at?: string
+          id?: string
+          key_hash?: string | null
+          key_last4?: string | null
+          kind: string
+          label: string
+          last_used_at?: string | null
+          legacy_token_id?: string | null
+          oauth_client_id?: string | null
+          org_id: string
+          profile_id: string
+          revoked_at?: string | null
+          revoked_via?: string | null
+          scopes?: string[]
+          user_id: string
+          vault_secret_id?: string | null
+        }
+        Update: {
+          client_name?: string | null
+          created_at?: string
+          id?: string
+          key_hash?: string | null
+          key_last4?: string | null
+          kind?: string
+          label?: string
+          last_used_at?: string | null
+          legacy_token_id?: string | null
+          oauth_client_id?: string | null
+          org_id?: string
+          profile_id?: string
+          revoked_at?: string | null
+          revoked_via?: string | null
+          scopes?: string[]
+          user_id?: string
+          vault_secret_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mcp_connections_legacy_token_id_fkey"
+            columns: ["legacy_token_id"]
+            isOneToOne: true
+            referencedRelation: "mcp_tokens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mcp_connections_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mcp_connections_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mcp_tokens: {
         Row: {
           created_at: string
@@ -2738,6 +2856,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      mcp_ways_in: {
+        Row: {
+          enabled: boolean
+          kind: string
+          read_only: boolean
+          updated_at: string
+        }
+        Insert: {
+          enabled?: boolean
+          kind: string
+          read_only?: boolean
+          updated_at?: string
+        }
+        Update: {
+          enabled?: boolean
+          kind?: string
+          read_only?: boolean
+          updated_at?: string
+        }
+        Relationships: []
       }
       note_cites: {
         Row: {
@@ -4871,6 +5010,54 @@ export type Database = {
         }
         Returns: string
       }
+      admin_note_delete: { Args: { p_id: string }; Returns: boolean }
+      admin_note_save: {
+        Args: {
+          p_body?: string
+          p_collapsed?: boolean
+          p_color?: string
+          p_id?: string
+          p_x_pct?: number
+          p_y_pct?: number
+        }
+        Returns: {
+          body: string
+          collapsed: boolean
+          color: string
+          created_at: string
+          id: string
+          owner_id: string
+          updated_at: string
+          x_pct: number
+          y_pct: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "founder_notes"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      admin_notes_list: {
+        Args: never
+        Returns: {
+          body: string
+          collapsed: boolean
+          color: string
+          created_at: string
+          id: string
+          owner_id: string
+          updated_at: string
+          x_pct: number
+          y_pct: number
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "founder_notes"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       admin_ops_health: { Args: never; Returns: Json }
       admin_outbound_emails: {
         Args: { p_org_id?: string }
@@ -4951,6 +5138,10 @@ export type Database = {
       }
       admin_set_seats: {
         Args: { p_org_id: string; p_reason: string; p_seats: number }
+        Returns: Json
+      }
+      admin_user_directory: {
+        Args: { p_limit?: number; p_offset?: number; p_search?: string }
         Returns: Json
       }
       admin_workspace_activity: {
@@ -5126,6 +5317,10 @@ export type Database = {
         Args: { p_note_id: string }
         Returns: undefined
       }
+      mcp__revoke_rows: {
+        Args: { p_ids: string[]; p_via: string }
+        Returns: number
+      }
       mcp_actor_ok: {
         Args: { p_actor: string }
         Returns: {
@@ -5144,6 +5339,15 @@ export type Database = {
         }
         Returns: Json
       }
+      mcp_create_connection: {
+        Args: {
+          p_kind?: string
+          p_label: string
+          p_profile_id: string
+          p_replace_existing?: boolean
+        }
+        Returns: Json
+      }
       mcp_create_container: {
         Args: { p_actor: string; p_name: string }
         Returns: Json
@@ -5157,6 +5361,25 @@ export type Database = {
         }
         Returns: Json
       }
+      mcp_rename_connection: {
+        Args: { p_id: string; p_label: string }
+        Returns: boolean
+      }
+      mcp_resolve_key: {
+        Args: { p_key_hash: string }
+        Returns: {
+          connection_id: string
+          kind: string
+          legacy: boolean
+          org_id: string
+          profile_id: string
+          read_only: boolean
+          scopes: string[]
+          user_id: string
+        }[]
+      }
+      mcp_reveal_connection: { Args: { p_id: string }; Returns: string }
+      mcp_revoke_connection: { Args: { p_id: string }; Returns: boolean }
       move_item_to_workstream: {
         Args: { p_item: string; p_task: string }
         Returns: Json
