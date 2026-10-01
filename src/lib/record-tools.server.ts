@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 
 import { getItemText } from "./item-text.server";
+import { readFromRendition } from "./reference-rendition-shared";
 import { naturalTurnLabels } from "./turn-labels";
 import type { Catalogue } from "./record-catalogue.server";
 import { catalogueLine, extractBlock } from "./record-catalogue.server";
@@ -25,6 +26,8 @@ export type ToolState = {
   deadline: number;
   opened: Set<string>;
   readFull: Set<string>;
+  /** R3a: items read in full whose text came from a rendition. */
+  renditionsRead?: number;
   unreadable: Map<string, string | null>;
   /** Verbatim text the model has actually been given this turn. */
   quotable: string[];
@@ -252,6 +255,7 @@ async function readItems(state: ToolState, ids: string[]): Promise<string> {
     const clipped = headAndTail(naturalTurnLabels(text), Math.min(40_000, remaining));
     state.rawUsed += clipped.text.length;
     state.readFull.add(id);
+    if (readFromRendition(item, result.status)) state.renditionsRead = (state.renditionsRead ?? 0) + 1;
     state.quotable.push(clipped.text);
     blocks.push(
       `${code} ${item.title}${clipped.cut ? " (middle omitted)" : ""}\n  Full text:\n${clipped.text}`,

@@ -64,6 +64,8 @@ export type CatalogueAnswer = {
   toolCalls: number;
   searches: number;
   itemsFetched: number;
+  /** R3a */
+  renditionsRead: number;
   finishReason: string;
   /** The first write came back empty or as a status word and was asked again. */
   answerRetried: boolean;
@@ -289,6 +291,7 @@ export async function runCatalogueAnswer(
     toolCalls: state.toolCalls,
     searches: state.searches,
     itemsFetched: state.readFull.size,
+    renditionsRead: state.renditionsRead ?? 0,
     finishReason: final.finishReason,
     answerRetried,
     catalogue,

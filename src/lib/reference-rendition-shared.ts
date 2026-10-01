@@ -81,3 +81,16 @@ export function renditionPlainText(r: ReferenceRendition, raw: string): string {
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 }
+
+/** R3a: an item whose text Ask read came from a rendition, not a stored file. */
+export function readFromRendition(
+  item: { content_ref?: string | null; source_meta?: unknown },
+  status: string,
+): boolean {
+  return !item.content_ref && renditionOf(item) !== null && status === "ok";
+}
+
+/** R3a: closed bucket for reflect.message_sent renditions_read. */
+export function renditionsReadBucket(n: number): "0" | "1" | "2+" {
+  return n <= 0 ? "0" : n === 1 ? "1" : "2+";
+}

@@ -20,6 +20,7 @@ import { ensureExtract, type ClassifiableItem } from "./extract.server";
 import { ITEM_TEXT_COLUMNS, getItemText, type ItemTextStatus } from "./item-text.server";
 import type { ContextScope, ContextSource } from "./reflect-shared";
 import { naturalTurnLabels } from "./turn-labels";
+import { readFromRendition } from "./reference-rendition-shared";
 
 /** Tier 2 is the expensive tier: raw text, bounded hard. */
 const RAW_BUDGET = 120_000;
@@ -545,6 +546,7 @@ export async function assembleReflectContext(
   const unreadable = new Map<string, { status: ItemTextStatus; note: string | null }>();
   let rawUsed = 0;
   let anyCut = false;
+  let renditionsRead = 0;
   const textStarted = Date.now();
   // Files are opened a few at a time, in priority order, and then accounted
   // for one by one in that same order, so every inclusion decision is the one
@@ -557,6 +559,7 @@ export async function assembleReflectContext(
     const fetched = await Promise.all(
       chunk.map(async (item) => ({ item, result: await getItemText(supabase, item) })),
     );
+    for (const f of fetched) if (fullTextHas(f)) renditionsRead += 0;
     const applied = accountTextResults(fetched, rawBudget, { fullText, unreadable, rawUsed });
     rawUsed = applied.rawUsed;
     if (applied.anyCut) anyCut = true;
