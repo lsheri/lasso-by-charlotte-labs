@@ -17,6 +17,7 @@ vi.mock("@/integrations/supabase/client.server", () => ({
 vi.mock("../telemetry.server", () => ({ recordEvent: vi.fn() }));
 
 import { handleMcpRequest, resolveOwner } from "../mcp-handler.server";
+import { handleHeaderMcp } from "@/routes/api/mcp";
 
 const ownerRow = {
   connection_id: "connection-1",
@@ -76,6 +77,24 @@ describe("M1 connections resolver", () => {
       "abc",
     );
     expect(listed.status).toBe(200);
+  });
+
+  it("rejects a missing header and passes a bearer key through", async () => {
+    const handler = vi.fn(async () => new Response("ok"));
+    const load = async () => ({ CORS_HEADERS: {}, handleMcpRequest: handler });
+    const missing = await handleHeaderMcp(
+      new Request("https://x.test/api/mcp", { method: "POST" }),
+      load,
+    );
+    expect(missing.status).toBe(401);
+    await handleHeaderMcp(
+      new Request("https://x.test/api/mcp", {
+        method: "POST",
+        headers: { Authorization: "Bearer abc" },
+      }),
+      load,
+    );
+    expect(handler).toHaveBeenCalledWith(expect.any(Request), "abc", "header");
   });
 
   it("keeps old token-table reads out of the runtime files", () => {

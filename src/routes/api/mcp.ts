@@ -1,13 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-function bearerToken(request: Request): string | null {
+export function bearerToken(request: Request): string | null {
   const authorization = request.headers.get("authorization");
   const match = authorization?.match(/^Bearer ([^\s]+)$/);
   return match?.[1] ?? null;
 }
 
-export async function handleHeaderMcp(request: Request): Promise<Response> {
-  const { CORS_HEADERS, handleMcpRequest } = await import("@/lib/mcp-handler.server");
+export async function handleHeaderMcp(
+  request: Request,
+  loadHandler = () => import("@/lib/mcp-handler.server"),
+): Promise<Response> {
+  const { CORS_HEADERS, handleMcpRequest } = await loadHandler();
   if (request.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: CORS_HEADERS });
   }
