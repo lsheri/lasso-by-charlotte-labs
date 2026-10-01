@@ -260,9 +260,10 @@ export function validateFrameLabel(kind: string, label: unknown, options: { regi
   return null;
 }
 
-export function validateFrameArchive(kind: string, liveNodeCount: number): string | null {
+export function validateFrameArchive(kind: string, liveNodeCount: number, taskBacked = false): string | null {
   if (kind === "context") return null;
-  if (kind !== "custom") return "Only a custom workstream can be removed.";
+  // WK1: a seeded box backed by a workstream can come off under the same rules.
+  if (kind !== "custom" && !(kind === "task" && taskBacked)) return "Only a custom workstream can be removed.";
   if (liveNodeCount > 0) return "Move its cards first.";
   return null;
 }
@@ -352,7 +353,7 @@ export async function applyWorkboardCommand(
   if (command.type === "frame_update" || command.type === "frame_archive" || command.type === "frame_restore") {
     if (!membership.isEditor) return { status: "forbidden" };
     if (command.type === "frame_update" && !validFrameGeometry(command.patch)) return { status: "validation_error", message: "Workstream dimensions are outside the supported range." };
-    const targetQuery = db.from("workboard_frames").select("id, kind, key, fill").eq("id", command.frameId).eq("workboard_id", board.id);
+    const targetQuery = db.from("workboard_frames").select("id, kind, key, fill, task_id").eq("id", command.frameId).eq("workboard_id", board.id);
     const target = (await (command.type === "frame_restore" ? targetQuery.not("deleted_at", "is", null) : targetQuery.is("deleted_at", null)).maybeSingle()).data;
     if (!target) return { status: "validation_error", message: "That workstream is gone." };
     const normalizedLabel = command.type === "frame_update" && typeof command.patch.label === "string" ? command.patch.label.trim() : command.type === "frame_update" ? command.patch.label : undefined;
@@ -366,7 +367,7 @@ export async function applyWorkboardCommand(
     }
     if (command.type === "frame_archive") {
       const { count } = await db.from("workboard_nodes").select("id", { count: "exact", head: true }).eq("workboard_id", board.id).eq("frame_id", command.frameId).is("deleted_at", null);
-      const invalid = validateFrameArchive(target.kind, count ?? 0);
+      const invalid = validateFrameArchive(target.kind, count ?? 0, Boolean((target as { task_id?: string | null }).task_id));
       if (invalid) return { status: "validation_error", message: invalid };
     }
     const patch =
