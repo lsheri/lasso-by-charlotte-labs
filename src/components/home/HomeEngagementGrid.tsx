@@ -110,6 +110,7 @@ export function HomeEngagementGrid({
   previews,
   demo = false,
   onDemoOpen,
+  onOpen,
 }: {
   cards: readonly HomeGridEngagement[];
   availableWidth: number;
@@ -117,6 +118,8 @@ export function HomeEngagementGrid({
   /** Public demo: cards open the read-only demo board and carry no "last opened" line. */
   demo?: boolean;
   onDemoOpen?: (code: string) => void;
+  /** Signed-in Home only: the grid sits on a pannable board, so a press on a card must not start a pan. */
+  onOpen?: (id: string) => void;
 }) {
   if (cards.length === 0) return null;
   const ordered = orderHomeGrid(cards);
@@ -159,7 +162,9 @@ export function HomeEngagementGrid({
               to="/engagements/$id/canvas-lab"
               params={{ id: card.id }}
               search={{ from: "home" }}
-              onClick={() => emitClientEvent("home.engagement_opened", {})}
+              data-testid={`home-engagement-${card.id}`}
+              onPointerDown={onOpen ? (event) => event.stopPropagation() : undefined}
+              onClick={() => (onOpen ? onOpen(card.id) : emitClientEvent("home.engagement_opened", {}))}
               className="block h-full rounded-[var(--radius-control)] border border-border bg-card p-3 transition-colors hover:border-foreground/40 focus:outline-none focus:ring-2 focus:ring-ring"
             >
               <HomeBoardPreview state={previews?.get(card.id) ?? { status: "loading" }} />

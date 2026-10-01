@@ -3,7 +3,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-import { GettingStartedCard } from "@/components/onboarding/checklist/GettingStartedCard";
 import { MapDialog } from "@/components/work/MapDialog";
 import { RowMenu } from "@/components/work/RowMenu";
 import { AnalysisLens } from "@/components/reflect/AnalysisLens";
@@ -872,7 +871,6 @@ export function WorkPage() {
   return (
     <div className="flex h-[calc(100vh-6.5rem)] flex-col overflow-hidden">
       <div className="shrink-0">
-        <GettingStartedCard />
         <CoachingLinkNotices />
         <WatchSuggestionBanner />
         {!isCoach && flagged.length > 0 ? (

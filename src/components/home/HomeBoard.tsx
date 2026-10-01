@@ -171,7 +171,12 @@ export function HomeBoard() {
             </div>
           </section>
         ) : (
-          <HomeEngagementGrid cards={cards} availableWidth={currentFrame.width} previews={previews} />
+          <HomeEngagementGrid
+            cards={cards}
+            availableWidth={currentFrame.width}
+            previews={previews}
+            onOpen={() => emitClientEvent("home.engagement_opened", {})}
+          />
         )}
         renderNode={() => null}
       />
