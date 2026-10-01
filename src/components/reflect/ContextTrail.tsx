@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { LassoThinkingMark } from "@/components/reflect/LassoThinkingMark";
-import { AskThinkingFoot, ASK_THINKING_STYLES, askFlickerStyle } from "@/components/reflect/AskThinkingFoot";
+import { AskThinkingFoot, ASK_THINKING_COPY, ASK_THINKING_STYLES, askFlickerStyle } from "@/components/reflect/AskThinkingFoot";
 import { ThreadViewerById } from "@/components/work/ThreadViewerById";
 import { Button } from "@/components/ui/button";
 import { emitClientEvent } from "@/lib/client-telemetry";
@@ -147,7 +147,7 @@ export function ThinkingTrail({
       </div>
       {ask ? <AskThinkingFoot answered={ask.answered} reduced={reduced} count={shown.length} elapsed={elapsedLabel(elapsed)} /> : <div className="mt-2 flex h-5 items-center gap-2 text-[13px] text-muted-foreground">
         <LassoThinkingMark kind="loop" size={20} className="shrink-0 text-[var(--nb-lasso-green)]" />
-        <span>{manifest ? finalPhase : "Reading your work"}</span>
+        <span>{manifest ? finalPhase : ASK_THINKING_COPY.reading}</span>
         <span aria-hidden>·</span>
         <span className="font-mono text-[11px]">{elapsedLabel(elapsed)}</span>
       </div>}
