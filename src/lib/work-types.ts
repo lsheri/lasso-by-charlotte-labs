@@ -64,6 +64,8 @@ export type WorkItemRow = {
         brief_scope?: BriefScope | null;
         /** Pass 172: the person promoted this piece to their Portfolio. */
         portfolio?: boolean;
+        /** CU1: a chat link the person pasted. Wins over a pushed one. */
+        chat_url?: string | null;
       }
     | null
     | undefined;

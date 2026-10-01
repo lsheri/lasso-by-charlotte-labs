@@ -3,6 +3,7 @@ import { ExternalLink, FileText } from "lucide-react";
 import { WorkboardFilePreview as FilePreview } from "@/components/canvas-lab/WorkboardFilePreview";
 import { BrandLogo, brandHex, brandLabel } from "@/components/connectors/BrandLogo";
 import { ChatUrlLink } from "@/components/work/ChatUrlLink";
+import { pastedChatUrl } from "@/lib/chat-url";
 import { sourceBrandKey } from "@/components/work/SourceMark";
 import type { WorkboardCardPreview, WorkboardDisplayMode, WorkboardFilePreview } from "@/lib/workboard-card-preview.shared";
 import { resolveWorkDate } from "@/lib/work-order";
@@ -113,7 +114,7 @@ export function WorkNote({
 
         <div className="mt-1 flex h-[16px] shrink-0 select-none items-center gap-2 border-t border-hairline pt-1">
           <span className="min-w-0 flex-1 truncate text-[9px] text-muted-foreground" onClick={(event) => event.stopPropagation()}>
-            {item.type === "ai_thread" ? (
+            {item.type === "ai_thread" || pastedChatUrl((item as WorkItemRow).meta?.chat_url) ? (
               <ChatUrlLink item={item as WorkItemRow} showAbsence turnCount={chatPreview?.turnCount} />
             ) : sourceUrl ? (
               <a href={sourceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex max-w-full items-center gap-1">

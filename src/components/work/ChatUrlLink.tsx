@@ -1,6 +1,6 @@
 import { ExternalLink } from "lucide-react";
 
-import { chatUrlLabel, effectiveChatUrl } from "@/lib/chat-url";
+import { chatUrlLabel, itemChatUrl } from "@/lib/chat-url";
 import { keptContentLabel } from "@/lib/work-open";
 import type { WorkItemRow } from "@/lib/work-types";
 
@@ -19,11 +19,7 @@ export function ChatUrlLink({
   /** Already-loaded card data; this never triggers another read. */
   turnCount?: number | null | undefined;
 }) {
-  const url = effectiveChatUrl(
-    item?.source_meta?.url,
-    item?.source_vendor ?? null,
-    item?.orig_conversation_id ?? null,
-  );
+  const url = itemChatUrl(item);
   if (!url) {
     if (!showAbsence) return null;
     return (
