@@ -3178,6 +3178,42 @@ export type Database = {
           },
         ]
       }
+      people: {
+        Row: {
+          city: string | null
+          country: string | null
+          created_at: string
+          first_name: string | null
+          last_name: string | null
+          phone: string | null
+          state: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          first_name?: string | null
+          last_name?: string | null
+          phone?: string | null
+          state?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          first_name?: string | null
+          last_name?: string | null
+          phone?: string | null
+          state?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       pilot_accounts: {
         Row: {
           annual_value_usd: number | null
@@ -4568,11 +4604,13 @@ export type Database = {
           created_by: string
           deleted_at: string | null
           from_anchor: string
-          from_node_id: string
+          from_frame_id: string | null
+          from_node_id: string | null
           id: string
           relation: string
           to_anchor: string
-          to_node_id: string
+          to_frame_id: string | null
+          to_node_id: string | null
           updated_at: string
           updated_by: string
           version: number
@@ -4584,11 +4622,13 @@ export type Database = {
           created_by: string
           deleted_at?: string | null
           from_anchor?: string
-          from_node_id: string
+          from_frame_id?: string | null
+          from_node_id?: string | null
           id?: string
           relation: string
           to_anchor?: string
-          to_node_id: string
+          to_frame_id?: string | null
+          to_node_id?: string | null
           updated_at?: string
           updated_by: string
           version?: number
@@ -4600,11 +4640,13 @@ export type Database = {
           created_by?: string
           deleted_at?: string | null
           from_anchor?: string
-          from_node_id?: string
+          from_frame_id?: string | null
+          from_node_id?: string | null
           id?: string
           relation?: string
           to_anchor?: string
-          to_node_id?: string
+          to_frame_id?: string | null
+          to_node_id?: string | null
           updated_at?: string
           updated_by?: string
           version?: number
@@ -4626,10 +4668,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "workboard_links_from_frame_id_fkey"
+            columns: ["from_frame_id"]
+            isOneToOne: false
+            referencedRelation: "workboard_frames"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "workboard_links_from_node_id_fkey"
             columns: ["from_node_id"]
             isOneToOne: false
             referencedRelation: "workboard_nodes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workboard_links_to_frame_id_fkey"
+            columns: ["to_frame_id"]
+            isOneToOne: false
+            referencedRelation: "workboard_frames"
             referencedColumns: ["id"]
           },
           {
