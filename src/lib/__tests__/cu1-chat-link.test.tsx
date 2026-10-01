@@ -33,8 +33,8 @@ describe("CU1 validation", () => {
       expect(pastedChatUrl(bad)).toBeNull();
     }
   });
-  it("leaves safeChatUrl unchanged for its callers", () => {
-    expect(safeChatUrl(PASTED)).toBeNull();
+  it("CL-1: safeChatUrl keeps any https host now", () => {
+    expect(safeChatUrl(PASTED)).toBe(PASTED);
     expect(safeChatUrl(PUSHED)).toBe(PUSHED);
   });
 });

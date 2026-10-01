@@ -69,7 +69,7 @@ describe("pass 126 — effectiveChatUrl", () => {
     expect(effectiveChatUrl("http://claude.ai/chat/x", "claude", UUID)).toBe(
       `https://claude.ai/chat/${UUID}`,
     );
-    expect(effectiveChatUrl("https://evil.example.com/x", "claude", UUID)).toBe(
+    expect(effectiveChatUrl("javascript:alert(1)", "claude", UUID)).toBe(
       `https://claude.ai/chat/${UUID}`,
     );
   });

@@ -101,7 +101,8 @@ describe("pass 97 — chat_url allowlist", () => {
   it("rejects javascript:, http and unknown hosts", () => {
     expect(safeChatUrl("javascript:alert(1)")).toBeNull();
     expect(safeChatUrl("http://claude.ai/chat/abc")).toBeNull();
-    expect(safeChatUrl("https://evil.example.com/claude.ai")).toBeNull();
+    // CL-1: the host list is gone; any https link past a front door is kept.
+    expect(safeChatUrl("https://other.example.com/claude.ai")).toBe("https://other.example.com/claude.ai");
     expect(safeChatUrl("not a url")).toBeNull();
     expect(safeChatUrl(undefined)).toBeNull();
   });
