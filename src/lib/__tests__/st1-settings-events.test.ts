@@ -45,7 +45,6 @@ describe("S-T1 closed vocabulary", () => {
 describe("S-T1 call sites carry no free text", () => {
   const sites = [
     "src/lib/connectors.functions.ts",
-    "src/lib/mcp-tokens.functions.ts",
     "src/lib/data-consent.functions.ts",
     "src/components/settings/NamingConventionsCard.tsx",
   ];
