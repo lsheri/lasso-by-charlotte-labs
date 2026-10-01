@@ -182,6 +182,8 @@ import type { WorkItemRow } from "@/lib/work-types";
 import { useQueryClient } from "@tanstack/react-query";
 import { AddWorkPanel, type AddWorkSource } from "@/components/canvas-lab/AddWorkPanel";
 import { BoardFileDropOverlay, useBoardFileDrop } from "@/components/canvas-lab/board-file-drop";
+import { LabImage, buildImageNodeInput, removeBoardImageObject } from "@/components/canvas-lab/board-image";
+import { fitWorkboardImageSize, type WorkboardImageBody } from "@/lib/canvas-lab-shared";
 import { CARD_HEIGHT, CARD_WIDTH, bundleCountBand, chatBundles, dockBundles, dockedPieceChats, applyBundleViews, bundlePiecesBand, readBundleViews, workboardBundlesKey, writeBundleViews, type BundleView } from "@/components/canvas-lab/canvas-lab-model";
 import { placeWorkOnBoardFn } from "@/lib/workboard-add-work.functions";
 import { placeAddedCards, placementRectsForFrames, placementRectsForNodes, type PlacementRect } from "@/lib/workboard-placement";
@@ -519,7 +521,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   /** Bringing work in is arranging the board, so a coach never sees it. */
   const canAddWork = lab.board?.canEditStructure !== false;
   // DD1-a: files dropped from the desktop land at the release point.
-  const fileDrop = useBoardFileDrop({ enabled: canAddWork, toBoard: (x, y) => stagePoint(x, y), place: (ids, at) => addWorkToBoard(ids, "upload", at) });
+  const fileDrop = useBoardFileDrop({ enabled: canAddWork, toBoard: (x, y) => stagePoint(x, y), place: (ids, at) => addWorkToBoard(ids, "upload", at), placeImage: (image, at) => addImageToBoard(image, at) });
   /** The fixed guide panels belong to boards that were seeded with structure. */
   const showGuides = boardHasSeededStructure(lab.board);
   const showExample = boardIsNearEmpty(visibleNodes);
@@ -729,6 +731,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     if (node.kind === "text") return { ...base, frameKey: null, kind: "text", body: serializeWorkboardTextBody({ text: node.summary, size: node.textSize ?? "label", weight: node.textWeight ?? "medium", colour: node.textColour ?? "ink" }) };
     if (node.kind === "sticky") return { ...base, frameKey: null, kind: "sticky", body: serializeWorkboardStickyBody(stickyBodyOf(node)) };
     if (node.kind === "answer") return { ...base, kind: "answer", title: node.title, body: node.summary };
+    if (node.kind === "image" && node.imagePath && node.imageNaturalWidth && node.imageNaturalHeight) return buildImageNodeInput({ clientKey: base.clientKey, body: { path: node.imagePath, naturalWidth: node.imageNaturalWidth, naturalHeight: node.imageNaturalHeight }, x: base.x, y: base.y, w: base.w, h: base.h, hidden: base.hidden });
     return null;
   }
 
@@ -1667,7 +1670,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
           if (changed) {
             setNodes((current) => current?.map((node) => node.id === resizing.id ? { ...node, ...rect } : node) ?? current);
             void persistNodePatch(resizing.id, { x: rect.x, y: rect.y, w: rect.width, h: rect.height });
-            noteWorkboardElementResized(orgId, resizing.kind, "pointer", resizeAxis(resizing.start, rect));
+            if (resizing.kind !== "image") noteWorkboardElementResized(orgId, resizing.kind, "pointer", resizeAxis(resizing.start, rect));
             record({ action: "resize", kind: "card", targetId: resizing.id, before: resizing.start, after: rect });
           }
         } else if (changed) {
@@ -1815,7 +1818,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       if (frame) { end = { x: frame.x, y: frame.y, width: frame.width, height: frame.height }; void persistFramePatch(frame.id, { x: frame.x, y: frame.y, w: frame.width, h: frame.height }); }
     }
     if (end) {
-      noteWorkboardElementResized(orgId, resizing.kind, "keyboard", resizeAxis(resizing.start, end));
+      if (resizing.kind !== "image") noteWorkboardElementResized(orgId, resizing.kind, "keyboard", resizeAxis(resizing.start, end));
       record({ action: "resize", kind: resizing.kind === "frame" ? "frame" : "card", targetId: resizing.id, before: resizing.start, after: end });
     }
     resizeRef.current = null;
@@ -2116,6 +2119,12 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   function deleteNode(node: LabNode) {
     // A judgment belongs to whoever wrote it. Nobody else removes it, and the
     // author's removal is a soft archive the record keeps.
+    // DD1-f: only the person who dropped an image can remove it, because only
+    // they can delete its file; a teammate's removal would leave an orphan.
+    if (node.kind === "image" && !node.local) {
+      setAnnouncement("This image belongs to a teammate, so only they can remove it.");
+      return;
+    }
     if ((node.kind === "judgment" || node.kind === "chat") && !node.local) {
       setAnnouncement("This card belongs to a teammate, so only they can remove it.");
       return;
@@ -2133,6 +2142,12 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       return result.nodes;
     });
     setKeyboardId(null);
+    if (node.kind === "image") {
+      // The file goes in the same action. No node_deleted: its kind set has no image.
+      if (node.imagePath) void removeBoardImageObject(node.imagePath);
+      setAnnouncement("Image removed.");
+      return;
+    }
     noteWorkboardNodeDeleted(orgId, eventKind(node));
     setAnnouncement(node.kind === "shape" ? "Colour block removed." : node.kind === "text" ? "Text block removed." : node.kind === "sticky" ? "Sticky removed." : `${node.title} removed from this workboard.`);
     const entry = record({ action: "remove_note", node, links: links.filter((link) => link.fromId === node.id || link.toId === node.id) });
@@ -2507,6 +2522,26 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     setAnnouncement("Sticky added.");
   }
 
+  /** DD1-f: a dropped image lands at the drop point, sized to fit 420px on its longest edge. */
+  async function addImageToBoard(image: WorkboardImageBody, at: { x: number; y: number }): Promise<boolean> {
+    const id = `image:${crypto.randomUUID()}`;
+    const { width, height } = fitWorkboardImageSize(image.naturalWidth, image.naturalHeight);
+    const node: LabNode = {
+      id, clientKey: id, kind: "image", frame: null, title: "Image", summary: "", typeLabel: "image",
+      ownership: "yours", local: true, imagePath: image.path, imageNaturalWidth: image.naturalWidth, imageNaturalHeight: image.naturalHeight,
+      x: Math.round(at.x), y: Math.round(at.y), width, height,
+    };
+    nodesRef.current = [...nodesRef.current, node];
+    setNodes((current) => [...(current ?? []), node]);
+    if (!(await ensureNodeDurable(id))) {
+      nodesRef.current = nodesRef.current.filter((entry) => entry.id !== id);
+      setNodes((current) => current?.filter((entry) => entry.id !== id) ?? current);
+      return false;
+    }
+    setAnnouncement("Image added.");
+    return true;
+  }
+
   async function removeTrail() {
     const frame = framesRef.current.find((entry) => isTrailFrameId(entry.id));
     if (!frame) return;
@@ -2729,6 +2764,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
               <LabRelationships links={links} nodes={visibleNodes} measuredHeights={cardHeightsRef.current} selectedLinkId={selectedLinkId} inverseZoom={labInverseZoom(zoom)} onSelect={(id) => { setKeyboardId(null); setSelectedFrameId(null); setSelectedLinkId((current) => relationshipSelection(current, "select", id)); }} onHover={setHoveredLinkId} />
               {connectorPreview && connectorDragRef.current ? (() => { const source = visibleNodes.find((node) => node.id === connectorDragRef.current?.nodeId); if (!source || !connectorDragRef.current) return null; const from = labAnchorPoint(source, connectorDragRef.current.anchor, cardHeightsRef.current.get(source.id) ?? 108); return <path d={labConnectorPath(from, connectorDragRef.current.anchor, connectorPreview, connectorDragRef.current.anchor)} fill="none" stroke="var(--nb-green)" strokeWidth="2.4" strokeLinecap="round" className="pointer-events-none" />; })() : null}
             </svg>
+            {visibleNodes.filter((node) => node.kind === "image").map((node) => <LabImage key={node.id} node={node} selected={keyboardId === node.id} layoutEditable={Boolean(lab.board?.canEditStructure) && Boolean(node.local)} onSelect={() => { setKeyboardId(node.id); setSelectedFrameId(null); setSelectedLinkId(null); }} onDragStart={(event) => onCardPointerDown(node, event)} onResizeStart={(corner, event) => startResize("image", node.id, corner, node, event)} onResizeKeyDown={(corner, event) => keyboardResize("image", node.id, corner, node, event)} onResizeKeyUp={finishKeyboardResize} onRemove={() => deleteNode(node)} />)}
             {visibleNodes.filter((node) => node.kind === "sticky").map((node) => <LabSticky key={node.id} node={node} selected={keyboardId === node.id} editable={Boolean(node.local)} layoutEditable={Boolean(lab.board?.canEditStructure)} onSelect={() => { setKeyboardId(node.id); setSelectedFrameId(null); setSelectedLinkId(null); }} onDragStart={(event) => { if (decorationPointerIntent({ selected: keyboardId === node.id, onEdge: Boolean((event.target as HTMLElement).dataset["edge"]) }) === "drag") onCardPointerDown(node, event); }} onResizeStart={(corner, event) => startResize("sticky", node.id, corner, node, event)} onResizeKeyDown={(corner, event) => keyboardResize("sticky", node.id, corner, node, event)} onResizeKeyUp={finishKeyboardResize} onChange={(body) => setNodes((current) => current?.map((entry) => entry.id === node.id ? { ...entry, summary: body.text, textSize: body.size, textWeight: body.weight, textColour: body.colour, stickyFill: body.fill } : entry) ?? current)} onCommit={(body) => { noteWorkboardNodeEdited(orgId, "sticky"); void persistNodePatch(node.id, { body: serializeWorkboardStickyBody(body) }); }} onRemove={() => deleteNode(node)} />)}
             {visibleNodes.filter((node) => node.kind === "text").map((node) => <LabTextBlock key={node.id} node={node} selected={keyboardId === node.id} editable={Boolean(node.local)} layoutEditable={Boolean(lab.board?.canEditStructure)} onSelect={() => { setKeyboardId(node.id); setSelectedFrameId(null); setSelectedLinkId(null); }} onDragStart={(event) => { if (decorationPointerIntent({ selected: keyboardId === node.id, onEdge: Boolean((event.target as HTMLElement).dataset["edge"]) }) === "drag") onCardPointerDown(node, event); }} onResizeStart={(corner, event) => startResize("text", node.id, corner, node, event)} onResizeKeyDown={(corner, event) => keyboardResize("text", node.id, corner, node, event)} onResizeKeyUp={finishKeyboardResize} onChange={(body) => setNodes((current) => current?.map((entry) => entry.id === node.id ? { ...entry, summary: body.text, textSize: body.size, textWeight: body.weight, textColour: body.colour } : entry) ?? current)} onCommit={(body: WorkboardTextBody) => { noteWorkboardNodeEdited(orgId, "text"); void persistNodePatch(node.id, { body: serializeWorkboardTextBody(body) }); }} onRemove={() => deleteNode(node)} />)}
             <LabBundleStackEdges nodes={visibleNodes} minimized={bundleView.minimized} />
