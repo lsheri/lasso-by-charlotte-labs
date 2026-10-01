@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { BrandLockup } from "@/components/layout/BrandLockup";
+import { EntryDoorLink } from "@/components/layout/EntryDoorLink";
 import { supabase } from "@/integrations/supabase/client";
 import { emitClientEvent } from "@/lib/client-telemetry";
 import {
@@ -103,9 +104,9 @@ function ResetPasswordPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4 py-16">
       <div className="w-full max-w-[420px]">
-        <Link to="/" className="mb-4 inline-block transition-colors hover:text-foreground">
+        <EntryDoorLink className="mb-4 inline-block transition-colors hover:text-foreground">
           <BrandLockup />
-        </Link>
+        </EntryDoorLink>
         <div className="rounded-[var(--radius)] border border-border bg-card p-8 shadow-card">
           <h1 className="page-title">{mode === "set" ? SET_TITLE : RESET_TITLE}</h1>
           {mode === "set" ? (

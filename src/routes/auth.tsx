@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { BrandLockup } from "@/components/layout/BrandLockup";
+import { EntryDoorLink } from "@/components/layout/EntryDoorLink";
+import { rememberEntryDoor } from "@/lib/entry-door";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { checkSignupInvite } from "@/lib/invites.functions";
@@ -112,6 +114,9 @@ function AuthPage() {
   useEffect(() => {
     if (intent) emitClientEvent("signup.started", { intent, src: src ?? "direct" }, { stableVisitor: true });
   }, [intent, src]);
+  useEffect(() => {
+    if (src) rememberEntryDoor(src);
+  }, [src]);
   // Pass 185: the front door someone came through, remembered until the
   // workspace is created. Nothing else about the page changes.
   useEffect(() => {
@@ -225,12 +230,9 @@ function AuthPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4 py-16">
       <div className="w-full max-w-[420px]">
-        <Link
-          to="/"
-          className="mb-4 inline-block transition-colors hover:text-foreground"
-        >
+        <EntryDoorLink className="mb-4 inline-block transition-colors hover:text-foreground">
           <BrandLockup />
-        </Link>
+        </EntryDoorLink>
 
         <div className="rounded-[var(--radius)] border border-border bg-card p-8 shadow-card">
           <h1 className="page-title">
