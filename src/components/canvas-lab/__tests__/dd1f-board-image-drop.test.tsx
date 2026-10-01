@@ -13,8 +13,6 @@ const toastFn = vi.fn();
 vi.mock("sonner", () => ({ toast: Object.assign((m: string) => toastFn(m), { error: (m: string) => toastFn(m) }) }));
 vi.mock("@tanstack/react-start", () => ({ useServerFn: () => vi.fn(async () => ({})) }));
 vi.mock("@/lib/telemetry", () => ({ logEvent: (...a: unknown[]) => logEvent(...a) }));
-vi.mock("@/lib/item-text.functions", () => ({ getItemTextPane: {} }));
-vi.mock("@/lib/workboard-artifact-preview.functions", () => ({ getWorkboardArtifactPreview: {} }));
 vi.mock("@/components/work/use-capture-files", () => ({ useCaptureFiles: () => ({ captureWithResult }) }));
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: {

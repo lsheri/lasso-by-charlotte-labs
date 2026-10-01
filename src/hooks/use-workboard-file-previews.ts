@@ -2,6 +2,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
+import { signWorkboardFileUrl } from "@/lib/workboard-file-sign";
 import { getItemTextPane } from "@/lib/item-text.functions";
 import { getWorkboardArtifactPreview } from "@/lib/workboard-artifact-preview.functions";
 import {
@@ -27,15 +28,6 @@ function enqueue<T>(work: () => Promise<T>): Promise<T> {
 /** P1b: drop one item's cached preview so it is computed again after its file is added. */
 export function forgetWorkboardFilePreview(workItemId: string): void {
   sessionCache.delete(workItemId);
-}
-
-/**
- * The one place a workboard signs a work-files object. Card previews and
- * DD1-f board images both read through it. Null when signing is refused.
- */
-export async function signWorkboardFileUrl(path: string, seconds = 600): Promise<string | null> {
-  const signed = await supabase.storage.from("work-files").createSignedUrl(path, seconds);
-  return !signed.error && signed.data?.signedUrl ? signed.data.signedUrl : null;
 }
 
 export async function loadWorkboardFilePreview(

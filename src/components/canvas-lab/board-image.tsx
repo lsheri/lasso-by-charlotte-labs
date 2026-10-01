@@ -3,10 +3,10 @@ import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, PointerEvent a
 
 import type { LabNode, LabResizeCorner } from "@/components/canvas-lab/canvas-lab-model";
 import { Button } from "@/components/ui/button";
-import { signWorkboardFileUrl } from "@/hooks/use-workboard-file-previews";
 import { supabase } from "@/integrations/supabase/client";
 import { serializeWorkboardImageBody, type WorkboardImageBody, type WorkboardNodeInput } from "@/lib/canvas-lab-shared";
 import { storageObjectKey } from "@/lib/upload-payload";
+import { signWorkboardFileUrl } from "@/lib/workboard-file-sign";
 
 export const BOARD_IMAGE_COPY = {
   failed: "This image could not be loaded.",
