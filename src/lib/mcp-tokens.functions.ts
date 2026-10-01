@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { sha256Hex, validateProfileId } from "@/lib/connectors-shared";
+import { validateProfileId } from "@/lib/connectors-shared";
 import { resolveProfile } from "@/lib/profile-resolve";
 
 export type McpTokenInfo = {
@@ -18,9 +18,10 @@ export const getMcpToken = createServerFn({ method: "GET" })
     const profile = await resolveProfile(supabase, userId, data.profile_id);
     if (!profile) return null;
     const { data: token } = await supabase
-      .from("mcp_tokens")
+      .from("mcp_connections")
       .select("id, created_at, last_used_at")
       .eq("profile_id", profile.id)
+      .eq("kind", "link")
       .is("revoked_at", null)
       .order("created_at", { ascending: false })
       .limit(1)
@@ -36,30 +37,22 @@ export const createMcpToken = createServerFn({ method: "POST" })
     const profile = await resolveProfile(supabase, userId, data.profile_id);
     if (!profile) throw new Response("Forbidden", { status: 403 });
 
-    await supabase
-      .from("mcp_tokens")
-      .update({ revoked_at: new Date().toISOString() })
-      .eq("profile_id", profile.id)
-      .is("revoked_at", null);
-
-    const bytes = crypto.getRandomValues(new Uint8Array(32));
-    const token = Array.from(bytes)
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("");
-
-    const { error } = await supabase.from("mcp_tokens").insert({
-      profile_id: profile.id,
-      token_hash: await sha256Hex(token),
-      label: "AI connector",
+    const { data: result, error } = await supabase.rpc("mcp_create_connection", {
+      p_profile_id: profile.id,
+      p_label: "AI connector",
+      p_kind: "link",
+      p_replace_existing: true,
     });
     if (error) throw new Error(error.message);
+    const connection = result as { secret?: string } | null;
+    if (!connection?.secret) throw new Error("Could not create connector");
     const { recordSettingsChanged } = await import("./settings-events.server");
     await recordSettingsChanged(
       supabase,
       { orgId: profile.org_id, userId, profileId: profile.id },
       { section: "ai_tools", setting: "mcp_url_regenerated", change: "updated" },
     );
-    return { token };
+    return { token: connection.secret };
   });
 
 export const revokeMcpToken = createServerFn({ method: "POST" })
@@ -69,12 +62,19 @@ export const revokeMcpToken = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const profile = await resolveProfile(supabase, userId, data.profile_id);
     if (!profile) throw new Response("Forbidden", { status: 403 });
-    const { error } = await supabase
-      .from("mcp_tokens")
-      .update({ revoked_at: new Date().toISOString() })
+    const { data: connections, error } = await supabase
+      .from("mcp_connections")
+      .select("id")
       .eq("profile_id", profile.id)
+      .eq("kind", "link")
       .is("revoked_at", null);
     if (error) throw new Error(error.message);
+    for (const connection of connections ?? []) {
+      const { error: revokeError } = await supabase.rpc("mcp_revoke_connection", {
+        p_id: connection.id,
+      });
+      if (revokeError) throw new Error(revokeError.message);
+    }
     const { recordSettingsChanged } = await import("./settings-events.server");
     await recordSettingsChanged(
       supabase,

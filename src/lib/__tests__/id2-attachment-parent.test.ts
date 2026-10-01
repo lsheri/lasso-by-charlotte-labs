@@ -80,7 +80,7 @@ vi.mock("@/lib/org-type.server", () => ({
 
 import { pushConversation } from "@/lib/mcp-handler.server";
 
-const OWNER = { tokenId: "t1", profileId: "p1", orgId: "o1", userId: "u1" };
+const OWNER = { tokenId: "t1", profileId: "p1", orgId: "o1", userId: "u1", kind: "link", readOnly: false, legacy: true, authKind: "link" as const };
 
 async function push(args: Record<string, unknown>) {
   const res = await pushConversation(OWNER, args, 1);

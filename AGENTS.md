@@ -19,6 +19,7 @@
 - Render home story captions through the settled-step caption presenter so exit, entry, word reveal, progress, and reduced-motion states stay synchronized with the 800ms dwell.
 - Keep landing story navigation in the fixed ten-dot progress rail, with the public header reserved for destination links and account actions, so desktop and phone share one section-jump path.
 - Keep `/demo` as a local-state-only playground built from the landing board presentation pieces; preserve the original guided demo at unlinked `/demo/classic`.
-- Keep the `/demo` deliverable as a self-contained local slide viewer whose selected slide resets with the board, because its artwork must never overflow the workboard node.
+- Keep `/demo` deliverable art self-contained and reset its selected slide with the board.
 - Keep `/demo` touch gestures pointer-based: one finger on empty board pans, card-origin drags move cards, and two fingers pan and pinch regardless of their starting target.
 - Landing: one hero video replays on return; its data wait uses 2.5s logo rain, static under reduced motion.
+- Resolve all MCP keys through `mcp_connections`; routes differ only by key transport.

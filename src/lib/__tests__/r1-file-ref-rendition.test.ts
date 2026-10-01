@@ -84,7 +84,7 @@ import { ATTACHMENT_KINDS } from "@/lib/conversation-shared";
 import { parseIncomingAttachment, pushConversation, renditionNote, type AttachmentOutcome } from "@/lib/mcp-handler.server";
 import { readFileSync } from "node:fs";
 
-const OWNER = { tokenId: "t1", profileId: "p1", orgId: "o1", userId: "u1" };
+const OWNER = { tokenId: "t1", profileId: "p1", orgId: "o1", userId: "u1", kind: "link", readOnly: false, legacy: true, authKind: "link" as const };
 const TEXT = "# Slide 1\n\n- Revenue grew\n";
 const SHA = createHash("sha256").update(TEXT).digest("hex");
 

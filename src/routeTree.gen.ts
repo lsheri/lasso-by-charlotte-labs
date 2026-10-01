@@ -46,6 +46,7 @@ import { Route as AuthenticatedReflectRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedRequestsRouteImport } from './routes/_authenticated/requests'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedWorkRouteImport } from './routes/_authenticated/work'
+import { Route as ApiMcpRouteImport } from './routes/api/mcp'
 import { Route as DemoIndexRouteImport } from './routes/demo.index'
 import { Route as DemoCodeRouteImport } from './routes/demo.$code'
 import { Route as DemoClassicRouteImport } from './routes/demo.classic'
@@ -257,6 +258,11 @@ const AuthenticatedWorkRoute = AuthenticatedWorkRouteImport.update({
   path: '/work',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiMcpRoute = ApiMcpRouteImport.update({
+  id: '/api/mcp',
+  path: '/api/mcp',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DemoIndexRoute = DemoIndexRouteImport.update({
   id: '/demo/',
   path: '/demo/',
@@ -336,9 +342,9 @@ const ApiCoachChatStreamRoute = ApiCoachChatStreamRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiMcpTokenRoute = ApiMcpTokenRouteImport.update({
-  id: '/api/mcp/$token',
-  path: '/api/mcp/$token',
-  getParentRoute: () => rootRouteImport,
+  id: '/$token',
+  path: '/$token',
+  getParentRoute: () => ApiMcpRoute,
 } as any)
 const ApiPublicAuthEmailHookRoute = ApiPublicAuthEmailHookRouteImport.update({
   id: '/api/public/auth-email-hook',
@@ -417,6 +423,7 @@ export interface FileRoutesByFullPath {
   '/requests': typeof AuthenticatedRequestsRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/work': typeof AuthenticatedWorkRoute
+  '/api/mcp': typeof ApiMcpRouteWithChildren
   '/demo/$code': typeof DemoCodeRoute
   '/demo/classic': typeof DemoClassicRoute
   '/demo/conversations': typeof DemoConversationsRoute
@@ -478,6 +485,7 @@ export interface FileRoutesByTo {
   '/requests': typeof AuthenticatedRequestsRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/work': typeof AuthenticatedWorkRoute
+  '/api/mcp': typeof ApiMcpRouteWithChildren
   '/demo/$code': typeof DemoCodeRoute
   '/demo/classic': typeof DemoClassicRoute
   '/demo/conversations': typeof DemoConversationsRoute
@@ -541,6 +549,7 @@ export interface FileRoutesById {
   '/_authenticated/requests': typeof AuthenticatedRequestsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/work': typeof AuthenticatedWorkRoute
+  '/api/mcp': typeof ApiMcpRouteWithChildren
   '/demo/$code': typeof DemoCodeRoute
   '/demo/classic': typeof DemoClassicRoute
   '/demo/conversations': typeof DemoConversationsRoute
@@ -604,6 +613,7 @@ export interface FileRouteTypes {
     | '/requests'
     | '/settings'
     | '/work'
+    | '/api/mcp'
     | '/demo/$code'
     | '/demo/classic'
     | '/demo/conversations'
@@ -665,6 +675,7 @@ export interface FileRouteTypes {
     | '/requests'
     | '/settings'
     | '/work'
+    | '/api/mcp'
     | '/demo/$code'
     | '/demo/classic'
     | '/demo/conversations'
@@ -727,6 +738,7 @@ export interface FileRouteTypes {
     | '/_authenticated/requests'
     | '/_authenticated/settings'
     | '/_authenticated/work'
+    | '/api/mcp'
     | '/demo/$code'
     | '/demo/classic'
     | '/demo/conversations'
@@ -768,6 +780,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   TrustRoute: typeof TrustRoute
   WhyRoute: typeof WhyRoute
+  ApiMcpRoute: typeof ApiMcpRouteWithChildren
   DemoCodeRoute: typeof DemoCodeRoute
   DemoClassicRoute: typeof DemoClassicRoute
   DemoConversationsRoute: typeof DemoConversationsRoute
@@ -778,7 +791,6 @@ export interface RootRouteChildren {
   DemoIndexRoute: typeof DemoIndexRoute
   ApiAnalysisStreamRoute: typeof ApiAnalysisStreamRoute
   ApiCoachChatStreamRoute: typeof ApiCoachChatStreamRoute
-  ApiMcpTokenRoute: typeof ApiMcpTokenRoute
   ApiPublicAuthEmailHookRoute: typeof ApiPublicAuthEmailHookRoute
   ApiPublicResendWebhookRoute: typeof ApiPublicResendWebhookRoute
   ApiReflectStreamRoute: typeof ApiReflectStreamRoute
@@ -1047,6 +1059,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWorkRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/mcp': {
+      id: '/api/mcp'
+      path: '/api/mcp'
+      fullPath: '/api/mcp'
+      preLoaderRoute: typeof ApiMcpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/demo/': {
       id: '/demo/'
       path: '/demo'
@@ -1154,10 +1173,10 @@ declare module '@tanstack/react-router' {
     }
     '/api/mcp/$token': {
       id: '/api/mcp/$token'
-      path: '/api/mcp/$token'
+      path: '/$token'
       fullPath: '/api/mcp/$token'
       preLoaderRoute: typeof ApiMcpTokenRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof ApiMcpRoute
     }
     '/api/public/auth-email-hook': {
       id: '/api/public/auth-email-hook'
@@ -1280,6 +1299,17 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
+interface ApiMcpRouteChildren {
+  ApiMcpTokenRoute: typeof ApiMcpTokenRoute
+}
+
+const ApiMcpRouteChildren: ApiMcpRouteChildren = {
+  ApiMcpTokenRoute: ApiMcpTokenRoute,
+}
+
+const ApiMcpRouteWithChildren =
+  ApiMcpRoute._addFileChildren(ApiMcpRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
@@ -1296,6 +1326,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   TrustRoute: TrustRoute,
   WhyRoute: WhyRoute,
+  ApiMcpRoute: ApiMcpRouteWithChildren,
   DemoCodeRoute: DemoCodeRoute,
   DemoClassicRoute: DemoClassicRoute,
   DemoConversationsRoute: DemoConversationsRoute,
@@ -1306,7 +1337,6 @@ const rootRouteChildren: RootRouteChildren = {
   DemoIndexRoute: DemoIndexRoute,
   ApiAnalysisStreamRoute: ApiAnalysisStreamRoute,
   ApiCoachChatStreamRoute: ApiCoachChatStreamRoute,
-  ApiMcpTokenRoute: ApiMcpTokenRoute,
   ApiPublicAuthEmailHookRoute: ApiPublicAuthEmailHookRoute,
   ApiPublicResendWebhookRoute: ApiPublicResendWebhookRoute,
   ApiReflectStreamRoute: ApiReflectStreamRoute,
