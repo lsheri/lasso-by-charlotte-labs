@@ -72,6 +72,13 @@ describe("M2 connections settings", () => {
     expect(screen.getByText("Older link")).toBeTruthy();
   });
 
+  it("1b. an unlabelled current connection is not described as older", async () => {
+    rows = [row({ older: false, label: null })];
+    renderCard();
+    expect(await screen.findByText("Unnamed connection")).toBeTruthy();
+    expect(screen.queryByText("Older link")).toBeNull();
+  });
+
   it("2. Reveal calls reveal and shows the URL", async () => {
     rows = [row({})];
     renderCard();
@@ -187,6 +194,21 @@ describe("M2 connections settings", () => {
     expect(await screen.findByText("Give the connection a name, up to 80 characters.")).toBeTruthy();
     expect(create).not.toHaveBeenCalled();
     expect(logEvent).not.toHaveBeenCalled();
+  });
+
+  it("13b. a Replace refusal appears inside the selected older row", async () => {
+    rows = [
+      row({ id: "old-1", older: true, can_reveal: false, label: null }),
+      row({ id: "old-2", older: true, can_reveal: false, label: null }),
+    ];
+    renderCard();
+    const replaceButtons = await screen.findAllByRole("button", { name: "Replace" });
+    fireEvent.click(replaceButtons[1] as HTMLElement);
+    const alerts = await screen.findAllByRole("alert");
+    expect(alerts).toHaveLength(1);
+    const connectionRows = screen.getAllByTestId("connection-row");
+    expect(alerts[0]?.closest('[data-testid="connection-row"]')).toBe(connectionRows[1]);
+    expect(create).not.toHaveBeenCalled();
   });
 
   it("6. renders no Regenerate control", async () => {
