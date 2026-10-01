@@ -228,7 +228,7 @@ export function BoardFileDropOverlay({
             : "inset 0 24px 64px -12px transparent, inset 0 5px 14px transparent",
         }}
       />
-      <span className={`relative z-10 text-sm text-foreground transition-opacity duration-100 data-[active=true]:duration-[140ms] motion-reduce:transition-none ${show ? "opacity-100" : "opacity-0"}`} data-active={show ? "true" : "false"}>{BOARD_FILE_DROP_COPY.prompt}</span>
+      {show ? <span className="relative z-10 text-sm text-foreground">{BOARD_FILE_DROP_COPY.prompt}</span> : null}
       {!reduced ? flakes.map((flake) => {
         const elapsed = Math.max(0, now - flake.bornAt) / 1000;
         const progress = Math.min(1, (elapsed * 1000) / flake.lifetime);
