@@ -37,6 +37,7 @@ export type ReflectResult = {
 };
 
 /** Bucketed so an exact count never leaves as a dimension. */
+import { renditionsReadBucket } from "./reference-rendition-shared";
 function tierBucket(n: number): string {
   if (n <= 0) return "0";
   if (n <= 5) return "1-5";
@@ -269,6 +270,7 @@ export async function runReflectTurn(
         suppressed_quotes: qb(guardedCat.suppressed),
         finish_reason: run.finishReason,
         answer_retried: run.answerRetried,
+        renditions_read: renditionsReadBucket(run.renditionsRead),
         ...(preset ? { preset: preset.id } : {}),
       },
     });
@@ -426,6 +428,7 @@ export async function runReflectTurn(
       quote_repairs: quoteBucket(guarded.repairs),
       suppressed_quotes: quoteBucket(guarded.suppressed),
       finish_reason: completion.finishReason,
+      renditions_read: renditionsReadBucket(assembled.renditionsRead),
       ...(preset ? { preset: preset.id } : {}),
     },
   });

@@ -1,8 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
+import { useProfile } from "@/hooks/use-profile";
 import { toSafeHtml } from "@/lib/markdown";
+import { logEvent } from "@/lib/telemetry";
 import { getReferenceRenditionFn } from "@/lib/reference-file.functions";
 import {
   renditionMatchLine,
@@ -22,6 +24,14 @@ export function RenditionPane({ item }: { item: WorkItemRow }) {
   });
   const [html, setHtml] = useState<string | null>(null);
   const data = query.data;
+  const { data: profile } = useProfile();
+  const viewedRef = useRef(false);
+
+  useEffect(() => {
+    if (viewedRef.current || !data || data.status !== "ok" || !profile?.org_id) return;
+    viewedRef.current = true;
+    logEvent("work.rendition_viewed", profile.org_id, { method: data.method, match: data.match });
+  }, [data, profile?.org_id]);
 
   useEffect(() => {
     if (!data || data.status !== "ok") return;

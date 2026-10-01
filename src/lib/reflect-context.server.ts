@@ -559,9 +559,9 @@ export async function assembleReflectContext(
     const fetched = await Promise.all(
       chunk.map(async (item) => ({ item, result: await getItemText(supabase, item) })),
     );
-    for (const f of fetched) if (fullTextHas(f)) renditionsRead += 0;
     const applied = accountTextResults(fetched, rawBudget, { fullText, unreadable, rawUsed });
     rawUsed = applied.rawUsed;
+    for (const f of fetched) if (fullText.has(f.item.id) && readFromRendition(f.item, f.result.status)) renditionsRead += 1;
     if (applied.anyCut) anyCut = true;
     if (applied.stop) break;
   }
@@ -719,6 +719,7 @@ export async function assembleReflectContext(
     tier1Count: tier1,
     tier2Count: tier2,
     unreadableCount,
+    renditionsRead,
     reads,
     sources,
     manifest,
