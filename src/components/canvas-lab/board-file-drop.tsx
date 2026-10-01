@@ -216,14 +216,19 @@ export function BoardFileDropOverlay({
       data-testid="board-file-drop"
       aria-live="polite"
       data-active={show ? "true" : "false"}
-      className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center opacity-0 transition-[opacity,box-shadow] duration-100 ease-out data-[active=true]:opacity-100 data-[active=true]:duration-[140ms] motion-reduce:transition-none"
-      style={{
-        boxShadow: show
-          ? "inset 0 24px 64px -12px color-mix(in oklab, var(--nb-ink) 35%, transparent), inset 0 5px 14px color-mix(in oklab, var(--nb-graphite) 24%, transparent)"
-          : "inset 0 24px 64px -12px transparent, inset 0 5px 14px transparent",
-      }}
+      className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center"
     >
-      <span className="relative z-10 text-sm text-foreground">{BOARD_FILE_DROP_COPY.prompt}</span>
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 opacity-0 transition-[opacity,box-shadow] duration-100 ease-out data-[active=true]:opacity-100 data-[active=true]:duration-[140ms] motion-reduce:transition-none"
+        data-active={show ? "true" : "false"}
+        style={{
+          boxShadow: show
+            ? "inset 0 24px 64px -12px color-mix(in oklab, var(--nb-ink) 35%, transparent), inset 0 5px 14px color-mix(in oklab, var(--nb-graphite) 24%, transparent)"
+            : "inset 0 24px 64px -12px transparent, inset 0 5px 14px transparent",
+        }}
+      />
+      <span className={`relative z-10 text-sm text-foreground transition-opacity duration-100 data-[active=true]:duration-[140ms] motion-reduce:transition-none ${show ? "opacity-100" : "opacity-0"}`} data-active={show ? "true" : "false"}>{BOARD_FILE_DROP_COPY.prompt}</span>
       {!reduced ? flakes.map((flake) => {
         const elapsed = Math.max(0, now - flake.bornAt) / 1000;
         const progress = Math.min(1, (elapsed * 1000) / flake.lifetime);
