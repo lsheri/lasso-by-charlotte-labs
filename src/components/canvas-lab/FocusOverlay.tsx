@@ -12,6 +12,7 @@ import { SourceMark, sourceVendorKey, VendorMark } from "@/components/work/Sourc
 import type { CommentDto, CommentThreadDto } from "@/lib/canvas-lab-annotations-shared";
 import { resolveTurnSelection, type TurnSelection } from "@/lib/turn-selection";
 import { effectiveWorkDate, formatDate, type WorkItemRow } from "@/lib/work-types";
+import { useWorkFileDownload } from "@/hooks/use-work-file-download";
 
 /** One saved highlight, already told whether its turn has moved on. */
 export type OverlayHighlight = {
@@ -184,6 +185,7 @@ export function FocusOverlay({
   /** Close button words; defaults to "Back to the workboard". */
   closeLabel?: string | undefined;
 }) {
+  const download = useWorkFileDownload("focus");
   const [quote, setQuote] = useState("");
   const [turnSelection, setTurnSelection] = useState<TurnSelection | null>(null);
   const [crossTurn, setCrossTurn] = useState(false);
@@ -363,7 +365,7 @@ export function FocusOverlay({
                 filePreview && filePreview.kind !== "fallback"
                   ? <WorkboardFilePreview preview={filePreview} title={node.title} onFailure={() => undefined} />
                   : <p className="whitespace-pre-wrap text-[13px] leading-[20px] text-foreground">{node.summary}</p>
-              ) : <RenderedContent item={item} onDownload={() => undefined} canEdit={false} />}
+              ) : <RenderedContent item={item} onDownload={() => void download(item)} canEdit={false} />}
               </div>
             ) : (
               <div ref={readerRef} className="focus-paper-reader flex h-full flex-col gap-2 px-5 py-4" onMouseUp={captureSelection} onKeyUp={captureSelection}>

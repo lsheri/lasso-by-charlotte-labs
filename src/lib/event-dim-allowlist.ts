@@ -187,6 +187,7 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "work.panel_opened": ["panel"],
   "work.preview_mode_changed": ["mode", "kind"],
   "work.rendition_viewed": ["method", "match"],
+  "work.file_downloaded": ["surface"],
   "workflow.declared": ["item_count", "process_steps", "step_count", "task_class"],
   "workflow.reordered": ["item_count"],
   "workflow.reset": ["item_count"],
