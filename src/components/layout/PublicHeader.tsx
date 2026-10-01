@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
+import { EntryDoorLink } from "./EntryDoorLink";
 import { LassoLoopMark } from "./LassoLoopMark";
 
 const LINKS = [
@@ -13,14 +14,13 @@ export function PublicHeader({ current, cta }: { current?: "/" | "/why" | "/trus
   return (
     <header className="sticky top-0 z-50 bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/75">
       <div className="grid w-full grid-cols-1 items-center gap-3 px-4 pb-4 pt-[calc(1rem+env(safe-area-inset-top))] sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-6 sm:px-8 sm:pb-6 sm:pt-[calc(1.5rem+env(safe-area-inset-top))] md:px-12">
-        <Link
-          to="/"
+        <EntryDoorLink
           className="flex min-w-0 items-center gap-2 font-mono text-base font-normal tracking-[0.18em] text-foreground sm:gap-4 sm:text-2xl sm:tracking-[0.24em]"
           aria-current={current === "/" ? "page" : undefined}
         >
           <LassoLoopMark className="h-8 w-8 shrink-0 text-lasso-green sm:h-10 sm:w-10" />
           <span className="truncate">LASSO</span>
-        </Link>
+        </EntryDoorLink>
         <nav className={`grid min-w-0 shrink-0 items-center gap-2 sm:flex sm:gap-10 ${cta ? "grid-cols-2" : "grid-cols-1"}`}>
           {LINKS.filter((link) => link.to !== current).map((link) => (
             <Link

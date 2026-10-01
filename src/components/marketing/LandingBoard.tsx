@@ -15,6 +15,7 @@ import {
 } from "react";
 
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
+import { EntryDoorLink } from "@/components/layout/EntryDoorLink";
 import { BrandLogo, type BrandKey } from "@/components/connectors/BrandLogo";
 import { LandingParticlePhrase } from "@/components/marketing/LandingParticlePhrase";
 import { FocusSection } from "@/components/marketing/FocusSection";
@@ -2199,9 +2200,9 @@ function LandingBoardHeader() {
   return (
     <header className="lb-header">
       <div className="lb-header-main">
-        <Link to="/" className="lb-brand">
+        <EntryDoorLink className="lb-brand">
           <LassoLoopMark /> <span>LASSO</span>
-        </Link>
+        </EntryDoorLink>
         <nav className="lb-header-nav" aria-label="Primary navigation">
           <a href="#lb-canvas">How it works</a>
           <Link to="/plans" search={{ src: "lasso_landing" }}>Plans</Link>

@@ -3,6 +3,8 @@ import { useEffect, useState, type FormEvent } from "react";
 
 import { EnterInviteCode } from "@/components/invites/EnterInviteCode";
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
+import { EntryDoorLink } from "@/components/layout/EntryDoorLink";
+import { rememberEntryDoor } from "@/lib/entry-door";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -153,15 +155,18 @@ export function PlansPage({ search = {} }: { search?: PlansSearch }) {
   useEffect(() => {
     emitClientEvent("plans.viewed", { src: eventSrc }, { stableVisitor: true });
   }, [eventSrc]);
+  useEffect(() => {
+    if (src) rememberEntryDoor(src);
+  }, [src]);
 
   return (
     <div className="min-h-screen overflow-x-clip bg-background text-foreground">
       <header className="border-b border-rule">
         <div className="mx-auto flex min-h-16 max-w-7xl items-center justify-between gap-4 px-5 md:px-10">
-          <Link to="/" className="flex items-center gap-2 font-mono text-sm tracking-[0.18em]">
+          <EntryDoorLink className="flex items-center gap-2 font-mono text-sm tracking-[0.18em]">
             <LassoLoopMark className="h-8 w-8 text-lasso-green" />
             <span>LASSO</span>
-          </Link>
+          </EntryDoorLink>
           <Button asChild variant="outline" className="min-h-11">
             <Link to="/auth">Sign in</Link>
           </Button>
