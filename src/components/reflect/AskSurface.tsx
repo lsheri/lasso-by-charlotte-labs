@@ -215,7 +215,7 @@ function WorkPicker({ ask, engagementId }: { ask: AskLasso; engagementId: string
 }
 
 /** The transcript, on binder paper. Every line sits on the 28px pitch. */
-function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions?: React.ReactNode }) {
+export function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions?: React.ReactNode }) {
   const messages = ask.messages ?? [];
   const viewerInitial = ask.profile?.display_name.trim().charAt(0).toUpperCase() || "Y";
   // Only the workboard offers a place to keep an answer, and only to someone
@@ -234,6 +234,10 @@ function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions?: Reac
     return () => query.removeEventListener?.("change", onChange);
   }, []);
   const canDragAnswer = !!keep && !isMobile && !coarse;
+  // A1: the Lasso name carries the answer's own time, set on its first character.
+  const [answerStartedAt, setAnswerStartedAt] = useState<Date | null>(null);
+  const hasStream = Boolean(ask.pending && ask.streamed);
+  useEffect(() => { setAnswerStartedAt(hasStream ? new Date() : null); }, [hasStream]);
 
   function shortTime(value: string | Date): string {
     return new Date(value).toLocaleTimeString(undefined, {
@@ -384,27 +388,12 @@ function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions?: Reac
         })()}
 
         {ask.pending ? (
-          <div className="nb-binder-line flex items-center gap-2">
-            <LassoThinkingMark
-              kind="gather"
-              size={56}
-              count={ask.liveManifest?.items.length ?? 0}
-            />
-            <span className="text-sm text-muted-foreground">
-              {ask.streamed ? "Writing" : "Reading your work"}
-            </span>
-          </div>
-        ) : null}
-
-        {ask.pending ? (
           <div className="nb-conversation-message max-w-none flex-row items-start gap-3">
             <div className="grid w-7 shrink-0 grid-rows-[28px]">{speakerAvatar("assistant")}</div>
             <div className="nb-conversation-body w-full flex-1 gap-0 overflow-visible">
-              {speakerName("assistant", new Date())}
+              {ask.streamed && answerStartedAt ? <div className="ask-a1-name-in">{speakerName("assistant", answerStartedAt)}</div> : null}
               <AnswerRail state="working">
-                {ask.streamed ? (
-                  <MarkdownMessage content={ask.streamed} variant="binder" className="nb-stream" />
-                ) : (
+                {
                   <div className="nb-binder-inset">
                     <ThinkingTrail
                       items={(ask.pointedNow.length > 0 ? ask.pointedNow : ask.selectedItems).map(
@@ -413,9 +402,13 @@ function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions?: Reac
                       finalPhase="Writing"
                       manifest={ask.liveManifest}
                       lead={ask.pointedNow.length > 0 ? "Reading what you pointed at" : undefined}
+                      ask={{ answered: Boolean(ask.streamed) }}
                     />
                   </div>
-                )}
+                }
+                {ask.streamed ? (
+                  <MarkdownMessage content={ask.streamed} variant="binder" className="nb-stream" />
+                ) : null}
               </AnswerRail>
             </div>
           </div>

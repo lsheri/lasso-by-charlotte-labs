@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { LassoThinkingMark } from "@/components/reflect/LassoThinkingMark";
+import { AskThinkingFoot, ASK_THINKING_COPY, ASK_THINKING_STYLES, askFlickerStyle } from "@/components/reflect/AskThinkingFoot";
 import { ThreadViewerById } from "@/components/work/ThreadViewerById";
 import { Button } from "@/components/ui/button";
 import { emitClientEvent } from "@/lib/client-telemetry";
@@ -67,7 +68,10 @@ export function ThinkingTrail({
   finalPhase,
   manifest,
   lead,
+  ask,
 }: {
+  /** A1: Ask Lasso only. Other screens leave this unset and render as before. */
+  ask?: { answered: boolean } | undefined;
   /** Titles the person selected. Shown before the server answers. */
   items: { id: string; title: string }[];
   /** "Writing…" for chat, "Applying <analysis>…" for an analysis. */
@@ -116,7 +120,8 @@ export function ThinkingTrail({
   void lead;
   return (
     <div className="nb-answer-rail text-muted-foreground" data-rail-state="working" aria-live="polite">
-      {manifest ? (
+      {ask ? <style>{ASK_THINKING_STYLES}</style> : null}
+      {manifest && !ask ? (
         <p className="mb-2 text-[13px] leading-5">
           Read {manifest.items.length} pieces of work
           {manifest.brief_included ? ", the brief" : ""}
@@ -131,6 +136,7 @@ export function ThinkingTrail({
               key={line.key}
               className={`nb-trail-row relative flex h-[34px] items-center text-[13px] leading-none text-foreground ${index === shown.length - 1 ? "live" : ""}`}
               data-trail-state={manifest ? "read" : "pending"}
+              {...(ask ? askFlickerStyle(index, { answered: ask.answered, reduced }) : {})}
             >
               <TrailGlyph kind={line.kind} />
               <span className="ml-[9px] min-w-0 truncate">{line.text}</span>
@@ -139,12 +145,12 @@ export function ThinkingTrail({
           ))}
         </div>
       </div>
-      <div className="mt-2 flex h-5 items-center gap-2 text-[13px] text-muted-foreground">
+      {ask ? <AskThinkingFoot answered={ask.answered} reduced={reduced} count={shown.length} elapsed={elapsedLabel(elapsed)} /> : <div className="mt-2 flex h-5 items-center gap-2 text-[13px] text-muted-foreground">
         <LassoThinkingMark kind="loop" size={20} className="shrink-0 text-[var(--nb-lasso-green)]" />
-        <span>{manifest ? finalPhase : "Reading your work"}</span>
+        <span>{manifest ? finalPhase : ASK_THINKING_COPY.reading}</span>
         <span aria-hidden>·</span>
         <span className="font-mono text-[11px]">{elapsedLabel(elapsed)}</span>
-      </div>
+      </div>}
     </div>
   );
 }
