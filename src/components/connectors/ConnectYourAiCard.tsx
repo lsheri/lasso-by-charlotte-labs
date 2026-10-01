@@ -4,12 +4,29 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { BrandPair } from "@/components/connectors/BrandLogo";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { useProfile } from "@/hooks/use-profile";
-import { createMcpToken, getMcpToken, revokeMcpToken } from "@/lib/mcp-tokens.functions";
+import {
+  CONNECTION_LIMIT_ERROR,
+  createConnection,
+  listConnections,
+  renameConnection,
+  revealConnection,
+  revokeConnection,
+  type ConnectionRow,
+} from "@/lib/mcp-connections.functions";
 import {
   MCP_PUSH_PHRASE,
-  MCP_REGENERATE_WARNING,
   MCP_SERVER_NAME,
   MCP_SETUP_STEPS,
   MCP_VENDORS,
@@ -17,19 +34,60 @@ import {
 } from "@/lib/mcp-setup-steps";
 import { logEvent } from "@/lib/telemetry";
 
+/**
+ * Sign-in connections arrive in the next unit. While this is false they are
+ * filtered out of the list; flipping it is the whole switch.
+ */
+export const SHOW_SIGNIN_CONNECTIONS = false;
+
+export const CONNECTIONS_KEY = ["mcp-connections"] as const;
+
+export const AI_TOOLS_COPY = {
+  heading: "AI tools",
+  sub: "Connect Lasso to Claude, ChatGPT, Cursor or any tool that takes a custom connector.",
+  olderName: "Older link",
+  olderLine: "Made before 1 Oct, can't be shown again. Replace it to see the link.",
+  replaced: "Your new link is ready. Paste it into your tool, then disconnect the older link.",
+  nameLabel: "Name this connection",
+  namePlaceholder: "Claude",
+  nameHelper:
+    "Name it after the tool you will paste it into, so you know which one to disconnect later.",
+  create: "Create link",
+  nameError: "Give the connection a name, up to 80 characters.",
+  limitError: "You have 25 connections. Disconnect one first.",
+  disconnectBody:
+    "The tool using this link stops being able to add work right away. You can create a new one any time.",
+} as const;
+
 const SETUP_INSTRUCTIONS = MCP_VENDORS.map(
   (vendor) => `${VENDOR_LABELS[vendor]}:\n${MCP_SETUP_STEPS[vendor].join("\n")}`,
 )
   .concat(`Then, in any conversation: "${MCP_PUSH_PHRASE}"`)
   .join("\n\n");
 
-function formatDate(iso: string | null): string {
-  if (!iso) return "never";
+function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, {
     year: "numeric",
     month: "short",
     day: "numeric",
   });
+}
+
+function relative(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const minutes = Math.round(diff / 60000);
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes} min ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours} h ago`;
+  const days = Math.round(hours / 24);
+  if (days < 30) return `${days} d ago`;
+  return formatDate(iso);
+}
+
+function validName(value: string): boolean {
+  const trimmed = value.trim();
+  return trimmed.length >= 1 && trimmed.length <= 80;
 }
 
 /** Plain words for what is true right now, never a masked stand in for a URL. */
@@ -67,48 +125,94 @@ export function SetupSteps() {
   );
 }
 
-export function ConnectYourAiCard() {
-  const queryClient = useQueryClient();
-  const { data: profile } = useProfile();
-  const fetchToken = useServerFn(getMcpToken);
-  const create = useServerFn(createMcpToken);
-  const revoke = useServerFn(revokeMcpToken);
-  const { data: token } = useQuery({
-    queryKey: ["mcp-token"],
-    queryFn: () => fetchToken({ data: { profile_id: profile?.id } }),
-  });
-  const [freshUrl, setFreshUrl] = useState<string | null>(null);
-  const [showSetup, setShowSetup] = useState(false);
-  const [confirming, setConfirming] = useState(false);
+async function copyText(value: string, label: string) {
+  await navigator.clipboard.writeText(value);
+  toast.success(`${label} copied`);
+}
+
+/**
+ * The revealed link. Session replay masks all text through the PostHog
+ * maskTextSelector "*", which covers this element and the Copy button.
+ */
+function RevealedLink({ secret, workspace }: { secret: string; workspace: string }) {
+  const origin = typeof window === "undefined" ? "" : window.location.origin;
+  const url = `${origin}/api/mcp/${secret}`;
+  return (
+    <div className="mt-3 rounded-[var(--radius)] border border-accent bg-accent-soft px-3 py-2.5">
+      <div className="flex flex-wrap items-center gap-3">
+        <code
+          data-testid="revealed-url"
+          className="min-w-0 flex-1 break-all font-mono text-xs text-foreground"
+        >
+          {url}
+        </code>
+        <Button
+          type="button"
+          size="sm"
+          data-testid="copy-url"
+          onClick={() => void copyText(url, "Link")}
+        >
+          Copy
+        </Button>
+      </div>
+      <p className="mt-2 text-xs text-muted-foreground">
+        {`Anyone with this link can add work to ${workspace} as you. Keep it private.`}
+      </p>
+      <p className="mt-1 text-xs text-muted-foreground">
+        {`The same key also works as a header. Send Authorization: Bearer ${secret} to ${origin}/api/mcp`}
+      </p>
+    </div>
+  );
+}
+
+type RowProps = {
+  row: ConnectionRow;
+  workspace: string;
+  orgId: string | undefined;
+  fromReplace: boolean;
+  onReplace: (row: ConnectionRow) => void;
+  onChanged: () => Promise<void>;
+};
+
+export function ConnectionRowView({ row, workspace, orgId, fromReplace, onReplace, onChanged }: RowProps) {
+  const reveal = useServerFn(revealConnection);
+  const rename = useServerFn(renameConnection);
+  const revoke = useServerFn(revokeConnection);
+  const [secret, setSecret] = useState<string | null>(null);
+  const [renaming, setRenaming] = useState(false);
+  const [draft, setDraft] = useState(row.label ?? "");
+  const [renameError, setRenameError] = useState<string | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  // With no live connector the steps are the point of the card, so they are
-  // open. Once one exists they sit behind the toggle, still one click away.
-  const stepsOpen = !token || showSetup;
+  const name = row.older ? AI_TOOLS_COPY.olderName : row.label || AI_TOOLS_COPY.olderName;
+  const isSignin = row.kind === "signin";
+  const showReveal = !isSignin && !row.older && row.can_reveal;
 
-  async function copy(value: string, label: string) {
-    await navigator.clipboard.writeText(value);
-    toast.success(`${label} copied`);
-  }
-
-  function openSteps() {
-    setShowSetup(true);
-    if (profile) {
-      logEvent("connector.setup_opened", profile.org_id, {
-        surface: "mcp",
-        had_connector: Boolean(token),
-      });
+  async function handleReveal() {
+    setBusy(true);
+    try {
+      const { secret: value } = await reveal({ data: { id: row.id } });
+      setSecret(value);
+      if (value && orgId) logEvent("mcp.connection_revealed", orgId, { kind: row.kind });
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(false);
     }
   }
 
-  async function handleGenerate() {
+  async function handleRename() {
+    if (!validName(draft)) {
+      setRenameError(AI_TOOLS_COPY.nameError);
+      return;
+    }
     setBusy(true);
     try {
-      const { token: raw } = await create({ data: { profile_id: profile?.id } });
-      setFreshUrl(`${window.location.origin}/api/mcp/${raw}`);
-      await queryClient.invalidateQueries({ queryKey: ["mcp-token"] });
-      setShowSetup(true);
-      setConfirming(false);
+      await rename({ data: { id: row.id, label: draft.trim() } });
+      setRenaming(false);
+      setRenameError(null);
+      await onChanged();
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -119,12 +223,187 @@ export function ConnectYourAiCard() {
   async function handleRevoke() {
     setBusy(true);
     try {
-      await revoke({ data: { profile_id: profile?.id } });
-      setFreshUrl(null);
-      await queryClient.invalidateQueries({ queryKey: ["mcp-token"] });
-      toast.success("Connector revoked");
+      await revoke({ data: { id: row.id } });
+      if (orgId) {
+        logEvent("mcp.connection_revoked", orgId, {
+          kind: row.kind,
+          via: fromReplace ? "replace" : "settings",
+        });
+      }
+      setConfirmOpen(false);
+      await onChanged();
     } catch (e) {
       toast.error((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <li className="rounded-[var(--radius)] border border-border bg-card px-4 py-3" data-testid="connection-row">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        {renaming ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              aria-label={AI_TOOLS_COPY.nameLabel}
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              className="rounded-[var(--radius)] border border-border bg-background px-2 py-1 text-[13px]"
+            />
+            <Button type="button" size="sm" disabled={busy} onClick={() => void handleRename()}>
+              Save
+            </Button>
+            <button
+              type="button"
+              onClick={() => {
+                setRenaming(false);
+                setRenameError(null);
+              }}
+              className="text-xs text-muted-foreground hover:text-foreground"
+            >
+              Cancel
+            </button>
+          </div>
+        ) : (
+          <>
+            <p className="text-[13px] font-medium text-foreground">{name}</p>
+            {!row.older ? (
+              <button
+                type="button"
+                onClick={() => setRenaming(true)}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                Rename
+              </button>
+            ) : null}
+          </>
+        )}
+      </div>
+      {renameError ? <p className="mt-1 text-xs text-destructive">{renameError}</p> : null}
+
+      {isSignin ? (
+        <p className="mt-1 text-xs text-muted-foreground">{`Signed in from ${row.client_name ?? ""}`}</p>
+      ) : row.key_last4 ? (
+        <p className="mt-1 font-mono text-xs text-muted-foreground">{`····${row.key_last4}`}</p>
+      ) : null}
+
+      <p className="mt-1 text-xs text-muted-foreground">
+        {row.last_used_at
+          ? `Added ${formatDate(row.created_at)} · Last used ${relative(row.last_used_at)}`
+          : `Added ${formatDate(row.created_at)} · Never used`}
+      </p>
+      <p className="mt-0.5 text-xs text-muted-foreground">{`Adds work to ${workspace}`}</p>
+      {row.older ? <p className="mt-1 text-xs text-muted-foreground">{AI_TOOLS_COPY.olderLine}</p> : null}
+
+      <div className="mt-2 flex flex-wrap items-center gap-4">
+        {showReveal && !secret ? (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void handleReveal()}
+            className="text-xs font-medium text-accent-deep hover:opacity-70"
+          >
+            Reveal
+          </button>
+        ) : null}
+        {row.older ? (
+          <button
+            type="button"
+            onClick={() => onReplace(row)}
+            className="text-xs font-medium text-accent-deep hover:opacity-70"
+          >
+            Replace
+          </button>
+        ) : null}
+        <button
+          type="button"
+          onClick={() => setConfirmOpen(true)}
+          className="text-xs text-muted-foreground hover:text-destructive"
+        >
+          Disconnect
+        </button>
+      </div>
+
+      {secret ? <RevealedLink secret={secret} workspace={workspace} /> : null}
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{`Disconnect ${name}?`}</AlertDialogTitle>
+            <AlertDialogDescription>{AI_TOOLS_COPY.disconnectBody}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={busy}
+              onClick={(e) => {
+                e.preventDefault();
+                void handleRevoke();
+              }}
+            >
+              Disconnect
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </li>
+  );
+}
+
+export function ConnectYourAiCard() {
+  const queryClient = useQueryClient();
+  const { data: profile } = useProfile();
+  const fetchList = useServerFn(listConnections);
+  const create = useServerFn(createConnection);
+  const { data: rows } = useQuery({
+    queryKey: [...CONNECTIONS_KEY, profile?.id ?? null],
+    queryFn: () => fetchList({ data: { profile_id: profile?.id } }),
+  });
+  const [name, setName] = useState("");
+  const [formError, setFormError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [created, setCreated] = useState<{ secret: string } | null>(null);
+  const [replacedId, setReplacedId] = useState<string | null>(null);
+  const [showSetup, setShowSetup] = useState(false);
+
+  const workspace = profile?.org_name ?? "";
+  const visible = (rows ?? []).filter((row) => SHOW_SIGNIN_CONNECTIONS || row.kind !== "signin");
+  const newest = visible[0] ?? null;
+  const stepsOpen = !newest || showSetup;
+
+  async function refresh() {
+    await queryClient.invalidateQueries({ queryKey: CONNECTIONS_KEY });
+  }
+
+  function openSteps() {
+    setShowSetup(true);
+    if (profile) {
+      logEvent("connector.setup_opened", profile.org_id, {
+        surface: "mcp",
+        had_connector: Boolean(newest),
+      });
+    }
+  }
+
+  async function makeLink(label: string, replacing: string | null) {
+    if (!validName(label)) {
+      setFormError(AI_TOOLS_COPY.nameError);
+      return;
+    }
+    setFormError(null);
+    setBusy(true);
+    try {
+      const result = await create({ data: { profile_id: profile?.id, label: label.trim() } });
+      setCreated({ secret: result.secret });
+      setReplacedId(replacing);
+      setName("");
+      if (profile) logEvent("mcp.connection_created", profile.org_id, { kind: result.kind });
+      await refresh();
+    } catch (e) {
+      const message = (e as Error).message;
+      if (message === CONNECTION_LIMIT_ERROR) setFormError(AI_TOOLS_COPY.limitError);
+      else if (message === "invalid_label") setFormError(AI_TOOLS_COPY.nameError);
+      else toast.error(message);
     } finally {
       setBusy(false);
     }
@@ -136,104 +415,74 @@ export function ConnectYourAiCard() {
         <div className="flex items-center gap-3">
           <BrandPair brands={["claude", "chatgpt"]} size={26} />
           <div className="min-w-0">
-            <p className="text-[13px] font-medium text-foreground">
-              Let Claude or ChatGPT push work straight into Lasso
-            </p>
+            <h3 className="text-[13px] font-medium text-foreground">{AI_TOOLS_COPY.heading}</h3>
             <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-              {connectorStatusLine(token)}
+              {connectorStatusLine(newest)}
             </p>
           </div>
         </div>
         <p className="mt-1.5 max-w-2xl nb-type-small leading-[17px] text-muted-foreground">
-          Add Lasso as a custom connector in your AI once. Then, at the end of any working session,
-          just say “push this conversation to Lasso.” Everything lands private and unmapped, only
-          you can see it.
+          {AI_TOOLS_COPY.sub}
         </p>
 
-        <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2">
-          {token ? (
-            <>
-              <span className="text-xs text-muted-foreground">
-                Created {formatDate(token.created_at)}
-              </span>
-              <span className="text-xs text-muted-foreground">
-                Last used {formatDate(token.last_used_at)}
-              </span>
-            </>
-          ) : null}
-          <button
-            type="button"
-            onClick={() => void copy(SETUP_INSTRUCTIONS, "Setup instructions")}
-            className="text-xs font-medium text-accent-deep transition-opacity hover:opacity-70"
-          >
-            Copy setup instructions
-          </button>
-          {token ? (
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => void handleRevoke()}
-              className="text-xs text-muted-foreground transition-colors hover:text-destructive"
-            >
-              Revoke
-            </button>
-          ) : null}
-        </div>
+        {visible.length > 0 ? (
+          <ul className="mt-4 space-y-2">
+            {visible.map((row) => (
+              <ConnectionRowView
+                key={row.id}
+                row={row}
+                workspace={workspace}
+                orgId={profile?.org_id}
+                fromReplace={replacedId === row.id}
+                onReplace={(r) => void makeLink(name.trim() || "Replacement link", r.id)}
+                onChanged={refresh}
+              />
+            ))}
+          </ul>
+        ) : null}
 
-        {freshUrl ? (
-          <div className="mt-4 rounded-[var(--radius)] border border-accent bg-accent-soft px-4 py-3">
-            <p className="micro-label text-accent-deep">Your connector URL, shown once</p>
-            <div className="mt-2 flex flex-wrap items-center gap-3">
-              <code className="min-w-0 flex-1 break-all font-mono text-xs text-foreground">
-                {freshUrl}
-              </code>
-              <Button type="button" size="sm" onClick={() => void copy(freshUrl, "URL")}>
-                Copy
-              </Button>
-            </div>
-            <p className="mt-2 text-xs text-muted-foreground">
-              This URL is a key to your workspace. Treat it like a password. You can revoke it
-              anytime.
-            </p>
+        {created ? (
+          <div className="mt-4">
+            {replacedId ? (
+              <p className="text-xs text-foreground">{AI_TOOLS_COPY.replaced}</p>
+            ) : null}
+            <RevealedLink secret={created.secret} workspace={workspace} />
           </div>
         ) : null}
 
         <div className="mt-4 space-y-2">
-          <p className="text-xs text-muted-foreground">
-            We keep your URL as a one way hash, so it can never be shown to you a second time. If
-            you no longer have it, issue a new one.
-          </p>
-          {token && !confirming ? (
-            <Button type="button" variant="outline" onClick={() => setConfirming(true)}>
-              Generate a new URL
+          <label htmlFor="mcp-connection-name" className="block text-xs font-medium text-foreground">
+            {AI_TOOLS_COPY.nameLabel}
+          </label>
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              id="mcp-connection-name"
+              value={name}
+              placeholder={AI_TOOLS_COPY.namePlaceholder}
+              onChange={(e) => setName(e.target.value)}
+              className="min-w-0 flex-1 rounded-[var(--radius)] border border-border bg-background px-3 py-1.5 text-[13px]"
+            />
+            <Button type="button" disabled={busy} onClick={() => void makeLink(name, null)}>
+              {AI_TOOLS_COPY.create}
             </Button>
-          ) : null}
-          {token && confirming ? (
-            <div className="rounded-[var(--radius)] border border-border bg-secondary/60 px-4 py-3">
-              <p className="text-sm text-muted-foreground">{MCP_REGENERATE_WARNING}</p>
-              <div className="mt-3 flex flex-wrap items-center gap-3">
-                <Button type="button" disabled={busy} onClick={() => void handleGenerate()}>
-                  {busy ? "Generating…" : "Yes, generate a new URL"}
-                </Button>
-                <button
-                  type="button"
-                  onClick={() => setConfirming(false)}
-                  className="text-xs text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  Keep the one I have
-                </button>
-              </div>
-            </div>
-          ) : null}
-          {!token ? (
-            <Button type="button" disabled={busy} onClick={() => void handleGenerate()}>
-              {busy ? "Generating…" : "Generate my connector URL"}
-            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">{AI_TOOLS_COPY.nameHelper}</p>
+          {formError ? (
+            <p role="alert" className="text-xs text-destructive">
+              {formError}
+            </p>
           ) : null}
         </div>
 
-        <div className="mt-5 space-y-3">
-          {token ? (
+        <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-2">
+          <button
+            type="button"
+            onClick={() => void copyText(SETUP_INSTRUCTIONS, "Setup instructions")}
+            className="text-xs font-medium text-accent-deep transition-opacity hover:opacity-70"
+          >
+            Copy setup instructions
+          </button>
+          {newest ? (
             <button
               type="button"
               onClick={() => (showSetup ? setShowSetup(false) : openSteps())}
@@ -242,8 +491,12 @@ export function ConnectYourAiCard() {
               {showSetup ? "Hide setup instructions" : "Setup instructions"}
             </button>
           ) : null}
-          {stepsOpen ? <SetupSteps /> : null}
         </div>
+        {stepsOpen ? (
+          <div className="mt-3">
+            <SetupSteps />
+          </div>
+        ) : null}
       </div>
     </section>
   );
