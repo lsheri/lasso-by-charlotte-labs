@@ -191,7 +191,42 @@ export type AttachmentOutcome = {
   /** R1: what happened to a rendition sent with a file_ref. */
   rendition?: "stored" | "unchanged" | "rejected" | "failed" | "ignored_original_present";
   rendition_match?: "yes" | "no" | "unknown";
+  /** PF1: where the attachment ended up, kept apart from what storage did. */
+  placement?: AttachmentPlacement;
 };
+
+/** PF1: the placement vocabulary, separate from the storage outcome. */
+export type AttachmentPlacement =
+  | "placed"
+  | "inherited"
+  | "already_there"
+  | "on_other"
+  | "inbox_no_destination"
+  | "inbox_ambiguous";
+
+/** PF1: the plain sentence for attachments that did not reach a board. */
+export function attachmentPlacementNote(outcomes: readonly AttachmentOutcome[]): string {
+  const count = (p: AttachmentPlacement) => outcomes.filter((o) => o.placement === p).length;
+  const plural = (n: number) => `${n} attachment${n === 1 ? "" : "s"}`;
+  const parts: string[] = [];
+  const none = count("inbox_no_destination");
+  if (none > 0) {
+    parts.push(
+      `${plural(none)} stayed in the inbox: this call named no destination and the conversation is not on a board yet. Send destination to place ${none === 1 ? "it" : "them"}.`,
+    );
+  }
+  const ambiguous = count("inbox_ambiguous");
+  if (ambiguous > 0) {
+    parts.push(
+      `${plural(ambiguous)} stayed in the inbox: the conversation is in more than one place, so Lasso did not choose. Send destination to place ${ambiguous === 1 ? "it" : "them"}.`,
+    );
+  }
+  const other = count("on_other");
+  if (other > 0) {
+    parts.push(`${plural(other)} ${other === 1 ? "is" : "are"} already on another board and ${other === 1 ? "was" : "were"} left there.`);
+  }
+  return parts.length > 0 ? ` ${parts.join(" ")}` : "";
+}
 
 export function attachmentSummaryLine(outcomes: readonly AttachmentOutcome[]): string {
   if (outcomes.length === 0) return "";
