@@ -650,6 +650,7 @@ export function SidebarNav({
                   orgId={profile?.org_id}
                   setPending={setPendingMoves}
                 >
+                <div className="nb-nav-tree-scroll">
                 <TopLevelDropZone>
                   <FolderRows
                     rows={clientRoots}
@@ -678,6 +679,8 @@ export function SidebarNav({
                       {vocab.noEngagements}
                     </p>
                   ) : null}
+                </div>
+                  <div className="nb-nav-actions">
                   <NewEngagementDialog
                     onDone={onNavigate}
                     trigger={
@@ -690,6 +693,7 @@ export function SidebarNav({
                   <SidebarCreateActions empty={!!engagements && engagements.length === 0} />
 
                   {visibleItems}
+                  </div>
                 </SidebarDragProvider>
               ) : null}
 
