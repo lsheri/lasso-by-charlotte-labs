@@ -36,7 +36,8 @@ describe("W-S1 workspace settings", () => {
       p_profile_id: "active-profile",
     });
     expect(rpc).toHaveBeenCalledOnce();
-    expect(rpc.mock.calls[0]?.[1]).toMatchObject({ p_profile_id: "active-profile" });
+    const calls = rpc.mock.calls as unknown as [string, Record<string, unknown>][];
+    expect(calls[0]?.[1]).toMatchObject({ p_profile_id: "active-profile" });
   });
 
   it.each([
