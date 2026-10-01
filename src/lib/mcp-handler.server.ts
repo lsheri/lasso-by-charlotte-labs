@@ -1133,14 +1133,7 @@ async function pushThread(
         ...(storedPushChatUrl(args) ? { url: storedPushChatUrl(args)! } : {}),
         ...(plan.sourceProject ? { source_project: plan.sourceProject } : {}),
       } as unknown as Json,
-      // CU1: keep what the person set on this row (deliverable kind, portfolio,
-        // chat link, item text) across a re-push, as the thread does above.
-        meta: {
-          ...(match?.meta && typeof match.meta === "object" && !Array.isArray(match.meta)
-            ? (match.meta as Record<string, unknown>)
-            : {}),
-          assistant_transcribed: true,
-        } as unknown as Json,
+      meta: { assistant_transcribed: true },
     })
     .select("id")
     .single();
@@ -2547,7 +2540,14 @@ export async function pushConversation(
           chars: attachment.content.length,
           duplicate_of_transcript: false,
         } as unknown as Json,
-        meta: { assistant_transcribed: true },
+        // CU1: keep what the person set on this row (deliverable kind, portfolio,
+        // chat link, item text) across a re-push, as the thread does above.
+        meta: {
+          ...(match?.meta && typeof match.meta === "object" && !Array.isArray(match.meta)
+            ? (match.meta as Record<string, unknown>)
+            : {}),
+          assistant_transcribed: true,
+        } as unknown as Json,
       };
 
       // ID-2: the parent chat is set when missing and never replaced; the
