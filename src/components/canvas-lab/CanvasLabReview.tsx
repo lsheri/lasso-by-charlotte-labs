@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { inboundLabNodeIds, type LabComment, type LabLink, type LabNode } from "@/components/canvas-lab/canvas-lab-model";
 import type { DecisionRow } from "@/hooks/use-decisions";
 import { srcsOf } from "@/hooks/use-decisions";
+import { useWorkFileDownload } from "@/hooks/use-work-file-download";
 import { getSpanAudit } from "@/lib/span-provenance.functions";
 import { pageUnitFor } from "@/lib/lasso-geometry";
 import { renditionQueryOptions } from "@/lib/rendition-query";
@@ -21,6 +22,7 @@ type TrailGroup = "context" | "ai_work" | "human_judgment" | "decisions";
 export function CanvasLabReview({ item, anchorNodeId, links, profileId, decisions, nodes, comments, onTrailSelect, onClose }: { item: WorkItemRow; anchorNodeId: string; links: LabLink[]; profileId?: string | undefined; decisions: DecisionRow[]; nodes: LabNode[]; comments: LabComment[]; onTrailSelect: (group: TrailGroup, focus: "exact" | "item") => void; onClose: () => void }) {
   const load = useServerFn(getSpanAudit);
   const rendition = useServerFn(getRenditionUrl);
+  const download = useWorkFileDownload("review");
   const { data, isLoading, isError } = useQuery({ queryKey: ["canvas-lab-review", item.id, profileId], queryFn: () => load({ data: { work_item_id: item.id, ...(profileId ? { profile_id: profileId } : {}) } }) });
   const { data: visual } = useQuery({ queryKey: ["canvas-lab-review-rendition", item.id], queryFn: () => rendition({ data: { work_item_id: item.id } }), ...renditionQueryOptions });
   const [sourceId, setSourceId] = useState<string | null>(null);
@@ -59,7 +61,7 @@ export function CanvasLabReview({ item, anchorNodeId, links, profileId, decision
         {focusedSource ? <section className="mt-3 border-t border-border pt-3" aria-label="Focused source"><h2 className="text-[12px] font-medium text-foreground">{focusedSource.title}</h2>{focusedSource.turns.length > 0 ? <ul className="mt-2 space-y-2">{focusedSource.turns.map((turn) => <li key={turn.id} className={`border-l-2 px-2 py-1 nb-type-small leading-[17px] ${focus?.turnNo === turn.turn_no ? "border-[var(--nb-green)] bg-[var(--nb-green-wash)] text-foreground" : "border-border text-muted-foreground"}`}>Turn {turn.turn_no} · {turn.content}</li>)}</ul> : <p className="mt-2 whitespace-pre-wrap nb-type-small leading-[17px] text-foreground">{focusedSource.text ?? focusedSource.text_note ?? "Only this item's record is available."}</p>}</section> : null}
         </> : null}
       </aside>
-      <main className="min-h-0 flex-1 overflow-y-auto p-5">{data && activeStitchId ? (visual?.kind === "pdf" ? <SlidesPane url={visual.url} anchorId={item.id} unit={pageUnitFor({ webViewLink: data.anchor.web_view_link, text: data.anchor.text })} stitches={data.stitches} armed={false} busy={false} canAsk={false} onAsk={() => undefined} onGoToSource={() => undefined} replayStitchId={activeStitchId} /> : <AnchorPane anchor={data.anchor} canEdit={false} stitches={data.stitches.filter((stitch) => stitch.id === activeStitchId)} viewerProfileId={null} busy={false} onAsk={() => undefined} onGoToSource={() => undefined} />) : <RenderedContent item={item} onDownload={() => undefined} canEdit={false} />}</main>
+      <main className="min-h-0 flex-1 overflow-y-auto p-5">{data && activeStitchId ? (visual?.kind === "pdf" ? <SlidesPane url={visual.url} anchorId={item.id} unit={pageUnitFor({ webViewLink: data.anchor.web_view_link, text: data.anchor.text })} stitches={data.stitches} armed={false} busy={false} canAsk={false} onAsk={() => undefined} onGoToSource={() => undefined} replayStitchId={activeStitchId} /> : <AnchorPane anchor={data.anchor} canEdit={false} stitches={data.stitches.filter((stitch) => stitch.id === activeStitchId)} viewerProfileId={null} busy={false} onAsk={() => undefined} onGoToSource={() => undefined} />) : <RenderedContent item={item} onDownload={() => void download(item)} canEdit={false} />}</main>
     </div>
   </div>;
 }
