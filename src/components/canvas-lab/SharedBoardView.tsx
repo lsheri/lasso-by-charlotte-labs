@@ -35,6 +35,7 @@ import {
   seedCanvas,
   sizeSeedFrames,
   stageBounds,
+  boardFrameRenders,
   type LabFrame,
   type LabLink,
   type LabNode,
@@ -128,7 +129,7 @@ export function SharedBoardView({
     () => model.frames.filter((frame) => frame.id !== "trail" && frameKindOf(frame) === "context"),
     [model.frames],
   );
-  const bounds = stageBounds(model.frames, model.nodes);
+  const bounds = stageBounds(model.frames.filter((frame) => boardFrameRenders(frameKindOf(frame), true)), model.nodes);
 
   // The reading view asks for turns by the same key the live board uses. The
   // viewer has no session, so the turns this link carried answer that key.
