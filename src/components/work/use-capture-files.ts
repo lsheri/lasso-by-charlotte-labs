@@ -103,7 +103,9 @@ export function useCaptureFiles() {
       if (type === "document" || type === "deck" || type === "sheet") {
         logV2(
           "artifact.captured",
-          { artifact_type: type, channel },
+          // artifact.captured validates channel against its own closed set,
+          // which has no "drop"; a dropped file stays "upload" there.
+          { artifact_type: type, channel: "upload" },
           { profileId: profile.id, workItemId: created?.id },
         );
       }
