@@ -19,7 +19,7 @@ beforeEach(() => {
 describe("S-T1 closed vocabulary", () => {
   it("keeps a fixed setting list", () => {
     expect(SETTINGS_KEYS).toContain("data_level_workspace");
-    expect(SETTINGS_KEYS).toContain("mcp_url_regenerated");
+    expect(SETTINGS_KEYS).toContain("connector");
   });
 
   it("drops unknown keys, sections, changes and levels", () => {
@@ -45,7 +45,6 @@ describe("S-T1 closed vocabulary", () => {
 describe("S-T1 call sites carry no free text", () => {
   const sites = [
     "src/lib/connectors.functions.ts",
-    "src/lib/mcp-tokens.functions.ts",
     "src/lib/data-consent.functions.ts",
     "src/components/settings/NamingConventionsCard.tsx",
   ];

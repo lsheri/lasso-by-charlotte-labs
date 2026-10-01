@@ -99,7 +99,7 @@ describe("M1 connections resolver", () => {
 
   it("keeps old token-table reads out of the runtime files", () => {
     const handler = readFileSync("src/lib/mcp-handler.server.ts", "utf8");
-    const tokens = readFileSync("src/lib/mcp-tokens.functions.ts", "utf8");
+    const tokens = readFileSync("src/lib/mcp-connections.functions.ts", "utf8");
     expect(handler).not.toContain('.from("mcp_tokens")');
     expect(tokens).toContain("mcp_create_connection");
     expect(tokens).not.toContain('.from("mcp_tokens")');
