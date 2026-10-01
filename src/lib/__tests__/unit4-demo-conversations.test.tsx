@@ -50,7 +50,7 @@ describe("unit 4 demo conversations and sources", () => {
 
   it("renders no write controls and never the MCP link", () => {
     const page = readFileSync("src/pages/DemoExtraPages.tsx", "utf8");
-    for (const word of ["Push", "Capture", "Map to", "Comment", "Share", "Delete", "createMcpToken", "getMcpToken", "/api/mcp"]) {
+    for (const word of ["Push", "Capture", "Map to", "Comment", "Share", "Delete", "createConnection", "listConnections", "/api/mcp"]) {
       expect(page).not.toContain(word);
     }
     expect(page).toContain("readOnly");
