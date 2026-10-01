@@ -4,12 +4,18 @@ import {
   applyDurableBoard,
   boardFrameRenders,
   boardHasSeededStructure,
-  frameKindOf,
   materializableFrames,
   savedBoxLabFrames,
   type LabFrame,
 } from "@/components/canvas-lab/canvas-lab-model";
 import { isContextFrameId } from "@/lib/context-region";
+
+// Mirror of CanvasLabPage's local frameKindOf (pinned below).
+function frameKindOf(frame: LabFrame): string {
+  if (isContextFrameId(frame.id)) return "context";
+  if (frame.id === "foundation" || frame.id === "decisions" || frame.id === "outputs") return frame.id;
+  return frame.id.startsWith("task:") ? "task" : "custom";
+}
 
 const page = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
 const shared = readFileSync("src/components/canvas-lab/SharedBoardView.tsx", "utf8");
@@ -82,5 +88,6 @@ describe("WK3 a workstream gets a box only if someone drew one", () => {
     expect(page).toContain("savedBoxLabFrames(boardTasks, lab.board)");
     expect(shared).toContain("savedBoxLabFrames(dto.seed.tasks, board)");
     expect(page).not.toContain("createLabFrames(boardTasks)");
+    expect(page).toContain('return frame.id.startsWith("task:") ? "task" : "custom";');
   });
 });
