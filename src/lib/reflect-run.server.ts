@@ -7,6 +7,7 @@ import type { Database } from "@/integrations/supabase/types";
 import type { ContextSource, ScopeSource } from "@/lib/reflect-shared";
 import type { AnalysisPresetId } from "@/lib/analysis-presets";
 import type { ContextManifest } from "@/lib/context-manifest";
+import { renditionsReadBucket } from "./reference-rendition-shared";
 
 export type ReflectInput = {
   session_id: string;
@@ -269,6 +270,7 @@ export async function runReflectTurn(
         suppressed_quotes: qb(guardedCat.suppressed),
         finish_reason: run.finishReason,
         answer_retried: run.answerRetried,
+        renditions_read: renditionsReadBucket(run.renditionsRead),
         ...(preset ? { preset: preset.id } : {}),
       },
     });
@@ -426,6 +428,7 @@ export async function runReflectTurn(
       quote_repairs: quoteBucket(guarded.repairs),
       suppressed_quotes: quoteBucket(guarded.suppressed),
       finish_reason: completion.finishReason,
+      renditions_read: renditionsReadBucket(assembled.renditionsRead ?? 0),
       ...(preset ? { preset: preset.id } : {}),
     },
   });
