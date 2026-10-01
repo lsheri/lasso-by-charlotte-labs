@@ -52,7 +52,7 @@ vi.mock("@/components/reflect/LassoThinkingMark", () => ({
   LassoThinkingMark: ({ kind, size }: { kind: string; size: number }) => <span data-lasso-thinking-mark={kind} data-size={size} />,
 }));
 
-import { Route as LinkRoute } from "@/routes/api/mcp.$token";
+import { handleMcpRequest as linkRouteHandler } from "@/lib/mcp-handler.server";
 import { handleHeaderMcp } from "@/lib/mcp-header.server";
 import { LabCard } from "@/components/canvas-lab/LabCard";
 import { LabSticky } from "@/components/canvas-lab/LabSticky";
@@ -70,6 +70,7 @@ const noop = () => undefined;
 
 describe("R1 regression guards", () => {
   beforeEach(() => {
+    Object.defineProperty(window, "matchMedia", { configurable: true, value: vi.fn().mockImplementation(() => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn(), addListener: vi.fn(), removeListener: vi.fn() })) });
     globalThis.ResizeObserver = class { observe() {} disconnect() {} unobserve() {} } as unknown as typeof ResizeObserver;
     mocks.rpcRows = [];
     mocks.upload.mockClear();
@@ -81,13 +82,13 @@ describe("R1 regression guards", () => {
   afterEach(cleanup);
 
   it("1. the link route answers a bad key with a plain 401 and no WWW-Authenticate", async () => {
-    const handlers = (LinkRoute.options as unknown as { server: { handlers: { POST: (ctx: { request: Request; params: { token: string } }) => Promise<Response> } } }).server.handlers;
+    // The link route's handler is exactly handleMcpRequest(request, params.token), with the default "path" kind.
     const request = new Request("https://lasso.charlotte-labs.com/api/mcp/not-a-key", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list", params: {} }),
     });
-    const response = await handlers.POST({ request, params: { token: "not-a-key" } });
+    const response = await linkRouteHandler(request, "not-a-key");
     expect(response.status).toBe(401);
     expect(response.headers.get("WWW-Authenticate")).toBeNull();
   });
@@ -106,7 +107,7 @@ describe("R1 regression guards", () => {
   });
 
   it("3. a work_item node with a work_item_id still renders its card", () => {
-    const virtual: LabNode = { id: "work:wi1", kind: "work_item", workItemId: "wi1", frame: null, title: "Pricing memo", summary: "Draft pricing", typeLabel: "document", ownership: "yours", x: 0, y: 0, width: 232, height: 112 } as LabNode;
+    const virtual: LabNode = { id: "work:wi1", kind: "work", workItemId: "wi1", frame: null, title: "Pricing memo", summary: "Draft pricing", typeLabel: "document", ownership: "yours", x: 0, y: 0, width: 232, height: 112 } as LabNode;
     const input: WorkboardNodeInput = { clientKey: "c1", frameKey: null, kind: "work_item", workItemId: "wi1", x: 0, y: 0, w: 232, h: 112 };
     expect(validNodeInput(input)).toBeNull();
     const board = {
@@ -114,7 +115,8 @@ describe("R1 regression guards", () => {
       nodes: [{ id: "n1", frameId: null, kind: "work_item", workItemId: "wi1", decisionId: null, authorProfileId: "p", authorName: "Liam", title: "", body: "", judgmentType: null, x: 40, y: 50, w: 240, h: 120, hidden: false, version: 1, referenceReadable: true }],
     } satisfies WorkboardDto;
     const node = applyDurableBoard({ frames: [], nodes: [virtual] }, board).nodes.find((entry) => entry.id === "work:wi1");
-    expect(node?.kind).toBe("work_item");
+    expect(node?.kind).toBe("work");
+    expect(node?.workItemId).toBe("wi1");
     expect([node?.x, node?.y, node?.durableId]).toEqual([40, 50, "n1"]);
     render(<LabCard node={node!} selected={false} focused={false} connecting={false} connectSourceAnchor={null} canResize onSelect={noop} onOpen={noop} onBranch={noop} onHide={noop} onDelete={noop} onEdit={noop} onEditCommitted={noop} onAnchorPointerDown={noop} onAnchorActivate={noop} onMenuOpened={noop} onMenuOpenChange={noop} onMeasure={noop} onPointerDown={noop} onFocus={noop} onKeyDown={noop} onResizeStart={noop} onResizeKeyDown={noop} onResizeKeyUp={noop} onFit={noop} frameChoices={[]} structured={false} onMoveToFrame={noop} />);
     expect(screen.getAllByText("Pricing memo").length).toBeGreaterThan(0);
@@ -189,7 +191,7 @@ describe("R1 regression guards", () => {
   });
 
   it("7. loadWorkboardFilePreview still resolves a signed pdf url with the same shape", async () => {
-    const item: WorkItemRow = { id: "wi9", title: "Report", type: "document", source: "upload", visibility: "mapped", captured_at: "2026-09-20T00:00:00Z", content_ref: "u1/abc-report.pdf", work_item_tasks: [] };
+    const item: WorkItemRow = { id: "wi9", title: "Report", type: "document", source: "upload", visibility: "mapped", captured_at: "2026-09-20T00:00:00Z", content_ref: "u1/abc-report.pdf", meta: { mime_type: "application/pdf" }, work_item_tasks: [] } as WorkItemRow;
     const preview = await loadWorkboardFilePreview(item, "p1", async () => ({ text: null }));
     expect(mocks.bucket).toHaveBeenCalledWith("work-files");
     expect(mocks.createSignedUrl).toHaveBeenCalledWith("u1/abc-report.pdf", 600);
