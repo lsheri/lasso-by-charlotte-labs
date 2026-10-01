@@ -203,6 +203,9 @@ import {
 } from "@/lib/context-region";
 import { isBoardDefaultTask, workstreamTasks } from "@/lib/board-default-task";
 import { createDrawnWorkstreamFn, moveItemToWorkstreamFn } from "@/lib/workstream-draw.functions";
+import { deleteWorkstream as deleteWorkstreamFn, renameWorkstream as renameWorkstreamFn } from "@/lib/workstreams.functions";
+import { BOARD_WORKSTREAM_COPY, boxRemoval, regionNameAction, type ManagedTask } from "@/lib/board-workstream-delete";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { defaultWorkstreamName, drawnRect, drawnRectUsable, movePromptText, splitClaims, type ClaimCandidate, type DrawRect } from "@/lib/workstream-draw";
 import { boardIsNearEmpty, readWorkboardStructureMode, workboardStructureModeKey } from "@/lib/workboard-view-mode";
 import { ExampleBoardOverlay } from "@/components/canvas-lab/ExampleBoardOverlay";
@@ -235,6 +238,8 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   const placeWork = useServerFn(placeWorkOnBoardFn);
   const createDrawnWorkstream = useServerFn(createDrawnWorkstreamFn);
   const moveItemToWorkstream = useServerFn(moveItemToWorkstreamFn);
+  const deleteWorkstreamCall = useServerFn(deleteWorkstreamFn);
+  const renameWorkstreamCall = useServerFn(renameWorkstreamFn);
 
 
   const workItems = useMemo(() => {
@@ -254,6 +259,24 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     }
     return mapping;
   }, [page]);
+
+  /** WK1: the workstream each box is backed by, as this session last set it. */
+  const frameTaskOverrideRef = useRef(new Map<string, string | null>());
+  const [confirmDeleteFrame, setConfirmDeleteFrame] = useState<LabFrame | null>(null);
+  const taskById = useMemo(() => new Map((page?.tasks ?? []).map((task) => [task.id, task as ManagedTask & { name?: string }])), [page]);
+  function frameTaskId(frame: LabFrame): string | null {
+    if (frame.id.startsWith("task:")) return frame.id.slice(5);
+    if (frameTaskOverrideRef.current.has(frame.id)) return frameTaskOverrideRef.current.get(frame.id) ?? null;
+    return lab.board?.frames.find((entry) => entry.key === frame.id)?.taskId ?? null;
+  }
+  async function refreshWorkstreams() {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["engagement-tasks", engagementId] }),
+      queryClient.invalidateQueries({ queryKey: ["engagement-page", engagementId] }),
+      queryClient.invalidateQueries({ queryKey: ["engagement"] }),
+      queryClient.invalidateQueries({ queryKey: ["work-items"] }),
+    ]);
+  }
 
   const [frames, setFrames] = useState<LabFrame[] | null>(null);
   const [nodes, setNodes] = useState<LabNode[] | null>(null);
@@ -1883,12 +1906,28 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     const rect = { x: frame.x, y: frame.y, width: frame.width, height: frame.height };
     const namedFrameIds = framesRef.current.filter((entry) => isRegionFrameId(entry.id) && entry.name.trim()).map((entry) => entry.id);
     const change = regionNameChange({ id: frame.id, label: frame.name, fill: frame.fill }, nameInput, rect, claimCandidates(), { defaultHomeFrameIds, namedFrameIds });
+    const existingTaskId = frameTaskId(frame);
+    const nameAction = regionNameAction({ clearing: change.becomes === "paint", taskId: existingTaskId, task: existingTaskId ? taskById.get(existingTaskId) : null, profile, cardsInBox: allNodes.filter((node) => node.frame === frame.id).length });
+    if (nameAction.action === "refuse_clear") {
+      setAnnouncement(BOARD_WORKSTREAM_COPY.clearRefused);
+      return;
+    }
+    if (nameAction.action === "clear_and_delete") {
+      try {
+        await deleteWorkstreamCall({ data: { task_id: nameAction.taskId, profile_id: profile?.id, require_empty: true } });
+      } catch {
+        setAnnouncement(BOARD_WORKSTREAM_COPY.clearRefused);
+        return;
+      }
+      void refreshWorkstreams();
+    }
     if (change.becomes === "paint") {
       // What the name held is measured in filed work, never in covered cards.
       const released = claimCandidates().filter((entry) => entry.frame === frame.id);
       setFrames((current) => current?.map((entry) => (entry.id === frame.id ? { ...entry, name: "" } : entry)) ?? current);
       framesRef.current = framesRef.current.map((entry) => (entry.id === frame.id ? { ...entry, name: "" } : entry));
       for (const cardId of change.release) applyFrameMove(cardId, null);
+      frameTaskOverrideRef.current.set(frame.id, null);
       if (frame.durableId) await persistFramePatch(frame.id, { label: null, taskId: null });
       noteWorkboardRegionNamed(orgId, "cleared", filedWorkCount(released), frame.fill);
       setAnnouncement("Name taken off. This is a coloured grouping again.");
@@ -1899,7 +1938,15 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     framesRef.current = framesRef.current.map((entry) => (entry.id === frame.id ? { ...entry, name } : entry));
     let created: { id: string };
     try {
-      created = await createDrawnWorkstream({ data: { engagement_id: engagementId, name, profile_id: profile?.id } });
+      if (nameAction.action === "rename") {
+        // WK1: a region that already has a workstream renames it. No second row.
+        await renameWorkstreamCall({ data: { task_id: nameAction.taskId, name, profile_id: profile?.id } });
+        created = { id: nameAction.taskId };
+        void refreshWorkstreams();
+      } else {
+        created = await createDrawnWorkstream({ data: { engagement_id: engagementId, name, profile_id: profile?.id } });
+      }
+      frameTaskOverrideRef.current.set(frame.id, created.id);
     } catch {
       setFrames((current) => current?.map((entry) => (entry.id === frame.id ? { ...entry, name: frame.name } : entry)) ?? current);
       framesRef.current = framesRef.current.map((entry) => (entry.id === frame.id ? { ...entry, name: frame.name } : entry));
@@ -1929,18 +1976,47 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     if (!refused) setAnnouncement(`${name} now holds ${claimed} cards.`);
   }
 
-  function removeFrame(frame: LabFrame) {
+  function frameRemoval(frame: LabFrame) {
+    const taskId = frameTaskId(frame);
+    return boxRemoval({ custom: frameKindOf(frame) === "custom", seeded: frame.id.startsWith("task:"), profile, task: taskId ? taskById.get(taskId) : null, cardsInBox: allNodes.filter((node) => node.frame === frame.id).length });
+  }
+
+  function removeFrame(frame: LabFrame, confirmed = false) {
     if (allNodes.some((node) => node.frame === frame.id)) {
       setAnnouncement("Move its cards first.");
       return;
     }
-    if (!frame.durableId) {
-      setFrames((entries) => entries?.filter((entry) => entry.id !== frame.id) ?? entries);
-      setSelectedFrameId((selectedId) => selectedId === frame.id ? null : selectedId);
-      setAnnouncement("Workstream removed");
+    const removal = frameRemoval(frame);
+    if (removal.offer === "none") return;
+    if (removal.offer === "workstream") {
+      if (!removal.removable) { setAnnouncement("Move its cards first."); return; }
+      if (!confirmed) { setConfirmDeleteFrame(frame); return; }
+      const taskId = frameTaskId(frame);
+      if (!taskId) return;
+      void (async () => {
+        try {
+          await deleteWorkstreamCall({ data: { task_id: taskId, profile_id: profile?.id, require_empty: true } });
+        } catch (error) {
+          setAnnouncement(error instanceof Error && error.message === "Move its cards first." ? "Move its cards first." : BOARD_WORKSTREAM_COPY.notDeleted);
+          return;
+        }
+        frameTaskOverrideRef.current.set(frame.id, null);
+        void refreshWorkstreams();
+        await archiveFrameBox(frame, BOARD_WORKSTREAM_COPY.deleted);
+      })();
       return;
     }
-    void (async () => {
+    void archiveFrameBox(frame, "Workstream removed");
+  }
+
+  async function archiveFrameBox(frame: LabFrame, done: string) {
+    if (!frame.durableId && !frame.id.startsWith("task:")) {
+      setFrames((entries) => entries?.filter((entry) => entry.id !== frame.id) ?? entries);
+      setSelectedFrameId((selectedId) => selectedId === frame.id ? null : selectedId);
+      setAnnouncement(done);
+      return;
+    }
+    await (async () => {
       if (!(await materialize())) return;
       const current = framesRef.current.find((entry) => entry.id === frame.id);
       if (!current?.durableId) return;
@@ -1949,7 +2025,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       if (result.status !== "saved") return;
       setFrames((entries) => entries?.filter((entry) => entry.id !== frame.id) ?? entries);
       setSelectedFrameId((selectedId) => selectedId === frame.id ? null : selectedId);
-      setAnnouncement("Workstream removed");
+      setAnnouncement(done);
     })();
   }
 
@@ -2726,7 +2802,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
             {visibleNodes.filter((node) => node.kind === "shape").map((node) => <LabColourBlock key={node.id} node={node} selected={keyboardId === node.id} editable={Boolean(lab.board?.canEditStructure)} onSelect={() => { setKeyboardId(node.id); setSelectedFrameId(null); setSelectedLinkId(null); }} onDragStart={(event) => { if (decorationPointerIntent({ selected: keyboardId === node.id, onEdge: Boolean((event.target as HTMLElement).dataset["edge"]) }) === "drag") onCardPointerDown(node, event); }} onResizeStart={(corner, event) => startResize("shape", node.id, corner, node, event)} onResizeKeyDown={(corner, event) => keyboardResize("shape", node.id, corner, node, event)} onResizeKeyUp={finishKeyboardResize} onRemove={() => deleteNode(node)} />)}
             {marquee ? <div className="canvas-lab-marquee" aria-hidden="true" style={{ left: marquee.x, top: marquee.y, width: marquee.width, height: marquee.height }} /> : null}
             {/* The context region is not a workstream, so it is drawn whether or not the workstream outlines are showing. */}
-            {boardFrames.filter((frame) => frame.id !== "trail" && boardFrameRenders(frameKindOf(frame), structureMode === "structured")).map((frame) => { const kind = frameKindOf(frame); const count = visibleNodes.filter((node) => node.frame === frame.id).length; const custom = kind === "custom"; const removable = !allNodes.some((node) => node.frame === frame.id); const region = isRegionFrameId(frame.id); return <LabFrameElement key={frame.id} frame={frame} count={count} region={region} fillStyle={region ? regionFillStyle(frame.fill) : undefined} selected={selectedFrameId === frame.id} editable={Boolean(lab.board?.canEditStructure)} custom={custom} kind={kind} namedByWorkstream={kind === "task"} removable={removable} onSelect={() => { setSelectedFrameId(frame.id); setKeyboardId(null); setSelectedLinkId((current) => relationshipSelection(current, "deselect")); }} onDragStart={region && lab.board?.canEditStructure ? (event) => startGroupingDrag(frame, event) : undefined} onResizeStart={(corner, event) => startResize("frame", frame.id, corner, { x: frame.x, y: frame.y, width: frame.width, height: frame.height }, event)} onResizeKeyDown={(corner, event) => keyboardResize("frame", frame.id, corner, { x: frame.x, y: frame.y, width: frame.width, height: frame.height }, event)} onResizeKeyUp={finishKeyboardResize} onFit={() => fitFrame(frame)} onRename={(name) => renameFrame(frame, name)} onRemove={() => kind === "context" ? void removeContextArea(frame) : removeFrame(frame)} onMenuOpened={() => noteWorkboardCardMenuOpened(orgId, "frame", "shared")} onMenuOpenChange={setCardMenuOpen} onAddWorkstream={frame.id === "workstreams" ? addWorkstream : undefined} onAddContext={kind === "context" && canAddWork ? () => openAddWork("context_menu", null, "context") : undefined} onUseAsContext={() => useFrameAsContext(frame)} />; })}
+            {boardFrames.filter((frame) => frame.id !== "trail" && boardFrameRenders(frameKindOf(frame), structureMode === "structured")).map((frame) => { const kind = frameKindOf(frame); const count = visibleNodes.filter((node) => node.frame === frame.id).length; const custom = kind === "custom"; const removable = !allNodes.some((node) => node.frame === frame.id); const region = isRegionFrameId(frame.id); return <LabFrameElement key={frame.id} frame={frame} count={count} region={region} fillStyle={region ? regionFillStyle(frame.fill) : undefined} selected={selectedFrameId === frame.id} editable={Boolean(lab.board?.canEditStructure)} custom={custom} kind={kind} namedByWorkstream={kind === "task"} removable={kind === "context" ? removable : (() => { const removal = frameRemoval(frame); return removal.offer === "none" ? removable : removal.removable; })()} removal={kind === "context" ? undefined : frameRemoval(frame).offer} onSelect={() => { setSelectedFrameId(frame.id); setKeyboardId(null); setSelectedLinkId((current) => relationshipSelection(current, "deselect")); }} onDragStart={region && lab.board?.canEditStructure ? (event) => startGroupingDrag(frame, event) : undefined} onResizeStart={(corner, event) => startResize("frame", frame.id, corner, { x: frame.x, y: frame.y, width: frame.width, height: frame.height }, event)} onResizeKeyDown={(corner, event) => keyboardResize("frame", frame.id, corner, { x: frame.x, y: frame.y, width: frame.width, height: frame.height }, event)} onResizeKeyUp={finishKeyboardResize} onFit={() => fitFrame(frame)} onRename={(name) => renameFrame(frame, name)} onRemove={() => kind === "context" ? void removeContextArea(frame) : removeFrame(frame)} onMenuOpened={() => noteWorkboardCardMenuOpened(orgId, "frame", "shared")} onMenuOpenChange={setCardMenuOpen} onAddWorkstream={frame.id === "workstreams" ? addWorkstream : undefined} onAddContext={kind === "context" && canAddWork ? () => openAddWork("context_menu", null, "context") : undefined} onUseAsContext={() => useFrameAsContext(frame)} />; })}
             {structureMode === "structured" && Boolean(lab.board?.canEditStructure) && !boardFrames.some((frame) => frame.id === "workstreams") ? (() => { const anchor = workstreamAddAnchor(boardFrames, visibleNodes); if (!anchor) return null; return <div className="canvas-lab-inline-add" style={{ left: anchor.x, top: anchor.y, width: BOARD_INLINE_ADD_SIZE.width, minHeight: BOARD_INLINE_ADD_SIZE.height, transform: `scale(${1 / zoom})`, transformOrigin: "top left" }}>{inlineAddOpen ? <div className="canvas-lab-inline-workstream"><input aria-label="Workstream name" ref={inlineNameRef} maxLength={60} value={inlineFrameName} onChange={(event) => { setInlineFrameName(event.target.value); if (event.target.value.trim()) setInlineFrameError(false); }} onKeyDown={(event) => { if (event.key === "Enter" && addWorkstream(inlineFrameName)) { setInlineFrameName(""); setInlineFrameError(false); setInlineAddOpen(false); } if (event.key === "Escape") { setInlineAddOpen(false); setInlineFrameError(false); } }} /><button type="button" onClick={() => { if (addWorkstream(inlineFrameName)) { setInlineFrameName(""); setInlineFrameError(false); setInlineAddOpen(false); } else setInlineFrameError(true); }}>Add</button>{inlineFrameError ? <span>a workstream needs a name</span> : null}</div> : <button type="button" className="canvas-lab-add-workstream" onClick={() => setInlineAddOpen(true)}>+ workstream</button>}</div>; })() : null}
             <LabContextCoronas nodes={contextNodes} entryDelays={contextFlares} pan={pan} zoom={zoom} viewport={viewportSize} interacting={interaction !== "idle" || drawing !== null || viewportMoving} still={contextPickedMotion.still} heightOf={contextNodeHeight} />
             <svg className="canvas-lab-relationships absolute inset-0 overflow-visible" width={bounds.width} height={bounds.height} aria-label="Local workboard relationships">
@@ -2752,6 +2828,18 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
             {pendingWorkstream ? <div className="canvas-lab-draw-name" style={{ left: pendingWorkstream.rect.x + 8, top: pendingWorkstream.rect.y + 8, transform: `scale(${1 / zoom})`, transformOrigin: "top left" }}><div className="canvas-lab-inline-workstream"><input aria-label="Workstream name" ref={inlineNameRef} maxLength={60} value={pendingWorkstream.name} onChange={(event) => { const name = event.target.value; setPendingWorkstream((current) => current ? { ...current, name } : current); if (name.trim()) setPendingWorkstreamError(false); }} onPointerDown={(event) => event.stopPropagation()} onKeyDown={(event) => { event.stopPropagation(); if (event.key === "Enter") { event.preventDefault(); void commitDrawnWorkstream(pendingWorkstream.name); } if (event.key === "Escape") { event.preventDefault(); cancelDraw(); } }} /><button type="button" onPointerDown={(event) => event.stopPropagation()} onClick={() => void commitDrawnWorkstream(pendingWorkstream.name)}>Add</button>{pendingWorkstreamError ? <span>a workstream needs a name</span> : null}</div></div> : null}
             {claimPrompt ? <div data-claim-prompt="true" className="canvas-lab-drop-prompt" style={{ left: claimPrompt.rect.x, top: claimPrompt.rect.y + claimPrompt.rect.height + 10 }}><span>{movePromptText(claimPrompt.cards.length)}</span><button type="button" onClick={() => void answerClaimPrompt("yes")}>Move them</button><button type="button" onClick={() => void answerClaimPrompt("keep")}>Leave them</button></div> : null}
           </div> : null}
+          <AlertDialog open={confirmDeleteFrame !== null} onOpenChange={(open) => { if (!open) setConfirmDeleteFrame(null); }}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{BOARD_WORKSTREAM_COPY.confirmTitle}</AlertDialogTitle>
+                <AlertDialogDescription>{BOARD_WORKSTREAM_COPY.confirmBody(confirmDeleteFrame?.name ?? "")}</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>{BOARD_WORKSTREAM_COPY.confirmKeep}</AlertDialogCancel>
+                <AlertDialogAction onClick={() => { const frame = confirmDeleteFrame; setConfirmDeleteFrame(null); if (frame) removeFrame(frame, true); }}>{BOARD_WORKSTREAM_COPY.confirmDelete}</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
           {pendingRegionName && shellRef.current ? <GroupingNamePopup frame={pendingRegionName} pan={pan} zoom={zoom} viewport={viewportSize} portalRoot={shellRef.current} onName={(name) => { setPendingRegionNameId(null); renameFrame(pendingRegionName, name); }} onDismiss={() => setPendingRegionNameId(null)} /> : null}
           {boardMenu ? (
             <>
