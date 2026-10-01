@@ -1,5 +1,6 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+// @vitest-environment jsdom
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const upload = vi.fn(async () => ({ error: null }));
 const logEvent = vi.fn();
@@ -33,6 +34,7 @@ const files = (n: number) => Array.from({ length: n }, (_, i) => new File(["x"],
 const PROMPT = "Drop to add to this board";
 
 describe("DD1-a board file drop", () => {
+  afterEach(cleanup);
   beforeEach(() => { upload.mockClear(); logEvent.mockClear(); place.mockClear(); toastFn.mockClear(); });
 
   it("1. a file dragover shows the prompt", () => {
