@@ -64,10 +64,10 @@ describe("WK2 owner only", () => {
   });
   it("an unnamed region with no workstream stays fully editable by any editor", () => {
     renderBox(other, { backed: false, name: "" });
+    expect(screen.getByRole("button", { name: "Name this grouping" })).toBeTruthy();
     openMenu();
     expect(screen.getByRole("menuitem", { name: "Remove workstream" })).toBeTruthy();
     expect(screen.getByRole("menuitem", { name: "Rename" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Name this grouping" })).toBeTruthy();
     expect(regionNameAction({ clearing: false, taskId: null, task: null, profile: other, cardsInBox: 0 }).action).toBe("create");
   });
   it("a read-only viewer sees none of these", () => {
