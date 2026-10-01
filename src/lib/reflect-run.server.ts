@@ -428,7 +428,7 @@ export async function runReflectTurn(
       quote_repairs: quoteBucket(guarded.repairs),
       suppressed_quotes: quoteBucket(guarded.suppressed),
       finish_reason: completion.finishReason,
-      renditions_read: renditionsReadBucket(assembled.renditionsRead),
+      renditions_read: renditionsReadBucket(assembled.renditionsRead ?? 0),
       ...(preset ? { preset: preset.id } : {}),
     },
   });

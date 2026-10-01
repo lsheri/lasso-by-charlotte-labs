@@ -103,6 +103,8 @@ export type AssembledContext = {
   tier1Count: number;
   tier2Count: number;
   unreadableCount: number;
+  /** R3a: items read in full whose text came from a rendition. */
+  renditionsRead?: number;
   reads: AiReadInput[];
   sources: ContextSource[];
   /** Exactly what went into the prompt, for the person to inspect after. */
