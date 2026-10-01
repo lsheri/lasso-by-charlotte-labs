@@ -456,7 +456,16 @@ function textResult(id: unknown, text: string): Response {
   return rpcResult(id, { content: [{ type: "text", text }] });
 }
 
-type Owner = { tokenId: string; profileId: string; orgId: string; userId: string | null };
+export type Owner = {
+  tokenId: string;
+  profileId: string;
+  orgId: string;
+  userId: string | null;
+  kind: string;
+  readOnly: boolean;
+  legacy: boolean;
+  authKind: "link" | "header" | "signin";
+};
 
 /**
  * Pass 155. What the pushing client said about itself during the initialize
@@ -481,25 +490,22 @@ function clientIdentity(tokenId: string, headerProtocol: string | null): ClientI
   };
 }
 
-async function resolveOwner(token: string): Promise<Owner | null> {
+export async function resolveOwner(token: string, fromHeader = false): Promise<Owner | null> {
   if (!token) return null;
   const hash = await sha256Hex(token);
-  const { data } = await supabaseAdmin
-    .from("mcp_tokens")
-    .select("id, profile_id, revoked_at, profiles!inner(id, org_id, user_id)")
-    .eq("token_hash", hash)
-    .maybeSingle();
-  if (!data || data.revoked_at) return null;
-  const profile = data.profiles as unknown as { org_id: string; user_id: string | null };
-  await supabaseAdmin
-    .from("mcp_tokens")
-    .update({ last_used_at: new Date().toISOString() })
-    .eq("id", data.id);
+  const { data } = await supabaseAdmin.rpc("mcp_resolve_key", { p_key_hash: hash });
+  const connection = data?.[0];
+  if (!connection) return null;
+  const kind = connection.kind === "signin" ? "signin" : "link";
   return {
-    tokenId: data.id,
-    profileId: data.profile_id,
-    orgId: profile.org_id,
-    userId: profile.user_id,
+    tokenId: connection.connection_id,
+    profileId: connection.profile_id,
+    orgId: connection.org_id,
+    userId: connection.user_id,
+    kind: connection.kind,
+    readOnly: connection.read_only,
+    legacy: connection.legacy,
+    authKind: fromHeader ? "header" : kind,
   };
 }
 
@@ -508,7 +514,7 @@ async function logPush(owner: Owner, dims: Record<string, string>): Promise<void
     eventType: "mcp.push",
     orgId: owner.orgId,
     userId: owner.userId,
-    dims,
+    dims: { ...dims, auth_kind: owner.authKind },
   });
   if (dims["tool"] === "push_thread" || dims["tool"] === "push_document") {
     await recordEvent(supabaseAdmin, {
@@ -788,14 +794,18 @@ const pushTools = (vocab: McpVocab) => [
   },
 ];
 
-export async function handleMcpRequest(request: Request, token: string): Promise<Response> {
+export async function handleMcpRequest(
+  request: Request,
+  token: string,
+  authKind: "path" | "header" = "path",
+): Promise<Response> {
   if (request.method === "OPTIONS")
     return new Response(null, { status: 204, headers: CORS_HEADERS });
   if (request.method !== "POST") {
     return json({ error: "Method not allowed" }, 405);
   }
 
-  const owner = await resolveOwner(token);
+  const owner = await resolveOwner(token, authKind === "header");
   if (!owner) return json({ error: "Unauthorized" }, 401);
 
   let body: Obj;
@@ -858,6 +868,9 @@ export async function handleMcpRequest(request: Request, token: string): Promise
         : machineLabel(request.headers.get("mcp-protocol-version")),
     );
     try {
+      if (owner.readOnly && (name.startsWith("push_") || name.startsWith("create_"))) {
+        return rpcError(id, -32603, "This connection can read but not add work right now.");
+      }
       if (name === "push_conversation") return await pushConversation(owner, args, id, client);
       if (name === "push_thread") return await pushThread(owner, args, id, client);
       if (name === "push_document") return await pushDocument(owner, args, id);
@@ -2627,6 +2640,7 @@ export async function pushConversation(
       turn_linked_attachments: turnLinkedBucket(turnLinkedCount),
       renditions: versionRowsBucket(renditionsStored),
       renditions_changed: versionRowsBucket(renditionsChanged),
+      auth_kind: owner.authKind,
     },
   });
   await recordEvent(supabaseAdmin, {
