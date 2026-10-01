@@ -37,7 +37,7 @@ export const Route = createFileRoute("/reset-password")({
   component: ResetPasswordPage,
 });
 
-function isNetworkOrRate(error: { message?: string; status?: number } | null): boolean {
+function isNetworkOrRate(error: { message?: string | undefined; status?: number | undefined } | null): boolean {
   if (!error) return false;
   if (error.status === 429) return true;
   const m = (error.message ?? "").toLowerCase();
