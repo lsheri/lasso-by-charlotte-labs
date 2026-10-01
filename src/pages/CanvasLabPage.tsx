@@ -1525,7 +1525,8 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     // A docked piece is carried by its chat: the drag moves the chat.
     const node = bundleChatFor(picked);
     if (spaceRef.current) return; // Space pans the board, even over a card.
-    if (event.button !== 0 || (event.target as Element).closest("button,textarea")) return;
+    // Buttons and text boxes keep their press, except the data-edge strips: they are buttons whose only job is to start this drag.
+    if (!cardPressStartsDrag(event)) return;
     event.stopPropagation();
     closeDropPrompt("dismissed");
     setSelectedLinkId((current) => relationshipSelection(current, "deselect"));

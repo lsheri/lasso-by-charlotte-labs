@@ -1306,6 +1306,20 @@ export function decorationPointerIntent(input: { selected: boolean; onEdge: bool
   return input.selected || input.onEdge ? "drag" : "pan";
 }
 
+/**
+ * Whether a pointer press on a card may start a drag. Buttons and text boxes
+ * keep their press for their own job, with one exception: the edge strips are
+ * buttons that exist only to start a drag, so a press carrying data-edge is
+ * let through the button guard.
+ */
+export function cardPressStartsDrag(event: { button: number; target: EventTarget | null }): boolean {
+  if (event.button !== 0) return false;
+  const el = event.target as Element | null;
+  if (!el || typeof el.closest !== "function") return false;
+  if (el.closest("button,textarea") && !(el as HTMLElement).hasAttribute?.("data-edge")) return false;
+  return true;
+}
+
 /** Cards recently pressed or focused render above the rest, newest last. */
 export const LAB_FRONT_LIMIT = 12;
 
