@@ -28,7 +28,7 @@ import { BoardFileDropOverlay, useBoardFileDrop } from "@/components/canvas-lab/
 const place = vi.fn();
 function Harness() {
   const drop = useBoardFileDrop({ enabled: true, toBoard: (x, y) => ({ x: x * 2, y: y * 2 }), place });
-  return <div data-testid="shell" {...drop.handlers}><BoardFileDropOverlay show={drop.over} /></div>;
+  return <div data-testid="shell" {...drop.handlers}><BoardFileDropOverlay show={drop.over} pointer={drop.pointer} dropBurst={drop.dropBurst} clearSignal={drop.clearSignal} /></div>;
 }
 const files = (n: number) => Array.from({ length: n }, (_, i) => new File(["x"], `f${i}.pdf`, { type: "application/pdf" }));
 function dropAt(el: HTMLElement, x: number, y: number, list: File[]) {
@@ -86,5 +86,16 @@ describe("DD1-a board file drop", () => {
     fireEvent.drop(screen.getByTestId("shell"), { clientX: 1, clientY: 1, dataTransfer: { types: ["Files"], files: files(1) } });
     await waitFor(() => expect(place).toHaveBeenCalled());
     expect(logEvent).toHaveBeenCalledWith("workitem.captured", "o1", expect.objectContaining({ channel: "drop", source: "upload", type: expect.any(String) }));
+  });
+  it("8. reduced motion renders no pencil flakes", async () => {
+    window.matchMedia = vi.fn().mockImplementation(() => ({
+      matches: true,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }));
+    render(<Harness />);
+    fireEvent.dragOver(screen.getByTestId("shell"), { clientX: 40, clientY: 30, dataTransfer: { types: ["Files"] } });
+    await waitFor(() => expect(screen.getByTestId("board-file-drop").dataset["active"]).toBe("true"));
+    expect(screen.queryAllByTestId("pencil-flake")).toHaveLength(0);
   });
 });
