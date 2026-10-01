@@ -984,6 +984,52 @@ async function placeOneItem(
   };
 }
 
+/** PF1: a direct placement status in the receipt's words; failures stay unlabelled. */
+function directPlacement(status: string): AttachmentPlacement | null {
+  if (status === "placed" || status === "moved") return "placed";
+  if (status === "already_here") return "already_there";
+  if (status === "on_other") return "on_other";
+  return null;
+}
+
+/**
+ * PF1. Places a destination-free call's attachments where their conversation
+ * already is, only when that is exactly one place. Never moves anything.
+ */
+async function inheritConversationPlacement(
+  owner: Owner,
+  vocab: McpVocab,
+  threadId: string,
+  itemIds: string[],
+): Promise<{ place: PlaceRow | null; placed: number; byItem: Map<string, AttachmentPlacement> }> {
+  const byItem = new Map<string, AttachmentPlacement>();
+  const { data: rows } = await supabaseAdmin
+    .from("work_item_tasks")
+    .select("task_id")
+    .eq("work_item_id", threadId);
+  const taskIds = [...new Set((rows ?? []).map((r) => String(r.task_id)))];
+  if (taskIds.length > 1) {
+    for (const itemId of itemIds) byItem.set(itemId, "inbox_ambiguous");
+    return { place: null, placed: 0, byItem };
+  }
+  const place = taskIds.length === 1
+    ? ((await readPlaces(owner)).places.find((one) => one.taskId === taskIds[0]) ?? null)
+    : null;
+  if (!place) {
+    for (const itemId of itemIds) byItem.set(itemId, "inbox_no_destination");
+    return { place: null, placed: 0, byItem };
+  }
+  let placed = 0;
+  for (const itemId of itemIds) {
+    const one = await placeOneItem(owner, vocab, itemId, place, { move: false });
+    if (one.status === "placed" || one.status === "moved" || one.status === "already_here") placed += 1;
+    if (one.status === "placed" || one.status === "moved") byItem.set(itemId, "inherited");
+    else if (one.status === "already_here") byItem.set(itemId, "already_there");
+    else if (one.status === "on_other") byItem.set(itemId, "on_other");
+  }
+  return { place, placed, byItem };
+}
+
 async function applyDestination(
   owner: Owner,
   vocab: McpVocab,
@@ -2121,6 +2167,12 @@ export async function pushConversation(
   const attachmentOutcomes: AttachmentOutcome[] = [];
   /** P0 item 1: the attachment rows this push touched, for placing them. */
   const attachmentIds: string[] = [];
+  /** PF1: the receipt entry for each attachment row, so placement can be added to it. */
+  const outcomeById = new Map<string, AttachmentOutcome>();
+  const pushOutcome = (entry: AttachmentOutcome, itemId?: string | null) => {
+    attachmentOutcomes.push(entry);
+    if (itemId) outcomeById.set(itemId, entry);
+  };
   /** P1b: file_ref attachments in this call, and the placeholders created. */
   let fileRefCount = 0;
   let fileRefsCreated = 0;
@@ -2218,13 +2270,16 @@ export async function pushConversation(
               }
             }
           }
-          attachmentOutcomes.push({
-            title: attachment.title,
-            source_artifact_id: attachment.sourceArtifactId,
-            outcome: "unchanged",
-            chars: 0,
-            ...renditionFields,
-          });
+          pushOutcome(
+            {
+              title: attachment.title,
+              source_artifact_id: attachment.sourceArtifactId,
+              outcome: "unchanged",
+              chars: 0,
+              ...renditionFields,
+            },
+            refMatch.id,
+          );
           continue;
         }
         const refType = workTypeForFile(ref.filename);
@@ -2308,13 +2363,16 @@ export async function pushConversation(
         capturedIds.push(refResult.data.id);
         attachmentIds.push(refResult.data.id);
         createdAttachmentTypes.push(String(refType));
-        attachmentOutcomes.push({
-          title: attachment.title,
-          source_artifact_id: attachment.sourceArtifactId,
-          outcome: "reference_created",
-          chars: 0,
-          ...newRendition,
-        });
+        pushOutcome(
+          {
+            title: attachment.title,
+            source_artifact_id: attachment.sourceArtifactId,
+            outcome: "reference_created",
+            chars: 0,
+            ...newRendition,
+          },
+          refResult.data.id,
+        );
         continue;
       }
       // The server decides what an artifact is. Every rejected attachment's
@@ -2368,12 +2426,15 @@ export async function pushConversation(
             stored_chars: storedChars,
             incoming_chars: attachment.content.length,
           });
-          attachmentOutcomes.push({
-            title: attachment.title,
-            source_artifact_id: attachment.sourceArtifactId,
-            outcome: "kept_stored",
-            chars: attachment.content.length,
-          });
+          pushOutcome(
+            {
+              title: attachment.title,
+              source_artifact_id: attachment.sourceArtifactId,
+              outcome: "kept_stored",
+              chars: attachment.content.length,
+            },
+            match.id,
+          );
           // Kept as stored, but still placed with the thread like an unchanged one.
           attachmentIds.push(match.id);
           continue;
@@ -2389,12 +2450,15 @@ export async function pushConversation(
           capturedIds.push(match.id);
           attachmentIds.push(match.id);
         }
-        attachmentOutcomes.push({
-          title: attachment.title,
-          source_artifact_id: attachment.sourceArtifactId,
-          outcome: "unchanged",
-          chars: attachment.content.length,
-        });
+        pushOutcome(
+          {
+            title: attachment.title,
+            source_artifact_id: attachment.sourceArtifactId,
+            outcome: "unchanged",
+            chars: attachment.content.length,
+          },
+          match?.id,
+        );
         continue;
       }
 
@@ -2509,13 +2573,16 @@ export async function pushConversation(
         });
       } else {
         saved += 1;
-        attachmentOutcomes.push({
-          title: attachment.title,
-          source_artifact_id: attachment.sourceArtifactId,
-          outcome: match ? "new_version" : "new",
-          chars: attachment.content.length,
-          ...(match && newVersionNo ? { version_no: newVersionNo } : {}),
-        });
+        pushOutcome(
+          {
+            title: attachment.title,
+            source_artifact_id: attachment.sourceArtifactId,
+            outcome: match ? "new_version" : "new",
+            chars: attachment.content.length,
+            ...(match && newVersionNo ? { version_no: newVersionNo } : {}),
+          },
+          match?.id ?? result.data?.id,
+        );
         if (match?.id) {
           capturedIds.push(match.id);
           attachmentIds.push(match.id);
@@ -2576,11 +2643,31 @@ export async function pushConversation(
       if (one.status === "placed" || one.status === "moved" || one.status === "already_here") {
         attachmentsPlaced += 1;
       }
+      const entry = outcomeById.get(itemId);
+      const placement = directPlacement(one.status);
+      if (entry && placement) entry.placement = placement;
     }
     attachmentPlaceNote =
       attachmentsPlaced === placeTargets.length
         ? ` ${attachmentsPlaced} attachment${attachmentsPlaced === 1 ? "" : "s"} placed on ${place.ref}.`
         : ` ${attachmentsPlaced} of ${placeTargets.length} attachments placed on ${place.ref}; the rest stayed in the inbox.`;
+  } else if (!plan.destination && placeTargets.length > 0) {
+    // PF1. No destination on this call: the attachments follow their
+    // conversation when it already sits in exactly one place. Read only; the
+    // conversation itself is never placed or moved here.
+    const inherited = await inheritConversationPlacement(owner, convoVocab, threadId, placeTargets);
+    attachmentsPlaced = inherited.placed;
+    for (const [itemId, placement] of inherited.byItem) {
+      const entry = outcomeById.get(itemId);
+      if (entry) entry.placement = placement;
+    }
+    if (inherited.place && inherited.placed > 0) {
+      attachmentPlaceNote =
+        inherited.placed === placeTargets.length
+          ? ` ${inherited.placed} attachment${inherited.placed === 1 ? "" : "s"} placed on ${inherited.place.ref}, with the conversation.`
+          : ` ${inherited.placed} of ${placeTargets.length} attachments placed on ${inherited.place.ref}, with the conversation.`;
+    }
+    attachmentPlaceNote += attachmentPlacementNote(attachmentOutcomes);
   }
 
   // P4 item 3. Decisions become drafts citing their turns, only on a board.
@@ -2847,6 +2934,7 @@ export async function pushConversation(
   const notes = [
     placeholderNote,
     renditionNote(attachmentOutcomes),
+    plan.destination ? "" : attachmentPlacementNote(attachmentOutcomes),
     windowNote,
     totalNote,
     degradedNote,
