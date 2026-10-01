@@ -1537,3 +1537,12 @@ export function dockBundles<T extends Pick<LabNode, "id" | "x" | "y" | "height">
 export function bundleCountBand(count: number): "0" | "1" | "2_plus" {
   return count <= 0 ? "0" : count === 1 ? "1" : "2_plus";
 }
+
+/** GF2: the retired guide frames (decisions, foundation, outputs) never draw. Their rows and card links stay untouched. */
+export const RETIRED_GUIDE_FRAME_KINDS: readonly string[] = ["decisions", "foundation", "outputs"];
+
+/** GF2: whether a frame of this kind draws on the board in the given structure mode. Context draws in both; retired guide kinds in neither. */
+export function boardFrameRenders(kind: string, structured: boolean): boolean {
+  if (RETIRED_GUIDE_FRAME_KINDS.includes(kind)) return false;
+  return structured || kind === "context";
+}
