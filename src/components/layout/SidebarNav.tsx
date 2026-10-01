@@ -32,6 +32,8 @@ import {
   groupEngagementsByClient,
   INTERNAL_SHELF_ID,
   isSyntheticShelf,
+  allContainerIds,
+  descendantContainerIds,
   mergeContainerRows,
   notInContainerLabel,
   type ContainerNode,
@@ -380,12 +382,26 @@ export function SidebarNav({
   const [collapsedClients, setCollapsedClients] = useState<string[]>(() => readCollapsedClients());
   function toggleClient(clientId: string) {
     setCollapsedClients((prev) => {
+      // SB2: collapsing cascades to every descendant; expanding opens only this one.
       const next = prev.includes(clientId)
         ? prev.filter((id) => id !== clientId)
-        : [...prev, clientId];
+        : [...new Set([...prev, clientId, ...descendantContainerIds(containerRoots, clientId)])];
       writeCollapsedClients(next);
       return next;
     });
+  }
+
+  // SB2: every container in the whole tree plus the synthetic shelves.
+  const everyCollapsibleId = [
+    ...allContainerIds(containerRoots),
+    ...syntheticShelves.map((shelf) => shelf.clientId),
+  ];
+  const allCollapsed =
+    everyCollapsibleId.length > 0 && everyCollapsibleId.every((id) => collapsedClients.includes(id));
+  function toggleAll() {
+    const next = allCollapsed ? [] : everyCollapsibleId;
+    writeCollapsedClients(next);
+    setCollapsedClients(next);
   }
 
   function expandClient(clientId: string) {
@@ -637,7 +653,21 @@ export function SidebarNav({
         return (
           <Fragment key={group.label}>
           <div>
-            <div className="nb-group-header px-2">{group.label}</div>
+            {isEngagementGroup && everyCollapsibleId.length > 0 ? (
+              <div className="flex items-center justify-between gap-2 px-2">
+                <div className="nb-group-header">{group.label}</div>
+                <button
+                  type="button"
+                  data-testid="nav-collapse-all"
+                  onClick={toggleAll}
+                  className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft transition-colors hover:text-foreground"
+                >
+                  {allCollapsed ? "Expand all" : "Collapse all"}
+                </button>
+              </div>
+            ) : (
+              <div className="nb-group-header px-2">{group.label}</div>
+            )}
             <div className="mt-2 flex flex-col gap-0.5">
               {/* Past work belongs under the shelves, after everything that is
                   still running, so it renders below rather than above them. */}
