@@ -5212,6 +5212,10 @@ export type Database = {
         Args: { p_code: string; p_reason?: string }
         Returns: boolean
       }
+      admin_send_admin_link: {
+        Args: { p_bind?: boolean; p_email?: string; p_org_id: string }
+        Returns: Json
+      }
       admin_set_clients_enabled: {
         Args: { p_enabled: boolean; p_org: string }
         Returns: Json

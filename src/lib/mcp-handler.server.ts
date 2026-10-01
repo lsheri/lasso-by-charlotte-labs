@@ -564,7 +564,7 @@ async function logPush(owner: Owner, dims: Record<string, string>): Promise<void
 const CHAT_URL_FIELD = {
   type: "string",
   description:
-    "This conversation's own https URL in the source app. You are inside the conversation you are pushing and its URL is in the address bar, so send it. It is what lets the saved work point back to this chat, and what recognises the same conversation on a later push. Leave it out only if you genuinely cannot see it, and never invent one. Kept only for claude.ai, chatgpt.com, chat.openai.com and gemini.google.com; anything else is ignored.",
+    "This conversation's own https URL in the source app. You usually cannot see the address bar, so leave this out unless the link is plainly in front of you. Where it genuinely is available: in Claude Code and Cowork the session link is in your own context, so send it there. Never guess a URL and never send a vendor home page such as https://claude.ai/ or https://chatgpt.com/; a guessed link is worse than no link. The link is what lets the saved work point back to this chat, and what recognises the same conversation on a later push. Any https URL that points past a front door is kept. Leaving it out is the expected case, not a failure.",
 };
 
 const pushTools = (vocab: McpVocab) => [
@@ -597,7 +597,7 @@ const pushTools = (vocab: McpVocab) => [
         orig_conversation_id: {
           type: "string",
           description:
-            "Stable ID for the source thread; all pushes for the same conversation MUST reuse it. Use the source app's REAL conversation UUID when it is visible to you (it appears in the chat's URL). If you cannot see it, use any stable id, and send chat_url as well so the conversation can still be recognised later.",
+            "Stable ID for the source thread; all pushes for the same conversation MUST reuse it. Use the source app's real conversation UUID when you actually have it; it is rarely visible to you, so an invented stable id is fine and expected. Pick one id for this conversation and reuse it on every later push. Send chat_url too when you can see it, so the conversation can still be recognised.",
         },
         lasso_conversation_id: {
           type: "string",

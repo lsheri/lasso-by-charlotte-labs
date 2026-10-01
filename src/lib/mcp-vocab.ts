@@ -375,7 +375,8 @@ export function placementInputs(vocab: McpVocab): Record<string, unknown> {
     },
     source_project: {
       type: "object",
-      description: "Optional. The Project in the source app this chat lives in.",
+      description:
+        "Send this whenever the conversation lives in a Project. Include the Project's real id when you can see it; it is a UUID, and it is what lets the saved work point back to where the conversation lives. Never invent an id. Send the name alone if the id is not visible to you.",
       properties: { name: { type: "string" }, id: { type: "string" } },
       required: ["name"],
     },
