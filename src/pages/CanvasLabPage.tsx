@@ -2605,7 +2605,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
           <Tooltip>
             <TooltipTrigger asChild>
               <DropdownMenuTrigger asChild>
-                <Button size="sm" variant="outline" aria-label="Human judgment" data-toolbar-control="add-judgment"><GraphiteIcon name="working-from" size={20} />Human judgment</Button>
+                <Button size="sm" variant="outline" aria-label="Human judgment" data-toolbar-control="add-judgment"><GraphiteIcon name="decisions" size={20} />Human judgment</Button>
               </DropdownMenuTrigger>
             </TooltipTrigger>
             <TooltipContent>Human judgment</TooltipContent>
