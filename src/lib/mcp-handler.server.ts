@@ -894,6 +894,15 @@ export async function handleMcpRequest(
 
   if (method === "tools/call") {
     const name = String(params["name"] ?? "");
+    // CL-0 transport probe, TEMPORARY: does the connector send anything
+    // identifying the source conversation in _meta or headers? One event per
+    // tools/call, before the push work runs, swallowed on error. Removed once
+    // the question is answered; no portal counterpart.
+    try {
+      await recordTransportProbe(owner, request, body, params, name);
+    } catch {
+      // A probe failure must never fail the push.
+    }
     // Stale-schema tolerance: stringified arrays and objects are parsed first.
     const args = coercePushArgs((params["arguments"] ?? {}) as Obj);
     const client = clientIdentity(
