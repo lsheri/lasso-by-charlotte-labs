@@ -215,7 +215,7 @@ function WorkPicker({ ask, engagementId }: { ask: AskLasso; engagementId: string
 }
 
 /** The transcript, on binder paper. Every line sits on the 28px pitch. */
-function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions?: React.ReactNode }) {
+export function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions?: React.ReactNode }) {
   const messages = ask.messages ?? [];
   const viewerInitial = ask.profile?.display_name.trim().charAt(0).toUpperCase() || "Y";
   // Only the workboard offers a place to keep an answer, and only to someone
