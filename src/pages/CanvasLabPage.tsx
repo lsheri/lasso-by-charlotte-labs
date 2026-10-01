@@ -1913,9 +1913,8 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       return;
     }
     if (nameAction.action === "clear_and_delete") {
-      try {
-        await deleteWorkstreamCall({ data: { task_id: nameAction.taskId, profile_id: profile?.id, require_empty: true } });
-      } catch {
+      const deleted = await deleteWorkstreamCall({ data: { task_id: nameAction.taskId, profile_id: profile?.id, require_empty: true } }).then(() => true, () => false);
+      if (!deleted) {
         setAnnouncement(BOARD_WORKSTREAM_COPY.clearRefused);
         return;
       }
