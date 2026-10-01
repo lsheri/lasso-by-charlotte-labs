@@ -142,7 +142,8 @@ function RevealedLink({ secret, workspace }: { secret: string; workspace: string
       <div className="flex flex-wrap items-center gap-3">
         <code
           data-testid="revealed-url"
-          className="min-w-0 flex-1 break-all font-mono text-xs text-foreground"
+          data-ph-no-autocapture
+          className="ph-no-autocapture min-w-0 flex-1 break-all font-mono text-xs text-foreground"
         >
           {url}
         </code>
@@ -150,6 +151,8 @@ function RevealedLink({ secret, workspace }: { secret: string; workspace: string
           type="button"
           size="sm"
           data-testid="copy-url"
+          data-ph-no-autocapture
+          className="ph-no-autocapture"
           onClick={() => void copyText(url, "Link")}
         >
           Copy
@@ -158,7 +161,7 @@ function RevealedLink({ secret, workspace }: { secret: string; workspace: string
       <p className="mt-2 text-xs text-muted-foreground">
         {`Anyone with this link can add work to ${workspace} as you. Keep it private.`}
       </p>
-      <p className="mt-1 text-xs text-muted-foreground">
+      <p data-ph-no-autocapture className="ph-no-autocapture mt-1 text-xs text-muted-foreground">
         {`The same key also works as a header. Send Authorization: Bearer ${secret} to ${origin}/api/mcp`}
       </p>
     </div>
@@ -434,7 +437,7 @@ export function ConnectYourAiCard() {
                 workspace={workspace}
                 orgId={profile?.org_id}
                 fromReplace={replacedId === row.id}
-                onReplace={(r) => void makeLink(name.trim() || "Replacement link", r.id)}
+                onReplace={(r) => void makeLink(name, r.id)}
                 onChanged={refresh}
               />
             ))}
