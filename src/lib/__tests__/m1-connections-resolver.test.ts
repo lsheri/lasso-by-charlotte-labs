@@ -17,7 +17,7 @@ vi.mock("@/integrations/supabase/client.server", () => ({
 vi.mock("../telemetry.server", () => ({ recordEvent: vi.fn() }));
 
 import { handleMcpRequest, resolveOwner } from "../mcp-handler.server";
-import { handleHeaderMcp } from "@/routes/api/mcp";
+import { handleHeaderMcp } from "@/lib/mcp-header.server";
 
 const ownerRow = {
   connection_id: "connection-1",
