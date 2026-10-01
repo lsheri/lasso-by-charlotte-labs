@@ -99,7 +99,7 @@ describe("SB1 tree scroller and standing separation", () => {
     ).toBeTruthy();
     // The standing separation is a hairline rule on the actions block. jsdom
     // does not load the stylesheet, so the rule is read from the sheet itself.
-    const css = readFileSync(new URL("../../styles.css", import.meta.url), "utf8");
+    const css = readFileSync(`${process.cwd()}/src/styles.css`, "utf8");
     const rule = css.match(/\.nb-nav-actions\s*\{[^}]*\}/);
     expect(rule).not.toBeNull();
     expect(rule![0]).toContain("border-top: 1px solid var(--nb-rule)");
