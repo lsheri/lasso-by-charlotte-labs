@@ -561,67 +561,6 @@ async function logPush(owner: Owner, dims: Record<string, string>): Promise<void
   }
 }
 
-// CL-0 transport probe, TEMPORARY. Removed once the question it answers is
-// answered; no portal counterpart. Header names are always recorded; values of
-// sensitive headers never are. In _meta, only the value of a key whose name
-// contains token, secret, key or auth is replaced with "[redacted]".
-const PROBE_HEADER_VALUE_BLOCK = /auth|token|secret|key|cookie/i;
-const PROBE_META_VALUE_BLOCK = /token|secret|key|auth/i;
-const PROBE_VALUE_LIMIT = 2000;
-
-function probeMetaKeys(meta: unknown): string {
-  if (!meta || typeof meta !== "object" || Array.isArray(meta)) return "";
-  return Object.keys(meta as Obj).sort().join(",");
-}
-
-function probeMetaValues(body: Obj, params: Obj): string {
-  const merged: Record<string, unknown> = {};
-  for (const source of [body["_meta"], params["_meta"]]) {
-    if (!source || typeof source !== "object" || Array.isArray(source)) continue;
-    for (const [key, value] of Object.entries(source as Obj)) {
-      merged[key] = PROBE_META_VALUE_BLOCK.test(key) ? "[redacted]" : value;
-    }
-  }
-  return JSON.stringify(merged).slice(0, PROBE_VALUE_LIMIT);
-}
-
-function probeHeaders(request: Request): { names: string; values: string } {
-  const names: string[] = [];
-  const values: Record<string, string> = {};
-  request.headers.forEach((value, name) => {
-    const lower = name.toLowerCase();
-    names.push(lower);
-    if (!PROBE_HEADER_VALUE_BLOCK.test(lower)) values[lower] = value;
-  });
-  return {
-    names: names.sort().join(","),
-    values: JSON.stringify(values).slice(0, PROBE_VALUE_LIMIT),
-  };
-}
-
-async function recordTransportProbe(
-  owner: Owner,
-  request: Request,
-  body: Obj,
-  params: Obj,
-  toolName: string,
-): Promise<void> {
-  const headers = probeHeaders(request);
-  await recordEvent(supabaseAdmin, {
-    eventType: "mcp.transport_probe",
-    orgId: owner.orgId,
-    userId: owner.userId,
-    dims: {
-      meta_keys: probeMetaKeys(params["_meta"]),
-      body_meta_keys: probeMetaKeys(body["_meta"]),
-      meta_values: probeMetaValues(body, params),
-      header_names: headers.names,
-      header_values: headers.values,
-      tool_name: toolName,
-    },
-  });
-}
-
 const CHAT_URL_FIELD = {
   type: "string",
   description:
@@ -955,15 +894,6 @@ export async function handleMcpRequest(
 
   if (method === "tools/call") {
     const name = String(params["name"] ?? "");
-    // CL-0 transport probe, TEMPORARY: does the connector send anything
-    // identifying the source conversation in _meta or headers? One event per
-    // tools/call, before the push work runs, swallowed on error. Removed once
-    // the question is answered; no portal counterpart.
-    try {
-      await recordTransportProbe(owner, request, body, params, name);
-    } catch {
-      // A probe failure must never fail the push.
-    }
     // Stale-schema tolerance: stringified arrays and objects are parsed first.
     const args = coercePushArgs((params["arguments"] ?? {}) as Obj);
     const client = clientIdentity(

@@ -1,6 +1,6 @@
 import { ExternalLink } from "lucide-react";
 
-import { chatUrlLabel, itemChatUrl } from "@/lib/chat-url";
+import { chatLinkLabel, itemChatLink } from "@/lib/chat-url";
 import { keptContentLabel } from "@/lib/work-open";
 import type { WorkItemRow } from "@/lib/work-types";
 
@@ -19,8 +19,9 @@ export function ChatUrlLink({
   /** Already-loaded card data; this never triggers another read. */
   turnCount?: number | null | undefined;
 }) {
-  const url = itemChatUrl(item);
-  if (!url) {
+  const link = itemChatLink(item);
+  const url = link?.url ?? null;
+  if (!link || !url) {
     if (!showAbsence) return null;
     return (
       <span className="text-xs text-muted-foreground">{keptContentLabel(item, turnCount)}</span>
@@ -48,7 +49,7 @@ export function ChatUrlLink({
       onClick={note}
       className="inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
     >
-      {chatUrlLabel(url)}
+      {chatLinkLabel(link)}
       <ExternalLink className="h-3 w-3" aria-hidden />
     </a>
   );

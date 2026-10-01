@@ -43,7 +43,10 @@ describe("W1.1 — one parameter, asked for once", () => {
     expect(rawPushUrl({ chat_url: "https://intranet.example.com/thread/9" })).toBe(
       "https://intranet.example.com/thread/9",
     );
-    expect(storedPushChatUrl({ chat_url: "https://intranet.example.com/thread/9" })).toBeNull();
+    // CL-1: any https host is now stored.
+    expect(storedPushChatUrl({ chat_url: "https://intranet.example.com/thread/9" })).toBe(
+      "https://intranet.example.com/thread/9",
+    );
   });
 });
 

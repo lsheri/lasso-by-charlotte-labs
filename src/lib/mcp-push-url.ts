@@ -14,7 +14,7 @@ export function rawPushUrl(args: Record<string, unknown>): string | null {
   return null;
 }
 
-/** The URL kept on the record: allowlisted host, and past the vendor front door. */
+/** The URL kept on the record: https, and past the vendor front door. */
 export function storedPushChatUrl(args: Record<string, unknown>): string | null {
   return safeChatUrl(rawPushUrl(args));
 }
@@ -28,8 +28,9 @@ export function storedPushChatUrl(args: Record<string, unknown>): string | null 
  * one or it has none.
  */
 export function inheritedConversationUrl(sourceMeta: unknown): string | null {
-  const url = (sourceMeta as Record<string, unknown> | null)?.["url"];
-  return typeof url === "string" && url ? url : null;
+  // CL-1: re-checked before storing, so a front door saved by older code is
+  // never copied onto a new row. Existing rows are left as they are.
+  return safeChatUrl((sourceMeta as Record<string, unknown> | null)?.["url"]);
 }
 
 /**

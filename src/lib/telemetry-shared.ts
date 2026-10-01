@@ -105,9 +105,6 @@ export type TelemetryEvent =
   | "import.completed"
   | "import.abandoned"
   | "mcp.push"
-  /** CL-0 (temporary): what a tools/call transport carries beyond the tool
-   *  arguments. Removed once the question is answered; no portal counterpart. */
-  | "mcp.transport_probe"
   /** M2: a named connection was made in Settings. Kind only. */
   | "mcp.connection_created"
   /** M2: a connection was disconnected. Kind and where from. */

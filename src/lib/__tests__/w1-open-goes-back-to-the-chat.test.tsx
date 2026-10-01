@@ -7,7 +7,9 @@ import { deriveChatUrl, effectiveChatUrl, safeChatUrl } from "@/lib/chat-url";
 import { NO_SOURCE_LINK_LABEL, canOpenAtSource, keptContentLabel, resolveWorkOpen } from "@/lib/work-open";
 import type { WorkItemRow } from "@/lib/work-types";
 
-const CPT_CONVERSATION_ID = "04883dd3-81b8-5032-ab6e-029f37fedaa7";
+// CL-1: a real Claude id is v4. The original CPT id was a harness-minted v5.
+const CPT_CONVERSATION_ID = "04883dd3-81b8-4032-ab6e-029f37fedaa7";
+const MINTED_V5_ID = "04883dd3-81b8-5032-ab6e-029f37fedaa7";
 
 afterEach(cleanup);
 
@@ -75,6 +77,10 @@ describe("W1 — deriving, and refusing to derive", () => {
     expect(deriveChatUrl("claude", CPT_CONVERSATION_ID)).toBe(
       `https://claude.ai/chat/${CPT_CONVERSATION_ID}`,
     );
+  });
+
+  it("CL-1: never derives from a minted v5 id", () => {
+    expect(deriveChatUrl("claude", MINTED_V5_ID)).toBeNull();
   });
 
   it("never derives for ChatGPT, whose ids are invented slugs", () => {
