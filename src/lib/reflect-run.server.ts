@@ -7,6 +7,7 @@ import type { Database } from "@/integrations/supabase/types";
 import type { ContextSource, ScopeSource } from "@/lib/reflect-shared";
 import type { AnalysisPresetId } from "@/lib/analysis-presets";
 import type { ContextManifest } from "@/lib/context-manifest";
+import { renditionsReadBucket } from "./reference-rendition-shared";
 
 export type ReflectInput = {
   session_id: string;
@@ -37,7 +38,6 @@ export type ReflectResult = {
 };
 
 /** Bucketed so an exact count never leaves as a dimension. */
-import { renditionsReadBucket } from "./reference-rendition-shared";
 function tierBucket(n: number): string {
   if (n <= 0) return "0";
   if (n <= 5) return "1-5";
