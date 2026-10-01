@@ -2,6 +2,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
+import { signWorkboardFileUrl } from "@/lib/workboard-file-sign";
 import { getItemTextPane } from "@/lib/item-text.functions";
 import { getWorkboardArtifactPreview } from "@/lib/workboard-artifact-preview.functions";
 import {
@@ -60,9 +61,9 @@ export async function loadWorkboardFilePreview(
   }
 
   if (filePreviewKind(item) === "pdf" && item.content_ref) {
-    const signed = await supabase.storage.from("work-files").createSignedUrl(item.content_ref, 600);
-    if (!signed.error && signed.data?.signedUrl) {
-      return { workItemId: item.id, kind: "pdf", url: signed.data.signedUrl, lines: [], slideTitle: null, versionCount };
+    const signedUrl = await signWorkboardFileUrl(item.content_ref, 600);
+    if (signedUrl) {
+      return { workItemId: item.id, kind: "pdf", url: signedUrl, lines: [], slideTitle: null, versionCount };
     }
     return fallbackFilePreview(item, versionCount);
   }

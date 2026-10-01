@@ -4,6 +4,11 @@ import { toast } from "sonner";
 import { useCaptureFiles } from "@/components/work/use-capture-files";
 import { useReducedMotion } from "@/hooks/use-motion";
 import type { Point } from "@/lib/canvas-drag";
+import { isBoardImageFile, readImageSize, removeBoardImageObject, uploadBoardImage } from "@/components/canvas-lab/board-image";
+import type { WorkboardImageBody } from "@/lib/canvas-lab-shared";
+
+/** DD1-f: one uploaded image ready to become a board node. Resolves false when the node was not saved. */
+export type PlaceBoardImage = (image: WorkboardImageBody, at: Point) => Promise<boolean> | boolean;
 
 export const BOARD_FILE_DROP_COPY = {
   prompt: "Drop to add to this board",
@@ -44,10 +49,14 @@ export function useBoardFileDrop({
   enabled,
   toBoard,
   place,
+  placeImage,
+  readSize = readImageSize,
 }: {
   enabled: boolean;
   toBoard: (clientX: number, clientY: number) => Point;
   place: (ids: string[], at: Point) => Promise<void> | void;
+  placeImage?: PlaceBoardImage;
+  readSize?: (file: File) => Promise<{ width: number; height: number }>;
 }) {
   const { captureWithResult } = useCaptureFiles();
   const [over, setOver] = useState(false);
@@ -84,6 +93,19 @@ export function useBoardFileDrop({
     setClearSignal((value) => value + 1);
   }, []);
 
+  const dropImage = useCallback(async (file: File, at: Point): Promise<boolean> => {
+    if (!placeImage) return false;
+    let size: { width: number; height: number };
+    try { size = await readSize(file); } catch { return false; }
+    const path = await uploadBoardImage(file);
+    if (!path) return false;
+    let saved = false;
+    try { saved = await placeImage({ path, naturalWidth: size.width, naturalHeight: size.height }, at); } catch { saved = false; }
+    // A file whose node was never saved would be an orphan, so it goes too.
+    if (!saved) await removeBoardImageObject(path);
+    return saved;
+  }, [placeImage, readSize]);
+
   const onDrop = useCallback((event: DragEvent<HTMLElement>) => {
     if (!isFileDrag(event.dataTransfer?.types)) return;
     event.preventDefault();
@@ -99,14 +121,23 @@ export function useBoardFileDrop({
     busy.current = true;
     void (async () => {
       try {
-        const { ids, failures } = await captureWithResult(files, { channel: "drop" });
-        for (const failure of failures) toast.error(BOARD_FILE_DROP_COPY.failed(failure.name));
-        if (ids.length > 0) await place(ids, at);
+        // Images never touch the capture path: no work item, no card, no inbox.
+        const images = placeImage ? files.filter(isBoardImageFile) : [];
+        const documents = files.filter((file) => !images.includes(file));
+        if (documents.length > 0) {
+          const { ids, failures } = await captureWithResult(documents, { channel: "drop" });
+          for (const failure of failures) toast.error(BOARD_FILE_DROP_COPY.failed(failure.name));
+          if (ids.length > 0) await place(ids, at);
+        }
+        for (const [index, file] of images.entries()) {
+          const ok = await dropImage(file, { x: at.x + index * 24, y: at.y + index * 24 });
+          if (!ok) toast.error(BOARD_FILE_DROP_COPY.failed(file.name));
+        }
       } finally {
         busy.current = false;
       }
     })();
-  }, [enabled, toBoard, place, captureWithResult, localPoint]);
+  }, [enabled, toBoard, place, captureWithResult, localPoint, dropImage]);
 
   return { over, pointer, dropBurst, clearSignal, handlers: { onDragEnter, onDragOver, onDragLeave, onDrop } };
 }
