@@ -15,6 +15,10 @@ import type { Database } from "@/integrations/supabase/types";
 type Client = SupabaseClient<Database>;
 
 export const WORKSTREAM_NOT_AVAILABLE = "That workstream is not available to you.";
+/** WK1: the board's own home for work is never a workstream anyone deletes. */
+export const WORKSTREAM_IS_DEFAULT = "That workstream cannot be deleted.";
+/** WK1: the board deletes only an empty workstream. Same words as the box refusal. */
+export const WORKSTREAM_NOT_EMPTY = "Move its cards first.";
 
 export type DeleteWorkstreamResult = {
   deleted: true;
@@ -26,15 +30,16 @@ export type DeleteWorkstreamResult = {
 
 export async function deleteWorkstreamRow(
   client: Client,
-  input: { taskId: string },
+  input: { taskId: string; requireEmpty?: boolean },
 ): Promise<DeleteWorkstreamResult> {
   const task = await client
     .from("tasks")
-    .select("id, engagement_id")
+    .select("id, engagement_id, is_board_default")
     .eq("id", input.taskId)
     .maybeSingle();
   if (task.error) throw new Error(task.error.message);
   if (!task.data) throw new Error(WORKSTREAM_NOT_AVAILABLE);
+  if ((task.data as { is_board_default?: boolean | null }).is_board_default) throw new Error(WORKSTREAM_IS_DEFAULT);
 
   const links = await client
     .from("work_item_tasks")
@@ -44,6 +49,7 @@ export async function deleteWorkstreamRow(
   const itemIds = [
     ...new Set((links.data ?? []).map((row) => (row as { work_item_id: string }).work_item_id)),
   ];
+  if (input.requireEmpty && itemIds.length > 0) throw new Error(WORKSTREAM_NOT_EMPTY);
 
   const del = await client.from("tasks").delete().eq("id", input.taskId);
   if (del.error) throw new Error(del.error.message);

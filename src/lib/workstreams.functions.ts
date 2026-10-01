@@ -3,7 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveProfile } from "@/lib/profile-resolve";
 
-type DeleteInput = { task_id: string; profile_id?: string | null | undefined };
+type DeleteInput = { task_id: string; profile_id?: string | null | undefined; require_empty?: boolean | undefined };
 type MoveInput = {
   task_id: string;
   engagement_id: string;
@@ -14,7 +14,7 @@ type RenameInput = { task_id: string; name: string; profile_id?: string | null |
 
 function validateDelete(input: DeleteInput): DeleteInput {
   if (!input?.task_id) throw new Error("task_id is required");
-  return { task_id: input.task_id, profile_id: input.profile_id ?? null };
+  return { task_id: input.task_id, profile_id: input.profile_id ?? null, require_empty: input.require_empty === true };
 }
 
 function validateMove(input: MoveInput): MoveInput {
@@ -54,7 +54,7 @@ export const deleteWorkstream = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await requireMember(context, data.profile_id);
     const { deleteWorkstreamRow } = await import("./workstreams.server");
-    return deleteWorkstreamRow(context.supabase, { taskId: data.task_id });
+    return deleteWorkstreamRow(context.supabase, { taskId: data.task_id, requireEmpty: data.require_empty === true });
   });
 
 export const moveWorkstream = createServerFn({ method: "POST" })
