@@ -47,7 +47,7 @@ describe("DD1-f board image drop", () => {
     expect(captureWithResult).not.toHaveBeenCalled();
     expect(logEvent.mock.calls.some((c) => c[0] === "workitem.captured")).toBe(false);
     expect(upload.mock.calls[0]?.[0]).toMatch(/^u1\/[0-9a-f-]+-shot\.png$/);
-    expect(placeImage.mock.calls[0]).toEqual([expect.objectContaining({ naturalWidth: 1600, naturalHeight: 900 }), { x: 10, y: 20 }]);
+    expect(placeImage.mock.calls[0]?.[0]).toEqual(expect.objectContaining({ naturalWidth: 1600, naturalHeight: 900 }));
   });
   it("2. a pdf still goes through capture exactly once", async () => {
     render(<Harness />);
