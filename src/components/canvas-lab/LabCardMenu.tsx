@@ -29,6 +29,8 @@ export function LabCardMenu({
   onMoveToFrame,
   bundleToggleLabel,
   onBundleToggle,
+  chatLinkLabel,
+  onEditChatLink,
 }: {
   selected: boolean;
   canBranch: boolean;
@@ -52,6 +54,9 @@ export function LabCardMenu({
   /** B2: only on a chat with docked pieces. */
   bundleToggleLabel?: string | undefined;
   onBundleToggle?: (() => void) | undefined;
+  /** CU1: only where the board can save a chat link. */
+  chatLinkLabel?: string | undefined;
+  onEditChatLink?: (() => void) | undefined;
 }) {
 
   return (
@@ -82,6 +87,7 @@ export function LabCardMenu({
         {canBranch ? <DropdownMenuItem onSelect={onBranch}>Branch</DropdownMenuItem> : null}
         {onMoveToFrame && frameChoices.filter((frame) => frame.id !== currentFrame).map((frame) => <DropdownMenuItem key={frame.id} onSelect={() => onMoveToFrame(frame.id)}>Move to {frame.name}</DropdownMenuItem>)}
         {onBundleToggle && bundleToggleLabel ? <DropdownMenuItem onSelect={onBundleToggle}>{bundleToggleLabel}</DropdownMenuItem> : null}
+        {onEditChatLink && chatLinkLabel ? <DropdownMenuItem onSelect={onEditChatLink}>{chatLinkLabel}</DropdownMenuItem> : null}
         {onTakeOutOfContext ? <DropdownMenuItem onSelect={onTakeOutOfContext}>Take out of context</DropdownMenuItem> : null}
         <DropdownMenuSeparator />
         {local ? (
