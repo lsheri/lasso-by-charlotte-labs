@@ -21,4 +21,13 @@ describe("H-W1 home cleanup", () => {
   it("the public demo does not pass the new prop", () => {
     expect(read("src/components/demo/DemoHomeWorkspace.tsx")).not.toContain("onOpen=");
   });
+  it("signed-in chrome no longer mounts the Getting Started walkthrough", () => {
+    for (const file of [
+      "src/components/layout/AppSidebar.tsx",
+      "src/components/layout/MobileTabBar.tsx",
+      "src/components/layout/AppShell.tsx",
+    ]) {
+      expect(read(file)).not.toContain("onboarding/checklist");
+    }
+  });
 });

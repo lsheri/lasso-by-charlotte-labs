@@ -2,7 +2,6 @@ import { Link } from "@tanstack/react-router";
 
 import type { Profile } from "@/hooks/use-profile";
 import { FeedbackDialog } from "@/components/feedback/FeedbackWidget";
-import { ChecklistLauncher } from "@/components/onboarding/checklist/ChecklistLauncher";
 import { markWalkthroughEntry } from "@/lib/walkthrough-entry";
 
 import { OrgSwitcher } from "./OrgSwitcher";
@@ -66,7 +65,6 @@ export function AppSidebar({
           <Link to="/why" onClick={onNavigate} className={footerLink}>
             Why Lasso
           </Link>
-          <ChecklistLauncher />
           <FeedbackDialog
             trigger={
               <button type="button" className={footerLink}>
