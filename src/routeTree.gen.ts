@@ -21,6 +21,7 @@ import { Route as NoAccessRouteImport } from './routes/no-access'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as PersonalRouteImport } from './routes/personal'
 import { Route as PlansRouteImport } from './routes/plans'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as TrustRouteImport } from './routes/trust'
 import { Route as WhyRouteImport } from './routes/why'
 import { Route as AuthenticatedAffiliationRouteImport } from './routes/_authenticated/affiliation'
@@ -126,6 +127,11 @@ const PersonalRoute = PersonalRouteImport.update({
 const PlansRoute = PlansRouteImport.update({
   id: '/plans',
   path: '/plans',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TrustRoute = TrustRouteImport.update({
@@ -386,6 +392,7 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof OnboardingRoute
   '/personal': typeof PersonalRoute
   '/plans': typeof PlansRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/trust': typeof TrustRoute
   '/why': typeof WhyRoute
   '/affiliation': typeof AuthenticatedAffiliationRoute
@@ -446,6 +453,7 @@ export interface FileRoutesByTo {
   '/onboarding': typeof OnboardingRoute
   '/personal': typeof PersonalRoute
   '/plans': typeof PlansRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/trust': typeof TrustRoute
   '/why': typeof WhyRoute
   '/affiliation': typeof AuthenticatedAffiliationRoute
@@ -508,6 +516,7 @@ export interface FileRoutesById {
   '/onboarding': typeof OnboardingRoute
   '/personal': typeof PersonalRoute
   '/plans': typeof PlansRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/trust': typeof TrustRoute
   '/why': typeof WhyRoute
   '/_authenticated/affiliation': typeof AuthenticatedAffiliationRoute
@@ -570,6 +579,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/personal'
     | '/plans'
+    | '/reset-password'
     | '/trust'
     | '/why'
     | '/affiliation'
@@ -630,6 +640,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/personal'
     | '/plans'
+    | '/reset-password'
     | '/trust'
     | '/why'
     | '/affiliation'
@@ -691,6 +702,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/personal'
     | '/plans'
+    | '/reset-password'
     | '/trust'
     | '/why'
     | '/_authenticated/affiliation'
@@ -753,6 +765,7 @@ export interface RootRouteChildren {
   OnboardingRoute: typeof OnboardingRoute
   PersonalRoute: typeof PersonalRoute
   PlansRoute: typeof PlansRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   TrustRoute: typeof TrustRoute
   WhyRoute: typeof WhyRoute
   DemoCodeRoute: typeof DemoCodeRoute
@@ -857,6 +870,13 @@ declare module '@tanstack/react-router' {
       path: '/plans'
       fullPath: '/plans'
       preLoaderRoute: typeof PlansRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/trust': {
@@ -1273,6 +1293,7 @@ const rootRouteChildren: RootRouteChildren = {
   OnboardingRoute: OnboardingRoute,
   PersonalRoute: PersonalRoute,
   PlansRoute: PlansRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   TrustRoute: TrustRoute,
   WhyRoute: WhyRoute,
   DemoCodeRoute: DemoCodeRoute,
