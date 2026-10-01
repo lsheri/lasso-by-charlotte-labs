@@ -2031,6 +2031,26 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .nb-type-small {
   font-size: 11.5px;
 }
+/* SB1: the tree scrolls on its own so the create actions stay put, and a
+   standing hairline separates the tree from the actions. min-height: 0 is
+   what lets a flex child scroll at all. */
+.nb-nav-tree-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 0;
+  max-height: min(46vh, 480px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.nb-nav-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--nb-rule);
+}
 .nb-nav-item {
   position: relative;
   display: flex;
