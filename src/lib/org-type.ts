@@ -10,6 +10,11 @@ export type IntentParam = OrgType | "invite";
 
 export type DoorChoice = IntentParam | null | undefined;
 
+/** Company and partner workspaces use the same firm invitation language. */
+export function isFirmWorkspace(type: unknown): boolean {
+  return type === "company" || type === "partner";
+}
+
 /**
  * An invite never creates a workspace here (the accept page owns that), so it
  * falls back to the same default the screen has always used.

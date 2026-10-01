@@ -36,6 +36,36 @@ export type DataConsentView = {
   changes: ConsentChange[];
 };
 
+type ConsentRpcArgs = {
+  p_scope: ConsentScope;
+  p_tier: DataTier;
+  p_tier_d_switch: boolean;
+  p_consent_text_version: string;
+  p_notice_hash: string;
+  p_surface: string;
+  p_profile_id?: string | null;
+};
+
+type ConsentRpcResult = { data: number | null; error: { code?: string; message: string } | null };
+
+function missingProfileArgument(error: ConsentRpcResult["error"]): boolean {
+  return Boolean(
+    error &&
+      (error.code === "PGRST202" || /could not find the function/i.test(error.message)),
+  );
+}
+
+/** RUNBOOK-W-S1: remove the fallback after set_data_consent accepts p_profile_id everywhere. */
+export async function callSetDataConsentRpc(
+  rpc: (name: "set_data_consent", args: ConsentRpcArgs) => PromiseLike<ConsentRpcResult>,
+  args: ConsentRpcArgs,
+): Promise<ConsentRpcResult> {
+  const first = await rpc("set_data_consent", args);
+  if (!missingProfileArgument(first.error)) return first;
+  const { p_profile_id: _profileId, ...legacyArgs } = args;
+  return rpc("set_data_consent", legacyArgs);
+}
+
 /** Both state rows plus, for admins, the list of changes. Read only. */
 export const getDataConsent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -147,13 +177,14 @@ export const setDataConsent = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const hash = await noticeHash(data.scope, data.tier);
-    const { data: version, error } = await context.supabase.rpc("set_data_consent", {
+    const { data: version, error } = await callSetDataConsentRpc(context.supabase.rpc.bind(context.supabase), {
       p_scope: data.scope,
       p_tier: data.tier,
       p_tier_d_switch: data.tier === "d" ? (data.tier_d_switch ?? false) : false,
       p_consent_text_version: CONSENT_TEXT_VERSION,
       p_notice_hash: hash,
       p_surface: data.surface,
+      p_profile_id: data.profile_id ?? null,
     });
     if (error) throw new Error(error.message);
     // S-T1: after the ledger write succeeds. The level is a closed enum.

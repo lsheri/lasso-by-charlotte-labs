@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/integrations/supabase/types";
 import type { InviteEmailResult } from "./invites-shared";
+import { isFirmWorkspace } from "./org-type";
 
 type Client = SupabaseClient<Database>;
 
@@ -205,7 +206,7 @@ export async function loadInviteState(
 
   const profiles = mine ?? [];
   const settings = (org?.settings ?? {}) as Record<string, unknown>;
-  const orgIsCompany = settings["type"] === "company";
+  const orgIsCompany = isFirmWorkspace(settings["type"]);
 
   // A personal workspace has no company to name, so the welcome names the
   // person instead. Only for an email bound invite, where the link holder is

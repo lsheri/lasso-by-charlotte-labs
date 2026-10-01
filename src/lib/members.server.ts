@@ -4,6 +4,7 @@ import type { Database } from "@/integrations/supabase/types";
 
 import { resolveProfile, type ResolvedProfile } from "./profile-resolve";
 import type { TelemetryEvent } from "./telemetry-shared";
+import { isFirmWorkspace } from "./org-type";
 
 type AuthedContext = { supabase: SupabaseClient<Database>; userId: string };
 
@@ -99,7 +100,7 @@ export async function resendInviteByCode(
       context.supabase.from("orgs").select("name, settings").eq("id", profile.org_id).maybeSingle(),
     ]);
     const orgType =
-      ((org?.settings ?? {}) as Record<string, unknown>)["type"] === "company"
+      isFirmWorkspace(((org?.settings ?? {}) as Record<string, unknown>)["type"])
         ? ("business" as const)
         : ("personal" as const);
     variant = inviteEmailVariant(invite.invited_role, orgType);

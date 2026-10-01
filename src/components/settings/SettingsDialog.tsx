@@ -13,6 +13,7 @@ import { OrgDimensionsCard } from "./OrgDimensionsCard";
 import { YourWorkCard } from "./YourWorkCard";
 import { AccountEmailCard } from "./AccountEmailCard";
 import { ActivationKeyCard } from "./ActivationKeyCard";
+import { YourWorkspaceCard } from "./YourWorkspaceCard";
 import { InviteDialog } from "@/components/invites/InviteDialog";
 import { EnterInviteCode } from "@/components/invites/EnterInviteCode";
 import { Button } from "@/components/ui/button";
@@ -54,6 +55,7 @@ const SECTIONS: SettingsSection[] = [
     title: "Workspace",
     content: (
       <div className="space-y-8">
+        <YourWorkspaceCard />
         <OrgDimensionsCard />
         <ClientsSettingCard />
         <NamingConventionsCard />
