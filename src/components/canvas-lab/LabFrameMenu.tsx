@@ -1,6 +1,7 @@
 import { MoreHorizontal } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { BOARD_WORKSTREAM_COPY } from "@/lib/board-workstream-delete";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +21,7 @@ export function LabFrameMenu({
   onRename,
   onRemove,
   onUseAsContext,
+  removal,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -32,8 +34,12 @@ export function LabFrameMenu({
   onRename: () => void;
   onRemove: () => void;
   onUseAsContext?: (() => void) | undefined;
+  /** WK1: what Remove does. Absent means today's rule: custom boxes only. */
+  removal?: "none" | "box" | "workstream" | undefined;
 }) {
   if (!editable) return null;
+  const offersRemove = removal ? removal !== "none" : custom;
+  const removeLabel = removal === "workstream" ? BOARD_WORKSTREAM_COPY.removeAndDelete : BOARD_WORKSTREAM_COPY.removeBox;
   return (
     <DropdownMenu open={open} onOpenChange={onOpenChange}>
       <DropdownMenuTrigger asChild>
@@ -59,9 +65,9 @@ export function LabFrameMenu({
         {onUseAsContext ? <DropdownMenuItem onSelect={onUseAsContext}>Use as context</DropdownMenuItem> : null}
         <DropdownMenuItem onSelect={onFit}>Fit contents</DropdownMenuItem>
         {editable && custom ? <DropdownMenuItem onSelect={(event) => { event.preventDefault(); onRename(); }}>Rename</DropdownMenuItem> : null}
-        {editable && custom ? (
+        {editable && offersRemove ? (
           <DropdownMenuItem disabled={!removable} title={removable ? undefined : "Move its cards first"} onSelect={onRemove}>
-            Remove workstream{removable ? "" : " · Move its cards first"}
+            {removeLabel}{removable ? "" : " · Move its cards first"}
           </DropdownMenuItem>
         ) : null}
         {editable && context ? <DropdownMenuItem onSelect={onRemove}>Remove the context area</DropdownMenuItem> : null}
