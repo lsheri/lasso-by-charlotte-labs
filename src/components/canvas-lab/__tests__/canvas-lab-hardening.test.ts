@@ -2,7 +2,7 @@ import { readFileSync, readdirSync } from "node:fs";
 
 import { describe, expect, it } from "vitest";
 
-import { createLabFrames, createLocalNode, newLabClientKey } from "@/components/canvas-lab/canvas-lab-model";
+import { newLabClientKey } from "@/components/canvas-lab/canvas-lab-model";
 
 const read = (path: string) => readFileSync(path, "utf8");
 const migration = () => {
@@ -69,14 +69,10 @@ describe("server rules", () => {
 
 describe("client rules", () => {
   it("gives every local card its own key", () => {
-    const frames = createLabFrames([{ id: "task-1", name: "Discovery" }]);
-    const frame = frames[0]!;
-    const first = createLocalNode("judgment", frame, [], "added_constraint");
-    const second = createLocalNode("judgment", frame, [first], "corrected_ai");
-
-    expect(first.clientKey).toBeTruthy();
-    expect(first.clientKey).not.toEqual(second.clientKey);
-    expect(newLabClientKey()).not.toEqual(newLabClientKey());
+    const first = newLabClientKey();
+    const second = newLabClientKey();
+    expect(first).toBeTruthy();
+    expect(first).not.toEqual(second);
   });
 
   it("persists an author's card removal as a soft archive", () => {

@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 
-import { BOARD_GUIDE_RECTS } from "@/components/canvas-lab/canvas-lab-model";
 import {
   PLACEMENT_CARD,
   PLACEMENT_GAP,
@@ -61,20 +60,4 @@ describe("workboard placement", () => {
     expect(slotIsFree({ ...point, ...PLACEMENT_CARD }, [outline])).toBe(true);
   });
 
-  it("keeps added cards off the board's fixed guide panels", () => {
-    const guides = BOARD_GUIDE_RECTS.map((rect) => ({
-      x: rect.x,
-      y: rect.y,
-      width: rect.width,
-      height: rect.height,
-    }));
-    // The chosen point sits inside the Reasoning trail guide.
-    const anchor = { x: BOARD_GUIDE_RECTS[0]!.x + 40, y: BOARD_GUIDE_RECTS[0]!.y + 40 };
-    const points = placeAddedCards(anchor, guides, 2);
-    expect(points).toHaveLength(2);
-    for (const point of points) {
-      expect(slotIsFree({ ...point, ...PLACEMENT_CARD }, guides)).toBe(true);
-    }
-    expect(noneOverlap(points.map((point) => ({ ...point, ...PLACEMENT_CARD })))).toBe(true);
-  });
 });

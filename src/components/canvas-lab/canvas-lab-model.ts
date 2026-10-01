@@ -43,18 +43,11 @@ import { clampZoom } from "@/lib/canvas-zoom";
 import { isWorkstreamFrameId } from "@/lib/context-region";
 import { isContextFrameId } from "@/lib/context-region";
 import { isRegionFrameId } from "@/lib/board-region";
-import { isTrailFrameId } from "@/lib/reasoning-trail";
 import { placeAddedCards } from "@/lib/workboard-placement";
 import { resolveWorkDate } from "@/lib/work-order";
 
 export type LabNodeKind = "brief" | "task" | "work" | "decision" | "chat" | "source" | "ai_work" | "judgment" | "deliverable" | "shape" | "text" | "answer" | "sticky" | "image";
 export type LabJudgmentType = "added_constraint" | "corrected_ai" | "rejected_option" | "requested_evidence" | "changed_direction" | "accepted_but_rewrote";
-export type LabTemplateKind = "source" | "ai_work" | "judgment" | "decision" | "deliverable";
-/**
- * The cards a person can create from the board. A kept answer is not one of
- * them: it only ever arrives as the result of keeping an answer.
- */
-export const LAB_TEMPLATE_KINDS: readonly LabTemplateKind[] = ["source", "ai_work", "judgment", "decision", "deliverable"];
 
 /** Who the thing belongs to, which is what decides the offered actions. */
 export type LabOwnership = "yours" | "teammate" | "draft";
@@ -159,14 +152,6 @@ export function fitCardRect(node: Pick<LabNode, "width" | "height">, measuredHei
 }
 
 export type LabLink = { id: string; fromId: string; toId: string; fromAnchor: LabAnchor; toAnchor: LabAnchor; durableId?: string; durableVersion?: number; relation?: WorkboardRelation };
-
-export const REASONING_STEPS: { kind: LabTemplateKind; label: string }[] = [
-  { kind: "source", label: "Source / Context" },
-  { kind: "ai_work", label: "AI work" },
-  { kind: "judgment", label: "Human judgment" },
-  { kind: "decision", label: "Decision" },
-  { kind: "deliverable", label: "Deliverable" },
-];
 
 export const JUDGMENT_TYPES: { value: LabJudgmentType; label: string }[] = [
   { value: "added_constraint", label: "Added constraint" },
@@ -276,16 +261,6 @@ export function panToRevealNode(pan: Point, zoom: number, node: LabNode, viewpor
 }
 
 
-
-/**
- * The fixed panels that sit on the board but are neither a card nor an
- * outline. These values position the panels themselves, so anything choosing
- * a free spot can read the same board space bounds instead of the screen.
- */
-export const BOARD_GUIDE_RECTS: { id: string; x: number; y: number; width: number; height: number }[] = [
-  { id: "reasoning-trail", x: 60, y: 60, width: 896, height: 156 },
-  { id: "start-here", x: 60, y: 228, width: 896, height: 180 },
-];
 
 /** The inline add control's own size, in board space. */
 export const BOARD_INLINE_ADD_SIZE = { width: 220, height: 28 };
@@ -435,22 +410,11 @@ export function firstFreeLocalNodeAnchor(frame: LabFrame, visibleNodes: LabNode[
   return snapPoint({ x: frame.x + FRAME_PADDING, y: bottom + 32 });
 }
 
-let localCounter = 0;
-
 /** Random per-card key. Session counters would collide across visits. */
 export function newLabClientKey(): string {
   const source = globalThis.crypto;
   return `local:${source && "randomUUID" in source ? source.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`}`;
 }
-
-export function createLocalNode(kind: LabTemplateKind, frame: LabFrame, nodes: LabNode[], judgmentType?: LabJudgmentType): LabNode {
-  localCounter += 1;
-  const judgment = judgmentType ? JUDGMENT_TYPES.find((entry) => entry.value === judgmentType) : undefined;
-  const label = judgment?.label ?? REASONING_STEPS.find((entry) => entry.kind === kind)?.label ?? "Local note";
-  const at = localNodeAnchor(frame, nodes);
-  return { id: `local-node:${localCounter}`, clientKey: newLabClientKey(), kind, frame: frame.id, title: label, summary: "Add a short note.", typeLabel: label, ownership: "draft", ...(judgmentType ? { judgmentType } : {}), local: true, x: at.x, y: at.y, width: CARD_WIDTH, height: CARD_HEIGHT };
-}
-
 
 export function updateLocalNode(nodes: LabNode[], id: string, text: string): LabNode[] {
   return nodes.map((node) => node.id === id && node.local ? { ...node, summary: text } : node);
@@ -725,7 +689,7 @@ export function boardHasSeededStructure(board: { frames: { kind?: string | null;
   // The context region and a trail a person added are both made on demand on a
   // blank board, so neither is seeded structure and neither brings the guide
   // panels back.
-  return (board?.frames ?? []).some((frame) => frame.kind !== "context" && !isTrailFrameId(frame.key) && !(isRegionFrameId(frame.key) && !frame.label?.trim()));
+  return (board?.frames ?? []).some((frame) => frame.kind !== "context" && frame.key !== "trail" && !(isRegionFrameId(frame.key) && !frame.label?.trim()));
 }
 
 /**
@@ -1091,12 +1055,10 @@ export function applyDurableBoard(base: { frames: LabFrame[]; nodes: LabNode[] }
   }
   for (const durable of orderedDurableFrames) {
     if (base.frames.some((frame) => frame.id === durable.key)) continue;
-    // The trail keeps its own key so a reloaded board still knows the panel is
-    // a trail rather than an unnamed outline.
     // F1: the context region keeps its own key too. Without this a reloaded
     // board forgot the region was context, made a second local one with no
     // durable row behind it, and every resize on it went nowhere.
-    const id = durable.key.startsWith("custom:") || isRegionFrameId(durable.key) || isTrailFrameId(durable.key) || isContextFrameId(durable.key) ? durable.key : `durable-frame:${durable.id}`;
+    const id = durable.key.startsWith("custom:") || isRegionFrameId(durable.key) || durable.key === "trail" || isContextFrameId(durable.key) ? durable.key : `durable-frame:${durable.id}`;
     frameIdByKey.set(durable.id, id);
     // W3: a drawn region with no name is paint, so it keeps its empty name.
     frames.push({ id, name: durable.label ?? (isRegionFrameId(id) ? "" : "Workstream"), fill: durable.fill ?? null, x: durable.x, y: durable.y, width: durable.w, height: durable.h, durableId: durable.id, durableVersion: durable.version });

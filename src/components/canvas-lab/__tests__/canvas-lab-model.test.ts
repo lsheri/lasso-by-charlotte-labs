@@ -11,7 +11,6 @@ import {
   keepViewportUnscrolled,
   connectedLabNodeIds,
   containFrameMembers,
-  createLocalNode,
   deleteLocalNode,
   createChatNode,
   createComment,
@@ -357,28 +356,16 @@ describe("canvas lab model", () => {
     expect(viewportSizeChanged({ width: 1048, height: 713 }, { width: 1049, height: 713 })).toBe(true);
   });
 
-  it("creates the five local reasoning node kinds and six judgment choices", async () => {
+  it("keeps the six authored judgment choices", async () => {
     const model = await import("@/components/canvas-lab/canvas-lab-model");
-    expect(model.REASONING_STEPS.map((step) => step.label)).toEqual([
-      "Source / Context", "AI work", "Human judgment", "Decision", "Deliverable",
-    ]);
     expect(model.JUDGMENT_TYPES).toHaveLength(6);
-  });
-
-  it("places repeated local nodes deterministically without the same anchor", () => {
-    const frame = createLabFrames(SEED.tasks)[0];
-    expect(frame).toBeDefined();
-    if (!frame) return;
-    const first = createLocalNode("source", frame, []);
-    const second = createLocalNode("source", frame, [first]);
-    expect([second.x, second.y]).not.toEqual([first.x, first.y]);
   });
 
   it("deletes only local nodes and removes their links and context", () => {
     const frame = createLabFrames(SEED.tasks)[0];
     expect(frame).toBeDefined();
     if (!frame) return;
-    const local = createLocalNode("judgment", frame, [], "corrected_ai");
+    const local = { ...seedCanvas(SEED)[0]!, id: "local-judgment", clientKey: "local-judgment", kind: "judgment" as const, ownership: "draft" as const, local: true, judgmentType: "corrected_ai" as const };
     const real = seedCanvas(SEED)[0];
     expect(real).toBeDefined();
     if (!real) return;

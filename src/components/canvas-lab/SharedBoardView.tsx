@@ -46,7 +46,6 @@ import { isWorkboardDecorationKind } from "@/lib/canvas-lab-shared";
 import { clampZoom, wheelPanVector, workboardPinchZoom, zoomAbout } from "@/lib/canvas-zoom";
 import { isContextFrameId } from "@/lib/context-region";
 import { isDeliverableType } from "@/lib/lineage-shared";
-import { isTrailFrameId } from "@/lib/reasoning-trail";
 
 const noop = () => undefined;
 
@@ -126,7 +125,7 @@ export function SharedBoardView({
 
   const itemsById = useMemo(() => new Map(board.seed.work.map((item) => [item.id, item])), [board.seed.work]);
   const frames = useMemo(
-    () => model.frames.filter((frame) => !isTrailFrameId(frame.id) && frameKindOf(frame) === "context"),
+    () => model.frames.filter((frame) => frame.id !== "trail" && frameKindOf(frame) === "context"),
     [model.frames],
   );
   const bounds = stageBounds(model.frames, model.nodes);
