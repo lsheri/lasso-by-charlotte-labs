@@ -107,12 +107,10 @@ describe("SB2 collapse all and cascade", () => {
 
   it("collapsing a parent by its chevron collapses its children; expanding it leaves them collapsed", () => {
     setup();
-    const chevron = () => screen.getByText("Acme").closest("[data-drop-zone], div, li")!.parentElement!.querySelector('button[aria-label="Collapse"], button[aria-label="Expand"]') as HTMLButtonElement;
     const acmeChevron = screen.getAllByRole("button", { name: "Collapse" })[0]!;
     fireEvent.click(acmeChevron);
     expect(stored().sort()).toEqual(["c1", "f1", "f2"]);
     expect(stored()).not.toContain("c2");
-    void chevron;
     fireEvent.click(screen.getAllByRole("button", { name: "Expand" })[0]!);
     expect(stored().sort()).toEqual(["f1", "f2"]);
     expect(screen.queryByText("Deep board")).toBeNull();
