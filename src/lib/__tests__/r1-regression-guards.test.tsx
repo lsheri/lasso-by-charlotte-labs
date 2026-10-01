@@ -40,7 +40,7 @@ vi.mock("@/integrations/supabase/client", () => ({
 }));
 vi.mock("sonner", () => ({ toast: Object.assign((m: string) => mocks.toast(m), { error: (m: string) => mocks.toast(m) }) }));
 vi.mock("@tanstack/react-query", () => ({ useQueryClient: () => ({ invalidateQueries: vi.fn(async () => {}) }) }));
-vi.mock("@tanstack/react-start", () => ({ useServerFn: () => vi.fn(async () => ({})), createServerFn: () => { const b: Record<string, unknown> = {}; b["middleware"] = () => b; b["inputValidator"] = () => b; b["validator"] = () => b; b["handler"] = () => vi.fn(); return b; } }));
+vi.mock("@tanstack/react-start", async (importOriginal) => ({ ...(await importOriginal<object>()), useServerFn: () => vi.fn(async () => ({})) }));
 vi.mock("@/hooks/use-profile", () => ({ useProfile: () => ({ data: { id: "p1", org_id: "o1" } }) }));
 vi.mock("@/lib/extract.functions", () => ({ ensureExtractsFn: {} }));
 vi.mock("@/lib/work-taxonomy.functions", () => ({ noteCaptureFn: {} }));
