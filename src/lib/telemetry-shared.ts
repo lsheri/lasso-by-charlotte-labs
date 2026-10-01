@@ -28,6 +28,7 @@ export type TelemetryEvent =
   | "plan.picked"
   /** Unit D1: signup opened with a plan intent. Closed intent and source only. */
   | "signup.started"
+  | "signup.existing_account"
   /** Product shell 1.3: the public demo Home or a demo board was opened. Closed surface word and invented demo code only. */
   | "demo.opened"
   /** P1: one content-free interaction in the local-only public demo playground. */

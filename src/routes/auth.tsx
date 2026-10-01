@@ -19,6 +19,7 @@ import type { IntentParam } from "@/lib/org-type";
 import { aliasSignupVisitor, emitClientEvent } from "@/lib/client-telemetry";
 import { identifyPostHog } from "@/lib/posthog-client";
 import { parseFunnelSource, type FunnelSource } from "@/lib/funnel-source";
+import { EXISTING_ACCOUNT_INVITED, EXISTING_ACCOUNT_OPEN, isExistingAccountSignup } from "@/lib/signup-existing";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -203,6 +204,14 @@ function AuthPage() {
         },
       });
 
+      if (isExistingAccountSignup(data, signUpError)) {
+        setMode("signin");
+        setPassword("");
+        setMessage(inviteCode ? EXISTING_ACCOUNT_INVITED : EXISTING_ACCOUNT_OPEN);
+        emitClientEvent("signup.existing_account", { via: inviteCode ? "invite" : "open" }, { stableVisitor: true });
+        setPending(false);
+        return;
+      }
       noteSignUpIdentity({ user: data.user, error: signUpError });
       if (signUpError) setError(signUpError.message);
       else if (data.session) goOn();
