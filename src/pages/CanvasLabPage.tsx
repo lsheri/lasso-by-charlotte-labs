@@ -74,7 +74,8 @@ import {
   branchChatNode,
   createChatNode,
   containFrameMembers,
-  createLabFrames,
+  savedBoxLabFrames,
+  materializableFrames,
   deleteLocalNode,
   draftAnchor,
   fitWorkboardViewport,
@@ -420,7 +421,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     // A board with saved outlines keeps the seeded structure it has always
     // had. A board with none is new, and opens blank.
     const seeded = boardHasSeededStructure(lab.board);
-    const initialFrames = seeded ? createLabFrames(boardTasks) : [];
+    const initialFrames = seeded ? savedBoxLabFrames(boardTasks, lab.board) : [];
     const seedInput = {
       brief: { title: "The brief", text: page.engagement.brief },
       savedBrief: Boolean(lab.board?.nodes.some((node) => node.kind === "brief")),
@@ -765,7 +766,8 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
 
   async function materialize(): Promise<boolean> {
     if (boardIdRef.current) return true;
-    const frameInputs = framesRef.current.map((frame, index) => ({
+    // WK3: a generated task: box is never saved; only boxes a person drew are.
+    const frameInputs = materializableFrames(framesRef.current).map((frame, index) => ({
       key: frame.id,
       kind: frameKindOf(frame),
       taskId: frame.id.startsWith("task:") ? frame.id.slice(5) : null,
