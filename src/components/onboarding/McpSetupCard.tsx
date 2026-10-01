@@ -7,10 +7,9 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/use-profile";
-import { createMcpToken, getMcpToken } from "@/lib/mcp-tokens.functions";
+import { createConnection, listConnections } from "@/lib/mcp-connections.functions";
 import { TOOLS } from "@/lib/onboarding-tools";
 import {
-  MCP_REGENERATE_WARNING,
   MCP_SERVER_NAME,
   MCP_SETUP_STEPS,
   type McpVendor,
@@ -32,15 +31,15 @@ export function McpSetupCard({ vendor }: { vendor: McpVendor }) {
   const meta = TOOLS[vendor];
   const queryClient = useQueryClient();
   const { data: profile } = useProfile();
-  const fetchToken = useServerFn(getMcpToken);
-  const create = useServerFn(createMcpToken);
-  const { data: token, isFetched: tokenSettled } = useQuery({
-    queryKey: ["mcp-token"],
-    queryFn: () => fetchToken({ data: { profile_id: profile?.id } }),
+  const fetchList = useServerFn(listConnections);
+  const create = useServerFn(createConnection);
+  const { data: connections, isFetched: tokenSettled } = useQuery({
+    queryKey: ["mcp-connections", profile?.id ?? null],
+    queryFn: () => fetchList({ data: { profile_id: profile?.id } }),
   });
+  const token = (connections ?? []).find((c) => c.kind !== "signin") ?? null;
   const [url, setUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [confirming, setConfirming] = useState(false);
   const opened = useRef(false);
 
   // The steps are the whole card, so record the open once both reads have settled.
@@ -85,9 +84,10 @@ export function McpSetupCard({ vendor }: { vendor: McpVendor }) {
   async function generate() {
     setBusy(true);
     try {
-      const { token: raw } = await create({ data: { profile_id: profile?.id } });
-      setUrl(`${window.location.origin}/api/mcp/${raw}`);
-      await queryClient.invalidateQueries({ queryKey: ["mcp-token"] });
+      const result = await create({ data: { profile_id: profile?.id, label: meta.label } });
+      setUrl(`${window.location.origin}/api/mcp/${result.secret}`);
+      if (profile) logEvent("mcp.connection_created", profile.org_id, { kind: result.kind });
+      await queryClient.invalidateQueries({ queryKey: ["mcp-connections"] });
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -115,33 +115,9 @@ export function McpSetupCard({ vendor }: { vendor: McpVendor }) {
 
       {!url ? (
         <div className="mt-4 space-y-3">
-          {token && !confirming ? (
-            <Button type="button" variant="outline" onClick={() => setConfirming(true)}>
-              Generate a new URL
-            </Button>
-          ) : null}
-          {token && confirming ? (
-            <div className="rounded-[var(--radius)] border border-border bg-secondary/60 px-4 py-3">
-              <p className="text-sm text-muted-foreground">{MCP_REGENERATE_WARNING}</p>
-              <div className="mt-3 flex flex-wrap items-center gap-3">
-                <Button type="button" disabled={busy} onClick={() => void generate()}>
-                  {busy ? "Generating…" : "Yes, generate a new URL"}
-                </Button>
-                <button
-                  type="button"
-                  onClick={() => setConfirming(false)}
-                  className="text-xs text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  Keep the one I have
-                </button>
-              </div>
-            </div>
-          ) : null}
-          {!token ? (
-            <Button type="button" disabled={busy} onClick={() => void generate()}>
-              {busy ? "Generating…" : "Generate my connector URL"}
-            </Button>
-          ) : null}
+          <Button type="button" disabled={busy} onClick={() => void generate()}>
+            {busy ? "Generating…" : "Generate my connector URL"}
+          </Button>
           <ol className="space-y-1.5">
             {MCP_SETUP_STEPS[vendor].map((step, index) => (
               <li key={step} className="flex gap-2 text-sm text-muted-foreground">
@@ -168,7 +144,7 @@ export function McpSetupCard({ vendor }: { vendor: McpVendor }) {
               </Button>
             </div>
             <p className="mt-2 text-xs text-muted-foreground">
-              Treat it like a password. You can revoke it any time from Connectors.
+              Treat it like a password. You can disconnect it any time from Settings.
             </p>
           </div>
 
