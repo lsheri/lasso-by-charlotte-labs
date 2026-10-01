@@ -52,9 +52,10 @@ export const deleteWorkstream = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(validateDelete)
   .handler(async ({ data, context }) => {
-    await requireMember(context, data.profile_id);
+    const profile = await requireMember(context, data.profile_id);
     const { deleteWorkstreamRow } = await import("./workstreams.server");
-    return deleteWorkstreamRow(context.supabase, { taskId: data.task_id, requireEmpty: data.require_empty === true });
+    // WK2: the column header's owner gate, held on the server too.
+    return deleteWorkstreamRow(context.supabase, { taskId: data.task_id, requireEmpty: data.require_empty === true, ownerId: profile.id });
   });
 
 export const moveWorkstream = createServerFn({ method: "POST" })
