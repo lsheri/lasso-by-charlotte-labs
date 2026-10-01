@@ -174,6 +174,7 @@ const LIVE_KEYS_BY_EVENT: Record<string, readonly string[]> = {
   "work.rendition_viewed": ["method", "match"],
   "work.file_downloaded": ["surface"],
   "signup.existing_account": ["via"],
+  "auth.password_reset": ["step"],
   "demo.step_completed": ["step", "engagement"],
   "demo.tour_skipped": ["step"],
   "demo.filter_changed": ["tool"],
