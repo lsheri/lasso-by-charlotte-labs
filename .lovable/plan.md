@@ -1,70 +1,34 @@
-# Unit 4d: correct the sidebar tree shape
+# GF1 revised plan
 
-## Data platform gate
-- Coverage: indentation and connector rendering only. No user action, surface, or flow changes, so no event changes.
-- Consent: untouched.
-- Schema and portal: no event name, payload, or dimension changes. No database work.
+## Data impact
+- **Coverage:** This retires four guide-panel Add controls and adds one toolbar control. The relocated Human judgment action continues to emit the existing `workboard.node_created` event with `kind: "human_judgment"` and the same optional `judgment_type` dimension. No new event is needed.
+- **Consent:** No consent surface, consent stamping, or consent table is touched.
+- **Schema and portal:** No event name, payload, or dimension changes. The retired values become quiet but remain in the event catalog and allowlist.
+- **Database:** No SQL, migration, policy, function, trigger, seed, or data edit.
 
-## Current contract
-
-### Interactive controls before and after
-- Container name link.
-- New workboard button on each container.
-- More-actions button and right-click menu on every editable container and workboard row.
-- Container collapse and expand button with stored collapse state.
-- Workboard links and their existing nested task links.
-- Synthetic grouping collapse and expand controls.
-- New workboard, New client when permitted, and New folder actions.
-
-The before and after lists match exactly. No control is added, removed, renamed, or moved to a different destination. Workboard rows remain leaves and receive no disclosure control.
-
-### Render states before and after
-- Loaded client and folder trees, including empty containers.
-- Collapsed containers hiding all descendant folders and workboards.
-- `Nothing in here yet` under an open empty container.
-- `Not in a client yet` as an italic synthetic grouping with no container icon.
-- Split client and Folders sections as decided by `splitsByKind`.
-- Guest navigation built only from joined workboards, without a clients-table read.
-- Existing loading and empty workboard states.
-
-The state list is unchanged. Only the geometry of loaded tree rows changes.
-
-### Existing event calls before and after
-- No event is emitted by indentation, guide rendering, collapse, or expand.
-- Existing sidebar events and payloads remain untouched.
-
-## Diagnosis
-- `flattenForSidebar` correctly returns depths 0, 1, and 2 for the reported tree.
-- `FolderRows` passes that number into `ContainerShelfRow`.
-- In `src/components/layout/SidebarNav.tsx`, the current `depth > 0` branch renders one identical `PencilIndent` for every nested container. Depth 1 and depth 2 therefore become visually identical.
-- Nested workboards use a separate fixed `nb-nav-item-nested` indent, so a workboard and folder under the same parent do not share one coordinate system.
+## Before controls and states
+- Board shell: open menu, close/back, board menu, add-work flow, hidden-card restore, context-area creation, reasoning-trail creation, sharing, details, example board, Ask Lasso, fit, zoom out, zoom to 100%, zoom in, workstream visibility, relationship removal, and overflow menu.
+- Add controls: Add work, Add text, Sticky, Add grouping, workstream creation controls, and the guide panel's Source / Context, AI work, Human judgment, Decision, and Deliverable Add controls. Human judgment opens its type choices.
+- Board surface: empty-space selection/lasso, touch/middle/Space pan, wheel/zoom behavior, file and answer drops, drawing regions, region naming, cards/nodes, frame selection/move/resize/fit/rename/remove/menu/context actions, relationships, drop prompts, claim prompts, undo, focus/review overlays, and save/conflict/error actions.
+- Node controls remain those already supplied by each card type: selection, drag, open, edit, resize, relationship anchors, menus, comments, hide/delete, move-to-workstream, bundle controls, and decoration edge handles.
+- Render states: loading, unavailable/error, opening, saved/saving/conflict/read-only/error, empty/non-empty, no frames, one unnamed region, one named region, old `decisions` / `foundation` / `outputs` frames, structured/freeform, selected/focused/dragging/resizing/connecting/drawing, prompts/overlays, and shared read-only.
 
 ## Implementation
-- Replace the boolean nested-container indent in `SidebarNav.tsx` with recursive branch rendering based on the existing `ContainerNode.children` tree.
-- Use one fixed indent step for every level. A container at depth N and a workboard directly inside it at depth N+1 use the same row geometry as every other item at that depth.
-- Render each open container’s descendants inside one quiet, hairline guide wrapper. Nested wrappers create one continuous guide per open ancestor level. Each wrapper ends after its final visible child, so the final child closes that level’s line naturally.
-- Keep depth 0 flush with no guide.
-- Keep the existing icons, weights, links, menus, creation buttons, collapse state storage, empty line, synthetic groupings, section split, and guest data path unchanged.
-- Use existing semantic pencil and muted tokens only. No boxes, new colour literals, or heavy rules.
+1. Add **Human judgment** to the existing board toolbar and overflow menu beside Add text, Sticky, and Add grouping, gated by the same `canAddWork` condition.
+2. Reuse the current judgment creation and persistence sequence, but anchor the new card at the viewport centre using the same board-position rule as text and sticky. Preserve focus, keyboard selection, saved-node replacement, announcement, and `workboard.node_created` dimensions.
+3. Remove both guide render sites, the dead placed-trail branch, and the board-menu action that creates a reasoning trail.
+4. Remove guide-only imports, state, handlers, placement reservations, fixed guide rectangles, label lists, trail helpers, and retired local-node branches only after checking all remaining references.
+5. Keep `boardHasSeededStructure` because it still controls seeded-board initialization and automatic context-region behavior. Keep trail identity support only where needed to interpret stale saved frame rows without rendering them as ordinary regions.
+6. Delete `ReasoningTrailGuide.tsx` and `FoundationGuide.tsx`. Leave the existing-card fallback text `Human judgment` unchanged.
+7. Update mixed-purpose tests and replace guide-only tests with GF1 regressions. Add a recursive `src/` scan proving neither retired panel title remains.
 
-## Regression coverage
-- Extend the sidebar rendering test with the exact reported fixture: `ABC co`, `CURE test`, `folder 01`, `B5-TEST2 test`, `folder1`, and two root `test` folders.
-- Assert rendered depth attributes or classes, not only source-tree depth:
-  - `ABC co` at 0.
-  - `CURE test` and `folder 01` at 1.
-  - `B5-TEST2 test` and `folder1` at 2.
-- Preserve the existing DOM-order assertions proving nesting.
-- Collapse `folder 01` through its accessible button and assert both `B5-TEST2 test` and `folder1` disappear together.
-- Run `pass210-sidebar-tree`, `pass212-nested-folders`, `unit4a-move-delete`, and `unit4c-client-mint-gate`, then the project typecheck and full suite.
+## After controls and states
+- Every control and render state above remains, except the two retired panels, their five Add controls, their Human judgment type menu, their placed-trail Remove/drag behavior, and the board-menu “Add a reasoning trail” action are gone.
+- One **Human judgment** control is added to the normal editable-board toolbar and overflow menu. It is absent on shared read-only boards, matching the other add controls.
+- Named and unnamed regions, including stale old frames, continue to render through the ordinary frame component.
 
-## Visual verification
-- Open the signed-in preview as Liam without creating or changing rows.
-- Capture the existing three-level sidebar at 1280px and 390px.
-- Check that folder and workboard siblings align, the grandchild folder is one step deeper, guide lines are traceable to parents, final-child lines close, menus remain reachable, and no text or controls overlap.
-- If this external authentication setup still prevents preview access, report that limitation plainly rather than claiming visual verification.
-
-## Files expected to change
-- `src/components/layout/SidebarNav.tsx`: shared depth geometry and recursive guide rendering.
-- `src/styles.css`: quiet guide-line and fixed-step tree layout styles using existing tokens.
-- `src/lib/__tests__/pass210-sidebar-tree.test.tsx`: exact live-shape rendered-depth and collapse regression.
-- `roadmap.md`: Unit 4d completion state only.
+## Verification
+- Focused tests will assert toolbar placement, existing persistence and telemetry path, shared-board gating, removal on named and old-frame boards, continued named-region rendering, and a real recursive source scan.
+- Then run the complete Vitest suite and `bun run build` after the final edit.
+- Inspect the authenticated preview at 1280 and 390 only if an authenticated session is available; otherwise report that visual verification is blocked rather than asserting it.
+- Do not deploy.
