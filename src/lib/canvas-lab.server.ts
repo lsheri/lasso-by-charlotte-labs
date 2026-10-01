@@ -159,7 +159,11 @@ export async function loadWorkboard(db: Db, engagementId: string, profile: Resol
     linkedItemRemovedAt: row.linked_item_removed_at ?? null,
   }));
   const links: WorkboardLinkDto[] = linkRows
-    .filter((row) => visibleIds.has(row.from_node_id) && visibleIds.has(row.to_node_id))
+    .filter(
+      (row): row is typeof row & { from_node_id: string; to_node_id: string } =>
+        row.from_node_id != null && row.to_node_id != null &&
+        visibleIds.has(row.from_node_id) && visibleIds.has(row.to_node_id),
+    )
     .map((row) => ({
       id: row.id,
       fromNodeId: row.from_node_id,

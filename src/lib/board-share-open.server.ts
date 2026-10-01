@@ -273,7 +273,11 @@ export async function readBoard(
       linkedItemRemovedAt: row.linked_item_removed_at ?? null,
     })),
     links: ((linksRes.data ?? []) as LinkRow[])
-      .filter((row) => visibleIds.has(row.from_node_id) && visibleIds.has(row.to_node_id))
+      .filter(
+        (row): row is LinkRow & { from_node_id: string; to_node_id: string } =>
+          row.from_node_id != null && row.to_node_id != null &&
+          visibleIds.has(row.from_node_id) && visibleIds.has(row.to_node_id),
+      )
       .map((row): WorkboardLinkDto => ({
         id: row.id,
         fromNodeId: row.from_node_id,
