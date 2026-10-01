@@ -110,6 +110,8 @@ describe("CU1 wiring", () => {
   });
   it("a re-pushed attachment keeps its prior meta", () => {
     expect(push).toContain("parent_work_item_id, content_fidelity, meta\")");
-    expect(push).toMatch(/\.\.\.\(match\?\.meta && typeof match\.meta === "object"[\s\S]{0,140}assistant_transcribed: true/);
+    expect(push).toMatch(/duplicate_of_transcript: false,\s*\} as unknown as Json,[\s\S]{0,160}meta: \{\s*\.\.\.\(match\?\.meta && typeof match\.meta === "object"[\s\S]{0,140}assistant_transcribed: true/);
+    // The first-time thread insert is untouched.
+    expect(push).toMatch(/source_project: plan\.sourceProject \} : \{\}\),\s*\} as unknown as Json,\s*meta: \{ assistant_transcribed: true \},/);
   });
 });
