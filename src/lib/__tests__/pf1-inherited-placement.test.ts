@@ -208,9 +208,11 @@ describe("PF1 destination present: unchanged behaviour", () => {
     expect(sc["attachments_placed"]).toBe(2);
     expect(sc["attachments_total"]).toBe(2);
     expect(sc["summary"]).toBe(
-      "Saved 'Please draft the plan.' in Lasso. 2 messages captured. Attachments: 2 new. 2 attachments placed on CFT-01 · General. Saved and placed on CFT-01 · General. Your engagement team can see it there.",
+      "Saved 'Please draft the plan.' in Lasso. 2 messages captured. Attachments: 2 new. 2 attachments placed on CFT-01 · General. Stored 1 user 22 'Please draft the plan.' · 2 assistant 32 'Here is the plan as an artifact.'. Saved and placed on CFT-01 · General. Your engagement team can see it there. No link back to this chat was recorded. If you can see this conversation's URL, call again with chat_url so the saved work can point back to it.",
     );
-    expect(sc["notes"]).toEqual([]);
+    expect(sc["notes"]).toEqual([
+      "No link back to this chat was recorded. If you can see this conversation's URL, call again with chat_url so the saved work can point back to it.",
+    ]);
     // The only addition is the separate placement field on the existing receipts.
     expect(receipts(out)).toEqual([
       { title: "Plan", source_artifact_id: "a1", outcome: "new", chars: ART("Plan").length, placement: "placed" },
