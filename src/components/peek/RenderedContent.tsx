@@ -4,6 +4,8 @@ import { Download, ExternalLink } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { ReextractAction } from "@/components/peek/ReextractAction";
+import { RenditionPane } from "@/components/peek/RenditionPane";
+import { renditionOf } from "@/lib/reference-rendition-shared";
 import { Button } from "@/components/ui/button";
 import { useProfile } from "@/hooks/use-profile";
 import { highlight, toSafeHtml } from "@/lib/markdown";
@@ -318,7 +320,10 @@ function StandardRenderedContent({
   if (shape.kind === "none") {
     if (item.content_fidelity === "reference") {
       return (
-        <Notice>This file was made in a chat and has not been added yet. Add it from the card on the board.</Notice>
+        <div>
+          <Notice>This file was made in a chat and has not been added yet. Add it from the card on the board.</Notice>
+          {renditionOf(item) ? <RenditionPane item={item} /> : null}
+        </div>
       );
     }
     return (

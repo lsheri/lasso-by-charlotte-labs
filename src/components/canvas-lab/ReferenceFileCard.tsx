@@ -16,6 +16,12 @@ import {
   REFERENCE_DRIVE_LABEL,
   REFERENCE_MADE_IN_CHAT,
 } from "@/lib/reference-file-shared";
+import {
+  RENDITION_MATCH_NO,
+  renditionOf,
+  renditionSourceLine,
+  renditionTitle,
+} from "@/lib/reference-rendition-shared";
 import { storageObjectKey } from "@/lib/upload-payload";
 import { effectiveWorkDate, formatDate, type WorkItemRow } from "@/lib/work-types";
 
@@ -37,6 +43,7 @@ export function ReferenceFileCard({ item, onOpen }: { item: WorkItemRow; onOpen:
   const [added, setAdded] = useState(false);
   const meta = (item.source_meta ?? {}) as { filename?: string };
   const filename = meta.filename ?? item.title;
+  const rendition = renditionOf(item);
 
   async function refresh() {
     setAdded(true);
@@ -122,6 +129,13 @@ export function ReferenceFileCard({ item, onOpen }: { item: WorkItemRow; onOpen:
           <span className="min-w-0 truncate font-medium">{filename}</span>
         </div>
         <span className="text-xs text-muted-foreground">{REFERENCE_MADE_IN_CHAT}</span>
+        {rendition ? (
+          <>
+            <span data-testid="reference-rendition-line" className="text-xs text-muted-foreground">{renditionTitle(filename)}</span>
+            <span className="text-xs text-muted-foreground">{renditionSourceLine(rendition)}</span>
+            {rendition.method === "extracted_by_script" && rendition.match === "no" ? <span className="text-xs text-muted-foreground">{RENDITION_MATCH_NO}</span> : null}
+          </>
+        ) : null}
         <div
           data-testid="reference-file-drop"
           data-over={over}

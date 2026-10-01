@@ -87,3 +87,35 @@ export const completeReferenceFromDriveFn = createServerFn({ method: "POST" })
       },
     });
   });
+
+/** v1.3 part 2. The rendition a placeholder carries, read with the caller's own access. */
+export const getReferenceRenditionFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { work_item_id: string }) => {
+    if (!input?.work_item_id) throw new Error("work_item_id is required");
+    return { work_item_id: input.work_item_id };
+  })
+  .handler(async ({ data, context }) => {
+    const { renditionOf } = await import("@/lib/reference-rendition-shared");
+    const { data: item, error } = await context.supabase
+      .from("work_items")
+      .select("id, title, source_meta")
+      .eq("id", data.work_item_id)
+      .maybeSingle();
+    if (error || !item) return { status: "unavailable" as const };
+    const r = renditionOf(item);
+    if (!r) return { status: "none" as const };
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: blob, error: dlError } = await supabaseAdmin.storage.from("work-files").download(r.ref);
+    if (dlError || !blob) return { status: "failed" as const };
+    const raw = await blob.text();
+    const filename = ((item.source_meta ?? {}) as { filename?: string }).filename ?? item.title;
+    return {
+      status: "ok" as const,
+      filename,
+      format: r.format,
+      method: r.method,
+      match: r.match,
+      content: raw.slice(0, 200_000),
+    };
+  });

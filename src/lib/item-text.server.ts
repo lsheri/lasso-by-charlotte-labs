@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { fileNameFor, needsTextFetch, peekFormat } from "@/lib/peek-format";
 import type { WorkItemRow } from "@/lib/work-types";
+import { renditionOf, renditionPlainText, renditionTextHeader } from "@/lib/reference-rendition-shared";
 
 type Db = SupabaseClient<Database>;
 
@@ -122,7 +123,7 @@ async function downloadText(path: string): Promise<string | null> {
 
 /** Derived text lives beside the original. The original is never touched. */
 function derivedPath(item: TextItem, hash: string): string {
-  const dir = (item.content_ref ?? "").split("/").slice(0, -1).join("/") || "derived";
+  const dir = (item.content_ref ?? renditionOf(item)?.ref ?? "").split("/").slice(0, -1).join("/") || "derived";
   return `${dir}/derived/${item.id}-${hash.slice(0, 8)}.txt`;
 }
 
@@ -151,10 +152,15 @@ async function writeCache(item: TextItem, hash: string, result: ItemTextResult):
         });
       if (!upload.error) patch.text_ref = path;
     }
-    const next = {
+    const merged: Record<string, unknown> = {
       ...metaOf(item),
       ...patch,
-    } as unknown as Database["public"]["Tables"]["work_items"]["Row"]["meta"];
+    };
+    if (result.status === "ok") {
+      delete merged["text_error"];
+      delete merged["text_note"];
+    }
+    const next = merged as unknown as Database["public"]["Tables"]["work_items"]["Row"]["meta"];
     await supabaseAdmin.from("work_items").update({ meta: next }).eq("id", item.id);
   } catch (e) {
     console.error("[item-text] cache write failed:", (e as Error).message);
@@ -435,6 +441,25 @@ export async function getItemText(supabase: Db, item: TextItem): Promise<ItemTex
           },
       "thread",
     );
+  }
+
+  // v1.3: a placeholder with no stored file is read through its rendition, labelled as one.
+  const rendition = item.content_ref ? null : renditionOf(item);
+  if (rendition) {
+    const filename = ((item.source_meta ?? {}) as { filename?: string }).filename ?? item.title;
+    const hash = rendition.sha ?? `rendition-${rendition.chars ?? 0}`;
+    const raw = await downloadText(rendition.ref);
+    if (raw === null) {
+      return finish(item, hash, { text: null, status: "failed", note: "the rendition could not be opened", reason: "rendition_download_failed" }, "rendition");
+    }
+    const body = renditionPlainText(rendition, raw).trim();
+    if (!body) {
+      return finish(item, hash, { text: null, status: "unreadable", note: "the rendition is empty", reason: "empty_rendition" }, "rendition");
+    }
+    const result: ItemTextResult = { text: `${renditionTextHeader(rendition, filename)}\n\n${body}`, status: "ok" };
+    const meta = metaOf(item);
+    if (normalizeStatus(meta.text_status) === "ok" && meta.text_source_hash === hash) return result;
+    return finish(item, hash, result, "rendition");
   }
 
   if (!item.content_ref) {
