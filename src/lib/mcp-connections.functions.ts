@@ -64,7 +64,7 @@ export const listConnections = createServerFn({ method: "GET" })
 
 export const createConnection = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { profile_id?: string; label: string }) => ({
+  .inputValidator((input: { profile_id?: string | undefined; label: string }) => ({
     profile_id: input?.profile_id ?? null,
     label: validateLabel(input?.label),
   }))
