@@ -17,7 +17,10 @@ export const ASK_THINKING_STYLES = `
 .ask-a1-flicker { animation: ask-a1-flicker 2600ms ease-in-out infinite; }
 .ask-a1-glyph path { stroke-dasharray: 1; stroke-dashoffset: 0; }
 .ask-a1-glyph[data-state="thinking"] path { animation: ask-a1-draw 2200ms ease-in-out infinite; }
-.ask-a1-glyph[data-state="thinking"] { color: var(--nb-lasso-green); filter: drop-shadow(0 0 6px color-mix(in srgb, var(--nb-lasso-green) 55%, transparent)); }
+.ask-a1-glyph[data-state="thinking"] { --ask-a1-bloom: color-mix(in srgb, var(--nb-lasso-green) 55%, transparent); color: var(--nb-lasso-green); }
+.ask-a1-glyph[data-state="thinking"] {
+  filter: drop-shadow(0 0 6px var(--ask-a1-bloom));
+}
 .ask-a1-glyph[data-state="settled"] { color: var(--nb-green-deep); }
 .ask-a1-dot { display: inline-block; width: 4px; height: 4px; border-radius: 9999px; background: currentColor; }
 .ask-a1-dot[data-pulse="true"] { animation: ask-a1-dot 1200ms ease-in-out infinite; }
