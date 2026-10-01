@@ -1,7 +1,6 @@
 import { toast } from "sonner";
 
 import { useProfile } from "@/hooks/use-profile";
-import { logEvent } from "@/lib/telemetry";
 
 export type DownloadSurface = "review" | "focus";
 
@@ -26,6 +25,7 @@ export function useWorkFileDownload(surface: DownloadSurface): (item: { id: stri
       anchor.click();
       anchor.remove();
       if (profile?.org_id) {
+        const { logEvent } = await import("@/lib/telemetry");
         logEvent("work.file_downloaded", profile.org_id, { surface });
       }
     } catch {
