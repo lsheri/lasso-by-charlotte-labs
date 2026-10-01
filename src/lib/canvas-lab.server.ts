@@ -23,7 +23,7 @@ import type {
   WorkboardRowSnapshot,
 } from "@/lib/canvas-lab-shared";
 import { isRegionFill, isRegionFrameId } from "@/lib/board-region";
-import { WORKBOARD_ANCHORS, WORKBOARD_CARD_DEFAULT_SIZE, WORKBOARD_JUDGMENT_TYPES, WORKBOARD_NODE_KINDS, WORKBOARD_RELATIONS, WORKBOARD_SHAPE_COLOURS, isWorkboardDecorationKind, parseWorkboardStickyBody, parseWorkboardTextBody, validWorkboardNodeGeometry } from "@/lib/canvas-lab-shared";
+import { WORKBOARD_ANCHORS, WORKBOARD_CARD_DEFAULT_SIZE, WORKBOARD_JUDGMENT_TYPES, WORKBOARD_NODE_KINDS, WORKBOARD_RELATIONS, WORKBOARD_SHAPE_COLOURS, isWorkboardDecorationKind, parseWorkboardImageBody, parseWorkboardStickyBody, parseWorkboardTextBody, validWorkboardNodeGeometry } from "@/lib/canvas-lab-shared";
 import type { ResolvedProfile } from "@/lib/profile-resolve";
 
 type Db = SupabaseClient<Database>;
