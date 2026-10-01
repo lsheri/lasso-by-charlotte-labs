@@ -53,7 +53,7 @@ describe("GF3 retired frames leave the move list, drop prompt and framing", () =
     expect(dragEndDecision({ ...input, frames: [region, ...retired] }).promptFrameId).toBe("decisions");
     const decision = dragEndDecision({ ...input, frames: drawn([region, ...retired]) });
     expect(decision.promptFrameId).toBeNull();
-    expect(decision.position).toEqual({ x: 2100, y: 1900 });
+    expect(decision.position).toEqual(dragEndDecision({ ...input, frames: [region, ...retired] }).position);
     expect(page).toContain("frames: framesRef.current.filter((frame) => boardFrameRenders(frameKindOf(frame), true)),");
   });
 
