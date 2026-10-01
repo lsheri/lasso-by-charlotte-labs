@@ -146,6 +146,17 @@ export function NewEngagementDialog({
       return;
     }
 
+    // A new board needs somewhere for work to land. Best effort, one
+    // attempt, after membership so is_engagement_editor passes. The RPC is
+    // idempotent (selects an existing default first, unique index behind
+    // it). If it fails, the board still exists and the lazy call on first
+    // placement fills the gap, so nothing is surfaced here.
+    try {
+      await supabase.rpc("ensure_board_default_task", { p_engagement: engagementId });
+    } catch {
+      // The lazy path on first placement covers this.
+    }
+
     logEvent("engagement.updated", profile.org_id, {
       created: "true",
       brief_skipped: brief.trim() ? "false" : "true",
