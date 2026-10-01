@@ -234,6 +234,10 @@ function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions?: Reac
     return () => query.removeEventListener?.("change", onChange);
   }, []);
   const canDragAnswer = !!keep && !isMobile && !coarse;
+  // A1: the Lasso name carries the answer's own time, set on its first character.
+  const [answerStartedAt, setAnswerStartedAt] = useState<Date | null>(null);
+  const hasStream = Boolean(ask.pending && ask.streamed);
+  useEffect(() => { setAnswerStartedAt(hasStream ? new Date() : null); }, [hasStream]);
 
   function shortTime(value: string | Date): string {
     return new Date(value).toLocaleTimeString(undefined, {
@@ -389,7 +393,7 @@ function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions?: Reac
             <div className="nb-conversation-body w-full flex-1 gap-0 overflow-visible">
               {ask.streamed && answerStartedAt ? <div className="ask-a1-name-in">{speakerName("assistant", answerStartedAt)}</div> : null}
               <AnswerRail state="working">
-                {(
+                {
                   <div className="nb-binder-inset">
                     <ThinkingTrail
                       items={(ask.pointedNow.length > 0 ? ask.pointedNow : ask.selectedItems).map(
@@ -401,7 +405,7 @@ function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions?: Reac
                       ask={{ answered: Boolean(ask.streamed) }}
                     />
                   </div>
-                )}
+                }
                 {ask.streamed ? (
                   <MarkdownMessage content={ask.streamed} variant="binder" className="nb-stream" />
                 ) : null}
