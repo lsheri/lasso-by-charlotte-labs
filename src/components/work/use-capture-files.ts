@@ -11,6 +11,9 @@ import { noteCaptureFn } from "@/lib/work-taxonomy.functions";
 import { buildUploadSourceMeta, storageObjectKey } from "@/lib/upload-payload";
 import { workTypeForFile } from "@/lib/work-types";
 
+/** How a file came in: the upload button, or a file dropped on the board. */
+export type CaptureChannel = "upload" | "drop";
+
 /**
  * One capture path for files, so the upload button and the drop zone on Find
  * it insert work the same way and emit the same existing capture events.
@@ -25,17 +28,20 @@ export function useCaptureFiles() {
   const [error, setError] = useState<string | null>(null);
 
   /** F1: what did not come in, and why, so the reason is never swallowed. */
-  async function captureWithResult(files: File[]): Promise<{ ids: string[]; failures: { name: string; reason: string }[] }> {
+  async function captureWithResult(
+    files: File[],
+    options?: { channel?: CaptureChannel },
+  ): Promise<{ ids: string[]; failures: { name: string; reason: string }[] }> {
     const failures: { name: string; reason: string }[] = [];
-    const ids = await run(files, failures);
+    const ids = await run(files, failures, options?.channel ?? "upload");
     return { ids, failures };
   }
 
   async function capture(files: File[]): Promise<string[]> {
-    return run(files, []);
+    return run(files, [], "upload");
   }
 
-  async function run(files: File[], failures: { name: string; reason: string }[]): Promise<string[]> {
+  async function run(files: File[], failures: { name: string; reason: string }[], channel: CaptureChannel): Promise<string[]> {
     if (files.length === 0 || !profile) return [];
     setPending(true);
     setError(null);
@@ -90,14 +96,14 @@ export function useCaptureFiles() {
       if (created?.id) capturedIds.push(created.id);
 
       logEvent("workitem.captured", profile.org_id, {
-        channel: "upload",
+        channel,
         type,
         source: "upload",
       });
       if (type === "document" || type === "deck" || type === "sheet") {
         logV2(
           "artifact.captured",
-          { artifact_type: type, channel: "upload" },
+          { artifact_type: type, channel },
           { profileId: profile.id, workItemId: created?.id },
         );
       }
