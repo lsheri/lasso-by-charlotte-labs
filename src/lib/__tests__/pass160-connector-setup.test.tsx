@@ -19,10 +19,18 @@ const logEvent = vi.fn();
 vi.mock("@/lib/telemetry", () => ({ logEvent: (...args: unknown[]) => logEvent(...args) }));
 
 let token: { created_at: string; last_used_at: string | null } | null = null;
-vi.mock("@/lib/mcp-tokens.functions", () => ({
-  getMcpToken: () => Promise.resolve(token),
-  createMcpToken: () => Promise.resolve({ token: "raw" }),
-  revokeMcpToken: () => Promise.resolve({ ok: true }),
+vi.mock("@/lib/mcp-connections.functions", () => ({
+  CONNECTION_LIMIT_ERROR: "connection_limit",
+  listConnections: () =>
+    Promise.resolve(
+      token
+        ? [{ id: "c1", kind: "link", label: "Claude", client_name: null, key_last4: "abcd", can_reveal: true, older: false, ...token }]
+        : [],
+    ),
+  createConnection: () => Promise.resolve({ id: "c2", kind: "link", secret: "raw" }),
+  revealConnection: () => Promise.resolve({ secret: "raw" }),
+  renameConnection: () => Promise.resolve({ ok: true }),
+  revokeConnection: () => Promise.resolve({ ok: true }),
 }));
 vi.mock("@tanstack/react-start", () => ({
   useServerFn: (fn: (...a: unknown[]) => unknown) => fn,
@@ -88,20 +96,18 @@ describe("ConnectYourAiCard", () => {
     renderCard();
     expect(await screen.findByText("No connector yet")).toBeTruthy();
     expect(screen.getByText(MCP_SETUP_STEPS.claude[0] as string)).toBeTruthy();
-    expect(screen.getByText("Generate my connector URL")).toBeTruthy();
+    expect(screen.getByText("Create link")).toBeTruthy();
     expect(screen.queryByText(MCP_REGENERATE_WARNING)).toBeNull();
   });
 
-  it("hides steps behind the toggle once live, and asks before replacing the URL", async () => {
+  it("hides steps behind the toggle once live, with no regenerate control", async () => {
     token = { created_at: "2026-01-01", last_used_at: "2026-02-02" };
     logEvent.mockClear();
     renderCard();
     expect(await screen.findByText("Your connector is live")).toBeTruthy();
     expect(screen.queryByText(MCP_SETUP_STEPS.claude[0] as string)).toBeNull();
 
-    fireEvent.click(screen.getByText("Generate a new URL"));
-    expect(screen.getByText(MCP_REGENERATE_WARNING)).toBeTruthy();
-    expect(screen.getByText("Yes, generate a new URL")).toBeTruthy();
+    expect(screen.queryByText("Generate a new URL")).toBeNull();
 
     fireEvent.click(screen.getByText("Setup instructions"));
     expect(screen.getByText(MCP_SETUP_STEPS.claude[0] as string)).toBeTruthy();
