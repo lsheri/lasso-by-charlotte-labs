@@ -1,9 +1,10 @@
+import { readFileSync } from "node:fs";
+
 import { describe, expect, it } from "vitest";
 
 import { answerAsOf, answerCiteRows, answerNodeInput } from "@/lib/answer-card";
 import { regionClaimable } from "@/lib/board-region";
 import { WORKBOARD_NODE_KINDS } from "@/lib/canvas-lab-shared";
-import { LAB_TEMPLATE_KINDS } from "@/components/canvas-lab/canvas-lab-model";
 
 const READS = [
   { id: "work-a", depth: "full", title: "Cure First Problem Definition.pdf" },
@@ -73,6 +74,8 @@ describe("an answer kept as a card", () => {
 
   it("is a saved kind but never a card anyone can create", () => {
     expect(WORKBOARD_NODE_KINDS).toContain("answer");
-    expect(LAB_TEMPLATE_KINDS as readonly string[]).not.toContain("answer");
+    const page = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
+    const toolbar = page.slice(page.indexOf("const toolbarItems"), page.indexOf("const toolbarPlan"));
+    expect(toolbar).not.toContain('data-toolbar-control="add-answer"');
   });
 });

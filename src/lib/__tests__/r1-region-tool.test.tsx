@@ -24,14 +24,14 @@ describe("R1 region tool", () => {
     });
   });
 
-  it("a saved paint region does not mount the fixed trail or change the camera", () => {
+  it("a saved paint region does not change the camera", () => {
     const page = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
     const createPaintRegion = page.match(/async function createPaintRegion[\s\S]*?\n  }\n\n  \/\*\*/)?.[0] ?? "";
 
     expect(boardHasSeededStructure({ frames: [{ kind: "custom", key: newRegionFrameId("one"), label: null }] })).toBe(false);
     expect(boardHasSeededStructure({ frames: [{ kind: "custom", key: newRegionFrameId("one"), label: "Pricing" }] })).toBe(true);
     expect(createPaintRegion).not.toMatch(/setPan|setZoom|fit\(/);
-    expect(page).toContain("{showGuides ? <ReasoningTrailGuide");
+    expect(page).not.toContain("<ReasoningTrailGuide");
   });
 
   it("renders icon controls with accessible names for grouping and text", () => {
