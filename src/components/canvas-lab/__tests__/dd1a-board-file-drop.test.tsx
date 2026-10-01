@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, createEvent, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const upload = vi.fn(async () => ({ error: null }));
@@ -31,6 +31,12 @@ function Harness() {
   return <div data-testid="shell" {...drop.handlers}><BoardFileDropOverlay show={drop.over} /></div>;
 }
 const files = (n: number) => Array.from({ length: n }, (_, i) => new File(["x"], `f${i}.pdf`, { type: "application/pdf" }));
+function dropAt(el: HTMLElement, x: number, y: number, list: File[]) {
+  const event = createEvent.drop(el, { dataTransfer: { types: ["Files"], files: list } });
+  Object.defineProperty(event, "clientX", { value: x });
+  Object.defineProperty(event, "clientY", { value: y });
+  fireEvent(el, event);
+}
 const PROMPT = "Drop to add to this board";
 
 describe("DD1-a board file drop", () => {
@@ -54,13 +60,18 @@ describe("DD1-a board file drop", () => {
     fireEvent.dragLeave(shell, { dataTransfer: { types: ["Files"] } });
     expect(screen.queryByText(PROMPT)).toBeNull();
   });
-  it("4 and 5. one file uploads once and lands at the drop point", async () => {
+  it("4. one file calls the existing upload once with that file", async () => {
     render(<Harness />);
     const [file] = files(1);
-    fireEvent.drop(screen.getByTestId("shell"), { clientX: 300, clientY: 40, dataTransfer: { types: ["Files"], files: [file] } });
+    dropAt(screen.getByTestId("shell"), 300, 40, [file!]);
     await waitFor(() => expect(place).toHaveBeenCalled());
     expect(upload).toHaveBeenCalledTimes(1);
     expect((upload.mock.calls[0] as unknown[])[1]).toBe(file);
+  });
+  it("5. the card is placed at the drop point", async () => {
+    render(<Harness />);
+    dropAt(screen.getByTestId("shell"), 300, 40, files(1));
+    await waitFor(() => expect(place).toHaveBeenCalled());
     expect(place.mock.calls[0]?.[1]).toEqual({ x: 600, y: 80 });
   });
   it("6. twelve files process ten and say so", async () => {
