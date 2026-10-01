@@ -81,7 +81,8 @@ describe("WK1 removing a box", () => {
     expect(canManageWorkstream(coach, empty)).toBe(false);
     expect(canDeleteWorkstreamFromBoard({ profile: other, task: empty, cardsInBox: 0 })).toBe(false);
     expect(canDeleteWorkstreamFromBoard({ profile: coach, task: empty, cardsInBox: 0 })).toBe(false);
-    expect(boxRemoval({ custom: true, seeded: false, profile: other, task: empty, cardsInBox: 0 }).offer).toBe("box");
+    // WK2: somebody else's workstream box is no longer removable at all.
+    expect(boxRemoval({ custom: true, seeded: false, profile: other, task: empty, cardsInBox: 0 }).offer).toBe("none");
     expect(boxRemoval({ custom: false, seeded: true, profile: coach, task: empty, cardsInBox: 0 }).offer).toBe("none");
   });
   it("the default is never deletable from the board", () => {

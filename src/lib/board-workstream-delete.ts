@@ -38,11 +38,13 @@ export type BoxRemoval =
  * deletes that workstream too. A box backed by somebody else's workstream keeps
  * today's behaviour, and a seeded box they do not own offers nothing.
  */
-export function boxRemoval(input: { custom: boolean; seeded: boolean; profile: ManagingProfile; task: ManagedTask | null | undefined; cardsInBox: number }): BoxRemoval {
+export function boxRemoval(input: { custom: boolean; seeded: boolean; profile: ManagingProfile; task: ManagedTask | null | undefined; cardsInBox: number; backed?: boolean }): BoxRemoval {
   const { custom, seeded, profile, task, cardsInBox } = input;
   const owns = Boolean(task) && !isBoardDefaultTask(task) && canManageWorkstream(profile, task);
   if (owns) return { offer: "workstream", removable: cardsInBox === 0 && mappedWorkCount(task) === 0 };
-  if (custom && !seeded) return { offer: "box", removable: cardsInBox === 0 };
+  // WK2: a box backed by somebody else's workstream is theirs to remove.
+  const backed = input.backed ?? Boolean(task);
+  if (custom && !seeded && !backed) return { offer: "box", removable: cardsInBox === 0 };
   return { offer: "none" };
 }
 
@@ -51,7 +53,15 @@ export type RegionNameAction =
   | { action: "rename"; taskId: string }
   | { action: "clear" }
   | { action: "clear_and_delete"; taskId: string }
-  | { action: "refuse_clear" };
+  | { action: "refuse_clear" }
+  | { action: "not_owner" };
+
+/** WK2: a box with no workstream behind it is anybody's to name; a backed one only its owner's. */
+export function canRenameBox(input: { backed: boolean; profile: ManagingProfile; task: ManagedTask | null | undefined }): boolean {
+  if (!input.backed) return true;
+  if (!input.task || isBoardDefaultTask(input.task)) return false;
+  return canManageWorkstream(input.profile, input.task);
+}
 
 /**
  * Naming a region. A region that already has a workstream renames it; only a
@@ -61,10 +71,10 @@ export type RegionNameAction =
 export function regionNameAction(input: { clearing: boolean; taskId: string | null | undefined; task: ManagedTask | null | undefined; profile: ManagingProfile; cardsInBox: number }): RegionNameAction {
   const { clearing, taskId, task, profile, cardsInBox } = input;
   const backed = Boolean(taskId) && !isBoardDefaultTask(task);
+  if (backed && taskId && !canManageWorkstream(profile, task)) return { action: "not_owner" };
   if (!clearing) return backed && taskId ? { action: "rename", taskId } : { action: "create" };
   if (!backed || !taskId) return { action: "clear" };
   if (cardsInBox > 0 || mappedWorkCount(task) > 0) return { action: "refuse_clear" };
-  if (!canManageWorkstream(profile, task)) return { action: "clear" };
   return { action: "clear_and_delete", taskId };
 }
 
@@ -78,5 +88,6 @@ export const BOARD_WORKSTREAM_COPY = {
   confirmDelete: "Delete workstream",
   deleted: "Workstream deleted",
   clearRefused: "This workstream still holds work, so its name stays.",
+  notOwner: "Only the person who made this workstream can change it.",
   notDeleted: "That workstream could not be deleted. Nothing changed.",
 } as const;

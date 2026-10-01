@@ -22,6 +22,7 @@ export function LabFrameMenu({
   onRemove,
   onUseAsContext,
   removal,
+  renamable,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -36,6 +37,8 @@ export function LabFrameMenu({
   onUseAsContext?: (() => void) | undefined;
   /** WK1: what Remove does. Absent means today's rule: custom boxes only. */
   removal?: "none" | "box" | "workstream" | undefined;
+  /** WK2: absent means today's rule. False hides Rename on somebody else's workstream. */
+  renamable?: boolean | undefined;
 }) {
   if (!editable) return null;
   const offersRemove = removal ? removal !== "none" : custom;
@@ -64,7 +67,7 @@ export function LabFrameMenu({
       >
         {onUseAsContext ? <DropdownMenuItem onSelect={onUseAsContext}>Use as context</DropdownMenuItem> : null}
         <DropdownMenuItem onSelect={onFit}>Fit contents</DropdownMenuItem>
-        {editable && custom ? <DropdownMenuItem onSelect={(event) => { event.preventDefault(); onRename(); }}>Rename</DropdownMenuItem> : null}
+        {editable && custom && renamable !== false ? <DropdownMenuItem onSelect={(event) => { event.preventDefault(); onRename(); }}>Rename</DropdownMenuItem> : null}
         {editable && offersRemove ? (
           <DropdownMenuItem disabled={!removable} title={removable ? undefined : "Move its cards first"} onSelect={onRemove}>
             {removeLabel}{removable ? "" : " · Move its cards first"}

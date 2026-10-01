@@ -18,6 +18,8 @@ export const WORKSTREAM_NOT_AVAILABLE = "That workstream is not available to you
 /** WK1: the board's own home for work is never a workstream anyone deletes. */
 export const WORKSTREAM_IS_DEFAULT = "That workstream cannot be deleted.";
 /** WK1: the board deletes only an empty workstream. Same words as the box refusal. */
+/** WK2: only the person who made a workstream deletes it. */
+export const WORKSTREAM_NOT_OWNER = "Only the person who made this workstream can delete it.";
 export const WORKSTREAM_NOT_EMPTY = "Move its cards first.";
 
 export type DeleteWorkstreamResult = {
@@ -30,16 +32,17 @@ export type DeleteWorkstreamResult = {
 
 export async function deleteWorkstreamRow(
   client: Client,
-  input: { taskId: string; requireEmpty?: boolean },
+  input: { taskId: string; requireEmpty?: boolean; ownerId?: string },
 ): Promise<DeleteWorkstreamResult> {
   const task = await client
     .from("tasks")
-    .select("id, engagement_id, is_board_default")
+    .select("id, engagement_id, is_board_default, owner_id")
     .eq("id", input.taskId)
     .maybeSingle();
   if (task.error) throw new Error(task.error.message);
   if (!task.data) throw new Error(WORKSTREAM_NOT_AVAILABLE);
   if ((task.data as { is_board_default?: boolean | null }).is_board_default) throw new Error(WORKSTREAM_IS_DEFAULT);
+  if (input.ownerId !== undefined && (task.data as { owner_id?: string | null }).owner_id !== input.ownerId) throw new Error(WORKSTREAM_NOT_OWNER);
 
   const links = await client
     .from("work_item_tasks")
