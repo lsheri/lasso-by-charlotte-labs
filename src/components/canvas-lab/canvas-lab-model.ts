@@ -188,6 +188,23 @@ export function createLabFrames(tasks: { id: string; name: string }[]): LabFrame
   }));
 }
 
+/**
+ * WK3: the seeded frames for a board. A workstream gets a task: box only when
+ * the board already holds a saved task:<id> row for it, so the saved row keeps
+ * its name and kind. A workstream with no saved row gets no box. The
+ * "Workstreams" placeholder appears only when the board has no workstreams at
+ * all, exactly as before.
+ */
+export function savedBoxLabFrames(
+  tasks: { id: string; name: string }[],
+  board: { frames: { key?: string | null }[] } | null | undefined,
+): LabFrame[] {
+  const savedKeys = new Set((board?.frames ?? []).map((frame) => frame.key ?? ""));
+  const boxed = tasks.filter((task) => savedKeys.has(`task:${task.id}`));
+  const frames = createLabFrames(boxed);
+  return tasks.length > 0 && boxed.length === 0 ? frames.filter((frame) => frame.id !== "workstreams") : frames;
+}
+
 /** Grow only a fresh virtual seed so every opening card is inside its frame. */
 export function sizeSeedFrames(frames: LabFrame[], nodes: LabNode[]): LabFrame[] {
   return frames.map((frame) => {

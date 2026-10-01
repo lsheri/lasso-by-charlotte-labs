@@ -27,7 +27,7 @@ import {
   applyDurableBoard,
   boardHasSeededStructure,
   chatBundles,
-  createLabFrames,
+  savedBoxLabFrames,
   dockBundles,
   fitWorkboardViewport,
   labInverseZoom,
@@ -62,7 +62,7 @@ export function buildSharedBoardModel(dto: SharedBoardDto): SharedBoardModel {
   // The viewer is nobody: an empty id never equals an opaque author index.
   const board = { ...dto.board, viewerProfileId: "" } as WorkboardDto;
   const seeded = boardHasSeededStructure(board);
-  const initialFrames = seeded ? createLabFrames(dto.seed.tasks) : [];
+  const initialFrames = seeded ? savedBoxLabFrames(dto.seed.tasks, board) : [];
   const seedInput: SeedInput = {
     brief: dto.seed.brief ? { title: "The brief", text: dto.seed.brief.text } : null,
     tasks: dto.seed.tasks.map((task) => ({ ...task, ownedByViewer: false })),
