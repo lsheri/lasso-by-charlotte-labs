@@ -20,6 +20,7 @@ import { aliasSignupVisitor, emitClientEvent } from "@/lib/client-telemetry";
 import { identifyPostHog } from "@/lib/posthog-client";
 import { parseFunnelSource, type FunnelSource } from "@/lib/funnel-source";
 import { EXISTING_ACCOUNT_INVITED, EXISTING_ACCOUNT_OPEN, isExistingAccountSignup } from "@/lib/signup-existing";
+import { FORGOT_LINK } from "@/lib/password-reset";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -286,6 +287,9 @@ function AuthPage() {
             <Button type="submit" className="w-full" disabled={pending}>
               {pending ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}
             </Button>
+            {mode === "signin" ? (
+              <Link to="/reset-password" search={next ? { next } : {}} className="mt-2 inline-block text-sm text-muted-foreground transition-colors hover:text-foreground">{FORGOT_LINK}</Link>
+            ) : null}
             <p className="text-base text-muted-foreground">{emailCopy.privacy}</p>
           </form>
 
