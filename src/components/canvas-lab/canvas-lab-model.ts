@@ -23,6 +23,9 @@ import {
   isWorkboardDecorationKind,
   parseWorkboardTextBody,
   parseWorkboardStickyBody,
+  parseWorkboardImageBody,
+  WORKBOARD_IMAGE_MIN_SIZE,
+  WORKBOARD_IMAGE_MAX_SIZE,
   WORKBOARD_STICKY_MIN_WIDTH,
   WORKBOARD_STICKY_MIN_HEIGHT,
   WORKBOARD_STICKY_MAX_SIZE,
@@ -44,7 +47,7 @@ import { isTrailFrameId } from "@/lib/reasoning-trail";
 import { placeAddedCards } from "@/lib/workboard-placement";
 import { resolveWorkDate } from "@/lib/work-order";
 
-export type LabNodeKind = "brief" | "task" | "work" | "decision" | "chat" | "source" | "ai_work" | "judgment" | "deliverable" | "shape" | "text" | "answer" | "sticky";
+export type LabNodeKind = "brief" | "task" | "work" | "decision" | "chat" | "source" | "ai_work" | "judgment" | "deliverable" | "shape" | "text" | "answer" | "sticky" | "image";
 export type LabJudgmentType = "added_constraint" | "corrected_ai" | "rejected_option" | "requested_evidence" | "changed_direction" | "accepted_but_rewrote";
 export type LabTemplateKind = "source" | "ai_work" | "judgment" | "decision" | "deliverable";
 /**
@@ -106,6 +109,10 @@ export type LabNode = {
   textColour?: WorkboardTextColour;
   /** A sticky's paper fill. */
   stickyFill?: WorkboardStickyFill;
+  /** DD1-f: a dropped image's storage path and natural pixel size. */
+  imagePath?: string;
+  imageNaturalWidth?: number;
+  imageNaturalHeight?: number;
   /** Kept answers only: when the row was saved, and who asked. */
   createdAt?: string | null;
   authorName?: string;
@@ -969,9 +976,10 @@ export function fitWorkboardViewport(
   };
 }
 
-export type LabResizeKind = "card" | "frame" | "shape" | "text" | "sticky";
+export type LabResizeKind = "card" | "frame" | "shape" | "text" | "sticky" | "image";
 
 export function resizeLabRect(start: LabRect, corner: LabResizeCorner, delta: Point, preserveAspect = false, kind: LabResizeKind = "card"): LabRect {
+  if (kind === "image") return resizeImageRect(start, corner, delta);
   const minWidth = kind === "sticky" ? WORKBOARD_STICKY_MIN_WIDTH : kind === "shape" ? WORKBOARD_SHAPE_MIN_SIZE : kind === "text" ? WORKBOARD_TEXT_MIN_WIDTH : kind === "card" ? CARD_MIN_WIDTH : FRAME_MIN_WIDTH;
   const minHeight = kind === "sticky" ? WORKBOARD_STICKY_MIN_HEIGHT : kind === "shape" ? WORKBOARD_SHAPE_MIN_SIZE : kind === "text" ? WORKBOARD_TEXT_MIN_HEIGHT : kind === "card" ? CARD_MIN_HEIGHT : FRAME_MIN_HEIGHT;
   const maxWidth = kind === "sticky" ? WORKBOARD_STICKY_MAX_SIZE : kind === "shape" ? WORKBOARD_SHAPE_MAX_SIZE : kind === "text" ? WORKBOARD_TEXT_MAX_SIZE : kind === "card" ? CARD_MAX_WIDTH : 2400;
@@ -988,6 +996,26 @@ export function resizeLabRect(start: LabRect, corner: LabResizeCorner, delta: Po
   return {
     x: left ? start.x + start.width - width : start.x,
     y: top ? start.y + start.height - height : start.y,
+    width: Math.round(width),
+    height: Math.round(height),
+  };
+}
+
+/** An image always keeps its own shape while it is resized. */
+function resizeImageRect(start: LabRect, corner: LabResizeCorner, delta: Point): LabRect {
+  const left = corner === "nw" || corner === "sw";
+  const top = corner === "nw" || corner === "ne";
+  const ratio = start.width / start.height;
+  const dw = left ? -delta.x : delta.x;
+  const dh = top ? -delta.y : delta.y;
+  let width = Math.abs(dw) >= Math.abs(dh) * ratio ? start.width + dw : (start.height + dh) * ratio;
+  const minWidth = Math.max(WORKBOARD_IMAGE_MIN_SIZE, WORKBOARD_IMAGE_MIN_SIZE * ratio);
+  const maxWidth = Math.min(WORKBOARD_IMAGE_MAX_SIZE, WORKBOARD_IMAGE_MAX_SIZE * ratio);
+  width = Math.max(minWidth, Math.min(maxWidth, width));
+  const height = width / ratio;
+  return {
+    x: Math.round(left ? start.x + start.width - width : start.x),
+    y: Math.round(top ? start.y + start.height - height : start.y),
     width: Math.round(width),
     height: Math.round(height),
   };
@@ -1130,6 +1158,28 @@ export function applyDurableBoard(base: { frames: LabFrame[]; nodes: LabNode[] }
         ownership: durable.authorProfileId === board.viewerProfileId ? "yours" : "teammate",
         colour: durable.body as WorkboardShapeColour,
         local: false,
+        durableId: durable.id,
+        durableVersion: durable.version,
+        x: durable.x,
+        y: durable.y,
+        width: durable.w,
+        height: durable.h,
+      });
+    }
+    if (durable.kind === "image") {
+      const image = parseWorkboardImageBody(durable.body);
+      if (image) nodes.push({
+        id: localId,
+        kind: "image",
+        frame: null,
+        title: "Image",
+        summary: "",
+        typeLabel: "image",
+        ownership: durable.authorProfileId === board.viewerProfileId ? "yours" : "teammate",
+        imagePath: image.path,
+        imageNaturalWidth: image.naturalWidth,
+        imageNaturalHeight: image.naturalHeight,
+        local: durable.authorProfileId === board.viewerProfileId,
         durableId: durable.id,
         durableVersion: durable.version,
         x: durable.x,
