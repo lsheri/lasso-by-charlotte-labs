@@ -46,6 +46,7 @@ export const AI_TOOLS_COPY = {
   heading: "AI tools",
   sub: "Connect Lasso to Claude, ChatGPT, Cursor or any tool that takes a custom connector.",
   olderName: "Older link",
+  unnamed: "Unnamed connection",
   olderLine: "Made before 1 Oct, can't be shown again. Replace it to see the link.",
   replaced: "Your new link is ready. Paste it into your tool, then disconnect the older link.",
   nameLabel: "Name this connection",
@@ -131,8 +132,13 @@ async function copyText(value: string, label: string) {
 }
 
 /**
- * The revealed link. Session replay masks all text through the PostHog
- * maskTextSelector "*", which covers this element and the Copy button.
+ * The revealed link. Two different PostHog paths have to be held off, and
+ * one config setting does not cover both:
+ *   - session replay is masked by maskTextSelector "*" in posthog-client.ts
+ *   - autocapture is NOT. It reads the text of clicked elements, so every
+ *     element here that can contain the key carries ph-no-autocapture and
+ *     data-ph-no-autocapture.
+ * Removing either marker puts a live connector key into event text.
  */
 function RevealedLink({ secret, workspace }: { secret: string; workspace: string }) {
   const origin = typeof window === "undefined" ? "" : window.location.origin;
@@ -173,11 +179,20 @@ type RowProps = {
   workspace: string;
   orgId: string | undefined;
   fromReplace: boolean;
+  showNameError: boolean;
   onReplace: (row: ConnectionRow) => void;
   onChanged: () => Promise<void>;
 };
 
-export function ConnectionRowView({ row, workspace, orgId, fromReplace, onReplace, onChanged }: RowProps) {
+export function ConnectionRowView({
+  row,
+  workspace,
+  orgId,
+  fromReplace,
+  showNameError,
+  onReplace,
+  onChanged,
+}: RowProps) {
   const reveal = useServerFn(revealConnection);
   const rename = useServerFn(renameConnection);
   const revoke = useServerFn(revokeConnection);
@@ -188,7 +203,7 @@ export function ConnectionRowView({ row, workspace, orgId, fromReplace, onReplac
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  const name = row.older ? AI_TOOLS_COPY.olderName : row.label || AI_TOOLS_COPY.olderName;
+  const name = row.older ? AI_TOOLS_COPY.olderName : row.label || AI_TOOLS_COPY.unnamed;
   const isSignin = row.kind === "signin";
   const showReveal = !isSignin && !row.older && row.can_reveal;
 
@@ -326,6 +341,11 @@ export function ConnectionRowView({ row, workspace, orgId, fromReplace, onReplac
           Disconnect
         </button>
       </div>
+      {showNameError ? (
+        <p role="alert" className="mt-1 text-xs text-destructive">
+          {AI_TOOLS_COPY.nameError}
+        </p>
+      ) : null}
 
       {secret ? <RevealedLink secret={secret} workspace={workspace} /> : null}
 
@@ -367,6 +387,7 @@ export function ConnectYourAiCard() {
   const [busy, setBusy] = useState(false);
   const [created, setCreated] = useState<{ secret: string } | null>(null);
   const [replacedId, setReplacedId] = useState<string | null>(null);
+  const [replaceError, setReplaceError] = useState<{ id: string } | null>(null);
   const [showSetup, setShowSetup] = useState(false);
 
   const workspace = profile?.org_name ?? "";
@@ -399,6 +420,7 @@ export function ConnectYourAiCard() {
       const result = await create({ data: { profile_id: profile?.id, label: label.trim() } });
       setCreated({ secret: result.secret });
       setReplacedId(replacing);
+      if (replacing) setReplaceError(null);
       setName("");
       if (profile) logEvent("mcp.connection_created", profile.org_id, { kind: result.kind });
       await refresh();
@@ -410,6 +432,14 @@ export function ConnectYourAiCard() {
     } finally {
       setBusy(false);
     }
+  }
+
+  function handleReplace(row: ConnectionRow) {
+    if (!validName(name)) {
+      setReplaceError({ id: row.id });
+      return;
+    }
+    void makeLink(name, row.id);
   }
 
   return (
@@ -437,7 +467,8 @@ export function ConnectYourAiCard() {
                 workspace={workspace}
                 orgId={profile?.org_id}
                 fromReplace={replacedId === row.id}
-                onReplace={(r) => void makeLink(name, r.id)}
+                 showNameError={replaceError?.id === row.id}
+                 onReplace={handleReplace}
                 onChanged={refresh}
               />
             ))}
@@ -462,7 +493,10 @@ export function ConnectYourAiCard() {
               id="mcp-connection-name"
               value={name}
               placeholder={AI_TOOLS_COPY.namePlaceholder}
-              onChange={(e) => setName(e.target.value)}
+               onChange={(e) => {
+                 setName(e.target.value);
+                 setReplaceError(null);
+               }}
               className="min-w-0 flex-1 rounded-[var(--radius)] border border-border bg-background px-3 py-1.5 text-[13px]"
             />
             <Button type="button" disabled={busy} onClick={() => void makeLink(name, null)}>
