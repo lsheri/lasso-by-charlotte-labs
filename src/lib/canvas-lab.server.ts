@@ -211,6 +211,9 @@ export function validNodeInput(node: WorkboardNodeInput): string | null {
   if (node.kind === "sticky" && (node.workItemId || node.decisionId)) return "A sticky cannot reference work or a decision.";
   if (node.kind === "sticky" && (node.frameKey || node.title || node.judgmentType)) return "A sticky can only carry its words, style, fill and rectangle.";
   if (node.kind === "sticky" && !parseWorkboardStickyBody(node.body)) return "Check the sticky words and style choices.";
+  if (node.kind === "image" && (node.workItemId || node.decisionId)) return "An image cannot reference work or a decision.";
+  if (node.kind === "image" && (node.frameKey || node.title || node.judgmentType)) return "An image can only carry its file and rectangle.";
+  if (node.kind === "image" && !parseWorkboardImageBody(node.body)) return "Check the image file.";
   if (node.judgmentType && !WORKBOARD_JUDGMENT_TYPES.includes(node.judgmentType)) return "Unknown judgment type.";
   return null;
 }
@@ -221,6 +224,7 @@ export function validateLinkNodeKinds(kinds: string[]): string | null {
   if (decorationKind === "text") return "A text block cannot be connected.";
   if (decorationKind === "mark") return "A mark cannot be connected.";
   if (decorationKind === "sticky") return "A sticky cannot be connected.";
+  if (decorationKind === "image") return "An image cannot be connected.";
   return null;
 }
 
@@ -231,6 +235,7 @@ export function validNodeUpdate(kind: WorkboardNodeDto["kind"], patch: Extract<W
   if (kind === "text" && patch.body !== undefined && !parseWorkboardTextBody(patch.body)) return "Check the text block words and style choices.";
   if (kind === "sticky" && patch.body !== undefined && !parseWorkboardStickyBody(patch.body)) return "Check the sticky words and style choices.";
   if (kind === "sticky" && patch.title !== undefined) return "A sticky can only carry its words, style, fill and rectangle.";
+  if (kind === "image" && (patch.body !== undefined || patch.title !== undefined)) return "An image can only carry its file and rectangle.";
   return null;
 }
 

@@ -9,7 +9,7 @@
  * instructions are not part of Slice 1 and stay browser-local.
  */
 
-export type WorkboardNodeKind = "brief" | "work_item" | "decision" | "judgment" | "draft" | "shape" | "text" | "mark" | "answer" | "sticky";
+export type WorkboardNodeKind = "brief" | "work_item" | "decision" | "judgment" | "draft" | "shape" | "text" | "mark" | "answer" | "sticky" | "image";
 export type WorkboardFrameKind = "foundation" | "task" | "decisions" | "outputs" | "custom" | "context";
 export type WorkboardAnchor = "top" | "right" | "bottom" | "left";
 export type WorkboardRelation = "informed" | "produced" | "revised" | "cited" | "context";
@@ -25,6 +25,42 @@ export const WORKBOARD_TEXT_MAX_SIZE = 4000;
 export const WORKBOARD_STICKY_MIN_WIDTH = 120;
 export const WORKBOARD_STICKY_MIN_HEIGHT = 90;
 export const WORKBOARD_STICKY_MAX_SIZE = 4000;
+/** DD1-f: a dropped image. Its rectangle keeps the picture's own shape. */
+export const WORKBOARD_IMAGE_MIN_SIZE = 8;
+export const WORKBOARD_IMAGE_MAX_SIZE = 4000;
+export const WORKBOARD_IMAGE_LONGEST_EDGE = 420;
+export type WorkboardImageBody = { path: string; naturalWidth: number; naturalHeight: number };
+
+export function parseWorkboardImageBody(value: unknown): WorkboardImageBody | null {
+  if (typeof value !== "string") return null;
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return null;
+    const body = parsed as Record<string, unknown>;
+    if (Object.keys(body).sort().join(",") !== "naturalHeight,naturalWidth,path") return null;
+    const path = body["path"];
+    if (typeof path !== "string" || path.length === 0 || path.length > 1024 || path.startsWith("/") || path.includes("..")) return null;
+    const w = body["naturalWidth"];
+    const h = body["naturalHeight"];
+    if (typeof w !== "number" || typeof h !== "number" || !Number.isFinite(w) || !Number.isFinite(h) || w <= 0 || h <= 0) return null;
+    return { path, naturalWidth: w, naturalHeight: h };
+  } catch {
+    return null;
+  }
+}
+
+export function serializeWorkboardImageBody(body: WorkboardImageBody): string {
+  return JSON.stringify({ path: body.path, naturalWidth: body.naturalWidth, naturalHeight: body.naturalHeight });
+}
+
+/** Scale down to fit the longest edge, never up, keeping the aspect ratio. */
+export function fitWorkboardImageSize(naturalWidth: number, naturalHeight: number, longest = WORKBOARD_IMAGE_LONGEST_EDGE): { width: number; height: number } {
+  const scale = Math.min(1, longest / Math.max(naturalWidth, naturalHeight));
+  return {
+    width: Math.max(WORKBOARD_IMAGE_MIN_SIZE, Math.round(naturalWidth * scale)),
+    height: Math.max(WORKBOARD_IMAGE_MIN_SIZE, Math.round(naturalHeight * scale)),
+  };
+}
 export const WORKBOARD_STICKY_DEFAULT_SIZE = { width: 200, height: 140 } as const;
 export const WORKBOARD_STICKY_FILLS = ["yellow", "green", "blue", "pink", "grey"] as const;
 export type WorkboardStickyFill = (typeof WORKBOARD_STICKY_FILLS)[number];
@@ -52,7 +88,7 @@ export type WorkboardTextBody = { text: string; size: WorkboardTextSize; weight:
  * connected, and are skipped by context selection, the marquee, region
  * membership and placement. A sticky is one of them.
  */
-const WORKBOARD_DECORATION_KINDS: readonly WorkboardNodeKind[] = ["shape", "text", "mark", "sticky"];
+const WORKBOARD_DECORATION_KINDS: readonly WorkboardNodeKind[] = ["shape", "text", "mark", "sticky", "image"];
 
 export function isWorkboardDecorationKind(kind: string): kind is WorkboardNodeKind {
   return WORKBOARD_DECORATION_KINDS.includes(kind as WorkboardNodeKind);
@@ -104,6 +140,10 @@ export function serializeWorkboardTextBody(body: WorkboardTextBody): string {
 export function validWorkboardNodeGeometry(node: { kind?: WorkboardNodeKind; x?: number; y?: number; w?: number; h?: number }): boolean {
   const values = [node.x, node.y, node.w, node.h].filter((value): value is number => value !== undefined);
   if (!values.every(Number.isFinite)) return false;
+  if (node.kind === "image") {
+    if (node.w !== undefined && (node.w < WORKBOARD_IMAGE_MIN_SIZE || node.w > WORKBOARD_IMAGE_MAX_SIZE)) return false;
+    return node.h === undefined || (node.h >= WORKBOARD_IMAGE_MIN_SIZE && node.h <= WORKBOARD_IMAGE_MAX_SIZE);
+  }
   if (node.kind === "sticky") {
     if (node.w !== undefined && (node.w < WORKBOARD_STICKY_MIN_WIDTH || node.w > WORKBOARD_STICKY_MAX_SIZE)) return false;
     return node.h === undefined || (node.h >= WORKBOARD_STICKY_MIN_HEIGHT && node.h <= WORKBOARD_STICKY_MAX_SIZE);
@@ -263,7 +303,7 @@ export const WORKBOARD_ANCHORS: WorkboardAnchor[] = ["top", "right", "bottom", "
  * writes a shape again; the kind stays in the type only so old code paths
  * still read, and the server refuses it the way it refuses a mark.
  */
-export const WORKBOARD_NODE_KINDS: WorkboardNodeKind[] = ["brief", "work_item", "decision", "judgment", "draft", "text", "mark", "answer", "sticky"];
+export const WORKBOARD_NODE_KINDS: WorkboardNodeKind[] = ["brief", "work_item", "decision", "judgment", "draft", "text", "mark", "answer", "sticky", "image"];
 export const WORKBOARD_JUDGMENT_TYPES: WorkboardJudgmentType[] = [
   "added_constraint",
   "corrected_ai",
