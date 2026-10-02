@@ -39,6 +39,7 @@ import {
   rawPushUrl,
   storedPushChatUrl,
 } from "@/lib/mcp-push-url";
+import { isBareChatOrigin, itemChatLink, pastedChatUrl } from "@/lib/chat-url";
 import { isAffiliatedStrict, orgTypeOfStrict } from "@/lib/org-type.server";
 import {
   placementLine,
@@ -1318,14 +1319,14 @@ async function pushThread(
     protocolVersion: client.protocol,
     bytes,
   });
+  // CL-2b. push_thread returns no id elsewhere, so the ask carries it.
+  const threadAsk = await noChatLinkLine(owner, item.id);
+  const threadLinkLine = threadAsk ? `${threadAsk} Use lasso_conversation_id ${item.id}.` : "";
   return textResult(
     id,
     `Saved to Lasso: '${title}' (${turns.length} turns).${
       threadPlacement.target === "workboard" ? "" : " It is private until you map it."
-    }${threadPlacement.text ? ` ${threadPlacement.text}` : ""}${await noChatLinkLine(owner, item.id)}${
-      // CL-2b: push_thread returns no id elsewhere, so the attach tool can find the row.
-      ""
-    }\nlasso_conversation_id: ${item.id}`,
+    }${threadPlacement.text ? ` ${threadPlacement.text}` : ""}${threadLinkLine}`,
   );
 }
 
