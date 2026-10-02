@@ -79,7 +79,7 @@ export function TourActOne({ register, onComplete }: { register: Register; onCom
   const land = (title: string) => { if (landed) return; setLanded(title); setFilesOpen(false); onComplete(title); };
   const finishPointer = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (!drag || drag.pointerId !== event.pointerId) return;
-    const board = boardRef.current?.getBoundingClientRect();
+    const board = (event.currentTarget.querySelector('[data-testid="tour-drop-board"]') ?? boardRef.current)?.getBoundingClientRect();
     const inside = Boolean(board && event.clientX >= board.left && event.clientX <= board.right && event.clientY >= board.top && event.clientY <= board.bottom);
     if (event.pointerType === "touch" || inside) land(drag.title);
     setDrag(null); setKeyPosition({ x: 0, y: 0 });
@@ -117,7 +117,7 @@ export function TourActTwo({ register, hint: _hint, onComplete }: { register: Re
     const required = GROUP_IDS.map((id) => boardRef.current?.querySelector<HTMLElement>(`[data-tour-layout-id="${id}"]`)?.getBoundingClientRect()).filter((rect) => rect !== undefined);
     if (required.length === 3 && required.every((rect) => rect.left < right && rect.right > left && rect.top < bottom && rect.bottom > top)) finish();
   });
-  return <TourWorkboard active="select"><div className="tour-shared-act" data-testid="tour-act-two"><TourBoard register={register} state={{ act: 2, outlinedIds: GROUP_IDS, selectedIds: selected }} boardRef={boardRef} {...handlers} onWorkCardSelect={select} onWorkCardKeyDown={(index, event) => { if (event.code === "Space") { event.preventDefault(); select(index); } }}>{box ? <span className="tour-marquee" style={{ left: box.x, top: box.y, width: box.width, height: box.height }} /> : null}</TourBoard></div></TourWorkboard>;
+  return <TourWorkboard active="select"><div className="tour-shared-act" data-testid="tour-act-two"><TourBoard register={register} state={{ act: 2, outlinedIds: GROUP_IDS, selectedIds: selected }} className="tour-board-act" boardRef={boardRef} {...handlers} onWorkCardSelect={select} onWorkCardKeyDown={(index, event) => { if (event.code === "Space") { event.preventDefault(); select(index); } }}>{box ? <span className="tour-marquee" style={{ left: box.x, top: box.y, width: box.width, height: box.height }} /> : null}</TourBoard></div></TourWorkboard>;
 }
 
 export function TourActThree({ register, onComplete }: { register: Register; onComplete: () => void }) {
@@ -128,7 +128,7 @@ export function TourActThree({ register, onComplete }: { register: Register; onC
     const required = GROUP_IDS.map((id) => boardRef.current?.querySelector<HTMLElement>(`[data-tour-layout-id="${id}"]`)?.getBoundingClientRect()).filter((rect) => rect !== undefined);
     if (required.length === 3 && required.every((rect) => left <= rect.left && top <= rect.top && right >= rect.right && bottom >= rect.bottom)) group();
   });
-  return <TourWorkboard active="group" onGroup={group}><div className="tour-shared-act" data-testid="tour-act-three" onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); group(); } }}><TourBoard register={register} state={{ act: 3, selectedIds: GROUP_IDS, groupedIds: grouped ? GROUP_IDS : [], glowingIds: grouped ? GROUP_IDS : [] }} boardRef={boardRef} {...handlers}>{box ? <span className="tour-marquee" style={{ left: box.x, top: box.y, width: box.width, height: box.height }} /> : null}{grouped ? <p className="tour-context-sentence">{act?.contextSentence}</p> : null}</TourBoard></div></TourWorkboard>;
+  return <TourWorkboard active="group" onGroup={group}><div className="tour-shared-act" data-testid="tour-act-three" onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); group(); } }}><TourBoard register={register} state={{ act: 3, selectedIds: GROUP_IDS, groupedIds: grouped ? GROUP_IDS : [], glowingIds: grouped ? GROUP_IDS : [] }} className="tour-board-act" boardRef={boardRef} {...handlers}>{box ? <span className="tour-marquee" style={{ left: box.x, top: box.y, width: box.width, height: box.height }} /> : null}{grouped ? <p className="tour-context-sentence">{act?.contextSentence}</p> : null}</TourBoard></div></TourWorkboard>;
 }
 
 function TourAskMimic({ register, visibleClaims, generating, onAsk }: { register: Register; visibleClaims: number; generating: boolean; onAsk: () => void }) {

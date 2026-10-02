@@ -102,7 +102,7 @@ function BoardRelationships({ register }: { register: Register }) {
       const base = board.getBoundingClientRect();
       const answer = board.querySelector<HTMLElement>('[data-tour-layout-id="answer"]');
       const sources = Array.from(board.querySelectorAll<HTMLElement>("[data-tour-connector-source]"));
-      if (!answer || sources.length !== 3 || base.width <= 0 || base.height <= 0) return;
+      if (!answer || sources.length !== 3) return;
       const answerRect = answer.getBoundingClientRect();
       const sourceNodes = sources.map((element, index) => {
         const rect = element.getBoundingClientRect();
@@ -134,10 +134,10 @@ export function TourBoard({ register, state, className = "", children, onWorkCar
   const answer = useMemo(() => answerNode(register), [register]);
 
   return <div ref={boardRef} className={`tour-persistent-board ${className}`} data-tour-board="" onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerCancel}>
-    <div className="tour-board-grid" aria-label="Workstream board">
-      {state.groupedIds?.length ? <div className="tour-shared-group-region tour-region is-grouped" aria-label={`${TOUR_CONTENT[register].acts[2]?.frameTitle ?? "Workstream"} with three source work cards`}><span>{TOUR_CONTENT[register].acts[2]?.frameTitle}</span></div> : null}
+    <div className="tour-board-grid" aria-label="Loose AI chat work cards">
+      {state.groupedIds?.length ? <div className="tour-shared-group-region tour-region is-grouped" aria-label={`${TOUR_CONTENT[register].acts[2]?.frameTitle ?? "Workstream"} with three source work cards`}><span>{TOUR_CONTENT[register].acts[2]?.frameTitle}</span><span className="sr-only">{Array.from(grouped).map((id) => cards[Number(id.split("-")[1])]?.title).filter(Boolean).join(", ")}</span></div> : null}
       {TOUR_BOARD_LAYOUT.map((item) => {
-        if (!visible(item)) return <div key={item.id} className="tour-reserved-slot" data-tour-layout-id={item.id} data-tour-reserved="" style={itemStyle(item)} />;
+        if (!visible(item)) return item.id === "answer" || item.id === "primary-0" ? <div key={item.id} className="tour-reserved-slot" data-tour-layout-id={item.id} data-tour-reserved="" style={itemStyle(item)} /> : null;
         if (item.kind === "primary") {
           const index = Number(item.id.split("-")[1]);
           const card = cards[index];
