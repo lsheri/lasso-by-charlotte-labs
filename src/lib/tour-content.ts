@@ -39,7 +39,7 @@ export const TOUR_BOARD_LAYOUT: readonly TourLayoutItem[] = [
   { id: "chat-3", kind: "chat", x: 2, y: 62, widthBasis: 30, rotation: -0.6, earliestAct: 1 },
   { id: "artifact", kind: "artifact", x: 35, y: 62, widthBasis: 30, rotation: 0, earliestAct: 1 },
   { id: "whiteboard", kind: "image", x: 68, y: 62, widthBasis: 30, rotation: -0.4, earliestAct: 1 },
-  { id: "deck", kind: "image", x: 68, y: 82, widthBasis: 30, rotation: 0.3, earliestAct: 5 },
+  { id: "deck", kind: "image", x: 68, y: 91, widthBasis: 30, rotation: 0.3, earliestAct: 5 },
 ] as const;
 
 export const TOUR_AMBIENT_CARDS: readonly TourAmbientCard[] = [
