@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   signIn: vi.fn(async () => ({ error: null })),
   logEvent: vi.fn(),
   navigate: vi.fn(),
+  profile: null as null | { id: string },
 }));
 
 vi.mock("@tanstack/react-router", async (orig) => ({
@@ -57,7 +58,7 @@ vi.mock("@/lib/activation-keys.functions", () => ({
 vi.mock("@/lib/invites.functions", () => ({ checkSignupInvite: vi.fn() }));
 vi.mock("@/lib/client-telemetry", () => ({ aliasSignupVisitor: vi.fn(), emitClientEvent: vi.fn() }));
 vi.mock("@/lib/posthog-client", () => ({ identifyPostHog: vi.fn() }));
-vi.mock("@/hooks/use-profile", () => ({ fetchProfile: async () => null, AUTH_USER_KEY: ["auth-user"] }));
+vi.mock("@/hooks/use-profile", () => ({ fetchProfile: async () => mocks.profile, AUTH_USER_KEY: ["auth-user"] }));
 vi.mock("@/lib/pending-invite", () => ({ readPendingInvite: () => null }));
 vi.mock("@/lib/telemetry", () => ({ logEvent: mocks.logEvent }));
 vi.mock("@/components/layout/SessionHeader", () => ({ SessionHeader: () => null }));
@@ -87,6 +88,7 @@ beforeAll(async () => {
 beforeEach(() => {
   window.localStorage.clear();
   vi.clearAllMocks();
+  mocks.profile = null;
   mocks.getUser.mockResolvedValue({ data: { user: { id: "u1" } }, error: null });
 });
 afterEach(cleanup);
@@ -159,6 +161,7 @@ describe("Unit 19: partner invite path", () => {
     );
     await screen.findByText("What should we call you?", undefined, { timeout: 25000 });
     fireEvent.change(screen.getByLabelText("Your name"), { target: { value: "Liam" } });
+    mocks.profile = { id: "p1" };
     fireEvent.submit(screen.getByRole("button", { name: /create my workspace/i }).closest("form")!);
     expect(await screen.findByText(KEY_KEPT_COPY, undefined, { timeout: 10000 })).toBeTruthy();
     expect(readActivationKey()).toBe("LSO-WPSK77");
