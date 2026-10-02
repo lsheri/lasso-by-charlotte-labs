@@ -15,6 +15,15 @@ export type TourAmbientCard = {
   excerpt: readonly [string, string];
 };
 
+export type TourBoardCopy = {
+  title: string;
+  owner: string;
+  pieceCount: number;
+  whiteboardTitle: string;
+  whiteboardCaption: string;
+  deckTitle: string;
+};
+
 export type TourLayoutItem = {
   id: `primary-${0 | 1 | 2 | 3 | 4}` | `chat-${0 | 1 | 2 | 3}` | "artifact" | "whiteboard" | "deck" | "answer";
   kind: "primary" | "chat" | "artifact" | "image" | "answer";
@@ -27,19 +36,19 @@ export type TourLayoutItem = {
 
 /** The sole geometry source for every item on the five-act tour board. */
 export const TOUR_BOARD_LAYOUT: readonly TourLayoutItem[] = [
-  { id: "primary-0", kind: "primary", x: 2, y: 2, widthBasis: 28, rotation: -0.8, earliestAct: 1 },
-  { id: "primary-1", kind: "primary", x: 31.5, y: 4, widthBasis: 30, rotation: 0.7, earliestAct: 1 },
-  { id: "primary-2", kind: "primary", x: 17, y: 23, widthBasis: 29, rotation: 0.5, earliestAct: 1 },
-  { id: "primary-3", kind: "primary", x: 68, y: 3, widthBasis: 25, rotation: 0.9, earliestAct: 1 },
-  { id: "primary-4", kind: "primary", x: 70, y: 24.5, widthBasis: 27, rotation: -0.7, earliestAct: 1 },
-  { id: "answer", kind: "answer", x: 68, y: 44.5, widthBasis: 27, rotation: 0, earliestAct: 5 },
-  { id: "chat-0", kind: "chat", x: 2, y: 44, widthBasis: 27, rotation: -0.7, earliestAct: 1 },
-  { id: "chat-1", kind: "chat", x: 3.5, y: 64, widthBasis: 29, rotation: 0.8, earliestAct: 1 },
-  { id: "chat-2", kind: "chat", x: 34, y: 43, widthBasis: 27, rotation: 0.5, earliestAct: 1 },
-  { id: "chat-3", kind: "chat", x: 35.5, y: 63, widthBasis: 29, rotation: -0.6, earliestAct: 1 },
-  { id: "artifact", kind: "artifact", x: 37, y: 81.5, widthBasis: 25, rotation: 0, earliestAct: 1 },
-  { id: "whiteboard", kind: "image", x: 69.5, y: 64.5, widthBasis: 28.5, rotation: -0.4, earliestAct: 1 },
-  { id: "deck", kind: "image", x: 67, y: 94, widthBasis: 31, rotation: 0.3, earliestAct: 5 },
+  { id: "primary-0", kind: "primary", x: 3, y: 19, widthBasis: 21, rotation: -0.8, earliestAct: 1 },
+  { id: "primary-1", kind: "primary", x: 31, y: 17.5, widthBasis: 22, rotation: 0.7, earliestAct: 1 },
+  { id: "primary-2", kind: "primary", x: 60, y: 20.5, widthBasis: 21, rotation: 0.5, earliestAct: 1 },
+  { id: "primary-3", kind: "primary", x: 5, y: 44, widthBasis: 18, rotation: 0.9, earliestAct: 1 },
+  { id: "primary-4", kind: "primary", x: 6.5, y: 59, widthBasis: 19, rotation: -0.7, earliestAct: 1 },
+  { id: "answer", kind: "answer", x: 33, y: 82, widthBasis: 23, rotation: 0, earliestAct: 5 },
+  { id: "chat-0", kind: "chat", x: 32, y: 42, widthBasis: 21, rotation: -0.7, earliestAct: 1 },
+  { id: "chat-1", kind: "chat", x: 62, y: 44.5, widthBasis: 22, rotation: 0.8, earliestAct: 1 },
+  { id: "chat-2", kind: "chat", x: 30, y: 63.5, widthBasis: 22, rotation: 0.5, earliestAct: 1 },
+  { id: "chat-3", kind: "chat", x: 61, y: 65.5, widthBasis: 21, rotation: -0.6, earliestAct: 1 },
+  { id: "artifact", kind: "artifact", x: 84.5, y: 66, widthBasis: 13, rotation: 0.4, earliestAct: 1 },
+  { id: "whiteboard", kind: "image", x: 5, y: 78.5, widthBasis: 18, rotation: -0.4, earliestAct: 1 },
+  { id: "deck", kind: "image", x: 72, y: 84, widthBasis: 20, rotation: 0.3, earliestAct: 5 },
 ] as const;
 
 export const TOUR_AMBIENT_CARDS: readonly TourAmbientCard[] = [
@@ -48,6 +57,39 @@ export const TOUR_AMBIENT_CARDS: readonly TourAmbientCard[] = [
   { title: "Gemini: market size, 3 scenarios", source: "gemini", excerpt: ["Built low, middle and high cases", "Compared assumptions behind each case"] },
   { title: "Claude: positioning draft", source: "claude", excerpt: ["Explored a sharper category position", "Turned the argument into a draft"] },
 ] as const;
+
+const COMPANY_AMBIENT_CARDS = [
+  { title: "ChatGPT: athleisure trend teardown", source: "chatgpt", excerpt: ["Compared fabric and fit trends for fall", "Flagged the strongest growth segment"] },
+  { title: "ChatGPT: creator brief, draft 2", source: "chatgpt", excerpt: ["Drafted the brief for seeding partners", "Kept the language direct and specific"] },
+  { title: "Gemini: city by city demand", source: "gemini", excerpt: ["Sized Austin, Denver and Toronto", "Compared assumptions behind each market"] },
+  { title: "Claude: positioning lines", source: "claude", excerpt: ["Explored a sharper category position", "Turned the argument into a draft"] },
+] as const satisfies readonly TourAmbientCard[];
+
+export function tourAmbientCards(register: Register): readonly TourAmbientCard[] {
+  return register === "company" || register === "partner" ? COMPANY_AMBIENT_CARDS : TOUR_AMBIENT_CARDS;
+}
+
+const COMPANY_BOARD_COPY: TourBoardCopy = {
+  title: "Fall Marketing Launch",
+  owner: "LYKOS LOUNGEWARE",
+  pieceCount: 12,
+  whiteboardTitle: "Moodboard photo",
+  whiteboardCaption: "Shots from the fabric session",
+  deckTitle: "Launch deck, slide 12",
+};
+
+const DEFAULT_BOARD_COPY: TourBoardCopy = {
+  title: "Your workboard",
+  owner: "WORK IN PROGRESS",
+  pieceCount: 12,
+  whiteboardTitle: "Whiteboard photo",
+  whiteboardCaption: "Working session notes",
+  deckTitle: "Deck, slide 12",
+};
+
+export function tourBoardCopy(register: Register): TourBoardCopy {
+  return register === "company" || register === "partner" ? COMPANY_BOARD_COPY : DEFAULT_BOARD_COPY;
+}
 
 export type TourClaim = {
   text: string;
@@ -82,6 +124,13 @@ const FILES = [
   "whiteboard.png",
 ] as const;
 
+const COMPANY_FILES = [
+  "Fall launch plan.pdf",
+  "Creator call.txt",
+  "Media budget.xlsx",
+  "moodboard.png",
+] as const;
+
 const DO_LINES = {
   2: "Click one of the outlined work cards.",
   3: "Draw a box around them.",
@@ -107,6 +156,7 @@ function acts(
   question: string,
   answer: readonly TourClaim[],
   chatLink: TourChatLink,
+  files: readonly string[] = FILES,
 ): readonly TourAct[] {
   return [
     {
@@ -114,7 +164,7 @@ function acts(
       captionPointer: "Drag a file onto the board.",
       captionTouch: "Tap a file to put it on the board.",
       why: "Files, AI chats and call transcripts all land here. Lasso keeps each one with a link back to where it came from.",
-      files: FILES,
+      files,
     },
     {
       id: 2,
@@ -152,17 +202,17 @@ function acts(
 }
 
 const COMPANY_CARDS = [
-  { title: "Q3 strategy deck", source: "drive", inSet: true, preview: ["Commercial plan and rollout choices", "Recommendation for the next quarter"] },
-  { title: "Discovery call, 14 Sep", source: "granola", inSet: true, preview: ["Client priorities and open questions", "Notes from the pricing discussion"] },
-  { title: "Claude: pricing options", source: "claude", inSet: true, preview: ["Compared tiered and usage options", "Outlined tradeoffs for each route"] },
-  { title: "Pricing model v4", source: "drive", inSet: false, preview: ["Base case and sensitivity ranges", "Quarterly revenue assumptions"] },
-  { title: "Travel receipts", source: "email", inSet: false, preview: ["September travel costs", "Receipts and payment notes"] },
+  { title: "Fall launch plan v3", source: "drive", inSet: true, preview: ["Channel mix, budget split and launch week", "Recommendation for the 29 Sep start"] },
+  { title: "Creator call, 14 Sep", source: "granola", inSet: true, preview: ["Agency rates and posting cadence", "Which markets they actually cover"] },
+  { title: "Claude: channel mix options", source: "claude", inSet: true, preview: ["Compared TikTok first and retail first", "Outlined tradeoffs for each route"] },
+  { title: "Media budget v4", source: "drive", inSet: false, preview: ["Paid split by channel and market", "Cost per acquisition assumptions"] },
+  { title: "Sample shipping receipts", source: "email", inSet: false, preview: ["Seeding costs for September", "Receipts and payment notes"] },
 ] as const satisfies readonly TourCard[];
 
 const COMPANY_ANSWER = [
-  { text: "You floated usage based pricing and dropped it after the discovery call.", sourceCardTitle: "Claude: pricing options" },
-  { text: "A phased rollout was discussed on the call and never reached the deck.", sourceCardTitle: "Discovery call, 14 Sep" },
-  { text: "The deck kept the tiered option only.", sourceCardTitle: "Q3 strategy deck" },
+  { text: "You floated a TikTok first launch and dropped it after the creator call.", sourceCardTitle: "Claude: channel mix options" },
+  { text: "Toronto came up on the call and never reached the plan.", sourceCardTitle: "Creator call, 14 Sep" },
+  { text: "The plan kept Austin and Denver only.", sourceCardTitle: "Fall launch plan v3" },
 ] as const satisfies readonly TourClaim[];
 
 const PERSONAL_CARDS = [
@@ -201,9 +251,10 @@ export const TOUR_CONTENT: Readonly<
     acts: acts(
       COMPANY_CARDS,
       "Workstream",
-      "What ideas did I have that did not make the final deck? Give me the link to the AI chat I worked them out in.",
+      "What ideas did I have that did not make the final launch plan? Give me the link to the AI chat I worked them out in.",
       COMPANY_ANSWER,
-      { label: "Open the chat", cardTitle: "Claude: pricing options" },
+      { label: "Open the chat", cardTitle: "Claude: channel mix options" },
+      COMPANY_FILES,
     ),
   },
   partner: {
@@ -211,9 +262,10 @@ export const TOUR_CONTENT: Readonly<
     acts: acts(
       COMPANY_CARDS,
       "Workstream",
-      "What ideas did I have that did not make the final deck? Give me the link to the AI chat I worked them out in.",
+      "What ideas did I have that did not make the final launch plan? Give me the link to the AI chat I worked them out in.",
       COMPANY_ANSWER,
-      { label: "Open the chat", cardTitle: "Claude: pricing options" },
+      { label: "Open the chat", cardTitle: "Claude: channel mix options" },
+      COMPANY_FILES,
     ),
   },
   personal: {

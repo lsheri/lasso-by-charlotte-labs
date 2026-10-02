@@ -6530,19 +6530,32 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .tour-keep-panel > button { align-self: flex-end; }
 .tour-shared-act { height: 100%; min-height: 0; }
 .tour-persistent-board { position: relative; height: 100%; min-height: 0; overflow: hidden; border: 1px solid var(--nb-rule); background: var(--nb-paper); }
-.tour-board-grid { position: absolute; inset: 0; min-height: 0; background-image: radial-gradient(var(--nb-rule) 1px, transparent 1px); background-size: 22px 22px; }
+.tour-board-grid { position: absolute; inset: 0; min-height: 0; background: var(--nb-paper); }
+.tour-board-heading { position: absolute; z-index: 6; top: 2.5%; left: 3%; display: grid; gap: 1px; color: var(--nb-graphite); pointer-events: none; }
+.tour-board-heading strong { font-family: var(--font-hand); font-size: 26px; font-weight: 500; line-height: 1; }
+.tour-board-heading span { font-family: var(--font-mono); font-size: 11px; line-height: 1.2; letter-spacing: .12em; text-transform: uppercase; }
+.tour-alignment-rail { position: absolute; z-index: 1; right: 3%; left: 3%; height: 2px; border-top: var(--stroke-pencil) solid var(--nb-pencil); opacity: .72; transform: rotate(-.08deg); pointer-events: none; }
+.tour-alignment-rail.is-upper { top: 15%; }
+.tour-alignment-rail.is-lower { top: 96%; transform: rotate(.1deg); }
+.tour-margin-note { position: absolute; z-index: 5; max-width: 15%; color: var(--nb-pencil); font-family: var(--font-hand); font-size: 16px; line-height: 1.05; pointer-events: none; }
+.tour-margin-note.is-answer-note { top: 86%; left: 58%; max-width: 12%; }
 .tour-board-item,.tour-reserved-slot { position: absolute; z-index: 4; box-sizing: border-box; }
 .tour-board-item.tour-preview-card { min-width: 0; min-height: 0; height: 17%; padding: 7px 9px; gap: 4px 7px; cursor: default; }
+.tour-board-item.tour-preview-card:nth-of-type(n) { box-shadow: none; }
+.tour-board-item.tour-preview-card:has(.tour-card-preview-copy) { height: 17%; }
+.tour-board-item.tour-preview-card:not(:has(.tour-card-preview-copy)) { height: 10%; min-height: 46px; grid-template-rows: auto; align-items: center; }
 .tour-board-item.tour-preview-card[tabindex] { cursor: pointer; }
 .tour-board-item.tour-preview-card.is-target-work { border: 2px dashed var(--nb-lasso-green); background: color-mix(in srgb, var(--nb-lasso-green) 7%, var(--nb-white)); box-shadow: 0 0 14px color-mix(in srgb, var(--nb-lasso-green) 24%, transparent); }
 .tour-board-item.tour-preview-card.is-group-glowing { border-color: var(--nb-region-lavender-vivid); box-shadow: 0 0 16px color-mix(in srgb, var(--nb-region-lavender-vivid) 24%, transparent); }
 .tour-board-item.tour-preview-card.is-source-highlighted { box-shadow: 0 0 0 3px color-mix(in srgb, var(--nb-green) 22%, transparent), var(--shadow-card); }
 .tour-board-item .tour-card-preview-copy { gap: 2px; font-size: 11.5px; line-height: 1.12; }
 .tour-board-item.tour-preview-card > strong { font-size: 13px; line-height: 1.1; }
-.tour-board-item > .tour-artifact-card,.tour-board-item > .tour-image-card { position: static; width: 100%; min-width: 0; height: 17%; min-height: 74px; }
-.tour-board-item > .tour-artifact-card { height: 56px; }
+.tour-board-item > .tour-compact-card { position: static; display: grid; width: 100%; min-width: 0; min-height: 46px; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 6px; border: 1px solid var(--nb-rule); border-radius: var(--radius-card); background: var(--nb-white); padding: 6px 8px; color: var(--nb-graphite); }
+.tour-compact-card strong { overflow-wrap: anywhere; font-family: var(--font-ui); font-size: 12px; line-height: 1.1; }
+.tour-compact-tool { font-family: var(--font-mono); font-size: 9px; text-transform: uppercase; }
+.tour-image-caption { grid-column: 1 / -1; color: var(--nb-mid); font-family: var(--font-hand); font-size: 13px; line-height: 1; }
 .tour-reserved-slot { height: 17%; border: 1px dashed var(--nb-pencil); border-radius: var(--radius-card); background: color-mix(in srgb, var(--nb-white) 45%, transparent); }
-.tour-shared-group-region { position: absolute; z-index: 2; top: 1%; left: 1%; width: 65%; height: 39%; padding: 5px 8px; pointer-events: none; }
+.tour-shared-group-region { position: absolute; z-index: 2; top: 16%; left: 1.5%; width: 82%; height: 24%; padding: 5px 8px; pointer-events: none; }
 .tour-shared-group-region > span:first-child { color: var(--nb-region-lavender-vivid); font-family: var(--font-hand); font-size: 16px; }
 .tour-ask-mimic { position: absolute; z-index: 35; top: 8px; right: 8px; bottom: 8px; width: min(320px, 42%); border: 1px solid var(--nb-rule); box-shadow: var(--nb-paper-shadow-contact); }
 .tour-keep-panel { position: absolute; z-index: 35; right: 8px; bottom: 8px; width: min(280px, 42%); max-height: calc(100% - 16px); background: var(--nb-white); box-shadow: var(--nb-paper-shadow-contact); }
@@ -6636,12 +6649,34 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   .tour-keep-panel { padding: 8px; }
   .tour-drag-answer { padding: 8px; }
   .tour-drag-answer p { font-size: 11.5px; }
-  .tour-board-item.tour-preview-card { height: 18%; padding: 4px; gap: 2px 4px; }
+  .tour-board-item.tour-preview-card { width: 43% !important; height: 10.5%; padding: 4px; gap: 2px 4px; }
+  .tour-board-item.tour-preview-card:has(.tour-card-preview-copy) { height: 10.5%; }
+  .tour-board-heading strong { font-size: 23px; }
+  .tour-board-heading span { font-size: 9px; }
+  .tour-margin-note { font-size: 13px; }
+  .tour-board-item.tour-preview-card:not(:has(.tour-card-preview-copy)) { width: 40% !important; height: 6%; min-height: 42px; }
+  .tour-board-item[data-tour-layout-id="primary-0"] { top: 17% !important; left: 3% !important; }
+  .tour-board-item[data-tour-layout-id="primary-1"] { top: 18% !important; left: 53% !important; }
+  .tour-board-item[data-tour-layout-id="primary-2"] { top: 29.5% !important; left: 28% !important; }
+  .tour-board-item[data-tour-layout-id="primary-3"] { top: 70% !important; left: 3% !important; }
+  .tour-board-item[data-tour-layout-id="primary-4"] { top: 70.5% !important; left: 55% !important; }
+  .tour-board-item[data-tour-layout-id="chat-0"] { top: 41.5% !important; left: 3% !important; }
+  .tour-board-item[data-tour-layout-id="chat-1"] { top: 42.5% !important; left: 53% !important; }
+  .tour-board-item[data-tour-layout-id="chat-2"] { top: 53.5% !important; left: 3% !important; }
+  .tour-board-item[data-tour-layout-id="chat-3"] { top: 54.5% !important; left: 53% !important; }
+  .tour-board-item[data-tour-layout-id="artifact"] { top: 80.5% !important; left: 3% !important; width: 27% !important; }
+  .tour-board-item[data-tour-layout-id="whiteboard"] { top: 80.5% !important; left: 52% !important; width: 45% !important; }
+  .tour-board-item[data-tour-layout-id="deck"] { top: 92% !important; left: 52% !important; width: 45% !important; }
+  .tour-reserved-slot[data-tour-layout-id="answer"],.tour-answer-slot[data-tour-layout-id="answer"] { top: 88% !important; left: 4% !important; width: 43% !important; height: 10.5%; }
+  .tour-shared-group-region { top: 15.5%; left: 1%; width: 97%; height: 25%; }
+  .tour-margin-note[data-tour-note="group"] { top: 12% !important; left: 52% !important; max-width: 30%; }
+  .tour-margin-note[data-tour-note="budget"] { top: 77% !important; left: 49% !important; max-width: 48%; }
+  .tour-margin-note[data-tour-note="gemini"] { top: 65% !important; left: 3% !important; max-width: 43%; }
+  .tour-margin-note.is-answer-note { top: 76.5% !important; left: 3% !important; max-width: 42%; transform: none; }
   .tour-board-item.tour-preview-card > strong { font-size: 11.5px; line-height: 1.05; }
   .tour-board-item .tour-card-preview-copy { font-size: 9px; line-height: 1.05; }
   .tour-board-item .tour-card-preview-copy span::before { display: none; }
-  .tour-board-item > .tour-image-card { min-height: 0; height: 18%; padding: 4px; }
-  .tour-board-item > .tour-image-card svg { height: 58px; }
+  .tour-board-item > .tour-compact-card { min-height: 42px; padding: 4px; }
   .tour-reserved-slot { height: 18%; }
   .tour-answer-slot { height: 18%; }
   .tour-ask-mimic { width: 48%; }

@@ -87,33 +87,33 @@ describe("tour acts one to three", () => {
     render(<TourActOne register="company" onComplete={done} />);
     expect(screen.queryByLabelText("Your files")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Add work" }));
-    const file = screen.getByRole("button", { name: "Q3 strategy deck.pdf" });
+    const file = screen.getByRole("button", { name: "Fall launch plan.pdf" });
     const board = screen.getByTestId("tour-drop-board");
     vi.spyOn(board, "getBoundingClientRect").mockReturnValue({ left: 200, right: 600, top: 0, bottom: 400, width: 400, height: 400, x: 200, y: 0, toJSON: () => ({}) });
     fireEvent.pointerDown(file, { pointerId: 1, pointerType: "mouse", clientX: 20, clientY: 20 });
     fireEvent.pointerUp(screen.getByTestId("tour-act-one"), { pointerId: 1, pointerType: "mouse", clientX: 300, clientY: 200 });
-    expect(done).toHaveBeenCalledWith("Q3 strategy deck.pdf");
+    expect(done).toHaveBeenCalledWith("Fall launch plan.pdf");
   });
 
   it("advances act one on touch", () => {
     const done = vi.fn();
     render(<TourActOne register="company" onComplete={done} />);
     fireEvent.click(screen.getByRole("button", { name: "Add work" }));
-    const file = screen.getByRole("button", { name: "Q3 strategy deck.pdf" });
+    const file = screen.getByRole("button", { name: "Fall launch plan.pdf" });
     fireEvent.pointerDown(file, { pointerId: 2, pointerType: "touch", clientX: 20, clientY: 20 });
     fireEvent.pointerUp(screen.getByTestId("tour-act-one"), { pointerId: 2, pointerType: "touch", clientX: 20, clientY: 20 });
-    expect(done).toHaveBeenCalledWith("Q3 strategy deck.pdf");
+    expect(done).toHaveBeenCalledWith("Fall launch plan.pdf");
   });
 
   it("advances act one after keyboard lift, move and drop", () => {
     const done = vi.fn();
     render(<TourActOne register="company" onComplete={done} />);
     fireEvent.click(screen.getByRole("button", { name: "Add work" }));
-    const file = screen.getByRole("button", { name: "Q3 strategy deck.pdf" });
+    const file = screen.getByRole("button", { name: "Fall launch plan.pdf" });
     fireEvent.keyDown(file, { code: "Space", key: " " });
     fireEvent.keyDown(file, { code: "ArrowRight", key: "ArrowRight" });
     fireEvent.keyDown(file, { code: "Space", key: " " });
-    expect(done).toHaveBeenCalledWith("Q3 strategy deck.pdf");
+    expect(done).toHaveBeenCalledWith("Fall launch plan.pdf");
   });
 
   it("advances act two exactly once when one outlined work card is clicked", () => {
@@ -153,7 +153,7 @@ describe("tour acts one to three", () => {
     expect(chats.filter((card) => card.textContent?.includes("ChatGPT:"))).toHaveLength(2);
     expect(chats.filter((card) => card.textContent?.includes("Claude:"))).toHaveLength(2);
     expect(chats.filter((card) => card.textContent?.includes("Gemini:"))).toHaveLength(1);
-    expect(screen.getByText("Claude: positioning draft")).toBeTruthy();
+    expect(screen.getByText("Claude: positioning lines")).toBeTruthy();
     expect(screen.getByLabelText("Loose AI chat work cards").classList.contains("tour-region")).toBe(false);
   });
 
@@ -202,7 +202,7 @@ describe("tour acts one to three", () => {
     const question = screen.getByLabelText("Preset question");
     expect(question.getAttribute("contenteditable")).not.toBe("true");
     expect(question.getAttribute("aria-readonly")).toBe("true");
-    expect(question.textContent).toBe("What ideas did I have that did not make the final deck? Give me the link to the AI chat I worked them out in.");
+    expect(question.textContent).toBe("What ideas did I have that did not make the final launch plan? Give me the link to the AI chat I worked them out in.");
   });
 
   it("shows exactly three cited claims from work cards in the frame", () => {
@@ -215,7 +215,7 @@ describe("tour acts one to three", () => {
     expect(claims).toHaveLength(3);
     const frameText = screen.getByLabelText("Workstream with three source work cards").textContent ?? "";
     for (const claim of claims) expect(frameText).toContain(claim.querySelector("span")?.textContent);
-    expect(screen.getByRole("button", { name: "Open the chat: Claude: pricing options" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Open the chat: Claude: channel mix options" })).toBeTruthy();
     vi.useRealTimers();
   });
 
@@ -226,8 +226,8 @@ describe("tour acts one to three", () => {
     expect(screen.getByTestId("canvas-lab-answer-card")).toBeTruthy();
     expect(document.querySelectorAll('.tour-keep-links [role="button"]')).toHaveLength(3);
     expect(landed).toHaveBeenCalledTimes(1);
-    expect(screen.getByLabelText("Deck, slide 12")).toBeTruthy();
-    expect(screen.getByLabelText("Whiteboard photo")).toBeTruthy();
+    expect(screen.getByLabelText("Launch deck, slide 12")).toBeTruthy();
+    expect(screen.getByLabelText("Moodboard photo")).toBeTruthy();
   });
 
   it("anchors each kept-answer connector to a source work card", () => {

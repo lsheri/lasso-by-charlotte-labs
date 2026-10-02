@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { TOUR_AMBIENT_CARDS, TOUR_BOARD_LAYOUT, TOUR_CONTENT } from "@/lib/tour-content";
+import { TOUR_AMBIENT_CARDS, TOUR_BOARD_LAYOUT, TOUR_CONTENT, tourAmbientCards, tourBoardCopy } from "@/lib/tour-content";
 
 const REGISTERS = ["company", "partner", "personal", "edu"] as const;
 const FORBIDDEN = /\u2014|\baudit\b|\boversight\b|\bmonitor\b|\btrack\b|\bsurveillance\b|\bgovernance\b|\bscore\b/i;
@@ -75,5 +75,29 @@ describe("T1 tour content", () => {
         expect(Math.abs(layout?.rotation ?? 2)).toBeLessThan(1.5);
       }
     }
+  });
+
+  it("pins the company fall launch scenario and its cited sources", () => {
+    const acts = TOUR_CONTENT.company.acts;
+    expect(acts[1]?.cards?.map((card) => card.title)).toEqual([
+      "Fall launch plan v3",
+      "Creator call, 14 Sep",
+      "Claude: channel mix options",
+      "Media budget v4",
+      "Sample shipping receipts",
+    ]);
+    expect(acts[3]?.question).toBe("What ideas did I have that did not make the final launch plan? Give me the link to the AI chat I worked them out in.");
+    expect(acts[3]?.answer).toEqual([
+      { text: "You floated a TikTok first launch and dropped it after the creator call.", sourceCardTitle: "Claude: channel mix options" },
+      { text: "Toronto came up on the call and never reached the plan.", sourceCardTitle: "Creator call, 14 Sep" },
+      { text: "The plan kept Austin and Denver only.", sourceCardTitle: "Fall launch plan v3" },
+    ]);
+    expect(tourAmbientCards("company").map((card) => card.title)).toEqual([
+      "ChatGPT: athleisure trend teardown",
+      "ChatGPT: creator brief, draft 2",
+      "Gemini: city by city demand",
+      "Claude: positioning lines",
+    ]);
+    expect(tourBoardCopy("company")).toMatchObject({ title: "Fall Marketing Launch", owner: "LYKOS LOUNGEWARE", whiteboardTitle: "Moodboard photo", whiteboardCaption: "Shots from the fabric session", deckTitle: "Launch deck, slide 12" });
   });
 });
