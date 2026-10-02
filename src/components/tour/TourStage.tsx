@@ -17,8 +17,69 @@ type TourStageProps = {
   onSkip: () => void;
   onBack: () => void;
   onHintShown: (act: number) => void;
-  captionOverride?: string | null;
+  instructionOverride?: string | null;
 };
+
+type ArrowPath = { width: number; height: number; line: string; headA: string; headB: string };
+
+function TourInstructionArrow({ stage, activeAct }: { stage: React.RefObject<HTMLElement | null>; activeAct: number }) {
+  const [path, setPath] = useState<ArrowPath | null>(null);
+
+  useEffect(() => {
+    const root = stage.current;
+    if (!root) return;
+    let frame = 0;
+    let observer: ResizeObserver | null = null;
+    const draw = () => {
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
+        const instruction = root.querySelector<HTMLElement>("[data-tour-do]");
+        const target = root.querySelector<HTMLElement>(`[data-tour-target="${activeAct}"]`);
+        if (!instruction || !target) { setPath(null); return; }
+        const base = root.getBoundingClientRect();
+        const from = instruction.getBoundingClientRect();
+        const to = target.getBoundingClientRect();
+        const sx = Math.min(from.right - base.left + 18, base.width - 28);
+        const sy = from.bottom - base.top + 4;
+        const ex = to.left - base.left + to.width / 2;
+        const ey = to.top - base.top + Math.min(to.height / 2, 22);
+        const bend = Math.max(28, Math.abs(ey - sy) * 0.42);
+        const line = `M ${sx} ${sy} C ${sx + 10} ${sy + bend}, ${ex - 18} ${ey - bend}, ${ex} ${ey}`;
+        setPath({
+          width: base.width,
+          height: base.height,
+          line,
+          headA: `M ${ex} ${ey} l -11 -3`,
+          headB: `M ${ex} ${ey} l -4 -10`,
+        });
+      });
+    };
+    draw();
+    const mutation = new MutationObserver(draw);
+    const actSurface = root.querySelector<HTMLElement>("[data-testid='tour-act']");
+    if (actSurface) mutation.observe(actSurface, { childList: true, subtree: true });
+    if (typeof ResizeObserver !== "undefined") {
+      observer = new ResizeObserver(draw);
+      observer.observe(root);
+    }
+    window.addEventListener("resize", draw);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      mutation.disconnect();
+      observer?.disconnect();
+      window.removeEventListener("resize", draw);
+    };
+  }, [activeAct, stage]);
+
+  if (!path) return null;
+  return (
+    <svg className="tour-instruction-arrow" viewBox={`0 0 ${path.width} ${path.height}`} aria-hidden>
+      <path pathLength={1} d={path.line} />
+      <path pathLength={1} d={path.headA} />
+      <path pathLength={1} d={path.headB} />
+    </svg>
+  );
+}
 
 function useTouchPresentation(): boolean {
   const [touch, setTouch] = useState(false);
@@ -51,13 +112,14 @@ export function TourStage({
   onSkip,
   onBack,
   onHintShown,
-  captionOverride,
+  instructionOverride,
 }: TourStageProps) {
   const copy = TOUR_CONTENT[register];
   const touch = useTouchPresentation();
   const act = copy.acts[activeAct - 1];
   const renderer = acts[activeAct - 1];
   const hintedActs = useRef(new Set<number>());
+  const stageRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -87,7 +149,7 @@ export function TourStage({
 
   return (
     <section className="tour-shell" aria-label={copy.stage.stageLabel} data-act={activeAct}>
-      <div className="tour-stage">
+      <section ref={stageRef} className="tour-stage">
         <header className="tour-stage-header">
           <nav className="tour-rail" aria-label={copy.stage.railLabel}>
             {copy.acts.map((item, index) => {
@@ -109,6 +171,12 @@ export function TourStage({
           </Button>
         </header>
 
+        <div className={`tour-instruction-band${instructionOverride ? " is-complete" : ""}`}>
+          <span className="tour-step-marker">Step {activeAct} of 5</span>
+          <p className="tour-do-line" data-tour-do>{instructionOverride ?? (touch ? act.captionTouch : act.captionPointer)}</p>
+          <p className="tour-why-line">{act.why}</p>
+        </div>
+
         <div className="tour-act" data-testid="tour-act">
           {renderer.content}
         </div>
@@ -123,11 +191,8 @@ export function TourStage({
           )}
           <div className="tour-primary-action">{renderer.primaryAction}</div>
         </footer>
-      </div>
-
-      <p className="tour-caption">
-        {captionOverride ?? (touch ? act.captionTouch : act.captionPointer)}
-      </p>
+        <TourInstructionArrow stage={stageRef} activeAct={activeAct} />
+      </section>
     </section>
   );
 }

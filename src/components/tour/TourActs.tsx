@@ -140,11 +140,13 @@ export function TourActOne({ register, onComplete }: { register: Register; onCom
   const boardRef = useRef<HTMLDivElement>(null);
   const [drag, setDrag] = useState<DragFile | null>(null);
   const [landed, setLanded] = useState<string | null>(null);
+  const [filesOpen, setFilesOpen] = useState(false);
   const [keyPosition, setKeyPosition] = useState({ x: 0, y: 0 });
 
   const land = (title: string) => {
     if (landed) return;
     setLanded(title);
+    setFilesOpen(false);
     onComplete(title);
   };
 
@@ -194,14 +196,17 @@ export function TourActOne({ register, onComplete }: { register: Register; onCom
       if (!drag || drag.pointerId < 0) return;
       setDrag((current) => current ? { ...current, x: event.clientX, y: event.clientY } : null);
     }} onPointerUp={finishPointer} onPointerCancel={() => setDrag(null)}>
-      <FileWindow files={files} drag={drag} onPointerDown={(title, event) => {
-        event.currentTarget.setPointerCapture?.(event.pointerId);
-        setDrag({ title, pointerId: event.pointerId, x: event.clientX, y: event.clientY });
-      }} onKeyDown={onFileKeyDown} />
-      <div ref={boardRef} className="tour-arrival-board" data-testid="tour-drop-board">
-        <BoardShell ariaLabel="Empty tour board" frames={[]} nodes={landedNode} lockZoom renderNode={(node) => <TourLabCard node={node} selected={false} onSelect={noop} onKeyDown={noop} />} />
-        {landedNode.length === 0 ? <GraphiteRule className="tour-empty-rule" animated={false} /> : null}
-      </div>
+      <TourWorkboard active="add" onAddWork={() => setFilesOpen(true)}>
+        <div ref={boardRef} className="tour-arrival-board" data-testid="tour-drop-board">
+          <BoardShell ariaLabel="Empty tour board" frames={[]} nodes={landedNode} lockZoom renderNode={(node) => <TourLabCard node={node} selected={false} onSelect={noop} onKeyDown={noop} />} />
+          {landedNode.length === 0 ? <GraphiteRule className="tour-empty-rule" animated={false} /> : null}
+          {filesOpen ? <div className="tour-file-window-layer"><FileWindow files={files} drag={drag} onPointerDown={(title, event) => {
+            event.currentTarget.setPointerCapture?.(event.pointerId);
+            if (event.pointerType === "touch") { land(title); return; }
+            setDrag({ title, pointerId: event.pointerId, x: event.clientX, y: event.clientY });
+          }} onKeyDown={onFileKeyDown} /></div> : null}
+        </div>
+      </TourWorkboard>
       {drag ? <div className="tour-file-drag" data-keyboard={drag.pointerId < 0} style={drag.pointerId < 0 ? { transform: `translate(${keyPosition.x}px, ${keyPosition.y}px)` } : { left: drag.x, top: drag.y }}><DrawnFileGlyph seed={drag.title} /><span>{drag.title}</span></div> : null}
     </div>
   );
@@ -245,7 +250,7 @@ export function TourActTwo({ register, hint, onComplete }: { register: Register;
   };
 
   return (
-    <TourWorkboard active="select"><div ref={boardRef} className="tour-board-act" data-testid="tour-act-two" onPointerDown={(event) => {
+    <TourWorkboard active="select"><div ref={boardRef} className="tour-board-act" data-testid="tour-act-two" data-tour-target="2" onPointerDown={(event) => {
       if ((event.target as HTMLElement).closest("[data-tour-card]")) return;
       const rect = event.currentTarget.getBoundingClientRect();
       startRef.current = { x: event.clientX - rect.left, y: event.clientY - rect.top };
@@ -370,18 +375,18 @@ function TourAskMimic({ register, visibleClaims, generating, onAsk }: {
   );
 }
 
-type TourWorkboardTool = "select" | "group" | "ask" | null;
+type TourWorkboardTool = "add" | "select" | "group" | "ask" | null;
 
-function TourWorkboard({ active, onGroup, onAsk, children }: { active: TourWorkboardTool; onGroup?: () => void; onAsk?: () => void; children: React.ReactNode }) {
+function TourWorkboard({ active, onAddWork, onGroup, onAsk, children }: { active: TourWorkboardTool; onAddWork?: () => void; onGroup?: () => void; onAsk?: () => void; children: React.ReactNode }) {
   const inert = () => undefined;
   const toolClass = (tool: Exclude<TourWorkboardTool, null>) => `tour-board-tool${active === tool ? " is-active" : ""}`;
   const toolbar = (
     <WorkboardToolbar className="tour-board-toolbar" ariaLabel="Board tools">
       <Button type="button" size="icon" variant="outline" aria-label="Show workstreams" onClick={inert}><GraphiteIcon name="workstreams" size={20} /></Button>
-      <Button type="button" size="sm" variant="outline" aria-label="Add work" onClick={inert}><GraphiteIcon name="work" size={20} /><span>Add work</span></Button>
+      <Button type="button" size="sm" variant="outline" aria-label="Add work" data-toolbar-control="add-work" data-tour-target={active === "add" ? "1" : undefined} className={toolClass("add")} onClick={active === "add" ? onAddWork : inert}><GraphiteIcon name="work" size={20} /><span>Add work</span></Button>
       <Button type="button" size="icon" variant="outline" aria-label="Select work" aria-pressed={active === "select"} className={toolClass("select")} onClick={inert}><GraphiteIcon name="connectors" size={20} /></Button>
-      <Button type="button" size="icon" variant="outline" aria-label="Add grouping" aria-pressed={active === "group"} className={toolClass("group")} onClick={active === "group" ? onGroup : inert}><GraphiteIcon name="grouping" size={20} /></Button>
-      <Button type="button" size="icon" variant="outline" aria-label="Ask Lasso" aria-pressed={active === "ask"} className={toolClass("ask")} onClick={active === "ask" ? onAsk : inert}><LassoThinkingMark kind="signature" size={24} /></Button>
+      <Button type="button" size="icon" variant="outline" aria-label="Add grouping" aria-pressed={active === "group"} data-tour-target={active === "group" ? "3" : undefined} className={toolClass("group")} onClick={active === "group" ? onGroup : inert}><GraphiteIcon name="grouping" size={20} /></Button>
+      <Button type="button" size="icon" variant="outline" aria-label="Ask Lasso" aria-pressed={active === "ask"} data-tour-target={active === "ask" ? "4" : undefined} className={toolClass("ask")} onClick={active === "ask" ? onAsk : inert}><LassoThinkingMark kind="signature" size={24} /></Button>
       <Button type="button" size="icon" variant="outline" aria-label="Info" onClick={inert}><GraphiteIcon name="working-from" size={20} /></Button>
       <Button type="button" size="icon" variant="outline" aria-label="Fit" onClick={inert}><GraphiteIcon name="fit" size={20} /></Button>
     </WorkboardToolbar>
@@ -545,7 +550,7 @@ export function TourActFive({ register, onLanded }: { register: Register; onLand
             <span>Answer</span>
             <p>{TOUR_CONTENT[register].acts[3]?.answer?.map((claim) => claim.text).join(" ")}</p>
           </article>
-          <Button type="button" variant="ink" onClick={land}>Keep</Button>
+          <Button type="button" variant="ink" data-tour-target="5" onClick={land}>Keep</Button>
         </aside>
       ) : null}
     </div></TourWorkboard>
@@ -554,12 +559,12 @@ export function TourActFive({ register, onLanded }: { register: Register; onLand
 
 export function useTourActRenderers({ register, activeAct, onAdvance, onHintShown, onFinish }: { register: Register; activeAct: 1 | 2 | 3 | 4 | 5; onAdvance: (act: 1 | 2 | 3 | 4) => void; onHintShown: (act: number) => void; onFinish: () => void }) {
   const [hintAct, setHintAct] = useState<number | null>(null);
-  const [captionOverride, setCaptionOverride] = useState<string | null>(null);
+  const [instructionOverride, setInstructionOverride] = useState<string | null>(null);
   const [answerLanded, setAnswerLanded] = useState(false);
 
   useEffect(() => {
     setHintAct(null);
-    setCaptionOverride(null);
+    setInstructionOverride(null);
     setAnswerLanded(false);
   }, [activeAct, register]);
 
@@ -574,10 +579,10 @@ export function useTourActRenderers({ register, activeAct, onAdvance, onHintShow
     { content: <TourActThree register={register} onComplete={() => onAdvance(3)} /> },
     { content: <TourActFour register={register} onComplete={() => onAdvance(4)} /> },
     {
-      content: <TourActFive register={register} onLanded={() => { setAnswerLanded(true); setCaptionOverride(TOUR_CONTENT[register].acts[4]?.closingLine ?? null); }} />,
+      content: <TourActFive register={register} onLanded={() => { setAnswerLanded(true); setInstructionOverride(TOUR_CONTENT[register].acts[4]?.closingLine ?? null); }} />,
       primaryAction: answerLanded ? <Button type="button" variant="ink" onClick={onFinish}>{TOUR_CONTENT[register].acts[4]?.primaryActionLabel}</Button> : null,
     },
   ], [answerLanded, hintAct, onAdvance, onFinish, register]);
 
-  return { renderers, captionOverride, hint };
+  return { renderers, instructionOverride, hint };
 }

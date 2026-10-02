@@ -38,4 +38,14 @@ describe("T1 tour content", () => {
   it("keeps every content string within the language rules", () => {
     for (const value of strings(TOUR_CONTENT)) expect(value).not.toMatch(FORBIDDEN);
   });
+
+  it("gives every act a plain instruction and reason", () => {
+    for (const register of REGISTERS) {
+      for (const act of TOUR_CONTENT[register].acts) {
+        expect(act.captionPointer.length).toBeGreaterThan(0);
+        expect(act.captionTouch.length).toBeGreaterThan(0);
+        expect(act.why.length).toBeGreaterThan(0);
+      }
+    }
+  });
 });

@@ -42,10 +42,11 @@ function stage(onSkip = vi.fn()) {
 }
 
 describe("T2 tour stage", () => {
-  it("shows two drawn checks and the pointer caption at act three", () => {
+  it("shows two drawn checks and the pointer instruction at act three", () => {
     const { container } = render(stage());
     expect(container.querySelectorAll('[data-state="complete"] .nb-mark')).toHaveLength(2);
-    expect(screen.getByText("Draw a box around them. That is a workstream.")).toBeTruthy();
+    expect(screen.getByText("Draw a box around them.")).toBeTruthy();
+    expect(screen.getByText("The box keeps those three together. Lasso calls it a workstream.")).toBeTruthy();
   });
 
   it("uses the touch caption at a touch-width viewport", () => {
@@ -60,7 +61,7 @@ describe("T2 tour stage", () => {
         onHintShown: vi.fn(),
       }),
     );
-    expect(screen.getByText("Tap the deck to put it on the board.")).toBeTruthy();
+    expect(screen.getByText("Tap a file to put it on the board.")).toBeTruthy();
   });
 
   it("calls the required Skip handler", () => {

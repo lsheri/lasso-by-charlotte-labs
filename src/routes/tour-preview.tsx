@@ -34,7 +34,7 @@ function TourPreviewPage() {
     window.setTimeout(() => setActiveAct((act + 1) as 2 | 3 | 4 | 5), act === 3 ? 900 : 450);
   }, []);
   const finish = useCallback(() => setActiveAct(1), []);
-  const { renderers, captionOverride, hint } = useTourActRenderers({ register, activeAct, onAdvance: advance, onHintShown: () => undefined, onFinish: finish });
+  const { renderers, instructionOverride, hint } = useTourActRenderers({ register, activeAct, onAdvance: advance, onHintShown: () => undefined, onFinish: finish });
 
   return (
     <main className="tour-preview-page">
@@ -61,7 +61,7 @@ function TourPreviewPage() {
         onSkip={skip}
         onBack={back}
         onHintShown={hint}
-        captionOverride={captionOverride}
+        instructionOverride={instructionOverride}
       />
     </main>
   );
