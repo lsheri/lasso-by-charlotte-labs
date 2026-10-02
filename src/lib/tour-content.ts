@@ -86,7 +86,7 @@ function acts(
       id: 3,
       captionPointer: DO_LINES[3],
       captionTouch: DO_LINES[3],
-      why: `The box is a ${frameTitle}. Everything inside it shares context, so a question answers from those pieces and nothing else on the board.`,
+      why: `The box is a ${frameTitle === "Workstream" ? "workstream" : frameTitle}. Everything inside it shares context, so a question answers from those pieces and nothing else on the board.`,
       contextSentence: TOUR_CONTEXT_SENTENCE,
       frameTitle,
     },

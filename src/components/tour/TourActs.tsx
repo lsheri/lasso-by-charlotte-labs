@@ -486,7 +486,15 @@ function answerNode(register: Register, compact = false): LabNode {
 
 function TourAnchoredRelationships({ sourceNodes, answer }: { sourceNodes: LabNode[]; answer: LabNode }) {
   const hostRef = useRef<SVGSVGElement>(null);
-  const [geometry, setGeometry] = useState<{ width: number; height: number; nodes: LabNode[]; links: LabLink[] } | null>(null);
+  const [geometry, setGeometry] = useState<{ width: number; height: number; nodes: LabNode[]; links: LabLink[] }>(() => {
+    const endpoints = sourceNodes.map((_, index) => ({ ...answer, id: `${answer.id}-anchor-${index}`, y: answer.y + answer.height * ((index + 1) / (sourceNodes.length + 1)), width: 1, height: 1 }));
+    return {
+      width: 680,
+      height: 600,
+      nodes: [...sourceNodes, ...endpoints],
+      links: sourceNodes.map((node, index) => ({ id: `tour-link-${index}`, fromId: node.id, toId: endpoints[index]?.id ?? answer.id, fromAnchor: "right", toAnchor: "left" })),
+    };
+  });
 
   useEffect(() => {
     const svg = hostRef.current;
@@ -528,7 +536,7 @@ function TourAnchoredRelationships({ sourceNodes, answer }: { sourceNodes: LabNo
 
   return (
     <svg ref={hostRef} className="tour-keep-links" viewBox={geometry ? `0 0 ${geometry.width} ${geometry.height}` : "0 0 1 1"} aria-label="Answer links to its three sources">
-      {geometry ? <LabRelationships links={geometry.links} nodes={geometry.nodes} measuredHeights={new Map()} selectedLinkId={null} inverseZoom={1} onSelect={noop} /> : null}
+      <LabRelationships links={geometry.links} nodes={geometry.nodes} measuredHeights={new Map()} selectedLinkId={null} inverseZoom={1} onSelect={noop} />
     </svg>
   );
 }
@@ -547,7 +555,7 @@ export function TourActFive({ register, onLanded }: { register: Register; onLand
     query.addEventListener("change", update);
     return () => query.removeEventListener("change", update);
   }, []);
-  const sourceNodes: LabNode[] = cards.map((card, index) => ({
+  const sourceNodes: LabNode[] = useMemo(() => cards.map((card, index) => ({
     id: `tour-source-${index}`,
     kind: "source",
     frame: "tour-keep-frame",
@@ -559,8 +567,8 @@ export function TourActFive({ register, onLanded }: { register: Register; onLand
     y: 42 + index * 82,
     width: compact ? 196 : 250,
     height: 64,
-  }));
-  const answer = answerNode(register, compact);
+  })), [cards, compact]);
+  const answer = useMemo(() => answerNode(register, compact), [register, compact]);
   const land = () => {
     if (landed) return;
     setLanded(true);
