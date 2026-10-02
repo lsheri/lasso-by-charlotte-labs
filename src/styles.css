@@ -6551,7 +6551,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .tour-deck-footnote-marker .nb-circle-mark { inset: -4px; width: calc(100% + 8px); height: calc(100% + 8px); }
 .tour-deck-links { position: absolute; z-index: 6; inset: 0; width: 100%; height: auto; overflow: visible; pointer-events: none; }
 .tour-deck-links > path { fill: none; stroke: var(--nb-graphite); stroke-width: var(--stroke-pencil); stroke-linecap: round; stroke-linejoin: round; }
-.tour-deck-links > path[data-tour-deck-link="deck-chat-trace"] { stroke: var(--nb-blue); stroke-dasharray: 4 4; stroke-width: var(--stroke-bold); }
+.tour-deck-links > path[data-tour-deck-link="deck-chat-trace"] { stroke: var(--nb-region-lavender-vivid); stroke-dasharray: 4 4; stroke-width: var(--stroke-bold); }
 .tour-deck-links marker path { fill: var(--nb-graphite); stroke: none; }
 .tour-reserved-slot.is-deck-slot { height: 34%; min-height: 150px; }
 .tour-reserved-slot { height: 17%; border: 1px dashed var(--nb-pencil); border-radius: var(--radius-card); background: color-mix(in srgb, var(--nb-white) 45%, transparent); }
