@@ -1,30 +1,21 @@
-import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type MutableRefObject, type PointerEvent as ReactPointerEvent, type ReactNode, type RefObject } from "react";
 
-import { BoardShell } from "@/components/board/BoardShell";
-import { LabCard } from "@/components/canvas-lab/LabCard";
-import { LabAnswerCard } from "@/components/canvas-lab/LabAnswerCard";
-import { LabRelationships } from "@/components/canvas-lab/LabRelationships";
+import { TourBoard } from "@/components/tour/TourBoard";
 import { WorkboardHeader, WorkboardSideRail, WorkboardToolbar } from "@/components/canvas-lab/WorkboardChrome";
-import type { LabLink, LabNode } from "@/components/canvas-lab/canvas-lab-model";
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
 import { GraphiteIcon } from "@/components/notebook/icons";
-import { EvidenceCircle } from "@/components/notebook/marks";
 import { LassoThinkingMark } from "@/components/reflect/LassoThinkingMark";
 import { ToolBadge } from "@/components/onboarding/ToolBadge";
 import { Button } from "@/components/ui/button";
 import { keyTo } from "@/lib/canvas-drag";
-import { seededRand } from "@/lib/journey-path";
 import type { ToolId } from "@/lib/onboarding-tools";
 import type { Register } from "@/lib/register";
-import { TOUR_AMBIENT_CARDS, TOUR_CONTENT, type TourAmbientCard, type TourCard, type TourSource } from "@/lib/tour-content";
+import { TOUR_CONTENT, type TourSource } from "@/lib/tour-content";
 
 const noop = () => undefined;
-const BOARD_POINT = { x: 72, y: 82 };
-const CARD_SIZE = { width: 190, height: 92 };
-
-type TourNode = LabNode & { source: TourSource; inSet: boolean };
 type DragFile = { title: string; pointerId: number; x: number; y: number };
 type Box = { x: number; y: number; width: number; height: number };
+const GROUP_IDS = ["primary-0", "primary-1", "primary-2"] as const;
 
 function sourceTool(source: TourSource): ToolId {
   if (source === "drive") return "googledrive";
@@ -32,263 +23,50 @@ function sourceTool(source: TourSource): ToolId {
   return source;
 }
 
-function nodeFor(card: TourCard, index: number, compact = false): TourNode {
-  const column = compact ? index % 2 : index % 3;
-  const row = compact ? Math.floor(index / 2) : Math.floor(index / 3);
-  return {
-    id: `tour-card-${index}`,
-    kind: "source",
-    frame: null,
-    title: card.title,
-    summary: "",
-    typeLabel: card.source,
-    ownership: "draft",
-    x: compact ? 10 + column * 157 : 32 + column * 218,
-    y: compact ? 22 + row * 122 : 46 + row * 130,
-    width: compact ? 145 : CARD_SIZE.width,
-    height: compact ? 96 : CARD_SIZE.height,
-    source: card.source,
-    inSet: card.inSet,
-  };
-}
-
-function TourLabCard({ node, selected, hint, inert = false, onSelect, onKeyDown }: {
-  node: TourNode;
-  selected: boolean;
-  hint?: boolean;
-  inert?: boolean;
-  onSelect: () => void;
-  onKeyDown: (event: React.KeyboardEvent) => void;
-}) {
-  const localNode = { ...node, x: 0, y: 0 };
-  return (
-    <div className="tour-card-wrap" data-tour-card={node.id}>
-      <span className="tour-card-source"><ToolBadge tool={sourceTool(node.source)} size="sm" /></span>
-      <LabCard
-        node={localNode}
-        readOnly={inert}
-        showStatusChrome={false}
-        selected={selected}
-        focused={selected}
-        connecting={false}
-        connectSourceAnchor={null}
-        onSelect={onSelect}
-        onOpen={noop}
-        onBranch={noop}
-        onHide={noop}
-        onDelete={noop}
-        onEdit={noop}
-        onEditCommitted={noop}
-        onAnchorPointerDown={noop}
-        onAnchorActivate={noop}
-        onMenuOpened={noop}
-        onMenuOpenChange={noop}
-        onMeasure={noop}
-        onPointerDown={onSelect}
-        onFocus={noop}
-        onKeyDown={onKeyDown}
-        canResize={false}
-        onResizeStart={noop}
-        onFit={noop}
-        onResizeKeyDown={noop}
-        onResizeKeyUp={noop}
-        frameChoices={[]}
-        structured={false}
-        onMoveToFrame={noop}
-      />
-      {hint ? <EvidenceCircle className="tour-card-hint" /> : null}
-    </div>
-  );
-}
-
-function ambientTitle(register: Register) {
-  if (register === "personal") return "Research";
-  if (register === "edu") return "Background reading";
-  return "Market scan";
-}
-
-function ArtifactPreview({ strip = false }: { strip?: boolean }) {
-  return (
-    <article className={`tour-artifact-card${strip ? " is-strip" : ""}`} aria-label="Artifact preview">
-      <span>Artifact</span>
-      <div aria-hidden>{strip ? <><i /><i /><b /><b /></> : <><i /><i /><i /><b /><b /></>}</div>
-    </article>
-  );
-}
-
-function DrawnPreview({ kind = "document" }: { kind?: "document" | "image" }) {
-  return (
-    <svg className={`tour-drawn-preview is-${kind}`} viewBox="0 0 180 76" aria-hidden>
-      {kind === "image" ? <>
-        <rect x="4" y="4" width="172" height="58" rx="2" />
-        <path d="M10 52 48 24l26 20 25-18 69 31" />
-        <circle cx="132" cy="20" r="8" />
-        <path d="M6 70 C48 69 113 71 164 69" />
-      </> : <>
-        <path d="M5 12 C48 11 110 13 170 11 M5 28 C48 27 92 29 146 27 M5 44 C42 43 102 45 160 43 M5 60 C34 59 78 61 126 59" />
-      </>}
-    </svg>
-  );
-}
-
-function TourPreviewCard({ card, domId, selected = false, inert = false, ambient = false, onSelect = noop, onKeyDown = noop }: {
-  card: TourCard | TourAmbientCard;
-  domId: string;
-  selected?: boolean;
-  inert?: boolean;
-  ambient?: boolean;
-  onSelect?: () => void;
-  onKeyDown?: (event: React.KeyboardEvent) => void;
-}) {
-  const preview = "excerpt" in card ? card.excerpt : card.preview;
-  return (
-    <article
-      className={`tour-preview-card${selected ? " is-selected" : ""}`}
-      role={inert ? undefined : "group"}
-      tabIndex={inert ? undefined : 0}
-      data-tour-card={domId}
-      data-tour-ambient={ambient ? "" : undefined}
-      onClick={inert ? undefined : onSelect}
-      onKeyDown={inert ? undefined : onKeyDown}
-    >
-      <ToolBadge tool={sourceTool(card.source)} size="sm" />
-      <strong>{card.title}</strong>
-      <div className="tour-card-preview-copy"><span>{preview[0]}</span><span>{preview[1]}</span></div>
-    </article>
-  );
-}
-
-const AMBIENT_LINK_SOURCE = "Claude: positioning draft";
-
-const AMBIENT_COLUMNS: readonly (readonly string[])[] = [
-  ["ChatGPT: competitor pricing teardown", "ChatGPT: objection handling script"],
-  ["Claude: positioning draft", "artifact", "Gemini: market size, 3 scenarios"],
-];
-
-// The shared connector bows 64px past each anchor, which would run under both cards across a 12px gap.
-// A chat with its artifact hanging directly beneath reads as one straight drop.
-function AmbientDropLine({ nodes }: { nodes: LabNode[] }) {
-  const [from, to] = nodes;
-  if (!from || !to) return null;
-  const x = Math.max(from.x, to.x) + (Math.min(from.x + from.width, to.x + to.width) - Math.max(from.x, to.x)) / 2;
-  return <path className="canvas-lab-relationship-line" d={`M ${x} ${from.y + from.height} L ${x} ${to.y}`} />;
-}
-
-function AmbientWorkstream({ register, columns = false, loose = false }: { register: Register; columns?: boolean; loose?: boolean }) {
-  const cards = TOUR_AMBIENT_CARDS;
-  const sectionRef = useRef<HTMLElement>(null);
-  const [geometry, setGeometry] = useState<{ width: number; height: number; nodes: LabNode[] } | null>(null);
-  const links = useMemo<LabLink[]>(() => [columns
-    ? { id: "ambient-artifact-link", fromId: "ambient-claude", toId: "ambient-artifact", fromAnchor: "bottom", toAnchor: "top" }
-    : { id: "ambient-artifact-link", fromId: "ambient-claude", toId: "ambient-artifact", fromAnchor: "right", toAnchor: "left" }], [columns]);
-
-  useEffect(() => {
-    const section = sectionRef.current;
-    if (!section) return;
-    const measure = () => {
-      const box = section.getBoundingClientRect();
-      const source = section.querySelector<HTMLElement>("[data-tour-ambient-link-source]");
-      const artifact = section.querySelector<HTMLElement>(".tour-artifact-card");
-      if (!source || !artifact || box.width <= 0 || box.height <= 0) return;
-      const s = source.getBoundingClientRect();
-      const a = artifact.getBoundingClientRect();
-      const base = { kind: "source", frame: null, summary: "", ownership: "draft" } as const;
-      setGeometry({
-        width: box.width,
-        height: box.height,
-        nodes: [
-          { ...base, id: "ambient-claude", title: AMBIENT_LINK_SOURCE, typeLabel: "claude", x: s.left - box.left, y: s.top - box.top, width: s.width, height: s.height },
-          { ...base, id: "ambient-artifact", title: "Artifact", typeLabel: "artifact", x: a.left - box.left, y: a.top - box.top, width: a.width, height: a.height },
-        ] as LabNode[],
-      });
-    };
-    measure();
-    if (typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(measure);
-    observer.observe(section);
-    for (const element of section.querySelectorAll<HTMLElement>("[data-tour-ambient-link-source], .tour-artifact-card")) observer.observe(element);
-    return () => observer.disconnect();
-  }, [columns]);
-
-  const renderCard = (card: TourAmbientCard, index: number) => (
-    <div key={card.title} className="tour-ambient-node" data-tour-ambient-link-source={card.title === AMBIENT_LINK_SOURCE ? "" : undefined} style={columns ? { transform: `rotate(${card.layout.rotation}deg)` } : { left: `${card.layout.x}%`, top: `${card.layout.y}%`, transform: `rotate(${card.layout.rotation}deg)` }}>
-      <TourPreviewCard card={card} domId={`ambient-${index}`} inert ambient />
-    </div>
-  );
-
-  return (
-    <section ref={sectionRef} className={`tour-ambient-frame${loose ? " is-loose" : " tour-region is-secondary"}${columns ? " is-columns" : ""}`} aria-label={loose ? "Loose AI chat work cards" : `${ambientTitle(register)} workstream`}>
-      {!loose ? <span className="tour-source-frame-title">{ambientTitle(register)}</span> : null}
-      {columns ? AMBIENT_COLUMNS.map((column, columnIndex) => (
-        <div key={columnIndex} className="tour-ambient-column">
-          {column.map((title) => {
-            if (title === "artifact") return <ArtifactPreview key="artifact" strip />;
-            const index = cards.findIndex((card) => card.title === title);
-            const card = cards[index];
-            return card ? renderCard(card, index) : null;
-          })}
-        </div>
-      )) : <>{cards.map(renderCard)}<ArtifactPreview /></>}
-      {geometry ? <svg className="tour-ambient-link" viewBox={`0 0 ${geometry.width} ${geometry.height}`} preserveAspectRatio="none" aria-label="Claude chat linked to its artifact">
-        {columns ? <AmbientDropLine nodes={geometry.nodes} /> : <LabRelationships links={links} nodes={geometry.nodes} measuredHeights={new Map()} selectedLinkId={null} inverseZoom={1} onSelect={noop} interactive={false} />}
-      </svg> : null}
-    </section>
-  );
-}
-
-function TourImageCard({ kind }: { kind: "deck" | "whiteboard" }) {
-  const deck = kind === "deck";
-  const rand = useMemo(() => seededRand(["tour-image-card", kind]), [kind]);
-  return (
-    <article className="tour-image-card" aria-label={deck ? "Deck, slide 12" : "Whiteboard photo"} style={{ transform: `rotate(${(rand(1) - 0.5) * 0.8}deg)` }}>
-      <strong>{deck ? "Deck, slide 12" : "Whiteboard photo"}</strong>
-      <svg viewBox="0 0 160 82" aria-hidden>
-        {deck ? <>
-          <path d="M10 12 C52 11 105 13 150 11" /><path d="M12 27 H72 M12 35 H62" />
-          <path d="M92 65 V48 H105 V65 M113 65 V37 H126 V65 M134 65 V25 H147 V65" />
-        </> : <>
-          <rect x="12" y="14" width="38" height="22" rx="2" /><rect x="108" y="46" width="38" height="22" rx="2" />
-          <rect x="61" y="28" width="38" height="22" rx="2" /><path d="M50 25 C57 24 58 32 64 34 M98 42 C105 42 107 50 111 53" />
-          <path d="m59 31 5 3-5 3 M106 50 5 3-5 3" />
-        </>}
-      </svg>
-    </article>
-  );
-}
-
 function DrawnFileGlyph({ seed }: { seed: string }) {
-  const rand = useMemo(() => seededRand(["tour-file", seed]), [seed]);
-  const a = 2 + rand(1) * 1.2;
-  const b = 13 + rand(2) * 1.1;
-  return (
-    <svg viewBox="0 0 20 24" aria-hidden className="tour-file-glyph">
-      <path d={`M${a} 1.5 L13 1.5 L18 6.5 L18 ${22 - rand(3)} L2 22 Z`} />
-      <path d="M13 1.5V7H18" />
-      <path d={`M5 ${b} C8 ${b - 0.7} 11 ${b + 0.6} 15 ${b}`} />
-      <path d={`M5 ${b + 4} C8 ${b + 3.5} 11 ${b + 4.6} 14 ${b + 4}`} />
-    </svg>
-  );
+  const offset = (seed.length % 4) * 0.3;
+  return <svg viewBox="0 0 20 24" aria-hidden className="tour-file-glyph">
+    <path d={`M${2 + offset} 1.5 L13 1.5 L18 6.5 L18 21 L2 22 Z`} /><path d="M13 1.5V7H18" />
+    <path d="M5 13 C8 12.3 11 13.6 15 13 M5 17 C8 16.5 11 17.6 14 17" />
+  </svg>;
 }
 
 function FileWindow({ files, drag, onPointerDown, onKeyDown }: {
   files: readonly string[];
   drag: DragFile | null;
   onPointerDown: (title: string, event: ReactPointerEvent<HTMLButtonElement>) => void;
-  onKeyDown: (title: string, event: React.KeyboardEvent<HTMLButtonElement>) => void;
+  onKeyDown: (title: string, event: KeyboardEvent<HTMLButtonElement>) => void;
 }) {
-  return (
-    <section className="tour-file-window" aria-label="Your files">
-      <header><i aria-hidden /><strong>Your files</strong></header>
-      <div>
-        {files.map((file) => (
-          <Button key={file} type="button" variant="ghost" className="tour-file-row" data-lifted={drag?.title === file} onPointerDown={(event) => onPointerDown(file, event)} onKeyDown={(event) => onKeyDown(file, event)}>
-            <DrawnFileGlyph seed={file} />
-            <span>{file}</span>
-          </Button>
-        ))}
-      </div>
-    </section>
-  );
+  return <section className="tour-file-window" aria-label="Your files"><header><i aria-hidden /><strong>Your files</strong></header><div>
+    {files.map((file) => <Button key={file} type="button" variant="ghost" className="tour-file-row" data-lifted={drag?.title === file} onPointerDown={(event) => onPointerDown(file, event)} onKeyDown={(event) => onKeyDown(file, event)}><DrawnFileGlyph seed={file} /><span>{file}</span></Button>)}
+  </div></section>;
+}
+
+function useReducedMotion() {
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") return;
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setReduced(query.matches);
+    update(); query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
+  return reduced;
+}
+
+type TourWorkboardTool = "add" | "select" | "group" | "ask" | null;
+function TourWorkboard({ active, onAddWork, onGroup, onAsk, children }: { active: TourWorkboardTool; onAddWork?: () => void; onGroup?: () => void; onAsk?: () => void; children: ReactNode }) {
+  const toolClass = (tool: Exclude<TourWorkboardTool, null>) => `tour-board-tool${active === tool ? " is-active" : ""}`;
+  const toolbar = <WorkboardToolbar className="tour-board-toolbar" ariaLabel="Board tools">
+    <Button type="button" size="icon" variant="outline" aria-label="Show workstreams" onClick={noop}><GraphiteIcon name="workstreams" size={20} /></Button>
+    <Button type="button" size="sm" variant="outline" aria-label="Add work" data-toolbar-control="add-work" data-tour-target={active === "add" ? "1" : undefined} className={toolClass("add")} onClick={active === "add" ? onAddWork : noop}><GraphiteIcon name="work" size={20} /><span>Add work</span></Button>
+    <Button type="button" size="icon" variant="outline" aria-label="Select work" aria-pressed={active === "select"} className={toolClass("select")} onClick={noop}><GraphiteIcon name="connectors" size={20} /></Button>
+    <Button type="button" size="icon" variant="outline" aria-label="Add grouping" aria-pressed={active === "group"} data-tour-target={active === "group" ? "3" : undefined} className={toolClass("group")} onClick={active === "group" ? onGroup : noop}><GraphiteIcon name="grouping" size={20} /></Button>
+    <Button type="button" size="icon" variant="outline" aria-label="Ask Lasso" aria-pressed={active === "ask"} data-tour-target={active === "ask" ? "4" : undefined} className={toolClass("ask")} onClick={active === "ask" ? onAsk : noop}><LassoThinkingMark kind="signature" size={24} /></Button>
+    <Button type="button" size="icon" variant="outline" aria-label="Info" onClick={noop}><GraphiteIcon name="working-from" size={20} /></Button>
+    <Button type="button" size="icon" variant="outline" aria-label="Fit" onClick={noop}><GraphiteIcon name="fit" size={20} /></Button>
+  </WorkboardToolbar>;
+  return <div className="tour-workboard-chrome"><WorkboardSideRail menuControl={<Button type="button" size="icon" variant="ghost" aria-label="Open workboard menu" onClick={noop}><GraphiteIcon name="more" size={18} /></Button>} closeControl={<Button type="button" size="icon" variant="ghost" aria-label="Close workboard" onClick={noop}><GraphiteIcon name="close" size={18} /></Button>} /><div className="tour-workboard-main"><WorkboardHeader title="Your workboard" status="WORKBOARD" toolbar={toolbar} /><div className="tour-workboard-canvas">{children}</div></div></div>;
 }
 
 export function TourActOne({ register, onComplete }: { register: Register; onComplete: (title: string) => void }) {
@@ -298,510 +76,97 @@ export function TourActOne({ register, onComplete }: { register: Register; onCom
   const [landed, setLanded] = useState<string | null>(null);
   const [filesOpen, setFilesOpen] = useState(false);
   const [keyPosition, setKeyPosition] = useState({ x: 0, y: 0 });
-
-  const land = (title: string) => {
-    if (landed) return;
-    setLanded(title);
-    setFilesOpen(false);
-    onComplete(title);
-  };
-
+  const land = (title: string) => { if (landed) return; setLanded(title); setFilesOpen(false); onComplete(title); };
   const finishPointer = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (!drag || drag.pointerId !== event.pointerId) return;
-    const board = boardRef.current?.getBoundingClientRect();
+    const board = (event.currentTarget.querySelector('[data-testid="tour-drop-board"]') ?? boardRef.current)?.getBoundingClientRect();
     const inside = Boolean(board && event.clientX >= board.left && event.clientX <= board.right && event.clientY >= board.top && event.clientY <= board.bottom);
     if (event.pointerType === "touch" || inside) land(drag.title);
-    setDrag(null);
-    setKeyPosition({ x: 0, y: 0 });
+    setDrag(null); setKeyPosition({ x: 0, y: 0 });
   };
-
-  const onFileKeyDown = (title: string, event: React.KeyboardEvent<HTMLButtonElement>) => {
-    if (event.code === "Space") {
-      event.preventDefault();
-      if (drag?.title === title) {
-        land(title);
-        setDrag(null);
-      } else {
-        setDrag({ title, pointerId: -1, x: 0, y: 0 });
-      }
-      return;
-    }
+  const onFileKeyDown = (title: string, event: KeyboardEvent<HTMLButtonElement>) => {
+    if (event.code === "Space") { event.preventDefault(); if (drag?.title === title) { land(title); setDrag(null); } else setDrag({ title, pointerId: -1, x: 0, y: 0 }); return; }
     if (drag?.title !== title || !["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)) return;
-    event.preventDefault();
-    setKeyPosition((current) => keyTo(current, event.key as "ArrowUp" | "ArrowDown" | "ArrowLeft" | "ArrowRight", event.shiftKey));
+    event.preventDefault(); setKeyPosition((current) => keyTo(current, event.key as "ArrowUp" | "ArrowDown" | "ArrowLeft" | "ArrowRight", event.shiftKey));
   };
-
-  const landedNode: TourNode[] = landed ? [{
-    id: "tour-landed-file",
-    kind: "source",
-    frame: null,
-    title: landed,
-    summary: "",
-    typeLabel: "file",
-    ownership: "draft",
-    x: BOARD_POINT.x,
-    y: BOARD_POINT.y,
-    width: CARD_SIZE.width,
-    height: CARD_SIZE.height,
-    source: "drive",
-    inSet: true,
-  }] : [];
-
-  return (
-    <div className="tour-arrival" data-testid="tour-act-one" onPointerMove={(event) => {
-      if (!drag || drag.pointerId < 0) return;
-      setDrag((current) => current ? { ...current, x: event.clientX, y: event.clientY } : null);
-    }} onPointerUp={finishPointer} onPointerCancel={() => setDrag(null)}>
-      <TourWorkboard active="add" onAddWork={() => setFilesOpen(true)}>
-        <div ref={boardRef} className="tour-arrival-board" data-testid="tour-drop-board">
-          <BoardShell ariaLabel="Empty tour board" frames={[]} nodes={landedNode} lockZoom renderNode={(node) => <TourLabCard node={node} selected={false} onSelect={noop} onKeyDown={noop} />} />
-          {!landed ? <article className="tour-first-image" aria-label="Whiteboard screenshot"><DrawnPreview kind="image" /><strong>Workshop whiteboard</strong><span>Ideas from the working session</span></article> : null}
-          <aside className="tour-arrival-hint">You can also drag files, documents or images straight from your computer onto the board.</aside>
-          {filesOpen ? <div className="tour-file-window-layer"><FileWindow files={files} drag={drag} onPointerDown={(title, event) => {
-            event.currentTarget.setPointerCapture?.(event.pointerId);
-            if (event.pointerType === "touch") { land(title); return; }
-            setDrag({ title, pointerId: event.pointerId, x: event.clientX, y: event.clientY });
-          }} onKeyDown={onFileKeyDown} /></div> : null}
-        </div>
-      </TourWorkboard>
-      {drag ? <div className="tour-file-drag" data-keyboard={drag.pointerId < 0} style={drag.pointerId < 0 ? { transform: `translate(${keyPosition.x}px, ${keyPosition.y}px)` } : { left: drag.x, top: drag.y }}><DrawnFileGlyph seed={drag.title} /><span>{drag.title}</span></div> : null}
-    </div>
-  );
+  return <div className="tour-arrival" data-testid="tour-act-one" onPointerMove={(event) => { if (drag && drag.pointerId >= 0) setDrag({ ...drag, x: event.clientX, y: event.clientY }); }} onPointerUp={finishPointer} onPointerCancel={() => setDrag(null)}>
+    <TourWorkboard active="add" onAddWork={() => setFilesOpen(true)}><div data-testid="tour-drop-board" className="tour-shared-act"><TourBoard register={register} state={{ act: 1, landedFile: landed }} boardRef={boardRef}>
+      <aside className="tour-arrival-hint">You can also drag files, documents or images straight from your computer onto the board.</aside>
+      {filesOpen ? <div className="tour-file-window-layer"><FileWindow files={files} drag={drag} onPointerDown={(title, event) => { event.currentTarget.setPointerCapture?.(event.pointerId); if (event.pointerType === "touch") { land(title); return; } setDrag({ title, pointerId: event.pointerId, x: event.clientX, y: event.clientY }); }} onKeyDown={onFileKeyDown} /></div> : null}
+    </TourBoard></div></TourWorkboard>
+    {drag ? <div className="tour-file-drag" data-keyboard={drag.pointerId < 0} style={drag.pointerId < 0 ? { transform: `translate(${keyPosition.x}px, ${keyPosition.y}px)` } : { left: drag.x, top: drag.y }}><DrawnFileGlyph seed={drag.title} /><span>{drag.title}</span></div> : null}
+  </div>;
 }
 
-export function TourActTwo({ register, hint, onComplete }: { register: Register; hint: boolean; onComplete: () => void }) {
+function boxHandlers(boardRef: RefObject<HTMLDivElement | null>, box: Box | null, setBox: (box: Box | null) => void, startRef: MutableRefObject<{ x: number; y: number } | null>, finish: (left: number, top: number, right: number, bottom: number) => void) {
+  return {
+    onPointerDown: (event: ReactPointerEvent<HTMLDivElement>) => { if ((event.target as HTMLElement).closest("[data-tour-card],button")) return; const rect = event.currentTarget.getBoundingClientRect(); startRef.current = { x: event.clientX - rect.left, y: event.clientY - rect.top }; setBox({ ...startRef.current, width: 0, height: 0 }); },
+    onPointerMove: (event: ReactPointerEvent<HTMLDivElement>) => { const start = startRef.current; if (!start) return; const rect = event.currentTarget.getBoundingClientRect(); const x = event.clientX - rect.left; const y = event.clientY - rect.top; setBox({ x: Math.min(start.x, x), y: Math.min(start.y, y), width: Math.abs(x - start.x), height: Math.abs(y - start.y) }); },
+    onPointerUp: (event: ReactPointerEvent<HTMLDivElement>) => { const start = startRef.current; if (!start || !boardRef.current) { setBox(null); return; } const board = boardRef.current.getBoundingClientRect(); const x = event.clientX - board.left; const y = event.clientY - board.top; finish(board.left + Math.min(start.x, x), board.top + Math.min(start.y, y), board.left + Math.max(start.x, x), board.top + Math.max(start.y, y)); setBox(null); startRef.current = null; },
+    onPointerCancel: () => { setBox(null); startRef.current = null; },
+  };
+}
+
+export function TourActTwo({ register, hint: _hint, onComplete }: { register: Register; hint: boolean; onComplete: () => void }) {
   const cards = TOUR_CONTENT[register].acts[1]?.cards ?? [];
-  const nodes = useMemo(() => cards.map((card, index) => nodeFor(card, index)), [cards]);
-  const [selected, setSelected] = useState<string[]>([]);
-  const [box, setBox] = useState<Box | null>(null);
-  const boardRef = useRef<HTMLDivElement>(null);
-  const startRef = useRef<{ x: number; y: number } | null>(null);
-  const completeRef = useRef(false);
-
-  const applySelection = (ids: string[]) => {
-    setSelected(ids);
-    const required = nodes.filter((node) => node.inSet).map((node) => node.id);
-    if (!completeRef.current && required.every((id) => ids.includes(id))) {
-      completeRef.current = true;
-      onComplete();
-    }
-  };
-  const selectWorkCard = (node: TourNode) => {
-    if (node.inSet) {
-      applySelection(nodes.filter((candidate) => candidate.inSet).map((candidate) => candidate.id));
-      return;
-    }
-    applySelection(selected.includes(node.id) ? selected.filter((value) => value !== node.id) : [...selected, node.id]);
-  };
-
-  const endBox = () => {
-    if (!box || !boardRef.current) { setBox(null); return; }
-    const board = boardRef.current.getBoundingClientRect();
-    const left = board.left + box.x;
-    const top = board.top + box.y;
-    const right = left + box.width;
-    const bottom = top + box.height;
-    const picked = Array.from(boardRef.current.querySelectorAll<HTMLElement>("[data-tour-card]")).flatMap((element) => {
-      const rect = element.getBoundingClientRect();
-      return rect.left < right && rect.right > left && rect.top < bottom && rect.bottom > top ? [element.dataset["tourCard"] ?? ""] : [];
-    }).filter(Boolean);
-    applySelection(picked);
-    setBox(null);
-    startRef.current = null;
-  };
-
-  return (
-    <TourWorkboard active="select"><div ref={boardRef} className="tour-board-act" data-testid="tour-act-two" onPointerDown={(event) => {
-      if ((event.target as HTMLElement).closest("[data-tour-card]")) return;
-      const rect = event.currentTarget.getBoundingClientRect();
-      startRef.current = { x: event.clientX - rect.left, y: event.clientY - rect.top };
-      setBox({ x: event.clientX - rect.left, y: event.clientY - rect.top, width: 0, height: 0 });
-    }} onPointerMove={(event) => {
-      const start = startRef.current;
-      if (!start) return;
-      const rect = event.currentTarget.getBoundingClientRect();
-      const x = event.clientX - rect.left;
-      const y = event.clientY - rect.top;
-      setBox({ x: Math.min(start.x, x), y: Math.min(start.y, y), width: Math.abs(x - start.x), height: Math.abs(y - start.y) });
-    }} onPointerUp={endBox} onPointerCancel={() => { setBox(null); startRef.current = null; }}>
-      <section className="tour-primary-frame tour-region is-primary" aria-label={`${TOUR_CONTENT[register].acts[2]?.frameTitle ?? "Workstream"} workstream`}><span>{TOUR_CONTENT[register].acts[2]?.frameTitle}</span>
-        {cards.map((card, index) => <div key={card.title} className={`tour-free-node${card.inSet ? " is-target-work" : ""}`} style={{ left: `${card.layout.x}%`, top: `${card.layout.y}%`, transform: `rotate(${card.layout.rotation}deg)` }}>
-          {card.inSet && index === 0 ? <span className="tour-act-two-arrow-target" data-tour-target="2" aria-hidden /> : null}
-          <TourPreviewCard card={card} domId={nodes[index]?.id ?? `tour-card-${index}`} selected={selected.includes(nodes[index]?.id ?? "")} onSelect={() => { const node = nodes[index]; if (node) selectWorkCard(node); }} onKeyDown={(event) => { if (event.code === "Space") { event.preventDefault(); const node = nodes[index]; if (node) selectWorkCard(node); } }} />
-        </div>)}
-      </section>
-      <AmbientWorkstream register={register} columns loose />
-      {box ? <span className="tour-marquee" style={{ left: box.x, top: box.y, width: box.width, height: box.height }} /> : null}
-    </div></TourWorkboard>
-  );
+  const [selected, setSelected] = useState<string[]>([]); const [box, setBox] = useState<Box | null>(null);
+  const boardRef = useRef<HTMLDivElement>(null); const startRef = useRef<{ x: number; y: number } | null>(null); const completeRef = useRef(false);
+  const finish = () => { if (!completeRef.current) { completeRef.current = true; setSelected([...GROUP_IDS]); onComplete(); } };
+  const select = (index: number) => { if (cards[index]?.inSet) finish(); };
+  const handlers = boxHandlers(boardRef, box, setBox, startRef, (left, top, right, bottom) => {
+    const required = GROUP_IDS.map((id) => boardRef.current?.querySelector<HTMLElement>(`[data-tour-layout-id="${id}"]`)?.getBoundingClientRect()).filter((rect) => rect !== undefined);
+    if (required.length === 3 && required.every((rect) => rect.left < right && rect.right > left && rect.top < bottom && rect.bottom > top)) finish();
+  });
+  return <TourWorkboard active="select"><div className="tour-shared-act" data-testid="tour-act-two" {...handlers}><TourBoard register={register} state={{ act: 2, outlinedIds: GROUP_IDS, selectedIds: selected }} className="tour-board-act" boardRef={boardRef} onWorkCardSelect={select} onWorkCardKeyDown={(index, event) => { if (event.code === "Space") { event.preventDefault(); select(index); } }}>{box ? <span className="tour-marquee" style={{ left: box.x, top: box.y, width: box.width, height: box.height }} /> : null}</TourBoard></div></TourWorkboard>;
 }
 
 export function TourActThree({ register, onComplete }: { register: Register; onComplete: () => void }) {
-  const act = TOUR_CONTENT[register].acts[2];
-  const cards = TOUR_CONTENT[register].acts[1]?.cards ?? [];
-  const chosen = cards.filter((card) => card.inSet);
-  const [grouped, setGrouped] = useState(false);
-  const [box, setBox] = useState<Box | null>(null);
-  const startRef = useRef<{ x: number; y: number } | null>(null);
-  const boardRef = useRef<HTMLDivElement>(null);
-
-  const group = () => {
-    if (grouped || chosen.length !== 3) return;
-    setGrouped(true);
-    onComplete();
-  };
-
-  const endBox = () => {
-    if (!box || !boardRef.current) { setBox(null); return; }
-    const board = boardRef.current.getBoundingClientRect();
-    const left = board.left + box.x;
-    const top = board.top + box.y;
-    const right = left + box.width;
-    const bottom = top + box.height;
-    const scope = boardRef.current.querySelector<HTMLElement>("[data-tour-group-scope]");
-    const cardRects = Array.from(scope?.querySelectorAll<HTMLElement>("[data-tour-card]:not([data-tour-ambient])") ?? []).map((element) => element.getBoundingClientRect());
-    if (cardRects.length === 3 && cardRects.every((rect) => left <= rect.left && top <= rect.top && right >= rect.right && bottom >= rect.bottom)) group();
-    setBox(null);
-    startRef.current = null;
-  };
-
-  return (
-    <TourWorkboard active="group" onGroup={group}><div className="tour-group-act" data-testid="tour-act-three" onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); group(); } }}>
-      <div ref={boardRef} className="tour-board-act" tabIndex={0} onPointerDown={(event) => {
-        if ((event.target as HTMLElement).closest("[data-tour-card],button")) return;
-        const rect = event.currentTarget.getBoundingClientRect();
-        startRef.current = { x: event.clientX - rect.left, y: event.clientY - rect.top };
-        setBox({ x: event.clientX - rect.left, y: event.clientY - rect.top, width: 0, height: 0 });
-      }} onPointerMove={(event) => {
-        const start = startRef.current;
-        if (!start) return;
-        const rect = event.currentTarget.getBoundingClientRect();
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
-        setBox({ x: Math.min(start.x, x), y: Math.min(start.y, y), width: Math.abs(x - start.x), height: Math.abs(y - start.y) });
-      }} onPointerUp={endBox} onPointerCancel={() => { setBox(null); startRef.current = null; }}>
-        <section className={`tour-primary-frame tour-group-scope${grouped ? " tour-region is-grouped" : ""}`} data-tour-group-scope="" aria-label={`${act?.frameTitle ?? "Workstream"} with three work cards`}>
-          {grouped ? <span>{act?.frameTitle}</span> : null}
-          {chosen.map((card, index) => <div key={card.title} className={`tour-free-node is-group-work${grouped ? " is-grouped" : ""}`}>
-            <TourPreviewCard card={card} domId={`tour-card-${index}`} selected={grouped} inert />
-          </div>)}
-        </section>
-        <AmbientWorkstream register={register} columns loose />
-        {box ? <span className="tour-marquee" style={{ left: box.x, top: box.y, width: box.width, height: box.height }} /> : null}
-      </div>
-      {grouped ? <p className="tour-context-sentence">{act?.contextSentence}</p> : null}
-    </div></TourWorkboard>
-  );
+  const act = TOUR_CONTENT[register].acts[2]; const [grouped, setGrouped] = useState(false); const [box, setBox] = useState<Box | null>(null);
+  const boardRef = useRef<HTMLDivElement>(null); const startRef = useRef<{ x: number; y: number } | null>(null);
+  const group = () => { if (grouped) return; setGrouped(true); onComplete(); };
+  const handlers = boxHandlers(boardRef, box, setBox, startRef, (left, top, right, bottom) => {
+    const required = GROUP_IDS.map((id) => boardRef.current?.querySelector<HTMLElement>(`[data-tour-layout-id="${id}"]`)?.getBoundingClientRect()).filter((rect) => rect !== undefined);
+    if (required.length === 3 && required.every((rect) => left <= rect.left && top <= rect.top && right >= rect.right && bottom >= rect.bottom)) group();
+  });
+  return <TourWorkboard active="group" onGroup={group}><div className="tour-shared-act" data-testid="tour-act-three" {...handlers} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); group(); } }}><TourBoard register={register} state={{ act: 3, selectedIds: GROUP_IDS, groupedIds: grouped ? GROUP_IDS : [], glowingIds: grouped ? GROUP_IDS : [] }} className="tour-board-act" boardRef={boardRef}>{box ? <span className="tour-marquee" style={{ left: box.x, top: box.y, width: box.width, height: box.height }} /> : null}{grouped ? <p className="tour-context-sentence">{act?.contextSentence}</p> : null}</TourBoard></div></TourWorkboard>;
 }
 
-function useReducedMotion() {
-  const [reduced, setReduced] = useState(false);
-  useEffect(() => {
-    if (typeof window.matchMedia !== "function") return;
-    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const update = () => setReduced(query.matches);
-    update();
-    query.addEventListener("change", update);
-    return () => query.removeEventListener("change", update);
-  }, []);
-  return reduced;
-}
-
-function TourAskMimic({ register, visibleClaims, generating, onAsk }: {
-  register: Register;
-  visibleClaims: number;
-  generating: boolean;
-  onAsk: () => void;
-}) {
-  const act = TOUR_CONTENT[register].acts[3];
-  const chatCard = (TOUR_CONTENT[register].acts[1]?.cards ?? []).find((card) => card.title === act?.chatLink?.cardTitle);
-  return (
-    <aside className="tour-ask-mimic" aria-label="Ask Lasso tour example">
-      <header>
-        <LassoLoopMark className={generating ? "tour-ask-loop is-generating" : "tour-ask-loop"} />
-        <strong>Ask Lasso</strong>
-      </header>
-      <div className="tour-ask-question" aria-label="Preset question" aria-readonly="true">
-        {act?.question}
-      </div>
-      <div className="tour-ask-claims" aria-live="polite">
-        {(act?.answer ?? []).slice(0, visibleClaims).map((claim) => (
-          <article key={claim.sourceCardTitle} className="tour-ask-claim">
-            <p>{claim.text}</p>
-            <span>{claim.sourceCardTitle}</span>
-          </article>
-        ))}
-        {visibleClaims === (act?.answer?.length ?? 0) && act?.chatLink && chatCard ? (
-          <Button type="button" variant="outline" className="tour-chat-link" onClick={noop} aria-label={`${act.chatLink.label}: ${act.chatLink.cardTitle}`}>
-            <ToolBadge tool={sourceTool(chatCard.source)} size="sm" />
-            <span>{act.chatLink.label}</span>
-            <strong>{act.chatLink.cardTitle}</strong>
-          </Button>
-        ) : null}
-      </div>
-      <Button type="button" variant="ink" onClick={onAsk} disabled={generating || visibleClaims === 3}>Ask</Button>
-    </aside>
-  );
-}
-
-type TourWorkboardTool = "add" | "select" | "group" | "ask" | null;
-
-function TourWorkboard({ active, onAddWork, onGroup, onAsk, children }: { active: TourWorkboardTool; onAddWork?: () => void; onGroup?: () => void; onAsk?: () => void; children: React.ReactNode }) {
-  const inert = () => undefined;
-  const toolClass = (tool: Exclude<TourWorkboardTool, null>) => `tour-board-tool${active === tool ? " is-active" : ""}`;
-  const toolbar = (
-    <WorkboardToolbar className="tour-board-toolbar" ariaLabel="Board tools">
-      <Button type="button" size="icon" variant="outline" aria-label="Show workstreams" onClick={inert}><GraphiteIcon name="workstreams" size={20} /></Button>
-      <Button type="button" size="sm" variant="outline" aria-label="Add work" data-toolbar-control="add-work" data-tour-target={active === "add" ? "1" : undefined} className={toolClass("add")} onClick={active === "add" ? onAddWork : inert}><GraphiteIcon name="work" size={20} /><span>Add work</span></Button>
-      <Button type="button" size="icon" variant="outline" aria-label="Select work" aria-pressed={active === "select"} className={toolClass("select")} onClick={inert}><GraphiteIcon name="connectors" size={20} /></Button>
-      <Button type="button" size="icon" variant="outline" aria-label="Add grouping" aria-pressed={active === "group"} data-tour-target={active === "group" ? "3" : undefined} className={toolClass("group")} onClick={active === "group" ? onGroup : inert}><GraphiteIcon name="grouping" size={20} /></Button>
-      <Button type="button" size="icon" variant="outline" aria-label="Ask Lasso" aria-pressed={active === "ask"} data-tour-target={active === "ask" ? "4" : undefined} className={toolClass("ask")} onClick={active === "ask" ? onAsk : inert}><LassoThinkingMark kind="signature" size={24} /></Button>
-      <Button type="button" size="icon" variant="outline" aria-label="Info" onClick={inert}><GraphiteIcon name="working-from" size={20} /></Button>
-      <Button type="button" size="icon" variant="outline" aria-label="Fit" onClick={inert}><GraphiteIcon name="fit" size={20} /></Button>
-    </WorkboardToolbar>
-  );
-  return (
-    <div className="tour-workboard-chrome">
-      <WorkboardSideRail menuControl={<Button type="button" size="icon" variant="ghost" aria-label="Open workboard menu" onClick={inert}><GraphiteIcon name="more" size={18} /></Button>} closeControl={<Button type="button" size="icon" variant="ghost" aria-label="Close workboard" onClick={inert}><GraphiteIcon name="close" size={18} /></Button>} />
-      <div className="tour-workboard-main">
-        <WorkboardHeader title="Your workboard" status="WORKBOARD" toolbar={toolbar} />
-        <div className="tour-workboard-canvas">{children}</div>
-      </div>
-    </div>
-  );
-}
-
-function TourFramedSources({ register, highlightedTitle }: { register: Register; highlightedTitle?: string | null }) {
-  const title = TOUR_CONTENT[register].acts[2]?.frameTitle ?? "";
-  const cards = (TOUR_CONTENT[register].acts[1]?.cards ?? []).filter((card) => card.inSet);
-  return (
-    <section className="tour-source-frame" aria-label={`${title} with three source work cards`}>
-      <span className="tour-source-frame-title">{title}</span>
-      {cards.map((card) => (
-        <article key={card.title} className="tour-source-mini" data-highlighted={card.title === highlightedTitle ? "true" : undefined}>
-          <ToolBadge tool={sourceTool(card.source)} size="sm" />
-          <strong>{card.title}</strong>
-        </article>
-      ))}
-    </section>
-  );
+function TourAskMimic({ register, visibleClaims, generating, onAsk }: { register: Register; visibleClaims: number; generating: boolean; onAsk: () => void }) {
+  const act = TOUR_CONTENT[register].acts[3]; const chatCard = (TOUR_CONTENT[register].acts[1]?.cards ?? []).find((card) => card.title === act?.chatLink?.cardTitle);
+  return <aside className="tour-ask-mimic" aria-label="Ask Lasso tour example"><header><LassoLoopMark className={generating ? "tour-ask-loop is-generating" : "tour-ask-loop"} /><strong>Ask Lasso</strong></header><div className="tour-ask-question" aria-label="Preset question" aria-readonly="true">{act?.question}</div><div className="tour-ask-claims" aria-live="polite">
+    {(act?.answer ?? []).slice(0, visibleClaims).map((claim) => <article key={claim.sourceCardTitle} className="tour-ask-claim"><p>{claim.text}</p><span>{claim.sourceCardTitle}</span></article>)}
+    {visibleClaims === (act?.answer?.length ?? 0) && act?.chatLink && chatCard ? <Button type="button" variant="outline" className="tour-chat-link" onClick={noop} aria-label={`${act.chatLink.label}: ${act.chatLink.cardTitle}`}><ToolBadge tool={sourceTool(chatCard.source)} size="sm" /><span>{act.chatLink.label}</span><strong>{act.chatLink.cardTitle}</strong></Button> : null}
+  </div><Button type="button" variant="ink" onClick={onAsk} disabled={generating || visibleClaims === 3}>Ask</Button></aside>;
 }
 
 export function TourActFour({ register, onComplete }: { register: Register; onComplete: () => void }) {
-  const claims = TOUR_CONTENT[register].acts[3]?.answer ?? [];
-  const reduced = useReducedMotion();
-  const [visibleClaims, setVisibleClaims] = useState(0);
-  const [generating, setGenerating] = useState(false);
-  const [askOpen, setAskOpen] = useState(false);
-  const timers = useRef<number[]>([]);
-
+  const claims = TOUR_CONTENT[register].acts[3]?.answer ?? []; const reduced = useReducedMotion();
+  const [visibleClaims, setVisibleClaims] = useState(0); const [generating, setGenerating] = useState(false); const [askOpen, setAskOpen] = useState(false); const timers = useRef<number[]>([]);
   useEffect(() => () => timers.current.forEach((timer) => window.clearTimeout(timer)), []);
-
-  const ask = () => {
-    if (generating || visibleClaims === claims.length) return;
-    setGenerating(true);
-    if (reduced) {
-      setVisibleClaims(claims.length);
-      setGenerating(false);
-      onComplete();
-      return;
-    }
-    claims.forEach((_, index) => {
-      const timer = window.setTimeout(() => {
-        setVisibleClaims(index + 1);
-        if (index === claims.length - 1) {
-          setGenerating(false);
-          onComplete();
-        }
-      }, 400 * (index + 1));
-      timers.current.push(timer);
-    });
-  };
-  const highlighted = visibleClaims > 0 ? (claims[visibleClaims - 1]?.sourceCardTitle ?? null) : null;
-
-  return (
-    <TourWorkboard active="ask" onAsk={() => setAskOpen(true)}><div className="tour-ask-act" data-testid="tour-act-four">
-      <div className="tour-ask-board-scene"><TourFramedSources register={register} highlightedTitle={highlighted} /><AmbientWorkstream register={register} /></div>
-      {askOpen ? <TourAskMimic register={register} visibleClaims={visibleClaims} generating={generating} onAsk={ask} /> : null}
-    </div></TourWorkboard>
-  );
-}
-
-function answerNode(register: Register, compact = false): LabNode {
-  const claims = TOUR_CONTENT[register].acts[3]?.answer ?? [];
-  return {
-    id: "tour-answer",
-    kind: "answer",
-    frame: "tour-keep-frame",
-    title: "Answer",
-    summary: claims.map((claim) => claim.text).join(" "),
-    typeLabel: "answer",
-    ownership: "draft",
-    local: false,
-    authorName: "you",
-    x: compact ? 12 : 300,
-    y: compact ? 350 : 60,
-    width: compact ? 196 : 220,
-    height: compact ? 220 : 190,
-  };
-}
-
-function TourAnchoredRelationships({ sourceNodes, answer }: { sourceNodes: LabNode[]; answer: LabNode }) {
-  const hostRef = useRef<SVGSVGElement>(null);
-  const [geometry, setGeometry] = useState<{ width: number; height: number; nodes: LabNode[]; links: LabLink[] }>(() => {
-    const endpoints = sourceNodes.map((_, index) => ({ ...answer, id: `${answer.id}-anchor-${index}`, y: answer.y + answer.height * ((index + 1) / (sourceNodes.length + 1)), width: 1, height: 1 }));
-    return {
-      width: 680,
-      height: 600,
-      nodes: [...sourceNodes, ...endpoints],
-      links: sourceNodes.map((node, index) => ({ id: `tour-link-${index}`, fromId: node.id, toId: endpoints[index]?.id ?? answer.id, fromAnchor: "right", toAnchor: "left" })),
-    };
-  });
-
-  useEffect(() => {
-    const svg = hostRef.current;
-    const board = svg?.parentElement;
-    if (!svg || !board) return;
-    const measure = () => {
-      const boardRect = board.getBoundingClientRect();
-      const answerElement = board.querySelector<HTMLElement>('[data-testid="canvas-lab-answer-card"]');
-      const sourceElements = Array.from(board.querySelectorAll<HTMLElement>("[data-tour-connector-source]"));
-      if (!answerElement || sourceElements.length !== sourceNodes.length || boardRect.width <= 0 || boardRect.height <= 0) return;
-      const answerRect = answerElement.getBoundingClientRect();
-      const measuredSources = sourceElements.map((element, index) => {
-        const rect = element.getBoundingClientRect();
-        return { ...sourceNodes[index], x: rect.left - boardRect.left, y: rect.top - boardRect.top, width: rect.width, height: rect.height } as LabNode;
-      });
-      const endpoints = measuredSources.map((_, index) => ({
-        ...answer,
-        id: `${answer.id}-anchor-${index}`,
-        x: answerRect.left - boardRect.left,
-        y: answerRect.top - boardRect.top + answerRect.height * ((index + 1) / (measuredSources.length + 1)),
-        width: 1,
-        height: 1,
-      }));
-      const links = measuredSources.map((node, index) => ({
-        id: `tour-link-${index}`,
-        fromId: node.id,
-        toId: endpoints[index]?.id ?? answer.id,
-        fromAnchor: "right" as const,
-        toAnchor: "left" as const,
-      }));
-      setGeometry({ width: boardRect.width, height: boardRect.height, nodes: [...measuredSources, ...endpoints], links });
-    };
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(board);
-    for (const element of board.querySelectorAll<HTMLElement>("[data-tour-connector-source], [data-testid=canvas-lab-answer-card]")) observer.observe(element);
-    return () => observer.disconnect();
-  }, [answer, sourceNodes]);
-
-  return (
-    <svg ref={hostRef} className="tour-keep-links" viewBox={geometry ? `0 0 ${geometry.width} ${geometry.height}` : "0 0 1 1"} aria-label="Answer links to its three source work cards">
-      <LabRelationships links={geometry.links} nodes={geometry.nodes} measuredHeights={new Map()} selectedLinkId={null} inverseZoom={1} onSelect={noop} />
-    </svg>
-  );
+  const ask = () => { if (generating || visibleClaims === claims.length) return; setGenerating(true); if (reduced) { setVisibleClaims(claims.length); setGenerating(false); onComplete(); return; } claims.forEach((_, index) => { const timer = window.setTimeout(() => { setVisibleClaims(index + 1); if (index === claims.length - 1) { setGenerating(false); onComplete(); } }, 400 * (index + 1)); timers.current.push(timer); }); };
+  const highlighted = visibleClaims > 0 ? claims[visibleClaims - 1]?.sourceCardTitle ?? null : null;
+  return <TourWorkboard active="ask" onAsk={() => setAskOpen(true)}><div className="tour-shared-act" data-testid="tour-act-four"><TourBoard register={register} state={{ act: 4, selectedIds: GROUP_IDS, groupedIds: GROUP_IDS, glowingIds: GROUP_IDS, highlightedTitle: highlighted, askOpen }}>{askOpen ? <TourAskMimic register={register} visibleClaims={visibleClaims} generating={generating} onAsk={ask} /> : null}</TourBoard></div></TourWorkboard>;
 }
 
 export function TourActFive({ register, onLanded }: { register: Register; onLanded: () => void }) {
-  const cards = (TOUR_CONTENT[register].acts[1]?.cards ?? []).filter((card) => card.inSet);
-  const [landed, setLanded] = useState(false);
-  const [dragging, setDragging] = useState(false);
-  const boardRef = useRef<HTMLDivElement>(null);
-  const [compact, setCompact] = useState(false);
-  useEffect(() => {
-    if (typeof window.matchMedia !== "function") return;
-    const query = window.matchMedia("(max-width: 767px)");
-    const update = () => setCompact(query.matches);
-    update();
-    query.addEventListener("change", update);
-    return () => query.removeEventListener("change", update);
-  }, []);
-  const sourceNodes: LabNode[] = useMemo(() => cards.map((card, index) => ({
-    id: `tour-source-${index}`,
-    kind: "source",
-    frame: "tour-keep-frame",
-    title: card.title,
-    summary: "",
-    typeLabel: card.source,
-    ownership: "draft",
-    x: compact ? 12 : 30,
-    y: 42 + index * 82,
-    width: compact ? 196 : 250,
-    height: 64,
-  })), [cards, compact]);
-  const answer = useMemo(() => answerNode(register, compact), [register, compact]);
-  const land = () => {
-    if (landed) return;
-    setLanded(true);
-    setDragging(false);
-    onLanded();
-  };
-  const finishDrag = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (!dragging) return;
-    const rect = boardRef.current?.getBoundingClientRect();
-    if (rect && event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom) land();
-    else setDragging(false);
-  };
-
-  return (
-    <TourWorkboard active={null}><div className="tour-keep-act" data-testid="tour-act-five" onPointerUp={finishDrag} onPointerCancel={() => setDragging(false)}>
-      <div ref={boardRef} className="tour-keep-board" aria-label="Workstream board">
-        <span className="tour-source-frame-title">{TOUR_CONTENT[register].acts[2]?.frameTitle}</span>
-        {sourceNodes.map((node, index) => (
-          <article key={node.id} className="tour-keep-source" data-tour-connector-source={node.id} style={{ left: node.x, top: node.y, width: node.width, height: node.height }}>
-            <ToolBadge tool={sourceTool(cards[index]?.source ?? "drive")} size="sm" />
-            <strong>{node.title}</strong>
-          </article>
-        ))}
-        {landed ? (
-          <>
-            <LabAnswerCard node={answer} focused={false} stackZ={4} onFocus={noop} onPointerDown={noop} onDelete={noop} />
-            <TourAnchoredRelationships sourceNodes={sourceNodes} answer={answer} />
-            <div className="tour-final-images"><TourImageCard kind="deck" /><TourImageCard kind="whiteboard" /></div>
-          </>
-        ) : null}
-        <AmbientWorkstream register={register} />
-      </div>
-      {!landed ? (
-        <aside className="tour-keep-panel">
-          <article className="tour-drag-answer" onPointerDown={(event) => { event.currentTarget.setPointerCapture?.(event.pointerId); setDragging(true); }}>
-            <span>Answer</span>
-            <p>{TOUR_CONTENT[register].acts[3]?.answer?.map((claim) => claim.text).join(" ")}</p>
-          </article>
-          <Button type="button" variant="ink" data-tour-target="5" onClick={land}>Keep</Button>
-        </aside>
-      ) : null}
-    </div></TourWorkboard>
-  );
+  const [landed, setLanded] = useState(false); const [dragging, setDragging] = useState(false); const boardRef = useRef<HTMLDivElement>(null);
+  const land = () => { if (landed) return; setLanded(true); setDragging(false); onLanded(); };
+  const finishDrag = (event: ReactPointerEvent<HTMLDivElement>) => { if (!dragging) return; const rect = boardRef.current?.getBoundingClientRect(); if (rect && event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom) land(); else setDragging(false); };
+  return <TourWorkboard active={null}><div className="tour-shared-act" data-testid="tour-act-five"><TourBoard register={register} state={{ act: 5, selectedIds: GROUP_IDS, groupedIds: GROUP_IDS, glowingIds: GROUP_IDS, answerVisible: landed, connectorsVisible: landed }} boardRef={boardRef} onPointerUp={finishDrag} onPointerCancel={() => setDragging(false)}>
+    {!landed ? <aside className="tour-keep-panel"><article className="tour-drag-answer" onPointerDown={(event) => { event.currentTarget.setPointerCapture?.(event.pointerId); setDragging(true); }}><span>Answer</span><p>{TOUR_CONTENT[register].acts[3]?.answer?.map((claim) => claim.text).join(" ")}</p></article><Button type="button" variant="ink" data-tour-target="5" onClick={land}>Keep</Button></aside> : null}
+  </TourBoard></div></TourWorkboard>;
 }
 
 export function useTourActRenderers({ register, activeAct, onAdvance, onHintShown, onFinish }: { register: Register; activeAct: 1 | 2 | 3 | 4 | 5; onAdvance: (act: 1 | 2 | 3 | 4) => void; onHintShown: (act: number) => void; onFinish: () => void }) {
-  const [hintAct, setHintAct] = useState<number | null>(null);
-  const [instructionOverride, setInstructionOverride] = useState<string | null>(null);
-  const [answerLanded, setAnswerLanded] = useState(false);
-
-  useEffect(() => {
-    setHintAct(null);
-    setInstructionOverride(null);
-    setAnswerLanded(false);
-  }, [activeAct, register]);
-
-  const hint = (act: number) => {
-    setHintAct(act);
-    onHintShown(act);
-  };
-
+  const [hintAct, setHintAct] = useState<number | null>(null); const [instructionOverride, setInstructionOverride] = useState<string | null>(null); const [answerLanded, setAnswerLanded] = useState(false);
+  useEffect(() => { setHintAct(null); setInstructionOverride(null); setAnswerLanded(false); }, [activeAct, register]);
+  const hint = (act: number) => { setHintAct(act); onHintShown(act); };
   const renderers = useMemo(() => [
     { content: <TourActOne register={register} onComplete={() => onAdvance(1)} /> },
     { content: <TourActTwo register={register} hint={hintAct === 2} onComplete={() => onAdvance(2)} /> },
     { content: <TourActThree register={register} onComplete={() => onAdvance(3)} /> },
     { content: <TourActFour register={register} onComplete={() => onAdvance(4)} /> },
-    {
-      content: <TourActFive register={register} onLanded={() => { setAnswerLanded(true); setInstructionOverride(TOUR_CONTENT[register].acts[4]?.closingLine ?? null); }} />,
-      primaryAction: answerLanded ? <Button type="button" variant="ink" onClick={onFinish}>{TOUR_CONTENT[register].acts[4]?.primaryActionLabel}</Button> : null,
-    },
+    { content: <TourActFive register={register} onLanded={() => { setAnswerLanded(true); setInstructionOverride(TOUR_CONTENT[register].acts[4]?.closingLine ?? null); }} />, primaryAction: answerLanded ? <Button type="button" variant="ink" onClick={onFinish}>{TOUR_CONTENT[register].acts[4]?.primaryActionLabel}</Button> : null },
   ], [answerLanded, hintAct, onAdvance, onFinish, register]);
-
   return { renderers, instructionOverride, hint };
 }

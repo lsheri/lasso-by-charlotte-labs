@@ -8,3 +8,4 @@
 - [x] Run the full Vitest suite and bun run build after the final edit.
 - [x] Put placement on the existing per-attachment receipts as a separate `placement` field; no second array.
 - [x] Unit 11: clarify Act 2 targets and one-click grouping, then restyle Act 3 grouping and verify both widths.
+- [x] Unit 12: replace five changing tour scenes with one fixed-layout board and verify invariant geometry across every act and register.
