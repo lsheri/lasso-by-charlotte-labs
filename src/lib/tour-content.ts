@@ -52,24 +52,17 @@ export const TOUR_BOARD_LAYOUT: readonly TourLayoutItem[] = [
 ] as const;
 
 export const TOUR_AMBIENT_CARDS: readonly TourAmbientCard[] = [
-  { title: "ChatGPT: competitor pricing teardown", source: "chatgpt", excerpt: ["Compared entry tiers and service limits", "Flagged the strongest pricing contrast"] },
-  { title: "ChatGPT: objection handling script", source: "chatgpt", excerpt: ["Drafted responses to budget concerns", "Kept the language direct and specific"] },
-  { title: "Gemini: market size, 3 scenarios", source: "gemini", excerpt: ["Built low, middle and high cases", "Compared assumptions behind each case"] },
-  { title: "Claude: positioning draft", source: "claude", excerpt: ["Explored a sharper category position", "Turned the argument into a draft"] },
-] as const;
-
-const COMPANY_AMBIENT_CARDS = [
   { title: "ChatGPT: athleisure trend teardown", source: "chatgpt", excerpt: ["Compared fabric and fit trends for fall", "Flagged the strongest growth segment"] },
   { title: "ChatGPT: creator brief, draft 2", source: "chatgpt", excerpt: ["Drafted the brief for seeding partners", "Kept the language direct and specific"] },
   { title: "Gemini: city by city demand", source: "gemini", excerpt: ["Sized Austin, Denver and Toronto", "Compared assumptions behind each market"] },
   { title: "Claude: positioning lines", source: "claude", excerpt: ["Explored a sharper category position", "Turned the argument into a draft"] },
-] as const satisfies readonly TourAmbientCard[];
+] as const;
 
-export function tourAmbientCards(register: Register): readonly TourAmbientCard[] {
-  return register === "company" || register === "partner" ? COMPANY_AMBIENT_CARDS : TOUR_AMBIENT_CARDS;
+export function tourAmbientCards(_register: Register): readonly TourAmbientCard[] {
+  return TOUR_AMBIENT_CARDS;
 }
 
-const COMPANY_BOARD_COPY: TourBoardCopy = {
+const BOARD_COPY: TourBoardCopy = {
   title: "Fall Marketing Launch",
   owner: "LYKOS LOUNGEWARE",
   pieceCount: 12,
@@ -78,17 +71,8 @@ const COMPANY_BOARD_COPY: TourBoardCopy = {
   deckTitle: "Launch deck, slide 12",
 };
 
-const DEFAULT_BOARD_COPY: TourBoardCopy = {
-  title: "Your workboard",
-  owner: "WORK IN PROGRESS",
-  pieceCount: 12,
-  whiteboardTitle: "Whiteboard photo",
-  whiteboardCaption: "Working session notes",
-  deckTitle: "Deck, slide 12",
-};
-
-export function tourBoardCopy(register: Register): TourBoardCopy {
-  return register === "company" || register === "partner" ? COMPANY_BOARD_COPY : DEFAULT_BOARD_COPY;
+export function tourBoardCopy(_register: Register): TourBoardCopy {
+  return BOARD_COPY;
 }
 
 export type TourClaim = {
@@ -215,34 +199,6 @@ const COMPANY_ANSWER = [
   { text: "The plan kept Austin and Denver only.", sourceCardTitle: "Fall launch plan v3" },
 ] as const satisfies readonly TourClaim[];
 
-const PERSONAL_CARDS = [
-  { title: "Side project plan", source: "drive", inSet: true, preview: ["Offer shape and launch sequence", "Decisions for the first release"] },
-  { title: "Research notes", source: "drive", inSet: true, preview: ["Examples from adjacent products", "Questions to test before launch"] },
-  { title: "ChatGPT: how to price this", source: "chatgpt", inSet: true, preview: ["Compared project and monthly prices", "Drafted three possible packages"] },
-  { title: "Grocery list", source: "drive", inSet: false, preview: ["Fruit, coffee and rice", "Things to get this week"] },
-  { title: "Flight confirmation", source: "email", inSet: false, preview: ["Booking details and departure time", "Return journey confirmation"] },
-] as const satisfies readonly TourCard[];
-
-const PERSONAL_ANSWER = [
-  { text: "You considered project pricing and dropped it after comparing monthly retainers.", sourceCardTitle: "ChatGPT: how to price this" },
-  { text: "The research notes raised a lower entry tier that never reached the final version.", sourceCardTitle: "Research notes" },
-  { text: "The final version kept the three-tier offer.", sourceCardTitle: "Side project plan" },
-] as const satisfies readonly TourClaim[];
-
-const EDU_CARDS = [
-  { title: "Essay draft 2", source: "drive", inSet: true, preview: ["Institutions and individual choices", "Second pass at the central argument"] },
-  { title: "Lecture notes, week 4", source: "drive", inSet: true, preview: ["Seminar examples and definitions", "Questions raised in discussion"] },
-  { title: "Claude: outline my argument", source: "claude", inSet: true, preview: ["Tested three possible structures", "Connected evidence to each section"] },
-  { title: "Reading list", source: "drive", inSet: false, preview: ["Core articles and book chapters", "Reading for the next seminar"] },
-  { title: "Timetable", source: "email", inSet: false, preview: ["Classes and submission dates", "Room changes for this term"] },
-] as const satisfies readonly TourCard[];
-
-const EDU_ANSWER = [
-  { text: "You considered leading with incentives and dropped that structure from the essay.", sourceCardTitle: "Claude: outline my argument" },
-  { text: "A point about informal institutions stayed in the notes but not the essay.", sourceCardTitle: "Lecture notes, week 4" },
-  { text: "The essay kept the argument about institutions shaping individual choices.", sourceCardTitle: "Essay draft 2" },
-] as const satisfies readonly TourClaim[];
-
 export const TOUR_CONTENT: Readonly<
   Record<Register, { acts: readonly TourAct[]; stage: typeof STAGE_COPY }>
 > = {
@@ -271,21 +227,23 @@ export const TOUR_CONTENT: Readonly<
   personal: {
     stage: STAGE_COPY,
     acts: acts(
-      PERSONAL_CARDS,
+      COMPANY_CARDS,
       "Step",
-      "What ideas did I have that did not make the final version? Give me the link to the chat I worked them out in.",
-      PERSONAL_ANSWER,
-      { label: "Open the chat", cardTitle: "ChatGPT: how to price this" },
+      "What ideas did I have that did not make the final launch plan? Give me the link to the AI chat I worked them out in.",
+      COMPANY_ANSWER,
+      { label: "Open the chat", cardTitle: "Claude: channel mix options" },
+      COMPANY_FILES,
     ),
   },
   edu: {
     stage: STAGE_COPY,
     acts: acts(
-      EDU_CARDS,
+      COMPANY_CARDS,
       "Assignment",
-      "What points did I drop from the essay? Give me the link to the chat I worked them out in.",
-      EDU_ANSWER,
-      { label: "Open the chat", cardTitle: "Claude: outline my argument" },
+      "What ideas did I have that did not make the final launch plan? Give me the link to the AI chat I worked them out in.",
+      COMPANY_ANSWER,
+      { label: "Open the chat", cardTitle: "Claude: channel mix options" },
+      COMPANY_FILES,
     ),
   },
 };
