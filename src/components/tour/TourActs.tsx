@@ -27,7 +27,9 @@ function sourceTool(source: TourSource): ToolId {
   return source;
 }
 
-function nodeFor(card: TourCard, index: number): TourNode {
+function nodeFor(card: TourCard, index: number, compact = false): TourNode {
+  const column = compact ? index % 2 : index % 3;
+  const row = compact ? Math.floor(index / 2) : Math.floor(index / 3);
   return {
     id: `tour-card-${index}`,
     kind: "source",
@@ -36,10 +38,10 @@ function nodeFor(card: TourCard, index: number): TourNode {
     summary: "",
     typeLabel: card.source,
     ownership: "draft",
-    x: 32 + (index % 3) * 218,
-    y: 46 + Math.floor(index / 3) * 130,
-    width: CARD_SIZE.width,
-    height: CARD_SIZE.height,
+    x: compact ? 10 + column * 157 : 32 + column * 218,
+    y: compact ? 22 + row * 122 : 46 + row * 130,
+    width: compact ? 145 : CARD_SIZE.width,
+    height: compact ? 96 : CARD_SIZE.height,
     source: card.source,
     inSet: card.inSet,
   };
@@ -200,7 +202,9 @@ export function TourActOne({ register, onComplete }: { register: Register; onCom
 
 export function TourActTwo({ register, hint, onComplete, onCaptionChange }: { register: Register; hint: boolean; onComplete: () => void; onCaptionChange?: (caption: string | null) => void }) {
   const cards = TOUR_CONTENT[register].acts[1]?.cards ?? [];
-  const nodes = useMemo(() => cards.map(nodeFor), [cards]);
+  const [boardWidth, setBoardWidth] = useState(720);
+  const compact = boardWidth < 500;
+  const nodes = useMemo(() => cards.map((card, index) => nodeFor(card, index, compact)), [cards, compact]);
   const [selected, setSelected] = useState<string[]>([]);
   const [box, setBox] = useState<Box | null>(null);
   const boardRef = useRef<HTMLDivElement>(null);
@@ -248,7 +252,7 @@ export function TourActTwo({ register, hint, onComplete, onCaptionChange }: { re
       const y = event.clientY - rect.top;
       setBox({ x: Math.min(start.x, x), y: Math.min(start.y, y), width: Math.abs(x - start.x), height: Math.abs(y - start.y) });
     }} onPointerUp={endBox} onPointerCancel={() => { setBox(null); startRef.current = null; }}>
-      <BoardShell ariaLabel="Tour selection board" frames={[]} nodes={nodes} selectedIds={selected} lockZoom renderNode={(node) => <TourLabCard node={node} selected={selected.includes(node.id)} hint={hint && node.inSet} onSelect={() => toggle(node.id)} onKeyDown={(event) => { if (event.code === "Space") { event.preventDefault(); toggle(node.id); } }} />} />
+      <BoardShell ariaLabel="Tour selection board" frames={[]} nodes={nodes} selectedIds={selected} lockZoom onViewportSizeChange={({ width }) => setBoardWidth(width)} renderNode={(node) => <TourLabCard node={node} selected={selected.includes(node.id)} hint={hint && node.inSet} onSelect={() => toggle(node.id)} onKeyDown={(event) => { if (event.code === "Space") { event.preventDefault(); toggle(node.id); } }} />} />
       {box ? <span className="tour-marquee" style={{ left: box.x, top: box.y, width: box.width, height: box.height }} /> : null}
     </div>
   );
@@ -259,11 +263,22 @@ export function TourActThree({ register, onComplete }: { register: Register; onC
   const cards = TOUR_CONTENT[register].acts[1]?.cards ?? [];
   const chosen = cards.filter((card) => card.inSet);
   const [grouped, setGrouped] = useState(false);
+  const [boardWidth, setBoardWidth] = useState(720);
   const [box, setBox] = useState<Box | null>(null);
   const startRef = useRef<{ x: number; y: number } | null>(null);
   const boardRef = useRef<HTMLDivElement>(null);
-  const nodes = useMemo(() => chosen.map((card, index) => ({ ...nodeFor(card, index), x: 52 + index * 205, y: 104, frame: grouped ? "tour-group" : null })), [chosen, grouped]);
-  const frame: LabFrame = { id: "tour-group", name: act?.frameTitle ?? "", x: 28, y: 58, width: 650, height: 196 };
+  const compact = boardWidth < 500;
+  const nodes = useMemo(() => chosen.map((card, index) => ({
+    ...nodeFor(card, index, compact),
+    x: compact ? 34 : 52 + index * 205,
+    y: compact ? 54 + index * 84 : 104,
+    width: compact ? 250 : CARD_SIZE.width,
+    height: compact ? 70 : CARD_SIZE.height,
+    frame: grouped ? "tour-group" : null,
+  })), [chosen, compact, grouped]);
+  const frame: LabFrame = compact
+    ? { id: "tour-group", name: act?.frameTitle ?? "", x: 16, y: 18, width: 286, height: 298 }
+    : { id: "tour-group", name: act?.frameTitle ?? "", x: 28, y: 58, width: 650, height: 196 };
 
   const group = () => {
     if (grouped || nodes.length !== 3) return;
@@ -299,7 +314,7 @@ export function TourActThree({ register, onComplete }: { register: Register; onC
         const y = event.clientY - rect.top;
         setBox({ x: Math.min(start.x, x), y: Math.min(start.y, y), width: Math.abs(x - start.x), height: Math.abs(y - start.y) });
       }} onPointerUp={endBox} onPointerCancel={() => { setBox(null); startRef.current = null; }}>
-        <BoardShell ariaLabel="Tour grouping board" frames={grouped ? [frame] : []} nodes={nodes} selectedIds={nodes.map((node) => node.id)} lockZoom renderFrame={(current) => <LabFrameElement frame={{ ...current, x: 0, y: 0 }} count={3} kind="custom" selected={false} editable={false} custom namedByWorkstream={false} removable={false} onSelect={noop} onResizeStart={noop} onFit={noop} onRename={noop} onRemove={noop} onMenuOpened={noop} onMenuOpenChange={noop} />} renderNode={(node) => <TourLabCard node={node} selected onSelect={noop} onKeyDown={noop} />} />
+        <BoardShell ariaLabel="Tour grouping board" frames={grouped ? [frame] : []} nodes={nodes} selectedIds={nodes.map((node) => node.id)} lockZoom onViewportSizeChange={({ width }) => setBoardWidth(width)} renderFrame={(current) => <LabFrameElement frame={{ ...current, x: 0, y: 0 }} count={3} kind="custom" selected={false} editable={false} custom namedByWorkstream={false} removable={false} onSelect={noop} onResizeStart={noop} onFit={noop} onRename={noop} onRemove={noop} onMenuOpened={noop} onMenuOpenChange={noop} />} renderNode={(node) => <TourLabCard node={node} selected onSelect={noop} onKeyDown={noop} />} />
         {box ? <span className="tour-marquee" style={{ left: box.x, top: box.y, width: box.width, height: box.height }} /> : null}
       </div>
       <Button type="button" variant="ink" className="tour-group-action" onClick={group}>Group</Button>

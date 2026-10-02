@@ -6453,8 +6453,11 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   .tour-card-wrap .canvas-lab-paper-body { padding: 8px; }
   .tour-card-wrap .canvas-lab-paper-title { font-size: 16px; }
   .tour-card-source { top: 5px; right: 5px; }
-  .tour-board-act [data-testid="board-shell-stage"] { width: 700px; height: 340px; }
-  .tour-context-sentence { top: auto; right: 8px; bottom: 58px; width: calc(100% - 16px); }
+  .tour-board-act [data-testid="board-shell-stage"] { width: 320px; height: 400px; }
+  .tour-group-act .tour-board-act [data-testid="board-shell-stage"] { height: 336px; }
+  .tour-group-act .tour-card-wrap .canvas-lab-paper-header { display: none; }
+  .tour-group-act .tour-card-wrap .canvas-lab-paper-title { font-size: 16px; }
+  .tour-context-sentence { top: auto; right: 8px; bottom: 56px; width: calc(100% - 16px); }
 }
 @media (prefers-reduced-motion: reduce) {
   .tour-stage *,
