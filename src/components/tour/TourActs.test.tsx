@@ -12,7 +12,19 @@ class ResizeObserverStub {
 }
 global.ResizeObserver = ResizeObserverStub;
 
-afterEach(cleanup);
+afterEach(() => { cleanup(); vi.restoreAllMocks(); });
+
+function rect(left: number, top: number, width: number, height: number): DOMRect {
+  return { left, top, width, height, right: left + width, bottom: top + height, x: left, y: top, toJSON: () => ({}) } as DOMRect;
+}
+
+function mockRects(board: HTMLElement, cardRect: (element: HTMLElement) => DOMRect) {
+  vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) {
+    if (this === board) return rect(0, 0, 1000, 1000);
+    if (this.hasAttribute("data-tour-card")) return cardRect(this);
+    return rect(0, 0, 0, 0);
+  });
+}
 
 describe("tour acts one to three", () => {
   it("gives every act an anchored instruction target", () => {
@@ -114,6 +126,39 @@ describe("tour acts one to three", () => {
     fireEvent.click(screen.getByRole("button", { name: "Add grouping" }));
     expect(screen.getByText(TOUR_CONTEXT_SENTENCE)).toBeTruthy();
   });
+
+  it("advances act two exactly once when a marquee is dragged around the three set cards", () => {
+    const done = vi.fn();
+    render(<TourActTwo register="company" hint={false} onComplete={done} />);
+    const board = screen.getByTestId("tour-act-two");
+    mockRects(board, (element) => {
+      const id = element.dataset["tourCard"] ?? "";
+      const index = Number(id.replace("tour-card-", ""));
+      if (id.startsWith("tour-card-") && index < 3) return rect(50 + index * 110, 50, 90, 90);
+      return rect(800, 700, 90, 90);
+    });
+    fireEvent.pointerDown(board, { pointerId: 1, clientX: 10, clientY: 10 });
+    fireEvent.pointerMove(board, { pointerId: 1, clientX: 420, clientY: 200 });
+    fireEvent.pointerUp(board, { pointerId: 1, clientX: 420, clientY: 200 });
+    expect(done).toHaveBeenCalledTimes(1);
+    fireEvent.pointerDown(board, { pointerId: 1, clientX: 10, clientY: 10 });
+    fireEvent.pointerMove(board, { pointerId: 1, clientX: 420, clientY: 200 });
+    fireEvent.pointerUp(board, { pointerId: 1, clientX: 420, clientY: 200 });
+    expect(done).toHaveBeenCalledTimes(1);
+  });
+
+  it("groups act three when a marquee encloses the three cards, ignoring the ambient workstream", () => {
+    const done = vi.fn();
+    render(<TourActThree register="company" onComplete={done} />);
+    const board = screen.getByTestId("tour-act-three").querySelector<HTMLElement>(".tour-board-act")!;
+    mockRects(board, (element) => element.hasAttribute("data-tour-ambient") ? rect(800, 700, 90, 90) : rect(120, 60, 90, 90));
+    fireEvent.pointerDown(board, { pointerId: 1, clientX: 10, clientY: 10 });
+    fireEvent.pointerMove(board, { pointerId: 1, clientX: 500, clientY: 300 });
+    fireEvent.pointerUp(board, { pointerId: 1, clientX: 500, clientY: 300 });
+    expect(done).toHaveBeenCalledTimes(1);
+    expect(screen.getByText(TOUR_CONTEXT_SENTENCE)).toBeTruthy();
+  });
+
 
   it("keeps the preset question read only", () => {
     render(<TourActFour register="company" onComplete={vi.fn()} />);
