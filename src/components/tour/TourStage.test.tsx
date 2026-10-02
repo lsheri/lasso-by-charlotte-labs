@@ -46,7 +46,7 @@ describe("T2 tour stage", () => {
     const { container } = render(stage());
     expect(container.querySelectorAll('[data-state="complete"] .nb-mark')).toHaveLength(2);
     expect(screen.getByText("Draw a box around them.")).toBeTruthy();
-    expect(screen.getByText("The box keeps those three together. Lasso calls it a workstream.")).toBeTruthy();
+    expect(screen.getByText("The box is a workstream. Everything inside it shares context, so a question answers from those pieces and nothing else on the board.")).toBeTruthy();
   });
 
   it("uses the touch caption at a touch-width viewport", () => {
