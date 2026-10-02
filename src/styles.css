@@ -6546,7 +6546,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .tour-image-card.is-finished-deck strong { font-size: 18px; }
 .tour-image-card.is-finished-deck svg { height: calc(100% - 24px); min-height: 118px; }
 .tour-deck-title-line { stroke-width: var(--stroke-bold); }
-.tour-deck-footnote-marker { --nb-circle-stroke: 1.4; position: absolute; z-index: 3; top: 40%; right: -9px; display: grid; width: 20px; height: 20px; place-items: center; border-radius: 50%; background: var(--nb-white); color: var(--nb-graphite); font-family: var(--font-mono); font-size: 9px; }
+.tour-deck-footnote-marker { --nb-circle-stroke: 1.4; position: absolute; z-index: 3; top: 40%; right: 8px; display: grid; width: 20px; height: 20px; place-items: center; border-radius: 50%; background: var(--nb-white); color: var(--nb-graphite); font-family: var(--font-mono); font-size: 9px; }
 .tour-deck-footnote-marker:focus-visible { outline: 2px solid var(--nb-green-deep); outline-offset: 3px; }
 .tour-deck-footnote-marker .nb-circle-mark { inset: -4px; width: calc(100% + 8px); height: calc(100% + 8px); }
 .tour-deck-links { position: absolute; z-index: 6; inset: 0; width: 100%; height: auto; overflow: visible; pointer-events: none; }
