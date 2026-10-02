@@ -1,27 +1,25 @@
-# PF1: inherit attachment placement
+# Unit 11 tour update
 
-## Data platform gate
-- Coverage: no new user action or surface. Existing MCP push behavior changes only for attachments sent without a destination after their conversation was placed once.
-- Telemetry: keep the existing `mcp.push` event and `attachments_placed` dimension. Add no event, dimension, or renamed value.
-- Consent: no consent surface, stamping, or consent-table change.
-- Schema and portal: no event-schema change and no portal update.
-- Database: no schema, migration, policy, RPC, function, or data work. `mcp_place_item` remains untouched.
+## Data and scope gate
+- Presentation and existing tour interaction changes only.
+- No consent surfaces, event names, payloads, dimensions, database work, storage, uploads, or network calls.
+- Existing local tour actions remain: Add work, file drop or tap, one work-card click or Space, marquee selection, grouping, Ask, Keep, Back, and Skip.
+- Existing render states remain: idle, hint, selected or grouped, asking, completed, and reduced-motion settled.
+- No telemetry calls exist in these tour files, and none will be added.
 
-## Before contract
-- Conversation placement outcomes remain the existing `applyDestination` statuses.
-- Attachment storage outcomes remain `new`, `unchanged`, `new_version`, `kept_stored`, `rejected`, `failed`, `reference_created`, or `held`.
-- Attachments are placed only when the same call supplies a destination that resolves to a board.
-- The response has counts and storage receipts, but no separate placement outcome per attachment.
-
-## Implementation
-1. Add a read-only lookup for the conversation's current placement when attachments are present and `destination` is absent.
-2. Inherit only an exact single placement, calling the existing `placeOneItem` with `move: false`; never place or move the conversation itself.
-3. Leave zero placements in the inbox and classify them `inbox_no_destination`; leave multiple placements in the inbox and classify them `inbox_ambiguous`.
-4. Preserve the destination-present path exactly, including its placement arguments and response behavior.
-5. Add an additive per-attachment placement receipt `{ title, outcome }`, with outcomes `placed`, `inherited`, `already_there`, `on_other`, `inbox_no_destination`, or `inbox_ambiguous`.
-6. Add plain-language notes whenever attachments do not reach the board.
+## Changes
+- Mark the three Act 2 target work cards with one shared lime dashed interaction treatment and remove the delayed evidence circles as redundant.
+- Make click or Space on any target work card select all three and advance once; retain the real marquee path.
+- Update Act 2 instruction copy and all tour-visible references from “card” to “work card.”
+- Aim the instruction arrow at a measured target work-card edge on desktop and phone.
+- Remove the ambient region treatment and label from Acts 2 and 3 while keeping its four chats and Artifact as loose, noninteractive canvas items.
+- Reposition all Act 2 and 3 work cards to eliminate pairwise overlaps at 1280px and 390px.
+- Replace Act 3’s small cards with the same preview work cards used in Act 2; after grouping, show an existing-token soft purple region and glow around the three selected cards.
+- Keep the ambient region in Acts 4 and 5 because it distinguishes supporting board scenery where selection is no longer the lesson.
 
 ## Verification
-- Add handler-driven tests for single, zero, and multiple inherited placements; direct destination byte-for-byte behavior; `on_other`; unchanged conversation placement; and exact `attachments_placed` values.
-- Run focused PF1 tests, then the full Vitest suite and `bun run build` after the final edit.
-- Report changed files, before/after outcomes, full pass/fail counts and failing files, telemetry invariants, and build exit status. Preview only.
+- Update tour tests to drive one-click, Space, and marquee behavior through real controls.
+- Run focused tour tests, then the full suite and compare against the accepted 12-file, 30-test outside baseline.
+- Check prohibited copy, persistence, network, assets, and lime usage safeguards.
+- Use the preview at 1280px and 390px to print arrow-to-card geometry and pairwise overlap results, then capture Act 2 and Act 3 screenshots.
+- Report the repository revision containing the changes.
