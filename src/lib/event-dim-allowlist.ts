@@ -145,6 +145,8 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "link.drawn": ["action", "considered", "cost_bucket", "count", "relation", "scope", "source", "surface", "tokens_in_bucket"],
   "link.reviewed": ["action", "considered", "cost_bucket", "count", "relation", "scope", "source", "surface", "tokens_in_bucket"],
   "mcp.container_created": ["attachment_count", "attachment_versions", "degraded_refusals", "has_suggestion", "mode", "rejected_attachments", "suggestion_outcome", "target", "tool", "vendor", "windowed"],
+  // CL-2b. Portal needs this event added when it exists.
+  "mcp.chat_link_attached": ["had_prior_link", "source"],
   "mcp.connection_created": ["kind"],
   "mcp.connection_revoked": ["kind", "via"],
   "mcp.connection_revealed": ["kind"],
