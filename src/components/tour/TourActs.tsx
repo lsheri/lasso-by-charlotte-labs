@@ -2,8 +2,11 @@ import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointer
 
 import { BoardShell } from "@/components/board/BoardShell";
 import { LabCard } from "@/components/canvas-lab/LabCard";
+import { LabAnswerCard } from "@/components/canvas-lab/LabAnswerCard";
 import { LabFrame as LabFrameElement } from "@/components/canvas-lab/LabFrame";
-import type { LabFrame, LabNode } from "@/components/canvas-lab/canvas-lab-model";
+import { LabRelationships } from "@/components/canvas-lab/LabRelationships";
+import type { LabFrame, LabLink, LabNode } from "@/components/canvas-lab/canvas-lab-model";
+import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
 import { EvidenceCircle, GraphiteRule } from "@/components/notebook/marks";
 import { ToolBadge } from "@/components/onboarding/ToolBadge";
 import { Button } from "@/components/ui/button";
@@ -323,13 +326,211 @@ export function TourActThree({ register, onComplete }: { register: Register; onC
   );
 }
 
-export function useTourActRenderers({ register, activeAct, onAdvance, onHintShown }: { register: Register; activeAct: 1 | 2 | 3 | 4 | 5; onAdvance: (act: 1 | 2 | 3) => void; onHintShown: (act: number) => void }) {
+function useReducedMotion() {
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") return;
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setReduced(query.matches);
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
+  return reduced;
+}
+
+function TourAskMimic({ register, visibleClaims, generating, onAsk }: {
+  register: Register;
+  visibleClaims: number;
+  generating: boolean;
+  onAsk: () => void;
+}) {
+  const act = TOUR_CONTENT[register].acts[3];
+  return (
+    <aside className="tour-ask-mimic" aria-label="Ask Lasso tour example">
+      <header>
+        <LassoLoopMark className={generating ? "tour-ask-loop is-generating" : "tour-ask-loop"} />
+        <strong>Ask Lasso</strong>
+      </header>
+      <div className="tour-ask-question" aria-label="Preset question" aria-readonly="true">
+        {act?.question}
+      </div>
+      <div className="tour-ask-claims" aria-live="polite">
+        {(act?.answer ?? []).slice(0, visibleClaims).map((claim) => (
+          <article key={claim.sourceCardTitle} className="tour-ask-claim">
+            <p>{claim.text}</p>
+            <span>{claim.sourceCardTitle}</span>
+          </article>
+        ))}
+      </div>
+      <Button type="button" variant="ink" onClick={onAsk} disabled={generating || visibleClaims === 3}>Ask</Button>
+    </aside>
+  );
+}
+
+function TourFramedSources({ register, highlightedTitle }: { register: Register; highlightedTitle?: string | null }) {
+  const title = TOUR_CONTENT[register].acts[2]?.frameTitle ?? "";
+  const cards = (TOUR_CONTENT[register].acts[1]?.cards ?? []).filter((card) => card.inSet);
+  return (
+    <section className="tour-source-frame" aria-label={`${title} with three source cards`}>
+      <span className="tour-source-frame-title">{title}</span>
+      {cards.map((card) => (
+        <article key={card.title} className="tour-source-mini" data-highlighted={card.title === highlightedTitle ? "true" : undefined}>
+          <ToolBadge tool={sourceTool(card.source)} size="sm" />
+          <strong>{card.title}</strong>
+        </article>
+      ))}
+    </section>
+  );
+}
+
+export function TourActFour({ register, onComplete }: { register: Register; onComplete: () => void }) {
+  const claims = TOUR_CONTENT[register].acts[3]?.answer ?? [];
+  const reduced = useReducedMotion();
+  const [visibleClaims, setVisibleClaims] = useState(0);
+  const [generating, setGenerating] = useState(false);
+  const timers = useRef<number[]>([]);
+
+  useEffect(() => () => timers.current.forEach((timer) => window.clearTimeout(timer)), []);
+
+  const ask = () => {
+    if (generating || visibleClaims === claims.length) return;
+    setGenerating(true);
+    if (reduced) {
+      setVisibleClaims(claims.length);
+      setGenerating(false);
+      onComplete();
+      return;
+    }
+    claims.forEach((_, index) => {
+      const timer = window.setTimeout(() => {
+        setVisibleClaims(index + 1);
+        if (index === claims.length - 1) {
+          setGenerating(false);
+          onComplete();
+        }
+      }, 400 * (index + 1));
+      timers.current.push(timer);
+    });
+  };
+  const highlighted = visibleClaims > 0 ? (claims[visibleClaims - 1]?.sourceCardTitle ?? null) : null;
+
+  return (
+    <div className="tour-ask-act" data-testid="tour-act-four">
+      <TourFramedSources register={register} highlightedTitle={highlighted} />
+      <TourAskMimic register={register} visibleClaims={visibleClaims} generating={generating} onAsk={ask} />
+    </div>
+  );
+}
+
+function answerNode(register: Register, compact = false): LabNode {
+  const claims = TOUR_CONTENT[register].acts[3]?.answer ?? [];
+  return {
+    id: "tour-answer",
+    kind: "answer",
+    frame: "tour-keep-frame",
+    title: "Answer",
+    summary: claims.map((claim) => claim.text).join(" "),
+    typeLabel: "answer",
+    ownership: "draft",
+    local: false,
+    authorName: "you",
+    x: compact ? 12 : 375,
+    y: compact ? 350 : 60,
+    width: compact ? 196 : 260,
+    height: compact ? 220 : 190,
+  };
+}
+
+export function TourActFive({ register, onLanded }: { register: Register; onLanded: () => void }) {
+  const cards = (TOUR_CONTENT[register].acts[1]?.cards ?? []).filter((card) => card.inSet);
+  const [landed, setLanded] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  const boardRef = useRef<HTMLDivElement>(null);
+  const [compact, setCompact] = useState(false);
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") return;
+    const query = window.matchMedia("(max-width: 767px)");
+    const update = () => setCompact(query.matches);
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
+  const sourceNodes: LabNode[] = cards.map((card, index) => ({
+    id: `tour-source-${index}`,
+    kind: "source",
+    frame: "tour-keep-frame",
+    title: card.title,
+    summary: "",
+    typeLabel: card.source,
+    ownership: "draft",
+    x: compact ? 12 : 30,
+    y: 42 + index * 82,
+    width: compact ? 196 : 250,
+    height: 64,
+  }));
+  const answer = answerNode(register, compact);
+  const links: LabLink[] = sourceNodes.map((node, index) => ({
+    id: `tour-link-${index}`,
+    fromId: node.id,
+    toId: answer.id,
+    fromAnchor: compact ? "bottom" : "right",
+    toAnchor: compact ? "top" : "left",
+  }));
+  const land = () => {
+    if (landed) return;
+    setLanded(true);
+    setDragging(false);
+    onLanded();
+  };
+  const finishDrag = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (!dragging) return;
+    const rect = boardRef.current?.getBoundingClientRect();
+    if (rect && event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom) land();
+    else setDragging(false);
+  };
+
+  return (
+    <div className="tour-keep-act" data-testid="tour-act-five" onPointerUp={finishDrag} onPointerCancel={() => setDragging(false)}>
+      <div ref={boardRef} className="tour-keep-board" aria-label="Workstream board">
+        <span className="tour-source-frame-title">{TOUR_CONTENT[register].acts[2]?.frameTitle}</span>
+        {sourceNodes.map((node, index) => (
+          <article key={node.id} className="tour-keep-source" style={{ left: node.x, top: node.y, width: node.width, height: node.height }}>
+            <ToolBadge tool={sourceTool(cards[index]?.source ?? "drive")} size="sm" />
+            <strong>{node.title}</strong>
+          </article>
+        ))}
+        {landed ? (
+          <>
+            <svg className="tour-keep-links" viewBox={compact ? "0 0 220 600" : "0 0 680 300"} aria-label="Answer links to its three sources">
+              <LabRelationships links={links} nodes={[...sourceNodes, answer]} measuredHeights={new Map()} selectedLinkId={null} inverseZoom={1} onSelect={noop} />
+            </svg>
+            <LabAnswerCard node={answer} focused={false} stackZ={4} onFocus={noop} onPointerDown={noop} onDelete={noop} />
+          </>
+        ) : null}
+      </div>
+      {!landed ? (
+        <aside className="tour-keep-panel">
+          <article className="tour-drag-answer" onPointerDown={(event) => { event.currentTarget.setPointerCapture?.(event.pointerId); setDragging(true); }}>
+            <span>Answer</span>
+            <p>{TOUR_CONTENT[register].acts[3]?.answer?.map((claim) => claim.text).join(" ")}</p>
+          </article>
+          <Button type="button" variant="ink" onClick={land}>Keep</Button>
+        </aside>
+      ) : null}
+    </div>
+  );
+}
+
+export function useTourActRenderers({ register, activeAct, onAdvance, onHintShown, onFinish }: { register: Register; activeAct: 1 | 2 | 3 | 4 | 5; onAdvance: (act: 1 | 2 | 3 | 4) => void; onHintShown: (act: number) => void; onFinish: () => void }) {
   const [hintAct, setHintAct] = useState<number | null>(null);
   const [captionOverride, setCaptionOverride] = useState<string | null>(null);
+  const [answerLanded, setAnswerLanded] = useState(false);
 
   useEffect(() => {
     setHintAct(null);
     setCaptionOverride(null);
+    setAnswerLanded(false);
   }, [activeAct, register]);
 
   const hint = (act: number) => {
@@ -341,9 +542,12 @@ export function useTourActRenderers({ register, activeAct, onAdvance, onHintShow
     { content: <TourActOne register={register} onComplete={() => onAdvance(1)} /> },
     { content: <TourActTwo register={register} hint={hintAct === 2} onCaptionChange={setCaptionOverride} onComplete={() => onAdvance(2)} /> },
     { content: <TourActThree register={register} onComplete={() => onAdvance(3)} /> },
-    { content: <div className="tour-coming-act" aria-label="Act four preview" /> },
-    { content: <div className="tour-coming-act" aria-label="Act five preview" /> },
-  ], [hintAct, onAdvance, register]);
+    { content: <TourActFour register={register} onComplete={() => onAdvance(4)} /> },
+    {
+      content: <TourActFive register={register} onLanded={() => { setAnswerLanded(true); setCaptionOverride(TOUR_CONTENT[register].acts[4]?.closingLine ?? null); }} />,
+      primaryAction: answerLanded ? <Button type="button" variant="ink" onClick={onFinish}>{TOUR_CONTENT[register].acts[4]?.primaryActionLabel}</Button> : null,
+    },
+  ], [answerLanded, hintAct, onAdvance, onFinish, register]);
 
   return { renderers, captionOverride, hint };
 }
