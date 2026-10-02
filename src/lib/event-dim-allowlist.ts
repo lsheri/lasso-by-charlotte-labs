@@ -158,6 +158,7 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "model.used": ["length", "model_id", "model_raw", "model_switched", "role", "task_class", "turn_band", "vendor", "via"],
   "note.created": ["cites_count", "days_to_note_band", "entry"],
   "onboarding.tools_selected": ["count"],
+  "activation.redeem_failed": ["reason"],
   "oneonone.note_added": ["kind"],
   "oneonone.note_discussed": ["kind"],
   "oneonone.prepared": ["entry", "kind", "scope", "window"],

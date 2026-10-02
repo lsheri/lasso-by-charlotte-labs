@@ -183,3 +183,43 @@ export const redeemActivationKeyFn = createServerFn({ method: "POST" })
       return outcome("error");
     }
   });
+
+/**
+ * KX1: names the institution behind a carried key WITHOUT redeeming it, so
+ * onboarding can show the person who they are joining before they agree.
+ * Read only: never increments uses, never writes. A bad, revoked, expired or
+ * used-up code returns the same plain "not recognised" answer.
+ */
+export const lookupActivationKeyFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { code: string }) => ({
+    code: typeof input?.code === "string" ? input.code.trim().slice(0, 200) : "",
+  }))
+  .handler(async ({ data, context }): Promise<{ ok: boolean; institution_name: string | null }> => {
+    const none = { ok: false, institution_name: null };
+    try {
+      if (!data.code || !context.userId) return none;
+      if (!allowAttempt(`lookup:${context.userId}`)) return none;
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: row, error } = await supabaseAdmin
+        .from("activation_keys")
+        .select("expires_at, revoked_at, max_uses, uses, institutions(name)")
+        .eq("code", data.code.toUpperCase())
+        .maybeSingle();
+      if (error || !row) return none;
+      const key = row as unknown as {
+        expires_at: string | null;
+        revoked_at: string | null;
+        max_uses: number | null;
+        uses: number;
+        institutions: { name: string } | null;
+      };
+      if (key.revoked_at) return none;
+      if (key.expires_at && Date.parse(key.expires_at) <= Date.now()) return none;
+      if (key.max_uses !== null && key.uses >= key.max_uses) return none;
+      const name = key.institutions?.name ?? null;
+      return name ? { ok: true, institution_name: name } : none;
+    } catch {
+      return none;
+    }
+  });

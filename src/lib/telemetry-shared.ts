@@ -4,6 +4,8 @@ export type TelemetryEvent =
   /** Unit 4h-a: an admin turned the workspace's client list on or off. The new state only, as "true" or "false". Never a name, never an id. */
   | "org.clients_changed"
   | "onboarding.tools_selected"
+  /** KX1: a carried activation key failed to redeem at workspace creation. Closed reason only; never the code, institution or email. Portal needs this name added. */
+  | "activation.redeem_failed"
   | "landing.viewed"
   /** B2B landing: a visitor chose either pilot entry point. Location only. */
   | "landing.pilot_cta_clicked"
