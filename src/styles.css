@@ -6496,7 +6496,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   .tour-ask-claim p { font-size: 11.5px; }
   .tour-keep-act { grid-template-columns: minmax(0, 1fr) 38%; gap: 6px; }
   .tour-keep-source { left: 12px !important; width: calc(100% - 24px) !important; }
-  .tour-keep-board > .canvas-lab-answer-card { left: 12px !important; top: 286px !important; width: calc(100% - 24px) !important; height: 132px !important; }
+  .tour-keep-board > .canvas-lab-answer-card { left: 12px !important; top: 350px !important; width: calc(100% - 24px) !important; height: 220px !important; }
   .tour-keep-panel { padding: 8px; }
   .tour-drag-answer { padding: 8px; }
   .tour-drag-answer p { font-size: 11.5px; }

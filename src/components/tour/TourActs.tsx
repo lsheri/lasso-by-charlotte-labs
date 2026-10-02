@@ -423,7 +423,7 @@ export function TourActFour({ register, onComplete }: { register: Register; onCo
   );
 }
 
-function answerNode(register: Register): LabNode {
+function answerNode(register: Register, compact = false): LabNode {
   const claims = TOUR_CONTENT[register].acts[3]?.answer ?? [];
   return {
     id: "tour-answer",
@@ -435,10 +435,10 @@ function answerNode(register: Register): LabNode {
     ownership: "draft",
     local: false,
     authorName: "you",
-    x: 375,
-    y: 60,
-    width: 260,
-    height: 190,
+    x: compact ? 12 : 375,
+    y: compact ? 350 : 60,
+    width: compact ? 196 : 260,
+    height: compact ? 220 : 190,
   };
 }
 
@@ -447,6 +447,15 @@ export function TourActFive({ register, onLanded }: { register: Register; onLand
   const [landed, setLanded] = useState(false);
   const [dragging, setDragging] = useState(false);
   const boardRef = useRef<HTMLDivElement>(null);
+  const [compact, setCompact] = useState(false);
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") return;
+    const query = window.matchMedia("(max-width: 767px)");
+    const update = () => setCompact(query.matches);
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
   const sourceNodes: LabNode[] = cards.map((card, index) => ({
     id: `tour-source-${index}`,
     kind: "source",
@@ -455,18 +464,18 @@ export function TourActFive({ register, onLanded }: { register: Register; onLand
     summary: "",
     typeLabel: card.source,
     ownership: "draft",
-    x: 30,
+    x: compact ? 12 : 30,
     y: 42 + index * 82,
-    width: 250,
+    width: compact ? 196 : 250,
     height: 64,
   }));
-  const answer = answerNode(register);
+  const answer = answerNode(register, compact);
   const links: LabLink[] = sourceNodes.map((node, index) => ({
     id: `tour-link-${index}`,
     fromId: node.id,
     toId: answer.id,
-    fromAnchor: "right",
-    toAnchor: "left",
+    fromAnchor: compact ? "bottom" : "right",
+    toAnchor: compact ? "top" : "left",
   }));
   const land = () => {
     if (landed) return;
@@ -493,7 +502,7 @@ export function TourActFive({ register, onLanded }: { register: Register; onLand
         ))}
         {landed ? (
           <>
-            <svg className="tour-keep-links" viewBox="0 0 680 300" aria-label="Answer links to its three sources">
+            <svg className="tour-keep-links" viewBox={compact ? "0 0 220 600" : "0 0 680 300"} aria-label="Answer links to its three sources">
               <LabRelationships links={links} nodes={[...sourceNodes, answer]} measuredHeights={new Map()} selectedLinkId={null} inverseZoom={1} onSelect={noop} />
             </svg>
             <LabAnswerCard node={answer} focused={false} stackZ={4} onFocus={noop} onPointerDown={noop} onDelete={noop} />
