@@ -18,6 +18,8 @@ export async function classifyQuestionIntent(
   input: {
     userId: string;
     profileId: string;
+    /** The workspace to bill this call to, when the caller already knows it. */
+    orgId?: string | null | undefined;
     question: string;
     scopeMode: string;
     email?: string | null | undefined;
@@ -44,7 +46,11 @@ export async function classifyQuestionIntent(
         },
         { role: "user", content: input.question.slice(0, 2000) },
       ],
-      { tier: "fast", timeoutMs: 5000, meta: { surface: "question_intent" } },
+      {
+        tier: "fast",
+        timeoutMs: 5000,
+        meta: { surface: "question_intent", orgId: input.orgId ?? null },
+      },
     );
     const match = completion.text.match(/\{[\s\S]*\}/);
     if (match) {
