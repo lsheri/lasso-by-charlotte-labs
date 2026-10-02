@@ -439,7 +439,8 @@ export function TourActThree({ register, onComplete }: { register: Register; onC
     const top = board.top + box.y;
     const right = left + box.width;
     const bottom = top + box.height;
-    const cardRects = Array.from(boardRef.current.querySelectorAll<HTMLElement>("[data-tour-card]")).map((element) => element.getBoundingClientRect());
+    const scope = boardRef.current.querySelector<HTMLElement>("[data-tour-group-scope]");
+    const cardRects = Array.from(scope?.querySelectorAll<HTMLElement>("[data-tour-card]:not([data-tour-ambient])") ?? []).map((element) => element.getBoundingClientRect());
     if (cardRects.length === 3 && cardRects.every((rect) => left <= rect.left && top <= rect.top && right >= rect.right && bottom >= rect.bottom)) group();
     setBox(null);
     startRef.current = null;
@@ -460,7 +461,7 @@ export function TourActThree({ register, onComplete }: { register: Register; onC
         const y = event.clientY - rect.top;
         setBox({ x: Math.min(start.x, x), y: Math.min(start.y, y), width: Math.abs(x - start.x), height: Math.abs(y - start.y) });
       }} onPointerUp={endBox} onPointerCancel={() => { setBox(null); startRef.current = null; }}>
-        <BoardShell ariaLabel="Tour grouping board" frames={grouped ? [frame] : []} nodes={nodes} selectedIds={nodes.map((node) => node.id)} lockZoom onViewportSizeChange={({ width }) => setBoardWidth(width)} renderFrame={(current) => <LabFrameElement frame={{ ...current, x: 0, y: 0 }} count={3} kind="custom" selected={false} editable={false} custom namedByWorkstream={false} removable={false} onSelect={noop} onResizeStart={noop} onFit={noop} onRename={noop} onRemove={noop} onMenuOpened={noop} onMenuOpenChange={noop} />} renderNode={(node) => <TourLabCard node={node} selected onSelect={noop} onKeyDown={noop} />} />
+        <div className="tour-group-scope" data-tour-group-scope=""><BoardShell ariaLabel="Tour grouping board" frames={grouped ? [frame] : []} nodes={nodes} selectedIds={nodes.map((node) => node.id)} lockZoom onViewportSizeChange={({ width }) => setBoardWidth(width)} renderFrame={(current) => <LabFrameElement frame={{ ...current, x: 0, y: 0 }} count={3} kind="custom" selected={false} editable={false} custom namedByWorkstream={false} removable={false} onSelect={noop} onResizeStart={noop} onFit={noop} onRename={noop} onRemove={noop} onMenuOpened={noop} onMenuOpenChange={noop} />} renderNode={(node) => <TourLabCard node={node} selected onSelect={noop} onKeyDown={noop} />} /></div>
         <AmbientWorkstream register={register} />
         {box ? <span className="tour-marquee" style={{ left: box.x, top: box.y, width: box.width, height: box.height }} /> : null}
       </div>
