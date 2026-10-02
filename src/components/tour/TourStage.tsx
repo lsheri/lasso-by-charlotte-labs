@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { DrawnCheck, GraphiteRule } from "@/components/notebook/marks";
 import { Button } from "@/components/ui/button";
@@ -23,7 +23,7 @@ type TourStageProps = {
 function TourInstructionArrow({ stage, activeAct }: { stage: React.RefObject<HTMLElement | null>; activeAct: number }) {
   const svgRef = useRef<SVGSVGElement>(null);
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     const root = stage.current;
     const svg = svgRef.current;
     if (!root || !svg) return;
