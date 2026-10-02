@@ -6529,8 +6529,9 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .tour-drag-answer p { margin-top: 10px; font-size: 13px; line-height: 1.45; }
 .tour-keep-panel > button { align-self: flex-end; }
 .tour-shared-act { height: 100%; min-height: 0; }
-.tour-persistent-board { position: relative; height: 100%; min-height: 0; overflow: hidden; border: 1px solid var(--nb-rule); background: var(--nb-paper); }
+.tour-persistent-board { position: relative; height: 100%; min-height: 0; overflow: auto; border: 1px solid var(--nb-rule); background: var(--nb-paper); }
 .tour-board-grid { position: absolute; inset: 0; min-height: 0; background-image: radial-gradient(var(--nb-rule) 1px, transparent 1px); background-size: 22px 22px; }
+.tour-board-scroll-space { width: 1px; height: calc(100% + 190px); pointer-events: none; }
 .tour-board-item,.tour-reserved-slot { position: absolute; z-index: 4; box-sizing: border-box; }
 .tour-board-item.tour-preview-card { min-width: 0; min-height: 0; height: 17%; padding: 7px 9px; gap: 4px 7px; cursor: default; }
 .tour-board-item.tour-preview-card[tabindex] { cursor: pointer; }
@@ -6541,6 +6542,18 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .tour-board-item.tour-preview-card > strong { font-size: 13px; line-height: 1.1; }
 .tour-board-item > .tour-artifact-card,.tour-board-item > .tour-image-card { position: static; width: 100%; min-width: 0; height: 17%; min-height: 74px; }
 .tour-board-item > .tour-artifact-card { height: 56px; }
+.tour-board-item > .tour-image-card.is-finished-deck { position: relative; height: 34%; min-height: 150px; padding: 10px 12px; }
+.tour-image-card.is-finished-deck strong { font-size: 18px; }
+.tour-image-card.is-finished-deck svg { height: calc(100% - 24px); min-height: 118px; }
+.tour-deck-title-line { stroke-width: var(--stroke-bold); }
+.tour-deck-footnote-marker { --nb-circle-stroke: 1.4; position: absolute; z-index: 3; top: 40%; right: -9px; display: grid; width: 20px; height: 20px; place-items: center; border-radius: 50%; background: var(--nb-white); color: var(--nb-graphite); font-family: var(--font-mono); font-size: 9px; }
+.tour-deck-footnote-marker:focus-visible { outline: 2px solid var(--nb-green-deep); outline-offset: 3px; }
+.tour-deck-footnote-marker .nb-circle-mark { inset: -4px; width: calc(100% + 8px); height: calc(100% + 8px); }
+.tour-deck-links { position: absolute; z-index: 6; inset: 0; width: 100%; height: auto; overflow: visible; pointer-events: none; }
+.tour-deck-links > path { fill: none; stroke: var(--nb-graphite); stroke-width: var(--stroke-pencil); stroke-linecap: round; stroke-linejoin: round; }
+.tour-deck-links > path[data-tour-deck-link="deck-chat-trace"] { stroke: var(--nb-blue); stroke-dasharray: 4 4; stroke-width: var(--stroke-bold); }
+.tour-deck-links marker path { fill: var(--nb-graphite); stroke: none; }
+.tour-reserved-slot.is-deck-slot { height: 34%; min-height: 150px; }
 .tour-reserved-slot { height: 17%; border: 1px dashed var(--nb-pencil); border-radius: var(--radius-card); background: color-mix(in srgb, var(--nb-white) 45%, transparent); }
 .tour-shared-group-region { position: absolute; z-index: 2; top: 1%; left: 1%; width: 65%; height: 39%; padding: 5px 8px; pointer-events: none; }
 .tour-shared-group-region > span:first-child { color: var(--nb-region-lavender-vivid); font-family: var(--font-hand); font-size: 16px; }
@@ -6642,6 +6655,10 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   .tour-board-item .tour-card-preview-copy span::before { display: none; }
   .tour-board-item > .tour-image-card { min-height: 0; height: 18%; padding: 4px; }
   .tour-board-item > .tour-image-card svg { height: 58px; }
+  .tour-board-item > .tour-image-card.is-finished-deck { height: 36%; min-height: 164px; padding: 7px; }
+  .tour-image-card.is-finished-deck strong { font-size: 15px; }
+  .tour-image-card.is-finished-deck svg { height: calc(100% - 20px); min-height: 130px; }
+  .tour-reserved-slot.is-deck-slot { height: 36%; min-height: 164px; }
   .tour-reserved-slot { height: 18%; }
   .tour-answer-slot { height: 18%; }
   .tour-ask-mimic { width: 48%; }
