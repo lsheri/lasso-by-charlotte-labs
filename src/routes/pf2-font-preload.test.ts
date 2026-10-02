@@ -12,7 +12,9 @@ describe("PF2 font preloads", () => {
     throw new Error("Root route head definition unexpectedly returned a promise");
   }
   const head = headResult;
-  const links = head?.links ?? [];
+  const links = (head?.links ?? []).filter(
+    (link): link is NonNullable<typeof link> => link !== undefined,
+  );
   const fontPreloads = links.filter(
     (link) => link.rel === "preload" && "as" in link && link.as === "font",
   );
@@ -35,9 +37,13 @@ describe("PF2 font preloads", () => {
     expect(fontPreloads).toHaveLength(3);
     for (const preload of fontPreloads) {
       expect(typeof preload.href).toBe("string");
-      expect(preload.href.length).toBeGreaterThan(0);
-      expect(preload.href).toMatch(/\.woff2(?:\?|$)/);
-      expect(preload.href).not.toMatch(/^(caveat|jetbrains-mono|archivo)$/);
+      const href = preload.href;
+      if (typeof href !== "string") {
+        throw new Error("Font preload href is not a string");
+      }
+      expect(href.length).toBeGreaterThan(0);
+      expect(href).toMatch(/\.woff2(?:\?|$)/);
+      expect(href).not.toMatch(/^(caveat|jetbrains-mono|archivo)$/);
     }
   });
 
