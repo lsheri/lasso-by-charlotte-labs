@@ -19,7 +19,7 @@ import {
 } from "@/lib/edu-entry";
 import { readPendingInvite } from "@/lib/pending-invite";
 import { useServerFn } from "@tanstack/react-start";
-import { redeemActivationKeyFn } from "@/lib/activation-keys.functions";
+import { lookupActivationKeyFn, redeemActivationKeyFn } from "@/lib/activation-keys.functions";
 import { cleanActivationKey, clearActivationKey, readActivationKey } from "@/lib/key-entry";
 import { logEvent } from "@/lib/telemetry";
 import {
@@ -82,6 +82,23 @@ async function applyOrgType(profileId: string, type: OrgType): Promise<string | 
   // affiliation is entitlement, and entitlement comes only from a redeemed
   // activation key. signup_source stays recorded above as attribution.
   return profile.org_id;
+}
+
+/** KX1: the carried-key notice on the name screen. Tests pin these strings. */
+export const KEY_NOTICE_COPY = {
+  named: (institution: string) => `You are joining with a key from ${institution}.`,
+  neutral: "You are joining with a sponsored key.",
+  body: "They will see counts of your work, never its content, and only what you choose to share.",
+  remove: "Not with them? Remove this key.",
+} as const;
+
+const REDEEM_FAILED_REASONS = ["not_found", "expired", "revoked", "exhausted", "domain_not_allowed"] as const;
+
+/** Closed reason for activation.redeem_failed. Anything unlisted is "other". */
+export function redeemFailedReason(reason: unknown): string {
+  return typeof reason === "string" && (REDEEM_FAILED_REASONS as readonly string[]).includes(reason)
+    ? reason
+    : "other";
 }
 
 type OnboardingSearch = {
@@ -190,6 +207,13 @@ function OnboardingInner() {
   const queryClient = useQueryClient();
   const { intent, setup, key, from, src } = Route.useSearch();
   const redeemKey = useServerFn(redeemActivationKeyFn);
+  const lookupKey = useServerFn(lookupActivationKeyFn);
+  // KX1: the key this signup would redeem, shown before it is used. URL
+  // first, then a saved key that has not expired. Only the setup stage.
+  const [carriedKey, setCarriedKey] = useState<string | null>(() =>
+    setup ? null : (key ?? readActivationKey()),
+  );
+  const [keyInstitution, setKeyInstitution] = useState<string | null>(null);
   // Unit C: the register comes from the door. Unit B5X: with no door signal
   // at all, beforeLoad sends the person to /plans to choose.
   const [derived] = useState(() => deriveRegister(intent));
@@ -209,6 +233,36 @@ function OnboardingInner() {
   const [orgName, setOrgName] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // KX1: name who the key belongs to without redeeming it. Never blocks.
+  useEffect(() => {
+    if (!carriedKey) return;
+    let live = true;
+    void lookupKey({ data: { code: carriedKey } })
+      .then((r) => {
+        if (live) setKeyInstitution(r?.ok && r.institution_name ? r.institution_name : null);
+      })
+      .catch(() => {
+        if (live) setKeyInstitution(null);
+      });
+    return () => {
+      live = false;
+    };
+  }, [carriedKey, lookupKey]);
+
+  function removeKey() {
+    clearActivationKey();
+    setCarriedKey(null);
+    setKeyInstitution(null);
+    navigate({
+      to: "/onboarding",
+      search: (prev: OnboardingSearch) => {
+        const { key: _drop, ...rest } = prev;
+        return rest;
+      },
+      replace: true,
+    } as never);
+  }
 
   // Returning members reopening setup from Connectors see their earlier picks.
   useEffect(() => {
@@ -285,8 +339,10 @@ function OnboardingInner() {
     }
 
     const profile = await fetchProfile();
+    let createdOrgId: string | null = null;
     if (profile) {
       const orgId = await applyOrgType(profile.id, orgType);
+      createdOrgId = orgId ?? profile.org_id ?? null;
       if (orgId) {
         logEvent("org.created", orgId, {
           org_type: orgType,
@@ -297,16 +353,22 @@ function OnboardingInner() {
       clearEduIntent();
     }
 
-    // Unit J1: a key carried from a /j/<code> link redeems once, here, the
-    // first moment a workspace exists. The outcome never blocks onboarding.
-    const carriedKey = key ?? readActivationKey();
+    // Unit J1 / KX1: the key shown on this screen redeems once, here, the
+    // first moment a workspace exists. Submitting with the notice on screen
+    // is the consent; a removed key is null and nothing is redeemed. The
+    // outcome never blocks onboarding, but a failure is recorded.
     if (carriedKey) {
+      let failed: string | null = null;
       try {
-        await redeemKey({ data: { code: carriedKey } });
+        const result = await redeemKey({ data: { code: carriedKey } });
+        if (!result?.ok) failed = redeemFailedReason(result?.reason);
       } catch {
-        /* swallowed on purpose: onboarding continues either way */
+        failed = "other";
       } finally {
         clearActivationKey();
+      }
+      if (failed && createdOrgId) {
+        logEvent("activation.redeem_failed", createdOrgId, { reason: failed });
       }
     }
 
@@ -440,6 +502,25 @@ function OnboardingInner() {
                     onChange={(e) => setOrgName(e.target.value)}
                     placeholder={copy.workspacePlaceholder}
                   />
+                </div>
+              ) : null}
+
+              {carriedKey ? (
+                <div
+                  data-testid="key-notice"
+                  className="rounded-[var(--radius)] border border-dashed border-border px-4 py-3"
+                >
+                  <p className="font-hand text-[16px] leading-snug text-foreground">
+                    {keyInstitution ? KEY_NOTICE_COPY.named(keyInstitution) : KEY_NOTICE_COPY.neutral}
+                  </p>
+                  <p className="mt-1 text-[13px] text-muted-foreground">{KEY_NOTICE_COPY.body}</p>
+                  <button
+                    type="button"
+                    onClick={removeKey}
+                    className="nb-pencil-cta nb-pencil-cta--sm mt-3"
+                  >
+                    <span>{KEY_NOTICE_COPY.remove}</span>
+                  </button>
                 </div>
               ) : null}
 

@@ -15,7 +15,7 @@ import { checkSignupInvite } from "@/lib/invites.functions";
 import { type SignupInviteCheck } from "@/lib/signup-invite";
 import { markSignupSource, type SignupSource } from "@/lib/edu-entry";
 import { isPartnerSlug } from "@/lib/partners";
-import { cleanActivationKey, markActivationKey, readActivationKey } from "@/lib/key-entry";
+import { cleanActivationKey, clearActivationKey, markActivationKey } from "@/lib/key-entry";
 import { deriveRegister, NEUTRAL_COPY, REGISTER_COPY } from "@/lib/register";
 import type { IntentParam } from "@/lib/org-type";
 import { aliasSignupVisitor, emitClientEvent } from "@/lib/client-telemetry";
@@ -175,7 +175,11 @@ function AuthPage() {
     if (mode === "signin") {
       const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
       if (signInError) setError(signInError.message);
-      else goOn();
+      else {
+        // KX1: an existing account never inherits a key saved in this browser.
+        clearActivationKey();
+        goOn();
+      }
     } else {
       // With an invite code, the gate is checked again on the server at submit
       // time, with the typed address. Without one, this is an open signup.
@@ -191,7 +195,9 @@ function AuthPage() {
       // survives being opened on another device. No signal, nothing carried.
       const register = deriveRegister(intent);
       const basePath = register ? `/onboarding?intent=${register}` : "/onboarding";
-      const carriedKey = key ?? readActivationKey();
+      // KX1: only a key in this page's link rides into the confirm email.
+      // A key saved in the browser from an earlier visit never does.
+      const carriedKey = key ?? null;
       const onboardingPath = carriedKey
         ? `${basePath}${register ? "&" : "?"}key=${encodeURIComponent(carriedKey)}`
         : basePath;
