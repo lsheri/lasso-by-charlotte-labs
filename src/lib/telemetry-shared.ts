@@ -115,6 +115,9 @@ export type TelemetryEvent =
   | "mcp.push_options_requested"
   /** M2a: a place was made through MCP. Shape only, never a name. */
   | "mcp.container_created"
+  /** CL-2b: a chat link was attached to a pushed conversation through MCP.
+   *  Dims: source ("mcp"), had_prior_link. Portal needs this name added when it exists. */
+  | "mcp.chat_link_attached"
   /** B1d: a container was made in the app, client or folder. Kind, the closed
    *  entry point (empty_state included), workspace type and level only. Never a name, never an id. Compare mcp.container_created,
    *  which is the same act performed by an outside model. */

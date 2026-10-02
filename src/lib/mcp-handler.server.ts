@@ -39,6 +39,7 @@ import {
   rawPushUrl,
   storedPushChatUrl,
 } from "@/lib/mcp-push-url";
+import { isBareChatOrigin, itemChatLink, pastedChatUrl } from "@/lib/chat-url";
 import { isAffiliatedStrict, orgTypeOfStrict } from "@/lib/org-type.server";
 import {
   placementLine,
@@ -487,6 +488,104 @@ function json(body: unknown, status = 200): Response {
   });
 }
 
+/** CL-2b: the reply line when no rung of the ladder holds. */
+export const NO_CHAT_LINK_LINE =
+  " No link back to this chat was recorded. Paste the URL from your address bar and I will attach it with lasso_attach_chat_link.";
+
+/**
+ * CL-2b: re-read the stored conversation, scoped to its owner, and return the
+ * ask line only when itemChatLink finds nothing on any rung.
+ */
+async function noChatLinkLine(owner: Owner, workItemId: string): Promise<string> {
+  const { data } = await supabaseAdmin
+    .from("work_items")
+    .select("meta, source_meta, source_vendor, orig_conversation_id")
+    .eq("id", workItemId)
+    .eq("owner_id", owner.profileId)
+    .maybeSingle();
+  if (!data) return "";
+  const link = itemChatLink({
+    meta: data.meta as { chat_url?: string | null } | null,
+    source_meta: data.source_meta as { url?: string | null; source_project?: { id?: unknown } | null } | null,
+    source_vendor: data.source_vendor,
+    orig_conversation_id: data.orig_conversation_id,
+  });
+  return link ? "" : NO_CHAT_LINK_LINE;
+}
+
+/**
+ * CL-2b: attach a link a person pasted to a conversation they own.
+ * supabaseAdmin bypasses RLS, so both the read and the write are filtered by
+ * owner_id = the caller's profile id. meta is merged; only chat_url changes.
+ */
+async function attachChatLink(owner: Owner, args: Obj, id: unknown): Promise<Response> {
+  const convId = typeof args["lasso_conversation_id"] === "string" ? args["lasso_conversation_id"].trim() : "";
+  const rawUrl = typeof args["chat_url"] === "string" ? args["chat_url"].trim() : "";
+  if (!convId) return textResult(id, "lasso_conversation_id is required. Nothing was changed.");
+  const url = pastedChatUrl(rawUrl);
+  let bare = false;
+  if (url) {
+    try {
+      bare = isBareChatOrigin(new URL(url));
+    } catch {
+      bare = false;
+    }
+  }
+  if (!url) {
+    return textResult(
+      id,
+      "That link was not attached. It must be a full https link with no username or password, under 2048 characters. Nothing was changed.",
+    );
+  }
+  if (bare) {
+    return textResult(
+      id,
+      "That link is the app's home page, not this conversation. Ask the person for the link to the conversation itself. Nothing was changed.",
+    );
+  }
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(convId);
+  const { data: row } = isUuid
+    ? await supabaseAdmin
+        .from("work_items")
+        .select("id, title, meta, source_meta, source_vendor, orig_conversation_id")
+        .eq("id", convId)
+        .eq("owner_id", owner.profileId)
+        .eq("type", "ai_thread")
+        .maybeSingle()
+    : { data: null };
+  if (!row) {
+    return textResult(
+      id,
+      `lasso_conversation_id '${convId}' does not name a conversation of yours in Lasso. Nothing was changed.`,
+    );
+  }
+  const hadPrior =
+    itemChatLink({
+      meta: row.meta as { chat_url?: string | null } | null,
+      source_meta: row.source_meta as { url?: string | null; source_project?: { id?: unknown } | null } | null,
+      source_vendor: row.source_vendor,
+      orig_conversation_id: row.orig_conversation_id,
+    }) !== null;
+  const meta = { ...((row.meta ?? {}) as Record<string, unknown>), chat_url: url };
+  const { data: updated, error } = await supabaseAdmin
+    .from("work_items")
+    .update({ meta: meta as Json })
+    .eq("id", row.id)
+    .eq("owner_id", owner.profileId)
+    .select("id");
+  if (error) return rpcError(id, -32603, error.message);
+  if (!updated || updated.length !== 1) {
+    return textResult(id, `lasso_conversation_id '${convId}' does not name a conversation of yours in Lasso. Nothing was changed.`);
+  }
+  await recordEvent(supabaseAdmin, {
+    eventType: "mcp.chat_link_attached",
+    orgId: owner.orgId,
+    userId: owner.userId,
+    dims: { source: "mcp", had_prior_link: hadPrior ? "true" : "false" },
+  });
+  return textResult(id, `Attached the chat link to '${row.title}'.`);
+}
+
 function textResult(id: unknown, text: string): Response {
   return rpcResult(id, { content: [{ type: "text", text }] });
 }
@@ -565,6 +664,30 @@ const CHAT_URL_FIELD = {
   type: "string",
   description:
     "This conversation's own https URL in the source app. You usually cannot see the address bar, so leave this out unless the link is plainly in front of you. Where it genuinely is available: in Claude Code and Cowork the session link is in your own context, so send it there. Never guess a URL and never send a vendor home page such as https://claude.ai/ or https://chatgpt.com/; a guessed link is worse than no link. The link is what lets the saved work point back to this chat, and what recognises the same conversation on a later push. Any https URL that points past a front door is kept. Leaving it out is the expected case, not a failure.",
+};
+
+/** CL-2b: the last rung. The person hands over the link from their address bar. */
+const ATTACH_CHAT_LINK_TOOL = {
+  name: "lasso_attach_chat_link",
+  title: "Attach the chat link",
+  icons: ICONS,
+  description:
+    "Attach the link to a conversation already saved in Lasso. Call this when a push reply said no link to the chat was recorded and the person has given you the URL. Ask the person for it: they can see their address bar, and you usually cannot. Never invent a URL and never send a vendor home page.",
+  annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+  inputSchema: {
+    type: "object",
+    properties: {
+      lasso_conversation_id: {
+        type: "string",
+        description: "The lasso_conversation_id a push of this conversation returned.",
+      },
+      chat_url: {
+        type: "string",
+        description: "The https URL of this conversation in the source app, as the person pasted it.",
+      },
+    },
+    required: ["lasso_conversation_id", "chat_url"],
+  },
 };
 
 const pushTools = (vocab: McpVocab) => [
@@ -886,6 +1009,7 @@ export async function handleMcpRequest(
     return rpcResult(id, {
       tools: [
         ...pushTools(mcpVocabFor(type)),
+        ATTACH_CHAT_LINK_TOOL,
         ...readToolsFor(type, ICONS),
         ...createToolsFor(type, ICONS),
       ],
@@ -912,6 +1036,10 @@ export async function handleMcpRequest(
       if (name === "list_engagements") return await listEngagements(owner, id);
       if (name === "lasso_list_places") return await listPlaces(owner, id);
       if (name === "lasso_push_options") return await pushOptions(owner, args, id);
+      if (name === "lasso_attach_chat_link") {
+        if (owner.readOnly) return rpcError(id, -32603, "This connection can read but not add work right now.");
+        return await attachChatLink(owner, args, id);
+      }
       const type = await workspaceTypeOf(owner);
       const vocab = mcpVocabFor(type);
       if (name === vocab.createContainerTool) return await createContainer(owner, args, id, type, vocab);
@@ -1191,11 +1319,14 @@ async function pushThread(
     protocolVersion: client.protocol,
     bytes,
   });
+  // CL-2b. push_thread returns no id elsewhere, so the ask carries it.
+  const threadAsk = await noChatLinkLine(owner, item.id);
+  const threadLinkLine = threadAsk ? `${threadAsk} Use lasso_conversation_id ${item.id}.` : "";
   return textResult(
     id,
     `Saved to Lasso: '${title}' (${turns.length} turns).${
       threadPlacement.target === "workboard" ? "" : " It is private until you map it."
-    }${threadPlacement.text ? ` ${threadPlacement.text}` : ""}`,
+    }${threadPlacement.text ? ` ${threadPlacement.text}` : ""}${threadLinkLine}`,
   );
 }
 
@@ -2918,6 +3049,8 @@ export async function pushConversation(
   const receiptNote = win || receipts.length > 0 ? receiptLine(receipts) : "";
   // P0 item 10. Asked for once, on the first push of this conversation.
   const urlNote = pushMode === "created" ? missingChatUrlNote(args) : "";
+  // CL-2b. Asked only when no rung of the ladder holds on the stored row.
+  const attachNote = await noChatLinkLine(owner, threadId);
   // P1 item 1. A summary never replaces a turn already held word for word.
   const summaryRefusedNote =
     summaryRefused.length > 0
@@ -2934,7 +3067,7 @@ export async function pushConversation(
   const decisionText = decisionsLine(decisionReceipts);
   const decisionNote = decisionText ? ` ${decisionText}` : "";
   const decisionNeedsNote = decisionReceipts.some((r) => r.outcome === "held" || r.outcome === "skipped");
-  const summary = `${verb} '${title}' in Lasso.${counts}${attachmentLine}${attachmentPlaceNote}${placeholderNote}${shortNote}${windowNote}${totalNote}${receiptNote}${degradedNote}${summaryRefusedNote}${degradedAttachmentNote}${cursor}${placementText}${rejectedNote}${warn}${continuation}${urlNote}${decisionNote}`;
+  const summary = `${verb} '${title}' in Lasso.${counts}${attachmentLine}${attachmentPlaceNote}${placeholderNote}${shortNote}${windowNote}${totalNote}${receiptNote}${degradedNote}${summaryRefusedNote}${degradedAttachmentNote}${cursor}${placementText}${rejectedNote}${warn}${continuation}${urlNote}${attachNote}${decisionNote}`;
   // P1 item 0. Clients that read only structuredContent must still see
   // everything the text says, as fields rather than prose.
   const progress = pushProgress(storedCount, total ?? null);
@@ -2951,6 +3084,7 @@ export async function pushConversation(
     warn,
     continuation,
     urlNote,
+    attachNote,
     decisionNeedsNote ? decisionNote : "",
   ]
     .map((one) => one.trim())

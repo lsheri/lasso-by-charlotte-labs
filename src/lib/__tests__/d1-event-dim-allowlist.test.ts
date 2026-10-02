@@ -181,6 +181,7 @@ const LIVE_KEYS_BY_EVENT: Record<string, readonly string[]> = {
   "demo.play_interacted": ["action", "surface"],
   "landing.section_jumped": ["section"],
   "landing.proof_link_opened": ["step", "target"],
+  "mcp.chat_link_attached": ["had_prior_link", "source"],
   "mcp.connection_created": ["kind"],
   "mcp.connection_revoked": ["kind", "via"],
   "mcp.connection_revealed": ["kind"],
