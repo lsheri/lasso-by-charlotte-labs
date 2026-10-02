@@ -50,6 +50,88 @@ function Figure({ value, label }: { value: number; label: string }) {
   );
 }
 
+type AffiliationContentProps = {
+  institutionName: string;
+  projectCount: number;
+  toolCount: number;
+  keptCount: number;
+  sharedCount: number;
+};
+
+export function AffiliationContent({
+  institutionName,
+  projectCount,
+  toolCount,
+  keptCount,
+  sharedCount,
+}: AffiliationContentProps) {
+  const nothingShared = sharedCount === 0;
+  const counts = (
+    <section className="mb-10" data-testid="affiliation-counts">
+      <SectionHeader title="What goes up" />
+      <p className="mb-5 text-sm text-muted-foreground">Counts, never content.</p>
+      <div className="flex gap-12">
+        <Figure value={projectCount} label="projects" />
+        <Figure value={toolCount} label="tools that have sent work" />
+        <Figure value={keptCount} label="pieces of work kept" />
+      </div>
+    </section>
+  );
+
+  const sharing = (
+    <section className="mb-10" data-testid="affiliation-sharing">
+      {nothingShared ? (
+        <>
+          <SectionHeader title={`Nothing has been shared with ${institutionName}.`} />
+          <p className="text-sm text-muted-foreground">
+            This workspace is linked to them. They see nothing until you share something, one piece at a time.
+          </p>
+        </>
+      ) : (
+        <>
+          <SectionHeader title="What you chose to share" />
+          <p className="mb-4 text-sm text-muted-foreground">
+            One piece at a time, and only when you say so.
+          </p>
+        </>
+      )}
+    </section>
+  );
+
+  return (
+    <>
+      <PageHeader
+        title="What"
+        italicWord={institutionName}
+        subtitle="Read this any time. It is the whole list."
+      />
+
+      {nothingShared ? sharing : null}
+      {counts}
+
+      <section className="mb-10">
+        <SectionHeader title="What stays put" />
+        <p className="mb-4 text-sm text-muted-foreground">
+          None of this leaves your account.
+        </p>
+        <ul className="flex flex-col gap-1.5 text-[13px]">
+          <li>The titles of your work</li>
+          <li>What you asked, in every conversation</li>
+          <li>Your documents and transcripts</li>
+          <li>Your canvas, and what you connected to what</li>
+          <li>Anything you wrote in a brief</li>
+        </ul>
+      </section>
+
+      {nothingShared ? null : sharing}
+
+      <p className="font-hand text-[16px] text-green">
+        your record is yours, and it leaves with you
+      </p>
+    </>
+  );
+}
+
 export function AffiliationPage() {
   const { data: affiliation } = useAffiliation();
   const institution = affiliation?.institution ?? null;
@@ -70,7 +152,7 @@ export function AffiliationPage() {
     return (
       <div className="page">
         <p className="text-sm text-muted-foreground">
-          This workspace is not linked to a school.
+          This workspace is not linked to a school or a partner.
         </p>
       </div>
     );
@@ -78,49 +160,13 @@ export function AffiliationPage() {
 
   return (
     <div className="page">
-      <PageHeader
-        title="What"
-        italicWord={institution.name}
-        subtitle="Read this any time. It is the whole list."
+      <AffiliationContent
+        institutionName={institution.name}
+        projectCount={(engagements ?? []).length}
+        toolCount={shape?.tools ?? 0}
+        keptCount={shape?.kept ?? 0}
+        sharedCount={0}
       />
-
-      <section className="mb-10">
-        <SectionHeader title="What goes up" />
-        <p className="mb-5 text-sm text-muted-foreground">Counts, never content.</p>
-        <div className="flex gap-12">
-          <Figure value={(engagements ?? []).length} label="projects" />
-          <Figure value={shape?.tools ?? 0} label="tools that have sent work" />
-          <Figure value={shape?.kept ?? 0} label="pieces of work kept" />
-        </div>
-      </section>
-
-      <section className="mb-10">
-        <SectionHeader title="What stays put" />
-        <p className="mb-4 text-sm text-muted-foreground">
-          None of this leaves your account.
-        </p>
-        <ul className="flex flex-col gap-1.5 text-[13px]">
-          <li>The titles of your work</li>
-          <li>What you asked, in every conversation</li>
-          <li>Your documents and transcripts</li>
-          <li>Your canvas, and what you connected to what</li>
-          <li>Anything you wrote in a brief</li>
-        </ul>
-      </section>
-
-      <section className="mb-10">
-        <SectionHeader title="What you chose to share" />
-        <p className="mb-4 text-sm text-muted-foreground">
-          One piece at a time, and only when you say so.
-        </p>
-        <p className="text-sm text-muted-foreground">
-          You have not shared anything with {institution.name}.
-        </p>
-      </section>
-
-      <p className="font-hand text-[16px] text-green">
-        your record is yours, and it leaves with you
-      </p>
     </div>
   );
 }
