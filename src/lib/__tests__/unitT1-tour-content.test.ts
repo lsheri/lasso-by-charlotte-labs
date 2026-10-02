@@ -50,6 +50,14 @@ describe("T1 tour content", () => {
     }
   });
 
+  it("pins the one-click work-card instruction", () => {
+    for (const register of REGISTERS) {
+      expect(TOUR_CONTENT[register].acts[1]?.captionPointer).toBe("Click one of the outlined work cards.");
+      expect(TOUR_CONTENT[register].acts[1]?.captionTouch).toBe("Click one of the outlined work cards.");
+      expect(TOUR_CONTENT[register].acts[1]?.why).toBe("You are telling Lasso which work, AI chats and transcripts share context. These three all went into the same final piece of work.");
+    }
+  });
+
   it("pins the free form card layouts and AI chat plurality", () => {
     expect(TOUR_AMBIENT_CARDS).toHaveLength(4);
     expect(TOUR_AMBIENT_CARDS.map((card) => card.source)).toEqual(["chatgpt", "chatgpt", "gemini", "claude"]);

@@ -410,7 +410,7 @@ export function TourActTwo({ register, hint, onComplete }: { register: Register;
   };
 
   return (
-    <TourWorkboard active="select"><div ref={boardRef} className="tour-board-act" data-testid="tour-act-two" data-tour-target="2" onPointerDown={(event) => {
+    <TourWorkboard active="select"><div ref={boardRef} className="tour-board-act" data-testid="tour-act-two" onPointerDown={(event) => {
       if ((event.target as HTMLElement).closest("[data-tour-card]")) return;
       const rect = event.currentTarget.getBoundingClientRect();
       startRef.current = { x: event.clientX - rect.left, y: event.clientY - rect.top };
@@ -445,7 +445,7 @@ export function TourActThree({ register, onComplete }: { register: Register; onC
   const boardRef = useRef<HTMLDivElement>(null);
 
   const group = () => {
-    if (grouped || nodes.length !== 3) return;
+    if (grouped || chosen.length !== 3) return;
     setGrouped(true);
     onComplete();
   };
@@ -696,7 +696,7 @@ function TourAnchoredRelationships({ sourceNodes, answer }: { sourceNodes: LabNo
   }, [answer, sourceNodes]);
 
   return (
-    <svg ref={hostRef} className="tour-keep-links" viewBox={geometry ? `0 0 ${geometry.width} ${geometry.height}` : "0 0 1 1"} aria-label="Answer links to its three sources">
+    <svg ref={hostRef} className="tour-keep-links" viewBox={geometry ? `0 0 ${geometry.width} ${geometry.height}` : "0 0 1 1"} aria-label="Answer links to its three source work cards">
       <LabRelationships links={geometry.links} nodes={geometry.nodes} measuredHeights={new Map()} selectedLinkId={null} inverseZoom={1} onSelect={noop} />
     </svg>
   );
