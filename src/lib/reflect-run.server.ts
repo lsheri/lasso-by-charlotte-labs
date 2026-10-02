@@ -279,6 +279,7 @@ export async function runReflectTurn(
     await classifyQuestionIntent(supabase, {
       userId,
       profileId: profile.id,
+      orgId: profile.org_id,
       question: message,
       scopeMode: scope.mode,
     });
@@ -437,6 +438,7 @@ export async function runReflectTurn(
   await classifyQuestionIntent(supabase, {
     userId,
     profileId: profile.id,
+    orgId: profile.org_id,
     question: message,
     scopeMode: scope.mode,
   });

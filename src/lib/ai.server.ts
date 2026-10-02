@@ -62,6 +62,21 @@ export const MODEL_PRICES: Record<string, { input: number; cachedInput: number; 
 /** The Batch API is half price. */
 export const BATCH_DISCOUNT = 0.5;
 
+/**
+ * The price key for a model id. OpenAI resolves an alias to a dated snapshot,
+ * so `gpt-5-2025-08-07` must price as `gpt-5`. Longest matching key wins, so a
+ * future `gpt-5-mini` entry is never shadowed by `gpt-5`. Null means the model
+ * is not in the table and any cost computed for it is a guess.
+ */
+export function priceKeyFor(model: string): string | null {
+  if (MODEL_PRICES[model]) return model;
+  let best: string | null = null;
+  for (const key of Object.keys(MODEL_PRICES)) {
+    if (model.startsWith(key) && (best === null || key.length > best.length)) best = key;
+  }
+  return best;
+}
+
 export function computeCostUsd(
   model: string,
   tokensIn: number,
@@ -69,7 +84,7 @@ export function computeCostUsd(
   tokensOut: number,
   batch = false,
 ): number {
-  const price = MODEL_PRICES[model] ?? MODEL_PRICES[MODELS.smart]!;
+  const price = MODEL_PRICES[priceKeyFor(model) ?? MODELS.smart]!;
   const freshIn = Math.max(tokensIn - cachedIn, 0);
   const usd =
     (freshIn * price.input + cachedIn * price.cachedInput + tokensOut * price.output) / 1_000_000;
@@ -449,6 +464,7 @@ export async function chatComplete(
   const response = attempt.response;
 
   type Payload = {
+    model?: string;
     choices?: {
       message?: {
         content?: string;
@@ -477,6 +493,7 @@ export async function chatComplete(
     );
   }
   const choice = payload.choices?.[0];
+  const servedModel = payload.model ?? model;
   const tokensIn = payload.usage?.prompt_tokens ?? 0;
   const tokensOut = payload.usage?.completion_tokens ?? 0;
   const cachedIn = payload.usage?.prompt_tokens_details?.cached_tokens ?? 0;
@@ -489,13 +506,23 @@ export async function chatComplete(
       arguments: call.function?.arguments ?? "{}",
     })),
     finishReason: normaliseFinish(choice?.finish_reason),
-    model,
+    model: servedModel,
     tokensIn,
     tokensOut,
     cachedIn,
-    costUsd: computeCostUsd(model, tokensIn, cachedIn, tokensOut),
+    costUsd: computeCostUsd(servedModel, tokensIn, cachedIn, tokensOut),
     durationMs: Date.now() - startedAt,
   };
+  if (priceKeyFor(servedModel) === null) {
+    void logHealth({
+      kind: "anomaly",
+      surface: "pricing",
+      orgId: options.meta?.orgId,
+      model: servedModel,
+      detail: "model_not_in_price_table",
+      meta: { origin_surface: options.meta?.surface ?? "unknown" },
+    });
+  }
   afterCall(result, options.meta);
   return result;
 }
@@ -550,6 +577,7 @@ export async function streamChat(
   let tokensIn = 0;
   let tokensOut = 0;
   let cachedIn = 0;
+  let servedModel = model;
   let interrupted = false;
   // Tool calls arrive in fragments, keyed by index, and are reassembled here.
   const toolParts = new Map<number, { id: string; name: string; arguments: string }>();
@@ -567,6 +595,7 @@ export async function streamChat(
         const data = line.slice(5).trim();
         if (!data || data === "[DONE]") continue;
         let event: {
+          model?: string;
           choices?: {
             delta?: {
               content?: string;
@@ -603,6 +632,7 @@ export async function streamChat(
             arguments: existing.arguments + (part.function?.arguments ?? ""),
           });
         }
+        if (event.model) servedModel = event.model;
         if (event.choices?.[0]?.finish_reason) finish = event.choices[0].finish_reason;
         if (event.usage) {
           tokensIn = event.usage.prompt_tokens ?? tokensIn;
@@ -636,13 +666,23 @@ export async function streamChat(
         arguments: call.arguments || "{}",
       })),
     finishReason: normaliseFinish(finish),
-    model,
+    model: servedModel,
     tokensIn,
     tokensOut,
     cachedIn,
-    costUsd: computeCostUsd(model, tokensIn, cachedIn, tokensOut),
+    costUsd: computeCostUsd(servedModel, tokensIn, cachedIn, tokensOut),
     durationMs: Date.now() - startedAt,
   };
+  if (priceKeyFor(servedModel) === null) {
+    void logHealth({
+      kind: "anomaly",
+      surface: "pricing",
+      orgId: options.meta?.orgId,
+      model: servedModel,
+      detail: "model_not_in_price_table",
+      meta: { origin_surface: options.meta?.surface ?? "unknown" },
+    });
+  }
   afterCall(result, options.meta);
   return { ...result, interrupted };
 }
