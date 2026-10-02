@@ -23,3 +23,4 @@
 - Keep `/demo` touch gestures pointer-based: one finger on empty board pans, card-origin drags move cards, and two fingers pan and pinch regardless of their starting target.
 - Landing: one hero video replays on return; its data wait uses 2.5s logo rain, static under reduced motion.
 - Resolve all MCP keys through `mcp_connections`; routes differ only by key transport.
+- Keep the first-run interactive tour entirely in local React state; it must never create product rows or upload files.
