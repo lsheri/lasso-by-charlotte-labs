@@ -77,7 +77,7 @@ function ImageCard({ kind, title, caption }: { kind: "deck" | "whiteboard"; titl
 const BOARD_NOTES = [
   { id: "group", text: "name this grouping?", x: 83, y: 22 },
   { id: "budget", text: "keep for the budget, not the plan", x: 2, y: 70 },
-  { id: "gemini", text: "add the Toronto numbers?", x: 54, y: 61.5 },
+  { id: "gemini", text: "add the Toronto numbers?", x: 54, y: 63 },
 ] as const;
 
 function answerNode(register: Register): LabNode {

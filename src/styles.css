@@ -6669,9 +6669,9 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   .tour-board-item[data-tour-layout-id="deck"] { top: 75% !important; left: 71% !important; width: 26% !important; }
   .tour-reserved-slot[data-tour-layout-id="answer"],.tour-answer-slot[data-tour-layout-id="answer"] { top: 87% !important; left: 4% !important; width: 43% !important; height: 10.5%; }
   .tour-shared-group-region { top: 15.5%; left: 1%; width: 97%; height: 25%; }
-  .tour-margin-note[data-tour-note="group"] { top: 39.5% !important; left: 73% !important; max-width: 24%; }
-  .tour-margin-note[data-tour-note="budget"] { top: 63.5% !important; left: 3% !important; max-width: 42%; }
-  .tour-margin-note[data-tour-note="gemini"] { top: 52% !important; left: 43% !important; max-width: 44%; }
+  .tour-margin-note[data-tour-note="group"] { top: 40.5% !important; left: 72% !important; max-width: 25%; }
+  .tour-margin-note[data-tour-note="budget"] { top: 64.5% !important; left: 3% !important; max-width: 42%; }
+  .tour-margin-note[data-tour-note="gemini"] { top: 64% !important; left: 45% !important; max-width: 48%; }
   .tour-margin-note.is-answer-note { top: 88% !important; left: 51% !important; max-width: 20%; }
   .tour-board-item.tour-preview-card > strong { font-size: 11.5px; line-height: 1.05; }
   .tour-board-item .tour-card-preview-copy { font-size: 9px; line-height: 1.05; }
