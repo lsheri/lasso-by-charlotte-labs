@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { EVENT_DIM_ALLOWLIST } from "@/lib/event-dim-allowlist";
+import { EVENT_DIM_KEYS } from "@/lib/event-dim-allowlist";
 
 const src = readFileSync(resolve(__dirname, "../mcp-handler.server.ts"), "utf8");
 
@@ -28,6 +28,6 @@ describe("CL-2b attach chat link", () => {
   });
 
   it("allows the new event's dims", () => {
-    expect((EVENT_DIM_ALLOWLIST as Record<string, string[]>)["mcp.chat_link_attached"]).toEqual(["had_prior_link", "source"]);
+    expect((EVENT_DIM_KEYS as Record<string, string[]>)["mcp.chat_link_attached"]).toEqual(["had_prior_link", "source"]);
   });
 });
