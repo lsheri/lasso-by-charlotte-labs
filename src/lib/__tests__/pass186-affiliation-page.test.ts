@@ -27,7 +27,7 @@ describe("pass 186: the student's transparency page", () => {
   );
 
   it("renders the empty share state without a share action", () => {
-    expect(page).toMatch(/have not|has not/);
+    expect(page).toContain("Nothing has been shared");
     expect(page).not.toMatch(/<Button[^>]*>\s*Share/);
   });
 
