@@ -123,7 +123,7 @@ describe("tour acts one to three", () => {
     expect(screen.getByText(TOUR_CONTEXT_SENTENCE)).toBeTruthy();
   });
 
-  it("advances act two exactly once when a marquee is dragged around the three set cards", () => {
+  it("advances act two exactly once when a marquee is dragged around the three outlined work cards", () => {
     const done = vi.fn();
     render(<TourActTwo register="company" hint={false} onComplete={done} />);
     const board = screen.getByTestId("tour-act-two");
@@ -165,7 +165,7 @@ describe("tour acts one to three", () => {
     expect(question.textContent).toBe("What ideas did I have that did not make the final deck? Give me the link to the AI chat I worked them out in.");
   });
 
-  it("shows exactly three cited claims from cards in the frame", () => {
+  it("shows exactly three cited claims from work cards in the frame", () => {
     vi.useFakeTimers();
     render(<TourActFour register="company" onComplete={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: "Ask Lasso" }));
@@ -190,7 +190,7 @@ describe("tour acts one to three", () => {
     expect(screen.getByLabelText("Whiteboard photo")).toBeTruthy();
   });
 
-  it("anchors each kept-answer connector to a source card", () => {
+  it("anchors each kept-answer connector to a source work card", () => {
     render(<TourActFive register="company" onLanded={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: "Keep" }));
     const sources = document.querySelectorAll("[data-tour-connector-source]");

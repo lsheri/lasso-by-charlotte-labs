@@ -7,4 +7,4 @@
 - [x] Add handler-driven regression tests for all requested placement cases.
 - [x] Run the full Vitest suite and bun run build after the final edit.
 - [x] Put placement on the existing per-attachment receipts as a separate `placement` field; no second array.
-- [ ] Unit 11: clarify Act 2 targets and one-click grouping, then restyle Act 3 grouping and verify both widths.
+- [x] Unit 11: clarify Act 2 targets and one-click grouping, then restyle Act 3 grouping and verify both widths.
