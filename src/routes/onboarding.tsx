@@ -93,7 +93,17 @@ export const KEY_NOTICE_COPY = {
   remove: "Not with them? Remove this key.",
 } as const;
 
-const REDEEM_FAILED_REASONS = ["not_found", "expired", "revoked", "exhausted", "domain_not_allowed"] as const;
+const REDEEM_FAILED_REASONS = [
+  "not_found",
+  "expired",
+  "revoked",
+  "exhausted",
+  "domain_not_allowed",
+  "needs_workspace",
+] as const;
+
+/** Unit 19: shown when the workspace was created but the key did not apply. */
+export const KEY_KEPT_COPY = "Your workspace is ready. We could not apply the key yet, so it is still saved.";
 
 /** Closed reason for activation.redeem_failed. Anything unlisted is "other". */
 export function redeemFailedReason(reason: unknown): string {
@@ -160,7 +170,16 @@ export const Route = createFileRoute("/onboarding")({
   },
   beforeLoad: async ({ search }) => {
     const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user) throw redirect({ to: "/auth" });
+    if (error || !data.user) {
+      // Unit 19: a bounce to sign in keeps the invite it was carrying.
+      throw redirect({
+        to: "/auth",
+        search: {
+          ...(search.intent ? { intent: search.intent } : {}),
+          ...(search.key ? { key: search.key } : {}),
+        } as never,
+      });
+    }
     const profile = await fetchProfile();
     // `?setup=1` is how an existing member reopens the tool setup from Connectors.
     if (profile && !search.setup) throw redirect({ to: "/home" });
@@ -366,11 +385,13 @@ function OnboardingInner() {
         if (!result?.ok) failed = redeemFailedReason(result?.reason);
       } catch {
         failed = "other";
-      } finally {
-        clearActivationKey();
       }
-      if (failed && createdOrgId) {
-        logEvent("activation.redeem_failed", createdOrgId, { reason: failed });
+      // Unit 19: clear only on success; a failed key stays saved and says so.
+      if (failed) {
+        setError(KEY_KEPT_COPY);
+        if (createdOrgId) logEvent("activation.redeem_failed", createdOrgId, { reason: failed });
+      } else {
+        clearActivationKey();
       }
     }
 
@@ -405,6 +426,7 @@ function OnboardingInner() {
               Pick everything you use. We'll only set up what you choose, and nothing comes in
               until you say so.
             </p>
+            {error ? <p className="mt-3 text-sm text-destructive">{error}</p> : null}
 
             <div className="mt-6">
               <ToolPicker selected={tools} onToggle={toggleTool} />
