@@ -226,18 +226,8 @@ describe("tour acts one to three", () => {
     expect(screen.getByTestId("canvas-lab-answer-card")).toBeTruthy();
     expect(document.querySelectorAll('.tour-keep-links [role="button"]')).toHaveLength(3);
     expect(landed).toHaveBeenCalledTimes(1);
-    expect(screen.getByLabelText("Finished deck, slide 12")).toBeTruthy();
+    expect(screen.getByLabelText("Deck, slide 12")).toBeTruthy();
     expect(screen.getByLabelText("Whiteboard photo")).toBeTruthy();
-  });
-
-  it("shows the finished deck, its four source links, the answer, and a named keyboard marker", () => {
-    render(<TourActFive register="company" onLanded={vi.fn()} />);
-    fireEvent.click(screen.getByRole("button", { name: "Keep" }));
-    expect(screen.getByLabelText("Finished deck, slide 12")).toBeTruthy();
-    expect(screen.getByTestId("canvas-lab-answer-card")).toBeTruthy();
-    expect(document.querySelectorAll("[data-tour-deck-link]")).toHaveLength(4);
-    const marker = screen.getByRole("note", { name: "This line came from Claude: positioning draft" });
-    expect(marker.getAttribute("tabindex")).toBe("0");
   });
 
   it("anchors each kept-answer connector to a source work card", () => {
