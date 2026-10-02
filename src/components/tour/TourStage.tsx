@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { DrawnCheck, GraphiteRule } from "@/components/notebook/marks";
 import { Button } from "@/components/ui/button";
@@ -55,9 +55,14 @@ export function TourStage({
   const touch = useTouchPresentation();
   const act = copy.acts[activeAct - 1];
   const renderer = acts[activeAct - 1];
+  const hintedActs = useRef(new Set<number>());
 
   useEffect(() => {
-    const timer = window.setTimeout(() => onHintShown(activeAct), 8000);
+    const timer = window.setTimeout(() => {
+      if (hintedActs.current.has(activeAct)) return;
+      hintedActs.current.add(activeAct);
+      onHintShown(activeAct);
+    }, 8000);
     return () => window.clearTimeout(timer);
   }, [activeAct, onHintShown]);
 

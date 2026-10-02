@@ -22,6 +22,7 @@ import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as PersonalRouteImport } from './routes/personal'
 import { Route as PlansRouteImport } from './routes/plans'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as TourPreviewRouteImport } from './routes/tour-preview'
 import { Route as TrustRouteImport } from './routes/trust'
 import { Route as WhyRouteImport } from './routes/why'
 import { Route as AuthenticatedAffiliationRouteImport } from './routes/_authenticated/affiliation'
@@ -133,6 +134,11 @@ const PlansRoute = PlansRouteImport.update({
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TourPreviewRoute = TourPreviewRouteImport.update({
+  id: '/tour-preview',
+  path: '/tour-preview',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TrustRoute = TrustRouteImport.update({
@@ -399,6 +405,7 @@ export interface FileRoutesByFullPath {
   '/personal': typeof PersonalRoute
   '/plans': typeof PlansRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/tour-preview': typeof TourPreviewRoute
   '/trust': typeof TrustRoute
   '/why': typeof WhyRoute
   '/affiliation': typeof AuthenticatedAffiliationRoute
@@ -461,6 +468,7 @@ export interface FileRoutesByTo {
   '/personal': typeof PersonalRoute
   '/plans': typeof PlansRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/tour-preview': typeof TourPreviewRoute
   '/trust': typeof TrustRoute
   '/why': typeof WhyRoute
   '/affiliation': typeof AuthenticatedAffiliationRoute
@@ -525,6 +533,7 @@ export interface FileRoutesById {
   '/personal': typeof PersonalRoute
   '/plans': typeof PlansRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/tour-preview': typeof TourPreviewRoute
   '/trust': typeof TrustRoute
   '/why': typeof WhyRoute
   '/_authenticated/affiliation': typeof AuthenticatedAffiliationRoute
@@ -589,6 +598,7 @@ export interface FileRouteTypes {
     | '/personal'
     | '/plans'
     | '/reset-password'
+    | '/tour-preview'
     | '/trust'
     | '/why'
     | '/affiliation'
@@ -651,6 +661,7 @@ export interface FileRouteTypes {
     | '/personal'
     | '/plans'
     | '/reset-password'
+    | '/tour-preview'
     | '/trust'
     | '/why'
     | '/affiliation'
@@ -714,6 +725,7 @@ export interface FileRouteTypes {
     | '/personal'
     | '/plans'
     | '/reset-password'
+    | '/tour-preview'
     | '/trust'
     | '/why'
     | '/_authenticated/affiliation'
@@ -778,6 +790,7 @@ export interface RootRouteChildren {
   PersonalRoute: typeof PersonalRoute
   PlansRoute: typeof PlansRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  TourPreviewRoute: typeof TourPreviewRoute
   TrustRoute: typeof TrustRoute
   WhyRoute: typeof WhyRoute
   ApiMcpRoute: typeof ApiMcpRouteWithChildren
@@ -889,6 +902,13 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tour-preview': {
+      id: '/tour-preview'
+      path: '/tour-preview'
+      fullPath: '/tour-preview'
+      preLoaderRoute: typeof TourPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/trust': {
@@ -1324,6 +1344,7 @@ const rootRouteChildren: RootRouteChildren = {
   PersonalRoute: PersonalRoute,
   PlansRoute: PlansRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  TourPreviewRoute: TourPreviewRoute,
   TrustRoute: TrustRoute,
   WhyRoute: WhyRoute,
   ApiMcpRoute: ApiMcpRouteWithChildren,

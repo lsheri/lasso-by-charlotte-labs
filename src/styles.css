@@ -6224,6 +6224,185 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   .lb-desktop-hero[data-hero-focus] :is(.lb-hero-assemble,.lb-hero-assemble-caption,.lb-hero-line,.lb-hero-copy h1,.lb-hero-copy h2,.lb-hero-zone-1) { filter: none; opacity: 1; }
 }
 
+/* T1: local-only first-run tour frame. The acts arrive in later units. */
+.tour-preview-page {
+  display: grid;
+  min-height: 100dvh;
+  place-items: center;
+  overflow: hidden;
+  background: var(--nb-grey-1);
+  padding: 24px 16px;
+}
+.tour-shell {
+  width: min(960px, 100%);
+}
+.tour-stage {
+  position: relative;
+  display: grid;
+  aspect-ratio: 16 / 10;
+  grid-template-rows: 74px minmax(0, 1fr) 54px;
+  overflow: hidden;
+  border: 1px solid var(--nb-rule);
+  border-radius: var(--radius-card);
+  background: var(--nb-paper);
+  padding: 18px 22px;
+  box-shadow: var(--nb-paper-shadow-contact);
+}
+.tour-stage-header {
+  position: relative;
+  min-width: 0;
+}
+.tour-rail {
+  display: flex;
+  width: min(620px, calc(100% - 120px));
+  min-width: 0;
+  align-items: center;
+}
+.tour-rail-segment {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 0;
+  align-items: center;
+}
+.tour-rail-segment:last-child {
+  flex: 0 0 auto;
+}
+.tour-rail-mark {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  place-items: center;
+  border: 1px solid var(--nb-pencil);
+  border-radius: 50%;
+  color: var(--nb-pencil);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1;
+}
+.tour-rail-segment[data-state="complete"] .tour-rail-mark {
+  border-color: var(--nb-graphite);
+  color: var(--nb-graphite);
+}
+.tour-rail-segment[data-state="current"] .tour-rail-mark {
+  border-width: 2px;
+  border-color: var(--nb-ink);
+  color: var(--nb-ink);
+  font-weight: 600;
+}
+.tour-rail-line {
+  width: 100%;
+  height: 8px;
+  color: var(--nb-pencil);
+}
+.tour-rail-segment[data-state="complete"] .tour-rail-line {
+  color: var(--nb-graphite);
+}
+.tour-skip {
+  position: absolute;
+  top: -5px;
+  right: -8px;
+  min-height: 40px;
+  color: var(--nb-green);
+  font-family: var(--font-hand);
+  font-size: 18px;
+}
+.tour-act {
+  min-height: 0;
+  overflow: hidden;
+}
+.tour-stage-actions {
+  display: flex;
+  min-width: 0;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+}
+.tour-back {
+  min-height: 40px;
+  color: var(--nb-green);
+  font-family: var(--font-hand);
+  font-size: 18px;
+}
+.tour-primary-action .bg-primary,
+.tour-primary-action > button {
+  background: var(--nb-graphite);
+  color: var(--nb-white);
+}
+.tour-caption {
+  width: 100%;
+  margin-top: 14px;
+  overflow: hidden;
+  color: var(--nb-green);
+  font-family: var(--font-hand);
+  font-size: 20px;
+  line-height: 1.2;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tour-preview-art {
+  position: relative;
+  height: 100%;
+}
+.tour-preview-art > span {
+  position: absolute;
+  top: 20%;
+  width: 23%;
+  height: 48%;
+  border: 1px solid var(--nb-pencil);
+  border-radius: var(--radius-card);
+  background: var(--nb-white);
+  box-shadow: var(--nb-paper-shadow-contact);
+}
+.tour-preview-art > span:nth-child(1) { left: 10%; transform: rotate(-2deg); }
+.tour-preview-art > span:nth-child(2) { left: 38%; transform: rotate(1deg); }
+.tour-preview-art > span:nth-child(3) { left: 66%; transform: rotate(-1deg); }
+.tour-preview-art > i {
+  position: absolute;
+  inset: 12% 5% 8%;
+  border: var(--stroke-pencil) solid var(--nb-green);
+  border-radius: var(--radius-md);
+}
+@media (max-width: 767px) {
+  .tour-preview-page { padding: 16px; }
+  .tour-stage {
+    grid-template-rows: 66px minmax(0, 1fr) 42px;
+    padding: 12px;
+  }
+  .tour-rail {
+    position: absolute;
+    right: 0;
+    bottom: 2px;
+    left: 0;
+    width: 100%;
+  }
+  .tour-rail-mark {
+    width: 26px;
+    height: 26px;
+    flex-basis: 26px;
+  }
+  .tour-skip {
+    top: -9px;
+    right: -6px;
+  }
+  .tour-caption { font-size: 18px; }
+  .tour-preview-art > span { top: 12%; height: 62%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tour-stage *,
+  .tour-stage *::before,
+  .tour-stage *::after,
+  .tour-caption {
+    animation: none !important;
+    transition: none !important;
+  }
+  .tour-stage svg path {
+    stroke-dasharray: none !important;
+    stroke-dashoffset: 0 !important;
+  }
+}
+
 /* S2: self-contained workstreams section, drawn over the sticky stage. */
 .lb-scroll-step.lb-standalone-step { z-index: 6; display: flex; min-height: calc(100vh - var(--lb-header-h)); flex-direction: column; align-items: center; justify-content: center; gap: 20px; padding: 32px 4vw; background: var(--nb-paper); pointer-events: auto; scroll-margin-top: calc(var(--lb-header-h) - 55vh); }
 .lb-standalone-caption { width: min(620px, 100%); max-height: none; }
