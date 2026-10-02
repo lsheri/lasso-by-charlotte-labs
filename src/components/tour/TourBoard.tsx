@@ -217,7 +217,6 @@ function DeckRelationships() {
       const claudeRect = normalize(claude.getBoundingClientRect());
       const sourceRects = sources.map((source) => source ? normalize(source.getBoundingClientRect()) : null).filter((source): source is MeasuredRect => source !== null);
       const itemRects = Array.from(board.querySelectorAll<HTMLElement>("[data-tour-layout-id]")).map((element) => ({ id: element.dataset["tourLayoutId"] ?? "", rect: normalize(element.getBoundingClientRect()) }));
-      const local = (point: MeasuredPoint) => ({ x: point.x - base.left, y: point.y - base.top });
       const paths: MeasuredPath[] = sourceRects.map((source, index) => {
         const obstacles = itemRects.filter((item) => item.id !== "deck" && item.id !== `primary-${index}`).map((item) => item.rect);
         return { id: `deck-source-${index}`, label: `Finished deck links to ${sources[index]?.dataset["tourTitle"] ?? "source work card"}`, points: routeBetween(deckRect, source, obstacles, base.width, Math.max(base.height, deckRect.bottom + 20)) };
