@@ -15,6 +15,21 @@ global.ResizeObserver = ResizeObserverStub;
 afterEach(cleanup);
 
 describe("tour acts one to three", () => {
+  it("gives every act an anchored instruction target", () => {
+    const views = [
+      <TourActOne key="one" register="company" onComplete={vi.fn()} />,
+      <TourActTwo key="two" register="company" hint={false} onComplete={vi.fn()} />,
+      <TourActThree key="three" register="company" onComplete={vi.fn()} />,
+      <TourActFour key="four" register="company" onComplete={vi.fn()} />,
+      <TourActFive key="five" register="company" onLanded={vi.fn()} />,
+    ];
+    views.forEach((view, index) => {
+      const rendered = render(view);
+      expect(rendered.container.querySelector(`[data-tour-target="${index + 1}"]`)).toBeTruthy();
+      rendered.unmount();
+    });
+  });
+
   it("advances act one on a pointer drop", () => {
     const done = vi.fn();
     render(<TourActOne register="company" onComplete={done} />);

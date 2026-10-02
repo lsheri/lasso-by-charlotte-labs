@@ -56,7 +56,8 @@ function TourInstructionArrow({ stage, activeAct }: { stage: React.RefObject<HTM
     };
     draw();
     const mutation = new MutationObserver(draw);
-    mutation.observe(root, { childList: true, subtree: true, attributes: true });
+    const actSurface = root.querySelector<HTMLElement>("[data-testid='tour-act']");
+    if (actSurface) mutation.observe(actSurface, { childList: true, subtree: true });
     if (typeof ResizeObserver !== "undefined") {
       observer = new ResizeObserver(draw);
       observer.observe(root);
