@@ -177,7 +177,8 @@ function AuthPage() {
       if (signInError) setError(signInError.message);
       else {
         // KX1: an existing account never inherits a key saved in this browser.
-        clearActivationKey();
+        // Unit 19: a key in this page's own link is not stale and is kept.
+        if (!key) clearActivationKey();
         goOn();
       }
     } else {
