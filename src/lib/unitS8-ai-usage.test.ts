@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
-import { aiUsageRow, type ChatResult, type AiMeta } from "./ai.server";
+import { aiUsageRow, computeCostUsd, priceKeyFor, type ChatResult, type AiMeta } from "./ai.server";
 
 function aResult(): ChatResult {
   return {
@@ -56,5 +56,47 @@ describe("unit S8 ai usage rows", () => {
       "messages",
     ];
     for (const key of keys) expect(banned).not.toContain(key);
+  });
+});
+
+describe("unit AU1 served model and pricing", () => {
+  it("normalises a model id to its price key", () => {
+    expect(priceKeyFor("gpt-5-2025-08-07")).toBe("gpt-5");
+    expect(priceKeyFor("gpt-4.1-mini")).toBe("gpt-4.1-mini");
+    expect(priceKeyFor("claude-3")).toBeNull();
+  });
+
+  it("prices a dated snapshot as its alias", () => {
+    const snap = computeCostUsd("gpt-5-2025-08-07", 1_000_000, 0, 0);
+    expect(snap).toBe(computeCostUsd("gpt-5", 1_000_000, 0, 0));
+    expect(snap).not.toBe(computeCostUsd("gpt-4.1-mini", 1_000_000, 0, 0));
+  });
+
+  it("writes the served snapshot onto the row", () => {
+    const row = aiUsageRow({ ...aResult(), model: "gpt-5-2025-08-07" }, { surface: "ask_dock" });
+    expect(row.model).toBe("gpt-5-2025-08-07");
+  });
+
+  it("bills question_intent to the org id the caller supplies", async () => {
+    vi.resetModules();
+    const seen: AiMeta[] = [];
+    vi.doMock("./ai.server", async (importOriginal) => ({
+      ...(await importOriginal<typeof import("./ai.server")>()),
+      chatComplete: vi.fn(async (_m: unknown, opts: { meta: AiMeta }) => {
+        seen.push(opts.meta);
+        return { ...aResult(), text: "" };
+      }),
+    }));
+    const { classifyQuestionIntent } = await import("./question-intent.server");
+    const chain = { select: () => chain, eq: () => chain, maybeSingle: async () => ({ data: null }) };
+    const supabase = { from: () => chain } as never;
+    const ORG = "7a1b2c3d-0000-4000-8000-0000000000aa";
+    await classifyQuestionIntent(supabase, {
+      userId: "u", profileId: "p", orgId: ORG, question: "q", scopeMode: "whole",
+    });
+    expect(seen).toHaveLength(1);
+    expect(seen[0]!.surface).toBe("question_intent");
+    expect(aiUsageRow(aResult(), seen[0]).org_id).toBe(ORG);
+    vi.doUnmock("./ai.server");
   });
 });
