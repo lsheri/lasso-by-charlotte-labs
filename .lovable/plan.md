@@ -1,25 +1,28 @@
-# Unit 11 tour update
+# Unit 12: one persistent tour board
 
 ## Data and scope gate
-- Presentation and existing tour interaction changes only.
-- No consent surfaces, event names, payloads, dimensions, database work, storage, uploads, or network calls.
-- Existing local tour actions remain: Add work, file drop or tap, one work-card click or Space, marquee selection, grouping, Ask, Keep, Back, and Skip.
-- Existing render states remain: idle, hint, selected or grouped, asking, completed, and reduced-motion settled.
-- No telemetry calls exist in these tour files, and none will be added.
+- This changes only the existing five-step tour presentation and its current local interactions.
+- Existing actions remain covered: file drag or tap, one-click or Space selection, marquee selection, grouping, Ask, Keep, Escape, and Backspace.
+- No telemetry calls exist in the permitted tour files, so no event is added or changed.
+- No consent surface, event stamping, schema, database, storage, upload, network request, or product behavior changes.
 
-## Changes
-- Mark the three Act 2 target work cards with one shared lime dashed interaction treatment and remove the delayed evidence circles as redundant.
-- Make click or Space on any target work card select all three and advance once; retain the real marquee path.
-- Update Act 2 instruction copy and all tour-visible references from “card” to “work card.”
-- Aim the instruction arrow at a measured target work-card edge on desktop and phone.
-- Remove the ambient region treatment and label from Acts 2 and 3 while keeping its four chats and Artifact as loose, noninteractive canvas items.
-- Reposition all Act 2 and 3 work cards to eliminate pairwise overlaps at 1280px and 390px.
-- Replace Act 3’s small cards with the same preview work cards used in Act 2; after grouping, show an existing-token soft purple region and glow around the three selected cards.
-- Keep the ambient region in Acts 4 and 5 because it distinguishes supporting board scenery where selection is no longer the lesson.
+## Control and state contract
+**Before:** Add work, file drag/tap/keyboard drop, Select, one-click/Space/marquee, Group/Enter/marquee, Ask, Keep/drag, toolbar controls, Back, Skip; idle, file picker, dragging, landed, selected, grouped, Ask closed/open/generating/settled, answer dragging/landed, hint, and reduced-motion settled states.
 
-## Verification
-- Update tour tests to drive one-click, Space, and marquee behavior through real controls.
-- Run focused tour tests, then the full suite and compare against the accepted 12-file, 30-test outside baseline.
-- Check prohibited copy, persistence, network, assets, and lime usage safeguards.
-- Use the preview at 1280px and 390px to print arrow-to-card geometry and pairwise overlap results, then capture Act 2 and Act 3 screenshots.
-- Report the repository revision containing the changes.
+**After:** The same controls, signatures, test IDs, keyboard paths, completion guards, and render states. Only the board presentation becomes persistent and additive across acts.
+
+## Build
+- Export one typed layout constant from the tour content module. It will contain all five primary work cards, four loose chat work cards, artifact strip, whiteboard image, deck image, and reserved answer slot with fixed percentage position, width basis, rotation, and earliest visible act.
+- Build one shared board component that renders every visible item from that constant and accepts only state flags for visibility, outlines, selection, grouping, glow, source highlights, connectors, answer visibility, and Ask visibility.
+- Keep the first primary work-card slot empty in Act 1 until the existing file gesture completes. Keep the other board content visible from Act 1, show the deck only in Act 5, and reserve the answer slot from Act 1 without rendering its contents.
+- Preserve one board box, canvas origin, zoom, chrome, rail, header, and toolbar across all five acts. The Ask panel will be an overlay so opening it cannot resize or reposition the board.
+- Preserve the Act 2 lime outline exception and interactions. Draw the Act 3 purple region around the three unchanged source work cards; retain it through Acts 4 and 5.
+- Highlight source work cards in place as Act 4 claims appear. In Act 5, land the answer in its reserved slot and measure three connectors to the unchanged source work cards.
+- Remove the parallel Act 4 framed-source scene and Act 5 mini-source/image-strip scene after the shared board replaces them.
+
+## Tests and verification
+- Keep every existing test name and test file. Update selectors only where the shared board requires it.
+- Add one invariant test covering all four registers and all five acts. For each shared visible layout item, compare rendered `left`, `top`, `width`, and `rotation` exactly across acts.
+- Run focused tour tests and the full suite once; compare outside failures with the accepted 30 tests across 12 files.
+- At 1280 and 390, capture all five acts, print every item rect for Acts 1–5 at 1280, and run pairwise overlap checks for every visible work card and artifact in every act.
+- Do not publish.
