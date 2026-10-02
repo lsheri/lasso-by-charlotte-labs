@@ -32,6 +32,7 @@ describe("T1 tour content", () => {
       const answer = acts[3]?.answer ?? [];
       expect(answer).toHaveLength(3);
       for (const claim of answer) expect(selected.has(claim.sourceCardTitle)).toBe(true);
+      expect(selected.has(acts[3]?.chatLink?.cardTitle ?? "")).toBe(true);
     }
   });
 
