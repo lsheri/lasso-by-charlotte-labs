@@ -133,7 +133,11 @@ describe("tour acts one to three", () => {
     const connectors = screen.getAllByRole("button", { name: /Select relationship/ });
     expect(sources).toHaveLength(3);
     expect(connectors).toHaveLength(3);
-    connectors.forEach((connector, index) => expect(connector.getAttribute("aria-label")).toContain(sources[index]?.textContent));
+    connectors.forEach((connector, index) => {
+      const sourceTitle = sources[index]?.querySelector("strong")?.textContent;
+      expect(sourceTitle).toBeTruthy();
+      expect(connector.getAttribute("aria-label")).toContain(sourceTitle);
+    });
   });
 
   it("uses the standalone mimic shape without importing the live data surface", () => {
