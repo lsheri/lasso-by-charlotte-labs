@@ -17,7 +17,7 @@ import { keyTo } from "@/lib/canvas-drag";
 import { seededRand } from "@/lib/journey-path";
 import type { ToolId } from "@/lib/onboarding-tools";
 import type { Register } from "@/lib/register";
-import { TOUR_CONTENT, type TourCard, type TourSource } from "@/lib/tour-content";
+import { TOUR_AMBIENT_CARDS, TOUR_CONTENT, type TourAmbientCard, type TourCard, type TourSource } from "@/lib/tour-content";
 
 const noop = () => undefined;
 const BOARD_POINT = { x: 72, y: 82 };
@@ -102,12 +102,6 @@ function TourLabCard({ node, selected, hint, inert = false, onSelect, onKeyDown 
   );
 }
 
-const AMBIENT_CARDS = [
-  { title: "ChatGPT: competitor pricing teardown", source: "chatgpt" },
-  { title: "Gemini: market size, 3 scenarios", source: "gemini" },
-  { title: "Claude: positioning draft", source: "claude" },
-] as const;
-
 function ambientTitle(register: Register) {
   if (register === "personal") return "Research";
   if (register === "edu") return "Background reading";
@@ -123,37 +117,62 @@ function ArtifactPreview() {
   );
 }
 
+function DrawnPreview({ kind = "document" }: { kind?: "document" | "image" }) {
+  return (
+    <svg className={`tour-drawn-preview is-${kind}`} viewBox="0 0 180 76" aria-hidden>
+      {kind === "image" ? <>
+        <rect x="4" y="4" width="172" height="58" rx="2" />
+        <path d="M10 52 48 24l26 20 25-18 69 31" />
+        <circle cx="132" cy="20" r="8" />
+        <path d="M6 70 C48 69 113 71 164 69" />
+      </> : <>
+        <path d="M5 12 C48 11 110 13 170 11 M5 28 C48 27 92 29 146 27 M5 44 C42 43 102 45 160 43 M5 60 C34 59 78 61 126 59" />
+      </>}
+    </svg>
+  );
+}
+
+function TourPreviewCard({ card, selected = false, inert = false, onSelect = noop, onKeyDown = noop }: {
+  card: TourCard | TourAmbientCard;
+  selected?: boolean;
+  inert?: boolean;
+  onSelect?: () => void;
+  onKeyDown?: (event: React.KeyboardEvent) => void;
+}) {
+  const preview = "excerpt" in card ? card.excerpt : card.preview;
+  return (
+    <article
+      className={`tour-preview-card${selected ? " is-selected" : ""}`}
+      role={inert ? undefined : "group"}
+      tabIndex={inert ? undefined : 0}
+      data-tour-card={card.title}
+      onClick={inert ? undefined : onSelect}
+      onKeyDown={inert ? undefined : onKeyDown}
+    >
+      <ToolBadge tool={sourceTool(card.source)} size="sm" />
+      <strong>{card.title}</strong>
+      <div className="tour-card-preview-copy"><span>{preview[0]}</span><span>{preview[1]}</span></div>
+    </article>
+  );
+}
+
 function AmbientWorkstream({ register }: { register: Register }) {
-  const cards = useMemo<TourNode[]>(() => AMBIENT_CARDS.map((card, index) => ({
-    id: `ambient-${card.source}`,
-    kind: "source",
-    frame: null,
-    title: card.title,
-    summary: "",
-    typeLabel: card.source,
-    ownership: "draft",
-    x: index < 2 ? 10 : 12,
-    y: index < 2 ? 38 + index * 52 : 142,
-    width: index < 2 ? 314 : 176,
-    height: index < 2 ? 46 : 58,
-    source: card.source,
-    inSet: false,
-  })), []);
+  const cards = TOUR_AMBIENT_CARDS;
   const nodes = useMemo<LabNode[]>(() => [
-    cards[2] ?? { id: "ambient-claude", kind: "source", frame: null, title: "Claude: positioning draft", summary: "", typeLabel: "claude", ownership: "draft", x: 12, y: 142, width: 176, height: 58 },
-    { id: "ambient-artifact", kind: "source", frame: null, title: "Artifact", summary: "", typeLabel: "artifact", ownership: "draft", x: 206, y: 142, width: 116, height: 76 },
+    { id: "ambient-claude", kind: "source", frame: null, title: "Claude: positioning draft", summary: "", typeLabel: "claude", ownership: "draft", x: 180, y: 178, width: 250, height: 128 },
+    { id: "ambient-artifact", kind: "source", frame: null, title: "Artifact", summary: "", typeLabel: "artifact", ownership: "draft", x: 450, y: 210, width: 138, height: 96 },
   ], []);
   const links = useMemo<LabLink[]>(() => [{ id: "ambient-artifact-link", fromId: "ambient-claude", toId: "ambient-artifact", fromAnchor: "right", toAnchor: "left" }], []);
   return (
-    <section className="tour-ambient-frame" aria-label={`${ambientTitle(register)} workstream`}>
+    <section className="tour-ambient-frame tour-region is-secondary" aria-label={`${ambientTitle(register)} workstream`}>
       <span className="tour-source-frame-title">{ambientTitle(register)}</span>
-      {cards.map((node) => (
-        <div key={node.id} className="tour-ambient-node" style={{ left: node.x, top: node.y, width: node.width, height: node.height }}>
-          <TourLabCard node={node} selected={false} inert onSelect={noop} onKeyDown={noop} />
+      {cards.map((card) => (
+        <div key={card.title} className="tour-ambient-node" style={{ left: `${card.layout.x}%`, top: `${card.layout.y}%`, transform: `rotate(${card.layout.rotation}deg)` }}>
+          <TourPreviewCard card={card} inert />
         </div>
       ))}
       <ArtifactPreview />
-      <svg className="tour-ambient-link" viewBox="0 0 334 232" aria-label="Claude chat linked to its artifact">
+      <svg className="tour-ambient-link" viewBox="0 0 620 340" aria-label="Claude chat linked to its artifact">
         <LabRelationships links={links} nodes={nodes} measuredHeights={new Map()} selectedLinkId={null} inverseZoom={1} onSelect={noop} interactive={false} />
       </svg>
     </section>
@@ -279,6 +298,7 @@ export function TourActOne({ register, onComplete }: { register: Register; onCom
       <TourWorkboard active="add" onAddWork={() => setFilesOpen(true)}>
         <div ref={boardRef} className="tour-arrival-board" data-testid="tour-drop-board">
           <BoardShell ariaLabel="Empty tour board" frames={[]} nodes={landedNode} lockZoom renderNode={(node) => <TourLabCard node={node} selected={false} onSelect={noop} onKeyDown={noop} />} />
+          {!landed ? <article className="tour-first-image" aria-label="Whiteboard screenshot"><DrawnPreview kind="image" /><strong>Workshop whiteboard</strong><span>Ideas from the working session</span></article> : null}
           <aside className="tour-arrival-hint">You can also drag files, documents or images straight from your computer onto the board.</aside>
           {filesOpen ? <div className="tour-file-window-layer"><FileWindow files={files} drag={drag} onPointerDown={(title, event) => {
             event.currentTarget.setPointerCapture?.(event.pointerId);
@@ -294,9 +314,7 @@ export function TourActOne({ register, onComplete }: { register: Register; onCom
 
 export function TourActTwo({ register, hint, onComplete }: { register: Register; hint: boolean; onComplete: () => void }) {
   const cards = TOUR_CONTENT[register].acts[1]?.cards ?? [];
-  const [boardWidth, setBoardWidth] = useState(720);
-  const compact = boardWidth < 900;
-  const nodes = useMemo(() => cards.map((card, index) => nodeFor(card, index, compact)), [cards, compact]);
+  const nodes = useMemo(() => cards.map((card, index) => nodeFor(card, index)), [cards]);
   const [selected, setSelected] = useState<string[]>([]);
   const [box, setBox] = useState<Box | null>(null);
   const boardRef = useRef<HTMLDivElement>(null);
@@ -343,8 +361,12 @@ export function TourActTwo({ register, hint, onComplete }: { register: Register;
       const y = event.clientY - rect.top;
       setBox({ x: Math.min(start.x, x), y: Math.min(start.y, y), width: Math.abs(x - start.x), height: Math.abs(y - start.y) });
     }} onPointerUp={endBox} onPointerCancel={() => { setBox(null); startRef.current = null; }}>
-      <BoardShell ariaLabel="Tour selection board" frames={[]} nodes={nodes} selectedIds={selected} lockZoom onViewportSizeChange={({ width }) => setBoardWidth(width)} renderNode={(node) => <TourLabCard node={node} selected={selected.includes(node.id)} hint={hint && node.inSet} onSelect={() => toggle(node.id)} onKeyDown={(event) => { if (event.code === "Space") { event.preventDefault(); toggle(node.id); } }} />} />
-      <section className="tour-primary-frame" aria-label={`${TOUR_CONTENT[register].acts[2]?.frameTitle ?? "Workstream"} workstream`}><span>{TOUR_CONTENT[register].acts[2]?.frameTitle}</span></section>
+      <section className="tour-primary-frame tour-region is-primary" aria-label={`${TOUR_CONTENT[register].acts[2]?.frameTitle ?? "Workstream"} workstream`}><span>{TOUR_CONTENT[register].acts[2]?.frameTitle}</span>
+        {cards.map((card, index) => <div key={card.title} className="tour-free-node" style={{ left: `${card.layout.x}%`, top: `${card.layout.y}%`, transform: `rotate(${card.layout.rotation}deg)` }}>
+          <TourPreviewCard card={card} selected={selected.includes(nodes[index]?.id ?? "")} onSelect={() => toggle(nodes[index]?.id ?? "")} onKeyDown={(event) => { if (event.code === "Space") { event.preventDefault(); toggle(nodes[index]?.id ?? ""); } }} />
+          {hint && card.inSet ? <EvidenceCircle className="tour-card-hint" /> : null}
+        </div>)}
+      </section>
       <AmbientWorkstream register={register} />
       {box ? <span className="tour-marquee" style={{ left: box.x, top: box.y, width: box.width, height: box.height }} /> : null}
     </div></TourWorkboard>
