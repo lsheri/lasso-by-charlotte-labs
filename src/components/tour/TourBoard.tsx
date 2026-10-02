@@ -133,12 +133,12 @@ export function TourBoard({ register, state, className = "", children, onWorkCar
   const visible = (item: TourLayoutItem) => item.earliestAct <= state.act && !(item.id === "primary-0" && state.act === 1 && !state.landedFile);
   const answer = useMemo(() => answerNode(register), [register]);
 
-  return <div ref={boardRef} className={`tour-persistent-board${state.act === 5 ? " is-act-five" : ""} ${className}`} data-tour-board="" onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerCancel}>
+  return <div ref={boardRef} className={`tour-persistent-board ${className}`} data-tour-board="" onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerCancel}>
     <div className="tour-board-grid" aria-label="Workstream board">
       <div className="tour-loose-work-label" aria-label="Loose AI chat work cards" />
       {state.groupedIds?.length ? <div className="tour-shared-group-region tour-region is-grouped" aria-label={`${TOUR_CONTENT[register].acts[2]?.frameTitle ?? "Workstream"} with three source work cards`}><span>{TOUR_CONTENT[register].acts[2]?.frameTitle}</span><span className="sr-only">{Array.from(grouped).map((id) => cards[Number(id.split("-")[1])]?.title).filter(Boolean).join(", ")}</span></div> : null}
       {TOUR_BOARD_LAYOUT.map((item) => {
-        if (!visible(item) || (item.id === "deck" && !state.answerVisible)) return item.id === "answer" || item.id === "primary-0" || item.id === "deck" ? <div key={item.id} className={`tour-reserved-slot${item.id === "deck" ? " is-deck-slot" : ""}`} data-tour-layout-id={item.id} data-tour-reserved="" style={itemStyle(item)} /> : null;
+        if (!visible(item)) return item.id === "answer" || item.id === "primary-0" ? <div key={item.id} className="tour-reserved-slot" data-tour-layout-id={item.id} data-tour-reserved="" style={itemStyle(item)} /> : null;
         if (item.kind === "primary") {
           const index = Number(item.id.split("-")[1]);
           const card = cards[index];
@@ -154,7 +154,7 @@ export function TourBoard({ register, state, className = "", children, onWorkCar
         if (item.kind === "chat") {
           const index = Number(item.id.split("-")[1]);
           const card = TOUR_AMBIENT_CARDS[index];
-          return card ? <article key={item.id} className="tour-board-item tour-preview-card is-ambient" data-tour-layout-id={item.id} data-tour-card={`ambient-${index}`} data-tour-title={card.title} data-tour-ambient="" style={itemStyle(item)}><PreviewCard card={card} /></article> : null;
+          return card ? <article key={item.id} className="tour-board-item tour-preview-card is-ambient" data-tour-layout-id={item.id} data-tour-card={`ambient-${index}`} data-tour-ambient="" style={itemStyle(item)}><PreviewCard card={card} /></article> : null;
         }
         if (item.id === "artifact") return <div key={item.id} className="tour-board-item" data-tour-layout-id={item.id} style={itemStyle(item)}><ArtifactPreview /></div>;
         if (item.id === "whiteboard" || item.id === "deck") return <div key={item.id} className="tour-board-item" data-tour-layout-id={item.id} style={itemStyle(item)}><ImageCard kind={item.id} /></div>;
