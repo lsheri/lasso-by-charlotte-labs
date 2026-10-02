@@ -6418,7 +6418,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .tour-region { border: 0; border-radius: 18px 24px 20px 16px; box-shadow: inset 0 0 18px color-mix(in srgb, var(--nb-pencil) 12%, transparent), 0 1px 8px color-mix(in srgb, var(--nb-pencil) 10%, transparent); }
 .tour-region.is-primary { background: color-mix(in srgb, var(--paper-1) 36%, transparent); }
 .tour-region.is-secondary { background: color-mix(in srgb, var(--paper-2) 40%, transparent); }
-.tour-primary-frame { position: absolute; z-index: 17; top: 14px; bottom: 14px; left: 14px; width: 56%; pointer-events: none; }
+.tour-primary-frame { position: absolute; z-index: 17; top: 14px; bottom: 14px; left: 14px; display: grid; width: 56%; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(3, auto); align-content: start; gap: 4px 10px; padding: 34px 10px 8px; pointer-events: none; }
 .tour-primary-frame > span { position: absolute; z-index: 5; top: 8px; left: 12px; color: var(--nb-mid); font-family: var(--font-hand); font-size: 18px; }
 .tour-board-act > .tour-ambient-frame,.tour-group-act .tour-ambient-frame { position: absolute; z-index: 18; top: 14px; right: 14px; width: 40%; height: calc(100% - 28px); }
 .tour-board-act [data-testid="board-shell-stage"] { width: 720px; height: 310px; }
@@ -6435,7 +6435,11 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .tour-card-source > span { width: 26px; height: 26px; }
 .tour-card-hint { inset: -8px !important; width: calc(100% + 16px) !important; height: calc(100% + 16px) !important; animation: tour-hint-fade 1800ms var(--nb-ease) both; }
 .tour-free-node,.tour-ambient-node { position: absolute; z-index: 3; width: min(44%, 260px); min-width: 210px; pointer-events: auto; }
+.tour-primary-frame > .tour-free-node { position: relative; top: auto !important; left: auto !important; width: auto; min-width: 0; transform: none !important; }
+.tour-primary-frame > .tour-free-node .tour-preview-card { min-height: 0; }
 .tour-preview-card { display: grid; min-height: 132px; grid-template-columns: auto minmax(0,1fr); grid-template-rows: auto auto; gap: 8px 9px; overflow: visible; border: 1px solid var(--nb-rule); border-radius: var(--radius-card); background: var(--nb-white); padding: 11px 12px; box-shadow: var(--shadow-card); color: var(--nb-graphite); cursor: pointer; }
+.tour-free-node.is-target-work .tour-preview-card { border: 2px dashed var(--nb-lasso-green); background: color-mix(in srgb, var(--nb-lasso-green) 7%, var(--nb-white)); box-shadow: 0 0 14px color-mix(in srgb, var(--nb-lasso-green) 24%, transparent); }
+.tour-act-two-arrow-target { position: absolute; top: 20px; left: -14px; width: 2px; height: 20px; pointer-events: none; }
 .tour-preview-card:focus-visible { outline: 2px solid var(--nb-green); outline-offset: 3px; }
 .tour-preview-card.is-selected { box-shadow: 0 0 0 3px color-mix(in srgb, var(--nb-green) 18%, transparent), var(--shadow-card); }
 .tour-preview-card > strong { align-self: center; overflow: visible; font-family: var(--font-ui); font-size: 16px; font-weight: 650; line-height: 1.2; text-overflow: clip; white-space: normal; overflow-wrap: anywhere; }
@@ -6478,8 +6482,15 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .tour-artifact-card i,.tour-artifact-card b { position: absolute; display: block; height: 3px; background: var(--nb-pencil); content: ""; }
 .tour-artifact-card i:nth-child(1) { top: 8px; left: 5px; width: 54px; }.tour-artifact-card i:nth-child(2) { top: 15px; left: 5px; width: 42px; }.tour-artifact-card i:nth-child(3) { top: 22px; left: 5px; width: 49px; }
 .tour-artifact-card b:nth-child(4) { right: 22px; bottom: 5px; width: 8px; height: 13px; }.tour-artifact-card b:nth-child(5) { right: 7px; bottom: 5px; width: 8px; height: 24px; }
-.tour-group-scope { display: contents; }
+.tour-group-scope { display: grid; }
+.tour-primary-frame.tour-group-scope { width: 56%; grid-template-rows: repeat(2, minmax(0, 1fr)); padding-top: 38px; transition: background 180ms ease, box-shadow 180ms ease; }
+.tour-primary-frame.tour-group-scope > .tour-free-node:nth-of-type(1) { grid-column: 1; grid-row: 1; }
+.tour-primary-frame.tour-group-scope > .tour-free-node:nth-of-type(2) { grid-column: 2; grid-row: 1; }
+.tour-primary-frame.tour-group-scope > .tour-free-node:nth-of-type(3) { grid-column: 1 / -1; grid-row: 2; width: calc(50% - 5px); justify-self: center; }
+.tour-region.is-grouped { border: 1px solid var(--nb-region-lavender-soft-edge); background: color-mix(in srgb, var(--nb-region-lavender-soft) 82%, transparent); box-shadow: inset 0 0 20px color-mix(in srgb, var(--nb-region-lavender-vivid) 8%, transparent); }
+.tour-free-node.is-group-work.is-grouped .tour-preview-card { border-color: var(--nb-region-lavender-vivid); box-shadow: 0 0 16px color-mix(in srgb, var(--nb-region-lavender-vivid) 24%, transparent); }
 .tour-ambient-frame.is-columns { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; gap: 12px; }
+.tour-ambient-frame.is-columns.is-loose { padding: 12px 0 0; }
 .tour-ambient-column { display: flex; min-width: 0; flex-direction: column; gap: 12px; }
 .tour-ambient-frame.is-columns .tour-ambient-node { position: relative; width: auto; min-width: 0; }
 .tour-ambient-frame.is-columns .tour-artifact-card.is-strip { position: relative; top: auto; left: auto; width: auto; min-width: 0; height: 56px; padding: 5px 8px; }
@@ -6490,7 +6501,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .tour-ask-mimic { display: grid; min-height: 0; grid-template-rows: auto auto minmax(0, 1fr) auto; border-left: 1px solid var(--nb-rule); background: var(--nb-white); padding: 14px; }
 .tour-ask-mimic > header { display: flex; align-items: center; gap: 8px; padding-bottom: 10px; font-family: var(--font-ui); font-size: 13px; }
 .tour-ask-loop { width: 28px; height: 28px; color: var(--nb-graphite); }
-.tour-ask-loop.is-generating { color: var(--nb-lasso-green); }
+.tour-ask-loop.is-generating { color: var(--nb-graphite); }
 .tour-ask-question { border-bottom: var(--stroke-pencil) solid var(--nb-graphite); padding: 10px 2px 8px; color: var(--nb-graphite); font-family: var(--font-ui); font-size: 13px; line-height: 1.35; }
 .tour-ask-claims { min-height: 0; overflow: hidden; padding: 10px 0; }
 .tour-ask-claim { border-left: var(--stroke-pencil) solid var(--nb-green); padding: 5px 8px; animation: tour-claim-in 220ms var(--nb-ease) both; }
@@ -6571,8 +6582,8 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   .tour-board-toolbar button { width: 32px; height: 32px; min-height: 32px; padding-inline: 6px; }
   .tour-board-toolbar button span { display: none; }
   .tour-board-act [data-testid="board-shell-stage"] { width: 320px; height: 400px; }
-  .tour-primary-frame { top: 7px; right: 6px; bottom: auto; left: 6px; width: calc(100% - 12px); height: 45%; }
-  .tour-board-act > .tour-ambient-frame,.tour-group-act .tour-ambient-frame { top: 47%; right: 6px; width: calc(100% - 12px); height: 51%; }
+  .tour-primary-frame { top: 7px; right: 6px; bottom: auto; left: 6px; width: calc(100% - 12px); height: 48%; gap: 4px 7px; padding: 28px 7px 7px; }
+  .tour-board-act > .tour-ambient-frame,.tour-group-act .tour-ambient-frame { top: 51%; right: 6px; width: calc(100% - 12px); height: 47%; }
   .tour-free-node,.tour-ambient-node { width: 44%; min-width: 0; }
   .tour-preview-card,.tour-ambient-node .tour-preview-card { min-height: 104px; gap: 5px; padding: 7px; }
   .tour-preview-card > strong { font-size: 13px; line-height: 1.15; }
@@ -6582,9 +6593,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   .tour-artifact-card > span { font-size: 13px; }
   .tour-first-image { left: 5%; bottom: 5%; width: 54%; padding: 7px; }
   .tour-first-image strong { font-size: 16px; }
-  .tour-group-act .tour-board-act [data-testid="board-shell-stage"] { height: 336px; }
-  .tour-group-act .tour-card-wrap .canvas-lab-paper-header { display: none; }
-  .tour-group-act .tour-card-wrap .canvas-lab-paper-title { font-size: 16px; }
+  .tour-primary-frame.tour-group-scope { width: calc(100% - 12px); grid-template-rows: repeat(2, minmax(0, 1fr)); padding-top: 30px; }
   .tour-context-sentence { top: auto; right: 8px; bottom: 56px; width: calc(100% - 16px); }
   .tour-ask-act { grid-template-columns: minmax(0, 1fr) 46%; gap: 6px; }
   .tour-ask-board-scene { display: block; position: relative; }

@@ -76,37 +76,33 @@ describe("tour acts one to three", () => {
     expect(done).toHaveBeenCalledWith("Q3 strategy deck.pdf");
   });
 
-  it("advances act two only after all three set cards are selected", () => {
+  it("advances act two exactly once when one outlined work card is clicked", () => {
+    const done = vi.fn();
+    render(<TourActTwo register="company" hint={false} onComplete={done} />);
+    const cards = screen.getAllByRole("group");
+    fireEvent.click(cards[0]!);
+    expect(done).toHaveBeenCalledTimes(1);
+    fireEvent.click(cards[1]!);
+    expect(done).toHaveBeenCalledTimes(1);
+  });
+
+  it("advances act two exactly once when Space selects one outlined work card", () => {
     const done = vi.fn();
     render(<TourActTwo register="company" hint={false} onComplete={done} />);
     const cards = screen.getAllByRole("group");
     fireEvent.keyDown(cards[0]!, { code: "Space", key: " " });
-    fireEvent.keyDown(cards[1]!, { code: "Space", key: " " });
-    expect(done).not.toHaveBeenCalled();
-    fireEvent.keyDown(cards[3]!, { code: "Space", key: " " });
-    expect(done).not.toHaveBeenCalled();
+    expect(done).toHaveBeenCalledTimes(1);
     fireEvent.keyDown(cards[2]!, { code: "Space", key: " " });
     expect(done).toHaveBeenCalledTimes(1);
   });
 
-  it("advances act two when all three set cards and one extra are selected", () => {
+  it("keeps the loose AI chat work cards inert while one outlined work card advances", () => {
     const done = vi.fn();
     render(<TourActTwo register="company" hint={false} onComplete={done} />);
-    const cards = screen.getAllByRole("group");
-    fireEvent.keyDown(cards[3]!, { code: "Space", key: " " });
-    fireEvent.keyDown(cards[0]!, { code: "Space", key: " " });
-    fireEvent.keyDown(cards[1]!, { code: "Space", key: " " });
-    fireEvent.keyDown(cards[2]!, { code: "Space", key: " " });
-    expect(done).toHaveBeenCalledTimes(1);
-  });
-
-  it("keeps the second workstream inert while the first three cards advance", () => {
-    const done = vi.fn();
-    render(<TourActTwo register="company" hint={false} onComplete={done} />);
-    const ambient = screen.getByLabelText("Market scan workstream");
+    const ambient = screen.getByLabelText("Loose AI chat work cards");
     expect(ambient.querySelectorAll('[tabindex="0"]')).toHaveLength(0);
     const cards = screen.getAllByRole("group").filter((card) => card.getAttribute("tabindex") === "0");
-    cards.slice(0, 3).forEach((card) => fireEvent.keyDown(card, { code: "Space", key: " " }));
+    fireEvent.click(cards[0]!);
     expect(done).toHaveBeenCalledTimes(1);
   });
 
@@ -118,7 +114,7 @@ describe("tour acts one to three", () => {
     expect(chats.filter((card) => card.textContent?.includes("Claude:"))).toHaveLength(2);
     expect(chats.filter((card) => card.textContent?.includes("Gemini:"))).toHaveLength(1);
     expect(screen.getByText("Claude: positioning draft")).toBeTruthy();
-    expect(screen.getByLabelText("Market scan workstream").classList.contains("tour-region")).toBe(true);
+    expect(screen.getByLabelText("Loose AI chat work cards").classList.contains("tour-region")).toBe(false);
   });
 
   it("renders the exported context sentence after grouping", () => {
@@ -127,7 +123,7 @@ describe("tour acts one to three", () => {
     expect(screen.getByText(TOUR_CONTEXT_SENTENCE)).toBeTruthy();
   });
 
-  it("advances act two exactly once when a marquee is dragged around the three set cards", () => {
+  it("advances act two exactly once when a marquee is dragged around the three outlined work cards", () => {
     const done = vi.fn();
     render(<TourActTwo register="company" hint={false} onComplete={done} />);
     const board = screen.getByTestId("tour-act-two");
@@ -147,7 +143,7 @@ describe("tour acts one to three", () => {
     expect(done).toHaveBeenCalledTimes(1);
   });
 
-  it("groups act three when a marquee encloses the three cards, ignoring the ambient workstream", () => {
+  it("groups act three when a marquee encloses the three work cards, ignoring loose AI chats", () => {
     const done = vi.fn();
     render(<TourActThree register="company" onComplete={done} />);
     const board = screen.getByTestId("tour-act-three").querySelector<HTMLElement>(".tour-board-act")!;
@@ -169,7 +165,7 @@ describe("tour acts one to three", () => {
     expect(question.textContent).toBe("What ideas did I have that did not make the final deck? Give me the link to the AI chat I worked them out in.");
   });
 
-  it("shows exactly three cited claims from cards in the frame", () => {
+  it("shows exactly three cited claims from work cards in the frame", () => {
     vi.useFakeTimers();
     render(<TourActFour register="company" onComplete={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: "Ask Lasso" }));
@@ -177,7 +173,7 @@ describe("tour acts one to three", () => {
     act(() => vi.advanceTimersByTime(1200));
     const claims = document.querySelectorAll(".tour-ask-claim");
     expect(claims).toHaveLength(3);
-    const frameText = screen.getByLabelText("Workstream with three source cards").textContent ?? "";
+    const frameText = screen.getByLabelText("Workstream with three source work cards").textContent ?? "";
     for (const claim of claims) expect(frameText).toContain(claim.querySelector("span")?.textContent);
     expect(screen.getByRole("button", { name: "Open the chat: Claude: pricing options" })).toBeTruthy();
     vi.useRealTimers();
@@ -194,7 +190,7 @@ describe("tour acts one to three", () => {
     expect(screen.getByLabelText("Whiteboard photo")).toBeTruthy();
   });
 
-  it("anchors each kept-answer connector to a source card", () => {
+  it("anchors each kept-answer connector to a source work card", () => {
     render(<TourActFive register="company" onLanded={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: "Keep" }));
     const sources = document.querySelectorAll("[data-tour-connector-source]");
