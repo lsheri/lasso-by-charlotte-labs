@@ -1,6 +1,7 @@
 # Roadmap
 
 - [x] Build the local-only five-act first-run tour, including the final copy, chat-link example, and anchored answer connectors.
+- [ ] Fill the tour with a second AI workstream, linked artifact, final image cards, and an Act 1 drag hint.
 - [x] PF1: inherit one existing conversation placement for destination-free attachments without moving the conversation.
 - [x] Add per-attachment placement receipts and explicit inbox notes.
 - [x] Add handler-driven regression tests for all requested placement cases.

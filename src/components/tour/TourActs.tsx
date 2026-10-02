@@ -53,10 +53,11 @@ function nodeFor(card: TourCard, index: number, compact = false): TourNode {
   };
 }
 
-function TourLabCard({ node, selected, hint, onSelect, onKeyDown }: {
+function TourLabCard({ node, selected, hint, inert = false, onSelect, onKeyDown }: {
   node: TourNode;
   selected: boolean;
   hint?: boolean;
+  inert?: boolean;
   onSelect: () => void;
   onKeyDown: (event: React.KeyboardEvent) => void;
 }) {
@@ -66,6 +67,7 @@ function TourLabCard({ node, selected, hint, onSelect, onKeyDown }: {
       <span className="tour-card-source"><ToolBadge tool={sourceTool(node.source)} size="sm" /></span>
       <LabCard
         node={localNode}
+        readOnly={inert}
         showStatusChrome={false}
         selected={selected}
         focused={selected}
@@ -97,6 +99,71 @@ function TourLabCard({ node, selected, hint, onSelect, onKeyDown }: {
       />
       {hint ? <EvidenceCircle className="tour-card-hint" /> : null}
     </div>
+  );
+}
+
+const AMBIENT_CARDS = [
+  { title: "ChatGPT: competitor pricing teardown", source: "chatgpt" },
+  { title: "Gemini: market size, 3 scenarios", source: "gemini" },
+  { title: "Claude: positioning draft", source: "claude" },
+] as const;
+
+function ambientTitle(register: Register) {
+  if (register === "personal") return "Research";
+  if (register === "edu") return "Background reading";
+  return "Market scan";
+}
+
+function ArtifactPreview() {
+  return (
+    <article className="tour-artifact-card" aria-label="Artifact preview">
+      <span>Artifact</span>
+      <div aria-hidden><i /><i /><i /><b /><b /></div>
+    </article>
+  );
+}
+
+function AmbientWorkstream({ register }: { register: Register }) {
+  const nodes = useMemo<LabNode[]>(() => [
+    { id: "ambient-claude", kind: "source", frame: null, title: "Claude: positioning draft", summary: "", typeLabel: "claude", ownership: "draft", x: 12, y: 142, width: 176, height: 58 },
+    { id: "ambient-artifact", kind: "source", frame: null, title: "Artifact", summary: "", typeLabel: "artifact", ownership: "draft", x: 206, y: 142, width: 116, height: 76 },
+  ], []);
+  const links = useMemo<LabLink[]>(() => [{ id: "ambient-artifact-link", fromId: "ambient-claude", toId: "ambient-artifact", fromAnchor: "right", toAnchor: "left" }], []);
+  return (
+    <section className="tour-ambient-frame" aria-label={`${ambientTitle(register)} workstream`}>
+      <span className="tour-source-frame-title">{ambientTitle(register)}</span>
+      {AMBIENT_CARDS.slice(0, 2).map((card) => (
+        <article key={card.title} className="tour-ambient-card" aria-label={card.title}>
+          <ToolBadge tool={sourceTool(card.source)} size="sm" /><strong>{card.title}</strong>
+        </article>
+      ))}
+      <article className="tour-ambient-card tour-ambient-claude" aria-label={AMBIENT_CARDS[2].title}>
+        <ToolBadge tool="claude" size="sm" /><strong>{AMBIENT_CARDS[2].title}</strong>
+      </article>
+      <ArtifactPreview />
+      <svg className="tour-ambient-link" viewBox="0 0 334 232" aria-label="Claude chat linked to its artifact">
+        <LabRelationships links={links} nodes={nodes} measuredHeights={new Map()} selectedLinkId={null} inverseZoom={1} onSelect={noop} />
+      </svg>
+    </section>
+  );
+}
+
+function TourImageCard({ kind }: { kind: "deck" | "whiteboard" }) {
+  const deck = kind === "deck";
+  return (
+    <article className="tour-image-card" aria-label={deck ? "Deck, slide 12" : "Whiteboard photo"}>
+      <strong>{deck ? "Deck, slide 12" : "Whiteboard photo"}</strong>
+      <svg viewBox="0 0 160 82" aria-hidden>
+        {deck ? <>
+          <path d="M10 12 C52 11 105 13 150 11" /><path d="M12 27 H72 M12 35 H62" />
+          <path d="M92 65 V48 H105 V65 M113 65 V37 H126 V65 M134 65 V25 H147 V65" />
+        </> : <>
+          <rect x="12" y="14" width="38" height="22" rx="2" /><rect x="108" y="46" width="38" height="22" rx="2" />
+          <rect x="61" y="28" width="38" height="22" rx="2" /><path d="M50 25 C57 24 58 32 64 34 M98 42 C105 42 107 50 111 53" />
+          <path d="m59 31 5 3-5 3 M106 50 5 3-5 3" />
+        </>}
+      </svg>
+    </article>
   );
 }
 
@@ -199,6 +266,7 @@ export function TourActOne({ register, onComplete }: { register: Register; onCom
       <TourWorkboard active="add" onAddWork={() => setFilesOpen(true)}>
         <div ref={boardRef} className="tour-arrival-board" data-testid="tour-drop-board">
           <BoardShell ariaLabel="Empty tour board" frames={[]} nodes={landedNode} lockZoom renderNode={(node) => <TourLabCard node={node} selected={false} onSelect={noop} onKeyDown={noop} />} />
+          <aside className="tour-arrival-hint">You can also drag files, documents or images straight from your computer onto the board.</aside>
           {filesOpen ? <div className="tour-file-window-layer"><FileWindow files={files} drag={drag} onPointerDown={(title, event) => {
             event.currentTarget.setPointerCapture?.(event.pointerId);
             if (event.pointerType === "touch") { land(title); return; }
@@ -263,6 +331,7 @@ export function TourActTwo({ register, hint, onComplete }: { register: Register;
       setBox({ x: Math.min(start.x, x), y: Math.min(start.y, y), width: Math.abs(x - start.x), height: Math.abs(y - start.y) });
     }} onPointerUp={endBox} onPointerCancel={() => { setBox(null); startRef.current = null; }}>
       <BoardShell ariaLabel="Tour selection board" frames={[]} nodes={nodes} selectedIds={selected} lockZoom onViewportSizeChange={({ width }) => setBoardWidth(width)} renderNode={(node) => <TourLabCard node={node} selected={selected.includes(node.id)} hint={hint && node.inSet} onSelect={() => toggle(node.id)} onKeyDown={(event) => { if (event.code === "Space") { event.preventDefault(); toggle(node.id); } }} />} />
+      <AmbientWorkstream register={register} />
       {box ? <span className="tour-marquee" style={{ left: box.x, top: box.y, width: box.width, height: box.height }} /> : null}
     </div></TourWorkboard>
   );
@@ -325,6 +394,7 @@ export function TourActThree({ register, onComplete }: { register: Register; onC
         setBox({ x: Math.min(start.x, x), y: Math.min(start.y, y), width: Math.abs(x - start.x), height: Math.abs(y - start.y) });
       }} onPointerUp={endBox} onPointerCancel={() => { setBox(null); startRef.current = null; }}>
         <BoardShell ariaLabel="Tour grouping board" frames={grouped ? [frame] : []} nodes={nodes} selectedIds={nodes.map((node) => node.id)} lockZoom onViewportSizeChange={({ width }) => setBoardWidth(width)} renderFrame={(current) => <LabFrameElement frame={{ ...current, x: 0, y: 0 }} count={3} kind="custom" selected={false} editable={false} custom namedByWorkstream={false} removable={false} onSelect={noop} onResizeStart={noop} onFit={noop} onRename={noop} onRemove={noop} onMenuOpened={noop} onMenuOpenChange={noop} />} renderNode={(node) => <TourLabCard node={node} selected onSelect={noop} onKeyDown={noop} />} />
+        <AmbientWorkstream register={register} />
         {box ? <span className="tour-marquee" style={{ left: box.x, top: box.y, width: box.width, height: box.height }} /> : null}
       </div>
       {grouped ? <p className="tour-context-sentence">{act?.contextSentence}</p> : null}
@@ -459,7 +529,7 @@ export function TourActFour({ register, onComplete }: { register: Register; onCo
 
   return (
     <TourWorkboard active="ask" onAsk={() => setAskOpen(true)}><div className="tour-ask-act" data-testid="tour-act-four">
-      <TourFramedSources register={register} highlightedTitle={highlighted} />
+      <div className="tour-ask-board-scene"><TourFramedSources register={register} highlightedTitle={highlighted} /><AmbientWorkstream register={register} /></div>
       {askOpen ? <TourAskMimic register={register} visibleClaims={visibleClaims} generating={generating} onAsk={ask} /> : null}
     </div></TourWorkboard>
   );
@@ -596,8 +666,10 @@ export function TourActFive({ register, onLanded }: { register: Register; onLand
           <>
             <LabAnswerCard node={answer} focused={false} stackZ={4} onFocus={noop} onPointerDown={noop} onDelete={noop} />
             <TourAnchoredRelationships sourceNodes={sourceNodes} answer={answer} />
+            <div className="tour-final-images"><TourImageCard kind="deck" /><TourImageCard kind="whiteboard" /></div>
           </>
         ) : null}
+        <AmbientWorkstream register={register} />
       </div>
       {!landed ? (
         <aside className="tour-keep-panel">
