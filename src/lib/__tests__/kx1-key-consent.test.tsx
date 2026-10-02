@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   })),
   lookup: vi.fn(async () => ({ ok: true, institution_name: "Harbor College" })),
   navigate: vi.fn(),
+  emitClientEvent: vi.fn(),
 }));
 
 vi.mock("@tanstack/react-router", async (orig) => ({
@@ -47,7 +48,7 @@ vi.mock("@/lib/activation-keys.functions", () => ({
   redeemActivationKeyFn: vi.fn(async () => ({ ok: true, reason: "redeemed" })),
 }));
 vi.mock("@/lib/invites.functions", () => ({ checkSignupInvite: vi.fn() }));
-vi.mock("@/lib/client-telemetry", () => ({ aliasSignupVisitor: vi.fn(), emitClientEvent: vi.fn() }));
+vi.mock("@/lib/client-telemetry", () => ({ aliasSignupVisitor: vi.fn(), emitClientEvent: mocks.emitClientEvent }));
 vi.mock("@/lib/posthog-client", () => ({ identifyPostHog: vi.fn() }));
 vi.mock("@/hooks/use-profile", () => ({ fetchProfile: async () => null, AUTH_USER_KEY: ["auth-user"] }));
 vi.mock("@/lib/pending-invite", () => ({ readPendingInvite: () => null }));
@@ -75,6 +76,7 @@ beforeEach(() => {
   window.localStorage.clear();
   mocks.signUp.mockClear();
   mocks.navigate.mockClear();
+  mocks.emitClientEvent.mockClear();
 });
 afterEach(cleanup);
 
@@ -145,6 +147,9 @@ describe("KX1: carried key is shown and removable", () => {
     await waitFor(() => expect(screen.queryByTestId("key-notice")).toBeNull());
     expect(window.localStorage.getItem(KEY_STORAGE)).toBeNull();
     expect(mocks.navigate).toHaveBeenCalled();
+    expect(mocks.emitClientEvent).toHaveBeenCalledWith("activation.key_removed", {
+      had_institution: true,
+    });
   });
 
   it("shows no notice when nothing is carried", async () => {

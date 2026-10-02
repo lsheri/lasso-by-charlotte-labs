@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const read = (p: string) => readFileSync(p, "utf8");
@@ -9,8 +9,8 @@ describe("H-W1 home cleanup", () => {
     expect(home).not.toContain("WelcomeBoard");
     expect(home).not.toContain("A guide from Lasso");
   });
-  it("Work no longer mounts the Getting Started card", () => {
-    expect(read("src/pages/WorkPage.tsx")).not.toContain("GettingStartedCard");
+  it("the retired Getting Started card no longer exists", () => {
+    expect(existsSync("src/components/onboarding/checklist/GettingStartedCard.tsx")).toBe(false);
   });
   it("signed-in Home passes onOpen and the card is a Link to the board page", () => {
     expect(read("src/components/home/HomeBoard.tsx")).toMatch(/<HomeEngagementGrid[\s\S]*?onOpen=/);
@@ -21,13 +21,17 @@ describe("H-W1 home cleanup", () => {
   it("the public demo does not pass the new prop", () => {
     expect(read("src/components/demo/DemoHomeWorkspace.tsx")).not.toContain("onOpen=");
   });
-  it("signed-in chrome no longer mounts the Getting Started walkthrough", () => {
+  it("the retired Getting Started walkthrough files no longer exist", () => {
     for (const file of [
-      "src/components/layout/AppSidebar.tsx",
-      "src/components/layout/MobileTabBar.tsx",
-      "src/components/layout/AppShell.tsx",
+      "src/components/onboarding/checklist/WelcomeCard.tsx",
+      "src/components/onboarding/checklist/ChecklistStep.tsx",
+      "src/components/onboarding/checklist/steps.ts",
+      "src/components/onboarding/checklist/ChecklistLauncher.tsx",
+      "src/components/onboarding/checklist/LauncherPill.tsx",
+      "src/components/onboarding/checklist/StepPopover.tsx",
+      "src/components/onboarding/ProgressDots.tsx",
     ]) {
-      expect(read(file)).not.toContain("onboarding/checklist");
+      expect(existsSync(file)).toBe(false);
     }
   });
 });

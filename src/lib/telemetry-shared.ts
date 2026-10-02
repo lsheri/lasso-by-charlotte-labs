@@ -6,6 +6,8 @@ export type TelemetryEvent =
   | "onboarding.tools_selected"
   /** KX1: a carried activation key failed to redeem at workspace creation. Closed reason only; never the code, institution or email. Portal needs this name added. */
   | "activation.redeem_failed"
+  /** KX1: a carried activation key was removed before workspace creation. Whether its institution lookup had resolved, and nothing else. Portal needs this name added. */
+  | "activation.key_removed"
   | "landing.viewed"
   /** B2B landing: a visitor chose either pilot entry point. Location only. */
   | "landing.pilot_cta_clicked"

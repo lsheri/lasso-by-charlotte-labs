@@ -565,7 +565,7 @@ export function SidebarNav({
           group.id === "account" && institution
             ? [
                 {
-                  label: `What ${institution.name} sees`,
+                  label: `Your ${institution.name} link`,
                   to: "/affiliation",
                   icon: "messages" as const,
                 },

@@ -22,6 +22,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { lookupActivationKeyFn, redeemActivationKeyFn } from "@/lib/activation-keys.functions";
 import { cleanActivationKey, clearActivationKey, readActivationKey } from "@/lib/key-entry";
 import { logEvent } from "@/lib/telemetry";
+import { emitClientEvent } from "@/lib/client-telemetry";
 import {
   loadToolsUsed,
   saveToolsUsed,
@@ -251,6 +252,7 @@ function OnboardingInner() {
   }, [carriedKey, lookupKey]);
 
   function removeKey() {
+    emitClientEvent("activation.key_removed", { had_institution: keyInstitution !== null });
     clearActivationKey();
     setCarriedKey(null);
     setKeyInstitution(null);

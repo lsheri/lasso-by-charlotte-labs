@@ -1,7 +1,11 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-import { describe, expect, it } from "vitest";
+// @vitest-environment jsdom
+import { cleanup, render, screen } from "@testing-library/react";
+import { createElement } from "react";
+import { afterEach, describe, expect, it } from "vitest";
+import { AffiliationContent } from "@/pages/AffiliationPage";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
@@ -23,14 +27,29 @@ describe("pass 186: the student's transparency page", () => {
   );
 
   it("renders the empty share state without a share action", () => {
-    expect(page).toMatch(/have not|has not/);
+    expect(page).toContain("Nothing has been shared");
     expect(page).not.toMatch(/<Button[^>]*>\s*Share/);
   });
 
   it("the nav gains the item only through the hook", () => {
     const nav = read("src/components/layout/SidebarNav.tsx");
     expect(nav).toContain("useAffiliation");
-    expect(nav).toContain("sees");
+    expect(nav).toContain("`Your ${institution.name} link`");
+  });
+
+  it("leads with the nothing-shared fact before the counts panel", () => {
+    render(
+      createElement(AffiliationContent, {
+        institutionName: "Artemis Connection",
+        projectCount: 0,
+        toolCount: 0,
+        keptCount: 0,
+        sharedCount: 0,
+      }),
+    );
+    const empty = screen.getByText("Nothing has been shared with Artemis Connection.");
+    const counts = screen.getByTestId("affiliation-counts");
+    expect(empty.compareDocumentPosition(counts) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it("registers the event, dims only", () => {
@@ -40,3 +59,5 @@ describe("pass 186: the student's transparency page", () => {
     expect(fns).not.toContain("payload");
   });
 });
+
+afterEach(cleanup);
