@@ -415,7 +415,7 @@ export function TourActTwo({ register, hint, onComplete }: { register: Register;
           {hint && card.inSet ? <EvidenceCircle className="tour-card-hint" /> : null}
         </div>)}
       </section>
-      <AmbientWorkstream register={register} />
+      <AmbientWorkstream register={register} columns />
       {box ? <span className="tour-marquee" style={{ left: box.x, top: box.y, width: box.width, height: box.height }} /> : null}
     </div></TourWorkboard>
   );
@@ -479,7 +479,7 @@ export function TourActThree({ register, onComplete }: { register: Register; onC
         setBox({ x: Math.min(start.x, x), y: Math.min(start.y, y), width: Math.abs(x - start.x), height: Math.abs(y - start.y) });
       }} onPointerUp={endBox} onPointerCancel={() => { setBox(null); startRef.current = null; }}>
         <div className="tour-group-scope" data-tour-group-scope=""><BoardShell ariaLabel="Tour grouping board" frames={grouped ? [frame] : []} nodes={nodes} selectedIds={nodes.map((node) => node.id)} lockZoom onViewportSizeChange={({ width }) => setBoardWidth(width)} renderFrame={(current) => <LabFrameElement frame={{ ...current, x: 0, y: 0 }} count={3} kind="custom" selected={false} editable={false} custom namedByWorkstream={false} removable={false} onSelect={noop} onResizeStart={noop} onFit={noop} onRename={noop} onRemove={noop} onMenuOpened={noop} onMenuOpenChange={noop} />} renderNode={(node) => <TourLabCard node={node} selected onSelect={noop} onKeyDown={noop} />} /></div>
-        <AmbientWorkstream register={register} />
+        <AmbientWorkstream register={register} columns />
         {box ? <span className="tour-marquee" style={{ left: box.x, top: box.y, width: box.width, height: box.height }} /> : null}
       </div>
       {grouped ? <p className="tour-context-sentence">{act?.contextSentence}</p> : null}
