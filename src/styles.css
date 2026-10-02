@@ -6263,9 +6263,20 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   overflow: hidden;
   border: 1px solid var(--nb-rule);
   border-radius: var(--radius-card);
-  background: var(--nb-paper);
+  background: var(--nb-white);
   padding: 18px 22px;
   box-shadow: var(--nb-paper-shadow-contact);
+}
+.tour-stage::before {
+  position: absolute;
+  z-index: 30;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 4px;
+  background: var(--nb-lasso-green);
+  content: "";
+  pointer-events: none;
 }
 .tour-stage-header {
   position: relative;
@@ -6397,13 +6408,6 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .tour-arrival-board { height: 100%; }
 .tour-arrival-board .canvas-lab-surface,
 .tour-board-act .canvas-lab-surface { cursor: default; }
-.tour-empty-rule {
-  position: absolute;
-  top: 50%;
-  left: 18%;
-  width: 64%;
-  color: var(--nb-pencil);
-}
 .tour-file-drag { position: fixed; z-index: 80; display: flex; max-width: 210px; align-items: center; gap: 8px; border: 1px solid var(--nb-pencil); border-radius: var(--radius-card); background: var(--nb-white); padding: 8px 10px; color: var(--nb-graphite); font-size: 13px; box-shadow: var(--nb-paper-shadow-contact); pointer-events: none; }
 .tour-file-drag:not([data-keyboard="true"]) { transform: translate(-50%, -50%); }
 .tour-file-drag[data-keyboard="true"] { position: absolute; top: 34%; left: 28%; }
