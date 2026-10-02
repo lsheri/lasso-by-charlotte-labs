@@ -413,7 +413,7 @@ export function TourActFour({ register, onComplete }: { register: Register; onCo
       timers.current.push(timer);
     });
   };
-  const highlighted = visibleClaims > 0 ? claims[visibleClaims - 1]?.sourceCardTitle : null;
+  const highlighted = visibleClaims > 0 ? (claims[visibleClaims - 1]?.sourceCardTitle ?? null) : null;
 
   return (
     <div className="tour-ask-act" data-testid="tour-act-four">
