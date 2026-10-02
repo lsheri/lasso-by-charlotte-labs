@@ -352,6 +352,7 @@ function TourAskMimic({ register, visibleClaims, generating, onAsk }: {
   onAsk: () => void;
 }) {
   const act = TOUR_CONTENT[register].acts[3];
+  const chatCard = (TOUR_CONTENT[register].acts[1]?.cards ?? []).find((card) => card.title === act?.chatLink?.cardTitle);
   return (
     <aside className="tour-ask-mimic" aria-label="Ask Lasso tour example">
       <header>
@@ -368,6 +369,13 @@ function TourAskMimic({ register, visibleClaims, generating, onAsk }: {
             <span>{claim.sourceCardTitle}</span>
           </article>
         ))}
+        {visibleClaims === (act?.answer?.length ?? 0) && act?.chatLink && chatCard ? (
+          <Button type="button" variant="outline" className="tour-chat-link" onClick={noop} aria-label={`${act.chatLink.label}: ${act.chatLink.cardTitle}`}>
+            <ToolBadge tool={sourceTool(chatCard.source)} size="sm" />
+            <span>{act.chatLink.label}</span>
+            <strong>{act.chatLink.cardTitle}</strong>
+          </Button>
+        ) : null}
       </div>
       <Button type="button" variant="ink" onClick={onAsk} disabled={generating || visibleClaims === 3}>Ask</Button>
     </aside>
@@ -476,6 +484,55 @@ function answerNode(register: Register, compact = false): LabNode {
   };
 }
 
+function TourAnchoredRelationships({ sourceNodes, answer }: { sourceNodes: LabNode[]; answer: LabNode }) {
+  const hostRef = useRef<SVGSVGElement>(null);
+  const [geometry, setGeometry] = useState<{ width: number; height: number; nodes: LabNode[]; links: LabLink[] } | null>(null);
+
+  useEffect(() => {
+    const svg = hostRef.current;
+    const board = svg?.parentElement;
+    if (!svg || !board) return;
+    const measure = () => {
+      const boardRect = board.getBoundingClientRect();
+      const answerElement = board.querySelector<HTMLElement>('[data-testid="canvas-lab-answer-card"]');
+      const sourceElements = Array.from(board.querySelectorAll<HTMLElement>("[data-tour-connector-source]"));
+      if (!answerElement || sourceElements.length !== sourceNodes.length || boardRect.width <= 0 || boardRect.height <= 0) return;
+      const answerRect = answerElement.getBoundingClientRect();
+      const measuredSources = sourceElements.map((element, index) => {
+        const rect = element.getBoundingClientRect();
+        return { ...sourceNodes[index], x: rect.left - boardRect.left, y: rect.top - boardRect.top, width: rect.width, height: rect.height } as LabNode;
+      });
+      const endpoints = measuredSources.map((_, index) => ({
+        ...answer,
+        id: `${answer.id}-anchor-${index}`,
+        x: answerRect.left - boardRect.left,
+        y: answerRect.top - boardRect.top + answerRect.height * ((index + 1) / (measuredSources.length + 1)),
+        width: 1,
+        height: 1,
+      }));
+      const links = measuredSources.map((node, index) => ({
+        id: `tour-link-${index}`,
+        fromId: node.id,
+        toId: endpoints[index]?.id ?? answer.id,
+        fromAnchor: "right" as const,
+        toAnchor: "left" as const,
+      }));
+      setGeometry({ width: boardRect.width, height: boardRect.height, nodes: [...measuredSources, ...endpoints], links });
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(board);
+    for (const element of board.querySelectorAll<HTMLElement>("[data-tour-connector-source], [data-testid=canvas-lab-answer-card]")) observer.observe(element);
+    return () => observer.disconnect();
+  }, [answer, sourceNodes]);
+
+  return (
+    <svg ref={hostRef} className="tour-keep-links" viewBox={geometry ? `0 0 ${geometry.width} ${geometry.height}` : "0 0 1 1"} aria-label="Answer links to its three sources">
+      {geometry ? <LabRelationships links={geometry.links} nodes={geometry.nodes} measuredHeights={new Map()} selectedLinkId={null} inverseZoom={1} onSelect={noop} /> : null}
+    </svg>
+  );
+}
+
 export function TourActFive({ register, onLanded }: { register: Register; onLanded: () => void }) {
   const cards = (TOUR_CONTENT[register].acts[1]?.cards ?? []).filter((card) => card.inSet);
   const [landed, setLanded] = useState(false);
@@ -504,13 +561,6 @@ export function TourActFive({ register, onLanded }: { register: Register; onLand
     height: 64,
   }));
   const answer = answerNode(register, compact);
-  const links: LabLink[] = sourceNodes.map((node, index) => ({
-    id: `tour-link-${index}`,
-    fromId: node.id,
-    toId: answer.id,
-    fromAnchor: compact ? "bottom" : "right",
-    toAnchor: compact ? "top" : "left",
-  }));
   const land = () => {
     if (landed) return;
     setLanded(true);
@@ -529,17 +579,15 @@ export function TourActFive({ register, onLanded }: { register: Register; onLand
       <div ref={boardRef} className="tour-keep-board" aria-label="Workstream board">
         <span className="tour-source-frame-title">{TOUR_CONTENT[register].acts[2]?.frameTitle}</span>
         {sourceNodes.map((node, index) => (
-          <article key={node.id} className="tour-keep-source" style={{ left: node.x, top: node.y, width: node.width, height: node.height }}>
+          <article key={node.id} className="tour-keep-source" data-tour-connector-source={node.id} style={{ left: node.x, top: node.y, width: node.width, height: node.height }}>
             <ToolBadge tool={sourceTool(cards[index]?.source ?? "drive")} size="sm" />
             <strong>{node.title}</strong>
           </article>
         ))}
         {landed ? (
           <>
-            <svg className="tour-keep-links" viewBox={compact ? "0 0 220 600" : "0 0 680 300"} aria-label="Answer links to its three sources">
-              <LabRelationships links={links} nodes={[...sourceNodes, answer]} measuredHeights={new Map()} selectedLinkId={null} inverseZoom={1} onSelect={noop} />
-            </svg>
             <LabAnswerCard node={answer} focused={false} stackZ={4} onFocus={noop} onPointerDown={noop} onDelete={noop} />
+            <TourAnchoredRelationships sourceNodes={sourceNodes} answer={answer} />
           </>
         ) : null}
       </div>

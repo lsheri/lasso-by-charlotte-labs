@@ -13,6 +13,11 @@ export type TourClaim = {
   sourceCardTitle: string;
 };
 
+export type TourChatLink = {
+  label: string;
+  cardTitle: string;
+};
+
 export type TourAct = {
   id: 1 | 2 | 3 | 4 | 5;
   captionPointer: string;
@@ -24,6 +29,7 @@ export type TourAct = {
   frameTitle?: string;
   question?: string;
   answer?: readonly TourClaim[];
+  chatLink?: TourChatLink;
   closingLine?: string;
   primaryActionLabel?: string;
 };
@@ -59,27 +65,28 @@ function acts(
   frameTitle: string,
   question: string,
   answer: readonly TourClaim[],
+  chatLink: TourChatLink,
 ): readonly TourAct[] {
   return [
     {
       id: 1,
       captionPointer: "Drag a file onto the board.",
       captionTouch: "Tap a file to put it on the board.",
-      why: "This is how your work gets into Lasso.",
+      why: "Files, AI chats and call transcripts all land here. Lasso keeps each one with a link back to where it came from.",
       files: FILES,
     },
     {
       id: 2,
       captionPointer: DO_LINES[2],
       captionTouch: DO_LINES[2],
-      why: "You are telling Lasso which pieces are about the same job.",
+      why: "You are deciding which work, AI chats and transcripts share context. They all went into the same final piece of work.",
       cards,
     },
     {
       id: 3,
       captionPointer: DO_LINES[3],
       captionTouch: DO_LINES[3],
-      why: `The box keeps those three together. Lasso calls it a ${frameTitle.toLowerCase()}.`,
+      why: `The box is a ${frameTitle}. Everything inside it shares context, so a question answers from those pieces and nothing else on the board.`,
       contextSentence: TOUR_CONTEXT_SENTENCE,
       frameTitle,
     },
@@ -87,15 +94,16 @@ function acts(
       id: 4,
       captionPointer: DO_LINES[4],
       captionTouch: DO_LINES[4],
-      why: `Lasso reads only the three cards in the ${frameTitle.toLowerCase()}. Nothing else on the board.`,
+      why: "Lasso reads only what is inside the box, and shows you which piece every part of the answer came from.",
       question,
       answer,
+      chatLink,
     },
     {
       id: 5,
       captionPointer: DO_LINES[5],
       captionTouch: DO_LINES[5],
-      why: "The answer stays on the board, next to the work it came from.",
+      why: "The answer stays on the board with links back to the chat and the files behind it, so you can open the original months later.",
       closingLine: CLOSING_LINE,
       primaryActionLabel: START_LABEL,
     },
@@ -111,9 +119,9 @@ const COMPANY_CARDS = [
 ] as const satisfies readonly TourCard[];
 
 const COMPANY_ANSWER = [
-  { text: "The Q3 strategy deck recommends tiered pricing for the client.", sourceCardTitle: "Q3 strategy deck" },
-  { text: "The discovery call records the client's request for a phased starting point.", sourceCardTitle: "Discovery call, 14 Sep" },
-  { text: "Claude compared three options and favored a retainer with milestones.", sourceCardTitle: "Claude: pricing options" },
+  { text: "You floated usage based pricing and dropped it after the discovery call.", sourceCardTitle: "Claude: pricing options" },
+  { text: "A phased rollout was discussed on the call and never reached the deck.", sourceCardTitle: "Discovery call, 14 Sep" },
+  { text: "The deck kept the tiered option only.", sourceCardTitle: "Q3 strategy deck" },
 ] as const satisfies readonly TourClaim[];
 
 const PERSONAL_CARDS = [
@@ -125,9 +133,9 @@ const PERSONAL_CARDS = [
 ] as const satisfies readonly TourCard[];
 
 const PERSONAL_ANSWER = [
-  { text: "The side project plan sets out a three-tier offer.", sourceCardTitle: "Side project plan" },
-  { text: "The research notes show comparable services using monthly retainers.", sourceCardTitle: "Research notes" },
-  { text: "ChatGPT suggested testing the highest tier first.", sourceCardTitle: "ChatGPT: how to price this" },
+  { text: "You considered project pricing and dropped it after comparing monthly retainers.", sourceCardTitle: "ChatGPT: how to price this" },
+  { text: "The research notes raised a lower entry tier that never reached the final version.", sourceCardTitle: "Research notes" },
+  { text: "The final version kept the three-tier offer.", sourceCardTitle: "Side project plan" },
 ] as const satisfies readonly TourClaim[];
 
 const EDU_CARDS = [
@@ -139,9 +147,9 @@ const EDU_CARDS = [
 ] as const satisfies readonly TourCard[];
 
 const EDU_ANSWER = [
-  { text: "The essay draft argues that institutions shape individual choices.", sourceCardTitle: "Essay draft 2" },
-  { text: "The lecture notes explain how incentives influence institutional behavior.", sourceCardTitle: "Lecture notes, week 4" },
-  { text: "Claude organized the argument from institutions to incentives to choices.", sourceCardTitle: "Claude: outline my argument" },
+  { text: "You considered leading with incentives and dropped that structure from the essay.", sourceCardTitle: "Claude: outline my argument" },
+  { text: "A point about informal institutions stayed in the notes but not the essay.", sourceCardTitle: "Lecture notes, week 4" },
+  { text: "The essay kept the argument about institutions shaping individual choices.", sourceCardTitle: "Essay draft 2" },
 ] as const satisfies readonly TourClaim[];
 
 export const TOUR_CONTENT: Readonly<
@@ -152,8 +160,9 @@ export const TOUR_CONTENT: Readonly<
     acts: acts(
       COMPANY_CARDS,
       "Workstream",
-      "What did we tell the client about pricing, and where did that come from?",
+      "What ideas did I have that did not make the final deck? Give me the link to the AI chat I worked them out in.",
       COMPANY_ANSWER,
+      { label: "Open the chat", cardTitle: "Claude: pricing options" },
     ),
   },
   partner: {
@@ -161,8 +170,9 @@ export const TOUR_CONTENT: Readonly<
     acts: acts(
       COMPANY_CARDS,
       "Workstream",
-      "What did we tell the client about pricing, and where did that come from?",
+      "What ideas did I have that did not make the final deck? Give me the link to the AI chat I worked them out in.",
       COMPANY_ANSWER,
+      { label: "Open the chat", cardTitle: "Claude: pricing options" },
     ),
   },
   personal: {
@@ -170,8 +180,9 @@ export const TOUR_CONTENT: Readonly<
     acts: acts(
       PERSONAL_CARDS,
       "Step",
-      "What did I decide about pricing, and where did I work it out?",
+      "What ideas did I have that did not make the final version? Give me the link to the chat I worked them out in.",
       PERSONAL_ANSWER,
+      { label: "Open the chat", cardTitle: "ChatGPT: how to price this" },
     ),
   },
   edu: {
@@ -179,8 +190,9 @@ export const TOUR_CONTENT: Readonly<
     acts: acts(
       EDU_CARDS,
       "Assignment",
-      "What is the argument here, and which source does each part come from?",
+      "What points did I drop from the essay? Give me the link to the chat I worked them out in.",
       EDU_ANSWER,
+      { label: "Open the chat", cardTitle: "Claude: outline my argument" },
     ),
   },
 };

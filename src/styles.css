@@ -6455,6 +6455,9 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .tour-ask-claim { border-left: var(--stroke-pencil) solid var(--nb-green); padding: 5px 8px; animation: tour-claim-in 220ms var(--nb-ease) both; }
 .tour-ask-claim p { font-size: 13px; line-height: 1.35; }
 .tour-ask-claim span { display: block; margin-top: 2px; color: var(--nb-green-deep); font-family: var(--font-mono); font-size: 9px; }
+.tour-chat-link { display: grid; width: 100%; min-height: 42px; grid-template-columns: auto auto minmax(0, 1fr); justify-content: start; gap: 7px; margin-top: 8px; overflow: hidden; pointer-events: none; }
+.tour-chat-link > span { color: var(--nb-mid); font-family: var(--font-ui); font-size: 11.5px; }
+.tour-chat-link > strong { min-width: 0; overflow: hidden; color: var(--nb-ink); font-family: var(--font-ui); font-size: 11.5px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
 .tour-ask-mimic > button { justify-self: end; }
 .tour-keep-act { position: relative; display: grid; height: 100%; min-height: 0; grid-template-columns: minmax(0, 1fr) 280px; gap: 14px; }
 .tour-keep-board { position: relative; min-height: 0; overflow: hidden; border: 1px dashed var(--nb-pencil); background-image: radial-gradient(var(--nb-rule) 1px, transparent 1px); background-size: 22px 22px; }
@@ -6480,7 +6483,8 @@ body[data-answer-drag="true"] .canvas-lab-surface {
     grid-template-rows: 66px 132px minmax(0, 1fr) 42px;
     padding: 12px;
   }
-  .tour-instruction-band { height: 132px; padding: 2px 8px 12px; }
+  .tour-stage { grid-template-rows: 66px 178px minmax(0, 1fr) 42px; }
+  .tour-instruction-band { height: 178px; padding: 2px 8px 12px; }
   .tour-do-line { margin-top: 5px; max-width: calc(100% - 8px); font-size: 20px; }
   .tour-why-line { max-width: calc(100% - 12px); font-size: 16px; line-height: 1.25; }
   .tour-instruction-band.is-complete .tour-do-line { font-size: 22px; }
@@ -6531,6 +6535,9 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   .tour-ask-question { font-size: 13px; }
   .tour-ask-claim { padding: 4px 5px; }
   .tour-ask-claim p { font-size: 11.5px; }
+  .tour-chat-link { grid-template-columns: auto minmax(0, 1fr); gap: 4px; padding-inline: 5px; }
+  .tour-chat-link > span { grid-column: 2; }
+  .tour-chat-link > strong { grid-column: 2; }
   .tour-keep-act { grid-template-columns: minmax(0, 1fr) 38%; gap: 6px; }
   .tour-keep-source { left: 12px !important; width: calc(100% - 24px) !important; }
   .tour-keep-board > .canvas-lab-answer-card { left: 12px !important; top: 350px !important; width: calc(100% - 24px) !important; height: 220px !important; }

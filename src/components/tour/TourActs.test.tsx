@@ -100,7 +100,7 @@ describe("tour acts one to three", () => {
     const question = screen.getByLabelText("Preset question");
     expect(question.getAttribute("contenteditable")).not.toBe("true");
     expect(question.getAttribute("aria-readonly")).toBe("true");
-    expect(question.textContent).toBe("What did we tell the client about pricing, and where did that come from?");
+    expect(question.textContent).toBe("What ideas did I have that did not make the final deck? Give me the link to the AI chat I worked them out in.");
   });
 
   it("shows exactly three cited claims from cards in the frame", () => {
@@ -113,6 +113,7 @@ describe("tour acts one to three", () => {
     expect(claims).toHaveLength(3);
     const frameText = screen.getByLabelText("Workstream with three source cards").textContent ?? "";
     for (const claim of claims) expect(frameText).toContain(claim.querySelector("span")?.textContent);
+    expect(screen.getByRole("button", { name: "Open the chat: Claude: pricing options" })).toBeTruthy();
     vi.useRealTimers();
   });
 
@@ -123,6 +124,16 @@ describe("tour acts one to three", () => {
     expect(screen.getByTestId("canvas-lab-answer-card")).toBeTruthy();
     expect(screen.getAllByRole("button", { name: /Select relationship/ })).toHaveLength(3);
     expect(landed).toHaveBeenCalledTimes(1);
+  });
+
+  it("anchors each kept-answer connector to a source card", () => {
+    render(<TourActFive register="company" onLanded={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Keep" }));
+    const sources = document.querySelectorAll("[data-tour-connector-source]");
+    const connectors = screen.getAllByRole("button", { name: /Select relationship/ });
+    expect(sources).toHaveLength(3);
+    expect(connectors).toHaveLength(3);
+    connectors.forEach((connector, index) => expect(connector.getAttribute("aria-label")).toContain(sources[index]?.textContent));
   });
 
   it("uses the standalone mimic shape without importing the live data surface", () => {
