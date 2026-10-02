@@ -108,11 +108,11 @@ function ambientTitle(register: Register) {
   return "Market scan";
 }
 
-function ArtifactPreview() {
+function ArtifactPreview({ strip = false }: { strip?: boolean }) {
   return (
-    <article className="tour-artifact-card" aria-label="Artifact preview">
+    <article className={`tour-artifact-card${strip ? " is-strip" : ""}`} aria-label="Artifact preview">
       <span>Artifact</span>
-      <div aria-hidden><i /><i /><i /><b /><b /></div>
+      <div aria-hidden>{strip ? <><i /><i /><b /><b /></> : <><i /><i /><i /><b /><b /></>}</div>
     </article>
   );
 }
@@ -160,11 +160,27 @@ function TourPreviewCard({ card, domId, selected = false, inert = false, onSelec
 
 const AMBIENT_LINK_SOURCE = "Claude: positioning draft";
 
-function AmbientWorkstream({ register }: { register: Register }) {
+const AMBIENT_COLUMNS: readonly (readonly string[])[] = [
+  ["ChatGPT: competitor pricing teardown", "ChatGPT: objection handling script"],
+  ["Claude: positioning draft", "artifact", "Gemini: market size, 3 scenarios"],
+];
+
+// The shared connector bows 64px past each anchor, which would run under both cards across a 12px gap.
+// A chat with its artifact hanging directly beneath reads as one straight drop.
+function AmbientDropLine({ nodes }: { nodes: LabNode[] }) {
+  const [from, to] = nodes;
+  if (!from || !to) return null;
+  const x = Math.max(from.x, to.x) + (Math.min(from.x + from.width, to.x + to.width) - Math.max(from.x, to.x)) / 2;
+  return <path className="canvas-lab-relationship-line" d={`M ${x} ${from.y + from.height} L ${x} ${to.y}`} />;
+}
+
+function AmbientWorkstream({ register, columns = false }: { register: Register; columns?: boolean }) {
   const cards = TOUR_AMBIENT_CARDS;
   const sectionRef = useRef<HTMLElement>(null);
   const [geometry, setGeometry] = useState<{ width: number; height: number; nodes: LabNode[] } | null>(null);
-  const links = useMemo<LabLink[]>(() => [{ id: "ambient-artifact-link", fromId: "ambient-claude", toId: "ambient-artifact", fromAnchor: "right", toAnchor: "left" }], []);
+  const links = useMemo<LabLink[]>(() => [columns
+    ? { id: "ambient-artifact-link", fromId: "ambient-claude", toId: "ambient-artifact", fromAnchor: "bottom", toAnchor: "top" }
+    : { id: "ambient-artifact-link", fromId: "ambient-claude", toId: "ambient-artifact", fromAnchor: "right", toAnchor: "left" }], [columns]);
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -192,19 +208,29 @@ function AmbientWorkstream({ register }: { register: Register }) {
     observer.observe(section);
     for (const element of section.querySelectorAll<HTMLElement>("[data-tour-ambient-link-source], .tour-artifact-card")) observer.observe(element);
     return () => observer.disconnect();
-  }, []);
+  }, [columns]);
+
+  const renderCard = (card: TourAmbientCard, index: number) => (
+    <div key={card.title} className="tour-ambient-node" data-tour-ambient-link-source={card.title === AMBIENT_LINK_SOURCE ? "" : undefined} style={columns ? { transform: `rotate(${card.layout.rotation}deg)` } : { left: `${card.layout.x}%`, top: `${card.layout.y}%`, transform: `rotate(${card.layout.rotation}deg)` }}>
+      <TourPreviewCard card={card} domId={`ambient-${index}`} inert />
+    </div>
+  );
 
   return (
-    <section ref={sectionRef} className="tour-ambient-frame tour-region is-secondary" aria-label={`${ambientTitle(register)} workstream`}>
+    <section ref={sectionRef} className={`tour-ambient-frame tour-region is-secondary${columns ? " is-columns" : ""}`} aria-label={`${ambientTitle(register)} workstream`}>
       <span className="tour-source-frame-title">{ambientTitle(register)}</span>
-      {cards.map((card, index) => (
-        <div key={card.title} className="tour-ambient-node" data-tour-ambient-link-source={card.title === AMBIENT_LINK_SOURCE ? "" : undefined} style={{ left: `${card.layout.x}%`, top: `${card.layout.y}%`, transform: `rotate(${card.layout.rotation}deg)` }}>
-          <TourPreviewCard card={card} domId={`ambient-${index}`} inert />
+      {columns ? AMBIENT_COLUMNS.map((column, columnIndex) => (
+        <div key={columnIndex} className="tour-ambient-column">
+          {column.map((title) => {
+            if (title === "artifact") return <ArtifactPreview key="artifact" strip />;
+            const index = cards.findIndex((card) => card.title === title);
+            const card = cards[index];
+            return card ? renderCard(card, index) : null;
+          })}
         </div>
-      ))}
-      <ArtifactPreview />
+      )) : <>{cards.map(renderCard)}<ArtifactPreview /></>}
       {geometry ? <svg className="tour-ambient-link" viewBox={`0 0 ${geometry.width} ${geometry.height}`} preserveAspectRatio="none" aria-label="Claude chat linked to its artifact">
-        <LabRelationships links={links} nodes={geometry.nodes} measuredHeights={new Map()} selectedLinkId={null} inverseZoom={1} onSelect={noop} interactive={false} />
+        {columns ? <AmbientDropLine nodes={geometry.nodes} /> : <LabRelationships links={links} nodes={geometry.nodes} measuredHeights={new Map()} selectedLinkId={null} inverseZoom={1} onSelect={noop} interactive={false} />}
       </svg> : null}
     </section>
   );
@@ -398,7 +424,7 @@ export function TourActTwo({ register, hint, onComplete }: { register: Register;
           {hint && card.inSet ? <EvidenceCircle className="tour-card-hint" /> : null}
         </div>)}
       </section>
-      <AmbientWorkstream register={register} />
+      <AmbientWorkstream register={register} columns />
       {box ? <span className="tour-marquee" style={{ left: box.x, top: box.y, width: box.width, height: box.height }} /> : null}
     </div></TourWorkboard>
   );
@@ -462,7 +488,7 @@ export function TourActThree({ register, onComplete }: { register: Register; onC
         setBox({ x: Math.min(start.x, x), y: Math.min(start.y, y), width: Math.abs(x - start.x), height: Math.abs(y - start.y) });
       }} onPointerUp={endBox} onPointerCancel={() => { setBox(null); startRef.current = null; }}>
         <div className="tour-group-scope" data-tour-group-scope=""><BoardShell ariaLabel="Tour grouping board" frames={grouped ? [frame] : []} nodes={nodes} selectedIds={nodes.map((node) => node.id)} lockZoom onViewportSizeChange={({ width }) => setBoardWidth(width)} renderFrame={(current) => <LabFrameElement frame={{ ...current, x: 0, y: 0 }} count={3} kind="custom" selected={false} editable={false} custom namedByWorkstream={false} removable={false} onSelect={noop} onResizeStart={noop} onFit={noop} onRename={noop} onRemove={noop} onMenuOpened={noop} onMenuOpenChange={noop} />} renderNode={(node) => <TourLabCard node={node} selected onSelect={noop} onKeyDown={noop} />} /></div>
-        <AmbientWorkstream register={register} />
+        <AmbientWorkstream register={register} columns />
         {box ? <span className="tour-marquee" style={{ left: box.x, top: box.y, width: box.width, height: box.height }} /> : null}
       </div>
       {grouped ? <p className="tour-context-sentence">{act?.contextSentence}</p> : null}
