@@ -20,14 +20,13 @@ type TourStageProps = {
   instructionOverride?: string | null;
 };
 
-type ArrowPath = { width: number; height: number; line: string; headA: string; headB: string };
-
 function TourInstructionArrow({ stage, activeAct }: { stage: React.RefObject<HTMLElement | null>; activeAct: number }) {
-  const [path, setPath] = useState<ArrowPath | null>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
 
   useLayoutEffect(() => {
     const root = stage.current;
-    if (!root) return;
+    const svg = svgRef.current;
+    if (!root || !svg) return;
     let frame = 0;
     let observer: ResizeObserver | null = null;
     const draw = () => {
@@ -35,7 +34,7 @@ function TourInstructionArrow({ stage, activeAct }: { stage: React.RefObject<HTM
       frame = window.requestAnimationFrame(() => {
         const instruction = root.querySelector<HTMLElement>("[data-tour-do]");
         const target = root.querySelector<HTMLElement>(`[data-tour-target="${activeAct}"]`);
-        if (!instruction || !target) { setPath(null); return; }
+        if (!instruction || !target) { svg.hidden = true; return; }
         const base = root.getBoundingClientRect();
         const from = instruction.getBoundingClientRect();
         const to = target.getBoundingClientRect();
@@ -45,13 +44,12 @@ function TourInstructionArrow({ stage, activeAct }: { stage: React.RefObject<HTM
         const ey = to.top - base.top + Math.min(to.height / 2, 22);
         const bend = Math.max(28, Math.abs(ey - sy) * 0.42);
         const line = `M ${sx} ${sy} C ${sx + 10} ${sy + bend}, ${ex - 18} ${ey - bend}, ${ex} ${ey}`;
-        setPath({
-          width: base.width,
-          height: base.height,
-          line,
-          headA: `M ${ex} ${ey} l -11 -3`,
-          headB: `M ${ex} ${ey} l -4 -10`,
-        });
+        svg.hidden = false;
+        svg.setAttribute("viewBox", `0 0 ${base.width} ${base.height}`);
+        const paths = svg.querySelectorAll("path");
+        paths[0]?.setAttribute("d", line);
+        paths[1]?.setAttribute("d", `M ${ex} ${ey} l -11 -3`);
+        paths[2]?.setAttribute("d", `M ${ex} ${ey} l -4 -10`);
       });
     };
     draw();
@@ -71,12 +69,11 @@ function TourInstructionArrow({ stage, activeAct }: { stage: React.RefObject<HTM
     };
   }, [activeAct, stage]);
 
-  if (!path) return null;
   return (
-    <svg className="tour-instruction-arrow" viewBox={`0 0 ${path.width} ${path.height}`} aria-hidden>
-      <path pathLength={1} d={path.line} />
-      <path pathLength={1} d={path.headA} />
-      <path pathLength={1} d={path.headB} />
+    <svg ref={svgRef} className="tour-instruction-arrow" viewBox="0 0 1 1" aria-hidden hidden>
+      <path pathLength={1} />
+      <path pathLength={1} />
+      <path pathLength={1} />
     </svg>
   );
 }
