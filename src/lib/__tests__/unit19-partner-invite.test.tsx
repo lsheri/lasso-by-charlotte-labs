@@ -44,7 +44,7 @@ vi.mock("@/integrations/supabase/client", () => ({
       const chain: Record<string, unknown> = {};
       const done = Promise.resolve({ data: [], error: null });
       for (const k of ["select", "eq", "is", "update", "insert"]) chain[k] = () => chain;
-      chain["maybeSingle"] = async () => ({ data: null, error: null });
+      chain["maybeSingle"] = async () => ({ data: { org_id: "o1", settings: {} }, error: null });
       chain["then"] = done.then.bind(done);
       return chain;
     },
