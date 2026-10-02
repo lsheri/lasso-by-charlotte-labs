@@ -3,7 +3,15 @@ import { describe, expect, it } from "vitest";
 import { Route } from "./__root";
 
 describe("PF2 font preloads", () => {
-  const head = await Promise.resolve(Route.options.head?.({} as never));
+  const headDefinition = Route.options.head;
+  if (!headDefinition) {
+    throw new Error("Root route head definition is missing");
+  }
+  const headResult = headDefinition({} as never);
+  if (headResult instanceof Promise) {
+    throw new Error("Root route head definition unexpectedly returned a promise");
+  }
+  const head = headResult;
   const links = head?.links ?? [];
   const fontPreloads = links.filter(
     (link) => link.rel === "preload" && "as" in link && link.as === "font",
