@@ -18,6 +18,8 @@ describe("tour acts one to three", () => {
   it("advances act one on a pointer drop", () => {
     const done = vi.fn();
     render(<TourActOne register="company" onComplete={done} />);
+    expect(screen.queryByLabelText("Your files")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Add work" }));
     const file = screen.getByRole("button", { name: "Q3 strategy deck.pdf" });
     const board = screen.getByTestId("tour-drop-board");
     vi.spyOn(board, "getBoundingClientRect").mockReturnValue({ left: 200, right: 600, top: 0, bottom: 400, width: 400, height: 400, x: 200, y: 0, toJSON: () => ({}) });
@@ -29,6 +31,7 @@ describe("tour acts one to three", () => {
   it("advances act one on touch", () => {
     const done = vi.fn();
     render(<TourActOne register="company" onComplete={done} />);
+    fireEvent.click(screen.getByRole("button", { name: "Add work" }));
     const file = screen.getByRole("button", { name: "Q3 strategy deck.pdf" });
     fireEvent.pointerDown(file, { pointerId: 2, pointerType: "touch", clientX: 20, clientY: 20 });
     fireEvent.pointerUp(screen.getByTestId("tour-act-one"), { pointerId: 2, pointerType: "touch", clientX: 20, clientY: 20 });
@@ -38,6 +41,7 @@ describe("tour acts one to three", () => {
   it("advances act one after keyboard lift, move and drop", () => {
     const done = vi.fn();
     render(<TourActOne register="company" onComplete={done} />);
+    fireEvent.click(screen.getByRole("button", { name: "Add work" }));
     const file = screen.getByRole("button", { name: "Q3 strategy deck.pdf" });
     fireEvent.keyDown(file, { code: "Space", key: " " });
     fireEvent.keyDown(file, { code: "ArrowRight", key: "ArrowRight" });

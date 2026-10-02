@@ -17,6 +17,7 @@ export type TourAct = {
   id: 1 | 2 | 3 | 4 | 5;
   captionPointer: string;
   captionTouch: string;
+  why: string;
   files?: readonly string[];
   cards?: readonly TourCard[];
   contextSentence?: string;
@@ -34,11 +35,11 @@ const FILES = [
   "whiteboard.png",
 ] as const;
 
-const SHARED_CAPTIONS = {
-  2: "Select the three pieces that belong together.",
-  3: "Draw a box around them. That is a workstream.",
-  4: "Now ask the box a question.",
-  5: "Keep it. Now the answer lives next to what it came from.",
+const DO_LINES = {
+  2: "Click the three cards that go together.",
+  3: "Draw a box around them.",
+  4: "Click Ask.",
+  5: "Click Keep.",
 } as const;
 
 export const TOUR_CONTEXT_SENTENCE =
@@ -62,34 +63,39 @@ function acts(
   return [
     {
       id: 1,
-      captionPointer: "Drag the deck onto the board.",
-      captionTouch: "Tap the deck to put it on the board.",
+      captionPointer: "Drag a file onto the board.",
+      captionTouch: "Tap a file to put it on the board.",
+      why: "This is how your work gets into Lasso.",
       files: FILES,
     },
     {
       id: 2,
-      captionPointer: SHARED_CAPTIONS[2],
-      captionTouch: SHARED_CAPTIONS[2],
+      captionPointer: DO_LINES[2],
+      captionTouch: DO_LINES[2],
+      why: "You are telling Lasso which pieces are about the same job.",
       cards,
     },
     {
       id: 3,
-      captionPointer: SHARED_CAPTIONS[3],
-      captionTouch: SHARED_CAPTIONS[3],
+      captionPointer: DO_LINES[3],
+      captionTouch: DO_LINES[3],
+      why: `The box keeps those three together. Lasso calls it a ${frameTitle.toLowerCase()}.`,
       contextSentence: TOUR_CONTEXT_SENTENCE,
       frameTitle,
     },
     {
       id: 4,
-      captionPointer: SHARED_CAPTIONS[4],
-      captionTouch: SHARED_CAPTIONS[4],
+      captionPointer: DO_LINES[4],
+      captionTouch: DO_LINES[4],
+      why: `Lasso reads only the three cards in the ${frameTitle.toLowerCase()}. Nothing else on the board.`,
       question,
       answer,
     },
     {
       id: 5,
-      captionPointer: SHARED_CAPTIONS[5],
-      captionTouch: SHARED_CAPTIONS[5],
+      captionPointer: DO_LINES[5],
+      captionTouch: DO_LINES[5],
+      why: "The answer stays on the board, next to the work it came from.",
       closingLine: CLOSING_LINE,
       primaryActionLabel: START_LABEL,
     },
