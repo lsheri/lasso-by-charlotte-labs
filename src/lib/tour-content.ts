@@ -27,19 +27,19 @@ export type TourLayoutItem = {
 
 /** The sole geometry source for every item on the five-act tour board. */
 export const TOUR_BOARD_LAYOUT: readonly TourLayoutItem[] = [
-  { id: "primary-0", kind: "primary", x: 2, y: 2, widthBasis: 30, rotation: -0.8, earliestAct: 1 },
-  { id: "primary-1", kind: "primary", x: 35, y: 2, widthBasis: 30, rotation: 0.7, earliestAct: 1 },
-  { id: "answer", kind: "answer", x: 68, y: 2, widthBasis: 30, rotation: 0, earliestAct: 5 },
-  { id: "primary-2", kind: "primary", x: 2, y: 22, widthBasis: 30, rotation: 0.5, earliestAct: 1 },
-  { id: "primary-3", kind: "primary", x: 35, y: 22, widthBasis: 30, rotation: 0.9, earliestAct: 1 },
-  { id: "primary-4", kind: "primary", x: 68, y: 22, widthBasis: 30, rotation: -0.7, earliestAct: 1 },
-  { id: "chat-0", kind: "chat", x: 2, y: 42, widthBasis: 30, rotation: -0.7, earliestAct: 1 },
-  { id: "chat-1", kind: "chat", x: 35, y: 42, widthBasis: 30, rotation: 0.8, earliestAct: 1 },
-  { id: "chat-2", kind: "chat", x: 68, y: 42, widthBasis: 30, rotation: 0.5, earliestAct: 1 },
-  { id: "chat-3", kind: "chat", x: 2, y: 62, widthBasis: 30, rotation: -0.6, earliestAct: 1 },
-  { id: "artifact", kind: "artifact", x: 35, y: 62, widthBasis: 30, rotation: 0, earliestAct: 1 },
-  { id: "whiteboard", kind: "image", x: 68, y: 62, widthBasis: 30, rotation: -0.4, earliestAct: 1 },
-  { id: "deck", kind: "image", x: 68, y: 91, widthBasis: 30, rotation: 0.3, earliestAct: 5 },
+  { id: "primary-0", kind: "primary", x: 2, y: 2, widthBasis: 28, rotation: -0.8, earliestAct: 1 },
+  { id: "primary-1", kind: "primary", x: 31.5, y: 4, widthBasis: 30, rotation: 0.7, earliestAct: 1 },
+  { id: "primary-2", kind: "primary", x: 17, y: 23, widthBasis: 29, rotation: 0.5, earliestAct: 1 },
+  { id: "primary-3", kind: "primary", x: 68, y: 3, widthBasis: 25, rotation: 0.9, earliestAct: 1 },
+  { id: "primary-4", kind: "primary", x: 70, y: 24.5, widthBasis: 27, rotation: -0.7, earliestAct: 1 },
+  { id: "answer", kind: "answer", x: 68, y: 44.5, widthBasis: 27, rotation: 0, earliestAct: 5 },
+  { id: "chat-0", kind: "chat", x: 2, y: 44, widthBasis: 27, rotation: -0.7, earliestAct: 1 },
+  { id: "chat-1", kind: "chat", x: 3.5, y: 64, widthBasis: 29, rotation: 0.8, earliestAct: 1 },
+  { id: "chat-2", kind: "chat", x: 34, y: 43, widthBasis: 27, rotation: 0.5, earliestAct: 1 },
+  { id: "chat-3", kind: "chat", x: 35.5, y: 63, widthBasis: 29, rotation: -0.6, earliestAct: 1 },
+  { id: "artifact", kind: "artifact", x: 37, y: 81.5, widthBasis: 25, rotation: 0, earliestAct: 1 },
+  { id: "whiteboard", kind: "image", x: 69.5, y: 64.5, widthBasis: 28.5, rotation: -0.4, earliestAct: 1 },
+  { id: "deck", kind: "image", x: 67, y: 94, widthBasis: 31, rotation: 0.3, earliestAct: 5 },
 ] as const;
 
 export const TOUR_AMBIENT_CARDS: readonly TourAmbientCard[] = [
