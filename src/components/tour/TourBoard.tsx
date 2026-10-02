@@ -138,39 +138,36 @@ function pointsPath(points: readonly MeasuredPoint[]) {
   return points.map((point, index) => `${index === 0 ? "M" : "L"}${point.x} ${point.y}`).join(" ");
 }
 
-function segmentClear(a: MeasuredPoint, b: MeasuredPoint, obstacles: readonly MeasuredRect[]) {
-  return obstacles.every((rect) => {
-    const left = rect.left - 4; const right = rect.right + 4; const top = rect.top - 4; const bottom = rect.bottom + 4;
-    if (a.x === b.x) return a.x <= left || a.x >= right || Math.max(a.y, b.y) <= top || Math.min(a.y, b.y) >= bottom;
-    return a.y <= top || a.y >= bottom || Math.max(a.x, b.x) <= left || Math.min(a.x, b.x) >= right;
-  });
-}
-
-function orthogonalRoute(start: MeasuredPoint, end: MeasuredPoint, obstacles: readonly MeasuredRect[], width: number, height: number) {
-  const xs = Array.from(new Set([2, width - 2, start.x, end.x, ...obstacles.flatMap((rect) => [rect.left - 6, rect.right + 6])])).filter((value) => value >= 1 && value <= width - 1).sort((a, b) => a - b);
-  const ys = Array.from(new Set([2, height - 2, start.y, end.y, ...obstacles.flatMap((rect) => [rect.top - 6, rect.bottom + 6])])).filter((value) => value >= 1 && value <= height - 1).sort((a, b) => a - b);
-  const points = xs.flatMap((x) => ys.map((y) => ({ x, y }))).filter((point) => !obstacles.some((rect) => point.x > rect.left - 4 && point.x < rect.right + 4 && point.y > rect.top - 4 && point.y < rect.bottom + 4));
-  points.push(start, end);
-  const key = (point: MeasuredPoint) => `${point.x}:${point.y}`;
-  const byKey = new Map(points.map((point) => [key(point), point]));
-  const distance = new Map<string, number>([[key(start), 0]]); const previous = new Map<string, string>(); const open = new Set([key(start)]);
-  while (open.size) {
-    const currentKey = Array.from(open).reduce((best, candidate) => (distance.get(candidate) ?? Infinity) < (distance.get(best) ?? Infinity) ? candidate : best);
-    open.delete(currentKey); if (currentKey === key(end)) break;
-    const current = byKey.get(currentKey); if (!current) continue;
-    const neighbors = points.filter((point) => (point.x === current.x || point.y === current.y) && key(point) !== currentKey && segmentClear(current, point, obstacles));
-    for (const neighbor of neighbors) {
-      const neighborKey = key(neighbor); const next = (distance.get(currentKey) ?? 0) + Math.abs(neighbor.x - current.x) + Math.abs(neighbor.y - current.y);
-      if (next >= (distance.get(neighborKey) ?? Infinity)) continue;
-      distance.set(neighborKey, next); previous.set(neighborKey, currentKey); open.add(neighborKey);
+function gridRoute(start: MeasuredPoint, end: MeasuredPoint, obstacles: readonly MeasuredRect[], width: number, height: number) {
+  const step = 3;
+  const columns = Math.ceil(width / step) + 1; const rows = Math.ceil(height / step) + 1;
+  const cell = (point: MeasuredPoint) => ({ column: Math.max(0, Math.min(columns - 1, Math.round(point.x / step))), row: Math.max(0, Math.min(rows - 1, Math.round(point.y / step))) });
+  const point = (column: number, row: number) => ({ x: column * step, y: row * step });
+  const key = (column: number, row: number) => row * columns + column;
+  const from = cell(start); const to = cell(end); const fromKey = key(from.column, from.row); const toKey = key(to.column, to.row);
+  const blocked = (column: number, row: number) => {
+    const value = point(column, row);
+    return obstacles.some((rect) => value.x > rect.left - 4 && value.x < rect.right + 4 && value.y > rect.top - 4 && value.y < rect.bottom + 4);
+  };
+  const queue = [fromKey]; const previous = new Map<number, number>(); const visited = new Set([fromKey]);
+  for (let cursor = 0; cursor < queue.length; cursor += 1) {
+    const current = queue[cursor]; if (current === undefined || current === toKey) break;
+    const column = current % columns; const row = Math.floor(current / columns);
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+      const nextColumn = column + dx; const nextRow = row + dy;
+      if (nextColumn < 0 || nextColumn >= columns || nextRow < 0 || nextRow >= rows) continue;
+      const next = key(nextColumn, nextRow);
+      if (visited.has(next) || (next !== toKey && blocked(nextColumn, nextRow))) continue;
+      visited.add(next); previous.set(next, current); queue.push(next);
     }
   }
-  if (!distance.has(key(end))) return [start, end];
-  const route: MeasuredPoint[] = []; let cursor: string | undefined = key(end);
-  while (cursor) { const point = byKey.get(cursor); if (point) route.unshift(point); cursor = previous.get(cursor); }
-  return route.filter((point, index) => {
+  if (!visited.has(toKey)) return null;
+  const route: MeasuredPoint[] = []; let cursor: number | undefined = toKey;
+  while (cursor !== undefined) { route.unshift(point(cursor % columns, Math.floor(cursor / columns))); cursor = previous.get(cursor); }
+  route[0] = start; route[route.length - 1] = end;
+  return route.filter((entry, index) => {
     const before = route[index - 1]; const after = route[index + 1];
-    return !before || !after || !((before.x === point.x && point.x === after.x) || (before.y === point.y && point.y === after.y));
+    return !before || !after || !((before.x === entry.x && entry.x === after.x) || (before.y === entry.y && entry.y === after.y));
   });
 }
 
@@ -187,10 +184,11 @@ function routeBetween(from: MeasuredRect, to: MeasuredRect, obstacles: readonly 
   let best: MeasuredPoint[] | null = null; let bestLength = Infinity;
   for (const start of edgeAnchors(from)) for (const end of edgeAnchors(to)) {
     if (start.out.x < 1 || start.out.x > width - 1 || start.out.y < 1 || start.out.y > height - 1 || end.out.x < 1 || end.out.x > width - 1 || end.out.y < 1 || end.out.y > height - 1) continue;
-    const middle = orthogonalRoute(start.out, end.out, obstacles, width, height);
+    const middle = gridRoute(start.out, end.out, obstacles, width, height);
+    if (!middle) continue;
     const route = [start.edge, ...middle, end.edge];
     const length = route.slice(1).reduce((sum, point, index) => sum + Math.abs(point.x - (route[index]?.x ?? point.x)) + Math.abs(point.y - (route[index]?.y ?? point.y)), 0);
-    if (middle.length > 1 && length < bestLength) { best = route; bestLength = length; }
+    if (length < bestLength) { best = route; bestLength = length; }
   }
   return best ?? [{ x: from.right, y: from.top + from.height / 2 }, { x: to.left, y: to.top + to.height / 2 }];
 }
