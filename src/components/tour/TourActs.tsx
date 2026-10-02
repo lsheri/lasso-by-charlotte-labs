@@ -108,11 +108,11 @@ function ambientTitle(register: Register) {
   return "Market scan";
 }
 
-function ArtifactPreview() {
+function ArtifactPreview({ strip = false }: { strip?: boolean }) {
   return (
-    <article className="tour-artifact-card" aria-label="Artifact preview">
+    <article className={`tour-artifact-card${strip ? " is-strip" : ""}`} aria-label="Artifact preview">
       <span>Artifact</span>
-      <div aria-hidden><i /><i /><i /><b /><b /></div>
+      <div aria-hidden>{strip ? <><i /><i /><b /><b /></> : <><i /><i /><i /><b /><b /></>}</div>
     </article>
   );
 }
@@ -160,11 +160,18 @@ function TourPreviewCard({ card, domId, selected = false, inert = false, onSelec
 
 const AMBIENT_LINK_SOURCE = "Claude: positioning draft";
 
-function AmbientWorkstream({ register }: { register: Register }) {
+const AMBIENT_COLUMNS: readonly (readonly string[])[] = [
+  ["ChatGPT: competitor pricing teardown", "ChatGPT: objection handling script"],
+  ["Claude: positioning draft", "artifact", "Gemini: market size, 3 scenarios"],
+];
+
+function AmbientWorkstream({ register, columns = false }: { register: Register; columns?: boolean }) {
   const cards = TOUR_AMBIENT_CARDS;
   const sectionRef = useRef<HTMLElement>(null);
   const [geometry, setGeometry] = useState<{ width: number; height: number; nodes: LabNode[] } | null>(null);
-  const links = useMemo<LabLink[]>(() => [{ id: "ambient-artifact-link", fromId: "ambient-claude", toId: "ambient-artifact", fromAnchor: "right", toAnchor: "left" }], []);
+  const links = useMemo<LabLink[]>(() => [columns
+    ? { id: "ambient-artifact-link", fromId: "ambient-claude", toId: "ambient-artifact", fromAnchor: "bottom", toAnchor: "top" }
+    : { id: "ambient-artifact-link", fromId: "ambient-claude", toId: "ambient-artifact", fromAnchor: "right", toAnchor: "left" }], [columns]);
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -192,17 +199,27 @@ function AmbientWorkstream({ register }: { register: Register }) {
     observer.observe(section);
     for (const element of section.querySelectorAll<HTMLElement>("[data-tour-ambient-link-source], .tour-artifact-card")) observer.observe(element);
     return () => observer.disconnect();
-  }, []);
+  }, [columns]);
+
+  const renderCard = (card: TourAmbientCard, index: number) => (
+    <div key={card.title} className="tour-ambient-node" data-tour-ambient-link-source={card.title === AMBIENT_LINK_SOURCE ? "" : undefined} style={columns ? { transform: `rotate(${card.layout.rotation}deg)` } : { left: `${card.layout.x}%`, top: `${card.layout.y}%`, transform: `rotate(${card.layout.rotation}deg)` }}>
+      <TourPreviewCard card={card} domId={`ambient-${index}`} inert />
+    </div>
+  );
 
   return (
-    <section ref={sectionRef} className="tour-ambient-frame tour-region is-secondary" aria-label={`${ambientTitle(register)} workstream`}>
+    <section ref={sectionRef} className={`tour-ambient-frame tour-region is-secondary${columns ? " is-columns" : ""}`} aria-label={`${ambientTitle(register)} workstream`}>
       <span className="tour-source-frame-title">{ambientTitle(register)}</span>
-      {cards.map((card, index) => (
-        <div key={card.title} className="tour-ambient-node" data-tour-ambient-link-source={card.title === AMBIENT_LINK_SOURCE ? "" : undefined} style={{ left: `${card.layout.x}%`, top: `${card.layout.y}%`, transform: `rotate(${card.layout.rotation}deg)` }}>
-          <TourPreviewCard card={card} domId={`ambient-${index}`} inert />
+      {columns ? AMBIENT_COLUMNS.map((column, columnIndex) => (
+        <div key={columnIndex} className="tour-ambient-column">
+          {column.map((title) => {
+            if (title === "artifact") return <ArtifactPreview key="artifact" strip />;
+            const index = cards.findIndex((card) => card.title === title);
+            const card = cards[index];
+            return card ? renderCard(card, index) : null;
+          })}
         </div>
-      ))}
-      <ArtifactPreview />
+      )) : <>{cards.map(renderCard)}<ArtifactPreview /></>}
       {geometry ? <svg className="tour-ambient-link" viewBox={`0 0 ${geometry.width} ${geometry.height}`} preserveAspectRatio="none" aria-label="Claude chat linked to its artifact">
         <LabRelationships links={links} nodes={geometry.nodes} measuredHeights={new Map()} selectedLinkId={null} inverseZoom={1} onSelect={noop} interactive={false} />
       </svg> : null}
