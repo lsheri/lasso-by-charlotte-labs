@@ -39,7 +39,7 @@ export const TOUR_BOARD_LAYOUT: readonly TourLayoutItem[] = [
   { id: "chat-3", kind: "chat", x: 35.5, y: 63, widthBasis: 29, rotation: -0.6, earliestAct: 1 },
   { id: "artifact", kind: "artifact", x: 37, y: 81.5, widthBasis: 25, rotation: 0, earliestAct: 1 },
   { id: "whiteboard", kind: "image", x: 69.5, y: 64.5, widthBasis: 28.5, rotation: -0.4, earliestAct: 1 },
-  { id: "deck", kind: "image", x: 45, y: 100, widthBasis: 52, rotation: 0.3, earliestAct: 5 },
+  { id: "deck", kind: "image", x: 67, y: 94, widthBasis: 31, rotation: 0.3, earliestAct: 5 },
 ] as const;
 
 export const TOUR_AMBIENT_CARDS: readonly TourAmbientCard[] = [
@@ -144,7 +144,7 @@ function acts(
       id: 5,
       captionPointer: DO_LINES[5],
       captionTouch: DO_LINES[5],
-      why: "The finished deck keeps its links, so you can open the original work months later.",
+      why: "The answer stays on the board with links back to the chat and the files behind it, so you can open the original months later.",
       closingLine: CLOSING_LINE,
       primaryActionLabel: START_LABEL,
     },
