@@ -131,11 +131,12 @@ function DrawnPreview({ kind = "document" }: { kind?: "document" | "image" }) {
   );
 }
 
-function TourPreviewCard({ card, domId, selected = false, inert = false, onSelect = noop, onKeyDown = noop }: {
+function TourPreviewCard({ card, domId, selected = false, inert = false, ambient = false, onSelect = noop, onKeyDown = noop }: {
   card: TourCard | TourAmbientCard;
   domId: string;
   selected?: boolean;
   inert?: boolean;
+  ambient?: boolean;
   onSelect?: () => void;
   onKeyDown?: (event: React.KeyboardEvent) => void;
 }) {
@@ -146,7 +147,7 @@ function TourPreviewCard({ card, domId, selected = false, inert = false, onSelec
       role={inert ? undefined : "group"}
       tabIndex={inert ? undefined : 0}
       data-tour-card={domId}
-      data-tour-ambient={inert ? "" : undefined}
+      data-tour-ambient={ambient ? "" : undefined}
       onClick={inert ? undefined : onSelect}
       onKeyDown={inert ? undefined : onKeyDown}
     >
@@ -211,7 +212,7 @@ function AmbientWorkstream({ register, columns = false, loose = false }: { regis
 
   const renderCard = (card: TourAmbientCard, index: number) => (
     <div key={card.title} className="tour-ambient-node" data-tour-ambient-link-source={card.title === AMBIENT_LINK_SOURCE ? "" : undefined} style={columns ? { transform: `rotate(${card.layout.rotation}deg)` } : { left: `${card.layout.x}%`, top: `${card.layout.y}%`, transform: `rotate(${card.layout.rotation}deg)` }}>
-      <TourPreviewCard card={card} domId={`ambient-${index}`} inert />
+      <TourPreviewCard card={card} domId={`ambient-${index}`} inert ambient />
     </div>
   );
 
