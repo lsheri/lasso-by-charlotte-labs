@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode, type RefObject } from "react";
 
 import { LabAnswerCard } from "@/components/canvas-lab/LabAnswerCard";
 import { LabRelationships } from "@/components/canvas-lab/LabRelationships";
@@ -36,11 +36,11 @@ type TourBoardProps = {
   children?: ReactNode;
   onWorkCardSelect?: (index: number) => void;
   onWorkCardKeyDown?: (index: number, event: KeyboardEvent<HTMLElement>) => void;
-  onPointerDown?: (event: React.PointerEvent<HTMLDivElement>) => void;
-  onPointerMove?: (event: React.PointerEvent<HTMLDivElement>) => void;
-  onPointerUp?: (event: React.PointerEvent<HTMLDivElement>) => void;
+  onPointerDown?: (event: PointerEvent<HTMLDivElement>) => void;
+  onPointerMove?: (event: PointerEvent<HTMLDivElement>) => void;
+  onPointerUp?: (event: PointerEvent<HTMLDivElement>) => void;
   onPointerCancel?: () => void;
-  boardRef?: React.RefObject<HTMLDivElement | null>;
+  boardRef?: RefObject<HTMLDivElement | null>;
 };
 
 function itemStyle(item: TourLayoutItem) {

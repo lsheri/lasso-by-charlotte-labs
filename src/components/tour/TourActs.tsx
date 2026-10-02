@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type MutableRefObject, type PointerEvent as ReactPointerEvent, type ReactNode, type RefObject } from "react";
 
 import { TourBoard } from "@/components/tour/TourBoard";
 import { WorkboardHeader, WorkboardSideRail, WorkboardToolbar } from "@/components/canvas-lab/WorkboardChrome";
@@ -35,7 +35,7 @@ function FileWindow({ files, drag, onPointerDown, onKeyDown }: {
   files: readonly string[];
   drag: DragFile | null;
   onPointerDown: (title: string, event: ReactPointerEvent<HTMLButtonElement>) => void;
-  onKeyDown: (title: string, event: React.KeyboardEvent<HTMLButtonElement>) => void;
+  onKeyDown: (title: string, event: KeyboardEvent<HTMLButtonElement>) => void;
 }) {
   return <section className="tour-file-window" aria-label="Your files"><header><i aria-hidden /><strong>Your files</strong></header><div>
     {files.map((file) => <Button key={file} type="button" variant="ghost" className="tour-file-row" data-lifted={drag?.title === file} onPointerDown={(event) => onPointerDown(file, event)} onKeyDown={(event) => onKeyDown(file, event)}><DrawnFileGlyph seed={file} /><span>{file}</span></Button>)}
@@ -84,7 +84,7 @@ export function TourActOne({ register, onComplete }: { register: Register; onCom
     if (event.pointerType === "touch" || inside) land(drag.title);
     setDrag(null); setKeyPosition({ x: 0, y: 0 });
   };
-  const onFileKeyDown = (title: string, event: React.KeyboardEvent<HTMLButtonElement>) => {
+  const onFileKeyDown = (title: string, event: KeyboardEvent<HTMLButtonElement>) => {
     if (event.code === "Space") { event.preventDefault(); if (drag?.title === title) { land(title); setDrag(null); } else setDrag({ title, pointerId: -1, x: 0, y: 0 }); return; }
     if (drag?.title !== title || !["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)) return;
     event.preventDefault(); setKeyPosition((current) => keyTo(current, event.key as "ArrowUp" | "ArrowDown" | "ArrowLeft" | "ArrowRight", event.shiftKey));
@@ -98,7 +98,7 @@ export function TourActOne({ register, onComplete }: { register: Register; onCom
   </div>;
 }
 
-function boxHandlers(boardRef: React.RefObject<HTMLDivElement | null>, box: Box | null, setBox: (box: Box | null) => void, startRef: React.MutableRefObject<{ x: number; y: number } | null, finish: (left: number, top: number, right: number, bottom: number) => void) {
+function boxHandlers(boardRef: RefObject<HTMLDivElement | null>, box: Box | null, setBox: (box: Box | null) => void, startRef: MutableRefObject<{ x: number; y: number } | null>, finish: (left: number, top: number, right: number, bottom: number) => void) {
   return {
     onPointerDown: (event: ReactPointerEvent<HTMLDivElement>) => { if ((event.target as HTMLElement).closest("[data-tour-card],button")) return; const rect = event.currentTarget.getBoundingClientRect(); startRef.current = { x: event.clientX - rect.left, y: event.clientY - rect.top }; setBox({ ...startRef.current, width: 0, height: 0 }); },
     onPointerMove: (event: ReactPointerEvent<HTMLDivElement>) => { const start = startRef.current; if (!start) return; const rect = event.currentTarget.getBoundingClientRect(); const x = event.clientX - rect.left; const y = event.clientY - rect.top; setBox({ x: Math.min(start.x, x), y: Math.min(start.y, y), width: Math.abs(x - start.x), height: Math.abs(y - start.y) }); },
