@@ -6278,6 +6278,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   content: "";
   pointer-events: none;
 }
+.tour-shell[data-act="4"] .tour-stage::before { display: none; }
 .tour-stage-header {
   position: relative;
   min-width: 0;
