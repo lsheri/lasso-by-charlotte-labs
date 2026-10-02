@@ -1,7 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useState } from "react";
 
-import { TourStage, type TourActRenderer } from "@/components/tour/TourStage";
+import { useTourActRenderers } from "@/components/tour/TourActs";
+import { TourStage } from "@/components/tour/TourStage";
+import { Button } from "@/components/ui/button";
+import type { Register } from "@/lib/register";
 
 export const Route = createFileRoute("/tour-preview")({
   ssr: false,
@@ -20,37 +23,44 @@ export const Route = createFileRoute("/tour-preview")({
 });
 
 function TourPreviewPage() {
-  const [activeAct, setActiveAct] = useState<1 | 2 | 3 | 4 | 5>(3);
-  const acts = useMemo<readonly TourActRenderer[]>(
-    () =>
-      Array.from({ length: 5 }, (_, index) => ({
-        content: (
-          <div className="tour-preview-art" aria-hidden>
-            <span />
-            <span />
-            <span />
-            <i data-position={index + 1} />
-          </div>
-        ),
-      })),
-    [],
-  );
+  const [activeAct, setActiveAct] = useState<1 | 2 | 3 | 4 | 5>(1);
+  const [register, setRegister] = useState<Register>("company");
   const skip = useCallback(() => setActiveAct(5), []);
   const back = useCallback(
     () => setActiveAct((current) => Math.max(1, current - 1) as 1 | 2 | 3 | 4 | 5),
     [],
   );
-  const hint = useCallback((_act: number) => {}, []);
+  const advance = useCallback((act: 1 | 2 | 3) => {
+    window.setTimeout(() => setActiveAct((act + 1) as 2 | 3 | 4), act === 3 ? 900 : 450);
+  }, []);
+  const { renderers, captionOverride, hint } = useTourActRenderers({ register, activeAct, onAdvance: advance, onHintShown: () => undefined });
 
   return (
     <main className="tour-preview-page">
+      <div className="tour-preview-controls" aria-label="Tour preview controls">
+        <label>
+          Register
+          <select value={register} onChange={(event) => { setRegister(event.target.value as Register); setActiveAct(1); }}>
+            <option value="company">Company</option>
+            <option value="partner">Partner</option>
+            <option value="personal">Personal</option>
+            <option value="edu">Education</option>
+          </select>
+        </label>
+        <div aria-label="Choose act">
+          {([1, 2, 3, 4, 5] as const).map((act) => (
+            <Button key={act} type="button" size="icon" variant={activeAct === act ? "ink" : "outline"} aria-label={`Show act ${act}`} onClick={() => setActiveAct(act)}>{act}</Button>
+          ))}
+        </div>
+      </div>
       <TourStage
-        register="company"
+        register={register}
         activeAct={activeAct}
-        acts={acts}
+        acts={renderers}
         onSkip={skip}
         onBack={back}
         onHintShown={hint}
+        captionOverride={captionOverride}
       />
     </main>
   );
