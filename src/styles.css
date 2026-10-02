@@ -6498,7 +6498,8 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .tour-keep-source strong { font-family: var(--font-hand); font-size: 17px; font-weight: 500; }
 .tour-keep-links { position: absolute; z-index: 2; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .tour-keep-board > .canvas-lab-answer-card { position: absolute; }
-.tour-keep-board > .tour-ambient-frame { position: absolute; z-index: 3; top: 12px; right: 10px; width: 300px; height: 236px; }
+.tour-keep-board > .tour-ambient-frame { position: absolute; z-index: 3; top: 12px; right: 10px; width: 45%; height: 52%; }
+.tour-keep-board > .tour-ambient-frame .tour-ambient-node { width: 43%; min-width: 0; }
 .tour-final-images { position: absolute; z-index: 4; right: 12px; bottom: 10px; display: grid; width: 300px; grid-template-columns: 1fr 1fr; gap: 8px; }
 .tour-image-card { min-width: 0; height: 126px; overflow: hidden; border: var(--stroke-pencil) solid var(--nb-graphite); border-radius: var(--radius-card); background: var(--nb-white); padding: 7px; box-shadow: 2px 3px 0 color-mix(in srgb, var(--nb-pencil) 24%, transparent); }
 .tour-image-card strong { display: block; overflow: hidden; font-family: var(--font-hand); font-size: 15px; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
@@ -6562,8 +6563,8 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   .tour-board-toolbar button { width: 32px; height: 32px; min-height: 32px; padding-inline: 6px; }
   .tour-board-toolbar button span { display: none; }
   .tour-board-act [data-testid="board-shell-stage"] { width: 320px; height: 400px; }
-  .tour-primary-frame { top: 7px; right: 6px; bottom: auto; left: 6px; width: calc(100% - 12px); height: 53%; }
-  .tour-board-act > .tour-ambient-frame,.tour-group-act .tour-ambient-frame { top: 56%; right: 6px; width: calc(100% - 12px); height: 42%; }
+  .tour-primary-frame { top: 7px; right: 6px; bottom: auto; left: 6px; width: calc(100% - 12px); height: 45%; }
+  .tour-board-act > .tour-ambient-frame,.tour-group-act .tour-ambient-frame { top: 47%; right: 6px; width: calc(100% - 12px); height: 51%; }
   .tour-free-node,.tour-ambient-node { width: 44%; min-width: 0; }
   .tour-preview-card,.tour-ambient-node .tour-preview-card { min-height: 104px; gap: 5px; padding: 7px; }
   .tour-preview-card > strong { font-size: 13px; line-height: 1.15; }
