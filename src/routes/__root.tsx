@@ -10,6 +10,9 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
+import caveat700 from "@fontsource/caveat/files/caveat-latin-700-normal.woff2?url";
+import jetbrainsMono400 from "@fontsource/jetbrains-mono/files/jetbrains-mono-latin-400-normal.woff2?url";
+import archivo400 from "@fontsource/archivo/files/archivo-latin-400-normal.woff2?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { markNavStart } from "@/lib/perf-timing";
 import { initPageLoadTiming } from "@/lib/pageload-timing";
@@ -122,6 +125,27 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
     ],
     links: [
+      {
+        rel: "preload",
+        as: "font",
+        type: "font/woff2",
+        href: caveat700,
+        crossOrigin: "anonymous",
+      },
+      {
+        rel: "preload",
+        as: "font",
+        type: "font/woff2",
+        href: jetbrainsMono400,
+        crossOrigin: "anonymous",
+      },
+      {
+        rel: "preload",
+        as: "font",
+        type: "font/woff2",
+        href: archivo400,
+        crossOrigin: "anonymous",
+      },
       {
         rel: "stylesheet",
         href: appCss,
