@@ -166,7 +166,7 @@ export function TourBoard({ register, state, className = "", children, onWorkCar
           return card ? <article key={item.id} className="tour-board-item tour-preview-card is-ambient" data-tour-layout-id={item.id} data-tour-card={`ambient-${index}`} data-tour-ambient="" style={itemStyle(item)}><PreviewCard card={card} /></article> : null;
         }
         if (item.id === "artifact") return <div key={item.id} className="tour-board-item" data-tour-layout-id={item.id} style={itemStyle(item)}><ArtifactPreview /></div>;
-        if (item.id === "whiteboard" || item.id === "deck") return <div key={item.id} className="tour-board-item" data-tour-layout-id={item.id} style={itemStyle(item)}><ImageCard kind={item.id} title={item.id === "whiteboard" ? boardCopy.whiteboardTitle : boardCopy.deckTitle} caption={item.id === "whiteboard" ? boardCopy.whiteboardCaption : undefined} /></div>;
+        if (item.id === "whiteboard" || item.id === "deck") return <div key={item.id} className="tour-board-item" data-tour-layout-id={item.id} style={itemStyle(item)}><ImageCard kind={item.id} title={item.id === "whiteboard" ? boardCopy.whiteboardTitle : boardCopy.deckTitle} {...(item.id === "whiteboard" ? { caption: boardCopy.whiteboardCaption } : {})} /></div>;
         if (item.id === "answer" && state.answerVisible) return <div key={item.id} className="tour-board-item tour-answer-slot" data-tour-layout-id="answer" style={itemStyle(item)}><LabAnswerCard node={{ ...answer, x: 0, y: 0, width: 100, height: 100 }} focused={false} stackZ={4} onFocus={noop} onPointerDown={noop} onDelete={noop} /></div>;
         return null;
       })}
