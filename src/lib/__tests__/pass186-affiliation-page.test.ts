@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 
 // @vitest-environment jsdom
 import { cleanup, render, screen } from "@testing-library/react";
+import { createElement } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 import { AffiliationContent } from "@/pages/AffiliationPage";
 
@@ -38,13 +39,13 @@ describe("pass 186: the student's transparency page", () => {
 
   it("leads with the nothing-shared fact before the counts panel", () => {
     render(
-      <AffiliationContent
-        institutionName="Artemis Connection"
-        projectCount={0}
-        toolCount={0}
-        keptCount={0}
-        sharedCount={0}
-      />,
+      createElement(AffiliationContent, {
+        institutionName: "Artemis Connection",
+        projectCount: 0,
+        toolCount: 0,
+        keptCount: 0,
+        sharedCount: 0,
+      }),
     );
     const empty = screen.getByText("Nothing has been shared with Artemis Connection.");
     const counts = screen.getByTestId("affiliation-counts");
