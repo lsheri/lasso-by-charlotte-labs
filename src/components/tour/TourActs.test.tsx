@@ -58,14 +58,26 @@ describe("tour acts one to three", () => {
     expect(done).toHaveBeenCalledTimes(1);
   });
 
+  it("advances act two when all three set cards and one extra are selected", () => {
+    const done = vi.fn();
+    render(<TourActTwo register="company" hint={false} onComplete={done} />);
+    const cards = screen.getAllByRole("group");
+    fireEvent.keyDown(cards[3]!, { code: "Space", key: " " });
+    fireEvent.keyDown(cards[0]!, { code: "Space", key: " " });
+    fireEvent.keyDown(cards[1]!, { code: "Space", key: " " });
+    fireEvent.keyDown(cards[2]!, { code: "Space", key: " " });
+    expect(done).toHaveBeenCalledTimes(1);
+  });
+
   it("renders the exported context sentence after grouping", () => {
     render(<TourActThree register="company" onComplete={vi.fn()} />);
-    fireEvent.click(screen.getByRole("button", { name: "Group" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add grouping" }));
     expect(screen.getByText(TOUR_CONTEXT_SENTENCE)).toBeTruthy();
   });
 
   it("keeps the preset question read only", () => {
     render(<TourActFour register="company" onComplete={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Ask Lasso" }));
     const question = screen.getByLabelText("Preset question");
     expect(question.getAttribute("contenteditable")).not.toBe("true");
     expect(question.getAttribute("aria-readonly")).toBe("true");
@@ -75,6 +87,7 @@ describe("tour acts one to three", () => {
   it("shows exactly three cited claims from cards in the frame", () => {
     vi.useFakeTimers();
     render(<TourActFour register="company" onComplete={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Ask Lasso" }));
     fireEvent.click(screen.getByRole("button", { name: "Ask" }));
     act(() => vi.advanceTimersByTime(1200));
     const claims = document.querySelectorAll(".tour-ask-claim");
@@ -95,6 +108,7 @@ describe("tour acts one to three", () => {
 
   it("uses the standalone mimic shape without importing the live data surface", () => {
     render(<TourActFour register="company" onComplete={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Ask Lasso" }));
     expect(screen.getByLabelText("Ask Lasso tour example")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Ask" })).toBeTruthy();
   });

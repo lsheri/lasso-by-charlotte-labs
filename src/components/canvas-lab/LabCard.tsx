@@ -67,6 +67,7 @@ export function LabCard({
   filePreview,
   onPreviewScroll: _onPreviewScroll,
   readOnly = false,
+  showStatusChrome = true,
   madeInChat,
   bundleToggleLabel,
   onBundleToggle,
@@ -113,6 +114,8 @@ export function LabCard({
   onPreviewScroll?: ((kind: "chat" | "document" | "deck" | "html" | "mermaid") => void) | undefined;
   /** Sample board only: no drag, no menu, no anchors, no handles. */
   readOnly?: boolean;
+  /** Presentational previews may hide ownership and context labels without disabling input. */
+  showStatusChrome?: boolean;
   /** U3: set on a piece docked under its chat, for assistive tech. */
   madeInChat?: string | undefined;
   bundleToggleLabel?: string | undefined;
@@ -202,7 +205,7 @@ export function LabCard({
       ref={cardRef}
       role="group"
       aria-roledescription="card"
-      aria-label={`${node.title}${selected ? ", in context" : ""}`}
+      aria-label={`${node.title}${selected && showStatusChrome ? ", in context" : ""}`}
       tabIndex={readOnly ? -1 : 0}
       data-testid={`lab-card-${node.id}`}
       data-node-id={node.id}
@@ -239,7 +242,7 @@ export function LabCard({
               </button>
             ) : undefined}
           />
-        ) : <LabPaper node={node} selected={selected} showOwnership={!readOnly} onEdit={onEdit} onEditCommitted={onEditCommitted} onOpenTrail={readOnly || !node.deliverable ? undefined : () => onOpen(cardRef.current?.getBoundingClientRect())} />}
+        ) : <LabPaper node={node} selected={selected && showStatusChrome} showOwnership={!readOnly && showStatusChrome} onEdit={onEdit} onEditCommitted={onEditCommitted} onOpenTrail={readOnly || !node.deliverable ? undefined : () => onOpen(cardRef.current?.getBoundingClientRect())} />}
         {matchLine ? <span data-testid="reference-match-line" className="absolute bottom-1 left-2 text-xs text-muted-foreground">{matchLine}</span> : null}
         {selected ? <Paperclip aria-hidden="true" className="canvas-lab-context-mark" /> : null}
         {madeInChat ? <span className="sr-only" data-testid="lab-card-made-in-chat">Made in the chat {madeInChat}</span> : null}

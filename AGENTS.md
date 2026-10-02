@@ -1,3 +1,4 @@
+Tour workboard chrome stays a local presentational mirror around shared board primitives because the live workboard composition is source-pinned and behavior-coupled.
 <!-- LOVABLE:BEGIN -->
 > [!IMPORTANT]
 > This project is connected to [Lovable](https://lovable.dev). Avoid rewriting
