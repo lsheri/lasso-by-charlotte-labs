@@ -77,27 +77,50 @@ describe("T1 tour content", () => {
     }
   });
 
-  it("pins the company fall launch scenario and its cited sources", () => {
-    const acts = TOUR_CONTENT.company.acts;
-    expect(acts[1]?.cards?.map((card) => card.title)).toEqual([
+  it("pins the shared fall launch scenario and each register grouping word", () => {
+    const expectedTitles = [
       "Fall launch plan v3",
       "Creator call, 14 Sep",
       "Claude: channel mix options",
       "Media budget v4",
       "Sample shipping receipts",
-    ]);
-    expect(acts[3]?.question).toBe("What ideas did I have that did not make the final launch plan? Give me the link to the AI chat I worked them out in.");
-    expect(acts[3]?.answer).toEqual([
+    ];
+    const expectedQuestion = "What ideas did I have that did not make the final launch plan? Give me the link to the AI chat I worked them out in.";
+    const expectedAnswer = [
       { text: "You floated a TikTok first launch and dropped it after the creator call.", sourceCardTitle: "Claude: channel mix options" },
       { text: "Toronto came up on the call and never reached the plan.", sourceCardTitle: "Creator call, 14 Sep" },
       { text: "The plan kept Austin and Denver only.", sourceCardTitle: "Fall launch plan v3" },
-    ]);
-    expect(tourAmbientCards("company").map((card) => card.title)).toEqual([
+    ];
+    const expectedAmbientTitles = [
       "ChatGPT: athleisure trend teardown",
       "ChatGPT: creator brief, draft 2",
       "Gemini: city by city demand",
       "Claude: positioning lines",
+    ];
+    const expectedFrameTitles = {
+      company: "Workstream",
+      partner: "Workstream",
+      personal: "Step",
+      edu: "Assignment",
+    } as const;
+
+    for (const register of REGISTERS) {
+      const acts = TOUR_CONTENT[register].acts;
+      expect(acts[1]?.cards?.map((card) => card.title)).toEqual(expectedTitles);
+      expect(acts[3]?.question).toBe(expectedQuestion);
+      expect(acts[3]?.answer).toEqual(expectedAnswer);
+      expect(acts[3]?.chatLink).toEqual({ label: "Open the chat", cardTitle: "Claude: channel mix options" });
+      expect(acts[0]?.files).toEqual(["Fall launch plan.pdf", "Creator call.txt", "Media budget.xlsx", "moodboard.png"]);
+      expect(acts[2]?.frameTitle).toBe(expectedFrameTitles[register]);
+      expect(acts[2]?.why).toBe(`The box is a ${expectedFrameTitles[register] === "Workstream" ? "workstream" : expectedFrameTitles[register]}. Everything inside it shares context, so a question answers from those pieces and nothing else on the board.`);
+      expect(tourAmbientCards(register).map((card) => card.title)).toEqual(expectedAmbientTitles);
+      expect(tourBoardCopy(register)).toMatchObject({ title: "Fall Marketing Launch", owner: "LYKOS LOUNGEWARE", whiteboardTitle: "Moodboard photo", whiteboardCaption: "Shots from the fabric session", deckTitle: "Launch deck, slide 12" });
+    }
+    expect(REGISTERS.map((register) => TOUR_CONTENT[register].acts[2]?.frameTitle)).toEqual([
+      "Workstream",
+      "Workstream",
+      "Step",
+      "Assignment",
     ]);
-    expect(tourBoardCopy("company")).toMatchObject({ title: "Fall Marketing Launch", owner: "LYKOS LOUNGEWARE", whiteboardTitle: "Moodboard photo", whiteboardCaption: "Shots from the fabric session", deckTitle: "Launch deck, slide 12" });
   });
 });
