@@ -41,7 +41,7 @@ const SHARED_CAPTIONS = {
   5: "Keep it. Now the answer lives next to what it came from.",
 } as const;
 
-const CONTEXT_SENTENCE =
+export const TOUR_CONTEXT_SENTENCE =
   "Grouped work shares context. When you ask a question of this box, Lasso reads these three and nothing else.";
 const CLOSING_LINE = "That is the whole thing. Everything else is more of it.";
 const START_LABEL = "Start with my own work";
@@ -76,7 +76,7 @@ function acts(
       id: 3,
       captionPointer: SHARED_CAPTIONS[3],
       captionTouch: SHARED_CAPTIONS[3],
-      contextSentence: CONTEXT_SENTENCE,
+      contextSentence: TOUR_CONTEXT_SENTENCE,
       frameTitle,
     },
     {

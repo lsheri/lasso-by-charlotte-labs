@@ -17,6 +17,7 @@ type TourStageProps = {
   onSkip: () => void;
   onBack: () => void;
   onHintShown: (act: number) => void;
+  captionOverride?: string | null;
 };
 
 function useTouchPresentation(): boolean {
@@ -50,6 +51,7 @@ export function TourStage({
   onSkip,
   onBack,
   onHintShown,
+  captionOverride,
 }: TourStageProps) {
   const copy = TOUR_CONTENT[register];
   const touch = useTouchPresentation();
@@ -123,8 +125,8 @@ export function TourStage({
         </footer>
       </div>
 
-      <p className="tour-caption" title={touch ? act.captionTouch : act.captionPointer}>
-        {touch ? act.captionTouch : act.captionPointer}
+      <p className="tour-caption">
+        {captionOverride ?? (touch ? act.captionTouch : act.captionPointer)}
       </p>
     </section>
   );
