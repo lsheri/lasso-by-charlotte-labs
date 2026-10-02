@@ -98,6 +98,17 @@ describe("tour acts one to three", () => {
     expect(done).toHaveBeenCalledTimes(1);
   });
 
+  it("shows five distinct AI chats in free form regions without clipping titles", () => {
+    render(<TourActTwo register="company" hint={false} onComplete={vi.fn()} />);
+    const chats = Array.from(document.querySelectorAll<HTMLElement>(".tour-preview-card")).filter((card) => /ChatGPT:|Claude:|Gemini:/.test(card.textContent ?? ""));
+    expect(chats).toHaveLength(5);
+    expect(chats.filter((card) => card.textContent?.includes("ChatGPT:"))).toHaveLength(2);
+    expect(chats.filter((card) => card.textContent?.includes("Claude:"))).toHaveLength(2);
+    expect(chats.filter((card) => card.textContent?.includes("Gemini:"))).toHaveLength(1);
+    expect(screen.getByText("Claude: positioning draft")).toBeTruthy();
+    expect(screen.getByLabelText("Market scan workstream").classList.contains("tour-region")).toBe(true);
+  });
+
   it("renders the exported context sentence after grouping", () => {
     render(<TourActThree register="company" onComplete={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: "Add grouping" }));

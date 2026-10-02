@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { TOUR_CONTENT } from "@/lib/tour-content";
+import { TOUR_AMBIENT_CARDS, TOUR_CONTENT } from "@/lib/tour-content";
 
 const REGISTERS = ["company", "partner", "personal", "edu"] as const;
 const FORBIDDEN = /\u2014|\baudit\b|\boversight\b|\bmonitor\b|\btrack\b|\bsurveillance\b|\bgovernance\b|\bscore\b/i;
@@ -46,6 +46,21 @@ describe("T1 tour content", () => {
         expect(act.captionPointer.length).toBeGreaterThan(0);
         expect(act.captionTouch.length).toBeGreaterThan(0);
         expect(act.why.length).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("pins the free form card layouts and AI chat plurality", () => {
+    expect(TOUR_AMBIENT_CARDS).toHaveLength(4);
+    expect(TOUR_AMBIENT_CARDS.map((card) => card.source)).toEqual(["chatgpt", "chatgpt", "gemini", "claude"]);
+    for (const card of TOUR_AMBIENT_CARDS) {
+      expect(card.excerpt).toHaveLength(2);
+      expect(Math.abs(card.layout.rotation)).toBeLessThan(1.5);
+    }
+    for (const register of REGISTERS) {
+      for (const card of TOUR_CONTENT[register].acts[1]?.cards ?? []) {
+        expect(card.preview).toHaveLength(2);
+        expect(Math.abs(card.layout.rotation)).toBeLessThan(1.5);
       }
     }
   });
