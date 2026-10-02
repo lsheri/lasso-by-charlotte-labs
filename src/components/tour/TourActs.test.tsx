@@ -3,7 +3,7 @@ import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { TourActFive, TourActFour, TourActOne, TourActThree, TourActTwo } from "@/components/tour/TourActs";
-import { TOUR_CONTEXT_SENTENCE } from "@/lib/tour-content";
+import { TOUR_BOARD_LAYOUT, TOUR_CONTEXT_SENTENCE } from "@/lib/tour-content";
 
 class ResizeObserverStub {
   observe() {}
@@ -27,6 +27,31 @@ function mockRects(board: HTMLElement, cardRect: (element: HTMLElement) => DOMRe
 }
 
 describe("tour acts one to three", () => {
+  it("keeps every shared layout item fixed across all five acts and four registers", () => {
+    const registers = ["company", "partner", "personal", "edu"] as const;
+    const acts = [
+      (register: (typeof registers)[number]) => <TourActOne register={register} onComplete={vi.fn()} />,
+      (register: (typeof registers)[number]) => <TourActTwo register={register} hint={false} onComplete={vi.fn()} />,
+      (register: (typeof registers)[number]) => <TourActThree register={register} onComplete={vi.fn()} />,
+      (register: (typeof registers)[number]) => <TourActFour register={register} onComplete={vi.fn()} />,
+      (register: (typeof registers)[number]) => <TourActFive register={register} onLanded={vi.fn()} />,
+    ];
+    for (const register of registers) {
+      const seen = new Map<string, string>();
+      acts.forEach((renderAct) => {
+        const rendered = render(renderAct(register));
+        for (const item of TOUR_BOARD_LAYOUT) {
+          const element = rendered.container.querySelector<HTMLElement>(`[data-tour-layout-id="${item.id}"]`);
+          if (!element) continue;
+          const geometry = [element.style.left, element.style.top, element.style.width, element.style.transform].join("|");
+          expect(geometry).toBe(`${item.x}%|${item.y}%|${item.widthBasis}%|rotate(${item.rotation}deg)`);
+          if (seen.has(item.id)) expect(geometry).toBe(seen.get(item.id));
+          else seen.set(item.id, geometry);
+        }
+        rendered.unmount();
+      });
+    }
+  });
   it("gives every act an anchored instruction target", () => {
     const views = [
       <TourActOne key="one" register="company" onComplete={vi.fn()} />,

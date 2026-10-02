@@ -102,7 +102,7 @@ function boxHandlers(boardRef: RefObject<HTMLDivElement | null>, box: Box | null
   return {
     onPointerDown: (event: ReactPointerEvent<HTMLDivElement>) => { if ((event.target as HTMLElement).closest("[data-tour-card],button")) return; const rect = event.currentTarget.getBoundingClientRect(); startRef.current = { x: event.clientX - rect.left, y: event.clientY - rect.top }; setBox({ ...startRef.current, width: 0, height: 0 }); },
     onPointerMove: (event: ReactPointerEvent<HTMLDivElement>) => { const start = startRef.current; if (!start) return; const rect = event.currentTarget.getBoundingClientRect(); const x = event.clientX - rect.left; const y = event.clientY - rect.top; setBox({ x: Math.min(start.x, x), y: Math.min(start.y, y), width: Math.abs(x - start.x), height: Math.abs(y - start.y) }); },
-    onPointerUp: () => { if (!box || !boardRef.current) { setBox(null); return; } const board = boardRef.current.getBoundingClientRect(); finish(board.left + box.x, board.top + box.y, board.left + box.x + box.width, board.top + box.y + box.height); setBox(null); startRef.current = null; },
+    onPointerUp: (event: ReactPointerEvent<HTMLDivElement>) => { const start = startRef.current; if (!start || !boardRef.current) { setBox(null); return; } const board = boardRef.current.getBoundingClientRect(); const x = event.clientX - board.left; const y = event.clientY - board.top; finish(board.left + Math.min(start.x, x), board.top + Math.min(start.y, y), board.left + Math.max(start.x, x), board.top + Math.max(start.y, y)); setBox(null); startRef.current = null; },
     onPointerCancel: () => { setBox(null); startRef.current = null; },
   };
 }
