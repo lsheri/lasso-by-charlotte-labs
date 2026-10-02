@@ -3,10 +3,9 @@ import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointer
 import { BoardShell } from "@/components/board/BoardShell";
 import { LabCard } from "@/components/canvas-lab/LabCard";
 import { LabAnswerCard } from "@/components/canvas-lab/LabAnswerCard";
-import { LabFrame as LabFrameElement } from "@/components/canvas-lab/LabFrame";
 import { LabRelationships } from "@/components/canvas-lab/LabRelationships";
 import { WorkboardHeader, WorkboardSideRail, WorkboardToolbar } from "@/components/canvas-lab/WorkboardChrome";
-import type { LabFrame, LabLink, LabNode } from "@/components/canvas-lab/canvas-lab-model";
+import type { LabLink, LabNode } from "@/components/canvas-lab/canvas-lab-model";
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
 import { GraphiteIcon } from "@/components/notebook/icons";
 import { EvidenceCircle } from "@/components/notebook/marks";
@@ -174,7 +173,7 @@ function AmbientDropLine({ nodes }: { nodes: LabNode[] }) {
   return <path className="canvas-lab-relationship-line" d={`M ${x} ${from.y + from.height} L ${x} ${to.y}`} />;
 }
 
-function AmbientWorkstream({ register, columns = false }: { register: Register; columns?: boolean }) {
+function AmbientWorkstream({ register, columns = false, loose = false }: { register: Register; columns?: boolean; loose?: boolean }) {
   const cards = TOUR_AMBIENT_CARDS;
   const sectionRef = useRef<HTMLElement>(null);
   const [geometry, setGeometry] = useState<{ width: number; height: number; nodes: LabNode[] } | null>(null);
@@ -217,8 +216,8 @@ function AmbientWorkstream({ register, columns = false }: { register: Register; 
   );
 
   return (
-    <section ref={sectionRef} className={`tour-ambient-frame tour-region is-secondary${columns ? " is-columns" : ""}`} aria-label={`${ambientTitle(register)} workstream`}>
-      <span className="tour-source-frame-title">{ambientTitle(register)}</span>
+    <section ref={sectionRef} className={`tour-ambient-frame${loose ? " is-loose" : " tour-region is-secondary"}${columns ? " is-columns" : ""}`} aria-label={loose ? "Loose AI chat work cards" : `${ambientTitle(register)} workstream`}>
+      {!loose ? <span className="tour-source-frame-title">{ambientTitle(register)}</span> : null}
       {columns ? AMBIENT_COLUMNS.map((column, columnIndex) => (
         <div key={columnIndex} className="tour-ambient-column">
           {column.map((title) => {
@@ -386,7 +385,13 @@ export function TourActTwo({ register, hint, onComplete }: { register: Register;
       onComplete();
     }
   };
-  const toggle = (id: string) => applySelection(selected.includes(id) ? selected.filter((value) => value !== id) : [...selected, id]);
+  const selectWorkCard = (node: TourNode) => {
+    if (node.inSet) {
+      applySelection(nodes.filter((candidate) => candidate.inSet).map((candidate) => candidate.id));
+      return;
+    }
+    applySelection(selected.includes(node.id) ? selected.filter((value) => value !== node.id) : [...selected, node.id]);
+  };
 
   const endBox = () => {
     if (!box || !boardRef.current) { setBox(null); return; }
@@ -419,12 +424,12 @@ export function TourActTwo({ register, hint, onComplete }: { register: Register;
       setBox({ x: Math.min(start.x, x), y: Math.min(start.y, y), width: Math.abs(x - start.x), height: Math.abs(y - start.y) });
     }} onPointerUp={endBox} onPointerCancel={() => { setBox(null); startRef.current = null; }}>
       <section className="tour-primary-frame tour-region is-primary" aria-label={`${TOUR_CONTENT[register].acts[2]?.frameTitle ?? "Workstream"} workstream`}><span>{TOUR_CONTENT[register].acts[2]?.frameTitle}</span>
-        {cards.map((card, index) => <div key={card.title} className="tour-free-node" style={{ left: `${card.layout.x}%`, top: `${card.layout.y}%`, transform: `rotate(${card.layout.rotation}deg)` }}>
-          <TourPreviewCard card={card} domId={nodes[index]?.id ?? `tour-card-${index}`} selected={selected.includes(nodes[index]?.id ?? "")} onSelect={() => toggle(nodes[index]?.id ?? "")} onKeyDown={(event) => { if (event.code === "Space") { event.preventDefault(); toggle(nodes[index]?.id ?? ""); } }} />
-          {hint && card.inSet ? <EvidenceCircle className="tour-card-hint" /> : null}
+        {cards.map((card, index) => <div key={card.title} className={`tour-free-node${card.inSet ? " is-target-work" : ""}`} style={{ left: `${card.layout.x}%`, top: `${card.layout.y}%`, transform: `rotate(${card.layout.rotation}deg)` }}>
+          {card.inSet && index === 0 ? <span className="tour-act-two-arrow-target" data-tour-target="2" aria-hidden /> : null}
+          <TourPreviewCard card={card} domId={nodes[index]?.id ?? `tour-card-${index}`} selected={selected.includes(nodes[index]?.id ?? "")} onSelect={() => { const node = nodes[index]; if (node) selectWorkCard(node); }} onKeyDown={(event) => { if (event.code === "Space") { event.preventDefault(); const node = nodes[index]; if (node) selectWorkCard(node); } }} />
         </div>)}
       </section>
-      <AmbientWorkstream register={register} columns />
+      <AmbientWorkstream register={register} columns loose />
       {box ? <span className="tour-marquee" style={{ left: box.x, top: box.y, width: box.width, height: box.height }} /> : null}
     </div></TourWorkboard>
   );
@@ -435,22 +440,9 @@ export function TourActThree({ register, onComplete }: { register: Register; onC
   const cards = TOUR_CONTENT[register].acts[1]?.cards ?? [];
   const chosen = cards.filter((card) => card.inSet);
   const [grouped, setGrouped] = useState(false);
-  const [boardWidth, setBoardWidth] = useState(720);
   const [box, setBox] = useState<Box | null>(null);
   const startRef = useRef<{ x: number; y: number } | null>(null);
   const boardRef = useRef<HTMLDivElement>(null);
-  const compact = boardWidth < 900;
-  const nodes = useMemo(() => chosen.map((card, index) => ({
-    ...nodeFor(card, index, compact),
-    x: compact ? 34 : 52 + index * 205,
-    y: compact ? 54 + index * 84 : 104,
-    width: compact ? 250 : CARD_SIZE.width,
-    height: compact ? 70 : CARD_SIZE.height,
-    frame: grouped ? "tour-group" : null,
-  })), [chosen, compact, grouped]);
-  const frame: LabFrame = compact
-    ? { id: "tour-group", name: act?.frameTitle ?? "", x: 16, y: 18, width: 286, height: 298 }
-    : { id: "tour-group", name: act?.frameTitle ?? "", x: 28, y: 58, width: 650, height: 196 };
 
   const group = () => {
     if (grouped || nodes.length !== 3) return;
@@ -487,8 +479,13 @@ export function TourActThree({ register, onComplete }: { register: Register; onC
         const y = event.clientY - rect.top;
         setBox({ x: Math.min(start.x, x), y: Math.min(start.y, y), width: Math.abs(x - start.x), height: Math.abs(y - start.y) });
       }} onPointerUp={endBox} onPointerCancel={() => { setBox(null); startRef.current = null; }}>
-        <div className="tour-group-scope" data-tour-group-scope=""><BoardShell ariaLabel="Tour grouping board" frames={grouped ? [frame] : []} nodes={nodes} selectedIds={nodes.map((node) => node.id)} lockZoom onViewportSizeChange={({ width }) => setBoardWidth(width)} renderFrame={(current) => <LabFrameElement frame={{ ...current, x: 0, y: 0 }} count={3} kind="custom" selected={false} editable={false} custom namedByWorkstream={false} removable={false} onSelect={noop} onResizeStart={noop} onFit={noop} onRename={noop} onRemove={noop} onMenuOpened={noop} onMenuOpenChange={noop} />} renderNode={(node) => <TourLabCard node={node} selected onSelect={noop} onKeyDown={noop} />} /></div>
-        <AmbientWorkstream register={register} columns />
+        <section className={`tour-primary-frame tour-group-scope${grouped ? " tour-region is-grouped" : ""}`} data-tour-group-scope="" aria-label={`${act?.frameTitle ?? "Workstream"} with three work cards`}>
+          {grouped ? <span>{act?.frameTitle}</span> : null}
+          {chosen.map((card, index) => <div key={card.title} className={`tour-free-node is-group-work${grouped ? " is-grouped" : ""}`}>
+            <TourPreviewCard card={card} domId={`tour-card-${index}`} selected={grouped} inert />
+          </div>)}
+        </section>
+        <AmbientWorkstream register={register} columns loose />
         {box ? <span className="tour-marquee" style={{ left: box.x, top: box.y, width: box.width, height: box.height }} /> : null}
       </div>
       {grouped ? <p className="tour-context-sentence">{act?.contextSentence}</p> : null}
@@ -577,7 +574,7 @@ function TourFramedSources({ register, highlightedTitle }: { register: Register;
   const title = TOUR_CONTENT[register].acts[2]?.frameTitle ?? "";
   const cards = (TOUR_CONTENT[register].acts[1]?.cards ?? []).filter((card) => card.inSet);
   return (
-    <section className="tour-source-frame" aria-label={`${title} with three source cards`}>
+    <section className="tour-source-frame" aria-label={`${title} with three source work cards`}>
       <span className="tour-source-frame-title">{title}</span>
       {cards.map((card) => (
         <article key={card.title} className="tour-source-mini" data-highlighted={card.title === highlightedTitle ? "true" : undefined}>

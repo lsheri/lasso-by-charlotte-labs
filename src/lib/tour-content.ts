@@ -58,7 +58,7 @@ const FILES = [
 ] as const;
 
 const DO_LINES = {
-  2: "Click the three cards that go together.",
+  2: "Click one of the outlined work cards.",
   3: "Draw a box around them.",
   4: "Click Ask.",
   5: "Click Keep.",
@@ -95,7 +95,7 @@ function acts(
       id: 2,
       captionPointer: DO_LINES[2],
       captionTouch: DO_LINES[2],
-      why: "You are deciding which work, AI chats and transcripts share context. They all went into the same final piece of work.",
+      why: "You are telling Lasso which work, AI chats and transcripts share context. These three all went into the same final piece of work.",
       cards,
     },
     {
