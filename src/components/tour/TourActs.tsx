@@ -165,6 +165,15 @@ const AMBIENT_COLUMNS: readonly (readonly string[])[] = [
   ["Claude: positioning draft", "artifact", "Gemini: market size, 3 scenarios"],
 ];
 
+// The shared connector bows 64px past each anchor, which would run under both cards across a 12px gap.
+// A chat with its artifact hanging directly beneath reads as one straight drop.
+function AmbientDropLine({ nodes }: { nodes: LabNode[] }) {
+  const [from, to] = nodes;
+  if (!from || !to) return null;
+  const x = Math.max(from.x, to.x) + (Math.min(from.x + from.width, to.x + to.width) - Math.max(from.x, to.x)) / 2;
+  return <path className="canvas-lab-relationship-line" d={`M ${x} ${from.y + from.height} L ${x} ${to.y}`} />;
+}
+
 function AmbientWorkstream({ register, columns = false }: { register: Register; columns?: boolean }) {
   const cards = TOUR_AMBIENT_CARDS;
   const sectionRef = useRef<HTMLElement>(null);
@@ -221,7 +230,7 @@ function AmbientWorkstream({ register, columns = false }: { register: Register; 
         </div>
       )) : <>{cards.map(renderCard)}<ArtifactPreview /></>}
       {geometry ? <svg className="tour-ambient-link" viewBox={`0 0 ${geometry.width} ${geometry.height}`} preserveAspectRatio="none" aria-label="Claude chat linked to its artifact">
-        <LabRelationships links={links} nodes={geometry.nodes} measuredHeights={new Map()} selectedLinkId={null} inverseZoom={1} onSelect={noop} interactive={false} />
+        {columns ? <AmbientDropLine nodes={geometry.nodes} /> : <LabRelationships links={links} nodes={geometry.nodes} measuredHeights={new Map()} selectedLinkId={null} inverseZoom={1} onSelect={noop} interactive={false} />}
       </svg> : null}
     </section>
   );
