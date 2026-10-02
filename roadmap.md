@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] Build the five-act first-run tour in five additive units; units 1 to 4 provide the frame, content, all acts, and real board chrome. Unit 5 remains.
+- [x] Build the local-only five-act first-run tour, including the final copy, chat-link example, and anchored answer connectors.
 - [x] PF1: inherit one existing conversation placement for destination-free attachments without moving the conversation.
 - [x] Add per-attachment placement receipts and explicit inbox notes.
 - [x] Add handler-driven regression tests for all requested placement cases.
