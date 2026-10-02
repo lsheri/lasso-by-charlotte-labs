@@ -6452,9 +6452,11 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .tour-ask-board-scene { display: grid; min-width: 0; grid-template-columns: minmax(0, 1fr) minmax(280px, .9fr); gap: 10px; overflow: hidden; }
 .tour-ask-board-scene > .tour-ambient-frame { position: relative; width: auto; height: 100%; }
 .tour-ambient-frame { position: relative; display: grid; min-width: 0; align-content: start; gap: 7px; overflow: hidden; border: 1px dashed var(--nb-pencil); background: color-mix(in srgb, var(--nb-paper) 94%, transparent); padding: 38px 10px 10px; }
-.tour-ambient-card { position: relative; z-index: 3; display: flex; min-height: 46px; align-items: center; gap: 7px; border: var(--stroke-pencil) solid var(--nb-graphite); border-radius: var(--radius-card); background: var(--nb-white); padding: 6px 8px; pointer-events: none; }
-.tour-ambient-card strong { font-family: var(--font-hand); font-size: 15px; font-weight: 500; line-height: 1.05; }
-.tour-ambient-claude { position: absolute; top: 142px; left: 12px; width: 176px; min-height: 58px; }
+.tour-ambient-node { position: absolute; z-index: 3; pointer-events: none; }
+.tour-ambient-node .tour-card-wrap .canvas-lab-paper-body { padding: 7px; }
+.tour-ambient-node .tour-card-wrap .canvas-lab-paper-title { font-size: 15px; line-height: 1.05; }
+.tour-ambient-node .tour-card-source { top: 4px; right: 4px; }
+.tour-ambient-node .tour-card-source > span { width: 22px; height: 22px; }
 .tour-artifact-card { position: absolute; z-index: 3; top: 142px; left: 206px; width: 116px; height: 76px; overflow: hidden; border: var(--stroke-pencil) solid var(--nb-graphite); border-radius: var(--radius-card); background: var(--nb-white); padding: 6px; }
 .tour-artifact-card > span { font-family: var(--font-mono); font-size: 9px; text-transform: uppercase; }
 .tour-artifact-card > div { position: relative; height: 48px; margin-top: 3px; border-top: 1px solid var(--nb-rule); }

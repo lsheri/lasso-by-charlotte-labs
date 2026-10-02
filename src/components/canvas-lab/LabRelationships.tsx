@@ -13,6 +13,7 @@ export function LabRelationships({
   inverseZoom,
   onSelect,
   onHover,
+  interactive = true,
 }: {
   links: LabLink[];
   nodes: LabNode[];
@@ -21,6 +22,7 @@ export function LabRelationships({
   inverseZoom: number;
   onSelect: (id: string) => void;
   onHover?: (id: string | null) => void;
+  interactive?: boolean;
 }) {
   const arrowSize = 8 * inverseZoom;
 
@@ -45,18 +47,18 @@ export function LabRelationships({
         const select = () => onSelect(link.id);
         return (
           <g key={link.id} data-testid={`lab-relationship-${link.id}`} onPointerEnter={() => onHover?.(link.id)} onPointerLeave={() => onHover?.(null)}>
-            <path d={path} fill="none" stroke="transparent" strokeWidth={12 * inverseZoom} className="canvas-lab-relationship-hit" onClick={select} />
+            {interactive ? <path d={path} fill="none" stroke="transparent" strokeWidth={12 * inverseZoom} className="canvas-lab-relationship-hit" onClick={select} /> : null}
             <path
-              role="button"
-              tabIndex={0}
-              aria-label={`Select relationship from ${source.title} to ${target.title}`}
-              onClick={select}
-              onKeyDown={(event) => {
+              role={interactive ? "button" : undefined}
+              tabIndex={interactive ? 0 : undefined}
+              aria-label={interactive ? `Select relationship from ${source.title} to ${target.title}` : undefined}
+              onClick={interactive ? select : undefined}
+              onKeyDown={interactive ? (event) => {
                 if (event.key === "Enter" || event.key === " ") {
                   event.preventDefault();
                   select();
                 }
-              }}
+              } : undefined}
               d={path}
               fill="none"
               stroke={selected ? "var(--nb-green)" : "var(--nb-graphite)"}

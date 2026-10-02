@@ -124,25 +124,37 @@ function ArtifactPreview() {
 }
 
 function AmbientWorkstream({ register }: { register: Register }) {
+  const cards = useMemo<TourNode[]>(() => AMBIENT_CARDS.map((card, index) => ({
+    id: `ambient-${card.source}`,
+    kind: "source",
+    frame: null,
+    title: card.title,
+    summary: "",
+    typeLabel: card.source,
+    ownership: "draft",
+    x: index < 2 ? 10 : 12,
+    y: index < 2 ? 38 + index * 52 : 142,
+    width: index < 2 ? 314 : 176,
+    height: index < 2 ? 46 : 58,
+    source: card.source,
+    inSet: false,
+  })), []);
   const nodes = useMemo<LabNode[]>(() => [
-    { id: "ambient-claude", kind: "source", frame: null, title: "Claude: positioning draft", summary: "", typeLabel: "claude", ownership: "draft", x: 12, y: 142, width: 176, height: 58 },
+    cards[2] ?? { id: "ambient-claude", kind: "source", frame: null, title: "Claude: positioning draft", summary: "", typeLabel: "claude", ownership: "draft", x: 12, y: 142, width: 176, height: 58 },
     { id: "ambient-artifact", kind: "source", frame: null, title: "Artifact", summary: "", typeLabel: "artifact", ownership: "draft", x: 206, y: 142, width: 116, height: 76 },
   ], []);
   const links = useMemo<LabLink[]>(() => [{ id: "ambient-artifact-link", fromId: "ambient-claude", toId: "ambient-artifact", fromAnchor: "right", toAnchor: "left" }], []);
   return (
     <section className="tour-ambient-frame" aria-label={`${ambientTitle(register)} workstream`}>
       <span className="tour-source-frame-title">{ambientTitle(register)}</span>
-      {AMBIENT_CARDS.slice(0, 2).map((card) => (
-        <article key={card.title} className="tour-ambient-card" aria-label={card.title}>
-          <ToolBadge tool={sourceTool(card.source)} size="sm" /><strong>{card.title}</strong>
-        </article>
+      {cards.map((node) => (
+        <div key={node.id} className="tour-ambient-node" style={{ left: node.x, top: node.y, width: node.width, height: node.height }}>
+          <TourLabCard node={node} selected={false} inert onSelect={noop} onKeyDown={noop} />
+        </div>
       ))}
-      <article className="tour-ambient-card tour-ambient-claude" aria-label={AMBIENT_CARDS[2].title}>
-        <ToolBadge tool="claude" size="sm" /><strong>{AMBIENT_CARDS[2].title}</strong>
-      </article>
       <ArtifactPreview />
       <svg className="tour-ambient-link" viewBox="0 0 334 232" aria-label="Claude chat linked to its artifact">
-        <LabRelationships links={links} nodes={nodes} measuredHeights={new Map()} selectedLinkId={null} inverseZoom={1} onSelect={noop} />
+        <LabRelationships links={links} nodes={nodes} measuredHeights={new Map()} selectedLinkId={null} inverseZoom={1} onSelect={noop} interactive={false} />
       </svg>
     </section>
   );
@@ -282,7 +294,7 @@ export function TourActOne({ register, onComplete }: { register: Register; onCom
 export function TourActTwo({ register, hint, onComplete }: { register: Register; hint: boolean; onComplete: () => void }) {
   const cards = TOUR_CONTENT[register].acts[1]?.cards ?? [];
   const [boardWidth, setBoardWidth] = useState(720);
-  const compact = boardWidth < 500;
+  const compact = boardWidth < 900;
   const nodes = useMemo(() => cards.map((card, index) => nodeFor(card, index, compact)), [cards, compact]);
   const [selected, setSelected] = useState<string[]>([]);
   const [box, setBox] = useState<Box | null>(null);
@@ -346,7 +358,7 @@ export function TourActThree({ register, onComplete }: { register: Register; onC
   const [box, setBox] = useState<Box | null>(null);
   const startRef = useRef<{ x: number; y: number } | null>(null);
   const boardRef = useRef<HTMLDivElement>(null);
-  const compact = boardWidth < 500;
+  const compact = boardWidth < 900;
   const nodes = useMemo(() => chosen.map((card, index) => ({
     ...nodeFor(card, index, compact),
     x: compact ? 34 : 52 + index * 205,
@@ -547,9 +559,9 @@ function answerNode(register: Register, compact = false): LabNode {
     ownership: "draft",
     local: false,
     authorName: "you",
-    x: compact ? 12 : 375,
+    x: compact ? 12 : 300,
     y: compact ? 350 : 60,
-    width: compact ? 196 : 260,
+    width: compact ? 196 : 220,
     height: compact ? 220 : 190,
   };
 }

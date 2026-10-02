@@ -132,7 +132,7 @@ describe("tour acts one to three", () => {
     render(<TourActFive register="company" onLanded={landed} />);
     fireEvent.click(screen.getByRole("button", { name: "Keep" }));
     expect(screen.getByTestId("canvas-lab-answer-card")).toBeTruthy();
-    expect(screen.getAllByRole("button", { name: /Select relationship/ })).toHaveLength(3);
+    expect(document.querySelectorAll('.tour-keep-links [role="button"]')).toHaveLength(3);
     expect(landed).toHaveBeenCalledTimes(1);
     expect(screen.getByLabelText("Deck, slide 12")).toBeTruthy();
     expect(screen.getByLabelText("Whiteboard photo")).toBeTruthy();
@@ -142,7 +142,7 @@ describe("tour acts one to three", () => {
     render(<TourActFive register="company" onLanded={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: "Keep" }));
     const sources = document.querySelectorAll("[data-tour-connector-source]");
-    const connectors = screen.getAllByRole("button", { name: /Select relationship/ });
+    const connectors = Array.from(document.querySelectorAll<SVGElement>('.tour-keep-links [role="button"]'));
     expect(sources).toHaveLength(3);
     expect(connectors).toHaveLength(3);
     connectors.forEach((connector, index) => {
