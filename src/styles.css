@@ -6649,29 +6649,30 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   .tour-keep-panel { padding: 8px; }
   .tour-drag-answer { padding: 8px; }
   .tour-drag-answer p { font-size: 11.5px; }
-  .tour-board-item.tour-preview-card { width: 43% !important; height: 11.5%; padding: 4px; gap: 2px 4px; }
+  .tour-board-item.tour-preview-card { width: 43% !important; height: 10.5%; padding: 4px; gap: 2px 4px; }
+  .tour-board-item.tour-preview-card:has(.tour-card-preview-copy) { height: 10.5%; }
   .tour-board-heading strong { font-size: 23px; }
   .tour-board-heading span { font-size: 9px; }
   .tour-margin-note { font-size: 13px; }
   .tour-board-item.tour-preview-card:not(:has(.tour-card-preview-copy)) { width: 40% !important; height: 6%; min-height: 42px; }
   .tour-board-item[data-tour-layout-id="primary-0"] { top: 17% !important; left: 3% !important; }
   .tour-board-item[data-tour-layout-id="primary-1"] { top: 18% !important; left: 53% !important; }
-  .tour-board-item[data-tour-layout-id="primary-2"] { top: 30.5% !important; left: 28% !important; }
-  .tour-board-item[data-tour-layout-id="primary-3"] { top: 71% !important; left: 3% !important; }
-  .tour-board-item[data-tour-layout-id="primary-4"] { top: 71.5% !important; left: 55% !important; }
-  .tour-board-item[data-tour-layout-id="chat-0"] { top: 43.5% !important; left: 3% !important; }
-  .tour-board-item[data-tour-layout-id="chat-1"] { top: 44.5% !important; left: 53% !important; }
-  .tour-board-item[data-tour-layout-id="chat-2"] { top: 57% !important; left: 3% !important; }
-  .tour-board-item[data-tour-layout-id="chat-3"] { top: 58% !important; left: 53% !important; }
-  .tour-board-item[data-tour-layout-id="artifact"] { top: 79% !important; left: 3% !important; width: 27% !important; }
-  .tour-board-item[data-tour-layout-id="whiteboard"] { top: 79.5% !important; left: 35% !important; width: 31% !important; }
-  .tour-board-item[data-tour-layout-id="deck"] { top: 80% !important; left: 71% !important; width: 26% !important; }
-  .tour-reserved-slot[data-tour-layout-id="answer"],.tour-answer-slot[data-tour-layout-id="answer"] { top: 87% !important; left: 4% !important; width: 43% !important; height: 11.5%; }
-  .tour-shared-group-region { top: 15.5%; left: 1%; width: 97%; height: 27.5%; }
-  .tour-margin-note[data-tour-note="group"] { top: 31% !important; left: 75% !important; max-width: 22%; }
-  .tour-margin-note[data-tour-note="budget"] { top: 68% !important; left: 3% !important; max-width: 42%; }
-  .tour-margin-note[data-tour-note="gemini"] { top: 55% !important; left: 47% !important; max-width: 6%; }
-  .tour-margin-note.is-answer-note { top: 90% !important; left: 50% !important; max-width: 20%; }
+  .tour-board-item[data-tour-layout-id="primary-2"] { top: 29.5% !important; left: 28% !important; }
+  .tour-board-item[data-tour-layout-id="primary-3"] { top: 66% !important; left: 3% !important; }
+  .tour-board-item[data-tour-layout-id="primary-4"] { top: 66.5% !important; left: 55% !important; }
+  .tour-board-item[data-tour-layout-id="chat-0"] { top: 41.5% !important; left: 3% !important; }
+  .tour-board-item[data-tour-layout-id="chat-1"] { top: 42.5% !important; left: 53% !important; }
+  .tour-board-item[data-tour-layout-id="chat-2"] { top: 53.5% !important; left: 3% !important; }
+  .tour-board-item[data-tour-layout-id="chat-3"] { top: 54.5% !important; left: 53% !important; }
+  .tour-board-item[data-tour-layout-id="artifact"] { top: 74% !important; left: 3% !important; width: 27% !important; }
+  .tour-board-item[data-tour-layout-id="whiteboard"] { top: 74.5% !important; left: 35% !important; width: 31% !important; }
+  .tour-board-item[data-tour-layout-id="deck"] { top: 75% !important; left: 71% !important; width: 26% !important; }
+  .tour-reserved-slot[data-tour-layout-id="answer"],.tour-answer-slot[data-tour-layout-id="answer"] { top: 87% !important; left: 4% !important; width: 43% !important; height: 10.5%; }
+  .tour-shared-group-region { top: 15.5%; left: 1%; width: 97%; height: 25%; }
+  .tour-margin-note[data-tour-note="group"] { top: 39.5% !important; left: 73% !important; max-width: 24%; }
+  .tour-margin-note[data-tour-note="budget"] { top: 63.5% !important; left: 3% !important; max-width: 42%; }
+  .tour-margin-note[data-tour-note="gemini"] { top: 52% !important; left: 43% !important; max-width: 44%; }
+  .tour-margin-note.is-answer-note { top: 88% !important; left: 51% !important; max-width: 20%; }
   .tour-board-item.tour-preview-card > strong { font-size: 11.5px; line-height: 1.05; }
   .tour-board-item .tour-card-preview-copy { font-size: 9px; line-height: 1.05; }
   .tour-board-item .tour-card-preview-copy span::before { display: none; }
