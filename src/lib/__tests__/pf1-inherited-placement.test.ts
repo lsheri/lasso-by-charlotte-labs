@@ -208,7 +208,7 @@ describe("PF1 destination present: unchanged behaviour", () => {
     expect(sc["attachments_placed"]).toBe(2);
     expect(sc["attachments_total"]).toBe(2);
     expect(sc["summary"]).toBe(
-      "Saved 'Please draft the plan.' in Lasso. 2 messages captured. Attachments: 2 new. 2 attachments placed on CFT-01 · General. Stored 1 user 22 'Please draft the plan.' · 2 assistant 32 'Here is the plan as an artifact.'. Saved and placed on CFT-01 · General. Your engagement team can see it there. No link back to this chat was recorded. If you can see this conversation's URL, call again with chat_url so the saved work can point back to it.",
+      "Saved 'Please draft the plan.' in Lasso. 2 messages captured. Attachments: 2 new. 2 attachments placed on CFT-01 · General. Stored 1 user 22 'Please draft the plan.' · 2 assistant 32 'Here is the plan as an artifact.'. Saved and placed on CFT-01 · General. Your engagement team can see it there. No link back to this chat was recorded. If you can see this conversation's URL, call again with chat_url so the saved work can point back to it. No link back to this chat was recorded. Paste the URL from your address bar and I will attach it with lasso_attach_chat_link.",
     );
     expect(sc["notes"]).toEqual([
       "No link back to this chat was recorded. If you can see this conversation's URL, call again with chat_url so the saved work can point back to it.",
