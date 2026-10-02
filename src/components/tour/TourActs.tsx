@@ -5,9 +5,12 @@ import { LabCard } from "@/components/canvas-lab/LabCard";
 import { LabAnswerCard } from "@/components/canvas-lab/LabAnswerCard";
 import { LabFrame as LabFrameElement } from "@/components/canvas-lab/LabFrame";
 import { LabRelationships } from "@/components/canvas-lab/LabRelationships";
+import { WorkboardHeader, WorkboardSideRail, WorkboardToolbar } from "@/components/canvas-lab/WorkboardChrome";
 import type { LabFrame, LabLink, LabNode } from "@/components/canvas-lab/canvas-lab-model";
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
+import { GraphiteIcon } from "@/components/notebook/icons";
 import { EvidenceCircle, GraphiteRule } from "@/components/notebook/marks";
+import { LassoThinkingMark } from "@/components/reflect/LassoThinkingMark";
 import { ToolBadge } from "@/components/onboarding/ToolBadge";
 import { Button } from "@/components/ui/button";
 import { keyTo } from "@/lib/canvas-drag";
@@ -63,6 +66,7 @@ function TourLabCard({ node, selected, hint, onSelect, onKeyDown }: {
       <span className="tour-card-source"><ToolBadge tool={sourceTool(node.source)} size="sm" /></span>
       <LabCard
         node={localNode}
+        showStatusChrome={false}
         selected={selected}
         focused={selected}
         connecting={false}
@@ -203,7 +207,7 @@ export function TourActOne({ register, onComplete }: { register: Register; onCom
   );
 }
 
-export function TourActTwo({ register, hint, onComplete, onCaptionChange }: { register: Register; hint: boolean; onComplete: () => void; onCaptionChange?: (caption: string | null) => void }) {
+export function TourActTwo({ register, hint, onComplete }: { register: Register; hint: boolean; onComplete: () => void }) {
   const cards = TOUR_CONTENT[register].acts[1]?.cards ?? [];
   const [boardWidth, setBoardWidth] = useState(720);
   const compact = boardWidth < 500;
@@ -219,7 +223,6 @@ export function TourActTwo({ register, hint, onComplete, onCaptionChange }: { re
     const required = nodes.filter((node) => node.inSet).map((node) => node.id);
     if (!completeRef.current && required.every((id) => ids.includes(id))) {
       completeRef.current = true;
-      onCaptionChange?.("Those three are the set.");
       onComplete();
     }
   };
@@ -242,7 +245,7 @@ export function TourActTwo({ register, hint, onComplete, onCaptionChange }: { re
   };
 
   return (
-    <div ref={boardRef} className="tour-board-act" data-testid="tour-act-two" onPointerDown={(event) => {
+    <TourWorkboard active="select"><div ref={boardRef} className="tour-board-act" data-testid="tour-act-two" onPointerDown={(event) => {
       if ((event.target as HTMLElement).closest("[data-tour-card]")) return;
       const rect = event.currentTarget.getBoundingClientRect();
       startRef.current = { x: event.clientX - rect.left, y: event.clientY - rect.top };
@@ -257,7 +260,7 @@ export function TourActTwo({ register, hint, onComplete, onCaptionChange }: { re
     }} onPointerUp={endBox} onPointerCancel={() => { setBox(null); startRef.current = null; }}>
       <BoardShell ariaLabel="Tour selection board" frames={[]} nodes={nodes} selectedIds={selected} lockZoom onViewportSizeChange={({ width }) => setBoardWidth(width)} renderNode={(node) => <TourLabCard node={node} selected={selected.includes(node.id)} hint={hint && node.inSet} onSelect={() => toggle(node.id)} onKeyDown={(event) => { if (event.code === "Space") { event.preventDefault(); toggle(node.id); } }} />} />
       {box ? <span className="tour-marquee" style={{ left: box.x, top: box.y, width: box.width, height: box.height }} /> : null}
-    </div>
+    </div></TourWorkboard>
   );
 }
 
@@ -303,7 +306,7 @@ export function TourActThree({ register, onComplete }: { register: Register; onC
   };
 
   return (
-    <div className="tour-group-act" data-testid="tour-act-three" onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); group(); } }}>
+    <TourWorkboard active="group" onGroup={group}><div className="tour-group-act" data-testid="tour-act-three" onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); group(); } }}>
       <div ref={boardRef} className="tour-board-act" tabIndex={0} onPointerDown={(event) => {
         if ((event.target as HTMLElement).closest("[data-tour-card],button")) return;
         const rect = event.currentTarget.getBoundingClientRect();
@@ -320,9 +323,8 @@ export function TourActThree({ register, onComplete }: { register: Register; onC
         <BoardShell ariaLabel="Tour grouping board" frames={grouped ? [frame] : []} nodes={nodes} selectedIds={nodes.map((node) => node.id)} lockZoom onViewportSizeChange={({ width }) => setBoardWidth(width)} renderFrame={(current) => <LabFrameElement frame={{ ...current, x: 0, y: 0 }} count={3} kind="custom" selected={false} editable={false} custom namedByWorkstream={false} removable={false} onSelect={noop} onResizeStart={noop} onFit={noop} onRename={noop} onRemove={noop} onMenuOpened={noop} onMenuOpenChange={noop} />} renderNode={(node) => <TourLabCard node={node} selected onSelect={noop} onKeyDown={noop} />} />
         {box ? <span className="tour-marquee" style={{ left: box.x, top: box.y, width: box.width, height: box.height }} /> : null}
       </div>
-      <Button type="button" variant="ink" className="tour-group-action" onClick={group}>Group</Button>
       {grouped ? <p className="tour-context-sentence">{act?.contextSentence}</p> : null}
-    </div>
+    </div></TourWorkboard>
   );
 }
 
@@ -368,6 +370,33 @@ function TourAskMimic({ register, visibleClaims, generating, onAsk }: {
   );
 }
 
+type TourWorkboardTool = "select" | "group" | "ask" | null;
+
+function TourWorkboard({ active, onGroup, onAsk, children }: { active: TourWorkboardTool; onGroup?: () => void; onAsk?: () => void; children: React.ReactNode }) {
+  const inert = () => undefined;
+  const toolClass = (tool: Exclude<TourWorkboardTool, null>) => `tour-board-tool${active === tool ? " is-active" : ""}`;
+  const toolbar = (
+    <WorkboardToolbar className="tour-board-toolbar" ariaLabel="Board tools">
+      <Button type="button" size="icon" variant="outline" aria-label="Show workstreams" onClick={inert}><GraphiteIcon name="workstreams" size={20} /></Button>
+      <Button type="button" size="sm" variant="outline" aria-label="Add work" onClick={inert}><GraphiteIcon name="work" size={20} /><span>Add work</span></Button>
+      <Button type="button" size="icon" variant="outline" aria-label="Select work" aria-pressed={active === "select"} className={toolClass("select")} onClick={inert}><GraphiteIcon name="connectors" size={20} /></Button>
+      <Button type="button" size="icon" variant="outline" aria-label="Add grouping" aria-pressed={active === "group"} className={toolClass("group")} onClick={active === "group" ? onGroup : inert}><GraphiteIcon name="grouping" size={20} /></Button>
+      <Button type="button" size="icon" variant="outline" aria-label="Ask Lasso" aria-pressed={active === "ask"} className={toolClass("ask")} onClick={active === "ask" ? onAsk : inert}><LassoThinkingMark kind="signature" size={24} /></Button>
+      <Button type="button" size="icon" variant="outline" aria-label="Info" onClick={inert}><GraphiteIcon name="working-from" size={20} /></Button>
+      <Button type="button" size="icon" variant="outline" aria-label="Fit" onClick={inert}><GraphiteIcon name="fit" size={20} /></Button>
+    </WorkboardToolbar>
+  );
+  return (
+    <div className="tour-workboard-chrome">
+      <WorkboardSideRail menuControl={<Button type="button" size="icon" variant="ghost" aria-label="Open workboard menu" onClick={inert}><GraphiteIcon name="more" size={18} /></Button>} closeControl={<Button type="button" size="icon" variant="ghost" aria-label="Close workboard" onClick={inert}><GraphiteIcon name="close" size={18} /></Button>} />
+      <div className="tour-workboard-main">
+        <WorkboardHeader title="Your workboard" status="WORKBOARD" toolbar={toolbar} />
+        <div className="tour-workboard-canvas">{children}</div>
+      </div>
+    </div>
+  );
+}
+
 function TourFramedSources({ register, highlightedTitle }: { register: Register; highlightedTitle?: string | null }) {
   const title = TOUR_CONTENT[register].acts[2]?.frameTitle ?? "";
   const cards = (TOUR_CONTENT[register].acts[1]?.cards ?? []).filter((card) => card.inSet);
@@ -389,6 +418,7 @@ export function TourActFour({ register, onComplete }: { register: Register; onCo
   const reduced = useReducedMotion();
   const [visibleClaims, setVisibleClaims] = useState(0);
   const [generating, setGenerating] = useState(false);
+  const [askOpen, setAskOpen] = useState(false);
   const timers = useRef<number[]>([]);
 
   useEffect(() => () => timers.current.forEach((timer) => window.clearTimeout(timer)), []);
@@ -416,10 +446,10 @@ export function TourActFour({ register, onComplete }: { register: Register; onCo
   const highlighted = visibleClaims > 0 ? (claims[visibleClaims - 1]?.sourceCardTitle ?? null) : null;
 
   return (
-    <div className="tour-ask-act" data-testid="tour-act-four">
+    <TourWorkboard active="ask" onAsk={() => setAskOpen(true)}><div className="tour-ask-act" data-testid="tour-act-four">
       <TourFramedSources register={register} highlightedTitle={highlighted} />
-      <TourAskMimic register={register} visibleClaims={visibleClaims} generating={generating} onAsk={ask} />
-    </div>
+      {askOpen ? <TourAskMimic register={register} visibleClaims={visibleClaims} generating={generating} onAsk={ask} /> : null}
+    </div></TourWorkboard>
   );
 }
 
@@ -491,7 +521,7 @@ export function TourActFive({ register, onLanded }: { register: Register; onLand
   };
 
   return (
-    <div className="tour-keep-act" data-testid="tour-act-five" onPointerUp={finishDrag} onPointerCancel={() => setDragging(false)}>
+    <TourWorkboard active={null}><div className="tour-keep-act" data-testid="tour-act-five" onPointerUp={finishDrag} onPointerCancel={() => setDragging(false)}>
       <div ref={boardRef} className="tour-keep-board" aria-label="Workstream board">
         <span className="tour-source-frame-title">{TOUR_CONTENT[register].acts[2]?.frameTitle}</span>
         {sourceNodes.map((node, index) => (
@@ -518,7 +548,7 @@ export function TourActFive({ register, onLanded }: { register: Register; onLand
           <Button type="button" variant="ink" onClick={land}>Keep</Button>
         </aside>
       ) : null}
-    </div>
+    </div></TourWorkboard>
   );
 }
 
@@ -540,7 +570,7 @@ export function useTourActRenderers({ register, activeAct, onAdvance, onHintShow
 
   const renderers = useMemo(() => [
     { content: <TourActOne register={register} onComplete={() => onAdvance(1)} /> },
-    { content: <TourActTwo register={register} hint={hintAct === 2} onCaptionChange={setCaptionOverride} onComplete={() => onAdvance(2)} /> },
+    { content: <TourActTwo register={register} hint={hintAct === 2} onComplete={() => onAdvance(2)} /> },
     { content: <TourActThree register={register} onComplete={() => onAdvance(3)} /> },
     { content: <TourActFour register={register} onComplete={() => onAdvance(4)} /> },
     {
