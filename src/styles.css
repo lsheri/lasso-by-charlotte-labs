@@ -6665,14 +6665,14 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   .tour-board-item[data-tour-layout-id="chat-2"] { top: 53.5% !important; left: 3% !important; }
   .tour-board-item[data-tour-layout-id="chat-3"] { top: 54.5% !important; left: 53% !important; }
   .tour-board-item[data-tour-layout-id="artifact"] { top: 80.5% !important; left: 3% !important; width: 27% !important; }
-  .tour-board-item[data-tour-layout-id="whiteboard"] { top: 81% !important; left: 35% !important; width: 31% !important; }
+  .tour-board-item[data-tour-layout-id="whiteboard"] { top: 80.5% !important; left: 33% !important; width: 31% !important; }
   .tour-board-item[data-tour-layout-id="deck"] { top: 81.5% !important; left: 71% !important; width: 26% !important; }
   .tour-reserved-slot[data-tour-layout-id="answer"],.tour-answer-slot[data-tour-layout-id="answer"] { top: 88% !important; left: 4% !important; width: 43% !important; height: 10.5%; }
   .tour-shared-group-region { top: 15.5%; left: 1%; width: 97%; height: 25%; }
-  .tour-margin-note[data-tour-note="group"] { top: 29.5% !important; left: 3% !important; max-width: 22%; }
+  .tour-margin-note[data-tour-note="group"] { top: 28% !important; left: 1% !important; max-width: 22%; }
   .tour-margin-note[data-tour-note="budget"] { top: 77% !important; left: 49% !important; max-width: 48%; }
   .tour-margin-note[data-tour-note="gemini"] { top: 65% !important; left: 3% !important; max-width: 43%; }
-  .tour-margin-note.is-answer-note { top: 89% !important; left: 51% !important; max-width: 20%; }
+  .tour-margin-note.is-answer-note { top: 91% !important; left: 67% !important; max-width: 30%; }
   .tour-board-item.tour-preview-card > strong { font-size: 11.5px; line-height: 1.05; }
   .tour-board-item .tour-card-preview-copy { font-size: 9px; line-height: 1.05; }
   .tour-board-item .tour-card-preview-copy span::before { display: none; }
