@@ -30,10 +30,11 @@ function TourPreviewPage() {
     () => setActiveAct((current) => Math.max(1, current - 1) as 1 | 2 | 3 | 4 | 5),
     [],
   );
-  const advance = useCallback((act: 1 | 2 | 3) => {
-    window.setTimeout(() => setActiveAct((act + 1) as 2 | 3 | 4), act === 3 ? 900 : 450);
+  const advance = useCallback((act: 1 | 2 | 3 | 4) => {
+    window.setTimeout(() => setActiveAct((act + 1) as 2 | 3 | 4 | 5), act === 3 ? 900 : 450);
   }, []);
-  const { renderers, captionOverride, hint } = useTourActRenderers({ register, activeAct, onAdvance: advance, onHintShown: () => undefined });
+  const finish = useCallback(() => setActiveAct(1), []);
+  const { renderers, captionOverride, hint } = useTourActRenderers({ register, activeAct, onAdvance: advance, onHintShown: () => undefined, onFinish: finish });
 
   return (
     <main className="tour-preview-page">

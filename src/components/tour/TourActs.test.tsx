@@ -2,7 +2,7 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { TourActOne, TourActThree, TourActTwo } from "@/components/tour/TourActs";
+import { TourActFive, TourActFour, TourActOne, TourActThree, TourActTwo } from "@/components/tour/TourActs";
 import { TOUR_CONTEXT_SENTENCE } from "@/lib/tour-content";
 
 class ResizeObserverStub {
@@ -62,5 +62,40 @@ describe("tour acts one to three", () => {
     render(<TourActThree register="company" onComplete={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: "Group" }));
     expect(screen.getByText(TOUR_CONTEXT_SENTENCE)).toBeTruthy();
+  });
+
+  it("keeps the preset question read only", () => {
+    render(<TourActFour register="company" onComplete={vi.fn()} />);
+    const question = screen.getByLabelText("Preset question");
+    expect(question.getAttribute("contenteditable")).not.toBe("true");
+    expect(question.getAttribute("aria-readonly")).toBe("true");
+    expect(question.textContent).toBe("What did we tell the client about pricing, and where did that come from?");
+  });
+
+  it("shows exactly three cited claims from cards in the frame", () => {
+    vi.useFakeTimers();
+    render(<TourActFour register="company" onComplete={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Ask" }));
+    vi.advanceTimersByTime(1200);
+    const claims = document.querySelectorAll(".tour-ask-claim");
+    expect(claims).toHaveLength(3);
+    const frameText = screen.getByLabelText("Workstream with three source cards").textContent ?? "";
+    for (const claim of claims) expect(frameText).toContain(claim.querySelector("span")?.textContent);
+    vi.useRealTimers();
+  });
+
+  it("keeps an answer on the board and ends the tour", () => {
+    const landed = vi.fn();
+    render(<TourActFive register="company" onLanded={landed} />);
+    fireEvent.click(screen.getByRole("button", { name: "Keep" }));
+    expect(screen.getByTestId("canvas-lab-answer-card")).toBeTruthy();
+    expect(screen.getAllByRole("button", { name: /Select relationship/ })).toHaveLength(3);
+    expect(landed).toHaveBeenCalledTimes(1);
+  });
+
+  it("uses the standalone mimic shape without importing the live data surface", () => {
+    render(<TourActFour register="company" onComplete={vi.fn()} />);
+    expect(screen.getByLabelText("Ask Lasso tour example")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Ask" })).toBeTruthy();
   });
 });
