@@ -128,7 +128,6 @@ export function TourBoard({ register, state, className = "", children, onWorkCar
   const cards = TOUR_CONTENT[register].acts[1]?.cards ?? [];
   const ambientCards = tourAmbientCards(register);
   const boardCopy = tourBoardCopy(register);
-  const brandedScenario = register === "company" || register === "partner";
   const selected = new Set(state.selectedIds ?? []);
   const outlined = new Set(state.outlinedIds ?? []);
   const grouped = new Set(state.groupedIds ?? []);
@@ -138,12 +137,12 @@ export function TourBoard({ register, state, className = "", children, onWorkCar
 
   return <div ref={boardRef} className={`tour-persistent-board ${className}`} data-tour-board="" onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerCancel}>
     <div className="tour-board-grid" aria-label="Workstream board">
-      {brandedScenario ? <>
+      <>
         <header className="tour-board-heading"><strong>{boardCopy.title}</strong><span>{boardCopy.owner} · {boardCopy.pieceCount} pieces</span></header>
         <i className="tour-alignment-rail is-upper" aria-hidden /><i className="tour-alignment-rail is-lower" aria-hidden />
         {BOARD_NOTES.map((note) => <span key={note.id} className="tour-margin-note" data-tour-note={note.id} style={{ left: `${note.x}%`, top: `${note.y}%` }}>{note.text}</span>)}
         {state.answerVisible ? <span className="tour-margin-note is-answer-note" data-tour-note="answer">this is the one to send</span> : null}
-      </> : null}
+      </>
       <div className="tour-loose-work-label" aria-label="Loose AI chat work cards" />
       {state.groupedIds?.length ? <div className="tour-shared-group-region tour-region is-grouped" aria-label={`${TOUR_CONTENT[register].acts[2]?.frameTitle ?? "Workstream"} with three source work cards`}><span>{TOUR_CONTENT[register].acts[2]?.frameTitle}</span><span className="sr-only">{Array.from(grouped).map((id) => cards[Number(id.split("-")[1])]?.title).filter(Boolean).join(", ")}</span></div> : null}
       {TOUR_BOARD_LAYOUT.map((item) => {
