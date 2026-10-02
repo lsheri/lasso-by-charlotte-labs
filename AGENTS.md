@@ -25,4 +25,3 @@ Tour workboard chrome stays a local presentational mirror around shared board pr
 - Landing: one hero video replays on return; its data wait uses 2.5s logo rain, static under reduced motion.
 - Resolve all MCP keys through `mcp_connections`; routes differ only by key transport.
 - Keep the first-run interactive tour entirely in local React state; it must never create product rows or upload files.
-- Keep every first-run tour act on the single exported board layout and shared board renderer, with answer space reserved before it appears, so items never reflow between acts.
