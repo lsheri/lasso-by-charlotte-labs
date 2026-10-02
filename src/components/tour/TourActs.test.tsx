@@ -27,6 +27,21 @@ function mockRects(board: HTMLElement, cardRect: (element: HTMLElement) => DOMRe
 }
 
 describe("tour acts one to three", () => {
+  it("keeps the shared layout free of accidental rows and columns", () => {
+    const counts = (values: readonly number[]) => values.reduce((result, value) => result.set(value, (result.get(value) ?? 0) + 1), new Map<number, number>());
+    expect(Math.max(...counts(TOUR_BOARD_LAYOUT.map((item) => item.x)).values())).toBeLessThanOrEqual(2);
+    expect(Math.max(...counts(TOUR_BOARD_LAYOUT.map((item) => item.y)).values())).toBeLessThanOrEqual(2);
+    expect(new Set(TOUR_BOARD_LAYOUT.map((item) => item.widthBasis)).size).toBeGreaterThanOrEqual(4);
+    for (const item of TOUR_BOARD_LAYOUT) expect(Math.abs(item.rotation)).toBeLessThan(1.5);
+    for (let index = 0; index < TOUR_BOARD_LAYOUT.length; index += 1) {
+      const item = TOUR_BOARD_LAYOUT[index];
+      if (!item) continue;
+      for (const other of TOUR_BOARD_LAYOUT.slice(index + 1)) {
+        if (Math.abs(item.x - other.x) <= 1) expect(Math.abs(item.y - other.y)).toBeGreaterThan(18);
+        if (Math.abs(item.y - other.y) <= 1) expect(Math.abs(item.x - other.x)).toBeGreaterThan(18);
+      }
+    }
+  });
   it("keeps every shared layout item fixed across all five acts and four registers", () => {
     const registers = ["company", "partner", "personal", "edu"] as const;
     const acts = [
