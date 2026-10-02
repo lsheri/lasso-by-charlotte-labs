@@ -162,8 +162,9 @@ function AmbientWorkstream({ register }: { register: Register }) {
 
 function TourImageCard({ kind }: { kind: "deck" | "whiteboard" }) {
   const deck = kind === "deck";
+  const rand = useMemo(() => seededRand(["tour-image-card", kind]), [kind]);
   return (
-    <article className="tour-image-card" aria-label={deck ? "Deck, slide 12" : "Whiteboard photo"}>
+    <article className="tour-image-card" aria-label={deck ? "Deck, slide 12" : "Whiteboard photo"} style={{ transform: `rotate(${(rand(1) - 0.5) * 0.8}deg)` }}>
       <strong>{deck ? "Deck, slide 12" : "Whiteboard photo"}</strong>
       <svg viewBox="0 0 160 82" aria-hidden>
         {deck ? <>
@@ -343,6 +344,7 @@ export function TourActTwo({ register, hint, onComplete }: { register: Register;
       setBox({ x: Math.min(start.x, x), y: Math.min(start.y, y), width: Math.abs(x - start.x), height: Math.abs(y - start.y) });
     }} onPointerUp={endBox} onPointerCancel={() => { setBox(null); startRef.current = null; }}>
       <BoardShell ariaLabel="Tour selection board" frames={[]} nodes={nodes} selectedIds={selected} lockZoom onViewportSizeChange={({ width }) => setBoardWidth(width)} renderNode={(node) => <TourLabCard node={node} selected={selected.includes(node.id)} hint={hint && node.inSet} onSelect={() => toggle(node.id)} onKeyDown={(event) => { if (event.code === "Space") { event.preventDefault(); toggle(node.id); } }} />} />
+      <section className="tour-primary-frame" aria-label={`${TOUR_CONTENT[register].acts[2]?.frameTitle ?? "Workstream"} workstream`}><span>{TOUR_CONTENT[register].acts[2]?.frameTitle}</span></section>
       <AmbientWorkstream register={register} />
       {box ? <span className="tour-marquee" style={{ left: box.x, top: box.y, width: box.width, height: box.height }} /> : null}
     </div></TourWorkboard>
