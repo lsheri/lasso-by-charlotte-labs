@@ -6665,8 +6665,8 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   .tour-board-item[data-tour-layout-id="chat-2"] { top: 53.5% !important; left: 3% !important; }
   .tour-board-item[data-tour-layout-id="chat-3"] { top: 54.5% !important; left: 53% !important; }
   .tour-board-item[data-tour-layout-id="artifact"] { top: 80.5% !important; left: 3% !important; width: 27% !important; }
-  .tour-board-item[data-tour-layout-id="whiteboard"] { top: 80.5% !important; left: 51% !important; width: 20% !important; }
-  .tour-board-item[data-tour-layout-id="deck"] { top: 81.5% !important; left: 75% !important; width: 22% !important; }
+  .tour-board-item[data-tour-layout-id="whiteboard"] { top: 80.5% !important; left: 52% !important; width: 45% !important; }
+  .tour-board-item[data-tour-layout-id="deck"] { top: 92% !important; left: 52% !important; width: 45% !important; }
   .tour-reserved-slot[data-tour-layout-id="answer"],.tour-answer-slot[data-tour-layout-id="answer"] { top: 88% !important; left: 4% !important; width: 43% !important; height: 10.5%; }
   .tour-shared-group-region { top: 15.5%; left: 1%; width: 97%; height: 25%; }
   .tour-margin-note[data-tour-note="group"] { top: 12% !important; left: 52% !important; max-width: 30%; }
