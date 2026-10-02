@@ -15,7 +15,7 @@ import { checkSignupInvite } from "@/lib/invites.functions";
 import { type SignupInviteCheck } from "@/lib/signup-invite";
 import { markSignupSource, type SignupSource } from "@/lib/edu-entry";
 import { isPartnerSlug } from "@/lib/partners";
-import { cleanActivationKey, markActivationKey, readActivationKey } from "@/lib/key-entry";
+import { cleanActivationKey, clearActivationKey, markActivationKey } from "@/lib/key-entry";
 import { deriveRegister, NEUTRAL_COPY, REGISTER_COPY } from "@/lib/register";
 import type { IntentParam } from "@/lib/org-type";
 import { aliasSignupVisitor, emitClientEvent } from "@/lib/client-telemetry";
