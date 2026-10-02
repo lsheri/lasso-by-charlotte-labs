@@ -9,7 +9,7 @@ import { WorkboardHeader, WorkboardSideRail, WorkboardToolbar } from "@/componen
 import type { LabFrame, LabLink, LabNode } from "@/components/canvas-lab/canvas-lab-model";
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
 import { GraphiteIcon } from "@/components/notebook/icons";
-import { EvidenceCircle, GraphiteRule } from "@/components/notebook/marks";
+import { EvidenceCircle } from "@/components/notebook/marks";
 import { LassoThinkingMark } from "@/components/reflect/LassoThinkingMark";
 import { ToolBadge } from "@/components/onboarding/ToolBadge";
 import { Button } from "@/components/ui/button";
@@ -199,7 +199,6 @@ export function TourActOne({ register, onComplete }: { register: Register; onCom
       <TourWorkboard active="add" onAddWork={() => setFilesOpen(true)}>
         <div ref={boardRef} className="tour-arrival-board" data-testid="tour-drop-board">
           <BoardShell ariaLabel="Empty tour board" frames={[]} nodes={landedNode} lockZoom renderNode={(node) => <TourLabCard node={node} selected={false} onSelect={noop} onKeyDown={noop} />} />
-          {landedNode.length === 0 ? <GraphiteRule className="tour-empty-rule" animated={false} /> : null}
           {filesOpen ? <div className="tour-file-window-layer"><FileWindow files={files} drag={drag} onPointerDown={(title, event) => {
             event.currentTarget.setPointerCapture?.(event.pointerId);
             if (event.pointerType === "touch") { land(title); return; }
