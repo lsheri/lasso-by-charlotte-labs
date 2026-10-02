@@ -1,6 +1,6 @@
 import type { Register } from "@/lib/register";
 
-export type TourSource = "claude" | "chatgpt" | "drive" | "granola" | "email";
+export type TourSource = "claude" | "chatgpt" | "gemini" | "drive" | "granola" | "email";
 
 export type TourCard = {
   title: string;
