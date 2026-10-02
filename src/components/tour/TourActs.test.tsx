@@ -151,7 +151,7 @@ describe("tour acts one to three", () => {
     const done = vi.fn();
     render(<TourActThree register="company" onComplete={done} />);
     const board = screen.getByTestId("tour-act-three").querySelector<HTMLElement>(".tour-board-act")!;
-    mockRects(board, (element) => element.hasAttribute("data-tour-ambient") ? rect(800, 700, 90, 90) : rect(60 + Math.random() * 200, 60, 90, 90));
+    mockRects(board, (element) => element.hasAttribute("data-tour-ambient") ? rect(800, 700, 90, 90) : rect(120, 60, 90, 90));
     fireEvent.pointerDown(board, { pointerId: 1, clientX: 10, clientY: 10 });
     fireEvent.pointerMove(board, { pointerId: 1, clientX: 500, clientY: 300 });
     fireEvent.pointerUp(board, { pointerId: 1, clientX: 500, clientY: 300 });
