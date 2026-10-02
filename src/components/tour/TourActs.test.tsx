@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { TourActFive, TourActFour, TourActOne, TourActThree, TourActTwo } from "@/components/tour/TourActs";
@@ -76,7 +76,7 @@ describe("tour acts one to three", () => {
     vi.useFakeTimers();
     render(<TourActFour register="company" onComplete={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: "Ask" }));
-    vi.advanceTimersByTime(1200);
+    act(() => vi.advanceTimersByTime(1200));
     const claims = document.querySelectorAll(".tour-ask-claim");
     expect(claims).toHaveLength(3);
     const frameText = screen.getByLabelText("Workstream with three source cards").textContent ?? "";
