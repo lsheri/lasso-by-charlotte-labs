@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { Route } from "./__root";
 
 describe("PF2 font preloads", () => {
-  const head = Route.options.head?.({} as never);
+  const head = await Promise.resolve(Route.options.head?.({} as never));
   const links = head?.links ?? [];
   const fontPreloads = links.filter(
     (link) => link.rel === "preload" && "as" in link && link.as === "font",
