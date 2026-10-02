@@ -84,8 +84,17 @@ function useClaim(): boolean {
 }
 
 /** Confirmed, accepted. Drawn beside the thing that was decided. */
-export function DrawnCheck({ size = 18, className = "" }: { size?: number; className?: string }) {
-  if (!useClaim()) return null;
+export function DrawnCheck({
+  size = 18,
+  className = "",
+  persistent = false,
+}: {
+  size?: number;
+  className?: string;
+  persistent?: boolean;
+}) {
+  const claimed = useClaim();
+  if (!persistent && !claimed) return null;
   return (
     <svg
       className={`nb-mark pointer-events-none ${className}`}
