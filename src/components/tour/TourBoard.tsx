@@ -6,7 +6,7 @@ import type { LabLink, LabNode } from "@/components/canvas-lab/canvas-lab-model"
 import { ToolBadge } from "@/components/onboarding/ToolBadge";
 import type { ToolId } from "@/lib/onboarding-tools";
 import type { Register } from "@/lib/register";
-import { TOUR_AMBIENT_CARDS, TOUR_BOARD_LAYOUT, TOUR_CONTENT, type TourCard, type TourLayoutItem, type TourSource } from "@/lib/tour-content";
+import { TOUR_BOARD_LAYOUT, TOUR_CONTENT, tourAmbientCards, tourBoardCopy, type TourAmbientCard, type TourCard, type TourLayoutItem, type TourSource } from "@/lib/tour-content";
 
 const noop = () => undefined;
 
@@ -52,33 +52,33 @@ function itemStyle(item: TourLayoutItem) {
   };
 }
 
-function PreviewCard({ card }: { card: TourCard | (typeof TOUR_AMBIENT_CARDS)[number] }) {
+function PreviewCard({ card, compact = false }: { card: TourCard | TourAmbientCard; compact?: boolean }) {
   const preview = "excerpt" in card ? card.excerpt : card.preview;
   return <>
     <ToolBadge tool={sourceTool(card.source)} size="sm" />
     <strong>{card.title}</strong>
-    <div className="tour-card-preview-copy"><span>{preview[0]}</span><span>{preview[1]}</span></div>
+    {!compact ? <div className="tour-card-preview-copy"><span>{preview[0]}</span><span>{preview[1]}</span></div> : null}
   </>;
 }
 
 function ArtifactPreview() {
-  return <article className="tour-artifact-card is-strip" aria-label="Artifact preview"><span>Artifact</span><div aria-hidden><i /><i /><b /><b /></div></article>;
+  return <article className="tour-compact-card" aria-label="Artifact preview"><ToolBadge tool="claude" size="sm" /><strong>Artifact</strong></article>;
 }
 
-function ImageCard({ kind }: { kind: "deck" | "whiteboard" }) {
+function ImageCard({ kind, title, caption }: { kind: "deck" | "whiteboard"; title: string; caption?: string }) {
   const deck = kind === "deck";
-  return <article className="tour-image-card" aria-label={deck ? "Deck, slide 12" : "Whiteboard photo"}>
-    <strong>{deck ? "Deck, slide 12" : "Whiteboard photo"}</strong>
-    <svg viewBox="0 0 160 82" aria-hidden>{deck ? <>
-      <path d="M10 12 C52 11 105 13 150 11" /><path d="M12 27 H72 M12 35 H62" />
-      <path d="M92 65 V48 H105 V65 M113 65 V37 H126 V65 M134 65 V25 H147 V65" />
-    </> : <>
-      <rect x="12" y="14" width="38" height="22" rx="2" /><rect x="108" y="46" width="38" height="22" rx="2" />
-      <rect x="61" y="28" width="38" height="22" rx="2" /><path d="M50 25 C57 24 58 32 64 34 M98 42 C105 42 107 50 111 53" />
-      <path d="m59 31 5 3-5 3 M106 50 5 3-5 3" />
-    </>}</svg>
+  return <article className="tour-compact-card" aria-label={title}>
+    <span className="tour-compact-tool">{deck ? "Deck" : "Image"}</span>
+    <strong>{title}</strong>
+    {caption ? <span className="tour-image-caption">{caption}</span> : null}
   </article>;
 }
+
+const BOARD_NOTES = [
+  { id: "group", text: "name this grouping?", x: 83, y: 22 },
+  { id: "budget", text: "keep for the budget, not the plan", x: 2, y: 37 },
+  { id: "gemini", text: "add the Toronto numbers?", x: 53.5, y: 60 },
+] as const;
 
 function answerNode(register: Register): LabNode {
   const item = TOUR_BOARD_LAYOUT.find((candidate) => candidate.id === "answer");
@@ -126,6 +126,9 @@ function BoardRelationships({ register }: { register: Register }) {
 
 export function TourBoard({ register, state, className = "", children, onWorkCardSelect, onWorkCardKeyDown, onPointerDown, onPointerMove, onPointerUp, onPointerCancel, boardRef }: TourBoardProps) {
   const cards = TOUR_CONTENT[register].acts[1]?.cards ?? [];
+  const ambientCards = tourAmbientCards(register);
+  const boardCopy = tourBoardCopy(register);
+  const brandedScenario = register === "company" || register === "partner";
   const selected = new Set(state.selectedIds ?? []);
   const outlined = new Set(state.outlinedIds ?? []);
   const grouped = new Set(state.groupedIds ?? []);
@@ -135,6 +138,12 @@ export function TourBoard({ register, state, className = "", children, onWorkCar
 
   return <div ref={boardRef} className={`tour-persistent-board ${className}`} data-tour-board="" onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerCancel}>
     <div className="tour-board-grid" aria-label="Workstream board">
+      {brandedScenario ? <>
+        <header className="tour-board-heading"><strong>{boardCopy.title}</strong><span>{boardCopy.owner} · {boardCopy.pieceCount} pieces</span></header>
+        <i className="tour-alignment-rail is-upper" aria-hidden /><i className="tour-alignment-rail is-lower" aria-hidden />
+        {BOARD_NOTES.map((note) => <span key={note.id} className="tour-margin-note" data-tour-note={note.id} style={{ left: `${note.x}%`, top: `${note.y}%` }}>{note.text}</span>)}
+        {state.answerVisible ? <span className="tour-margin-note is-answer-note" data-tour-note="answer">this is the one to send</span> : null}
+      </> : null}
       <div className="tour-loose-work-label" aria-label="Loose AI chat work cards" />
       {state.groupedIds?.length ? <div className="tour-shared-group-region tour-region is-grouped" aria-label={`${TOUR_CONTENT[register].acts[2]?.frameTitle ?? "Workstream"} with three source work cards`}><span>{TOUR_CONTENT[register].acts[2]?.frameTitle}</span><span className="sr-only">{Array.from(grouped).map((id) => cards[Number(id.split("-")[1])]?.title).filter(Boolean).join(", ")}</span></div> : null}
       {TOUR_BOARD_LAYOUT.map((item) => {
@@ -148,16 +157,16 @@ export function TourBoard({ register, state, className = "", children, onWorkCar
           const interactive = state.act === 2;
           return <article key={item.id} className={`tour-board-item tour-preview-card${outlined.has(item.id) ? " is-target-work" : ""}${selected.has(item.id) ? " is-selected" : ""}${glowing.has(item.id) ? " is-group-glowing" : ""}${state.highlightedTitle === card.title ? " is-source-highlighted" : ""}`} data-tour-layout-id={item.id} data-tour-card={`tour-card-${index}`} data-tour-title={card.title} data-tour-connector-source={grouped.has(item.id) ? item.id : undefined} role={interactive ? "group" : undefined} tabIndex={interactive ? 0 : undefined} style={itemStyle(item)} onClick={interactive ? () => onWorkCardSelect?.(index) : undefined} onKeyDown={interactive ? (event) => onWorkCardKeyDown?.(index, event) : undefined}>
             {item.id === "primary-0" && state.act === 2 ? <span className="tour-act-two-arrow-target" data-tour-target="2" aria-hidden /> : null}
-            <PreviewCard card={rendered} />
+            <PreviewCard card={rendered} compact={!card.inSet} />
           </article>;
         }
         if (item.kind === "chat") {
           const index = Number(item.id.split("-")[1]);
-          const card = TOUR_AMBIENT_CARDS[index];
+          const card = ambientCards[index];
           return card ? <article key={item.id} className="tour-board-item tour-preview-card is-ambient" data-tour-layout-id={item.id} data-tour-card={`ambient-${index}`} data-tour-ambient="" style={itemStyle(item)}><PreviewCard card={card} /></article> : null;
         }
         if (item.id === "artifact") return <div key={item.id} className="tour-board-item" data-tour-layout-id={item.id} style={itemStyle(item)}><ArtifactPreview /></div>;
-        if (item.id === "whiteboard" || item.id === "deck") return <div key={item.id} className="tour-board-item" data-tour-layout-id={item.id} style={itemStyle(item)}><ImageCard kind={item.id} /></div>;
+        if (item.id === "whiteboard" || item.id === "deck") return <div key={item.id} className="tour-board-item" data-tour-layout-id={item.id} style={itemStyle(item)}><ImageCard kind={item.id} title={item.id === "whiteboard" ? boardCopy.whiteboardTitle : boardCopy.deckTitle} caption={item.id === "whiteboard" ? boardCopy.whiteboardCaption : undefined} /></div>;
         if (item.id === "answer" && state.answerVisible) return <div key={item.id} className="tour-board-item tour-answer-slot" data-tour-layout-id="answer" style={itemStyle(item)}><LabAnswerCard node={{ ...answer, x: 0, y: 0, width: 100, height: 100 }} focused={false} stackZ={4} onFocus={noop} onPointerDown={noop} onDelete={noop} /></div>;
         return null;
       })}
