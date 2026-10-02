@@ -17,6 +17,33 @@ export type TourAmbientCard = {
   layout: { x: number; y: number; rotation: number };
 };
 
+export type TourLayoutItem = {
+  id: `primary-${0 | 1 | 2 | 3 | 4}` | `chat-${0 | 1 | 2 | 3}` | "artifact" | "whiteboard" | "deck" | "answer";
+  kind: "primary" | "chat" | "artifact" | "image" | "answer";
+  x: number;
+  y: number;
+  widthBasis: number;
+  rotation: number;
+  earliestAct: 1 | 2 | 3 | 4 | 5;
+};
+
+/** The sole geometry source for every item on the five-act tour board. */
+export const TOUR_BOARD_LAYOUT: readonly TourLayoutItem[] = [
+  { id: "primary-0", kind: "primary", x: 2, y: 2, widthBasis: 30, rotation: -0.8, earliestAct: 1 },
+  { id: "primary-1", kind: "primary", x: 35, y: 2, widthBasis: 30, rotation: 0.7, earliestAct: 1 },
+  { id: "answer", kind: "answer", x: 68, y: 2, widthBasis: 30, rotation: 0, earliestAct: 5 },
+  { id: "primary-2", kind: "primary", x: 2, y: 22, widthBasis: 30, rotation: 0.5, earliestAct: 1 },
+  { id: "primary-3", kind: "primary", x: 35, y: 22, widthBasis: 30, rotation: 0.9, earliestAct: 1 },
+  { id: "primary-4", kind: "primary", x: 68, y: 22, widthBasis: 30, rotation: -0.7, earliestAct: 1 },
+  { id: "chat-0", kind: "chat", x: 2, y: 42, widthBasis: 30, rotation: -0.7, earliestAct: 1 },
+  { id: "chat-1", kind: "chat", x: 35, y: 42, widthBasis: 30, rotation: 0.8, earliestAct: 1 },
+  { id: "chat-2", kind: "chat", x: 68, y: 42, widthBasis: 30, rotation: 0.5, earliestAct: 1 },
+  { id: "chat-3", kind: "chat", x: 2, y: 62, widthBasis: 30, rotation: -0.6, earliestAct: 1 },
+  { id: "artifact", kind: "artifact", x: 35, y: 62, widthBasis: 30, rotation: 0, earliestAct: 1 },
+  { id: "whiteboard", kind: "image", x: 68, y: 62, widthBasis: 30, rotation: -0.4, earliestAct: 1 },
+  { id: "deck", kind: "image", x: 68, y: 82, widthBasis: 30, rotation: 0.3, earliestAct: 5 },
+] as const;
+
 export const TOUR_AMBIENT_CARDS: readonly TourAmbientCard[] = [
   { title: "ChatGPT: competitor pricing teardown", source: "chatgpt", excerpt: ["Compared entry tiers and service limits", "Flagged the strongest pricing contrast"], layout: { x: 5, y: 13, rotation: -0.7 } },
   { title: "ChatGPT: objection handling script", source: "chatgpt", excerpt: ["Drafted responses to budget concerns", "Kept the language direct and specific"], layout: { x: 49, y: 8, rotation: 0.8 } },
