@@ -6546,7 +6546,8 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .tour-shared-group-region > span:first-child { color: var(--nb-region-lavender-vivid); font-family: var(--font-hand); font-size: 16px; }
 .tour-ask-mimic { position: absolute; z-index: 35; top: 8px; right: 8px; bottom: 8px; width: min(320px, 42%); border: 1px solid var(--nb-rule); box-shadow: var(--nb-paper-shadow-contact); }
 .tour-keep-panel { position: absolute; z-index: 35; right: 8px; bottom: 8px; width: min(280px, 42%); max-height: calc(100% - 16px); background: var(--nb-white); box-shadow: var(--nb-paper-shadow-contact); }
-.tour-answer-slot > .canvas-lab-answer-card { position: static !important; width: 100% !important; height: 17% !important; min-height: 88px; }
+.tour-answer-slot { height: 17%; min-height: 0; overflow: hidden; }
+.tour-answer-slot > .canvas-lab-answer-card { position: static !important; width: 100% !important; height: 100% !important; min-height: 0 !important; overflow: hidden; }
 @keyframes tour-claim-in { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes tour-card-arrive { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes tour-hint-fade { 0% { opacity: 0; } 20%, 72% { opacity: 1; } 100% { opacity: 0; } }
@@ -6642,6 +6643,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   .tour-board-item > .tour-image-card { min-height: 0; height: 18%; padding: 4px; }
   .tour-board-item > .tour-image-card svg { height: 58px; }
   .tour-reserved-slot { height: 18%; }
+  .tour-answer-slot { height: 18%; }
   .tour-ask-mimic { width: 48%; }
   .tour-keep-panel { width: 48%; }
 }
