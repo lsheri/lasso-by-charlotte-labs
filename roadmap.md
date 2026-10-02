@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] Build the five-act first-run tour in five additive units; unit 1 provides content and the stage frame only.
+- [ ] Build the five-act first-run tour in five additive units; units 1 and 2 provide the frame, content, and acts 1 to 3.
 - [x] PF1: inherit one existing conversation placement for destination-free attachments without moving the conversation.
 - [x] Add per-attachment placement receipts and explicit inbox notes.
 - [x] Add handler-driven regression tests for all requested placement cases.
