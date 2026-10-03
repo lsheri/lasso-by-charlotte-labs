@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -16,6 +16,8 @@ import { DrawnEllipse, useMark } from "@/components/notebook/marks";
 import { CanvasDeliverableActions } from "@/components/engagements/CanvasDeliverableActions";
 import { latestDeliverable } from "@/components/engagements/WhatFedThisButton";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { sponsorScopeLine, sponsorScopeRows, type SponsorScopeRow } from "@/lib/share-back-scope";
 import { ShipToFirmDialog } from "@/components/work/ShipToFirmDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useEngagementCoaches, useShareInvalidation } from "@/hooks/use-coach-share";
@@ -379,5 +381,124 @@ function ShipBlock({
         />
       ) : null}
     </>
+  );
+}
+
+/**
+ * SB-P1. One row per sponsor the person has offered work to. The toggle
+ * decides whether THIS board is shared with that sponsor. A sponsor on an
+ * all_work link has no toggle, because turning it off would do nothing.
+ */
+function SponsorBoards({
+  engagementId,
+  orgId,
+  profileId,
+}: {
+  engagementId: string;
+  orgId: string;
+  profileId: string;
+}) {
+  const queryClient = useQueryClient();
+  const [busyLink, setBusyLink] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const queryKey = ["sponsor-boards", profileId, engagementId];
+
+  const data = useQuery({
+    queryKey,
+    queryFn: async (): Promise<SponsorScopeRow[]> => {
+      const { data: links, error } = await supabase
+        .from("coaching_links")
+        .select("id, subject_profile_id, scope, ended_at, consent_withdrawn_at, coach_profile_id")
+        .eq("subject_profile_id", profileId)
+        .is("ended_at", null)
+        .is("consent_withdrawn_at", null);
+      if (error) throw error;
+      const rows = links ?? [];
+      if (rows.length === 0) return [];
+      const coachIds = rows
+        .map((r) => r.coach_profile_id)
+        .filter((id): id is string => Boolean(id));
+      const names = new Map<string, string>();
+      if (coachIds.length > 0) {
+        const { data: people } = await supabase
+          .from("profiles")
+          .select("id, display_name")
+          .in("id", coachIds);
+        for (const p of people ?? []) if (p.display_name) names.set(p.id, p.display_name);
+      }
+      const { data: junction, error: jErr } = await supabase
+        .from("coaching_link_engagements")
+        .select("link_id, engagement_id")
+        .in(
+          "link_id",
+          rows.map((r) => r.id),
+        );
+      if (jErr) throw jErr;
+      return sponsorScopeRows(
+        rows.map((r) => ({
+          ...r,
+          sponsor_name: r.coach_profile_id ? (names.get(r.coach_profile_id) ?? null) : null,
+        })),
+        junction ?? [],
+        engagementId,
+        profileId,
+      );
+    },
+  });
+
+  async function setShared(row: SponsorScopeRow, next: boolean) {
+    setBusyLink(row.linkId);
+    setMessage(null);
+    const args = { p_link_id: row.linkId, p_engagement_id: engagementId };
+    const { error } = next
+      ? await supabase.rpc("share_engagement_with_sponsor", args)
+      : await supabase.rpc("unshare_engagement_with_sponsor", args);
+    if (error) {
+      setMessage(error.message);
+      toast.error(error.message);
+    } else if (next) {
+      logEvent("share_back.engagement_shared", orgId, {});
+    } else {
+      logEvent("share_back.engagement_unshared", orgId, {});
+    }
+    // Reflect what the server now holds, never the assumed result.
+    await queryClient.invalidateQueries({ queryKey });
+    setBusyLink(null);
+  }
+
+  if (data.error) {
+    return (
+      <p className="mt-6 text-sm text-muted-foreground">
+        We could not load your sponsors for this board just now.
+      </p>
+    );
+  }
+  const rows = data.data ?? [];
+  if (rows.length === 0) return null;
+
+  return (
+    <div className="mt-6 space-y-2">
+      <h2 className="micro-label micro-label-section">Sponsors</h2>
+      {rows.map((row) => (
+        <div
+          key={row.linkId}
+          className="flex flex-wrap items-center justify-between gap-2 rounded-[var(--radius)] border border-border bg-card px-4 py-3 shadow-card"
+        >
+          <div className="min-w-0">
+            <p className="text-sm text-foreground">{row.sponsorName}</p>
+            <p className="mt-0.5 text-sm text-muted-foreground">{sponsorScopeLine(row)}</p>
+          </div>
+          {row.state === "sees_everything" ? null : (
+            <Switch
+              aria-label={`Share this board with ${row.sponsorName}`}
+              checked={row.state === "shared"}
+              disabled={busyLink === row.linkId}
+              onCheckedChange={(next) => void setShared(row, next)}
+            />
+          )}
+        </div>
+      ))}
+      {message ? <p className="text-sm text-accent-deep">{message}</p> : null}
+    </div>
   );
 }
