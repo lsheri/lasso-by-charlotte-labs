@@ -325,7 +325,12 @@ async function unwrapRpc<T>(call: PromiseLike<{ data: T; error: { message: strin
   return data;
 }
 
-function SeatRoster({ requestId }: { requestId: string }) {
+/** Read a count out of a jsonb rpc result; anything missing or non-numeric becomes 0. */
+function rpcCount(value: unknown): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+function SeatRoster({ requestId, orgId }: { requestId: string; orgId: string | null }) {
   const qc = useQueryClient();
   const key = ["seat-summary", requestId];
   const [raw, setRaw] = useState("");
@@ -340,21 +345,28 @@ function SeatRoster({ requestId }: { requestId: string }) {
   const add = useMutation({
     mutationFn: (emails: string[]) =>
       unwrapRpc(supabase.rpc("partner_add_seat_emails", { p_request_id: requestId, p_emails: emails })),
-    onSuccess: () => {
+    onSuccess: (data) => {
       setRaw("");
       refresh();
+      if (orgId) logEvent("seat.named", orgId, { count: rpcCount((data as { added?: unknown }).added), source: "roster" });
     },
     onError,
   });
   const send = useMutation({
     mutationFn: () => unwrapRpc(supabase.rpc("partner_send_seat_invites", { p_request_id: requestId })),
-    onSuccess: refresh,
+    onSuccess: (data) => {
+      refresh();
+      if (orgId) logEvent("invite.sent", orgId, { count: rpcCount((data as { sent?: unknown }).sent) });
+    },
     onError,
   });
   const revoke = useMutation({
     mutationFn: (email: string) =>
       unwrapRpc(supabase.rpc("partner_revoke_seat_grant", { p_request_id: requestId, p_email: email })),
-    onSuccess: refresh,
+    onSuccess: () => {
+      refresh();
+      if (orgId) logEvent("seat.revoked", orgId, {});
+    },
     onError,
   });
 
