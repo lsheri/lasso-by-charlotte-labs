@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
@@ -80,6 +80,8 @@ export const Route = createFileRoute("/auth")({
         property: "og:description",
         content: "Sign in to Lasso by Charlotte Labs.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: AuthPage,
@@ -114,6 +116,7 @@ export function noteSignUpIdentity(result: {
 
 function AuthPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { next, intent, invite, from, src, key } = Route.useSearch();
   useEffect(() => {
     if (intent) emitClientEvent("signup.started", { intent, src: src ?? "direct" }, { stableVisitor: true });
@@ -236,6 +239,8 @@ function AuthPage() {
 
   async function signOutForNewAccount() {
     await supabase.auth.signOut();
+    queryClient.removeQueries({ queryKey: ["auth-entry-user"] });
+    queryClient.removeQueries({ queryKey: ["auth-entry-profile"] });
     navigate({
       to: "/auth",
       search: {
