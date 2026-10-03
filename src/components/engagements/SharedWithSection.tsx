@@ -300,6 +300,10 @@ export function SharedWithSection({
       ) : null}
       {confirmation ? <p className="mt-2 text-sm text-accent-deep">{confirmation}</p> : null}
 
+      {profile ? (
+        <SponsorBoards engagementId={engagementId} orgId={orgId} profileId={profile.id} />
+      ) : null}
+
       <AlertDialog open={confirmAll} onOpenChange={setConfirmAll}>
         <AlertDialogContent>
           <AlertDialogHeader>
