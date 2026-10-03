@@ -122,6 +122,8 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "import.started": ["last_screen", "tier", "vendor"],
   "inbox.arrival_undone": ["reverted"],
   "invite.blocked": ["delivered", "reason", "state", "variant"],
+  "seat.named": ["source"],
+  "invite.sent": [],
   "seat.revoked": [],
   "share_back.offered": [],
   "share_back.declined": [],
