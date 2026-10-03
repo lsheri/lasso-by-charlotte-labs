@@ -55,8 +55,7 @@ export function shouldSendAskOnEnter(
   return true;
 }
 
-function hasTouchInput(): boolean {
-  if (typeof navigator !== "undefined" && navigator.maxTouchPoints > 0) return true;
+export function hasTouchInput(): boolean {
   return typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches === true;
 }
 
