@@ -123,6 +123,31 @@ describe("Unit 19: partner invite path", () => {
     expect(r).toEqual({ to: "/auth", search: { intent: "personal", key: "LSO-WPSK77" } });
   });
 
+  it("f. /j/CODE?r=personal uses the link register and never calls the lookup", async () => {
+    const r = await caught(() =>
+      jOpts.beforeLoad({ params: { code: "LSO-WPSK77" }, location: { searchStr: "?r=personal" } }),
+    );
+    expect(r).toEqual({ to: "/auth", search: { intent: "personal", key: "LSO-WPSK77" } });
+    expect(mocks.lookup).not.toHaveBeenCalled();
+  });
+
+  it("g. /j/CODE?r=bogus ignores the parameter and falls back to the lookup", async () => {
+    mocks.lookup.mockResolvedValue({ ok: true, institution_name: "UW", register: "edu" });
+    const r = await caught(() =>
+      jOpts.beforeLoad({ params: { code: "LSO-WPSK77" }, location: { searchStr: "?r=bogus" } }),
+    );
+    expect(mocks.lookup).toHaveBeenCalled();
+    expect(r).toEqual({ to: "/auth", search: { intent: "edu", key: "LSO-WPSK77" } });
+  });
+
+  it("h. /j/CODE?r=personal&from=ceiba keeps from alongside intent and key", async () => {
+    const r = await caught(() =>
+      jOpts.beforeLoad({ params: { code: "LSO-WPSK77" }, location: { searchStr: "?r=personal&from=ceiba" } }),
+    );
+    expect(r).toEqual({ to: "/auth", search: { intent: "personal", key: "LSO-WPSK77", from: "ceiba" } });
+    expect(mocks.lookup).not.toHaveBeenCalled();
+  });
+
   async function signIn() {
     render(
       <Suspense fallback={null}>

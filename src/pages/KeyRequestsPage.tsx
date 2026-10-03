@@ -261,7 +261,7 @@ function LinkLine({ label, url }: { label: string; url: string }) {
 
 function RequestRow({ r }: { r: KeyRequest }) {
   const tone = r.status === "provisioned" ? "record" : r.status === "declined" ? "attention" : "paper";
-  const attendee = r.issued_code ? attendeeLink(r.issued_code) : null;
+  const attendee = r.issued_code ? attendeeLink(r.issued_code, r.workspace_kind) : null;
   const admin = r.admin_invite_code ? adminLink(r.admin_invite_code) : null;
   return (
     <ToneCard tone={tone}>
