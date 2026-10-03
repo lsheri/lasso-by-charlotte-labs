@@ -246,7 +246,10 @@ function OnboardingInner() {
           ? "invite"
           : "chooser",
   );
-  const [stage, setStage] = useState<"setup" | "tools" | "capture">(setup ? "tools" : "setup");
+  const [stage, setStage] = useState<"setup" | "share_back" | "tools" | "capture">(setup ? "tools" : "setup");
+  const [shareBack, setShareBack] = useState<{ id: string; name: string; orgId: string | null } | null>(null);
+  const [shareBackPending, setShareBackPending] = useState(false);
+  const [shareBackError, setShareBackError] = useState<string | null>(null);
   const [tools, setTools] = useState<Set<ToolId>>(new Set());
   const [orgType] = useState<OrgType>(orgTypeForChoice(derived));
   const [displayName, setDisplayName] = useState("");
@@ -403,6 +406,40 @@ function OnboardingInner() {
       queryClient.invalidateQueries({ queryKey: ["engagements"] }),
     ]);
     setPending(false);
+
+    // Share back: the database decides whether to ask. Any failure or a
+    // "no" from the prompt goes straight on; this never blocks onboarding.
+    let prompt: { ask?: boolean; institution_id?: string; institution_name?: string } | null = null;
+    try {
+      const { data, error: promptError } = await supabase.rpc("share_back_prompt", {});
+      if (!promptError) prompt = data as typeof prompt;
+    } catch {
+      prompt = null;
+    }
+    if (prompt?.ask && prompt.institution_id && prompt.institution_name) {
+      setShareBack({ id: prompt.institution_id, name: prompt.institution_name, orgId: createdOrgId });
+      setStage("share_back");
+      return;
+    }
+    setStage("tools");
+  }
+
+  async function answerShareBack(yes: boolean) {
+    if (!shareBack) return;
+    setShareBackPending(true);
+    setShareBackError(null);
+    const { error: answerError } = yes
+      ? await supabase.rpc("offer_share_back", { p_institution_id: shareBack.id })
+      : await supabase.rpc("decline_share_back", { p_institution_id: shareBack.id });
+    setShareBackPending(false);
+    if (answerError) {
+      setShareBackError(answerError.message);
+      return;
+    }
+    if (shareBack.orgId) {
+      if (yes) logEvent("share_back.offered", shareBack.orgId, {});
+      else logEvent("share_back.declined", shareBack.orgId, {});
+    }
     setStage("tools");
   }
 
@@ -410,6 +447,33 @@ function OnboardingInner() {
     // Unit Y2: the same place sign-in lands, so the first visit and every
     // later one start on the same screen.
     navigate({ to: "/home", replace: true });
+  }
+
+  if (stage === "share_back" && shareBack) {
+    return (
+      <>
+        <SessionHeader />
+        <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background px-4 py-16">
+          <div className="w-full max-w-md">
+            <h1 className="page-title">{`${shareBack.name} sponsored your workspace`}</h1>
+            <p className="mt-3 text-sm text-foreground">Do you want to share work with them?</p>
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              You choose what you share, one piece at a time. They see nothing until you send it.
+            </p>
+            {shareBackError ? <p className="mt-3 text-sm text-destructive">{shareBackError}</p> : null}
+            <div className="mt-6 flex flex-col items-start gap-3">
+              <Button type="button" disabled={shareBackPending} onClick={() => void answerShareBack(true)}>
+                {`Yes, share with ${shareBack.name}`}
+              </Button>
+              <Button type="button" variant="outline" disabled={shareBackPending} onClick={() => void answerShareBack(false)}>
+                No thanks
+              </Button>
+              <p className="text-xs text-muted-foreground">We will not ask again.</p>
+            </div>
+          </div>
+        </main>
+      </>
+    );
   }
 
   if (stage === "tools") {

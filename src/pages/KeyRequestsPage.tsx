@@ -228,6 +228,8 @@ export function KeyRequestsPage() {
         </form>
       </section>
 
+      <SharedWithYou orgId={orgId} profileId={profile?.id ?? null} />
+
       <section>
         <SectionHeader title="Your requests" />
         <div className="mt-4 flex flex-col gap-3">
@@ -328,6 +330,53 @@ async function unwrapRpc<T>(call: PromiseLike<{ data: T; error: { message: strin
 /** Read a count out of a jsonb rpc result; anything missing or non-numeric becomes 0. */
 function rpcCount(value: unknown): number {
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+type ShareBackPerson = { person: string; code: string; offered_at: string | null; claimed: boolean };
+
+/** People who offered to share back with this partner. Renders nothing when nobody has. */
+function SharedWithYou({ orgId, profileId }: { orgId: string | null; profileId: string | null }) {
+  const qc = useQueryClient();
+  const key = ["share-backs", orgId];
+  const people = useQuery({
+    queryKey: key,
+    enabled: !!orgId,
+    queryFn: async () =>
+      ((await unwrapRpc(supabase.rpc("partner_share_backs"))) as { people?: ShareBackPerson[] } | null)?.people ?? [],
+  });
+  const claim = useMutation({
+    mutationFn: async (code: string) => {
+      if (!profileId) throw new Error("Your profile is still loading. Try again in a moment.");
+      return unwrapRpc(supabase.rpc("claim_coaching_links", { p_code: code, p_actor_profile_id: profileId }));
+    },
+    onSuccess: () => {
+      if (orgId) logEvent("share_back.claimed", orgId, {});
+      void qc.invalidateQueries({ queryKey: key });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const rows = people.data ?? [];
+  if (rows.length === 0) return null;
+  return (
+    <section>
+      <SectionHeader title="Shared with you" />
+      <ul className="mt-4 flex flex-col gap-2">
+        {rows.map((p) => (
+          <li key={p.code} className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border px-3 py-2">
+            <span className="text-sm text-foreground">{p.person}</span>
+            <span className="text-sm text-muted-foreground">{dateLabel(p.offered_at)}</span>
+            {p.claimed ? (
+              <span className="text-sm text-muted-foreground">Claimed</span>
+            ) : (
+              <Button type="button" size="sm" disabled={claim.isPending} onClick={() => claim.mutate(p.code)}>
+                Claim
+              </Button>
+            )}
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
 }
 
 function SeatRoster({ requestId, orgId }: { requestId: string; orgId: string | null }) {
