@@ -960,6 +960,7 @@ export type Database = {
           disclosed_at: string | null
           ended_at: string | null
           id: string
+          institution_id: string | null
           invite_code: string | null
           org_id: string
           relation: string
@@ -978,6 +979,7 @@ export type Database = {
           disclosed_at?: string | null
           ended_at?: string | null
           id?: string
+          institution_id?: string | null
           invite_code?: string | null
           org_id: string
           relation: string
@@ -996,6 +998,7 @@ export type Database = {
           disclosed_at?: string | null
           ended_at?: string | null
           id?: string
+          institution_id?: string | null
           invite_code?: string | null
           org_id?: string
           relation?: string
@@ -1015,6 +1018,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coaching_links_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
             referencedColumns: ["id"]
           },
           {
@@ -5442,6 +5452,10 @@ export type Database = {
         Returns: string
       }
       deactivate_member: { Args: { p_profile: string }; Returns: undefined }
+      decline_share_back: {
+        Args: { p_actor_profile_id?: string; p_institution_id: string }
+        Returns: Json
+      }
       delete_container: { Args: { p_id: string }; Returns: Json }
       end_coaching_link: {
         Args: { p_actor_profile_id?: string; p_link_id: string }
@@ -5564,6 +5578,10 @@ export type Database = {
       my_profile_id: { Args: never; Returns: string }
       my_profile_ids: { Args: never; Returns: string[] }
       my_role: { Args: never; Returns: Database["public"]["Enums"]["app_role"] }
+      offer_share_back: {
+        Args: { p_actor_profile_id?: string; p_institution_id: string }
+        Returns: Json
+      }
       org_key_target_ok: {
         Args: { p_type: string }
         Returns: Record<string, unknown>
@@ -5581,6 +5599,7 @@ export type Database = {
         Args: { p_emails?: string[]; p_request_id: string }
         Returns: Json
       }
+      partner_share_backs: { Args: never; Returns: Json }
       purge_workboard_annotations: { Args: never; Returns: number }
       reactivate_member: { Args: { p_profile: string }; Returns: undefined }
       record_coaching_disclosure: {
@@ -5621,6 +5640,10 @@ export type Database = {
           p_role: Database["public"]["Enums"]["app_role"]
         }
         Returns: undefined
+      }
+      share_back_prompt: {
+        Args: { p_actor_profile_id?: string }
+        Returns: Json
       }
       share_engagement_with_coach: {
         Args: { p_coach_profile: string; p_engagement: string }

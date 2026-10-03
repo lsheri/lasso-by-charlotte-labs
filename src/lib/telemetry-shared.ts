@@ -201,6 +201,12 @@ export type TelemetryEvent =
   | "invite.sent"
   /** Seat roster: a named seat was revoked. Content-free. Portal needs this name added. */
   | "seat.revoked"
+  /** Share back: a sponsored person said yes to sharing with their sponsor. Content-free. Portal needs this name added. */
+  | "share_back.offered"
+  /** Share back: a sponsored person said no thanks. Content-free. Portal needs this name added. */
+  | "share_back.declined"
+  /** Share back: a partner claimed an offered share back. Content-free. Portal needs this name added. */
+  | "share_back.claimed"
   | "oneonone.prepared"
   | "oneonone.saved_to_drive"
   /** Pass C: a person made a dated 1:1 session of their own. No text, no ids. */
