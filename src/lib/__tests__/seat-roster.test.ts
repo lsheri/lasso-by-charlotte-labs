@@ -30,4 +30,22 @@ describe("seat roster links", () => {
     expect(plain.startsWith(CANONICAL_ORIGIN)).toBe(true);
     expect(withR.startsWith(CANONICAL_ORIGIN)).toBe(true);
   });
+
+  it("seat roster event payloads carry counts and the fixed source only", () => {
+    // The three payloads KeyRequestsPage can emit from the seat roster.
+    const payloads: Record<string, unknown>[] = [
+      { count: 2, source: "roster" }, // seat.named
+      { count: 3 }, // invite.sent
+      {}, // seat.revoked
+    ];
+    const emailish = /@|\S+@\S+/;
+    for (const p of payloads) {
+      for (const key of Object.keys(p)) {
+        expect(["count", "source"]).toContain(key);
+      }
+      for (const value of Object.values(p)) {
+        expect(String(value)).not.toMatch(emailish);
+      }
+    }
+  });
 });
