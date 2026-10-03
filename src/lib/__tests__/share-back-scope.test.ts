@@ -19,14 +19,14 @@ describe("sponsorScopeRows", () => {
     expect(rows).toEqual([{ linkId: "l1", sponsorName: "Acme", state: "shared" }]);
   });
   it("reads not_shared with no junction row, or one for another board", () => {
-    expect(sponsorScopeRows([link({})], [], ENG, ME)[0].state).toBe("not_shared");
+    expect(sponsorScopeRows([link({})], [], ENG, ME)[0]?.state).toBe("not_shared");
     expect(
-      sponsorScopeRows([link({})], [{ link_id: "l1", engagement_id: "other" }], ENG, ME)[0].state,
+      sponsorScopeRows([link({})], [{ link_id: "l1", engagement_id: "other" }], ENG, ME)[0]?.state,
     ).toBe("not_shared");
   });
   it("reads sees_everything for an all_work link", () => {
     const rows = sponsorScopeRows([link({ scope: "all_work" })], [], ENG, ME);
-    expect(rows[0].state).toBe("sees_everything");
+    expect(rows[0]?.state).toBe("sees_everything");
   });
   it("excludes ended, consent-withdrawn and not-mine links", () => {
     const rows = sponsorScopeRows(
