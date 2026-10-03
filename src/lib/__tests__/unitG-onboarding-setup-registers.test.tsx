@@ -74,7 +74,7 @@ describe("Unit G: onboarding setup stage per register", () => {
     expect(screen.getByLabelText("Your name")).toBeTruthy();
     expect(screen.getByLabelText("Workspace name")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Create my workspace" })).toBeTruthy();
-    expect(screen.getByText("One board. Every tool. Circle a few chats and ask.")).toBeTruthy();
+    expect(screen.queryByText("One board. Every tool. Circle a few chats and ask.")).toBeNull();
   });
 
   it("personal", async () => {
@@ -83,7 +83,7 @@ describe("Unit G: onboarding setup stage per register", () => {
     expect(screen.getByText("One detail and you are in. Yours to change later.")).toBeTruthy();
     expect(screen.getByLabelText("Your name")).toBeTruthy();
     expect(screen.queryByLabelText("Workspace name")).toBeNull();
-    expect(screen.getByText("Stop losing the chat where you worked it out.")).toBeTruthy();
+    expect(screen.queryByText("Stop losing the chat where you worked it out.")).toBeNull();
   });
 
   it("edu", async () => {
@@ -92,8 +92,8 @@ describe("Unit G: onboarding setup stage per register", () => {
     expect(screen.getByText("One detail and you are in. Yours to change later.")).toBeTruthy();
     expect(screen.queryByLabelText("Workspace name")).toBeNull();
     expect(
-      screen.getByText("Your AI chats are where the thinking happened. Put them where the work is."),
-    ).toBeTruthy();
+      screen.queryByText("Your AI chats are where the thinking happened. Put them where the work is."),
+    ).toBeNull();
   });
 
   it.each(["company", "personal", "edu"] as const)(
