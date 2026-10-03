@@ -1,6 +1,7 @@
-import { describe, expect, it } from "vitest";
+// @vitest-environment jsdom
+import { describe, expect, it, vi } from "vitest";
 
-import { shouldSendAskOnEnter } from "@/components/reflect/AskSurface";
+import { hasTouchInput, shouldSendAskOnEnter } from "@/components/reflect/AskSurface";
 
 function key(overrides: Partial<Parameters<typeof shouldSendAskOnEnter>[0]> = {}) {
   return {
@@ -28,6 +29,18 @@ describe("Ask Lasso composer keyboard", () => {
 
   it("does not send Enter on a touch device", () => {
     expect(shouldSendAskOnEnter(key(), true, "A question", false)).toBe(false);
+  });
+
+  it("does not treat touch points with a fine pointer as touch", () => {
+    Object.defineProperty(navigator, "maxTouchPoints", { configurable: true, value: 5 });
+    const matchMedia = vi.fn(() => ({ matches: false }));
+    Object.defineProperty(window, "matchMedia", { configurable: true, value: matchMedia });
+    try {
+      expect(hasTouchInput()).toBe(false);
+    } finally {
+      delete (navigator as { maxTouchPoints?: unknown }).maxTouchPoints;
+      delete (window as { matchMedia?: unknown }).matchMedia;
+    }
   });
 
   it("does not send whitespace-only input", () => {
