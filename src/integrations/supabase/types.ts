@@ -5649,6 +5649,10 @@ export type Database = {
         Args: { p_coach_profile: string; p_engagement: string }
         Returns: undefined
       }
+      share_engagement_with_sponsor: {
+        Args: { p_engagement_id: string; p_link_id: string }
+        Returns: Json
+      }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
       tier_rank: { Args: { t: string }; Returns: number }
@@ -5656,6 +5660,10 @@ export type Database = {
       unshare_engagement_coach: {
         Args: { p_coach_profile: string; p_engagement: string }
         Returns: undefined
+      }
+      unshare_engagement_with_sponsor: {
+        Args: { p_engagement_id: string; p_link_id: string }
+        Returns: Json
       }
       withdraw_coaching_consent: {
         Args: { p_actor_profile_id?: string; p_link_id: string }
