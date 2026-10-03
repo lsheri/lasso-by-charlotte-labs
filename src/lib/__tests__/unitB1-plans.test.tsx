@@ -55,6 +55,14 @@ describe("Unit B1: public plans", () => {
     expect(container.querySelector('a[href^="/auth?intent=partner"]')).toBeNull();
 
     const wholePage = container.textContent ?? "";
+    for (const line of [
+      "pick a thread back up months later",
+      "take your work with you when the term ends",
+      "hand over a board with the thinking still attached",
+      "you see what people share with you",
+    ]) expect(wholePage).toContain(line);
+    expect(wholePage).not.toContain("Your workspace is never locked");
+    expect(wholePage).not.toContain("your record is never taken away");
     expect(wholePage).not.toMatch(SIGNUP_BANNED_COPY);
     expect(wholePage).not.toContain("\u2014");
   });

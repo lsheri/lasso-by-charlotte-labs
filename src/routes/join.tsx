@@ -267,8 +267,7 @@ function JoinPage() {
         <StateCard label={coachInvite ? "Coaching invite" : "Invite"} title={title}>
           {coachInvite ? (
             <p>
-              You will join as a coach. You see only the work that is chosen to be shared with
-              you, and nothing else in the workspace.
+              You will join as a coach. People share work with you from their workspace.
             </p>
           ) : (
             <p>You will join as a {roleWord}.</p>

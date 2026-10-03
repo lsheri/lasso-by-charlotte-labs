@@ -22,25 +22,25 @@ const EXPECTED: Record<Register, string[]> = {
     "You work in your AI tools", "Claude, ChatGPT, Drive, meetings.",
     "It flows into Lasso", "Only what you choose. Private on arrival.",
     "You map it", "Give it a workboard and a workstream. It becomes a record.",
-    "A coach sees what you share", "Never your raw files. Only the shared view.",
+    "A coach sees what you share", "A coach sees the shared view.",
   ],
   personal: [
     "You work in your AI tools", "Claude, ChatGPT, Drive, your own notes.",
-    "It flows into Lasso", "Only what you choose. Private on arrival.",
+    "It flows into Lasso", "Work arrives in the workspace you created.",
     "You file it", "Put it under one of your workboards. It becomes part of your record.",
-    "The record stays yours", "Nothing leaves unless you choose to share it.",
+    "The record stays yours", "Share a piece when you want to.",
   ],
   edu: [
     "You work in your AI tools", "Claude, ChatGPT, Drive, lecture notes.",
-    "It flows into Lasso", "Only what you choose. Private on arrival.",
+    "It flows into Lasso", "Work arrives in the workspace you created.",
     "You file it", "Put it under a class or workboard, next to the coursework it belongs to.",
-    "You choose what to share", "Nothing leaves your workspace by itself. Share one piece when you want to.",
+    "You choose what to share", "Share one piece when you want to.",
   ],
   partner: [
     "You set up the workboard", "A client, a cohort, the workstreams you will run.",
     "People join with a link", "Their workspace stays theirs. Yours holds the workboard.",
-    "They share what they choose", "A board, a transcript, or nothing at all, at the depth they agreed to.",
-    "You coach from what arrived", "Never their raw files. Only what they sent you.",
+    "They share what they choose", "A board or transcript, at the depth they agreed to.",
+    "You coach from what arrived", "You coach from what they sent you.",
   ],
 };
 

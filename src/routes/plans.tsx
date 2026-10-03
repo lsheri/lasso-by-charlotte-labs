@@ -63,7 +63,7 @@ const PLANS = [
       "push from Claude and ChatGPT",
       "connect Drive, Gmail and Granola",
       "circle a few chats and ask",
-      "nobody reads your threads",
+      "pick a thread back up months later",
     ],
   },
   {
@@ -79,7 +79,7 @@ const PLANS = [
       "keep the chat where the idea came from",
       "share one piece of work when you choose",
       "your record leaves with you",
-      "Not your professor, not your school",
+      "take your work with you when the term ends",
     ],
   },
   {
@@ -96,7 +96,7 @@ const PLANS = [
       "hand off work with the thinking still attached",
       "what the team worked out, still there next year",
       "trace a fact in a deliverable back to its source",
-      "Your work stays private until you share it. Even here.",
+      "hand over a board with the thinking still attached",
     ],
   },
   {
@@ -110,7 +110,7 @@ const PLANS = [
       "seats and length come from your key",
       "people keep their workspace when the engagement ends",
       "share a whole conversation, not just the answer",
-      "You see what people send you, and nothing else.",
+      "you see what people share with you",
     ],
   },
 ] as const;
@@ -252,8 +252,7 @@ export function PlansPage({ search = {} }: { search?: PlansSearch }) {
 
         <p className="mx-auto mt-8 max-w-4xl text-center text-xs leading-5 text-muted-foreground">
           Every plan is $0 while we pilot. When pricing turns on, billing runs through Stripe and
-          nothing is charged without your yes. Your workspace is never locked and your record is
-          never taken away, whatever you decide then.
+          nothing is charged without your yes.
         </p>
       </main>
     </div>

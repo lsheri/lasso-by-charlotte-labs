@@ -89,7 +89,7 @@ async function applyOrgType(profileId: string, type: OrgType): Promise<string | 
 export const KEY_NOTICE_COPY = {
   named: (institution: string) => `You are joining with a key from ${institution}.`,
   neutral: "You are joining with a sponsored key.",
-  body: "They will see counts of your work, never its content, and only what you choose to share.",
+  body: "You choose what you share with them.",
   remove: "Not with them? Remove this key.",
 } as const;
 
@@ -553,8 +553,6 @@ function OnboardingInner() {
               <Button type="submit" className="w-full" disabled={pending}>
                 {pending ? "Setting up…" : REGISTER_SHARED_COPY.submit}
               </Button>
-              <p className="text-base text-muted-foreground">{copy.privacy}</p>
-              <p className="text-sm text-muted-foreground">{copy.claim}</p>
               <button
                 type="button"
                 onClick={() =>

@@ -102,26 +102,26 @@ export type FlowPreviewStage = { label: string; body: string };
 export const FLOW_PREVIEW_COPY: Readonly<Record<Register, readonly FlowPreviewStage[]>> = {
   company: [
     { label: "You work in your AI tools", body: "Claude, ChatGPT, Drive, meetings." },
-    { label: "It flows into Lasso", body: "Only what you choose. Private on arrival." },
+    { label: "It flows into Lasso", body: "Work arrives in the workspace you created." },
     { label: "You map it", body: "Give it a workboard and a workstream. It becomes a record." },
-    { label: "A coach sees what you share", body: "Never your raw files. Only the shared view." },
+    { label: "A coach sees what you share", body: "A coach sees the shared view." },
   ],
   personal: [
     { label: "You work in your AI tools", body: "Claude, ChatGPT, Drive, your own notes." },
-    { label: "It flows into Lasso", body: "Only what you choose. Private on arrival." },
+    { label: "It flows into Lasso", body: "Work arrives in the workspace you created." },
     { label: "You file it", body: "Put it under one of your workboards. It becomes part of your record." },
-    { label: "The record stays yours", body: "Nothing leaves unless you choose to share it." },
+    { label: "The record stays yours", body: "Share a piece when you want to." },
   ],
   edu: [
     { label: "You work in your AI tools", body: "Claude, ChatGPT, Drive, lecture notes." },
-    { label: "It flows into Lasso", body: "Only what you choose. Private on arrival." },
+    { label: "It flows into Lasso", body: "Work arrives in the workspace you created." },
     { label: "You file it", body: "Put it under a class or workboard, next to the coursework it belongs to." },
-    { label: "You choose what to share", body: "Nothing leaves your workspace by itself. Share one piece when you want to." },
+    { label: "You choose what to share", body: "Share one piece when you want to." },
   ],
   partner: [
     { label: "You set up the workboard", body: "A client, a cohort, the workstreams you will run." },
     { label: "People join with a link", body: "Their workspace stays theirs. Yours holds the workboard." },
-    { label: "They share what they choose", body: "A board, a transcript, or nothing at all, at the depth they agreed to." },
-    { label: "You coach from what arrived", body: "Never their raw files. Only what they sent you." },
+    { label: "They share what they choose", body: "A board or transcript, at the depth they agreed to." },
+    { label: "You coach from what arrived", body: "You coach from what they sent you." },
   ],
 };
