@@ -318,12 +318,8 @@ type SeatSummary = { seats: number; named: number; joined_named: number; joined_
 
 const SEAT_STATUS_LABEL: Record<SeatPerson["status"], string> = { added: "Added", sent: "Invited", joined: "Joined" };
 
-// The seat RPCs are newer than the generated types.
-type RpcClient = { rpc: (fn: string, args: Record<string, unknown>) => PromiseLike<{ data: unknown; error: { message: string } | null }> };
-const rpcClient = supabase as unknown as RpcClient;
-
-async function callRpc(fn: string, args: Record<string, unknown>): Promise<unknown> {
-  const { data, error } = await rpcClient.rpc(fn, args);
+async function unwrapRpc<T>(call: PromiseLike<{ data: T; error: { message: string } | null }>): Promise<T> {
+  const { data, error } = await call;
   if (error) throw new Error(error.message);
   return data;
 }
@@ -334,13 +330,15 @@ function SeatRoster({ requestId }: { requestId: string }) {
   const [raw, setRaw] = useState("");
   const summary = useQuery({
     queryKey: key,
-    queryFn: async () => (await callRpc("partner_seat_summary", { p_request_id: requestId })) as SeatSummary,
+    queryFn: async () =>
+      (await unwrapRpc(supabase.rpc("partner_seat_summary", { p_request_id: requestId }))) as SeatSummary,
   });
   const onError = (e: Error) => toast.error(e.message);
   const refresh = () => void qc.invalidateQueries({ queryKey: key });
 
   const add = useMutation({
-    mutationFn: (emails: string[]) => callRpc("partner_add_seat_emails", { p_request_id: requestId, p_emails: emails }),
+    mutationFn: (emails: string[]) =>
+      unwrapRpc(supabase.rpc("partner_add_seat_emails", { p_request_id: requestId, p_emails: emails })),
     onSuccess: () => {
       setRaw("");
       refresh();
@@ -348,12 +346,13 @@ function SeatRoster({ requestId }: { requestId: string }) {
     onError,
   });
   const send = useMutation({
-    mutationFn: () => callRpc("partner_send_seat_invites", { p_request_id: requestId }),
+    mutationFn: () => unwrapRpc(supabase.rpc("partner_send_seat_invites", { p_request_id: requestId })),
     onSuccess: refresh,
     onError,
   });
   const revoke = useMutation({
-    mutationFn: (email: string) => callRpc("partner_revoke_seat_grant", { p_request_id: requestId, p_email: email }),
+    mutationFn: (email: string) =>
+      unwrapRpc(supabase.rpc("partner_revoke_seat_grant", { p_request_id: requestId, p_email: email })),
     onSuccess: refresh,
     onError,
   });
