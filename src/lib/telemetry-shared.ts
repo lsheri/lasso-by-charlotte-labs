@@ -195,6 +195,12 @@ export type TelemetryEvent =
   | "invite.revoked"
   | "invite.email_sent"
   | "invite.blocked"
+  /** Seat roster: a partner named people on a provisioned seat request. Count and the fixed source only. Never an email, name, request id or key code. Portal needs this name added. */
+  | "seat.named"
+  /** Seat roster: seat invitations went out. Count only, nothing about who. Portal needs this name added. */
+  | "invite.sent"
+  /** Seat roster: a named seat was revoked. Content-free. Portal needs this name added. */
+  | "seat.revoked"
   | "oneonone.prepared"
   | "oneonone.saved_to_drive"
   /** Pass C: a person made a dated 1:1 session of their own. No text, no ids. */

@@ -11,6 +11,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { SectionHeader } from "@/components/notebook/SectionHeader";
 import { ToneCard } from "@/components/notebook/ToneCard";
 import { supabase } from "@/integrations/supabase/client";
+import { logEvent } from "@/lib/telemetry";
 import { useProfile } from "@/hooks/use-profile";
 import type { Database } from "@/integrations/supabase/types";
 
