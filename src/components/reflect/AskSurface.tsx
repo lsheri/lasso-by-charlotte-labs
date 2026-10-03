@@ -55,7 +55,7 @@ export function shouldSendAskOnEnter(
   return true;
 }
 
-function hasTouchInput(): boolean {
+export function hasTouchInput(): boolean {
   return typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches === true;
 }
 
