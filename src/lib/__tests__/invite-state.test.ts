@@ -4,6 +4,7 @@ import {
   blockedStateFor,
   blockedStateFromRpcError,
   emailsMatch,
+  expiredInviteCopy,
   maskEmail,
   normalizeEmail,
   notFoundState,
@@ -76,6 +77,19 @@ describe("maskEmail", () => {
     expect(maskEmail(null)).toBeNull();
     expect(maskEmail("@firm.com")).toBeNull();
     expect(maskEmail("not-an-email")).toBeNull();
+  });
+});
+
+describe("expiredInviteCopy", () => {
+  it("uses the invite's own expiry date", () => {
+    expect(expiredInviteCopy("2026-10-03T12:00:00Z")).toBe(
+      "This invite expired on 3 October 2026. It can no longer be used.",
+    );
+  });
+
+  it("makes no lifetime claim when the expiry is unavailable", () => {
+    expect(expiredInviteCopy(null)).toBe("This invite can no longer be used.");
+    expect(expiredInviteCopy("not-a-date")).toBe("This invite can no longer be used.");
   });
 });
 

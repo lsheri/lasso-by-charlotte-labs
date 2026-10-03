@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   blockedStateFor,
   blockedStateFromRpcError,
+  expiredInviteCopy,
   type BlockedState,
   type InviteState,
 } from "@/lib/invite-state";
@@ -216,7 +217,7 @@ function JoinPage() {
     return (
       <Shell>
         <StateCard label="Invite" title="This invite has expired">
-          <p>Invites last 14 days. This one is past that, so it can no longer be used.</p>
+          <p>{expiredInviteCopy(state.expires_at)}</p>
           <p>Ask {org} for a fresh link.</p>
         </StateCard>
       </Shell>
