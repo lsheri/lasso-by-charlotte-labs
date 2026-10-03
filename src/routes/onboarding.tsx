@@ -409,10 +409,11 @@ function OnboardingInner() {
 
     // Share back: the database decides whether to ask. Any failure or a
     // "no" from the prompt goes straight on; this never blocks onboarding.
-    let prompt: { ask?: boolean; institution_id?: string; institution_name?: string } | null = null;
+    type SharePrompt = { ask?: boolean; institution_id?: string; institution_name?: string };
+    let prompt: SharePrompt | null = null;
     try {
       const { data, error: promptError } = await supabase.rpc("share_back_prompt", {});
-      if (!promptError) prompt = data as typeof prompt;
+      if (!promptError) prompt = (data ?? null) as unknown as SharePrompt | null;
     } catch {
       prompt = null;
     }
