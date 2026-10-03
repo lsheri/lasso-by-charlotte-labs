@@ -173,6 +173,7 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "signup.started": ["intent", "src"],
   "signup.existing_account": ["via"],
   "auth.password_reset": ["step"],
+  "auth.sign_in_link": ["outcome"],
   "span_link.created": ["via"],
   "settings.changed": ["section", "setting", "change", "to_level"],
   "packet.viewed": [],
