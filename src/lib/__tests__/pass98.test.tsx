@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { FallbackCard, RenderedContent } from "@/components/peek/RenderedContent";
 import { BrandLogo, brandForToolkit, type BrandKey } from "@/components/connectors/BrandLogo";
 import { dateOnly, defaultWorkDate, driveSourceMeta } from "@/lib/source-dates";
 
@@ -95,7 +96,6 @@ describe("re-extract affordance", () => {
   } as never;
 
   it("shows for the owner when the contents could not be read", async () => {
-    const { FallbackCard } = await import("@/components/peek/RenderedContent");
     render(
       <QueryClientProvider client={new QueryClient()}>
         <FallbackCard item={failed} label="PDF" onDownload={() => {}} canEdit />
@@ -105,13 +105,11 @@ describe("re-extract affordance", () => {
   });
 
   it("stays hidden for a reader who does not own the item", async () => {
-    const { FallbackCard } = await import("@/components/peek/RenderedContent");
     render(<FallbackCard item={failed} label="PDF" onDownload={() => {}} />);
     expect(screen.queryByText("Try reading it again")).toBeNull();
   });
 
   it("shows in the Drive embed preview when the owner could not read contents", async () => {
-    const { RenderedContent } = await import("@/components/peek/RenderedContent");
     const driveFailed = {
       id: "w2",
       title: "Plan.gdoc",

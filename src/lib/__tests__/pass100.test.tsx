@@ -1,9 +1,12 @@
 // @vitest-environment jsdom
-import { cleanup } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
 afterEach(() => cleanup());
 
+import { AnchorPane } from "@/components/provenance/AnchorPane";
+import { loadSpanScope } from "@/lib/span-audit.server";
 import { ANALYSIS_PRESET_IDS, presetsForScope } from "@/lib/analysis-presets";
 import {
   validateSpanClaim,
@@ -193,7 +196,6 @@ describe("pass 100: reading is the access check", () => {
   }
 
   it("refuses a span question on work the caller cannot read", async () => {
-    const { loadSpanScope } = await import("@/lib/span-audit.server");
     await expect(loadSpanScope(clientFor([]), "deck-1", "owner-1")).rejects.toThrow(
       /not available to you/,
     );
@@ -217,9 +219,6 @@ describe("pass 100: an unreadable anchor stays honest", () => {
   };
 
   it("shows the title only line and the existing re-extract action for the owner", async () => {
-    const { render, screen } = await import("@testing-library/react");
-    const { QueryClient, QueryClientProvider } = await import("@tanstack/react-query");
-    const { AnchorPane } = await import("@/components/provenance/AnchorPane");
     render(
       <QueryClientProvider client={new QueryClient()}>
         <AnchorPane
@@ -238,9 +237,6 @@ describe("pass 100: an unreadable anchor stays honest", () => {
   });
 
   it("offers no owner action to a coach", async () => {
-    const { render, screen } = await import("@testing-library/react");
-    const { QueryClient, QueryClientProvider } = await import("@tanstack/react-query");
-    const { AnchorPane } = await import("@/components/provenance/AnchorPane");
     render(
       <QueryClientProvider client={new QueryClient()}>
         <AnchorPane
