@@ -156,7 +156,15 @@ export function KeyRequestsPage() {
 
   return (
     <div className="mx-auto w-full max-w-3xl">
-      <PageHeader title="Workshop keys" subtitle="Ask for keys for a workshop. The links appear here once they are ready." />
+      <PageHeader
+        title="Workshop keys"
+        subtitle="Ask for keys for a workshop. The links appear here once they are ready."
+        action={
+          <a href="/adding-people" className="text-sm text-muted-foreground underline-offset-4 hover:underline">
+            How adding people works
+          </a>
+        }
+      />
 
       <section className="mb-10">
         <SectionHeader title="Request keys for a workshop" />

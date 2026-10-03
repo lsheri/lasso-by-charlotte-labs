@@ -25,6 +25,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as TourPreviewRouteImport } from './routes/tour-preview'
 import { Route as TrustRouteImport } from './routes/trust'
 import { Route as WhyRouteImport } from './routes/why'
+import { Route as AuthenticatedAddingPeopleRouteImport } from './routes/_authenticated/adding-people'
 import { Route as AuthenticatedAffiliationRouteImport } from './routes/_authenticated/affiliation'
 import { Route as AuthenticatedAiRecordRouteImport } from './routes/_authenticated/ai-record'
 import { Route as AuthenticatedArchiveRouteImport } from './routes/_authenticated/archive'
@@ -151,6 +152,12 @@ const WhyRoute = WhyRouteImport.update({
   path: '/why',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAddingPeopleRoute =
+  AuthenticatedAddingPeopleRouteImport.update({
+    id: '/adding-people',
+    path: '/adding-people',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAffiliationRoute =
   AuthenticatedAffiliationRouteImport.update({
     id: '/affiliation',
@@ -408,6 +415,7 @@ export interface FileRoutesByFullPath {
   '/tour-preview': typeof TourPreviewRoute
   '/trust': typeof TrustRoute
   '/why': typeof WhyRoute
+  '/adding-people': typeof AuthenticatedAddingPeopleRoute
   '/affiliation': typeof AuthenticatedAffiliationRoute
   '/ai-record': typeof AuthenticatedAiRecordRoute
   '/archive': typeof AuthenticatedArchiveRoute
@@ -471,6 +479,7 @@ export interface FileRoutesByTo {
   '/tour-preview': typeof TourPreviewRoute
   '/trust': typeof TrustRoute
   '/why': typeof WhyRoute
+  '/adding-people': typeof AuthenticatedAddingPeopleRoute
   '/affiliation': typeof AuthenticatedAffiliationRoute
   '/ai-record': typeof AuthenticatedAiRecordRoute
   '/archive': typeof AuthenticatedArchiveRoute
@@ -536,6 +545,7 @@ export interface FileRoutesById {
   '/tour-preview': typeof TourPreviewRoute
   '/trust': typeof TrustRoute
   '/why': typeof WhyRoute
+  '/_authenticated/adding-people': typeof AuthenticatedAddingPeopleRoute
   '/_authenticated/affiliation': typeof AuthenticatedAffiliationRoute
   '/_authenticated/ai-record': typeof AuthenticatedAiRecordRoute
   '/_authenticated/archive': typeof AuthenticatedArchiveRoute
@@ -601,6 +611,7 @@ export interface FileRouteTypes {
     | '/tour-preview'
     | '/trust'
     | '/why'
+    | '/adding-people'
     | '/affiliation'
     | '/ai-record'
     | '/archive'
@@ -664,6 +675,7 @@ export interface FileRouteTypes {
     | '/tour-preview'
     | '/trust'
     | '/why'
+    | '/adding-people'
     | '/affiliation'
     | '/ai-record'
     | '/archive'
@@ -728,6 +740,7 @@ export interface FileRouteTypes {
     | '/tour-preview'
     | '/trust'
     | '/why'
+    | '/_authenticated/adding-people'
     | '/_authenticated/affiliation'
     | '/_authenticated/ai-record'
     | '/_authenticated/archive'
@@ -924,6 +937,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/why'
       preLoaderRoute: typeof WhyRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/adding-people': {
+      id: '/_authenticated/adding-people'
+      path: '/adding-people'
+      fullPath: '/adding-people'
+      preLoaderRoute: typeof AuthenticatedAddingPeopleRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/affiliation': {
       id: '/_authenticated/affiliation'
@@ -1251,6 +1271,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAddingPeopleRoute: typeof AuthenticatedAddingPeopleRoute
   AuthenticatedAffiliationRoute: typeof AuthenticatedAffiliationRoute
   AuthenticatedAiRecordRoute: typeof AuthenticatedAiRecordRoute
   AuthenticatedArchiveRoute: typeof AuthenticatedArchiveRoute
@@ -1283,6 +1304,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAddingPeopleRoute: AuthenticatedAddingPeopleRoute,
   AuthenticatedAffiliationRoute: AuthenticatedAffiliationRoute,
   AuthenticatedAiRecordRoute: AuthenticatedAiRecordRoute,
   AuthenticatedArchiveRoute: AuthenticatedArchiveRoute,
