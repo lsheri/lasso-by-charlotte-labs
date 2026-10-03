@@ -318,12 +318,8 @@ type SeatSummary = { seats: number; named: number; joined_named: number; joined_
 
 const SEAT_STATUS_LABEL: Record<SeatPerson["status"], string> = { added: "Added", sent: "Invited", joined: "Joined" };
 
-// The seat RPCs are newer than the generated types.
-type RpcClient = { rpc: (fn: string, args: Record<string, unknown>) => PromiseLike<{ data: unknown; error: { message: string } | null }> };
-const rpcClient = supabase as unknown as RpcClient;
-
-async function callRpc(fn: string, args: Record<string, unknown>): Promise<unknown> {
-  const { data, error } = await rpcClient.rpc(fn, args);
+async function unwrapRpc<T>(call: PromiseLike<{ data: T; error: { message: string } | null }>): Promise<T> {
+  const { data, error } = await call;
   if (error) throw new Error(error.message);
   return data;
 }
