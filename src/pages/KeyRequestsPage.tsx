@@ -44,8 +44,11 @@ export function parseEmails(raw: string): string[] {
     .filter((s) => s.length > 0);
 }
 
-export function attendeeLink(code: string): string {
-  return `${ORIGIN}/j/${code}`;
+export function attendeeLink(code: string, register?: string): string {
+  const url = `${ORIGIN}/j/${code}`;
+  // Unit 20: the key's own register rides in the link so signed out
+  // recipients land on the right door without a lookup.
+  return register ? `${url}?r=${encodeURIComponent(register)}` : url;
 }
 
 export { adminLink } from "@/lib/join-link";

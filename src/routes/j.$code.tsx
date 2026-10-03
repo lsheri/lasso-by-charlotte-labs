@@ -32,8 +32,14 @@ export const Route = createFileRoute("/j/$code")({
   beforeLoad: async ({ params, location }) => {
     const code = cleanActivationKey(params.code);
     if (code) markActivationKey(code);
-    const from = new URLSearchParams(location.searchStr ?? "").get("from");
-    const intent = code ? await resolveKeyIntent(code) : null;
+    const search = new URLSearchParams(location.searchStr ?? "");
+    const from = search.get("from");
+    // Unit 20: the link can carry the register itself. A valid r wins and
+    // skips the lookup entirely; anything else falls back to the lookup.
+    const rParam = search.get("r");
+    const linkIntent =
+      rParam && (INTENTS as readonly string[]).includes(rParam) ? (rParam as KeyIntent) : null;
+    const intent = linkIntent ?? (code ? await resolveKeyIntent(code) : null);
     throw redirect({
       to: "/auth",
       search: {
