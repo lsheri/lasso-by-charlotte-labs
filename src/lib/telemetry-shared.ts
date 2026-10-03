@@ -34,6 +34,8 @@ export type TelemetryEvent =
   | "signup.started"
   | "signup.existing_account"
   | "auth.password_reset"
+  /** A sign-in link was requested. Closed outcome word only (sent | cooldown). Portal needs this name added. */
+  | "auth.sign_in_link"
   /** Product shell 1.3: the public demo Home or a demo board was opened. Closed surface word and invented demo code only. */
   | "demo.opened"
   /** P1: one content-free interaction in the local-only public demo playground. */

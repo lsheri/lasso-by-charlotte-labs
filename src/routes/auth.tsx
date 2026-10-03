@@ -23,6 +23,7 @@ import { identifyPostHog } from "@/lib/posthog-client";
 import { parseFunnelSource, type FunnelSource } from "@/lib/funnel-source";
 import { EXISTING_ACCOUNT_INVITED, EXISTING_ACCOUNT_OPEN, isExistingAccountSignup } from "@/lib/signup-existing";
 import { FORGOT_LINK } from "@/lib/password-reset";
+import { isSendCooldown, SIGN_IN_LINK_COPY, signInLinkOptions } from "@/lib/sign-in-link";
 import { fetchProfile } from "@/hooks/use-profile";
 import { lookupActivationKeyFn, redeemActivationKeyFn } from "@/lib/activation-keys.functions";
 import { logEvent } from "@/lib/telemetry";
@@ -269,6 +270,32 @@ function AuthPage() {
     setResendPending(false);
   }
 
+  const [linkPending, setLinkPending] = useState(false);
+  const [linkSent, setLinkSent] = useState(false);
+  const [linkNote, setLinkNote] = useState<string | null>(null);
+  async function sendSignInLink() {
+    if (linkPending) return;
+    if (!email) {
+      setLinkNote(SIGN_IN_LINK_COPY.needEmail);
+      return;
+    }
+    setLinkPending(true);
+    setLinkNote(null);
+    setError(null);
+    // The raw query, not the validated one, so nothing is dropped on the way back.
+    const { error: otpError } = await supabase.auth.signInWithOtp({
+      email,
+      options: signInLinkOptions(window.location.search),
+    });
+    const cooldown = isSendCooldown(otpError);
+    // Any other outcome, including an unknown address, reads as sent.
+    setLinkNote(cooldown ? SIGN_IN_LINK_COPY.alreadySent : null);
+    setLinkSent(true);
+    emitClientEvent("auth.sign_in_link", { outcome: cooldown ? "cooldown" : "sent" }, { stableVisitor: true });
+    setLinkPending(false);
+  }
+
+
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     setPending(true);
@@ -458,6 +485,26 @@ function AuthPage() {
             </Button>
             {mode === "signin" ? (
               <Link to="/reset-password" search={next ? { next } : {}} className="mt-2 inline-block text-sm text-muted-foreground transition-colors hover:text-foreground">{FORGOT_LINK}</Link>
+            ) : null}
+            {mode === "signin" ? (
+              <div data-testid="sign-in-link" className="border-t border-border pt-4">
+                {linkSent ? (
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{SIGN_IN_LINK_COPY.sentTitle}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">{linkNote ?? SIGN_IN_LINK_COPY.sentBody}</p>
+                    <button type="button" className="mt-2 text-sm text-muted-foreground transition-colors hover:text-foreground" onClick={() => { setLinkSent(false); setLinkNote(null); }}>
+                      {SIGN_IN_LINK_COPY.back}
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <Button type="button" variant="outline" className="w-full" disabled={linkPending} onClick={() => void sendSignInLink()}>
+                      {linkPending ? SIGN_IN_LINK_COPY.sending : SIGN_IN_LINK_COPY.control}
+                    </Button>
+                    {linkNote ? <p className="mt-2 text-sm text-muted-foreground">{linkNote}</p> : null}
+                  </>
+                )}
+              </div>
             ) : null}
           </form>
 
