@@ -209,6 +209,10 @@ export type TelemetryEvent =
   | "share_back.declined"
   /** Share back: a partner claimed an offered share back. Content-free. Portal needs this name added. */
   | "share_back.claimed"
+  /** Share back: a person let a sponsor see one board. Content-free. Portal needs this name added. */
+  | "share_back.engagement_shared"
+  /** Share back: a person took one board back from a sponsor. Content-free. Portal needs this name added. */
+  | "share_back.engagement_unshared"
   | "oneonone.prepared"
   | "oneonone.saved_to_drive"
   /** Pass C: a person made a dated 1:1 session of their own. No text, no ids. */
