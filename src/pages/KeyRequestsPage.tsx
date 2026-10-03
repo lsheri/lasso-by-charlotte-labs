@@ -236,7 +236,7 @@ export function KeyRequestsPage() {
           {list.data && list.data.length === 0 ? (
             <p className="text-base text-muted-foreground">No requests yet.</p>
           ) : null}
-          {list.data?.map((r) => <RequestRow key={r.id} r={r} />)}
+          {list.data?.map((r) => <RequestRow key={r.id} r={r} orgId={orgId} />)}
         </div>
       </section>
     </div>
@@ -259,7 +259,7 @@ function LinkLine({ label, url }: { label: string; url: string }) {
   );
 }
 
-function RequestRow({ r }: { r: KeyRequest }) {
+function RequestRow({ r, orgId }: { r: KeyRequest; orgId: string | null }) {
   const tone = r.status === "provisioned" ? "record" : r.status === "declined" ? "attention" : "paper";
   const attendee = r.issued_code ? attendeeLink(r.issued_code, r.workspace_kind) : null;
   const admin = r.admin_invite_code ? adminLink(r.admin_invite_code) : null;
@@ -307,7 +307,7 @@ function RequestRow({ r }: { r: KeyRequest }) {
               Copy both
             </Button>
           ) : null}
-          <SeatRoster requestId={r.id} />
+          <SeatRoster requestId={r.id} orgId={orgId} />
         </div>
       ) : null}
     </ToneCard>
