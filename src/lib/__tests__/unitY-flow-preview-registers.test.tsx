@@ -20,7 +20,7 @@ afterEach(() => cleanup());
 const EXPECTED: Record<Register, string[]> = {
   company: [
     "You work in your AI tools", "Claude, ChatGPT, Drive, meetings.",
-    "It flows into Lasso", "Only what you choose. Private on arrival.",
+    "It flows into Lasso", "Work arrives in the workspace you created.",
     "You map it", "Give it a workboard and a workstream. It becomes a record.",
     "A coach sees what you share", "A coach sees the shared view.",
   ],
