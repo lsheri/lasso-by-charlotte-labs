@@ -397,7 +397,7 @@ function SeatRoster({ requestId, orgId }: { requestId: string; orgId: string | n
     onSuccess: (data) => {
       setRaw("");
       refresh();
-      if (orgId) logEvent("seat.named", orgId, { count: rpcCount((data as { added?: unknown }).added), source: "roster" });
+      if (orgId) logEvent("seat.named", orgId, { source: "roster" });
     },
     onError,
   });
@@ -405,7 +405,7 @@ function SeatRoster({ requestId, orgId }: { requestId: string; orgId: string | n
     mutationFn: () => unwrapRpc(supabase.rpc("partner_send_seat_invites", { p_request_id: requestId })),
     onSuccess: (data) => {
       refresh();
-      if (orgId) logEvent("invite.sent", orgId, { count: rpcCount((data as { sent?: unknown }).sent) });
+      if (orgId) logEvent("invite.sent", orgId, {});
     },
     onError,
   });
