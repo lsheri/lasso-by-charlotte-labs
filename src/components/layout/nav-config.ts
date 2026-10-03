@@ -140,7 +140,9 @@ export const partnerNavGroups: NavGroup[] = navGroups.flatMap((group) => {
       {
         ...group,
         label: "Your clients",
-        items: [...group.items, { label: "Workshop keys", to: "/requests", icon: "members" as const }],
+        items: [...group.items, { label: "Workshop keys", to: "/requests", icon: "members" as const },
+          { label: "Adding people", to: "/adding-people", icon: "members" as const },
+        ],
       },
     ];
   }
