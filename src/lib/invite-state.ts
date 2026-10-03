@@ -46,6 +46,19 @@ export function maskEmail(email: string | null | undefined): string | null {
   return `${local[0]}•••@${domain}`;
 }
 
+export function expiredInviteCopy(expiresAt: string | null): string {
+  if (!expiresAt) return "This invite can no longer be used.";
+  const expiry = new Date(expiresAt);
+  if (Number.isNaN(expiry.getTime())) return "This invite can no longer be used.";
+  const date = expiry.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+  return `This invite expired on ${date}. It can no longer be used.`;
+}
+
 export type InviteState = {
   status: InviteStatus;
   invited_role: string | null;

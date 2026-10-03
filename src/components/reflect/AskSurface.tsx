@@ -30,6 +30,36 @@ import { extractTurnRefs, type TurnRef } from "@/lib/turn-labels";
 import { AnswerTurnLinks } from "@/components/reflect/AnswerTurnLinks";
 import { ThreadViewerById } from "@/components/work/ThreadViewerById";
 
+type AskComposerKeyEvent = {
+  key: string;
+  shiftKey: boolean;
+  isComposing: boolean;
+  keyCode: number;
+};
+
+export function shouldSendAskOnEnter(
+  event: AskComposerKeyEvent,
+  isTouch: boolean,
+  draft: string,
+  pending: boolean,
+): boolean {
+  if (
+    event.key !== "Enter" ||
+    event.shiftKey ||
+    event.isComposing ||
+    event.keyCode === 229 ||
+    isTouch ||
+    !draft.trim() ||
+    pending
+  ) return false;
+  return true;
+}
+
+function hasTouchInput(): boolean {
+  if (typeof navigator !== "undefined" && navigator.maxTouchPoints > 0) return true;
+  return typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches === true;
+}
+
 /** Three grey dots used by compact loading and sending states inside Ask Lasso. */
 export function NbDots({ label = "Thinking" }: { label?: string }) {
   return (
@@ -612,22 +642,32 @@ export function AskComposer({
                 }
                 return;
               }
-              if (!ask.mention || ask.mentionMatches.length === 0) return;
-              if (event.key === "ArrowDown") {
-                event.preventDefault();
-                ask.setMentionIndex((i) => (i + 1) % ask.mentionMatches.length);
-              } else if (event.key === "ArrowUp") {
-                event.preventDefault();
-                ask.setMentionIndex(
-                  (i) => (i - 1 + ask.mentionMatches.length) % ask.mentionMatches.length,
-                );
-              } else if (event.key === "Enter") {
-                event.preventDefault();
-                const pick = ask.mentionMatches[ask.mentionIndex];
-                if (pick) ask.chooseMention(pick);
-              } else if (event.key === "Escape") {
-                ask.setMention(null);
+              if (ask.mention && ask.mentionMatches.length > 0) {
+                if (event.key === "ArrowDown") {
+                  event.preventDefault();
+                  ask.setMentionIndex((i) => (i + 1) % ask.mentionMatches.length);
+                } else if (event.key === "ArrowUp") {
+                  event.preventDefault();
+                  ask.setMentionIndex(
+                    (i) => (i - 1 + ask.mentionMatches.length) % ask.mentionMatches.length,
+                  );
+                } else if (event.key === "Enter") {
+                  event.preventDefault();
+                  const pick = ask.mentionMatches[ask.mentionIndex];
+                  if (pick) ask.chooseMention(pick);
+                } else if (event.key === "Escape") {
+                  ask.setMention(null);
+                }
+                return;
               }
+              if (!shouldSendAskOnEnter(
+                event.nativeEvent,
+                hasTouchInput(),
+                ask.draft,
+                ask.pending,
+              )) return;
+              event.preventDefault();
+              void ask.submit();
             }}
             placeholder="What do you want to think through? Type @ to point at a piece of work. Type / for a workstream."
             rows={mobile ? 2 : 3}
