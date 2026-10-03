@@ -107,7 +107,11 @@ describe("Unit W: the setup form never creates a second workspace", () => {
   it("zero profiles creates the workspace as before", async () => {
     mocks.profilesRead.mockResolvedValue({ data: [], error: null });
     await submit();
-    await waitFor(() => expect(mocks.rpc).toHaveBeenCalledTimes(1));
+    const creates = () => mocks.rpc.mock.calls.filter((c) => c[0] === "create_org_with_profile");
+    await waitFor(() => expect(creates()).toHaveLength(1));
+    // Let any later calls (the share back prompt) settle, then check again.
+    await waitFor(() => expect(mocks.rpc.mock.calls.length).toBeGreaterThanOrEqual(2));
+    expect(creates()).toHaveLength(1);
     expect(mocks.rpc.mock.calls[0]?.[0]).toBe("create_org_with_profile");
   });
 
