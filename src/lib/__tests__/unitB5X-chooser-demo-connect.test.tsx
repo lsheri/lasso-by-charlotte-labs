@@ -5,11 +5,14 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { ExportGuideCard } from "@/components/onboarding/ExportGuideCard";
 import { DEMO_BANNED_PATTERN, neutralDemoCopy, neutralDemoText } from "@/lib/demo-neutral-copy";
 import { parseLandingProof } from "@/lib/landing-proof-shared";
+import { plansRedirectSearch } from "@/routes/onboarding";
 
 const logEvent = vi.fn();
 vi.mock("@/lib/telemetry", () => ({ logEvent: (...args: unknown[]) => logEvent(...args) }));
+vi.mock("@/integrations/supabase/client", () => ({ supabase: {} }));
 vi.mock("@/hooks/use-profile", () => ({
   useProfile: () => ({ data: { id: "p1", org_id: "o1" } }),
 }));
@@ -21,8 +24,6 @@ afterEach(() => {
 
 describe("onboarding with no door signal goes to /plans", () => {
   it("redirects with from and src carried through", async () => {
-    vi.doMock("@/integrations/supabase/client", () => ({ supabase: {} }));
-    const { plansRedirectSearch } = await import("@/routes/onboarding");
     expect(plansRedirectSearch({ from: "edu", src: "email" } as never, false)).toEqual({
       from: "edu",
       src: "email",
@@ -45,7 +46,6 @@ describe("onboarding with no door signal goes to /plans", () => {
 
 describe("connector.setup_opened fires from a non-AI card", () => {
   it("ExportGuideCard records it with surface and had_connector", async () => {
-    const { ExportGuideCard } = await import("@/components/onboarding/ExportGuideCard");
     const client = new QueryClient();
     render(
       <QueryClientProvider client={client}>

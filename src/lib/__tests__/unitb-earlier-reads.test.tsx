@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
-import { render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { AskPrivacyLine } from "@/components/reflect/AskSurface";
 import { earlierReadsNote, EARLIER_READS_HEADING } from "@/lib/earlier-reads";
 
 let live = false;
@@ -50,18 +51,14 @@ describe("earlierReadsNote", () => {
 });
 
 describe("AskPrivacyLine", () => {
-  beforeEach(() => {
-    vi.resetModules();
-  });
+  afterEach(() => cleanup());
   it("short line without a live coach link", async () => {
     live = false;
-    const { AskPrivacyLine } = await import("@/components/reflect/AskSurface");
     render(<AskPrivacyLine />);
     expect(screen.getByText("Ask about this workboard. Private to you.")).toBeTruthy();
   });
   it("coach line with a live coach link", async () => {
     live = true;
-    const { AskPrivacyLine } = await import("@/components/reflect/AskSurface");
     render(<AskPrivacyLine />);
     expect(screen.getByText("Ask about this workboard. Private to you, your coach never sees this.")).toBeTruthy();
   });
