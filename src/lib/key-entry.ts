@@ -20,6 +20,12 @@ export function cleanActivationKey(raw: unknown): string | null {
   return trimmed;
 }
 
+/** Activation keys use either the current LSO prefix or the earlier three-part pilot format. */
+export function isActivationKeyShape(raw: unknown): raw is string {
+  const clean = cleanActivationKey(raw);
+  return clean !== null && /^(?:LSO-[A-Z0-9]+|[A-Z][A-Z0-9]*-[A-Z0-9]+-[A-Z0-9]+)$/i.test(clean);
+}
+
 export function markActivationKey(code: string | undefined): void {
   const clean = cleanActivationKey(code);
   if (!clean) return;

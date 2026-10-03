@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 
-import { EnterInviteCode } from "@/components/invites/EnterInviteCode";
+import { parseInvite } from "@/components/invites/EnterInviteCode";
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
 import { EntryDoorLink } from "@/components/layout/EntryDoorLink";
 import { rememberEntryDoor } from "@/lib/entry-door";
@@ -12,6 +12,7 @@ import { emitClientEvent } from "@/lib/client-telemetry";
 import type { SignupSource } from "@/lib/edu-entry";
 import { parseFunnelSource, type FunnelSource } from "@/lib/funnel-source";
 import { isPartnerSlug } from "@/lib/partners";
+import { cleanActivationKey, isActivationKeyShape } from "@/lib/key-entry";
 
 export type PlansSearch = { src?: FunnelSource | undefined; from?: SignupSource | undefined };
 
@@ -115,35 +116,54 @@ const PLANS = [
   },
 ] as const;
 
-function ActivationKeyEntry({ onSubmit }: { onSubmit: () => void }) {
+export const CODE_ENTRY_ERROR = "We do not recognise that code. Check it against the message you were sent.";
+
+function CodeEntry() {
   const navigate = useNavigate();
   const [code, setCode] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const clean = code.trim();
-    if (!clean) return;
-    onSubmit();
-    navigate({ to: "/j/$code", params: { code: clean } });
+    const clean = cleanActivationKey(code);
+    if (clean && isActivationKeyShape(clean)) {
+      setError(null);
+      navigate({ to: "/j/$code", params: { code: clean } });
+      return;
+    }
+    const invite = parseInvite(code);
+    if (invite) {
+      setError(null);
+      navigate({
+        to: "/join",
+        search: invite.eng ? { code: invite.code, eng: invite.eng } : { code: invite.code },
+      });
+      return;
+    }
+    setError(CODE_ENTRY_ERROR);
   }
 
   return (
     <form onSubmit={submit} className="min-w-0">
-      <Label htmlFor="activation-key" className="micro-label">
-        Someone sent you a key?
+      <Label htmlFor="entry-code" className="micro-label">
+        Enter the code you were sent
       </Label>
       <div className="mt-3 flex min-w-0 gap-2">
         <Input
-          id="activation-key"
+          id="entry-code"
           value={code}
-          onChange={(event) => setCode(event.target.value)}
+          onChange={(event) => {
+            setCode(event.target.value);
+            if (error) setError(null);
+          }}
           className="min-w-0 font-mono"
-          placeholder="Enter your key"
+          autoComplete="off"
         />
         <Button type="submit" variant="outline">
           Continue
         </Button>
       </div>
+      {error ? <p className="mt-2 text-sm text-destructive">{error}</p> : null}
     </form>
   );
 }
@@ -245,9 +265,10 @@ export function PlansPage({ search = {} }: { search?: PlansSearch }) {
           ))}
         </div>
 
-        <section className="mt-12 grid gap-8 border-y border-rule py-8 md:grid-cols-2">
-          <ActivationKeyEntry onSubmit={() => undefined} />
-          <EnterInviteCode label="Got an invite to a workspace?" bare />
+        <section className="mt-12 border-y border-rule py-8">
+          <div className="max-w-xl">
+            <CodeEntry />
+          </div>
         </section>
 
         <p className="mx-auto mt-8 max-w-4xl text-center text-xs leading-5 text-muted-foreground">
