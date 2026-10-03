@@ -98,4 +98,12 @@ describe("Unit L4: entry copy", () => {
     expect(screen.queryByText(/Signing in reads nothing/)).toBeNull();
     expect(screen.queryByText("no tool is connected by signing in")).toBeNull();
   });
+
+  it("keeps exported register lines positive for entry emails", () => {
+    expect(REGISTER_COPY.company.privacy).toBe("Share work with your organization when you choose.");
+    expect(REGISTER_COPY.personal.privacy).toBe("Pick a thread back up months later.");
+    expect(REGISTER_COPY.edu.privacy).toBe("Take your work with you when the term ends.");
+    expect(REGISTER_COPY.partner.privacy).toBe("You see what people share with you.");
+    expect(NEUTRAL_COPY.privacy).toBe("Bring your AI conversations into one workspace.");
+  });
 });

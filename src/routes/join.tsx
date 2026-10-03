@@ -192,7 +192,7 @@ function JoinPage() {
     return (
       <Shell>
         <StateCard label="Invite" title="This invite was withdrawn">
-          <p>Whoever created it has since cancelled it. Nothing was shared with you.</p>
+          <p>Whoever created it has since cancelled it.</p>
           <p>Ask {org} for a new one if you still need access.</p>
         </StateCard>
       </Shell>

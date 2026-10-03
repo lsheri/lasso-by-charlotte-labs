@@ -37,7 +37,7 @@ export const REGISTER_COPY: Readonly<Record<Register, RegisterCopy>> = {
     workspaceLabel: "Workspace name",
     workspacePlaceholder: "Northwind Group",
     claim: "One board. Every tool. Circle a few chats and ask.",
-    privacy: "Nobody reads your threads. Your work is private to you until you share it.",
+    privacy: "Share work with your organization when you choose.",
   },
   personal: {
     emailLabel: "EMAIL",
@@ -46,7 +46,7 @@ export const REGISTER_COPY: Readonly<Record<Register, RegisterCopy>> = {
     setupBody: "One detail and you are in. Yours to change later.",
     workspaceField: false,
     claim: "Stop losing the chat where you worked it out.",
-    privacy: "Nobody reads your threads.",
+    privacy: "Pick a thread back up months later.",
   },
   edu: {
     emailLabel: "EMAIL",
@@ -55,7 +55,7 @@ export const REGISTER_COPY: Readonly<Record<Register, RegisterCopy>> = {
     setupBody: "One detail and you are in. Yours to change later.",
     workspaceField: false,
     claim: "Your AI chats are where the thinking happened. Put them where the work is.",
-    privacy: "Not your professor, not your school.",
+    privacy: "Take your work with you when the term ends.",
   },
   partner: {
     emailLabel: "WORK EMAIL",
@@ -66,7 +66,7 @@ export const REGISTER_COPY: Readonly<Record<Register, RegisterCopy>> = {
     workspaceLabel: "Workspace name",
     workspacePlaceholder: "Harbor Practice",
     claim: "Every workboard in one place, with the work people shared next to it.",
-    privacy: "You see what people send you, and nothing else.",
+    privacy: "You see what people share with you.",
   },
 };
 
@@ -82,7 +82,7 @@ export const NEUTRAL_COPY: RegisterCopy = {
   setupBody: "One detail and you are in. Yours to change later.",
   workspaceField: false,
   claim: "Every AI conversation you've had, in one place, next to the work it produced.",
-  privacy: "Nobody reads your threads.",
+  privacy: "Bring your AI conversations into one workspace.",
 };
 
 export const REGISTER_SHARED_COPY = {

@@ -37,14 +37,14 @@ const SECTIONS: { heading: string; body: string[] }[] = [
     heading: "A coach in your corner",
     body: [
       "Growing fast is easier with someone who has seen the road. Lasso lets you invite someone you trust into exactly the work you choose, a coach, a lead, a mentor.",
-      "They see what you share, never more. No dashboards over your shoulder, no ratings, no verdicts on you as a person. Just a colleague who can read the real context and tell you something useful.",
+      "They see what you share and can read the real context before telling you something useful.",
     ],
   },
   {
     heading: "Yours, always",
     body: [
-      "You own the record. Private stays private, drafts stay drafts, and nothing is shared until you say so. Change your mind and you can unshare or delete it.",
-      "Your organization's admins handle settings and invitations, never anyone's content.",
+      "You own the record. Share it, unshare it or delete it as your work changes.",
+      "Your organization's admins handle settings and invitations.",
     ],
   },
 ];
@@ -79,7 +79,7 @@ function WhyPage() {
         </div>
 
         <div className="mt-16 rounded-[var(--radius-control)] border border-[var(--nb-pencil)] bg-card px-6 py-8 shadow-card">
-          <p className="text-sm text-foreground">Start your record. It stays yours.</p>
+          <p className="text-sm text-foreground">Start your record.</p>
           <Button asChild className="mt-4">
             <Link to="/auth">Get started</Link>
           </Button>

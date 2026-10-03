@@ -54,7 +54,7 @@ export const TOOLS: Record<ToolId, ToolMeta> = {
     icon: MessageSquare,
     hue: "--hue-slate-blue",
     path: "mcp",
-    scope: "your conversations, not your account",
+    scope: "the conversations you push",
   },
   chatgpt: {
     id: "chatgpt",
@@ -63,7 +63,7 @@ export const TOOLS: Record<ToolId, ToolMeta> = {
     icon: Bot,
     hue: "--hue-moss",
     path: "mcp",
-    scope: "the conversations you push, not your history",
+    scope: "the conversations you push",
   },
   gemini: {
     id: "gemini",
@@ -72,7 +72,7 @@ export const TOOLS: Record<ToolId, ToolMeta> = {
     icon: Sparkles,
     hue: "--hue-indigo",
     path: "export",
-    scope: "the file you export, not your Google account",
+    scope: "the file you export",
   },
   copilot: {
     id: "copilot",
@@ -81,7 +81,7 @@ export const TOOLS: Record<ToolId, ToolMeta> = {
     icon: FileText,
     hue: "--hue-sand",
     path: "export",
-    scope: "the file you export, not your Microsoft account",
+    scope: "the file you export",
   },
   googledrive: {
     id: "googledrive",
@@ -90,7 +90,7 @@ export const TOOLS: Record<ToolId, ToolMeta> = {
     icon: HardDrive,
     hue: "--hue-amber",
     path: "connector",
-    scope: "files you touched, not the whole drive",
+    scope: "the files you pick",
   },
   granola: {
     id: "granola",
@@ -99,7 +99,7 @@ export const TOOLS: Record<ToolId, ToolMeta> = {
     icon: Mic,
     hue: "--hue-plum",
     path: "connector",
-    scope: "meeting notes, never the audio",
+    scope: "meeting notes",
   },
   gmail: {
     id: "gmail",
@@ -108,7 +108,7 @@ export const TOOLS: Record<ToolId, ToolMeta> = {
     icon: Mail,
     hue: "--hue-cyan",
     path: "connector",
-    scope: "the threads you pick, not your inbox",
+    scope: "the threads you pick",
   },
   transcripts: {
     id: "transcripts",
@@ -117,7 +117,7 @@ export const TOOLS: Record<ToolId, ToolMeta> = {
     icon: Mic,
     hue: "--hue-clay",
     path: "connector",
-    scope: "transcripts, never recordings",
+    scope: "transcripts",
   },
   other: {
     id: "other",
