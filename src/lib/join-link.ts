@@ -22,3 +22,10 @@ export function buildJoinUrl(
   if (opts?.eng) url.searchParams.set("eng", opts.eng);
   return url.toString();
 }
+
+/** The attendee link for a key. The key's register rides as r so signed out recipients land on the right door. */
+export function attendeeLink(code: string, register?: string, origin: string = CANONICAL_ORIGIN): string {
+  const url = new URL(`/j/${code}`, origin);
+  if (register) url.searchParams.set("r", register);
+  return url.toString();
+}

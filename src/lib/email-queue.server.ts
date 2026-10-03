@@ -3,7 +3,7 @@
  * Service role only. Rows are claimed atomically before sending so two
  * sweeps never send the same email twice. Operational, not a product event.
  */
-import { buildJoinUrl } from "./join-link";
+import { attendeeLink, buildJoinUrl } from "./join-link";
 import { REGISTER_COPY, type Register } from "./register";
 
 export const EMAIL_BATCH = 10;
@@ -36,8 +36,12 @@ export function buildVariables(payload: Record<string, unknown> | null): Record<
     WORKSPACE_NAME: String(p["WORKSPACE_NAME"] ?? ""),
     SEATS: num(p["SEATS"]),
     EXPIRES_DAYS: num(p["EXPIRES_DAYS"]),
-    JOIN_URL: buildJoinUrl(String(p["CODE"] ?? "")),
+    JOIN_URL:
+      p["LINK_KIND"] === "attendee"
+        ? attendeeLink(String(p["CODE"] ?? ""), typeof p["REGISTER"] === "string" ? p["REGISTER"] : undefined)
+        : buildJoinUrl(String(p["CODE"] ?? "")),
     PRIVACY_LINE: privacyLineFor(p["REGISTER"]),
+    PARTNER_NAME: String(p["PARTNER_NAME"] ?? ""),
   };
 }
 

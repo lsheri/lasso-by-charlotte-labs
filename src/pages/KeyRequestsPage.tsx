@@ -18,8 +18,6 @@ type KeyRequest = Database["public"]["Tables"]["key_requests"]["Row"];
 type KeyRequestInsert = Database["public"]["Tables"]["key_requests"]["Insert"];
 type Kind = "company" | "edu" | "personal";
 
-const ORIGIN = "https://lasso.charlotte-labs.com";
-
 const KINDS: { value: Kind; label: string; help: string }[] = [
   { value: "company", label: "A company", help: "Everyone joins one workspace together." },
   { value: "edu", label: "A school", help: "Everyone joins one school workspace together." },
@@ -44,15 +42,8 @@ export function parseEmails(raw: string): string[] {
     .filter((s) => s.length > 0);
 }
 
-export function attendeeLink(code: string, register?: string): string {
-  const url = `${ORIGIN}/j/${code}`;
-  // Unit 20: the key's own register rides in the link so signed out
-  // recipients land on the right door without a lookup.
-  return register ? `${url}?r=${encodeURIComponent(register)}` : url;
-}
-
-export { adminLink } from "@/lib/join-link";
-import { adminLink } from "@/lib/join-link";
+export { adminLink, attendeeLink } from "@/lib/join-link";
+import { adminLink, attendeeLink } from "@/lib/join-link";
 
 function copy(text: string) {
   void navigator.clipboard.writeText(text).then(
@@ -315,8 +306,123 @@ function RequestRow({ r }: { r: KeyRequest }) {
               Copy both
             </Button>
           ) : null}
+          <SeatRoster requestId={r.id} />
         </div>
       ) : null}
     </ToneCard>
+  );
+}
+
+type SeatPerson = { email: string; status: "added" | "sent" | "joined"; invited_at: string | null; joined_at: string | null };
+type SeatSummary = { seats: number; named: number; joined_named: number; joined_total: number; people: SeatPerson[] };
+
+const SEAT_STATUS_LABEL: Record<SeatPerson["status"], string> = { added: "Added", sent: "Invited", joined: "Joined" };
+
+// The seat RPCs are newer than the generated types.
+type RpcClient = { rpc: (fn: string, args: Record<string, unknown>) => PromiseLike<{ data: unknown; error: { message: string } | null }> };
+const rpcClient = supabase as unknown as RpcClient;
+
+async function callRpc(fn: string, args: Record<string, unknown>): Promise<unknown> {
+  const { data, error } = await rpcClient.rpc(fn, args);
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+function SeatRoster({ requestId }: { requestId: string }) {
+  const qc = useQueryClient();
+  const key = ["seat-summary", requestId];
+  const [raw, setRaw] = useState("");
+  const summary = useQuery({
+    queryKey: key,
+    queryFn: async () => (await callRpc("partner_seat_summary", { p_request_id: requestId })) as SeatSummary,
+  });
+  const onError = (e: Error) => toast.error(e.message);
+  const refresh = () => void qc.invalidateQueries({ queryKey: key });
+
+  const add = useMutation({
+    mutationFn: (emails: string[]) => callRpc("partner_add_seat_emails", { p_request_id: requestId, p_emails: emails }),
+    onSuccess: () => {
+      setRaw("");
+      refresh();
+    },
+    onError,
+  });
+  const send = useMutation({
+    mutationFn: () => callRpc("partner_send_seat_invites", { p_request_id: requestId }),
+    onSuccess: refresh,
+    onError,
+  });
+  const revoke = useMutation({
+    mutationFn: (email: string) => callRpc("partner_revoke_seat_grant", { p_request_id: requestId, p_email: email }),
+    onSuccess: refresh,
+    onError,
+  });
+
+  const s = summary.data;
+  const addedCount = s?.people.filter((p) => p.status === "added").length ?? 0;
+  const inputId = `seat-add-${requestId}`;
+  const emails = parseEmails(raw);
+
+  return (
+    <div className="flex flex-col gap-3 border-t border-border pt-3">
+      {summary.isLoading ? <p className="text-sm text-muted-foreground">Loading</p> : null}
+      {summary.error ? <p className="text-sm text-destructive">{(summary.error as Error).message}</p> : null}
+      {s ? (
+        <div className="flex flex-col gap-1">
+          <p className="text-sm font-medium">
+            {s.joined_total} of {s.seats} seats taken
+          </p>
+          {s.named === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Nobody is named yet. Anyone with the attendee link can take a seat until they run out.
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+      {s && s.named > 0 ? (
+        <ul className="flex flex-col gap-2">
+          {s.people.map((p) => (
+            <li key={p.email} className="flex flex-wrap items-center gap-2">
+              <span className="min-w-0 flex-1 truncate text-sm">{p.email}</span>
+              <span className="rounded-full border border-border px-2 py-0.5 text-sm">{SEAT_STATUS_LABEL[p.status] ?? p.status}</span>
+              {p.status !== "joined" ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={revoke.isPending}
+                  onClick={() => revoke.mutate(p.email)}
+                >
+                  Remove
+                </Button>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor={inputId}>Add people</Label>
+        <Textarea id={inputId} rows={3} value={raw} onChange={(e) => setRaw(e.target.value)} />
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="self-start"
+          disabled={emails.length === 0 || add.isPending}
+          onClick={() => add.mutate(emails)}
+        >
+          Add
+        </Button>
+      </div>
+      <Button
+        type="button"
+        size="sm"
+        className="self-start"
+        disabled={addedCount === 0 || send.isPending}
+        onClick={() => send.mutate()}
+      >
+        {addedCount > 0 ? `Send invitations to ${addedCount}` : "Send invitations"}
+      </Button>
+    </div>
   );
 }

@@ -65,6 +65,7 @@ export type Database = {
       }
       activation_keys: {
         Row: {
+          allowed_domains: Json | null
           code: string
           created_at: string
           created_by: string | null
@@ -80,6 +81,7 @@ export type Database = {
           uses: number
         }
         Insert: {
+          allowed_domains?: Json | null
           code: string
           created_at?: string
           created_by?: string | null
@@ -95,6 +97,7 @@ export type Database = {
           uses?: number
         }
         Update: {
+          allowed_domains?: Json | null
           code?: string
           created_at?: string
           created_by?: string | null
@@ -3539,6 +3542,74 @@ export type Database = {
           },
         ]
       }
+      seat_grants: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string | null
+          email: string
+          id: string
+          invited_at: string | null
+          joined_at: string | null
+          joined_profile_id: string | null
+          request_id: string
+          status: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by?: string | null
+          email: string
+          id?: string
+          invited_at?: string | null
+          joined_at?: string | null
+          joined_profile_id?: string | null
+          request_id: string
+          status?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          email?: string
+          id?: string
+          invited_at?: string | null
+          joined_at?: string | null
+          joined_profile_id?: string | null
+          request_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seat_grants_code_fkey"
+            columns: ["code"]
+            isOneToOne: false
+            referencedRelation: "activation_keys"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "seat_grants_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seat_grants_joined_profile_id_fkey"
+            columns: ["joined_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seat_grants_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "key_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shipped_work: {
         Row: {
           engagement_id: string | null
@@ -4983,6 +5054,7 @@ export type Database = {
       admin_approve_request: {
         Args: {
           p_admin_link_days?: number
+          p_domain_gate?: boolean
           p_institution_id: string
           p_note?: string
           p_request_id: string
@@ -5294,6 +5366,10 @@ export type Database = {
       analytics_upsert_episode: { Args: { p_row: Json }; Returns: undefined }
       analytics_upsert_feature: { Args: { p_row: Json }; Returns: undefined }
       assert_seat_available: { Args: { p_org_id: string }; Returns: undefined }
+      can_manage_key_request: {
+        Args: { p_request_id: string }
+        Returns: boolean
+      }
       can_place_in_task: { Args: { p_task: string }; Returns: boolean }
       can_place_item_in_task: {
         Args: { p_item: string; p_task: string }
@@ -5491,6 +5567,19 @@ export type Database = {
       org_key_target_ok: {
         Args: { p_type: string }
         Returns: Record<string, unknown>
+      }
+      partner_add_seat_emails: {
+        Args: { p_emails: string[]; p_request_id: string }
+        Returns: Json
+      }
+      partner_revoke_seat_grant: {
+        Args: { p_email: string; p_request_id: string }
+        Returns: Json
+      }
+      partner_seat_summary: { Args: { p_request_id: string }; Returns: Json }
+      partner_send_seat_invites: {
+        Args: { p_emails?: string[]; p_request_id: string }
+        Returns: Json
       }
       purge_workboard_annotations: { Args: never; Returns: number }
       reactivate_member: { Args: { p_profile: string }; Returns: undefined }
