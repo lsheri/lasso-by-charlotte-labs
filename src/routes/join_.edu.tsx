@@ -9,7 +9,7 @@ import { recordAnonymousEventFn } from "@/lib/telemetry.functions";
 
 export const EDU_JOIN_COPY = {
   eyebrow: "Lasso for students",
-  headline: "Your work record. Yours, and professors never see it.",
+  headline: "Your work record. Yours to keep.",
   sub: "Keep every class, workboard and late night draft in one place you own.",
   points: [
     [
@@ -22,11 +22,11 @@ export const EDU_JOIN_COPY = {
     ],
     [
       "Share only what you choose",
-      "Nothing leaves your workspace by itself. Share one piece of work with a coach when you choose, and change your mind whenever you like.",
+      "Share one piece of work with a coach when you choose, and change your mind whenever you like.",
     ],
   ] as const,
   cta: "Create my workspace",
-  reassurance: "Free while in beta. Your workspace belongs to you, not to your school.",
+  reassurance: "Free while in beta.",
 };
 
 export const Route = createFileRoute("/join_/edu")({
@@ -37,7 +37,7 @@ export const Route = createFileRoute("/join_/edu")({
       {
         name: "description",
         content:
-          "A private place for university students, with every class and workboard in one place. Keep the work you are proud of, and share only what you choose.",
+          "A place for university students, with every class and workboard in one place. Keep the work you are proud of, and share only what you choose.",
       },
       { property: "og:title", content: "Lasso for students | Your work record, yours" },
       {

@@ -79,9 +79,6 @@ export function SetupTools({ tools, register }: { tools: ToolId[]; register?: Re
         </div>
       </section>
 
-      <p className="text-sm text-muted-foreground">
-        Everything lands private. Nothing is visible to anyone until you map it.
-      </p>
     </div>
   );
 }

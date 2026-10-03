@@ -192,7 +192,7 @@ function JoinPage() {
     return (
       <Shell>
         <StateCard label="Invite" title="This invite was withdrawn">
-          <p>Whoever created it has since cancelled it. Nothing was shared with you.</p>
+          <p>Whoever created it has since cancelled it.</p>
           <p>Ask {org} for a new one if you still need access.</p>
         </StateCard>
       </Shell>
@@ -267,8 +267,7 @@ function JoinPage() {
         <StateCard label={coachInvite ? "Coaching invite" : "Invite"} title={title}>
           {coachInvite ? (
             <p>
-              You will join as a coach. You see only the work that is chosen to be shared with
-              you, and nothing else in the workspace.
+              You will join as a coach. People share work with you from their workspace.
             </p>
           ) : (
             <p>You will join as a {roleWord}.</p>

@@ -250,9 +250,6 @@ function AuthPage() {
                 : "Create account"}{" "}
             <em className="italic">to Lasso</em>
           </h1>
-          <p className="mt-3 text-[11.5px] leading-relaxed text-muted-foreground">
-            Signing in reads nothing on its own. You choose which tools Lasso can see, one at a time, on the next screen.
-          </p>
 
           <form onSubmit={handleSubmit} className="mt-8 space-y-4">
             <div className="space-y-1.5">
@@ -299,7 +296,6 @@ function AuthPage() {
             {mode === "signin" ? (
               <Link to="/reset-password" search={next ? { next } : {}} className="mt-2 inline-block text-sm text-muted-foreground transition-colors hover:text-foreground">{FORGOT_LINK}</Link>
             ) : null}
-            <p className="text-base text-muted-foreground">{emailCopy.privacy}</p>
           </form>
 
           <button
@@ -323,9 +319,6 @@ function AuthPage() {
             Trust &amp; data
           </Link>
         </div>
-        <p className="mt-4 text-center font-hand text-[16px] text-green">
-          no tool is connected by signing in
-        </p>
       </div>
     </main>
   );

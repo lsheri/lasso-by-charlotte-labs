@@ -64,8 +64,8 @@ beforeAll(async () => {
 }, 30_000);
 afterEach(cleanup);
 
-describe("Unit L4: register privacy line", () => {
-  it.each(registers)("setup renders the %s privacy line", async (register) => {
+describe("Unit L4: entry copy", () => {
+  it.each(registers)("setup omits the %s privacy and claim lines", async (register) => {
     mocks.search = { intent: register };
     const Setup = onboardingOptions.component;
     render(
@@ -73,10 +73,12 @@ describe("Unit L4: register privacy line", () => {
         <Setup />
       </Suspense>,
     );
-    expect(await screen.findByText(REGISTER_COPY[register].privacy)).toBeTruthy();
+    expect(await screen.findByText("What should we call you?")).toBeTruthy();
+    expect(screen.queryByText(REGISTER_COPY[register].privacy)).toBeNull();
+    expect(screen.queryByText(REGISTER_COPY[register].claim)).toBeNull();
   });
 
-  it("auth without a door signal renders the neutral privacy line", async () => {
+  it("auth without a door signal omits the neutral privacy line", async () => {
     mocks.search = {};
     const Auth = authOptions.component;
     render(
@@ -84,18 +86,24 @@ describe("Unit L4: register privacy line", () => {
         <Auth />
       </Suspense>,
     );
-    expect(await screen.findByText(NEUTRAL_COPY.privacy)).toBeTruthy();
+    expect(await screen.findByRole("heading", { name: /Sign in/ })).toBeTruthy();
+    expect(screen.queryByText(NEUTRAL_COPY.privacy)).toBeNull();
   });
 
-  it("changes only the company privacy string", () => {
-    expect(REGISTER_COPY.company.privacy).toBe(
-      "Nobody reads your threads. Your work is private to you until you share it.",
-    );
-    expect(REGISTER_COPY.personal.privacy).toBe("Nobody reads your threads.");
-    expect(REGISTER_COPY.edu.privacy).toBe("Not your professor, not your school.");
-    expect(REGISTER_COPY.partner.privacy).toBe(
-      "You see what people send you, and nothing else.",
-    );
-    expect(NEUTRAL_COPY.privacy).toBe("Nobody reads your threads.");
+  it("omits the extra sign-in denial lines", async () => {
+    mocks.search = {};
+    const Auth = authOptions.component;
+    render(<Suspense fallback={null}><Auth /></Suspense>);
+    expect(await screen.findByRole("heading", { name: /Sign in/ })).toBeTruthy();
+    expect(screen.queryByText(/Signing in reads nothing/)).toBeNull();
+    expect(screen.queryByText("no tool is connected by signing in")).toBeNull();
+  });
+
+  it("keeps exported register lines positive for entry emails", () => {
+    expect(REGISTER_COPY.company.privacy).toBe("Share work with your organization when you choose.");
+    expect(REGISTER_COPY.personal.privacy).toBe("Pick a thread back up months later.");
+    expect(REGISTER_COPY.edu.privacy).toBe("Take your work with you when the term ends.");
+    expect(REGISTER_COPY.partner.privacy).toBe("You see what people share with you.");
+    expect(NEUTRAL_COPY.privacy).toBe("Bring your AI conversations into one workspace.");
   });
 });
