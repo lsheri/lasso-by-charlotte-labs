@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -161,9 +160,9 @@ export function KeyRequestsPage() {
         title="Workshop keys"
         subtitle="Ask for keys for a workshop. The links appear here once they are ready."
         action={
-          <Link to="/adding-people" className="text-sm text-muted-foreground underline-offset-4 hover:underline">
+          <a href="/adding-people" className="text-sm text-muted-foreground underline-offset-4 hover:underline">
             How adding people works
-          </Link>
+          </a>
         }
       />
 
