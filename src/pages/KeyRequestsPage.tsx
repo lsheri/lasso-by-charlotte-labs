@@ -44,8 +44,11 @@ export function parseEmails(raw: string): string[] {
     .filter((s) => s.length > 0);
 }
 
-export function attendeeLink(code: string): string {
-  return `${ORIGIN}/j/${code}`;
+export function attendeeLink(code: string, register?: string): string {
+  const url = `${ORIGIN}/j/${code}`;
+  // Unit 20: the key's own register rides in the link so signed out
+  // recipients land on the right door without a lookup.
+  return register ? `${url}?r=${encodeURIComponent(register)}` : url;
 }
 
 export { adminLink } from "@/lib/join-link";
@@ -258,7 +261,7 @@ function LinkLine({ label, url }: { label: string; url: string }) {
 
 function RequestRow({ r }: { r: KeyRequest }) {
   const tone = r.status === "provisioned" ? "record" : r.status === "declined" ? "attention" : "paper";
-  const attendee = r.issued_code ? attendeeLink(r.issued_code) : null;
+  const attendee = r.issued_code ? attendeeLink(r.issued_code, r.workspace_kind) : null;
   const admin = r.admin_invite_code ? adminLink(r.admin_invite_code) : null;
   return (
     <ToneCard tone={tone}>
