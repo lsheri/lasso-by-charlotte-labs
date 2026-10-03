@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
@@ -23,6 +23,9 @@ import { identifyPostHog } from "@/lib/posthog-client";
 import { parseFunnelSource, type FunnelSource } from "@/lib/funnel-source";
 import { EXISTING_ACCOUNT_INVITED, EXISTING_ACCOUNT_OPEN, isExistingAccountSignup } from "@/lib/signup-existing";
 import { FORGOT_LINK } from "@/lib/password-reset";
+import { fetchProfile } from "@/hooks/use-profile";
+import { lookupActivationKeyFn, redeemActivationKeyFn } from "@/lib/activation-keys.functions";
+import { logEvent } from "@/lib/telemetry";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -61,6 +64,7 @@ export const Route = createFileRoute("/auth")({
     const { data } = await supabase.auth.getUser();
     if (!data.user) return;
     const target = joinTarget(search.next);
+    if (search.key || search.invite || target?.code) return;
     if (target) throw redirect({ to: "/join", search: target, replace: true });
     throw redirect({ to: "/home" });
   },
@@ -76,6 +80,8 @@ export const Route = createFileRoute("/auth")({
         property: "og:description",
         content: "Sign in to Lasso by Charlotte Labs.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: AuthPage,
@@ -110,6 +116,7 @@ export function noteSignUpIdentity(result: {
 
 function AuthPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { next, intent, invite, from, src, key } = Route.useSearch();
   useEffect(() => {
     if (intent) emitClientEvent("signup.started", { intent, src: src ?? "direct" }, { stableVisitor: true });
@@ -126,6 +133,8 @@ function AuthPage() {
     markActivationKey(key);
   }, [key]);
   const checkInvite = useServerFn(checkSignupInvite);
+  const lookupKey = useServerFn(lookupActivationKeyFn);
+  const redeemKey = useServerFn(redeemActivationKeyFn);
   // Unit C: the email field speaks the register; with no signal it implies
   // nothing at all, rather than reading as a company.
   const register = deriveRegister(intent);
@@ -151,12 +160,32 @@ function AuthPage() {
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [confirmedEmail, setConfirmedEmail] = useState<string | null>(null);
+  const [resendSeconds, setResendSeconds] = useState(0);
+  const [resendPending, setResendPending] = useState(false);
+
+  const { data: authUser } = useQuery({
+    queryKey: ["auth-entry-user"],
+    queryFn: async () => (await supabase.auth.getUser()).data.user ?? null,
+  });
+  const carriedEntry = Boolean(key || inviteCode);
+  const alreadySignedIn = Boolean(authUser && carriedEntry);
+  const { data: currentProfile } = useQuery({
+    queryKey: ["auth-entry-profile", authUser?.id],
+    queryFn: fetchProfile,
+    enabled: alreadySignedIn,
+  });
 
   const { data: inviteCheck } = useQuery({
     queryKey: ["signup-invite", inviteCode],
     enabled: Boolean(inviteCode),
     queryFn: (): Promise<SignupInviteCheck> =>
       checkInvite({ data: { code: inviteCode as string } }),
+  });
+  const { data: keyCheck } = useQuery({
+    queryKey: ["auth-entry-key", key],
+    enabled: Boolean(key),
+    queryFn: () => lookupKey({ data: { code: key as string } }),
   });
 
   // An invite bound to one address fills it in and holds it, so the account
@@ -165,6 +194,80 @@ function AuthPage() {
   useEffect(() => {
     if (lockedEmail) setEmail(lockedEmail);
   }, [lockedEmail]);
+
+  useEffect(() => {
+    if (resendSeconds <= 0) return;
+    const timer = window.setInterval(() => setResendSeconds((value) => Math.max(0, value - 1)), 1000);
+    return () => window.clearInterval(timer);
+  }, [resendSeconds]);
+
+  function continuationUrl() {
+    const register = deriveRegister(intent);
+    const basePath = register ? `/onboarding?intent=${register}` : "/onboarding";
+    const onboardingPath = key
+      ? `${basePath}${register ? "&" : "?"}key=${encodeURIComponent(key)}`
+      : basePath;
+    return next
+      ? `${window.location.origin}${next}`
+      : inviteCode
+        ? `${window.location.origin}/join?code=${encodeURIComponent(inviteCode)}`
+        : `${window.location.origin}${onboardingPath}`;
+  }
+
+  async function useCurrentAccount() {
+    setPending(true);
+    setError(null);
+    if (key && currentProfile) {
+      const outcome = await redeemKey({ data: { code: key, profile_id: currentProfile.id } });
+      logEvent("activation_key.submitted", currentProfile.org_id, { reason: outcome.reason, from: "settings" });
+      if (!outcome.ok) {
+        setError(outcome.message);
+        setPending(false);
+        return;
+      }
+      clearActivationKey();
+      navigate({ to: "/home", replace: true });
+      return;
+    }
+    if (inviteCode) {
+      const target = joinTarget(next) ?? { code: inviteCode };
+      navigate({ to: "/join", search: target, replace: true });
+      return;
+    }
+    navigate({ to: "/onboarding", search: { ...(intent ? { intent } : {}), ...(key ? { key } : {}) }, replace: true } as never);
+  }
+
+  async function signOutForNewAccount() {
+    await supabase.auth.signOut();
+    queryClient.removeQueries({ queryKey: ["auth-entry-user"] });
+    queryClient.removeQueries({ queryKey: ["auth-entry-profile"] });
+    navigate({
+      to: "/auth",
+      search: {
+        ...(next ? { next } : {}),
+        ...(invite ? { invite } : {}),
+        ...(intent ? { intent } : {}),
+        ...(from ? { from } : {}),
+        ...(src ? { src } : {}),
+        ...(key ? { key } : {}),
+      },
+      replace: true,
+    } as never);
+  }
+
+  async function resendConfirmation() {
+    if (!confirmedEmail || resendPending || resendSeconds > 0) return;
+    setResendPending(true);
+    setError(null);
+    const { error: resendError } = await supabase.auth.resend({
+      type: "signup",
+      email: confirmedEmail,
+      options: { emailRedirectTo: continuationUrl() },
+    });
+    if (resendError) setError(resendError.message);
+    else setResendSeconds(30);
+    setResendPending(false);
+  }
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -194,14 +297,6 @@ function AuthPage() {
       }
       // Unit C: the derived register rides the confirmation link, so it
       // survives being opened on another device. No signal, nothing carried.
-      const register = deriveRegister(intent);
-      const basePath = register ? `/onboarding?intent=${register}` : "/onboarding";
-      // KX1: only a key in this page's link rides into the confirm email.
-      // A key saved in the browser from an earlier visit never does.
-      const carriedKey = key ?? null;
-      const onboardingPath = carriedKey
-        ? `${basePath}${register ? "&" : "?"}key=${encodeURIComponent(carriedKey)}`
-        : basePath;
       const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -209,11 +304,7 @@ function AuthPage() {
         // lost between the email link and the accept page, and an open signup
         // lands on workspace setup.
         options: {
-          emailRedirectTo: next
-            ? `${window.location.origin}${next}`
-            : inviteCode
-              ? `${window.location.origin}/join?code=${encodeURIComponent(inviteCode)}`
-              : `${window.location.origin}${onboardingPath}`,
+          emailRedirectTo: continuationUrl(),
         },
       });
 
@@ -228,10 +319,82 @@ function AuthPage() {
       noteSignUpIdentity({ user: data.user, error: signUpError });
       if (signUpError) setError(signUpError.message);
       else if (data.session) goOn();
-      else setMessage("Check your email to confirm your account.");
+      else setConfirmedEmail(email);
     }
 
     setPending(false);
+  }
+
+  const institution = inviteCheck?.ok ? inviteCheck.org_name : keyCheck?.ok ? keyCheck.institution_name : null;
+  const addressedTo = inviteCheck?.ok ? inviteCheck.email : null;
+
+  if (alreadySignedIn) {
+    const workspaceName = currentProfile?.org_name ?? "your current account";
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-background px-4 py-16">
+        <div className="w-full max-w-[420px]">
+          <EntryDoorLink className="mb-4 inline-block transition-colors hover:text-foreground"><BrandLockup /></EntryDoorLink>
+          <div className="rounded-[var(--radius)] border border-border bg-card p-8 shadow-card">
+            <h1 className="page-title">You are already signed in</h1>
+            <p className="mt-3 text-sm text-foreground">{authUser?.email}</p>
+            {institution || addressedTo ? (
+              <p className="mt-3 text-sm text-muted-foreground">
+                {institution ? `This invitation is from ${institution}.` : null}
+                {institution && addressedTo ? " " : null}
+                {addressedTo ? `It was sent to ${addressedTo}.` : null}
+              </p>
+            ) : null}
+            {error ? <p className="mt-4 text-sm text-destructive">{error}</p> : null}
+            <div className="mt-6 grid gap-3">
+              <Button type="button" onClick={() => void useCurrentAccount()} disabled={pending}>
+                Use this key on {workspaceName}
+              </Button>
+              <Button type="button" variant="outline" onClick={() => void signOutForNewAccount()}>
+                Sign out and set this up as a new account
+              </Button>
+            </div>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (confirmedEmail) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-background px-4 py-16">
+        <div className="w-full max-w-[420px]">
+          <EntryDoorLink className="mb-4 inline-block transition-colors hover:text-foreground"><BrandLockup /></EntryDoorLink>
+          <div className="rounded-[var(--radius)] border border-border bg-card p-8 shadow-card">
+            <h1 className="page-title">Check your email</h1>
+            <p className="mt-4 break-words text-sm font-medium text-foreground">{confirmedEmail}</p>
+            <p className="mt-2 text-sm text-muted-foreground">The link signs you in and picks up where you left off.</p>
+            {key ? (
+              <div data-testid="key-notice" className="mt-5 rounded-[var(--radius)] border border-dashed border-border px-4 py-3">
+                <p className="font-hand text-[16px] leading-snug text-foreground">
+                  {keyCheck?.ok && keyCheck.institution_name
+                    ? `You are joining with a key from ${keyCheck.institution_name}.`
+                    : "You are joining with a sponsored key."}
+                </p>
+                <p className="mt-1 text-[13px] text-muted-foreground">You choose what you share with them.</p>
+              </div>
+            ) : null}
+            {error ? <p className="mt-4 text-sm text-destructive">{error}</p> : null}
+            <Button
+              type="button"
+              className="mt-6 w-full"
+              onClick={() => void resendConfirmation()}
+              disabled={resendPending || resendSeconds > 0}
+            >
+              {resendPending ? "Sending" : resendSeconds > 0 ? `Resend in ${resendSeconds}s` : "Resend email"}
+            </Button>
+            <p className="mt-3 text-sm text-muted-foreground">No email after a minute? Check spam, or resend above.</p>
+            <Button type="button" variant="ghost" className="mt-3 px-0" onClick={() => { setConfirmedEmail(null); setError(null); }}>
+              Change the address
+            </Button>
+          </div>
+        </div>
+      </main>
+    );
   }
 
   return (
