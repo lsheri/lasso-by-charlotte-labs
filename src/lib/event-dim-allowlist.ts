@@ -128,6 +128,10 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "share_back.offered": [],
   "share_back.declined": [],
   "share_back.claimed": [],
+  // A person let a sponsor see one board. Content free.
+  "share_back.engagement_shared": [],
+  // A person took one board back from a sponsor. Content free.
+  "share_back.engagement_unshared": [],
   "invite.email_sent": ["delivered", "reason", "resend", "variant"],
   "invite.revoked": ["delivered", "reason", "variant"],
   "landing.pilot_cta_clicked": ["location", "placement"],
