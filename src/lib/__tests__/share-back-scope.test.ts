@@ -3,9 +3,11 @@ import { sponsorScopeLine, sponsorScopeRows, type SponsorLinkInput } from "@/lib
 
 const ME = "me";
 const ENG = "eng-1";
+const ORG = "org-1";
 const link = (over: Partial<SponsorLinkInput>): SponsorLinkInput => ({
   id: "l1",
   subject_profile_id: ME,
+  org_id: ORG,
   scope: "selected_engagements",
   ended_at: null,
   consent_withdrawn_at: null,
