@@ -7,6 +7,7 @@ export type SponsorScopeState = "shared" | "not_shared" | "sees_everything";
 export interface SponsorLinkInput {
   id: string;
   subject_profile_id: string;
+  org_id: string;
   scope: string;
   ended_at: string | null;
   consent_withdrawn_at: string | null;
@@ -31,6 +32,7 @@ export function sponsorScopeRows(
   junction: LinkEngagementInput[],
   engagementId: string,
   subjectProfileId: string,
+  orgId: string,
 ): SponsorScopeRow[] {
   const sharedLinks = new Set(
     junction.filter((row) => row.engagement_id === engagementId).map((row) => row.link_id),
@@ -39,6 +41,7 @@ export function sponsorScopeRows(
     .filter(
       (link) =>
         link.subject_profile_id === subjectProfileId &&
+        link.org_id === orgId &&
         link.ended_at === null &&
         link.consent_withdrawn_at === null,
     )

@@ -408,8 +408,11 @@ function SponsorBoards({
     queryFn: async (): Promise<SponsorScopeRow[]> => {
       const { data: links, error } = await supabase
         .from("coaching_links")
-        .select("id, subject_profile_id, scope, ended_at, consent_withdrawn_at, coach_profile_id")
+        .select(
+          "id, subject_profile_id, org_id, scope, ended_at, consent_withdrawn_at, coach_profile_id",
+        )
         .eq("subject_profile_id", profileId)
+        .eq("org_id", orgId)
         .is("ended_at", null)
         .is("consent_withdrawn_at", null);
       if (error) throw error;
@@ -442,6 +445,7 @@ function SponsorBoards({
         junction ?? [],
         engagementId,
         profileId,
+        orgId,
       );
     },
   });

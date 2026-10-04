@@ -3,9 +3,11 @@ import { sponsorScopeLine, sponsorScopeRows, type SponsorLinkInput } from "@/lib
 
 const ME = "me";
 const ENG = "eng-1";
+const ORG = "org-1";
 const link = (over: Partial<SponsorLinkInput>): SponsorLinkInput => ({
   id: "l1",
   subject_profile_id: ME,
+  org_id: ORG,
   scope: "selected_engagements",
   ended_at: null,
   consent_withdrawn_at: null,
@@ -15,17 +17,18 @@ const link = (over: Partial<SponsorLinkInput>): SponsorLinkInput => ({
 
 describe("sponsorScopeRows", () => {
   it("reads shared when a junction row exists for this board", () => {
-    const rows = sponsorScopeRows([link({})], [{ link_id: "l1", engagement_id: ENG }], ENG, ME);
+    const rows = sponsorScopeRows([link({})], [{ link_id: "l1", engagement_id: ENG }], ENG, ME, ORG);
     expect(rows).toEqual([{ linkId: "l1", sponsorName: "Acme", state: "shared" }]);
   });
   it("reads not_shared with no junction row, or one for another board", () => {
-    expect(sponsorScopeRows([link({})], [], ENG, ME)[0]?.state).toBe("not_shared");
+    expect(sponsorScopeRows([link({})], [], ENG, ME, ORG)[0]?.state).toBe("not_shared");
     expect(
-      sponsorScopeRows([link({})], [{ link_id: "l1", engagement_id: "other" }], ENG, ME)[0]?.state,
+      sponsorScopeRows([link({})], [{ link_id: "l1", engagement_id: "other" }], ENG, ME, ORG)[0]
+        ?.state,
     ).toBe("not_shared");
   });
   it("reads sees_everything for an all_work link", () => {
-    const rows = sponsorScopeRows([link({ scope: "all_work" })], [], ENG, ME);
+    const rows = sponsorScopeRows([link({ scope: "all_work" })], [], ENG, ME, ORG);
     expect(rows[0]?.state).toBe("sees_everything");
   });
   it("excludes ended, consent-withdrawn and not-mine links", () => {
@@ -38,6 +41,17 @@ describe("sponsorScopeRows", () => {
       [],
       ENG,
       ME,
+      ORG,
+    );
+    expect(rows).toEqual([]);
+  });
+  it("excludes a link in another org even when a junction row exists for this engagement", () => {
+    const rows = sponsorScopeRows(
+      [link({ id: "x", org_id: "other-org" })],
+      [{ link_id: "x", engagement_id: ENG }],
+      ENG,
+      ME,
+      ORG,
     );
     expect(rows).toEqual([]);
   });
