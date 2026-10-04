@@ -102,7 +102,7 @@ export function LabImage({ node, selected, layoutEditable, onSelect, onDragStart
       {state.status === "ready" && state.url ? (
         <img src={state.url} alt="" draggable={false} className="block h-full w-full rounded-[2px] select-none" onError={() => setState({ status: "failed", url: null })} />
       ) : (
-        <div data-testid="board-image-placeholder" className="flex h-full w-full items-center justify-center rounded-[2px] bg-muted p-2 text-center text-[11.5px] text-muted-foreground">
+        <div data-testid="board-image-placeholder" className="flex h-full w-full items-center justify-center rounded-[2px] bg-muted p-2 text-center nb-type-small text-muted-foreground">
           {state.status === "failed" ? <span>{BOARD_IMAGE_COPY.failed}</span> : null}
         </div>
       )}
