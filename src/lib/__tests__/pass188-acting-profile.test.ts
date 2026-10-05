@@ -89,7 +89,8 @@ describe("resolveProfile", () => {
  * cross workspace membership question. It is not a single acting profile read.
  */
 // demo-presets.server.ts looks up the caller's profile in the demo org specifically, not the acting profile.
-const ALLOWED = new Set(["invites.server.ts", "demo-presets.server.ts"]);
+// mcp-signin.server.ts checks that one named profile is the caller's own and active before granting an AI tool access. It must never fall back to another workspace, which resolveProfile does.
+const ALLOWED = new Set(["invites.server.ts", "demo-presets.server.ts", "mcp-signin.server.ts"]);
 
 describe("one way to resolve who is acting", () => {
   it("no server module hand-rolls the acting profile lookup", () => {
