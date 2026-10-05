@@ -63,6 +63,19 @@ const activeProps = { className: "nb-nav-item-active" };
 type CachedNavTask = { id: string; name: string; is_wrap?: boolean };
 const EMPTY_NAV_TASKS: CachedNavTask[] = [];
 
+function subscribeToHash(onStoreChange: () => void) {
+  window.addEventListener("hashchange", onStoreChange);
+  return () => window.removeEventListener("hashchange", onStoreChange);
+}
+
+function useLocationHash() {
+  return useSyncExternalStore(
+    subscribeToHash,
+    () => window.location.hash.slice(1),
+    () => "",
+  );
+}
+
 /** The indent mark on a nested engagement row. Hand-drawn, not a chevron:
     it marks depth, it is not a control. Decorative, so it is hidden from
     assistive tech and the row's link text carries the meaning. */
@@ -348,6 +361,8 @@ export function SidebarNav({
 
 
   const matchRoute = useMatchRoute();
+  const locationHash = useLocationHash();
+  const archiveMatch = Boolean(matchRoute({ to: "/archive", fuzzy: false }));
   const engagementMatch = matchRoute({ to: "/engagements/$id", fuzzy: false });
   const activeEngagementId = engagementMatch ? engagementMatch.id : undefined;
   const search = useSearch({ strict: false });
@@ -583,7 +598,11 @@ export function SidebarNav({
         const visibleItems = itemsForGroup
           .filter((item) => !(item.to === "/members" && !canManageMembers))
           .filter((item) => !(item.to === "/firm" && !canSeeFirmView))
-          .map((item) =>
+          .map((item) => {
+            const archiveItem = item.to === "/archive";
+            const archiveItemActive =
+              archiveItem && archiveMatch && (item.hash ?? "") === locationHash;
+            return (
             item.disabled ? (
               <TooltipProvider key={`${item.to}:${item.label}`} delayDuration={150}>
                 <Tooltip>
@@ -630,10 +649,11 @@ export function SidebarNav({
               <Link
                  key={`${item.to}:${item.label}`}
                 to={item.to}
+                 {...(item.hash ? { hash: item.hash } : {})}
                  {...(item.search ? { search: item.search } : {})}
                 onClick={onNavigate}
-                className={item.nested ? `${linkClass} nb-nav-item-nested` : linkClass}
-                activeProps={activeProps}
+                className={`${item.nested ? `${linkClass} nb-nav-item-nested` : linkClass}${archiveItemActive ? " nb-nav-item-active" : ""}`}
+                activeProps={archiveItem ? undefined : activeProps}
               >
                 {item.nested ? <PencilIndent /> : null}
                 <GraphiteIcon name={item.icon} size={20} />
@@ -646,7 +666,8 @@ export function SidebarNav({
                   ) : null}
                 </span>
               </Link>
-            ),
+            ));
+          },
 
           );
 

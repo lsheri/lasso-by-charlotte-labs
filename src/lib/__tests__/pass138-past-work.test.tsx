@@ -95,7 +95,7 @@ describe("Pass 138: Past work nav", () => {
   it("members and admins reach it; coaches do not", () => {
     // Workers and admins share navGroups; the Firm group is never role gated.
     const worker = navGroups.flatMap((group) => group.items).filter((i) => i.to === "/archive");
-    expect(worker).toHaveLength(1);
+    expect(worker).toHaveLength(2);
     expect(worker[0]!.label).toBe(PAST_WORK_NAV_LABEL);
 
     const coach = coachNavGroups.flatMap((group) => group.items).filter((i) => i.to === "/archive");
