@@ -1043,7 +1043,9 @@ export async function handleMcpRequest(
     return json({ error: "Method not allowed" }, 405);
   }
 
-  const owner = await resolveOwner(token, authKind === "header");
+  const resolved = await resolveOwnerDetailed(token, authKind === "header");
+  if (resolved && "failure" in resolved) await recordAuthFailure(resolved.failure);
+  const owner = resolved && "owner" in resolved ? resolved.owner : null;
   if (!owner) return json({ error: "Unauthorized" }, 401);
 
   let body: Obj;
