@@ -1,5 +1,6 @@
 import type { ReactNode, Ref } from "react";
 import type { WorkboardPreviewTurn } from "@/lib/workboard-card-preview.shared";
+import { toolStepsLabel } from "@/lib/tool-steps";
 
 export type ChatBorderTreatment = "claude" | "chatgpt" | "gemini" | "copilot" | "default";
 
@@ -16,10 +17,13 @@ export function chatBorderTreatment(vendorKey: string | null): ChatBorderTreatme
 export function ChatPreviewWindow({
   vendorKey,
   turns,
+  toolSteps = 0,
   testId = "chat-preview-window",
 }: {
   vendorKey: string | null;
   turns: WorkboardPreviewTurn[];
+  /** TT1: collapsed AI tool steps. A plain line on cards, never a control. */
+  toolSteps?: number | undefined;
   testId?: string;
 }) {
   return (
@@ -30,6 +34,11 @@ export function ChatPreviewWindow({
             <p>{turn.content}</p>
           </div>
         ))}
+        {toolSteps > 0 ? (
+          <p data-testid="chat-preview-tool-steps" className="nb-type-small text-muted-foreground">
+            {toolStepsLabel(toolSteps)}
+          </p>
+        ) : null}
     </ChatBorderFrame>
   );
 }
