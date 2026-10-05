@@ -82,7 +82,7 @@ const BOARD_NOTES = [
 
 function answerNode(register: Register): LabNode {
   const item = TOUR_BOARD_LAYOUT.find((candidate) => candidate.id === "answer");
-  const claims = actById(register, 4)?.answer ?? [];
+  const claims = actById(register, 6)?.answer ?? [];
   return {
     id: "tour-answer", kind: "answer", frame: null, title: "Answer",
     summary: claims.map((claim) => claim.text).join(" "), typeLabel: "answer",
@@ -125,7 +125,7 @@ function BoardRelationships({ register }: { register: Register }) {
 }
 
 export function TourBoard({ register, state, className = "", children, onWorkCardSelect, onWorkCardKeyDown, onPointerDown, onPointerMove, onPointerUp, onPointerCancel, boardRef }: TourBoardProps) {
-  const cards = actById(register, 2)?.cards ?? [];
+  const cards = actById(register, 4)?.cards ?? [];
   const ambientCards = tourAmbientCards(register);
   const boardCopy = tourBoardCopy(register);
   const selected = new Set(state.selectedIds ?? []);
@@ -144,7 +144,7 @@ export function TourBoard({ register, state, className = "", children, onWorkCar
         {state.answerVisible ? <span className="tour-margin-note is-answer-note" data-tour-note="answer">this is the one to send</span> : null}
       </>
       <div className="tour-loose-work-label" aria-label="Loose AI chat work cards" />
-      {state.groupedIds?.length ? <div className="tour-shared-group-region tour-region is-grouped" aria-label={`${actById(register, 3)?.frameTitle ?? "Workstream"} with three source work cards`}><span>{actById(register, 3)?.frameTitle}</span><span className="sr-only">{Array.from(grouped).map((id) => cards[Number(id.split("-")[1])]?.title).filter(Boolean).join(", ")}</span></div> : null}
+      {state.groupedIds?.length ? <div className="tour-shared-group-region tour-region is-grouped" aria-label={`${actById(register, 5)?.frameTitle ?? "Workstream"} with three source work cards`}><span>{actById(register, 5)?.frameTitle}</span><span className="sr-only">{Array.from(grouped).map((id) => cards[Number(id.split("-")[1])]?.title).filter(Boolean).join(", ")}</span></div> : null}
       {TOUR_BOARD_LAYOUT.map((item) => {
         if (!visible(item)) return item.id === "answer" || item.id === "primary-0" ? <div key={item.id} className="tour-reserved-slot" data-tour-layout-id={item.id} data-tour-reserved="" style={itemStyle(item)} /> : null;
         if (item.kind === "primary") {
