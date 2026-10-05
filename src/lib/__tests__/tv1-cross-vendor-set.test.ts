@@ -20,7 +20,7 @@ describe("TV1 cross-vendor grouped set", () => {
     for (const register of REGISTERS) {
       const sources = GROUP_IDS.map((id) => cardAt(register, id)?.source);
       expect(sources.filter((source) => source === "drive")).toHaveLength(1);
-      const chats = sources.filter((source): source is string => !!source && CHAT_SOURCES.has(source));
+      const chats = sources.filter((source) => !!source && CHAT_SOURCES.has(source));
       expect(chats).toHaveLength(2);
       expect(chats[0]).not.toBe(chats[1]);
       for (const id of GROUP_IDS) expect(TOUR_BOARD_LAYOUT.some((item) => item.id === id)).toBe(true);
