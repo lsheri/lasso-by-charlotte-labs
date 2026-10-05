@@ -27,6 +27,7 @@ import { isSendCooldown, SIGN_IN_LINK_COPY, signInLinkOptions } from "@/lib/sign
 import { fetchProfile } from "@/hooks/use-profile";
 import { lookupActivationKeyFn, redeemActivationKeyFn } from "@/lib/activation-keys.functions";
 import { logEvent } from "@/lib/telemetry";
+import { consentTarget } from "@/lib/consent-return";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -64,6 +65,8 @@ export const Route = createFileRoute("/auth")({
   beforeLoad: async ({ search }) => {
     const { data } = await supabase.auth.getUser();
     if (!data.user) return;
+    const consent = consentTarget(search.next);
+    if (consent) throw redirect({ to: "/oauth/consent", search: consent, replace: true });
     const target = joinTarget(search.next);
     if (search.key || search.invite || target?.code) return;
     if (target) throw redirect({ to: "/join", search: target, replace: true });
@@ -147,6 +150,11 @@ function AuthPage() {
   const invited = Boolean(joinTarget(next));
 
   function goOn() {
+    const consent = consentTarget(next);
+    if (consent) {
+      navigate({ to: "/oauth/consent", search: consent, replace: true });
+      return;
+    }
     const target = joinTarget(next) ?? (inviteCode ? { code: inviteCode } : null);
     if (target) navigate({ to: "/join", search: target, replace: true });
     else if (intent) navigate({ to: "/onboarding", search: { intent }, replace: true });
@@ -440,6 +448,9 @@ function AuthPage() {
                 : "Create account"}{" "}
             <em className="italic">to Lasso</em>
           </h1>
+          {consentTarget(next) && mode === "signin" ? (
+            <p className="mt-2 text-sm text-muted-foreground">Sign in to finish connecting your AI tool.</p>
+          ) : null}
 
           <form onSubmit={handleSubmit} className="mt-8 space-y-4">
             <div className="space-y-1.5">

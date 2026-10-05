@@ -58,6 +58,7 @@ import { Route as DemoConversationsRouteImport } from './routes/demo.conversatio
 import { Route as DemoSourcesRouteImport } from './routes/demo.sources'
 import { Route as JCodeRouteImport } from './routes/j.$code'
 import { Route as JoinEduRouteImport } from './routes/join_.edu'
+import { Route as OauthConsentRouteImport } from './routes/oauth/consent'
 import { Route as SharedBoardTokenRouteImport } from './routes/shared-board.$token'
 import { Route as AuthenticatedClientsIdRouteImport } from './routes/_authenticated/clients.$id'
 import { Route as AuthenticatedCoachingIndexRouteImport } from './routes/_authenticated/coaching.index'
@@ -326,6 +327,11 @@ const JoinEduRoute = JoinEduRouteImport.update({
   path: '/join/edu',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OauthConsentRoute = OauthConsentRouteImport.update({
+  id: '/oauth/consent',
+  path: '/oauth/consent',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SharedBoardTokenRoute = SharedBoardTokenRouteImport.update({
   id: '/shared-board/$token',
   path: '/shared-board/$token',
@@ -468,6 +474,7 @@ export interface FileRoutesByFullPath {
   '/demo/sources': typeof DemoSourcesRoute
   '/j/$code': typeof JCodeRoute
   '/join/edu': typeof JoinEduRoute
+  '/oauth/consent': typeof OauthConsentRoute
   '/shared-board/$token': typeof SharedBoardTokenRoute
   '/demo/': typeof DemoIndexRoute
   '/clients/$id': typeof AuthenticatedClientsIdRoute
@@ -535,6 +542,7 @@ export interface FileRoutesByTo {
   '/demo/sources': typeof DemoSourcesRoute
   '/j/$code': typeof JCodeRoute
   '/join/edu': typeof JoinEduRoute
+  '/oauth/consent': typeof OauthConsentRoute
   '/shared-board/$token': typeof SharedBoardTokenRoute
   '/demo': typeof DemoIndexRoute
   '/clients/$id': typeof AuthenticatedClientsIdRoute
@@ -604,6 +612,7 @@ export interface FileRoutesById {
   '/demo/sources': typeof DemoSourcesRoute
   '/j/$code': typeof JCodeRoute
   '/join_/edu': typeof JoinEduRoute
+  '/oauth/consent': typeof OauthConsentRoute
   '/shared-board/$token': typeof SharedBoardTokenRoute
   '/demo/': typeof DemoIndexRoute
   '/_authenticated/clients/$id': typeof AuthenticatedClientsIdRoute
@@ -673,6 +682,7 @@ export interface FileRouteTypes {
     | '/demo/sources'
     | '/j/$code'
     | '/join/edu'
+    | '/oauth/consent'
     | '/shared-board/$token'
     | '/demo/'
     | '/clients/$id'
@@ -740,6 +750,7 @@ export interface FileRouteTypes {
     | '/demo/sources'
     | '/j/$code'
     | '/join/edu'
+    | '/oauth/consent'
     | '/shared-board/$token'
     | '/demo'
     | '/clients/$id'
@@ -808,6 +819,7 @@ export interface FileRouteTypes {
     | '/demo/sources'
     | '/j/$code'
     | '/join_/edu'
+    | '/oauth/consent'
     | '/shared-board/$token'
     | '/demo/'
     | '/_authenticated/clients/$id'
@@ -854,6 +866,7 @@ export interface RootRouteChildren {
   DemoSourcesRoute: typeof DemoSourcesRoute
   JCodeRoute: typeof JCodeRoute
   JoinEduRoute: typeof JoinEduRoute
+  OauthConsentRoute: typeof OauthConsentRoute
   SharedBoardTokenRoute: typeof SharedBoardTokenRoute
   DemoIndexRoute: typeof DemoIndexRoute
   ApiAnalysisStreamRoute: typeof ApiAnalysisStreamRoute
@@ -1210,6 +1223,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof JoinEduRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/oauth/consent': {
+      id: '/oauth/consent'
+      path: '/oauth/consent'
+      fullPath: '/oauth/consent'
+      preLoaderRoute: typeof OauthConsentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/shared-board/$token': {
       id: '/shared-board/$token'
       path: '/shared-board/$token'
@@ -1456,6 +1476,7 @@ const rootRouteChildren: RootRouteChildren = {
   DemoSourcesRoute: DemoSourcesRoute,
   JCodeRoute: JCodeRoute,
   JoinEduRoute: JoinEduRoute,
+  OauthConsentRoute: OauthConsentRoute,
   SharedBoardTokenRoute: SharedBoardTokenRoute,
   DemoIndexRoute: DemoIndexRoute,
   ApiAnalysisStreamRoute: ApiAnalysisStreamRoute,
