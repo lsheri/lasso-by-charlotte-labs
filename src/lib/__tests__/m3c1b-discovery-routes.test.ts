@@ -28,7 +28,7 @@ function walk(dir: string, out: string[] = []): string[] {
 
 describe("M3-C1b OAuth discovery routes", () => {
   it("registers the discovery paths in the generated route tree", () => {
-    const paths = collectFullPaths(routeTree);
+    const paths = collectFullPaths();
     expect(paths).toContain("/.well-known/oauth-protected-resource");
     expect(paths).toContain("/.well-known/oauth-protected-resource/api/mcp");
     expect(paths).toContain("/api/oauth-protected-resource");
