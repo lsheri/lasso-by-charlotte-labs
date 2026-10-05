@@ -98,7 +98,7 @@ describe("TV2 seven act tour", () => {
     expect(rows).toHaveLength(1 + tourAmbientCards("company").length);
     expect(rows[0]?.textContent).toContain(TOUR_PUSHED_CHAT.title);
     expect(rows[0]?.textContent).toContain("Just arrived");
-    expect(rows.slice(1).map((row) => row.querySelector("strong")?.textContent)).toEqual(tourAmbientCards("company").map((card) => card.title));
+    expect(rows.slice(1).map((row) => row.querySelector(".ledger-work-note > .nb-paper-body > p")?.textContent)).toEqual(tourAmbientCards("company").map((card) => card.title));
     fireEvent.click(within(rows[0]!).getByRole("button", { name: TOUR_PUSHED_CHAT.title }));
     expect(screen.getByTestId("tour-act-one")).toBeTruthy();
     expect(screen.getByText("Drag a file onto the board.")).toBeTruthy();

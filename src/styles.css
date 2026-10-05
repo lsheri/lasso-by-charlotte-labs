@@ -6804,12 +6804,12 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .tour-conversations-mimic .conversation-month-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 210px), 1fr)); margin: 0; padding: 0; list-style: none; }
 .tour-conversation-row { height: 118px; min-width: 0; }
 .tour-conversation-row:not(.is-arrived) { opacity: 0.72; }
-.tour-conversation-row.is-arrived > span { outline: 1.4px solid var(--nb-graphite); outline-offset: 1px; animation: tour-turn-in 320ms ease-out both; }
-.tour-conversation-row.is-arrived [role="button"]:focus-visible { outline: 2px solid var(--nb-lasso-green); outline-offset: -3px; }
+.tour-conversation-row.is-arrived > button { outline: 1.4px solid var(--nb-graphite); outline-offset: 1px; animation: tour-turn-in 320ms ease-out both; }
+.tour-conversation-row.is-arrived > button:focus-visible { outline: 2px solid var(--nb-lasso-green); outline-offset: -3px; }
 .tour-arrived-label { flex: 0 0 auto; font-family: var(--font-hand); font-size: 13px; color: var(--nb-green); white-space: nowrap; }
 @keyframes tour-turn-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) {
-  .tour-chat-turn, .tour-push-control, .tour-conversation-row.is-arrived > span { animation: none; transition: none; }
+  .tour-chat-turn, .tour-push-control, .tour-conversation-row.is-arrived > button { animation: none; transition: none; }
 }
 @media (max-width: 767px) {
   .tour-push-stage { padding: 6px; }

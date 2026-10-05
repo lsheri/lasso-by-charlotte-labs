@@ -264,9 +264,9 @@ export function TourActArrived({ register, onComplete }: { register: Register; o
               <div className="flex min-h-10 items-center gap-3"><h2 className="font-hand text-[19px] leading-none text-graphite">October</h2><span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{rows.length}</span><span className="h-px flex-1 bg-[var(--nb-rule)]" /></div>
               <ul className="conversation-month-grid" aria-label="AI conversations">
                 {rows.map((row) => <li key={row.item.id} className={row.arrived ? "tour-conversation-row is-arrived" : "tour-conversation-row"}>
-                  <span className="conversation-card-compact canvas-lab-card-paper block h-full min-w-0" data-tour-target={row.arrived ? "2" : undefined}>
-                    <WorkNote item={row.item} dense displayMode="preview" chatPreview={row.preview} onOpen={row.arrived ? open : undefined} lead={row.arrived ? <span className="tour-arrived-label">{list.arrivedLabel}</span> : undefined} />
-                  </span>
+                  {row.arrived ? <Button type="button" variant="ghost" className="conversation-card-compact canvas-lab-card-paper block h-full w-full min-w-0 p-0 text-left whitespace-normal hover:bg-transparent" data-tour-target="2" onClick={open}>
+                    <WorkNote item={row.item} dense displayMode="preview" chatPreview={row.preview} lead={<span className="tour-arrived-label">{list.arrivedLabel}</span>} />
+                  </Button> : <span className="conversation-card-compact canvas-lab-card-paper block h-full min-w-0"><WorkNote item={row.item} dense displayMode="preview" chatPreview={row.preview} /></span>}
                 </li>)}
               </ul>
             </section>
