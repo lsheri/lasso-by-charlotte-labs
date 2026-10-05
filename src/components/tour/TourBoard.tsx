@@ -26,6 +26,8 @@ export type TourBoardState = {
   highlightedTitle?: string | null;
   answerVisible?: boolean;
   connectorsVisible?: boolean;
+  deliverableVisible?: boolean;
+  reducedMotion?: boolean;
   askOpen?: boolean;
 };
 
@@ -91,6 +93,23 @@ function answerNode(register: Register): LabNode {
   };
 }
 
+function TourDeliverableCard({ register, style, reduced }: { register: Register; style: ReturnType<typeof itemStyle>; reduced: boolean }) {
+  const deliverable = actById(register, 7)?.deliverable;
+  const claims = actById(register, 6)?.answer ?? [];
+  const cards = actById(register, 4)?.cards ?? [];
+  if (!deliverable) return null;
+  return <article className="tour-board-item tour-deliverable" data-tour-layout-id="deliverable" data-tour-title={deliverable.title} data-testid="tour-deliverable" data-reduced={reduced ? "" : undefined} aria-label={deliverable.title} style={style}>
+    <header><span className="tour-deliverable-kind">Deliverable</span><strong>{deliverable.title}</strong></header>
+    <ol className="tour-deliverable-lines">
+      {claims.map((claim, index) => {
+        const source = cards.find((card) => card.title === claim.sourceCardTitle)?.source;
+        return <li key={claim.sourceCardTitle} className="tour-deliverable-line" data-source-title={claim.sourceCardTitle} style={{ "--tour-line-index": index } as React.CSSProperties}>{source ? <ToolBadge tool={sourceTool(source)} size="sm" /> : null}<span>{claim.text}</span></li>;
+      })}
+    </ol>
+    <p className="tour-deliverable-note">{deliverable.note}</p>
+  </article>;
+}
+
 function BoardRelationships({ register }: { register: Register }) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [geometry, setGeometry] = useState<{ width: number; height: number; nodes: LabNode[]; links: LabLink[] } | null>(null);
@@ -100,7 +119,8 @@ function BoardRelationships({ register }: { register: Register }) {
     if (!svg || !board) return;
     const measure = () => {
       const base = board.getBoundingClientRect();
-      const answer = board.querySelector<HTMLElement>('[data-tour-layout-id="answer"]');
+      const answer = board.querySelector<HTMLElement>('[data-tour-layout-id="deliverable"]') ?? board.querySelector<HTMLElement>('[data-tour-layout-id="answer"]');
+      const targetTitle = answer?.dataset["tourTitle"] ?? "Answer";
       const sources = Array.from(board.querySelectorAll<HTMLElement>("[data-tour-connector-source]"));
       if (!answer || sources.length !== 3) return;
       const answerRect = answer.getBoundingClientRect();
@@ -108,7 +128,7 @@ function BoardRelationships({ register }: { register: Register }) {
         const rect = element.getBoundingClientRect();
         return { id: `source-${index}`, kind: "source", frame: null, title: element.dataset["tourTitle"] ?? "Source work card", summary: "", typeLabel: "source", ownership: "draft", x: rect.left - base.left, y: rect.top - base.top, width: rect.width, height: rect.height } as LabNode;
       });
-      const endpoints = sourceNodes.map((_, index) => ({ ...answerNode(register), id: `answer-anchor-${index}`, x: answerRect.left - base.left, y: answerRect.top - base.top + answerRect.height * ((index + 1) / 4), width: 1, height: 1 }));
+      const endpoints = sourceNodes.map((_, index) => ({ ...answerNode(register), title: targetTitle, id: `answer-anchor-${index}`, x: answerRect.left - base.left, y: answerRect.top - base.top + answerRect.height * ((index + 1) / 4), width: 1, height: 1 }));
       const links = sourceNodes.map((node, index) => ({ id: `tour-link-${index}`, fromId: node.id, toId: endpoints[index]?.id ?? "tour-answer", fromAnchor: "right" as const, toAnchor: "left" as const }));
       setGeometry({ width: base.width, height: base.height, nodes: [...sourceNodes, ...endpoints], links });
     };
@@ -116,10 +136,10 @@ function BoardRelationships({ register }: { register: Register }) {
     if (typeof ResizeObserver === "undefined") return;
     const observer = new ResizeObserver(measure);
     observer.observe(board);
-    for (const element of board.querySelectorAll<HTMLElement>("[data-tour-connector-source], [data-tour-layout-id=answer]")) observer.observe(element);
+    for (const element of board.querySelectorAll<HTMLElement>("[data-tour-connector-source], [data-tour-layout-id=answer], [data-tour-layout-id=deliverable]")) observer.observe(element);
     return () => observer.disconnect();
   }, [register]);
-  return <svg ref={svgRef} className="tour-keep-links" viewBox={geometry ? `0 0 ${geometry.width} ${geometry.height}` : "0 0 1 1"} aria-label="Answer links to its three source work cards">
+  return <svg ref={svgRef} className="tour-keep-links" viewBox={geometry ? `0 0 ${geometry.width} ${geometry.height}` : "0 0 1 1"} aria-label="Links back to the three source work cards">
     {geometry ? <LabRelationships links={geometry.links} nodes={geometry.nodes} measuredHeights={new Map()} selectedLinkId={null} inverseZoom={1} onSelect={noop} /> : null}
   </svg>;
 }
@@ -166,7 +186,8 @@ export function TourBoard({ register, state, className = "", children, onWorkCar
         }
         if (item.id === "artifact") return <div key={item.id} className="tour-board-item" data-tour-layout-id={item.id} style={itemStyle(item)}><ArtifactPreview /></div>;
         if (item.id === "whiteboard" || item.id === "deck") return <div key={item.id} className="tour-board-item" data-tour-layout-id={item.id} style={itemStyle(item)}><ImageCard kind={item.id} title={item.id === "whiteboard" ? boardCopy.whiteboardTitle : boardCopy.deckTitle} {...(item.id === "whiteboard" ? { caption: boardCopy.whiteboardCaption } : {})} /></div>;
-        if (item.id === "answer" && state.answerVisible) return <div key={item.id} className="tour-board-item tour-answer-slot" data-tour-layout-id="answer" style={itemStyle(item)}><LabAnswerCard node={{ ...answer, x: 0, y: 0, width: 100, height: 100 }} focused={false} stackZ={4} onFocus={noop} onPointerDown={noop} onDelete={noop} /></div>;
+        if (item.id === "deliverable" && state.deliverableVisible) return <TourDeliverableCard key={item.id} register={register} style={itemStyle(item)} reduced={Boolean(state.reducedMotion)} />;
+        if (item.id === "answer" && state.answerVisible && !state.deliverableVisible) return <div key={item.id} className="tour-board-item tour-answer-slot" data-tour-layout-id="answer" style={itemStyle(item)}><LabAnswerCard node={{ ...answer, x: 0, y: 0, width: 100, height: 100 }} focused={false} stackZ={4} onFocus={noop} onPointerDown={noop} onDelete={noop} /></div>;
         return null;
       })}
       {state.connectorsVisible ? <BoardRelationships register={register} /> : null}
