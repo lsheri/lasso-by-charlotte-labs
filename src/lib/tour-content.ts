@@ -118,12 +118,12 @@ const COMPANY_FILES = [
   "moodboard.png",
 ] as const;
 
-const DO_LINES: Readonly<Partial<Record<TourActId, string>>> = {
+const DO_LINES = {
   2: "Click one of the outlined work cards.",
   3: "Draw a box around them.",
   4: "Click Ask.",
   5: "Click Keep.",
-};
+} as const satisfies Partial<Record<TourActId, string>>;
 
 export const TOUR_CONTEXT_SENTENCE =
   "Grouped work shares context. When you ask a question of this box, Lasso reads these three and nothing else.";
