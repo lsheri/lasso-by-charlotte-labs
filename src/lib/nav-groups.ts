@@ -466,7 +466,15 @@ export function mergeContainerRows<T extends NavEngagement>(
   for (const row of containerRowsFromEngagements(engagements)) byId.set(row.id, row);
   for (const row of rows) {
     if (row.quick_folder === true) continue;
-    byId.set(row.id, { id: row.id, name: row.name, kind: row.kind ?? "client", parent_id: row.parent_id ?? null, quick_folder: false });
+    byId.set(row.id, {
+      id: row.id,
+      name: row.name,
+      kind: row.kind ?? "client",
+      parent_id: row.parent_id ?? null,
+      quick_folder: false,
+      color: row.color ?? null,
+      archived_at: row.archived_at ?? null,
+    });
   }
   return [...byId.values()].sort(byName);
 }

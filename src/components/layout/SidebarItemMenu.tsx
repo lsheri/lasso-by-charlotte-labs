@@ -65,8 +65,8 @@ export type SidebarMenuTarget =
       kind: "client" | "folder";
       workboards: number;
       folders: number;
-      color: ContainerColour | null;
-      archivedAt: string | null;
+      color?: ContainerColour | null;
+      archivedAt?: string | null;
     }
   | { type: "workboard"; id: string; name: string; clientId: string | null };
 

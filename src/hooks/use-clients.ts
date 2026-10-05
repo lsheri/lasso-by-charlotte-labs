@@ -11,8 +11,8 @@ export type ClientRow = {
   quick_folder: boolean;
   kind: "client" | "folder";
   parent_id: string | null;
-  color: ContainerColour | null;
-  archived_at: string | null;
+  color?: ContainerColour | null;
+  archived_at?: string | null;
 };
 
 export function useClients(orgId: string | undefined) {

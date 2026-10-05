@@ -1,7 +1,7 @@
 import { clientsEnabled } from "@/lib/workspace-settings";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link, useMatchRoute, useSearch } from "@tanstack/react-router";
-import { Fragment, useState, useSyncExternalStore, type ReactNode } from "react";
+import { Fragment, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
 
 import { NewEngagementDialog } from "@/components/engagements/NewEngagementDialog";
 import { SidebarCreateActions } from "@/components/engagements/SidebarCreateActions";
@@ -908,7 +908,7 @@ function ContainerShelfRow({
               <div
                 className="nb-tree-branch"
                 data-container-colour={colour ?? undefined}
-                style={colourStyle ? { "--container-wash": colourStyle.wash } as React.CSSProperties : undefined}
+                style={colourStyle ? { "--container-wash": colourStyle.wash } as CSSProperties : undefined}
               >
                 {node.engagements.map((engagement) => (
                   <div key={engagement.id} className="nb-tree-child" data-tree-depth={depth + 1}>
