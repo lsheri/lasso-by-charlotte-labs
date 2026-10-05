@@ -653,7 +653,7 @@ export function SidebarNav({
                  {...(item.search ? { search: item.search } : {})}
                 onClick={onNavigate}
                 className={`${item.nested ? `${linkClass} nb-nav-item-nested` : linkClass}${archiveItemActive ? " nb-nav-item-active" : ""}`}
-                activeProps={archiveItem ? undefined : activeProps}
+                {...(archiveItem ? {} : { activeProps })}
               >
                 {item.nested ? <PencilIndent /> : null}
                 <GraphiteIcon name={item.icon} size={20} />
