@@ -4,6 +4,8 @@ import { Paperclip } from "lucide-react";
 import { LabCardMenu } from "@/components/canvas-lab/LabCardMenu";
 import { LabPaper } from "@/components/canvas-lab/LabPaper";
 import { CHAT_LINK_COPY, ChatLinkDialog } from "@/components/canvas-lab/ChatLinkDialog";
+import { brandLabel } from "@/components/connectors/BrandLogo";
+import { sourceBrandKey } from "@/components/work/SourceMark";
 import { pastedChatUrl } from "@/lib/chat-url";
 import { ReferenceFileCard, referenceMatchLine } from "@/components/canvas-lab/ReferenceFileCard";
 import { GraphiteIcon } from "@/components/notebook/icons";
@@ -20,6 +22,8 @@ import {
 } from "@/lib/canvas-drag";
 import { cardSizeTier, type LabAnchor, type LabNode, type LabResizeCorner } from "@/components/canvas-lab/canvas-lab-model";
 import type { WorkItemRow } from "@/lib/work-types";
+import { formatDate } from "@/lib/work-types";
+import { resolveWorkDate } from "@/lib/work-order";
 import type { WorkboardCardPreview, WorkboardFilePreview } from "@/lib/workboard-card-preview.shared";
 import type { TeammateMark } from "@/lib/teammate-mark";
 
@@ -203,7 +207,11 @@ export function LabCard({
   }
 
   const matchLine = item && !isReferenceItem(item) ? referenceMatchLine(item) : null;
-  const teammateTooltip = teammateMark?.name ? `Added by ${teammateMark.name}` : null;
+  const teammateTooltip = teammateMark?.name
+    ? item
+      ? `Added by ${teammateMark.name} from ${brandLabel(sourceBrandKey(item))}, ${formatDate(resolveWorkDate(item).iso)}`
+      : `Added by ${teammateMark.name}`
+    : null;
   const anchors: LabAnchor[] = ["top", "right", "bottom", "left"];
   return (
     <div
