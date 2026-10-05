@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { cleanup, render } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { LabCard } from "@/components/canvas-lab/LabCard";
 import type { LabNode } from "@/components/canvas-lab/canvas-lab-model";
@@ -25,6 +25,14 @@ const node: LabNode = {
 };
 
 const noop = () => undefined;
+
+beforeAll(() => {
+  globalThis.ResizeObserver = class {
+    observe() {}
+    disconnect() {}
+    unobserve() {}
+  } as typeof ResizeObserver;
+});
 
 function renderCard(teammateMark?: { name: string | null; initials: string | null } | null) {
   const markProps = teammateMark === undefined ? {} : { teammateMark };
