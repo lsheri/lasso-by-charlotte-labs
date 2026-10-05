@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const emitClientEvent = vi.fn();
 vi.mock("@/lib/client-telemetry", () => ({ emitClientEvent: (...args: unknown[]) => emitClientEvent(...args) }));
 
-const turn = (turn_no: number, role: string, content: string) => ({
+const turn = (turn_no: number, role: string, content: string): { id: string; turn_no: number; role: string; content: string; content_hash: null; ts: null; model: string | null; meta: null } => ({
   id: `t${turn_no}`, turn_no, role, content, content_hash: null, ts: null, model: null, meta: null,
 });
 let turns = [

@@ -27,6 +27,7 @@ const node: LabNode = {
 const noop = () => undefined;
 
 function renderCard(teammateMark?: { name: string | null; initials: string | null } | null) {
+  const markProps = teammateMark === undefined ? {} : { teammateMark };
   return render(
     <LabCard
       node={node}
@@ -57,7 +58,7 @@ function renderCard(teammateMark?: { name: string | null; initials: string | nul
       frameChoices={[]}
       structured={false}
       onMoveToFrame={noop}
-      teammateMark={teammateMark}
+      {...markProps}
     />,
   );
 }
