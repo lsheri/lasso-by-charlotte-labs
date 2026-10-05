@@ -1683,11 +1683,12 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   font-family: var(--font-hand);
   font-size: 15px;
   line-height: 1;
-  pointer-events: none;
+  pointer-events: auto;
+  cursor: default;
 }
-.canvas-lab-teammate-tag svg { position: absolute; inset: -1px -2px; width: 34px; height: 24px; overflow: visible; }
+.canvas-lab-teammate-tag svg { position: absolute; inset: -1px -2px; width: 34px; height: 24px; overflow: visible; pointer-events: none; }
 .canvas-lab-teammate-tag path { fill: none; stroke: var(--nb-graphite); stroke-width: 1.2px; stroke-linecap: round; stroke-linejoin: round; }
-.canvas-lab-teammate-tag > span { position: relative; z-index: 1; }
+.canvas-lab-teammate-tag > span { position: relative; z-index: 1; pointer-events: none; }
 .canvas-lab-context-coronas { z-index: 0; }
 @media (prefers-reduced-motion: reduce) {
   .canvas-lab-card-paper::before { transition: none; }
