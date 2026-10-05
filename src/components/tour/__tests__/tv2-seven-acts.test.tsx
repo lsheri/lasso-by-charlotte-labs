@@ -42,7 +42,7 @@ describe("TV2 seven act tour", () => {
     for (const register of REGISTERS) {
       expect(actById(register, 3)?.captionPointer).toBe("Drag a file onto the board.");
       expect(actById(register, 3)?.files).toEqual(["Fall launch plan.pdf", "Creator call.txt", "Media budget.xlsx", "moodboard.png"]);
-      expect(actById(register, 7)?.captionPointer).toBe("Click Keep.");
+      expect(actById(register, 7)?.captionPointer).toBe("Keep it. Now the answer lives next to what it came from.");
       expect(actById(register, 7)?.primaryActionLabel).toBe("Start with my own work");
       expect(actById(register, 1)?.captionPointer).toBe("Push the chat into Lasso.");
       expect(actById(register, 2)?.captionPointer).toBe("It is already here. You did not have to file it.");

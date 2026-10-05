@@ -6815,7 +6815,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 }
 
 /* TV3 act 7: the kept answer lands inside a deliverable with its source trail */
-.tour-board-item.tour-deliverable { z-index: 6; display: grid; gap: 6px; border: 1.4px solid var(--nb-graphite); border-radius: var(--radius); background: var(--nb-white); box-shadow: 4px 5px 0 color-mix(in srgb, var(--nb-graphite) 16%, transparent); padding: 10px 12px; font-family: var(--font-ui); color: var(--nb-ink); animation: tour-turn-in 260ms ease-out both; }
+.tour-board-item.tour-deliverable { z-index: 6; top: 40% !important; left: 27% !important; width: 50% !important; display: grid; gap: 6px; border: 1.4px solid var(--nb-graphite); border-radius: var(--radius); background: var(--nb-white); box-shadow: 4px 5px 0 color-mix(in srgb, var(--nb-graphite) 16%, transparent); padding: 10px 12px; font-family: var(--font-ui); color: var(--nb-ink); animation: tour-turn-in 260ms ease-out both; }
 .tour-deliverable > header { display: grid; gap: 2px; }
 .tour-deliverable-kind { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--nb-graphite); }
 .tour-deliverable > header strong { font-family: var(--font-serif); font-size: 19px; font-weight: 400; line-height: 1.05; }
@@ -6831,7 +6831,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   .tour-shell[data-act="7"] .tour-instruction-band.is-complete .tour-do-line { animation: none; }
 }
 @media (max-width: 767px) {
-  .tour-board-item.tour-deliverable { top: 80.5% !important; left: 3% !important; width: 52% !important; padding: 6px 8px; gap: 3px; }
+  .tour-board-item.tour-deliverable { top: 38% !important; left: 4% !important; width: 92% !important; padding: 6px 8px; gap: 3px; }
   .tour-deliverable > header strong { font-size: 16px; }
   .tour-deliverable-line { font-size: 9px; }
   .tour-deliverable-note { font-size: 13px; }

@@ -223,7 +223,9 @@ describe("tour acts one to three", () => {
     const landed = vi.fn();
     render(<TourActFive register="company" onLanded={landed} />);
     fireEvent.click(screen.getByRole("button", { name: "Keep" }));
-    expect(screen.getByTestId("canvas-lab-answer-card")).toBeTruthy();
+    expect(screen.getByTestId("tour-deliverable")).toBeTruthy();
+    expect(screen.getByText("Client launch note")).toBeTruthy();
+    expect(screen.getByText("Every line in here can show where it came from.")).toBeTruthy();
     expect(document.querySelectorAll('.tour-keep-links [role="button"]')).toHaveLength(3);
     expect(landed).toHaveBeenCalledTimes(1);
     expect(screen.getByLabelText("Launch deck, slide 12")).toBeTruthy();
@@ -242,6 +244,21 @@ describe("tour acts one to three", () => {
       expect(sourceTitle).toBeTruthy();
       expect(connector.getAttribute("aria-label")).toContain(sourceTitle);
     });
+  });
+
+  it("keeps the answer by keyboard and shows all three cited lines", () => {
+    const landed = vi.fn();
+    render(<TourActFive register="company" onLanded={landed} />);
+    const keep = screen.getByRole("button", { name: "Keep" });
+    keep.focus();
+    fireEvent.keyDown(keep, { key: "Enter", code: "Enter" });
+    fireEvent.click(keep);
+    expect(document.activeElement).toBe(keep);
+    expect(landed).toHaveBeenCalledTimes(1);
+    expect(document.querySelectorAll(".tour-deliverable-line")).toHaveLength(3);
+    expect(screen.getByText("You floated a TikTok first launch and dropped it.")).toBeTruthy();
+    expect(screen.getByText("Toronto made the creator brief and never reached the plan.")).toBeTruthy();
+    expect(screen.getByText("The plan kept Austin and Denver only.")).toBeTruthy();
   });
 
   it("uses the standalone mimic shape without importing the live data surface", () => {
