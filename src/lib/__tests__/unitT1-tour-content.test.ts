@@ -80,20 +80,20 @@ describe("T1 tour content", () => {
   it("pins the shared fall launch scenario and each register grouping word", () => {
     const expectedTitles = [
       "Fall launch plan v3",
-      "Creator call, 14 Sep",
+      "ChatGPT: creator brief, draft 2",
       "Claude: channel mix options",
-      "Media budget v4",
+      "Creator call, 14 Sep",
       "Sample shipping receipts",
     ];
     const expectedQuestion = "What ideas did I have that did not make the final launch plan? Give me the link to the AI chat I worked them out in.";
     const expectedAnswer = [
-      { text: "You floated a TikTok first launch and dropped it after the creator call.", sourceCardTitle: "Claude: channel mix options" },
-      { text: "Toronto came up on the call and never reached the plan.", sourceCardTitle: "Creator call, 14 Sep" },
+      { text: "You floated a TikTok first launch and dropped it.", sourceCardTitle: "Claude: channel mix options" },
+      { text: "Toronto made the creator brief and never reached the plan.", sourceCardTitle: "ChatGPT: creator brief, draft 2" },
       { text: "The plan kept Austin and Denver only.", sourceCardTitle: "Fall launch plan v3" },
     ];
     const expectedAmbientTitles = [
       "ChatGPT: athleisure trend teardown",
-      "ChatGPT: creator brief, draft 2",
+      "ChatGPT: seeding partner outreach",
       "Gemini: city by city demand",
       "Claude: positioning lines",
     ];

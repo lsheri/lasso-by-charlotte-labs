@@ -53,7 +53,7 @@ export const TOUR_BOARD_LAYOUT: readonly TourLayoutItem[] = [
 
 export const TOUR_AMBIENT_CARDS: readonly TourAmbientCard[] = [
   { title: "ChatGPT: athleisure trend teardown", source: "chatgpt", excerpt: ["Compared fabric and fit trends for fall", "Flagged the strongest growth segment"] },
-  { title: "ChatGPT: creator brief, draft 2", source: "chatgpt", excerpt: ["Drafted the brief for seeding partners", "Kept the language direct and specific"] },
+  { title: "ChatGPT: seeding partner outreach", source: "chatgpt", excerpt: ["Drafted first notes to seeding partners", "Kept the language direct and specific"] },
   { title: "Gemini: city by city demand", source: "gemini", excerpt: ["Sized Austin, Denver and Toronto", "Compared assumptions behind each market"] },
   { title: "Claude: positioning lines", source: "claude", excerpt: ["Explored a sharper category position", "Turned the argument into a draft"] },
 ] as const;
@@ -190,15 +190,15 @@ function acts(
 
 const COMPANY_CARDS = [
   { title: "Fall launch plan v3", source: "drive", inSet: true, preview: ["Channel mix, budget split and launch week", "Recommendation for the 29 Sep start"] },
-  { title: "Creator call, 14 Sep", source: "granola", inSet: true, preview: ["Agency rates and posting cadence", "Which markets they actually cover"] },
+  { title: "ChatGPT: creator brief, draft 2", source: "chatgpt", inSet: true, preview: ["Drafted the brief for seeding partners", "Listed Toronto as a third launch city"] },
   { title: "Claude: channel mix options", source: "claude", inSet: true, preview: ["Compared TikTok first and retail first", "Outlined tradeoffs for each route"] },
-  { title: "Media budget v4", source: "drive", inSet: false, preview: ["Paid split by channel and market", "Cost per acquisition assumptions"] },
+  { title: "Creator call, 14 Sep", source: "granola", inSet: false, preview: ["Agency rates and posting cadence", "Which markets they actually cover"] },
   { title: "Sample shipping receipts", source: "email", inSet: false, preview: ["Seeding costs for September", "Receipts and payment notes"] },
 ] as const satisfies readonly TourCard[];
 
 const COMPANY_ANSWER = [
-  { text: "You floated a TikTok first launch and dropped it after the creator call.", sourceCardTitle: "Claude: channel mix options" },
-  { text: "Toronto came up on the call and never reached the plan.", sourceCardTitle: "Creator call, 14 Sep" },
+  { text: "You floated a TikTok first launch and dropped it.", sourceCardTitle: "Claude: channel mix options" },
+  { text: "Toronto made the creator brief and never reached the plan.", sourceCardTitle: "ChatGPT: creator brief, draft 2" },
   { text: "The plan kept Austin and Denver only.", sourceCardTitle: "Fall launch plan v3" },
 ] as const satisfies readonly TourClaim[];
 

@@ -16,7 +16,7 @@ import type { TourActRenderer } from "@/components/tour/TourStage";
 const noop = () => undefined;
 type DragFile = { title: string; pointerId: number; x: number; y: number };
 type Box = { x: number; y: number; width: number; height: number };
-const GROUP_IDS = ["primary-0", "primary-1", "primary-2"] as const;
+export const GROUP_IDS = ["primary-0", "primary-1", "primary-2"] as const;
 
 function sourceTool(source: TourSource): ToolId {
   if (source === "drive") return "googledrive";
