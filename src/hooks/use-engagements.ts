@@ -32,7 +32,7 @@ export async function fetchMyEngagements(profileId: string): Promise<EngagementS
   return rows
     .map((r) => r.engagements)
     .filter((e): e is EngagementSummary => e !== null)
-    .filter((e) => e.archived_at === null)
+    .filter((e) => !e.archived_at)
     // A folder engagement carries no code, so the sort must never assume one.
     .sort((a, b) => (a.code ?? "").localeCompare(b.code ?? ""));
 }

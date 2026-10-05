@@ -317,8 +317,6 @@ export function containerRowsFromEngagements<T extends NavEngagement>(
       kind: client.kind ?? "client",
       parent_id: client.parent_id ?? null,
       quick_folder: false,
-      color: null,
-      archived_at: null,
     });
   }
   return [...byId.values()].sort(byName);
