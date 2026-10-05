@@ -25,6 +25,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as TourPreviewRouteImport } from './routes/tour-preview'
 import { Route as TrustRouteImport } from './routes/trust'
 import { Route as WhyRouteImport } from './routes/why'
+import { Route as DotwellKnownOauthProtectedResourceRouteImport } from './routes/[.]well-known/oauth-protected-resource'
 import { Route as AuthenticatedAddingPeopleRouteImport } from './routes/_authenticated/adding-people'
 import { Route as AuthenticatedAffiliationRouteImport } from './routes/_authenticated/affiliation'
 import { Route as AuthenticatedAiRecordRouteImport } from './routes/_authenticated/ai-record'
@@ -49,6 +50,7 @@ import { Route as AuthenticatedRequestsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedWorkRouteImport } from './routes/_authenticated/work'
 import { Route as ApiMcpRouteImport } from './routes/api/mcp'
+import { Route as ApiOauthProtectedResourceRouteImport } from './routes/api/oauth-protected-resource'
 import { Route as DemoIndexRouteImport } from './routes/demo.index'
 import { Route as DemoCodeRouteImport } from './routes/demo.$code'
 import { Route as DemoClassicRouteImport } from './routes/demo.classic'
@@ -68,6 +70,7 @@ import { Route as ApiMcpTokenRouteImport } from './routes/api/mcp.$token'
 import { Route as ApiPublicAuthEmailHookRouteImport } from './routes/api/public/auth-email-hook'
 import { Route as ApiPublicResendWebhookRouteImport } from './routes/api/public/resend-webhook'
 import { Route as ApiReflectStreamRouteImport } from './routes/api/reflect.stream'
+import { Route as DotwellKnownOauthProtectedResourceApiMcpRouteImport } from './routes/[.]well-known/oauth-protected-resource.api.mcp'
 import { Route as AuthenticatedCoachingEngagementIdSubjectIdRouteImport } from './routes/_authenticated/coaching.$engagementId.$subjectId'
 import { Route as AuthenticatedEngagementsIdCanvasLabRouteImport } from './routes/_authenticated/engagements.$id_.canvas-lab'
 import { Route as ApiPublicHooksEgressSweepRouteImport } from './routes/api/public/hooks/egress-sweep'
@@ -152,6 +155,12 @@ const WhyRoute = WhyRouteImport.update({
   path: '/why',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DotwellKnownOauthProtectedResourceRoute =
+  DotwellKnownOauthProtectedResourceRouteImport.update({
+    id: '/.well-known/oauth-protected-resource',
+    path: '/.well-known/oauth-protected-resource',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedAddingPeopleRoute =
   AuthenticatedAddingPeopleRouteImport.update({
     id: '/adding-people',
@@ -276,6 +285,12 @@ const ApiMcpRoute = ApiMcpRouteImport.update({
   path: '/api/mcp',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiOauthProtectedResourceRoute =
+  ApiOauthProtectedResourceRouteImport.update({
+    id: '/api/oauth-protected-resource',
+    path: '/api/oauth-protected-resource',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const DemoIndexRoute = DemoIndexRouteImport.update({
   id: '/demo/',
   path: '/demo/',
@@ -374,6 +389,12 @@ const ApiReflectStreamRoute = ApiReflectStreamRouteImport.update({
   path: '/api/reflect/stream',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DotwellKnownOauthProtectedResourceApiMcpRoute =
+  DotwellKnownOauthProtectedResourceApiMcpRouteImport.update({
+    id: '/api/mcp',
+    path: '/api/mcp',
+    getParentRoute: () => DotwellKnownOauthProtectedResourceRoute,
+  } as any)
 const AuthenticatedCoachingEngagementIdSubjectIdRoute =
   AuthenticatedCoachingEngagementIdSubjectIdRouteImport.update({
     id: '/coaching/$engagementId/$subjectId',
@@ -415,6 +436,7 @@ export interface FileRoutesByFullPath {
   '/tour-preview': typeof TourPreviewRoute
   '/trust': typeof TrustRoute
   '/why': typeof WhyRoute
+  '/.well-known/oauth-protected-resource': typeof DotwellKnownOauthProtectedResourceRouteWithChildren
   '/adding-people': typeof AuthenticatedAddingPeopleRoute
   '/affiliation': typeof AuthenticatedAffiliationRoute
   '/ai-record': typeof AuthenticatedAiRecordRoute
@@ -439,6 +461,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRoute
   '/work': typeof AuthenticatedWorkRoute
   '/api/mcp': typeof ApiMcpRouteWithChildren
+  '/api/oauth-protected-resource': typeof ApiOauthProtectedResourceRoute
   '/demo/$code': typeof DemoCodeRoute
   '/demo/classic': typeof DemoClassicRoute
   '/demo/conversations': typeof DemoConversationsRoute
@@ -458,6 +481,7 @@ export interface FileRoutesByFullPath {
   '/api/public/resend-webhook': typeof ApiPublicResendWebhookRoute
   '/api/reflect/stream': typeof ApiReflectStreamRoute
   '/coaching/': typeof AuthenticatedCoachingIndexRoute
+  '/.well-known/oauth-protected-resource/api/mcp': typeof DotwellKnownOauthProtectedResourceApiMcpRoute
   '/coaching/$engagementId/$subjectId': typeof AuthenticatedCoachingEngagementIdSubjectIdRoute
   '/engagements/$id/canvas-lab': typeof AuthenticatedEngagementsIdCanvasLabRoute
   '/api/public/hooks/egress-sweep': typeof ApiPublicHooksEgressSweepRoute
@@ -479,6 +503,7 @@ export interface FileRoutesByTo {
   '/tour-preview': typeof TourPreviewRoute
   '/trust': typeof TrustRoute
   '/why': typeof WhyRoute
+  '/.well-known/oauth-protected-resource': typeof DotwellKnownOauthProtectedResourceRouteWithChildren
   '/adding-people': typeof AuthenticatedAddingPeopleRoute
   '/affiliation': typeof AuthenticatedAffiliationRoute
   '/ai-record': typeof AuthenticatedAiRecordRoute
@@ -503,6 +528,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsRoute
   '/work': typeof AuthenticatedWorkRoute
   '/api/mcp': typeof ApiMcpRouteWithChildren
+  '/api/oauth-protected-resource': typeof ApiOauthProtectedResourceRoute
   '/demo/$code': typeof DemoCodeRoute
   '/demo/classic': typeof DemoClassicRoute
   '/demo/conversations': typeof DemoConversationsRoute
@@ -522,6 +548,7 @@ export interface FileRoutesByTo {
   '/api/public/resend-webhook': typeof ApiPublicResendWebhookRoute
   '/api/reflect/stream': typeof ApiReflectStreamRoute
   '/coaching': typeof AuthenticatedCoachingIndexRoute
+  '/.well-known/oauth-protected-resource/api/mcp': typeof DotwellKnownOauthProtectedResourceApiMcpRoute
   '/coaching/$engagementId/$subjectId': typeof AuthenticatedCoachingEngagementIdSubjectIdRoute
   '/engagements/$id/canvas-lab': typeof AuthenticatedEngagementsIdCanvasLabRoute
   '/api/public/hooks/egress-sweep': typeof ApiPublicHooksEgressSweepRoute
@@ -545,6 +572,7 @@ export interface FileRoutesById {
   '/tour-preview': typeof TourPreviewRoute
   '/trust': typeof TrustRoute
   '/why': typeof WhyRoute
+  '/.well-known/oauth-protected-resource': typeof DotwellKnownOauthProtectedResourceRouteWithChildren
   '/_authenticated/adding-people': typeof AuthenticatedAddingPeopleRoute
   '/_authenticated/affiliation': typeof AuthenticatedAffiliationRoute
   '/_authenticated/ai-record': typeof AuthenticatedAiRecordRoute
@@ -569,6 +597,7 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/work': typeof AuthenticatedWorkRoute
   '/api/mcp': typeof ApiMcpRouteWithChildren
+  '/api/oauth-protected-resource': typeof ApiOauthProtectedResourceRoute
   '/demo/$code': typeof DemoCodeRoute
   '/demo/classic': typeof DemoClassicRoute
   '/demo/conversations': typeof DemoConversationsRoute
@@ -588,6 +617,7 @@ export interface FileRoutesById {
   '/api/public/resend-webhook': typeof ApiPublicResendWebhookRoute
   '/api/reflect/stream': typeof ApiReflectStreamRoute
   '/_authenticated/coaching/': typeof AuthenticatedCoachingIndexRoute
+  '/.well-known/oauth-protected-resource/api/mcp': typeof DotwellKnownOauthProtectedResourceApiMcpRoute
   '/_authenticated/coaching/$engagementId/$subjectId': typeof AuthenticatedCoachingEngagementIdSubjectIdRoute
   '/_authenticated/engagements/$id_/canvas-lab': typeof AuthenticatedEngagementsIdCanvasLabRoute
   '/api/public/hooks/egress-sweep': typeof ApiPublicHooksEgressSweepRoute
@@ -611,6 +641,7 @@ export interface FileRouteTypes {
     | '/tour-preview'
     | '/trust'
     | '/why'
+    | '/.well-known/oauth-protected-resource'
     | '/adding-people'
     | '/affiliation'
     | '/ai-record'
@@ -635,6 +666,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/work'
     | '/api/mcp'
+    | '/api/oauth-protected-resource'
     | '/demo/$code'
     | '/demo/classic'
     | '/demo/conversations'
@@ -654,6 +686,7 @@ export interface FileRouteTypes {
     | '/api/public/resend-webhook'
     | '/api/reflect/stream'
     | '/coaching/'
+    | '/.well-known/oauth-protected-resource/api/mcp'
     | '/coaching/$engagementId/$subjectId'
     | '/engagements/$id/canvas-lab'
     | '/api/public/hooks/egress-sweep'
@@ -675,6 +708,7 @@ export interface FileRouteTypes {
     | '/tour-preview'
     | '/trust'
     | '/why'
+    | '/.well-known/oauth-protected-resource'
     | '/adding-people'
     | '/affiliation'
     | '/ai-record'
@@ -699,6 +733,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/work'
     | '/api/mcp'
+    | '/api/oauth-protected-resource'
     | '/demo/$code'
     | '/demo/classic'
     | '/demo/conversations'
@@ -718,6 +753,7 @@ export interface FileRouteTypes {
     | '/api/public/resend-webhook'
     | '/api/reflect/stream'
     | '/coaching'
+    | '/.well-known/oauth-protected-resource/api/mcp'
     | '/coaching/$engagementId/$subjectId'
     | '/engagements/$id/canvas-lab'
     | '/api/public/hooks/egress-sweep'
@@ -740,6 +776,7 @@ export interface FileRouteTypes {
     | '/tour-preview'
     | '/trust'
     | '/why'
+    | '/.well-known/oauth-protected-resource'
     | '/_authenticated/adding-people'
     | '/_authenticated/affiliation'
     | '/_authenticated/ai-record'
@@ -764,6 +801,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/_authenticated/work'
     | '/api/mcp'
+    | '/api/oauth-protected-resource'
     | '/demo/$code'
     | '/demo/classic'
     | '/demo/conversations'
@@ -783,6 +821,7 @@ export interface FileRouteTypes {
     | '/api/public/resend-webhook'
     | '/api/reflect/stream'
     | '/_authenticated/coaching/'
+    | '/.well-known/oauth-protected-resource/api/mcp'
     | '/_authenticated/coaching/$engagementId/$subjectId'
     | '/_authenticated/engagements/$id_/canvas-lab'
     | '/api/public/hooks/egress-sweep'
@@ -806,7 +845,9 @@ export interface RootRouteChildren {
   TourPreviewRoute: typeof TourPreviewRoute
   TrustRoute: typeof TrustRoute
   WhyRoute: typeof WhyRoute
+  DotwellKnownOauthProtectedResourceRoute: typeof DotwellKnownOauthProtectedResourceRouteWithChildren
   ApiMcpRoute: typeof ApiMcpRouteWithChildren
+  ApiOauthProtectedResourceRoute: typeof ApiOauthProtectedResourceRoute
   DemoCodeRoute: typeof DemoCodeRoute
   DemoClassicRoute: typeof DemoClassicRoute
   DemoConversationsRoute: typeof DemoConversationsRoute
@@ -936,6 +977,13 @@ declare module '@tanstack/react-router' {
       path: '/why'
       fullPath: '/why'
       preLoaderRoute: typeof WhyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.well-known/oauth-protected-resource': {
+      id: '/.well-known/oauth-protected-resource'
+      path: '/.well-known/oauth-protected-resource'
+      fullPath: '/.well-known/oauth-protected-resource'
+      preLoaderRoute: typeof DotwellKnownOauthProtectedResourceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/adding-people': {
@@ -1106,6 +1154,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMcpRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/oauth-protected-resource': {
+      id: '/api/oauth-protected-resource'
+      path: '/api/oauth-protected-resource'
+      fullPath: '/api/oauth-protected-resource'
+      preLoaderRoute: typeof ApiOauthProtectedResourceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/demo/': {
       id: '/demo/'
       path: '/demo'
@@ -1239,6 +1294,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiReflectStreamRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/.well-known/oauth-protected-resource/api/mcp': {
+      id: '/.well-known/oauth-protected-resource/api/mcp'
+      path: '/api/mcp'
+      fullPath: '/.well-known/oauth-protected-resource/api/mcp'
+      preLoaderRoute: typeof DotwellKnownOauthProtectedResourceApiMcpRouteImport
+      parentRoute: typeof DotwellKnownOauthProtectedResourceRoute
+    }
     '/_authenticated/coaching/$engagementId/$subjectId': {
       id: '/_authenticated/coaching/$engagementId/$subjectId'
       path: '/coaching/$engagementId/$subjectId'
@@ -1341,6 +1403,21 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
+interface DotwellKnownOauthProtectedResourceRouteChildren {
+  DotwellKnownOauthProtectedResourceApiMcpRoute: typeof DotwellKnownOauthProtectedResourceApiMcpRoute
+}
+
+const DotwellKnownOauthProtectedResourceRouteChildren: DotwellKnownOauthProtectedResourceRouteChildren =
+  {
+    DotwellKnownOauthProtectedResourceApiMcpRoute:
+      DotwellKnownOauthProtectedResourceApiMcpRoute,
+  }
+
+const DotwellKnownOauthProtectedResourceRouteWithChildren =
+  DotwellKnownOauthProtectedResourceRoute._addFileChildren(
+    DotwellKnownOauthProtectedResourceRouteChildren,
+  )
+
 interface ApiMcpRouteChildren {
   ApiMcpTokenRoute: typeof ApiMcpTokenRoute
 }
@@ -1369,7 +1446,10 @@ const rootRouteChildren: RootRouteChildren = {
   TourPreviewRoute: TourPreviewRoute,
   TrustRoute: TrustRoute,
   WhyRoute: WhyRoute,
+  DotwellKnownOauthProtectedResourceRoute:
+    DotwellKnownOauthProtectedResourceRouteWithChildren,
   ApiMcpRoute: ApiMcpRouteWithChildren,
+  ApiOauthProtectedResourceRoute: ApiOauthProtectedResourceRoute,
   DemoCodeRoute: DemoCodeRoute,
   DemoClassicRoute: DemoClassicRoute,
   DemoConversationsRoute: DemoConversationsRoute,
