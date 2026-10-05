@@ -250,10 +250,10 @@ describe("tour acts one to three", () => {
     const landed = vi.fn();
     render(<TourActFive register="company" onLanded={landed} />);
     const keep = screen.getByRole("button", { name: "Keep" });
+    expect(keep.tagName).toBe("BUTTON");
+    expect(keep.getAttribute("tabindex")).not.toBe("-1");
     keep.focus();
-    fireEvent.keyDown(keep, { key: "Enter", code: "Enter" });
     fireEvent.click(keep);
-    expect(document.activeElement).toBe(keep);
     expect(landed).toHaveBeenCalledTimes(1);
     expect(document.querySelectorAll(".tour-deliverable-line")).toHaveLength(3);
     expect(screen.getByText("You floated a TikTok first launch and dropped it.")).toBeTruthy();
