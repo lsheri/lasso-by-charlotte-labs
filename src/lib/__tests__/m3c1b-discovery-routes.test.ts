@@ -2,14 +2,17 @@ import { describe, expect, it } from "vitest";
 import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { routeTree } from "@/routeTree.gen";
+import { getRouter } from "@/router";
 
-function collectFullPaths(node: unknown, out: string[] = []): string[] {
-  if (!node || typeof node !== "object") return out;
-  const rec = node as Record<string, unknown>;
-  if (typeof rec.fullPath === "string") out.push(rec.fullPath);
-  const children = rec.children;
-  if (children && typeof children === "object") {
-    for (const child of Object.values(children)) collectFullPaths(child, out);
+function collectFullPaths(): string[] {
+  // Route instances are lazily initialised; building the router walks and
+  // initialises the tree, after which every route object carries fullPath.
+  const router = getRouter();
+  void routeTree;
+  const out: string[] = [];
+  for (const route of Object.values(router.routesById)) {
+    const fullPath = (route as { fullPath?: string }).fullPath;
+    if (typeof fullPath === "string") out.push(fullPath);
   }
   return out;
 }
