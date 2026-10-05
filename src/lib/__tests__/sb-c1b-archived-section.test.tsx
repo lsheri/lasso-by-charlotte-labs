@@ -7,6 +7,10 @@ const logEvent = vi.fn();
 const toastError = vi.fn();
 const toastSuccess = vi.fn();
 const invalidate = vi.fn();
+const archiveData = vi.hoisted(() => ({
+  clients: [] as Array<Record<string, unknown>>,
+  boards: [] as Array<Record<string, unknown>>,
+}));
 
 vi.mock("@/integrations/supabase/client", () => ({ supabase: { rpc: (...a: unknown[]) => rpc(...a) } }));
 vi.mock("@/lib/telemetry", () => ({ logEvent: (...a: unknown[]) => logEvent(...a) }));
@@ -18,18 +22,14 @@ const ago = new Date(Date.now() - 3 * 86_400_000).toISOString();
 vi.mock("@/hooks/use-clients", () => ({
   useClients: () => ({
     isLoading: false,
-    data: [
-      { id: "c-arch", name: "Acme Archived", kind: "client", parent_id: null, archived_at: ago },
-      { id: "f-arch", name: "Old Folder", kind: "folder", parent_id: null, archived_at: ago },
-      { id: "c-live", name: "Live Client", kind: "client", parent_id: null, archived_at: null },
-    ],
+    data: archiveData.clients,
   }),
   useInvalidateClients: () => invalidate,
 }));
 vi.mock("@/hooks/use-engagements", () => ({
   useArchivedEngagements: () => ({
     isLoading: false,
-    data: [{ id: "e-arch", title: "Shelved Board", archived_at: ago }],
+    data: archiveData.boards,
   }),
 }));
 
@@ -40,6 +40,12 @@ beforeEach(() => {
   logEvent.mockReset();
   toastError.mockReset();
   invalidate.mockReset();
+  archiveData.clients = [
+    { id: "c-arch", name: "Acme Archived", kind: "client", parent_id: null, archived_at: ago },
+    { id: "f-arch", name: "Old Folder", kind: "folder", parent_id: null, archived_at: ago },
+    { id: "c-live", name: "Live Client", kind: "client", parent_id: null, archived_at: null },
+  ];
+  archiveData.boards = [{ id: "e-arch", title: "Shelved Board", archived_at: ago }];
 });
 afterEach(cleanup);
 
@@ -77,7 +83,15 @@ describe("SB-C1b-1 Archived section", () => {
     expect(invalidate).not.toHaveBeenCalled();
   });
 
-  it("fires container.archive_opened once across re-renders", () => {
+  it("does not fire container.archive_opened when nothing is archived", () => {
+    archiveData.clients = [{ id: "c-live", name: "Live Client", kind: "client", archived_at: null }];
+    archiveData.boards = [];
+    render(<ArchivedSection />);
+    const opened = logEvent.mock.calls.filter((c) => c[0] === "container.archive_opened");
+    expect(opened).toEqual([]);
+  });
+
+  it("fires container.archive_opened once when archived work exists", () => {
     const { rerender } = render(<ArchivedSection />);
     rerender(<ArchivedSection />);
     rerender(<ArchivedSection />);

@@ -26,11 +26,9 @@ describe("pass 139: the page is named Past work", () => {
   // stamp that used to sit above it is the sidebar's own word for this page,
   // and saying it twice on one screen is noise. The nav labels are unchanged
   // and still checked here.
-  it('leads with the shared "Past work" page header', () => {
-    // "Past" + an italic "work" reads as "Past work". Passing the whole phrase
-    // as the title printed the word twice.
-    expect(page).toContain('<PageHeader title="Past" italicWord="work"');
-    expect(page).toContain("subtitle={subtitle}");
+  it('leads with the shared "Look back" page header', () => {
+    expect(page).toContain('<PageHeader title="Look" italicWord="back"');
+    expect(page).toContain("subtitle={null}");
     // The ask facility has its own small uppercase heading inside the card; the
     // shared page header is still the only h1 on the route.
     expect(page).toMatch(/ASK PAST WORK\s*<\/h2>/);

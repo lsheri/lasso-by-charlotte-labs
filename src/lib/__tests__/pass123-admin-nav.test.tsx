@@ -89,6 +89,7 @@ describe("Pass 123: the sidebar follows the weekly loop", () => {
     // SB-N1: Past work leads Look back; it is a way to find, not to make.
     expect(lookback.items.map((i) => i.to)).toEqual([
       "/archive",
+      "/archive",
       "/ai-record",
       "/find-it",
       "/decisions",

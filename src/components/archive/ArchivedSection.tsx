@@ -41,12 +41,6 @@ export function ArchivedSection() {
   const opened = useRef(false);
   const guest = usesGuestNav(profile);
 
-  useEffect(() => {
-    if (opened.current || !orgId || guest) return;
-    opened.current = true;
-    logEvent("container.archive_opened", orgId, { from: "past_work" });
-  }, [orgId, guest]);
-
   const rows: ArchivedRow[] = [
     ...(clients.data ?? [])
       .filter((c) => Boolean(c.archived_at))
@@ -80,8 +74,14 @@ export function ArchivedSection() {
     kind === "workboard" ? vocab.engagement : ARCHIVED_SECTION_COPY[kind];
   const loading = clients.isLoading || boards.isLoading;
 
+  useEffect(() => {
+    if (opened.current || loading || rows.length === 0 || !orgId || guest) return;
+    opened.current = true;
+    logEvent("container.archive_opened", orgId, { from: "past_work" });
+  }, [loading, rows.length, orgId, guest]);
+
   return (
-    <section data-testid="archived-section" className="mt-6">
+    <section id="archived" data-testid="archived-section" className="mt-6">
       <h2 className="font-mono text-[0.894rem] font-medium uppercase tracking-[0.12em] text-[var(--nb-mid)]">
         {ARCHIVED_SECTION_COPY.heading}
       </h2>

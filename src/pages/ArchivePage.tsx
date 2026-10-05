@@ -55,54 +55,47 @@ export function ArchivePage() {
 
   return (
     <div data-testid="archive-page">
-      {/* Figma 29:833 leads with the title itself. The group stamp that used to
-          sit above it is the sidebar's word for this page, and saying it twice
-          on the same screen is noise. */}
-      <PageHeader title="Past" italicWord="work" subtitle={subtitle} />
+      <PageHeader title="Look" italicWord="back" subtitle={null} />
 
-      {/*
-        The frame runs the spine down the left at about two thirds and stacks
-        the standing notes beside it. Below `lg` they go back to one column, so
-        the notes follow the work rather than crowding it.
-      */}
-      <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <div className="min-w-0">
-          <section className="rounded-lg border border-graphite bg-card p-5">
-            <h2 className="font-mono text-[0.894rem] font-medium uppercase tracking-[0.12em] text-[var(--nb-mid)]">
-              ASK PAST WORK
-            </h2>
-
-            <p className="mt-2 text-[13px] text-muted-foreground">
-              Describe what you are working on and find shipped work like it.
-            </p>
-            <PastWorkSearch />
-
-            {!guest && (
-              <>
-                <div className="my-4 border-t border-rule" />
-                <p className="text-[13px] text-muted-foreground">
-                  Or ask how the firm does something, and read the answer out of shipped work.
-                </p>
-                <ArchiveChat cards={cards} onResultsChange={onResultsChange} />
-              </>
-            )}
-          </section>
-
-          <div className="mt-6">
-            {isLoading ? (
-              <p className="text-sm text-muted-foreground">Reading shipped work.</p>
-            ) : (
-              <ArchiveSpine groups={groups} hidden={searching} />
-            )}
-          </div>
-
-          <ArchivedSection />
-
-          {/* The frame foots the spine with this, not the page. */}
-          <p className="mt-6 font-hand text-[16px] text-green">closed, not gone</p>
+      <section data-testid="shipped-work-section">
+        <h2 className="font-mono text-[0.894rem] font-medium uppercase tracking-[0.12em] text-[var(--nb-mid)]">
+          Shipped work
+        </h2>
+        <p className="mt-2 text-sm text-muted-foreground">{subtitle}</p>
+        <div className="mt-6">
+          {isLoading ? (
+            <p className="text-sm text-muted-foreground">Reading shipped work.</p>
+          ) : (
+            <ArchiveSpine groups={groups} hidden={searching} />
+          )}
         </div>
+        <p className="mt-6 font-hand text-[16px] text-green">closed, not gone</p>
+      </section>
 
-        <aside className="space-y-4">
+      <ArchivedSection />
+
+      <section className="mt-6 rounded-lg border border-graphite bg-card p-5">
+        <h2 className="font-mono text-[0.894rem] font-medium uppercase tracking-[0.12em] text-[var(--nb-mid)]">
+          ASK PAST WORK
+        </h2>
+
+        <p className="mt-2 text-[13px] text-muted-foreground">
+          Describe what you are working on and find shipped work like it.
+        </p>
+        <PastWorkSearch />
+
+        {!guest && (
+          <>
+            <div className="my-4 border-t border-rule" />
+            <p className="text-[13px] text-muted-foreground">
+              Or ask how the firm does something, and read the answer out of shipped work.
+            </p>
+            <ArchiveChat cards={cards} onResultsChange={onResultsChange} />
+          </>
+        )}
+      </section>
+
+      <aside className="mt-6 grid gap-4 lg:grid-cols-3">
           <ToneCard tone="record" label="WHAT STAYS WHEN AN Workboard CLOSES">
             {/* The frame ticks these off one by one. It is the same promise the
                 paragraph made, said so you can check it item by item. */}
@@ -145,8 +138,7 @@ export function ArchivePage() {
               built yet.
             </p>
           </ToneCard>
-        </aside>
-      </div>
+      </aside>
     </div>
   );
 }

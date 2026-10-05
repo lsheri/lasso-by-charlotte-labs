@@ -5,6 +5,7 @@ export type NavItem = {
   label: string;
   to: string;
   icon: GraphiteIconName;
+  hash?: string;
   nested?: boolean;
   disabled?: boolean;
   disabledReason?: string;
@@ -46,6 +47,7 @@ export const navGroups: NavGroup[] = [
     items: [
       // First, because it is where finished work is found.
       { label: "Past work", to: "/archive", icon: "firm" },
+      { label: "Archived", to: "/archive", hash: "archived", icon: "history" },
       { label: "Past Ask Lasso chats", to: "/ai-record", icon: "history", search: { view: "asked" } },
       { label: "Find it", to: "/find-it", icon: "work", disabled: true, disabledReason: "Coming soon" },
       { label: "Decision log", to: "/decisions", icon: "decisions", disabled: true, disabledReason: "Coming soon" },
