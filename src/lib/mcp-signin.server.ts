@@ -55,7 +55,7 @@ export async function decideSigninCore(
   const { data, error } = await supabase.rpc("mcp_bind_signin", {
     p_profile_id: input.profile_id,
     p_oauth_client_id: input.client_id,
-    p_client_label: input.client_name ?? undefined,
+    ...(input.client_name ? { p_client_label: input.client_name } : {}),
   });
   if (error) {
     if (error.code === "54000") throw new Error(CONNECTION_LIMIT_ERROR);
