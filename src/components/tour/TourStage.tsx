@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { DrawnCheck, GraphiteRule } from "@/components/notebook/marks";
 import { Button } from "@/components/ui/button";
-import { TOUR_CONTENT } from "@/lib/tour-content";
+import { TOUR_CONTENT, actById, type TourActId } from "@/lib/tour-content";
 import type { Register } from "@/lib/register";
 
 export type TourActRenderer = {
@@ -12,7 +12,7 @@ export type TourActRenderer = {
 
 type TourStageProps = {
   register: Register;
-  activeAct: 1 | 2 | 3 | 4 | 5;
+  activeAct: TourActId;
   acts: readonly TourActRenderer[];
   onSkip: () => void;
   onBack: () => void;
@@ -116,7 +116,7 @@ export function TourStage({
 }: TourStageProps) {
   const copy = TOUR_CONTENT[register];
   const touch = useTouchPresentation();
-  const act = copy.acts[activeAct - 1];
+  const act = actById(register, activeAct);
   const renderer = acts[activeAct - 1];
   const hintedActs = useRef(new Set<number>());
   const stageRef = useRef<HTMLElement>(null);

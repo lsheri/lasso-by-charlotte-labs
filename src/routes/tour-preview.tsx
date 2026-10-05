@@ -5,6 +5,7 @@ import { useTourActRenderers } from "@/components/tour/TourActs";
 import { TourStage } from "@/components/tour/TourStage";
 import { Button } from "@/components/ui/button";
 import type { Register } from "@/lib/register";
+import type { TourActId } from "@/lib/tour-content";
 
 export const Route = createFileRoute("/tour-preview")({
   ssr: false,
@@ -23,15 +24,15 @@ export const Route = createFileRoute("/tour-preview")({
 });
 
 function TourPreviewPage() {
-  const [activeAct, setActiveAct] = useState<1 | 2 | 3 | 4 | 5>(1);
+  const [activeAct, setActiveAct] = useState<TourActId>(1);
   const [register, setRegister] = useState<Register>("company");
   const skip = useCallback(() => setActiveAct(5), []);
   const back = useCallback(
-    () => setActiveAct((current) => Math.max(1, current - 1) as 1 | 2 | 3 | 4 | 5),
+    () => setActiveAct((current) => Math.max(1, current - 1) as TourActId),
     [],
   );
-  const advance = useCallback((act: 1 | 2 | 3 | 4) => {
-    window.setTimeout(() => setActiveAct((act + 1) as 2 | 3 | 4 | 5), act === 3 ? 900 : 450);
+  const advance = useCallback((act: TourActId) => {
+    window.setTimeout(() => setActiveAct((act + 1) as TourActId), act === 3 ? 900 : 450);
   }, []);
   const finish = useCallback(() => setActiveAct(1), []);
   const { renderers, instructionOverride, hint } = useTourActRenderers({ register, activeAct, onAdvance: advance, onHintShown: () => undefined, onFinish: finish });
@@ -49,7 +50,7 @@ function TourPreviewPage() {
           </select>
         </label>
         <div aria-label="Choose act">
-          {([1, 2, 3, 4, 5] as const).map((act) => (
+          {([1, 2, 3, 4, 5] as const satisfies readonly TourActId[]).map((act) => (
             <Button key={act} type="button" size="icon" variant={activeAct === act ? "ink" : "outline"} aria-label={`Show act ${act}`} onClick={() => setActiveAct(act)}>{act}</Button>
           ))}
         </div>

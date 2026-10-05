@@ -6,7 +6,7 @@ import type { LabLink, LabNode } from "@/components/canvas-lab/canvas-lab-model"
 import { ToolBadge } from "@/components/onboarding/ToolBadge";
 import type { ToolId } from "@/lib/onboarding-tools";
 import type { Register } from "@/lib/register";
-import { TOUR_BOARD_LAYOUT, TOUR_CONTENT, tourAmbientCards, tourBoardCopy, type TourAmbientCard, type TourCard, type TourLayoutItem, type TourSource } from "@/lib/tour-content";
+import { TOUR_BOARD_LAYOUT, actById, tourAmbientCards, tourBoardCopy, type TourAmbientCard, type TourCard, type TourLayoutItem, type TourSource, type TourActId } from "@/lib/tour-content";
 
 const noop = () => undefined;
 
@@ -17,7 +17,7 @@ function sourceTool(source: TourSource): ToolId {
 }
 
 export type TourBoardState = {
-  act: 1 | 2 | 3 | 4 | 5;
+  act: TourActId;
   landedFile?: string | null;
   outlinedIds?: readonly string[];
   selectedIds?: readonly string[];
@@ -82,7 +82,7 @@ const BOARD_NOTES = [
 
 function answerNode(register: Register): LabNode {
   const item = TOUR_BOARD_LAYOUT.find((candidate) => candidate.id === "answer");
-  const claims = TOUR_CONTENT[register].acts[3]?.answer ?? [];
+  const claims = actById(register, 4)?.answer ?? [];
   return {
     id: "tour-answer", kind: "answer", frame: null, title: "Answer",
     summary: claims.map((claim) => claim.text).join(" "), typeLabel: "answer",
@@ -125,7 +125,7 @@ function BoardRelationships({ register }: { register: Register }) {
 }
 
 export function TourBoard({ register, state, className = "", children, onWorkCardSelect, onWorkCardKeyDown, onPointerDown, onPointerMove, onPointerUp, onPointerCancel, boardRef }: TourBoardProps) {
-  const cards = TOUR_CONTENT[register].acts[1]?.cards ?? [];
+  const cards = actById(register, 2)?.cards ?? [];
   const ambientCards = tourAmbientCards(register);
   const boardCopy = tourBoardCopy(register);
   const selected = new Set(state.selectedIds ?? []);
@@ -144,7 +144,7 @@ export function TourBoard({ register, state, className = "", children, onWorkCar
         {state.answerVisible ? <span className="tour-margin-note is-answer-note" data-tour-note="answer">this is the one to send</span> : null}
       </>
       <div className="tour-loose-work-label" aria-label="Loose AI chat work cards" />
-      {state.groupedIds?.length ? <div className="tour-shared-group-region tour-region is-grouped" aria-label={`${TOUR_CONTENT[register].acts[2]?.frameTitle ?? "Workstream"} with three source work cards`}><span>{TOUR_CONTENT[register].acts[2]?.frameTitle}</span><span className="sr-only">{Array.from(grouped).map((id) => cards[Number(id.split("-")[1])]?.title).filter(Boolean).join(", ")}</span></div> : null}
+      {state.groupedIds?.length ? <div className="tour-shared-group-region tour-region is-grouped" aria-label={`${actById(register, 3)?.frameTitle ?? "Workstream"} with three source work cards`}><span>{actById(register, 3)?.frameTitle}</span><span className="sr-only">{Array.from(grouped).map((id) => cards[Number(id.split("-")[1])]?.title).filter(Boolean).join(", ")}</span></div> : null}
       {TOUR_BOARD_LAYOUT.map((item) => {
         if (!visible(item)) return item.id === "answer" || item.id === "primary-0" ? <div key={item.id} className="tour-reserved-slot" data-tour-layout-id={item.id} data-tour-reserved="" style={itemStyle(item)} /> : null;
         if (item.kind === "primary") {
