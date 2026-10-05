@@ -68,7 +68,7 @@ const candidate = (id: string): PastWorkCandidate => ({
 });
 
 describe("Pass 138: Past work nav", () => {
-  it("sits in Where it goes, after the shelves", () => {
+  it("sits first in Look back, not in the create block", () => {
     const labels = navGroups.map((group) => group.label);
     // Nav is now ordered by the weekly loop rather than by object type.
     expect(labels).toEqual([
@@ -81,8 +81,14 @@ describe("Pass 138: Past work nav", () => {
     ]);
     expect(labels.indexOf("Look back")).toBe(labels.indexOf("Where it goes") + 1);
 
-    const learned = navGroups.find((group) => group.label === "Where it goes")!;
-    expect(learned.items[0]).toEqual({ label: PAST_WORK_NAV_LABEL, to: "/archive", icon: "firm" });
+    // SB-N1: Past work finds work rather than making it, so it leads Look back.
+    const lookback = navGroups.find((group) => group.id === "lookback")!;
+    expect(lookback.items[0]).toEqual({ label: PAST_WORK_NAV_LABEL, to: "/archive", icon: "firm" });
+    expect(lookback.items[0]!.label).toBe("Past work");
+    // The shelves group holds only the shelves, so the create block beside it
+    // carries nothing but New workboard, New client and New folder.
+    const shelves = navGroups.find((group) => group.id === "engagements")!;
+    expect(shelves.items).toEqual([]);
     expect(PAST_WORK_NAV_LABEL).toBe("Past work");
   });
 
