@@ -250,10 +250,10 @@ export function TourActArrived({ register, onComplete }: { register: Register; o
         </header>
         <div className="tour-conversations-toolbar flex h-[46px] shrink-0 items-center gap-2 overflow-x-auto border-b border-[var(--nb-rule)] px-5 whitespace-nowrap">
           <label htmlFor="tour-chat-library-search" className="sr-only">Search your chats</label>
-          <input id="tour-chat-library-search" type="search" readOnly placeholder="Search your chats" className="h-7 w-[200px] shrink-0 rounded-[var(--radius)] border border-border bg-card px-3 text-[11.5px] text-foreground placeholder:text-muted-foreground" />
+          <input id="tour-chat-library-search" type="search" readOnly placeholder="Search your chats" className="h-7 w-[200px] shrink-0 rounded-[var(--radius)] border border-border bg-card px-3 nb-type-small text-foreground placeholder:text-muted-foreground" />
           <span aria-hidden="true" className="h-5 w-px shrink-0 bg-[var(--nb-rule)]" />
           <div role="group" aria-label="Filter by tool" className="flex shrink-0 items-center gap-2">
-            {TOUR_TOOL_FILTERS.map((option, index) => <button key={option} type="button" aria-pressed={index === 0} onClick={noop} className={index === 0 ? "rounded-full border border-graphite bg-nb-white px-3 py-1 text-[11.5px] font-medium text-foreground" : "rounded-full border border-[var(--nb-pencil)] px-3 py-1 text-[11.5px] text-muted-foreground"}>{option}<span className="ml-1.5 font-mono text-[10px] text-soft">{index === 0 ? rows.length : rows.filter((row) => row.item.source === option.toLowerCase()).length}</span></button>)}
+            {TOUR_TOOL_FILTERS.map((option, index) => <button key={option} type="button" aria-pressed={index === 0} onClick={noop} className={index === 0 ? "rounded-full border border-graphite bg-nb-white px-3 py-1 nb-type-small font-medium text-foreground" : "rounded-full border border-[var(--nb-pencil)] px-3 py-1 nb-type-small text-muted-foreground"}>{option}<span className="ml-1.5 font-mono text-[10px] text-soft">{index === 0 ? rows.length : rows.filter((row) => row.item.source === option.toLowerCase()).length}</span></button>)}
           </div>
           <Button type="button" variant="outline" className="h-7 rounded-full" onClick={noop}>Workboards</Button>
           <div className="ml-auto flex shrink-0 items-center gap-2"><Button type="button" variant="ghost" className="h-7 text-[13px] text-muted-foreground" onClick={noop}>{rows.length} conversations.</Button></div>
