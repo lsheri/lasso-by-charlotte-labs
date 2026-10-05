@@ -27,6 +27,7 @@ afterEach(() => {
 });
 
 const acts: readonly TourActRenderer[] = Array.from({ length: 5 }, (_, index) => ({
+  id: (index + 1) as TourActRenderer["id"],
   content: createElement("div", null, `Act ${index + 1}`),
 }));
 
