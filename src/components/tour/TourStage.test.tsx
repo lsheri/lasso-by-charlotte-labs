@@ -62,7 +62,7 @@ describe("T2 tour stage", () => {
         onHintShown: vi.fn(),
       }),
     );
-    expect(screen.getByText("Tap a file to put it on the board.")).toBeTruthy();
+    expect(screen.getByText("Tap the chat to put it on the board.")).toBeTruthy();
   });
 
   it("calls the required Skip handler", () => {
