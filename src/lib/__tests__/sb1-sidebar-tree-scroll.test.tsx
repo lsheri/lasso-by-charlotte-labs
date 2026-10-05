@@ -116,6 +116,23 @@ describe("SB1 tree scroller and standing separation", () => {
     expect(screen.getByText("Past work")).toBeTruthy();
   });
 
+  it("puts Past work at the head of Look back and leaves the create block three", () => {
+    // SB-N1: Past work finds work rather than making it, so it moved out of the
+    // create block and leads Look back.
+    mocks.engagements = manyBoards();
+    const { container } = render(<SidebarNav />);
+    const actions = container.querySelector(".nb-nav-actions")!;
+    expect(actions.textContent).toContain("New workboard");
+    expect(actions.textContent).toContain("New client");
+    expect(actions.textContent).toContain("New folder");
+    expect(actions.textContent).not.toContain("Past work");
+    expect(actions.querySelectorAll("button")).toHaveLength(3);
+    const lookback = screen.getByText("Look back").parentElement!;
+    const rows = [...lookback.querySelectorAll("a")];
+    expect(rows[0]?.textContent).toContain("Past work");
+    expect(rows[1]?.textContent).toContain("Past Ask Lasso chats");
+  });
+
   it("keeps the separation when the tree is empty", () => {
     mocks.engagements = [];
     const { container } = render(<SidebarNav />);
