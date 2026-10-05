@@ -14,6 +14,7 @@ export type ContainerActionsCopy = {
   moveTo: string;
   remove: string;
   colour: string;
+  noColour: string;
   archive: string;
   bringBack: string;
   colourTitle: (name: string) => string;
@@ -32,6 +33,7 @@ export const CONTAINER_ACTIONS_COPY: ContainerActionsCopy = {
   moveTo: "Move to…",
   remove: "Delete",
   colour: "Colour",
+  noColour: "None",
   archive: "Archive",
   bringBack: "Bring back",
   colourTitle: (name) => `Choose a colour for ${name}`,

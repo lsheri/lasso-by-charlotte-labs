@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   deleteContainer: vi.fn(),
   moveWorkboard: vi.fn(),
   reparentClient: vi.fn(),
+  rpc: vi.fn(),
   clientsEnabled: true,
   // Stable references: a fresh object per render would recompute the memo
   // regardless of its dependency array, and the test would catch nothing.
@@ -24,6 +25,9 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/telemetry", () => ({ logEvent: mocks.logEvent }));
+vi.mock("@/integrations/supabase/client", () => ({
+  supabase: { rpc: (...args: unknown[]) => mocks.rpc(...args) },
+}));
 vi.mock("sonner", () => ({ toast: { error: mocks.toastError, success: mocks.toastSuccess } }));
 vi.mock("@/hooks/use-profile", () => ({
   useProfile: () => ({ data: { id: "p1", org_id: "o1", org_type: "partner", role: "worker", clients_enabled: mocks.clientsEnabled } }),
@@ -145,6 +149,56 @@ describe("unit 4a status replies", () => {
 });
 
 describe("unit 4a keyboard path and events", () => {
+  it("offers six colours plus None and clears a container colour", async () => {
+    mocks.rpc.mockResolvedValue({ data: { status: "colored" }, error: null });
+    render(<Harness target={{ ...folder, color: undefined }} />);
+    fireEvent.click(screen.getByRole("button", { name: "More actions for Folder One" }));
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Colour" }));
+
+    const colours = await screen.findByRole("group", { name: "Container colours" });
+    expect(colours.querySelectorAll("button")).toHaveLength(7);
+    const none = screen.getByRole("button", { name: "None" });
+    expect(none.getAttribute("aria-pressed")).toBe("true");
+    fireEvent.click(none);
+
+    await waitFor(() =>
+      expect(mocks.rpc).toHaveBeenCalledWith("set_container_color", { p_id: "f1", p_color: null }),
+    );
+    expect(mocks.logEvent).toHaveBeenCalledWith("container.colored", "o1", {
+      kind: "folder",
+      color: "none",
+      from: "menu",
+    });
+  });
+
+  it("presses the selected colour instead of None", async () => {
+    render(<Harness target={{ ...folder, color: "blue" }} />);
+    fireEvent.click(screen.getByRole("button", { name: "More actions for Folder One" }));
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Colour" }));
+
+    expect(screen.getByRole("button", { name: "blue" }).getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByRole("button", { name: "None" }).getAttribute("aria-pressed")).toBe("false");
+  });
+
+  it("archives a workboard without offering Delete", async () => {
+    mocks.rpc.mockResolvedValue({ data: { status: "archived" }, error: null });
+    render(<Harness target={boardTarget} />);
+    fireEvent.click(screen.getByRole("button", { name: "More actions for Board" }));
+
+    const archive = await screen.findByRole("menuitem", { name: "Archive" });
+    expect(screen.queryByRole("menuitem", { name: "Delete" })).toBeNull();
+    fireEvent.click(archive);
+
+    await waitFor(() =>
+      expect(mocks.rpc).toHaveBeenCalledWith("archive_container", { p_id: "e1" }),
+    );
+    expect(mocks.logEvent).toHaveBeenCalledWith("container.archived", "o1", {
+      kind: "workboard",
+      had_workboards: false,
+      had_folders: false,
+    });
+  });
+
   it("opens the menu from the keyboard and deletes with the lifted confirmation", async () => {
     mocks.deleteContainer.mockResolvedValue({ status: "deleted", lifted_workboards: 2, lifted_folders: 1, lifted_items: 0, lifted_to: "c1" });
     render(<Harness target={folder} />);
