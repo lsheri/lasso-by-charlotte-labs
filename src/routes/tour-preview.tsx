@@ -26,7 +26,7 @@ export const Route = createFileRoute("/tour-preview")({
 function TourPreviewPage() {
   const [activeAct, setActiveAct] = useState<TourActId>(1);
   const [register, setRegister] = useState<Register>("company");
-  const skip = useCallback(() => setActiveAct(7), []);
+  const skip = useCallback(() => setActiveAct(8), []);
   const back = useCallback(
     () => setActiveAct((current) => Math.max(1, current - 1) as TourActId),
     [],
@@ -50,7 +50,7 @@ function TourPreviewPage() {
           </select>
         </label>
         <div aria-label="Choose act">
-          {([1, 2, 3, 4, 5, 6, 7] as const satisfies readonly TourActId[]).map((act) => (
+          {([1, 2, 3, 4, 5, 6, 7, 8] as const satisfies readonly TourActId[]).map((act) => (
             <Button key={act} type="button" size="icon" variant={activeAct === act ? "ink" : "outline"} aria-label={`Show act ${act}`} onClick={() => setActiveAct(act)}>{act}</Button>
           ))}
         </div>

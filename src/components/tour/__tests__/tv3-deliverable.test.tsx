@@ -1,8 +1,10 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { TourActFive } from "@/components/tour/TourActs";
+import { TourActFive, TourActSix, useTourActRenderers } from "@/components/tour/TourActs";
+import { TourStage } from "@/components/tour/TourStage";
 import { ARROW_EDGE_GAP, arrowEnd } from "@/components/tour/TourStage";
 import { TOUR_BOARD_LAYOUT, TOUR_CONTENT, actById } from "@/lib/tour-content";
 
@@ -37,35 +39,87 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 
-describe("TV3 deliverable and source trail", () => {
+describe("TVc note and deck source trail", () => {
   it("adds only the deliverable without moving any pre-existing board item", () => {
     expect(TOUR_BOARD_LAYOUT.filter((item) => item.id !== "deliverable").map((item) => [item.id, item.kind, item.x, item.y, item.widthBasis, item.rotation, item.earliestAct])).toEqual(PRE_TV3_LAYOUT);
     expect(TOUR_BOARD_LAYOUT.find((item) => item.id === "deliverable")).toEqual({ id: "deliverable", kind: "deliverable", x: 31.5, y: 80, widthBasis: 25, rotation: -0.3, earliestAct: 7 });
   });
 
-  it("pins the act seven deliverable copy and its three source claims", () => {
+  it("pins the act seven note teaching and act eight deck copy", () => {
     for (const register of REGISTERS) {
       const act = actById(register, 7);
       expect(act?.captionPointer).toBe("Keep it. Now the answer lives next to what it came from.");
-      expect(act?.deliverable).toEqual({ title: "Client launch note", note: "Every line in here can show where it came from." });
-      expect(act?.closingLine).toBe("That is the whole thing. Everything else is more of it.");
+      expect(act?.why).toBe("Anything Lasso gives you can be kept on the board as a note. You can come back later and still see what it came from.");
+      expect(act?.deliverable).toBeUndefined();
+      expect(act?.closingLine).toBeUndefined();
+      expect(act?.primaryActionLabel).toBe("See it in the deck");
+      const deckAct = actById(register, 8);
+      expect(deckAct?.captionPointer).toBe("See the deck connected back to the work.");
+      expect(deckAct?.why).toBe("The deck is what the client sees. Every line in it can still show the chat or file it came from.");
+      expect(deckAct?.deliverable).toEqual({ caption: "The deck is what the client sees. Every line in it can still show the chat or file it came from." });
+      expect(deckAct?.closingLine).toBe("That is the whole thing. Everything else is more of it.");
+      expect(deckAct?.primaryActionLabel).toBe("Start with my own work");
       expect(actById(register, 6)?.answer).toEqual([
         { text: "You floated a TikTok first launch and dropped it.", sourceCardTitle: "Claude: channel mix options" },
         { text: "Toronto made the creator brief and never reached the plan.", sourceCardTitle: "ChatGPT: creator brief, draft 2" },
         { text: "The plan kept Austin and Denver only.", sourceCardTitle: "Fall launch plan v3" },
       ]);
-      expect(TOUR_CONTENT[register].acts).toHaveLength(7);
+      expect(TOUR_CONTENT[register].acts).toHaveLength(8);
     }
   });
 
-  it("shows the complete deliverable at once with reduced motion", () => {
+  it("shows the complete slide at once with reduced motion", () => {
     reducedMotion = true;
-    render(<TourActFive register="company" onLanded={vi.fn()} />);
+    render(<TourActSix register="company" />);
+    const slide = screen.getByTestId("tour-deck-slide");
+    expect(slide.hasAttribute("data-reduced")).toBe(true);
+    expect(slide.querySelectorAll(".tour-deck-page li")).toHaveLength(3);
+    expect(document.querySelectorAll('.tour-keep-links [role="button"]')).toHaveLength(3);
+  });
+
+  it("advances from the kept note to the deck by pointer and keyboard", () => {
+    function Harness() {
+      const [activeAct, setActiveAct] = useState<7 | 8>(7);
+      const { renderers, instructionOverride, hint } = useTourActRenderers({
+        register: "company",
+        activeAct,
+        onAdvance: () => setActiveAct(8),
+        onHintShown: () => undefined,
+        onFinish: () => undefined,
+      });
+      return <TourStage register="company" activeAct={activeAct} acts={renderers} onSkip={() => undefined} onBack={() => undefined} onHintShown={hint} instructionOverride={instructionOverride} />;
+    }
+    const pointer = render(<Harness />);
     fireEvent.click(screen.getByRole("button", { name: "Keep" }));
-    const deliverable = screen.getByTestId("tour-deliverable");
-    expect(deliverable.hasAttribute("data-reduced")).toBe(true);
-    expect(deliverable.querySelectorAll(".tour-deliverable-line")).toHaveLength(3);
-    expect(screen.getByText("Every line in here can show where it came from.")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Start with my own work" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "See it in the deck" }));
+    expect(screen.getByTestId("tour-deck-slide")).toBeTruthy();
+    pointer.unmount();
+
+    render(<Harness />);
+    fireEvent.click(screen.getByRole("button", { name: "Keep" }));
+    const next = screen.getByRole("button", { name: "See it in the deck" });
+    next.focus();
+    expect(document.activeElement).toBe(next);
+    fireEvent.keyDown(next, { key: "Enter" });
+    fireEvent.click(next);
+    expect(screen.getByTestId("tour-deck-slide")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Start with my own work" })).toBeTruthy();
+  });
+
+  it("keeps every pre-existing board item at identical geometry in acts seven and eight", () => {
+    const note = render(<TourActFive register="company" onLanded={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Keep" }));
+    const noteGeometry = new Map(TOUR_BOARD_LAYOUT.filter((item) => item.id !== "deliverable").map((item) => {
+      const element = note.container.querySelector<HTMLElement>(`[data-tour-layout-id="${item.id}"]`);
+      return [item.id, element ? [element.style.left, element.style.top, element.style.width, element.style.transform].join("|") : null];
+    }));
+    note.unmount();
+    const deck = render(<TourActSix register="company" />);
+    for (const item of TOUR_BOARD_LAYOUT.filter((candidate) => candidate.id !== "deliverable")) {
+      const element = deck.container.querySelector<HTMLElement>(`[data-tour-layout-id="${item.id}"]`);
+      expect(element ? [element.style.left, element.style.top, element.style.width, element.style.transform].join("|") : null).toBe(noteGeometry.get(item.id));
+    }
   });
 
   it("keeps act one and two arrows outside their controls while later arrows retain centre aim", () => {

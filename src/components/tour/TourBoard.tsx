@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent, type CSSProperties, type ReactNode, type RefObject } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode, type RefObject } from "react";
 
 import { LabAnswerCard } from "@/components/canvas-lab/LabAnswerCard";
 import { LabRelationships } from "@/components/canvas-lab/LabRelationships";
@@ -26,7 +26,6 @@ export type TourBoardState = {
   highlightedTitle?: string | null;
   answerVisible?: boolean;
   connectorsVisible?: boolean;
-  deliverableVisible?: boolean;
   reducedMotion?: boolean;
   askOpen?: boolean;
 };
@@ -91,23 +90,6 @@ function answerNode(register: Register): LabNode {
     ownership: "draft", local: false, authorName: "you", x: item?.x ?? 0,
     y: item?.y ?? 0, width: item?.widthBasis ?? 30, height: 18,
   };
-}
-
-function TourDeliverableCard({ register, style, reduced }: { register: Register; style: ReturnType<typeof itemStyle>; reduced: boolean }) {
-  const deliverable = actById(register, 7)?.deliverable;
-  const claims = actById(register, 6)?.answer ?? [];
-  const cards = actById(register, 4)?.cards ?? [];
-  if (!deliverable) return null;
-  return <article className="tour-board-item tour-deliverable" data-tour-layout-id="deliverable" data-tour-title={deliverable.title} data-testid="tour-deliverable" data-reduced={reduced ? "" : undefined} aria-label={deliverable.title} style={style}>
-    <header><span className="tour-deliverable-kind">Deliverable</span><strong>{deliverable.title}</strong></header>
-    <ol className="tour-deliverable-lines">
-      {claims.map((claim, index) => {
-        const source = cards.find((card) => card.title === claim.sourceCardTitle)?.source;
-        return <li key={claim.sourceCardTitle} className="tour-deliverable-line" data-source-title={claim.sourceCardTitle} style={{ "--tour-line-index": index } as CSSProperties}>{source ? <ToolBadge tool={sourceTool(source)} size="sm" /> : null}<span>{claim.text}</span></li>;
-      })}
-    </ol>
-    <p className="tour-deliverable-note">{deliverable.note}</p>
-  </article>;
 }
 
 function BoardRelationships({ register }: { register: Register }) {
@@ -184,8 +166,7 @@ export function TourBoard({ register, state, className = "", children, onWorkCar
         }
         if (item.id === "artifact") return <div key={item.id} className="tour-board-item" data-tour-layout-id={item.id} style={itemStyle(item)}><ArtifactPreview /></div>;
         if (item.id === "whiteboard" || item.id === "deck") return <div key={item.id} className="tour-board-item" data-tour-layout-id={item.id} style={itemStyle(item)}><ImageCard kind={item.id} title={item.id === "whiteboard" ? boardCopy.whiteboardTitle : boardCopy.deckTitle} {...(item.id === "whiteboard" ? { caption: boardCopy.whiteboardCaption } : {})} /></div>;
-        if (item.id === "deliverable" && state.deliverableVisible) return <TourDeliverableCard key={item.id} register={register} style={itemStyle(item)} reduced={Boolean(state.reducedMotion)} />;
-        if (item.id === "answer" && state.answerVisible && !state.deliverableVisible) return <div key={item.id} className="tour-board-item tour-answer-slot" data-tour-layout-id="answer" style={itemStyle(item)}><LabAnswerCard node={{ ...answer, x: 0, y: 0, width: 100, height: 100 }} focused={false} stackZ={4} onFocus={noop} onPointerDown={noop} onDelete={noop} /></div>;
+        if (item.id === "answer" && state.answerVisible) return <div key={item.id} className="tour-board-item tour-answer-slot" data-tour-layout-id="answer" style={itemStyle(item)}><LabAnswerCard node={{ ...answer, x: 0, y: 0, width: 100, height: 100 }} focused={false} stackZ={4} onFocus={noop} onPointerDown={noop} onDelete={noop} /></div>;
         return null;
       })}
       {state.connectorsVisible ? <BoardRelationships register={register} /> : null}

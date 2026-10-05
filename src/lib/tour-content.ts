@@ -34,7 +34,7 @@ export type TourLayoutItem = {
   earliestAct: TourActId;
 };
 
-/** The sole geometry source for every item on the five-act tour board. */
+/** The sole geometry source for every item on the tour board. */
 export const TOUR_BOARD_LAYOUT: readonly TourLayoutItem[] = [
   { id: "primary-0", kind: "primary", x: 3, y: 19, widthBasis: 21, rotation: -0.8, earliestAct: 3 },
   { id: "primary-1", kind: "primary", x: 31, y: 17.5, widthBasis: 22, rotation: 0.7, earliestAct: 3 },
@@ -87,7 +87,7 @@ export type TourChatLink = {
 };
 
 /** Act slot ids. Wider than today's five acts so acts can be inserted by id. */
-export type TourActId = 1 | 2 | 3 | 4 | 5 | 6 | 7;
+export type TourActId = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 
 export type TourChatTurn = {
   role: "user" | "assistant";
@@ -109,8 +109,7 @@ export type TourConversationList = {
 };
 
 export type TourDeliverable = {
-  title: string;
-  note: string;
+  caption: string;
 };
 
 export type TourAct = {
@@ -137,6 +136,7 @@ const DO_LINES = {
   5: "Draw a box around them.",
   6: "Click Ask.",
   7: "Keep it. Now the answer lives next to what it came from.",
+  8: "See the deck connected back to the work.",
 } as const satisfies Partial<Record<TourActId, string>>;
 
 export const TOUR_CONTEXT_SENTENCE =
@@ -165,8 +165,7 @@ export const TOUR_CONVERSATION_LIST: TourConversationList = {
 };
 
 export const TOUR_DELIVERABLE: TourDeliverable = {
-  title: "Client launch note",
-  note: "Every line in here can show where it came from.",
+  caption: "The deck is what the client sees. Every line in it can still show the chat or file it came from.",
 };
 
 const CLOSING_LINE = "That is the whole thing. Everything else is more of it.";
@@ -236,7 +235,14 @@ function acts(
       id: 7,
       captionPointer: DO_LINES[7],
       captionTouch: DO_LINES[7],
-      why: "The answer stays on the board with links back to the chat and the files behind it, so you can open the original months later.",
+      why: "Anything Lasso gives you can be kept on the board as a note. You can come back later and still see what it came from.",
+      primaryActionLabel: "See it in the deck",
+    },
+    {
+      id: 8,
+      captionPointer: DO_LINES[8],
+      captionTouch: DO_LINES[8],
+      why: TOUR_DELIVERABLE.caption,
       closingLine: CLOSING_LINE,
       deliverable: TOUR_DELIVERABLE,
       primaryActionLabel: START_LABEL,

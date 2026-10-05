@@ -12,7 +12,7 @@ import { useReducedMotion as useMotionPreference } from "@/hooks/use-motion";
 import { keyTo } from "@/lib/canvas-drag";
 import type { ToolId } from "@/lib/onboarding-tools";
 import type { Register } from "@/lib/register";
-import { actById, tourAmbientCards, type TourActId, type TourSource } from "@/lib/tour-content";
+import { TOUR_BOARD_LAYOUT, actById, tourAmbientCards, tourBoardCopy, type TourActId, type TourSource } from "@/lib/tour-content";
 import type { WorkboardCardPreview } from "@/lib/workboard-card-preview.shared";
 import type { WorkItemRow } from "@/lib/work-types";
 import type { TourActRenderer } from "@/components/tour/TourStage";
@@ -150,8 +150,42 @@ export function TourActFive({ register, onLanded }: { register: Register; onLand
   const [landed, setLanded] = useState(false); const [dragging, setDragging] = useState(false); const boardRef = useRef<HTMLDivElement>(null);
   const land = () => { if (landed) return; setLanded(true); setDragging(false); onLanded(); };
   const finishDrag = (event: ReactPointerEvent<HTMLDivElement>) => { if (!dragging) return; const rect = boardRef.current?.getBoundingClientRect(); if (rect && event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom) land(); else setDragging(false); };
-  return <TourWorkboard active={null}><div className="tour-shared-act" data-testid="tour-act-five"><TourBoard register={register} state={{ act: 7, selectedIds: GROUP_IDS, groupedIds: GROUP_IDS, glowingIds: GROUP_IDS, answerVisible: landed, connectorsVisible: landed, deliverableVisible: landed, reducedMotion }} boardRef={boardRef} onPointerUp={finishDrag} onPointerCancel={() => setDragging(false)}>
+  return <TourWorkboard active={null}><div className="tour-shared-act" data-testid="tour-act-five"><TourBoard register={register} state={{ act: 7, selectedIds: GROUP_IDS, groupedIds: GROUP_IDS, glowingIds: GROUP_IDS, answerVisible: landed, connectorsVisible: landed, reducedMotion }} boardRef={boardRef} onPointerUp={finishDrag} onPointerCancel={() => setDragging(false)}>
     {!landed ? <aside className="tour-keep-panel"><article className="tour-drag-answer" onPointerDown={(event) => { event.currentTarget.setPointerCapture?.(event.pointerId); setDragging(true); }}><span>Answer</span><p>{actById(register, 6)?.answer?.map((claim) => claim.text).join(" ")}</p></article><Button type="button" variant="ink" data-tour-target="7" onClick={land}>Keep</Button></aside> : null}
+  </TourBoard></div></TourWorkboard>;
+}
+
+function TourDeckSlide({ register, reducedMotion }: { register: Register; reducedMotion: boolean }) {
+  const boardCopy = tourBoardCopy(register);
+  const claims = actById(register, 6)?.answer ?? [];
+  const cards = actById(register, 4)?.cards ?? [];
+  const deliverable = actById(register, 8)?.deliverable;
+  const layout = TOUR_BOARD_LAYOUT.find((item) => item.id === "deliverable");
+  const layoutStyle = layout ? { left: `${layout.x}%`, top: `${layout.y}%`, width: `${layout.widthBasis}%`, transform: `rotate(${layout.rotation}deg)` } : undefined;
+  return <aside className="tour-deck-overlay" data-tour-layout-id="deliverable" data-tour-title={boardCopy.deckTitle} data-tour-target="8" data-testid="tour-deck-slide" data-reduced={reducedMotion ? "" : undefined} aria-label={boardCopy.deckTitle} style={layoutStyle}>
+    <div className="tour-deck-thumbnails" aria-label="Slide thumbnails"><span /><span /><span data-active="true">12</span></div>
+    <section data-page={12} className="tour-deck-page-wrap">
+      <p className="micro-label micro-label-field">Slide 12</p>
+      <div className="tour-deck-page relative w-full overflow-hidden rounded-[var(--radius)] border border-border bg-white">
+        <header><span>LYKOS LOUNGEWEAR</span><strong>{boardCopy.deckTitle}</strong></header>
+        <h2>Fall launch recommendation</h2>
+        <ol>
+          {claims.map((claim) => {
+            const source = cards.find((card) => card.title === claim.sourceCardTitle)?.source;
+            return <li key={claim.sourceCardTitle} data-source-title={claim.sourceCardTitle}>{source ? <ToolBadge tool={sourceTool(source)} size="sm" /> : null}<span>{claim.text}</span></li>;
+          })}
+        </ol>
+        <span className="tour-deck-slide-number">12</span>
+      </div>
+    </section>
+    <p className="tour-deck-caption">{deliverable?.caption}</p>
+  </aside>;
+}
+
+export function TourActSix({ register }: { register: Register }) {
+  const reducedMotion = useMotionPreference();
+  return <TourWorkboard active={null}><div className="tour-shared-act" data-testid="tour-act-six"><TourBoard register={register} state={{ act: 8, selectedIds: GROUP_IDS, groupedIds: GROUP_IDS, glowingIds: GROUP_IDS, answerVisible: true, connectorsVisible: true, reducedMotion }}>
+    <TourDeckSlide register={register} reducedMotion={reducedMotion} />
   </TourBoard></div></TourWorkboard>;
 }
 
@@ -280,7 +314,8 @@ export function useTourActRenderers({ register, activeAct, onAdvance, onHintShow
     { id: 4, content: <TourActTwo register={register} hint={hintAct === 4} onComplete={() => onAdvance(4)} /> },
     { id: 5, content: <TourActThree register={register} onComplete={() => onAdvance(5)} /> },
     { id: 6, content: <TourActFour register={register} onComplete={() => onAdvance(6)} /> },
-    { id: 7, content: <TourActFive register={register} onLanded={() => { setAnswerLanded(true); setInstructionOverride(actById(register, 7)?.closingLine ?? null); }} />, primaryAction: answerLanded ? <Button type="button" variant="ink" onClick={onFinish}>{actById(register, 7)?.primaryActionLabel}</Button> : null },
+    { id: 7, content: <TourActFive register={register} onLanded={() => setAnswerLanded(true)} />, primaryAction: answerLanded ? <Button type="button" variant="ink" onClick={() => onAdvance(7)}>{actById(register, 7)?.primaryActionLabel}</Button> : null },
+    { id: 8, content: <TourActSix register={register} />, primaryAction: <Button type="button" variant="ink" onClick={onFinish}>{actById(register, 8)?.primaryActionLabel}</Button> },
   ], [answerLanded, hintAct, onAdvance, onFinish, register]);
-  return { renderers, instructionOverride, hint };
+  return { renderers, instructionOverride: activeAct === 8 ? actById(register, 8)?.closingLine ?? null : instructionOverride, hint };
 }
