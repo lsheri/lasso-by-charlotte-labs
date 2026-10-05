@@ -224,8 +224,8 @@ function acts(
     },
     {
       id: 6,
-      captionPointer: DO_LINES[4],
-      captionTouch: DO_LINES[4],
+      captionPointer: DO_LINES[6],
+      captionTouch: DO_LINES[6],
       why: "Lasso reads only what is inside the box, and shows you which piece every part of the answer came from.",
       question,
       answer,
@@ -233,8 +233,8 @@ function acts(
     },
     {
       id: 7,
-      captionPointer: DO_LINES[5],
-      captionTouch: DO_LINES[5],
+      captionPointer: DO_LINES[7],
+      captionTouch: DO_LINES[7],
       why: "The answer stays on the board with links back to the chat and the files behind it, so you can open the original months later.",
       closingLine: CLOSING_LINE,
       primaryActionLabel: START_LABEL,
