@@ -6808,7 +6808,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .tour-conversation-row:not(.is-arrived) > div { opacity: 0.7; }
 .tour-conversation-row.is-arrived > button { border: 1.4px solid var(--nb-graphite); cursor: pointer; animation: tour-turn-in 320ms ease-out both; }
 .tour-conversation-row.is-arrived > button:focus-visible { outline: 2px solid var(--nb-lasso-green); outline-offset: 3px; }
-.tour-arrived-label { flex: 0 0 auto; font-family: var(--font-hand); font-size: 16px; color: var(--nb-lasso-green); }
+.tour-arrived-label { flex: 0 0 auto; font-family: var(--font-hand); font-size: 16px; color: var(--nb-green); }
 @keyframes tour-turn-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) {
   .tour-chat-turn, .tour-push-control, .tour-conversation-row.is-arrived > button { animation: none; transition: none; }
