@@ -11,6 +11,7 @@ import { keyTo } from "@/lib/canvas-drag";
 import type { ToolId } from "@/lib/onboarding-tools";
 import type { Register } from "@/lib/register";
 import { actById, type TourActId, type TourSource } from "@/lib/tour-content";
+import type { TourActRenderer } from "@/components/tour/TourStage";
 
 const noop = () => undefined;
 type DragFile = { title: string; pointerId: number; x: number; y: number };
