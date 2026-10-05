@@ -111,6 +111,8 @@ export type TelemetryEvent =
   | "import.completed"
   | "import.abandoned"
   | "mcp.push"
+  /** M3-C2: an MCP call that could not be resolved. Kind and closed reason only. */
+  | "mcp.auth_failed"
   /** M2: a named connection was made in Settings. Kind only. */
   | "mcp.connection_created"
   /** M2: a connection was disconnected. Kind and where from. */
