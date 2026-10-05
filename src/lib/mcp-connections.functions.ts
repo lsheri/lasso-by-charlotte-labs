@@ -121,5 +121,54 @@ export const revokeConnection = createServerFn({ method: "POST" })
       p_id: data.id,
     });
     if (error) throw new Error(error.message);
+    if (ok) {
+      const { revokeGrantAfterDisconnect } = await import("./mcp-signin.server");
+      await revokeGrantAfterDisconnect(context.supabase, data.id);
+    }
     return { ok: Boolean(ok) };
+  });
+
+export type SigninDecisionInput = {
+  decision: "approve" | "deny";
+  profile_id: string | null;
+  client_id: string;
+  client_name: string | null;
+  redirect_uri: string | null;
+};
+
+function boundedOrNull(value: unknown, max: number, field: string): string | null {
+  if (value === null || value === undefined) return null;
+  if (typeof value !== "string" || value.length > max) throw new Error(`invalid_${field}`);
+  return value;
+}
+
+export function validateSigninDecision(input: unknown): SigninDecisionInput {
+  const raw = (input ?? {}) as Record<string, unknown>;
+  const decision = raw["decision"];
+  if (decision !== "approve" && decision !== "deny") throw new Error("invalid_decision");
+  const clientId = raw["client_id"];
+  if (typeof clientId !== "string" || clientId.length < 1 || clientId.length > 255) {
+    throw new Error("invalid_client_id");
+  }
+  const profileRaw = raw["profile_id"];
+  if (profileRaw !== null && profileRaw !== undefined && typeof profileRaw !== "string") {
+    throw new Error("invalid_profile_id");
+  }
+  const profileId = typeof profileRaw === "string" && profileRaw ? profileRaw : null;
+  if (decision === "approve" && !profileId) throw new Error("invalid_profile_id");
+  return {
+    decision,
+    profile_id: profileId,
+    client_id: clientId,
+    client_name: boundedOrNull(raw["client_name"], 200, "client_name"),
+    redirect_uri: boundedOrNull(raw["redirect_uri"], 2048, "redirect_uri"),
+  };
+}
+
+export const decideSignin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: SigninDecisionInput) => validateSigninDecision(input))
+  .handler(async ({ data, context }) => {
+    const { decideSigninCore } = await import("./mcp-signin.server");
+    return decideSigninCore(context.supabase, context.userId, data);
   });
