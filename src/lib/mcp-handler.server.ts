@@ -713,10 +713,14 @@ async function recordAuthFailure(failure: AuthFailure): Promise<void> {
     typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
       ? crypto.randomUUID()
       : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-  await recordAnonymousEvent("mcp.auth_failed", viewId, {
-    kind: failure.kind,
-    reason: failure.reason,
-  });
+  try {
+    await recordAnonymousEvent("mcp.auth_failed", viewId, {
+      kind: failure.kind,
+      reason: failure.reason,
+    });
+  } catch {
+    /* telemetry never changes the 401 */
+  }
 }
 
 async function logPush(owner: Owner, dims: Record<string, string>): Promise<void> {
