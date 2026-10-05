@@ -26,7 +26,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-const acts: readonly TourActRenderer[] = Array.from({ length: 5 }, (_, index) => ({
+const acts: readonly TourActRenderer[] = Array.from({ length: 7 }, (_, index) => ({
   id: (index + 1) as TourActRenderer["id"],
   content: createElement("div", null, `Act ${index + 1}`),
 }));
@@ -34,7 +34,7 @@ const acts: readonly TourActRenderer[] = Array.from({ length: 5 }, (_, index) =>
 function stage(onSkip = vi.fn()) {
   return createElement(TourStage, {
     register: "company",
-    activeAct: 3,
+    activeAct: 5,
     acts,
     onSkip,
     onBack: vi.fn(),
@@ -43,9 +43,9 @@ function stage(onSkip = vi.fn()) {
 }
 
 describe("T2 tour stage", () => {
-  it("shows two drawn checks and the pointer instruction at act three", () => {
+  it("shows four drawn checks and the pointer instruction at act five", () => {
     const { container } = render(stage());
-    expect(container.querySelectorAll('[data-state="complete"] .nb-mark')).toHaveLength(2);
+    expect(container.querySelectorAll('[data-state="complete"] .nb-mark')).toHaveLength(4);
     expect(screen.getByText("Draw a box around them.")).toBeTruthy();
     expect(screen.getByText("The box is a workstream. Everything inside it shares context, so a question answers from those pieces and nothing else on the board.")).toBeTruthy();
   });
@@ -55,7 +55,7 @@ describe("T2 tour stage", () => {
     render(
       createElement(TourStage, {
         register: "company",
-        activeAct: 1,
+        activeAct: 3,
         acts,
         onSkip: vi.fn(),
         onBack: vi.fn(),

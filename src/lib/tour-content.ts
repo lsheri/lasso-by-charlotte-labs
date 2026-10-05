@@ -36,19 +36,19 @@ export type TourLayoutItem = {
 
 /** The sole geometry source for every item on the five-act tour board. */
 export const TOUR_BOARD_LAYOUT: readonly TourLayoutItem[] = [
-  { id: "primary-0", kind: "primary", x: 3, y: 19, widthBasis: 21, rotation: -0.8, earliestAct: 1 },
-  { id: "primary-1", kind: "primary", x: 31, y: 17.5, widthBasis: 22, rotation: 0.7, earliestAct: 1 },
-  { id: "primary-2", kind: "primary", x: 60, y: 20.5, widthBasis: 21, rotation: 0.5, earliestAct: 1 },
-  { id: "primary-3", kind: "primary", x: 5, y: 44, widthBasis: 18, rotation: 0.9, earliestAct: 1 },
-  { id: "primary-4", kind: "primary", x: 6.5, y: 59, widthBasis: 19, rotation: -0.7, earliestAct: 1 },
-  { id: "answer", kind: "answer", x: 33, y: 82, widthBasis: 23, rotation: 0, earliestAct: 5 },
-  { id: "chat-0", kind: "chat", x: 32, y: 42, widthBasis: 21, rotation: -0.7, earliestAct: 1 },
-  { id: "chat-1", kind: "chat", x: 62, y: 44.5, widthBasis: 22, rotation: 0.8, earliestAct: 1 },
-  { id: "chat-2", kind: "chat", x: 30, y: 63.5, widthBasis: 22, rotation: 0.5, earliestAct: 1 },
-  { id: "chat-3", kind: "chat", x: 61, y: 65.5, widthBasis: 21, rotation: -0.6, earliestAct: 1 },
-  { id: "artifact", kind: "artifact", x: 84.5, y: 66, widthBasis: 13, rotation: 0.4, earliestAct: 1 },
-  { id: "whiteboard", kind: "image", x: 5, y: 78.5, widthBasis: 18, rotation: -0.4, earliestAct: 1 },
-  { id: "deck", kind: "image", x: 72, y: 84, widthBasis: 20, rotation: 0.3, earliestAct: 5 },
+  { id: "primary-0", kind: "primary", x: 3, y: 19, widthBasis: 21, rotation: -0.8, earliestAct: 3 },
+  { id: "primary-1", kind: "primary", x: 31, y: 17.5, widthBasis: 22, rotation: 0.7, earliestAct: 3 },
+  { id: "primary-2", kind: "primary", x: 60, y: 20.5, widthBasis: 21, rotation: 0.5, earliestAct: 3 },
+  { id: "primary-3", kind: "primary", x: 5, y: 44, widthBasis: 18, rotation: 0.9, earliestAct: 3 },
+  { id: "primary-4", kind: "primary", x: 6.5, y: 59, widthBasis: 19, rotation: -0.7, earliestAct: 3 },
+  { id: "answer", kind: "answer", x: 33, y: 82, widthBasis: 23, rotation: 0, earliestAct: 7 },
+  { id: "chat-0", kind: "chat", x: 32, y: 42, widthBasis: 21, rotation: -0.7, earliestAct: 3 },
+  { id: "chat-1", kind: "chat", x: 62, y: 44.5, widthBasis: 22, rotation: 0.8, earliestAct: 3 },
+  { id: "chat-2", kind: "chat", x: 30, y: 63.5, widthBasis: 22, rotation: 0.5, earliestAct: 3 },
+  { id: "chat-3", kind: "chat", x: 61, y: 65.5, widthBasis: 21, rotation: -0.6, earliestAct: 3 },
+  { id: "artifact", kind: "artifact", x: 84.5, y: 66, widthBasis: 13, rotation: 0.4, earliestAct: 3 },
+  { id: "whiteboard", kind: "image", x: 5, y: 78.5, widthBasis: 18, rotation: -0.4, earliestAct: 3 },
+  { id: "deck", kind: "image", x: 72, y: 84, widthBasis: 20, rotation: 0.3, earliestAct: 7 },
 ] as const;
 
 export const TOUR_AMBIENT_CARDS: readonly TourAmbientCard[] = [
@@ -88,12 +88,33 @@ export type TourChatLink = {
 /** Act slot ids. Wider than today's five acts so acts can be inserted by id. */
 export type TourActId = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
+export type TourChatTurn = {
+  role: "user" | "assistant";
+  text: string;
+};
+
+export type TourPushedChat = {
+  title: string;
+  source: "claude";
+  turns: readonly TourChatTurn[];
+  pushLine: string;
+  pushLabel: string;
+  pushedLabel: string;
+};
+
+export type TourConversationList = {
+  heading: string;
+  arrivedLabel: string;
+};
+
 export type TourAct = {
   id: TourActId;
   captionPointer: string;
   captionTouch: string;
   why: string;
   files?: readonly string[];
+  chat?: TourPushedChat;
+  conversations?: TourConversationList;
   cards?: readonly TourCard[];
   contextSentence?: string;
   frameTitle?: string;
@@ -119,14 +140,33 @@ const COMPANY_FILES = [
 ] as const;
 
 const DO_LINES = {
-  2: "Click one of the outlined work cards.",
-  3: "Draw a box around them.",
-  4: "Click Ask.",
-  5: "Click Keep.",
+  4: "Click one of the outlined work cards.",
+  5: "Draw a box around them.",
+  6: "Click Ask.",
+  7: "Click Keep.",
 } as const satisfies Partial<Record<TourActId, string>>;
 
 export const TOUR_CONTEXT_SENTENCE =
   "Grouped work shares context. When you ask a question of this box, Lasso reads these three and nothing else.";
+export const TOUR_PUSHED_CHAT: TourPushedChat = {
+  title: "Claude: channel mix options",
+  source: "claude",
+  turns: [
+    { role: "user", text: "Compare a TikTok first launch with a retail first launch." },
+    { role: "assistant", text: "TikTok first is cheaper to test. Retail first gets you shelf space, but slower." },
+    { role: "user", text: "Creator rates went up on the call. Drop TikTok?" },
+    { role: "assistant", text: "Then lead with retail and keep TikTok as a small test." },
+  ],
+  pushLine: "Push this to Lasso.",
+  pushLabel: "Push to Lasso",
+  pushedLabel: "Pushed to Lasso",
+};
+
+export const TOUR_CONVERSATION_LIST: TourConversationList = {
+  heading: "All AI Conversations",
+  arrivedLabel: "Just arrived",
+};
+
 const CLOSING_LINE = "That is the whole thing. Everything else is more of it.";
 const START_LABEL = "Start with my own work";
 
@@ -148,39 +188,53 @@ function acts(
   return [
     {
       id: 1,
+      captionPointer: "Push the chat into Lasso.",
+      captionTouch: "Push the chat into Lasso.",
+      why: "You keep working in the AI tools you already use. One push brings the whole conversation into Lasso, with a link back to where it happened.",
+      chat: TOUR_PUSHED_CHAT,
+    },
+    {
+      id: 2,
+      captionPointer: "It is already here. You did not have to file it.",
+      captionTouch: "It is already here. You did not have to file it.",
+      why: "Every chat you push lands in All AI Conversations on its own. Click it to put it to work.",
+      conversations: TOUR_CONVERSATION_LIST,
+    },
+    {
+      id: 3,
       captionPointer: "Drag a file onto the board.",
       captionTouch: "Tap a file to put it on the board.",
       why: "Files, AI chats and call transcripts all land here. Lasso keeps each one with a link back to where it came from.",
       files,
     },
     {
-      id: 2,
-      captionPointer: DO_LINES[2],
-      captionTouch: DO_LINES[2],
+      id: 4,
+      captionPointer: DO_LINES[4],
+      captionTouch: DO_LINES[4],
       why: "You are telling Lasso which work, AI chats and transcripts share context. These three all went into the same final piece of work.",
       cards,
     },
     {
-      id: 3,
-      captionPointer: DO_LINES[3],
-      captionTouch: DO_LINES[3],
+      id: 5,
+      captionPointer: DO_LINES[5],
+      captionTouch: DO_LINES[5],
       why: `The box is a ${frameTitle === "Workstream" ? "workstream" : frameTitle}. Everything inside it shares context, so a question answers from those pieces and nothing else on the board.`,
       contextSentence: TOUR_CONTEXT_SENTENCE,
       frameTitle,
     },
     {
-      id: 4,
-      captionPointer: DO_LINES[4],
-      captionTouch: DO_LINES[4],
+      id: 6,
+      captionPointer: DO_LINES[6],
+      captionTouch: DO_LINES[6],
       why: "Lasso reads only what is inside the box, and shows you which piece every part of the answer came from.",
       question,
       answer,
       chatLink,
     },
     {
-      id: 5,
-      captionPointer: DO_LINES[5],
-      captionTouch: DO_LINES[5],
+      id: 7,
+      captionPointer: DO_LINES[7],
+      captionTouch: DO_LINES[7],
       why: "The answer stays on the board with links back to the chat and the files behind it, so you can open the original months later.",
       closingLine: CLOSING_LINE,
       primaryActionLabel: START_LABEL,

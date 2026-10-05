@@ -82,7 +82,7 @@ const BOARD_NOTES = [
 
 function answerNode(register: Register): LabNode {
   const item = TOUR_BOARD_LAYOUT.find((candidate) => candidate.id === "answer");
-  const claims = actById(register, 4)?.answer ?? [];
+  const claims = actById(register, 6)?.answer ?? [];
   return {
     id: "tour-answer", kind: "answer", frame: null, title: "Answer",
     summary: claims.map((claim) => claim.text).join(" "), typeLabel: "answer",
@@ -125,14 +125,14 @@ function BoardRelationships({ register }: { register: Register }) {
 }
 
 export function TourBoard({ register, state, className = "", children, onWorkCardSelect, onWorkCardKeyDown, onPointerDown, onPointerMove, onPointerUp, onPointerCancel, boardRef }: TourBoardProps) {
-  const cards = actById(register, 2)?.cards ?? [];
+  const cards = actById(register, 4)?.cards ?? [];
   const ambientCards = tourAmbientCards(register);
   const boardCopy = tourBoardCopy(register);
   const selected = new Set(state.selectedIds ?? []);
   const outlined = new Set(state.outlinedIds ?? []);
   const grouped = new Set(state.groupedIds ?? []);
   const glowing = new Set(state.glowingIds ?? []);
-  const visible = (item: TourLayoutItem) => item.earliestAct <= state.act && !(item.id === "primary-0" && state.act === 1 && !state.landedFile);
+  const visible = (item: TourLayoutItem) => item.earliestAct <= state.act && !(item.id === "primary-0" && state.act === 3 && !state.landedFile);
   const answer = useMemo(() => answerNode(register), [register]);
 
   return <div ref={boardRef} className={`tour-persistent-board ${className}`} data-tour-board="" onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerCancel}>
@@ -144,18 +144,18 @@ export function TourBoard({ register, state, className = "", children, onWorkCar
         {state.answerVisible ? <span className="tour-margin-note is-answer-note" data-tour-note="answer">this is the one to send</span> : null}
       </>
       <div className="tour-loose-work-label" aria-label="Loose AI chat work cards" />
-      {state.groupedIds?.length ? <div className="tour-shared-group-region tour-region is-grouped" aria-label={`${actById(register, 3)?.frameTitle ?? "Workstream"} with three source work cards`}><span>{actById(register, 3)?.frameTitle}</span><span className="sr-only">{Array.from(grouped).map((id) => cards[Number(id.split("-")[1])]?.title).filter(Boolean).join(", ")}</span></div> : null}
+      {state.groupedIds?.length ? <div className="tour-shared-group-region tour-region is-grouped" aria-label={`${actById(register, 5)?.frameTitle ?? "Workstream"} with three source work cards`}><span>{actById(register, 5)?.frameTitle}</span><span className="sr-only">{Array.from(grouped).map((id) => cards[Number(id.split("-")[1])]?.title).filter(Boolean).join(", ")}</span></div> : null}
       {TOUR_BOARD_LAYOUT.map((item) => {
         if (!visible(item)) return item.id === "answer" || item.id === "primary-0" ? <div key={item.id} className="tour-reserved-slot" data-tour-layout-id={item.id} data-tour-reserved="" style={itemStyle(item)} /> : null;
         if (item.kind === "primary") {
           const index = Number(item.id.split("-")[1]);
           const card = cards[index];
           if (!card) return null;
-          const title = item.id === "primary-0" && state.act === 1 && state.landedFile ? state.landedFile : card.title;
+          const title = item.id === "primary-0" && state.act === 3 && state.landedFile ? state.landedFile : card.title;
           const rendered = { ...card, title };
-          const interactive = state.act === 2;
+          const interactive = state.act === 4;
           return <article key={item.id} className={`tour-board-item tour-preview-card${outlined.has(item.id) ? " is-target-work" : ""}${selected.has(item.id) ? " is-selected" : ""}${glowing.has(item.id) ? " is-group-glowing" : ""}${state.highlightedTitle === card.title ? " is-source-highlighted" : ""}`} data-tour-layout-id={item.id} data-tour-card={`tour-card-${index}`} data-tour-title={card.title} data-tour-connector-source={grouped.has(item.id) ? item.id : undefined} role={interactive ? "group" : undefined} tabIndex={interactive ? 0 : undefined} style={itemStyle(item)} onClick={interactive ? () => onWorkCardSelect?.(index) : undefined} onKeyDown={interactive ? (event) => onWorkCardKeyDown?.(index, event) : undefined}>
-            {item.id === "primary-0" && state.act === 2 ? <span className="tour-act-two-arrow-target" data-tour-target="2" aria-hidden /> : null}
+            {item.id === "primary-0" && state.act === 4 ? <span className="tour-act-two-arrow-target" data-tour-target="4" aria-hidden /> : null}
             <PreviewCard card={rendered} compact={!card.inSet} />
           </article>;
         }

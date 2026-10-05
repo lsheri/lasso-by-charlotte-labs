@@ -173,7 +173,7 @@ export function TourStage({
         </header>
 
         <div className={`tour-instruction-band${instructionOverride ? " is-complete" : ""}`}>
-          <span className="tour-step-marker">Step {activeAct} of 5</span>
+          <span className="tour-step-marker">Step {activeAct} of {copy.acts.length}</span>
           <p className="tour-do-line" data-tour-do>{instructionOverride ?? (touch ? act.captionTouch : act.captionPointer)}</p>
           <p className="tour-why-line">{act.why}</p>
         </div>
