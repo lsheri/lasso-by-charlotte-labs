@@ -152,7 +152,9 @@ describe("unit 4a keyboard path and events", () => {
   it("offers six colours plus None and clears a container colour", async () => {
     mocks.rpc.mockResolvedValue({ data: { status: "colored" }, error: null });
     render(<Harness target={{ ...folder, color: undefined }} />);
-    fireEvent.click(screen.getByRole("button", { name: "More actions for Folder One" }));
+    const trigger = screen.getByRole("button", { name: "More actions for Folder One" });
+    trigger.focus();
+    fireEvent.keyDown(trigger, { key: "Enter" });
     fireEvent.click(await screen.findByRole("menuitem", { name: "Colour" }));
 
     const colours = await screen.findByRole("group", { name: "Container colours" });
@@ -173,7 +175,9 @@ describe("unit 4a keyboard path and events", () => {
 
   it("presses the selected colour instead of None", async () => {
     render(<Harness target={{ ...folder, color: "blue" }} />);
-    fireEvent.click(screen.getByRole("button", { name: "More actions for Folder One" }));
+    const trigger = screen.getByRole("button", { name: "More actions for Folder One" });
+    trigger.focus();
+    fireEvent.keyDown(trigger, { key: "Enter" });
     fireEvent.click(await screen.findByRole("menuitem", { name: "Colour" }));
 
     expect(screen.getByRole("button", { name: "blue" }).getAttribute("aria-pressed")).toBe("true");
@@ -183,7 +187,9 @@ describe("unit 4a keyboard path and events", () => {
   it("archives a workboard without offering Delete", async () => {
     mocks.rpc.mockResolvedValue({ data: { status: "archived" }, error: null });
     render(<Harness target={boardTarget} />);
-    fireEvent.click(screen.getByRole("button", { name: "More actions for Board" }));
+    const trigger = screen.getByRole("button", { name: "More actions for Board" });
+    trigger.focus();
+    fireEvent.keyDown(trigger, { key: "Enter" });
 
     const archive = await screen.findByRole("menuitem", { name: "Archive" });
     expect(screen.queryByRole("menuitem", { name: "Delete" })).toBeNull();
