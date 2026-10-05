@@ -105,16 +105,22 @@ describe("TV2 seven act tour", () => {
   });
 
   it("renders the real conversation-page shell and its inert controls", () => {
-    render(<TourActArrived register="company" onComplete={vi.fn()} />);
+    const done = vi.fn();
+    render(<TourActArrived register="company" onComplete={done} />);
     const mimic = screen.getByLabelText("All AI Conversations tour example");
     expect(mimic.classList.contains("nb-chatview")).toBe(true);
     expect(within(mimic).getByRole("heading", { name: "All AI Conversations" })).toBeTruthy();
     expect(within(mimic).getByPlaceholderText("Search your chats")).toBeTruthy();
-    expect(within(mimic).getByRole("button", { name: "Add a chat" })).toBeTruthy();
-    expect(within(mimic).getByRole("button", { name: "Ask Lasso" })).toBeTruthy();
-    expect(within(mimic).getByRole("group", { name: "Filter by tool" }).querySelectorAll("button")).toHaveLength(4);
-    expect(within(mimic).getByRole("button", { name: "Workboards" })).toBeTruthy();
-    expect(within(mimic).getByRole("button", { name: "5 conversations." })).toBeTruthy();
+    const inertControls = [
+      within(mimic).getByRole("button", { name: "Add a chat" }),
+      within(mimic).getByRole("button", { name: "Ask Lasso" }),
+      within(mimic).getByRole("button", { name: "Workboards" }),
+      within(mimic).getByRole("button", { name: "5 conversations." }),
+    ];
+    const toolFilters = within(mimic).getByRole("group", { name: "Filter by tool" }).querySelectorAll("button");
+    expect(toolFilters).toHaveLength(4);
+    for (const control of [...inertControls, ...toolFilters]) fireEvent.click(control);
+    expect(done).not.toHaveBeenCalled();
   });
 
   it("completes acts one and two by keyboard alone", async () => {
