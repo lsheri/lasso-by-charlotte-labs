@@ -5525,6 +5525,14 @@ export type Database = {
           wtype: string
         }[]
       }
+      mcp_bind_signin: {
+        Args: {
+          p_client_label?: string
+          p_oauth_client_id: string
+          p_profile_id: string
+        }
+        Returns: string
+      }
       mcp_create_board: {
         Args: {
           p_actor: string
@@ -5563,6 +5571,19 @@ export type Database = {
       }
       mcp_resolve_key: {
         Args: { p_key_hash: string }
+        Returns: {
+          connection_id: string
+          kind: string
+          legacy: boolean
+          org_id: string
+          profile_id: string
+          read_only: boolean
+          scopes: string[]
+          user_id: string
+        }[]
+      }
+      mcp_resolve_signin: {
+        Args: { p_oauth_client_id: string; p_user_id: string }
         Returns: {
           connection_id: string
           kind: string
