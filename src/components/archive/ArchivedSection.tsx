@@ -95,7 +95,7 @@ export function ArchivedSection() {
             <li key={`${row.kind}-${row.id}`} data-testid="archived-row" className="flex items-center gap-3 px-4 py-2.5">
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[13px] text-foreground">{row.name}</p>
-                <p className="text-[11.5px] text-muted-foreground">
+                <p className="nb-type-small text-muted-foreground">
                   {kindLabel(row.kind)} · {ARCHIVED_SECTION_COPY.archivedAgo(daysSince(row.archivedAt))}
                 </p>
               </div>
