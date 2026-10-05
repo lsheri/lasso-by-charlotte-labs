@@ -86,7 +86,13 @@ describe("Pass 123: the sidebar follows the weekly loop", () => {
     ]);
 
     const lookback = navGroups.find((g) => g.label === "Look back")!;
-    expect(lookback.items.map((i) => i.to)).toEqual(["/ai-record", "/find-it", "/decisions"]);
+    // SB-N1: Past work leads Look back; it is a way to find, not to make.
+    expect(lookback.items.map((i) => i.to)).toEqual([
+      "/archive",
+      "/ai-record",
+      "/find-it",
+      "/decisions",
+    ]);
     expect(lookback.items.find((i) => i.label === "Past Ask Lasso chats")?.search).toEqual({ view: "asked" });
     expect(lookback.items.filter((i) => i.disabled).map((i) => i.label)).toEqual(["Find it", "Decision log"]);
     expect(lookback.items.map((i) => i.to)).not.toContain("/firm");
@@ -95,13 +101,12 @@ describe("Pass 123: the sidebar follows the weekly loop", () => {
     const coachGroup = navGroups.find((g) => g.label === "Your coach")!;
     expect(coachGroup.items.map((i) => i.to)).toEqual(["/one-on-one", "/coach-notes"]);
 
-    // Overview and Reflect are retired; Past work sits with the shelves.
+    // Overview and Reflect are retired. The shelves group carries no nav rows of
+    // its own, so the create block beside it holds only the three create actions.
     const everyTo = navGroups.flatMap((g) => g.items.map((i) => i.to));
     expect(everyTo).not.toContain("/overview");
     expect(everyTo).not.toContain("/reflect");
-    expect(navGroups.find((g) => g.id === "engagements")!.items.map((i) => i.to)).toEqual([
-      "/archive",
-    ]);
+    expect(navGroups.find((g) => g.id === "engagements")!.items.map((i) => i.to)).toEqual([]);
 
     const runTheFirm = navGroups.find((g) => g.label === "Run the firm")!;
     expect(runTheFirm.items.map((i) => ({ to: i.to, label: i.label }))).toEqual([

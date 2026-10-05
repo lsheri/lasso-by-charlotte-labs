@@ -669,8 +669,8 @@ export function SidebarNav({
               <div className="nb-group-header px-2">{group.label}</div>
             )}
             <div className="mt-2 flex flex-col gap-0.5">
-              {/* Past work belongs under the shelves, after everything that is
-                  still running, so it renders below rather than above them. */}
+              {/* Anything still in this group (a partner firm's extra rows)
+                  renders after the shelves, never above them. */}
               {isEngagementGroup ? null : visibleItems}
 
 

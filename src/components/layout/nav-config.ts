@@ -33,17 +33,19 @@ export const navGroups: NavGroup[] = [
     ],
   },
   {
-    // The shelves render first, then these items, so Past work reads as the
-    // place everything finished ends up.
+    // The shelves, and nothing else. Past work is a way to find something
+    // rather than a way to make something, so it sits under Look back.
     id: "engagements",
     label: "Where it goes",
-    items: [{ label: "Past work", to: "/archive", icon: "firm" }],
+    items: [],
     emptyState: "No workboards yet",
   },
   {
     id: "lookback",
     label: "Look back",
     items: [
+      // First, because it is where finished work is found.
+      { label: "Past work", to: "/archive", icon: "firm" },
       { label: "Past Ask Lasso chats", to: "/ai-record", icon: "history", search: { view: "asked" } },
       { label: "Find it", to: "/find-it", icon: "work", disabled: true, disabledReason: "Coming soon" },
       { label: "Decision log", to: "/decisions", icon: "decisions", disabled: true, disabledReason: "Coming soon" },

@@ -10,8 +10,11 @@ describe("pass 142: your organization", () => {
     // Nav is now ordered by the weekly loop rather than by object type.
     expect(PAST_WORK_GROUP_LABEL).toBe("Where it goes");
     expect(PAST_WORK_NAV_LABEL).toBe("Past work");
-    const group = navGroups.find((g) => g.label === "Where it goes");
-    expect(group?.items[0]?.label).toBe("Past work");
+    // SB-N1: the row itself leads Look back now, above the past chats.
+    const lookback = navGroups.find((g) => g.id === "lookback");
+    expect(lookback?.items[0]?.label).toBe("Past work");
+    const shelves = navGroups.find((g) => g.label === "Where it goes");
+    expect(shelves?.items.some((i) => i.to === "/archive")).toBe(false);
     expect(navGroups.some((g) => g.label === "Firm")).toBe(false);
   });
 
