@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
 import { ArchiveChat } from "@/components/archive/ArchiveChat";
+import { ArchivedSection } from "@/components/archive/ArchivedSection";
 import { ArchiveSpine, type ArchiveSpineGroup } from "@/components/archive/ArchiveSpine";
 import { PastWorkSearch } from "@/components/archive/PastWorkSearch";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -94,6 +95,8 @@ export function ArchivePage() {
               <ArchiveSpine groups={groups} hidden={searching} />
             )}
           </div>
+
+          <ArchivedSection />
 
           {/* The frame foots the spine with this, not the page. */}
           <p className="mt-6 font-hand text-[16px] text-green">closed, not gone</p>
