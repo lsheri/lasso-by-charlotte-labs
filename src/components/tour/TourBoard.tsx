@@ -132,7 +132,7 @@ export function TourBoard({ register, state, className = "", children, onWorkCar
   const outlined = new Set(state.outlinedIds ?? []);
   const grouped = new Set(state.groupedIds ?? []);
   const glowing = new Set(state.glowingIds ?? []);
-  const visible = (item: TourLayoutItem) => item.earliestAct <= state.act && !(item.id === "primary-0" && state.act === 1 && !state.landedFile);
+  const visible = (item: TourLayoutItem) => item.earliestAct <= state.act && !(item.id === "primary-0" && state.act === 3 && !state.landedFile);
   const answer = useMemo(() => answerNode(register), [register]);
 
   return <div ref={boardRef} className={`tour-persistent-board ${className}`} data-tour-board="" onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerCancel}>
@@ -151,11 +151,11 @@ export function TourBoard({ register, state, className = "", children, onWorkCar
           const index = Number(item.id.split("-")[1]);
           const card = cards[index];
           if (!card) return null;
-          const title = item.id === "primary-0" && state.act === 1 && state.landedFile ? state.landedFile : card.title;
+          const title = item.id === "primary-0" && state.act === 3 && state.landedFile ? state.landedFile : card.title;
           const rendered = { ...card, title };
-          const interactive = state.act === 2;
+          const interactive = state.act === 4;
           return <article key={item.id} className={`tour-board-item tour-preview-card${outlined.has(item.id) ? " is-target-work" : ""}${selected.has(item.id) ? " is-selected" : ""}${glowing.has(item.id) ? " is-group-glowing" : ""}${state.highlightedTitle === card.title ? " is-source-highlighted" : ""}`} data-tour-layout-id={item.id} data-tour-card={`tour-card-${index}`} data-tour-title={card.title} data-tour-connector-source={grouped.has(item.id) ? item.id : undefined} role={interactive ? "group" : undefined} tabIndex={interactive ? 0 : undefined} style={itemStyle(item)} onClick={interactive ? () => onWorkCardSelect?.(index) : undefined} onKeyDown={interactive ? (event) => onWorkCardKeyDown?.(index, event) : undefined}>
-            {item.id === "primary-0" && state.act === 2 ? <span className="tour-act-two-arrow-target" data-tour-target="2" aria-hidden /> : null}
+            {item.id === "primary-0" && state.act === 4 ? <span className="tour-act-two-arrow-target" data-tour-target="2" aria-hidden /> : null}
             <PreviewCard card={rendered} compact={!card.inSet} />
           </article>;
         }

@@ -7,10 +7,11 @@ import { GraphiteIcon } from "@/components/notebook/icons";
 import { LassoThinkingMark } from "@/components/reflect/LassoThinkingMark";
 import { ToolBadge } from "@/components/onboarding/ToolBadge";
 import { Button } from "@/components/ui/button";
+import { useReducedMotion as useMotionPreference } from "@/hooks/use-motion";
 import { keyTo } from "@/lib/canvas-drag";
 import type { ToolId } from "@/lib/onboarding-tools";
 import type { Register } from "@/lib/register";
-import { actById, type TourActId, type TourSource } from "@/lib/tour-content";
+import { actById, tourAmbientCards, type TourActId, type TourSource } from "@/lib/tour-content";
 import type { TourActRenderer } from "@/components/tour/TourStage";
 
 const noop = () => undefined;
@@ -60,10 +61,10 @@ function TourWorkboard({ active, onAddWork, onGroup, onAsk, children }: { active
   const toolClass = (tool: Exclude<TourWorkboardTool, null>) => `tour-board-tool${active === tool ? " is-active" : ""}`;
   const toolbar = <WorkboardToolbar className="tour-board-toolbar" ariaLabel="Board tools">
     <Button type="button" size="icon" variant="outline" aria-label="Show workstreams" onClick={noop}><GraphiteIcon name="workstreams" size={20} /></Button>
-    <Button type="button" size="sm" variant="outline" aria-label="Add work" data-toolbar-control="add-work" data-tour-target={active === "add" ? "1" : undefined} className={toolClass("add")} onClick={active === "add" ? onAddWork : noop}><GraphiteIcon name="work" size={20} /><span>Add work</span></Button>
+    <Button type="button" size="sm" variant="outline" aria-label="Add work" data-toolbar-control="add-work" data-tour-target={active === "add" ? "3" : undefined} className={toolClass("add")} onClick={active === "add" ? onAddWork : noop}><GraphiteIcon name="work" size={20} /><span>Add work</span></Button>
     <Button type="button" size="icon" variant="outline" aria-label="Select work" aria-pressed={active === "select"} className={toolClass("select")} onClick={noop}><GraphiteIcon name="connectors" size={20} /></Button>
-    <Button type="button" size="icon" variant="outline" aria-label="Add grouping" aria-pressed={active === "group"} data-tour-target={active === "group" ? "3" : undefined} className={toolClass("group")} onClick={active === "group" ? onGroup : noop}><GraphiteIcon name="grouping" size={20} /></Button>
-    <Button type="button" size="icon" variant="outline" aria-label="Ask Lasso" aria-pressed={active === "ask"} data-tour-target={active === "ask" ? "4" : undefined} className={toolClass("ask")} onClick={active === "ask" ? onAsk : noop}><LassoThinkingMark kind="signature" size={24} /></Button>
+    <Button type="button" size="icon" variant="outline" aria-label="Add grouping" aria-pressed={active === "group"} data-tour-target={active === "group" ? "5" : undefined} className={toolClass("group")} onClick={active === "group" ? onGroup : noop}><GraphiteIcon name="grouping" size={20} /></Button>
+    <Button type="button" size="icon" variant="outline" aria-label="Ask Lasso" aria-pressed={active === "ask"} data-tour-target={active === "ask" ? "6" : undefined} className={toolClass("ask")} onClick={active === "ask" ? onAsk : noop}><LassoThinkingMark kind="signature" size={24} /></Button>
     <Button type="button" size="icon" variant="outline" aria-label="Info" onClick={noop}><GraphiteIcon name="working-from" size={20} /></Button>
     <Button type="button" size="icon" variant="outline" aria-label="Fit" onClick={noop}><GraphiteIcon name="fit" size={20} /></Button>
   </WorkboardToolbar>;
@@ -71,7 +72,7 @@ function TourWorkboard({ active, onAddWork, onGroup, onAsk, children }: { active
 }
 
 export function TourActOne({ register, onComplete }: { register: Register; onComplete: (title: string) => void }) {
-  const files = actById(register, 1)?.files ?? [];
+  const files = actById(register, 3)?.files ?? [];
   const boardRef = useRef<HTMLDivElement>(null);
   const [drag, setDrag] = useState<DragFile | null>(null);
   const [landed, setLanded] = useState<string | null>(null);
@@ -91,7 +92,7 @@ export function TourActOne({ register, onComplete }: { register: Register; onCom
     event.preventDefault(); setKeyPosition((current) => keyTo(current, event.key as "ArrowUp" | "ArrowDown" | "ArrowLeft" | "ArrowRight", event.shiftKey));
   };
   return <div className="tour-arrival" data-testid="tour-act-one" onPointerMove={(event) => { if (drag && drag.pointerId >= 0) setDrag({ ...drag, x: event.clientX, y: event.clientY }); }} onPointerUp={finishPointer} onPointerCancel={() => setDrag(null)}>
-    <TourWorkboard active="add" onAddWork={() => setFilesOpen(true)}><div data-testid="tour-drop-board" className="tour-shared-act"><TourBoard register={register} state={{ act: 1, landedFile: landed }} boardRef={boardRef}>
+    <TourWorkboard active="add" onAddWork={() => setFilesOpen(true)}><div data-testid="tour-drop-board" className="tour-shared-act"><TourBoard register={register} state={{ act: 3, landedFile: landed }} boardRef={boardRef}>
       <aside className="tour-arrival-hint">You can also drag files, documents or images straight from your computer onto the board.</aside>
       {filesOpen ? <div className="tour-file-window-layer"><FileWindow files={files} drag={drag} onPointerDown={(title, event) => { event.currentTarget.setPointerCapture?.(event.pointerId); if (event.pointerType === "touch") { land(title); return; } setDrag({ title, pointerId: event.pointerId, x: event.clientX, y: event.clientY }); }} onKeyDown={onFileKeyDown} /></div> : null}
     </TourBoard></div></TourWorkboard>
@@ -109,7 +110,7 @@ function boxHandlers(boardRef: RefObject<HTMLDivElement | null>, box: Box | null
 }
 
 export function TourActTwo({ register, hint: _hint, onComplete }: { register: Register; hint: boolean; onComplete: () => void }) {
-  const cards = actById(register, 2)?.cards ?? [];
+  const cards = actById(register, 4)?.cards ?? [];
   const [selected, setSelected] = useState<string[]>([]); const [box, setBox] = useState<Box | null>(null);
   const boardRef = useRef<HTMLDivElement>(null); const startRef = useRef<{ x: number; y: number } | null>(null); const completeRef = useRef(false);
   const finish = () => { if (!completeRef.current) { completeRef.current = true; setSelected([...GROUP_IDS]); onComplete(); } };
@@ -118,22 +119,22 @@ export function TourActTwo({ register, hint: _hint, onComplete }: { register: Re
     const required = GROUP_IDS.map((id) => boardRef.current?.querySelector<HTMLElement>(`[data-tour-layout-id="${id}"]`)?.getBoundingClientRect()).filter((rect) => rect !== undefined);
     if (required.length === 3 && required.every((rect) => rect.left < right && rect.right > left && rect.top < bottom && rect.bottom > top)) finish();
   });
-  return <TourWorkboard active="select"><div className="tour-shared-act" data-testid="tour-act-two" {...handlers}><TourBoard register={register} state={{ act: 2, outlinedIds: GROUP_IDS, selectedIds: selected }} className="tour-board-act" boardRef={boardRef} onWorkCardSelect={select} onWorkCardKeyDown={(index, event) => { if (event.code === "Space") { event.preventDefault(); select(index); } }}>{box ? <span className="tour-marquee" style={{ left: box.x, top: box.y, width: box.width, height: box.height }} /> : null}</TourBoard></div></TourWorkboard>;
+  return <TourWorkboard active="select"><div className="tour-shared-act" data-testid="tour-act-two" {...handlers}><TourBoard register={register} state={{ act: 4, outlinedIds: GROUP_IDS, selectedIds: selected }} className="tour-board-act" boardRef={boardRef} onWorkCardSelect={select} onWorkCardKeyDown={(index, event) => { if (event.code === "Space") { event.preventDefault(); select(index); } }}>{box ? <span className="tour-marquee" style={{ left: box.x, top: box.y, width: box.width, height: box.height }} /> : null}</TourBoard></div></TourWorkboard>;
 }
 
 export function TourActThree({ register, onComplete }: { register: Register; onComplete: () => void }) {
-  const act = actById(register, 3); const [grouped, setGrouped] = useState(false); const [box, setBox] = useState<Box | null>(null);
+  const act = actById(register, 5); const [grouped, setGrouped] = useState(false); const [box, setBox] = useState<Box | null>(null);
   const boardRef = useRef<HTMLDivElement>(null); const startRef = useRef<{ x: number; y: number } | null>(null);
   const group = () => { if (grouped) return; setGrouped(true); onComplete(); };
   const handlers = boxHandlers(boardRef, box, setBox, startRef, (left, top, right, bottom) => {
     const required = GROUP_IDS.map((id) => boardRef.current?.querySelector<HTMLElement>(`[data-tour-layout-id="${id}"]`)?.getBoundingClientRect()).filter((rect) => rect !== undefined);
     if (required.length === 3 && required.every((rect) => left <= rect.left && top <= rect.top && right >= rect.right && bottom >= rect.bottom)) group();
   });
-  return <TourWorkboard active="group" onGroup={group}><div className="tour-shared-act" data-testid="tour-act-three" {...handlers} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); group(); } }}><TourBoard register={register} state={{ act: 3, selectedIds: GROUP_IDS, groupedIds: grouped ? GROUP_IDS : [], glowingIds: grouped ? GROUP_IDS : [] }} className="tour-board-act" boardRef={boardRef}>{box ? <span className="tour-marquee" style={{ left: box.x, top: box.y, width: box.width, height: box.height }} /> : null}{grouped ? <p className="tour-context-sentence">{act?.contextSentence}</p> : null}</TourBoard></div></TourWorkboard>;
+  return <TourWorkboard active="group" onGroup={group}><div className="tour-shared-act" data-testid="tour-act-three" {...handlers} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); group(); } }}><TourBoard register={register} state={{ act: 5, selectedIds: GROUP_IDS, groupedIds: grouped ? GROUP_IDS : [], glowingIds: grouped ? GROUP_IDS : [] }} className="tour-board-act" boardRef={boardRef}>{box ? <span className="tour-marquee" style={{ left: box.x, top: box.y, width: box.width, height: box.height }} /> : null}{grouped ? <p className="tour-context-sentence">{act?.contextSentence}</p> : null}</TourBoard></div></TourWorkboard>;
 }
 
 function TourAskMimic({ register, visibleClaims, generating, onAsk }: { register: Register; visibleClaims: number; generating: boolean; onAsk: () => void }) {
-  const act = actById(register, 4); const chatCard = (actById(register, 2)?.cards ?? []).find((card) => card.title === act?.chatLink?.cardTitle);
+  const act = actById(register, 6); const chatCard = (actById(register, 4)?.cards ?? []).find((card) => card.title === act?.chatLink?.cardTitle);
   return <aside className="tour-ask-mimic" aria-label="Ask Lasso tour example"><header><LassoLoopMark className={generating ? "tour-ask-loop is-generating" : "tour-ask-loop"} /><strong>Ask Lasso</strong></header><div className="tour-ask-question" aria-label="Preset question" aria-readonly="true">{act?.question}</div><div className="tour-ask-claims" aria-live="polite">
     {(act?.answer ?? []).slice(0, visibleClaims).map((claim) => <article key={claim.sourceCardTitle} className="tour-ask-claim"><p>{claim.text}</p><span>{claim.sourceCardTitle}</span></article>)}
     {visibleClaims === (act?.answer?.length ?? 0) && act?.chatLink && chatCard ? <Button type="button" variant="outline" className="tour-chat-link" onClick={noop} aria-label={`${act.chatLink.label}: ${act.chatLink.cardTitle}`}><ToolBadge tool={sourceTool(chatCard.source)} size="sm" /><span>{act.chatLink.label}</span><strong>{act.chatLink.cardTitle}</strong></Button> : null}
@@ -141,21 +142,70 @@ function TourAskMimic({ register, visibleClaims, generating, onAsk }: { register
 }
 
 export function TourActFour({ register, onComplete }: { register: Register; onComplete: () => void }) {
-  const claims = actById(register, 4)?.answer ?? []; const reduced = useReducedMotion();
+  const claims = actById(register, 6)?.answer ?? []; const reduced = useReducedMotion();
   const [visibleClaims, setVisibleClaims] = useState(0); const [generating, setGenerating] = useState(false); const [askOpen, setAskOpen] = useState(false); const timers = useRef<number[]>([]);
   useEffect(() => () => timers.current.forEach((timer) => window.clearTimeout(timer)), []);
   const ask = () => { if (generating || visibleClaims === claims.length) return; setGenerating(true); if (reduced) { setVisibleClaims(claims.length); setGenerating(false); onComplete(); return; } claims.forEach((_, index) => { const timer = window.setTimeout(() => { setVisibleClaims(index + 1); if (index === claims.length - 1) { setGenerating(false); onComplete(); } }, 400 * (index + 1)); timers.current.push(timer); }); };
   const highlighted = visibleClaims > 0 ? claims[visibleClaims - 1]?.sourceCardTitle ?? null : null;
-  return <TourWorkboard active="ask" onAsk={() => setAskOpen(true)}><div className="tour-shared-act" data-testid="tour-act-four"><TourBoard register={register} state={{ act: 4, selectedIds: GROUP_IDS, groupedIds: GROUP_IDS, glowingIds: GROUP_IDS, highlightedTitle: highlighted, askOpen }}>{askOpen ? <TourAskMimic register={register} visibleClaims={visibleClaims} generating={generating} onAsk={ask} /> : null}</TourBoard></div></TourWorkboard>;
+  return <TourWorkboard active="ask" onAsk={() => setAskOpen(true)}><div className="tour-shared-act" data-testid="tour-act-four"><TourBoard register={register} state={{ act: 6, selectedIds: GROUP_IDS, groupedIds: GROUP_IDS, glowingIds: GROUP_IDS, highlightedTitle: highlighted, askOpen }}>{askOpen ? <TourAskMimic register={register} visibleClaims={visibleClaims} generating={generating} onAsk={ask} /> : null}</TourBoard></div></TourWorkboard>;
 }
 
 export function TourActFive({ register, onLanded }: { register: Register; onLanded: () => void }) {
   const [landed, setLanded] = useState(false); const [dragging, setDragging] = useState(false); const boardRef = useRef<HTMLDivElement>(null);
   const land = () => { if (landed) return; setLanded(true); setDragging(false); onLanded(); };
   const finishDrag = (event: ReactPointerEvent<HTMLDivElement>) => { if (!dragging) return; const rect = boardRef.current?.getBoundingClientRect(); if (rect && event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom) land(); else setDragging(false); };
-  return <TourWorkboard active={null}><div className="tour-shared-act" data-testid="tour-act-five"><TourBoard register={register} state={{ act: 5, selectedIds: GROUP_IDS, groupedIds: GROUP_IDS, glowingIds: GROUP_IDS, answerVisible: landed, connectorsVisible: landed }} boardRef={boardRef} onPointerUp={finishDrag} onPointerCancel={() => setDragging(false)}>
-    {!landed ? <aside className="tour-keep-panel"><article className="tour-drag-answer" onPointerDown={(event) => { event.currentTarget.setPointerCapture?.(event.pointerId); setDragging(true); }}><span>Answer</span><p>{actById(register, 4)?.answer?.map((claim) => claim.text).join(" ")}</p></article><Button type="button" variant="ink" data-tour-target="5" onClick={land}>Keep</Button></aside> : null}
+  return <TourWorkboard active={null}><div className="tour-shared-act" data-testid="tour-act-five"><TourBoard register={register} state={{ act: 7, selectedIds: GROUP_IDS, groupedIds: GROUP_IDS, glowingIds: GROUP_IDS, answerVisible: landed, connectorsVisible: landed }} boardRef={boardRef} onPointerUp={finishDrag} onPointerCancel={() => setDragging(false)}>
+    {!landed ? <aside className="tour-keep-panel"><article className="tour-drag-answer" onPointerDown={(event) => { event.currentTarget.setPointerCapture?.(event.pointerId); setDragging(true); }}><span>Answer</span><p>{actById(register, 6)?.answer?.map((claim) => claim.text).join(" ")}</p></article><Button type="button" variant="ink" data-tour-target="7" onClick={land}>Keep</Button></aside> : null}
   </TourBoard></div></TourWorkboard>;
+}
+
+const TURN_STAGGER_MS = 260;
+
+export function TourActPush({ register, onComplete }: { register: Register; onComplete: () => void }) {
+  const chat = actById(register, 1)?.chat;
+  const reduced = useMotionPreference();
+  const turns = chat?.turns ?? [];
+  const total = turns.length + 2;
+  const [step, setStep] = useState(0);
+  const [pushed, setPushed] = useState(false);
+  const pushRef = useRef<HTMLButtonElement>(null);
+  const shown = reduced ? total : step;
+  useEffect(() => {
+    if (reduced) return;
+    const timers = Array.from({ length: total }, (_, index) => window.setTimeout(() => setStep(index + 1), TURN_STAGGER_MS * (index + 1)));
+    return () => timers.forEach((timer) => window.clearTimeout(timer));
+  }, [reduced, total]);
+  const ready = shown >= total;
+  useEffect(() => { if (ready) pushRef.current?.focus({ preventScroll: true }); }, [ready]);
+  const push = () => { if (pushed) return; setPushed(true); onComplete(); };
+  if (!chat) return null;
+  return <div className="tour-push-stage" data-testid="tour-act-push">
+    <section className={`tour-chat-window${ready ? " is-ready" : ""}`} aria-label={`AI chat: ${chat.title}`} data-reduced={reduced ? "" : undefined}>
+      <header><ToolBadge tool={chat.source} size="sm" /><strong>{chat.title}</strong></header>
+      <ol className="tour-chat-turns">
+        {turns.slice(0, Math.min(shown, turns.length)).map((turn, index) => <li key={index} className="tour-chat-turn" data-role={turn.role}>{turn.text}</li>)}
+        {shown > turns.length ? <li className="tour-chat-turn is-push-line" data-role="user">{chat.pushLine}</li> : null}
+      </ol>
+      <footer>{ready ? <Button ref={pushRef} type="button" variant="ink" className="tour-push-control" data-tour-target="1" data-pushed={pushed ? "" : undefined} onClick={push}>{pushed ? chat.pushedLabel : chat.pushLabel}</Button> : null}</footer>
+    </section>
+  </div>;
+}
+
+export function TourActArrived({ register, onComplete }: { register: Register; onComplete: () => void }) {
+  const list = actById(register, 2)?.conversations;
+  const chat = actById(register, 1)?.chat;
+  const [opened, setOpened] = useState(false);
+  if (!list || !chat) return null;
+  const open = () => { if (opened) return; setOpened(true); onComplete(); };
+  return <div className="tour-push-stage" data-testid="tour-act-arrived">
+    <section className="tour-conversations-mimic" aria-label="All AI Conversations tour example">
+      <header><h2>{list.heading}</h2></header>
+      <ul aria-label="AI conversations">
+        <li className="tour-conversation-row is-arrived"><button type="button" data-tour-target="2" onClick={open}><ToolBadge tool={chat.source} size="sm" /><strong>{chat.title}</strong><span className="tour-arrived-label">{list.arrivedLabel}</span></button></li>
+        {tourAmbientCards(register).map((card) => <li key={card.title} className="tour-conversation-row"><div><ToolBadge tool={card.source} size="sm" /><strong>{card.title}</strong></div></li>)}
+      </ul>
+    </section>
+  </div>;
 }
 
 export function useTourActRenderers({ register, activeAct, onAdvance, onHintShown, onFinish }: { register: Register; activeAct: TourActId; onAdvance: (act: TourActId) => void; onHintShown: (act: number) => void; onFinish: () => void }) {
@@ -163,11 +213,13 @@ export function useTourActRenderers({ register, activeAct, onAdvance, onHintShow
   useEffect(() => { setHintAct(null); setInstructionOverride(null); setAnswerLanded(false); }, [activeAct, register]);
   const hint = (act: number) => { setHintAct(act); onHintShown(act); };
   const renderers = useMemo((): TourActRenderer[] => [
-    { id: 1, content: <TourActOne register={register} onComplete={() => onAdvance(1)} /> },
-    { id: 2, content: <TourActTwo register={register} hint={hintAct === 2} onComplete={() => onAdvance(2)} /> },
-    { id: 3, content: <TourActThree register={register} onComplete={() => onAdvance(3)} /> },
-    { id: 4, content: <TourActFour register={register} onComplete={() => onAdvance(4)} /> },
-    { id: 5, content: <TourActFive register={register} onLanded={() => { setAnswerLanded(true); setInstructionOverride(actById(register, 5)?.closingLine ?? null); }} />, primaryAction: answerLanded ? <Button type="button" variant="ink" onClick={onFinish}>{actById(register, 5)?.primaryActionLabel}</Button> : null },
+    { id: 1, content: <TourActPush register={register} onComplete={() => onAdvance(1)} /> },
+    { id: 2, content: <TourActArrived register={register} onComplete={() => onAdvance(2)} /> },
+    { id: 3, content: <TourActOne register={register} onComplete={() => onAdvance(3)} /> },
+    { id: 4, content: <TourActTwo register={register} hint={hintAct === 4} onComplete={() => onAdvance(4)} /> },
+    { id: 5, content: <TourActThree register={register} onComplete={() => onAdvance(5)} /> },
+    { id: 6, content: <TourActFour register={register} onComplete={() => onAdvance(6)} /> },
+    { id: 7, content: <TourActFive register={register} onLanded={() => { setAnswerLanded(true); setInstructionOverride(actById(register, 7)?.closingLine ?? null); }} />, primaryAction: answerLanded ? <Button type="button" variant="ink" onClick={onFinish}>{actById(register, 7)?.primaryActionLabel}</Button> : null },
   ], [answerLanded, hintAct, onAdvance, onFinish, register]);
   return { renderers, instructionOverride, hint };
 }
