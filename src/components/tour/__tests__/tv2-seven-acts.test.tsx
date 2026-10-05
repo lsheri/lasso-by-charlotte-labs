@@ -3,7 +3,7 @@ import { act, cleanup, fireEvent, render, screen, within } from "@testing-librar
 import { useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { TourActArrived, TourActPush, useTourActRenderers } from "@/components/tour/TourActs";
+import { TOUR_TURN_DELAY_MS, TourActArrived, TourActPush, useTourActRenderers } from "@/components/tour/TourActs";
 import { TourStage } from "@/components/tour/TourStage";
 import { TOUR_CONTENT, TOUR_PUSHED_CHAT, actById, tourAmbientCards, type TourActId } from "@/lib/tour-content";
 
@@ -54,14 +54,25 @@ describe("TV2 seven act tour", () => {
     render(<TourActPush register="company" onComplete={vi.fn()} />);
     expect(document.querySelectorAll(".tour-chat-turn")).toHaveLength(0);
     expect(screen.queryByRole("button", { name: "Push to Lasso" })).toBeNull();
-    act(() => vi.advanceTimersByTime(260));
+    expect(TOUR_TURN_DELAY_MS).toBe(900);
+    expect(TOUR_TURN_DELAY_MS).toBeGreaterThanOrEqual(700);
+    act(() => vi.advanceTimersByTime(TOUR_TURN_DELAY_MS));
     expect(document.querySelectorAll(".tour-chat-turn")).toHaveLength(1);
-    act(() => vi.advanceTimersByTime(260 * 4));
+    act(() => vi.advanceTimersByTime(TOUR_TURN_DELAY_MS * TOUR_PUSHED_CHAT.turns.length));
     expect(screen.getByText("Push this to Lasso.")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Push to Lasso" })).toBeNull();
-    act(() => vi.advanceTimersByTime(260));
+    act(() => vi.advanceTimersByTime(TOUR_TURN_DELAY_MS));
     const push = screen.getByRole("button", { name: "Push to Lasso" });
     expect(document.activeElement).toBe(push);
+  });
+
+  it("plays a substantial alternating conversation that produces the board excerpt", () => {
+    expect(TOUR_PUSHED_CHAT.turns.length).toBeGreaterThanOrEqual(7);
+    TOUR_PUSHED_CHAT.turns.forEach((turn, index) => expect(turn.role).toBe(index % 2 === 0 ? "user" : "assistant"));
+    const transcript = TOUR_PUSHED_CHAT.turns.map((turn) => turn.text).join(" ");
+    const card = actById("company", 4)?.cards?.find((item) => item.title === TOUR_PUSHED_CHAT.title);
+    expect(card?.preview).toEqual(["Compared TikTok first and retail first", "Outlined tradeoffs for each route"]);
+    for (const line of card?.preview ?? []) expect(transcript).toContain(line);
   });
 
   it("shows every turn and the Push control at once with reduced motion", () => {
@@ -88,9 +99,22 @@ describe("TV2 seven act tour", () => {
     expect(rows[0]?.textContent).toContain(TOUR_PUSHED_CHAT.title);
     expect(rows[0]?.textContent).toContain("Just arrived");
     expect(rows.slice(1).map((row) => row.querySelector("strong")?.textContent)).toEqual(tourAmbientCards("company").map((card) => card.title));
-    fireEvent.click(within(rows[0]!).getByRole("button"));
+    fireEvent.click(within(rows[0]!).getByRole("button", { name: TOUR_PUSHED_CHAT.title }));
     expect(screen.getByTestId("tour-act-one")).toBeTruthy();
     expect(screen.getByText("Drag a file onto the board.")).toBeTruthy();
+  });
+
+  it("renders the real conversation-page shell and its inert controls", () => {
+    render(<TourActArrived register="company" onComplete={vi.fn()} />);
+    const mimic = screen.getByLabelText("All AI Conversations tour example");
+    expect(mimic.classList.contains("nb-chatview")).toBe(true);
+    expect(within(mimic).getByRole("heading", { name: "All AI Conversations" })).toBeTruthy();
+    expect(within(mimic).getByPlaceholderText("Search your chats")).toBeTruthy();
+    expect(within(mimic).getByRole("button", { name: "Add a chat" })).toBeTruthy();
+    expect(within(mimic).getByRole("button", { name: "Ask Lasso" })).toBeTruthy();
+    expect(within(mimic).getByRole("group", { name: "Filter by tool" }).querySelectorAll("button")).toHaveLength(4);
+    expect(within(mimic).getByRole("button", { name: "Workboards" })).toBeTruthy();
+    expect(within(mimic).getByRole("button", { name: "5 conversations." })).toBeTruthy();
   });
 
   it("completes acts one and two by keyboard alone", async () => {
