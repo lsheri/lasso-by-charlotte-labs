@@ -92,6 +92,25 @@ describe("TT1 tool steps", () => {
     expect(emitClientEvent).not.toHaveBeenCalled();
   });
 
+  it("labels an opened tool turn as a tool step without a model name", () => {
+    const saved = turns;
+    turns = saved.map((entry) => entry.turn_no === 3 ? { ...entry, model: "search-model" } : entry);
+    render(<ThreadBody item={item} reducedMotion />);
+    fireEvent.click(screen.getByTestId("tool-steps-toggle"));
+    expect(screen.getByTestId("tool-steps-body").textContent).toContain("Turn 3 · tool step");
+    expect(screen.getByTestId("tool-steps-body").textContent).not.toContain("search-model");
+    turns = saved;
+  });
+
+  it("lets a person close a run opened by focus", () => {
+    render(<ThreadBody item={item} reducedMotion focus={{ turnNo: 4 }} />);
+    const toggle = screen.getByTestId("tool-steps-toggle");
+    expect(screen.getByTestId("tool-steps-body").hidden).toBe(false);
+    fireEvent.click(toggle);
+    expect(screen.getByTestId("tool-steps-body").hidden).toBe(true);
+    expect(emitClientEvent).not.toHaveBeenCalled();
+  });
+
   it("(d) the event is registered with its one band dimension", () => {
     expect(EVENT_DIM_KEYS["work.tool_steps_opened"]).toEqual(["steps_band"]);
   });
