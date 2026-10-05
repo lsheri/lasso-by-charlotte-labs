@@ -12,6 +12,8 @@ export type WorkboardCardPreview = {
   turns: WorkboardPreviewTurn[];
   firstUserTurn?: WorkboardPreviewTurn | null;
   turnCount: number;
+  /** TT1: AI tool steps, collapsed out of turns and turnCount. */
+  toolSteps?: number;
   model: string | null;
 };
 

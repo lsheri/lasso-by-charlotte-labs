@@ -11,6 +11,7 @@
  */
 
 import { fnv1a, mulberry32 } from "@/lib/journey-path";
+import { isToolRole } from "@/lib/tool-steps";
 
 /** At most this many cards on screen at once; the oldest leaves as one lands. */
 export const TURN_STORY_WINDOW = 6;
@@ -106,6 +107,7 @@ export function turnCardDx(itemId: string, turnNo: number): number {
 /** One card per turn, in turn order. */
 export function turnCards(itemId: string, turns: readonly TurnStoryTurn[]): TurnCard[] {
   return [...turns]
+    .filter((turn) => !isToolRole(turn.role))
     .sort((a, b) => a.turn_no - b.turn_no)
     .map((turn) => {
       const assistant = isAssistantRole(turn.role);

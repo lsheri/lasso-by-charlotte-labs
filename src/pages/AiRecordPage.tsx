@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useSearch } from "@tanstack/react-router";
+import { isToolRole } from "@/lib/tool-steps";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 
@@ -356,10 +357,11 @@ export function AiRecordPage() {
     queryFn: async (): Promise<Record<string, number>> => {
       const { data } = await supabase
         .from("turns")
-        .select("work_item_id")
+        .select("work_item_id, role")
         .in("work_item_id", threadIds);
       const counts: Record<string, number> = {};
       for (const row of data ?? []) {
+        if (isToolRole(row.role)) continue;
         counts[row.work_item_id] = (counts[row.work_item_id] ?? 0) + 1;
       }
       return counts;

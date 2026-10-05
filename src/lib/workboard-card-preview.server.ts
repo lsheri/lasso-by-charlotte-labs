@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/integrations/supabase/types";
 import type { WorkboardCardPreview } from "@/lib/workboard-card-preview.shared";
+import { isToolRole } from "@/lib/tool-steps";
 
 type Db = SupabaseClient<Database>;
 
@@ -35,12 +36,15 @@ export async function readWorkboardCardPreviews(db: Db, workItemIds: string[]): 
   }
   const summaries = new Map(((summaryResult.data ?? []) as PreviewSummaryRow[]).map((row) => [row.work_item_id, row.summary]));
   return ids.map((workItemId) => {
-    const turns = grouped.get(workItemId) ?? [];
+    const all = grouped.get(workItemId) ?? [];
+    const turns = all.filter((turn) => !isToolRole(turn.role));
+    const toolSteps = all.length - turns.length;
     const last = turns.slice(-3);
     return {
       workItemId,
       summary: summaries.get(workItemId) ?? null,
       turnCount: turns.length,
+      toolSteps,
       model: [...turns].reverse().find((turn) => turn.model)?.model ?? null,
       firstUserTurn: (() => {
         const turn = turns.find((candidate) => candidate.role.trim().toLowerCase() === "user");

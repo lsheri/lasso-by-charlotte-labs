@@ -10,6 +10,7 @@
  * null for one even if it is somehow mounted.
  */
 import { useServerFn } from "@tanstack/react-start";
+import { isToolRole } from "@/lib/tool-steps";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -493,7 +494,7 @@ function PendingBody({
       return (data ?? []) as TurnStoryTurn[];
     },
   });
-  const turnCount = turns?.length ?? 0;
+  const turnCount = (turns ?? []).filter((turn) => !isToolRole(turn.role)).length;
 
   const lines = useMemo(
     () => (isDecisions ? decisionsPhaseLines(turnCount) : verifyPhaseLines(turnCount)),

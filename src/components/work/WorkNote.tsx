@@ -115,14 +115,14 @@ export function WorkNote({
         <div className="mt-1 flex h-[16px] shrink-0 select-none items-center gap-2 border-t border-hairline pt-1">
           <span className="min-w-0 flex-1 truncate text-[9px] text-muted-foreground" onClick={(event) => event.stopPropagation()}>
             {item.type === "ai_thread" || pastedChatUrl((item as WorkItemRow).meta?.chat_url) ? (
-              <ChatUrlLink item={item as WorkItemRow} showAbsence turnCount={chatPreview?.turnCount} />
+              <ChatUrlLink item={item as WorkItemRow} showAbsence turnCount={chatPreview?.turnCount} toolSteps={chatPreview?.toolSteps} />
             ) : sourceUrl ? (
               <a href={sourceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex max-w-full items-center gap-1">
                 <ExternalLink className="h-2.5 w-2.5 shrink-0" aria-hidden />
                 <span className="truncate">{sourceUrl}</span>
               </a>
             ) : (
-              <ChatUrlLink item={item as WorkItemRow} showAbsence turnCount={chatPreview?.turnCount} />
+              <ChatUrlLink item={item as WorkItemRow} showAbsence turnCount={chatPreview?.turnCount} toolSteps={chatPreview?.toolSteps} />
             )}
           </span>
           {mapping?.engagements?.code ? <span className="shrink-0 rounded-[3px] border border-hairline px-1 font-mono text-[8.5px] uppercase tracking-[0.08em] text-muted-foreground">{mapping.engagements.code}</span> : null}
