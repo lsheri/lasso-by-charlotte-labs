@@ -1,6 +1,6 @@
 export const MCP_RESOURCE_URL = "https://lasso.charlotte-labs.com/api/mcp";
 export const OAUTH_RESOURCE_METADATA_URL =
-  "https://lasso.charlotte-labs.com/.well-known/oauth-protected-resource";
+  "https://lasso.charlotte-labs.com/api/oauth-protected-resource";
 
 export const OAUTH_PROTECTED_RESOURCE_BODY = {
   resource: MCP_RESOURCE_URL,

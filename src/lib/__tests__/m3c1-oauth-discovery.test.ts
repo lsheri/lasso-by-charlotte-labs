@@ -62,7 +62,7 @@ describe("M3-C1 OAuth discovery", () => {
       `resource_metadata="${OAUTH_RESOURCE_METADATA_URL}"`,
     );
     expect(OAUTH_RESOURCE_METADATA_URL).toBe(
-      "https://lasso.charlotte-labs.com/.well-known/oauth-protected-resource",
+      "https://lasso.charlotte-labs.com/api/oauth-protected-resource",
     );
   });
 
