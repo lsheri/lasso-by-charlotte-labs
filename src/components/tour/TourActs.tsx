@@ -7,11 +7,14 @@ import { GraphiteIcon } from "@/components/notebook/icons";
 import { LassoThinkingMark } from "@/components/reflect/LassoThinkingMark";
 import { ToolBadge } from "@/components/onboarding/ToolBadge";
 import { Button } from "@/components/ui/button";
+import { WorkNote } from "@/components/work/WorkNote";
 import { useReducedMotion as useMotionPreference } from "@/hooks/use-motion";
 import { keyTo } from "@/lib/canvas-drag";
 import type { ToolId } from "@/lib/onboarding-tools";
 import type { Register } from "@/lib/register";
 import { actById, tourAmbientCards, type TourActId, type TourSource } from "@/lib/tour-content";
+import type { WorkboardCardPreview } from "@/lib/workboard-card-preview.shared";
+import type { WorkItemRow } from "@/lib/work-types";
 import type { TourActRenderer } from "@/components/tour/TourStage";
 
 const noop = () => undefined;
@@ -160,7 +163,7 @@ export function TourActFive({ register, onLanded }: { register: Register; onLand
   </TourBoard></div></TourWorkboard>;
 }
 
-const TURN_STAGGER_MS = 260;
+export const TOUR_TURN_DELAY_MS = 900;
 
 export function TourActPush({ register, onComplete }: { register: Register; onComplete: () => void }) {
   const chat = actById(register, 1)?.chat;
@@ -173,7 +176,7 @@ export function TourActPush({ register, onComplete }: { register: Register; onCo
   const shown = reduced ? total : step;
   useEffect(() => {
     if (reduced) return;
-    const timers = Array.from({ length: total }, (_, index) => window.setTimeout(() => setStep(index + 1), TURN_STAGGER_MS * (index + 1)));
+    const timers = Array.from({ length: total }, (_, index) => window.setTimeout(() => setStep(index + 1), TOUR_TURN_DELAY_MS * (index + 1)));
     return () => timers.forEach((timer) => window.clearTimeout(timer));
   }, [reduced, total]);
   const ready = shown >= total;
@@ -192,19 +195,84 @@ export function TourActPush({ register, onComplete }: { register: Register; onCo
   </div>;
 }
 
+const TOUR_CHAT_DATE = "2026-10-05T12:00:00.000Z";
+const TOUR_TOOL_FILTERS = ["Everything", "Claude", "ChatGPT", "Gemini"] as const;
+
+function tourChatItem(id: string, title: string, source: "claude" | "chatgpt" | "gemini"): WorkItemRow {
+  return {
+    id,
+    title,
+    type: "ai_thread",
+    source,
+    source_vendor: source,
+    visibility: "mapped",
+    captured_at: TOUR_CHAT_DATE,
+    content_ref: null,
+    source_meta: null,
+    meta: null,
+    work_item_tasks: [],
+    work_item_extracts: [],
+  };
+}
+
+function tourChatPreview(id: string, excerpt: string): WorkboardCardPreview {
+  return {
+    workItemId: id,
+    summary: excerpt,
+    turns: [{ turnNo: 1, role: "user", content: excerpt }],
+    firstUserTurn: { turnNo: 1, role: "user", content: excerpt },
+    turnCount: 8,
+    toolSteps: 0,
+    model: null,
+  };
+}
+
 export function TourActArrived({ register, onComplete }: { register: Register; onComplete: () => void }) {
   const list = actById(register, 2)?.conversations;
   const chat = actById(register, 1)?.chat;
   const [opened, setOpened] = useState(false);
   if (!list || !chat) return null;
   const open = () => { if (opened) return; setOpened(true); onComplete(); };
+  const rows = [
+    { item: tourChatItem("tour-arrived", chat.title, chat.source), preview: tourChatPreview("tour-arrived", chat.turns[0]?.text ?? "Channel mix options for the fall launch."), arrived: true },
+    ...tourAmbientCards(register).map((card, index) => ({ item: tourChatItem(`tour-ambient-${index}`, card.title, card.source), preview: tourChatPreview(`tour-ambient-${index}`, card.excerpt[0]), arrived: false })),
+  ];
   return <div className="tour-push-stage" data-testid="tour-act-arrived">
-    <section className="tour-conversations-mimic" aria-label="All AI Conversations tour example">
-      <header><h2>{list.heading}</h2></header>
-      <ul aria-label="AI conversations">
-        <li className="tour-conversation-row is-arrived"><button type="button" data-tour-target="2" onClick={open}><ToolBadge tool={chat.source} size="sm" /><strong>{chat.title}</strong><span className="tour-arrived-label">{list.arrivedLabel}</span></button></li>
-        {tourAmbientCards(register).map((card) => <li key={card.title} className="tour-conversation-row"><div><ToolBadge tool={card.source} size="sm" /><strong>{card.title}</strong></div></li>)}
-      </ul>
+    <section className="tour-conversations-mimic nb-chatview" data-reader="closed" aria-label="All AI Conversations tour example">
+      <div className="nb-chatview-list flex min-h-0 flex-col overflow-hidden">
+        <header className="box-border flex h-16 shrink-0 items-center gap-2 border-b border-[var(--nb-rule)] px-5">
+          <div className="mr-auto min-w-0">
+            <h1 className="truncate font-serif text-[19px] leading-none">{list.heading}</h1>
+            <p className="mt-1 truncate font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">5 conversations on the record · 1 new this week</p>
+          </div>
+          <Button type="button" variant="outline" className="h-9" onClick={noop}>Add a chat</Button>
+          <Button type="button" variant="outline" className="h-9" onClick={noop}><span aria-hidden="true" className="h-3.5 w-3.5 rounded-full border-2 border-[var(--nb-lasso-green)]" />Ask Lasso</Button>
+        </header>
+        <div className="tour-conversations-toolbar flex h-[46px] shrink-0 items-center gap-2 overflow-x-auto border-b border-[var(--nb-rule)] px-5 whitespace-nowrap">
+          <label htmlFor="tour-chat-library-search" className="sr-only">Search your chats</label>
+          <input id="tour-chat-library-search" type="search" readOnly placeholder="Search your chats" className="h-7 w-[200px] shrink-0 rounded-[var(--radius)] border border-border bg-card px-3 nb-type-small text-foreground placeholder:text-muted-foreground" />
+          <span aria-hidden="true" className="h-5 w-px shrink-0 bg-[var(--nb-rule)]" />
+          <div role="group" aria-label="Filter by tool" className="flex shrink-0 items-center gap-2">
+            {TOUR_TOOL_FILTERS.map((option, index) => <button key={option} type="button" aria-pressed={index === 0} onClick={noop} className={index === 0 ? "rounded-full border border-graphite bg-nb-white px-3 py-1 nb-type-small font-medium text-foreground" : "rounded-full border border-[var(--nb-pencil)] px-3 py-1 nb-type-small text-muted-foreground"}>{option}<span className="ml-1.5 font-mono text-[10px] text-soft">{index === 0 ? rows.length : rows.filter((row) => row.item.source === option.toLowerCase()).length}</span></button>)}
+          </div>
+          <Button type="button" variant="outline" className="h-7 rounded-full" onClick={noop}>Workboards</Button>
+          <div className="ml-auto flex shrink-0 items-center gap-2"><Button type="button" variant="ghost" className="h-7 text-[13px] text-muted-foreground" onClick={noop}>{rows.length} conversations.</Button></div>
+        </div>
+        <div className="relative min-h-0 flex-1 overflow-y-auto">
+          <div className="conversation-month-stack p-5" aria-label="AI conversations by month">
+            <section data-conversation-month="2026-10">
+              <div className="flex min-h-10 items-center gap-3"><h2 className="font-hand text-[19px] leading-none text-graphite">October</h2><span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{rows.length}</span><span className="h-px flex-1 bg-[var(--nb-rule)]" /></div>
+              <ul className="conversation-month-grid" aria-label="AI conversations">
+                {rows.map((row) => <li key={row.item.id} className={row.arrived ? "tour-conversation-row is-arrived" : "tour-conversation-row"}>
+                  {row.arrived ? <Button type="button" variant="ghost" className="conversation-card-compact canvas-lab-card-paper block h-full w-full min-w-0 p-0 text-left whitespace-normal hover:bg-transparent" data-tour-target="2" onClick={open}>
+                    <WorkNote item={row.item} dense displayMode="preview" chatPreview={row.preview} lead={<span className="tour-arrived-label">{list.arrivedLabel}</span>} />
+                  </Button> : <span className="conversation-card-compact canvas-lab-card-paper block h-full min-w-0"><WorkNote item={row.item} dense displayMode="preview" chatPreview={row.preview} /></span>}
+                </li>)}
+              </ul>
+            </section>
+          </div>
+        </div>
+      </div>
     </section>
   </div>;
 }
