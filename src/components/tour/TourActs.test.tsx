@@ -77,7 +77,7 @@ describe("tour acts one to three", () => {
     ];
     views.forEach((view, index) => {
       const rendered = render(view);
-      expect(rendered.container.querySelector(`[data-tour-target="${index + 1}"]`)).toBeTruthy();
+      expect(rendered.container.querySelector(`[data-tour-target="${index + 3}"]`)).toBeTruthy();
       rendered.unmount();
     });
   });

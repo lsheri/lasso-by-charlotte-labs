@@ -17,9 +17,9 @@ describe("T1 tour content", () => {
     expect(Object.keys(TOUR_CONTENT).sort()).toEqual([...REGISTERS].sort());
     for (const register of REGISTERS) {
       const acts = TOUR_CONTENT[register].acts;
-      expect(acts).toHaveLength(5);
-      expect(acts.map((act) => act.id)).toEqual([1, 2, 3, 4, 5]);
-      const cards = acts[1]?.cards ?? [];
+      expect(acts).toHaveLength(7);
+      expect(acts.map((act) => act.id)).toEqual([1, 2, 3, 4, 5, 6, 7]);
+      const cards = acts[3]?.cards ?? [];
       expect(cards).toHaveLength(5);
       expect(cards.filter((card) => card.inSet)).toHaveLength(3);
     }
@@ -28,11 +28,11 @@ describe("T1 tour content", () => {
   it("ties every answer claim to one selected card in the same register", () => {
     for (const register of REGISTERS) {
       const acts = TOUR_CONTENT[register].acts;
-      const selected = new Set((acts[1]?.cards ?? []).filter((card) => card.inSet).map((card) => card.title));
-      const answer = acts[3]?.answer ?? [];
+      const selected = new Set((acts[3]?.cards ?? []).filter((card) => card.inSet).map((card) => card.title));
+      const answer = acts[5]?.answer ?? [];
       expect(answer).toHaveLength(3);
       for (const claim of answer) expect(selected.has(claim.sourceCardTitle)).toBe(true);
-      expect(selected.has(acts[3]?.chatLink?.cardTitle ?? "")).toBe(true);
+      expect(selected.has(acts[5]?.chatLink?.cardTitle ?? "")).toBe(true);
     }
   });
 
@@ -52,9 +52,9 @@ describe("T1 tour content", () => {
 
   it("pins the one-click work-card instruction", () => {
     for (const register of REGISTERS) {
-      expect(TOUR_CONTENT[register].acts[1]?.captionPointer).toBe("Click one of the outlined work cards.");
-      expect(TOUR_CONTENT[register].acts[1]?.captionTouch).toBe("Click one of the outlined work cards.");
-      expect(TOUR_CONTENT[register].acts[1]?.why).toBe("You are telling Lasso which work, AI chats and transcripts share context. These three all went into the same final piece of work.");
+      expect(TOUR_CONTENT[register].acts[3]?.captionPointer).toBe("Click one of the outlined work cards.");
+      expect(TOUR_CONTENT[register].acts[3]?.captionTouch).toBe("Click one of the outlined work cards.");
+      expect(TOUR_CONTENT[register].acts[3]?.why).toBe("You are telling Lasso which work, AI chats and transcripts share context. These three all went into the same final piece of work.");
     }
   });
 
@@ -68,7 +68,7 @@ describe("T1 tour content", () => {
       expect(Math.abs(layout?.rotation ?? 2)).toBeLessThan(1.5);
     }
     for (const register of REGISTERS) {
-      for (const [index, card] of (TOUR_CONTENT[register].acts[1]?.cards ?? []).entries()) {
+      for (const [index, card] of (TOUR_CONTENT[register].acts[3]?.cards ?? []).entries()) {
         expect(card.preview).toHaveLength(2);
         const layout = TOUR_BOARD_LAYOUT.find((item) => item.id === `primary-${index}`);
         expect(layout).toBeTruthy();
@@ -106,17 +106,17 @@ describe("T1 tour content", () => {
 
     for (const register of REGISTERS) {
       const acts = TOUR_CONTENT[register].acts;
-      expect(acts[1]?.cards?.map((card) => card.title)).toEqual(expectedTitles);
-      expect(acts[3]?.question).toBe(expectedQuestion);
-      expect(acts[3]?.answer).toEqual(expectedAnswer);
-      expect(acts[3]?.chatLink).toEqual({ label: "Open the chat", cardTitle: "Claude: channel mix options" });
-      expect(acts[0]?.files).toEqual(["Fall launch plan.pdf", "Creator call.txt", "Media budget.xlsx", "moodboard.png"]);
-      expect(acts[2]?.frameTitle).toBe(expectedFrameTitles[register]);
-      expect(acts[2]?.why).toBe(`The box is a ${expectedFrameTitles[register] === "Workstream" ? "workstream" : expectedFrameTitles[register]}. Everything inside it shares context, so a question answers from those pieces and nothing else on the board.`);
+      expect(acts[3]?.cards?.map((card) => card.title)).toEqual(expectedTitles);
+      expect(acts[5]?.question).toBe(expectedQuestion);
+      expect(acts[5]?.answer).toEqual(expectedAnswer);
+      expect(acts[5]?.chatLink).toEqual({ label: "Open the chat", cardTitle: "Claude: channel mix options" });
+      expect(acts[2]?.files).toEqual(["Fall launch plan.pdf", "Creator call.txt", "Media budget.xlsx", "moodboard.png"]);
+      expect(acts[4]?.frameTitle).toBe(expectedFrameTitles[register]);
+      expect(acts[4]?.why).toBe(`The box is a ${expectedFrameTitles[register] === "Workstream" ? "workstream" : expectedFrameTitles[register]}. Everything inside it shares context, so a question answers from those pieces and nothing else on the board.`);
       expect(tourAmbientCards(register).map((card) => card.title)).toEqual(expectedAmbientTitles);
       expect(tourBoardCopy(register)).toMatchObject({ title: "Fall Marketing Launch", owner: "LYKOS LOUNGEWARE", whiteboardTitle: "Moodboard photo", whiteboardCaption: "Shots from the fabric session", deckTitle: "Launch deck, slide 12" });
     }
-    expect(REGISTERS.map((register) => TOUR_CONTENT[register].acts[2]?.frameTitle)).toEqual([
+    expect(REGISTERS.map((register) => TOUR_CONTENT[register].acts[4]?.frameTitle)).toEqual([
       "Workstream",
       "Workstream",
       "Step",

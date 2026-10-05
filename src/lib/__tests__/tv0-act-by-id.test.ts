@@ -12,15 +12,15 @@ describe("TV0 actById", () => {
         expect(found).toBe(act);
         expect(found?.id).toBe(act.id);
       }
-      // Id 2 is the cards act; a positional read of index 2 would return the frame act.
-      expect(actById(register, 2)?.cards).toHaveLength(5);
-      expect(actById(register, 3)?.frameTitle).toBeTruthy();
+      // Id 4 is the cards act; a positional read of index 4 would return the frame act.
+      expect(actById(register, 4)?.cards).toHaveLength(5);
+      expect(actById(register, 5)?.frameTitle).toBeTruthy();
     }
   });
 
   it("returns undefined for an id with no act", () => {
     for (const register of REGISTERS) {
-      for (const id of [6, 7] as const satisfies readonly TourActId[]) {
+      for (const id of [0, 8] as unknown as readonly TourActId[]) {
         expect(actById(register, id)).toBeUndefined();
       }
     }
