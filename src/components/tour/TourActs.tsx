@@ -28,22 +28,14 @@ function sourceTool(source: TourSource): ToolId {
   return source;
 }
 
-function DrawnFileGlyph({ seed }: { seed: string }) {
-  const offset = (seed.length % 4) * 0.3;
-  return <svg viewBox="0 0 20 24" aria-hidden className="tour-file-glyph">
-    <path d={`M${2 + offset} 1.5 L13 1.5 L18 6.5 L18 21 L2 22 Z`} /><path d="M13 1.5V7H18" />
-    <path d="M5 13 C8 12.3 11 13.6 15 13 M5 17 C8 16.5 11 17.6 14 17" />
-  </svg>;
-}
-
-function FileWindow({ files, drag, onPointerDown, onKeyDown }: {
-  files: readonly string[];
+function BringInWindow({ item, drag, onPointerDown, onKeyDown }: {
+  item: { title: string; source: TourSource };
   drag: DragFile | null;
   onPointerDown: (title: string, event: ReactPointerEvent<HTMLButtonElement>) => void;
   onKeyDown: (title: string, event: KeyboardEvent<HTMLButtonElement>) => void;
 }) {
-  return <section className="tour-file-window" aria-label="Your files"><header><i aria-hidden /><strong>Your files</strong></header><div>
-    {files.map((file) => <Button key={file} type="button" variant="ghost" className="tour-file-row" data-lifted={drag?.title === file} onPointerDown={(event) => onPointerDown(file, event)} onKeyDown={(event) => onKeyDown(file, event)}><DrawnFileGlyph seed={file} /><span>{file}</span></Button>)}
+  return <section className="tour-file-window" aria-label="AI conversation to bring in"><header><i aria-hidden /><strong>AI conversation</strong></header><div>
+    <Button type="button" variant="ghost" className="tour-file-row" data-lifted={drag?.title === item.title} onPointerDown={(event) => onPointerDown(item.title, event)} onKeyDown={(event) => onKeyDown(item.title, event)}><ToolBadge tool={sourceTool(item.source)} size="sm" /><span>{item.title}</span></Button>
   </div></section>;
 }
 
@@ -75,7 +67,7 @@ function TourWorkboard({ active, onAddWork, onGroup, onAsk, children }: { active
 }
 
 export function TourActOne({ register, onComplete }: { register: Register; onComplete: (title: string) => void }) {
-  const files = actById(register, 3)?.files ?? [];
+  const bringIn = actById(register, 3)?.bringIn;
   const boardRef = useRef<HTMLDivElement>(null);
   const [drag, setDrag] = useState<DragFile | null>(null);
   const [landed, setLanded] = useState<string | null>(null);
@@ -97,9 +89,9 @@ export function TourActOne({ register, onComplete }: { register: Register; onCom
   return <div className="tour-arrival" data-testid="tour-act-one" onPointerMove={(event) => { if (drag && drag.pointerId >= 0) setDrag({ ...drag, x: event.clientX, y: event.clientY }); }} onPointerUp={finishPointer} onPointerCancel={() => setDrag(null)}>
     <TourWorkboard active="add" onAddWork={() => setFilesOpen(true)}><div data-testid="tour-drop-board" className="tour-shared-act"><TourBoard register={register} state={{ act: 3, landedFile: landed }} boardRef={boardRef}>
       <aside className="tour-arrival-hint">You can also drag files, documents or images straight from your computer onto the board.</aside>
-      {filesOpen ? <div className="tour-file-window-layer"><FileWindow files={files} drag={drag} onPointerDown={(title, event) => { event.currentTarget.setPointerCapture?.(event.pointerId); if (event.pointerType === "touch") { land(title); return; } setDrag({ title, pointerId: event.pointerId, x: event.clientX, y: event.clientY }); }} onKeyDown={onFileKeyDown} /></div> : null}
+      {filesOpen && bringIn ? <div className="tour-file-window-layer"><BringInWindow item={bringIn} drag={drag} onPointerDown={(title, event) => { event.currentTarget.setPointerCapture?.(event.pointerId); if (event.pointerType === "touch") { land(title); return; } setDrag({ title, pointerId: event.pointerId, x: event.clientX, y: event.clientY }); }} onKeyDown={onFileKeyDown} /></div> : null}
     </TourBoard></div></TourWorkboard>
-    {drag ? <div className="tour-file-drag" data-keyboard={drag.pointerId < 0} style={drag.pointerId < 0 ? { transform: `translate(${keyPosition.x}px, ${keyPosition.y}px)` } : { left: drag.x, top: drag.y }}><DrawnFileGlyph seed={drag.title} /><span>{drag.title}</span></div> : null}
+    {drag && bringIn ? <div className="tour-file-drag" data-keyboard={drag.pointerId < 0} style={drag.pointerId < 0 ? { transform: `translate(${keyPosition.x}px, ${keyPosition.y}px)` } : { left: drag.x, top: drag.y }}><ToolBadge tool={sourceTool(bringIn.source)} size="sm" /><span>{drag.title}</span></div> : null}
   </div>;
 }
 

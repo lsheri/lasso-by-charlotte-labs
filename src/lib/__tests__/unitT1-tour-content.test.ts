@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { TOUR_AMBIENT_CARDS, TOUR_BOARD_LAYOUT, TOUR_CONTENT, tourAmbientCards, tourBoardCopy } from "@/lib/tour-content";
+import { TOUR_AMBIENT_CARDS, TOUR_BOARD_LAYOUT, TOUR_CONTENT, TOUR_PUSHED_CHAT, tourAmbientCards, tourBoardCopy } from "@/lib/tour-content";
 
 const REGISTERS = ["company", "partner", "personal", "edu"] as const;
 const FORBIDDEN = /\u2014|\baudit\b|\boversight\b|\bmonitor\b|\btrack\b|\bsurveillance\b|\bgovernance\b|\bscore\b/i;
@@ -110,7 +110,8 @@ describe("T1 tour content", () => {
       expect(acts[5]?.question).toBe(expectedQuestion);
       expect(acts[5]?.answer).toEqual(expectedAnswer);
       expect(acts[5]?.chatLink).toEqual({ label: "Open the chat", cardTitle: "Claude: channel mix options" });
-      expect(acts[2]?.files).toEqual(["Fall launch plan.pdf", "Creator call.txt", "Media budget.xlsx", "moodboard.png"]);
+      expect(acts[2]?.bringIn).toEqual({ title: TOUR_PUSHED_CHAT.title, source: TOUR_PUSHED_CHAT.source });
+      expect(acts[2]?.bringIn?.title).toBe(acts[3]?.cards?.[2]?.title);
       expect(acts[4]?.frameTitle).toBe(expectedFrameTitles[register]);
       expect(acts[4]?.why).toBe(`The box is a ${expectedFrameTitles[register] === "Workstream" ? "workstream" : expectedFrameTitles[register]}. Everything inside it shares context, so a question answers from those pieces and nothing else on the board.`);
       expect(tourAmbientCards(register).map((card) => card.title)).toEqual(expectedAmbientTitles);

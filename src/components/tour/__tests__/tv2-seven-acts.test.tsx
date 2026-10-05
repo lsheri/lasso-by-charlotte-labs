@@ -40,8 +40,10 @@ describe("TV2 seven act tour", () => {
 
   it("keeps the old acts in order at their new ids", () => {
     for (const register of REGISTERS) {
-      expect(actById(register, 3)?.captionPointer).toBe("Drag a file onto the board.");
-      expect(actById(register, 3)?.files).toEqual(["Fall launch plan.pdf", "Creator call.txt", "Media budget.xlsx", "moodboard.png"]);
+      expect(actById(register, 3)?.captionPointer).toBe("Drag the chat onto the board.");
+      expect(actById(register, 3)?.captionTouch).toBe("Tap the chat to put it on the board.");
+      expect(actById(register, 3)?.why).toBe("The chat you just pushed is now yours to place. Files, documents and call transcripts land the same way.");
+      expect(actById(register, 3)?.bringIn).toEqual({ title: TOUR_PUSHED_CHAT.title, source: TOUR_PUSHED_CHAT.source });
       expect(actById(register, 7)?.captionPointer).toBe("Keep it. Now the answer lives next to what it came from.");
       expect(actById(register, 7)?.primaryActionLabel).toBe("Start with my own work");
       expect(actById(register, 1)?.captionPointer).toBe("Push the chat into Lasso.");
@@ -92,7 +94,7 @@ describe("TV2 seven act tour", () => {
     expect(screen.getByText("It is already here. You did not have to file it.")).toBeTruthy();
   });
 
-  it("shows the pushed chat at the top of the list and advances to the file act when clicked", () => {
+  it("shows the pushed chat at the top of the list and advances to the bring-in act when clicked", () => {
     render(<Harness start={2} />);
     const rows = within(screen.getByRole("list", { name: "AI conversations" })).getAllByRole("listitem");
     expect(rows).toHaveLength(1 + tourAmbientCards("company").length);
@@ -101,7 +103,7 @@ describe("TV2 seven act tour", () => {
     expect(rows.slice(1).map((row) => row.querySelector(".ledger-work-note > .nb-paper-body > p")?.textContent)).toEqual(tourAmbientCards("company").map((card) => card.title));
     fireEvent.click(within(rows[0]!).getByRole("button", { name: /Claude: channel mix options/ }));
     expect(screen.getByTestId("tour-act-one")).toBeTruthy();
-    expect(screen.getByText("Drag a file onto the board.")).toBeTruthy();
+    expect(screen.getByText("Drag the chat onto the board.")).toBeTruthy();
   });
 
   it("renders the real conversation-page shell and its inert controls", () => {

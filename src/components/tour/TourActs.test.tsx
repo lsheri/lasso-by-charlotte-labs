@@ -3,7 +3,7 @@ import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { TourActFive, TourActFour, TourActOne, TourActThree, TourActTwo } from "@/components/tour/TourActs";
-import { TOUR_BOARD_LAYOUT, TOUR_CONTEXT_SENTENCE } from "@/lib/tour-content";
+import { TOUR_BOARD_LAYOUT, TOUR_CONTEXT_SENTENCE, TOUR_PUSHED_CHAT, actById } from "@/lib/tour-content";
 
 class ResizeObserverStub {
   observe() {}
@@ -85,35 +85,54 @@ describe("tour acts one to three", () => {
   it("advances act one on a pointer drop", () => {
     const done = vi.fn();
     render(<TourActOne register="company" onComplete={done} />);
-    expect(screen.queryByLabelText("Your files")).toBeNull();
+    expect(screen.queryByLabelText("AI conversation to bring in")).toBeNull();
+    const beforeIds = Array.from(document.querySelectorAll<HTMLElement>("[data-tour-card]"), (card) => card.dataset["tourCard"]);
+    expect(beforeIds).toEqual(["tour-card-0", "tour-card-1", "tour-card-3", "tour-card-4", "ambient-0", "ambient-1", "ambient-2", "ambient-3"]);
+    expect(screen.getByText("Fall launch plan v3")).toBeTruthy();
+    expect(screen.queryByText(TOUR_PUSHED_CHAT.title)).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Add work" }));
-    const file = screen.getByRole("button", { name: "Fall launch plan.pdf" });
+    const picker = screen.getByLabelText("AI conversation to bring in");
+    const choices = Array.from(picker.querySelectorAll("button"));
+    expect(choices).toHaveLength(1);
+    expect(choices[0]?.textContent).toContain(TOUR_PUSHED_CHAT.title);
+    const file = screen.getByRole("button", { name: TOUR_PUSHED_CHAT.title });
     const board = screen.getByTestId("tour-drop-board");
     vi.spyOn(board, "getBoundingClientRect").mockReturnValue({ left: 200, right: 600, top: 0, bottom: 400, width: 400, height: 400, x: 200, y: 0, toJSON: () => ({}) });
     fireEvent.pointerDown(file, { pointerId: 1, pointerType: "mouse", clientX: 20, clientY: 20 });
     fireEvent.pointerUp(screen.getByTestId("tour-act-one"), { pointerId: 1, pointerType: "mouse", clientX: 300, clientY: 200 });
-    expect(done).toHaveBeenCalledWith("Fall launch plan.pdf");
+    expect(done).toHaveBeenCalledWith(TOUR_PUSHED_CHAT.title);
+    expect(document.querySelector('[data-tour-card="tour-card-2"]')).toBeTruthy();
   });
 
   it("advances act one on touch", () => {
     const done = vi.fn();
     render(<TourActOne register="company" onComplete={done} />);
     fireEvent.click(screen.getByRole("button", { name: "Add work" }));
-    const file = screen.getByRole("button", { name: "Fall launch plan.pdf" });
+    const file = screen.getByRole("button", { name: TOUR_PUSHED_CHAT.title });
     fireEvent.pointerDown(file, { pointerId: 2, pointerType: "touch", clientX: 20, clientY: 20 });
     fireEvent.pointerUp(screen.getByTestId("tour-act-one"), { pointerId: 2, pointerType: "touch", clientX: 20, clientY: 20 });
-    expect(done).toHaveBeenCalledWith("Fall launch plan.pdf");
+    expect(done).toHaveBeenCalledWith(TOUR_PUSHED_CHAT.title);
+    expect(document.querySelector('[data-tour-card="tour-card-2"]')).toBeTruthy();
   });
 
   it("advances act one after keyboard lift, move and drop", () => {
     const done = vi.fn();
     render(<TourActOne register="company" onComplete={done} />);
     fireEvent.click(screen.getByRole("button", { name: "Add work" }));
-    const file = screen.getByRole("button", { name: "Fall launch plan.pdf" });
+    const file = screen.getByRole("button", { name: TOUR_PUSHED_CHAT.title });
     fireEvent.keyDown(file, { code: "Space", key: " " });
     fireEvent.keyDown(file, { code: "ArrowRight", key: "ArrowRight" });
     fireEvent.keyDown(file, { code: "Space", key: " " });
-    expect(done).toHaveBeenCalledWith("Fall launch plan.pdf");
+    expect(done).toHaveBeenCalledWith(TOUR_PUSHED_CHAT.title);
+    expect(document.querySelector('[data-tour-card="tour-card-2"]')).toBeTruthy();
+  });
+
+  it("uses one pushed-chat identity across acts one, three and four", () => {
+    const bringIn = actById("company", 3)?.bringIn;
+    const primaryTwo = actById("company", 4)?.cards?.[2];
+    expect(bringIn?.title).toBe(TOUR_PUSHED_CHAT.title);
+    expect(bringIn?.source).toBe(TOUR_PUSHED_CHAT.source);
+    expect(bringIn?.title).toBe(primaryTwo?.title);
   });
 
   it("advances act two exactly once when one outlined work card is clicked", () => {

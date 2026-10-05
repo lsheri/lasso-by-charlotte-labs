@@ -118,7 +118,7 @@ export type TourAct = {
   captionPointer: string;
   captionTouch: string;
   why: string;
-  files?: readonly string[];
+  bringIn?: { title: string; source: TourSource };
   chat?: TourPushedChat;
   conversations?: TourConversationList;
   cards?: readonly TourCard[];
@@ -131,20 +131,6 @@ export type TourAct = {
   deliverable?: TourDeliverable;
   primaryActionLabel?: string;
 };
-
-const FILES = [
-  "Q3 strategy deck.pdf",
-  "Discovery call.txt",
-  "Pricing model.xlsx",
-  "whiteboard.png",
-] as const;
-
-const COMPANY_FILES = [
-  "Fall launch plan.pdf",
-  "Creator call.txt",
-  "Media budget.xlsx",
-  "moodboard.png",
-] as const;
 
 const DO_LINES = {
   4: "Click one of the outlined work cards.",
@@ -199,7 +185,6 @@ function acts(
   question: string,
   answer: readonly TourClaim[],
   chatLink: TourChatLink,
-  files: readonly string[] = FILES,
 ): readonly TourAct[] {
   return [
     {
@@ -218,10 +203,10 @@ function acts(
     },
     {
       id: 3,
-      captionPointer: "Drag a file onto the board.",
-      captionTouch: "Tap a file to put it on the board.",
-      why: "Files, AI chats and call transcripts all land here. Lasso keeps each one with a link back to where it came from.",
-      files,
+      captionPointer: "Drag the chat onto the board.",
+      captionTouch: "Tap the chat to put it on the board.",
+      why: "The chat you just pushed is now yours to place. Files, documents and call transcripts land the same way.",
+      bringIn: { title: TOUR_PUSHED_CHAT.title, source: TOUR_PUSHED_CHAT.source },
     },
     {
       id: 4,
@@ -284,7 +269,6 @@ export const TOUR_CONTENT: Readonly<
       "What ideas did I have that did not make the final launch plan? Give me the link to the AI chat I worked them out in.",
       COMPANY_ANSWER,
       { label: "Open the chat", cardTitle: "Claude: channel mix options" },
-      COMPANY_FILES,
     ),
   },
   partner: {
@@ -295,7 +279,6 @@ export const TOUR_CONTENT: Readonly<
       "What ideas did I have that did not make the final launch plan? Give me the link to the AI chat I worked them out in.",
       COMPANY_ANSWER,
       { label: "Open the chat", cardTitle: "Claude: channel mix options" },
-      COMPANY_FILES,
     ),
   },
   personal: {
@@ -306,7 +289,6 @@ export const TOUR_CONTENT: Readonly<
       "What ideas did I have that did not make the final launch plan? Give me the link to the AI chat I worked them out in.",
       COMPANY_ANSWER,
       { label: "Open the chat", cardTitle: "Claude: channel mix options" },
-      COMPANY_FILES,
     ),
   },
   edu: {
@@ -317,7 +299,6 @@ export const TOUR_CONTENT: Readonly<
       "What ideas did I have that did not make the final launch plan? Give me the link to the AI chat I worked them out in.",
       COMPANY_ANSWER,
       { label: "Open the chat", cardTitle: "Claude: channel mix options" },
-      COMPANY_FILES,
     ),
   },
 };
