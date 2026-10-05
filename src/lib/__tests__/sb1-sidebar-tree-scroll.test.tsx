@@ -10,13 +10,14 @@ const mocks = vi.hoisted(() => ({
   profile: { id: "p1", org_id: "o1", org_type: "company", clients_enabled: true, role: "worker" } as Record<string, unknown>,
   engagements: [] as unknown[],
   clientRows: [] as unknown[],
+  archiveMatch: false,
 }));
 
 vi.mock("@tanstack/react-router", () => ({
-  Link: ({ children, className }: { children: ReactNode; className?: string }) => (
-    <a className={className}>{children}</a>
+  Link: ({ children, className, hash }: { children: ReactNode; className?: string; hash?: string }) => (
+    <a className={className} href={hash ? `/archive#${hash}` : undefined}>{children}</a>
   ),
-  useMatchRoute: () => () => false,
+  useMatchRoute: () => ({ to }: { to: string }) => to === "/archive" && mocks.archiveMatch,
   useSearch: () => ({}),
 }));
 vi.mock("@tanstack/react-query", () => ({
@@ -58,6 +59,8 @@ afterEach(() => {
   cleanup();
   mocks.engagements = [];
   mocks.clientRows = [];
+  mocks.archiveMatch = false;
+  window.history.replaceState(null, "", "/");
 });
 
 const eng = (id: string, clients: NavEngagement["clients"]): NavEngagement => ({
@@ -136,7 +139,28 @@ describe("SB1 tree scroller and standing separation", () => {
     const lookback = screen.getByText("Look back").parentElement!;
     const rows = [...lookback.querySelectorAll("a")];
     expect(rows[0]?.textContent).toContain("Past work");
-    expect(rows[1]?.textContent).toContain("Past Ask Lasso chats");
+    expect(rows[1]?.textContent).toContain("Archived");
+    expect(rows[2]?.textContent).toContain("Past Ask Lasso chats");
+  });
+
+  it("activates only Past work on the archive route without a hash", () => {
+    mocks.archiveMatch = true;
+    window.history.replaceState(null, "", "/archive");
+    render(<SidebarNav />);
+    const lookback = screen.getByText("Look back").parentElement!;
+    const active = [...lookback.querySelectorAll("a.nb-nav-item-active")];
+    expect(active).toHaveLength(1);
+    expect(active[0]?.textContent).toContain("Past work");
+  });
+
+  it("activates only Archived on the archive route with its hash", () => {
+    mocks.archiveMatch = true;
+    window.history.replaceState(null, "", "/archive#archived");
+    render(<SidebarNav />);
+    const lookback = screen.getByText("Look back").parentElement!;
+    const active = [...lookback.querySelectorAll("a.nb-nav-item-active")];
+    expect(active).toHaveLength(1);
+    expect(active[0]?.textContent).toContain("Archived");
   });
 
   it("hides an archived container and everything beneath it", () => {
