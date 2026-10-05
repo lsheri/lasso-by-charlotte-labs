@@ -12,19 +12,22 @@ export function ChatUrlLink({
   item,
   showAbsence = false,
   turnCount,
+  toolSteps,
 }: {
   item: WorkItemRow | null | undefined;
   /** Cards say plainly when there is no way back, so nobody is surprised. */
   showAbsence?: boolean;
   /** Already-loaded card data; this never triggers another read. */
   turnCount?: number | null | undefined;
+  /** TT1: collapsed AI tool steps, named beside the turn count. */
+  toolSteps?: number | null | undefined;
 }) {
   const link = itemChatLink(item);
   const url = link?.url ?? null;
   if (!link || !url) {
     if (!showAbsence) return null;
     return (
-      <span className="text-xs text-muted-foreground">{keptContentLabel(item, turnCount)}</span>
+      <span className="text-xs text-muted-foreground">{keptContentLabel(item, turnCount, toolSteps)}</span>
     );
   }
 

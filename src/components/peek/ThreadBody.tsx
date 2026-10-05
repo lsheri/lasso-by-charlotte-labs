@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { EvidenceCircle, MarginFlag, VerifyInk } from "@/components/notebook/marks";
 import { mergeRanges, type CharRange } from "@/lib/canvas-lab-annotations-shared";
@@ -7,6 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { splitByQuote, turnAnchorId, type ThreadMark } from "@/lib/verify-thread-shared";
 import { vendorLabel } from "@/lib/conversation-shared";
 import type { WorkItemRow } from "@/lib/work-types";
+import { emitClientEvent } from "@/lib/client-telemetry";
+import { groupToolRuns, stepsBand, toolStepsLabel } from "@/lib/tool-steps";
 
 type Turn = {
   id: string;
@@ -271,6 +273,30 @@ export function ThreadBody({
     });
   }, [enabled, focusedTurn, reducedMotion]);
 
+  const segments = useMemo(() => groupToolRuns(turns ?? []), [turns]);
+  const [openRuns, setOpenRuns] = useState<ReadonlySet<string>>(() => new Set());
+  /** A focus jump or an active finding on a tool step opens its run. */
+  const forcedRuns = useMemo(() => {
+    const forced = new Set<string>();
+    const activeTurnNo = activeMarkId ? marks.find((m) => m.id === activeMarkId)?.turnNo : undefined;
+    for (const segment of segments) {
+      if (segment.kind !== "tools") continue;
+      if (segment.turns.some((turn) => turn.id === focusedTurn?.id || turn.turn_no === activeTurnNo)) {
+        forced.add(segment.key);
+      }
+    }
+    return forced;
+  }, [segments, focusedTurn, activeMarkId, marks]);
+  function toggleRun(key: string, count: number, open: boolean) {
+    setOpenRuns((current) => {
+      const next = new Set(current);
+      if (open) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+    if (!open) emitClientEvent("work.tool_steps_opened", { steps_band: stepsBand(count) });
+  }
+
   const meta = item.source_meta ?? null;
   const model = meta?.model ?? null;
   const expectedTotal =
@@ -317,7 +343,35 @@ export function ThreadBody({
       ) : null}
 
       <div className="space-y-5">
-        {(turns ?? []).map((turn) => {
+        {segments.map((segment) => {
+          if (segment.kind === "turn") return renderTurn(segment.turn);
+          const open = openRuns.has(segment.key) || forcedRuns.has(segment.key);
+          const label = toolStepsLabel(segment.turns.length);
+          return (
+            <div key={segment.key} data-tool-run={segment.key} data-open={open ? "true" : "false"}>
+              <button
+                type="button"
+                aria-expanded={open}
+                data-testid="tool-steps-toggle"
+                className="nb-type-small text-muted-foreground underline-offset-2 hover:underline"
+                onClick={() => toggleRun(segment.key, segment.turns.length, open)}
+              >
+                {label} · {open ? "Hide" : "Show"}
+              </button>
+              <div data-testid="tool-steps-body" hidden={!open} className="mt-3 space-y-5">
+                {segment.turns.map((turn) => renderTurn(turn))}
+              </div>
+            </div>
+          );
+        })}
+        {turns && turns.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No turns stored for this item.</p>
+        ) : null}
+      </div>
+    </div>
+  );
+
+  function renderTurn(turn: Turn) {
           const focused = focusedTurn?.id === turn.id;
           const focusedRange = focused ? focusedTextRange(turn.content, focus?.text) : null;
           const liveRanges: CharRange[] = highlights
@@ -428,11 +482,5 @@ export function ThreadBody({
           {focused ? <p className="mt-2 font-hand text-[16px] text-green">this is the turn it came from</p> : null}
           </div>
           );
-        })}
-        {turns && turns.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No turns stored for this item.</p>
-        ) : null}
-      </div>
-    </div>
-  );
+  }
 }

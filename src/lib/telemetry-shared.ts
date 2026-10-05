@@ -76,6 +76,8 @@ export type TelemetryEvent =
   | "work.import_menu_opened"
   /** Inbox: an arrivals or reading panel was opened. Closed panel word only. */
   | "work.panel_opened"
+  /** Reader: a collapsed run of AI tool steps was opened. Banded count only. */
+  | "work.tool_steps_opened"
   /** Chat library: a filter or supporting panel was opened. Closed panel word only. */
   | "chatlib.panel_opened"
   /** Ask Lasso: the persisted response-input disclosure was opened. Count bands only. */

@@ -15,6 +15,7 @@
  */
 
 import type { SharedBoardTurn, SharedSeedWork } from "./board-share-shared";
+import { isToolRole } from "@/lib/tool-steps";
 import { publicSafeText } from "./demo-presets-shared";
 
 const TOP_KEYS = [
@@ -83,7 +84,7 @@ export type PublicTurnExcerpt = Pick<SharedBoardTurn, "turn_no" | "role" | "cont
 /** Demo-only turn text with row ids, model metadata, web addresses and UUIDs removed. */
 export function publicSafeTurnExcerpts(turns: readonly SharedBoardTurn[], from = 1, to = 999): PublicTurnExcerpt[] {
   return turns
-    .filter((turn) => turn.turn_no >= from && turn.turn_no <= to)
+    .filter((turn) => turn.turn_no >= from && turn.turn_no <= to && !isToolRole(turn.role))
     .map((turn) => ({
       turn_no: turn.turn_no,
       role: turn.role === "user" ? "user" : "assistant",

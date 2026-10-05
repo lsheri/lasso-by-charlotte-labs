@@ -29,6 +29,7 @@ export function WorkCardPreview({
           testId="work-card-chat-preview"
           vendorKey={sourceVendorKey(item)}
           turns={chatPreview.turns}
+          toolSteps={chatPreview.toolSteps}
         />
       </div>
     );

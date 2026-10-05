@@ -1,5 +1,6 @@
 import { effectiveChatUrl } from "@/lib/chat-url";
 import type { WorkItemRow } from "@/lib/work-types";
+import { toolStepsLabel } from "@/lib/tool-steps";
 
 /**
  * W1 — what "Open" means, decided in one place.
@@ -39,11 +40,13 @@ export const NO_SOURCE_LINK_LABEL = "Kept in full";
 export function keptContentLabel(
   item: Pick<WorkItemRow, "content_fidelity" | "type"> | null | undefined,
   turnCount?: number | null,
+  toolSteps?: number | null,
 ): string {
   if (item?.content_fidelity === "summary") return "Summary kept";
   if (item?.content_fidelity === "reference") return "File reference kept";
   if (item?.type === "ai_thread" && typeof turnCount === "number" && turnCount > 0) {
-    return `${turnCount} ${turnCount === 1 ? "turn" : "turns"} kept in full`;
+    const kept = `${turnCount} ${turnCount === 1 ? "turn" : "turns"} kept in full`;
+    return typeof toolSteps === "number" && toolSteps > 0 ? `${kept}, plus ${toolStepsLabel(toolSteps)}` : kept;
   }
   return NO_SOURCE_LINK_LABEL;
 }
