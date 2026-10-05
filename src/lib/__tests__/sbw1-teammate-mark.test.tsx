@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { readFileSync } from "node:fs";
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
@@ -96,8 +97,8 @@ describe("SB-W1 teammate marks", () => {
     expect(tag?.getAttribute("title")).toMatch(/^Added by Sam Rivera/);
   });
 
-  it("lets the tag receive pointer events so its tooltip can show", async () => {
-    const styles = (await import("@/styles.css?raw")).default as string;
+  it("lets the tag receive pointer events so its tooltip can show", () => {
+    const styles = readFileSync(new URL("../../styles.css", import.meta.url), "utf8");
     const start = styles.indexOf(".canvas-lab-teammate-tag {");
     expect(start).toBeGreaterThan(-1);
     const rule = styles.slice(start, styles.indexOf("}", start));
