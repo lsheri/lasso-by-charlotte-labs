@@ -98,7 +98,9 @@ describe("SB-W1 teammate marks", () => {
   });
 
   it("lets the tag receive pointer events so its tooltip can show", () => {
-    const styles = readFileSync(new URL("../../styles.css", import.meta.url), "utf8");
+    const here = new URL("../../styles.css", import.meta.url);
+    const styles = readFileSync(here, "utf8");
+    console.log("DEBUG meta:", import.meta.url, "resolved:", here.toString(), "len:", styles.length, "has tag:", styles.includes("canvas-lab-teammate"), "has brace:", styles.includes(".canvas-lab-teammate-tag {"));
     const start = styles.indexOf(".canvas-lab-teammate-tag {");
     expect(start).toBeGreaterThan(-1);
     const rule = styles.slice(start, styles.indexOf("}", start));
