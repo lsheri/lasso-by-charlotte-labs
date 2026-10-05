@@ -151,10 +151,11 @@ export function TourActFour({ register, onComplete }: { register: Register; onCo
 }
 
 export function TourActFive({ register, onLanded }: { register: Register; onLanded: () => void }) {
+  const reducedMotion = useMotionPreference();
   const [landed, setLanded] = useState(false); const [dragging, setDragging] = useState(false); const boardRef = useRef<HTMLDivElement>(null);
   const land = () => { if (landed) return; setLanded(true); setDragging(false); onLanded(); };
   const finishDrag = (event: ReactPointerEvent<HTMLDivElement>) => { if (!dragging) return; const rect = boardRef.current?.getBoundingClientRect(); if (rect && event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom) land(); else setDragging(false); };
-  return <TourWorkboard active={null}><div className="tour-shared-act" data-testid="tour-act-five"><TourBoard register={register} state={{ act: 7, selectedIds: GROUP_IDS, groupedIds: GROUP_IDS, glowingIds: GROUP_IDS, answerVisible: landed, connectorsVisible: landed }} boardRef={boardRef} onPointerUp={finishDrag} onPointerCancel={() => setDragging(false)}>
+  return <TourWorkboard active={null}><div className="tour-shared-act" data-testid="tour-act-five"><TourBoard register={register} state={{ act: 7, selectedIds: GROUP_IDS, groupedIds: GROUP_IDS, glowingIds: GROUP_IDS, answerVisible: landed, connectorsVisible: landed, deliverableVisible: landed, reducedMotion }} boardRef={boardRef} onPointerUp={finishDrag} onPointerCancel={() => setDragging(false)}>
     {!landed ? <aside className="tour-keep-panel"><article className="tour-drag-answer" onPointerDown={(event) => { event.currentTarget.setPointerCapture?.(event.pointerId); setDragging(true); }}><span>Answer</span><p>{actById(register, 6)?.answer?.map((claim) => claim.text).join(" ")}</p></article><Button type="button" variant="ink" data-tour-target="7" onClick={land}>Keep</Button></aside> : null}
   </TourBoard></div></TourWorkboard>;
 }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode, type RefObject } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent, type CSSProperties, type ReactNode, type RefObject } from "react";
 
 import { LabAnswerCard } from "@/components/canvas-lab/LabAnswerCard";
 import { LabRelationships } from "@/components/canvas-lab/LabRelationships";
@@ -103,7 +103,7 @@ function TourDeliverableCard({ register, style, reduced }: { register: Register;
     <ol className="tour-deliverable-lines">
       {claims.map((claim, index) => {
         const source = cards.find((card) => card.title === claim.sourceCardTitle)?.source;
-        return <li key={claim.sourceCardTitle} className="tour-deliverable-line" data-source-title={claim.sourceCardTitle} style={{ "--tour-line-index": index } as React.CSSProperties}>{source ? <ToolBadge tool={sourceTool(source)} size="sm" /> : null}<span>{claim.text}</span></li>;
+        return <li key={claim.sourceCardTitle} className="tour-deliverable-line" data-source-title={claim.sourceCardTitle} style={{ "--tour-line-index": index } as CSSProperties}>{source ? <ToolBadge tool={sourceTool(source)} size="sm" /> : null}<span>{claim.text}</span></li>;
       })}
     </ol>
     <p className="tour-deliverable-note">{deliverable.note}</p>
