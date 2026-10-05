@@ -9,7 +9,7 @@ import {
   type RejectionReason,
 } from "@/lib/attachment-guard";
 import { workTypeForFile } from "@/lib/work-types";
-import { recordEvent } from "@/lib/telemetry.server";
+import { recordAnonymousEvent, recordEvent } from "@/lib/telemetry.server";
 import { dateLabel } from "@/lib/decisions-shared";
 import { coerceJsonArg, coercePushArgs } from "@/lib/mcp-args";
 import {
@@ -624,23 +624,103 @@ function clientIdentity(tokenId: string, headerProtocol: string | null): ClientI
   };
 }
 
-export async function resolveOwner(token: string, fromHeader = false): Promise<Owner | null> {
+export type AuthFailure = {
+  kind: "header" | "link" | "signin";
+  reason: "bad_key" | "bad_token" | "no_connection";
+};
+
+type ConnectionRow = {
+  connection_id: string;
+  profile_id: string;
+  org_id: string;
+  user_id: string;
+  kind: string;
+  read_only: boolean;
+  legacy: boolean;
+};
+
+const JWT_SHAPE = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/;
+
+/**
+ * M3-C2. Header-route JWTs are verified server side and resolved as an AI
+ * tool sign-in; every other token takes the existing key path unchanged.
+ */
+export async function resolveOwnerDetailed(
+  token: string,
+  fromHeader = false,
+): Promise<{ owner: Owner } | { failure: AuthFailure } | null> {
   if (!token) return null;
+  if (fromHeader && JWT_SHAPE.test(token)) {
+    let claims: Record<string, unknown> | null = null;
+    try {
+      const { data, error } = await supabaseAdmin.auth.getClaims(token);
+      if (!error && data?.claims) claims = data.claims as Record<string, unknown>;
+    } catch {
+      claims = null;
+    }
+    const sub = typeof claims?.["sub"] === "string" ? (claims["sub"] as string) : "";
+    const clientId = typeof claims?.["client_id"] === "string" ? (claims["client_id"] as string) : "";
+    if (!claims || !sub || !clientId) return { failure: { kind: "signin", reason: "bad_token" } };
+    const rpc = supabaseAdmin.rpc as unknown as (
+      name: string,
+      args: Record<string, unknown>,
+    ) => Promise<{ data: ConnectionRow[] | null; error: unknown }>;
+    const { data } = await rpc.call(supabaseAdmin, "mcp_resolve_signin", {
+      p_user_id: sub,
+      p_oauth_client_id: clientId,
+    });
+    const row = data?.[0];
+    if (!row) return { failure: { kind: "signin", reason: "no_connection" } };
+    return {
+      owner: {
+        tokenId: row.connection_id,
+        profileId: row.profile_id,
+        orgId: row.org_id,
+        userId: row.user_id,
+        kind: "signin",
+        readOnly: row.read_only,
+        legacy: row.legacy,
+        authKind: "signin",
+      },
+    };
+  }
   const hash = await sha256Hex(token);
   const { data } = await supabaseAdmin.rpc("mcp_resolve_key", { p_key_hash: hash });
   const connection = data?.[0];
-  if (!connection) return null;
+  if (!connection) return { failure: { kind: fromHeader ? "header" : "link", reason: "bad_key" } };
   const kind = connection.kind === "signin" ? "signin" : "link";
   return {
-    tokenId: connection.connection_id,
-    profileId: connection.profile_id,
-    orgId: connection.org_id,
-    userId: connection.user_id,
-    kind: connection.kind,
-    readOnly: connection.read_only,
-    legacy: connection.legacy,
-    authKind: fromHeader ? "header" : kind,
+    owner: {
+      tokenId: connection.connection_id,
+      profileId: connection.profile_id,
+      orgId: connection.org_id,
+      userId: connection.user_id,
+      kind: connection.kind,
+      readOnly: connection.read_only,
+      legacy: connection.legacy,
+      authKind: fromHeader ? "header" : kind,
+    },
   };
+}
+
+export async function resolveOwner(token: string, fromHeader = false): Promise<Owner | null> {
+  const result = await resolveOwnerDetailed(token, fromHeader);
+  return result && "owner" in result ? result.owner : null;
+}
+
+async function recordAuthFailure(failure: AuthFailure): Promise<void> {
+  const viewId =
+    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  try {
+    await recordAnonymousEvent("mcp.auth_failed", viewId, {
+      kind: failure.kind,
+      reason: failure.reason,
+    });
+  } catch {
+    /* telemetry never changes the 401 */
+  }
 }
 
 async function logPush(owner: Owner, dims: Record<string, string>): Promise<void> {
@@ -963,7 +1043,9 @@ export async function handleMcpRequest(
     return json({ error: "Method not allowed" }, 405);
   }
 
-  const owner = await resolveOwner(token, authKind === "header");
+  const resolved = await resolveOwnerDetailed(token, authKind === "header");
+  if (resolved && "failure" in resolved) await recordAuthFailure(resolved.failure);
+  const owner = resolved && "owner" in resolved ? resolved.owner : null;
   if (!owner) return json({ error: "Unauthorized" }, 401);
 
   let body: Obj;
