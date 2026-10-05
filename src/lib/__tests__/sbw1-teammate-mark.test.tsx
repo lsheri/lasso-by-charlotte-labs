@@ -91,8 +91,17 @@ describe("SB-W1 teammate marks", () => {
     expect(container.querySelector(".canvas-lab-card")?.classList.contains("canvas-lab-card-teammate")).toBe(true);
     const tag = container.querySelector(".canvas-lab-teammate-tag");
     expect(tag?.textContent).toBe("SR");
+    expect(tag?.getAttribute("role")).toBe("img");
     expect(tag?.getAttribute("aria-label")).toMatch(/^Added by Sam Rivera/);
     expect(tag?.getAttribute("title")).toMatch(/^Added by Sam Rivera/);
+  });
+
+  it("lets the tag receive pointer events so its tooltip can show", async () => {
+    const styles = (await import("@/styles.css?raw")).default as string;
+    const start = styles.indexOf(".canvas-lab-teammate-tag {");
+    expect(start).toBeGreaterThan(-1);
+    const rule = styles.slice(start, styles.indexOf("}", start));
+    expect(rule).toContain("pointer-events: auto");
   });
 
   it("keeps the shadow without a tag when the member name is unavailable", () => {
