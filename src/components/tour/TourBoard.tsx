@@ -155,7 +155,7 @@ export function TourBoard({ register, state, className = "", children, onWorkCar
           const rendered = { ...card, title };
           const interactive = state.act === 4;
           return <article key={item.id} className={`tour-board-item tour-preview-card${outlined.has(item.id) ? " is-target-work" : ""}${selected.has(item.id) ? " is-selected" : ""}${glowing.has(item.id) ? " is-group-glowing" : ""}${state.highlightedTitle === card.title ? " is-source-highlighted" : ""}`} data-tour-layout-id={item.id} data-tour-card={`tour-card-${index}`} data-tour-title={card.title} data-tour-connector-source={grouped.has(item.id) ? item.id : undefined} role={interactive ? "group" : undefined} tabIndex={interactive ? 0 : undefined} style={itemStyle(item)} onClick={interactive ? () => onWorkCardSelect?.(index) : undefined} onKeyDown={interactive ? (event) => onWorkCardKeyDown?.(index, event) : undefined}>
-            {item.id === "primary-0" && state.act === 4 ? <span className="tour-act-two-arrow-target" data-tour-target="2" aria-hidden /> : null}
+            {item.id === "primary-0" && state.act === 4 ? <span className="tour-act-two-arrow-target" data-tour-target="4" aria-hidden /> : null}
             <PreviewCard card={rendered} compact={!card.inSet} />
           </article>;
         }
