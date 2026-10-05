@@ -31,7 +31,7 @@ export type TourLayoutItem = {
   y: number;
   widthBasis: number;
   rotation: number;
-  earliestAct: 1 | 2 | 3 | 4 | 5;
+  earliestAct: TourActId;
 };
 
 /** The sole geometry source for every item on the five-act tour board. */
@@ -85,8 +85,11 @@ export type TourChatLink = {
   cardTitle: string;
 };
 
+/** Act slot ids. Wider than today's five acts so acts can be inserted by id. */
+export type TourActId = 1 | 2 | 3 | 4 | 5 | 6 | 7;
+
 export type TourAct = {
-  id: 1 | 2 | 3 | 4 | 5;
+  id: TourActId;
   captionPointer: string;
   captionTouch: string;
   why: string;
@@ -115,12 +118,12 @@ const COMPANY_FILES = [
   "moodboard.png",
 ] as const;
 
-const DO_LINES = {
+const DO_LINES: Readonly<Partial<Record<TourActId, string>>> = {
   2: "Click one of the outlined work cards.",
   3: "Draw a box around them.",
   4: "Click Ask.",
   5: "Click Keep.",
-} as const;
+};
 
 export const TOUR_CONTEXT_SENTENCE =
   "Grouped work shares context. When you ask a question of this box, Lasso reads these three and nothing else.";
@@ -247,3 +250,8 @@ export const TOUR_CONTENT: Readonly<
     ),
   },
 };
+
+/** Look up an act by its id, never by array position. */
+export function actById(register: Register, id: TourActId): TourAct | undefined {
+  return TOUR_CONTENT[register].acts.find((act) => act.id === id);
+}
