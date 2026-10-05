@@ -38,6 +38,11 @@ import {
 } from "@/hooks/use-clients";
 import { useProfile } from "@/hooks/use-profile";
 import {
+  CONTAINER_COLOURS,
+  containerColourStyle,
+  type ContainerColour,
+} from "@/lib/container-colour";
+import {
   CONTAINER_ACTIONS_COPY as COPY,
   deleteConfirmLine,
   deletedLine,
@@ -46,7 +51,11 @@ import {
 } from "@/lib/container-actions";
 import { vocabFor } from "@/lib/edu-vocab";
 import { containerDepth, eligibleParents, type ContainerRow } from "@/lib/nav-groups";
+import { canManageMembers } from "@/lib/role-access";
+import { bucket } from "@/lib/telemetry-shared";
 import { logEvent } from "@/lib/telemetry";
+import { supabase } from "@/integrations/supabase/client";
+import { rpcOutcome, type RpcStatus } from "@/lib/save-guard";
 
 export type SidebarMenuTarget =
   | {
@@ -56,10 +65,42 @@ export type SidebarMenuTarget =
       kind: "client" | "folder";
       workboards: number;
       folders: number;
+      color: ContainerColour | null;
+      archivedAt: string | null;
     }
   | { type: "workboard"; id: string; name: string; clientId: string | null };
 
-type Mode = null | "rename" | "move" | "delete";
+type Mode = null | "rename" | "move" | "delete" | "colour";
+
+async function setContainerColour(id: string, colour: ContainerColour): Promise<RpcStatus> {
+  const outcome = rpcOutcome(
+    await supabase.rpc("set_container_color", { p_id: id, p_color: colour }),
+    "colored",
+    "That colour was not saved.",
+  );
+  if (!outcome.ok) throw new Error(outcome.message);
+  return outcome.value;
+}
+
+async function archiveContainer(id: string): Promise<RpcStatus> {
+  const outcome = rpcOutcome(
+    await supabase.rpc("archive_container", { p_id: id }),
+    "archived",
+    "That container was not archived.",
+  );
+  if (!outcome.ok) throw new Error(outcome.message);
+  return outcome.value;
+}
+
+async function unarchiveContainer(id: string): Promise<RpcStatus> {
+  const outcome = rpcOutcome(
+    await supabase.rpc("unarchive_container", { p_id: id }),
+    "unarchived",
+    "That container was not brought back.",
+  );
+  if (!outcome.ok) throw new Error(outcome.message);
+  return outcome.value;
+}
 
 /**
  * Unit 4a: one menu per sidebar row. It opens from its own button, which a
@@ -77,6 +118,50 @@ export function SidebarItemMenu({
   onOpenChange: (open: boolean) => void;
 }) {
   const [mode, setMode] = useState<Mode>(null);
+  const { data: profile } = useProfile();
+  const invalidate = useInvalidateClients();
+  const canColour = target.type === "container" && (target.kind === "folder" || canManageMembers(profile));
+
+  async function bringBack(targetRow: Extract<SidebarMenuTarget, { type: "container" }>) {
+    try {
+      await unarchiveContainer(targetRow.id);
+      invalidate();
+      if (profile?.org_id) {
+        const archivedAt = targetRow.archivedAt ? new Date(targetRow.archivedAt).getTime() : Date.now();
+        const days = Math.max(0, Math.floor((Date.now() - archivedAt) / 86_400_000));
+        logEvent("container.unarchived", profile.org_id, {
+          kind: targetRow.kind,
+          days_archived: bucket(days),
+        });
+      }
+      toast.success(COPY.broughtBack(targetRow.name));
+    } catch (error) {
+      toast.error((error as Error).message);
+    }
+  }
+
+  async function archive(targetRow: Extract<SidebarMenuTarget, { type: "container" }>) {
+    try {
+      await archiveContainer(targetRow.id);
+      invalidate();
+      if (profile?.org_id) {
+        logEvent("container.archived", profile.org_id, {
+          kind: targetRow.kind,
+          had_workboards: targetRow.workboards > 0,
+          had_folders: targetRow.folders > 0,
+        });
+      }
+      toast.success(COPY.archived(targetRow.name), {
+        duration: 8_000,
+        action: {
+          label: "Undo",
+          onClick: () => void bringBack({ ...targetRow, archivedAt: new Date().toISOString() }),
+        },
+      });
+    } catch (error) {
+      toast.error((error as Error).message);
+    }
+  }
   return (
     <>
       <DropdownMenu open={open} onOpenChange={onOpenChange}>
@@ -94,6 +179,16 @@ export function SidebarItemMenu({
             <DropdownMenuItem onSelect={() => setMode("rename")}>{COPY.rename}</DropdownMenuItem>
           ) : null}
           <DropdownMenuItem onSelect={() => setMode("move")}>{COPY.moveTo}</DropdownMenuItem>
+          {canColour ? (
+            <DropdownMenuItem onSelect={() => setMode("colour")}>{COPY.colour}</DropdownMenuItem>
+          ) : null}
+          {target.type === "container" ? (
+            <DropdownMenuItem
+              onSelect={() => void (target.archivedAt ? bringBack(target) : archive(target))}
+            >
+              {target.archivedAt ? COPY.bringBack : COPY.archive}
+            </DropdownMenuItem>
+          ) : null}
           {target.type === "container" ? (
             <DropdownMenuItem onSelect={() => setMode("delete")}>{COPY.remove}</DropdownMenuItem>
           ) : null}
@@ -138,6 +233,25 @@ function MenuDialogs({
   const [name, setName] = useState(target.name);
   const [dest, setDest] = useState(parentId ?? "");
   const [pending, setPending] = useState(false);
+
+  async function colour(value: ContainerColour) {
+    if (target.type !== "container" || !orgId) return;
+    setPending(true);
+    try {
+      await setContainerColour(target.id, value);
+      invalidate();
+      logEvent("container.colored", orgId, {
+        kind: target.kind,
+        color: value,
+        from: "menu",
+      });
+      onClose();
+    } catch (error) {
+      toast.error((error as Error).message);
+    } finally {
+      setPending(false);
+    }
+  }
 
   const destinations = useMemo(() => {
     if (target.type === "container") return eligibleParents(rows, target.id);
@@ -247,6 +361,39 @@ function MenuDialogs({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    );
+  }
+
+  if (mode === "colour" && target.type === "container") {
+    return (
+      <Dialog open onOpenChange={close}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{COPY.colourTitle(target.name)}</DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-3 gap-3" role="group" aria-label="Container colours">
+            {CONTAINER_COLOURS.map((value) => (
+              <Button
+                key={value}
+                type="button"
+                variant="outline"
+                disabled={pending}
+                aria-label={value}
+                aria-pressed={target.color === value}
+                onClick={() => void colour(value)}
+                className="justify-start capitalize"
+              >
+                <span
+                  aria-hidden="true"
+                  className="h-3 w-3 rounded-full"
+                  style={{ backgroundColor: containerColourStyle(value).dot }}
+                />
+                {value}
+              </Button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     );
   }
 

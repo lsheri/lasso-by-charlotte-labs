@@ -51,6 +51,11 @@ import {
   partnerNavGroups,
 } from "./nav-config";
 import { engagementDisplayCode, engagementDisplayTitle } from "@/lib/clients";
+import {
+  containerColourStyle,
+  inheritedColour,
+  type ContainerColour,
+} from "@/lib/container-colour";
 
 const linkClass = "nb-nav-item";
 const activeProps = { className: "nb-nav-item-active" };
@@ -355,7 +360,9 @@ export function SidebarNav({
       : undefined;
 
   const [pendingMoves, setPendingMoves] = useState<PendingMoves>({});
-  const rawEngagementList = (engagements ?? []) as unknown as NavEngagement[];
+  const rawEngagementList = ((engagements ?? []) as unknown as NavEngagement[]).filter(
+    (engagement) => !engagement.archived_at,
+  );
   // Unit 3c: the container tree is built from the workspace's own container
   // rows plus workboards. Built from workboard joins alone, a client or folder
   // with nothing in it was in no group and rendered nothing. A guest never
@@ -711,6 +718,7 @@ export function SidebarNav({
                   ) : null}
                 </div>
                   <div className="nb-nav-actions">
+                  <div className="nb-nav-create-tile">
                   <NewEngagementDialog
                     onDone={onNavigate}
                     trigger={
@@ -722,6 +730,7 @@ export function SidebarNav({
                   />
                   <SidebarCreateActions empty={!!engagements && engagements.length === 0} />
 
+                  </div>
                   {visibleItems}
                   </div>
                 </SidebarDragProvider>
@@ -780,6 +789,7 @@ function FolderRows({
         onNavigate={onNavigate}
         newEngagementLabel={newEngagementLabel}
         scopeFor={scopeFor}
+        ancestors={[]}
       />
     ));
 }
@@ -793,6 +803,7 @@ function ContainerShelfRow({
   onNavigate,
   newEngagementLabel,
   scopeFor,
+  ancestors,
 }: {
   node: ContainerNode<NavEngagement>;
   depth: number;
@@ -802,12 +813,15 @@ function ContainerShelfRow({
   onNavigate?: (() => void) | undefined;
   newEngagementLabel: string;
   scopeFor: (id: string) => { tasks: CachedNavTask[]; workId: string | undefined } | undefined;
+  ancestors: readonly { color?: unknown }[];
 }) {
   const canEdit = useCanEditContainers();
   const [menuOpen, setMenuOpen] = useState(false);
   const collapsed = collapsedIds.includes(node.clientId);
   const hasChildren = node.engagements.length > 0 || node.children.length > 0;
   const drag = useSidebarDrag();
+  const colour = inheritedColour(node, ancestors);
+  const colourStyle = colour ? containerColourStyle(colour) : null;
         return (
           <div key={node.clientId} className="nb-tree-child" data-tree-node={node.clientId}>
             <div
@@ -831,6 +845,13 @@ function ContainerShelfRow({
                   : undefined
               }
             >
+               {node.color && colourStyle ? (
+                 <span
+                   aria-hidden="true"
+                   className="h-2 w-2 shrink-0 rounded-full"
+                   style={{ backgroundColor: containerColourStyle(node.color as ContainerColour).dot }}
+                 />
+               ) : null}
                <GraphiteIcon name="folder" size={20} />
               <Link
                 to="/clients/$id"
@@ -865,6 +886,8 @@ function ContainerShelfRow({
                     kind: node.kind,
                     workboards: node.engagements.length,
                     folders: node.children.length,
+                    color: node.color as ContainerColour | null,
+                    archivedAt: node.archived_at,
                   }}
                 />
               ) : null}
@@ -882,7 +905,11 @@ function ContainerShelfRow({
               <p className="px-2 py-1 pl-10 text-sm italic text-muted-foreground" data-tree-depth={depth + 1}>Nothing in here yet</p>
             ) : null}
             {collapsed || !hasChildren ? null : (
-              <div className="nb-tree-branch">
+              <div
+                className="nb-tree-branch"
+                data-container-colour={colour ?? undefined}
+                style={colourStyle ? { "--container-wash": colourStyle.wash } as React.CSSProperties : undefined}
+              >
                 {node.engagements.map((engagement) => (
                   <div key={engagement.id} className="nb-tree-child" data-tree-depth={depth + 1}>
                   <EngagementRow
@@ -904,6 +931,7 @@ function ContainerShelfRow({
                     onNavigate={onNavigate}
                     newEngagementLabel={newEngagementLabel}
                     scopeFor={scopeFor}
+                    ancestors={[node, ...ancestors]}
                   />
                 ))}
               </div>
