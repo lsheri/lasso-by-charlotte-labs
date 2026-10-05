@@ -7,7 +7,7 @@ const mocks = vi.hoisted(() => ({
   claims: { data: null as unknown, error: null as unknown },
   getClaims: vi.fn(),
   rpc: vi.fn(),
-  recordAnonymousEvent: vi.fn(async () => undefined),
+  recordAnonymousEvent: vi.fn(async (..._args: unknown[]) => undefined),
 }));
 
 vi.mock("@/integrations/supabase/client.server", () => ({

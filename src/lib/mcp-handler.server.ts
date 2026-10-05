@@ -9,7 +9,7 @@ import {
   type RejectionReason,
 } from "@/lib/attachment-guard";
 import { workTypeForFile } from "@/lib/work-types";
-import { recordEvent } from "@/lib/telemetry.server";
+import { recordAnonymousEvent, recordEvent } from "@/lib/telemetry.server";
 import { dateLabel } from "@/lib/decisions-shared";
 import { coerceJsonArg, coercePushArgs } from "@/lib/mcp-args";
 import {
