@@ -185,7 +185,8 @@ const LIVE_KEYS_BY_EVENT: Record<string, readonly string[]> = {
   "landing.proof_link_opened": ["step", "target"],
   "mcp.chat_link_attached": ["had_prior_link", "source"],
   "mcp.auth_failed": ["kind", "reason"],
-  "mcp.connection_created": ["kind"],
+  "mcp.connection_created": ["kind", "client"],
+  "mcp.consent_denied": ["client"],
   "mcp.connection_revoked": ["kind", "via"],
   "mcp.connection_revealed": ["kind"],
 };

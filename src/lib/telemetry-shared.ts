@@ -115,6 +115,8 @@ export type TelemetryEvent =
   | "mcp.auth_failed"
   /** M2: a named connection was made in Settings. Kind only. */
   | "mcp.connection_created"
+  /** M3-C3a: a person declined an AI tool sign-in. Client family only. */
+  | "mcp.consent_denied"
   /** M2: a connection was disconnected. Kind and where from. */
   | "mcp.connection_revoked"
   /** M2: a connection link was shown again. Kind only. */

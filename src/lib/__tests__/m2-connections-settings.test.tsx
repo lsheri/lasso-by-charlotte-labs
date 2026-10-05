@@ -219,12 +219,31 @@ describe("M2 connections settings", () => {
     expect(screen.queryByText(/generate a new url/i)).toBeNull();
   });
 
-  it("7. hides signin rows while the flag is false", async () => {
-    expect(SHOW_SIGNIN_CONNECTIONS).toBe(false);
-    rows = [row({ id: "s1", kind: "signin", client_name: "Claude Desktop", label: "Signin" })];
+  it("7. shows signin rows now the flag is on", async () => {
+    expect(SHOW_SIGNIN_CONNECTIONS).toBe(true);
+    rows = [row({ id: "s1", kind: "signin", client_name: "Claude", label: "Claude", key_last4: null, can_reveal: false })];
     renderCard();
-    await screen.findByText("Create link");
-    expect(screen.queryByText(/Signed in from/)).toBeNull();
-    expect(screen.queryAllByTestId("connection-row")).toHaveLength(0);
+    expect(await screen.findByText("Signed in from Claude")).toBeTruthy();
+    expect(screen.queryAllByTestId("connection-row")).toHaveLength(1);
+    expect(screen.queryByText("Reveal")).toBeNull();
+    expect(screen.queryByText(/····/)).toBeNull();
+  });
+
+  it("7b. disconnecting a signin row uses the sign-in sentence and logs the revoke", async () => {
+    rows = [row({ id: "s1", kind: "signin", client_name: "Claude", label: "Claude", key_last4: null, can_reveal: false })];
+    logEvent.mockClear();
+    renderCard();
+    fireEvent.click(await screen.findByText("Disconnect"));
+    expect(
+      await screen.findByText(
+        "Claude stops being able to add or read work right away. To use it again, choose Connect in Claude.",
+      ),
+    ).toBeTruthy();
+    const buttons = screen.getAllByRole("button", { name: "Disconnect" });
+    fireEvent.click(buttons[buttons.length - 1] as HTMLElement);
+    await waitFor(() => expect(revoke).toHaveBeenCalledWith({ data: { id: "s1" } }));
+    await waitFor(() =>
+      expect(logEvent).toHaveBeenCalledWith("mcp.connection_revoked", "o1", { kind: "signin", via: "settings" }),
+    );
   });
 });

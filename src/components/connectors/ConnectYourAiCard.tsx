@@ -35,10 +35,10 @@ import {
 import { logEvent } from "@/lib/telemetry";
 
 /**
- * Sign-in connections arrive in the next unit. While this is false they are
- * filtered out of the list; flipping it is the whole switch.
+ * Sign-in connections now show in the list beside link connections.
+ * Setting this back to false filters them out again; it is the whole switch.
  */
-export const SHOW_SIGNIN_CONNECTIONS = false;
+export const SHOW_SIGNIN_CONNECTIONS = true;
 
 export const CONNECTIONS_KEY = ["mcp-connections"] as const;
 
@@ -58,6 +58,8 @@ export const AI_TOOLS_COPY = {
   limitError: "You have 25 connections. Disconnect one first.",
   disconnectBody:
     "The tool using this link stops being able to add work right away. You can create a new one any time.",
+  disconnectSigninBody: (name: string) =>
+    `${name} stops being able to add or read work right away. To use it again, choose Connect in ${name}.`,
 } as const;
 
 const SETUP_INSTRUCTIONS = MCP_VENDORS.map(
@@ -353,7 +355,7 @@ export function ConnectionRowView({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{`Disconnect ${name}?`}</AlertDialogTitle>
-            <AlertDialogDescription>{AI_TOOLS_COPY.disconnectBody}</AlertDialogDescription>
+            <AlertDialogDescription>{isSignin ? AI_TOOLS_COPY.disconnectSigninBody(name) : AI_TOOLS_COPY.disconnectBody}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
