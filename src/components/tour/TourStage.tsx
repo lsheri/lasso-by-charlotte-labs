@@ -23,6 +23,23 @@ type TourStageProps = {
 
 type ArrowPath = { width: number; height: number; line: string; headA: string; headB: string };
 
+type RectLike = Pick<DOMRect, "left" | "top" | "right" | "bottom" | "width" | "height">;
+
+/** Gap kept between the arrow tip and a target it must not cover. */
+export const ARROW_EDGE_GAP = 8;
+
+/**
+ * Where the arrow tip lands. Acts 1 and 2 point at a control with text on it,
+ * so the tip stops just outside the target's left edge instead of its centre.
+ * Every later act keeps its original centre aim.
+ */
+export function arrowEnd(activeAct: number, _from: RectLike, to: RectLike, base: RectLike): { x: number; y: number } {
+  if (activeAct <= 2) {
+    return { x: to.left - base.left - ARROW_EDGE_GAP, y: to.top - base.top + to.height / 2 };
+  }
+  return { x: to.left - base.left + to.width / 2, y: to.top - base.top + Math.min(to.height / 2, 22) };
+}
+
 function TourInstructionArrow({ stage, activeAct }: { stage: React.RefObject<HTMLElement | null>; activeAct: number }) {
   const [path, setPath] = useState<ArrowPath | null>(null);
 
@@ -42,8 +59,9 @@ function TourInstructionArrow({ stage, activeAct }: { stage: React.RefObject<HTM
         const to = target.getBoundingClientRect();
         const sx = Math.min(from.right - base.left + 18, base.width - 28);
         const sy = from.bottom - base.top + 4;
-        const ex = to.left - base.left + to.width / 2;
-        const ey = to.top - base.top + Math.min(to.height / 2, 22);
+        const end = arrowEnd(activeAct, from, to, base);
+        const ex = end.x;
+        const ey = end.y;
         const bend = Math.max(28, Math.abs(ey - sy) * 0.42);
         const line = `M ${sx} ${sy} C ${sx + 10} ${sy + bend}, ${ex - 18} ${ey - bend}, ${ex} ${ey}`;
         setPath({
