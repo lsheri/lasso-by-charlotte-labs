@@ -25,8 +25,8 @@ export type TourBoardCopy = {
 };
 
 export type TourLayoutItem = {
-  id: `primary-${0 | 1 | 2 | 3 | 4}` | `chat-${0 | 1 | 2 | 3}` | "artifact" | "whiteboard" | "deck" | "answer";
-  kind: "primary" | "chat" | "artifact" | "image" | "answer";
+  id: `primary-${0 | 1 | 2 | 3 | 4}` | `chat-${0 | 1 | 2 | 3}` | "artifact" | "whiteboard" | "deck" | "answer" | "deliverable";
+  kind: "primary" | "chat" | "artifact" | "image" | "answer" | "deliverable";
   x: number;
   y: number;
   widthBasis: number;
@@ -49,6 +49,7 @@ export const TOUR_BOARD_LAYOUT: readonly TourLayoutItem[] = [
   { id: "artifact", kind: "artifact", x: 84.5, y: 66, widthBasis: 13, rotation: 0.4, earliestAct: 3 },
   { id: "whiteboard", kind: "image", x: 5, y: 78.5, widthBasis: 18, rotation: -0.4, earliestAct: 3 },
   { id: "deck", kind: "image", x: 72, y: 84, widthBasis: 20, rotation: 0.3, earliestAct: 7 },
+  { id: "deliverable", kind: "deliverable", x: 31.5, y: 80, widthBasis: 25, rotation: -0.3, earliestAct: 7 },
 ] as const;
 
 export const TOUR_AMBIENT_CARDS: readonly TourAmbientCard[] = [
@@ -107,6 +108,11 @@ export type TourConversationList = {
   arrivedLabel: string;
 };
 
+export type TourDeliverable = {
+  title: string;
+  note: string;
+};
+
 export type TourAct = {
   id: TourActId;
   captionPointer: string;
@@ -122,6 +128,7 @@ export type TourAct = {
   answer?: readonly TourClaim[];
   chatLink?: TourChatLink;
   closingLine?: string;
+  deliverable?: TourDeliverable;
   primaryActionLabel?: string;
 };
 
@@ -143,7 +150,7 @@ const DO_LINES = {
   4: "Click one of the outlined work cards.",
   5: "Draw a box around them.",
   6: "Click Ask.",
-  7: "Click Keep.",
+  7: "Keep it. Now the answer lives next to what it came from.",
 } as const satisfies Partial<Record<TourActId, string>>;
 
 export const TOUR_CONTEXT_SENTENCE =
@@ -165,6 +172,11 @@ export const TOUR_PUSHED_CHAT: TourPushedChat = {
 export const TOUR_CONVERSATION_LIST: TourConversationList = {
   heading: "All AI Conversations",
   arrivedLabel: "Just arrived",
+};
+
+export const TOUR_DELIVERABLE: TourDeliverable = {
+  title: "Client launch note",
+  note: "Every line in here can show where it came from.",
 };
 
 const CLOSING_LINE = "That is the whole thing. Everything else is more of it.";
@@ -237,6 +249,7 @@ function acts(
       captionTouch: DO_LINES[7],
       why: "The answer stays on the board with links back to the chat and the files behind it, so you can open the original months later.",
       closingLine: CLOSING_LINE,
+      deliverable: TOUR_DELIVERABLE,
       primaryActionLabel: START_LABEL,
     },
   ];
