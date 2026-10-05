@@ -283,7 +283,7 @@ export function LabCard({
         </div>
       )}
       {teammateMark?.initials && teammateTooltip ? (
-        <span className="canvas-lab-teammate-tag" title={teammateTooltip} aria-label={teammateTooltip}>
+        <span className="canvas-lab-teammate-tag" role="img" title={teammateTooltip} aria-label={teammateTooltip}>
           <svg viewBox="0 0 34 24" fill="none" aria-hidden="true">
             <path d="M5.2 12.7C4.4 6.3 10.1 2.8 17.4 3.4c7.4.6 11.8 4.7 10.7 10.2-1 5.2-7.4 7.8-14.3 6.5C7.4 18.9 3.6 15 5.2 12.7Zm22.5 1.7 4 4.2" />
           </svg>
