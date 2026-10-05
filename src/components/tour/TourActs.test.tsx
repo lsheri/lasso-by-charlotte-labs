@@ -87,7 +87,7 @@ describe("tour acts one to three", () => {
     render(<TourActOne register="company" onComplete={done} />);
     expect(screen.queryByLabelText("AI conversation to bring in")).toBeNull();
     const beforeIds = Array.from(document.querySelectorAll<HTMLElement>("[data-tour-card]"), (card) => card.dataset["tourCard"]);
-    expect(beforeIds).toEqual(["tour-card-0", "tour-card-1", "tour-card-3", "tour-card-4"]);
+    expect(beforeIds).toEqual(["tour-card-0", "tour-card-1", "tour-card-3", "tour-card-4", "ambient-0", "ambient-1", "ambient-2", "ambient-3"]);
     expect(screen.getByText("Fall launch plan v3")).toBeTruthy();
     expect(screen.queryByText(TOUR_PUSHED_CHAT.title)).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Add work" }));
