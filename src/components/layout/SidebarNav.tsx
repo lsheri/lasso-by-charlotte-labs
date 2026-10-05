@@ -845,14 +845,12 @@ function ContainerShelfRow({
                   : undefined
               }
             >
-               {node.color && colourStyle ? (
-                 <span
-                   aria-hidden="true"
-                   className="h-2 w-2 shrink-0 rounded-full"
-                   style={{ backgroundColor: containerColourStyle(node.color as ContainerColour).dot }}
-                 />
-               ) : null}
-               <GraphiteIcon name="folder" size={20} />
+              <span
+                className="flex shrink-0"
+                style={colourStyle ? { color: colourStyle.dot } : undefined}
+              >
+                <GraphiteIcon name="folder" size={20} />
+              </span>
               <Link
                 to="/clients/$id"
                 params={{ id: node.clientId }}
