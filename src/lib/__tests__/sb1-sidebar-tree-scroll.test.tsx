@@ -157,6 +157,23 @@ describe("SB1 tree scroller and standing separation", () => {
     expect(screen.getByText("Title current-board")).toBeTruthy();
   });
 
+  it("tints parent and child folder glyphs with the inherited container colour", () => {
+    mocks.clientRows = [
+      { id: "blue-client", name: "Blue client", kind: "client", parent_id: null, quick_folder: false, color: "blue", archived_at: null },
+      { id: "blue-child", name: "Blue child", kind: "folder", parent_id: "blue-client", quick_folder: false, color: null, archived_at: null },
+    ];
+    const { container } = render(<SidebarNav />);
+    const clientRow = container.querySelector('[data-tree-node="blue-client"] > .nb-nav-shelf');
+    const childRow = container.querySelector('[data-tree-node="blue-child"] > .nb-nav-shelf');
+    const clientGlyph = clientRow?.querySelector(':scope > span.flex.shrink-0');
+    const childGlyph = childRow?.querySelector(':scope > span.flex.shrink-0');
+    expect(clientRow).not.toBeNull();
+    expect(childRow).not.toBeNull();
+    expect(clientRow?.querySelector(".rounded-full")).toBeNull();
+    expect(clientGlyph?.getAttribute("style")).toBe("color: var(--nb-region-blue-vivid);");
+    expect(childGlyph?.getAttribute("style")).toBe("color: var(--nb-region-blue-vivid);");
+  });
+
   it("keeps the separation when the tree is empty", () => {
     mocks.engagements = [];
     const { container } = render(<SidebarNav />);
