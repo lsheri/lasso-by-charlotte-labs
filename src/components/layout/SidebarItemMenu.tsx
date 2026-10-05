@@ -68,13 +68,19 @@ export type SidebarMenuTarget =
       color?: ContainerColour | null;
       archivedAt?: string | null;
     }
-  | { type: "workboard"; id: string; name: string; clientId: string | null };
+  | {
+      type: "workboard";
+      id: string;
+      name: string;
+      clientId: string | null;
+      archivedAt?: string | null;
+    };
 
 type Mode = null | "rename" | "move" | "delete" | "colour";
 
-async function setContainerColour(id: string, colour: ContainerColour): Promise<RpcStatus> {
+async function setContainerColour(id: string, colour: ContainerColour | null): Promise<RpcStatus> {
   const outcome = rpcOutcome(
-    await supabase.rpc("set_container_color", { p_id: id, p_color: colour }),
+    await supabase.rpc("set_container_color", { p_id: id, p_color: colour as string }),
     "colored",
     "That colour was not saved.",
   );
@@ -122,7 +128,7 @@ export function SidebarItemMenu({
   const invalidate = useInvalidateClients();
   const canColour = target.type === "container" && (target.kind === "folder" || canManageMembers(profile));
 
-  async function bringBack(targetRow: Extract<SidebarMenuTarget, { type: "container" }>) {
+  async function bringBack(targetRow: SidebarMenuTarget) {
     try {
       await unarchiveContainer(targetRow.id);
       invalidate();
@@ -130,7 +136,7 @@ export function SidebarItemMenu({
         const archivedAt = targetRow.archivedAt ? new Date(targetRow.archivedAt).getTime() : Date.now();
         const days = Math.max(0, Math.floor((Date.now() - archivedAt) / 86_400_000));
         logEvent("container.unarchived", profile.org_id, {
-          kind: targetRow.kind,
+          kind: targetRow.type === "workboard" ? "workboard" : targetRow.kind,
           days_archived: bucket(days),
         });
       }
@@ -140,15 +146,15 @@ export function SidebarItemMenu({
     }
   }
 
-  async function archive(targetRow: Extract<SidebarMenuTarget, { type: "container" }>) {
+  async function archive(targetRow: SidebarMenuTarget) {
     try {
       await archiveContainer(targetRow.id);
       invalidate();
       if (profile?.org_id) {
         logEvent("container.archived", profile.org_id, {
-          kind: targetRow.kind,
-          had_workboards: targetRow.workboards > 0,
-          had_folders: targetRow.folders > 0,
+          kind: targetRow.type === "workboard" ? "workboard" : targetRow.kind,
+          had_workboards: targetRow.type === "container" && targetRow.workboards > 0,
+          had_folders: targetRow.type === "container" && targetRow.folders > 0,
         });
       }
       toast.success(COPY.archived(targetRow.name), {
@@ -188,7 +194,9 @@ export function SidebarItemMenu({
             >
               {target.archivedAt ? COPY.bringBack : COPY.archive}
             </DropdownMenuItem>
-          ) : null}
+          ) : (
+            <DropdownMenuItem onSelect={() => void archive(target)}>{COPY.archive}</DropdownMenuItem>
+          )}
           {target.type === "container" ? (
             <DropdownMenuItem onSelect={() => setMode("delete")}>{COPY.remove}</DropdownMenuItem>
           ) : null}
@@ -234,7 +242,7 @@ function MenuDialogs({
   const [dest, setDest] = useState(parentId ?? "");
   const [pending, setPending] = useState(false);
 
-  async function colour(value: ContainerColour) {
+  async function colour(value: ContainerColour | null) {
     if (target.type !== "container" || !orgId) return;
     setPending(true);
     try {
@@ -242,7 +250,7 @@ function MenuDialogs({
       invalidate();
       logEvent("container.colored", orgId, {
         kind: target.kind,
-        color: value,
+        color: value ?? "none",
         from: "menu",
       });
       onClose();
@@ -391,6 +399,18 @@ function MenuDialogs({
                 {value}
               </Button>
             ))}
+            <Button
+              type="button"
+              variant="outline"
+              disabled={pending}
+              aria-label={COPY.noColour}
+              aria-pressed={target.color == null}
+              onClick={() => void colour(null)}
+              className="justify-start"
+            >
+              <span aria-hidden="true" className="h-3 w-3 rounded-full border border-current" />
+              {COPY.noColour}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

@@ -197,6 +197,7 @@ function EngagementRow({
               id: engagement.id,
               name: engagementDisplayTitle(engagement),
               clientId: engagement.clients?.id ?? null,
+              archivedAt: engagement.archived_at ?? null,
             }}
           />
         </div>
