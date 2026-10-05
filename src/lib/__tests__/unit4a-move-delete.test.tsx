@@ -151,7 +151,7 @@ describe("unit 4a status replies", () => {
 describe("unit 4a keyboard path and events", () => {
   it("offers six colours plus None and clears a container colour", async () => {
     mocks.rpc.mockResolvedValue({ data: { status: "colored" }, error: null });
-    render(<Harness target={{ ...folder, color: undefined }} />);
+    render(<Harness target={folder} />);
     const trigger = screen.getByRole("button", { name: "More actions for Folder One" });
     trigger.focus();
     fireEvent.keyDown(trigger, { key: "Enter" });

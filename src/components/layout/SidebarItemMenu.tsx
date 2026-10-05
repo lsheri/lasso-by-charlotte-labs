@@ -128,7 +128,7 @@ export function SidebarItemMenu({
   const invalidate = useInvalidateClients();
   const canColour = target.type === "container" && (target.kind === "folder" || canManageMembers(profile));
 
-  async function bringBack(targetRow: Extract<SidebarMenuTarget, { type: "container" }>) {
+  async function bringBack(targetRow: SidebarMenuTarget) {
     try {
       await unarchiveContainer(targetRow.id);
       invalidate();
@@ -136,7 +136,7 @@ export function SidebarItemMenu({
         const archivedAt = targetRow.archivedAt ? new Date(targetRow.archivedAt).getTime() : Date.now();
         const days = Math.max(0, Math.floor((Date.now() - archivedAt) / 86_400_000));
         logEvent("container.unarchived", profile.org_id, {
-          kind: targetRow.kind,
+          kind: targetRow.type === "workboard" ? "workboard" : targetRow.kind,
           days_archived: bucket(days),
         });
       }
@@ -161,10 +161,7 @@ export function SidebarItemMenu({
         duration: 8_000,
         action: {
           label: "Undo",
-          onClick: () =>
-            void (targetRow.type === "container"
-              ? bringBack({ ...targetRow, archivedAt: new Date().toISOString() })
-              : unarchiveContainer(targetRow.id).then(invalidate).catch((error: Error) => toast.error(error.message))),
+          onClick: () => void bringBack({ ...targetRow, archivedAt: new Date().toISOString() }),
         },
       });
     } catch (error) {
