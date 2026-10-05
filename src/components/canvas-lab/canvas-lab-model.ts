@@ -109,6 +109,8 @@ export type LabNode = {
   /** Kept answers only: when the row was saved, and who asked. */
   createdAt?: string | null;
   authorName?: string;
+  /** The person who authored a durable board-native card. */
+  authorProfileId?: string;
 
 
   x: number;
@@ -1106,6 +1108,7 @@ export function applyDurableBoard(base: { frames: LabFrame[]; nodes: LabNode[] }
         height: durable.h > 0 ? durable.h : CARD_HEIGHT,
         durableId: durable.id,
         durableVersion: durable.version,
+        authorProfileId: durable.authorProfileId,
         linkedItemRemovedAt: durable.linkedItemRemovedAt ?? null,
       });
       continue;
@@ -1122,6 +1125,7 @@ export function applyDurableBoard(base: { frames: LabFrame[]; nodes: LabNode[] }
         ownership: durable.authorProfileId === board.viewerProfileId ? "draft" : "teammate",
         ...(durable.judgmentType ? { judgmentType: durable.judgmentType as LabJudgmentType } : {}),
         local: durable.authorProfileId === board.viewerProfileId,
+        authorProfileId: durable.authorProfileId,
         durableId: durable.id,
         durableVersion: durable.version,
         linkedItemRemovedAt: durable.linkedItemRemovedAt ?? null,

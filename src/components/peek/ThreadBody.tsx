@@ -275,6 +275,7 @@ export function ThreadBody({
 
   const segments = useMemo(() => groupToolRuns(turns ?? []), [turns]);
   const [openRuns, setOpenRuns] = useState<ReadonlySet<string>>(() => new Set());
+  const [closedForcedRuns, setClosedForcedRuns] = useState<{ signature: string; keys: ReadonlySet<string> }>(() => ({ signature: "", keys: new Set() }));
   /** A focus jump or an active finding on a tool step opens its run. */
   const forcedRuns = useMemo(() => {
     const forced = new Set<string>();
@@ -287,12 +288,19 @@ export function ThreadBody({
     }
     return forced;
   }, [segments, focusedTurn, activeMarkId, marks]);
-  function toggleRun(key: string, count: number, open: boolean) {
+  const forcedSignature = `${focusedTurn?.id ?? ""}:${activeMarkId ?? ""}`;
+  function toggleRun(key: string, count: number, open: boolean, forced: boolean) {
     setOpenRuns((current) => {
       const next = new Set(current);
       if (open) next.delete(key);
       else next.add(key);
       return next;
+    });
+    setClosedForcedRuns((current) => {
+      const next = current.signature === forcedSignature ? new Set(current.keys) : new Set<string>();
+      if (open && forced) next.add(key);
+      else next.delete(key);
+      return { signature: forcedSignature, keys: next };
     });
     if (!open) emitClientEvent("work.tool_steps_opened", { steps_band: stepsBand(count) });
   }
@@ -345,7 +353,9 @@ export function ThreadBody({
       <div className="space-y-5">
         {segments.map((segment) => {
           if (segment.kind === "turn") return renderTurn(segment.turn);
-          const open = openRuns.has(segment.key) || forcedRuns.has(segment.key);
+          const forced = forcedRuns.has(segment.key);
+          const personClosedForced = closedForcedRuns.signature === forcedSignature && closedForcedRuns.keys.has(segment.key);
+          const open = openRuns.has(segment.key) || (forced && !personClosedForced);
           const label = toolStepsLabel(segment.turns.length);
           return (
             <div key={segment.key} data-tool-run={segment.key} data-open={open ? "true" : "false"}>
@@ -354,7 +364,7 @@ export function ThreadBody({
                 aria-expanded={open}
                 data-testid="tool-steps-toggle"
                 className="nb-type-small text-muted-foreground underline-offset-2 hover:underline"
-                onClick={() => toggleRun(segment.key, segment.turns.length, open)}
+                onClick={() => toggleRun(segment.key, segment.turns.length, open, forced)}
               >
                 {label} · {open ? "Hide" : "Show"}
               </button>
@@ -434,8 +444,8 @@ export function ThreadBody({
                       ) : null}
                     </span>
                     <span className="micro-label">
-                      Turn {turn.turn_no} · {turn.role}
-                      {turn.model ? ` · ${turn.model}` : model ? ` · ${model}` : ""}
+                      Turn {turn.turn_no} · {turn.role === "tool" ? "tool step" : turn.role}
+                      {turn.role !== "tool" ? (turn.model ? ` · ${turn.model}` : model ? ` · ${model}` : "") : ""}
                       {turnTime(turn.ts) ? ` · ${turnTime(turn.ts)}` : ""}
                     </span>
                   </div>

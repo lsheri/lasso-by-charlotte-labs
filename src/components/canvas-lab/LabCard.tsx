@@ -4,6 +4,8 @@ import { Paperclip } from "lucide-react";
 import { LabCardMenu } from "@/components/canvas-lab/LabCardMenu";
 import { LabPaper } from "@/components/canvas-lab/LabPaper";
 import { CHAT_LINK_COPY, ChatLinkDialog } from "@/components/canvas-lab/ChatLinkDialog";
+import { brandLabel } from "@/components/connectors/BrandLogo";
+import { sourceBrandKey } from "@/components/work/SourceMark";
 import { pastedChatUrl } from "@/lib/chat-url";
 import { ReferenceFileCard, referenceMatchLine } from "@/components/canvas-lab/ReferenceFileCard";
 import { GraphiteIcon } from "@/components/notebook/icons";
@@ -20,7 +22,10 @@ import {
 } from "@/lib/canvas-drag";
 import { cardSizeTier, type LabAnchor, type LabNode, type LabResizeCorner } from "@/components/canvas-lab/canvas-lab-model";
 import type { WorkItemRow } from "@/lib/work-types";
+import { formatDate } from "@/lib/work-types";
+import { resolveWorkDate } from "@/lib/work-order";
 import type { WorkboardCardPreview, WorkboardFilePreview } from "@/lib/workboard-card-preview.shared";
+import type { TeammateMark } from "@/lib/teammate-mark";
 
 /**
  * One object on the board. Imported work uses the shared Ledger face.
@@ -72,6 +77,7 @@ export function LabCard({
   bundleToggleLabel,
   onBundleToggle,
   onSaveChatLink,
+  teammateMark,
 }: {
   node: LabNode;
   item?: WorkItemRow | undefined;
@@ -122,6 +128,8 @@ export function LabCard({
   onBundleToggle?: (() => void) | undefined;
   /** CU1: only the live board passes this, and only for the item's owner. */
   onSaveChatLink?: ((url: string | null) => Promise<void>) | undefined;
+  /** Live signed-in board only: provenance for a card added by another member. */
+  teammateMark?: TeammateMark | null;
 }) {
   const cardRef = useRef<HTMLDivElement | null>(null);
   const paperRef = useRef<HTMLDivElement | null>(null);
@@ -199,6 +207,11 @@ export function LabCard({
   }
 
   const matchLine = item && !isReferenceItem(item) ? referenceMatchLine(item) : null;
+  const teammateTooltip = teammateMark?.name
+    ? item
+      ? `Added by ${teammateMark.name} from ${brandLabel(sourceBrandKey(item))}, ${formatDate(resolveWorkDate(item).iso)}`
+      : `Added by ${teammateMark.name}`
+    : null;
   const anchors: LabAnchor[] = ["top", "right", "bottom", "left"];
   return (
     <div
@@ -224,7 +237,7 @@ export function LabCard({
       }}
       style={{ left: node.x, top: node.y, width: node.width, height: node.height, zIndex: stackZ } as React.CSSProperties}
       data-size={cardSizeTier(node)}
-      className="canvas-lab-card group absolute text-left outline-none"
+      className={`canvas-lab-card group absolute text-left outline-none${teammateMark ? " canvas-lab-card-teammate" : ""}`}
     >
       <div ref={paperRef} data-selected={selected} data-marquee-preview={previewSelected} data-focused={focused} data-connect-source={connectSourceAnchor !== null} className="canvas-lab-card-paper h-full w-full overflow-hidden">
         {item && isReferenceItem(item) ? <ReferenceFileCard item={item} onOpen={() => onOpen(cardRef.current?.getBoundingClientRect())} /> : item ? (
@@ -269,6 +282,14 @@ export function LabCard({
           </Button>
         </div>
       )}
+      {teammateMark?.initials && teammateTooltip ? (
+        <span className="canvas-lab-teammate-tag" title={teammateTooltip} aria-label={teammateTooltip}>
+          <svg viewBox="0 0 34 24" fill="none" aria-hidden="true">
+            <path d="M5.2 12.7C4.4 6.3 10.1 2.8 17.4 3.4c7.4.6 11.8 4.7 10.7 10.2-1 5.2-7.4 7.8-14.3 6.5C7.4 18.9 3.6 15 5.2 12.7Zm22.5 1.7 4 4.2" />
+          </svg>
+          <span>{teammateMark.initials}</span>
+        </span>
+      ) : null}
       {canSetChatLink && onSaveChatLink ? <ChatLinkDialog open={chatLinkOpen} onOpenChange={setChatLinkOpen} current={pastedLink} onSave={onSaveChatLink} /> : null}
       {canResize && focused && !readOnly ? (["nw", "ne", "se", "sw"] as LabResizeCorner[]).map((corner) => <button key={corner} type="button" className="canvas-lab-resize-handle" data-corner={corner} aria-label={`Resize ${node.title} from ${corner}`} onDoubleClick={(event) => { event.stopPropagation(); onFit(); }} onPointerDown={(event) => onResizeStart(corner, event)} onKeyDown={(event) => onResizeKeyDown(corner, event)} onKeyUp={onResizeKeyUp} />) : null}
       {readOnly ? null : anchors.map((side) => <button key={side} type="button" className="canvas-lab-anchor" data-node-id={node.id} data-side={side} data-active={connectSourceAnchor === side} aria-label={`Connect from ${side}`} onPointerDown={(event) => { anchorDownRef.current = { x: event.clientX, y: event.clientY }; onAnchorPointerDown(side, event); }} onClick={(event) => { event.stopPropagation(); const down = anchorDownRef.current; anchorDownRef.current = null; if (down && Math.hypot(event.clientX - down.x, event.clientY - down.y) >= 6) return; onAnchorActivate(side); }} />)}

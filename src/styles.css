@@ -1656,6 +1656,38 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 }
 .canvas-lab-card-paper[data-selected="true"]::before { opacity: 1; }
 .canvas-lab-card-paper[data-marquee-preview="true"]::before { opacity: .5; }
+.canvas-lab-card-teammate::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  transform: translate(4px, 5px);
+  border-radius: var(--radius-card);
+  background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--nb-graphite) 24%, transparent) 0 1px, transparent 1px 4px);
+  pointer-events: none;
+}
+.canvas-lab-card-teammate > .canvas-lab-card-paper { position: relative; z-index: 1; }
+.canvas-lab-teammate-tag {
+  position: absolute;
+  left: -10px;
+  bottom: -12px;
+  z-index: 10;
+  display: inline-flex;
+  width: 30px;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-card);
+  background: var(--nb-paper);
+  color: var(--nb-graphite);
+  font-family: var(--font-hand);
+  font-size: 15px;
+  line-height: 1;
+  pointer-events: none;
+}
+.canvas-lab-teammate-tag svg { position: absolute; inset: -1px -2px; width: 34px; height: 24px; overflow: visible; }
+.canvas-lab-teammate-tag path { fill: none; stroke: var(--nb-graphite); stroke-width: 1.2px; stroke-linecap: round; stroke-linejoin: round; }
+.canvas-lab-teammate-tag > span { position: relative; z-index: 1; }
 .canvas-lab-context-coronas { z-index: 0; }
 @media (prefers-reduced-motion: reduce) {
   .canvas-lab-card-paper::before { transition: none; }
