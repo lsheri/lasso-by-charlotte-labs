@@ -6831,7 +6831,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   .tour-shell[data-act="7"] .tour-instruction-band.is-complete .tour-do-line { animation: none; }
 }
 @media (max-width: 767px) {
-  .tour-board-item.tour-deliverable { top: 38% !important; left: 4% !important; width: 92% !important; padding: 6px 8px; gap: 3px; }
+  .tour-board-item.tour-deliverable { top: 44% !important; left: 4% !important; width: 92% !important; padding: 6px 8px; gap: 3px; }
   .tour-deliverable > header strong { font-size: 16px; }
   .tour-deliverable-line { font-size: 9px; }
   .tour-deliverable-note { font-size: 13px; }
