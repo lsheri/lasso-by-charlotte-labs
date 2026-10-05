@@ -24,6 +24,7 @@ export type NavEngagement = {
   code: string;
   title: string;
   client_label?: string | null;
+  archived_at?: string | null;
   clients?: NavClientRef;
 };
 
@@ -146,6 +147,8 @@ export type ContainerNode<T extends NavEngagement = NavEngagement> = {
   name: string;
   kind: "client" | "folder";
   depth: number;
+  color: string | null;
+  archived_at: string | null;
   engagements: T[];
   children: ContainerNode<T>[];
 };
@@ -156,6 +159,8 @@ export type ContainerRow = {
   kind: "client" | "folder";
   parent_id: string | null;
   quick_folder?: boolean;
+  color?: string | null;
+  archived_at?: string | null;
 };
 
 function byName(a: { name: string }, b: { name: string }): number {
@@ -173,7 +178,19 @@ export function buildContainerTree<T extends NavEngagement>(
   // Rule 6, purity: no React, no query, no read of the clients table.
   // Rule 4: quick folders and engagements with no client row are not part of
   // this tree; groupEngagementsByClient keeps owning those.
-  const containers = rows.filter((row) => row.quick_folder !== true);
+  const candidates = rows.filter((row) => row.quick_folder !== true);
+  const candidateById = new Map(candidates.map((row) => [row.id, row]));
+  const hiddenByArchive = (row: ContainerRow): boolean => {
+    const seen = new Set<string>();
+    let cursor: ContainerRow | undefined = row;
+    while (cursor && !seen.has(cursor.id)) {
+      if (cursor.archived_at) return true;
+      seen.add(cursor.id);
+      cursor = cursor.parent_id ? candidateById.get(cursor.parent_id) : undefined;
+    }
+    return false;
+  };
+  const containers = candidates.filter((row) => !hiddenByArchive(row));
   const byId = new Map(containers.map((row) => [row.id, row]));
 
   // Rule 4: engagements attach to their own container by clients.id, by code.
@@ -214,6 +231,8 @@ export function buildContainerTree<T extends NavEngagement>(
       name: row.name,
       kind: row.kind,
       depth,
+      color: row.color ?? null,
+      archived_at: row.archived_at ?? null,
       engagements: [...(workFor.get(row.id) ?? [])].sort(byCode),
       children: [],
     };
@@ -445,7 +464,15 @@ export function mergeContainerRows<T extends NavEngagement>(
   for (const row of containerRowsFromEngagements(engagements)) byId.set(row.id, row);
   for (const row of rows) {
     if (row.quick_folder === true) continue;
-    byId.set(row.id, { id: row.id, name: row.name, kind: row.kind ?? "client", parent_id: row.parent_id ?? null, quick_folder: false });
+    byId.set(row.id, {
+      id: row.id,
+      name: row.name,
+      kind: row.kind ?? "client",
+      parent_id: row.parent_id ?? null,
+      quick_folder: false,
+      color: row.color ?? null,
+      archived_at: row.archived_at ?? null,
+    });
   }
   return [...byId.values()].sort(byName);
 }

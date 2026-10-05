@@ -127,10 +127,34 @@ describe("SB1 tree scroller and standing separation", () => {
     expect(actions.textContent).toContain("New folder");
     expect(actions.textContent).not.toContain("Past work");
     expect(actions.querySelectorAll("button")).toHaveLength(3);
+    const tile = actions.querySelector(".nb-nav-create-tile");
+    expect(tile).not.toBeNull();
+    expect(tile?.querySelectorAll("button")).toHaveLength(3);
+    expect(tile?.textContent).toContain("New workboard");
+    expect(tile?.textContent).toContain("New client");
+    expect(tile?.textContent).toContain("New folder");
     const lookback = screen.getByText("Look back").parentElement!;
     const rows = [...lookback.querySelectorAll("a")];
     expect(rows[0]?.textContent).toContain("Past work");
     expect(rows[1]?.textContent).toContain("Past Ask Lasso chats");
+  });
+
+  it("hides an archived container and everything beneath it", () => {
+    mocks.clientRows = [
+      { id: "archived", name: "Old client", kind: "client", parent_id: null, quick_folder: false, color: "blue", archived_at: "2026-10-05T12:00:00Z" },
+      { id: "child", name: "Hidden child", kind: "folder", parent_id: "archived", quick_folder: false, color: null, archived_at: null },
+      { id: "current", name: "Current client", kind: "client", parent_id: null, quick_folder: false, color: null, archived_at: null },
+    ];
+    mocks.engagements = [
+      eng("hidden-board", { id: "child", name: "Hidden child", quick_folder: false, kind: "folder", parent_id: "archived" }),
+      eng("current-board", { id: "current", name: "Current client", quick_folder: false, kind: "client", parent_id: null }),
+    ];
+    render(<SidebarNav />);
+    expect(screen.queryByText("Old client")).toBeNull();
+    expect(screen.queryByText("Hidden child")).toBeNull();
+    expect(screen.queryByText("Title hidden-board")).toBeNull();
+    expect(screen.getByText("Current client")).toBeTruthy();
+    expect(screen.getByText("Title current-board")).toBeTruthy();
   });
 
   it("keeps the separation when the tree is empty", () => {

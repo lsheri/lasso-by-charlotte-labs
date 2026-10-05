@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { supabase } from "@/integrations/supabase/client";
+import type { ContainerColour } from "@/lib/container-colour";
 import { CLIENT_MOVE_REFUSAL, CLIENT_RENAME_REFUSAL, rpcOutcome, saveOutcome, type RpcStatus } from "@/lib/save-guard";
 
 export type ClientRow = {
@@ -10,6 +11,8 @@ export type ClientRow = {
   quick_folder: boolean;
   kind: "client" | "folder";
   parent_id: string | null;
+  color?: ContainerColour | null;
+  archived_at?: string | null;
 };
 
 export function useClients(orgId: string | undefined) {
@@ -20,7 +23,7 @@ export function useClients(orgId: string | undefined) {
     queryFn: async (): Promise<ClientRow[]> => {
       const { data, error } = await supabase
         .from("clients")
-        .select("id, name, code, quick_folder, kind, parent_id")
+        .select("id, name, code, quick_folder, kind, parent_id, color, archived_at")
         .eq("org_id", orgId as string)
         .order("name", { ascending: true });
       if (error) throw error;

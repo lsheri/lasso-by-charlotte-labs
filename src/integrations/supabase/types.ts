@@ -803,7 +803,9 @@ export type Database = {
       }
       clients: {
         Row: {
+          archived_at: string | null
           code: string | null
+          color: string | null
           created_at: string
           id: string
           kind: string
@@ -813,7 +815,9 @@ export type Database = {
           quick_folder: boolean
         }
         Insert: {
+          archived_at?: string | null
           code?: string | null
+          color?: string | null
           created_at?: string
           id?: string
           kind?: string
@@ -823,7 +827,9 @@ export type Database = {
           quick_folder?: boolean
         }
         Update: {
+          archived_at?: string | null
           code?: string | null
+          color?: string | null
           created_at?: string
           id?: string
           kind?: string
@@ -1691,6 +1697,7 @@ export type Database = {
       }
       engagements: {
         Row: {
+          archived_at: string | null
           brief: string | null
           brief_by: string | null
           client_id: string | null
@@ -1704,6 +1711,7 @@ export type Database = {
           title: string
         }
         Insert: {
+          archived_at?: string | null
           brief?: string | null
           brief_by?: string | null
           client_id?: string | null
@@ -1717,6 +1725,7 @@ export type Database = {
           title: string
         }
         Update: {
+          archived_at?: string | null
           brief?: string | null
           brief_by?: string | null
           client_id?: string | null
@@ -5375,6 +5384,7 @@ export type Database = {
       }
       analytics_upsert_episode: { Args: { p_row: Json }; Returns: undefined }
       analytics_upsert_feature: { Args: { p_row: Json }; Returns: undefined }
+      archive_container: { Args: { p_id: string }; Returns: Json }
       assert_seat_available: { Args: { p_org_id: string }; Returns: undefined }
       can_manage_key_request: {
         Args: { p_request_id: string }
@@ -5615,6 +5625,10 @@ export type Database = {
         }
         Returns: Json
       }
+      set_container_color: {
+        Args: { p_color: string; p_id: string }
+        Returns: Json
+      }
       set_data_consent: {
         Args: {
           p_consent_text_version?: string
@@ -5657,6 +5671,7 @@ export type Database = {
       show_trgm: { Args: { "": string }; Returns: string[] }
       tier_rank: { Args: { t: string }; Returns: number }
       trigger_egress_sweep: { Args: { p_source?: string }; Returns: number }
+      unarchive_container: { Args: { p_id: string }; Returns: Json }
       unshare_engagement_coach: {
         Args: { p_coach_profile: string; p_engagement: string }
         Returns: undefined

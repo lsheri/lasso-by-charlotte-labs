@@ -13,6 +13,12 @@ export type ContainerActionsCopy = {
   rename: string;
   moveTo: string;
   remove: string;
+  colour: string;
+  archive: string;
+  bringBack: string;
+  colourTitle: (name: string) => string;
+  archived: (name: string) => string;
+  broughtBack: (name: string) => string;
   topLevel: string;
   destinationEmpty: (label: string) => string;
   moreActions: (name: string) => string;
@@ -25,6 +31,12 @@ export const CONTAINER_ACTIONS_COPY: ContainerActionsCopy = {
   rename: "Rename",
   moveTo: "Move to…",
   remove: "Delete",
+  colour: "Colour",
+  archive: "Archive",
+  bringBack: "Bring back",
+  colourTitle: (name) => `Choose a colour for ${name}`,
+  archived: (name) => `${name} archived.`,
+  broughtBack: (name) => `${name} brought back.`,
   topLevel: "Top level",
   destinationEmpty: (label) => `No ${label.toLowerCase()} yet`,
   moreActions: (name) => `More actions for ${name}`,
