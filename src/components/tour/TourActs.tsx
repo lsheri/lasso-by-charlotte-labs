@@ -11,6 +11,7 @@ import { keyTo } from "@/lib/canvas-drag";
 import type { ToolId } from "@/lib/onboarding-tools";
 import type { Register } from "@/lib/register";
 import { actById, type TourActId, type TourSource } from "@/lib/tour-content";
+import type { TourActRenderer } from "@/components/tour/TourStage";
 
 const noop = () => undefined;
 type DragFile = { title: string; pointerId: number; x: number; y: number };
@@ -161,12 +162,12 @@ export function useTourActRenderers({ register, activeAct, onAdvance, onHintShow
   const [hintAct, setHintAct] = useState<number | null>(null); const [instructionOverride, setInstructionOverride] = useState<string | null>(null); const [answerLanded, setAnswerLanded] = useState(false);
   useEffect(() => { setHintAct(null); setInstructionOverride(null); setAnswerLanded(false); }, [activeAct, register]);
   const hint = (act: number) => { setHintAct(act); onHintShown(act); };
-  const renderers = useMemo(() => [
-    { content: <TourActOne register={register} onComplete={() => onAdvance(1)} /> },
-    { content: <TourActTwo register={register} hint={hintAct === 2} onComplete={() => onAdvance(2)} /> },
-    { content: <TourActThree register={register} onComplete={() => onAdvance(3)} /> },
-    { content: <TourActFour register={register} onComplete={() => onAdvance(4)} /> },
-    { content: <TourActFive register={register} onLanded={() => { setAnswerLanded(true); setInstructionOverride(actById(register, 5)?.closingLine ?? null); }} />, primaryAction: answerLanded ? <Button type="button" variant="ink" onClick={onFinish}>{actById(register, 5)?.primaryActionLabel}</Button> : null },
+  const renderers = useMemo((): TourActRenderer[] => [
+    { id: 1, content: <TourActOne register={register} onComplete={() => onAdvance(1)} /> },
+    { id: 2, content: <TourActTwo register={register} hint={hintAct === 2} onComplete={() => onAdvance(2)} /> },
+    { id: 3, content: <TourActThree register={register} onComplete={() => onAdvance(3)} /> },
+    { id: 4, content: <TourActFour register={register} onComplete={() => onAdvance(4)} /> },
+    { id: 5, content: <TourActFive register={register} onLanded={() => { setAnswerLanded(true); setInstructionOverride(actById(register, 5)?.closingLine ?? null); }} />, primaryAction: answerLanded ? <Button type="button" variant="ink" onClick={onFinish}>{actById(register, 5)?.primaryActionLabel}</Button> : null },
   ], [answerLanded, hintAct, onAdvance, onFinish, register]);
   return { renderers, instructionOverride, hint };
 }

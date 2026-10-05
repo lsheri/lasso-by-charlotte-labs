@@ -6,6 +6,7 @@ import { TOUR_CONTENT, actById, type TourActId } from "@/lib/tour-content";
 import type { Register } from "@/lib/register";
 
 export type TourActRenderer = {
+  id: TourActId;
   content: ReactNode;
   primaryAction?: ReactNode;
 };
@@ -117,7 +118,7 @@ export function TourStage({
   const copy = TOUR_CONTENT[register];
   const touch = useTouchPresentation();
   const act = actById(register, activeAct);
-  const renderer = acts[activeAct - 1];
+  const renderer = acts.find((item) => item.id === activeAct);
   const hintedActs = useRef(new Set<number>());
   const stageRef = useRef<HTMLElement>(null);
 
