@@ -13,12 +13,12 @@ function strings(value: unknown): string[] {
 }
 
 describe("T1 tour content", () => {
-  it("defines five complete acts for every register", () => {
+  it("defines eight complete acts for every register", () => {
     expect(Object.keys(TOUR_CONTENT).sort()).toEqual([...REGISTERS].sort());
     for (const register of REGISTERS) {
       const acts = TOUR_CONTENT[register].acts;
-      expect(acts).toHaveLength(7);
-      expect(acts.map((act) => act.id)).toEqual([1, 2, 3, 4, 5, 6, 7]);
+      expect(acts).toHaveLength(8);
+      expect(acts.map((act) => act.id)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
       const cards = acts[3]?.cards ?? [];
       expect(cards).toHaveLength(5);
       expect(cards.filter((card) => card.inSet)).toHaveLength(3);

@@ -31,10 +31,10 @@ function Harness({ start = 1 as TourActId }: { start?: TourActId }) {
   return <TourStage register="company" activeAct={activeAct} acts={renderers} onSkip={() => undefined} onBack={() => undefined} onHintShown={hint} instructionOverride={instructionOverride} />;
 }
 
-describe("TV2 seven act tour", () => {
-  it("has seven acts with ids one to seven and no gaps in every register", () => {
+describe("TV2 and TVc tour sequence", () => {
+  it("has eight acts with ids one to eight and no gaps in every register", () => {
     for (const register of REGISTERS) {
-      expect(TOUR_CONTENT[register].acts.map((item) => item.id)).toEqual([1, 2, 3, 4, 5, 6, 7]);
+      expect(TOUR_CONTENT[register].acts.map((item) => item.id)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
     }
   });
 
@@ -45,7 +45,8 @@ describe("TV2 seven act tour", () => {
       expect(actById(register, 3)?.why).toBe("The chat you just pushed is now yours to place. Files, documents and call transcripts land the same way.");
       expect(actById(register, 3)?.bringIn).toEqual({ title: TOUR_PUSHED_CHAT.title, source: TOUR_PUSHED_CHAT.source });
       expect(actById(register, 7)?.captionPointer).toBe("Keep it. Now the answer lives next to what it came from.");
-      expect(actById(register, 7)?.primaryActionLabel).toBe("Start with my own work");
+      expect(actById(register, 7)?.primaryActionLabel).toBe("See it in the deck");
+      expect(actById(register, 8)?.primaryActionLabel).toBe("Start with my own work");
       expect(actById(register, 1)?.captionPointer).toBe("Push the chat into Lasso.");
       expect(actById(register, 2)?.captionPointer).toBe("It is already here. You did not have to file it.");
     }
@@ -149,10 +150,10 @@ describe("TV2 seven act tour", () => {
     expect(arrived).toHaveBeenCalledTimes(1);
   });
 
-  it("draws seven rail marks", () => {
+  it("draws eight rail marks", () => {
     reducedMotion = true;
     const { container } = render(<Harness />);
-    expect(container.querySelectorAll(".tour-rail-segment")).toHaveLength(7);
-    expect(screen.getByText("Step 1 of 7")).toBeTruthy();
+    expect(container.querySelectorAll(".tour-rail-segment")).toHaveLength(8);
+    expect(screen.getByText("Step 1 of 8")).toBeTruthy();
   });
 });

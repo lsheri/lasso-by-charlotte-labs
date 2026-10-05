@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { TourActFive, TourActFour, TourActOne, TourActThree, TourActTwo } from "@/components/tour/TourActs";
+import { TourActFive, TourActFour, TourActOne, TourActSix, TourActThree, TourActTwo } from "@/components/tour/TourActs";
 import { TOUR_BOARD_LAYOUT, TOUR_CONTEXT_SENTENCE, TOUR_PUSHED_CHAT, actById } from "@/lib/tour-content";
 
 class ResizeObserverStub {
@@ -42,7 +42,7 @@ describe("tour acts one to three", () => {
       }
     }
   });
-  it("keeps every shared layout item fixed across all five acts and four registers", () => {
+  it("keeps every shared layout item fixed across all six board acts and four registers", () => {
     const registers = ["company", "partner", "personal", "edu"] as const;
     const acts = [
       (register: (typeof registers)[number]) => <TourActOne register={register} onComplete={vi.fn()} />,
@@ -50,6 +50,7 @@ describe("tour acts one to three", () => {
       (register: (typeof registers)[number]) => <TourActThree register={register} onComplete={vi.fn()} />,
       (register: (typeof registers)[number]) => <TourActFour register={register} onComplete={vi.fn()} />,
       (register: (typeof registers)[number]) => <TourActFive register={register} onLanded={vi.fn()} />,
+      (register: (typeof registers)[number]) => <TourActSix register={register} />,
     ];
     for (const register of registers) {
       const seen = new Map<string, string>();
@@ -74,6 +75,7 @@ describe("tour acts one to three", () => {
       <TourActThree key="three" register="company" onComplete={vi.fn()} />,
       <TourActFour key="four" register="company" onComplete={vi.fn()} />,
       <TourActFive key="five" register="company" onLanded={vi.fn()} />,
+      <TourActSix key="six" register="company" />,
     ];
     views.forEach((view, index) => {
       const rendered = render(view);
@@ -238,13 +240,12 @@ describe("tour acts one to three", () => {
     vi.useRealTimers();
   });
 
-  it("keeps an answer on the board and ends the tour", () => {
+  it("keeps an answer note on the board with three source links", () => {
     const landed = vi.fn();
     render(<TourActFive register="company" onLanded={landed} />);
     fireEvent.click(screen.getByRole("button", { name: "Keep" }));
-    expect(screen.getByTestId("tour-deliverable")).toBeTruthy();
-    expect(screen.getByText("Client launch note")).toBeTruthy();
-    expect(screen.getByText("Every line in here can show where it came from.")).toBeTruthy();
+    expect(document.querySelector('[data-tour-layout-id="answer"]:not([data-tour-reserved])')).toBeTruthy();
+    expect(screen.queryByTestId("tour-deck-slide")).toBeNull();
     expect(document.querySelectorAll('.tour-keep-links [role="button"]')).toHaveLength(3);
     expect(landed).toHaveBeenCalledTimes(1);
     expect(screen.getByLabelText("Launch deck, slide 12")).toBeTruthy();
@@ -265,7 +266,7 @@ describe("tour acts one to three", () => {
     });
   });
 
-  it("keeps the answer by keyboard and shows all three cited lines", () => {
+  it("keeps the answer by keyboard as a note", () => {
     const landed = vi.fn();
     render(<TourActFive register="company" onLanded={landed} />);
     const keep = screen.getByRole("button", { name: "Keep" });
@@ -274,10 +275,21 @@ describe("tour acts one to three", () => {
     keep.focus();
     fireEvent.click(keep);
     expect(landed).toHaveBeenCalledTimes(1);
-    expect(document.querySelectorAll(".tour-deliverable-line")).toHaveLength(3);
-    expect(screen.getByText("You floated a TikTok first launch and dropped it.")).toBeTruthy();
-    expect(screen.getByText("Toronto made the creator brief and never reached the plan.")).toBeTruthy();
-    expect(screen.getByText("The plan kept Austin and Denver only.")).toBeTruthy();
+    expect(document.querySelector('[data-tour-layout-id="answer"]:not([data-tour-reserved])')).toBeTruthy();
+    expect(document.querySelectorAll('.tour-keep-links [role="button"]')).toHaveLength(3);
+  });
+
+  it("shows the deck slide with the three claims in source order", () => {
+    render(<TourActSix register="company" />);
+    const slide = screen.getByTestId("tour-deck-slide");
+    expect(slide.getAttribute("data-tour-title")).toBe("Launch deck, slide 12");
+    expect(within(slide).getByText("Launch deck, slide 12")).toBeTruthy();
+    const claims = actById("company", 6)?.answer ?? [];
+    const bullets = Array.from(slide.querySelectorAll<HTMLElement>(".tour-deck-page li"));
+    expect(bullets).toHaveLength(3);
+    expect(bullets.map((bullet) => bullet.querySelector("span:last-child")?.textContent)).toEqual(claims.map((claim) => claim.text));
+    expect(bullets.map((bullet) => bullet.dataset["sourceTitle"])).toEqual(claims.map((claim) => claim.sourceCardTitle));
+    expect(document.querySelectorAll('.tour-keep-links [role="button"]')).toHaveLength(3);
   });
 
   it("uses the standalone mimic shape without importing the live data surface", () => {

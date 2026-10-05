@@ -20,7 +20,7 @@ describe("TV0 actById", () => {
 
   it("returns undefined for an id with no act", () => {
     for (const register of REGISTERS) {
-      for (const id of [0, 8] as unknown as readonly TourActId[]) {
+      for (const id of [0, 9] as unknown as readonly TourActId[]) {
         expect(actById(register, id)).toBeUndefined();
       }
     }
