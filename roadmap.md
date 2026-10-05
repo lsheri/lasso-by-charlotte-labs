@@ -11,3 +11,4 @@
 - [x] Unit 12: replace five changing tour scenes with one fixed-layout board and verify invariant geometry across every act and register.
 - [x] Unit 14: enlarge the Act 5 finished deck and connect it to its source work and Claude chat.
 - [x] Fix expired invite wording and Ask Lasso Enter behavior without changing existing actions or event payloads.
+- [x] SB-C1a: add sidebar container colour, reversible archive actions, and the grouped create tile.

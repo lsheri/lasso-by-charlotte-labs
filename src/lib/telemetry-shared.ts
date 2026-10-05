@@ -139,6 +139,14 @@ export type TelemetryEvent =
   /** Unit 4a: a container was removed through delete_container. Its contents
    *  lift one level. Kind and two booleans only. Never a name, id or count. */
   | "container.deleted"
+  /** SB-C1a: a container colour changed. Closed family, kind and entry point only. */
+  | "container.colored"
+  /** SB-C1a: a container was archived. Kind and booleans only. */
+  | "container.archived"
+  /** SB-C1a: a container was brought back. Kind and a day band only. */
+  | "container.unarchived"
+  /** SB-C1b: the archive surface opened. Entry point only. */
+  | "container.archive_opened"
   | "workflow.reordered"
   | "workflow.reset"
   | "coach.invite_created"

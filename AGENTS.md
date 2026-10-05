@@ -1,4 +1,6 @@
 Tour workboard chrome stays a local presentational mirror around shared board primitives because the live workboard composition is source-pinned and behavior-coupled.
+- Keep container colour inheritance pure in `container-colour.ts`; children never persist inherited colour.
+- Filter archived container branches while building the sidebar tree so descendants stay hidden without child writes.
 <!-- LOVABLE:BEGIN -->
 > [!IMPORTANT]
 > This project is connected to [Lovable](https://lovable.dev). Avoid rewriting
