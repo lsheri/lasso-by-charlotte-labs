@@ -287,7 +287,7 @@ export function TourActArrived({ register, onComplete }: { register: Register; o
             <Button type="button" variant="ghost" className="nb-nav-item nb-nav-item-active w-full justify-start" onClick={noop}><GraphiteIcon name="ai-record" size={20} /><span>All AI Conversations</span></Button>
           </div></div>
           <div><div className="nb-group-header px-2">Where it goes</div><div className="mt-2 flex flex-col gap-0.5">
-            <Button type="button" variant="ghost" className="nb-nav-item nb-nav-item-nested w-full justify-start" data-tour-target="2" onClick={openWorkboard}><GraphiteIcon name="workboard" size={20} /><span className="truncate">{boardTitle}</span></Button>
+            <Button type="button" variant="ghost" className="tour-workboard-nav-row nb-nav-item nb-nav-item-nested w-full justify-start" data-tour-target="2" onClick={openWorkboard}><GraphiteIcon name="workboard" size={20} /><span>{boardTitle}</span></Button>
             <Button type="button" variant="ghost" className="nb-nav-item w-full justify-start" onClick={noop}><GraphiteIcon name="plus" size={20} /><span>New workboard</span></Button>
           </div></div>
         </nav>
