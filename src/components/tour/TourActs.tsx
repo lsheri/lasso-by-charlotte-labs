@@ -264,6 +264,7 @@ export function TourActArrived({ register, onComplete }: { register: Register; o
   const list = actById(register, 2)?.conversations;
   const actOne = actById(register, 1);
   const chats = [actOne?.chat, actOne?.companionChat].filter((chat): chat is TourPushedChat => chat !== undefined);
+  const completeRef = useRef(false);
   if (!list || chats.length !== 2) return null;
   const rows = [
     ...chats.map((chat, index) => ({ item: tourChatItem(`tour-arrived-${index}`, chat.title, chat.source), preview: tourChatPreview(`tour-arrived-${index}`, chat.turns[0]?.text ?? "Fall launch conversation."), arrived: true })),
@@ -271,6 +272,11 @@ export function TourActArrived({ register, onComplete }: { register: Register; o
   ];
   const arrivedCount = rows.filter((row) => row.arrived).length;
   const boardTitle = tourBoardCopy(register).title;
+  const openWorkboard = () => {
+    if (completeRef.current) return;
+    completeRef.current = true;
+    onComplete();
+  };
   return <div className="tour-push-stage" data-testid="tour-act-arrived">
     <section className="tour-conversations-mimic nb-chatview" data-reader="closed" aria-label="All AI Conversations tour example">
       <aside className="tour-conversations-sidebar" aria-label="Tour navigation">
@@ -281,7 +287,7 @@ export function TourActArrived({ register, onComplete }: { register: Register; o
             <Button type="button" variant="ghost" className="nb-nav-item nb-nav-item-active w-full justify-start" onClick={noop}><GraphiteIcon name="ai-record" size={20} /><span>All AI Conversations</span></Button>
           </div></div>
           <div><div className="nb-group-header px-2">Where it goes</div><div className="mt-2 flex flex-col gap-0.5">
-            <Button type="button" variant="ghost" className="nb-nav-item nb-nav-item-nested w-full justify-start" data-tour-target="2" onClick={onComplete}><GraphiteIcon name="workboard" size={20} /><span className="truncate">{boardTitle}</span></Button>
+            <Button type="button" variant="ghost" className="nb-nav-item nb-nav-item-nested w-full justify-start" data-tour-target="2" onClick={openWorkboard}><GraphiteIcon name="workboard" size={20} /><span className="truncate">{boardTitle}</span></Button>
             <Button type="button" variant="ghost" className="nb-nav-item w-full justify-start" onClick={noop}><GraphiteIcon name="plus" size={20} /><span>New workboard</span></Button>
           </div></div>
         </nav>
