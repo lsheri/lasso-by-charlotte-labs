@@ -42,22 +42,25 @@ describe("T1 tour content", () => {
 
   it("gives every act a plain instruction and reason", () => {
     for (const register of REGISTERS) {
-      for (const act of TOUR_CONTENT[register].acts) {
+      const acts = TOUR_CONTENT[register].acts;
+      for (const act of acts) {
         expect(act.captionPointer.length).toBeGreaterThan(0);
         expect(act.captionTouch.length).toBeGreaterThan(0);
         expect(act.why.length).toBeGreaterThan(0);
+        expect(act.why).not.toBe(act.captionPointer);
       }
+      expect(new Set(acts.map((act) => act.why)).size).toBe(acts.length);
     }
   });
 
   it("pins the one-click work-card instruction", () => {
     for (const register of REGISTERS) {
-      expect(TOUR_CONTENT[register].acts[3]?.captionPointer).toBe("Click one outlined card to point Lasso at that work.");
-      expect(TOUR_CONTENT[register].acts[3]?.captionTouch).toBe("Tap one outlined card to point Lasso at that work.");
-      expect(TOUR_CONTENT[register].acts[3]?.why).toBe("Lasso can answer from one piece of work. Selecting is how you point at it.");
+      expect(TOUR_CONTENT[register].acts[3]?.captionPointer).toBe("Click one of the outlined cards.");
+      expect(TOUR_CONTENT[register].acts[3]?.captionTouch).toBe("Tap one of the outlined cards.");
+      expect(TOUR_CONTENT[register].acts[3]?.why).toBe("Lasso can answer from a single piece of work. Selecting a card is how you point at it.");
       expect(TOUR_CONTENT[register].acts[4]?.captionPointer).toBe("Draw a box around the three selected cards.");
-      expect(TOUR_CONTENT[register].acts[4]?.captionTouch).toBe("Tap Add grouping to group the three selected cards.");
-      expect(TOUR_CONTENT[register].acts[4]?.why).toBe("A workstream keeps related pieces together. The question will read from this group, not the whole board.");
+      expect(TOUR_CONTENT[register].acts[4]?.captionTouch).toBe("Tap Add grouping to group the three cards.");
+      expect(TOUR_CONTENT[register].acts[4]?.why).toBe("Three pieces of work that belong to one decision. Grouped, they answer together, and nothing else on the board gets read.");
     }
   });
 
@@ -119,7 +122,7 @@ describe("T1 tour content", () => {
       expect(acts[2]?.bringIn).toEqual({ title: TOUR_PUSHED_CHAT.title, source: TOUR_PUSHED_CHAT.source });
       expect(acts[2]?.bringIn?.title).toBe(acts[3]?.cards?.[2]?.title);
       expect(acts[4]?.frameTitle).toBe(expectedFrameTitles[register]);
-      expect(acts[4]?.why).toBe("A workstream keeps related pieces together. The question will read from this group, not the whole board.");
+      expect(acts[4]?.why).toBe("Three pieces of work that belong to one decision. Grouped, they answer together, and nothing else on the board gets read.");
       expect(tourAmbientCards(register).map((card) => card.title)).toEqual(expectedAmbientTitles);
       expect(tourBoardCopy(register)).toMatchObject({ title: "Fall Marketing Launch", owner: "LYKOS LOUNGEWARE", whiteboardTitle: "Austin retail launch page", whiteboardCaption: "Store page draft", deckTitle: "Launch deck, slide 12" });
       expect(tourBoardCopy(register).pieceCount).toBe(TOUR_BOARD_LAYOUT.filter((item) => item.earliestAct <= 3).length);

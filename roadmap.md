@@ -20,3 +20,4 @@
 - [x] TVf: replace the Act 3 deck and screenshot previews, remove three crowded cards, and preserve remaining geometry.
 - [x] TVg: teach the three real Ask scopes in Acts 4 to 6 and derive the Act 3 piece count.
 - [x] TVh: isolate Act 8 to its three sources, kept answer, sourced slide, and connectors without moving board items.
+- [x] TVi: replace all eight acts' instructional copy and keep every exact-string guard current.
