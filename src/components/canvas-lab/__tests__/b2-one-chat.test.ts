@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { ASK_SCOPE_ALL_LABEL } from "@/components/reflect/AskSurface";
 import { boardSelectionScope } from "@/lib/reflect-scope-shape";
 
 const read = (p: string) => readFileSync(resolve(process.cwd(), p), "utf8");
@@ -42,8 +43,9 @@ describe("B2 one chat on the board", () => {
     expect(surface).toContain('"Brief only: nothing picked has work to read"');
     expect(surface).toContain("title={title}");
     expect(surface).toContain("${ask.boardPickedCount} picked on the board");
-    expect(surface).toContain("All work in this workboard");
-    expect(surface.indexOf("boardPicked && ask.boardPickedCount === 0")).toBeLessThan(surface.indexOf('"All work in this workboard"'));
+    expect(ASK_SCOPE_ALL_LABEL).toBe("All work in this workboard");
+    expect(surface).toContain("ASK_SCOPE_ALL_LABEL");
+    expect(surface.indexOf("boardPicked && ask.boardPickedCount === 0")).toBeLessThan(surface.indexOf("ASK_SCOPE_ALL_LABEL", surface.indexOf("const label")));
   });
 
   it("keeps the live board pick through New chat and restores all work only after clear", () => {
