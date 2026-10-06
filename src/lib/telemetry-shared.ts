@@ -114,6 +114,9 @@ export type TelemetryEvent =
   | "import.committed"
   | "import.completed"
   | "import.abandoned"
+  /** PF1: a push through MCP. Dims include stage (options | capture | helper)
+   *  and window_pos (only | first | middle | last); the full list lives in
+   *  event-dim-allowlist.ts. */
   | "mcp.push"
   /** M3-C2: an MCP call that could not be resolved. Kind and closed reason only. */
   | "mcp.auth_failed"
