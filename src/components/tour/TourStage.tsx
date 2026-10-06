@@ -45,7 +45,8 @@ function TourInstructionArrow({ stage, activeAct }: { stage: React.RefObject<HTM
 
   useEffect(() => {
     const root = stage.current;
-    if (!root) return;
+    // Act 8's target is the finish button in the footer; an arrow would cross the slide, so only the glow remains.
+    if (!root || activeAct === 8) { setPath(null); return; }
     let frame = 0;
     let observer: ResizeObserver | null = null;
     const draw = () => {

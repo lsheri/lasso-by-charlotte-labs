@@ -1,3 +1,4 @@
+import type React from "react";
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode, type RefObject } from "react";
 
 import { LabAnswerCard } from "@/components/canvas-lab/LabAnswerCard";
@@ -50,7 +51,10 @@ function itemStyle(item: TourLayoutItem) {
     top: `${item.y}%`,
     width: `${item.widthBasis}%`,
     transform: `rotate(${item.rotation}deg)`,
-  };
+    // Read only by the act 8 zoom-out rule in CSS; layout values are untouched.
+    "--tour-x": item.x,
+    "--tour-y": item.y,
+  } as React.CSSProperties;
 }
 
 function PreviewCard({ card, compact = false }: { card: TourCard | TourAmbientCard; compact?: boolean }) {
@@ -166,7 +170,7 @@ export function TourBoard({ register, state, className = "", children, onWorkCar
     && (state.act !== 8 || TOUR_ACT_EIGHT_BOARD_IDS.includes(item.id as (typeof TOUR_ACT_EIGHT_BOARD_IDS)[number]));
   const answer = useMemo(() => answerNode(register), [register]);
 
-  return <div ref={boardRef} className={`tour-persistent-board ${className}`} data-tour-board="" onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerCancel}>
+  return <div ref={boardRef} className={`tour-persistent-board ${className}`} data-tour-board="" data-act={state.act} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerCancel}>
     <div className="tour-board-grid" aria-label="Workstream board">
       <>
         {state.act !== 8 ? <><header className="tour-board-heading"><strong>{boardCopy.title}</strong><span>{boardCopy.owner} · {boardCopy.pieceCount} pieces</span></header>
