@@ -43,7 +43,7 @@ vi.mock("@/hooks/use-profile", () => ({
   useProfile: () => ({ data: { id: "p1", org_id: "o1" } }),
 }));
 
-const { ConnectYourAiCard, connectorStatusLine } =
+const { ConnectYourAiCard, SetupSteps, connectorStatusLine } =
   await import("@/components/connectors/ConnectYourAiCard");
 
 function renderCard() {
