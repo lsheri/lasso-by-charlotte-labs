@@ -6855,7 +6855,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 }
 
 /* TVh act 8: the presentation reader sits in the cleared lower board, below its three sources. */
-.tour-deck-overlay { position: absolute; z-index: 35; top: 43% !important; left: 3% !important; display: grid; width: 52% !important; grid-template-columns: 54px minmax(0, 1fr); gap: 8px; border: 1px solid var(--nb-rule); border-radius: var(--radius); background: var(--nb-grey-1); padding: 8px; box-shadow: var(--nb-paper-shadow-contact); color: var(--nb-ink); transform: none !important; animation: tour-turn-in 260ms ease-out both; }
+.tour-deck-overlay { position: absolute; z-index: 35; top: 43% !important; left: 60% !important; display: grid; width: 37% !important; grid-template-columns: 54px minmax(0, 1fr); gap: 8px; border: 1px solid var(--nb-rule); border-radius: var(--radius); background: var(--nb-grey-1); padding: 8px; box-shadow: var(--nb-paper-shadow-contact); color: var(--nb-ink); transform: none !important; animation: tour-turn-in 260ms ease-out both; }
 .tour-deck-thumbnails { display: grid; align-content: start; gap: 6px; }
 .tour-deck-thumbnails > span { display: grid; aspect-ratio: 16 / 9; place-items: center; border: 1px solid var(--nb-rule); border-radius: var(--radius-card); background: var(--nb-white); color: var(--nb-mid); font-family: var(--font-mono); font-size: 12px; }
 .tour-deck-thumbnails > span[data-active="true"] { border-color: var(--nb-graphite); box-shadow: 0 0 0 1px var(--nb-graphite); }
