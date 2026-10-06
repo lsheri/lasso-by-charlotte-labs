@@ -26,6 +26,7 @@ import {
   type ConnectionRow,
 } from "@/lib/mcp-connections.functions";
 import {
+  MCP_PUSH_BLOCKED_NOTE,
   MCP_PUSH_PHRASE,
   MCP_SERVER_NAME,
   MCP_SETUP_STEPS,
@@ -124,6 +125,7 @@ export function SetupSteps() {
       <p className="text-sm text-muted-foreground">
         Then, at the end of any session, say “{MCP_PUSH_PHRASE}”
       </p>
+      <p className="text-sm text-muted-foreground">{MCP_PUSH_BLOCKED_NOTE}</p>
     </div>
   );
 }
@@ -286,7 +288,12 @@ export function ConnectionRowView({
           </div>
         ) : (
           <>
-            <p className="text-[13px] font-medium text-foreground">{name}</p>
+            <span className="flex min-w-0 items-center gap-2">
+              <p className="min-w-0 truncate text-[13px] font-medium text-foreground">{name}</p>
+              <span className="shrink-0 rounded-full border border-border bg-secondary/60 px-2 py-0.5 text-[11px] text-muted-foreground">
+                {isSignin ? "Signed in" : "Link"}
+              </span>
+            </span>
             {!row.older ? (
               <button
                 type="button"

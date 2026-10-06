@@ -246,4 +246,25 @@ describe("M2 connections settings", () => {
       expect(logEvent).toHaveBeenCalledWith("mcp.connection_revoked", "o1", { kind: "signin", via: "settings" }),
     );
   });
+
+  it("14. a link row carries the Link kind label and not the sign-in one", async () => {
+    rows = [row({})];
+    renderCard();
+    expect(await screen.findByText("Link")).toBeTruthy();
+    expect(screen.queryByText("Signed in")).toBeNull();
+  });
+
+  it("15. a signin row carries the Signed in kind label and not the link one", async () => {
+    rows = [row({ id: "s1", kind: "signin", client_name: "Claude", label: "Claude", key_last4: null, can_reveal: false })];
+    renderCard();
+    expect(await screen.findByText("Signed in")).toBeTruthy();
+    expect(screen.queryByText("Link")).toBeNull();
+  });
+
+  it("16. a signin row still shows its Signed in from secondary line", async () => {
+    rows = [row({ id: "s1", kind: "signin", client_name: "Claude", label: "Claude", key_last4: null, can_reveal: false })];
+    renderCard();
+    expect(await screen.findByText("Signed in from Claude")).toBeTruthy();
+    expect(await screen.findByText("Signed in")).toBeTruthy();
+  });
 });
