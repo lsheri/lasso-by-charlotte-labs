@@ -25,7 +25,7 @@ export type TourBoardCopy = {
 };
 
 export type TourLayoutItem = {
-  id: `primary-${0 | 1 | 2 | 3 | 4}` | `chat-${0 | 1 | 2 | 3}` | "artifact" | "whiteboard" | "deck" | "answer" | "deliverable";
+  id: `primary-${0 | 1 | 2 | 3}` | `chat-${0 | 1}` | "artifact" | "whiteboard" | "deck" | "answer" | "deliverable";
   kind: "primary" | "chat" | "artifact" | "image" | "answer" | "deliverable";
   x: number;
   y: number;
@@ -40,15 +40,12 @@ export const TOUR_BOARD_LAYOUT: readonly TourLayoutItem[] = [
   { id: "primary-1", kind: "primary", x: 31, y: 17.5, widthBasis: 22, rotation: 0.7, earliestAct: 3 },
   { id: "primary-2", kind: "primary", x: 60, y: 20.5, widthBasis: 21, rotation: 0.5, earliestAct: 3 },
   { id: "primary-3", kind: "primary", x: 5, y: 44, widthBasis: 18, rotation: 0.9, earliestAct: 3 },
-  { id: "primary-4", kind: "primary", x: 6.5, y: 59, widthBasis: 19, rotation: -0.7, earliestAct: 3 },
   { id: "answer", kind: "answer", x: 33, y: 82, widthBasis: 23, rotation: 0, earliestAct: 7 },
   { id: "chat-0", kind: "chat", x: 32, y: 42, widthBasis: 21, rotation: -0.7, earliestAct: 3 },
   { id: "chat-1", kind: "chat", x: 62, y: 44.5, widthBasis: 22, rotation: 0.8, earliestAct: 3 },
-  { id: "chat-2", kind: "chat", x: 30, y: 63.5, widthBasis: 22, rotation: 0.5, earliestAct: 3 },
-  { id: "chat-3", kind: "chat", x: 61, y: 65.5, widthBasis: 21, rotation: -0.6, earliestAct: 3 },
   { id: "artifact", kind: "artifact", x: 84.5, y: 66, widthBasis: 13, rotation: 0.4, earliestAct: 3 },
   { id: "whiteboard", kind: "image", x: 5, y: 78.5, widthBasis: 18, rotation: -0.4, earliestAct: 3 },
-  { id: "deck", kind: "image", x: 72, y: 84, widthBasis: 20, rotation: 0.3, earliestAct: 7 },
+  { id: "deck", kind: "image", x: 72, y: 84, widthBasis: 20, rotation: 0.3, earliestAct: 3 },
   { id: "deliverable", kind: "deliverable", x: 31.5, y: 80, widthBasis: 25, rotation: -0.3, earliestAct: 7 },
 ] as const;
 
@@ -67,8 +64,8 @@ const BOARD_COPY: TourBoardCopy = {
   title: "Fall Marketing Launch",
   owner: "LYKOS LOUNGEWARE",
   pieceCount: 12,
-  whiteboardTitle: "Moodboard photo",
-  whiteboardCaption: "Shots from the fabric session",
+  whiteboardTitle: "Austin retail launch page",
+  whiteboardCaption: "Store page draft",
   deckTitle: "Launch deck, slide 12",
 };
 

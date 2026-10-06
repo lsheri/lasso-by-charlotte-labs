@@ -61,7 +61,7 @@ describe("T1 tour content", () => {
   it("pins the free form card layouts and AI chat plurality", () => {
     expect(TOUR_AMBIENT_CARDS).toHaveLength(4);
     expect(TOUR_AMBIENT_CARDS.map((card) => card.source)).toEqual(["chatgpt", "chatgpt", "gemini", "claude"]);
-    for (const [index, card] of TOUR_AMBIENT_CARDS.entries()) {
+    for (const [index, card] of TOUR_AMBIENT_CARDS.slice(0, 2).entries()) {
       expect(card.excerpt).toHaveLength(2);
       const layout = TOUR_BOARD_LAYOUT.find((item) => item.id === `chat-${index}`);
       expect(layout).toBeTruthy();
@@ -71,8 +71,11 @@ describe("T1 tour content", () => {
       for (const [index, card] of (TOUR_CONTENT[register].acts[3]?.cards ?? []).entries()) {
         expect(card.preview).toHaveLength(2);
         const layout = TOUR_BOARD_LAYOUT.find((item) => item.id === `primary-${index}`);
-        expect(layout).toBeTruthy();
-        expect(Math.abs(layout?.rotation ?? 2)).toBeLessThan(1.5);
+        if (index === 4) expect(layout).toBeUndefined();
+        else {
+          expect(layout).toBeTruthy();
+          expect(Math.abs(layout?.rotation ?? 2)).toBeLessThan(1.5);
+        }
       }
     }
   });
@@ -115,7 +118,7 @@ describe("T1 tour content", () => {
       expect(acts[4]?.frameTitle).toBe(expectedFrameTitles[register]);
       expect(acts[4]?.why).toBe(`The box is a ${expectedFrameTitles[register] === "Workstream" ? "workstream" : expectedFrameTitles[register]}. Everything inside it shares context, so a question answers from those pieces and nothing else on the board.`);
       expect(tourAmbientCards(register).map((card) => card.title)).toEqual(expectedAmbientTitles);
-      expect(tourBoardCopy(register)).toMatchObject({ title: "Fall Marketing Launch", owner: "LYKOS LOUNGEWARE", whiteboardTitle: "Moodboard photo", whiteboardCaption: "Shots from the fabric session", deckTitle: "Launch deck, slide 12" });
+      expect(tourBoardCopy(register)).toMatchObject({ title: "Fall Marketing Launch", owner: "LYKOS LOUNGEWARE", whiteboardTitle: "Austin retail launch page", whiteboardCaption: "Store page draft", deckTitle: "Launch deck, slide 12" });
     }
     expect(REGISTERS.map((register) => TOUR_CONTENT[register].acts[4]?.frameTitle)).toEqual([
       "Workstream",

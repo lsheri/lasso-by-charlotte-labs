@@ -6605,6 +6605,19 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .tour-compact-card strong { overflow-wrap: anywhere; font-family: var(--font-ui); font-size: 12px; line-height: 1.1; }
 .tour-compact-tool { font-family: var(--font-mono); font-size: 9px; text-transform: uppercase; }
 .tour-image-caption { grid-column: 1 / -1; color: var(--nb-mid); font-family: var(--font-hand); font-size: 13px; line-height: 1; }
+.tour-board-item > .tour-mini-slide,.tour-board-item > .tour-screenshot-card { display: block; min-height: 118px; padding: 7px; }
+.tour-mini-slide > strong,.tour-screenshot-card > strong { display: block; margin-top: 2px; }
+.tour-mini-slide h3 { margin: 6px 0 4px; font-family: var(--font-serif); font-size: 13px; font-weight: 400; line-height: 1; }
+.tour-mini-slide-body { display: grid; grid-template-columns: minmax(0, 1fr) 42%; align-items: end; gap: 5px; }
+.tour-mini-slide ul { display: grid; gap: 2px; margin: 0; padding-left: 13px; font-family: var(--font-ui); font-size: 8px; line-height: 1.1; }
+.tour-mini-slide svg { width: 100%; max-height: 48px; overflow: visible; }
+.tour-mini-slide svg path { fill: none; stroke: var(--nb-pencil); stroke-width: 1.5; }
+.tour-mini-slide svg rect { fill: var(--nb-lasso-green); opacity: .78; }
+.tour-screenshot-card svg { display: block; width: 100%; margin-top: 5px; }
+.tour-screenshot-card svg > * { fill: var(--nb-rule); }
+.tour-screenshot-card .tour-shot-window { fill: var(--nb-white); stroke: var(--nb-pencil); }
+.tour-screenshot-card .tour-shot-rule { fill: none; stroke: var(--nb-rule); }
+.tour-screenshot-card .tour-shot-image { fill: color-mix(in srgb, var(--nb-lasso-green) 18%, var(--nb-paper)); }
 .tour-reserved-slot { height: 17%; border: 1px dashed var(--nb-pencil); border-radius: var(--radius-card); background: color-mix(in srgb, var(--nb-white) 45%, transparent); }
 .tour-shared-group-region { position: absolute; z-index: 2; top: 16%; left: 1.5%; width: 82%; height: 24%; padding: 5px 8px; pointer-events: none; }
 .tour-shared-group-region > span:first-child { color: var(--nb-region-lavender-vivid); font-family: var(--font-hand); font-size: 16px; }
@@ -6711,18 +6724,14 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   .tour-board-item[data-tour-layout-id="primary-1"] { top: 18% !important; left: 53% !important; }
   .tour-board-item[data-tour-layout-id="primary-2"] { top: 29.5% !important; left: 28% !important; }
   .tour-board-item[data-tour-layout-id="primary-3"] { top: 70% !important; left: 3% !important; }
-  .tour-board-item[data-tour-layout-id="primary-4"] { top: 70.5% !important; left: 55% !important; }
   .tour-board-item[data-tour-layout-id="chat-0"] { top: 41.5% !important; left: 3% !important; }
   .tour-board-item[data-tour-layout-id="chat-1"] { top: 42.5% !important; left: 53% !important; }
-  .tour-board-item[data-tour-layout-id="chat-2"] { top: 53.5% !important; left: 3% !important; }
-  .tour-board-item[data-tour-layout-id="chat-3"] { top: 54.5% !important; left: 53% !important; }
   .tour-board-item[data-tour-layout-id="artifact"] { top: 80.5% !important; left: 3% !important; width: 27% !important; }
   .tour-board-item[data-tour-layout-id="whiteboard"] { top: 80.5% !important; left: 52% !important; width: 45% !important; }
   .tour-board-item[data-tour-layout-id="deck"] { top: 92% !important; left: 52% !important; width: 45% !important; }
   .tour-reserved-slot[data-tour-layout-id="answer"],.tour-answer-slot[data-tour-layout-id="answer"] { top: 88% !important; left: 4% !important; width: 43% !important; height: 10.5%; }
   .tour-shared-group-region { top: 15.5%; left: 1%; width: 97%; height: 25%; }
   .tour-margin-note[data-tour-note="group"] { top: 12% !important; left: 52% !important; max-width: 30%; }
-  .tour-margin-note[data-tour-note="budget"] { top: 77% !important; left: 49% !important; max-width: 48%; }
   .tour-margin-note[data-tour-note="gemini"] { top: 65% !important; left: 3% !important; max-width: 43%; }
   .tour-margin-note.is-answer-note { top: 76.5% !important; left: 3% !important; max-width: 42%; transform: none; }
   .tour-board-item.tour-preview-card > strong { font-size: 11.5px; line-height: 1.05; }

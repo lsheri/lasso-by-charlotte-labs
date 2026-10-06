@@ -68,16 +68,41 @@ function ArtifactPreview() {
 
 function ImageCard({ kind, title, caption }: { kind: "deck" | "whiteboard"; title: string; caption?: string }) {
   const deck = kind === "deck";
-  return <article className="tour-compact-card" aria-label={title}>
-    <span className="tour-compact-tool">{deck ? "Deck" : "Image"}</span>
+  if (deck) return <article className="tour-compact-card tour-mini-slide" aria-label={title}>
+    <span className="tour-compact-tool">Slide 12</span>
     <strong>{title}</strong>
+    <h3>Fall launch recommendation</h3>
+    <div className="tour-mini-slide-body">
+      <ul><li>Retail leads the mix</li><li>Austin + Denver</li><li>Starts 29 Sep</li></ul>
+      <svg viewBox="0 0 84 54" role="img" aria-label="Decorative four bar chart">
+        <path d="M8 5v41h70" />
+        <rect x="16" y="30" width="10" height="16" />
+        <rect x="31" y="20" width="10" height="26" />
+        <rect x="46" y="12" width="10" height="34" />
+        <rect x="61" y="25" width="10" height="21" />
+      </svg>
+    </div>
+  </article>;
+  return <article className="tour-compact-card tour-screenshot-card" aria-label={title}>
+    <span className="tour-compact-tool">Screenshot</span>
+    <strong>{title}</strong>
+    <svg viewBox="0 0 180 100" role="img" aria-label="Retail launch page screenshot frame">
+      <rect className="tour-shot-window" x="1" y="1" width="178" height="98" rx="3" />
+      <path className="tour-shot-rule" d="M1 15h178" />
+      <circle cx="9" cy="8" r="2" /><circle cx="16" cy="8" r="2" /><circle cx="23" cy="8" r="2" />
+      <rect className="tour-shot-image" x="10" y="25" width="70" height="55" rx="2" />
+      <rect x="92" y="28" width="66" height="7" rx="2" />
+      <rect x="92" y="42" width="52" height="4" rx="2" />
+      <rect x="92" y="51" width="58" height="4" rx="2" />
+      <rect x="92" y="66" width="36" height="10" rx="2" />
+      <rect x="10" y="87" width="148" height="3" rx="1.5" />
+    </svg>
     {caption ? <span className="tour-image-caption">{caption}</span> : null}
   </article>;
 }
 
 const BOARD_NOTES = [
   { id: "group", text: "name this grouping?", x: 83, y: 22 },
-  { id: "budget", text: "keep for the budget, not the plan", x: 2, y: 70 },
   { id: "gemini", text: "add the Toronto numbers?", x: 85.5, y: 61.5 },
 ] as const;
 

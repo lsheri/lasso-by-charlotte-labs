@@ -9,20 +9,18 @@ import { ARROW_EDGE_GAP, arrowEnd } from "@/components/tour/TourStage";
 import { TOUR_BOARD_LAYOUT, TOUR_CONTENT, actById } from "@/lib/tour-content";
 
 const REGISTERS = ["company", "partner", "personal", "edu"] as const;
-const PRE_TV3_LAYOUT = [
+const TVF_LAYOUT = [
   ["primary-0", "primary", 3, 19, 21, -0.8, 3],
   ["primary-1", "primary", 31, 17.5, 22, 0.7, 3],
   ["primary-2", "primary", 60, 20.5, 21, 0.5, 3],
   ["primary-3", "primary", 5, 44, 18, 0.9, 3],
-  ["primary-4", "primary", 6.5, 59, 19, -0.7, 3],
   ["answer", "answer", 33, 82, 23, 0, 7],
   ["chat-0", "chat", 32, 42, 21, -0.7, 3],
   ["chat-1", "chat", 62, 44.5, 22, 0.8, 3],
-  ["chat-2", "chat", 30, 63.5, 22, 0.5, 3],
-  ["chat-3", "chat", 61, 65.5, 21, -0.6, 3],
   ["artifact", "artifact", 84.5, 66, 13, 0.4, 3],
   ["whiteboard", "image", 5, 78.5, 18, -0.4, 3],
-  ["deck", "image", 72, 84, 20, 0.3, 7],
+  ["deck", "image", 72, 84, 20, 0.3, 3],
+  ["deliverable", "deliverable", 31.5, 80, 25, -0.3, 7],
 ] as const;
 
 class ResizeObserverStub { observe() {} unobserve() {} disconnect() {} }
@@ -40,9 +38,9 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 
 describe("TVc note and deck source trail", () => {
-  it("adds only the deliverable without moving any pre-existing board item", () => {
-    expect(TOUR_BOARD_LAYOUT.filter((item) => item.id !== "deliverable").map((item) => [item.id, item.kind, item.x, item.y, item.widthBasis, item.rotation, item.earliestAct])).toEqual(PRE_TV3_LAYOUT);
-    expect(TOUR_BOARD_LAYOUT.find((item) => item.id === "deliverable")).toEqual({ id: "deliverable", kind: "deliverable", x: 31.5, y: 80, widthBasis: 25, rotation: -0.3, earliestAct: 7 });
+  it("pins every remaining board item by value and removes only the three crowded cards", () => {
+    expect(TOUR_BOARD_LAYOUT.map((item) => [item.id, item.kind, item.x, item.y, item.widthBasis, item.rotation, item.earliestAct])).toEqual(TVF_LAYOUT);
+    expect(TOUR_BOARD_LAYOUT.some((item) => ["primary-4", "chat-2", "chat-3"].includes(item.id))).toBe(false);
   });
 
   it("pins the act seven note teaching and act eight deck copy", () => {
