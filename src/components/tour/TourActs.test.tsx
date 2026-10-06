@@ -277,7 +277,7 @@ describe("tour acts one to three", () => {
 
   it("derives the act three heading count from the rendered layout", () => {
     render(<TourActOne register="company" onComplete={vi.fn()} />);
-    const rendered = document.querySelectorAll('[data-tour-layout-id]:not([data-tour-reserved])').length;
+    const rendered = document.querySelectorAll('[data-tour-layout-id]').length;
     expect(rendered).toBe(TOUR_BOARD_LAYOUT.filter((item) => item.earliestAct <= 3).length);
     expect(screen.getByText(`${rendered} pieces`)).toBeTruthy();
   });
