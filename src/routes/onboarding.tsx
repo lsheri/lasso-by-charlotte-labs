@@ -4,13 +4,15 @@ import { useEffect, useState } from "react";
 
 import { StepRail } from "@/components/onboarding/StepRail";
 import { SetupTools } from "@/components/onboarding/SetupTools";
+import { OnboardingTour } from "@/components/onboarding/OnboardingTour";
+import { useOnboardingUi } from "@/hooks/use-onboarding-ui";
 import { ToolPicker } from "@/components/onboarding/ToolPicker";
 import { SessionHeader } from "@/components/layout/SessionHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
-import { AUTH_USER_KEY, fetchProfile } from "@/hooks/use-profile";
+import { AUTH_USER_KEY, fetchProfile, useProfile } from "@/hooks/use-profile";
 import {
   readEduIntent,
   clearEduIntent,
@@ -246,7 +248,7 @@ function OnboardingInner() {
           ? "invite"
           : "chooser",
   );
-  const [stage, setStage] = useState<"setup" | "share_back" | "tools" | "capture">(setup ? "tools" : "setup");
+  const [stage, setStage] = useState<"setup" | "share_back" | "tools" | "capture" | "tour">(setup ? "tools" : "setup");
   const [shareBack, setShareBack] = useState<{ id: string; name: string; orgId: string | null } | null>(null);
   const [shareBackPending, setShareBackPending] = useState(false);
   const [shareBackError, setShareBackError] = useState<string | null>(null);
@@ -444,10 +446,37 @@ function OnboardingInner() {
     setStage("tools");
   }
 
-  function finish() {
+  // TV5: the first-run tour sits in front of the existing completion path.
+  // profiles.onboarding.welcome_seen is the memory that stops it replaying;
+  // ?setup=1 is an existing member and never sees it.
+  const { data: activeProfile } = useProfile();
+  const { ui: onboardingUi, update: updateOnboardingUi } = useOnboardingUi();
+
+  function land() {
     // Unit Y2: the same place sign-in lands, so the first visit and every
     // later one start on the same screen.
     navigate({ to: "/home", replace: true });
+  }
+
+  function finish() {
+    if (!setup && activeProfile && !onboardingUi.welcome_seen) {
+      setStage("tour");
+      return;
+    }
+    land();
+  }
+
+  function completeTour() {
+    updateOnboardingUi({ welcome_seen: true });
+    land();
+  }
+
+  if (stage === "tour") {
+    return (
+      <main className="tour-preview-page" data-testid="onboarding-tour">
+        <OnboardingTour register={orgType} orgId={activeProfile?.org_id ?? null} onDone={completeTour} />
+      </main>
+    );
   }
 
   if (stage === "share_back" && shareBack) {

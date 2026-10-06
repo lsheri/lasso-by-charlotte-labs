@@ -3,7 +3,6 @@ import { UploadFilesButton } from "@/components/work/UploadFilesButton";
 import { TOOLS, type ToolId } from "@/lib/onboarding-tools";
 import type { Register } from "@/lib/register";
 import { ExportGuideCard } from "./ExportGuideCard";
-import { FlowPreview } from "./FlowPreview";
 import { LiveConnectCard } from "./LiveConnectCard";
 import { McpSetupCard } from "./McpSetupCard";
 
@@ -20,8 +19,6 @@ export function SetupTools({ tools, register }: { tools: ToolId[]; register?: Re
 
   return (
     <div className="space-y-6">
-      <FlowPreview {...(register ? { register } : {})} />
-
       {connectors.length > 0 ? (
         <section className="space-y-3">
           <h2 className="micro-label text-graphite">Connect and pick</h2>

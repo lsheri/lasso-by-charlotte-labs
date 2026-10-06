@@ -34,7 +34,6 @@ vi.mock("@/components/connectors/ConnectorPicker", () => ({
 }));
 vi.mock("@/components/work/PasteThreadDialog", () => ({ PasteThreadDialog: () => null }));
 vi.mock("@/components/work/UploadFilesButton", () => ({ UploadFilesButton: () => null }));
-vi.mock("@/components/onboarding/FlowPreview", () => ({ FlowPreview: () => null }));
 vi.mock("@/components/onboarding/McpSetupCard", () => ({ McpSetupCard: () => null }));
 vi.mock("@/components/onboarding/ExportGuideCard", () => ({ ExportGuideCard: () => null }));
 
