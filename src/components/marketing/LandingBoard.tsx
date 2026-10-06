@@ -18,6 +18,7 @@ import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
 import { EntryDoorLink } from "@/components/layout/EntryDoorLink";
 import { BrandLogo, type BrandKey } from "@/components/connectors/BrandLogo";
 import { LandingParticlePhrase } from "@/components/marketing/LandingParticlePhrase";
+import { OnboardingTour } from "@/components/onboarding/OnboardingTour";
 import { FocusSection } from "@/components/marketing/FocusSection";
 import { ToolLogo } from "@/components/marketing/ToolLogo";
 import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
@@ -2946,58 +2947,14 @@ export function LandingBoard() {
             <p className="micro-label">HOW IT WORKS</p>
             <h2>Watch one engagement, start to finish.</h2>
           </div>
-          <div className="lb-sticky-stage">
-            {result?.status === "open" && "board" in result ? (
-              <StoryBoard
-                board={result.board}
-                presets={result.presets}
-                proof={result.proof}
-                step={active}
-                attentionStep={settledStep}
-                attentionNonce={attentionNonce}
-                clientLabel={result.engagement.clientLabel ?? ""}
-                engagementTitle={result.engagement.title}
-                onShowSlide={() => {
-                  event(viewId.current, "landing.proof_link_opened", {
-                    step: "6",
-                    target: "slide",
-                  });
-                  jump("circle");
-                }}
-                onOpenTurn={() =>
-                  event(viewId.current, "landing.proof_link_opened", { step: "6", target: "turn" })
-                }
-                onOpenDecisionTurn={() =>
-                  event(viewId.current, "landing.proof_link_opened", { step: "7", target: "turn" })
-                }
-              />
-            ) : (
-              <div className="lb-stage-window lb-loading">
-                The demo board is not available right now.
-              </div>
-            )}
-            <StoryCaption
-              step={settledStep}
-              nonce={attentionNonce}
-              onPilot={() => pilot("try_it")}
-            />
-          </div>
-          <div className="lb-scroll-sections">
-            {LANDING_BOARD_STEPS.slice(1).map((step, itemIndex) => {
-              const index = itemIndex + 1;
-              // S2: workstreams is a self-contained section, not a shared-stage step.
-              if (step.key === "workstreams")
-                return <WorkstreamsSection key={step.key} onViewed={noteWorkstreamsViewed} />;
-              return (
-                <section
-                  id={`lb-${step.key}`}
-                  data-lb-step={index}
-                  key={step.key}
-                  className="lb-scroll-step"
-                ></section>
-              );
-            })}
-          </div>
+          {/* TL2: desktop How it works is the eight-act tour. Phone keeps PhoneStory. */}
+          <OnboardingTour
+            register="company"
+            orgId={null}
+            onDone={() =>
+              document.getElementById("pilot")?.scrollIntoView({ behavior: "smooth", block: "start" })
+            }
+          />
         </section>
         {result?.status === "open" && "board" in result ? (
           <PhoneStory
