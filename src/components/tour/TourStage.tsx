@@ -9,13 +9,13 @@ export type TourActRenderer = {
   id: TourActId;
   content: ReactNode;
   /** True once the act's action is done; the teaching callout then shows. */
-  complete?: boolean;
+  complete?: boolean | undefined;
   /** False when the act has nothing to do; such an act never earns a teaching callout and its control lives in the footer. */
-  hasAction?: boolean;
+  hasAction?: boolean | undefined;
   /** The act's own primary action label; the callout falls back to the stage "Got it" label. */
-  continueLabel?: string;
+  continueLabel?: string | undefined;
   /** The single way forward from the teaching callout. */
-  onContinue?: () => void;
+  onContinue?: (() => void) | undefined;
 };
 
 type TourStageProps = {
