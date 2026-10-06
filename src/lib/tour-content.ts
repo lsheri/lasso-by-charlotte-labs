@@ -194,9 +194,9 @@ function acts(
   return [
     {
       id: 1,
-      captionPointer: "Push both chats into Lasso, then click Next.",
+      captionPointer: "Push all of your most important AI Conversations directly to Lasso's inbox.",
       captionTouch: "Push both chats into Lasso, then tap Next.",
-      why: "Keep working in whichever AI tool you like. One push brings the whole conversation over, with a link back to where it happened.",
+      why: "Keep working in whichever AI tool you like. One push brings the whole conversation over, with a link back to where it happened. You can add to your AI conversations and re-push to lasso whenevr you'd like.",
       chat: TOUR_PUSHED_CHAT,
       companionChat: TOUR_CHATGPT_CHAT,
     },
