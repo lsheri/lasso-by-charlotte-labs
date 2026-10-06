@@ -28,9 +28,12 @@ export const recordEventFn = createServerFn({ method: "POST" })
       dims = guardEventDims(data.event_type, dims).dims;
     }
     const { resolveProfile } = await import("./profile-resolve");
-    const profile = await resolveProfile(context.supabase, context.userId, data.profile_id).catch(
-      () => null,
-    );
+    const profile = await resolveProfile(
+      context.supabase,
+      context.userId,
+      data.profile_id,
+      data.org_id,
+    ).catch(() => null);
     const { recordEvent, notePresence } = await import("./telemetry.server");
     await recordEvent(context.supabase, {
       eventType: data.event_type,

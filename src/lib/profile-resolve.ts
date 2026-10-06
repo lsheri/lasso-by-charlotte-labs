@@ -21,6 +21,7 @@ export async function resolveProfile(
   supabase: SupabaseClient<Database>,
   userId: string,
   profileId?: string | null | undefined,
+  orgId?: string,
 ): Promise<ResolvedProfile | null> {
   const { data, error } = await supabase
     .from("profiles")
@@ -30,6 +31,16 @@ export async function resolveProfile(
     .order("created_at", { ascending: true });
   if (error) throw new Error(error.message);
   const rows = (data ?? []) as ResolvedProfile[];
+  if (orgId !== undefined) {
+    // The acting profile for an event is the caller's profile in that event's
+    // own workspace. If the caller has no active profile there, the honest
+    // answer is null: this person is not a member of that workspace, so no
+    // person should be stamped on that row. Never fall back to the oldest
+    // profile, which could belong to a different workspace.
+    const inOrg = rows.filter((row) => row.org_id === orgId);
+    const match = profileId ? inOrg.find((row) => row.id === profileId) : undefined;
+    return match ?? inOrg[0] ?? null;
+  }
   const match = profileId ? rows.find((row) => row.id === profileId) : undefined;
   return match ?? rows[0] ?? null;
 }
