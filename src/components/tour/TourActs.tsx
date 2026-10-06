@@ -17,6 +17,7 @@ import { TOUR_BOARD_LAYOUT, actById, tourAmbientCards, tourBoardCopy, type TourA
 import type { WorkboardCardPreview } from "@/lib/workboard-card-preview.shared";
 import type { WorkItemRow } from "@/lib/work-types";
 import type { TourActRenderer } from "@/components/tour/TourStage";
+import { useTourTeachBeat } from "@/components/tour/tour-beat";
 
 const noop = () => undefined;
 type DragFile = { title: string; pointerId: number; x: number; y: number };
@@ -218,15 +219,17 @@ export function TourActPush({ register, onReady }: { register: Register; onReady
   const act = actById(register, 1);
   const chats = [act?.chat, act?.companionChat].filter((chat): chat is TourPushedChat => chat !== undefined);
   const reduced = useMotionPreference();
+  const teaching = useTourTeachBeat();
   const total = Math.max(...chats.map((chat) => chat.turns.length + 2), 0);
   const [step, setStep] = useState(0);
   const [pushed, setPushed] = useState<Set<string>>(() => new Set());
   const shown = reduced ? total : step;
   useEffect(() => {
-    if (reduced) return;
+    // The shared timer starts only once the teach beat is dismissed.
+    if (reduced || teaching) return;
     const timers = Array.from({ length: total }, (_, index) => window.setTimeout(() => setStep(index + 1), TOUR_TURN_DELAY_MS * (index + 1)));
     return () => timers.forEach((timer) => window.clearTimeout(timer));
-  }, [reduced, total]);
+  }, [reduced, teaching, total]);
   const push = (title: string) => {
     if (pushed.has(title)) return;
     const next = new Set(pushed).add(title);

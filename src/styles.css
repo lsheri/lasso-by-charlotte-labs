@@ -6911,3 +6911,24 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   .tour-persistent-board[data-act="8"] .tour-deck-overlay { top: 30% !important; left: 2% !important; width: 96% !important; }
   .tour-deck-chart { max-height: 64px; }
 }
+
+/* TVk: teach beat. The act surface recedes behind a light blur and dim; heading, counter and callout stay sharp. */
+.tour-stage-header { z-index: 3; }
+.tour-act, .tour-stage-actions { transition: filter 220ms var(--nb-ease); }
+.tour-stage[data-beat="teach"] .tour-act,
+.tour-stage[data-beat="teach"] .tour-stage-actions { filter: blur(2px) saturate(0.85); }
+.tour-teach-scrim { position: absolute; z-index: 2; inset: 0; background: color-mix(in srgb, var(--nb-paper) 42%, transparent); cursor: pointer; animation: tour-teach-fade 220ms var(--nb-ease) both; }
+.tour-teaching-callout p { margin: 0; white-space: pre-line; }
+.tour-teaching-callout { transform-origin: top right; transition: transform 220ms var(--nb-ease), box-shadow 220ms var(--nb-ease); }
+.tour-teaching-callout.is-teaching { transform: scale(1.06); box-shadow: 4px 6px 0 color-mix(in srgb, var(--nb-pencil) 34%, transparent), 0 12px 32px color-mix(in srgb, var(--nb-ink) 14%, transparent); }
+.tour-got-it { display: flex; margin: 12px 0 0 auto; }
+.tour-stage[data-beat="teach"] [data-tour-target] { outline: none; box-shadow: none; animation: none; }
+@keyframes tour-teach-fade { from { opacity: 0; } to { opacity: 1; } }
+@media (max-width: 767px) {
+  .tour-teaching-callout.is-teaching { transform: none; max-height: calc(100% - 160px); overflow-y: auto; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tour-act, .tour-stage-actions, .tour-teaching-callout { transition: none !important; }
+  .tour-teach-scrim { animation: none !important; }
+  .tour-teaching-callout.is-teaching { transform: none; }
+}

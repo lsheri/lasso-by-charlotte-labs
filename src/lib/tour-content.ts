@@ -181,6 +181,7 @@ const STAGE_COPY = {
   back: "Back",
   stageLabel: "First run tour",
   railLabel: "Tour progress",
+  gotIt: "Got it",
 } as const;
 
 function acts(

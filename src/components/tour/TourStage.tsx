@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { TourTeachBeatContext } from "@/components/tour/tour-beat";
 
 import { DrawnCheck, GraphiteRule } from "@/components/notebook/marks";
 import { Button } from "@/components/ui/button";
@@ -139,6 +140,17 @@ export function TourStage({
   const renderer = acts.find((item) => item.id === activeAct);
   const hintedActs = useRef(new Set<number>());
   const stageRef = useRef<HTMLElement>(null);
+  const gotItRef = useRef<HTMLButtonElement>(null);
+  // Acts already read stay read for the life of the tour, so Back never re-gates them.
+  const [readActs, setReadActs] = useState<ReadonlySet<number>>(() => new Set());
+  const teaching = !readActs.has(activeAct);
+  const dismissTeach = useCallback(() => {
+    setReadActs((current) => (current.has(activeAct) ? current : new Set(current).add(activeAct)));
+  }, [activeAct]);
+
+  useEffect(() => {
+    if (teaching) gotItRef.current?.focus();
+  }, [teaching, activeAct]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -151,6 +163,13 @@ export function TourStage({
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
+      if (teaching) {
+        if (event.key === "Enter" || event.key === " " || event.key === "Escape") {
+          event.preventDefault();
+          dismissTeach();
+        }
+        return;
+      }
       if (event.key === "Escape") {
         event.preventDefault();
         onSkip();
@@ -162,13 +181,13 @@ export function TourStage({
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [activeAct, onBack, onSkip]);
+  }, [activeAct, onBack, onSkip, teaching, dismissTeach]);
 
   if (!act || !renderer) return null;
 
   return (
     <section className="tour-shell" aria-label={copy.stage.stageLabel} data-act={activeAct}>
-      <section ref={stageRef} className="tour-stage">
+      <section ref={stageRef} className="tour-stage" data-beat={teaching ? "teach" : "do"}>
         <header className="tour-stage-header">
           <nav className="tour-rail" aria-label={copy.stage.railLabel}>
             {copy.acts.map((item, index) => {
@@ -195,13 +214,24 @@ export function TourStage({
           <p className="tour-do-line" data-tour-do>{instructionOverride ?? (touch ? act.captionTouch : act.captionPointer)}</p>
         </div>
 
-        <aside className="tour-teaching-callout">{act.why}</aside>
+        {teaching ? <div className="tour-teach-scrim" data-testid="tour-teach-scrim" aria-hidden onClick={dismissTeach} /> : null}
 
-        <div className="tour-act" data-testid="tour-act">
-          {renderer.content}
-        </div>
+        <aside className={`tour-teaching-callout${teaching ? " is-teaching" : ""}`}>
+          <p>{act.why}</p>
+          {teaching ? (
+            <Button ref={gotItRef} type="button" variant="ink" size="sm" className="tour-got-it" onClick={dismissTeach}>
+              {copy.stage.gotIt}
+            </Button>
+          ) : null}
+        </aside>
 
-        <footer className="tour-stage-actions">
+        <TourTeachBeatContext.Provider value={teaching}>
+          <div className="tour-act" data-testid="tour-act" data-tour-beat={teaching ? "teach" : "do"} inert={teaching}>
+            {renderer.content}
+          </div>
+        </TourTeachBeatContext.Provider>
+
+        <footer className="tour-stage-actions" data-tour-beat={teaching ? "teach" : "do"} inert={teaching}>
           {activeAct > 1 ? (
             <Button type="button" variant="ghost" className="tour-back nb-pencil-cta" onClick={onBack}>
               {copy.stage.back}
@@ -211,7 +241,7 @@ export function TourStage({
           )}
           <div className="tour-primary-action">{renderer.primaryAction}</div>
         </footer>
-        <TourInstructionArrow stage={stageRef} activeAct={activeAct} />
+        {teaching ? null : <TourInstructionArrow stage={stageRef} activeAct={activeAct} />}
       </section>
     </section>
   );
