@@ -2988,7 +2988,7 @@ export function LandingBoard() {
           `}</style>
           <div className="lb-how-it-works-head">
             <p className="micro-label">GETTING STARTED</p>
-            <h2>See how it works. Click through one engagement.</h2>
+            <h2>See how it works. Click through one deliverable.</h2>
           </div>
           {/* TL2: desktop How it works is the eight-act tour. Phone keeps PhoneStory. */}
           <LandingTourFrame />
