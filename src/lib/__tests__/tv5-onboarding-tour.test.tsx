@@ -23,7 +23,7 @@ vi.mock("@tanstack/react-router", async (orig) => ({
 vi.mock("@tanstack/react-query", () => ({
   useQueryClient: () => ({ invalidateQueries: async () => {}, removeQueries: () => {} }),
 }));
-vi.mock("@tanstack/react-start", () => ({ useServerFn: () => async () => null }));
+vi.mock("@tanstack/react-start", async (orig) => ({ ...(await orig<object>()), useServerFn: () => async () => null }));
 vi.mock("@/lib/activation-keys.functions", () => ({ lookupActivationKeyFn: {}, redeemActivationKeyFn: {} }));
 vi.mock("@/integrations/supabase/client", () => {
   const builder = (): Record<string, unknown> => {
