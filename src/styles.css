@@ -6912,23 +6912,23 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   .tour-deck-chart { max-height: 64px; }
 }
 
-/* TVk: teach beat. The act surface recedes behind a light blur and dim; heading, counter and callout stay sharp. */
+/* TVL: teach beat at the end of each act. The act surface recedes behind a blur and dim; the callout sits centred; heading and counter stay sharp. */
 .tour-stage-header { z-index: 3; }
 .tour-act, .tour-stage-actions { transition: filter 220ms var(--nb-ease); }
 .tour-stage[data-beat="teach"] .tour-act,
-.tour-stage[data-beat="teach"] .tour-stage-actions { filter: blur(2px) saturate(0.85); }
-.tour-teach-scrim { position: absolute; z-index: 2; inset: 0; background: color-mix(in srgb, var(--nb-paper) 42%, transparent); cursor: pointer; animation: tour-teach-fade 220ms var(--nb-ease) both; }
+.tour-stage[data-beat="teach"] .tour-stage-actions { filter: blur(4px) saturate(0.75); }
+.tour-teach-scrim { position: absolute; z-index: 2; inset: 0; background: color-mix(in srgb, var(--nb-paper) 58%, transparent); animation: tour-teach-fade 220ms var(--nb-ease) both; }
 .tour-teaching-callout p { margin: 0; white-space: pre-line; }
-.tour-teaching-callout { transform-origin: top right; transition: transform 220ms var(--nb-ease), box-shadow 220ms var(--nb-ease); }
-.tour-teaching-callout.is-teaching { transform: scale(1.06); box-shadow: 4px 6px 0 color-mix(in srgb, var(--nb-pencil) 34%, transparent), 0 12px 32px color-mix(in srgb, var(--nb-ink) 14%, transparent); }
-.tour-got-it { display: flex; margin: 12px 0 0 auto; }
-.tour-stage[data-beat="teach"] [data-tour-target] { outline: none; box-shadow: none; animation: none; }
+.tour-teaching-callout.is-teaching { top: 50%; right: auto; left: 50%; width: min(520px, calc(100% - 48px)); max-height: calc(100% - 48px); overflow-y: auto; font-size: 22px; transform: translate(-50%, -50%); box-shadow: 4px 6px 0 color-mix(in srgb, var(--nb-pencil) 34%, transparent), 0 12px 32px color-mix(in srgb, var(--nb-ink) 14%, transparent); animation: tour-teach-rise 240ms var(--nb-ease) both; }
+.tour-teaching-callout.is-teaching::after { display: none; }
+.tour-got-it { display: flex; margin: 14px 0 0 auto; }
+.tour-stage[data-beat="teach"] .tour-act [data-tour-target] { outline: none; box-shadow: none; animation: none; }
 @keyframes tour-teach-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes tour-teach-rise { from { opacity: 0; transform: translate(-50%, -50%) scale(0.96); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
 @media (max-width: 767px) {
-  .tour-teaching-callout.is-teaching { transform: none; max-height: calc(100% - 160px); overflow-y: auto; }
+  .tour-teaching-callout.is-teaching { position: fixed; z-index: 40; top: 50%; right: auto; left: 50%; width: calc(100vw - 24px); max-height: calc(100dvh - 24px); font-size: 17px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .tour-act, .tour-stage-actions, .tour-teaching-callout { transition: none !important; }
-  .tour-teach-scrim { animation: none !important; }
-  .tour-teaching-callout.is-teaching { transform: none; }
+  .tour-act, .tour-stage-actions { transition: none !important; }
+  .tour-teach-scrim, .tour-teaching-callout.is-teaching { animation: none !important; }
 }

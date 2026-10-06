@@ -32,12 +32,13 @@ const acts: readonly TourActRenderer[] = Array.from({ length: 8 }, (_, index) =>
   id: (index + 1) as TourActRenderer["id"],
   content: createElement("button", { "data-tour-target": String(index + 1) }, `Act ${index + 1}`),
 }));
+const completedActs: readonly TourActRenderer[] = acts.map((item) => ({ ...item, complete: true }));
 
 function stage(onSkip = vi.fn()) {
   return createElement(TourStage, {
     register: "company",
     activeAct: 5,
-    acts,
+    acts: completedActs,
     onSkip,
     onBack: vi.fn(),
     onHintShown: vi.fn(),
@@ -72,7 +73,7 @@ describe("T2 tour stage", () => {
 
   it("renders every unchanged teaching sentence in the callout rather than the instruction band", () => {
     for (const activeAct of [1, 2, 3, 4, 5, 6, 7, 8] as const) {
-      const rendered = render(createElement(TourStage, { register: "company", activeAct, acts, onSkip: vi.fn(), onBack: vi.fn(), onHintShown: vi.fn() }));
+      const rendered = render(createElement(TourStage, { register: "company", activeAct, acts: completedActs, onSkip: vi.fn(), onBack: vi.fn(), onHintShown: vi.fn() }));
       const callout = rendered.container.querySelector(".tour-teaching-callout");
       const band = rendered.container.querySelector(".tour-instruction-band");
       expect(callout?.querySelector("p")?.textContent).toBe(TOUR_CONTENT.company.acts[activeAct - 1]?.why);
@@ -98,12 +99,10 @@ describe("T2 tour stage", () => {
     });
     for (const activeAct of [1, 2, 3, 4, 5, 6, 7] as const) {
       const rendered = render(createElement(TourStage, { register: "company", activeAct, acts, onSkip: vi.fn(), onBack: vi.fn(), onHintShown: vi.fn() }));
-      fireEvent.click(within(rendered.container).getByRole("button", { name: "Got it" }));
       await waitFor(() => expect(rendered.container.querySelectorAll(".tour-instruction-arrow path")).toHaveLength(3));
       rendered.unmount();
     }
     const finale = render(createElement(TourStage, { register: "company", activeAct: 8, acts, onSkip: vi.fn(), onBack: vi.fn(), onHintShown: vi.fn() }));
-    fireEvent.click(within(finale.container).getByRole("button", { name: "Got it" }));
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect(finale.container.querySelector('[data-tour-target="8"]')).toBeTruthy();
     expect(finale.container.querySelector(".tour-instruction-arrow")).toBeNull();

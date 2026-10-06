@@ -94,7 +94,8 @@ describe("tour acts one to three", () => {
     fireEvent.click(targets[0]!);
     expect(actOne.container.querySelectorAll('[data-tour-target="1"]')).toHaveLength(1);
     fireEvent.click(actOne.container.querySelector('[data-tour-target="1"]') as HTMLElement);
-    expect(screen.getByRole("button", { name: "Next" }).getAttribute("data-tour-target")).toBe("1");
+    expect(screen.getByRole("button", { name: "Got it" }).getAttribute("data-tour-target")).toBe("1");
+    expect(screen.getByRole("button", { name: "Got it" }).closest(".tour-teaching-callout")).toBeTruthy();
     expect(actOne.container.querySelectorAll('[data-tour-target="1"]')).toHaveLength(1);
   });
 
@@ -405,10 +406,12 @@ describe("tour acts one to three", () => {
     fireEvent.click(screen.getByRole("button", { name: "Keep" }));
     expect(seven.container.querySelectorAll('[data-tour-target="7"]')).toHaveLength(1);
     expect(screen.getByRole("button", { name: "See it in the deck" }).getAttribute("data-tour-target")).toBe("7");
+    expect(screen.getByRole("button", { name: "See it in the deck" }).closest(".tour-teaching-callout")).toBeTruthy();
     seven.unmount();
     const eight = render(<Harness start={8} />);
     expect(eight.container.querySelectorAll('[data-tour-target="8"]')).toHaveLength(1);
     expect(screen.getByRole("button", { name: "Start with my own work" }).getAttribute("data-tour-target")).toBe("8");
+    expect(screen.getByRole("button", { name: "Start with my own work" }).closest(".tour-teaching-callout")).toBeTruthy();
     expect(screen.getByTestId("tour-deck-slide").hasAttribute("data-tour-target")).toBe(false);
   });
 
