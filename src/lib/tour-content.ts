@@ -196,7 +196,7 @@ function acts(
       id: 1,
       captionPointer: "Push all of your most important AI Conversations directly to Lasso's inbox.",
       captionTouch: "Push both chats into Lasso, then tap Next.",
-      why: "Keep working in whichever AI tool you like. One push brings the whole conversation over, with a link back to where it happened. You can add to your AI conversations and re-push to lasso whenevr you'd like.",
+      why: 'Once an MCP connector is live...simply say "Push to Lasso" to push to your inbox or directly to a work board.\n\nKeep working in whichever AI tool you like. One push brings the whole conversation over, with a link back to where it happened. You can add to your AI conversations and re-push to lasso whenever you\'d like.',
       chat: TOUR_PUSHED_CHAT,
       companionChat: TOUR_CHATGPT_CHAT,
     },
