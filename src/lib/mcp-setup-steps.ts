@@ -19,6 +19,22 @@ export const MCP_SETUP_STEPS: Record<McpVendor, readonly string[]> = {
   ],
 };
 
+/** One sign-in address for everybody, unlike a link, which is per person. */
+export const MCP_SIGNIN_URL = "https://lasso.charlotte-labs.com/api/mcp";
+
+export const MCP_SIGNIN_STEPS: Partial<Record<McpVendor, readonly string[]>> = {
+  claude: [
+    "Open Claude, then Settings, then Connectors.",
+    `Add custom connector and paste ${MCP_SIGNIN_URL}`,
+    "Choose Sign in now and Register automatically, then Connect.",
+    "Sign in to Lasso, choose the workspace this connection belongs to, and approve.",
+  ],
+};
+
+/** What sign-in gives, shown as the heading note above the sign-in steps. */
+export const MCP_SIGNIN_NOTE =
+  "Signing in keeps each person's work under their own name, so a shared connector never files one person's work as another's.";
+
 export const MCP_VENDORS: readonly McpVendor[] = ["claude", "chatgpt"];
 
 /** What Claude and ChatGPT show in their connector list once it is added. */
