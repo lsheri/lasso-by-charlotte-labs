@@ -226,7 +226,7 @@ export function TourStage({
             <div className="tour-teach-scrim" data-testid="tour-teach-scrim" aria-hidden />
             <aside className="tour-teaching-callout is-teaching" role="dialog" aria-label={copy.stage.stageLabel}>
               <p>{act.why}</p>
-              <Button ref={continueRef} type="button" variant="ink" size="sm" className="tour-got-it" onClick={renderer.onContinue}>
+              <Button ref={continueRef} type="button" variant="ink" size="sm" className="tour-got-it" data-tour-target={activeAct} onClick={renderer.onContinue}>
                 {renderer.continueLabel ?? copy.stage.gotIt}
               </Button>
             </aside>

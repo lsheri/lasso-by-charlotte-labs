@@ -100,17 +100,18 @@ describe("TV2 and TVc tour sequence", () => {
     expect(document.querySelectorAll('[data-tour-target="1"]')).toHaveLength(2);
   });
 
-  it("keeps act one open after either push and advances only through Next after both", () => {
+  it("keeps act one open after either push and advances only through the callout control after both", () => {
     reducedMotion = true;
     render(<Harness />);
     const pushes = screen.getAllByRole("button", { name: "Push to Lasso" });
     fireEvent.click(pushes[0]!);
     expect(screen.queryByLabelText("All AI Conversations tour example")).toBeNull();
-    expect(screen.queryByRole("button", { name: "Next" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Got it" })).toBeNull();
     expect(document.querySelectorAll('[data-tour-target="1"]')).toHaveLength(1);
     fireEvent.click(pushes[1]!);
     expect(document.querySelectorAll('[data-tour-target="1"]')).toHaveLength(1);
-    const next = screen.getByRole("button", { name: "Next" });
+    expect(screen.queryByLabelText("All AI Conversations tour example")).toBeNull();
+    const next = screen.getByRole("button", { name: "Got it" });
     expect(next.getAttribute("data-tour-target")).toBe("1");
     fireEvent.click(next);
     expect(screen.getByLabelText("All AI Conversations tour example")).toBeTruthy();
@@ -134,6 +135,8 @@ describe("TV2 and TVc tour sequence", () => {
     expect(document.querySelectorAll('[data-tour-target="2"]')).toHaveLength(1);
     expect(rows.slice(2).map((row) => row.querySelector(".ledger-work-note > .nb-paper-body > p")?.textContent)).toEqual(tourAmbientCards("company").map((card) => card.title));
     fireEvent.click(board);
+    expect(screen.queryByTestId("tour-act-one")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Got it" }));
     expect(screen.getByTestId("tour-act-one")).toBeTruthy();
     expect(screen.getByText("Lasso connects to wherever you work...Drives, Docs, Transcripts, AI chats...All available to organize on work boards.")).toBeTruthy();
   });

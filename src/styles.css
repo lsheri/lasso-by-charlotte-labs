@@ -6922,7 +6922,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .tour-teaching-callout.is-teaching { top: 50%; right: auto; left: 50%; width: min(520px, calc(100% - 48px)); max-height: calc(100% - 48px); overflow-y: auto; font-size: 22px; transform: translate(-50%, -50%); box-shadow: 4px 6px 0 color-mix(in srgb, var(--nb-pencil) 34%, transparent), 0 12px 32px color-mix(in srgb, var(--nb-ink) 14%, transparent); animation: tour-teach-rise 240ms var(--nb-ease) both; }
 .tour-teaching-callout.is-teaching::after { display: none; }
 .tour-got-it { display: flex; margin: 14px 0 0 auto; }
-.tour-stage[data-beat="teach"] [data-tour-target] { outline: none; box-shadow: none; animation: none; }
+.tour-stage[data-beat="teach"] .tour-act [data-tour-target] { outline: none; box-shadow: none; animation: none; }
 @keyframes tour-teach-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes tour-teach-rise { from { opacity: 0; transform: translate(-50%, -50%) scale(0.96); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
 @media (max-width: 767px) {
