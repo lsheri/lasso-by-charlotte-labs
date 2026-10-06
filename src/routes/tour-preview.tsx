@@ -32,7 +32,8 @@ export function TourPreviewPage() {
     [],
   );
   const advance = useCallback((act: TourActId) => {
-    window.setTimeout(() => setActiveAct((act + 1) as TourActId), act === 5 ? 900 : 450);
+    // The end-of-step callout already holds the reading time, so its control advances at once.
+    setActiveAct((act + 1) as TourActId);
   }, []);
   const finish = useCallback(() => setActiveAct(1), []);
   const { renderers, instructionOverride, hint } = useTourActRenderers({ register, activeAct, onAdvance: advance, onHintShown: () => undefined, onFinish: finish });
