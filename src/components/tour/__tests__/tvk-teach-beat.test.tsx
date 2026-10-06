@@ -82,7 +82,6 @@ describe("TVk teach beat", () => {
     vi.useFakeTimers();
     const view = (teaching: boolean) => createElement(TourTeachBeatContext.Provider, { value: teaching }, createElement(TourActPush, { register: "company", onReady: vi.fn() }));
     const r = render(view(true));
-    const turns = () => r.container.querySelectorAll(".tour-chat-window li, .tour-chat-window [data-turn]").length;
     const before = r.container.innerHTML;
     act(() => { vi.advanceTimersByTime(TOUR_TURN_DELAY_MS * 12); });
     expect(r.container.innerHTML).toBe(before);
@@ -90,7 +89,6 @@ describe("TVk teach beat", () => {
     act(() => { vi.advanceTimersByTime(TOUR_TURN_DELAY_MS * 12); });
     expect(r.container.innerHTML).not.toBe(before);
     expect(r.container.querySelectorAll('[data-tour-target="1"]')).toHaveLength(2);
-    void turns;
   });
 
   it("does not re-gate an act already read when going back", () => {
