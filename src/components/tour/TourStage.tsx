@@ -8,12 +8,14 @@ import type { Register } from "@/lib/register";
 export type TourActRenderer = {
   id: TourActId;
   content: ReactNode;
-  /** True once the act's action is done (always for the closing act); the teaching callout then shows. */
-  complete?: boolean;
+  /** True once the act's action is done; the teaching callout then shows. */
+  complete?: boolean | undefined;
+  /** False when the act has nothing to do; such an act never earns a teaching callout and its control lives in the footer. */
+  hasAction?: boolean | undefined;
   /** The act's own primary action label; the callout falls back to the stage "Got it" label. */
-  continueLabel?: string;
+  continueLabel?: string | undefined;
   /** The single way forward from the teaching callout. */
-  onContinue?: () => void;
+  onContinue?: (() => void) | undefined;
 };
 
 type TourStageProps = {
@@ -146,7 +148,8 @@ export function TourStage({
   const stageRef = useRef<HTMLElement>(null);
   const continueRef = useRef<HTMLButtonElement>(null);
   // One teach beat, at the end of each act: the callout appears only once the act's action is done.
-  const teaching = Boolean(renderer?.complete);
+  // An act with nothing to do never earns a callout.
+  const teaching = Boolean(renderer?.complete && renderer.hasAction !== false);
 
   useEffect(() => {
     if (teaching) continueRef.current?.focus();
@@ -219,6 +222,11 @@ export function TourStage({
           ) : (
             <span />
           )}
+          {renderer.hasAction === false && renderer.onContinue ? (
+            <Button type="button" variant="ink" size="sm" className="tour-got-it" data-tour-target={activeAct} onClick={renderer.onContinue}>
+              {renderer.continueLabel ?? copy.stage.gotIt}
+            </Button>
+          ) : null}
         </footer>
 
         {teaching ? (

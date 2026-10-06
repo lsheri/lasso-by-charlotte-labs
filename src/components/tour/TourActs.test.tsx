@@ -411,7 +411,9 @@ describe("tour acts one to three", () => {
     const eight = render(<Harness start={8} />);
     expect(eight.container.querySelectorAll('[data-tour-target="8"]')).toHaveLength(1);
     expect(screen.getByRole("button", { name: "Start with my own work" }).getAttribute("data-tour-target")).toBe("8");
-    expect(screen.getByRole("button", { name: "Start with my own work" }).closest(".tour-teaching-callout")).toBeTruthy();
+    // Act eight has no completing action, so its finish control sits in the footer and no callout ever shows.
+    expect(screen.getByRole("button", { name: "Start with my own work" }).closest(".tour-stage-actions")).toBeTruthy();
+    expect(eight.container.querySelector(".tour-teaching-callout")).toBeNull();
     expect(screen.getByTestId("tour-deck-slide").hasAttribute("data-tour-target")).toBe(false);
   });
 
