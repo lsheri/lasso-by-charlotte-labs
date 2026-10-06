@@ -196,10 +196,10 @@ describe("M2a — the handler's own wiring", () => {
   });
 
   it("records every new tool call and the two new events", () => {
-    expect(handler).toContain('logPush(owner, { tool: "list_places" })');
-    expect(handler).toContain('logPush(owner, { tool: "push_options" })');
-    expect(handler).toContain('logPush(owner, { tool: "create_container" })');
-    expect(handler).toContain('logPush(owner, { tool: "create_board" })');
+    expect(handler).toContain('logPush(owner, { tool: "list_places" }, "helper")');
+    expect(handler).toContain('logPush(owner, { tool: "push_options" }, "options")');
+    expect(handler).toContain('logPush(owner, { tool: "create_container" }, "helper")');
+    expect(handler).toContain('logPush(owner, { tool: "create_board" }, "helper")');
     expect(handler).toContain('eventType: "mcp.push_options_requested"');
     expect(handler).toContain('eventType: "mcp.container_created"');
     expect(handler).toContain('dims: { has_suggestion: suggested ? "true" : "false" }');
