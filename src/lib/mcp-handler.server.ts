@@ -723,18 +723,26 @@ async function recordAuthFailure(failure: AuthFailure): Promise<void> {
   }
 }
 
-async function logPush(owner: Owner, dims: Record<string, string>): Promise<void> {
+// stage is "capture" on exactly the paths that write workitem.captured.
+// Nothing else may be "capture".
+async function logPush(
+  owner: Owner,
+  dims: Record<string, string>,
+  stage: "options" | "capture" | "helper",
+): Promise<void> {
   await recordEvent(supabaseAdmin, {
     eventType: "mcp.push",
     orgId: owner.orgId,
     userId: owner.userId,
-    dims: { ...dims, auth_kind: owner.authKind },
+    profileId: owner.profileId,
+    dims: { ...dims, stage, auth_kind: owner.authKind },
   });
   if (dims["tool"] === "push_thread" || dims["tool"] === "push_document") {
     await recordEvent(supabaseAdmin, {
       eventType: "workitem.captured",
       orgId: owner.orgId,
       userId: owner.userId,
+      profileId: owner.profileId,
       dims: { channel: "mcp", source: dims["source_ai"] ?? "mcp" },
     });
   }
@@ -1380,7 +1388,7 @@ async function pushThread(
     source_ai: sourceAi,
     target: threadPlacement.target,
     suggestion_outcome: plan.suggestionOutcome,
-  });
+  }, "capture");
   const threadActor = { orgId: owner.orgId, userId: owner.userId, profileId: owner.profileId };
   await noteModelUsed(supabaseAdmin, threadActor, {
     item: { type: "ai_thread", source: `mcp:${sourceAi}` },
@@ -1496,7 +1504,7 @@ async function pushDocument(owner: Owner, args: Obj, id: unknown): Promise<Respo
     tool: "push_document",
     target: docPlacement.target,
     suggestion_outcome: plan.suggestionOutcome,
-  });
+  }, "capture");
   await noteModelUsed(
     supabaseAdmin,
     { orgId: owner.orgId, userId: owner.userId, profileId: owner.profileId },
@@ -1586,7 +1594,7 @@ async function listPlaces(owner: Owner, id: unknown): Promise<Response> {
   const refByBoardWorkstream = new Map(
     places.map((place) => [`${place.code}\u0000${place.boardTitle}\u0000${place.workstreamName}`, place.ref]),
   );
-  await logPush(owner, { tool: "list_places" });
+  await logPush(owner, { tool: "list_places" }, "helper");
   if (boards.length === 0) return textResult(id, `No ${vocab.boards} yet.`);
 
   const byContainer = new Map<string, string[]>();
@@ -1682,7 +1690,7 @@ async function pushOptions(owner: Owner, args: Obj, id: unknown): Promise<Respon
     projectName,
   });
 
-  await logPush(owner, { tool: "push_options" });
+  await logPush(owner, { tool: "push_options" }, "options");
   await recordEvent(supabaseAdmin, {
     eventType: "mcp.push_options_requested",
     orgId: owner.orgId,
@@ -1751,7 +1759,7 @@ async function createContainer(
   vocab: McpVocab,
 ): Promise<Response> {
   const name = String(args["name"] ?? "").trim();
-  await logPush(owner, { tool: "create_container" });
+  await logPush(owner, { tool: "create_container" }, "helper");
   if (!name) return textResult(id, `Tell me the ${vocab.container} name first, exactly as the user gave it.`);
 
   const { data, error } = await supabaseAdmin.rpc("mcp_create_container", {
@@ -1775,7 +1783,7 @@ async function createBoard(
 ): Promise<Response> {
   const wanted = String(args["container"] ?? "").trim();
   const title = String(args["title"] ?? "").trim();
-  await logPush(owner, { tool: "create_board" });
+  await logPush(owner, { tool: "create_board" }, "helper");
   if (!wanted || !title) {
     return textResult(id, `Tell me the ${vocab.container} and the ${vocab.board} title first.`);
   }
@@ -1851,7 +1859,7 @@ async function listEngagements(owner: Owner, id: unknown): Promise<Response> {
       : `${e.code}, ${e.title}${clientDisplayName(e) ? ` for ${clientDisplayName(e)}` : ""}`;
     return [header, ...(names.length ? names : ["  (no workstreams yet)"])].join("\n");
   });
-  await logPush(owner, { tool: "list_engagements" });
+  await logPush(owner, { tool: "list_engagements" }, "helper");
   return textResult(id, lines.join("\n\n"));
 }
 
