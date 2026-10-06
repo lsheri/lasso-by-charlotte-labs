@@ -2954,7 +2954,7 @@ export function LandingBoard() {
             <h2>See how it works. Click through one engagement.</h2>
           </div>
           {/* TL2: desktop How it works is the eight-act tour. Phone keeps PhoneStory. */}
-          <div className="mx-auto w-full max-w-4xl">
+          <div className="mx-auto w-full max-w-4xl [&>.tour-shell]:w-full">
             <OnboardingTour
               register="company"
               orgId={null}
