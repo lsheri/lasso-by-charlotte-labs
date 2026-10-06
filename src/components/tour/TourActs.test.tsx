@@ -317,14 +317,13 @@ describe("tour acts one to three", () => {
     expect(deck.querySelectorAll("svg rect")).toHaveLength(4);
   });
 
-  it("renders the renamed screenshot frame and never renders removed cards in any board act", () => {
+  it("renders the renamed screenshot frame through act seven and never renders removed cards in any board act", () => {
     for (const renderAct of [
       () => <TourActOne register="company" onComplete={vi.fn()} />,
       () => <TourActTwo register="company" hint={false} onComplete={vi.fn()} />,
       () => <TourActThree register="company" onComplete={vi.fn()} />,
       () => <TourActFour register="company" onComplete={vi.fn()} />,
       () => <TourActFive register="company" onLanded={vi.fn()} />,
-      () => <TourActSix register="company" />,
     ]) {
       const rendered = render(renderAct());
       const screenshot = screen.getByLabelText(tourBoardCopy("company").whiteboardTitle);
@@ -332,6 +331,9 @@ describe("tour acts one to three", () => {
       for (const id of ["primary-4", "chat-2", "chat-3"]) expect(rendered.container.querySelector(`[data-tour-layout-id="${id}"]`)).toBeNull();
       rendered.unmount();
     }
+    const actEight = render(<TourActSix register="company" />);
+    expect(screen.queryByLabelText(tourBoardCopy("company").whiteboardTitle)).toBeNull();
+    for (const id of ["primary-4", "chat-2", "chat-3"]) expect(actEight.container.querySelector(`[data-tour-layout-id="${id}"]`)).toBeNull();
   });
 
   it("keeps every margin note beside work that still exists", () => {
