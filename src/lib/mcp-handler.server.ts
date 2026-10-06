@@ -1910,6 +1910,17 @@ async function storedAttachmentChars(match: {
   return data ? data.size : 0;
 }
 
+/** Where a windowed push sits inside its conversation. */
+export function windowPos(
+  win: { from: number; to: number; total: number } | null,
+): "only" | "first" | "middle" | "last" {
+  if (!win) return "only";
+  if (win.from <= 1 && win.to >= win.total) return "only";
+  if (win.from <= 1) return "first";
+  if (win.to >= win.total) return "last";
+  return "middle";
+}
+
 /**
  * The canonical push. One call = one conversation: a transcript work item plus
  * one work item per attachment, all sharing orig_conversation_id so the app can
@@ -2971,10 +2982,13 @@ export async function pushConversation(
     eventType: "mcp.push",
     orgId: owner.orgId,
     userId: owner.userId,
+    profileId: owner.profileId,
     dims: {
       vendor,
       target: convoPlacement.target,
       suggestion_outcome: plan.suggestionOutcome,
+      stage: "capture",
+      window_pos: windowPos(win),
       attachment_count: attachmentBucket(attachments.length),
       rejected_attachments: flaggedBucket(rejected.length),
       mode: pushMode,
