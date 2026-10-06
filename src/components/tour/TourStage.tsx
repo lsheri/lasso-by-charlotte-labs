@@ -75,8 +75,7 @@ function TourInstructionArrow({ stage, activeAct }: { stage: React.RefObject<HTM
     };
     draw();
     const mutation = new MutationObserver(draw);
-    const actSurface = root.querySelector<HTMLElement>("[data-testid='tour-act']");
-    if (actSurface) mutation.observe(actSurface, { childList: true, subtree: true });
+    mutation.observe(root, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-tour-target"] });
     if (typeof ResizeObserver !== "undefined") {
       observer = new ResizeObserver(draw);
       observer.observe(root);
@@ -193,8 +192,9 @@ export function TourStage({
         <div className={`tour-instruction-band${instructionOverride ? " is-complete" : ""}`}>
           <span className="tour-step-marker">Step {activeAct} of {copy.acts.length}</span>
           <p className="tour-do-line" data-tour-do>{instructionOverride ?? (touch ? act.captionTouch : act.captionPointer)}</p>
-          <p className="tour-why-line">{act.why}</p>
         </div>
+
+        <aside className="tour-teaching-callout">{act.why}</aside>
 
         <div className="tour-act" data-testid="tour-act">
           {renderer.content}
