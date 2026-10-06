@@ -225,7 +225,7 @@ function acts(
       id: 5,
       captionPointer: "Draw a box around the three selected cards.",
       captionTouch: "Tap Add grouping to group the three cards.",
-      why: "Three pieces of work that belong to one decision. Grouped, they answer together, and nothing else on the board gets read.",
+      why: "Three pieces of work that belong to one workstream. Grouped, they answer together, and nothing else on the board gets read.",
       contextSentence: TOUR_CONTEXT_SENTENCE,
       frameTitle,
     },
