@@ -8,8 +8,10 @@ import type { Register } from "@/lib/register";
 export type TourActRenderer = {
   id: TourActId;
   content: ReactNode;
-  /** True once the act's action is done (always for the closing act); the teaching callout then shows. */
+  /** True once the act's action is done; the teaching callout then shows. */
   complete?: boolean;
+  /** False when the act has nothing to do; such an act never earns a teaching callout and its control lives in the footer. */
+  hasAction?: boolean;
   /** The act's own primary action label; the callout falls back to the stage "Got it" label. */
   continueLabel?: string;
   /** The single way forward from the teaching callout. */

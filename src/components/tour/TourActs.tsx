@@ -363,6 +363,7 @@ export function useTourActRenderers({ register, activeAct, onAdvance, onHintShow
       id,
       content: content[id],
       complete: id === 8 || completedAct === id,
+      hasAction: id !== 8,
       continueLabel: actById(register, id)?.primaryActionLabel,
       onContinue: id === 8 ? onFinish : () => onAdvance(id),
     }));
