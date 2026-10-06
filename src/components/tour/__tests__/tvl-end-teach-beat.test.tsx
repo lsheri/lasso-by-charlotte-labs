@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { useState } from "react";
+import { createElement, useState } from "react";
 import { readFileSync } from "node:fs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { TourStage } from "@/components/tour/TourStage";
+import { TourStage, type TourActRenderer } from "@/components/tour/TourStage";
 import { TourActPush, TOUR_TURN_DELAY_MS, useTourActRenderers } from "@/components/tour/TourActs";
 import { TOUR_CONTENT, actById, type TourActId } from "@/lib/tour-content";
 
