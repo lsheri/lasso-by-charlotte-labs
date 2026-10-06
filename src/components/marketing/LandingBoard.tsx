@@ -2947,6 +2947,7 @@ export function LandingBoard() {
             @media (min-width: 640px) {
               .lb-how-it-works { width: min(1200px, calc(100% - 48px)); margin-inline: auto; }
               .lb-how-it-works-head { padding-left: 0; }
+              .lb-how-it-works .tour-shell { width: 100%; }
             }
           `}</style>
           <div className="lb-how-it-works-head">
@@ -2954,7 +2955,7 @@ export function LandingBoard() {
             <h2>See how it works. Click through one engagement.</h2>
           </div>
           {/* TL2: desktop How it works is the eight-act tour. Phone keeps PhoneStory. */}
-          <div className="mx-auto w-full max-w-4xl [&>.tour-shell]:w-full">
+          <div className="mx-auto w-full max-w-4xl">
             <OnboardingTour
               register="company"
               orgId={null}
