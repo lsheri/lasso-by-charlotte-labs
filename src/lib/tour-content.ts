@@ -209,7 +209,7 @@ function acts(
     },
     {
       id: 3,
-      captionPointer: "Drag the Claude chat onto the board.",
+      captionPointer: "Lasso connects to wherever you work...Drives, Docs, Transcripts, AI chats...All available to organize on work boards.",
       captionTouch: "Tap the Claude chat to put it on the board.",
       why: "Putting work on a board is how you decide what belongs together. Files, documents and call transcripts land here the same way.",
       bringIn: { title: TOUR_PUSHED_CHAT.title, source: TOUR_PUSHED_CHAT.source },
