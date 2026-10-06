@@ -231,9 +231,9 @@ function acts(
     },
     {
       id: 6,
-      captionPointer: "Click Ask.",
+      captionPointer: "Ask Lasso! Unlock all the thinking and ideas that didn't quite make it into the final deck",
       captionTouch: "Tap Ask.",
-      why: "Every line of the answer shows the piece it came from. You can ask this group, one card, or the whole workboard.",
+      why: "Ask Lasso where facts came from, what was verified, where that specific idea came from, and more...",
       question,
       answer,
       chatLink,
