@@ -6926,7 +6926,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 @keyframes tour-teach-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes tour-teach-rise { from { opacity: 0; transform: translate(-50%, -50%) scale(0.96); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
 @media (max-width: 767px) {
-  .tour-teaching-callout.is-teaching { top: 50%; right: auto; left: 50%; width: calc(100% - 24px); font-size: 17px; }
+  .tour-teaching-callout.is-teaching { position: fixed; z-index: 40; top: 50%; right: auto; left: 50%; width: calc(100vw - 24px); max-height: calc(100dvh - 24px); font-size: 17px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .tour-act, .tour-stage-actions { transition: none !important; }
