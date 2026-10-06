@@ -106,6 +106,8 @@ const BOARD_NOTES = [
   { id: "gemini", targetId: "artifact", text: "add the Toronto numbers?", x: 85.5, y: 61.5 },
 ] as const;
 
+export const TOUR_ACT_EIGHT_BOARD_IDS = ["primary-0", "primary-1", "primary-2", "answer"] as const;
+
 function answerNode(register: Register): LabNode {
   const item = TOUR_BOARD_LAYOUT.find((candidate) => candidate.id === "answer");
   const claims = actById(register, 6)?.answer ?? [];
@@ -159,19 +161,21 @@ export function TourBoard({ register, state, className = "", children, onWorkCar
   const outlined = new Set(state.outlinedIds ?? []);
   const grouped = new Set(state.groupedIds ?? []);
   const glowing = new Set(state.glowingIds ?? []);
-  const visible = (item: TourLayoutItem) => item.earliestAct <= state.act && !(item.id === "primary-2" && state.act === 3 && !state.landedFile);
+  const visible = (item: TourLayoutItem) => item.earliestAct <= state.act
+    && !(item.id === "primary-2" && state.act === 3 && !state.landedFile)
+    && (state.act !== 8 || TOUR_ACT_EIGHT_BOARD_IDS.includes(item.id as (typeof TOUR_ACT_EIGHT_BOARD_IDS)[number]));
   const answer = useMemo(() => answerNode(register), [register]);
 
   return <div ref={boardRef} className={`tour-persistent-board ${className}`} data-tour-board="" onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerCancel}>
     <div className="tour-board-grid" aria-label="Workstream board">
       <>
-        <header className="tour-board-heading"><strong>{boardCopy.title}</strong><span>{boardCopy.owner} · {boardCopy.pieceCount} pieces</span></header>
+        {state.act !== 8 ? <><header className="tour-board-heading"><strong>{boardCopy.title}</strong><span>{boardCopy.owner} · {boardCopy.pieceCount} pieces</span></header>
         <i className="tour-alignment-rail is-upper" aria-hidden /><i className="tour-alignment-rail is-lower" aria-hidden />
         {BOARD_NOTES.map((note) => <span key={note.id} className="tour-margin-note" data-tour-note={note.id} data-tour-note-target={note.targetId} style={{ left: `${note.x}%`, top: `${note.y}%` }}>{note.text}</span>)}
-        {state.answerVisible ? <span className="tour-margin-note is-answer-note" data-tour-note="answer">this is the one to send</span> : null}
+        {state.answerVisible ? <span className="tour-margin-note is-answer-note" data-tour-note="answer">this is the one to send</span> : null}</> : null}
       </>
-      <div className="tour-loose-work-label" aria-label="Loose AI chat work cards" />
-      {state.groupedIds?.length ? <div className="tour-shared-group-region tour-region is-grouped" aria-label={`${actById(register, 5)?.frameTitle ?? "Workstream"} with three source work cards`}><span>{actById(register, 5)?.frameTitle}</span><span className="sr-only">{Array.from(grouped).map((id) => cards[Number(id.split("-")[1])]?.title).filter(Boolean).join(", ")}</span></div> : null}
+      {state.act !== 8 ? <div className="tour-loose-work-label" aria-label="Loose AI chat work cards" /> : null}
+      {state.act !== 8 && state.groupedIds?.length ? <div className="tour-shared-group-region tour-region is-grouped" aria-label={`${actById(register, 5)?.frameTitle ?? "Workstream"} with three source work cards`}><span>{actById(register, 5)?.frameTitle}</span><span className="sr-only">{Array.from(grouped).map((id) => cards[Number(id.split("-")[1])]?.title).filter(Boolean).join(", ")}</span></div> : null}
       {TOUR_BOARD_LAYOUT.map((item) => {
         if (!visible(item)) return item.id === "answer" || item.id === "primary-2" ? <div key={item.id} className="tour-reserved-slot" data-tour-layout-id={item.id} data-tour-reserved="" style={itemStyle(item)} /> : null;
         if (item.kind === "primary") {

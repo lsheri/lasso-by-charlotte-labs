@@ -4,6 +4,7 @@ import { useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { TourActFive, TourActSix, useTourActRenderers } from "@/components/tour/TourActs";
+import { TOUR_ACT_EIGHT_BOARD_IDS } from "@/components/tour/TourBoard";
 import { TourStage } from "@/components/tour/TourStage";
 import { ARROW_EDGE_GAP, arrowEnd } from "@/components/tour/TourStage";
 import { TOUR_BOARD_LAYOUT, TOUR_CONTENT, actById } from "@/lib/tour-content";
@@ -105,19 +106,37 @@ describe("TVc note and deck source trail", () => {
     expect(screen.getByRole("button", { name: "Start with my own work" })).toBeTruthy();
   });
 
-  it("keeps every pre-existing board item at identical geometry in acts seven and eight", () => {
+  it("keeps every visible act eight item at its act seven geometry and hides the exact remainder", () => {
     const note = render(<TourActFive register="company" onLanded={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: "Keep" }));
-    const noteGeometry = new Map(TOUR_BOARD_LAYOUT.filter((item) => item.id !== "deliverable").map((item) => {
+    const actSevenIds = TOUR_BOARD_LAYOUT.filter((item) => item.id !== "deliverable").map((item) => item.id);
+    expect(actSevenIds).toEqual(["primary-0", "primary-1", "primary-2", "primary-3", "answer", "chat-0", "chat-1", "artifact", "whiteboard", "deck"]);
+    const noteGeometry = new Map(TOUR_BOARD_LAYOUT.filter((item) => TOUR_ACT_EIGHT_BOARD_IDS.includes(item.id as (typeof TOUR_ACT_EIGHT_BOARD_IDS)[number])).map((item) => {
       const element = note.container.querySelector<HTMLElement>(`[data-tour-layout-id="${item.id}"]`);
       return [item.id, element ? [element.style.left, element.style.top, element.style.width, element.style.transform].join("|") : null];
     }));
     note.unmount();
     const deck = render(<TourActSix register="company" />);
-    for (const item of TOUR_BOARD_LAYOUT.filter((candidate) => candidate.id !== "deliverable")) {
+    const renderedIds = Array.from(deck.container.querySelectorAll<HTMLElement>("[data-tour-layout-id]"), (element) => element.dataset["tourLayoutId"]);
+    expect(renderedIds).toEqual([...TOUR_ACT_EIGHT_BOARD_IDS, "deliverable"]);
+    const hiddenIds = TOUR_BOARD_LAYOUT.map((item) => item.id).filter((id) => !renderedIds.includes(id));
+    expect(hiddenIds).toEqual(["primary-3", "chat-0", "chat-1", "artifact", "whiteboard", "deck"]);
+    for (const item of TOUR_BOARD_LAYOUT.filter((candidate) => TOUR_ACT_EIGHT_BOARD_IDS.includes(candidate.id as (typeof TOUR_ACT_EIGHT_BOARD_IDS)[number]))) {
       const element = deck.container.querySelector<HTMLElement>(`[data-tour-layout-id="${item.id}"]`);
       expect(element ? [element.style.left, element.style.top, element.style.width, element.style.transform].join("|") : null).toBe(noteGeometry.get(item.id));
     }
+    expect(deck.container.querySelectorAll("[data-tour-note], .tour-shared-group-region, .tour-loose-work-label")).toHaveLength(0);
+  });
+
+  it("renders only three sources, the answer, the sourced slide, and three connectors in act eight", () => {
+    render(<TourActSix register="company" />);
+    expect(Array.from(document.querySelectorAll("[data-tour-connector-source]"), (source) => source.getAttribute("data-tour-layout-id"))).toEqual(["primary-0", "primary-1", "primary-2"]);
+    expect(document.querySelector('[data-tour-layout-id="answer"]')).toBeTruthy();
+    const slide = screen.getByTestId("tour-deck-slide");
+    expect(slide.getAttribute("data-tour-title")).toBe("Launch deck, slide 12");
+    expect(slide.querySelectorAll(".tour-deck-page li")).toHaveLength(3);
+    expect(slide.querySelectorAll(".tour-deck-page li .h-7.w-7")).toHaveLength(3);
+    expect(document.querySelectorAll('.tour-keep-links [role="button"]')).toHaveLength(3);
   });
 
   it("keeps act one and two arrows outside their controls while later arrows retain centre aim", () => {
