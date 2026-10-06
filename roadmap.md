@@ -12,3 +12,6 @@
 - [x] Unit 14: enlarge the Act 5 finished deck and connect it to its source work and Claude chat.
 - [x] Fix expired invite wording and Ask Lasso Enter behavior without changing existing actions or event payloads.
 - [x] SB-C1a: add sidebar container colour, reversible archive actions, and the grouped create tile.
+- [ ] TVd: add shared active-target glow, sequential target handoffs, and teaching callout bubbles without copy or geometry changes.
+- [ ] Verify TVd targets and callouts at 1280px and 390px; run the full suite once and build once.
+- [ ] Report real Ask Lasso scopes, controls, and any board presentation renderer from source evidence.
