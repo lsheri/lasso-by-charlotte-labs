@@ -47,13 +47,15 @@ describe("push stages in the MCP handler", () => {
   });
 
   it('uses "capture" as a stage on exactly the three capture paths', () => {
-    const captureStages = source.match(/"capture"/g) ?? [];
-    // Two logPush capture call sites (push_thread, push_document) plus the
-    // inline mcp.push in pushConversation. The rule comment above logPush
-    // mentions the word twice ("capture" appears there as quoted text).
-    const commentMentions = source.match(/stage is "capture" on exactly the paths/g) ?? [];
-    expect(commentMentions.length).toBe(1);
-    // The comment line holds two literal "capture" occurrences.
-    expect(captureStages.length).toBe(3 + 2);
+    // The rule comment above logPush exists exactly once.
+    expect(source.match(/stage is "capture" on exactly the paths/g)?.length).toBe(1);
+    // Two logPush call sites pass "capture" (push_thread, push_document)...
+    expect(source.match(/,\s*"capture"\s*\)/g)?.length).toBe(2);
+    // ...and the inline mcp.push in pushConversation sets it as a dim.
+    expect(source.match(/stage:\s*"capture"/g)?.length).toBe(1);
+    // No logPush call site passes "options" more than once or "helper" other
+    // than the four helper tools.
+    expect(source.match(/,\s*"options"\s*\)/g)?.length).toBe(1);
+    expect(source.match(/,\s*"helper"\s*\)/g)?.length).toBe(4);
   });
 });
