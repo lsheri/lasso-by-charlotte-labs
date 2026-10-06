@@ -2945,7 +2945,7 @@ export function LandingBoard() {
         <section className="lb-how-it-works">
           <div className="lb-how-it-works-head">
             <p className="micro-label">HOW IT WORKS</p>
-            <h2>Watch one engagement, start to finish.</h2>
+            <h2>See how it works. Click through one engagement.</h2>
           </div>
           {/* TL2: desktop How it works is the eight-act tour. Phone keeps PhoneStory. */}
           <OnboardingTour
