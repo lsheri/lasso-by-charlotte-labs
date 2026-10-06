@@ -1,27 +1,35 @@
-# TVd teaching layer
+# TVe: Acts 1 and 2
 
-## Data impact
-- Coverage: visual guidance changes only. Existing actions and transitions remain; no telemetry event is added or changed.
-- Consent: no consent surfaces, stamping, or consent tables are touched.
-- Schema and portal: no event name, payload, or dimension changes. No database work.
+## Data platform gate
+- **Coverage:** Changes two local tour actions and the Act 1 to Act 3 teaching flow. Per dispatch, add no telemetry. Existing tour actions remain local and emit no events.
+- **Consent:** No consent surfaces, consent stamping, or consent tables are touched.
+- **Schema and portal:** No event names, payloads, or dimensions change.
+- **Database:** No database work.
 
-## Control and state contract
-- Before and after controls remain identical: eight act targets, Back, Skip, act-specific controls, and final action.
-- Existing render states remain, with the active target receiving a shared glow. Act 3 switches that one target from Add work to its chat row when the picker opens.
-- Telemetry before and after: none in the local tour.
+## Control rule
+### Before
+- Act 1: one Claude `Push to Lasso` control; pushing it advances to Act 2.
+- Act 2: inert `Add a chat`, `Ask Lasso`, search, four tool filters, `Workboards`, and conversation count controls; the one arrived Claude card advances to Act 3.
+- Shared stage: Skip; Back from Act 2; rail; instruction arrow and target glow.
+- Act 1 states: timed turns, push line, push ready, pushed, reduced-motion complete.
+- Act 2 states: static conversation list, one arrived card, ambient cards.
+- Telemetry: none in these renderers.
 
-## Changes
-- Drive a shared lime outline and pulse entirely from the active `data-tour-target`; retain a static glow under reduced motion.
-- Ensure each act has exactly one current target, including sequential targets where an act requires more than one click.
-- Move each unchanged teaching sentence into one hand-drawn callout bubble above the act surface on phone and beside it on desktop.
-- Replace the slide’s hardcoded owner with the register-aware board owner.
-- Add strict tests for target uniqueness and transitions, bubble placement semantics, arrow paths, reduced motion, owner copy, and unchanged geometry.
+### After
+- Act 1: Claude and ChatGPT each have an independent `Push to Lasso`; neither advances. `Next` appears only after both are pushed and advances to Act 2.
+- Act 2: the same inert conversation controls remain; a presentational sidebar adds inert navigation rows and one active `Fall Marketing Launch` workboard row that advances to Act 3 by pointer or keyboard. Arrived cards are inert.
+- Shared stage controls and Acts 3–8 remain unchanged.
+- Act 1 states: both transcripts advance concurrently from one shared elapsed step, each push target clears immediately after use, Next becomes the sole target, and reduced motion shows both complete.
+- Act 2 states: two arrived cards followed by ambient cards; row-derived counts; sidebar target ready.
+- Telemetry: none.
 
-## Verification
-- Run focused tour tests and inspect all eight acts, including Act 3’s target handoff, at 1280px and 390px.
-- Run the full Vitest suite once after the final edit and report only failures beyond the nine named baseline files.
-- Run `bun run build`; preview only, never publish.
+## Implementation
+1. Extend tour content with a five-turn ChatGPT conversation titled `ChatGPT: launch week checklist`, using the same chat shape and delay constant as Claude. Update only Act 1 and Act 2 instruction and teaching copy.
+2. Refactor the Act 1 local renderer into two responsive chat panes driven by one timer step. Track pushes separately and expose `Next` through the existing stage footer after both complete.
+3. Add a route-local, presentational sidebar to Act 2 using `SidebarNav`’s visible structure and classes: grouped headings, icon rows, nested workboard row, and existing nav styling. Keep every non-workboard control inert.
+4. Render both arrived chats first, derive every displayed count from the rows array, and make only the workboard row advance.
+5. Update strict tests for concurrent timing, exact target lifecycle, Next gating, pointer and keyboard progression, sidebar title provenance, inert arrived cards, derived counts, and reduced motion. Preserve geometry assertions and Acts 3–8 tests.
+6. Verify focused tests while editing, inspect 1280px and 390px previews, then make the final edit. After that, run the full Vitest suite exactly once and `bun run build`, reporting only failures outside the nine authorized baseline files.
 
-## Read-only follow-up
-- Report real Ask Lasso scopes and controls with file/function evidence.
-- Report whether a real board renders a deck or presentation and which component does it.
+## Technical note
+The two tour conversations remain a static product demonstration built from the existing tour chat window and `WorkNote` presentation. They are not an agent transcript or composer, so introducing AI Elements would replace established tour-only primitives and exceed this two-act presentation change.
