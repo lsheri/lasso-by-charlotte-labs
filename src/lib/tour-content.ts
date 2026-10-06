@@ -202,9 +202,9 @@ function acts(
     },
     {
       id: 2,
-      captionPointer: `Open the ${tourBoardCopy(register).title} workboard.`,
-      captionTouch: `Open the ${tourBoardCopy(register).title} workboard.`,
-      why: "You did not file anything. Both chats are already here. A workboard is where you put the ones you want to work with.",
+      captionPointer: "Now that your AI assisted work is in Lasso...Organize it on a workboard",
+      captionTouch: "Now that your AI assisted work is in Lasso...Organize it on a workboard",
+      why: "All of your most important chats live in Lasso. You can add them to work boards for project/ Homework/ deliverable based organization or find lost conversations with a simple search.",
       conversations: TOUR_CONVERSATION_LIST,
     },
     {
