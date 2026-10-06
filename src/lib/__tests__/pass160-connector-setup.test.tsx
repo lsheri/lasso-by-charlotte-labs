@@ -119,4 +119,14 @@ describe("ConnectYourAiCard", () => {
       had_connector: true,
     });
   });
+
+  it("shows the blocked push line below the steps, defined only in mcp-setup-steps", async () => {
+    token = null;
+    logEvent.mockClear();
+    renderCard();
+    expect(await screen.findByText(MCP_PUSH_BLOCKED_NOTE)).toBeTruthy();
+    const source = readFileSync("src/components/connectors/ConnectYourAiCard.tsx", "utf8");
+    expect(source).toContain("MCP_PUSH_BLOCKED_NOTE");
+    expect(source).not.toContain("If your AI stops a push before it runs");
+  });
 });
