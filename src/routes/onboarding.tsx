@@ -114,6 +114,16 @@ export function redeemFailedReason(reason: unknown): string {
     : "other";
 }
 
+/**
+ * TV5: whether the first-run tour still owes this person a showing. Only a
+ * new workspace (never ?setup=1), and only until profiles.onboarding.welcome_seen
+ * is set.
+ */
+export function firstRunTourPending(setup: boolean | undefined, profile: { onboarding: unknown } | null): boolean {
+  if (setup || !profile) return false;
+  return !readOnboardingUi(profile.onboarding).welcome_seen;
+}
+
 type OnboardingSearch = {
   intent?: IntentParam | undefined;
   setup?: boolean | undefined;
@@ -460,7 +470,7 @@ function OnboardingInner() {
   async function finish() {
     if (!setup) {
       const profile = await fetchProfile().catch(() => null);
-      if (profile && !readOnboardingUi(profile.onboarding).welcome_seen) {
+      if (profile && firstRunTourPending(setup, profile)) {
         setTourProfile(profile);
         setStage("tour");
         return;

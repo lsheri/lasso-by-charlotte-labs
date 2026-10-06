@@ -25,18 +25,23 @@ vi.mock("@tanstack/react-query", () => ({
 }));
 vi.mock("@tanstack/react-start", () => ({ useServerFn: () => async () => null }));
 vi.mock("@/lib/activation-keys.functions", () => ({ lookupActivationKeyFn: {}, redeemActivationKeyFn: {} }));
-vi.mock("@/integrations/supabase/client", () => ({
-  supabase: {
-    auth: { getUser: async () => ({ data: { user: { id: "u1" } }, error: null }) },
-    rpc: async () => ({ error: null }),
-    from: () => ({
-      update: (value: unknown) => {
-        mocks.updates.push(value);
-        return { eq: async () => ({ error: null }) };
-      },
-    }),
-  },
-}));
+vi.mock("@/integrations/supabase/client", () => {
+  const builder = (): Record<string, unknown> => {
+    const b: Record<string, unknown> = {};
+    for (const m of ["select", "eq", "is", "order"]) b[m] = () => b;
+    b["update"] = (value: unknown) => { mocks.updates.push(value); return b; };
+    b["maybeSingle"] = async () => ({ data: { org_id: "o1", settings: { type: "personal" } }, error: null });
+    b["then"] = (ok: (v: unknown) => unknown) => Promise.resolve({ data: [], error: null }).then(ok);
+    return b;
+  };
+  return {
+    supabase: {
+      auth: { getUser: async () => ({ data: { user: { id: "u1" } }, error: null }) },
+      rpc: async () => ({ data: null, error: null }),
+      from: () => builder(),
+    },
+  };
+});
 vi.mock("@/hooks/use-profile", () => ({ fetchProfile: async () => mocks.profile, AUTH_USER_KEY: ["auth-user"] }));
 vi.mock("@/lib/onboarding-tools", () => ({ loadToolsUsed: async () => [], saveToolsUsed: async () => null, toolCountBucket: () => "0" }));
 vi.mock("@/lib/pending-invite", () => ({ readPendingInvite: () => null }));
@@ -72,12 +77,24 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
-async function mountTools(search: Record<string, unknown>) {
+async function mount(search: Record<string, unknown>) {
   mocks.search = search;
   const Component = opts.component;
   render(<Suspense fallback={null}><Component /></Suspense>);
-  await screen.findByText("Where do you work with AI?", undefined, { timeout: 25000 });
 }
+
+/** A new person: create the workspace, then leave the tools step. */
+async function reachTourGate() {
+  await mount({ intent: "personal" });
+  const name = await screen.findByLabelText("Your name", undefined, { timeout: 25000 });
+  fireEvent.change(name, { target: { value: "Jordan" } });
+  fireEvent.click(screen.getByRole("button", { name: "Create my workspace" }));
+  await screen.findByText("Where do you work with AI?", undefined, { timeout: 25000 });
+  fireEvent.click(screen.getByRole("button", { name: "I'll do this later" }));
+}
+
+const welcomeSeenWrites = () =>
+  mocks.updates.filter((u) => (u as { onboarding?: { welcome_seen?: boolean } }).onboarding?.welcome_seen === true);
 
 describe("TV5 the tour is the onboarding step", () => {
   it("the gate: first run only, never for ?setup=1 or a person who has completed it", () => {
@@ -88,17 +105,34 @@ describe("TV5 the tour is the onboarding step", () => {
     expect(firstRunTourPending(false, null)).toBe(false);
   });
 
-  it.each(["stub finish", "stub skip"])("leaving onboarding opens the tour; %s uses the existing completion path", async (control) => {
-    await mountTools({ setup: true });
-    // ?setup=1 never shows it, so drive the first-run gate through the same handler with setup off.
-    cleanup();
-    mocks.search = {};
-    await mountTools({ setup: true });
-    expect(screen.queryByTestId("tour-stub")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "I'll do this later" }));
+  it("a new person sees the tour, with the register from their own workspace", async () => {
+    await reachTourGate();
+    await screen.findByTestId("tour-stub");
+    expect(mocks.tourProps.at(-1)).toMatchObject({ register: "edu", orgId: "o1" });
+    expect(mocks.navigate).not.toHaveBeenCalled();
+  });
+
+  it.each(["stub finish", "stub skip"])("%s uses the route's existing completion path and remembers it", async (control) => {
+    await reachTourGate();
+    fireEvent.click(await screen.findByRole("button", { name: control }));
+    expect(mocks.navigate).toHaveBeenCalledWith({ to: "/home", replace: true });
+    await waitFor(() => expect(welcomeSeenWrites()).toHaveLength(1));
+    expect(welcomeSeenWrites()[0]).toEqual({ onboarding: { welcome_seen: true, checklist: "open" } });
+  });
+
+  it("a person who has already completed it does not see the tour again", async () => {
+    mocks.profile = { ...mocks.profile, onboarding: { welcome_seen: true, checklist: "open" } };
+    await reachTourGate();
     await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith({ to: "/home", replace: true }));
     expect(screen.queryByTestId("tour-stub")).toBeNull();
-    void control;
+    expect(welcomeSeenWrites()).toHaveLength(0);
+  });
+
+  it("an existing member reopening setup never sees it", async () => {
+    await mount({ setup: true });
+    fireEvent.click(await screen.findByRole("button", { name: "I'll do this later" }, { timeout: 25000 }));
+    await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith({ to: "/home", replace: true }));
+    expect(screen.queryByTestId("tour-stub")).toBeNull();
   });
 
   it("onboarding source renders the tour, not FlowPreview", () => {
