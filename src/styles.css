@@ -6901,7 +6901,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .tour-deck-chart path { fill: none; stroke: var(--nb-pencil); stroke-width: 1.5; }
 .tour-deck-chart rect { fill: var(--nb-lasso-green); opacity: .78; }
 @media (max-width: 767px) {
-  .tour-persistent-board[data-act="8"] { --tour-zoom: .62; --tour-zoom-dy: 2cqh; }
-  .tour-persistent-board[data-act="8"] .tour-deck-overlay { top: 40% !important; left: 2% !important; width: 96% !important; }
+  .tour-persistent-board[data-act="8"] { overflow-y: auto; --tour-zoom: .5; --tour-zoom-dy: 0cqh; }
+  .tour-persistent-board[data-act="8"] .tour-deck-overlay { top: 46% !important; left: 2% !important; width: 96% !important; }
   .tour-deck-chart { max-height: 64px; }
 }
