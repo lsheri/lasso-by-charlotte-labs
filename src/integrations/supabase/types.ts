@@ -2594,21 +2594,32 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          partner_org_id: string | null
           slug: string
         }
         Insert: {
           created_at?: string
           id?: string
           name: string
+          partner_org_id?: string | null
           slug: string
         }
         Update: {
           created_at?: string
           id?: string
           name?: string
+          partner_org_id?: string | null
           slug?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "institutions_partner_org_id_fkey"
+            columns: ["partner_org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       invites: {
         Row: {
@@ -5370,6 +5381,7 @@ export type Database = {
           org_id: string
           org_name: string
           org_type: string
+          partner_of_slug: string
           seats_free: number
           signup_source: string
         }[]
