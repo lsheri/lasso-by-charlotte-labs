@@ -208,6 +208,7 @@ export async function captureEvents(
   args: {
     orgId: string;
     userId: string;
+    profileId: string;
     toolkit: string;
     source: string;
     imported: number;
@@ -226,6 +227,7 @@ export async function captureEvents(
       eventType: "workitem.captured",
       orgId: args.orgId,
       userId: args.userId,
+      profileId: args.profileId,
       dims: { channel: "connector", source: args.source },
     });
   }

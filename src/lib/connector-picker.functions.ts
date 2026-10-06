@@ -306,6 +306,7 @@ export const importGranolaMeetings = createServerFn({ method: "POST" })
     await captureEvents(supabase, {
       orgId: profile.org_id,
       userId,
+      profileId: profile.id,
       toolkit: "granola_mcp",
       source: "granola",
       imported,
@@ -435,6 +436,7 @@ export const importGmailThreads = createServerFn({ method: "POST" })
     await captureEvents(supabase, {
       orgId: profile.org_id,
       userId,
+      profileId: profile.id,
       toolkit: "gmail",
       source: "gmail",
       imported,

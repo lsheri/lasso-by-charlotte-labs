@@ -349,6 +349,7 @@ export async function importConnectorFiles(
   await captureEvents(supabase, {
     orgId: args.orgId,
     userId: args.userId,
+    profileId: args.profileId,
     toolkit: args.toolkit,
     source: TOOLKIT_VENDOR[args.toolkit],
     imported,

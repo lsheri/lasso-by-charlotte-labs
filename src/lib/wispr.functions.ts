@@ -307,6 +307,7 @@ export const importWisprMeetings = createServerFn({ method: "POST" })
     await captureEvents(supabase, {
       orgId: profile.org_id,
       userId,
+      profileId: profile.id,
       toolkit: "wispr",
       source: "wispr",
       imported,

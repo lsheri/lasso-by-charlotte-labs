@@ -255,6 +255,7 @@ export async function runReflectTurn(
       eventType: "reflect.message_sent",
       orgId: profile.org_id,
       userId,
+      profileId: profile.id,
       dims: {
         scope: scope.mode,
         scope_source: effectiveScopeSource,
@@ -419,6 +420,7 @@ export async function runReflectTurn(
     eventType: "reflect.message_sent",
     orgId: profile.org_id,
     userId,
+    profileId: profile.id,
     dims: {
       scope: scope.mode,
       scope_source: effectiveScopeSource,
