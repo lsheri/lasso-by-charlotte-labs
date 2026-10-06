@@ -1695,6 +1695,7 @@ async function pushOptions(owner: Owner, args: Obj, id: unknown): Promise<Respon
     eventType: "mcp.push_options_requested",
     orgId: owner.orgId,
     userId: owner.userId,
+    profileId: owner.profileId,
     dims: { has_suggestion: suggested ? "true" : "false" },
   });
 
@@ -1746,6 +1747,7 @@ async function noteCreated(
     eventType: "mcp.container_created",
     orgId: owner.orgId,
     userId: owner.userId,
+    profileId: owner.profileId,
     // workspace_type is the events column, not a dim.
     dims: { entity, outcome },
   });
@@ -3011,6 +3013,7 @@ export async function pushConversation(
     eventType: "workitem.captured",
     orgId: owner.orgId,
     userId: owner.userId,
+    profileId: owner.profileId,
     dims: { channel: "mcp", source: vendor },
   });
 
