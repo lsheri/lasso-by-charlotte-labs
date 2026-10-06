@@ -6901,7 +6901,13 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .tour-deck-chart path { fill: none; stroke: var(--nb-pencil); stroke-width: 1.5; }
 .tour-deck-chart rect { fill: var(--nb-lasso-green); opacity: .78; }
 @media (max-width: 767px) {
-  .tour-persistent-board[data-act="8"] { overflow-y: auto; --tour-zoom: .5; --tour-zoom-dy: 0cqh; }
-  .tour-persistent-board[data-act="8"] .tour-deck-overlay { top: 46% !important; left: 2% !important; width: 96% !important; }
+  /* Phones already place cards by fixed overrides, so act 8 sets its own small row and scales about each card's corner. */
+  .tour-persistent-board[data-act="8"] { overflow-y: auto; --tour-zoom: .5; }
+  .tour-persistent-board[data-act="8"] .tour-board-item { translate: none; }
+  .tour-persistent-board[data-act="8"] .tour-board-item[data-tour-layout-id="primary-0"] { top: 3% !important; left: 3% !important; }
+  .tour-persistent-board[data-act="8"] .tour-board-item[data-tour-layout-id="primary-1"] { top: 3% !important; left: 36% !important; }
+  .tour-persistent-board[data-act="8"] .tour-board-item[data-tour-layout-id="primary-2"] { top: 3% !important; left: 69% !important; }
+  .tour-persistent-board[data-act="8"] .tour-board-item[data-tour-layout-id="answer"] { top: 17% !important; left: 36% !important; width: 43% !important; }
+  .tour-persistent-board[data-act="8"] .tour-deck-overlay { top: 30% !important; left: 2% !important; width: 96% !important; }
   .tour-deck-chart { max-height: 64px; }
 }
