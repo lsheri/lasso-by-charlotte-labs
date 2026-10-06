@@ -2592,7 +2592,7 @@ function LandingBoardContinuation({
         <h2 className="landing-close-line1 landing-close-wordmark">
           Every claim, traced to the work behind it.
         </h2>
-        <p className="landing-close-line2">
+        <p className="landing-close-line2 min-[640px]:[--lb-neon-orange:var(--nb-lasso-green)] min-[640px]:[--lb-neon-orange-glow:color-mix(in_srgb,var(--nb-lasso-green)_55%,transparent)]">
           <LandingParticlePhrase text="The judgement, thinking, work... *Visible*" />
         </p>
         <div className="mt-10">
@@ -2942,19 +2942,27 @@ export function LandingBoard() {
           </div>
         </section>
         <UseCaseSection onPlayed={noteUseCasePlayed} />
-        <section className="lb-how-it-works">
+        <section id="lb-canvas" className="lb-how-it-works">
+          <style>{`
+            @media (min-width: 640px) {
+              .lb-how-it-works { width: min(1200px, calc(100% - 48px)); margin-inline: auto; }
+              .lb-how-it-works-head { padding-left: 0; }
+            }
+          `}</style>
           <div className="lb-how-it-works-head">
-            <p className="micro-label">HOW IT WORKS</p>
+            <p className="micro-label">GETTING STARTED</p>
             <h2>See how it works. Click through one engagement.</h2>
           </div>
           {/* TL2: desktop How it works is the eight-act tour. Phone keeps PhoneStory. */}
-          <OnboardingTour
-            register="company"
-            orgId={null}
-            onDone={() =>
-              document.getElementById("pilot")?.scrollIntoView({ behavior: "smooth", block: "start" })
-            }
-          />
+          <div className="mx-auto w-full max-w-4xl">
+            <OnboardingTour
+              register="company"
+              orgId={null}
+              onDone={() =>
+                document.getElementById("pilot")?.scrollIntoView({ behavior: "smooth", block: "start" })
+              }
+            />
+          </div>
         </section>
         {result?.status === "open" && "board" in result ? (
           <PhoneStory
