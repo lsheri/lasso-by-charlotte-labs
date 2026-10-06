@@ -6,6 +6,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
+  MCP_PUSH_BLOCKED_NOTE,
   MCP_PUSH_PHRASE,
   MCP_REGENERATE_WARNING,
   MCP_SERVER_NAME,
@@ -62,6 +63,7 @@ describe("shared setup steps", () => {
     expect(MCP_SERVER_NAME).toBe("Lasso by Charlotte Labs");
     expect(BANNED.test(MCP_REGENERATE_WARNING)).toBe(false);
     expect(BANNED.test(MCP_PUSH_PHRASE)).toBe(false);
+    expect(BANNED.test(MCP_PUSH_BLOCKED_NOTE)).toBe(false);
   });
 
   it("is the only place the steps are defined", () => {
