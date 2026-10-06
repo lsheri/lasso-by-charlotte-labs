@@ -216,9 +216,9 @@ function acts(
     },
     {
       id: 4,
-      captionPointer: "Click one of the outlined cards.",
+      captionPointer: "On your board, add groupings to specify which context cards share the same work stream",
       captionTouch: "Tap one of the outlined cards.",
-      why: "Lasso can answer from a single piece of work. Selecting a card is how you point at it.",
+      why: "Lasso can answer from a full board, single piece of work, or grouped works treams. Think of each card as \"context\" for Lasso's AI chat.",
       cards,
     },
     {
