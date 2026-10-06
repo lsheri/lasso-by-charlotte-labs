@@ -2,7 +2,8 @@
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { TourActFive, TourActFour, TourActOne, TourActSix, TourActThree, TourActTwo } from "@/components/tour/TourActs";
+import { TourActFive, TourActFour, TourActOne, TourActSix, TourActThree, TourActTwo, useTourActRenderers } from "@/components/tour/TourActs";
+import { TourStage } from "@/components/tour/TourStage";
 import { TOUR_BOARD_LAYOUT, TOUR_CONTEXT_SENTENCE, TOUR_PUSHED_CHAT, actById } from "@/lib/tour-content";
 
 class ResizeObserverStub {
@@ -79,7 +80,7 @@ describe("tour acts one to three", () => {
     ];
     views.forEach((view, index) => {
       const rendered = render(view);
-      expect(rendered.container.querySelector(`[data-tour-target="${index + 3}"]`)).toBeTruthy();
+      expect(rendered.container.querySelectorAll(`[data-tour-target="${index + 3}"]`)).toHaveLength(1);
       rendered.unmount();
     });
   });
@@ -93,11 +94,14 @@ describe("tour acts one to three", () => {
     expect(screen.getByText("Fall launch plan v3")).toBeTruthy();
     expect(screen.queryByText(TOUR_PUSHED_CHAT.title)).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Add work" }));
+    expect(screen.getByRole("button", { name: "Add work" }).hasAttribute("data-tour-target")).toBe(false);
     const picker = screen.getByLabelText("AI conversation to bring in");
     const choices = Array.from(picker.querySelectorAll("button"));
     expect(choices).toHaveLength(1);
     expect(choices[0]?.textContent).toContain(TOUR_PUSHED_CHAT.title);
     const file = screen.getByRole("button", { name: TOUR_PUSHED_CHAT.title });
+    expect(file.getAttribute("data-tour-target")).toBe("3");
+    expect(document.querySelectorAll('[data-tour-target="3"]')).toHaveLength(1);
     const board = screen.getByTestId("tour-drop-board");
     vi.spyOn(board, "getBoundingClientRect").mockReturnValue({ left: 200, right: 600, top: 0, bottom: 400, width: 400, height: 400, x: 200, y: 0, toJSON: () => ({}) });
     fireEvent.pointerDown(file, { pointerId: 1, pointerType: "mouse", clientX: 20, clientY: 20 });
@@ -220,6 +224,9 @@ describe("tour acts one to three", () => {
   it("keeps the preset question read only", () => {
     render(<TourActFour register="company" onComplete={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: "Ask Lasso" }));
+    expect(screen.getByRole("button", { name: "Ask Lasso" }).hasAttribute("data-tour-target")).toBe(false);
+    expect(screen.getByRole("button", { name: "Ask" }).getAttribute("data-tour-target")).toBe("6");
+    expect(document.querySelectorAll('[data-tour-target="6"]')).toHaveLength(1);
     const question = screen.getByLabelText("Preset question");
     expect(question.getAttribute("contenteditable")).not.toBe("true");
     expect(question.getAttribute("aria-readonly")).toBe("true");
@@ -284,12 +291,32 @@ describe("tour acts one to three", () => {
     const slide = screen.getByTestId("tour-deck-slide");
     expect(slide.getAttribute("data-tour-title")).toBe("Launch deck, slide 12");
     expect(within(slide).getByText("Launch deck, slide 12")).toBeTruthy();
+    expect(within(slide).getByText("LYKOS LOUNGEWARE")).toBeTruthy();
+    expect(slide.textContent).not.toContain("LYKOS LOUNGEWEAR");
     const claims = actById("company", 6)?.answer ?? [];
     const bullets = Array.from(slide.querySelectorAll<HTMLElement>(".tour-deck-page li"));
     expect(bullets).toHaveLength(3);
     expect(bullets.map((bullet) => bullet.querySelector("span:last-child")?.textContent)).toEqual(claims.map((claim) => claim.text));
     expect(bullets.map((bullet) => bullet.dataset["sourceTitle"])).toEqual(claims.map((claim) => claim.sourceCardTitle));
     expect(document.querySelectorAll('.tour-keep-links [role="button"]')).toHaveLength(3);
+  });
+
+  it("moves act seven's sole target from Keep to the deck action and gives act eight one final target", () => {
+    function Harness({ start }: { start: 7 | 8 }) {
+      const { renderers, instructionOverride, hint } = useTourActRenderers({ register: "company", activeAct: start, onAdvance: vi.fn(), onHintShown: vi.fn(), onFinish: vi.fn() });
+      return <TourStage register="company" activeAct={start} acts={renderers} onSkip={vi.fn()} onBack={vi.fn()} onHintShown={hint} instructionOverride={instructionOverride} />;
+    }
+    const seven = render(<Harness start={7} />);
+    expect(seven.container.querySelectorAll('[data-tour-target="7"]')).toHaveLength(1);
+    expect(screen.getByRole("button", { name: "Keep" }).getAttribute("data-tour-target")).toBe("7");
+    fireEvent.click(screen.getByRole("button", { name: "Keep" }));
+    expect(seven.container.querySelectorAll('[data-tour-target="7"]')).toHaveLength(1);
+    expect(screen.getByRole("button", { name: "See it in the deck" }).getAttribute("data-tour-target")).toBe("7");
+    seven.unmount();
+    const eight = render(<Harness start={8} />);
+    expect(eight.container.querySelectorAll('[data-tour-target="8"]')).toHaveLength(1);
+    expect(screen.getByRole("button", { name: "Start with my own work" }).getAttribute("data-tour-target")).toBe("8");
+    expect(screen.getByTestId("tour-deck-slide").hasAttribute("data-tour-target")).toBe(false);
   });
 
   it("uses the standalone mimic shape without importing the live data surface", () => {
