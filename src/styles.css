@@ -6623,6 +6623,10 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .tour-shared-group-region { position: absolute; z-index: 2; top: 16%; left: 1.5%; width: 82%; height: 24%; padding: 5px 8px; pointer-events: none; }
 .tour-shared-group-region > span:first-child { color: var(--nb-region-lavender-vivid); font-family: var(--font-hand); font-size: 16px; }
 .tour-ask-mimic { position: absolute; z-index: 35; top: 8px; right: 8px; bottom: 8px; width: min(320px, 42%); border: 1px solid var(--nb-rule); box-shadow: var(--nb-paper-shadow-contact); }
+.tour-ask-scopes { display: flex; flex-wrap: wrap; gap: 5px; padding: 7px 8px 0; }
+.tour-ask-scope { min-height: 25px; height: auto; border-radius: 999px; padding: 4px 8px; font-family: var(--font-mono); font-size: 9px; font-weight: 500; line-height: 1.1; letter-spacing: .04em; text-transform: uppercase; }
+.tour-ask-scope.is-active { display: inline-flex; align-items: center; border: 1px solid var(--nb-green); background: var(--nb-green-pale); color: var(--nb-green-deep); }
+.tour-ask-scope:not(.is-active) { border-color: var(--nb-rule); background: var(--nb-white); color: var(--nb-mid); box-shadow: none; }
 .tour-keep-panel { position: absolute; z-index: 35; right: 8px; bottom: 8px; width: min(280px, 42%); max-height: calc(100% - 16px); background: var(--nb-white); box-shadow: var(--nb-paper-shadow-contact); }
 .tour-answer-slot { height: 17%; min-height: 0; overflow: hidden; }
 .tour-answer-slot > .canvas-lab-answer-card { position: static !important; width: 100% !important; height: 100% !important; min-height: 0 !important; overflow: hidden; }

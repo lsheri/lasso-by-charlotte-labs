@@ -5,6 +5,7 @@ import { WorkboardHeader, WorkboardSideRail, WorkboardToolbar } from "@/componen
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
 import { GraphiteIcon } from "@/components/notebook/icons";
 import { LassoThinkingMark } from "@/components/reflect/LassoThinkingMark";
+import { ASK_SCOPE_ALL_LABEL, ASK_SCOPE_ONE_LABEL, askScopeWorkstreamLabel } from "@/components/reflect/AskSurface";
 import { ToolBadge } from "@/components/onboarding/ToolBadge";
 import { Button } from "@/components/ui/button";
 import { WorkNote } from "@/components/work/WorkNote";
@@ -130,7 +131,8 @@ export function TourActThree({ register, onComplete }: { register: Register; onC
 
 function TourAskMimic({ register, visibleClaims, generating, onAsk }: { register: Register; visibleClaims: number; generating: boolean; onAsk: () => void }) {
   const act = actById(register, 6); const chatCard = (actById(register, 4)?.cards ?? []).find((card) => card.title === act?.chatLink?.cardTitle);
-  return <aside className="tour-ask-mimic" aria-label="Ask Lasso tour example"><header><LassoLoopMark className={generating ? "tour-ask-loop is-generating" : "tour-ask-loop"} /><strong>Ask Lasso</strong></header><div className="tour-ask-question" aria-label="Preset question" aria-readonly="true">{act?.question}</div><div className="tour-ask-claims" aria-live="polite">
+  const activeScope = askScopeWorkstreamLabel(actById(register, 5)?.frameTitle ?? "Workstream");
+  return <aside className="tour-ask-mimic" aria-label="Ask Lasso tour example"><header><LassoLoopMark className={generating ? "tour-ask-loop is-generating" : "tour-ask-loop"} /><strong>Ask Lasso</strong></header><div className="tour-ask-scopes" aria-label="Question scope"><span className="tour-ask-scope is-active" aria-current="true">{activeScope}</span><Button type="button" variant="outline" size="sm" className="tour-ask-scope" aria-pressed="false" onClick={noop}>{ASK_SCOPE_ONE_LABEL}</Button><Button type="button" variant="outline" size="sm" className="tour-ask-scope" aria-pressed="false" onClick={noop}>{ASK_SCOPE_ALL_LABEL}</Button></div><div className="tour-ask-question" aria-label="Preset question" aria-readonly="true">{act?.question}</div><div className="tour-ask-claims" aria-live="polite">
     {(act?.answer ?? []).slice(0, visibleClaims).map((claim) => <article key={claim.sourceCardTitle} className="tour-ask-claim"><p>{claim.text}</p><span>{claim.sourceCardTitle}</span></article>)}
     {visibleClaims === (act?.answer?.length ?? 0) && act?.chatLink && chatCard ? <Button type="button" variant="outline" className="tour-chat-link" onClick={noop} aria-label={`${act.chatLink.label}: ${act.chatLink.cardTitle}`}><ToolBadge tool={sourceTool(chatCard.source)} size="sm" /><span>{act.chatLink.label}</span><strong>{act.chatLink.cardTitle}</strong></Button> : null}
   </div><Button type="button" variant="ink" data-tour-target={visibleClaims < 3 ? "6" : undefined} onClick={onAsk} disabled={generating || visibleClaims === 3}>Ask</Button></aside>;

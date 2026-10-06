@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { TourActFive, TourActFour, TourActOne, TourActSix, TourActThree, TourActTwo, useTourActRenderers } from "@/components/tour/TourActs";
 import { TourStage } from "@/components/tour/TourStage";
+import { ASK_SCOPE_ALL_LABEL, ASK_SCOPE_ONE_LABEL, askScopeWorkstreamLabel } from "@/components/reflect/AskSurface";
 import { TOUR_BOARD_LAYOUT, TOUR_CONTEXT_SENTENCE, TOUR_PUSHED_CHAT, actById, tourBoardCopy } from "@/lib/tour-content";
 
 class ResizeObserverStub {
@@ -200,6 +201,14 @@ describe("tour acts one to three", () => {
     expect(screen.getByText(TOUR_CONTEXT_SENTENCE)).toBeTruthy();
   });
 
+  it("groups act five by keyboard without changing the pointer or marquee paths", () => {
+    const done = vi.fn();
+    render(<TourActThree register="company" onComplete={done} />);
+    fireEvent.keyDown(screen.getByTestId("tour-act-three"), { key: "Enter" });
+    expect(done).toHaveBeenCalledTimes(1);
+    expect(screen.getByText(TOUR_CONTEXT_SENTENCE)).toBeTruthy();
+  });
+
   it("advances act two exactly once when a marquee is dragged around the three outlined work cards", () => {
     const done = vi.fn();
     render(<TourActTwo register="company" hint={false} onComplete={done} />);
@@ -243,6 +252,34 @@ describe("tour acts one to three", () => {
     expect(question.getAttribute("contenteditable")).not.toBe("true");
     expect(question.getAttribute("aria-readonly")).toBe("true");
     expect(question.textContent).toBe("What ideas did I have that did not make the final launch plan? Give me the link to the AI chat I worked them out in.");
+  });
+
+  it("shows the exact product scope labels and keeps alternative scopes inert", () => {
+    vi.useFakeTimers();
+    const done = vi.fn();
+    render(<TourActFour register="company" onComplete={done} />);
+    fireEvent.click(screen.getByRole("button", { name: "Ask Lasso" }));
+    const scopes = screen.getByLabelText("Question scope");
+    expect(within(scopes).getByText(askScopeWorkstreamLabel(actById("company", 5)?.frameTitle ?? "Workstream")).getAttribute("aria-current")).toBe("true");
+    const one = within(scopes).getByRole("button", { name: ASK_SCOPE_ONE_LABEL });
+    const all = within(scopes).getByRole("button", { name: ASK_SCOPE_ALL_LABEL });
+    expect(one.getAttribute("aria-pressed")).toBe("false");
+    expect(all.getAttribute("aria-pressed")).toBe("false");
+    fireEvent.click(one);
+    fireEvent.click(all);
+    act(() => vi.runOnlyPendingTimers());
+    expect(document.querySelectorAll(".tour-ask-claim")).toHaveLength(0);
+    expect(done).not.toHaveBeenCalled();
+    expect(screen.getByLabelText("Preset question").textContent).toBe(actById("company", 6)?.question);
+    expect(screen.getByRole("button", { name: "Ask" }).getAttribute("data-tour-target")).toBe("6");
+    vi.useRealTimers();
+  });
+
+  it("derives the act three heading count from the rendered layout", () => {
+    render(<TourActOne register="company" onComplete={vi.fn()} />);
+    const rendered = document.querySelectorAll('[data-tour-layout-id]:not([data-tour-reserved])').length;
+    expect(rendered).toBe(TOUR_BOARD_LAYOUT.filter((item) => item.earliestAct <= 3).length);
+    expect(screen.getByText(`${rendered} pieces`)).toBeTruthy();
   });
 
   it("shows exactly three cited claims from work cards in the frame", () => {

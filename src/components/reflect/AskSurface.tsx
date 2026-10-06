@@ -164,6 +164,10 @@ export function AnswerKeepControl({
 }
 
 /** The scope chip: what Lasso will read on the next message. */
+export const ASK_SCOPE_ALL_LABEL = "All work in this workboard";
+export const ASK_SCOPE_ONE_LABEL = "1 piece of work selected";
+export const askScopeWorkstreamLabel = (name: string) => `Workstream: ${name}`;
+
 export function AskScopeChip({
   ask,
   block,
@@ -188,11 +192,11 @@ export function AskScopeChip({
         : boardPicked
           ? `${ask.boardPickedCount} picked on the board`
           : onWorkstream
-            ? `Workstream: ${workstream.name}`
+            ? askScopeWorkstreamLabel(workstream.name)
             : ask.selectedItems.length === ask.mapped.length
-              ? "All work in this workboard"
+              ? ASK_SCOPE_ALL_LABEL
               : ask.selectedItems.length === 1
-                ? "1 piece of work selected"
+                ? ASK_SCOPE_ONE_LABEL
                 : `${ask.selectedItems.length} pieces of work selected`;
   const title =
     ask.draftPointed.length === 0 && boardPicked && ask.boardPickedCount === 0
