@@ -2547,6 +2547,38 @@ function UseCaseSection({
   );
 }
 
+function LandingTourFrame() {
+  const frameRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const frame = frameRef.current;
+    const shell = frame?.querySelector<HTMLElement>(".tour-shell");
+    if (!frame || !shell) return;
+    const fit = () => {
+      if (!frame.clientWidth || !shell.offsetWidth) return;
+      const scale = Math.min(1, frame.clientWidth / shell.offsetWidth);
+      frame.style.setProperty("--lb-tour-scale", String(scale));
+      frame.style.setProperty("--lb-tour-height", `${shell.offsetHeight * scale}px`);
+    };
+    const observer = new ResizeObserver(fit);
+    observer.observe(frame);
+    observer.observe(shell);
+    fit();
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div ref={frameRef} className="lb-tour-frame mx-auto w-full max-w-4xl">
+      <OnboardingTour
+        register="company"
+        orgId={null}
+        onDone={() =>
+          document.getElementById("pilot")?.scrollIntoView({ behavior: "smooth", block: "start" })
+        }
+      />
+    </div>
+  );
+}
+
 function LandingBoardContinuation({
   viewId,
   onPilot,
@@ -2947,7 +2979,11 @@ export function LandingBoard() {
             @media (min-width: 640px) {
               .lb-how-it-works { width: min(1200px, calc(100% - 48px)); margin-inline: auto; }
               .lb-how-it-works-head { padding-left: 0; }
-              .lb-how-it-works .tour-shell { width: 100%; }
+              .lb-tour-frame { height: var(--lb-tour-height); }
+              .lb-tour-frame > .tour-shell {
+                transform: scale(var(--lb-tour-scale, 1));
+                transform-origin: top left;
+              }
             }
           `}</style>
           <div className="lb-how-it-works-head">
@@ -2955,15 +2991,7 @@ export function LandingBoard() {
             <h2>See how it works. Click through one engagement.</h2>
           </div>
           {/* TL2: desktop How it works is the eight-act tour. Phone keeps PhoneStory. */}
-          <div className="mx-auto w-full max-w-4xl">
-            <OnboardingTour
-              register="company"
-              orgId={null}
-              onDone={() =>
-                document.getElementById("pilot")?.scrollIntoView({ behavior: "smooth", block: "start" })
-              }
-            />
-          </div>
+          <LandingTourFrame />
         </section>
         {result?.status === "open" && "board" in result ? (
           <PhoneStory
