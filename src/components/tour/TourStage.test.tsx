@@ -49,7 +49,7 @@ describe("T2 tour stage", () => {
     const { container } = render(stage());
     expect(container.querySelectorAll('[data-state="complete"] .nb-mark')).toHaveLength(4);
     expect(screen.getByText("Draw a box around the three selected cards.")).toBeTruthy();
-    const teaching = screen.getByText("Three pieces of work that belong to one decision. Grouped, they answer together, and nothing else on the board gets read.");
+    const teaching = screen.getByText("We are deciding that these pieces of work should share the same context.");
     expect(teaching.classList.contains("tour-teaching-callout")).toBe(true);
     expect(within(container.querySelector(".tour-instruction-band") as HTMLElement).queryByText(teaching.textContent ?? "")).toBeNull();
     expect(container.querySelector("[data-tour-do]")).toBeTruthy();
