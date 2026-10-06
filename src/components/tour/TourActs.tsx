@@ -12,7 +12,7 @@ import { useReducedMotion as useMotionPreference } from "@/hooks/use-motion";
 import { keyTo } from "@/lib/canvas-drag";
 import type { ToolId } from "@/lib/onboarding-tools";
 import type { Register } from "@/lib/register";
-import { TOUR_BOARD_LAYOUT, actById, tourAmbientCards, tourBoardCopy, type TourActId, type TourSource } from "@/lib/tour-content";
+import { TOUR_BOARD_LAYOUT, actById, tourAmbientCards, tourBoardCopy, type TourActId, type TourPushedChat, type TourSource } from "@/lib/tour-content";
 import type { WorkboardCardPreview } from "@/lib/workboard-card-preview.shared";
 import type { WorkItemRow } from "@/lib/work-types";
 import type { TourActRenderer } from "@/components/tour/TourStage";
@@ -191,33 +191,40 @@ export function TourActSix({ register }: { register: Register }) {
 
 export const TOUR_TURN_DELAY_MS = 900;
 
-export function TourActPush({ register, onComplete }: { register: Register; onComplete: () => void }) {
-  const chat = actById(register, 1)?.chat;
+function TourPushChat({ chat, shown, reduced, pushed, onPush }: { chat: TourPushedChat; shown: number; reduced: boolean; pushed: boolean; onPush: () => void }) {
+  const ready = shown >= chat.turns.length + 2;
+  return <section className={`tour-chat-window${ready ? " is-ready" : ""}`} aria-label={`AI chat: ${chat.title}`} data-reduced={reduced ? "" : undefined}>
+    <header><ToolBadge tool={chat.source} size="sm" /><strong>{chat.title}</strong></header>
+    <ol className="tour-chat-turns">
+      {chat.turns.slice(0, Math.min(shown, chat.turns.length)).map((turn, index) => <li key={index} className="tour-chat-turn" data-role={turn.role}>{turn.text}</li>)}
+      {shown > chat.turns.length ? <li className="tour-chat-turn is-push-line" data-role="user">{chat.pushLine}</li> : null}
+    </ol>
+    <footer>{ready ? <Button type="button" variant="ink" className="tour-push-control" data-tour-target={!pushed ? "1" : undefined} data-pushed={pushed ? "" : undefined} onClick={onPush}>{pushed ? chat.pushedLabel : chat.pushLabel}</Button> : null}</footer>
+  </section>;
+}
+
+export function TourActPush({ register, onReady }: { register: Register; onReady: () => void }) {
+  const act = actById(register, 1);
+  const chats = [act?.chat, act?.companionChat].filter((chat): chat is TourPushedChat => chat !== undefined);
   const reduced = useMotionPreference();
-  const turns = chat?.turns ?? [];
-  const total = turns.length + 2;
+  const total = Math.max(...chats.map((chat) => chat.turns.length + 2), 0);
   const [step, setStep] = useState(0);
-  const [pushed, setPushed] = useState(false);
-  const pushRef = useRef<HTMLButtonElement>(null);
+  const [pushed, setPushed] = useState<Set<string>>(() => new Set());
   const shown = reduced ? total : step;
   useEffect(() => {
     if (reduced) return;
     const timers = Array.from({ length: total }, (_, index) => window.setTimeout(() => setStep(index + 1), TOUR_TURN_DELAY_MS * (index + 1)));
     return () => timers.forEach((timer) => window.clearTimeout(timer));
   }, [reduced, total]);
-  const ready = shown >= total;
-  useEffect(() => { if (ready) pushRef.current?.focus({ preventScroll: true }); }, [ready]);
-  const push = () => { if (pushed) return; setPushed(true); onComplete(); };
-  if (!chat) return null;
-  return <div className="tour-push-stage" data-testid="tour-act-push">
-    <section className={`tour-chat-window${ready ? " is-ready" : ""}`} aria-label={`AI chat: ${chat.title}`} data-reduced={reduced ? "" : undefined}>
-      <header><ToolBadge tool={chat.source} size="sm" /><strong>{chat.title}</strong></header>
-      <ol className="tour-chat-turns">
-        {turns.slice(0, Math.min(shown, turns.length)).map((turn, index) => <li key={index} className="tour-chat-turn" data-role={turn.role}>{turn.text}</li>)}
-        {shown > turns.length ? <li className="tour-chat-turn is-push-line" data-role="user">{chat.pushLine}</li> : null}
-      </ol>
-      <footer>{ready ? <Button ref={pushRef} type="button" variant="ink" className="tour-push-control" data-tour-target={!pushed ? "1" : undefined} data-pushed={pushed ? "" : undefined} onClick={push}>{pushed ? chat.pushedLabel : chat.pushLabel}</Button> : null}</footer>
-    </section>
+  const push = (title: string) => {
+    if (pushed.has(title)) return;
+    const next = new Set(pushed).add(title);
+    setPushed(next);
+    if (next.size === chats.length) onReady();
+  };
+  if (chats.length !== 2) return null;
+  return <div className="tour-push-stage tour-push-pair" data-testid="tour-act-push">
+    {chats.map((chat) => <TourPushChat key={chat.title} chat={chat} shown={shown} reduced={reduced} pushed={pushed.has(chat.title)} onPush={() => push(chat.title)} />)}
   </div>;
 }
 
@@ -255,21 +262,41 @@ function tourChatPreview(id: string, excerpt: string): WorkboardCardPreview {
 
 export function TourActArrived({ register, onComplete }: { register: Register; onComplete: () => void }) {
   const list = actById(register, 2)?.conversations;
-  const chat = actById(register, 1)?.chat;
-  const [opened, setOpened] = useState(false);
-  if (!list || !chat) return null;
-  const open = () => { if (opened) return; setOpened(true); onComplete(); };
+  const actOne = actById(register, 1);
+  const chats = [actOne?.chat, actOne?.companionChat].filter((chat): chat is TourPushedChat => chat !== undefined);
+  const completeRef = useRef(false);
+  if (!list || chats.length !== 2) return null;
   const rows = [
-    { item: tourChatItem("tour-arrived", chat.title, chat.source), preview: tourChatPreview("tour-arrived", chat.turns[0]?.text ?? "Channel mix options for the fall launch."), arrived: true },
+    ...chats.map((chat, index) => ({ item: tourChatItem(`tour-arrived-${index}`, chat.title, chat.source), preview: tourChatPreview(`tour-arrived-${index}`, chat.turns[0]?.text ?? "Fall launch conversation."), arrived: true })),
     ...tourAmbientCards(register).map((card, index) => ({ item: tourChatItem(`tour-ambient-${index}`, card.title, card.source), preview: tourChatPreview(`tour-ambient-${index}`, card.excerpt[0]), arrived: false })),
   ];
+  const arrivedCount = rows.filter((row) => row.arrived).length;
+  const boardTitle = tourBoardCopy(register).title;
+  const openWorkboard = () => {
+    if (completeRef.current) return;
+    completeRef.current = true;
+    onComplete();
+  };
   return <div className="tour-push-stage" data-testid="tour-act-arrived">
     <section className="tour-conversations-mimic nb-chatview" data-reader="closed" aria-label="All AI Conversations tour example">
+      <aside className="tour-conversations-sidebar" aria-label="Tour navigation">
+        <nav className="flex flex-col gap-7">
+          <div><div className="nb-group-header px-2">What landed</div><div className="mt-2 flex flex-col gap-0.5">
+            <Button type="button" variant="ghost" className="nb-nav-item w-full justify-start" onClick={noop}><GraphiteIcon name="overview" size={20} /><span>Home</span></Button>
+            <Button type="button" variant="ghost" className="nb-nav-item w-full justify-start" onClick={noop}><GraphiteIcon name="work" size={20} /><span>Inbox</span></Button>
+            <Button type="button" variant="ghost" className="nb-nav-item nb-nav-item-active w-full justify-start" onClick={noop}><GraphiteIcon name="ai-record" size={20} /><span>All AI Conversations</span></Button>
+          </div></div>
+          <div><div className="nb-group-header px-2">Where it goes</div><div className="mt-2 flex flex-col gap-0.5">
+            <Button type="button" variant="ghost" className="tour-workboard-nav-row nb-nav-item nb-nav-item-nested w-full justify-start" data-tour-target="2" onClick={openWorkboard}><GraphiteIcon name="workboard" size={20} /><span>{boardTitle}</span></Button>
+            <Button type="button" variant="ghost" className="nb-nav-item w-full justify-start" onClick={noop}><GraphiteIcon name="plus" size={20} /><span>New workboard</span></Button>
+          </div></div>
+        </nav>
+      </aside>
       <div className="nb-chatview-list flex min-h-0 flex-col overflow-hidden">
         <header className="box-border flex h-16 shrink-0 items-center gap-2 border-b border-[var(--nb-rule)] px-5">
           <div className="mr-auto min-w-0">
             <h1 className="truncate font-serif text-[19px] leading-none">{list.heading}</h1>
-            <p className="mt-1 truncate font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">5 conversations on the record · 1 new this week</p>
+            <p className="mt-1 truncate font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">{rows.length} conversations on the record · {arrivedCount} new this week</p>
           </div>
           <Button type="button" variant="outline" className="h-9" onClick={noop}>Add a chat</Button>
           <Button type="button" variant="outline" className="h-9" onClick={noop}><span aria-hidden="true" className="h-3.5 w-3.5 rounded-full border-2 border-[var(--nb-lasso-green)]" />Ask Lasso</Button>
@@ -290,7 +317,7 @@ export function TourActArrived({ register, onComplete }: { register: Register; o
               <div className="flex min-h-10 items-center gap-3"><h2 className="font-hand text-[19px] leading-none text-graphite">October</h2><span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{rows.length}</span><span className="h-px flex-1 bg-[var(--nb-rule)]" /></div>
               <ul className="conversation-month-grid" aria-label="AI conversations">
                 {rows.map((row) => <li key={row.item.id} className={row.arrived ? "tour-conversation-row is-arrived" : "tour-conversation-row"}>
-                  {row.arrived ? <Button type="button" variant="ghost" className="conversation-card-compact canvas-lab-card-paper block h-full w-full min-w-0 p-0 text-left whitespace-normal hover:bg-transparent" data-tour-target={!opened ? "2" : undefined} onClick={open}>
+                  {row.arrived ? <Button type="button" variant="ghost" className="conversation-card-compact canvas-lab-card-paper block h-full w-full min-w-0 p-0 text-left whitespace-normal hover:bg-transparent" onClick={noop}>
                     <WorkNote item={row.item} dense displayMode="preview" chatPreview={row.preview} lead={<span className="tour-arrived-label">{list.arrivedLabel}</span>} />
                   </Button> : <span className="conversation-card-compact canvas-lab-card-paper block h-full min-w-0"><WorkNote item={row.item} dense displayMode="preview" chatPreview={row.preview} /></span>}
                 </li>)}
@@ -304,11 +331,11 @@ export function TourActArrived({ register, onComplete }: { register: Register; o
 }
 
 export function useTourActRenderers({ register, activeAct, onAdvance, onHintShown, onFinish }: { register: Register; activeAct: TourActId; onAdvance: (act: TourActId) => void; onHintShown: (act: number) => void; onFinish: () => void }) {
-  const [hintAct, setHintAct] = useState<number | null>(null); const [instructionOverride, setInstructionOverride] = useState<string | null>(null); const [answerLanded, setAnswerLanded] = useState(false);
-  useEffect(() => { setHintAct(null); setInstructionOverride(null); setAnswerLanded(false); }, [activeAct, register]);
+  const [hintAct, setHintAct] = useState<number | null>(null); const [instructionOverride, setInstructionOverride] = useState<string | null>(null); const [answerLanded, setAnswerLanded] = useState(false); const [actOneReady, setActOneReady] = useState(false);
+  useEffect(() => { setHintAct(null); setInstructionOverride(null); setAnswerLanded(false); setActOneReady(false); }, [activeAct, register]);
   const hint = (act: number) => { setHintAct(act); onHintShown(act); };
   const renderers = useMemo((): TourActRenderer[] => [
-    { id: 1, content: <TourActPush register={register} onComplete={() => onAdvance(1)} /> },
+    { id: 1, content: <TourActPush register={register} onReady={() => setActOneReady(true)} />, primaryAction: actOneReady ? <Button type="button" variant="ink" data-tour-target="1" onClick={() => onAdvance(1)}>Next</Button> : null },
     { id: 2, content: <TourActArrived register={register} onComplete={() => onAdvance(2)} /> },
     { id: 3, content: <TourActOne register={register} onComplete={() => onAdvance(3)} /> },
     { id: 4, content: <TourActTwo register={register} hint={hintAct === 4} onComplete={() => onAdvance(4)} /> },
@@ -316,6 +343,6 @@ export function useTourActRenderers({ register, activeAct, onAdvance, onHintShow
     { id: 6, content: <TourActFour register={register} onComplete={() => onAdvance(6)} /> },
     { id: 7, content: <TourActFive register={register} onLanded={() => setAnswerLanded(true)} />, primaryAction: answerLanded ? <Button type="button" variant="ink" data-tour-target="7" onClick={() => onAdvance(7)}>{actById(register, 7)?.primaryActionLabel}</Button> : null },
     { id: 8, content: <TourActSix register={register} />, primaryAction: <Button type="button" variant="ink" data-tour-target="8" onClick={onFinish}>{actById(register, 8)?.primaryActionLabel}</Button> },
-  ], [answerLanded, hintAct, onAdvance, onFinish, register]);
+  ], [actOneReady, answerLanded, hintAct, onAdvance, onFinish, register]);
   return { renderers, instructionOverride: activeAct === 8 ? actById(register, 8)?.closingLine ?? null : instructionOverride, hint };
 }

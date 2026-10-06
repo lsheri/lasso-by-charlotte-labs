@@ -15,3 +15,5 @@
 - [x] TVd: add shared active-target glow, sequential target handoffs, and teaching callout bubbles without copy or geometry changes.
 - [x] Verify TVd targets and callouts at 1280px and 390px; run the full suite once and build once.
 - [x] Report real Ask Lasso scopes, controls, and any board presentation renderer from source evidence.
+- [x] TVe: run two Act 1 conversations concurrently, gate Next on both pushes, and move Act 2 progression to its local sidebar workboard row.
+- [x] Verify TVe at 1280px and 390px, then run the full suite once after the final edit and build once.

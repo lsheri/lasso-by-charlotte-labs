@@ -76,16 +76,25 @@ describe("tour acts one to three", () => {
       });
     }
   });
-  it("gives every act exactly one anchored instruction target", async () => {
+  it("keeps every live target actionable and removes each completed target immediately", async () => {
     function Harness({ activeAct }: { activeAct: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 }) {
       const { renderers, instructionOverride, hint } = useTourActRenderers({ register: "company", activeAct, onAdvance: vi.fn(), onHintShown: vi.fn(), onFinish: vi.fn() });
       return <TourStage register="company" activeAct={activeAct} acts={renderers} onSkip={vi.fn()} onBack={vi.fn()} onHintShown={hint} instructionOverride={instructionOverride} />;
     }
-    for (const activeAct of [1, 2, 3, 4, 5, 6, 7, 8] as const) {
+    for (const activeAct of [2, 3, 4, 5, 6, 7, 8] as const) {
       const rendered = render(<Harness activeAct={activeAct} />);
       await waitFor(() => expect(rendered.container.querySelectorAll(`[data-tour-target="${activeAct}"]`)).toHaveLength(1));
       rendered.unmount();
     }
+    const actOne = render(<Harness activeAct={1} />);
+    const targets = actOne.container.querySelectorAll<HTMLElement>('[data-tour-target="1"]');
+    expect(targets).toHaveLength(2);
+    expect(Array.from(targets).every((target) => target.tagName === "BUTTON" && target.textContent === "Push to Lasso")).toBe(true);
+    fireEvent.click(targets[0]!);
+    expect(actOne.container.querySelectorAll('[data-tour-target="1"]')).toHaveLength(1);
+    fireEvent.click(actOne.container.querySelector('[data-tour-target="1"]') as HTMLElement);
+    expect(screen.getByRole("button", { name: "Next" }).getAttribute("data-tour-target")).toBe("1");
+    expect(actOne.container.querySelectorAll('[data-tour-target="1"]')).toHaveLength(1);
   });
 
   it("advances act one on a pointer drop", () => {
