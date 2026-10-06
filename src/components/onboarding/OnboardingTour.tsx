@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useTourActRenderers } from "@/components/tour/TourActs";
 import { TourStage } from "@/components/tour/TourStage";
+import { noteAnonymousTourEvent } from "@/lib/demo-telemetry";
 import type { Register } from "@/lib/register";
 import { logEvent } from "@/lib/telemetry";
 import type { TourActId } from "@/lib/tour-content";
@@ -34,18 +35,24 @@ export function OnboardingTour({
       dims: { step?: number },
     ) => {
       const org = orgRef.current;
-      if (!org) return;
-      logEvent(event, org, { ...dims, register });
+      // TL1: signed in, the canonical org-scoped path, unchanged. Signed out
+      // (the public landing How it works section), the same event and dims go
+      // down the anonymous path the landing demo already uses.
+      if (org) {
+        logEvent(event, org, { ...dims, register });
+      } else {
+        noteAnonymousTourEvent(event, { ...dims, register });
+      }
     },
     [register],
   );
 
   const started = useRef(false);
   useEffect(() => {
-    if (started.current || !orgId) return;
+    if (started.current) return;
     started.current = true;
     emit("tour.started", {});
-  }, [orgId, emit]);
+  }, [emit]);
 
   const back = useCallback(() => setActiveAct((current) => Math.max(1, current - 1) as TourActId), []);
   const advance = useCallback(
