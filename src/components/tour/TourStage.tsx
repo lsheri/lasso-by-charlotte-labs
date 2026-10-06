@@ -148,7 +148,8 @@ export function TourStage({
   const stageRef = useRef<HTMLElement>(null);
   const continueRef = useRef<HTMLButtonElement>(null);
   // One teach beat, at the end of each act: the callout appears only once the act's action is done.
-  const teaching = Boolean(renderer?.complete);
+  // An act with nothing to do never earns a callout.
+  const teaching = Boolean(renderer?.complete && renderer.hasAction !== false);
 
   useEffect(() => {
     if (teaching) continueRef.current?.focus();
@@ -221,6 +222,11 @@ export function TourStage({
           ) : (
             <span />
           )}
+          {renderer.hasAction === false && renderer.onContinue ? (
+            <Button type="button" variant="ink" size="sm" className="tour-got-it" data-tour-target={activeAct} onClick={renderer.onContinue}>
+              {renderer.continueLabel ?? copy.stage.gotIt}
+            </Button>
+          ) : null}
         </footer>
 
         {teaching ? (
