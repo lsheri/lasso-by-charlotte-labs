@@ -218,7 +218,7 @@ export function DemoSourcesPage() {
         <p className="mt-1 text-[13px] text-muted-foreground">
           Add Lasso to your AI once. At the end of a working session, ask it to push the conversation to Lasso.
         </p>
-        <div className="mt-4"><SetupSteps /></div>
+        <div className="mt-4"><SetupSteps showSignin={false} /></div>
         <p className="mt-4 text-[13px] text-foreground" data-testid="demo-sources-link-line">{DEMO_SOURCES_LINK_LINE}</p>
         <Link
           to="/"

@@ -104,11 +104,11 @@ export function connectorStatusLine(
   return token.last_used_at ? "Your connector is live" : "Set up, no work pushed yet";
 }
 
-export function SetupSteps() {
+export function SetupSteps({ showSignin = true }: { showSignin?: boolean }) {
   return (
     <div className="space-y-4 rounded-[var(--radius)] border border-border bg-secondary/60 px-4 py-4">
       {MCP_VENDORS.map((vendor) => {
-        const signinSteps = MCP_SIGNIN_STEPS[vendor];
+        const signinSteps = showSignin ? MCP_SIGNIN_STEPS[vendor] : undefined;
         return (
           <div key={vendor}>
             <p className="micro-label">{VENDOR_LABELS[vendor]}</p>

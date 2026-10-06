@@ -43,7 +43,7 @@ vi.mock("@/hooks/use-profile", () => ({
   useProfile: () => ({ data: { id: "p1", org_id: "o1" } }),
 }));
 
-const { ConnectYourAiCard, connectorStatusLine } =
+const { ConnectYourAiCard, SetupSteps, connectorStatusLine } =
   await import("@/components/connectors/ConnectYourAiCard");
 
 function renderCard() {
@@ -153,5 +153,21 @@ describe("ConnectYourAiCard", () => {
     const signin = screen.getByText("Sign in");
     const link = screen.getByText("Or paste a link");
     expect(link.compareDocumentPosition(signin) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
+  });
+
+  it("renders link steps only when showSignin is false, as the demo page asks", () => {
+    render(<SetupSteps showSignin={false} />);
+    expect(screen.queryByText("Sign in")).toBeNull();
+    expect(screen.queryByText("Or paste a link")).toBeNull();
+    expect(screen.queryByText(new RegExp(MCP_SIGNIN_URL))).toBeNull();
+    for (const vendor of MCP_VENDORS) {
+      for (const step of MCP_SETUP_STEPS[vendor]) expect(screen.getByText(step)).toBeTruthy();
+    }
+  });
+
+  it("with no prop, the sign-in group still shows, so the default did not flip", () => {
+    render(<SetupSteps />);
+    expect(screen.getByText("Sign in")).toBeTruthy();
+    expect(screen.getByText("Or paste a link")).toBeTruthy();
   });
 });
