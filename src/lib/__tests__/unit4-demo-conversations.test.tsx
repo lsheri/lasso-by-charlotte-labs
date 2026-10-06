@@ -1,6 +1,8 @@
+// @vitest-environment jsdom
 import { readFileSync } from "node:fs";
 
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { cleanup, render } from "@testing-library/react";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 
 import { EVENT_DIM_KEYS, guardEventDims } from "../event-dim-allowlist";
 import { publicSafeWork } from "../public-work-allowlist";
@@ -13,10 +15,32 @@ vi.mock("../telemetry.functions", () => ({
   },
 }));
 
+// ConnectYourAiCard pulls in the connector queries, the profile hook and the
+// event path. None of that is what this guard is about, and none of it can run
+// in a test without a real workspace, so it is stubbed the same way the
+// connector setup test stubs it.
+vi.mock("@/lib/telemetry", () => ({ logEvent: () => undefined }));
+vi.mock("@/hooks/use-profile", () => ({ useProfile: () => ({ data: null }) }));
+vi.mock("@tanstack/react-start", () => ({
+  useServerFn: (fn: (...a: unknown[]) => unknown) => fn,
+}));
+vi.mock("@/lib/mcp-connections.functions", () => ({
+  CONNECTION_LIMIT_ERROR: "connection_limit",
+  listConnections: () => Promise.resolve([]),
+  createConnection: () => Promise.resolve({ id: "c2", kind: "link", secret: "raw" }),
+  revealConnection: () => Promise.resolve({ secret: "raw" }),
+  renameConnection: () => Promise.resolve({ ok: true }),
+  revokeConnection: () => Promise.resolve({ ok: true }),
+}));
+
+const { SetupSteps } = await import("@/components/connectors/ConnectYourAiCard");
+
 describe("unit 4 demo conversations and sources", () => {
   beforeEach(() => {
     sent.length = 0;
   });
+
+  afterEach(() => cleanup());
 
   it("the conversations payload carries no urls, refs or real ids", () => {
     const [safe] = publicSafeWork([
@@ -55,8 +79,19 @@ describe("unit 4 demo conversations and sources", () => {
     }
     expect(page).toContain("readOnly");
     expect(page).toContain("Your link is issued when your pilot starts.");
-    const steps = readFileSync("src/lib/mcp-setup-steps.ts", "utf8");
-    expect(steps).not.toMatch(/\/api\/mcp/);
+    // The assertion this replaces scanned mcp-setup-steps.ts for the MCP link.
+    // That scan was a proxy: the demo page could only ever show an MCP endpoint
+    // by way of the steps file, so reading the file stood in for reading the
+    // page. The page now passes showSignin={false}, which keeps the sign-in
+    // group, and its URL, out of the rendered block directly. So the file scan
+    // now bans a literal that can no longer reach the page. What follows
+    // asserts the real thing, at render time, which is the stronger guard.
+    // The second render is the positive control: without it, the first
+    // assertion would also pass if SetupSteps rendered nothing at all.
+    const demoBlock = render(<SetupSteps showSignin={false} />);
+    expect(demoBlock.container.textContent).not.toContain("/api/mcp");
+    const settingsBlock = render(<SetupSteps />);
+    expect(settingsBlock.container.textContent).toContain("/api/mcp");
   });
 
   it("both routes are noindex and phone safe", () => {
