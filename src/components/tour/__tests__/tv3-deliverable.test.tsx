@@ -57,7 +57,7 @@ describe("TVc note and deck source trail", () => {
       expect(deckAct?.captionPointer).toBe("See how the deck connects back.");
       expect(deckAct?.captionTouch).toBe("See how the deck connects back.");
       expect(deckAct?.why).toBe("The deck is what the client sees. Every line in it can still point at the chat or file it came from.");
-      expect(deckAct?.deliverable).toEqual({ caption: "Three pieces of work. One slide. The line between them stays." });
+      expect(deckAct?.deliverable).toEqual({ caption: "Three pieces of work. One slide. The work traced back to your AI conversations." });
       expect(deckAct?.closingLine).toBe("That is the whole thing. Everything else is more of it.");
       expect(deckAct?.primaryActionLabel).toBe("Start with my own work");
       expect(actById(register, 6)?.answer).toEqual([

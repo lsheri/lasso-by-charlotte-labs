@@ -49,7 +49,7 @@ describe("TV2 and TVc tour sequence", () => {
       expect(actById(register, 8)?.primaryActionLabel).toBe("Start with my own work");
       expect(actById(register, 1)?.captionPointer).toBe("Push all of your most important AI Conversations directly to Lasso's inbox.");
       expect(actById(register, 1)?.captionTouch).toBe("Push both chats into Lasso, then tap Next.");
-      expect(actById(register, 1)?.why).toBe("Keep working in whichever AI tool you like. One push brings the whole conversation over, with a link back to where it happened. You can add to your AI conversations and re-push to lasso whenevr you'd like.");
+      expect(actById(register, 1)?.why).toBe("Once an MCP connector is live...simply say \"Push to Lasso\" to push to your inbox or directly to a work board.\n\nKeep working in whichever AI tool you like. One push brings the whole conversation over, with a link back to where it happened. You can add to your AI conversations and re-push to lasso whenever you'd like.");
       expect(actById(register, 2)?.captionPointer).toBe("Now that your AI assisted work is in Lasso...Organize it on a workboard");
       expect(actById(register, 2)?.captionTouch).toBe("Now that your AI assisted work is in Lasso...Organize it on a workboard");
       expect(actById(register, 2)?.why).toBe("All of your most important chats live in Lasso. You can add them to work boards for project/ Homework/ deliverable based organization or find lost conversations with a simple search.");
