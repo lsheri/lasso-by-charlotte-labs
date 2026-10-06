@@ -265,6 +265,6 @@ describe("M2 connections settings", () => {
     rows = [row({ id: "s1", kind: "signin", client_name: "Claude", label: "Claude", key_last4: null, can_reveal: false })];
     renderCard();
     expect(await screen.findByText("Signed in from Claude")).toBeTruthy();
-    expect(screen.findByText("Signed in")).toBeTruthy();
+    expect(await screen.findByText("Signed in")).toBeTruthy();
   });
 });
