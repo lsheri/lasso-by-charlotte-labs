@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { TourActFive, TourActFour, TourActOne, TourActSix, TourActThree, TourActTwo, useTourActRenderers } from "@/components/tour/TourActs";
 import { TourStage } from "@/components/tour/TourStage";
-import { TOUR_BOARD_LAYOUT, TOUR_CONTEXT_SENTENCE, TOUR_PUSHED_CHAT, actById } from "@/lib/tour-content";
+import { TOUR_BOARD_LAYOUT, TOUR_CONTEXT_SENTENCE, TOUR_PUSHED_CHAT, actById, tourBoardCopy } from "@/lib/tour-content";
 
 class ResizeObserverStub {
   observe() {}
@@ -294,7 +294,7 @@ describe("tour acts one to three", () => {
     const slide = screen.getByTestId("tour-deck-slide");
     expect(slide.getAttribute("data-tour-title")).toBe("Launch deck, slide 12");
     expect(within(slide).getByText("Launch deck, slide 12")).toBeTruthy();
-    expect(within(slide).getByText("LYKOS LOUNGEWARE")).toBeTruthy();
+    expect(within(slide).getByText(tourBoardCopy("company").owner)).toBeTruthy();
     expect(slide.textContent).not.toContain("LYKOS LOUNGEWEAR");
     const claims = actById("company", 6)?.answer ?? [];
     const bullets = Array.from(slide.querySelectorAll<HTMLElement>(".tour-deck-page li"));
@@ -302,6 +302,14 @@ describe("tour acts one to three", () => {
     expect(bullets.map((bullet) => bullet.querySelector("span:last-child")?.textContent)).toEqual(claims.map((claim) => claim.text));
     expect(bullets.map((bullet) => bullet.dataset["sourceTitle"])).toEqual(claims.map((claim) => claim.sourceCardTitle));
     expect(document.querySelectorAll('.tour-keep-links [role="button"]')).toHaveLength(3);
+  });
+
+  it("uses each register's board owner in the slide header", () => {
+    for (const register of ["company", "partner", "personal", "edu"] as const) {
+      const rendered = render(<TourActSix register={register} />);
+      expect(within(screen.getByTestId("tour-deck-slide")).getByText(tourBoardCopy(register).owner)).toBeTruthy();
+      rendered.unmount();
+    }
   });
 
   it("moves act seven's sole target from Keep to the deck action and gives act eight one final target", () => {

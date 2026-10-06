@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { TourStage, type TourActRenderer } from "@/components/tour/TourStage";
+import { TOUR_CONTENT } from "@/lib/tour-content";
 
 let width = 1280;
 
@@ -67,6 +68,18 @@ describe("T2 tour stage", () => {
       }),
     );
     expect(screen.getByText("Tap the chat to put it on the board.")).toBeTruthy();
+  });
+
+  it("renders every unchanged teaching sentence in the callout rather than the instruction band", () => {
+    for (const activeAct of [1, 2, 3, 4, 5, 6, 7, 8] as const) {
+      const rendered = render(createElement(TourStage, { register: "company", activeAct, acts, onSkip: vi.fn(), onBack: vi.fn(), onHintShown: vi.fn() }));
+      const callout = rendered.container.querySelector(".tour-teaching-callout");
+      const band = rendered.container.querySelector(".tour-instruction-band");
+      expect(callout?.textContent).toBe(TOUR_CONTENT.company.acts[activeAct - 1]?.why);
+      expect(band?.textContent).not.toContain(TOUR_CONTENT.company.acts[activeAct - 1]?.why);
+      expect(band?.querySelector("[data-tour-do]")).toBeTruthy();
+      rendered.unmount();
+    }
   });
 
   it("calls the required Skip handler", () => {
