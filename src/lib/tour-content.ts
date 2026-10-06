@@ -129,14 +129,6 @@ export type TourAct = {
   primaryActionLabel?: string;
 };
 
-const DO_LINES = {
-  4: "Click one of the outlined work cards.",
-  5: "Draw a box around them.",
-  6: "Click Ask.",
-  7: "Keep it. Now the answer lives next to what it came from.",
-  8: "See the deck connected back to the work.",
-} as const satisfies Partial<Record<TourActId, string>>;
-
 export const TOUR_CONTEXT_SENTENCE =
   "Grouped work shares context. When you ask a question of this box, Lasso reads these three and nothing else.";
 export const TOUR_PUSHED_CHAT: TourPushedChat = {
@@ -178,7 +170,7 @@ export const TOUR_CONVERSATION_LIST: TourConversationList = {
 };
 
 export const TOUR_DELIVERABLE: TourDeliverable = {
-  caption: "The deck is what the client sees. Every line in it can still show the chat or file it came from.",
+  caption: "Three pieces of work. One slide. The line between them stays.",
 };
 
 const CLOSING_LINE = "That is the whole thing. Everything else is more of it.";
@@ -192,6 +184,7 @@ const STAGE_COPY = {
 } as const;
 
 function acts(
+  register: Register,
   cards: readonly TourCard[],
   frameTitle: string,
   question: string,
@@ -201,62 +194,62 @@ function acts(
   return [
     {
       id: 1,
-      captionPointer: "Push both into Lasso, then click Next.",
-      captionTouch: "Push both into Lasso, then tap Next.",
-      why: "Push work from either AI tool. When both are in Lasso, go to the next step.",
+      captionPointer: "Push both chats into Lasso, then click Next.",
+      captionTouch: "Push both chats into Lasso, then tap Next.",
+      why: "Keep working in whichever AI tool you like. One push brings the whole conversation over, with a link back to where it happened.",
       chat: TOUR_PUSHED_CHAT,
       companionChat: TOUR_CHATGPT_CHAT,
     },
     {
       id: 2,
-      captionPointer: "They are already here. Go to your workboard.",
-      captionTouch: "They are already here. Go to your workboard.",
-      why: "Both chats arrived on their own. Open Fall Marketing Launch to keep working.",
+      captionPointer: `Open the ${tourBoardCopy(register).title} workboard.`,
+      captionTouch: `Open the ${tourBoardCopy(register).title} workboard.`,
+      why: "You did not file anything. Both chats are already here. A workboard is where you put the ones you want to work with.",
       conversations: TOUR_CONVERSATION_LIST,
     },
     {
       id: 3,
-      captionPointer: "Drag the chat onto the board.",
-      captionTouch: "Tap the chat to put it on the board.",
-      why: "The chat you just pushed is now yours to place. Files, documents and call transcripts land the same way.",
+      captionPointer: "Drag the Claude chat onto the board.",
+      captionTouch: "Tap the Claude chat to put it on the board.",
+      why: "Putting work on a board is how you decide what belongs together. Files, documents and call transcripts land here the same way.",
       bringIn: { title: TOUR_PUSHED_CHAT.title, source: TOUR_PUSHED_CHAT.source },
     },
     {
       id: 4,
-      captionPointer: "Click one outlined card to point Lasso at that work.",
-      captionTouch: "Tap one outlined card to point Lasso at that work.",
-      why: "Lasso can answer from one piece of work. Selecting is how you point at it.",
+      captionPointer: "Click one of the outlined cards.",
+      captionTouch: "Tap one of the outlined cards.",
+      why: "Lasso can answer from a single piece of work. Selecting a card is how you point at it.",
       cards,
     },
     {
       id: 5,
       captionPointer: "Draw a box around the three selected cards.",
-      captionTouch: "Tap Add grouping to group the three selected cards.",
-      why: "A workstream keeps related pieces together. The question will read from this group, not the whole board.",
+      captionTouch: "Tap Add grouping to group the three cards.",
+      why: "Three pieces of work that belong to one decision. Grouped, they answer together, and nothing else on the board gets read.",
       contextSentence: TOUR_CONTEXT_SENTENCE,
       frameTitle,
     },
     {
       id: 6,
-      captionPointer: DO_LINES[6],
-      captionTouch: DO_LINES[6],
-      why: "Lasso reads only what is inside the box, and shows you which piece every part of the answer came from.",
+      captionPointer: "Click Ask.",
+      captionTouch: "Tap Ask.",
+      why: "Every line of the answer shows the piece it came from. You can ask this group, one card, or the whole workboard.",
       question,
       answer,
       chatLink,
     },
     {
       id: 7,
-      captionPointer: DO_LINES[7],
-      captionTouch: DO_LINES[7],
-      why: "Anything Lasso gives you can be kept on the board as a note. You can come back later and still see what it came from.",
+      captionPointer: "Click Keep.",
+      captionTouch: "Tap Keep.",
+      why: "Keep anything Lasso gives you as a note on the board. Months later it still shows the work behind it.",
       primaryActionLabel: "See it in the deck",
     },
     {
       id: 8,
-      captionPointer: DO_LINES[8],
-      captionTouch: DO_LINES[8],
-      why: TOUR_DELIVERABLE.caption,
+      captionPointer: "See how the deck connects back.",
+      captionTouch: "See how the deck connects back.",
+      why: "The deck is what the client sees. Every line in it can still point at the chat or file it came from.",
       closingLine: CLOSING_LINE,
       deliverable: TOUR_DELIVERABLE,
       primaryActionLabel: START_LABEL,
@@ -284,6 +277,7 @@ export const TOUR_CONTENT: Readonly<
   company: {
     stage: STAGE_COPY,
     acts: acts(
+      "company",
       COMPANY_CARDS,
       "Workstream",
       "What ideas did I have that did not make the final launch plan? Give me the link to the AI chat I worked them out in.",
@@ -294,6 +288,7 @@ export const TOUR_CONTENT: Readonly<
   partner: {
     stage: STAGE_COPY,
     acts: acts(
+      "partner",
       COMPANY_CARDS,
       "Workstream",
       "What ideas did I have that did not make the final launch plan? Give me the link to the AI chat I worked them out in.",
@@ -304,6 +299,7 @@ export const TOUR_CONTENT: Readonly<
   personal: {
     stage: STAGE_COPY,
     acts: acts(
+      "personal",
       COMPANY_CARDS,
       "Step",
       "What ideas did I have that did not make the final launch plan? Give me the link to the AI chat I worked them out in.",
@@ -314,6 +310,7 @@ export const TOUR_CONTENT: Readonly<
   edu: {
     stage: STAGE_COPY,
     acts: acts(
+      "edu",
       COMPANY_CARDS,
       "Assignment",
       "What ideas did I have that did not make the final launch plan? Give me the link to the AI chat I worked them out in.",

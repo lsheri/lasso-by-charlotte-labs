@@ -47,15 +47,17 @@ describe("TVc note and deck source trail", () => {
   it("pins the act seven note teaching and act eight deck copy", () => {
     for (const register of REGISTERS) {
       const act = actById(register, 7);
-      expect(act?.captionPointer).toBe("Keep it. Now the answer lives next to what it came from.");
-      expect(act?.why).toBe("Anything Lasso gives you can be kept on the board as a note. You can come back later and still see what it came from.");
+      expect(act?.captionPointer).toBe("Click Keep.");
+      expect(act?.captionTouch).toBe("Tap Keep.");
+      expect(act?.why).toBe("Keep anything Lasso gives you as a note on the board. Months later it still shows the work behind it.");
       expect(act?.deliverable).toBeUndefined();
       expect(act?.closingLine).toBeUndefined();
       expect(act?.primaryActionLabel).toBe("See it in the deck");
       const deckAct = actById(register, 8);
-      expect(deckAct?.captionPointer).toBe("See the deck connected back to the work.");
-      expect(deckAct?.why).toBe("The deck is what the client sees. Every line in it can still show the chat or file it came from.");
-      expect(deckAct?.deliverable).toEqual({ caption: "The deck is what the client sees. Every line in it can still show the chat or file it came from." });
+      expect(deckAct?.captionPointer).toBe("See how the deck connects back.");
+      expect(deckAct?.captionTouch).toBe("See how the deck connects back.");
+      expect(deckAct?.why).toBe("The deck is what the client sees. Every line in it can still point at the chat or file it came from.");
+      expect(deckAct?.deliverable).toEqual({ caption: "Three pieces of work. One slide. The line between them stays." });
       expect(deckAct?.closingLine).toBe("That is the whole thing. Everything else is more of it.");
       expect(deckAct?.primaryActionLabel).toBe("Start with my own work");
       expect(actById(register, 6)?.answer).toEqual([

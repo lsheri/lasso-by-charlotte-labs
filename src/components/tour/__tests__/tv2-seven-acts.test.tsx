@@ -40,19 +40,19 @@ describe("TV2 and TVc tour sequence", () => {
 
   it("keeps the old acts in order at their new ids", () => {
     for (const register of REGISTERS) {
-      expect(actById(register, 3)?.captionPointer).toBe("Drag the chat onto the board.");
-      expect(actById(register, 3)?.captionTouch).toBe("Tap the chat to put it on the board.");
-      expect(actById(register, 3)?.why).toBe("The chat you just pushed is now yours to place. Files, documents and call transcripts land the same way.");
+      expect(actById(register, 3)?.captionPointer).toBe("Drag the Claude chat onto the board.");
+      expect(actById(register, 3)?.captionTouch).toBe("Tap the Claude chat to put it on the board.");
+      expect(actById(register, 3)?.why).toBe("Putting work on a board is how you decide what belongs together. Files, documents and call transcripts land here the same way.");
       expect(actById(register, 3)?.bringIn).toEqual({ title: TOUR_PUSHED_CHAT.title, source: TOUR_PUSHED_CHAT.source });
-      expect(actById(register, 7)?.captionPointer).toBe("Keep it. Now the answer lives next to what it came from.");
+      expect(actById(register, 7)?.captionPointer).toBe("Click Keep.");
       expect(actById(register, 7)?.primaryActionLabel).toBe("See it in the deck");
       expect(actById(register, 8)?.primaryActionLabel).toBe("Start with my own work");
-      expect(actById(register, 1)?.captionPointer).toBe("Push both into Lasso, then click Next.");
-      expect(actById(register, 1)?.captionTouch).toBe("Push both into Lasso, then tap Next.");
-      expect(actById(register, 1)?.why).toBe("Push work from either AI tool. When both are in Lasso, go to the next step.");
-      expect(actById(register, 2)?.captionPointer).toBe("They are already here. Go to your workboard.");
-      expect(actById(register, 2)?.captionTouch).toBe("They are already here. Go to your workboard.");
-      expect(actById(register, 2)?.why).toBe("Both chats arrived on their own. Open Fall Marketing Launch to keep working.");
+      expect(actById(register, 1)?.captionPointer).toBe("Push both chats into Lasso, then click Next.");
+      expect(actById(register, 1)?.captionTouch).toBe("Push both chats into Lasso, then tap Next.");
+      expect(actById(register, 1)?.why).toBe("Keep working in whichever AI tool you like. One push brings the whole conversation over, with a link back to where it happened.");
+      expect(actById(register, 2)?.captionPointer).toBe(`Open the ${tourBoardCopy(register).title} workboard.`);
+      expect(actById(register, 2)?.captionTouch).toBe(`Open the ${tourBoardCopy(register).title} workboard.`);
+      expect(actById(register, 2)?.why).toBe("You did not file anything. Both chats are already here. A workboard is where you put the ones you want to work with.");
     }
   });
 
@@ -114,7 +114,7 @@ describe("TV2 and TVc tour sequence", () => {
     expect(next.getAttribute("data-tour-target")).toBe("1");
     fireEvent.click(next);
     expect(screen.getByLabelText("All AI Conversations tour example")).toBeTruthy();
-    expect(screen.getByText("They are already here. Go to your workboard.")).toBeTruthy();
+    expect(screen.getByText("Open the Fall Marketing Launch workboard.")).toBeTruthy();
   });
 
   it("shows both pushed chats first while only the workboard row advances", () => {
@@ -135,7 +135,7 @@ describe("TV2 and TVc tour sequence", () => {
     expect(rows.slice(2).map((row) => row.querySelector(".ledger-work-note > .nb-paper-body > p")?.textContent)).toEqual(tourAmbientCards("company").map((card) => card.title));
     fireEvent.click(board);
     expect(screen.getByTestId("tour-act-one")).toBeTruthy();
-    expect(screen.getByText("Drag the chat onto the board.")).toBeTruthy();
+    expect(screen.getByText("Drag the Claude chat onto the board.")).toBeTruthy();
   });
 
   it("renders the real conversation-page shell and its inert controls", () => {

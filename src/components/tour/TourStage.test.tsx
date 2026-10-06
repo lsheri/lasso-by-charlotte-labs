@@ -49,7 +49,7 @@ describe("T2 tour stage", () => {
     const { container } = render(stage());
     expect(container.querySelectorAll('[data-state="complete"] .nb-mark')).toHaveLength(4);
     expect(screen.getByText("Draw a box around the three selected cards.")).toBeTruthy();
-    const teaching = screen.getByText("A workstream keeps related pieces together. The question will read from this group, not the whole board.");
+    const teaching = screen.getByText("Three pieces of work that belong to one decision. Grouped, they answer together, and nothing else on the board gets read.");
     expect(teaching.classList.contains("tour-teaching-callout")).toBe(true);
     expect(within(container.querySelector(".tour-instruction-band") as HTMLElement).queryByText(teaching.textContent ?? "")).toBeNull();
     expect(container.querySelector("[data-tour-do]")).toBeTruthy();
@@ -67,7 +67,7 @@ describe("T2 tour stage", () => {
         onHintShown: vi.fn(),
       }),
     );
-    expect(screen.getByText("Tap the chat to put it on the board.")).toBeTruthy();
+    expect(screen.getByText("Tap the Claude chat to put it on the board.")).toBeTruthy();
   });
 
   it("renders every unchanged teaching sentence in the callout rather than the instruction band", () => {
