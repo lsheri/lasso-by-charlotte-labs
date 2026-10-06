@@ -11,6 +11,9 @@ import {
   MCP_REGENERATE_WARNING,
   MCP_SERVER_NAME,
   MCP_SETUP_STEPS,
+  MCP_SIGNIN_NOTE,
+  MCP_SIGNIN_STEPS,
+  MCP_SIGNIN_URL,
   MCP_VENDORS,
 } from "@/lib/mcp-setup-steps";
 
