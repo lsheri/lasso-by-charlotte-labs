@@ -96,9 +96,6 @@ export const REGISTER_SHARED_COPY = {
 export const ENTRY_DOORS = ["intent", "edu_flag", "chooser", "invite"] as const;
 export type EntryDoor = (typeof ENTRY_DOORS)[number];
 
-/** Unit Y1: the four FlowPreview beats, one set per register. */
-export type FlowPreviewStage = { label: string; body: string };
-
 export const FLOW_PREVIEW_COPY: Readonly<Record<Register, readonly FlowPreviewStage[]>> = {
   company: [
     { label: "You work in your AI tools", body: "Claude, ChatGPT, Drive, meetings." },
