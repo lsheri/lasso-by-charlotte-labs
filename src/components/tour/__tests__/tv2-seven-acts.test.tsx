@@ -83,7 +83,8 @@ describe("TV2 and TVc tour sequence", () => {
     vi.useFakeTimers();
     render(<TourActPush register="company" onComplete={vi.fn()} />);
     expect(document.querySelectorAll(".tour-chat-turn")).toHaveLength(TOUR_PUSHED_CHAT.turns.length + 1);
-    expect(screen.getByRole("button", { name: "Push to Lasso" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Push to Lasso" }).getAttribute("data-tour-target")).toBe("1");
+    expect(document.querySelectorAll('[data-tour-target="1"]')).toHaveLength(1);
   });
 
   it("advances from act one to act two when Push is pressed, and confirms once", () => {
@@ -101,6 +102,8 @@ describe("TV2 and TVc tour sequence", () => {
     expect(rows).toHaveLength(1 + tourAmbientCards("company").length);
     expect(rows[0]?.textContent).toContain(TOUR_PUSHED_CHAT.title);
     expect(rows[0]?.textContent).toContain("Just arrived");
+    expect(within(rows[0]!).getByRole("button", { name: /Claude: channel mix options/ }).getAttribute("data-tour-target")).toBe("2");
+    expect(document.querySelectorAll('[data-tour-target="2"]')).toHaveLength(1);
     expect(rows.slice(1).map((row) => row.querySelector(".ledger-work-note > .nb-paper-body > p")?.textContent)).toEqual(tourAmbientCards("company").map((card) => card.title));
     fireEvent.click(within(rows[0]!).getByRole("button", { name: /Claude: channel mix options/ }));
     expect(screen.getByTestId("tour-act-one")).toBeTruthy();

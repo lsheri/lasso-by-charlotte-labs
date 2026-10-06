@@ -35,7 +35,7 @@ function BringInWindow({ item, drag, onPointerDown, onKeyDown }: {
   onKeyDown: (title: string, event: KeyboardEvent<HTMLButtonElement>) => void;
 }) {
   return <section className="tour-file-window" aria-label="AI conversation to bring in"><header><i aria-hidden /><strong>AI conversation</strong></header><div>
-    <Button type="button" variant="ghost" className="tour-file-row" data-lifted={drag?.title === item.title} onPointerDown={(event) => onPointerDown(item.title, event)} onKeyDown={(event) => onKeyDown(item.title, event)}><ToolBadge tool={sourceTool(item.source)} size="sm" /><span>{item.title}</span></Button>
+    <Button type="button" variant="ghost" className="tour-file-row" data-tour-target="3" data-lifted={drag?.title === item.title} onPointerDown={(event) => onPointerDown(item.title, event)} onKeyDown={(event) => onKeyDown(item.title, event)}><ToolBadge tool={sourceTool(item.source)} size="sm" /><span>{item.title}</span></Button>
   </div></section>;
 }
 
@@ -87,7 +87,7 @@ export function TourActOne({ register, onComplete }: { register: Register; onCom
     event.preventDefault(); setKeyPosition((current) => keyTo(current, event.key as "ArrowUp" | "ArrowDown" | "ArrowLeft" | "ArrowRight", event.shiftKey));
   };
   return <div className="tour-arrival" data-testid="tour-act-one" onPointerMove={(event) => { if (drag && drag.pointerId >= 0) setDrag({ ...drag, x: event.clientX, y: event.clientY }); }} onPointerUp={finishPointer} onPointerCancel={() => setDrag(null)}>
-    <TourWorkboard active="add" onAddWork={() => setFilesOpen(true)}><div data-testid="tour-drop-board" className="tour-shared-act"><TourBoard register={register} state={{ act: 3, landedFile: landed }} boardRef={boardRef}>
+    <TourWorkboard active={!landed && !filesOpen ? "add" : null} onAddWork={() => setFilesOpen(true)}><div data-testid="tour-drop-board" className="tour-shared-act"><TourBoard register={register} state={{ act: 3, landedFile: landed }} boardRef={boardRef}>
       <aside className="tour-arrival-hint">You can also drag files, documents or images straight from your computer onto the board.</aside>
       {filesOpen && bringIn ? <div className="tour-file-window-layer"><BringInWindow item={bringIn} drag={drag} onPointerDown={(title, event) => { event.currentTarget.setPointerCapture?.(event.pointerId); if (event.pointerType === "touch") { land(title); return; } setDrag({ title, pointerId: event.pointerId, x: event.clientX, y: event.clientY }); }} onKeyDown={onFileKeyDown} /></div> : null}
     </TourBoard></div></TourWorkboard>
@@ -125,7 +125,7 @@ export function TourActThree({ register, onComplete }: { register: Register; onC
     const required = GROUP_IDS.map((id) => boardRef.current?.querySelector<HTMLElement>(`[data-tour-layout-id="${id}"]`)?.getBoundingClientRect()).filter((rect) => rect !== undefined);
     if (required.length === 3 && required.every((rect) => left <= rect.left && top <= rect.top && right >= rect.right && bottom >= rect.bottom)) group();
   });
-  return <TourWorkboard active="group" onGroup={group}><div className="tour-shared-act" data-testid="tour-act-three" {...handlers} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); group(); } }}><TourBoard register={register} state={{ act: 5, selectedIds: GROUP_IDS, groupedIds: grouped ? GROUP_IDS : [], glowingIds: grouped ? GROUP_IDS : [] }} className="tour-board-act" boardRef={boardRef}>{box ? <span className="tour-marquee" style={{ left: box.x, top: box.y, width: box.width, height: box.height }} /> : null}{grouped ? <p className="tour-context-sentence">{act?.contextSentence}</p> : null}</TourBoard></div></TourWorkboard>;
+  return <TourWorkboard active={grouped ? null : "group"} onGroup={group}><div className="tour-shared-act" data-testid="tour-act-three" {...handlers} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); group(); } }}><TourBoard register={register} state={{ act: 5, selectedIds: GROUP_IDS, groupedIds: grouped ? GROUP_IDS : [], glowingIds: grouped ? GROUP_IDS : [] }} className="tour-board-act" boardRef={boardRef}>{box ? <span className="tour-marquee" style={{ left: box.x, top: box.y, width: box.width, height: box.height }} /> : null}{grouped ? <p className="tour-context-sentence">{act?.contextSentence}</p> : null}</TourBoard></div></TourWorkboard>;
 }
 
 function TourAskMimic({ register, visibleClaims, generating, onAsk }: { register: Register; visibleClaims: number; generating: boolean; onAsk: () => void }) {
@@ -133,7 +133,7 @@ function TourAskMimic({ register, visibleClaims, generating, onAsk }: { register
   return <aside className="tour-ask-mimic" aria-label="Ask Lasso tour example"><header><LassoLoopMark className={generating ? "tour-ask-loop is-generating" : "tour-ask-loop"} /><strong>Ask Lasso</strong></header><div className="tour-ask-question" aria-label="Preset question" aria-readonly="true">{act?.question}</div><div className="tour-ask-claims" aria-live="polite">
     {(act?.answer ?? []).slice(0, visibleClaims).map((claim) => <article key={claim.sourceCardTitle} className="tour-ask-claim"><p>{claim.text}</p><span>{claim.sourceCardTitle}</span></article>)}
     {visibleClaims === (act?.answer?.length ?? 0) && act?.chatLink && chatCard ? <Button type="button" variant="outline" className="tour-chat-link" onClick={noop} aria-label={`${act.chatLink.label}: ${act.chatLink.cardTitle}`}><ToolBadge tool={sourceTool(chatCard.source)} size="sm" /><span>{act.chatLink.label}</span><strong>{act.chatLink.cardTitle}</strong></Button> : null}
-  </div><Button type="button" variant="ink" onClick={onAsk} disabled={generating || visibleClaims === 3}>Ask</Button></aside>;
+  </div><Button type="button" variant="ink" data-tour-target={visibleClaims < 3 ? "6" : undefined} onClick={onAsk} disabled={generating || visibleClaims === 3}>Ask</Button></aside>;
 }
 
 export function TourActFour({ register, onComplete }: { register: Register; onComplete: () => void }) {
@@ -142,7 +142,7 @@ export function TourActFour({ register, onComplete }: { register: Register; onCo
   useEffect(() => () => timers.current.forEach((timer) => window.clearTimeout(timer)), []);
   const ask = () => { if (generating || visibleClaims === claims.length) return; setGenerating(true); if (reduced) { setVisibleClaims(claims.length); setGenerating(false); onComplete(); return; } claims.forEach((_, index) => { const timer = window.setTimeout(() => { setVisibleClaims(index + 1); if (index === claims.length - 1) { setGenerating(false); onComplete(); } }, 400 * (index + 1)); timers.current.push(timer); }); };
   const highlighted = visibleClaims > 0 ? claims[visibleClaims - 1]?.sourceCardTitle ?? null : null;
-  return <TourWorkboard active="ask" onAsk={() => setAskOpen(true)}><div className="tour-shared-act" data-testid="tour-act-four"><TourBoard register={register} state={{ act: 6, selectedIds: GROUP_IDS, groupedIds: GROUP_IDS, glowingIds: GROUP_IDS, highlightedTitle: highlighted, askOpen }}>{askOpen ? <TourAskMimic register={register} visibleClaims={visibleClaims} generating={generating} onAsk={ask} /> : null}</TourBoard></div></TourWorkboard>;
+  return <TourWorkboard active={askOpen ? null : "ask"} onAsk={() => setAskOpen(true)}><div className="tour-shared-act" data-testid="tour-act-four"><TourBoard register={register} state={{ act: 6, selectedIds: GROUP_IDS, groupedIds: GROUP_IDS, glowingIds: GROUP_IDS, highlightedTitle: highlighted, askOpen }}>{askOpen ? <TourAskMimic register={register} visibleClaims={visibleClaims} generating={generating} onAsk={ask} /> : null}</TourBoard></div></TourWorkboard>;
 }
 
 export function TourActFive({ register, onLanded }: { register: Register; onLanded: () => void }) {
@@ -162,12 +162,12 @@ function TourDeckSlide({ register, reducedMotion }: { register: Register; reduce
   const deliverable = actById(register, 8)?.deliverable;
   const layout = TOUR_BOARD_LAYOUT.find((item) => item.id === "deliverable");
   const layoutStyle = layout ? { left: `${layout.x}%`, top: `${layout.y}%`, width: `${layout.widthBasis}%`, transform: `rotate(${layout.rotation}deg)` } : undefined;
-  return <aside className="tour-deck-overlay" data-tour-layout-id="deliverable" data-tour-title={boardCopy.deckTitle} data-tour-target="8" data-testid="tour-deck-slide" data-reduced={reducedMotion ? "" : undefined} aria-label={boardCopy.deckTitle} style={layoutStyle}>
+  return <aside className="tour-deck-overlay" data-tour-layout-id="deliverable" data-tour-title={boardCopy.deckTitle} data-testid="tour-deck-slide" data-reduced={reducedMotion ? "" : undefined} aria-label={boardCopy.deckTitle} style={layoutStyle}>
     <div className="tour-deck-thumbnails" aria-label="Slide thumbnails"><span /><span /><span data-active="true">12</span></div>
     <section data-page={12} className="tour-deck-page-wrap">
       <p className="micro-label micro-label-field">Slide 12</p>
       <div className="tour-deck-page relative w-full overflow-hidden rounded-[var(--radius)] border border-border bg-white">
-        <header><span>LYKOS LOUNGEWEAR</span><strong>{boardCopy.deckTitle}</strong></header>
+        <header><span>{boardCopy.owner}</span><strong>{boardCopy.deckTitle}</strong></header>
         <h2>Fall launch recommendation</h2>
         <ol>
           {claims.map((claim) => {
@@ -216,7 +216,7 @@ export function TourActPush({ register, onComplete }: { register: Register; onCo
         {turns.slice(0, Math.min(shown, turns.length)).map((turn, index) => <li key={index} className="tour-chat-turn" data-role={turn.role}>{turn.text}</li>)}
         {shown > turns.length ? <li className="tour-chat-turn is-push-line" data-role="user">{chat.pushLine}</li> : null}
       </ol>
-      <footer>{ready ? <Button ref={pushRef} type="button" variant="ink" className="tour-push-control" data-tour-target="1" data-pushed={pushed ? "" : undefined} onClick={push}>{pushed ? chat.pushedLabel : chat.pushLabel}</Button> : null}</footer>
+      <footer>{ready ? <Button ref={pushRef} type="button" variant="ink" className="tour-push-control" data-tour-target={!pushed ? "1" : undefined} data-pushed={pushed ? "" : undefined} onClick={push}>{pushed ? chat.pushedLabel : chat.pushLabel}</Button> : null}</footer>
     </section>
   </div>;
 }
@@ -290,7 +290,7 @@ export function TourActArrived({ register, onComplete }: { register: Register; o
               <div className="flex min-h-10 items-center gap-3"><h2 className="font-hand text-[19px] leading-none text-graphite">October</h2><span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{rows.length}</span><span className="h-px flex-1 bg-[var(--nb-rule)]" /></div>
               <ul className="conversation-month-grid" aria-label="AI conversations">
                 {rows.map((row) => <li key={row.item.id} className={row.arrived ? "tour-conversation-row is-arrived" : "tour-conversation-row"}>
-                  {row.arrived ? <Button type="button" variant="ghost" className="conversation-card-compact canvas-lab-card-paper block h-full w-full min-w-0 p-0 text-left whitespace-normal hover:bg-transparent" data-tour-target="2" onClick={open}>
+                  {row.arrived ? <Button type="button" variant="ghost" className="conversation-card-compact canvas-lab-card-paper block h-full w-full min-w-0 p-0 text-left whitespace-normal hover:bg-transparent" data-tour-target={!opened ? "2" : undefined} onClick={open}>
                     <WorkNote item={row.item} dense displayMode="preview" chatPreview={row.preview} lead={<span className="tour-arrived-label">{list.arrivedLabel}</span>} />
                   </Button> : <span className="conversation-card-compact canvas-lab-card-paper block h-full min-w-0"><WorkNote item={row.item} dense displayMode="preview" chatPreview={row.preview} /></span>}
                 </li>)}
@@ -314,8 +314,8 @@ export function useTourActRenderers({ register, activeAct, onAdvance, onHintShow
     { id: 4, content: <TourActTwo register={register} hint={hintAct === 4} onComplete={() => onAdvance(4)} /> },
     { id: 5, content: <TourActThree register={register} onComplete={() => onAdvance(5)} /> },
     { id: 6, content: <TourActFour register={register} onComplete={() => onAdvance(6)} /> },
-    { id: 7, content: <TourActFive register={register} onLanded={() => setAnswerLanded(true)} />, primaryAction: answerLanded ? <Button type="button" variant="ink" onClick={() => onAdvance(7)}>{actById(register, 7)?.primaryActionLabel}</Button> : null },
-    { id: 8, content: <TourActSix register={register} />, primaryAction: <Button type="button" variant="ink" onClick={onFinish}>{actById(register, 8)?.primaryActionLabel}</Button> },
+    { id: 7, content: <TourActFive register={register} onLanded={() => setAnswerLanded(true)} />, primaryAction: answerLanded ? <Button type="button" variant="ink" data-tour-target="7" onClick={() => onAdvance(7)}>{actById(register, 7)?.primaryActionLabel}</Button> : null },
+    { id: 8, content: <TourActSix register={register} />, primaryAction: <Button type="button" variant="ink" data-tour-target="8" onClick={onFinish}>{actById(register, 8)?.primaryActionLabel}</Button> },
   ], [answerLanded, hintAct, onAdvance, onFinish, register]);
   return { renderers, instructionOverride: activeAct === 8 ? actById(register, 8)?.closingLine ?? null : instructionOverride, hint };
 }
