@@ -30,4 +30,5 @@ Tour workboard chrome stays a local presentational mirror around shared board pr
 - Keep the first-run interactive tour entirely in local React state; it must never create product rows or upload files.
 - Keep the first-run tour's AI conversation examples on one shared elapsed step, while each conversation retains independent local push state.
 - Keep every first-run tour act on the single exported board layout and shared board renderer, with answer space reserved before it appears, so items never reflow between acts.
+- Source first-run tour Ask scope labels from AskSurface exports so the teaching copy cannot drift from the product chip.
 - Classify signed-out entry codes locally: activation-key shapes go through `/j/$code`, while workspace invites retain the existing `/join` flow.

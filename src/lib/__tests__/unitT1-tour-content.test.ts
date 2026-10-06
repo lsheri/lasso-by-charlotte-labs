@@ -52,9 +52,12 @@ describe("T1 tour content", () => {
 
   it("pins the one-click work-card instruction", () => {
     for (const register of REGISTERS) {
-      expect(TOUR_CONTENT[register].acts[3]?.captionPointer).toBe("Click one of the outlined work cards.");
-      expect(TOUR_CONTENT[register].acts[3]?.captionTouch).toBe("Click one of the outlined work cards.");
-      expect(TOUR_CONTENT[register].acts[3]?.why).toBe("You are telling Lasso which work, AI chats and transcripts share context. These three all went into the same final piece of work.");
+      expect(TOUR_CONTENT[register].acts[3]?.captionPointer).toBe("Click one outlined card to point Lasso at that work.");
+      expect(TOUR_CONTENT[register].acts[3]?.captionTouch).toBe("Tap one outlined card to point Lasso at that work.");
+      expect(TOUR_CONTENT[register].acts[3]?.why).toBe("Lasso can answer from one piece of work. Selecting is how you point at it.");
+      expect(TOUR_CONTENT[register].acts[4]?.captionPointer).toBe("Draw a box around the three selected cards.");
+      expect(TOUR_CONTENT[register].acts[4]?.captionTouch).toBe("Tap Add grouping to group the three selected cards.");
+      expect(TOUR_CONTENT[register].acts[4]?.why).toBe("A workstream keeps related pieces together. The question will read from this group, not the whole board.");
     }
   });
 
@@ -116,9 +119,10 @@ describe("T1 tour content", () => {
       expect(acts[2]?.bringIn).toEqual({ title: TOUR_PUSHED_CHAT.title, source: TOUR_PUSHED_CHAT.source });
       expect(acts[2]?.bringIn?.title).toBe(acts[3]?.cards?.[2]?.title);
       expect(acts[4]?.frameTitle).toBe(expectedFrameTitles[register]);
-      expect(acts[4]?.why).toBe(`The box is a ${expectedFrameTitles[register] === "Workstream" ? "workstream" : expectedFrameTitles[register]}. Everything inside it shares context, so a question answers from those pieces and nothing else on the board.`);
+      expect(acts[4]?.why).toBe("A workstream keeps related pieces together. The question will read from this group, not the whole board.");
       expect(tourAmbientCards(register).map((card) => card.title)).toEqual(expectedAmbientTitles);
       expect(tourBoardCopy(register)).toMatchObject({ title: "Fall Marketing Launch", owner: "LYKOS LOUNGEWARE", whiteboardTitle: "Austin retail launch page", whiteboardCaption: "Store page draft", deckTitle: "Launch deck, slide 12" });
+      expect(tourBoardCopy(register).pieceCount).toBe(TOUR_BOARD_LAYOUT.filter((item) => item.earliestAct <= 3).length);
     }
     expect(REGISTERS.map((register) => TOUR_CONTENT[register].acts[4]?.frameTitle)).toEqual([
       "Workstream",

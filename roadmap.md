@@ -17,3 +17,5 @@
 - [x] Report real Ask Lasso scopes, controls, and any board presentation renderer from source evidence.
 - [x] TVe: run two Act 1 conversations concurrently, gate Next on both pushes, and move Act 2 progression to its local sidebar workboard row.
 - [x] Verify TVe at 1280px and 390px, then run the full suite once after the final edit and build once.
+- [x] TVf: replace the Act 3 deck and screenshot previews, remove three crowded cards, and preserve remaining geometry.
+- [x] TVg: teach the three real Ask scopes in Acts 4 to 6 and derive the Act 3 piece count.

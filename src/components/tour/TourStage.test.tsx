@@ -48,8 +48,8 @@ describe("T2 tour stage", () => {
   it("shows four drawn checks and the pointer instruction at act five", () => {
     const { container } = render(stage());
     expect(container.querySelectorAll('[data-state="complete"] .nb-mark')).toHaveLength(4);
-    expect(screen.getByText("Draw a box around them.")).toBeTruthy();
-    const teaching = screen.getByText("The box is a workstream. Everything inside it shares context, so a question answers from those pieces and nothing else on the board.");
+    expect(screen.getByText("Draw a box around the three selected cards.")).toBeTruthy();
+    const teaching = screen.getByText("A workstream keeps related pieces together. The question will read from this group, not the whole board.");
     expect(teaching.classList.contains("tour-teaching-callout")).toBe(true);
     expect(within(container.querySelector(".tour-instruction-band") as HTMLElement).queryByText(teaching.textContent ?? "")).toBeNull();
     expect(container.querySelector("[data-tour-do]")).toBeTruthy();
