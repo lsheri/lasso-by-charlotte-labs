@@ -34,8 +34,14 @@ export function OnboardingTour({
       dims: { step?: number },
     ) => {
       const org = orgRef.current;
-      if (!org) return;
-      logEvent(event, org, { ...dims, register });
+      // TL1: signed in, the canonical org-scoped path, unchanged. Signed out
+      // (the public landing How it works section), the same event and dims go
+      // down the anonymous path the landing demo already uses.
+      if (org) {
+        logEvent(event, org, { ...dims, register });
+      } else {
+        noteAnonymousTourEvent(event, { ...dims, register });
+      }
     },
     [register],
   );

@@ -96,6 +96,20 @@ export function noteDemoTourSkipped(step: number): void {
   noteTourEvent("demo.tour_skipped", step);
 }
 
+/**
+ * TL1: the first-run tour on the signed-out landing page has no org, so its
+ * five events go down the same anonymous path as the demo events above, with
+ * the same per-view id. Names and dims are the tour's own; nothing is added.
+ */
+export function noteAnonymousTourEvent(
+  eventType: "tour.started" | "tour.step_done" | "tour.step_continued" | "tour.skipped" | "tour.finished",
+  dims: Record<string, string | number>,
+): void {
+  void recordAnonymousEventFn({
+    data: { event_type: eventType, view_id: demoViewId(), dims },
+  }).catch(() => undefined);
+}
+
 const DEMO_TOOLS = new Set(["all", "claude", "chatgpt", "gemini", "document"]);
 
 /** Unit 4: a tool chip on /demo/conversations. Closed tool word only. */
