@@ -142,4 +142,16 @@ describe("ConnectYourAiCard", () => {
     expect(source).toContain("MCP_PUSH_BLOCKED_NOTE");
     expect(source).not.toContain("If your AI stops a push before it runs");
   });
+
+  it("shows the Sign in group before the link group for claude, and no headings for chatgpt", async () => {
+    token = null;
+    renderCard();
+    expect(await screen.findByText("No connector yet")).toBeTruthy();
+    expect(screen.getAllByText("Sign in")).toHaveLength(1);
+    expect(screen.getAllByText("Or paste a link")).toHaveLength(1);
+    expect(screen.getByText(MCP_SIGNIN_NOTE)).toBeTruthy();
+    const signin = screen.getByText("Sign in");
+    const link = screen.getByText("Or paste a link");
+    expect(link.compareDocumentPosition(signin) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
+  });
 });
