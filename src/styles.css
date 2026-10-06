@@ -6052,7 +6052,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   :root:has(.landing-board-page) { scroll-snap-type: y mandatory; scroll-padding-top: calc(56px + env(safe-area-inset-top, 0px)); }
   .lb-header { position: fixed; right: 0; left: 0; height: calc(var(--lb-header-h) + env(safe-area-inset-top, 0px)); min-height: calc(var(--lb-header-h) + env(safe-area-inset-top, 0px)); overflow: hidden; }
   .lb-header-main { grid-template-columns: minmax(0,1fr) auto; gap: 12px; min-height: calc(var(--lb-header-h) + env(safe-area-inset-top, 0px)); padding: env(safe-area-inset-top, 0px) 12px 0; }
-  .lb-brand { font-size: 14px; }.lb-brand svg { width: 28px; height: 28px; }
+  .lb-brand { font-size: 14px; }.lb-brand svg { width: 28px; height: 28px; }.lb-brand .lb-brand-byline { margin-left: 14px; }
   .lb-header-nav,.lb-header-actions > a[href="#pilot"] { display: none !important; }
   .lb-sticky-stage,.lb-scroll-sections { display: none; }
   .lb-desktop-hero,.lb-story > .landing-usecases,.lb-how-it-works { display: none; }
