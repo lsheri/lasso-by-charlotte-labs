@@ -15,14 +15,17 @@ export function OnboardingTour({
   register,
   orgId,
   onDone,
+  startAct = 1,
 }: {
   register: Register;
   /** The person's workspace; events wait until it is known. */
   orgId: string | null;
   /** The route's existing completion path, used by both finish and skip. */
   onDone: () => void;
+  /** Test seam only; onboarding always opens on act 1. */
+  startAct?: TourActId;
 }) {
-  const [activeAct, setActiveAct] = useState<TourActId>(1);
+  const [activeAct, setActiveAct] = useState<TourActId>(startAct);
   const orgRef = useRef(orgId);
   orgRef.current = orgId;
   const emit = useCallback(

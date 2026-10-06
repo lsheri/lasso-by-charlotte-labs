@@ -5,14 +5,14 @@ import { useEffect, useState } from "react";
 import { StepRail } from "@/components/onboarding/StepRail";
 import { SetupTools } from "@/components/onboarding/SetupTools";
 import { OnboardingTour } from "@/components/onboarding/OnboardingTour";
-import { useOnboardingUi } from "@/hooks/use-onboarding-ui";
+import { readOnboardingUi } from "@/lib/onboarding-ui";
 import { ToolPicker } from "@/components/onboarding/ToolPicker";
 import { SessionHeader } from "@/components/layout/SessionHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
-import { AUTH_USER_KEY, fetchProfile, useProfile } from "@/hooks/use-profile";
+import { AUTH_USER_KEY, fetchProfile, type Profile } from "@/hooks/use-profile";
 import {
   readEduIntent,
   clearEduIntent,
@@ -449,8 +449,7 @@ function OnboardingInner() {
   // TV5: the first-run tour sits in front of the existing completion path.
   // profiles.onboarding.welcome_seen is the memory that stops it replaying;
   // ?setup=1 is an existing member and never sees it.
-  const { data: activeProfile } = useProfile();
-  const { ui: onboardingUi, update: updateOnboardingUi } = useOnboardingUi();
+  const [tourProfile, setTourProfile] = useState<Profile | null>(null);
 
   function land() {
     // Unit Y2: the same place sign-in lands, so the first visit and every
@@ -458,23 +457,41 @@ function OnboardingInner() {
     navigate({ to: "/home", replace: true });
   }
 
-  function finish() {
-    if (!setup && activeProfile && !onboardingUi.welcome_seen) {
-      setStage("tour");
-      return;
+  async function finish() {
+    if (!setup) {
+      const profile = await fetchProfile().catch(() => null);
+      if (profile && !readOnboardingUi(profile.onboarding).welcome_seen) {
+        setTourProfile(profile);
+        setStage("tour");
+        return;
+      }
     }
     land();
   }
 
   function completeTour() {
-    updateOnboardingUi({ welcome_seen: true });
+    const profile = tourProfile;
+    if (profile) {
+      // The same self update useOnboardingUi makes. Memory, so a failed write is silent.
+      const next = { ...readOnboardingUi(profile.onboarding), welcome_seen: true };
+      void (async () => {
+        await supabase.from("profiles").update({ onboarding: next }).eq("id", profile.id);
+        await queryClient.invalidateQueries({ queryKey: ["profiles"] });
+      })().catch(() => {
+        /* onboarding memory never interrupts the person */
+      });
+    }
     land();
   }
 
   if (stage === "tour") {
     return (
       <main className="tour-preview-page" data-testid="onboarding-tour">
-        <OnboardingTour register={orgType} orgId={activeProfile?.org_id ?? null} onDone={completeTour} />
+        <OnboardingTour
+          register={tourProfile?.org_type ?? orgType}
+          orgId={tourProfile?.org_id ?? null}
+          onDone={completeTour}
+        />
       </main>
     );
   }
@@ -532,7 +549,7 @@ function OnboardingInner() {
               </Button>
               <button
                 type="button"
-                onClick={finish}
+                onClick={() => void finish()}
                 className="text-xs text-muted-foreground hover:text-foreground"
               >
                 I'll do this later
@@ -564,12 +581,12 @@ function OnboardingInner() {
             </div>
 
             <div className="mt-8 flex items-center gap-6">
-              <Button type="button" onClick={finish}>
+              <Button type="button" onClick={() => void finish()}>
                 Go to my work
               </Button>
               <button
                 type="button"
-                onClick={finish}
+                onClick={() => void finish()}
                 className="text-xs text-muted-foreground hover:text-foreground"
               >
                 I'll do this later
