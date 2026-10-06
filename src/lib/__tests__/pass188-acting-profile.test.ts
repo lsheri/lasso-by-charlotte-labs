@@ -82,6 +82,34 @@ describe("resolveProfile", () => {
     const asked = await resolveProfile(stub([GONE, NEWER]), "u-1", "p-gone");
     expect(asked?.id).toBe("p-new");
   });
+
+  it("picks the profile in the named org when an org is given", async () => {
+    const profile = await resolveProfile(stub([OLDEST, NEWER]), "u-1", undefined, "o-2");
+    expect(profile?.id).toBe("p-new");
+  });
+
+  it("prefers the requested id when it is the caller's and in the named org", async () => {
+    const profile = await resolveProfile(stub([OLDEST, NEWER]), "u-1", "p-new", "o-2");
+    expect(profile?.id).toBe("p-new");
+  });
+
+  it("ignores a requested id from a different org and uses the caller's profile in the named org", async () => {
+    const profile = await resolveProfile(stub([OLDEST, NEWER]), "u-1", "p-new", "o-1");
+    expect(profile?.id).toBe("p-old");
+  });
+
+  it("returns null when the caller has no active profile in the named org", async () => {
+    const profile = await resolveProfile(stub([OLDEST, NEWER]), "u-1", undefined, "o-9");
+    expect(profile).toBeNull();
+
+    const asked = await resolveProfile(stub([OLDEST, NEWER]), "u-1", "p-old", "o-9");
+    expect(asked).toBeNull();
+  });
+
+  it("still falls back to the oldest when no org is given", async () => {
+    const profile = await resolveProfile(stub([NEWER, OLDEST]), "u-1", "p-somebody-else");
+    expect(profile?.id).toBe("p-old");
+  });
 });
 
 /**
