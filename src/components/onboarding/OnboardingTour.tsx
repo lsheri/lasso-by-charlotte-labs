@@ -74,17 +74,13 @@ export function OnboardingTour({
   const doneNow = Boolean(current?.complete && current.hasAction !== false);
   const reported = useRef<number | null>(null);
   useEffect(() => {
-    if (!doneNow) {
-      if (reported.current === activeAct) return;
-      return;
-    }
-    if (reported.current === activeAct) return;
+    reported.current = null;
+  }, [activeAct]);
+  useEffect(() => {
+    if (!doneNow || reported.current === activeAct) return;
     reported.current = activeAct;
     emit("tour.step_done", { step: activeAct });
   }, [doneNow, activeAct, emit]);
-  useEffect(() => {
-    if (!doneNow && reported.current !== null && reported.current !== activeAct) reported.current = null;
-  }, [doneNow, activeAct]);
 
   return (
     <TourStage
