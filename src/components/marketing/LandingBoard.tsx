@@ -251,8 +251,11 @@ function LandingLogoRain() {
         ))}
       </div>
       <div className="lb-intro-brand" aria-hidden="true">
-        <LassoLoopMark />
-        <span>LASSO</span>
+        <div className="lb-brand-lockup-main">
+          <LassoLoopMark />
+          <span>LASSO</span>
+        </div>
+        <span className="lb-brand-byline">by Charlotte Labs</span>
       </div>
     </main>
   );
@@ -2202,7 +2205,11 @@ function LandingBoardHeader() {
     <header className="lb-header">
       <div className="lb-header-main">
         <EntryDoorLink className="lb-brand">
-          <LassoLoopMark /> <span>LASSO</span>
+          <span className="lb-brand-lockup-main">
+            <LassoLoopMark />
+            <span>LASSO</span>
+          </span>
+          <span className="lb-brand-byline">by Charlotte Labs</span>
         </EntryDoorLink>
         <nav className="lb-header-nav" aria-label="Primary navigation">
           <a href="#lb-canvas">How it works</a>
