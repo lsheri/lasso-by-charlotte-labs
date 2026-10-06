@@ -6279,22 +6279,21 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   display: grid;
   min-height: 100dvh;
   place-items: center;
-  overflow: hidden;
+  overflow-x: hidden;
   background: var(--nb-grey-1);
   padding: 24px 16px;
 }
 .tour-shell {
   width: min(1440px, calc(100vw - 48px));
 }
+.tour-preview-dev { justify-self: center; margin-top: 12px; color: var(--nb-mid); font-family: var(--font-mono); font-size: 11.5px; }
+.tour-preview-dev > summary { cursor: pointer; text-align: center; }
 .tour-preview-controls {
-  position: fixed;
-  top: 12px;
-  left: 50%;
-  z-index: 40;
   display: flex;
+  flex-wrap: wrap;
   align-items: end;
   gap: 12px;
-  transform: translateX(-50%);
+  margin-top: 8px;
   border: 1px solid var(--nb-rule);
   border-radius: var(--radius-control);
   background: var(--nb-white);

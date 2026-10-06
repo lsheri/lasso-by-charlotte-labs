@@ -39,22 +39,6 @@ function TourPreviewPage() {
 
   return (
     <main className="tour-preview-page">
-      <div className="tour-preview-controls" aria-label="Tour preview controls">
-        <label>
-          Register
-          <select value={register} onChange={(event) => { setRegister(event.target.value as Register); setActiveAct(1); }}>
-            <option value="company">Company</option>
-            <option value="partner">Partner</option>
-            <option value="personal">Personal</option>
-            <option value="edu">Education</option>
-          </select>
-        </label>
-        <div aria-label="Choose act">
-          {([1, 2, 3, 4, 5, 6, 7, 8] as const satisfies readonly TourActId[]).map((act) => (
-            <Button key={act} type="button" size="icon" variant={activeAct === act ? "ink" : "outline"} aria-label={`Show act ${act}`} onClick={() => setActiveAct(act)}>{act}</Button>
-          ))}
-        </div>
-      </div>
       <TourStage
         register={register}
         activeAct={activeAct}
@@ -64,6 +48,25 @@ function TourPreviewPage() {
         onHintShown={hint}
         instructionOverride={instructionOverride}
       />
+      <details className="tour-preview-dev" data-testid="tour-preview-dev">
+        <summary>Preview controls</summary>
+        <div className="tour-preview-controls" aria-label="Tour preview controls">
+          <label>
+            Register
+            <select value={register} onChange={(event) => { setRegister(event.target.value as Register); setActiveAct(1); }}>
+              <option value="company">Company</option>
+              <option value="partner">Partner</option>
+              <option value="personal">Personal</option>
+              <option value="edu">Education</option>
+            </select>
+          </label>
+          <div aria-label="Choose act">
+            {([1, 2, 3, 4, 5, 6, 7, 8] as const satisfies readonly TourActId[]).map((act) => (
+              <Button key={act} type="button" size="icon" variant={activeAct === act ? "ink" : "outline"} aria-label={`Show act ${act}`} onClick={() => setActiveAct(act)}>{act}</Button>
+            ))}
+          </div>
+        </div>
+      </details>
     </main>
   );
 }
