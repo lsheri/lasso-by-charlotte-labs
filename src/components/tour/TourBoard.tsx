@@ -102,8 +102,8 @@ function ImageCard({ kind, title, caption }: { kind: "deck" | "whiteboard"; titl
 }
 
 const BOARD_NOTES = [
-  { id: "group", text: "name this grouping?", x: 83, y: 22 },
-  { id: "gemini", text: "add the Toronto numbers?", x: 85.5, y: 61.5 },
+  { id: "group", targetId: "primary-2", text: "name this grouping?", x: 83, y: 22 },
+  { id: "gemini", targetId: "artifact", text: "add the Toronto numbers?", x: 85.5, y: 61.5 },
 ] as const;
 
 function answerNode(register: Register): LabNode {
@@ -167,7 +167,7 @@ export function TourBoard({ register, state, className = "", children, onWorkCar
       <>
         <header className="tour-board-heading"><strong>{boardCopy.title}</strong><span>{boardCopy.owner} · {boardCopy.pieceCount} pieces</span></header>
         <i className="tour-alignment-rail is-upper" aria-hidden /><i className="tour-alignment-rail is-lower" aria-hidden />
-        {BOARD_NOTES.map((note) => <span key={note.id} className="tour-margin-note" data-tour-note={note.id} style={{ left: `${note.x}%`, top: `${note.y}%` }}>{note.text}</span>)}
+        {BOARD_NOTES.map((note) => <span key={note.id} className="tour-margin-note" data-tour-note={note.id} data-tour-note-target={note.targetId} style={{ left: `${note.x}%`, top: `${note.y}%` }}>{note.text}</span>)}
         {state.answerVisible ? <span className="tour-margin-note is-answer-note" data-tour-note="answer">this is the one to send</span> : null}
       </>
       <div className="tour-loose-work-label" aria-label="Loose AI chat work cards" />

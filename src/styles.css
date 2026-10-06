@@ -6605,7 +6605,8 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .tour-compact-card strong { overflow-wrap: anywhere; font-family: var(--font-ui); font-size: 12px; line-height: 1.1; }
 .tour-compact-tool { font-family: var(--font-mono); font-size: 9px; text-transform: uppercase; }
 .tour-image-caption { grid-column: 1 / -1; color: var(--nb-mid); font-family: var(--font-hand); font-size: 13px; line-height: 1; }
-.tour-board-item > .tour-mini-slide,.tour-board-item > .tour-screenshot-card { display: block; min-height: 118px; padding: 7px; }
+.tour-board-item > .tour-mini-slide,.tour-board-item > .tour-screenshot-card { display: block; height: 100%; min-height: 0; padding: 7px; }
+.tour-board-item:has(> .tour-mini-slide),.tour-board-item:has(> .tour-screenshot-card) { height: 15%; }
 .tour-mini-slide > strong,.tour-screenshot-card > strong { display: block; margin-top: 2px; }
 .tour-mini-slide h3 { margin: 6px 0 4px; font-family: var(--font-serif); font-size: 13px; font-weight: 400; line-height: 1; }
 .tour-mini-slide-body { display: grid; grid-template-columns: minmax(0, 1fr) 42%; align-items: end; gap: 5px; }
@@ -6738,6 +6739,13 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   .tour-board-item .tour-card-preview-copy { font-size: 9px; line-height: 1.05; }
   .tour-board-item .tour-card-preview-copy span::before { display: none; }
   .tour-board-item > .tour-compact-card { min-height: 42px; padding: 4px; }
+  .tour-board-item:has(> .tour-mini-slide),.tour-board-item:has(> .tour-screenshot-card) { height: 10%; min-height: 72px; overflow: hidden; }
+  .tour-board-item > .tour-mini-slide,.tour-board-item > .tour-screenshot-card { min-height: 72px; padding: 4px; }
+  .tour-mini-slide h3 { margin-block: 2px; font-size: 10px; }
+  .tour-mini-slide ul { gap: 0; padding-left: 10px; font-size: 7px; }
+  .tour-mini-slide svg { max-height: 30px; }
+  .tour-screenshot-card svg { margin-top: 2px; }
+  .tour-screenshot-card .tour-image-caption { display: none; }
   .tour-reserved-slot { height: 18%; }
   .tour-answer-slot { height: 18%; }
   .tour-ask-mimic { width: 48%; }

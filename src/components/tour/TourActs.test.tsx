@@ -300,10 +300,9 @@ describe("tour acts one to three", () => {
   it("keeps every margin note beside work that still exists", () => {
     render(<TourActOne register="company" onComplete={vi.fn()} />);
     expect(document.querySelector('[data-tour-note="budget"]')).toBeNull();
-    expect(document.querySelector('[data-tour-note="group"]')).toBeTruthy();
-    expect(document.querySelector('[data-tour-layout-id="primary-2"]')).toBeTruthy();
-    expect(document.querySelector('[data-tour-note="gemini"]')).toBeTruthy();
-    expect(document.querySelector('[data-tour-layout-id="artifact"]')).toBeTruthy();
+    const notes = Array.from(document.querySelectorAll<HTMLElement>("[data-tour-note-target]"));
+    expect(notes.map((note) => [note.dataset["tourNote"], note.dataset["tourNoteTarget"]])).toEqual([["group", "primary-2"], ["gemini", "artifact"]]);
+    for (const note of notes) expect(document.querySelector(`[data-tour-layout-id="${note.dataset["tourNoteTarget"]}"]`)).toBeTruthy();
   });
 
   it("anchors each kept-answer connector to a source work card", () => {
