@@ -87,7 +87,7 @@ export function TourActOne({ register, onComplete }: { register: Register; onCom
     event.preventDefault(); setKeyPosition((current) => keyTo(current, event.key as "ArrowUp" | "ArrowDown" | "ArrowLeft" | "ArrowRight", event.shiftKey));
   };
   return <div className="tour-arrival" data-testid="tour-act-one" onPointerMove={(event) => { if (drag && drag.pointerId >= 0) setDrag({ ...drag, x: event.clientX, y: event.clientY }); }} onPointerUp={finishPointer} onPointerCancel={() => setDrag(null)}>
-    <TourWorkboard active={filesOpen ? null : "add"} onAddWork={() => setFilesOpen(true)}><div data-testid="tour-drop-board" className="tour-shared-act"><TourBoard register={register} state={{ act: 3, landedFile: landed }} boardRef={boardRef}>
+    <TourWorkboard active={!landed && !filesOpen ? "add" : null} onAddWork={() => setFilesOpen(true)}><div data-testid="tour-drop-board" className="tour-shared-act"><TourBoard register={register} state={{ act: 3, landedFile: landed }} boardRef={boardRef}>
       <aside className="tour-arrival-hint">You can also drag files, documents or images straight from your computer onto the board.</aside>
       {filesOpen && bringIn ? <div className="tour-file-window-layer"><BringInWindow item={bringIn} drag={drag} onPointerDown={(title, event) => { event.currentTarget.setPointerCapture?.(event.pointerId); if (event.pointerType === "touch") { land(title); return; } setDrag({ title, pointerId: event.pointerId, x: event.clientX, y: event.clientY }); }} onKeyDown={onFileKeyDown} /></div> : null}
     </TourBoard></div></TourWorkboard>
@@ -216,7 +216,7 @@ export function TourActPush({ register, onComplete }: { register: Register; onCo
         {turns.slice(0, Math.min(shown, turns.length)).map((turn, index) => <li key={index} className="tour-chat-turn" data-role={turn.role}>{turn.text}</li>)}
         {shown > turns.length ? <li className="tour-chat-turn is-push-line" data-role="user">{chat.pushLine}</li> : null}
       </ol>
-      <footer>{ready ? <Button ref={pushRef} type="button" variant="ink" className="tour-push-control" data-tour-target="1" data-pushed={pushed ? "" : undefined} onClick={push}>{pushed ? chat.pushedLabel : chat.pushLabel}</Button> : null}</footer>
+      <footer>{ready ? <Button ref={pushRef} type="button" variant="ink" className="tour-push-control" data-tour-target={!pushed ? "1" : undefined} data-pushed={pushed ? "" : undefined} onClick={push}>{pushed ? chat.pushedLabel : chat.pushLabel}</Button> : null}</footer>
     </section>
   </div>;
 }
@@ -290,7 +290,7 @@ export function TourActArrived({ register, onComplete }: { register: Register; o
               <div className="flex min-h-10 items-center gap-3"><h2 className="font-hand text-[19px] leading-none text-graphite">October</h2><span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{rows.length}</span><span className="h-px flex-1 bg-[var(--nb-rule)]" /></div>
               <ul className="conversation-month-grid" aria-label="AI conversations">
                 {rows.map((row) => <li key={row.item.id} className={row.arrived ? "tour-conversation-row is-arrived" : "tour-conversation-row"}>
-                  {row.arrived ? <Button type="button" variant="ghost" className="conversation-card-compact canvas-lab-card-paper block h-full w-full min-w-0 p-0 text-left whitespace-normal hover:bg-transparent" data-tour-target="2" onClick={open}>
+                  {row.arrived ? <Button type="button" variant="ghost" className="conversation-card-compact canvas-lab-card-paper block h-full w-full min-w-0 p-0 text-left whitespace-normal hover:bg-transparent" data-tour-target={!opened ? "2" : undefined} onClick={open}>
                     <WorkNote item={row.item} dense displayMode="preview" chatPreview={row.preview} lead={<span className="tour-arrived-label">{list.arrivedLabel}</span>} />
                   </Button> : <span className="conversation-card-compact canvas-lab-card-paper block h-full min-w-0"><WorkNote item={row.item} dense displayMode="preview" chatPreview={row.preview} /></span>}
                 </li>)}
