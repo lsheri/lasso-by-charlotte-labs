@@ -1,5 +1,4 @@
-import type React from "react";
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode, type RefObject } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode, type RefObject } from "react";
 
 import { LabAnswerCard } from "@/components/canvas-lab/LabAnswerCard";
 import { LabRelationships } from "@/components/canvas-lab/LabRelationships";
@@ -54,7 +53,7 @@ function itemStyle(item: TourLayoutItem) {
     // Read only by the act 8 zoom-out rule in CSS; layout values are untouched.
     "--tour-x": item.x,
     "--tour-y": item.y,
-  } as React.CSSProperties;
+  } as CSSProperties;
 }
 
 function PreviewCard({ card, compact = false }: { card: TourCard | TourAmbientCard; compact?: boolean }) {

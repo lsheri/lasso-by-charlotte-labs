@@ -172,7 +172,7 @@ function TourDeckSlide({ register, reducedMotion }: { register: Register; reduce
         <header><span>{boardCopy.owner}</span><strong>{boardCopy.deckTitle}</strong></header>
         <h2>Fall launch recommendation</h2>
         <div className="tour-deck-body">
-        <ol>
+          <ol>
             {claims.map((claim) => {
               const source = cards.find((card) => card.title === claim.sourceCardTitle)?.source;
               return <li key={claim.sourceCardTitle} data-source-title={claim.sourceCardTitle}>{source ? <ToolBadge tool={sourceTool(source)} size="sm" /> : null}<span>{claim.text}</span></li>;
