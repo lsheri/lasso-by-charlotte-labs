@@ -96,7 +96,7 @@ export type TourChatTurn = {
 
 export type TourPushedChat = {
   title: string;
-  source: "claude";
+  source: "claude" | "chatgpt";
   turns: readonly TourChatTurn[];
   pushLine: string;
   pushLabel: string;
@@ -119,6 +119,7 @@ export type TourAct = {
   why: string;
   bringIn?: { title: string; source: TourSource };
   chat?: TourPushedChat;
+  companionChat?: TourPushedChat;
   conversations?: TourConversationList;
   cards?: readonly TourCard[];
   contextSentence?: string;
@@ -159,6 +160,21 @@ export const TOUR_PUSHED_CHAT: TourPushedChat = {
   pushedLabel: "Pushed to Lasso",
 };
 
+export const TOUR_CHATGPT_CHAT: TourPushedChat = {
+  title: "ChatGPT: launch week checklist",
+  source: "chatgpt",
+  turns: [
+    { role: "user", text: "Make a checklist for launch week." },
+    { role: "assistant", text: "Start with store setup, creator posts and daily stock checks." },
+    { role: "user", text: "Keep it focused on Austin and Denver." },
+    { role: "assistant", text: "I kept both cities and added owners for each handoff." },
+    { role: "user", text: "Add a Friday check before the weekend push." },
+  ],
+  pushLine: "Push this to Lasso.",
+  pushLabel: "Push to Lasso",
+  pushedLabel: "Pushed to Lasso",
+};
+
 export const TOUR_CONVERSATION_LIST: TourConversationList = {
   heading: "All AI Conversations",
   arrivedLabel: "Just arrived",
@@ -188,16 +204,17 @@ function acts(
   return [
     {
       id: 1,
-      captionPointer: "Push the chat into Lasso.",
-      captionTouch: "Push the chat into Lasso.",
-      why: "You keep working in the AI tools you already use. One push brings the whole conversation into Lasso, with a link back to where it happened.",
+      captionPointer: "Push both into Lasso, then click Next.",
+      captionTouch: "Push both into Lasso, then tap Next.",
+      why: "Push work from either AI tool. When both are in Lasso, go to the next step.",
       chat: TOUR_PUSHED_CHAT,
+      companionChat: TOUR_CHATGPT_CHAT,
     },
     {
       id: 2,
-      captionPointer: "It is already here. You did not have to file it.",
-      captionTouch: "It is already here. You did not have to file it.",
-      why: "Every chat you push lands in All AI Conversations on its own. Click it to put it to work.",
+      captionPointer: "They are already here. Go to your workboard.",
+      captionTouch: "They are already here. Go to your workboard.",
+      why: "Both chats arrived on their own. Open Fall Marketing Launch to keep working.",
       conversations: TOUR_CONVERSATION_LIST,
     },
     {
