@@ -170,7 +170,7 @@ export const TOUR_CONVERSATION_LIST: TourConversationList = {
 };
 
 export const TOUR_DELIVERABLE: TourDeliverable = {
-  caption: "Three pieces of work. One slide. The line between them stays.",
+  caption: "Three pieces of work. One slide. The work traced back to your AI conversations.",
 };
 
 const CLOSING_LINE = "That is the whole thing. Everything else is more of it.";
