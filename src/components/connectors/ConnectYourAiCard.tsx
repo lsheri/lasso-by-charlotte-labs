@@ -30,6 +30,8 @@ import {
   MCP_PUSH_PHRASE,
   MCP_SERVER_NAME,
   MCP_SETUP_STEPS,
+  MCP_SIGNIN_NOTE,
+  MCP_SIGNIN_STEPS,
   MCP_VENDORS,
   VENDOR_LABELS,
 } from "@/lib/mcp-setup-steps";
@@ -105,19 +107,46 @@ export function connectorStatusLine(
 export function SetupSteps() {
   return (
     <div className="space-y-4 rounded-[var(--radius)] border border-border bg-secondary/60 px-4 py-4">
-      {MCP_VENDORS.map((vendor) => (
-        <div key={vendor}>
-          <p className="micro-label">{VENDOR_LABELS[vendor]}</p>
-          <ol className="mt-1.5 space-y-1.5">
-            {MCP_SETUP_STEPS[vendor].map((step, index) => (
-              <li key={step} className="flex gap-2 text-sm text-muted-foreground">
-                <span className="font-mono text-[11px] text-accent-deep">{index + 1}</span>
-                <span>{step}</span>
-              </li>
-            ))}
-          </ol>
-        </div>
-      ))}
+      {MCP_VENDORS.map((vendor) => {
+        const signinSteps = MCP_SIGNIN_STEPS[vendor];
+        return (
+          <div key={vendor}>
+            <p className="micro-label">{VENDOR_LABELS[vendor]}</p>
+            {signinSteps ? (
+              <>
+                <p className="micro-label mt-3">Sign in</p>
+                <p className="mt-1 text-sm text-muted-foreground">{MCP_SIGNIN_NOTE}</p>
+                <ol className="mt-1.5 space-y-1.5">
+                  {signinSteps.map((step, index) => (
+                    <li key={step} className="flex gap-2 text-sm text-muted-foreground">
+                      <span className="font-mono text-[11px] text-accent-deep">{index + 1}</span>
+                      <span>{step}</span>
+                    </li>
+                  ))}
+                </ol>
+                <p className="micro-label mt-3">Or paste a link</p>
+                <ol className="mt-1.5 space-y-1.5">
+                  {MCP_SETUP_STEPS[vendor].map((step, index) => (
+                    <li key={step} className="flex gap-2 text-sm text-muted-foreground">
+                      <span className="font-mono text-[11px] text-accent-deep">{index + 1}</span>
+                      <span>{step}</span>
+                    </li>
+                  ))}
+                </ol>
+              </>
+            ) : (
+              <ol className="mt-1.5 space-y-1.5">
+                {MCP_SETUP_STEPS[vendor].map((step, index) => (
+                  <li key={step} className="flex gap-2 text-sm text-muted-foreground">
+                    <span className="font-mono text-[11px] text-accent-deep">{index + 1}</span>
+                    <span>{step}</span>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </div>
+        );
+      })}
       <p className="text-sm text-muted-foreground">
         The server shows up in your AI as <span className="text-foreground">{MCP_SERVER_NAME}</span>
         .
