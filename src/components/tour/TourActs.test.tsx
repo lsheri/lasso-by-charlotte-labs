@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { TourActFive, TourActFour, TourActOne, TourActSix, TourActThree, TourActTwo, useTourActRenderers } from "@/components/tour/TourActs";
 import { TourStage } from "@/components/tour/TourStage";
@@ -12,6 +12,13 @@ class ResizeObserverStub {
   disconnect() {}
 }
 global.ResizeObserver = ResizeObserverStub;
+
+beforeEach(() => {
+  window.matchMedia = vi.fn((query: string) => ({
+    matches: query.includes("prefers-reduced-motion"), media: query, onchange: null,
+    addEventListener: vi.fn(), removeEventListener: vi.fn(), addListener: vi.fn(), removeListener: vi.fn(), dispatchEvent: vi.fn(),
+  }));
+});
 
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 
@@ -69,20 +76,16 @@ describe("tour acts one to three", () => {
       });
     }
   });
-  it("gives every act an anchored instruction target", () => {
-    const views = [
-      <TourActOne key="one" register="company" onComplete={vi.fn()} />,
-      <TourActTwo key="two" register="company" hint={false} onComplete={vi.fn()} />,
-      <TourActThree key="three" register="company" onComplete={vi.fn()} />,
-      <TourActFour key="four" register="company" onComplete={vi.fn()} />,
-      <TourActFive key="five" register="company" onLanded={vi.fn()} />,
-      <TourActSix key="six" register="company" />,
-    ];
-    views.forEach((view, index) => {
-      const rendered = render(view);
-      expect(rendered.container.querySelectorAll(`[data-tour-target="${index + 3}"]`)).toHaveLength(1);
+  it("gives every act exactly one anchored instruction target", async () => {
+    function Harness({ activeAct }: { activeAct: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 }) {
+      const { renderers, instructionOverride, hint } = useTourActRenderers({ register: "company", activeAct, onAdvance: vi.fn(), onHintShown: vi.fn(), onFinish: vi.fn() });
+      return <TourStage register="company" activeAct={activeAct} acts={renderers} onSkip={vi.fn()} onBack={vi.fn()} onHintShown={hint} instructionOverride={instructionOverride} />;
+    }
+    for (const activeAct of [1, 2, 3, 4, 5, 6, 7, 8] as const) {
+      const rendered = render(<Harness activeAct={activeAct} />);
+      await waitFor(() => expect(rendered.container.querySelectorAll(`[data-tour-target="${activeAct}"]`)).toHaveLength(1));
       rendered.unmount();
-    });
+    }
   });
 
   it("advances act one on a pointer drop", () => {
