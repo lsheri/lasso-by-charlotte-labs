@@ -6279,22 +6279,21 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   display: grid;
   min-height: 100dvh;
   place-items: center;
-  overflow: hidden;
+  overflow-x: hidden;
   background: var(--nb-grey-1);
   padding: 24px 16px;
 }
 .tour-shell {
   width: min(1440px, calc(100vw - 48px));
 }
+.tour-preview-dev { justify-self: center; margin-top: 12px; color: var(--nb-mid); font-family: var(--font-mono); font-size: 11.5px; }
+.tour-preview-dev > summary { cursor: pointer; text-align: center; }
 .tour-preview-controls {
-  position: fixed;
-  top: 12px;
-  left: 50%;
-  z-index: 40;
   display: flex;
+  flex-wrap: wrap;
   align-items: end;
   gap: 12px;
-  transform: translateX(-50%);
+  margin-top: 8px;
   border: 1px solid var(--nb-rule);
   border-radius: var(--radius-control);
   background: var(--nb-white);
@@ -6885,4 +6884,30 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   .tour-deck-page ol { gap: 1px; margin-top: 2%; }
   .tour-deck-page li { gap: 3px; font-size: 11.5px; line-height: 1.05; }
   .tour-deck-caption { font-size: 13px; }
+}
+
+/* TVj act 8: the board zooms out to a small cluster on the left and the slide takes the freed space.
+   Cards keep their layout x/y/width/rotation; the zoom is a visual transform about the board's top left. */
+.tour-persistent-board[data-act="8"] { container-type: size; --tour-zoom: .55; --tour-zoom-dx: 0cqw; --tour-zoom-dy: 10cqh; }
+.tour-persistent-board[data-act="8"] .tour-board-item {
+  transform-origin: 0 0;
+  translate: calc(var(--tour-x) * (var(--tour-zoom) - 1) * 1cqw + var(--tour-zoom-dx)) calc(var(--tour-y) * (var(--tour-zoom) - 1) * 1cqh + var(--tour-zoom-dy));
+  scale: var(--tour-zoom);
+}
+.tour-persistent-board[data-act="8"] .tour-deck-overlay { top: 6% !important; left: 46% !important; width: 51% !important; }
+.tour-deck-body { display: grid; grid-template-columns: minmax(0, 1fr) 34%; align-items: end; gap: 6%; }
+.tour-deck-body > ol { margin-top: 6%; }
+.tour-deck-chart { width: 100%; max-height: 120px; overflow: visible; }
+.tour-deck-chart path { fill: none; stroke: var(--nb-pencil); stroke-width: 1.5; }
+.tour-deck-chart rect { fill: var(--nb-lasso-green); opacity: .78; }
+@media (max-width: 767px) {
+  /* Phones already place cards by fixed overrides, so act 8 sets its own small row and scales about each card's corner. */
+  .tour-persistent-board[data-act="8"] { overflow-y: auto; --tour-zoom: .5; }
+  .tour-persistent-board[data-act="8"] .tour-board-item { translate: none; }
+  .tour-persistent-board[data-act="8"] .tour-board-item[data-tour-layout-id="primary-0"] { top: 3% !important; left: 3% !important; }
+  .tour-persistent-board[data-act="8"] .tour-board-item[data-tour-layout-id="primary-1"] { top: 3% !important; left: 36% !important; }
+  .tour-persistent-board[data-act="8"] .tour-board-item[data-tour-layout-id="primary-2"] { top: 3% !important; left: 69% !important; }
+  .tour-persistent-board[data-act="8"] .tour-board-item[data-tour-layout-id="answer"] { top: 17% !important; left: 36% !important; width: 43% !important; }
+  .tour-persistent-board[data-act="8"] .tour-deck-overlay { top: 30% !important; left: 2% !important; width: 96% !important; }
+  .tour-deck-chart { max-height: 64px; }
 }

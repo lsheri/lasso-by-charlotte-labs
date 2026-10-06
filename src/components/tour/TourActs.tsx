@@ -171,12 +171,21 @@ function TourDeckSlide({ register, reducedMotion }: { register: Register; reduce
       <div className="tour-deck-page relative w-full overflow-hidden rounded-[var(--radius)] border border-border bg-white">
         <header><span>{boardCopy.owner}</span><strong>{boardCopy.deckTitle}</strong></header>
         <h2>Fall launch recommendation</h2>
-        <ol>
-          {claims.map((claim) => {
-            const source = cards.find((card) => card.title === claim.sourceCardTitle)?.source;
-            return <li key={claim.sourceCardTitle} data-source-title={claim.sourceCardTitle}>{source ? <ToolBadge tool={sourceTool(source)} size="sm" /> : null}<span>{claim.text}</span></li>;
-          })}
-        </ol>
+        <div className="tour-deck-body">
+          <ol>
+            {claims.map((claim) => {
+              const source = cards.find((card) => card.title === claim.sourceCardTitle)?.source;
+              return <li key={claim.sourceCardTitle} data-source-title={claim.sourceCardTitle}>{source ? <ToolBadge tool={sourceTool(source)} size="sm" /> : null}<span>{claim.text}</span></li>;
+            })}
+          </ol>
+          <svg className="tour-deck-chart" viewBox="0 0 84 54" role="img" aria-label="Decorative four bar chart" data-testid="tour-deck-chart">
+            <path d="M8 5v41h70" />
+            <rect x="16" y="30" width="10" height="16" />
+            <rect x="31" y="20" width="10" height="26" />
+            <rect x="46" y="12" width="10" height="34" />
+            <rect x="61" y="25" width="10" height="21" />
+          </svg>
+        </div>
         <span className="tour-deck-slide-number">12</span>
       </div>
     </section>
