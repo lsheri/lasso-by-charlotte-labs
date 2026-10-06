@@ -167,7 +167,7 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "mcp.consent_denied": ["client"],
   "mcp.connection_revoked": ["kind", "via"],
   "mcp.connection_revealed": ["kind"],
-  "mcp.push": ["attachment_count", "attachment_versions", "attachments_placed", "auth_kind", "channel", "decisions", "degraded_refusals", "entry", "has_suggestion", "mode", "rejected_attachments", "source", "suggestion_outcome", "file_refs", "summary_spans", "attachments_held", "text_refs", "target", "tool", "turn_linked_attachments", "renditions", "renditions_changed", "vendor", "windowed"],
+  "mcp.push": ["attachment_count", "attachment_versions", "attachments_placed", "auth_kind", "channel", "decisions", "degraded_refusals", "entry", "has_suggestion", "mode", "rejected_attachments", "source", "stage", "suggestion_outcome", "file_refs", "summary_spans", "attachments_held", "text_refs", "target", "tool", "turn_linked_attachments", "renditions", "renditions_changed", "vendor", "window_pos", "windowed"],
   "mcp.push_options_requested": ["attachment_count", "attachment_versions", "degraded_refusals", "has_suggestion", "mode", "rejected_attachments", "suggestion_outcome", "target", "tool", "vendor", "windowed"],
   "member.deactivated": [],
   "member.reactivated": [],
