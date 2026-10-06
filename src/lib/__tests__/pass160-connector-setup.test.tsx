@@ -62,11 +62,21 @@ describe("shared setup steps", () => {
     for (const vendor of MCP_VENDORS) {
       expect(MCP_SETUP_STEPS[vendor].length).toBeGreaterThan(1);
       for (const step of MCP_SETUP_STEPS[vendor]) expect(BANNED.test(step)).toBe(false);
+      for (const step of MCP_SIGNIN_STEPS[vendor] ?? []) expect(BANNED.test(step)).toBe(false);
     }
+    expect(BANNED.test(MCP_SIGNIN_NOTE)).toBe(false);
     expect(MCP_SERVER_NAME).toBe("Lasso by Charlotte Labs");
     expect(BANNED.test(MCP_REGENERATE_WARNING)).toBe(false);
     expect(BANNED.test(MCP_PUSH_PHRASE)).toBe(false);
     expect(BANNED.test(MCP_PUSH_BLOCKED_NOTE)).toBe(false);
+  });
+
+  it("carries the sign-in path for claude only, with no URL in the card", () => {
+    expect(MCP_SIGNIN_STEPS.claude).toHaveLength(4);
+    expect(MCP_SIGNIN_STEPS.chatgpt).toBeUndefined();
+    expect(MCP_SIGNIN_STEPS.claude!.join("\n")).toContain(MCP_SIGNIN_URL);
+    const source = readFileSync("src/components/connectors/ConnectYourAiCard.tsx", "utf8");
+    expect(source).not.toContain(MCP_SIGNIN_URL);
   });
 
   it("is the only place the steps are defined", () => {
