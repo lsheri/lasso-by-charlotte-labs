@@ -17,7 +17,6 @@ import { TOUR_BOARD_LAYOUT, actById, tourAmbientCards, tourBoardCopy, type TourA
 import type { WorkboardCardPreview } from "@/lib/workboard-card-preview.shared";
 import type { WorkItemRow } from "@/lib/work-types";
 import type { TourActRenderer } from "@/components/tour/TourStage";
-import { useTourTeachBeat } from "@/components/tour/tour-beat";
 
 const noop = () => undefined;
 type DragFile = { title: string; pointerId: number; x: number; y: number };
@@ -219,17 +218,15 @@ export function TourActPush({ register, onReady }: { register: Register; onReady
   const act = actById(register, 1);
   const chats = [act?.chat, act?.companionChat].filter((chat): chat is TourPushedChat => chat !== undefined);
   const reduced = useMotionPreference();
-  const teaching = useTourTeachBeat();
   const total = Math.max(...chats.map((chat) => chat.turns.length + 2), 0);
   const [step, setStep] = useState(0);
   const [pushed, setPushed] = useState<Set<string>>(() => new Set());
   const shown = reduced ? total : step;
   useEffect(() => {
-    // The shared timer starts only once the teach beat is dismissed.
-    if (reduced || teaching) return;
+    if (reduced) return;
     const timers = Array.from({ length: total }, (_, index) => window.setTimeout(() => setStep(index + 1), TOUR_TURN_DELAY_MS * (index + 1)));
     return () => timers.forEach((timer) => window.clearTimeout(timer));
-  }, [reduced, teaching, total]);
+  }, [reduced, total]);
   const push = (title: string) => {
     if (pushed.has(title)) return;
     const next = new Set(pushed).add(title);
@@ -345,18 +342,30 @@ export function TourActArrived({ register, onComplete }: { register: Register; o
 }
 
 export function useTourActRenderers({ register, activeAct, onAdvance, onHintShown, onFinish }: { register: Register; activeAct: TourActId; onAdvance: (act: TourActId) => void; onHintShown: (act: number) => void; onFinish: () => void }) {
-  const [hintAct, setHintAct] = useState<number | null>(null); const [instructionOverride, setInstructionOverride] = useState<string | null>(null); const [answerLanded, setAnswerLanded] = useState(false); const [actOneReady, setActOneReady] = useState(false);
-  useEffect(() => { setHintAct(null); setInstructionOverride(null); setAnswerLanded(false); setActOneReady(false); }, [activeAct, register]);
+  const [hintAct, setHintAct] = useState<number | null>(null); const [instructionOverride, setInstructionOverride] = useState<string | null>(null);
+  // The act whose action is done; its teaching callout is then the only way forward.
+  const [completedAct, setCompletedAct] = useState<number | null>(null);
+  useEffect(() => { setHintAct(null); setInstructionOverride(null); setCompletedAct(null); }, [activeAct, register]);
   const hint = (act: number) => { setHintAct(act); onHintShown(act); };
-  const renderers = useMemo((): TourActRenderer[] => [
-    { id: 1, content: <TourActPush register={register} onReady={() => setActOneReady(true)} />, primaryAction: actOneReady ? <Button type="button" variant="ink" data-tour-target="1" onClick={() => onAdvance(1)}>Next</Button> : null },
-    { id: 2, content: <TourActArrived register={register} onComplete={() => onAdvance(2)} /> },
-    { id: 3, content: <TourActOne register={register} onComplete={() => onAdvance(3)} /> },
-    { id: 4, content: <TourActTwo register={register} hint={hintAct === 4} onComplete={() => onAdvance(4)} /> },
-    { id: 5, content: <TourActThree register={register} onComplete={() => onAdvance(5)} /> },
-    { id: 6, content: <TourActFour register={register} onComplete={() => onAdvance(6)} /> },
-    { id: 7, content: <TourActFive register={register} onLanded={() => setAnswerLanded(true)} />, primaryAction: answerLanded ? <Button type="button" variant="ink" data-tour-target="7" onClick={() => onAdvance(7)}>{actById(register, 7)?.primaryActionLabel}</Button> : null },
-    { id: 8, content: <TourActSix register={register} />, primaryAction: <Button type="button" variant="ink" data-tour-target="8" onClick={onFinish}>{actById(register, 8)?.primaryActionLabel}</Button> },
-  ], [actOneReady, answerLanded, hintAct, onAdvance, onFinish, register]);
+  const renderers = useMemo((): TourActRenderer[] => {
+    const done = (id: TourActId) => () => setCompletedAct(id);
+    const content: Record<TourActId, ReactNode> = {
+      1: <TourActPush register={register} onReady={done(1)} />,
+      2: <TourActArrived register={register} onComplete={done(2)} />,
+      3: <TourActOne register={register} onComplete={done(3)} />,
+      4: <TourActTwo register={register} hint={hintAct === 4} onComplete={done(4)} />,
+      5: <TourActThree register={register} onComplete={done(5)} />,
+      6: <TourActFour register={register} onComplete={done(6)} />,
+      7: <TourActFive register={register} onLanded={done(7)} />,
+      8: <TourActSix register={register} />,
+    };
+    return ([1, 2, 3, 4, 5, 6, 7, 8] as const).map((id) => ({
+      id,
+      content: content[id],
+      complete: id === 8 || completedAct === id,
+      continueLabel: actById(register, id)?.primaryActionLabel,
+      onContinue: id === 8 ? onFinish : () => onAdvance(id),
+    }));
+  }, [completedAct, hintAct, onAdvance, onFinish, register]);
   return { renderers, instructionOverride: activeAct === 8 ? actById(register, 8)?.closingLine ?? null : instructionOverride, hint };
 }

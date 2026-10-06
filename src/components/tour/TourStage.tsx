@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { TourTeachBeatContext } from "@/components/tour/tour-beat";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { DrawnCheck, GraphiteRule } from "@/components/notebook/marks";
 import { Button } from "@/components/ui/button";
@@ -9,7 +8,12 @@ import type { Register } from "@/lib/register";
 export type TourActRenderer = {
   id: TourActId;
   content: ReactNode;
-  primaryAction?: ReactNode;
+  /** True once the act's action is done (always for the closing act); the teaching callout then shows. */
+  complete?: boolean;
+  /** The act's own primary action label; the callout falls back to the stage "Got it" label. */
+  continueLabel?: string;
+  /** The single way forward from the teaching callout. */
+  onContinue?: () => void;
 };
 
 type TourStageProps = {
@@ -140,16 +144,12 @@ export function TourStage({
   const renderer = acts.find((item) => item.id === activeAct);
   const hintedActs = useRef(new Set<number>());
   const stageRef = useRef<HTMLElement>(null);
-  const gotItRef = useRef<HTMLButtonElement>(null);
-  // Acts already read stay read for the life of the tour, so Back never re-gates them.
-  const [readActs, setReadActs] = useState<ReadonlySet<number>>(() => new Set());
-  const teaching = !readActs.has(activeAct);
-  const dismissTeach = useCallback(() => {
-    setReadActs((current) => (current.has(activeAct) ? current : new Set(current).add(activeAct)));
-  }, [activeAct]);
+  const continueRef = useRef<HTMLButtonElement>(null);
+  // One teach beat, at the end of each act: the callout appears only once the act's action is done.
+  const teaching = Boolean(renderer?.complete);
 
   useEffect(() => {
-    if (teaching) gotItRef.current?.focus();
+    if (teaching) continueRef.current?.focus();
   }, [teaching, activeAct]);
 
   useEffect(() => {
@@ -163,13 +163,6 @@ export function TourStage({
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (teaching) {
-        if (event.key === "Enter" || event.key === " " || event.key === "Escape") {
-          event.preventDefault();
-          dismissTeach();
-        }
-        return;
-      }
       if (event.key === "Escape") {
         event.preventDefault();
         onSkip();
@@ -181,7 +174,7 @@ export function TourStage({
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [activeAct, onBack, onSkip, teaching, dismissTeach]);
+  }, [activeAct, onBack, onSkip]);
 
   if (!act || !renderer) return null;
 
@@ -214,22 +207,9 @@ export function TourStage({
           <p className="tour-do-line" data-tour-do>{instructionOverride ?? (touch ? act.captionTouch : act.captionPointer)}</p>
         </div>
 
-        {teaching ? <div className="tour-teach-scrim" data-testid="tour-teach-scrim" aria-hidden onClick={dismissTeach} /> : null}
-
-        <aside className={`tour-teaching-callout${teaching ? " is-teaching" : ""}`}>
-          <p>{act.why}</p>
-          {teaching ? (
-            <Button ref={gotItRef} type="button" variant="ink" size="sm" className="tour-got-it" onClick={dismissTeach}>
-              {copy.stage.gotIt}
-            </Button>
-          ) : null}
-        </aside>
-
-        <TourTeachBeatContext.Provider value={teaching}>
-          <div className="tour-act" data-testid="tour-act" data-tour-beat={teaching ? "teach" : "do"} inert={teaching}>
-            {renderer.content}
-          </div>
-        </TourTeachBeatContext.Provider>
+        <div className="tour-act" data-testid="tour-act" data-tour-beat={teaching ? "teach" : "do"} inert={teaching}>
+          {renderer.content}
+        </div>
 
         <footer className="tour-stage-actions" data-tour-beat={teaching ? "teach" : "do"} inert={teaching}>
           {activeAct > 1 ? (
@@ -239,8 +219,19 @@ export function TourStage({
           ) : (
             <span />
           )}
-          <div className="tour-primary-action">{renderer.primaryAction}</div>
         </footer>
+
+        {teaching ? (
+          <>
+            <div className="tour-teach-scrim" data-testid="tour-teach-scrim" aria-hidden />
+            <aside className="tour-teaching-callout is-teaching" role="dialog" aria-label={copy.stage.stageLabel}>
+              <p>{act.why}</p>
+              <Button ref={continueRef} type="button" variant="ink" size="sm" className="tour-got-it" onClick={renderer.onContinue}>
+                {renderer.continueLabel ?? copy.stage.gotIt}
+              </Button>
+            </aside>
+          </>
+        ) : null}
         {teaching ? null : <TourInstructionArrow stage={stageRef} activeAct={activeAct} />}
       </section>
     </section>
