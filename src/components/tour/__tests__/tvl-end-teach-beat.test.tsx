@@ -84,12 +84,46 @@ describe("TVL teach beat at the end of each act", () => {
     expect(spies.advance).toHaveBeenCalledWith(7);
   });
 
-  it("act eight shows its callout on open and its control finishes the tour", () => {
+  it("act eight has no completing action, so it never shows a callout; its footer control finishes the tour", async () => {
     const r = render(<Harness start={8} />);
-    const control = within(callout(r.container)!).getByRole("button");
-    expect(control.textContent).toBe(actById("company", 8)?.primaryActionLabel);
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(callout(r.container)).toBeNull();
+    expect(r.container.querySelector(".tour-teach-scrim")).toBeNull();
+    expect(stage(r.container)?.getAttribute("data-beat")).toBe("do");
+    expect(within(r.container).queryByRole("button", { name: "Got it" })).toBeNull();
+    const footer = r.container.querySelector(".tour-stage-actions") as HTMLElement;
+    const control = within(footer).getByRole("button", { name: actById("company", 8)?.primaryActionLabel ?? "" });
     fireEvent.click(control);
     expect(spies.finish).toHaveBeenCalledTimes(1);
+    // No interaction can bring a callout up: the board, the scrim area and keys change nothing.
+    fireEvent.click(r.container.querySelector('[data-testid="tour-act"]') as HTMLElement);
+    fireEvent.keyDown(window, { key: "Enter" });
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(callout(r.container)).toBeNull();
+  });
+
+  it("the no-callout rule follows hasAction, not a hardcoded act id", () => {
+    const base: TourActRenderer[] = Array.from({ length: 8 }, (_, index) => ({
+      id: (index + 1) as TourActId,
+      content: <span />,
+      complete: true,
+    }));
+    // A completed act five with no action shows no callout.
+    const noAction = base.map((item) => (item.id === 5 ? { ...item, hasAction: false } : item));
+    const r5 = render(createElement(TourStage, { register: "company", activeAct: 5, acts: noAction, onSkip: vi.fn(), onBack: vi.fn(), onHintShown: vi.fn() }));
+    expect(callout(r5.container)).toBeNull();
+    r5.unmount();
+    // A completed act eight that declares an action still shows its callout.
+    const withAction = base.map((item) => (item.id === 8 ? { ...item, hasAction: true, onContinue: vi.fn() } : item));
+    const r8 = render(createElement(TourStage, { register: "company", activeAct: 8, acts: withAction, onSkip: vi.fn(), onBack: vi.fn(), onHintShown: vi.fn() }));
+    expect(callout(r8.container)).not.toBeNull();
+    r8.unmount();
+  });
+
+  it("act eight's why string is untouched in tour-content.ts", () => {
+    const source = readFileSync("src/lib/tour-content.ts", "utf8");
+    expect(source).toContain('why: "The deck is what the client sees. Every line in it can still point at the chat or file it came from.",');
+    expect(actById("company", 8)?.why).toBe("The deck is what the client sees. Every line in it can still point at the chat or file it came from.");
   });
 
   it("labels each act's control with its primaryActionLabel, else Got it", () => {
@@ -99,12 +133,13 @@ describe("TVL teach beat at the end of each act", () => {
     }
   });
 
-  it("renders no primary action in the stage footer", () => {
+  it("renders no primary action in the stage footer for acts with an action; act eight's finish control lives there", () => {
     for (const id of [1, 7, 8] as const) {
       const r = render(<Harness start={id} />);
       const footer = r.container.querySelector(".tour-stage-actions") as HTMLElement;
       expect(footer.querySelector(".tour-primary-action")).toBeNull();
-      expect(within(footer).queryAllByRole("button").map((b) => b.textContent)).toEqual(id > 1 ? ["Back"] : []);
+      const labels = within(footer).queryAllByRole("button").map((b) => b.textContent);
+      expect(labels).toEqual(id === 8 ? ["Back", "Start with my own work"] : id > 1 ? ["Back"] : []);
       r.unmount();
     }
   });
