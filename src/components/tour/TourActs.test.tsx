@@ -279,7 +279,7 @@ describe("tour acts one to three", () => {
     render(<TourActOne register="company" onComplete={vi.fn()} />);
     const rendered = document.querySelectorAll('[data-tour-layout-id]:not([data-tour-layout-id="answer"])').length;
     expect(rendered).toBe(TOUR_BOARD_LAYOUT.filter((item) => item.earliestAct <= 3).length);
-    expect(screen.getByText(`${rendered} pieces`)).toBeTruthy();
+    expect(document.querySelector(".tour-board-heading span")?.textContent).toContain(`${rendered} pieces`);
   });
 
   it("shows exactly three cited claims from work cards in the frame", () => {
