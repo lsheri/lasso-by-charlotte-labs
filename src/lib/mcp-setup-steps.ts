@@ -31,6 +31,10 @@ export const MCP_PUSH_PHRASE = "Push this conversation to Lasso.";
 export const MCP_REGENERATE_WARNING =
   "A new URL replaces the old one. Any AI already set up with the old URL stops being able to push until you paste the new one in.";
 
+/** Said once when an AI tool stops a push before it runs. */
+export const MCP_PUSH_BLOCKED_NOTE =
+  "If your AI stops a push before it runs, the work is not lost. Try again from an ordinary chat window, or use Import to bring the conversation in yourself.";
+
 export const VENDOR_LABELS: Record<McpVendor, string> = {
   claude: "Claude",
   chatgpt: "ChatGPT",
