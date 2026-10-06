@@ -3,7 +3,6 @@ import { UploadFilesButton } from "@/components/work/UploadFilesButton";
 import { TOOLS, type ToolId } from "@/lib/onboarding-tools";
 import type { Register } from "@/lib/register";
 import { ExportGuideCard } from "./ExportGuideCard";
-import { FlowPreview } from "./FlowPreview";
 import { LiveConnectCard } from "./LiveConnectCard";
 import { McpSetupCard } from "./McpSetupCard";
 
@@ -11,7 +10,7 @@ import { McpSetupCard } from "./McpSetupCard";
  * Composed only from what the person checked. Every path here is opt-in:
  * nothing enters Lasso until they pick it, paste it or push it.
  */
-export function SetupTools({ tools, register }: { tools: ToolId[]; register?: Register }) {
+export function SetupTools({ tools }: { tools: ToolId[]; register?: Register }) {
   const has = (id: ToolId) => tools.includes(id);
   const mcp = (["claude", "chatgpt"] as const).filter(has);
   const connectors = (["googledrive", "granola", "transcripts", "gmail"] as const).filter(has);
@@ -20,8 +19,6 @@ export function SetupTools({ tools, register }: { tools: ToolId[]; register?: Re
 
   return (
     <div className="space-y-6">
-      <FlowPreview {...(register ? { register } : {})} />
-
       {connectors.length > 0 ? (
         <section className="space-y-3">
           <h2 className="micro-label text-graphite">Connect and pick</h2>

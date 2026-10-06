@@ -4,13 +4,15 @@ import { useEffect, useState } from "react";
 
 import { StepRail } from "@/components/onboarding/StepRail";
 import { SetupTools } from "@/components/onboarding/SetupTools";
+import { OnboardingTour } from "@/components/onboarding/OnboardingTour";
+import { readOnboardingUi } from "@/lib/onboarding-ui";
 import { ToolPicker } from "@/components/onboarding/ToolPicker";
 import { SessionHeader } from "@/components/layout/SessionHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
-import { AUTH_USER_KEY, fetchProfile } from "@/hooks/use-profile";
+import { AUTH_USER_KEY, fetchProfile, type Profile } from "@/hooks/use-profile";
 import {
   readEduIntent,
   clearEduIntent,
@@ -110,6 +112,16 @@ export function redeemFailedReason(reason: unknown): string {
   return typeof reason === "string" && (REDEEM_FAILED_REASONS as readonly string[]).includes(reason)
     ? reason
     : "other";
+}
+
+/**
+ * TV5: whether the first-run tour still owes this person a showing. Only a
+ * new workspace (never ?setup=1), and only until profiles.onboarding.welcome_seen
+ * is set.
+ */
+export function firstRunTourPending(setup: boolean | undefined, profile: { onboarding: unknown } | null): boolean {
+  if (setup || !profile) return false;
+  return !readOnboardingUi(profile.onboarding).welcome_seen;
 }
 
 type OnboardingSearch = {
@@ -246,7 +258,7 @@ function OnboardingInner() {
           ? "invite"
           : "chooser",
   );
-  const [stage, setStage] = useState<"setup" | "share_back" | "tools" | "capture">(setup ? "tools" : "setup");
+  const [stage, setStage] = useState<"setup" | "share_back" | "tools" | "capture" | "tour">(setup ? "tools" : "setup");
   const [shareBack, setShareBack] = useState<{ id: string; name: string; orgId: string | null } | null>(null);
   const [shareBackPending, setShareBackPending] = useState(false);
   const [shareBackError, setShareBackError] = useState<string | null>(null);
@@ -444,10 +456,54 @@ function OnboardingInner() {
     setStage("tools");
   }
 
-  function finish() {
+  // TV5: the first-run tour sits in front of the existing completion path.
+  // profiles.onboarding.welcome_seen is the memory that stops it replaying;
+  // ?setup=1 is an existing member and never sees it.
+  const [tourProfile, setTourProfile] = useState<Profile | null>(null);
+
+  function land() {
     // Unit Y2: the same place sign-in lands, so the first visit and every
     // later one start on the same screen.
     navigate({ to: "/home", replace: true });
+  }
+
+  async function finish() {
+    if (!setup) {
+      const profile = await fetchProfile().catch(() => null);
+      if (profile && firstRunTourPending(setup, profile)) {
+        setTourProfile(profile);
+        setStage("tour");
+        return;
+      }
+    }
+    land();
+  }
+
+  function completeTour() {
+    const profile = tourProfile;
+    if (profile) {
+      // The same self update useOnboardingUi makes. Memory, so a failed write is silent.
+      const next = { ...readOnboardingUi(profile.onboarding), welcome_seen: true };
+      void (async () => {
+        await supabase.from("profiles").update({ onboarding: next }).eq("id", profile.id);
+        await queryClient.invalidateQueries({ queryKey: ["profiles"] });
+      })().catch(() => {
+        /* onboarding memory never interrupts the person */
+      });
+    }
+    land();
+  }
+
+  if (stage === "tour") {
+    return (
+      <main className="tour-preview-page" data-testid="onboarding-tour">
+        <OnboardingTour
+          register={tourProfile?.org_type ?? orgType}
+          orgId={tourProfile?.org_id ?? null}
+          onDone={completeTour}
+        />
+      </main>
+    );
   }
 
   if (stage === "share_back" && shareBack) {
@@ -503,7 +559,7 @@ function OnboardingInner() {
               </Button>
               <button
                 type="button"
-                onClick={finish}
+                onClick={() => void finish()}
                 className="text-xs text-muted-foreground hover:text-foreground"
               >
                 I'll do this later
@@ -535,12 +591,12 @@ function OnboardingInner() {
             </div>
 
             <div className="mt-8 flex items-center gap-6">
-              <Button type="button" onClick={finish}>
+              <Button type="button" onClick={() => void finish()}>
                 Go to my work
               </Button>
               <button
                 type="button"
-                onClick={finish}
+                onClick={() => void finish()}
                 className="text-xs text-muted-foreground hover:text-foreground"
               >
                 I'll do this later

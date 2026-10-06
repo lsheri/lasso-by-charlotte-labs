@@ -32,3 +32,4 @@ Tour workboard chrome stays a local presentational mirror around shared board pr
 - Keep every first-run tour act on the single exported board layout and shared board renderer, with answer space reserved before it appears, so items never reflow between acts.
 - Source first-run tour Ask scope labels from AskSurface exports so the teaching copy cannot drift from the product chip.
 - Classify signed-out entry codes locally: activation-key shapes go through `/j/$code`, while workspace invites retain the existing `/join` flow.
+- Emit the tour.* event family only from OnboardingTour, with act number and register as the sole dims, so the preview harness and shared tour primitives never record anything.

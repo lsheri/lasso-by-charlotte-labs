@@ -96,32 +96,3 @@ export const REGISTER_SHARED_COPY = {
 export const ENTRY_DOORS = ["intent", "edu_flag", "chooser", "invite"] as const;
 export type EntryDoor = (typeof ENTRY_DOORS)[number];
 
-/** Unit Y1: the four FlowPreview beats, one set per register. */
-export type FlowPreviewStage = { label: string; body: string };
-
-export const FLOW_PREVIEW_COPY: Readonly<Record<Register, readonly FlowPreviewStage[]>> = {
-  company: [
-    { label: "You work in your AI tools", body: "Claude, ChatGPT, Drive, meetings." },
-    { label: "It flows into Lasso", body: "Work arrives in the workspace you created." },
-    { label: "You map it", body: "Give it a workboard and a workstream. It becomes a record." },
-    { label: "A coach sees what you share", body: "A coach sees the shared view." },
-  ],
-  personal: [
-    { label: "You work in your AI tools", body: "Claude, ChatGPT, Drive, your own notes." },
-    { label: "It flows into Lasso", body: "Work arrives in the workspace you created." },
-    { label: "You file it", body: "Put it under one of your workboards. It becomes part of your record." },
-    { label: "The record stays yours", body: "Share a piece when you want to." },
-  ],
-  edu: [
-    { label: "You work in your AI tools", body: "Claude, ChatGPT, Drive, lecture notes." },
-    { label: "It flows into Lasso", body: "Work arrives in the workspace you created." },
-    { label: "You file it", body: "Put it under a class or workboard, next to the coursework it belongs to." },
-    { label: "You choose what to share", body: "Share one piece when you want to." },
-  ],
-  partner: [
-    { label: "You set up the workboard", body: "A client, a cohort, the workstreams you will run." },
-    { label: "People join with a link", body: "Their workspace stays theirs. Yours holds the workboard." },
-    { label: "They share what they choose", body: "A board or transcript, at the depth they agreed to." },
-    { label: "You coach from what arrived", body: "You coach from what they sent you." },
-  ],
-};
