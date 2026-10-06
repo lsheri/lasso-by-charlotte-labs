@@ -102,7 +102,7 @@ describe("tour acts one to three", () => {
     render(<TourActOne register="company" onComplete={done} />);
     expect(screen.queryByLabelText("AI conversation to bring in")).toBeNull();
     const beforeIds = Array.from(document.querySelectorAll<HTMLElement>("[data-tour-card]"), (card) => card.dataset["tourCard"]);
-    expect(beforeIds).toEqual(["tour-card-0", "tour-card-1", "tour-card-3", "tour-card-4", "ambient-0", "ambient-1", "ambient-2", "ambient-3"]);
+    expect(beforeIds).toEqual(["tour-card-0", "tour-card-1", "tour-card-3", "ambient-0", "ambient-1"]);
     expect(screen.getByText("Fall launch plan v3")).toBeTruthy();
     expect(screen.queryByText(TOUR_PUSHED_CHAT.title)).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Add work" }));
@@ -183,14 +183,14 @@ describe("tour acts one to three", () => {
     expect(done).toHaveBeenCalledTimes(1);
   });
 
-  it("shows five distinct AI chats in free form regions without clipping titles", () => {
+  it("shows three distinct AI chats in free form regions without clipping titles", () => {
     render(<TourActTwo register="company" hint={false} onComplete={vi.fn()} />);
     const chats = Array.from(document.querySelectorAll<HTMLElement>(".tour-preview-card")).filter((card) => /ChatGPT:|Claude:|Gemini:/.test(card.textContent ?? ""));
-    expect(chats).toHaveLength(6);
+    expect(chats).toHaveLength(4);
     expect(chats.filter((card) => card.textContent?.includes("ChatGPT:"))).toHaveLength(3);
-    expect(chats.filter((card) => card.textContent?.includes("Claude:"))).toHaveLength(2);
-    expect(chats.filter((card) => card.textContent?.includes("Gemini:"))).toHaveLength(1);
-    expect(screen.getByText("Claude: positioning lines")).toBeTruthy();
+    expect(chats.filter((card) => card.textContent?.includes("Claude:"))).toHaveLength(1);
+    expect(chats.filter((card) => card.textContent?.includes("Gemini:"))).toHaveLength(0);
+    expect(screen.queryByText("Claude: positioning lines")).toBeNull();
     expect(screen.getByLabelText("Loose AI chat work cards").classList.contains("tour-region")).toBe(false);
   });
 
@@ -268,7 +268,41 @@ describe("tour acts one to three", () => {
     expect(document.querySelectorAll('.tour-keep-links [role="button"]')).toHaveLength(3);
     expect(landed).toHaveBeenCalledTimes(1);
     expect(screen.getByLabelText("Launch deck, slide 12")).toBeTruthy();
-    expect(screen.getByLabelText("Moodboard photo")).toBeTruthy();
+    expect(screen.getByLabelText("Austin retail launch page")).toBeTruthy();
+  });
+
+  it("renders the deck as a slide with bullets and a chart from act three", () => {
+    render(<TourActOne register="company" onComplete={vi.fn()} />);
+    const deck = screen.getByLabelText("Launch deck, slide 12");
+    expect(within(deck).getByText("Fall launch recommendation")).toBeTruthy();
+    expect(deck.querySelectorAll("li").length).toBeGreaterThanOrEqual(2);
+    expect(deck.querySelector('svg[aria-label="Decorative four bar chart"]')).toBeTruthy();
+    expect(deck.querySelectorAll("svg rect")).toHaveLength(4);
+  });
+
+  it("renders the renamed screenshot frame and never renders removed cards in any board act", () => {
+    for (const renderAct of [
+      () => <TourActOne register="company" onComplete={vi.fn()} />,
+      () => <TourActTwo register="company" hint={false} onComplete={vi.fn()} />,
+      () => <TourActThree register="company" onComplete={vi.fn()} />,
+      () => <TourActFour register="company" onComplete={vi.fn()} />,
+      () => <TourActFive register="company" onLanded={vi.fn()} />,
+      () => <TourActSix register="company" />,
+    ]) {
+      const rendered = render(renderAct());
+      const screenshot = screen.getByLabelText(tourBoardCopy("company").whiteboardTitle);
+      expect(screenshot.querySelector('svg[aria-label="Retail launch page screenshot frame"]')).toBeTruthy();
+      for (const id of ["primary-4", "chat-2", "chat-3"]) expect(rendered.container.querySelector(`[data-tour-layout-id="${id}"]`)).toBeNull();
+      rendered.unmount();
+    }
+  });
+
+  it("keeps every margin note beside work that still exists", () => {
+    render(<TourActOne register="company" onComplete={vi.fn()} />);
+    expect(document.querySelector('[data-tour-note="budget"]')).toBeNull();
+    const notes = Array.from(document.querySelectorAll<HTMLElement>("[data-tour-note-target]"));
+    expect(notes.map((note) => [note.dataset["tourNote"], note.dataset["tourNoteTarget"]])).toEqual([["group", "primary-2"], ["gemini", "artifact"]]);
+    for (const note of notes) expect(document.querySelector(`[data-tour-layout-id="${note.dataset["tourNoteTarget"]}"]`)).toBeTruthy();
   });
 
   it("anchors each kept-answer connector to a source work card", () => {
