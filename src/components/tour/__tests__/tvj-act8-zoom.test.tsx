@@ -6,11 +6,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TourActSix } from "@/components/tour/TourActs";
 import { TOUR_BOARD_LAYOUT } from "@/lib/tour-content";
 
-vi.mock("@tanstack/react-router", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@tanstack/react-router")>();
-  return { ...actual, createFileRoute: () => (options: Record<string, unknown>) => ({ options }) };
-});
-
 const TVJ_LAYOUT = [
   ["primary-0", 3, 19, 21, -0.8, 3],
   ["primary-1", 31, 17.5, 22, 0.7, 3],
@@ -57,7 +52,7 @@ describe("TVj act 8 zoom and preview harness", () => {
     const slide = screen.getByTestId("tour-deck-slide");
     expect(slide.querySelector(".tour-deck-page > header")).toBeTruthy();
     expect(slide.querySelectorAll(".tour-deck-page li")).toHaveLength(3);
-    expect(slide.querySelectorAll(".tour-deck-page li [data-tool], .tour-deck-page li > :first-child:not(span)").length).toBeGreaterThanOrEqual(3);
+    expect(slide.querySelectorAll(".tour-deck-page li > span[aria-hidden]:first-child")).toHaveLength(3);
     const chart = within(slide).getByTestId("tour-deck-chart");
     expect(chart.tagName.toLowerCase()).toBe("svg");
     expect(chart.querySelectorAll("rect")).toHaveLength(4);
@@ -84,6 +79,7 @@ describe("TVj act 8 zoom and preview harness", () => {
     const { Route } = await import("@/routes/tour-preview");
     const Page = (Route as unknown as { options: { component: () => JSX.Element } }).options.component;
     const { container } = render(<Page />);
+    if (!container.querySelector("main")) throw new Error(container.innerHTML.slice(0, 400));
     const main = container.querySelector("main.tour-preview-page") as HTMLElement;
     const children = Array.from(main.children);
     const stageIndex = children.findIndex((child) => child.classList.contains("tour-shell"));
