@@ -23,7 +23,7 @@ export const Route = createFileRoute("/tour-preview")({
   component: TourPreviewPage,
 });
 
-function TourPreviewPage() {
+export function TourPreviewPage() {
   const [activeAct, setActiveAct] = useState<TourActId>(1);
   const [register, setRegister] = useState<Register>("company");
   const skip = useCallback(() => setActiveAct(8), []);

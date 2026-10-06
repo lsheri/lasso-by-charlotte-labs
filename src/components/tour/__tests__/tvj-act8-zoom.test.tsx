@@ -76,10 +76,8 @@ describe("TVj act 8 zoom and preview harness", () => {
   });
 
   it("renders no picker above the stage and keeps the preview controls closed on load", async () => {
-    const { Route } = await import("@/routes/tour-preview");
-    const Page = (Route as unknown as { options: { component: () => JSX.Element } }).options.component;
-    const { container } = render(<Page />);
-    if (!container.querySelector("main")) throw new Error(container.innerHTML.slice(0, 400));
+    const { TourPreviewPage } = await import("@/routes/tour-preview");
+    const { container } = render(<TourPreviewPage />);
     const main = container.querySelector("main.tour-preview-page") as HTMLElement;
     const children = Array.from(main.children);
     const stageIndex = children.findIndex((child) => child.classList.contains("tour-shell"));
