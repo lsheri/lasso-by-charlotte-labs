@@ -2973,7 +2973,7 @@ export function LandingBoard() {
               <p className="micro-label lb-hero-assemble-caption" aria-hidden="true">{"\n"}</p>
               <div className="lb-hero-line">
                 <p className="micro-label">{"\n"}</p>
-                <p className="lb-hero-line-text font-mono font-bold uppercase tracking-[0.18em]">
+                <p className="lb-hero-line-text uppercase">
                   ONE INFINITE CANVAS WHERE YOUR AI WORK, AND THE THINKING BEHIND IT, LIVES
                 </p>
               </div>

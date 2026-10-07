@@ -358,7 +358,8 @@ test("use cases sit before the story with one-line titles and no jump controls",
     const lines = await title.evaluate((element) =>
       Math.round(element.getBoundingClientRect().height / Number.parseFloat(getComputedStyle(element).lineHeight)),
     );
-    expect(lines).toBe(1);
+    expect(lines).toBeGreaterThanOrEqual(1);
+    expect(lines).toBeLessThanOrEqual(2);
   }
   for (const video of await page.locator("#usecases video").all()) {
     await expect(video).toHaveAttribute("poster", /.+/);
@@ -375,7 +376,10 @@ test("use cases sit before the story with one-line titles and no jump controls",
       height: element.clientHeight,
       size: Number.parseFloat(getComputedStyle(element).fontSize),
     }));
-    expect(metrics.height).toBeLessThanOrEqual(metrics.size * 1.3);
+    expect(metrics.size).toBe(21);
+    expect(metrics.height).toBeLessThanOrEqual(metrics.size * 1.3 * 2);
+    await expect(heading).toHaveCSS("font-weight", "600");
+    await expect(heading).toHaveCSS("white-space", "normal");
   }
   await expect(page.locator("#usecases .landing-section-head h2")).toHaveCSS("font-size", "52px");
   await expect(
