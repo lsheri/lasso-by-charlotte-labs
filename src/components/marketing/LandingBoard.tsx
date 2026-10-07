@@ -1457,8 +1457,9 @@ function PhoneStory({
             team's work went invisible.
           </h1>
           <p>
-            Lasso is the reasoning and judgment layer for AI-assisted consulting. It connects the
-            work across tools to the client deliverable and keeps the decisions your team made.
+            Lasso keeps the thinking behind AI-assisted work. The chats, files and decisions you
+            send sit next to the deliverable they produced, so you can show where a claim came
+            from and why it stayed.
           </p>
           <div>
             <Button asChild>
@@ -2940,9 +2941,9 @@ export function LandingBoard() {
                 team's work went invisible.
               </h1>
               <h2>
-                Lasso is the reasoning and judgment layer for AI-assisted consulting. It connects
-                the work across tools to the client deliverable and keeps the decisions your team
-                made, so they can show where a claim came from and why it stayed.
+                Lasso keeps the thinking behind AI-assisted work. The chats, files and decisions
+                you send sit next to the deliverable they produced, so you can show where a claim
+                came from and why it stayed.
               </h2>
               <div className="lb-hero-zone-1">
                 <Button asChild>
