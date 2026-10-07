@@ -28,7 +28,7 @@ describe("TV4 tour events fire from the real surface", () => {
     const onDone = vi.fn();
     const r = render(<OnboardingTour register="edu" orgId="org-1" onDone={onDone} />);
     r.rerender(<OnboardingTour register="edu" orgId="org-1" onDone={onDone} />);
-    expect(calls("tour.started")).toEqual([["tour.started", "org-1", { register: "edu" }]]);
+    expect(calls("tour.started")).toEqual([["tour.started", "org-1", { register: "edu", surface: "onboarding" }]]);
   });
 
   it("tour.step_done fires when act one's action completes and its callout appears", () => {
@@ -36,7 +36,7 @@ describe("TV4 tour events fire from the real surface", () => {
     expect(calls("tour.step_done")).toEqual([]);
     pushBoth();
     expect(container.querySelector(".tour-teaching-callout")).toBeTruthy();
-    expect(calls("tour.step_done")).toEqual([["tour.step_done", "org-1", { step: 1, register: "company" }]]);
+    expect(calls("tour.step_done")).toEqual([["tour.step_done", "org-1", { step: 1, register: "company", surface: "onboarding" }]]);
     expect(calls("tour.step_continued")).toEqual([]);
   });
 
@@ -44,7 +44,7 @@ describe("TV4 tour events fire from the real surface", () => {
     render(<OnboardingTour register="personal" orgId="org-1" onDone={vi.fn()} />);
     pushBoth();
     fireEvent.click(screen.getByRole("button", { name: "Got it" }));
-    expect(calls("tour.step_continued")).toEqual([["tour.step_continued", "org-1", { step: 1, register: "personal" }]]);
+    expect(calls("tour.step_continued")).toEqual([["tour.step_continued", "org-1", { step: 1, register: "personal", surface: "onboarding" }]]);
     expect(document.querySelector('[data-tour-target="2"]')).toBeTruthy();
   });
 
@@ -54,7 +54,7 @@ describe("TV4 tour events fire from the real surface", () => {
     pushBoth();
     fireEvent.click(screen.getByRole("button", { name: "Got it" }));
     fireEvent.click(screen.getByRole("button", { name: "Skip the tour" }));
-    expect(calls("tour.skipped")).toEqual([["tour.skipped", "org-1", { step: 2, register: "partner" }]]);
+    expect(calls("tour.skipped")).toEqual([["tour.skipped", "org-1", { step: 2, register: "partner", surface: "onboarding" }]]);
     expect(onDone).toHaveBeenCalledTimes(1);
   });
 
@@ -62,7 +62,7 @@ describe("TV4 tour events fire from the real surface", () => {
     const onDone = vi.fn();
     render(<OnboardingTour register="company" orgId="org-1" onDone={onDone} startAct={8} />);
     fireEvent.click(screen.getByRole("button", { name: "Start with my own work" }));
-    expect(calls("tour.finished")).toEqual([["tour.finished", "org-1", { register: "company" }]]);
+    expect(calls("tour.finished")).toEqual([["tour.finished", "org-1", { register: "company", surface: "onboarding" }]]);
     expect(calls("tour.skipped")).toEqual([]);
     expect(onDone).toHaveBeenCalledTimes(1);
   });
@@ -74,14 +74,14 @@ describe("TV4 tour events fire from the real surface", () => {
     fireEvent.click(screen.getByRole("button", { name: "Skip the tour" }));
     for (const [name, , dims] of mocks.logEvent.mock.calls) {
       expect(TOUR_EVENTS).toContain(name);
-      for (const key of Object.keys(dims as object)) expect(["step", "register"]).toContain(key);
+      for (const key of Object.keys(dims as object)) expect(["step", "register", "surface"]).toContain(key);
       if ("step" in (dims as object)) expect(typeof (dims as { step: unknown }).step).toBe("number");
     }
-    expect(EVENT_DIM_KEYS["tour.started"]).toEqual(["register"]);
-    expect(EVENT_DIM_KEYS["tour.step_done"]).toEqual(["step", "register"]);
-    expect(EVENT_DIM_KEYS["tour.step_continued"]).toEqual(["step", "register"]);
-    expect(EVENT_DIM_KEYS["tour.skipped"]).toEqual(["step", "register"]);
-    expect(EVENT_DIM_KEYS["tour.finished"]).toEqual(["register"]);
+    expect(EVENT_DIM_KEYS["tour.started"]).toEqual(["register", "surface"]);
+    expect(EVENT_DIM_KEYS["tour.step_done"]).toEqual(["step", "register", "surface"]);
+    expect(EVENT_DIM_KEYS["tour.step_continued"]).toEqual(["step", "register", "surface"]);
+    expect(EVENT_DIM_KEYS["tour.skipped"]).toEqual(["step", "register", "surface"]);
+    expect(EVENT_DIM_KEYS["tour.finished"]).toEqual(["register", "surface"]);
     const family = Object.keys(EVENT_DIM_KEYS).filter((k) => k.startsWith("tour."));
     expect(family.sort()).toEqual([...TOUR_EVENTS].sort());
   });
