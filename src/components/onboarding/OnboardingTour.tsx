@@ -38,10 +38,13 @@ export function OnboardingTour({
       // TL1: signed in, the canonical org-scoped path, unchanged. Signed out
       // (the public landing How it works section), the same event and dims go
       // down the anonymous path the landing demo already uses.
+      // TM1: one extra dim, derived from the same org the branch checks, so
+      // the signed-in and landing populations never mix in one funnel.
+      const surface = org ? "onboarding" : "landing";
       if (org) {
-        logEvent(event, org, { ...dims, register });
+        logEvent(event, org, { ...dims, register, surface });
       } else {
-        noteAnonymousTourEvent(event, { ...dims, register });
+        noteAnonymousTourEvent(event, { ...dims, register, surface });
       }
     },
     [register],
