@@ -81,7 +81,7 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "activation_key.submitted": ["reason", "from"],
   "container.reparented": ["kind", "depth", "action"],
   "container.deleted": ["kind", "had_workboards", "had_folders"],
-  "container.colored": ["kind", "color", "from"],
+  "container.colored": ["kind", "color", "from", "at_create", "containers_band"],
   "container.archived": ["kind", "had_workboards", "had_folders"],
   "container.unarchived": ["kind", "days_archived"],
   "container.archive_opened": ["from"],

@@ -40,6 +40,7 @@ import { useProfile } from "@/hooks/use-profile";
 import {
   CONTAINER_COLOURS,
   containerColourStyle,
+  containersBand,
   type ContainerColour,
 } from "@/lib/container-colour";
 import {
@@ -252,6 +253,8 @@ function MenuDialogs({
         kind: target.kind,
         color: value ?? "none",
         from: "menu",
+        at_create: false,
+        containers_band: containersBand((data ?? []).filter((row) => !row.archived_at).length),
       });
       onClose();
     } catch (error) {

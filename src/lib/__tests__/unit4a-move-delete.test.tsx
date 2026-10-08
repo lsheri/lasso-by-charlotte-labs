@@ -170,6 +170,8 @@ describe("unit 4a keyboard path and events", () => {
       kind: "folder",
       color: "none",
       from: "menu",
+      at_create: false,
+      containers_band: "2-5",
     });
   });
 
