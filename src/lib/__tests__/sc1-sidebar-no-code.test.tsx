@@ -70,7 +70,6 @@ const codedBoard: NavEngagement = {
 };
 const quickFolderBoard: NavEngagement = {
   id: "e2",
-  code: null,
   title: "Loose board",
   clients: null,
 };
