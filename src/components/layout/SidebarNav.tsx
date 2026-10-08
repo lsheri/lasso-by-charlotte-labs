@@ -50,7 +50,7 @@ import {
   navGroups,
   partnerNavGroups,
 } from "./nav-config";
-import { engagementDisplayCode, engagementDisplayTitle } from "@/lib/clients";
+import { engagementDisplayTitle } from "@/lib/clients";
 import {
   containerColourStyle,
   inheritedColour,
@@ -136,19 +136,15 @@ function EngagementRow({
   engagement,
   nested,
   treeDepth,
-  hideCode,
   onNavigate,
   scope,
 }: {
   engagement: NavEngagement;
   nested?: boolean;
   treeDepth?: number;
-  /** Inside the Unmapped shelf the shelf already says it; the code adds nothing. */
-  hideCode?: boolean;
   onNavigate?: (() => void) | undefined;
   scope?: { tasks: CachedNavTask[]; workId: string | undefined } | undefined;
 }) {
-  const code = hideCode ? null : (engagementDisplayCode(engagement) ?? "Folder");
   const canEdit = useCanEditContainers();
   const [menuOpen, setMenuOpen] = useState(false);
   const drag = useSidebarDrag();
@@ -164,10 +160,7 @@ function EngagementRow({
         activeOptions={{ includeSearch: false }}
       >
         {nested ? <PencilIndent /> : <GraphiteIcon name="workboard" size={20} />}
-        <span className="flex min-w-0 items-center gap-1.5">
-          {code ? <span className="font-mono text-xs text-muted-foreground">{code}</span> : null}
-          <span className="truncate">{engagementDisplayTitle(engagement)}</span>
-        </span>
+        <span className="truncate">{engagementDisplayTitle(engagement)}</span>
       </Link>
   );
   return (
@@ -296,14 +289,7 @@ function SharedWithMeGroup({
                 activeOptions={{ includeSearch: false }}
               >
                 <PencilIndent />
-                <span className="flex min-w-0 items-center gap-1.5">
-                  {engagement.code ? (
-                    <span className="font-mono text-xs text-muted-foreground">
-                      {engagement.code}
-                    </span>
-                  ) : null}
-                  <span className="truncate">{engagement.title}</span>
-                </span>
+                <span className="truncate">{engagement.title}</span>
               </Link>
             ))}
           </div>
@@ -515,7 +501,6 @@ export function SidebarNav({
                                   key={engagement.id}
                                   engagement={engagement}
                                   nested
-                                  hideCode={shelf.clientId === UNMAPPED_SHELF_ID}
                                   onNavigate={onNavigate}
                                   scope={scopeFor(engagement.id)}
                                 />
