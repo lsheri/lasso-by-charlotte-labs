@@ -23,3 +23,13 @@ export function inheritedColour(node: ColourNode, ancestors: readonly ColourNode
   }
   return null;
 }
+
+export type ContainersBand = "1" | "2-5" | "6-15" | "16+";
+
+/** Banded count of a workspace's live containers. Never a judgement about a person. */
+export function containersBand(n: number): ContainersBand {
+  if (n <= 1) return "1";
+  if (n <= 5) return "2-5";
+  if (n <= 15) return "6-15";
+  return "16+";
+}
