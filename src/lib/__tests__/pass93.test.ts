@@ -81,8 +81,12 @@ describe("93.2 sidebar hierarchy", () => {
     expect(isSyntheticShelf("c1")).toBe(false);
   });
 
-  it("drops the Folder code label inside the Unmapped shelf", () => {
-    expect(nav).toContain("hideCode={shelf.clientId === UNMAPPED_SHELF_ID}");
+  // SC1: the code used to be hidden only inside the Unmapped shelf. It is now
+  // absent from every sidebar row, so the row renders the title and nothing else.
+  it("renders no board code in any nav row", () => {
+    expect(nav).not.toContain("engagementDisplayCode");
+    expect(nav).not.toContain("hideCode");
+    expect(nav).not.toContain('{engagement.code');
   });
 
   it("leaves the coach nav flat", () => {
