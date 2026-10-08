@@ -2,9 +2,11 @@ import { clientsEnabled } from "@/lib/workspace-settings";
 import { useState } from "react";
 
 import { createContainer } from "@/components/engagements/create-container";
+import { ContainerColourSwatches } from "@/components/engagements/ContainerColourSwatches";
 import { GraphiteIcon } from "@/components/notebook/icons";
 import { Input } from "@/components/ui/input";
-import { useInvalidateClients } from "@/hooks/use-clients";
+import { useClients, useInvalidateClients } from "@/hooks/use-clients";
+import type { ContainerColour } from "@/lib/container-colour";
 import { useProfile } from "@/hooks/use-profile";
 import { vocabFor } from "@/lib/edu-vocab";
 import { canManageMembers } from "@/lib/role-access";
@@ -18,10 +20,12 @@ import { canManageMembers } from "@/lib/role-access";
  */
 export function SidebarCreateActions({ empty }: { empty: boolean }) {
   const { data: profile } = useProfile();
+  const { data: rows } = useClients(profile?.org_id);
   const vocab = vocabFor(profile);
   const invalidate = useInvalidateClients();
   const [creating, setCreating] = useState<null | "client" | "folder">(null);
   const [name, setName] = useState("");
+  const [color, setColor] = useState<ContainerColour | null>(null);
   const [pending, setPending] = useState(false);
 
   async function submit() {
@@ -33,14 +37,15 @@ export function SidebarCreateActions({ empty }: { empty: boolean }) {
         name: name.trim(),
         kind: creating,
         parentId: null,
-        // Always top level here, so depth is 1 and no rows are needed.
-        rows: [],
+        rows: rows ?? [],
+        color,
         from: empty ? "empty_state" : "sidebar",
       });
       if (!id) return;
       invalidate();
       setCreating(null);
       setName("");
+      setColor(null);
     } finally {
       setPending(false);
     }
@@ -48,20 +53,25 @@ export function SidebarCreateActions({ empty }: { empty: boolean }) {
 
   if (creating) {
     return (
-      <div className="flex gap-2 px-2 py-1">
+      <div className="space-y-1 px-2 py-1" onKeyDown={(e) => {
+        if (e.key === "Escape") {
+          e.preventDefault();
+          setCreating(null);
+          setName("");
+          setColor(null);
+        }
+        if (e.key === "Enter") {
+          e.preventDefault();
+          void submit();
+        }
+      }}>
+        <div className="flex gap-2">
         <Input
           autoFocus
           aria-label={creating === "client" ? `${vocab.client} name` : "Folder name"}
           placeholder={creating === "client" ? `${vocab.client} name` : "Folder name"}
           value={name}
           onChange={(e) => setName(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              void submit();
-            }
-            if (e.key === "Escape") setCreating(null);
-          }}
         />
         <button
           type="button"
@@ -71,6 +81,8 @@ export function SidebarCreateActions({ empty }: { empty: boolean }) {
         >
           Add
         </button>
+        </div>
+        <ContainerColourSwatches value={color} onChange={setColor} disabled={pending} />
       </div>
     );
   }

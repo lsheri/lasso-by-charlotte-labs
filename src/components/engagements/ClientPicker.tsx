@@ -4,6 +4,8 @@ import { toast } from "sonner";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ContainerColourSwatches } from "@/components/engagements/ContainerColourSwatches";
+import type { ContainerColour } from "@/lib/container-colour";
 import { createContainer, type ContainerFrom } from "@/components/engagements/create-container";
 import { renameClient, useClients, useInvalidateClients } from "@/hooks/use-clients";
 import { useProfile } from "@/hooks/use-profile";
@@ -35,6 +37,7 @@ export function ClientPicker({
   const [creating, setCreating] = useState<null | "client" | "folder">(null);
   const [renaming, setRenaming] = useState(false);
   const [name, setName] = useState("");
+  const [color, setColor] = useState<ContainerColour | null>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -61,6 +64,7 @@ export function ClientPicker({
         kind: creating,
         parentId: creating === "folder" ? (picked?.id ?? null) : null,
         rows: clients ?? [],
+        color,
         from: from ?? "picker",
       });
       if (!clientId) return;
@@ -68,6 +72,7 @@ export function ClientPicker({
       onChange(clientId, true);
       setCreating(null);
       setName("");
+      setColor(null);
     } finally {
       setPending(false);
     }
@@ -99,7 +104,20 @@ export function ClientPicker({
         {`${vocab.client} (optional)`}
       </Label>
       {creating || renaming ? (
-        <div className="flex gap-2">
+        <div className="space-y-1" onKeyDown={(e) => {
+          if (!creating) return;
+          if (e.key === "Escape") {
+            e.preventDefault();
+            setCreating(null);
+            setName("");
+            setColor(null);
+          }
+          if (e.key === "Enter") {
+            e.preventDefault();
+            void create();
+          }
+        }}>
+          <div className="flex gap-2">
           <Input
             id={id}
             autoFocus
@@ -115,7 +133,7 @@ export function ClientPicker({
                   : `${vocab.client} name`
             }
             onKeyDown={(e) => {
-              if (e.key === "Enter") {
+              if (e.key === "Enter" && renaming) {
                 e.preventDefault();
                 void (renaming ? rename() : create());
               }
@@ -129,6 +147,8 @@ export function ClientPicker({
           >
             {renaming ? "Save" : "Add"}
           </button>
+          </div>
+          {creating ? <ContainerColourSwatches value={color} onChange={setColor} disabled={pending} /> : null}
         </div>
       ) : (
         <div className="flex gap-2">

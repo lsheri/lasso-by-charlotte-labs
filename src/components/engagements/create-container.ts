@@ -1,6 +1,9 @@
 import { toast } from "sonner";
 
 import { createClient, type ClientRow } from "@/hooks/use-clients";
+import { supabase } from "@/integrations/supabase/client";
+import { containersBand, type ContainerColour } from "@/lib/container-colour";
+import { rpcOutcome } from "@/lib/save-guard";
 import { logEvent } from "@/lib/telemetry";
 
 /** Where a container was made from. "empty_state" is the sidebar create actions. */
@@ -31,6 +34,7 @@ export async function createContainer(input: {
   parentId: string | null;
   rows: ClientRow[];
   from: ContainerFrom;
+  color?: ContainerColour | null;
 }): Promise<string | null> {
   const parentId = input.kind === "client" ? null : input.parentId;
   try {
@@ -47,6 +51,28 @@ export async function createContainer(input: {
       from: input.from,
       depth: String(depthFor(parentId, input.rows)),
     });
+    if (input.color) {
+      try {
+        const outcome = rpcOutcome(
+          await supabase.rpc("set_container_color", { p_id: id, p_color: input.color }),
+          "colored",
+          "That colour was not saved.",
+        );
+        if (!outcome.ok) {
+          toast.error(outcome.message);
+        } else {
+          logEvent("container.colored", input.orgId, {
+            kind: input.kind,
+            color: input.color,
+            from: "create",
+            at_create: true,
+            containers_band: containersBand(input.rows.filter((row) => !row.archived_at).length + 1),
+          });
+        }
+      } catch (e) {
+        toast.error((e as Error).message);
+      }
+    }
     return id;
   } catch (e) {
     toast.error((e as Error).message);
