@@ -29,12 +29,12 @@ export const Route = createFileRoute("/plans")({
   validateSearch: validatePlansSearch,
   head: () => ({
     meta: [
-      { title: "Plans | Lasso by Charlotte Labs" },
+      { title: "Plans | Lasso" },
       {
         name: "description",
         content: "Pick the plan that fits how you work. Every plan is free while we pilot.",
       },
-      { property: "og:title", content: "Plans | Lasso by Charlotte Labs" },
+      { property: "og:title", content: "Plans | Lasso" },
       {
         property: "og:description",
         content: "Pick the plan that fits how you work. Every plan is free while we pilot.",

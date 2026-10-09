@@ -14,12 +14,12 @@ export const Route = createFileRoute("/_authenticated/engagements/$id_/canvas-la
   validateSearch: zodValidator(canvasLabSearchSchema),
   head: () => ({
     meta: [
-      { title: "Workboard Workboard | Lasso" },
+      { title: "Workboard | Lasso" },
       {
         name: "description",
         content: "A local workboard for understanding the sources, context, judgment, calls, and finished work in one workboard.",
       },
-      { property: "og:title", content: "Workboard Workboard | Lasso" },
+      { property: "og:title", content: "Workboard | Lasso" },
       {
         property: "og:description",
         content: "A local workboard for understanding the sources, context, judgment, calls, and finished work in one workboard.",

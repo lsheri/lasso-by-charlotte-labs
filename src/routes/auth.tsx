@@ -74,18 +74,26 @@ export const Route = createFileRoute("/auth")({
   },
   head: () => ({
     meta: [
-      { title: "Sign in | Lasso by Charlotte Labs" },
+      { title: "Sign in | Lasso" },
       {
         name: "description",
-        content: "Sign in to Lasso by Charlotte Labs.",
+        content:
+          "Sign in to Lasso, where your AI conversations, files and decisions sit next to the work they produced.",
       },
       { property: "og:title", content: "Sign in | Lasso" },
       {
         property: "og:description",
-        content: "Sign in to Lasso by Charlotte Labs.",
+        content:
+          "Sign in to Lasso, where your AI conversations, files and decisions sit next to the work they produced.",
       },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Sign in | Lasso" },
+      {
+        name: "twitter:description",
+        content:
+          "Sign in to Lasso, where your AI conversations, files and decisions sit next to the work they produced.",
+      },
     ],
   }),
   component: AuthPage,

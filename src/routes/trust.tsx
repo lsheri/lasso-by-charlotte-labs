@@ -5,7 +5,7 @@ import { PublicHeader } from "@/components/layout/PublicHeader";
 export const Route = createFileRoute("/trust")({
   head: () => ({
     meta: [
-      { title: "Trust & data | Lasso by Charlotte Labs" },
+      { title: "Trust & data | Lasso" },
       {
         name: "description",
         content:
