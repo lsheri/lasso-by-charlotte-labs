@@ -28,6 +28,13 @@ import {
   listEngagementPeopleFn,
   setEngagementPersonAccessFn,
 } from "@/lib/engagement-access.functions";
+import {
+  listMyPartnerShares,
+  listSharedEngagements,
+  shareEngagement,
+  unshareEngagement,
+  type PartnerShare,
+} from "@/lib/partner-share";
 
 export function ShareDialog({
   engagementId,
