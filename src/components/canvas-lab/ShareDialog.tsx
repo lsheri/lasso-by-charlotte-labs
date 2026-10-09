@@ -154,20 +154,22 @@ function SponsorRow({
   });
 
   return (
-    <li className="flex items-center justify-between gap-3 rounded-md border border-border p-2">
-      <span className="nb-type-small text-muted-foreground">
-        {share.institutionName}
-        {share.bound ? "" : " · Nobody there has opened this yet."}
-      </span>
-      <Button
-        size="sm"
-        variant={on ? "default" : "outline"}
-        aria-pressed={on}
-        disabled={toggle.isPending || shared.isPending}
-        onClick={() => toggle.mutate()}
-      >
-        {on ? "Shared" : "Share"}
-      </Button>
+    <li className="flex flex-col gap-1 rounded-md border border-border p-2">
+      <div className="flex items-center justify-between gap-3">
+        <span className="nb-type-small text-muted-foreground">{share.institutionName}</span>
+        <Button
+          size="sm"
+          variant={on ? "default" : "outline"}
+          aria-pressed={on}
+          disabled={toggle.isPending || shared.isPending}
+          onClick={() => toggle.mutate()}
+        >
+          {on ? "Shared" : "Share"}
+        </Button>
+      </div>
+      {share.bound ? null : (
+        <p className="nb-type-small text-muted-foreground">Nobody there has opened this yet.</p>
+      )}
     </li>
   );
 }
