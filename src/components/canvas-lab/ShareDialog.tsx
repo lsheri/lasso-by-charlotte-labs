@@ -60,6 +60,8 @@ export function ShareDialog({
         <div className="flex max-h-[70vh] flex-col gap-6 overflow-y-auto">
           <PeopleSection engagementId={engagementId} profileId={profileId} open={open} />
 
+          <SponsorSection engagementId={engagementId} profileId={profileId} open={open} />
+
           <section className="flex flex-col gap-3">
             <p className="font-mono text-[9px] uppercase tracking-[0.08em] text-foreground">
               A link that expires
