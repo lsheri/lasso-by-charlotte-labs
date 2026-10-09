@@ -5158,6 +5158,8 @@ export type Database = {
         Returns: {
           id: string
           name: string
+          partner_org_id: string
+          partner_org_name: string
           slug: string
         }[]
       }
