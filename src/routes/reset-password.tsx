@@ -27,7 +27,7 @@ export const Route = createFileRoute("/reset-password")({
   },
   head: () => ({
     meta: [
-      { title: "Reset your password | Lasso by Charlotte Labs" },
+      { title: "Reset your password | Lasso" },
       { name: "description", content: "Set a new password for your Lasso account." },
       { property: "og:title", content: "Reset your password | Lasso" },
       { property: "og:description", content: "Set a new password for your Lasso account." },
