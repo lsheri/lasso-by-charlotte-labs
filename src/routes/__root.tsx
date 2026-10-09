@@ -22,6 +22,11 @@ import { Toaster } from "@/components/ui/sonner";
 import { CANONICAL_ORIGIN, maybeRedirectToCanonical } from "@/lib/app-host";
 import { registerProfileQueryClient } from "@/hooks/use-profile";
 
+/** One source for the page title and the link preview card. Mirrors the Front Door. */
+const META_TITLE = "Lasso | The knowledge trace for AI-assisted work";
+const META_DESCRIPTION =
+  "Your AI conversations, files and decisions in one place, next to the work they produced. You choose what goes in, and it stays yours.";
+
 
 function NotFoundComponent() {
   return (
@@ -94,19 +99,21 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         name: "viewport",
         content: "width=device-width, initial-scale=1, viewport-fit=cover",
       },
-      { title: "Lasso by Charlotte Labs" },
+      { title: META_TITLE },
       {
         name: "description",
-        content: "Coaching context for workboard managers: connect your work, map it, review it.",
+        content: META_DESCRIPTION,
       },
       { name: "author", content: "Charlotte Labs" },
-      { property: "og:title", content: "Lasso by Charlotte Labs" },
+      { property: "og:title", content: META_TITLE },
       {
         property: "og:description",
-        content: "Coaching context for workboard managers: connect your work, map it, review it.",
+        content: META_DESCRIPTION,
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: META_TITLE },
+      { name: "twitter:description", content: META_DESCRIPTION },
       { name: "theme-color", content: "#fafaf8" },
       {
         property: "og:image",
