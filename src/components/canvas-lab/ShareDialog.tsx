@@ -28,6 +28,13 @@ import {
   listEngagementPeopleFn,
   setEngagementPersonAccessFn,
 } from "@/lib/engagement-access.functions";
+import {
+  listMyPartnerShares,
+  listSharedEngagements,
+  shareEngagement,
+  unshareEngagement,
+  type PartnerShare,
+} from "@/lib/partner-share";
 
 export function ShareDialog({
   engagementId,
@@ -53,6 +60,8 @@ export function ShareDialog({
         <div className="flex max-h-[70vh] flex-col gap-6 overflow-y-auto">
           <PeopleSection engagementId={engagementId} profileId={profileId} open={open} />
 
+          <SponsorSection engagementId={engagementId} profileId={profileId} open={open} />
+
           <section className="flex flex-col gap-3">
             <p className="font-mono text-[9px] uppercase tracking-[0.08em] text-foreground">
               A link that expires
@@ -62,6 +71,106 @@ export function ShareDialog({
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/**
+ * SHARE-1a — the institution that sponsors this workspace, one row each, with
+ * an on or off control for this board only. No sponsor, no section: most
+ * people have none and must see no new chrome.
+ */
+function SponsorSection({
+  engagementId,
+  profileId,
+  open,
+}: {
+  engagementId: string;
+  profileId: string | undefined;
+  open: boolean;
+}) {
+  const shares = useQuery({
+    queryKey: ["partner-shares", profileId ?? ""],
+    queryFn: () => listMyPartnerShares(profileId as string),
+    enabled: open && Boolean(profileId),
+    staleTime: 5_000,
+  });
+
+  const list = shares.data ?? [];
+  if (list.length === 0) return null;
+
+  return (
+    <section className="flex flex-col gap-3">
+      <p className="font-mono text-[9px] uppercase tracking-[0.08em] text-foreground">
+        YOUR SPONSOR
+      </p>
+
+      <ul className="space-y-2">
+        {list.map((share) => (
+          <SponsorRow
+            key={share.linkId}
+            share={share}
+            engagementId={engagementId}
+            open={open}
+          />
+        ))}
+      </ul>
+
+      <p className="nb-type-small text-muted-foreground">
+        They see the work you have placed on this board, and nothing you have not placed.
+      </p>
+    </section>
+  );
+}
+
+function SponsorRow({
+  share,
+  engagementId,
+  open,
+}: {
+  share: PartnerShare;
+  engagementId: string;
+  open: boolean;
+}) {
+  const queryClient = useQueryClient();
+  const key = ["partner-share-engagements", share.linkId] as const;
+
+  const shared = useQuery({
+    queryKey: key,
+    queryFn: () => listSharedEngagements(share.linkId),
+    enabled: open,
+    staleTime: 5_000,
+  });
+
+  const on = (shared.data ?? []).includes(engagementId);
+
+  const toggle = useMutation({
+    mutationFn: () =>
+      on
+        ? unshareEngagement(share.linkId, engagementId)
+        : shareEngagement(share.linkId, engagementId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: key });
+    },
+  });
+
+  return (
+    <li className="flex flex-col gap-1 rounded-md border border-border p-2">
+      <div className="flex items-center justify-between gap-3">
+        <span className="nb-type-small text-muted-foreground">{share.institutionName}</span>
+        <Button
+          size="sm"
+          variant={on ? "default" : "outline"}
+          aria-pressed={on}
+          disabled={toggle.isPending || shared.isPending}
+          onClick={() => toggle.mutate()}
+        >
+          {on ? "Shared" : "Share"}
+        </Button>
+      </div>
+      {share.bound ? null : (
+        <p className="nb-type-small text-muted-foreground">Nobody there has opened this yet.</p>
+      )}
+    </li>
   );
 }
 
