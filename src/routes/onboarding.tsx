@@ -32,7 +32,7 @@ import { lookupActivationKeyFn, redeemActivationKeyFn } from "@/lib/activation-k
 import { cleanActivationKey, clearActivationKey, readActivationKey } from "@/lib/key-entry";
 import { logEvent } from "@/lib/telemetry";
 import { logV2 } from "@/lib/telemetry-v2";
-import { INDUSTRIES, SIZE_BANDS, USE_FOR_OPTIONS } from "@/lib/org-segments";
+import { COUNTRIES, INDUSTRIES, SIZE_BANDS, USE_FOR_OPTIONS, segmentFieldsFor } from "@/lib/org-segments";
 import { emitClientEvent } from "@/lib/client-telemetry";
 import {
   loadToolsUsed,
@@ -280,6 +280,7 @@ function OnboardingInner() {
   const [segIndustry, setSegIndustry] = useState("");
   const [segSizeBand, setSegSizeBand] = useState("");
   const [segUseFor, setSegUseFor] = useState("");
+  const [segCountry, setSegCountry] = useState("");
   const [segPending, setSegPending] = useState(false);
 
   /** Where the flow goes once a workspace exists: everyone but edu gets the optional segment step first. */
@@ -486,20 +487,21 @@ function OnboardingInner() {
       return;
     }
     setSegPending(true);
-    const isPersonal = orgType === "personal";
+    const isPersonal = !segmentFieldsFor(orgType).includes("industry");
     const industry = segIndustry || null;
     const sizeBand = segSizeBand || null;
     const useFor = segUseFor || null;
+    const country = segCountry || null;
     const payload = isPersonal
-      ? { use_for: useFor }
-      : { industry, size_band: sizeBand };
+      ? { use_for: useFor, country }
+      : { industry, size_band: sizeBand, country };
     const { error: saveError } = await supabase
       .from("orgs")
       .update(payload)
       .eq("id", segmentOrgId);
     setSegPending(false);
     if (!saveError) {
-      const asked = isPersonal ? [useFor] : [industry, sizeBand];
+      const asked = isPersonal ? [useFor, country] : [industry, sizeBand, country];
       logV2(
         "organization.segment_updated",
         { fields_set: asked.filter((v) => Boolean(v)).length },
@@ -598,7 +600,7 @@ function OnboardingInner() {
             </p>
 
             <div className="mt-6 space-y-5">
-              {orgType === "personal" ? (
+              {!segmentFieldsFor(orgType).includes("industry") ? (
                 <div className="space-y-1.5">
                   <Label htmlFor="seg-use-for" className="micro-label">
                     What is this for
@@ -654,6 +656,23 @@ function OnboardingInner() {
               </div>
                 </>
               )}
+              <div className="space-y-1.5">
+                <Label htmlFor="seg-country" className="micro-label">
+                  Country
+                </Label>
+                <Select value={segCountry} onValueChange={setSegCountry}>
+                  <SelectTrigger id="seg-country">
+                    <SelectValue placeholder="Not set" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {COUNTRIES.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <div className="mt-8 flex items-center gap-6">
