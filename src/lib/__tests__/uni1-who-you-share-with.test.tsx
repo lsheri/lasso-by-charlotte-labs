@@ -36,7 +36,7 @@ function open(Page: typeof MembersPage) {
 afterEach(() => { cleanup(); vi.clearAllMocks(); state.orgType = "personal"; state.institution = true; });
 beforeEach(() => {
   state.noteRead.mockResolvedValue({ ok: true });
-  vi.mocked(listMyPartnerShares).mockResolvedValue([{ linkId: "link", institutionId: "institution", institutionName: "Ceiba Uni" }]);
+  vi.mocked(listMyPartnerShares).mockResolvedValue([{ linkId: "link", institutionId: "institution", institutionName: "Ceiba Uni", bound: false }]);
   vi.mocked(listSharedEngagements).mockResolvedValue(["board"]);
 });
 
