@@ -32,7 +32,7 @@ import { lookupActivationKeyFn, redeemActivationKeyFn } from "@/lib/activation-k
 import { cleanActivationKey, clearActivationKey, readActivationKey } from "@/lib/key-entry";
 import { logEvent } from "@/lib/telemetry";
 import { logV2 } from "@/lib/telemetry-v2";
-import { INDUSTRIES, SIZE_BANDS } from "@/lib/org-segments";
+import { INDUSTRIES, SIZE_BANDS, USE_FOR_OPTIONS } from "@/lib/org-segments";
 import { emitClientEvent } from "@/lib/client-telemetry";
 import {
   loadToolsUsed,
