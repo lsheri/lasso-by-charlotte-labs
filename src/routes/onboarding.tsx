@@ -32,7 +32,7 @@ import { lookupActivationKeyFn, redeemActivationKeyFn } from "@/lib/activation-k
 import { cleanActivationKey, clearActivationKey, readActivationKey } from "@/lib/key-entry";
 import { logEvent } from "@/lib/telemetry";
 import { logV2 } from "@/lib/telemetry-v2";
-import { INDUSTRIES, SIZE_BANDS } from "@/lib/org-segments";
+import { INDUSTRIES, SIZE_BANDS, USE_FOR_OPTIONS } from "@/lib/org-segments";
 import { emitClientEvent } from "@/lib/client-telemetry";
 import {
   loadToolsUsed,
@@ -273,17 +273,18 @@ function OnboardingInner() {
   const [orgName, setOrgName] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // SEG-1a: the optional segmentation step after creation. Organisations only;
-  // personal and edu workspaces never see it.
+  // SEG-1a/1b: the optional segmentation step after creation. Organisations
+  // answer Industry and People; an individual answers one question; edu skips.
   const [segmentOrgId, setSegmentOrgId] = useState<string | null>(null);
   const [segmentProfileId, setSegmentProfileId] = useState<string | null>(null);
   const [segIndustry, setSegIndustry] = useState("");
   const [segSizeBand, setSegSizeBand] = useState("");
+  const [segUseFor, setSegUseFor] = useState("");
   const [segPending, setSegPending] = useState(false);
 
-  /** Where the flow goes once a workspace exists: organisations get the optional segment step first. */
+  /** Where the flow goes once a workspace exists: everyone but edu gets the optional segment step first. */
   function afterCreation(): "segment" | "tools" {
-    return orgType === "company" || orgType === "partner" ? "segment" : "tools";
+    return orgType === "edu" ? "tools" : "segment";
   }
 
   // KX1: name who the key belongs to without redeeming it. Never blocks.
@@ -476,25 +477,32 @@ function OnboardingInner() {
     setStage(afterCreation());
   }
 
-  // SEG-1a: optional, skippable, and only ever writes the two fields it asked
-  // about. A failed save is silent; this step never blocks the way in.
+  // SEG-1a/1b: optional, skippable, and only ever writes the fields the shape
+  // it showed actually asked about. A failed save is silent; this step never
+  // blocks the way in.
   async function saveSegment() {
     if (!segmentOrgId) {
       setStage("tools");
       return;
     }
     setSegPending(true);
+    const isPersonal = orgType === "personal";
     const industry = segIndustry || null;
     const sizeBand = segSizeBand || null;
+    const useFor = segUseFor || null;
+    const payload = isPersonal
+      ? { use_for: useFor }
+      : { industry, size_band: sizeBand };
     const { error: saveError } = await supabase
       .from("orgs")
-      .update({ industry, size_band: sizeBand })
+      .update(payload)
       .eq("id", segmentOrgId);
     setSegPending(false);
     if (!saveError) {
+      const asked = isPersonal ? [useFor] : [industry, sizeBand];
       logV2(
         "organization.segment_updated",
-        { fields_set: [industry, sizeBand].filter((v) => Boolean(v)).length },
+        { fields_set: asked.filter((v) => Boolean(v)).length },
         { profileId: segmentProfileId ?? undefined },
       );
     }
@@ -590,10 +598,30 @@ function OnboardingInner() {
             </p>
 
             <div className="mt-6 space-y-5">
-              <div className="space-y-1.5">
-                <Label htmlFor="seg-industry" className="micro-label">
-                  Industry
-                </Label>
+              {orgType === "personal" ? (
+                <div className="space-y-1.5">
+                  <Label htmlFor="seg-use-for" className="micro-label">
+                    What is this for
+                  </Label>
+                  <Select value={segUseFor} onValueChange={setSegUseFor}>
+                    <SelectTrigger id="seg-use-for">
+                      <SelectValue placeholder="Not set" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {USE_FOR_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="seg-industry" className="micro-label">
+                      Industry
+                    </Label>
                 <Select value={segIndustry} onValueChange={setSegIndustry}>
                   <SelectTrigger id="seg-industry">
                     <SelectValue placeholder="Not set" />
@@ -624,6 +652,8 @@ function OnboardingInner() {
                   </SelectContent>
                 </Select>
               </div>
+                </>
+              )}
             </div>
 
             <div className="mt-8 flex items-center gap-6">
