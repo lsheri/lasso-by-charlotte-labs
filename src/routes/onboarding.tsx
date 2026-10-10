@@ -598,10 +598,30 @@ function OnboardingInner() {
             </p>
 
             <div className="mt-6 space-y-5">
-              <div className="space-y-1.5">
-                <Label htmlFor="seg-industry" className="micro-label">
-                  Industry
-                </Label>
+              {orgType === "personal" ? (
+                <div className="space-y-1.5">
+                  <Label htmlFor="seg-use-for" className="micro-label">
+                    What is this for
+                  </Label>
+                  <Select value={segUseFor} onValueChange={setSegUseFor}>
+                    <SelectTrigger id="seg-use-for">
+                      <SelectValue placeholder="Not set" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {USE_FOR_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="seg-industry" className="micro-label">
+                      Industry
+                    </Label>
                 <Select value={segIndustry} onValueChange={setSegIndustry}>
                   <SelectTrigger id="seg-industry">
                     <SelectValue placeholder="Not set" />
