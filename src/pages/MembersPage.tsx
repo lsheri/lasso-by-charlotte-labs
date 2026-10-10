@@ -248,7 +248,7 @@ function MembersConsole() {
               />
               <div className="overflow-x-auto">
                 <div className={business ? "min-w-[700px]" : "min-w-[560px]"}>
-                  <div className={`grid ${business ? "grid-cols-[minmax(220px,1.15fr)_140px_minmax(230px,1fr)_auto]" : "grid-cols-[minmax(220px,1.15fr)_minmax(230px,1fr)_auto]"} gap-4 border-b border-border px-2 pb-2 font-mono text-[10px] uppercase tracking-[0.08em] text-soft"}>
+                  <div className={`grid ${business ? "grid-cols-[minmax(220px,1.15fr)_140px_minmax(230px,1fr)_auto]" : "grid-cols-[minmax(220px,1.15fr)_minmax(230px,1fr)_auto]"} gap-4 border-b border-border px-2 pb-2 font-mono text-[10px] uppercase tracking-[0.08em] text-soft`}>
                     <span>Name</span>
                     {business ? <span>Role</span> : null}
                     <span>What they can see</span>
