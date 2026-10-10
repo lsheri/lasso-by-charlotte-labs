@@ -14,8 +14,8 @@ import {
 } from "@/components/ui/select";
 import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
+import { orgTypeDisplayLabel } from "@/lib/org-type";
 
-const ORG_MODES = ["corporate", "education"];
 const INDUSTRIES = [
   "Professional services",
   "Technology",
@@ -28,14 +28,11 @@ const INDUSTRIES = [
   "Other",
 ];
 const SIZE_BANDS = ["1-10", "11-50", "51-200", "201-1000", "1000+"];
-const MATURITY = ["exploring", "adopting", "established"];
 
 type OrgRow = {
-  org_mode: string | null;
   industry: string | null;
   size_band: string | null;
   country: string | null;
-  ai_maturity: string | null;
   data_use_tier: string | null;
 };
 
@@ -62,16 +59,14 @@ export function OrgDimensionsCard() {
     queryFn: async (): Promise<OrgRow> => {
       const { data: row, error } = await supabase
         .from("orgs")
-        .select("org_mode, industry, size_band, country, ai_maturity, data_use_tier")
+        .select("industry, size_band, country, data_use_tier")
         .eq("id", profile?.org_id as string)
         .maybeSingle();
       if (error) throw error;
       return (row as OrgRow | null) ?? {
-        org_mode: null,
         industry: null,
         size_band: null,
         country: null,
-        ai_maturity: null,
         data_use_tier: null,
       };
     },
@@ -89,18 +84,16 @@ export function OrgDimensionsCard() {
     const { error } = await supabase
       .from("orgs")
       .update({
-        org_mode: form.org_mode,
         industry: form.industry,
         size_band: form.size_band,
         country: form.country,
-        ai_maturity: form.ai_maturity,
       })
       .eq("id", profile.org_id);
     setPending(false);
     if (error) return void toast.error(error.message);
     await queryClient.invalidateQueries({ queryKey: ["org-dimensions", profile.org_id] });
     logV2("organization.segment_updated", {
-      fields_set: [form.org_mode, form.industry, form.size_band, form.country, form.ai_maturity].filter(
+      fields_set: [form.industry, form.size_band, form.country].filter(
         (v) => Boolean(v),
       ).length,
     }, { profileId: profile.id });
@@ -116,22 +109,12 @@ export function OrgDimensionsCard() {
       <h2 className="micro-label micro-label-section">About this workspace</h2>
       <div className="mt-3 space-y-4 rounded-[var(--radius)] border border-border bg-card px-4 py-4 shadow-card">
         <p className="text-sm text-muted-foreground">
-          All optional. It helps Lasso make suggestions that fit how your organisation works.
+          All optional. We use this to understand who Lasso is for, and nothing on this card changes how Lasso behaves.
         </p>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Kind of organisation">
-            <Select value={form.org_mode ?? ""} onValueChange={(v) => set("org_mode", v)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Not set" />
-              </SelectTrigger>
-              <SelectContent>
-                {ORG_MODES.map((value) => (
-                  <SelectItem key={value} value={value}>
-                    {value.replace("_", " ")}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <p className="text-sm text-foreground">{orgTypeDisplayLabel(profile?.org_type)}</p>
+            <p className="text-sm text-muted-foreground">Set when this workspace was created.</p>
           </Field>
           <Field label="Industry">
             <Select value={form.industry ?? ""} onValueChange={(v) => set("industry", v)}>
@@ -167,20 +150,6 @@ export function OrgDimensionsCard() {
               onChange={(e) => set("country", e.target.value)}
               placeholder="Not set"
             />
-          </Field>
-          <Field label="Where you are with AI">
-            <Select value={form.ai_maturity ?? ""} onValueChange={(v) => set("ai_maturity", v)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Not set" />
-              </SelectTrigger>
-              <SelectContent>
-                {MATURITY.map((value) => (
-                  <SelectItem key={value} value={value}>
-                    {value}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </Field>
           <Field label="Data use">
             <p className="text-sm text-foreground">{form.data_use_tier ?? "Operate only"}</p>

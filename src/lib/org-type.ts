@@ -6,6 +6,16 @@
 
 export type OrgType = "company" | "personal" | "edu" | "partner";
 
+export function orgTypeDisplayLabel(type: OrgType | null | undefined): string {
+  switch (type) {
+    case "company": return "A company or firm";
+    case "partner": return "A partner organisation";
+    case "edu": return "A school or university";
+    case "personal": return "Just you";
+    default: return "Not set";
+  }
+}
+
 export type IntentParam = OrgType | "invite";
 
 export type DoorChoice = IntentParam | null | undefined;
