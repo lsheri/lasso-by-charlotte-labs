@@ -652,6 +652,8 @@ function OnboardingInner() {
                   </SelectContent>
                 </Select>
               </div>
+                </>
+              )}
             </div>
 
             <div className="mt-8 flex items-center gap-6">
