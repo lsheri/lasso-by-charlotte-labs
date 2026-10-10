@@ -26,15 +26,13 @@ vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
     auth: { getUser: async () => ({ data: { user: { id: "u1" } }, error: null }) },
     rpc: async () => ({ data: "org-1", error: null }),
-    from: (table: string) => {
-      if (table !== "orgs") throw new Error(`unexpected table ${table}`);
-      return {
-        update: (payload: Record<string, unknown>) => {
-          mocks.orgUpdates.push(payload);
-          return { eq: async () => ({ error: null }) };
-        },
-      };
-    },
+    from: (table: string) => ({
+      update: (payload: Record<string, unknown>) => {
+        if (table === "orgs") mocks.orgUpdates.push(payload);
+        return { eq: async () => ({ error: null }) };
+      },
+      select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null, error: null }) }) }),
+    }),
   },
 }));
 vi.mock("@/hooks/use-profile", () => ({ fetchProfile: async () => null }));
