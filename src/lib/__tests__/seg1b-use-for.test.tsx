@@ -105,7 +105,7 @@ describe("SEG-1b: the individual question in the segment step", () => {
     await reachSegment("personal");
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
     await waitFor(() => expect(mocks.orgUpdates).toHaveLength(1));
-    expect(mocks.orgUpdates[0]).toEqual({ use_for: null });
+    expect(mocks.orgUpdates[0]).toEqual({ use_for: null, country: null });
   });
 
   it("skip writes nothing", async () => {
