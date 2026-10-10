@@ -17,7 +17,6 @@ vi.mock("@/hooks/use-profile", () => ({
 vi.mock("@/lib/telemetry-v2", () => ({ logV2: vi.fn() }));
 vi.mock("@/lib/telemetry", () => ({ logEvent: vi.fn() }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
-vi.mock("@/components/layout/SectionHeader", () => ({}));
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
     rpc: vi.fn(),
