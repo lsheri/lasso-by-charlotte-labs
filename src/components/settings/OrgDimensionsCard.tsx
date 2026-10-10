@@ -4,6 +4,7 @@ import { logV2 } from "@/lib/telemetry-v2";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -23,12 +24,14 @@ import {
 import { orgTypeDisplayLabel } from "@/lib/org-type";
 
 type OrgRow = {
+  name: string;
   industry: string | null;
   size_band: string | null;
   country: string | null;
   use_for: string | null;
-  data_use_tier: string | null;
 };
+
+export const NAME_REQUIRED_LINE = "A workspace needs a name.";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -76,6 +79,7 @@ export function OrgDimensionsCard() {
   const queryClient = useQueryClient();
   const [form, setForm] = useState<OrgRow | null>(null);
   const [pending, setPending] = useState(false);
+  const [nameError, setNameError] = useState(false);
   const canEdit = profile?.role === "admin";
   const fields = segmentFieldsFor(profile?.org_type);
   const isOrg = fields.includes("industry");
@@ -86,16 +90,16 @@ export function OrgDimensionsCard() {
     queryFn: async (): Promise<OrgRow> => {
       const { data: row, error } = await supabase
         .from("orgs")
-        .select("industry, size_band, country, use_for, data_use_tier")
+        .select("name, industry, size_band, country, use_for")
         .eq("id", profile?.org_id as string)
         .maybeSingle();
       if (error) throw error;
       return (row as OrgRow | null) ?? {
+        name: "",
         industry: null,
         size_band: null,
         country: null,
         use_for: null,
-        data_use_tier: null,
       };
     },
   });
@@ -108,16 +112,23 @@ export function OrgDimensionsCard() {
 
   async function save() {
     if (!profile || !form) return;
+    const name = form.name.trim();
+    if (!name) {
+      setNameError(true);
+      return;
+    }
+    setNameError(false);
     setPending(true);
-    const payload = isOrg
+    const segment = isOrg
       ? { industry: form.industry, size_band: form.size_band, country: form.country }
       : { use_for: form.use_for, country: form.country };
-    const { error } = await supabase.from("orgs").update(payload).eq("id", profile.org_id);
+    const { error } = await supabase.from("orgs").update({ name, ...segment }).eq("id", profile.org_id);
     setPending(false);
     if (error) return void toast.error(error.message);
     await queryClient.invalidateQueries({ queryKey: ["org-dimensions", profile.org_id] });
+    await queryClient.invalidateQueries({ queryKey: ["profiles"] });
     logV2("organization.segment_updated", {
-      fields_set: Object.values(payload).filter((v) => Boolean(v)).length,
+      fields_set: Object.values(segment).filter((v) => Boolean(v)).length,
     }, { profileId: profile.id });
     toast.success("Workspace details saved");
   }
@@ -130,26 +141,39 @@ export function OrgDimensionsCard() {
     <section>
       <h2 className="micro-label micro-label-section">About this workspace</h2>
       <div className="mt-3 space-y-4 rounded-[var(--radius)] border border-border bg-card px-4 py-4 shadow-card">
-        <p className="text-sm text-muted-foreground">
-          All optional. We use this to understand who Lasso is for, and nothing on this card changes how Lasso behaves.
-        </p>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2" data-testid="workspace-identity">
+          <Field label="Workspace name">
+            <Input
+              aria-label="Workspace name"
+              value={form.name}
+              onChange={(e) => {
+                set("name", e.target.value);
+                if (e.target.value.trim()) setNameError(false);
+              }}
+            />
+            {nameError ? <p className="mt-1.5 text-sm text-destructive">{NAME_REQUIRED_LINE}</p> : null}
+          </Field>
           <Field label="Kind of organisation">
             <p className="text-sm text-foreground">{orgTypeDisplayLabel(profile?.org_type)}</p>
             <p className="text-sm text-muted-foreground">Set when this workspace was created.</p>
           </Field>
-          {isOrg ? (
-            <>
-              <PickField label="Industry" value={form.industry} options={asOptions(INDUSTRIES)} onChange={(v) => set("industry", v)} />
-              <PickField label="People" value={form.size_band} options={asOptions(SIZE_BANDS)} onChange={(v) => set("size_band", v)} />
-            </>
-          ) : (
-            <PickField label="What is this for" value={form.use_for} options={USE_FOR_OPTIONS} onChange={(v) => set("use_for", v)} />
-          )}
-          <PickField label="Country" value={form.country} options={COUNTRIES} onChange={(v) => set("country", v)} />
-          <Field label="Data use">
-            <p className="text-sm text-foreground">{form.data_use_tier ?? "Operate only"}</p>
-          </Field>
+        </div>
+        <div className="space-y-3 border-t border-border pt-4" data-testid="workspace-about">
+          <h3 className="micro-label">About this workspace, for our understanding only</h3>
+          <p className="text-sm text-muted-foreground">
+            All optional. We use this to understand who Lasso is for, and nothing on this card changes how Lasso behaves.
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {isOrg ? (
+              <>
+                <PickField label="Industry" value={form.industry} options={asOptions(INDUSTRIES)} onChange={(v) => set("industry", v)} />
+                <PickField label="People" value={form.size_band} options={asOptions(SIZE_BANDS)} onChange={(v) => set("size_band", v)} />
+              </>
+            ) : (
+              <PickField label="What is this for" value={form.use_for} options={USE_FOR_OPTIONS} onChange={(v) => set("use_for", v)} />
+            )}
+            <PickField label="Country" value={form.country} options={COUNTRIES} onChange={(v) => set("country", v)} />
+          </div>
         </div>
         <Button type="button" onClick={() => void save()} disabled={pending}>
           Save

@@ -409,7 +409,7 @@ function MembersConsole() {
                 ) : null}
               </section>
             ) : null}
-            {!business ? <WhatStaysPutSection {...sharing} /> : null}
+            {!business ? <WhatStaysPutSection institutionName={institution?.name ?? null} {...sharing} /> : null}
           </div>
 
           <aside className="mt-10 space-y-8 lg:mt-0">

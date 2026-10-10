@@ -137,13 +137,13 @@ export function SharedWithSection({ institutionName, sharedCount, sharedBoards =
   );
 }
 
-export function WhatStaysPutSection({ sharedCount, sharingPending = false, sharingFailed = false }: Pick<AffiliationContentProps, "sharedCount" | "sharingPending" | "sharingFailed">) {
+export function WhatStaysPutSection({ institutionName, sharedCount, sharingPending = false, sharingFailed = false }: Pick<AffiliationContentProps, "sharedCount" | "sharingPending" | "sharingFailed"> & { institutionName?: string | null | undefined }) {
   const nothingShared = sharedCount === 0;
   return (
       <section className="mb-10">
         <SectionHeader title="What stays put" />
         <p className="mb-4 text-sm text-muted-foreground">
-          {nothingShared && !sharingPending && !sharingFailed ? "None of this leaves your account." : "Anything you have not placed on a shared board stays in your account."}
+          {nothingShared && !sharingPending && !sharingFailed ? (institutionName ? `None of this reaches ${institutionName}.` : "None of this leaves your account.") : "Anything you have not placed on a shared board stays in your account."}
         </p>
         <ul className="flex flex-col gap-1.5 text-[13px]">
           <li>The titles of your work</li>

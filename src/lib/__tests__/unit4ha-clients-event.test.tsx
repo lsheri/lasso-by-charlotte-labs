@@ -18,7 +18,7 @@ vi.mock("@/integrations/supabase/client", () => ({
 
 const profile = vi.hoisted(() => vi.fn());
 
-vi.mock("@/hooks/use-profile", () => ({ useProfile: profile }));
+vi.mock("@/hooks/use-profile", () => ({ useProfile: profile, isBusinessOrg: (p: { org_type?: string } | null) => p?.org_type === "company" || p?.org_type === "partner" }));
 
 function adminProfile() {
   return {
