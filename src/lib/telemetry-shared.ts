@@ -429,6 +429,12 @@ export type TelemetryEvent =
    */
   | "settings.changed"
   /**
+   * RQ-1: a partner submitted a workshop key request. Dims: workspace_kind
+   * (the request's own), seats_band (1 | 2-5 | 6-20 | 21+), outcome
+   * (ok | refused). Never an email, client name, domain, code or name.
+   */
+  | "key_request.submitted"
+  /**
    * S2: someone in the workspace was given, moved between, or taken off the
    * two things a person can have on a board. Closed dims only, no ids, no
    * names, no counts: access (review | work | none) and result (granted |

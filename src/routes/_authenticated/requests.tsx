@@ -1,13 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { requirePartnerWorkspace } from "@/lib/partner-guard";
+import { requirePartnerSubmitter } from "@/lib/partner-guard";
 import { KeyRequestsPage } from "@/pages/KeyRequestsPage";
 
 const DESCRIPTION = "Ask Lasso for workshop keys and collect the links once they are ready.";
 
 export const Route = createFileRoute("/_authenticated/requests")({
   ssr: false,
-  beforeLoad: () => requirePartnerWorkspace(),
+  beforeLoad: () => requirePartnerSubmitter(),
   head: () => ({
     meta: [
       { title: "Workshop keys | Lasso" },
