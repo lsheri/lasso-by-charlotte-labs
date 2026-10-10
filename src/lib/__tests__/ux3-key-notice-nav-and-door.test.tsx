@@ -143,7 +143,7 @@ describe("UX-3", () => {
   });
   it("an empty arrival starts on signin without a notice", () => {
     mount(auth);
-    expect(screen.getByRole("button", { name: "Sign in", exact: true })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /^Sign in$/ })).toBeTruthy();
     expect(screen.queryByTestId("key-notice")).toBeNull();
   });
 });
