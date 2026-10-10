@@ -31,7 +31,12 @@ vi.mock("@/integrations/supabase/client", () => ({
         if (table === "orgs") mocks.orgUpdates.push(payload);
         return { eq: async () => ({ error: null }) };
       },
-      select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null, error: null }) }) }),
+      select: () => ({
+        eq: () => ({
+          maybeSingle: async () => ({ data: null, error: null }),
+          is: async () => ({ data: [], error: null }),
+        }),
+      }),
     }),
   },
 }));
