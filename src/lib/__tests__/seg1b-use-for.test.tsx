@@ -40,7 +40,9 @@ vi.mock("@/integrations/supabase/client", () => ({
     }),
   },
 }));
-vi.mock("@/hooks/use-profile", () => ({ fetchProfile: async () => null }));
+vi.mock("@/hooks/use-profile", () => ({
+  fetchProfile: async () => ({ id: "p1", org_id: "org-1" }),
+}));
 vi.mock("@/lib/pending-invite", () => ({ readPendingInvite: () => null }));
 vi.mock("@/lib/telemetry", () => ({ logEvent: vi.fn(), logV2: mocks.logV2 }));
 vi.mock("@/components/layout/SessionHeader", () => ({ SessionHeader: () => null }));
