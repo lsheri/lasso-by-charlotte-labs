@@ -19,7 +19,7 @@ import { useSharedWithMe } from "@/hooks/use-shared-with-me";
 
 import { useDecisions } from "@/hooks/use-decisions";
 import { useEngagements } from "@/hooks/use-engagements";
-import { useProfile } from "@/hooks/use-profile";
+import { isBusinessOrg, useProfile } from "@/hooks/use-profile";
 import * as roles from "@/lib/role-access";
 import { isEduOrg, vocabFor } from "@/lib/edu-vocab";
 import { bucket, logEvent } from "@/lib/telemetry";
@@ -568,6 +568,7 @@ export function SidebarNav({
     <nav className="flex flex-col gap-7">
       {[...groupsForOrg, ...coachingGroups].map((group) => {
         const isEngagementGroup = group.id === "engagements";
+        const groupLabel = group.id === "firm" && !isBusinessOrg(profile) ? "Who you share with" : group.label;
 
         const itemsForGroup =
           group.id === "account" && institution
@@ -669,7 +670,7 @@ export function SidebarNav({
           <div>
             {isEngagementGroup && everyCollapsibleId.length > 0 ? (
               <div className="flex items-center justify-between gap-2 px-2">
-                <div className="nb-group-header">{group.label}</div>
+                <div className="nb-group-header">{groupLabel}</div>
                 <button
                   type="button"
                   data-testid="nav-collapse-all"
@@ -680,7 +681,7 @@ export function SidebarNav({
                 </button>
               </div>
             ) : (
-              <div className="nb-group-header px-2">{group.label}</div>
+              <div className="nb-group-header px-2">{groupLabel}</div>
             )}
             <div className="mt-2 flex flex-col gap-0.5">
               {/* Anything still in this group (a partner firm's extra rows)

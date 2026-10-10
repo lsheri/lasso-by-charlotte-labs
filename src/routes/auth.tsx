@@ -28,6 +28,7 @@ import { fetchProfile } from "@/hooks/use-profile";
 import { lookupActivationKeyFn, redeemActivationKeyFn } from "@/lib/activation-keys.functions";
 import { logEvent } from "@/lib/telemetry";
 import { consentTarget } from "@/lib/consent-return";
+import { KEY_NOTICE_COPY, KeyNoticeSentence } from "@/routes/onboarding";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -170,7 +171,7 @@ function AuthPage() {
   }
 
   const [mode, setMode] = useState<"signin" | "signup">(
-    invited || inviteCode ? "signup" : "signin",
+    invited || inviteCode || key ? "signup" : "signin",
   );
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -414,11 +415,9 @@ function AuthPage() {
             {key ? (
               <div data-testid="key-notice" className="mt-5 rounded-[var(--radius)] border border-dashed border-border px-4 py-3">
                 <p className="font-hand text-[16px] leading-snug text-foreground">
-                  {keyCheck?.ok && keyCheck.institution_name
-                    ? `You are joining with a key from ${keyCheck.institution_name}.`
-                    : "You are joining with a sponsored key."}
+                  <KeyNoticeSentence institution={keyCheck?.ok ? keyCheck.institution_name : null} />
                 </p>
-                <p className="mt-1 text-[13px] text-muted-foreground">You choose what you share with them.</p>
+                <p className="mt-1 text-[13px] text-muted-foreground">{KEY_NOTICE_COPY.body}</p>
               </div>
             ) : null}
             {error ? <p className="mt-4 text-sm text-destructive">{error}</p> : null}
@@ -461,6 +460,14 @@ function AuthPage() {
           ) : null}
 
           <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+            {key ? (
+              <div data-testid="key-notice" className="mt-5 rounded-[var(--radius)] border border-dashed border-border px-4 py-3">
+                <p className="font-hand text-[16px] leading-snug text-foreground">
+                  <KeyNoticeSentence institution={keyCheck?.ok ? keyCheck.institution_name : null} />
+                </p>
+                <p className="mt-1 text-[13px] text-muted-foreground">{KEY_NOTICE_COPY.body}</p>
+              </div>
+            ) : null}
             <div className="space-y-1.5">
               <Label htmlFor="email" className="micro-label">
                 {emailCopy.emailLabel}
