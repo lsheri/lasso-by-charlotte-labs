@@ -10,6 +10,8 @@ vi.mock("@tanstack/react-start", async (orig) => ({
   useServerFn: () => mocks.save,
 }));
 
+vi.mock("@/components/layout/SessionHeader", () => ({ SessionHeader: () => null }));
+
 import { SponsoredDataUseStep } from "@/routes/onboarding";
 
 afterEach(() => {
