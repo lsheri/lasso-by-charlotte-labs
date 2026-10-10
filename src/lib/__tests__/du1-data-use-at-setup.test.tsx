@@ -64,7 +64,7 @@ describe("DU-1 data use at setup", () => {
     expect(screen.queryByRole("switch")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
     await waitFor(() => expect(onDone).toHaveBeenCalledOnce());
-    const sent = (mocks.save.mock.calls[0] as unknown as [{ data: Record<string, unknown> }])[0].data;
+    const sent = (mocks.save.mock.calls[0] as unknown as [{ data: { tier: string; tier_d_switch?: boolean } }])[0].data;
     expect(sent.tier).toBe("b");
     expect(sent.tier_d_switch).not.toBe(true);
   });
