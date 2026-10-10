@@ -97,7 +97,8 @@ async function applyOrgType(profileId: string, type: OrgType): Promise<string | 
 }
 
 /** KX1: the carried-key notice on the name screen. Canonical copy lives in @/lib/key-notice. */
-export { KEY_NOTICE_COPY, KeyNoticeSentence } from "@/lib/key-notice";
+import { KEY_NOTICE_COPY, KeyNoticeSentence } from "@/lib/key-notice";
+export { KEY_NOTICE_COPY, KeyNoticeSentence };
 
 const REDEEM_FAILED_REASONS = [
   "not_found",
