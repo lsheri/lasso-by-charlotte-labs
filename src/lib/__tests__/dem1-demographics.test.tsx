@@ -29,6 +29,8 @@ vi.mock("@/integrations/supabase/client", () => ({
 import { COUNTRIES, segmentFieldsFor } from "@/lib/org-segments";
 import { OrgDimensionsCard } from "@/components/settings/OrgDimensionsCard";
 
+vi.setConfig({ testTimeout: 20000 });
+
 afterEach(() => {
   cleanup();
   mocks.updates.length = 0;

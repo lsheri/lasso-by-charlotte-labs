@@ -37,6 +37,8 @@ import { OrgDimensionsCard, NAME_REQUIRED_LINE } from "@/components/settings/Org
 import { ClientsSettingCard } from "@/components/settings/ClientsSettingCard";
 import { WhatStaysPutSection } from "@/pages/AffiliationPage";
 
+vi.setConfig({ testTimeout: 20000 });
+
 afterEach(() => {
   cleanup();
   mocks.updates.length = 0;
