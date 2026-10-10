@@ -8,6 +8,7 @@ import { AffiliationPage } from "@/pages/AffiliationPage";
 
 const state = vi.hoisted(() => ({ orgType: "personal", institution: true, noteRead: vi.fn() }));
 vi.mock("@tanstack/react-start", () => ({ useServerFn: () => state.noteRead }));
+vi.mock("@/lib/affiliation.functions", () => ({ noteDisclosureReadFn: vi.fn() }));
 vi.mock("@tanstack/react-router", () => ({ Link: ({ children, to }: { children: React.ReactNode; to: string }) => <a href={to}>{children}</a> }));
 vi.mock("@/hooks/use-profile", () => ({
   useProfile: () => ({ data: { id: "person", org_id: "org", role: "admin", org_type: state.orgType } }),
@@ -50,7 +51,7 @@ describe("UNI-1 individual sharing page", () => {
     await waitFor(() => expect(state.noteRead).toHaveBeenCalledTimes(1));
     client.clear();
   });
-  it.each(["company", "partner"])("preserves the %s members console", () => {
+  it.each(["company", "partner"])("preserves the %s members console", (orgType) => {
     state.orgType = orgType;
     const client = open(MembersPage);
     expect(screen.getByRole("heading", { name: /Members/ })).toBeTruthy();
