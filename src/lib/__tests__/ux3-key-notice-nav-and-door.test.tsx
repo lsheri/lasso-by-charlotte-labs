@@ -64,6 +64,7 @@ vi.mock("@/components/invites/EnterInviteCode", () => ({ EnterInviteCode: () => 
 
 import { KEY_STORAGE, KEY_TTL_MS, markActivationKey, readActivationKey } from "@/lib/key-entry";
 import { Route as AuthRoute } from "@/routes/auth";
+import { Route as OnboardingRoute } from "@/routes/onboarding";
 import { KEY_NOTICE_COPY } from "@/lib/key-notice";
 
 vi.mock("@/hooks/use-engagements", () => ({
