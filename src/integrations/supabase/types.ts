@@ -3122,6 +3122,7 @@ export type Database = {
           settings: Json
           signup_source: string | null
           size_band: string | null
+          use_for: string | null
           vendor_display: string
         }
         Insert: {
@@ -3138,6 +3139,7 @@ export type Database = {
           settings?: Json
           signup_source?: string | null
           size_band?: string | null
+          use_for?: string | null
           vendor_display?: string
         }
         Update: {
@@ -3154,6 +3156,7 @@ export type Database = {
           settings?: Json
           signup_source?: string | null
           size_band?: string | null
+          use_for?: string | null
           vendor_display?: string
         }
         Relationships: []
