@@ -46,6 +46,19 @@ export function parseEmails(raw: string): string[] {
 export { adminLink, attendeeLink } from "@/lib/join-link";
 import { adminLink, attendeeLink } from "@/lib/join-link";
 
+/** RQ-1: closed seats_band vocabulary for key_request.submitted. */
+export function seatsBand(n: number): "1" | "2-5" | "6-20" | "21+" {
+  if (n <= 1) return "1";
+  if (n <= 5) return "2-5";
+  if (n <= 20) return "6-20";
+  return "21+";
+}
+
+/** RQ-1: the only dims key_request.submitted carries. No content from the request. */
+export function keyRequestDims(row: { workspace_kind: string; seat_count: number }, outcome: "ok" | "refused") {
+  return { workspace_kind: row.workspace_kind, seats_band: seatsBand(row.seat_count), outcome };
+}
+
 function copy(text: string) {
   void navigator.clipboard.writeText(text).then(
     () => toast.success("Copied"),
@@ -112,7 +125,8 @@ export function KeyRequestsPage() {
       const { error } = await supabase.from("key_requests").insert(row);
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_d, row) => {
+      logEvent("key_request.submitted", row.partner_org_id, keyRequestDims(row, "ok"));
       setResult({ ok: true, text: "Request sent. We will let you know here once the keys are ready." });
       setClientName("");
       setKind("");
@@ -124,7 +138,10 @@ export function KeyRequestsPage() {
       setNote("");
       void qc.invalidateQueries({ queryKey: listKey });
     },
-    onError: () => setResult({ ok: false, text: "That request did not go through. Please try again." }),
+    onError: (_e, row) => {
+      logEvent("key_request.submitted", row.partner_org_id, keyRequestDims(row, "refused"));
+      setResult({ ok: false, text: "That request did not go through. Please try again." });
+    },
   });
 
   function onSubmit(e: React.FormEvent) {
