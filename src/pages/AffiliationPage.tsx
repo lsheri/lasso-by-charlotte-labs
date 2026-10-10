@@ -1,14 +1,16 @@
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery } from "@tanstack/react-query";
-import { useEffect, useRef } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useRef, useState } from "react";
 
 import { PageHeader } from "@/components/layout/PageHeader";
 import { SectionHeader } from "@/components/notebook/SectionHeader";
+import { Button } from "@/components/ui/button";
 import { useAffiliation } from "@/hooks/use-affiliation";
 import { useEngagements } from "@/hooks/use-engagements";
 import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
 import { noteDisclosureReadFn } from "@/lib/affiliation.functions";
+import { listMyPartnerShares, listSharedEngagements, unshareEngagement } from "@/lib/partner-share";
 
 /**
  * Pass 186: the person's own view of what an affiliated school can see.
@@ -56,7 +58,37 @@ type AffiliationContentProps = {
   toolCount: number;
   keptCount: number;
   sharedCount: number;
+  sharedBoards?: { linkId: string; engagementId: string; title: string }[];
+  sharingPending?: boolean;
+  sharingFailed?: boolean;
 };
+
+function SharedBoardRow({ board }: { board: { linkId: string; engagementId: string; title: string } }) {
+  const queryClient = useQueryClient();
+  const [problem, setProblem] = useState<string | null>(null);
+  const stop = useMutation({
+    mutationFn: () => unshareEngagement(board.linkId, board.engagementId),
+    onMutate: () => setProblem(null),
+    onError: () => setProblem("That did not change. Try again."),
+    onSuccess: async () => {
+      setProblem(null);
+      await queryClient.invalidateQueries({ queryKey: ["partner-share-engagements", board.linkId] });
+      await queryClient.invalidateQueries({ queryKey: ["affiliation-shared-boards"] });
+    },
+  });
+
+  return (
+    <li className="flex flex-col gap-1 rounded-md border border-border p-2">
+      <div className="flex items-center justify-between gap-3">
+        <span className="min-w-0 break-words text-sm text-foreground">{board.title}</span>
+        <Button size="sm" variant="ghost" className="shrink-0" disabled={stop.isPending} onClick={() => stop.mutate()}>
+          Stop sharing
+        </Button>
+      </div>
+      {problem ? <p className="nb-type-small text-foreground" role="alert">{problem}</p> : null}
+    </li>
+  );
+}
 
 export function AffiliationContent({
   institutionName,
@@ -64,6 +96,9 @@ export function AffiliationContent({
   toolCount,
   keptCount,
   sharedCount,
+  sharedBoards = [],
+  sharingPending = false,
+  sharingFailed = false,
 }: AffiliationContentProps) {
   const nothingShared = sharedCount === 0;
   const counts = (
@@ -80,7 +115,11 @@ export function AffiliationContent({
 
   const sharing = (
     <section className="mb-10" data-testid="affiliation-sharing">
-      {nothingShared ? (
+      {sharingPending ? (
+        <p className="text-sm text-muted-foreground">Reading shared boards.</p>
+      ) : sharingFailed ? (
+        <p className="text-sm text-foreground" role="alert">Shared boards could not be read. Try again.</p>
+      ) : nothingShared ? (
         <>
           <SectionHeader title={`Nothing has been shared with ${institutionName}.`} />
           <p className="text-sm text-muted-foreground">
@@ -89,9 +128,14 @@ export function AffiliationContent({
         </>
       ) : (
         <>
-          <SectionHeader title="What you chose to share" />
-          <p className="mb-4 text-sm text-muted-foreground">
-            One piece at a time, and only when you say so.
+          <SectionHeader title={`${institutionName} can open these boards.`} />
+          <ul className="mb-4 space-y-2">
+            {sharedBoards.map((board) => (
+              <SharedBoardRow key={`${board.linkId}:${board.engagementId}`} board={board} />
+            ))}
+          </ul>
+          <p className="text-sm text-muted-foreground">
+            They see the work you have placed on each one, and nothing you have not placed.
           </p>
         </>
       )}
@@ -112,7 +156,7 @@ export function AffiliationContent({
       <section className="mb-10">
         <SectionHeader title="What stays put" />
         <p className="mb-4 text-sm text-muted-foreground">
-          None of this leaves your account.
+          {nothingShared && !sharingPending && !sharingFailed ? "None of this leaves your account." : "Anything you have not placed on a shared board stays in your account."}
         </p>
         <ul className="flex flex-col gap-1.5 text-[13px]">
           <li>The titles of your work</li>
@@ -138,6 +182,23 @@ export function AffiliationPage() {
   const { data: profile } = useProfile();
   const { data: engagements } = useEngagements(profile?.id);
   const { data: shape } = useOwnWorkShape(institution ? profile?.id : undefined);
+  const shared = useQuery({
+    queryKey: ["affiliation-shared-boards", profile?.id, institution?.id],
+    enabled: Boolean(profile?.id && institution),
+    staleTime: 5_000,
+    queryFn: async () => {
+      if (!profile?.id || !institution) return [];
+      const sponsors = (await listMyPartnerShares(profile.id)).filter((share) => share.institutionId === institution.id);
+      const boards = await Promise.all(sponsors.map(async (share) =>
+        (await listSharedEngagements(share.linkId)).map((engagementId) => ({ linkId: share.linkId, engagementId })),
+      ));
+      return boards.flat();
+    },
+  });
+  const sharedBoards = (shared.data ?? []).map((board) => ({
+    ...board,
+    title: engagements?.find((engagement) => engagement.id === board.engagementId)?.title ?? "A board you are no longer on",
+  }));
 
   // One read of the page, once per mount, and only when affiliated.
   const noteRead = useServerFn(noteDisclosureReadFn);
@@ -165,7 +226,10 @@ export function AffiliationPage() {
         projectCount={(engagements ?? []).length}
         toolCount={shape?.tools ?? 0}
         keptCount={shape?.kept ?? 0}
-        sharedCount={0}
+        sharedCount={sharedBoards.length}
+        sharedBoards={sharedBoards}
+        sharingPending={shared.isPending}
+        sharingFailed={shared.isError}
       />
     </div>
   );
