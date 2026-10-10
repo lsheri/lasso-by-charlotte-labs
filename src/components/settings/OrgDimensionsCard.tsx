@@ -4,7 +4,6 @@ import { logV2 } from "@/lib/telemetry-v2";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -14,13 +13,20 @@ import {
 } from "@/components/ui/select";
 import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
-import { INDUSTRIES, SIZE_BANDS } from "@/lib/org-segments";
+import {
+  COUNTRIES,
+  INDUSTRIES,
+  SIZE_BANDS,
+  USE_FOR_OPTIONS,
+  segmentFieldsFor,
+} from "@/lib/org-segments";
 import { orgTypeDisplayLabel } from "@/lib/org-type";
 
 type OrgRow = {
   industry: string | null;
   size_band: string | null;
   country: string | null;
+  use_for: string | null;
   data_use_tier: string | null;
 };
 
@@ -33,6 +39,37 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
+function PickField({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: string | null;
+  options: readonly { value: string; label: string }[];
+  onChange: (v: string) => void;
+}) {
+  return (
+    <Field label={label}>
+      <Select value={value ?? ""} onValueChange={onChange}>
+        <SelectTrigger aria-label={label}>
+          <SelectValue placeholder="Not set" />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((o) => (
+            <SelectItem key={o.value} value={o.value}>
+              {o.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </Field>
+  );
+}
+
+const asOptions = (list: readonly string[]) => list.map((v) => ({ value: v, label: v }));
+
 /** Admin only. Every field is optional and none of it is shown as a score. */
 export function OrgDimensionsCard() {
   const { data: profile } = useProfile();
@@ -40,6 +77,8 @@ export function OrgDimensionsCard() {
   const [form, setForm] = useState<OrgRow | null>(null);
   const [pending, setPending] = useState(false);
   const canEdit = profile?.role === "admin";
+  const fields = segmentFieldsFor(profile?.org_type);
+  const isOrg = fields.includes("industry");
 
   const { data } = useQuery({
     queryKey: ["org-dimensions", profile?.org_id],
@@ -47,7 +86,7 @@ export function OrgDimensionsCard() {
     queryFn: async (): Promise<OrgRow> => {
       const { data: row, error } = await supabase
         .from("orgs")
-        .select("industry, size_band, country, data_use_tier")
+        .select("industry, size_band, country, use_for, data_use_tier")
         .eq("id", profile?.org_id as string)
         .maybeSingle();
       if (error) throw error;
@@ -55,6 +94,7 @@ export function OrgDimensionsCard() {
         industry: null,
         size_band: null,
         country: null,
+        use_for: null,
         data_use_tier: null,
       };
     },
@@ -69,21 +109,15 @@ export function OrgDimensionsCard() {
   async function save() {
     if (!profile || !form) return;
     setPending(true);
-    const { error } = await supabase
-      .from("orgs")
-      .update({
-        industry: form.industry,
-        size_band: form.size_band,
-        country: form.country,
-      })
-      .eq("id", profile.org_id);
+    const payload = isOrg
+      ? { industry: form.industry, size_band: form.size_band, country: form.country }
+      : { use_for: form.use_for, country: form.country };
+    const { error } = await supabase.from("orgs").update(payload).eq("id", profile.org_id);
     setPending(false);
     if (error) return void toast.error(error.message);
     await queryClient.invalidateQueries({ queryKey: ["org-dimensions", profile.org_id] });
     logV2("organization.segment_updated", {
-      fields_set: [form.industry, form.size_band, form.country].filter(
-        (v) => Boolean(v),
-      ).length,
+      fields_set: Object.values(payload).filter((v) => Boolean(v)).length,
     }, { profileId: profile.id });
     toast.success("Workspace details saved");
   }
@@ -104,41 +138,15 @@ export function OrgDimensionsCard() {
             <p className="text-sm text-foreground">{orgTypeDisplayLabel(profile?.org_type)}</p>
             <p className="text-sm text-muted-foreground">Set when this workspace was created.</p>
           </Field>
-          <Field label="Industry">
-            <Select value={form.industry ?? ""} onValueChange={(v) => set("industry", v)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Not set" />
-              </SelectTrigger>
-              <SelectContent>
-                {INDUSTRIES.map((value) => (
-                  <SelectItem key={value} value={value}>
-                    {value}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </Field>
-          <Field label="People">
-            <Select value={form.size_band ?? ""} onValueChange={(v) => set("size_band", v)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Not set" />
-              </SelectTrigger>
-              <SelectContent>
-                {SIZE_BANDS.map((value) => (
-                  <SelectItem key={value} value={value}>
-                    {value}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </Field>
-          <Field label="Country">
-            <Input
-              value={form.country ?? ""}
-              onChange={(e) => set("country", e.target.value)}
-              placeholder="Not set"
-            />
-          </Field>
+          {isOrg ? (
+            <>
+              <PickField label="Industry" value={form.industry} options={asOptions(INDUSTRIES)} onChange={(v) => set("industry", v)} />
+              <PickField label="People" value={form.size_band} options={asOptions(SIZE_BANDS)} onChange={(v) => set("size_band", v)} />
+            </>
+          ) : (
+            <PickField label="What is this for" value={form.use_for} options={USE_FOR_OPTIONS} onChange={(v) => set("use_for", v)} />
+          )}
+          <PickField label="Country" value={form.country} options={COUNTRIES} onChange={(v) => set("country", v)} />
           <Field label="Data use">
             <p className="text-sm text-foreground">{form.data_use_tier ?? "Operate only"}</p>
           </Field>
