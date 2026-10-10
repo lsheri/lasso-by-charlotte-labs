@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { MembersPage } from "@/pages/MembersPage";
 import { AffiliationPage } from "@/pages/AffiliationPage";
+import { listMyPartnerShares, listSharedEngagements } from "@/lib/partner-share";
 
 const state = vi.hoisted(() => ({ orgType: "personal", institution: true, noteRead: vi.fn() }));
 vi.mock("@tanstack/react-start", () => ({ useServerFn: () => state.noteRead }));
@@ -33,6 +34,11 @@ function open(Page: typeof MembersPage) {
   return client;
 }
 afterEach(() => { cleanup(); vi.clearAllMocks(); state.orgType = "personal"; state.institution = true; });
+beforeEach(() => {
+  state.noteRead.mockResolvedValue({ ok: true });
+  vi.mocked(listMyPartnerShares).mockResolvedValue([{ linkId: "link", institutionId: "institution", institutionName: "Ceiba Uni" }]);
+  vi.mocked(listSharedEngagements).mockResolvedValue(["board"]);
+});
 
 describe("UNI-1 individual sharing page", () => {
   it.each(["personal", "edu"])("merges %s sharing above people without firm roles", async (orgType) => {
