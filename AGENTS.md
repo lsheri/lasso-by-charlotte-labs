@@ -34,3 +34,5 @@ Tour workboard chrome stays a local presentational mirror around shared board pr
 - Classify signed-out entry codes locally: activation-key shapes go through `/j/$code`, while workspace invites retain the existing `/join` flow.
 - Emit the tour.* event family only from OnboardingTour, with act number and register as the sole dims, so the preview harness and shared tour primitives never record anything.
 - Fit the landing tour through its local measured wrapper, preserving the shared tour's natural dimensions and reserving its scaled height, because preview and onboarding must remain unchanged.
+
+- Keep affiliation sections and their shared-board reads in AffiliationPage exports, so individual Members and business Affiliation compose one disclosure implementation.

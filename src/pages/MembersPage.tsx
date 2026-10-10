@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { SharedWithSection, WhatGoesUpSection, WhatStaysPutSection, useSharedBoards } from "@/pages/AffiliationPage";
 import { toast } from "sonner";
 import { MoreHorizontal } from "lucide-react";
 
@@ -158,6 +159,7 @@ function MembersConsole() {
   const canManageInvites = isAdmin || data?.viewer_role === "lead";
   // A solo workspace has no roster: the only other people in it are coaches.
   const business = isBusinessOrg(profile);
+  const { institution, ...sharing } = useSharedBoards(!business);
   const copy = business
     ? {
         title: "Members",
@@ -167,8 +169,8 @@ function MembersConsole() {
         empty: "Nothing outstanding.",
       }
     : {
-        title: "Your coaches",
-        blurb: "Who you have invited to look at your work, and the invites still outstanding.",
+        title: "Who you share with",
+        blurb: "What you have shared, and who can see it.",
         people: "People with access",
         invite: "Invite a coach",
         empty: "No invites outstanding.",
@@ -211,7 +213,7 @@ function MembersConsole() {
     <div>
       <PageHeader
         title={copy.title}
-        subtitle={metaLine}
+        subtitle={business ? metaLine : copy.blurb}
         {...(business ? { italicWord: "of the firm" } : {})}
       />
 
@@ -225,9 +227,10 @@ function MembersConsole() {
       {data ? (
         <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-10">
           <div className="space-y-10">
+            {!business && institution ? <SharedWithSection institutionName={institution.name} {...sharing} /> : null}
             <section>
               <SectionHeader
-                title="People"
+                title={copy.people}
                 action={
                   isAdmin ? (
                     <InviteDialog
@@ -244,17 +247,17 @@ function MembersConsole() {
                 }
               />
               <div className="overflow-x-auto">
-                <div className="min-w-[700px]">
-                  <div className="grid grid-cols-[minmax(220px,1.15fr)_140px_minmax(230px,1fr)_auto] gap-4 border-b border-border px-2 pb-2 font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
+                <div className={business ? "min-w-[700px]" : "min-w-[560px]"}>
+                  <div className={`grid ${business ? "grid-cols-[minmax(220px,1.15fr)_140px_minmax(230px,1fr)_auto]" : "grid-cols-[minmax(220px,1.15fr)_minmax(230px,1fr)_auto]"} gap-4 border-b border-border px-2 pb-2 font-mono text-[10px] uppercase tracking-[0.08em] text-soft"}>
                     <span>Name</span>
-                    <span>Role</span>
+                    {business ? <span>Role</span> : null}
                     <span>What they can see</span>
                     <span className="sr-only">Actions</span>
                   </div>
                   {members.map((member) => (
                     <div
                       key={member.id}
-                      className="grid min-h-16 grid-cols-[minmax(220px,1.15fr)_140px_minmax(230px,1fr)_auto] items-center gap-4 border-b border-border px-2 py-3"
+                      className={`grid min-h-16 ${business ? "grid-cols-[minmax(220px,1.15fr)_140px_minmax(230px,1fr)_auto]" : "grid-cols-[minmax(220px,1.15fr)_minmax(230px,1fr)_auto]"} items-center gap-4 border-b border-border px-2 py-3`}
                     >
                       <div className="flex min-w-0 items-center gap-3">
                         <span className="flex size-7 shrink-0 items-center justify-center rounded-full border border-border bg-card font-mono text-[10px] text-foreground">
@@ -267,16 +270,21 @@ function MembersConsole() {
                           <p className="truncate text-xs text-muted-foreground">
                             {member.email ?? "No login email"} · joined {dateLabel(member.created_at)}
                           </p>
+                          {!business ? <div className="mt-1 flex flex-wrap gap-1.5">{member.deactivated_at ? (
+                          <Badge>Deactivated {dateLabel(member.deactivated_at)}</Badge>
+                        ) : (
+                          <Badge tone="accent">Active</Badge>
+                        )}</div> : null}
                         </div>
                       </div>
-                      <div className="flex flex-wrap items-center gap-1.5">
+                      {business ? <div className="flex flex-wrap items-center gap-1.5">
                         <Badge>{ROLE_LABELS[member.role] ?? member.role}</Badge>
                         {member.deactivated_at ? (
                           <Badge>Deactivated {dateLabel(member.deactivated_at)}</Badge>
                         ) : (
                           <Badge tone="accent">Active</Badge>
                         )}
-                      </div>
+                      </div> : null}
                       <p className="text-xs leading-5 text-muted-foreground">
                         {whatTheyCanSee(member.role, member.id === profile?.id)}
                       </p>
@@ -401,12 +409,14 @@ function MembersConsole() {
                 ) : null}
               </section>
             ) : null}
+            {!business ? <WhatStaysPutSection {...sharing} /> : null}
           </div>
 
           <aside className="mt-10 space-y-8 lg:mt-0">
+            {!business ? <WhatGoesUpSection {...sharing} /> : null}
             <PlanSection entitlement={data.entitlement} business={business} />
             {isAdmin ? <OrgDataCard /> : null}
-            <ToneCard tone="record" label="WHAT A ROLE CHANGES" className="gap-3 p-4">
+            {business ? <ToneCard tone="record" label="WHAT A ROLE CHANGES" className="gap-3 p-4">
               <p className="text-sm leading-6 text-foreground">
                 A role changes what someone can see. It never changes what someone can be told.
               </p>
@@ -431,7 +441,7 @@ function MembersConsole() {
                 </div>
               </dl>
               <p className="font-hand text-green">nobody gets promoted into seeing your drafts</p>
-            </ToneCard>
+            </ToneCard> : null}
           </aside>
         </div>
       ) : null}
