@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   profile: { id: "p1", org_id: "org-1", role: "admin", org_type: "company" } as Record<string, unknown>,
-  row: { industry: "Technology", size_band: "11-50", country: "US", use_for: "work", data_use_tier: null },
+  row: { name: "Acme", industry: "Technology", size_band: "11-50", country: "US", use_for: "work" },
   updates: [] as Array<Record<string, unknown>>,
   logV2: vi.fn(),
 }));
@@ -67,7 +67,7 @@ describe("DEM-1 demographics", () => {
     expect(screen.getByText("United States")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     await waitFor(() => expect(mocks.updates).toHaveLength(1));
-    expect(mocks.updates[0]).toEqual({ industry: "Technology", size_band: "11-50", country: "US" });
+    expect(mocks.updates[0]).toEqual({ name: "Acme", industry: "Technology", size_band: "11-50", country: "US" });
     await waitFor(() => expect(mocks.logV2).toHaveBeenCalled());
     expect(mocks.logV2.mock.calls[0]?.[1]).toEqual({ fields_set: 3 });
   });
@@ -79,7 +79,7 @@ describe("DEM-1 demographics", () => {
     expect(screen.queryByText("People")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     await waitFor(() => expect(mocks.updates).toHaveLength(1));
-    expect(mocks.updates[0]).toEqual({ use_for: "work", country: "US" });
+    expect(mocks.updates[0]).toEqual({ name: "Acme", use_for: "work", country: "US" });
     await waitFor(() => expect(mocks.logV2).toHaveBeenCalled());
     expect(mocks.logV2.mock.calls[0]?.[1]).toEqual({ fields_set: 2 });
   });
