@@ -36,6 +36,7 @@ import { SubjectCoachingSection } from "@/components/coaching/SubjectCoachingSec
 import { useRegisterAskLasso } from "@/components/reflect/ask-lasso-context";
 import { usePerfNavFinish } from "@/hooks/use-perf-timer";
 import { useProfile } from "@/hooks/use-profile";
+import { useSharedBoardMarks } from "@/hooks/use-shared-board-marks";
 import { useShippedWork } from "@/hooks/use-shipped-work";
 import { useTraceParam } from "@/hooks/use-trace-param";
 import { useJourneyParam } from "@/hooks/use-journey-param";
@@ -73,6 +74,7 @@ const THREAD_PRESET_VARIANTS: Partial<Record<AnalysisPresetId, AnalysisPresetId>
 export function EngagementPage({ engagementId }: { engagementId: string }) {
   const { work } = engagementRoute.useSearch();
   const { data: profile } = useProfile();
+  const sharedBy = useSharedBoardMarks().get(engagementId);
   const queryClient = useQueryClient();
   const [rail, setRail] = useState<"closed" | "open">("closed");
   const askOpen = rail !== "closed";
@@ -493,6 +495,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
               {engagementDisplayTitle(engagement)}
               <GraphiteRule />
             </h1>
+            {sharedBy ? <p className="nb-shared-ink mt-1.5 text-base">Shared by {sharedBy}</p> : null}
             {/* Not `page-subtitle`: that utility is mono/700/uppercase, which turns
                 Figma's quiet sentence into a shouty label. */}
             <p className="mt-1.5 text-[13px] leading-[19px] text-muted-foreground">

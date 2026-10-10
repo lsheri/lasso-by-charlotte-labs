@@ -11,6 +11,7 @@ export type EngagementSummary = {
   brief: string | null;
   term_label: string | null;
   archived_at: string | null;
+  shared_by_id: string | null;
   clients: {
     id: string;
     name: string;
@@ -28,13 +29,16 @@ export async function fetchAllMyEngagements(profileId: string): Promise<Engageme
   const { data, error } = await supabase
     .from("engagement_members")
     .select(
-      `engagements(id, code, title, client_label, brief, term_label, archived_at, ${CLIENT_JOIN})`,
+      `added_by, engagements(id, code, title, client_label, brief, term_label, archived_at, ${CLIENT_JOIN})`,
     )
     .eq("profile_id", profileId);
   if (error) throw error;
-  const rows = (data ?? []) as unknown as { engagements: EngagementSummary | null }[];
+  const rows = (data ?? []) as unknown as { added_by: string | null; engagements: Omit<EngagementSummary, "shared_by_id"> | null }[];
   return rows
-    .map((r) => r.engagements)
+    .map((r) => r.engagements ? {
+      ...r.engagements,
+      shared_by_id: r.added_by && r.added_by !== profileId ? r.added_by : null,
+    } : null)
     .filter((e): e is EngagementSummary => e !== null)
     // A folder engagement carries no code, so the sort must never assume one.
     .sort((a, b) => (a.code ?? "").localeCompare(b.code ?? ""));

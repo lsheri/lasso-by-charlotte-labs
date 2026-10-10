@@ -16,6 +16,7 @@ import { useUnreadNotesAboutMe } from "@/hooks/use-coach-note-thread";
 import { useHasLiveCoachLink } from "@/hooks/use-coaching-links";
 import { useCoachingReach } from "@/hooks/use-coaching-reach";
 import { useSharedWithMe } from "@/hooks/use-shared-with-me";
+import { useSharedBoardMarks } from "@/hooks/use-shared-board-marks";
 
 import { useDecisions } from "@/hooks/use-decisions";
 import { useEngagements } from "@/hooks/use-engagements";
@@ -146,6 +147,7 @@ function EngagementRow({
   scope?: { tasks: CachedNavTask[]; workId: string | undefined } | undefined;
 }) {
   const canEdit = useCanEditContainers();
+  const sharedBy = useSharedBoardMarks().get(engagement.id);
   const [menuOpen, setMenuOpen] = useState(false);
   const drag = useSidebarDrag();
   const link = (
@@ -154,12 +156,25 @@ function EngagementRow({
         params={{ id: engagement.id }}
         search={{ work: undefined }}
         onClick={onNavigate}
+        aria-label={sharedBy ? `${engagementDisplayTitle(engagement)}, Shared by ${sharedBy}` : undefined}
         className={treeDepth === undefined && nested ? `${linkClass} nb-nav-item-nested` : linkClass}
         data-tree-depth={treeDepth}
         activeProps={activeProps}
         activeOptions={{ includeSearch: false }}
       >
         {nested ? <PencilIndent /> : <GraphiteIcon name="workboard" size={20} />}
+        {sharedBy ? (
+          <TooltipProvider delayDuration={150}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="nb-shared-ink inline-flex shrink-0" aria-hidden="true">
+                  <GraphiteIcon name="members" size={16} animate={false} />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="right">Shared by {sharedBy}</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        ) : null}
         <span className="truncate">{engagementDisplayTitle(engagement)}</span>
       </Link>
   );
