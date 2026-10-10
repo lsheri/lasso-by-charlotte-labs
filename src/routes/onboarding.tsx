@@ -104,6 +104,13 @@ export const KEY_NOTICE_COPY = {
   remove: "Not with them? Remove this key.",
 } as const;
 
+export function KeyNoticeSentence({ institution }: { institution: string | null | undefined }) {
+  if (!institution) return <>{KEY_NOTICE_COPY.neutral}</>;
+  const sentence = KEY_NOTICE_COPY.named(institution);
+  const prefixLength = sentence.length - institution.length - 1;
+  return <>{sentence.slice(0, prefixLength)}<span className="text-accent-deep">{institution}</span>{sentence.slice(-1)}</>;
+}
+
 const REDEEM_FAILED_REASONS = [
   "not_found",
   "expired",
@@ -771,7 +778,7 @@ function OnboardingInner() {
                   className="rounded-[var(--radius)] border border-dashed border-border px-4 py-3"
                 >
                   <p className="font-hand text-[16px] leading-snug text-foreground">
-                    {keyInstitution ? KEY_NOTICE_COPY.named(keyInstitution) : KEY_NOTICE_COPY.neutral}
+                    <KeyNoticeSentence institution={keyInstitution} />
                   </p>
                   <p className="mt-1 text-[13px] text-muted-foreground">{KEY_NOTICE_COPY.body}</p>
                   <button
