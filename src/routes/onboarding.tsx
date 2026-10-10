@@ -273,17 +273,18 @@ function OnboardingInner() {
   const [orgName, setOrgName] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // SEG-1a: the optional segmentation step after creation. Organisations only;
-  // personal and edu workspaces never see it.
+  // SEG-1a/1b: the optional segmentation step after creation. Organisations
+  // answer Industry and People; an individual answers one question; edu skips.
   const [segmentOrgId, setSegmentOrgId] = useState<string | null>(null);
   const [segmentProfileId, setSegmentProfileId] = useState<string | null>(null);
   const [segIndustry, setSegIndustry] = useState("");
   const [segSizeBand, setSegSizeBand] = useState("");
+  const [segUseFor, setSegUseFor] = useState("");
   const [segPending, setSegPending] = useState(false);
 
-  /** Where the flow goes once a workspace exists: organisations get the optional segment step first. */
+  /** Where the flow goes once a workspace exists: everyone but edu gets the optional segment step first. */
   function afterCreation(): "segment" | "tools" {
-    return orgType === "company" || orgType === "partner" ? "segment" : "tools";
+    return orgType === "edu" ? "tools" : "segment";
   }
 
   // KX1: name who the key belongs to without redeeming it. Never blocks.
