@@ -1,29 +1,26 @@
-import { useQueryClient } from "@tanstack/react-query";
-import { useMemo, useSyncExternalStore } from "react";
+import { useMemo } from "react";
 
 import { useProfile } from "@/hooks/use-profile";
-import type { SharedGroup } from "@/lib/shared-with-me";
+import { useSharedWithMe } from "@/hooks/use-shared-with-me";
 
-const EMPTY_GROUPS: SharedGroup[] = [];
-
-/** Observe the shared-by-person query without starting another read. */
+/**
+ * Which boards were handed to the signed in person, and by whom.
+ *
+ * This hook owns its read: it calls the shared-by-person query itself rather
+ * than peeking at whatever another component may have cached, so a mark never
+ * depends on some other surface having mounted first. React Query deduplicates
+ * by key, so a second caller of the same key adds no second round trip.
+ *
+ * A group with no usable granter name contributes nothing: no placeholder, no
+ * "someone", no fallback to the board.
+ */
 export function useSharedBoardMarks(): Map<string, string> {
   const { profiles } = useProfile();
-  const csv = profiles.map((profile) => profile.id).join(",");
-  const queryClient = useQueryClient();
-  const groups = useSyncExternalStore(
-    (onStoreChange) => queryClient.getQueryCache().subscribe((event) => {
-      if (event.query.queryKey[0] === "shared-with-me" && event.query.queryKey[1] === csv) {
-        onStoreChange();
-      }
-    }),
-    () => queryClient.getQueryData<SharedGroup[]>(["shared-with-me", csv]) ?? EMPTY_GROUPS,
-    () => EMPTY_GROUPS,
-  );
+  const { groups } = useSharedWithMe(profiles);
 
   return useMemo(() => {
     const marks = new Map<string, string>();
-    for (const group of groups ?? []) {
+    for (const group of groups) {
       if (!group.granterName.trim()) continue;
       for (const engagement of group.engagements) {
         if (!marks.has(engagement.id)) marks.set(engagement.id, group.granterName);

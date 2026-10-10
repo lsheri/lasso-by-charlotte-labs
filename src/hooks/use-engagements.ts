@@ -11,7 +11,6 @@ export type EngagementSummary = {
   brief: string | null;
   term_label: string | null;
   archived_at: string | null;
-  shared_by_id: string | null;
   clients: {
     id: string;
     name: string;
