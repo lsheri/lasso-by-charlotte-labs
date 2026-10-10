@@ -92,6 +92,7 @@ describe("pass 186: the student's transparency page", () => {
     expect(screen.queryByText("None of this leaves your account.")).toBeNull();
     expect(screen.getByText("They see the work you have placed on each one, and nothing you have not placed.")).toBeTruthy();
     const stop = screen.getAllByRole("button", { name: "Stop sharing" })[0];
+    if (!stop) throw new Error("Stop sharing control missing");
     fireEvent.click(stop);
     await waitFor(() => expect(screen.getByRole("alert").textContent).toBe("That did not change. Try again."));
     expect(unshareEngagement).toHaveBeenCalledWith("link-1", "board-1");
