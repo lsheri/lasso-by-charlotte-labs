@@ -22,7 +22,7 @@ describe("pass 186: the student's transparency page", () => {
 
   it("carries the exact lines", () => {
     expect(page).toContain("Counts, never content.");
-    expect(page).toContain("None of this leaves your account.");
+    expect(page).toContain("None of this reaches ${institutionName}.");
     expect(page).toContain("your record is yours, and it leaves with you");
   });
 
