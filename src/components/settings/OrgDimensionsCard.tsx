@@ -14,20 +14,8 @@ import {
 } from "@/components/ui/select";
 import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
+import { INDUSTRIES, SIZE_BANDS } from "@/lib/org-segments";
 import { orgTypeDisplayLabel } from "@/lib/org-type";
-
-const INDUSTRIES = [
-  "Professional services",
-  "Technology",
-  "Financial services",
-  "Healthcare",
-  "Public sector",
-  "Education",
-  "Manufacturing",
-  "Retail",
-  "Other",
-];
-const SIZE_BANDS = ["1-10", "11-50", "51-200", "201-1000", "1000+"];
 
 type OrgRow = {
   industry: string | null;

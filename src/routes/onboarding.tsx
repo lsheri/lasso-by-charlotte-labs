@@ -11,6 +11,13 @@ import { SessionHeader } from "@/components/layout/SessionHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { AUTH_USER_KEY, fetchProfile, type Profile } from "@/hooks/use-profile";
 import {
@@ -24,6 +31,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { lookupActivationKeyFn, redeemActivationKeyFn } from "@/lib/activation-keys.functions";
 import { cleanActivationKey, clearActivationKey, readActivationKey } from "@/lib/key-entry";
 import { logEvent } from "@/lib/telemetry";
+import { logV2 } from "@/lib/telemetry-v2";
+import { INDUSTRIES, SIZE_BANDS } from "@/lib/org-segments";
 import { emitClientEvent } from "@/lib/client-telemetry";
 import {
   loadToolsUsed,
@@ -258,7 +267,7 @@ function OnboardingInner() {
           ? "invite"
           : "chooser",
   );
-  const [stage, setStage] = useState<"setup" | "share_back" | "tools" | "capture" | "tour">(setup ? "tools" : "setup");
+  const [stage, setStage] = useState<"setup" | "share_back" | "segment" | "tools" | "capture" | "tour">(setup ? "tools" : "setup");
   const [shareBack, setShareBack] = useState<{ id: string; name: string; orgId: string | null } | null>(null);
   const [shareBackPending, setShareBackPending] = useState(false);
   const [shareBackError, setShareBackError] = useState<string | null>(null);
@@ -268,6 +277,18 @@ function OnboardingInner() {
   const [orgName, setOrgName] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // SEG-1a: the optional segmentation step after creation. Organisations only;
+  // personal and edu workspaces never see it.
+  const [segmentOrgId, setSegmentOrgId] = useState<string | null>(null);
+  const [segmentProfileId, setSegmentProfileId] = useState<string | null>(null);
+  const [segIndustry, setSegIndustry] = useState("");
+  const [segSizeBand, setSegSizeBand] = useState("");
+  const [segPending, setSegPending] = useState(false);
+
+  /** Where the flow goes once a workspace exists: organisations get the optional segment step first. */
+  function afterCreation(): "segment" | "tools" {
+    return orgType === "company" || orgType === "partner" ? "segment" : "tools";
+  }
 
   // KX1: name who the key belongs to without redeeming it. Never blocks.
   useEffect(() => {
@@ -434,7 +455,9 @@ function OnboardingInner() {
       setStage("share_back");
       return;
     }
-    setStage("tools");
+    setSegmentOrgId(createdOrgId);
+    setSegmentProfileId(profile?.id ?? null);
+    setStage(afterCreation());
   }
 
   async function answerShareBack(yes: boolean) {
@@ -452,6 +475,32 @@ function OnboardingInner() {
     if (shareBack.orgId) {
       if (yes) logEvent("share_back.offered", shareBack.orgId, {});
       else logEvent("share_back.declined", shareBack.orgId, {});
+    }
+    setSegmentOrgId(shareBack.orgId);
+    setStage(afterCreation());
+  }
+
+  // SEG-1a: optional, skippable, and only ever writes the two fields it asked
+  // about. A failed save is silent; this step never blocks the way in.
+  async function saveSegment() {
+    if (!segmentOrgId) {
+      setStage("tools");
+      return;
+    }
+    setSegPending(true);
+    const industry = segIndustry || null;
+    const sizeBand = segSizeBand || null;
+    const { error: saveError } = await supabase
+      .from("orgs")
+      .update({ industry, size_band: sizeBand })
+      .eq("id", segmentOrgId);
+    setSegPending(false);
+    if (!saveError) {
+      logV2(
+        "organization.segment_updated",
+        { fields_set: [industry, sizeBand].filter((v) => Boolean(v)).length },
+        { profileId: segmentProfileId ?? undefined },
+      );
     }
     setStage("tools");
   }
@@ -526,6 +575,72 @@ function OnboardingInner() {
                 No thanks
               </Button>
               <p className="text-xs text-muted-foreground">We will not ask again.</p>
+            </div>
+          </div>
+        </main>
+      </>
+    );
+  }
+
+  if (stage === "segment") {
+    return (
+      <>
+        <SessionHeader />
+        <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background px-4 py-16">
+          <div className="w-full max-w-md">
+            <h1 className="page-title">One thing before you start.</h1>
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              It helps us compare like with like, never you with anyone.
+            </p>
+
+            <div className="mt-6 space-y-5">
+              <div className="space-y-1.5">
+                <Label htmlFor="seg-industry" className="micro-label">
+                  Industry
+                </Label>
+                <Select value={segIndustry} onValueChange={setSegIndustry}>
+                  <SelectTrigger id="seg-industry">
+                    <SelectValue placeholder="Not set" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {INDUSTRIES.map((value) => (
+                      <SelectItem key={value} value={value}>
+                        {value}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="seg-people" className="micro-label">
+                  People
+                </Label>
+                <Select value={segSizeBand} onValueChange={setSegSizeBand}>
+                  <SelectTrigger id="seg-people">
+                    <SelectValue placeholder="Not set" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SIZE_BANDS.map((value) => (
+                      <SelectItem key={value} value={value}>
+                        {value}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="mt-8 flex items-center gap-6">
+              <Button type="button" disabled={segPending} onClick={() => void saveSegment()}>
+                Continue
+              </Button>
+              <button
+                type="button"
+                onClick={() => setStage("tools")}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                Skip
+              </button>
             </div>
           </div>
         </main>
