@@ -477,25 +477,32 @@ function OnboardingInner() {
     setStage(afterCreation());
   }
 
-  // SEG-1a: optional, skippable, and only ever writes the two fields it asked
-  // about. A failed save is silent; this step never blocks the way in.
+  // SEG-1a/1b: optional, skippable, and only ever writes the fields the shape
+  // it showed actually asked about. A failed save is silent; this step never
+  // blocks the way in.
   async function saveSegment() {
     if (!segmentOrgId) {
       setStage("tools");
       return;
     }
     setSegPending(true);
+    const isPersonal = orgType === "personal";
     const industry = segIndustry || null;
     const sizeBand = segSizeBand || null;
+    const useFor = segUseFor || null;
+    const payload = isPersonal
+      ? { use_for: useFor }
+      : { industry, size_band: sizeBand };
     const { error: saveError } = await supabase
       .from("orgs")
-      .update({ industry, size_band: sizeBand })
+      .update(payload)
       .eq("id", segmentOrgId);
     setSegPending(false);
     if (!saveError) {
+      const asked = isPersonal ? [useFor] : [industry, sizeBand];
       logV2(
         "organization.segment_updated",
-        { fields_set: [industry, sizeBand].filter((v) => Boolean(v)).length },
+        { fields_set: asked.filter((v) => Boolean(v)).length },
         { profileId: segmentProfileId ?? undefined },
       );
     }
