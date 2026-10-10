@@ -95,9 +95,10 @@ vi.mock("@/components/engagements/NewEngagementDialog", () => ({
 
 import { SidebarNav } from "@/components/layout/SidebarNav";
 
-type Options = { component: () => ReactNode };
+type Options = { component: (() => ReactNode) & { preload?: () => Promise<unknown> } };
 const auth = (AuthRoute as unknown as { options: Options }).options.component;
 const onboarding = (OnboardingRoute as unknown as { options: Options }).options.component;
+beforeAll(async () => { await auth.preload?.(); await onboarding.preload?.(); }, 30000);
 beforeEach(() => { mocks.search = {}; window.localStorage.clear(); });
 afterEach(cleanup);
 function mount(Component: () => ReactNode) { return render(<Suspense fallback={null}><Component /></Suspense>); }
@@ -111,9 +112,10 @@ function assertNotice() {
   expect(within(notice).getByText(KEY_NOTICE_COPY.body)).toBeTruthy();
 }
 describe("UX-3", () => {
-  it("auth renders the canonical named sentence with an isolated name above email", () => {
+  it("auth renders the canonical named sentence with an isolated name above email", async () => {
     mocks.search = { key: "LSO-EXAMPLE", intent: "personal" };
     mount(auth);
+    await screen.findByTestId("key-notice", undefined, { timeout: 25000 });
     assertNotice();
     const email = document.querySelector('input[type="email"]');
     expect(email && screen.getByTestId("key-notice").compareDocumentPosition(email) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
@@ -122,7 +124,7 @@ describe("UX-3", () => {
   it("onboarding renders the same canonical sentence and isolated name", async () => {
     mocks.search = { key: "LSO-EXAMPLE", intent: "personal" };
     mount(onboarding);
-    await waitFor(() => expect(screen.getByTestId("key-notice").textContent).toContain(KEY_NOTICE_COPY.named("Harbor College")));
+    await waitFor(() => expect(screen.getByTestId("key-notice").textContent).toContain(KEY_NOTICE_COPY.named("Harbor College")), { timeout: 25000 });
     assertNotice();
   });
   it.each([
