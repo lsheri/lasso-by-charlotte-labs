@@ -98,6 +98,9 @@ async function applyOrgType(profileId: string, type: OrgType): Promise<string | 
 
 /** KX1: the carried-key notice on the name screen. Canonical copy lives in @/lib/key-notice. */
 import { KEY_NOTICE_COPY, KeyNoticeSentence } from "@/lib/key-notice";
+import { Switch } from "@/components/ui/switch";
+import { CONTENT_SWITCH_LINE, TIER_COPY, type DataTier } from "@/lib/data-consent-shared";
+import { setDataConsent } from "@/lib/data-consent.functions";
 export { KEY_NOTICE_COPY, KeyNoticeSentence };
 
 const REDEEM_FAILED_REASONS = [
@@ -263,9 +266,15 @@ function OnboardingInner() {
           ? "invite"
           : "chooser",
   );
-  const [stage, setStage] = useState<"setup" | "share_back" | "segment" | "tools" | "capture" | "tour">(setup ? "tools" : "setup");
+  const [stage, setStage] = useState<"setup" | "share_back" | "data_use" | "segment" | "tools" | "capture" | "tour">(setup ? "tools" : "setup");
   const [shareBack, setShareBack] = useState<{ id: string; name: string; orgId: string | null } | null>(null);
   const [shareBackPending, setShareBackPending] = useState(false);
+  // DU-1: sponsored workspaces are asked once; tier d with the content switch on is pre-chosen.
+  const saveDataConsent = useServerFn(setDataConsent);
+  const [duTier, setDuTier] = useState<DataTier>("d");
+  const [duSwitch, setDuSwitch] = useState(true);
+  const [duPending, setDuPending] = useState(false);
+  const [duProfileId, setDuProfileId] = useState<string | null>(null);
   const [shareBackError, setShareBackError] = useState<string | null>(null);
   const [tools, setTools] = useState<Set<ToolId>>(new Set());
   const [orgType] = useState<OrgType>(orgTypeForChoice(derived));
@@ -450,6 +459,7 @@ function OnboardingInner() {
     }
     if (prompt?.ask && prompt.institution_id && prompt.institution_name) {
       setShareBack({ id: prompt.institution_id, name: prompt.institution_name, orgId: createdOrgId });
+      setDuProfileId(profile?.id ?? null);
       setStage("share_back");
       return;
     }
@@ -475,6 +485,27 @@ function OnboardingInner() {
       else logEvent("share_back.declined", shareBack.orgId, {});
     }
     setSegmentOrgId(shareBack.orgId);
+    setStage("data_use");
+  }
+
+  // DU-1: Continue records the person's own choice; Not now writes nothing.
+  // A failed save is silent and never blocks the way in.
+  async function continueDataUse() {
+    setDuPending(true);
+    try {
+      await saveDataConsent({
+        data: {
+          scope: "org",
+          tier: duTier,
+          tier_d_switch: duTier === "d" ? duSwitch : false,
+          surface: "onboarding_sponsored",
+          profile_id: duProfileId ?? undefined,
+        },
+      });
+    } catch {
+      /* never blocks onboarding */
+    }
+    setDuPending(false);
     setStage(afterCreation());
   }
 
@@ -581,6 +612,75 @@ function OnboardingInner() {
                 No thanks
               </Button>
               <p className="text-xs text-muted-foreground">We will not ask again.</p>
+            </div>
+          </div>
+        </main>
+      </>
+    );
+  }
+
+  if (stage === "data_use") {
+    return (
+      <>
+        <SessionHeader />
+        <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background px-4 py-16">
+          <div className="w-full max-w-md" data-testid="onboarding-data-use">
+            <h1 className="page-title">What leaves this workspace</h1>
+            <p className="mt-3 text-sm text-muted-foreground">You can change this at any time in Settings.</p>
+            <div className="mt-4 space-y-2">
+              {TIER_COPY.map((copy) => {
+                const selected = duTier === copy.tier;
+                return (
+                  <label
+                    key={copy.tier}
+                    className={`flex cursor-pointer items-start gap-3 rounded-[var(--radius)] border px-4 py-3 ${
+                      selected ? "border-foreground bg-secondary" : "border-border bg-card"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="onboarding-data-level"
+                      className="mt-1"
+                      checked={selected}
+                      onChange={() => {
+                        setDuTier(copy.tier);
+                        if (copy.tier !== "d") setDuSwitch(false);
+                      }}
+                    />
+                    <span className="min-w-0">
+                      <span className="block text-sm font-medium text-foreground">{copy.label}</span>
+                      <span className="mt-1 block text-sm text-muted-foreground">{copy.description}</span>
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+            {duTier === "d" ? (
+              <div className="mt-3 flex items-start justify-between gap-4 rounded-[var(--radius)] border border-border bg-card px-4 py-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-foreground">Include shared work content</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{CONTENT_SWITCH_LINE}</p>
+                </div>
+                <Switch
+                  checked={duSwitch}
+                  disabled={duPending}
+                  aria-label="Include shared work content"
+                  onCheckedChange={setDuSwitch}
+                />
+              </div>
+            ) : null}
+            <div className="mt-6 flex flex-col items-start gap-3">
+              <Button type="button" disabled={duPending} onClick={() => void continueDataUse()}>
+                Continue
+              </Button>
+              <button
+                type="button"
+                className="text-sm text-muted-foreground underline-offset-4 hover:underline"
+                disabled={duPending}
+                onClick={() => setStage(afterCreation())}
+              >
+                Not now
+              </button>
             </div>
           </div>
         </main>
