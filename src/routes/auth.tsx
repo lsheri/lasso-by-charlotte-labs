@@ -28,7 +28,7 @@ import { fetchProfile } from "@/hooks/use-profile";
 import { lookupActivationKeyFn, redeemActivationKeyFn } from "@/lib/activation-keys.functions";
 import { logEvent } from "@/lib/telemetry";
 import { consentTarget } from "@/lib/consent-return";
-import { KEY_NOTICE_COPY, KeyNoticeSentence } from "@/routes/onboarding";
+import { KEY_NOTICE_COPY, KeyNoticeSentence } from "@/lib/key-notice";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
