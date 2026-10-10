@@ -101,7 +101,7 @@ function SponsorSection({
   return (
     <section className="flex flex-col gap-3">
       <p className="font-mono text-[9px] uppercase tracking-[0.08em] text-foreground">
-        YOUR SPONSOR
+        Your sponsor
       </p>
 
       <ul className="space-y-2">
@@ -133,6 +133,7 @@ function SponsorRow({
 }) {
   const queryClient = useQueryClient();
   const key = ["partner-share-engagements", share.linkId] as const;
+  const [problem, setProblem] = useState<string | null>(null);
 
   const shared = useQuery({
     queryKey: key,
@@ -148,8 +149,12 @@ function SponsorRow({
       on
         ? unshareEngagement(share.linkId, engagementId)
         : shareEngagement(share.linkId, engagementId),
+    onMutate: () => setProblem(null),
+    onError: () => setProblem("That did not change. Try again."),
     onSuccess: async () => {
+      setProblem(null);
       await queryClient.invalidateQueries({ queryKey: key });
+      await queryClient.invalidateQueries({ queryKey: ["affiliation-shared-boards"] });
     },
   });
 
@@ -167,6 +172,7 @@ function SponsorRow({
           {on ? "Shared" : "Share"}
         </Button>
       </div>
+      {problem ? <p className="nb-type-small text-foreground" role="alert">{problem}</p> : null}
       {share.bound ? null : (
         <p className="nb-type-small text-muted-foreground">Nobody there has opened this yet.</p>
       )}
