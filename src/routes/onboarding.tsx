@@ -582,6 +582,72 @@ function OnboardingInner() {
     );
   }
 
+  if (stage === "segment") {
+    return (
+      <>
+        <SessionHeader />
+        <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background px-4 py-16">
+          <div className="w-full max-w-md">
+            <h1 className="page-title">One thing before you start.</h1>
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              It helps us compare like with like, never you with anyone.
+            </p>
+
+            <div className="mt-6 space-y-5">
+              <div className="space-y-1.5">
+                <Label htmlFor="seg-industry" className="micro-label">
+                  Industry
+                </Label>
+                <Select value={segIndustry} onValueChange={setSegIndustry}>
+                  <SelectTrigger id="seg-industry">
+                    <SelectValue placeholder="Not set" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {INDUSTRIES.map((value) => (
+                      <SelectItem key={value} value={value}>
+                        {value}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="seg-people" className="micro-label">
+                  People
+                </Label>
+                <Select value={segSizeBand} onValueChange={setSegSizeBand}>
+                  <SelectTrigger id="seg-people">
+                    <SelectValue placeholder="Not set" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SIZE_BANDS.map((value) => (
+                      <SelectItem key={value} value={value}>
+                        {value}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="mt-8 flex items-center gap-6">
+              <Button type="button" disabled={segPending} onClick={() => void saveSegment()}>
+                Continue
+              </Button>
+              <button
+                type="button"
+                onClick={() => setStage("tools")}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                Skip
+              </button>
+            </div>
+          </div>
+        </main>
+      </>
+    );
+  }
+
   if (stage === "tools") {
     return (
       <>
