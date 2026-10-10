@@ -11,6 +11,13 @@ import { SessionHeader } from "@/components/layout/SessionHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { AUTH_USER_KEY, fetchProfile, type Profile } from "@/hooks/use-profile";
 import {
@@ -24,6 +31,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { lookupActivationKeyFn, redeemActivationKeyFn } from "@/lib/activation-keys.functions";
 import { cleanActivationKey, clearActivationKey, readActivationKey } from "@/lib/key-entry";
 import { logEvent } from "@/lib/telemetry";
+import { logV2 } from "@/lib/telemetry-v2";
+import { INDUSTRIES, SIZE_BANDS } from "@/lib/org-segments";
 import { emitClientEvent } from "@/lib/client-telemetry";
 import {
   loadToolsUsed,
@@ -258,7 +267,7 @@ function OnboardingInner() {
           ? "invite"
           : "chooser",
   );
-  const [stage, setStage] = useState<"setup" | "share_back" | "tools" | "capture" | "tour">(setup ? "tools" : "setup");
+  const [stage, setStage] = useState<"setup" | "share_back" | "segment" | "tools" | "capture" | "tour">(setup ? "tools" : "setup");
   const [shareBack, setShareBack] = useState<{ id: string; name: string; orgId: string | null } | null>(null);
   const [shareBackPending, setShareBackPending] = useState(false);
   const [shareBackError, setShareBackError] = useState<string | null>(null);
@@ -268,6 +277,18 @@ function OnboardingInner() {
   const [orgName, setOrgName] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // SEG-1a: the optional segmentation step after creation. Organisations only;
+  // personal and edu workspaces never see it.
+  const [segmentOrgId, setSegmentOrgId] = useState<string | null>(null);
+  const [segmentProfileId, setSegmentProfileId] = useState<string | null>(null);
+  const [segIndustry, setSegIndustry] = useState("");
+  const [segSizeBand, setSegSizeBand] = useState("");
+  const [segPending, setSegPending] = useState(false);
+
+  /** Where the flow goes once a workspace exists: organisations get the optional segment step first. */
+  function afterCreation(): "segment" | "tools" {
+    return orgType === "company" || orgType === "partner" ? "segment" : "tools";
+  }
 
   // KX1: name who the key belongs to without redeeming it. Never blocks.
   useEffect(() => {
