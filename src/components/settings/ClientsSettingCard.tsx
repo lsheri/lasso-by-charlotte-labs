@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { logEvent } from "@/lib/telemetry";
-import { useProfile } from "@/hooks/use-profile";
+import { isBusinessOrg, useProfile } from "@/hooks/use-profile";
 import { canSetWorkspaceShape } from "@/lib/role-access";
 import { rpcOutcome } from "@/lib/save-guard";
 import { clientsEnabled } from "@/lib/workspace-settings";
@@ -25,7 +25,7 @@ export function ClientsSettingCard() {
   const { data: profile } = useProfile();
   const queryClient = useQueryClient();
   const [busy, setBusy] = useState(false);
-  if (!profile || !canSetWorkspaceShape(profile)) return null;
+  if (!profile || !canSetWorkspaceShape(profile) || !isBusinessOrg(profile)) return null;
   const on = clientsEnabled(profile);
 
   async function change(next: boolean) {
