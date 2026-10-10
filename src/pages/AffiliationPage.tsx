@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
@@ -7,7 +8,7 @@ import { SectionHeader } from "@/components/notebook/SectionHeader";
 import { Button } from "@/components/ui/button";
 import { useAffiliation } from "@/hooks/use-affiliation";
 import { useEngagements } from "@/hooks/use-engagements";
-import { useProfile } from "@/hooks/use-profile";
+import { isBusinessOrg, useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
 import { noteDisclosureReadFn } from "@/lib/affiliation.functions";
 import { listMyPartnerShares, listSharedEngagements, unshareEngagement } from "@/lib/partner-share";
@@ -90,18 +91,8 @@ function SharedBoardRow({ board }: { board: { linkId: string; engagementId: stri
   );
 }
 
-export function AffiliationContent({
-  institutionName,
-  projectCount,
-  toolCount,
-  keptCount,
-  sharedCount,
-  sharedBoards = [],
-  sharingPending = false,
-  sharingFailed = false,
-}: AffiliationContentProps) {
-  const nothingShared = sharedCount === 0;
-  const counts = (
+export function WhatGoesUpSection({ projectCount, toolCount, keptCount }: Pick<AffiliationContentProps, "projectCount" | "toolCount" | "keptCount">) {
+  return (
     <section className="mb-10" data-testid="affiliation-counts">
       <SectionHeader title="What goes up" />
       <p className="mb-5 text-sm text-muted-foreground">Counts, never content.</p>
@@ -112,8 +103,11 @@ export function AffiliationContent({
       </div>
     </section>
   );
+}
 
-  const sharing = (
+export function SharedWithSection({ institutionName, sharedCount, sharedBoards = [], sharingPending = false, sharingFailed = false }: Pick<AffiliationContentProps, "institutionName" | "sharedCount" | "sharedBoards" | "sharingPending" | "sharingFailed">) {
+  const nothingShared = sharedCount === 0;
+  return (
     <section className="mb-10" data-testid="affiliation-sharing">
       {sharingPending ? (
         <p className="text-sm text-muted-foreground">Reading shared boards.</p>
@@ -141,18 +135,11 @@ export function AffiliationContent({
       )}
     </section>
   );
+}
 
+export function WhatStaysPutSection({ sharedCount, sharingPending = false, sharingFailed = false }: Pick<AffiliationContentProps, "sharedCount" | "sharingPending" | "sharingFailed">) {
+  const nothingShared = sharedCount === 0;
   return (
-    <>
-      <PageHeader
-        title="What"
-        italicWord={institutionName}
-        subtitle="Read this any time. It is the whole list."
-      />
-
-      {nothingShared ? sharing : null}
-      {counts}
-
       <section className="mb-10">
         <SectionHeader title="What stays put" />
         <p className="mb-4 text-sm text-muted-foreground">
@@ -166,6 +153,25 @@ export function AffiliationContent({
           <li>Anything you wrote in a brief</li>
         </ul>
       </section>
+  );
+}
+
+export function AffiliationContent(props: AffiliationContentProps) {
+  const { institutionName, sharedCount } = props;
+  const nothingShared = sharedCount === 0;
+  const sharing = <SharedWithSection {...props} />;
+  return (
+    <>
+      <PageHeader
+        title="What"
+        italicWord={institutionName}
+        subtitle="Read this any time. It is the whole list."
+      />
+
+      {nothingShared ? sharing : null}
+      <WhatGoesUpSection {...props} />
+
+      <WhatStaysPutSection {...props} />
 
       {nothingShared ? null : sharing}
 
@@ -176,15 +182,15 @@ export function AffiliationContent({
   );
 }
 
-export function AffiliationPage() {
+export function useSharedBoards(enabled = true) {
   const { data: affiliation } = useAffiliation();
   const institution = affiliation?.institution ?? null;
   const { data: profile } = useProfile();
-  const { data: engagements } = useEngagements(profile?.id);
-  const { data: shape } = useOwnWorkShape(institution ? profile?.id : undefined);
+  const { data: engagements } = useEngagements(enabled ? profile?.id : undefined);
+  const { data: shape } = useOwnWorkShape(enabled && institution ? profile?.id : undefined);
   const shared = useQuery({
     queryKey: ["affiliation-shared-boards", profile?.id, institution?.id],
-    enabled: Boolean(profile?.id && institution),
+    enabled: Boolean(enabled && profile?.id && institution),
     staleTime: 5_000,
     queryFn: async () => {
       if (!profile?.id || !institution) return [];
@@ -204,10 +210,38 @@ export function AffiliationPage() {
   const noteRead = useServerFn(noteDisclosureReadFn);
   const noted = useRef(false);
   useEffect(() => {
-    if (!institution || noted.current) return;
+    if (!enabled || !institution || noted.current) return;
     noted.current = true;
     void noteRead({ data: { institution: institution.slug, profile_id: profile?.id } }).catch(() => {});
-  }, [institution, noteRead]);
+  }, [enabled, institution, noteRead]);
+
+  return {
+    institution,
+    projectCount: (engagements ?? []).length,
+    toolCount: shape?.tools ?? 0,
+    keptCount: shape?.kept ?? 0,
+    sharedBoards,
+    sharedCount: sharedBoards.length,
+    sharingPending: shared.isPending,
+    sharingFailed: shared.isError,
+  };
+}
+
+export function AffiliationPage() {
+  const { data: profile } = useProfile();
+  const business = isBusinessOrg(profile);
+  const { institution, sharedBoards, ...sections } = useSharedBoards(business);
+
+  if (!business) {
+    return (
+      <div className="page">
+        <p className="text-sm text-muted-foreground">
+          This has moved. Everything you have shared, and who can see it, is on one page now.
+        </p>
+        <Link to="/members" className="text-sm text-green">Who you share with</Link>
+      </div>
+    );
+  }
 
   if (!institution) {
     return (
@@ -223,13 +257,9 @@ export function AffiliationPage() {
     <div className="page">
       <AffiliationContent
         institutionName={institution.name}
-        projectCount={(engagements ?? []).length}
-        toolCount={shape?.tools ?? 0}
-        keptCount={shape?.kept ?? 0}
+        {...sections}
         sharedCount={sharedBoards.length}
         sharedBoards={sharedBoards}
-        sharingPending={shared.isPending}
-        sharingFailed={shared.isError}
       />
     </div>
   );

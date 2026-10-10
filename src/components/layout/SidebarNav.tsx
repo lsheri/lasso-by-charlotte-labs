@@ -571,7 +571,7 @@ export function SidebarNav({
         const groupLabel = group.id === "firm" && !isBusinessOrg(profile) ? "Who you share with" : group.label;
 
         const itemsForGroup =
-          group.id === "account" && institution
+          group.id === "account" && institution && isBusinessOrg(profile)
             ? [
                 {
                   label: `Your ${institution.name} link`,
