@@ -6,6 +6,16 @@ import {
   loopStamps,
   resolvedFormAt,
   resolvedLinework,
+  scatterAngLerp,
+  scatterGeometry,
+  scatterLerp,
+  scatterLoopPoint,
+  scatterPhase,
+  scatterPieces,
+  scatterSmooth,
+  scatterStroke,
+  SCATTER_ROPE_ANGLE,
+  SCATTER_ROPE_LENGTH,
   type LoopStamp,
 } from "@/lib/lasso-loop";
 
@@ -15,6 +25,8 @@ type LassoThinkingMarkProps = {
   kind: LassoThinkingMarkKind;
   size: number;
   count?: number;
+  /** signature only: lime working state; false is the calm, graphite answered state. */
+  thinking?: boolean;
   className?: string;
 };
 
@@ -68,8 +80,137 @@ function drawResolvedMark(context: CanvasRenderingContext2D, time: number, size:
   context.restore();
 }
 
-export function LassoThinkingMark({ kind, size, count = 0, className }: LassoThinkingMarkProps) {
+/** TM-1 scatter to lasso. One rAF loop, paused drawing off screen, nothing scheduled under reduced motion. */
+function runSignature(
+  canvas: HTMLCanvasElement,
+  context: CanvasRenderingContext2D,
+  size: number,
+  thinkingRef: { current: boolean },
+): () => void {
+  const dpr = Math.min(window.devicePixelRatio || 1, 3);
+  canvas.width = Math.round(size * dpr);
+  canvas.height = Math.round(size * dpr);
+  canvas.style.width = `${size}px`;
+  canvas.style.height = `${size}px`;
+  const styles = window.getComputedStyle(canvas);
+  const acc = styles.getPropertyValue("--nb-lasso-green").trim();
+  const ink = styles.getPropertyValue("--nb-ink").trim();
+  const rest = styles.getPropertyValue("--nb-graphite").trim();
+  const els = scatterPieces(size);
+  const { w, dot: dotSize, unit } = scatterStroke(size);
+  const { cx, cy, R } = scatterGeometry(size);
+
+  function draw(t: number, forceCinch: boolean) {
+    const ph = scatterPhase(t, thinkingRef.current, forceCinch);
+    const { think, k, p, strokeA, q, cinch, partA, omega, wobble } = ph;
+    context.setTransform(dpr, 0, 0, dpr, 0, 0);
+    context.clearRect(0, 0, size, size);
+    const col0 = think ? ink : rest;
+    const hot = think ? acc : rest;
+    context.lineCap = "round";
+    context.lineJoin = "round";
+    for (let i = 0; i < els.length; i += 1) {
+      const e = els[i]!;
+      const swirl = omega * t * e.sp * (1 + 0.7 * (1 - e.r));
+      const th = e.a0 + swirl + wobble * 0.18 * Math.sin(t * 1.3 + e.ph);
+      const rr = e.r + wobble * (0.1 * Math.sin(t * 1.7 + e.ph) + 0.06 * Math.sin(t * 2.9 + 2 * e.ph));
+      const sx = cx + Math.cos(th) * R * rr * 1.08;
+      const sy = cy + Math.sin(th) * R * rr * 1.08;
+      const breath = Math.pow(0.5 + 0.5 * Math.sin(t * 1.25 * e.sp + e.ph * 3), 2);
+      const slen = R * 0.36 * breath;
+      const sdir = th + Math.PI / 2 + 1.1 * Math.sin(t * 0.8 + e.ph) * wobble;
+      const lp = scatterLoopPoint((i + 0.5) / els.length, R, cx, cy, cinch);
+      const llen = ((Math.PI * 2 * R) / els.length) * 0.62;
+      const kk = scatterSmooth(k * 1.25 - (i / els.length) * 0.25);
+      const x = scatterLerp(sx, lp.x, kk);
+      const y = scatterLerp(sy, lp.y, kk);
+      const len = scatterLerp(slen, llen, kk);
+      const dir = scatterAngLerp(sdir, lp.a + Math.PI / 2, kk);
+      const a = partA * (forceCinch ? 0 : scatterLerp(0.55 + 0.45 * (1 - e.r * 0.5), 1, kk));
+      if (a <= 0.01) continue;
+      context.globalAlpha = a;
+      const col = think && (e.lime || kk > 0.92) ? hot : col0;
+      if (len < dotSize * 1.6) {
+        context.fillStyle = col;
+        context.beginPath();
+        context.arc(x, y, dotSize * (1 - 0.3 * breath * (1 - kk)), 0, Math.PI * 2);
+        context.fill();
+      } else {
+        const dx = (Math.cos(dir) * len) / 2;
+        const dy = (Math.sin(dir) * len) / 2;
+        context.strokeStyle = col;
+        context.lineWidth = w;
+        context.beginPath();
+        context.moveTo(x - dx, y - dy);
+        context.lineTo(x + dx, y + dy);
+        context.stroke();
+      }
+    }
+    if (p > 0.001 && strokeA > 0.01) {
+      context.globalAlpha = strokeA;
+      if (ph.glow > 0.02) {
+        context.shadowColor = acc;
+        context.shadowBlur = Math.max(2, 7 * unit) * ph.glow;
+      }
+      context.strokeStyle = hot;
+      context.lineWidth = w * 1.25;
+      context.beginPath();
+      const steps = Math.max(40, Math.round(size * 1.2));
+      for (let j = 0; j <= steps; j += 1) {
+        const pt = scatterLoopPoint((p * j) / steps, R, cx, cy, cinch);
+        if (j === 0) context.moveTo(pt.x, pt.y);
+        else context.lineTo(pt.x, pt.y);
+      }
+      context.stroke();
+      if (q > 0.001) {
+        const ep = scatterLoopPoint(1, R, cx, cy, cinch);
+        const L = R * SCATTER_ROPE_LENGTH * q;
+        context.beginPath();
+        context.moveTo(ep.x, ep.y);
+        context.lineTo(ep.x + Math.cos(SCATTER_ROPE_ANGLE) * L, ep.y + Math.sin(SCATTER_ROPE_ANGLE) * L);
+        context.stroke();
+      }
+      context.shadowBlur = 0;
+    }
+    context.globalAlpha = 1;
+  }
+
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    draw(0, true);
+    return () => {};
+  }
+
+  let visible = true;
+  let observer: IntersectionObserver | null = null;
+  if (typeof IntersectionObserver !== "undefined") {
+    observer = new IntersectionObserver(([entry]) => {
+      visible = entry?.isIntersecting ?? false;
+    });
+    observer.observe(canvas);
+  }
+  let clock = 0;
+  let last = performance.now();
+  let frameId: number | null = null;
+  const frame = (now: number) => {
+    const dt = Math.min(64, now - last);
+    last = now;
+    if (visible) {
+      clock += dt / 1000;
+      draw(clock, false);
+    }
+    frameId = window.requestAnimationFrame(frame);
+  };
+  frameId = window.requestAnimationFrame(frame);
+  return () => {
+    observer?.disconnect();
+    if (frameId !== null) window.cancelAnimationFrame(frameId);
+  };
+}
+
+export function LassoThinkingMark({ kind, size, count = 0, thinking = false, className }: LassoThinkingMarkProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const thinkingRef = useRef(thinking);
+  thinkingRef.current = thinking;
   const arrivalsRef = useRef<GatherArrival[]>([]);
   const clockBaseRef = useRef<number | null>(null);
 
@@ -79,6 +220,7 @@ export function LassoThinkingMark({ kind, size, count = 0, className }: LassoThi
     const foundContext = canvas.getContext("2d");
     if (!foundContext) return;
     const context: CanvasRenderingContext2D = foundContext;
+    if (kind === "signature") return runSignature(canvas, context, size, thinkingRef);
 
     const width = size;
     const height = size;
@@ -171,10 +313,6 @@ export function LassoThinkingMark({ kind, size, count = 0, className }: LassoThi
       }
     }
 
-    function drawSignature(t: number) {
-      drawResolvingLoop(t);
-    }
-
     function draw(timestamp: number) {
       const t = (timestamp - clockBase) / 1000;
       context.clearRect(0, 0, width, height);
@@ -182,8 +320,7 @@ export function LassoThinkingMark({ kind, size, count = 0, className }: LassoThi
       if (kind === "orbit") drawOrbit(t);
       else if (kind === "loop") drawResolvingLoop(t);
       else if (kind === "gather") drawGather(t);
-      else if (kind === "trace") drawTrace(t);
-      else drawSignature(t);
+      else drawTrace(t);
       context.globalAlpha = 1;
     }
 
@@ -236,6 +373,7 @@ export function LassoThinkingMark({ kind, size, count = 0, className }: LassoThi
       height={size}
       aria-hidden="true"
       data-lasso-thinking-mark={kind}
+      data-thinking={kind === "signature" ? (thinking ? "true" : "false") : undefined}
     />
   );
 }

@@ -1,13 +1,13 @@
 import type { CSSProperties } from "react";
 
-import { resolvedLinework } from "@/lib/lasso-loop";
+import { LassoThinkingMark } from "@/components/reflect/LassoThinkingMark";
 
 export const ASK_THINKING_COPY = {
   reading: "Reading your work",
   read: (n: number) => `Read ${n} ${n === 1 ? "piece" : "pieces"} of work`,
 } as const;
 
-const GLYPH_SIZE = 46;
+const GLYPH_SIZE = 16;
 
 /** A1 keyframes live with the component, never in the global stylesheet. */
 export const ASK_THINKING_STYLES = `
@@ -39,16 +39,12 @@ export function askFlickerStyle(index: number, { answered, reduced }: { answered
   return { "data-a1-flicker": "on", style: { animation: `ask-a1-flicker 2600ms ease-in-out ${-870 * (index % 3)}ms infinite` } };
 }
 
-/** The same artwork the loop mark resolves to, as inline SVG so it can be drawn. */
+/** The TM-1 scatter-to-lasso engine at glyph size; lime only while thinking. */
 function AskGlyph({ state }: { state: "thinking" | "settled" }) {
-  const paths = resolvedLinework(GLYPH_SIZE, 0);
   return (
-    <svg data-testid="ask-thinking-glyph" data-state={state} className="ask-a1-glyph shrink-0" width={GLYPH_SIZE} height={GLYPH_SIZE} viewBox={`0 0 ${GLYPH_SIZE} ${GLYPH_SIZE}`} aria-hidden>
-      {paths.map((path, index) => {
-        const d = path.points.map((point, i) => `${i === 0 ? "M" : "L"}${point.x.toFixed(2)} ${point.y.toFixed(2)}`).join(" ") + (path.closed ? " Z" : "");
-        return <path key={index} d={d} pathLength={1} fill="none" stroke="currentColor" strokeWidth={Math.max(1.35, GLYPH_SIZE * 0.034)} strokeLinejoin="round" strokeLinecap="round" />;
-      })}
-    </svg>
+    <span data-testid="ask-thinking-glyph" data-state={state} className="ask-a1-glyph inline-flex shrink-0" aria-hidden>
+      <LassoThinkingMark kind="signature" size={GLYPH_SIZE} thinking={state === "thinking"} />
+    </span>
   );
 }
 
