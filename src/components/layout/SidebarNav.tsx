@@ -42,7 +42,7 @@ import {
   type NavEngagement,
 } from "@/lib/nav-groups";
 
-import { navFor } from "./nav-config";
+import { navFor, type NavItemId } from "./nav-config";
 import { useNavCtx } from "./use-nav-ctx";
 import { engagementDisplayTitle } from "@/lib/clients";
 import {
@@ -310,9 +310,11 @@ function SharedWithMeGroup({
 export function SidebarNav({
   onNavigate,
   onOpenSettings,
+  surface = "sidebar",
 }: {
   onNavigate?: (() => void) | undefined;
   onOpenSettings?: (() => void) | undefined;
+  surface?: "sidebar" | "drawer";
 }) {
   // useAffiliation remains the source of the institution, through useNavCtx.
   const { ctx: navCtx, profile, profiles, institution, vocab, guestNav, labels } = useNavCtx();
@@ -322,7 +324,11 @@ export function SidebarNav({
   // call needs nothing, so counting it would ask for attention that is not due.
   const decisionCount = (decisions ?? []).filter((row) => row.status === "draft").length;
   const isPartnerOrg = profile?.org_type === "partner";
-  const navGroupsForPerson = navFor(navCtx, labels);
+  const navGroupsForPerson = navFor(navCtx, labels).filter((group) => group.placement !== "workspace_menu");
+  const openNavItem = (item: NavItemId) => {
+    if (profile?.org_id) logEvent("nav.opened", profile.org_id, { item, surface });
+    onNavigate?.();
+  };
   const coachingGroups = navGroupsForPerson.filter((group) => group.id === "coaching");
   // The guest shell's own short list, below its coaching group.
   const coachNavGroups = navGroupsForPerson.filter((group) => group.id !== "coaching");
@@ -514,7 +520,7 @@ export function SidebarNav({
             {/* In a partner workspace Shared with me is the primary surface,
                 so it renders above the coaching group rather than after it. */}
             {isPartnerOrg && group.id === "coaching" ? shared : null}
-            <div>
+            <div data-nav-placement={group.placement}>
               <div className="nb-group-header px-2">{group.label}</div>
               <div className="mt-2 flex flex-col gap-0.5">
                 {group.items.map((item) =>
@@ -524,7 +530,7 @@ export function SidebarNav({
                       type="button"
                       onClick={() => {
                         onOpenSettings?.();
-                        onNavigate?.();
+                        openNavItem(item.id);
                       }}
                       className={`${linkClass} w-full text-left`}
                     >
@@ -535,7 +541,7 @@ export function SidebarNav({
                     <Link
                       key={item.id}
                       to={item.to as string}
-                      onClick={onNavigate}
+                      onClick={() => openNavItem(item.id)}
                       className={linkClass}
                       activeProps={activeProps}
                     >
@@ -593,7 +599,7 @@ export function SidebarNav({
                 type="button"
                 onClick={() => {
                   onOpenSettings?.();
-                  onNavigate?.();
+                  openNavItem(item.id);
                 }}
                 className={`${linkClass} w-full text-left`}
               >
@@ -605,7 +611,7 @@ export function SidebarNav({
               <CircleMark key={item.to} className="block" label="New note from your coach">
                 <Link
                   to={item.to as string}
-                  onClick={onNavigate}
+                  onClick={() => openNavItem(item.id)}
                   className={linkClass}
                   activeProps={activeProps}
                 >
@@ -619,7 +625,7 @@ export function SidebarNav({
                 to={item.to as string}
                  {...(item.hash ? { hash: item.hash } : {})}
                  {...(item.search ? { search: item.search } : {})}
-                onClick={onNavigate}
+                onClick={() => openNavItem(item.id)}
                 className={`${item.nested ? `${linkClass} nb-nav-item-nested` : linkClass}${archiveItemActive ? " nb-nav-item-active" : ""}`}
                 {...(archiveItem ? {} : { activeProps })}
               >
@@ -647,7 +653,7 @@ export function SidebarNav({
 
         return (
           <Fragment key={group.label}>
-          <div className={isEngagementGroup ? "flex shrink-0 flex-col" : "shrink-0"}>
+          <div data-nav-placement={group.placement} className={isEngagementGroup ? "flex shrink-0 flex-col" : "shrink-0"}>
             {isEngagementGroup && everyCollapsibleId.length > 0 ? (
               <div className="flex items-center justify-between gap-2 px-2">
                 <div className="nb-group-header">{groupLabel}</div>

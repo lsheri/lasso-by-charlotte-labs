@@ -1,5 +1,6 @@
 import { useQuery, type QueryClient } from "@tanstack/react-query";
 import { useEffect, useSyncExternalStore } from "react";
+import { useRouter } from "@tanstack/react-router";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -295,6 +296,8 @@ function useReconcileActiveProfile(
   rowUpdatedAt: number,
   rowFetching: boolean,
 ): void {
+  let router: ReturnType<typeof useRouter> | undefined;
+  try { router = useRouter({ warn: false }); } catch { router = undefined; }
   useEffect(() => {
     if (!rowProfile || rowProfile.id === localId) return;
     // MN-1b: a row read before the local value last changed (or still in
@@ -316,13 +319,16 @@ function useReconcileActiveProfile(
     lastReconciled = key;
     writeStored(rowProfile.id);
     void sharedQueryClient?.invalidateQueries();
+    if (router?.state?.location.pathname.startsWith("/engagements/")) {
+      void router.navigate({ to: "/home", replace: true });
+    }
     // Loaded on demand so this hook never pulls the server-function graph
     // into every module that reads the profile.
     const orgId = rowProfile.org_id;
     void import("@/lib/telemetry")
       .then(({ logEvent }) => logEvent("profile.active_reconciled", orgId, { source: "row_differs" }))
       .catch(() => {});
-  }, [rowProfile, localId, rowUpdatedAt, rowFetching]);
+  }, [rowProfile, localId, rowUpdatedAt, rowFetching, router]);
 }
 
 /** Existence check used by route gates, true when the user has any profile. */

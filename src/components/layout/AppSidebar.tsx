@@ -1,13 +1,11 @@
 import { Link } from "@tanstack/react-router";
 
 import type { Profile } from "@/hooks/use-profile";
-import { FeedbackDialog } from "@/components/feedback/FeedbackWidget";
 import { markWalkthroughEntry } from "@/lib/walkthrough-entry";
 
-import { OrgSwitcher } from "./OrgSwitcher";
+import { WorkspaceMenu } from "./WorkspaceMenu";
 import { LassoLoopMark } from "./LassoLoopMark";
 import { SidebarNav } from "./SidebarNav";
-import { UserCard } from "./UserCard";
 
 const footerLink =
   "font-mono text-[9px] uppercase tracking-[0.08em] text-soft transition-colors hover:text-foreground";
@@ -38,15 +36,11 @@ export function AppSidebar({
       </div>
 
       <div className="shrink-0">
-        <UserCard name={userName} role={userRole} onSignOut={onSignOut} />
+        <WorkspaceMenu profiles={profiles} active={activeProfile} name={userName} onOpenSettings={onOpenSettings} onNavigate={onNavigate} />
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
         <SidebarNav onNavigate={onNavigate} onOpenSettings={onOpenSettings} />
-      </div>
-
-      <div className="shrink-0">
-        <OrgSwitcher profiles={profiles} active={activeProfile} />
       </div>
 
       {/* Footer */}
@@ -63,19 +57,7 @@ export function AppSidebar({
           >
             How Lasso works
           </Link>
-          <Link to="/trust" onClick={onNavigate} className={footerLink}>
-            Trust &amp; data
-          </Link>
-          <Link to="/why" onClick={onNavigate} className={footerLink}>
-            Why Lasso
-          </Link>
-          <FeedbackDialog
-            trigger={
-              <button type="button" className={footerLink}>
-                Feedback
-              </button>
-            }
-          />
+
         </div>
       </div>
     </div>

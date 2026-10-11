@@ -21,6 +21,8 @@ export type NavGroup = { id?: string; label: string; items: NavItem[]; emptyStat
  * legacy group exports below are derived from it for existing importers.
  * ------------------------------------------------------------------------ */
 
+export type NavPlacement = "main" | "bottom" | "workspace_menu";
+
 export type NavItemId =
   | "home"
   | "all-work"
@@ -45,7 +47,8 @@ export type NavItemId =
   | "settings"
   | "people-you-coach"
   | "guest-one-on-one"
-  | "guest-settings";
+  | "guest-settings"
+  | "trust" | "why" | "feedback" | "sign-out";
 
 export type NavGroupId =
   | "landed"
@@ -56,7 +59,8 @@ export type NavGroupId =
   | "firm"
   | "account"
   | "coaching"
-  | "guest-account";
+  | "guest-account"
+  | "workspace";
 
 export type NavAction = "openSettings" | "signOut" | "openFeedback";
 
@@ -92,6 +96,7 @@ type Label = string | ((l: NavLabelCtx) => string);
 
 export type NavManifestItem = {
   id: NavItemId;
+  placement: NavPlacement;
   group: NavGroupId;
   label: Label;
   to?: string;
@@ -116,6 +121,7 @@ export type NavManifestGroup = {
   types?: OrgType[];
   /** Guest groups belong to the guest shell; the rest to the worker shell. */
   guest?: boolean;
+  shared?: boolean;
   /** Shown even with no visible items (the engagement shelves). */
   alwaysShow?: boolean;
   show?: (ctx: NavCtx) => boolean;
@@ -163,31 +169,32 @@ export const NAV_GROUPS: NavManifestGroup[] = [
   // Shown only to someone given Review on at least one engagement.
   { id: "coaching", label: "Coaching", show: (ctx) => ctx.canReview },
   { id: "guest-account", label: "Your account", guest: true },
+  { id: "workspace", label: "Workspace", shared: true },
 ];
 
 export const NAV_ITEMS: NavManifestItem[] = [
-  { id: "home", group: "landed", label: "Home", to: "/home", icon: "overview" },
-  { id: "all-work", group: "landed", label: "All work", to: "/work", icon: "work" },
-  { id: "ai-record", group: "landed", label: "All AI Conversations", to: "/ai-record", icon: "ai-record" },
-  { id: "connectors", group: "landed", label: "Where work comes from", to: "/connectors", icon: "connectors" },
+  { id: "home", placement: "main", group: "landed", label: "Home", to: "/home", icon: "overview" },
+  { id: "all-work", placement: "main", group: "landed", label: "All work", to: "/work", icon: "work" },
+  { id: "ai-record", placement: "main", group: "landed", label: "All AI Conversations", to: "/ai-record", icon: "ai-record" },
+  { id: "connectors", placement: "main", group: "landed", label: "Where work comes from", to: "/connectors", icon: "connectors" },
   // A partner's extra rows render after the shelves.
-  { id: "workshop-keys", group: "engagements", label: "Workshop keys", to: "/requests", icon: "members", types: ["partner"] },
-  { id: "adding-people", group: "engagements", label: "Adding people", to: "/adding-people", icon: "members", types: ["partner"] },
+  { id: "workshop-keys", placement: "workspace_menu", group: "engagements", label: "Workshop keys", to: "/requests", icon: "members", types: ["partner"], show: (ctx) => ctx.canManageMembers },
+  { id: "adding-people", placement: "workspace_menu", group: "engagements", label: "Adding people", to: "/adding-people", icon: "members", types: ["partner"], show: (ctx) => ctx.canManageMembers },
   // Past work first, because it is where finished work is found.
-  { id: "past-work", group: "lookback", label: "Past work", to: "/archive", icon: "firm" },
-  { id: "archived", group: "lookback", label: "Archived", to: "/archive", hash: "archived", icon: "history" },
-  { id: "past-ask", group: "lookback", label: "Past Ask Lasso chats", to: "/ai-record", icon: "history", search: { view: "asked" } },
-  { id: "find-it", group: "lookback", label: "Find it", to: "/find-it", icon: "work", disabled: true, disabledReason: "Coming soon" },
-  { id: "decisions", group: "lookback", label: "Decision log", to: "/decisions", icon: "decisions", disabled: true, disabledReason: "Coming soon" },
-  { id: "classes", group: "school", label: () => EDU_VOCAB.classes, to: "/classes", icon: "engagement" },
-  { id: "assignments", group: "school", label: () => EDU_VOCAB.assignments, to: "/assignments", icon: "work" },
-  { id: "projects", group: "school", label: () => EDU_VOCAB.projects, to: "/projects", icon: "overview" },
-  { id: "portfolio", group: "school", label: () => EDU_VOCAB.portfolio, to: "/portfolio", icon: "firm" },
-  { id: "one-on-one", group: "coach", label: "1:1 prep", to: "/one-on-one", icon: "one-on-one" },
-  { id: "coach-notes", group: "coach", label: "Notes from your coach", to: "/coach-notes", icon: "messages" },
-  { id: "firm-view", group: "firm", label: "Firm view", to: "/firm", icon: "firm", show: (ctx) => ctx.canSeeFirmView },
+  { id: "past-work", placement: "main", group: "lookback", label: "Past work", to: "/archive", icon: "firm" },
+  { id: "archived", placement: "main", group: "lookback", label: "Archived", to: "/archive", hash: "archived", icon: "history" },
+  { id: "past-ask", placement: "main", group: "lookback", label: "Past Ask Lasso chats", to: "/ai-record", icon: "history", search: { view: "asked" } },
+  { id: "find-it", placement: "main", group: "lookback", label: "Find it", to: "/find-it", icon: "work", disabled: true, disabledReason: "Coming soon" },
+  { id: "decisions", placement: "main", group: "lookback", label: "Decision log", to: "/decisions", icon: "decisions", disabled: true, disabledReason: "Coming soon" },
+  { id: "classes", placement: "main", group: "school", label: () => EDU_VOCAB.classes, to: "/classes", icon: "engagement" },
+  { id: "assignments", placement: "main", group: "school", label: () => EDU_VOCAB.assignments, to: "/assignments", icon: "work" },
+  { id: "projects", placement: "main", group: "school", label: () => EDU_VOCAB.projects, to: "/projects", icon: "overview" },
+  { id: "portfolio", placement: "main", group: "school", label: () => EDU_VOCAB.portfolio, to: "/portfolio", icon: "firm" },
+  { id: "one-on-one", placement: "main", group: "coach", label: "1:1 prep", to: "/one-on-one", icon: "one-on-one" },
+  { id: "coach-notes", placement: "main", group: "coach", label: "Notes from your coach", to: "/coach-notes", icon: "messages" },
+  { id: "firm-view", placement: "workspace_menu", group: "firm", label: "Firm view", to: "/firm", icon: "firm", show: (ctx) => ctx.canSeeFirmView },
   {
-    id: "members",
+    id: "members", placement: "bottom",
     group: "firm",
     label: (l) => (l.legacy ? "Members" : roles.membersLabel({ role: "", org_type: l.type })),
     to: "/members",
@@ -196,7 +203,7 @@ export const NAV_ITEMS: NavManifestItem[] = [
   },
   {
     // An affiliated business workspace names its institution first.
-    id: "affiliation",
+    id: "affiliation", placement: "main",
     group: "account",
     label: (l) => `Your ${l.institutionName ?? ""} link`,
     to: "/affiliation",
@@ -204,16 +211,20 @@ export const NAV_ITEMS: NavManifestItem[] = [
     runtimeOnly: true,
     show: (ctx) => ctx.affiliated && isBusinessType(ctx.type),
   },
-  { id: "settings", group: "account", label: "Settings", action: "openSettings", icon: "settings" },
-  { id: "people-you-coach", group: "coaching", label: "People you coach", to: "/coaching", icon: "members" },
-  { id: "guest-one-on-one", group: "guest-account", label: "1:1 prep", to: "/one-on-one", icon: "one-on-one" },
-  { id: "guest-settings", group: "guest-account", label: "Settings", action: "openSettings", icon: "settings" },
+  { id: "settings", placement: "workspace_menu", group: "account", label: "Settings", action: "openSettings", icon: "settings" },
+  { id: "people-you-coach", placement: "main", group: "coaching", label: "People you coach", to: "/coaching", icon: "members" },
+  { id: "guest-one-on-one", placement: "main", group: "guest-account", label: "1:1 prep", to: "/one-on-one", icon: "one-on-one" },
+  { id: "guest-settings", placement: "workspace_menu", group: "guest-account", label: "Settings", action: "openSettings", icon: "settings" },
+  { id: "trust", placement: "workspace_menu", group: "workspace", label: "Trust & data", to: "/trust", icon: "settings", runtimeOnly: true },
+  { id: "why", placement: "workspace_menu", group: "workspace", label: "Why Lasso", to: "/why", icon: "overview", runtimeOnly: true },
+  { id: "feedback", placement: "workspace_menu", group: "workspace", label: "Feedback", action: "openFeedback", icon: "messages", runtimeOnly: true },
+  { id: "sign-out", placement: "workspace_menu", group: "workspace", label: "Sign out", action: "signOut", icon: "chevron-right", runtimeOnly: true },
 ];
 
 export type ResolvedNavItem = Omit<NavManifestItem, "label" | "show" | "types" | "runtimeOnly"> & {
   label: string;
 };
-export type ResolvedNavGroup = { id: NavGroupId; label: string; emptyState?: string; items: ResolvedNavItem[] };
+export type ResolvedNavGroup = { placement: NavPlacement; id: NavGroupId; label: string; emptyState?: string; items: ResolvedNavItem[] };
 
 const resolve = (label: Label, l: NavLabelCtx) => (typeof label === "string" ? label : label(l));
 const presentFor = (types: OrgType[] | undefined, type: OrgType) => !types || types.includes(type);
@@ -228,7 +239,7 @@ export function navFor(ctx: NavCtx, l: Omit<NavLabelCtx, "type">): ResolvedNavGr
   const labels: NavLabelCtx = { ...l, type: ctx.type };
   const out: ResolvedNavGroup[] = [];
   for (const group of NAV_GROUPS) {
-    if (Boolean(group.guest) !== guest && group.id !== "coaching") continue;
+    if (!group.shared && Boolean(group.guest) !== guest && group.id !== "coaching") continue;
     if (!presentFor(group.types, ctx.type)) continue;
     if (group.show && !group.show(ctx)) continue;
     const items = NAV_ITEMS.filter(
@@ -236,15 +247,15 @@ export function navFor(ctx: NavCtx, l: Omit<NavLabelCtx, "type">): ResolvedNavGr
         item.group === group.id && presentFor(item.types, ctx.type) && (!item.show || item.show(ctx)),
     ).map(({ label, show: _s, types: _t, runtimeOnly: _r, ...rest }) => ({
       ...rest,
+      placement: rest.id === "members" && isBusinessType(ctx.type) ? "workspace_menu" as const : rest.placement,
       label: resolve(label, labels),
     }));
-    if (!group.alwaysShow && items.length === 0) continue;
-    out.push({
-      id: group.id,
-      label: resolve(group.label, labels),
-      ...(group.emptyState ? { emptyState: group.emptyState } : {}),
-      items,
-    });
+    for (const placement of ["main", "bottom", "workspace_menu"] as const) {
+      const placed = items.filter((item) => item.placement === placement);
+      if (placed.length === 0 && !(group.alwaysShow && placement === "main")) continue;
+      out.push({ id: group.id, placement, label: resolve(group.label, labels),
+        ...(group.emptyState ? { emptyState: group.emptyState } : {}), items: placed });
+    }
   }
   return out;
 }

@@ -467,7 +467,7 @@ export type ProfileActiveReconciledDims = { source: (typeof PROFILE_RECONCILE_SO
 
 /** MN-2b: content-free navigation destinations; portal registration required. */
 export type NavOpenedDims = {
-  item: NavItemId | "workboards" | "more" | "board";
+  item: NavItemId | "workboards" | "more" | "board" | "workspace";
   surface: "tab" | "more" | "workboards_sheet" | "sidebar" | "workspace_menu" | "drawer";
 };
 

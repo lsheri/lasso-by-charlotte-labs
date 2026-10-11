@@ -1,13 +1,18 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 
-import { ROLE_LABELS, setActiveProfileId, type Profile } from "@/hooks/use-profile";
+import { setActiveProfileId, type Profile } from "@/hooks/use-profile";
 import { logEvent } from "@/lib/telemetry";
 
-function roleLabel(profile: Profile | null): string {
-  if (!profile) return "Signed in";
-  return ROLE_LABELS[profile.role] ?? profile.role;
+export function workspaceTypeLabel(profile: Profile | null): string {
+  if (!profile) return "INDIVIDUAL";
+  const type = { company: "FIRM", partner: "PARTNER", personal: "INDIVIDUAL", edu: "SCHOOL" }[profile.org_type];
+  return profile.org_type === "company" || profile.org_type === "partner"
+    ? `${type} · ${profile.role === "admin" ? "ADMIN" : profile.role === "lead" ? "LEAD" : "MEMBER"}` : type;
 }
 
 /**
@@ -27,48 +32,43 @@ function useOptionalRouter(): { navigate: (opts: { to: "/home"; replace: boolean
  * Not an organisation picker: it says which hat you are wearing. The role
  * leads, the workspace sits underneath it. Hidden for a single profile.
  */
-export function OrgSwitcher({ profiles, active }: { profiles: Profile[]; active: Profile | null }) {
+export function OrgSwitcher({ profiles, active, children, header, onOpen }: { profiles: Profile[]; active: Profile | null; children?: ReactNode; header?: ReactNode; onOpen?: () => void }) {
   const queryClient = useQueryClient();
   const router = useOptionalRouter();
   const [open, setOpen] = useState(false);
-  if (profiles.length < 2) return null;
 
   return (
-    <div className="relative">
-      <button
+    <DropdownMenu open={open} onOpenChange={(value) => { setOpen(value); if (value) onOpen?.(); }}>
+      <DropdownMenuTrigger asChild><Button variant="ghost"
         type="button"
-        aria-label={`Change workspace. Current: ${roleLabel(active)}, ${active?.org_name ?? ""}`}
+        aria-label={`Change workspace. Current: ${active?.org_name ?? "Workspace"}, ${workspaceTypeLabel(active)}`}
         aria-expanded={open}
-        aria-controls="workspace-options"
-        onClick={() => setOpen((value) => !value)}
-        className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-[var(--radius-md)] border border-[var(--nb-pencil)] px-3 py-2 text-left transition-colors hover:bg-accent-soft"
+        onPointerDown={(event) => event.preventDefault()}
+        onClick={() => { if (!open) onOpen?.(); setOpen((value) => !value); }}
+        className="grid h-auto w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-[var(--radius-md)] border border-[var(--nb-pencil)] px-3 py-2 text-left transition-colors hover:bg-accent-soft"
       >
         <span className="min-w-0">
-          <span className="block truncate text-sm font-medium text-foreground">{roleLabel(active)}</span>
-          <span className="block truncate font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-            {active?.org_name ?? ""}
+          <span className="block truncate text-sm font-medium text-foreground">{active?.org_name ?? "Workspace"}</span>
+          <span className="block truncate font-mono text-[12px] uppercase tracking-[0.08em] text-muted-foreground">
+            {workspaceTypeLabel(active)}
           </span>
         </span>
-        <span className="shrink-0 font-hand text-[16px] text-green" aria-hidden>
-          {open ? "close" : "change"}
-        </span>
-      </button>
+        <ChevronsUpDown className="size-4 shrink-0" aria-hidden />
+      </Button></DropdownMenuTrigger>
 
       {open ? (
-        <div
-          id="workspace-options"
-          className="absolute bottom-[calc(100%+0.5rem)] left-0 z-50 max-h-[min(60vh,440px)] w-full overflow-y-auto rounded-[var(--radius-md)] border border-[var(--nb-pencil)] bg-sidebar p-1 shadow-lg"
-        >
+        <DropdownMenuContent align="start" className="w-[var(--radix-dropdown-menu-trigger-width)] min-w-[240px] bg-sidebar" aria-label="Workspace menu">
+          {header ? <><DropdownMenuLabel>{header}</DropdownMenuLabel><DropdownMenuSeparator /></> : null}
+          {profiles.length > 1 ? <>
           <div className="micro-label px-2 py-1.5">Choose workspace</div>
           <div className="flex flex-col gap-1">
             {profiles.map((profile) => {
               const isActive = profile.id === active?.id;
               return (
-                <button
+                <DropdownMenuItem
                   key={profile.id}
-                  type="button"
                   aria-current={isActive ? "true" : undefined}
-                  onClick={() => {
+                  onSelect={() => {
                     // MN-1: a re-pick is a repair, not a switch. It still
                     // rewrites the row, but records no switch and stays put.
                     if (active && !isActive) {
@@ -94,22 +94,21 @@ export function OrgSwitcher({ profiles, active }: { profiles: Profile[]; active:
                   }}
                   className={
                     isActive
-                      ? "flex w-full flex-col gap-0.5 rounded-[var(--radius-md)] bg-accent-soft px-3 py-2 text-left"
-                      : "flex w-full flex-col gap-0.5 rounded-[var(--radius-md)] px-3 py-2 text-left transition-colors hover:bg-accent-soft"
+                      ? "flex w-full gap-2 rounded-[var(--radius-md)] bg-accent-soft px-3 py-2 text-left"
+                      : "flex w-full gap-2 rounded-[var(--radius-md)] px-3 py-2 text-left transition-colors hover:bg-accent-soft"
                   }
                 >
-                  <span className={isActive ? "truncate text-sm font-medium text-accent-deep" : "truncate text-sm font-medium text-foreground/80"}>
-                    {ROLE_LABELS[profile.role] ?? profile.role}
-                  </span>
-                  <span className="truncate font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-                    {profile.org_name}
-                  </span>
-                </button>
+                  <span className="min-w-0 flex-1"><span className={isActive ? "block truncate text-sm font-medium text-accent-deep" : "block truncate text-sm font-medium text-foreground/80"}>{profile.org_name}</span>
+                  <span className="block truncate font-mono text-[12px] uppercase tracking-[0.08em] text-muted-foreground">{workspaceTypeLabel(profile)}</span></span>
+                  {isActive ? <Check className="size-4 shrink-0" aria-label="Active workspace" /> : null}
+                </DropdownMenuItem>
               );
             })}
           </div>
-        </div>
+          {children ? <DropdownMenuSeparator /> : null}</> : null}
+          {children}
+        </DropdownMenuContent>
       ) : null}
-    </div>
+    </DropdownMenu>
   );
 }
