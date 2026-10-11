@@ -136,7 +136,7 @@ describe("MN-1: the active workspace has one truth", () => {
     const [a, b] = profiles();
     render(createElement(wrapper, null, createElement(OrgSwitcher, { profiles: [a!, b!], active: a! })));
     fireEvent.click(screen.getByRole("button", { name: /change workspace/i }));
-    fireEvent.click(screen.getByText("Northline"));
+    fireEvent.click(screen.getAllByText("Northline").at(-1)!);
     await waitFor(() => expect(db.upserts).toEqual(["a"]));
     expect(logEvent.mock.calls.some((c) => c[0] === "profile.switched")).toBe(false);
     expect(navigate).not.toHaveBeenCalled();

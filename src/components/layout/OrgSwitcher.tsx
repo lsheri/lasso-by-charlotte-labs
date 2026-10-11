@@ -11,13 +11,25 @@ function roleLabel(profile: Profile | null): string {
 }
 
 /**
+ * The switcher also renders outside a router (and under partial router mocks
+ * in tests). Either way it behaves the same on every render, so the hook
+ * order never changes; without a router a switch simply does not navigate.
+ */
+function useOptionalRouter(): { navigate: (opts: { to: "/home"; replace: boolean }) => unknown } | undefined {
+  try {
+    return useRouter({ warn: false }) as unknown as { navigate: (opts: { to: "/home"; replace: boolean }) => unknown } | undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
  * Not an organisation picker: it says which hat you are wearing. The role
  * leads, the workspace sits underneath it. Hidden for a single profile.
  */
 export function OrgSwitcher({ profiles, active }: { profiles: Profile[]; active: Profile | null }) {
   const queryClient = useQueryClient();
-  // Optional: the switcher also renders outside a router in tests.
-  const router = useRouter({ warn: false }) as ReturnType<typeof useRouter> | undefined;
+  const router = useOptionalRouter();
   const [open, setOpen] = useState(false);
   if (profiles.length < 2) return null;
 
