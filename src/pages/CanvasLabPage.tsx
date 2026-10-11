@@ -225,6 +225,11 @@ function ToolbarIcon({ label, children }: { label: string; children: ReactNode }
   return <Tooltip><TooltipTrigger asChild>{children}</TooltipTrigger><TooltipContent>{label}</TooltipContent></Tooltip>;
 }
 
+/** MAP-1: a first mapping on the board records workitem.mapped. */
+function noteBoardFirstMap(orgId: string, item: { type: string; source: string }) {
+  logEvent("workitem.mapped", orgId, { type: item.type, source: item.source, via: "board" });
+}
+
 export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string; entryVia?: string }) {
   const navigate = useNavigate();
   const { data: profile } = useProfile();
@@ -2897,9 +2902,4 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     </div>
     </TooltipProvider>
   );
-}
-
-/** MAP-1: a first mapping on the board records workitem.mapped. */
-function noteBoardFirstMap(orgId: string, item: { type: string; source: string }) {
-  logEvent("workitem.mapped", orgId, { type: item.type, source: item.source, via: "board" });
 }
