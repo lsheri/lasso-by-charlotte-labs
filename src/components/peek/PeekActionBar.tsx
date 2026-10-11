@@ -114,7 +114,7 @@ export function PeekActionBar({
     >
       {canEdit && onMap ? (
         <MapButton onClick={() => onMap(item, group)}>
-          {item.visibility === "mapped" ? "Move to board" : "Map to a workstream"}
+          {item.visibility === "mapped" ? "Move to board" : "Put on a board"}
         </MapButton>
       ) : null}
       {showFactCheck ? (
