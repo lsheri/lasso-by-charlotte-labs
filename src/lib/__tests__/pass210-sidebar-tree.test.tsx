@@ -117,6 +117,8 @@ describe("pass 210 sidebar rendering", () => {
     mocks.profile = { id: "p1", org_id: "o1", org_type: "company", clients_enabled: true, role: "worker" };
     mocks.engagements = mixed;
     render(<SidebarNav />);
+    const expandAll = screen.queryByTestId("nav-collapse-all");
+    if (expandAll?.textContent === "Expand all") fireEvent.click(expandAll);
     expect(screen.getAllByText("Folders")).toHaveLength(1);
     expect(screen.getAllByText("Research")).toHaveLength(1);
   });
@@ -125,6 +127,8 @@ describe("pass 210 sidebar rendering", () => {
     mocks.profile = { id: "p1", org_id: "o1", org_type: "personal", role: "worker" };
     mocks.engagements = mixed;
     render(<SidebarNav />);
+    const expandAll = screen.queryByTestId("nav-collapse-all");
+    if (expandAll?.textContent === "Expand all") fireEvent.click(expandAll);
     expect(screen.queryByText("Folders")).toBeNull();
   });
 
@@ -136,6 +140,8 @@ describe("pass 210 sidebar rendering", () => {
       eng("e3", null),
     ];
     render(<SidebarNav />);
+    const expandAll = screen.queryByTestId("nav-collapse-all");
+    if (expandAll?.textContent === "Expand all") fireEvent.click(expandAll);
     expect(screen.queryByText("Folders")).toBeNull();
     for (const id of ["e1", "e2", "e3"]) expect(screen.getByText(`Title ${id}`)).toBeTruthy();
   });
@@ -144,6 +150,8 @@ describe("pass 210 sidebar rendering", () => {
     mocks.profile = { id: "p1", org_id: "o1", org_type: "company", clients_enabled: false, role: "worker" };
     mocks.engagements = mixed;
     render(<SidebarNav />);
+    const expandAll = screen.queryByTestId("nav-collapse-all");
+    if (expandAll?.textContent === "Expand all") fireEvent.click(expandAll);
     expect(screen.queryByText("Folders")).toBeNull();
     expect(screen.getAllByText("Acme")).toHaveLength(1);
     expect(screen.getAllByText("Research")).toHaveLength(1);
@@ -163,6 +171,8 @@ describe("unit 3c containers render without workboards", () => {
     mocks.profile = { id: "p1", org_id: "o1", org_type: "partner", clients_enabled: true, role: "worker" };
     mocks.engagements = [eng("e9", null)];
     const { container } = render(<SidebarNav />);
+    const expandAll = screen.queryByTestId("nav-collapse-all");
+    if (expandAll?.textContent === "Expand all") fireEvent.click(expandAll);
     for (const name of ["Lonely Co", "Top Co", "Folder One", "Folder Two"]) {
       expect(screen.getAllByText(name)).toHaveLength(1);
     }
@@ -198,6 +208,8 @@ describe("unit 3c containers render without workboards", () => {
     ];
 
     const { container } = render(<SidebarNav />);
+    const expandAll = screen.queryByTestId("nav-collapse-all");
+    if (expandAll?.textContent === "Expand all") fireEvent.click(expandAll);
     const renderedDepth = (label: string) =>
       Number(screen.getByText(label).closest("[data-tree-depth]")?.getAttribute("data-tree-depth"));
 

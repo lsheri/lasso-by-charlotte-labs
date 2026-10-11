@@ -999,7 +999,7 @@ function ContainerShelfRow({
                     onToggle={onToggle}
                     onExpand={onExpand}
                     onNavigate={onNavigate}
-                    onBoardNavigate={boardNavigate}
+                    onBoardNavigate={onBoardNavigate}
                     newEngagementLabel={newEngagementLabel}
                     scopeFor={scopeFor}
                     ancestors={[node, ...ancestors]}

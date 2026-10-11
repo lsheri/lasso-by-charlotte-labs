@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -137,6 +137,8 @@ describe("pass 212 sidebar rendering", () => {
     const folder = row("folder", "folder", client.id);
     mocks.engagements = [eng("client-work", client), eng("folder-work", folder)];
     render(<SidebarNav />);
+    const expandAll = screen.queryByTestId("nav-collapse-all");
+    if (expandAll?.textContent === "Expand all") fireEvent.click(expandAll);
     expect(screen.getByText("folder")).toBeTruthy();
     expect(screen.getByText("Title folder-work")).toBeTruthy();
     expect(screen.queryByText("Folders")).toBeNull();
@@ -147,6 +149,8 @@ describe("pass 212 sidebar rendering", () => {
     const beta = { ...row("c2", "client", null), name: "Beta" };
     mocks.engagements = [eng("e1", acme), eng("e2", beta), eng("e3", null)];
     render(<SidebarNav />);
+    const expandAll = screen.queryByTestId("nav-collapse-all");
+    if (expandAll?.textContent === "Expand all") fireEvent.click(expandAll);
     expect(screen.queryByText("Folders")).toBeNull();
     for (const id of ["e1", "e2", "e3"]) expect(screen.getByText(`Title ${id}`)).toBeTruthy();
   });
@@ -157,6 +161,8 @@ describe("pass 212 sidebar rendering", () => {
     const folder = { ...row("folder", "folder", null), name: "Field notes" };
     mocks.engagements = [eng("e1", folder)];
     render(<SidebarNav />);
+    const expandAll = screen.queryByTestId("nav-collapse-all");
+    if (expandAll?.textContent === "Expand all") fireEvent.click(expandAll);
     expect(screen.getByText("Field notes")).toBeTruthy();
     expect(screen.getByText("Title e1")).toBeTruthy();
     expect(screen.queryByText("Folders")).toBeNull();
@@ -170,6 +176,8 @@ describe("pass 212 sidebar rendering", () => {
     const folder = { ...row("folder", "folder", null), name: "Field notes" };
     mocks.engagements = [eng("e1", folder)];
     render(<SidebarNav />);
+    const expandAll = screen.queryByTestId("nav-collapse-all");
+    if (expandAll?.textContent === "Expand all") fireEvent.click(expandAll);
     expect(screen.getAllByText("Folders")).toHaveLength(1);
     expect(screen.getAllByText("Field notes")).toHaveLength(1);
     expect(screen.getByText("Title e1")).toBeTruthy();
@@ -183,6 +191,8 @@ describe("pass 212 sidebar rendering", () => {
     const root = { ...row("root", "folder", null), name: "Root folder" };
     mocks.engagements = [eng("e1", client), eng("e2", nested), eng("e3", root)];
     render(<SidebarNav />);
+    const expandAll = screen.queryByTestId("nav-collapse-all");
+    if (expandAll?.textContent === "Expand all") fireEvent.click(expandAll);
     expect(screen.getAllByText("Nested folder")).toHaveLength(1);
     expect(screen.getAllByText("Root folder")).toHaveLength(1);
     // The mock Link keeps real anchors, so document order proves the boundary:

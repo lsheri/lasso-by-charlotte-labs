@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { readFileSync } from "node:fs";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -80,6 +80,8 @@ describe("SB1 single middle-column scroller and standing separation", () => {
   it("wraps the tree rows in the scroller and keeps the actions outside it", () => {
     mocks.engagements = manyBoards();
     const { container } = render(<SidebarNav />);
+    const expandAll = screen.queryByTestId("nav-collapse-all");
+    if (expandAll?.textContent === "Expand all") fireEvent.click(expandAll);
     const scroller = container.querySelector(".nb-nav-tree-scroll");
     expect(scroller).not.toBeNull();
     // The tree rows live inside the scroller.
@@ -96,6 +98,8 @@ describe("SB1 single middle-column scroller and standing separation", () => {
   it("sits the actions block after the tree in DOM order, with the top border rule, and the middle column (not the tree) as the single scroller", () => {
     mocks.engagements = manyBoards();
     const { container } = render(<SidebarNav />);
+    const expandAll = screen.queryByTestId("nav-collapse-all");
+    if (expandAll?.textContent === "Expand all") fireEvent.click(expandAll);
     const scroller = container.querySelector(".nb-nav-tree-scroll")!;
     const actions = container.querySelector(".nb-nav-actions")!;
     expect(
@@ -120,6 +124,8 @@ describe("SB1 single middle-column scroller and standing separation", () => {
     // MN-3b: create actions live behind the + beside Where it goes.
     mocks.engagements = manyBoards();
     render(<SidebarNav />);
+    const expandAll = screen.queryByTestId("nav-collapse-all");
+    if (expandAll?.textContent === "Expand all") fireEvent.click(expandAll);
     expect(screen.getByRole("button", { name: "New workboard, client or folder" })).toBeTruthy();
     expect(screen.getByText("Look back").closest("a")!).toBeTruthy();
   });
@@ -128,6 +134,8 @@ describe("SB1 single middle-column scroller and standing separation", () => {
     // MN-3b: the grouped create tile is gone; Look back is one row below the tree.
     mocks.engagements = manyBoards();
     const { container } = render(<SidebarNav />);
+    const expandAll = screen.queryByTestId("nav-collapse-all");
+    if (expandAll?.textContent === "Expand all") fireEvent.click(expandAll);
     const actions = container.querySelector(".nb-nav-actions")!;
     expect(actions.querySelector(".nb-nav-create-tile")).toBeNull();
     expect(actions.textContent).not.toContain("New workboard");
@@ -141,6 +149,8 @@ describe("SB1 single middle-column scroller and standing separation", () => {
     mocks.archiveMatch = true;
     window.history.replaceState(null, "", "/archive");
     render(<SidebarNav />);
+    const expandAll = screen.queryByTestId("nav-collapse-all");
+    if (expandAll?.textContent === "Expand all") fireEvent.click(expandAll);
     expect(screen.getByText("Look back").closest("a")!.className).toContain("nb-nav-item-active");
   });
 
@@ -148,6 +158,8 @@ describe("SB1 single middle-column scroller and standing separation", () => {
     mocks.archiveMatch = true;
     window.history.replaceState(null, "", "/archive#archived");
     render(<SidebarNav />);
+    const expandAll = screen.queryByTestId("nav-collapse-all");
+    if (expandAll?.textContent === "Expand all") fireEvent.click(expandAll);
     expect(screen.getByText("Look back").closest("a")!.className).not.toContain("nb-nav-item-active");
   });
 
@@ -162,6 +174,8 @@ describe("SB1 single middle-column scroller and standing separation", () => {
       eng("current-board", { id: "current", name: "Current client", quick_folder: false, kind: "client", parent_id: null }),
     ];
     render(<SidebarNav />);
+    const expandAll = screen.queryByTestId("nav-collapse-all");
+    if (expandAll?.textContent === "Expand all") fireEvent.click(expandAll);
     expect(screen.queryByText("Old client")).toBeNull();
     expect(screen.queryByText("Hidden child")).toBeNull();
     expect(screen.queryByText("Title hidden-board")).toBeNull();
@@ -175,6 +189,8 @@ describe("SB1 single middle-column scroller and standing separation", () => {
       { id: "blue-child", name: "Blue child", kind: "folder", parent_id: "blue-client", quick_folder: false, color: null, archived_at: null },
     ];
     const { container } = render(<SidebarNav />);
+    const expandAll = screen.queryByTestId("nav-collapse-all");
+    if (expandAll?.textContent === "Expand all") fireEvent.click(expandAll);
     const clientRow = container.querySelector('[data-tree-node="blue-client"] > .nb-nav-shelf');
     const childRow = container.querySelector('[data-tree-node="blue-child"] > .nb-nav-shelf');
     const clientGlyph = clientRow?.querySelector(':scope > span.flex.shrink-0');
@@ -189,6 +205,8 @@ describe("SB1 single middle-column scroller and standing separation", () => {
   it("keeps the separation when the tree is empty", () => {
     mocks.engagements = [];
     const { container } = render(<SidebarNav />);
+    const expandAll = screen.queryByTestId("nav-collapse-all");
+    if (expandAll?.textContent === "Expand all") fireEvent.click(expandAll);
     const scroller = container.querySelector(".nb-nav-tree-scroll");
     const actions = container.querySelector(".nb-nav-actions");
     expect(scroller).not.toBeNull();

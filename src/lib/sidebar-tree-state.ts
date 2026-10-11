@@ -24,7 +24,7 @@ export function useRememberBoardOpen(profileId: string | undefined, boardId: str
   useEffect(() => { if (profileId && boardId) rememberBoardOpen(profileId, boardId); }, [profileId, boardId]);
 }
 export function useRecentBoards(profileId: string | undefined) {
-  const [state, setState] = useState<{ profileId?: string; ids: string[] }>({ ids: [] });
+  const [state, setState] = useState<{ profileId?: string | undefined; ids: string[] }>({ ids: [] });
   useEffect(() => {
     const refresh = () => setState({ profileId, ids: profileId ? readRecentBoards(profileId) : [] });
     refresh();
@@ -56,7 +56,7 @@ export function filterBoardTree(roots: ContainerNode<NavEngagement>[], query: st
   });
 }
 export function useContainerOpenState(profileId: string | undefined, ids: string[], activeChain: string[]) {
-  const [state, setState] = useState<{ profileId?: string; choices: Record<string, boolean> }>({ choices: {} });
+  const [state, setState] = useState<{ profileId?: string | undefined; choices: Record<string, boolean> }>({ choices: {} });
   const chainKey = activeChain.join("\u0000");
   useEffect(() => {
     const value = profileId ? read(openKey(profileId)) : null;
