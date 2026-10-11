@@ -361,6 +361,7 @@ export type TelemetryEvent =
   | "workboard.work_added"
   /** B4: a workstream was drawn on the workboard. Claimed count and whether one prompt was shown. */
   | "workboard.workstream_drawn"
+  | "workboard.workstream_created"
   | "workboard.region_named"
   /** B2: a chat's docked pieces were minimized, shown, or all shown. State, count band, entry only. */
   | "workboard.bundle_toggled"

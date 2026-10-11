@@ -132,6 +132,18 @@ export function noteWorkboardWorkstreamDrawn(orgId: string | undefined, claimed:
 }
 
 /**
+ * BB-5: one workstream was made from the inline add. Shape only: how it was
+ * made and a band for the cards it took in. No names, no ids.
+ */
+export function noteWorkboardWorkstreamCreated(orgId: string | undefined, claimed: number): void {
+  if (!orgId) return;
+  logEvent("workboard.workstream_created", orgId, {
+    via: "inline_add",
+    claimed: claimed <= 0 ? "0" : claimed <= 4 ? "1-4" : claimed <= 19 ? "5-19" : "20+",
+  });
+}
+
+/**
  * W3: a drawn region was named, which makes it a workstream, or had its name
  * taken off, which turns it back into paint. Shape only: a band for how many
  * cards it took in, and the colour family, never the name a person typed.

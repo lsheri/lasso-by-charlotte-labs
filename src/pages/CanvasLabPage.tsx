@@ -148,6 +148,7 @@ import {
   noteHighlightChanged,
   noteWorkboardWorkAdded,
   noteWorkboardWorkstreamDrawn,
+  noteWorkboardWorkstreamCreated,
   noteWorkboardRegionNamed,
   type LabNodeEventKind,
   type WorkboardOpenVia,
@@ -2210,6 +2211,12 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       return;
     }
     record({ action: "workstream_move", nodeId: node.id, before: node.frame ?? "", after: frameId });
+    // BB-5: into a real workstream, the work is filed there too.
+    const taskId = frameTaskId(target);
+    if (taskId && node.workItemId) {
+      void claimCard(node as ClaimCandidate, taskId, frameId).then((ok) => setAnnouncement(ok ? `${node.title} moved to ${target.name}.` : "That card stayed where it was."));
+      return;
+    }
     applyFrameMove(node.id, frameId);
     setAnnouncement(`${node.title} moved to ${target.name}.`);
   }
@@ -2573,20 +2580,23 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   function addWorkstream(nameInput: string): boolean {
     const name = nameInput.trim();
     if (!name || name.length > 60) return false;
-    const next = addLocalFrame(framesRef.current, name, nextWorkstreamRect(framesRef.current, nodesRef.current.filter((node) => !hiddenIds.includes(node.id))));
-    const frame = next[next.length - 1];
-    setFrames(next);
-    if (!frame) return false;
+    // BB-5: a real workstream first, then its outline. Never a custom frame from here.
+    const rect = addLocalFrame(framesRef.current, name, nextWorkstreamRect(framesRef.current, nodesRef.current.filter((node) => !hiddenIds.includes(node.id)))).at(-1);
+    if (!rect) return false;
     void (async () => {
-      const boardExisted = boardIdRef.current != null;
-      if (!(await materialize())) return;
-      if (!boardExisted) return; // materialize already carried the new frame
-      const result = await lab.persist({ type: "frame_create", frame: { key: frame.id, kind: "custom", label: name, x: frame.x, y: frame.y, w: frame.width, h: frame.height, ord: 0 } });
-      report(result, "frame", "create");
-      if (result.status === "saved" && result.created?.frameId) {
-        const id = result.created.frameId;
-        setFrames((current) => current ? markFrameSaved(current, frame.id, id, result.versions[id] ?? 1) : current);
+      let created: { id: string };
+      try {
+        created = await createDrawnWorkstream({ data: { engagement_id: engagementId, name, profile_id: profile?.id } });
+      } catch {
+        setAnnouncement("That workstream could not be created. Nothing moved.");
+        return;
       }
+      const frame: LabFrame = { ...rect, id: `task:${created.id}`, name, local: true };
+      setFrames((current) => current ? [...current, frame] : [frame]);
+      framesRef.current = [...framesRef.current, frame];
+      await persistDrawnFrame(frame, created.id);
+      noteWorkboardWorkstreamCreated(orgId, 0);
+      void refreshWorkstreams();
     })();
     return true;
   }
@@ -2921,7 +2931,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       {profile?.id && orgId ? <BoardAsk open={askOpen} onOpenChange={setAskOpen} engagementId={engagementId} engagementTitle={title} profileId={profile.id} orgId={orgId} canKeep={canAddWork} onKeep={(answer, via) => void keepAnswerAsCard(answer, { via: via ?? "button" })} boardContextHasPicks={contextNodes.length > 0} boardContextItemIds={contextNodes.flatMap((node) => { const item = itemByNode(node); return item ? [item.id] : []; })} /> : null}
       <p className="sr-only" aria-live="polite">{announcement}</p>
       {exampleOpen ? <ExampleBoardOverlay onClose={() => setExampleOpen(false)} /> : null}
-      {canAddWork ? <AddWorkPanel open={addWorkOpen} onOpenChange={(next) => { setAddWorkOpen(next); if (!next) { setAddWorkAnchor(null); setAddWorkTarget("board"); } }} onPlace={addWorkToBoard} busy={addWorkBusy} /> : null}
+      {canAddWork ? <AddWorkPanel open={addWorkOpen} onOpenChange={(next) => { setAddWorkOpen(next); if (!next) { setAddWorkAnchor(null); setAddWorkTarget("board"); } }} onPlace={addWorkToBoard} busy={addWorkBusy} engagementId={engagementId} /> : null}
       {focusNode ? <FocusOverlay node={focusNode} item={focusItem} origin={focusOrigin} onContentScroll={focusItem?.type === "ai_thread" ? () => notePreviewScroll(focusItem, "chat") : undefined} onSummarize={() => { branchFrom({ ...focusNode, prompt: `Summarize: ${focusNode.title}` }); setFocusId(null); }} onBranch={() => { branchFrom(focusNode); setFocusId(null); }} onClose={() => { setFocusId(null); setFocusOrigin(null); setFocusOpensComments(false); }} highlights={annotations.highlights} canWrite={canComment} openComments={focusOpensComments} threads={commentThreads.threads} onHighlight={focusThreadId ? (selection) => { void annotations.createHighlight({ turnNo: selection.turnNo, charStart: selection.charStart, charEnd: selection.charEnd, clientKey: crypto.randomUUID() }).then((result) => { if (result.status === "saved") noteHighlightChanged(orgId, "created", result.highlight.visibility, result.highlight.excerpt.length); }).catch(() => undefined); } : undefined} onRemoveHighlight={focusThreadId ? (highlight) => { void annotations.archiveHighlight({ id: highlight.id, expectedVersion: highlight.version }).then((result) => { if (result.status === "saved") noteHighlightChanged(orgId, "archived", highlight.visibility ?? "just_me", highlight.excerpt.length); }).catch(() => undefined); } : undefined} onSetHighlightVisibility={focusThreadId ? (highlight, visibility) => { void annotations.setHighlightVisibility({ id: highlight.id, visibility, expectedVersion: highlight.version }).then((result) => { if (result.status === "saved") noteAnnotationChanged(orgId, { kind: "highlight", action: "edited", anchorKind: "turn", visibility, length: highlight.excerpt.length, isReply: false }); }).catch(() => undefined); } : undefined} onCreateComment={focusThreadId ? (anchor, body) => { void commentThreads.createComment({ turnNo: anchor.turnNo, charStart: anchor.charStart, charEnd: anchor.charEnd, body, clientKey: crypto.randomUUID() }).then((result) => { if (result.status !== "saved") return; noteAnnotationChanged(orgId, { kind: "comment", action: "created", anchorKind: "turn", visibility: "engagement", length: body.length, isReply: false }); if (!needsHighlightForComment(annotations.highlights, anchor)) return; void annotations.createHighlight({ turnNo: anchor.turnNo, charStart: anchor.charStart, charEnd: anchor.charEnd, clientKey: crypto.randomUUID() }).then((marked) => { if (marked.status === "saved") noteHighlightChanged(orgId, "created", marked.highlight.visibility, marked.highlight.excerpt.length); }).catch(() => undefined); }).catch(() => undefined); } : undefined} onCreateReply={focusThreadId ? (parentId, body) => { void commentThreads.createReply({ parentId, body, clientKey: crypto.randomUUID() }).then((result) => { if (result.status === "saved") noteAnnotationChanged(orgId, { kind: "comment", action: "created", anchorKind: "item", visibility: "engagement", length: body.length, isReply: true }); }).catch(() => undefined); } : undefined} onEditComment={focusThreadId ? (comment, body) => { void commentThreads.editComment({ id: comment.id, body, expectedVersion: comment.version }).then((result) => { if (result.status === "saved") noteAnnotationChanged(orgId, { kind: "comment", action: "edited", anchorKind: comment.parentId ? "item" : "turn", visibility: "engagement", length: body.length, isReply: Boolean(comment.parentId) }); }).catch(() => undefined); } : undefined} onArchiveComment={focusThreadId ? (comment) => { void commentThreads.archiveComment({ id: comment.id, expectedVersion: comment.version }).then((result) => { if (result.status === "saved") noteAnnotationChanged(orgId, { kind: "comment", action: "archived", anchorKind: comment.parentId ? "item" : "turn", visibility: "engagement", length: comment.body.length, isReply: Boolean(comment.parentId) }); }).catch(() => undefined); } : undefined} /> : null}
       {reviewItem && reviewNode ? <CanvasLabReview item={reviewItem} anchorNodeId={reviewNode.id} links={links} profileId={profile?.id} decisions={page?.decisions ?? []} nodes={visibleNodes} comments={comments} onTrailSelect={(group, focus) => noteWorkboardTrailSelected(orgId, group, focus)} onClose={() => setReviewId(null)} /> : null}
     </div>
