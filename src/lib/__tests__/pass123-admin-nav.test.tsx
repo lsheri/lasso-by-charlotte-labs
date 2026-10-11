@@ -174,13 +174,15 @@ describe("Pass 123: the sidebar follows the weekly loop", () => {
     expect(screen.queryByText("Coaching")).not.toBeNull();
     expect(screen.queryByText("People you coach")).not.toBeNull();
     expect(screen.queryByText("Your account")).not.toBeNull();
-    expect(screen.queryByText("Settings")).not.toBeNull();
+    expect(screen.queryByText("Settings")).toBeNull();
+    expect(NAV_ITEMS.find((i) => i.id === "guest-settings")?.placement).toBe("workspace_menu");
     cleanup();
 
     mocks.canReach = false;
     setup("coach", "company");
     expect(screen.queryByText("People you coach")).toBeNull();
-    expect(screen.queryByText("Settings")).not.toBeNull();
+    expect(screen.queryByText("Settings")).toBeNull();
+    expect(NAV_ITEMS.find((i) => i.id === "guest-settings")?.placement).toBe("workspace_menu");
   });
 
   it("gives a worker the coaching destination once they hold Review somewhere", () => {
