@@ -218,12 +218,12 @@ describe("CG1 inbox congruency", () => {
     expect(screen.queryByRole("group", { name: "How work is shown" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Preview" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Sticky" })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Suggest mapping/ })).toBeNull();
   });
 
-  it("keeps every Inbox entry dimmed and disabled when the Unmapped filter matches nothing, and teaches about unclaimed work", () => {
+  it("hides every non-match and shows empty lane counts when No board matches nothing", () => {
     // Every entry is claimed, so the Unmapped placement filter matches zero
-    // entries. Nothing may disappear and the teaching line, which is
-    // specifically about work that arrived unclaimed, is present.
+    // entries. Each lane keeps its header and explains the empty result.
     inboxRows = [
       item("alpha", "mapped", "ALPHA"),
       item("bravo", "mapped", "ALPHA"),
@@ -232,21 +232,22 @@ describe("CG1 inbox congruency", () => {
     ];
     render(<WorkPage />);
     fireEvent.click(screen.getByRole("button", { name: "No board" }));
-    for (const row of inboxRows) expect(screen.getByText(row.title)).toBeTruthy();
-    const dimmed = screen.getAllByTestId("dimmed-disabled");
-    expect(dimmed).toHaveLength(inboxRows.length);
-    for (const wrapper of dimmed) {
-      expect(wrapper.getAttribute("aria-disabled")).toBe("true");
-      expect(wrapper.hasAttribute("inert")).toBe(true);
+    for (const row of inboxRows) expect(screen.queryByText(row.title)).toBeNull();
+    expect(screen.queryByTestId("dimmed-disabled")).toBeNull();
+    const board = screen.getByTestId("board-shell");
+    for (const lane of board.querySelectorAll("[data-board-lane]")) {
+      expect(lane.querySelector("h2")?.textContent).toMatch(/0$/);
     }
+    expect(screen.getByRole("button", { name: "0 of 4 shown" })).toBeTruthy();
+    expect(screen.queryByText(/Nothing is hidden/)).toBeNull();
     expect(screen.queryByText("Your work lands here.")).toBeNull();
-    expect(screen.getByText(/These landed on their own\. Say whose work it is and the rest gets easier\./)).toBeTruthy();
+    expect(screen.getAllByText("Nothing here with no board")).toHaveLength(4);
   });
 
-  it("keeps every Inbox entry dimmed and disabled when the Claimed by you filter matches nothing, with no teaching line", () => {
+  it("hides every non-match when Claimed by you matches nothing", () => {
     // Every entry arrived unclaimed, so the Claimed placement filter matches
     // zero entries. The teaching line is about unclaimed work and does not
-    // fit this state, so it must be absent while nothing disappears.
+    // fit this state, so it must be absent while non-matches are hidden.
     inboxRows = [
       itemOfType("thread", "ai_thread"),
       itemOfType("document", "document"),
@@ -255,21 +256,23 @@ describe("CG1 inbox congruency", () => {
     ];
     render(<WorkPage />);
     fireEvent.click(screen.getByRole("button", { name: "Claimed by you" }));
-    for (const row of inboxRows) expect(screen.getByText(row.title)).toBeTruthy();
-    const dimmed = screen.getAllByTestId("dimmed-disabled");
-    expect(dimmed).toHaveLength(inboxRows.length);
-    for (const wrapper of dimmed) {
-      expect(wrapper.getAttribute("aria-disabled")).toBe("true");
-      expect(wrapper.hasAttribute("inert")).toBe(true);
+    for (const row of inboxRows) expect(screen.queryByText(row.title)).toBeNull();
+    expect(screen.queryByTestId("dimmed-disabled")).toBeNull();
+    const board = screen.getByTestId("board-shell");
+    for (const lane of board.querySelectorAll("[data-board-lane]")) {
+      expect(lane.querySelector("h2")?.textContent).toMatch(/0$/);
     }
+    expect(screen.getByRole("button", { name: "0 of 4 shown" })).toBeTruthy();
+    expect(screen.queryByText(/Nothing is hidden/)).toBeNull();
     expect(screen.queryByText("Your work lands here.")).toBeNull();
-    expect(screen.queryByText("These landed on their own. Say whose work it is and the rest gets easier.")).toBeNull();
+    expect(screen.getAllByText("Nothing here")).toHaveLength(4);
   });
 
-  it("uses the shared dim component in Find it and the Inbox without disabling discarded results", () => {
+  it("keeps discarded Find it results dimmed and reversible without dimming work filters", () => {
     const inbox = readFileSync("src/pages/WorkPage.tsx", "utf8");
     const findIt = readFileSync("src/components/find-it/FindItResults.tsx", "utf8");
-    for (const source of [inbox, findIt]) expect(source).toContain("DimmedDisabled");
+    expect(inbox).not.toContain("DimmedDisabled");
+    expect(findIt).toContain("DimmedDisabled");
     expect(findIt).toMatch(/DimmedDisabled[^>]+disabled=\{false\}/);
     const action = vi.fn();
     render(<DimmedDisabled dimmed disabled={false}><button onClick={action}>Reverse decision</button></DimmedDisabled>);
@@ -294,7 +297,8 @@ describe("CG1 inbox congruency", () => {
     inboxRows = [item("claimed", "mapped", "ALPHA")];
     render(<WorkPage />);
     fireEvent.click(screen.getByRole("button", { name: "No board" }));
-    expect(screen.getByTestId("dimmed-disabled").className).not.toMatch(/green|lime|lasso/i);
+    expect(screen.queryByText("claimed")).toBeNull();
+    expect(screen.queryByTestId("dimmed-disabled")).toBeNull();
   });
 
   it("marks Inbox cards as fixed and cancels drag", () => {
@@ -339,6 +343,8 @@ describe("CG1 inbox congruency", () => {
   it("keeps four lanes and five-per-page replacement through both wrappers", () => {
     inboxRows = Array.from({ length: 6 }, (_, index) => itemOfType(`document-${index + 1}`, "document"));
     render(<WorkPage />);
+    fireEvent.click(screen.getByRole("button", { name: "No board" }));
+    expect(screen.getByRole("button", { name: "6 of 6 shown" })).toBeTruthy();
     const board = screen.getByTestId("board-shell");
     expect(board.getAttribute("aria-label")).toBe("All work");
     expect(board).toBeTruthy();
@@ -486,7 +492,8 @@ describe("CG1 inbox congruency", () => {
     inboxRows = [item("claimed", "mapped", "ALPHA")];
     render(<WorkPage />);
     fireEvent.click(screen.getByRole("button", { name: "No board" }));
-    expect(screen.getByTestId("dimmed-disabled").className).not.toMatch(/green|lime/);
+    expect(screen.queryByText("claimed")).toBeNull();
+    expect(screen.queryByTestId("dimmed-disabled")).toBeNull();
   });
 });
 
