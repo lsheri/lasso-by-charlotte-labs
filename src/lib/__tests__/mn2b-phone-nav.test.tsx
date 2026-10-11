@@ -17,7 +17,9 @@ vi.mock("@tanstack/react-router", () => ({
   useNavigate: () => state.navigate,
   useRouterState: () => "/home",
 }));
-vi.mock("@/hooks/use-profile", () => ({ useProfile: () => ({
+vi.mock("@/hooks/use-profile", () => ({
+  isBusinessOrg: (profile: { org_type?: string } | null) => profile?.org_type === "company" || profile?.org_type === "partner",
+  useProfile: () => ({
   data: { id: "p1", org_id: "o1", org_type: state.type, role: state.role, display_name: "Liam" }, profiles: [],
 }) }));
 vi.mock("@/hooks/use-affiliation", () => ({ useAffiliation: () => ({ data: null }) }));

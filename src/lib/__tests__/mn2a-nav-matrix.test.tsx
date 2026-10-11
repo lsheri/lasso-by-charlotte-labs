@@ -164,7 +164,7 @@ function youSheetFor(c: Combo): string {
   fireEvent.click(screen.getByRole("button", { name: "More" }));
   const sheet = screen.getByTestId("open-sheet");
   const lines = Array.from(sheet.querySelectorAll(".nb-group-header, .nb-nav-item")).map((node) =>
-    describeNode(node).replace(/ Coming soon \[disabled\]$/, " [disabled]"),
+    describeNode(node).replace(/\s*Coming soon \[disabled\]$/, " [disabled]"),
   );
   cleanup();
   return lines.join("\n");
@@ -1011,7 +1011,7 @@ describe("MN-2a navigation matrix", () => {
       // item and the board-tree group. The desktop table is unchanged.
       let tree = false;
       const moreLines = (SIDEBAR_LAYOUTS[sidebarId] ?? "").split("\n").filter((line) => {
-        if (line.startsWith("# ")) tree = ["# Where it goes", "# Your clients", "# Your classes and assignments"].includes(line);
+        if (line.startsWith("# ")) tree = ["# Where it goes", "# Your clients", "# Workboards"].includes(line);
         return !tree && line !== "All work -> /work";
       });
       expect(youSheetFor(c)).toBe(moreLines.join("\n"));
