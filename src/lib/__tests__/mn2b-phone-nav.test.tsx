@@ -25,6 +25,7 @@ vi.mock("@/hooks/use-profile", () => ({
 vi.mock("@/hooks/use-affiliation", () => ({ useAffiliation: () => ({ data: null }) }));
 vi.mock("@/hooks/use-coaching-links", () => ({ useHasLiveCoachLink: () => false }));
 vi.mock("@/hooks/use-coaching-reach", () => ({ useCoachingReach: () => ({ canReach: state.canReview }) }));
+vi.mock("@/hooks/use-work-items", () => ({ useWorkItems: () => ({ data: { items: [] } }) }));
 vi.mock("@/hooks/use-engagements", () => ({ useEngagements: () => ({ data: [{ id: "b1", code: "ABC-01", title: "Pricing review" }] }) }));
 vi.mock("@/components/layout/OrgSwitcher", () => ({ OrgSwitcher: () => null }));
 vi.mock("@/components/coaching/CoachAskSheet", () => ({ CoachAskSheet: ({ open }: { open: boolean }) => open ? <div>Coach messages</div> : null }));
@@ -94,8 +95,8 @@ describe("MN-2b phone navigation", () => {
     render(<MobileTabBar />);
     fireEvent.click(screen.getByRole("button", { name: "More" }));
     state.events.mockClear();
-    fireEvent.click(screen.getByRole("button", { name: /Find it/ }));
-    expect(state.events).not.toHaveBeenCalled();
+    // MN-3b: Find it left the nav, so More has no disabled row to press.
+    expect(screen.queryByRole("button", { name: /Find it/ })).toBeNull();
     fireEvent.click(screen.getByRole("link", { name: "Home" }));
     expect(state.events).toHaveBeenCalledWith("nav.opened", "o1", { item: "home", surface: "more" });
   });
@@ -121,5 +122,16 @@ describe("MN-2b phone navigation", () => {
     for (const label of ["Where work lives", "Past Ask Lasso chats", "1:1 prep", "All AI Conversations", "Find it", "Decision log", "Firm view", "Settings"]) {
       expect(source).not.toContain(`"${label}"`);
     }
+  });
+  it("MN-3b: More shows Look back and Your coach as single rows and no Find it or Decision log", () => {
+    render(<MobileTabBar />);
+    fireEvent.click(screen.getByRole("button", { name: "More" }));
+    const sheet = screen.getByTestId("sheet");
+    expect(within(sheet).getAllByRole("link", { name: "Look back" })).toHaveLength(1);
+    expect(within(sheet).getAllByRole("link", { name: "Your coach" })).toHaveLength(1);
+    for (const gone of ["Find it", "Decision log", "Past work", "Archived", "Past Ask Lasso chats", "1:1 prep", "Notes from your coach"])
+      expect(within(sheet).queryByText(gone)).toBeNull();
+    fireEvent.click(within(sheet).getByRole("link", { name: "Look back" }));
+    expect(state.events).toHaveBeenCalledWith("nav.opened", "o1", { item: "look_back", surface: "more" });
   });
 });

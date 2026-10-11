@@ -179,17 +179,19 @@ describe("the archive in the nav", () => {
       coachNavGroups.some((group) => group.items.some((item) => item.to === "/archive")),
     ).toBe(false);
 
+    // MN-3b: the sidebar reaches the archive through the one Look back row.
     render(<SidebarNav />);
-    expect(screen.getByText(PAST_WORK_NAV_LABEL)).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Look back" }).getAttribute("href")).toContain("/archive");
     cleanup();
 
     mocks.profile = { id: "p2", role: "admin", org_type: "company", display_name: "B" };
     render(<SidebarNav />);
-    expect(screen.getByText(PAST_WORK_NAV_LABEL)).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Look back" }).getAttribute("href")).toContain("/archive");
     cleanup();
 
     mocks.profile = { id: "p3", role: "coach", org_type: "company", display_name: "C" };
     render(<SidebarNav />);
+    expect(screen.queryByRole("link", { name: "Look back" })).toBeNull();
     expect(screen.queryByText(PAST_WORK_NAV_LABEL)).toBeNull();
   });
 });

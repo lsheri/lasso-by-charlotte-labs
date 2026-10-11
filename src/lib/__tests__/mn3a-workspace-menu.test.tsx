@@ -48,7 +48,7 @@ function profile(): Profile {
 function makeProfiles(): Profile[] { return state.count === 1 ? [profile()] : [profile(), { ...profile(), id: "p2", org_id: "o2", org_name: "Bright Path" }]; }
 function context(): NavCtx {
   return { type: profile().org_type, role: state.role, canReview: false, canManageMembers: ["admin", "lead"].includes(state.role),
-    canSeeFirmView: state.type === "company" && ["admin", "lead"].includes(state.role), hasCoachLink: false, affiliated: false, clientsEnabled: true };
+    canSeeFirmView: state.type === "company" && ["admin", "lead"].includes(state.role), hasCoachLink: false, affiliated: false, clientsEnabled: true, workItemCount: 0 };
 }
 function mount(children: ReactNode) { return render(<QueryClientProvider client={new QueryClient()}>{children}</QueryClientProvider>); }
 function openMenu() { fireEvent.click(screen.getByRole("button", { name: /Change workspace/ })); return screen.getByRole("menu"); }

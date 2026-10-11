@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 
 import { ArchiveChat } from "@/components/archive/ArchiveChat";
 import { ArchivedSection } from "@/components/archive/ArchivedSection";
@@ -11,6 +11,28 @@ import { ToneCard } from "@/components/notebook/ToneCard";
 import { useProfile } from "@/hooks/use-profile";
 import { useShippedWork } from "@/hooks/use-shipped-work";
 import { usesGuestNav } from "@/lib/role-access";
+import { showsYourCoach } from "@/components/layout/nav-config";
+import { useHasLiveCoachLink } from "@/hooks/use-coaching-links";
+
+/** MN-3b: the plain links under the Look back header. */
+export const ARCHIVE_LINKS_COPY = {
+  pastAsk: "Past Ask Lasso chats",
+  coachNotes: "Notes from your coach",
+} as const;
+
+function CoachNotesLink() {
+  return (
+    <Link to="/coach-notes" className="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
+      {ARCHIVE_LINKS_COPY.coachNotes}
+    </Link>
+  );
+}
+
+/** A solo workspace has a coach only through a live link, so only it asks. */
+function SoloCoachNotesLink({ profileId, role }: { profileId: string; role: string }) {
+  const hasCoachLink = useHasLiveCoachLink(Boolean(profileId));
+  return showsYourCoach({ type: "personal", role, hasCoachLink }) ? <CoachNotesLink /> : null;
+}
 
 /**
  * The learning archive. Members and admins can read it: shipped work, the
@@ -56,6 +78,16 @@ export function ArchivePage() {
   return (
     <div data-testid="archive-page">
       <PageHeader title="Look" italicWord="back" subtitle={null} />
+      <p className="-mt-2 mb-8 flex flex-wrap gap-x-5 gap-y-1 text-sm" data-testid="archive-links">
+        <Link to="/ai-record" search={{ view: "asked" }} className="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
+          {ARCHIVE_LINKS_COPY.pastAsk}
+        </Link>
+        {profile.org_type === "personal" ? (
+          <SoloCoachNotesLink profileId={profile.id} role={profile.role} />
+        ) : showsYourCoach({ type: profile.org_type, role: profile.role, hasCoachLink: false }) ? (
+          <CoachNotesLink />
+        ) : null}
+      </p>
 
       <section data-testid="shipped-work-section">
         <h2 className="font-mono text-[0.894rem] font-medium uppercase tracking-[0.12em] text-[var(--nb-mid)]">
