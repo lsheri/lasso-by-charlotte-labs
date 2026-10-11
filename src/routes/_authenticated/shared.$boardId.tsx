@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { SharedBoardPage } from "@/pages/SharedBoardPage";
+import { PartnerSharedBoardPage } from "@/pages/PartnerSharedBoardPage";
 
 export const Route = createFileRoute("/_authenticated/shared/$boardId")({
   head: () => ({
@@ -18,5 +18,5 @@ export const Route = createFileRoute("/_authenticated/shared/$boardId")({
 
 function SharedBoardRoute() {
   const { boardId } = Route.useParams();
-  return <SharedBoardPage boardId={boardId} />;
+  return <PartnerSharedBoardPage boardId={boardId} />;
 }

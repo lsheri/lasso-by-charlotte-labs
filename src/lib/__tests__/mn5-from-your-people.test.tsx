@@ -35,7 +35,7 @@ vi.mock("@/components/work/WorkNote", () => ({
 
 import { FromYourPeopleGroup } from "@/components/layout/FromYourPeople";
 import { usePartnerSharedBoards } from "@/hooks/use-partner-shared-boards";
-import { SharedBoardPage, SHARED_BOARD_COPY } from "@/pages/SharedBoardPage";
+import { PartnerSharedBoardPage, SHARED_BOARD_COPY } from "@/pages/PartnerSharedBoardPage";
 import { logEvent } from "@/lib/telemetry";
 
 const BOARDS = [
@@ -107,7 +107,7 @@ describe("MN-5 shared board view", () => {
   it("shows the Shared by line and read-only pieces with no edit controls", () => {
     mocks.boards = BOARDS;
     mocks.pieces = [{ id: "w1", title: "Interview notes" }];
-    const { container } = render(<SharedBoardPage boardId="b1" />);
+    const { container } = render(<PartnerSharedBoardPage boardId="b1" />);
     expect(screen.getByRole("heading", { name: "Market entry" })).toBeTruthy();
     expect(screen.getByText(SHARED_BOARD_COPY.sharedBy("Ana Ruiz"))).toBeTruthy();
     expect(container.querySelector("article")?.getAttribute("data-readonly")).toBe("true");
@@ -118,7 +118,7 @@ describe("MN-5 shared board view", () => {
   it("shows only the no-longer-shared line when the board is absent", () => {
     mocks.boards = BOARDS;
     mocks.pieces = [{ id: "w1", title: "Interview notes" }];
-    const { container } = render(<SharedBoardPage boardId="gone" />);
+    const { container } = render(<PartnerSharedBoardPage boardId="gone" />);
     expect(container.textContent).toBe(SHARED_BOARD_COPY.ended);
   });
 
