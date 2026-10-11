@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] MAP-UX: default board placement, optional workstreams, unified labels, and behavioral regression tests.
+- [ ] MAP-UX: signed-in visual verification at 1280 and 390; blocked by external unmanaged authentication, both preview captures were blank.
+
 - [x] MOB-1b: phone-only bottom clearance, explicit subtitle spacing, and shell scroll boundary.
 - [ ] MOB-1b: confirm signed-in Show more clearance and desktop comparison; blocked by external unmanaged authentication.
 

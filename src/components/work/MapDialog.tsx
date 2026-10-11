@@ -1,8 +1,8 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
+import { toast } from "sonner";
 
-import { DeclareWorkflowChips } from "@/components/work/DeclareWorkflowChips";
 import { TypeIcon } from "@/components/work/TypeIcon";
 import { engagementHue } from "@/lib/work-identity";
 import { Button } from "@/components/ui/button";
@@ -12,8 +12,6 @@ import { useEngagements } from "@/hooks/use-engagements";
 import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
 import { workstreamTasks } from "@/lib/board-default-task";
-import { guessWorkflowDeclaration, type WorkflowDeclaration } from "@/lib/declared-work";
-import { declareWorkflow } from "@/lib/declared-work.functions";
 import { detachEpisodeItems, syncEpisodeForMapping } from "@/lib/episodes.functions";
 import { remapItems } from "@/lib/workflow-order";
 import type { WorkItemRow } from "@/lib/work-types";
@@ -21,6 +19,15 @@ import type { WorkItemRow } from "@/lib/work-types";
 import { engagementDisplayCode, engagementDisplayTitle } from "@/lib/clients";
 
 type TaskRow = { id: string; name: string };
+
+export const COPY = {
+  title: "Put on a board",
+  visibility: "Your workboard team can see what you put on it.",
+  optional: "Or put it in a workstream (optional)",
+  putOn: "Put on",
+  added: "Added to",
+  homeError: "Could not find this workboard's default home.",
+} as const;
 
 export function MapDialog({
   item,
@@ -43,13 +50,14 @@ export function MapDialog({
   const { data: engagements } = useEngagements(profile?.id);
   const queryClient = useQueryClient();
   const syncEpisode = useServerFn(syncEpisodeForMapping);
-  const declare = useServerFn(declareWorkflow);
   const detachEpisode = useServerFn(detachEpisodeItems);
   const [engagementId, setEngagementId] = useState<string | null>(null);
   const [newTask, setNewTask] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [worked, setWorked] = useState<WorkflowDeclaration>(() => guessWorkflowDeclaration(item));
+  const selectedBoard = engagements?.find((engagement) => engagement.id === engagementId);
+  const boardCode = selectedBoard ? engagementDisplayCode(selectedBoard) : null;
+  const boardTitle = selectedBoard ? engagementDisplayTitle(selectedBoard) : "";
 
   const { data: tasks } = useQuery({
     queryKey: ["tasks", engagementId],
@@ -71,10 +79,12 @@ export function MapDialog({
     setEngagementId(null);
     setNewTask("");
     setError(null);
-    setWorked(guessWorkflowDeclaration(item));
   }
 
-  async function mapToTask(taskId: string) {
+  async function mapToTask(
+    taskId: string,
+    workstreamName = tasks?.find((task) => task.id === taskId)?.name ?? newTask.trim(),
+  ) {
     if (!item || !profile) return;
     setPending(true);
     setError(null);
@@ -97,14 +107,25 @@ export function MapDialog({
       return;
     }
 
-    // How the person worked, said in the same moment the work is mapped.
-    await declare({
-      data: { work_item_ids: targets.map((t) => t.id), ...worked },
-    }).catch(() => undefined);
-
+    toast.success(`${COPY.added} ${[boardCode, boardTitle, workstreamName].filter(Boolean).join(" · ")}`);
     setPending(false);
     onOpenChange(false);
     reset();
+  }
+
+  async function putOnBoard() {
+    if (!engagementId || !item || !profile || pending) return;
+    setPending(true);
+    setError(null);
+    try {
+      const home = await supabase.rpc("ensure_board_default_task", { p_engagement: engagementId });
+      if (home.error) throw new Error(home.error.message);
+      if (typeof home.data !== "string" || !home.data) throw new Error(COPY.homeError);
+      await mapToTask(home.data, "");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : COPY.homeError);
+      setPending(false);
+    }
   }
 
 
@@ -121,7 +142,6 @@ export function MapDialog({
       setPending(false);
       return;
     }
-    setNewTask("");
     await queryClient.invalidateQueries({ queryKey: ["tasks", engagementId] });
     await mapToTask(data.id);
   }
@@ -136,10 +156,10 @@ export function MapDialog({
     >
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle className="page-title">Map to a workstream</DialogTitle>
+          <DialogTitle className="page-title">{COPY.title}</DialogTitle>
         </DialogHeader>
         <p className="-mt-1 nb-type-small leading-[17px] text-muted-foreground">
-          Your workboard team can see mapped work.
+          {COPY.visibility}
         </p>
 
 
@@ -193,19 +213,21 @@ export function MapDialog({
             >
               ← Workboards
             </button>
-            <p className="micro-label">Choose a workstream</p>
+            <Button type="button" disabled={pending || !selectedBoard} onClick={() => void putOnBoard()} className="w-full">
+              {COPY.putOn} {[boardCode, boardTitle].filter(Boolean).join(" ")}
+            </Button>
+            <p className="micro-label text-muted-foreground">{COPY.optional}</p>
             {(tasks ?? []).map((task) => (
               <button
                 key={task.id}
                 type="button"
                 disabled={pending}
-                onClick={() => void mapToTask(task.id)}
+                onClick={() => void mapToTask(task.id, task.name)}
                 className="w-full rounded-[var(--radius)] border border-border bg-card px-4 py-3 text-left text-sm text-foreground transition-colors hover:bg-accent-soft"
               >
                 {task.name}
               </button>
             ))}
-            <DeclareWorkflowChips value={worked} onChange={setWorked} />
             <form
               onSubmit={(e) => {
                 e.preventDefault();

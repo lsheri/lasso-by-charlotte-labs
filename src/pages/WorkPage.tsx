@@ -219,7 +219,7 @@ function BringWorkInRow({
                 Select all
               </label>
               <MapButton disabled={chosenCount === 0} onClick={onBulkMap}>
-                Map to a workstream{chosenCount ? ` (${chosenCount})` : ""}
+                Put on a board{chosenCount ? ` (${chosenCount})` : ""}
               </MapButton>
               <button
                 type="button"
@@ -500,7 +500,7 @@ export function WorkPage() {
               : "Move to board"
             : groupLabel
               ? "Map conversation"
-              : "Map to a workstream"}
+              : "Put on a board"}
         </MapButton>
         {claimIsPrimary ? null : <ClaimToClient item={item} surface="work" />}
         {group && group.length > 1 ? (
@@ -827,7 +827,7 @@ export function WorkPage() {
               <Checkbox checked={allChosen} onCheckedChange={() => setChosen(allChosen ? new Set() : new Set(selectable))} aria-label="Select all visible unmapped items" />
               Select all
             </label>
-            <MapButton disabled={chosen.size === 0} onClick={bulkMapChosen}>Map to a workstream{chosen.size ? ` (${chosen.size})` : ""}</MapButton>
+            <MapButton disabled={chosen.size === 0} onClick={bulkMapChosen}>Put on a board{chosen.size ? ` (${chosen.size})` : ""}</MapButton>
             <Button type="button" variant="ghost" disabled={chosen.size === 0} onClick={() => setConfirmRemove(true)}>Remove{chosen.size ? ` (${chosen.size})` : ""}</Button>
             <Button type="button" variant="ghost" onClick={leaveSelectMode}>Done</Button>
           </>

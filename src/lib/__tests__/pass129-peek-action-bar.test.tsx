@@ -70,7 +70,7 @@ describe("pass 129 — the peek action bar", () => {
       (node) => node.textContent?.trim(),
     );
     expect(labels).toEqual([
-      "Map to a workstream",
+      "Put on a board",
       analysisPreset("verification")!.label,
       analysisPreset("decision_origin")!.label,
     ]);
