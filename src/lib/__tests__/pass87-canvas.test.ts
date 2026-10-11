@@ -26,10 +26,10 @@ function stubClient(calls: unknown[]) {
   const chain = (table: string) => {
     const record: Record<string, unknown> = { table };
     const api: Record<string, unknown> = {};
-    for (const key of ["update", "insert", "delete", "eq", "in"]) {
+    for (const key of ["select", "update", "insert", "delete", "eq", "in"]) {
       api[key] = (...args: unknown[]) => {
         record[key] = args.length === 1 ? args[0] : args;
-        if (key === "insert" || key === "update") record["op"] = key;
+        if (key === "insert" || key === "update" || key === "select") record["op"] = key;
         return api;
       };
     }
@@ -145,7 +145,7 @@ describe("shared write helpers keep the list behaviour", () => {
       invalidate: vi.fn(),
     });
     expect(result.error).toBeNull();
-    expect(calls.map((c) => c.op ?? "delete")).toEqual(["delete", "insert", "update"]);
+    expect(calls.map((c) => c.op ?? "delete")).toEqual(["select", "delete", "insert", "update"]);
     expect(detachEpisode).toHaveBeenCalledBefore(syncEpisode);
   });
 });
