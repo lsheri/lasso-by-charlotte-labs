@@ -1,4 +1,4 @@
-import { useSearch } from "@tanstack/react-router";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
@@ -313,6 +313,17 @@ export function WorkPage() {
   );
   const mapEntry: "nav_no_board" | undefined =
     enteredViaNoBoard && columnFilter === "unmapped" ? "nav_no_board" : undefined;
+  // NAV-6: react to the param changing while the page is mounted, not only on
+  // mount. Set state directly, never through changeColumnFilter, so arriving
+  // still records no work.filter_changed event.
+  const filterParam = "filter" in landingSearch ? landingSearch.filter : undefined;
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (filterParam === "no-board") {
+      setColumnFilter("unmapped");
+      setEnteredViaNoBoard(true);
+    }
+  }, [filterParam]);
   const [inboxViewportWidth, setInboxViewportWidth] = useState(0);
   const [inboxViewportHeight, setInboxViewportHeight] = useState(0);
   // Which page each type column is on. Presentation-only local state, exactly
@@ -607,6 +618,10 @@ export function WorkPage() {
     if (next === columnFilter) return;
     setEnteredViaNoBoard(false);
     setColumnFilter(next);
+    // NAV-6: clear the param so the URL agrees with the chosen chip and a
+    // later click on the No board row changes the param again. Replace, so
+    // the back button is not polluted with filter changes.
+    void navigate({ to: "/work", search: {}, replace: true });
     const count = groupedCount(
       visible.filter((item) => inboxFilterMatches(item, next, showPrivate)),
     );
