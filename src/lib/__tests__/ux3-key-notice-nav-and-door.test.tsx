@@ -96,7 +96,7 @@ vi.mock("@/components/engagements/NewEngagementDialog", () => ({
 
 import { SidebarNav } from "@/components/layout/SidebarNav";
 import { navFor, type NavCtx } from "@/components/layout/nav-config";
-import { DEFAULT_VOCAB } from "@/lib/vocab";
+import { DEFAULT_VOCAB } from "@/lib/edu-vocab";
 
 type Options = { component: (() => ReactNode) & { preload?: () => Promise<unknown> } };
 const auth = (AuthRoute as unknown as { options: Options }).options.component;
