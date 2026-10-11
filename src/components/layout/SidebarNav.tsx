@@ -314,6 +314,7 @@ export function SidebarNav({
   onNavigate?: (() => void) | undefined;
   onOpenSettings?: (() => void) | undefined;
 }) {
+  // useAffiliation remains the source of the institution, through useNavCtx.
   const { ctx: navCtx, profile, profiles, institution, vocab, guestNav, labels } = useNavCtx();
   const { data: engagements } = useEngagements(profile?.id);
   const { data: decisions } = useDecisions();
