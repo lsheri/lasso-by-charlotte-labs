@@ -225,7 +225,7 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "workitem.dated": ["channel", "source", "type"],
   "workitem.deleted": ["channel", "on_board", "source", "type"],
   "workitem.journey": ["channel", "output_kind", "source", "type"],
-  "workitem.mapped": ["channel", "entry", "source", "suggested", "type"],
+  "workitem.mapped": ["channel", "entry", "source", "suggested", "tool", "type", "via"],
   "workitem.marked_private": ["channel", "source", "type"],
   "workspace.affiliated": ["institution"],
 } as const;

@@ -62,6 +62,9 @@ export const moveItemToWorkstreamFn = createServerFn({ method: "POST" })
       if (error.code === "42501") return { status: "refused" as const };
       throw new Error(error.message);
     }
-    const payload = (result ?? {}) as { status?: string; from?: string | null };
-    return { status: (payload.status ?? "placed") as "placed" | "moved" | "already_here" };
+    const payload = (result ?? {}) as { status?: string; from?: string | null; first_map?: boolean };
+    return {
+      status: (payload.status ?? "placed") as "placed" | "moved" | "already_here",
+      first_map: payload.first_map === true,
+    };
   });

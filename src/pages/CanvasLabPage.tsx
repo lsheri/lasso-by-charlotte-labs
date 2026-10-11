@@ -205,6 +205,7 @@ import {
   needsContextRegion,
 } from "@/lib/context-region";
 import { isBoardDefaultTask, workstreamTasks } from "@/lib/board-default-task";
+import { logEvent } from "@/lib/telemetry";
 import { createDrawnWorkstreamFn, moveItemToWorkstreamFn } from "@/lib/workstream-draw.functions";
 import { deleteWorkstream as deleteWorkstreamFn, renameWorkstream as renameWorkstreamFn } from "@/lib/workstreams.functions";
 import { BOARD_WORKSTREAM_COPY, boxRemoval, canRenameBox, regionNameAction, type ManagedTask } from "@/lib/board-workstream-delete";
@@ -2458,6 +2459,11 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       try {
         const result = await moveItemToWorkstream({ data: { item_id: card.workItemId, task_id: taskId, profile_id: profile?.id } });
         if (result.status === "refused") return false;
+        // MAP-1: only a first mapping records; moves and already_here stay silent.
+        if (result.first_map === true) {
+          const item = workItems.find((one) => one.id === card.workItemId);
+          if (orgId && item) logEvent("workitem.mapped", orgId, { type: item.type, source: item.source, via: "board" });
+        }
       } catch {
         return false;
       }

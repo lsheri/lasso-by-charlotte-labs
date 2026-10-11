@@ -1171,6 +1171,8 @@ async function placeOneItem(
   itemId: string,
   place: PlaceRow,
   plan: { move: boolean },
+  /** MAP-1: the MCP tool that triggered this placement. */
+  tool: string,
 ): Promise<{ text: string; target: "inbox" | "workboard"; status: string }> {
   const { data, error } = await supabaseAdmin.rpc("mcp_place_item", {
     p_actor: owner.profileId,
@@ -1185,8 +1187,10 @@ async function placeOneItem(
     status?: string;
     ref?: string | null;
     placements?: { ref?: string | null }[] | null;
+    first_map?: boolean;
   };
   const status = String(result.status ?? "");
+  if (result.first_map === true) await recordFirstMap(owner, itemId, tool);
   // on_other carries no top-level ref; the boards it already sits on do.
   const others = (result.placements ?? [])
     .map((one) => one?.ref)
@@ -1200,6 +1204,22 @@ async function placeOneItem(
     target: placementTarget(status),
     status,
   };
+}
+
+/** MAP-1: a first mapping through MCP records workitem.mapped, through recordEvent only. */
+async function recordFirstMap(owner: Owner, itemId: string, tool: string): Promise<void> {
+  const { data: item } = await supabaseAdmin
+    .from("work_items")
+    .select("type, source")
+    .eq("id", itemId)
+    .maybeSingle();
+  await recordEvent(supabaseAdmin, {
+    eventType: "workitem.mapped",
+    orgId: owner.orgId,
+    userId: owner.userId,
+    profileId: owner.profileId,
+    dims: { type: String(item?.type ?? ""), source: String(item?.source ?? ""), via: "mcp", tool },
+  });
 }
 
 /** PF1: a direct placement status in the receipt's words; failures stay unlabelled. */
@@ -1219,6 +1239,7 @@ async function inheritConversationPlacement(
   vocab: McpVocab,
   threadId: string,
   itemIds: string[],
+  tool: string,
 ): Promise<{ place: PlaceRow | null; placed: number; byItem: Map<string, AttachmentPlacement> }> {
   const byItem = new Map<string, AttachmentPlacement>();
   const { data: rows } = await supabaseAdmin
@@ -1239,7 +1260,7 @@ async function inheritConversationPlacement(
   }
   let placed = 0;
   for (const itemId of itemIds) {
-    const one = await placeOneItem(owner, vocab, itemId, place, { move: false });
+    const one = await placeOneItem(owner, vocab, itemId, place, { move: false }, tool);
     if (one.status === "placed" || one.status === "moved" || one.status === "already_here") placed += 1;
     if (one.status === "placed" || one.status === "moved") byItem.set(itemId, "inherited");
     else if (one.status === "already_here") byItem.set(itemId, "already_there");
@@ -1253,6 +1274,8 @@ async function applyDestination(
   vocab: McpVocab,
   itemId: string,
   plan: PlacementPlan,
+  /** MAP-1: the MCP tool that triggered this placement. */
+  tool: string,
   /** P0 item 1: the caller may supply places already read, so one push reads once. */
   knownPlaces?: PlaceRow[],
 ): Promise<{
@@ -1280,7 +1303,7 @@ async function applyDestination(
       status: "unknown_ref",
     };
   }
-  const placed = await placeOneItem(owner, vocab, itemId, place, plan);
+  const placed = await placeOneItem(owner, vocab, itemId, place, plan, tool);
   return { text: placed.text, target: placed.target, place, status: placed.status };
 }
 
@@ -1382,7 +1405,7 @@ async function pushThread(
   await ensureExtracts([item.id]);
 
   const threadVocab = await placementVocab(owner);
-  const threadPlacement = await applyDestination(owner, threadVocab, item.id, plan);
+  const threadPlacement = await applyDestination(owner, threadVocab, item.id, plan, "push_thread");
   await logPush(owner, {
     tool: "push_thread",
     source_ai: sourceAi,
@@ -1498,7 +1521,7 @@ async function pushDocument(owner: Owner, args: Obj, id: unknown): Promise<Respo
 
   const docVocab = await placementVocab(owner);
   const docPlacement = doc?.id
-    ? await applyDestination(owner, docVocab, doc.id, plan)
+    ? await applyDestination(owner, docVocab, doc.id, plan, "push_document")
     : { text: "", target: "inbox" as const };
   await logPush(owner, {
     tool: "push_document",
@@ -2870,7 +2893,7 @@ export async function pushConversation(
 
   const convoVocab = await placementVocab(owner);
   const knownPlaces = plan.destination ? (await readPlaces(owner)).places : undefined;
-  const convoPlacement = await applyDestination(owner, convoVocab, threadId, plan, knownPlaces);
+  const convoPlacement = await applyDestination(owner, convoVocab, threadId, plan, "push_conversation", knownPlaces);
 
   // P0 item 1. An attachment belongs where its conversation went. The place is
   // already resolved, so each one is a single call with the same task.
@@ -2880,7 +2903,7 @@ export async function pushConversation(
   if (convoPlacement.target === "workboard" && convoPlacement.place && placeTargets.length > 0) {
     const place = convoPlacement.place;
     for (const itemId of placeTargets) {
-      const one = await placeOneItem(owner, convoVocab, itemId, place, plan);
+      const one = await placeOneItem(owner, convoVocab, itemId, place, plan, "push_conversation");
       if (one.status === "placed" || one.status === "moved" || one.status === "already_here") {
         attachmentsPlaced += 1;
       }
@@ -2896,7 +2919,7 @@ export async function pushConversation(
     // PF1. No destination on this call: the attachments follow their
     // conversation when it already sits in exactly one place. Read only; the
     // conversation itself is never placed or moved here.
-    const inherited = await inheritConversationPlacement(owner, convoVocab, threadId, placeTargets);
+    const inherited = await inheritConversationPlacement(owner, convoVocab, threadId, placeTargets, "push_conversation");
     attachmentsPlaced = inherited.placed;
     for (const [itemId, placement] of inherited.byItem) {
       const entry = outcomeById.get(itemId);
