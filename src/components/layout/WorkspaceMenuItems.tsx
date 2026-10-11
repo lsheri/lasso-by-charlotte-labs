@@ -12,7 +12,7 @@ export function WorkspaceMenuItems({ items, dropdown = false, onOpened, onSettin
   onOpened: (item: ResolvedNavItem["id"]) => void;
   onSettings: () => void;
   onSignOut: () => void;
-  onNavigate?: () => void;
+  onNavigate?: (() => void) | undefined;
 }) {
   return items.map((item) => {
     const content = <><GraphiteIcon name={item.icon} size={16} /><span>{item.label}</span></>;

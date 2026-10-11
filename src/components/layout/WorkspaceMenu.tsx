@@ -9,8 +9,8 @@ import { OrgSwitcher } from "./OrgSwitcher";
 import { WorkspaceMenuItems } from "./WorkspaceMenuItems";
 
 export function WorkspaceMenu({ profiles, active, name, onOpenSettings, onNavigate, surface = "sidebar" }: {
-  profiles?: Profile[]; active?: Profile | null; name?: string; onOpenSettings?: () => void;
-  onNavigate?: () => void; surface?: "sidebar" | "drawer";
+  profiles?: Profile[]; active?: Profile | null; name?: string; onOpenSettings?: (() => void) | undefined;
+  onNavigate?: (() => void) | undefined; surface?: "sidebar" | "drawer";
 }) {
   const nav = useNavCtx();
   const profile = active ?? nav.profile;

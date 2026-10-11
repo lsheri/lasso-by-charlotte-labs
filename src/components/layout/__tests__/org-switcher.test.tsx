@@ -34,10 +34,11 @@ function renderSwitcher(profiles: Profile[], active: Profile | null) {
 }
 
 describe("OrgSwitcher", () => {
-  it("stays hidden for a single profile", () => {
+  it("shows name and type for a single profile", () => {
     const one = profile({});
     const { container } = renderSwitcher([one], one);
-    expect(container.textContent).toBe("");
+    expect(container.textContent).toContain("Northline");
+    expect(container.textContent).toContain("FIRM · MEMBER");
   });
 
   it("stays compact until opened and emits one switch record", () => {
@@ -46,15 +47,15 @@ describe("OrgSwitcher", () => {
     const coaching = profile({ id: "p2", org_id: "o2", role: "coach", org_name: "Bright Path" });
     renderSwitcher([mine, coaching], mine);
 
-    const trigger = screen.getByRole("button", { name: /change workspace.*engagement mgr.*northline/i });
+    const trigger = screen.getByRole("button", { name: /change workspace.*northline.*firm/i });
     expect(trigger.getAttribute("aria-expanded")).toBe("false");
-    expect(screen.queryByText("Coach")).toBeNull();
+    expect(screen.queryByText("Bright Path")).toBeNull();
 
     fireEvent.click(trigger);
     expect(trigger.getAttribute("aria-expanded")).toBe("true");
-    expect(screen.getByText("Coach")).not.toBeNull();
+    expect(screen.getByText("Bright Path")).not.toBeNull();
 
-    fireEvent.click(screen.getByText("Coach"));
+    fireEvent.click(screen.getByText("Bright Path"));
     expect(trigger.getAttribute("aria-expanded")).toBe("false");
     expect(logEvent).toHaveBeenCalledTimes(1);
     expect(logEvent).toHaveBeenCalledWith("profile.switched", "o2", {
