@@ -60,6 +60,15 @@ export type NavGroupId =
 
 export type NavAction = "openSettings" | "signOut" | "openFeedback";
 
+export const TAB_ITEMS = {
+  work: { id: "all-work", label: "Work", to: "/work", icon: "work" },
+  workboards: { id: "workboards", label: "Workboards", icon: "engagement", action: "engagements" },
+  more: { id: "more", label: "More", icon: "overview", action: "more" },
+  coaching: { id: "people-you-coach", label: "Coaching", to: "/coaching", icon: "members" },
+  prep: { id: "guest-one-on-one", label: "1:1 prep", to: "/one-on-one", icon: "one-on-one" },
+  coachAsk: { id: "people-you-coach", label: "Ask", icon: "ask-lasso", action: "coach-ask" },
+} as const;
+
 export type NavCtx = {
   type: OrgType;
   role: string;

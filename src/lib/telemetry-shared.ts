@@ -1,5 +1,8 @@
+import type { NavItemId } from "@/components/layout/nav-config";
+
 /** Canonical event registry. Every name here is mirrored to PostHog. */
 export type TelemetryEvent =
+  | "nav.opened"
   | "org.created"
   /** Unit 4h-a: an admin turned the workspace's client list on or off. The new state only, as "true" or "false". Never a name, never an id. */
   | "org.clients_changed"
@@ -461,6 +464,12 @@ export type TelemetryDims = Record<
 /** MN-1: closed source vocabulary for profile.active_reconciled. */
 export const PROFILE_RECONCILE_SOURCES = ["row_differs"] as const;
 export type ProfileActiveReconciledDims = { source: (typeof PROFILE_RECONCILE_SOURCES)[number] };
+
+/** MN-2b: content-free navigation destinations; portal registration required. */
+export type NavOpenedDims = {
+  item: NavItemId | "workboards" | "more" | "board";
+  surface: "tab" | "more" | "workboards_sheet" | "sidebar" | "workspace_menu" | "drawer";
+};
 
 /** MAP-1: dims for workitem.mapped. Additive; existing keys unchanged. */
 export type WorkitemMappedDims = {

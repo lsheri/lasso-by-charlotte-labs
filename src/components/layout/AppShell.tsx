@@ -3,9 +3,9 @@ import { MessageSquare } from "lucide-react";
 import { useEffect } from "react";
 
 import { setClientTelemetryOrg } from "@/lib/client-telemetry";
-import { identifyPostHog, resetPostHog } from "@/lib/posthog-client";
+import { identifyPostHog } from "@/lib/posthog-client";
+import { signOut } from "@/lib/sign-out";
 
-import { supabase } from "@/integrations/supabase/client";
 import { useAuthUser, useProfile } from "@/hooks/use-profile";
 
 import { AppSidebar } from "./AppSidebar";
@@ -57,12 +57,6 @@ function AppShellInner() {
 
   const userName = profile?.display_name ?? "Signed in";
 
-  async function handleSignOut() {
-    resetPostHog();
-    await supabase.auth.signOut();
-    navigate({ to: "/auth", replace: true });
-  }
-
   return (
     <AskLassoProvider>
       <AskDockStateProvider>
@@ -74,7 +68,7 @@ function AppShellInner() {
                 userRole={profile?.role}
                 profiles={profiles}
                 activeProfile={profile}
-                onSignOut={handleSignOut}
+                onSignOut={() => void signOut(navigate)}
                 onOpenSettings={openSettings}
               />
             </div>

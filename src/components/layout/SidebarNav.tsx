@@ -11,10 +11,7 @@ import { SidebarDragProvider, useSidebarDrag } from "@/components/layout/sidebar
 import { applyContainerMoves, applyWorkboardMoves, type PendingMoves } from "@/lib/sidebar-drag";
 import { CircleMark } from "@/components/notebook/CircleMark";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { useAffiliation } from "@/hooks/use-affiliation";
 import { useUnreadNotesAboutMe } from "@/hooks/use-coach-note-thread";
-import { useHasLiveCoachLink } from "@/hooks/use-coaching-links";
-import { useCoachingReach } from "@/hooks/use-coaching-reach";
 import { useSharedWithMe } from "@/hooks/use-shared-with-me";
 import { useSharedBoardMarks } from "@/hooks/use-shared-board-marks";
 
@@ -24,7 +21,6 @@ import { groupConversations } from "@/lib/work-types";
 import { useEngagements } from "@/hooks/use-engagements";
 import { isBusinessOrg, useProfile } from "@/hooks/use-profile";
 import * as roles from "@/lib/role-access";
-import { vocabFor } from "@/lib/edu-vocab";
 import { bucket, logEvent } from "@/lib/telemetry";
 
 
@@ -46,7 +42,8 @@ import {
   type NavEngagement,
 } from "@/lib/nav-groups";
 
-import { navFor, type NavCtx } from "./nav-config";
+import { navFor } from "./nav-config";
+import { useNavCtx } from "./use-nav-ctx";
 import { engagementDisplayTitle } from "@/lib/clients";
 import {
   containerColourStyle,
@@ -317,44 +314,15 @@ export function SidebarNav({
   onNavigate?: (() => void) | undefined;
   onOpenSettings?: (() => void) | undefined;
 }) {
-  const { data: profile, profiles } = useProfile();
-  // Pass 186: an affiliated workspace gets one extra item at the top of
-  // "Your account", named for the institution. Nothing is inserted when
-  // there is no affiliation.
-  const { data: affiliation } = useAffiliation();
-  const institution = affiliation?.institution ?? null;
+  // useAffiliation remains the source of the institution, through useNavCtx.
+  const { ctx: navCtx, profile, profiles, institution, vocab, guestNav, labels } = useNavCtx();
   const { data: engagements } = useEngagements(profile?.id);
   const { data: decisions } = useDecisions();
   // The pill counts what is WAITING on you, which is the drafts. A confirmed
   // call needs nothing, so counting it would ask for attention that is not due.
   const decisionCount = (decisions ?? []).filter((row) => row.status === "draft").length;
-  const guestNav = roles.usesGuestNav(profile);
-  const canManageMembers = roles.canManageMembers(profile);
-  const canSeeFirmView = roles.canSeeFirmView(profile);
   const isPartnerOrg = profile?.org_type === "partner";
-  const vocab = vocabFor(profile);
-  // Whether a coaching destination exists at all is decided by what this
-  // person was given on a board, never by their workspace role.
-  const reach = useCoachingReach(profiles);
-
-  // "Your coach" is only a real place when someone is actually coaching you.
-  // A firm or school role has that by arrangement; a solo workspace has to
-  // have a live link, so only there does the sidebar ask.
-  const soloHasCoach = useHasLiveCoachLink(
-    !guestNav && profile?.org_type === "personal" && Boolean(profile?.id),
-  );
-  // MN-2a: which groups and items show is decided by the nav manifest.
-  const navCtx: NavCtx = {
-    type: profile?.org_type ?? "personal",
-    role: profile?.role ?? "",
-    canReview: reach.canReach,
-    canManageMembers,
-    canSeeFirmView,
-    hasCoachLink: soloHasCoach,
-    affiliated: Boolean(institution),
-    clientsEnabled: clientsEnabled(profile),
-  };
-  const navGroupsForPerson = navFor(navCtx, { vocab, institutionName: institution?.name ?? null });
+  const navGroupsForPerson = navFor(navCtx, labels);
   const coachingGroups = navGroupsForPerson.filter((group) => group.id === "coaching");
   // The guest shell's own short list, below its coaching group.
   const coachNavGroups = navGroupsForPerson.filter((group) => group.id !== "coaching");
