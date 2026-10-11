@@ -34,7 +34,7 @@ describe("BB-2 portalled presses", () => {
 
   it("a press on the board surface still captures for a pan", () => {
     const capture = setup();
-    const surface = document.querySelector("[aria-label='Test board']") ?? screen.getByText("card").closest("div")!.parentElement!;
+    const surface = document.querySelector(".canvas-lab-surface")!;
     fireEvent.pointerDown(surface, { button: 0, pointerId: 1 });
     expect(capture).toHaveBeenCalled();
   });
