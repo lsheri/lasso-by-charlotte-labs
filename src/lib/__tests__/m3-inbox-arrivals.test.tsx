@@ -197,7 +197,7 @@ describe("M3 — Undo and Put it back", () => {
   });
 
   it("undoes a placement, records it, and can put it back", async () => {
-    renderStrip([item({ id: "i1", captured_at: new Date(Date.now() - 60 * 60 * 1000).toISOString(), work_item_tasks: mappedTo("CFT-01", "General") })]);
+    renderStrip([item({ id: "i1", work_item_tasks: mappedTo("CFT-01", "General") })]);
     expect(screen.getByText("Placed on CFT-01 · General")).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "Undo" }));
@@ -212,7 +212,7 @@ describe("M3 — Undo and Put it back", () => {
   });
 
   it("offers no Undo on an arrival still in the inbox", () => {
-    renderStrip([item({ id: "i2", captured_at: new Date(Date.now() - 60 * 60 * 1000).toISOString() })]);
+    renderStrip([item({ id: "i2" })]);
     expect(screen.getByText("No board yet")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Undo" })).toBeNull();
   });
