@@ -74,6 +74,8 @@ export async function remapItems(input: {
     data: { task_id: string; work_item_ids: string[]; profile_id: string };
   }) => Promise<unknown>;
   invalidate: (queryKey: readonly unknown[]) => Promise<void> | void;
+  /** NAV-5: optional entry attribution; omitted callers emit exactly as before. */
+  entry?: "nav_no_board" | undefined;
 }): Promise<WriteResult> {
   const client = input.client ?? defaultClient;
   const { targets, taskId, profile } = input;
@@ -95,7 +97,11 @@ export async function remapItems(input: {
   await input.invalidate(["episode", taskId]);
 
   for (const target of targets) {
-    logEvent("workitem.mapped", profile.org_id, { type: target.type, source: target.source });
+    logEvent("workitem.mapped", profile.org_id, {
+      type: target.type,
+      source: target.source,
+      ...(input.entry ? { entry: input.entry } : {}),
+    });
   }
   await input.invalidate(["work-items"]);
   await input.invalidate(["engagement"]);

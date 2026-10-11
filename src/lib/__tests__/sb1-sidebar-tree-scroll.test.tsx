@@ -93,7 +93,7 @@ describe("SB1 tree scroller and standing separation", () => {
     expect(actions!.contains(scroller!)).toBe(false);
   });
 
-  it("sits the actions block after the tree in DOM order, with the top border rule", () => {
+  it("sits the actions block after the tree in DOM order, with the top border rule, and the middle column (not the tree) as the single scroller", () => {
     mocks.engagements = manyBoards();
     const { container } = render(<SidebarNav />);
     const scroller = container.querySelector(".nb-nav-tree-scroll")!;
@@ -109,7 +109,11 @@ describe("SB1 tree scroller and standing separation", () => {
     expect(rule![0]).toContain("border-top: 1px solid var(--nb-rule)");
     const scrollRule = css.match(/\.nb-nav-tree-scroll\s*\{[^}]*\}/);
     expect(scrollRule).not.toBeNull();
-    expect(scrollRule![0]).toContain("overflow-y: auto");
+    // NAV-5: the sidebar's middle column is the single scroller; the tree is a plain list.
+    expect(scrollRule![0]).not.toContain("overflow-y");
+    expect(scrollRule![0]).not.toContain("max-height");
+    const sidebarSrc = readFileSync(`${process.cwd()}/src/components/layout/AppSidebar.tsx`, "utf8");
+    expect(sidebarSrc).toContain('className="flex min-h-0 flex-1 flex-col overflow-y-auto"');
   });
 
   it("keeps New workboard, New folder and Past work present with a long tree", () => {
