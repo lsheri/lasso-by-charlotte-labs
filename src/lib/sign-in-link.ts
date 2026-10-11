@@ -5,9 +5,9 @@ export const SIGN_IN_LINK_COPY = {
   control: "Email me a sign-in link",
   sending: "Sending",
   needEmail: "Enter your email first.",
-  sentTitle: "Check your inbox",
+  sentTitle: "Check your email",
   sentBody: "If that address has a Lasso account, a sign-in link is on its way. The link works once.",
-  alreadySent: "We already sent one. Check your inbox, or ask again in a minute.",
+  alreadySent: "We already sent one. Check your email, or ask again in a minute.",
   back: "Back to sign in",
 } as const;
 

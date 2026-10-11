@@ -33,7 +33,7 @@ export const MOTION_SCENES: MotionScene[] = [
     loop: "loop-with-pause",
     pauseMs: 10000,
     role: "background",
-    placement: ["src/pages/WorkPage.tsx — Inbox, behind the page"],
+    placement: ["src/pages/WorkPage.tsx, All work, behind the page"],
   },
   {
     id: "m10-notebook-spider",

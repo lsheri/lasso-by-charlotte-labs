@@ -362,7 +362,7 @@ export function placementInputs(vocab: McpVocab): Record<string, unknown> {
   return {
     destination: {
       type: "string",
-      description: `Optional. A place ref exactly as lasso_list_places or lasso_push_options gave it ("CODE · ${vocab.workstream}"). Leave it out to keep the item in the user's inbox.`,
+      description: `Optional. A place ref exactly as lasso_list_places or lasso_push_options gave it ("CODE · ${vocab.workstream}"). Leave it out to keep the item in All work with no board.`,
     },
     move: {
       type: "boolean",
