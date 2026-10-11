@@ -45,7 +45,11 @@ describe("A1 Ask Lasso thinking state", () => {
     setReducedMotion(false);
     render(<MessagesTab ask={fakeAsk("")} />);
     expect(screen.getAllByTestId("ask-thinking-glyph")).toHaveLength(1);
-    expect(document.querySelectorAll("canvas")).toHaveLength(0);
+    const glyph = screen.getByTestId("ask-thinking-glyph");
+    expect(glyph.getAttribute("data-state")).toBe("thinking");
+    expect(glyph.querySelectorAll('canvas[data-lasso-thinking-mark="signature"]')).toHaveLength(1);
+    expect(glyph.querySelector("canvas")?.getAttribute("data-thinking")).toBe("true");
+    expect(document.querySelectorAll("canvas")).toHaveLength(1);
   });
   it("3. on the first character, the Lasso name appears", () => {
     setReducedMotion(false);

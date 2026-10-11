@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import type React from "react";
 import { act, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -32,7 +33,7 @@ describe("LassoThinkingMark", () => {
     }
     vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(context as unknown as CanvasRenderingContext2D);
     vi.spyOn(window, "getComputedStyle").mockReturnValue({
-      getPropertyValue: (name: string) => (name === "--nb-lasso-green" ? "token-green" : ""),
+      getPropertyValue: (name: string) => ({ "--nb-lasso-green": "token-green", "--nb-ink": "token-ink", "--nb-graphite": "token-graphite" } as Record<string, string>)[name] ?? "",
     } as CSSStyleDeclaration);
     vi.stubGlobal("devicePixelRatio", 3);
     vi.stubGlobal("matchMedia", vi.fn().mockReturnValue({
@@ -46,7 +47,7 @@ describe("LassoThinkingMark", () => {
 
   afterEach(() => vi.restoreAllMocks());
 
-  it.each(["orbit", "loop", "gather", "trace", "signature"] as const)("draws %s from the token and cancels on unmount", (kind) => {
+  it.each(["orbit", "loop", "gather", "trace"] as const)("draws %s from the token and cancels on unmount", (kind) => {
     const { unmount } = render(
       <LassoThinkingMark kind={kind} size={72} {...(kind === "gather" ? { count: 3 } : {})} />,
     );
@@ -110,5 +111,68 @@ describe("LassoThinkingMark", () => {
     expect(requestAnimationFrame).toHaveBeenCalled();
     act(() => observerCallback?.([{ isIntersecting: false } as IntersectionObserverEntry], {} as IntersectionObserver));
     expect(cancelAnimationFrame).toHaveBeenCalled();
+  });
+
+  describe("TM-1 signature engine", () => {
+    function runFrames(element: React.ReactElement, frames: number[]) {
+      const callbacks: FrameRequestCallback[] = [];
+      vi.mocked(requestAnimationFrame).mockImplementation((callback) => { callbacks.push(callback); return 17; });
+      vi.spyOn(performance, "now").mockReturnValue(0);
+      const strokes: string[] = [];
+      const fills: string[] = [];
+      context.stroke.mockImplementation(() => { strokes.push(context.strokeStyle); });
+      context.fill.mockImplementation(() => { fills.push(context.fillStyle); });
+      const view = render(element);
+      for (const at of frames) act(() => callbacks[callbacks.length - 1]?.(at));
+      return { view, colours: [...strokes, ...fills] };
+    }
+
+    it("draws once, dpr capped at 3, and schedules no frame under reduced motion", () => {
+      vi.mocked(window.matchMedia).mockReturnValue({ matches: true } as unknown as MediaQueryList);
+      render(<LassoThinkingMark kind="signature" size={72} />);
+      expect(context.setTransform).toHaveBeenCalledWith(3, 0, 0, 3, 0, 0);
+      expect(context.stroke).toHaveBeenCalled();
+      expect(requestAnimationFrame).not.toHaveBeenCalled();
+      expect(context.strokeStyle).toBe("token-graphite");
+    });
+
+    it.each([[120, 56], [72, 40], [28, 22], [16, 12]])("draws %ipx with %i pieces", (size, pieces) => {
+      context.arc.mockClear(); context.moveTo.mockClear();
+      runFrames(<LassoThinkingMark kind="signature" size={size} />, [16]);
+      // answered at t=0.016 sits early in the loop: every piece is drawn once, as a dot or a dash, plus the loop stroke start.
+      const marks = context.arc.mock.calls.length + context.moveTo.mock.calls.length;
+      expect(marks).toBeGreaterThanOrEqual(pieces);
+      expect(marks).toBeLessThanOrEqual(pieces + 2);
+    });
+
+    it("answered uses graphite only; thinking adds lime from the token", () => {
+      const answered = runFrames(<LassoThinkingMark kind="signature" size={72} />, [500, 1500, 3000, 4500]);
+      expect(answered.colours.length).toBeGreaterThan(0);
+      expect(new Set(answered.colours)).toEqual(new Set(["token-graphite"]));
+      answered.view.unmount();
+      const thinking = runFrames(<LassoThinkingMark kind="signature" size={72} thinking />, [500, 1500, 3000, 3900]);
+      expect(thinking.colours).toContain("token-green");
+      expect(thinking.colours).toContain("token-ink");
+      expect(thinking.colours).not.toContain("token-graphite");
+    });
+
+    it("keeps the frame loop but draws nothing off screen, and cancels on unmount", () => {
+      let observerCallback: IntersectionObserverCallback | undefined;
+      class TestObserver {
+        constructor(callback: IntersectionObserverCallback) { observerCallback = callback; }
+        observe() {}
+        disconnect() {}
+      }
+      vi.stubGlobal("IntersectionObserver", TestObserver);
+      const callbacks: FrameRequestCallback[] = [];
+      vi.mocked(requestAnimationFrame).mockImplementation((callback) => { callbacks.push(callback); return 17; });
+      const { unmount } = render(<LassoThinkingMark kind="signature" size={72} />);
+      act(() => observerCallback?.([{ isIntersecting: false } as IntersectionObserverEntry], {} as IntersectionObserver));
+      context.clearRect.mockClear();
+      act(() => callbacks[callbacks.length - 1]?.(performance.now() + 16));
+      expect(context.clearRect).not.toHaveBeenCalled();
+      unmount();
+      expect(cancelAnimationFrame).toHaveBeenCalledWith(17);
+    });
   });
 });

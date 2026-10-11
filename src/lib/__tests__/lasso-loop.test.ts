@@ -16,6 +16,13 @@ import {
   settledLassoStamps,
   stampRadiusFor,
   turnFractionAt,
+  scatterCinchPath,
+  scatterGeometry,
+  scatterPieceCount,
+  scatterPieces,
+  scatterLoopPoint,
+  scatterPhase,
+  scatterStroke,
 } from "@/lib/lasso-loop";
 
 describe("Ask Lasso signature loop maths", () => {
@@ -94,19 +101,39 @@ describe("Ask Lasso signature loop maths", () => {
     );
   });
 
-  it("starts with the cursive L, advances through four symbols and the fox, then repeats", () => {
-    const cycleSeconds = LOOP_CYCLE_MS / 1000;
-    expect(LOOP_SEQUENCE_LENGTH).toBe(6);
-    expect(Array.from({ length: 12 }, (_, index) => resolvedFormAt(cycleSeconds * index))).toEqual([
-      0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5,
-    ]);
+  it("TM-1: scatter pieces are deterministic for the seed and sized by mark", () => {
+    expect(scatterPieces(72)).toEqual(scatterPieces(72));
+    expect(scatterPieces(72, 8)).not.toEqual(scatterPieces(72));
+    expect([120, 72, 28, 16].map(scatterPieceCount)).toEqual([56, 40, 22, 12]);
+    expect(scatterStroke(16)).toMatchObject({ w: 1.5, dot: 1.25 });
+    const lime = scatterPieces(120).filter((piece) => piece.lime).length;
+    expect(lime).toBeGreaterThan(4);
+    expect(lime).toBeLessThan(20);
+  });
 
-    const silhouettes = Array.from({ length: LOOP_SEQUENCE_LENGTH }, (_, form) =>
-      settledLassoStamps(LOOP_SIZE_TITLE, form as 0 | 1 | 2 | 3 | 4 | 5)
-        .map(({ x, y }) => `${x.toFixed(2)},${y.toFixed(2)}`)
-        .join("|"),
-    );
-    expect(new Set(silhouettes).size).toBe(LOOP_SEQUENCE_LENGTH);
+  it("TM-1: the cinch path is loop points plus a rope, with no knot", () => {
+    const size = LOOP_SIZE_TITLE;
+    const { cx, cy, R } = scatterGeometry(size);
+    const { loop, rope } = scatterCinchPath(size);
+    const cinch = scatterPhase(0, false, true).cinch;
+    loop.forEach((point, j) => {
+      const expected = scatterLoopPoint(j / (loop.length - 1), R, cx, cy, cinch);
+      expect(point.x).toBeCloseTo(expected.x, 10);
+      expect(point.y).toBeCloseTo(expected.y, 10);
+    });
+    expect(rope[0]).toEqual(loop[loop.length - 1]);
+    expect(Math.hypot(rope[1].x - rope[0].x, rope[1].y - rope[0].y)).toBeCloseTo(R * 0.78, 6);
+    expect(Object.keys(scatterCinchPath(size)).sort()).toEqual(["loop", "rope"]);
+  });
+
+  it("TM-1: answered holds mostly on the loop and never glows", () => {
+    for (let t = 0; t < 9; t += 0.25) {
+      const ph = scatterPhase(t, false, false);
+      expect(ph.cyc).toBeGreaterThanOrEqual(0.3);
+      expect(ph.cyc).toBeLessThanOrEqual(0.92);
+      expect(ph.glow).toBe(0);
+    }
+    expect(scatterPhase(5.4 * 0.72, true, false).glow).toBeGreaterThan(0.9);
   });
 
   it("returns 48 stamps and resolves every form inside its square", () => {
