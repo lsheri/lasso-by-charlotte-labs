@@ -38,13 +38,14 @@ import {
   notInContainerLabel,
   type ContainerNode,
   UNMAPPED_SHELF_ID,
-  readCollapsedClients,
-  writeCollapsedClients,
   type NavEngagement,
 } from "@/lib/nav-groups";
 
 import { navFor, type NavItemId } from "./nav-config";
 import { useNavCtx } from "./use-nav-ctx";
+import { BoardFinder } from "./BoardFinder";
+import { activeBoardChain, filterBoardTree, treeBoards, useContainerOpenState, TREE_COPY } from "@/lib/sidebar-tree-state";
+import type { NavOpenedDims } from "@/lib/telemetry-shared";
 import { engagementDisplayTitle } from "@/lib/clients";
 import {
   containerColourStyle,
@@ -360,7 +361,7 @@ export function SidebarNav({
   const matchRoute = useMatchRoute();
   const locationHash = useLocationHash();
   const archiveMatch = Boolean(matchRoute({ to: "/archive", fuzzy: false }));
-  const engagementMatch = matchRoute({ to: "/engagements/$id", fuzzy: false });
+  const engagementMatch = matchRoute({ to: "/engagements/$id", fuzzy: true });
   const activeEngagementId = engagementMatch ? engagementMatch.id : undefined;
   const search = useSearch({ strict: false });
   const activeWorkId =
@@ -388,7 +389,10 @@ export function SidebarNav({
   const engagementList = applyWorkboardMoves(rawEngagementList, containerRows, pendingMoves);
   // Only the synthetic groupings (clientless work, quick folders) come from here.
   const { groups } = groupEngagementsByClient(engagementList);
-  const containerRoots = buildContainerTree(containerRows, engagementList);
+  const fullContainerRoots = buildContainerTree(containerRows, engagementList);
+  const [findQuery, setFindQuery] = useState("");
+  const filtering = findQuery.trim().length > 0;
+  const containerRoots = filterBoardTree(fullContainerRoots, findQuery);
   const split = clientsEnabled(profile);
   const clientRoots = flattenForSidebar(
     containerRoots.filter((node) => !split || node.kind === "client"),
@@ -397,40 +401,30 @@ export function SidebarNav({
     ? flattenForSidebar(containerRoots.filter((node) => node.kind === "folder"))
     : [];
   const showFolders = topLevelFolders.length > 0;
-  const syntheticShelves = groups.filter((shelf) => isSyntheticShelf(shelf.clientId));
-  const [collapsedClients, setCollapsedClients] = useState<string[]>(() => readCollapsedClients());
+  const allSyntheticShelves = groups.filter((shelf) => isSyntheticShelf(shelf.clientId));
+  const boardsInTree = [...treeBoards(fullContainerRoots), ...allSyntheticShelves.flatMap((shelf) => shelf.engagements)];
+  const syntheticShelves = filtering ? allSyntheticShelves.flatMap((shelf) => {
+    const engagements = shelf.engagements.filter((board) => board.title.toLocaleLowerCase().includes(findQuery.trim().toLocaleLowerCase()) || board.clients?.name.toLocaleLowerCase().includes(findQuery.trim().toLocaleLowerCase()));
+    return engagements.length ? [{ ...shelf, engagements }] : [];
+  }) : allSyntheticShelves;
+  const everyCollapsibleId = [...allContainerIds(fullContainerRoots), ...allSyntheticShelves.map((shelf) => shelf.clientId)];
+  const { collapsed: savedCollapsed, setCollapsed: setCollapsedClients } = useContainerOpenState(
+    profile?.id, everyCollapsibleId, activeBoardChain(fullContainerRoots, activeEngagementId),
+  );
+  const collapsedClients = filtering ? [] : savedCollapsed;
+  const boardNavigate = () => {
+    if (filtering && profile?.org_id) logEvent("nav.opened", profile.org_id, { item: "find_result", surface } satisfies NavOpenedDims);
+    onNavigate?.();
+  };
   function toggleClient(clientId: string) {
-    setCollapsedClients((prev) => {
-      // SB2: collapsing cascades to every descendant; expanding opens only this one.
-      const next = prev.includes(clientId)
-        ? prev.filter((id) => id !== clientId)
-        : [...new Set([...prev, clientId, ...descendantContainerIds(containerRoots, clientId)])];
-      writeCollapsedClients(next);
-      return next;
-    });
-  }
-
-  // SB2: every container in the whole tree plus the synthetic shelves.
-  const everyCollapsibleId = [
-    ...allContainerIds(containerRoots),
-    ...syntheticShelves.map((shelf) => shelf.clientId),
-  ];
-  const allCollapsed =
-    everyCollapsibleId.length > 0 && everyCollapsibleId.every((id) => collapsedClients.includes(id));
-  function toggleAll() {
-    const next = allCollapsed ? [] : everyCollapsibleId;
-    writeCollapsedClients(next);
+    const next = savedCollapsed.includes(clientId)
+      ? savedCollapsed.filter((id) => id !== clientId)
+      : [...new Set([...savedCollapsed, clientId, ...descendantContainerIds(fullContainerRoots, clientId)])];
     setCollapsedClients(next);
   }
-
-  function expandClient(clientId: string) {
-    setCollapsedClients((prev) => {
-      if (!prev.includes(clientId)) return prev;
-      const next = prev.filter((id) => id !== clientId);
-      writeCollapsedClients(next);
-      return next;
-    });
-  }
+  const allCollapsed = everyCollapsibleId.length > 0 && everyCollapsibleId.every((id) => savedCollapsed.includes(id));
+  function toggleAll() { setCollapsedClients(allCollapsed ? [] : everyCollapsibleId); }
+  function expandClient(clientId: string) { setCollapsedClients(savedCollapsed.filter((id) => id !== clientId)); }
 
   function renderShelf(shelf: (typeof groups)[number]) {
                     const collapsed = collapsedClients.includes(shelf.clientId);
@@ -511,7 +505,7 @@ export function SidebarNav({
                                   key={engagement.id}
                                   engagement={engagement}
                                   nested
-                                  onNavigate={onNavigate}
+                                  onNavigate={boardNavigate}
                                   scope={scopeFor(engagement.id)}
                                 />
                               ))}
@@ -718,6 +712,8 @@ export function SidebarNav({
                   orgId={profile?.org_id}
                   setPending={setPendingMoves}
                 >
+                <BoardFinder profileId={profile?.id} boards={boardsInTree} query={findQuery} onQueryChange={setFindQuery}
+                  onOpen={() => { if (profile?.org_id) logEvent("nav.opened", profile.org_id, { item: "recent_board", surface }); onNavigate?.(); }} />
                 <NoBoardNavRow onNavigate={onNavigate} />
                 <div className="nb-nav-tree-scroll">
                 <TopLevelDropZone>
@@ -727,6 +723,7 @@ export function SidebarNav({
                     onToggle={toggleClient}
                     onExpand={expandClient}
                     onNavigate={onNavigate}
+                    onBoardNavigate={boardNavigate}
                     newEngagementLabel={vocab.newEngagement}
                     scopeFor={scopeFor}
                   />
@@ -737,12 +734,14 @@ export function SidebarNav({
                       onToggle={toggleClient}
                       onExpand={expandClient}
                       onNavigate={onNavigate}
+                      onBoardNavigate={boardNavigate}
                       newEngagementLabel={vocab.newEngagement}
                       scopeFor={scopeFor}
                     />
                   ) : null}
                   {syntheticShelves.map((shelf) => renderShelf(shelf))}
                 </TopLevelDropZone>
+                  {filtering && containerRoots.length === 0 && syntheticShelves.length === 0 ? <p className="px-2 py-1.5 text-sm text-muted-foreground">{TREE_COPY.noMatch}</p> : null}
                   {engagements && engagements.length === 0 ? (
                     <p className="px-2 py-1.5 text-sm text-muted-foreground">
                       {vocab.noEngagements}
@@ -831,6 +830,7 @@ function FolderRows({
   onToggle,
   onExpand,
   onNavigate,
+  onBoardNavigate,
   newEngagementLabel,
   scopeFor,
 }: {
@@ -839,6 +839,7 @@ function FolderRows({
   onToggle: (id: string) => void;
   onExpand?: ((id: string) => void) | undefined;
   onNavigate?: (() => void) | undefined;
+  onBoardNavigate?: (() => void) | undefined;
   newEngagementLabel: string;
   scopeFor: (id: string) => { tasks: CachedNavTask[]; workId: string | undefined } | undefined;
 }) {
@@ -855,6 +856,7 @@ function FolderRows({
         onToggle={onToggle}
         onExpand={onExpand}
         onNavigate={onNavigate}
+        onBoardNavigate={onBoardNavigate}
         newEngagementLabel={newEngagementLabel}
         scopeFor={scopeFor}
         ancestors={[]}
@@ -869,6 +871,7 @@ function ContainerShelfRow({
   onToggle,
   onExpand,
   onNavigate,
+  onBoardNavigate,
   newEngagementLabel,
   scopeFor,
   ancestors,
@@ -879,6 +882,7 @@ function ContainerShelfRow({
   onToggle: (id: string) => void;
   onExpand?: ((id: string) => void) | undefined;
   onNavigate?: (() => void) | undefined;
+  onBoardNavigate?: (() => void) | undefined;
   newEngagementLabel: string;
   scopeFor: (id: string) => { tasks: CachedNavTask[]; workId: string | undefined } | undefined;
   ancestors: readonly { color?: unknown }[];
@@ -981,7 +985,7 @@ function ContainerShelfRow({
                   <EngagementRow
                     engagement={engagement}
                     treeDepth={depth + 1}
-                    onNavigate={onNavigate}
+                    onNavigate={onBoardNavigate ?? onNavigate}
                     scope={scopeFor(engagement.id)}
                   />
                   </div>
@@ -995,6 +999,7 @@ function ContainerShelfRow({
                     onToggle={onToggle}
                     onExpand={onExpand}
                     onNavigate={onNavigate}
+                    onBoardNavigate={onBoardNavigate}
                     newEngagementLabel={newEngagementLabel}
                     scopeFor={scopeFor}
                     ancestors={[node, ...ancestors]}

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -80,6 +80,8 @@ describe("SC1 sidebar rows carry no board code", () => {
   it("renders the title and never the code", () => {
     mocks.engagements = [codedBoard];
     render(<SidebarNav />);
+    const expandAll = screen.queryByTestId("nav-collapse-all");
+    if (expandAll?.textContent === "Expand all") fireEvent.click(expandAll);
     expect(screen.getByText("Quarterly margin review")).toBeTruthy();
     expect(screen.queryByText("ABC-01")).toBeNull();
   });
@@ -87,6 +89,8 @@ describe("SC1 sidebar rows carry no board code", () => {
   it("a quick-folder board does not render the word Folder as a label", () => {
     mocks.engagements = [quickFolderBoard];
     render(<SidebarNav />);
+    const expandAll = screen.queryByTestId("nav-collapse-all");
+    if (expandAll?.textContent === "Expand all") fireEvent.click(expandAll);
     const row = screen.getByText("Loose board");
     expect(row).toBeTruthy();
     expect(screen.queryByText("Folder")).toBeNull();

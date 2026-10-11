@@ -467,7 +467,7 @@ export type ProfileActiveReconciledDims = { source: (typeof PROFILE_RECONCILE_SO
 
 /** MN-2b: content-free navigation destinations; portal registration required. */
 export type NavOpenedDims = {
-  item: NavItemId | "workboards" | "more" | "board" | "workspace";
+  item: NavItemId | "workboards" | "more" | "board" | "workspace" | "recent_board" | "find_result";
   // MN-3b adds look_back, your_coach, connect_tools and create_menu through NavItemId.
   surface: "tab" | "more" | "workboards_sheet" | "sidebar" | "workspace_menu" | "drawer";
 };

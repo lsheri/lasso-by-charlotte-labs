@@ -6,6 +6,8 @@ import { GraphiteIcon } from "@/components/notebook/icons";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { useEngagements } from "@/hooks/use-engagements";
 
+import { BoardFinder } from "./BoardFinder";
+import { TREE_COPY, useLoadedTreeBoards } from "@/lib/sidebar-tree-state";
 import { OrgSwitcher } from "./OrgSwitcher";
 import { engagementDisplayTitle } from "@/lib/clients";
 import { signOut } from "@/lib/sign-out";
@@ -26,6 +28,10 @@ export function MobileTabBar() {
   const [engOpen, setEngOpen] = useState(false);
   const { data: engagements } = useEngagements(profile?.id);
 
+  const [findQuery, setFindQuery] = useState("");
+  const boards = useLoadedTreeBoards(profile?.org_id, engagements ?? []);
+  const filtering = findQuery.trim().length > 0;
+  const foundBoards = boards.filter((board) => !filtering || board.title.toLocaleLowerCase().includes(findQuery.trim().toLocaleLowerCase()) || board.clients?.name.toLocaleLowerCase().includes(findQuery.trim().toLocaleLowerCase()));
   const canReview = ctx.canReview;
   const manifest = navFor(ctx, labels);
   const workspaceItems = manifest.filter((group) => group.placement === "workspace_menu").flatMap((group) => group.items);
@@ -96,12 +102,15 @@ export function MobileTabBar() {
             Workboards
           </SheetTitle>
           <div className="mt-3 flex flex-col gap-0.5">
-            {(engagements ?? []).map((engagement) => (
+            <BoardFinder profileId={profile?.id} boards={boards} query={findQuery} onQueryChange={setFindQuery}
+              onOpen={() => { opened("recent_board", "workboards_sheet"); setEngOpen(false); }} />
+            {filtering && foundBoards.length === 0 ? <p className="px-2 py-1.5 text-sm text-muted-foreground">{TREE_COPY.noMatch}</p> : null}
+            {foundBoards.map((engagement) => (
               <Link
                 key={engagement.id}
                 to="/engagements/$id"
                 params={{ id: engagement.id }}
-                onClick={() => { opened("board", "workboards_sheet"); setEngOpen(false); }}
+                onClick={() => { opened(filtering ? "find_result" : "board", "workboards_sheet"); setEngOpen(false); }}
                 className="nb-nav-item min-h-[48px]"
                 activeProps={{ className: "nb-nav-item-active" }}
               >

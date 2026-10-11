@@ -62,8 +62,8 @@ afterEach(() => {
 });
 
 
-const KEY = "lasso.nav.clients";
-const stored = () => JSON.parse(window.localStorage.getItem(KEY) ?? "[]") as string[];
+const KEY = "lasso.tree_open.p1";
+const stored = () => Object.entries(JSON.parse(window.localStorage.getItem(KEY) ?? "{}") as Record<string, boolean>).filter(([, open]) => !open).map(([id]) => id);
 const rows = [
   { id: "c1", name: "Acme", kind: "client", parent_id: null, quick_folder: false },
   { id: "f1", name: "Phase one", kind: "folder", parent_id: "c1", quick_folder: false },
@@ -94,6 +94,8 @@ describe("SB2 collapse all and cascade", () => {
 
   it("Collapse all stores every id, nested ones included, and the label flips", () => {
     setup();
+    expect(screen.getByTestId("nav-collapse-all").textContent).toBe("Expand all");
+    fireEvent.click(screen.getByTestId("nav-collapse-all"));
     const button = screen.getByTestId("nav-collapse-all");
     expect(button.textContent).toBe("Collapse all");
     fireEvent.click(button);
@@ -108,11 +110,12 @@ describe("SB2 collapse all and cascade", () => {
 
   it("collapsing a parent by its chevron collapses its children; expanding it leaves them collapsed", () => {
     setup();
-    const acmeChevron = screen.getAllByRole("button", { name: "Collapse" })[0]!;
+    fireEvent.click(screen.getByTestId("nav-collapse-all"));
+    const acmeChevron = screen.getAllByRole("button", { name: "Collapse" })[0] as HTMLElement;
     fireEvent.click(acmeChevron);
     expect(stored().sort()).toEqual(["c1", "f1", "f2"]);
     expect(stored()).not.toContain("c2");
-    fireEvent.click(screen.getAllByRole("button", { name: "Expand" })[0]!);
+    fireEvent.click(screen.getAllByRole("button", { name: "Expand" })[0] as HTMLElement);
     expect(stored().sort()).toEqual(["f1", "f2"]);
     expect(screen.queryByText("Deep board")).toBeNull();
     expect(screen.getByText("Phase one")).toBeTruthy();

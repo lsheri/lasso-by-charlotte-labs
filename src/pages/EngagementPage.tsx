@@ -35,6 +35,7 @@ import { Button } from "@/components/ui/button";
 import { SubjectCoachingSection } from "@/components/coaching/SubjectCoachingSection";
 import { useRegisterAskLasso } from "@/components/reflect/ask-lasso-context";
 import { usePerfNavFinish } from "@/hooks/use-perf-timer";
+import { useRememberBoardOpen } from "@/lib/sidebar-tree-state";
 import { useProfile } from "@/hooks/use-profile";
 import { useSharedBoardMarks } from "@/hooks/use-shared-board-marks";
 import { useShippedWork } from "@/hooks/use-shipped-work";
@@ -74,6 +75,7 @@ const THREAD_PRESET_VARIANTS: Partial<Record<AnalysisPresetId, AnalysisPresetId>
 export function EngagementPage({ engagementId }: { engagementId: string }) {
   const { work } = engagementRoute.useSearch();
   const { data: profile } = useProfile();
+  useRememberBoardOpen(profile?.id, engagementId);
   const sharedBy = useSharedBoardMarks().get(engagementId);
   const queryClient = useQueryClient();
   const [rail, setRail] = useState<"closed" | "open">("closed");
