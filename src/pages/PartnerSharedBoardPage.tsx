@@ -19,7 +19,7 @@ async function fetchSharedPieces(boardId: string): Promise<WorkItemRow[]> {
     { p_board_id: boardId } as never,
   );
   if (error) throw error;
-  const record = (Array.isArray(data) ? data[0] : null) as { item_ids?: unknown } | null;
+  const record = (Array.isArray(data) ? data[0] : data) as { item_ids?: unknown } | null;
   const rawIds = record?.item_ids;
   const ids = Array.isArray(rawIds)
     ? (rawIds as unknown[]).filter((id): id is string => typeof id === "string")
