@@ -4,7 +4,8 @@ import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { SidebarNav } from "@/components/layout/SidebarNav";
-import { NAV_ITEMS, navGroups } from "@/components/layout/nav-config";
+import { NAV_ITEMS, navFor, navGroups } from "@/components/layout/nav-config";
+import { DEFAULT_VOCAB } from "@/lib/edu-vocab";
 
 const mocks = vi.hoisted(() => ({
   profile: null as {
@@ -119,9 +120,11 @@ describe("Pass 123: the sidebar follows the weekly loop", () => {
   it("admin on a business org sees Run the firm with Firm view + Members", () => {
     setup("admin", "company");
 
-    expect(screen.queryByText("Run the firm")).not.toBeNull();
-    expect(screen.queryByText("Firm view")).not.toBeNull();
-    expect(screen.queryByText("Members")).not.toBeNull();
+    expect(screen.queryByText("Run the firm")).toBeNull();
+    expect(screen.queryByText("Firm view")).toBeNull();
+    expect(screen.queryByText("Members")).toBeNull();
+    expect(NAV_ITEMS.find((i) => i.id === "firm-view")?.placement).toBe("workspace_menu");
+    expect(navFor({ type: "company", role: "admin", canReview: false, canManageMembers: true, canSeeFirmView: true, hasCoachLink: false, affiliated: false, clientsEnabled: false }, { vocab: DEFAULT_VOCAB, institutionName: null }).flatMap((g) => g.items).find((i) => i.id === "members")?.placement).toBe("workspace_menu");
 
     expect(screen.queryByText("Look back")).not.toBeNull();
     // MN-3a: Settings moved out of the sidebar body into the workspace menu.
