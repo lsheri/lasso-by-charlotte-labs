@@ -339,9 +339,11 @@ const SIDEBAR_LAYOUTS: Record<string, string> = {
   S9: [
     "# Coaching",
     "People you coach -> /coaching",
+    "# Your account",
     "1:1 prep -> /one-on-one",
   ].join("\n"),
   S10: [
+    "# Your account",
     "1:1 prep -> /one-on-one",
   ].join("\n"),
   S11: [

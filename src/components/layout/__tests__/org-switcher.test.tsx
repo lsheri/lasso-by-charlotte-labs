@@ -36,9 +36,10 @@ function renderSwitcher(profiles: Profile[], active: Profile | null) {
 describe("OrgSwitcher", () => {
   it("shows name and type for a single profile", () => {
     const one = profile({});
-    const { container } = renderSwitcher([one], one);
+    const { container, unmount } = renderSwitcher([one], one);
     expect(container.textContent).toContain("Northline");
     expect(container.textContent).toContain("FIRM · MEMBER");
+    unmount();
   });
 
   it("stays compact until opened and emits one switch record", () => {
