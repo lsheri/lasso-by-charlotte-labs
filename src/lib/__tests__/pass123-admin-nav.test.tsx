@@ -119,9 +119,12 @@ describe("Pass 123: the sidebar follows the weekly loop", () => {
   it("admin on a business org sees Run the firm with Firm view + Members", () => {
     setup("admin", "company");
 
-    expect(screen.queryByText("Run the firm")).not.toBeNull();
-    expect(screen.queryByText("Firm view")).not.toBeNull();
-    expect(screen.queryByText("Members")).not.toBeNull();
+    expect(screen.queryByText("Run the firm")).toBeNull();
+    expect(screen.queryByText("Firm view")).toBeNull();
+    expect(screen.queryByText("Members")).toBeNull();
+    expect(NAV_ITEMS.find((i) => i.id === "firm-view")?.placement).toBe("workspace_menu");
+    const membersPlacement = NAV_ITEMS.find((i) => i.id === "members")?.placement;
+    expect(typeof membersPlacement === "function" ? membersPlacement({ type: "company" } as Parameters<typeof membersPlacement>[0]) : membersPlacement).toBe("workspace_menu");
 
     expect(screen.queryByText("Look back")).not.toBeNull();
     // MN-3a: Settings moved out of the sidebar body into the workspace menu.
