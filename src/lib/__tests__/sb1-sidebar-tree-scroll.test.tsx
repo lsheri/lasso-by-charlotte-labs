@@ -76,7 +76,7 @@ const manyBoards = () =>
     eng(`e${i}`, { id: `c${i}`, name: `Client ${i}`, quick_folder: false, kind: "client", parent_id: null }),
   );
 
-describe("SB1 tree scroller and standing separation", () => {
+describe("SB1 single middle-column scroller and standing separation", () => {
   it("wraps the tree rows in the scroller and keeps the actions outside it", () => {
     mocks.engagements = manyBoards();
     const { container } = render(<SidebarNav />);
