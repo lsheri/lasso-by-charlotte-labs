@@ -66,6 +66,8 @@ import {
   type WorkItemRow,
 } from "@/lib/work-types";
 import { WorkSubtitle } from "@/components/work/WorkSubtitle";
+import { WorkNote } from "@/components/work/WorkNote";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { InboxFixedCard } from "@/components/work/InboxFixedCard";
 import {
   BoardShell,
@@ -270,6 +272,8 @@ function BringWorkInRow({
 }
 
 export function WorkPage() {
+  const isMobile = useIsMobile();
+  const [phoneLimit, setPhoneLimit] = useState(25);
   const { data: profile } = useProfile();
   const { openSettings } = useSettingsDialog();
   const { data, isLoading, error } = useWorkItems();
@@ -312,6 +316,7 @@ export function WorkPage() {
   // longer exists. The render below also clamps a stale index, belt and braces.
   useEffect(() => {
     setColumnPages({ llm: 0, documents: 0, sheets: 0, calls: 0 });
+    setPhoneLimit(25);
   }, [columnFilter, showPrivate]);
   // Rolled once per mount, never per render: a re-roll mid-animation would
   // restart the gust under the reader.
@@ -624,6 +629,10 @@ export function WorkPage() {
   }
   const filteredEntries = visibleEntries.filter(entryMatchesFilter);
   const matchingEntryCount = filteredEntries.length;
+  const phoneEntries = orderByWorkDate(filteredEntries.flatMap((entry) => {
+    const head = isConversationGroup(entry) ? (entry.transcript ?? entry.items[0]) : entry;
+    return head ? [{ ...head, entry }] : [];
+  }));
 
   /** Where the work came from, counted client-side off the loaded items. */
   const sourceCounts = (() => {
@@ -728,7 +737,7 @@ export function WorkPage() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-6.5rem)] flex-col overflow-hidden">
+    <div className="work-page flex h-[calc(100vh-6.5rem)] flex-col overflow-hidden">
       <div className="shrink-0">
         <CoachingLinkNotices />
         <WatchSuggestionBanner />
@@ -748,10 +757,10 @@ export function WorkPage() {
         {mappingError ? <p className="px-5 py-2 text-sm text-destructive">Mapping details couldn't load: {mappingError}</p> : null}
       </div>
 
-      <header className="box-border flex h-16 shrink-0 flex-wrap items-center gap-4 border-b border-[var(--nb-rule)] px-5 md:flex-nowrap">
+      <header className="work-page-header box-border flex h-16 shrink-0 flex-wrap items-center gap-4 border-b border-[var(--nb-rule)] px-5 md:flex-nowrap">
         <div className="mr-auto min-w-0 shrink-0">
           <h1 className="whitespace-nowrap font-serif text-[19px] leading-none">All work</h1>
-          <p className="mt-1 truncate font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
+          <p className="work-page-subtitle mt-1 truncate font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
             <WorkSubtitle pieces={groupedCount(all)} unmapped={groupedCount(unmapped)} />
           </p>
         </div>
@@ -766,12 +775,12 @@ export function WorkPage() {
             <ImportFlowDialog trigger={<Button type="button" variant="outline">Import AI history</Button>} />
           </DropdownMenuContent>
         </DropdownMenu>
-        {!isCoach && selectable.length > 0 && !selectMode ? (
+        {!isMobile && !isCoach && selectable.length > 0 && !selectMode ? (
           <Button type="button" variant="ghost" className="h-9" onClick={() => setSelectMode(true)}>Select</Button>
         ) : null}
       </header>
 
-      <div className="flex h-[46px] shrink-0 items-center gap-2 overflow-x-auto border-b border-[var(--nb-rule)] px-5 whitespace-nowrap">
+      <div className="work-page-filters flex h-[46px] shrink-0 items-center gap-2 overflow-x-auto border-b border-[var(--nb-rule)] px-5 whitespace-nowrap">
         <button type="button" onClick={() => changeColumnFilter("all")} className={columnFilter === "all" ? chipOn : chipOff}>Everything</button>
         <button type="button" title="Work with no board is private. It is not in any receipt, no coach can see it, and it will not appear in the firm view until you put it on a board." onClick={() => changeColumnFilter("unmapped")} className={columnFilter === "unmapped" ? chipOn : chipOff}>No board</button>
         <button type="button" onClick={() => changeColumnFilter("claimed")} className={columnFilter === "claimed" ? chipOn : chipOff}>Claimed by you</button>
@@ -782,7 +791,7 @@ export function WorkPage() {
             Show private ({priv.length})
           </label>
         ) : null}
-        {selectMode && !isCoach ? (
+        {!isMobile && selectMode && !isCoach ? (
           <>
             <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
               <Checkbox checked={allChosen} onCheckedChange={() => setChosen(allChosen ? new Set() : new Set(selectable))} aria-label="Select all visible unmapped items" />
@@ -793,7 +802,7 @@ export function WorkPage() {
             <Button type="button" variant="ghost" onClick={leaveSelectMode}>Done</Button>
           </>
         ) : null}
-        <div className="ml-auto flex shrink-0 items-center gap-2">
+        <div className="work-page-panels ml-auto flex shrink-0 items-center gap-2">
           {arrivalCount > 0 ? (
             <Popover onOpenChange={(open) => { if (open) recordPanelOpen("arrived"); }}>
               <PopoverTrigger asChild><button type="button" className={chipOff}>Arrived · {arrivalCount}</button></PopoverTrigger>
@@ -809,9 +818,27 @@ export function WorkPage() {
         </div>
       </div>
 
-      <div className="relative min-h-0 flex-1">
+      <div className="work-page-content relative min-h-0 flex-1">
         {isLoading ? (
           <p className="p-5 text-sm text-muted-foreground">Loading your work…</p>
+        ) : isMobile ? (
+          <div className="work-phone-list" aria-label="All work list">
+            {phoneEntries.length === 0 ? <p className="py-6 text-base text-muted-foreground">Nothing here yet. Bring work in.</p> : (
+              <ul className="m-0 list-none p-0">
+                {phoneEntries.slice(0, phoneLimit).map(({ entry, ...head }) => (
+                  <li key={isConversationGroup(entry) ? entry.key : entry.id}>
+                    <WorkNote item={head} phoneRow onOpen={openItem(head, entry)} />
+                  </li>
+                ))}
+              </ul>
+            )}
+            {phoneLimit < phoneEntries.length ? (
+              <Button type="button" variant="outline" className="work-phone-more" onClick={() => {
+                setPhoneLimit((limit) => limit + 25);
+                if (profile?.org_id) logEvent("work.list_expanded", profile.org_id, {});
+              }}>Show more</Button>
+            ) : null}
+          </div>
         ) : all.length === 0 ? (
           <div className="mx-auto mt-8 max-w-lg rounded-[var(--radius)] border border-border bg-card px-8 py-12 text-center shadow-card">
             <p className="text-sm text-foreground">Your work lands here.</p>

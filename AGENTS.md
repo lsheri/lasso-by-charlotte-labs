@@ -36,3 +36,4 @@ Tour workboard chrome stays a local presentational mirror around shared board pr
 - Fit the landing tour through its local measured wrapper, preserving the shared tour's natural dimensions and reserving its scaled height, because preview and onboarding must remain unchanged.
 
 - Keep affiliation sections and their shared-board reads in AffiliationPage exports, so individual Members and business Affiliation compose one disclosure implementation.
+- Render phone All work through WorkNote's opt-in list presentation and the existing mobile breakpoint hook, so its dates, source marks, and open handlers share the desktop card truth without changing other surfaces.

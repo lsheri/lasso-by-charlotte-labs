@@ -212,6 +212,7 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "work.piece_regrouped": ["action", "on_board", "piece_kind", "vendor"],
   "work.filter_changed": ["filter", "selected", "result_band"],
   "work.import_menu_opened": [],
+  "work.list_expanded": [],
   "work.panel_opened": ["panel"],
   "work.tool_steps_opened": ["steps_band"],
   "work.preview_mode_changed": ["mode", "kind"],
