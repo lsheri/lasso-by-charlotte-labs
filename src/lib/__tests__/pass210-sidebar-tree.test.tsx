@@ -27,6 +27,7 @@ vi.mock("@tanstack/react-router", () => ({
   useSearch: () => ({}),
 }));
 vi.mock("@tanstack/react-query", () => ({
+  useQuery: () => ({ data: { items: [] }, isLoading: false, error: null }),
   useQueryClient: () => ({ getQueryData: () => undefined, getQueryCache: () => ({ subscribe: () => () => {} }) }),
 }));
 vi.mock("@/hooks/use-profile", async (importOriginal) => ({

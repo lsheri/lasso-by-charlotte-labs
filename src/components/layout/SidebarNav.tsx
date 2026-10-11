@@ -582,7 +582,7 @@ export function SidebarNav({
   }
 
   return (
-    <nav className="flex min-h-0 flex-1 flex-col gap-7">
+    <nav className="flex shrink-0 flex-col gap-7">
       {[...groupsForOrg, ...coachingGroups].map((group) => {
         const isEngagementGroup = group.id === "engagements";
         const groupLabel = group.id === "firm" && !isBusinessOrg(profile) ? "Who you share with" : group.label;
@@ -684,7 +684,7 @@ export function SidebarNav({
 
         return (
           <Fragment key={group.label}>
-          <div className={isEngagementGroup ? "flex min-h-0 flex-1 flex-col" : "shrink-0"}>
+          <div className={isEngagementGroup ? "flex shrink-0 flex-col" : "shrink-0"}>
             {isEngagementGroup && everyCollapsibleId.length > 0 ? (
               <div className="flex items-center justify-between gap-2 px-2">
                 <div className="nb-group-header">{groupLabel}</div>
@@ -700,7 +700,7 @@ export function SidebarNav({
             ) : (
               <div className="nb-group-header px-2">{groupLabel}</div>
             )}
-            <div className={isEngagementGroup ? "mt-2 flex min-h-0 flex-1 flex-col gap-0.5" : "mt-2 flex flex-col gap-0.5"}>
+            <div className="mt-2 flex flex-col gap-0.5">
               {/* Anything still in this group (a partner firm's extra rows)
                   renders after the shelves, never above them. */}
               {isEngagementGroup ? null : visibleItems}

@@ -54,6 +54,7 @@ vi.mock("@/hooks/use-clients", () => ({
   useInvalidateClients: () => () => {},
 }));
 vi.mock("@tanstack/react-query", () => ({
+  useQuery: () => ({ data: { items: [] }, isLoading: false, error: null }),
   useQueryClient: () => ({
     getQueryCache: () => ({ subscribe: () => () => {} }),
     getQueryData: () => undefined,
