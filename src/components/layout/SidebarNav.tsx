@@ -356,6 +356,8 @@ export function SidebarNav({
   };
   const navGroupsForPerson = navFor(navCtx, { vocab, institutionName: institution?.name ?? null });
   const coachingGroups = navGroupsForPerson.filter((group) => group.id === "coaching");
+  // The guest shell's own short list, below its coaching group.
+  const coachNavGroups = navGroupsForPerson.filter((group) => group.id !== "coaching");
   // The affiliation link is only ever drawn for an affiliated business workspace.
   const affiliationShown = (group: { id: string }) =>
     Boolean(group.id === "account" && institution && isBusinessOrg(profile));
@@ -539,7 +541,7 @@ export function SidebarNav({
     return (
       <nav className="flex flex-col gap-7">
         {coachingGroups.length === 0 ? shared : null}
-        {navGroupsForPerson.map((group) => (
+        {[...coachingGroups, ...coachNavGroups].map((group) => (
           <Fragment key={group.label}>
             {/* In a partner workspace Shared with me is the primary surface,
                 so it renders above the coaching group rather than after it. */}
