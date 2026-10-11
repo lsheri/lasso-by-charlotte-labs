@@ -157,7 +157,9 @@ describe("Pass 123: the sidebar follows the weekly loop", () => {
     expect(screen.queryByText("Members")).toBeNull();
 
     expect(screen.queryByText("Look back")).not.toBeNull();
-    expect(screen.queryByText("Settings")).not.toBeNull();
+    // MN-3a: Settings moved out of the sidebar body into the workspace menu.
+    expect(screen.queryByText("Settings")).toBeNull();
+    expect(NAV_ITEMS.find((i) => i.id === "settings")?.placement).toBe("workspace_menu");
   });
 
   it("guest nav shows Coaching only when a board was shared for review", () => {
