@@ -23,7 +23,7 @@ export const LANDING_VIEW_SURFACES = ["landing-board", "landing-classic", "landi
 
 /** Every non-workboard event name mapped to the dim keys it may carry. */
 export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
-  // nav.opened item values include workspace, look_back, your_coach, connect_tools and create_menu; dimension keys remain unchanged.
+  // nav.opened item values include workspace, look_back, your_coach, connect_tools create_menu, recent_board and find_result; dimension keys remain unchanged.
   "nav.opened": ["item", "surface"],
   "admin.dashboard_viewed": ["panels_shown"],
   "affiliation.disclosure_read": ["institution"],

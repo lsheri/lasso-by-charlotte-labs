@@ -7,6 +7,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import { canvasLabBoardQuery } from "@/hooks/use-canvas-lab";
 import { useRecordEngagementView } from "@/hooks/use-engagement-views";
+import { useRememberBoardOpen } from "@/lib/sidebar-tree-state";
 import { useProfile } from "@/hooks/use-profile";
 import { CanvasLabPage } from "@/pages/CanvasLabPage";
 
@@ -46,6 +47,7 @@ function CanvasLabRoute() {
 
   // Opening the board records that this person opened it, once per open.
   useRecordEngagementView(id);
+  useRememberBoardOpen(profileId, id);
 
   // PERF-A: direct opens start the board read here; a redirected open finds
   // it already in flight under the same key, so nothing fetches twice.
