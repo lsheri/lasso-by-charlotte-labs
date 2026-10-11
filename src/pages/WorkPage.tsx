@@ -891,7 +891,7 @@ export function WorkPage() {
 
       <header className="box-border flex h-16 shrink-0 flex-wrap items-center gap-4 border-b border-[var(--nb-rule)] px-5 md:flex-nowrap">
         <div className="mr-auto min-w-0 shrink-0">
-          <h1 className="whitespace-nowrap font-serif text-[19px] leading-none">Inbox</h1>
+          <h1 className="whitespace-nowrap font-serif text-[19px] leading-none">All work</h1>
           <p className="mt-1 truncate font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
             <WorkSubtitle pieces={groupedCount(all)} unmapped={groupedCount(unmapped)} />
           </p>
@@ -919,7 +919,7 @@ export function WorkPage() {
 
       <div className="flex h-[46px] shrink-0 items-center gap-2 overflow-x-auto border-b border-[var(--nb-rule)] px-5 whitespace-nowrap">
         <button type="button" onClick={() => changeColumnFilter("all")} className={columnFilter === "all" ? chipOn : chipOff}>Everything</button>
-        <button type="button" title="Unmapped work is private and belongs to no workboard. It is not in any receipt, no coach can see it, and it will not appear in the firm view until you map it." onClick={() => changeColumnFilter("unmapped")} className={columnFilter === "unmapped" ? chipOn : chipOff}>Unmapped</button>
+        <button type="button" title="Unmapped work is private and belongs to no workboard. It is not in any receipt, no coach can see it, and it will not appear in the firm view until you map it." onClick={() => changeColumnFilter("unmapped")} className={columnFilter === "unmapped" ? chipOn : chipOff}>No board</button>
         <button type="button" onClick={() => changeColumnFilter("claimed")} className={columnFilter === "claimed" ? chipOn : chipOff}>Claimed by you</button>
         {engagementCodes.map((code) => <button key={code} type="button" onClick={() => changeColumnFilter(code)} className={columnFilter === code ? chipOn : chipOff}>{code}</button>)}
         {priv.length > 0 ? (
@@ -979,7 +979,7 @@ export function WorkPage() {
               </p>
             ) : null}
             <BoardShell
-              ariaLabel="Inbox work board"
+              ariaLabel="All work"
               className={gusting ? "h-full nb-gust" : "h-full"}
               frames={inboxFrames}
               nodes={inboxLaneNodes}

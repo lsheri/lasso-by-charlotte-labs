@@ -11,7 +11,7 @@ const chatlib = readFileSync("src/lib/chat-library.functions.ts", "utf8");
 describe("pass A2 · All conversations absorbs Reflect", () => {
   it("renames the two nav rows", () => {
     const labels = navGroups.flatMap((g) => g.items ?? []).map((i) => i.label);
-    expect(labels).toContain("Inbox");
+    expect(labels).toContain("All work");
     expect(labels).toContain("All AI Conversations");
   });
 

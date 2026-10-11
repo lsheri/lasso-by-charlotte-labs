@@ -294,7 +294,7 @@ export function TourActArrived({ register, onComplete }: { register: Register; o
         <nav className="flex flex-col gap-7">
           <div><div className="nb-group-header px-2">What landed</div><div className="mt-2 flex flex-col gap-0.5">
             <Button type="button" variant="ghost" className="nb-nav-item w-full justify-start" onClick={noop}><GraphiteIcon name="overview" size={20} /><span>Home</span></Button>
-            <Button type="button" variant="ghost" className="nb-nav-item w-full justify-start" onClick={noop}><GraphiteIcon name="work" size={20} /><span>Inbox</span></Button>
+            <Button type="button" variant="ghost" className="nb-nav-item w-full justify-start" onClick={noop}><GraphiteIcon name="work" size={20} /><span>All work</span></Button>
             <Button type="button" variant="ghost" className="nb-nav-item nb-nav-item-active w-full justify-start" onClick={noop}><GraphiteIcon name="ai-record" size={20} /><span>All AI Conversations</span></Button>
           </div></div>
           <div><div className="nb-group-header px-2">Where it goes</div><div className="mt-2 flex flex-col gap-0.5">

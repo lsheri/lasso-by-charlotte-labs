@@ -432,7 +432,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
         <p className="text-xs text-muted-foreground">
           Bring more work in from{" "}
           <Link to="/work" className="underline-offset-2 hover:underline">
-            the Inbox
+            All work
           </Link>
           .
         </p>

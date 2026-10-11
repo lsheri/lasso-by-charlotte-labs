@@ -2268,7 +2268,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     noteWorkboardRecordVisibility(orgId, "hidden", node.kind === "decision" ? "decision" : node.kind === "brief" ? "brief" : "work");
     setAnnouncement(`${node.title} removed from this local workboard.`);
     const entry = record({ action: "hide", nodeId: node.id });
-    if (entry) setUndoToast({ message: node.workItemId ? "Removed from the board. It's still in your inbox." : "Removed from the board", entry });
+    if (entry) setUndoToast({ message: node.workItemId ? "Removed from the board. It is still in All work." : "Removed from the board", entry });
   }
 
   /** B3: every card in a workstream or region becomes the context. Membership first, the region's area when it has none. */

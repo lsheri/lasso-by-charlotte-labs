@@ -12,7 +12,7 @@ describe("pass 151 engagement focus", () => {
     expect(page).not.toContain("ConnectToWorkSheet");
     expect(page).not.toContain('title="Coaching and sharing"');
     expect(page).toContain("Bring more work in from");
-    expect(page).toContain("the Inbox");
+    expect(page).toContain("All work");
   });
 
   it("keeps engagement actions and the existing Share view", () => {

@@ -161,7 +161,7 @@ describe("TV2 and TVc tour sequence", () => {
     const rows = within(mimic).getAllByRole("listitem");
     expect(within(mimic).getByText(`${rows.length} conversations on the record · 2 new this week`)).toBeTruthy();
     expect(within(mimic).getByRole("button", { name: "Home" })).toBeTruthy();
-    expect(within(mimic).getByRole("button", { name: "Inbox" })).toBeTruthy();
+    expect(within(mimic).getByRole("button", { name: "All work" })).toBeTruthy();
     expect(within(mimic).getByRole("button", { name: "All AI Conversations" })).toBeTruthy();
     expect(within(mimic).getByText("What landed")).toBeTruthy();
     expect(within(mimic).getByText("Where it goes")).toBeTruthy();

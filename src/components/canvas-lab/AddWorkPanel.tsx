@@ -91,7 +91,7 @@ export function AddWorkPanel({
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
-            <TabsTrigger value="inbox">Inbox</TabsTrigger>
+            <TabsTrigger value="inbox">No board</TabsTrigger>
             <TabsTrigger value="upload">From your computer</TabsTrigger>
             <TabsTrigger value="connectors">Connected apps</TabsTrigger>
           </TabsList>
@@ -99,7 +99,7 @@ export function AddWorkPanel({
           <TabsContent value="inbox" className="space-y-3">
             {inbox.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                Nothing waiting in your inbox right now.
+                Nothing without a board right now.
               </p>
             ) : (
               <ScrollArea

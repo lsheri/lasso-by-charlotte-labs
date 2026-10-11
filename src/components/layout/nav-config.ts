@@ -28,7 +28,7 @@ export const navGroups: NavGroup[] = [
     label: "What landed",
     items: [
       { label: "Home", to: "/home", icon: "overview" },
-      { label: "Inbox", to: "/work", icon: "work" },
+      { label: "All work", to: "/work", icon: "work" },
       { label: "All AI Conversations", to: "/ai-record", icon: "ai-record" },
       { label: "Where work comes from", to: "/connectors", icon: "connectors" },
     ],

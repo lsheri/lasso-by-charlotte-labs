@@ -19,7 +19,7 @@ export function WorkSubtitle({ pieces, unmapped }: { pieces: number; unmapped: n
 
   const parts = [
     `${pieces} piece${pieces === 1 ? "" : "s"} of work`,
-    `${unmapped} unmapped`,
+    `${unmapped} with no board`,
     connected === null ? "" : `${connected} tool${connected === 1 ? "" : "s"} connected`,
   ].filter(Boolean);
 

@@ -67,7 +67,7 @@ export function ArrivalsStrip({ items }: { items: WorkItemRow[] }) {
       }
       if (profile) logEvent("inbox.arrival_undone", profile.org_id, { reverted: false });
       await queryClient.invalidateQueries({ queryKey: ["work-items"] });
-      toast("Moved back to your inbox.", {
+      toast("Moved back to All work.", {
         duration: 5000,
         action: { label: "Put it back", onClick: () => void putBack(pieces, taskId) },
       });

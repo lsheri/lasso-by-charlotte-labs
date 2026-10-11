@@ -279,7 +279,7 @@ export function ConnectorsSection({ from }: { from?: SettingsOpenFrom }) {
             <ul className="space-y-1">
               <li>Anything in a tool you have not connected</li>
               <li>Anything you have not sent</li>
-              <li>Your inbox</li>
+              <li>All work</li>
               <li>Your drive at large</li>
             </ul>
             <p className="mt-2">
