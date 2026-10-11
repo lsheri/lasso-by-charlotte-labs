@@ -17,9 +17,15 @@
 
 /* All work phone presentation. No rules in this block apply at 768px or above. */
 @media (max-width: 767px) {
+  /* Keep the shell header in flow and give only the work list a scroll area. */
+  div:has(> main .work-page):has(> header) { height: 100dvh; overflow: hidden; }
+  main:has(.work-page) { min-height: 0; padding-bottom: 0; overflow: hidden; }
+  main:has(.work-page) > div { height: 100%; }
+  .work-page { height: 100%; }
   .work-page-header { display: grid; grid-template-columns: minmax(0, 1fr) auto; height: auto; gap: 10px; padding: 16px; }
   .work-page-header > div:first-child { min-width: 0; }
   .work-page-subtitle { overflow: visible; white-space: normal; font-size: 12px; line-height: 1.5; }
+  .work-page-subtitle [data-work-subtitle="parts"] { column-gap: 16px; }
   .work-page-filters { flex-wrap: wrap; height: auto; gap: 10px; padding: 10px 16px; overflow: visible; white-space: normal; }
   .work-page-filters > button, .work-page-filters > label { flex-shrink: 0; }
   .work-page-panels { width: 100%; margin-left: 0; flex-wrap: wrap; gap: 10px; }
@@ -30,7 +36,8 @@
   .work-page-filters > button { font-size: 13px; }
   .work-page :is(button, [role="button"], [role="checkbox"]):focus-visible { outline: 2px solid var(--nb-green); outline-offset: -2px; }
   .work-page-content { overflow-y: auto; }
-  .work-phone-list { padding: 0 16px 16px; }
+  /* Paste bar bottom is 4.5rem + safe area; its phone target is 44px tall. */
+  .work-phone-list { padding: 10px 16px calc(4.5rem + 44px + 16px + env(safe-area-inset-bottom)); }
   .work-phone-list li + li { margin-top: 10px; }
   .work-phone-row { display: flex; width: 100%; min-height: 88px; height: auto; gap: 12px; border-radius: 0; border-bottom: 1px solid var(--nb-rule); padding: 12px 0; white-space: normal; }
   .work-phone-row__title { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow-wrap: anywhere; font-size: 16px; line-height: 1.4; }

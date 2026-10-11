@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] MOB-1b: phone-only bottom clearance, explicit subtitle spacing, and shell scroll boundary.
+- [ ] MOB-1b: confirm signed-in Show more clearance and desktop comparison; blocked by external unmanaged authentication.
+
 - [x] MOB-1: phone-only work list, header controls, card reuse, and regression checks.
 - [ ] MOB-1: signed-in visual comparison at 390 and 1280; blocked by external unmanaged authentication.
 
