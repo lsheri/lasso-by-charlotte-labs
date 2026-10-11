@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -22,9 +22,6 @@ import { ArrivalsStrip } from "@/components/work/ArrivalsStrip";
 import { ReadingPanel } from "@/components/overview/ReadingPanel";
 import { NotCovered } from "@/components/overview/NotCovered";
 
-import { SuggestLegend } from "@/components/common/Suggested";
-import { DimmedDisabled } from "@/components/common/DimmedDisabled";
-import { SuggestionChip } from "@/components/work/SuggestionChip";
 import { PeekPanel, type PeekEntry } from "@/components/peek/PeekPanel";
 import type { PeekAnalysisPreset } from "@/components/peek/PeekActionBar";
 import { UploadFilesButton } from "@/components/work/UploadFilesButton";
@@ -56,10 +53,7 @@ import { orderByWorkDate } from "@/lib/work-order";
 import { useWorkboardCardPreviews } from "@/hooks/use-workboard-card-previews";
 import { useWorkboardFilePreviews } from "@/hooks/use-workboard-file-previews";
 import { supabase } from "@/integrations/supabase/client";
-import type { MappingSuggestion } from "@/lib/mapping-shared";
-import { suggestMappings } from "@/lib/mapping.functions";
 import { removeWorkItems } from "@/lib/work-bulk.functions";
-import { detachEpisodeItems, syncEpisodeForMapping } from "@/lib/episodes.functions";
 import { logEvent } from "@/lib/telemetry";
 import { logV2 } from "@/lib/telemetry-v2";
 import { markOpenStart } from "@/lib/perf-timing";
@@ -180,9 +174,6 @@ function PageMark({ back = false }: { back?: boolean }) {
 }
 
 type BringWorkInRowProps = {
-  unmappedCount: number;
-  suggesting: boolean;
-  onSuggest: () => void;
   isCoach: boolean;
   selectableCount: number;
   selectMode: boolean;
@@ -196,9 +187,6 @@ type BringWorkInRowProps = {
 };
 
 function BringWorkInRow({
-  unmappedCount,
-  suggesting,
-  onSuggest,
   isCoach,
   selectableCount,
   selectMode,
@@ -216,16 +204,6 @@ function BringWorkInRow({
     <div className="mb-6">
       <p className="micro-label">BRING WORK IN</p>
       <div className="mt-2 flex flex-wrap items-center gap-2 lg:max-w-[720px]">
-        {unmappedCount > 0 ? (
-          <button
-            type="button"
-            disabled={suggesting}
-            onClick={onSuggest}
-            className="text-xs font-medium text-accent-deep transition-opacity hover:opacity-70 disabled:opacity-50"
-          >
-            {suggesting ? "Thinking…" : "✨ Suggest mapping"}
-          </button>
-        ) : null}
         {!isCoach && selectableCount > 0 ? (
           selectMode ? (
             <div className="flex flex-wrap items-center gap-3">
@@ -296,10 +274,7 @@ export function WorkPage() {
   const { openSettings } = useSettingsDialog();
   const { data, isLoading, error } = useWorkItems();
   const queryClient = useQueryClient();
-  const runSuggest = useServerFn(suggestMappings);
   const runRemove = useServerFn(removeWorkItems);
-  const syncEpisode = useServerFn(syncEpisodeForMapping);
-  const detachEpisode = useServerFn(detachEpisodeItems);
   const [mapItem, setMapItem] = useState<WorkItemRow | null>(null);
   const [mapGroup, setMapGroup] = useState<WorkItemRow[] | null>(null);
   const [mapBulk, setMapBulk] = useState(false);
@@ -312,10 +287,6 @@ export function WorkPage() {
     null,
   );
   const [actionError, setActionError] = useState<string | null>(null);
-  const [suggestions, setSuggestions] = useState<MappingSuggestion[] | null>(null);
-  const [dismissed, setDismissed] = useState<string[]>([]);
-  const [suggesting, setSuggesting] = useState(false);
-  const [acceptPending, setAcceptPending] = useState(false);
   const [selectMode, setSelectMode] = useState(false);
   const [chosen, setChosen] = useState<Set<string>>(new Set());
   const [confirmRemove, setConfirmRemove] = useState(false);
@@ -383,38 +354,6 @@ export function WorkPage() {
       setRemovingFlagged(false);
     }
   }
-
-  const active = (suggestions ?? []).filter(
-    (s) => !dismissed.includes(s.work_item_id) && unmapped.some((i) => i.id === s.work_item_id),
-  );
-
-  const { data: taskLabels } = useQuery({
-    queryKey: [
-      "suggestion-task-labels",
-      active
-        .map((s) => s.task_id)
-        .sort()
-        .join(","),
-    ],
-    enabled: active.length > 0,
-    queryFn: async (): Promise<Record<string, string>> => {
-      const ids = Array.from(new Set(active.map((s) => s.task_id)));
-      const { data: rows, error: taskError } = await supabase
-        .from("tasks")
-        .select("id, name, engagements(code)")
-        .in("id", ids);
-      if (taskError) throw taskError;
-      const out: Record<string, string> = {};
-      for (const row of (rows ?? []) as unknown as {
-        id: string;
-        name: string;
-        engagements: { code: string } | null;
-      }[]) {
-        out[row.id] = `${row.engagements?.code ?? "Not set"} · ${row.name}`;
-      }
-      return out;
-    },
-  });
 
   const { data: clients } = useClients(profile?.org_id);
   const clientName = (id: string | null | undefined) =>
@@ -569,87 +508,6 @@ export function WorkPage() {
   }
 
 
-  async function handleSuggest() {
-    setSuggesting(true);
-    setActionError(null);
-    try {
-      const result = await runSuggest({ data: { profile_id: profile?.id } });
-      setSuggestions(result.suggestions);
-      setDismissed([]);
-      toast.success(
-        result.suggestions.length > 0
-          ? `${result.suggestions.length} suggestion${result.suggestions.length === 1 ? "" : "s"}`
-          : "No confident matches yet",
-      );
-    } catch (e) {
-      toast.error((e as Error).message);
-    } finally {
-      setSuggesting(false);
-    }
-  }
-
-  async function acceptSuggestion(suggestion: MappingSuggestion) {
-    const item = unmapped.find((i) => i.id === suggestion.work_item_id);
-    if (!item || !profile) return;
-    setAcceptPending(true);
-    setActionError(null);
-    try {
-      const cleanup = await supabase.from("work_item_tasks").delete().eq("work_item_id", item.id);
-      if (cleanup.error) throw new Error(cleanup.error.message);
-      const link = await supabase
-        .from("work_item_tasks")
-        .insert({ work_item_id: item.id, task_id: suggestion.task_id });
-      if (link.error) throw new Error(link.error.message);
-      const upd = await supabase
-        .from("work_items")
-        .update({ visibility: "mapped" })
-        .eq("id", item.id);
-      if (upd.error) throw new Error(upd.error.message);
-
-      await detachEpisode({ data: { work_item_ids: [item.id] } });
-      await syncEpisode({
-        data: {
-          task_id: suggestion.task_id,
-          work_item_ids: [item.id],
-          profile_id: profile.id,
-        },
-      });
-
-      logEvent("workitem.mapped", profile.org_id, {
-        type: item.type,
-        source: item.source,
-        suggested: true,
-      });
-      setDismissed((prev) => [...prev, item.id]);
-      await queryClient.invalidateQueries({ queryKey: ["work-items"] });
-      await queryClient.invalidateQueries({ queryKey: ["engagement"] });
-    } catch (e) {
-      setActionError((e as Error).message);
-    } finally {
-      setAcceptPending(false);
-    }
-  }
-
-  const highConfidence = active.filter((s) => s.confidence === "high");
-
-  function suggestionFor(item: WorkItemRow) {
-    const suggestion = active.find((s) => s.work_item_id === item.id);
-    const flag = isFlaggedRestatement(item) ? <FlaggedMarker item={item} /> : null;
-    if (!suggestion) return flag;
-    return (
-      <div className="space-y-2">
-        <SuggestionChip
-          label={taskLabels?.[suggestion.task_id] ?? "task"}
-          reason={suggestion.reason}
-          pending={acceptPending}
-          onAccept={() => void acceptSuggestion(suggestion)}
-          onDismiss={() => setDismissed((prev) => [...prev, suggestion.work_item_id])}
-        />
-        {flag}
-      </div>
-    );
-  }
-
   const isCoach = profile?.role === "coach";
   // The pile IS the unmapped set. Private items are unmapped work you withheld,
   // so they join it behind a filter rather than getting a section of their own.
@@ -764,7 +622,8 @@ export function WorkPage() {
       ? entry.items.some((item) => inboxFilterMatches(item, columnFilter, showPrivate))
       : inboxFilterMatches(entry, columnFilter, showPrivate);
   }
-  const matchingEntryCount = visibleEntries.filter(entryMatchesFilter).length;
+  const filteredEntries = visibleEntries.filter(entryMatchesFilter);
+  const matchingEntryCount = filteredEntries.length;
 
   /** Where the work came from, counted client-side off the loaded items. */
   const sourceCounts = (() => {
@@ -808,13 +667,13 @@ export function WorkPage() {
         }}
         clientLabel={clientName(entry.client_id)}
 
-        {...(entry.visibility === "mapped" ? {} : { footer: suggestionFor(entry) })}
+        {...(entry.visibility === "mapped" ? {} : { footer: isFlaggedRestatement(entry) ? <FlaggedMarker item={entry} /> : null })}
       />
     );
   }
 
   const lanePages = BUCKETS.map((bucket) => {
-    const entries = visibleEntries.filter((entry) => bucketKeyForEntry(entry) === bucket.key);
+    const entries = filteredEntries.filter((entry) => bucketKeyForEntry(entry) === bucket.key);
     const lastPage = Math.max(0, Math.ceil(entries.length / COLUMN_PAGE_SIZE) - 1);
     const page = Math.min(columnPages[bucket.key], lastPage);
     return {
@@ -907,11 +766,6 @@ export function WorkPage() {
             <ImportFlowDialog trigger={<Button type="button" variant="outline">Import AI history</Button>} />
           </DropdownMenuContent>
         </DropdownMenu>
-        {unmappedCount > 0 ? (
-          <Button type="button" variant="ink" className="h-9" disabled={suggesting} onClick={() => void handleSuggest()}>
-            {suggesting ? "Thinking…" : "Suggest mapping"}
-          </Button>
-        ) : null}
         {!isCoach && selectable.length > 0 && !selectMode ? (
           <Button type="button" variant="ghost" className="h-9" onClick={() => setSelectMode(true)}>Select</Button>
         ) : null}
@@ -939,12 +793,6 @@ export function WorkPage() {
             <Button type="button" variant="ghost" onClick={leaveSelectMode}>Done</Button>
           </>
         ) : null}
-        {active.length > 0 ? <SuggestLegend /> : null}
-        {active.length > 0 && highConfidence.length >= 3 ? (
-          <Button type="button" variant="outline" size="sm" disabled={acceptPending} onClick={() => { void (async () => { for (const suggestion of highConfidence) await acceptSuggestion(suggestion); })(); }}>
-            Accept all high-confidence ({highConfidence.length})
-          </Button>
-        ) : null}
         <div className="ml-auto flex shrink-0 items-center gap-2">
           {arrivalCount > 0 ? (
             <Popover onOpenChange={(open) => { if (open) recordPanelOpen("arrived"); }}>
@@ -954,30 +802,25 @@ export function WorkPage() {
           ) : null}
           {all.length > 0 ? (
             <Popover onOpenChange={(open) => { if (open) recordPanelOpen("reading"); }}>
-              <PopoverTrigger asChild><Button type="button" variant="ghost" className="h-9 text-[13px] text-muted-foreground">{groupedCount(all)} pieces of work. Nothing is hidden.</Button></PopoverTrigger>
+              <PopoverTrigger asChild><Button type="button" variant="ghost" className="h-9 text-[13px] text-muted-foreground">{columnFilter === "all" ? `${groupedCount(all)} pieces of work. Nothing is hidden.` : `${matchingEntryCount} of ${groupedCount(all)} shown`}</Button></PopoverTrigger>
               <PopoverContent align="end" className="max-h-[70vh] w-[min(720px,calc(100vw-2rem))] overflow-y-auto"><ReadingPanel items={reading} /><NotCovered /></PopoverContent>
             </Popover>
           ) : null}
         </div>
       </div>
 
-      <div className={suggesting ? "relative min-h-0 flex-1 animate-pulse" : "relative min-h-0 flex-1"}>
+      <div className="relative min-h-0 flex-1">
         {isLoading ? (
           <p className="p-5 text-sm text-muted-foreground">Loading your work…</p>
         ) : all.length === 0 ? (
           <div className="mx-auto mt-8 max-w-lg rounded-[var(--radius)] border border-border bg-card px-8 py-12 text-center shadow-card">
             <p className="text-sm text-foreground">Your work lands here.</p>
             <div className="mt-6 inline-block text-left">
-              <BringWorkInRow unmappedCount={unmappedCount} suggesting={suggesting} onSuggest={() => void handleSuggest()} isCoach={isCoach} selectableCount={selectable.length} selectMode={selectMode} allChosen={allChosen} chosenCount={chosen.size} onToggleSelectAll={() => setChosen(allChosen ? new Set() : new Set(selectable))} onBulkMap={bulkMapChosen} onRemove={() => setConfirmRemove(true)} onDoneSelect={leaveSelectMode} onEnterSelect={() => setSelectMode(true)} />
+              <BringWorkInRow isCoach={isCoach} selectableCount={selectable.length} selectMode={selectMode} allChosen={allChosen} chosenCount={chosen.size} onToggleSelectAll={() => setChosen(allChosen ? new Set() : new Set(selectable))} onBulkMap={bulkMapChosen} onRemove={() => setConfirmRemove(true)} onDoneSelect={leaveSelectMode} onEnterSelect={() => setSelectMode(true)} />
             </div>
           </div>
         ) : (
           <>
-            {columnFilter === "unmapped" && matchingEntryCount === 0 ? (
-              <p className="absolute inset-x-5 top-3 z-20 rounded-[var(--radius-md)] border border-dashed border-pencil bg-card px-4 py-3 text-center text-[11.5px] text-soft">
-                These landed on their own. Say whose work it is and the rest gets easier. Unmapped work is private and belongs to no workboard. It is not in any receipt, no coach can see it, and it will not appear in the firm view until you map it.
-              </p>
-            ) : null}
             <BoardShell
               ariaLabel="All work"
               className={gusting ? "h-full nb-gust" : "h-full"}
@@ -1003,7 +846,7 @@ export function WorkPage() {
                     <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-10 border-b border-[var(--nb-rule)] px-3 py-3">
                       <h2 className="flex items-baseline justify-between gap-3 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground"><span className="truncate">{frame.bucket.label}</span><span className="shrink-0 text-soft">{frame.entryCount}</span></h2>
                     </div>
-                    {lanePage.pageEntries.length === 0 ? <p className="pointer-events-none absolute left-3 right-3 top-14 z-10 rounded-[var(--radius-md)] border border-dashed border-pencil bg-card px-3 py-4 text-center text-[11.5px] text-soft">Nothing here yet.</p> : null}
+                    {lanePage.pageEntries.length === 0 ? <p className="pointer-events-none absolute left-3 right-3 top-14 z-10 rounded-[var(--radius-md)] border border-dashed border-pencil bg-card px-3 py-4 text-center text-[11.5px] text-soft">{columnFilter === "unmapped" ? "Nothing here with no board" : columnFilter === "all" ? "Nothing here yet." : "Nothing here"}</p> : null}
                     {lanePage.entries.length > COLUMN_PAGE_SIZE ? (
                       <div className="absolute inset-x-0 bottom-0 z-10 flex h-11 items-center justify-center gap-3 border-t border-[var(--nb-rule)] bg-card">
                         {lanePage.page > 0 ? <button type="button" aria-label="Earlier work in this column" className="group inline-flex min-h-11 min-w-11 items-center justify-center md:min-h-0 md:min-w-0" onClick={() => setPage(lanePage.page - 1)}><PageMark back /></button> : null}
@@ -1015,9 +858,9 @@ export function WorkPage() {
                 );
               }}
               renderNode={(node) => (
-                <DimmedDisabled dimmed={!entryMatchesFilter(node.entry)} disabled={!entryMatchesFilter(node.entry)} className="min-w-0 w-full">
+                <div className="min-w-0 w-full">
                   <InboxFixedCard>{isConversationGroup(node.entry) ? renderGroup(node.entry, (node.entry.transcript ?? node.entry.items[0]!).visibility === "mapped" ? "mapped" : "unmapped") : renderColumnItem(node.entry)}</InboxFixedCard>
-                </DimmedDisabled>
+                </div>
               )}
             />
           </>
