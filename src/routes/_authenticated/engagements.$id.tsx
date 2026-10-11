@@ -1,7 +1,10 @@
-import { Navigate, createFileRoute } from "@tanstack/react-router";
+import { Navigate, createFileRoute, useRouter } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 
-
+import { canvasLabBoardQuery } from "@/hooks/use-canvas-lab";
 import { useEngagementPage } from "@/hooks/use-engagement-page";
+import { useProfile } from "@/hooks/use-profile";
 import {
   ENGAGEMENT_NARROW_WIDTH,
   shouldOpenWorkboard,
@@ -31,6 +34,23 @@ export const Route = createFileRoute("/_authenticated/engagements/$id")({
 function EngagementRoute() {
   const { id } = Route.useParams();
   const { work, view } = Route.useSearch();
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const { data: profile } = useProfile();
+  const profileId = profile?.id;
+
+  // PERF-A: download the board's code while the engagement read is in flight.
+  useEffect(() => {
+    void router.preloadRoute({ to: "/engagements/$id/canvas-lab", params: { id } }).catch(() => undefined);
+  }, [id, router]);
+
+  // PERF-A: start the board read (shared cache key with useCanvasLab) the
+  // moment the acting profile is known, never awaited.
+  useEffect(() => {
+    if (!id || !profileId) return;
+    void queryClient.prefetchQuery(canvasLabBoardQuery(id, profileId));
+  }, [id, profileId, queryClient]);
+
   const page = useEngagementPage(id);
   const engagement = page.data?.engagement ?? null;
 
