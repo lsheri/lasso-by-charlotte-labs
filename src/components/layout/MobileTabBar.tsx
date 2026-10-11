@@ -58,7 +58,7 @@ export function MobileTabBar() {
       ]
     : [
         { label: "Home", to: "/home", icon: "overview" },
-        { label: "Inbox", to: "/work", icon: "work" },
+        { label: "All work", to: "/work", icon: "work" },
         { label: "All AI Conversations", to: "/ai-record", icon: "ai-record" },
         { label: "Past Ask Lasso chats", to: "/ai-record", icon: "history", search: { view: "asked" } },
         { label: "Find it", to: "/find-it", icon: "work", disabled: true },

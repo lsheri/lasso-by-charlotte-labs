@@ -113,7 +113,7 @@ describe("M3 — where it is now, in the workspace's words", () => {
 
   it("an unmapped arrival says where it is, never who saw it", () => {
     const place = arrivalPlace(item(), "company");
-    expect(place).toEqual({ mapped: false, text: "In your inbox" });
+    expect(place).toEqual({ mapped: false, text: "No board yet" });
   });
 
   it("never says tracked, monitored or synced", () => {
@@ -203,7 +203,7 @@ describe("M3 — Undo and Put it back", () => {
     fireEvent.click(screen.getByRole("button", { name: "Undo" }));
     await waitFor(() => expect(deletes).toEqual(["i1"]));
     expect(events).toEqual([{ name: "inbox.arrival_undone", dims: { reverted: false } }]);
-    expect(toasts[0]?.text).toBe("Moved back to your inbox.");
+    expect(toasts[0]?.text).toBe("Moved back to All work.");
     expect(toasts[0]?.action?.label).toBe("Put it back");
 
     toasts[0]?.action?.onClick();
@@ -213,7 +213,7 @@ describe("M3 — Undo and Put it back", () => {
 
   it("offers no Undo on an arrival still in the inbox", () => {
     renderStrip([item({ id: "i2" })]);
-    expect(screen.getByText("In your inbox")).toBeTruthy();
+    expect(screen.getByText("No board yet")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Undo" })).toBeNull();
   });
 

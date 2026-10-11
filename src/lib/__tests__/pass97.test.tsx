@@ -142,7 +142,7 @@ describe("pass 97 — connect to work", () => {
     const page = readFileSync("src/pages/EngagementPage.tsx", "utf8");
     expect(page).not.toContain("ConnectToWorkSheet");
     expect(page).toContain("Bring more work in from");
-    expect(page).toContain("the Inbox");
+    expect(page).toContain("All work");
     expect(page).toContain('profile.role !== "coach"');
     expect(page).toContain("membership.data?.isMember");
   });

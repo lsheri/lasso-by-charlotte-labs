@@ -60,7 +60,7 @@ export function arrivalPlace(
 ): ArrivalPlace {
   const link = item.work_item_tasks[0];
   const task = link?.tasks;
-  if (!link || !task) return { mapped: false, text: "In your inbox" };
+  if (!link || !task) return { mapped: false, text: "No board yet" };
   const code = task.engagements?.code ?? "Not set";
   const verb = orgType === "company" ? "Placed on" : "Filed under";
   return { mapped: true, text: `${verb} ${code} · ${task.name}`, taskId: link.task_id };
