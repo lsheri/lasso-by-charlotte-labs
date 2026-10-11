@@ -2,6 +2,7 @@
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { readFileSync } from "node:fs";
 import type { ReactNode } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { navFor, TAB_ITEMS, type NavCtx } from "@/components/layout/nav-config";
 import { vocabFor } from "@/lib/edu-vocab";
@@ -46,6 +47,10 @@ function ContextProbe() {
   const { ctx } = useNavCtx();
   return <output data-testid="ctx">{JSON.stringify(ctx)}</output>;
 }
+function renderTab(ui: ReactNode) {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
+}
 beforeEach(() => { vi.clearAllMocks(); state.type = "company"; state.role = "em"; state.canReview = false; });
 afterEach(cleanup);
 
@@ -53,7 +58,7 @@ describe("MN-2b phone navigation", () => {
   for (const [type, role] of [["company", "em"], ["company", "admin"], ["partner", "admin"], ["personal", "admin"], ["edu", "admin"], ["company", "coach"]]) {
     it(`${type} ${role}: ordered More items equal the manifest`, () => {
       state.type = type ?? "company"; state.role = role ?? "em";
-      render(<><ContextProbe /><MobileTabBar /></>);
+      renderTab(<><ContextProbe /><MobileTabBar /></>);
       const ctx = JSON.parse(screen.getByTestId("ctx").textContent ?? "{}") as NavCtx;
       const expected = navFor(ctx, { vocab: vocabFor({ org_type: ctx.type }), institutionName: null })
         .filter(g => g.placement !== "workspace_menu" && g.id !== "engagements").flatMap(g => g.items.filter(i => i.id !== "all-work"))
@@ -68,7 +73,7 @@ describe("MN-2b phone navigation", () => {
     });
   }
   it("workers have exactly Work, Workboards, More and emit tab events", () => {
-    render(<MobileTabBar />);
+    renderTab(<MobileTabBar />);
     const nav = screen.getByRole("navigation", { name: "Primary" });
     expect(Array.from(nav.querySelectorAll("a, button")).map(i => i.textContent)).toEqual(["Work", "Workboards", "More"]);
     fireEvent.click(within(nav).getByRole("link", { name: "Work" }));
@@ -77,7 +82,7 @@ describe("MN-2b phone navigation", () => {
     expect(state.events).toHaveBeenCalledWith("nav.opened", "o1", { item: "workboards", surface: "tab" });
   });
   it("board rows show titles only and emit a content-free board event", () => {
-    render(<MobileTabBar />);
+    renderTab(<MobileTabBar />);
     fireEvent.click(screen.getByRole("button", { name: "Workboards" }));
     expect(screen.queryByText(/ABC-01|Folder/)).toBeNull();
     fireEvent.click(screen.getByRole("link", { name: "Pricing review" }));
@@ -85,14 +90,14 @@ describe("MN-2b phone navigation", () => {
     expect(screen.queryByTestId("sheet")).toBeNull();
   });
   it("More opens settings through its handler and emits the item event", () => {
-    render(<MobileTabBar />);
+    renderTab(<MobileTabBar />);
     fireEvent.click(screen.getByRole("button", { name: "More" }));
     fireEvent.click(screen.getByRole("button", { name: "Settings" }));
     expect(state.settings).toHaveBeenCalledOnce();
     expect(state.events).toHaveBeenCalledWith("nav.opened", "o1", { item: "settings", surface: "more" });
   });
   it("a More link emits its manifest ID and disabled rows emit nothing", () => {
-    render(<MobileTabBar />);
+    renderTab(<MobileTabBar />);
     fireEvent.click(screen.getByRole("button", { name: "More" }));
     state.events.mockClear();
     // MN-3b: Find it left the nav, so More has no disabled row to press.
@@ -101,7 +106,7 @@ describe("MN-2b phone navigation", () => {
     expect(state.events).toHaveBeenCalledWith("nav.opened", "o1", { item: "home", surface: "more" });
   });
   it("More sign-out resets PostHog then signs out and returns to auth", async () => {
-    render(<MobileTabBar />);
+    renderTab(<MobileTabBar />);
     fireEvent.click(screen.getByRole("button", { name: "More" }));
     fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
     await vi.waitFor(() => expect(state.navigate).toHaveBeenCalledWith({ to: "/auth", replace: true }));
@@ -110,7 +115,7 @@ describe("MN-2b phone navigation", () => {
   });
   it.each([false, true])("guest tabs and coach messages remain intact, canReview=%s", (canReview) => {
     state.role = "coach"; state.canReview = canReview;
-    render(<MobileTabBar />);
+    renderTab(<MobileTabBar />);
     const nav = screen.getByRole("navigation", { name: "Primary" });
     expect(Array.from(nav.querySelectorAll("a, button")).map(i => i.textContent)).toEqual(canReview ? ["Coaching", "1:1 prep", "Ask", "More"] : ["1:1 prep", "More"]);
     if (canReview) { fireEvent.click(screen.getByRole("button", { name: "Ask" })); expect(screen.getByText("Coach messages")).toBeTruthy(); }
@@ -124,7 +129,7 @@ describe("MN-2b phone navigation", () => {
     }
   });
   it("MN-3b: More shows Look back and Your coach as single rows and no Find it or Decision log", () => {
-    render(<MobileTabBar />);
+    renderTab(<MobileTabBar />);
     fireEvent.click(screen.getByRole("button", { name: "More" }));
     const sheet = screen.getByTestId("sheet");
     expect(within(sheet).getAllByRole("link", { name: "Look back" })).toHaveLength(1);
