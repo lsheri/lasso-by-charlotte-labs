@@ -105,6 +105,7 @@ export function resetProfileIdentityState(): void {
   authUnsubscribe = null;
   sharedQueryClient = null;
   seededUsers.clear();
+  lastReconciled = null;
 }
 
 /**
@@ -148,26 +149,38 @@ async function fetchStoredActiveProfileId(userId: string): Promise<string | null
 
 /**
  * The choice of workspace has to reach the database, not just this tab: the
- * reads are scoped to it there. The local switch happens first and always, so
- * a failed write never leaves the person stuck.
+ * reads are scoped to it there. MN-1: the database row is the truth, so the
+ * row is written FIRST. Only once it is accepted does this tab's cache (and
+ * so the label) change; a failed write leaves both exactly as they were.
+ * Returns whether the database accepted the choice.
  */
-export async function setActiveProfileId(id: string): Promise<void> {
+export async function setActiveProfileId(id: string): Promise<boolean> {
+  const user = await ensureAuthUser();
+  const accepted = await writeActiveProfileRow(id, user?.id ?? null);
+  if (!accepted) return false;
+  // The cached row moves with the write, so reconciliation never sees the
+  // old row against the new cache and switches the person straight back.
+  if (user) sharedQueryClient?.setQueryData([...ACTIVE_PROFILE_ROW_KEY, user.id], id);
+  writeStored(id);
+  // The switch is the moment the stored choice changes, so the cached copy is
+  // dropped here rather than left to expire. The next read returns the new one.
+  sharedQueryClient?.invalidateQueries({ queryKey: ACTIVE_PROFILE_ROW_KEY });
+  return true;
+}
+
+/** This tab's cache of the choice. Storage is a convenience, never a requirement. */
+function writeStored(id: string): void {
   try {
     window.localStorage.setItem(STORAGE_KEY, id);
   } catch {
     /* storage is a convenience, never a requirement */
   }
   for (const listener of listeners) listener();
-  const user = await ensureAuthUser();
-  await writeActiveProfileRow(id, user?.id ?? null);
-  // The switch is the moment the stored choice changes, so the cached copy is
-  // dropped here rather than left to expire. The next read returns the new one.
-  sharedQueryClient?.invalidateQueries({ queryKey: ACTIVE_PROFILE_ROW_KEY });
 }
 
-async function writeActiveProfileRow(id: string, userId: string | null): Promise<void> {
+async function writeActiveProfileRow(id: string, userId: string | null): Promise<boolean> {
   try {
-    if (!userId) return;
+    if (!userId) return false;
     const { error } = await supabase
       .from("user_active_profile")
       .upsert(
@@ -175,12 +188,14 @@ async function writeActiveProfileRow(id: string, userId: string | null): Promise
         { onConflict: "user_id" },
       );
     if (error) throw error;
+    return true;
   } catch {
     // Wrong reads that look right are the dangerous kind, so this is said out
     // loud rather than swallowed.
     toast.error(
       "We could not save which workspace you are in. You may see work from another workspace until you try again.",
     );
+    return false;
   }
 }
 
@@ -235,10 +250,46 @@ export async function fetchProfileState(): Promise<ProfileState> {
   return { profiles, hasDeactivated: rows.some((row) => row.deactivated_at) };
 }
 
-function pickActive(profiles: Profile[], activeId: string | null): Profile | null {
+function pickActive(profiles: Profile[], activeId: string | null, rowId?: string | null): Profile | null {
   if (profiles.length === 0) return null;
+  // MN-1: the database row wins whenever it names one of these profiles.
+  const fromRow = rowId ? profiles.find((p) => p.id === rowId) : undefined;
+  if (fromRow) return fromRow;
   const match = activeId ? profiles.find((p) => p.id === activeId) : undefined;
   return match ?? (profiles[0] as Profile);
+}
+
+/** MN-1: the last row/cache disagreement already repaired, so it never loops. */
+let lastReconciled: string | null = null;
+
+/**
+ * When the loaded row names a real profile and this tab's cache says
+ * otherwise, the cache follows the row. Never writes the database.
+ */
+function useReconcileActiveProfile(
+  rowProfile: Profile | null,
+  localId: string | null,
+): void {
+  useEffect(() => {
+    if (!rowProfile || rowProfile.id === localId) return;
+    // An empty cache is not a disagreement: nothing was shown from it, so it
+    // simply takes the row's id, with no refetch and no event.
+    if (!localId) {
+      writeStored(rowProfile.id);
+      return;
+    }
+    const key = `${rowProfile.id}|${localId ?? ""}`;
+    if (lastReconciled === key) return;
+    lastReconciled = key;
+    writeStored(rowProfile.id);
+    void sharedQueryClient?.invalidateQueries();
+    // Loaded on demand so this hook never pulls the server-function graph
+    // into every module that reads the profile.
+    const orgId = rowProfile.org_id;
+    void import("@/lib/telemetry")
+      .then(({ logEvent }) => logEvent("profile.active_reconciled", orgId, { source: "row_differs" }))
+      .catch(() => {});
+  }, [rowProfile, localId]);
 }
 
 /** Existence check used by route gates, true when the user has any profile. */
@@ -262,7 +313,9 @@ export function useStoredActiveProfileId(userId: string | null) {
     queryKey: [...ACTIVE_PROFILE_ROW_KEY, userId ?? "none"],
     queryFn: () => fetchStoredActiveProfileId(userId as string),
     enabled: Boolean(userId),
-    staleTime: 60_000,
+    // MN-1: another tab or device may have switched; focus re-asks the row.
+    staleTime: 0,
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -299,7 +352,10 @@ export function useProfile() {
   const userId = userQuery.data?.id ?? null;
   const storedQuery = useStoredActiveProfileId(userId);
   const profiles = query.data ?? [];
-  const active = pickActive(profiles, activeId);
+  const rowId = storedQuery.isSuccess ? storedQuery.data : null;
+  const rowProfile = rowId ? profiles.find((p) => p.id === rowId) ?? null : null;
+  const active = pickActive(profiles, activeId, rowId);
+  useReconcileActiveProfile(rowProfile, activeId);
   useSeedActiveProfile(
     active,
     userId,
