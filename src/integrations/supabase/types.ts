@@ -5648,6 +5648,7 @@ export type Database = {
         Returns: Json
       }
       partner_share_backs: { Args: never; Returns: Json }
+      partner_shared_boards: { Args: never; Returns: Json }
       purge_workboard_annotations: { Args: never; Returns: number }
       reactivate_member: { Args: { p_profile: string }; Returns: undefined }
       record_coaching_disclosure: {
