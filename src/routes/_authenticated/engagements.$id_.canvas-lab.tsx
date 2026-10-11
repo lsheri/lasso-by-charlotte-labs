@@ -3,7 +3,11 @@ import { fallback, zodValidator } from "@tanstack/zod-adapter";
 import { useEffect } from "react";
 import { z } from "zod";
 
+import { useQueryClient } from "@tanstack/react-query";
+
+import { canvasLabBoardQuery } from "@/hooks/use-canvas-lab";
 import { useRecordEngagementView } from "@/hooks/use-engagement-views";
+import { useProfile } from "@/hooks/use-profile";
 import { CanvasLabPage } from "@/pages/CanvasLabPage";
 
 const canvasLabSearchSchema = z.object({
@@ -36,9 +40,19 @@ function CanvasLabRoute() {
   const { id } = Route.useParams();
   const { from } = Route.useSearch();
   const navigate = Route.useNavigate();
+  const queryClient = useQueryClient();
+  const { data: profile } = useProfile();
+  const profileId = profile?.id;
 
   // Opening the board records that this person opened it, once per open.
   useRecordEngagementView(id);
+
+  // PERF-A: direct opens start the board read here; a redirected open finds
+  // it already in flight under the same key, so nothing fetches twice.
+  useEffect(() => {
+    if (!id || !profileId) return;
+    void queryClient.prefetchQuery(canvasLabBoardQuery(id, profileId));
+  }, [id, profileId, queryClient]);
 
   useEffect(() => {
     if (!from) return;
