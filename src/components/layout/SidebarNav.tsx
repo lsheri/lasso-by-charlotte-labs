@@ -24,7 +24,7 @@ import { groupConversations } from "@/lib/work-types";
 import { useEngagements } from "@/hooks/use-engagements";
 import { isBusinessOrg, useProfile } from "@/hooks/use-profile";
 import * as roles from "@/lib/role-access";
-import { isEduOrg, vocabFor } from "@/lib/edu-vocab";
+import { vocabFor } from "@/lib/edu-vocab";
 import { bucket, logEvent } from "@/lib/telemetry";
 
 
@@ -46,13 +46,7 @@ import {
   type NavEngagement,
 } from "@/lib/nav-groups";
 
-import {
-  coachNavGroups,
-  coachingGroup,
-  eduNavGroups,
-  navGroups,
-  partnerNavGroups,
-} from "./nav-config";
+import { navFor, type NavCtx } from "./nav-config";
 import { engagementDisplayTitle } from "@/lib/clients";
 import {
   containerColourStyle,
@@ -338,26 +332,34 @@ export function SidebarNav({
   const canManageMembers = roles.canManageMembers(profile);
   const canSeeFirmView = roles.canSeeFirmView(profile);
   const isPartnerOrg = profile?.org_type === "partner";
-  const groupsForOrg = isEduOrg(profile)
-    ? eduNavGroups
-    : isPartnerOrg
-      ? partnerNavGroups
-      : navGroups;
   const vocab = vocabFor(profile);
   // Whether a coaching destination exists at all is decided by what this
   // person was given on a board, never by their workspace role.
   const reach = useCoachingReach(profiles);
-  const coachingGroups = reach.canReach ? [coachingGroup] : [];
 
-  const membersLabel = roles.membersLabel(profile);
   // "Your coach" is only a real place when someone is actually coaching you.
   // A firm or school role has that by arrangement; a solo workspace has to
   // have a live link, so only there does the sidebar ask.
-  const byArrangement = roles.hasCoachByArrangement(profile);
   const soloHasCoach = useHasLiveCoachLink(
     !guestNav && profile?.org_type === "personal" && Boolean(profile?.id),
   );
-  const canBeCoached = byArrangement || soloHasCoach;
+  // MN-2a: which groups and items show is decided by the nav manifest.
+  const navCtx: NavCtx = {
+    type: profile?.org_type ?? "personal",
+    role: profile?.role ?? "",
+    canReview: reach.canReach,
+    canManageMembers,
+    canSeeFirmView,
+    hasCoachLink: soloHasCoach,
+    affiliated: Boolean(institution),
+    clientsEnabled: clientsEnabled(profile),
+  };
+  const navGroupsForPerson = navFor(navCtx, { vocab, institutionName: institution?.name ?? null });
+  const coachingGroups = navGroupsForPerson.filter((group) => group.id === "coaching");
+  // The affiliation link is only ever drawn for an affiliated business workspace.
+  const affiliationShown = (group: { id: string }) =>
+    Boolean(group.id === "account" && institution && isBusinessOrg(profile));
+  const affiliationLabel = institution ? `Your ${institution.name} link` : null;
   // One query for the circle, shared with every other surface that draws it.
   // A guest never asks: there are no circles on a guest's screen.
   const { data: unreadNotes } = useUnreadNotesAboutMe(guestNav ? undefined : profile?.id);
@@ -537,7 +539,7 @@ export function SidebarNav({
     return (
       <nav className="flex flex-col gap-7">
         {coachingGroups.length === 0 ? shared : null}
-        {[...coachingGroups, ...coachNavGroups].map((group) => (
+        {navGroupsForPerson.map((group) => (
           <Fragment key={group.label}>
             {/* In a partner workspace Shared with me is the primary surface,
                 so it renders above the coaching group rather than after it. */}
@@ -546,9 +548,9 @@ export function SidebarNav({
               <div className="nb-group-header px-2">{group.label}</div>
               <div className="mt-2 flex flex-col gap-0.5">
                 {group.items.map((item) =>
-                  item.to === "/settings" ? (
+                  item.action === "openSettings" ? (
                     <button
-                      key={item.to}
+                      key={item.id}
                       type="button"
                       onClick={() => {
                         onOpenSettings?.();
@@ -561,8 +563,8 @@ export function SidebarNav({
                     </button>
                   ) : (
                     <Link
-                      key={item.to}
-                      to={item.to}
+                      key={item.id}
+                      to={item.to as string}
                       onClick={onNavigate}
                       className={linkClass}
                       activeProps={activeProps}
@@ -583,25 +585,17 @@ export function SidebarNav({
 
   return (
     <nav className="flex shrink-0 flex-col gap-7">
-      {[...groupsForOrg, ...coachingGroups].map((group) => {
+      {navGroupsForPerson.map((group) => {
         const isEngagementGroup = group.id === "engagements";
-        const groupLabel = group.id === "firm" && !isBusinessOrg(profile) ? "Who you share with" : group.label;
+        const groupLabel = group.label;
 
-        const itemsForGroup =
-          group.id === "account" && institution && isBusinessOrg(profile)
-            ? [
-                {
-                  label: `Your ${institution.name} link`,
-                  to: "/affiliation",
-                  icon: "messages" as const,
-                },
-                ...group.items,
-              ]
-            : group.items;
+        const itemsForGroup = group.items
+          .filter((item) => item.id !== "affiliation" || affiliationShown(group))
+          .map((item) =>
+            item.id === "affiliation" && affiliationLabel ? { ...item, label: affiliationLabel } : item,
+          );
 
         const visibleItems = itemsForGroup
-          .filter((item) => !(item.to === "/members" && !canManageMembers))
-          .filter((item) => !(item.to === "/firm" && !canSeeFirmView))
           .map((item) => {
             const archiveItem = item.to === "/archive";
             const archiveItemActive =
@@ -623,9 +617,9 @@ export function SidebarNav({
                   <TooltipContent side="right">{item.disabledReason ?? "Coming soon"}</TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-            ) : item.to === "/settings" ? (
+            ) : item.action === "openSettings" ? (
               <button
-                key={item.to}
+                key={item.id}
                 type="button"
                 onClick={() => {
                   onOpenSettings?.();
@@ -640,7 +634,7 @@ export function SidebarNav({
               // The circle, not a count: it says look here, and nothing more.
               <CircleMark key={item.to} className="block" label="New note from your coach">
                 <Link
-                  to={item.to}
+                  to={item.to as string}
                   onClick={onNavigate}
                   className={linkClass}
                   activeProps={activeProps}
@@ -652,7 +646,7 @@ export function SidebarNav({
             ) : (
               <Link
                  key={`${item.to}:${item.label}`}
-                to={item.to}
+                to={item.to as string}
                  {...(item.hash ? { hash: item.hash } : {})}
                  {...(item.search ? { search: item.search } : {})}
                 onClick={onNavigate}
@@ -663,7 +657,7 @@ export function SidebarNav({
                 <GraphiteIcon name={item.icon} size={20} />
                 <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
                   <span className="truncate">
-                    {item.to === "/members" ? membersLabel : item.label}
+                    {item.label}
                   </span>
                   {item.to === "/decisions" && decisionCount > 0 ? (
                     <span className="count-pill">{decisionCount}</span>
@@ -680,7 +674,6 @@ export function SidebarNav({
         if (!isEngagementGroup && visibleItems.length === 0) {
           return null;
         }
-        if (group.id === "coach" && !canBeCoached) return null;
 
         return (
           <Fragment key={group.label}>
