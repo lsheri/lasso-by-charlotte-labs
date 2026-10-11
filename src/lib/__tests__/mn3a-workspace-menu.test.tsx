@@ -17,10 +17,10 @@ vi.mock("@tanstack/react-router", () => ({
 }));
 vi.mock("@/hooks/use-profile", async (original) => ({ ...(await original<object>()),
   setActiveProfileId: state.setActive,
-  useProfile: () => ({ data: profile(), profiles: profiles() }),
+  useProfile: () => ({ data: profile(), profiles: makeProfiles() }),
 }));
 vi.mock("@/components/layout/use-nav-ctx", () => ({ useNavCtx: () => ({
-  ctx: context(), profile: profile(), profiles: profiles(), institution: null,
+  ctx: context(), profile: profile(), profiles: makeProfiles(), institution: null,
   guestNav: state.role === "coach", vocab: vocabFor(profile()), labels: { vocab: vocabFor(profile()), institutionName: null },
 }) }));
 vi.mock("@/hooks/use-engagements", () => ({ useEngagements: () => ({ data: [] }) }));
@@ -45,7 +45,7 @@ function profile(): Profile {
   return { id: "p1", user_id: "u1", org_id: "o1", org_name: "Northline", org_type: state.type as Profile["org_type"], role: state.role,
     display_name: "Liam", title_band: null, clients_enabled: true, onboarding: null };
 }
-function profiles(): Profile[] { return state.count === 1 ? [profile()] : [profile(), { ...profile(), id: "p2", org_id: "o2", org_name: "Bright Path" }]; }
+function makeProfiles(): Profile[] { return state.count === 1 ? [profile()] : [profile(), { ...profile(), id: "p2", org_id: "o2", org_name: "Bright Path" }]; }
 function context(): NavCtx {
   return { type: profile().org_type, role: state.role, canReview: false, canManageMembers: ["admin", "lead"].includes(state.role),
     canSeeFirmView: state.type === "company" && ["admin", "lead"].includes(state.role), hasCoachLink: false, affiliated: false, clientsEnabled: true };
