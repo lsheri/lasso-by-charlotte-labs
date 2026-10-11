@@ -4,7 +4,8 @@ import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { SidebarNav } from "@/components/layout/SidebarNav";
-import { NAV_ITEMS, navGroups } from "@/components/layout/nav-config";
+import { NAV_ITEMS, navFor, navGroups } from "@/components/layout/nav-config";
+import { DEFAULT_VOCAB } from "@/lib/vocab";
 
 const mocks = vi.hoisted(() => ({
   profile: null as {
@@ -123,8 +124,7 @@ describe("Pass 123: the sidebar follows the weekly loop", () => {
     expect(screen.queryByText("Firm view")).toBeNull();
     expect(screen.queryByText("Members")).toBeNull();
     expect(NAV_ITEMS.find((i) => i.id === "firm-view")?.placement).toBe("workspace_menu");
-    const membersPlacement = NAV_ITEMS.find((i) => i.id === "members")?.placement;
-    expect(typeof membersPlacement === "function" ? membersPlacement({ type: "company" } as Parameters<typeof membersPlacement>[0]) : membersPlacement).toBe("workspace_menu");
+    expect(navFor({ type: "company", role: "admin", canReview: false, canManageMembers: true, canSeeFirmView: true, hasCoachLink: false, affiliated: false, clientsEnabled: false }, { vocab: DEFAULT_VOCAB, institutionName: null }).flatMap((g) => g.items).find((i) => i.id === "members")?.placement).toBe("workspace_menu");
 
     expect(screen.queryByText("Look back")).not.toBeNull();
     // MN-3a: Settings moved out of the sidebar body into the workspace menu.
