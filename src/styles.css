@@ -15,6 +15,29 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* All work phone presentation. No rules in this block apply at 768px or above. */
+@media (max-width: 767px) {
+  .work-page-header { display: grid; grid-template-columns: minmax(0, 1fr) auto; height: auto; gap: 10px; padding: 16px; }
+  .work-page-header > div:first-child { min-width: 0; }
+  .work-page-subtitle { overflow: visible; white-space: normal; font-size: 12px; line-height: 1.5; }
+  .work-page-filters { flex-wrap: wrap; height: auto; gap: 10px; padding: 10px 16px; overflow: visible; white-space: normal; }
+  .work-page-filters > button, .work-page-filters > label { flex-shrink: 0; }
+  .work-page-panels { width: 100%; margin-left: 0; flex-wrap: wrap; gap: 10px; }
+  .work-page-panels > button { max-width: 100%; height: auto; white-space: normal; text-align: left; }
+  .work-page button, .work-page [role="button"], .work-page-filters > label { min-width: 44px; min-height: 44px; }
+  .work-page-filters > label { position: relative; padding-left: 44px; }
+  .work-page-filters > label > [role="checkbox"] { position: absolute; left: 0; min-width: 44px; min-height: 44px; }
+  .work-page-filters > button { font-size: 13px; }
+  .work-page :is(button, [role="button"], [role="checkbox"]):focus-visible { outline: 2px solid var(--nb-green); outline-offset: -2px; }
+  .work-page-content { overflow-y: auto; }
+  .work-phone-list { padding: 0 16px 16px; }
+  .work-phone-list li + li { margin-top: 10px; }
+  .work-phone-row { display: flex; width: 100%; min-height: 88px; height: auto; gap: 12px; border-radius: 0; border-bottom: 1px solid var(--nb-rule); padding: 12px 0; white-space: normal; }
+  .work-phone-row__title { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow-wrap: anywhere; font-size: 16px; line-height: 1.4; }
+  .work-phone-row__stamp { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 6px; font-family: var(--font-mono); font-size: 12px; font-weight: 400; line-height: 1.5; text-transform: uppercase; color: var(--nb-mid); }
+  .work-phone-more { width: 100%; height: 44px; margin-top: 10px; }
+}
+
 @layer nb {
 /*
  * Design system definition.

@@ -3,6 +3,8 @@ import { ExternalLink, FileText } from "lucide-react";
 import { WorkboardFilePreview as FilePreview } from "@/components/canvas-lab/WorkboardFilePreview";
 import { BrandLogo, brandHex, brandLabel } from "@/components/connectors/BrandLogo";
 import { ChatUrlLink } from "@/components/work/ChatUrlLink";
+import { Button } from "@/components/ui/button";
+import { workIdentityLabel } from "@/lib/work-identity";
 import { pastedChatUrl } from "@/lib/chat-url";
 import { sourceBrandKey } from "@/components/work/SourceMark";
 import type { WorkboardCardPreview, WorkboardDisplayMode, WorkboardFilePreview } from "@/lib/workboard-card-preview.shared";
@@ -24,6 +26,7 @@ export function WorkNote({
   filePreview,
   contextSelected = false,
   headerGutter = false,
+  phoneRow = false,
 }: {
   item: Omit<WorkItemRow, "work_item_tasks"> & { work_item_tasks?: WorkItemRow["work_item_tasks"] };
   onOpen?: (() => void) | undefined;
@@ -39,6 +42,8 @@ export function WorkNote({
   contextSelected?: boolean;
   /** Reserves the lane the board's control bar occupies, so a control never covers the date. */
   headerGutter?: boolean;
+  /** Opt-in phone list presentation, used only by All work below 768px. */
+  phoneRow?: boolean;
 }) {
   const mapping = item.work_item_tasks?.[0]?.tasks ?? null;
   const when = resolveWorkDate(item);
@@ -62,6 +67,20 @@ export function WorkNote({
           ? "Document"
           : "";
   const sourceUrl = item.meta?.web_view_link ?? item.source_meta?.url ?? null;
+
+  if (phoneRow) {
+    return (
+      <Button type="button" variant="ghost" onClick={onOpen} aria-label={item.title} className="work-phone-row">
+        <span className="shrink-0" aria-hidden="true"><BrandLogo brand={brand} size={20} /></span>
+        <span className="min-w-0 flex-1 text-left">
+          <span className="work-phone-row__title">{item.title}</span>
+          <span className="work-phone-row__stamp">
+            {date} · {workIdentityLabel(item as WorkItemRow)} · {mapping?.engagements?.code ?? "NO BOARD"}
+          </span>
+        </span>
+      </Button>
+    );
+  }
 
   return (
     <div

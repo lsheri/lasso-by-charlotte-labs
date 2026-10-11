@@ -1,5 +1,6 @@
 import { useConnectorAccounts } from "@/hooks/use-connector-accounts";
 import { CONNECTOR_TOOLKITS } from "@/lib/connector-toolkits";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 /**
  * Figma 22:220 subtitle: "38 pieces of work · 6 unmapped · 4 tools connected".
@@ -10,6 +11,7 @@ import { CONNECTOR_TOOLKITS } from "@/lib/connector-toolkits";
  * appear until the read lands rather than showing a guess of zero.
  */
 export function WorkSubtitle({ pieces, unmapped }: { pieces: number; unmapped: number }) {
+  const isMobile = useIsMobile();
   const { data: accounts } = useConnectorAccounts();
 
   const connected =
@@ -23,5 +25,9 @@ export function WorkSubtitle({ pieces, unmapped }: { pieces: number; unmapped: n
     connected === null ? "" : `${connected} tool${connected === 1 ? "" : "s"} connected`,
   ].filter(Boolean);
 
-  return <>{parts.join(" · ")}</>;
+  return isMobile ? (
+    <span className="flex min-w-0 flex-wrap gap-x-3 gap-y-1" data-work-subtitle="parts">
+      {parts.map((part) => <span key={part} className="whitespace-nowrap">{part}</span>)}
+    </span>
+  ) : <>{parts.join(" · ")}</>;
 }

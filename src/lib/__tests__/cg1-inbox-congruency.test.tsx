@@ -188,6 +188,27 @@ beforeEach(() => {
 });
 
 describe("CG1 inbox congruency", () => {
+  it("below 768 replaces lanes with a list and removes selection, fit and zoom from the DOM", () => {
+    const width = window.innerWidth;
+    Object.defineProperty(window, "innerWidth", { configurable: true, value: 390 });
+    try {
+      inboxRows = rows;
+      render(<WorkPage />);
+      expect(screen.getByLabelText("All work list")).toBeTruthy();
+      expect(screen.queryByTestId("board-shell")).toBeNull();
+      expect(screen.queryByRole("button", { name: "Select" })).toBeNull();
+      expect(screen.queryByRole("button", { name: "Fit" })).toBeNull();
+      expect(screen.queryByRole("group", { name: "Board zoom" })).toBeNull();
+      fireEvent.click(screen.getByRole("button", { name: "No board" }));
+      expect(screen.getByRole("button", { name: "1 of 3 shown" })).toBeTruthy();
+      expect(screen.queryByText(/Nothing is hidden/)).toBeNull();
+      expect(screen.queryByText("mapped")).toBeNull();
+      expect(screen.queryByText("other")).toBeNull();
+      expect(screen.getByText("waiting")).toBeTruthy();
+    } finally {
+      Object.defineProperty(window, "innerWidth", { configurable: true, value: width });
+    }
+  });
   // The Inbox lanes size from the shell's reported box, so every render gets a
   // real desktop shell (1094 x 1376) unless a test installs its own.
   const shellSize: { width: PropertyDescriptor | undefined; height: PropertyDescriptor | undefined } = { width: undefined, height: undefined };

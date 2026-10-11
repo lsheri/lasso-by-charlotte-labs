@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] MOB-1: phone-only work list, header controls, card reuse, and regression checks.
+- [ ] MOB-1: signed-in visual comparison at 390 and 1280; blocked by external unmanaged authentication.
+
 - [x] Build the local-only five-act first-run tour, including the final copy, chat-link example, and anchored answer connectors.
 - [x] Fill the tour with a second AI workstream, linked artifact, final image cards, and an Act 1 drag hint.
 - [x] PF1: inherit one existing conversation placement for destination-free attachments without moving the conversation.

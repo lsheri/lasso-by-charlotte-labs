@@ -76,6 +76,8 @@ export type TelemetryEvent =
   | "tour.finished"
   /** Inbox: the bring-work menu was opened. Content-free. */
   | "work.import_menu_opened"
+  /** Phone All work: another local page of the list was revealed. Content-free. */
+  | "work.list_expanded"
   /** Inbox: an arrivals or reading panel was opened. Closed panel word only. */
   | "work.panel_opened"
   /** Reader: a collapsed run of AI tool steps was opened. Banded count only. */
