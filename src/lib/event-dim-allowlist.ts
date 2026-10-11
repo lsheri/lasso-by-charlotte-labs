@@ -21,9 +21,12 @@ export const LANDING_SEE_IT_WORK_LOCATIONS = ["hero", "hero_workboard"] as const
 /** Closed landing.viewed.surface vocabulary. */
 export const LANDING_VIEW_SURFACES = ["landing-board", "landing-classic", "landing-next", "personal"] as const;
 
+/** MN-7: additive navigation item values for the portal. No content dimensions. */
+export const MN7_NAV_ITEMS = ["recent_board", "find_result"] as const;
+
 /** Every non-workboard event name mapped to the dim keys it may carry. */
 export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
-  // nav.opened item values include workspace, look_back, your_coach, connect_tools create_menu, recent_board and find_result; dimension keys remain unchanged.
+  // nav.opened item values include workspace, look_back, your_coach, connect_tools, create_menu, recent_board and find_result; dimension keys remain unchanged.
   "nav.opened": ["item", "surface"],
   "admin.dashboard_viewed": ["panels_shown"],
   "affiliation.disclosure_read": ["institution"],

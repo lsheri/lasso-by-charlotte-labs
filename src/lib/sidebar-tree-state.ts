@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { buildContainerTree, mergeContainerRows, groupEngagementsByClient, isSyntheticShelf, type ContainerRow } from "./nav-groups";
 import type { ContainerNode, NavEngagement } from "./nav-groups";
 
 export const TREE_COPY = { recent: "Recent", find: "Find a board", noMatch: "No board matches" };
@@ -37,6 +39,18 @@ export function useRecentBoards(profileId: string | undefined) {
 export function treeBoards(roots: ContainerNode<NavEngagement>[]): NavEngagement[] {
   return roots.flatMap((node) => [...node.engagements, ...treeBoards(node.children)]);
 }
+const EMPTY_CONTAINERS: ContainerRow[] = [];
+export function useLoadedTreeBoards(orgId: string | undefined, boards: NavEngagement[]) {
+  const client = useQueryClient();
+  const rows = useSyncExternalStore(
+    (notify) => client.getQueryCache().subscribe(notify),
+    () => client.getQueryData<ContainerRow[]>(["clients", orgId]) ?? EMPTY_CONTAINERS,
+    () => EMPTY_CONTAINERS,
+  );
+  const live = boards.filter((board) => !board.archived_at);
+  const roots = buildContainerTree(mergeContainerRows(rows, live), live);
+  return [...treeBoards(roots), ...groupEngagementsByClient(live).groups.filter((shelf) => isSyntheticShelf(shelf.clientId)).flatMap((shelf) => shelf.engagements)];
+}
 export function activeBoardChain(roots: ContainerNode<NavEngagement>[], boardId: string | undefined): string[] {
   for (const node of roots) {
     if (node.engagements.some((board) => board.id === boardId)) return [node.clientId];
@@ -65,7 +79,7 @@ export function useContainerOpenState(profileId: string | undefined, ids: string
       for (const [id, open] of Object.entries(value)) if (typeof open === "boolean") choices[id] = open;
     }
     for (const id of chainKey.split("\u0000").filter(Boolean)) choices[id] = true;
-    setState({ profileId, choices });
+    setState((previous) => ({ profileId, choices: { ...choices, ...(previous.profileId === profileId ? previous.choices : {}), ...Object.fromEntries(chainKey.split("\u0000").filter(Boolean).map((id) => [id, true])) } }));
   }, [profileId, chainKey]);
   const choices = state.profileId === profileId ? state.choices : {};
   const collapsed = ids.filter((id) => !(choices[id] ?? activeChain.includes(id)));

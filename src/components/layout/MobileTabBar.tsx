@@ -7,7 +7,7 @@ import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { useEngagements } from "@/hooks/use-engagements";
 
 import { BoardFinder } from "./BoardFinder";
-import { TREE_COPY } from "@/lib/sidebar-tree-state";
+import { TREE_COPY, useLoadedTreeBoards } from "@/lib/sidebar-tree-state";
 import { OrgSwitcher } from "./OrgSwitcher";
 import { engagementDisplayTitle } from "@/lib/clients";
 import { signOut } from "@/lib/sign-out";
@@ -29,7 +29,7 @@ export function MobileTabBar() {
   const { data: engagements } = useEngagements(profile?.id);
 
   const [findQuery, setFindQuery] = useState("");
-  const boards = (engagements ?? []).filter((board) => !board.archived_at);
+  const boards = useLoadedTreeBoards(profile?.org_id, engagements ?? []);
   const filtering = findQuery.trim().length > 0;
   const foundBoards = boards.filter((board) => !filtering || board.title.toLocaleLowerCase().includes(findQuery.trim().toLocaleLowerCase()) || board.clients?.name.toLocaleLowerCase().includes(findQuery.trim().toLocaleLowerCase()));
   const canReview = ctx.canReview;
