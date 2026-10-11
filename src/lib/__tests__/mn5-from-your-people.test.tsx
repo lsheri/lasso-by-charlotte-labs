@@ -132,7 +132,7 @@ describe("MN-5 From your people", () => {
 describe("MN-5 shared board view", () => {
   it("shows the Shared by line and read-only pieces with no edit controls", async () => {
     mocks.boards = BOARDS;
-    mocks.supabase.rpc.mockResolvedValue({ data: [{ item_ids: ["w1"] }], error: null });
+    mocks.supabase.rpc.mockResolvedValue({ data: { item_ids: ["w1"] }, error: null });
     stubPiecesRead([{ id: "w1", title: "Interview notes" }]);
     const view = render(<PartnerSharedBoardPage boardId="b1" />);
     await act(async () => {
@@ -155,7 +155,7 @@ describe("MN-5 shared board view", () => {
 
   it("shows the empty line and never reads work_items when the rpc shares no ids", async () => {
     mocks.boards = BOARDS;
-    mocks.supabase.rpc.mockResolvedValue({ data: [{ item_ids: [] }], error: null });
+    mocks.supabase.rpc.mockResolvedValue({ data: { item_ids: [] }, error: null });
     const view = render(<PartnerSharedBoardPage boardId="b1" />);
     await act(async () => {
       await mocks.piecesQuery!.promise;
@@ -163,6 +163,19 @@ describe("MN-5 shared board view", () => {
     view.rerender(<PartnerSharedBoardPage boardId="b1" />);
     expect(screen.getByText(SHARED_BOARD_COPY.empty)).toBeTruthy();
     expect(mocks.supabase.from).not.toHaveBeenCalled();
+  });
+
+  it("still reads pieces when the rpc answers with the array shape", async () => {
+    mocks.boards = BOARDS;
+    mocks.supabase.rpc.mockResolvedValue({ data: [{ item_ids: ["w1"] }], error: null });
+    stubPiecesRead([{ id: "w1", title: "Interview notes" }]);
+    const view = render(<PartnerSharedBoardPage boardId="b1" />);
+    await act(async () => {
+      await mocks.piecesQuery!.promise;
+    });
+    view.rerender(<PartnerSharedBoardPage boardId="b1" />);
+    expect(screen.getByText("Interview notes")).toBeTruthy();
+    expect(screen.queryByText(SHARED_BOARD_COPY.empty)).toBeNull();
   });
 
   it("copy holds no em dash", () => {
