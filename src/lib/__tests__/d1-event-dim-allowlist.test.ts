@@ -171,6 +171,8 @@ const LIVE_KEYS_BY_EVENT: Record<string, readonly string[]> = {
   "reflect.trail_opened": ["read_band", "also_in_band", "not_read_band"],
   "work.filter_changed": ["filter", "selected", "result_band"],
   "work.import_menu_opened": [],
+  // Local list expansion emits no dims and must not inherit regrouping keys.
+  "work.list_expanded": [],
   "work.panel_opened": ["panel"],
   "work.tool_steps_opened": ["steps_band"],
   "work.preview_mode_changed": ["mode", "kind"],

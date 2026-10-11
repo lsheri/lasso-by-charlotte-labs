@@ -40,8 +40,16 @@ describe("pass120 telemetry taxonomy", () => {
   });
 
   it("routes every mapping emit through logEvent with the canonical name", () => {
+    const page = readFileSync("src/pages/WorkPage.tsx", "utf8");
+    expect(page).toContain('import { MapDialog } from "@/components/work/MapDialog"');
+    expect(page).toContain("<MapDialog");
+    expect(page).toContain("item={mapItem}");
+    expect(page).toContain("groupItems={mapGroup ?? undefined}");
+    const dialog = readFileSync("src/components/work/MapDialog.tsx", "utf8");
+    expect(dialog).toContain('import { remapItems } from "@/lib/workflow-order"');
+    expect(dialog).toContain("const result = await remapItems({");
+    expect(dialog).toContain("await mapToTask(data.id)");
     const sites = [
-      "src/pages/WorkPage.tsx",
       "src/hooks/use-mapping-suggestions.ts",
       "src/lib/workflow-order.ts",
       "src/components/engagements/EngagementBriefSection.tsx",
