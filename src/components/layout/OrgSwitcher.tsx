@@ -1,4 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 
 import { ROLE_LABELS, setActiveProfileId, type Profile } from "@/hooks/use-profile";
@@ -15,6 +16,8 @@ function roleLabel(profile: Profile | null): string {
  */
 export function OrgSwitcher({ profiles, active }: { profiles: Profile[]; active: Profile | null }) {
   const queryClient = useQueryClient();
+  // Optional: the switcher also renders outside a router in tests.
+  const router = useRouter({ warn: false }) as ReturnType<typeof useRouter> | undefined;
   const [open, setOpen] = useState(false);
   if (profiles.length < 2) return null;
 
@@ -54,11 +57,9 @@ export function OrgSwitcher({ profiles, active }: { profiles: Profile[]; active:
                   type="button"
                   aria-current={isActive ? "true" : undefined}
                   onClick={() => {
-                    if (isActive) {
-                      setOpen(false);
-                      return;
-                    }
-                    if (active) {
+                    // MN-1: a re-pick is a repair, not a switch. It still
+                    // rewrites the row, but records no switch and stays put.
+                    if (active && !isActive) {
                       logEvent("profile.switched", profile.org_id, {
                         from_role: active.role,
                         to_role: profile.role,
@@ -69,7 +70,11 @@ export function OrgSwitcher({ profiles, active }: { profiles: Profile[]; active:
                     void (async () => {
                       // The database has to know the new workspace before anything
                       // refetches, or the refetch caches the old workspace's rows.
-                      await setActiveProfileId(profile.id);
+                      const accepted = await setActiveProfileId(profile.id);
+                      if (!accepted) return;
+                      // Land where sign-in lands every profile, guests included
+                      // (src/routes/auth.tsx), so no old workspace page lingers.
+                      if (!isActive) void router?.navigate({ to: "/home", replace: true });
                       // Deliberately unfiltered: switching workspace invalidates every
                       // profile scoped key, so no previous workspace data can linger.
                       void queryClient.invalidateQueries();
