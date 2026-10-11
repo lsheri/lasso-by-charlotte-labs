@@ -2,107 +2,41 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useState } from "react";
 
 import { CoachAskSheet } from "@/components/coaching/CoachAskSheet";
-import { GraphiteIcon, type GraphiteIconName } from "@/components/notebook/icons";
+import { GraphiteIcon } from "@/components/notebook/icons";
 import { FeedbackDialog } from "@/components/feedback/FeedbackWidget";
-import { useAskLassoHandler } from "@/components/reflect/ask-lasso-context";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
-import { useCoachingReach } from "@/hooks/use-coaching-reach";
 import { useEngagements } from "@/hooks/use-engagements";
 
-import { useProfile } from "@/hooks/use-profile";
 import { OrgSwitcher } from "./OrgSwitcher";
-import { vocabFor } from "@/lib/edu-vocab";
-import * as roles from "@/lib/role-access";
-import { engagementDisplayCode, engagementDisplayTitle } from "@/lib/clients";
-import { supabase } from "@/integrations/supabase/client";
+import { engagementDisplayTitle } from "@/lib/clients";
+import { signOut } from "@/lib/sign-out";
+import { logEvent } from "@/lib/telemetry";
+import type { NavOpenedDims } from "@/lib/telemetry-shared";
+import { useSettingsDialogOptional } from "@/lib/settings-dialog-context";
+import { navFor, TAB_ITEMS } from "./nav-config";
+import { useNavCtx } from "./use-nav-ctx";
 
-type Dest = {
-  label: string;
-  to: string;
-  icon: GraphiteIconName;
-  disabled?: boolean;
-  search?: { view: "asked" };
-};
-
-/**
- * On phones the drawer is gone: four destinations sit in the thumb zone and
- * everything else lives one tap deeper in the You sheet. Desktop keeps the
- * sidebar untouched.
- */
 export function MobileTabBar() {
-  const { data: profile, profiles } = useProfile();
+  const { ctx, profile, profiles, vocab, guestNav, labels } = useNavCtx();
+  const settings = useSettingsDialogOptional();
   const navigate = useNavigate();
   const path = useRouterState({ select: (s) => s.location.pathname });
-  const handler = useAskLassoHandler();
-  const [youOpen, setYouOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const [coachAskOpen, setCoachAskOpen] = useState(false);
   const [engOpen, setEngOpen] = useState(false);
   const { data: engagements } = useEngagements(profile?.id);
 
-  const guestNav = roles.usesGuestNav(profile);
-  const canManageMembers = roles.canManageMembers(profile);
-  const canSeeFirmView = roles.canSeeFirmView(profile);
-  const membersLabel = roles.membersLabel(profile);
-  const vocab = vocabFor(profile);
-  // A coaching tab exists only where a board was shared for review. The
-  // workspace role decides the shape of the nav, never what it may reach.
-  const reach = useCoachingReach(profiles);
-  const canReview = reach.canReach;
+  const canReview = ctx.canReview;
+  const groups = navFor(ctx, labels)
+    .filter((group) => group.id !== "engagements")
+    .map((group) => ({ ...group, items: group.items.filter((item) => item.id !== "all-work") }))
+    .filter((group) => group.items.length > 0);
+  const tabs = guestNav
+    ? [...(canReview ? [TAB_ITEMS.coaching, TAB_ITEMS.prep, TAB_ITEMS.coachAsk] : [TAB_ITEMS.prep]), TAB_ITEMS.more]
+    : [TAB_ITEMS.work, TAB_ITEMS.workboards, TAB_ITEMS.more];
 
-  // A guest has no work of their own, so an Ask tab over their own record
-  // would be a dead affordance the way the FAB would be.
-  const you: Dest[] = guestNav
-    ? [
-        { label: "1:1 prep", to: "/one-on-one", icon: "one-on-one" },
-        { label: "Settings", to: "/settings", icon: "settings" },
-      ]
-    : [
-        { label: "Home", to: "/home", icon: "overview" },
-        { label: "All work", to: "/work", icon: "work" },
-        { label: "All AI Conversations", to: "/ai-record", icon: "ai-record" },
-        { label: "Past Ask Lasso chats", to: "/ai-record", icon: "history", search: { view: "asked" } },
-        { label: "Find it", to: "/find-it", icon: "work", disabled: true },
-        { label: "Decision log", to: "/decisions", icon: "decisions", disabled: true },
-        { label: "1:1 prep", to: "/one-on-one", icon: "one-on-one" },
-        ...(canReview
-          ? [{ label: "People you coach", to: "/coaching", icon: "members" as const }]
-          : []),
-        ...(canSeeFirmView ? [{ label: "Firm view", to: "/firm", icon: "firm" as const }] : []),
-        ...(canManageMembers
-          ? [{ label: membersLabel, to: "/members", icon: "members" as const }]
-          : []),
-        { label: "Settings", to: "/settings", icon: "settings" },
-        { label: "Where work lives", to: "/connectors", icon: "connectors" },
-      ];
-
-  const tabs: (Dest | { label: string; icon: GraphiteIconName; action: "ask" | "coach-ask" | "you" | "engagements" })[] = guestNav
-    ? [
-        ...(canReview
-          ? [
-              { label: "Coaching", to: "/coaching", icon: "members" as const },
-              { label: "1:1 prep", to: "/one-on-one", icon: "one-on-one" as const },
-              { label: "Ask", icon: "ask-lasso" as const, action: "coach-ask" as const },
-            ]
-          : [{ label: "1:1 prep", to: "/one-on-one", icon: "one-on-one" as const }]),
-        { label: "You", icon: "overview", action: "you" },
-      ]
-    : [
-        { label: "Work", to: "/work", icon: "work" },
-        { label: "Workboards", icon: "engagement", action: "engagements" },
-        { label: "Ask", icon: "ask-lasso", action: "ask" },
-        { label: "You", icon: "overview", action: "you" },
-      ];
-
-
-
-  function askLasso() {
-    if (handler) handler();
-    else void navigate({ to: "/ai-record", search: { ask: true } });
-  }
-
-  async function signOut() {
-    await supabase.auth.signOut();
-    void navigate({ to: "/auth", replace: true });
+  function opened(item: NavOpenedDims["item"], surface: NavOpenedDims["surface"]) {
+    if (profile?.org_id) logEvent("nav.opened", profile.org_id, { item, surface } satisfies NavOpenedDims);
   }
 
   return (
@@ -117,6 +51,7 @@ export function MobileTabBar() {
             <Link
               key={tab.label}
               to={tab.to}
+              onClick={() => opened(tab.id, "tab")}
               className={`nb-tab ${path.startsWith(tab.to) ? "nb-tab-active" : ""}`}
             >
               <GraphiteIcon name={tab.icon} size={18} />
@@ -127,13 +62,13 @@ export function MobileTabBar() {
               key={tab.label}
               type="button"
               onClick={() => {
-                if (tab.action === "ask") askLasso();
-                else if (tab.action === "coach-ask") setCoachAskOpen(true);
+                opened(tab.id, "tab");
+                if (tab.action === "coach-ask") setCoachAskOpen(true);
                 else if (tab.action === "engagements") setEngOpen(true);
-                else setYouOpen(true);
+                else setMoreOpen(true);
               }}
               className={`nb-tab ${
-                (tab.action === "you" && youOpen) ||
+                (tab.action === "more" && moreOpen) ||
                 (tab.action === "coach-ask" && coachAskOpen) ||
                 (tab.action === "engagements" && (engOpen || path.startsWith("/engagements")))
                   ? "nb-tab-active"
@@ -154,7 +89,7 @@ export function MobileTabBar() {
           side="bottom"
           className="max-h-[85vh] overflow-y-auto border-border bg-card pb-[calc(1rem+env(safe-area-inset-bottom))]"
         >
-          <SheetTitle className="font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
+          <SheetTitle className="font-mono text-[13px] uppercase tracking-[0.12em] text-muted-foreground">
             Workboards
           </SheetTitle>
           <div className="mt-3 flex flex-col gap-0.5">
@@ -163,17 +98,12 @@ export function MobileTabBar() {
                 key={engagement.id}
                 to="/engagements/$id"
                 params={{ id: engagement.id }}
-                onClick={() => setEngOpen(false)}
+                onClick={() => { opened("board", "workboards_sheet"); setEngOpen(false); }}
                 className="nb-nav-item min-h-[48px]"
                 activeProps={{ className: "nb-nav-item-active" }}
               >
                 <GraphiteIcon name="engagement" size={16} />
-                <span className="flex min-w-0 items-center gap-1.5">
-                  <span className="font-mono text-xs text-muted-foreground">
-                    {engagementDisplayCode(engagement) ?? "Folder"}
-                  </span>
-                  <span className="truncate">{engagementDisplayTitle(engagement)}</span>
-                </span>
+                <span className="truncate">{engagementDisplayTitle(engagement)}</span>
               </Link>
             ))}
             {engagements && engagements.length === 0 ? (
@@ -183,38 +113,41 @@ export function MobileTabBar() {
         </SheetContent>
       </Sheet>
 
-      <Sheet open={youOpen} onOpenChange={setYouOpen}>
+      <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
         <SheetContent
           side="bottom"
           className="max-h-[85vh] overflow-y-auto border-border bg-card pb-[calc(1rem+env(safe-area-inset-bottom))]"
         >
-          <SheetTitle className="font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
+          <SheetTitle className="font-mono text-[13px] uppercase tracking-[0.12em] text-muted-foreground">
             {profile?.display_name ?? "You"}
           </SheetTitle>
           <div className="mt-3 flex flex-col gap-0.5">
-            {you.map((item) => item.disabled ? (
-              <button
-                key={`${item.to}:${item.label}`}
-                type="button"
-                aria-disabled="true"
-                title="Coming soon"
-                className="nb-nav-item nb-nav-item-disabled min-h-[48px] w-full text-left"
-              >
-                <GraphiteIcon name={item.icon} size={16} />
-                <span className="flex flex-1 items-center justify-between gap-2"><span>{item.label}</span><span className="font-mono text-[9px] uppercase tracking-[0.08em]">Coming soon</span></span>
-              </button>
-            ) : (
-              <Link
-                key={`${item.to}:${item.label}`}
-                to={item.to}
-                {...(item.search ? { search: item.search } : {})}
-                onClick={() => setYouOpen(false)}
-                className="nb-nav-item min-h-[48px]"
-                activeProps={{ className: "nb-nav-item-active" }}
-              >
-                <GraphiteIcon name={item.icon} size={16} />
-                <span>{item.label}</span>
-              </Link>
+            {groups.map((group) => (
+              <section key={group.id} data-nav-group={group.id}>
+                <div className="nb-group-header">{group.label}</div>
+                {group.items.map((item) => {
+                  const content = <><GraphiteIcon name={item.icon} size={16} /><span>{item.label}</span></>;
+                  if (item.disabled) return (
+                    <button key={item.id} type="button" aria-disabled="true" title={item.disabledReason}
+                      data-nav-item={item.id} className="nb-nav-item nb-nav-item-disabled min-h-[48px] w-full text-left">
+                      <GraphiteIcon name={item.icon} size={16} />
+                      <span className="flex flex-1 items-center justify-between gap-2"><span>{item.label}</span><span className="font-mono text-[12px] uppercase tracking-[0.08em]">{item.disabledReason}</span></span>
+                    </button>
+                  );
+                  if (item.action === "openSettings") return (
+                    <button key={item.id} type="button" data-nav-item={item.id} className="nb-nav-item min-h-[48px] w-full text-left"
+                      onClick={() => { opened(item.id, "more"); setMoreOpen(false); settings?.openSettings(); }}>
+                      {content}
+                    </button>
+                  );
+                  if (!item.to) return null;
+                  return <Link key={item.id} to={item.to} search={item.search} hash={item.hash}
+                    data-nav-item={item.id} onClick={() => { opened(item.id, "more"); setMoreOpen(false); }}
+                    className="nb-nav-item min-h-[48px]" activeProps={{ className: "nb-nav-item-active" }}>
+                    {content}
+                  </Link>;
+                })}
+              </section>
             ))}
           </div>
           {profiles.length > 1 ? (
@@ -225,15 +158,15 @@ export function MobileTabBar() {
           <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border pt-3">
             <Link
               to="/trust"
-              onClick={() => setYouOpen(false)}
-              className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground"
+              onClick={() => setMoreOpen(false)}
+              className="font-mono text-[13px] uppercase tracking-[0.08em] text-muted-foreground"
             >
               Trust &amp; data
             </Link>
             <Link
               to="/why"
-              onClick={() => setYouOpen(false)}
-              className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground"
+              onClick={() => setMoreOpen(false)}
+              className="font-mono text-[13px] uppercase tracking-[0.08em] text-muted-foreground"
             >
               Why Lasso
             </Link>
@@ -241,7 +174,7 @@ export function MobileTabBar() {
               trigger={
                 <button
                   type="button"
-                  className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground"
+                  className="font-mono text-[13px] uppercase tracking-[0.08em] text-muted-foreground"
                 >
                   Feedback
                 </button>
@@ -249,8 +182,8 @@ export function MobileTabBar() {
             />
             <button
               type="button"
-              onClick={() => void signOut()}
-              className="ml-auto font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground"
+              onClick={() => void signOut(navigate)}
+              className="ml-auto font-mono text-[13px] uppercase tracking-[0.08em] text-muted-foreground"
             >
               Sign out
             </button>
