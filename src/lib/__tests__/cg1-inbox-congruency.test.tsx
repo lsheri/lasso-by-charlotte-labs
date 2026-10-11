@@ -71,7 +71,7 @@ vi.mock("@/components/work/WorkRow", () => ({
 vi.mock("@/components/work/ConversationCard", () => ({ ConversationCard: () => null }));
 vi.mock("@/components/work/WorkSubtitle", () => ({
   WorkSubtitle: ({ pieces, unmapped }: { pieces: number; unmapped: number }) => (
-    <span data-testid="work-subtitle">{pieces} pieces of work · {unmapped} unmapped</span>
+    <span data-testid="work-subtitle">{pieces} pieces of work · {unmapped} with no board</span>
   ),
 }));
 vi.mock("@/components/work/SourceMark", () => ({ sourceVendorKey: () => null }));
@@ -207,14 +207,14 @@ describe("CG1 inbox congruency", () => {
   it("keeps the count line visible when the Inbox is empty", () => {
     inboxRows = [];
     render(<WorkPage />);
-    expect(screen.getByTestId("work-subtitle").textContent).toBe("0 pieces of work · 0 unmapped");
+    expect(screen.getByTestId("work-subtitle").textContent).toBe("0 pieces of work · 0 with no board");
     expect(screen.queryByTestId("board-shell")).toBeNull();
   });
 
   it("keeps the Inbox title on one line and removes the retired view controls", () => {
     inboxRows = [];
     render(<WorkPage />);
-    expect(screen.getByRole("heading", { name: "Inbox" }).classList.contains("whitespace-nowrap")).toBe(true);
+    expect(screen.getByRole("heading", { name: "All work" }).classList.contains("whitespace-nowrap")).toBe(true);
     expect(screen.queryByRole("group", { name: "How work is shown" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Preview" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Sticky" })).toBeNull();
@@ -231,7 +231,7 @@ describe("CG1 inbox congruency", () => {
       item("delta", "mapped", "BETA"),
     ];
     render(<WorkPage />);
-    fireEvent.click(screen.getByRole("button", { name: "Unmapped" }));
+    fireEvent.click(screen.getByRole("button", { name: "No board" }));
     for (const row of inboxRows) expect(screen.getByText(row.title)).toBeTruthy();
     const dimmed = screen.getAllByTestId("dimmed-disabled");
     expect(dimmed).toHaveLength(inboxRows.length);
@@ -293,7 +293,7 @@ describe("CG1 inbox congruency", () => {
     expect(dimmed).not.toMatch(/green|lime|lasso/i);
     inboxRows = [item("claimed", "mapped", "ALPHA")];
     render(<WorkPage />);
-    fireEvent.click(screen.getByRole("button", { name: "Unmapped" }));
+    fireEvent.click(screen.getByRole("button", { name: "No board" }));
     expect(screen.getByTestId("dimmed-disabled").className).not.toMatch(/green|lime|lasso/i);
   });
 
@@ -332,7 +332,7 @@ describe("CG1 inbox congruency", () => {
     expect(emitted).toEqual([dims]);
     inboxRows = [item("claimed", "mapped", "ALPHA")];
     render(<WorkPage />);
-    fireEvent.click(screen.getByRole("button", { name: "Unmapped" }));
+    fireEvent.click(screen.getByRole("button", { name: "No board" }));
     expect(recorded).toEqual([{ filter: "placement", selected: "one", result_band: "0" }]);
   });
 
@@ -340,7 +340,7 @@ describe("CG1 inbox congruency", () => {
     inboxRows = Array.from({ length: 6 }, (_, index) => itemOfType(`document-${index + 1}`, "document"));
     render(<WorkPage />);
     const board = screen.getByTestId("board-shell");
-    expect(board.getAttribute("aria-label")).toBe("Inbox work board");
+    expect(board.getAttribute("aria-label")).toBe("All work");
     expect(board).toBeTruthy();
     expect(board.querySelectorAll("[data-board-lane]")).toHaveLength(4);
     for (const label of ["AI conversations", "Documents", "Models & sheets", "Meeting transcripts"]) {
@@ -348,7 +348,7 @@ describe("CG1 inbox congruency", () => {
     }
     expect(screen.queryByRole("group", { name: "How work is shown" })).toBeNull();
     expect(screen.getByRole("button", { name: "Everything" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Unmapped" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "No board" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Claimed by you" })).toBeTruthy();
     expect(within(board).getByText("1–5 OF 6")).toBeTruthy();
     const documentLaneFrame = within(board).getByText("Documents").closest("[data-board-lane]");
@@ -485,7 +485,7 @@ describe("CG1 inbox congruency", () => {
     expect(offenders).toEqual([]);
     inboxRows = [item("claimed", "mapped", "ALPHA")];
     render(<WorkPage />);
-    fireEvent.click(screen.getByRole("button", { name: "Unmapped" }));
+    fireEvent.click(screen.getByRole("button", { name: "No board" }));
     expect(screen.getByTestId("dimmed-disabled").className).not.toMatch(/green|lime/);
   });
 });
