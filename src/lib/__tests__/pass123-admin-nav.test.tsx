@@ -124,7 +124,9 @@ describe("Pass 123: the sidebar follows the weekly loop", () => {
     expect(screen.queryByText("Members")).not.toBeNull();
 
     expect(screen.queryByText("Look back")).not.toBeNull();
-    expect(screen.queryByText("Settings")).not.toBeNull();
+    // MN-3a: Settings moved out of the sidebar body into the workspace menu.
+    expect(screen.queryByText("Settings")).toBeNull();
+    expect(NAV_ITEMS.find((i) => i.id === "settings")?.placement).toBe("workspace_menu");
 
     // Firm view and Members should not also appear under Look back.
     const lookbackSection = screen.getByText("Look back").parentElement!;
@@ -141,7 +143,9 @@ describe("Pass 123: the sidebar follows the weekly loop", () => {
     expect(screen.queryByText("Your coaches")).toBeNull();
 
     expect(screen.queryByText("Look back")).not.toBeNull();
-    expect(screen.queryByText("Settings")).not.toBeNull();
+    // MN-3a: Settings moved out of the sidebar body into the workspace menu.
+    expect(screen.queryByText("Settings")).toBeNull();
+    expect(NAV_ITEMS.find((i) => i.id === "settings")?.placement).toBe("workspace_menu");
   });
 
   it("admin on a solo org sees Run the firm with 'Your coaches' only", () => {
