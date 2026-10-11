@@ -421,3 +421,133 @@ export function loopStamps(timeSeconds: number, size: number): LoopStamp[] {
     };
   }).sort((a, b) => a.z - b.z);
 }
+/* ---------------------------------------------------------------------------
+ * TM-1 scatter-to-lasso signature engine. Pure maths; the canvas lives in
+ * LassoThinkingMark. Seeded so every mount draws the same pieces.
+ * ------------------------------------------------------------------------- */
+
+export const SCATTER_SEED = 7;
+export const SCATTER_THINKING_SECONDS = 5.4;
+export const SCATTER_ANSWERED_SECONDS = 9;
+export const SCATTER_TURN = 1.08;
+export const SCATTER_START_ANGLE = 0.1;
+export const SCATTER_ROPE_ANGLE = 0.9;
+export const SCATTER_ROPE_LENGTH = 0.78;
+
+export type ScatterPiece = { a0: number; r: number; ph: number; sp: number; lime: boolean };
+export type ScatterLoopPoint = { x: number; y: number; a: number };
+export type ScatterGeometry = { cx: number; cy: number; R: number };
+
+export function mulberry32(seed: number): () => number {
+  let a = seed;
+  return () => {
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+export function scatterSmooth(x: number): number {
+  const v = Math.max(0, Math.min(1, x));
+  return v * v * (3 - 2 * v);
+}
+
+export function scatterLerp(a: number, b: number, t: number): number {
+  return a + (b - a) * t;
+}
+
+export function scatterBump(x: number, c: number, wd: number): number {
+  const d = (x - c) / wd;
+  return Math.exp(-d * d);
+}
+
+export function scatterAngLerp(a: number, b: number, t: number): number {
+  let d = b - a;
+  d = Math.atan2(Math.sin(d), Math.cos(d));
+  return a + d * t;
+}
+
+export function scatterPieceCount(size: number): number {
+  return size >= 120 ? 56 : size >= 60 ? 40 : size >= 24 ? 22 : 12;
+}
+
+export function scatterStroke(size: number): { w: number; dot: number; unit: number } {
+  const unit = size / 72;
+  if (size <= 16) return { w: 1.5, dot: 1.25, unit };
+  const w = Math.min(3, Math.max(1.1, 0.9 * unit + 0.5));
+  return { w, dot: Math.max(1, w * 0.8), unit };
+}
+
+export function scatterPieces(size: number, seed = SCATTER_SEED): ScatterPiece[] {
+  const n = scatterPieceCount(size);
+  const rand = mulberry32(seed);
+  const pieces: ScatterPiece[] = [];
+  for (let i = 0; i < n; i += 1) {
+    pieces.push({
+      a0: (i / n) * Math.PI * 2 + (rand() - 0.5) * 0.35,
+      r: 0.62 + rand() * 0.38,
+      ph: rand() * Math.PI * 2,
+      sp: 0.7 + rand() * 0.6,
+      lime: rand() < 0.2,
+    });
+  }
+  return pieces;
+}
+
+export function scatterGeometry(size: number): ScatterGeometry {
+  return { cx: size / 2, cy: size / 2 - size * 0.03, R: size * 0.34 };
+}
+
+/** One point on the single hand-drawn loop stroke, s in 0..1. */
+export function scatterLoopPoint(s: number, R: number, cx: number, cy: number, k: number): ScatterLoopPoint {
+  const a = SCATTER_START_ANGLE + Math.PI * 2 * SCATTER_TURN * s;
+  const r = R * (1 + 0.032 * Math.sin(Math.PI * 2 * 3 * s + 0.6) - 0.06 * s) * k;
+  return { x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r, a };
+}
+
+export type ScatterPhase = {
+  think: boolean;
+  cyc: number;
+  k: number;
+  p: number;
+  strokeA: number;
+  q: number;
+  cinch: number;
+  partA: number;
+  omega: number;
+  wobble: number;
+  glow: number;
+};
+
+/** Cycle parameters for a moment. forceCinch is the finished, still mark. */
+export function scatterPhase(t: number, thinking: boolean, forceCinch: boolean): ScatterPhase {
+  const think = thinking && !forceCinch;
+  const T = think ? SCATTER_THINKING_SECONDS : SCATTER_ANSWERED_SECONDS;
+  let cyc = forceCinch ? 0.78 : (t % T) / T;
+  if (!think && !forceCinch) cyc = 0.3 + cyc * 0.62;
+  const k = cyc < 0.86 ? scatterSmooth((cyc - 0.4) / 0.18) : 1 - scatterSmooth((cyc - 0.86) / 0.14);
+  const p = forceCinch ? 1 : scatterSmooth((cyc - 0.55) / 0.12);
+  const strokeA = cyc < 0.86 ? 1 : 1 - scatterSmooth((cyc - 0.86) / 0.07);
+  const q = forceCinch ? 1 : scatterSmooth((cyc - 0.66) / 0.08) * strokeA;
+  const cinch = 1 - 0.05 * scatterBump(cyc, 0.71, 0.035) + 0.018 * scatterBump(cyc, 0.765, 0.035);
+  const partA = cyc < 0.86 ? 1 - 0.95 * p : Math.max(0.05, scatterSmooth((cyc - 0.86) / 0.08));
+  return {
+    think, cyc, k, p, strokeA, q, cinch, partA,
+    omega: think ? 1.15 : 0.3,
+    wobble: think ? 1 : 0.4,
+    glow: think ? scatterBump(cyc, 0.72, 0.06) : 0,
+  };
+}
+
+/** The finished loop and its rope as points; there is no knot. */
+export function scatterCinchPath(size: number): { loop: ScatterLoopPoint[]; rope: [ScatterLoopPoint, { x: number; y: number }] } {
+  const { cx, cy, R } = scatterGeometry(size);
+  const ph = scatterPhase(0, false, true);
+  const steps = Math.max(40, Math.round(size * 1.2));
+  const loop = Array.from({ length: steps + 1 }, (_, j) => scatterLoopPoint((ph.p * j) / steps, R, cx, cy, ph.cinch));
+  const ep = scatterLoopPoint(1, R, cx, cy, ph.cinch);
+  const L = R * SCATTER_ROPE_LENGTH * ph.q;
+  return { loop, rope: [ep, { x: ep.x + Math.cos(SCATTER_ROPE_ANGLE) * L, y: ep.y + Math.sin(SCATTER_ROPE_ANGLE) * L }] };
+}
