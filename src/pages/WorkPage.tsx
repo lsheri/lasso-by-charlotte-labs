@@ -401,8 +401,11 @@ export function WorkPage() {
     const upd = await supabase
       .from("work_items")
       .update({ visibility: "unmapped" })
-      .eq("id", item.id);
+      .eq("id", item.id)
+      .select("id");
     if (upd.error) return setActionError(upd.error.message);
+    // BB-2: an update that changed no row is not a success.
+    if (!upd.data || upd.data.length === 0) return setActionError("That change did not save. Try again.");
     if (profile) {
       logV2(
         "work_item.unmapped",
