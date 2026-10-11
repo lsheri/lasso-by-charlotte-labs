@@ -55,7 +55,7 @@ vi.mock("@/components/engagements/NewEngagementDialog", () => ({
 
 import { SidebarNav } from "@/components/layout/SidebarNav";
 
-afterEach(() => cleanup());
+afterEach(() => { cleanup(); window.localStorage.clear(); });
 
 const row = (id: string, parent_id: string | null, kind: "client" | "folder" = "client"): ContainerRow => ({
   id,
