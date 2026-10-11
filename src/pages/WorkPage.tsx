@@ -631,6 +631,11 @@ export function WorkPage() {
         if (profile?.org_id) logEvent("work.filter_changed", profile.org_id, dims);
       },
     );
+    // NAV-6: clear the param so the URL agrees with the chosen chip and a
+    // later click on the No board row changes the param again. Replace, so
+    // the back button is not polluted with filter changes. Last, after the
+    // event is recorded.
+    void navigate({ to: "/work", search: {}, replace: true });
   }
 
   function changePrivate(next: boolean) {
