@@ -32,21 +32,25 @@ export function AppSidebar({
   return (
     <div className="flex h-full w-full flex-col gap-[22px] bg-sidebar px-4 pb-[18px] pt-[22px]">
       {/* Brand */}
-      <div className="flex items-center gap-2.5">
+      <div className="flex shrink-0 items-center gap-2.5">
         <LassoLoopMark className="h-[17px] w-5 shrink-0 text-lasso-green" />
         <div className="min-w-0 truncate font-mono text-lg tracking-[0.24em] text-foreground">LASSO</div>
       </div>
 
-      <UserCard name={userName} role={userRole} onSignOut={onSignOut} />
+      <div className="shrink-0">
+        <UserCard name={userName} role={userRole} onSignOut={onSignOut} />
+      </div>
 
-      <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
         <SidebarNav onNavigate={onNavigate} onOpenSettings={onOpenSettings} />
       </div>
 
-      <OrgSwitcher profiles={profiles} active={activeProfile} />
+      <div className="shrink-0">
+        <OrgSwitcher profiles={profiles} active={activeProfile} />
+      </div>
 
       {/* Footer */}
-      <div className="flex flex-col gap-1.5">
+      <div className="flex shrink-0 flex-col gap-1.5">
         <div className="h-px w-[208px] max-w-full bg-[var(--nb-pencil)]" aria-hidden />
         <div className="flex flex-wrap items-start gap-x-2.5 gap-y-1">
           <Link
