@@ -33,7 +33,7 @@ function openDialog() {
     item={{ id: "w1", title: "Memo", type: "document", source: "import:manual" } as WorkItemRow}
     open onOpenChange={mocks.close} entry="nav_no_board"
   /></QueryClientProvider>);
-  fireEvent.click(screen.getByRole("button", { name: "CF Pricing" }));
+  fireEvent.click(screen.getByRole("button", { name: /CF\s*Pricing/ }));
 }
 
 describe("MAP-UX optional workstreams", () => {

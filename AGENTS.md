@@ -2,6 +2,7 @@ Tour workboard chrome stays a local presentational mirror around shared board pr
 - Compute teammate provenance marks only in the signed-in CanvasLabPage, because shared, demo, tour, firm, and rollup surfaces must never expose them.
 - Keep container colour inheritance pure in `container-colour.ts`; children never persist inherited colour.
 - Filter archived container branches while building the sidebar tree so descendants stay hidden without child writes.
+- Resolve MapDialog's board-only placement through ensure_board_default_task and the existing remapItems path, because default placement must share first-map recording and entry attribution with optional workstreams.
 <!-- LOVABLE:BEGIN -->
 > [!IMPORTANT]
 > This project is connected to [Lovable](https://lovable.dev). Avoid rewriting
