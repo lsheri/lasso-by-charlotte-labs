@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { SidebarNav } from "@/components/layout/SidebarNav";
 import { NAV_ITEMS, navFor, navGroups } from "@/components/layout/nav-config";
-import { DEFAULT_VOCAB } from "@/lib/vocab";
+import { DEFAULT_VOCAB } from "@/lib/edu-vocab";
 
 const mocks = vi.hoisted(() => ({
   profile: null as {
