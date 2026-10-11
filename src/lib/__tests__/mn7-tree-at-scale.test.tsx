@@ -62,7 +62,7 @@ afterEach(() => {
   mocks.clientRows = [];
   window.localStorage.clear();
   mocks.active = undefined;
-  mocks.profile.id = "p1";
+  mocks.profile["id"] = "p1";
   vi.restoreAllMocks();
   mocks.events.mockClear();
 });
@@ -101,7 +101,7 @@ describe("MN-7 tree at scale", () => {
     const view = render(<SidebarNav />);
     expect(screen.getByTestId("recent-boards").querySelectorAll("a")).toHaveLength(1);
     expect(screen.getByTestId("recent-boards").textContent).toContain("Board 2Bravo");
-    mocks.profile.id = "p2"; view.rerender(<SidebarNav />);
+    mocks.profile["id"] = "p2"; view.rerender(<SidebarNav />);
     expect(screen.queryByTestId("recent-boards")).toBeNull();
   });
   it("Recent excludes boards under archived containers", () => {
