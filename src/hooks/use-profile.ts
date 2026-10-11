@@ -159,6 +159,9 @@ export async function setActiveProfileId(id: string): Promise<boolean> {
   const user = await ensureAuthUser();
   const accepted = await writeActiveProfileRow(id, user?.id ?? null);
   if (!accepted) return false;
+  // The cached row moves with the write, so reconciliation never sees the
+  // old row against the new cache and switches the person straight back.
+  if (user) sharedQueryClient?.setQueryData([...ACTIVE_PROFILE_ROW_KEY, user.id], id);
   writeStored(id);
   // The switch is the moment the stored choice changes, so the cached copy is
   // dropped here rather than left to expire. The next read returns the new one.
