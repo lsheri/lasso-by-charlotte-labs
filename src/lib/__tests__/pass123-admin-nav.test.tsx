@@ -4,7 +4,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { SidebarNav } from "@/components/layout/SidebarNav";
-import { navGroups } from "@/components/layout/nav-config";
+import { NAV_ITEMS, navGroups } from "@/components/layout/nav-config";
 
 const mocks = vi.hoisted(() => ({
   profile: null as {
