@@ -371,6 +371,8 @@ export type TelemetryEvent =
   | "affiliation.disclosure_read"
   /** Pass 159: a person changed the profile they are acting as. Roles only. */
   | "profile.switched"
+  /** MN-1: the stored workspace row differed from this tab's cache; the row won. Source only. */
+  | "profile.active_reconciled"
   /** Pass 161: the subject opened notes about their work. One per view. */
   | "coachnote.read"
   /** Pass D: a coach pinned a note with a scope chosen. The scope only. */
@@ -455,6 +457,10 @@ export type TelemetryDims = Record<
   string,
   string | number | boolean | null | Record<string, number>
 >;
+
+/** MN-1: closed source vocabulary for profile.active_reconciled. */
+export const PROFILE_RECONCILE_SOURCES = ["row_differs"] as const;
+export type ProfileActiveReconciledDims = { source: (typeof PROFILE_RECONCILE_SOURCES)[number] };
 
 /** MAP-1: dims for workitem.mapped. Additive; existing keys unchanged. */
 export type WorkitemMappedDims = {
