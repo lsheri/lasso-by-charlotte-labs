@@ -4,7 +4,6 @@ import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 import type { OrgType } from "@/lib/org-type";
-import { logEvent } from "@/lib/telemetry";
 
 
 export type Profile = {
@@ -284,7 +283,12 @@ function useReconcileActiveProfile(
     lastReconciled = key;
     writeStored(rowProfile.id);
     void sharedQueryClient?.invalidateQueries();
-    logEvent("profile.active_reconciled", rowProfile.org_id, { source: "row_differs" });
+    // Loaded on demand so this hook never pulls the server-function graph
+    // into every module that reads the profile.
+    const orgId = rowProfile.org_id;
+    void import("@/lib/telemetry")
+      .then(({ logEvent }) => logEvent("profile.active_reconciled", orgId, { source: "row_differs" }))
+      .catch(() => {});
   }, [rowProfile, localId]);
 }
 

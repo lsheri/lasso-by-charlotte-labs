@@ -89,6 +89,7 @@ describe("MN-1: the active workspace has one truth", () => {
     await waitFor(() => expect(window.localStorage.getItem(KEY)).toBe("b"));
     rerender();
     rerender();
+    await waitFor(() => expect(logEvent).toHaveBeenCalled());
     const reconciled = logEvent.mock.calls.filter((c) => c[0] === "profile.active_reconciled");
     expect(reconciled).toEqual([["profile.active_reconciled", "ob", { source: "row_differs" }]]);
     expect(db.upserts).toEqual([]);
@@ -125,7 +126,7 @@ describe("MN-1: the active workspace has one truth", () => {
     expect(result.current.data?.id).toBe("a");
   });
 
-  function profiles(): Profile[] {
+  function pair(): Profile[] {
     return [
       { id: "a", user_id: "u1", org_id: "oa", role: "em", display_name: "Liam", title_band: null, org_name: "Northline", org_type: "company", clients_enabled: true, onboarding: null },
       { id: "b", user_id: "u1", org_id: "ob", role: "coach", display_name: "Liam", title_band: null, org_name: "Bright Path", org_type: "company", clients_enabled: true, onboarding: null },
@@ -133,7 +134,7 @@ describe("MN-1: the active workspace has one truth", () => {
   }
 
   it("re-picking the shown workspace upserts the row and logs no switch", async () => {
-    const [a, b] = profiles();
+    const [a, b] = pair();
     render(createElement(wrapper, null, createElement(OrgSwitcher, { profiles: [a!, b!], active: a! })));
     fireEvent.click(screen.getByRole("button", { name: /change workspace/i }));
     fireEvent.click(screen.getAllByText("Northline").at(-1)!);
@@ -143,7 +144,7 @@ describe("MN-1: the active workspace has one truth", () => {
   });
 
   it("a real switch upserts, then lands on the sign-in landing route", async () => {
-    const [a, b] = profiles();
+    const [a, b] = pair();
     render(createElement(wrapper, null, createElement(OrgSwitcher, { profiles: [a!, b!], active: a! })));
     fireEvent.click(screen.getByRole("button", { name: /change workspace/i }));
     fireEvent.click(screen.getByText("Bright Path"));
