@@ -1,13 +1,13 @@
 import type { CSSProperties } from "react";
 
-import { resolvedLinework } from "@/lib/lasso-loop";
+import { LassoThinkingMark } from "@/components/reflect/LassoThinkingMark";
 
 export const ASK_THINKING_COPY = {
   reading: "Reading your work",
   read: (n: number) => `Read ${n} ${n === 1 ? "piece" : "pieces"} of work`,
 } as const;
 
-const GLYPH_SIZE = 46;
+const GLYPH_SIZE = 16;
 
 /** A1 keyframes live with the component, never in the global stylesheet. */
 export const ASK_THINKING_STYLES = `
@@ -18,9 +18,6 @@ export const ASK_THINKING_STYLES = `
 .ask-a1-glyph path { stroke-dasharray: 1; stroke-dashoffset: 0; }
 .ask-a1-glyph[data-state="thinking"] path { animation: ask-a1-draw 2200ms ease-in-out infinite; }
 .ask-a1-glyph[data-state="thinking"] { --ask-a1-bloom: color-mix(in srgb, var(--nb-lasso-green) 55%, transparent); color: var(--nb-lasso-green); }
-.ask-a1-glyph[data-state="thinking"] {
-  filter: drop-shadow(0 0 6px var(--ask-a1-bloom));
-}
 .ask-a1-glyph[data-state="settled"] { color: var(--nb-green-deep); }
 .ask-a1-dot { display: inline-block; width: 4px; height: 4px; border-radius: 9999px; background: currentColor; }
 .ask-a1-dot[data-pulse="true"] { animation: ask-a1-dot 1200ms ease-in-out infinite; }
@@ -39,16 +36,12 @@ export function askFlickerStyle(index: number, { answered, reduced }: { answered
   return { "data-a1-flicker": "on", style: { animation: `ask-a1-flicker 2600ms ease-in-out ${-870 * (index % 3)}ms infinite` } };
 }
 
-/** The same artwork the loop mark resolves to, as inline SVG so it can be drawn. */
+/** The TM-1 scatter-to-lasso engine at glyph size; lime only while thinking. */
 function AskGlyph({ state }: { state: "thinking" | "settled" }) {
-  const paths = resolvedLinework(GLYPH_SIZE, 0);
   return (
-    <svg data-testid="ask-thinking-glyph" data-state={state} className="ask-a1-glyph shrink-0" width={GLYPH_SIZE} height={GLYPH_SIZE} viewBox={`0 0 ${GLYPH_SIZE} ${GLYPH_SIZE}`} aria-hidden>
-      {paths.map((path, index) => {
-        const d = path.points.map((point, i) => `${i === 0 ? "M" : "L"}${point.x.toFixed(2)} ${point.y.toFixed(2)}`).join(" ") + (path.closed ? " Z" : "");
-        return <path key={index} d={d} pathLength={1} fill="none" stroke="currentColor" strokeWidth={Math.max(1.35, GLYPH_SIZE * 0.034)} strokeLinejoin="round" strokeLinecap="round" />;
-      })}
-    </svg>
+    <span data-testid="ask-thinking-glyph" data-state={state} className="ask-a1-glyph inline-flex shrink-0" aria-hidden>
+      <LassoThinkingMark kind="signature" size={GLYPH_SIZE} thinking={state === "thinking"} />
+    </span>
   );
 }
 
