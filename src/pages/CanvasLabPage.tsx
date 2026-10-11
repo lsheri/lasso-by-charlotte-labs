@@ -922,6 +922,21 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   /* ---------------- 2c-v: one step back ---------------- */
 
   /** Whatever the board holds right now, never the version stored on a stack. */
+  /** BB-1: the version each archive left behind, so an undo restore never sends a stale one. */
+  const archivedVersionsRef = useRef(new Map<string, Promise<number | null>>());
+  function archiveDurable(durableId: string, expectedVersion: number) {
+    const pending = lab.persist({ type: "node_archive", nodeId: durableId, expectedVersion }).then((result) => {
+      report(result, "node", "archive");
+      return result.status === "saved" ? result.versions[durableId] ?? expectedVersion + 1 : null;
+    });
+    archivedVersionsRef.current.set(durableId, pending);
+  }
+  async function restoreVersion(durableId: string, fallback: number): Promise<number> {
+    const pending = archivedVersionsRef.current.get(durableId);
+    const read = pending ? await pending : null;
+    return read ?? fallback;
+  }
+
   function liveNode(id: string, fallback?: LabNode): LabNode | undefined {
     return nodesRef.current.find((entry) => entry.id === id) ?? fallback;
   }
@@ -977,14 +992,21 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
         setNodes((current) => current && !current.some((node) => node.id === stored.id) ? [...current, stored] : current);
         setLinks((current) => [...current, ...entry.links.filter((link) => !current.some((existing) => existing.id === link.id))]);
         if (stored.durableId) {
-          const version = liveNode(stored.id, stored)?.durableVersion ?? stored.durableVersion ?? 1;
-          void lab.persist({ type: "node_restore", nodeId: stored.durableId, expectedVersion: version }).then((result) => report(result, "node", "restore"));
+          const durableId = stored.durableId;
+          const fallback = liveNode(stored.id, stored)?.durableVersion ?? stored.durableVersion ?? 1;
+          void restoreVersion(durableId, fallback).then((version) => lab.persist({ type: "node_restore", nodeId: durableId, expectedVersion: version })).then((result) => {
+            report(result, "node", "restore");
+            if (result.status === "saved") {
+              const next = result.versions[durableId];
+              if (next) setNodes((current) => current?.map((node) => node.id === stored.id ? { ...node, durableVersion: next } : node) ?? current);
+            }
+          });
         }
         return;
       }
       if (stored.durableId) {
         const version = liveNode(stored.id, stored)?.durableVersion ?? stored.durableVersion ?? 1;
-        void lab.persist({ type: "node_archive", nodeId: stored.durableId, expectedVersion: version }).then((result) => report(result, "node", "archive"));
+        archiveDurable(stored.durableId, version);
       }
       setNodes((current) => {
         if (!current) return current;
@@ -1194,6 +1216,8 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       }
       if (cardMenuOpen) return;
       if (event.key !== "Delete" && event.key !== "Backspace") return;
+      // BB-1: keys typed into a box belong to that box, never to the highlighted card.
+      if (isTypingTarget(event.target) || isTypingTarget(document.activeElement)) return;
       if (selectedLinkId) {
         event.preventDefault();
         const link = links.find((entry) => entry.id === selectedLinkId);
@@ -1221,7 +1245,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   useEffect(() => {
     function onUndoKey(event: KeyboardEvent) {
       const active = document.activeElement as HTMLElement | null;
-      const direction = undoKeyIntent(event, Boolean(active?.closest("textarea,input,[contenteditable='true']")));
+      const direction = undoKeyIntent(event, isTypingTarget(active));
       if (!direction) return;
       if (cardMenuOpen || menuOpen || focusId || reviewId) return;
       event.preventDefault();
@@ -2244,9 +2268,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       return;
     }
     if (node.durableId) {
-      void lab
-        .persist({ type: "node_archive", nodeId: node.durableId, expectedVersion: node.durableVersion ?? 1 })
-        .then((result) => report(result, "node", "archive"));
+      archiveDurable(node.durableId, node.durableVersion ?? 1);
     }
     setNodes((current) => {
       if (!current) return current;
@@ -2905,4 +2927,12 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     </div>
     </TooltipProvider>
   );
+}
+
+/** BB-1: true when keys belong to a text box (input, textarea, select or editable text), or anything inside one. */
+export function isTypingTarget(el: EventTarget | Element | null | undefined): boolean {
+  if (!el || typeof (el as Element).closest !== "function") return false;
+  const element = el as HTMLElement;
+  if (element.isContentEditable) return true;
+  return Boolean(element.closest("input,textarea,select,[contenteditable]:not([contenteditable='false'])"));
 }

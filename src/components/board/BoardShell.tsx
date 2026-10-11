@@ -313,6 +313,8 @@ export function BoardShell<F extends BoardShellFrame, N extends BoardShellNode>(
   const beginPointer = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
       if (nativeScroll) return;
+      // BB-2: presses from portalled menus and dialogs bubble here through React; they are not the board's.
+      if (!(event.target instanceof Node) || !event.currentTarget.contains(event.target)) return;
       if (event.button !== 0 && event.button !== 1) return;
       const target = event.target instanceof HTMLElement ? event.target : null;
       const nodeEl = target?.closest<HTMLElement>("[data-board-node]");
