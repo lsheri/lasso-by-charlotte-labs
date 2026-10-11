@@ -1021,7 +1021,7 @@ function NoBoardNavRow({ onNavigate }: { onNavigate?: (() => void) | undefined }
       data-testid="nav-no-board"
     >
       <span>No board</span>
-      <span className="ml-auto font-mono text-[11.5px] text-muted-foreground" aria-hidden>
+      <span className="ml-auto font-mono text-[10px] text-soft" aria-hidden>
         {count}
       </span>
     </Link>
