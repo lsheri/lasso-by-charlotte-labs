@@ -919,7 +919,7 @@ export function WorkPage() {
 
       <div className="flex h-[46px] shrink-0 items-center gap-2 overflow-x-auto border-b border-[var(--nb-rule)] px-5 whitespace-nowrap">
         <button type="button" onClick={() => changeColumnFilter("all")} className={columnFilter === "all" ? chipOn : chipOff}>Everything</button>
-        <button type="button" title="Unmapped work is private and belongs to no workboard. It is not in any receipt, no coach can see it, and it will not appear in the firm view until you map it." onClick={() => changeColumnFilter("unmapped")} className={columnFilter === "unmapped" ? chipOn : chipOff}>No board</button>
+        <button type="button" title="Work with no board is private. It is not in any receipt, no coach can see it, and it will not appear in the firm view until you put it on a board." onClick={() => changeColumnFilter("unmapped")} className={columnFilter === "unmapped" ? chipOn : chipOff}>No board</button>
         <button type="button" onClick={() => changeColumnFilter("claimed")} className={columnFilter === "claimed" ? chipOn : chipOff}>Claimed by you</button>
         {engagementCodes.map((code) => <button key={code} type="button" onClick={() => changeColumnFilter(code)} className={columnFilter === code ? chipOn : chipOff}>{code}</button>)}
         {priv.length > 0 ? (
