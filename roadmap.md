@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] MAP-UX: default board placement, optional workstreams, unified labels, and regression verification.
+
 - [x] MOB-1b: phone-only bottom clearance, explicit subtitle spacing, and shell scroll boundary.
 - [ ] MOB-1b: confirm signed-in Show more clearance and desktop comparison; blocked by external unmanaged authentication.
 
