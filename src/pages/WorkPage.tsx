@@ -618,10 +618,6 @@ export function WorkPage() {
     if (next === columnFilter) return;
     setEnteredViaNoBoard(false);
     setColumnFilter(next);
-    // NAV-6: clear the param so the URL agrees with the chosen chip and a
-    // later click on the No board row changes the param again. Replace, so
-    // the back button is not polluted with filter changes.
-    void navigate({ to: "/work", search: {}, replace: true });
     const count = groupedCount(
       visible.filter((item) => inboxFilterMatches(item, next, showPrivate)),
     );
