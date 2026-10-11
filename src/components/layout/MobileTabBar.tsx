@@ -32,7 +32,7 @@ export function MobileTabBar() {
     .map((group) => ({ ...group, items: group.items.filter((item) => item.id !== "all-work") }))
     .filter((group) => group.items.length > 0);
   const tabs = guestNav
-    ? [...(canReview ? [TAB_ITEMS.coaching, TAB_ITEMS.prep, TAB_ITEMS.coachAsk] : [TAB_ITEMS.prep]), TAB_ITEMS.more]
+    ? [...(canReview ? [TAB_ITEMS.coaching, TAB_ITEMS.prep, { ...TAB_ITEMS.coachAsk, action: "coach-ask" as const }] : [TAB_ITEMS.prep]), TAB_ITEMS.more]
     : [TAB_ITEMS.work, TAB_ITEMS.workboards, TAB_ITEMS.more];
 
   function opened(item: NavOpenedDims["item"], surface: NavOpenedDims["surface"]) {
@@ -141,7 +141,7 @@ export function MobileTabBar() {
                     </button>
                   );
                   if (!item.to) return null;
-                  return <Link key={item.id} to={item.to} search={item.search} hash={item.hash}
+                  return <Link key={item.id} to={item.to} {...(item.search ? { search: item.search } : {})} {...(item.hash ? { hash: item.hash } : {})}
                     data-nav-item={item.id} onClick={() => { opened(item.id, "more"); setMoreOpen(false); }}
                     className="nb-nav-item min-h-[48px]" activeProps={{ className: "nb-nav-item-active" }}>
                     {content}

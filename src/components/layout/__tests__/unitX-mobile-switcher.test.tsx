@@ -40,7 +40,7 @@ function openYouSheet() {
       <MobileTabBar />
     </QueryClientProvider>,
   );
-  fireEvent.click(screen.getByRole("button", { name: /^you$/i }));
+  fireEvent.click(screen.getByRole("button", { name: /^more$/i }));
 }
 
 afterEach(() => cleanup());
