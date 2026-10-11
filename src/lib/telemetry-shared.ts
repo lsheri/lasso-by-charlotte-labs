@@ -463,7 +463,7 @@ export type WorkitemMappedDims = {
   suggested?: boolean;
   entry?: string;
   channel?: string;
-  via?: "board" | "mcp" | "list";
+  via?: "board" | "mcp" | "list" | "add_work" | "suggestion" | "brief";
   tool?: string;
 };
 

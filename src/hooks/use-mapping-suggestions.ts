@@ -76,6 +76,14 @@ export function useMappingSuggestions() {
     setAcceptPending(true);
     setError(null);
     try {
+      // MAP-2: the event belongs to a first mapping anywhere, so read before
+      // the delete below erases the evidence of an earlier placement.
+      const prior = await supabase
+        .from("work_item_tasks")
+        .select("work_item_id")
+        .eq("work_item_id", suggestion.work_item_id);
+      if (prior.error) throw new Error(prior.error.message);
+      const firstMap = (prior.data ?? []).length === 0;
       const cleanup = await supabase
         .from("work_item_tasks")
         .delete()
@@ -91,11 +99,14 @@ export function useMappingSuggestions() {
         .eq("id", suggestion.work_item_id);
       if (upd.error) throw new Error(upd.error.message);
 
-      logEvent("workitem.mapped", profile.org_id, {
-        type: meta?.type ?? "ai_thread",
-        source: meta?.source ?? "import",
-        suggested: true,
-      });
+      if (firstMap) {
+        logEvent("workitem.mapped", profile.org_id, {
+          type: meta?.type ?? "ai_thread",
+          source: meta?.source ?? "import",
+          suggested: true,
+          via: "suggestion",
+        });
+      }
       setDismissed((prev) => [...prev, suggestion.work_item_id]);
       await queryClient.invalidateQueries({ queryKey: ["work-items"] });
       await queryClient.invalidateQueries({ queryKey: ["engagement"] });

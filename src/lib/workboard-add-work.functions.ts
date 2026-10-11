@@ -60,6 +60,14 @@ export const placeWorkOnBoardFn = createServerFn({ method: "POST" })
     if (existing.error) throw new Error(existing.error.message);
     const alreadyHere = new Set((existing.data ?? []).map((row) => row.work_item_id as string));
 
+    // MAP-2: a first mapping anywhere is the event, not a first mapping here.
+    const prior = await supabase
+      .from("work_item_tasks")
+      .select("work_item_id")
+      .in("work_item_id", data.work_item_ids);
+    if (prior.error) throw new Error(prior.error.message);
+    const alreadyMapped = new Set((prior.data ?? []).map((row) => row.work_item_id as string));
+
     const toPlace = data.work_item_ids.filter((id) => !alreadyHere.has(id));
     if (toPlace.length > 0) {
       const insert = await supabase
@@ -73,6 +81,18 @@ export const placeWorkOnBoardFn = createServerFn({ method: "POST" })
       .select("id, title, type, source, owner_id")
       .in("id", data.work_item_ids);
     if (details.error) throw new Error(details.error.message);
+
+    const { recordEvent } = await import("@/lib/telemetry.server");
+    for (const item of (details.data ?? []) as PlacedWorkItem[]) {
+      if (!toPlace.includes(item.id) || alreadyMapped.has(item.id)) continue;
+      await recordEvent(supabase, {
+        eventType: "workitem.mapped",
+        orgId: profile.org_id,
+        userId,
+        profileId: profile.id,
+        dims: { type: item.type, source: item.source, via: "add_work" },
+      });
+    }
 
     return {
       taskId,
