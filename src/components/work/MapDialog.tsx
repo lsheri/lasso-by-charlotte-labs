@@ -28,6 +28,7 @@ export function MapDialog({
   groupLabel,
   open,
   onOpenChange,
+  entry,
 }: {
   item: WorkItemRow | null;
   groupItems?: WorkItemRow[] | undefined;
@@ -35,6 +36,8 @@ export function MapDialog({
   groupLabel?: string | undefined;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** NAV-5: set only while a No board row visit is still attributable. */
+  entry?: "nav_no_board" | undefined;
 }) {
   const { data: profile } = useProfile();
   const { data: engagements } = useEngagements(profile?.id);
@@ -86,6 +89,7 @@ export function MapDialog({
       detachEpisode: detachEpisode as never,
       syncEpisode: syncEpisode as never,
       invalidate: (queryKey) => queryClient.invalidateQueries({ queryKey: [...queryKey] }),
+      entry,
     });
     if (result.error) {
       setError(result.error);

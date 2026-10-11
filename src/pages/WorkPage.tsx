@@ -306,6 +306,13 @@ export function WorkPage() {
   const [columnFilter, setColumnFilter] = useState<string>(() =>
     "filter" in landingSearch && landingSearch.filter === "no-board" ? "unmapped" : "all",
   );
+  // NAV-5: entered through the No board row. Same initialiser test as above;
+  // cleared for the rest of the visit the moment the filter changes.
+  const [enteredViaNoBoard, setEnteredViaNoBoard] = useState<boolean>(
+    () => "filter" in landingSearch && landingSearch.filter === "no-board",
+  );
+  const mapEntry: "nav_no_board" | undefined =
+    enteredViaNoBoard && columnFilter === "unmapped" ? "nav_no_board" : undefined;
   const [inboxViewportWidth, setInboxViewportWidth] = useState(0);
   const [inboxViewportHeight, setInboxViewportHeight] = useState(0);
   // Which page each type column is on. Presentation-only local state, exactly
@@ -598,6 +605,7 @@ export function WorkPage() {
 
   function changeColumnFilter(next: string) {
     if (next === columnFilter) return;
+    setEnteredViaNoBoard(false);
     setColumnFilter(next);
     const count = groupedCount(
       visible.filter((item) => inboxFilterMatches(item, next, showPrivate)),
@@ -915,6 +923,7 @@ export function WorkPage() {
       ) : null}
 
       <MapDialog
+        entry={mapEntry}
         item={mapItem}
         groupItems={mapGroup ?? undefined}
         groupLabel={mapBulk ? "selected work" : undefined}
