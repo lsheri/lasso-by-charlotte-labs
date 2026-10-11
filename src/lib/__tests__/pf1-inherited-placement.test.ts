@@ -159,7 +159,7 @@ describe("PF1 inherited placement", () => {
     expect(table("work_items").find((r) => r["title"] === "Plan")!["visibility"]).toBe("unmapped");
     expect(receipts(out).map((r) => r.placement)).toEqual(["inbox_no_destination", "inbox_no_destination"]);
     const notes = out.result.structuredContent["notes"] as string[];
-    expect(notes.join(" ")).toContain("2 attachments stayed in the inbox: this call named no destination");
+    expect(notes.join(" ")).toContain("2 attachments did not go on a board: this call named no destination");
     expect(notes.join(" ")).not.toContain("\u2014");
     expect(rpcCalls).toHaveLength(0);
     expect(out.result.structuredContent["attachments_placed"]).toBe(0);
@@ -229,6 +229,6 @@ describe("PF1 destination present: unchanged behaviour", () => {
     const out = await push({ vendor: "claude", orig_conversation_id: "c3", messages: MSGS, attachments: ATTS, destination: "CFT-01 · General" });
     expect(mapsOf(idOf("Plan"))).toEqual(["t2"]);
     expect(receipts(out).find((r) => r.title === "Plan")!.placement).toBe("on_other");
-    expect(out.result.structuredContent["summary"]).toContain("1 of 2 attachments placed on CFT-01 · General; the rest stayed in the inbox.");
+    expect(out.result.structuredContent["summary"]).toContain("1 of 2 attachments placed on CFT-01 · General; the rest did not go on a board.");
   });
 });

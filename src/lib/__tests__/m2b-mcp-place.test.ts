@@ -88,13 +88,13 @@ describe("M2b — what the reply says", () => {
 
   it("forbidden keeps it in the inbox", () => {
     expect(renderPlacement(company, "forbidden", "CFT-01 · General", null)).toBe(
-      "Saved to your inbox only; you can't place work on that engagement.",
+      "Saved to All work, not on a board yet; you can't place work on that engagement.",
     );
   });
 
   it("an unknown ref lists the valid ones", () => {
     expect(renderUnknownRef(company, ["CFT-01 · General", "NWG-02 · Research"])).toBe(
-      "Saved to your inbox only; that place is not one of yours. Valid places: CFT-01 · General, NWG-02 · Research.",
+      "Saved to All work, not on a board yet; that place is not one of yours. Valid places: CFT-01 · General, NWG-02 · Research.",
     );
     expect(renderUnknownRef(company, [])).toContain("no engagements yet");
   });
