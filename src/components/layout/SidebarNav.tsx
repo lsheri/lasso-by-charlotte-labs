@@ -4,7 +4,9 @@ import { Link, useMatchRoute, useSearch } from "@tanstack/react-router";
 import { Fragment, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
 
 import { NewEngagementDialog } from "@/components/engagements/NewEngagementDialog";
-import { SidebarCreateActions } from "@/components/engagements/SidebarCreateActions";
+import { SidebarCreateActions, type CreatingKind } from "@/components/engagements/SidebarCreateActions";
+import { canCreateClient } from "@/components/engagements/create-permissions";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { GraphiteIcon } from "@/components/notebook/icons";
 import { SidebarItemMenu } from "@/components/layout/SidebarItemMenu";
 import { SidebarDragProvider, useSidebarDrag } from "@/components/layout/sidebar-drag";
@@ -15,7 +17,6 @@ import { useUnreadNotesAboutMe } from "@/hooks/use-coach-note-thread";
 import { useSharedWithMe } from "@/hooks/use-shared-with-me";
 import { useSharedBoardMarks } from "@/hooks/use-shared-board-marks";
 
-import { useDecisions } from "@/hooks/use-decisions";
 import { useWorkItems } from "@/hooks/use-work-items";
 import { groupConversations } from "@/lib/work-types";
 import { useEngagements } from "@/hooks/use-engagements";
@@ -319,10 +320,9 @@ export function SidebarNav({
   // useAffiliation remains the source of the institution, through useNavCtx.
   const { ctx: navCtx, profile, profiles, institution, vocab, guestNav, labels } = useNavCtx();
   const { data: engagements } = useEngagements(profile?.id);
-  const { data: decisions } = useDecisions();
-  // The pill counts what is WAITING on you, which is the drafts. A confirmed
-  // call needs nothing, so counting it would ask for attention that is not due.
-  const decisionCount = (decisions ?? []).filter((row) => row.status === "draft").length;
+  // MN-3b: the create menu opens the same dialog and inline rows the tile did.
+  const [newBoardOpen, setNewBoardOpen] = useState(false);
+  const [creating, setCreating] = useState<CreatingKind>(null);
   const isPartnerOrg = profile?.org_type === "partner";
   const navGroupsForPerson = navFor(navCtx, labels).filter((group) => group.placement !== "workspace_menu");
   const openNavItem = (item: NavItemId) => {
@@ -340,6 +340,21 @@ export function SidebarNav({
   // A guest never asks: there are no circles on a guest's screen.
   const { data: unreadNotes } = useUnreadNotesAboutMe(guestNav ? undefined : profile?.id);
   const hasNewNotes = (unreadNotes ?? []).length > 0;
+  const unreadCount = (unreadNotes ?? []).length;
+  const createMenu = (
+    <SidebarCreateMenu
+      items={[
+        { id: "workboard", label: vocab.newEngagement, onSelect: () => setNewBoardOpen(true) },
+        ...(canCreateClient(profile)
+          ? [{ id: "client", label: `New ${vocab.client.toLowerCase()}`, onSelect: () => setCreating("client") }]
+          : []),
+        { id: "folder", label: "New folder", onSelect: () => setCreating("folder") },
+      ]}
+      onOpen={() => {
+        if (profile?.org_id) logEvent("nav.opened", profile.org_id, { item: "create_menu", surface });
+      }}
+    />
+  );
 
 
   const matchRoute = useMatchRoute();
@@ -606,6 +621,23 @@ export function SidebarNav({
                 <GraphiteIcon name={item.icon} size={20} />
                 <span className="truncate">{item.label}</span>
               </button>
+            ) : item.id === "your_coach" ? (
+              <Link
+                key={item.id}
+                to={item.to as string}
+                onClick={() => openNavItem(item.id)}
+                className={linkClass}
+                activeProps={activeProps}
+                aria-label={unreadCount > 0 ? `${item.label}, ${unreadCount} new ${unreadCount === 1 ? "note" : "notes"}` : undefined}
+              >
+                <GraphiteIcon name={item.icon} size={20} />
+                <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
+                  <span className="truncate">{item.label}</span>
+                  {unreadCount > 0 ? (
+                    <span className="font-mono text-[10px] text-soft" aria-hidden>{unreadCount}</span>
+                  ) : null}
+                </span>
+              </Link>
             ) : item.to === "/coach-notes" && hasNewNotes ? (
               // The circle, not a count: it says look here, and nothing more.
               <CircleMark key={item.to} className="block" label="New note from your coach">
@@ -635,9 +667,6 @@ export function SidebarNav({
                   <span className="truncate">
                     {item.label}
                   </span>
-                  {item.to === "/decisions" && decisionCount > 0 ? (
-                    <span className="count-pill">{decisionCount}</span>
-                  ) : null}
                 </span>
               </Link>
             ));
@@ -657,6 +686,8 @@ export function SidebarNav({
             {isEngagementGroup && everyCollapsibleId.length > 0 ? (
               <div className="flex items-center justify-between gap-2 px-2">
                 <div className="nb-group-header">{groupLabel}</div>
+                <span className="ml-auto flex items-center gap-2">
+                {createMenu}
                 <button
                   type="button"
                   data-testid="nav-collapse-all"
@@ -665,11 +696,17 @@ export function SidebarNav({
                 >
                   {allCollapsed ? "Expand all" : "Collapse all"}
                 </button>
+                </span>
               </div>
-            ) : (
+            ) : isEngagementGroup ? (
+              <div className="flex items-center justify-between gap-2 px-2">
+                <div className="nb-group-header">{groupLabel}</div>
+                {createMenu}
+              </div>
+            ) : group.headless ? null : (
               <div className="nb-group-header px-2">{groupLabel}</div>
             )}
-            <div className="mt-2 flex flex-col gap-0.5">
+            <div className={group.headless ? "flex flex-col gap-0.5" : "mt-2 flex flex-col gap-0.5"}>
               {/* Anything still in this group (a partner firm's extra rows)
                   renders after the shelves, never above them. */}
               {isEngagementGroup ? null : visibleItems}
@@ -713,19 +750,17 @@ export function SidebarNav({
                   ) : null}
                 </div>
                   <div className="nb-nav-actions">
-                  <div className="nb-nav-create-tile">
                   <NewEngagementDialog
                     onDone={onNavigate}
-                    trigger={
-                      <button type="button" className="nb-nav-item w-full text-left">
-                        <GraphiteIcon name="plus" size={20} />
-                        <span>{vocab.newEngagement}</span>
-                      </button>
-                    }
+                    from="sidebar"
+                    open={newBoardOpen}
+                    onOpenChange={setNewBoardOpen}
                   />
-                  <SidebarCreateActions empty={!!engagements && engagements.length === 0} />
-
-                  </div>
+                  <SidebarCreateActions
+                    empty={!!engagements && engagements.length === 0}
+                    creating={creating}
+                    onCreatingChange={setCreating}
+                  />
                   {visibleItems}
                   </div>
                 </SidebarDragProvider>
@@ -748,6 +783,44 @@ export function SidebarNav({
         );
       })}
     </nav>
+  );
+}
+
+/** MN-3b: the one "+" beside Where it goes. Same dropdown as the workspace menu. */
+function SidebarCreateMenu({
+  items,
+  onOpen,
+}: {
+  items: { id: string; label: string; onSelect: () => void }[];
+  onOpen: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <DropdownMenu open={open} onOpenChange={(value) => { setOpen(value); if (value) onOpen(); }}>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          aria-label="New workboard, client or folder"
+          aria-expanded={open}
+          data-testid="nav-create-menu"
+          onPointerDown={(event) => event.preventDefault()}
+          onClick={() => { if (!open) onOpen(); setOpen((value) => !value); }}
+          className="shrink-0 rounded-[var(--radius-md)] p-0.5 text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <GraphiteIcon name="plus" size={14} />
+        </button>
+      </DropdownMenuTrigger>
+      {open ? (
+        <DropdownMenuContent align="end" className="min-w-[200px] bg-sidebar">
+          {items.map((item) => (
+            <DropdownMenuItem key={item.id} data-create-item={item.id} onSelect={item.onSelect}>
+              <GraphiteIcon name="plus" size={16} />
+              <span>{item.label}</span>
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      ) : null}
+    </DropdownMenu>
   );
 }
 

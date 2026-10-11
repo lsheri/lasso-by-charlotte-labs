@@ -8,6 +8,10 @@ import { SavedForOneOnOne } from "@/components/oneonone/SaveForOneOnOne";
 import { SessionStickies } from "@/components/oneonone/SessionStickies";
 import { Button } from "@/components/ui/button";
 import { useProfile } from "@/hooks/use-profile";
+import { Link } from "@tanstack/react-router";
+
+/** MN-3b: the one link from the hour to the notes your coach left. */
+export const ONE_ON_ONE_LINKS_COPY = { coachNotes: "Notes from your coach" } as const;
 
 export function OneOnOnePage() {
   const { data: profile } = useProfile();
@@ -24,6 +28,13 @@ export function OneOnOnePage() {
         italicWord="hour"
         subtitle="What you want to bring up. Nothing here is sent until you choose to."
       />
+      {!isCoach ? (
+        <p className="-mt-2 mb-6 text-sm" data-testid="one-on-one-links">
+          <Link to="/coach-notes" className="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
+            {ONE_ON_ONE_LINKS_COPY.coachNotes}
+          </Link>
+        </p>
+      ) : null}
       <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-10">
         <div>
           {profile && !isCoach ? (

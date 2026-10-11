@@ -126,8 +126,8 @@ export function MobileTabBar() {
           </SheetTitle>
           <div className="mt-3 flex flex-col gap-0.5">
             {groups.map((group) => (
-              <section key={group.id} data-nav-group={group.id}>
-                <div className="nb-group-header">{group.label}</div>
+              <section key={`${group.id}:${group.placement}`} data-nav-group={group.id}>
+                {group.headless ? null : <div className="nb-group-header">{group.label}</div>}
                 {group.items.map((item) => {
                   const content = <><GraphiteIcon name={item.icon} size={16} /><span>{item.label}</span></>;
                   if (item.disabled) return (

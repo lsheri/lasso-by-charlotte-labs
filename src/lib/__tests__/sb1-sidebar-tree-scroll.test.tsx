@@ -116,56 +116,39 @@ describe("SB1 single middle-column scroller and standing separation", () => {
     expect(sidebarSrc).toContain('className="flex min-h-0 flex-1 flex-col overflow-y-auto"');
   });
 
-  it("keeps New workboard, New folder and Past work present with a long tree", () => {
+  it("keeps the create menu and Look back present with a long tree", () => {
+    // MN-3b: create actions live behind the + beside Where it goes.
     mocks.engagements = manyBoards();
     render(<SidebarNav />);
-    expect(screen.getByText("New workboard")).toBeTruthy();
-    expect(screen.getByText("New folder")).toBeTruthy();
-    expect(screen.getByText("Past work")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "New workboard, client or folder" })).toBeTruthy();
+    expect(screen.getByText("Look back").closest("a")!).toBeTruthy();
   });
 
-  it("puts Past work at the head of Look back and leaves the create block three", () => {
-    // SB-N1: Past work finds work rather than making it, so it moved out of the
-    // create block and leads Look back.
+  it("drops the create tile and puts the single Look back row after the tree", () => {
+    // MN-3b: the grouped create tile is gone; Look back is one row below the tree.
     mocks.engagements = manyBoards();
     const { container } = render(<SidebarNav />);
     const actions = container.querySelector(".nb-nav-actions")!;
-    expect(actions.textContent).toContain("New workboard");
-    expect(actions.textContent).toContain("New client");
-    expect(actions.textContent).toContain("New folder");
-    expect(actions.textContent).not.toContain("Past work");
-    expect(actions.querySelectorAll("button")).toHaveLength(3);
-    const tile = actions.querySelector(".nb-nav-create-tile");
-    expect(tile).not.toBeNull();
-    expect(tile?.querySelectorAll("button")).toHaveLength(3);
-    expect(tile?.textContent).toContain("New workboard");
-    expect(tile?.textContent).toContain("New client");
-    expect(tile?.textContent).toContain("New folder");
-    const lookback = screen.getByText("Look back").parentElement!;
-    const rows = [...lookback.querySelectorAll("a")];
-    expect(rows[0]?.textContent).toContain("Past work");
-    expect(rows[1]?.textContent).toContain("Archived");
-    expect(rows[2]?.textContent).toContain("Past Ask Lasso chats");
+    expect(actions.querySelector(".nb-nav-create-tile")).toBeNull();
+    expect(actions.textContent).not.toContain("New workboard");
+    const lookBack = screen.getAllByText("Look back");
+    expect(lookBack).toHaveLength(1);
+    expect(container.querySelector(".nb-nav-tree-scroll")!.compareDocumentPosition(lookBack[0]!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    for (const gone of ["Past work", "Archived", "Past Ask Lasso chats"]) expect(screen.queryByText(gone)).toBeNull();
   });
 
-  it("activates only Past work on the archive route without a hash", () => {
+  it("activates Look back on the archive route without a hash", () => {
     mocks.archiveMatch = true;
     window.history.replaceState(null, "", "/archive");
     render(<SidebarNav />);
-    const lookback = screen.getByText("Look back").parentElement!;
-    const active = [...lookback.querySelectorAll("a.nb-nav-item-active")];
-    expect(active).toHaveLength(1);
-    expect(active[0]?.textContent).toContain("Past work");
+    expect(screen.getByText("Look back").closest("a")!.className).toContain("nb-nav-item-active");
   });
 
-  it("activates only Archived on the archive route with its hash", () => {
+  it("leaves Look back inactive on the archive route with the archived hash", () => {
     mocks.archiveMatch = true;
     window.history.replaceState(null, "", "/archive#archived");
     render(<SidebarNav />);
-    const lookback = screen.getByText("Look back").parentElement!;
-    const active = [...lookback.querySelectorAll("a.nb-nav-item-active")];
-    expect(active).toHaveLength(1);
-    expect(active[0]?.textContent).toContain("Archived");
+    expect(screen.getByText("Look back").closest("a")!.className).not.toContain("nb-nav-item-active");
   });
 
   it("hides an archived container and everything beneath it", () => {
@@ -215,7 +198,7 @@ describe("SB1 single middle-column scroller and standing separation", () => {
     expect(
       scroller!.compareDocumentPosition(actions!) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
-    expect(screen.getByText("New workboard")).toBeTruthy();
-    expect(screen.getByText("Past work")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "New workboard, client or folder" })).toBeTruthy();
+    expect(screen.getByText("Look back").closest("a")!).toBeTruthy();
   });
 });

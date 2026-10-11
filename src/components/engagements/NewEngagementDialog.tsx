@@ -34,12 +34,18 @@ export function NewEngagementDialog({
   onDone,
   initialClientId,
   from = "sidebar",
+  open: openProp,
+  onOpenChange,
 }: {
-  trigger: ReactNode;
+  /** MN-3b: optional when the dialog is opened from a menu instead. */
+  trigger?: ReactNode;
   onDone?: (() => void) | undefined;
   /** A client chosen for the person before the dialog opens. Still changeable. */
   initialClientId?: string | null | undefined;
   from?: NewEngagementFrom;
+  /** MN-3b: controlled open state, for opening from the sidebar create menu. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
   const { data: profile } = useProfile();
   const queryClient = useQueryClient();
@@ -48,7 +54,12 @@ export function NewEngagementDialog({
   const { captureWithResult } = useCaptureFiles();
   const placeWork = useServerFn(placeWorkOnBoardFn);
   const fileInput = useRef<HTMLInputElement | null>(null);
-  const [open, setOpen] = useState(false);
+  const [openState, setOpenState] = useState(false);
+  const open = openProp ?? openState;
+  const setOpen = (next: boolean) => {
+    if (openProp === undefined) setOpenState(next);
+    onOpenChange?.(next);
+  };
   const [title, setTitle] = useState("");
   const [clientId, setClientId] = useState<string | null>(initialClientId ?? null);
   const [brief, setBrief] = useState("");
@@ -235,7 +246,7 @@ export function NewEngagementDialog({
         if (!next) reset();
       }}
     >
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      {trigger ? <DialogTrigger asChild>{trigger}</DialogTrigger> : null}
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="page-title">

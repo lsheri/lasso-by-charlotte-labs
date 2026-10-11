@@ -48,7 +48,9 @@ export type NavItemId =
   | "people-you-coach"
   | "guest-one-on-one"
   | "guest-settings"
-  | "trust" | "why" | "feedback" | "sign-out";
+  | "trust" | "why" | "feedback" | "sign-out"
+  /** MN-3b: the lean sidebar rows and the create menu. */
+  | "look_back" | "your_coach" | "connect_tools" | "create_menu";
 
 export type NavGroupId =
   | "landed"
@@ -82,6 +84,8 @@ export type NavCtx = {
   hasCoachLink: boolean;
   affiliated: boolean;
   clientsEnabled: boolean;
+  /** MN-3b: how many work items the workspace holds; undefined while unknown. */
+  workItemCount?: number;
 };
 
 /** What wording may depend on. `legacy` is set only when deriving the old exports. */
@@ -111,6 +115,10 @@ export type NavManifestItem = {
   types?: OrgType[];
   /** Runtime-only items (e.g. the affiliation link) never enter the legacy exports. */
   runtimeOnly?: boolean;
+  /** MN-3b: kept only for the legacy exports; never rendered by navFor. */
+  retired?: boolean;
+  /** MN-3b: the group the legacy exports file this item under, when it moved. */
+  legacyGroup?: NavGroupId;
   show?: (ctx: NavCtx) => boolean;
 };
 
@@ -124,6 +132,8 @@ export type NavManifestGroup = {
   shared?: boolean;
   /** Shown even with no visible items (the engagement shelves). */
   alwaysShow?: boolean;
+  /** MN-3b: a one-row group renders its row without a heading. */
+  headless?: boolean;
   show?: (ctx: NavCtx) => boolean;
 };
 
@@ -143,7 +153,7 @@ export const NAV_GROUPS: NavManifestGroup[] = [
     emptyState: "No workboards yet",
     alwaysShow: true,
   },
-  { id: "lookback", label: "Look back" },
+  { id: "lookback", label: "Look back", headless: true },
   // A school workspace adds its own section after Look back.
   { id: "school", label: "Your classes", types: ["edu"] },
   {
@@ -152,6 +162,7 @@ export const NAV_GROUPS: NavManifestGroup[] = [
     // A partner workspace never has it.
     id: "coach",
     label: "Your coach",
+    headless: true,
     types: ["company", "personal", "edu"],
     show: (ctx) =>
       roles.hasCoachByArrangement(asProfile(ctx)) || (ctx.type === "personal" && ctx.hasCoachLink),
@@ -172,26 +183,36 @@ export const NAV_GROUPS: NavManifestGroup[] = [
   { id: "workspace", label: "Workspace", shared: true },
 ];
 
+/** MN-3b: whether the Your coach row shows, by the coach group's own rule. */
+export function showsYourCoach(ctx: Pick<NavCtx, "type" | "role" | "hasCoachLink">): boolean {
+  const group = NAV_GROUPS.find((g) => g.id === "coach");
+  if (!group || roles.usesGuestNav(asProfile(ctx as NavCtx))) return false;
+  return presentFor(group.types, ctx.type) && (!group.show || group.show(ctx as NavCtx));
+}
+
 export const NAV_ITEMS: NavManifestItem[] = [
   { id: "home", placement: "main", group: "landed", label: "Home", to: "/home", icon: "overview" },
   { id: "all-work", placement: "main", group: "landed", label: "All work", to: "/work", icon: "work" },
   { id: "ai-record", placement: "main", group: "landed", label: "All AI Conversations", to: "/ai-record", icon: "ai-record" },
-  { id: "connectors", placement: "main", group: "landed", label: "Where work comes from", to: "/connectors", icon: "connectors" },
+  // MN-3b: shown only while the workspace holds no work items.
+  { id: "connect_tools", placement: "main", group: "landed", label: "Connect your AI tools", to: "/connectors", icon: "connectors", runtimeOnly: true, show: (ctx) => ctx.workItemCount === 0 },
   // A partner's extra rows render after the shelves.
   { id: "workshop-keys", placement: "workspace_menu", group: "engagements", label: "Workshop keys", to: "/requests", icon: "members", types: ["partner"], show: (ctx) => ctx.canManageMembers },
   { id: "adding-people", placement: "workspace_menu", group: "engagements", label: "Adding people", to: "/adding-people", icon: "members", types: ["partner"], show: (ctx) => ctx.canManageMembers },
   // Past work first, because it is where finished work is found.
-  { id: "past-work", placement: "main", group: "lookback", label: "Past work", to: "/archive", icon: "firm" },
-  { id: "archived", placement: "main", group: "lookback", label: "Archived", to: "/archive", hash: "archived", icon: "history" },
-  { id: "past-ask", placement: "main", group: "lookback", label: "Past Ask Lasso chats", to: "/ai-record", icon: "history", search: { view: "asked" } },
-  { id: "find-it", placement: "main", group: "lookback", label: "Find it", to: "/find-it", icon: "work", disabled: true, disabledReason: "Coming soon" },
-  { id: "decisions", placement: "main", group: "lookback", label: "Decision log", to: "/decisions", icon: "decisions", disabled: true, disabledReason: "Coming soon" },
+  { id: "past-work", retired: true, placement: "main", group: "lookback", label: "Past work", to: "/archive", icon: "firm" },
+  { id: "archived", retired: true, placement: "main", group: "lookback", label: "Archived", to: "/archive", hash: "archived", icon: "history" },
+  { id: "past-ask", retired: true, placement: "main", group: "lookback", label: "Past Ask Lasso chats", to: "/ai-record", icon: "history", search: { view: "asked" } },
+  { id: "find-it", retired: true, placement: "main", group: "lookback", label: "Find it", to: "/find-it", icon: "work", disabled: true, disabledReason: "Coming soon" },
+  { id: "decisions", retired: true, placement: "main", group: "lookback", label: "Decision log", to: "/decisions", icon: "decisions", disabled: true, disabledReason: "Coming soon" },
+  { id: "look_back", placement: "bottom", group: "lookback", label: "Look back", to: "/archive", icon: "history", runtimeOnly: true },
   { id: "classes", placement: "main", group: "school", label: () => EDU_VOCAB.classes, to: "/classes", icon: "engagement" },
   { id: "assignments", placement: "main", group: "school", label: () => EDU_VOCAB.assignments, to: "/assignments", icon: "work" },
   { id: "projects", placement: "main", group: "school", label: () => EDU_VOCAB.projects, to: "/projects", icon: "overview" },
   { id: "portfolio", placement: "main", group: "school", label: () => EDU_VOCAB.portfolio, to: "/portfolio", icon: "firm" },
-  { id: "one-on-one", placement: "main", group: "coach", label: "1:1 prep", to: "/one-on-one", icon: "one-on-one" },
-  { id: "coach-notes", placement: "main", group: "coach", label: "Notes from your coach", to: "/coach-notes", icon: "messages" },
+  { id: "one-on-one", retired: true, placement: "main", group: "coach", label: "1:1 prep", to: "/one-on-one", icon: "one-on-one" },
+  { id: "coach-notes", retired: true, placement: "main", group: "coach", label: "Notes from your coach", to: "/coach-notes", icon: "messages" },
+  { id: "your_coach", placement: "bottom", group: "coach", label: "Your coach", to: "/one-on-one", icon: "one-on-one", runtimeOnly: true },
   { id: "firm-view", placement: "workspace_menu", group: "firm", label: "Firm view", to: "/firm", icon: "firm", show: (ctx) => ctx.canSeeFirmView },
   {
     id: "members", placement: "bottom",
@@ -203,7 +224,7 @@ export const NAV_ITEMS: NavManifestItem[] = [
   },
   {
     // An affiliated business workspace names its institution first.
-    id: "affiliation", placement: "main",
+    id: "affiliation", placement: "bottom",
     group: "account",
     label: (l) => `Your ${l.institutionName ?? ""} link`,
     to: "/affiliation",
@@ -212,6 +233,8 @@ export const NAV_ITEMS: NavManifestItem[] = [
     show: (ctx) => ctx.affiliated && isBusinessType(ctx.type),
   },
   { id: "settings", placement: "workspace_menu", group: "account", label: "Settings", action: "openSettings", icon: "settings" },
+  // MN-3b: once work has arrived, the sources page lives in the workspace menu.
+  { id: "connectors", placement: "workspace_menu", group: "account", legacyGroup: "landed", label: "Where work comes from", to: "/connectors", icon: "connectors", show: (ctx) => ctx.workItemCount !== 0 },
   { id: "people-you-coach", placement: "main", group: "coaching", label: "People you coach", to: "/coaching", icon: "members" },
   { id: "guest-one-on-one", placement: "main", group: "guest-account", label: "1:1 prep", to: "/one-on-one", icon: "one-on-one" },
   { id: "guest-settings", placement: "workspace_menu", group: "guest-account", label: "Settings", action: "openSettings", icon: "settings" },
@@ -221,10 +244,10 @@ export const NAV_ITEMS: NavManifestItem[] = [
   { id: "sign-out", placement: "workspace_menu", group: "workspace", label: "Sign out", action: "signOut", icon: "chevron-right", runtimeOnly: true },
 ];
 
-export type ResolvedNavItem = Omit<NavManifestItem, "label" | "show" | "types" | "runtimeOnly"> & {
+export type ResolvedNavItem = Omit<NavManifestItem, "label" | "show" | "types" | "runtimeOnly" | "retired" | "legacyGroup"> & {
   label: string;
 };
-export type ResolvedNavGroup = { placement: NavPlacement; id: NavGroupId; label: string; emptyState?: string; items: ResolvedNavItem[] };
+export type ResolvedNavGroup = { placement: NavPlacement; id: NavGroupId; label: string; emptyState?: string; headless?: boolean; items: ResolvedNavItem[] };
 
 const resolve = (label: Label, l: NavLabelCtx) => (typeof label === "string" ? label : label(l));
 const presentFor = (types: OrgType[] | undefined, type: OrgType) => !types || types.includes(type);
@@ -237,27 +260,34 @@ const presentFor = (types: OrgType[] | undefined, type: OrgType) => !types || ty
 export function navFor(ctx: NavCtx, l: Omit<NavLabelCtx, "type">): ResolvedNavGroup[] {
   const guest = roles.usesGuestNav(asProfile(ctx));
   const labels: NavLabelCtx = { ...l, type: ctx.type };
-  const out: ResolvedNavGroup[] = [];
+  const placed: Record<NavPlacement, ResolvedNavGroup[]> = { main: [], bottom: [], workspace_menu: [] };
   for (const group of NAV_GROUPS) {
     if (!group.shared && Boolean(group.guest) !== guest && group.id !== "coaching") continue;
     if (!presentFor(group.types, ctx.type)) continue;
     if (group.show && !group.show(ctx)) continue;
     const items = NAV_ITEMS.filter(
       (item) =>
-        item.group === group.id && presentFor(item.types, ctx.type) && (!item.show || item.show(ctx)),
-    ).map(({ label, show: _s, types: _t, runtimeOnly: _r, ...rest }) => ({
+        item.group === group.id && !item.retired && presentFor(item.types, ctx.type) && (!item.show || item.show(ctx)),
+    ).map(({ label, show: _s, types: _t, runtimeOnly: _r, retired: _x, legacyGroup: _g, ...rest }) => ({
       ...rest,
       placement: rest.id === "members" && isBusinessType(ctx.type) ? "workspace_menu" as const : rest.placement,
       label: resolve(label, labels),
     }));
     for (const placement of ["main", "bottom", "workspace_menu"] as const) {
-      const placed = items.filter((item) => item.placement === placement);
-      if (placed.length === 0 && !(group.alwaysShow && placement === "main")) continue;
-      out.push({ id: group.id, placement, label: resolve(group.label, labels),
-        ...(group.emptyState ? { emptyState: group.emptyState } : {}), items: placed });
+      const rows = items.filter((item) => item.placement === placement);
+      if (rows.length === 0 && !(group.alwaysShow && placement === "main")) continue;
+      placed[placement].push({ id: group.id, placement, label: resolve(group.label, labels),
+        ...(group.emptyState ? { emptyState: group.emptyState } : {}),
+        ...(group.headless && placement === "bottom" ? { headless: true } : {}), items: rows });
     }
   }
-  return out;
+  // MN-3b: main rows first, People you coach right after What landed, then
+  // the bottom rows, then the workspace menu.
+  const coaching = guest ? [] : placed.main.filter((g) => g.id === "coaching");
+  const main = placed.main.filter((g) => !coaching.includes(g));
+  const landedAt = main.findIndex((g) => g.id === "landed") + 1;
+  main.splice(landedAt, 0, ...coaching);
+  return [...main, ...placed.bottom, ...placed.workspace_menu];
 }
 
 /* ---- Legacy exports, derived from the manifest for existing importers. ---- */
@@ -281,7 +311,7 @@ function legacyGroups(type: OrgType, ids: NavGroupId[]): NavGroup[] {
     id: group.id,
     label: resolve(group.label, l),
     items: NAV_ITEMS.filter(
-      (item) => item.group === group.id && !item.runtimeOnly && presentFor(item.types, type),
+      (item) => (item.legacyGroup ?? item.group) === group.id && !item.runtimeOnly && presentFor(item.types, type),
     ).map((item) => legacyItem(item, l)),
     ...(group.emptyState ? { emptyState: group.emptyState } : {}),
   }));

@@ -1,4 +1,3 @@
-import { clientsEnabled } from "@/lib/workspace-settings";
 import { useState } from "react";
 
 import { createContainer } from "@/components/engagements/create-container";
@@ -9,7 +8,7 @@ import { useClients, useInvalidateClients } from "@/hooks/use-clients";
 import type { ContainerColour } from "@/lib/container-colour";
 import { useProfile } from "@/hooks/use-profile";
 import { vocabFor } from "@/lib/edu-vocab";
-import { canManageMembers } from "@/lib/role-access";
+import { canCreateClient } from "@/components/engagements/create-permissions";
 
 /**
  * Standing create actions in the sidebar, beside New workboard, shown
@@ -18,12 +17,25 @@ import { canManageMembers } from "@/lib/role-access";
  * With zero workboards the event reads from "empty_state", otherwise "sidebar".
  * Refusals come back from the database and show as a toast.
  */
-export function SidebarCreateActions({ empty }: { empty: boolean }) {
+export type CreatingKind = null | "client" | "folder";
+
+/**
+ * MN-3b: with `creating` and `onCreatingChange` the rows move into the
+ * sidebar create menu and this renders only the inline form.
+ */
+export function SidebarCreateActions({ empty, creating: creatingProp, onCreatingChange }: {
+  empty: boolean;
+  creating?: CreatingKind;
+  onCreatingChange?: (next: CreatingKind) => void;
+}) {
   const { data: profile } = useProfile();
   const { data: rows } = useClients(profile?.org_id);
   const vocab = vocabFor(profile);
   const invalidate = useInvalidateClients();
-  const [creating, setCreating] = useState<null | "client" | "folder">(null);
+  const [creatingState, setCreatingState] = useState<CreatingKind>(null);
+  const controlled = onCreatingChange !== undefined;
+  const creating = controlled ? (creatingProp ?? null) : creatingState;
+  const setCreating = (next: CreatingKind) => (controlled ? onCreatingChange(next) : setCreatingState(next));
   const [name, setName] = useState("");
   const [color, setColor] = useState<ContainerColour | null>(null);
   const [pending, setPending] = useState(false);
@@ -87,9 +99,11 @@ export function SidebarCreateActions({ empty }: { empty: boolean }) {
     );
   }
 
+  if (controlled) return null;
+
   return (
     <>
-      {clientsEnabled(profile) && canManageMembers(profile) ? (
+      {canCreateClient(profile) ? (
         <button type="button" className="nb-nav-item w-full text-left" onClick={() => setCreating("client")}>
           <GraphiteIcon name="plus" size={20} />
           <span>{`New ${vocab.client.toLowerCase()}`}</span>
