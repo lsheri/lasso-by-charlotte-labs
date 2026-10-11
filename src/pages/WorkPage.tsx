@@ -1,3 +1,4 @@
+import { useSearch } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
@@ -299,7 +300,12 @@ export function WorkPage() {
   // Private stopped being a section: it is a per-row chip and this filter.
   const [showPrivate, setShowPrivate] = useState(true);
   // Presentation-only filter for the type columns. Local state, no query.
-  const [columnFilter, setColumnFilter] = useState<string>("all");
+  // NAV-3: /work?filter=no-board lands with No board on. Initial state only,
+  // never through changeColumnFilter, so arriving records nothing.
+  const landingSearch = useSearch({ strict: false });
+  const [columnFilter, setColumnFilter] = useState<string>(() =>
+    "filter" in landingSearch && landingSearch.filter === "no-board" ? "unmapped" : "all",
+  );
   const [inboxViewportWidth, setInboxViewportWidth] = useState(0);
   const [inboxViewportHeight, setInboxViewportHeight] = useState(0);
   // Which page each type column is on. Presentation-only local state, exactly
