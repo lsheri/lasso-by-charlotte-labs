@@ -456,6 +456,17 @@ export type TelemetryDims = Record<
   string | number | boolean | null | Record<string, number>
 >;
 
+/** MAP-1: dims for workitem.mapped. Additive; existing keys unchanged. */
+export type WorkitemMappedDims = {
+  type: string;
+  source: string;
+  suggested?: boolean;
+  entry?: string;
+  channel?: string;
+  via?: "board" | "mcp" | "list";
+  tool?: string;
+};
+
 /** How a work item entered Lasso. Content never travels; the channel does. */
 export type CaptureChannel = "paste" | "upload" | "import" | "mcp" | "connector";
 

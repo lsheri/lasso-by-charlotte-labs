@@ -81,6 +81,11 @@ export async function remapItems(input: {
   const { targets, taskId, profile } = input;
   const ids = targets.map((t) => t.id);
 
+  // MAP-1: only targets with no placement anywhere are a first mapping.
+  const prior = await client.from("work_item_tasks").select("work_item_id").in("work_item_id", ids);
+  if (prior.error) return { error: prior.error.message };
+  const alreadyMapped = new Set((prior.data ?? []).map((row) => row.work_item_id as string));
+
   const cleanup = await client.from("work_item_tasks").delete().in("work_item_id", ids);
   if (cleanup.error) return { error: cleanup.error.message };
 
@@ -97,9 +102,11 @@ export async function remapItems(input: {
   await input.invalidate(["episode", taskId]);
 
   for (const target of targets) {
+    if (alreadyMapped.has(target.id)) continue;
     logEvent("workitem.mapped", profile.org_id, {
       type: target.type,
       source: target.source,
+      via: "list",
       ...(input.entry ? { entry: input.entry } : {}),
     });
   }
