@@ -85,6 +85,14 @@ export function EngagementBriefSection({
     if (!brief || taskIds.length === 0) return;
     setSharing(true);
     try {
+      // MAP-2: read prior placement before the delete erases it; the event
+      // belongs to a first mapping anywhere.
+      const prior = await supabase
+        .from("work_item_tasks")
+        .select("work_item_id")
+        .eq("work_item_id", brief.id);
+      if (prior.error) throw prior.error;
+      const firstMap = (prior.data ?? []).length === 0;
       await supabase.from("work_item_tasks").delete().eq("work_item_id", brief.id);
       const { error } = await supabase
         .from("work_item_tasks")
@@ -95,7 +103,9 @@ export function EngagementBriefSection({
         .update({ visibility: "mapped" })
         .eq("id", brief.id);
       if (update.error) throw update.error;
-      logEvent("workitem.mapped", orgId, { type: brief.type, source: brief.source });
+      if (firstMap) {
+        logEvent("workitem.mapped", orgId, { type: brief.type, source: brief.source, via: "brief" });
+      }
       await invalidate();
       toast.success("The brief is now shared.");
     } catch (e) {
