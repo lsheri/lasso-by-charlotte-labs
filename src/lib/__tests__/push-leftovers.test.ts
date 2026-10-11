@@ -52,7 +52,7 @@ describe("suggestionCaution", () => {
   it("placementLine adds the inbox default only for shared workspaces", () => {
     const shared = placementLine({ ...mcpVocabFor("company" as never), shared: true });
     const solo = placementLine({ ...mcpVocabFor("company" as never), shared: false });
-    expect(shared).toContain("default to the inbox");
-    expect(solo).not.toContain("default to the inbox");
+    expect(shared).toContain("default to All work");
+    expect(solo).not.toContain("default to All work");
   });
 });

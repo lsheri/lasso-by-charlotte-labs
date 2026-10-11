@@ -115,7 +115,7 @@ describe("P0 item 2 — per-attachment outcomes", () => {
 describe("P0 items 1, 3, 9, 10 — the handler's wiring", () => {
   it("places attachments with the thread and reports how many", () => {
     expect(handler).toContain("attachments placed on ${place.ref}");
-    expect(handler).toContain("the rest stayed in the inbox");
+    expect(handler).toContain("the rest did not go on a board");
     expect(handler).toContain("attachments_placed: versionRowsBucket(attachmentsPlaced)");
   });
 

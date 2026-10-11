@@ -172,7 +172,7 @@ export function readToolsFor(type: McpWorkspaceType, icons: unknown[] = []): unk
       title: "Where could this go",
       icons,
       description:
-        "Call before push_conversation. Ask the user: inbox only, or the suggested place? Never choose for them.",
+        "Call before push_conversation. Ask the user: All work only, or the suggested place? Never choose for them.",
       inputSchema: {
         type: "object",
         properties: {
@@ -291,7 +291,7 @@ export function chooseSuggestion(vocab: McpVocab, signals: SuggestionSignals): P
 }
 
 export const SUGGESTION_CAUTION_TEXT =
-  "This chat's project is not this board's client. Placing it shares the chat's reasoning with the whole engagement; the inbox keeps it private until you place it yourself.";
+  "This chat's project is not this board's client. Placing it shares the chat's reasoning with the whole engagement; All work keeps it private until you place it yourself.";
 
 /**
  * Founder decision, 23 Sep. A suggestion that came from precedent, for a chat
@@ -321,9 +321,9 @@ export function placementLine(vocab: McpVocab): string {
     ? "Placing work on a board makes it visible to everyone on that engagement, so only pass destination after the user says yes."
     : `Placing work files it under that ${vocab.board}; nothing is shared with anyone. Only pass destination after the user says yes.`;
   const caution = vocab.shared
-    ? " If the chat's project is not this board's client, default to the inbox unless the user says otherwise."
+    ? " If the chat's project is not this board's client, default to All work unless the user says otherwise."
     : "";
-  return `Before pushing, call lasso_push_options and ask the user: inbox only, or the suggested place? ${sharing}${caution}`;
+  return `Before pushing, call lasso_push_options and ask the user: All work only, or the suggested place? ${sharing}${caution}`;
 }
 
 export type SuggestionOutcome = "accepted" | "changed" | "declined" | "none";
@@ -400,15 +400,15 @@ export function renderPlacement(
     const other = otherRef ?? `another ${vocab.board}`;
     return `Saved. It is already on ${other}. Ask the user whether to move it to ${ref}; if yes, call again with move: true.`;
   }
-  return `Saved to your inbox only; you can't place work on that ${vocab.board}.`;
+  return `Saved to All work, not on a board yet; you can't place work on that ${vocab.board}.`;
 }
 
 /** An unknown ref never guesses. The item stays in the inbox and says so. */
 export function renderUnknownRef(vocab: McpVocab, refs: readonly string[], note?: string): string {
-  if (refs.length === 0) return `Saved to your inbox only; that place is not one of yours, and you have no ${vocab.boards} yet.`;
+  if (refs.length === 0) return `Saved to All work, not on a board yet; that place is not one of yours, and you have no ${vocab.boards} yet.`;
   const head = note
-    ? `Saved to your inbox only; ${note}`
-    : "Saved to your inbox only; that place is not one of yours.";
+    ? `Saved to All work, not on a board yet; ${note}`
+    : "Saved to All work, not on a board yet; that place is not one of yours.";
   return `${head} Valid places: ${refs.join(", ")}.`;
 }
 

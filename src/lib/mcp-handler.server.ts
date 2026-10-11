@@ -213,13 +213,13 @@ export function attachmentPlacementNote(outcomes: readonly AttachmentOutcome[]):
   const none = count("inbox_no_destination");
   if (none > 0) {
     parts.push(
-      `${plural(none)} stayed in the inbox: this call named no destination and the conversation is not on a board yet. Send destination to place ${none === 1 ? "it" : "them"}.`,
+      `${plural(none)} did not go on a board: this call named no destination and the conversation is not on a board yet. Send destination to place ${none === 1 ? "it" : "them"}.`,
     );
   }
   const ambiguous = count("inbox_ambiguous");
   if (ambiguous > 0) {
     parts.push(
-      `${plural(ambiguous)} stayed in the inbox: the conversation is in more than one place, so Lasso did not choose. Send destination to place ${ambiguous === 1 ? "it" : "them"}.`,
+      `${plural(ambiguous)} did not go on a board: the conversation is in more than one place, so Lasso did not choose. Send destination to place ${ambiguous === 1 ? "it" : "them"}.`,
     );
   }
   const other = count("on_other");
@@ -1179,7 +1179,7 @@ async function placeOneItem(
     p_move: plan.move,
   });
   if (error) {
-    return { text: "Saved to your inbox only; placing it did not work.", target: "inbox", status: "error" };
+    return { text: "Saved to All work. Putting it on a board did not work.", target: "inbox", status: "error" };
   }
   const result = (data ?? {}) as {
     status?: string;
@@ -1716,7 +1716,7 @@ async function pushOptions(owner: Owner, args: Obj, id: unknown): Promise<Respon
     ...(caution ? [SUGGESTION_CAUTION_TEXT] : []),
     suggested
       ? `Suggested place: ${suggested.ref}. ${suggested.reason}`
-      : `No suggested place. Ask the user: inbox only, or a place they name?`,
+      : `No suggested place. Ask the user: All work only, or a place they name?`,
     ...shown.map((place) => `- ${place.ref}`),
     ...(othersExist
       ? [`Other ${vocab.containers} exist; call lasso_list_places to see them all.`]
@@ -2891,7 +2891,7 @@ export async function pushConversation(
     attachmentPlaceNote =
       attachmentsPlaced === placeTargets.length
         ? ` ${attachmentsPlaced} attachment${attachmentsPlaced === 1 ? "" : "s"} placed on ${place.ref}.`
-        : ` ${attachmentsPlaced} of ${placeTargets.length} attachments placed on ${place.ref}; the rest stayed in the inbox.`;
+        : ` ${attachmentsPlaced} of ${placeTargets.length} attachments placed on ${place.ref}; the rest did not go on a board.`;
   } else if (!plan.destination && placeTargets.length > 0) {
     // PF1. No destination on this call: the attachments follow their
     // conversation when it already sits in exactly one place. Read only; the
