@@ -33,7 +33,7 @@ export function useNavCtx() {
     affiliated: Boolean(institution),
     clientsEnabled: clientsEnabled(profile),
     ...(work ? { workItemCount: work.items.length } : {}),
-    ...(partnerShared ? { partnerShareCount: partnerShared.length } : {}),
+    ...(Array.isArray(partnerShared) ? { partnerShareCount: partnerShared.length } : {}),
   };
   return { ctx, profile, profiles, institution, vocab, guestNav,
     labels: { vocab, institutionName: institution?.name ?? null } };

@@ -30,7 +30,7 @@ async function fetchSharedPieces(boardId: string): Promise<WorkItemRow[]> {
 /** MN-5: a read-only view of what one person shared with this partner workspace. */
 export function SharedBoardPage({ boardId }: { boardId: string }) {
   const { data: shared, isLoading } = usePartnerSharedBoards();
-  const board = shared?.find((entry) => entry.board_id === boardId);
+  const board = (Array.isArray(shared) ? shared : []).find((entry) => entry.board_id === boardId);
   const pieces = useQuery({
     queryKey: ["partner-shared-pieces", boardId],
     queryFn: () => fetchSharedPieces(boardId),

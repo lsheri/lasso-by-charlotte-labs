@@ -17,7 +17,7 @@ export function FromYourPeopleGroup({
   rowClassName?: string;
 }) {
   const { data } = usePartnerSharedBoards();
-  const groups = groupBySharer(data ?? []);
+  const groups = groupBySharer(Array.isArray(data) ? data : []);
   if (groups.length === 0) return null;
   return (
     <div data-nav-group="from_your_people">
