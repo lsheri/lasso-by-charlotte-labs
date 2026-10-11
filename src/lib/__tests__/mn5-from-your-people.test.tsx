@@ -8,7 +8,7 @@ const mocks = vi.hoisted(() => ({
   boards: [] as unknown[],
   pieces: [] as unknown[],
   queries: [] as Array<{ queryKey: unknown[]; enabled?: boolean }>,
-  piecesQuery: null as null | { promise: Promise<unknown[]>; resolved?: unknown[] },
+  piecesQuery: null as null | { promise: Promise<unknown[]>; resolved: unknown[] | undefined },
   supabase: { rpc: vi.fn(), from: vi.fn() },
   events: vi.fn(),
 }));
