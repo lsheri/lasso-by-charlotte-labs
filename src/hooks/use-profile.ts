@@ -38,6 +38,24 @@ export type ProfileState = { profiles: Profile[]; hasDeactivated: boolean };
 const STORAGE_KEY = "lasso.active_profile_id";
 const listeners = new Set<() => void>();
 
+/** MN-1b: when this tab last saw the stored choice change (here or in another tab). */
+let lastLocalChangeAt = 0;
+
+/** MN-1b: one storage listener per page, not per hook instance. */
+let storageUnsubscribe: (() => void) | null = null;
+
+function subscribeToStorageChanges(): void {
+  if (storageUnsubscribe || typeof window === "undefined") return;
+  const onStorage = (event: StorageEvent) => {
+    if (event.key !== STORAGE_KEY) return;
+    lastLocalChangeAt = Date.now();
+    for (const listener of listeners) listener();
+    void sharedQueryClient?.refetchQueries({ queryKey: ACTIVE_PROFILE_ROW_KEY });
+  };
+  window.addEventListener("storage", onStorage);
+  storageUnsubscribe = () => window.removeEventListener("storage", onStorage);
+}
+
 function readStored(): string | null {
   if (typeof window === "undefined") return null;
   try {
@@ -97,6 +115,7 @@ function subscribeToIdentityChanges(): void {
 export function registerProfileQueryClient(client: QueryClient): void {
   sharedQueryClient = client;
   subscribeToIdentityChanges();
+  subscribeToStorageChanges();
 }
 
 /** Test seam. */
@@ -106,6 +125,9 @@ export function resetProfileIdentityState(): void {
   sharedQueryClient = null;
   seededUsers.clear();
   lastReconciled = null;
+  storageUnsubscribe?.();
+  storageUnsubscribe = null;
+  lastLocalChangeAt = 0;
 }
 
 /**
@@ -170,6 +192,7 @@ export async function setActiveProfileId(id: string): Promise<boolean> {
 
 /** This tab's cache of the choice. Storage is a convenience, never a requirement. */
 function writeStored(id: string): void {
+  lastLocalChangeAt = Date.now();
   try {
     window.localStorage.setItem(STORAGE_KEY, id);
   } catch {
@@ -269,9 +292,19 @@ let lastReconciled: string | null = null;
 function useReconcileActiveProfile(
   rowProfile: Profile | null,
   localId: string | null,
+  rowUpdatedAt: number,
+  rowFetching: boolean,
 ): void {
   useEffect(() => {
     if (!rowProfile || rowProfile.id === localId) return;
+    // MN-1b: a row read before the local value last changed (or still in
+    // flight) is not evidence. Wait for a fresh row instead of writing back.
+    if (rowFetching || rowUpdatedAt < lastLocalChangeAt) {
+      if (!rowFetching) {
+        void sharedQueryClient?.refetchQueries({ queryKey: ACTIVE_PROFILE_ROW_KEY });
+      }
+      return;
+    }
     // An empty cache is not a disagreement: nothing was shown from it, so it
     // simply takes the row's id, with no refetch and no event.
     if (!localId) {
@@ -289,7 +322,7 @@ function useReconcileActiveProfile(
     void import("@/lib/telemetry")
       .then(({ logEvent }) => logEvent("profile.active_reconciled", orgId, { source: "row_differs" }))
       .catch(() => {});
-  }, [rowProfile, localId]);
+  }, [rowProfile, localId, rowUpdatedAt, rowFetching]);
 }
 
 /** Existence check used by route gates, true when the user has any profile. */
@@ -355,7 +388,10 @@ export function useProfile() {
   const rowId = storedQuery.isSuccess ? storedQuery.data : null;
   const rowProfile = rowId ? profiles.find((p) => p.id === rowId) ?? null : null;
   const active = pickActive(profiles, activeId, rowId);
-  useReconcileActiveProfile(rowProfile, activeId);
+  useEffect(() => {
+    subscribeToStorageChanges();
+  }, []);
+  useReconcileActiveProfile(rowProfile, activeId, storedQuery.dataUpdatedAt, storedQuery.isFetching);
   useSeedActiveProfile(
     active,
     userId,

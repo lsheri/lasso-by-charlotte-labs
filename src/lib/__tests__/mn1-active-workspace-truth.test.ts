@@ -154,3 +154,35 @@ describe("MN-1: the active workspace has one truth", () => {
     expect(logEvent.mock.calls.filter((c) => c[0] === "profile.switched")).toHaveLength(1);
   });
 });
+
+describe("MN-1b: change from another tab", () => {
+  it("a change from another tab with a stale cached row does not write the old id back and logs nothing until the fresh row arrives; when the fresh row agrees, no event at all", async () => {
+    db.row = "a";
+    window.localStorage.setItem(KEY, "a");
+    const { result } = renderHook(() => useProfile(), { wrapper });
+    await waitFor(() => expect(result.current.data?.id).toBe("a"));
+    await waitFor(() => expect(client.isFetching()).toBe(0));
+    logEvent.mockClear();
+
+    // Another tab switches to "b": the database and shared storage both move,
+    // while this tab's cached row still says "a".
+    db.row = "b";
+    const setItem = vi.spyOn(Storage.prototype, "setItem");
+    act(() => {
+      window.localStorage.setItem(KEY, "b");
+      setItem.mockClear();
+      window.dispatchEvent(new StorageEvent("storage", { key: KEY, newValue: "b", oldValue: "a" }));
+    });
+
+    expect(window.localStorage.getItem(KEY)).toBe("b");
+    expect(setItem.mock.calls.some(([k, v]) => k === KEY && v === "a")).toBe(false);
+    expect(logEvent).not.toHaveBeenCalled();
+
+    await waitFor(() => expect(result.current.data?.id).toBe("b"));
+    await waitFor(() => expect(client.isFetching()).toBe(0));
+    expect(setItem.mock.calls.some(([k, v]) => k === KEY && v === "a")).toBe(false);
+    expect(window.localStorage.getItem(KEY)).toBe("b");
+    expect(logEvent).not.toHaveBeenCalled();
+    setItem.mockRestore();
+  });
+});
