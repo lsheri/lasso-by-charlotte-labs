@@ -41,6 +41,10 @@ describe("MOB-1 phone work presentation", () => {
     expect(phone).toContain("@media (max-width: 767px)");
     expect(phone).not.toContain("outline: none");
     expect(phone).toContain("min-height: 88px");
+    expect(phone).toContain('column-gap: 16px');
+    expect(phone).toContain('calc(4.5rem + 44px + 16px + env(safe-area-inset-bottom))');
+    expect(phone).toContain('main:has(.work-page) { min-height: 0; padding-bottom: 0; overflow: hidden; }');
+    expect(phone).toContain('.work-page { height: 100%; }');
   });
 
   it("reuses WorkNote with the same title, date, type and opener but without summary or link", () => {
