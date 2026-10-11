@@ -13,18 +13,27 @@ export const SHARED_BOARD_COPY = {
 } as const;
 
 async function fetchSharedPieces(boardId: string): Promise<WorkItemRow[]> {
-  const { data, error } = await supabase
+  // A partner cannot read this board's task rows, so the shared ids come from the RPC.
+  const { data, error } = await supabase.rpc(
+    "partner_shared_board_items" as never,
+    { p_board_id: boardId } as never,
+  );
+  if (error) throw error;
+  const record = (Array.isArray(data) ? data[0] : null) as { item_ids?: unknown } | null;
+  const rawIds = record?.item_ids;
+  const ids = Array.isArray(rawIds)
+    ? (rawIds as unknown[]).filter((id): id is string => typeof id === "string")
+    : [];
+  if (ids.length === 0) return [];
+  const { data: rows, error: piecesError } = await supabase
     .from("work_items")
     .select(
-      "id, owner_id, client_id, title, type, source, visibility, captured_at, content_ref, created_at_source, work_date, content_fidelity, source_vendor, orig_conversation_id, ungrouped_at, source_meta, meta, work_item_tasks!inner(tasks!inner(engagement_id))",
+      "id, owner_id, client_id, title, type, source, visibility, captured_at, content_ref, created_at_source, work_date, content_fidelity, source_vendor, orig_conversation_id, ungrouped_at, source_meta, meta",
     )
-    .eq("work_item_tasks.tasks.engagement_id", boardId)
+    .in("id", ids)
     .order("captured_at", { ascending: false });
-  if (error) throw error;
-  // The join only scopes the read; the card never shows a placement.
-  return ((data ?? []) as unknown as WorkItemRow[]).map(
-    ({ work_item_tasks: _placement, ...item }) => item as WorkItemRow,
-  );
+  if (piecesError) throw piecesError;
+  return (rows ?? []) as WorkItemRow[];
 }
 
 /** MN-5: a read-only view of what one person shared with this partner workspace. */
