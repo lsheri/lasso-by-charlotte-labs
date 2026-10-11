@@ -273,6 +273,12 @@ function useReconcileActiveProfile(
 ): void {
   useEffect(() => {
     if (!rowProfile || rowProfile.id === localId) return;
+    // An empty cache is not a disagreement: nothing was shown from it, so it
+    // simply takes the row's id, with no refetch and no event.
+    if (!localId) {
+      writeStored(rowProfile.id);
+      return;
+    }
     const key = `${rowProfile.id}|${localId ?? ""}`;
     if (lastReconciled === key) return;
     lastReconciled = key;
