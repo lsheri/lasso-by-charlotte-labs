@@ -95,6 +95,8 @@ vi.mock("@/components/engagements/NewEngagementDialog", () => ({
 
 
 import { SidebarNav } from "@/components/layout/SidebarNav";
+import { navFor, type NavCtx } from "@/components/layout/nav-config";
+import { DEFAULT_VOCAB } from "@/lib/vocab";
 
 type Options = { component: (() => ReactNode) & { preload?: () => Promise<unknown> } };
 const auth = (AuthRoute as unknown as { options: Options }).options.component;
@@ -130,11 +132,21 @@ describe("UX-3", () => {
   });
   it.each([
     ["personal", "Who you share with"], ["edu", "Who you share with"],
-    ["company", "Run the firm"], ["partner", "Your practice"],
   ])("%s uses only the intended heading", (org_type, heading) => {
     mocks.profile.org_type = org_type;
     render(<SidebarNav />);
     expect(screen.getByText(heading)).toBeTruthy();
+  });
+  it.each([
+    ["company", "Run the firm", ["firm-view", "members"]], ["partner", "Your practice", ["members"]],
+  ])("%s moves the %s rows into the workspace menu", (org_type, heading, ids) => {
+    mocks.profile.org_type = org_type;
+    render(<SidebarNav />);
+    expect(screen.queryByText(heading)).toBeNull();
+    const ctx: NavCtx = { type: org_type as NavCtx["type"], role: "admin", canReview: false, canManageMembers: true,
+      canSeeFirmView: org_type === "company", hasCoachLink: false, affiliated: false, clientsEnabled: false };
+    const menu = navFor(ctx, { vocab: DEFAULT_VOCAB, institutionName: null }).filter((g) => g.placement === "workspace_menu").flatMap((g) => g.items.map((i) => i.id));
+    for (const id of ids) expect(menu).toContain(id);
   });
   it("a carried key starts on signup and shows the notice", () => {
     mocks.search = { key: "LSO-EXAMPLE" };
