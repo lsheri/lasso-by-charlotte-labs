@@ -3,7 +3,6 @@ import { useState } from "react";
 
 import { CoachAskSheet } from "@/components/coaching/CoachAskSheet";
 import { GraphiteIcon } from "@/components/notebook/icons";
-import { FeedbackDialog } from "@/components/feedback/FeedbackWidget";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { useEngagements } from "@/hooks/use-engagements";
 
@@ -15,6 +14,7 @@ import type { NavOpenedDims } from "@/lib/telemetry-shared";
 import { useSettingsDialogOptional } from "@/lib/settings-dialog-context";
 import { navFor, TAB_ITEMS } from "./nav-config";
 import { useNavCtx } from "./use-nav-ctx";
+import { WorkspaceMenuItems } from "./WorkspaceMenuItems";
 
 export function MobileTabBar() {
   const { ctx, profile, profiles, vocab, guestNav, labels } = useNavCtx();
@@ -27,7 +27,10 @@ export function MobileTabBar() {
   const { data: engagements } = useEngagements(profile?.id);
 
   const canReview = ctx.canReview;
-  const groups = navFor(ctx, labels)
+  const manifest = navFor(ctx, labels);
+  const workspaceItems = manifest.filter((group) => group.placement === "workspace_menu").flatMap((group) => group.items);
+  const groups = manifest
+    .filter((group) => group.placement !== "workspace_menu")
     .filter((group) => group.id !== "engagements")
     .map((group) => ({ ...group, items: group.items.filter((item) => item.id !== "all-work") }))
     .filter((group) => group.items.length > 0);
@@ -155,39 +158,12 @@ export function MobileTabBar() {
               <OrgSwitcher profiles={profiles} active={profile} />
             </div>
           ) : null}
-          <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border pt-3">
-            <Link
-              to="/trust"
-              onClick={() => setMoreOpen(false)}
-              className="font-mono text-[13px] uppercase tracking-[0.08em] text-muted-foreground"
-            >
-              Trust &amp; data
-            </Link>
-            <Link
-              to="/why"
-              onClick={() => setMoreOpen(false)}
-              className="font-mono text-[13px] uppercase tracking-[0.08em] text-muted-foreground"
-            >
-              Why Lasso
-            </Link>
-            <FeedbackDialog
-              trigger={
-                <button
-                  type="button"
-                  className="font-mono text-[13px] uppercase tracking-[0.08em] text-muted-foreground"
-                >
-                  Feedback
-                </button>
-              }
-            />
-            <button
-              type="button"
-              onClick={() => void signOut(navigate)}
-              className="ml-auto font-mono text-[13px] uppercase tracking-[0.08em] text-muted-foreground"
-            >
-              Sign out
-            </button>
-          </div>
+          <section className="mt-4 border-t border-border pt-3" data-nav-group="workspace_menu">
+            <div className="nb-group-header">Workspace</div>
+            <WorkspaceMenuItems items={workspaceItems} onOpened={(item) => opened(item, "more")}
+              onSettings={() => settings?.openSettings()} onSignOut={() => void signOut(navigate)}
+              onNavigate={() => setMoreOpen(false)} />
+          </section>
         </SheetContent>
       </Sheet>
     </>

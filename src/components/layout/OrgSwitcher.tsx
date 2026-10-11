@@ -5,7 +5,7 @@ import { Check, ChevronsUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 
-import { ROLE_LABELS, setActiveProfileId, type Profile } from "@/hooks/use-profile";
+import { setActiveProfileId, type Profile } from "@/hooks/use-profile";
 import { logEvent } from "@/lib/telemetry";
 
 export function workspaceTypeLabel(profile: Profile | null): string {
@@ -43,6 +43,7 @@ export function OrgSwitcher({ profiles, active, children, header, onOpen }: { pr
         type="button"
         aria-label={`Change workspace. Current: ${active?.org_name ?? "Workspace"}, ${workspaceTypeLabel(active)}`}
         aria-expanded={open}
+        onPointerDown={(event) => event.preventDefault()}
         onClick={() => { if (!open) onOpen?.(); setOpen((value) => !value); }}
         className="grid h-auto w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-[var(--radius-md)] border border-[var(--nb-pencil)] px-3 py-2 text-left transition-colors hover:bg-accent-soft"
       >
