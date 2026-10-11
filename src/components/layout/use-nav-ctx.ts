@@ -1,6 +1,7 @@
 import { useAffiliation } from "@/hooks/use-affiliation";
 import { useHasLiveCoachLink } from "@/hooks/use-coaching-links";
 import { useCoachingReach } from "@/hooks/use-coaching-reach";
+import { usePartnerSharedBoards } from "@/hooks/use-partner-shared-boards";
 import { useProfile } from "@/hooks/use-profile";
 import { useWorkItems } from "@/hooks/use-work-items";
 import { vocabFor } from "@/lib/edu-vocab";
@@ -20,6 +21,7 @@ export function useNavCtx() {
   );
   // MN-3b: the same work-items read the sidebar already shares; no new query.
   const { data: work } = useWorkItems();
+  const { data: partnerShared } = usePartnerSharedBoards();
   const vocab = vocabFor(profile);
   const ctx: NavCtx = {
     type: profile?.org_type ?? "personal",
@@ -31,6 +33,7 @@ export function useNavCtx() {
     affiliated: Boolean(institution),
     clientsEnabled: clientsEnabled(profile),
     ...(work ? { workItemCount: work.items.length } : {}),
+    ...(Array.isArray(partnerShared) ? { partnerShareCount: partnerShared.length } : {}),
   };
   return { ctx, profile, profiles, institution, vocab, guestNav,
     labels: { vocab, institutionName: institution?.name ?? null } };
