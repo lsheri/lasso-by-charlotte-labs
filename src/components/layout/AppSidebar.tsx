@@ -39,7 +39,7 @@ export function AppSidebar({
 
       <UserCard name={userName} role={userRole} onSignOut={onSignOut} />
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex min-h-0 flex-1 flex-col">
         <SidebarNav onNavigate={onNavigate} onOpenSettings={onOpenSettings} />
       </div>
 

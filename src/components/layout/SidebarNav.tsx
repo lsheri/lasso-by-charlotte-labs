@@ -19,6 +19,8 @@ import { useSharedWithMe } from "@/hooks/use-shared-with-me";
 import { useSharedBoardMarks } from "@/hooks/use-shared-board-marks";
 
 import { useDecisions } from "@/hooks/use-decisions";
+import { useWorkItems } from "@/hooks/use-work-items";
+import { groupConversations } from "@/lib/work-types";
 import { useEngagements } from "@/hooks/use-engagements";
 import { isBusinessOrg, useProfile } from "@/hooks/use-profile";
 import * as roles from "@/lib/role-access";
@@ -580,7 +582,7 @@ export function SidebarNav({
   }
 
   return (
-    <nav className="flex flex-col gap-7">
+    <nav className="flex min-h-0 flex-1 flex-col gap-7">
       {[...groupsForOrg, ...coachingGroups].map((group) => {
         const isEngagementGroup = group.id === "engagements";
         const groupLabel = group.id === "firm" && !isBusinessOrg(profile) ? "Who you share with" : group.label;
@@ -682,7 +684,7 @@ export function SidebarNav({
 
         return (
           <Fragment key={group.label}>
-          <div>
+          <div className={isEngagementGroup ? "flex min-h-0 flex-1 flex-col" : "shrink-0"}>
             {isEngagementGroup && everyCollapsibleId.length > 0 ? (
               <div className="flex items-center justify-between gap-2 px-2">
                 <div className="nb-group-header">{groupLabel}</div>
@@ -698,7 +700,7 @@ export function SidebarNav({
             ) : (
               <div className="nb-group-header px-2">{groupLabel}</div>
             )}
-            <div className="mt-2 flex flex-col gap-0.5">
+            <div className={isEngagementGroup ? "mt-2 flex min-h-0 flex-1 flex-col gap-0.5" : "mt-2 flex flex-col gap-0.5"}>
               {/* Anything still in this group (a partner firm's extra rows)
                   renders after the shelves, never above them. */}
               {isEngagementGroup ? null : visibleItems}
@@ -710,6 +712,7 @@ export function SidebarNav({
                   orgId={profile?.org_id}
                   setPending={setPendingMoves}
                 >
+                <NoBoardNavRow onNavigate={onNavigate} />
                 <div className="nb-nav-tree-scroll">
                 <TopLevelDropZone>
                   <FolderRows
@@ -997,5 +1000,30 @@ function ShelfDropZone({ topLevel, children }: { topLevel: boolean; children: Re
     <div data-drop-zone="not-in-container" {...drag.dropTarget({ type: "top" })}>
       {children}
     </div>
+  );
+}
+
+/**
+ * NAV-3: the count of grouped entries with no board, counted the way All work
+ * counts them. Hidden at zero. Fires nothing; the filter chip owns that event.
+ */
+function NoBoardNavRow({ onNavigate }: { onNavigate?: (() => void) | undefined }) {
+  const { data } = useWorkItems();
+  const count = groupConversations((data?.items ?? []).filter((i) => i.visibility === "unmapped")).length;
+  if (count === 0) return null;
+  return (
+    <Link
+      to="/work"
+      search={{ filter: "no-board" }}
+      onClick={onNavigate}
+      className={`${linkClass} shrink-0`}
+      aria-label={`No board, ${count} ${count === 1 ? "piece" : "pieces"}`}
+      data-testid="nav-no-board"
+    >
+      <span>No board</span>
+      <span className="ml-auto font-mono text-[11.5px] text-muted-foreground" aria-hidden>
+        {count}
+      </span>
+    </Link>
   );
 }
