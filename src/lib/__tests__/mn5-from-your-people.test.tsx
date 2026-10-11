@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -8,6 +8,8 @@ const mocks = vi.hoisted(() => ({
   boards: [] as unknown[],
   pieces: [] as unknown[],
   queries: [] as Array<{ queryKey: unknown[]; enabled?: boolean }>,
+  piecesQuery: null as null | { promise: Promise<unknown[]>; resolved?: unknown[] },
+  supabase: { rpc: vi.fn(), from: vi.fn() },
   events: vi.fn(),
 }));
 
@@ -17,15 +19,28 @@ vi.mock("@tanstack/react-router", () => ({
   ),
 }));
 vi.mock("@tanstack/react-query", () => ({
-  useQuery: (opts: { queryKey: unknown[]; enabled?: boolean }) => {
+  useQuery: (opts: { queryKey: unknown[]; enabled?: boolean; queryFn?: () => Promise<unknown[]> }) => {
     mocks.queries.push(opts);
     if (opts.queryKey[0] === "partner-shared-boards")
       return { data: opts.enabled === false ? undefined : mocks.boards, isLoading: false };
+    if (opts.queryKey[0] === "partner-shared-pieces") {
+      if (opts.enabled === false) return { data: undefined, isSuccess: false, isLoading: false };
+      if (!mocks.piecesQuery) {
+        const query = {
+          promise: opts.queryFn ? opts.queryFn() : Promise.resolve([] as unknown[]),
+          resolved: undefined as unknown[] | undefined,
+        };
+        mocks.piecesQuery = query;
+        void query.promise.then((rows) => { query.resolved = rows; });
+      }
+      const resolved = mocks.piecesQuery?.resolved;
+      return { data: resolved, isSuccess: Array.isArray(resolved), isLoading: resolved === undefined };
+    }
     return { data: mocks.pieces, isSuccess: true, isLoading: false };
   },
 }));
 vi.mock("@/hooks/use-profile", () => ({ useProfile: () => ({ data: mocks.profile }) }));
-vi.mock("@/integrations/supabase/client", () => ({ supabase: { rpc: vi.fn(), from: vi.fn() } }));
+vi.mock("@/integrations/supabase/client", () => ({ supabase: mocks.supabase }));
 vi.mock("@/lib/telemetry", () => ({ logEvent: mocks.events }));
 vi.mock("@/components/work/WorkNote", () => ({
   WorkNote: ({ item, onOpen, actions }: { item: { title: string }; onOpen?: unknown; actions?: unknown }) => (
@@ -44,11 +59,22 @@ const BOARDS = [
   { link_id: "l3", shared_by: "Ana Ruiz", board_id: "b3", title: "Ops model", code: "ACM-03" },
 ];
 
+function stubPiecesRead(rows: unknown[]) {
+  const order = vi.fn().mockResolvedValue({ data: rows, error: null });
+  const inFn = vi.fn().mockReturnValue({ order });
+  const select = vi.fn().mockReturnValue({ in: inFn });
+  mocks.supabase.from.mockImplementation(() => ({ select }));
+  return { select, inFn, order };
+}
+
 afterEach(() => {
   cleanup();
   mocks.boards = [];
   mocks.pieces = [];
   mocks.queries = [];
+  mocks.piecesQuery = null;
+  mocks.supabase.rpc.mockReset();
+  mocks.supabase.from.mockReset();
   mocks.events.mockReset();
   mocks.profile = { id: "p1", org_id: "o1", org_type: "partner", role: "em" };
 });
@@ -104,15 +130,20 @@ describe("MN-5 From your people", () => {
 });
 
 describe("MN-5 shared board view", () => {
-  it("shows the Shared by line and read-only pieces with no edit controls", () => {
+  it("shows the Shared by line and read-only pieces with no edit controls", async () => {
     mocks.boards = BOARDS;
-    mocks.pieces = [{ id: "w1", title: "Interview notes" }];
-    const { container } = render(<PartnerSharedBoardPage boardId="b1" />);
+    mocks.supabase.rpc.mockResolvedValue({ data: [{ item_ids: ["w1"] }], error: null });
+    stubPiecesRead([{ id: "w1", title: "Interview notes" }]);
+    const view = render(<PartnerSharedBoardPage boardId="b1" />);
+    await act(async () => {
+      await mocks.piecesQuery!.promise;
+    });
+    view.rerender(<PartnerSharedBoardPage boardId="b1" />);
     expect(screen.getByRole("heading", { name: "Market entry" })).toBeTruthy();
     expect(screen.getByText(SHARED_BOARD_COPY.sharedBy("Ana Ruiz"))).toBeTruthy();
-    expect(container.querySelector("article")?.getAttribute("data-readonly")).toBe("true");
+    expect(view.container.querySelector("article")?.getAttribute("data-readonly")).toBe("true");
     expect(screen.queryAllByRole("button")).toHaveLength(0);
-    expect(container.textContent).not.toMatch(/ACM-01|move|edit|delete/i);
+    expect(view.container.textContent).not.toMatch(/ACM-01|move|edit|delete/i);
   });
 
   it("shows only the no-longer-shared line when the board is absent", () => {
@@ -120,6 +151,18 @@ describe("MN-5 shared board view", () => {
     mocks.pieces = [{ id: "w1", title: "Interview notes" }];
     const { container } = render(<PartnerSharedBoardPage boardId="gone" />);
     expect(container.textContent).toBe(SHARED_BOARD_COPY.ended);
+  });
+
+  it("shows the empty line and never reads work_items when the rpc shares no ids", async () => {
+    mocks.boards = BOARDS;
+    mocks.supabase.rpc.mockResolvedValue({ data: [{ item_ids: [] }], error: null });
+    const view = render(<PartnerSharedBoardPage boardId="b1" />);
+    await act(async () => {
+      await mocks.piecesQuery!.promise;
+    });
+    view.rerender(<PartnerSharedBoardPage boardId="b1" />);
+    expect(screen.getByText(SHARED_BOARD_COPY.empty)).toBeTruthy();
+    expect(mocks.supabase.from).not.toHaveBeenCalled();
   });
 
   it("copy holds no em dash", () => {
