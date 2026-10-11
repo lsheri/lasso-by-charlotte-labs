@@ -8,6 +8,7 @@ import { useEngagements } from "@/hooks/use-engagements";
 
 import { BoardFinder } from "./BoardFinder";
 import { TREE_COPY, useLoadedTreeBoards } from "@/lib/sidebar-tree-state";
+import { FromYourPeopleGroup } from "./FromYourPeople";
 import { OrgSwitcher } from "./OrgSwitcher";
 import { engagementDisplayTitle } from "@/lib/clients";
 import { signOut } from "@/lib/sign-out";
@@ -135,6 +136,10 @@ export function MobileTabBar() {
           </SheetTitle>
           <div className="mt-3 flex flex-col gap-0.5">
             {groups.map((group) => (
+              group.id === "from_your_people" ? (
+                <FromYourPeopleGroup key="from_your_people" rowClassName="nb-nav-item min-h-[48px]"
+                  onOpen={() => { opened("from_your_people", "more"); setMoreOpen(false); }} />
+              ) : (
               <section key={`${group.id}:${group.placement}`} data-nav-group={group.id}>
                 {group.headless ? null : <div className="nb-group-header">{group.label}</div>}
                 {group.items.map((item) => {
@@ -160,6 +165,7 @@ export function MobileTabBar() {
                   </Link>;
                 })}
               </section>
+              )
             ))}
           </div>
           {profiles.length > 1 ? (

@@ -50,11 +50,14 @@ export type NavItemId =
   | "guest-settings"
   | "trust" | "why" | "feedback" | "sign-out"
   /** MN-3b: the lean sidebar rows and the create menu. */
-  | "look_back" | "your_coach" | "connect_tools" | "create_menu";
+  | "look_back" | "your_coach" | "connect_tools" | "create_menu"
+  /** MN-5: boards people shared with a partner workspace. */
+  | "from_your_people";
 
 export type NavGroupId =
   | "landed"
   | "engagements"
+  | "from_your_people"
   | "lookback"
   | "school"
   | "coach"
@@ -86,6 +89,8 @@ export type NavCtx = {
   clientsEnabled: boolean;
   /** MN-3b: how many work items the workspace holds; undefined while unknown. */
   workItemCount?: number;
+  /** MN-5: how many boards people shared with this partner workspace; undefined while unknown. */
+  partnerShareCount?: number;
 };
 
 /** What wording may depend on. `legacy` is set only when deriving the old exports. */
@@ -153,6 +158,8 @@ export const NAV_GROUPS: NavManifestGroup[] = [
     emptyState: "No workboards yet",
     alwaysShow: true,
   },
+  // MN-5: directly below Where it goes; partner only, absent when nothing is shared.
+  { id: "from_your_people", label: "From your people", types: ["partner"], show: (ctx) => (ctx.partnerShareCount ?? 0) > 0 },
   { id: "lookback", label: "Look back", headless: true },
   // A school workspace adds its own section after Look back.
   { id: "school", label: "Your classes", types: ["edu"] },
@@ -205,6 +212,7 @@ export const NAV_ITEMS: NavManifestItem[] = [
   { id: "past-ask", retired: true, placement: "main", group: "lookback", label: "Past Ask Lasso chats", to: "/ai-record", icon: "history", search: { view: "asked" } },
   { id: "find-it", retired: true, placement: "main", group: "lookback", label: "Find it", to: "/find-it", icon: "work", disabled: true, disabledReason: "Coming soon" },
   { id: "decisions", retired: true, placement: "main", group: "lookback", label: "Decision log", to: "/decisions", icon: "decisions", disabled: true, disabledReason: "Coming soon" },
+  { id: "from_your_people", placement: "main", group: "from_your_people", label: "From your people", icon: "members", types: ["partner"], runtimeOnly: true, show: (ctx) => (ctx.partnerShareCount ?? 0) > 0 },
   { id: "look_back", placement: "bottom", group: "lookback", label: "Look back", to: "/archive", icon: "history", runtimeOnly: true },
   { id: "classes", placement: "main", group: "school", label: () => EDU_VOCAB.classes, to: "/classes", icon: "engagement" },
   { id: "assignments", placement: "main", group: "school", label: () => EDU_VOCAB.assignments, to: "/assignments", icon: "work" },

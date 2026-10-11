@@ -14,6 +14,7 @@ import { applyContainerMoves, applyWorkboardMoves, type PendingMoves } from "@/l
 import { CircleMark } from "@/components/notebook/CircleMark";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useUnreadNotesAboutMe } from "@/hooks/use-coach-note-thread";
+import { FromYourPeopleGroup } from "./FromYourPeople";
 import { useSharedWithMe } from "@/hooks/use-shared-with-me";
 import { useSharedBoardMarks } from "@/hooks/use-shared-board-marks";
 
@@ -571,6 +572,9 @@ export function SidebarNav({
   return (
     <nav className="flex shrink-0 flex-col gap-7">
       {navGroupsForPerson.map((group) => {
+        if (group.id === "from_your_people") {
+          return <FromYourPeopleGroup key="from_your_people" onOpen={() => openNavItem("from_your_people")} />;
+        }
         const isEngagementGroup = group.id === "engagements";
         const groupLabel = group.label;
 
