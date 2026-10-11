@@ -115,12 +115,13 @@ export function HomeBoard() {
     workCount: workCounts ? workCounts.get(engagement.id) ?? 0 : null,
   }));
   const frames = homeFramesForViewport(viewport, cards.length);
+  const contentHeight = Math.max(...frames.map((frame) => frame.y + frame.height)) + BOARD_FIT_PADDING;
 
   return (
     <div
       data-testid="home-board-viewport"
-      // Desktop chrome is AppShell's 48px top padding plus 56px bottom padding.
-      className="h-[calc(100vh-6.5rem)] overflow-hidden"
+      className="min-h-[calc(100vh-6.5rem)]"
+      style={{ height: contentHeight }}
     >
       <BoardShell
         ariaLabel="Home board"
@@ -129,6 +130,7 @@ export function HomeBoard() {
         showViewControls
         showZoomControls={false}
         lockZoom
+        nativeScroll
         onViewportSizeChange={(size) => {
           setViewport((current) => current.width === size.width && current.height === size.height ? current : size);
         }}

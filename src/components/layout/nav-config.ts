@@ -139,6 +139,7 @@ export const eduNavGroups: NavGroup[] = navGroups.flatMap((group) => {
  * routes exist, they get inserted here the way the school section is.
  */
 export const partnerNavGroups: NavGroup[] = navGroups.flatMap((group) => {
+  if (group.id === "coach") return [];
   if (group.id === "engagements") {
     return [
       {

@@ -38,3 +38,4 @@ Tour workboard chrome stays a local presentational mirror around shared board pr
 
 - Keep affiliation sections and their shared-board reads in AffiliationPage exports, so individual Members and business Affiliation compose one disclosure implementation.
 - Render phone All work through WorkNote's opt-in list presentation and the existing mobile breakpoint hook, so its dates, source marks, and open handlers share the desktop card truth without changing other surfaces.
+- Keep Home's board shell content-height-sized with native scrolling opted in; other board surfaces retain canvas gestures by default so the Home fix cannot alter workboard interactions.

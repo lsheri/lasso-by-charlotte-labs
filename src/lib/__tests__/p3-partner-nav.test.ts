@@ -10,16 +10,16 @@ function flat(groups: typeof navGroups) {
 }
 
 describe("partner navigation", () => {
-  it("keeps every existing destination", () => {
-    for (const to of flat(navGroups)) expect(flat(partnerNavGroups)).toContain(to);
-    expect(partnerNavGroups).toHaveLength(navGroups.length);
+  it("keeps every existing destination outside the partner coaching section", () => {
+    for (const to of flat(navGroups.filter((group) => group.id !== "coach"))) expect(flat(partnerNavGroups)).toContain(to);
+    expect(partnerNavGroups).toHaveLength(navGroups.length - 1);
   });
 
-  it("changes only the two named headings", () => {
-    expect(partnerNavGroups).toHaveLength(navGroups.length);
+  it("changes only the two named headings in retained groups", () => {
+    expect(partnerNavGroups).toHaveLength(navGroups.length - 1);
     const diffs: string[] = [];
     for (const [i, partner] of partnerNavGroups.entries()) {
-      const group = navGroups[i];
+      const group = navGroups.filter((group) => group.id !== "coach")[i];
       if (!group) throw new Error("group count drifted");
       expect(partner.id).toBe(group.id);
       // Partner-only additions under the engagements group.
@@ -35,6 +35,13 @@ describe("partner navigation", () => {
       if (partner.label !== group.label) diffs.push(`${group.label} -> ${partner.label}`);
     }
     expect(diffs).toEqual(["Where it goes -> Your clients", "Run the firm -> Your practice"]);
+  });
+
+  it("omits Your coach for partners and retains it for company workspaces", () => {
+    expect(partnerNavGroups.some((group) => group.id === "coach" || group.label === "Your coach")).toBe(false);
+    expect(flat(partnerNavGroups)).not.toContain("/one-on-one");
+    expect(flat(partnerNavGroups)).not.toContain("/coach-notes");
+    expect(navGroups.find((group) => group.id === "coach")?.items.map((item) => item.label)).toEqual(["1:1 prep", "Notes from your coach"]);
   });
 
   it("adds no route and uses no forbidden word", () => {

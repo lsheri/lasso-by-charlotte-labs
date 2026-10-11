@@ -1,5 +1,8 @@
 # Roadmap
 
+- [ ] FS-1: restore normal Home scrolling without changing welcome, feedback, or cards; hide partner-only coaching group and run regression checks.
+- [ ] FS-1: inspect signed-in Home previews at 1440x710, 1280, and 390; authentication availability must be verified.
+
 - [x] MAP-UX: default board placement, optional workstreams, unified labels, and behavioral regression tests.
 - [ ] MAP-UX: signed-in visual verification at 1280 and 390; blocked by external unmanaged authentication, both preview captures were blank.
 

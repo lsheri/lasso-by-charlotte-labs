@@ -44,18 +44,20 @@ vi.mock("@/components/engagements/NewEngagementDialog", () => ({
 }));
 
 vi.mock("@/components/board/BoardShell", () => ({
-  BoardShell: ({ frames, fitFrameIds, toolbar, renderFrame, lockZoom, showViewControls, showZoomControls }: {
+  BoardShell: ({ frames, fitFrameIds, toolbar, renderFrame, lockZoom, nativeScroll, showViewControls, showZoomControls }: {
     frames: { id: string }[];
     fitFrameIds?: readonly string[];
     toolbar?: React.ReactNode;
     renderFrame?: (frame: { id: string }) => React.ReactNode;
     lockZoom?: boolean;
+    nativeScroll?: boolean;
     showViewControls?: boolean;
     showZoomControls?: boolean;
   }) => (
     <div
       data-fit-frame-ids={fitFrameIds?.join(",") ?? ""}
       data-lock-zoom={lockZoom ? "true" : "false"}
+      data-native-scroll={nativeScroll ? "true" : "false"}
       data-show-view-controls={showViewControls ? "true" : "false"}
       data-show-zoom-controls={showZoomControls === false ? "false" : "true"}
     >
@@ -121,12 +123,15 @@ describe("Home", () => {
     expect(shell?.getAttribute("data-show-zoom-controls")).toBe("false");
   });
 
-  it("accounts for the full page chrome without imposing extra document height", () => {
+  it("reserves the full content height so every card can be reached by normal scrolling", () => {
+    mocks.engagements = Array.from({ length: 11 }, (_, index) => ({ id: `engagement-${index}` }));
     render(<HomeBoard />);
     const viewport = screen.getByTestId("home-board-viewport");
-    expect(viewport.className).toContain("h-[calc(100vh-6.5rem)]");
-    expect(viewport.className).not.toContain("h-[calc(100vh-6rem)]");
-    expect(viewport.className).not.toContain("min-h-");
+    expect(viewport.className).toContain("min-h-[calc(100vh-6.5rem)]");
+    expect(viewport.className).not.toContain("overflow-hidden");
+    const frames = homeFramesForViewport({ width: 980, height: 720 }, 11);
+    expect(Number.parseFloat(viewport.style.height)).toBe(Math.max(...frames.map((frame) => frame.y + frame.height)) + 32);
+    expect(document.querySelector("[data-native-scroll]")?.getAttribute("data-native-scroll")).toBe("true");
   });
 
   it("shows only a real engagement count and exactly one title signature", () => {

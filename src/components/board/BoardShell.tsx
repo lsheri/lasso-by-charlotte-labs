@@ -68,6 +68,8 @@ export type BoardShellProps<F extends BoardShellFrame, N extends BoardShellNode>
   showZoomControls?: boolean | undefined;
   /** Holds this board at 100% while leaving every pan path available. */
   lockZoom?: boolean | undefined;
+  /** Lets a read-only page scroll normally instead of panning the canvas. */
+  nativeScroll?: boolean | undefined;
   /** Given only when nodes may be moved. Lane contents are never offered it. */
   onNodeMove?: ((id: string, to: Point) => void) | undefined;
   selectedIds?: readonly string[] | undefined;
@@ -94,6 +96,7 @@ export function BoardShell<F extends BoardShellFrame, N extends BoardShellNode>(
   showViewControls = false,
   showZoomControls = true,
   lockZoom = false,
+  nativeScroll = false,
   onNodeMove,
   selectedIds,
   onSelectNode,
@@ -212,7 +215,7 @@ export function BoardShell<F extends BoardShellFrame, N extends BoardShellNode>(
 
   useEffect(() => {
     const shell = shellRef.current;
-    if (!shell) return;
+    if (!shell || nativeScroll) return;
     const onSurfaceWheel = (event: WheelEvent) => {
       const target = event.target instanceof HTMLElement ? event.target : null;
       const delta = wheelPanVector(event);
@@ -233,7 +236,7 @@ export function BoardShell<F extends BoardShellFrame, N extends BoardShellNode>(
     };
     shell.addEventListener("wheel", onSurfaceWheel, { passive: false });
     return () => shell.removeEventListener("wheel", onSurfaceWheel);
-  }, []);
+  }, [nativeScroll]);
 
   // ---- keyboard: space pans, arrows nudge, +/- zoom ----------------------
 
@@ -309,6 +312,7 @@ export function BoardShell<F extends BoardShellFrame, N extends BoardShellNode>(
 
   const beginPointer = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
+      if (nativeScroll) return;
       if (event.button !== 0 && event.button !== 1) return;
       const target = event.target instanceof HTMLElement ? event.target : null;
       const nodeEl = target?.closest<HTMLElement>("[data-board-node]");
@@ -338,7 +342,7 @@ export function BoardShell<F extends BoardShellFrame, N extends BoardShellNode>(
       setInteraction("pan");
       event.currentTarget.setPointerCapture(event.pointerId);
     },
-    [boardNodes, onNodeMove, onSelectNode, pan],
+    [boardNodes, onNodeMove, onSelectNode, pan, nativeScroll],
   );
 
   const movePointer = useCallback(
@@ -397,7 +401,7 @@ export function BoardShell<F extends BoardShellFrame, N extends BoardShellNode>(
         </div>
       ) : null}
       <div
-        className="canvas-lab-surface absolute inset-0 touch-none"
+        className={cn("canvas-lab-surface absolute inset-0", nativeScroll ? "touch-pan-y" : "touch-none")}
         onPointerDown={beginPointer}
         onPointerMove={movePointer}
         onPointerUp={endPointer}
