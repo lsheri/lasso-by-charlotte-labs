@@ -66,7 +66,8 @@ describe("MAP-1 board and MCP callers", () => {
   it("board emits only when first_map is true", () => {
     expect(fn).toContain("first_map: payload.first_map === true");
     expect(page).toContain("if (result.first_map === true) {");
-    expect(page).toContain('logEvent("workitem.mapped", orgId, { type: item.type, source: item.source, via: "board" })');
+    expect(page).toContain("if (orgId && item) noteBoardFirstMap(orgId, item);");
+    expect(page).toContain('logEvent("workitem.mapped", orgId, { type: item.type, source: item.source, via: "board" });');
   });
 
   it("MCP records through recordEvent only when first_map is true", () => {

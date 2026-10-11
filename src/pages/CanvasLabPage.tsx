@@ -2462,7 +2462,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
         // MAP-1: only a first mapping records; moves and already_here stay silent.
         if (result.first_map === true) {
           const item = workItems.find((one) => one.id === card.workItemId);
-          if (orgId && item) logEvent("workitem.mapped", orgId, { type: item.type, source: item.source, via: "board" });
+          if (orgId && item) noteBoardFirstMap(orgId, item);
         }
       } catch {
         return false;
@@ -2897,4 +2897,9 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     </div>
     </TooltipProvider>
   );
+}
+
+/** MAP-1: a first mapping on the board records workitem.mapped. */
+function noteBoardFirstMap(orgId: string, item: { type: string; source: string }) {
+  logEvent("workitem.mapped", orgId, { type: item.type, source: item.source, via: "board" });
 }
