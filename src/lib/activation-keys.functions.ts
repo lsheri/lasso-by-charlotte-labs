@@ -231,7 +231,7 @@ export const checkActivationKeyPublic = createServerFn({ method: "POST" })
     code: typeof input?.code === "string" ? input.code.trim().slice(0, 200) : "",
   }))
   .handler(async ({ data }): Promise<{ valid: boolean; institution_name: string | null }> => {
-    const { checkKeyPublic, GENERIC_ANSWER } = await import("@/lib/activation-key-public.server");
+    const { checkKeyPublic } = await import("@/lib/activation-key-public.server");
     let ip = "";
     try {
       const { getRequestHeader } = await import("@tanstack/react-start/server");
@@ -239,8 +239,6 @@ export const checkActivationKeyPublic = createServerFn({ method: "POST" })
     } catch (e) {
       console.error("[activation-key-public] no request header", { message: e instanceof Error ? e.message : String(e) });
     }
-    if (!ip) console.error("[activation-key-public] no client address; sharing one limit bucket");
-    void GENERIC_ANSWER;
     return checkKeyPublic(data.code, ip, async (code) => {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const { data: row, error } = await supabaseAdmin
