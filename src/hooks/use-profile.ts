@@ -101,6 +101,7 @@ function handleIdentityChange(event: string, nextUserId: string | null): void {
   if (!client) return;
   client.removeQueries({ queryKey: AUTH_USER_KEY });
   client.removeQueries({ queryKey: ["profiles"] });
+  client.removeQueries({ queryKey: PROFILE_STATE_KEY });
 }
 
 function subscribeToIdentityChanges(): void {
@@ -113,10 +114,42 @@ function subscribeToIdentityChanges(): void {
   authUnsubscribe = () => data.subscription.unsubscribe();
 }
 
+/**
+ * PERF-2a: the gate's cached profile state follows ["profiles"]. Every place
+ * that invalidates or removes the profile list (workspace switch, onboarding,
+ * profile edits) moves the gate's copy with it, without touching those files.
+ */
+let profileCacheUnsubscribe: (() => void) | null = null;
+let profileCacheClient: QueryClient | null = null;
+
+function isProfilesKey(key: readonly unknown[]): boolean {
+  return key.length === 1 && key[0] === "profiles";
+}
+
+function followProfilesCache(client: QueryClient): void {
+  if (profileCacheClient === client && profileCacheUnsubscribe) return;
+  profileCacheUnsubscribe?.();
+  profileCacheClient = client;
+  const cache = client.getQueryCache?.();
+  if (!cache || typeof cache.subscribe !== "function") {
+    profileCacheUnsubscribe = null;
+    return;
+  }
+  profileCacheUnsubscribe = cache.subscribe((event) => {
+    if (!isProfilesKey(event.query.queryKey)) return;
+    if (event.type === "removed") {
+      client.removeQueries({ queryKey: PROFILE_STATE_KEY, exact: true });
+    } else if (event.type === "updated" && event.action.type === "invalidate") {
+      void client.invalidateQueries({ queryKey: PROFILE_STATE_KEY, exact: true, refetchType: "none" });
+    }
+  });
+}
+
 export function registerProfileQueryClient(client: QueryClient): void {
   sharedQueryClient = client;
   subscribeToIdentityChanges();
   subscribeToStorageChanges();
+  followProfilesCache(client);
 }
 
 /** Test seam. */
