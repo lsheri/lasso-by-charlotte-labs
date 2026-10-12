@@ -16,6 +16,7 @@ import { artifactPreviewKind } from "@/lib/workboard-file-preview";
 import { withPreviewCsp } from "@/lib/workboard-card-preview.shared";
 import { getWorkFileUrl } from "@/lib/work-files.functions";
 import { getItemTextPane } from "@/lib/item-text.functions";
+import { SUMMARY_ONLY_LINE, summaryOnlyLine } from "@/components/peek/summary-only";
 import {
   contentsUnread,
   textStatusOf,
@@ -109,10 +110,14 @@ function TextPane({
   if (!pane?.text) {
     return (
       <div className="space-y-2">
-        <Notice>
-          Lasso could not read this file&apos;s contents
-          {pane?.note ? `: ${pane.note}.` : "."} You can still download the original.
-        </Notice>
+        {summaryOnlyLine(pane?.reason, item, profile?.id) ? (
+          <Notice>{SUMMARY_ONLY_LINE}</Notice>
+        ) : (
+          <Notice>
+            Lasso could not read this file&apos;s contents
+            {pane?.note ? `: ${pane.note}.` : "."} You can still download the original.
+          </Notice>
+        )}
         {onDownload ? (
           <button
             type="button"

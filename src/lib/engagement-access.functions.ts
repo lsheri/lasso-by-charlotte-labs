@@ -10,6 +10,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
   accessResult,
+  isConversationAccess,
   isEngagementAccessValue,
   type EngagementPeoplePayload,
   type AccessResult,
@@ -68,4 +69,27 @@ export const setEngagementPersonAccessFn = createServerFn({ method: "POST" })
       dims: { access: data.access, result },
     });
     return { status: "done", result };
+  });
+
+export type SetConversationsAnswer =
+  | { status: "done"; result: "changed" | "unchanged" }
+  | { status: "refused" };
+
+export const setPersonConversationsFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: { engagement_id: string; person_id: string; conversations: string; profile_id?: string }) => ({
+      engagement_id: typeof input?.engagement_id === "string" ? input.engagement_id : "",
+      person_id: typeof input?.person_id === "string" ? input.person_id : "",
+      conversations: typeof input?.conversations === "string" ? input.conversations : "",
+      profile_id: typeof input?.profile_id === "string" ? input.profile_id : undefined,
+    }),
+  )
+  .handler(async ({ data, context }): Promise<SetConversationsAnswer> => {
+    if (!data.engagement_id || !data.person_id) return { status: "refused" };
+    if (!isConversationAccess(data.conversations)) return { status: "refused" };
+    const profile = await resolveProfile(context.supabase, context.userId, data.profile_id);
+    if (!profile) return { status: "refused" };
+    const { setPersonConversations } = await import("@/lib/engagement-access.server");
+    return setPersonConversations(context.supabase, data.engagement_id, data.person_id, data.conversations);
   });

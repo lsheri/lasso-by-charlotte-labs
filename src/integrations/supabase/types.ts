@@ -5706,6 +5706,14 @@ export type Database = {
         Args: { p_active: boolean; p_check: string }
         Returns: undefined
       }
+      set_link_board_conversation_access: {
+        Args: { p_access: string; p_engagement: string; p_link: string }
+        Returns: string
+      }
+      set_member_conversation_access: {
+        Args: { p_access: string; p_engagement: string; p_profile: string }
+        Returns: string
+      }
       set_member_role: {
         Args: {
           p_profile: string

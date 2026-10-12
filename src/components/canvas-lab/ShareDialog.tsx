@@ -21,14 +21,18 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+  type ConversationAccess,
   type EngagementAccessChoice,
 } from "@/lib/engagement-access-shared";
 import {
   listEngagementPeopleFn,
   setEngagementPersonAccessFn,
+  setPersonConversationsFn,
 } from "@/lib/engagement-access.functions";
 import {
+  getBoardConversationAccess,
   listMyPartnerShares,
+  setBoardConversationAccess,
   listSharedEngagements,
   shareEngagement,
   unshareEngagement,
@@ -142,6 +146,21 @@ function SponsorRow({
   });
 
   const on = (shared.data ?? []).includes(engagementId);
+  const convoKey = ["partner-share-conversations", share.linkId, engagementId] as const;
+  const conversations = useQuery({
+    queryKey: convoKey,
+    queryFn: () => getBoardConversationAccess(share.linkId, engagementId),
+    enabled: open && on,
+    staleTime: 5_000,
+  });
+  const changeConversations = useMutation({
+    mutationFn: (next: ConversationAccess) => setBoardConversationAccess(share.linkId, engagementId, next),
+    onMutate: () => setProblem(null),
+    onError: () => setProblem("That did not change. Try again."),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: convoKey });
+    },
+  });
 
   const toggle = useMutation({
     mutationFn: () =>
@@ -171,6 +190,14 @@ function SponsorRow({
           {on ? "Shared" : "Share"}
         </Button>
       </div>
+      {on ? (
+        <ConversationSwitch
+          name={share.institutionName}
+          value={conversations.data ?? null}
+          disabled={changeConversations.isPending || conversations.isPending}
+          onChoose={(next) => changeConversations.mutate(next)}
+        />
+      ) : null}
       {problem ? <p className="nb-type-small text-foreground" role="alert">{problem}</p> : null}
       {share.bound ? null : (
         <p className="nb-type-small text-muted-foreground">Nobody there has opened this yet.</p>
@@ -192,7 +219,44 @@ export const PEOPLE_COPY = {
   empty: "Nobody else is on this board yet.",
   nobodyToAdd: "Nobody else is in your workspace yet. Invite people from Settings, People.",
   problem: "That could not be changed.",
+  summaries: "Summaries only",
+  full: "Full conversations",
+  summariesLine: "Summaries only: they can ask Lasso how AI was used here, but can't open the conversations.",
 } as const;
+
+const CONVERSATION_CHOICES = [
+  { value: "summaries", label: PEOPLE_COPY.summaries },
+  { value: "full", label: PEOPLE_COPY.full },
+] as const;
+
+function ConversationSwitch({
+  name,
+  value,
+  disabled,
+  onChoose,
+}: {
+  name: string;
+  value: ConversationAccess | null;
+  disabled: boolean;
+  onChoose: (next: ConversationAccess) => void;
+}) {
+  return (
+    <div role="group" aria-label={`${name} conversations`} className="flex gap-1">
+      {CONVERSATION_CHOICES.map((choice) => (
+        <Button
+          key={choice.value}
+          size="sm"
+          variant={value === choice.value ? "secondary" : "outline"}
+          aria-pressed={value === choice.value}
+          disabled={disabled}
+          onClick={() => onChoose(choice.value)}
+        >
+          {choice.label}
+        </Button>
+      ))}
+    </div>
+  );
+}
 
 function PeopleSection({
   engagementId,
@@ -233,6 +297,24 @@ function PeopleSection({
     onSuccess: async (answer) => {
       setProblem(answer.status === "done" ? null : PEOPLE_COPY.problem);
       if (answer.status === "done") setPick("");
+      await queryClient.invalidateQueries({ queryKey: key });
+    },
+    onError: () => setProblem(PEOPLE_COPY.problem),
+  });
+
+  const setConversations = useServerFn(setPersonConversationsFn);
+  const changeConversations = useMutation({
+    mutationFn: (input: { person_id: string; conversations: ConversationAccess }) =>
+      setConversations({
+        data: {
+          engagement_id: engagementId,
+          person_id: input.person_id,
+          conversations: input.conversations,
+          ...(profileId ? { profile_id: profileId } : {}),
+        },
+      }),
+    onSuccess: async (answer) => {
+      setProblem(answer.status === "done" ? null : PEOPLE_COPY.problem);
       await queryClient.invalidateQueries({ queryKey: key });
     },
     onError: () => setProblem(PEOPLE_COPY.problem),
@@ -293,6 +375,7 @@ function PeopleSection({
           {choice.label}: {choice.line}
         </p>
       ))}
+      <p className="nb-type-small text-muted-foreground">{PEOPLE_COPY.summariesLine}</p>
       <ul className="space-y-2">
         {you ? (
           <li className="nb-type-small text-muted-foreground">
@@ -326,6 +409,12 @@ function PeopleSection({
                 {PEOPLE_COPY.remove}
               </Button>
             </div>
+            <ConversationSwitch
+              name={person.display_name}
+              value={person.conversations ?? null}
+              disabled={changeConversations.isPending || !people.data?.canShare}
+              onChoose={(next) => changeConversations.mutate({ person_id: person.id, conversations: next })}
+            />
           </li>
         ))}
       </ul>
