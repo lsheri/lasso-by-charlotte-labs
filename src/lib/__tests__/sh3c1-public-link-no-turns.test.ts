@@ -66,4 +66,27 @@ describe("SH-3c-1 public link carries no turn text", () => {
     expect(dto?.cardPreviews?.["wi-1"]?.summary).toBe("A short summary");
     expect(dto?.turns).toEqual({});
   });
+
+  it("the demo option reads turns and returns their text", async () => {
+    const { db, tables } = fakeDb();
+    const dto = await readBoard(
+      db as never,
+      "wb-1",
+      { org_id: "org-1", expires_at: "2099-01-01T00:00:00Z" },
+      null,
+      { conversationText: true },
+    );
+    expect(tables).toContain("turns");
+    expect(dto?.turns?.["wi-1"]?.[0]?.content).toBe(SECRET);
+  });
+});
+
+describe("SH-3c-2 call sites", () => {
+  it("only the demo asks for conversation text; the public link never does", async () => {
+    const { readFileSync } = await import("node:fs");
+    const open = readFileSync("src/lib/board-share-open.server.ts", "utf8");
+    const demo = readFileSync("src/lib/demo-board.server.ts", "utf8");
+    expect(demo).toContain("{ conversationText: true }");
+    expect(open).not.toContain("conversationText: true");
+  });
 });

@@ -17,6 +17,8 @@ export type PartnerShare = {
   institutionName: string;
   /** Someone at the institution has claimed the link on their side. */
   bound: boolean;
+  /** SH-3c-2: the named person at the partner, when one has claimed it. */
+  coachName?: string | null;
 };
 
 /** The joined row shape listMyPartnerShares selects. */
@@ -61,7 +63,14 @@ export async function listMyPartnerShares(profileId: string): Promise<PartnerSha
     .is("consent_withdrawn_at", null)
     .not("institution_id", "is", null);
   if (error) throw new Error(error.message);
-  return toPartnerShares((data ?? []) as unknown as PartnerShareRow[]);
+  const shares = toPartnerShares((data ?? []) as unknown as PartnerShareRow[]);
+  if (shares.length === 0) return shares;
+  // One call for every row; a failure leaves the institution name alone.
+  const { data: people } = await supabase.rpc("partner_share_people");
+  const names = new Map(
+    ((people ?? []) as { link_id: string; coach_name: string | null }[]).map((row) => [row.link_id, row.coach_name]),
+  );
+  return shares.map((share) => ({ ...share, coachName: names.get(share.linkId) ?? null }));
 }
 
 /** Engagement ids this link already shares, one row per board. */
@@ -141,4 +150,9 @@ export async function setBoardConversationAccess(
     }
   }
   return result;
+}
+
+/** SH-3c-2: "Name · Institution" when a person is named, else the institution. */
+export function partnerShareLabel(share: Pick<PartnerShare, "institutionName" | "coachName">): string {
+  return share.coachName ? `${share.coachName} · ${share.institutionName}` : share.institutionName;
 }

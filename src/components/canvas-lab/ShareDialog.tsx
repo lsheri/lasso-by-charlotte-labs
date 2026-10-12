@@ -34,6 +34,7 @@ import {
   listMyPartnerShares,
   setBoardConversationAccess,
   listSharedEngagements,
+  partnerShareLabel,
   shareEngagement,
   unshareEngagement,
   type PartnerShare,
@@ -179,7 +180,7 @@ function SponsorRow({
   return (
     <li className="flex flex-col gap-1 rounded-md border border-border p-2">
       <div className="flex items-center justify-between gap-3">
-        <span className="nb-type-small text-muted-foreground">{share.institutionName}</span>
+        <span className="nb-type-small text-muted-foreground">{partnerShareLabel(share)}</span>
         <Button
           size="sm"
           variant={on ? "default" : "outline"}
@@ -192,7 +193,7 @@ function SponsorRow({
       </div>
       {on ? (
         <ConversationSwitch
-          name={share.institutionName}
+          name={partnerShareLabel(share)}
           value={conversations.data ?? null}
           disabled={changeConversations.isPending || conversations.isPending}
           onChoose={(next) => changeConversations.mutate(next)}

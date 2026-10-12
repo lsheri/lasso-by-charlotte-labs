@@ -59,7 +59,7 @@ describe("demo org resolution", () => {
 
   it("the share link still reads as its maker; the demo reads as nobody", () => {
     expect(SHARE).toContain("readBoard(supabaseAdmin, link.workboard_id, link, link.created_by)");
-    expect(SERVER).toMatch(/readBoard\(db, wb\.id, \{[^}]*\}, null\)/);
+    expect(SERVER).toMatch(/readBoard\(db, wb\.id, \{[^}]*\}, null, \{ conversationText: true \}\)/);
   });
 });
 

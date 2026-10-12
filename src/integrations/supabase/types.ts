@@ -5663,6 +5663,13 @@ export type Database = {
         Returns: Json
       }
       partner_share_backs: { Args: never; Returns: Json }
+      partner_share_people: {
+        Args: never
+        Returns: {
+          coach_name: string
+          link_id: string
+        }[]
+      }
       partner_shared_board_items: {
         Args: { p_board_id: string }
         Returns: Json

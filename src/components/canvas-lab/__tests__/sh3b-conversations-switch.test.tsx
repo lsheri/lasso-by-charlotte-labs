@@ -38,6 +38,8 @@ vi.mock("@/lib/partner-share", () => ({
   shareEngagement: vi.fn(async () => undefined),
   unshareEngagement: vi.fn(async () => undefined),
   getBoardConversationAccess: vi.fn(async () => "full"),
+  partnerShareLabel: (share: { institutionName: string; coachName?: string | null }) =>
+    share.coachName ? `${share.coachName} · ${share.institutionName}` : share.institutionName,
   setBoardConversationAccess: vi.fn(async (...args: unknown[]) => {
     linkCalls.push(args);
   }),

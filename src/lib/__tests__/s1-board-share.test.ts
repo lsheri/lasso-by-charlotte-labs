@@ -127,6 +127,7 @@ describe("S1 — resolving a link", () => {
       "document_versions",
       "engagements",
       "tasks",
+      "turns",
       "work_item_extracts",
       "workboard_frames",
       "workboard_links",
@@ -237,9 +238,10 @@ describe("S1 — the read only view", () => {
     expect(PAGE).not.toMatch(/expired link|revoked|wrong token/i);
   });
 
-  it("shows everything on the board, but never a conversation turn (SH-3c-1)", () => {
+  it("shows everything on the board, but turns only when conversationText is asked for (SH-3c-2)", () => {
     expect(VIEW).toContain("board.turns");
-    expect(OPEN).not.toContain('.from("turns")');
+    expect(OPEN).toContain("chatIds.length > 0 && conversationText");
+    expect(OPEN).toContain("readBoard(supabaseAdmin, link.workboard_id, link, link.created_by)");
   });
 });
 
