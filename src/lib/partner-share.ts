@@ -89,3 +89,38 @@ export async function unshareEngagement(linkId: string, engagementId: string): P
   });
   if (error) throw new Error(error.message);
 }
+
+/**
+ * SH-3b: what this one board shares of the conversations. The per-board row
+ * wins; null there means the link's own setting applies.
+ */
+export async function getBoardConversationAccess(
+  linkId: string,
+  engagementId: string,
+): Promise<"summaries" | "full"> {
+  const [boardRes, linkRes] = await Promise.all([
+    supabase
+      .from("coaching_link_engagements")
+      .select("conversation_access")
+      .eq("link_id", linkId)
+      .eq("engagement_id", engagementId)
+      .maybeSingle(),
+    supabase.from("coaching_links").select("conversation_access").eq("id", linkId).maybeSingle(),
+  ]);
+  const value = boardRes.data?.conversation_access ?? linkRes.data?.conversation_access ?? null;
+  return value === "full" ? "full" : "summaries";
+}
+
+export async function setBoardConversationAccess(
+  linkId: string,
+  engagementId: string,
+  access: "summaries" | "full",
+): Promise<void> {
+  const { error } = await supabase.rpc("set_link_board_conversation_access", {
+    p_link: linkId,
+    p_engagement: engagementId,
+    p_access: access,
+  });
+  // Never show raw database text; callers say it plainly.
+  if (error) throw new Error("not_changed");
+}

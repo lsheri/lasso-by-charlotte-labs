@@ -8,6 +8,8 @@ export type ItemTextPane = {
   text: string | null;
   status: "ok" | "unreadable" | "unsupported" | "failed";
   note: string | null;
+  /** SH-3b: the reader's reason word, when it gave one. */
+  reason?: string | null;
 };
 
 /**
@@ -39,6 +41,7 @@ export const getItemTextPane = createServerFn({ method: "POST" })
       text: result.text ? result.text.slice(0, 200_000) : null,
       status: result.status,
       note: result.note ?? null,
+      reason: result.reason ?? null,
     };
   });
 

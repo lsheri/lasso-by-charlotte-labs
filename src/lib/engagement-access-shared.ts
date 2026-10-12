@@ -24,7 +24,15 @@ export type EngagementPerson = {
   display_name: string;
   access: EngagementAccessChoice | null;
   isYou: boolean;
+  /** SH-3b: whether they can open the conversations or only ask about them. */
+  conversations: ConversationAccess;
 };
+
+export type ConversationAccess = "summaries" | "full";
+
+export function isConversationAccess(value: unknown): value is ConversationAccess {
+  return value === "summaries" || value === "full";
+}
 
 export type EngagementPeoplePayload = {
   people: EngagementPerson[];

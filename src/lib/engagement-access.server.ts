@@ -10,6 +10,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import {
   accessFromMemberRole,
+  isConversationAccess,
+  type ConversationAccess,
   type EngagementAccessChoice,
   type EngagementAccessValue,
   type EngagementPeoplePayload,
@@ -35,11 +37,15 @@ export async function listEngagementPeople(
       .select("id, display_name, deactivated_at")
       .eq("org_id", profile.org_id)
       .order("display_name", { ascending: true }),
-    db.from("engagement_members").select("profile_id, member_role").eq("engagement_id", engagementId),
+    db.from("engagement_members").select("profile_id, member_role, conversation_access").eq("engagement_id", engagementId),
   ]);
 
   const roles = new Map<string, string>();
-  for (const row of memberRes.data ?? []) roles.set(row.profile_id, row.member_role);
+  const conversations = new Map<string, ConversationAccess>();
+  for (const row of memberRes.data ?? []) {
+    roles.set(row.profile_id, row.member_role);
+    if (isConversationAccess(row.conversation_access)) conversations.set(row.profile_id, row.conversation_access);
+  }
 
   const people: EngagementPerson[] = (peopleRes.data ?? [])
     .filter((row) => !row.deactivated_at)
@@ -48,6 +54,7 @@ export async function listEngagementPeople(
       display_name: row.display_name ?? "",
       access: accessFromMemberRole(roles.get(row.id) ?? null),
       isYou: row.id === profile.id,
+      conversations: conversations.get(row.id) ?? "summaries",
     }));
 
   return { people, canShare: true };
@@ -87,4 +94,20 @@ export async function setPersonAccess(
   });
   if (error || typeof data !== "string") return { status: "refused" };
   return { status: "done", returned: data, previous };
+}
+
+/** SH-3b: one call to the database function that owns every refusal. */
+export async function setPersonConversations(
+  db: Db,
+  engagementId: string,
+  personId: string,
+  conversations: ConversationAccess,
+): Promise<{ status: "done"; result: "changed" | "unchanged" } | { status: "refused" }> {
+  const { data, error } = await db.rpc("set_member_conversation_access", {
+    p_engagement: engagementId,
+    p_profile: personId,
+    p_access: conversations,
+  });
+  if (error || (data !== "changed" && data !== "unchanged")) return { status: "refused" };
+  return { status: "done", result: data };
 }
