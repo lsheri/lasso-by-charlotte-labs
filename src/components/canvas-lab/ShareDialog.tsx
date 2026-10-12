@@ -10,6 +10,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 
 import { BoardLinkSection } from "@/components/canvas-lab/ShareBoardDialog";
+import { useProfile } from "@/hooks/use-profile";
+import { logEvent } from "@/lib/telemetry";
 import { GraphiteIcon } from "@/components/notebook/icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,9 +52,18 @@ export function ShareDialog({
   profileId: string | undefined;
 }) {
   const [open, setOpen] = useState(false);
+  const { data: activeProfile } = useProfile();
+
+  // PERF-2c: one event per closed-to-open transition, no dims.
+  function handleOpenChange(next: boolean) {
+    if (next && !open && activeProfile?.org_id) {
+      logEvent("board.share_opened", activeProfile.org_id, {});
+    }
+    setOpen(next);
+  }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button size="icon" variant="outline" aria-label="Share" title="Share" data-toolbar-control="share">
           <GraphiteIcon name="share" size={20} />

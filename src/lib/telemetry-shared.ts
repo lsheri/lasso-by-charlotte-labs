@@ -426,6 +426,8 @@ export type TelemetryEvent =
    * on refused only, reason (expired | revoked | unknown).
    */
   | "board.share_link"
+  /** PERF-2c: the board Share dialog went from closed to open. No dims. */
+  | "board.share_opened"
   /**
    * T1: a traced question was saved to span_links. Dims: via (short fixed
    * code-path name) only. No ids, text, names or counts.
@@ -436,6 +438,11 @@ export type TelemetryEvent =
    * to_level for data levels only. Closed lists in settings-events.ts.
    */
   | "settings.changed"
+  /**
+   * PERF-2c: the visible Settings section changed. Dims: section (fixed nav
+   * id), via (rail | deep_link | default).
+   */
+  | "settings.section_opened"
   /** SH-6d-1: an admin decided a support access request. Dims: approved, conversations ("true" | "false"). */
   | "support.decided"
   /** SH-6d-1: support access was ended early. Dims: by ("grantor"). */

@@ -1,3 +1,5 @@
+import { useProfile } from "@/hooks/use-profile";
+import { logEvent } from "@/lib/telemetry";
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 
 /**
@@ -60,6 +62,23 @@ export function SettingsShell({
     return sections[0]?.id ?? "";
   });
   const contentPaneRef = useRef<HTMLDivElement>(null);
+  const { data: activeProfile } = useProfile();
+  const orgId = activeProfile?.org_id;
+  const lastOpened = useRef<string | null>(null);
+
+  // PERF-2c: settings.section_opened fires only when the visible section changes.
+  function noteSection(id: string, via: "rail" | "deep_link" | "default") {
+    if (!id || lastOpened.current === id) return;
+    lastOpened.current = id;
+    if (orgId) logEvent("settings.section_opened", orgId, { section: id, via });
+  }
+
+  useEffect(() => {
+    if (lastOpened.current !== null || !orgId) return;
+    const named = !!initialSection && sections.some((s) => s.id === initialSection);
+    noteSection(active, named && active === initialSection ? "deep_link" : "default");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orgId]);
 
   // A caller can open settings straight onto a section. An absent value never
   // resets what the person is already looking at.
@@ -67,6 +86,8 @@ export function SettingsShell({
     if (!initialSection) return;
     if (!sections.some((s) => s.id === initialSection)) return;
     setActive(initialSection);
+    if (lastOpened.current !== null) noteSection(initialSection, "deep_link");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialSection, sections]);
 
   useEffect(() => {
@@ -90,7 +111,10 @@ export function SettingsShell({
       <button
         key={section.id}
         type="button"
-        onClick={() => setActive(section.id)}
+        onClick={() => {
+          setActive(section.id);
+          noteSection(section.id, "rail");
+        }}
         aria-current={on ? "true" : undefined}
         className={
           on
