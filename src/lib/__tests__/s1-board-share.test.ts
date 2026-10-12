@@ -127,7 +127,7 @@ describe("S1 — resolving a link", () => {
       "document_versions",
       "engagements",
       "tasks",
-      "turns",
+      "work_item_extracts",
       "workboard_frames",
       "workboard_links",
       "workboard_nodes",

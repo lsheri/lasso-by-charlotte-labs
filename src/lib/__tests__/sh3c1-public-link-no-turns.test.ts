@@ -45,7 +45,7 @@ function fakeDb() {
     from(table: string) {
       tables.push(table);
       const rows = data[table] ?? [];
-      const builder: Record<string, unknown> = {};
+      const builder: Record<string, unknown> & { maybeSingle?: unknown; then?: unknown } = {};
       for (const m of ["select", "eq", "is", "in", "order", "limit", "not"]) builder[m] = () => builder;
       builder.maybeSingle = async () => ({ data: Array.isArray(rows) ? rows[0] ?? null : rows, error: null });
       builder.then = (resolve: (v: unknown) => unknown) => resolve({ data: rows, error: null });
