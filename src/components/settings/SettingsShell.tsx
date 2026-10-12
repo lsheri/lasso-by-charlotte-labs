@@ -126,10 +126,11 @@ export function SettingsShell({
         </header>
       ) : null}
 
-      <div className="grid flex-1 overflow-hidden md:grid-cols-[13rem_minmax(0,1fr)]">
+      <div className="grid flex-1 grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)] overflow-hidden md:grid-cols-[13rem_minmax(0,1fr)] md:grid-rows-none">
         <nav
           aria-label="Settings sections"
-          className="flex gap-1 overflow-x-auto border-b border-border p-3 md:flex-col md:overflow-x-visible md:overflow-y-auto md:border-b-0 md:border-r"
+          data-testid="settings-rail"
+          className={`flex min-w-0 gap-1 overflow-x-auto border-b border-border p-3 ${variant === "dialog" ? "pr-14 md:pr-3" : ""} md:flex-col md:overflow-x-visible md:overflow-y-auto md:border-b-0 md:border-r`}
         >
           {ungrouped.map(railButton)}
           {groups.map((group, index) => (
