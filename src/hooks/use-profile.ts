@@ -279,7 +279,7 @@ export function useActiveProfileId(): string | null {
 export async function ensureProfileState(): Promise<ProfileState> {
   const client = sharedQueryClient;
   if (!client) return fetchProfileState();
-  const state = await client.ensureQueryData({
+  const state = await client.fetchQuery({
     queryKey: PROFILE_STATE_KEY,
     queryFn: fetchProfileState,
     staleTime: 60_000,
