@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 
 import { BoardShell, type BoardShellFrame } from "@/components/board/BoardShell";
 import { NewEngagementDialog } from "@/components/engagements/NewEngagementDialog";
@@ -12,6 +12,7 @@ import { useEngagementWorkCounts } from "@/hooks/use-engagement-work-counts";
 import { useEngagementBoardPreviews } from "@/hooks/use-engagement-board-previews";
 import { useProfile } from "@/hooks/use-profile";
 import { emitClientEvent } from "@/lib/client-telemetry";
+import { logEvent } from "@/lib/telemetry";
 import type { HomeGridEngagement } from "@/lib/home-grid";
 import { LOOP_SIZE_TITLE } from "@/lib/lasso-loop";
 
@@ -97,9 +98,15 @@ export function HomeBoard() {
   const { data: engagements } = useEngagements(profile?.id);
   const [viewport, setViewport] = useState(HOME_VIEWPORT_SEED);
 
+  // CS-1: one home.opened per mount, through the same signed-in pipeline as
+  // nav.opened, and only once the acting profile has resolved.
+  const homeOpenedRef = useRef(false);
+  const orgId = profile?.org_id;
   useEffect(() => {
-    emitClientEvent("home.opened", {});
-  }, []);
+    if (!orgId || homeOpenedRef.current) return;
+    homeOpenedRef.current = true;
+    logEvent("home.opened", orgId, {});
+  }, [orgId]);
 
   const countLabel = engagements ? `HOME · ${engagements.length} WORKBOARDS` : "HOME";
   const { data: views } = useEngagementViews(profile?.id);

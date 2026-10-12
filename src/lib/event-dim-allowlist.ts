@@ -24,12 +24,15 @@ export const LANDING_VIEW_SURFACES = ["landing-board", "landing-classic", "landi
 /** MN-7: additive navigation item values for the portal. No content dimensions. */
 export const MN7_NAV_ITEMS = ["recent_board", "find_result"] as const;
 
+/** CS-3: additive navigation item value for a board opened from a tree. Never a title, id or name. */
+export const CS3_NAV_ITEMS = ["board"] as const;
+
 /** MN-5: additive navigation item value for the portal. Never a title, id or name. */
 export const MN5_NAV_ITEMS = ["from_your_people"] as const;
 
 /** Every non-workboard event name mapped to the dim keys it may carry. */
 export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
-  // nav.opened item values include workspace, look_back, your_coach, connect_tools, create_menu, recent_board, find_result and from_your_people; dimension keys remain unchanged.
+  // nav.opened item values include workspace, look_back, your_coach, connect_tools, create_menu, recent_board, find_result, board and from_your_people; dimension keys remain unchanged.
   "nav.opened": ["item", "surface"],
   "admin.dashboard_viewed": ["panels_shown"],
   "affiliation.disclosure_read": ["institution"],
