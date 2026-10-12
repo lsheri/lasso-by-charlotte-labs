@@ -34,7 +34,7 @@ describe("SH-3a people access", () => {
   beforeEach(() => vi.clearAllMocks());
   it("maps labels independently to the unchanged access values", async () => {
     const section = await mount();
-    for (const [label, access] of [["Multiplayer", "work"], ["Can view", "review"], ["Remove", "none"]]) {
+    for (const [label, access] of [["Multiplayer", "work"], ["Can view", "review"], ["Remove", "none"]] as const) {
       const button = within(section).getByRole("button", { name: label });
       await waitFor(() => expect(button.hasAttribute("disabled")).toBe(false));
       fireEvent.click(button);
