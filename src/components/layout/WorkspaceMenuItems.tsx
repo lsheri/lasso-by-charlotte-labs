@@ -1,7 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { FeedbackDialog } from "@/components/feedback/FeedbackWidget";
 import { GraphiteIcon } from "@/components/notebook/icons";
-import { Button } from "@/components/ui/button";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import type { ResolvedNavItem } from "./nav-config";
 
