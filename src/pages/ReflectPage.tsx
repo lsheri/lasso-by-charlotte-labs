@@ -1,3 +1,5 @@
+import { NoAnswerSaved } from "@/components/reflect/NoAnswerSaved";
+import { unansweredQuestionIds } from "@/lib/ask-question-persist";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { hasTouchInput, shouldSendAskOnEnter } from "@/components/reflect/AskSurface";
 import { useServerFn } from "@tanstack/react-start";
@@ -315,8 +317,11 @@ export function ReflectPage({
   }
 
   async function submit() {
-    const message = draft.trim();
-    if (!message || !activeId || !profile) return;
+    return send(draft.trim());
+  }
+
+  async function send(message: string) {
+    if (!message || !activeId || !profile || pending) return;
     setPending(true);
     setError(null);
     try {
@@ -341,8 +346,11 @@ export function ReflectPage({
     } finally {
       setPending(false);
       setStreamed("");
+      void queryClient.invalidateQueries({ queryKey: ["reflect-messages", activeId] });
     }
   }
+
+  const unanswered = unansweredQuestionIds(messages ?? [], pending);
 
   return (
     <div>
@@ -482,9 +490,14 @@ export function ReflectPage({
                         {message.role === "user" ? "You" : "AI"}
                       </p>
                       {message.role === "user" ? (
-                        <p className="nb-binder-line whitespace-pre-wrap text-sm text-foreground">
-                          {message.content}
-                        </p>
+                        <>
+                          <p className="nb-binder-line whitespace-pre-wrap text-sm text-foreground">
+                            {message.content}
+                          </p>
+                          {unanswered.has(String(message.id)) ? (
+                            <NoAnswerSaved onResend={() => void send(message.content)} disabled={pending} />
+                          ) : null}
+                        </>
                       ) : (
                         <AnswerRail state="done">
                           <MarkdownMessage content={message.content} variant="binder" />

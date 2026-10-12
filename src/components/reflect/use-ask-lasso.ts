@@ -280,7 +280,15 @@ export function useAskLasso({
   }
 
   async function submit() {
-    const message = draft.trim();
+    return send(draft.trim());
+  }
+
+  /** AQ-1: send a saved question again. The server reuses its row. */
+  async function resend(text: string) {
+    return send(text.trim());
+  }
+
+  async function send(message: string) {
     if (!message || pending) return;
     const ids = pointedAtIds(message, mapped);
     const pointedItems = mapped.filter((item) => ids.includes(item.id));
@@ -320,6 +328,7 @@ export function useAskLasso({
       setPending(false);
       setStreamed("");
       setPointedNow([]);
+      if (sessionId) void queryClient.invalidateQueries({ queryKey: ["reflect-messages", sessionId] });
     }
   }
 
@@ -363,6 +372,7 @@ export function useAskLasso({
     sourcesByMessage,
     streamed,
     submit,
+    resend,
   };
 }
 
