@@ -5650,6 +5650,22 @@ export type Database = {
         Args: { p_org_id: string; p_reason: string; p_seats: number }
         Returns: Json
       }
+      admin_support_grants: {
+        Args: never
+        Returns: {
+          created_at: string
+          days: number
+          decided_at: string
+          ends_at: string
+          id: string
+          include_conversations: boolean
+          org_id: string
+          org_name: string
+          reason: string
+          status: string
+          views: number
+        }[]
+      }
       admin_user_directory: {
         Args: { p_limit?: number; p_offset?: number; p_search?: string }
         Returns: Json
