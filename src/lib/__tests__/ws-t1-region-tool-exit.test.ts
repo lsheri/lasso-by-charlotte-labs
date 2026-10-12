@@ -37,8 +37,9 @@ describe("WS-T1 region tool exits after creation, Escape and an empty click", ()
   it("an empty-canvas click exits the tool without creating anything", () => {
     const endDrawing = slice("function endDrawing()", "function cancelDrawing()");
 
-    expect(endDrawing).toMatch(/!drawnRectUsable\(rect\)\) \{ setDrawTool\(false\)/);
-    expect(endDrawing).not.toMatch(/!drawnRectUsable\(rect\)[\s\S]*createPaintRegion/);
+    const unusable = endDrawing.match(/if \(!drawnRectUsable\(rect\)\) \{ ([^}]*) \}/)?.[1] ?? "";
+    expect(unusable).toContain("setDrawTool(false)");
+    expect(unusable).not.toContain("createPaintRegion");
   });
 
   it("the toolbar button still toggles the tool on and off", () => {
