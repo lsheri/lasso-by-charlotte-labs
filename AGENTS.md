@@ -40,3 +40,4 @@ Tour workboard chrome stays a local presentational mirror around shared board pr
 - Render phone All work through WorkNote's opt-in list presentation and the existing mobile breakpoint hook, so its dates, source marks, and open handlers share the desktop card truth without changing other surfaces.
 - Keep Home's board shell content-height-sized with native scrolling opted in; other board surfaces retain canvas gestures by default so the Home fix cannot alter workboard interactions.
 - Keep the signup default notice in data-consent-shared and pin its literal SHA-256 in tests; signup and new-account setup must render that same string without changing existing consent choices or writes.
+- Compose role- and product-specific data Settings in DataSection using the existing consent primitives and mutations; normalize legacy section IDs at entry boundaries so old links keep working without a second rail section.

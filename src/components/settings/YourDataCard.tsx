@@ -48,7 +48,7 @@ import {
 
 import { SampleEventDialog } from "./SampleEventDialog";
 
-function useConsent() {
+export function useConsent() {
   const { data: profile } = useProfile();
   const load = useServerFn(getDataConsent);
   const query = useQuery({
@@ -59,7 +59,7 @@ function useConsent() {
   return { profile, ...query };
 }
 
-function TierList({
+export function TierList({
   value,
   ceiling,
   onPick,
@@ -109,7 +109,7 @@ function TierList({
   );
 }
 
-function ConfirmDialog({
+export function ConfirmDialog({
   pending,
   scope,
   onCancel,
@@ -148,7 +148,7 @@ function ConfirmDialog({
 }
 
 /** Quiet, in place. Nothing else in the app changes until this is confirmed. */
-function ReconfirmNotice({ busy, onConfirm }: { busy: boolean; onConfirm: () => void }) {
+export function ReconfirmNotice({ busy, onConfirm }: { busy: boolean; onConfirm: () => void }) {
   return (
     <div className="mt-3 rounded-[var(--radius)] border border-border bg-secondary px-4 py-3">
       <p className="text-sm font-medium text-foreground">{RECONFIRM_LINE}</p>
@@ -272,7 +272,7 @@ export function OrgDataCard() {
 /** The person's own level, bounded by the organization. Coaches see nothing. */
 /** Taking part in studies is separate from the level above. One card, one
  * question, and the current answer is said in words before the action. */
-function ResearchBlock({
+export function ResearchBlock({
   profileId,
   choice,
 }: {

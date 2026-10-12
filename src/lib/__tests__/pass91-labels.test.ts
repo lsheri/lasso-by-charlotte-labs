@@ -45,7 +45,7 @@ describe("pass91 label colour hierarchy", () => {
       '<h2 className="micro-label micro-label-section">The brief</h2>',
     );
     expect(read("src/components/settings/DataUseCard.tsx")).toContain(
-      '<h2 className="micro-label micro-label-section">Data use</h2>',
+      '<h2 className="micro-label micro-label-section">{heading ?? "Data use"}</h2>',
     );
   });
 

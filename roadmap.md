@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] DC-3: merged Your data by product type and role, preserved consent contracts, aliased old section, moved workspace controls from People; 38 targeted tests passed, full-suite results reported in chat; no database work or manual build.
+- [ ] DC-3: authenticated Settings visual and real-save verification at 1280 and 390; blocked by external unmanaged authentication. Both preview visits reached Sign in; role and save behavior are mock-tested only.
+
 - [x] DC-2: truthful Trust copy and signup/setup notice; pinned hash and render tests; public signup/sign-in and Trust visually checked at 1280 and 390. Setup is render-tested only because hosted authentication is external unmanaged. Full-suite results reported in chat; preview only, no database work or manual build.
 
 - [x] FS-1: restore normal Home scrolling without changing welcome, feedback, or cards; hide partner-only coaching group and run regression checks.

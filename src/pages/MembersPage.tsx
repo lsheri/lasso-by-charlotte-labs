@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { SharedWithSection, WhatGoesUpSection, WhatStaysPutSection, useSharedBoards } from "@/pages/AffiliationPage";
 import { toast } from "sonner";
 import { MoreHorizontal } from "lucide-react";
@@ -23,7 +24,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { InviteDialog } from "@/components/invites/InviteDialog";
-import { OrgDataCard } from "@/components/settings/YourDataCard";
+import { COPY as DATA_COPY } from "@/components/settings/DataSection";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { SectionHeader } from "@/components/notebook/SectionHeader";
 import { ToneCard } from "@/components/notebook/ToneCard";
@@ -415,7 +416,7 @@ function MembersConsole() {
           <aside className="mt-10 space-y-8 lg:mt-0">
             {!business ? <WhatGoesUpSection {...sharing} /> : null}
             <PlanSection entitlement={data.entitlement} business={business} />
-            {isAdmin ? <OrgDataCard /> : null}
+            {isAdmin ? <p className="text-sm leading-relaxed text-muted-foreground"><Link to="/settings" search={{ section: "your-data" }} className="underline underline-offset-4">{DATA_COPY.membersLink}</Link></p> : null}
             {business ? <ToneCard tone="record" label="WHAT A ROLE CHANGES" className="gap-3 p-4">
               <p className="text-sm leading-6 text-foreground">
                 A role changes what someone can see. It never changes what someone can be told.

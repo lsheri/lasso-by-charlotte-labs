@@ -7,8 +7,7 @@ import { useSettingsDialog } from "@/lib/settings-dialog-context";
 import { SettingsShell, type SettingsSection } from "./SettingsShell";
 import { ConnectorsSection } from "./ConnectorsSection";
 import { McpSection } from "./McpSection";
-import { DataUseCard } from "./DataUseCard";
-import { PersonalDataCard } from "./YourDataCard";
+import { DataSection } from "./DataSection";
 import { NamingConventionsCard } from "./NamingConventionsCard";
 import { ClientsSettingCard } from "@/components/settings/ClientsSettingCard";
 import { OrgDimensionsCard } from "./OrgDimensionsCard";
@@ -87,20 +86,12 @@ const SECTIONS: SettingsSection[] = [
     ),
   },
   {
-    id: "data-use",
-    label: "Data use",
-    hint: "what it is used for",
-    group: "Account",
-    title: "Data use",
-    content: <DataUseCard />,
-  },
-  {
     id: "your-data",
     label: "Your data",
     hint: "what leaves the workspace",
     group: "Account",
     title: "Your data",
-    content: <PersonalDataCard />,
+    content: <DataSection />,
   },
   {
     id: "support",

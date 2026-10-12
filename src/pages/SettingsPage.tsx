@@ -2,8 +2,7 @@ import { SupportAccessCard } from "@/components/settings/SupportAccessCard";
 import { useProfile } from "@/hooks/use-profile";
 import { ConnectorsSection } from "@/components/settings/ConnectorsSection";
 import { McpSection } from "@/components/settings/McpSection";
-import { DataUseCard } from "@/components/settings/DataUseCard";
-import { PersonalDataCard } from "@/components/settings/YourDataCard";
+import { DataSection } from "@/components/settings/DataSection";
 import { NamingConventionsCard } from "@/components/settings/NamingConventionsCard";
 import { ClientsSettingCard } from "@/components/settings/ClientsSettingCard";
 import { OrgDimensionsCard } from "@/components/settings/OrgDimensionsCard";
@@ -20,8 +19,7 @@ import { Button } from "@/components/ui/button";
  * SECTIONS mirrors SettingsDialog.tsx — they are kept in sync manually.
  * If you add a section here, add it there too.
  *
- * Cards that render null for the current role (PersonalDataCard for a coach,
- * OrgDimensionsCard and NamingConventionsCard for a member) leave their section
+ * Cards that render null for the current role (OrgDimensionsCard and NamingConventionsCard for a member) leave their section
  * visibly empty. That is a known rough edge, not a bug to route around here.
  */
 const SECTIONS: SettingsSection[] = [
@@ -87,20 +85,12 @@ const SECTIONS: SettingsSection[] = [
     ),
   },
   {
-    id: "data-use",
-    label: "Data use",
-    hint: "what it is used for",
-    group: "Account",
-    title: "Data use",
-    content: <DataUseCard />,
-  },
-  {
     id: "your-data",
     label: "Your data",
     hint: "what leaves the workspace",
     group: "Account",
     title: "Your data",
-    content: <PersonalDataCard />,
+    content: <DataSection />,
   },
   {
     id: "support",
