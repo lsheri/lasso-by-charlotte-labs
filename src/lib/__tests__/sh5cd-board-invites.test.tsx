@@ -14,7 +14,37 @@ vi.mock("@tanstack/react-router", async (orig) => {
   };
 });
 vi.mock("@/integrations/supabase/client", () => ({ supabase: { auth: {} } }));
-vi.mock("@/lib/board-invites.functions", () => ({ claimBoardInvite: vi.fn(), previewBoardInvite: vi.fn() }));
+const inviteState = vi.hoisted(() => ({
+  listCalls: 0,
+  rows: [] as { id: string; email: string; level: string; conversations: string; status: string }[],
+}));
+vi.mock("@/lib/board-invites.functions", () => ({
+  claimBoardInvite: vi.fn(),
+  previewBoardInvite: vi.fn(),
+  inviteToBoard: vi.fn(async () => {
+    inviteState.rows = [{ id: "i-1", email: "jo@x.com", level: "review", conversations: "summaries", status: "sent" }];
+    return { ok: true, status: "sent", emailed: true };
+  }),
+  listBoardInvites: vi.fn(async () => {
+    inviteState.listCalls += 1;
+    return inviteState.rows;
+  }),
+  withdrawBoardInvite: vi.fn(async () => ({ ok: true })),
+}));
+vi.mock("@tanstack/react-start", () => ({ useServerFn: (fn: unknown) => fn }));
+vi.mock("@/lib/engagement-access.functions", () => ({
+  listEngagementPeopleFn: vi.fn(async () => ({
+    canShare: true,
+    people: [{ id: "p-me", display_name: "Liam", access: "work", isYou: true }],
+  })),
+  setEngagementPersonAccessFn: vi.fn(async () => ({ status: "done", result: "granted" })),
+  setPersonConversationsFn: vi.fn(async () => ({ status: "done", result: "unchanged" })),
+}));
+vi.mock("@/lib/board-share.functions", () => ({
+  listBoardShareLinksFn: vi.fn(async () => ({ links: [], holdsOthersWork: false, canShare: true })),
+  createBoardShareLinkFn: vi.fn(async () => ({ status: "error" })),
+  expireBoardShareLinkFn: vi.fn(async () => ({ status: "not_found" })),
+}));
 vi.mock("@/hooks/use-profile", () => ({ setActiveProfileId: vi.fn() }));
 vi.mock("@/components/layout/SessionHeader", () => ({ SessionHeader: () => null }));
 
