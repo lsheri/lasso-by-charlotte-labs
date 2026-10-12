@@ -105,3 +105,54 @@ describe("AU-1 audit fixes", () => {
     expect(auth).not.toMatch(/: "Create account"\}\{" "\}/);
   });
 });
+
+import { checkKeyPublic, GENERIC_ANSWER } from "@/lib/activation-key-public.server";
+
+describe("AU-1b public key check", () => {
+  const good = { expires_at: null, revoked_at: null, max_uses: 5, uses: 1, institutions: { name: "Harbor" } };
+
+  it("returns only the two fields", async () => {
+    const answer = await checkKeyPublic("lso-ok", "1.1.1.1", async () => good, () => true);
+    expect(Object.keys(answer).sort()).toEqual(["institution_name", "valid"]);
+    expect(answer).toEqual({ valid: true, institution_name: "Harbor" });
+  });
+
+  it("an unknown key gives valid false, and the code is normalised", async () => {
+    const seen: string[] = [];
+    const answer = await checkKeyPublic(" lso-nope ", "1.1.1.1", async (c) => { seen.push(c); return null; }, () => true);
+    expect(answer).toEqual({ valid: false, institution_name: null });
+    expect(seen).toEqual(["LSO-NOPE"]);
+  });
+
+  it("over the limit returns the generic answer without a lookup", async () => {
+    let looked = false;
+    const answer = await checkKeyPublic("x", "1.1.1.1", async () => { looked = true; return null; }, () => false);
+    expect(answer).toEqual(GENERIC_ANSWER);
+    expect(looked).toBe(false);
+  });
+});
+
+import { isKeyInvalid, resolveKeyCheck } from "@/lib/auth-key-check";
+
+describe("AU-1b /auth signed out with a made-up key", () => {
+  it("signed out uses the public check; invalid shows the line and hides the sponsored notice", async () => {
+    const lookup = vi.fn();
+    const publicCheck = vi.fn(async () => ({ valid: false, institution_name: null }));
+    const check = await resolveKeyCheck(false, "LSO-MADEUP", { lookup, publicCheck });
+    expect(lookup).not.toHaveBeenCalled();
+    expect(publicCheck).toHaveBeenCalledWith({ data: { code: "LSO-MADEUP" } });
+    expect(isKeyInvalid("LSO-MADEUP", check)).toBe(true);
+    expect(isKeyInvalid("LSO-MADEUP", undefined)).toBe(false);
+    const auth = readFileSync("src/routes/auth.tsx", "utf8");
+    expect(auth).toContain("{key && keyInvalid ? (");
+    expect(auth).toContain("{AUTH_COPY.keyInvalid}");
+    expect(auth.match(/\{key && !keyInvalid \? \(\s*<div data-testid="key-notice"/g)?.length).toBe(2);
+  });
+
+  it("signed in keeps the existing lookup", async () => {
+    const lookup = vi.fn(async () => ({ ok: true, institution_name: "Harbor" }));
+    const publicCheck = vi.fn();
+    expect(await resolveKeyCheck(true, "K", { lookup, publicCheck })).toEqual({ ok: true, institution_name: "Harbor" });
+    expect(publicCheck).not.toHaveBeenCalled();
+  });
+});

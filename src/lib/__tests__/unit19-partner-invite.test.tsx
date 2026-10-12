@@ -67,6 +67,7 @@ vi.mock("@/integrations/supabase/client", () => ({
 vi.mock("@/lib/activation-keys.functions", () => ({
   lookupActivationKeyFn: mocks.lookup,
   redeemActivationKeyFn: mocks.redeem,
+  checkActivationKeyPublic: vi.fn(async () => ({ valid: true, institution_name: null })),
 }));
 vi.mock("@/lib/invites.functions", () => ({ checkSignupInvite: vi.fn(async () => mocks.inviteCheck) }));
 vi.mock("@/lib/client-telemetry", () => ({ aliasSignupVisitor: vi.fn(), emitClientEvent: vi.fn() }));
