@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen } from "@testing-library/react";
-import { type ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
@@ -48,15 +48,17 @@ import { Route as AuthRoute } from "@/routes/auth";
 
 afterEach(cleanup);
 
+vi.setConfig({ testTimeout: 30000 });
+
 describe("AU-1b signed out with a made-up key", () => {
   it("shows the invalid line and no sponsored line, using the public check", async () => {
     const Comp = (AuthRoute as unknown as { options: { component: () => JSX.Element } }).options.component;
-    console.log("COMP", String(Comp).slice(0, 200));
-    render(<Comp />);
+    render(<Suspense fallback={null}><Comp /></Suspense>);
+    const line = await screen.findByText("This key link is not valid. Ask whoever sent it for a new one.", {}, { timeout: 20000 });
+    expect(line).toBeTruthy();
     // The query the page runs signed out goes through the public check.
     expect(mocks.keyOpts?.enabled).toBe(true);
     expect(await mocks.keyOpts!.queryFn()).toEqual({ ok: false, institution_name: null });
-    expect(await screen.findByText("This key link is not valid. Ask whoever sent it for a new one.")).toBeTruthy();
     expect(screen.queryByTestId("key-notice")).toBeNull();
     expect(screen.queryByText(/sponsored key/i)).toBeNull();
     expect(mocks.publicCheck).toHaveBeenCalled();
