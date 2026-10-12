@@ -44,7 +44,7 @@ export async function demoOrgId(db: AdminDb): Promise<string | null> {
 async function demoBoard(db: AdminDb, orgId: string, engagementId: string): Promise<SharedBoardDto | null> {
   const { data: wb } = await db.from("workboards").select("id").eq("engagement_id", engagementId).maybeSingle();
   if (!wb) return null;
-  const dto = await readBoard(db, wb.id, { org_id: orgId, expires_at: new Date(Date.now() + DEMO_EXPIRY_MS).toISOString() }, null, { conversationText: true });
+  const dto = await readBoard(db, wb.id, { org_id: orgId, expires_at: new Date(Date.now() + DEMO_EXPIRY_MS).toISOString() }, null);
   return dto ? demoSafeBoard(dto) : null;
 }
 

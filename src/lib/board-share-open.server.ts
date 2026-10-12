@@ -148,7 +148,6 @@ export async function readBoard(
   workboardId: string,
   link: { expires_at: string; org_id: string },
   viewerProfileId: string | null = null,
-  options: { conversationText?: boolean } = {},
 ): Promise<SharedBoardDto | null> {
   const { data: boardRow } = await db
     .from("workboards")
@@ -295,37 +294,13 @@ export async function readBoard(
   };
 
   const chatIds = work.filter((item) => item.type === "ai_thread").map((item) => item.id);
-  // SH-3c-1: a public link never carries conversation text. Only the demo
-  // board, built from invented content, asks for it explicitly.
-  const conversationText = options.conversationText === true;
-  const [cardPreviewRows, turnsRes, filePreviews] = await Promise.all([
-    chatIds.length === 0
-      ? Promise.resolve([])
-      : conversationText
-        ? readWorkboardCardPreviews(db, chatIds).catch(() => [])
-        : readSummaryOnlyPreviews(db, chatIds).catch(() => []),
-    chatIds.length > 0 && conversationText
-      ? db
-          .from("turns")
-          .select("id, work_item_id, turn_no, role, content, ts, model")
-          .in("work_item_id", chatIds)
-          .order("turn_no", { ascending: true })
-          .limit(TURN_LIMIT)
-      : Promise.resolve({ data: [] as (SharedBoardTurn & { work_item_id: string })[] }),
+  // SH-3c-1: no turn text ever leaves through this read. Conversation cards
+  // carry the summary only, and the turns map stays empty.
+  const [cardPreviewRows, filePreviews] = await Promise.all([
+    chatIds.length > 0 ? readSummaryOnlyPreviews(db, chatIds).catch(() => []) : Promise.resolve([]),
     readFilePreviews(db, work.filter((item) => item.type !== "ai_thread").slice(0, FILE_PREVIEW_LIMIT)),
   ]);
-
   const turns: Record<string, SharedBoardTurn[]> = {};
-  for (const row of (turnsRes.data ?? []) as (SharedBoardTurn & { work_item_id: string })[]) {
-    (turns[row.work_item_id] ??= []).push({
-      id: row.id,
-      turn_no: row.turn_no,
-      role: row.role,
-      content: row.content,
-      ts: row.ts,
-      model: row.model,
-    });
-  }
 
   return {
     board,
