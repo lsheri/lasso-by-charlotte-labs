@@ -44,6 +44,7 @@ type Grant = {
   include_conversations: boolean;
   status: string;
   ends_at: string | null;
+  requested_by: string;
 };
 
 type Tab = "home" | "boards" | "work";
@@ -65,12 +66,17 @@ export function SupportView({ grantId }: { grantId: string }) {
   const grant = useQuery({
     queryKey: ["support-view-grant", grantId],
     queryFn: async () => {
+      const { data: auth } = await supabase.auth.getUser();
       const { data } = await supabase
         .from("support_grants")
-        .select("id, org_id, reason, include_conversations, status, ends_at")
+        .select("id, org_id, reason, include_conversations, status, ends_at, requested_by")
         .eq("id", grantId)
         .maybeSingle();
-      return (data as Grant | null) ?? null;
+      const g = (data as Grant | null) ?? null;
+      // Only the person who asked for support may use the view; the customer's
+      // own admin can read the grant row for Settings but must not see it here.
+      if (!g || !auth.user || g.requested_by !== auth.user.id) return null;
+      return g;
     },
   });
   if (grant.isLoading) {
@@ -103,10 +109,10 @@ function ActiveView({ grant }: { grant: Grant }) {
     queryFn: async () => {
       const { data } = await supabase
         .from("orgs")
-        .select("name, org_mode")
+        .select("name, settings")
         .eq("id", grant.org_id)
         .maybeSingle();
-      return data as { name: string; org_mode: string | null } | null;
+      return data as { name: string; settings: { type?: string } | null } | null;
     },
   });
 
@@ -161,12 +167,23 @@ function ActiveView({ grant }: { grant: Grant }) {
   );
 }
 
+const ORG_TYPE_LABELS: Record<string, string> = {
+  personal: "Individual",
+  company: "Company",
+  partner: "Partner",
+};
+
+function orgTypeLabel(settings: { type?: string } | null): string {
+  const raw = settings?.type ?? "";
+  return ORG_TYPE_LABELS[raw] ?? raw;
+}
+
 function HomeTab({
   grant,
   org,
 }: {
   grant: Grant;
-  org: { name: string; org_mode: string | null } | null;
+  org: { name: string; settings: { type?: string } | null } | null;
 }) {
   const counts = useQuery({
     queryKey: ["support-view-counts", grant.org_id],
@@ -183,7 +200,7 @@ function HomeTab({
       <div>
         <h1 className="page-title">{org?.name}</h1>
       </div>
-      <Row label={C.type} value={org?.org_mode ?? ""} />
+      <Row label={C.type} value={orgTypeLabel(org?.settings ?? null)} />
       <Row label={C.people} value={String(counts.data?.people ?? "")} />
       <Row label={C.boardsCount} value={String(counts.data?.boards ?? "")} />
       <Row label={C.reason} value={`"${grant.reason}"`} />
@@ -371,11 +388,17 @@ function ItemPanel({
     queryFn: async () => {
       const [w, x] = await Promise.all([
         supabase.from("work_items").select("id, title").eq("id", itemId).maybeSingle(),
-        supabase.from("work_item_extracts").select("summary").eq("work_item_id", itemId).maybeSingle(),
+        supabase
+          .from("work_item_extracts")
+          .select("summary")
+          .eq("work_item_id", itemId)
+          .order("created_at", { ascending: false })
+          .limit(1),
       ]);
+      const extract = (x.data as { summary: string }[] | null)?.[0] ?? null;
       return {
         title: (w.data as { title: string } | null)?.title ?? "",
-        summary: (x.data as { summary: string } | null)?.summary ?? null,
+        summary: extract?.summary ?? null,
       };
     },
   });
