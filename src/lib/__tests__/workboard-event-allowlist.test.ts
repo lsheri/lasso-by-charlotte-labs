@@ -129,6 +129,10 @@ describe("the workboard allowlist", () => {
           "via",
           "count",
         ],
+        "workboard.workstream_created": [
+          "via",
+          "claimed",
+        ],
         "workboard.workstream_drawn": [
           "claimed",
           "asked",
@@ -242,7 +246,7 @@ describe("the workboard allowlist", () => {
       const [name, , dims] = mocked.mock.calls[0] as [string, string, Record<string, unknown>];
       expect(guardWorkboardEvent(name, dims as never)).toEqual({ keep: true, dims });
     }
-    expect(Object.keys(WORKBOARD_EVENT_DIMS)).toHaveLength(29);
+    expect(Object.keys(WORKBOARD_EVENT_DIMS)).toHaveLength(30);
   });
 
   it("keeps the additive open path for previewed document and deck cards", () => {

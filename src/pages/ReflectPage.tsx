@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { hasTouchInput, shouldSendAskOnEnter } from "@/components/reflect/AskSurface";
 import { useServerFn } from "@tanstack/react-start";
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
@@ -566,6 +567,13 @@ export function ReflectPage({
                   <Textarea
                     value={draft}
                     onChange={(event) => setDraft(event.target.value)}
+                    enterKeyHint="send"
+                    onKeyDown={(event) => {
+                      // BB-6: the one shared Ask Lasso Enter rule.
+                      if (!shouldSendAskOnEnter(event.nativeEvent, hasTouchInput(), draft, pending)) return;
+                      event.preventDefault();
+                      void submit();
+                    }}
                     placeholder="What do you want to think through?"
                     rows={2}
                     className="resize-none"
