@@ -10,8 +10,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 
 import { BoardLinkSection } from "@/components/canvas-lab/ShareBoardDialog";
-import { useProfile } from "@/hooks/use-profile";
-import { logEvent } from "@/lib/telemetry";
 import { GraphiteIcon } from "@/components/notebook/icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,12 +50,19 @@ export function ShareDialog({
   profileId: string | undefined;
 }) {
   const [open, setOpen] = useState(false);
-  const { data: activeProfile } = useProfile();
-
-  // PERF-2c: one event per closed-to-open transition, no dims.
+  // PERF-2c: one event per closed-to-open transition, no dims. Loaded on
+  // demand so the dialog never pulls the server-function graph at import.
   function handleOpenChange(next: boolean) {
-    if (next && !open && activeProfile?.org_id) {
-      logEvent("board.share_opened", activeProfile.org_id, {});
+    if (next && !open) {
+      void (async () => {
+        const [{ ensureProfileState }, { logEvent }] = await Promise.all([
+          import("@/hooks/use-profile"),
+          import("@/lib/telemetry"),
+        ]);
+        const { profiles } = await ensureProfileState();
+        const orgId = profiles.find((p) => p.id === profileId)?.org_id;
+        if (orgId) logEvent("board.share_opened", orgId, {});
+      })().catch(() => {});
     }
     setOpen(next);
   }
