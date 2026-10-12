@@ -29,7 +29,6 @@ import {
 import { isBoardDefaultTask } from "./board-default-task";
 import type { WorkItemRow } from "./work-types";
 import type { WorkboardFilePreview } from "./workboard-card-preview.shared";
-import { readWorkboardCardPreviews } from "./workboard-card-preview.server";
 import {
   artifactPreviewKind,
   fallbackFilePreview,
@@ -42,7 +41,6 @@ import { publicSafeWork } from "./public-work-allowlist";
 
 type Refusal = "expired" | "revoked" | "unknown";
 
-const TURN_LIMIT = 4000;
 
 async function noteShareEvent(
   action: "opened" | "refused",
@@ -294,30 +292,13 @@ export async function readBoard(
   };
 
   const chatIds = work.filter((item) => item.type === "ai_thread").map((item) => item.id);
-  const [cardPreviewRows, turnsRes, filePreviews] = await Promise.all([
-    chatIds.length > 0 ? readWorkboardCardPreviews(db, chatIds).catch(() => []) : Promise.resolve([]),
-    chatIds.length > 0
-      ? db
-          .from("turns")
-          .select("id, work_item_id, turn_no, role, content, ts, model")
-          .in("work_item_id", chatIds)
-          .order("turn_no", { ascending: true })
-          .limit(TURN_LIMIT)
-      : Promise.resolve({ data: [] as (SharedBoardTurn & { work_item_id: string })[] }),
+  // SH-3c-1: no turn text ever leaves through this read. Conversation cards
+  // carry the summary only, and the turns map stays empty.
+  const [cardPreviewRows, filePreviews] = await Promise.all([
+    chatIds.length > 0 ? readSummaryOnlyPreviews(db, chatIds).catch(() => []) : Promise.resolve([]),
     readFilePreviews(db, work.filter((item) => item.type !== "ai_thread").slice(0, FILE_PREVIEW_LIMIT)),
   ]);
-
   const turns: Record<string, SharedBoardTurn[]> = {};
-  for (const row of (turnsRes.data ?? []) as (SharedBoardTurn & { work_item_id: string })[]) {
-    (turns[row.work_item_id] ??= []).push({
-      id: row.id,
-      turn_no: row.turn_no,
-      role: row.role,
-      content: row.content,
-      ts: row.ts,
-      model: row.model,
-    });
-  }
 
   return {
     board,
@@ -332,6 +313,22 @@ export async function readBoard(
     turns,
     expiresAt: link.expires_at,
   };
+}
+
+/** Conversation cards on a public link: the summary only, never a turn. */
+async function readSummaryOnlyPreviews(db: AdminDb, ids: string[]) {
+  const unique = [...new Set(ids)].slice(0, 100);
+  const { data } = await db.from("work_item_extracts").select("work_item_id, summary").in("work_item_id", unique);
+  const summaries = new Map(((data ?? []) as { work_item_id: string; summary: string | null }[]).map((row) => [row.work_item_id, row.summary]));
+  return unique.map((workItemId) => ({
+    workItemId,
+    summary: summaries.get(workItemId) ?? null,
+    turnCount: 0,
+    toolSteps: 0,
+    model: null,
+    firstUserTurn: null,
+    turns: [],
+  }));
 }
 
 /** The live board's document and artifact previews, read without writing. */

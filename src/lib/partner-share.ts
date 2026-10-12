@@ -115,12 +115,30 @@ export async function setBoardConversationAccess(
   linkId: string,
   engagementId: string,
   access: "summaries" | "full",
-): Promise<void> {
-  const { error } = await supabase.rpc("set_link_board_conversation_access", {
+): Promise<"changed" | "unchanged"> {
+  const { data, error } = await supabase.rpc("set_link_board_conversation_access", {
     p_link: linkId,
     p_engagement: engagementId,
     p_access: access,
   });
   // Never show raw database text; callers say it plainly.
   if (error) throw new Error("not_changed");
+  const result = data === "changed" ? "changed" : "unchanged";
+  if (result === "changed") {
+    // SH-3c-1: same event as the member switch, consent-stamped by logEvent.
+    const { data: engagement } = await supabase
+      .from("engagements")
+      .select("org_id")
+      .eq("id", engagementId)
+      .maybeSingle();
+    if (engagement?.org_id) {
+      const { logEvent } = await import("@/lib/telemetry");
+      logEvent("engagement.access_changed", engagement.org_id, {
+        conversations: access,
+        result: "changed",
+        target: "partner",
+      });
+    }
+  }
+  return result;
 }

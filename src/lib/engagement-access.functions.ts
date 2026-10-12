@@ -66,7 +66,7 @@ export const setEngagementPersonAccessFn = createServerFn({ method: "POST" })
       orgId: profile.org_id,
       userId: context.userId,
       profileId: profile.id,
-      dims: { access: data.access, result },
+      dims: { access: data.access, result, target: "member" },
     });
     return { status: "done", result };
   });
@@ -91,5 +91,19 @@ export const setPersonConversationsFn = createServerFn({ method: "POST" })
     const profile = await resolveProfile(context.supabase, context.userId, data.profile_id);
     if (!profile) return { status: "refused" };
     const { setPersonConversations } = await import("@/lib/engagement-access.server");
-    return setPersonConversations(context.supabase, data.engagement_id, data.person_id, data.conversations);
+    const answer = await setPersonConversations(
+      context.supabase,
+      data.engagement_id,
+      data.person_id,
+      data.conversations,
+    );
+    const { recordConversationsChange } = await import("@/lib/engagement-access.server");
+    await recordConversationsChange(context.supabase, {
+      answer,
+      conversations: data.conversations,
+      orgId: profile.org_id,
+      userId: context.userId,
+      profileId: profile.id,
+    });
+    return answer;
   });

@@ -127,7 +127,7 @@ describe("S1 — resolving a link", () => {
       "document_versions",
       "engagements",
       "tasks",
-      "turns",
+      "work_item_extracts",
       "workboard_frames",
       "workboard_links",
       "workboard_nodes",
@@ -237,9 +237,9 @@ describe("S1 — the read only view", () => {
     expect(PAGE).not.toMatch(/expired link|revoked|wrong token/i);
   });
 
-  it("shows everything on the board, transcripts included", () => {
+  it("shows everything on the board, but never a conversation turn (SH-3c-1)", () => {
     expect(VIEW).toContain("board.turns");
-    expect(OPEN).toContain('.from("turns")');
+    expect(OPEN).not.toContain('.from("turns")');
   });
 });
 
