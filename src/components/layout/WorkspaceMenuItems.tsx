@@ -1,7 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { FeedbackDialog } from "@/components/feedback/FeedbackWidget";
 import { GraphiteIcon } from "@/components/notebook/icons";
-import { Button } from "@/components/ui/button";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import type { ResolvedNavItem } from "./nav-config";
 
@@ -30,7 +29,7 @@ export function WorkspaceMenuItems({ items, dropdown = false, onOpened, onSettin
       return item.action === "openFeedback" ? <FeedbackDialog key={item.id} trigger={row} /> : row;
     }
     const row = item.to ? <Link key={item.id} to={item.to} data-nav-item={item.id} className="nb-nav-item min-h-[48px]" onClick={activate}>{content}</Link>
-      : <Button key={item.id} variant="ghost" data-nav-item={item.id} className="nb-nav-item h-auto min-h-[48px] w-full justify-start text-left" onClick={activate}>{content}</Button>;
+      : <button key={item.id} type="button" data-nav-item={item.id} className="nb-nav-item min-h-[48px] w-full text-left" onClick={activate}>{content}</button>;
     return item.action === "openFeedback" ? <FeedbackDialog key={item.id} trigger={row} /> : row;
   });
 }
