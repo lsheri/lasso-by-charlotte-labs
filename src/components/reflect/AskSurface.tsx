@@ -711,6 +711,7 @@ export function AskSurface({
   mobile,
   emptyActions,
   inline,
+  headerTone = "graphite",
 }: {
   ask: AskLasso;
   tab: AskTab;
@@ -723,12 +724,13 @@ export function AskSurface({
   mobile?: boolean;
   emptyActions?: React.ReactNode;
   inline?: boolean;
+  headerTone?: "graphite" | "lime";
 }) {
   return (
     <>
       <header className="shrink-0 border-b border-border px-4 pb-2 pt-[calc(1rem+env(safe-area-inset-top))]">
         <div className={`flex min-w-0 gap-2 ${inline ? "items-center" : "items-start"}`}>
-          <LassoThinkingMark kind="signature" size={LOOP_SIZE_CHAT} className="shrink-0" />
+          <LassoThinkingMark kind="signature" size={LOOP_SIZE_CHAT} thinking={headerTone === "lime"} rope={headerTone !== "lime"} className="shrink-0" />
           <div className="min-w-0 flex-1">
             {inline ? (
               <AskTabs
