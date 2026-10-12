@@ -16,7 +16,7 @@ import { detachEpisodeItems, syncEpisodeForMapping } from "@/lib/episodes.functi
 import { remapItems } from "@/lib/workflow-order";
 import type { WorkItemRow } from "@/lib/work-types";
 
-import { engagementDisplayCode, engagementDisplayTitle } from "@/lib/clients";
+import { clientDisplayName, engagementDisplayTitle } from "@/lib/clients";
 
 type TaskRow = { id: string; name: string };
 
@@ -56,7 +56,7 @@ export function MapDialog({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const selectedBoard = engagements?.find((engagement) => engagement.id === engagementId);
-  const boardCode = selectedBoard ? engagementDisplayCode(selectedBoard) : null;
+  const boardClient = selectedBoard ? clientDisplayName(selectedBoard) : null;
   const boardTitle = selectedBoard ? engagementDisplayTitle(selectedBoard) : "";
 
   const { data: tasks } = useQuery({
@@ -107,7 +107,7 @@ export function MapDialog({
       return;
     }
 
-    toast.success(`${COPY.added} ${[boardCode, boardTitle, workstreamName].filter(Boolean).join(" · ")}`);
+    toast.success(`${COPY.added} ${[boardClient !== boardTitle ? boardClient : null, boardTitle, workstreamName].filter(Boolean).join(" · ")}`);
     setPending(false);
     onOpenChange(false);
     reset();
@@ -190,9 +190,6 @@ export function MapDialog({
                   style={{ backgroundColor: `var(${engagementHue(engagement.id)})` }}
                   aria-hidden
                 />
-                <span className="font-mono text-xs text-muted-foreground">
-                  {engagementDisplayCode(engagement) ?? "Folder"}
-                </span>
                 <span className="text-sm text-foreground">
                   {engagementDisplayTitle(engagement)}
                 </span>
@@ -214,7 +211,7 @@ export function MapDialog({
               ← Workboards
             </button>
             <Button type="button" disabled={pending || !selectedBoard} onClick={() => void putOnBoard()} className="w-full">
-              {COPY.putOn} {[boardCode, boardTitle].filter(Boolean).join(" ")}
+              {COPY.putOn} {boardTitle}
             </Button>
             <p className="micro-label text-muted-foreground">{COPY.optional}</p>
             {(tasks ?? []).map((task) => (

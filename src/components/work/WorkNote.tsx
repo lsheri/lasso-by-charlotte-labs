@@ -4,6 +4,7 @@ import { WorkboardFilePreview as FilePreview } from "@/components/canvas-lab/Wor
 import { BrandLogo, brandHex, brandLabel } from "@/components/connectors/BrandLogo";
 import { ChatUrlLink } from "@/components/work/ChatUrlLink";
 import { Button } from "@/components/ui/button";
+import { engagementDisplayTitle } from "@/lib/clients";
 import { workIdentityLabel } from "@/lib/work-identity";
 import { pastedChatUrl } from "@/lib/chat-url";
 import { sourceBrandKey } from "@/components/work/SourceMark";
@@ -46,6 +47,7 @@ export function WorkNote({
   phoneRow?: boolean;
 }) {
   const mapping = item.work_item_tasks?.[0]?.tasks ?? null;
+  const boardTitle = mapping?.engagements ? engagementDisplayTitle(mapping.engagements) : null;
   const when = resolveWorkDate(item);
   const date = when.byArrival ? `added ${formatDate(when.iso)}` : formatDate(when.iso);
   const brand = sourceBrandKey(item);
@@ -75,7 +77,7 @@ export function WorkNote({
         <span className="min-w-0 flex-1 text-left">
           <span className="work-phone-row__title">{item.title}</span>
           <span className="work-phone-row__stamp">
-            {date} · {workIdentityLabel(item as WorkItemRow)} · {mapping?.engagements?.code ?? "NO BOARD"}
+            {date} · {workIdentityLabel(item as WorkItemRow)} · {boardTitle ?? "NO BOARD"}
           </span>
         </span>
       </Button>
@@ -144,7 +146,7 @@ export function WorkNote({
               <ChatUrlLink item={item as WorkItemRow} showAbsence turnCount={chatPreview?.turnCount} toolSteps={chatPreview?.toolSteps} />
             )}
           </span>
-          {mapping?.engagements?.code ? <span className="shrink-0 rounded-[3px] border border-hairline px-1 font-mono text-[8.5px] uppercase tracking-[0.08em] text-muted-foreground">{mapping.engagements.code}</span> : null}
+          {boardTitle ? <span className="min-w-0 truncate rounded-[3px] border border-hairline px-1 font-mono text-[8.5px] uppercase tracking-[0.08em] text-muted-foreground">{boardTitle}</span> : null}
           {chips ? <span className="sr-only">{chips}</span> : null}
         </div>
       </div>

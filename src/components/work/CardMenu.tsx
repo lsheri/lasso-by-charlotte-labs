@@ -8,6 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useRowMenuParts } from "@/components/work/RowMenu";
+import { engagementDisplayTitle } from "@/lib/clients";
 import { effectiveWorkDate, formatDate, sourceLabel, type WorkItemRow } from "@/lib/work-types";
 
 /** Plain words for how complete the text behind a card is. */
@@ -59,7 +60,7 @@ export function CardMenu({
   const { items, dialogs } = useRowMenuParts({ item, onFluency, engagementId, onRemoved });
   const mapping = item.work_item_tasks?.[0]?.tasks ?? null;
   const place = mapping
-    ? [mapping.engagements?.code, mapping.name].filter(Boolean).join(" · ")
+    ? [mapping.engagements ? engagementDisplayTitle(mapping.engagements) : null, mapping.name].filter(Boolean).join(" · ")
     : (clientLabel ?? null);
   const fidelity = fidelityLine(item.content_fidelity);
 

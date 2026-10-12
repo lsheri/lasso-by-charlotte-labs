@@ -33,7 +33,7 @@ function openDialog() {
     item={{ id: "w1", title: "Memo", type: "document", source: "import:manual" } as WorkItemRow}
     open onOpenChange={mocks.close} entry="nav_no_board"
   /></QueryClientProvider>);
-  fireEvent.click(screen.getByRole("button", { name: /CF\s*Pricing/ }));
+  fireEvent.click(screen.getByRole("button", { name: "Pricing" }));
 }
 
 describe("MAP-UX optional workstreams", () => {
@@ -41,17 +41,17 @@ describe("MAP-UX optional workstreams", () => {
     openDialog();
     expect(screen.getByRole("heading", { name: "Put on a board" })).toBeTruthy();
     expect(screen.queryByTestId("declare-workflow")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Put on CF Pricing" }));
+    fireEvent.click(screen.getByRole("button", { name: "Put on Pricing" }));
     await waitFor(() => expect(mocks.remap).toHaveBeenCalledWith(expect.objectContaining({ taskId: "default-task", entry: "nav_no_board" })));
     expect(mocks.rpc).toHaveBeenCalledExactlyOnceWith("ensure_board_default_task", { p_engagement: "e1" });
-    expect(mocks.toast).toHaveBeenCalledExactlyOnceWith("Added to CF · Pricing");
+    expect(mocks.toast).toHaveBeenCalledExactlyOnceWith("Added to Pricing");
     expect(mocks.close).toHaveBeenCalledWith(false);
   });
 
   it("keeps optional workstream mapping and names it in the confirmation", async () => {
     openDialog();
     fireEvent.click(await screen.findByRole("button", { name: "Research" }));
-    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith("Added to CF · Pricing · Research"));
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith("Added to Pricing · Research"));
     expect(mocks.rpc).not.toHaveBeenCalled();
     expect(mocks.remap).toHaveBeenCalledWith(expect.objectContaining({ taskId: "t1" }));
   });
@@ -59,7 +59,7 @@ describe("MAP-UX optional workstreams", () => {
   it("keeps the dialog open and emits no confirmation when default home resolution fails", async () => {
     mocks.rpc.mockResolvedValue({ data: null, error: { message: "No access" } });
     openDialog();
-    fireEvent.click(screen.getByRole("button", { name: "Put on CF Pricing" }));
+    fireEvent.click(screen.getByRole("button", { name: "Put on Pricing" }));
     expect(await screen.findByText("No access")).toBeTruthy();
     expect(mocks.remap).not.toHaveBeenCalled();
     expect(mocks.toast).not.toHaveBeenCalled();
@@ -73,5 +73,10 @@ describe("MAP-UX optional workstreams", () => {
     for (const text of Object.values(COPY)) {
       expect(text).not.toMatch(/score|monitor|track|surveillance|—/i);
     }
+  });
+  it("CS-11 shows no board code in the chooser or Put on button", () => {
+    openDialog();
+    expect(screen.getByRole("button", { name: "Put on Pricing" })).toBeTruthy();
+    expect(screen.getByRole("dialog").textContent).not.toContain("CF");
   });
 });

@@ -596,6 +596,10 @@ export function WorkPage() {
         .filter((code): code is string => Boolean(code)),
     ),
   ).sort((a, b) => a.localeCompare(b));
+  const engagementTitles = new Map(mapped.flatMap((item) => {
+    const board = item.work_item_tasks[0]?.tasks?.engagements;
+    return board ? [[board.code, board.clients?.quick_folder ? board.clients.name : board.title] as const] : [];
+  }));
 
   // Every item stays in the columns. Filters only decide which cards remain active.
   const visible = all;
@@ -817,7 +821,7 @@ export function WorkPage() {
         <button type="button" onClick={() => changeColumnFilter("all")} className={columnFilter === "all" ? chipOn : chipOff}>Everything</button>
         <button type="button" title="Work with no board is private. It is not in any receipt, no coach can see it, and it will not appear in the firm view until you put it on a board." onClick={() => changeColumnFilter("unmapped")} className={columnFilter === "unmapped" ? chipOn : chipOff}>No board</button>
         <button type="button" onClick={() => changeColumnFilter("claimed")} className={columnFilter === "claimed" ? chipOn : chipOff}>Claimed by you</button>
-        {engagementCodes.map((code) => <button key={code} type="button" onClick={() => changeColumnFilter(code)} className={columnFilter === code ? chipOn : chipOff}>{code}</button>)}
+        {engagementCodes.map((code) => <button key={code} type="button" onClick={() => changeColumnFilter(code)} className={columnFilter === code ? chipOn : chipOff}>{engagementTitles.get(code)}</button>)}
         {priv.length > 0 ? (
           <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
             <Checkbox checked={showPrivate} onCheckedChange={(next) => changePrivate(next === true)} aria-label="Show private work" />
