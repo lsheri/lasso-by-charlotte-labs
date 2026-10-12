@@ -129,6 +129,11 @@ export function BoardInviteCard({
   }
 }
 
+/** SH-5f: only a peer invitee with no space anywhere sets one up first. */
+export function shouldSetUpSpace(preview: BoardInvitePreview | undefined, hasProfile: boolean): boolean {
+  return preview?.state === "sent" && preview.kind === "peer" && !hasProfile;
+}
+
 function BoardInvitePage() {
   const { code } = Route.useSearch();
   const navigate = useNavigate();
@@ -181,8 +186,8 @@ function BoardInvitePage() {
   // SH-5f: a peer invitee with no space of their own sets one up first.
   const needsSpace = useQuery({
     queryKey: ["board-invite-needs-space", viewer.data],
-    enabled: Boolean(viewer.data) && state.data?.state === "sent" && state.data?.kind === "peer",
-    queryFn: async () => (await fetchProfile()) === null,
+    enabled: Boolean(viewer.data) && shouldSetUpSpace(state.data, false),
+    queryFn: async () => shouldSetUpSpace(state.data, (await fetchProfile()) !== null),
   });
   useEffect(() => {
     if (!code || !needsSpace.data || !state.data) return;
