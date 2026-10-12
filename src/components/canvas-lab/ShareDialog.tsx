@@ -358,7 +358,8 @@ function PeopleSection({
     queryKey: invitesKey,
     queryFn: () => listInvites({ data: { engagementId } }),
     enabled: open && !!engagementId,
-    staleTime: 5_000,
+    staleTime: 0,
+    refetchOnMount: "always",
   });
   const sendInvite = useMutation({
     mutationFn: (email: string) =>
@@ -374,7 +375,7 @@ function PeopleSection({
       }
       setPick("");
       setInviteLine(inviteResultLine(answer));
-      await queryClient.invalidateQueries({ queryKey: invitesKey });
+      await invites.refetch();
     },
     onError: () => setProblem(PEOPLE_COPY.problem),
   });
@@ -382,7 +383,7 @@ function PeopleSection({
     mutationFn: (inviteId: string) => withdraw({ data: { inviteId } }),
     onSuccess: async (answer) => {
       setProblem(answer.ok ? null : answer.error);
-      await queryClient.invalidateQueries({ queryKey: invitesKey });
+      await invites.refetch();
     },
     onError: () => setProblem(PEOPLE_COPY.problem),
   });
@@ -423,7 +424,7 @@ function PeopleSection({
         <SegmentedChoice name="New person conversations" value={addConversations}
           choices={CONVERSATION_CHOICES} disabled={change.isPending || !people.data?.canShare}
           onChoose={setAddConversations} />
-        {people.data && canPick.length === 0 ? (
+        {people.data && canPick.length === 0 && !inviteEmail ? (
           <p className="text-sm text-muted-foreground">{PEOPLE_COPY.nobodyToAdd}</p>
         ) : null}
         {pick.trim() && suggestions.length > 0 ? (
