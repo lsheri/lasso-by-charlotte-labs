@@ -34,6 +34,9 @@ import { isSupportPath } from "@/lib/support-view";
 import { AUTH_COPY } from "@/lib/auth-copy";
 import { isKeyInvalid, resolveKeyCheck } from "@/lib/auth-key-check";
 import { KEY_NOTICE_COPY, KeyNoticeSentence } from "@/lib/key-notice";
+import { SIGNUP_DEFAULT_NOTICE } from "@/lib/data-consent-shared";
+
+export const COPY = { noticeLink: "Trust & data" } as const;
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -551,6 +554,12 @@ function AuthPage() {
             <Button type="submit" className="w-full" disabled={pending}>
               {pending ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}
             </Button>
+            {mode === "signup" && !authUser ? (
+              <div data-testid="signup-default-notice" className="text-sm leading-relaxed text-muted-foreground">
+                <p>{SIGNUP_DEFAULT_NOTICE}</p>
+                <Link to="/trust" className="mt-2 inline-block underline underline-offset-4 hover:text-foreground">{COPY.noticeLink}</Link>
+              </div>
+            ) : null}
             {mode === "signin" ? (
               <Link to="/reset-password" search={next ? { next } : {}} className="mt-2 inline-block text-sm text-muted-foreground transition-colors hover:text-foreground">{FORGOT_LINK}</Link>
             ) : null}

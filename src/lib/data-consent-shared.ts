@@ -12,6 +12,11 @@ export type DataTier = (typeof TIER_ORDER)[number];
 /** The copy people read. Bump this when any sentence below changes. */
 export const CONSENT_TEXT_VERSION = "dc-v4";
 
+/** Shown to every new sign-up. The database hashes this exact string (signup_default_notice(), dc-signup-v1); a test pins they match. */
+export const SIGNUP_DEFAULT_NOTICE =
+  "Lasso starts at Full work content: work you map or ship, including the AI conversations behind it, is shared with Charlotte Labs to build the record of how people work with AI. Private and unmapped work never leaves your workspace. Change it any time in Settings, under Your data.";
+export const SIGNUP_DEFAULT_TEXT_VERSION = "dc-signup-v1";
+
 /** Defaults when a state row is missing. */
 export const DEFAULT_ORG_TIER: DataTier = "c";
 export const DEFAULT_USER_TIER: DataTier = "b";
