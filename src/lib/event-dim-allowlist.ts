@@ -44,6 +44,8 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "analysis.reader_story": ["claims", "confirm_step", "cost_band", "cost_bucket", "deliverable_kind", "error_class", "handoff_parse", "handoffs_emitted", "items_read", "items_read_bucket", "outcome", "preset", "reason_class", "scope_type", "status", "suppressed", "suppressed_bucket", "tokens_in_bucket"],
   "analysis.run": ["claims", "confirm_step", "cost_band", "cost_bucket", "deliverable_kind", "error_class", "handoff_parse", "handoffs_emitted", "items_read", "items_read_bucket", "outcome", "preset", "reason_class", "scope_type", "status", "suppressed", "suppressed_bucket", "tokens_in_bucket"],
   "analysis.started": ["claims", "confirm_step", "cost_band", "cost_bucket", "deliverable_kind", "entry", "error_class", "handoff_parse", "handoffs_emitted", "items_read", "items_read_bucket", "outcome", "preset", "reason_class", "scope", "scope_type", "status", "suppressed", "suppressed_bucket", "tokens_in_bucket"],
+  "answer.edited": ["change_band", "first_edit"],
+  "answer.original_viewed": [],
   "archive.search": ["had_results", "matched", "result_count", "results"],
   "archive.searched": ["had_results", "matched", "result_count", "results"],
   "artifact.declared": ["ai_involvement", "disposition", "output_kind"],

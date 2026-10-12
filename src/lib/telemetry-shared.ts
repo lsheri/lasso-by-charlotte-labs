@@ -319,6 +319,10 @@ export type TelemetryEvent =
   | "workboard.node_deleted"
   /** Canvas Lab Phase 2: a local note was edited. Kind only. */
   | "workboard.node_edited"
+  /** BE-6: content-free answer edit bands and first-edit state. CAT-9 portal registration required. */
+  | "answer.edited"
+  /** BE-6: the preserved original answer was opened. No dims. */
+  | "answer.original_viewed"
   /** Canvas Lab Phase 2: a real record was hidden or restored locally. */
   | "workboard.record_visibility_changed"
   /** Canvas Lab Phase 2: a local relationship changed. Action only. */
