@@ -42,7 +42,7 @@ describe("AU-1b signed out with a made-up key", () => {
     const Comp = (AuthRoute as unknown as { options: { component: () => JSX.Element } }).options.component;
     render(
       <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-        <Suspense fallback={null}><Comp /></Suspense>
+        <Comp />
       </QueryClientProvider>,
     );
     await new Promise((r) => setTimeout(r, 300)); console.log("DOM", document.body.textContent, mocks.publicCheck.mock.calls.length);
