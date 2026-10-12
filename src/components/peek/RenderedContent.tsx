@@ -93,6 +93,15 @@ export function isItemOwner(item: Pick<WorkItemRow, "owner_id">, profileId: stri
   return Boolean(profileId) && item.owner_id === profileId;
 }
 
+/** The summary sentence for a viewer who does not own the item; owners get null. */
+export function summaryOnlyLine(
+  reason: string | null | undefined,
+  item: Pick<WorkItemRow, "owner_id">,
+  profileId: string | undefined,
+): string | null {
+  return reason === "empty_thread" && !isItemOwner(item, profileId) ? SUMMARY_ONLY_LINE : null;
+}
+
 /** Plain text for formats a browser cannot render. No layout, and it says so. */
 function TextPane({
   item,
@@ -117,7 +126,7 @@ function TextPane({
   if (!pane?.text) {
     return (
       <div className="space-y-2">
-        {pane?.reason === "empty_thread" && !isItemOwner(item, profile?.id) ? (
+        {summaryOnlyLine(pane?.reason, item, profile?.id) ? (
           <Notice>{SUMMARY_ONLY_LINE}</Notice>
         ) : (
           <Notice>
