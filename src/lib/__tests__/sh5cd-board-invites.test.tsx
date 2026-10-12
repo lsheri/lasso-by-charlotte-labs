@@ -146,7 +146,7 @@ describe("SH-5c-fix the Invited group refreshes", () => {
     await waitFor(() => expect(inviteState.listCalls).toBe(1));
     expect(screen.getByText("Nobody else in your workspace yet.")).toBeTruthy();
 
-    fireEvent.change(screen.getByLabelText("Add people by name"), { target: { value: "jo@x.com" } });
+    fireEvent.change(screen.getByLabelText("Add people by name or email"), { target: { value: "jo@x.com" } });
     expect(screen.queryByText("Nobody else in your workspace yet.")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Invite jo@x.com" }));
 
