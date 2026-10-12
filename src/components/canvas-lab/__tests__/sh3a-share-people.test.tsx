@@ -14,6 +14,7 @@ vi.mock("@/lib/engagement-access.functions", () => ({
     ],
   })),
   setEngagementPersonAccessFn: vi.fn(async () => ({ status: "done", result: "changed" })),
+  setPersonConversationsFn: vi.fn(async () => ({ status: "done", result: "unchanged" })),
 }));
 vi.mock("@/lib/partner-share", () => ({ listMyPartnerShares: vi.fn(async () => []), listSharedEngagements: vi.fn(), shareEngagement: vi.fn(), unshareEngagement: vi.fn() }));
 vi.mock("@/components/canvas-lab/ShareBoardDialog", () => ({ BoardLinkSection: () => null }));
