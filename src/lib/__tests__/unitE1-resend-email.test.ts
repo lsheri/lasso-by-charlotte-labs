@@ -93,12 +93,12 @@ describe("auth email hook", () => {
   });
 
   const expected: Record<AuthEmailType, [string, string[]]> = {
-    signup: ["auth-signup", ["CONFIRMATION_URL"]],
-    invite: ["auth-invite", ["CONFIRMATION_URL"]],
-    magiclink: ["auth-magiclink", ["CONFIRMATION_URL"]],
-    recovery: ["auth-recovery", ["CONFIRMATION_URL"]],
-    email_change: ["auth-email-change", ["CONFIRMATION_URL", "NEW_EMAIL", "OLD_EMAIL"]],
-    reauthentication: ["auth-reauthentication", ["TOKEN"]],
+    signup: ["auth-signup", ["CONFIRMATION_URL", "USER_EMAIL"]],
+    invite: ["auth-invite", ["CONFIRMATION_URL", "USER_EMAIL"]],
+    magiclink: ["auth-magiclink", ["CONFIRMATION_URL", "USER_EMAIL"]],
+    recovery: ["auth-recovery", ["CONFIRMATION_URL", "USER_EMAIL"]],
+    email_change: ["auth-email-change", ["CONFIRMATION_URL", "NEW_EMAIL", "OLD_EMAIL", "USER_EMAIL"]],
+    reauthentication: ["auth-reauthentication", ["TOKEN", "USER_EMAIL"]],
   };
   for (const type of Object.keys(expected) as AuthEmailType[]) {
     it(`${type} maps to its alias and variables, never a reserved name`, () => {
