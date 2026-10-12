@@ -42,10 +42,14 @@ export type BoardInvitePreview = {
   by: string | null;
   kind: string | null;
   email_hint: string | null;
+  /** SH-5f: company name for member invites, null for peer. */
+  org?: string | null;
 };
 
 export const ACCEPT_COPY = {
   heading: (by: string, board: string) => `${by} invited you to ${board}`,
+  memberHeading: (by: string, org: string) => `${by} invited you to join ${org} on Lasso`,
+  memberBoard: (board: string) => `You'll work on ${board}.`,
   useAddress: (hint: string) => `Use the address this was sent to: ${hint}.`,
   signIn: "Sign in",
   signUp: "Create an account",

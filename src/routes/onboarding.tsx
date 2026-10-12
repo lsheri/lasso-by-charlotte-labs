@@ -27,6 +27,7 @@ import {
   clearSignupSource,
 } from "@/lib/edu-entry";
 import { readPendingInvite } from "@/lib/pending-invite";
+import { pendingBoardInvitePath } from "@/lib/pending-board-invite";
 import { useServerFn } from "@tanstack/react-start";
 import { lookupActivationKeyFn, redeemActivationKeyFn } from "@/lib/activation-keys.functions";
 import { cleanActivationKey, clearActivationKey, readActivationKey } from "@/lib/key-entry";
@@ -202,7 +203,12 @@ export const Route = createFileRoute("/onboarding")({
     }
     const profile = await fetchProfile();
     // `?setup=1` is how an existing member reopens the tool setup from Connectors.
-    if (profile && !search.setup) throw redirect({ to: "/home" });
+    if (profile && !search.setup) {
+      // SH-5f: a waiting board invite comes before Home.
+      const invitePath = pendingBoardInvitePath();
+      if (invitePath) throw redirect({ href: invitePath, replace: true });
+      throw redirect({ to: "/home" });
+    }
     // Someone who arrived on an invite should never be asked for the code
     // again. The accept page owns every invite state, including redeemed.
     if (!profile && !search.setup) {
@@ -524,6 +530,12 @@ function OnboardingInner() {
   const [tourProfile, setTourProfile] = useState<Profile | null>(null);
 
   function land() {
+    // SH-5f: someone who set up their own space for a board invite goes back to it.
+    const invitePath = pendingBoardInvitePath();
+    if (invitePath) {
+      navigate({ href: invitePath, replace: true });
+      return;
+    }
     // Unit Y2: the same place sign-in lands, so the first visit and every
     // later one start on the same screen.
     navigate({ to: "/home", replace: true });

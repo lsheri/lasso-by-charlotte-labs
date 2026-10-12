@@ -42,6 +42,7 @@ export const Route = createFileRoute("/auth")({
     from?: SignupSource | undefined;
     src?: FunnelSource | undefined;
     key?: string | undefined;
+    mode?: "signup" | undefined;
   } => {
     const next = search["next"];
     const intent = search["intent"];
@@ -50,6 +51,7 @@ export const Route = createFileRoute("/auth")({
     const src = parseFunnelSource(search["src"]);
     const key = cleanActivationKey(search["key"]);
     return {
+      ...(search["mode"] === "signup" ? { mode: "signup" as const } : {}),
       ...(key ? { key } : {}),
       ...(isPartnerSlug(from) || from === "edu" || from === "direct" ? { from } : {}),
       ...(src ? { src } : {}),
@@ -132,7 +134,7 @@ export function noteSignUpIdentity(result: {
 function AuthPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { next, intent, invite, from, src, key } = Route.useSearch();
+  const { next, intent, invite, from, src, key, mode: modeParam } = Route.useSearch();
   useEffect(() => {
     if (intent) emitClientEvent("signup.started", { intent, src: src ?? "direct" }, { stableVisitor: true });
   }, [intent, src]);
@@ -178,7 +180,7 @@ function AuthPage() {
   }
 
   const [mode, setMode] = useState<"signin" | "signup">(
-    invited || inviteCode || key ? "signup" : "signin",
+    invited || inviteCode || key || modeParam === "signup" ? "signup" : "signin",
   );
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

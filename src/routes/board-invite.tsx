@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { SessionHeader } from "@/components/layout/SessionHeader";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,12 @@ import {
   type BoardInvitePreview,
 } from "@/lib/board-invites-shared";
 import { claimBoardInvite, previewBoardInvite } from "@/lib/board-invites.functions";
+import { fetchProfile } from "@/hooks/use-profile";
+import {
+  clearPendingBoardInvite,
+  readPendingBoardInvite,
+  rememberPendingBoardInvite,
+} from "@/lib/pending-board-invite";
 
 type Search = { code?: string | undefined };
 
@@ -55,6 +61,7 @@ export function BoardInviteCard({
   onAccept,
   onSignOut,
   onOpenBoard,
+  onRemember,
 }: {
   preview: BoardInvitePreview;
   code: string;
@@ -64,6 +71,7 @@ export function BoardInviteCard({
   onAccept?: () => void;
   onSignOut?: () => void;
   onOpenBoard?: () => void;
+  onRemember?: (via: "signup" | "signin") => void;
 }) {
   const by = preview.by ?? "Someone";
   const board = preview.board ?? "a board";
@@ -71,7 +79,14 @@ export function BoardInviteCard({
   switch (preview.state) {
     case "sent":
       return (
-        <Card title={ACCEPT_COPY.heading(by, board)}>
+        <Card
+          title={
+            preview.kind === "member" && preview.org
+              ? ACCEPT_COPY.memberHeading(by, preview.org)
+              : ACCEPT_COPY.heading(by, board)
+          }
+        >
+          {preview.kind === "member" && preview.org ? <p>{ACCEPT_COPY.memberBoard(board)}</p> : null}
           {signedIn ? (
             <>
               <Button disabled={pending} onClick={onAccept}>{ACCEPT_COPY.accept}</Button>
@@ -87,10 +102,10 @@ export function BoardInviteCard({
               {preview.email_hint ? <p>{ACCEPT_COPY.useAddress(preview.email_hint)}</p> : null}
               <div className="flex flex-wrap gap-2">
                 <Button asChild>
-                  <Link to="/auth" search={{ next }}>{ACCEPT_COPY.signIn}</Link>
+                  <Link to="/auth" search={{ next }} onClick={() => onRemember?.("signin")}>{ACCEPT_COPY.signIn}</Link>
                 </Button>
                 <Button asChild variant="outline">
-                  <Link to="/auth" search={{ next }}>{ACCEPT_COPY.signUp}</Link>
+                  <Link to="/auth" search={{ mode: "signup", next }} onClick={() => onRemember?.("signup")}>{ACCEPT_COPY.signUp}</Link>
                 </Button>
               </div>
             </>
@@ -112,6 +127,11 @@ export function BoardInviteCard({
     default:
       return <Card title={ACCEPT_COPY.notFound} />;
   }
+}
+
+/** SH-5f: only a peer invitee with no space anywhere sets one up first. */
+export function shouldSetUpSpace(preview: BoardInvitePreview | undefined, hasProfile: boolean): boolean {
+  return preview?.state === "sent" && preview.kind === "peer" && !hasProfile;
 }
 
 function BoardInvitePage() {
@@ -137,7 +157,8 @@ function BoardInvitePage() {
     if (!code) return;
     setPending(true);
     setError(null);
-    const result = await claim({ data: { code } }).catch((e: unknown) => ({
+    const via = readPendingBoardInvite()?.code === code ? readPendingBoardInvite()!.via : "direct";
+    const result = await claim({ data: { code, via } }).catch((e: unknown) => ({
       ok: false as const,
       error: e instanceof Error ? e.message : "Could not accept this invite.",
     }));
@@ -146,6 +167,7 @@ function BoardInvitePage() {
       setPending(false);
       return;
     }
+    clearPendingBoardInvite();
     if (result.profileId) await setActiveProfileId(result.profileId);
     if (result.engagementId) {
       navigate({ to: "/engagements/$id/canvas-lab", params: { id: result.engagementId } } as never);
@@ -161,9 +183,26 @@ function BoardInvitePage() {
     window.location.replace(`${window.location.origin}${boardInviteReturnPath(code ?? "")}`);
   }
 
+  // SH-5f: a peer invitee with no space of their own sets one up first.
+  const needsSpace = useQuery({
+    queryKey: ["board-invite-needs-space", viewer.data],
+    enabled: Boolean(viewer.data) && shouldSetUpSpace(state.data, false),
+    queryFn: async () => shouldSetUpSpace(state.data, (await fetchProfile()) !== null),
+  });
+  useEffect(() => {
+    if (!code || !needsSpace.data || !state.data) return;
+    const prior = readPendingBoardInvite();
+    rememberPendingBoardInvite({
+      code,
+      kind: state.data.kind,
+      via: prior?.code === code ? prior.via : "signin",
+    });
+    navigate({ to: "/plans", replace: true } as never);
+  }, [code, needsSpace.data, state.data, navigate]);
+
   let body: React.ReactNode;
   if (!code) body = <Card title={ACCEPT_COPY.missing} />;
-  else if (state.isLoading || viewer.isLoading || !state.data) body = <Card title={ACCEPT_COPY.loading} />;
+  else if (state.isLoading || viewer.isLoading || !state.data || needsSpace.isLoading || needsSpace.data) body = <Card title={ACCEPT_COPY.loading} />;
   else
     body = (
       <BoardInviteCard
@@ -175,6 +214,7 @@ function BoardInvitePage() {
         onAccept={accept}
         onSignOut={signOut}
         onOpenBoard={() => navigate({ to: "/work" } as never)}
+        onRemember={(via) => rememberPendingBoardInvite({ code, kind: state.data?.kind ?? null, via })}
       />
     );
 

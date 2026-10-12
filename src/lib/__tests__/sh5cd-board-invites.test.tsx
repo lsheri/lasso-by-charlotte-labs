@@ -45,10 +45,17 @@ vi.mock("@/lib/board-share.functions", () => ({
   createBoardShareLinkFn: vi.fn(async () => ({ status: "error" })),
   expireBoardShareLinkFn: vi.fn(async () => ({ status: "not_found" })),
 }));
-vi.mock("@/hooks/use-profile", () => ({ setActiveProfileId: vi.fn() }));
+vi.mock("@/hooks/use-profile", () => ({ setActiveProfileId: vi.fn(), fetchProfile: vi.fn() }));
 vi.mock("@/components/layout/SessionHeader", () => ({ SessionHeader: () => null }));
 
-import { BoardInviteCard } from "@/routes/board-invite";
+import { readFileSync } from "node:fs";
+import {
+  clearPendingBoardInvite,
+  pendingBoardInvitePath,
+  readPendingBoardInvite,
+  rememberPendingBoardInvite,
+} from "@/lib/pending-board-invite";
+import { BoardInviteCard, shouldSetUpSpace } from "@/routes/board-invite";
 import {
   CONVERSATIONS_FROM_LABEL,
   LEVEL_FROM_LABEL,
@@ -124,7 +131,7 @@ describe("telemetry", () => {
   it("three events allowlisted with closed dims", () => {
     expect(EVENT_DIM_KEYS["board.invite_sent"]).toEqual(["conversations", "kind", "level", "status"]);
     expect(EVENT_DIM_KEYS["board.invite_withdrawn"]).toEqual(["kind"]);
-    expect(EVENT_DIM_KEYS["board.invite_accepted"]).toEqual(["kind"]);
+    expect(EVENT_DIM_KEYS["board.invite_accepted"]).toEqual(["kind", "via"]);
   });
 });
 
@@ -154,5 +161,61 @@ describe("SH-5c-fix the Invited group refreshes", () => {
     const group = await screen.findByRole("group", { name: "Invited" });
     expect(group.textContent).toContain("jo@x.com");
     expect(screen.getByRole("button", { name: "Withdraw" })).toBeTruthy();
+  });
+});
+
+describe("SH-5f invite page routing", () => {
+  const sent: BoardInvitePreview = { state: "sent", board: "Q3 pricing", by: "Ana", kind: "member", email_hint: "j***@x.com", org: "Acme" };
+
+  it("member heading names the company and the board line follows", () => {
+    render(<BoardInviteCard preview={sent} code="c" signedIn={false} />);
+    expect(screen.getByRole("heading").textContent).toBe("Ana invited you to join Acme on Lasso");
+    expect(screen.getByText("You'll work on Q3 pricing.")).toBeTruthy();
+  });
+
+  it("peer heading is unchanged", () => {
+    render(<BoardInviteCard preview={{ ...sent, kind: "peer", org: null }} code="c" signedIn={false} />);
+    expect(screen.getByRole("heading").textContent).toBe("Ana invited you to Q3 pricing");
+    expect(screen.queryByText(/You'll work on/)).toBeNull();
+  });
+
+  it("Create an account opens sign up and keeps next", () => {
+    render(<BoardInviteCard preview={sent} code="AB" signedIn={false} />);
+    const href = screen.getByText("Create an account").closest("a")!.getAttribute("href")!;
+    expect(href).toBe(`/auth?${new URLSearchParams({ mode: "signup", next: "/board-invite?code=AB" })}`);
+    const signIn = screen.getByText("Sign in").closest("a")!.getAttribute("href")!;
+    expect(signIn).not.toContain("mode=");
+  });
+
+  it("/auth accepts mode=signup and opens the sign-up view from it", () => {
+    const src = readFileSync("src/routes/auth.tsx", "utf8");
+    expect(src).toContain('search["mode"] === "signup"');
+    expect(src).toContain('modeParam === "signup" ? "signup" : "signin"');
+  });
+
+  it("a signed-in peer with no profile sets up a space; a member sees Accept", () => {
+    expect(shouldSetUpSpace({ ...sent, kind: "peer" }, false)).toBe(true);
+    expect(shouldSetUpSpace({ ...sent, kind: "peer" }, true)).toBe(false);
+    expect(shouldSetUpSpace(sent, false)).toBe(false);
+    render(<BoardInviteCard preview={sent} code="c" signedIn />);
+    expect(screen.getByRole("button", { name: "Accept" })).toBeTruthy();
+    expect(readFileSync("src/routes/board-invite.tsx", "utf8")).toContain('navigate({ to: "/plans"');
+  });
+
+  it("land() and beforeLoad go to a pending invite", () => {
+    rememberPendingBoardInvite({ code: "XY", kind: "peer", via: "signup" });
+    expect(pendingBoardInvitePath()).toBe("/board-invite?code=XY");
+    expect(readPendingBoardInvite()?.via).toBe("signup");
+    clearPendingBoardInvite();
+    expect(pendingBoardInvitePath()).toBeNull();
+    rememberPendingBoardInvite({ code: "OLD", kind: "peer", via: "signin" }, Date.now() - 15 * 86400000);
+    expect(readPendingBoardInvite()).toBeNull();
+    const onboarding = readFileSync("src/routes/onboarding.tsx", "utf8");
+    const land = onboarding.slice(onboarding.indexOf("function land()"), onboarding.indexOf("function land()") + 400);
+    expect(land.indexOf("pendingBoardInvitePath()")).toBeLessThan(land.indexOf('to: "/home"'));
+  });
+
+  it("board.invite_accepted allowlists via", () => {
+    expect(EVENT_DIM_KEYS["board.invite_accepted"]).toEqual(["kind", "via"]);
   });
 });
