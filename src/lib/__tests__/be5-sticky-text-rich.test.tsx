@@ -7,6 +7,9 @@ import { LabTextBlock } from "@/components/canvas-lab/LabTextBlock";
 import type { LabNode } from "@/components/canvas-lab/canvas-lab-model";
 import { sanitizeRichHtml } from "@/lib/rich-text";
 
+// jsdom has no selection geometry; ProseMirror's autofocus scroll reads it.
+Object.defineProperty(Range.prototype, "getClientRects", { configurable: true, value: () => [] });
+Object.defineProperty(Range.prototype, "getBoundingClientRect", { configurable: true, value: () => ({ left: 0, right: 0, top: 0, bottom: 0, width: 0, height: 0 }) });
 afterEach(cleanup);
 const base: LabNode = { id: "one", kind: "sticky", title: "", summary: "Hello", typeLabel: "", ownership: "yours", local: true, x: 0, y: 0, width: 260, height: 160 };
 function mount(kind: "sticky" | "text", patch: Partial<LabNode> = {}) {
