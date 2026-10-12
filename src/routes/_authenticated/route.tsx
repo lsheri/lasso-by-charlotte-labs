@@ -1,11 +1,15 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
 import { AppShell } from "@/components/layout/AppShell";
+import { AppShellSkeleton } from "@/components/layout/AppShellSkeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureAuthUser, ensureProfileState } from "@/hooks/use-profile";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
+  pendingComponent: AppShellSkeleton,
+  pendingMs: 150,
+  pendingMinMs: 200,
   beforeLoad: async () => {
     // PERF-2a: identity and profiles come through the shared cache, so an
     // in-app navigation makes no network round trip while they are fresh.
