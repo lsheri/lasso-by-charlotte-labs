@@ -1,3 +1,4 @@
+import { useRecordEngagementView } from "@/hooks/use-engagement-views";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { Menu, X } from "lucide-react";
@@ -236,6 +237,8 @@ function noteBoardFirstMap(orgId: string, item: { type: string; source: string }
 
 export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string; entryVia?: string }) {
   const navigate = useNavigate();
+  // F3: opening a board writes the viewer's own last-viewed row and clears its "N NEW".
+  useRecordEngagementView(engagementId);
   const settingsDialog = useSettingsDialogOptional();
   const { data: profile } = useProfile();
   const { data: page, isLoading, isError } = useEngagementPage(engagementId);

@@ -1,5 +1,6 @@
 import { clientsEnabled } from "@/lib/workspace-settings";
 import { useQueryClient } from "@tanstack/react-query";
+import { BoardNewPill } from "@/components/board/BoardNewPill";
 import { Link, useMatchRoute, useSearch } from "@tanstack/react-router";
 import { Fragment, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
 
@@ -172,6 +173,7 @@ function EngagementRow({
           </TooltipProvider>
         ) : null}
         <span className="truncate">{engagementDisplayTitle(engagement)}</span>
+        <BoardNewPill engagementId={engagement.id} />
       </Link>
   );
   return (

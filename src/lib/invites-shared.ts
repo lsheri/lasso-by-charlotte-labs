@@ -62,5 +62,5 @@ export function joinNames(names: readonly string[]): string {
 export function coachScopeLine(subjectNames: readonly string[] | undefined): string | null {
   const names = joinNames(subjectNames ?? []);
   if (!names) return null;
-  return `You will see the work of the people you were added to: ${names}. Nothing else in the workspace is visible to you.`;
+  return `You will see only the work ${names} choose to share with you. Nothing else in the workspace is visible to you.`;
 }

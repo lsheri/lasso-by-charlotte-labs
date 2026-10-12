@@ -315,6 +315,7 @@ function PeopleSection({
           engagement_id: engagementId,
           person_id: input.person_id,
           access: input.access,
+          ...(input.fromAdd ? { conversations: addConversations } : {}),
           ...(profileId ? { profile_id: profileId } : {}),
         },
       }),

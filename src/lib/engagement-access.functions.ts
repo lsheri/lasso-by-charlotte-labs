@@ -6,6 +6,7 @@
  */
 
 import { createServerFn } from "@tanstack/react-start";
+import { shouldNotifyShare } from "@/lib/board-share-notify";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
@@ -38,10 +39,11 @@ export type SetAccessAnswer =
 
 export const setEngagementPersonAccessFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { engagement_id: string; person_id: string; access: string; profile_id?: string }) => ({
+  .inputValidator((input: { engagement_id: string; person_id: string; access: string; profile_id?: string; conversations?: string }) => ({
     engagement_id: typeof input?.engagement_id === "string" ? input.engagement_id : "",
     person_id: typeof input?.person_id === "string" ? input.person_id : "",
     access: typeof input?.access === "string" ? input.access : "",
+    conversations: input?.conversations === "full" ? ("full" as const) : ("summaries" as const),
     profile_id: typeof input?.profile_id === "string" ? input.profile_id : undefined,
   }))
   .handler(async ({ data, context }): Promise<SetAccessAnswer> => {
@@ -68,6 +70,17 @@ export const setEngagementPersonAccessFn = createServerFn({ method: "POST" })
       profileId: profile.id,
       dims: { access: data.access, result, target: "member" },
     });
+    // F6: only a fresh add of someone else sends the board-shared email and bell row.
+    if (shouldNotifyShare(result, data.person_id, profile.id)) {
+      const { notifyBoardShared } = await import("@/lib/board-invite-email.server");
+      await notifyBoardShared({
+        engagementId: data.engagement_id,
+        recipientProfileId: data.person_id,
+        sharerProfileId: profile.id,
+        level: data.access,
+        conversations: data.conversations,
+      });
+    }
     return { status: "done", result };
   });
 

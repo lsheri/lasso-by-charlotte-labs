@@ -132,7 +132,7 @@ function ConfirmDialog({
           <AlertDialogDescription>
             {pending ? tierCopy(pending).description : ""}
             {scope === "org"
-              ? " This sets what the whole organization may share. People can choose less for themselves."
+              ? " This sets how Lasso may use the whole organization's data. People can choose less for themselves."
               : " You can change this at any time."}
           </AlertDialogDescription>
         </AlertDialogHeader>
@@ -203,7 +203,7 @@ export function OrgDataCard() {
     <section>
       <h2 className="micro-label micro-label-section">{SURFACE_NAME}</h2>
       <p className="mt-1.5 text-sm text-muted-foreground">
-        What this organization shares outside the workspace. You can change it at any time.
+        Choose how Lasso may use your workspace's data outside the workspace. You can change it at any time.
       </p>
       <div className="mt-1 flex flex-wrap items-center gap-3">
         <p className="text-sm text-foreground">Current level: {tierLabel(data.org_tier)}</p>

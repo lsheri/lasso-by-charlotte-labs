@@ -62,7 +62,7 @@ describe("SH-3a people access", () => {
     fireEvent.change(within(section).getByLabelText("Add people by name or email"), { target: { value: "nad" } });
     expect(within(section).queryByRole("button", { name: "Owen" })).toBeNull();
     fireEvent.click(within(section).getByRole("button", { name: "Nadia" }));
-    await waitFor(() => expect(setEngagementPersonAccessFn).toHaveBeenCalledWith({ data: { engagement_id: "board", profile_id: "me", person_id: "new", access: "review" } }));
+    await waitFor(() => expect(setEngagementPersonAccessFn).toHaveBeenCalledWith({ data: { engagement_id: "board", profile_id: "me", person_id: "new", access: "review", conversations: "summaries" } }));
   });
   it("labels a non-owner viewer with their own level, never ownership", async () => {
     vi.mocked(listEngagementPeopleFn).mockResolvedValueOnce({

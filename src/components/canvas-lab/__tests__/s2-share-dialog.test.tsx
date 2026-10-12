@@ -37,6 +37,17 @@ vi.mock("@/lib/engagement-access.functions", () => ({
   setPersonConversationsFn: vi.fn(async () => ({ status: "done", result: "unchanged" })),
 }));
 
+// Keeps the partner section off the live database: no real coaching_links reads.
+vi.mock("@/lib/partner-share", () => ({
+  listMyPartnerShares: vi.fn(async () => []),
+  listSharedEngagements: vi.fn(async () => []),
+  shareEngagement: vi.fn(async () => undefined),
+  unshareEngagement: vi.fn(async () => undefined),
+  getBoardConversationAccess: vi.fn(async () => "summaries"),
+  partnerShareLabel: (share: { institutionName: string; coachName?: string | null }) =>
+    share.coachName ? `${share.coachName} · ${share.institutionName}` : share.institutionName,
+  setBoardConversationAccess: vi.fn(async () => "unchanged"),
+}));
 vi.mock("@/lib/board-share.functions", () => ({
   listBoardShareLinksFn: vi.fn(async () => ({ links: [], holdsOthersWork: false, canShare: true })),
   createBoardShareLinkFn: vi.fn(async () => ({ status: "error" })),
