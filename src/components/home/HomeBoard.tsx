@@ -144,8 +144,8 @@ export function HomeBoard() {
           setViewport((current) => current.width === size.width && current.height === size.height ? current : size);
         }}
         toolbar={(
-          <div className="flex min-w-0 flex-1 items-center gap-2">
-            <span className="mr-auto truncate font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 md:flex-nowrap">
+            <span data-testid="home-count-label" className="mr-auto basis-full whitespace-normal font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground md:basis-auto md:truncate">
               {countLabel}
             </span>
             <NewEngagementDialog
