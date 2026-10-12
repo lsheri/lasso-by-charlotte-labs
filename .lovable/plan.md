@@ -1,35 +1,26 @@
-# TVe: Acts 1 and 2
+# PERF-2 investigation (read only)
 
-## Data platform gate
-- **Coverage:** Changes two local tour actions and the Act 1 to Act 3 teaching flow. Per dispatch, add no telemetry. Existing tour actions remain local and emit no events.
-- **Consent:** No consent surfaces, consent stamping, or consent tables are touched.
-- **Schema and portal:** No event names, payloads, or dimensions change.
-- **Database:** No database work.
+## 1. SSR
+`src/routes/_authenticated/route.tsx:8` sets `ssr: false`. The server sends only the root shell (`__root.tsx` RootShell, lines ~167/54-63). /home inherits it, so the HTML has no sidebar or Home frame.
 
-## Control rule
-### Before
-- Act 1: one Claude `Push to Lasso` control; pushing it advances to Act 2.
-- Act 2: inert `Add a chat`, `Ask Lasso`, search, four tool filters, `Workboards`, and conversation count controls; the one arrived Claude card advances to Act 3.
-- Shared stage: Skip; Back from Act 2; rail; instruction arrow and target glow.
-- Act 1 states: timed turns, push line, push ready, pushed, reduced-motion complete.
-- Act 2 states: static conversation list, one arrived card, ambient cards.
-- Telemetry: none in these renderers.
+## 2. What blocks first paint, in order
+1. Client bundle loads and hydrates (all 173 files).
+2. `route.tsx:10` `await supabase.auth.getUser()`: a network call to /auth/v1/user.
+3. `route.tsx:12` `await fetchProfileState()`. That runs `ensureAuthUser()` (`use-profile.ts:241`). If `sharedQueryClient` is not set yet (it is set at `use-profile.ts:117`), this makes a second getUser call (`:140`), then the profiles query (`:244-250`).
+4. Only then does `AppShell` mount (`route.tsx:18`). The ~10 queries start from hooks such as `use-nav-ctx.ts:14-24`.
+No timer floor or minimum duration exists on this path. No `pendingComponent`. No Suspense boundary.
 
-### After
-- Act 1: Claude and ChatGPT each have an independent `Push to Lasso`; neither advances. `Next` appears only after both are pushed and advances to Act 2.
-- Act 2: the same inert conversation controls remain; a presentational sidebar adds inert navigation rows and one active `Fall Marketing Launch` workboard row that advances to Act 3 by pointer or keyboard. Arrived cards are inert.
-- Shared stage controls and Acts 3–8 remain unchanged.
-- Act 1 states: both transcripts advance concurrently from one shared elapsed step, each push target clears immediately after use, Next becomes the sole target, and reduced motion shows both complete.
-- Act 2 states: two arrived cards followed by ambient cards; row-derived counts; sidebar target ready.
-- Telemetry: none.
+## 3. Dead clicks (proven cause)
+`beforeLoad` runs again on every navigation inside `_authenticated` (`route.tsx:9-16`). Each run makes two to three network round trips before the child route can match. While it is pending, a click on All work or the Home chip starts a navigation that nothing draws: no pending UI and no new page. The event belongs to the destination, so nothing is written until that page mounts. Warm caches shorten the wait, which matches "works once warm". On /work at 1.0s the link is missing because the shell has not mounted yet (step 4). The overlay and remount candidates are not supported by the code I read.
 
-## Implementation
-1. Extend tour content with a five-turn ChatGPT conversation titled `ChatGPT: launch week checklist`, using the same chat shape and delay constant as Claude. Update only Act 1 and Act 2 instruction and teaching copy.
-2. Refactor the Act 1 local renderer into two responsive chat panes driven by one timer step. Track pushes separately and expose `Next` through the existing stage footer after both complete.
-3. Add a route-local, presentational sidebar to Act 2 using `SidebarNav`’s visible structure and classes: grouped headings, icon rows, nested workboard row, and existing nav styling. Keep every non-workboard control inert.
-4. Render both arrived chats first, derive every displayed count from the rows array, and make only the workboard row advance.
-5. Update strict tests for concurrent timing, exact target lifecycle, Next gating, pointer and keyboard progression, sidebar title provenance, inert arrived cards, derived counts, and reduced motion. Preserve geometry assertions and Acts 3–8 tests.
-6. Verify focused tests while editing, inspect 1280px and 390px previews, then make the final edit. After that, run the full Vitest suite exactly once and `bun run build`, reporting only failures outside the nine authorized baseline files.
+## 4. Smallest fixes
+1. Make `beforeLoad` read cached data: `getSession()` (local, no network) instead of `getUser()`, and pass the result into `ensureQueryData`. Files: `route.tsx`, `use-profile.ts`. Gain: about 1 to 2 round trips per navigation, which ends the dead clicks. Risk: low. A session can be stale, but the existing query retry still checks it.
+2. Store the profiles in the query cache with `["profiles"]` so `useProfile` does not ask again. Files: `use-profile.ts`. Gain: one less query. Risk: low.
+3. Add a `pendingComponent` that draws the sidebar frame. Files: `route.tsx`, `AppShell.tsx`. Gain: something is visible on screen right away. Risk: low.
+4. Plain anchors cannot work before hydration under `ssr:false`, because nothing is drawn before then. Turning SSR on is a larger job and is not proposed here.
 
-## Technical note
-The two tour conversations remain a static product demonstration built from the existing tour chat window and `WorkNote` presentation. They are not an agent transcript or composer, so introducing AI Elements would replace established tour-only primitives and exceed this two-act presentation change.
+## Locations
+- (a) `ShareDialog.tsx:53` `onOpenChange={setOpen}`, mounted at `CanvasLabPage.tsx:2781`.
+- (b) `SettingsShell.tsx:93` (rail click) and `:69` (opened onto a named section).
+- (c) `CanvasLabPage.tsx:224-227` `workboardOpenVia` accepts only header, canvas_tab and default, so "home" falls through to "direct". Passed in at `engagements.$id_.canvas-lab.tsx:64`, emitted at `CanvasLabPage.tsx:509`, link at `HomeEngagementGrid.tsx:164`. The allowed dims are at `workboard-event-allowlist.ts:13`.
+- (d) Catalog `telemetry-shared.ts:4` (TelemetryEvent union, for example `:61`, `:315`), dims `event-dim-allowlist.ts` (for example `:137`). Pinned by `e1-environment.test.ts`, `cl1-link-ladder.test.tsx` and `cl2b-attach-chat-link.test.ts`.
