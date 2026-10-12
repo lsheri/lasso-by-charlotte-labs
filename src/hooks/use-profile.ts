@@ -69,6 +69,8 @@ function readStored(): string | null {
 /** Shared keys so every consumer waits on one request, not its own. */
 export const AUTH_USER_KEY = ["auth-user"] as const;
 export const ACTIVE_PROFILE_ROW_KEY = ["active-profile-row"] as const;
+/** PERF-2a: the signed-in gate's cached profile state. */
+export const PROFILE_STATE_KEY = ["profile-state"] as const;
 
 /**
  * The query client the app is already using. Registered from useProfiles so
@@ -161,6 +163,9 @@ export function resetProfileIdentityState(): void {
   lastReconciled = null;
   storageUnsubscribe?.();
   storageUnsubscribe = null;
+  profileCacheUnsubscribe?.();
+  profileCacheUnsubscribe = null;
+  profileCacheClient = null;
   lastLocalChangeAt = 0;
 }
 
@@ -263,6 +268,24 @@ function subscribe(listener: () => void): () => void {
 
 export function useActiveProfileId(): string | null {
   return useSyncExternalStore(subscribe, readStored, () => null);
+}
+
+/**
+ * PERF-2a: the gate reads profile state through the cache, so in-app
+ * navigation within a minute makes no network call. The list is handed to
+ * ["profiles"] so useProfiles does not ask again. Without a registered
+ * client this is the direct fetch, as before.
+ */
+export async function ensureProfileState(): Promise<ProfileState> {
+  const client = sharedQueryClient;
+  if (!client) return fetchProfileState();
+  const state = await client.ensureQueryData({
+    queryKey: PROFILE_STATE_KEY,
+    queryFn: fetchProfileState,
+    staleTime: 60_000,
+  });
+  if (client.getQueryData(["profiles"]) === undefined) client.setQueryData(["profiles"], state.profiles);
+  return state;
 }
 
 /** Every profile this user holds, one per org. */
