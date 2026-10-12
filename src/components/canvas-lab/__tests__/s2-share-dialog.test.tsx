@@ -7,8 +7,8 @@
  */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const calls: { access: string; person_id: string }[] = [];
 
@@ -38,7 +38,7 @@ vi.mock("@/lib/board-share.functions", () => ({
 }));
 
 import { ShareDialog } from "@/components/canvas-lab/ShareDialog";
-import { ACCESS_CHOICES } from "@/lib/engagement-access-shared";
+
 
 function mount() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -52,8 +52,10 @@ function mount() {
 async function openDialog() {
   mount();
   fireEvent.click(screen.getByRole("button", { name: "Share" }));
-  await screen.findByRole("combobox");
+  await screen.findByText("Owen");
 }
+
+afterEach(cleanup);
 
 describe("S2 — giving someone one of two things", () => {
   beforeEach(() => {
@@ -62,7 +64,7 @@ describe("S2 — giving someone one of two things", () => {
 
   it("offers exactly two choices for a person", async () => {
     await openDialog();
-    const labels = ACCESS_CHOICES.map((choice) => choice.label);
+    const labels = ["Can view", "Multiplayer"];
     expect(labels).toHaveLength(2);
     for (const label of labels) {
       expect(screen.getByRole("button", { name: label })).toBeTruthy();
@@ -71,24 +73,24 @@ describe("S2 — giving someone one of two things", () => {
 
   it("choosing one sends that word and nothing else", async () => {
     await openDialog();
-    await screen.findByRole("option", { name: "Nadia" });
-    fireEvent.change(screen.getByRole("combobox"), { target: { value: "p-new" } });
-    fireEvent.click(screen.getByRole("button", { name: ACCESS_CHOICES[0]!.label }));
+    fireEvent.click(screen.getByRole("button", { name: "Can view" }));
     await waitFor(() => expect(calls).toHaveLength(1));
-    expect(calls[0]).toEqual({ person_id: "p-new", access: "review" });
+    expect(calls[0]).toEqual({ person_id: "p-on", access: "review" });
 
-    fireEvent.change(screen.getByRole("combobox"), { target: { value: "p-new" } });
-    fireEvent.click(screen.getByRole("button", { name: ACCESS_CHOICES[1]!.label }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Multiplayer" }).hasAttribute("disabled")).toBe(false));
+    fireEvent.click(screen.getByRole("button", { name: "Multiplayer" }));
     await waitFor(() => expect(calls).toHaveLength(2));
-    expect(calls[1]).toEqual({ person_id: "p-new", access: "work" });
+    expect(calls[1]).toEqual({ person_id: "p-on", access: "work" });
     for (const call of calls) expect(["review", "work", "none"]).toContain(call.access);
   });
 
   it("taking it away sends none, and is never offered on yourself", async () => {
     await openDialog();
-    const takeAway = await screen.findAllByRole("button", { name: "Take it away" });
+    const takeAway = await screen.findAllByRole("button", { name: "Remove" });
     expect(takeAway).toHaveLength(1);
-    fireEvent.click(takeAway[0]!);
+    const remove = takeAway[0];
+    if (!remove) throw new Error("Missing Remove");
+    fireEvent.click(remove);
     await waitFor(() => expect(calls).toHaveLength(1));
     expect(calls[0]).toEqual({ person_id: "p-on", access: "none" });
   });
@@ -99,7 +101,7 @@ describe("S2 — giving someone one of two things", () => {
     expect(screen.queryByText("Working on the same board together")).toBeNull();
   });
 
-  it("with nobody to pick, one line replaces the choice and both buttons", async () => {
+  it("with nobody to pick, the owner remains without access controls", async () => {
     const { listEngagementPeopleFn } = await import("@/lib/engagement-access.functions");
     vi.mocked(listEngagementPeopleFn).mockResolvedValueOnce({
       canShare: true,
@@ -107,8 +109,8 @@ describe("S2 — giving someone one of two things", () => {
     } as never);
     mount();
     fireEvent.click(screen.getByRole("button", { name: "Share" }));
-    await screen.findByText("Nobody else is in your workspace yet. Invite people from Settings, People.");
-    expect(screen.queryByRole("combobox")).toBeNull();
-    for (const choice of ACCESS_CHOICES) expect(screen.queryByRole("button", { name: choice.label })).toBeNull();
+    await screen.findByText("Nobody else is on this board yet.");
+    expect(screen.getByText("You · Owner")).toBeTruthy();
+    for (const label of ["Can view", "Multiplayer", "Remove"]) expect(screen.queryByRole("button", { name: label })).toBeNull();
   });
 });
