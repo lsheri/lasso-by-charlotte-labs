@@ -22,7 +22,7 @@ export function boardAccessLine(level: string, conversations: string): string {
 }
 
 export { escapeHtml } from "./escape-html";
-import { escapeHtml } from "./escape-html";
+import { emailVar } from "./escape-html";
 
 export async function sendBoardInviteEmail(inviteId: string): Promise<{ sent: boolean }> {
   try {
@@ -46,8 +46,8 @@ export async function sendBoardInviteEmail(inviteId: string): Promise<{ sent: bo
       to: invite.email,
       template: "board-invite",
       variables: {
-        INVITER_NAME: escapeHtml(String(inviter?.display_name ?? "Someone")),
-        BOARD_NAME: escapeHtml(String(board?.title ?? "a board")),
+        INVITER_NAME: emailVar(String(inviter?.display_name ?? "Someone")),
+        BOARD_NAME: emailVar(String(board?.title ?? "a board")),
         ACCESS_LINE: boardAccessLine(invite.level, invite.conversations),
         ACCEPT_URL: buildBoardInviteUrl(invite.code),
       },
@@ -104,10 +104,10 @@ export async function sendInviteApprovalEmails(inviteId: string, inviterUserId: 
         to,
         template: "invite-approval-needed",
         variables: {
-          INVITER_NAME: escapeHtml(String(inviter?.display_name ?? "Someone")),
-          INVITEE_EMAIL: escapeHtml(String(invite.email)),
-          BOARD_NAME: escapeHtml(String(board?.title ?? "a board")),
-          ORG_NAME: escapeHtml(String(org?.name ?? "your workspace")),
+          INVITER_NAME: emailVar(String(inviter?.display_name ?? "Someone")),
+          INVITEE_EMAIL: emailVar(String(invite.email)),
+          BOARD_NAME: emailVar(String(board?.title ?? "a board")),
+          ORG_NAME: emailVar(String(org?.name ?? "your workspace")),
           REVIEW_URL: buildReviewUrl(),
         },
       });
@@ -173,8 +173,8 @@ export async function notifyBoardShared(args: {
       to,
       template: "board-shared",
       variables: {
-        SHARER_NAME: escapeHtml(String(sharer?.display_name ?? "Someone")),
-        BOARD_NAME: escapeHtml(title),
+        SHARER_NAME: emailVar(String(sharer?.display_name ?? "Someone")),
+        BOARD_NAME: emailVar(title),
         ACCESS_LINE: boardAccessLine(args.level, args.conversations),
         OPEN_URL: buildBoardOpenUrl(args.engagementId),
       },

@@ -4,7 +4,7 @@
  * sweeps never send the same email twice. Operational, not a product event.
  */
 import { attendeeLink, buildJoinUrl } from "./join-link";
-import { escapeHtml } from "./escape-html";
+import { emailVar } from "./escape-html";
 import { CANONICAL_ORIGIN } from "./app-host";
 import { REGISTER_COPY, type Register } from "./register";
 
@@ -37,18 +37,18 @@ export function buildVariables(
 ): Record<string, string | number> {
   const p = payload ?? {};
   const out: Record<string, string | number> = {
-    WORKSPACE_NAME: escapeHtml(String(p["WORKSPACE_NAME"] ?? "")),
+    WORKSPACE_NAME: emailVar(String(p["WORKSPACE_NAME"] ?? "")),
     JOIN_URL:
       p["LINK_KIND"] === "attendee"
         ? attendeeLink(String(p["CODE"] ?? ""), typeof p["REGISTER"] === "string" ? p["REGISTER"] : undefined)
         : buildJoinUrl(String(p["CODE"] ?? "")),
     PRIVACY_LINE: privacyLineFor(p["REGISTER"]),
-    PARTNER_NAME: escapeHtml(String(p["PARTNER_NAME"] ?? "")),
+    PARTNER_NAME: emailVar(String(p["PARTNER_NAME"] ?? "")),
   };
   // AU-1: a key that is not a number is left out, never sent as 0.
   // SH-6d-1: support access letters. Person-typed text is escaped.
   for (const k of ["REASON", "ENDS_ON", "CONVERSATIONS"] as const) {
-    if (p[k] !== undefined && p[k] !== null) out[k] = escapeHtml(String(p[k]));
+    if (p[k] !== undefined && p[k] !== null) out[k] = emailVar(String(p[k]));
   }
   for (const k of ["SEATS", "EXPIRES_DAYS", "DAYS"] as const) {
     const v = p[k];

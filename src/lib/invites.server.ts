@@ -98,12 +98,12 @@ export async function sendInviteEmail(args: {
   const orgName = args.orgName || "your organization";
   const acceptUrl = buildJoinUrl(args.code, { eng: args.eng });
 
-  const { escapeHtml } = await import("./escape-html");
-  const variables: Record<string, string> = { INVITER_NAME: escapeHtml(args.inviterName), ACCEPT_URL: acceptUrl };
-  if (variant !== "coach_personal") variables["ORG_NAME"] = escapeHtml(orgName);
+  const { emailVar } = await import("./escape-html");
+  const variables: Record<string, string> = { INVITER_NAME: emailVar(args.inviterName), ACCEPT_URL: acceptUrl };
+  if (variant !== "coach_personal") variables["ORG_NAME"] = emailVar(orgName);
   if (variant === "coach_business") {
     const scope = coachScopeLine(args.subjectNames);
-    if (scope) variables["COACH_SCOPE_LINE"] = escapeHtml(scope);
+    if (scope) variables["COACH_SCOPE_LINE"] = emailVar(scope);
   }
 
   const resendKey = resendApiKey();
