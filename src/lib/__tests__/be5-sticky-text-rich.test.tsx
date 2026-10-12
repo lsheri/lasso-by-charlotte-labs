@@ -4,7 +4,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { LabSticky } from "@/components/canvas-lab/LabSticky";
 import { LabTextBlock } from "@/components/canvas-lab/LabTextBlock";
-import type { LabNode } from "@/components/canvas-lab/canvas-lab-model";
+import { applyDurableBoard, type LabNode } from "@/components/canvas-lab/canvas-lab-model";
+import { serializeWorkboardStickyBody, serializeWorkboardTextBody, type WorkboardDto } from "@/lib/canvas-lab-shared";
 import { sanitizeRichHtml } from "@/lib/rich-text";
 
 // jsdom has no selection geometry; ProseMirror's autofocus scroll reads it.
@@ -57,6 +58,18 @@ describe("BE-5 rich sticky and text edits", () => {
       await waitFor(() => expect(document.activeElement).toBe(box));
     });
   }
+  it("durable reload retains sticky/text HTML and edited answer provenance", () => {
+    const html = "<p><strong>Hello</strong></p>";
+    const common = { frameId: null, workItemId: null, decisionId: null, authorProfileId: "p", authorName: "Liam", title: "", judgmentType: null, x: 0, y: 0, w: 260, h: 160, hidden: false, version: 1, referenceReadable: true };
+    const board: WorkboardDto = { id: "b", engagementId: "e", version: 1, frames: [], links: [], viewerProfileId: "p", canEditStructure: true, archivedContextFrame: null, nodes: [
+      { ...common, id: "s", kind: "sticky", body: serializeWorkboardStickyBody({ text: "Hello", html, size: "body", weight: "regular", colour: "ink", fill: "yellow" }) },
+      { ...common, id: "t", kind: "text", body: serializeWorkboardTextBody({ text: "Hello", html, size: "label", weight: "medium", colour: "ink" }) },
+      { ...common, id: "a", kind: "answer", body: JSON.stringify({ text: "Hello", html, original: "Original answer", edited_at: "2026-10-12T22:00:00Z" }) },
+    ] };
+    const model = applyDurableBoard({ nodes: [], frames: [] }, board);
+    for (const kind of ["sticky", "text", "answer"]) expect(model.nodes.find((node) => node.kind === kind)).toMatchObject({ summary: "Hello", html });
+    expect(model.nodes.find((node) => node.kind === "answer")).toMatchObject({ original: "Original answer", editedAt: "2026-10-12T22:00:00Z" });
+  });
   it("keeps event calls in the page commit callbacks without new dims", () => {
     const source = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
     for (const kind of ["sticky", "text"]) {
