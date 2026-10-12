@@ -64,8 +64,8 @@ function sizeBucket(n: number): string {
 }
 
 /**
- * One Reflect turn. Streams when a delta sink is given, and in both cases the
- * message is written only once the complete answer has been through the quote
+ * One Reflect turn. Streams when a delta sink is given. The question is saved
+ * as soon as it is accepted (AQ-1); the answer is written only once the complete answer has been through the quote
  * pipeline, so a half-finished answer is never persisted.
  */
 export async function runReflectTurn(
@@ -112,12 +112,21 @@ export async function runReflectTurn(
   const picked = effectiveScopeSource === "board_pick" ? sessionScope.ids.length : effectiveScopeSource === "board_pick_brief_only" ? 0 : null;
   const preset = data.preset ? analysisPreset(data.preset) : null;
 
-  const { data: history } = await supabase
+  const { data: storedHistory } = await supabase
     .from("chat_messages")
-    .select("role, content, context_manifest")
+    .select("id, role, content, context_manifest")
     .eq("session_id", session.id)
     .order("created_at", { ascending: true })
     .limit(40);
+
+  // AQ-1: the question is saved now, before any reading or model call.
+  const { ensureQuestionRow } = await import("./ask-question-persist");
+  const { history } = await ensureQuestionRow(
+    supabase,
+    session.id,
+    message,
+    (storedHistory ?? []) as { id: number; role: string; content: string; context_manifest?: unknown }[],
+  );
 
   const surface = data.surface === "ask_lasso" ? "ask_lasso" : "reflect";
   const historyMessages = ((history ?? []) as { role: string; content: string }[]).map((m) => ({
@@ -379,7 +388,6 @@ export async function runReflectTurn(
   const { data: written, error: insertError } = await supabase
     .from("chat_messages")
     .insert([
-      { session_id: session.id, role: "user", content: message },
       {
         session_id: session.id,
         role: "assistant",
@@ -509,7 +517,7 @@ async function finishTurn(
   return title;
 }
 
-/** Writes the pair of messages, then the log and title. */
+/** Writes the answer (the question is already saved), then the log and title. */
 async function persistTurn(
   supabase: SupabaseClient<Database>,
   input: {
@@ -526,7 +534,6 @@ async function persistTurn(
   const { data: written, error: insertError } = await supabase
     .from("chat_messages")
     .insert([
-      { session_id: input.sessionId, role: "user", content: input.question },
       {
         session_id: input.sessionId,
         role: "assistant",
