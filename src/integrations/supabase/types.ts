@@ -925,14 +925,17 @@ export type Database = {
       }
       coaching_link_engagements: {
         Row: {
+          conversation_access: string | null
           engagement_id: string
           link_id: string
         }
         Insert: {
+          conversation_access?: string | null
           engagement_id: string
           link_id: string
         }
         Update: {
+          conversation_access?: string | null
           engagement_id?: string
           link_id?: string
         }
@@ -961,6 +964,7 @@ export type Database = {
           coach_profile_id: string | null
           consent_withdrawn_at: string | null
           consented_at: string | null
+          conversation_access: string
           created_at: string
           created_by: string
           disclosed_at: string | null
@@ -980,6 +984,7 @@ export type Database = {
           coach_profile_id?: string | null
           consent_withdrawn_at?: string | null
           consented_at?: string | null
+          conversation_access?: string
           created_at?: string
           created_by: string
           disclosed_at?: string | null
@@ -999,6 +1004,7 @@ export type Database = {
           coach_profile_id?: string | null
           consent_withdrawn_at?: string | null
           consented_at?: string | null
+          conversation_access?: string
           created_at?: string
           created_by?: string
           disclosed_at?: string | null
@@ -1620,6 +1626,7 @@ export type Database = {
         Row: {
           added_at: string | null
           added_by: string | null
+          conversation_access: string
           engagement_id: string
           member_role: Database["public"]["Enums"]["app_role"]
           profile_id: string
@@ -1627,6 +1634,7 @@ export type Database = {
         Insert: {
           added_at?: string | null
           added_by?: string | null
+          conversation_access?: string
           engagement_id: string
           member_role: Database["public"]["Enums"]["app_role"]
           profile_id: string
@@ -1634,6 +1642,7 @@ export type Database = {
         Update: {
           added_at?: string | null
           added_by?: string | null
+          conversation_access?: string
           engagement_id?: string
           member_role?: Database["public"]["Enums"]["app_role"]
           profile_id?: string
@@ -5723,6 +5732,7 @@ export type Database = {
         Args: { p_engagement_id: string; p_link_id: string }
         Returns: Json
       }
+      viewer_can_read_turns: { Args: { item: string }; Returns: boolean }
       withdraw_coaching_consent: {
         Args: { p_actor_profile_id?: string; p_link_id: string }
         Returns: undefined
