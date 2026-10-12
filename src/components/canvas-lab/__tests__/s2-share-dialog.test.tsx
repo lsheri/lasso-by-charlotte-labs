@@ -102,6 +102,13 @@ describe("S2 — giving someone one of two things", () => {
     expect(screen.queryByText("Working on the same board together")).toBeNull();
   });
 
+  it("the link section never claims the AI conversations travel with it", async () => {
+    const { container } = mount();
+    fireEvent.click(screen.getByRole("button", { name: "Share" }));
+    await screen.findByText("A link that expires");
+    expect(container.textContent ?? "").not.toContain("including the AI conversations");
+  });
+
   it("with nobody to pick, your level remains without access controls", async () => {
     const { listEngagementPeopleFn } = await import("@/lib/engagement-access.functions");
     vi.mocked(listEngagementPeopleFn).mockResolvedValueOnce({
