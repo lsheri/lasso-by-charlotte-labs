@@ -186,6 +186,20 @@ describe("CS-1 home.opened", () => {
     view.rerender(<HomeBoard />);
     expect(mocks.logEvent.mock.calls.filter(([name]) => name === "home.opened")).toHaveLength(1);
   });
+
+  it("emits again when the org changes, but not for a re-render with the same org", () => {
+    mocks.engagements = [];
+    const view = render(<HomeBoard />);
+    view.rerender(<HomeBoard />);
+    mocks.profile = { id: "profile-1", org_id: "org-2" };
+    view.rerender(<HomeBoard />);
+    view.rerender(<HomeBoard />);
+    const calls = mocks.logEvent.mock.calls.filter(([name]) => name === "home.opened");
+    expect(calls).toEqual([
+      ["home.opened", "org-1", {}],
+      ["home.opened", "org-2", {}],
+    ]);
+  });
 });
 
 describe("the ideas note", () => {

@@ -98,13 +98,15 @@ export function HomeBoard() {
   const { data: engagements } = useEngagements(profile?.id);
   const [viewport, setViewport] = useState(HOME_VIEWPORT_SEED);
 
-  // CS-1: one home.opened per mount, through the same signed-in pipeline as
-  // nav.opened, and only once the acting profile has resolved.
-  const homeOpenedRef = useRef(false);
+  // CS-1: one home.opened per mount and org, through the same signed-in
+  // pipeline as nav.opened, and only once the acting profile has resolved.
+  // TL-1b: a workspace switch keeps Home mounted, so guard on the org, not a
+  // boolean — a new orgId emits again, the same orgId never emits twice.
+  const homeOpenedRef = useRef<string | null>(null);
   const orgId = profile?.org_id;
   useEffect(() => {
-    if (!orgId || homeOpenedRef.current) return;
-    homeOpenedRef.current = true;
+    if (!orgId || homeOpenedRef.current === orgId) return;
+    homeOpenedRef.current = orgId;
     logEvent("home.opened", orgId, {});
   }, [orgId]);
 
