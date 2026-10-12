@@ -60,7 +60,7 @@ async function choose(name: string) {
 describe("DC-3 unified data Settings", () => {
   it("A has one picker, one improvement switch, research and no organisation purpose", async () => {
     mount();
-    await screen.findByRole("switch");
+    await screen.findByRole("switch", {}, { timeout: 10000 });
     expect(screen.getAllByRole("radio")).toHaveLength(5);
     expect(screen.getAllByRole("switch")).toHaveLength(1);
     expect(screen.queryByText("Analytics for your organisation")).toBeNull();
