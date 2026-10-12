@@ -389,7 +389,7 @@ function useReconcileActiveProfile(
 
 /** Existence check used by route gates, true when the user has any profile. */
 export async function fetchProfile(): Promise<Profile | null> {
-  const profiles = await fetchProfiles();
+  const profiles = (await ensureProfileState()).profiles;
   return pickActive(profiles, readStored());
 }
 

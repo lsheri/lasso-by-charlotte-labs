@@ -33,7 +33,7 @@ vi.mock("@/integrations/supabase/client", () => ({
 }));
 vi.mock("@/components/layout/AppShell", () => ({ AppShell: () => null }));
 
-import { registerProfileQueryClient, resetProfileIdentityState } from "@/hooks/use-profile";
+import { fetchProfile, registerProfileQueryClient, resetProfileIdentityState } from "@/hooks/use-profile";
 import { Route } from "@/routes/_authenticated/route";
 
 const row = (over: Record<string, unknown> = {}) => ({
@@ -88,6 +88,12 @@ describe("PERF-2a signed-in gate cache", () => {
     client.removeQueries({ queryKey: ["profile-state"] });
     h.rows = [row({ deactivated_at: "2026-02-01" })];
     expect(await gate()).toEqual({ redirect: "/no-access" });
+  });
+
+  it("(PERF-2d) two fetchProfile() calls within 60s ask for profiles once", async () => {
+    expect((await fetchProfile())?.id).toBe("p1");
+    expect((await fetchProfile())?.id).toBe("p1");
+    expect(h.profilesCalls).toBe(1);
   });
 
   it("invalidating the profile list also refreshes the gate copy", async () => {
