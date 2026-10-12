@@ -98,6 +98,10 @@ export type LabNode = {
   linkedItemRemovedAt?: string | null;
   /** Closed palette token for a decorative colour block. */
   colour?: WorkboardShapeColour;
+  /** Optional rich content for sticky, text and answer nodes. */
+  html?: string;
+  original?: string;
+  editedAt?: string;
   textSize?: WorkboardTextSize;
   textWeight?: WorkboardTextWeight;
   textColour?: WorkboardTextColour;
@@ -1185,6 +1189,7 @@ export function applyDurableBoard(base: { frames: LabFrame[]; nodes: LabNode[] }
         frame: null,
         title: "Sticky",
         summary: sticky.text,
+        ...(sticky.html !== undefined ? { html: sticky.html } : {}),
         typeLabel: "sticky",
         ownership: durable.authorProfileId === board.viewerProfileId ? "yours" : "teammate",
         textSize: sticky.size,
@@ -1208,6 +1213,7 @@ export function applyDurableBoard(base: { frames: LabFrame[]; nodes: LabNode[] }
         frame: null,
         title: "Text block",
         summary: text.text,
+        ...(text.html !== undefined ? { html: text.html } : {}),
         typeLabel: "text block",
         ownership: durable.authorProfileId === board.viewerProfileId ? "yours" : "teammate",
         textSize: text.size,
@@ -1223,12 +1229,16 @@ export function applyDurableBoard(base: { frames: LabFrame[]; nodes: LabNode[] }
       });
     }
     if (durable.kind === "answer") {
+      const answer = parseAnswerBody(durable.body);
       nodes.push({
         id: localId,
         kind: "answer",
         frame: frameId,
         title: durable.title || "Answer",
-        summary: parseAnswerBody(durable.body).text,
+        summary: answer.text,
+        ...(answer.html !== null ? { html: answer.html } : {}),
+        ...(answer.original !== null ? { original: answer.original } : {}),
+        ...(answer.editedAt !== null ? { editedAt: answer.editedAt } : {}),
         typeLabel: "answer",
         ownership: durable.authorProfileId === board.viewerProfileId ? "yours" : "teammate",
         authorName: durable.authorName,
