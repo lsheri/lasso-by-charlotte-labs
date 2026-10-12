@@ -117,8 +117,8 @@ describe("F6 board-shared", () => {
     expect(mail.template).toBe("board-shared");
     expect(mail.to).toBe("bo@x.com");
     expect(mail.variables).toEqual({
-      SHARER_NAME: "&lt;b&gt;Ana&lt;/b&gt;",
-      BOARD_NAME: "&lt;b&gt;Q3&lt;/b&gt;",
+      SHARER_NAME: "bAna/b",
+      BOARD_NAME: "bQ3/b",
       ACCESS_LINE: "You can view the cards and their summaries.",
       OPEN_URL: "https://lasso.charlotte-labs.com/engagements/e-9/canvas-lab",
     });

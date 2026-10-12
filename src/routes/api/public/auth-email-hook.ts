@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Webhook } from "standardwebhooks";
-import { escapeHtml } from "@/lib/escape-html";
+import { emailVar } from "@/lib/escape-html";
 
 // Supabase Auth "Send Email Hook" receiver. Each action type sends a published
 // Resend template by alias; the template supplies subject and from.
@@ -53,7 +53,7 @@ export function buildAuthEmails(payload: HookPayload): Outgoing[] {
   if (!template) return [];
   const email = payload.user.email;
   // AU-1: Resend reserves EMAIL, so the address rides as USER_EMAIL on every template.
-  const userEmail = escapeHtml(String(email ?? ""));
+  const userEmail = emailVar(String(email ?? ""));
   const url = verifyUrl(d.token_hash ?? "", type, d.redirect_to);
   switch (type) {
     case "signup":

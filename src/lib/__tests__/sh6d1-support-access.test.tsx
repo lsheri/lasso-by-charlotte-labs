@@ -62,7 +62,7 @@ describe("SH-6d-1 buildVariables", () => {
   it("non-support templates get no SUPPORT_URL; REASON is escaped; DAYS is numeric", () => {
     const v = buildVariables({ REASON: "<b>x</b>", DAYS: "7" }, "workspace-invite");
     expect(v["SUPPORT_URL"]).toBeUndefined();
-    expect(v["REASON"]).toBe("&lt;b&gt;x&lt;/b&gt;");
+    expect(v["REASON"]).toBe("bx/b");
     expect(v["DAYS"]).toBe(7);
   });
 });

@@ -7,3 +7,8 @@ export function escapeHtml(value: string): string {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
 }
+
+/** Resend reuses a variable in subject, HTML and plain text; strip tag brackets only so apostrophes stay readable. */
+export function emailVar(value: unknown): string {
+  return String(value ?? "").replace(/[<>]/g, "");
+}
