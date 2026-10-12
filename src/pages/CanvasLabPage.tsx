@@ -1194,10 +1194,6 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
-  {
-    function onBoardKeyPlaceholder() {}
-    void onBoardKeyPlaceholder;
-  }
   function onBoardKey(event: KeyboardEvent) {
     {
       if (event.key === "Escape") {
