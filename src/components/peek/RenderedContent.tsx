@@ -85,6 +85,14 @@ function DrivePreview({
 }
 
 
+/** SH-3b: what a viewer sees when the turns were shared as a summary. */
+export const SUMMARY_ONLY_LINE =
+  "Shared as a summary. The full conversation stays with the person who had it.";
+
+export function isItemOwner(item: Pick<WorkItemRow, "owner_id">, profileId: string | undefined): boolean {
+  return Boolean(profileId) && item.owner_id === profileId;
+}
+
 /** Plain text for formats a browser cannot render. No layout, and it says so. */
 function TextPane({
   item,
@@ -109,10 +117,14 @@ function TextPane({
   if (!pane?.text) {
     return (
       <div className="space-y-2">
-        <Notice>
-          Lasso could not read this file&apos;s contents
-          {pane?.note ? `: ${pane.note}.` : "."} You can still download the original.
-        </Notice>
+        {pane?.reason === "empty_thread" && !isItemOwner(item, profile?.id) ? (
+          <Notice>{SUMMARY_ONLY_LINE}</Notice>
+        ) : (
+          <Notice>
+            Lasso could not read this file&apos;s contents
+            {pane?.note ? `: ${pane.note}.` : "."} You can still download the original.
+          </Notice>
+        )}
         {onDownload ? (
           <button
             type="button"
