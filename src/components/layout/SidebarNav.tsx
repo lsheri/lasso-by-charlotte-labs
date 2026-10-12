@@ -414,7 +414,8 @@ export function SidebarNav({
   );
   const collapsedClients = filtering ? [] : savedCollapsed;
   const boardNavigate = () => {
-    if (filtering && profile?.org_id) logEvent("nav.opened", profile.org_id, { item: "find_result", surface } satisfies NavOpenedDims);
+    // CS-3: a tree board click is a board open; a filtered one stays a find result.
+    if (profile?.org_id) logEvent("nav.opened", profile.org_id, { item: filtering ? "find_result" : "board", surface } satisfies NavOpenedDims);
     onNavigate?.();
   };
   function toggleClient(clientId: string) {

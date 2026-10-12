@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { StrictMode } from "react";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -7,7 +8,11 @@ import { HOME_HERO_CONTENT_HEIGHT, HOME_HERO_FRAME_HEIGHT, HomeBoard, IdeasNote,
 const mocks = vi.hoisted(() => ({
   engagements: undefined as undefined | { id: string }[],
   emitClientEvent: vi.fn(),
+  logEvent: vi.fn(),
+  profile: { id: "profile-1", org_id: "org-1" } as null | { id: string; org_id: string },
 }));
+
+vi.mock("@/lib/telemetry", () => ({ logEvent: mocks.logEvent }));
 
 vi.mock("@tanstack/react-router", () => ({
   Link: ({ children, to, onClick }: { children: React.ReactNode; to: string; onClick?: () => void }) => (
@@ -16,7 +21,7 @@ vi.mock("@tanstack/react-router", () => ({
 }));
 
 vi.mock("@/hooks/use-profile", () => ({
-  useProfile: () => ({ data: { id: "profile-1", org_id: "org-1" } }),
+  useProfile: () => ({ data: mocks.profile }),
 }));
 
 vi.mock("@/hooks/use-engagements", () => ({
@@ -77,6 +82,8 @@ afterEach(() => {
   cleanup();
   mocks.engagements = undefined;
   mocks.emitClientEvent.mockClear();
+  mocks.logEvent.mockClear();
+  mocks.profile = { id: "profile-1", org_id: "org-1" };
 });
 
 describe("Home", () => {
@@ -149,12 +156,35 @@ describe("Home", () => {
   it("covers opening and both navigation actions without content dimensions", () => {
     mocks.engagements = [];
     render(<HomeBoard />);
-    expect(mocks.emitClientEvent).toHaveBeenCalledWith("home.opened", {});
+    expect(mocks.logEvent).toHaveBeenCalledWith("home.opened", "org-1", {});
+    expect(mocks.emitClientEvent).not.toHaveBeenCalledWith("home.opened", expect.anything());
 
     fireEvent.click(screen.getByRole("button", { name: "New workboard" }));
     fireEvent.click(screen.getByRole("link", { name: "Past work" }));
     expect(mocks.emitClientEvent).toHaveBeenCalledWith("home.new_engagement_started", {});
     expect(mocks.emitClientEvent).toHaveBeenCalledWith("home.past_work_opened", {});
+  });
+});
+
+describe("CS-1 home.opened", () => {
+  it("emits exactly once per mount, even under a StrictMode double effect and re-renders", () => {
+    mocks.engagements = [];
+    const view = render(<StrictMode><HomeBoard /></StrictMode>);
+    view.rerender(<StrictMode><HomeBoard /></StrictMode>);
+    const calls = mocks.logEvent.mock.calls.filter(([name]) => name === "home.opened");
+    expect(calls).toEqual([["home.opened", "org-1", {}]]);
+  });
+
+  it("does not emit before the profile resolves, then emits once", () => {
+    mocks.engagements = [];
+    mocks.profile = null;
+    const view = render(<HomeBoard />);
+    expect(mocks.logEvent).not.toHaveBeenCalledWith("home.opened", expect.anything(), expect.anything());
+    expect(mocks.emitClientEvent).not.toHaveBeenCalledWith("home.opened", expect.anything());
+    mocks.profile = { id: "profile-1", org_id: "org-1" };
+    view.rerender(<HomeBoard />);
+    view.rerender(<HomeBoard />);
+    expect(mocks.logEvent.mock.calls.filter(([name]) => name === "home.opened")).toHaveLength(1);
   });
 });
 

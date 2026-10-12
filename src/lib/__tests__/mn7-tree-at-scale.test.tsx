@@ -160,6 +160,22 @@ describe("MN-7 tree at scale", () => {
     expect(mocks.events).toHaveBeenLastCalledWith("nav.opened", "o1", { item: "find_result", surface: "sidebar" });
     for (const call of mocks.events.mock.calls) expect(Object.keys(call[2]).sort()).toEqual(["item", "surface"]);
   });
+  it("CS-3: a tree board click emits nav.opened item board with the surface, and no title or id", () => {
+    for (const surface of ["sidebar", "drawer"] as const) {
+      mocks.clientRows = containers; mocks.engagements = boards(10);
+      const view = render(<SidebarNav surface={surface} />);
+      const toggle = screen.getByTestId("nav-collapse-all");
+      if (toggle.textContent === "Collapse all") fireEvent.click(toggle);
+      fireEvent.click(toggle);
+      mocks.events.mockClear();
+      const link = Array.from(document.querySelectorAll("a")).find((a) => a.textContent?.includes("Deep analysis") && !a.closest("[data-testid='recent-boards']"));
+      fireEvent.click(link as HTMLElement);
+      expect(mocks.events).toHaveBeenLastCalledWith("nav.opened", "o1", { item: "board", surface });
+      const dims = mocks.events.mock.calls.at(-1)?.[2] as Record<string, unknown>;
+      expect(JSON.stringify(dims)).not.toMatch(/Deep analysis|e0/);
+      view.unmount();
+    }
+  });
   it("phone uses the same Recent and Find thresholds and safely handles missing history", () => {
     rememberBoardOpen("p1", "e0");
     const view = render(<BoardFinder profileId="p1" boards={boards(10)} query="" onQueryChange={() => {}} onOpen={() => {}} />);
