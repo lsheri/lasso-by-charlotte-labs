@@ -25,7 +25,7 @@ import { EXISTING_ACCOUNT_INVITED, EXISTING_ACCOUNT_OPEN, isExistingAccountSignu
 import { FORGOT_LINK } from "@/lib/password-reset";
 import { isSendCooldown, SIGN_IN_LINK_COPY, signInLinkOptions } from "@/lib/sign-in-link";
 import { fetchProfile } from "@/hooks/use-profile";
-import { lookupActivationKeyFn, redeemActivationKeyFn } from "@/lib/activation-keys.functions";
+import { checkActivationKeyPublic, lookupActivationKeyFn, redeemActivationKeyFn } from "@/lib/activation-keys.functions";
 import { logEvent } from "@/lib/telemetry";
 import { consentTarget } from "@/lib/consent-return";
 import { BOARD_SIGNUP_COPY, boardInviteCodeFrom, isBoardInvitePath } from "@/lib/board-invites-shared";
@@ -154,6 +154,7 @@ function AuthPage() {
   const checkInvite = useServerFn(checkSignupInvite);
   const lookupKey = useServerFn(lookupActivationKeyFn);
   const checkBoardSignup = useServerFn(checkBoardInviteSignup);
+  const checkKeyPublic = useServerFn(checkActivationKeyPublic);
   const redeemKey = useServerFn(redeemActivationKeyFn);
   // Unit C: the email field speaks the register; with no signal it implies
   // nothing at all, rather than reading as a company.
@@ -212,10 +213,15 @@ function AuthPage() {
     queryFn: (): Promise<SignupInviteCheck> =>
       checkInvite({ data: { code: inviteCode as string } }),
   });
+  // AU-1b: signed in keeps the existing lookup; signed out uses the public check.
   const { data: keyCheck } = useQuery({
-    queryKey: ["auth-entry-key", key],
-    enabled: Boolean(key),
-    queryFn: () => lookupKey({ data: { code: key as string } }),
+    queryKey: ["auth-entry-key", key, Boolean(authUser)],
+    enabled: Boolean(key) && authUser !== undefined,
+    queryFn: async (): Promise<{ ok: boolean; institution_name: string | null }> => {
+      if (authUser) return lookupKey({ data: { code: key as string } });
+      const answer = await checkKeyPublic({ data: { code: key as string } });
+      return { ok: answer.valid, institution_name: answer.institution_name };
+    },
   });
 
   // An invite bound to one address fills it in and holds it, so the account
