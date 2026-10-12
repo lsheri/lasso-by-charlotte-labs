@@ -7,8 +7,8 @@
  */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const calls: { access: string; person_id: string }[] = [];
 
@@ -54,6 +54,8 @@ async function openDialog() {
   fireEvent.click(screen.getByRole("button", { name: "Share" }));
   await screen.findByText("Owen");
 }
+
+afterEach(cleanup);
 
 describe("S2 — giving someone one of two things", () => {
   beforeEach(() => {

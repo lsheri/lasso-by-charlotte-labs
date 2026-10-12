@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@tanstack/react-start", () => ({ useServerFn: (fn: unknown) => fn }));
 vi.mock("@/lib/engagement-access.functions", () => ({
@@ -27,6 +27,8 @@ async function mount() {
   await screen.findByText("Owen");
   return screen.getByRole("region", { name: "Who has access" });
 }
+
+afterEach(cleanup);
 
 describe("SH-3a people access", () => {
   beforeEach(() => vi.clearAllMocks());
