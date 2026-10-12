@@ -1,6 +1,11 @@
-/** Only an invite destination survives a reset, same rule as /auth (workspace or board invite). */
+import { isSupportPath } from "./support-view";
+
+/** Only an invite or support-view destination survives a reset, same rule as /auth. */
 export function safeNext(next: string | null | undefined): string | null {
-  return typeof next === "string" && (next.startsWith("/join") || next.startsWith("/board-invite?")) ? next : null;
+  return typeof next === "string" &&
+    (next.startsWith("/join") || next.startsWith("/board-invite?") || isSupportPath(next))
+    ? next
+    : null;
 }
 export function resetRedirectTo(origin: string, next: string | null | undefined): string {
   const n = safeNext(next);
