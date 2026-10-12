@@ -18,6 +18,7 @@ import { useConnectorAccounts } from "@/hooks/use-connector-accounts";
 import { useProfile } from "@/hooks/use-profile";
 import { useWorkItems } from "@/hooks/use-work-items";
 import { useSettingsDialogOptional } from "@/lib/settings-dialog-context";
+import type { MappedTask } from "@/lib/work-types";
 
 export type AddWorkSource = "inbox" | "upload" | "connector";
 
@@ -27,17 +28,33 @@ function isConnected(status: string | undefined): boolean {
   return Boolean(status) && status !== "not_connected" && status !== "disconnected";
 }
 
+type BoardLinked = { work_item_tasks?: MappedTask[] | null };
+
+/** BB-4: the board names this work already sits on, unique, from loaded data. */
+export function boardNames(item: BoardLinked): string[] {
+  const names = (item.work_item_tasks ?? []).map((link) => link.tasks?.engagements?.title).filter((name): name is string => Boolean(name));
+  return [...new Set(names)];
+}
+
+export function isOnBoard(item: BoardLinked, engagementId: string | undefined): boolean {
+  if (!engagementId) return false;
+  return (item.work_item_tasks ?? []).some((link) => link.tasks?.engagement_id === engagementId || link.tasks?.engagements?.id === engagementId);
+}
+
 export function AddWorkPanel({
   open,
   onOpenChange,
   onPlace,
   busy,
+  engagementId,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** Hand the chosen or freshly captured ids to the board. */
   onPlace: (ids: string[], source: AddWorkSource) => Promise<void> | void;
   busy?: boolean;
+  /** BB-4: the board being added to, so work already here is shown, not offered. */
+  engagementId?: string | undefined;
 }) {
   const { data: profile } = useProfile();
   const { data: work } = useWorkItems();
@@ -51,7 +68,7 @@ export function AddWorkPanel({
   const inbox = useMemo(() => {
     const items = work?.items ?? [];
     return items.filter(
-      (item) => item.owner_id === profile?.id && item.visibility === "unmapped",
+      (item) => item.owner_id === profile?.id && item.visibility !== "private",
     );
   }, [work, profile?.id]);
 
@@ -91,7 +108,7 @@ export function AddWorkPanel({
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
-            <TabsTrigger value="inbox">No board</TabsTrigger>
+            <TabsTrigger value="inbox">Your work</TabsTrigger>
             <TabsTrigger value="upload">From your computer</TabsTrigger>
             <TabsTrigger value="connectors">Connected apps</TabsTrigger>
           </TabsList>
@@ -99,26 +116,37 @@ export function AddWorkPanel({
           <TabsContent value="inbox" className="space-y-3">
             {inbox.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                Nothing without a board right now.
+                Nothing of yours to add yet.
               </p>
             ) : (
               <ScrollArea
                 className="h-72 rounded-md border"
               >
                 <ul className="divide-y">
-                  {inbox.map((item) => (
-                    <li key={item.id}>
-                      <label className="flex cursor-pointer items-center gap-3 px-3 py-2 text-sm">
-                        <Checkbox
-                          checked={picked.has(item.id)}
-                          onCheckedChange={() => toggle(item.id)}
-                          aria-label={`Choose ${item.title ?? "this work"}`}
-                        />
-                        <span className="min-w-0 flex-1 truncate">{item.title ?? "Untitled"}</span>
-                        <span className="shrink-0 text-xs text-muted-foreground">{item.type}</span>
-                      </label>
-                    </li>
-                  ))}
+                  {inbox.map((item) => {
+                    const boards = boardNames(item);
+                    const here = Boolean(engagementId) && isOnBoard(item, engagementId);
+                    return (
+                      <li key={item.id}>
+                        <label className={here ? "flex items-center gap-3 px-3 py-2 text-sm" : "flex cursor-pointer items-center gap-3 px-3 py-2 text-sm"}>
+                          {here ? (
+                            <span className="w-4 shrink-0" aria-hidden />
+                          ) : (
+                            <Checkbox
+                              checked={picked.has(item.id)}
+                              onCheckedChange={() => toggle(item.id)}
+                              aria-label={`Choose ${item.title ?? "this work"}`}
+                            />
+                          )}
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate">{item.title ?? "Untitled"}</span>
+                            <span className="block truncate text-xs text-muted-foreground">{boards.length > 0 ? boards.join(", ") : "No board"}</span>
+                          </span>
+                          <span className="shrink-0 text-xs text-muted-foreground">{here ? "Already here" : item.type}</span>
+                        </label>
+                      </li>
+                    );
+                  })}
                 </ul>
               </ScrollArea>
             )}
