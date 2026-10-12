@@ -34,6 +34,10 @@ export function sameCardProps(prev: Record<string, unknown>, next: Record<string
 }
 
 export function stableMemo<P extends object>(Inner: ComponentType<P>): ComponentType<P> {
+  // The card itself only re-renders when its data changes. The thin outer layer
+  // runs on every parent render to keep the callback proxies pointing at the
+  // newest functions, so a skipped card never calls a stale one.
+  const MemoInner = memo(Inner, (a, b) => sameCardProps(a as Record<string, unknown>, b as Record<string, unknown>));
   function Stable(props: P) {
     const latest = useRef(props);
     latest.current = props;
@@ -48,8 +52,8 @@ export function stableMemo<P extends object>(Inner: ComponentType<P>): Component
       }
       passed[key] = proxy;
     }
-    return <Inner {...(passed as P)} />;
+    return <MemoInner {...(passed as P)} />;
   }
   Stable.displayName = `Stable(${Inner.displayName ?? Inner.name ?? "Card"})`;
-  return memo(Stable, (a, b) => sameCardProps(a as Record<string, unknown>, b as Record<string, unknown>)) as unknown as ComponentType<P>;
+  return Stable;
 }

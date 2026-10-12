@@ -11,7 +11,9 @@ import { resolve } from "node:path";
 import { Profiler, useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 
-import { LabAnswerCard } from "@/components/canvas-lab/LabAnswerCard";
+const answerAsOf = vi.fn((_: string | null) => null);
+vi.mock("@/lib/answer-card", () => ({ answerAsOf: (v: string | null) => answerAsOf(v) }));
+const { LabAnswerCard } = await import("@/components/canvas-lab/LabAnswerCard");
 import { LabTextBlock } from "@/components/canvas-lab/LabTextBlock";
 import { sameCardProps, stableMemo } from "@/components/canvas-lab/stable-memo";
 import type { LabNode } from "@/components/canvas-lab/canvas-lab-model";
@@ -44,7 +46,8 @@ describe("BB-3 typing stays in the box", () => {
     const onParentRender = vi.fn();
     render(<Board onCommit={onCommit} onSiblingRender={onSiblingRender} onParentRender={onParentRender} />);
     const box = screen.getByLabelText("Text block words") as HTMLTextAreaElement;
-    const siblingBefore = onSiblingRender.mock.calls.length;
+    // The sibling card's own body runs answerAsOf once per real render.
+    const siblingBefore = answerAsOf.mock.calls.length;
     const parentBefore = onParentRender.mock.calls.length;
     let typed = "";
     for (let i = 0; i < 20; i += 1) {
@@ -52,14 +55,14 @@ describe("BB-3 typing stays in the box", () => {
       fireEvent.change(box, { target: { value: typed } });
     }
     expect(box.value).toBe(typed);
-    expect(onSiblingRender.mock.calls.length - siblingBefore).toBe(0);
+    expect(answerAsOf.mock.calls.length - siblingBefore).toBe(0);
     expect(onParentRender.mock.calls.length - parentBefore).toBe(0);
     expect(onCommit).not.toHaveBeenCalled();
     fireEvent.blur(box);
     expect(onCommit).toHaveBeenCalledTimes(1);
     expect(onCommit).toHaveBeenCalledWith(typed);
     // The parent heard the words once; the memoized sibling still did not re-render.
-    expect(onSiblingRender.mock.calls.length - siblingBefore).toBe(0);
+    expect(answerAsOf.mock.calls.length - siblingBefore).toBe(0);
   });
 
   it("the card memo ignores fresh callbacks and equal small arrays, but sees data changes", () => {
