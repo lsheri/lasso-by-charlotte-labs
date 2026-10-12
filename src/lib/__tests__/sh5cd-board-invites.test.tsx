@@ -49,7 +49,6 @@ vi.mock("@/hooks/use-profile", () => ({ setActiveProfileId: vi.fn(), fetchProfil
 vi.mock("@/components/layout/SessionHeader", () => ({ SessionHeader: () => null }));
 
 import { readFileSync } from "node:fs";
-import { EVENT_DIM_ALLOWLIST as EVENT_DIM_ALLOWLIST_SH5F } from "@/lib/event-dim-allowlist";
 import {
   clearPendingBoardInvite,
   pendingBoardInvitePath,
@@ -132,7 +131,7 @@ describe("telemetry", () => {
   it("three events allowlisted with closed dims", () => {
     expect(EVENT_DIM_KEYS["board.invite_sent"]).toEqual(["conversations", "kind", "level", "status"]);
     expect(EVENT_DIM_KEYS["board.invite_withdrawn"]).toEqual(["kind"]);
-    expect(EVENT_DIM_KEYS["board.invite_accepted"]).toEqual(["kind"]);
+    expect(EVENT_DIM_KEYS["board.invite_accepted"]).toEqual(["kind", "via"]);
   });
 });
 
@@ -217,6 +216,6 @@ describe("SH-5f invite page routing", () => {
   });
 
   it("board.invite_accepted allowlists via", () => {
-    expect(EVENT_DIM_ALLOWLIST_SH5F["board.invite_accepted"]).toEqual(["kind", "via"]);
+    expect(EVENT_DIM_KEYS["board.invite_accepted"]).toEqual(["kind", "via"]);
   });
 });
