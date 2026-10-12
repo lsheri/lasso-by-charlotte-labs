@@ -1,3 +1,5 @@
+import { NoAnswerSaved } from "@/components/reflect/NoAnswerSaved";
+import { unansweredQuestionIds } from "@/lib/ask-question-persist";
 import { Link } from "@tanstack/react-router";
 import { createContext, useContext, useEffect, useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -250,6 +252,7 @@ function WorkPicker({ ask, engagementId }: { ask: AskLasso; engagementId: string
 /** The transcript, on binder paper. Every line sits on the 28px pitch. */
 export function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions?: React.ReactNode }) {
   const messages = ask.messages ?? [];
+  const unanswered = unansweredQuestionIds(messages, ask.pending);
   const viewerInitial = ask.profile?.display_name.trim().charAt(0).toUpperCase() || "Y";
   // Only the workboard offers a place to keep an answer, and only to someone
   // who may arrange that board.
@@ -344,9 +347,17 @@ export function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions
               <div className="nb-conversation-body w-full flex-1 gap-0 overflow-visible">
                 {!followsSameSpeaker ? speakerName(role, message.created_at) : null}
                 {message.role === "user" ? (
-                  <p className="nb-binder-line whitespace-pre-wrap text-sm text-foreground">
-                    {message.content}
-                  </p>
+                  <>
+                    <p className="nb-binder-line whitespace-pre-wrap text-sm text-foreground">
+                      {message.content}
+                    </p>
+                    {unanswered.has(String(message.id)) ? (
+                      <NoAnswerSaved
+                        onResend={() => void ask.resend(message.content)}
+                        disabled={ask.pending}
+                      />
+                    ) : null}
+                  </>
                 ) : (
                   <AnswerRail state="done">
                     <MarkdownMessage content={message.content} variant="binder" />
