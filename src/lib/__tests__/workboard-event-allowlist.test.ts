@@ -129,6 +129,10 @@ describe("the workboard allowlist", () => {
           "via",
           "count",
         ],
+        "workboard.workstream_created": [
+          "via",
+          "claimed",
+        ],
         "workboard.workstream_drawn": [
           "claimed",
           "asked",
