@@ -44,7 +44,7 @@ vi.mock("@/lib/partner-share", () => ({
 }));
 
 import { ShareDialog } from "@/components/canvas-lab/ShareDialog";
-import { SUMMARY_ONLY_LINE, summaryOnlyLine } from "@/components/peek/RenderedContent";
+import { SUMMARY_ONLY_LINE, summaryOnlyLine } from "@/components/peek/summary-only";
 
 async function openDialog() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });

@@ -29,6 +29,7 @@ vi.mock("@/lib/engagement-access.functions", () => ({
     calls.push({ access: data.access, person_id: data.person_id });
     return { status: "done", result: "granted" };
   }),
+  setPersonConversationsFn: vi.fn(async () => ({ status: "done", result: "unchanged" })),
 }));
 
 vi.mock("@/lib/board-share.functions", () => ({

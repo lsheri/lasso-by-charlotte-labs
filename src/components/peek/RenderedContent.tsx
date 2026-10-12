@@ -16,6 +16,7 @@ import { artifactPreviewKind } from "@/lib/workboard-file-preview";
 import { withPreviewCsp } from "@/lib/workboard-card-preview.shared";
 import { getWorkFileUrl } from "@/lib/work-files.functions";
 import { getItemTextPane } from "@/lib/item-text.functions";
+import { SUMMARY_ONLY_LINE, summaryOnlyLine } from "@/components/peek/summary-only";
 import {
   contentsUnread,
   textStatusOf,
@@ -84,23 +85,6 @@ function DrivePreview({
   );
 }
 
-
-/** SH-3b: what a viewer sees when the turns were shared as a summary. */
-export const SUMMARY_ONLY_LINE =
-  "Shared as a summary. The full conversation stays with the person who had it.";
-
-export function isItemOwner(item: Pick<WorkItemRow, "owner_id">, profileId: string | undefined): boolean {
-  return Boolean(profileId) && item.owner_id === profileId;
-}
-
-/** The summary sentence for a viewer who does not own the item; owners get null. */
-export function summaryOnlyLine(
-  reason: string | null | undefined,
-  item: Pick<WorkItemRow, "owner_id">,
-  profileId: string | undefined,
-): string | null {
-  return reason === "empty_thread" && !isItemOwner(item, profileId) ? SUMMARY_ONLY_LINE : null;
-}
 
 /** Plain text for formats a browser cannot render. No layout, and it says so. */
 function TextPane({
