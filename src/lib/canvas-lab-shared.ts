@@ -9,6 +9,8 @@
  * instructions are not part of Slice 1 and stay browser-local.
  */
 
+import { richToPlainText } from "@/lib/rich-text";
+
 export type WorkboardNodeKind = "brief" | "work_item" | "decision" | "judgment" | "draft" | "shape" | "text" | "mark" | "answer" | "sticky" | "image";
 export type WorkboardFrameKind = "foundation" | "task" | "decisions" | "outputs" | "custom" | "context";
 export type WorkboardAnchor = "top" | "right" | "bottom" | "left";
@@ -134,11 +136,13 @@ export function parseWorkboardStickyBody(value: unknown): WorkboardStickyBody | 
 }
 
 export function serializeWorkboardStickyBody(body: WorkboardStickyBody): string {
-  return JSON.stringify({ text: body.text, size: body.size, weight: body.weight, colour: body.colour, fill: body.fill, ...(body.html !== undefined ? { html: body.html } : {}) });
+  const text = body.html !== undefined && typeof document !== "undefined" ? richToPlainText(body.html) : body.text;
+  return JSON.stringify({ text, size: body.size, weight: body.weight, colour: body.colour, fill: body.fill, ...(body.html !== undefined ? { html: body.html } : {}) });
 }
 
 export function serializeWorkboardTextBody(body: WorkboardTextBody): string {
-  return JSON.stringify({ text: body.text, size: body.size, weight: body.weight, colour: body.colour, ...(body.html !== undefined ? { html: body.html } : {}) });
+  const text = body.html !== undefined && typeof document !== "undefined" ? richToPlainText(body.html) : body.text;
+  return JSON.stringify({ text, size: body.size, weight: body.weight, colour: body.colour, ...(body.html !== undefined ? { html: body.html } : {}) });
 }
 
 export function validWorkboardNodeGeometry(node: { kind?: WorkboardNodeKind; x?: number; y?: number; w?: number; h?: number }): boolean {

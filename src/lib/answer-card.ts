@@ -8,6 +8,7 @@
 
 import type { WorkboardNodeInput } from "@/lib/canvas-lab-shared";
 import { WORKBOARD_HTML_MAX_LENGTH, WORKBOARD_TEXT_MAX_LENGTH } from "@/lib/canvas-lab-shared";
+import { richToPlainText } from "@/lib/rich-text";
 
 export type AnswerBody = { text: string; html: string | null; original: string | null; editedAt: string | null };
 
@@ -33,7 +34,9 @@ export function serializeAnswerBody(body: AnswerBody): string {
     || body.text.length > WORKBOARD_TEXT_MAX_LENGTH || body.html.length > WORKBOARD_HTML_MAX_LENGTH) {
     throw new Error("Invalid answer body.");
   }
-  return JSON.stringify({ text: body.text, html: body.html, original: body.original, edited_at: body.editedAt });
+  const text = typeof document !== "undefined" ? richToPlainText(body.html) : body.text;
+  if (text.length > WORKBOARD_TEXT_MAX_LENGTH) throw new Error("Invalid answer body.");
+  return JSON.stringify({ text, html: body.html, original: body.original, edited_at: body.editedAt });
 }
 
 export function validateAnswerBody(body: string, storedBody?: string): string | null {

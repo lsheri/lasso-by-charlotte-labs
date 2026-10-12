@@ -18,6 +18,26 @@
 import type { Database } from "@/integrations/supabase/types";
 
 import type { WorkboardFrameDto, WorkboardLinkDto, WorkboardNodeDto } from "./canvas-lab-shared";
+import { parseWorkboardStickyBody, parseWorkboardTextBody, serializeWorkboardStickyBody, serializeWorkboardTextBody } from "./canvas-lab-shared";
+import { parseAnswerBody } from "./answer-card";
+
+/** Public board bodies never disclose edit history or rich markup. */
+export function sharedNodeBody(kind: string, body: string): string {
+  if (kind === "answer") return parseAnswerBody(body).text;
+  if (kind === "sticky") {
+    const parsed = parseWorkboardStickyBody(body);
+    if (!parsed) return "";
+    const { html: _html, ...plain } = parsed;
+    return serializeWorkboardStickyBody(plain);
+  }
+  if (kind === "text") {
+    const parsed = parseWorkboardTextBody(body);
+    if (!parsed) return "";
+    const { html: _html, ...plain } = parsed;
+    return serializeWorkboardTextBody(plain);
+  }
+  return body;
+}
 import {
   looksLikeShareToken,
   type SharedBoardDto,
@@ -261,7 +281,7 @@ export async function readBoard(
       authorProfileId: authorOf(row.author_profile_id),
       authorName: "A teammate",
       title: row.title,
-      body: row.body,
+      body: sharedNodeBody(row.kind, row.body),
       judgmentType: (row.judgment_type as WorkboardNodeDto["judgmentType"]) ?? null,
       x: row.x,
       y: row.y,
