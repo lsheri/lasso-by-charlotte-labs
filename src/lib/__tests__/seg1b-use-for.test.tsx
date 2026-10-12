@@ -27,6 +27,7 @@ vi.mock("@/integrations/supabase/client", () => ({
     auth: { getUser: async () => ({ data: { user: { id: "u1" } }, error: null }) },
     rpc: async () => ({ data: "org-1", error: null }),
     from: (table: string) => ({
+      upsert: async () => ({ error: null }),
       update: (payload: Record<string, unknown>) => {
         if (table === "orgs") mocks.orgUpdates.push(payload);
         return { eq: async () => ({ error: null }) };
@@ -77,6 +78,7 @@ async function reachSegment(intent: "company" | "personal") {
   if (intent === "company") {
     fireEvent.change(screen.getByLabelText("Workspace name"), { target: { value: "Acme" } });
   }
+  fireEvent.click(screen.getByRole("button", { name: "Work" }));
   fireEvent.click(screen.getByRole("button", { name: /Create/ }));
   await screen.findByText("One thing before you start.", undefined, { timeout: 25000 });
 }

@@ -150,7 +150,7 @@ describe("F6 board-shared", () => {
 describe("Small fix A", () => {
   it("coachScopeLine has the new wording", () => {
     expect(coachScopeLine(["Ada"])).toBe(
-      "You will see only the work Ada choose to share with you. Nothing else in the workspace is visible to you.",
+      "You will see only the work Ada chooses to share with you. Nothing else in the workspace is visible to you.",
     );
   });
 });

@@ -87,8 +87,9 @@ describe("Unit G: onboarding setup stage per register", () => {
   });
 
   it("edu", async () => {
+    // F4: the school door now sets up an individual workspace.
     await mount("edu");
-    expect(screen.getByText("Your school work")).toBeTruthy();
+    expect(screen.getByText("Just you")).toBeTruthy();
     expect(screen.getByText("One detail and you are in. Yours to change later.")).toBeTruthy();
     expect(screen.queryByLabelText("Workspace name")).toBeNull();
     expect(
