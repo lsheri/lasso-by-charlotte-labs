@@ -62,18 +62,6 @@ function LabTextBlockInner({ node, selected, editable, layoutEditable, onSelect,
     onCommit(next);
   };
   const style = { left: node.x, top: node.y, width: node.width, height: node.height, pointerEvents: layoutEditable || editable || selected ? "auto" : "none" } satisfies CSSProperties;
-  return () => document.removeEventListener("pointerdown", onOutside, true);
-  }, [editing]);
-
-  // Losing the selection always ends editing.
-  useEffect(() => { if (!selected && editing) setEditing(false); }, [selected, editing]);
-
-  const enterEdit = () => {
-    if (!editable) return;
-    onSelect();
-    setEditing(true);
-  };
-
   return (
     <section ref={sectionRef} data-testid={`text-block-${node.id}`} data-selected={selected} data-editing={editing} data-empty={body.text.length === 0} data-size={body.size} data-weight={body.weight} data-colour={body.colour} aria-label="Text block" tabIndex={selected ? 0 : -1} className="canvas-lab-text-block absolute" style={style} onFocus={onSelect}
       onPointerDown={(event) => {
@@ -84,7 +72,7 @@ function LabTextBlockInner({ node, selected, editable, layoutEditable, onSelect,
       onDoubleClick={enterEdit}
       onKeyDown={(event) => {
         if (event.target !== event.currentTarget) return;
-        if (event.key === "Enter" && selected && !editing && editable) { event.preventDefault(); setEditing(true); }
+        if (event.key === "Enter" && selected && !editing && editable) { event.preventDefault(); enterEdit(); }
       }}>
       {(["top", "right", "bottom", "left"] as const).map((edge) => <button key={edge} type="button" tabIndex={-1} aria-label={`Move text block from ${edge} edge`} className="canvas-lab-text-block-edge" data-edge={edge} onPointerDown={(event) => { event.stopPropagation(); onSelect(); onDragStart(event); }} />)}
       <style>{`
