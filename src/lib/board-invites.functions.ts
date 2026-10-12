@@ -126,7 +126,7 @@ export const withdrawBoardInvite = createServerFn({ method: "POST" })
 export const previewBoardInvite = createServerFn({ method: "POST" })
   .inputValidator((input: { code: string }) => ({ code: String(input?.code ?? "").slice(0, 200) }))
   .handler(async ({ data }): Promise<BoardInvitePreview> => {
-    const empty: BoardInvitePreview = { state: "not_found", board: null, by: null, kind: null, email_hint: null };
+    const empty: BoardInvitePreview = { state: "not_found", board: null, by: null, kind: null, email_hint: null, org: null };
     if (!data.code) return empty;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: raw, error } = await supabaseAdmin.rpc("board_invite_preview", { p_code: data.code });
@@ -139,12 +139,16 @@ export const previewBoardInvite = createServerFn({ method: "POST" })
       by: str("by"),
       kind: str("kind"),
       email_hint: str("email_hint"),
+      org: str("org"),
     };
   });
 
 export const claimBoardInvite = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { code: string }) => ({ code: String(input?.code ?? "") }))
+  .inputValidator((input: { code: string; via?: string }) => ({
+    code: String(input?.code ?? ""),
+    via: input?.via === "signup" || input?.via === "signin" ? input.via : "direct",
+  }))
   .handler(async ({ data, context }) => {
     const { data: raw, error } = await context.supabase.rpc("claim_board_invite", { p_code: data.code });
     if (error) return { ok: false as const, error: error.message };
@@ -169,7 +173,7 @@ export const claimBoardInvite = createServerFn({ method: "POST" })
               orgId: profile.org_id,
               userId: context.userId,
               profileId: profile.id,
-              dims: { kind },
+              dims: { kind, via: data.via },
             });
           }
         } catch {
