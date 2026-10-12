@@ -1162,7 +1162,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       setDrawing(null);
       if (!current) return;
       const rect = drawnRect(current.from, current.to);
-      if (!drawnRectUsable(rect)) { setAnnouncement("Drag a bigger box to draw a grouping."); return; }
+      if (!drawnRectUsable(rect)) { setDrawTool(false); setAnnouncement("Drag a bigger box to draw a grouping."); return; }
       void createPaintRegion(rect);
     }
     function cancelDrawing() {
@@ -1936,7 +1936,8 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     };
     setFrames((current) => (current ? [...current, frame] : [frame]));
     framesRef.current = [...framesRef.current, frame];
-    setDrawTool(nextTool.armed);
+    // WS-T1: one drawn grouping closes the tray and exits the tool.
+    setDrawTool(false);
     setSelectedFrameId(id);
     setPendingRegionNameId(id);
     const boardExisted = boardIdRef.current != null;
@@ -2584,6 +2585,8 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   function addWorkstream(nameInput: string): boolean {
     const name = nameInput.trim();
     if (!name || name.length > 60) return false;
+    // WS-T1: creating a workstream closes the tray and exits the tool.
+    setDrawTool(false);
     // BB-5: a real workstream first, then its outline. Never a custom frame from here.
     const rect = addLocalFrame(framesRef.current, name, nextWorkstreamRect(framesRef.current, nodesRef.current.filter((node) => !hiddenIds.includes(node.id)))).at(-1);
     if (!rect) return false;
