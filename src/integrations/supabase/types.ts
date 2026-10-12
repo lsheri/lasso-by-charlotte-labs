@@ -576,6 +576,99 @@ export type Database = {
           },
         ]
       }
+      board_invites: {
+        Row: {
+          accepted_at: string | null
+          accepted_profile_id: string | null
+          code: string
+          conversations: string
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          email: string
+          engagement_id: string
+          expires_at: string
+          id: string
+          invited_by: string
+          kind: string
+          level: string
+          org_id: string
+          status: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_profile_id?: string | null
+          code?: string
+          conversations?: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          email: string
+          engagement_id: string
+          expires_at?: string
+          id?: string
+          invited_by: string
+          kind: string
+          level?: string
+          org_id: string
+          status: string
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_profile_id?: string | null
+          code?: string
+          conversations?: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          email?: string
+          engagement_id?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string
+          kind?: string
+          level?: string
+          org_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "board_invites_accepted_profile_id_fkey"
+            columns: ["accepted_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "board_invites_decided_by_fkey"
+            columns: ["decided_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "board_invites_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "engagements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "board_invites_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "board_invites_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       board_share_links: {
         Row: {
           created_at: string
@@ -2960,6 +3053,66 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          acted_at: string | null
+          created_at: string
+          group_key: string | null
+          id: string
+          kind: string
+          org_id: string | null
+          payload: Json
+          read_at: string | null
+          recipient_profile_id: string
+          section: string
+          subject_id: string | null
+          subject_type: string | null
+        }
+        Insert: {
+          acted_at?: string | null
+          created_at?: string
+          group_key?: string | null
+          id?: string
+          kind: string
+          org_id?: string | null
+          payload?: Json
+          read_at?: string | null
+          recipient_profile_id: string
+          section: string
+          subject_id?: string | null
+          subject_type?: string | null
+        }
+        Update: {
+          acted_at?: string | null
+          created_at?: string
+          group_key?: string | null
+          id?: string
+          kind?: string
+          org_id?: string | null
+          payload?: Json
+          read_at?: string | null
+          recipient_profile_id?: string
+          section?: string
+          subject_id?: string | null
+          subject_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_recipient_profile_id_fkey"
+            columns: ["recipient_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       one_on_one_notes: {
         Row: {
           content: string
@@ -3439,6 +3592,7 @@ export type Database = {
           experience_band: string | null
           function_area: string | null
           id: string
+          is_guest: boolean
           onboarding: Json | null
           org_id: string
           primary_work_types: string[] | null
@@ -3456,6 +3610,7 @@ export type Database = {
           experience_band?: string | null
           function_area?: string | null
           id?: string
+          is_guest?: boolean
           onboarding?: Json | null
           org_id: string
           primary_work_types?: string[] | null
@@ -3473,6 +3628,7 @@ export type Database = {
           experience_band?: string | null
           function_area?: string | null
           id?: string
+          is_guest?: boolean
           onboarding?: Json | null
           org_id?: string
           primary_work_types?: string[] | null
@@ -3654,6 +3810,41 @@ export type Database = {
             columns: ["request_id"]
             isOneToOne: false
             referencedRelation: "key_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seat_usage_daily: {
+        Row: {
+          day: string
+          filled: number
+          org_id: string
+          over: number | null
+          seats: number
+          updated_at: string
+        }
+        Insert: {
+          day: string
+          filled: number
+          org_id: string
+          over?: number | null
+          seats: number
+          updated_at?: string
+        }
+        Update: {
+          day?: string
+          filled?: number
+          org_id?: string
+          over?: number | null
+          seats?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seat_usage_daily_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
             referencedColumns: ["id"]
           },
         ]
@@ -5418,6 +5609,7 @@ export type Database = {
       analytics_upsert_feature: { Args: { p_row: Json }; Returns: undefined }
       archive_container: { Args: { p_id: string }; Returns: Json }
       assert_seat_available: { Args: { p_org_id: string }; Returns: undefined }
+      board_invite_preview: { Args: { p_code: string }; Returns: Json }
       can_manage_key_request: {
         Args: { p_request_id: string }
         Returns: boolean
@@ -5430,6 +5622,10 @@ export type Database = {
       can_self_join_engagement: {
         Args: { eng: string; prof: string }
         Returns: boolean
+      }
+      claim_board_invite: {
+        Args: { p_code: string; p_display_name?: string }
+        Returns: Json
       }
       claim_coaching_links: {
         Args: { p_actor_profile_id?: string; p_code: string }
@@ -5446,6 +5642,7 @@ export type Database = {
           experience_band: string | null
           function_area: string | null
           id: string
+          is_guest: boolean
           onboarding: Json | null
           org_id: string
           primary_work_types: string[] | null
@@ -5471,6 +5668,15 @@ export type Database = {
         Args: { p_actor_profile_id?: string; p_link_id: string }
         Returns: undefined
       }
+      create_board_invite: {
+        Args: {
+          p_conversations?: string
+          p_email: string
+          p_engagement: string
+          p_level?: string
+        }
+        Returns: Json
+      }
       create_coaching_link: {
         Args: {
           p_access_level?: string
@@ -5494,6 +5700,10 @@ export type Database = {
         Returns: string
       }
       deactivate_member: { Args: { p_profile: string }; Returns: undefined }
+      decide_board_invite: {
+        Args: { p_approve: boolean; p_invite: string }
+        Returns: Json
+      }
       decline_share_back: {
         Args: { p_actor_profile_id?: string; p_institution_id: string }
         Returns: Json
@@ -5544,6 +5754,10 @@ export type Database = {
       mark_coaching_note_read: {
         Args: { p_note_id: string }
         Returns: undefined
+      }
+      mark_notifications: {
+        Args: { p_acted?: boolean; p_ids: string[] }
+        Returns: number
       }
       mcp__revoke_rows: {
         Args: { p_ids: string[]; p_via: string }
@@ -5641,6 +5855,31 @@ export type Database = {
       my_profile_id: { Args: never; Returns: string }
       my_profile_ids: { Args: never; Returns: string[] }
       my_role: { Args: never; Returns: Database["public"]["Enums"]["app_role"] }
+      notify: {
+        Args: {
+          p_group_key: string
+          p_kind: string
+          p_org: string
+          p_payload: Json
+          p_recipient: string
+          p_section: string
+          p_subject_id: string
+          p_subject_type: string
+        }
+        Returns: undefined
+      }
+      notify_admins: {
+        Args: {
+          p_group_key: string
+          p_kind: string
+          p_org: string
+          p_payload: Json
+          p_section: string
+          p_subject_id: string
+          p_subject_type: string
+        }
+        Returns: number
+      }
       offer_share_back: {
         Args: { p_actor_profile_id?: string; p_institution_id: string }
         Returns: Json
@@ -5675,6 +5914,7 @@ export type Database = {
         Returns: Json
       }
       partner_shared_boards: { Args: never; Returns: Json }
+      purge_old_notifications: { Args: never; Returns: number }
       purge_workboard_annotations: { Args: never; Returns: number }
       reactivate_member: { Args: { p_profile: string }; Returns: undefined }
       record_coaching_disclosure: {
@@ -5690,6 +5930,8 @@ export type Database = {
         }
         Returns: Json
       }
+      seat_ceiling: { Args: { p_seats: number }; Returns: number }
+      seat_status: { Args: { p_org: string }; Returns: Json }
       set_container_color: {
         Args: { p_color: string; p_id: string }
         Returns: Json
@@ -5742,6 +5984,7 @@ export type Database = {
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      snapshot_seat_usage: { Args: never; Returns: number }
       tier_rank: { Args: { t: string }; Returns: number }
       trigger_egress_sweep: { Args: { p_source?: string }; Returns: number }
       unarchive_container: { Args: { p_id: string }; Returns: Json }
@@ -5754,6 +5997,7 @@ export type Database = {
         Returns: Json
       }
       viewer_can_read_turns: { Args: { item: string }; Returns: boolean }
+      withdraw_board_invite: { Args: { p_invite: string }; Returns: string }
       withdraw_coaching_consent: {
         Args: { p_actor_profile_id?: string; p_link_id: string }
         Returns: undefined

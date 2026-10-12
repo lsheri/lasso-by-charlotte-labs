@@ -11,6 +11,7 @@ import { useAuthUser, useProfile } from "@/hooks/use-profile";
 import { AppSidebar } from "./AppSidebar";
 import { LassoLoopMark } from "./LassoLoopMark";
 import { MobileTabBar } from "./MobileTabBar";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { FeedbackDialog, FeedbackWidget } from "@/components/feedback/FeedbackWidget";
 import { ProvenanceAudit } from "@/components/provenance/ProvenanceAudit";
 import { VerifyThreadReader } from "@/components/verify/VerifyThreadReader";
@@ -84,6 +85,7 @@ function AppShellInner() {
                 <span className="max-w-[28vw] truncate text-xs text-muted-foreground">
                   {userName}
                 </span>
+                <NotificationBell />
                 <FeedbackDialog
                   trigger={
                     <button
@@ -97,6 +99,13 @@ function AppShellInner() {
                 />
               </div>
             </header>
+
+            {/* NC-2: desktop has no top bar, so the bell sits top right of the signed-in shell. */}
+            <div className="pointer-events-none sticky top-0 z-40 hidden h-0 justify-end px-4 md:flex">
+              <div className="pointer-events-auto mt-3">
+                <NotificationBell />
+              </div>
+            </div>
 
             {/* Clears the 56px tab bar plus a 32px breathing gap. Pages with a
               sticky CTA (Work) add their own spacer rather than taxing every page. */}
