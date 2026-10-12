@@ -130,7 +130,7 @@ export function SettingsShell({
         <nav
           aria-label="Settings sections"
           data-testid="settings-rail"
-          className={`flex min-w-0 gap-1 overflow-x-auto border-b border-border p-3 ${variant === "dialog" ? "pr-14 md:pr-3" : ""} md:flex-col md:overflow-x-visible md:overflow-y-auto md:border-b-0 md:border-r`}
+          className={`flex min-w-0 gap-1 overflow-x-auto border-b border-border p-3 ${variant === "dialog" ? "mr-12 md:mr-0" : ""} md:flex-col md:overflow-x-visible md:overflow-y-auto md:border-b-0 md:border-r`}
         >
           {ungrouped.map(railButton)}
           {groups.map((group, index) => (

@@ -43,16 +43,19 @@ describe("PH-1 CS-8 Settings tabs at 390", () => {
     const rail = screen.getByTestId("settings-rail");
     expect(rail.className).toContain("overflow-x-auto");
     expect(rail.className).toContain("min-w-0");
-    expect(rail.className).toContain("pr-14");
-    // Desktop: the extra right padding is undone and the column layout is kept.
-    expect(rail.className).toContain("md:pr-3");
+    // PH-1b: a right margin (not padding) shrinks the rail's visible box so
+    // no tab rect can intersect the close X at any scroll position.
+    expect(rail.className).toContain("mr-12");
+    expect(rail.className).not.toContain("pr-14");
+    // Desktop: the margin is undone and the column layout is kept.
+    expect(rail.className).toContain("md:mr-0");
     expect(rail.className).toContain("md:flex-col");
     expect(rail.parentElement!.className).toContain("grid-cols-[minmax(0,1fr)]");
     expect(rail.parentElement!.className).toContain("md:grid-cols-[13rem_minmax(0,1fr)]");
   });
 
-  it("the page variant gets no dialog padding", () => {
+  it("the page variant gets no dialog margin", () => {
     render(<SettingsShell sections={sections as never} variant="page" defaultSection="a" />);
-    expect(screen.getByTestId("settings-rail").className).not.toContain("pr-14");
+    expect(screen.getByTestId("settings-rail").className).not.toContain("mr-12");
   });
 });
