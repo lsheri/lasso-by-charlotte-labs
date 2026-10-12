@@ -220,6 +220,9 @@ function AuthPage() {
 
   // An invite bound to one address fills it in and holds it, so the account
   // that gets created is the one the admin asked for.
+  // AU-1 (W13): only a lookup that answered "not valid" counts; a lookup that
+  // could not run (signed out) keeps today's notice.
+  const keyInvalid = Boolean(key) && keyCheck !== undefined && !keyCheck.ok;
   const lockedEmail = inviteCheck?.ok ? (inviteCheck.email ?? null) : null;
   useEffect(() => {
     if (lockedEmail) setEmail(lockedEmail);
@@ -434,7 +437,7 @@ function AuthPage() {
             <h1 className="page-title">Check your email</h1>
             <p className="mt-4 break-words text-sm font-medium text-foreground">{confirmedEmail}</p>
             <p className="mt-2 text-sm text-muted-foreground">The link signs you in and picks up where you left off.</p>
-            {key ? (
+            {key && !keyInvalid ? (
               <div data-testid="key-notice" className="mt-5 rounded-[var(--radius)] border border-dashed border-border px-4 py-3">
                 <p className="font-hand text-[16px] leading-snug text-foreground">
                   <KeyNoticeSentence institution={keyCheck?.ok ? keyCheck.institution_name : null} />
@@ -489,7 +492,10 @@ function AuthPage() {
           ) : null}
 
           <form onSubmit={handleSubmit} className="mt-8 space-y-4">
-            {key ? (
+            {key && keyInvalid ? (
+              <p data-testid="key-invalid" className="text-sm text-destructive">{AUTH_COPY.keyInvalid}</p>
+            ) : null}
+            {key && !keyInvalid ? (
               <div data-testid="key-notice" className="mt-5 rounded-[var(--radius)] border border-dashed border-border px-4 py-3">
                 <p className="font-hand text-[16px] leading-snug text-foreground">
                   <KeyNoticeSentence institution={keyCheck?.ok ? keyCheck.institution_name : null} />

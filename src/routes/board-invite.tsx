@@ -176,6 +176,19 @@ function BoardInvitePage() {
     }
   }
 
+  // AU-1 (W3): claim answers with the board for the right person when already accepted.
+  async function openAccepted() {
+    if (!code) return;
+    const result = await claim({ data: { code } }).catch(() => null);
+    if (!result || !result.ok || !result.engagementId) {
+      navigate({ to: "/work" } as never);
+      return;
+    }
+    clearPendingBoardInvite();
+    if (result.profileId) await setActiveProfileId(result.profileId);
+    navigate({ to: "/engagements/$id/canvas-lab", params: { id: result.engagementId } } as never);
+  }
+
   async function signOut() {
     await queryClient.cancelQueries();
     queryClient.clear();
@@ -213,7 +226,7 @@ function BoardInvitePage() {
         error={error}
         onAccept={accept}
         onSignOut={signOut}
-        onOpenBoard={() => navigate({ to: "/work" } as never)}
+        onOpenBoard={() => void openAccepted()}
         onRemember={(via) => rememberPendingBoardInvite({ code, kind: state.data?.kind ?? null, via })}
       />
     );
