@@ -68,22 +68,6 @@ const PLANS = [
     ],
   },
   {
-    name: "School",
-    forLine: "FOR STUDENTS",
-    price: "$0/mo",
-    note: "free while we pilot",
-    intent: "edu",
-    edge: "border-l-blue",
-    plus: true,
-    features: [
-      "your classes and coursework in one place",
-      "keep the chat where the idea came from",
-      "share one piece of work when you choose",
-      "your record leaves with you",
-      "take your work with you when the term ends",
-    ],
-  },
-  {
     name: "Team",
     forLine: "FOR A COMPANY OR A GROUP AT WORK",
     price: "$0/person/mo",
