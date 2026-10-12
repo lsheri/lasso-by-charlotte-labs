@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
 import { readFileSync } from "node:fs";
@@ -36,6 +36,7 @@ function Gate() {
 }
 
 beforeEach(() => {
+  cleanup();
   upsert.mockClear();
   logEvent.mockClear();
   peopleRow.uses = null;
@@ -44,9 +45,9 @@ beforeEach(() => {
 describe("F4 uses question", () => {
   it("Continue is disabled until a chip is picked", () => {
     render(<Gate />);
-    expect(screen.getByText("Continue")).toBeDisabled();
+    expect((screen.getByText("Continue") as HTMLButtonElement).disabled).toBe(true);
     fireEvent.click(screen.getByRole("button", { name: /School/ }));
-    expect(screen.getByText("Continue")).not.toBeDisabled();
+    expect((screen.getByText("Continue") as HTMLButtonElement).disabled).toBe(false);
     expect(screen.getByText("Lasso is for people 18 and over.")).toBeTruthy();
   });
 
