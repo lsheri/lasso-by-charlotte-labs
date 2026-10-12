@@ -32,6 +32,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { lookupActivationKeyFn, redeemActivationKeyFn } from "@/lib/activation-keys.functions";
 import { cleanActivationKey, clearActivationKey, readActivationKey } from "@/lib/key-entry";
 import { logEvent } from "@/lib/telemetry";
+import { UsesChips } from "@/components/person/UsesChips";
+import { saveUses, sortUses, usesDim, type PersonUse } from "@/lib/person-uses";
 import { logV2 } from "@/lib/telemetry-v2";
 import { COUNTRIES, INDUSTRIES, SIZE_BANDS, USE_FOR_OPTIONS, segmentFieldsFor } from "@/lib/org-segments";
 import { emitClientEvent } from "@/lib/client-telemetry";
@@ -284,6 +286,10 @@ function OnboardingInner() {
   const [orgName, setOrgName] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // F4 / ST-2: required uses question; the school door pre-ticks School.
+  const [uses, setUses] = useState<PersonUse[]>(() =>
+    intent === "edu" || readEduIntent() ? ["school"] : [],
+  );
   // SEG-1a/1b: the optional segmentation step after creation. Organisations
   // answer Industry and People; an individual answers one question; edu skips.
   const [segmentOrgId, setSegmentOrgId] = useState<string | null>(null);
@@ -387,6 +393,21 @@ function OnboardingInner() {
       return;
     }
 
+    // F4 / ST-2: the person's own people row records what Lasso is for.
+    if (sortUses(uses).length === 0 || !freshUser?.user) {
+      setPending(false);
+      return;
+    }
+    const savedUses = await saveUses(supabase, freshUser.user.id, uses).catch(() => ({
+      ok: false,
+      uses: [] as PersonUse[],
+    }));
+    if (!savedUses.ok) {
+      setError("We could not save your answer just now. Nothing was created. Please try again.");
+      setPending(false);
+      return;
+    }
+
     // Redeeming an invite belongs to /join, which owns every honest state.
     // This surface only ever creates a workspace, so no database message
     // about invites can reach the screen from here.
@@ -417,6 +438,9 @@ function OnboardingInner() {
         });
       }
       clearEduIntent();
+      if (createdOrgId) {
+        logEvent("person.uses_declared", createdOrgId, { uses: usesDim(savedUses.uses) });
+      }
     }
 
     // Unit J1 / KX1: the key shown on this screen redeems once, here, the
@@ -833,6 +857,8 @@ function OnboardingInner() {
                 </div>
               ) : null}
 
+              <UsesChips value={uses} onChange={setUses} disabled={pending} />
+
               {carriedKey ? (
                 <div
                   data-testid="key-notice"
@@ -854,7 +880,7 @@ function OnboardingInner() {
 
               {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
-              <Button type="submit" className="w-full" disabled={pending}>
+              <Button type="submit" className="w-full" disabled={pending || uses.length === 0}>
                 {pending ? "Setting up…" : REGISTER_SHARED_COPY.submit}
               </Button>
               <button

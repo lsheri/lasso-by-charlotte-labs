@@ -199,6 +199,7 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "oneonone.prepared": ["entry", "kind", "scope", "window"],
   "oneonone.saved_to_drive": ["kind"],
   "oneonone.session_created": ["kind"],
+  "person.uses_declared": ["uses"],
   "org.created": ["org_type", "register", "entry_door"],
   "org.clients_changed": ["enabled"],
   "plans.action_clicked": ["action", "plan", "source"],

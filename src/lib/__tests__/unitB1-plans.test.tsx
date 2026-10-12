@@ -39,13 +39,12 @@ describe("Unit B1: public plans", () => {
   it("shows all four plans with the approved destinations and copy", () => {
     const { container } = render(<PlansPage />);
 
-    for (const heading of ["Just me", "School", "Team", "Partner"]) {
+    for (const heading of ["Just me", "Team", "Partner"]) {
       expect(screen.getByRole("heading", { name: heading })).toBeTruthy();
     }
 
     expect(hrefs()).toEqual([
       "/auth?intent=personal",
-      "/auth?intent=edu",
       "/auth?intent=company",
     ]);
 
@@ -57,7 +56,6 @@ describe("Unit B1: public plans", () => {
     const wholePage = container.textContent ?? "";
     for (const line of [
       "pick a thread back up months later",
-      "take your work with you when the term ends",
       "hand over a board with the thinking still attached",
       "you see what people share with you",
     ]) expect(wholePage).toContain(line);
@@ -73,7 +71,6 @@ describe("Unit D1: funnel source", () => {
     render(<PlansPage search={validatePlansSearch({ src: "front_door" })} />);
     expect(hrefs()).toEqual([
       "/auth?intent=personal&src=front_door",
-      "/auth?intent=edu&src=front_door",
       "/auth?intent=company&src=front_door",
     ]);
     expect(emitted).toContainEqual(["plans.viewed", { src: "front_door" }]);
@@ -92,14 +89,13 @@ describe("Unit D1: funnel source", () => {
     render(<PlansPage search={search} />);
     expect(hrefs()).toEqual([
       "/auth?intent=personal&src=front_door&from=artemis",
-      "/auth?intent=edu&src=front_door&from=artemis",
       "/auth?intent=company&src=front_door&from=artemis",
     ]);
   });
 
   it("fires plan.picked on a Get started click and nothing for Coming soon", () => {
     render(<PlansPage search={validatePlansSearch({ src: "front_door" })} />);
-    screen.getAllByRole("link", { name: "Get started" })[2]!.click();
+    screen.getAllByRole("link", { name: "Get started" })[1]!.click();
     screen.getByRole("button", { name: "Coming soon" }).click();
     expect(emitted.filter(([name]) => name === "plan.picked")).toEqual([
       ["plan.picked", { plan: "company", src: "front_door" }],

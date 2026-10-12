@@ -33,6 +33,7 @@ vi.mock("@/integrations/supabase/client", () => ({
       return Promise.resolve({ error: null });
     },
     from: (table: string) => {
+      if (table === "people") return { upsert: async () => ({ error: null }) };
       if (table !== "profiles") throw new Error(`unexpected table ${table}`);
       return {
         select: () => ({
@@ -91,6 +92,7 @@ async function submit() {
   );
   await screen.findByText("What should we call you?", undefined, { timeout: 25000 });
   fireEvent.change(screen.getByLabelText("Your name"), { target: { value: "Liam" } });
+  fireEvent.click(screen.getByRole("button", { name: "Work" }));
   fireEvent.submit(screen.getByRole("button", { name: /create my workspace/i }).closest("form")!);
 }
 
