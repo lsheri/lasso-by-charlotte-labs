@@ -19,9 +19,9 @@ export function parseAnswerBody(body: string): AnswerBody {
     if (value && typeof value === "object" && !Array.isArray(value)) {
       const row = value as Record<string, unknown>;
       if (Object.keys(row).sort().join(",") === "edited_at,html,original,text"
-        && typeof row.text === "string" && typeof row.html === "string"
-        && typeof row.original === "string" && typeof row.edited_at === "string") {
-        return { text: row.text, html: row.html, original: row.original, editedAt: row.edited_at };
+        && typeof row["text"] === "string" && typeof row["html"] === "string"
+        && typeof row["original"] === "string" && typeof row["edited_at"] === "string") {
+        return { text: row["text"], html: row["html"], original: row["original"], editedAt: row["edited_at"] };
       }
     }
   } catch { /* Legacy answers are plain text. */ }

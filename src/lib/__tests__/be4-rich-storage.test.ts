@@ -1,11 +1,14 @@
 // @vitest-environment jsdom
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { parseAnswerBody, serializeAnswerBody } from "@/lib/answer-card";
 import { parseWorkboardTextBody, parseWorkboardStickyBody, serializeWorkboardTextBody, serializeWorkboardStickyBody, type WorkboardDto } from "@/lib/canvas-lab-shared";
 import { validNodeInput, validNodeUpdate } from "@/lib/canvas-lab.server";
 import { applyDurableBoard } from "@/components/canvas-lab/canvas-lab-model";
 import { sharedNodeBody } from "@/lib/board-share-open.server";
+
+vi.mock("@/lib/telemetry.server", () => ({ sha256Hex: async () => "h", recordEvent: vi.fn() }));
+vi.mock("../telemetry.server", () => ({ sha256Hex: async () => "h", recordEvent: vi.fn() }));
 
 const style = { size: "body", weight: "regular", colour: "ink" } as const;
 const edited = (html = "<p>Current <strong>answer</strong></p>", original = "Original answer") => serializeAnswerBody({ text: "Current answer", html, original, editedAt: "2026-10-12T22:31:00Z" });
