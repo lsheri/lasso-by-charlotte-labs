@@ -50,9 +50,25 @@ export function ShareDialog({
   profileId: string | undefined;
 }) {
   const [open, setOpen] = useState(false);
+  // PERF-2c: one event per closed-to-open transition, no dims. Loaded on
+  // demand so the dialog never pulls the server-function graph at import.
+  function handleOpenChange(next: boolean) {
+    if (next && !open) {
+      void (async () => {
+        const [{ ensureProfileState }, { logEvent }] = await Promise.all([
+          import("@/hooks/use-profile"),
+          import("@/lib/telemetry"),
+        ]);
+        const { profiles } = await ensureProfileState();
+        const orgId = profiles.find((p) => p.id === profileId)?.org_id;
+        if (orgId) logEvent("board.share_opened", orgId, {});
+      })().catch(() => {});
+    }
+    setOpen(next);
+  }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button size="icon" variant="outline" aria-label="Share" title="Share" data-toolbar-control="share">
           <GraphiteIcon name="share" size={20} />
