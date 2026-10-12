@@ -105,3 +105,29 @@ describe("AU-1 audit fixes", () => {
     expect(auth).not.toMatch(/: "Create account"\}\{" "\}/);
   });
 });
+
+import { checkKeyPublic, GENERIC_ANSWER } from "@/lib/activation-key-public.server";
+
+describe("AU-1b public key check", () => {
+  const good = { expires_at: null, revoked_at: null, max_uses: 5, uses: 1, institutions: { name: "Harbor" } };
+
+  it("returns only the two fields", async () => {
+    const answer = await checkKeyPublic("lso-ok", "1.1.1.1", async () => good, () => true);
+    expect(Object.keys(answer).sort()).toEqual(["institution_name", "valid"]);
+    expect(answer).toEqual({ valid: true, institution_name: "Harbor" });
+  });
+
+  it("an unknown key gives valid false, and the code is normalised", async () => {
+    const seen: string[] = [];
+    const answer = await checkKeyPublic(" lso-nope ", "1.1.1.1", async (c) => { seen.push(c); return null; }, () => true);
+    expect(answer).toEqual({ valid: false, institution_name: null });
+    expect(seen).toEqual(["LSO-NOPE"]);
+  });
+
+  it("over the limit returns the generic answer without a lookup", async () => {
+    let looked = false;
+    const answer = await checkKeyPublic("x", "1.1.1.1", async () => { looked = true; return null; }, () => false);
+    expect(answer).toEqual(GENERIC_ANSWER);
+    expect(looked).toBe(false);
+  });
+});
