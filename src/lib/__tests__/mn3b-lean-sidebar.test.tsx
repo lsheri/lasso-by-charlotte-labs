@@ -101,7 +101,7 @@ describe("MN-3b lean sidebar", () => {
   });
   it("edu admin: classes after the tree, then the bottom rows", () => {
     state.type = "edu"; state.work = 5;
-    expect(sidebarRows()).toEqual([...LANDED, "# Workboards", "# Your classes", "Classes -> /classes", "Workboards -> /assignments", "Projects -> /projects", "Portfolio -> /portfolio",
+    expect(sidebarRows()).toEqual([...LANDED, "# Workboards",
       "Look back -> /archive", "Your coach -> /one-on-one", "# Who you share with", "Your coaches -> /members"]);
   });
   it("guest keeps the 1:1 prep row", () => {
