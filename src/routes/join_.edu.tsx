@@ -1,11 +1,6 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
-import { PublicHeader } from "@/components/layout/PublicHeader";
-import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
 import { markEduIntent } from "@/lib/edu-entry";
-import { recordAnonymousEventFn } from "@/lib/telemetry.functions";
 
 export const EDU_JOIN_COPY = {
   eyebrow: "Lasso for students",
@@ -29,78 +24,36 @@ export const EDU_JOIN_COPY = {
   reassurance: "Free while in beta.",
 };
 
+/**
+ * F4 / ST-3: School is no longer a workspace type. The old school link sends
+ * people to the individual sign-up path with School pre-ticked on the uses
+ * question, keeping `from` (for example ceiba_uni). It never mints an edu
+ * workspace. The copy above stays exported as dead data for older tests.
+ */
+export function eduJoinRedirectSearch(search: Record<string, unknown>): {
+  intent: "personal";
+  mode: "signup";
+  from?: string;
+} {
+  const from = search["from"];
+  return {
+    intent: "personal",
+    mode: "signup",
+    ...(typeof from === "string" && from.length > 0 && from.length <= 64 ? { from } : {}),
+  };
+}
+
 export const Route = createFileRoute("/join_/edu")({
   ssr: false,
+  beforeLoad: ({ search }) => {
+    markEduIntent();
+    throw redirect({ to: "/auth", search: eduJoinRedirectSearch(search) as never, replace: true });
+  },
   head: () => ({
     meta: [
       { title: "Lasso for students | Your work record, yours" },
-      {
-        name: "description",
-        content:
-          "A place for university students, with every class and workboard in one place. Keep the work you are proud of, and share only what you choose.",
-      },
-      { property: "og:title", content: "Lasso for students | Your work record, yours" },
-      {
-        property: "og:description",
-        content:
-          "Every class and workboard in one place. Keep the work you are proud of, and share only what you choose.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
+      { name: "robots", content: "noindex" },
     ],
   }),
-  component: EduJoinPage,
+  component: () => null,
 });
-
-function EduJoinPage() {
-  const navigate = useNavigate();
-  const [busy, setBusy] = useState(false);
-
-  useEffect(() => {
-    void recordAnonymousEventFn({
-      data: { event_type: "edu.join_opened", view_id: crypto.randomUUID(), dims: {} },
-    }).catch(() => {
-      /* signals never surface to the person */
-    });
-  }, []);
-
-  async function start() {
-    setBusy(true);
-    markEduIntent();
-    const { data } = await supabase.auth.getUser();
-    if (data.user) navigate({ to: "/onboarding", search: { intent: "edu" } });
-    else navigate({ to: "/auth" });
-  }
-
-  return (
-    <>
-      <PublicHeader />
-      <main className="min-h-screen bg-background px-4 py-16">
-        <div className="mx-auto w-full max-w-3xl">
-          <p className="micro-label">{EDU_JOIN_COPY.eyebrow}</p>
-          <h1 className="page-title mt-2 text-3xl leading-tight">{EDU_JOIN_COPY.headline}</h1>
-          <p className="mt-3 text-base text-muted-foreground">{EDU_JOIN_COPY.sub}</p>
-
-          <div className="mt-8 grid gap-4 md:grid-cols-3">
-            {EDU_JOIN_COPY.points.map(([title, body]) => (
-              <div
-                key={title}
-                className="rounded-[var(--radius)] border border-border bg-card p-5 shadow-card"
-              >
-                <p className="text-sm font-medium text-foreground">{title}</p>
-                <p className="mt-2 text-sm text-muted-foreground">{body}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-8 flex flex-wrap items-center gap-4">
-            <Button type="button" disabled={busy} onClick={() => void start()}>
-              {busy ? "One moment…" : EDU_JOIN_COPY.cta}
-            </Button>
-            <p className="text-xs text-muted-foreground">{EDU_JOIN_COPY.reassurance}</p>
-          </div>
-        </div>
-      </main>
-    </>
-  );
-}
