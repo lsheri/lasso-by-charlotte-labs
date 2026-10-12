@@ -66,7 +66,7 @@ export const setEngagementPersonAccessFn = createServerFn({ method: "POST" })
       orgId: profile.org_id,
       userId: context.userId,
       profileId: profile.id,
-      dims: { access: data.access, result },
+      dims: { access: data.access, result, target: "member" },
     });
     return { status: "done", result };
   });
@@ -91,5 +91,21 @@ export const setPersonConversationsFn = createServerFn({ method: "POST" })
     const profile = await resolveProfile(context.supabase, context.userId, data.profile_id);
     if (!profile) return { status: "refused" };
     const { setPersonConversations } = await import("@/lib/engagement-access.server");
-    return setPersonConversations(context.supabase, data.engagement_id, data.person_id, data.conversations);
+    const answer = await setPersonConversations(
+      context.supabase,
+      data.engagement_id,
+      data.person_id,
+      data.conversations,
+    );
+    if (answer.status === "done" && answer.result === "changed") {
+      const { recordEvent } = await import("@/lib/telemetry.server");
+      await recordEvent(context.supabase, {
+        eventType: "engagement.access_changed",
+        orgId: profile.org_id,
+        userId: context.userId,
+        profileId: profile.id,
+        dims: { conversations: data.conversations, result: "changed", target: "member" },
+      });
+    }
+    return answer;
   });

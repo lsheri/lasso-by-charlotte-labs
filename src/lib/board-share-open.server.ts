@@ -148,6 +148,7 @@ export async function readBoard(
   workboardId: string,
   link: { expires_at: string; org_id: string },
   viewerProfileId: string | null = null,
+  options: { conversationText?: boolean } = {},
 ): Promise<SharedBoardDto | null> {
   const { data: boardRow } = await db
     .from("workboards")
@@ -294,9 +295,16 @@ export async function readBoard(
   };
 
   const chatIds = work.filter((item) => item.type === "ai_thread").map((item) => item.id);
+  // SH-3c-1: a public link never carries conversation text. Only the demo
+  // board, built from invented content, asks for it explicitly.
+  const conversationText = options.conversationText === true;
   const [cardPreviewRows, turnsRes, filePreviews] = await Promise.all([
-    chatIds.length > 0 ? readWorkboardCardPreviews(db, chatIds).catch(() => []) : Promise.resolve([]),
-    chatIds.length > 0
+    chatIds.length === 0
+      ? Promise.resolve([])
+      : conversationText
+        ? readWorkboardCardPreviews(db, chatIds).catch(() => [])
+        : readSummaryOnlyPreviews(db, chatIds).catch(() => []),
+    chatIds.length > 0 && conversationText
       ? db
           .from("turns")
           .select("id, work_item_id, turn_no, role, content, ts, model")
@@ -332,6 +340,22 @@ export async function readBoard(
     turns,
     expiresAt: link.expires_at,
   };
+}
+
+/** Conversation cards on a public link: the summary only, never a turn. */
+async function readSummaryOnlyPreviews(db: AdminDb, ids: string[]) {
+  const unique = [...new Set(ids)].slice(0, 100);
+  const { data } = await db.from("work_item_extracts").select("work_item_id, summary").in("work_item_id", unique);
+  const summaries = new Map(((data ?? []) as { work_item_id: string; summary: string | null }[]).map((row) => [row.work_item_id, row.summary]));
+  return unique.map((workItemId) => ({
+    workItemId,
+    summary: summaries.get(workItemId) ?? null,
+    turnCount: 0,
+    toolSteps: 0,
+    model: null,
+    firstUserTurn: null,
+    turns: [],
+  }));
 }
 
 /** The live board's document and artifact previews, read without writing. */

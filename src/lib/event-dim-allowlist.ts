@@ -103,7 +103,7 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "document.version_recorded": ["changed", "checked", "reason", "source"],
   "document.versions_expanded": ["changed", "checked", "reason", "source", "version_count"],
   "edu.join_opened": [],
-  "engagement.access_changed": ["access", "brief_files", "brief_skipped", "content", "created", "from", "had_conversation", "has_client", "preset", "quick_folder", "result", "scope", "state", "view", "width_bucket"],
+  "engagement.access_changed": ["access", "brief_files", "brief_skipped", "content", "conversations", "created", "from", "had_conversation", "has_client", "preset", "quick_folder", "result", "scope", "state", "target", "view", "width_bucket"],
   "engagement.ask_rail_toggled": ["access", "brief_files", "brief_skipped", "content", "created", "from", "had_conversation", "has_client", "preset", "quick_folder", "result", "scope", "state", "view", "width_bucket"],
   "engagement.panel_content_changed": ["access", "brief_files", "brief_skipped", "content", "created", "from", "had_conversation", "has_client", "preset", "quick_folder", "result", "scope", "state", "view", "width_bucket"],
   "engagement.scope_changed": ["access", "brief_files", "brief_skipped", "content", "created", "from", "had_conversation", "has_client", "preset", "quick_folder", "result", "scope", "state", "view", "width_bucket"],
