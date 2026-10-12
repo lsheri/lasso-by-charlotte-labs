@@ -17,6 +17,7 @@ export function AskSheet(props: {
   engagementTitle: string;
   profileId: string;
   orgId: string;
+  headerTone?: "graphite" | "lime";
 }) {
   const { open, onOpenChange, engagementId, engagementTitle, profileId, orgId } =
     props;
@@ -40,6 +41,7 @@ export function AskSheet(props: {
           profileId={profileId}
           orgId={orgId}
           onClose={() => onOpenChange(false)}
+          headerTone={props.headerTone ?? "graphite"}
           mobile
         />
       </SheetContent>

@@ -156,6 +156,44 @@ describe("LassoThinkingMark", () => {
       expect(thinking.colours).not.toContain("token-graphite");
     });
 
+    it("rope=false draws only the finished loop under reduced motion", () => {
+      vi.mocked(window.matchMedia).mockReturnValue({ matches: true } as unknown as MediaQueryList);
+      const { rerender, unmount } = render(<LassoThinkingMark kind="signature" size={28} thinking rope={false} />);
+      expect(context.stroke).toHaveBeenCalledTimes(1);
+      expect(context.moveTo).toHaveBeenCalledTimes(1);
+      expect(requestAnimationFrame).not.toHaveBeenCalled();
+      context.stroke.mockClear();
+      context.moveTo.mockClear();
+      rerender(<LassoThinkingMark kind="signature" size={28} thinking />);
+      expect(context.stroke).toHaveBeenCalledTimes(2);
+      expect(context.moveTo).toHaveBeenCalledTimes(2);
+      unmount();
+    });
+
+    it("rope=false never draws the rope across a complete thinking cycle", () => {
+      vi.stubGlobal("IntersectionObserver", undefined);
+      let segments = 0;
+      const paths: number[] = [];
+      context.beginPath.mockImplementation(() => { segments = 0; });
+      context.lineTo.mockImplementation(() => { segments += 1; });
+      context.stroke.mockImplementation(() => { paths.push(segments); });
+      const callbacks: FrameRequestCallback[] = [];
+      vi.mocked(requestAnimationFrame).mockImplementation((callback) => { callbacks.push(callback); return 17; });
+      vi.spyOn(performance, "now").mockReturnValue(0);
+      const { rerender, unmount } = render(<LassoThinkingMark kind="signature" size={28} thinking rope={false} />);
+      for (let at = 16; at <= 12_000; at += 16) act(() => callbacks.at(-1)?.(at));
+      const withLoop = paths.filter((count) => count > 1);
+      expect(withLoop.length).toBeGreaterThan(0);
+      const noRope = paths.length;
+      paths.length = 0;
+      callbacks.length = 0;
+      rerender(<LassoThinkingMark kind="signature" size={28} thinking />);
+      for (let at = 16; at <= 12_000; at += 16) act(() => callbacks.at(-1)?.(at));
+      expect(paths.length).toBeGreaterThan(noRope);
+      expect(paths.filter((count) => count > 1)).toEqual(withLoop);
+      unmount();
+    });
+
     it("keeps the frame loop but draws nothing off screen, and cancels on unmount", () => {
       let observerCallback: IntersectionObserverCallback | undefined;
       class TestObserver {

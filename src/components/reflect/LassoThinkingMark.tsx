@@ -27,6 +27,7 @@ type LassoThinkingMarkProps = {
   count?: number;
   /** signature only: lime working state; false is the calm, graphite answered state. */
   thinking?: boolean;
+  rope?: boolean;
   className?: string;
 };
 
@@ -86,6 +87,7 @@ function runSignature(
   context: CanvasRenderingContext2D,
   size: number,
   thinkingRef: { current: boolean },
+  ropeRef: { current: boolean },
 ): () => void {
   const dpr = Math.min(window.devicePixelRatio || 1, 3);
   canvas.width = Math.round(size * dpr);
@@ -162,7 +164,7 @@ function runSignature(
         else context.lineTo(pt.x, pt.y);
       }
       context.stroke();
-      if (q > 0.001) {
+      if (ropeRef.current && q > 0.001) {
         const ep = scatterLoopPoint(1, R, cx, cy, cinch);
         const L = R * SCATTER_ROPE_LENGTH * q;
         context.beginPath();
@@ -207,10 +209,12 @@ function runSignature(
   };
 }
 
-export function LassoThinkingMark({ kind, size, count = 0, thinking = false, className }: LassoThinkingMarkProps) {
+export function LassoThinkingMark({ kind, size, count = 0, thinking = false, rope = true, className }: LassoThinkingMarkProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const thinkingRef = useRef(thinking);
   thinkingRef.current = thinking;
+  const ropeRef = useRef(rope);
+  ropeRef.current = rope;
   const arrivalsRef = useRef<GatherArrival[]>([]);
   const clockBaseRef = useRef<number | null>(null);
 
@@ -220,7 +224,7 @@ export function LassoThinkingMark({ kind, size, count = 0, thinking = false, cla
     const foundContext = canvas.getContext("2d");
     if (!foundContext) return;
     const context: CanvasRenderingContext2D = foundContext;
-    if (kind === "signature") return runSignature(canvas, context, size, thinkingRef);
+    if (kind === "signature") return runSignature(canvas, context, size, thinkingRef, ropeRef);
 
     const width = size;
     const height = size;
@@ -363,7 +367,7 @@ export function LassoThinkingMark({ kind, size, count = 0, thinking = false, cla
       observer?.disconnect();
       stop();
     };
-  }, [count, kind, size]);
+  }, [count, kind, size, rope]);
 
   return (
     <canvas
@@ -374,6 +378,7 @@ export function LassoThinkingMark({ kind, size, count = 0, thinking = false, cla
       aria-hidden="true"
       data-lasso-thinking-mark={kind}
       data-thinking={kind === "signature" ? (thinking ? "true" : "false") : undefined}
+      data-rope={rope ? "true" : "false"}
     />
   );
 }

@@ -40,7 +40,7 @@ export function askFlickerStyle(index: number, { answered, reduced }: { answered
 function AskGlyph({ state }: { state: "thinking" | "settled" }) {
   return (
     <span data-testid="ask-thinking-glyph" data-state={state} className="ask-a1-glyph inline-flex shrink-0" aria-hidden>
-      <LassoThinkingMark kind="signature" size={GLYPH_SIZE} thinking={state === "thinking"} />
+      <LassoThinkingMark kind="signature" size={GLYPH_SIZE} thinking={state === "thinking"} rope={state !== "thinking"} />
     </span>
   );
 }

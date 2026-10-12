@@ -49,6 +49,7 @@ describe("A1 Ask Lasso thinking state", () => {
     expect(glyph.getAttribute("data-state")).toBe("thinking");
     expect(glyph.querySelectorAll('canvas[data-lasso-thinking-mark="signature"]')).toHaveLength(1);
     expect(glyph.querySelector("canvas")?.getAttribute("data-thinking")).toBe("true");
+    expect(glyph.querySelector("canvas")?.getAttribute("data-rope")).toBe("false");
     expect(document.querySelectorAll("canvas")).toHaveLength(1);
   });
   it("3. on the first character, the Lasso name appears", () => {
@@ -69,6 +70,7 @@ describe("A1 Ask Lasso thinking state", () => {
     expect(screen.getByTestId("ask-thinking-dots")).toBeTruthy();
     rerender(<ThinkingTrail items={items(3)} finalPhase="Writing" ask={{ answered: true }} />);
     expect(screen.queryByTestId("ask-thinking-dots")).toBeNull();
+    expect(screen.getByTestId("ask-thinking-glyph").querySelector("canvas")?.getAttribute("data-rope")).toBe("true");
   });
   it("6. reduced motion: no element carries the flicker", async () => {
     setReducedMotion(true);

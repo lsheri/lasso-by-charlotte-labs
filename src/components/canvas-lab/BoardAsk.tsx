@@ -58,6 +58,7 @@ function BoardAskPanel(props: Props) {
         profileId={profileId}
         orgId={orgId}
         onClose={() => props.onOpenChange(false)}
+        headerTone="lime"
         inline
       />
     </aside>
@@ -77,6 +78,7 @@ export function BoardAsk(props: Props) {
       engagementTitle={props.engagementTitle}
       profileId={props.profileId}
       orgId={props.orgId}
+      headerTone="lime"
     />
   ) : props.open ? (
     <BoardAskPanel {...props} />
