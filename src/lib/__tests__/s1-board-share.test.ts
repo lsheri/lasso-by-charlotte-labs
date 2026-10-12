@@ -166,18 +166,18 @@ describe("S1 — who may make and end a link", () => {
 describe("S1 — the honest sentence", () => {
   it("says what leaves, to whom and for how long, before the link is made", () => {
     const sentence = shareExposureSentence(false);
-    expect(sentence).toContain("the cards, their summaries and any text written on it");
-    expect(sentence).toContain("The AI conversations behind the cards stay private.");
+    expect(sentence).toContain("the cards and summaries");
+    expect(sentence).toContain("Conversations stay private.");
     expect(sentence).not.toContain("including the AI conversations");
-    expect(sentence.startsWith("Anyone with this link")).toBe(true);
+    expect(sentence.startsWith("Anyone with the link")).toBe(true);
     expect(sentence).toContain("48 hours");
     // It sits where the person reads it before choosing, above the control.
     expect(DIALOG.indexOf("shareExposureSentence")).toBeLessThan(DIALOG.indexOf("Make a link"));
   });
 
   it("says so on the same sentence when the board holds somebody else's work", () => {
-    expect(shareExposureSentence(true)).toContain("work owned by other people");
-    expect(shareExposureSentence(false)).not.toContain("work owned by other people");
+    expect(shareExposureSentence(true)).toContain("Their cards go too.");
+    expect(shareExposureSentence(false)).not.toContain("Their cards go too.");
     // It says it, it does not block it.
     expect(DIALOG).not.toContain("disabled={holdsOthersWork");
   });
