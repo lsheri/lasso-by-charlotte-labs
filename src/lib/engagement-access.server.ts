@@ -111,3 +111,25 @@ export async function setPersonConversations(
   if (error || (data !== "changed" && data !== "unchanged")) return { status: "refused" };
   return { status: "done", result: data };
 }
+
+/** SH-3c-1: the member switch records the shared event only on a real change. */
+export async function recordConversationsChange(
+  db: Db,
+  input: {
+    answer: { status: "done"; result: "changed" | "unchanged" } | { status: "refused" };
+    conversations: ConversationAccess;
+    orgId: string;
+    userId: string;
+    profileId: string;
+  },
+): Promise<void> {
+  if (input.answer.status !== "done" || input.answer.result !== "changed") return;
+  const { recordEvent } = await import("@/lib/telemetry.server");
+  await recordEvent(db, {
+    eventType: "engagement.access_changed",
+    orgId: input.orgId,
+    userId: input.userId,
+    profileId: input.profileId,
+    dims: { conversations: input.conversations, result: "changed", target: "member" },
+  });
+}

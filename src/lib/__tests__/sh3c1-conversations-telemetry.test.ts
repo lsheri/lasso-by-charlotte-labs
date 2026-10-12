@@ -4,20 +4,6 @@ const recordEvent = vi.fn(async () => undefined);
 const logEvent = vi.fn();
 let rpcAnswer: { data: unknown; error: unknown } = { data: "changed", error: null };
 
-vi.mock("@tanstack/react-start", () => ({
-  createServerFn: () => ({
-    middleware: () => ({
-      inputValidator: (v: (input: unknown) => unknown) => ({
-        handler: (fn: (args: unknown) => unknown) => (args: { data: unknown; context: unknown }) =>
-          fn({ data: v(args.data), context: args.context }),
-      }),
-    }),
-  }),
-}));
-vi.mock("@/integrations/supabase/auth-middleware", () => ({ requireSupabaseAuth: {} }));
-vi.mock("@/lib/profile-resolve", () => ({
-  resolveProfile: vi.fn(async () => ({ id: "p-me", org_id: "org-1" })),
-}));
 vi.mock("@/lib/telemetry.server", () => ({ recordEvent }));
 vi.mock("@/lib/telemetry", () => ({ logEvent }));
 vi.mock("@/integrations/supabase/client", () => ({
@@ -27,14 +13,18 @@ vi.mock("@/integrations/supabase/client", () => ({
   },
 }));
 
-import { setPersonConversationsFn } from "@/lib/engagement-access.functions";
+import { recordConversationsChange, setPersonConversations } from "@/lib/engagement-access.server";
 import { setBoardConversationAccess } from "@/lib/partner-share";
 
 const db = { rpc: vi.fn(async () => rpcAnswer) };
-function callPerson() {
-  return (setPersonConversationsFn as unknown as (a: unknown) => Promise<unknown>)({
-    data: { engagement_id: "e-1", person_id: "p-on", conversations: "full" },
-    context: { supabase: db, userId: "u-1" },
+async function callPerson() {
+  const answer = await setPersonConversations(db as never, "e-1", "p-on", "full");
+  await recordConversationsChange(db as never, {
+    answer,
+    conversations: "full",
+    orgId: "org-1",
+    userId: "u-1",
+    profileId: "p-me",
   });
 }
 

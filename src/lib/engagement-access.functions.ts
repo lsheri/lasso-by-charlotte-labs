@@ -97,15 +97,13 @@ export const setPersonConversationsFn = createServerFn({ method: "POST" })
       data.person_id,
       data.conversations,
     );
-    if (answer.status === "done" && answer.result === "changed") {
-      const { recordEvent } = await import("@/lib/telemetry.server");
-      await recordEvent(context.supabase, {
-        eventType: "engagement.access_changed",
-        orgId: profile.org_id,
-        userId: context.userId,
-        profileId: profile.id,
-        dims: { conversations: data.conversations, result: "changed", target: "member" },
-      });
-    }
+    const { recordConversationsChange } = await import("@/lib/engagement-access.server");
+    await recordConversationsChange(context.supabase, {
+      answer,
+      conversations: data.conversations,
+      orgId: profile.org_id,
+      userId: context.userId,
+      profileId: profile.id,
+    });
     return answer;
   });
