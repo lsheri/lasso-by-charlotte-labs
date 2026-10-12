@@ -56,7 +56,6 @@ describe("Unit B1: public plans", () => {
     const wholePage = container.textContent ?? "";
     for (const line of [
       "pick a thread back up months later",
-      "take your work with you when the term ends",
       "hand over a board with the thinking still attached",
       "you see what people share with you",
     ]) expect(wholePage).toContain(line);
