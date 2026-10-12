@@ -4,19 +4,16 @@ const recordEvent = vi.fn(async () => undefined);
 const logEvent = vi.fn();
 let rpcAnswer: { data: unknown; error: unknown } = { data: "changed", error: null };
 
-vi.mock("@tanstack/react-start", () => {
-  const chain = () => {
-    const builder: Record<string, unknown> = {};
-    builder.middleware = () => builder;
-    builder.inputValidator = (validate: (input: unknown) => unknown) => {
-      builder.handler = (fn: (args: unknown) => unknown) =>
-        (args: { data: unknown; context: unknown }) => fn({ data: validate(args.data), context: args.context });
-      return builder;
-    };
-    return builder;
-  };
-  return { createServerFn: chain };
-});
+vi.mock("@tanstack/react-start", () => ({
+  createServerFn: () => ({
+    middleware: () => ({
+      inputValidator: (v: (input: unknown) => unknown) => ({
+        handler: (fn: (args: unknown) => unknown) => (args: { data: unknown; context: unknown }) =>
+          fn({ data: v(args.data), context: args.context }),
+      }),
+    }),
+  }),
+}));
 vi.mock("@/integrations/supabase/auth-middleware", () => ({ requireSupabaseAuth: {} }));
 vi.mock("@/lib/profile-resolve", () => ({
   resolveProfile: vi.fn(async () => ({ id: "p-me", org_id: "org-1" })),
