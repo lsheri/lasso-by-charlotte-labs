@@ -7,6 +7,48 @@
  */
 
 import type { WorkboardNodeInput } from "@/lib/canvas-lab-shared";
+import { WORKBOARD_HTML_MAX_LENGTH, WORKBOARD_TEXT_MAX_LENGTH } from "@/lib/canvas-lab-shared";
+
+export type AnswerBody = { text: string; html: string | null; original: string | null; editedAt: string | null };
+
+/** Strict recognition keeps JSON-looking legacy prose unchanged. */
+export function parseAnswerBody(body: string): AnswerBody {
+  try {
+    const value: unknown = JSON.parse(body);
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      const row = value as Record<string, unknown>;
+      if (Object.keys(row).sort().join(",") === "edited_at,html,original,text"
+        && typeof row.text === "string" && typeof row.html === "string"
+        && typeof row.original === "string" && typeof row.edited_at === "string") {
+        return { text: row.text, html: row.html, original: row.original, editedAt: row.edited_at };
+      }
+    }
+  } catch { /* Legacy answers are plain text. */ }
+  return { text: body, html: null, original: null, editedAt: null };
+}
+
+export function serializeAnswerBody(body: AnswerBody): string {
+  if (body.html === null && body.original === null && body.editedAt === null) return body.text;
+  if (body.html === null || body.original === null || body.editedAt === null
+    || body.text.length > WORKBOARD_TEXT_MAX_LENGTH || body.html.length > WORKBOARD_HTML_MAX_LENGTH) {
+    throw new Error("Invalid answer body.");
+  }
+  return JSON.stringify({ text: body.text, html: body.html, original: body.original, edited_at: body.editedAt });
+}
+
+export function validateAnswerBody(body: string, storedBody?: string): string | null {
+  const next = parseAnswerBody(body);
+  if (storedBody !== undefined && body !== storedBody) {
+    const stored = parseAnswerBody(storedBody);
+    if (next.original === null || next.original !== (stored.original ?? storedBody)) {
+      return "The original answer is kept as it was.";
+    }
+  }
+  if (next.text.length > WORKBOARD_TEXT_MAX_LENGTH || (next.html !== null && next.html.length > WORKBOARD_HTML_MAX_LENGTH)) {
+    return "Invalid answer body.";
+  }
+  return null;
+}
 
 /** One read the answer made, as the answer surface already has it. */
 export type AnswerRead = { id: string; depth: string };
