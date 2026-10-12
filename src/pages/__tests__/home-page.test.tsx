@@ -153,6 +153,19 @@ describe("Home", () => {
     expect(document.querySelectorAll('[data-lasso-thinking-mark="signature"]')).toHaveLength(1);
   });
 
+  it("PH-2: the count line wraps in full on phones and stays one truncated line from md up", () => {
+    mocks.engagements = [{ id: "one" }];
+    render(<HomeBoard />);
+    const label = screen.getByTestId("home-count-label");
+    const phone = label.className.split(" ").filter((c) => !c.startsWith("md:"));
+    expect(phone).toContain("basis-full");
+    expect(phone).toContain("whitespace-normal");
+    expect(phone).not.toContain("truncate");
+    expect(label.className).toContain("md:truncate");
+    expect(label.className).toContain("md:basis-auto");
+    expect(label.parentElement?.className).toContain("md:flex-nowrap");
+  });
+
   it("covers opening and both navigation actions without content dimensions", () => {
     mocks.engagements = [];
     render(<HomeBoard />);
