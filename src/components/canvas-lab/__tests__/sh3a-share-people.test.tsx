@@ -20,6 +20,7 @@ vi.mock("@/components/canvas-lab/ShareBoardDialog", () => ({ BoardLinkSection: (
 import { ShareDialog, PEOPLE_COPY } from "@/components/canvas-lab/ShareDialog";
 import { listEngagementPeopleFn, setEngagementPersonAccessFn } from "@/lib/engagement-access.functions";
 import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 async function mount() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -83,8 +84,8 @@ describe("SH-3a people access", () => {
     const group = within(section).getByRole("group", { name: "Owen" });
     const view = within(group).getByRole("button", { name: "Can view", pressed: true });
     const multiplayer = within(group).getByRole("button", { name: "Multiplayer", pressed: false });
-    expect(view.className).toBe(buttonVariants({ variant: "secondary", size: "sm" }));
-    expect(multiplayer.className).toBe(buttonVariants({ variant: "outline", size: "sm" }));
+    expect(view.className).toBe(cn(buttonVariants({ variant: "secondary", size: "sm" })));
+    expect(multiplayer.className).toBe(cn(buttonVariants({ variant: "outline", size: "sm" })));
   });
   it("restores empty-workspace guidance and disables the field", async () => {
     vi.mocked(listEngagementPeopleFn).mockResolvedValueOnce({
