@@ -54,8 +54,8 @@ describe("PH-1 CS-8 Settings tabs at 390", () => {
     expect(rail.parentElement!.className).toContain("md:grid-cols-[13rem_minmax(0,1fr)]");
   });
 
-  it("the page variant gets no dialog padding", () => {
+  it("the page variant gets no dialog margin", () => {
     render(<SettingsShell sections={sections as never} variant="page" defaultSection="a" />);
-    expect(screen.getByTestId("settings-rail").className).not.toContain("pr-14");
+    expect(screen.getByTestId("settings-rail").className).not.toContain("mr-12");
   });
 });
