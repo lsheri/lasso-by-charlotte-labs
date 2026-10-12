@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const sent = vi.hoisted(() => ({ calls: [] as { template: string; variables: Record<string, unknown> }[] }));
 vi.mock("@/lib/invites.server", async (orig) => {
@@ -39,9 +39,20 @@ import { buildVariables } from "@/lib/email-queue.server";
 import { sendBoardInviteEmail } from "@/lib/board-invite-email.server";
 import { safeNext } from "@/lib/password-reset";
 import { AUTH_COPY } from "@/lib/auth-copy";
+import { emailVar } from "@/lib/escape-html";
 
+const realFetch = vi.hoisted(() => ({ calls: 0 }));
 beforeEach(() => {
   sent.calls = [];
+  realFetch.calls = 0;
+  // No test in this file may reach the network: any fetch not replaced below is counted and refused.
+  vi.stubGlobal("fetch", vi.fn(async () => {
+    realFetch.calls += 1;
+    throw new Error("network blocked in tests");
+  }));
+});
+afterEach(() => {
+  vi.unstubAllGlobals();
 });
 
 describe("AU-1 audit fixes", () => {
@@ -54,24 +65,32 @@ describe("AU-1 audit fixes", () => {
 
   it("W1: the hook passes USER_EMAIL, escaped", () => {
     const out = buildAuthEmails({ user: { email: "a<b>@x.com" }, email_data: { email_action_type: "signup", token_hash: "h" } });
-    expect(out[0]!.variables["USER_EMAIL"]).toBe("a&lt;b&gt;@x.com");
+    expect(out[0]!.variables["USER_EMAIL"]).toBe("ab@x.com");
   });
 
-  it("W2: <b> arrives escaped in all three senders", async () => {
+  it("W2: <b> loses its brackets in all three senders and no real email leaves", async () => {
     const bodies: string[] = [];
-    vi.stubGlobal("fetch", vi.fn(async (_u: string, init: { body: string }) => {
+    const mockFetch = vi.fn(async (_u: string, init: { body: string }) => {
       bodies.push(init.body);
       return new Response(JSON.stringify({ id: "x" }), { status: 200 });
-    }));
+    });
+    vi.stubGlobal("fetch", mockFetch);
     process.env["RESEND_API_KEY"] = "k";
     await sendInviteEmail({ to: "t@x.com", inviterName: "<b>Ana</b>", code: "C", orgName: "<b>Org</b>", role: "member", orgType: "business" });
-    vi.unstubAllGlobals();
-    expect(bodies.join("")).toContain("&lt;b&gt;Ana&lt;/b&gt;");
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(realFetch.calls).toBe(0);
+    expect(bodies.join("")).toContain("bAna/b");
     expect(bodies.join("")).not.toContain("<b>Ana");
-    expect(buildVariables({ WORKSPACE_NAME: "<b>W</b>", CODE: "C" })["WORKSPACE_NAME"]).toBe("&lt;b&gt;W&lt;/b&gt;");
+    expect(buildVariables({ WORKSPACE_NAME: "<b>W</b>", CODE: "C" })["WORKSPACE_NAME"]).toBe("bW/b");
+    expect(buildVariables({ WORKSPACE_NAME: "Liam's & \"co\"", CODE: "C" })["WORKSPACE_NAME"]).toBe("Liam's & \"co\"");
     await sendBoardInviteEmail("i");
     const board = sent.calls.find((c) => c.template === "board-invite")!;
-    expect(board.variables["BOARD_NAME"]).toBe("&lt;b&gt;Board&lt;/b&gt;");
+    expect(board.variables["BOARD_NAME"]).toBe("bBoard/b");
+  });
+
+  it("EM-2: emailVar keeps quotes and ampersands, drops angle brackets", () => {
+    expect(emailVar(`Liam's & "co" <b>x</b>`)).toBe(`Liam's & "co" bx/b`);
+    expect(emailVar(null)).toBe("");
   });
 
   it("W2: num() omits missing keys and leaves the URL alone", () => {
