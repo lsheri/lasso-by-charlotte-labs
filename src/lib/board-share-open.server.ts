@@ -29,6 +29,7 @@ import {
 import { isBoardDefaultTask } from "./board-default-task";
 import type { WorkItemRow } from "./work-types";
 import type { WorkboardFilePreview } from "./workboard-card-preview.shared";
+import { readWorkboardCardPreviews } from "./workboard-card-preview.server";
 import {
   artifactPreviewKind,
   fallbackFilePreview,
@@ -121,6 +122,7 @@ type LinkRow = Database["public"]["Tables"]["workboard_links"]["Row"];
 const WORK_SELECT =
   "id, owner_id, orig_conversation_id, ungrouped_at, title, type, source, visibility, captured_at, content_ref, created_at_source, work_date, content_fidelity, source_vendor, source_meta, meta, work_item_extracts(summary)";
 const TASKS_SELECT = `id, name, detail, is_wrap, is_board_default, work_item_tasks(work_items(${WORK_SELECT}))`;
+const TURN_LIMIT = 4000;
 const FILE_PREVIEW_LIMIT = 40;
 const MAX_ARTIFACT_BYTES = 1024 * 1024;
 
@@ -146,6 +148,7 @@ export async function readBoard(
   workboardId: string,
   link: { expires_at: string; org_id: string },
   viewerProfileId: string | null = null,
+  options: { conversationText?: boolean } = {},
 ): Promise<SharedBoardDto | null> {
   const { data: boardRow } = await db
     .from("workboards")
@@ -292,13 +295,38 @@ export async function readBoard(
   };
 
   const chatIds = work.filter((item) => item.type === "ai_thread").map((item) => item.id);
-  // SH-3c-1: no turn text ever leaves through this read. Conversation cards
-  // carry the summary only, and the turns map stays empty.
-  const [cardPreviewRows, filePreviews] = await Promise.all([
-    chatIds.length > 0 ? readSummaryOnlyPreviews(db, chatIds).catch(() => []) : Promise.resolve([]),
+  // SH-3c-1: by default no turn text leaves through this read; conversation
+  // cards carry the summary only. SH-3c-2: only the demo board, built from
+  // invented content, asks for conversationText.
+  const conversationText = options.conversationText === true;
+  const [cardPreviewRows, turnsRes, filePreviews] = await Promise.all([
+    chatIds.length === 0
+      ? Promise.resolve([])
+      : conversationText
+        ? readWorkboardCardPreviews(db, chatIds).catch(() => [])
+        : readSummaryOnlyPreviews(db, chatIds).catch(() => []),
+    chatIds.length > 0 && conversationText
+      ? db
+          .from("turns")
+          .select("id, work_item_id, turn_no, role, content, ts, model")
+          .in("work_item_id", chatIds)
+          .order("turn_no", { ascending: true })
+          .limit(TURN_LIMIT)
+      : Promise.resolve({ data: [] as (SharedBoardTurn & { work_item_id: string })[] }),
     readFilePreviews(db, work.filter((item) => item.type !== "ai_thread").slice(0, FILE_PREVIEW_LIMIT)),
   ]);
+
   const turns: Record<string, SharedBoardTurn[]> = {};
+  for (const row of (turnsRes.data ?? []) as (SharedBoardTurn & { work_item_id: string })[]) {
+    (turns[row.work_item_id] ??= []).push({
+      id: row.id,
+      turn_no: row.turn_no,
+      role: row.role,
+      content: row.content,
+      ts: row.ts,
+      model: row.model,
+    });
+  }
 
   return {
     board,
