@@ -45,7 +45,7 @@ describe("AU-1b signed out with a made-up key", () => {
         <Comp />
       </QueryClientProvider>,
     );
-    await new Promise((r) => setTimeout(r, 300)); console.log("DOM", document.body.textContent, mocks.publicCheck.mock.calls.length);
+    await new Promise((r) => setTimeout(r, 300)); console.log("DOM", document.body.innerHTML.slice(0,300), mocks.publicCheck.mock.calls.length);
     expect(await screen.findByText("This key link is not valid. Ask whoever sent it for a new one.")).toBeTruthy();
     expect(screen.queryByTestId("key-notice")).toBeNull();
     expect(screen.queryByText(/sponsored key/i)).toBeNull();
