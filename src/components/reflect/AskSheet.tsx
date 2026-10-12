@@ -41,7 +41,7 @@ export function AskSheet(props: {
           profileId={profileId}
           orgId={orgId}
           onClose={() => onOpenChange(false)}
-          headerTone={props.headerTone}
+          headerTone={props.headerTone ?? "graphite"}
           mobile
         />
       </SheetContent>
