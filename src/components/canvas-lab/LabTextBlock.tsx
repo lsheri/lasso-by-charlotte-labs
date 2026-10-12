@@ -35,6 +35,7 @@ function LabTextBlockInner({ node, selected, editable, layoutEditable, onSelect,
   const body: WorkboardTextBody = { text: node.summary, ...(node.html !== undefined ? { html: node.html } : {}), size: node.textSize ?? "label", weight: node.textWeight ?? "medium", colour: node.textColour ?? "ink" };
   // Drafts stay inside this node until the existing commit callback runs.
   const draft = useRef<{ html: string; text: string } | null>(null);
+  const touched = useRef(false);
   const [fallbackText, setFallbackText] = useState<string | null>(null);
   const [editing, setEditing] = useState(() => selected && editable && body.text.length === 0);
   const editingRef = useRef(editing);
@@ -44,6 +45,7 @@ function LabTextBlockInner({ node, selected, editable, layoutEditable, onSelect,
     if (!editable || editingRef.current) return;
     baseline.current = { text: body.text, html: body.html ?? plainToRichHtml(body.text) };
     draft.current = null;
+    touched.current = false;
     setFallbackText(null);
     editingRef.current = true;
     onSelect();
@@ -88,12 +90,12 @@ function LabTextBlockInner({ node, selected, editable, layoutEditable, onSelect,
         .canvas-lab-text-block[data-weight="regular"] .node-rich .rich-text { font-weight: 400; }.canvas-lab-text-block[data-weight="medium"] .node-rich .rich-text { font-weight: 500; }.canvas-lab-text-block[data-weight="bold"] .node-rich .rich-text { font-weight: 700; }
         .canvas-lab-text-block[data-colour="ink"] .node-rich .rich-text { color: var(--nb-ink); }.canvas-lab-text-block[data-colour="graphite"] .node-rich .rich-text { color: var(--nb-graphite); }.canvas-lab-text-block[data-colour="mid"] .node-rich .rich-text { color: var(--nb-mid); }.canvas-lab-text-block[data-colour="green"] .node-rich .rich-text { color: var(--nb-green); }.canvas-lab-text-block[data-colour="blue"] .node-rich .rich-text { color: var(--nb-blue); }
       `}</style>
-      {editing ? <div className="node-rich" onPointerDown={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+      {editing ? <div className="node-rich" onInputCapture={() => { touched.current = true; }} onClickCapture={() => { touched.current = true; }} onKeyDownCapture={(event) => { if (event.key !== "Escape") touched.current = true; }} onPointerDown={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
         <Suspense fallback={<textarea aria-label="Text block words" autoFocus maxLength={WORKBOARD_TEXT_MAX_LENGTH} value={fallbackText ?? body.text} placeholder="Type something"
           onChange={(event) => { const text = event.target.value; draft.current = { text, html: plainToRichHtml(text) }; setFallbackText(text); }}
           onBlur={finish} onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); finish(); } }} />}>
           <RichTextEditor initialHtml={draft.current?.html ?? body.html ?? plainToRichHtml(body.text)} autoFocus maxChars={WORKBOARD_TEXT_MAX_LENGTH}
-            onChange={(html, text) => { draft.current = { html, text }; }} onDone={finish} />
+            onChange={(html, text) => { if (touched.current) draft.current = { html, text }; }} onDone={finish} />
         </Suspense>
       </div> : body.html !== undefined ? <div className="node-rich" onClick={() => { if (!body.text) enterEdit(); }}><RichTextView html={body.html} /></div>
         : <textarea aria-label="Text block words" maxLength={WORKBOARD_TEXT_MAX_LENGTH} value={body.text} readOnly placeholder="Type something" onPointerDown={(event) => { event.stopPropagation(); onSelect(); }} onClick={() => { if (!body.text) enterEdit(); }} />}

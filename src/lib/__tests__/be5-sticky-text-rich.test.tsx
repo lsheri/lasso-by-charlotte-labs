@@ -42,9 +42,10 @@ describe("BE-5 rich sticky and text edits", () => {
       fireEvent.pointerDown(document.body); expect(onCommit).toHaveBeenCalledTimes(1);
     });
     it(`${kind}: closing unchanged saves nothing`, async () => {
-      const { onCommit } = mount(kind);
+      const { onCommit } = mount(kind, { summary: "- First\n- Second", html: "<ul><li><strong>First</strong></li><li>Second</li></ul>" });
       fireEvent.doubleClick(screen.getByTestId(kind === "sticky" ? "sticky-one" : "text-block-one"));
       const box = await screen.findByRole("textbox", { name: "Text" });
+      await new Promise((resolve) => setTimeout(resolve, 50));
       fireEvent.keyDown(box, { key: "Escape" }); expect(onCommit).not.toHaveBeenCalled();
     });
     it(`${kind}: new empty node opens and focuses without double-click`, async () => {
