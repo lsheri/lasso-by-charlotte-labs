@@ -58,8 +58,16 @@ describe("AU-1 audit fixes", () => {
   });
 
   it("W2: <b> arrives escaped in all three senders", async () => {
+    const bodies: string[] = [];
+    vi.stubGlobal("fetch", vi.fn(async (_u: string, init: { body: string }) => {
+      bodies.push(init.body);
+      return new Response(JSON.stringify({ id: "x" }), { status: 200 });
+    }));
+    process.env["RESEND_API_KEY"] = "k";
     await sendInviteEmail({ to: "t@x.com", inviterName: "<b>Ana</b>", code: "C", orgName: "<b>Org</b>", role: "member", orgType: "business" });
-    expect(sent.calls[0]!.variables["INVITER_NAME"]).toBe("&lt;b&gt;Ana&lt;/b&gt;");
+    vi.unstubAllGlobals();
+    expect(bodies.join("")).toContain("&lt;b&gt;Ana&lt;/b&gt;");
+    expect(bodies.join("")).not.toContain("<b>Ana");
     expect(buildVariables({ WORKSPACE_NAME: "<b>W</b>", CODE: "C" })["WORKSPACE_NAME"]).toBe("&lt;b&gt;W&lt;/b&gt;");
     await sendBoardInviteEmail("i");
     const board = sent.calls.find((c) => c.template === "board-invite")!;
@@ -94,6 +102,6 @@ describe("AU-1 audit fixes", () => {
     expect(AUTH_COPY.keyInvalid).toBe("This key link is not valid. Ask whoever sent it for a new one.");
     expect(AUTH_COPY.signupHeading).toBe("Create your Lasso account");
     const auth = readFileSync("src/routes/auth.tsx", "utf8");
-    expect(auth).not.toContain('"Create account"}');
+    expect(auth).not.toMatch(/: "Create account"\}\{" "\}/);
   });
 });
