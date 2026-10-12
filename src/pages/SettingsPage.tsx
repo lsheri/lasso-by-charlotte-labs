@@ -1,3 +1,5 @@
+import { SupportAccessCard } from "@/components/settings/SupportAccessCard";
+import { useProfile } from "@/hooks/use-profile";
 import { ConnectorsSection } from "@/components/settings/ConnectorsSection";
 import { McpSection } from "@/components/settings/McpSection";
 import { DataUseCard } from "@/components/settings/DataUseCard";
@@ -100,8 +102,23 @@ const SECTIONS: SettingsSection[] = [
     title: "Your data",
     content: <PersonalDataCard />,
   },
+  {
+    id: "support",
+    label: "Support access",
+    hint: "when we help",
+    group: "Account",
+    title: "Support access",
+    content: <SupportAccessCard />,
+  },
 ];
 
+/** SH-6d-1: the Support access section exists for workspace admins only. */
+function visibleSections(role: string | undefined): SettingsSection[] {
+  return role === "admin" ? SECTIONS : SECTIONS.filter((s) => s.id !== "support");
+}
+
+
 export function SettingsPage() {
-  return <SettingsShell sections={SECTIONS} defaultSection="account" />;
+  const { data: profile } = useProfile();
+  return <SettingsShell sections={visibleSections(profile?.role)} defaultSection="account" />;
 }

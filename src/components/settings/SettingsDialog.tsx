@@ -1,3 +1,5 @@
+import { SupportAccessCard } from "@/components/settings/SupportAccessCard";
+import { useProfile } from "@/hooks/use-profile";
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 
@@ -100,7 +102,21 @@ const SECTIONS: SettingsSection[] = [
     title: "Your data",
     content: <PersonalDataCard />,
   },
+  {
+    id: "support",
+    label: "Support access",
+    hint: "when we help",
+    group: "Account",
+    title: "Support access",
+    content: <SupportAccessCard />,
+  },
 ];
+
+/** SH-6d-1: the Support access section exists for workspace admins only. */
+function visibleSections(role: string | undefined): SettingsSection[] {
+  return role === "admin" ? SECTIONS : SECTIONS.filter((s) => s.id !== "support");
+}
+
 
 /**
  * Floating settings dialog. Lazy mount + persist:
@@ -111,6 +127,7 @@ const SECTIONS: SettingsSection[] = [
 export function SettingsDialog() {
   const { open, section, closeSettings } = useSettingsDialog();
   const [hasOpened, setHasOpened] = useState(false);
+  const { data: profile } = useProfile();
 
   // Record first open — never resets
   useEffect(() => {
@@ -161,7 +178,7 @@ export function SettingsDialog() {
 
           {/* Shell fills the dialog — remove the page-level max-width wrapper */}
           <SettingsShell
-            sections={SECTIONS}
+            sections={visibleSections(profile?.role)}
             variant="dialog"
             initialSection={section}
             defaultSection="account"
