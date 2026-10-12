@@ -284,6 +284,14 @@ export async function ensureProfileState(): Promise<ProfileState> {
     queryFn: fetchProfileState,
     staleTime: 60_000,
   });
+  // PERF-2e: an empty result is never cached. A brand-new person can gain a
+  // workspace through a path that does not invalidate ["profiles"] (server
+  // invite accept, key redeem), and a cached empty list would loop them back
+  // to /onboarding for the full stale window.
+  if (state.profiles.length === 0) {
+    client.removeQueries({ queryKey: PROFILE_STATE_KEY });
+    return state;
+  }
   if (client.getQueryData(["profiles"]) === undefined) client.setQueryData(["profiles"], state.profiles);
   return state;
 }

@@ -96,6 +96,14 @@ describe("PERF-2a signed-in gate cache", () => {
     expect(h.profilesCalls).toBe(1);
   });
 
+  it("(PERF-2e) an empty profile list is never cached, so new rows are seen without invalidation", async () => {
+    h.rows = [];
+    expect(await gate()).toEqual({ redirect: "/onboarding" });
+    h.rows = [row()];
+    expect(await gate()).toEqual({});
+    expect(h.profilesCalls).toBe(2);
+  });
+
   it("invalidating the profile list also refreshes the gate copy", async () => {
     await gate();
     await client.invalidateQueries({ queryKey: ["profiles"] });
