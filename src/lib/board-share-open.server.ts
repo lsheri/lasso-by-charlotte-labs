@@ -29,7 +29,6 @@ import {
 import { isBoardDefaultTask } from "./board-default-task";
 import type { WorkItemRow } from "./work-types";
 import type { WorkboardFilePreview } from "./workboard-card-preview.shared";
-import { readWorkboardCardPreviews } from "./workboard-card-preview.server";
 import {
   artifactPreviewKind,
   fallbackFilePreview,
@@ -42,7 +41,6 @@ import { publicSafeWork } from "./public-work-allowlist";
 
 type Refusal = "expired" | "revoked" | "unknown";
 
-const TURN_LIMIT = 4000;
 
 async function noteShareEvent(
   action: "opened" | "refused",
