@@ -156,6 +156,7 @@ import {
   type WorkboardPersistEntity,
 } from "@/components/canvas-lab/canvas-lab-telemetry";
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { GraphiteIcon } from "@/components/notebook/icons";
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
 import { BoardDetailsContent } from "@/components/canvas-lab/BoardDetailsPopover";
@@ -2805,6 +2806,9 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     <div className="fixed inset-0 z-50 flex bg-[var(--nb-paper)]" data-testid="canvas-lab-shell" data-interaction={interaction === "idle" && connectSource ? "connect" : interaction}>
       <aside className="z-30 flex w-[52px] shrink-0 flex-col items-center border-r border-border bg-card py-3">
         <LassoLoopMark className="h-7 w-7 text-lasso-green" />
+        <div className="mt-2 hidden md:flex">
+          <NotificationBell side="right" align="start" />
+        </div>
         <Button className="mt-5" size="icon" variant="ghost" aria-label="Open workboard menu" onClick={() => setMenuOpen(true)}><Menu className="h-4 w-4" /></Button>
         <Button className="mt-auto" size="icon" variant="ghost" aria-label="Back to workboard" asChild><Link to="/engagements/$id" params={{ id: engagementId }} search={{ ...DETAILS_SEARCH }}><X className="h-4 w-4" /></Link></Button>
       </aside>

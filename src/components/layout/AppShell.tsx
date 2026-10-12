@@ -100,13 +100,6 @@ function AppShellInner() {
               </div>
             </header>
 
-            {/* NC-2: desktop has no top bar, so the bell sits top right of the signed-in shell. */}
-            <div className="pointer-events-none sticky top-0 z-40 hidden h-0 justify-end px-4 md:flex">
-              <div className="pointer-events-auto mt-3">
-                <NotificationBell />
-              </div>
-            </div>
-
             {/* Clears the 56px tab bar plus a 32px breathing gap. Pages with a
               sticky CTA (Work) add their own spacer rather than taxing every page. */}
             <main className="flex-1 px-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-6 md:px-8 md:py-12 md:pb-14 lg:px-10 xl:px-14">

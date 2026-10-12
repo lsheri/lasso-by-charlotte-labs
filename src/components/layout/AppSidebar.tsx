@@ -6,6 +6,7 @@ import { markWalkthroughEntry } from "@/lib/walkthrough-entry";
 import { WorkspaceMenu } from "./WorkspaceMenu";
 import { LassoLoopMark } from "./LassoLoopMark";
 import { SidebarNav } from "./SidebarNav";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 const footerLink =
   "font-mono text-[9px] uppercase tracking-[0.08em] text-soft transition-colors hover:text-foreground";
@@ -33,6 +34,9 @@ export function AppSidebar({
       <div className="flex shrink-0 items-center gap-2.5">
         <LassoLoopMark className="h-[17px] w-5 shrink-0 text-lasso-green" />
         <div className="min-w-0 truncate font-mono text-lg tracking-[0.24em] text-foreground">LASSO</div>
+        <div className="ml-auto shrink-0">
+          <NotificationBell side="right" align="start" />
+        </div>
       </div>
 
       <div className="shrink-0">
