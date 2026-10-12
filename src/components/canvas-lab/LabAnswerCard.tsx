@@ -51,11 +51,11 @@ function LabAnswerCardInner({
       if (!expanded) setOverflows(body.scrollHeight > body.clientHeight + 1);
     };
     measure();
-    const resize = new ResizeObserver(measure);
-    resize.observe(body);
+    const resize = typeof ResizeObserver !== "undefined" ? new ResizeObserver(measure) : undefined;
+    resize?.observe(body);
     const mutations = new MutationObserver(measure);
     mutations.observe(body, { childList: true, subtree: true, characterData: true });
-    return () => { resize.disconnect(); mutations.disconnect(); };
+    return () => { resize?.disconnect(); mutations.disconnect(); };
   }, [expanded, node.summary, node.width, node.height]);
   return (
     <article
