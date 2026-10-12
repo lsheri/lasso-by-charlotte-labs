@@ -82,6 +82,7 @@ function LabTextBlockInner({ node, selected, editable, layoutEditable, onSelect,
         .canvas-lab-text-block .node-rich > .rich-text { height: 100%; overflow-y: auto; }
         .canvas-lab-text-block .node-rich .rich-text { color: var(--nb-ink); font-family: var(--font-ui); line-height: 1.25; }
         .canvas-lab-text-block[data-editing="true"] { z-index: 40; }
+        .canvas-lab-text-block > .canvas-lab-text-block-controls { max-width: calc(100vw - 3rem); flex-wrap: wrap; }
         .canvas-lab-text-block[data-editing="true"] > .canvas-lab-text-block-controls { top: calc(100% + 8px); bottom: auto; }
         .canvas-lab-text-block[data-size="small"] .node-rich .rich-text { font-size: 11.5px; }.canvas-lab-text-block[data-size="body"] .node-rich .rich-text { font-size: 13px; }.canvas-lab-text-block[data-size="label"] .node-rich .rich-text { font-size: 16px; }.canvas-lab-text-block[data-size="heading"] .node-rich .rich-text { font-size: 26px; }
         .canvas-lab-text-block[data-weight="regular"] .node-rich .rich-text { font-weight: 400; }.canvas-lab-text-block[data-weight="medium"] .node-rich .rich-text { font-weight: 500; }.canvas-lab-text-block[data-weight="bold"] .node-rich .rich-text { font-weight: 700; }
