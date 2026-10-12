@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { PALETTE, SIZES, plainToRichHtml, richToPlainText, sanitizeRichHtml } from "@/lib/rich-text";
-import RichTextEditor from "@/components/rich-text/RichTextEditor";
+import RichTextEditor, { COPY } from "@/components/rich-text/RichTextEditor";
 import { RichTextView } from "@/components/rich-text/RichTextView";
 
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
@@ -46,9 +46,23 @@ describe("shared rich text", () => {
       expect(source).not.toMatch(/import\s*\(\s*["']@tiptap/);
     }
   });
+  it("blocks paste beyond the limit, shows the note, and finishes on Escape or outside click", async () => {
+    const onDone = vi.fn();
+    render(<RichTextEditor initialHtml="<p>Hello</p>" maxChars={5} onChange={vi.fn()} onDone={onDone} />);
+    const textbox = await screen.findByRole("textbox");
+    expect(screen.getByRole("status").textContent).toBe(COPY.limit);
+    fireEvent.paste(textbox, { clipboardData: { getData: (type: string) => type === "text/plain" ? "too much" : "", files: [] } });
+    expect(textbox.textContent).toBe("Hello");
+    fireEvent.keyDown(textbox, { key: "Escape" });
+    expect(onDone).toHaveBeenCalledTimes(1);
+    fireEvent.pointerDown(document.body);
+    expect(onDone).toHaveBeenCalledTimes(2);
+  });
   it("has no colour literals or banned copy in the new files", () => {
     for (const path of ["src/lib/rich-text.ts", "src/components/rich-text/RichTextEditor.tsx", "src/components/rich-text/RichTextView.tsx"]) {
       expect(readFileSync(path, "utf8")).not.toMatch(/#[\da-f]{3,8}\b/i);
     }
+    expect(JSON.stringify(COPY)).not.toMatch(/\u2014|\b(track|monitor|surveillance|score|audit|analytics|telemetry)\b/i);
+    expect(COPY.sizes).toEqual({ small: "Small", body: "Body", large: "Large", heading: "Heading" });
   });
 });
