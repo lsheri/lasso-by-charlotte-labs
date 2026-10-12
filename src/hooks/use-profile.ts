@@ -69,6 +69,8 @@ function readStored(): string | null {
 /** Shared keys so every consumer waits on one request, not its own. */
 export const AUTH_USER_KEY = ["auth-user"] as const;
 export const ACTIVE_PROFILE_ROW_KEY = ["active-profile-row"] as const;
+/** PERF-2a: the signed-in gate's cached profile state. */
+export const PROFILE_STATE_KEY = ["profile-state"] as const;
 
 /**
  * The query client the app is already using. Registered from useProfiles so
@@ -101,6 +103,7 @@ function handleIdentityChange(event: string, nextUserId: string | null): void {
   if (!client) return;
   client.removeQueries({ queryKey: AUTH_USER_KEY });
   client.removeQueries({ queryKey: ["profiles"] });
+  client.removeQueries({ queryKey: PROFILE_STATE_KEY });
 }
 
 function subscribeToIdentityChanges(): void {
@@ -113,10 +116,42 @@ function subscribeToIdentityChanges(): void {
   authUnsubscribe = () => data.subscription.unsubscribe();
 }
 
+/**
+ * PERF-2a: the gate's cached profile state follows ["profiles"]. Every place
+ * that invalidates or removes the profile list (workspace switch, onboarding,
+ * profile edits) moves the gate's copy with it, without touching those files.
+ */
+let profileCacheUnsubscribe: (() => void) | null = null;
+let profileCacheClient: QueryClient | null = null;
+
+function isProfilesKey(key: readonly unknown[]): boolean {
+  return key.length === 1 && key[0] === "profiles";
+}
+
+function followProfilesCache(client: QueryClient): void {
+  if (profileCacheClient === client && profileCacheUnsubscribe) return;
+  profileCacheUnsubscribe?.();
+  profileCacheClient = client;
+  const cache = client.getQueryCache?.();
+  if (!cache || typeof cache.subscribe !== "function") {
+    profileCacheUnsubscribe = null;
+    return;
+  }
+  profileCacheUnsubscribe = cache.subscribe((event) => {
+    if (!isProfilesKey(event.query.queryKey)) return;
+    if (event.type === "removed") {
+      client.removeQueries({ queryKey: PROFILE_STATE_KEY, exact: true });
+    } else if (event.type === "updated" && event.action.type === "invalidate") {
+      void client.invalidateQueries({ queryKey: PROFILE_STATE_KEY, exact: true, refetchType: "none" });
+    }
+  });
+}
+
 export function registerProfileQueryClient(client: QueryClient): void {
   sharedQueryClient = client;
   subscribeToIdentityChanges();
   subscribeToStorageChanges();
+  followProfilesCache(client);
 }
 
 /** Test seam. */
@@ -128,6 +163,9 @@ export function resetProfileIdentityState(): void {
   lastReconciled = null;
   storageUnsubscribe?.();
   storageUnsubscribe = null;
+  profileCacheUnsubscribe?.();
+  profileCacheUnsubscribe = null;
+  profileCacheClient = null;
   lastLocalChangeAt = 0;
 }
 
@@ -230,6 +268,24 @@ function subscribe(listener: () => void): () => void {
 
 export function useActiveProfileId(): string | null {
   return useSyncExternalStore(subscribe, readStored, () => null);
+}
+
+/**
+ * PERF-2a: the gate reads profile state through the cache, so in-app
+ * navigation within a minute makes no network call. The list is handed to
+ * ["profiles"] so useProfiles does not ask again. Without a registered
+ * client this is the direct fetch, as before.
+ */
+export async function ensureProfileState(): Promise<ProfileState> {
+  const client = sharedQueryClient;
+  if (!client) return fetchProfileState();
+  const state = await client.fetchQuery({
+    queryKey: PROFILE_STATE_KEY,
+    queryFn: fetchProfileState,
+    staleTime: 60_000,
+  });
+  if (client.getQueryData(["profiles"]) === undefined) client.setQueryData(["profiles"], state.profiles);
+  return state;
 }
 
 /** Every profile this user holds, one per org. */
