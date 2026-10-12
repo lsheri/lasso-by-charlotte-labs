@@ -122,7 +122,7 @@ function LabAnswerCardInner({
       className="canvas-lab-answer-card absolute overflow-hidden"
       style={{ left: node.x, top: node.y, width: node.width, height: grown ? "auto" : node.height, minHeight: grown ? node.height : undefined, ...(editing ? { overflow: "visible" as const } : {}), zIndex: stackZ }}
     >
-      <style>{`.canvas-lab-answer-body > .rich-text { font-size: inherit; line-height: inherit; } .canvas-lab-answer-card[data-editing="true"] .canvas-lab-answer-body { overflow: visible; }`}</style>
+      <style>{`.canvas-lab-answer-body > .rich-text { font-size: inherit; line-height: inherit; } .canvas-lab-answer-card[data-editing="true"] .canvas-lab-answer-body { overflow: visible; } .canvas-lab-answer-card[data-editing="true"] [role="toolbar"] { bottom: calc(100% + 2.5rem); }`}</style>
       <header className="flex items-baseline justify-between gap-2">
         <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">Answer</span>
         <span className="flex items-center gap-1">
@@ -134,7 +134,7 @@ function LabAnswerCardInner({
                   variant="ghost"
                   type="button"
                   aria-label={canEdit ? "Answer menu" : "Move answer"}
-                  className="text-soft hover:text-foreground"
+                  className="h-auto min-h-0 p-0 text-soft hover:text-foreground"
                   onPointerDown={(event) => event.stopPropagation()}
                 >
                   <MoreHorizontal className="h-3.5 w-3.5" />
