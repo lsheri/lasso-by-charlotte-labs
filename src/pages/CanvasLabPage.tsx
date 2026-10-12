@@ -222,7 +222,7 @@ import { ExampleBoardOverlay } from "@/components/canvas-lab/ExampleBoardOverlay
 
 /** A local workboard over one permission-filtered engagement read. */
 export function workboardOpenVia(value: string | undefined): WorkboardOpenVia {
-  if (value === "header" || value === "canvas_tab" || value === "default") return value;
+  if (value === "header" || value === "canvas_tab" || value === "default" || value === "home") return value;
   return "direct";
 }
 
