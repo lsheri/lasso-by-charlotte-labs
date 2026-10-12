@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Webhook } from "standardwebhooks";
+import { escapeHtml } from "@/lib/escape-html";
 
 // Supabase Auth "Send Email Hook" receiver. Each action type sends a published
 // Resend template by alias; the template supplies subject and from.
@@ -51,6 +52,8 @@ export function buildAuthEmails(payload: HookPayload): Outgoing[] {
   const template = AUTH_EMAIL_ALIASES[type];
   if (!template) return [];
   const email = payload.user.email;
+  // AU-1: Resend reserves EMAIL, so the address rides as USER_EMAIL on every template.
+  const userEmail = escapeHtml(String(email ?? ""));
   const url = verifyUrl(d.token_hash ?? "", type, d.redirect_to);
   switch (type) {
     case "signup":
@@ -58,15 +61,15 @@ export function buildAuthEmails(payload: HookPayload): Outgoing[] {
     case "recovery":
     // ORG_NAME is optional on auth-invite; nothing supplies it, so it is omitted.
     case "invite":
-      return [{ to: email, template, variables: { CONFIRMATION_URL: url } }];
+      return [{ to: email, template, variables: { CONFIRMATION_URL: url, USER_EMAIL: userEmail } }];
     case "reauthentication":
-      return [{ to: email, template, variables: { TOKEN: d.token ?? "" } }];
+      return [{ to: email, template, variables: { TOKEN: d.token ?? "", USER_EMAIL: userEmail } }];
     case "email_change": {
       const newEmail = payload.user.new_email ?? "";
       const make = (to: string, link: string): Outgoing => ({
         to,
         template,
-        variables: { CONFIRMATION_URL: link, OLD_EMAIL: email, NEW_EMAIL: newEmail },
+        variables: { CONFIRMATION_URL: link, OLD_EMAIL: email, NEW_EMAIL: newEmail, USER_EMAIL: userEmail },
       });
       // Secure change: Supabase pairs token_hash_new with the current address
       // and token_hash with the new one. Two sends, never collapsed.

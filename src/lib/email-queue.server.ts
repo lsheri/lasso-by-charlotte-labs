@@ -4,6 +4,7 @@
  * sweeps never send the same email twice. Operational, not a product event.
  */
 import { attendeeLink, buildJoinUrl } from "./join-link";
+import { escapeHtml } from "./escape-html";
 import { REGISTER_COPY, type Register } from "./register";
 
 export const EMAIL_BATCH = 10;
@@ -31,18 +32,22 @@ export function privacyLineFor(register: unknown): string {
 
 export function buildVariables(payload: Record<string, unknown> | null): Record<string, string | number> {
   const p = payload ?? {};
-  const num = (v: unknown) => (typeof v === "number" ? v : Number(v) || 0);
-  return {
-    WORKSPACE_NAME: String(p["WORKSPACE_NAME"] ?? ""),
-    SEATS: num(p["SEATS"]),
-    EXPIRES_DAYS: num(p["EXPIRES_DAYS"]),
+  const out: Record<string, string | number> = {
+    WORKSPACE_NAME: escapeHtml(String(p["WORKSPACE_NAME"] ?? "")),
     JOIN_URL:
       p["LINK_KIND"] === "attendee"
         ? attendeeLink(String(p["CODE"] ?? ""), typeof p["REGISTER"] === "string" ? p["REGISTER"] : undefined)
         : buildJoinUrl(String(p["CODE"] ?? "")),
     PRIVACY_LINE: privacyLineFor(p["REGISTER"]),
-    PARTNER_NAME: String(p["PARTNER_NAME"] ?? ""),
+    PARTNER_NAME: escapeHtml(String(p["PARTNER_NAME"] ?? "")),
   };
+  // AU-1: a key that is not a number is left out, never sent as 0.
+  for (const k of ["SEATS", "EXPIRES_DAYS"] as const) {
+    const v = p[k];
+    const n = typeof v === "number" ? v : typeof v === "string" && v.trim() !== "" ? Number(v) : NaN;
+    if (Number.isFinite(n)) out[k] = n;
+  }
+  return out;
 }
 
 async function markFailed(db: Db, id: string, message: string) {

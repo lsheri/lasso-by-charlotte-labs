@@ -28,7 +28,9 @@ import { fetchProfile } from "@/hooks/use-profile";
 import { lookupActivationKeyFn, redeemActivationKeyFn } from "@/lib/activation-keys.functions";
 import { logEvent } from "@/lib/telemetry";
 import { consentTarget } from "@/lib/consent-return";
-import { isBoardInvitePath } from "@/lib/board-invites-shared";
+import { BOARD_SIGNUP_COPY, boardInviteCodeFrom, isBoardInvitePath } from "@/lib/board-invites-shared";
+import { checkBoardInviteSignup } from "@/lib/board-invites.functions";
+import { AUTH_COPY } from "@/lib/auth-copy";
 import { KEY_NOTICE_COPY, KeyNoticeSentence } from "@/lib/key-notice";
 
 export const Route = createFileRoute("/auth")({
@@ -151,6 +153,7 @@ function AuthPage() {
   }, [key]);
   const checkInvite = useServerFn(checkSignupInvite);
   const lookupKey = useServerFn(lookupActivationKeyFn);
+  const checkBoardSignup = useServerFn(checkBoardInviteSignup);
   const redeemKey = useServerFn(redeemActivationKeyFn);
   // Unit C: the email field speaks the register; with no signal it implies
   // nothing at all, rather than reading as a company.
@@ -217,6 +220,9 @@ function AuthPage() {
 
   // An invite bound to one address fills it in and holds it, so the account
   // that gets created is the one the admin asked for.
+  // AU-1 (W13): only a lookup that answered "not valid" counts; a lookup that
+  // could not run (signed out) keeps today's notice.
+  const keyInvalid = Boolean(key) && keyCheck !== undefined && !keyCheck.ok;
   const lockedEmail = inviteCheck?.ok ? (inviteCheck.email ?? null) : null;
   useEffect(() => {
     if (lockedEmail) setEmail(lockedEmail);
@@ -348,6 +354,16 @@ function AuthPage() {
           return;
         }
       }
+      // AU-1 (B1): a board invite is checked against the typed address first.
+      const boardCode = boardInviteCodeFrom(next);
+      if (boardCode) {
+        const verdict = await checkBoardSignup({ data: { code: boardCode, email } }).catch(() => null);
+        if (verdict && !verdict.matches) {
+          setError(BOARD_SIGNUP_COPY.mismatch(verdict.email_hint ?? "another address"));
+          setPending(false);
+          return;
+        }
+      }
       // Unit C: the derived register rides the confirmation link, so it
       // survives being opened on another device. No signal, nothing carried.
       const { data, error: signUpError } = await supabase.auth.signUp({
@@ -400,7 +416,7 @@ function AuthPage() {
             {error ? <p className="mt-4 text-sm text-destructive">{error}</p> : null}
             <div className="mt-6 grid gap-3">
               <Button type="button" onClick={() => void useCurrentAccount()} disabled={pending}>
-                Use this key on {workspaceName}
+                {inviteCode && !key ? AUTH_COPY.continueInvite : AUTH_COPY.useKeyOn(workspaceName)}
               </Button>
               <Button type="button" variant="outline" onClick={() => void signOutForNewAccount()}>
                 Sign out and set this up as a new account
@@ -421,7 +437,7 @@ function AuthPage() {
             <h1 className="page-title">Check your email</h1>
             <p className="mt-4 break-words text-sm font-medium text-foreground">{confirmedEmail}</p>
             <p className="mt-2 text-sm text-muted-foreground">The link signs you in and picks up where you left off.</p>
-            {key ? (
+            {key && !keyInvalid ? (
               <div data-testid="key-notice" className="mt-5 rounded-[var(--radius)] border border-dashed border-border px-4 py-3">
                 <p className="font-hand text-[16px] leading-snug text-foreground">
                   <KeyNoticeSentence institution={keyCheck?.ok ? keyCheck.institution_name : null} />
@@ -461,15 +477,25 @@ function AuthPage() {
               ? "Sign in"
               : invited
                 ? "Set up your account"
-                : "Create account"}{" "}
-            <em className="italic">to Lasso</em>
+                : null}
+            {mode === "signin" || invited ? (
+              <>
+                {" "}
+                <em className="italic">to Lasso</em>
+              </>
+            ) : (
+              AUTH_COPY.signupHeading
+            )}
           </h1>
           {consentTarget(next) && mode === "signin" ? (
             <p className="mt-2 text-sm text-muted-foreground">Sign in to finish connecting your AI tool.</p>
           ) : null}
 
           <form onSubmit={handleSubmit} className="mt-8 space-y-4">
-            {key ? (
+            {key && keyInvalid ? (
+              <p data-testid="key-invalid" className="text-sm text-destructive">{AUTH_COPY.keyInvalid}</p>
+            ) : null}
+            {key && !keyInvalid ? (
               <div data-testid="key-notice" className="mt-5 rounded-[var(--radius)] border border-dashed border-border px-4 py-3">
                 <p className="font-hand text-[16px] leading-snug text-foreground">
                   <KeyNoticeSentence institution={keyCheck?.ok ? keyCheck.institution_name : null} />
