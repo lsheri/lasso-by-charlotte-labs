@@ -61,6 +61,7 @@ import { Route as JCodeRouteImport } from './routes/j.$code'
 import { Route as JoinEduRouteImport } from './routes/join_.edu'
 import { Route as OauthConsentRouteImport } from './routes/oauth/consent'
 import { Route as SharedBoardTokenRouteImport } from './routes/shared-board.$token'
+import { Route as SupportGrantIdRouteImport } from './routes/support.$grantId'
 import { Route as AuthenticatedClientsIdRouteImport } from './routes/_authenticated/clients.$id'
 import { Route as AuthenticatedCoachingIndexRouteImport } from './routes/_authenticated/coaching.index'
 import { Route as AuthenticatedDesignIconsRouteImport } from './routes/_authenticated/design.icons'
@@ -344,6 +345,11 @@ const SharedBoardTokenRoute = SharedBoardTokenRouteImport.update({
   path: '/shared-board/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SupportGrantIdRoute = SupportGrantIdRouteImport.update({
+  id: '/support/$grantId',
+  path: '/support/$grantId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedClientsIdRoute = AuthenticatedClientsIdRouteImport.update({
   id: '/clients/$id',
   path: '/clients/$id',
@@ -490,6 +496,7 @@ export interface FileRoutesByFullPath {
   '/join/edu': typeof JoinEduRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/shared-board/$token': typeof SharedBoardTokenRoute
+  '/support/$grantId': typeof SupportGrantIdRoute
   '/demo/': typeof DemoIndexRoute
   '/clients/$id': typeof AuthenticatedClientsIdRoute
   '/design/icons': typeof AuthenticatedDesignIconsRoute
@@ -560,6 +567,7 @@ export interface FileRoutesByTo {
   '/join/edu': typeof JoinEduRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/shared-board/$token': typeof SharedBoardTokenRoute
+  '/support/$grantId': typeof SupportGrantIdRoute
   '/demo': typeof DemoIndexRoute
   '/clients/$id': typeof AuthenticatedClientsIdRoute
   '/design/icons': typeof AuthenticatedDesignIconsRoute
@@ -632,6 +640,7 @@ export interface FileRoutesById {
   '/join_/edu': typeof JoinEduRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/shared-board/$token': typeof SharedBoardTokenRoute
+  '/support/$grantId': typeof SupportGrantIdRoute
   '/demo/': typeof DemoIndexRoute
   '/_authenticated/clients/$id': typeof AuthenticatedClientsIdRoute
   '/_authenticated/design/icons': typeof AuthenticatedDesignIconsRoute
@@ -704,6 +713,7 @@ export interface FileRouteTypes {
     | '/join/edu'
     | '/oauth/consent'
     | '/shared-board/$token'
+    | '/support/$grantId'
     | '/demo/'
     | '/clients/$id'
     | '/design/icons'
@@ -774,6 +784,7 @@ export interface FileRouteTypes {
     | '/join/edu'
     | '/oauth/consent'
     | '/shared-board/$token'
+    | '/support/$grantId'
     | '/demo'
     | '/clients/$id'
     | '/design/icons'
@@ -845,6 +856,7 @@ export interface FileRouteTypes {
     | '/join_/edu'
     | '/oauth/consent'
     | '/shared-board/$token'
+    | '/support/$grantId'
     | '/demo/'
     | '/_authenticated/clients/$id'
     | '/_authenticated/design/icons'
@@ -894,6 +906,7 @@ export interface RootRouteChildren {
   JoinEduRoute: typeof JoinEduRoute
   OauthConsentRoute: typeof OauthConsentRoute
   SharedBoardTokenRoute: typeof SharedBoardTokenRoute
+  SupportGrantIdRoute: typeof SupportGrantIdRoute
   DemoIndexRoute: typeof DemoIndexRoute
   ApiAnalysisStreamRoute: typeof ApiAnalysisStreamRoute
   ApiCoachChatStreamRoute: typeof ApiCoachChatStreamRoute
@@ -1270,6 +1283,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SharedBoardTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/support/$grantId': {
+      id: '/support/$grantId'
+      path: '/support/$grantId'
+      fullPath: '/support/$grantId'
+      preLoaderRoute: typeof SupportGrantIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/clients/$id': {
       id: '/_authenticated/clients/$id'
       path: '/clients/$id'
@@ -1521,6 +1541,7 @@ const rootRouteChildren: RootRouteChildren = {
   JoinEduRoute: JoinEduRoute,
   OauthConsentRoute: OauthConsentRoute,
   SharedBoardTokenRoute: SharedBoardTokenRoute,
+  SupportGrantIdRoute: SupportGrantIdRoute,
   DemoIndexRoute: DemoIndexRoute,
   ApiAnalysisStreamRoute: ApiAnalysisStreamRoute,
   ApiCoachChatStreamRoute: ApiCoachChatStreamRoute,

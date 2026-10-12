@@ -30,6 +30,7 @@ import { logEvent } from "@/lib/telemetry";
 import { consentTarget } from "@/lib/consent-return";
 import { BOARD_SIGNUP_COPY, boardInviteCodeFrom, isBoardInvitePath } from "@/lib/board-invites-shared";
 import { checkBoardInviteSignup } from "@/lib/board-invites.functions";
+import { isSupportPath } from "@/lib/support-view";
 import { AUTH_COPY } from "@/lib/auth-copy";
 import { isKeyInvalid, resolveKeyCheck } from "@/lib/auth-key-check";
 import { KEY_NOTICE_COPY, KeyNoticeSentence } from "@/lib/key-notice";
@@ -75,6 +76,8 @@ export const Route = createFileRoute("/auth")({
     const consent = consentTarget(search.next);
     if (consent) throw redirect({ to: "/oauth/consent", search: consent, replace: true });
     if (isBoardInvitePath(search.next)) throw redirect({ href: search.next, replace: true });
+    // SH-6d-2: a support view link comes back to exactly that grant.
+    if (isSupportPath(search.next)) throw redirect({ href: search.next, replace: true });
     const target = joinTarget(search.next);
     if (search.key || search.invite || target?.code) return;
     if (target) throw redirect({ to: "/join", search: target, replace: true });
@@ -174,7 +177,7 @@ function AuthPage() {
       return;
     }
     // SH-5d: a board invite comes back to the exact page it left.
-    if (isBoardInvitePath(next)) {
+    if (isBoardInvitePath(next) || isSupportPath(next)) {
       navigate({ href: next, replace: true });
       return;
     }
