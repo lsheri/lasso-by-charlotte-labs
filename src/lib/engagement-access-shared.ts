@@ -25,7 +25,7 @@ export type EngagementPerson = {
   access: EngagementAccessChoice | null;
   isYou: boolean;
   /** SH-3b: whether they can open the conversations or only ask about them. */
-  conversations: ConversationAccess;
+  conversations?: ConversationAccess;
 };
 
 export type ConversationAccess = "summaries" | "full";
