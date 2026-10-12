@@ -127,3 +127,32 @@ describe("telemetry", () => {
     expect(EVENT_DIM_KEYS["board.invite_accepted"]).toEqual(["kind"]);
   });
 });
+
+describe("SH-5c-fix the Invited group refreshes", () => {
+  it("a successful invite refetches the list and the new row renders with Withdraw", async () => {
+    const { QueryClient, QueryClientProvider } = await import("@tanstack/react-query");
+    const { ShareDialog } = await import("@/components/canvas-lab/ShareDialog");
+    const { fireEvent, waitFor } = await import("@testing-library/react");
+    inviteState.listCalls = 0;
+    inviteState.rows = [];
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <ShareDialog engagementId="e-1" profileId="p-me" />
+      </QueryClientProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Share" }));
+    await screen.findByText("You");
+    await waitFor(() => expect(inviteState.listCalls).toBe(1));
+    expect(screen.getByText("Nobody else in your workspace yet.")).toBeTruthy();
+
+    fireEvent.change(screen.getByLabelText("Add people by name"), { target: { value: "jo@x.com" } });
+    expect(screen.queryByText("Nobody else in your workspace yet.")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Invite jo@x.com" }));
+
+    await waitFor(() => expect(inviteState.listCalls).toBeGreaterThan(1));
+    const group = await screen.findByRole("group", { name: "Invited" });
+    expect(group.textContent).toContain("jo@x.com");
+    expect(screen.getByRole("button", { name: "Withdraw" })).toBeTruthy();
+  });
+});
