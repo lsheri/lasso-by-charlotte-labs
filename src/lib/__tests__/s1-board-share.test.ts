@@ -166,8 +166,9 @@ describe("S1 — who may make and end a link", () => {
 describe("S1 — the honest sentence", () => {
   it("says what leaves, to whom and for how long, before the link is made", () => {
     const sentence = shareExposureSentence(false);
-    expect(sentence).toContain("everything on this board");
-    expect(sentence).toContain("AI conversations behind the cards");
+    expect(sentence).toContain("the cards, their summaries and any text written on it");
+    expect(sentence).toContain("The AI conversations behind the cards stay private.");
+    expect(sentence).not.toContain("including the AI conversations");
     expect(sentence.startsWith("Anyone with this link")).toBe(true);
     expect(sentence).toContain("48 hours");
     // It sits where the person reads it before choosing, above the control.
