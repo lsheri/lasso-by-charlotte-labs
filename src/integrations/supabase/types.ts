@@ -6133,6 +6133,7 @@ export type Database = {
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      signup_default_notice: { Args: never; Returns: string }
       snapshot_seat_usage: { Args: never; Returns: number }
       support_grantor_profile: { Args: { p_org: string }; Returns: string }
       support_notify_admins: { Args: { p_grant: string }; Returns: undefined }

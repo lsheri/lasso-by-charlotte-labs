@@ -1,5 +1,7 @@
 # Roadmap
 
+- [x] DC-2: truthful Trust copy and signup/setup notice; pinned hash and render tests; public signup/sign-in and Trust visually checked at 1280 and 390. Setup is render-tested only because hosted authentication is external unmanaged. Full-suite results reported in chat; preview only, no database work or manual build.
+
 - [x] FS-1: restore normal Home scrolling without changing welcome, feedback, or cards; hide partner-only coaching group and run regression checks.
 - [ ] FS-1: inspect real signed-in Home preview states; blocked by external unmanaged authentication. Illustrative fixture scrolling and populated previews verified at 1440x710, 1280, and 390.
 

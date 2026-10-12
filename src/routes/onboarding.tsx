@@ -1,4 +1,4 @@
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
@@ -102,9 +102,11 @@ async function applyOrgType(profileId: string, type: OrgType): Promise<string | 
 /** KX1: the carried-key notice on the name screen. Canonical copy lives in @/lib/key-notice. */
 import { KEY_NOTICE_COPY, KeyNoticeSentence } from "@/lib/key-notice";
 import { Switch } from "@/components/ui/switch";
-import { CONTENT_SWITCH_LINE, TIER_COPY, type DataTier } from "@/lib/data-consent-shared";
+import { CONTENT_SWITCH_LINE, SIGNUP_DEFAULT_NOTICE, TIER_COPY, type DataTier } from "@/lib/data-consent-shared";
 import { setDataConsent } from "@/lib/data-consent.functions";
 export { KEY_NOTICE_COPY, KeyNoticeSentence };
+
+export const COPY = { noticeLink: "See what each level means" } as const;
 
 const REDEEM_FAILED_REASONS = [
   "not_found",
@@ -858,6 +860,13 @@ function OnboardingInner() {
               ) : null}
 
               <UsesChips value={uses} onChange={setUses} disabled={pending} />
+
+              {!setup ? (
+                <div data-testid="signup-default-notice" className="rounded-[var(--radius-control)] border border-border px-4 py-3 text-sm leading-relaxed text-muted-foreground">
+                  <p>{SIGNUP_DEFAULT_NOTICE}</p>
+                  <Link to="/trust" hash="levels" className="mt-2 inline-block underline underline-offset-4 hover:text-foreground">{COPY.noticeLink}</Link>
+                </div>
+              ) : null}
 
               {carriedKey ? (
                 <div
