@@ -16,6 +16,11 @@ vi.mock("@tanstack/react-start", () => ({
   useServerFn: (fn: unknown) => fn,
 }));
 
+vi.mock("@/lib/board-invites.functions", () => ({
+  inviteToBoard: vi.fn(async () => ({ ok: true, status: "sent", emailed: true })),
+  listBoardInvites: vi.fn(async () => []),
+  withdrawBoardInvite: vi.fn(async () => ({ ok: true })),
+}));
 vi.mock("@/lib/engagement-access.functions", () => ({
   listEngagementPeopleFn: vi.fn(async () => ({
     canShare: true,
@@ -120,14 +125,14 @@ describe("S2 — giving someone one of two things", () => {
     await screen.findByText("Nobody else in your workspace yet.");
     expect(screen.getByText("You")).toBeTruthy();
     expect(screen.getByText("Nobody else in your workspace yet.")).toBeTruthy();
-    expect(screen.getByLabelText("Add people by name").hasAttribute("disabled")).toBe(true);
+    expect(screen.getByLabelText("Add people by name or email").hasAttribute("disabled")).toBe(false);
     for (const label of ["Viewer", "Collaborator"]) expect(screen.getByRole("button", { name: label })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Remove" })).toBeNull();
   });
   it("adds a person with the picked Collaborator level", async () => {
     await openDialog();
     fireEvent.click(within(screen.getByRole("group", { name: "New person level" })).getByRole("button", { name: "Collaborator" }));
-    fireEvent.change(screen.getByLabelText("Add people by name"), { target: { value: "nad" } });
+    fireEvent.change(screen.getByLabelText("Add people by name or email"), { target: { value: "nad" } });
     fireEvent.click(screen.getByRole("button", { name: "Nadia" }));
     await waitFor(() => expect(calls).toEqual([{ person_id: "p-new", access: "work" }]));
   });

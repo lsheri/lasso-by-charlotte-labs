@@ -4,6 +4,11 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@tanstack/react-start", () => ({ useServerFn: (fn: unknown) => fn }));
+vi.mock("@/lib/board-invites.functions", () => ({
+  inviteToBoard: vi.fn(async () => ({ ok: true, status: "sent", emailed: true })),
+  listBoardInvites: vi.fn(async () => []),
+  withdrawBoardInvite: vi.fn(async () => ({ ok: true })),
+}));
 vi.mock("@/lib/engagement-access.functions", () => ({
   listEngagementPeopleFn: vi.fn(async () => ({
     canShare: true,
@@ -46,14 +51,15 @@ describe("SH-3a people access", () => {
   });
   it("does not add an unknown email", async () => {
     const section = await mount();
-    fireEvent.change(within(section).getByLabelText("Add people by name"), { target: { value: "unknown@example.com" } });
-    expect(within(section).getByText("Only people in this workspace can be added here.")).toBeTruthy();
+    fireEvent.change(within(section).getByLabelText("Add people by name or email"), { target: { value: "unknown@example.com" } });
+    expect(within(section).getByRole("button", { name: "Invite unknown@example.com" })).toBeTruthy();
+    expect(within(section).queryByText("Only people in this workspace can be added here.")).toBeNull();
     expect(setEngagementPersonAccessFn).not.toHaveBeenCalled();
   });
   it("puts your level first and adds a suggested member as Can view", async () => {
     const section = await mount();
     expect(within(section).getAllByRole("listitem")[0]?.textContent?.trim()).toBe("You");
-    fireEvent.change(within(section).getByLabelText("Add people by name"), { target: { value: "nad" } });
+    fireEvent.change(within(section).getByLabelText("Add people by name or email"), { target: { value: "nad" } });
     expect(within(section).queryByRole("button", { name: "Owen" })).toBeNull();
     fireEvent.click(within(section).getByRole("button", { name: "Nadia" }));
     await waitFor(() => expect(setEngagementPersonAccessFn).toHaveBeenCalledWith({ data: { engagement_id: "board", profile_id: "me", person_id: "new", access: "review" } }));
@@ -99,7 +105,7 @@ describe("SH-3a people access", () => {
     });
     const section = await mount();
     expect(within(section).getByText("Nobody else in your workspace yet.")).toBeTruthy();
-    expect(within(section).getByLabelText("Add people by name").hasAttribute("disabled")).toBe(true);
+    expect(within(section).getByLabelText("Add people by name or email").hasAttribute("disabled")).toBe(false);
   });
   it("renders no internal role words, preserving the required explanatory work sentence", async () => {
     const section = await mount();

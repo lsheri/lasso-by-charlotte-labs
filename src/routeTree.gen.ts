@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as BoardInviteRouteImport } from './routes/board-invite'
 import { Route as JoinRouteImport } from './routes/join'
 import { Route as LandingBoardRouteImport } from './routes/landing-board'
 import { Route as LandingClassicRouteImport } from './routes/landing-classic'
@@ -90,6 +91,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BoardInviteRoute = BoardInviteRouteImport.update({
+  id: '/board-invite',
+  path: '/board-invite',
   getParentRoute: () => rootRouteImport,
 } as any)
 const JoinRoute = JoinRouteImport.update({
@@ -436,6 +442,7 @@ const LovableEmailTransactionalPreviewRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/board-invite': typeof BoardInviteRoute
   '/join': typeof JoinRoute
   '/landing-board': typeof LandingBoardRoute
   '/landing-classic': typeof LandingClassicRoute
@@ -505,6 +512,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/board-invite': typeof BoardInviteRoute
   '/join': typeof JoinRoute
   '/landing-board': typeof LandingBoardRoute
   '/landing-classic': typeof LandingClassicRoute
@@ -576,6 +584,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/board-invite': typeof BoardInviteRoute
   '/join': typeof JoinRoute
   '/landing-board': typeof LandingBoardRoute
   '/landing-classic': typeof LandingClassicRoute
@@ -647,6 +656,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/board-invite'
     | '/join'
     | '/landing-board'
     | '/landing-classic'
@@ -716,6 +726,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/board-invite'
     | '/join'
     | '/landing-board'
     | '/landing-classic'
@@ -786,6 +797,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/board-invite'
     | '/join'
     | '/landing-board'
     | '/landing-classic'
@@ -857,6 +869,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  BoardInviteRoute: typeof BoardInviteRoute
   JoinRoute: typeof JoinRoute
   LandingBoardRoute: typeof LandingBoardRoute
   LandingClassicRoute: typeof LandingClassicRoute
@@ -912,6 +925,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/board-invite': {
+      id: '/board-invite'
+      path: '/board-invite'
+      fullPath: '/board-invite'
+      preLoaderRoute: typeof BoardInviteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/join': {
@@ -1475,6 +1495,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  BoardInviteRoute: BoardInviteRoute,
   JoinRoute: JoinRoute,
   LandingBoardRoute: LandingBoardRoute,
   LandingClassicRoute: LandingClassicRoute,

@@ -28,6 +28,7 @@ import { fetchProfile } from "@/hooks/use-profile";
 import { lookupActivationKeyFn, redeemActivationKeyFn } from "@/lib/activation-keys.functions";
 import { logEvent } from "@/lib/telemetry";
 import { consentTarget } from "@/lib/consent-return";
+import { isBoardInvitePath } from "@/lib/board-invites-shared";
 import { KEY_NOTICE_COPY, KeyNoticeSentence } from "@/lib/key-notice";
 
 export const Route = createFileRoute("/auth")({
@@ -68,6 +69,7 @@ export const Route = createFileRoute("/auth")({
     if (!data.user) return;
     const consent = consentTarget(search.next);
     if (consent) throw redirect({ to: "/oauth/consent", search: consent, replace: true });
+    if (isBoardInvitePath(search.next)) throw redirect({ href: search.next, replace: true });
     const target = joinTarget(search.next);
     if (search.key || search.invite || target?.code) return;
     if (target) throw redirect({ to: "/join", search: target, replace: true });
@@ -162,6 +164,11 @@ function AuthPage() {
     const consent = consentTarget(next);
     if (consent) {
       navigate({ to: "/oauth/consent", search: consent, replace: true });
+      return;
+    }
+    // SH-5d: a board invite comes back to the exact page it left.
+    if (isBoardInvitePath(next)) {
+      navigate({ href: next, replace: true });
       return;
     }
     const target = joinTarget(next) ?? (inviteCode ? { code: inviteCode } : null);

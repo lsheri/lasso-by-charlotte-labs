@@ -459,7 +459,13 @@ export type TelemetryEvent =
   /** NC-2: the notification panel was opened. Dims: needs_you (none | some). */
   | "notification.opened"
   /** NC-2: a notification was acted on. Dims: kind (notification kind), action (approve | decline | open). No ids, names or emails. */
-  | "notification.acted";
+  | "notification.acted"
+  /** SH-5c: a board invite by email was created. Dims: kind, status, level, conversations. No emails, codes or ids. */
+  | "board.invite_sent"
+  /** SH-5c: an open board invite was withdrawn. Dims: kind. */
+  | "board.invite_withdrawn"
+  /** SH-5d: a board invite was accepted. Dims: kind. */
+  | "board.invite_accepted";
 
 export type TelemetryDims = Record<
   string,
