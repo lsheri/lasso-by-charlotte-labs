@@ -9,9 +9,11 @@ export type Register = OrgType;
 
 /** Returns the register a door implies, or null when there is no door signal. */
 export function deriveRegister(intent: unknown): Register | null {
-  if (intent === "company" || intent === "personal" || intent === "edu" || intent === "partner")
-    return intent;
-  if (readEduIntent()) return "edu";
+  // F4: School is no longer a workspace type. The school door creates a
+  // personal workspace and pre-ticks School on the uses question instead.
+  if (intent === "edu") return "personal";
+  if (intent === "company" || intent === "personal" || intent === "partner") return intent;
+  if (readEduIntent()) return "personal";
   return null;
 }
 

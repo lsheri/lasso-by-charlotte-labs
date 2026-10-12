@@ -465,7 +465,9 @@ export type TelemetryEvent =
   /** SH-5c: an open board invite was withdrawn. Dims: kind. */
   | "board.invite_withdrawn"
   /** SH-5d: a board invite was accepted. Dims: kind. */
-  | "board.invite_accepted";
+  | "board.invite_accepted"
+  /** F4: a person answered "What will you use Lasso for?". Dims: uses (sorted picks joined by "+"). Never shown to anyone else. */
+  | "person.uses_declared";
 
 export type TelemetryDims = Record<
   string,

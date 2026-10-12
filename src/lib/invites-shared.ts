@@ -60,7 +60,9 @@ export function joinNames(names: readonly string[]): string {
 
 /** Whole sentence for the business coach letter, or null to let the template fall back. */
 export function coachScopeLine(subjectNames: readonly string[] | undefined): string | null {
-  const names = joinNames(subjectNames ?? []);
+  const clean = (subjectNames ?? []).map((n) => n.trim()).filter(Boolean);
+  const names = joinNames(clean);
   if (!names) return null;
-  return `You will see only the work ${names} choose to share with you. Nothing else in the workspace is visible to you.`;
+  const verb = clean.length === 1 ? "chooses" : "choose";
+  return `You will see only the work ${names} ${verb} to share with you. Nothing else in the workspace is visible to you.`;
 }
