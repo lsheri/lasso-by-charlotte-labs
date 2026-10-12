@@ -129,7 +129,7 @@ describe("DC-2 starting-level disclosure", () => {
   });
   it("does not show a starting-level notice on sign-in", async () => {
     mount(AuthRoute);
-    await screen.findByRole("button", { name: "Sign in", exact: true });
+    await screen.findByRole("button", { name: /^Sign in$/ });
     expect(screen.queryByText(SIGNUP_DEFAULT_NOTICE)).toBeNull();
   });
   it("does not show it to an existing signed-in account with an invite", async () => {
