@@ -264,6 +264,19 @@ describe("the runtime dim allowlist", () => {
   });
 });
 
+describe("SH-3c-1 conversations switch dims", () => {
+  it("keeps conversations and target on engagement.access_changed and drops an unlisted key", () => {
+    const result = guardEventDims("engagement.access_changed", {
+      conversations: "full",
+      target: "partner",
+      result: "changed",
+      person_name: "Owen",
+    });
+    expect(result.keep).toBe(true);
+    expect(result.dims).toEqual({ conversations: "full", target: "partner", result: "changed" });
+  });
+});
+
 describe("unit 7 answer_retried", () => {
   it("keeps answer_retried on reflect.message_sent", () => {
     const kept = guardEventDims("reflect.message_sent", { answer_retried: true, finish_reason: "stop" }).dims;
