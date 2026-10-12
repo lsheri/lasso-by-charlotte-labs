@@ -31,6 +31,7 @@ import { consentTarget } from "@/lib/consent-return";
 import { BOARD_SIGNUP_COPY, boardInviteCodeFrom, isBoardInvitePath } from "@/lib/board-invites-shared";
 import { checkBoardInviteSignup } from "@/lib/board-invites.functions";
 import { AUTH_COPY } from "@/lib/auth-copy";
+import { isKeyInvalid, resolveKeyCheck } from "@/lib/auth-key-check";
 import { KEY_NOTICE_COPY, KeyNoticeSentence } from "@/lib/key-notice";
 
 export const Route = createFileRoute("/auth")({
@@ -217,18 +218,15 @@ function AuthPage() {
   const { data: keyCheck } = useQuery({
     queryKey: ["auth-entry-key", key, Boolean(authUser)],
     enabled: Boolean(key) && authUser !== undefined,
-    queryFn: async (): Promise<{ ok: boolean; institution_name: string | null }> => {
-      if (authUser) return lookupKey({ data: { code: key as string } });
-      const answer = await checkKeyPublic({ data: { code: key as string } });
-      return { ok: answer.valid, institution_name: answer.institution_name };
-    },
+    queryFn: () =>
+      resolveKeyCheck(Boolean(authUser), key as string, { lookup: lookupKey, publicCheck: checkKeyPublic }),
   });
 
   // An invite bound to one address fills it in and holds it, so the account
   // that gets created is the one the admin asked for.
   // AU-1 (W13): only a lookup that answered "not valid" counts; a lookup that
   // could not run (signed out) keeps today's notice.
-  const keyInvalid = Boolean(key) && keyCheck !== undefined && !keyCheck.ok;
+  const keyInvalid = isKeyInvalid(key, keyCheck);
   const lockedEmail = inviteCheck?.ok ? (inviteCheck.email ?? null) : null;
   useEffect(() => {
     if (lockedEmail) setEmail(lockedEmail);
