@@ -428,19 +428,17 @@ export async function getItemText(supabase: Db, item: TextItem): Promise<ItemTex
       .map((t) => `TURN ${t.turn_no} ${t.role.toUpperCase()}: ${t.content}`)
       .join("\n\n");
     const turnHash = `turns:${(data ?? []).length}:${text.length}`;
-    return finish(
-      item,
-      turnHash,
-      text.trim()
-        ? { text, status: "ok" }
-        : {
-            text: null,
-            status: "unreadable",
-            note: "no turns are stored for this conversation",
-            reason: "empty_thread",
-          },
-      "thread",
-    );
+    if (!text.trim()) {
+      // A reader without permission to see the turns must not stamp the
+      // owner's row, so this path returns without finish()'s cache write.
+      return {
+        text: null,
+        status: "unreadable",
+        note: "no turns are available for this conversation",
+        reason: "empty_thread",
+      };
+    }
+    return finish(item, turnHash, { text, status: "ok" }, "thread");
   }
 
   // v1.3: a placeholder with no stored file is read through its rendition, labelled as one.
