@@ -164,8 +164,7 @@ describe("MN-7 tree at scale", () => {
     for (const surface of ["sidebar", "drawer"] as const) {
       mocks.clientRows = containers; mocks.engagements = boards(10);
       const view = render(<SidebarNav surface={surface} />);
-      fireEvent.change(screen.getByRole("textbox", { name: "Find a board" }), { target: { value: "DEEP" } });
-      fireEvent.change(screen.getByRole("textbox", { name: "Find a board" }), { target: { value: "" } });
+      fireEvent.click(screen.getByTestId("nav-collapse-all"));
       mocks.events.mockClear();
       const link = Array.from(document.querySelectorAll("a")).find((a) => a.textContent?.includes("Deep analysis") && !a.closest("[data-testid='recent-boards']"));
       fireEvent.click(link as HTMLElement);

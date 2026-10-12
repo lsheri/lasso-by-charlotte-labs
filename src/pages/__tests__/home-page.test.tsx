@@ -1,5 +1,5 @@
-import { StrictMode } from "react";
 // @vitest-environment jsdom
+import { StrictMode } from "react";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
