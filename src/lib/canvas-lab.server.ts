@@ -25,6 +25,7 @@ import type {
 import { isRegionFill, isRegionFrameId } from "@/lib/board-region";
 import { WORKBOARD_ANCHORS, WORKBOARD_CARD_DEFAULT_SIZE, WORKBOARD_JUDGMENT_TYPES, WORKBOARD_NODE_KINDS, WORKBOARD_RELATIONS, WORKBOARD_SHAPE_COLOURS, isWorkboardDecorationKind, parseWorkboardImageBody, parseWorkboardStickyBody, parseWorkboardTextBody, validWorkboardNodeGeometry } from "@/lib/canvas-lab-shared";
 import type { ResolvedProfile } from "@/lib/profile-resolve";
+import { validateAnswerBody } from "@/lib/answer-card";
 
 type Db = SupabaseClient<Database>;
 type BoardRow = Database["public"]["Tables"]["workboards"]["Row"];
@@ -209,6 +210,10 @@ export function validNodeInput(node: WorkboardNodeInput): string | null {
   // A kept answer holds its own words and points at turns, never at a record.
   if (node.kind === "answer" && (node.workItemId || node.decisionId)) return "A kept answer cannot reference work or a decision.";
   if (node.kind === "answer" && !node.body?.trim()) return "A kept answer needs the answer it keeps.";
+  if (node.kind === "answer" && node.body !== undefined) {
+    const invalid = validateAnswerBody(node.body);
+    if (invalid) return invalid;
+  }
   if (node.kind === "text" && (node.workItemId || node.decisionId)) return "A text block cannot reference work or a decision.";
   if (node.kind === "text" && (node.frameKey || node.title || node.judgmentType)) return "A text block can only carry its words, style and rectangle.";
   if (node.kind === "text" && !parseWorkboardTextBody(node.body)) return "Check the text block words and style choices.";
@@ -232,12 +237,16 @@ export function validateLinkNodeKinds(kinds: string[]): string | null {
   return null;
 }
 
-export function validNodeUpdate(kind: WorkboardNodeDto["kind"], patch: Extract<WorkboardCommand, { type: "node_update" }>["patch"]): string | null {
+export function validNodeUpdate(kind: WorkboardNodeDto["kind"], patch: Extract<WorkboardCommand, { type: "node_update" }>["patch"], storedBody?: string): string | null {
   if (kind === "mark") return "Marks are not available yet.";
   if (kind === "shape") return "Draw a region on the board instead of a colour block.";
   if (!validNodeGeometry(kind, patch)) return kind === "text" ? "Text block dimensions are outside the supported range." : "Card dimensions are outside the supported range.";
   if (kind === "text" && patch.body !== undefined && !parseWorkboardTextBody(patch.body)) return "Check the text block words and style choices.";
   if (kind === "sticky" && patch.body !== undefined && !parseWorkboardStickyBody(patch.body)) return "Check the sticky words and style choices.";
+  if (kind === "answer" && patch.body !== undefined) {
+    const invalid = validateAnswerBody(patch.body, storedBody);
+    if (invalid) return invalid;
+  }
   if (kind === "sticky" && patch.title !== undefined) return "A sticky can only carry its words, style, fill and rectangle.";
   if (kind === "image" && (patch.body !== undefined || patch.title !== undefined)) return "An image can only carry its file and rectangle.";
   return null;
@@ -408,13 +417,13 @@ export async function applyWorkboardCommand(
   if (command.type === "node_update" || command.type === "node_archive" || command.type === "node_restore") {
     // Authored judgment and draft cards answer only to their author, archive
     // and restore included. Canonical reference cards are shared structure.
-    const owner = (await db.from("workboard_nodes").select("kind, author_profile_id").eq("id", command.nodeId).eq("workboard_id", board.id).maybeSingle()).data;
+    const owner = (await db.from("workboard_nodes").select("kind, author_profile_id, body").eq("id", command.nodeId).eq("workboard_id", board.id).maybeSingle()).data;
     if (owner && (owner.kind === "judgment" || owner.kind === "draft" || ((owner.kind === "text" || owner.kind === "sticky") && command.type === "node_update" && command.patch.body !== undefined)) && owner.author_profile_id !== profile.id) {
       return { status: "forbidden" };
     }
     if (!owner) return { status: "validation_error", message: "That card is gone." };
     if (command.type === "node_update") {
-      const invalid = validNodeUpdate(owner.kind as WorkboardNodeDto["kind"], command.patch);
+      const invalid = validNodeUpdate(owner.kind as WorkboardNodeDto["kind"], command.patch, owner.body);
       if (invalid) return { status: "validation_error", message: invalid };
     }
     if (command.type === "node_update" && command.patch.frameId) {

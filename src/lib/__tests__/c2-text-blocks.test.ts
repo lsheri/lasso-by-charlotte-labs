@@ -17,7 +17,7 @@ describe("C2 text block record", () => {
     expect(validNodeInput(input({ body: JSON.stringify({ ...body, size: "giant" }) }))).toBe("Check the text block words and style choices.");
     expect(validNodeInput(input({ body: JSON.stringify({ ...body, weight: "heavy" }) }))).toBe("Check the text block words and style choices.");
     expect(validNodeInput(input({ body: JSON.stringify({ ...body, colour: "white" }) }))).toBe("Check the text block words and style choices.");
-    expect(validNodeInput(input({ body: JSON.stringify({ ...body, text: "x".repeat(501) }) }))).toBe("Check the text block words and style choices.");
+    expect(validNodeInput(input({ body: JSON.stringify({ ...body, text: "x".repeat(5001) }) }))).toBe("Check the text block words and style choices.");
   });
 
   it("refuses card fields and accepts the text geometry range", () => {

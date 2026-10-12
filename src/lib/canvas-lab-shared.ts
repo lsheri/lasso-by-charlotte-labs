@@ -9,6 +9,8 @@
  * instructions are not part of Slice 1 and stay browser-local.
  */
 
+import { richToPlainText } from "@/lib/rich-text";
+
 export type WorkboardNodeKind = "brief" | "work_item" | "decision" | "judgment" | "draft" | "shape" | "text" | "mark" | "answer" | "sticky" | "image";
 export type WorkboardFrameKind = "foundation" | "task" | "decisions" | "outputs" | "custom" | "context";
 export type WorkboardAnchor = "top" | "right" | "bottom" | "left";
@@ -77,11 +79,12 @@ export type WorkboardShapeColour = (typeof WORKBOARD_SHAPE_COLOURS)[number];
 export const WORKBOARD_TEXT_SIZES = ["small", "body", "label", "heading"] as const;
 export const WORKBOARD_TEXT_WEIGHTS = ["regular", "medium", "bold"] as const;
 export const WORKBOARD_TEXT_COLOURS = ["ink", "graphite", "mid", "green", "blue"] as const;
-export const WORKBOARD_TEXT_MAX_LENGTH = 500;
+export const WORKBOARD_TEXT_MAX_LENGTH = 5000;
+export const WORKBOARD_HTML_MAX_LENGTH = 20000;
 export type WorkboardTextSize = (typeof WORKBOARD_TEXT_SIZES)[number];
 export type WorkboardTextWeight = (typeof WORKBOARD_TEXT_WEIGHTS)[number];
 export type WorkboardTextColour = (typeof WORKBOARD_TEXT_COLOURS)[number];
-export type WorkboardTextBody = { text: string; size: WorkboardTextSize; weight: WorkboardTextWeight; colour: WorkboardTextColour };
+export type WorkboardTextBody = { text: string; size: WorkboardTextSize; weight: WorkboardTextWeight; colour: WorkboardTextColour; html?: string };
 
 /**
  * Decorations are never a source: they carry no record reference, cannot be
@@ -100,7 +103,9 @@ export function parseWorkboardTextBody(value: unknown): WorkboardTextBody | null
     const parsed = JSON.parse(value) as unknown;
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return null;
     const body = parsed as Record<string, unknown>;
-    if (Object.keys(body).sort().join(",") !== "colour,size,text,weight") return null;
+    const keys = Object.keys(body).sort().join(",");
+    if (keys !== "colour,size,text,weight" && keys !== "colour,html,size,text,weight") return null;
+    if ("html" in body && (typeof body["html"] !== "string" || body["html"].length > WORKBOARD_HTML_MAX_LENGTH)) return null;
     if (typeof body["text"] !== "string" || body["text"].length > WORKBOARD_TEXT_MAX_LENGTH) return null;
     if (!WORKBOARD_TEXT_SIZES.includes(body["size"] as WorkboardTextSize)) return null;
     if (!WORKBOARD_TEXT_WEIGHTS.includes(body["weight"] as WorkboardTextWeight)) return null;
@@ -119,7 +124,8 @@ export function parseWorkboardStickyBody(value: unknown): WorkboardStickyBody | 
     const parsed = JSON.parse(value) as unknown;
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return null;
     const body = parsed as Record<string, unknown>;
-    if (Object.keys(body).sort().join(",") !== "colour,fill,size,text,weight") return null;
+    const keys = Object.keys(body).sort().join(",");
+    if (keys !== "colour,fill,size,text,weight" && keys !== "colour,fill,html,size,text,weight") return null;
     if (!WORKBOARD_STICKY_FILLS.includes(body["fill"] as WorkboardStickyFill)) return null;
     const { fill, ...rest } = body;
     const text = parseWorkboardTextBody(JSON.stringify(rest));
@@ -130,11 +136,13 @@ export function parseWorkboardStickyBody(value: unknown): WorkboardStickyBody | 
 }
 
 export function serializeWorkboardStickyBody(body: WorkboardStickyBody): string {
-  return JSON.stringify({ text: body.text, size: body.size, weight: body.weight, colour: body.colour, fill: body.fill });
+  const text = body.html !== undefined && typeof document !== "undefined" ? richToPlainText(body.html) : body.text;
+  return JSON.stringify({ text, size: body.size, weight: body.weight, colour: body.colour, fill: body.fill, ...(body.html !== undefined ? { html: body.html } : {}) });
 }
 
 export function serializeWorkboardTextBody(body: WorkboardTextBody): string {
-  return JSON.stringify(body);
+  const text = body.html !== undefined && typeof document !== "undefined" ? richToPlainText(body.html) : body.text;
+  return JSON.stringify({ text, size: body.size, weight: body.weight, colour: body.colour, ...(body.html !== undefined ? { html: body.html } : {}) });
 }
 
 export function validWorkboardNodeGeometry(node: { kind?: WorkboardNodeKind; x?: number; y?: number; w?: number; h?: number }): boolean {

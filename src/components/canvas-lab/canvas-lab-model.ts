@@ -45,6 +45,7 @@ import { isContextFrameId } from "@/lib/context-region";
 import { isRegionFrameId } from "@/lib/board-region";
 import { placeAddedCards } from "@/lib/workboard-placement";
 import { resolveWorkDate } from "@/lib/work-order";
+import { parseAnswerBody } from "@/lib/answer-card";
 
 export type LabNodeKind = "brief" | "task" | "work" | "decision" | "chat" | "source" | "ai_work" | "judgment" | "deliverable" | "shape" | "text" | "answer" | "sticky" | "image";
 export type LabJudgmentType = "added_constraint" | "corrected_ai" | "rejected_option" | "requested_evidence" | "changed_direction" | "accepted_but_rewrote";
@@ -1227,7 +1228,7 @@ export function applyDurableBoard(base: { frames: LabFrame[]; nodes: LabNode[] }
         kind: "answer",
         frame: frameId,
         title: durable.title || "Answer",
-        summary: durable.body,
+        summary: parseAnswerBody(durable.body).text,
         typeLabel: "answer",
         ownership: durable.authorProfileId === board.viewerProfileId ? "yours" : "teammate",
         authorName: durable.authorName,
