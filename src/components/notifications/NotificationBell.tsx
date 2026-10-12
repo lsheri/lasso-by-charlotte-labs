@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 
@@ -56,6 +56,8 @@ export function NotificationBell({ className, side = "bottom", align = "end" }: 
     staleTime: 30_000,
   });
   const rows = (query.data ?? []) as NotificationRow[];
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const autoOpened = useRef(false);
   const count = badgeCount(rows);
 
   function onOpenChange(next: boolean) {
@@ -70,8 +72,23 @@ export function NotificationBell({ className, side = "bottom", align = "end" }: 
     }
   }
 
+  // SH-5c: ?notifications=open opens the visible bell once, then the param goes.
+  useEffect(() => {
+    if (autoOpened.current || !query.isSuccess) return;
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("notifications") !== "open") return;
+    const el = buttonRef.current;
+    if (!el || el.getClientRects().length === 0) return;
+    autoOpened.current = true;
+    url.searchParams.delete("notifications");
+    window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
+    onOpenChange(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query.isSuccess]);
+
   const trigger = (
     <button
+      ref={buttonRef}
       type="button"
       aria-label={count ? `${NOTIFICATION_COPY.bellLabel}, ${count} need you` : NOTIFICATION_COPY.bellLabel}
       onClick={narrow ? () => onOpenChange(true) : undefined}

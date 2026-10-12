@@ -39,6 +39,8 @@ import {
   unshareEngagement,
   type PartnerShare,
 } from "@/lib/partner-share";
+import { INVITE_COPY, inviteResultLine, looksLikeEmail } from "@/lib/board-invites-shared";
+import { inviteToBoard, listBoardInvites, withdrawBoardInvite } from "@/lib/board-invites.functions";
 
 export function ShareDialog({
   engagementId,
@@ -210,7 +212,7 @@ function SponsorRow({
 export const PEOPLE_COPY = {
   heading: "People",
   you: "You",
-  add: "Add people by name",
+  add: "Add people by name or email",
   view: "Viewer",
   multiplayer: "Collaborator",
   viewLine: "Opens the board and reads the cards",
@@ -284,8 +286,15 @@ function PeopleSection({
   const queryClient = useQueryClient();
   const list = useServerFn(listEngagementPeopleFn);
   const setAccess = useServerFn(setEngagementPersonAccessFn);
+  const setConversations = useServerFn(setPersonConversationsFn);
+  const invite = useServerFn(inviteToBoard);
+  const listInvites = useServerFn(listBoardInvites);
+  const withdraw = useServerFn(withdrawBoardInvite);
+  const invitesKey = ["board-invites", engagementId] as const;
   const [pick, setPick] = useState("");
   const [addLevel, setAddLevel] = useState<EngagementAccessChoice>("review");
+  const [addConversations, setAddConversations] = useState<ConversationAccess>("summaries");
+  const [inviteLine, setInviteLine] = useState<string | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
   const key = ["engagement-people", engagementId, profileId ?? ""] as const;
 
@@ -300,7 +309,7 @@ function PeopleSection({
   });
 
   const change = useMutation({
-    mutationFn: (input: { person_id: string; access: EngagementAccessChoice | "none" }) =>
+    mutationFn: (input: { person_id: string; access: EngagementAccessChoice | "none"; fromAdd?: boolean }) =>
       setAccess({
         data: {
           engagement_id: engagementId,
@@ -309,15 +318,25 @@ function PeopleSection({
           ...(profileId ? { profile_id: profileId } : {}),
         },
       }),
-    onSuccess: async (answer) => {
+    onSuccess: async (answer, input) => {
       setProblem(answer.status === "done" ? null : PEOPLE_COPY.problem);
       if (answer.status === "done") setPick("");
+      // SH-5c: a person added from the add row takes the picked conversations too.
+      if (answer.status === "done" && input.fromAdd && addConversations !== "summaries") {
+        await setConversations({
+          data: {
+            engagement_id: engagementId,
+            person_id: input.person_id,
+            conversations: addConversations,
+            ...(profileId ? { profile_id: profileId } : {}),
+          },
+        }).catch(() => setProblem(PEOPLE_COPY.problem));
+      }
       await queryClient.invalidateQueries({ queryKey: key });
     },
     onError: () => setProblem(PEOPLE_COPY.problem),
   });
 
-  const setConversations = useServerFn(setPersonConversationsFn);
   const changeConversations = useMutation({
     mutationFn: (input: { person_id: string; conversations: ConversationAccess }) =>
       setConversations({
@@ -335,6 +354,39 @@ function PeopleSection({
     onError: () => setProblem(PEOPLE_COPY.problem),
   });
 
+  const invites = useQuery({
+    queryKey: invitesKey,
+    queryFn: () => listInvites({ data: { engagementId } }),
+    enabled: open && !!engagementId,
+    staleTime: 5_000,
+  });
+  const sendInvite = useMutation({
+    mutationFn: (email: string) =>
+      invite({ data: { engagementId, email, level: addLevel, conversations: addConversations } }),
+    onMutate: () => {
+      setProblem(null);
+      setInviteLine(null);
+    },
+    onSuccess: async (answer) => {
+      if (!answer.ok) {
+        setProblem(answer.error);
+        return;
+      }
+      setPick("");
+      setInviteLine(inviteResultLine(answer));
+      await queryClient.invalidateQueries({ queryKey: invitesKey });
+    },
+    onError: () => setProblem(PEOPLE_COPY.problem),
+  });
+  const withdrawOne = useMutation({
+    mutationFn: (inviteId: string) => withdraw({ data: { inviteId } }),
+    onSuccess: async (answer) => {
+      setProblem(answer.ok ? null : answer.error);
+      await queryClient.invalidateQueries({ queryKey: invitesKey });
+    },
+    onError: () => setProblem(PEOPLE_COPY.problem),
+  });
+
   const rows = people.data?.people ?? [];
   const you = rows.find((person) => person.isYou);
   const onBoard = rows.filter((person) => !person.isYou && person.access !== null);
@@ -342,6 +394,9 @@ function PeopleSection({
   const suggestions = canPick.filter((person) =>
     person.display_name.toLocaleLowerCase().includes(pick.trim().toLocaleLowerCase()),
   );
+  const typed = pick.trim();
+  const inviteEmail = looksLikeEmail(typed) && suggestions.length === 0 ? typed : null;
+  const openInvites = invites.data ?? [];
   return (
     <section className="flex flex-col gap-3" aria-label={PEOPLE_COPY.heading}>
       <p className="font-mono text-xs uppercase tracking-[0.08em] text-foreground">{PEOPLE_COPY.heading}</p>
@@ -355,13 +410,19 @@ function PeopleSection({
           id="share-person"
           value={pick}
           autoComplete="off"
-          disabled={people.isPending || change.isPending || !people.data?.canShare || canPick.length === 0}
-          onChange={(event) => setPick(event.target.value)}
+          disabled={people.isPending || change.isPending || sendInvite.isPending || !people.data?.canShare}
+          onChange={(event) => {
+            setPick(event.target.value);
+            setInviteLine(null);
+          }}
         />
         <SegmentedChoice name="New person level" value={addLevel} choices={LEVEL_CHOICES}
           disabled={change.isPending || !people.data?.canShare}
           onChoose={setAddLevel} />
         </div>
+        <SegmentedChoice name="New person conversations" value={addConversations}
+          choices={CONVERSATION_CHOICES} disabled={change.isPending || !people.data?.canShare}
+          onChoose={setAddConversations} />
         {people.data && canPick.length === 0 ? (
           <p className="text-sm text-muted-foreground">{PEOPLE_COPY.nobodyToAdd}</p>
         ) : null}
@@ -373,7 +434,7 @@ function PeopleSection({
                   variant="ghost"
                   className="w-full justify-start"
                   disabled={change.isPending || !people.data?.canShare}
-                  onClick={() => change.mutate({ person_id: person.id, access: addLevel })}
+                  onClick={() => change.mutate({ person_id: person.id, access: addLevel, fromAdd: true })}
                 >
                   {person.display_name}
                 </Button>
@@ -381,9 +442,21 @@ function PeopleSection({
             ))}
           </ul>
         ) : null}
-        {pick.includes("@") && suggestions.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{PEOPLE_COPY.membersOnly}</p>
+        {inviteEmail ? (
+          <ul className="space-y-1" aria-label={PEOPLE_COPY.add}>
+            <li>
+              <Button
+                variant="ghost"
+                className="w-full justify-start"
+                disabled={sendInvite.isPending || !people.data?.canShare}
+                onClick={() => sendInvite.mutate(inviteEmail)}
+              >
+                {INVITE_COPY.invite(inviteEmail)}
+              </Button>
+            </li>
+          </ul>
         ) : null}
+        {inviteLine ? <p className="text-sm text-muted-foreground" role="status">{inviteLine}</p> : null}
       </div>
 
       <ul className="space-y-2">
@@ -419,6 +492,27 @@ function PeopleSection({
           </li>
         ))}
       </ul>
+      {openInvites.length > 0 ? (
+        <div className="flex flex-col gap-2" aria-label={INVITE_COPY.invitedHeading} role="group">
+          <p className="font-mono text-xs uppercase tracking-[0.08em] text-foreground">{INVITE_COPY.invitedHeading}</p>
+          <ul className="space-y-2">
+            {openInvites.map((row) => (
+              <li key={row.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border p-2">
+                <div className="flex min-w-0 flex-col">
+                  <span className="truncate text-sm text-foreground">{row.email}</span>
+                  <span className="text-sm text-muted-foreground">
+                    {row.level === "work" ? PEOPLE_COPY.multiplayer : PEOPLE_COPY.view} · {row.conversations === "full" ? PEOPLE_COPY.full : PEOPLE_COPY.summaries} · {row.status === "pending_approval" ? INVITE_COPY.statePending : INVITE_COPY.stateSent}
+                  </span>
+                </div>
+                <Button size="sm" variant="ghost" disabled={withdrawOne.isPending}
+                  onClick={() => withdrawOne.mutate(row.id)}>
+                  {INVITE_COPY.withdraw}
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
       {problem ? <p className="text-sm text-foreground">{problem}</p> : null}
     </section>
   );

@@ -6,6 +6,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 const shares = vi.fn();
 
 vi.mock("@tanstack/react-start", () => ({ useServerFn: (fn: unknown) => fn }));
+vi.mock("@/lib/board-invites.functions", () => ({
+  inviteToBoard: vi.fn(async () => ({ ok: true, status: "sent", emailed: true })),
+  listBoardInvites: vi.fn(async () => []),
+  withdrawBoardInvite: vi.fn(async () => ({ ok: true })),
+}));
 vi.mock("@/lib/engagement-access.functions", () => ({
   listEngagementPeopleFn: vi.fn(async () => ({ canShare: true, people: [] })),
   setEngagementPersonAccessFn: vi.fn(),
