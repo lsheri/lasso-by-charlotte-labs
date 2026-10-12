@@ -72,3 +72,21 @@ export function boardInviteReturnPath(code: string): string {
 export function isBoardInvitePath(next: string | undefined): next is string {
   return typeof next === "string" && next.startsWith("/board-invite?");
 }
+
+/** AU-1: a masked address, never the full one. "jo@x.com" -> "j***@x.com". */
+export function maskEmail(email: string | null | undefined): string | null {
+  const v = (email ?? "").trim();
+  const at = v.indexOf("@");
+  if (at < 1) return null;
+  return `${v[0]}***${v.slice(at)}`;
+}
+
+export const BOARD_SIGNUP_COPY = {
+  mismatch: (hint: string) => `This invite was sent to ${hint}. Use that address.`,
+} as const;
+
+/** The code inside a /board-invite?code=... next path, or null. */
+export function boardInviteCodeFrom(next: string | undefined): string | null {
+  if (!isBoardInvitePath(next)) return null;
+  return new URLSearchParams(next.split("?")[1] ?? "").get("code");
+}

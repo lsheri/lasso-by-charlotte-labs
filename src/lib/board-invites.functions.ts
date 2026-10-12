@@ -183,3 +183,38 @@ export const claimBoardInvite = createServerFn({ method: "POST" })
     }
     return { ok: true as const, status: String(r["status"] ?? ""), engagementId, profileId };
   });
+
+/**
+ * AU-1 (B1): public, called by sign up before an account exists. Returns only
+ * whether the typed address matches and a masked hint, never the address.
+ * A refusal records invite.blocked with state board_email_mismatch.
+ */
+export const checkBoardInviteSignup = createServerFn({ method: "POST" })
+  .inputValidator((input: { code: string; email: string }) => ({
+    code: String(input?.code ?? "").slice(0, 200),
+    email: String(input?.email ?? "").slice(0, 320),
+  }))
+  .handler(async ({ data }): Promise<{ matches: boolean; email_hint: string | null }> => {
+    const { maskEmail } = await import("@/lib/board-invites-shared");
+    if (!data.code) return { matches: true, email_hint: null };
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const admin = supabaseAdmin as unknown as { from: (t: string) => any };
+    const { data: row } = await admin
+      .from("board_invites").select("email, org_id").eq("code", data.code).maybeSingle();
+    // No such invite: the accept page already says so; sign up is not blocked here.
+    if (!row?.email) return { matches: true, email_hint: null };
+    const norm = (v: string) => v.trim().toLowerCase();
+    if (norm(row.email) === norm(data.email)) return { matches: true, email_hint: null };
+    try {
+      const { recordEvent } = await import("@/lib/telemetry.server");
+      await recordEvent(supabaseAdmin, {
+        eventType: "invite.blocked",
+        orgId: row.org_id,
+        userId: null,
+        dims: { state: "board_email_mismatch" },
+      });
+    } catch {
+      /* telemetry never blocks */
+    }
+    return { matches: false, email_hint: maskEmail(row.email) };
+  });

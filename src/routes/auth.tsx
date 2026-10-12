@@ -28,7 +28,9 @@ import { fetchProfile } from "@/hooks/use-profile";
 import { lookupActivationKeyFn, redeemActivationKeyFn } from "@/lib/activation-keys.functions";
 import { logEvent } from "@/lib/telemetry";
 import { consentTarget } from "@/lib/consent-return";
-import { isBoardInvitePath } from "@/lib/board-invites-shared";
+import { BOARD_SIGNUP_COPY, boardInviteCodeFrom, isBoardInvitePath } from "@/lib/board-invites-shared";
+import { checkBoardInviteSignup } from "@/lib/board-invites.functions";
+import { AUTH_COPY } from "@/lib/auth-copy";
 import { KEY_NOTICE_COPY, KeyNoticeSentence } from "@/lib/key-notice";
 
 export const Route = createFileRoute("/auth")({
@@ -151,6 +153,7 @@ function AuthPage() {
   }, [key]);
   const checkInvite = useServerFn(checkSignupInvite);
   const lookupKey = useServerFn(lookupActivationKeyFn);
+  const checkBoardSignup = useServerFn(checkBoardInviteSignup);
   const redeemKey = useServerFn(redeemActivationKeyFn);
   // Unit C: the email field speaks the register; with no signal it implies
   // nothing at all, rather than reading as a company.
@@ -348,6 +351,16 @@ function AuthPage() {
           return;
         }
       }
+      // AU-1 (B1): a board invite is checked against the typed address first.
+      const boardCode = boardInviteCodeFrom(next);
+      if (boardCode) {
+        const verdict = await checkBoardSignup({ data: { code: boardCode, email } }).catch(() => null);
+        if (verdict && !verdict.matches) {
+          setError(BOARD_SIGNUP_COPY.mismatch(verdict.email_hint ?? "another address"));
+          setPending(false);
+          return;
+        }
+      }
       // Unit C: the derived register rides the confirmation link, so it
       // survives being opened on another device. No signal, nothing carried.
       const { data, error: signUpError } = await supabase.auth.signUp({
@@ -400,7 +413,7 @@ function AuthPage() {
             {error ? <p className="mt-4 text-sm text-destructive">{error}</p> : null}
             <div className="mt-6 grid gap-3">
               <Button type="button" onClick={() => void useCurrentAccount()} disabled={pending}>
-                Use this key on {workspaceName}
+                {inviteCode && !key ? AUTH_COPY.continueInvite : AUTH_COPY.useKeyOn(workspaceName)}
               </Button>
               <Button type="button" variant="outline" onClick={() => void signOutForNewAccount()}>
                 Sign out and set this up as a new account
@@ -461,8 +474,15 @@ function AuthPage() {
               ? "Sign in"
               : invited
                 ? "Set up your account"
-                : "Create account"}{" "}
-            <em className="italic">to Lasso</em>
+                : null}
+            {mode === "signin" || invited ? (
+              <>
+                {" "}
+                <em className="italic">to Lasso</em>
+              </>
+            ) : (
+              AUTH_COPY.signupHeading
+            )}
           </h1>
           {consentTarget(next) && mode === "signin" ? (
             <p className="mt-2 text-sm text-muted-foreground">Sign in to finish connecting your AI tool.</p>
