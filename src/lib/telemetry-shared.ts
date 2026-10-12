@@ -455,7 +455,11 @@ export type TelemetryEvent =
    * granters_band (people who have shared with this person). It deliberately
    * carries no ids, of either the board or the person who shared it.
    */
-  | "shared.board_opened";
+  | "shared.board_opened"
+  /** NC-2: the notification panel was opened. Dims: needs_you (none | some). */
+  | "notification.opened"
+  /** NC-2: a notification was acted on. Dims: kind (notification kind), action (approve | decline | open). No ids, names or emails. */
+  | "notification.acted";
 
 export type TelemetryDims = Record<
   string,

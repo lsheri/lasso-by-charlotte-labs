@@ -34,6 +34,8 @@ export const MN5_NAV_ITEMS = ["from_your_people"] as const;
 export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   // nav.opened item values include workspace, look_back, your_coach, connect_tools, create_menu, recent_board, find_result, board and from_your_people; dimension keys remain unchanged.
   "nav.opened": ["item", "surface"],
+  "notification.acted": ["action", "kind"],
+  "notification.opened": ["needs_you"],
   "admin.dashboard_viewed": ["panels_shown"],
   "affiliation.disclosure_read": ["institution"],
   "analysis.completed": ["claims", "claims_rendered", "confirm_step", "cost_band", "cost_bucket", "deliverable_kind", "entry", "error_class", "handoff_parse", "handoffs_emitted", "items_read", "items_read_bucket", "outcome", "preset", "reason_class", "scope", "scope_type", "status", "suppressed", "suppressed_bucket", "tokens_in_bucket"],
