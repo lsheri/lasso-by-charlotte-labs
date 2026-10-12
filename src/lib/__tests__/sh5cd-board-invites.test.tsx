@@ -14,7 +14,37 @@ vi.mock("@tanstack/react-router", async (orig) => {
   };
 });
 vi.mock("@/integrations/supabase/client", () => ({ supabase: { auth: {} } }));
-vi.mock("@/lib/board-invites.functions", () => ({ claimBoardInvite: vi.fn(), previewBoardInvite: vi.fn() }));
+const inviteState = vi.hoisted(() => ({
+  listCalls: 0,
+  rows: [] as { id: string; email: string; level: string; conversations: string; status: string }[],
+}));
+vi.mock("@/lib/board-invites.functions", () => ({
+  claimBoardInvite: vi.fn(),
+  previewBoardInvite: vi.fn(),
+  inviteToBoard: vi.fn(async () => {
+    inviteState.rows = [{ id: "i-1", email: "jo@x.com", level: "review", conversations: "summaries", status: "sent" }];
+    return { ok: true, status: "sent", emailed: true };
+  }),
+  listBoardInvites: vi.fn(async () => {
+    inviteState.listCalls += 1;
+    return inviteState.rows;
+  }),
+  withdrawBoardInvite: vi.fn(async () => ({ ok: true })),
+}));
+vi.mock("@tanstack/react-start", () => ({ useServerFn: (fn: unknown) => fn }));
+vi.mock("@/lib/engagement-access.functions", () => ({
+  listEngagementPeopleFn: vi.fn(async () => ({
+    canShare: true,
+    people: [{ id: "p-me", display_name: "Liam", access: "work", isYou: true }],
+  })),
+  setEngagementPersonAccessFn: vi.fn(async () => ({ status: "done", result: "granted" })),
+  setPersonConversationsFn: vi.fn(async () => ({ status: "done", result: "unchanged" })),
+}));
+vi.mock("@/lib/board-share.functions", () => ({
+  listBoardShareLinksFn: vi.fn(async () => ({ links: [], holdsOthersWork: false, canShare: true })),
+  createBoardShareLinkFn: vi.fn(async () => ({ status: "error" })),
+  expireBoardShareLinkFn: vi.fn(async () => ({ status: "not_found" })),
+}));
 vi.mock("@/hooks/use-profile", () => ({ setActiveProfileId: vi.fn() }));
 vi.mock("@/components/layout/SessionHeader", () => ({ SessionHeader: () => null }));
 
@@ -95,5 +125,34 @@ describe("telemetry", () => {
     expect(EVENT_DIM_KEYS["board.invite_sent"]).toEqual(["conversations", "kind", "level", "status"]);
     expect(EVENT_DIM_KEYS["board.invite_withdrawn"]).toEqual(["kind"]);
     expect(EVENT_DIM_KEYS["board.invite_accepted"]).toEqual(["kind"]);
+  });
+});
+
+describe("SH-5c-fix the Invited group refreshes", () => {
+  it("a successful invite refetches the list and the new row renders with Withdraw", async () => {
+    const { QueryClient, QueryClientProvider } = await import("@tanstack/react-query");
+    const { ShareDialog } = await import("@/components/canvas-lab/ShareDialog");
+    const { fireEvent, waitFor } = await import("@testing-library/react");
+    inviteState.listCalls = 0;
+    inviteState.rows = [];
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <ShareDialog engagementId="e-1" profileId="p-me" />
+      </QueryClientProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Share" }));
+    await screen.findByText("You");
+    await waitFor(() => expect(inviteState.listCalls).toBe(1));
+    expect(screen.getByText("Nobody else in your workspace yet.")).toBeTruthy();
+
+    fireEvent.change(screen.getByLabelText("Add people by name or email"), { target: { value: "jo@x.com" } });
+    expect(screen.queryByText("Nobody else in your workspace yet.")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Invite jo@x.com" }));
+
+    await waitFor(() => expect(inviteState.listCalls).toBeGreaterThan(1));
+    const group = await screen.findByRole("group", { name: "Invited" });
+    expect(group.textContent).toContain("jo@x.com");
+    expect(screen.getByRole("button", { name: "Withdraw" })).toBeTruthy();
   });
 });
