@@ -25,7 +25,7 @@ vi.mock("@/hooks/use-members", () => ({
   useMemberAction: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 vi.mock("@/components/invites/InviteDialog", () => ({ InviteDialog: ({ trigger }: { trigger: React.ReactNode }) => <>{trigger}</> }));
-vi.mock("@/components/settings/YourDataCard", () => ({ OrgDataCard: () => <div>Your data</div> }));
+vi.mock("@/components/settings/DataSection", () => ({ COPY: { membersLink: "The workspace data level is in Settings, under Your data." } }));
 vi.mock("@/components/coaching/ShareWorkDialog", () => ({ ShareWorkDialog: () => null }));
 
 function open(Page: typeof MembersPage) {

@@ -17,6 +17,12 @@ type SettingsCtx = {
 
 const SettingsCtx = createContext<SettingsCtx | null>(null);
 
+export function resolveSettingsSection(sectionId: string): string;
+export function resolveSettingsSection(sectionId: string | undefined): string | undefined;
+export function resolveSettingsSection(sectionId: string | undefined): string | undefined {
+  return sectionId === "data-use" ? "your-data" : sectionId;
+}
+
 export function SettingsDialogProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const [section, setSection] = useState<string | undefined>(undefined);
@@ -30,7 +36,7 @@ export function SettingsDialogProvider({ children }: { children: ReactNode }) {
         openedWithSection,
         openedFrom,
         openSettings: (sectionId?: string, from?: SettingsOpenFrom) => {
-          setSection(sectionId);
+          setSection(resolveSettingsSection(sectionId));
           setOpenedWithSection(Boolean(sectionId));
           setOpenedFrom(from);
           setOpen(true);

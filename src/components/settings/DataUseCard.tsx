@@ -14,7 +14,7 @@ import type { ConsentPurpose } from "@/lib/telemetry-v2-shared";
  * Only an admin can answer for the organisation. Individual research
  * participation is not offered here and will not be until a protocol exists.
  */
-export function DataUseCard() {
+export function DataUseCard({ individual = false, heading }: { individual?: boolean; heading?: string }) {
   const { data: profile } = useProfile();
   const queryClient = useQueryClient();
   const load = useServerFn(getDataUse);
@@ -56,16 +56,16 @@ export function DataUseCard() {
 
   return (
     <section>
-      <h2 className="micro-label micro-label-section">Data use</h2>
-      <p className="mt-1.5 text-sm text-muted-foreground">
+      <h2 className="micro-label micro-label-section">{heading ?? "Data use"}</h2>
+      {individual ? null : <p className="mt-1.5 text-sm text-muted-foreground">
         {state.is_admin
           ? "What your workspace data may be used for. You can change any of these at any time."
           : "What your workspace data may be used for. Only an admin can change these."}
-      </p>
+      </p>}
       {saveError ? <p className="mt-2 text-sm text-destructive">{saveError}</p> : null}
 
       <div className="mt-4 space-y-3">
-        {VISIBLE_PURPOSE_COPY.map((purpose) => {
+        {VISIBLE_PURPOSE_COPY.filter((purpose) => !individual || purpose.purpose === "deidentified_improvement").map((purpose) => {
           const answer = state.grants[purpose.purpose];
           const on =
             purpose.alwaysOn ||
@@ -78,8 +78,10 @@ export function DataUseCard() {
             >
               <div className="min-w-0">
                 <p className="text-sm font-medium text-foreground">{purpose.title}</p>
-                <p className="mt-1 text-sm text-muted-foreground">{purpose.unlocks}</p>
-                <p className="mt-1 text-xs text-muted-foreground">{purpose.declining}</p>
+                {individual ? null : <>
+                  <p className="mt-1 text-sm text-muted-foreground">{purpose.unlocks}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{purpose.declining}</p>
+                </>}
                 {purpose.note ? (
                   <p className="mt-1 text-xs text-muted-foreground">{purpose.note}</p>
                 ) : null}
