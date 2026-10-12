@@ -51,6 +51,7 @@ afterEach(cleanup);
 describe("AU-1b signed out with a made-up key", () => {
   it("shows the invalid line and no sponsored line, using the public check", async () => {
     const Comp = (AuthRoute as unknown as { options: { component: () => JSX.Element } }).options.component;
+    console.log("COMP", String(Comp).slice(0, 200));
     render(<Comp />);
     // The query the page runs signed out goes through the public check.
     expect(mocks.keyOpts?.enabled).toBe(true);
