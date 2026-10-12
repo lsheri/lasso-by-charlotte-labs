@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { Menu, X } from "lucide-react";
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type Ref } from "react";
 
 import {
   DropdownMenu,
@@ -334,8 +334,6 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   const [newFrameName, setNewFrameName] = useState("");
   const [newFrameError, setNewFrameError] = useState(false);
   const [inlineAddOpen, setInlineAddOpen] = useState(false);
-  const [inlineFrameName, setInlineFrameName] = useState("");
-  const [inlineFrameError, setInlineFrameError] = useState(false);
   const [dropPrompt, setDropPrompt] = useState<{ nodeId: string; frameId: string } | null>(null);
   const dropPromptRef = useRef<{ nodeId: string; frameId: string } | null>(null);
   dropPromptRef.current = dropPrompt;
@@ -2957,7 +2955,7 @@ export function isTypingTarget(el: EventTarget | Element | null | undefined): bo
  * BB-3: the inline workstream name keeps its own draft, so typing a name never
  * re-renders the board. Enter, Add and Escape behave exactly as before.
  */
-function InlineWorkstreamName({ inputRef, onAdd, onClose }: { inputRef: React.RefObject<HTMLInputElement | null>; onAdd: (name: string) => boolean; onClose: () => void }) {
+function InlineWorkstreamName({ inputRef, onAdd, onClose }: { inputRef: Ref<HTMLInputElement>; onAdd: (name: string) => boolean; onClose: () => void }) {
   const [name, setName] = useState("");
   const [error, setError] = useState(false);
   const done = () => { setName(""); setError(false); onClose(); };
