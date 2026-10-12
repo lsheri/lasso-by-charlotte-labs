@@ -1,4 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
+import { useOptionalQueryClient } from "@/hooks/use-optional-query-client";
+import { BOARD_NEW_COUNTS_KEY } from "@/hooks/use-board-new-counts";
 import { useEffect, useRef } from "react";
 
 import { useProfile } from "@/hooks/use-profile";
@@ -54,6 +56,7 @@ export async function recordEngagementView(
  */
 export function useRecordEngagementView(engagementId: string | undefined): void {
   const { data: profile } = useProfile();
+  const queryClient = useOptionalQueryClient();
   const written = useRef<string | null>(null);
   const profileId = profile?.id;
 
@@ -62,8 +65,10 @@ export function useRecordEngagementView(engagementId: string | undefined): void 
     const key = `${profileId}:${engagementId}`;
     if (written.current === key) return;
     written.current = key;
-    void recordEngagementView(profileId, engagementId).catch(() => {
+    void recordEngagementView(profileId, engagementId)
+      .then(() => queryClient?.invalidateQueries({ queryKey: BOARD_NEW_COUNTS_KEY }))
+      .catch(() => {
       /* a recents row must never interrupt opening a board */
     });
-  }, [profileId, engagementId]);
+  }, [profileId, engagementId, queryClient]);
 }

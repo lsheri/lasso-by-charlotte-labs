@@ -59,7 +59,7 @@ describe("invite variants", () => {
     const body = await sent({ role: "coach", orgType: "business", subjectNames: ["Ada", "Bo"] });
     expect(body.template.id).toBe("invite-coach-firm");
     expect(body.template.variables.COACH_SCOPE_LINE).toBe(
-      "You will see the work of the people you were added to: Ada and Bo. Nothing else in the workspace is visible to you.",
+      "You will see only the work Ada and Bo choose to share with you. Nothing else in the workspace is visible to you.",
     );
     expect(BANNED.test(body.template.variables.COACH_SCOPE_LINE)).toBe(false);
   });

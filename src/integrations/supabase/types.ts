@@ -5610,6 +5610,13 @@ export type Database = {
       archive_container: { Args: { p_id: string }; Returns: Json }
       assert_seat_available: { Args: { p_org_id: string }; Returns: undefined }
       board_invite_preview: { Args: { p_code: string }; Returns: Json }
+      board_new_counts: {
+        Args: never
+        Returns: {
+          engagement_id: string
+          new_count: number
+        }[]
+      }
       can_manage_key_request: {
         Args: { p_request_id: string }
         Returns: boolean

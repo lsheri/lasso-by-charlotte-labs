@@ -120,3 +120,67 @@ export async function sendInviteApprovalEmails(inviteId: string, inviterUserId: 
     return false;
   }
 }
+
+/** F6: where the board-shared email opens the board. */
+export function buildBoardOpenUrl(engagementId: string, origin: string = CANONICAL_ORIGIN): string {
+  return new URL(`/engagements/${encodeURIComponent(engagementId)}/canvas-lab`, origin).toString();
+}
+
+/**
+ * F6: someone already in the workspace was added to a board by name. Sends the
+ * board-shared email and writes a share_received bell row. Never throws: a
+ * failed send never fails the add, and is logged here only.
+ */
+export async function notifyBoardShared(args: {
+  engagementId: string;
+  recipientProfileId: string;
+  sharerProfileId: string;
+  level: string;
+  conversations: string;
+}): Promise<void> {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const admin = supabaseAdmin as unknown as {
+      from: (t: string) => any;
+      rpc: (fn: string, args: Record<string, unknown>) => Promise<{ error: unknown }>;
+      auth: { admin: { getUserById: (id: string) => Promise<{ data: { user: { email?: string } | null } }> } };
+    };
+    const [{ data: board }, { data: recipient }, { data: sharer }] = await Promise.all([
+      admin.from("engagements").select("title, org_id").eq("id", args.engagementId).maybeSingle(),
+      admin.from("profiles").select("user_id").eq("id", args.recipientProfileId).maybeSingle(),
+      admin.from("profiles").select("display_name").eq("id", args.sharerProfileId).maybeSingle(),
+    ]);
+    const title = String(board?.title ?? "a board");
+    if (board?.org_id) {
+      const { error } = await admin.rpc("notify", {
+        p_recipient: args.recipientProfileId,
+        p_org: board.org_id,
+        p_kind: "share_received",
+        p_section: "updates",
+        p_subject_type: "engagement",
+        p_subject_id: args.engagementId,
+        p_group_key: `share:${args.engagementId}`,
+        p_payload: { board: title },
+      });
+      if (error) console.error("[board-shared] notify failed", { message: (error as Error).message });
+    }
+    const key = resendApiKey();
+    if (!key || !recipient?.user_id) return;
+    const { data } = await admin.auth.admin.getUserById(recipient.user_id);
+    const to = data.user?.email;
+    if (!to) return;
+    const result = await sendResendTemplate(key, {
+      to,
+      template: "board-shared",
+      variables: {
+        SHARER_NAME: escapeHtml(String(sharer?.display_name ?? "Someone")),
+        BOARD_NAME: escapeHtml(title),
+        ACCESS_LINE: boardAccessLine(args.level, args.conversations),
+        OPEN_URL: buildBoardOpenUrl(args.engagementId),
+      },
+    });
+    if (!result.ok) console.error("[board-shared] send failed", { status: result.status });
+  } catch (e) {
+    console.error("[board-shared] threw", { message: (e as Error).message });
+  }
+}

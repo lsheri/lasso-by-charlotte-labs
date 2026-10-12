@@ -1,5 +1,6 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useState } from "react";
+import { BoardNewPill } from "@/components/board/BoardNewPill";
 
 import { CoachAskSheet } from "@/components/coaching/CoachAskSheet";
 import { GraphiteIcon } from "@/components/notebook/icons";
@@ -117,6 +118,7 @@ export function MobileTabBar() {
               >
                 <GraphiteIcon name="engagement" size={16} />
                 <span className="truncate">{engagementDisplayTitle(engagement)}</span>
+                <BoardNewPill engagementId={engagement.id} />
               </Link>
             ))}
             {engagements && engagements.length === 0 ? (
