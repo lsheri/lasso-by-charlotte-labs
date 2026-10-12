@@ -1,4 +1,5 @@
 import { MoreHorizontal } from "lucide-react";
+import { useState } from "react";
 
 import {
   DropdownMenu,
@@ -54,6 +55,7 @@ export function CardMenu({
   /** The card's own actions, rendered above the shared item actions. */
   children?: React.ReactNode;
 }) {
+  const [open, setOpen] = useState(false);
   const { items, dialogs } = useRowMenuParts({ item, onFluency, engagementId, onRemoved });
   const mapping = item.work_item_tasks?.[0]?.tasks ?? null;
   const place = mapping
@@ -63,7 +65,7 @@ export function CardMenu({
 
   return (
     <>
-      <DropdownMenu>
+      <DropdownMenu open={open} onOpenChange={setOpen}>
         <DropdownMenuTrigger
           data-testid="card-menu-trigger"
           aria-label="Open this card's menu"
@@ -75,6 +77,12 @@ export function CardMenu({
         <DropdownMenuContent
           align="end"
           className="w-72"
+          onClickCapture={(event) => {
+            if (!(event.target instanceof Element)) return;
+            const action = event.target.closest('button, a, [role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"]');
+            if (!action || action.matches(':disabled, [aria-disabled="true"]')) return;
+            setOpen(false);
+          }}
           onClick={(event) => event.stopPropagation()}
         >
           <div className="space-y-0.5 px-2 py-1.5">

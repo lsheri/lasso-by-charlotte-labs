@@ -155,7 +155,7 @@ export function HomeBoard() {
               )}
             />
             <Button asChild type="button" variant="outline" className="h-9" onClick={() => emitClientEvent("home.past_work_opened", {})}>
-              <Link to="/archive">Past work</Link>
+              <Link to="/archive">Look back</Link>
             </Button>
           </div>
         )}
