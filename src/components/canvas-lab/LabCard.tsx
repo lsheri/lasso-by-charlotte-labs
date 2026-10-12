@@ -1,3 +1,4 @@
+import { stableMemo } from "@/components/canvas-lab/stable-memo";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Paperclip } from "lucide-react";
 
@@ -32,7 +33,7 @@ import type { TeammateMark } from "@/lib/teammate-mark";
  * Focus opens the same card up enough to work with. The card never offers an
  * action the owner rules would refuse.
  */
-export function LabCard({
+function LabCardInner({
   node,
   item,
   selected,
@@ -296,3 +297,6 @@ export function LabCard({
     </div>
   );
 }
+
+/** BB-3: memoized so typing in one card never re-renders its siblings. */
+export const LabCard = stableMemo(LabCardInner);

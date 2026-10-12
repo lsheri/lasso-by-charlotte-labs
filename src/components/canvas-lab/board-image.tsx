@@ -1,3 +1,4 @@
+import { stableMemo } from "@/components/canvas-lab/stable-memo";
 import { useEffect, useState } from "react";
 import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent } from "react";
 
@@ -74,7 +75,7 @@ export function buildImageNodeInput(input: { clientKey: string; body: WorkboardI
 const CORNERS: LabResizeCorner[] = ["nw", "ne", "se", "sw"];
 
 /** DD1-f: the picture itself on the board, no card chrome. */
-export function LabImage({ node, selected, layoutEditable, onSelect, onDragStart, onResizeStart, onResizeKeyDown, onResizeKeyUp, onRemove }: {
+function LabImageInner({ node, selected, layoutEditable, onSelect, onDragStart, onResizeStart, onResizeKeyDown, onResizeKeyUp, onRemove }: {
   node: LabNode;
   selected: boolean;
   layoutEditable: boolean;
@@ -113,3 +114,6 @@ export function LabImage({ node, selected, layoutEditable, onSelect, onDragStart
     </section>
   );
 }
+
+/** BB-3: memoized so typing in one card never re-renders its siblings. */
+export const LabImage = stableMemo(LabImageInner);

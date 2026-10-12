@@ -1,3 +1,4 @@
+import { stableMemo } from "@/components/canvas-lab/stable-memo";
 import type { CSSProperties, PointerEvent as ReactPointerEvent, KeyboardEvent as ReactKeyboardEvent } from "react";
 
 import type { LabNode, LabResizeCorner } from "@/components/canvas-lab/canvas-lab-model";
@@ -13,7 +14,7 @@ const COLOUR_VARS = {
 
 const CORNERS: LabResizeCorner[] = ["nw", "ne", "se", "sw"];
 
-export function LabColourBlock({ node, selected, editable, onSelect, onDragStart, onResizeStart, onResizeKeyDown, onResizeKeyUp, onRemove }: {
+function LabColourBlockInner({ node, selected, editable, onSelect, onDragStart, onResizeStart, onResizeKeyDown, onResizeKeyUp, onRemove }: {
   node: LabNode;
   selected: boolean;
   editable: boolean;
@@ -49,3 +50,6 @@ export function LabColourBlock({ node, selected, editable, onSelect, onDragStart
     </section>
   );
 }
+
+/** BB-3: memoized so typing in one card never re-renders its siblings. */
+export const LabColourBlock = stableMemo(LabColourBlockInner);

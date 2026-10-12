@@ -1,3 +1,4 @@
+import { stableMemo } from "@/components/canvas-lab/stable-memo";
 import { MoreHorizontal } from "lucide-react";
 
 import { answerAsOf } from "@/lib/answer-card";
@@ -14,7 +15,7 @@ import {
  * work and decisions at a glance. The date is read from the saved row.
  * It belongs to a workstream like any other card, or to none at all.
  */
-export function LabAnswerCard({
+function LabAnswerCardInner({
   node,
   focused,
   stackZ,
@@ -91,3 +92,6 @@ export function LabAnswerCard({
     </article>
   );
 }
+
+/** BB-3: memoized so typing in one card never re-renders its siblings. */
+export const LabAnswerCard = stableMemo(LabAnswerCardInner);

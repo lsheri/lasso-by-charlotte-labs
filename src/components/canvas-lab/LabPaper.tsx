@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 import { GraphiteIcon, type GraphiteIconName } from "@/components/notebook/icons";
 import { cardSizeTier, ownerLabel, type LabNode } from "@/components/canvas-lab/canvas-lab-model";
 import { cn } from "@/lib/utils";
@@ -38,6 +40,8 @@ export function LabPaper({
   onOpenTrail?: (() => void) | undefined;
 }) {
   const tier = cardSizeTier(node);
+  // BB-3: the note is a local draft while typing; the board hears it on blur.
+  const [draft, setDraft] = useState<string | null>(null);
 
   return (
     <div className={cn("nb-paper canvas-lab-paper", `canvas-lab-paper-${node.ownership}`)} data-tier={tier}>
@@ -57,9 +61,9 @@ export function LabPaper({
         {node.local ? (
           <textarea
             aria-label={`Edit ${node.title} note`}
-            value={node.summary}
-            onChange={(event) => onEdit(event.target.value)}
-            onBlur={onEditCommitted}
+            value={draft ?? node.summary}
+            onChange={(event) => setDraft(event.target.value)}
+            onBlur={() => { if (draft !== null) { onEdit(draft); setDraft(null); } onEditCommitted(); }}
             onPointerDown={(event) => event.stopPropagation()}
             className="canvas-lab-paper-edit min-h-0 w-full flex-1 basis-0 resize-none overflow-auto border border-[var(--nb-rule)] bg-card px-2 py-1 nb-type-small leading-[17px] text-foreground outline-none focus:border-[var(--nb-green)]"
           />

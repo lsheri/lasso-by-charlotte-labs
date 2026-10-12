@@ -1,3 +1,4 @@
+import { stableMemo } from "@/components/canvas-lab/stable-memo";
 import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
 
 import type { LabNode, LabResizeCorner } from "@/components/canvas-lab/canvas-lab-model";
@@ -12,7 +13,7 @@ const CORNERS: LabResizeCorner[] = ["nw", "ne", "se", "sw"];
  * (layoutEditable false) keeps the old transparent behaviour, so nothing on a
  * shared board can be moved or edited.
  */
-export function LabTextBlock({ node, selected, editable, layoutEditable, onSelect, onDragStart, onResizeStart, onResizeKeyDown, onResizeKeyUp, onChange, onCommit, onRemove }: {
+function LabTextBlockInner({ node, selected, editable, layoutEditable, onSelect, onDragStart, onResizeStart, onResizeKeyDown, onResizeKeyUp, onChange, onCommit, onRemove }: {
   node: LabNode;
   selected: boolean;
   editable: boolean;
@@ -26,7 +27,9 @@ export function LabTextBlock({ node, selected, editable, layoutEditable, onSelec
   onCommit: (body: WorkboardTextBody) => void;
   onRemove: () => void;
 }) {
-  const body: WorkboardTextBody = { text: node.summary, size: node.textSize ?? "label", weight: node.textWeight ?? "medium", colour: node.textColour ?? "ink" };
+  // BB-3: the words are a local draft while typing; the board hears them on blur.
+  const [draft, setDraft] = useState<string | null>(null);
+  const body: WorkboardTextBody = { text: draft ?? node.summary, size: node.textSize ?? "label", weight: node.textWeight ?? "medium", colour: node.textColour ?? "ink" };
   // A freshly added block (selected, editable, still empty at mount) opens in
   // edit mode so adding text and typing stays one step.
   const [editing, setEditing] = useState(() => selected && editable && body.text.length === 0);
@@ -34,7 +37,6 @@ export function LabTextBlock({ node, selected, editable, layoutEditable, onSelec
   const textRef = useRef<HTMLTextAreaElement>(null);
   const live = layoutEditable || editable;
   const style = { left: node.x, top: node.y, width: node.width, height: node.height, pointerEvents: live || selected ? "auto" : "none" } satisfies CSSProperties;
-  const change = (patch: Partial<WorkboardTextBody>) => onChange({ ...body, ...patch });
 
   useEffect(() => {
     if (!editing) return;
@@ -71,7 +73,7 @@ export function LabTextBlock({ node, selected, editable, layoutEditable, onSelec
       {(["top", "right", "bottom", "left"] as const).map((edge) => <button key={edge} type="button" tabIndex={-1} aria-label={`Move text block from ${edge} edge`} className="canvas-lab-text-block-edge" data-edge={edge} onPointerDown={(event) => { event.stopPropagation(); onSelect(); onDragStart(event); }} />)}
       <textarea ref={textRef} aria-label="Text block words" maxLength={WORKBOARD_TEXT_MAX_LENGTH} value={body.text} readOnly={!editable || !editing} placeholder="Type something" style={live && !editing ? { pointerEvents: "none" } : undefined}
         onPointerDown={(event) => event.stopPropagation()}
-        onChange={(event) => change({ text: event.target.value })}
+        onChange={(event) => setDraft(event.target.value)}
         onKeyDown={(event) => {
           if (event.key !== "Escape") return;
           event.preventDefault();
@@ -79,7 +81,7 @@ export function LabTextBlock({ node, selected, editable, layoutEditable, onSelec
           setEditing(false);
           sectionRef.current?.focus();
         }}
-        onBlur={() => onCommit(body)} />
+        onBlur={() => { if (draft !== null) { onChange(body); setDraft(null); } onCommit(body); }} />
       {selected && layoutEditable ? <div className="canvas-lab-text-block-controls" onPointerDown={(event) => event.stopPropagation()}>
         {editable ? <><select aria-label="Text size" value={body.size} onChange={(event) => { const next = { ...body, size: event.target.value as WorkboardTextBody["size"] }; onChange(next); onCommit(next); }}>{WORKBOARD_TEXT_SIZES.map((value) => <option key={value} value={value}>{value}</option>)}</select>
         <select aria-label="Text weight" value={body.weight} onChange={(event) => { const next = { ...body, weight: event.target.value as WorkboardTextBody["weight"] }; onChange(next); onCommit(next); }}>{WORKBOARD_TEXT_WEIGHTS.map((value) => <option key={value} value={value}>{value}</option>)}</select>
@@ -90,3 +92,6 @@ export function LabTextBlock({ node, selected, editable, layoutEditable, onSelec
     </section>
   );
 }
+
+/** BB-3: memoized so typing in one card never re-renders its siblings. */
+export const LabTextBlock = stableMemo(LabTextBlockInner);
