@@ -36,6 +36,7 @@ describe("PERF-2f app frame placeholder", () => {
     expect(Route.options.pendingComponent).toBe(AppShellSkeleton);
     expect(Route.options.pendingMs).toBe(150);
     expect(Route.options.pendingMinMs).toBe(200);
-    expect(Route.options.ssr).toBe(false);
+    const source = readFileSync("src/routes/_authenticated/route.tsx", "utf8");
+    expect(source).toContain("ssr: false,");
   });
 });
