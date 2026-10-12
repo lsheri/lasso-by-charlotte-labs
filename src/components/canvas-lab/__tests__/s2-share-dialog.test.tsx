@@ -101,7 +101,7 @@ describe("S2 — giving someone one of two things", () => {
     expect(screen.queryByText("Working on the same board together")).toBeNull();
   });
 
-  it("with nobody to pick, the owner remains without access controls", async () => {
+  it("with nobody to pick, your level remains without access controls", async () => {
     const { listEngagementPeopleFn } = await import("@/lib/engagement-access.functions");
     vi.mocked(listEngagementPeopleFn).mockResolvedValueOnce({
       canShare: true,
@@ -110,7 +110,9 @@ describe("S2 — giving someone one of two things", () => {
     mount();
     fireEvent.click(screen.getByRole("button", { name: "Share" }));
     await screen.findByText("Nobody else is on this board yet.");
-    expect(screen.getByText("You · Owner")).toBeTruthy();
+    expect(screen.getByText("You · Multiplayer")).toBeTruthy();
+    expect(screen.getByText("Nobody else is in your workspace yet. Invite people from Settings, People.")).toBeTruthy();
+    expect(screen.getByLabelText("Add people by name").hasAttribute("disabled")).toBe(true);
     for (const label of ["Can view", "Multiplayer", "Remove"]) expect(screen.queryByRole("button", { name: label })).toBeNull();
   });
 });

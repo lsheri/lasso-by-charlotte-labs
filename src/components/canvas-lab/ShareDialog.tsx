@@ -181,7 +181,7 @@ function SponsorRow({
 
 export const PEOPLE_COPY = {
   heading: "Who has access",
-  owner: "You · Owner",
+  you: "You",
   add: "Add people by name",
   view: "Can view",
   multiplayer: "Multiplayer",
@@ -190,6 +190,7 @@ export const PEOPLE_COPY = {
   remove: "Remove",
   membersOnly: "Only people in this workspace can be added here.",
   empty: "Nobody else is on this board yet.",
+  nobodyToAdd: "Nobody else is in your workspace yet. Invite people from Settings, People.",
   problem: "That could not be changed.",
 } as const;
 
@@ -238,6 +239,7 @@ function PeopleSection({
   });
 
   const rows = people.data?.people ?? [];
+  const you = rows.find((person) => person.isYou);
   const onBoard = rows.filter((person) => !person.isYou && person.access !== null);
   const canPick = rows.filter((person) => !person.isYou && person.access === null);
   const suggestions = canPick.filter((person) =>
@@ -258,9 +260,12 @@ function PeopleSection({
           id="share-person"
           value={pick}
           autoComplete="off"
-          disabled={people.isPending || change.isPending || !people.data?.canShare}
+          disabled={people.isPending || change.isPending || !people.data?.canShare || canPick.length === 0}
           onChange={(event) => setPick(event.target.value)}
         />
+        {people.data && canPick.length === 0 ? (
+          <p className="nb-type-small text-muted-foreground">{PEOPLE_COPY.nobodyToAdd}</p>
+        ) : null}
         {pick.trim() && suggestions.length > 0 ? (
           <ul className="space-y-1" aria-label={PEOPLE_COPY.add}>
             {suggestions.map((person) => (
@@ -283,9 +288,16 @@ function PeopleSection({
       </div>
 
       <p className="nb-type-small text-foreground">{PEOPLE_COPY.heading}</p>
+      {choices.map((choice) => (
+        <p key={choice.value} className="nb-type-small text-muted-foreground">
+          {choice.label}: {choice.line}
+        </p>
+      ))}
       <ul className="space-y-2">
-        {rows.some((person) => person.isYou) ? (
-          <li className="nb-type-small text-muted-foreground">{PEOPLE_COPY.owner}</li>
+        {you ? (
+          <li className="nb-type-small text-muted-foreground">
+            {PEOPLE_COPY.you}{you.access ? ` · ${choices.find((choice) => choice.value === you.access)?.label ?? ""}` : ""}
+          </li>
         ) : null}
         {onBoard.map((person) => (
           <li key={person.id} className="flex flex-col gap-2 rounded-md border border-border p-2">
@@ -296,7 +308,7 @@ function PeopleSection({
                   <Button
                     key={choice.value}
                     size="sm"
-                    variant="outline"
+                    variant={person.access === choice.value ? "secondary" : "outline"}
                     aria-pressed={person.access === choice.value}
                     disabled={change.isPending || !people.data?.canShare}
                     onClick={() => change.mutate({ person_id: person.id, access: choice.value })}
@@ -314,11 +326,6 @@ function PeopleSection({
                 {PEOPLE_COPY.remove}
               </Button>
             </div>
-            {choices.map((choice) => (
-              <p key={choice.value} className="nb-type-small text-muted-foreground">
-                {choice.label}: {choice.line}
-              </p>
-            ))}
           </li>
         ))}
       </ul>

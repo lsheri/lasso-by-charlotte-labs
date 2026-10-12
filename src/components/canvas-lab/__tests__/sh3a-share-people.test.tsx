@@ -18,13 +18,15 @@ vi.mock("@/lib/engagement-access.functions", () => ({
 vi.mock("@/lib/partner-share", () => ({ listMyPartnerShares: vi.fn(async () => []), listSharedEngagements: vi.fn(), shareEngagement: vi.fn(), unshareEngagement: vi.fn() }));
 vi.mock("@/components/canvas-lab/ShareBoardDialog", () => ({ BoardLinkSection: () => null }));
 import { ShareDialog, PEOPLE_COPY } from "@/components/canvas-lab/ShareDialog";
-import { setEngagementPersonAccessFn } from "@/lib/engagement-access.functions";
+import { listEngagementPeopleFn, setEngagementPersonAccessFn } from "@/lib/engagement-access.functions";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 async function mount() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(<QueryClientProvider client={client}><ShareDialog engagementId="board" profileId="me" /></QueryClientProvider>);
   fireEvent.click(screen.getByRole("button", { name: "Share" }));
-  await screen.findByText("Owen");
+  await screen.findByText(/^You · /);
   return screen.getByRole("region", { name: "Who has access" });
 }
 
@@ -47,13 +49,52 @@ describe("SH-3a people access", () => {
     expect(within(section).getByText("Only people in this workspace can be added here.")).toBeTruthy();
     expect(setEngagementPersonAccessFn).not.toHaveBeenCalled();
   });
-  it("puts the owner first and adds a suggested member as Can view", async () => {
+  it("puts your level first and adds a suggested member as Can view", async () => {
     const section = await mount();
-    expect(within(section).getAllByRole("listitem")[0]?.textContent).toBe("You · Owner");
+    expect(within(section).getAllByRole("listitem")[0]?.textContent?.trim()).toBe("You · Multiplayer");
     fireEvent.change(within(section).getByLabelText("Add people by name"), { target: { value: "nad" } });
     expect(within(section).queryByRole("button", { name: "Owen" })).toBeNull();
     fireEvent.click(within(section).getByRole("button", { name: "Nadia" }));
     await waitFor(() => expect(setEngagementPersonAccessFn).toHaveBeenCalledWith({ data: { engagement_id: "board", profile_id: "me", person_id: "new", access: "review" } }));
+  });
+  it("labels a non-owner viewer with their own level, never ownership", async () => {
+    vi.mocked(listEngagementPeopleFn).mockResolvedValueOnce({
+      canShare: false,
+      people: [{ id: "me", display_name: "Liam", access: "review", isYou: true }],
+    });
+    const section = await mount();
+    expect(within(section).getByText("You · Can view")).toBeTruthy();
+    expect(section.textContent).not.toContain("Owner");
+  });
+  it("shows the explanations once with two other people on the board", async () => {
+    vi.mocked(listEngagementPeopleFn).mockResolvedValueOnce({
+      canShare: true,
+      people: [
+        { id: "me", display_name: "Liam", access: "work", isYou: true },
+        { id: "other", display_name: "Owen", access: "review", isYou: false },
+        { id: "second", display_name: "Nadia", access: "work", isYou: false },
+      ],
+    });
+    const section = await mount();
+    expect(within(section).getAllByText("Can view: Can open the board and read the cards.")).toHaveLength(1);
+    expect(within(section).getAllByText("Multiplayer: Can also add and arrange work.")).toHaveLength(1);
+  });
+  it("shows Owen's Can view choice pressed and using the secondary variant", async () => {
+    const section = await mount();
+    const group = within(section).getByRole("group", { name: "Owen" });
+    const view = within(group).getByRole("button", { name: "Can view", pressed: true });
+    const multiplayer = within(group).getByRole("button", { name: "Multiplayer", pressed: false });
+    expect(view.className).toBe(cn(buttonVariants({ variant: "secondary", size: "sm" })));
+    expect(multiplayer.className).toBe(cn(buttonVariants({ variant: "outline", size: "sm" })));
+  });
+  it("restores empty-workspace guidance and disables the field", async () => {
+    vi.mocked(listEngagementPeopleFn).mockResolvedValueOnce({
+      canShare: true,
+      people: [{ id: "me", display_name: "Liam", access: "work", isYou: true }],
+    });
+    const section = await mount();
+    expect(within(section).getByText("Nobody else is in your workspace yet. Invite people from Settings, People.")).toBeTruthy();
+    expect(within(section).getByLabelText("Add people by name").hasAttribute("disabled")).toBe(true);
   });
   it("renders no internal role words, preserving the required explanatory work sentence", async () => {
     const section = await mount();
