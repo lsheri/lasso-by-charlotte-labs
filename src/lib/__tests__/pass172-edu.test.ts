@@ -63,10 +63,10 @@ describe("pass172 navigation", () => {
     expect(navGroups.find((g) => g.id === "lookback")?.label).toBe("Look back");
   });
 
-  it("adds the school places and keeps the engagement shelves group", () => {
-    expect(flat(eduNavGroups)).toEqual(
-      expect.arrayContaining(["/classes", "/projects", "/assignments", "/portfolio"]),
-    );
+  it("SH-6d-1: School is retired, so the classes rows are gone; shelves stay", () => {
+    for (const to of ["/classes", "/projects", "/assignments", "/portfolio"]) {
+      expect(flat(eduNavGroups)).not.toContain(to);
+    }
     expect(eduNavGroups.some((g) => g.id === "engagements")).toBe(true);
     expect(flat(navGroups)).not.toContain("/portfolio");
   });
