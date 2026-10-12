@@ -35,7 +35,12 @@ function useNarrow() {
   return narrow;
 }
 
-export function NotificationBell({ className }: { className?: string }) {
+export function NotificationBell({ className, side = "bottom", align = "end" }: {
+  className?: string;
+  /** Desktop popover placement; the phone sheet ignores it. */
+  side?: "top" | "right" | "bottom" | "left";
+  align?: "start" | "center" | "end";
+}) {
   const list = useServerFn(listMyNotifications);
   const mark = useServerFn(markNotifications);
   const opened = useServerFn(recordNotificationOpened);
@@ -109,7 +114,7 @@ export function NotificationBell({ className }: { className?: string }) {
   return (
     <Popover open={open} onOpenChange={onOpenChange}>
       <PopoverTrigger asChild>{trigger}</PopoverTrigger>
-      <PopoverContent align="end" className="max-h-[70vh] w-[360px] overflow-y-auto">
+      <PopoverContent side={side} align={align} className="max-h-[70vh] w-[360px] overflow-y-auto">
         {panel}
       </PopoverContent>
     </Popover>
