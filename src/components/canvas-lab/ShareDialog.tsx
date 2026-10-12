@@ -8,7 +8,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { Check } from "lucide-react";
 
 import { BoardLinkSection } from "@/components/canvas-lab/ShareBoardDialog";
 import { GraphiteIcon } from "@/components/notebook/icons";
@@ -250,7 +249,7 @@ function SegmentedChoice<T extends string>({ name, value, choices, disabled, onC
           className="text-sm"
           title={choice.title} aria-pressed={value === choice.value}
           disabled={disabled} onClick={() => onChoose(choice.value)}>
-          {value === choice.value ? <Check aria-hidden="true" data-selected-check="true" /> : null}
+          {value === choice.value ? <span aria-hidden="true" data-selected-check="true"><GraphiteIcon name="check" size={16} /></span> : null}
           {choice.label}
         </Button>
       ))}
