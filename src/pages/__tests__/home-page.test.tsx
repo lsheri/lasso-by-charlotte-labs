@@ -160,7 +160,7 @@ describe("Home", () => {
     expect(mocks.emitClientEvent).not.toHaveBeenCalledWith("home.opened", expect.anything());
 
     fireEvent.click(screen.getByRole("button", { name: "New workboard" }));
-    fireEvent.click(screen.getByRole("link", { name: "Past work" }));
+    fireEvent.click(screen.getByRole("link", { name: "Look back" }));
     expect(mocks.emitClientEvent).toHaveBeenCalledWith("home.new_engagement_started", {});
     expect(mocks.emitClientEvent).toHaveBeenCalledWith("home.past_work_opened", {});
   });

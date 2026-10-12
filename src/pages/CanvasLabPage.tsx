@@ -2752,32 +2752,6 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       menu: <DropdownMenuItem onSelect={() => void addSticky()}>Sticky</DropdownMenuItem>,
     });
     toolbarItems.push({
-      spec: { id: "add-judgment", width: 136, moveOrder: 4 },
-      row: (
-        <DropdownMenu>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <DropdownMenuTrigger asChild>
-                <Button size="sm" variant="outline" aria-label="Human judgment" data-toolbar-control="add-judgment"><GraphiteIcon name="decisions" size={20} />Human judgment</Button>
-              </DropdownMenuTrigger>
-            </TooltipTrigger>
-            <TooltipContent>Human judgment</TooltipContent>
-          </Tooltip>
-          <DropdownMenuContent align="end" aria-label="Human judgment type">
-            {JUDGMENT_TYPES.map((choice) => <DropdownMenuItem key={choice.value} onSelect={() => addJudgment(choice.value)}>{choice.label}</DropdownMenuItem>)}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ),
-      menu: (
-        <DropdownMenuSub>
-          <DropdownMenuSubTrigger>Human judgment</DropdownMenuSubTrigger>
-          <DropdownMenuSubContent aria-label="Human judgment type">
-            {JUDGMENT_TYPES.map((choice) => <DropdownMenuItem key={choice.value} onSelect={() => addJudgment(choice.value)}>{choice.label}</DropdownMenuItem>)}
-          </DropdownMenuSubContent>
-        </DropdownMenuSub>
-      ),
-    });
-    toolbarItems.push({
       spec: { id: "region", width: 84, moveOrder: 5 },
       row: <ToolbarIcon label="Add grouping"><Button size="icon" variant={drawTool ? "secondary" : "outline"} aria-label="Add grouping" aria-pressed={drawTool} data-toolbar-control="grouping" onClick={toggleDrawTool}><GraphiteIcon name="grouping" size={20} /></Button></ToolbarIcon>,
       menu: <DropdownMenuItem onSelect={toggleDrawTool}>Add grouping</DropdownMenuItem>,

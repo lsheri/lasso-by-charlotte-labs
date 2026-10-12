@@ -14,15 +14,15 @@ function sourceFiles(dir: string): string[] {
 }
 
 describe("GF1 retired board guides", () => {
-  it("keeps Human judgment beside the normal add controls and on the existing save path", () => {
+  it("removes Human judgment from the toolbar without removing its existing save path", () => {
     const toolbar = PAGE.slice(PAGE.indexOf("const toolbarItems"), PAGE.indexOf("const toolbarPlan"));
     const addJudgment = PAGE.slice(PAGE.indexOf("function addJudgment"), PAGE.indexOf("function deleteNode"));
 
     expect(toolbar).toContain('data-toolbar-control="add-text"');
     expect(toolbar).toContain('data-toolbar-control="add-sticky"');
-    expect(toolbar).toContain('data-toolbar-control="add-judgment"');
-    expect(toolbar).toContain('aria-label="Human judgment"');
-    expect(toolbar.indexOf('data-toolbar-control="add-judgment"')).toBeGreaterThan(toolbar.indexOf('data-toolbar-control="add-sticky"'));
+    expect(toolbar).not.toContain('data-toolbar-control="add-judgment"');
+    expect(toolbar).not.toContain('aria-label="Human judgment"');
+    expect(toolbar).not.toContain('Human judgment');
     expect(addJudgment).toContain('kind: "judgment"');
     expect(addJudgment).toContain('frame: null');
     expect(addJudgment).toContain('lab.persist({ type: "node_create", node: input })');
@@ -32,7 +32,7 @@ describe("GF1 retired board guides", () => {
   it("matches the other add controls by staying off shared read-only boards", () => {
     const addControls = PAGE.slice(PAGE.indexOf("if (canAddWork) {", PAGE.indexOf("const toolbarItems")), PAGE.indexOf("if (showExample)"));
     expect(addControls).toContain('data-toolbar-control="add-work"');
-    expect(addControls).toContain('data-toolbar-control="add-judgment"');
+    expect(addControls).not.toContain('data-toolbar-control="add-judgment"');
     expect(addControls).toContain('data-toolbar-control="grouping"');
   });
 

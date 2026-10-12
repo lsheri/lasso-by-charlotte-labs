@@ -1,6 +1,7 @@
 import { CircleDashed, Lock } from "lucide-react";
 
 import { REFERENCE_INBOX_STATUS } from "@/lib/reference-file-shared";
+import { engagementDisplayTitle } from "@/lib/clients";
 import { CardMenu } from "@/components/work/CardMenu";
 import { EngagementChip, TypeBadge, TypeIcon } from "@/components/work/TypeIcon";
 import { ArtifactNote, SourceMark, VendorMark } from "@/components/work/SourceMark";
@@ -198,7 +199,7 @@ export function WorkRow({
           <span className="hidden shrink-0 sm:inline">
             <EngagementChip
               engagementId={mapping.engagement_id}
-              code={mapping.engagements?.code}
+              code={mapping.engagements ? engagementDisplayTitle(mapping.engagements) : null}
               taskName={mapping.name}
             />
           </span>

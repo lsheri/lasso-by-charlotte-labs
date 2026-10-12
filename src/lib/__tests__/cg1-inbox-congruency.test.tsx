@@ -241,6 +241,18 @@ describe("CG1 inbox congruency", () => {
     expect(screen.queryByRole("button", { name: "Sticky" })).toBeNull();
     expect(screen.queryByRole("button", { name: /Suggest mapping/ })).toBeNull();
   });
+  it("CS-11 labels the board filter with its title while preserving code-based matching", () => {
+    const row = item("pricing memo", "mapped", "CUFST");
+    const board = row.work_item_tasks[0]?.tasks?.engagements;
+    if (!board) throw new Error("A board is required");
+    board.title = "Pricing review";
+    inboxRows = [row, item("waiting memo", "unmapped")];
+    render(<WorkPage />);
+    expect(screen.queryByRole("button", { name: "CUFST" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Pricing review" }));
+    expect(screen.getByText("pricing memo")).toBeTruthy();
+    expect(screen.queryByText("waiting memo")).toBeNull();
+  });
 
   it("hides every non-match and shows empty lane counts when No board matches nothing", () => {
     // Every entry is claimed, so the Unmapped placement filter matches zero

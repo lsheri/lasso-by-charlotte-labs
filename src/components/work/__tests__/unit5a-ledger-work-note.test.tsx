@@ -42,6 +42,17 @@ function rgb(hex: string): string {
 }
 
 describe("Unit 5a Ledger WorkNote", () => {
+  it("CS-11 shows the board title, not its code, on desktop and phone cards", () => {
+    const row = item("claude");
+    const desktop = render(<WorkNote item={row} />);
+    expect(desktop.container.textContent).toContain("Alpha");
+    expect(desktop.container.textContent).not.toContain("ALPHA");
+    desktop.unmount();
+    const phone = render(<WorkNote item={row} phoneRow />);
+    expect(phone.container.textContent).toContain("Alpha");
+    expect(phone.container.textContent).not.toContain("ALPHA");
+    phone.unmount();
+  });
   it.each([
     ["claude", "claude"],
     ["chatgpt", "chatgpt"],

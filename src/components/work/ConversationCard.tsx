@@ -2,6 +2,7 @@ import { useState } from "react";
 import { CircleDashed, Lock } from "lucide-react";
 
 import { CardMenu } from "@/components/work/CardMenu";
+import { engagementDisplayTitle } from "@/lib/clients";
 import { WorkNote } from "@/components/work/WorkNote";
 import { WorkCardPreview } from "@/components/work/WorkCardPreview";
 import { SourceMark, VendorMark } from "@/components/work/SourceMark";
@@ -97,7 +98,7 @@ export function ConversationCard({
    */
   const stateStamp = [
     variant === "mapped"
-      ? [mapping?.engagements?.code, "claimed"].filter(Boolean).join(" · ")
+      ? [mapping?.engagements ? engagementDisplayTitle(mapping.engagements) : null, "claimed"].filter(Boolean).join(" · ")
       : variant === "private"
         ? "private"
         : "unmapped",

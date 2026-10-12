@@ -52,9 +52,9 @@ describe("pass 139: the page is named Past work", () => {
     expect(page).not.toContain("The archive");
   });
 
-  it('the browser tab title is "Past work | Lasso"', () => {
-    expect(route).toContain('{ title: "Past work | Lasso" }');
-    expect(route).toContain('{ property: "og:title", content: "Past work | Lasso" }');
+  it('the browser tab title is "Look back | Lasso"', () => {
+    expect(route).toContain('{ title: "Look back | Lasso" }');
+    expect(route).toContain('{ property: "og:title", content: "Look back | Lasso" }');
     expect(route).not.toContain("The archive");
   });
 });
