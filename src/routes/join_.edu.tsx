@@ -1,6 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
 import { markEduIntent } from "@/lib/edu-entry";
+import { recordAnonymousEventFn } from "@/lib/telemetry.functions";
 
 export const EDU_JOIN_COPY = {
   eyebrow: "Lasso for students",
@@ -47,6 +48,12 @@ export const Route = createFileRoute("/join_/edu")({
   ssr: false,
   beforeLoad: ({ search }) => {
     markEduIntent();
+    // The arrival is still counted, as before.
+    void recordAnonymousEventFn({
+      data: { event_type: "edu.join_opened", view_id: crypto.randomUUID(), dims: {} },
+    }).catch(() => {
+      /* signals never surface to the person */
+    });
     throw redirect({ to: "/auth", search: eduJoinRedirectSearch(search) as never, replace: true });
   },
   head: () => ({
