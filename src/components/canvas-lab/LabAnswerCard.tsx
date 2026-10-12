@@ -1,5 +1,8 @@
 import { stableMemo } from "@/components/canvas-lab/stable-memo";
 import { MoreHorizontal } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
+import { Button } from "@/components/ui/button";
 
 import { answerAsOf } from "@/lib/answer-card";
 import type { LabNode } from "@/components/canvas-lab/canvas-lab-model";
@@ -9,6 +12,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+
+export const COPY = { showAll: "Show all", showLess: "Show less" };
 
 /**
  * An answer kept on the board. White face, lime edge, so it reads apart from
@@ -36,6 +41,22 @@ function LabAnswerCardInner({
 }) {
   const asOf = answerAsOf(node.createdAt ?? null);
   const moveTargets = onMoveToFrame ? frameChoices.filter((frame) => frame.id !== node.frame) : [];
+  const [expanded, setExpanded] = useState(false);
+  const [overflows, setOverflows] = useState(false);
+  const bodyRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const body = bodyRef.current;
+    if (!body) return;
+    const measure = () => {
+      if (!expanded) setOverflows(body.scrollHeight > body.clientHeight + 1);
+    };
+    measure();
+    const resize = new ResizeObserver(measure);
+    resize.observe(body);
+    const mutations = new MutationObserver(measure);
+    mutations.observe(body, { childList: true, subtree: true, characterData: true });
+    return () => { resize.disconnect(); mutations.disconnect(); };
+  }, [expanded, node.summary, node.width, node.height]);
   return (
     <article
       data-testid="canvas-lab-answer-card"
@@ -44,8 +65,9 @@ function LabAnswerCardInner({
       onFocus={onFocus}
       onPointerDown={onPointerDown}
       data-focused={focused ? "true" : undefined}
+      data-expanded={expanded ? "true" : undefined}
       className="canvas-lab-answer-card absolute overflow-hidden"
-      style={{ left: node.x, top: node.y, width: node.width, height: node.height, zIndex: stackZ }}
+      style={{ left: node.x, top: node.y, width: node.width, height: expanded ? "auto" : node.height, minHeight: expanded ? node.height : undefined, zIndex: stackZ }}
     >
       <header className="flex items-baseline justify-between gap-2">
         <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">Answer</span>
@@ -74,9 +96,21 @@ function LabAnswerCardInner({
           ) : null}
         </span>
       </header>
-      <p className="mt-2 overflow-hidden whitespace-pre-wrap text-[12px] leading-[1.5] text-foreground">
-        {node.summary}
-      </p>
+      <div ref={bodyRef} className="canvas-lab-answer-body" data-overflow={overflows && !expanded ? "true" : undefined}>
+        <MarkdownMessage content={node.summary} />
+        {overflows && !expanded ? <span className="canvas-lab-answer-fade" aria-hidden="true" data-testid="answer-body-fade" /> : null}
+      </div>
+      {overflows ? (
+        <Button
+          variant="ghost"
+          className="canvas-lab-answer-toggle"
+          aria-expanded={expanded}
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={(event) => { event.stopPropagation(); setExpanded((value) => !value); }}
+        >
+          {expanded ? COPY.showLess : COPY.showAll}
+        </Button>
+      ) : null}
       <footer className="mt-2 flex items-center justify-between gap-2">
         <span className="font-mono text-[9px] text-soft">Kept by {node.authorName ?? "you"}</span>
         {node.local ? (
