@@ -44,7 +44,9 @@ export async function checkKeyPublic(
   try {
     const { valid, institution_name } = evaluatePublicKey(await fetchRow(clean));
     return { valid, institution_name };
-  } catch {
+  } catch (e) {
+    // Logs only; the response stays the generic answer.
+    console.error("[activation-key-public] check failed", { message: e instanceof Error ? e.message : String(e) });
     return { ...GENERIC_ANSWER };
   }
 }

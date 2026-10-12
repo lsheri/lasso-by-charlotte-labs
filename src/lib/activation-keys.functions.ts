@@ -231,17 +231,21 @@ export const checkActivationKeyPublic = createServerFn({ method: "POST" })
     code: typeof input?.code === "string" ? input.code.trim().slice(0, 200) : "",
   }))
   .handler(async ({ data }): Promise<{ valid: boolean; institution_name: string | null }> => {
-    const { checkKeyPublic } = await import("@/lib/activation-key-public.server");
-    const { getRequestHeader } = await import("@tanstack/react-start/server");
-    const ip =
-      getRequestHeader("cf-connecting-ip") ??
-      getRequestHeader("x-forwarded-for")?.split(",")[0]?.trim() ??
-      "";
+    const { checkKeyPublic, GENERIC_ANSWER } = await import("@/lib/activation-key-public.server");
+    let ip = "";
+    try {
+      const { getRequestHeader } = await import("@tanstack/react-start/server");
+      ip = getRequestHeader("cf-connecting-ip") ?? getRequestHeader("x-forwarded-for")?.split(",")[0]?.trim() ?? "";
+    } catch (e) {
+      console.error("[activation-key-public] no request header", { message: e instanceof Error ? e.message : String(e) });
+    }
+    if (!ip) console.error("[activation-key-public] no client address; sharing one limit bucket");
+    void GENERIC_ANSWER;
     return checkKeyPublic(data.code, ip, async (code) => {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const { data: row, error } = await supabaseAdmin
         .from("activation_keys")
-        .select("expires_at, revoked_at, max_uses, uses, institutions(name)")
+        .select("expires_at, revoked_at, max_uses, uses, institutions!activation_keys_institution_id_fkey(name)")
         .eq("code", code)
         .maybeSingle();
       if (error) throw error;
