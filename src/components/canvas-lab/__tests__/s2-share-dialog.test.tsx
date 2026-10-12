@@ -7,7 +7,7 @@
  */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const calls: { access: string; person_id: string }[] = [];
@@ -65,21 +65,21 @@ describe("S2 — giving someone one of two things", () => {
 
   it("offers exactly two choices for a person", async () => {
     await openDialog();
-    const labels = ["Can view", "Multiplayer"];
+    const labels = ["Viewer", "Collaborator"];
     expect(labels).toHaveLength(2);
     for (const label of labels) {
-      expect(screen.getByRole("button", { name: label })).toBeTruthy();
+      expect(within(screen.getByRole("group", { name: "Owen" })).getByRole("button", { name: label })).toBeTruthy();
     }
   });
 
   it("choosing one sends that word and nothing else", async () => {
     await openDialog();
-    fireEvent.click(screen.getByRole("button", { name: "Can view" }));
+    fireEvent.click(within(screen.getByRole("group", { name: "Owen" })).getByRole("button", { name: "Viewer" }));
     await waitFor(() => expect(calls).toHaveLength(1));
     expect(calls[0]).toEqual({ person_id: "p-on", access: "review" });
 
-    await waitFor(() => expect(screen.getByRole("button", { name: "Multiplayer" }).hasAttribute("disabled")).toBe(false));
-    fireEvent.click(screen.getByRole("button", { name: "Multiplayer" }));
+    await waitFor(() => expect(within(screen.getByRole("group", { name: "Owen" })).getByRole("button", { name: "Collaborator" }).hasAttribute("disabled")).toBe(false));
+    fireEvent.click(within(screen.getByRole("group", { name: "Owen" })).getByRole("button", { name: "Collaborator" }));
     await waitFor(() => expect(calls).toHaveLength(2));
     expect(calls[1]).toEqual({ person_id: "p-on", access: "work" });
     for (const call of calls) expect(["review", "work", "none"]).toContain(call.access);
@@ -105,7 +105,7 @@ describe("S2 — giving someone one of two things", () => {
   it("the link section never claims the AI conversations travel with it", async () => {
     const { container } = mount();
     fireEvent.click(screen.getByRole("button", { name: "Share" }));
-    await screen.findByText("A link that expires");
+    await screen.findByText("Link");
     expect(container.textContent ?? "").not.toContain("including the AI conversations");
   });
 
@@ -117,10 +117,34 @@ describe("S2 — giving someone one of two things", () => {
     } as never);
     mount();
     fireEvent.click(screen.getByRole("button", { name: "Share" }));
-    await screen.findByText("Nobody else is on this board yet.");
-    expect(screen.getByText("You · Multiplayer")).toBeTruthy();
-    expect(screen.getByText("Nobody else is in your workspace yet. Invite people from Settings, People.")).toBeTruthy();
+    await screen.findByText("Nobody else in your workspace yet.");
+    expect(screen.getByText("You")).toBeTruthy();
+    expect(screen.getByText("Nobody else in your workspace yet.")).toBeTruthy();
     expect(screen.getByLabelText("Add people by name").hasAttribute("disabled")).toBe(true);
-    for (const label of ["Can view", "Multiplayer", "Remove"]) expect(screen.queryByRole("button", { name: label })).toBeNull();
+    for (const label of ["Viewer", "Collaborator"]) expect(screen.getByRole("button", { name: label })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Remove" })).toBeNull();
   });
+  it("adds a person with the picked Collaborator level", async () => {
+    await openDialog();
+    fireEvent.click(within(screen.getByRole("group", { name: "New person level" })).getByRole("button", { name: "Collaborator" }));
+    fireEvent.change(screen.getByLabelText("Add people by name"), { target: { value: "nad" } });
+    fireEvent.click(screen.getByRole("button", { name: "Nadia" }));
+    await waitFor(() => expect(calls).toEqual([{ person_id: "p-new", access: "work" }]));
+  });
+
+  it("removes the old explanations, empty copy and link paragraphs", async () => {
+    await openDialog();
+    for (const text of [
+      "Who has access", "Can view: Can open the board and read the cards.",
+      "Multiplayer: Can also add and arrange work.",
+      "Summaries only: they can ask Lasso how AI was used here, but can't open the conversations.",
+      "Nobody else is on this board yet.",
+      "Nobody else is in your workspace yet. Invite people from Settings, People.",
+      "You can expire this link yourself at any point before the 48 hours are up.",
+      "The board keeps changing, so whoever opens the link sees the board as it is then, not as it was when you made the link.",
+    ]) expect(screen.queryByText(text)).toBeNull();
+    expect(screen.getByText("None open.")).toBeTruthy();
+    expect(screen.getByText("Anyone with the link sees the cards and summaries for 48 hours. Conversations stay private.")).toBeTruthy();
+  });
+
 });

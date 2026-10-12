@@ -27,8 +27,8 @@ async function mount() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(<QueryClientProvider client={client}><ShareDialog engagementId="board" profileId="me" /></QueryClientProvider>);
   fireEvent.click(screen.getByRole("button", { name: "Share" }));
-  await screen.findByText(/^You · /);
-  return screen.getByRole("region", { name: "Who has access" });
+  await screen.findByText("You");
+  return screen.getByRole("region", { name: "People" });
 }
 
 afterEach(cleanup);
@@ -37,8 +37,8 @@ describe("SH-3a people access", () => {
   beforeEach(() => vi.clearAllMocks());
   it("maps labels independently to the unchanged access values", async () => {
     const section = await mount();
-    for (const [label, access] of [["Multiplayer", "work"], ["Can view", "review"], ["Remove", "none"]] as const) {
-      const button = within(section).getByRole("button", { name: label });
+    for (const [label, access] of [["Collaborator", "work"], ["Viewer", "review"], ["Remove", "none"]] as const) {
+      const button = label === "Remove" ? within(section).getByRole("button", { name: label }) : within(within(section).getByRole("group", { name: "Owen" })).getByRole("button", { name: label });
       await waitFor(() => expect(button.hasAttribute("disabled")).toBe(false));
       fireEvent.click(button);
       await waitFor(() => expect(setEngagementPersonAccessFn).toHaveBeenLastCalledWith({ data: { engagement_id: "board", profile_id: "me", person_id: "other", access } }));
@@ -52,7 +52,7 @@ describe("SH-3a people access", () => {
   });
   it("puts your level first and adds a suggested member as Can view", async () => {
     const section = await mount();
-    expect(within(section).getAllByRole("listitem")[0]?.textContent?.trim()).toBe("You · Multiplayer");
+    expect(within(section).getAllByRole("listitem")[0]?.textContent?.trim()).toBe("You");
     fireEvent.change(within(section).getByLabelText("Add people by name"), { target: { value: "nad" } });
     expect(within(section).queryByRole("button", { name: "Owen" })).toBeNull();
     fireEvent.click(within(section).getByRole("button", { name: "Nadia" }));
@@ -64,7 +64,7 @@ describe("SH-3a people access", () => {
       people: [{ id: "me", display_name: "Liam", access: "review", isYou: true }],
     });
     const section = await mount();
-    expect(within(section).getByText("You · Can view")).toBeTruthy();
+    expect(within(section).getByText("You")).toBeTruthy();
     expect(section.textContent).not.toContain("Owner");
   });
   it("shows the explanations once with two other people on the board", async () => {
@@ -77,16 +77,20 @@ describe("SH-3a people access", () => {
       ],
     });
     const section = await mount();
-    expect(within(section).getAllByText("Can view: Can open the board and read the cards.")).toHaveLength(1);
-    expect(within(section).getAllByText("Multiplayer: Can also add and arrange work.")).toHaveLength(1);
+    expect(within(section).queryByText("Can view: Can open the board and read the cards.")).toBeNull();
+    expect(within(section).getAllByTitle(PEOPLE_COPY.viewLine)).toHaveLength(3);
+    expect(within(section).queryByText("Multiplayer: Can also add and arrange work.")).toBeNull();
+    expect(within(section).getAllByTitle(PEOPLE_COPY.multiplayerLine)).toHaveLength(3);
   });
   it("shows Owen's Can view choice pressed and using the secondary variant", async () => {
     const section = await mount();
     const group = within(section).getByRole("group", { name: "Owen" });
-    const view = within(group).getByRole("button", { name: "Can view", pressed: true });
-    const multiplayer = within(group).getByRole("button", { name: "Multiplayer", pressed: false });
-    expect(view.className).toBe(cn(buttonVariants({ variant: "secondary", size: "sm" })));
-    expect(multiplayer.className).toBe(cn(buttonVariants({ variant: "outline", size: "sm" })));
+    const view = within(group).getByRole("button", { name: "Viewer", pressed: true });
+    const multiplayer = within(group).getByRole("button", { name: "Collaborator", pressed: false });
+    expect(view.className).toBe(cn(buttonVariants({ variant: "ink", size: "sm", className: "text-sm" })));
+    expect(multiplayer.className).toBe(cn(buttonVariants({ variant: "ghost", size: "sm", className: "text-sm" })));
+    expect(view.querySelector("[data-selected-check]")).toBeTruthy();
+    expect(multiplayer.querySelector("[data-selected-check]")).toBeNull();
   });
   it("restores empty-workspace guidance and disables the field", async () => {
     vi.mocked(listEngagementPeopleFn).mockResolvedValueOnce({
@@ -94,7 +98,7 @@ describe("SH-3a people access", () => {
       people: [{ id: "me", display_name: "Liam", access: "work", isYou: true }],
     });
     const section = await mount();
-    expect(within(section).getByText("Nobody else is in your workspace yet. Invite people from Settings, People.")).toBeTruthy();
+    expect(within(section).getByText("Nobody else in your workspace yet.")).toBeTruthy();
     expect(within(section).getByLabelText("Add people by name").hasAttribute("disabled")).toBe(true);
   });
   it("renders no internal role words, preserving the required explanatory work sentence", async () => {
@@ -103,9 +107,9 @@ describe("SH-3a people access", () => {
     const labels = [...section.querySelectorAll("button, label, li > span")].map((node) => node.textContent).join(" ");
     expect(labels.toLowerCase()).not.toMatch(/\b(coach|review|work)\b/);
     expect(section.textContent?.toLowerCase()).not.toMatch(/\b(coach|review)\b/);
-    expect(within(section).getByText(`Multiplayer: ${PEOPLE_COPY.multiplayerLine}`)).toBeTruthy();
+    expect(within(section).getAllByTitle(PEOPLE_COPY.multiplayerLine)).toHaveLength(2);
     expect(Object.values(PEOPLE_COPY).join(" ")).not.toMatch(/—|\baudit\b|\bmonitor\b|\boversight\b/i);
-    expect(PEOPLE_COPY.viewLine).toBe("Can open the board and read the cards.");
-    expect(PEOPLE_COPY.multiplayerLine).toBe("Can also add and arrange work.");
+    expect(PEOPLE_COPY.viewLine).toBe("Opens the board and reads the cards");
+    expect(PEOPLE_COPY.multiplayerLine).toBe("Also adds and arranges work");
   });
 });

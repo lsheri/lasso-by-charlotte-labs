@@ -75,13 +75,13 @@ beforeEach(() => {
 });
 
 describe("SH-3b conversations switch", () => {
-  it("sends full for Full conversations and summaries for Summaries only", async () => {
+  it("sends full for Full conversations and summaries for Summaries", async () => {
     await openDialog();
     fireEvent.click(btn("Owen", "Full conversations"));
     await waitFor(() => expect(convoCalls).toHaveLength(1));
     expect(convoCalls[0]).toEqual({ person_id: "p-on", conversations: "full" });
-    await waitFor(() => expect(btn("Fay", "Summaries only").disabled).toBe(false));
-    fireEvent.click(btn("Fay", "Summaries only"));
+    await waitFor(() => expect(btn("Fay", "Summaries").disabled).toBe(false));
+    fireEvent.click(btn("Fay", "Summaries"));
     await waitFor(() => expect(convoCalls).toHaveLength(2));
     expect(convoCalls[1]).toEqual({ person_id: "p-fu", conversations: "summaries" });
   });
@@ -90,13 +90,13 @@ describe("SH-3b conversations switch", () => {
     await openDialog();
     expect(screen.queryByRole("group", { name: "Liam conversations" })).toBeNull();
     expect(
-      screen.getByText("Summaries only: they can ask Lasso how AI was used here, but can't open the conversations."),
+      screen.getAllByTitle("Can ask Lasso about the AI work, can't open the conversations")[0],
     ).toBeTruthy();
   });
 
   it("pressed state follows the data", async () => {
     await openDialog();
-    expect(btn("Owen", "Summaries only").getAttribute("aria-pressed")).toBe("true");
+    expect(btn("Owen", "Summaries").getAttribute("aria-pressed")).toBe("true");
     expect(btn("Owen", "Full conversations").getAttribute("aria-pressed")).toBe("false");
     expect(btn("Fay", "Full conversations").getAttribute("aria-pressed")).toBe("true");
     await waitFor(() => expect(btn("Harbor School", "Full conversations").getAttribute("aria-pressed")).toBe("true"));
@@ -104,8 +104,8 @@ describe("SH-3b conversations switch", () => {
 
   it("the partner switch writes with the link and board ids", async () => {
     await openDialog();
-    await waitFor(() => expect(btn("Harbor School", "Summaries only").disabled).toBe(false));
-    fireEvent.click(btn("Harbor School", "Summaries only"));
+    await waitFor(() => expect(btn("Harbor School", "Summaries").disabled).toBe(false));
+    fireEvent.click(btn("Harbor School", "Summaries"));
     await waitFor(() => expect(linkCalls).toHaveLength(1));
     expect(linkCalls[0]).toEqual(["link-1", "e-1", "summaries"]);
   });

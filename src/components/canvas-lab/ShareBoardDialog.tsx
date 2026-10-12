@@ -20,7 +20,6 @@ import {
 import {
   shareExposureSentence,
   shareLinkLive,
-  shareLinkNotes,
   shareLinkUrl,
   shareTimeLeftLabel,
   type BoardShareLinkDto,
@@ -83,17 +82,11 @@ export function BoardLinkSection({
 
   return (
     <section className="flex flex-col gap-3">
-        <p className="nb-type-small text-muted-foreground">{shareExposureSentence(holdsOthersWork)}</p>
-
-        <ul className="space-y-1 nb-type-small text-muted-foreground">
-          {shareLinkNotes().map((note) => (
-            <li key={note}>{note}</li>
-          ))}
-        </ul>
+        <p className="text-sm text-muted-foreground">{shareExposureSentence(holdsOthersWork)}</p>
 
         {freshUrl ? (
           <div className="space-y-2">
-            <p className="nb-type-small text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Copy it now. This is the only time it is shown.
             </p>
             <div className="flex items-center gap-2">
@@ -120,12 +113,12 @@ export function BoardLinkSection({
           </Button>
         )}
 
-        {problem ? <p className="nb-type-small text-foreground">{problem}</p> : null}
+        {problem ? <p className="text-sm text-foreground">{problem}</p> : null}
 
         <div className="space-y-2">
-          <p className="font-mono text-[9px] uppercase tracking-[0.08em] text-foreground">Live links</p>
+          <p className="font-mono text-xs uppercase tracking-[0.08em] text-foreground">Live links</p>
           {live.length === 0 ? (
-            <p className="nb-type-small text-muted-foreground">No link to this board is open right now.</p>
+            <p className="text-sm text-muted-foreground">None open.</p>
           ) : (
             <ul className="space-y-2">
               {live.map((link) => (
@@ -154,7 +147,7 @@ function LiveLinkRow({
 }) {
   return (
     <li className="flex items-center justify-between gap-3 rounded-md border border-border p-2">
-      <span className="nb-type-small text-muted-foreground">
+      <span className="text-sm text-muted-foreground">
         {shareTimeLeftLabel(link.expiresAt)}
         {link.openedCount > 0
           ? ` · opened ${link.openedCount} ${link.openedCount === 1 ? "time" : "times"}`

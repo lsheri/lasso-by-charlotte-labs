@@ -67,8 +67,8 @@ export function ShareDialog({
           <SponsorSection engagementId={engagementId} profileId={profileId} open={open} />
 
           <section className="flex flex-col gap-3">
-            <p className="font-mono text-[9px] uppercase tracking-[0.08em] text-foreground">
-              A link that expires
+            <p className="font-mono text-xs uppercase tracking-[0.08em] text-foreground">
+              Link
             </p>
             <BoardLinkSection engagementId={engagementId} profileId={profileId} open={open} />
           </section>
@@ -104,8 +104,8 @@ function SponsorSection({
 
   return (
     <section className="flex flex-col gap-3">
-      <p className="font-mono text-[9px] uppercase tracking-[0.08em] text-foreground">
-        Your sponsor
+      <p className="font-mono text-xs uppercase tracking-[0.08em] text-foreground">
+        Partner
       </p>
 
       <ul className="space-y-2">
@@ -119,8 +119,8 @@ function SponsorSection({
         ))}
       </ul>
 
-      <p className="nb-type-small text-muted-foreground">
-        They see the work you have placed on this board, and nothing you have not placed.
+      <p className="text-sm text-muted-foreground">
+        Sees only the work you place on this board.
       </p>
     </section>
   );
@@ -180,7 +180,7 @@ function SponsorRow({
   return (
     <li className="flex flex-col gap-1 rounded-md border border-border p-2">
       <div className="flex items-center justify-between gap-3">
-        <span className="nb-type-small text-muted-foreground">{partnerShareLabel(share)}</span>
+        <span className="text-sm text-muted-foreground">{partnerShareLabel(share)}</span>
         <Button
           size="sm"
           variant={on ? "default" : "outline"}
@@ -199,36 +199,63 @@ function SponsorRow({
           onChoose={(next) => changeConversations.mutate(next)}
         />
       ) : null}
-      {problem ? <p className="nb-type-small text-foreground" role="alert">{problem}</p> : null}
+      {problem ? <p className="text-sm text-foreground" role="alert">{problem}</p> : null}
       {share.bound ? null : (
-        <p className="nb-type-small text-muted-foreground">Nobody there has opened this yet.</p>
+        <p className="text-sm text-muted-foreground">Nobody there has opened this yet.</p>
       )}
     </li>
   );
 }
 
 export const PEOPLE_COPY = {
-  heading: "Who has access",
+  heading: "People",
   you: "You",
   add: "Add people by name",
-  view: "Can view",
-  multiplayer: "Multiplayer",
-  viewLine: "Can open the board and read the cards.",
-  multiplayerLine: "Can also add and arrange work.",
+  view: "Viewer",
+  multiplayer: "Collaborator",
+  viewLine: "Opens the board and reads the cards",
+  multiplayerLine: "Also adds and arranges work",
   remove: "Remove",
   membersOnly: "Only people in this workspace can be added here.",
-  empty: "Nobody else is on this board yet.",
-  nobodyToAdd: "Nobody else is in your workspace yet. Invite people from Settings, People.",
+  nobodyToAdd: "Nobody else in your workspace yet.",
   problem: "That could not be changed.",
-  summaries: "Summaries only",
+  summaries: "Summaries",
   full: "Full conversations",
-  summariesLine: "Summaries only: they can ask Lasso how AI was used here, but can't open the conversations.",
+  summariesLine: "Can ask Lasso about the AI work, can't open the conversations",
+  fullLine: "Can open the conversations",
 } as const;
 
-const CONVERSATION_CHOICES = [
-  { value: "summaries", label: PEOPLE_COPY.summaries },
-  { value: "full", label: PEOPLE_COPY.full },
+const LEVEL_CHOICES = [
+  { value: "review", label: PEOPLE_COPY.view, title: PEOPLE_COPY.viewLine },
+  { value: "work", label: PEOPLE_COPY.multiplayer, title: PEOPLE_COPY.multiplayerLine },
 ] as const;
+const CONVERSATION_CHOICES = [
+  { value: "summaries", label: PEOPLE_COPY.summaries, title: PEOPLE_COPY.summariesLine },
+  { value: "full", label: PEOPLE_COPY.full, title: PEOPLE_COPY.fullLine },
+] as const;
+
+function SegmentedChoice<T extends string>({ name, value, choices, disabled, onChoose }: {
+  name: string;
+  value: T | null;
+  choices: readonly { value: T; label: string; title: string }[];
+  disabled: boolean;
+  onChoose: (next: T) => void;
+}) {
+  return (
+    <div role="group" aria-label={name} className="flex flex-wrap gap-1">
+      {choices.map((choice) => (
+        <Button key={choice.value} size="sm"
+          variant={value === choice.value ? "ink" : "ghost"}
+          className="text-sm"
+          title={choice.title} aria-pressed={value === choice.value}
+          disabled={disabled} onClick={() => onChoose(choice.value)}>
+          {value === choice.value ? <span aria-hidden="true" data-selected-check="true"><GraphiteIcon name="check" size={16} /></span> : null}
+          {choice.label}
+        </Button>
+      ))}
+    </div>
+  );
+}
 
 function ConversationSwitch({
   name,
@@ -241,22 +268,8 @@ function ConversationSwitch({
   disabled: boolean;
   onChoose: (next: ConversationAccess) => void;
 }) {
-  return (
-    <div role="group" aria-label={`${name} conversations`} className="flex gap-1">
-      {CONVERSATION_CHOICES.map((choice) => (
-        <Button
-          key={choice.value}
-          size="sm"
-          variant={value === choice.value ? "secondary" : "outline"}
-          aria-pressed={value === choice.value}
-          disabled={disabled}
-          onClick={() => onChoose(choice.value)}
-        >
-          {choice.label}
-        </Button>
-      ))}
-    </div>
-  );
+  return <SegmentedChoice name={`${name} conversations`} value={value}
+    choices={CONVERSATION_CHOICES} disabled={disabled} onChoose={onChoose} />;
 }
 
 function PeopleSection({
@@ -272,6 +285,7 @@ function PeopleSection({
   const list = useServerFn(listEngagementPeopleFn);
   const setAccess = useServerFn(setEngagementPersonAccessFn);
   const [pick, setPick] = useState("");
+  const [addLevel, setAddLevel] = useState<EngagementAccessChoice>("review");
   const [problem, setProblem] = useState<string | null>(null);
   const key = ["engagement-people", engagementId, profileId ?? ""] as const;
 
@@ -328,26 +342,28 @@ function PeopleSection({
   const suggestions = canPick.filter((person) =>
     person.display_name.toLocaleLowerCase().includes(pick.trim().toLocaleLowerCase()),
   );
-  const choices = [
-    { value: "review", label: PEOPLE_COPY.view, line: PEOPLE_COPY.viewLine },
-    { value: "work", label: PEOPLE_COPY.multiplayer, line: PEOPLE_COPY.multiplayerLine },
-  ] as const;
-
   return (
     <section className="flex flex-col gap-3" aria-label={PEOPLE_COPY.heading}>
+      <p className="font-mono text-xs uppercase tracking-[0.08em] text-foreground">{PEOPLE_COPY.heading}</p>
       <div className="flex flex-col gap-2">
-        <label className="nb-type-small text-muted-foreground" htmlFor="share-person">
+        <label className="text-sm text-muted-foreground" htmlFor="share-person">
           {PEOPLE_COPY.add}
         </label>
+        <div className="flex flex-wrap items-center gap-2">
         <Input
+          className="min-w-0 flex-1 basis-32"
           id="share-person"
           value={pick}
           autoComplete="off"
           disabled={people.isPending || change.isPending || !people.data?.canShare || canPick.length === 0}
           onChange={(event) => setPick(event.target.value)}
         />
+        <SegmentedChoice name="New person level" value={addLevel} choices={LEVEL_CHOICES}
+          disabled={change.isPending || !people.data?.canShare}
+          onChoose={setAddLevel} />
+        </div>
         {people.data && canPick.length === 0 ? (
-          <p className="nb-type-small text-muted-foreground">{PEOPLE_COPY.nobodyToAdd}</p>
+          <p className="text-sm text-muted-foreground">{PEOPLE_COPY.nobodyToAdd}</p>
         ) : null}
         {pick.trim() && suggestions.length > 0 ? (
           <ul className="space-y-1" aria-label={PEOPLE_COPY.add}>
@@ -357,7 +373,7 @@ function PeopleSection({
                   variant="ghost"
                   className="w-full justify-start"
                   disabled={change.isPending || !people.data?.canShare}
-                  onClick={() => change.mutate({ person_id: person.id, access: "review" })}
+                  onClick={() => change.mutate({ person_id: person.id, access: addLevel })}
                 >
                   {person.display_name}
                 </Button>
@@ -366,41 +382,24 @@ function PeopleSection({
           </ul>
         ) : null}
         {pick.includes("@") && suggestions.length === 0 ? (
-          <p className="nb-type-small text-muted-foreground">{PEOPLE_COPY.membersOnly}</p>
+          <p className="text-sm text-muted-foreground">{PEOPLE_COPY.membersOnly}</p>
         ) : null}
       </div>
 
-      <p className="nb-type-small text-foreground">{PEOPLE_COPY.heading}</p>
-      {choices.map((choice) => (
-        <p key={choice.value} className="nb-type-small text-muted-foreground">
-          {choice.label}: {choice.line}
-        </p>
-      ))}
-      <p className="nb-type-small text-muted-foreground">{PEOPLE_COPY.summariesLine}</p>
       <ul className="space-y-2">
         {you ? (
-          <li className="nb-type-small text-muted-foreground">
-            {PEOPLE_COPY.you}{you.access ? ` · ${choices.find((choice) => choice.value === you.access)?.label ?? ""}` : ""}
+          <li className="text-sm text-muted-foreground">
+            {PEOPLE_COPY.you}
           </li>
         ) : null}
         {onBoard.map((person) => (
           <li key={person.id} className="flex flex-col gap-2 rounded-md border border-border p-2">
-            <span className="nb-type-small text-foreground">{person.display_name}</span>
-            <div className="flex flex-wrap items-center gap-2">
-              <div role="group" aria-label={person.display_name} className="flex gap-1">
-                {choices.map((choice) => (
-                  <Button
-                    key={choice.value}
-                    size="sm"
-                    variant={person.access === choice.value ? "secondary" : "outline"}
-                    aria-pressed={person.access === choice.value}
-                    disabled={change.isPending || !people.data?.canShare}
-                    onClick={() => change.mutate({ person_id: person.id, access: choice.value })}
-                  >
-                    {choice.label}
-                  </Button>
-                ))}
-              </div>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-sm text-foreground">{person.display_name}</span>
+              <div className="flex flex-wrap items-center gap-1">
+              <SegmentedChoice name={person.display_name} value={person.access}
+                choices={LEVEL_CHOICES} disabled={change.isPending || !people.data?.canShare}
+                onChoose={(access) => change.mutate({ person_id: person.id, access })} />
               <Button
                 size="sm"
                 variant="ghost"
@@ -410,6 +409,7 @@ function PeopleSection({
                 {PEOPLE_COPY.remove}
               </Button>
             </div>
+              </div>
             <ConversationSwitch
               name={person.display_name}
               value={person.conversations ?? null}
@@ -419,10 +419,7 @@ function PeopleSection({
           </li>
         ))}
       </ul>
-      {people.data && onBoard.length === 0 ? (
-        <p className="nb-type-small text-muted-foreground">{PEOPLE_COPY.empty}</p>
-      ) : null}
-      {problem ? <p className="nb-type-small text-foreground">{problem}</p> : null}
+      {problem ? <p className="text-sm text-foreground">{problem}</p> : null}
     </section>
   );
 }

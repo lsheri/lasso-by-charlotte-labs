@@ -68,9 +68,9 @@ export function shareTimeLeftLabel(expiresAt: string, now: Date = new Date()): s
  */
 export function shareExposureSentence(holdsOthersWork: boolean): string {
   const base =
-    `Anyone with this link can see this board for ${SHARE_WINDOW_HOURS} hours: the cards, their summaries and any text written on it. The AI conversations behind the cards stay private.`;
+    `Anyone with the link sees the cards and summaries for ${SHARE_WINDOW_HOURS} hours. Conversations stay private.`;
   return holdsOthersWork
-    ? `${base} This board also holds work owned by other people, so their cards and summaries go with it too.`
+    ? `${base} Their cards go too.`
     : base;
 }
 
