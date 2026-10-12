@@ -53,7 +53,7 @@ function LabAnswerCardInner({
   orgId,
 }: {
   node: LabNode;
-  orgId?: string;
+  orgId?: string | undefined;
   onCommit?: (body: string) => Promise<string | null>;
   focused: boolean;
   stackZ: number;
