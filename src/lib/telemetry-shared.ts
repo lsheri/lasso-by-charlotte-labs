@@ -436,6 +436,12 @@ export type TelemetryEvent =
    * to_level for data levels only. Closed lists in settings-events.ts.
    */
   | "settings.changed"
+  /** SH-6d-1: an admin decided a support access request. Dims: approved, conversations ("true" | "false"). */
+  | "support.decided"
+  /** SH-6d-1: support access was ended early. Dims: by ("grantor"). */
+  | "support.ended"
+  /** SH-6d-2: Charlotte Labs viewed a surface under a grant. Dims: surface. */
+  | "support.viewed"
   /**
    * RQ-1: a partner submitted a workshop key request. Dims: workspace_kind
    * (the request's own), seats_band (1 | 2-5 | 6-20 | 21+), outcome

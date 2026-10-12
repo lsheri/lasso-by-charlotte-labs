@@ -161,8 +161,6 @@ export const NAV_GROUPS: NavManifestGroup[] = [
   // MN-5: directly below Where it goes; partner only, absent when nothing is shared.
   { id: "from_your_people", label: "From your people", types: ["partner"], show: (ctx) => (ctx.partnerShareCount ?? 0) > 0 },
   { id: "lookback", label: "Look back", headless: true },
-  // A school workspace adds its own section after Look back.
-  { id: "school", label: "Your classes", types: ["edu"] },
   {
     // "Your coach" is only a real place when someone is actually coaching
     // you: by arrangement in a firm or school, by a live link when solo.
@@ -214,10 +212,6 @@ export const NAV_ITEMS: NavManifestItem[] = [
   { id: "decisions", retired: true, placement: "main", group: "lookback", label: "Decision log", to: "/decisions", icon: "decisions", disabled: true, disabledReason: "Coming soon" },
   { id: "from_your_people", placement: "main", group: "from_your_people", label: "From your people", icon: "members", types: ["partner"], runtimeOnly: true, show: (ctx) => (ctx.partnerShareCount ?? 0) > 0 },
   { id: "look_back", placement: "bottom", group: "lookback", label: "Look back", to: "/archive", icon: "history", runtimeOnly: true },
-  { id: "classes", placement: "main", group: "school", label: () => EDU_VOCAB.classes, to: "/classes", icon: "engagement" },
-  { id: "assignments", placement: "main", group: "school", label: () => EDU_VOCAB.assignments, to: "/assignments", icon: "work" },
-  { id: "projects", placement: "main", group: "school", label: () => EDU_VOCAB.projects, to: "/projects", icon: "overview" },
-  { id: "portfolio", placement: "main", group: "school", label: () => EDU_VOCAB.portfolio, to: "/portfolio", icon: "firm" },
   { id: "one-on-one", retired: true, placement: "main", group: "coach", label: "1:1 prep", to: "/one-on-one", icon: "one-on-one" },
   { id: "coach-notes", retired: true, placement: "main", group: "coach", label: "Notes from your coach", to: "/coach-notes", icon: "messages" },
   { id: "your_coach", placement: "bottom", group: "coach", label: "Your coach", to: "/one-on-one", icon: "one-on-one", runtimeOnly: true },
@@ -325,7 +319,7 @@ function legacyGroups(type: OrgType, ids: NavGroupId[]): NavGroup[] {
   }));
 }
 
-const WORKER_GROUPS: NavGroupId[] = ["landed", "engagements", "lookback", "school", "coach", "firm", "account"];
+const WORKER_GROUPS: NavGroupId[] = ["landed", "engagements", "lookback", "coach", "firm", "account"];
 
 /** Legacy: the company worker groups, unfiltered by role. */
 export const navGroups: NavGroup[] = legacyGroups("company", WORKER_GROUPS);

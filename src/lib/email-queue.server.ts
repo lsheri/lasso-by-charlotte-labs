@@ -5,6 +5,7 @@
  */
 import { attendeeLink, buildJoinUrl } from "./join-link";
 import { escapeHtml } from "./escape-html";
+import { CANONICAL_ORIGIN } from "./app-host";
 import { REGISTER_COPY, type Register } from "./register";
 
 export const EMAIL_BATCH = 10;
@@ -30,7 +31,10 @@ export function privacyLineFor(register: unknown): string {
   return REGISTER_COPY.company.privacy;
 }
 
-export function buildVariables(payload: Record<string, unknown> | null): Record<string, string | number> {
+export function buildVariables(
+  payload: Record<string, unknown> | null,
+  template?: string,
+): Record<string, string | number> {
   const p = payload ?? {};
   const out: Record<string, string | number> = {
     WORKSPACE_NAME: escapeHtml(String(p["WORKSPACE_NAME"] ?? "")),
@@ -42,12 +46,27 @@ export function buildVariables(payload: Record<string, unknown> | null): Record<
     PARTNER_NAME: escapeHtml(String(p["PARTNER_NAME"] ?? "")),
   };
   // AU-1: a key that is not a number is left out, never sent as 0.
-  for (const k of ["SEATS", "EXPIRES_DAYS"] as const) {
+  // SH-6d-1: support access letters. Person-typed text is escaped.
+  for (const k of ["REASON", "ENDS_ON", "CONVERSATIONS"] as const) {
+    if (p[k] !== undefined && p[k] !== null) out[k] = escapeHtml(String(p[k]));
+  }
+  for (const k of ["SEATS", "EXPIRES_DAYS", "DAYS"] as const) {
     const v = p[k];
     const n = typeof v === "number" ? v : typeof v === "string" && v.trim() !== "" ? Number(v) : NaN;
     if (Number.isFinite(n)) out[k] = n;
   }
+  if (typeof template === "string" && template.startsWith("support-access-")) {
+    out["SUPPORT_URL"] = supportUrl(template, p["GRANT_ID"]);
+  }
   return out;
+}
+
+/** The granted letter opens the grant; the others open Settings, Support access. */
+export function supportUrl(template: string, grantId: unknown): string {
+  const settings = `${CANONICAL_ORIGIN}/settings?section=support`;
+  if (template !== "support-access-granted") return settings;
+  if (typeof grantId !== "string" || !/^[0-9a-f-]{36}$/.test(grantId)) return settings;
+  return `${CANONICAL_ORIGIN}/support/${grantId}`;
 }
 
 async function markFailed(db: Db, id: string, message: string) {
@@ -94,7 +113,7 @@ export async function runEmailQueue(): Promise<EmailQueueResult> {
         const sent = await sendResendTemplate(apiKey, {
           to: row.to_email,
           template: row.template,
-          variables: buildVariables(row.payload),
+          variables: buildVariables(row.payload, row.template),
         });
         if (sent.ok) {
           await db

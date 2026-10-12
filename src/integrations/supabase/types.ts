@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.17"
   }
   public: {
     Tables: {
@@ -4012,6 +4012,107 @@ export type Database = {
           },
         ]
       }
+      support_access_log: {
+        Row: {
+          at: string
+          grant_id: string
+          id: number
+          org_id: string
+          surface: string
+          user_id: string
+        }
+        Insert: {
+          at?: string
+          grant_id: string
+          id?: never
+          org_id: string
+          surface: string
+          user_id: string
+        }
+        Update: {
+          at?: string
+          grant_id?: string
+          id?: never
+          org_id?: string
+          surface?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_access_log_grant_id_fkey"
+            columns: ["grant_id"]
+            isOneToOne: false
+            referencedRelation: "support_grants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_access_log_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_grants: {
+        Row: {
+          created_at: string
+          days: number
+          decided_at: string | null
+          decided_by: string | null
+          ended_at: string | null
+          ended_by: string | null
+          ends_at: string | null
+          id: string
+          include_conversations: boolean
+          org_id: string
+          reason: string
+          requested_by: string
+          starts_at: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          days?: number
+          decided_at?: string | null
+          decided_by?: string | null
+          ended_at?: string | null
+          ended_by?: string | null
+          ends_at?: string | null
+          id?: string
+          include_conversations?: boolean
+          org_id: string
+          reason: string
+          requested_by: string
+          starts_at?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          days?: number
+          decided_at?: string | null
+          decided_by?: string | null
+          ended_at?: string | null
+          ended_by?: string | null
+          ends_at?: string | null
+          id?: string
+          include_conversations?: boolean
+          org_id?: string
+          reason?: string
+          requested_by?: string
+          starts_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_grants_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sweep_runs: {
         Row: {
           created_at: string
@@ -5711,6 +5812,15 @@ export type Database = {
         Args: { p_approve: boolean; p_invite: string }
         Returns: Json
       }
+      decide_support_access: {
+        Args: {
+          p_approve: boolean
+          p_days?: number
+          p_grant: string
+          p_include_conversations?: boolean
+        }
+        Returns: Json
+      }
       decline_share_back: {
         Args: { p_actor_profile_id?: string; p_institution_id: string }
         Returns: Json
@@ -5720,6 +5830,7 @@ export type Database = {
         Args: { p_actor_profile_id?: string; p_link_id: string }
         Returns: undefined
       }
+      end_support_access: { Args: { p_grant: string }; Returns: Json }
       engagement_member_can_see_item: {
         Args: { item: string }
         Returns: boolean
@@ -5728,6 +5839,7 @@ export type Database = {
         Args: { p_engagement: string }
         Returns: string
       }
+      expire_support_grants: { Args: never; Returns: number }
       has_org_role: {
         Args: {
           p_org: string
@@ -5742,13 +5854,23 @@ export type Database = {
       is_member_of: { Args: { p_org: string }; Returns: boolean }
       is_my_active_profile: { Args: { p: string }; Returns: boolean }
       is_my_profile: { Args: { p: string }; Returns: boolean }
+      is_org_admin_of: { Args: { p_org: string }; Returns: boolean }
       is_platform_admin: {
         Args: { p_min_role?: string; p_user: string }
+        Returns: boolean
+      }
+      is_support_viewer: { Args: { p_org: string }; Returns: boolean }
+      is_support_viewer_with_turns: {
+        Args: { p_org: string }
         Returns: boolean
       }
       join_org_with_invite: {
         Args: { p_code: string; p_display_name: string }
         Returns: string
+      }
+      log_support_view: {
+        Args: { p_org: string; p_surface: string }
+        Returns: undefined
       }
       make_invite: {
         Args: {
@@ -5937,6 +6059,10 @@ export type Database = {
         }
         Returns: Json
       }
+      request_support_access: {
+        Args: { p_days?: number; p_org: string; p_reason: string }
+        Returns: Json
+      }
       seat_ceiling: { Args: { p_seats: number }; Returns: number }
       seat_status: { Args: { p_org: string }; Returns: Json }
       set_container_color: {
@@ -5992,6 +6118,23 @@ export type Database = {
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
       snapshot_seat_usage: { Args: never; Returns: number }
+      support_grantor_profile: { Args: { p_org: string }; Returns: string }
+      support_notify_admins: { Args: { p_grant: string }; Returns: undefined }
+      support_queue_email: {
+        Args: {
+          p_grant: string
+          p_template: string
+          p_to_admins: boolean
+          p_to_requester: boolean
+        }
+        Returns: undefined
+      }
+      support_sees_chat: { Args: { p_session: string }; Returns: boolean }
+      support_sees_engagement: { Args: { p_eng: string }; Returns: boolean }
+      support_sees_task: { Args: { p_task: string }; Returns: boolean }
+      support_sees_turns_of: { Args: { p_wi: string }; Returns: boolean }
+      support_sees_work_item: { Args: { p_wi: string }; Returns: boolean }
+      support_sees_workboard: { Args: { p_wb: string }; Returns: boolean }
       tier_rank: { Args: { t: string }; Returns: number }
       trigger_egress_sweep: { Args: { p_source?: string }; Returns: number }
       unarchive_container: { Args: { p_id: string }; Returns: Json }
