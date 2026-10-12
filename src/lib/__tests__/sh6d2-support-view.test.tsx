@@ -11,7 +11,7 @@ const rpc = vi.fn(async () => ({ data: null, error: null }));
 function chain(table: string) {
   const result = () => {
     if (table === "support_grants") return { data: state.grant, error: null };
-    if (table === "orgs") return { data: { name: "Acme", org_mode: "company" }, error: null };
+    if (table === "orgs") return { data: { name: "Acme", settings: { type: "company" } }, error: null };
     if (table === "work_items") return { data: [{ id: "w1", title: "Pricing memo", source: "chatgpt", captured_at: "2026-10-10T00:00:00Z", work_item_tasks: [] }], error: null };
     return { data: null, error: null, count: 0 };
   };
@@ -72,7 +72,7 @@ describe("SH-6d-2 support view", () => {
   });
 
   it("active grant: banner, home logged once, hidden conversations never query turns", async () => {
-    state.grant = { id: GID, org_id: "o1", reason: "Board will not load", include_conversations: false, status: "active", ends_at: "2099-10-19T12:00:00Z" };
+    state.grant = { id: GID, org_id: "o1", reason: "Board will not load", include_conversations: false, status: "active", ends_at: "2099-10-19T12:00:00Z", requested_by: "u1" };
     mount();
     expect(await screen.findByText("Support view of Acme. Read only. Ends 19 Oct.")).toBeTruthy();
     expect(screen.getByText("Conversations: hidden")).toBeTruthy();
@@ -83,6 +83,15 @@ describe("SH-6d-2 support view", () => {
     fireEvent.click(await screen.findByText("Pricing memo"));
     expect(await screen.findByText("Conversations are hidden for this support view.")).toBeTruthy();
     expect(tables).not.toContain("turns");
+  });
+
+  it("active grant requested by someone else shows the not-active line and calls no RPC", async () => {
+    state.grant = { id: GID, org_id: "o1", reason: "r", include_conversations: true, status: "active", ends_at: "2099-01-01T00:00:00Z", requested_by: "someone-else" };
+    mount();
+    expect(await screen.findByText("This support access is not active.")).toBeTruthy();
+    expect(screen.queryByTestId("support-banner")).toBeNull();
+    expect(rpc).not.toHaveBeenCalled();
+    expect(tables).not.toContain("orgs");
   });
 });
 
