@@ -120,10 +120,9 @@ describe("the disclosure line", () => {
   it("appears verbatim on the Trust & data page", () => {
     const source = readFileSync("src/routes/trust.tsx", "utf8").replace(/\s+/g, " ");
     expect(source).toContain(
-      "To improve the product we measure how the interface is used: clicks, load times, " +
-        "and masked interaction replays. Everything readable is masked in your browser " +
-        "before anything is sent. Your documents, conversations, and prompts never leave " +
-        "your device through analytics.",
+      "We measure how the interface is used: clicks, load times and masked replays of the screen. " +
+        "Everything readable is masked in your browser before it is sent, and identifiers are one-way salted keys. " +
+        "This is separate from your data level above.",
     );
   });
 });
