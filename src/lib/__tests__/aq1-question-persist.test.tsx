@@ -17,6 +17,7 @@ function fakeSupabase() {
       const q: Record<string, unknown> = {};
       let pendingInsert: Omit<Row, "id">[] | null = null;
       const result = () => {
+        if (pendingInsert && table !== "chat_messages") return { data: null, error: null };
         if (pendingInsert) {
           const made = pendingInsert.map((r) => ({ ...r, id: nextId++ }));
           rows.push(...made);
