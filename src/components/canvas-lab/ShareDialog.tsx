@@ -12,6 +12,7 @@ import { useState } from "react";
 import { BoardLinkSection } from "@/components/canvas-lab/ShareBoardDialog";
 import { GraphiteIcon } from "@/components/notebook/icons";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -20,8 +21,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
-  ACCESS_CHOICES,
-  accessLabel,
   type EngagementAccessChoice,
 } from "@/lib/engagement-access-shared";
 import {
@@ -180,6 +179,20 @@ function SponsorRow({
   );
 }
 
+export const PEOPLE_COPY = {
+  heading: "Who has access",
+  owner: "You · Owner",
+  add: "Add people by name",
+  view: "Can view",
+  multiplayer: "Multiplayer",
+  viewLine: "Can open the board and read the cards.",
+  multiplayerLine: "Can also add and arrange work.",
+  remove: "Remove",
+  membersOnly: "Only people in this workspace can be added here.",
+  empty: "Nobody else is on this board yet.",
+  problem: "That could not be changed.",
+} as const;
+
 function PeopleSection({
   engagementId,
   profileId,
@@ -217,98 +230,102 @@ function PeopleSection({
         },
       }),
     onSuccess: async (answer) => {
-      setProblem(answer.status === "done" ? null : "That could not be changed.");
+      setProblem(answer.status === "done" ? null : PEOPLE_COPY.problem);
       if (answer.status === "done") setPick("");
       await queryClient.invalidateQueries({ queryKey: key });
     },
-    onError: () => setProblem("That could not be changed."),
+    onError: () => setProblem(PEOPLE_COPY.problem),
   });
 
   const rows = people.data?.people ?? [];
-  const onBoard = rows.filter((person) => person.access !== null);
-  const canPick = rows.filter((person) => person.access === null);
+  const onBoard = rows.filter((person) => !person.isYou && person.access !== null);
+  const canPick = rows.filter((person) => !person.isYou && person.access === null);
+  const suggestions = canPick.filter((person) =>
+    person.display_name.toLocaleLowerCase().includes(pick.trim().toLocaleLowerCase()),
+  );
+  const choices = [
+    { value: "review", label: PEOPLE_COPY.view, line: PEOPLE_COPY.viewLine },
+    { value: "work", label: PEOPLE_COPY.multiplayer, line: PEOPLE_COPY.multiplayerLine },
+  ] as const;
 
   return (
-    <section className="flex flex-col gap-3">
-      <p className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">People</p>
-
-      {people.data && canPick.length === 0 ? (
-        <p className="nb-type-small text-foreground" data-testid="share-nobody-to-pick">
-          Nobody else is in your workspace yet. Invite people from Settings, People.
-        </p>
-      ) : (
+    <section className="flex flex-col gap-3" aria-label={PEOPLE_COPY.heading}>
       <div className="flex flex-col gap-2">
-        <label className="nb-type-small text-muted" htmlFor="share-person">
-          Choose someone from your workspace
+        <label className="nb-type-small text-muted-foreground" htmlFor="share-person">
+          {PEOPLE_COPY.add}
         </label>
-        <select
+        <Input
           id="share-person"
-          aria-label="Choose someone from your workspace"
-          className="h-8 rounded-md border border-input bg-background px-2 text-xs"
           value={pick}
+          autoComplete="off"
+          disabled={people.isPending || change.isPending || !people.data?.canShare}
           onChange={(event) => setPick(event.target.value)}
-        >
-          <option value="">Nobody chosen</option>
-          {canPick.map((person) => (
-            <option key={person.id} value={person.id}>
-              {person.display_name}
-            </option>
-          ))}
-        </select>
-
-        <div className="flex flex-col gap-2">
-          {ACCESS_CHOICES.map((choice) => (
-            <div key={choice.value} className="flex items-start justify-between gap-3">
-              <p className="nb-type-small text-foreground">{choice.line}</p>
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={!pick || change.isPending}
-                onClick={() => change.mutate({ person_id: pick, access: choice.value })}
-              >
-                {choice.label}
-              </Button>
-            </div>
-          ))}
-        </div>
-      </div>
-      )}
-
-      {problem ? <p className="nb-type-small text-foreground">{problem}</p> : null}
-
-      <div className="flex flex-col gap-2">
-        <p className="font-mono text-[9px] uppercase tracking-[0.08em] text-foreground">
-          Already on this board
-        </p>
-        {onBoard.length === 0 ? (
-          <p className="nb-type-small text-muted-foreground">Nobody else is on this board yet.</p>
-        ) : (
-          <ul className="space-y-2">
-            {onBoard.map((person) => (
-              <li
-                key={person.id}
-                className="flex items-center justify-between gap-3 rounded-md border border-border p-2"
-              >
-                <span className="nb-type-small text-muted-foreground">
-                  {person.display_name} · {accessLabel(person.access as EngagementAccessChoice)}
-                </span>
-                {person.isYou ? (
-                  <span className="nb-type-small text-muted-foreground">You</span>
-                ) : (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    disabled={change.isPending}
-                    onClick={() => change.mutate({ person_id: person.id, access: "none" })}
-                  >
-                    Take it away
-                  </Button>
-                )}
+        />
+        {pick.trim() && suggestions.length > 0 ? (
+          <ul className="space-y-1" aria-label={PEOPLE_COPY.add}>
+            {suggestions.map((person) => (
+              <li key={person.id}>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start"
+                  disabled={change.isPending || !people.data?.canShare}
+                  onClick={() => change.mutate({ person_id: person.id, access: "review" })}
+                >
+                  {person.display_name}
+                </Button>
               </li>
             ))}
           </ul>
-        )}
+        ) : null}
+        {pick.includes("@") && suggestions.length === 0 ? (
+          <p className="nb-type-small text-muted-foreground">{PEOPLE_COPY.membersOnly}</p>
+        ) : null}
       </div>
+
+      <p className="nb-type-small text-foreground">{PEOPLE_COPY.heading}</p>
+      <ul className="space-y-2">
+        {rows.some((person) => person.isYou) ? (
+          <li className="nb-type-small text-muted-foreground">{PEOPLE_COPY.owner}</li>
+        ) : null}
+        {onBoard.map((person) => (
+          <li key={person.id} className="flex flex-col gap-2 rounded-md border border-border p-2">
+            <span className="nb-type-small text-foreground">{person.display_name}</span>
+            <div className="flex flex-wrap items-center gap-2">
+              <div role="group" aria-label={person.display_name} className="flex gap-1">
+                {choices.map((choice) => (
+                  <Button
+                    key={choice.value}
+                    size="sm"
+                    variant="outline"
+                    aria-pressed={person.access === choice.value}
+                    disabled={change.isPending || !people.data?.canShare}
+                    onClick={() => change.mutate({ person_id: person.id, access: choice.value })}
+                  >
+                    {choice.label}
+                  </Button>
+                ))}
+              </div>
+              <Button
+                size="sm"
+                variant="ghost"
+                disabled={change.isPending || !people.data?.canShare}
+                onClick={() => change.mutate({ person_id: person.id, access: "none" })}
+              >
+                {PEOPLE_COPY.remove}
+              </Button>
+            </div>
+            {choices.map((choice) => (
+              <p key={choice.value} className="nb-type-small text-muted-foreground">
+                {choice.label}: {choice.line}
+              </p>
+            ))}
+          </li>
+        ))}
+      </ul>
+      {people.data && onBoard.length === 0 ? (
+        <p className="nb-type-small text-muted-foreground">{PEOPLE_COPY.empty}</p>
+      ) : null}
+      {problem ? <p className="nb-type-small text-foreground">{problem}</p> : null}
     </section>
   );
 }
