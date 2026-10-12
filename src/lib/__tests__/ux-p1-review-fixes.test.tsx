@@ -13,9 +13,9 @@ import type { WorkItemRow } from "@/lib/work-types";
 vi.mock("@/components/work/RowMenu", () => ({
   useRowMenuParts: () => ({ items: <DropdownMenuItem>Shared action</DropdownMenuItem>, dialogs: null }),
 }));
-afterEach(cleanup);
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 const read = (path: string) => readFileSync(path, "utf8");
-const item = { id: "w1", title: "Memo", source: "import:manual", captured_at: "2026-10-12T00:00:00Z", work_item_tasks: [], meta: {} } as WorkItemRow;
+const item = { id: "w1", title: "Memo", type: "document", visibility: "unmapped", content_ref: null, source: "import:manual", captured_at: "2026-10-12T00:00:00Z", work_item_tasks: [], meta: {} } as WorkItemRow;
 
 describe("UX-P1 review fixes", () => {
   it.each(["Put on a board", "Work date", "Shared action"])("CS-4 closes the menu when %s is selected", async (label) => {
@@ -53,13 +53,14 @@ describe("UX-P1 review fixes", () => {
   });
 
   it("CS-12 removes the toolbar control while an existing judgment node still renders", () => {
+    vi.stubGlobal("ResizeObserver", class { observe() {} disconnect() {} unobserve() {} });
     const page = read("src/pages/CanvasLabPage.tsx");
     const toolbar = page.slice(page.indexOf("const toolbarItems"), page.indexOf("const toolbarPlan"));
     expect(toolbar).not.toContain("Human judgment");
     expect(toolbar).not.toContain('id: "add-judgment"');
     const node = { id: "judgment:existing", kind: "judgment", title: "Existing judgment", summary: "Keep the original recommendation.", typeLabel: "Human judgment", ownership: "yours", local: false, frame: null, x: 0, y: 0, width: 320, height: 240 } as LabNode;
     const noop = () => {};
-    render(<LabCard node={node} selected={false} focused={false} connecting={false} connectSourceAnchor={null} canResize={false} structured={false} frameChoices={[]} readOnly onSelect={noop} onOpen={noop} onBranch={noop} onHide={noop} onDelete={noop} onEdit={noop} onEditCommitted={noop} onAnchorPointerDown={noop} onAnchorActivate={noop} onMenuOpened={noop} onMenuOpenChange={noop} onMeasure={noop} onPointerDown={noop} onFocus={noop} onKeyDown={noop} onResizeStart={noop} onFit={noop} onResizeKeyDown={noop} onResizeKeyUp={noop} />);
+    render(<LabCard node={node} selected={false} focused={false} connecting={false} connectSourceAnchor={null} canResize={false} structured={false} frameChoices={[]} readOnly onSelect={noop} onOpen={noop} onBranch={noop} onHide={noop} onDelete={noop} onEdit={noop} onEditCommitted={noop} onAnchorPointerDown={noop} onAnchorActivate={noop} onMenuOpened={noop} onMenuOpenChange={noop} onMeasure={noop} onPointerDown={noop} onFocus={noop} onKeyDown={noop} onResizeStart={noop} onFit={noop} onResizeKeyDown={noop} onResizeKeyUp={noop} onMoveToFrame={noop} />);
     expect(screen.getByText("Existing judgment")).toBeTruthy();
     expect(screen.getByText("Human judgment")).toBeTruthy();
     expect(screen.getByText("Keep the original recommendation.")).toBeTruthy();
