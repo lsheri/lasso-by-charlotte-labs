@@ -37,7 +37,7 @@ describe("BE-2 kept answer display", () => {
   });
   it("replaces the border with one selected outline and uses token colours", () => {
     render(<LabAnswerCard {...props} focused />);
-    expect(screen.getByTestId("canvas-lab-answer-card").dataset.focused).toBe("true");
+    expect(screen.getByTestId("canvas-lab-answer-card").dataset["focused"]).toBe("true");
     const css = readFileSync("src/styles.css", "utf8");
     const rule = css.match(/\.canvas-lab-answer-card\[data-focused="true"\]\s*\{([^}]+)\}/)?.[1];
     expect(rule).toContain("border-color: transparent");
