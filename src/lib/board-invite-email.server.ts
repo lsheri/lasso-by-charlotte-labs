@@ -21,15 +21,8 @@ export function boardAccessLine(level: string, conversations: string): string {
     : "You can view the cards and their summaries.";
 }
 
-/** Resend inserts template variables raw, so anything a person typed is escaped. */
-export function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
+export { escapeHtml } from "./escape-html";
+import { escapeHtml } from "./escape-html";
 
 export async function sendBoardInviteEmail(inviteId: string): Promise<{ sent: boolean }> {
   try {
