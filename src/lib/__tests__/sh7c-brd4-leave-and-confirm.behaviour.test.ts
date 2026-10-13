@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { canLeaveBoard, LEAVE_BOARD_COPY, REMOVE_FROM_BOARD_COPY } from "@/lib/leave-board";
 import { cardRemovable } from "@/lib/card-removable";
+import { switcherProfiles } from "@/hooks/use-profile";
 import type { WorkItemRow } from "@/lib/work-types";
 
 describe("canLeaveBoard", () => {
@@ -45,5 +46,23 @@ describe("remove confirmation", () => {
   });
   it("never opens the dialog for a coach", () => {
     expect(requestHide({ id: "p-me", role: "coach" }, { workItemId: "w" }, { owner_id: "p-me" } as WorkItemRow)).toEqual(["announce"]);
+  });
+});
+
+describe("guest-seat lookup reads the unfiltered list (SH-7c-fix)", () => {
+  // OWN-1 makes switcherProfiles drop guest seats; the leave-board lookup must
+  // therefore read the full profile list, not the switcher list.
+  const all = [
+    { id: "p-own", role: "em", is_guest: false },
+    { id: "g-seat", role: "em", is_guest: true },
+  ] as unknown as Parameters<typeof switcherProfiles>[0];
+  it("the switcher list drops the guest seat, so a lookup against it finds nothing", () => {
+    const switcher = switcherProfiles(all);
+    expect(switcher.find((p) => p.id === "g-seat")).toBeUndefined();
+  });
+  it("the full list still contains the guest seat, so the lookup finds it", () => {
+    const seat = all.find((p) => p.id === "g-seat");
+    expect(seat).toBeDefined();
+    expect(canLeaveBoard(seat as { id: string; role: string; is_guest: boolean }, { profile_id: "g-seat" })).toBe(true);
   });
 });

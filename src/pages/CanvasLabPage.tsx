@@ -178,7 +178,7 @@ import { useEngagementPage } from "@/hooks/use-engagement-page";
 import { useWorkboardCardPreviews } from "@/hooks/use-workboard-card-previews";
 import { useWorkboardFilePreviews } from "@/hooks/use-workboard-file-previews";
 import { useMotion } from "@/hooks/use-motion";
-import { useProfile } from "@/hooks/use-profile";
+import { useProfile, useProfiles } from "@/hooks/use-profile";
 import { ownsWorkItem } from "@/lib/work-ownership";
 import { cardRemovable } from "@/lib/card-removable";
 import { teammateMarkFor } from "@/lib/teammate-mark";
@@ -256,6 +256,9 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   useRecordEngagementView(engagementId);
   const settingsDialog = useSettingsDialogOptional();
   const { data: profile, profiles } = useProfile();
+  // SH-7c-fix: the guest-seat lookup needs the unfiltered list; useProfile's
+  // `profiles` drops guest seats on purpose (OWN-1).
+  const allProfilesQuery = useProfiles();
   const { data: page, isLoading, isError } = useEngagementPage(engagementId);
   const noteOpened = useServerFn(noteCanvasOpenedFn);
   const unfold = useMotion("canvas.unfolded");
@@ -616,7 +619,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     : null;
   // SH-7c: the guest seat this person holds on this board, if any.
   const guestSeatRow = sharedSpace ? sharedBoards.find((b) => b.engagement_id === engagementId) : undefined;
-  const guestSeat = guestSeatRow ? profiles.find((p) => p.id === guestSeatRow.guest_profile_id) : undefined;
+  const guestSeat = guestSeatRow ? (allProfilesQuery.data ?? []).find((p) => p.id === guestSeatRow.guest_profile_id) : undefined;
   const canLeave = canLeaveBoard(guestSeat, guestSeatRow ? { profile_id: guestSeatRow.guest_profile_id } : null);
   async function leaveBoard() {
     if (!guestSeat || leaving) return;
