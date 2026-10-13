@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { BoardShell, type BoardShellFrame } from "@/components/board/BoardShell";
 import { NewEngagementDialog } from "@/components/engagements/NewEngagementDialog";
 import { HomeEngagementGrid, homeGridHeight } from "@/components/home/HomeEngagementGrid";
+import { SharedWithYouShelf, useSharedWithYou } from "@/components/layout/SharedWithYou";
 import { LassoThinkingMark } from "@/components/reflect/LassoThinkingMark";
 import { Button } from "@/components/ui/button";
 import { useEngagements } from "@/hooks/use-engagements";
@@ -26,11 +27,12 @@ export const HOME_HERO_CONTENT_HEIGHT = 286;
 export const HOME_HERO_BOTTOM_MARGIN = 48;
 export const HOME_HERO_FRAME_HEIGHT = HOME_CONTENT_TOP - BOARD_FIT_PADDING + HOME_HERO_CONTENT_HEIGHT + HOME_HERO_BOTTOM_MARGIN;
 
-type HomeFrame = BoardShellFrame & { kind: "hero" | "grid" };
+type HomeFrame = BoardShellFrame & { kind: "hero" | "grid" | "shared" };
 
 export function homeFramesForViewport(
   viewport: { width: number; height: number },
   cardCount: number,
+  sharedCount = 0,
 ): HomeFrame[] {
   const width = Math.max(1, viewport.width - BOARD_FIT_PADDING * 2);
   const hero: HomeFrame = {
@@ -49,7 +51,15 @@ export function homeFramesForViewport(
     width,
     height: homeGridHeight(cardCount, width),
   };
-  return [hero, grid];
+  if (sharedCount === 0) return [hero, grid];
+  const shared: HomeFrame = {
+    ...grid,
+    id: "home-shared",
+    kind: "shared",
+    height: 160 + homeGridHeight(sharedCount, width),
+  };
+  grid.y = shared.y + shared.height + HOME_FRAME_GAP;
+  return [hero, shared, grid];
 }
 
 export function ideasMailto(idea: string): string {
@@ -95,6 +105,7 @@ export function IdeasNote({ openMailClient = openIdeasMailClient }: { openMailCl
 
 export function HomeBoard() {
   const { data: profile } = useProfile();
+  const { shared, pending } = useSharedWithYou(Boolean(profile?.id));
   const { data: engagements } = useEngagements(profile?.id);
   const [viewport, setViewport] = useState(HOME_VIEWPORT_SEED);
 
@@ -123,7 +134,7 @@ export function HomeBoard() {
     lastViewedAt: viewedAt.get(engagement.id) ?? null,
     workCount: workCounts ? workCounts.get(engagement.id) ?? 0 : null,
   }));
-  const frames = homeFramesForViewport(viewport, cards.length);
+  const frames = homeFramesForViewport(viewport, cards.length, shared.length + pending.length);
   const contentHeight = Math.max(...frames.map((frame) => frame.y + frame.height)) + BOARD_FIT_PADDING;
 
   return (
@@ -181,6 +192,8 @@ export function HomeBoard() {
               <IdeasNote />
             </div>
           </section>
+        ) : currentFrame.kind === "shared" ? (
+          <SharedWithYouShelf shared={shared} pending={pending} />
         ) : (
           <HomeEngagementGrid
             cards={cards}

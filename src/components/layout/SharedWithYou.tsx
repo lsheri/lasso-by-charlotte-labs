@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { setActiveProfileId, useProfile, type Profile } from "@/hooks/use-profile";
 import { logEvent } from "@/lib/telemetry";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 export const SHARED_WITH_YOU_COPY = {
   title: "Shared with you",
@@ -23,6 +24,12 @@ export const SHARED_WITH_YOU_COPY = {
   band: (host: string, level: string) =>
     `${host}'s board · ${level === "review" ? "You can view" : "You can add work"} · What you add stays yours`,
   failed: "That board could not be opened. Ask the person who shared it for a new link.",
+  shelfNote: "Other people's boards you can see or add to. Your work on them stays yours.",
+  sharedLabel: (host: string) => `SHARED · ${host.toUpperCase()}`,
+  inviteLabel: "INVITE · WAITING FOR YOU",
+  invited: (name: string) => `${name} wants you to see this board.`,
+  permission: (level: string) => level === "work" ? "You can add work" : "You can view",
+  placement: (title: string) => `On ${title} · shared`,
 } as const;
 
 const OWN_PROFILE_KEY = "lasso.last_own_profile";
@@ -55,10 +62,10 @@ export function useSharedWithYou(enabled: boolean) {
 }
 
 /** Open a shared board in place: no profile switch, ever. */
-function useOpenShared() {
+export function useOpenShared() {
   const navigate = useNavigate();
   const { data: profile } = useProfile();
-  return (engagementId: string, via: "shelf" | "bell") => {
+  return (engagementId: string, via: "shelf" | "bell" | "home") => {
     if (profile?.org_id) logEvent("shared.board_opened", profile.org_id, { via });
     void navigate({ to: "/engagements/$id/canvas-lab", params: { id: engagementId } });
     return true;
@@ -70,7 +77,7 @@ export function useAcceptBoardShare() {
   const queryClient = useQueryClient();
   const { data: profile } = useProfile();
   const openShared = useOpenShared();
-  return async (code: string, level: string, via: "bell" | "sidebar"): Promise<string | null> => {
+  return async (code: string, level: string, via: "bell" | "sidebar" | "home"): Promise<string | null> => {
     const { data, error } = await supabase.rpc("claim_board_invite", { p_code: code });
     if (error) return SHARED_WITH_YOU_COPY.failed;
     const r = (data ?? {}) as Record<string, unknown>;
@@ -79,9 +86,79 @@ export function useAcceptBoardShare() {
     if (profile?.org_id) logEvent("board.invite_accepted", profile.org_id, { kind: "peer", level, via });
     void queryClient.invalidateQueries({ queryKey: ["my-shared-boards"] });
     void queryClient.invalidateQueries({ queryKey: ["my-pending-board-invites"] });
-    openShared(engagementId, via === "bell" ? "bell" : "shelf");
+    openShared(engagementId, via === "sidebar" ? "shelf" : via);
     return null;
   };
+}
+
+/** Home uses the same reads and actions as the sidebar, without changing workspace. */
+export function SharedWithYouShelf({ shared, pending }: { shared: SharedBoardRow[]; pending: PendingInviteRow[] }) {
+  const openShared = useOpenShared();
+  const accept = useAcceptBoardShare();
+  const [busy, setBusy] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  if (shared.length === 0 && pending.length === 0) return null;
+  const card = "flex min-h-[228px] min-w-0 flex-col items-start justify-between gap-4 whitespace-normal rounded-[var(--radius-control)] border-[1.5px] border-[var(--nb-shared)] bg-card p-4 text-left";
+  return (
+    <section aria-label={SHARED_WITH_YOU_COPY.title} data-testid="home-shared-shelf" className="min-w-0 text-left">
+      <h2 className="font-hand text-[26px] text-[var(--nb-shared)]">{SHARED_WITH_YOU_COPY.title}</h2>
+      <p className="mt-1 text-base leading-relaxed text-muted-foreground">{SHARED_WITH_YOU_COPY.shelfNote}</p>
+      <ul className="mt-4 grid list-none grid-cols-1 gap-6 p-0 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {shared.map((board) => (
+          <li key={`${board.engagement_id}:${board.guest_profile_id}`} className="min-w-0">
+            <Button variant="ghost" className={cn(card, "h-full w-full hover:bg-secondary")} onClick={() => openShared(board.engagement_id, "home")}>
+              <span className="max-w-full break-words font-mono text-[13px] font-normal text-[var(--nb-shared)]">{SHARED_WITH_YOU_COPY.sharedLabel(board.host_org)}</span>
+              <span className="max-w-full break-words text-[19.5px] font-medium text-foreground">{board.title}</span>
+              <span className="text-base font-normal text-muted-foreground">{SHARED_WITH_YOU_COPY.permission(board.level)}</span>
+            </Button>
+          </li>
+        ))}
+        {pending.map((invite) => (
+          <li key={invite.invite_id} className={cn(card, "border-dashed")}>
+            <span className="max-w-full break-words font-mono text-[13px] text-[var(--nb-shared)]">{SHARED_WITH_YOU_COPY.inviteLabel}</span>
+            <h3 className="max-w-full break-words text-[19.5px] font-medium text-foreground">{invite.board}</h3>
+            <p className="text-base leading-relaxed text-muted-foreground">{SHARED_WITH_YOU_COPY.invited(invite.invited_by)}</p>
+            <Button variant="outline" disabled={busy !== null} onClick={async () => {
+              setBusy(invite.invite_id);
+              setError(null);
+              try {
+                const message = await accept(invite.code, invite.level, "home");
+                if (message) setError(message);
+              } catch {
+                setError(SHARED_WITH_YOU_COPY.failed);
+              } finally {
+                setBusy(null);
+              }
+            }}>{SHARED_WITH_YOU_COPY.accept}</Button>
+          </li>
+        ))}
+      </ul>
+      {error && <p role="alert" className="mt-3 text-base text-destructive">{error}</p>}
+    </section>
+  );
+}
+
+export async function fetchSharedWorkPlacements(itemIds: string[]) {
+  if (itemIds.length === 0) return {};
+  const { data, error } = await supabase.from("work_item_tasks")
+    .select("work_item_id, work_items!inner(org_id), tasks(engagements(id, title, org_id))")
+    .in("work_item_id", itemIds);
+  if (error) throw error;
+  const byItem: Record<string, { id: string; title: string }[]> = {};
+  for (const row of data ?? []) {
+    const board = row.tasks?.engagements;
+    if (!board || !row.work_items || board.org_id === row.work_items.org_id) continue;
+    const boards = byItem[row.work_item_id] ?? [];
+    if (!boards.some((existing) => existing.id === board.id)) boards.push({ id: board.id, title: board.title });
+    byItem[row.work_item_id] = boards;
+  }
+  return byItem;
+}
+
+export function SharedWorkChips({ boards }: { boards: { id: string; title: string }[] }) {
+  return boards.length > 0 ? <span className="flex min-w-0 flex-wrap gap-1">
+    {boards.map((board) => <span key={board.id} className="max-w-full break-words rounded-[var(--radius-control)] bg-[color-mix(in_oklab,var(--nb-shared)_12%,var(--nb-paper))] px-2 py-1 text-[13px] text-[var(--nb-shared)]">{SHARED_WITH_YOU_COPY.placement(board.title)}</span>)}
+  </span> : null;
 }
 
 /** Sidebar section, shown in every workspace; silent when both lists are empty. */

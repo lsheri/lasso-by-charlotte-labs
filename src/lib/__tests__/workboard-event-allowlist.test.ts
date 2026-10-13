@@ -128,6 +128,7 @@ describe("the workboard allowlist", () => {
           "source",
           "via",
           "count",
+          "shared",
         ],
         "workboard.workstream_created": [
           "via",
