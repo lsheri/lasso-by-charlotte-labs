@@ -11,6 +11,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { setActiveProfileId, useProfile, type Profile } from "@/hooks/use-profile";
 import { logEvent } from "@/lib/telemetry";
+import { cn } from "@/lib/utils";
 
 export const SHARED_WITH_YOU_COPY = {
   title: "Shared with you",
@@ -165,12 +166,12 @@ function ownProfileId(profiles: Profile[]): string | null {
 }
 
 /** Thin bar over the board while the active profile is a guest. */
-export function GuestBar({ profile, profiles }: { profile: Profile; profiles: Profile[] }) {
+export function GuestBar({ profile, profiles, className }: { profile: Profile; profiles: Profile[]; className?: string }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const target = ownProfileId(profiles);
   return (
-    <div data-testid="guest-bar" className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-md border border-border bg-card px-3 py-1.5 text-[11.5px] text-muted-foreground">
+    <div data-testid="guest-bar" className={cn("mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-md border border-border bg-card px-3 py-1.5 text-[11.5px] text-muted-foreground", className)}>
       <span>{SHARED_WITH_YOU_COPY.guestBar(profile.org_name)}</span>
       {target && (
         <button
