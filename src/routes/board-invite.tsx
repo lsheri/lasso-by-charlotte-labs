@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 
 import { SessionHeader } from "@/components/layout/SessionHeader";
 import { Button } from "@/components/ui/button";
-import { setActiveProfileId } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
 import {
   ACCEPT_COPY,
@@ -168,7 +167,6 @@ function BoardInvitePage() {
       return;
     }
     clearPendingBoardInvite();
-    if (result.profileId) await setActiveProfileId(result.profileId);
     if (result.engagementId) {
       navigate({ to: "/engagements/$id/canvas-lab", params: { id: result.engagementId } } as never);
     } else {
@@ -185,7 +183,6 @@ function BoardInvitePage() {
       return;
     }
     clearPendingBoardInvite();
-    if (result.profileId) await setActiveProfileId(result.profileId);
     navigate({ to: "/engagements/$id/canvas-lab", params: { id: result.engagementId } } as never);
   }
 

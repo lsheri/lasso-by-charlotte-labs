@@ -21,7 +21,12 @@ export type CaptureChannel = "upload" | "drop";
 export function useCaptureFiles() {
   const ensureExtracts = useServerFn(ensureExtractsFn);
   const noteCapture = useServerFn(noteCaptureFn);
-  const { data: profile } = useProfile();
+  const { data: activeProfile, profiles: ownProfiles } = useProfile();
+  // OWN-1: a captured item belongs to the person's own workspace, never a
+  // guest seat on someone else's board, whatever the active profile says.
+  const profile = activeProfile && !activeProfile.is_guest
+    ? activeProfile
+    : ownProfiles.find((p) => !p.is_guest) ?? null;
   const queryClient = useQueryClient();
   const [pending, setPending] = useState(false);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);

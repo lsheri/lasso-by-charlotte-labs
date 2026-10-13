@@ -340,13 +340,24 @@ export async function fetchProfileState(): Promise<ProfileState> {
   return { profiles, hasDeactivated: rows.some((row) => row.deactivated_at) };
 }
 
-function pickActive(profiles: Profile[], activeId: string | null, rowId?: string | null): Profile | null {
-  if (profiles.length === 0) return null;
+/**
+ * OWN-1: a guest seat is a key to one shared board, never a workspace a
+ * person can stand in, so pickActive never returns one. If the only candidate
+ * is a guest seat, the first non-guest profile wins; guest-only means null.
+ */
+export function pickActive(profiles: Profile[], activeId: string | null, rowId?: string | null): Profile | null {
+  const ownable = profiles.filter((p) => !p.is_guest);
+  if (ownable.length === 0) return null;
   // MN-1: the database row wins whenever it names one of these profiles.
-  const fromRow = rowId ? profiles.find((p) => p.id === rowId) : undefined;
+  const fromRow = rowId ? ownable.find((p) => p.id === rowId) : undefined;
   if (fromRow) return fromRow;
-  const match = activeId ? profiles.find((p) => p.id === activeId) : undefined;
-  return match ?? (profiles[0] as Profile);
+  const match = activeId ? ownable.find((p) => p.id === activeId) : undefined;
+  return match ?? (ownable[0] as Profile);
+}
+
+/** OWN-1: the switcher offers workspaces, never guest seats. */
+export function switcherProfiles(profiles: Profile[]): Profile[] {
+  return profiles.filter((p) => !p.is_guest);
 }
 
 /** MN-1: the last row/cache disagreement already repaired, so it never loops. */
@@ -439,7 +450,7 @@ function useSeedActiveProfile(
   storedResolved: boolean,
 ): void {
   useEffect(() => {
-    if (!active || !userId || !storedResolved) return;
+    if (!active || active.is_guest || !userId || !storedResolved) return;
     if (storedId) return;
     if (seededUsers.has(userId)) return;
     seededUsers.add(userId);
@@ -456,7 +467,8 @@ export function useProfile() {
   const userQuery = useAuthUser();
   const userId = userQuery.data?.id ?? null;
   const storedQuery = useStoredActiveProfileId(userId);
-  const profiles = query.data ?? [];
+  // OWN-1: guest seats are board keys, not workspaces to switch into.
+  const profiles = switcherProfiles(query.data ?? []);
   const rowId = storedQuery.isSuccess ? storedQuery.data : null;
   const rowProfile = rowId ? profiles.find((p) => p.id === rowId) ?? null : null;
   const active = pickActive(profiles, activeId, rowId);
