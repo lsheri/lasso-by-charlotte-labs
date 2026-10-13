@@ -180,6 +180,7 @@ import { useWorkboardFilePreviews } from "@/hooks/use-workboard-file-previews";
 import { useMotion } from "@/hooks/use-motion";
 import { useProfile } from "@/hooks/use-profile";
 import { ownsWorkItem } from "@/lib/work-ownership";
+import { cardRemovable } from "@/lib/card-removable";
 import { teammateMarkFor } from "@/lib/teammate-mark";
 import { dragTo, keyTo, type Point } from "@/lib/canvas-drag";
 import { filedWorkCount, groupingDragSnapshot, isRegionFrameId, moveGroupingContents, newRegionFrameId, regionClaimable, regionClaims, regionFillStyle, regionNameChange, regionToolAfterDraw, type GroupingDragMember, type RegionFill } from "@/lib/board-region";
@@ -556,12 +557,6 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     ownerProfileId: item ? item.owner_id : node.authorProfileId,
     members: page?.members ?? [],
   });
-  /** BRD-3a: only the person who owns the work behind a card takes it off the board. */
-  const cardRemovable = (node: LabNode, item: WorkItemRow | undefined) => {
-    if (!node.workItemId) return true;
-    if (item) return ownsWorkItem(profile, item);
-    return Boolean(node.authorProfileId) && node.authorProfileId === profile?.id;
-  };
   const focusItem = focusNode ? itemByNode(focusNode) ?? null : null;
   const reviewItem = reviewNode ? itemByNode(reviewNode) ?? null : null;
   const onScreenChatIds = useMemo(() => {
