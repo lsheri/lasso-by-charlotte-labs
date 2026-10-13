@@ -237,6 +237,15 @@ function noteBoardFirstMap(orgId: string, item: { type: string; source: string }
   logEvent("workitem.mapped", orgId, { type: item.type, source: item.source, via: "board" });
 }
 
+/** SH-7b: a work card owned by any of the viewer's own profiles is theirs. */
+function claimMyWork(nodes: LabNode[], mine: Set<string>, owners: Map<string, string>): LabNode[] {
+  return nodes.map((node) => {
+    if (node.kind !== "work" || !node.workItemId || node.ownership === "yours") return node;
+    const owner = owners.get(node.workItemId);
+    return owner && mine.has(owner) ? { ...node, ownership: "yours" } : node;
+  });
+}
+
 export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string; entryVia?: string }) {
   const navigate = useNavigate();
   // F3: opening a board writes the viewer's own last-viewed row and clears its "N NEW".
@@ -253,6 +262,18 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   const entryViaRef = useRef(workboardOpenVia(entryVia));
   const entryLoggedRef = useRef(false);
   const lab = useCanvasLab(engagementId, profile?.id, orgId);
+  // SH-7b: work is "yours" when any of your own profiles owns it, the active
+  // one or your seat on a shared board.
+  const myProfileIds = useMemo(() => new Set([...(profile?.id ? [profile.id] : []), ...profiles.map((p) => p.id)]), [profile?.id, profiles]);
+  function workOwners(board: { nodes: readonly unknown[] } | null | undefined): Map<string, string> {
+    const owners = new Map<string, string>();
+    for (const item of workItems) if (item.owner_id) owners.set(item.id, item.owner_id);
+    for (const raw of board?.nodes ?? []) {
+      const node = raw as { workItemId?: string | null; itemOwnerId?: string | null };
+      if (node.workItemId && node.itemOwnerId) owners.set(node.workItemId, node.itemOwnerId);
+    }
+    return owners;
+  }
   const queryClient = useQueryClient();
   const placeWork = useServerFn(placeWorkOnBoardFn);
   const createDrawnWorkstream = useServerFn(createDrawnWorkstreamFn);
@@ -2912,6 +2933,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
               setNodes((current) => current?.map((entry) => entry.id === node.id ? { ...entry, summary: answer.text, ...(answer.html !== null ? { html: answer.html } : {}), ...(answer.original !== null ? { original: answer.original } : {}), ...(answer.editedAt !== null ? { editedAt: answer.editedAt } : {}), durableId: durable.id, durableVersion: result.versions[durable.id] ?? durable.version + 1 } : entry) ?? current);
               return null;
             }} focused={keyboardId === node.id} stackZ={cardStackZ(front, node.id)} onFocus={() => { setFront((current) => bringToFront(current, node.id)); setKeyboardId(node.id); setSelectedFrameId(null); }} onPointerDown={(event) => { setFront((current) => bringToFront(current, node.id)); onCardPointerDown(node, event); }} onDelete={() => deleteNode(node)} frameChoices={structureMode === "structured" ? boardFrames.filter((frame) => !isContextFrameId(frame.id) && frame.id !== "trail" && boardFrameRenders(frameKindOf(frame), true)).map((frame) => ({ id: frame.id, name: frame.name })) : []} onMoveToFrame={structureMode === "structured" && lab.board?.canEditStructure ? (frameId) => moveToFrame(node, frameId) : undefined} />)}
+            {sharedSpace ? visibleNodes.filter((node) => node.kind === "work" && node.ownership === "yours").map((node) => <span key={`yours:${node.id}`} data-testid="shared-yours-label" aria-hidden="true" className="pointer-events-none absolute font-mono text-[9px] uppercase tracking-[0.12em] text-[var(--nb-shared)]" style={{ left: node.x, top: node.y - 14 }}>Yours</span>) : null}
             {visibleNodes.filter((node) => node.kind !== "answer" && !isWorkboardDecorationKind(node.kind)).map((node) => { const bundleChatId = pieceChat.get(node.id); const canResize = !bundleChatId && Boolean(lab.board?.canEditStructure) && (node.kind !== "judgment" || Boolean(node.local)); const cardItem = itemByNode(node); return <LabCard key={node.id} node={node} item={cardItem} teammateMark={teammateMarkByNode(node, cardItem)} preview={cardItem ? cardPreviews[cardItem.id] : undefined} filePreview={cardItem ? filePreviews[cardItem.id] : undefined} onPreviewScroll={cardItem ? (kind) => notePreviewScroll(cardItem, kind) : undefined} selected={selected.includes(node.id)} previewSelected={marqueePreview.includes(node.id)} focused={keyboardId === node.id} focusOnMount={pendingJudgmentFocusId === node.id} connecting={connectSource !== null || connectorPreview !== null} connectSourceAnchor={connectSource?.nodeId === node.id ? connectSource.anchor : null} onSelect={() => { noteWorkboardContextChanged(orgId, "menu"); setAnnouncement(selected.includes(node.id) ? "Removed from context" : "Added to context"); setSelected((current) => { if (!current.includes(node.id)) flareNewContext([node.id], current); return toggleContext(current, node.id); }); }} onOpen={(origin) => openNode(node, origin)} onBranch={() => branchFrom(node)} onHide={() => hideNode(node)} onDelete={() => deleteNode(node)} onTakeOutOfContext={isContextFrameId(node.frame) && node.workItemId ? () => void takeOutOfContext(node) : undefined} onEdit={(text) => { nodesRef.current = updateLocalNode(nodesRef.current, node.id, text); setNodes((current) => current ? updateLocalNode(current, node.id, text) : current); }} onEditCommitted={() => { noteWorkboardNodeEdited(orgId, eventKind(node)); const current = nodesRef.current.find((entry) => entry.id === node.id); if (current?.durableId) void persistNodePatch(current.id, { body: current.summary, title: current.title }); }} onAnchorPointerDown={(side, event) => startPointerConnect(node, side, event)} onAnchorActivate={(side) => chooseConnectAnchor(node, side)} onMenuOpened={() => { if (connectSource || connectorDragRef.current) cancelConnect(); noteWorkboardCardMenuOpened(orgId, eventKind(node), node.ownership); }} onMenuOpenChange={setCardMenuOpen} onMeasure={(height) => cardHeightsRef.current.set(node.id, height)} onPointerDown={(event) => { setFront((current) => bringToFront(current, node.id)); onCardPointerDown(node, event); }} onFocus={() => { setFront((current) => bringToFront(current, node.id)); setKeyboardId(node.id); setSelectedFrameId(null); setSelectedLinkId((current) => relationshipSelection(current, "deselect")); if (pendingJudgmentFocusId === node.id) setPendingJudgmentFocusId(null); }} onKeyDown={(event) => onCardKeyDown(node, event)} canResize={canResize} onResizeStart={(corner, event) => startResize("card", node.id, corner, { x: node.x, y: node.y, width: node.width, height: node.height }, event)} onResizeKeyDown={(corner, event) => keyboardResize("card", node.id, corner, { x: node.x, y: node.y, width: node.width, height: node.height }, event)} onResizeKeyUp={finishKeyboardResize} onFit={() => fitCard(node)} frameChoices={boardFrames.filter((frame) => !isContextFrameId(frame.id) && frame.id !== "trail" && boardFrameRenders(frameKindOf(frame), true)).map((frame) => ({ id: frame.id, name: frame.name }))} structured={structureMode === "structured"} onMoveToFrame={(frameId) => moveToFrame(node, frameId)} stackZ={cardStackZ(front, node.id)} commentCount={node.workItemId ? commentCounts[node.workItemId] ?? 0 : 0} onOpenComments={() => { setFocusOrigin(null); setFocusOpensComments(true); setFocusId(node.id); }} madeInChat={bundleChatId ? visibleNodes.find((entry) => entry.id === bundleChatId)?.title : undefined} bundleToggleLabel={bundles.has(node.id) ? (bundleView.minimized.has(node.id) ? "Show pieces" : "Minimize pieces") : undefined} onBundleToggle={bundles.has(node.id) ? () => toggleBundle(node, bundleView.minimized.has(node.id) ? "expanded" : "minimized", "menu") : undefined} onSaveChatLink={cardItem && ownsWorkItem(profile, cardItem) ? (url) => saveChatLink(cardItem.id, url) : undefined} />; })}
             <LabBundleControls nodes={visibleNodes} bundles={bundleView.bundles} more={bundleView.more} minimized={bundleView.minimized} zoom={zoom} onToggle={(chat, state) => toggleBundle(chat, state, "control")} />
             <svg className="canvas-lab-relationship-overlays absolute inset-0 overflow-visible" width={bounds.width} height={bounds.height} aria-label="Workboard relationship labels">
