@@ -33,8 +33,10 @@ describe("BRD-3 remove from board", () => {
 
   it("CanvasLabPage passes a computed removable from work ownership, not the teammate mark", () => {
     const page = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
-    expect(page).toContain("removable={cardRemovable(node, cardItem)}");
-    const predicate = page.slice(page.indexOf("const cardRemovable ="), page.indexOf("const cardRemovable =") + 400);
+    expect(page).toContain('import { cardRemovable } from "@/lib/card-removable";');
+    expect(page).toContain("removable={cardRemovable(profile, node, cardItem)}");
+    expect(page).not.toContain("const cardRemovable =");
+    const predicate = readFileSync("src/lib/card-removable.ts", "utf8");
     expect(predicate).toContain("ownsWorkItem(profile, item)");
     expect(predicate).not.toContain("teammateMarkByNode");
     // A decoration node (sticky, text, grouping, judgment, decision, brief) is removable as before.

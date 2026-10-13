@@ -6,8 +6,43 @@ vi.mock("sonner", () => ({ toast: { error: () => undefined } }));
 import { pickActive, type Profile } from "@/hooks/use-profile";
 import { isSharedSpace } from "@/lib/shared-space";
 import { ownsWorkItem } from "@/lib/work-ownership";
+import { cardRemovable } from "@/lib/card-removable";
+import type { WorkItemRow } from "@/lib/work-types";
 
 const me = { id: "p-me", role: "em" };
+
+describe("cardRemovable", () => {
+  // Decorations carry no work behind them and stay removable for anyone.
+  it("is true for a sticky with no workItemId", () => {
+    expect(cardRemovable(me, { workItemId: null, authorProfileId: "p-other" }, undefined)).toBe(true);
+  });
+  it("is true for a text block with no workItemId", () => {
+    expect(cardRemovable(me, { workItemId: null, authorProfileId: undefined }, undefined)).toBe(true);
+  });
+  it("is true for a shape (grouping) with no workItemId", () => {
+    expect(cardRemovable(me, { workItemId: null, authorProfileId: "p-other" }, undefined)).toBe(true);
+  });
+  it("is true for a work node whose item the signed-in person owns", () => {
+    expect(cardRemovable(me, { workItemId: "w1", authorProfileId: "p-me" }, { owner_id: "p-me" } as WorkItemRow)).toBe(true);
+  });
+  it("is false for a work node whose item belongs to someone else", () => {
+    expect(cardRemovable(me, { workItemId: "w1", authorProfileId: "p-other" }, { owner_id: "p-other" } as WorkItemRow)).toBe(false);
+  });
+  it("falls back to the node author when the item has not loaded, true for own work", () => {
+    expect(cardRemovable(me, { workItemId: "w1", authorProfileId: "p-me" }, undefined)).toBe(true);
+  });
+  it("falls back to the node author when the item has not loaded, false for a teammate's work", () => {
+    expect(cardRemovable(me, { workItemId: "w1", authorProfileId: "p-other" }, undefined)).toBe(false);
+  });
+  it("is false when the item has not loaded and the node has no author", () => {
+    expect(cardRemovable(me, { workItemId: "w1", authorProfileId: undefined }, undefined)).toBe(false);
+    expect(cardRemovable(me, { workItemId: "w1" }, undefined)).toBe(false);
+  });
+  // A coach reads but never removes, even when the work is theirs.
+  it("is false for a coach even when they own the work", () => {
+    expect(cardRemovable({ id: "p-me", role: "coach" }, { workItemId: "w1", authorProfileId: "p-me" }, { owner_id: "p-me" } as WorkItemRow)).toBe(false);
+  });
+});
 
 describe("ownsWorkItem", () => {
   it("is true when the owner is the profile", () => {
