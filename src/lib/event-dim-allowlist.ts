@@ -228,7 +228,7 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "profile.switched": ["from_role", "same_org", "to_role"],
   "reflect.message_sent": ["answer_retried", "catalogue_size", "context_mode", "finish_reason", "items_fetched", "preset", "quote_repairs", "rounds", "scope", "scope_source", "searches", "suppressed_quotes", "tier2_items", "tool_calls", "truncated", "unmatched_quotes", "renditions_read"],
   "reflect.session_created": ["context_mode", "finish_reason", "preset", "quote_repairs", "scope", "suppressed_quotes", "tier2_items", "truncated", "unmatched_quotes"],
-  "shared.board_opened": ["boards_band", "granters_band"],
+  "shared.board_opened": ["boards_band", "granters_band", "via"],
   "task.updated": [],
   "thread.shape": ["from", "has_revision_loop", "role_alternation", "to", "turn_band"],
   "version.recorded": [],
