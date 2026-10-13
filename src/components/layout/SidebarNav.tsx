@@ -17,6 +17,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useUnreadNotesAboutMe } from "@/hooks/use-coach-note-thread";
 import { FromYourPeopleGroup } from "./FromYourPeople";
 import { useSharedWithMe } from "@/hooks/use-shared-with-me";
+import { SharedWithYouSection } from "./SharedWithYou";
 import { useSharedBoardMarks } from "@/hooks/use-shared-board-marks";
 
 import { useWorkItems } from "@/hooks/use-work-items";
@@ -519,6 +520,16 @@ export function SidebarNav({
                     );
   }
 
+  // SH-6b: a board guest sees only the boards shared with them, never the
+  // host's folders, All work or Look back.
+  if (profile?.is_guest) {
+    return (
+      <nav className="flex flex-col gap-7">
+        <SharedWithYouSection onNavigate={onNavigate} />
+      </nav>
+    );
+  }
+
   // A guest gets their own short nav. Worker and admin items are unchanged.
   // The coaching destination sits on top of it only when a board was shared.
   if (guestNav) {
@@ -527,6 +538,7 @@ export function SidebarNav({
     );
     return (
       <nav className="flex flex-col gap-7">
+        <SharedWithYouSection onNavigate={onNavigate} />
         {coachingGroups.length === 0 ? shared : null}
         {[...coachingGroups, ...coachNavGroups].map((group) => (
           <Fragment key={group.label}>
@@ -574,6 +586,7 @@ export function SidebarNav({
 
   return (
     <nav className="flex shrink-0 flex-col gap-7">
+      <SharedWithYouSection onNavigate={onNavigate} />
       {navGroupsForPerson.map((group) => {
         if (group.id === "from_your_people") {
           return <FromYourPeopleGroup key="from_your_people" onOpen={() => openNavItem("from_your_people")} />;
