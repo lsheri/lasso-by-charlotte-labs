@@ -5869,6 +5869,7 @@ export type Database = {
       is_free_mail: { Args: { p_domain: string }; Returns: boolean }
       is_member_of: { Args: { p_org: string }; Returns: boolean }
       is_my_active_profile: { Args: { p: string }; Returns: boolean }
+      is_my_guest_membership: { Args: { eng: string }; Returns: boolean }
       is_my_profile: { Args: { p: string }; Returns: boolean }
       is_org_admin_of: { Args: { p_org: string }; Returns: boolean }
       is_org_insider: { Args: { p_org: string }; Returns: boolean }

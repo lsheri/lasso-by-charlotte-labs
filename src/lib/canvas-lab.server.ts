@@ -45,6 +45,29 @@ async function membershipFor(db: Db, engagementId: string, profileId: string): P
   return { isMember: roles.length > 0, isEditor: roles.some((role) => role !== "coach") };
 }
 
+/**
+ * SH-7a: a shared board opens inside the person's own workspace. When the
+ * active profile is not on the board, the caller's own guest seat on it (a
+ * profile of the same user) stands in for author and permission checks.
+ */
+export async function boardSeatFor(db: Db, engagementId: string, profile: ResolvedProfile): Promise<ResolvedProfile> {
+  const own = await membershipFor(db, engagementId, profile.id);
+  if (own.isMember) return profile;
+  const { data: me } = await db.from("profiles").select("user_id").eq("id", profile.id).maybeSingle();
+  const userId = (me as { user_id?: string } | null)?.user_id;
+  if (!userId) return profile;
+  const { data: mine } = await db.from("profiles").select("id, org_id, role").eq("user_id", userId).is("deactivated_at", null);
+  const candidates = ((mine ?? []) as ResolvedProfile[]).filter((row) => row.id !== profile.id);
+  if (candidates.length === 0) return profile;
+  const { data: seats } = await db
+    .from("engagement_members")
+    .select("profile_id")
+    .eq("engagement_id", engagementId)
+    .in("profile_id", candidates.map((row) => row.id));
+  const seatId = (seats ?? [])[0]?.profile_id;
+  return candidates.find((row) => row.id === seatId) ?? profile;
+}
+
 async function findBoard(db: Db, engagementId: string): Promise<BoardRow | null> {
   const { data } = await db.from("workboards").select("*").eq("engagement_id", engagementId).maybeSingle();
   return data ?? null;
@@ -88,7 +111,8 @@ function frameDto(row: FrameRow): WorkboardFrameDto {
   };
 }
 
-export async function loadWorkboard(db: Db, engagementId: string, profile: ResolvedProfile): Promise<WorkboardDto | null> {
+export async function loadWorkboard(db: Db, engagementId: string, activeProfile: ResolvedProfile): Promise<WorkboardDto | null> {
+  const profile = await boardSeatFor(db, engagementId, activeProfile);
   const membership = await membershipFor(db, engagementId, profile.id);
   if (!membership.isMember) return null;
   const board = await findBoard(db, engagementId);
@@ -296,9 +320,10 @@ function nodePatchForDatabase(patch: Extract<WorkboardCommand, { type: "node_upd
 export async function applyWorkboardCommand(
   db: Db,
   engagementId: string,
-  profile: ResolvedProfile,
+  activeProfile: ResolvedProfile,
   command: WorkboardCommand,
 ): Promise<WorkboardMutationResult> {
+  const profile = await boardSeatFor(db, engagementId, activeProfile);
   const membership = await membershipFor(db, engagementId, profile.id);
   if (!membership.isMember) return { status: "forbidden" };
   // Coaches read already-permitted sources. They never arrange the shared

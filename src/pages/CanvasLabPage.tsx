@@ -157,7 +157,8 @@ import {
   type WorkboardPersistEntity,
 } from "@/components/canvas-lab/canvas-lab-telemetry";
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
-import { GuestBar } from "@/components/layout/SharedWithYou";
+import { SHARED_WITH_YOU_COPY, useSharedWithYou } from "@/components/layout/SharedWithYou";
+import { initialsOf } from "@/lib/initials";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { GraphiteIcon } from "@/components/notebook/icons";
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
@@ -241,7 +242,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   // F3: opening a board writes the viewer's own last-viewed row and clears its "N NEW".
   useRecordEngagementView(engagementId);
   const settingsDialog = useSettingsDialogOptional();
-  const { data: profile, profiles } = useProfile();
+  const { data: profile } = useProfile();
   const { data: page, isLoading, isError } = useEngagementPage(engagementId);
   const noteOpened = useServerFn(noteCanvasOpenedFn);
   const unfold = useMotion("canvas.unfolded");
@@ -574,6 +575,15 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   const fileDrop = useBoardFileDrop({ enabled: canAddWork, toBoard: (x, y) => stagePoint(x, y), place: (ids, at) => addWorkToBoard(ids, "upload", at), placeImage: (image, at) => addImageToBoard(image, at) });
   const showExample = boardIsNearEmpty(visibleNodes);
   const loadingBoard = isLoading || lab.boardLoading;
+  // SH-7a: a board from another workspace opens in place, marked as shared.
+  const sharedBoards = useSharedWithYou(Boolean(profile?.id)).shared;
+  const boardOrgId = (engagement as { org_id?: string | null } | null)?.org_id ?? null;
+  const sharedSpace = boardOrgId && profile?.org_id && boardOrgId !== profile.org_id
+    ? (() => {
+        const row = sharedBoards.find((b) => b.engagement_id === engagementId);
+        return { host: row?.host_org ?? "Another workspace", level: row?.level ?? "work", members: page?.members ?? [] };
+      })()
+    : null;
   const notAvailable = !loadingBoard && !isError && !engagement;
   const boardReady = !loadingBoard && !isError && Boolean(engagement) && nodes !== null && frames !== null;
   fitInputsRef.current = { frames: drawnBoardFrames, nodes: visibleNodes, structured: structureMode === "structured" };
@@ -2818,9 +2828,21 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       </aside>
       {menuOpen ? <div className="fixed inset-0 z-50 flex bg-[var(--nb-scrim)]" onPointerDown={() => setMenuOpen(false)}><aside className="h-full w-[280px] overflow-y-auto border-r border-border bg-sidebar p-4 shadow-[var(--shadow-modal)]" onPointerDown={(event) => event.stopPropagation()}><div className="mb-5 flex items-center justify-between"><span className="font-serif text-xl text-foreground">Lasso</span><Button size="icon" variant="ghost" aria-label="Close workboard menu" onClick={() => setMenuOpen(false)}><X className="h-4 w-4" /></Button></div><div className="mb-5"><WorkspaceMenu surface="drawer" onNavigate={() => setMenuOpen(false)} onOpenSettings={() => settingsDialog?.openSettings()} /></div><SidebarNav surface="drawer" onNavigate={() => setMenuOpen(false)} onOpenSettings={() => settingsDialog?.openSettings()} /><div className="mt-6 border-t border-border pt-4"><label className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft" htmlFor="canvas-lab-new-frame">Add workstream</label><div className="mt-2 flex gap-2"><input id="canvas-lab-new-frame" maxLength={60} value={newFrameName} onChange={(event) => { setNewFrameName(event.target.value); if (event.target.value.trim()) setNewFrameError(false); }} className="min-w-0 flex-1 rounded-[var(--radius-control)] border border-input bg-background px-2 text-[12px]" placeholder="Workstream name" /><Button size="sm" variant="outline" onClick={() => { if (addWorkstream(newFrameName)) { setNewFrameName(""); setNewFrameError(false); } else setNewFrameError(true); }}>Add</Button></div>{newFrameError ? <p className="mt-1 font-hand text-[13px] text-destructive">a workstream needs a name</p> : <p className="mt-1 font-hand text-[13px] text-[var(--nb-mid)]">not saved</p>}</div></aside></div> : null}
       <main className={`relative min-w-0 flex-1 flex-col ${mobileView === "board" ? "flex" : "hidden md:flex"}`}>
-        <header className={`relative z-20 flex shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-4 ${profile?.is_guest ? "min-h-[52px] flex-wrap py-2" : "h-[52px]"}`}>
+        {sharedSpace ? (
+          <div data-testid="shared-space-band" className="relative z-20 flex shrink-0 items-center gap-3 border-b border-[color-mix(in_srgb,var(--nb-shared)_25%,var(--card))] bg-[color-mix(in_srgb,var(--nb-shared)_8%,var(--card))] px-4 py-1.5">
+            <p className="min-w-0 flex-1 text-xs text-foreground">
+              <span className="mr-2 font-mono text-[9px] uppercase tracking-[0.12em] text-[var(--nb-shared)]">{SHARED_WITH_YOU_COPY.bandLabel}</span>
+              <span className="break-words">{SHARED_WITH_YOU_COPY.band(sharedSpace.host, sharedSpace.level)}</span>
+            </p>
+            {sharedSpace.members.length > 0 ? (
+              <ul className="flex shrink-0 -space-x-1.5" aria-label="People on this board">
+                {sharedSpace.members.slice(0, 4).map((m) => <li key={m.id} title={m.display_name} className="grid h-6 w-6 place-items-center rounded-full border border-[color-mix(in_srgb,var(--nb-shared)_25%,var(--card))] bg-card font-mono text-[9px] text-foreground">{initialsOf(m.display_name)}</li>)}
+              </ul>
+            ) : null}
+          </div>
+        ) : null}
+        <header className="relative z-20 flex h-[52px] shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-4">
           <div className="min-w-0 shrink"><span className="block truncate text-[13px] font-medium text-foreground">{title}</span><span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{status}</span></div>
-          {profile?.is_guest ? <GuestBar profile={profile} profiles={profiles} className="order-last mb-0 min-w-0 basis-full rounded-none border-0 bg-transparent p-0 text-[13px] [&_span]:min-w-0 [&_span]:break-words [&_button]:max-w-full [&_button]:text-left" /> : null}
           <div ref={toolbarRef} className="canvas-lab-toolbar flex min-w-0 flex-1 items-center justify-end gap-2 overflow-hidden">
             {toolbarItems.filter((item) => toolbarPlan.row.includes(item.spec.id)).map((item) => <div key={item.spec.id} className="flex shrink-0 items-center gap-2">{item.row}</div>)}
             {toolbarOverflowItems.length > 0 ? (
@@ -2860,6 +2882,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
         {lab.saveState.status === "error" ? <div data-testid="canvas-lab-banner" className="canvas-lab-banner" role="alert"><p className="text-[13px] text-foreground">Could not save your last change. {lab.saveState.message}</p><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => resolveSaveError("retry")}>Retry</Button><Button size="sm" variant="outline" onClick={() => resolveSaveError("discard")}>Discard</Button></div></div> : null}
         <div ref={shellRef} tabIndex={-1} onDragEnter={fileDrop.handlers.onDragEnter} onDragLeave={fileDrop.handlers.onDragLeave} onDragOverCapture={fileDrop.handlers.onDragOver} onDragOver={(event) => { if (!canAddWork || !isAnswerDrag(event.dataTransfer.types)) return; event.preventDefault(); event.dataTransfer.dropEffect = "copy"; }} onDropCapture={fileDrop.handlers.onDrop} onDrop={(event) => { if (!isAnswerDrag(event.dataTransfer.types)) return; event.preventDefault(); delete document.body.dataset["answerDrag"]; const answer = parseAnswerDrop(event.dataTransfer.getData(ANSWER_DRAG_MIME)); if (!answer) return; void keepAnswerAsCard(answer, { at: stagePoint(event.clientX, event.clientY), via: "drag" }); }} onPointerDownCapture={(event) => { if (event.button === 0 && spaceRef.current) { event.preventDefault(); event.stopPropagation(); startSpacePan(event); } }} onPointerDown={(event) => { const target = event.target as HTMLElement; const empty = event.target === event.currentTarget || target.dataset["testid"] === "canvas-lab-stage"; if (event.button === 0 && empty && drawTool) { event.preventDefault(); const at = stagePoint(event.clientX, event.clientY); drawingRef.current = { from: at, to: at }; setDrawing({ from: at, to: at }); return; } if (event.button === 1 && empty) { event.preventDefault(); startSpacePan(event); return; } if (event.button === 0 && empty) { event.preventDefault(); window.getSelection()?.removeAllRanges(); event.currentTarget.classList.add("select-none"); setKeyboardId(null); setSelectedFrameId(null); setSelectedLinkId((current) => relationshipSelection(current, "deselect")); if (event.pointerType === "touch") { event.currentTarget.classList.remove("select-none"); startSpacePan(event); return; } const at = stagePoint(event.clientX, event.clientY); const screen = { x: event.clientX, y: event.clientY }; marqueeRef.current = { fromScreen: screen, fromBoard: at, toScreen: screen, toBoard: at }; setInteraction("marquee"); } }} onContextMenu={(event) => { const target = event.target as HTMLElement; const empty = event.target === event.currentTarget || target.dataset["testid"] === "canvas-lab-stage"; if (!empty || !canAddWork) return; event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect(); const screen = { x: event.clientX - rect.left, y: event.clientY - rect.top }; setBoardMenu({ screen, board: boardPointFromScreen(screen) }); }} data-space-pan={spaceHeld} data-drawing={drawTool ? "true" : undefined} onScroll={(event) => keepViewportUnscrolled(event.currentTarget)} data-interacting={interaction !== "idle" || drawing !== null || viewportMoving ? "true" : undefined} className="canvas-lab-surface relative min-h-0 flex-1 overflow-hidden">
           <BoardFileDropOverlay show={fileDrop.over} />
+          {sharedSpace ? <div aria-hidden="true" data-testid="shared-space-frame" className="pointer-events-none absolute inset-0 z-10 shadow-[inset_0_0_0_3px_color-mix(in_srgb,var(--nb-shared)_25%,var(--card))]" /> : null}
           {boardReady ? <div data-testid="canvas-lab-stage" tabIndex={-1} className="canvas-lab-stage absolute left-0 top-0 origin-top-left" style={{ width: bounds.width, height: bounds.height, transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, "--lab-inverse-zoom": labInverseZoom(zoom) } as CSSProperties}>
             {visibleNodes.filter((node) => node.kind === "shape").map((node) => <LabColourBlock key={node.id} node={node} selected={keyboardId === node.id} editable={Boolean(lab.board?.canEditStructure)} onSelect={() => { setKeyboardId(node.id); setSelectedFrameId(null); setSelectedLinkId(null); }} onDragStart={(event) => { if (decorationPointerIntent({ selected: keyboardId === node.id, onEdge: Boolean((event.target as HTMLElement).dataset["edge"]) }) === "drag") onCardPointerDown(node, event); }} onResizeStart={(corner, event) => startResize("shape", node.id, corner, node, event)} onResizeKeyDown={(corner, event) => keyboardResize("shape", node.id, corner, node, event)} onResizeKeyUp={finishKeyboardResize} onRemove={() => deleteNode(node)} />)}
             {marquee ? <div className="canvas-lab-marquee" aria-hidden="true" style={{ left: marquee.x, top: marquee.y, width: marquee.width, height: marquee.height }} /> : null}

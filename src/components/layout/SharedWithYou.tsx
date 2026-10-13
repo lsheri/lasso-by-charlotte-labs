@@ -1,12 +1,12 @@
 /**
  * SH-6b: boards other people shared with this person. A board guest lives in
  * the host's workspace as a profile with is_guest, member of one board only.
- * Opening a shared board switches to that guest profile quietly; Back returns
- * to the person's own workspace.
+ * SH-7a: a shared board opens inside the person's own workspace. The guest
+ * seat is never made the active profile from the UI.
  */
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 
 import { supabase } from "@/integrations/supabase/client";
 import { setActiveProfileId, useProfile, type Profile } from "@/hooks/use-profile";
@@ -19,6 +19,9 @@ export const SHARED_WITH_YOU_COPY = {
   open: "Open",
   guestBar: (host: string) => `Shared by ${host}.`,
   back: "Back to your workspace",
+  bandLabel: "Shared space",
+  band: (host: string, level: string) =>
+    `${host}'s board · ${level === "review" ? "You can view" : "You can add work"} · What you add stays yours`,
   failed: "That board could not be opened. Ask the person who shared it for a new link.",
 } as const;
 
@@ -51,36 +54,33 @@ export function useSharedWithYou(enabled: boolean) {
   return { shared: shared.data ?? [], pending: pending.data ?? [] };
 }
 
-/** Switch profile, refresh everything scoped to it, open the board. */
-function useOpenAs() {
+/** Open a shared board in place: no profile switch, ever. */
+function useOpenShared() {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  return async (profileId: string, engagementId: string) => {
-    const ok = await setActiveProfileId(profileId);
-    if (!ok) return false;
-    void queryClient.invalidateQueries();
+  const { data: profile } = useProfile();
+  return (engagementId: string, via: "shelf" | "bell") => {
+    if (profile?.org_id) logEvent("shared.board_opened", profile.org_id, { via });
     void navigate({ to: "/engagements/$id/canvas-lab", params: { id: engagementId } });
     return true;
   };
 }
 
-/** Claim a share code, become its guest profile, open the board. */
+/** Claim a share code, then open the board inside the current workspace. */
 export function useAcceptBoardShare() {
   const queryClient = useQueryClient();
   const { data: profile } = useProfile();
-  const openAs = useOpenAs();
+  const openShared = useOpenShared();
   return async (code: string, level: string, via: "bell" | "sidebar"): Promise<string | null> => {
     const { data, error } = await supabase.rpc("claim_board_invite", { p_code: code });
     if (error) return SHARED_WITH_YOU_COPY.failed;
     const r = (data ?? {}) as Record<string, unknown>;
-    const profileId = typeof r["profile_id"] === "string" ? r["profile_id"] : null;
     const engagementId = typeof r["engagement_id"] === "string" ? r["engagement_id"] : null;
-    if (!profileId || !engagementId) return SHARED_WITH_YOU_COPY.failed;
+    if (!engagementId) return SHARED_WITH_YOU_COPY.failed;
     if (profile?.org_id) logEvent("board.invite_accepted", profile.org_id, { kind: "peer", level, via });
-    // The new guest profile has to be in the list before it can be active.
-    queryClient.removeQueries({ queryKey: ["profile-state"] });
-    await queryClient.invalidateQueries({ queryKey: ["profiles"] });
-    return (await openAs(profileId, engagementId)) ? null : SHARED_WITH_YOU_COPY.failed;
+    void queryClient.invalidateQueries({ queryKey: ["my-shared-boards"] });
+    void queryClient.invalidateQueries({ queryKey: ["my-pending-board-invites"] });
+    openShared(engagementId, via === "bell" ? "bell" : "shelf");
+    return null;
   };
 }
 
@@ -88,7 +88,8 @@ export function useAcceptBoardShare() {
 export function SharedWithYouSection({ onNavigate }: { onNavigate?: (() => void) | undefined }) {
   const { shared, pending } = useSharedWithYou(true);
   const accept = useAcceptBoardShare();
-  const openAs = useOpenAs();
+  const openShared = useOpenShared();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   if (shared.length === 0 && pending.length === 0) return null;
@@ -101,26 +102,27 @@ export function SharedWithYouSection({ onNavigate }: { onNavigate?: (() => void)
           <button
             key={`${b.engagement_id}:${b.guest_profile_id}`}
             type="button"
-            className={row}
+            className={cn(row, pathname.startsWith(`/engagements/${b.engagement_id}`) && "bg-secondary")}
+            aria-current={pathname.startsWith(`/engagements/${b.engagement_id}`) ? "page" : undefined}
             onClick={() => {
               onNavigate?.();
-              void openAs(b.guest_profile_id, b.engagement_id);
+              openShared(b.engagement_id, "shelf");
             }}
           >
             <span className="truncate text-[13px] text-foreground">{b.title}</span>
-            <span className="truncate text-[11.5px] text-muted-foreground">{b.host_org}</span>
+            <span className="truncate text-xs text-muted-foreground">{b.host_org}</span>
           </button>
         ))}
         {pending.map((p) => (
           <div key={p.invite_id} className="flex items-center gap-2 px-2 py-1">
             <span className="min-w-0 flex-1">
               <span className="block truncate text-[13px] text-foreground">{p.board}</span>
-              <span className="block truncate text-[11.5px] text-muted-foreground">{p.host_org}</span>
+              <span className="block truncate text-xs text-muted-foreground">{p.host_org}</span>
             </span>
             <button
               type="button"
               disabled={busy === p.invite_id}
-              className="nb-pencil-cta shrink-0 rounded-md px-2 py-1 text-[11.5px]"
+              className="nb-pencil-cta shrink-0 rounded-md px-2 py-1 text-xs"
               onClick={async () => {
                 setBusy(p.invite_id);
                 setError(null);
@@ -134,7 +136,7 @@ export function SharedWithYouSection({ onNavigate }: { onNavigate?: (() => void)
             </button>
           </div>
         ))}
-        {error && <p className="px-2 text-[11.5px] text-destructive">{error}</p>}
+        {error && <p className="px-2 text-xs text-destructive">{error}</p>}
       </div>
     </div>
   );
@@ -171,7 +173,7 @@ export function GuestBar({ profile, profiles, className }: { profile: Profile; p
   const queryClient = useQueryClient();
   const target = ownProfileId(profiles);
   return (
-    <div data-testid="guest-bar" className={cn("mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-md border border-border bg-card px-3 py-1.5 text-[11.5px] text-muted-foreground", className)}>
+    <div data-testid="guest-bar" className={cn("mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-md border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground", className)}>
       <span>{SHARED_WITH_YOU_COPY.guestBar(profile.org_name)}</span>
       {target && (
         <button
