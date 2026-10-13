@@ -46,6 +46,7 @@ import { isRegionFrameId } from "@/lib/board-region";
 import { placeAddedCards } from "@/lib/workboard-placement";
 import { resolveWorkDate } from "@/lib/work-order";
 import { parseAnswerBody } from "@/lib/answer-card";
+import { isDeliverableType } from "@/lib/lineage-shared";
 
 export type LabNodeKind = "brief" | "task" | "work" | "decision" | "chat" | "source" | "ai_work" | "judgment" | "deliverable" | "shape" | "text" | "answer" | "sticky" | "image";
 export type LabJudgmentType = "added_constraint" | "corrected_ai" | "rejected_option" | "requested_evidence" | "changed_direction" | "accepted_but_rewrote";
@@ -1134,7 +1135,7 @@ export function applyDurableBoard(base: { frames: LabFrame[]; nodes: LabNode[] }
           typeLabel: type.replaceAll("_", " "),
           ownership: !item.itemOwnerId || item.itemOwnerId === board.viewerProfileId ? "yours" : "teammate",
           workItemId: durable.workItemId,
-          deliverable: type === "document" || type === "deck" || type === "sheet",
+          deliverable: isDeliverableType(type),
           authorProfileId: durable.authorProfileId,
           durableId: durable.id,
           durableVersion: durable.version,
