@@ -1,5 +1,6 @@
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { fetchSharedWorkPlacements, SharedWorkChips } from "@/components/layout/SharedWithYou";
 import { BoardNewPill } from "@/components/board/BoardNewPill";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
@@ -276,7 +277,7 @@ function BringWorkInRow({
 export function WorkPage() {
   const isMobile = useIsMobile();
   const [phoneLimit, setPhoneLimit] = useState(25);
-  const { data: profile } = useProfile();
+  const { data: profile, profiles } = useProfile();
   const { openSettings } = useSettingsDialog();
   const { data, isLoading, error } = useWorkItems();
   const queryClient = useQueryClient();
@@ -356,6 +357,19 @@ export function WorkPage() {
   // One ordering rule for the whole page: when the work happened, falling
   // back to when it arrived. Every column, count and filter reads this list.
   const all = orderByWorkDate(data?.items ?? []);
+  const ownProfileIds = new Set((profiles ?? []).map((own) => own.id));
+  if (profile?.id) ownProfileIds.add(profile.id);
+  const ownItemIds = all.filter((item) => item.owner_id && ownProfileIds.has(item.owner_id)).map((item) => item.id).sort();
+  const sharedPlacements = useQuery({
+    queryKey: ["work-items", "shared-placements", profile?.id, ownItemIds],
+    enabled: ownItemIds.length > 0,
+    staleTime: 60_000,
+    queryFn: () => fetchSharedWorkPlacements(ownItemIds),
+  });
+  function sharedChips(items: WorkItemRow[]) {
+    const boards = new Map(items.flatMap((item) => (sharedPlacements.data?.[item.id] ?? []).map((board) => [board.id, board] as const)));
+    return <SharedWorkChips boards={[...boards.values()]} />;
+  }
   const mappingError = data?.mappingError ?? null;
   const mapped = all.filter((i) => i.visibility === "mapped");
   const unmapped = all.filter((i) => i.visibility === "unmapped");
@@ -756,7 +770,11 @@ export function WorkPage() {
       x: 0,
       y: 0,
       width: currentInboxLaneWidth,
-      height: INBOX_CARD_HEIGHT,
+      height: INBOX_CARD_HEIGHT + (() => {
+        const items = isConversationGroup(entry) ? entry.items : [entry];
+        const boards = new Set(items.flatMap((item) => (sharedPlacements.data?.[item.id] ?? []).map((board) => board.id)));
+        return boards.size * 32;
+      })(),
       frame: newLaneFrameId(`inbox-${bucket.key}`),
       entry,
     })),
@@ -870,6 +888,7 @@ export function WorkPage() {
                 {phoneEntries.slice(0, phoneLimit).map(({ entry, ...head }) => (
                   <li key={isConversationGroup(entry) ? entry.key : entry.id}>
                     <WorkNote item={head} phoneRow onOpen={openItem(head, entry)} />
+                    {sharedChips(isConversationGroup(entry) ? entry.items : [entry])}
                   </li>
                 ))}
               </ul>
@@ -929,6 +948,7 @@ export function WorkPage() {
               renderNode={(node) => (
                 <div className="min-w-0 w-full">
                   <InboxFixedCard>{isConversationGroup(node.entry) ? renderGroup(node.entry, (node.entry.transcript ?? node.entry.items[0]!).visibility === "mapped" ? "mapped" : "unmapped") : renderColumnItem(node.entry)}</InboxFixedCard>
+                  {sharedChips(isConversationGroup(node.entry) ? node.entry.items : [node.entry])}
                 </div>
               )}
             />
