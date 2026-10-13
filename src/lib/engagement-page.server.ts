@@ -16,7 +16,7 @@ import {
 type Db = SupabaseClient<Database>;
 
 const ENGAGEMENT_SELECT =
-  "id, code, title, client_label, client_id, brief, brief_by, term_label, clients(id, name, quick_folder)";
+  "id, org_id, code, title, client_label, client_id, brief, brief_by, term_label, clients(id, name, quick_folder)";
 
 const TASKS_SELECT =
   "id, name, owner_id, detail, is_wrap, is_board_default, work_item_tasks(step_no, step_confirmed, work_items(id, owner_id, orig_conversation_id, ungrouped_at, title, type, source, visibility, captured_at, content_ref, created_at_source, work_date, content_fidelity, source_vendor, source_meta, meta, work_item_extracts(summary)))";

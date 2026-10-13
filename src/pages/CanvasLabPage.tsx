@@ -158,6 +158,7 @@ import {
 } from "@/components/canvas-lab/canvas-lab-telemetry";
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
 import { SHARED_WITH_YOU_COPY, useSharedWithYou } from "@/components/layout/SharedWithYou";
+import { isSharedSpace } from "@/lib/shared-space";
 import { initialsOf } from "@/lib/initials";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { GraphiteIcon } from "@/components/notebook/icons";
@@ -598,8 +599,8 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   const loadingBoard = isLoading || lab.boardLoading;
   // SH-7a: a board from another workspace opens in place, marked as shared.
   const sharedBoards = useSharedWithYou(Boolean(profile?.id)).shared;
-  const boardOrgId = (engagement as { org_id?: string | null } | null)?.org_id ?? null;
-  const sharedSpace = boardOrgId && profile?.org_id && boardOrgId !== profile.org_id
+  const boardOrgId = engagement?.org_id ?? null;
+  const sharedSpace = isSharedSpace(boardOrgId, profile?.org_id)
     ? (() => {
         const row = sharedBoards.find((b) => b.engagement_id === engagementId);
         return { host: row?.host_org ?? "Another workspace", level: row?.level ?? "work", members: page?.members ?? [] };
