@@ -3,6 +3,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/hooks/use-work-file-download", () => ({ useWorkFileDownload: () => vi.fn() }));
+vi.mock("@/hooks/use-vendor-display", () => ({ useVendorVisible: () => true }));
 vi.mock("@/components/peek/ThreadBody", () => ({ ThreadBody: () => <p>Stored conversation</p> }));
 
 import { COPY, FocusOverlay } from "@/components/canvas-lab/FocusOverlay";
