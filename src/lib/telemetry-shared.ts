@@ -473,6 +473,8 @@ export type TelemetryEvent =
    * carries no ids, of either the board or the person who shared it.
    */
   | "shared.board_opened"
+  /** SH-7c: a guest left a board shared with them. No dims, no ids. Portal registration required. */
+  | "shared.board_left"
   /** NC-2: the notification panel was opened. Dims: needs_you (none | some). */
   | "notification.opened"
   /** NC-2: a notification was acted on. Dims: kind (notification kind), action (approve | decline | open). No ids, names or emails. */
