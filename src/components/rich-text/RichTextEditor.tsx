@@ -6,7 +6,7 @@ import Highlight from "@tiptap/extension-highlight";
 import { TextStyle } from "@tiptap/extension-text-style";
 import Color from "@tiptap/extension-color";
 import Underline from "@tiptap/extension-underline";
-import { Bold, Italic, Underline as UnderlineIcon, Strikethrough, List, ListOrdered, RemoveFormatting } from "lucide-react";
+import { Bold, Italic, Underline as UnderlineIcon, Strikethrough, List, ListOrdered, RemoveFormatting, Heading2, Quote } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PALETTE, SIZES, RICH_TEXT_CSS, plainToRichHtml, richToPlainText, sanitizeRichHtml } from "@/lib/rich-text";
 
@@ -15,7 +15,7 @@ export const COPY = {
   highlight: ["Yellow highlight", "Green highlight", "Blue highlight", "Rose highlight"],
   colour: ["Primary text", "Secondary text", "Green text", "Blue text", "Rose text", "Amber text"],
   size: "Text size", sizes: { small: "Small", body: "Body", large: "Large", heading: "Heading" },
-  bullets: "Bullet list", numbered: "Numbered list", clear: "Clear formatting", limit: "Limit reached", editor: "Text",
+  bullets: "Bullet list", numbered: "Numbered list", heading: "Heading", quote: "Quote", marks: "Text style", structure: "Structure", colours: "Colour and highlight", clear: "Clear formatting", limit: "Limit reached", editor: "Text",
 };
 
 const SizedTextStyle = TextStyle.extend({
@@ -31,8 +31,24 @@ const SafeHighlight = Highlight.extend({
   addKeyboardShortcuts() { return { "Mod-Shift-h": () => this.editor.commands.toggleHighlight({ color: PALETTE.highlight[0] }) }; },
 });
 
-export default function RichTextEditor({ initialHtml, onChange, onDone, autoFocus = false, maxChars = 5000 }: {
-  initialHtml: string; onChange: (html: string, plain: string) => void; onDone: () => void; autoFocus?: boolean; maxChars?: number;
+/**
+ * BI-3: toolbar groups in order: marks, structure, then colour and highlight.
+ * Every surface keeps every control; "compact" (stickies) only narrows the
+ * toolbar so it wraps to the sticky instead of running past it.
+ */
+export type ToolbarVariant = "full" | "compact";
+export const TOOLBAR_GROUPS = {
+  marks: ["bold", "italic", "underline", "strike"],
+  structure: ["heading", "bulletList", "orderedList", "blockquote", "clear"],
+  colour: ["highlight", "colour", "size"],
+} as const;
+export function toolbarControls(variant: ToolbarVariant): string[] {
+  void variant;
+  return [...TOOLBAR_GROUPS.marks, ...TOOLBAR_GROUPS.structure, ...TOOLBAR_GROUPS.colour];
+}
+
+export default function RichTextEditor({ initialHtml, onChange, onDone, autoFocus = false, maxChars = 5000, variant = "full" }: {
+  initialHtml: string; onChange: (html: string, plain: string) => void; onDone: () => void; autoFocus?: boolean; maxChars?: number; variant?: ToolbarVariant;
 }) {
   const root = useRef<HTMLDivElement>(null);
   const callbacks = useRef({ onChange, onDone });
@@ -44,7 +60,7 @@ export default function RichTextEditor({ initialHtml, onChange, onDone, autoFocu
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
-      StarterKit.configure({ heading: { levels: [3] }, underline: false, link: false, code: false, codeBlock: false, horizontalRule: false }),
+      StarterKit.configure({ heading: { levels: [2, 3] }, underline: false, link: false, code: false, codeBlock: false, horizontalRule: false }),
       Underline, SafeHighlight.configure({ multicolor: true }), SizedTextStyle, Color,
       Extension.create({ name: "characterLimit", addProseMirrorPlugins() { return [new Plugin({
         filterTransaction(transaction, state) {
@@ -78,20 +94,28 @@ export default function RichTextEditor({ initialHtml, onChange, onDone, autoFocu
     { label: COPY.italic, icon: Italic, active: "italic", run: () => editor?.chain().focus().toggleItalic().run() },
     { label: COPY.underline, icon: UnderlineIcon, active: "underline", run: () => editor?.chain().focus().toggleUnderline().run() },
     { label: COPY.strike, icon: Strikethrough, active: "strike", run: () => editor?.chain().focus().toggleStrike().run() },
+    { label: COPY.heading, icon: Heading2, active: "heading", run: () => editor?.chain().focus().toggleHeading({ level: 2 }).run() },
     { label: COPY.bullets, icon: List, active: "bulletList", run: () => editor?.chain().focus().toggleBulletList().run() },
     { label: COPY.numbered, icon: ListOrdered, active: "orderedList", run: () => editor?.chain().focus().toggleOrderedList().run() },
+    { label: COPY.quote, icon: Quote, active: "blockquote", run: () => editor?.chain().focus().toggleBlockquote().run() },
     { label: COPY.clear, icon: RemoveFormatting, active: "", run: () => editor?.chain().focus().unsetAllMarks().clearNodes().run() },
   ];
   return <div ref={root} className="relative text-foreground">
     <style>{RICH_TEXT_CSS}</style>
-    <div role="toolbar" className="absolute bottom-full left-0 z-50 mb-2 flex max-w-[calc(100vw-2rem)] flex-wrap items-center gap-1 rounded-[var(--radius-control)] border border-border bg-background p-1 shadow-sm" onPointerDown={(event) => { if (!(event.target instanceof HTMLSelectElement)) event.preventDefault(); }}>
+    <div role="toolbar" className="absolute bottom-full left-0 z-50 mb-2 flex flex-wrap items-center gap-1 rounded-[var(--radius-control)] border border-border bg-background p-1 shadow-sm " + (variant === "compact" ? "w-max max-w-[min(15rem,calc(100vw-2rem))]" : "max-w-[calc(100vw-2rem)]") onPointerDown={(event) => { if (!(event.target instanceof HTMLSelectElement)) event.preventDefault(); }}>
+      <div role="group" aria-label={COPY.marks} className="flex flex-wrap items-center gap-1">
       {tools.slice(0, 4).map(({ label, icon: Icon, active, run }) => <Button key={label} type="button" variant="ghost" className={target} title={label} aria-label={label} aria-pressed={active ? editor?.isActive(active) ?? false : undefined} onClick={run}><Icon /></Button>)}
+      </div>
+      <div role="group" aria-label={COPY.structure} className="flex flex-wrap items-center gap-1 border-l border-border pl-1">
+      {tools.slice(4).map(({ label, icon: Icon, active, run }) => <Button key={label} type="button" variant="ghost" className={target} title={label} aria-label={label} aria-pressed={active ? (active === "heading" ? editor?.isActive("heading", { level: 2 }) : editor?.isActive(active)) ?? false : undefined} onClick={run}><Icon /></Button>)}
+      </div>
+      <div role="group" aria-label={COPY.colours} className="flex flex-wrap items-center gap-1 border-l border-border pl-1">
       {PALETTE.highlight.map((colour, index) => <Button key={colour} type="button" variant="ghost" className={target} title={COPY.highlight[index]} aria-label={COPY.highlight[index]} aria-pressed={editor?.isActive("highlight", { color: colour }) ?? false} onClick={() => editor?.chain().focus().toggleHighlight({ color: colour }).run()}><span className="h-3 w-3 border border-border" style={{ backgroundColor: colour }} /></Button>)}
       {PALETTE.text.map((colour, index) => <Button key={colour} type="button" variant="ghost" className={target} title={COPY.colour[index]} aria-label={COPY.colour[index]} aria-pressed={editor?.isActive("textStyle", { color: colour }) ?? false} onClick={() => editor?.chain().focus().setColor(colour).run()}><span className="h-3 w-3 rounded-full" style={{ backgroundColor: colour }} /></Button>)}
       <select aria-label={COPY.size} className="h-7 border border-border bg-background px-1 text-[13px] [@media(pointer:coarse)]:h-11" value={editor?.getAttributes("textStyle")['fontSize'] ?? SIZES.body} onChange={(event) => { if (Object.values(SIZES).some((size) => size === event.target.value)) editor?.chain().focus().setMark("textStyle", { fontSize: event.target.value }).run(); }}>
         {Object.entries(SIZES).map(([key, value]) => <option key={key} value={value}>{COPY.sizes[key as keyof typeof SIZES]}</option>)}
       </select>
-      {tools.slice(4).map(({ label, icon: Icon, active, run }) => <Button key={label} type="button" variant="ghost" className={target} title={label} aria-label={label} aria-pressed={active ? editor?.isActive(active) ?? false : undefined} onClick={run}><Icon /></Button>)}
+      </div>
     </div>
     <EditorContent editor={editor} />
     {limitReached ? <p role="status" className="mt-1 text-[13px] text-soft">{COPY.limit}</p> : null}
