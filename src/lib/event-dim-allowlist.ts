@@ -30,6 +30,9 @@ export const CS3_NAV_ITEMS = ["board"] as const;
 /** MN-5: additive navigation item value for the portal. Never a title, id or name. */
 export const MN5_NAV_ITEMS = ["from_your_people"] as const;
 
+/** BI-2a: additive workboard.context_changed action value for a card body click. Key list unchanged; portal owed this value. */
+export const BI2A_CONTEXT_ACTIONS = ["card"] as const;
+
 /** Every non-workboard event name mapped to the dim keys it may carry. */
 export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   // nav.opened item values include workspace, look_back, your_coach, connect_tools, create_menu, recent_board, find_result, board and from_your_people; dimension keys remain unchanged.

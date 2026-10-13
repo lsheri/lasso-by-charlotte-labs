@@ -355,7 +355,7 @@ export type TelemetryEvent =
   | "work.file_downloaded"
   /** Canvas Lab polish: a save error was settled. Entity and choice only. */
   | "workboard.save_error_resolved"
-  /** Canvas Lab polish: the local context selection changed. Action only. */
+  /** Canvas Lab polish: the local context selection changed. Action only: cleared | marquee | workstream | menu, plus additive "card" (BI-2a, a card body click). */
   | "workboard.context_changed"
   /** Canvas Lab polish: one arranging step was taken back or put back. Closed vocabulary only. */
   | "workboard.undo_used"
