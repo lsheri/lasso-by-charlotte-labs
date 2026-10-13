@@ -8,11 +8,13 @@ export const SIZES = { small: "11.5px", body: "13px", large: "16px", heading: "2
 export const RICH_TEXT_CSS = `.rich-text { color: var(--nb-ink); font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
 .rich-text p { margin: 0; } .rich-text > * + * { margin-top: .35em; }
 .rich-text ul, .rich-text ol { padding-left: 1.25em; } .rich-text ul { list-style: disc; } .rich-text ol { list-style: decimal; }
-.rich-text li + li { margin-top: .1em; } .rich-text h3 { font-size: 20px; font-weight: 600; }
+.rich-text li + li { margin-top: .1em; } .rich-text h2 { font-size: 22px; font-weight: 600; line-height: 1.25; } .rich-text h3 { font-size: 20px; font-weight: 600; }
 .rich-text blockquote { padding-left: .75em; border-left: var(--stroke-pencil) solid var(--nb-pencil); }
 .rich-text mark { background-color: var(--nb-region-yellow-soft); color: inherit; }`;
 
-const TAGS = ["p", "br", "strong", "b", "em", "i", "u", "s", "mark", "span", "ul", "ol", "li", "h3", "blockquote"];
+const TAGS = ["p", "br", "strong", "b", "em", "i", "u", "s", "mark", "span", "ul", "ol", "li", "h2", "h3", "blockquote"];
+/** BI-3: "start" keeps an ordered list that does not begin at 1 numbered correctly after reload. */
+const ATTRS = ["style", "start"];
 const allowedStyles: Record<string, readonly string[]> = {
   color: PALETTE.text,
   "background-color": PALETTE.highlight,
@@ -22,7 +24,7 @@ const allowedStyles: Record<string, readonly string[]> = {
 /** Browser-only sanitisation; without a DOM, fail closed. */
 export function sanitizeRichHtml(html: string): string {
   if (typeof document === "undefined" || typeof DOMPurify.sanitize !== "function") return "";
-  const clean = DOMPurify.sanitize(html, { ALLOWED_TAGS: TAGS, ALLOWED_ATTR: ["style"], ALLOW_DATA_ATTR: false, ALLOW_ARIA_ATTR: false });
+  const clean = DOMPurify.sanitize(html, { ALLOWED_TAGS: TAGS, ALLOWED_ATTR: ATTRS, ALLOW_DATA_ATTR: false, ALLOW_ARIA_ATTR: false });
   const template = document.createElement("template");
   template.innerHTML = clean;
   for (const element of template.content.querySelectorAll("[style]")) {
@@ -49,7 +51,7 @@ export function richToPlainText(html: string): string {
     if (tag === "br") return "\n";
     const children = Array.from(node.childNodes).map(walk).join("");
     if (tag === "li") return `- ${children.replace(/\n+$/, "")}\n`;
-    if (["p", "h3", "blockquote", "ul", "ol"].includes(tag)) return `${children.replace(/\n+$/, "")}\n`;
+    if (["p", "h2", "h3", "blockquote", "ul", "ol"].includes(tag)) return `${children.replace(/\n+$/, "")}\n`;
     return children;
   };
   return walk(template.content).replace(/\n+$/, "");
