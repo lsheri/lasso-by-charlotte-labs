@@ -9,7 +9,7 @@ import type { WorkItemRow } from "@/lib/work-types";
  */
 export function cardRemovable(
   profile: { id: string; role: string } | null | undefined,
-  node: Pick<LabNode, "workItemId" | "authorProfileId">,
+  node: { workItemId?: string | null; authorProfileId?: string | null },
   item: WorkItemRow | undefined,
 ): boolean {
   if (!node.workItemId) return true;
