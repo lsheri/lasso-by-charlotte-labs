@@ -9,7 +9,12 @@ const css = readFileSync("src/styles.css", "utf8");
 describe("R7 Ask Lasso thinking marks", () => {
   it("uses the signature mark in the toolbar and removes the old CSS drift", () => {
     const toolbar = page.slice(page.indexOf("const toolbarItems"), page.indexOf("const toolbarPlan"));
-    expect(toolbar).toContain('<LassoThinkingMark kind="signature" size={LOOP_SIZE_TOOLBAR} thinking still />');
+    // BI-2c-ii: thinking in the toolbar means the animated lime working motion, never a settled frame.
+    expect(toolbar).toContain('<LassoThinkingMark kind="signature" size={LOOP_SIZE_TOOLBAR} thinking />');
+    expect(toolbar).not.toContain("thinking still");
+    // The still setting stays on the component for any surface that needs one settled frame.
+    expect(mark).toContain("still?: boolean;");
+    expect(mark).toContain("if (still) {");
     expect(toolbar).not.toContain("canvas-lab-ask-drift");
     expect(css).not.toMatch(/canvas-lab-ask-(?:drift|float|tilt)/);
   });
