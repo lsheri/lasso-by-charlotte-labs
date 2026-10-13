@@ -1,5 +1,6 @@
 import { stableMemo } from "@/components/canvas-lab/stable-memo";
-import { lazy, Suspense, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
+import { lazy, Suspense, useEffect, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
+import { Pencil } from "lucide-react";
 
 import type { LabNode, LabResizeCorner } from "@/components/canvas-lab/canvas-lab-model";
 import { Button } from "@/components/ui/button";
@@ -38,11 +39,14 @@ function LabTextBlockInner({ node, selected, editable, layoutEditable, onSelect,
   const touched = useRef(false);
   const [fallbackText, setFallbackText] = useState<string | null>(null);
   const [editing, setEditing] = useState(() => selected && editable && body.text.length === 0);
+  const [formattingOpen, setFormattingOpen] = useState(false);
+  useEffect(() => { if (!selected) setFormattingOpen(false); }, [selected]);
   const editingRef = useRef(editing);
   const baseline = useRef({ text: body.text, html: body.html ?? plainToRichHtml(body.text) });
   const sectionRef = useRef<HTMLElement>(null);
   const enterEdit = () => {
     if (!editable || editingRef.current) return;
+    setFormattingOpen(false);
     baseline.current = { text: body.text, html: body.html ?? plainToRichHtml(body.text) };
     draft.current = null;
     touched.current = false;
@@ -94,15 +98,17 @@ function LabTextBlockInner({ node, selected, editable, layoutEditable, onSelect,
         <Suspense fallback={<textarea aria-label="Text block words" autoFocus maxLength={WORKBOARD_TEXT_MAX_LENGTH} value={fallbackText ?? body.text} placeholder="Type something"
           onChange={(event) => { const text = event.target.value; draft.current = { text, html: plainToRichHtml(text) }; setFallbackText(text); }}
           onBlur={finish} onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); finish(); } }} />}>
-          <RichTextEditor initialHtml={draft.current?.html ?? body.html ?? plainToRichHtml(body.text)} autoFocus maxChars={WORKBOARD_TEXT_MAX_LENGTH}
+          <RichTextEditor toolbarVisible={selected && formattingOpen} initialHtml={draft.current?.html ?? body.html ?? plainToRichHtml(body.text)} autoFocus maxChars={WORKBOARD_TEXT_MAX_LENGTH}
             onChange={(html, text) => { if (touched.current) draft.current = { html, text }; }} onDone={finish} />
         </Suspense>
       </div> : body.html !== undefined ? <div className="node-rich" onClick={() => { if (!body.text) enterEdit(); }}><RichTextView html={body.html} /></div>
         : <textarea aria-label="Text block words" maxLength={WORKBOARD_TEXT_MAX_LENGTH} value={body.text} readOnly placeholder="Type something" onPointerDown={(event) => { event.stopPropagation(); onSelect(); }} onClick={() => { if (!body.text) enterEdit(); }} />}
-      {selected && layoutEditable ? <div className="canvas-lab-text-block-controls" onPointerDown={(event) => event.stopPropagation()}>
-        {editable ? <><select aria-label="Text size" value={body.size} onChange={(event) => { const next = { ...body, size: event.target.value as WorkboardTextBody["size"] }; onChange(next); onCommit(next); }}>{WORKBOARD_TEXT_SIZES.map((value) => <option key={value} value={value}>{value}</option>)}</select>
+      {selected && layoutEditable ? <div className="canvas-lab-text-block-controls" onPointerDown={(event) => event.stopPropagation()} onDoubleClick={(event) => event.stopPropagation()}>
+        {editable ? <>
+        <Button type="button" size="sm" variant="ghost" title="Formatting" aria-label="Formatting" aria-pressed={formattingOpen} onPointerDown={(event) => event.preventDefault()} onClick={() => setFormattingOpen((open) => !open)}><Pencil size={12} aria-hidden="true" /></Button>
+        {formattingOpen ? <><select aria-label="Text size" value={body.size} onChange={(event) => { const next = { ...body, size: event.target.value as WorkboardTextBody["size"] }; onChange(next); onCommit(next); }}>{WORKBOARD_TEXT_SIZES.map((value) => <option key={value} value={value}>{value}</option>)}</select>
         <select aria-label="Text weight" value={body.weight} onChange={(event) => { const next = { ...body, weight: event.target.value as WorkboardTextBody["weight"] }; onChange(next); onCommit(next); }}>{WORKBOARD_TEXT_WEIGHTS.map((value) => <option key={value} value={value}>{value}</option>)}</select>
-        <select aria-label="Text colour" value={body.colour} onChange={(event) => { const next = { ...body, colour: event.target.value as WorkboardTextBody["colour"] }; onChange(next); onCommit(next); }}>{WORKBOARD_TEXT_COLOURS.map((value) => <option key={value} value={value}>{value}</option>)}</select></> : null}
+        <select aria-label="Text colour" value={body.colour} onChange={(event) => { const next = { ...body, colour: event.target.value as WorkboardTextBody["colour"] }; onChange(next); onCommit(next); }}>{WORKBOARD_TEXT_COLOURS.map((value) => <option key={value} value={value}>{value}</option>)}</select></> : null}</> : null}
         <Button type="button" size="sm" variant="ghost" onClick={onRemove}>Remove text block</Button>
       </div> : null}
       {selected && layoutEditable ? CORNERS.map((corner) => <button key={corner} type="button" className="canvas-lab-resize-handle" data-corner={corner} aria-label={`Resize text block from ${corner}`} onPointerDown={(event) => onResizeStart(corner, event)} onKeyDown={(event) => onResizeKeyDown(corner, event)} onKeyUp={onResizeKeyUp} />) : null}
