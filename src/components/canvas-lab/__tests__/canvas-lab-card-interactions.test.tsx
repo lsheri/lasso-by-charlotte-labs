@@ -54,7 +54,7 @@ describe("Canvas Lab card interaction correction", () => {
     expect(menu).toContain('aria-label="Card options"');
     expect(read("src/styles.css")).toContain("width: 44px;");
     expect(menu).toContain("cardRef.current?.focus({ preventScroll: true })");
-    expect(menu).toContain("Hide from this board");
+    expect(menu).toContain("Remove from board");
     expect(menu).toContain("Delete this work");
   });
 

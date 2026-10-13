@@ -15,7 +15,7 @@ describe("F4 context area removal and restore", () => {
     const card = readFileSync("src/components/canvas-lab/LabCardMenu.tsx", "utf8");
     expect(frame).toContain("Remove the context area");
     expect(card).toContain("Take out of context");
-    expect(card).toContain("Hide from this board");
+    expect(card).toContain("Remove from board");
     expect(card).toContain("Delete this work");
   });
 
