@@ -2358,9 +2358,9 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     const removed = removedPlacementsRef.current.get(nodeId);
     if (!removed || removed.taskIds.length === 0) return;
     const result = placed
-      ? await supabase.from("work_item_tasks").upsert(removed.taskIds.map((taskId) => ({ work_item_id: removed.workItemId, task_id: taskId })), { onConflict: "work_item_id,task_id", ignoreDuplicates: true })
+      ? await supabase.from("work_item_tasks").insert(removed.taskIds.map((taskId) => ({ work_item_id: removed.workItemId, task_id: taskId })))
       : await supabase.from("work_item_tasks").delete().eq("work_item_id", removed.workItemId).in("task_id", removed.taskIds);
-    if (result.error) setAnnouncement("That change to the board did not save.");
+    if (result.error && result.error.code !== "23505") setAnnouncement("That change to the board did not save.");
     void queryClient.invalidateQueries({ queryKey: ["work-items"] });
   }
 
