@@ -123,8 +123,8 @@ describe("analysis streaming wiring", () => {
 });
 
 describe("work items read", () => {
-  it("keeps the mapping read bounded by the ids on the page", () => {
+  it("keeps the mapping read bounded by the row policies, not the URL", () => {
     const hook = readFileSync(join(SRC, "hooks/use-work-items.ts"), "utf8");
-    expect(hook).toContain('.in(\n      "work_item_id"');
+    expect(hook).not.toContain(".in(");
   });
 });
