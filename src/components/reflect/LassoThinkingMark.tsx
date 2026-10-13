@@ -16,6 +16,7 @@ import {
   scatterStroke,
   SCATTER_ROPE_ANGLE,
   SCATTER_ROPE_LENGTH,
+  SCATTER_THINKING_SECONDS,
   type LoopStamp,
 } from "@/lib/lasso-loop";
 
@@ -28,6 +29,8 @@ type LassoThinkingMarkProps = {
   /** signature only: lime working state; false is the calm, graphite answered state. */
   thinking?: boolean;
   rope?: boolean;
+  /** signature only: draw one settled frame with no animation loop. */
+  still?: boolean;
   className?: string;
 };
 
@@ -88,6 +91,7 @@ function runSignature(
   size: number,
   thinkingRef: { current: boolean },
   ropeRef: { current: boolean },
+  still = false,
 ): () => void {
   const dpr = Math.min(window.devicePixelRatio || 1, 3);
   canvas.width = Math.round(size * dpr);
@@ -177,6 +181,12 @@ function runSignature(
     context.globalAlpha = 1;
   }
 
+  /** BI-2c: a still mark draws one settled frame; thinking keeps it lime, with no frame loop. */
+  if (still) {
+    draw(thinkingRef.current ? SCATTER_THINKING_SECONDS * 0.78 : 0, !thinkingRef.current);
+    return () => {};
+  }
+
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
     draw(0, true);
     return () => {};
@@ -209,7 +219,7 @@ function runSignature(
   };
 }
 
-export function LassoThinkingMark({ kind, size, count = 0, thinking = false, rope = true, className }: LassoThinkingMarkProps) {
+export function LassoThinkingMark({ kind, size, count = 0, thinking = false, rope = true, still = false, className }: LassoThinkingMarkProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const thinkingRef = useRef(thinking);
   thinkingRef.current = thinking;
@@ -224,7 +234,7 @@ export function LassoThinkingMark({ kind, size, count = 0, thinking = false, rop
     const foundContext = canvas.getContext("2d");
     if (!foundContext) return;
     const context: CanvasRenderingContext2D = foundContext;
-    if (kind === "signature") return runSignature(canvas, context, size, thinkingRef, ropeRef);
+    if (kind === "signature") return runSignature(canvas, context, size, thinkingRef, ropeRef, still);
 
     const width = size;
     const height = size;
@@ -367,7 +377,7 @@ export function LassoThinkingMark({ kind, size, count = 0, thinking = false, rop
       observer?.disconnect();
       stop();
     };
-  }, [count, kind, size, rope]);
+  }, [count, kind, size, rope, still]);
 
   return (
     <canvas

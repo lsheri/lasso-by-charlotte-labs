@@ -34,7 +34,7 @@ const ICONS: Record<GraphiteIconName, IconDef> = {
   sticky: { d: ["M4.1 3.6l11.8.2-.2 8.5-3.8 3.9-7.9-.2.1-12.4", "M11.9 16.1l.1-3.9 3.7.1"], sig: "nb-sig-flap", sigIndex: 1, origin: "12px 12px" },
   "working-from": { d: ["M5 2.9l9.8.3-.2 14-9.7-.3L5 2.9z", "M7.4 6.3l5.1.1M7.3 9.4l4.2.1M7.2 12.6l5 .1"], sig: "nb-sig-rise", sigIndex: 1 },
   text: { d: ["M4 4.2l12-.2M10 4.2l-.2 11.9", "M6.8 16.2l6-.1"], sig: "nb-sig-nudge", sigIndex: 1 },
-  grouping: { d: ["M3.1 4.2l13.5-.4.3 12.1-13.6.4-.2-12.1z", "M5.4 4l-.6 1.7M16.7 13.8l-1.5 2.2"], sig: "nb-sig-scuff", sigIndex: 1 },
+  grouping: { d: ["M12.8 15.6c-1 .3-2 .4-3.1.4C5.9 15.8 3 13.2 3.2 9.6 3.4 6 6.6 3.4 10.4 3.6c3.7.2 6.5 2.8 6.4 6-.1 1.9-1.1 3.5-2.7 4.6", "M7.6 8.6l.1.1M11.8 8.2l.1.1M9.6 11.6l.1.1M14.1 14.2l2.4 2.6"], sig: "nb-sig-scuff", sigIndex: 1 },
   "example-board": { d: ["M2.9 4.6l5.9-.4.1 5.1-5.8.2-.2-4.9zM11 3.8l6 .3-.3 4.8-5.7.2V3.8z", "M3.4 12l7.4-.3-.1 4.6-7.3-.1V12zM13 11.4l3.8.2-.2 4.3-3.8.3.2-4.8z"], sig: "nb-sig-flap", sigIndex: 1 },
   share: { d: ["M6.5 10.5l7-4.1M6.5 10.5l7 4", "M5 8.7a2.1 2.1 0 11-.1 4.2A2.1 2.1 0 015 8.7zM15 4.1a2.1 2.1 0 11-.1 4.2 2.1 2.1 0 01.1-4.2zM15 12.4a2.1 2.1 0 11-.1 4.2 2.1 2.1 0 01.1-4.2z"], sig: "nb-sig-lean-in", sigIndex: 0 },
   fit: { d: ["M3.2 7V3.2h3.9M12.9 3.2h3.9V7M16.7 13v3.8h-3.9M7.1 16.8H3.2V13", "M7.3 10l5.4-.1"], sig: "nb-sig-rise", sigIndex: 1 },

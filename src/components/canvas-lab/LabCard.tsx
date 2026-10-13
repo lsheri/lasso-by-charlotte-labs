@@ -21,7 +21,7 @@ import {
   swallowClickIfDrag,
   type ClickSuppress,
 } from "@/lib/canvas-drag";
-import { cardBodyClickSelects, cardDoubleClick } from "@/lib/card-click";
+import { cardBodyClickSelects, cardDoubleClick, createCardClickController, type CardSelectVia } from "@/lib/card-click";
 import { cardSizeTier, type LabAnchor, type LabNode, type LabResizeCorner } from "@/components/canvas-lab/canvas-lab-model";
 import type { WorkItemRow } from "@/lib/work-types";
 import { formatDate } from "@/lib/work-types";
@@ -88,7 +88,8 @@ function LabCardInner({
   previewSelected?: boolean;
   focused: boolean;
   focusOnMount?: boolean;
-  onSelect: () => void;
+  /** Omitted means the menu item. Card body clicks pass a CardSelectVia. */
+  onSelect: (via?: CardSelectVia) => void;
   onOpen: (origin?: DOMRect) => void;
   onBranch: () => void;
   onHide: () => void;
@@ -142,7 +143,11 @@ function LabCardInner({
   const cardDownRef = useRef<{ x: number; y: number } | null>(null);
   const lastClickMovedRef = useRef(false);
   const clickDownRef = useRef<{ x: number; y: number } | null>(null);
-  const firstClickSelectedRef = useRef(false);
+  const onSelectRef = useRef(onSelect);
+  onSelectRef.current = onSelect;
+  const clickControllerRef = useRef<ReturnType<typeof createCardClickController> | null>(null);
+  clickControllerRef.current ??= createCardClickController({ select: (via) => onSelectRef.current(via), schedule: (run, ms) => window.setTimeout(run, ms), cancel: (id) => window.clearTimeout(id) });
+  useEffect(() => () => clickControllerRef.current?.flush(), []);
   const suppressClickRef: ClickSuppress = useRef(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [chatLinkOpen, setChatLinkOpen] = useState(false);
@@ -209,18 +214,17 @@ function LabCardInner({
   function handleCardClick(event: React.MouseEvent) {
     const onControl = Boolean((event.target as Element).closest("button,textarea,a,input,select,[role='menu'],[role='menuitem']"));
     const selects = cardBodyClickSelects({ readOnly, clickCount: event.detail, down: clickDownRef.current, up: { x: event.clientX, y: event.clientY }, onControl });
-    if (event.detail <= 1) firstClickSelectedRef.current = selects;
-    if (selects) onSelect();
+    if (selects) clickControllerRef.current?.click();
   }
 
   /** BI-1: any card opens on a clean double-click, and the first click's select is undone. */
   function handleDoubleClick(event: React.MouseEvent) {
     const onControl = Boolean((event.target as Element).closest("button,textarea"));
-    const result = cardDoubleClick({ readOnly, moved: lastClickMovedRef.current, onControl, firstClickSelected: firstClickSelectedRef.current });
-    firstClickSelectedRef.current = false;
+    const controller = clickControllerRef.current;
+    const result = cardDoubleClick({ readOnly, moved: lastClickMovedRef.current, onControl, firstClickSelected: controller?.pending() ?? false });
     if (!result.open) return;
     event.stopPropagation();
-    if (result.undoSelect) onSelect();
+    if (result.undoSelect) controller?.undo();
     onOpen(cardRef.current?.getBoundingClientRect());
   }
 
@@ -281,7 +285,7 @@ function LabCardInner({
       </div>
       {readOnly ? null : (
         <div className="canvas-lab-card-bar" onPointerDown={(event) => event.stopPropagation()}>
-          <LabCardMenu selected={selected} canBranch={node.ownership === "teammate" || node.kind === "chat"} local={Boolean(node.local || node.kind === "chat")} removable={(removable ?? true) && (node.kind !== "judgment" || Boolean(node.local))} open={menuOpen} onOpenChange={changeMenuOpen} cardRef={cardRef} onSelect={onSelect} onOpen={() => onOpen(cardRef.current?.getBoundingClientRect())} onBranch={onBranch} onHide={onHide} onDelete={onDelete} onTakeOutOfContext={onTakeOutOfContext} onFit={canResize ? onFit : undefined} frameChoices={structured ? frameChoices : []} currentFrame={node.frame} onMoveToFrame={structured && canResize ? onMoveToFrame : undefined} bundleToggleLabel={bundleToggleLabel} onBundleToggle={onBundleToggle} chatLinkLabel={canSetChatLink ? (pastedLink ? CHAT_LINK_COPY.change : CHAT_LINK_COPY.add) : undefined} onEditChatLink={canSetChatLink ? () => setChatLinkOpen(true) : undefined} />
+          <LabCardMenu selected={selected} canBranch={node.ownership === "teammate" || node.kind === "chat"} local={Boolean(node.local || node.kind === "chat")} removable={(removable ?? true) && (node.kind !== "judgment" || Boolean(node.local))} open={menuOpen} onOpenChange={changeMenuOpen} cardRef={cardRef} onSelect={() => onSelect()} onOpen={() => onOpen(cardRef.current?.getBoundingClientRect())} onBranch={onBranch} onHide={onHide} onDelete={onDelete} onTakeOutOfContext={onTakeOutOfContext} onFit={canResize ? onFit : undefined} frameChoices={structured ? frameChoices : []} currentFrame={node.frame} onMoveToFrame={structured && canResize ? onMoveToFrame : undefined} bundleToggleLabel={bundleToggleLabel} onBundleToggle={onBundleToggle} chatLinkLabel={canSetChatLink ? (pastedLink ? CHAT_LINK_COPY.change : CHAT_LINK_COPY.add) : undefined} onEditChatLink={canSetChatLink ? () => setChatLinkOpen(true) : undefined} />
           <Button
             type="button"
             size="icon"
