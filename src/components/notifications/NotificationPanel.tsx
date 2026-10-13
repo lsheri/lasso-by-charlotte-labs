@@ -14,8 +14,15 @@ import {
   type NotificationRow,
 } from "@/lib/notifications-shared";
 import { formatDate } from "@/lib/work-types";
+import { SHARED_WITH_YOU_COPY, useAcceptBoardShare } from "@/components/layout/SharedWithYou";
 
 type Decided = { pending?: boolean; text?: string; error?: string };
+
+function boardSharedSentence(row: NotificationRow): string {
+  const by = typeof row.payload["by"] === "string" && row.payload["by"] ? row.payload["by"] : "Someone";
+  const board = typeof row.payload["board"] === "string" && row.payload["board"] ? row.payload["board"] : "a board";
+  return `${by} shared ${board} with you`;
+}
 
 export function NotificationPanel({
   rows,
@@ -30,6 +37,7 @@ export function NotificationPanel({
   const decide = useServerFn(decideInvite);
   const mark = useServerFn(markNotifications);
   const acted = useServerFn(recordNotificationActed);
+  const accept = useAcceptBoardShare();
   const [state, setState] = useState<Record<string, Decided>>({});
 
   const needsYou = rows.filter(
@@ -59,6 +67,22 @@ export function NotificationPanel({
     }
   }
 
+  // SH-6b: Open claims the share, becomes the guest profile, opens the board.
+  async function onOpenShared(row: NotificationRow) {
+    const code = typeof row.payload["code"] === "string" ? row.payload["code"] : "";
+    const level = typeof row.payload["level"] === "string" ? row.payload["level"] : "review";
+    if (!code) return;
+    setState((s) => ({ ...s, [row.id]: { pending: true } }));
+    const msg = await accept(code, level, "bell");
+    if (msg) {
+      setState((s) => ({ ...s, [row.id]: { error: msg } }));
+      return;
+    }
+    setState((s) => ({ ...s, [row.id]: {} }));
+    void mark({ data: { ids: [row.id], acted: true } }).then(onChanged).catch(() => {});
+    onNavigate();
+  }
+
   function onOpen(row: NotificationRow) {
     void mark({ data: { ids: [row.id], acted: true } }).then(onChanged).catch(() => {});
     void acted({ data: { kind: row.kind, action: "open" } }).catch(() => {});
@@ -84,8 +108,15 @@ export function NotificationPanel({
               const s = state[row.id] ?? {};
               return (
                 <li key={row.id} className="rounded-md border border-border p-3">
-                  <p className="text-sm text-foreground">{s.text ?? notificationSentence(row)}</p>
+                  <p className="text-sm text-foreground">{s.text ?? (row.kind === "board_shared" ? boardSharedSentence(row) : notificationSentence(row))}</p>
                   <p className="mt-1 text-xs text-muted-foreground">{formatDate(row.created_at)}</p>
+                  {!s.text && row.kind === "board_shared" && (
+                    <div className="mt-2 flex gap-2">
+                      <Button size="sm" disabled={s.pending} onClick={() => void onOpenShared(row)}>
+                        {SHARED_WITH_YOU_COPY.open}
+                      </Button>
+                    </div>
+                  )}
                   {!s.text && row.kind === "invite_needs_approval" && (
                     <div className="mt-2 flex gap-2">
                       <Button size="sm" disabled={s.pending} onClick={() => void onDecide(row, true)}>
