@@ -110,19 +110,19 @@ export function SharedWithYouSection({ onNavigate }: { onNavigate?: (() => void)
             }}
           >
             <span className="truncate text-[13px] text-foreground">{b.title}</span>
-            <span className="truncate text-[11.5px] text-muted-foreground">{b.host_org}</span>
+            <span className="truncate text-xs text-muted-foreground">{b.host_org}</span>
           </button>
         ))}
         {pending.map((p) => (
           <div key={p.invite_id} className="flex items-center gap-2 px-2 py-1">
             <span className="min-w-0 flex-1">
               <span className="block truncate text-[13px] text-foreground">{p.board}</span>
-              <span className="block truncate text-[11.5px] text-muted-foreground">{p.host_org}</span>
+              <span className="block truncate text-xs text-muted-foreground">{p.host_org}</span>
             </span>
             <button
               type="button"
               disabled={busy === p.invite_id}
-              className="nb-pencil-cta shrink-0 rounded-md px-2 py-1 text-[11.5px]"
+              className="nb-pencil-cta shrink-0 rounded-md px-2 py-1 text-xs"
               onClick={async () => {
                 setBusy(p.invite_id);
                 setError(null);
@@ -136,7 +136,7 @@ export function SharedWithYouSection({ onNavigate }: { onNavigate?: (() => void)
             </button>
           </div>
         ))}
-        {error && <p className="px-2 text-[11.5px] text-destructive">{error}</p>}
+        {error && <p className="px-2 text-xs text-destructive">{error}</p>}
       </div>
     </div>
   );
@@ -173,7 +173,7 @@ export function GuestBar({ profile, profiles, className }: { profile: Profile; p
   const queryClient = useQueryClient();
   const target = ownProfileId(profiles);
   return (
-    <div data-testid="guest-bar" className={cn("mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-md border border-border bg-card px-3 py-1.5 text-[11.5px] text-muted-foreground", className)}>
+    <div data-testid="guest-bar" className={cn("mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-md border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground", className)}>
       <span>{SHARED_WITH_YOU_COPY.guestBar(profile.org_name)}</span>
       {target && (
         <button

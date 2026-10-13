@@ -2830,7 +2830,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       <main className={`relative min-w-0 flex-1 flex-col ${mobileView === "board" ? "flex" : "hidden md:flex"}`}>
         {sharedSpace ? (
           <div data-testid="shared-space-band" className="relative z-20 flex shrink-0 items-center gap-3 border-b border-[color-mix(in_srgb,var(--nb-shared)_25%,var(--card))] bg-[color-mix(in_srgb,var(--nb-shared)_8%,var(--card))] px-4 py-1.5">
-            <p className="min-w-0 flex-1 text-[11.5px] text-foreground">
+            <p className="min-w-0 flex-1 text-xs text-foreground">
               <span className="mr-2 font-mono text-[9px] uppercase tracking-[0.12em] text-[var(--nb-shared)]">{SHARED_WITH_YOU_COPY.bandLabel}</span>
               <span className="break-words">{SHARED_WITH_YOU_COPY.band(sharedSpace.host, sharedSpace.level)}</span>
             </p>
