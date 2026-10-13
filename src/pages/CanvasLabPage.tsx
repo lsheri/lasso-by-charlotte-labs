@@ -174,6 +174,7 @@ import { DETAILS_SEARCH } from "@/lib/engagement-default-view";
 import { useCanvasLab } from "@/hooks/use-canvas-lab";
 import { useCanvasLabAnnotations } from "@/hooks/use-canvas-lab-annotations";
 import { useCanvasLabComments, useWorkboardCommentCounts } from "@/hooks/use-canvas-lab-comments";
+import { useBoardNodeItems } from "@/hooks/use-board-node-items";
 import { useEngagementPage } from "@/hooks/use-engagement-page";
 import { useWorkboardCardPreviews } from "@/hooks/use-workboard-card-previews";
 import { useWorkboardFilePreviews } from "@/hooks/use-workboard-file-previews";
@@ -562,7 +563,9 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       queryClient.invalidateQueries({ queryKey: ["work-items"] }),
     ]);
   }
-  const itemByNode = (node: LabNode) => node.workItemId ? workItems.find((item) => item.id === node.workItemId) : undefined;
+  // BI-5: placement-derived items first; readable items whose placement is hidden resolve by id.
+  const { items: boardItems } = useBoardNodeItems(nodes ?? [], workItems);
+  const itemByNode = (node: LabNode) => node.workItemId ? boardItems.find((item) => item.id === node.workItemId) : undefined;
   const teammateMarkByNode = (node: LabNode, item: WorkItemRow | undefined) => teammateMarkFor({
     ownership: node.ownership,
     ownerProfileId: item ? item.owner_id : node.authorProfileId,
@@ -577,12 +580,12 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     const right = left + viewportSize.width / zoom;
     const bottom = top + viewportSize.height / zoom;
     return visibleNodes.flatMap((node) => {
-      const item = node.workItemId ? workItems.find((entry) => entry.id === node.workItemId) : undefined;
+      const item = node.workItemId ? boardItems.find((entry) => entry.id === node.workItemId) : undefined;
       const height = cardHeightsRef.current.get(node.id) ?? node.height;
       const intersects = node.x < right && node.x + node.width > left && node.y < bottom && node.y + height > top;
       return item?.type === "ai_thread" && intersects ? [item.id] : [];
     });
-  }, [pan.x, pan.y, viewportSize.height, viewportSize.width, visibleNodes, workItems, zoom]);
+  }, [pan.x, pan.y, viewportSize.height, viewportSize.width, visibleNodes, boardItems, zoom]);
   const onScreenFileItems = useMemo(() => {
     if (viewportSize.width === 0 || zoom <= 0) return [];
     const left = -pan.x / zoom;
@@ -590,12 +593,12 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     const right = left + viewportSize.width / zoom;
     const bottom = top + viewportSize.height / zoom;
     return visibleNodes.flatMap((node) => {
-      const item = node.workItemId ? workItems.find((entry) => entry.id === node.workItemId) : undefined;
+      const item = node.workItemId ? boardItems.find((entry) => entry.id === node.workItemId) : undefined;
       const height = cardHeightsRef.current.get(node.id) ?? node.height;
       const intersects = node.x < right && node.x + node.width > left && node.y < bottom && node.y + height > top;
       return item && item.type !== "ai_thread" && intersects ? [item] : [];
     });
-  }, [pan.x, pan.y, viewportSize.height, viewportSize.width, visibleNodes, workItems, zoom]);
+  }, [pan.x, pan.y, viewportSize.height, viewportSize.width, visibleNodes, boardItems, zoom]);
   const cardPreviews = useWorkboardCardPreviews(engagementId, profile?.id, true, onScreenChatIds);
   const filePreviews = useWorkboardFilePreviews(profile?.id, true, onScreenFileItems);
   const focusThreadId = focusItem && focusItem.type === "ai_thread" ? focusItem.id : null;
