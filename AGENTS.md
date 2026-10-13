@@ -43,3 +43,4 @@ Tour workboard chrome stays a local presentational mirror around shared board pr
 - Compose role- and product-specific data Settings in DataSection using the existing consent primitives and mutations; normalize legacy section IDs at entry boundaries so old links keep working without a second rail section.
 - SharedWithYou owns Home/sidebar reads and actions; never switch profiles on shared entry, so work stays owned locally.
 - Read All work shared placements once per page and compare item/board orgs, to avoid per-card requests.
+- Node formatting is local; other editors default visible.
