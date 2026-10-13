@@ -17,7 +17,7 @@ describe("cardRemovable", () => {
     expect(cardRemovable(me, { workItemId: null, authorProfileId: "p-other" }, undefined)).toBe(true);
   });
   it("is true for a text block with no workItemId", () => {
-    expect(cardRemovable(me, { workItemId: null, authorProfileId: null }, undefined)).toBe(true);
+    expect(cardRemovable(me, { workItemId: null, authorProfileId: undefined }, undefined)).toBe(true);
   });
   it("is true for a shape (grouping) with no workItemId", () => {
     expect(cardRemovable(me, { workItemId: null, authorProfileId: "p-other" }, undefined)).toBe(true);
@@ -35,7 +35,7 @@ describe("cardRemovable", () => {
     expect(cardRemovable(me, { workItemId: "w1", authorProfileId: "p-other" }, undefined)).toBe(false);
   });
   it("is false when the item has not loaded and the node has no author", () => {
-    expect(cardRemovable(me, { workItemId: "w1", authorProfileId: null }, undefined)).toBe(false);
+    expect(cardRemovable(me, { workItemId: "w1", authorProfileId: undefined }, undefined)).toBe(false);
     expect(cardRemovable(me, { workItemId: "w1" }, undefined)).toBe(false);
   });
   // A coach reads but never removes, even when the work is theirs.
