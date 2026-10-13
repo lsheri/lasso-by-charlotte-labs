@@ -5871,6 +5871,7 @@ export type Database = {
       is_my_active_profile: { Args: { p: string }; Returns: boolean }
       is_my_profile: { Args: { p: string }; Returns: boolean }
       is_org_admin_of: { Args: { p_org: string }; Returns: boolean }
+      is_org_insider: { Args: { p_org: string }; Returns: boolean }
       is_platform_admin: {
         Args: { p_min_role?: string; p_user: string }
         Returns: boolean
@@ -5997,9 +5998,32 @@ export type Database = {
         Returns: Json
       }
       my_org_id: { Args: never; Returns: string }
+      my_pending_board_invites: {
+        Args: never
+        Returns: {
+          board: string
+          code: string
+          created_at: string
+          host_org: string
+          invite_id: string
+          invited_by: string
+          level: string
+        }[]
+      }
       my_profile_id: { Args: never; Returns: string }
       my_profile_ids: { Args: never; Returns: string[] }
       my_role: { Args: never; Returns: Database["public"]["Enums"]["app_role"] }
+      my_shared_boards: {
+        Args: never
+        Returns: {
+          added_at: string
+          engagement_id: string
+          guest_profile_id: string
+          host_org: string
+          level: string
+          title: string
+        }[]
+      }
       notify: {
         Args: {
           p_group_key: string
