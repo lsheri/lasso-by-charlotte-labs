@@ -102,7 +102,7 @@ export default function RichTextEditor({ initialHtml, onChange, onDone, autoFocu
   ];
   return <div ref={root} className="relative text-foreground">
     <style>{RICH_TEXT_CSS}</style>
-    <div role="toolbar" className="absolute bottom-full left-0 z-50 mb-2 flex flex-wrap items-center gap-1 rounded-[var(--radius-control)] border border-border bg-background p-1 shadow-sm " + (variant === "compact" ? "w-max max-w-[min(15rem,calc(100vw-2rem))]" : "max-w-[calc(100vw-2rem)]") onPointerDown={(event) => { if (!(event.target instanceof HTMLSelectElement)) event.preventDefault(); }}>
+    <div role="toolbar" className={"absolute bottom-full left-0 z-50 mb-2 flex flex-wrap items-center gap-1 rounded-[var(--radius-control)] border border-border bg-background p-1 shadow-sm " + (variant === "compact" ? "w-max max-w-[min(15rem,calc(100vw-2rem))]" : "max-w-[calc(100vw-2rem)]")} onPointerDown={(event) => { if (!(event.target instanceof HTMLSelectElement)) event.preventDefault(); }}>
       <div role="group" aria-label={COPY.marks} className="flex flex-wrap items-center gap-1">
       {tools.slice(0, 4).map(({ label, icon: Icon, active, run }) => <Button key={label} type="button" variant="ghost" className={target} title={label} aria-label={label} aria-pressed={active ? editor?.isActive(active) ?? false : undefined} onClick={run}><Icon /></Button>)}
       </div>
