@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+// Behavioural coverage for these predicates lives in board-permissions.behaviour.test.ts; keep this file to wording and wiring pins.
 import { readFileSync } from "node:fs";
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
