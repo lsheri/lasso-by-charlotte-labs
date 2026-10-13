@@ -65,7 +65,8 @@ describe("B3c deliverable trail entry", () => {
     expect(onOpen).toHaveBeenCalledTimes(1);
   });
 
-  it("shows no footer button and no double-click open on a non-deliverable card", () => {
+  // BI-1 deliberately replaced "no double-click open on a non-deliverable card": every card now opens on double-click.
+  it("shows no footer button on a non-deliverable card, and double-click opens it", () => {
     const onOpen = vi.fn();
     const { getByTestId, queryByTestId } = renderCard(node({}), onOpen);
     const card = getByTestId("lab-card-n");
@@ -73,7 +74,7 @@ describe("B3c deliverable trail entry", () => {
     fireEvent.pointerDown(card, { clientX: 10, clientY: 10 });
     fireEvent.pointerUp(card, { clientX: 10, clientY: 10 });
     fireEvent.doubleClick(card, { clientX: 10, clientY: 10 });
-    expect(onOpen).not.toHaveBeenCalled();
+    expect(onOpen).toHaveBeenCalledTimes(1);
   });
 
   it("ignores the double-click when the pointer moved like a drag", () => {

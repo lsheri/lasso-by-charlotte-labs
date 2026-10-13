@@ -21,6 +21,7 @@ import {
   swallowClickIfDrag,
   type ClickSuppress,
 } from "@/lib/canvas-drag";
+import { cardBodyClickSelects, cardDoubleClick } from "@/lib/card-click";
 import { cardSizeTier, type LabAnchor, type LabNode, type LabResizeCorner } from "@/components/canvas-lab/canvas-lab-model";
 import type { WorkItemRow } from "@/lib/work-types";
 import { formatDate } from "@/lib/work-types";
@@ -140,6 +141,8 @@ function LabCardInner({
   const anchorDownRef = useRef<{ x: number; y: number } | null>(null);
   const cardDownRef = useRef<{ x: number; y: number } | null>(null);
   const lastClickMovedRef = useRef(false);
+  const clickDownRef = useRef<{ x: number; y: number } | null>(null);
+  const firstClickSelectedRef = useRef(false);
   const suppressClickRef: ClickSuppress = useRef(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [chatLinkOpen, setChatLinkOpen] = useState(false);
@@ -176,6 +179,7 @@ function LabCardInner({
   function handleCardPointerDown(event: React.PointerEvent) {
     beginClickGesture(suppressClickRef);
     cardDownRef.current = { x: event.clientX, y: event.clientY };
+    clickDownRef.current = cardDownRef.current;
     lastClickMovedRef.current = false;
     onPointerDown(event);
   }
@@ -201,12 +205,22 @@ function LabCardInner({
     event.stopPropagation();
   }
 
-  /** A deliverable opens its trail on a clean double-click; a drag never does. */
+  /** BI-1: a clean single click on the body toggles Ask Lasso context through the menu's own onSelect. */
+  function handleCardClick(event: React.MouseEvent) {
+    const onControl = Boolean((event.target as Element).closest("button,textarea,a,input,select,[role='menu'],[role='menuitem']"));
+    const selects = cardBodyClickSelects({ readOnly, clickCount: event.detail, down: clickDownRef.current, up: { x: event.clientX, y: event.clientY }, onControl });
+    if (event.detail <= 1) firstClickSelectedRef.current = selects;
+    if (selects) onSelect();
+  }
+
+  /** BI-1: any card opens on a clean double-click, and the first click's select is undone. */
   function handleDoubleClick(event: React.MouseEvent) {
-    if (readOnly || !node.deliverable) return;
-    if (lastClickMovedRef.current) return;
-    if ((event.target as Element).closest("button,textarea")) return;
+    const onControl = Boolean((event.target as Element).closest("button,textarea"));
+    const result = cardDoubleClick({ readOnly, moved: lastClickMovedRef.current, onControl, firstClickSelected: firstClickSelectedRef.current });
+    firstClickSelectedRef.current = false;
+    if (!result.open) return;
     event.stopPropagation();
+    if (result.undoSelect) onSelect();
     onOpen(cardRef.current?.getBoundingClientRect());
   }
 
@@ -232,6 +246,7 @@ function LabCardInner({
       onPointerUp={readOnly ? undefined : handleCardPointerUp}
       onPointerCancel={readOnly ? undefined : handleCardPointerCancel}
       onClickCapture={readOnly ? undefined : handleClickCapture}
+      onClick={readOnly ? undefined : handleCardClick}
       onDoubleClick={readOnly ? undefined : handleDoubleClick}
       onFocus={readOnly ? undefined : onFocus}
       onContextMenu={openMenu}
