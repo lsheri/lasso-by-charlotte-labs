@@ -215,6 +215,8 @@ import {
 } from "@/lib/context-region";
 import { isBoardDefaultTask, workstreamTasks } from "@/lib/board-default-task";
 import { logEvent } from "@/lib/telemetry";
+import { canLeaveBoard, LEAVE_BOARD_COPY, REMOVE_FROM_BOARD_COPY } from "@/lib/leave-board";
+import { buttonVariants } from "@/components/ui/button";
 import { createDrawnWorkstreamFn, moveItemToWorkstreamFn } from "@/lib/workstream-draw.functions";
 import { deleteWorkstream as deleteWorkstreamFn, renameWorkstream as renameWorkstreamFn } from "@/lib/workstreams.functions";
 import { BOARD_WORKSTREAM_COPY, boxRemoval, canRenameBox, regionNameAction, type ManagedTask } from "@/lib/board-workstream-delete";
@@ -305,6 +307,11 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   /** WK1: the workstream each box is backed by, as this session last set it. */
   const frameTaskOverrideRef = useRef(new Map<string, string | null>());
   const [confirmDeleteFrame, setConfirmDeleteFrame] = useState<LabFrame | null>(null);
+  /** BRD-4: a card waiting on "Remove from the board?". */
+  const [confirmRemoveNode, setConfirmRemoveNode] = useState<LabNode | null>(null);
+  /** SH-7c: the leave confirmation and its in-flight state. */
+  const [confirmLeave, setConfirmLeave] = useState(false);
+  const [leaving, setLeaving] = useState(false);
   const taskById = useMemo(() => new Map((page?.tasks ?? []).map((task) => [task.id, task as ManagedTask & { name?: string }])), [page]);
   function frameTaskId(frame: LabFrame): string | null {
     if (frame.id.startsWith("task:")) return frame.id.slice(5);
@@ -607,6 +614,21 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
         return { host: row?.host_org ?? "Another workspace", level: row?.level ?? "work", members: page?.members ?? [] };
       })()
     : null;
+  // SH-7c: the guest seat this person holds on this board, if any.
+  const guestSeatRow = sharedSpace ? sharedBoards.find((b) => b.engagement_id === engagementId) : undefined;
+  const guestSeat = guestSeatRow ? profiles.find((p) => p.id === guestSeatRow.guest_profile_id) : undefined;
+  const canLeave = canLeaveBoard(guestSeat, guestSeatRow ? { profile_id: guestSeatRow.guest_profile_id } : null);
+  async function leaveBoard() {
+    if (!guestSeat || leaving) return;
+    setLeaving(true);
+    const { data, error } = await supabase.from("engagement_members").delete().eq("engagement_id", engagementId).eq("profile_id", guestSeat.id).select("engagement_id");
+    setLeaving(false);
+    if (error || !data || data.length === 0) { setConfirmLeave(false); setAnnouncement(LEAVE_BOARD_COPY.failed); toast.error(LEAVE_BOARD_COPY.failed); return; }
+    if (profile?.org_id) logEvent("shared.board_left", profile.org_id, {});
+    setConfirmLeave(false);
+    await Promise.all([["my-shared-boards"], ["shared-with-me"], ["engagements"]].map((queryKey) => queryClient.invalidateQueries({ queryKey })));
+    void navigate({ to: "/home" });
+  }
   const notAvailable = !loadingBoard && !isError && !engagement;
   const boardReady = !loadingBoard && !isError && Boolean(engagement) && nodes !== null && frames !== null;
   fitInputsRef.current = { frames: drawnBoardFrames, nodes: visibleNodes, structured: structureMode === "structured" };
@@ -2363,6 +2385,12 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     void queryClient.invalidateQueries({ queryKey: ["work-items"] });
   }
 
+  /** BRD-4: the ownership guard first, then the confirmation; only a confirm removes. */
+  function requestHide(node: LabNode) {
+    if (node.workItemId && !cardRemovable(profile, node, itemByNode(node))) { setAnnouncement("Only the author can remove this."); return; }
+    setConfirmRemoveNode(node);
+  }
+
   function hideNode(node: LabNode) {
     if (node.workItemId && !cardRemovable(profile, node, itemByNode(node))) { setAnnouncement("Only the author can remove this."); return; }
     if (node.workItemId) {
@@ -2895,7 +2923,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
           <div className="min-w-0 shrink"><span className="block truncate text-[13px] font-medium text-foreground">{title}</span><span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{status}</span></div>
           <div ref={toolbarRef} className="canvas-lab-toolbar flex min-w-0 flex-1 items-center justify-end gap-2 overflow-hidden">
             {toolbarItems.filter((item) => toolbarPlan.row.includes(item.spec.id)).map((item) => <div key={item.spec.id} className="flex shrink-0 items-center gap-2">{item.row}</div>)}
-            {toolbarOverflowItems.length > 0 ? (
+            {toolbarOverflowItems.length > 0 || canLeave ? (
               <DropdownMenu>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -2907,6 +2935,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
                 </Tooltip>
                 <DropdownMenuContent align="end">
                   {toolbarOverflowItems.map((item) => <Fragment key={item.spec.id}>{item.menu}</Fragment>)}
+                  {canLeave ? <><DropdownMenuSeparator /><DropdownMenuItem onSelect={() => setConfirmLeave(true)}>{LEAVE_BOARD_COPY.menuItem}</DropdownMenuItem></> : null}
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : null}
@@ -2963,7 +2992,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
               return null;
             }} focused={keyboardId === node.id} stackZ={cardStackZ(front, node.id)} onFocus={() => { setFront((current) => bringToFront(current, node.id)); setKeyboardId(node.id); setSelectedFrameId(null); }} onPointerDown={(event) => { setFront((current) => bringToFront(current, node.id)); onCardPointerDown(node, event); }} onDelete={() => deleteNode(node)} frameChoices={structureMode === "structured" ? boardFrames.filter((frame) => !isContextFrameId(frame.id) && frame.id !== "trail" && boardFrameRenders(frameKindOf(frame), true)).map((frame) => ({ id: frame.id, name: frame.name })) : []} onMoveToFrame={structureMode === "structured" && lab.board?.canEditStructure ? (frameId) => moveToFrame(node, frameId) : undefined} />)}
             {sharedSpace ? visibleNodes.filter((node) => node.kind === "work" && node.ownership === "yours").map((node) => <span key={`yours:${node.id}`} data-testid="shared-yours-label" aria-hidden="true" className="pointer-events-none absolute font-mono text-[9px] uppercase tracking-[0.12em] text-[var(--nb-shared)]" style={{ left: node.x, top: node.y - 14 }}>Yours</span>) : null}
-            {visibleNodes.filter((node) => node.kind !== "answer" && !isWorkboardDecorationKind(node.kind)).map((node) => { const bundleChatId = pieceChat.get(node.id); const canResize = !bundleChatId && Boolean(lab.board?.canEditStructure) && (node.kind !== "judgment" || Boolean(node.local)); const cardItem = itemByNode(node); return <LabCard key={node.id} node={node} item={cardItem} teammateMark={teammateMarkByNode(node, cardItem)} removable={cardRemovable(profile, node, cardItem)} preview={cardItem ? cardPreviews[cardItem.id] : undefined} filePreview={cardItem ? filePreviews[cardItem.id] : undefined} onPreviewScroll={cardItem ? (kind) => notePreviewScroll(cardItem, kind) : undefined} selected={selected.includes(node.id)} previewSelected={marqueePreview.includes(node.id)} focused={keyboardId === node.id} focusOnMount={pendingJudgmentFocusId === node.id} connecting={connectSource !== null || connectorPreview !== null} connectSourceAnchor={connectSource?.nodeId === node.id ? connectSource.anchor : null} onSelect={() => { noteWorkboardContextChanged(orgId, "menu"); setAnnouncement(selected.includes(node.id) ? "Removed from context" : "Added to context"); setSelected((current) => { if (!current.includes(node.id)) flareNewContext([node.id], current); return toggleContext(current, node.id); }); }} onOpen={(origin) => openNode(node, origin)} onBranch={() => branchFrom(node)} onHide={() => hideNode(node)} onDelete={() => deleteNode(node)} onTakeOutOfContext={isContextFrameId(node.frame) && node.workItemId ? () => void takeOutOfContext(node) : undefined} onEdit={(text) => { nodesRef.current = updateLocalNode(nodesRef.current, node.id, text); setNodes((current) => current ? updateLocalNode(current, node.id, text) : current); }} onEditCommitted={() => { noteWorkboardNodeEdited(orgId, eventKind(node)); const current = nodesRef.current.find((entry) => entry.id === node.id); if (current?.durableId) void persistNodePatch(current.id, { body: current.summary, title: current.title }); }} onAnchorPointerDown={(side, event) => startPointerConnect(node, side, event)} onAnchorActivate={(side) => chooseConnectAnchor(node, side)} onMenuOpened={() => { if (connectSource || connectorDragRef.current) cancelConnect(); noteWorkboardCardMenuOpened(orgId, eventKind(node), node.ownership); }} onMenuOpenChange={setCardMenuOpen} onMeasure={(height) => cardHeightsRef.current.set(node.id, height)} onPointerDown={(event) => { setFront((current) => bringToFront(current, node.id)); onCardPointerDown(node, event); }} onFocus={() => { setFront((current) => bringToFront(current, node.id)); setKeyboardId(node.id); setSelectedFrameId(null); setSelectedLinkId((current) => relationshipSelection(current, "deselect")); if (pendingJudgmentFocusId === node.id) setPendingJudgmentFocusId(null); }} onKeyDown={(event) => onCardKeyDown(node, event)} canResize={canResize} onResizeStart={(corner, event) => startResize("card", node.id, corner, { x: node.x, y: node.y, width: node.width, height: node.height }, event)} onResizeKeyDown={(corner, event) => keyboardResize("card", node.id, corner, { x: node.x, y: node.y, width: node.width, height: node.height }, event)} onResizeKeyUp={finishKeyboardResize} onFit={() => fitCard(node)} frameChoices={boardFrames.filter((frame) => !isContextFrameId(frame.id) && frame.id !== "trail" && boardFrameRenders(frameKindOf(frame), true)).map((frame) => ({ id: frame.id, name: frame.name }))} structured={structureMode === "structured"} onMoveToFrame={(frameId) => moveToFrame(node, frameId)} stackZ={cardStackZ(front, node.id)} commentCount={node.workItemId ? commentCounts[node.workItemId] ?? 0 : 0} onOpenComments={() => { setFocusOrigin(null); setFocusOpensComments(true); setFocusId(node.id); }} madeInChat={bundleChatId ? visibleNodes.find((entry) => entry.id === bundleChatId)?.title : undefined} bundleToggleLabel={bundles.has(node.id) ? (bundleView.minimized.has(node.id) ? "Show pieces" : "Minimize pieces") : undefined} onBundleToggle={bundles.has(node.id) ? () => toggleBundle(node, bundleView.minimized.has(node.id) ? "expanded" : "minimized", "menu") : undefined} onSaveChatLink={cardItem && ownsWorkItem(profile, cardItem) ? (url) => saveChatLink(cardItem.id, url) : undefined} />; })}
+            {visibleNodes.filter((node) => node.kind !== "answer" && !isWorkboardDecorationKind(node.kind)).map((node) => { const bundleChatId = pieceChat.get(node.id); const canResize = !bundleChatId && Boolean(lab.board?.canEditStructure) && (node.kind !== "judgment" || Boolean(node.local)); const cardItem = itemByNode(node); return <LabCard key={node.id} node={node} item={cardItem} teammateMark={teammateMarkByNode(node, cardItem)} removable={cardRemovable(profile, node, cardItem)} preview={cardItem ? cardPreviews[cardItem.id] : undefined} filePreview={cardItem ? filePreviews[cardItem.id] : undefined} onPreviewScroll={cardItem ? (kind) => notePreviewScroll(cardItem, kind) : undefined} selected={selected.includes(node.id)} previewSelected={marqueePreview.includes(node.id)} focused={keyboardId === node.id} focusOnMount={pendingJudgmentFocusId === node.id} connecting={connectSource !== null || connectorPreview !== null} connectSourceAnchor={connectSource?.nodeId === node.id ? connectSource.anchor : null} onSelect={() => { noteWorkboardContextChanged(orgId, "menu"); setAnnouncement(selected.includes(node.id) ? "Removed from context" : "Added to context"); setSelected((current) => { if (!current.includes(node.id)) flareNewContext([node.id], current); return toggleContext(current, node.id); }); }} onOpen={(origin) => openNode(node, origin)} onBranch={() => branchFrom(node)} onHide={() => requestHide(node)} onDelete={() => deleteNode(node)} onTakeOutOfContext={isContextFrameId(node.frame) && node.workItemId ? () => void takeOutOfContext(node) : undefined} onEdit={(text) => { nodesRef.current = updateLocalNode(nodesRef.current, node.id, text); setNodes((current) => current ? updateLocalNode(current, node.id, text) : current); }} onEditCommitted={() => { noteWorkboardNodeEdited(orgId, eventKind(node)); const current = nodesRef.current.find((entry) => entry.id === node.id); if (current?.durableId) void persistNodePatch(current.id, { body: current.summary, title: current.title }); }} onAnchorPointerDown={(side, event) => startPointerConnect(node, side, event)} onAnchorActivate={(side) => chooseConnectAnchor(node, side)} onMenuOpened={() => { if (connectSource || connectorDragRef.current) cancelConnect(); noteWorkboardCardMenuOpened(orgId, eventKind(node), node.ownership); }} onMenuOpenChange={setCardMenuOpen} onMeasure={(height) => cardHeightsRef.current.set(node.id, height)} onPointerDown={(event) => { setFront((current) => bringToFront(current, node.id)); onCardPointerDown(node, event); }} onFocus={() => { setFront((current) => bringToFront(current, node.id)); setKeyboardId(node.id); setSelectedFrameId(null); setSelectedLinkId((current) => relationshipSelection(current, "deselect")); if (pendingJudgmentFocusId === node.id) setPendingJudgmentFocusId(null); }} onKeyDown={(event) => onCardKeyDown(node, event)} canResize={canResize} onResizeStart={(corner, event) => startResize("card", node.id, corner, { x: node.x, y: node.y, width: node.width, height: node.height }, event)} onResizeKeyDown={(corner, event) => keyboardResize("card", node.id, corner, { x: node.x, y: node.y, width: node.width, height: node.height }, event)} onResizeKeyUp={finishKeyboardResize} onFit={() => fitCard(node)} frameChoices={boardFrames.filter((frame) => !isContextFrameId(frame.id) && frame.id !== "trail" && boardFrameRenders(frameKindOf(frame), true)).map((frame) => ({ id: frame.id, name: frame.name }))} structured={structureMode === "structured"} onMoveToFrame={(frameId) => moveToFrame(node, frameId)} stackZ={cardStackZ(front, node.id)} commentCount={node.workItemId ? commentCounts[node.workItemId] ?? 0 : 0} onOpenComments={() => { setFocusOrigin(null); setFocusOpensComments(true); setFocusId(node.id); }} madeInChat={bundleChatId ? visibleNodes.find((entry) => entry.id === bundleChatId)?.title : undefined} bundleToggleLabel={bundles.has(node.id) ? (bundleView.minimized.has(node.id) ? "Show pieces" : "Minimize pieces") : undefined} onBundleToggle={bundles.has(node.id) ? () => toggleBundle(node, bundleView.minimized.has(node.id) ? "expanded" : "minimized", "menu") : undefined} onSaveChatLink={cardItem && ownsWorkItem(profile, cardItem) ? (url) => saveChatLink(cardItem.id, url) : undefined} />; })}
             <LabBundleControls nodes={visibleNodes} bundles={bundleView.bundles} more={bundleView.more} minimized={bundleView.minimized} zoom={zoom} onToggle={(chat, state) => toggleBundle(chat, state, "control")} />
             <svg className="canvas-lab-relationship-overlays absolute inset-0 overflow-visible" width={bounds.width} height={bounds.height} aria-label="Workboard relationship labels">
               <LabRelationshipOverlays links={links} nodes={visibleNodes} measuredHeights={cardHeightsRef.current} selectedLinkId={selectedLinkId} hoveredLinkId={hoveredLinkId} inverseZoom={labInverseZoom(zoom)} zoom={zoom} editable={Boolean(lab.board?.canEditStructure)} onRemove={removeRelationship} onHover={setHoveredLinkId} />
@@ -2975,6 +3004,30 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
             {pendingWorkstream ? <div className="canvas-lab-draw-name" style={{ left: pendingWorkstream.rect.x + 8, top: pendingWorkstream.rect.y + 8, transform: `scale(${1 / zoom})`, transformOrigin: "top left" }}><div className="canvas-lab-inline-workstream"><input aria-label="Workstream name" ref={inlineNameRef} maxLength={60} value={pendingWorkstream.name} onChange={(event) => { const name = event.target.value; setPendingWorkstream((current) => current ? { ...current, name } : current); if (name.trim()) setPendingWorkstreamError(false); }} onPointerDown={(event) => event.stopPropagation()} onKeyDown={(event) => { event.stopPropagation(); if (event.key === "Enter") { event.preventDefault(); void commitDrawnWorkstream(pendingWorkstream.name); } if (event.key === "Escape") { event.preventDefault(); cancelDraw(); } }} /><button type="button" onPointerDown={(event) => event.stopPropagation()} onClick={() => void commitDrawnWorkstream(pendingWorkstream.name)}>Add</button>{pendingWorkstreamError ? <span>a workstream needs a name</span> : null}</div></div> : null}
             {claimPrompt ? <div data-claim-prompt="true" className="canvas-lab-drop-prompt" style={{ left: claimPrompt.rect.x, top: claimPrompt.rect.y + claimPrompt.rect.height + 10 }}><span>{movePromptText(claimPrompt.cards.length)}</span><button type="button" onClick={() => void answerClaimPrompt("yes")}>Move them</button><button type="button" onClick={() => void answerClaimPrompt("keep")}>Leave them</button></div> : null}
           </div> : null}
+          <AlertDialog open={confirmRemoveNode !== null} onOpenChange={(open) => { if (!open) setConfirmRemoveNode(null); }}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{REMOVE_FROM_BOARD_COPY.title}</AlertDialogTitle>
+                <AlertDialogDescription>{REMOVE_FROM_BOARD_COPY.body}</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>{REMOVE_FROM_BOARD_COPY.cancel}</AlertDialogCancel>
+                <AlertDialogAction onClick={() => { const node = confirmRemoveNode; setConfirmRemoveNode(null); if (node) hideNode(node); }}>{REMOVE_FROM_BOARD_COPY.confirm}</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+          <AlertDialog open={confirmLeave} onOpenChange={(open) => { if (!open && !leaving) setConfirmLeave(false); }}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{LEAVE_BOARD_COPY.title}</AlertDialogTitle>
+                <AlertDialogDescription>{LEAVE_BOARD_COPY.body}</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={leaving}>{LEAVE_BOARD_COPY.cancel}</AlertDialogCancel>
+                <AlertDialogAction className={buttonVariants({ variant: "destructive" })} disabled={leaving} onClick={(event) => { event.preventDefault(); void leaveBoard(); }}>{LEAVE_BOARD_COPY.confirm}</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
           <AlertDialog open={confirmDeleteFrame !== null} onOpenChange={(open) => { if (!open) setConfirmDeleteFrame(null); }}>
             <AlertDialogContent>
               <AlertDialogHeader>
