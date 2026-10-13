@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type CSSProperties } from "react";
 
 import { actionsFor, type LabNode } from "@/components/canvas-lab/canvas-lab-model";
 import { WorkboardFilePreview } from "@/components/canvas-lab/WorkboardFilePreview";
+import { Spinner } from "@/components/common/Working";
 import type { WorkboardFilePreview as WorkboardFilePreviewData } from "@/lib/workboard-card-preview.shared";
 import { RenderedContent } from "@/components/peek/RenderedContent";
 import { ThreadBody } from "@/components/peek/ThreadBody";
@@ -13,6 +14,11 @@ import type { CommentDto, CommentThreadDto } from "@/lib/canvas-lab-annotations-
 import { resolveTurnSelection, type TurnSelection } from "@/lib/turn-selection";
 import { effectiveWorkDate, formatDate, type WorkItemRow } from "@/lib/work-types";
 import { useWorkFileDownload } from "@/hooks/use-work-file-download";
+
+export const COPY = {
+  loading: "Loading work…",
+  unavailable: "This card's work could not be loaded. Please try again.",
+} as const;
 
 /** One saved highlight, already told whether its turn has moved on. */
 export type OverlayHighlight = {
@@ -123,6 +129,7 @@ function CommentLine({ comment }: { comment: CommentDto }) {
 export function FocusOverlay({
   node,
   item,
+  itemLoading = false,
   onSummarize,
   onBranch,
   onClose,
@@ -148,6 +155,7 @@ export function FocusOverlay({
 }: {
   node: LabNode;
   item: WorkItemRow | null;
+  itemLoading?: boolean;
   onSummarize: () => void;
   onBranch: () => void;
   onClose: () => void;
@@ -367,14 +375,19 @@ export function FocusOverlay({
                   : <p className="whitespace-pre-wrap text-[13px] leading-[20px] text-foreground">{node.summary}</p>
               ) : <RenderedContent item={item} onDownload={() => void download(item)} canEdit={false} />}
               </div>
+            ) : itemLoading ? (
+              <div className="focus-paper-reader flex h-full items-start gap-2 px-5 py-4 text-muted-foreground" aria-live="polite" aria-busy="true">
+                <Spinner />
+                <p className="text-base leading-relaxed">{COPY.loading}</p>
+              </div>
             ) : (
               <div ref={readerRef} className="focus-paper-reader flex h-full flex-col gap-2 px-5 py-4" onMouseUp={captureSelection} onKeyUp={captureSelection}>
                 <p className="text-[13px] leading-[20px] text-foreground">{node.summary}</p>
                 {node.prompt ? (
                   <p className="text-[13px] leading-[20px] text-foreground">{node.prompt}</p>
                 ) : null}
-                <p className="font-hand text-[16px] leading-none text-[var(--nb-mid)]">
-                  the live AI connection is off in this prototype
+                <p className="font-hand text-base leading-relaxed text-muted-foreground">
+                  {COPY.unavailable}
                 </p>
               </div>
             )}
