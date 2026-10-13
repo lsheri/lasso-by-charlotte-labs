@@ -85,7 +85,7 @@ describe("client rules", () => {
     const menu = read("src/components/canvas-lab/LabCardMenu.tsx");
     const card = read("src/components/canvas-lab/LabCard.tsx");
     expect(menu).toContain("Only the author can remove this");
-    expect(card).toContain('removable={node.kind !== "judgment" || Boolean(node.local)}');
+    expect(card).toContain('removable={(removable ?? true) && (node.kind !== "judgment" || Boolean(node.local))}');
   });
 
   it("reconciles workstreams, cards and relationships on Load latest", () => {
