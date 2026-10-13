@@ -28,7 +28,10 @@ export function WorkNote({
   contextSelected = false,
   headerGutter = false,
   phoneRow = false,
+  openOn = "click",
 }: {
+  /** BI-1b: the board opens on double-click; every other caller keeps single click. */
+  openOn?: "click" | "doubleClick";
   item: Omit<WorkItemRow, "work_item_tasks"> & { work_item_tasks?: WorkItemRow["work_item_tasks"] };
   onOpen?: (() => void) | undefined;
   lead?: React.ReactNode;
@@ -93,7 +96,9 @@ export function WorkNote({
       style={{ borderLeftColor: brandHex(brand) }}
     >
       <div
-        {...(onOpen
+        {...(onOpen && openOn === "doubleClick"
+          ? { onDoubleClick: onOpen }
+          : onOpen
           ? {
               role: "button" as const,
               tabIndex: 0,
@@ -107,7 +112,7 @@ export function WorkNote({
               },
             }
           : {})}
-        className={`nb-paper-body flex h-full min-h-0 flex-col ${onOpen ? "cursor-pointer" : ""}`}
+        className={`nb-paper-body flex h-full min-h-0 flex-col ${onOpen && openOn === "click" ? "cursor-pointer" : ""}`}
       >
         <div className={`flex h-[18px] shrink-0 select-none items-center gap-2 ${headerGutter ? "pr-[58px]" : ""} ${contextSelected ? "canvas-lab-context-header" : ""}`}>
           {lead ? <span className="shrink-0">{lead}</span> : null}

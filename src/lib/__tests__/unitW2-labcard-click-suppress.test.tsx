@@ -45,14 +45,14 @@ const item: WorkItemRow = {
   work_item_tasks: [],
 };
 
-function renderCard({ onOpen = vi.fn(), onPointerDown = vi.fn(), readOnly = false } = {}) {
+function renderCard({ onOpen = vi.fn(), onPointerDown = vi.fn(), onSelect = vi.fn(), readOnly = false } = {}) {
   const utils = render(
     <LabCard
       node={node}
       item={item}
       selected={false}
       focused={false}
-      onSelect={() => {}}
+      onSelect={onSelect}
       onOpen={onOpen}
       onBranch={() => {}}
       onHide={() => {}}
@@ -81,8 +81,9 @@ function renderCard({ onOpen = vi.fn(), onPointerDown = vi.fn(), readOnly = fals
     />,
   );
   const card = utils.getByTestId("lab-card-n1");
-  const body = utils.getByRole("button", { name: "A piece of work" });
-  return { ...utils, card, body, onOpen, onPointerDown };
+  // BI-1b: on the board the work body is not a control; a click selects, a double click opens.
+  const body = card.querySelector(".nb-paper-body") as HTMLElement;
+  return { ...utils, card, body, onOpen, onPointerDown, onSelect };
 }
 
 function press(card: Element, body: Element, from: { x: number; y: number }, to: { x: number; y: number }) {
@@ -91,42 +92,46 @@ function press(card: Element, body: Element, from: { x: number; y: number }, to:
   fireEvent.pointerUp(card, { clientX: to.x, clientY: to.y });
   // A real click targets the innermost element: the card body. The card's
   // capture-phase handler sees it on the way down.
-  fireEvent.click(body, { clientX: to.x, clientY: to.y });
+  fireEvent.click(body, { clientX: to.x, clientY: to.y, detail: 1 });
 }
 
 afterEach(cleanup);
 
 describe("unit W2 workboard card click after drag", () => {
-  it("a drag that ends on the card does not open it", () => {
-    const { card, body, onOpen } = renderCard();
+  it("a drag that ends on the card neither selects nor opens it", () => {
+    const { card, body, onOpen, onSelect } = renderCard();
     press(card, body, { x: 100, y: 100 }, { x: 140, y: 140 });
     expect(onOpen).not.toHaveBeenCalled();
+    expect(onSelect).not.toHaveBeenCalled();
   });
 
-  it("a stationary click opens the card", () => {
-    const { card, body, onOpen } = renderCard();
+  it("a stationary click selects the card and does not open it", () => {
+    const { card, body, onOpen, onSelect } = renderCard();
     press(card, body, { x: 100, y: 100 }, { x: 100, y: 100 });
-    expect(onOpen).toHaveBeenCalledTimes(1);
-  });
-
-  it("a wobble inside the threshold still opens the card", () => {
-    const { card, body, onOpen } = renderCard();
-    press(card, body, { x: 100, y: 100 }, { x: 102, y: 101 });
-    expect(onOpen).toHaveBeenCalledTimes(1);
-  });
-
-  it("suppression lasts one gesture: the next real click opens", () => {
-    const { card, body, onOpen } = renderCard();
-    press(card, body, { x: 100, y: 100 }, { x: 160, y: 160 });
+    expect(onSelect).toHaveBeenCalledTimes(1);
     expect(onOpen).not.toHaveBeenCalled();
+  });
+
+  it("a wobble inside the threshold still selects, never opens", () => {
+    const { card, body, onOpen, onSelect } = renderCard();
+    press(card, body, { x: 100, y: 100 }, { x: 102, y: 101 });
+    expect(onSelect).toHaveBeenCalledTimes(1);
+    expect(onOpen).not.toHaveBeenCalled();
+  });
+
+  it("a double click on the content area opens exactly once", () => {
+    const { card, body, onOpen } = renderCard();
     press(card, body, { x: 100, y: 100 }, { x: 100, y: 100 });
+    fireEvent.doubleClick(body, { clientX: 100, clientY: 100 });
     expect(onOpen).toHaveBeenCalledTimes(1);
   });
 
-  it("Enter on the card body opens it, no pointer involved", () => {
+  it("the work body is not a focusable control on the board", () => {
     const { body, onOpen } = renderCard();
+    expect(body.hasAttribute("role")).toBe(false);
+    expect(body.hasAttribute("tabindex")).toBe(false);
     fireEvent.keyDown(body, { key: "Enter" });
-    expect(onOpen).toHaveBeenCalledTimes(1);
+    expect(onOpen).not.toHaveBeenCalled();
   });
 
   it("the Open button opens exactly once without starting a card drag", () => {
