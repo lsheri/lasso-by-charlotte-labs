@@ -175,6 +175,7 @@ import { useCanvasLab } from "@/hooks/use-canvas-lab";
 import { useCanvasLabAnnotations } from "@/hooks/use-canvas-lab-annotations";
 import { useCanvasLabComments, useWorkboardCommentCounts } from "@/hooks/use-canvas-lab-comments";
 import { useBoardNodeItems } from "@/hooks/use-board-node-items";
+import { workboardOpeningView } from "@/lib/workboard-opening-view";
 import { useEngagementPage } from "@/hooks/use-engagement-page";
 import { useWorkboardCardPreviews } from "@/hooks/use-workboard-card-previews";
 import { useWorkboardFilePreviews } from "@/hooks/use-workboard-file-previews";
@@ -667,13 +668,14 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     if (!shell || !boardReady) return;
     if (manual) viewportChangedRef.current = true;
     const inputs = fitInputsRef.current;
-    const result = fitWorkboardViewport(
+    const fitted = fitWorkboardViewport(
       { width: shell.clientWidth, height: shell.clientHeight },
       inputs.structured ? inputs.frames : [],
       inputs.nodes,
       cardHeightsRef.current,
       null,
     );
+    const result = manual ? fitted : workboardOpeningView(window.innerWidth, fitted, inputs.nodes);
     setZoom(result.zoom);
     setPan(result.pan);
   }, [boardReady]);
