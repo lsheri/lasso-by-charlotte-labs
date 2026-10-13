@@ -3,6 +3,7 @@ import type { WorkItemRow } from "@/lib/work-types";
 
 export type EngagementRow = {
   id: string;
+  org_id: string;
   code: string;
   title: string;
   client_label: string | null;
