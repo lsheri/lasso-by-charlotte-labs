@@ -168,7 +168,7 @@ import { DemoPresetsAdmin } from "@/components/engagements/DemoPresetsAdmin";
 import { SidebarNav } from "@/components/layout/SidebarNav";
 import { WorkspaceMenu } from "@/components/layout/WorkspaceMenu";
 import { useSettingsDialogOptional } from "@/lib/settings-dialog-context";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { DETAILS_SEARCH } from "@/lib/engagement-default-view";
 import { useCanvasLab } from "@/hooks/use-canvas-lab";
@@ -216,7 +216,7 @@ import {
 import { isBoardDefaultTask, workstreamTasks } from "@/lib/board-default-task";
 import { logEvent } from "@/lib/telemetry";
 import { canLeaveBoard, LEAVE_BOARD_COPY, REMOVE_FROM_BOARD_COPY } from "@/lib/leave-board";
-import { buttonVariants } from "@/components/ui/button";
+import { toast } from "sonner";
 import { createDrawnWorkstreamFn, moveItemToWorkstreamFn } from "@/lib/workstream-draw.functions";
 import { deleteWorkstream as deleteWorkstreamFn, renameWorkstream as renameWorkstreamFn } from "@/lib/workstreams.functions";
 import { BOARD_WORKSTREAM_COPY, boxRemoval, canRenameBox, regionNameAction, type ManagedTask } from "@/lib/board-workstream-delete";
