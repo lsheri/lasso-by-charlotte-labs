@@ -1,5 +1,4 @@
 import { ownsWorkItem } from "@/lib/work-ownership";
-import type { LabNode } from "@/components/canvas-lab/canvas-lab-model";
 import type { WorkItemRow } from "@/lib/work-types";
 
 /**
