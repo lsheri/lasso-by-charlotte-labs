@@ -23,16 +23,15 @@ export async function fetchWorkItems(): Promise<WorkItemsResult> {
   if (items.length === 0) return { items, mappingError: null };
 
   // Mapping labels live behind engagement policies; if those reads fail we still
-  // show the work itself rather than blanking the page. The mapping read stays
-  // bounded by the ids actually on the page, so no extra rows cross the wire.
+  // show the work itself rather than blanking the page. The row policies bound
+  // this read: wit_owner_all and the engagement policies return exactly the
+  // placements the caller is entitled to. Enumerating work item ids in the query
+  // string made the URL grow with the size of a person's record until the
+  // request failed, so the read carries no id list.
   const mapping = await supabase
     .from("work_item_tasks")
     .select(
       "work_item_id, task_id, tasks(id, name, engagement_id, is_wrap, engagements(id, code, title, client_label, clients(id, name, quick_folder)))",
-    )
-    .in(
-      "work_item_id",
-      items.map((item) => item.id),
     );
   if (mapping.error) return { items, mappingError: mapping.error.message };
 
