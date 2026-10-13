@@ -44,7 +44,7 @@ describe("BI-3 typing rules", () => {
 
   it("binds bold, italic and underline shortcuts", () => {
     const e = make("<p>x</p>");
-    const keys = e.extensionManager.extensions.flatMap((ext) => Object.keys((ext.config.addKeyboardShortcuts?.call({ editor: e, options: ext.options, storage: {}, name: ext.name, type: undefined, parent: undefined } as never) ?? {}) as object));
+    const keys = e.extensionManager.extensions.flatMap((ext) => Object.keys(((ext.config.addKeyboardShortcuts as unknown as ((this: unknown) => object) | undefined)?.call({ editor: e, options: ext.options, storage: {}, name: ext.name, type: undefined, parent: undefined } as never) ?? {}) as object));
     expect(keys).toEqual(expect.arrayContaining(["Mod-b", "Mod-i", "Mod-u"]));
   });
 });
