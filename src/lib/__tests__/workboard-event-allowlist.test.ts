@@ -12,8 +12,36 @@ vi.mock("@/lib/telemetry", () => ({ logEvent: vi.fn() }));
 
 import { logEvent } from "@/lib/telemetry";
 import * as helpers from "@/components/canvas-lab/canvas-lab-telemetry";
+import { EVENT_DIM_KEYS, guardEventDims } from "../event-dim-allowlist";
 
 describe("the workboard allowlist", () => {
+  it("keeps shared on work_added and home on the existing shared-board via dimension", () => {
+    expect(guardWorkboardEvent("workboard.work_added", { source: "inbox", via: "header", count: 1, shared: "yes" })).toEqual({ keep: true, dims: { source: "inbox", via: "header", count: 1, shared: "yes" } });
+    expect(EVENT_DIM_KEYS["shared.board_opened"]).toContain("via");
+    expect(guardEventDims("shared.board_opened", { via: "home" })).toEqual({ via: "home" });
+  });
+
+  it("uses one page query for owned shared placements and compares actual item and board organisations", () => {
+    const work = readFileSync("src/pages/WorkPage.tsx", "utf8");
+    const shared = readFileSync("src/components/layout/SharedWithYou.tsx", "utf8");
+    expect(work).toContain("ownProfileIds.has(item.owner_id)");
+    expect(work.match(/queryFn: \(\) => fetchSharedWorkPlacements/g)).toHaveLength(1);
+    expect(shared).toContain('work_items!inner(org_id), tasks(engagements(id, title, org_id))');
+    expect(shared).toContain("board.org_id === row.work_items.org_id");
+    expect(work.match(/sharedChips\(isConversationGroup/g)).toHaveLength(2);
+  });
+
+  it("pins the shelf copy and keeps Home opens and accepts in the current workspace", () => {
+    const shared = readFileSync("src/components/layout/SharedWithYou.tsx", "utf8");
+    expect(shared).toContain('shelfNote: "Other people\'s boards you can see or add to. Your work on them stays yours."');
+    expect(shared).toContain('inviteLabel: "INVITE · WAITING FOR YOU"');
+    expect(shared).toContain('`On ${title} · shared`');
+    expect(shared).toContain('openShared(board.engagement_id, "home")');
+    expect(shared).toContain('accept(invite.code, invite.level, "home")');
+    const actions = shared.slice(shared.indexOf("export function useOpenShared"), shared.indexOf("/** Sidebar section"));
+    expect(actions).not.toContain("setActiveProfileId(");
+  });
+
   it("pins every name and its dim keys", () => {
     expect(WORKBOARD_EVENT_DIMS).toMatchInlineSnapshot(`
       {

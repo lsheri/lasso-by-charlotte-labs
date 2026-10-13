@@ -4,7 +4,7 @@
  * SH-7a: a shared board opens inside the person's own workspace. The guest
  * seat is never made the active profile from the UI.
  */
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 
@@ -92,15 +92,26 @@ export function useAcceptBoardShare() {
 }
 
 /** Home uses the same reads and actions as the sidebar, without changing workspace. */
-export function SharedWithYouShelf({ shared, pending }: { shared: SharedBoardRow[]; pending: PendingInviteRow[] }) {
+export function SharedWithYouShelf({ shared, pending, onHeight }: { shared: SharedBoardRow[]; pending: PendingInviteRow[]; onHeight?: (height: number) => void }) {
   const openShared = useOpenShared();
   const accept = useAcceptBoardShare();
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const shelfRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    const shelf = shelfRef.current;
+    if (!shelf || !onHeight) return;
+    const measure = () => onHeight(Math.ceil(shelf.getBoundingClientRect().height));
+    measure();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(shelf);
+    return () => observer.disconnect();
+  }, [onHeight, shared.length, pending.length]);
   if (shared.length === 0 && pending.length === 0) return null;
   const card = "flex min-h-[228px] min-w-0 flex-col items-start justify-between gap-4 whitespace-normal rounded-[var(--radius-control)] border-[1.5px] border-[var(--nb-shared)] bg-card p-4 text-left";
   return (
-    <section aria-label={SHARED_WITH_YOU_COPY.title} data-testid="home-shared-shelf" className="min-w-0 text-left">
+    <section ref={shelfRef} aria-label={SHARED_WITH_YOU_COPY.title} data-testid="home-shared-shelf" className="min-w-0 text-left">
       <h2 className="font-hand text-[26px] text-[var(--nb-shared)]">{SHARED_WITH_YOU_COPY.title}</h2>
       <p className="mt-1 text-base leading-relaxed text-muted-foreground">{SHARED_WITH_YOU_COPY.shelfNote}</p>
       <ul className="mt-4 grid list-none grid-cols-1 gap-6 p-0 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

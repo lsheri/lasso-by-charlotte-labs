@@ -108,6 +108,7 @@ export function HomeBoard() {
   const { shared, pending } = useSharedWithYou(Boolean(profile?.id));
   const { data: engagements } = useEngagements(profile?.id);
   const [viewport, setViewport] = useState(HOME_VIEWPORT_SEED);
+  const [sharedHeight, setSharedHeight] = useState(0);
 
   // CS-1: one home.opened per mount and org, through the same signed-in
   // pipeline as nav.opened, and only once the acting profile has resolved.
@@ -135,6 +136,12 @@ export function HomeBoard() {
     workCount: workCounts ? workCounts.get(engagement.id) ?? 0 : null,
   }));
   const frames = homeFramesForViewport(viewport, cards.length, shared.length + pending.length);
+  const sharedFrame = frames.find((frame) => frame.kind === "shared");
+  const gridFrame = frames.find((frame) => frame.kind === "grid");
+  if (sharedFrame && gridFrame && sharedHeight > 0) {
+    sharedFrame.height = sharedHeight;
+    gridFrame.y = sharedFrame.y + sharedHeight + HOME_FRAME_GAP;
+  }
   const contentHeight = Math.max(...frames.map((frame) => frame.y + frame.height)) + BOARD_FIT_PADDING;
 
   return (
@@ -193,7 +200,7 @@ export function HomeBoard() {
             </div>
           </section>
         ) : currentFrame.kind === "shared" ? (
-          <SharedWithYouShelf shared={shared} pending={pending} />
+          <SharedWithYouShelf shared={shared} pending={pending} onHeight={setSharedHeight} />
         ) : (
           <HomeEngagementGrid
             cards={cards}
