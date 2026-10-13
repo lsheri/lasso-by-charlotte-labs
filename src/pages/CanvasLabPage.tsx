@@ -158,6 +158,7 @@ import {
 } from "@/components/canvas-lab/canvas-lab-telemetry";
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
 import { SHARED_WITH_YOU_COPY, useSharedWithYou } from "@/components/layout/SharedWithYou";
+import { isSharedSpace } from "@/lib/shared-space";
 import { initialsOf } from "@/lib/initials";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { GraphiteIcon } from "@/components/notebook/icons";
