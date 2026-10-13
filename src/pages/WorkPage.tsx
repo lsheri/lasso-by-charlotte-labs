@@ -770,7 +770,11 @@ export function WorkPage() {
       x: 0,
       y: 0,
       width: currentInboxLaneWidth,
-      height: INBOX_CARD_HEIGHT,
+      height: INBOX_CARD_HEIGHT + (() => {
+        const items = isConversationGroup(entry) ? entry.items : [entry];
+        const boards = new Set(items.flatMap((item) => (sharedPlacements.data?.[item.id] ?? []).map((board) => board.id)));
+        return boards.size * 32;
+      })(),
       frame: newLaneFrameId(`inbox-${bucket.key}`),
       entry,
     })),

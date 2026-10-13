@@ -18,7 +18,7 @@ describe("the workboard allowlist", () => {
   it("keeps shared on work_added and home on the existing shared-board via dimension", () => {
     expect(guardWorkboardEvent("workboard.work_added", { source: "inbox", via: "header", count: 1, shared: "yes" })).toEqual({ keep: true, dims: { source: "inbox", via: "header", count: 1, shared: "yes" } });
     expect(EVENT_DIM_KEYS["shared.board_opened"]).toContain("via");
-    expect(guardEventDims("shared.board_opened", { via: "home" })).toEqual({ via: "home" });
+    expect(guardEventDims("shared.board_opened", { via: "home" })).toEqual({ keep: true, dims: { via: "home" } });
   });
 
   it("uses one page query for owned shared placements and compares actual item and board organisations", () => {

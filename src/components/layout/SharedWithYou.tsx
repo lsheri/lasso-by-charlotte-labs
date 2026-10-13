@@ -167,8 +167,8 @@ export async function fetchSharedWorkPlacements(itemIds: string[]) {
 }
 
 export function SharedWorkChips({ boards }: { boards: { id: string; title: string }[] }) {
-  return boards.length > 0 ? <span className="flex min-w-0 flex-wrap gap-1">
-    {boards.map((board) => <span key={board.id} className="max-w-full break-words rounded-[var(--radius-control)] bg-[color-mix(in_oklab,var(--nb-shared)_12%,var(--nb-paper))] px-2 py-1 text-[13px] text-[var(--nb-shared)]">{SHARED_WITH_YOU_COPY.placement(board.title)}</span>)}
+  return boards.length > 0 ? <span className="flex min-w-0 flex-col gap-1">
+    {boards.map((board) => <span key={board.id} title={SHARED_WITH_YOU_COPY.placement(board.title)} className="h-7 max-w-full truncate rounded-[var(--radius-control)] bg-[color-mix(in_oklab,var(--nb-shared)_12%,var(--nb-paper))] px-2 py-1 text-[13px] text-[var(--nb-shared)]">{SHARED_WITH_YOU_COPY.placement(board.title)}</span>)}
   </span> : null;
 }
 
