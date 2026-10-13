@@ -10,18 +10,18 @@ const h = vi.hoisted(() => {
     results: {} as Record<string, { data: unknown; error: unknown }>,
   };
   function builder(table: string) {
-    state.calls[table] ??= [];
+    const callsOf = (t: string): Call[] => (state.calls[t] ??= []);
     const b: any = {
       select: (...args: unknown[]) => {
-        state.calls[table].push({ method: "select", args });
+        callsOf(table).push({ method: "select", args });
         return b;
       },
       order: (...args: unknown[]) => {
-        state.calls[table].push({ method: "order", args });
+        callsOf(table).push({ method: "order", args });
         return b;
       },
       in: (...args: unknown[]) => {
-        state.calls[table].push({ method: "in", args });
+        callsOf(table).push({ method: "in", args });
         return b;
       },
       then: (
@@ -91,7 +91,7 @@ describe("PERF-3 work items URL stays constant", () => {
     expect(items).toHaveLength(2);
     const first = items.find((item) => item.id === "w1");
     expect(first!.work_item_tasks).toHaveLength(1);
-    expect(first!.work_item_tasks[0].task_id).toBe("t1");
+    expect(first!.work_item_tasks[0]!.task_id).toBe("t1");
     const second = items.find((item) => item.id === "w2");
     expect(second!.work_item_tasks).toHaveLength(0);
   });
