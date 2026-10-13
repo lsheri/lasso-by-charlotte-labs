@@ -157,6 +157,7 @@ import {
   type WorkboardPersistEntity,
 } from "@/components/canvas-lab/canvas-lab-telemetry";
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
+import { GuestBar } from "@/components/layout/SharedWithYou";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { GraphiteIcon } from "@/components/notebook/icons";
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
@@ -240,7 +241,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   // F3: opening a board writes the viewer's own last-viewed row and clears its "N NEW".
   useRecordEngagementView(engagementId);
   const settingsDialog = useSettingsDialogOptional();
-  const { data: profile } = useProfile();
+  const { data: profile, profiles } = useProfile();
   const { data: page, isLoading, isError } = useEngagementPage(engagementId);
   const noteOpened = useServerFn(noteCanvasOpenedFn);
   const unfold = useMotion("canvas.unfolded");
@@ -2817,8 +2818,9 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       </aside>
       {menuOpen ? <div className="fixed inset-0 z-50 flex bg-[var(--nb-scrim)]" onPointerDown={() => setMenuOpen(false)}><aside className="h-full w-[280px] overflow-y-auto border-r border-border bg-sidebar p-4 shadow-[var(--shadow-modal)]" onPointerDown={(event) => event.stopPropagation()}><div className="mb-5 flex items-center justify-between"><span className="font-serif text-xl text-foreground">Lasso</span><Button size="icon" variant="ghost" aria-label="Close workboard menu" onClick={() => setMenuOpen(false)}><X className="h-4 w-4" /></Button></div><div className="mb-5"><WorkspaceMenu surface="drawer" onNavigate={() => setMenuOpen(false)} onOpenSettings={() => settingsDialog?.openSettings()} /></div><SidebarNav surface="drawer" onNavigate={() => setMenuOpen(false)} onOpenSettings={() => settingsDialog?.openSettings()} /><div className="mt-6 border-t border-border pt-4"><label className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft" htmlFor="canvas-lab-new-frame">Add workstream</label><div className="mt-2 flex gap-2"><input id="canvas-lab-new-frame" maxLength={60} value={newFrameName} onChange={(event) => { setNewFrameName(event.target.value); if (event.target.value.trim()) setNewFrameError(false); }} className="min-w-0 flex-1 rounded-[var(--radius-control)] border border-input bg-background px-2 text-[12px]" placeholder="Workstream name" /><Button size="sm" variant="outline" onClick={() => { if (addWorkstream(newFrameName)) { setNewFrameName(""); setNewFrameError(false); } else setNewFrameError(true); }}>Add</Button></div>{newFrameError ? <p className="mt-1 font-hand text-[13px] text-destructive">a workstream needs a name</p> : <p className="mt-1 font-hand text-[13px] text-[var(--nb-mid)]">not saved</p>}</div></aside></div> : null}
       <main className={`relative min-w-0 flex-1 flex-col ${mobileView === "board" ? "flex" : "hidden md:flex"}`}>
-        <header className="relative z-20 flex h-[52px] shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-4">
+        <header className={`relative z-20 flex shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-4 ${profile?.is_guest ? "min-h-[52px] flex-wrap py-2" : "h-[52px]"}`}>
           <div className="min-w-0 shrink"><span className="block truncate text-[13px] font-medium text-foreground">{title}</span><span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{status}</span></div>
+          {profile?.is_guest ? <GuestBar profile={profile} profiles={profiles} className="order-last mb-0 min-w-0 basis-full rounded-none border-0 bg-transparent p-0 text-[13px] [&_span]:min-w-0 [&_span]:break-words [&_button]:max-w-full [&_button]:text-left" /> : null}
           <div ref={toolbarRef} className="canvas-lab-toolbar flex min-w-0 flex-1 items-center justify-end gap-2 overflow-hidden">
             {toolbarItems.filter((item) => toolbarPlan.row.includes(item.spec.id)).map((item) => <div key={item.spec.id} className="flex shrink-0 items-center gap-2">{item.row}</div>)}
             {toolbarOverflowItems.length > 0 ? (

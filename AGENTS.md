@@ -41,3 +41,4 @@ Tour workboard chrome stays a local presentational mirror around shared board pr
 - Keep Home's board shell content-height-sized with native scrolling opted in; other board surfaces retain canvas gestures by default so the Home fix cannot alter workboard interactions.
 - Keep the signup default notice in data-consent-shared and pin its literal SHA-256 in tests; signup and new-account setup must render that same string without changing existing consent choices or writes.
 - Compose role- and product-specific data Settings in DataSection using the existing consent primitives and mutations; normalize legacy section IDs at entry boundaries so old links keep working without a second rail section.
+- Reuse GuestBar inside the full-screen board header as well as AppShell, because the board covers the shell and guests must retain the same workspace-return action.
