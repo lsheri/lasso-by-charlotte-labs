@@ -131,7 +131,7 @@ describe("telemetry", () => {
   it("three events allowlisted with closed dims", () => {
     expect(EVENT_DIM_KEYS["board.invite_sent"]).toEqual(["conversations", "kind", "level", "status"]);
     expect(EVENT_DIM_KEYS["board.invite_withdrawn"]).toEqual(["kind"]);
-    expect(EVENT_DIM_KEYS["board.invite_accepted"]).toEqual(["kind", "via"]);
+    expect(EVENT_DIM_KEYS["board.invite_accepted"]).toEqual(["kind", "level", "via"]);
   });
 });
 
@@ -215,7 +215,7 @@ describe("SH-5f invite page routing", () => {
     expect(land.indexOf("pendingBoardInvitePath()")).toBeLessThan(land.indexOf('to: "/home"'));
   });
 
-  it("board.invite_accepted allowlists via", () => {
-    expect(EVENT_DIM_KEYS["board.invite_accepted"]).toEqual(["kind", "via"]);
+  it("board.invite_accepted allowlists kind, level and via", () => {
+    expect(EVENT_DIM_KEYS["board.invite_accepted"]).toEqual(["kind", "level", "via"]);
   });
 });

@@ -242,7 +242,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   // F3: opening a board writes the viewer's own last-viewed row and clears its "N NEW".
   useRecordEngagementView(engagementId);
   const settingsDialog = useSettingsDialogOptional();
-  const { data: profile } = useProfile();
+  const { data: profile, profiles } = useProfile();
   const { data: page, isLoading, isError } = useEngagementPage(engagementId);
   const noteOpened = useServerFn(noteCanvasOpenedFn);
   const unfold = useMotion("canvas.unfolded");
@@ -454,14 +454,14 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     if (board?.id) {
       const merged = applyDurableBoard({ frames: virtualFrames, nodes: virtualNodes }, board);
       setFrames(merged.frames);
-      setNodes(merged.nodes);
+      setNodes(claimMyWork(merged.nodes, myProfileIds, workOwners(board)));
       setLinks(merged.links);
       setHiddenIds(merged.hiddenIds);
       return;
     }
     setFrames(virtualFrames);
     setNodes(virtualNodes);
-  }, [frames, nodes, page, profile?.id, taskIdsByWork, workItems, lab.board, lab.boardLoading]);
+  }, [frames, nodes, page, profile?.id, taskIdsByWork, workItems, lab.board, lab.boardLoading, myProfileIds]);
 
   const allNodes = useMemo(() => nodes ?? [], [nodes]);
   const shownNodes = useMemo(() => allNodes.filter((node) => !hiddenIds.includes(node.id)), [allNodes, hiddenIds]);
@@ -1101,7 +1101,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     const merged = applyDurableBoard(base, fresh);
     const localOnly = (nodesRef.current ?? []).filter((entry) => !entry.durableId && (entry.kind === "chat" || (entry.local && entry.kind !== "judgment")));
     setFrames(merged.frames);
-    setNodes([...merged.nodes, ...localOnly]);
+    setNodes([...claimMyWork(merged.nodes, myProfileIds, workOwners(fresh)), ...localOnly]);
     setLinks(merged.links);
     setHiddenIds(merged.hiddenIds);
     setSelectedLinkId(null);
@@ -1494,7 +1494,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
             title: item.title,
             summary: item.source,
             typeLabel: item.type.replaceAll("_", " "),
-            ownership: !item.owner_id || item.owner_id === profile?.id ? "yours" : "teammate",
+            ownership: !item.owner_id || myProfileIds.has(item.owner_id) ? "yours" : "teammate",
             workItemId: item.id,
             deliverable: isDeliverableType(item.type),
             x: at.x,
@@ -1525,7 +1525,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       }
       await queryClient.invalidateQueries({ queryKey: ["work-items"] });
       await queryClient.invalidateQueries({ queryKey: ["engagement"] });
-      noteWorkboardWorkAdded(orgId, source, addWorkVia, ids.length);
+      noteWorkboardWorkAdded(orgId, source, addWorkVia, ids.length, sharedSpace ? "yes" : "no");
       setAddWorkOpen(false);
     } catch {
       setAnnouncement("That work could not be added here.");
