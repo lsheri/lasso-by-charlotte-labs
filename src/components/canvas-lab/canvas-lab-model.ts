@@ -1118,6 +1118,35 @@ export function applyDurableBoard(base: { frames: LabFrame[]; nodes: LabNode[] }
       });
       continue;
     }
+    // SH-6c: a work card the viewer can read, but whose workstream link they
+    // cannot, is missing from the seed. It still draws, from the readable item.
+    // An unreadable item never reaches here: the server drops its node.
+    if (durable.kind === "work_item" && durable.workItemId) {
+      const item = durable as typeof durable & { itemTitle?: string; itemType?: string; itemOwnerId?: string | null };
+      if (item.itemType !== undefined) {
+        const type = item.itemType || "document";
+        nodes.push({
+          id: localId,
+          kind: "work",
+          frame: frameId,
+          title: item.itemTitle || durable.title || "Untitled",
+          summary: "",
+          typeLabel: type.replaceAll("_", " "),
+          ownership: !item.itemOwnerId || item.itemOwnerId === board.viewerProfileId ? "yours" : "teammate",
+          workItemId: durable.workItemId,
+          deliverable: type === "document" || type === "deck" || type === "sheet",
+          authorProfileId: durable.authorProfileId,
+          durableId: durable.id,
+          durableVersion: durable.version,
+          linkedItemRemovedAt: durable.linkedItemRemovedAt ?? null,
+          x: durable.x,
+          y: durable.y,
+          width: durable.w > 0 ? durable.w : CARD_WIDTH,
+          height: durable.h > 0 ? durable.h : CARD_HEIGHT,
+        });
+      }
+      continue;
+    }
     if (durable.kind === "judgment") {
       const judgment = JUDGMENT_TYPES.find((entry) => entry.value === durable.judgmentType);
       nodes.push({
