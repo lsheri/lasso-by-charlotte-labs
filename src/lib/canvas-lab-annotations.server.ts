@@ -25,7 +25,7 @@ import {
   type CommentThreadDto,
   type HighlightDto,
 } from "@/lib/canvas-lab-annotations-shared";
-import { ensureBoard, ensureWorkItemNode, findBoardFor, isEngagementEditor } from "@/lib/canvas-lab.server";
+import { boardSeatFor, ensureBoard, ensureWorkItemNode, findBoardFor, isEngagementEditor } from "@/lib/canvas-lab.server";
 import type { ResolvedProfile } from "@/lib/profile-resolve";
 
 type Db = SupabaseClient<Database>;
@@ -75,12 +75,24 @@ function highlightDto(
  * their own highlights plus any a teammate chose to share on an item the
  * reader can already open.
  */
+/** SH-7b: on a shared board, the caller's own guest seat writes and owns annotations. */
+async function seatForAnnotation(db: Db, annotationId: string, profile: ResolvedProfile): Promise<ResolvedProfile> {
+  if (!annotationId) return profile;
+  const { data: row } = await db.from("workboard_annotations").select("workboard_id").eq("id", annotationId).maybeSingle();
+  const boardId = (row as { workboard_id?: string } | null)?.workboard_id;
+  if (!boardId) return profile;
+  const { data: board } = await db.from("workboards").select("engagement_id").eq("id", boardId).maybeSingle();
+  const engagementId = (board as { engagement_id?: string } | null)?.engagement_id;
+  return engagementId ? boardSeatFor(db, engagementId, profile) : profile;
+}
+
 export async function listMyAnnotations(
   db: Db,
   engagementId: string,
   workItemId: string,
   profile: ResolvedProfile,
 ): Promise<HighlightDto[]> {
+  profile = await boardSeatFor(db, engagementId, profile);
   const board = await findBoardFor(db, engagementId);
   if (!board) return [];
   const { data } = await db
@@ -133,6 +145,7 @@ export async function createHighlight(
   profile: ResolvedProfile,
   input: CreateHighlightInput,
 ): Promise<AnnotationMutationResult> {
+  profile = await boardSeatFor(db, input.engagementId, profile);
   if (!input.workItemId || !Number.isInteger(input.turnNo) || !input.clientKey) {
     return { status: "validation_error", message: "That selection could not be read." };
   }
@@ -208,6 +221,7 @@ export async function archiveHighlight(
   id: string,
   expectedVersion: number,
 ): Promise<AnnotationMutationResult> {
+  profile = await seatForAnnotation(db, id, profile);
   if (!id || !Number.isInteger(expectedVersion)) {
     return { status: "validation_error", message: "That highlight could not be read." };
   }
@@ -240,6 +254,7 @@ export async function setHighlightVisibility(
   visibility: AnnotationVisibility,
   expectedVersion: number,
 ): Promise<AnnotationMutationResult> {
+  profile = await seatForAnnotation(db, id, profile);
   if (!id || !Number.isInteger(expectedVersion)) {
     return { status: "validation_error", message: "That highlight could not be read." };
   }
@@ -333,6 +348,7 @@ export async function createComment(
   profile: ResolvedProfile,
   input: CreateCommentInput,
 ): Promise<CommentMutationResult> {
+  profile = await boardSeatFor(db, input.engagementId, profile);
   if (!input.workItemId || !Number.isInteger(input.turnNo) || !input.clientKey) {
     return { status: "validation_error", message: "That selection could not be read." };
   }
@@ -405,6 +421,7 @@ export async function createReply(
   profile: ResolvedProfile,
   input: { parentId: string; body: string; clientKey: string },
 ): Promise<CommentMutationResult> {
+  profile = await seatForAnnotation(db, input.parentId, profile);
   if (!input.parentId || !input.clientKey) {
     return { status: "validation_error", message: "That comment could not be read." };
   }
@@ -467,6 +484,7 @@ export async function editComment(
   body: string,
   expectedVersion: number,
 ): Promise<CommentMutationResult> {
+  profile = await seatForAnnotation(db, id, profile);
   if (!id || !Number.isInteger(expectedVersion)) {
     return { status: "validation_error", message: "That comment could not be read." };
   }
@@ -492,6 +510,7 @@ export async function archiveComment(
   id: string,
   expectedVersion: number,
 ): Promise<CommentMutationResult> {
+  profile = await seatForAnnotation(db, id, profile);
   if (!id || !Number.isInteger(expectedVersion)) {
     return { status: "validation_error", message: "That comment could not be read." };
   }
@@ -519,6 +538,7 @@ export async function listComments(
   workItemId: string,
   profile: ResolvedProfile,
 ): Promise<CommentThreadDto[]> {
+  profile = await boardSeatFor(db, engagementId, profile);
   const board = await findBoardFor(db, engagementId);
   if (!board) return [];
   const { data } = await db
