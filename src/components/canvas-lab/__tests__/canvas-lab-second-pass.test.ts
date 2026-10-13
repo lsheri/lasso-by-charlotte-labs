@@ -23,7 +23,7 @@ describe("Canvas Lab second prototype pass", () => {
     expect(card).toContain("<LabCardMenu");
     expect(card).not.toContain('className="mt-1 flex flex-wrap');
     expect(menu).toContain("Use as context");
-    expect(menu).toContain("Hide from this board");
+    expect(menu).toContain("Remove from board");
     expect(menu).toContain("Delete this work");
   });
 

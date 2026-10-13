@@ -79,6 +79,7 @@ function LabCardInner({
   onBundleToggle,
   onSaveChatLink,
   teammateMark,
+  removable,
 }: {
   node: LabNode;
   item?: WorkItemRow | undefined;
@@ -131,6 +132,8 @@ function LabCardInner({
   onSaveChatLink?: ((url: string | null) => Promise<void>) | undefined;
   /** Live signed-in board only: provenance for a card added by another member. */
   teammateMark?: TeammateMark | null;
+  /** BRD-3: false when the work behind this card belongs to someone else. */
+  removable?: boolean | undefined;
 }) {
   const cardRef = useRef<HTMLDivElement | null>(null);
   const paperRef = useRef<HTMLDivElement | null>(null);
@@ -263,7 +266,7 @@ function LabCardInner({
       </div>
       {readOnly ? null : (
         <div className="canvas-lab-card-bar" onPointerDown={(event) => event.stopPropagation()}>
-          <LabCardMenu selected={selected} canBranch={node.ownership === "teammate" || node.kind === "chat"} local={Boolean(node.local || node.kind === "chat")} removable={node.kind !== "judgment" || Boolean(node.local)} open={menuOpen} onOpenChange={changeMenuOpen} cardRef={cardRef} onSelect={onSelect} onOpen={() => onOpen(cardRef.current?.getBoundingClientRect())} onBranch={onBranch} onHide={onHide} onDelete={onDelete} onTakeOutOfContext={onTakeOutOfContext} onFit={canResize ? onFit : undefined} frameChoices={structured ? frameChoices : []} currentFrame={node.frame} onMoveToFrame={structured && canResize ? onMoveToFrame : undefined} bundleToggleLabel={bundleToggleLabel} onBundleToggle={onBundleToggle} chatLinkLabel={canSetChatLink ? (pastedLink ? CHAT_LINK_COPY.change : CHAT_LINK_COPY.add) : undefined} onEditChatLink={canSetChatLink ? () => setChatLinkOpen(true) : undefined} />
+          <LabCardMenu selected={selected} canBranch={node.ownership === "teammate" || node.kind === "chat"} local={Boolean(node.local || node.kind === "chat")} removable={(removable ?? true) && (node.kind !== "judgment" || Boolean(node.local))} open={menuOpen} onOpenChange={changeMenuOpen} cardRef={cardRef} onSelect={onSelect} onOpen={() => onOpen(cardRef.current?.getBoundingClientRect())} onBranch={onBranch} onHide={onHide} onDelete={onDelete} onTakeOutOfContext={onTakeOutOfContext} onFit={canResize ? onFit : undefined} frameChoices={structured ? frameChoices : []} currentFrame={node.frame} onMoveToFrame={structured && canResize ? onMoveToFrame : undefined} bundleToggleLabel={bundleToggleLabel} onBundleToggle={onBundleToggle} chatLinkLabel={canSetChatLink ? (pastedLink ? CHAT_LINK_COPY.change : CHAT_LINK_COPY.add) : undefined} onEditChatLink={canSetChatLink ? () => setChatLinkOpen(true) : undefined} />
           <Button
             type="button"
             size="icon"
