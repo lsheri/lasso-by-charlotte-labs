@@ -18,6 +18,9 @@ export const COPY = {
   bullets: "Bullet list", numbered: "Numbered list", heading: "Heading", quote: "Quote", marks: "Text style", structure: "Structure", colours: "Colour and highlight", clear: "Clear formatting", limit: "Limit reached", editor: "Text",
 };
 
+/** BI-3: heading 2 joins heading 3; lists and quote come from StarterKit with their typing rules. */
+export const STARTER_KIT_OPTIONS = { heading: { levels: [2, 3] as (2 | 3)[] }, underline: false, link: false, code: false, codeBlock: false, horizontalRule: false } as const;
+
 const SizedTextStyle = TextStyle.extend({
   addAttributes() {
     return { ...this.parent?.(), fontSize: {
@@ -60,7 +63,7 @@ export default function RichTextEditor({ initialHtml, onChange, onDone, autoFocu
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
-      StarterKit.configure({ heading: { levels: [2, 3] }, underline: false, link: false, code: false, codeBlock: false, horizontalRule: false }),
+      StarterKit.configure(STARTER_KIT_OPTIONS),
       Underline, SafeHighlight.configure({ multicolor: true }), SizedTextStyle, Color,
       Extension.create({ name: "characterLimit", addProseMirrorPlugins() { return [new Plugin({
         filterTransaction(transaction, state) {
