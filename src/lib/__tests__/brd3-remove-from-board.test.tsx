@@ -30,10 +30,16 @@ describe("BRD-3 remove from board", () => {
     expect(readFileSync("src/components/canvas-lab/LabCardMenu.tsx", "utf8")).not.toContain("Hide from this board");
   });
 
-  it("CanvasLabPage passes a computed removable from the teammate mark", () => {
+  it("CanvasLabPage passes a computed removable from work ownership, not the teammate mark", () => {
     const page = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
     expect(page).toContain("removable={cardRemovable(node, cardItem)}");
-    expect(page).toMatch(/const cardRemovable = [^\n]*teammateMarkByNode/);
+    const predicate = page.slice(page.indexOf("const cardRemovable ="), page.indexOf("const cardRemovable =") + 400);
+    expect(predicate).toContain("ownsWorkItem(profile, item)");
+    expect(predicate).not.toContain("teammateMarkByNode");
+    // A decoration node (sticky, text, grouping, judgment, decision, brief) is removable as before.
+    expect(predicate).toContain("if (!node.workItemId) return true;");
+    // A work node whose row has not loaded falls back to the node author, never to "removable".
+    expect(predicate).toContain("node.authorProfileId === profile?.id");
     expect(readFileSync("src/components/canvas-lab/LabCard.tsx", "utf8")).toContain("removable={(removable ?? true)");
   });
 
