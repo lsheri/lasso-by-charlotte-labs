@@ -242,7 +242,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   // F3: opening a board writes the viewer's own last-viewed row and clears its "N NEW".
   useRecordEngagementView(engagementId);
   const settingsDialog = useSettingsDialogOptional();
-  const { data: profile, profiles } = useProfile();
+  const { data: profile } = useProfile();
   const { data: page, isLoading, isError } = useEngagementPage(engagementId);
   const noteOpened = useServerFn(noteCanvasOpenedFn);
   const unfold = useMotion("canvas.unfolded");
