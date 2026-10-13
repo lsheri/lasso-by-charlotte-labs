@@ -178,7 +178,7 @@ import { useEngagementPage } from "@/hooks/use-engagement-page";
 import { useWorkboardCardPreviews } from "@/hooks/use-workboard-card-previews";
 import { useWorkboardFilePreviews } from "@/hooks/use-workboard-file-previews";
 import { useMotion } from "@/hooks/use-motion";
-import { useProfile } from "@/hooks/use-profile";
+import { useProfile, useProfiles } from "@/hooks/use-profile";
 import { ownsWorkItem } from "@/lib/work-ownership";
 import { cardRemovable } from "@/lib/card-removable";
 import { teammateMarkFor } from "@/lib/teammate-mark";
