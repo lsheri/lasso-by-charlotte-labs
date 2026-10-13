@@ -105,7 +105,9 @@ describe("AU-1 audit fixes", () => {
     const fn = page.slice(page.indexOf("async function openAccepted"), page.indexOf("async function signOut"));
     expect(fn).toContain("result.engagementId");
     expect(fn).toContain('"/engagements/$id/canvas-lab"');
-    expect(fn).toContain("setActiveProfileId");
+    // OWN-1: accepting a shared board never moves the person into the
+    // host's workspace, so the switch call is gone.
+    expect(fn).not.toContain("setActiveProfileId");
   });
 
   it("W4: safeNext keeps /board-invite?", () => {
