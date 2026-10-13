@@ -556,8 +556,12 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     ownerProfileId: item ? item.owner_id : node.authorProfileId,
     members: page?.members ?? [],
   });
-  /** BRD-3: someone else's work is whatever carries the teammate mark; only its author removes it. */
-  const cardRemovable = (node: LabNode, item: WorkItemRow | undefined) => !(node.workItemId && teammateMarkByNode(node, item));
+  /** BRD-3a: only the person who owns the work behind a card takes it off the board. */
+  const cardRemovable = (node: LabNode, item: WorkItemRow | undefined) => {
+    if (!node.workItemId) return true;
+    if (item) return ownsWorkItem(profile, item);
+    return Boolean(node.authorProfileId) && node.authorProfileId === profile?.id;
+  };
   const focusItem = focusNode ? itemByNode(focusNode) ?? null : null;
   const reviewItem = reviewNode ? itemByNode(reviewNode) ?? null : null;
   const onScreenChatIds = useMemo(() => {
