@@ -43,6 +43,13 @@ describe("BRD-3 remove from board", () => {
     expect(readFileSync("src/components/canvas-lab/LabCard.tsx", "utf8")).toContain("removable={(removable ?? true)");
   });
 
+  it("every LabCard render in CanvasLabPage carries the removable guard", () => {
+    const page = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
+    const sites = page.match(/<LabCard\b/g)?.length ?? 0;
+    expect(sites).toBeGreaterThan(0);
+    expect(page.match(/removable=\{cardRemovable\(/g)?.length ?? 0).toBe(sites);
+  });
+
   it("the hide handler un-places the work and the toast names your work", () => {
     const page = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
     const hide = page.slice(page.indexOf("function hideNode("), page.indexOf("function hideNode(") + 1200);
