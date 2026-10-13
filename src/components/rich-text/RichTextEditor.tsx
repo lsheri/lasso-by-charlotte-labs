@@ -50,8 +50,8 @@ export function toolbarControls(variant: ToolbarVariant): string[] {
   return [...TOOLBAR_GROUPS.marks, ...TOOLBAR_GROUPS.structure, ...TOOLBAR_GROUPS.colour];
 }
 
-export default function RichTextEditor({ initialHtml, onChange, onDone, autoFocus = false, maxChars = 5000, variant = "full" }: {
-  initialHtml: string; onChange: (html: string, plain: string) => void; onDone: () => void; autoFocus?: boolean; maxChars?: number; variant?: ToolbarVariant;
+export default function RichTextEditor({ initialHtml, onChange, onDone, autoFocus = false, maxChars = 5000, variant = "full", toolbarVisible = true }: {
+  initialHtml: string; onChange: (html: string, plain: string) => void; onDone: () => void; autoFocus?: boolean; maxChars?: number; variant?: ToolbarVariant; toolbarVisible?: boolean;
 }) {
   const root = useRef<HTMLDivElement>(null);
   const callbacks = useRef({ onChange, onDone });
@@ -105,7 +105,7 @@ export default function RichTextEditor({ initialHtml, onChange, onDone, autoFocu
   ];
   return <div ref={root} className="relative text-foreground">
     <style>{RICH_TEXT_CSS}</style>
-    <div role="toolbar" className={"absolute bottom-full left-0 z-50 mb-2 flex flex-wrap items-center gap-1 rounded-[var(--radius-control)] border border-border bg-background p-1 shadow-sm " + (variant === "compact" ? "w-max max-w-[min(15rem,calc(100vw-2rem))]" : "max-w-[calc(100vw-2rem)]")} onPointerDown={(event) => { if (!(event.target instanceof HTMLSelectElement)) event.preventDefault(); }}>
+    {toolbarVisible ? <div role="toolbar" className={"absolute bottom-full left-0 z-50 mb-2 flex flex-wrap items-center gap-1 rounded-[var(--radius-control)] border border-border bg-background p-1 shadow-sm " + (variant === "compact" ? "w-max max-w-[min(15rem,calc(100vw-2rem))]" : "max-w-[calc(100vw-2rem)]")} onPointerDown={(event) => { if (!(event.target instanceof HTMLSelectElement)) event.preventDefault(); }}>
       <div role="group" aria-label={COPY.marks} className="flex flex-wrap items-center gap-1">
       {tools.slice(0, 4).map(({ label, icon: Icon, active, run }) => <Button key={label} type="button" variant="ghost" className={target} title={label} aria-label={label} aria-pressed={active ? editor?.isActive(active) ?? false : undefined} onClick={run}><Icon /></Button>)}
       </div>
@@ -119,7 +119,7 @@ export default function RichTextEditor({ initialHtml, onChange, onDone, autoFocu
         {Object.entries(SIZES).map(([key, value]) => <option key={key} value={value}>{COPY.sizes[key as keyof typeof SIZES]}</option>)}
       </select>
       </div>
-    </div>
+    </div> : null}
     <EditorContent editor={editor} />
     {limitReached ? <p role="status" className="mt-1 text-[13px] text-soft">{COPY.limit}</p> : null}
   </div>;

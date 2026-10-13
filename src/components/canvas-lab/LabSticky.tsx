@@ -1,5 +1,5 @@
 import { stableMemo } from "@/components/canvas-lab/stable-memo";
-import { lazy, Suspense, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent } from "react";
 
 import type { LabNode, LabResizeCorner } from "@/components/canvas-lab/canvas-lab-model";
@@ -50,11 +50,14 @@ function LabStickyInner({ node, selected, editable, layoutEditable, onSelect, on
   const touched = useRef(false);
   const [fallbackText, setFallbackText] = useState<string | null>(null);
   const [editing, setEditing] = useState(() => stickyStartsEditing({ selected, editable, textLength: body.text.length }));
+  const [formattingOpen, setFormattingOpen] = useState(false);
+  useEffect(() => { if (!selected) setFormattingOpen(false); }, [selected]);
   const editingRef = useRef(editing);
   const baseline = useRef({ text: body.text, html: body.html ?? plainToRichHtml(body.text) });
   const sectionRef = useRef<HTMLElement>(null);
   const enterEdit = () => {
     if (!editable || editingRef.current) return;
+    setFormattingOpen(false);
     baseline.current = { text: body.text, html: body.html ?? plainToRichHtml(body.text) };
     draft.current = null;
     touched.current = false;
@@ -97,19 +100,21 @@ function LabStickyInner({ node, selected, editable, layoutEditable, onSelect, on
         <Suspense fallback={<textarea aria-label="Sticky words" autoFocus maxLength={WORKBOARD_TEXT_MAX_LENGTH} value={fallbackText ?? body.text} placeholder="Write here"
           onChange={(event) => { const text = event.target.value; draft.current = { text, html: plainToRichHtml(text) }; setFallbackText(text); }}
           onBlur={finish} onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); finish(); } }} />}>
-          <RichTextEditor variant="compact" initialHtml={draft.current?.html ?? body.html ?? plainToRichHtml(body.text)} autoFocus maxChars={WORKBOARD_TEXT_MAX_LENGTH}
+          <RichTextEditor variant="compact" toolbarVisible={selected && formattingOpen} initialHtml={draft.current?.html ?? body.html ?? plainToRichHtml(body.text)} autoFocus maxChars={WORKBOARD_TEXT_MAX_LENGTH}
             onChange={(html, text) => { if (touched.current) draft.current = { html, text }; }} onDone={finish} />
         </Suspense>
       </div> : body.html !== undefined ? <div className="node-rich"><RichTextView html={body.html} /></div>
         : <textarea aria-label="Sticky words" maxLength={WORKBOARD_TEXT_MAX_LENGTH} value={body.text} readOnly placeholder="Write here" onPointerDown={(event) => { event.stopPropagation(); onSelect(); }} />}
-      {selected && layoutEditable ? <div className="canvas-lab-text-block-controls" onPointerDown={(event) => event.stopPropagation()}>
+      {selected && layoutEditable ? <div className="canvas-lab-text-block-controls" onPointerDown={(event) => event.stopPropagation()} onDoubleClick={(event) => event.stopPropagation()}>
         {editable ? <>
+          <Button type="button" size="sm" variant="ghost" title="Formatting" aria-label="Formatting" aria-pressed={formattingOpen} onPointerDown={(event) => event.preventDefault()} onClick={() => setFormattingOpen((open) => !open)}><Pencil size={12} aria-hidden="true" /></Button>
+          {formattingOpen ? <>
           <div className="canvas-lab-sticky-swatches" role="group" aria-label="Sticky colour">
             {WORKBOARD_STICKY_FILLS.map((fill) => <button key={fill} type="button" className="canvas-lab-sticky-swatch" data-fill={fill} aria-label={fill} aria-pressed={body.fill === fill} onPointerDown={(event) => event.preventDefault()} onClick={() => choose({ fill }, "fill")} />)}
           </div>
-          <button type="button" className="canvas-lab-sticky-swatch" aria-label="Edit words" onPointerDown={(event) => event.preventDefault()} onClick={() => { if (stickyTriggerEntersEdit("pencil", editable)) enterEdit(); }}><Pencil size={12} aria-hidden="true" /></button>
           <select aria-label="Text size" value={body.size} onChange={(event) => choose({ size: event.target.value as WorkboardStickyBody["size"] }, "style")}>{WORKBOARD_TEXT_SIZES.map((value) => <option key={value} value={value}>{value}</option>)}</select>
           <select aria-label="Text weight" value={body.weight} onChange={(event) => choose({ weight: event.target.value as WorkboardStickyBody["weight"] }, "style")}>{WORKBOARD_TEXT_WEIGHTS.map((value) => <option key={value} value={value}>{value}</option>)}</select>
+          </> : null}
         </> : null}
         <Button type="button" size="sm" variant="ghost" onClick={onRemove}>Remove sticky</Button>
       </div> : null}
