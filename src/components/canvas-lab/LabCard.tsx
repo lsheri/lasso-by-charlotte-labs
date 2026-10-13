@@ -246,6 +246,7 @@ function LabCardInner({
       onPointerUp={readOnly ? undefined : handleCardPointerUp}
       onPointerCancel={readOnly ? undefined : handleCardPointerCancel}
       onClickCapture={readOnly ? undefined : handleClickCapture}
+      onClick={readOnly ? undefined : handleCardClick}
       onDoubleClick={readOnly ? undefined : handleDoubleClick}
       onFocus={readOnly ? undefined : onFocus}
       onContextMenu={openMenu}
