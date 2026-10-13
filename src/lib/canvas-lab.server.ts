@@ -122,11 +122,14 @@ export async function loadWorkboard(db: Db, engagementId: string, profile: Resol
   const workIds = [...new Set(nodeRows.map((row) => row.work_item_id).filter((id): id is string => !!id))];
   const decisionIds = [...new Set(nodeRows.map((row) => row.decision_id).filter((id): id is string => !!id))];
   const [workRes, decisionRes, authorRes] = await Promise.all([
-    workIds.length > 0 ? db.from("work_items").select("id").in("id", workIds) : Promise.resolve({ data: [] as { id: string }[] }),
+    workIds.length > 0 ? db.from("work_items").select("id, title, type, owner_id").in("id", workIds) : Promise.resolve({ data: [] as { id: string; title: string; type: string; owner_id: string | null }[] }),
     decisionIds.length > 0 ? db.from("decisions").select("id").in("id", decisionIds) : Promise.resolve({ data: [] as { id: string }[] }),
     db.from("profiles").select("id, display_name").in("id", [...new Set(nodeRows.map((row) => row.author_profile_id))]),
   ]);
   const readableWork = new Set((workRes.data ?? []).map((row) => row.id));
+  // SH-6c: the readable item travels with its node, so a card the viewer can
+  // read still draws when its workstream link is hidden from them.
+  const workById = new Map((workRes.data ?? []).map((row) => [row.id, row as { id: string; title?: string | null; type?: string | null; owner_id?: string | null }]));
   const readableDecisions = new Set((decisionRes.data ?? []).map((row) => row.id));
   const authorNames = new Map((authorRes.data ?? []).map((row) => [row.id, row.display_name]));
 
@@ -138,7 +141,7 @@ export async function loadWorkboard(db: Db, engagementId: string, profile: Resol
   const visibleIds = new Set(visibleNodes.map((row) => row.id));
   const frameIds = new Set(frameRows.map((row) => row.id));
 
-  const nodes: WorkboardNodeDto[] = visibleNodes.map((row) => ({
+  const nodes: WorkboardNodeDto[] = visibleNodes.map((row) => Object.assign({
     id: row.id,
     frameId: row.frame_id && frameIds.has(row.frame_id) ? row.frame_id : null,
     kind: row.kind as WorkboardNodeDto["kind"],
@@ -158,7 +161,7 @@ export async function loadWorkboard(db: Db, engagementId: string, profile: Resol
     referenceReadable: true,
     createdAt: row.created_at ?? null,
     linkedItemRemovedAt: row.linked_item_removed_at ?? null,
-  }));
+  } satisfies WorkboardNodeDto, readableItemFields(row.work_item_id ? workById.get(row.work_item_id) : undefined)));
   const links: WorkboardLinkDto[] = linkRows
     .filter(
       (row): row is typeof row & { from_node_id: string; to_node_id: string } =>
@@ -642,4 +645,11 @@ async function frameIdForKey(db: Db, boardId: string, key: string): Promise<stri
 
 function definedPatch<T extends Record<string, unknown>>(patch: T): Record<string, unknown> {
   return Object.fromEntries(Object.entries(patch).filter(([, value]) => value !== undefined));
+}
+
+/** SH-6c: additive fields on a work node DTO, read by applyDurableBoard. */
+export type ReadableWorkItemFields = { itemTitle?: string; itemType?: string; itemOwnerId?: string | null };
+function readableItemFields(item: { title?: string | null; type?: string | null; owner_id?: string | null } | undefined): ReadableWorkItemFields {
+  if (!item) return {};
+  return { itemTitle: item.title ?? "", itemType: item.type ?? "", itemOwnerId: item.owner_id ?? null };
 }

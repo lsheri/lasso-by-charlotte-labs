@@ -170,9 +170,9 @@ export function MobileTabBar() {
               )
             ))}
           </div>
-          {profiles.length > 1 ? (
+          {switcherProfiles(profiles).length > 1 ? (
             <div className="mt-4" data-testid="mobile-workspace-switcher">
-              <OrgSwitcher profiles={profiles} active={profile} />
+              <OrgSwitcher profiles={switcherProfiles(profiles)} active={profile} />
             </div>
           ) : null}
           <section className="mt-4 border-t border-border pt-3" data-nav-group="workspace_menu">
@@ -185,4 +185,9 @@ export function MobileTabBar() {
       </Sheet>
     </>
   );
+}
+
+/** SH-6b/6c: guest profiles are boards, not workspaces; the switcher skips them. */
+export function switcherProfiles<T extends { is_guest?: boolean }>(profiles: T[]): T[] {
+  return profiles.filter((p) => !p.is_guest);
 }
