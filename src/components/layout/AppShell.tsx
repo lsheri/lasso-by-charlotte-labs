@@ -9,6 +9,7 @@ import { signOut } from "@/lib/sign-out";
 import { useAuthUser, useProfile } from "@/hooks/use-profile";
 
 import { AppSidebar } from "./AppSidebar";
+import { GuestBar, useRememberOwnProfile } from "./SharedWithYou";
 import { LassoLoopMark } from "./LassoLoopMark";
 import { MobileTabBar } from "./MobileTabBar";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
@@ -57,6 +58,9 @@ function AppShellInner() {
   }, []);
 
   const userName = profile?.display_name ?? "Signed in";
+  // SH-6b: guest profiles are boards, not workspaces; the switcher skips them.
+  const workspaceProfiles = profiles.filter((p) => !p.is_guest);
+  useRememberOwnProfile(profile);
 
   return (
     <AskLassoProvider>
@@ -67,7 +71,7 @@ function AppShellInner() {
               <AppSidebar
                 userName={userName}
                 userRole={profile?.role}
-                profiles={profiles}
+                profiles={workspaceProfiles}
                 activeProfile={profile}
                 onSignOut={() => void signOut(navigate)}
                 onOpenSettings={openSettings}
@@ -104,6 +108,7 @@ function AppShellInner() {
               sticky CTA (Work) add their own spacer rather than taxing every page. */}
             <main className="flex-1 px-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-6 md:px-8 md:py-12 md:pb-14 lg:px-10 xl:px-14">
               <div className="mx-auto w-full max-w-[1440px]">
+                {profile?.is_guest ? <GuestBar profile={profile} profiles={profiles} /> : null}
                 <Outlet />
               </div>
             </main>

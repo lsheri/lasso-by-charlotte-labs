@@ -24,6 +24,8 @@ export type Profile = {
   onboarding: unknown;
   /** When this profile was created. Used for banded age only, never shown. */
   created_at?: string | null;
+  /** SH-6b: a board guest profile, member of one shared board only. */
+  is_guest?: boolean;
 };
 
 
@@ -308,7 +310,7 @@ export async function fetchProfileState(): Promise<ProfileState> {
   const { data, error } = await supabase
     .from("profiles")
     .select(
-      "id, user_id, org_id, role, display_name, title_band, onboarding, created_at, deactivated_at, orgs(name, settings, clients_enabled)",
+      "id, user_id, org_id, role, display_name, title_band, onboarding, created_at, deactivated_at, is_guest, orgs(name, settings, clients_enabled)",
     )
     .eq("user_id", user.id)
     .order("created_at", { ascending: true });
