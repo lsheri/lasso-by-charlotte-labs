@@ -29,7 +29,7 @@ export async function fetchBoardNodeItems(ids: readonly string[]): Promise<WorkI
   if (error) throw error;
   return ((data ?? []) as unknown as Record<string, unknown>[]).map((row) => ({
     ...row,
-    meta: row.meta ?? null,
+    meta: row["meta"] ?? null,
     work_item_tasks: [],
   })) as unknown as WorkItemRow[];
 }
