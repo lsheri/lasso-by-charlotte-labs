@@ -7049,3 +7049,11 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   --font-mono:"Martian Mono", ui-monospace, monospace;
   --font-hand:"Architects Daughter", var(--font-sans);
 }
+
+/* Tailwind's @theme inline bakes the font stacks into the utilities, so the
+   token overrides above cannot reach .font-mono / .font-serif / .font-sans.
+   These re-point the utilities at the tokens, inside the app shell only.
+   The landing page is outside the shell and keeps its current type. */
+[data-lasso="on"] .font-mono { font-family: var(--font-mono); }
+[data-lasso="on"] .font-serif { font-family: var(--font-serif); }
+[data-lasso="on"] .font-sans { font-family: var(--font-sans); }
