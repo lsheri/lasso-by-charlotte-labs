@@ -1,3 +1,4 @@
+import { displayName } from "@/lib/work-item-name";
 /**
  * Canvas Lab Phase 3 Slice 1: server-side Workboard assembly and mutation.
  *
@@ -146,7 +147,7 @@ export async function loadWorkboard(db: Db, engagementId: string, activeProfile:
   const workIds = [...new Set(nodeRows.map((row) => row.work_item_id).filter((id): id is string => !!id))];
   const decisionIds = [...new Set(nodeRows.map((row) => row.decision_id).filter((id): id is string => !!id))];
   const [workRes, decisionRes, authorRes] = await Promise.all([
-    workIds.length > 0 ? db.from("work_items").select("id, title, type, owner_id").in("id", workIds) : Promise.resolve({ data: [] as { id: string; title: string; type: string; owner_id: string | null }[] }),
+    workIds.length > 0 ? db.from("work_items").select("id, title, display_title, type, owner_id").in("id", workIds) : Promise.resolve({ data: [] as { id: string; title: string; display_title: string | null; type: string; owner_id: string | null }[] }),
     decisionIds.length > 0 ? db.from("decisions").select("id").in("id", decisionIds) : Promise.resolve({ data: [] as { id: string }[] }),
     db.from("profiles").select("id, display_name").in("id", [...new Set(nodeRows.map((row) => row.author_profile_id))]),
   ]);
@@ -674,7 +675,7 @@ function definedPatch<T extends Record<string, unknown>>(patch: T): Record<strin
 
 /** SH-6c: additive fields on a work node DTO, read by applyDurableBoard. */
 export type ReadableWorkItemFields = { itemTitle?: string; itemType?: string; itemOwnerId?: string | null };
-function readableItemFields(item: { title?: string | null; type?: string | null; owner_id?: string | null } | undefined): ReadableWorkItemFields {
+function readableItemFields(item: { title?: string | null; display_title?: string | null; type?: string | null; owner_id?: string | null } | undefined): ReadableWorkItemFields {
   if (!item) return {};
-  return { itemTitle: item.title ?? "", itemType: item.type ?? "", itemOwnerId: item.owner_id ?? null };
+  return { itemTitle: displayName(item), itemType: item.type ?? "", itemOwnerId: item.owner_id ?? null };
 }

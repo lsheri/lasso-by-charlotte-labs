@@ -149,7 +149,7 @@ export async function fetchPacket(engagementId: string, subjectId: string): Prom
     supabase
       .from("tasks")
       .select(
-        "id, name, goal, when_label, position, work_item_tasks(step_no, step_confirmed, mapped_at, work_items(id, owner_id, title, type, source, visibility, content_ref, content_fidelity, source_vendor, work_date, created_at_source, captured_at, meta))",
+        "id, name, goal, when_label, position, work_item_tasks(step_no, step_confirmed, mapped_at, work_items(id, owner_id, title, display_title, type, source, visibility, content_ref, content_fidelity, source_vendor, work_date, created_at_source, captured_at, meta))",
       )
       .eq("engagement_id", engagementId)
       .eq("owner_id", subjectId)

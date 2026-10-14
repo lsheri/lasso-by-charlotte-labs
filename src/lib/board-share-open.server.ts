@@ -140,7 +140,7 @@ type NodeRow = Database["public"]["Tables"]["workboard_nodes"]["Row"];
 type LinkRow = Database["public"]["Tables"]["workboard_links"]["Row"];
 
 const WORK_SELECT =
-  "id, owner_id, orig_conversation_id, ungrouped_at, title, type, source, visibility, captured_at, content_ref, created_at_source, work_date, content_fidelity, source_vendor, source_meta, meta, work_item_extracts(summary)";
+  "id, owner_id, orig_conversation_id, ungrouped_at, title, display_title, type, source, visibility, captured_at, content_ref, created_at_source, work_date, content_fidelity, source_vendor, source_meta, meta, work_item_extracts(summary)";
 const TASKS_SELECT = `id, name, detail, is_wrap, is_board_default, work_item_tasks(work_items(${WORK_SELECT}))`;
 const TURN_LIMIT = 4000;
 const FILE_PREVIEW_LIMIT = 40;

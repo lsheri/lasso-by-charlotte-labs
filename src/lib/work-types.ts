@@ -32,6 +32,8 @@ export type WorkItemRow = {
 
 
   title: string;
+  /** WI-1: the name the owner chose for other people. title stays provenance. */
+  display_title?: string | null | undefined;
   type: WorkType;
   source: string;
   visibility: WorkVisibility;
