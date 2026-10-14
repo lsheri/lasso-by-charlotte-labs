@@ -7,11 +7,13 @@ vi.mock("@/lib/telemetry.server", () => ({
 }));
 vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: {} }));
 
-import { recordAuthFailure } from "@/lib/mcp-handler.server";
+import { recordAuthFailure, resetAuthFailureThrottle } from "@/lib/mcp-handler.server";
 import { guardEventDims } from "@/lib/event-dim-allowlist";
 
 describe("TEL-2 mcp.auth_failed throttle", () => {
   beforeEach(() => {
+    resetAuthFailureThrottle();
+    recordAnonymousEvent.mockClear();
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-10-14T00:00:00Z"));
   });

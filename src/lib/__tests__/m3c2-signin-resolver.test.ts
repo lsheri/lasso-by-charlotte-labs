@@ -22,7 +22,7 @@ vi.mock("../telemetry.server", () => ({
   recordAnonymousEvent: mocks.recordAnonymousEvent,
 }));
 
-import { handleMcpRequest, resolveOwner } from "../mcp-handler.server";
+import { handleMcpRequest, resetAuthFailureThrottle, resolveOwner } from "../mcp-handler.server";
 
 const row = {
   connection_id: "conn-9",
@@ -47,6 +47,7 @@ function failures() {
 }
 
 beforeEach(() => {
+  resetAuthFailureThrottle();
   mocks.keyRows = [];
   mocks.signinRows = [];
   mocks.claims = { data: { claims: { sub: "user-1", client_id: "client-7" } }, error: null };
@@ -92,24 +93,24 @@ describe("M3-C2 sign-in resolver", () => {
     const response = await handleMcpRequest(call("push_conversation"), JWT, "header");
     expect(response.status).toBe(401);
     expect(await response.json()).toEqual({ error: "Unauthorized" });
-    expect(failures()[0]?.[2]).toEqual({ kind: "signin", reason: "bad_token" });
+    expect(failures()[0]?.[2]).toEqual({ kind: "signin", reason: "bad_token", repeats_band: "0" });
   });
 
   it("(f) verified claims without client_id are bad_token", async () => {
     mocks.claims = { data: { claims: { sub: "user-1" } }, error: null };
     await handleMcpRequest(call("push_conversation"), JWT, "header");
-    expect(failures()[0]?.[2]).toEqual({ kind: "signin", reason: "bad_token" });
+    expect(failures()[0]?.[2]).toEqual({ kind: "signin", reason: "bad_token", repeats_band: "0" });
     expect(mocks.rpc).not.toHaveBeenCalledWith("mcp_resolve_signin", expect.anything());
   });
 
   it("(g) a verified token with no row is no_connection", async () => {
     await handleMcpRequest(call("push_conversation"), JWT, "header");
-    expect(failures()[0]?.[2]).toEqual({ kind: "signin", reason: "no_connection" });
+    expect(failures()[0]?.[2]).toEqual({ kind: "signin", reason: "no_connection", repeats_band: "0" });
   });
 
   it("(h) an unknown lsk key on the header route is bad_key", async () => {
     await handleMcpRequest(call("push_conversation"), "lsk_live_nope", "header");
-    expect(failures()[0]?.[2]).toEqual({ kind: "header", reason: "bad_key" });
+    expect(failures()[0]?.[2]).toEqual({ kind: "header", reason: "bad_key", repeats_band: "0" });
   });
 
   it("(i) a successful resolution records no failure", async () => {
