@@ -78,7 +78,7 @@ export const placeWorkOnBoardFn = createServerFn({ method: "POST" })
 
     const details = await supabase
       .from("work_items")
-      .select("id, title, type, source, owner_id")
+      .select("id, title, display_title, type, source, owner_id")
       .in("id", data.work_item_ids);
     if (details.error) throw new Error(details.error.message);
 

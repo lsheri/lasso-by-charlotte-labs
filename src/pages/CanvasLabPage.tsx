@@ -1555,7 +1555,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
             id: `work:${item.id}`,
             kind: "work",
             frame: null,
-            title: item.title,
+            title: displayName(item),
             summary: item.source,
             typeLabel: item.type.replaceAll("_", " "),
             ownership: !item.owner_id || myProfileIds.has(item.owner_id) ? "yours" : "teammate",
