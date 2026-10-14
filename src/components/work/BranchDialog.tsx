@@ -43,7 +43,8 @@ export function BranchDialog({
   onOpenChange,
   onBranched,
 }: {
-  source: { id: string; title: string; display_title?: string | null | undefined };
+  source: { id: string; title: string; display_title?: string | null | undefined; owner_id?: string | null | undefined };
+  /** Fallback label when the owner profile cannot be read. */
   sourceOwnerLabel: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -54,14 +55,36 @@ export function BranchDialog({
   const [tool, setTool] = useState<BranchTool>("claude");
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [ownerName, setOwnerName] = useState<string | null>(null);
   const created = useRef<{ id: string; at: string; tool: BranchTool } | null>(null);
 
   useEffect(() => {
     if (!open) return;
     setTool(readTool());
     setNotice(null);
+    setOwnerName(null);
     created.current = null;
-  }, [open]);
+    // BR-3b: attribute the record to the source owner by name, the same
+    // caller-scoped profiles read the connector makes. Policies decide
+    // visibility; a slow or refused read never blocks the branch.
+    const ownerId = source.owner_id;
+    if (!ownerId) return;
+    let live = true;
+    void supabase
+      .from("profiles")
+      .select("display_name")
+      .eq("id", ownerId)
+      .maybeSingle()
+      .then(({ data }) => {
+        const name = data?.display_name?.trim();
+        if (live && name) setOwnerName(name);
+      });
+    return () => {
+      live = false;
+    };
+  }, [open, source.owner_id]);
+
+  const ownerLabel = ownerName ?? sourceOwnerLabel;
 
   async function ensureBranch(id: string, chosen: BranchTool): Promise<{ id: string; at: string } | null> {
     if (created.current) return created.current;
@@ -96,7 +119,7 @@ export function BranchDialog({
       branchId: branch.id,
       sourceId: source.id,
       sourceTitle: source.title,
-      sourceOwner: sourceOwnerLabel,
+      sourceOwner: ownerLabel,
       tool: chosen,
       createdAt: branch.at,
       turns: ((data ?? []) as BranchTurn[]),
