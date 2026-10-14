@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: {} }));
 vi.mock("@/integrations/supabase/auth-middleware", () => ({ requireSupabaseAuth: {} }));
 
-import { withSignupRef } from "@/lib/telemetry.functions";
+import { withSignupRef } from "@/lib/telemetry.server";
 import { guardEventDims } from "@/lib/event-dim-allowlist";
 
 describe("TEL-3 signup_ref on org.created", () => {
