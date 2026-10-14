@@ -20,6 +20,10 @@ const h = vi.hoisted(() => {
         callsOf(table).push({ method: "order", args });
         return b;
       },
+      eq: (...args: unknown[]) => {
+        callsOf(table).push({ method: "eq", args });
+        return b;
+      },
       in: (...args: unknown[]) => {
         callsOf(table).push({ method: "in", args });
         return b;
@@ -72,13 +76,13 @@ describe("PERF-3 work items URL stays constant", () => {
   });
 
   it("does not enumerate ids in the work_item_tasks query", async () => {
-    await fetchWorkItems();
+    await fetchWorkItems("org-1");
     const calls = h.state.calls["work_item_tasks"] ?? [];
     expect(calls.some((call) => call.method === "in")).toBe(false);
   });
 
   it("keeps the work_item_tasks select shape unchanged", async () => {
-    await fetchWorkItems();
+    await fetchWorkItems("org-1");
     const calls = h.state.calls["work_item_tasks"] ?? [];
     const select = calls.find((call) => call.method === "select");
     expect(select).toBeDefined();
@@ -86,7 +90,7 @@ describe("PERF-3 work items URL stays constant", () => {
   });
 
   it("still merges placements onto the right items by work_item_id", async () => {
-    const { items, mappingError } = await fetchWorkItems();
+    const { items, mappingError } = await fetchWorkItems("org-1");
     expect(mappingError).toBeNull();
     expect(items).toHaveLength(2);
     const first = items.find((item) => item.id === "w1");
@@ -97,10 +101,10 @@ describe("PERF-3 work items URL stays constant", () => {
   });
 
   it("ignores a placement row whose work_item_id is not on the page", async () => {
-    await expect(fetchWorkItems()).resolves.toMatchObject({
+    await expect(fetchWorkItems("org-1")).resolves.toMatchObject({
       mappingError: null,
     });
-    const second = (await fetchWorkItems()).items.find(
+    const second = (await fetchWorkItems("org-1")).items.find(
       (item) => item.id === "w2",
     );
     // The "missing-item" placement never attaches to any item and never throws.
