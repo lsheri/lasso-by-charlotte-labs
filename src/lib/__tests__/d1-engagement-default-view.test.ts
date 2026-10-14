@@ -38,9 +38,9 @@ describe("D1 engagement default view", () => {
     expect(shouldOpenWorkboard({ ...base, isQuickFolder: true })).toBe(false);
   });
 
-  it("keeps phones on the details page", () => {
+  it("opens the workboard on phones too", () => {
     expect(ENGAGEMENT_NARROW_WIDTH).toBe(768);
-    expect(shouldOpenWorkboard({ ...base, isNarrow: true })).toBe(false);
+    expect(shouldOpenWorkboard({ ...base, isNarrow: true })).toBe(true);
   });
 
   it("sends both board-to-details links home with view=details", () => {
