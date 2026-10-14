@@ -74,6 +74,7 @@ import {
 import { CANONICAL_ORIGIN } from "@/lib/app-host";
 import { pushSourceTimeFields } from "@/lib/push-source-time";
 import { countCarryGaps, carryGapBucket } from "./carry-gap";
+import { promptedByTurn } from "./version-prompt";
 
 const PROTOCOL_VERSION = "2025-11-25";
 const ACCEPTED_PROTOCOLS = new Set([
@@ -2437,12 +2438,19 @@ export async function pushConversation(
   // ID-2: turn ids by position, read after this call's turns are written, and
   // only when an attachment named the position that produced it.
   let turnIdAtPosition = new Map<number, string>();
+  let userTurnPositions: number[] = [];
   if (attachments.some((a) => a.producedAtTurn)) {
     const { data: positionRows } = await supabaseAdmin
       .from("turns")
       .select("id, turn_no")
       .eq("work_item_id", threadId);
     turnIdAtPosition = new Map((positionRows ?? []).map((t) => [t.turn_no, t.id]));
+    const { data: userPositions } = await supabaseAdmin
+      .from("turns")
+      .select("turn_no")
+      .eq("work_item_id", threadId)
+      .eq("role", "user");
+    userTurnPositions = (userPositions ?? []).map((t) => t.turn_no);
   }
   const linkedTurnId = (a: IncomingAttachment): string | null =>
     a.producedAtTurn ? (turnIdAtPosition.get(a.producedAtTurn) ?? null) : null;
@@ -2789,6 +2797,7 @@ export async function pushConversation(
             .eq("work_item_id", match.id)
             .limit(1)
             .maybeSingle();
+          const promptTurn = promptedByTurn(attachment.producedAtTurn, userTurnPositions);
           newVersionNo = await recordNewVersion(supabaseAdmin, {
             workItemId: match.id,
             previousRef: match.content_ref,
@@ -2798,6 +2807,12 @@ export async function pushConversation(
             newHash,
             sourceEvent: "mcp_repush",
             origin: "model_artifact",
+            ...(attachment.producedAtTurn
+              ? {
+                  createdAtTurn: attachment.producedAtTurn,
+                  ...(promptTurn !== undefined ? { promptedByTurn: promptTurn } : {}),
+                }
+              : {}),
           });
           attachmentVersionRows += existingVersion ? 1 : 2;
         } catch (err) {
@@ -2894,6 +2909,7 @@ export async function pushConversation(
           attachmentIds.push(result.data.id);
           createdAttachmentTypes.push(String(fields.type));
           // The first stored version, so later pushes have a parent to point at.
+          const promptTurn = promptedByTurn(attachment.producedAtTurn, userTurnPositions);
           const v1 = await supabaseAdmin.from("document_versions").insert({
             work_item_id: result.data.id,
             version_no: 1,
@@ -2902,6 +2918,12 @@ export async function pushConversation(
             parent_version_id: null,
             source_event: "mcp_push",
             origin: "model_artifact",
+            ...(attachment.producedAtTurn
+              ? {
+                  created_at_turn: attachment.producedAtTurn,
+                  ...(promptTurn !== undefined ? { prompted_by_turn: promptTurn } : {}),
+                }
+              : {}),
           });
           if (!v1.error) attachmentVersionRows += 1;
         }
