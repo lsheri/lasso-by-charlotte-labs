@@ -35,6 +35,20 @@ export async function computeActorHash(userId: string | null | undefined): Promi
 }
 
 /**
+ * TEL-3: on org.created only, stamp signup_ref = the actor_hash signup.started
+ * carried. Runs after the dim guard. The raw visitor id is never stored.
+ */
+export async function withSignupRef(
+  eventType: string,
+  dims: TelemetryDims,
+  visitorId: string | undefined,
+): Promise<TelemetryDims> {
+  if (eventType !== "org.created" || typeof visitorId !== "string" || !visitorId) return dims;
+  const ref = await computeActorHash(`anon:${visitorId.slice(0, 128)}`);
+  return ref ? { ...dims, signup_ref: ref } : dims;
+}
+
+/**
  * V2-1: the distinct id a PostHog copy may carry at each level. t0 never
  * mirrors; "a" gets a fresh id per event so no visit joins the next.
  */
