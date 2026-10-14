@@ -1,5 +1,5 @@
 /** WI-1: the one rule for naming a work item to a human: display_title ?? title. */
-export function displayName(item: { display_title?: string | null; title?: string | null }): string {
+export function displayName(item: { display_title?: string | null | undefined; title?: string | null | undefined }): string {
   const chosen = typeof item.display_title === "string" ? item.display_title.trim() : "";
   if (chosen) return chosen;
   return item.title ?? "";
