@@ -26,7 +26,7 @@ export async function fetchWorkItems(orgId: string): Promise<WorkItemsResult> {
 
   // Mapping labels live behind engagement policies; if those reads fail we still
   // show the work itself rather than blanking the page. Row security on
-  // work_items (work_owner_all, via is_my_active_profile(owner_id)) also admits
+  // work_items (the work_owner_all policy, keyed on the active profile) also admits
   // support-granted and coach-visible rows from OTHER workspaces, so the items
   // read above filters by the active workspace itself rather than trusting row
   // security to do it. This placement read is joined in memory by work_item_id,
