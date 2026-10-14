@@ -4716,11 +4716,40 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 
 .nb-paper::before { content: none; }
 
-/* Unmapped has no engagement yet, so it has no colour yet. The dashed pencil
-   edge says "not filed" without spending a hue on it. */
+/* No board uses texture in the source spine, without assigning a source hue. */
+.nb-paper[data-paper-state="unmapped"],
+.work-state-card[data-paper-state="unmapped"] {
+  position: relative;
+  border: 1px solid var(--nb-pencil);
+  background: var(--nb-paper);
+  padding-left: 9px;
+}
 .nb-paper[data-paper-state="unmapped"] {
-  --nb-paper-fill: var(--nb-white);
-  --nb-paper-edge: var(--nb-pencil);
+  padding-left: 19px;
+}
+.nb-paper[data-paper-state="unmapped"]::before,
+.work-state-card[data-paper-state="unmapped"]::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 9px;
+  box-sizing: border-box;
+  border-right: 1px solid var(--nb-line-hairline);
+  background: repeating-linear-gradient(135deg, transparent 0 4px, var(--nb-pencil) 4px 5px);
+  pointer-events: none;
+}
+.work-no-board-label {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 4px;
+  min-height: 16px;
+  color: var(--nb-mid);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 16px;
 }
 
 .nb-paper[data-paper-state="private"] { background: var(--nb-white); }
@@ -4816,6 +4845,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 }
 
 .ledger-work-note { container-type: inline-size; width: 100%; height: 118px; max-width: none; }
+.ledger-work-note[data-paper-state="unmapped"] { height: 138px; }
 .canvas-lab-card-paper > .ledger-work-note { height: 100%; }
 /* I1: the Inbox card alone gets room to preview; every other face keeps 118px. */
 .inbox-fixed-card .ledger-work-note { height: 156px; }
