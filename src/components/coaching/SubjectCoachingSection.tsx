@@ -1,3 +1,4 @@
+import { displayName } from "@/lib/work-item-name";
 import type { CSSProperties } from "react";
 
 import { CoachNoteList, noteWhen } from "@/components/coaching/CoachNoteList";
@@ -15,7 +16,7 @@ function trailStops(items: readonly WorkItemRow[]): TrailStop[] {
     return {
       id: item.id,
       eyebrow: `${source} · ${when}`.trim(),
-      label: item.title.length > 34 ? `${item.title.slice(0, 33)}…` : item.title,
+      label: ((name) => (name.length > 34 ? `${name.slice(0, 33)}…` : name))(displayName(item)),
     };
   });
 }

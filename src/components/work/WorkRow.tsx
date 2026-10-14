@@ -1,3 +1,4 @@
+import { displayName } from "@/lib/work-item-name";
 import { CircleDashed, Lock } from "lucide-react";
 
 import { REFERENCE_INBOX_STATUS } from "@/lib/reference-file-shared";
@@ -105,7 +106,7 @@ export function WorkRow({
               // from everything inside it, including the action labels, so the
               // row itself answers to "Map to a workstream". Naming it after the item
               // keeps each action addressable as itself.
-              "aria-label": item.title,
+              "aria-label": displayName(item),
               onClick: onOpen,
               onKeyDown: (event: React.KeyboardEvent) => {
                 if (event.key === "Enter" || event.key === " ") {
@@ -138,10 +139,10 @@ export function WorkRow({
             ) : null}
             <SourceMark item={item} />
             <p
-              title={item.title}
+              title={displayName(item)}
               className="line-clamp-2 min-w-0 break-words text-sm font-medium text-foreground"
             >
-              {item.title} <ArtifactNote item={item} />
+              {displayName(item)} <ArtifactNote item={item} />
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-1.5">

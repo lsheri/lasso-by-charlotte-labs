@@ -1,3 +1,4 @@
+import { displayName } from "@/lib/work-item-name";
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -69,12 +70,12 @@ export const listSubjects = createServerFn({ method: "GET" })
         if (withProse.length > 0) {
           const { data: items } = await supabase
             .from("work_items")
-            .select("id, title")
+            .select("id, title, display_title")
             .in(
               "id",
               withProse.map((e) => e.work_item_id),
             );
-          const titles = new Map((items ?? []).map((i) => [i.id, i.title]));
+          const titles = new Map((items ?? []).map((i) => [i.id, displayName(i)]));
           suggestions = withProse.map((e) => ({
             work_item_id: e.work_item_id,
             title: titles.get(e.work_item_id) ?? "Untitled",
