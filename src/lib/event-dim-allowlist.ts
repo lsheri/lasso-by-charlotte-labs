@@ -252,6 +252,7 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "workflow.reset": ["item_count"],
   "workitem.captured": ["channel", "count_bucket", "entry", "source", "type"],
   "workitem.dated": ["channel", "source", "type"],
+  "workitem.renamed": ["cleared"],
   "workitem.deleted": ["channel", "on_board", "source", "type"],
   "workitem.journey": ["channel", "output_kind", "source", "type"],
   "workitem.mapped": ["channel", "entry", "source", "suggested", "tool", "type", "via"],
