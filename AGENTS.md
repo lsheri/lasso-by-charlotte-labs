@@ -19,8 +19,8 @@ Tour workboard chrome stays a local presentational mirror around shared board pr
 
 - Keep the signed-out `/` story as a public, read-only composition fed only by `openDemoBoardFn`; `/landing-board` redirects to it and preserves hashes.
 - Keep the desktop home story zone-selected, transition-queued, and dwell-based after a static use-case section; below 640px use eleven viewport-snapped stops, including use cases as stop 2, fed by the same public payload with no sticky board or scroll-driven transforms.
-- Keep the home story tool marks behind ToolLogo, deck art self-contained, and attention motion keyed only to settled story steps.
-- Keep the home story connector browser check in normal motion at both desktop sizes, because reduced motion bypasses its live replay timing.
+- Home: ToolLogo marks, self-contained deck art, attention motion only on settled steps.
+- Check home connectors in normal motion at both desktop sizes; reduced motion bypasses replay timing.
 - Render home story captions through the settled-step caption presenter so exit, entry, word reveal, progress, and reduced-motion states stay synchronized with the 800ms dwell.
 - Keep landing story navigation in the fixed ten-dot progress rail, with the public header reserved for destination links and account actions, so desktop and phone share one section-jump path.
 - Keep `/demo` as a local-state-only playground built from the landing board presentation pieces; preserve the original guided demo at unlinked `/demo/classic`.
@@ -44,3 +44,5 @@ Tour workboard chrome stays a local presentational mirror around shared board pr
 - SharedWithYou owns Home/sidebar reads and actions; never switch profiles on shared entry, so work stays owned locally.
 - Read All work shared placements once per page and compare item/board orgs, to avoid per-card requests.
 - Node formatting is local; other editors default visible.
+
+- All work opts into reader rename; its page owns the dialog so closing the reader preserves it.
