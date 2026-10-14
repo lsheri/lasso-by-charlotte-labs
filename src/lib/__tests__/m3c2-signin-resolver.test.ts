@@ -123,7 +123,7 @@ describe("M3-C2 sign-in resolver", () => {
     const token = "lsk_live_secretvalue123";
     await handleMcpRequest(call("push_conversation"), token, "header");
     const recorded = failures()[0] as unknown[];
-    expect(Object.keys(recorded[2] as object).sort()).toEqual(["kind", "reason"]);
+    expect(Object.keys(recorded[2] as object).sort()).toEqual(["kind", "reason", "repeats_band"]);
     expect(JSON.stringify(mocks.recordAnonymousEvent.mock.calls)).not.toContain(token);
     expect(recorded[3]).toBeUndefined();
   });
