@@ -6159,6 +6159,7 @@ export type Database = {
         Args: { p_engagement_id: string; p_link_id: string }
         Returns: Json
       }
+      shared_work_display_name: { Args: { p: string }; Returns: string }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
       signup_default_notice: { Args: never; Returns: string }
