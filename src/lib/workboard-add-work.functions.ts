@@ -14,6 +14,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 export type PlacedWorkItem = {
   id: string;
   title: string;
+  display_title?: string | null;
   type: string;
   source: string;
   owner_id: string | null;
