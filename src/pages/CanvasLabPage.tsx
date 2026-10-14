@@ -45,6 +45,7 @@ import { LabBundleLinks } from "@/components/canvas-lab/LabBundleLinks";
 import { LabContextCoronas } from "@/components/canvas-lab/LabContextCoronas";
 import { LabBundleControls, LabBundleStackEdges } from "@/components/canvas-lab/LabBundleControls";
 import { shouldEndOnMove } from "@/components/canvas-lab/canvas-lab-pointer";
+import { beginPinch, panView, pinchView, type PinchStart } from "@/lib/board-pinch";
 import { RegionColourSwatches } from "@/components/canvas-lab/RegionColourSwatches";
 import { LabUndoToast } from "@/components/canvas-lab/LabUndoToast";
 import {
@@ -438,9 +439,48 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   const [contextFlares, setContextFlares] = useState<Record<string, number>>({});
   const contextFlareTimersRef = useRef<number[]>([]);
   const zoomRef = useRef(zoom);
-  zoomRef.current = zoom;
   const panStateRef = useRef<Point>(pan);
-  panStateRef.current = pan;
+  /** MOB-4: while a pan or pinch is live the refs lead and state catches up on release. */
+  const liveViewRef = useRef(false);
+  if (!liveViewRef.current) {
+    zoomRef.current = zoom;
+    panStateRef.current = pan;
+  }
+  const stageRef = useRef<HTMLDivElement | null>(null);
+  const liveFrameRef = useRef<number | null>(null);
+  /** MOB-5: touch pointers down on the board, by id, in surface pixels. */
+  const touchPointsRef = useRef(new Map<number, Point>());
+  const pinchRef = useRef<{ start: PinchStart; ids: [number, number] } | null>(null);
+  /** Write the live view straight to the stage, at most once per frame. */
+  const scheduleLiveView = useCallback(() => {
+    liveViewRef.current = true;
+    if (liveFrameRef.current !== null) return;
+    liveFrameRef.current = window.requestAnimationFrame(() => {
+      liveFrameRef.current = null;
+      const stage = stageRef.current;
+      if (!stage) return;
+      const at = panStateRef.current;
+      const z = zoomRef.current;
+      stage.style.transform = `translate(${at.x}px, ${at.y}px) scale(${z})`;
+      stage.style.setProperty("--lab-inverse-zoom", String(labInverseZoom(z)));
+    });
+  }, []);
+  /** Commit the live view to state once, on release. */
+  const commitLiveView = useCallback(() => {
+    if (liveFrameRef.current !== null) { window.cancelAnimationFrame(liveFrameRef.current); liveFrameRef.current = null; }
+    if (!liveViewRef.current) return;
+    liveViewRef.current = false;
+    const at = { ...panStateRef.current };
+    const z = zoomRef.current;
+    const stage = stageRef.current;
+    if (stage) {
+      stage.style.transform = `translate(${at.x}px, ${at.y}px) scale(${z})`;
+      stage.style.setProperty("--lab-inverse-zoom", String(labInverseZoom(z)));
+    }
+    setPan(at);
+    setZoom(z);
+  }, []);
+  useEffect(() => () => { if (liveFrameRef.current !== null) window.cancelAnimationFrame(liveFrameRef.current); }, []);
 
   const pauseCoronasForViewportMotion = useCallback(() => {
     setViewportMoving(true);
@@ -1667,6 +1707,30 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     return () => window.removeEventListener("keydown", onZoomKey);
   }, [fit, zoomAtCentre]);
 
+  /** MOB-5: a second finger turns a pan (or nothing) into a pinch; it never starts a card drag, box or link. */
+  function onSurfaceTouchDown(event: React.PointerEvent): boolean {
+    if (event.pointerType !== "touch") return false;
+    const rect = shellRef.current?.getBoundingClientRect();
+    const touches = touchPointsRef.current;
+    touches.set(event.pointerId, { x: event.clientX - (rect?.left ?? 0), y: event.clientY - (rect?.top ?? 0) });
+    if (touches.size < 2) return false;
+    event.preventDefault();
+    event.stopPropagation();
+    if (pinchRef.current) return true;
+    const otherBusy = Boolean(dragRef.current || frameDragRef.current || connectorDragRef.current || resizeRef.current || marqueeRef.current);
+    if (otherBusy) return true;
+    const ids = [...touches.keys()].slice(-2) as [number, number];
+    const a = touches.get(ids[0])!;
+    const b = touches.get(ids[1])!;
+    panRef.current = null;
+    viewportChangedRef.current = true;
+    pinchRef.current = { start: beginPinch({ pan: panStateRef.current, zoom: zoomRef.current }, a, b), ids };
+    liveViewRef.current = true;
+    setInteraction("pan");
+    pauseCoronasForViewportMotion();
+    return true;
+  }
+
   function startSpacePan(event: React.PointerEvent) {
     viewportChangedRef.current = true;
     setInteraction("pan");
@@ -1734,7 +1798,10 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
         return;
       }
       const panning = panRef.current;
-      if (panning) setPan({ x: panning.origin.x + event.clientX - panning.from.x, y: panning.origin.y + event.clientY - panning.from.y });
+      if (panning) {
+        panStateRef.current = panView(panning.origin, panning.from, { x: event.clientX, y: event.clientY });
+        scheduleLiveView();
+      }
     }
     /** B1: the one end path for drag, trail drag, resize, connector and pan. */
     function endInteraction(event: { clientX: number; clientY: number; shiftKey?: boolean }) {
@@ -1835,12 +1902,53 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
         resizeRef.current = null;
       }
       panRef.current = null;
+      commitLiveView();
       setInteraction("idle");
     }
     const lastPointer = { clientX: 0, clientY: 0 };
     function track(event: PointerEvent) { lastPointer.clientX = event.clientX; lastPointer.clientY = event.clientY; }
-    function onMove(event: PointerEvent) { track(event); move(event); }
-    function onUp(event: PointerEvent) { endInteraction(event); }
+    function surfacePoint(event: { clientX: number; clientY: number }): Point {
+      const rect = shellRef.current?.getBoundingClientRect();
+      return { x: event.clientX - (rect?.left ?? 0), y: event.clientY - (rect?.top ?? 0) };
+    }
+    function onMove(event: PointerEvent) {
+      track(event);
+      const touches = touchPointsRef.current;
+      if (touches.has(event.pointerId)) touches.set(event.pointerId, surfacePoint(event));
+      const pinch = pinchRef.current;
+      if (pinch) {
+        const a = touches.get(pinch.ids[0]);
+        const b = touches.get(pinch.ids[1]);
+        if (a && b) {
+          const view = pinchView(pinch.start, a, b);
+          panStateRef.current = view.pan;
+          zoomRef.current = view.zoom;
+          scheduleLiveView();
+        }
+        return;
+      }
+      move(event);
+    }
+    function onUp(event: PointerEvent) {
+      const touches = touchPointsRef.current;
+      touches.delete(event.pointerId);
+      const pinch = pinchRef.current;
+      if (pinch) {
+        pinchRef.current = null;
+        const ended = zoomRef.current;
+        if (ended !== pinch.start.zoom && orgId) logEvent("canvas.zoomed", orgId, { direction: ended > pinch.start.zoom ? "in" : "out", method: "touch_pinch" });
+        const rest = [...touches.entries()][0];
+        if (rest) {
+          // Hand back to a one-finger pan from where the view now stands.
+          const rect = shellRef.current?.getBoundingClientRect();
+          panRef.current = { from: { x: rest[1].x + (rect?.left ?? 0), y: rest[1].y + (rect?.top ?? 0) }, origin: { ...panStateRef.current } };
+          return;
+        }
+        endInteraction(event);
+        return;
+      }
+      endInteraction(event);
+    }
     function onBlur() { if (interactionLive()) endInteraction(lastPointer); }
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
@@ -2969,10 +3077,10 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
         </header>
         {lab.saveState.status === "conflict" ? <div data-testid="canvas-lab-banner" className="canvas-lab-banner" role="alert"><p className="text-[13px] text-foreground">A newer version of this record was saved.</p><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => resolveConflict("latest")}>Load latest</Button><Button size="sm" variant="outline" onClick={() => resolveConflict("retry")}>Retry my change</Button></div></div> : null}
         {lab.saveState.status === "error" ? <div data-testid="canvas-lab-banner" className="canvas-lab-banner" role="alert"><p className="text-[13px] text-foreground">Could not save your last change. {lab.saveState.message}</p><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => resolveSaveError("retry")}>Retry</Button><Button size="sm" variant="outline" onClick={() => resolveSaveError("discard")}>Discard</Button></div></div> : null}
-        <div ref={shellRef} tabIndex={-1} onDragEnter={fileDrop.handlers.onDragEnter} onDragLeave={fileDrop.handlers.onDragLeave} onDragOverCapture={fileDrop.handlers.onDragOver} onDragOver={(event) => { if (!canAddWork || !isAnswerDrag(event.dataTransfer.types)) return; event.preventDefault(); event.dataTransfer.dropEffect = "copy"; }} onDropCapture={fileDrop.handlers.onDrop} onDrop={(event) => { if (!isAnswerDrag(event.dataTransfer.types)) return; event.preventDefault(); delete document.body.dataset["answerDrag"]; const answer = parseAnswerDrop(event.dataTransfer.getData(ANSWER_DRAG_MIME)); if (!answer) return; void keepAnswerAsCard(answer, { at: stagePoint(event.clientX, event.clientY), via: "drag" }); }} onPointerDownCapture={(event) => { if (event.button === 0 && spaceRef.current) { event.preventDefault(); event.stopPropagation(); startSpacePan(event); } }} onPointerDown={(event) => { const target = event.target as HTMLElement; const empty = event.target === event.currentTarget || target.dataset["testid"] === "canvas-lab-stage"; if (event.button === 0 && empty && drawTool) { event.preventDefault(); const at = stagePoint(event.clientX, event.clientY); drawingRef.current = { from: at, to: at }; setDrawing({ from: at, to: at }); return; } if (event.button === 1 && empty) { event.preventDefault(); startSpacePan(event); return; } if (event.button === 0 && empty) { event.preventDefault(); window.getSelection()?.removeAllRanges(); event.currentTarget.classList.add("select-none"); setKeyboardId(null); setSelectedFrameId(null); setSelectedLinkId((current) => relationshipSelection(current, "deselect")); if (event.pointerType === "touch") { event.currentTarget.classList.remove("select-none"); startSpacePan(event); return; } const at = stagePoint(event.clientX, event.clientY); const screen = { x: event.clientX, y: event.clientY }; marqueeRef.current = { fromScreen: screen, fromBoard: at, toScreen: screen, toBoard: at }; setInteraction("marquee"); } }} onContextMenu={(event) => { const target = event.target as HTMLElement; const empty = event.target === event.currentTarget || target.dataset["testid"] === "canvas-lab-stage"; if (!empty || !canAddWork) return; event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect(); const screen = { x: event.clientX - rect.left, y: event.clientY - rect.top }; setBoardMenu({ screen, board: boardPointFromScreen(screen) }); }} data-space-pan={spaceHeld} data-drawing={drawTool ? "true" : undefined} onScroll={(event) => keepViewportUnscrolled(event.currentTarget)} data-interacting={interaction !== "idle" || drawing !== null || viewportMoving ? "true" : undefined} className="canvas-lab-surface relative min-h-0 flex-1 overflow-hidden">
+        <div ref={shellRef} tabIndex={-1} onDragEnter={fileDrop.handlers.onDragEnter} onDragLeave={fileDrop.handlers.onDragLeave} onDragOverCapture={fileDrop.handlers.onDragOver} onDragOver={(event) => { if (!canAddWork || !isAnswerDrag(event.dataTransfer.types)) return; event.preventDefault(); event.dataTransfer.dropEffect = "copy"; }} onDropCapture={fileDrop.handlers.onDrop} onDrop={(event) => { if (!isAnswerDrag(event.dataTransfer.types)) return; event.preventDefault(); delete document.body.dataset["answerDrag"]; const answer = parseAnswerDrop(event.dataTransfer.getData(ANSWER_DRAG_MIME)); if (!answer) return; void keepAnswerAsCard(answer, { at: stagePoint(event.clientX, event.clientY), via: "drag" }); }} onPointerDownCapture={(event) => { if (onSurfaceTouchDown(event)) return; if (event.button === 0 && spaceRef.current) { event.preventDefault(); event.stopPropagation(); startSpacePan(event); } }} onPointerDown={(event) => { const target = event.target as HTMLElement; const empty = event.target === event.currentTarget || target.dataset["testid"] === "canvas-lab-stage"; if (event.button === 0 && empty && drawTool) { event.preventDefault(); const at = stagePoint(event.clientX, event.clientY); drawingRef.current = { from: at, to: at }; setDrawing({ from: at, to: at }); return; } if (event.button === 1 && empty) { event.preventDefault(); startSpacePan(event); return; } if (event.button === 0 && empty) { event.preventDefault(); window.getSelection()?.removeAllRanges(); event.currentTarget.classList.add("select-none"); setKeyboardId(null); setSelectedFrameId(null); setSelectedLinkId((current) => relationshipSelection(current, "deselect")); if (event.pointerType === "touch") { event.currentTarget.classList.remove("select-none"); startSpacePan(event); return; } const at = stagePoint(event.clientX, event.clientY); const screen = { x: event.clientX, y: event.clientY }; marqueeRef.current = { fromScreen: screen, fromBoard: at, toScreen: screen, toBoard: at }; setInteraction("marquee"); } }} onContextMenu={(event) => { const target = event.target as HTMLElement; const empty = event.target === event.currentTarget || target.dataset["testid"] === "canvas-lab-stage"; if (!empty || !canAddWork) return; event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect(); const screen = { x: event.clientX - rect.left, y: event.clientY - rect.top }; setBoardMenu({ screen, board: boardPointFromScreen(screen) }); }} data-space-pan={spaceHeld} data-drawing={drawTool ? "true" : undefined} onScroll={(event) => keepViewportUnscrolled(event.currentTarget)} data-interacting={interaction !== "idle" || drawing !== null || viewportMoving ? "true" : undefined} className="canvas-lab-surface relative min-h-0 flex-1 overflow-hidden">
           <BoardFileDropOverlay show={fileDrop.over} />
           {sharedSpace ? <div aria-hidden="true" data-testid="shared-space-frame" className="pointer-events-none absolute inset-0 z-10 shadow-[inset_0_0_0_3px_color-mix(in_srgb,var(--nb-shared)_25%,var(--card))]" /> : null}
-          {boardReady ? <div data-testid="canvas-lab-stage" tabIndex={-1} className="canvas-lab-stage absolute left-0 top-0 origin-top-left" style={{ width: bounds.width, height: bounds.height, transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, "--lab-inverse-zoom": labInverseZoom(zoom) } as CSSProperties}>
+          {boardReady ? <div data-testid="canvas-lab-stage" ref={stageRef} tabIndex={-1} className="canvas-lab-stage absolute left-0 top-0 origin-top-left" style={{ width: bounds.width, height: bounds.height, transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, "--lab-inverse-zoom": labInverseZoom(zoom) } as CSSProperties}>
             {visibleNodes.filter((node) => node.kind === "shape").map((node) => <LabColourBlock key={node.id} node={node} selected={keyboardId === node.id} editable={Boolean(lab.board?.canEditStructure)} onSelect={() => { setKeyboardId(node.id); setSelectedFrameId(null); setSelectedLinkId(null); }} onDragStart={(event) => { if (decorationPointerIntent({ selected: keyboardId === node.id, onEdge: Boolean((event.target as HTMLElement).dataset["edge"]) }) === "drag") onCardPointerDown(node, event); }} onResizeStart={(corner, event) => startResize("shape", node.id, corner, node, event)} onResizeKeyDown={(corner, event) => keyboardResize("shape", node.id, corner, node, event)} onResizeKeyUp={finishKeyboardResize} onRemove={() => deleteNode(node)} />)}
             {marquee ? <div className="canvas-lab-marquee" aria-hidden="true" style={{ left: marquee.x, top: marquee.y, width: marquee.width, height: marquee.height }} /> : null}
             {/* The context region is not a workstream, so it is drawn whether or not the workstream outlines are showing. */}

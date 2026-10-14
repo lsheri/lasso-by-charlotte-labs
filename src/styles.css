@@ -1394,6 +1394,8 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   cursor: grab;
 }
 .canvas-lab-surface:has(> [data-testid="canvas-lab-stage"]) { cursor: grab; }
+/* MOB-4: only the signed-in Workboard owns one-finger pan and two-finger pinch; Home and demo boards keep native scrolling. Scrollers inside cards keep native touch scrolling, because touch-action stops at the nearest scroll container. */
+[data-testid="canvas-lab-shell"] .canvas-lab-surface { touch-action: none; }
 [data-testid="canvas-lab-shell"][data-interaction="pan"] .canvas-lab-surface,
 [data-testid="canvas-lab-shell"][data-interaction="drag"] .canvas-lab-card {
   cursor: grabbing;
