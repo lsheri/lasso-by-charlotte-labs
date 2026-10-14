@@ -6930,3 +6930,115 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   .tour-act, .tour-stage-actions { transition: none !important; }
   .tour-teach-scrim, .tour-teaching-callout.is-teaching { animation: none !important; }
 }
+
+/* ==================================================================
+   LASSO · BONE AND ACID — installed 14 Oct 2026, switched off.
+   New names only. Existing :root values above are untouched.
+   ================================================================== */
+:root {
+  --neutral-00:#ffffff; --neutral-05:#fcfcfa; --neutral-10:#f6f6f3;
+  --neutral-20:#f0f0ed; --neutral-30:#e2e2dd; --neutral-40:#bcbcb6;
+  --neutral-50:#8f8f8a; --neutral-60:#5e5e5a; --neutral-80:#2b2b29;
+  --neutral-95:#0a0a0a;
+
+  --acid-100:#c8ff00; --acid-60:#dcff66; --acid-20:#f0ffc2; --acid-ink:#3d4d00;
+  --orange-100:#ff5f1f; --orange-20:#fff0e8;
+  --red-100:#e01b24;    --red-20:#fdecec;
+  --gold-100:#6b5a00;   --gold-20:#fbf4cf;
+
+  --surface-page:var(--neutral-05);
+  --surface-raised:var(--neutral-00);
+  --surface-sunk:var(--neutral-10);
+  --surface-sunk-2:var(--neutral-20);
+  --surface-inverse:var(--neutral-95);
+
+  --text-primary:var(--neutral-95);
+  --text-secondary:var(--neutral-60);
+  --text-muted:var(--neutral-50);
+  --text-on-inverse:var(--neutral-05);
+  --text-on-acid:var(--neutral-95);
+
+  --line-hairline:var(--neutral-30);
+  --line-pencil:var(--neutral-40);
+  --line-strong:var(--neutral-95);
+
+  --action-primary:var(--neutral-95);
+  --action-primary-fg:var(--neutral-05);
+  --action-primary-shadow:var(--acid-100);
+  --action-secondary:var(--neutral-95);
+  --focus-ring-new:var(--neutral-95);
+
+  --hand-ink:var(--neutral-95);
+  --hand-live:var(--acid-100);
+  --hand-wash:var(--acid-20);
+
+  --state-no-board:var(--neutral-40);
+  --state-yours-pending:var(--gold-100);
+  --state-highlight:var(--acid-100);
+  --state-highlight-wash:var(--acid-20);
+  --state-shared-in:var(--orange-100);
+  --state-shared-wash:var(--orange-20);
+  --state-destructive-new:var(--red-100);
+
+  --here-rule:var(--acid-100);
+  --here-weight:2.5px;
+
+  --radius-sm-new:2px; --radius-md-new:5px; --radius-pill:999px;
+
+  --shadow-flat:none;
+  --shadow-card-new:1px 2px 3px color-mix(in oklab,var(--neutral-95) 14%,transparent);
+  --shadow-float:0 12px 32px color-mix(in oklab,var(--neutral-95) 10%,transparent);
+
+  --dur-instant:80ms; --dur-quick:160ms; --dur-move:200ms; --dur-base:300ms;
+  --dur-enter:400ms; --dur-settle:550ms; --dur-draw:800ms; --dur-catch:900ms;
+  --dur-story:2200ms;
+
+  --ease-standard:cubic-bezier(.2,0,0,1);
+  --ease-catch:cubic-bezier(.22,0,.12,1);
+  --ease-spring:cubic-bezier(.34,1.3,.64,1);
+  --ease-lively:cubic-bezier(.34,1.56,.64,1);
+}
+
+/* Switched on by setting data-lasso="on" on the app shell. Until then this
+   block matches nothing and the app renders exactly as it does today.
+   The landing page is outside the app shell and is never affected. */
+[data-lasso="on"] {
+  --nb-white:var(--surface-raised);
+  --nb-paper:var(--surface-page);
+  --nb-grey-1:var(--surface-sunk);
+  --nb-grey-2:var(--surface-sunk-2);
+  --nb-rule:var(--line-hairline);
+  --nb-line-hairline:var(--line-hairline);
+  --nb-pencil:var(--line-pencil);
+  --nb-ink:var(--text-primary);
+  --nb-graphite:var(--text-primary);
+  --nb-mid:var(--text-secondary);
+  --nb-soft:var(--text-muted);
+  --nb-green:var(--hand-ink);
+  --nb-lasso-green:var(--hand-live);
+  --nb-green-wash:var(--hand-wash);
+  --nb-blue:var(--action-secondary);
+  --nb-amber:var(--state-yours-pending);
+  --nb-ink-yellow:var(--state-highlight);
+  --nb-shared:var(--state-shared-in);
+  --nb-ink-ember:var(--state-destructive-new);
+  --nb-danger-text:var(--state-destructive-new);
+
+  --background:var(--surface-page);
+  --foreground:var(--text-primary);
+  --card:var(--surface-raised);
+  --primary:var(--action-primary);
+  --primary-foreground:var(--action-primary-fg);
+  --muted-foreground:var(--text-secondary);
+  --border:var(--line-hairline);
+  --ring:var(--focus-ring-new);
+  --destructive:var(--state-destructive-new);
+
+  --ember:var(--action-primary);
+  --ember-foreground:var(--action-primary-fg);
+  --electric:var(--action-secondary);
+  --accent-deep:var(--action-secondary);
+  --state-amber:var(--state-yours-pending);
+  --state-teal:var(--hand-ink);
+  --state-indigo:var(--text-secondary);
+}
