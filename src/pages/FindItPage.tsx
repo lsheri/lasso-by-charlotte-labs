@@ -1,3 +1,4 @@
+import { displayName } from "@/lib/work-item-name";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -597,7 +598,7 @@ export function FindItPage() {
                             key={item.work_item_id}
                             className="rounded-[6px] border border-hairline bg-card px-3 py-1.5 text-[13px] text-foreground"
                           >
-                            {item.title}
+                            {displayName(item)}
                           </span>
                         ))}
                       </div>
@@ -639,7 +640,7 @@ export function FindItPage() {
                 }}
                 className="block w-full truncate rounded-md px-2 py-2 text-left text-[13px] text-foreground transition-colors hover:bg-accent-soft"
               >
-                {item.title}
+                {displayName(item)}
                 <span className="ml-2 text-muted-foreground">
                   {formatDate(effectiveWorkDate(item))}
                 </span>

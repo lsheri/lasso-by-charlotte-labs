@@ -619,7 +619,7 @@ export function AskComposer({
                 }`}
               >
                 <SourceMark item={item} className="mr-1.5" />
-                <span className="break-words">{item.title}</span> <ArtifactNote item={item} />{" "}
+                <span className="break-words">{displayName(item)}</span> <ArtifactNote item={item} />{" "}
                 <TypeBadge item={item} size="sm" />
               </button>
             ))}
