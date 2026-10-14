@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const recordAnonymousEvent = vi.fn(async () => undefined);
+const recordAnonymousEvent = vi.fn(async (..._a: unknown[]) => undefined);
 vi.mock("@/lib/telemetry.server", () => ({
   recordAnonymousEvent: (...a: unknown[]) => (recordAnonymousEvent as (...x: unknown[]) => unknown)(...a),
   recordEvent: vi.fn(async () => undefined),

@@ -16,7 +16,7 @@ describe("TEL-3 signup_ref on org.created", () => {
     const base = guardEventDims("org.created", { org_type: "firm", register: "none", entry_door: "chooser" }).dims;
     const dims = await withSignupRef("org.created", base, "v-123");
     const expected = createHash("sha256").update("salt-x" + "anon:v-123").digest("hex");
-    expect(dims.signup_ref).toBe(expected);
+    expect(dims["signup_ref"]).toBe(expected);
     expect(JSON.stringify(dims)).not.toContain("v-123");
 
     const other = await withSignupRef("home.opened", {}, "v-123");
