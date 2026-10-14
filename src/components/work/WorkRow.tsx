@@ -1,5 +1,5 @@
 import { displayName } from "@/lib/work-item-name";
-import { CircleDashed, Lock } from "lucide-react";
+import { Lock } from "lucide-react";
 
 import { REFERENCE_INBOX_STATUS } from "@/lib/reference-file-shared";
 import { engagementDisplayTitle } from "@/lib/clients";
@@ -93,7 +93,8 @@ export function WorkRow({
 
   return (
     <div
-      className={`rounded-[var(--radius)] border ${shell} ${
+      data-paper-state={state}
+      className={`work-state-card rounded-[var(--radius)] border ${shell} ${
         onOpen ? "transition-colors hover:border-accent/40" : ""
       }`}
     >
@@ -194,6 +195,9 @@ export function WorkRow({
               </>
             ) : null}
           </p>
+          {state === "unmapped" ? (
+            <span className="work-no-board-label"><Lock className="h-3 w-3 shrink-0" aria-hidden />No board</span>
+          ) : null}
         </div>
 
         {mapping ? (
@@ -203,17 +207,6 @@ export function WorkRow({
               code={mapping.engagements ? engagementDisplayTitle(mapping.engagements) : null}
               taskName={mapping.name}
             />
-          </span>
-        ) : state === "unmapped" ? (
-          <span
-            className="hidden shrink-0 items-center gap-1 rounded-full border border-dashed px-2 py-0.5 font-mono text-[10px] font-medium uppercase tracking-[0.08em] sm:inline-flex"
-            style={{
-              color: "var(--state-amber)",
-              borderColor: "color-mix(in oklab, var(--state-amber) 50%, transparent)",
-            }}
-          >
-            <CircleDashed className="h-3 w-3" aria-hidden />
-            Needs mapping
           </span>
         ) : null}
 

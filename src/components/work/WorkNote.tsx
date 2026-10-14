@@ -1,5 +1,5 @@
 import { displayName } from "@/lib/work-item-name";
-import { ExternalLink, FileText } from "lucide-react";
+import { ExternalLink, FileText, Lock } from "lucide-react";
 
 import { WorkboardFilePreview as FilePreview } from "@/components/canvas-lab/WorkboardFilePreview";
 import { BrandLogo, brandHex, brandLabel } from "@/components/connectors/BrandLogo";
@@ -76,13 +76,14 @@ export function WorkNote({
 
   if (phoneRow) {
     return (
-      <Button type="button" variant="ghost" onClick={onOpen} aria-label={displayName(item)} className="work-phone-row">
+      <Button type="button" variant="ghost" onClick={onOpen} aria-label={displayName(item)} data-paper-state={item.visibility} className="work-phone-row work-state-card">
         <span className="shrink-0" aria-hidden="true"><BrandLogo brand={brand} size={20} /></span>
         <span className="min-w-0 flex-1 text-left">
           <span className="work-phone-row__title">{displayName(item)}</span>
           <span className="work-phone-row__stamp">
             {date} · {workIdentityLabel(item as WorkItemRow)} · {boardTitle ?? "NO BOARD"}
           </span>
+          {item.visibility === "unmapped" ? <span className="work-no-board-label"><Lock className="h-3 w-3 shrink-0" aria-hidden />No board</span> : null}
         </span>
       </Button>
     );
@@ -94,7 +95,7 @@ export function WorkNote({
       data-paper-state={item.visibility}
       data-client-label={clientLabel ?? undefined}
       data-brand={brand}
-      style={{ borderLeftColor: brandHex(brand) }}
+      style={item.visibility === "unmapped" ? undefined : { borderLeftColor: brandHex(brand) }}
     >
       <div
         {...(onOpen && openOn === "doubleClick"
@@ -155,6 +156,7 @@ export function WorkNote({
           {boardTitle ? <span className="min-w-0 truncate rounded-[3px] border border-hairline px-1 font-mono text-[8.5px] uppercase tracking-[0.08em] text-muted-foreground">{boardTitle}</span> : null}
           {chips ? <span className="sr-only">{chips}</span> : null}
         </div>
+        {item.visibility === "unmapped" ? <span className="work-no-board-label"><Lock className="h-3 w-3 shrink-0" aria-hidden />No board</span> : null}
       </div>
     </div>
   );

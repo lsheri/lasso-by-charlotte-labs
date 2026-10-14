@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CircleDashed, Lock } from "lucide-react";
+import { Lock } from "lucide-react";
 
 import { CardMenu } from "@/components/work/CardMenu";
 import { engagementDisplayTitle } from "@/lib/clients";
@@ -70,14 +70,9 @@ export function ConversationCard({
       ? "border-border bg-card shadow-card"
       : state === "private"
         ? "border-border/70"
-        : "border-dashed";
+        : "";
   const wash =
-    state === "unmapped"
-      ? {
-          backgroundColor: "var(--state-amber-wash)",
-          borderColor: "color-mix(in oklab, var(--state-amber) 45%, transparent)",
-        }
-      : state === "private"
+    state === "private"
         ? { backgroundColor: "var(--state-indigo-wash)" }
         : {};
   const spine =
@@ -101,7 +96,7 @@ export function ConversationCard({
       ? [mapping?.engagements ? engagementDisplayTitle(mapping.engagements) : null, "claimed"].filter(Boolean).join(" · ")
       : variant === "private"
         ? "private"
-        : "unmapped",
+        : "No board",
     `${group.items.length} piece${group.items.length === 1 ? "" : "s"}`,
   ].join(" · ");
 
@@ -126,7 +121,8 @@ export function ConversationCard({
 
   return (
     <div
-      className={`nb-card-surface rounded-[var(--radius)] ${displayMode === "preview" ? "nb-preview-card" : ""} ${shell} transition-colors`}
+      data-paper-state={state}
+      className={`work-state-card nb-card-surface rounded-[var(--radius)] ${displayMode === "preview" ? "nb-preview-card" : ""} ${shell} transition-colors`}
       style={{ ...wash, ...spine }}
     >
       <div className="px-3 pt-3 sm:px-4">
@@ -139,18 +135,6 @@ export function ConversationCard({
           <span>
             {group.items.length} piece{group.items.length === 1 ? "" : "s"}
           </span>
-          {state === "unmapped" ? (
-            <span
-              className="ml-auto inline-flex items-center gap-1 rounded-full border border-dashed px-2 py-0.5 font-medium"
-              style={{
-                color: "var(--state-amber)",
-                borderColor: "color-mix(in oklab, var(--state-amber) 50%, transparent)",
-              }}
-            >
-              <CircleDashed className="h-3 w-3" aria-hidden />
-              Needs mapping
-            </span>
-          ) : null}
           {state === "private" ? (
             <span className="ml-auto inline-flex items-center gap-1 rounded-full border border-border bg-secondary px-2 py-0.5">
               <Lock className="h-2.5 w-2.5" aria-hidden />
@@ -226,6 +210,7 @@ export function ConversationCard({
         </ul>
       ) : null}
 
+      {state === "unmapped" ? <div className="px-3 pt-2 sm:px-4"><span className="work-no-board-label"><Lock className="h-3 w-3 shrink-0" aria-hidden />No board</span></div> : null}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-3 py-2 sm:px-4">{actions}</div>
     </div>
   );
