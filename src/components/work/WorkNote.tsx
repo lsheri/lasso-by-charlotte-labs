@@ -4,6 +4,7 @@ import { ExternalLink, FileText, Lock } from "lucide-react";
 import { WorkboardFilePreview as FilePreview } from "@/components/canvas-lab/WorkboardFilePreview";
 import { BrandLogo, brandHex, brandLabel } from "@/components/connectors/BrandLogo";
 import { ChatUrlLink } from "@/components/work/ChatUrlLink";
+import { SourceMirror } from "@/components/work/SourceMirror";
 import { Button } from "@/components/ui/button";
 import { engagementDisplayTitle } from "@/lib/clients";
 import { workIdentityLabel } from "@/lib/work-identity";
@@ -116,6 +117,7 @@ export function WorkNote({
           : {})}
         className={`nb-paper-body flex h-full min-h-0 flex-col ${onOpen && openOn === "click" ? "cursor-pointer" : ""}`}
       >
+        {headerGutter ? <SourceMirror item={item} chatPreview={chatPreview} filePreview={filePreview} /> : null}
         <div className={`flex h-[18px] shrink-0 select-none items-center gap-2 ${headerGutter ? "pr-[58px]" : ""} ${contextSelected ? "canvas-lab-context-header" : ""}`}>
           {lead ? <span className="shrink-0">{lead}</span> : null}
           <BrandLogo brand={brand} size={16} />
@@ -126,7 +128,7 @@ export function WorkNote({
 
         <p className={`mt-1 shrink-0 select-text truncate text-[12px] font-medium leading-[15px] text-foreground ${contextSelected ? "canvas-lab-context-title" : ""}`}>{displayName(item)}</p>
 
-        {isFile ? (
+        {headerGutter ? null : isFile ? (
           <div className="ledger-work-note__file mt-1 flex min-h-0 flex-1 items-center gap-2">
             <div className="ledger-work-note__thumbnail h-[42px] w-[74px] shrink-0 overflow-hidden border border-hairline bg-secondary">
               {hasFilePreview && filePreview ? <FilePreview preview={filePreview} title={displayName(item)} onFailure={() => {}} /> : <FileText className="m-auto h-full w-5 text-muted-foreground" aria-label="Document" />}
