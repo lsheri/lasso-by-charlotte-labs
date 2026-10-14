@@ -14,6 +14,7 @@ import {
 } from "@/lib/attachment-guard";
 import { workTypeForFile } from "@/lib/work-types";
 import { recordAnonymousEvent, recordEvent } from "@/lib/telemetry.server";
+import { bucket } from "@/lib/telemetry-shared";
 import { dateLabel } from "@/lib/decisions-shared";
 import { coerceJsonArg, coercePushArgs } from "@/lib/mcp-args";
 import {
@@ -712,7 +713,21 @@ export async function resolveOwner(token: string, fromHeader = false): Promise<O
   return result && "owner" in result ? result.owner : null;
 }
 
-async function recordAuthFailure(failure: AuthFailure): Promise<void> {
+// TEL-2: one mcp.auth_failed row per kind|reason per 60s per instance; the
+// next written row carries how many refusals were held back, banded.
+const AUTH_FAILURE_WINDOW_MS = 60_000;
+const authFailureSeen = new Map<string, { at: number; suppressed: number }>();
+
+export async function recordAuthFailure(failure: AuthFailure): Promise<void> {
+  const key = `${failure.kind}|${failure.reason}`;
+  const now = Date.now();
+  const seen = authFailureSeen.get(key);
+  if (seen && now - seen.at < AUTH_FAILURE_WINDOW_MS) {
+    seen.suppressed += 1;
+    return;
+  }
+  const repeats = seen?.suppressed ?? 0;
+  authFailureSeen.set(key, { at: now, suppressed: 0 });
   const viewId =
     typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
       ? crypto.randomUUID()
@@ -721,6 +736,7 @@ async function recordAuthFailure(failure: AuthFailure): Promise<void> {
     await recordAnonymousEvent("mcp.auth_failed", viewId, {
       kind: failure.kind,
       reason: failure.reason,
+      repeats_band: bucket(repeats),
     });
   } catch {
     /* telemetry never changes the 401 */
