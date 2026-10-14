@@ -1,7 +1,7 @@
 // Server-only MCP endpoint logic. Token in URL path, service-role scoped writes.
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
-import type { Database, Json } from "@/integrations/supabase/types";
+import type { Database } from "@/integrations/supabase/types";
 import { branchMarkdown, type BranchTurn } from "@/lib/branch-handoff";
 import { BRANCH_NEEDS_SIGNIN, BRANCH_REFUSAL, branchToolDim, decideBranchFetch, mergeBranchFetchMeta, type BranchRow } from "@/lib/branch-fetch";
 import type { Json } from "@/integrations/supabase/types";
