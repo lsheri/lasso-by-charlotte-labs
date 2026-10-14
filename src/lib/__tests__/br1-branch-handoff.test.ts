@@ -79,3 +79,12 @@ describe("branch targets", () => {
     expect(plan.handoff).toBe("clipboard");
   });
 });
+
+describe("PRE-1 branch primary action", () => {
+  it("download leads only when no signed-in connector is known", async () => {
+    const { branchHasSigninConnector, branchPrimaryAction } = await import("@/lib/branch-handoff");
+    expect(branchPrimaryAction(branchHasSigninConnector([{ id: "x" }]))).toBe("open");
+    expect(branchPrimaryAction(branchHasSigninConnector([]))).toBe("download");
+    expect(branchPrimaryAction(branchHasSigninConnector(null))).toBe("open");
+  });
+});
