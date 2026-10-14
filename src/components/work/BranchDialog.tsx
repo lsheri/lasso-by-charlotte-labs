@@ -119,7 +119,7 @@ export function BranchDialog({
       branchId: branch.id,
       sourceId: source.id,
       sourceTitle: source.title,
-      sourceOwner: sourceOwnerLabel,
+      sourceOwner: ownerLabel,
       tool: chosen,
       createdAt: branch.at,
       turns: ((data ?? []) as BranchTurn[]),
