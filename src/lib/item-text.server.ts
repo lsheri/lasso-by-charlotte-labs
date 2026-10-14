@@ -8,7 +8,7 @@ import { renditionOf, renditionPlainText, renditionTextHeader } from "@/lib/refe
 type Db = SupabaseClient<Database>;
 
 /** The columns any caller must select for text extraction to work. */
-export const ITEM_TEXT_COLUMNS = "id, title, type, content_ref, content_hash, source_meta, meta";
+export const ITEM_TEXT_COLUMNS = "id, title, display_title, type, content_ref, content_hash, source_meta, meta";
 
 export type TextItem = Pick<
   WorkItemRow,

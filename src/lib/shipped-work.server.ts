@@ -1,3 +1,4 @@
+import { displayName } from "@/lib/work-item-name";
 /**
  * Pass 111: the firm archive. shipped_work carries no client write policies by
  * design, so every write is made with the admin client only after the caller
@@ -178,7 +179,7 @@ export async function listShippedCards(caller: CallerClient): Promise<ShippedCar
   const { data, error } = await caller
     .from("shipped_work")
     .select(
-      "id, work_item_id, engagement_id, shipped_at, shipped_by, work_items(title, type, source, source_vendor, source_meta, meta, owner_id, work_date, created_at_source), profiles:shipped_by(display_name), engagements(code, client_label, title, brief)",
+      "id, work_item_id, engagement_id, shipped_at, shipped_by, work_items(title, display_title, type, source, source_vendor, source_meta, meta, owner_id, work_date, created_at_source), profiles:shipped_by(display_name), engagements(code, client_label, title, brief)",
     )
     .order("shipped_at", { ascending: false });
   if (error) throw new Error(error.message);
@@ -202,7 +203,7 @@ export async function listShippedCards(caller: CallerClient): Promise<ShippedCar
     shipped_at: row.shipped_at,
     shipped_by: row.shipped_by,
     shipped_by_name: row.profiles?.display_name ?? null,
-    title: row.work_items?.title ?? "",
+    title: row.work_items ? displayName(row.work_items) : "",
     type: row.work_items?.type ?? "document",
     source: row.work_items?.source ?? null,
     source_vendor: row.work_items?.source_vendor ?? null,

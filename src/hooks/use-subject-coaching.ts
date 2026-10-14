@@ -86,7 +86,7 @@ export async function fetchAllNotesAboutMe(subjectId: string): Promise<AccountNo
   const { data, error } = await supabase
     .from("coaching_notes")
     .select(
-      "id, created_at, did_well, would_try, watch_next, engagement_id, read_at, task_id, work_item_id, profiles!coaching_notes_author_id_fkey(display_name), engagements(title, code), tasks(name), work_items(title)",
+      "id, created_at, did_well, would_try, watch_next, engagement_id, read_at, task_id, work_item_id, profiles!coaching_notes_author_id_fkey(display_name), engagements(title, code), tasks(name), work_items(title, display_title)",
     )
     .eq("subject_id", subjectId)
     .order("created_at", { ascending: false });

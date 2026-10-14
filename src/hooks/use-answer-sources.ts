@@ -1,3 +1,4 @@
+import { displayName } from "@/lib/work-item-name";
 import { useQuery } from "@tanstack/react-query";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -26,7 +27,7 @@ export function useAnswerSources(messageIds: number[]) {
     queryFn: async (): Promise<Record<number, ContextSource[]>> => {
       const { data, error } = await supabase
         .from("ai_reads")
-        .select("message_id, depth, work_item_id, work_items(title, type, source_vendor)")
+        .select("message_id, depth, work_item_id, work_items(title, display_title, type, source_vendor)")
         .in("message_id", key);
       if (error) throw error;
       const grouped: Record<number, ContextSource[]> = {};
@@ -35,7 +36,7 @@ export function useAnswerSources(messageIds: number[]) {
         const list = grouped[row.message_id] ?? (grouped[row.message_id] = []);
         list.push({
           id: row.work_item_id,
-          title: row.work_items?.title ?? "Untitled",
+          title: (row.work_items ? displayName(row.work_items) : "") || "Untitled",
           type: row.work_items?.type ?? "document",
           source_vendor: row.work_items?.source_vendor ?? null,
           depth:

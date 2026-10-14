@@ -1,3 +1,4 @@
+import { displayName } from "@/lib/work-item-name";
 import { useEffect, useRef, useState } from "react";
 
 import { LassoThinkingMark } from "@/components/reflect/LassoThinkingMark";
@@ -188,7 +189,7 @@ export function auditReadRows(manifest: ContextManifest, allReads: ContextSource
     if (read) matched.add(read.id);
     return {
       key: item.id || item.title,
-      title: item.title,
+      title: displayName(item),
       kind: item.kind,
       detail: read ? READ_DEPTH_DETAIL[read.depth] : item.detail,
       openId: read ? read.id : null,

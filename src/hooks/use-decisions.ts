@@ -1,3 +1,4 @@
+import { displayName } from "@/lib/work-item-name";
 import { useQuery } from "@tanstack/react-query";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -54,11 +55,11 @@ export function useDecisionSourceItems(ids: string[]) {
     queryFn: async (): Promise<Record<string, SourceItemInfo>> => {
       const { data, error } = await supabase
         .from("work_items")
-        .select("id, title, type, source_vendor, work_date, created_at_source, captured_at")
+        .select("id, title, display_title, type, source_vendor, work_date, created_at_source, captured_at")
         .in("id", ids);
       if (error) throw error;
       const out: Record<string, SourceItemInfo> = {};
-      for (const row of data ?? []) out[row.id] = row as SourceItemInfo;
+      for (const row of data ?? []) out[row.id] = { ...row, title: displayName(row) } as SourceItemInfo;
       return out;
     },
   });

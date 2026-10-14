@@ -1,3 +1,4 @@
+import { displayName } from "@/lib/work-item-name";
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 
@@ -26,11 +27,11 @@ export function useJourneyParam(engagementId: string): void {
       fetchItem: async (id) => {
         const { data, error } = await supabase
           .from("work_items")
-          .select("id, title")
+          .select("id, title, display_title")
           .eq("id", id)
           .maybeSingle();
         if (error || !data) return null;
-        return { id: data.id, title: data.title };
+        return { id: data.id, title: displayName(data) };
       },
       open: (request) => openJourney(request),
       onUnavailable: (line) => toast(line),

@@ -1,3 +1,4 @@
+import { displayName } from "@/lib/work-item-name";
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -113,7 +114,7 @@ export const episodeForTask = createServerFn({ method: "POST" })
     if (!episode) return null;
     const { data: items } = await supabase
       .from("episode_items")
-      .select("work_item_id, item_role, work_items(title, type, source, source_vendor)")
+      .select("work_item_id, item_role, work_items(title, display_title, type, source, source_vendor)")
       .eq("episode_id", episode.id);
     return {
       ...(episode as Omit<EpisodeView, "items">),
@@ -129,7 +130,7 @@ export const episodeForTask = createServerFn({ method: "POST" })
       }[]).map((row) => ({
         work_item_id: row.work_item_id,
         item_role: row.item_role,
-        title: row.work_items?.title ?? "Untitled",
+        title: (row.work_items ? displayName(row.work_items) : "") || "Untitled",
         type: row.work_items?.type ?? "document",
         source: row.work_items?.source ?? "manual",
         source_vendor: row.work_items?.source_vendor ?? null,
