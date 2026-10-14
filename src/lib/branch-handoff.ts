@@ -23,6 +23,19 @@ export function branchPrompt(branchId: string): string {
   return `Fetch Lasso branch ${branchId} with the Lasso connector and load it as context.`;
 }
 
+/**
+ * The name a branch record attributes its source to. The board already loads
+ * member names for card marks, so the label comes from that same list; when
+ * the name cannot be read, the fallback matches the connector's wording.
+ */
+export function branchOwnerLabel(
+  ownerId: string | null | undefined,
+  members: { id: string; display_name: string | null }[],
+): string {
+  const name = members.find((member) => member.id === ownerId)?.display_name?.trim();
+  return name ? name : "A teammate";
+}
+
 export type BranchTurn = { id: string; turn_no: number; role: string; content: string | null };
 
 export type BranchMarkdownInput = {
