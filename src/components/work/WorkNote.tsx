@@ -81,7 +81,7 @@ export function WorkNote({
         <span className="min-w-0 flex-1 text-left">
           <span className="work-phone-row__title">{displayName(item)}</span>
           <span className="work-phone-row__stamp">
-            {date} · {workIdentityLabel(item as WorkItemRow)} · {boardTitle ?? "NO BOARD"}
+            {date} · {workIdentityLabel(item as WorkItemRow)}{item.visibility !== "unmapped" ? ` · ${boardTitle ?? "NO BOARD"}` : ""}
           </span>
           {item.visibility === "unmapped" ? <span className="work-no-board-label"><Lock className="h-3 w-3 shrink-0" aria-hidden />No board</span> : null}
         </span>

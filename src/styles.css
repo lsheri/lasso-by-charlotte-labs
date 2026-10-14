@@ -4845,6 +4845,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 }
 
 .ledger-work-note { container-type: inline-size; width: 100%; height: 118px; max-width: none; }
+.ledger-work-note[data-paper-state="unmapped"] { height: 138px; }
 .canvas-lab-card-paper > .ledger-work-note { height: 100%; }
 /* I1: the Inbox card alone gets room to preview; every other face keeps 118px. */
 .inbox-fixed-card .ledger-work-note { height: 156px; }
