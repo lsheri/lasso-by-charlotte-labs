@@ -59,7 +59,7 @@ export function WorkNote({
     ?? chatPreview?.summary
     ?? chatPreview?.firstUserTurn?.content
     ?? chatPreview?.turns.find((turn) => turn.role.trim().toLowerCase() === "user")?.content
-    ?? "No summary available.";
+    ?? "Open it to see what landed.";
   const isFile = item.type === "document" || item.type === "deck" || item.type === "sheet";
   const sourceLabel = brand === "unknown" && isFile ? "Document" : brandLabel(brand);
   const hasFilePreview = Boolean(filePreview && filePreview.kind !== "fallback");
