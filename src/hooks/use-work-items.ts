@@ -1,16 +1,18 @@
 import { useQuery } from "@tanstack/react-query";
 
+import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
 import type { MappedTask, WorkItemRow } from "@/lib/work-types";
 
 export type WorkItemsResult = { items: WorkItemRow[]; mappingError: string | null };
 
-export async function fetchWorkItems(): Promise<WorkItemsResult> {
+export async function fetchWorkItems(orgId: string): Promise<WorkItemsResult> {
   const itemsRes = await supabase
     .from("work_items")
     .select(
       "id, owner_id, client_id, title, display_title, type, source, visibility, captured_at, content_ref, created_at_source, work_date, content_fidelity, source_vendor, orig_conversation_id, ungrouped_at, source_meta, meta",
     )
+    .eq("org_id", orgId)
     .order("captured_at", { ascending: false });
   if (itemsRes.error) throw itemsRes.error;
 
@@ -23,11 +25,14 @@ export async function fetchWorkItems(): Promise<WorkItemsResult> {
   if (items.length === 0) return { items, mappingError: null };
 
   // Mapping labels live behind engagement policies; if those reads fail we still
-  // show the work itself rather than blanking the page. The row policies bound
-  // this read: wit_owner_all and the engagement policies return exactly the
-  // placements the caller is entitled to. Enumerating work item ids in the query
-  // string made the URL grow with the size of a person's record until the
-  // request failed, so the read carries no id list.
+  // show the work itself rather than blanking the page. Row security on
+  // work_items (the work_owner_all policy, keyed on the active profile) also admits
+  // support-granted and coach-visible rows from OTHER workspaces, so the items
+  // read above filters by the active workspace itself rather than trusting row
+  // security to do it. This placement read is joined in memory by work_item_id,
+  // so only placements for this workspace's items attach. Enumerating work item
+  // ids in the query string made the URL grow with the size of a person's
+  // record until the request failed, so the read carries no id list.
   const mapping = await supabase
     .from("work_item_tasks")
     .select(
@@ -45,5 +50,12 @@ export async function fetchWorkItems(): Promise<WorkItemsResult> {
 }
 
 export function useWorkItems() {
-  return useQuery({ queryKey: ["work-items"], queryFn: fetchWorkItems });
+  const { data: profile } = useProfile();
+  const orgId = profile?.org_id ?? null;
+  return useQuery({
+    queryKey: ["work-items", orgId],
+    queryFn: () => fetchWorkItems(orgId as string),
+    // No active workspace means no read: never fall back to an unfiltered one.
+    enabled: Boolean(orgId),
+  });
 }
