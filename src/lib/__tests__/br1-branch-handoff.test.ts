@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { BRANCH_COPY, branchMarkdown, branchPrompt } from "@/lib/branch-handoff";
+import { BRANCH_COPY, branchMarkdown, branchOwnerLabel, branchPrompt } from "@/lib/branch-handoff";
 import { BRANCH_URL_LIMIT, branchOpenPlan } from "@/lib/branch-targets";
 
 const ID = "7f1c2b9e-1111-4222-8333-944455556666";
@@ -47,6 +47,22 @@ describe("branchMarkdown", () => {
       const text = typeof value === "function" ? value("Claude") : value;
       expect(text).not.toContain("\u2014");
     }
+  });
+});
+
+describe("branchOwnerLabel", () => {
+  const members = [
+    { id: "p-1", display_name: "Dana" },
+    { id: "p-2", display_name: "  " },
+  ];
+  it("uses the resolved display name, whoever owns the source", () => {
+    expect(branchOwnerLabel("p-1", members)).toBe("Dana");
+  });
+  it("falls back to the connector wording when the name cannot be read", () => {
+    expect(branchOwnerLabel("p-2", members)).toBe("A teammate");
+    expect(branchOwnerLabel("p-9", members)).toBe("A teammate");
+    expect(branchOwnerLabel(null, members)).toBe("A teammate");
+    expect(branchOwnerLabel("p-1", [])).toBe("A teammate");
   });
 });
 
