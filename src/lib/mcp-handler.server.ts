@@ -73,6 +73,7 @@ import {
 } from "@/lib/mcp-vocab";
 import { CANONICAL_ORIGIN } from "@/lib/app-host";
 import { pushSourceTimeFields } from "@/lib/push-source-time";
+import { countCarryGaps, carryGapBucket } from "./carry-gap";
 
 const PROTOCOL_VERSION = "2025-11-25";
 const ACCEPTED_PROTOCOLS = new Set([
@@ -3041,6 +3042,23 @@ export async function pushConversation(
   }
   const decisionsDrafted = decisionReceipts.filter((r) => r.outcome === "drafted").length;
 
+  // CARRY-1. Did this chat plainly make a file that no attachment carried?
+  // Observation only: it must never change what a push writes or returns.
+  let carryGaps = 0;
+  let carryEvidence = "none";
+  try {
+    const result = countCarryGaps({
+      messageTexts,
+      attachmentTitles: attachments.map((a) => a.title),
+      attachmentFilenames: attachments
+        .map((a) => a.fileRef?.filename)
+        .filter((n): n is string => typeof n === "string"),
+    });
+    carryGaps = result.gaps;
+    carryEvidence = result.evidence;
+  } catch {
+    /* a carry gap is never worth failing a push over */
+  }
   await recordEvent(supabaseAdmin, {
     eventType: "mcp.push",
     orgId: owner.orgId,
@@ -3068,6 +3086,8 @@ export async function pushConversation(
       renditions: versionRowsBucket(renditionsStored),
       renditions_changed: versionRowsBucket(renditionsChanged),
       auth_kind: owner.authKind,
+      carry_gaps: carryGapBucket(carryGaps),
+      carry_evidence: carryEvidence,
     },
   });
   await recordEvent(supabaseAdmin, {
