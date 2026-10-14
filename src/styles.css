@@ -26,7 +26,7 @@
   .work-page-header > div:first-child { min-width: 0; }
   .work-page-subtitle { overflow: visible; white-space: normal; font-size: 12px; line-height: 1.5; }
   .work-page-subtitle [data-work-subtitle="parts"] { column-gap: 16px; }
-  .work-page-filters { flex-wrap: wrap; height: auto; gap: 10px; padding: 10px 16px; overflow: visible; white-space: normal; }
+  .work-page-filters { flex-wrap: nowrap; height: auto; gap: 10px; padding: 10px 16px; overflow-x: auto; overflow-y: hidden; white-space: nowrap; }
   .work-page-filters > button, .work-page-filters > label { flex-shrink: 0; }
   .work-page-panels { width: 100%; margin-left: 0; flex-wrap: wrap; gap: 10px; }
   .work-page-panels > button { max-width: 100%; height: auto; white-space: normal; text-align: left; }

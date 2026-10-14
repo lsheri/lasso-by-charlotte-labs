@@ -27,6 +27,6 @@ export function shouldOpenWorkboard(input: EngagementLandingInput): boolean {
   if (input.view === "details") return false;
   if (input.hasTrace || input.hasJourney) return false;
   if (input.isQuickFolder) return false;
-  if (input.isNarrow) return false;
+  // MOB-2: phones open the Workboard too; its phone opening view keeps text readable.
   return true;
 }
