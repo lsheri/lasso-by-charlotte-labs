@@ -96,7 +96,6 @@ describe("the per highlight visibility choice", () => {
       <FocusOverlay
         node={node}
         item={item}
-        onSummarize={() => undefined}
         onBranch={() => undefined}
         onClose={() => undefined}
         canWrite

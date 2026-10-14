@@ -132,7 +132,6 @@ export function FocusOverlay({
   item,
   itemLoading = false,
   viewerOwnsItem = false,
-  onSummarize,
   onBranch,
   onClose,
   highlights = [],
@@ -160,7 +159,6 @@ export function FocusOverlay({
   itemLoading?: boolean;
   /** WI-1: only the owner sees the captured title beneath a chosen name. */
   viewerOwnsItem?: boolean;
-  onSummarize: () => void;
   onBranch: () => void;
   onClose: () => void;
   /** Slice 2a: highlights on this chat the reader is allowed to see. */
@@ -184,7 +182,7 @@ export function FocusOverlay({
   openComments?: boolean;
   origin?: { left: number; top: number; width: number; height: number } | null;
   onContentScroll?: (() => void) | undefined;
-  /** S3a: a shared board reads only. No Summarize, no Branch, no server reads. */
+  /** S3a: a shared board reads only. No Branch, no server reads. */
   readOnly?: boolean;
   /** S3a: the preview the shared board was handed, used in place of a server read. */
   filePreview?: WorkboardFilePreviewData | undefined;
@@ -340,11 +338,6 @@ export function FocusOverlay({
             {item && viewerOwnsItem && displayName(item) !== item.title ? <p data-testid="focus-captured-as" className="truncate text-[11.5px] text-muted-foreground">Captured as {item.title}</p> : null}
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            {!readOnly && actions.includes("Summarize") ? (
-              <Button size="sm" variant="outline" onClick={onSummarize}>
-                Summarize
-              </Button>
-            ) : null}
             {!readOnly && actions.includes("Branch") ? (
               <Button size="sm" variant="outline" onClick={onBranch}>
                 Branch

@@ -23,7 +23,7 @@ const item = {
 
 function overlay(itemLoading: boolean, resolved: WorkItemRow | null = null) {
   return <FocusOverlay node={node} item={resolved} itemLoading={itemLoading}
-    onSummarize={() => undefined} onBranch={() => undefined} onClose={() => undefined} />;
+    onBranch={() => undefined} onClose={() => undefined} />;
 }
 
 afterEach(cleanup);

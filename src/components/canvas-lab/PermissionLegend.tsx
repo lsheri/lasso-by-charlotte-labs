@@ -5,7 +5,7 @@
 export function PermissionLegend() {
   const rows: { label: string; body: string }[] = [
     { label: "Your source", body: "Arrange it, open it." },
-    { label: "Teammate source", body: "Read, summarize, branch, comment. Never alter the original." },
+    { label: "Teammate source", body: "Read, branch, comment. Never alter the original." },
     { label: "Your draft", body: "Edit it here. It lives in this browser only." },
   ];
   return (

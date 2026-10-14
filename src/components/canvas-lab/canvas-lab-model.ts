@@ -867,7 +867,7 @@ export function branchChatNode(node: LabNode): LabNode {
 export function actionsFor(ownership: LabOwnership): string[] {
   if (ownership === "yours") return ["Arrange", "Open"];
   if (ownership === "draft") return ["Edit here", "Branch", "Focus"];
-  return ["Read", "Summarize", "Branch", "Comment"];
+  return ["Read", "Branch", "Comment"];
 }
 
 export type LabComment = {

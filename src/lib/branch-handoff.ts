@@ -8,6 +8,7 @@
 
 export const BRANCH_COPY = {
   title: "Branch this work",
+  needsSignin: "A link can load this branch only once your AI tool connects to Lasso by signing in. Until then, download the handoff.",
   toolLabel: "Continue in",
   open: (tool: string) => `Open in ${tool}`,
   download: "Download the handoff",
@@ -83,4 +84,13 @@ export function branchMarkdown(input: BranchMarkdownInput): string {
     lines.push("", `## Turn ${turn.turn_no} (${turn.id})`, "", `${speaker(turn.role, input.sourceOwner)} wrote:`, "", quote(turn.content ?? ""));
   }
   return `${lines.join("\n")}\n`;
+}
+
+/** PRE-1: unknown (null) counts as connected so a flaky read never degrades the main path. */
+export function branchHasSigninConnector(rows: readonly unknown[] | null): boolean {
+  return rows === null ? true : rows.length > 0;
+}
+
+export function branchPrimaryAction(hasSignin: boolean): "open" | "download" {
+  return hasSignin ? "open" : "download";
 }
