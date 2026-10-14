@@ -95,6 +95,8 @@ export type TelemetryEvent =
   | "workitem.dated"
   /** WI-1: an owner set or cleared the name other people see. dims.cleared is "true" or "false"; never the name. */
   | "workitem.renamed"
+  /** BR-1: a person branched work into an AI tool. dims.tool and dims.handoff only; never a name or content. */
+  | "workitem.branched"
   /** A work item was deleted for good from the inbox. Content-free. */
   | "workitem.deleted"
   /** M3: an arrival was moved back to the inbox. Whether it was put back again. */
