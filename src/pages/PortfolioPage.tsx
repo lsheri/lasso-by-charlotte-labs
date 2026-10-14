@@ -1,3 +1,4 @@
+import { displayName } from "@/lib/work-item-name";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { ToneCard } from "@/components/notebook/ToneCard";
 import { useWorkItems } from "@/hooks/use-work-items";
@@ -28,7 +29,7 @@ export function PortfolioPage() {
                 key={item.id}
                 tone="paper"
                 label={deliverableTag(item.meta, item.type)}
-                title={item.title}
+                title={displayName(item)}
                 {...(home ? { meta: home } : {})}
               />
             );

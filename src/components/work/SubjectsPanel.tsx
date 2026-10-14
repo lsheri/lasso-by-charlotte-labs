@@ -1,3 +1,4 @@
+import { displayName } from "@/lib/work-item-name";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
@@ -253,7 +254,7 @@ export function SubjectsPanel({
                       .filter((item) => item.id !== suggestion.work_item_id)
                       .map((item) => (
                         <option key={item.id} value={item.id}>
-                          {item.title}
+                          {displayName(item)}
                         </option>
                       ))}
                   </select>

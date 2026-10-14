@@ -1,3 +1,4 @@
+import { displayName } from "@/lib/work-item-name";
 import { useEffect, useMemo, useState } from "react";
 
 import { CoachChat } from "@/components/coaching/CoachChat";
@@ -131,7 +132,7 @@ export function PacketPage({
         .flatMap((task) => task.work_item_tasks ?? [])
         .map((element) => element.work_items)
         .filter((item): item is NonNullable<typeof item> => item !== null)
-        .map((item) => [item.id, { id: item.id, label: item.title }] as const),
+        .map((item) => [item.id, { id: item.id, label: displayName(item) }] as const),
     ).values(),
   );
 
@@ -160,7 +161,7 @@ export function PacketPage({
             <p className="micro-label micro-label-section">What {subjectName} was asked to do</p>
             {sharedBriefs.map((item) => (
               <p key={item.id} className="mt-1.5 text-sm font-medium text-foreground">
-                {item.title}
+                {displayName(item)}
               </p>
             ))}
             <p className="mt-1 text-sm text-muted-foreground">

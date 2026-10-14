@@ -1,3 +1,4 @@
+import { displayName } from "@/lib/work-item-name";
 import { useState } from "react";
 import { MoreHorizontal } from "lucide-react";
 
@@ -161,7 +162,7 @@ export function TaskWorkflow({
                 ) : null}
                 <TypeIcon item={item} size="sm" />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm text-foreground">{item.title}</p>
+                  <p className="truncate text-sm text-foreground">{displayName(item)}</p>
                   <p className="truncate font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
                     {workIdentityLabel(item)} · {sourceLabel(item.source)} ·{" "}
                     {formatDate(effectiveWorkDate(item))}
@@ -181,7 +182,7 @@ export function TaskWorkflow({
                     <OpenFileAction item={item} onOpenInApp={onOpen ? () => onOpen(item) : undefined} />
                     <DropdownMenu>
                       <DropdownMenuTrigger
-                        aria-label={`Actions for ${item.title}`}
+                        aria-label={`Actions for ${displayName(item)}`}
                         className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
                       >
                         <MoreHorizontal className="h-4 w-4" />

@@ -1,3 +1,4 @@
+import { displayName } from "@/lib/work-item-name";
 import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { MoreHorizontal } from "lucide-react";
@@ -264,7 +265,7 @@ export function EngagementCanvas({
     if (samePos(from, to)) return;
     const { cols, pos } = moveCard(view, from, to);
     if (announce) {
-      const title = cards.get(cardId)?.work_items.title ?? "Card";
+      const title = (cards.get(cardId)?.work_items ? displayName(cards.get(cardId)!.work_items) : "") ?? "Card";
       setLive(announceMove(title, cols[pos.col]?.name ?? "", pos.index));
     }
     void commit(cols, from, pos, cardId);
@@ -307,7 +308,7 @@ export function EngagementCanvas({
     dragRef.current = next;
     setDrag(next);
     setDropCol(start.pos.col);
-    setLive(announceGrab(cards.get(start.id)?.work_items.title ?? "Card"));
+    setLive(announceGrab((cards.get(start.id)?.work_items ? displayName(cards.get(start.id)!.work_items) : "") ?? "Card"));
   }
 
   function beginPointer(
@@ -378,11 +379,11 @@ export function EngagementCanvas({
     setDropCol(null);
     if (!current) return;
     if (cancel) {
-      setLive(announceCancel(cards.get(current.id)?.work_items.title ?? "Card"));
+      setLive(announceCancel((cards.get(current.id)?.work_items ? displayName(cards.get(current.id)!.work_items) : "") ?? "Card"));
       return;
     }
     const to = placeAt(current.x, current.y, current.from);
-    setLive(announceDrop(cards.get(current.id)?.work_items.title ?? "Card"));
+    setLive(announceDrop((cards.get(current.id)?.work_items ? displayName(cards.get(current.id)!.work_items) : "") ?? "Card"));
     applyMove(current.from, to, current.id, false);
   }
 
@@ -415,7 +416,7 @@ export function EngagementCanvas({
   // ── Keyboard ──────────────────────────────────────────────────────────────
 
   function onCardKeyDown(event: React.KeyboardEvent, pos: CanvasPos, id: string) {
-    const title = cards.get(id)?.work_items.title ?? "Card";
+    const title = (cards.get(id)?.work_items ? displayName(cards.get(id)!.work_items) : "") ?? "Card";
     if (event.key === "Enter") {
       const item = cards.get(id)?.work_items;
       if (item) onOpen(item);
@@ -696,7 +697,7 @@ export function EngagementCanvas({
           style={{ left: drag.x, top: drag.y, width: drag.width }}
           aria-hidden
         >
-          <p className="truncate text-sm text-foreground">{dragCard.work_items.title}</p>
+          <p className="truncate text-sm text-foreground">{displayName(dragCard.work_items)}</p>
         </div>
       ) : null}
 
