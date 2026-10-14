@@ -43,7 +43,8 @@ export function BranchDialog({
   onOpenChange,
   onBranched,
 }: {
-  source: { id: string; title: string; display_title?: string | null | undefined };
+  source: { id: string; title: string; display_title?: string | null | undefined; owner_id?: string | null | undefined };
+  /** Fallback label when the owner profile cannot be read. */
   sourceOwnerLabel: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
