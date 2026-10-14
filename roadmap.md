@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] WI-1e: owner-only All work reader rename and full work-menu source audit; focused menu tests passed.
+- [ ] WI-1e: signed-in owner/non-owner menu and real-save board verification; blocked by external unmanaged authentication. Preview showed a loading shell at 1280 and Sign in at 390.
+
 - [x] DC-3: merged Your data by product type and role, preserved consent contracts, aliased old section, moved workspace controls from People; 38 targeted tests passed, full-suite results reported in chat; no database work or manual build.
 - [ ] DC-3: authenticated Settings visual and real-save verification at 1280 and 390; blocked by external unmanaged authentication. Both preview visits reached Sign in; role and save behavior are mock-tested only.
 
