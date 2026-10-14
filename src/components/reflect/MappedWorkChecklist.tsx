@@ -1,6 +1,7 @@
 import { Checkbox } from "@/components/ui/checkbox";
 import { ArtifactNote, SourceMark } from "@/components/work/SourceMark";
 import { TypeBadge } from "@/components/work/TypeIcon";
+import { displayName } from "@/lib/work-item-name";
 import { effectiveWorkDate, formatDate, type WorkItemRow } from "@/lib/work-types";
 
 export type TaskGroup = { taskId: string; name: string; items: WorkItemRow[] };
@@ -53,14 +54,14 @@ export function MappedWorkChecklist({
             {group.items.map((item) => (
               <label key={item.id} className="flex items-start gap-3 px-1 py-1.5 text-sm">
                 <Checkbox
-                  aria-label={item.title}
+                  aria-label={displayName(item)}
                   checked={checked.has(item.id)}
                   onCheckedChange={() => onToggle(item.id)}
                 />
                 <span className="min-w-0 leading-snug">
                   <span className="block break-words">
                     <SourceMark item={item} className="mr-1.5" />
-                    {item.title} <ArtifactNote item={item} />
+                    {displayName(item)} <ArtifactNote item={item} />
                   </span>
                   <TypeBadge item={item} size="sm" className="mt-1 mr-1.5" />
                   <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
