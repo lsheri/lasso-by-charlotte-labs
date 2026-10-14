@@ -1,5 +1,6 @@
 import { ToneCard } from "@/components/notebook/ToneCard";
 import { workIdentityLabel } from "@/lib/work-identity";
+import { displayName } from "@/lib/work-item-name";
 import type { WorkItemRow } from "@/lib/work-types";
 import { effectiveWorkDate, formatDate } from "@/lib/work-types";
 
@@ -48,7 +49,7 @@ export function WeekRail({ items }: { items: WorkItemRow[] }) {
             </span>
             <div className="min-w-0">
               <p className="text-[13px] font-medium leading-[17px] text-foreground">
-                {item.title}
+                {displayName(item)}
               </p>
               <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
                 {workIdentityLabel(item)} · {formatDate(effectiveWorkDate(item))} ·{" "}
