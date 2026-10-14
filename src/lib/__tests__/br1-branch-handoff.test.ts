@@ -50,6 +50,22 @@ describe("branchMarkdown", () => {
   });
 });
 
+describe("branchOwnerLabel", () => {
+  const members = [
+    { id: "p-1", display_name: "Dana" },
+    { id: "p-2", display_name: "  " },
+  ];
+  it("uses the resolved display name, whoever owns the source", () => {
+    expect(branchOwnerLabel("p-1", members)).toBe("Dana");
+  });
+  it("falls back to the connector wording when the name cannot be read", () => {
+    expect(branchOwnerLabel("p-2", members)).toBe("A teammate");
+    expect(branchOwnerLabel("p-9", members)).toBe("A teammate");
+    expect(branchOwnerLabel(null, members)).toBe("A teammate");
+    expect(branchOwnerLabel("p-1", [])).toBe("A teammate");
+  });
+});
+
 describe("branch targets", () => {
   it("builds the Claude and ChatGPT links", () => {
     expect(branchOpenPlan("claude", "hi there")).toEqual({ handoff: "link", url: "https://claude.ai/new?q=hi%20there" });
