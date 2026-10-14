@@ -10,7 +10,12 @@ export type { CaptureChannel, TelemetryDims, TelemetryEvent } from "./telemetry-
  * Fire-and-forget. Never blocks the UI, never carries content or names.
  * The server writes the canonical row and mirrors a content-free copy.
  */
-export function logEvent(eventType: TelemetryEvent, orgId: string, dims: TelemetryDims): void {
+export function logEvent(
+  eventType: TelemetryEvent,
+  orgId: string,
+  dims: TelemetryDims,
+  options?: { visitorId?: string },
+): void {
   const entry = consumeEntryDim(eventType);
   const merged = entry ? { ...dims, ...entry } : dims;
   void (async () => {
@@ -26,6 +31,7 @@ export function logEvent(eventType: TelemetryEvent, orgId: string, dims: Telemet
         dims: merged,
         session_id: sessionId(),
         client_seq: nextClientSeq(),
+        ...(options?.visitorId ? { visitor_id: options.visitorId } : {}),
       },
     });
   })().catch(() => {

@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { BrandLockup } from "@/components/layout/BrandLockup";
 import { EntryDoorLink } from "@/components/layout/EntryDoorLink";
 import { rememberEntryDoor } from "@/lib/entry-door";
+import { getPostHogDistinctId } from "@/lib/posthog-client";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { checkSignupInvite } from "@/lib/invites.functions";
@@ -146,6 +147,15 @@ function AuthPage() {
   const { next, intent, invite, from, src, key, mode: modeParam } = Route.useSearch();
   useEffect(() => {
     if (intent) emitClientEvent("signup.started", { intent, src: src ?? "direct" }, { stableVisitor: true });
+    if (intent) {
+      // TEL-3: keep the same visitor id so org.created can carry its hash.
+      try {
+        const visitor = getPostHogDistinctId();
+        if (visitor) window.localStorage.setItem("lasso_signup_ref", visitor);
+      } catch {
+        /* storage may be unavailable */
+      }
+    }
   }, [intent, src]);
   useEffect(() => {
     if (src) rememberEntryDoor(src);

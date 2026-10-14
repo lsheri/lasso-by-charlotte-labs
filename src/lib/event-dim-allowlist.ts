@@ -185,7 +185,7 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "mcp.container_created": ["attachment_count", "attachment_versions", "degraded_refusals", "has_suggestion", "mode", "rejected_attachments", "suggestion_outcome", "target", "tool", "vendor", "windowed"],
   // CL-2b. Portal needs this event added when it exists.
   "mcp.chat_link_attached": ["had_prior_link", "source"],
-  "mcp.auth_failed": ["kind", "reason"],
+  "mcp.auth_failed": ["kind", "reason", "repeats_band"],
   "mcp.connection_created": ["kind", "client"],
   "mcp.consent_denied": ["client"],
   "mcp.connection_revoked": ["kind", "via"],
@@ -206,7 +206,7 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "oneonone.saved_to_drive": ["kind"],
   "oneonone.session_created": ["kind"],
   "person.uses_declared": ["uses"],
-  "org.created": ["org_type", "register", "entry_door"],
+  "org.created": ["org_type", "register", "entry_door", "signup_ref"],
   "org.clients_changed": ["enabled"],
   "plans.action_clicked": ["action", "plan", "source"],
   "plans.viewed": ["src"],

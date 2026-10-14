@@ -4,6 +4,21 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 import type { TelemetryDims, TelemetryEvent } from "./telemetry-shared";
 
+/**
+ * TEL-3: on org.created only, stamp signup_ref = the actor_hash signup.started
+ * carried. Runs after the dim guard. The raw visitor id is never stored.
+ */
+export async function withSignupRef(
+  eventType: string,
+  dims: TelemetryDims,
+  visitorId: string | undefined,
+): Promise<TelemetryDims> {
+  if (eventType !== "org.created" || typeof visitorId !== "string" || !visitorId) return dims;
+  const { computeActorHash } = await import("./telemetry.server");
+  const ref = await computeActorHash(`anon:${visitorId.slice(0, 128)}`);
+  return ref ? { ...dims, signup_ref: ref } : dims;
+}
+
 export const recordEventFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
@@ -14,7 +29,11 @@ export const recordEventFn = createServerFn({ method: "POST" })
       session_id?: string | undefined;
       client_seq?: number | undefined;
       profile_id?: string | undefined;
-    }) => input,
+      visitor_id?: string | undefined;
+    }) => ({
+      ...input,
+      visitor_id: typeof input.visitor_id === "string" ? input.visitor_id.slice(0, 128) : undefined,
+    }),
   )
   .handler(async ({ data, context }) => {
     let dims = data.dims ?? {};
@@ -27,6 +46,7 @@ export const recordEventFn = createServerFn({ method: "POST" })
       const { guardEventDims } = await import("./event-dim-allowlist");
       dims = guardEventDims(data.event_type, dims).dims;
     }
+    dims = await withSignupRef(data.event_type, dims, data.visitor_id);
     const { resolveProfile } = await import("./profile-resolve");
     const profile = await resolveProfile(
       context.supabase,

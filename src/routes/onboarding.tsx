@@ -433,11 +433,27 @@ function OnboardingInner() {
       const orgId = await applyOrgType(profile.id, orgType);
       createdOrgId = orgId ?? profile.org_id ?? null;
       if (orgId) {
-        logEvent("org.created", orgId, {
-          org_type: orgType,
-          register: derived ?? "none",
-          entry_door: derived ? entryDoor : entryDoor === "invite" ? "invite" : "chooser",
-        });
+        let signupRef: string | undefined;
+        try {
+          signupRef = window.localStorage.getItem("lasso_signup_ref") ?? undefined;
+        } catch {
+          signupRef = undefined;
+        }
+        logEvent(
+          "org.created",
+          orgId,
+          {
+            org_type: orgType,
+            register: derived ?? "none",
+            entry_door: derived ? entryDoor : entryDoor === "invite" ? "invite" : "chooser",
+          },
+          signupRef ? { visitorId: signupRef } : undefined,
+        );
+        try {
+          window.localStorage.removeItem("lasso_signup_ref");
+        } catch {
+          /* storage may be unavailable */
+        }
       }
       clearEduIntent();
       if (createdOrgId) {
