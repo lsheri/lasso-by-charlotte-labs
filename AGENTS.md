@@ -28,7 +28,7 @@ Tour workboard chrome stays a local presentational mirror around shared board pr
 - Keep `/demo` touch gestures pointer-based: one finger on empty board pans, card-origin drags move cards, and two fingers pan and pinch regardless of their starting target.
 - Landing: one hero video replays on return; its data wait uses 2.5s logo rain, static under reduced motion.
 - Resolve all MCP keys through `mcp_connections`; routes differ only by key transport.
-- Keep the first-run interactive tour entirely in local React state; it must never create product rows or upload files.
+- First-run tour uses only local React state; never create product rows or upload files.
 - Keep the first-run tour's AI conversation examples on one shared elapsed step, while each conversation retains independent local push state.
 - Keep every first-run tour act on the single exported board layout and shared board renderer, with answer space reserved before it appears, so items never reflow between acts.
 - Source first-run tour Ask scope labels from AskSurface exports so the teaching copy cannot drift from the product chip.
@@ -45,4 +45,4 @@ Tour workboard chrome stays a local presentational mirror around shared board pr
 - Read All work shared placements once per page and compare item/board orgs, to avoid per-card requests.
 - Node formatting is local; other editors default visible.
 
-- All work opts into reader rename; its page owns the dialog so closing the reader preserves it.
+- All work opts into reader rename; its page owns the dialog so reader closure preserves it.
