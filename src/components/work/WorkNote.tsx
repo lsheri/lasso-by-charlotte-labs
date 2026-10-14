@@ -1,3 +1,4 @@
+import { displayName } from "@/lib/work-item-name";
 import { ExternalLink, FileText } from "lucide-react";
 
 import { WorkboardFilePreview as FilePreview } from "@/components/canvas-lab/WorkboardFilePreview";
@@ -75,10 +76,10 @@ export function WorkNote({
 
   if (phoneRow) {
     return (
-      <Button type="button" variant="ghost" onClick={onOpen} aria-label={item.title} className="work-phone-row">
+      <Button type="button" variant="ghost" onClick={onOpen} aria-label={displayName(item)} className="work-phone-row">
         <span className="shrink-0" aria-hidden="true"><BrandLogo brand={brand} size={20} /></span>
         <span className="min-w-0 flex-1 text-left">
-          <span className="work-phone-row__title">{item.title}</span>
+          <span className="work-phone-row__title">{displayName(item)}</span>
           <span className="work-phone-row__stamp">
             {date} · {workIdentityLabel(item as WorkItemRow)} · {boardTitle ?? "NO BOARD"}
           </span>
@@ -102,7 +103,7 @@ export function WorkNote({
           ? {
               role: "button" as const,
               tabIndex: 0,
-              "aria-label": item.title,
+              "aria-label": displayName(item),
               onClick: onOpen,
               onKeyDown: (event: React.KeyboardEvent) => {
                 if (event.key === "Enter" || event.key === " ") {
@@ -122,15 +123,15 @@ export function WorkNote({
           {actions ? <span className="shrink-0 select-none" onClick={(event) => event.stopPropagation()}>{actions}</span> : null}
         </div>
 
-        <p className={`mt-1 shrink-0 select-text truncate text-[12px] font-medium leading-[15px] text-foreground ${contextSelected ? "canvas-lab-context-title" : ""}`}>{item.title}</p>
+        <p className={`mt-1 shrink-0 select-text truncate text-[12px] font-medium leading-[15px] text-foreground ${contextSelected ? "canvas-lab-context-title" : ""}`}>{displayName(item)}</p>
 
         {isFile ? (
           <div className="ledger-work-note__file mt-1 flex min-h-0 flex-1 items-center gap-2">
             <div className="ledger-work-note__thumbnail h-[42px] w-[74px] shrink-0 overflow-hidden border border-hairline bg-secondary">
-              {hasFilePreview && filePreview ? <FilePreview preview={filePreview} title={item.title} onFailure={() => {}} /> : <FileText className="m-auto h-full w-5 text-muted-foreground" aria-label="Document" />}
+              {hasFilePreview && filePreview ? <FilePreview preview={filePreview} title={displayName(item)} onFailure={() => {}} /> : <FileText className="m-auto h-full w-5 text-muted-foreground" aria-label="Document" />}
             </div>
             <div className="min-w-0 select-text">
-              <p className="truncate text-[10.5px] leading-[15px] text-muted-foreground">{item.title}</p>
+              <p className="truncate text-[10.5px] leading-[15px] text-muted-foreground">{displayName(item)}</p>
               <p className="truncate font-mono text-[8.5px] uppercase tracking-[0.08em] text-soft">{detail}</p>
             </div>
           </div>

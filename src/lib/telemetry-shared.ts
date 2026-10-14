@@ -93,6 +93,8 @@ export type TelemetryEvent =
   | "workitem.mapped"
   | "workitem.marked_private"
   | "workitem.dated"
+  /** WI-1: an owner set or cleared the name other people see. dims.cleared is "true" or "false"; never the name. */
+  | "workitem.renamed"
   /** A work item was deleted for good from the inbox. Content-free. */
   | "workitem.deleted"
   /** M3: an arrival was moved back to the inbox. Whether it was put back again. */

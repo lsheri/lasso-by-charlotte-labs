@@ -1,3 +1,4 @@
+import { displayName } from "@/lib/work-item-name";
 /**
  * S3a: the shared board is the owner's board, read only.
  *
@@ -68,7 +69,7 @@ export function buildSharedBoardModel(dto: SharedBoardDto): SharedBoardModel {
     tasks: dto.seed.tasks.map((task) => ({ ...task, ownedByViewer: false })),
     work: dto.seed.work.map((item) => ({
       id: item.id,
-      title: item.title,
+      title: displayName(item),
       typeLabel: item.type.replaceAll("_", " "),
       source: item.source,
       ownedByViewer: false,

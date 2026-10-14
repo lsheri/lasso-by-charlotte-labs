@@ -26,6 +26,7 @@ import {
   canStandAlone,
 } from "@/lib/work-standalone";
 import { useStandAlone } from "@/components/work/use-stand-alone";
+import { RenameWorkDialog, RENAME_COPY } from "@/components/work/RenameWorkDialog";
 import type { WorkItemRow } from "@/lib/work-types";
 
 export type RowMenuProps = {
@@ -52,6 +53,7 @@ export function useRowMenuParts({ item, onFluency, engagementId, onRemoved }: Ro
   const [briefOpen, setBriefOpen] = useState(false);
   const [removeOpen, setRemoveOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [renameOpen, setRenameOpen] = useState(false);
   const profile = useProfile().data;
   const isThread = item.type === "ai_thread";
   const isDeliverable = ["document", "deck", "sheet"].includes(item.type);
@@ -98,6 +100,9 @@ export function useRowMenuParts({ item, onFluency, engagementId, onRemoved }: Ro
           {canLift ? STAND_ALONE_LABEL : PUT_BACK_LABEL}
         </DropdownMenuItem>
       ) : null}
+      {owned ? (
+        <DropdownMenuItem onSelect={() => setRenameOpen(true)}>{RENAME_COPY.menu}</DropdownMenuItem>
+      ) : null}
       {owned ? <DropdownMenuSeparator /> : null}
       {owned && engagementId ? (
         <DropdownMenuItem
@@ -121,6 +126,9 @@ export function useRowMenuParts({ item, onFluency, engagementId, onRemoved }: Ro
 
   const dialogs = (
     <>
+      {owned ? (
+        <RenameWorkDialog item={item} open={renameOpen} onOpenChange={setRenameOpen} />
+      ) : null}
       {engagementId ? (
         <MarkBriefDialog
           item={item}

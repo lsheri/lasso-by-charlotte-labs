@@ -20,7 +20,7 @@ export function ThreadViewerById({
     queryFn: async (): Promise<WorkItemRow | null> => {
       const { data: row, error } = await supabase
         .from("work_items")
-        .select("id, title, type, source, visibility, captured_at, content_ref, meta")
+        .select("id, title, display_title, type, source, visibility, captured_at, content_ref, meta")
         .eq("id", workItemId as string)
         .maybeSingle();
       if (error) throw error;

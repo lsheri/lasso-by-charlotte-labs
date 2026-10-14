@@ -28,7 +28,7 @@ async function fetchSharedPieces(boardId: string): Promise<WorkItemRow[]> {
   const { data: rows, error: piecesError } = await supabase
     .from("work_items")
     .select(
-      "id, owner_id, client_id, title, type, source, visibility, captured_at, content_ref, created_at_source, work_date, content_fidelity, source_vendor, orig_conversation_id, ungrouped_at, source_meta, meta",
+      "id, owner_id, client_id, title, display_title, type, source, visibility, captured_at, content_ref, created_at_source, work_date, content_fidelity, source_vendor, orig_conversation_id, ungrouped_at, source_meta, meta",
     )
     .in("id", ids)
     .order("captured_at", { ascending: false });

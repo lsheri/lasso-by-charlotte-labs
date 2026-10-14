@@ -4630,6 +4630,7 @@ export type Database = {
           content_hash: string | null
           content_ref: string | null
           created_at_source: string | null
+          display_title: string | null
           id: string
           import_session_id: string | null
           meta: Json
@@ -4657,6 +4658,7 @@ export type Database = {
           content_hash?: string | null
           content_ref?: string | null
           created_at_source?: string | null
+          display_title?: string | null
           id?: string
           import_session_id?: string | null
           meta?: Json
@@ -4684,6 +4686,7 @@ export type Database = {
           content_hash?: string | null
           content_ref?: string | null
           created_at_source?: string | null
+          display_title?: string | null
           id?: string
           import_session_id?: string | null
           meta?: Json

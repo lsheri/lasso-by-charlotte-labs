@@ -1,3 +1,4 @@
+import { displayName } from "@/lib/work-item-name";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 
 import { actionsFor, type LabNode } from "@/components/canvas-lab/canvas-lab-model";
@@ -130,6 +131,7 @@ export function FocusOverlay({
   node,
   item,
   itemLoading = false,
+  viewerOwnsItem = false,
   onSummarize,
   onBranch,
   onClose,
@@ -156,6 +158,8 @@ export function FocusOverlay({
   node: LabNode;
   item: WorkItemRow | null;
   itemLoading?: boolean;
+  /** WI-1: only the owner sees the captured title beneath a chosen name. */
+  viewerOwnsItem?: boolean;
   onSummarize: () => void;
   onBranch: () => void;
   onClose: () => void;
@@ -332,7 +336,8 @@ export function FocusOverlay({
               {item ? <VendorMark item={item} /> : node.typeLabel}
               {item ? <> · {formatDate(effectiveWorkDate(item))}</> : null}
             </span>
-            <h1 className="page-title truncate">{node.title}</h1>
+            <h1 className="page-title truncate">{item ? displayName(item) || node.title : node.title}</h1>
+            {item && viewerOwnsItem && displayName(item) !== item.title ? <p data-testid="focus-captured-as" className="truncate text-[11.5px] text-muted-foreground">Captured as {item.title}</p> : null}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {!readOnly && actions.includes("Summarize") ? (

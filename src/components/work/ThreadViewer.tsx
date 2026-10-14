@@ -1,3 +1,4 @@
+import { displayName } from "@/lib/work-item-name";
 import { DraftDecisionsButton } from "@/components/decisions/DraftDecisionsButton";
 import { ThreadBody } from "@/components/peek/ThreadBody";
 import type { ThreadFocus } from "@/components/peek/ThreadBody";
@@ -24,7 +25,7 @@ export function ThreadViewer({
         <DialogHeader>
           <DialogTitle className="page-title flex flex-wrap items-center gap-1.5">
             {item ? <SourceMark item={item} size={15} /> : null}
-            <span className="min-w-0 break-words">{item?.title ?? "Thread"}</span>
+            <span className="min-w-0 break-words">{item ? displayName(item) || "Thread" : "Thread"}</span>
             {item ? <ArtifactNote item={item} /> : null}
           </DialogTitle>
           {item ? (

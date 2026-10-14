@@ -1,3 +1,5 @@
+import { RenameWorkDialog } from "@/components/work/RenameWorkDialog";
+import { displayName } from "@/lib/work-item-name";
 import { stableMemo } from "@/components/canvas-lab/stable-memo";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Paperclip } from "lucide-react";
@@ -81,6 +83,7 @@ function LabCardInner({
   onSaveChatLink,
   teammateMark,
   removable,
+  canRename = false,
 }: {
   node: LabNode;
   item?: WorkItemRow | undefined;
@@ -136,6 +139,8 @@ function LabCardInner({
   teammateMark?: TeammateMark | null;
   /** BRD-3: false when the work behind this card belongs to someone else. */
   removable?: boolean | undefined;
+  /** WI-1: true only when the viewer owns this card's work item. */
+  canRename?: boolean | undefined;
 }) {
   const cardRef = useRef<HTMLDivElement | null>(null);
   const paperRef = useRef<HTMLDivElement | null>(null);
@@ -151,6 +156,7 @@ function LabCardInner({
   const suppressClickRef: ClickSuppress = useRef(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [chatLinkOpen, setChatLinkOpen] = useState(false);
+  const [renameOpen, setRenameOpen] = useState(false);
   const pastedLink = pastedChatUrl(item?.meta?.chat_url);
   const canSetChatLink = Boolean(item && onSaveChatLink && !readOnly);
 
@@ -240,7 +246,7 @@ function LabCardInner({
       ref={cardRef}
       role="group"
       aria-roledescription="card"
-      aria-label={`${node.title}${selected && showStatusChrome ? ", in context" : ""}`}
+      aria-label={`${item ? displayName(item) || node.title : node.title}${selected && showStatusChrome ? ", in context" : ""}`}
       tabIndex={readOnly ? -1 : 0}
       data-testid={`lab-card-${node.id}`}
       data-node-id={node.id}
@@ -285,7 +291,8 @@ function LabCardInner({
       </div>
       {readOnly ? null : (
         <div className="canvas-lab-card-bar" onPointerDown={(event) => event.stopPropagation()}>
-          <LabCardMenu selected={selected} canBranch={node.ownership === "teammate" || node.kind === "chat"} local={Boolean(node.local || node.kind === "chat")} removable={(removable ?? true) && (node.kind !== "judgment" || Boolean(node.local))} open={menuOpen} onOpenChange={changeMenuOpen} cardRef={cardRef} onSelect={() => onSelect()} onOpen={() => onOpen(cardRef.current?.getBoundingClientRect())} onBranch={onBranch} onHide={onHide} onDelete={onDelete} onTakeOutOfContext={onTakeOutOfContext} onFit={canResize ? onFit : undefined} frameChoices={structured ? frameChoices : []} currentFrame={node.frame} onMoveToFrame={structured && canResize ? onMoveToFrame : undefined} bundleToggleLabel={bundleToggleLabel} onBundleToggle={onBundleToggle} chatLinkLabel={canSetChatLink ? (pastedLink ? CHAT_LINK_COPY.change : CHAT_LINK_COPY.add) : undefined} onEditChatLink={canSetChatLink ? () => setChatLinkOpen(true) : undefined} />
+          <LabCardMenu selected={selected} canBranch={node.ownership === "teammate" || node.kind === "chat"} local={Boolean(node.local || node.kind === "chat")} removable={(removable ?? true) && (node.kind !== "judgment" || Boolean(node.local))} open={menuOpen} onOpenChange={changeMenuOpen} cardRef={cardRef} onSelect={() => onSelect()} onOpen={() => onOpen(cardRef.current?.getBoundingClientRect())} onBranch={onBranch} onHide={onHide} onDelete={onDelete} onTakeOutOfContext={onTakeOutOfContext} onFit={canResize ? onFit : undefined} frameChoices={structured ? frameChoices : []} currentFrame={node.frame} onMoveToFrame={structured && canResize ? onMoveToFrame : undefined} bundleToggleLabel={bundleToggleLabel} onBundleToggle={onBundleToggle} chatLinkLabel={canSetChatLink ? (pastedLink ? CHAT_LINK_COPY.change : CHAT_LINK_COPY.add) : undefined} onEditChatLink={canSetChatLink ? () => setChatLinkOpen(true) : undefined} onRename={canRename && item ? () => setRenameOpen(true) : undefined} />
+          {canRename && item ? <RenameWorkDialog item={item} open={renameOpen} onOpenChange={setRenameOpen} /> : null}
           <Button
             type="button"
             size="icon"
