@@ -1388,6 +1388,8 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 }
 
 .canvas-lab-surface {
+  /* MOB-4: the board owns one-finger pan and two-finger pinch. Scrollers inside cards keep native touch scrolling, because touch-action stops at the nearest scroll container. */
+  touch-action: none;
   background-color: var(--nb-paper);
   background-image: radial-gradient(circle, var(--nb-rule) 1px, transparent 1px);
   background-size: 22px 22px;
