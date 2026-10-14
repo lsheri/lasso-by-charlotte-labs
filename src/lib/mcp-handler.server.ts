@@ -1,5 +1,9 @@
 // Server-only MCP endpoint logic. Token in URL path, service-role scoped writes.
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import type { Database, Json } from "@/integrations/supabase/types";
+import { branchMarkdown, type BranchTurn } from "@/lib/branch-handoff";
+import { BRANCH_NEEDS_SIGNIN, BRANCH_REFUSAL, branchToolDim, decideBranchFetch, mergeBranchFetchMeta, type BranchRow } from "@/lib/branch-fetch";
 import type { Json } from "@/integrations/supabase/types";
 import { sha256Hex } from "@/lib/connectors-shared";
 import {
@@ -1031,6 +1035,18 @@ const pushTools = (vocab: McpVocab) => [
     },
   },
   {
+    name: "lasso_fetch_branch",
+    title: "Fetch a branch",
+    icons: ICONS,
+    description:
+      "Load a Lasso branch by id: the source work's title, owner, date and turns, in order. Use when the user's message names a Lasso branch. Read-only.",
+    inputSchema: {
+      type: "object",
+      properties: { branch_id: { type: "string" } },
+      required: ["branch_id"],
+    },
+  },
+  {
     name: "list_engagements",
     title: "List workboards",
     icons: ICONS,
@@ -1124,6 +1140,7 @@ export async function handleMcpRequest(
       if (name === "push_thread") return await pushThread(owner, args, id, client);
       if (name === "push_document") return await pushDocument(owner, args, id);
       if (name === "list_engagements") return await listEngagements(owner, id);
+      if (name === "lasso_fetch_branch") return await fetchBranch(owner, token, args, id);
       if (name === "lasso_list_places") return await listPlaces(owner, id);
       if (name === "lasso_push_options") return await pushOptions(owner, args, id);
       if (name === "lasso_attach_chat_link") {
@@ -3242,4 +3259,85 @@ export async function pushConversation(
       decisions: decisionReceipts,
     },
   });
+}
+
+
+/**
+ * BR-2. A branch fetch reads only as the signed-in person: a client built on
+ * the caller's own token, so every row policy applies exactly as in Lasso.
+ * Nothing here uses the service client. The source row is never written.
+ */
+function callerClient(token: string) {
+  const url = process.env["SUPABASE_URL"];
+  const key = process.env["SUPABASE_PUBLISHABLE_KEY"];
+  if (!url || !key) return null;
+  const opaque = key.startsWith("sb_");
+  return createSupabaseClient<Database>(url, key, {
+    global: {
+      headers: { Authorization: `Bearer ${token}` },
+      fetch: (input, init) => {
+        const headers = new Headers(init?.headers);
+        if (opaque && headers.get("Authorization") === `Bearer ${key}`) headers.delete("Authorization");
+        headers.set("apikey", key);
+        return fetch(input, { ...init, headers });
+      },
+    },
+    auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
+  });
+}
+
+async function fetchBranch(owner: Owner, token: string, args: Obj, id: unknown): Promise<Response> {
+  if (owner.authKind !== "signin" || !JWT_SHAPE.test(token)) return textResult(id, BRANCH_NEEDS_SIGNIN);
+  const db = callerClient(token);
+  if (!db) return rpcError(id, -32603, "Branches are unavailable right now.");
+  const branchId = typeof args["branch_id"] === "string" ? args["branch_id"].trim() : "";
+  if (!/^[0-9a-f-]{36}$/i.test(branchId)) return textResult(id, BRANCH_REFUSAL);
+
+  const { data: branch } = await db
+    .from("work_items")
+    .select("id, owner_id, parent_work_item_id, source_vendor, meta")
+    .eq("id", branchId)
+    .maybeSingle();
+  const { data: source } = branch?.parent_work_item_id
+    ? await db.from("work_items").select("id, title, owner_id, work_date, captured_at").eq("id", branch.parent_work_item_id).maybeSingle()
+    : { data: null };
+  const decision = decideBranchFetch({ branch: (branch as BranchRow | null) ?? null, callerProfileId: owner.profileId, sourceReadable: Boolean(source) });
+  if (!decision.ok || !source || !branch) return textResult(id, BRANCH_REFUSAL);
+
+  const { data: turns } = await db
+    .from("turns")
+    .select("id, turn_no, role, content")
+    .eq("work_item_id", source.id)
+    .order("turn_no", { ascending: true });
+  let ownerName = "A teammate";
+  if (source.owner_id) {
+    const { data: person } = await db.from("profiles").select("display_name").eq("id", source.owner_id).maybeSingle();
+    if (person?.display_name) ownerName = person.display_name;
+  }
+
+  const now = new Date().toISOString();
+  const merged = mergeBranchFetchMeta(branch.meta, now);
+  await db
+    .from("work_items")
+    .update({ meta: merged.meta as unknown as Json })
+    .eq("id", branch.id)
+    .eq("owner_id", owner.profileId);
+  await recordEvent(db, {
+    eventType: "workitem.branch_opened",
+    orgId: owner.orgId,
+    userId: owner.userId,
+    profileId: owner.profileId,
+    dims: { tool: branchToolDim(branch.source_vendor), first: merged.first ? "true" : "false" },
+  });
+
+  const text = branchMarkdown({
+    branchId: branch.id,
+    sourceId: source.id,
+    sourceTitle: source.title,
+    sourceOwner: ownerName,
+    tool: branchToolDim(branch.source_vendor),
+    createdAt: source.work_date ?? source.captured_at ?? now,
+    turns: (turns ?? []) as BranchTurn[],
+  });
+  return textResult(id, text);
 }
