@@ -46,6 +46,7 @@ import { LabContextCoronas } from "@/components/canvas-lab/LabContextCoronas";
 import { LabBundleControls, LabBundleStackEdges } from "@/components/canvas-lab/LabBundleControls";
 import { shouldEndOnMove } from "@/components/canvas-lab/canvas-lab-pointer";
 import { BranchDialog } from "@/components/work/BranchDialog";
+import { branchOwnerLabel } from "@/lib/branch-handoff";
 import { beginPinch, panView, pinchView, type PinchStart } from "@/lib/board-pinch";
 import { RegionColourSwatches } from "@/components/canvas-lab/RegionColourSwatches";
 import { LabUndoToast } from "@/components/canvas-lab/LabUndoToast";

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { BRANCH_COPY, branchMarkdown, branchPrompt } from "@/lib/branch-handoff";
+import { BRANCH_COPY, branchMarkdown, branchOwnerLabel, branchPrompt } from "@/lib/branch-handoff";
 import { BRANCH_URL_LIMIT, branchOpenPlan } from "@/lib/branch-targets";
 
 const ID = "7f1c2b9e-1111-4222-8333-944455556666";
