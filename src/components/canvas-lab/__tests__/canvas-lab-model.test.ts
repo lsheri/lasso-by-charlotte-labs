@@ -295,7 +295,7 @@ describe("canvas lab model", () => {
   });
 
   it("offers a teammate's work read actions only", () => {
-    expect(actionsFor("teammate")).toEqual(["Read", "Summarize", "Branch", "Comment"]);
+    expect(actionsFor("teammate")).toEqual(["Read", "Branch", "Comment"]);
     expect(actionsFor("teammate")).not.toContain("Delete");
     expect(actionsFor("yours")).toEqual(["Arrange", "Open"]);
     expect(actionsFor("draft")).toContain("Edit here");

@@ -70,7 +70,6 @@ function renderOverlay(canWrite: boolean) {
     <FocusOverlay
       node={node}
       item={item}
-      onSummarize={() => undefined}
       onBranch={() => undefined}
       onClose={() => undefined}
       canWrite={canWrite}

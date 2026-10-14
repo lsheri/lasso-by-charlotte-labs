@@ -199,7 +199,6 @@ export function DemoConversationsPage() {
             highlightTurnRange={search.from === "story" ? [2, 6] : undefined}
             focusedTurnTestId={search.turn ? `demo-proof-turn-${search.turn}` : undefined}
             filePreview={query.data?.filePreviews[focus.item.id]}
-            onSummarize={() => undefined}
             onBranch={() => undefined}
             onClose={closeReader}
           />

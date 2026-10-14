@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
-import { BRANCH_COPY, branchMarkdown, branchPrompt, type BranchTurn } from "@/lib/branch-handoff";
+import { BRANCH_COPY, branchHasSigninConnector, branchPrimaryAction, branchMarkdown, branchPrompt, type BranchTurn } from "@/lib/branch-handoff";
 import { BRANCH_TARGETS, BRANCH_TOOLS, branchOpenPlan, isBranchTool, type BranchTool } from "@/lib/branch-targets";
 import { logEvent } from "@/lib/telemetry";
 import { displayName } from "@/lib/work-item-name";
@@ -56,6 +56,7 @@ export function BranchDialog({
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [ownerName, setOwnerName] = useState<string | null>(null);
+  const [hasSignin, setHasSignin] = useState(true);
   const created = useRef<{ id: string; at: string; tool: BranchTool } | null>(null);
 
   useEffect(() => {
@@ -65,18 +66,15 @@ export function BranchDialog({
     setOwnerName(null);
     created.current = null;
     // BR-3b: attribute the record to the source owner by name, the same
-    // caller-scoped profiles read the connector makes. Policies decide
+    // caller-scoped shared_work_display_name RPC the connector calls. Policies decide
     // visibility; a slow or refused read never blocks the branch.
     const ownerId = source.owner_id;
     if (!ownerId) return;
     let live = true;
     void supabase
-      .from("profiles")
-      .select("display_name")
-      .eq("id", ownerId)
-      .maybeSingle()
+      .rpc("shared_work_display_name", { p: ownerId })
       .then(({ data }) => {
-        const name = data?.display_name?.trim();
+        const name = typeof data === "string" ? data.trim() : "";
         if (live && name) setOwnerName(name);
       });
     return () => {
@@ -84,6 +82,30 @@ export function BranchDialog({
     };
   }, [open, source.owner_id]);
 
+  // PRE-1: a branch link only loads through a signed-in connector. A failed
+  // or slow read counts as "has one" so the main path never degrades.
+  useEffect(() => {
+    if (!open) return;
+    setHasSignin(true);
+    const profileId = profile?.id;
+    if (!profileId) return;
+    let live = true;
+    void supabase
+      .from("mcp_connections")
+      .select("id")
+      .eq("profile_id", profileId)
+      .eq("kind", "signin")
+      .is("revoked_at", null)
+      .limit(1)
+      .then(({ data, error }) => {
+        if (live) setHasSignin(branchHasSigninConnector(error ? null : data ?? null));
+      });
+    return () => {
+      live = false;
+    };
+  }, [open, profile?.id]);
+
+  const primary = branchPrimaryAction(hasSignin);
   const ownerLabel = ownerName ?? sourceOwnerLabel;
 
   async function ensureBranch(id: string, chosen: BranchTool): Promise<{ id: string; at: string } | null> {
@@ -173,10 +195,20 @@ export function BranchDialog({
             </Button>
           ))}
         </div>
+        {primary === "download" ? <p className="text-[13px] text-muted-foreground">{BRANCH_COPY.needsSignin}</p> : null}
         {notice ? <p role="status" className="text-[13px] text-foreground">{notice}</p> : null}
         <DialogFooter className="mt-2 gap-2">
-          <Button type="button" variant="outline" disabled={busy} onClick={() => void download()}>{BRANCH_COPY.download}</Button>
-          <Button type="button" disabled={busy || !profile} onClick={() => void openTool()}>{BRANCH_COPY.open(label)}</Button>
+          {primary === "download" ? (
+            <>
+              <Button type="button" variant="outline" disabled={busy || !profile} onClick={() => void openTool()}>{BRANCH_COPY.open(label)}</Button>
+              <Button type="button" disabled={busy} onClick={() => void download()}>{BRANCH_COPY.download}</Button>
+            </>
+          ) : (
+            <>
+              <Button type="button" variant="outline" disabled={busy} onClick={() => void download()}>{BRANCH_COPY.download}</Button>
+              <Button type="button" disabled={busy || !profile} onClick={() => void openTool()}>{BRANCH_COPY.open(label)}</Button>
+            </>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

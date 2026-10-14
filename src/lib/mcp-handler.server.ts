@@ -3311,8 +3311,8 @@ async function fetchBranch(owner: Owner, token: string, args: Obj, id: unknown):
     .order("turn_no", { ascending: true });
   let ownerName = "A teammate";
   if (source.owner_id) {
-    const { data: person } = await db.from("profiles").select("display_name").eq("id", source.owner_id).maybeSingle();
-    if (person?.display_name) ownerName = person.display_name;
+    const { data: person } = await db.rpc("shared_work_display_name", { p: source.owner_id });
+    if (typeof person === "string" && person.trim()) ownerName = person.trim();
   }
 
   const now = new Date().toISOString();

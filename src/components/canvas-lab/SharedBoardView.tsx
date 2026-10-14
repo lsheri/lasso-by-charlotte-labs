@@ -350,7 +350,6 @@ export function SharedBoardView({
             filePreview={focusItem ? board.filePreviews[focusItem.id] : undefined}
             focusTurnNo={focusTurnNo}
             focusedTurnTestId={focusedTurnTestId}
-            onSummarize={noop}
             onBranch={noop}
             onClose={() => { setFocusId(null); setOrigin(null); setFocusTurnNo(null); onReaderClosed?.(); }}
           />
