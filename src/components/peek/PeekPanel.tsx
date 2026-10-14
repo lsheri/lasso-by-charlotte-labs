@@ -1,3 +1,4 @@
+import { displayName } from "@/lib/work-item-name";
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { ExternalLink } from "lucide-react";
@@ -109,7 +110,7 @@ export function PeekPanel({
     <SlideOver
       open={open}
       onOpenChange={onOpenChange}
-      title={active.title}
+      title={displayName(active)}
       description="Work item preview"
     >
       <PeekBody {...rest} onClose={() => onOpenChange(false)} />
@@ -192,7 +193,7 @@ export function PeekBody({
             <TypeIcon item={active} />
             <h2 className="page-title flex min-w-0 flex-wrap items-center gap-1.5 break-words text-[19px] leading-snug">
               <SourceMark item={active} size={15} />
-              <span className="min-w-0 break-words">{active.title}</span>
+              <span className="min-w-0 break-words">{displayName(active)}</span>
               <ArtifactNote item={active} />
             </h2>
           </div>
@@ -244,7 +245,7 @@ export function PeekBody({
               ? () =>
                   openJourney({
                     anchorId: active.id,
-                    anchorTitle: active.title,
+                    anchorTitle: displayName(active),
                     engagementId,
                   })
               : undefined
@@ -298,7 +299,7 @@ export function PeekBody({
                 <TypeIcon item={item} size="sm" />
                 <SourceMark item={item} size={12} />
                 <span className="truncate">
-                  {item.type === "ai_thread" ? "Transcript" : item.title}
+                  {item.type === "ai_thread" ? "Transcript" : displayName(item)}
                 </span>
               </button>
             ))}
@@ -348,7 +349,7 @@ export function PeekBody({
       {owned && isDeliverableType(active.type) ? (
         <ShipToFirmDialog
           workItemId={active.id}
-          title={active.title}
+          title={displayName(active)}
           engagementId={engagementId ?? null}
           item={active}
           open={shipOpen}
@@ -358,7 +359,7 @@ export function PeekBody({
       {owned && engagementId ? (
         <RemoveFromEngagementDialog
           workItemId={active.id}
-          title={active.title}
+          title={displayName(active)}
           engagementId={engagementId}
           open={removeOpen}
           onOpenChange={setRemoveOpen}
@@ -368,7 +369,7 @@ export function PeekBody({
       {owned ? (
         <DeleteWorkItemDialog
           workItemId={active.id}
-          title={active.title}
+          title={displayName(active)}
           open={deleteOpen}
           onOpenChange={setDeleteOpen}
           onDone={() => onClose?.()}

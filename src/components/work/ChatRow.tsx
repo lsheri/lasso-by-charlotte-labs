@@ -1,3 +1,4 @@
+import { displayName } from "@/lib/work-item-name";
 import { VendorMark } from "@/components/work/SourceMark";
 import { engagementHue } from "@/lib/work-identity";
 import type { WorkItemRow } from "@/lib/work-types";
@@ -71,7 +72,7 @@ export function ChatRow({
       <div
         role="button"
         tabIndex={0}
-        aria-label={item.title}
+        aria-label={displayName(item)}
         onClick={onOpen}
         onKeyDown={(event) => {
           if (event.key === "Enter" || event.key === " ") {
@@ -82,7 +83,7 @@ export function ChatRow({
         className="flex cursor-pointer items-baseline gap-4 py-2.5 transition-colors hover:bg-secondary/40"
       >
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[13px] leading-[18px] text-foreground">{item.title}</p>
+          <p className="truncate text-[13px] leading-[18px] text-foreground">{displayName(item)}</p>
           <p className="mt-0.5 flex min-w-0 items-center truncate font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
             {stamp}
           </p>
