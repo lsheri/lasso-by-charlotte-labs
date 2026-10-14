@@ -200,6 +200,8 @@ export async function recordAnonymousEvent(
       actor_hash: actorHash,
       dims,
       payload: {},
+      // These rows have no workspace and never leave; say so at write time instead of leaving them unreasoned.
+      egress_skipped_reason: "no_org",
     });
     if (error)
       console.error(`[telemetry] anonymous insert failed for ${eventType}:`, error.message);
