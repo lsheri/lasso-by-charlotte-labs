@@ -1,3 +1,4 @@
+import { displayName } from "@/lib/work-item-name";
 /**
  * Pass 138: Past work search. One model call over the firm's shipped work.
  *
@@ -60,7 +61,7 @@ export async function assemblePastWorkCandidates(caller: Db): Promise<PastWorkCa
   const { data, error } = await caller
     .from(PAST_WORK_GATEWAY_TABLE)
     .select(
-      "work_item_id, engagement_id, work_items(title, type, meta, source_meta), engagements(code, title, client_label, brief)",
+      "work_item_id, engagement_id, work_items(title, display_title, type, meta, source_meta), engagements(code, title, client_label, brief)",
     )
     .order("shipped_at", { ascending: false })
     .limit(PAST_WORK_CANDIDATE_CAP);
@@ -84,7 +85,7 @@ export async function assemblePastWorkCandidates(caller: Db): Promise<PastWorkCa
 
   return rows.map((row) => ({
     work_item_id: row.work_item_id,
-    title: row.work_items?.title ?? "",
+    title: row.work_items ? displayName(row.work_items) : "",
     kind: row.work_items?.type ?? "document",
     deliverable_kind: row.work_items?.meta?.deliverable_kind ?? null,
     file_format: row.work_items?.meta?.file_format ?? null,

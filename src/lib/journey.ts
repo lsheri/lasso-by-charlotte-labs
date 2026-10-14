@@ -1,3 +1,4 @@
+import { displayName } from "@/lib/work-item-name";
 /**
  * Pass 110: the journey. A shareable trace of how one deliverable grew out of
  * the record, computed entirely from rows that already exist.
@@ -135,7 +136,7 @@ function toNode(item: JourneyItemInput, kind: JourneyKind): JourneyNode {
   return {
     id: item.id,
     kind,
-    title: item.title,
+    title: displayName(item),
     type: item.type,
     sourceVendor: item.source_vendor ?? null,
     markItem: item.markItem,

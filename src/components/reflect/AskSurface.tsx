@@ -1,3 +1,4 @@
+import { displayName } from "@/lib/work-item-name";
 import { NoAnswerSaved } from "@/components/reflect/NoAnswerSaved";
 import { unansweredQuestionIds } from "@/lib/ask-question-persist";
 import { Link } from "@tanstack/react-router";
@@ -441,7 +442,7 @@ export function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions
                   <div className="nb-binder-inset">
                     <ThinkingTrail
                       items={(ask.pointedNow.length > 0 ? ask.pointedNow : ask.selectedItems).map(
-                        (item) => ({ id: item.id, title: item.title }),
+                        (item) => ({ id: item.id, title: displayName(item) }),
                       )}
                       finalPhase="Writing"
                       manifest={ask.liveManifest}
@@ -618,7 +619,7 @@ export function AskComposer({
                 }`}
               >
                 <SourceMark item={item} className="mr-1.5" />
-                <span className="break-words">{item.title}</span> <ArtifactNote item={item} />{" "}
+                <span className="break-words">{displayName(item)}</span> <ArtifactNote item={item} />{" "}
                 <TypeBadge item={item} size="sm" />
               </button>
             ))}

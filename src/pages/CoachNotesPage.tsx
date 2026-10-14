@@ -1,3 +1,4 @@
+import { displayName } from "@/lib/work-item-name";
 import { useState } from "react";
 
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -90,7 +91,7 @@ export function CoachNotesPage() {
               }}
               pointsAt={(note) => {
                 const row = rows.find((entry) => entry.id === note.id);
-                return row?.work_items?.title ?? row?.tasks?.name ?? null;
+                return (row?.work_items ? displayName(row.work_items) : null) || row?.tasks?.name || null;
               }}
               context={(note) => {
                 const row = rows.find((entry) => entry.id === note.id);

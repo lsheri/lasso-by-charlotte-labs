@@ -160,6 +160,7 @@ const LIVE_KEYS_BY_FAMILY: Record<string, readonly string[]> = {
 };
 
 const LIVE_KEYS_BY_EVENT: Record<string, readonly string[]> = {
+  "workitem.renamed": ["cleared"],
   "nav.opened": ["item", "surface"],
   // invite.sent is content free on purpose: the seat funnel numbers come from the seat_grants table, not from telemetry.
   "invite.sent": [],

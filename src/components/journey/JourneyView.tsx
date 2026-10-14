@@ -1,3 +1,4 @@
+import { displayName } from "@/lib/work-item-name";
 import { useQuery } from "@tanstack/react-query";
 import { X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -87,7 +88,7 @@ function JourneySurface({
         if (!item || byId.has(item.id)) continue;
         byId.set(item.id, {
           id: item.id,
-          title: item.title,
+          title: displayName(item),
           type: item.type,
           source_vendor: item.source_vendor ?? null,
           work_date: item.work_date ?? null,

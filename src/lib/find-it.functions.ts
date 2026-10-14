@@ -1,3 +1,4 @@
+import { displayName } from "@/lib/work-item-name";
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -298,7 +299,7 @@ export const searchRecord = createServerFn({ method: "POST" })
 
     const { data: mine } = await supabase
       .from("work_items")
-      .select("id, title, type, source_vendor, work_date, captured_at")
+      .select("id, title, display_title, type, source_vendor, work_date, captured_at")
       .eq("owner_id", profile.id);
     const items = mine ?? [];
     if (items.length === 0) return { turns: [], conversations: [], deliverables: [] };
@@ -400,7 +401,7 @@ export const searchRecord = createServerFn({ method: "POST" })
         const item = byId.get(row.work_item_id);
         return {
           work_item_id: row.work_item_id,
-          title: item?.title ?? "A conversation",
+          title: (item ? displayName(item) : "") || "A conversation",
           vendor: item?.source_vendor ?? null,
           turn_no: row.turn_no,
           role: String(row.role),
@@ -431,7 +432,7 @@ export const searchRecord = createServerFn({ method: "POST" })
             if (!item) continue;
             conversations.push({
               work_item_id: item.id,
-              title: item.title,
+              title: displayName(item),
               vendor: item.source_vendor ?? null,
               date: item.work_date ?? item.captured_at ?? null,
             });
@@ -476,7 +477,7 @@ export const searchRecord = createServerFn({ method: "POST" })
       if (confirmed) {
         deliverables.push({
           work_item_id: item.id,
-          title: item.title,
+          title: displayName(item),
           type: String(item.type),
         });
       }

@@ -1,3 +1,4 @@
+import { displayName } from "@/lib/work-item-name";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/integrations/supabase/types";
@@ -179,7 +180,7 @@ export async function buildEngagementCorpus(
   for (const item of items) {
     no += 1;
     numberFor.set(item.id, no);
-    sources.push({ no, id: item.id, title: item.title });
+    sources.push({ no, id: item.id, title: displayName(item) });
   }
 
   for (const item of readOrder) {

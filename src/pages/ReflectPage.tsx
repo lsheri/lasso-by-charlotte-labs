@@ -1,3 +1,4 @@
+import { displayName } from "@/lib/work-item-name";
 import { NoAnswerSaved } from "@/components/reflect/NoAnswerSaved";
 import { unansweredQuestionIds } from "@/lib/ask-question-persist";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -535,7 +536,7 @@ export function ReflectPage({
                             <ThinkingTrail
                               items={scopedItems.map((item) => ({
                                 id: item.id,
-                                title: item.title,
+                                title: displayName(item),
                               }))}
                               finalPhase="Writing"
                               manifest={liveManifest}
@@ -551,7 +552,7 @@ export function ReflectPage({
                         <ThinkingTrail
                           items={scopedItems.map((item) => ({
                             id: item.id,
-                            title: item.title,
+                            title: displayName(item),
                           }))}
                           finalPhase={`Applying ${analyses.running.label}`}
                         />
