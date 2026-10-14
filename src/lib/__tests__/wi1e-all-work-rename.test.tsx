@@ -1,11 +1,14 @@
 // @vitest-environment jsdom
 import { readFileSync } from "node:fs";
+import { useState } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { PeekActionBar } from "@/components/peek/PeekActionBar";
-import { RENAME_COPY } from "@/components/work/RenameWorkDialog";
+import { RenameWorkDialog, RENAME_COPY } from "@/components/work/RenameWorkDialog";
 import { ownsWorkItem } from "@/lib/work-ownership";
 import type { WorkItemRow } from "@/lib/work-types";
+vi.mock("@/hooks/use-profile", () => ({ useProfile: () => ({ data: { id: "p1", org_id: "o1", role: "consultant" } }) }));
 vi.mock("@/components/decisions/DraftDecisionsButton", () => ({ useDraftDecisions: () => ({ busy: false, draft: vi.fn() }) }));
 vi.mock("@/components/peek/PortfolioMenuItem", () => ({ PortfolioMenuItem: () => null }));
 vi.mock("@/components/ui/dropdown-menu", () => ({
@@ -22,6 +25,19 @@ function menu(ownerId: string, onRename = vi.fn()) {
   return onRename;
 }
 describe("WI-1e All work reader rename", () => {
+  it("opens the existing dialog and can cancel without a write", () => {
+    function Harness() {
+      const [open, setOpen] = useState(false);
+      return <><PeekActionBar item={item} canEdit owned onRename={() => setOpen(true)} onShip={vi.fn()} onBrief={vi.fn()} onRemove={vi.fn()} onDelete={vi.fn()} /><RenameWorkDialog item={item} open={open} onOpenChange={setOpen} /></>;
+    }
+    render(<QueryClientProvider client={new QueryClient()}><Harness /></QueryClientProvider>);
+    fireEvent.click(screen.getByRole("menuitem", { name: RENAME_COPY.menu }));
+    expect(screen.getByRole("dialog")).toBeTruthy();
+    expect(screen.getByRole("textbox", { name: RENAME_COPY.label }).getAttribute("value")).toBe("Original");
+    expect(screen.getByText(RENAME_COPY.helper)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: RENAME_COPY.cancel }));
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
   it("adds only rename next to Work date and opens the callback", () => {
     const rename = menu("p1");
     expect(screen.getAllByRole("menuitem").map((node) => node.textContent)).toEqual(["Work date", "Rename for others", "Find decisions in this conversation", "Make private", "Delete this work"]);
