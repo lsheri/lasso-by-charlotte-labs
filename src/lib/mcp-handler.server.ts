@@ -718,6 +718,11 @@ export async function resolveOwner(token: string, fromHeader = false): Promise<O
 const AUTH_FAILURE_WINDOW_MS = 60_000;
 const authFailureSeen = new Map<string, { at: number; suppressed: number }>();
 
+/** Test seam. */
+export function resetAuthFailureThrottle(): void {
+  authFailureSeen.clear();
+}
+
 export async function recordAuthFailure(failure: AuthFailure): Promise<void> {
   const key = `${failure.kind}|${failure.reason}`;
   const now = Date.now();
