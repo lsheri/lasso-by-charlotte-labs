@@ -18,6 +18,7 @@ import { REMOVE_LABEL } from "@/components/work/RemoveFromEngagementDialog";
 import { SHIP_ACTION_LABEL } from "@/lib/shipped-work-shared";
 import type { WorkItemRow } from "@/lib/work-types";
 import { PortfolioMenuItem } from "./PortfolioMenuItem";
+import { RENAME_COPY } from "@/components/work/RenameWorkDialog";
 
 /** The peek's analyses, opened by preset so no button ever dead-ends. */
 export type PeekAnalysisPreset =
@@ -64,6 +65,7 @@ export function PeekActionBar({
   analysesInHeader,
   onMap,
   onWorkDate,
+  onRename,
   onMakePrivate,
   onAnalyse,
   onWorkArtifact,
@@ -81,6 +83,7 @@ export function PeekActionBar({
   analysesInHeader?: boolean | undefined;
   onMap?: ((item: WorkItemRow, group?: WorkItemRow[]) => void) | undefined;
   onWorkDate?: ((item: WorkItemRow) => void) | undefined;
+  onRename?: ((item: WorkItemRow) => void) | undefined;
   onMakePrivate?: ((item: WorkItemRow) => void) | undefined;
   onAnalyse?: ((item: WorkItemRow, preset: PeekAnalysisPreset) => void) | undefined;
   onWorkArtifact?: (() => void) | undefined;
@@ -159,6 +162,9 @@ export function PeekActionBar({
               <DropdownMenuItem onSelect={() => onWorkDate(item)}>
                 {PEEK_WORK_DATE_LABEL}
               </DropdownMenuItem>
+            ) : null}
+            {owned && onRename ? (
+              <DropdownMenuItem onSelect={() => onRename(item)}>{RENAME_COPY.menu}</DropdownMenuItem>
             ) : null}
             {/* A brief belongs to the board it briefs: no board, no entry. */}
             {canEdit && engagementId ? (

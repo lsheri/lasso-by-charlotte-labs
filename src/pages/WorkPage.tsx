@@ -8,6 +8,8 @@ import { toast } from "sonner";
 
 import { MapDialog } from "@/components/work/MapDialog";
 import { RowMenu } from "@/components/work/RowMenu";
+import { RenameWorkDialog } from "@/components/work/RenameWorkDialog";
+import { ownsWorkItem } from "@/lib/work-ownership";
 import { AnalysisLens } from "@/components/reflect/AnalysisLens";
 import {
   ThreadAnalysisLauncher,
@@ -287,6 +289,7 @@ export function WorkPage() {
   const [mapBulk, setMapBulk] = useState(false);
   const [peek, setPeek] = useState<{ entry: PeekEntry; focusId: string } | null>(null);
   const [dateItem, setDateItem] = useState<WorkItemRow | null>(null);
+  const [renameItem, setRenameItem] = useState<WorkItemRow | null>(null);
   const [lensItem, setLensItem] = useState<WorkItemRow | null>(null);
   const [lensPreset, setLensPreset] = useState<PeekAnalysisPreset | undefined>(undefined);
   // A thread analysis launched from the peek: confirm, then the reader itself.
@@ -993,6 +996,11 @@ export function WorkPage() {
         open={peek !== null}
         canEdit={!isCoach}
         viewerProfileId={profile?.id ?? null}
+        onRename={(item) => {
+          if (!ownsWorkItem(profile, item)) return;
+          setPeek(null);
+          setRenameItem(item);
+        }}
         onMap={(item, group) => {
           setPeek(null);
           openMap(item, group);
@@ -1052,6 +1060,13 @@ export function WorkPage() {
           if (!next) setDateItem(null);
         }}
       />
+      {renameItem && ownsWorkItem(profile, renameItem) ? (
+        <RenameWorkDialog
+          item={renameItem}
+          open
+          onOpenChange={(next) => { if (!next) setRenameItem(null); }}
+        />
+      ) : null}
 
       {profile && launch ? (
         <ThreadAnalysisLauncher

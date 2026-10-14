@@ -1,4 +1,6 @@
 import { displayName } from "@/lib/work-item-name";
+import { ownsWorkItem } from "@/lib/work-ownership";
+import { useProfile } from "@/hooks/use-profile";
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { ExternalLink } from "lucide-react";
@@ -75,6 +77,8 @@ type PeekBodyProps = {
   canEdit: boolean;
   onMap?: ((item: WorkItemRow, group?: WorkItemRow[]) => void) | undefined;
   onWorkDate?: ((item: WorkItemRow) => void) | undefined;
+  /** Opt-in only from All work; other reader surfaces retain their actions. */
+  onRename?: ((item: WorkItemRow) => void) | undefined;
   onMakePrivate?: ((item: WorkItemRow) => void) | undefined;
   onAnalyse?: ((item: WorkItemRow, preset: PeekAnalysisPreset) => void) | undefined;
   /** Set when the peek is read inside one engagement. */
@@ -125,6 +129,7 @@ export function PeekBody({
   canEdit,
   onMap,
   onWorkDate,
+  onRename,
   onMakePrivate,
   onAnalyse,
   engagementId,
@@ -132,6 +137,7 @@ export function PeekBody({
   analysesInHeader,
   onClose,
 }: PeekBodyProps) {
+  const profile = useProfile().data;
   const fetchUrl = useServerFn(getWorkFileUrl);
   const navigate = useNavigate();
   const items = entry ? entryItems(entry) : [];
@@ -238,6 +244,7 @@ export function PeekBody({
           analysesInHeader={analysesInHeader}
           onMap={onMap}
           onWorkDate={onWorkDate}
+          onRename={ownsWorkItem(profile, active) ? onRename : undefined}
           onMakePrivate={onMakePrivate}
           onAnalyse={onAnalyse}
           onWorkArtifact={
