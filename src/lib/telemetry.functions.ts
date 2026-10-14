@@ -38,6 +38,7 @@ export const recordEventFn = createServerFn({ method: "POST" })
       const { guardEventDims } = await import("./event-dim-allowlist");
       dims = guardEventDims(data.event_type, dims).dims;
     }
+    const { withSignupRef } = await import("./telemetry.server");
     dims = await withSignupRef(data.event_type, dims, data.visitor_id);
     const { resolveProfile } = await import("./profile-resolve");
     const profile = await resolveProfile(
