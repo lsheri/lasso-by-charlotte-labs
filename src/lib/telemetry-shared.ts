@@ -97,6 +97,8 @@ export type TelemetryEvent =
   | "workitem.renamed"
   /** BR-1: a person branched work into an AI tool. dims.tool and dims.handoff only; never a name or content. */
   | "workitem.branched"
+  /** BR-2: a connected AI tool fetched a branch the person owns. dims.tool and dims.first only. */
+  | "workitem.branch_opened"
   /** A work item was deleted for good from the inbox. Content-free. */
   | "workitem.deleted"
   /** M3: an arrival was moved back to the inbox. Whether it was put back again. */
