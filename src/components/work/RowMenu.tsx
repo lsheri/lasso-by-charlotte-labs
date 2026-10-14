@@ -127,7 +127,7 @@ export function useRowMenuParts({ item, onFluency, engagementId, onRemoved }: Ro
   const dialogs = (
     <>
       {owned ? (
-        <RenameWorkDialog item={item} orgId={profile?.org_id} open={renameOpen} onOpenChange={setRenameOpen} />
+        <RenameWorkDialog item={item} open={renameOpen} onOpenChange={setRenameOpen} />
       ) : null}
       {engagementId ? (
         <MarkBriefDialog
