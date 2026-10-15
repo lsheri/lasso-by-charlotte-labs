@@ -6304,7 +6304,6 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .demo-sandbox-ask .demo-play-answer :is(p,strong,b) { font-size: max(15px, 1em); }
 .demo-sandbox-ask .demo-play-answer :is(.lb-micro,small) { font-size: 12px; }
 .demo-sandbox-ask .demo-play-composer textarea { font-size: 15px; line-height: 1.4; }
-.demo-sandbox-stage .canvas-lab-card:not(.demo-deliverable-node) .ledger-work-note > .nb-paper-body { padding: 14px 16px; }
 .demo-sandbox-stage .canvas-lab-card:not(.demo-deliverable-node) .ledger-work-note > .nb-paper-body > div:first-child { height: 18px; gap: 7px; }
 .demo-sandbox-stage .canvas-lab-card:not(.demo-deliverable-node) .ledger-work-note > .nb-paper-body > div:first-child > span { overflow: visible; font-size: 13.5px; line-height: 1.2; text-overflow: clip; white-space: nowrap; }
 .demo-sandbox-stage .canvas-lab-card:not(.demo-deliverable-node) .ledger-work-note > .nb-paper-body > div:first-child > span:first-of-type { min-width: max-content; }
@@ -7010,7 +7009,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   --verify-unreachable:#e01b24;
 
   --border-weight:1px;
-  --card-shadow:1px 2px 3px color-mix(in oklab, var(--text-primary) 15%, transparent);
+  --card-shadow:1px 2px 3px color-mix(in oklab, var(--text-primary) 14%, transparent);
   --btn-shadow:none;
   --label-weight:500;
   --label-tracking:0.08em;
@@ -7288,14 +7287,31 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   padding: 0;
 }
 .nb-paper.work-note-gutter[data-paper-state="unmapped"] {
-  border: var(--border-weight) dashed var(--state-no-board);
+  border: var(--border-weight) solid var(--line-pencil);
   background: var(--surface-page);
   box-shadow: none;
-  padding-left: 9px;
+  padding-left: 0;
 }
-/* WC-4b: one inset layer, the G card's 8px 10px, on the body only. */
+/* Canonical card insets live on the body; the mirror meets the source spine. */
 .work-note-gutter > .nb-paper-body {
   padding: 8px 10px;
+  padding-left: 11px;
+}
+.work-note-gutter[data-paper-state="unmapped"] > .nb-paper-body {
+  padding-left: 17px;
+}
+.nb-paper.work-note-gutter[data-paper-state="unmapped"]::before {
+  width: 9px;
+  border-right: var(--border-weight) solid var(--line-pencil);
+  background: repeating-linear-gradient(135deg, transparent 0 4px, var(--line-pencil) 4px 5px);
+}
+.work-note-gutter > .nb-paper-body > .source-mirror {
+  flex-basis: 104px;
+  height: 104px;
+  margin-left: -11px;
+}
+.work-note-gutter[data-paper-state="unmapped"] > .nb-paper-body > .source-mirror {
+  margin-left: -9px;
 }
 .nb-paper.work-note-gutter {
   transition:
@@ -7321,6 +7337,16 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   height: auto;
   min-height: 16px;
 }
+.work-note-gutter .canvas-card-headerrow > i {
+  flex: 0 0 11px;
+  width: 11px;
+  height: 11px;
+  border-radius: var(--radius-pill);
+}
+.work-note-gutter[data-paper-state="unmapped"] .canvas-card-headerrow > i {
+  border: var(--border-weight) solid var(--line-pencil);
+  background: transparent;
+}
 .work-note-gutter .canvas-card-source {
   flex: 1 1 auto;
   min-width: 0;
@@ -7330,7 +7356,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   font-family: var(--font-mono);
   font-size: 8.5px;
   font-weight: var(--label-weight);
-  letter-spacing: var(--label-tracking);
+  letter-spacing: .05em;
   text-transform: uppercase;
   color: var(--text-muted);
 }
@@ -7339,7 +7365,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   white-space: nowrap;
   font-family: var(--font-mono);
   font-size: 8px;
-  letter-spacing: .07em;
+  letter-spacing: .05em;
   text-transform: uppercase;
   color: var(--line-pencil);
 }
@@ -7372,7 +7398,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .work-note-gutter .canvas-card-provenance > span {
   font-family: var(--font-mono);
   font-size: 8px;
-  letter-spacing: .07em;
+  letter-spacing: .05em;
   text-transform: uppercase;
   color: var(--line-pencil);
 }
@@ -7384,11 +7410,10 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .work-note-gutter .canvas-card-chip {
   font-family: var(--font-mono);
   font-size: 8px;
-  letter-spacing: .07em;
+  letter-spacing: .05em;
   text-transform: uppercase;
   color: var(--text-secondary);
-  border: 1px solid var(--line-hairline);
-  border-radius: var(--radius-sm-new);
-  padding: 1px 5px;
-  max-width: 48%;
+  border: none;
+  padding: 0;
+  max-width: 50%;
 }

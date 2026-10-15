@@ -97,7 +97,7 @@ export function WorkNote({
       data-paper-state={item.visibility}
       data-client-label={clientLabel ?? undefined}
       data-brand={brand}
-      style={item.visibility === "unmapped" || headerGutter ? undefined : { borderLeftColor: brandHex(brand) }}
+      style={item.visibility === "unmapped" ? undefined : headerGutter ? { borderLeftWidth: 3, borderLeftStyle: "solid", borderLeftColor: brandHex(brand) } : { borderLeftColor: brandHex(brand) }}
     >
       <div
         {...(onOpen && openOn === "doubleClick"
@@ -121,7 +121,7 @@ export function WorkNote({
         {headerGutter ? <SourceMirror item={item} chatPreview={chatPreview} filePreview={filePreview} /> : null}
         <div className={`flex ${headerGutter ? "canvas-card-headerrow" : "h-[18px] gap-2"} shrink-0 select-none items-center ${headerGutter ? "pr-[69px]" : ""} ${contextSelected ? "canvas-lab-context-header" : ""}`}>
           {lead ? <span className="shrink-0">{lead}</span> : null}
-          <BrandLogo brand={brand} size={headerGutter ? 13 : 16} />
+          {headerGutter ? <i aria-hidden="true" style={item.visibility === "unmapped" ? undefined : { backgroundColor: brandHex(brand) }} /> : <BrandLogo brand={brand} size={16} />}
           <span className={headerGutter ? "canvas-card-source" : "min-w-0 flex-1 truncate font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground"}>{sourceLabel}</span>
           <span className={headerGutter ? "canvas-card-date" : "shrink-0 font-mono text-[8.5px] uppercase tracking-[0.08em] text-soft"}>{headerGutter ? cardDate : date}</span>
           {actions ? <span className="shrink-0 select-none" onClick={(event) => event.stopPropagation()}>{actions}</span> : null}
