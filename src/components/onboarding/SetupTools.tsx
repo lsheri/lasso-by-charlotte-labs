@@ -18,7 +18,7 @@ export function SetupTools({ tools }: { tools: ToolId[]; register?: Register }) 
   const nothingPicked = mcp.length + connectors.length + guides.length === 0;
 
   return (
-    <div className="space-y-6">
+    <div className="lasso-setup-tools space-y-6">
       {connectors.length > 0 ? (
         <section className="space-y-3">
           <h2 className="micro-label text-graphite">Connect and pick</h2>

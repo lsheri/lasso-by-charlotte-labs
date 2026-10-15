@@ -420,10 +420,10 @@ function AuthPage() {
   if (alreadySignedIn) {
     const workspaceName = currentProfile?.org_name ?? "your current account";
     return (
-      <main className="flex min-h-screen items-center justify-center bg-background px-4 py-16">
-        <div className="w-full max-w-[420px]">
+      <main data-lasso="on" className="lasso-entry flex min-h-screen items-center justify-center bg-background px-4 py-16">
+        <div className="lasso-entry-container w-full max-w-[420px]">
           <EntryDoorLink className="mb-4 inline-block transition-colors hover:text-foreground"><BrandLockup /></EntryDoorLink>
-          <div className="rounded-[var(--radius)] border border-border bg-card p-8 shadow-card">
+          <div className="lasso-entry-content rounded-[var(--radius)] border border-border bg-card p-8 shadow-card">
             <h1 className="page-title">You are already signed in</h1>
             <p className="mt-3 text-sm text-foreground">{authUser?.email}</p>
             {institution || addressedTo ? (
@@ -450,10 +450,10 @@ function AuthPage() {
 
   if (confirmedEmail) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-background px-4 py-16">
-        <div className="w-full max-w-[420px]">
+      <main data-lasso="on" className="lasso-entry flex min-h-screen items-center justify-center bg-background px-4 py-16">
+        <div className="lasso-entry-container w-full max-w-[420px]">
           <EntryDoorLink className="mb-4 inline-block transition-colors hover:text-foreground"><BrandLockup /></EntryDoorLink>
-          <div className="rounded-[var(--radius)] border border-border bg-card p-8 shadow-card">
+          <div className="lasso-entry-content rounded-[var(--radius)] border border-border bg-card p-8 shadow-card">
             <h1 className="page-title">Check your email</h1>
             <p className="mt-4 break-words text-sm font-medium text-foreground">{confirmedEmail}</p>
             <p className="mt-2 text-sm text-muted-foreground">The link signs you in and picks up where you left off.</p>
@@ -485,13 +485,13 @@ function AuthPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background px-4 py-16">
-      <div className="w-full max-w-[420px]">
+    <main data-lasso="on" className="lasso-entry flex min-h-screen items-center justify-center bg-background px-4 py-16">
+      <div className="lasso-entry-container w-full max-w-[420px]">
         <EntryDoorLink className="mb-4 inline-block transition-colors hover:text-foreground">
           <BrandLockup />
         </EntryDoorLink>
 
-        <div className="rounded-[var(--radius)] border border-border bg-card p-8 shadow-card">
+        <div className="lasso-entry-content rounded-[var(--radius)] border border-border bg-card p-8 shadow-card">
           <h1 className="page-title">
             {mode === "signin"
               ? "Sign in"
