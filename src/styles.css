@@ -7427,17 +7427,17 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   background-size: 100% 2px;
   text-decoration-line: none;
 }
-[data-lasso="on"] button:not(:is(.canvas-lab-toolbar *, [aria-pressed], [role="checkbox"], [role="switch"], [role="tab"], [role="radio"], [role="tablist"] *, [role="radiogroup"] *, [data-state="on"], [data-state="off"])) {
+[data-lasso="on"] button:not(:is(.canvas-lab-toolbar *:not(.lasso-action), [aria-pressed], [role="checkbox"], [role="switch"], [role="tab"], [role="radio"], [role="tablist"] *, [role="radiogroup"] *, [data-state="on"], [data-state="off"])) {
   transition: transform 90ms cubic-bezier(.2, 0, 0, 1), background-size 180ms cubic-bezier(.2, 0, 0, 1), background-color var(--dur-quick) var(--ease-standard), color var(--dur-quick) var(--ease-standard), border-color var(--dur-quick) var(--ease-standard);
 }
-[data-lasso="on"] button:not(:is(.canvas-lab-toolbar *, [aria-pressed], [role="checkbox"], [role="switch"], [role="tab"], [role="radio"], [role="tablist"] *, [role="radiogroup"] *, [data-state="on"], [data-state="off"])):active:not(:disabled) {
+[data-lasso="on"] button:not(:is(.canvas-lab-toolbar *:not(.lasso-action), [aria-pressed], [role="checkbox"], [role="switch"], [role="tab"], [role="radio"], [role="tablist"] *, [role="radiogroup"] *, [data-state="on"], [data-state="off"])):active:not(:disabled) {
   transform: translateY(1px);
 }
 @media (prefers-reduced-motion: reduce) {
   [data-lasso="on"] :is(a[href], .acid-link):not(:is(.canvas-card-url, .canvas-card-provenance a, .nb-nav-item, [data-nav-item], [data-sidebar] *, .canvas-lab-toolbar *, .lasso-action, [role="button"])) {
     transition: none;
   }
-  [data-lasso="on"] button:not(:is(.canvas-lab-toolbar *, [aria-pressed], [role="checkbox"], [role="switch"], [role="tab"], [role="radio"], [role="tablist"] *, [role="radiogroup"] *, [data-state="on"], [data-state="off"])):active:not(:disabled) {
+  [data-lasso="on"] button:not(:is(.canvas-lab-toolbar *:not(.lasso-action), [aria-pressed], [role="checkbox"], [role="switch"], [role="tab"], [role="radio"], [role="tablist"] *, [role="radiogroup"] *, [data-state="on"], [data-state="off"])):active:not(:disabled) {
     transform: none;
     transition: none;
   }
