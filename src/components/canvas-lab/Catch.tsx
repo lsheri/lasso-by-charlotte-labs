@@ -4,27 +4,18 @@ export const CATCH_PATH = "M206 9C180 2 96 1 46 7 11 11 4 24 20 31c20 9 112 10 1
 
 /** Arrival decoration; completion releases the session-only marker. */
 export function Catch({ shown = true, onComplete }: { shown?: boolean; onComplete?: (() => void) | undefined }) {
-  const [phase, setPhase] = useState<"ready" | "drawn" | "leaving">("ready");
+  const [leaving, setLeaving] = useState(false);
   const completeRef = useRef(onComplete);
   completeRef.current = onComplete;
   useEffect(() => {
     if (!shown) return;
-    setPhase("ready");
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    let frame = 0;
-    let hold = 0;
-    let finish = 0;
-    const draw = () => {
-      setPhase("drawn");
-      hold = window.setTimeout(() => setPhase("leaving"), (reduced ? 0 : 900) + 300);
-      finish = window.setTimeout(() => completeRef.current?.(), (reduced ? 0 : 900) + 480);
-    };
-    if (reduced) draw();
-    else frame = window.requestAnimationFrame(() => { frame = window.requestAnimationFrame(draw); });
-    return () => { window.cancelAnimationFrame(frame); window.clearTimeout(hold); window.clearTimeout(finish); };
+    setLeaving(false);
+    const hold = window.setTimeout(() => setLeaving(true), 1200);
+    const finish = window.setTimeout(() => completeRef.current?.(), 1380);
+    return () => { window.clearTimeout(hold); window.clearTimeout(finish); };
   }, [shown]);
   if (!shown) return null;
-  return <svg aria-hidden="true" className="canvas-lab-catch" data-phase={phase} viewBox="0 0 240 40" preserveAspectRatio="none" fill="none">
+  return <svg aria-hidden="true" className="canvas-lab-catch" data-phase={leaving ? "leaving" : undefined} viewBox="0 0 240 40" preserveAspectRatio="none" fill="none">
     <path d={CATCH_PATH} pathLength={1} strokeWidth={2.6} strokeLinecap="round" vectorEffect="non-scaling-stroke" />
   </svg>;
 }
