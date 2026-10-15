@@ -7275,3 +7275,107 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   }
 }
 
+
+/* WC-3: the G card anatomy, canvas cards only (the ones carrying the source
+   mirror, marked work-note-gutter). Scoped to the app shell; the All work
+   lane, the phone row and the tour render WorkNote without headerGutter and
+   keep their existing classes untouched. */
+[data-lasso="on"] .nb-paper.work-note-gutter {
+  border: var(--border-weight) solid var(--line-strong);
+  background: var(--surface-raised);
+  box-shadow: var(--card-shadow);
+  border-radius: var(--radius-sm-new);
+}
+[data-lasso="on"] .nb-paper.work-note-gutter[data-paper-state="unmapped"] {
+  border: var(--border-weight) dashed var(--state-no-board);
+  background: var(--surface-page);
+  box-shadow: none;
+}
+[data-lasso="on"] .nb-paper.work-note-gutter {
+  transition:
+    transform 140ms cubic-bezier(.2, 0, 0, 1),
+    box-shadow 140ms cubic-bezier(.2, 0, 0, 1),
+    opacity 180ms cubic-bezier(.2, 0, 0, 1);
+}
+[data-lasso="on"] .nb-paper.work-note-gutter:hover,
+[data-lasso="on"] .nb-paper.work-note-gutter:focus-visible {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px -12px rgba(0, 0, 0, .4);
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-lasso="on"] .nb-paper.work-note-gutter,
+  [data-lasso="on"] .nb-paper.work-note-gutter:hover,
+  [data-lasso="on"] .nb-paper.work-note-gutter:focus-visible {
+    transform: none;
+    transition: none;
+  }
+}
+[data-lasso="on"] .work-note-gutter .canvas-card-headerrow {
+  gap: 7px;
+  height: auto;
+  min-height: 16px;
+}
+[data-lasso="on"] .work-note-gutter .canvas-card-source {
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  font-weight: var(--label-weight);
+  letter-spacing: var(--label-tracking);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+[data-lasso="on"] .work-note-gutter .canvas-card-date {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--line-pencil);
+}
+[data-lasso="on"] .work-note-gutter .canvas-card-title {
+  margin: 6px 0 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.22;
+  letter-spacing: -.006em;
+  color: var(--text-primary);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+[data-lasso="on"] .work-note-gutter .canvas-card-footer {
+  margin-top: 6px;
+  gap: 6px;
+  min-height: 16px;
+  padding-top: 5px;
+  border-top: var(--border-weight) solid var(--line-hairline);
+}
+[data-lasso="on"] .work-note-gutter[data-paper-state="unmapped"] .canvas-card-footer {
+  border-top-style: dashed;
+  border-top-color: var(--state-no-board);
+}
+[data-lasso="on"] .work-note-gutter .canvas-card-provenance,
+[data-lasso="on"] .work-note-gutter .canvas-card-provenance > a,
+[data-lasso="on"] .work-note-gutter .canvas-card-provenance > span {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--line-pencil);
+}
+/* The provenance line is a real URL: a case-sensitive path rendered in
+   capitals misreads the link, so the caps stay only on the label variant. */
+[data-lasso="on"] .work-note-gutter .canvas-card-provenance .canvas-card-url {
+  text-transform: none;
+}
+[data-lasso="on"] .work-note-gutter .canvas-card-chip {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  border: 1px solid var(--line-hairline);
+  border-radius: var(--radius-sm-new);
+  padding: 1px 5px;
+  max-width: 48%;
+}
