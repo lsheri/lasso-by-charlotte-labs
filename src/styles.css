@@ -7417,3 +7417,27 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   padding: 0;
   max-width: 50%;
 }
+
+/* MOT-1: secondary links and soft press, confined to the application shell. */
+[data-lasso="on"] :is(a[href], .acid-link):not(:is(.canvas-card-url, .canvas-card-provenance a, .nb-nav-item, [data-nav-item], [data-sidebar] *, .canvas-lab-toolbar *, .lasso-action, [role="button"])) {
+  background: linear-gradient(var(--hand-live), var(--hand-live)) no-repeat left bottom / 0% 2px;
+  transition: background-size 180ms cubic-bezier(.2, 0, 0, 1);
+}
+[data-lasso="on"] :is(a[href], .acid-link):not(:is(.canvas-card-url, .canvas-card-provenance a, .nb-nav-item, [data-nav-item], [data-sidebar] *, .canvas-lab-toolbar *, .lasso-action, [role="button"])):hover {
+  background-size: 100% 2px;
+  text-decoration-line: none;
+}
+[data-lasso="on"] button:not(:is(.canvas-lab-toolbar *, [aria-pressed], [role="checkbox"], [role="switch"], [role="tab"], [role="radio"], [role="tablist"] *, [role="radiogroup"] *, [data-state="on"], [data-state="off"])) {
+  transition: transform 90ms cubic-bezier(.2, 0, 0, 1);
+}
+[data-lasso="on"] button:not(:is(.canvas-lab-toolbar *, [aria-pressed], [role="checkbox"], [role="switch"], [role="tab"], [role="radio"], [role="tablist"] *, [role="radiogroup"] *, [data-state="on"], [data-state="off"])):active:not(:disabled) {
+  transform: translateY(1px);
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-lasso="on"] :is(a[href], .acid-link):not(:is(.canvas-card-url, .canvas-card-provenance a, .nb-nav-item, [data-nav-item], [data-sidebar] *, .canvas-lab-toolbar *, .lasso-action, [role="button"])) {
+    transition: none;
+  }
+  [data-lasso="on"] button:not(:is(.canvas-lab-toolbar *, [aria-pressed], [role="checkbox"], [role="switch"], [role="tab"], [role="radio"], [role="tablist"] *, [role="radiogroup"] *, [data-state="on"], [data-state="off"])):active:not(:disabled) {
+    transform: none;
+  }
+}
