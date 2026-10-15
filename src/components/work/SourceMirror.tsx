@@ -10,8 +10,8 @@ const THEMES: Record<string, string> = { claude: "Claude", chatgpt: "ChatGPT", g
 /** Decorative source evidence, never generated from a summary. */
 export function SourceMirror({ item, chatPreview, filePreview }: {
   item: Omit<WorkItemRow, "work_item_tasks">;
-  chatPreview?: WorkboardCardPreview;
-  filePreview?: WorkboardFilePreview;
+  chatPreview?: WorkboardCardPreview | undefined;
+  filePreview?: WorkboardFilePreview | undefined;
 }) {
   const vendor = sourceVendorKey(item)?.toLowerCase();
   const key = vendor === "anthropic" ? "claude" : vendor === "openai" ? "chatgpt" : vendor === "google-gemini" ? "gemini" : vendor;
