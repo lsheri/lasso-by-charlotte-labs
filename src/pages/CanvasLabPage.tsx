@@ -1,4 +1,5 @@
 import { displayName } from "@/lib/work-item-name";
+import { boardHueIndex } from "@/lib/board-hue";
 import { useRecordEngagementView } from "@/hooks/use-engagement-views";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";

@@ -28,7 +28,7 @@ const SECTIONS: SettingsSection[] = [
     id: "connectors",
     label: "Connectors",
     hint: "where work comes from",
-    group: "Settings",
+    group: "You",
     title: "Connectors",
     content: <ConnectorsSection />,
   },
@@ -36,7 +36,7 @@ const SECTIONS: SettingsSection[] = [
     id: "mcp",
     label: "MCP",
     hint: "push from your AI",
-    group: "Settings",
+    group: "You",
     title: "MCP",
     content: <McpSection />,
   },
@@ -44,7 +44,7 @@ const SECTIONS: SettingsSection[] = [
     id: "your-work",
     label: "Your work",
     hint: "how you describe it",
-    group: "Settings",
+    group: "You",
     title: "Your work",
     content: <YourWorkCard />,
   },
@@ -52,7 +52,7 @@ const SECTIONS: SettingsSection[] = [
     id: "workspace",
     label: "Workspace",
     hint: "facts and naming",
-    group: "Settings",
+    group: "Workspace",
     title: "Workspace",
     content: (
       <div className="space-y-8">
@@ -140,7 +140,7 @@ export function SettingsDialog() {
 
   return (
     <div
-      className="fixed inset-0 z-50"
+      className="lasso-settings-dialog fixed inset-0 z-50"
       // display:none hides but does NOT unmount — keeps SettingsShell alive
       style={{ display: open ? undefined : "none" }}
       role="dialog"
@@ -149,14 +149,14 @@ export function SettingsDialog() {
     >
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
+        className="lasso-settings-backdrop absolute inset-0 bg-black/40 backdrop-blur-[2px]"
         onClick={closeSettings}
         aria-hidden="true"
       />
 
       {/* Panel — centered */}
-      <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-4">
-        <div className="pointer-events-auto relative h-[min(640px,calc(100vh-2rem))] w-full max-w-[1000px] overflow-hidden rounded-[var(--radius)] border border-border bg-card shadow-[0_8px_40px_rgba(42,40,32,0.18)]">
+      <div className="lasso-settings-placement pointer-events-none absolute inset-0 flex items-center justify-center p-4">
+        <div className="lasso-settings-panel pointer-events-auto relative h-[min(640px,calc(100vh-2rem))] w-full max-w-[1000px] overflow-hidden rounded-[var(--radius)] border border-border bg-card shadow-[0_8px_40px_rgba(42,40,32,0.18)]">
           {/* Close button */}
           <button
             type="button"
