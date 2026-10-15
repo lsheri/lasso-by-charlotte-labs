@@ -47,4 +47,4 @@ Tour mirrors board chrome; live remains source-pinned and behavior-coupled.
 
 - All work owns rename; reader closure preserves the dialog.
 
-- Mirror: real evidence, lane unchanged. Canvas catch: session-add IDs, cleared on finish, never selection. Tick: discussed-work only. Beads retain timing. Nav catch: CSS draw, not canvas. Board glyph: id hash, never source carriers.
+- Mirror: real evidence, lane unchanged. Canvas catch: session-add IDs, cleared on finish, never selection. Tick: discussed-work only. Beads retain timing. Nav catch: CSS draw, not canvas. Board glyph: hash ids, not source carriers.
