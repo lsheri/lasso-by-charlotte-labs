@@ -7442,3 +7442,32 @@ body[data-answer-drag="true"] .canvas-lab-surface {
     transition: none;
   }
 }
+
+/* Transient arrival loop, outside the face and pointer hit area. */
+.canvas-lab-catch {
+  position: absolute;
+  left: -7px;
+  right: -7px;
+  top: -5px;
+  bottom: -5px;
+  width: calc(100% + 14px);
+  height: calc(100% + 10px);
+  z-index: 5;
+  pointer-events: none;
+  overflow: visible;
+  opacity: 1;
+  transition: opacity 180ms cubic-bezier(.2, 0, 0, 1);
+}
+.canvas-lab-catch path {
+  stroke: var(--state-highlight);
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 900ms cubic-bezier(.22, 0, .12, 1);
+}
+.canvas-lab-catch[data-phase="drawn"] path,
+.canvas-lab-catch[data-phase="leaving"] path { stroke-dashoffset: 0; }
+.canvas-lab-catch[data-phase="leaving"] { opacity: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .canvas-lab-catch, .canvas-lab-catch path { transition: none; }
+  .canvas-lab-catch path { stroke-dashoffset: 0; }
+}

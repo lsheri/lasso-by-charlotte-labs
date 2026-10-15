@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] MOT-2: verify session-only arrival catch; real signed-in flow requires available authentication.
+
 - [x] WI-1e: owner-only All work reader rename and full work-menu source audit; focused menu tests passed.
 - [ ] WI-1e: signed-in owner/non-owner menu and real-save board verification; blocked by external unmanaged authentication. Preview showed a loading shell at 1280 and Sign in at 390.
 
