@@ -165,6 +165,7 @@ function EngagementRow({
       >
         <NavActiveCatch />
         {nested ? <PencilIndent /> : <GraphiteIcon name="workboard" size={20} />}
+        {nested ? <GraphiteIcon name="workboard" size={20} className="shrink-0 [stroke:var(--board-hue-ink)]" /> : null}
         {sharedBy ? (
           <TooltipProvider delayDuration={150}>
             <Tooltip>
@@ -1018,6 +1019,7 @@ function ContainerShelfRow({
                   <div key={engagement.id} className="nb-tree-child" data-tree-depth={depth + 1}>
                   <EngagementRow
                     engagement={engagement}
+                    nested
                     treeDepth={depth + 1}
                     onNavigate={onBoardNavigate ?? onNavigate}
                     scope={scopeFor(engagement.id)}
