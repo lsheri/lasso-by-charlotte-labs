@@ -92,11 +92,11 @@ export function WorkNote({
 
   return (
     <div
-      className={`nb-paper ledger-work-note ${className}`}
+      className={`nb-paper ledger-work-note ${headerGutter ? "work-note-gutter " : ""}${className}`}
       data-paper-state={item.visibility}
       data-client-label={clientLabel ?? undefined}
       data-brand={brand}
-      style={item.visibility === "unmapped" ? undefined : { borderLeftColor: brandHex(brand) }}
+      style={item.visibility === "unmapped" || headerGutter ? undefined : { borderLeftColor: brandHex(brand) }}
     >
       <div
         {...(onOpen && openOn === "doubleClick"
@@ -118,15 +118,15 @@ export function WorkNote({
         className={`nb-paper-body flex h-full min-h-0 flex-col ${onOpen && openOn === "click" ? "cursor-pointer" : ""}`}
       >
         {headerGutter ? <SourceMirror item={item} chatPreview={chatPreview} filePreview={filePreview} /> : null}
-        <div className={`flex h-[18px] shrink-0 select-none items-center gap-2 ${headerGutter ? "pr-[58px]" : ""} ${contextSelected ? "canvas-lab-context-header" : ""}`}>
+        <div className={`flex ${headerGutter ? "canvas-card-headerrow" : "h-[18px] gap-2"} shrink-0 select-none items-center ${headerGutter ? "pr-[58px]" : ""} ${contextSelected ? "canvas-lab-context-header" : ""}`}>
           {lead ? <span className="shrink-0">{lead}</span> : null}
-          <BrandLogo brand={brand} size={16} />
-          <span className="min-w-0 flex-1 truncate font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">{sourceLabel}</span>
-          <span className="shrink-0 font-mono text-[8.5px] uppercase tracking-[0.08em] text-soft">{date}</span>
+          <BrandLogo brand={brand} size={headerGutter ? 13 : 16} />
+          <span className={`min-w-0 flex-1 truncate ${headerGutter ? "canvas-card-source" : "font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground"}`}>{sourceLabel}</span>
+          <span className={`shrink-0 ${headerGutter ? "canvas-card-date" : "font-mono text-[8.5px] uppercase tracking-[0.08em] text-soft"}`}>{date}</span>
           {actions ? <span className="shrink-0 select-none" onClick={(event) => event.stopPropagation()}>{actions}</span> : null}
         </div>
 
-        <p className={`mt-1 shrink-0 select-text truncate text-[12px] font-medium leading-[15px] text-foreground ${contextSelected ? "canvas-lab-context-title" : ""}`}>{displayName(item)}</p>
+        <p className={`${headerGutter ? "canvas-card-title" : "mt-1 truncate text-[12px] font-medium leading-[15px] text-foreground"} shrink-0 select-text ${contextSelected ? "canvas-lab-context-title" : ""}`}>{displayName(item)}</p>
 
         {headerGutter ? null : isFile ? (
           <div className="ledger-work-note__file mt-1 flex min-h-0 flex-1 items-center gap-2">
@@ -142,12 +142,12 @@ export function WorkNote({
           <p data-summary-source={item.work_item_extracts?.some((extract) => extract.summary) || chatPreview?.summary ? "stored" : chatPreview?.firstUserTurn || chatPreview?.turns.some((turn) => turn.role.trim().toLowerCase() === "user") ? "first-turn" : "absent"} className="my-auto line-clamp-3 min-h-0 select-text text-[10.5px] leading-[1.45] text-muted-foreground">{summary}</p>
         )}
 
-        <div className="mt-1 flex h-[16px] shrink-0 select-none items-center gap-2 border-t border-hairline pt-1">
-          <span className="min-w-0 flex-1 truncate text-[9px] text-muted-foreground" onClick={(event) => event.stopPropagation()}>
+        <div className={`flex ${headerGutter ? "canvas-card-footer" : "mt-1 h-[16px] gap-2 border-t border-hairline pt-1"} shrink-0 select-none items-center`}>
+          <span className={`min-w-0 flex-1 truncate ${headerGutter ? "canvas-card-provenance" : "text-[9px] text-muted-foreground"}`} onClick={(event) => event.stopPropagation()}>
             {item.type === "ai_thread" || pastedChatUrl((item as WorkItemRow).meta?.chat_url) ? (
               <ChatUrlLink item={item as WorkItemRow} showAbsence turnCount={chatPreview?.turnCount} toolSteps={chatPreview?.toolSteps} />
             ) : sourceUrl ? (
-              <a href={sourceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex max-w-full items-center gap-1">
+              <a href={sourceUrl} target="_blank" rel="noopener noreferrer" className="canvas-card-url inline-flex max-w-full items-center gap-1">
                 <ExternalLink className="h-2.5 w-2.5 shrink-0" aria-hidden />
                 <span className="truncate">{sourceUrl}</span>
               </a>
@@ -155,7 +155,7 @@ export function WorkNote({
               <ChatUrlLink item={item as WorkItemRow} showAbsence turnCount={chatPreview?.turnCount} toolSteps={chatPreview?.toolSteps} />
             )}
           </span>
-          {boardTitle ? <span className="min-w-0 truncate rounded-[3px] border border-hairline px-1 font-mono text-[8.5px] uppercase tracking-[0.08em] text-muted-foreground">{boardTitle}</span> : null}
+          {boardTitle ? <span className={`min-w-0 truncate ${headerGutter ? "canvas-card-chip" : "rounded-[3px] border border-hairline px-1 font-mono text-[8.5px] uppercase tracking-[0.08em] text-muted-foreground"}`}>{boardTitle}</span> : null}
           {chips ? <span className="sr-only">{chips}</span> : null}
         </div>
         {item.visibility === "unmapped" ? <span className="work-no-board-label"><Lock className="h-3 w-3 shrink-0" aria-hidden />No board</span> : null}
