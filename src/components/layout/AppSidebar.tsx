@@ -29,7 +29,7 @@ export function AppSidebar({
   onOpenSettings?: (() => void) | undefined;
 }) {
   return (
-    <div className="flex h-full w-full flex-col gap-[22px] bg-sidebar px-4 pb-[18px] pt-[22px]">
+    <div className="lasso-sidebar-content flex h-full w-full flex-col gap-[22px] bg-sidebar px-4 pb-[18px] pt-[22px]">
       {/* Brand */}
       <div className="flex shrink-0 items-center gap-2.5">
         <LassoLoopMark className="h-[17px] w-5 shrink-0 text-lasso-green" />

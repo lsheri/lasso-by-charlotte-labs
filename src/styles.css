@@ -7499,3 +7499,68 @@ body[data-answer-drag="true"] .canvas-lab-surface {
     stroke-dashoffset: 0;
   }
 }
+
+/* NAV-1: location chrome, independent of transient canvas arrivals. */
+:root {
+  --nav-width: 258px;
+  --nav-row-padding-block: 6px;
+  --nav-row-padding-inline: 9px;
+  --nav-row-size: 13px;
+  --nav-row-weight: 400;
+  --nav-active-weight: 600;
+  --nav-catch-inline: -7px;
+  --nav-catch-block: -5px;
+}
+.lasso-sidebar-shell {
+  width: var(--nav-width);
+  border-right: var(--border-weight) solid var(--line-hairline);
+  background: var(--surface-page);
+}
+[data-lasso="on"] .lasso-sidebar-content { background: var(--surface-page); }
+[data-lasso="on"] .lasso-sidebar-nav .nb-nav-item {
+  padding-block: var(--nav-row-padding-block);
+  padding-right: var(--nav-row-padding-inline);
+  border-width: var(--border-weight);
+  border-color: transparent;
+  border-radius: var(--radius-md-new);
+  font-family: var(--font-sans);
+  font-size: var(--nav-row-size);
+  font-weight: var(--nav-row-weight);
+  color: var(--text-secondary);
+}
+[data-lasso="on"] .lasso-sidebar-nav .nb-nav-item:not(:is(.nb-nav-item-nested, .nb-nav-item-nested-2, .nb-nav-item-nested-3, [data-tree-depth])) {
+  padding-left: var(--nav-row-padding-inline);
+}
+[data-lasso="on"] .lasso-sidebar-nav .nb-nav-item:not(.nb-nav-item-disabled):hover {
+  background: var(--surface-sunk-2);
+  color: var(--text-secondary);
+}
+[data-lasso="on"] .lasso-sidebar-nav .nb-nav-item.nb-nav-item-active {
+  box-shadow: inset var(--here-weight) 0 0 var(--here-rule);
+  background: var(--surface-sunk);
+  font-weight: var(--nav-active-weight);
+  color: var(--text-primary);
+}
+.lasso-nav-catch { display: none; }
+[data-lasso="on"] .lasso-sidebar-nav a.nb-nav-item-active > .lasso-nav-catch {
+  display: block;
+  position: absolute;
+  left: var(--nav-catch-inline);
+  right: var(--nav-catch-inline);
+  top: var(--nav-catch-block);
+  bottom: var(--nav-catch-block);
+  width: calc(100% - 2 * var(--nav-catch-inline));
+  height: calc(100% - 2 * var(--nav-catch-block));
+  overflow: visible;
+  pointer-events: none;
+  z-index: 1;
+}
+.lasso-nav-catch path {
+  stroke: var(--state-highlight);
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  animation: lasso-catch-draw var(--dur-catch) var(--ease-catch) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lasso-nav-catch path { animation: none; stroke-dashoffset: 0; }
+}

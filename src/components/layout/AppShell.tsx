@@ -66,7 +66,7 @@ function AppShellInner() {
     <AskLassoProvider>
       <AskDockStateProvider>
         <div className="flex min-h-screen w-full bg-background" data-lasso="on">
-          <aside className="hidden w-[264px] shrink-0 border-r border-border md:block">
+          <aside className="lasso-sidebar-shell hidden shrink-0 md:block">
             <div className="sticky top-0 h-screen">
               <AppSidebar
                 userName={userName}

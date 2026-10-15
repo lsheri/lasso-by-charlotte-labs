@@ -12,6 +12,7 @@ import { GraphiteIcon } from "@/components/notebook/icons";
 import { SidebarItemMenu } from "@/components/layout/SidebarItemMenu";
 import { SidebarDragProvider, useSidebarDrag } from "@/components/layout/sidebar-drag";
 import { applyContainerMoves, applyWorkboardMoves, type PendingMoves } from "@/lib/sidebar-drag";
+import { NavActiveCatch } from "./NavActiveCatch";
 import { CircleMark } from "@/components/notebook/CircleMark";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useUnreadNotesAboutMe } from "@/hooks/use-coach-note-thread";
@@ -160,6 +161,7 @@ function EngagementRow({
         activeProps={activeProps}
         activeOptions={{ includeSearch: false }}
       >
+        <NavActiveCatch />
         {nested ? <PencilIndent /> : <GraphiteIcon name="workboard" size={20} />}
         {sharedBy ? (
           <TooltipProvider delayDuration={150}>
@@ -220,6 +222,7 @@ function EngagementRow({
             onClick={onNavigate}
             className={`${linkClass} nb-nav-item-nested-2 ${scope.workId === undefined ? "nb-nav-item-active" : ""}`}
           >
+            <NavActiveCatch />
             <PencilIndent />
             <span className="truncate">Everything in this workboard</span>
           </Link>
@@ -236,6 +239,7 @@ function EngagementRow({
                 onClick={onNavigate}
                 className={`${linkClass} nb-nav-item-nested ${scope.workId === task.id ? "nb-nav-item-active" : ""}`}
               >
+                <NavActiveCatch />
                 <PencilIndent />
                 {task.is_wrap === true ? (
                   <span
@@ -302,6 +306,7 @@ function SharedWithMeGroup({
                 activeProps={activeProps}
                 activeOptions={{ includeSearch: false }}
               >
+                <NavActiveCatch />
                 <PencilIndent />
                 <span className="truncate">{engagement.title}</span>
               </Link>
@@ -471,6 +476,7 @@ export function SidebarNav({
                               onClick={onNavigate}
                               className="flex min-w-0 flex-1 items-center gap-1.5"
                             >
+                              <NavActiveCatch />
                               <span className="truncate">{shelf.name}</span>
                             </Link>
                             <NewEngagementDialog
@@ -524,7 +530,7 @@ export function SidebarNav({
   // host's folders, All work or Look back.
   if (profile?.is_guest) {
     return (
-      <nav className="flex flex-col gap-7">
+      <nav className="lasso-sidebar-nav flex flex-col gap-7">
         <SharedWithYouSection onNavigate={onNavigate} />
       </nav>
     );
@@ -537,7 +543,7 @@ export function SidebarNav({
       <SharedWithMeGroup profiles={profiles} orgId={profile?.org_id} onNavigate={onNavigate} />
     );
     return (
-      <nav className="flex flex-col gap-7">
+      <nav className="lasso-sidebar-nav flex flex-col gap-7">
         <SharedWithYouSection onNavigate={onNavigate} />
         {coachingGroups.length === 0 ? shared : null}
         {[...coachingGroups, ...coachNavGroups].map((group) => (
@@ -570,6 +576,7 @@ export function SidebarNav({
                       className={linkClass}
                       activeProps={activeProps}
                     >
+                      <NavActiveCatch />
                       <GraphiteIcon name={item.icon} size={20} />
                       <span>{item.label}</span>
                     </Link>
@@ -585,7 +592,7 @@ export function SidebarNav({
   }
 
   return (
-    <nav className="flex shrink-0 flex-col gap-7">
+    <nav className="lasso-sidebar-nav flex shrink-0 flex-col gap-7">
       <SharedWithYouSection onNavigate={onNavigate} />
       {navGroupsForPerson.map((group) => {
         if (group.id === "from_your_people") {
@@ -644,6 +651,7 @@ export function SidebarNav({
                 activeProps={activeProps}
                 aria-label={unreadCount > 0 ? `${item.label}, ${unreadCount} new ${unreadCount === 1 ? "note" : "notes"}` : undefined}
               >
+                <NavActiveCatch />
                 <GraphiteIcon name={item.icon} size={20} />
                 <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
                   <span className="truncate">{item.label}</span>
@@ -661,6 +669,7 @@ export function SidebarNav({
                   className={linkClass}
                   activeProps={activeProps}
                 >
+                  <NavActiveCatch />
                   <GraphiteIcon name={item.icon} size={20} />
                   <span className="truncate">{item.label}</span>
                 </Link>
@@ -677,6 +686,7 @@ export function SidebarNav({
               >
                 {item.nested ? <PencilIndent /> : null}
                 <GraphiteIcon name={item.icon} size={20} />
+                <NavActiveCatch />
                 <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
                   <span className="truncate">
                     {item.label}
@@ -949,6 +959,7 @@ function ContainerShelfRow({
                 onClick={onNavigate}
                 className="flex min-w-0 flex-1 items-center gap-1.5"
               >
+                <NavActiveCatch />
                 <span className="truncate">{node.name}</span>
               </Link>
               <NewEngagementDialog
@@ -1087,6 +1098,7 @@ function NoBoardNavRow({ onNavigate }: { onNavigate?: (() => void) | undefined }
       aria-label={`No board, ${count} ${count === 1 ? "piece" : "pieces"}`}
       data-testid="nav-no-board"
     >
+      <NavActiveCatch />
       <span>No board</span>
       <span className="ml-auto font-mono text-[10px] text-soft" aria-hidden>
         {count}
