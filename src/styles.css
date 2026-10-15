@@ -7247,7 +7247,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 
 /* Here: the same current-location rule on navigation, settings, and Ask tabs. */
 [data-lasso="on"] > aside nav a.nb-nav-item[aria-current="page"] {
-  box-shadow: inset var(--here-weight) 0 0 0 var(--here-rule), var(--tw-ring-offset-shadow, 0 0 transparent), var(--tw-ring-shadow, 0 0 transparent), var(--tw-shadow, 0 0 transparent);
+  box-shadow: none;
 }
 [data-lasso="on"] nav[data-testid="settings-rail"] button[aria-current="true"] {
   box-shadow: inset var(--here-weight) 0 0 0 var(--here-rule), var(--tw-ring-offset-shadow, 0 0 transparent), var(--tw-ring-shadow, 0 0 transparent), var(--tw-shadow, 0 0 transparent);
@@ -7552,7 +7552,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   color: var(--text-secondary);
 }
 [data-lasso="on"] .lasso-sidebar-nav .nb-nav-item.nb-nav-item-active {
-  box-shadow: inset var(--here-weight) 0 0 var(--here-rule);
+  box-shadow: none;
   background: var(--surface-sunk);
   font-weight: var(--nav-active-weight);
   color: var(--text-primary);
@@ -7590,6 +7590,6 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 [data-lasso="on"] .lasso-sidebar-nav [data-board-hue="5"] { --board-hue-ink: var(--board-hue-5-ink); }
 [data-lasso="on"] .lasso-sidebar-nav [data-board-hue="6"] { --board-hue-ink: var(--board-hue-6-ink); }
 [data-lasso="on"] .lasso-sidebar-nav [data-board-hue="7"] { --board-hue-ink: var(--board-hue-7-ink); }
-[data-lasso="on"] .lasso-sidebar-nav .nb-nav-item[data-board-hue] > :is(svg[data-icon="workboard"], svg.nb-nav-indent) {
+[data-lasso="on"] .lasso-sidebar-nav .nb-nav-item[data-board-hue] > :is(svg[data-icon="workboard"]) {
   color: var(--board-hue-ink, var(--board-hue-0-ink));
 }

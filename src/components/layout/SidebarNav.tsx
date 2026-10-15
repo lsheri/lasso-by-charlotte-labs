@@ -165,7 +165,7 @@ function EngagementRow({
       >
         <NavActiveCatch />
         {nested ? <PencilIndent /> : <GraphiteIcon name="workboard" size={20} />}
-        {nested ? <span className="inline-flex shrink-0" style={{ color: "var(--board-hue-ink)" }}><GraphiteIcon name="workboard" size={20} /></span> : null}
+        {nested ? <GraphiteIcon name="workboard" size={20} /> : null}
         {sharedBy ? (
           <TooltipProvider delayDuration={150}>
             <Tooltip>
