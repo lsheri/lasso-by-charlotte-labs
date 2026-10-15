@@ -4,7 +4,7 @@ import type { LabNode } from "@/components/canvas-lab/canvas-lab-model";
 
 export const CONTEXT_CORONA_MOTION_CAP = 12;
 export const CONTEXT_CORONA_EXIT_MS = 200;
-export const CORONA_LOOK = { reach: 33, speed: 0.6, heat: 1.07, wisp: 0.89 } as const;
+export const CORONA_LOOK = { reach: 14, speed: 0.6, heat: 1.07, wisp: 0.89 } as const;
 const CORONA_CULL_PAD = CORONA_LOOK.reach * 4.2 + 30;
 const FRAME_MS = 33;
 
