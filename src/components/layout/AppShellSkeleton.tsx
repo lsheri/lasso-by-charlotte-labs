@@ -8,7 +8,7 @@ export function AppShellSkeleton() {
   return (
     <div aria-busy="true" className="flex min-h-screen w-full bg-background">
       <span className="sr-only">Opening Lasso</span>
-      <aside aria-hidden="true" className="hidden w-[264px] shrink-0 border-r border-border md:block">
+      <aside aria-hidden="true" className="lasso-sidebar-shell hidden shrink-0 md:block">
         <div className="sticky top-0 flex h-screen flex-col gap-[22px] bg-sidebar px-4 pb-[18px] pt-[22px]">
           <BrandLockup className="gap-2.5 [&_svg]:h-[17px] [&_svg]:w-5 [&_span]:text-lg" />
           <Skeleton className={`${blockClass} h-12 w-full`} />

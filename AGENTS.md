@@ -45,6 +45,6 @@ Tour mirrors board chrome; live remains source-pinned and behavior-coupled.
 - Read All work shared placements once per page and compare item/board orgs, to avoid per-card requests.
 - Node formatting is local; other editors default visible.
 
-- All work opts into reader rename; its page owns the dialog so reader closure preserves it.
+- All work owns rename; reader closure preserves the dialog.
 
-- Mirror: real evidence, lane unchanged. Catch: session-add IDs only, cleared on finish, never selection. Tick: discussed-work only. Ask beads: local skin, retain timing.
+- Mirror: real evidence, lane unchanged. Canvas catch: session-add IDs, cleared on finish, never selection. Tick: discussed-work only. Beads retain timing. Nav catch: CSS location draw, not canvas.
