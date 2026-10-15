@@ -7234,3 +7234,15 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 [data-lasso="on"] [data-testid="canvas-lab-shell"] > main:has(> header > .canvas-lab-region-palette) > .canvas-lab-banner {
   margin-top: 116px;
 }
+
+/* Here: the same current-location rule on navigation, settings, and Ask tabs. */
+[data-lasso="on"] > aside nav a.nb-nav-item[aria-current="page"] {
+  box-shadow: inset var(--here-weight) 0 0 0 var(--here-rule), var(--tw-ring-offset-shadow, 0 0 transparent), var(--tw-ring-shadow, 0 0 transparent), var(--tw-shadow, 0 0 transparent);
+}
+[data-lasso="on"] nav[data-testid="settings-rail"] button[aria-current="true"] {
+  box-shadow: inset var(--here-weight) 0 0 0 var(--here-rule), var(--tw-ring-offset-shadow, 0 0 transparent), var(--tw-ring-shadow, 0 0 transparent), var(--tw-shadow, 0 0 transparent);
+}
+[data-lasso="on"] .nb-ask-tabs[role="tablist"][aria-label="Ask Lasso"] > .nb-ask-tab[role="tab"][aria-selected="true"] {
+  border-bottom-color: transparent;
+  box-shadow: inset 0 calc(-1 * var(--here-weight)) 0 0 var(--here-rule), var(--tw-ring-offset-shadow, 0 0 transparent), var(--tw-ring-shadow, 0 0 transparent), var(--tw-shadow, 0 0 transparent);
+}
