@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] MOT-3 A: blocked because pending includes session setup before the read; no beads applied.
+- [ ] MOT-3a: authorized appearance-only beads on existing pending/answered state; verify both widths, reduced motion and one baseline-compared suite.
 - [x] MOT-3 B: discussed-work tick draw verified at 1280/390, reduced motion visible, tsgo clean; one suite had no outside-baseline failures.
 
 - [ ] MOT-2: acceptance blocked by outside-baseline be6 full-suite failure and unavailable signed-in verification; implementation remains preview-only.

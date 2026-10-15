@@ -12,15 +12,21 @@ const GLYPH_SIZE = 16;
 /** A1 keyframes live with the component, never in the global stylesheet. */
 export const ASK_THINKING_STYLES = `
 @keyframes ask-a1-flicker { 0%, 100% { opacity: 0.34; } 45% { opacity: 1; } 70% { opacity: 0.72; } }
-@keyframes ask-a1-draw { 0% { stroke-dashoffset: 1; } 48% { stroke-dashoffset: 0; } 52% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: -1; } }
-@keyframes ask-a1-dot { 0%, 100% { opacity: 0.25; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-2px); } }
+@keyframes ask-reading-beads { from { offset-distance: 0%; } to { offset-distance: 100%; } }
 .ask-a1-flicker { animation: ask-a1-flicker 2600ms ease-in-out infinite; }
-.ask-a1-glyph path { stroke-dasharray: 1; stroke-dashoffset: 0; }
-.ask-a1-glyph[data-state="thinking"] path { animation: ask-a1-draw 2200ms ease-in-out infinite; }
-.ask-a1-glyph[data-state="thinking"] { --ask-a1-bloom: color-mix(in srgb, var(--nb-lasso-green) 55%, transparent); color: var(--nb-lasso-green); }
+.ask-a1-glyph[data-state="thinking"] { display: none; }
 .ask-a1-glyph[data-state="settled"] { color: var(--nb-green-deep); }
-.ask-a1-dot { display: inline-block; width: 4px; height: 4px; border-radius: 9999px; background: currentColor; }
-.ask-a1-dot[data-pulse="true"] { animation: ask-a1-dot 1200ms ease-in-out infinite; }
+.ask-reading-beads { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; }
+.ask-reading-beads .ask-a1-dot {
+  position: absolute; left: 0; top: 0; width: 3.5px; height: 3.5px;
+  border-radius: var(--radius-pill); background: var(--state-highlight);
+  offset-path: path("M38 7C33 2 14 1 7 5 1 8 1 15 6 18c6 4 24 4 32 1 7-2 10-6 7-9-2-3-8-4-15-4-2 0-3 0-4 1");
+  offset-rotate: 0deg; animation: ask-reading-beads 2600ms linear infinite;
+}
+.ask-reading-beads .ask-a1-dot:nth-child(1) { animation-delay: 0ms; offset-distance: 0%; }
+.ask-reading-beads .ask-a1-dot:nth-child(2) { animation-delay: -867ms; offset-distance: 33.333333%; }
+.ask-reading-beads .ask-a1-dot:nth-child(3) { animation-delay: -1733ms; offset-distance: 66.666667%; }
+.ask-reading-beads[data-reduced="true"] .ask-a1-dot { animation: none; }
 @keyframes ask-a1-name-in { from { opacity: 0; } to { opacity: 1; } }
 .ask-a1-name-in { animation: ask-a1-name-in 340ms ease-out both; }
 @media (prefers-reduced-motion: reduce) {
@@ -49,12 +55,12 @@ export function AskThinkingFoot({ answered, reduced, count, elapsed }: { answere
   return (
     <div className="mt-2 flex items-center gap-2 text-[13px] text-muted-foreground" data-testid="ask-thinking-foot">
       <AskGlyph state={answered ? "settled" : "thinking"} />
-      <span>{answered ? ASK_THINKING_COPY.read(count) : ASK_THINKING_COPY.reading}</span>
       {answered ? null : (
-        <span className="inline-flex items-center gap-[3px]" data-testid="ask-thinking-dots" aria-hidden>
-          {[0, 1, 2].map((i) => <span key={i} className="ask-a1-dot" data-pulse={reduced ? "false" : "true"} style={reduced ? { opacity: 0.6 } : { animationDelay: `${i * 160}ms` }} />)}
+        <span className="ask-reading-beads" data-reduced={reduced} data-testid="ask-thinking-dots" aria-hidden>
+          {[0, 1, 2].map((i) => <span key={i} className="ask-a1-dot" />)}
         </span>
       )}
+      <span>{answered ? ASK_THINKING_COPY.read(count) : ASK_THINKING_COPY.reading}</span>
       <span className="ml-auto font-mono text-[11px] tabular-nums">{elapsed}</span>
     </div>
   );
