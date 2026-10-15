@@ -78,7 +78,7 @@ describe("C3 WebGL context corona", () => {
   });
 
   it("uses Liam's approved shader settings", () => {
-    expect(CORONA_LOOK).toEqual({ reach: 33, speed: 0.6, heat: 1.07, wisp: 0.89 });
+    expect(CORONA_LOOK).toEqual({ reach: 14, speed: 0.6, heat: 1.07, wisp: 0.89 });
   });
 
   it("marks pointer, drawing, wheel-pan, and zoom movement as interacting", () => {

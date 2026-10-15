@@ -7265,3 +7265,21 @@ body[data-answer-drag="true"] .canvas-lab-surface {
     transition: none;
   }
 }
+
+/* Context: a crisp overlay above full-bleed card content and a small edge bloom. */
+[data-lasso="on"] [data-testid="canvas-lab-shell"] > main > .canvas-lab-surface > .canvas-lab-stage > .canvas-lab-card > .canvas-lab-card-paper[data-selected="true"] {
+  box-shadow: 0 0 6px 0 color-mix(in oklab, var(--state-highlight) 35%, transparent);
+  transition: opacity var(--dur-quick) var(--ease-standard), box-shadow var(--dur-quick) var(--ease-standard);
+}
+[data-lasso="on"] [data-testid="canvas-lab-shell"] > main > .canvas-lab-surface > .canvas-lab-stage > .canvas-lab-card > .canvas-lab-card-paper[data-selected="true"]::before {
+  inset: 0;
+  border: 0;
+  box-shadow: inset 0 0 0 2px var(--state-highlight);
+  transition: opacity var(--dur-quick) var(--ease-standard), box-shadow var(--dur-quick) var(--ease-standard);
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-lasso="on"] [data-testid="canvas-lab-shell"] > main > .canvas-lab-surface > .canvas-lab-stage > .canvas-lab-card > .canvas-lab-card-paper[data-selected="true"],
+  [data-lasso="on"] [data-testid="canvas-lab-shell"] > main > .canvas-lab-surface > .canvas-lab-stage > .canvas-lab-card > .canvas-lab-card-paper[data-selected="true"]::before {
+    transition: none;
+  }
+}
