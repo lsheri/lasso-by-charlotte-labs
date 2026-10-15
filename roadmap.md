@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] BC-1a: restored pinned JSX and deleted glyph wrapper; pass93 restored: 12/12 passed. Verify CSS-only row tint at 1280/390 and one full suite; tsgo prohibited.
+- [x] BC-1a: pinned JSX restored, glyph wrapper deleted, CSS-only tint and 30-id reorder verified at 1280/390. pass93 12/12 passed before tint and passed in one full suite: 29 failing files, 104 failed, 4012 passed; no outside-baseline files, f2 green. Manual tsgo prohibited.
 
 - [x] NAV-1: sidebar appearance and persistent active-row catch verified on isolated 1280/390 fixtures; controls/events unchanged, one full suite: no outside-baseline failures, f2 green, six watched failures identical.
 - [ ] NAV-1: explicit tsgo result unavailable; manual project typechecks are disallowed in this environment.
