@@ -828,7 +828,7 @@ export function WorkPage() {
           </p>
         </div>
         <DropdownMenu onOpenChange={(open) => { if (open && profile?.org_id) logEvent("work.import_menu_opened", profile.org_id, {}); }}>
-          <DropdownMenuTrigger asChild><Button type="button" variant="outline" className="h-9">Bring work in</Button></DropdownMenuTrigger>
+          <DropdownMenuTrigger asChild><Button type="button" variant="outline" className="h-9 lasso-action">Bring work in</Button></DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="flex w-64 flex-col items-stretch gap-1 p-2 [&_button]:w-full [&_button]:justify-start">
             <ConnectorBrowseActions />
             <PasteThreadDialog trigger={<Button type="button" variant="outline">Paste a thread</Button>} />

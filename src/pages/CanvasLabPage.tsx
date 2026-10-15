@@ -2964,7 +2964,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   if (canAddWork) {
     toolbarItems.push({
       spec: { id: "add-work", width: 112, pinned: true },
-      row: <ToolbarIcon label="Add work"><Button size="sm" variant="outline" aria-label="Add work" data-toolbar-control="add-work" onClick={() => openAddWork("header", null)}><GraphiteIcon name="work" size={20} />Add work</Button></ToolbarIcon>,
+      row: <ToolbarIcon label="Add work"><Button size="sm" variant="outline" className="lasso-action" aria-label="Add work" data-toolbar-control="add-work" onClick={() => openAddWork("header", null)}><GraphiteIcon name="work" size={20} />Add work</Button></ToolbarIcon>,
     });
     toolbarItems.push({
       spec: { id: "add-text", width: 92, moveOrder: 4 },

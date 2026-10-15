@@ -7139,3 +7139,31 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   [data-lasso="on"] .canvas-lab-toolbar button:not([data-toolbar-control="add-work"]) { transition: none; }
   [data-lasso="on"] .canvas-lab-toolbar button:not([data-toolbar-control="add-work"]):hover:not(:disabled) { transform: none; }
 }
+
+/* Action class: graphite grain, acid only as an offset sheet behind, press on activation. */
+[data-lasso="on"] .lasso-action {
+  position: relative;
+  border-radius: var(--radius-md-new);
+  background: var(--action-primary);
+  color: var(--action-primary-fg);
+  border-color: transparent;
+  box-shadow: 3px 3px 0 0 var(--action-primary-shadow);
+  transition: transform var(--dur-instant) var(--ease-standard),
+              box-shadow var(--dur-instant) var(--ease-standard);
+}
+[data-lasso="on"] .lasso-action:hover:not(:disabled) {
+  box-shadow: 4px 4px 0 0 var(--action-primary-shadow);
+}
+[data-lasso="on"] .lasso-action:active:not(:disabled) {
+  transform: translate(3px, 3px);
+  box-shadow: 0 0 0 0 var(--action-primary-shadow);
+}
+[data-lasso="on"] .lasso-action:focus-visible {
+  outline: 2px solid var(--focus-ring-new);
+  outline-offset: 3px;
+}
+[data-lasso="on"] .lasso-action:disabled { box-shadow: none; opacity: .45; }
+@media (prefers-reduced-motion: reduce) {
+  [data-lasso="on"] .lasso-action { transition: none; }
+  [data-lasso="on"] .lasso-action:active:not(:disabled) { transform: none; box-shadow: 1px 1px 0 0 var(--action-primary-shadow); }
+}
