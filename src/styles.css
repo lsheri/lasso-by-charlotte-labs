@@ -7460,16 +7460,18 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   opacity: 1;
   transition: opacity 180ms cubic-bezier(.2, 0, 0, 1);
 }
+@keyframes lasso-catch-draw {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
 .canvas-lab-catch path {
   stroke: var(--state-highlight);
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
-  transition: stroke-dashoffset 900ms cubic-bezier(.22, 0, .12, 1);
+  animation: lasso-catch-draw 900ms cubic-bezier(.22, 0, .12, 1) both;
 }
-.canvas-lab-catch[data-phase="drawn"] path,
-.canvas-lab-catch[data-phase="leaving"] path { stroke-dashoffset: 0; }
 .canvas-lab-catch[data-phase="leaving"] { opacity: 0; }
 @media (prefers-reduced-motion: reduce) {
   .canvas-lab-catch, .canvas-lab-catch path { transition: none; }
-  .canvas-lab-catch path { stroke-dashoffset: 0; }
+  .canvas-lab-catch path { animation: none; stroke-dashoffset: 0; }
 }
