@@ -121,8 +121,8 @@ export function WorkNote({
         <div className={`flex ${headerGutter ? "canvas-card-headerrow" : "h-[18px] gap-2"} shrink-0 select-none items-center ${headerGutter ? "pr-[58px]" : ""} ${contextSelected ? "canvas-lab-context-header" : ""}`}>
           {lead ? <span className="shrink-0">{lead}</span> : null}
           <BrandLogo brand={brand} size={headerGutter ? 13 : 16} />
-          <span className={`min-w-0 flex-1 truncate ${headerGutter ? "canvas-card-source" : "font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground"}`}>{sourceLabel}</span>
-          <span className={`shrink-0 ${headerGutter ? "canvas-card-date" : "font-mono text-[8.5px] uppercase tracking-[0.08em] text-soft"}`}>{date}</span>
+          <span className={headerGutter ? "canvas-card-source" : "min-w-0 flex-1 truncate font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground"}>{sourceLabel}</span>
+          <span className={headerGutter ? "canvas-card-date" : "shrink-0 font-mono text-[8.5px] uppercase tracking-[0.08em] text-soft"}>{date}</span>
           {actions ? <span className="shrink-0 select-none" onClick={(event) => event.stopPropagation()}>{actions}</span> : null}
         </div>
 
