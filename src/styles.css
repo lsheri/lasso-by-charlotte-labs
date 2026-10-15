@@ -7630,3 +7630,102 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   max-width: 100%;
   padding: 0 5px;
 }
+
+/* PRIM-2: dialog-only furniture, preserving the page shell and section mounts. */
+[data-lasso="on"] .lasso-settings-dialog {
+  --settings-dialog-shadow: 0 24px 60px -24px color-mix(in srgb, var(--neutral-100) 50%, transparent);
+  --settings-dialog-backdrop: color-mix(in srgb, var(--surface-inverse) 26%, transparent);
+  --settings-dialog-radius: 10px;
+  --region-radius: 4px;
+}
+[data-lasso="on"] .lasso-settings-backdrop { background: var(--settings-dialog-backdrop); backdrop-filter: none; }
+[data-lasso="on"] .lasso-settings-placement { padding: 28px; }
+[data-lasso="on"] .lasso-settings-panel {
+  max-width: 940px;
+  margin-inline: auto;
+  display: flex;
+  border-radius: var(--settings-dialog-radius);
+  overflow: hidden;
+  background: var(--surface-raised);
+  box-shadow: var(--settings-dialog-shadow);
+  height: min(620px, calc(100dvh - 56px));
+}
+[data-lasso="on"] .lasso-settings-shell { width: 100%; }
+[data-lasso="on"] .lasso-settings-shell > div { display: flex; }
+[data-lasso="on"] .lasso-settings-shell > div > nav[data-testid="settings-rail"] {
+  width: 232px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--line-hairline);
+  border-bottom: 0;
+  background: var(--surface-page);
+  padding: 18px 10px;
+  display: grid;
+  gap: 14px;
+  align-content: start;
+  margin-right: 0;
+  overflow: auto;
+}
+[data-lasso="on"] .lasso-settings-rail-title { font-family: var(--font-serif); font-size: 20px; }
+[data-lasso="on"] .lasso-settings-shell nav[data-testid="settings-rail"] > div { display: block; }
+[data-lasso="on"] .lasso-settings-shell nav[data-testid="settings-rail"] > div > p {
+  display: block;
+  font-family: var(--font-hand);
+  font-size: 14px;
+  color: var(--text-secondary);
+  text-transform: none;
+  letter-spacing: 0;
+  padding: 0 9px;
+}
+[data-lasso="on"] .lasso-settings-shell nav[data-testid="settings-rail"] > div > div { display: grid; }
+[data-lasso="on"] .lasso-settings-shell nav[data-testid="settings-rail"] button {
+  gap: 9px;
+  border-radius: var(--radius-md-new);
+  padding: 7px 9px;
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+[data-lasso="on"] .lasso-settings-shell nav[data-testid="settings-rail"] button > span:first-child {
+  font: inherit;
+  color: inherit;
+}
+[data-lasso="on"] .lasso-settings-shell nav[data-testid="settings-rail"] button > span:nth-child(2) { font-size: 13px; white-space: normal; }
+[data-lasso="on"] .lasso-settings-shell nav[data-testid="settings-rail"] button[aria-current="true"] {
+  font-weight: 600;
+  color: var(--text-primary);
+  background: var(--surface-sunk);
+}
+[data-lasso="on"] .lasso-settings-shell > div > div {
+  flex: 1;
+  min-width: 0;
+  padding: 22px 26px 26px;
+  max-height: 620px;
+  overflow: auto;
+}
+[data-lasso="on"] .lasso-settings-shell > div > div > h2 { font-family: var(--font-serif); font-size: 24px; }
+
+/* Board identity uses the existing attribute mapping, never card/source colours. */
+[data-lasso="on"] .canvas-lab-stage[data-board-hue="0"] { --board-hue-ink: var(--board-hue-0-ink); --board-hue-wash: var(--board-hue-0-wash); }
+[data-lasso="on"] .canvas-lab-stage[data-board-hue="1"] { --board-hue-ink: var(--board-hue-1-ink); --board-hue-wash: var(--board-hue-1-wash); }
+[data-lasso="on"] .canvas-lab-stage[data-board-hue="2"] { --board-hue-ink: var(--board-hue-2-ink); --board-hue-wash: var(--board-hue-2-wash); }
+[data-lasso="on"] .canvas-lab-stage[data-board-hue="3"] { --board-hue-ink: var(--board-hue-3-ink); --board-hue-wash: var(--board-hue-3-wash); }
+[data-lasso="on"] .canvas-lab-stage[data-board-hue="4"] { --board-hue-ink: var(--board-hue-4-ink); --board-hue-wash: var(--board-hue-4-wash); }
+[data-lasso="on"] .canvas-lab-stage[data-board-hue="5"] { --board-hue-ink: var(--board-hue-5-ink); --board-hue-wash: var(--board-hue-5-wash); }
+[data-lasso="on"] .canvas-lab-stage[data-board-hue="6"] { --board-hue-ink: var(--board-hue-6-ink); --board-hue-wash: var(--board-hue-6-wash); }
+[data-lasso="on"] .canvas-lab-stage[data-board-hue="7"] { --board-hue-ink: var(--board-hue-7-ink); --board-hue-wash: var(--board-hue-7-wash); }
+/* Override the legacy frame's inline fill only on drawn regions. */
+[data-lasso="on"] .canvas-lab-stage[data-board-hue] > .canvas-lab-frame[data-region] {
+  border: 1.4px solid var(--board-hue-ink) !important;
+  border-radius: 4px;
+  background: var(--board-hue-wash) !important;
+}
+[data-lasso="on"] .canvas-lab-stage[data-board-hue] > .canvas-lab-frame[data-region] > div:first-child { top: -10px; left: 11px; }
+[data-lasso="on"] .canvas-lab-stage[data-board-hue] > .canvas-lab-frame[data-region] > div:first-child > h2 {
+  background: var(--surface-page);
+  padding: 0 6px;
+  font-family: var(--font-hand);
+  font-size: 15px;
+  color: var(--board-hue-ink) !important;
+  white-space: nowrap;
+}
