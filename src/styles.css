@@ -7633,10 +7633,9 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 
 /* PRIM-2: dialog-only furniture, preserving the page shell and section mounts. */
 [data-lasso="on"] .lasso-settings-dialog {
-  --settings-dialog-shadow: 0 24px 60px -24px color-mix(in srgb, var(--neutral-100) 50%, transparent);
+  --settings-dialog-shadow: 0 24px 60px -24px rgba(0, 0, 0, .5);
   --settings-dialog-backdrop: color-mix(in srgb, var(--surface-inverse) 26%, transparent);
   --settings-dialog-radius: 10px;
-  --region-radius: 4px;
 }
 [data-lasso="on"] .lasso-settings-backdrop { background: var(--settings-dialog-backdrop); backdrop-filter: none; }
 [data-lasso="on"] .lasso-settings-placement { padding: 28px; }
@@ -7714,10 +7713,11 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 [data-lasso="on"] .canvas-lab-stage[data-board-hue="5"] { --board-hue-ink: var(--board-hue-5-ink); --board-hue-wash: var(--board-hue-5-wash); }
 [data-lasso="on"] .canvas-lab-stage[data-board-hue="6"] { --board-hue-ink: var(--board-hue-6-ink); --board-hue-wash: var(--board-hue-6-wash); }
 [data-lasso="on"] .canvas-lab-stage[data-board-hue="7"] { --board-hue-ink: var(--board-hue-7-ink); --board-hue-wash: var(--board-hue-7-wash); }
+[data-lasso="on"] .canvas-lab-stage[data-board-hue] { --region-radius: 4px; }
 /* Override the legacy frame's inline fill only on drawn regions. */
 [data-lasso="on"] .canvas-lab-stage[data-board-hue] > .canvas-lab-frame[data-region] {
   border: 1.4px solid var(--board-hue-ink) !important;
-  border-radius: 4px;
+  border-radius: var(--region-radius);
   background: var(--board-hue-wash) !important;
 }
 [data-lasso="on"] .canvas-lab-stage[data-board-hue] > .canvas-lab-frame[data-region] > div:first-child { top: -10px; left: 11px; }
