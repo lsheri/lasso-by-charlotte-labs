@@ -7276,10 +7276,10 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 }
 
 
-/* WC-3: the G card anatomy, canvas cards only (the ones carrying the source
-   mirror, marked work-note-gutter). Scoped to the app shell; the All work
-   lane, the phone row and the tour render WorkNote without headerGutter and
-   keep their existing classes untouched. */
+/* WC-3: the G card anatomy, canvas cards only. Keyed to the card's own
+   work-note-gutter class (headerGutter), because /demo renders outside the
+   app shell and must inherit. The All work lane, the phone row and the tour
+   render WorkNote without headerGutter and keep their classes untouched. */
 .nb-paper.work-note-gutter {
   border: var(--border-weight) solid var(--line-strong);
   background: var(--surface-raised);
