@@ -47,4 +47,4 @@ Tour mirrors board chrome; live remains source-pinned and behavior-coupled.
 
 - All work opts into reader rename; its page owns the dialog so reader closure preserves it.
 
-- Mirror: real evidence, lane unchanged. Catch: session-add IDs only, cleared on finish, never selection. Tick: discussed-work only.
+- Mirror: real evidence, lane unchanged. Catch: session-add IDs only, cleared on finish, never selection. Tick: discussed-work only. Ask beads: local skin, retain timing.
