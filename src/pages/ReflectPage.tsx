@@ -599,7 +599,7 @@ export function ReflectPage({
                  <p className="text-xs text-muted-foreground">
                    You can answer none of these. Reflections are yours, and no coach sees a draft.
                  </p>
-                 <p className="font-hand text-[16px] text-green">
+                 <p className="lasso-hand-voice font-hand text-[16px] text-green">
                    answer in a sentence, not a paragraph
                  </p>
               </div>

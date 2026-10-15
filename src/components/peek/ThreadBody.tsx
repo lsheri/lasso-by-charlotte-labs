@@ -489,7 +489,7 @@ export function ThreadBody({
               );
             })()
           )}
-          {focused ? <p className="mt-2 font-hand text-[16px] text-green">this is the turn it came from</p> : null}
+          {focused ? <p className="lasso-hand-voice mt-2 font-hand text-[16px] text-green">this is the turn it came from</p> : null}
           </div>
           );
   }

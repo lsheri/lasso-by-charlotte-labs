@@ -441,7 +441,7 @@ function MembersConsole() {
                   <dd>Firm counts, never a person&apos;s work.</dd>
                 </div>
               </dl>
-              <p className="font-hand text-green">nobody gets promoted into seeing your drafts</p>
+              <p className="lasso-hand-voice font-hand text-green">nobody gets promoted into seeing your drafts</p>
             </ToneCard> : null}
           </aside>
         </div>

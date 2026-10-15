@@ -338,7 +338,7 @@ export function PacketPage({
             <p>Confirmed decisions and earlier coaching notes</p>
             <p>Answers come only from what {subjectName} has shared here.</p>
           </ToneCard>
-          <p className="font-hand text-green">he chose what you see. that is the point.</p>
+          <p className="lasso-hand-voice font-hand text-green">he chose what you see. that is the point.</p>
         </aside>
       </div>
 

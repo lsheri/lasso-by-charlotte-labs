@@ -101,7 +101,7 @@ export function CoachNotesPage() {
               }}
             />
           )}
-          <p className="mt-6 font-hand text-[16px] text-green">
+          <p className="lasso-hand-voice mt-6 font-hand text-[16px] text-green">
             a conversation about the work, not about the person
           </p>
         </div>
@@ -140,7 +140,7 @@ export function CoachNotesPage() {
               </div>
             ))}
           </div>
-          <p className="font-hand text-green">a note you cannot read is a rumour</p>
+          <p className="lasso-hand-voice font-hand text-green">a note you cannot read is a rumour</p>
         </aside>
       </div>
 

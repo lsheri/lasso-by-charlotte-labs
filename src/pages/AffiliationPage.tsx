@@ -175,7 +175,7 @@ export function AffiliationContent(props: AffiliationContentProps) {
 
       {nothingShared ? null : sharing}
 
-      <p className="font-hand text-[16px] text-green">
+      <p className="lasso-hand-voice font-hand text-[16px] text-green">
         your record is yours, and it leaves with you
       </p>
     </>
