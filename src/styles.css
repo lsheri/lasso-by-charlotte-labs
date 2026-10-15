@@ -7246,3 +7246,22 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   border-bottom-color: transparent;
   box-shadow: inset 0 calc(-1 * var(--here-weight)) 0 0 var(--here-rule), var(--tw-ring-offset-shadow, 0 0 transparent), var(--tw-ring-shadow, 0 0 transparent), var(--tw-shadow, 0 0 transparent);
 }
+
+/* Spotlight only the live board's cards; interaction bypasses the context scan. */
+[data-lasso="on"] [data-testid="canvas-lab-shell"] > main > .canvas-lab-surface > .canvas-lab-stage > .canvas-lab-card > .canvas-lab-card-paper {
+  opacity: 1;
+  transition: opacity var(--dur-quick) var(--ease-standard);
+}
+@media (prefers-contrast: no-preference) {
+  [data-lasso="on"] [data-testid="canvas-lab-shell"] > main > .canvas-lab-surface:not([data-interacting="true"]) > .canvas-lab-stage:has(> .canvas-lab-card > .canvas-lab-card-paper[data-selected="true"]) > .canvas-lab-card:not(:hover):not(:focus-within) > .canvas-lab-card-paper:not([data-selected="true"]):not(:hover):not(:focus-within) {
+    opacity: .3;
+  }
+}
+[data-lasso="on"] [data-testid="canvas-lab-shell"] > main > .canvas-lab-surface[data-interacting="true"] > .canvas-lab-stage > .canvas-lab-card > .canvas-lab-card-paper {
+  transition: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-lasso="on"] [data-testid="canvas-lab-shell"] > main > .canvas-lab-surface > .canvas-lab-stage > .canvas-lab-card > .canvas-lab-card-paper {
+    transition: none;
+  }
+}
