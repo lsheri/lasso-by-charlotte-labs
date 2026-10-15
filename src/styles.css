@@ -7316,6 +7316,8 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   min-height: 16px;
 }
 .work-note-gutter .canvas-card-source {
+  flex: 0 0 auto;
+  min-width: max-content;
   font-family: var(--font-mono);
   font-size: 8.5px;
   font-weight: var(--label-weight);
@@ -7324,6 +7326,11 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   color: var(--text-muted);
 }
 .work-note-gutter .canvas-card-date {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-family: var(--font-mono);
   font-size: 8px;
   letter-spacing: .07em;
