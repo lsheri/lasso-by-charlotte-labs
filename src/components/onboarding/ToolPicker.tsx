@@ -11,7 +11,7 @@ export function ToolPicker({
   onToggle: (tool: ToolId) => void;
 }) {
   return (
-    <div className="space-y-6">
+    <div className="lasso-tool-picker space-y-6">
       {TOOL_CATEGORIES.map((category) => (
         <section key={category.title}>
           <h3

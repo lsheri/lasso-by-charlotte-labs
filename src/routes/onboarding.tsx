@@ -762,8 +762,8 @@ function OnboardingInner() {
     return (
       <>
         <SessionHeader />
-        <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background px-4 py-16">
-          <div className="w-full max-w-3xl">
+        <main data-lasso="on" className="lasso-first-run flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background px-4 py-16">
+          <div className="lasso-first-run-container w-full max-w-3xl">
             <div>
               <StepRail current={0} />
             </div>
@@ -778,7 +778,7 @@ function OnboardingInner() {
               <ToolPicker selected={tools} onToggle={toggleTool} />
             </div>
 
-            <div className="mt-8 flex items-center gap-6">
+            <div className="lasso-first-run-actions mt-8 flex items-center gap-6">
               <Button type="button" onClick={() => void continueFromTools()}>
                 Continue
               </Button>
@@ -800,8 +800,8 @@ function OnboardingInner() {
     return (
       <>
         <SessionHeader />
-        <main className="flex min-h-[calc(100vh-4rem)] justify-center bg-background px-4 py-16">
-          <div className="w-full max-w-3xl">
+        <main data-lasso="on" className="lasso-first-run flex min-h-[calc(100vh-4rem)] justify-center bg-background px-4 py-16">
+          <div className="lasso-first-run-container w-full max-w-3xl">
             <div>
               <StepRail current={1} />
             </div>
@@ -815,7 +815,7 @@ function OnboardingInner() {
               <SetupTools tools={[...tools]} {...(setup ? {} : { register: orgType })} />
             </div>
 
-            <div className="mt-8 flex items-center gap-6">
+            <div className="lasso-first-run-actions mt-8 flex items-center gap-6">
               <Button type="button" onClick={() => void finish()}>
                 Go to my work
               </Button>
