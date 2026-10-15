@@ -7593,3 +7593,40 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 [data-lasso="on"] .lasso-sidebar-nav .nb-nav-item[data-board-hue] > :is(svg[data-icon="workboard"]) {
   color: var(--board-hue-ink, var(--board-hue-0-ink));
 }
+
+/* PRIM-1: explicit square tools, excluding zoom and text-bearing actions. */
+[data-lasso="on"] .canvas-lab-toolbar button:is([data-toolbar-control="workstreams"], [data-toolbar-control="working-from"], [data-toolbar-control="add-text"], [data-toolbar-control="add-sticky"], [data-toolbar-control="grouping"], [data-toolbar-control="ask"], [data-toolbar-control="fit"], [data-toolbar-control="more"]) {
+  width: 29px;
+  height: 29px;
+  min-width: 29px;
+  min-height: 29px;
+  padding: 0;
+}
+[data-lasso="on"] .canvas-lab-toolbar button:is([data-toolbar-control="workstreams"], [data-toolbar-control="working-from"], [data-toolbar-control="add-text"], [data-toolbar-control="add-sticky"], [data-toolbar-control="grouping"], [data-toolbar-control="ask"], [data-toolbar-control="fit"], [data-toolbar-control="more"]) > :is(svg, canvas) {
+  width: 15px;
+  height: 15px;
+  max-width: 15px;
+  max-height: 15px;
+}
+@media (hover: none), (max-width: 767px) {
+  [data-lasso="on"] .canvas-lab-toolbar button:is([data-toolbar-control="workstreams"], [data-toolbar-control="working-from"], [data-toolbar-control="add-text"], [data-toolbar-control="add-sticky"], [data-toolbar-control="grouping"], [data-toolbar-control="ask"], [data-toolbar-control="fit"], [data-toolbar-control="more"]) {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+  [data-lasso="on"] .canvas-lab-toolbar button:is([data-toolbar-control="workstreams"], [data-toolbar-control="working-from"], [data-toolbar-control="add-text"], [data-toolbar-control="add-sticky"], [data-toolbar-control="grouping"], [data-toolbar-control="ask"], [data-toolbar-control="fit"], [data-toolbar-control="more"]) > :is(svg, canvas) {
+    width: 19px;
+    height: 19px;
+    max-width: 19px;
+    max-height: 19px;
+  }
+}
+
+/* Only authored voice messages opt in, never headings or actions. */
+[data-lasso="on"] .lasso-hand-voice {
+  background: linear-gradient(var(--hand-wash), var(--hand-wash)) no-repeat left center / 100% 76%;
+  width: max-content;
+  max-width: 100%;
+  padding: 0 5px;
+}

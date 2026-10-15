@@ -101,7 +101,7 @@ export function ArchivePage() {
             <ArchiveSpine groups={groups} hidden={searching} />
           )}
         </div>
-        <p className="mt-6 font-hand text-[16px] text-green">closed, not gone</p>
+        <p className="lasso-hand-voice mt-6 font-hand text-[16px] text-green">closed, not gone</p>
       </section>
 
       <ArchivedSection />

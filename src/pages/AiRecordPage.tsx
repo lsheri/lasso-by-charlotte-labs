@@ -463,7 +463,7 @@ export function AiRecordPage() {
                 <PopoverTrigger asChild><Button type="button" variant="ghost" className="h-7 text-[13px] text-muted-foreground">{countLine}</Button></PopoverTrigger>
                 <PopoverContent align="end" className="max-h-[70vh] w-[min(720px,calc(100vw-2rem))] overflow-y-auto">
                   <CaptureCoverage profileId={profile?.id} itemCount={threads.length} scopeLabel="your chat library" dates={threads.map((thread) => effectiveWorkDate(thread))} />
-                  <p className="mt-6 font-hand text-[16px] text-green">nothing here was written by Lasso</p>
+                  <p className="lasso-hand-voice mt-6 font-hand text-[16px] text-green">nothing here was written by Lasso</p>
                 </PopoverContent>
               </Popover>
             ) : null}

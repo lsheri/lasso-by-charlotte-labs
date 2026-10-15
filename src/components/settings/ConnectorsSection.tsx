@@ -289,7 +289,7 @@ export function ConnectorsSection({ from }: { from?: SettingsOpenFrom }) {
         </div>
       </div>
 
-      <p className="font-hand mt-6 text-[16px] text-green">
+      <p className="lasso-hand-voice font-hand mt-6 text-[16px] text-green">
         connect one. see what lands. connect the rest later.
       </p>
     </div>

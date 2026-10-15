@@ -354,7 +354,7 @@ export function FindItPage() {
       />
 
       {confirmation ? (
-        <p className="mb-5 font-hand text-[16px] text-green" role="status">
+        <p className="lasso-hand-voice mb-5 font-hand text-[16px] text-green" role="status">
           {confirmation}
         </p>
       ) : null}
@@ -498,7 +498,7 @@ export function FindItPage() {
                 >
                   {running ? "Looking…" : "Find it"}
                 </Button>
-                <span className="font-hand text-[16px] text-soft">
+                <span className="lasso-hand-voice font-hand text-[16px] text-soft">
                   {mode === "number"
                     ? "a number without its conversation is a guess"
                     : "found by what was said, not by title"}
@@ -617,7 +617,7 @@ export function FindItPage() {
               ignore the rest.
             </p>
           </ToneCard>
-          <p className="font-hand text-[16px] text-green">your coach never sees this page</p>
+          <p className="lasso-hand-voice font-hand text-[16px] text-green">your coach never sees this page</p>
         </aside>
       </div>
 

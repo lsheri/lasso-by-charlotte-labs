@@ -193,7 +193,7 @@ export function CoachingPage() {
             <p>Unsent reflections</p>
             <p>Other workboards</p>
           </ToneCard>
-          <p className="font-hand text-green">coach the work, not the person</p>
+          <p className="lasso-hand-voice font-hand text-green">coach the work, not the person</p>
         </aside>
       </div>
     </div>
