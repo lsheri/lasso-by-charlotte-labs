@@ -12,7 +12,7 @@ import { pastedChatUrl } from "@/lib/chat-url";
 import { sourceBrandKey } from "@/components/work/SourceMark";
 import type { WorkboardCardPreview, WorkboardDisplayMode, WorkboardFilePreview } from "@/lib/workboard-card-preview.shared";
 import { resolveWorkDate } from "@/lib/work-order";
-import { formatDate, type WorkItemRow } from "@/lib/work-types";
+import { formatCardDate, formatDate, type WorkItemRow } from "@/lib/work-types";
 
 /** The shared Ledger preview card used anywhere one piece of work is shown. */
 export function WorkNote({
@@ -55,6 +55,7 @@ export function WorkNote({
   const boardTitle = mapping?.engagements ? engagementDisplayTitle(mapping.engagements) : null;
   const when = resolveWorkDate(item);
   const date = when.byArrival ? `added ${formatDate(when.iso)}` : formatDate(when.iso);
+  const cardDate = when.byArrival ? `added ${formatCardDate(when.iso)}` : formatCardDate(when.iso);
   const brand = sourceBrandKey(item);
   const summary = item.work_item_extracts?.find((extract) => extract.summary)?.summary
     ?? chatPreview?.summary
@@ -122,7 +123,7 @@ export function WorkNote({
           {lead ? <span className="shrink-0">{lead}</span> : null}
           <BrandLogo brand={brand} size={headerGutter ? 13 : 16} />
           <span className={headerGutter ? "canvas-card-source" : "min-w-0 flex-1 truncate font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground"}>{sourceLabel}</span>
-          <span className={headerGutter ? "canvas-card-date" : "shrink-0 font-mono text-[8.5px] uppercase tracking-[0.08em] text-soft"}>{date}</span>
+          <span className={headerGutter ? "canvas-card-date" : "shrink-0 font-mono text-[8.5px] uppercase tracking-[0.08em] text-soft"}>{headerGutter ? cardDate : date}</span>
           {actions ? <span className="shrink-0 select-none" onClick={(event) => event.stopPropagation()}>{actions}</span> : null}
         </div>
 

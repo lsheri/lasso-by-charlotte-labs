@@ -183,6 +183,15 @@ export function formatDate(iso: string): string {
   });
 }
 
+/** The card date. formatDate without the year, for work dated in the current
+ *  year. Work from any other year keeps its year: a card reading "Oct 14" for
+ *  2024 work would misdate the record. */
+export function formatCardDate(iso: string, now: Date = new Date()): string {
+  const when = calendarDate(iso);
+  if (when.getFullYear() !== now.getFullYear()) return formatDate(iso);
+  return when.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
 /** The date a work element happened: work_date, else source date, else capture date. */
 export function effectiveWorkDate(item: {
   work_date?: string | null | undefined;
