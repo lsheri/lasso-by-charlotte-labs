@@ -1681,12 +1681,11 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .canvas-lab-card-paper::before {
   content: "";
   position: absolute;
-  inset: calc(-1px * var(--lab-inverse-zoom, 1));
+  inset: calc(-2px * var(--lab-inverse-zoom, 1));
   z-index: 10;
   border-radius: inherit;
   pointer-events: none;
   border: calc(2px * var(--lab-inverse-zoom, 1)) solid var(--nb-lasso-green);
-  box-shadow: 0 0 calc(18px * var(--lab-inverse-zoom, 1)) calc(3px * var(--lab-inverse-zoom, 1)) color-mix(in srgb, var(--nb-lasso-green) 55%, transparent);
   opacity: 0;
   transition: opacity 180ms ease-out;
 }
@@ -7275,27 +7274,4 @@ body[data-answer-drag="true"] .canvas-lab-surface {
     transition: none;
   }
 }
-
-/* Context: a crisp overlay above full-bleed card content and a small edge bloom. */
-[data-lasso="on"] [data-testid="canvas-lab-shell"] > main > .canvas-lab-surface > .canvas-lab-stage > .canvas-lab-card > .canvas-lab-card-paper[data-selected="true"] {
-  transition: opacity var(--dur-quick) var(--ease-standard), box-shadow var(--dur-quick) var(--ease-standard);
-  box-shadow:
-    0 0 0 1px color-mix(in oklab, var(--state-highlight) 30%, transparent),
-    0 0 5px 0 color-mix(in oklab, var(--state-highlight) 22%, transparent);
-}
-[data-lasso="on"] [data-testid="canvas-lab-shell"] > main > .canvas-lab-surface > .canvas-lab-stage > .canvas-lab-card > .canvas-lab-card-paper[data-selected="true"]::before {
-  inset: 0;
-  border: 0;
-  box-shadow: inset 0 0 0 2px var(--state-highlight);
-  transition: opacity var(--dur-quick) var(--ease-standard), box-shadow var(--dur-quick) var(--ease-standard);
-}
-@media (prefers-reduced-motion: reduce) {
-  [data-lasso="on"] [data-testid="canvas-lab-shell"] > main > .canvas-lab-surface > .canvas-lab-stage > .canvas-lab-card > .canvas-lab-card-paper[data-selected="true"],
-  [data-lasso="on"] [data-testid="canvas-lab-shell"] > main > .canvas-lab-surface > .canvas-lab-stage > .canvas-lab-card > .canvas-lab-card-paper[data-selected="true"]::before {
-    transition: none;
-  }
-}
-
-/* Kill the WebGL corona; the acid border and its edge fade carry context alone. */
-[data-lasso="on"] .canvas-lab-context-coronas { display: none; }
 
