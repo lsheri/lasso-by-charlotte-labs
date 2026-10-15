@@ -7172,10 +7172,10 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   outline: 2px solid var(--focus-ring-new);
   outline-offset: 3px;
 }
-[data-lasso="on"] .lasso-action:disabled { box-shadow: none; opacity: .45; }
+[data-lasso="on"] .lasso-action:disabled { opacity: .45; }
 @media (prefers-reduced-motion: reduce) {
   [data-lasso="on"] .lasso-action { transition: none; }
-  [data-lasso="on"] .lasso-action:active:not(:disabled) { transform: none; box-shadow: 1px 1px 0 0 var(--action-primary-shadow); }
+  [data-lasso="on"] .lasso-action:active:not(:disabled) { transform: none; }
 }
 
 /* Float the existing header over the canvas without changing horizontal allocation. */
