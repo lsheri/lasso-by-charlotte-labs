@@ -1,4 +1,4 @@
-Tour chrome locally mirrors shared board primitives; live composition is source-pinned and behavior-coupled.
+Tour mirrors board chrome; live remains source-pinned and behavior-coupled.
 - Teammate provenance marks belong only in signed-in CanvasLabPage; never expose them on shared, demo, tour, firm, or rollup surfaces.
 - Keep container colour inheritance pure in `container-colour.ts`; children never persist inherited colour.
 - Filter archived container branches while building the sidebar tree so descendants stay hidden without child writes.
@@ -47,4 +47,4 @@ Tour chrome locally mirrors shared board primitives; live composition is source-
 
 - All work opts into reader rename; its page owns the dialog so reader closure preserves it.
 
-- SourceMirror uses real evidence and canvas-only headerGutter; lane faces stay unchanged.
+- SourceMirror: real canvas evidence; lane unchanged. Catch: session-added IDs only, cleared on finish, never selection.
