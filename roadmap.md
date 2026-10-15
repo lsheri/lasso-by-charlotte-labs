@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] BC-1 STOP: glyph fixture verified at 1280/390 and reorder stable; one suite found outside-baseline pass93.test.ts literal-source assertion, f2 green, six watched failures unchanged. Nested/shared indent tint added after their suite files ran, so final source is not fully suite-verified. No further fixes; tsgo prohibited. Await source-pin resolution.
+- [x] BC-1a: pinned JSX restored, glyph wrapper deleted, CSS-only tint and 30-id reorder verified at 1280/390. pass93 12/12 passed before tint and passed in one full suite: 29 failing files, 104 failed, 4012 passed; no outside-baseline files, f2 green. Manual tsgo prohibited.
 
 - [x] NAV-1: sidebar appearance and persistent active-row catch verified on isolated 1280/390 fixtures; controls/events unchanged, one full suite: no outside-baseline failures, f2 green, six watched failures identical.
 - [ ] NAV-1: explicit tsgo result unavailable; manual project typechecks are disallowed in this environment.

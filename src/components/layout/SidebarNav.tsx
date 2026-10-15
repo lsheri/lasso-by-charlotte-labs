@@ -13,7 +13,7 @@ import { SidebarItemMenu } from "@/components/layout/SidebarItemMenu";
 import { SidebarDragProvider, useSidebarDrag } from "@/components/layout/sidebar-drag";
 import { applyContainerMoves, applyWorkboardMoves, type PendingMoves } from "@/lib/sidebar-drag";
 import { NavActiveCatch } from "./NavActiveCatch";
-import { boardHueIndex, SidebarBoardGlyph } from "./SidebarBoardGlyph";
+import { boardHueIndex } from "@/lib/board-hue";
 import { CircleMark } from "@/components/notebook/CircleMark";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useUnreadNotesAboutMe } from "@/hooks/use-coach-note-thread";
@@ -80,7 +80,7 @@ function useLocationHash() {
 /** The indent mark on a nested engagement row. Hand-drawn, not a chevron:
     it marks depth, it is not a control. Decorative, so it is hidden from
     assistive tech and the row's link text carries the meaning. */
-function PencilIndent({ boardId }: { boardId?: string }) {
+function PencilIndent() {
   return (
     <svg
       width="28"
@@ -89,7 +89,6 @@ function PencilIndent({ boardId }: { boardId?: string }) {
       aria-hidden="true"
       focusable="false"
       className="nb-nav-indent shrink-0"
-      style={boardId ? { color: `var(--board-hue-${boardHueIndex(boardId)}-ink)` } : undefined}
     >
       <path
         d="M5 0 C 5.5 4.2, 4.4 8.1, 5.3 11.6 C 5.9 14.1, 8.6 13.5, 11.2 13.8 C 15.4 14.2, 19.8 13.6, 24 14.1"
@@ -160,11 +159,12 @@ function EngagementRow({
         aria-label={sharedBy ? `${engagementDisplayTitle(engagement)}, Shared by ${sharedBy}` : undefined}
         className={treeDepth === undefined && nested ? `${linkClass} nb-nav-item-nested` : linkClass}
         data-tree-depth={treeDepth}
+        data-board-hue={boardHueIndex(engagement.id)}
         activeProps={activeProps}
         activeOptions={{ includeSearch: false }}
       >
         <NavActiveCatch />
-        {nested ? <PencilIndent boardId={engagement.id} /> : <SidebarBoardGlyph boardId={engagement.id} />}
+        {nested ? <PencilIndent /> : <GraphiteIcon name="workboard" size={20} />}
         {sharedBy ? (
           <TooltipProvider delayDuration={150}>
             <Tooltip>
@@ -305,11 +305,12 @@ function SharedWithMeGroup({
                   onNavigate?.();
                 }}
                 className={`${linkClass} nb-nav-item-nested`}
+                data-board-hue={boardHueIndex(engagement.id)}
                 activeProps={activeProps}
                 activeOptions={{ includeSearch: false }}
               >
                 <NavActiveCatch />
-                <PencilIndent boardId={engagement.id} />
+                <PencilIndent />
                 <span className="truncate">{engagement.title}</span>
               </Link>
             ))}

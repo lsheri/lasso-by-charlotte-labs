@@ -7580,3 +7580,16 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 @media (prefers-reduced-motion: reduce) {
   .lasso-nav-catch path { animation: none; stroke-dashoffset: 0; }
 }
+
+/* BC-1a: board identity colours only the existing row glyph, never source marks. */
+[data-lasso="on"] .lasso-sidebar-nav [data-board-hue="0"] { --board-hue-ink: var(--board-hue-0-ink); }
+[data-lasso="on"] .lasso-sidebar-nav [data-board-hue="1"] { --board-hue-ink: var(--board-hue-1-ink); }
+[data-lasso="on"] .lasso-sidebar-nav [data-board-hue="2"] { --board-hue-ink: var(--board-hue-2-ink); }
+[data-lasso="on"] .lasso-sidebar-nav [data-board-hue="3"] { --board-hue-ink: var(--board-hue-3-ink); }
+[data-lasso="on"] .lasso-sidebar-nav [data-board-hue="4"] { --board-hue-ink: var(--board-hue-4-ink); }
+[data-lasso="on"] .lasso-sidebar-nav [data-board-hue="5"] { --board-hue-ink: var(--board-hue-5-ink); }
+[data-lasso="on"] .lasso-sidebar-nav [data-board-hue="6"] { --board-hue-ink: var(--board-hue-6-ink); }
+[data-lasso="on"] .lasso-sidebar-nav [data-board-hue="7"] { --board-hue-ink: var(--board-hue-7-ink); }
+[data-lasso="on"] .lasso-sidebar-nav .nb-nav-item[data-board-hue] > :is(svg[data-icon="workboard"], svg.nb-nav-indent) {
+  color: var(--board-hue-ink, var(--board-hue-0-ink));
+}
