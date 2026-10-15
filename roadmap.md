@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] NAV-2a-fix: six isolated diagnosis runs passed; fresh full-suite baseline captured. Verify nested glyph currentColor inheritance at 1280/390 and compare final suite filenames.
+
 - [x] BC-1a: pinned JSX restored, glyph wrapper deleted, CSS-only tint and 30-id reorder verified at 1280/390. pass93 12/12 passed before tint and passed in one full suite: 29 failing files, 104 failed, 4012 passed; no outside-baseline files, f2 green. Manual tsgo prohibited.
 
 - [x] NAV-1: sidebar appearance and persistent active-row catch verified on isolated 1280/390 fixtures; controls/events unchanged, one full suite: no outside-baseline failures, f2 green, six watched failures identical.
