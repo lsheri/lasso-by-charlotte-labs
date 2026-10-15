@@ -7253,9 +7253,8 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   box-shadow: inset var(--here-weight) 0 0 0 var(--here-rule), var(--tw-ring-offset-shadow, 0 0 transparent), var(--tw-ring-shadow, 0 0 transparent), var(--tw-shadow, 0 0 transparent);
 }
 [data-lasso="on"] .nb-ask-tabs[role="tablist"][aria-label="Ask Lasso"] > .nb-ask-tab[role="tab"][aria-selected="true"] {
-  border-bottom-width: var(--here-weight);
-  border-bottom-color: var(--here-rule);
-  box-shadow: none;
+  border-bottom-color: transparent;
+  box-shadow: inset 0 calc(-1 * var(--here-weight)) 0 0 var(--here-rule), var(--tw-ring-offset-shadow, 0 0 transparent), var(--tw-ring-shadow, 0 0 transparent), var(--tw-shadow, 0 0 transparent);
 }
 
 /* Spotlight only the live board's cards; interaction bypasses the context scan. */
