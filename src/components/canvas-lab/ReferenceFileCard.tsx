@@ -4,8 +4,9 @@ import { Maximize2 } from "lucide-react";
 import { useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { brandHex } from "@/components/connectors/BrandLogo";
 import { FileFormatIcon } from "@/components/work/FileFormatIcon";
-import { SourceMark, VendorMark } from "@/components/work/SourceMark";
+import { sourceBrandKey, VendorMark } from "@/components/work/SourceMark";
 import { forgetWorkboardFilePreview } from "@/hooks/use-workboard-file-previews";
 import { supabase } from "@/integrations/supabase/client";
 import { ConnectorPicker } from "@/components/connectors/ConnectorPicker";
@@ -23,7 +24,7 @@ import {
   renditionTitle,
 } from "@/lib/reference-rendition-shared";
 import { storageObjectKey } from "@/lib/upload-payload";
-import { effectiveWorkDate, formatDate, type WorkItemRow } from "@/lib/work-types";
+import { effectiveWorkDate, formatCardDate, type WorkItemRow } from "@/lib/work-types";
 
 /**
  * P1b item 3. A file the chat produced whose bytes have not been added yet.
@@ -44,6 +45,7 @@ export function ReferenceFileCard({ item, onOpen }: { item: WorkItemRow; onOpen:
   const meta = (item.source_meta ?? {}) as { filename?: string };
   const filename = meta.filename ?? item.title;
   const rendition = renditionOf(item);
+  const sourceColour = brandHex(sourceBrandKey(item));
 
   async function refresh() {
     setAdded(true);
@@ -114,13 +116,14 @@ export function ReferenceFileCard({ item, onOpen }: { item: WorkItemRow; onOpen:
       data-drawing="preview"
       data-preview-shape="portrait"
       className="nb-paper canvas-lab-preview-frame h-full min-h-0"
+      style={{ borderLeftColor: sourceColour }}
       onPointerDown={(event) => {
         if ((event.target as Element).closest("[data-reference-drag-strip]")) return;
         event.stopPropagation();
       }}
     >
       <header data-reference-drag-strip className="canvas-lab-preview-source">
-        <span><SourceMark item={item} size={12} /><VendorMark item={item} /> · {formatDate(effectiveWorkDate(item))}</span>
+        <span><i aria-hidden="true" style={{ backgroundColor: sourceColour }} /><VendorMark item={item} /> · {formatCardDate(effectiveWorkDate(item))}</span>
         <Button type="button" size="icon" variant="ghost" aria-label={`Open ${item.title} larger`} title="Open larger" onPointerDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); onOpen(); }}><Maximize2 aria-hidden="true" /></Button>
       </header>
       <div className="nb-preview-content flex min-h-0 flex-1 flex-col gap-2 p-3 font-sans text-sm text-foreground">
