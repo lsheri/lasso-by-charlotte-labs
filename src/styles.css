@@ -7253,8 +7253,9 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   box-shadow: inset var(--here-weight) 0 0 0 var(--here-rule), var(--tw-ring-offset-shadow, 0 0 transparent), var(--tw-ring-shadow, 0 0 transparent), var(--tw-shadow, 0 0 transparent);
 }
 [data-lasso="on"] .nb-ask-tabs[role="tablist"][aria-label="Ask Lasso"] > .nb-ask-tab[role="tab"][aria-selected="true"] {
-  border-bottom-color: transparent;
-  box-shadow: inset 0 calc(-1 * var(--here-weight)) 0 0 var(--here-rule), var(--tw-ring-offset-shadow, 0 0 transparent), var(--tw-ring-shadow, 0 0 transparent), var(--tw-shadow, 0 0 transparent);
+  border-bottom-width: var(--here-weight);
+  border-bottom-color: var(--here-rule);
+  box-shadow: none;
 }
 
 /* Spotlight only the live board's cards; interaction bypasses the context scan. */
@@ -7592,4 +7593,37 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 [data-lasso="on"] .lasso-sidebar-nav [data-board-hue="7"] { --board-hue-ink: var(--board-hue-7-ink); }
 [data-lasso="on"] .lasso-sidebar-nav .nb-nav-item[data-board-hue] > :is(svg[data-icon="workboard"]) {
   color: var(--board-hue-ink, var(--board-hue-0-ink));
+}
+
+/* PRIM-1: explicit square tools, excluding zoom and text-bearing actions. */
+[data-lasso="on"] .canvas-lab-toolbar button:is([data-toolbar-control="workstreams"], [data-toolbar-control="working-from"], [data-toolbar-control="add-text"], [data-toolbar-control="add-sticky"], [data-toolbar-control="grouping"], [data-toolbar-control="ask"], [data-toolbar-control="fit"], [data-toolbar-control="more"]) {
+  width: 29px;
+  height: 29px;
+  min-width: 29px;
+  min-height: 29px;
+  padding: 0;
+}
+[data-lasso="on"] .canvas-lab-toolbar button:is([data-toolbar-control="workstreams"], [data-toolbar-control="working-from"], [data-toolbar-control="add-text"], [data-toolbar-control="add-sticky"], [data-toolbar-control="grouping"], [data-toolbar-control="ask"], [data-toolbar-control="fit"], [data-toolbar-control="more"]) > :is(svg, canvas) {
+  width: 15px;
+  height: 15px;
+}
+@media (hover: none), (max-width: 767px) {
+  [data-lasso="on"] .canvas-lab-toolbar button:is([data-toolbar-control="workstreams"], [data-toolbar-control="working-from"], [data-toolbar-control="add-text"], [data-toolbar-control="add-sticky"], [data-toolbar-control="grouping"], [data-toolbar-control="ask"], [data-toolbar-control="fit"], [data-toolbar-control="more"]) {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+  [data-lasso="on"] .canvas-lab-toolbar button:is([data-toolbar-control="workstreams"], [data-toolbar-control="working-from"], [data-toolbar-control="add-text"], [data-toolbar-control="add-sticky"], [data-toolbar-control="grouping"], [data-toolbar-control="ask"], [data-toolbar-control="fit"], [data-toolbar-control="more"]) > :is(svg, canvas) {
+    width: 19px;
+    height: 19px;
+  }
+}
+
+/* Only authored voice messages opt in, never headings or actions. */
+[data-lasso="on"] .lasso-hand-voice {
+  background: linear-gradient(var(--hand-wash), var(--hand-wash)) no-repeat left center / 100% 76%;
+  width: max-content;
+  max-width: 100%;
+  padding: 0 5px;
 }
