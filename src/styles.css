@@ -6990,7 +6990,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   --radius-sm-new:2px; --radius-md-new:5px; --radius-pill:999px;
 
   --shadow-flat:none;
-  --shadow-card-new:1px 2px 3px color-mix(in oklab,var(--neutral-95) 14%,transparent);
+  --shadow-card-new:1px 2px 3px color-mix(in oklab,var(--neutral-95) 15%,transparent);
   --shadow-float:0 12px 32px color-mix(in oklab,var(--neutral-95) 10%,transparent);
 
   --dur-instant:80ms; --dur-quick:160ms; --dur-move:200ms; --dur-base:300ms;
@@ -7001,6 +7001,20 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   --ease-catch:cubic-bezier(.22,0,.12,1);
   --ease-spring:cubic-bezier(.34,1.3,.64,1);
   --ease-lively:cubic-bezier(.34,1.56,.64,1);
+
+  --action-secondary-underline:#c8ff00;
+
+  --verify-at-source:#c8ff00;
+  --verify-at-source-fg:#0a0a0a;
+  --verify-internal:#0a0a0a;
+  --verify-not-checked:#8f8f8a;
+  --verify-unreachable:#e01b24;
+
+  --border-weight:1px;
+  --card-shadow:1px 2px 3px color-mix(in oklab, var(--text-primary) 15%, transparent);
+  --btn-shadow:none;
+  --label-weight:500;
+  --label-tracking:0.08em;
 }
 
 /* Switched on by setting data-lasso="on" on the app shell. Until then this
@@ -7147,25 +7161,21 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   background: var(--action-primary);
   color: var(--action-primary-fg);
   border-color: transparent;
-  box-shadow: 3px 3px 0 0 var(--action-primary-shadow);
+  box-shadow: var(--btn-shadow);
   transition: transform var(--dur-instant) var(--ease-standard),
               box-shadow var(--dur-instant) var(--ease-standard);
 }
-[data-lasso="on"] .lasso-action:hover:not(:disabled) {
-  box-shadow: 4px 4px 0 0 var(--action-primary-shadow);
-}
 [data-lasso="on"] .lasso-action:active:not(:disabled) {
   transform: translate(3px, 3px);
-  box-shadow: 0 0 0 0 var(--action-primary-shadow);
 }
 [data-lasso="on"] .lasso-action:focus-visible {
   outline: 2px solid var(--focus-ring-new);
   outline-offset: 3px;
 }
-[data-lasso="on"] .lasso-action:disabled { box-shadow: none; opacity: .45; }
+[data-lasso="on"] .lasso-action:disabled { opacity: .45; }
 @media (prefers-reduced-motion: reduce) {
   [data-lasso="on"] .lasso-action { transition: none; }
-  [data-lasso="on"] .lasso-action:active:not(:disabled) { transform: none; box-shadow: 1px 1px 0 0 var(--action-primary-shadow); }
+  [data-lasso="on"] .lasso-action:active:not(:disabled) { transform: none; }
 }
 
 /* Float the existing header over the canvas without changing horizontal allocation. */
