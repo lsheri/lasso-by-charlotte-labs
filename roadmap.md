@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] NAV-2a-fix: six isolated diagnosis runs passed; fresh full-suite baseline captured. Verify nested glyph currentColor inheritance at 1280/390 and compare final suite filenames.
+- [x] NAV-2a-fix: six isolated runs passed; nested glyph computed stroke rgb(107, 63, 140) in 1280/390 fixtures; mappings unchanged. Final suite compared to fresh baseline: new failing files be5-sticky-text-rich.test.tsx and sh3b-conversations-switch.test.tsx, reported without fixes; f2/pass93 passed.
 
 - [x] BC-1a: pinned JSX restored, glyph wrapper deleted, CSS-only tint and 30-id reorder verified at 1280/390. pass93 12/12 passed before tint and passed in one full suite: 29 failing files, 104 failed, 4012 passed; no outside-baseline files, f2 green. Manual tsgo prohibited.
 
