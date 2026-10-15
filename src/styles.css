@@ -7704,6 +7704,45 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 }
 [data-lasso="on"] .lasso-settings-shell > div > div > h2 { font-family: var(--font-serif); font-size: 24px; }
 
+/* FIX-1: the dialog rail becomes a horizontal strip on phones and touch. */
+@media (hover: none), (max-width: 767px) {
+  [data-lasso="on"] .lasso-settings-placement { padding: 12px; }
+  [data-lasso="on"] .lasso-settings-panel {
+    width: 100%;
+    flex-direction: column;
+    height: min(620px, calc(100dvh - 24px));
+  }
+  [data-lasso="on"] .lasso-settings-shell > div {
+    flex-direction: column;
+    min-height: 0;
+  }
+  [data-lasso="on"] .lasso-settings-shell > div > nav[data-testid="settings-rail"] {
+    width: 100%;
+    height: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--line-hairline);
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+  }
+  [data-lasso="on"] .lasso-settings-rail-title { flex-shrink: 0; }
+  [data-lasso="on"] .lasso-settings-shell nav[data-testid="settings-rail"] > div,
+  [data-lasso="on"] .lasso-settings-shell nav[data-testid="settings-rail"] > div > div { display: contents; }
+  [data-lasso="on"] .lasso-settings-shell nav[data-testid="settings-rail"] > div > p { flex-shrink: 0; }
+  [data-lasso="on"] .lasso-settings-shell nav[data-testid="settings-rail"] button > span:nth-child(2) { white-space: nowrap; }
+  [data-lasso="on"] .lasso-settings-shell nav[data-testid="settings-rail"] button[aria-current="true"] {
+    box-shadow: inset 0 calc(-1 * var(--here-weight)) 0 0 var(--here-rule), var(--tw-ring-offset-shadow, 0 0 transparent), var(--tw-ring-shadow, 0 0 transparent), var(--tw-shadow, 0 0 transparent);
+  }
+  [data-lasso="on"] .lasso-settings-shell > div > div {
+    min-height: 0;
+    overflow: auto;
+  }
+}
+
 /* Board identity uses the existing attribute mapping, never card/source colours. */
 [data-lasso="on"] .canvas-lab-stage[data-board-hue="0"] { --board-hue-ink: var(--board-hue-0-ink); --board-hue-wash: var(--board-hue-0-wash); }
 [data-lasso="on"] .canvas-lab-stage[data-board-hue="1"] { --board-hue-ink: var(--board-hue-1-ink); --board-hue-wash: var(--board-hue-1-wash); }
