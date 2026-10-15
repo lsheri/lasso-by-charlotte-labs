@@ -7605,6 +7605,8 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 [data-lasso="on"] .canvas-lab-toolbar button:is([data-toolbar-control="workstreams"], [data-toolbar-control="working-from"], [data-toolbar-control="add-text"], [data-toolbar-control="add-sticky"], [data-toolbar-control="grouping"], [data-toolbar-control="ask"], [data-toolbar-control="fit"], [data-toolbar-control="more"]) > :is(svg, canvas) {
   width: 15px;
   height: 15px;
+  max-width: 15px;
+  max-height: 15px;
 }
 @media (hover: none), (max-width: 767px) {
   [data-lasso="on"] .canvas-lab-toolbar button:is([data-toolbar-control="workstreams"], [data-toolbar-control="working-from"], [data-toolbar-control="add-text"], [data-toolbar-control="add-sticky"], [data-toolbar-control="grouping"], [data-toolbar-control="ask"], [data-toolbar-control="fit"], [data-toolbar-control="more"]) {
@@ -7616,6 +7618,8 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   [data-lasso="on"] .canvas-lab-toolbar button:is([data-toolbar-control="workstreams"], [data-toolbar-control="working-from"], [data-toolbar-control="add-text"], [data-toolbar-control="add-sticky"], [data-toolbar-control="grouping"], [data-toolbar-control="ask"], [data-toolbar-control="fit"], [data-toolbar-control="more"]) > :is(svg, canvas) {
     width: 19px;
     height: 19px;
+    max-width: 19px;
+    max-height: 19px;
   }
 }
 
