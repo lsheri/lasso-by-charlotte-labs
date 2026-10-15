@@ -7269,6 +7269,9 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 /* Context: a crisp overlay above full-bleed card content and a small edge bloom. */
 [data-lasso="on"] [data-testid="canvas-lab-shell"] > main > .canvas-lab-surface > .canvas-lab-stage > .canvas-lab-card > .canvas-lab-card-paper[data-selected="true"] {
   transition: opacity var(--dur-quick) var(--ease-standard), box-shadow var(--dur-quick) var(--ease-standard);
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--state-highlight) 30%, transparent),
+    0 0 5px 0 color-mix(in oklab, var(--state-highlight) 22%, transparent);
 }
 [data-lasso="on"] [data-testid="canvas-lab-shell"] > main > .canvas-lab-surface > .canvas-lab-stage > .canvas-lab-card > .canvas-lab-card-paper[data-selected="true"]::before {
   inset: 0;
@@ -7283,29 +7286,6 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   }
 }
 
-/* One wrapper ring: the other pseudo-element is reserved for teammate marks. */
-[data-lasso="on"] [data-testid="canvas-lab-shell"] > main > .canvas-lab-surface > .canvas-lab-stage > .canvas-lab-card:has(> .canvas-lab-card-paper[data-selected="true"])::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  border: 1px solid color-mix(in oklab, var(--state-highlight) 35%, transparent);
-  border-radius: var(--radius-control);
-  background: transparent;
-  pointer-events: none;
-  transform-origin: center;
-  animation: lasso-context-reverberation var(--dur-story) var(--ease-standard) infinite;
-}
-@keyframes lasso-context-reverberation {
-  from { transform: scale(1); opacity: 1; }
-  to { transform: scale(1.06); opacity: 0; }
-}
-[data-lasso="on"] [data-testid="canvas-lab-shell"] > main > .canvas-lab-surface[data-interacting="true"] > .canvas-lab-stage > .canvas-lab-card:has(> .canvas-lab-card-paper[data-selected="true"])::after {
-  animation-play-state: paused;
-}
-@media (prefers-reduced-motion: reduce) {
-  [data-lasso="on"] [data-testid="canvas-lab-shell"] > main > .canvas-lab-surface > .canvas-lab-stage > .canvas-lab-card:has(> .canvas-lab-card-paper[data-selected="true"])::after {
-    animation: none;
-    opacity: 0;
-  }
-}
+/* Kill the WebGL corona; the acid border and its edge fade carry context alone. */
+[data-lasso="on"] .canvas-lab-context-coronas { display: none; }
+
