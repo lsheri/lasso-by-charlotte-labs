@@ -119,7 +119,7 @@ export function WorkNote({
         className={`nb-paper-body flex h-full min-h-0 flex-col ${onOpen && openOn === "click" ? "cursor-pointer" : ""}`}
       >
         {headerGutter ? <SourceMirror item={item} chatPreview={chatPreview} filePreview={filePreview} /> : null}
-        <div className={`flex ${headerGutter ? "canvas-card-headerrow" : "h-[18px] gap-2"} shrink-0 select-none items-center ${headerGutter ? "pr-[58px]" : ""} ${contextSelected ? "canvas-lab-context-header" : ""}`}>
+        <div className={`flex ${headerGutter ? "canvas-card-headerrow" : "h-[18px] gap-2"} shrink-0 select-none items-center ${headerGutter ? "pr-[69px]" : ""} ${contextSelected ? "canvas-lab-context-header" : ""}`}>
           {lead ? <span className="shrink-0">{lead}</span> : null}
           <BrandLogo brand={brand} size={headerGutter ? 13 : 16} />
           <span className={headerGutter ? "canvas-card-source" : "min-w-0 flex-1 truncate font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground"}>{sourceLabel}</span>

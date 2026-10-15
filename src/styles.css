@@ -1459,7 +1459,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 }
 .canvas-lab-card-paper {
   position: relative;
-  border-radius: var(--radius-control);
+  border-radius: var(--radius-sm-new);
 }
 /* The note fills the card rect exactly, so the box and the paper agree. */
 .canvas-lab-card-paper > .nb-paper,
@@ -7087,7 +7087,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   overflow: hidden;
   pointer-events: none;
   background: var(--mirror-paper);
-  margin: -17px -18px 7px;
+  margin: -8px -10px 7px;
   border-bottom: max(1px, calc(1px * var(--lab-inverse-zoom, 1))) solid var(--line-hairline);
 }
 .source-mirror[data-source-theme="claude"] { --mirror-bubble: #f0eee6; --mirror-ink: #3d3929; --mirror-radius: 9px; --mirror-chrome: #faf9f7; }
@@ -7116,7 +7116,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .source-mirror__unknown svg, .source-mirror__unknown-label { color: var(--text-muted); }
 .source-mirror__unknown-title { font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
 .source-mirror__unknown-label { font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; }
-.ledger-work-note[data-paper-state="unmapped"] .source-mirror { margin-left: -27px; filter: saturate(.2) opacity(.72); }
+.ledger-work-note[data-paper-state="unmapped"] .source-mirror { margin-left: -19px; filter: saturate(.2) opacity(.72); }
 /* Tool class: light graphite, acid only when held, hover lifts without recolouring.
    Add work is an Action, not a Tool, so it is excluded throughout. */
 [data-lasso="on"] .canvas-lab-toolbar button:not([data-toolbar-control="add-work"]) {
@@ -7285,11 +7285,17 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   background: var(--surface-raised);
   box-shadow: var(--card-shadow);
   border-radius: var(--radius-sm-new);
+  padding: 0;
 }
 .nb-paper.work-note-gutter[data-paper-state="unmapped"] {
   border: var(--border-weight) dashed var(--state-no-board);
   background: var(--surface-page);
   box-shadow: none;
+  padding-left: 9px;
+}
+/* WC-4b: one inset layer, the G card's 8px 10px, on the body only. */
+.work-note-gutter > .nb-paper-body {
+  padding: 8px 10px;
 }
 .nb-paper.work-note-gutter {
   transition:
