@@ -7167,3 +7167,70 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   [data-lasso="on"] .lasso-action { transition: none; }
   [data-lasso="on"] .lasso-action:active:not(:disabled) { transform: none; box-shadow: 1px 1px 0 0 var(--action-primary-shadow); }
 }
+
+/* Float the existing header over the canvas without changing horizontal allocation. */
+[data-lasso="on"] [data-testid="canvas-lab-shell"] > main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+}
+[data-lasso="on"] [data-testid="canvas-lab-shell"] > main > header {
+  grid-area: 1 / 1;
+  align-self: start;
+  margin: 8px 8px 0;
+  padding-left: 8px;
+  padding-right: 8px;
+  background: transparent;
+  border-bottom-color: transparent;
+  pointer-events: none;
+}
+[data-lasso="on"] [data-testid="canvas-lab-shell"] > main > header > div:first-child {
+  padding: 6px;
+  margin-left: -7px;
+  margin-right: -7px;
+  border: 1px solid var(--line-hairline);
+  border-radius: var(--radius-md-new);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-float);
+  pointer-events: auto;
+}
+[data-lasso="on"] [data-testid="canvas-lab-shell"] > main > header > .canvas-lab-toolbar {
+  padding-top: 6px;
+  padding-bottom: 6px;
+  margin-left: -1px;
+  margin-right: -1px;
+  border: 1px solid var(--line-hairline);
+  border-radius: var(--radius-md-new);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-float);
+  pointer-events: auto;
+}
+[data-lasso="on"] [data-testid="canvas-lab-shell"] > main > .canvas-lab-surface {
+  grid-area: 1 / 1;
+}
+[data-lasso="on"] [data-testid="canvas-lab-shell"] > main > .canvas-lab-banner {
+  grid-area: 1 / 1;
+  position: relative;
+  align-self: start;
+  top: auto;
+  margin-top: 72px;
+}
+[data-lasso="on"] [data-testid="canvas-lab-shell"] > main > header > .canvas-lab-region-palette {
+  pointer-events: auto;
+}
+[data-lasso="on"] [data-testid="canvas-lab-shell"] > main:has(> [data-testid="shared-space-band"]) {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+[data-lasso="on"] [data-testid="canvas-lab-shell"] > main > [data-testid="shared-space-band"] {
+  grid-area: 1 / 1;
+}
+[data-lasso="on"] [data-testid="canvas-lab-shell"] > main:has(> [data-testid="shared-space-band"]) > :is(header, .canvas-lab-surface, .canvas-lab-banner) {
+  grid-area: 2 / 1;
+}
+/* Keep the phone's existing hidden-main state and clear the open region palette. */
+@media (max-width: 767px) {
+  [data-lasso="on"] [data-testid="canvas-lab-shell"] > main.hidden { display: none; }
+}
+[data-lasso="on"] [data-testid="canvas-lab-shell"] > main:has(> header > .canvas-lab-region-palette) > .canvas-lab-banner {
+  margin-top: 116px;
+}
