@@ -1,5 +1,5 @@
 Tour chrome locally mirrors shared board primitives; live composition is source-pinned and behavior-coupled.
-- Compute teammate provenance marks only in the signed-in CanvasLabPage, because shared, demo, tour, firm, and rollup surfaces must never expose them.
+- Teammate provenance marks belong only in signed-in CanvasLabPage; never expose them on shared, demo, tour, firm, or rollup surfaces.
 - Keep container colour inheritance pure in `container-colour.ts`; children never persist inherited colour.
 - Filter archived container branches while building the sidebar tree so descendants stay hidden without child writes.
 - Resolve MapDialog's board-only placement through ensure_board_default_task and the existing remapItems path, because default placement must share first-map recording and entry attribution with optional workstreams.
