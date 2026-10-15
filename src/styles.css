@@ -7227,3 +7227,10 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 [data-lasso="on"] [data-testid="canvas-lab-shell"] > main:has(> [data-testid="shared-space-band"]) > :is(header, .canvas-lab-surface, .canvas-lab-banner) {
   grid-area: 2 / 1;
 }
+/* Keep the phone's existing hidden-main state and clear the open region palette. */
+@media (max-width: 767px) {
+  [data-lasso="on"] [data-testid="canvas-lab-shell"] > main.hidden { display: none; }
+}
+[data-lasso="on"] [data-testid="canvas-lab-shell"] > main:has(> header > .canvas-lab-region-palette) > .canvas-lab-banner {
+  margin-top: 116px;
+}
