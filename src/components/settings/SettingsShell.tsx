@@ -140,7 +140,7 @@ export function SettingsShell({
     <div
       className={
         variant === "dialog"
-          ? "flex h-full flex-col overflow-hidden"
+          ? "lasso-settings-shell flex h-full flex-col overflow-hidden"
           : "overflow-hidden rounded-[var(--radius)] border border-border bg-card"
       }
     >
@@ -160,6 +160,7 @@ export function SettingsShell({
           data-testid="settings-rail"
           className={`flex min-w-0 gap-1 overflow-x-auto border-b border-border p-3 ${variant === "dialog" ? "mr-12 md:mr-0" : ""} md:flex-col md:overflow-x-visible md:overflow-y-auto md:border-b-0 md:border-r`}
         >
+          {variant === "dialog" ? <h2 className="lasso-settings-rail-title">Settings</h2> : null}
           {ungrouped.map(railButton)}
           {groups.map((group, index) => (
             <div key={group.name} className="contents md:block">
