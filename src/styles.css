@@ -7502,6 +7502,22 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 
 /* NAV-1: location chrome, independent of transient canvas arrivals. */
 :root {
+  --board-hue-0-ink: #8f8f8a;
+  --board-hue-0-wash: #f0f0ed;
+  --board-hue-1-ink: #1b5e8c;
+  --board-hue-1-wash: #e4eff6;
+  --board-hue-2-ink: #1f6b4f;
+  --board-hue-2-wash: #e3f1ea;
+  --board-hue-3-ink: #6b3f8c;
+  --board-hue-3-wash: #efe8f5;
+  --board-hue-4-ink: #8c4a1b;
+  --board-hue-4-wash: #f7ebe2;
+  --board-hue-5-ink: #1f5f6b;
+  --board-hue-5-wash: #e3eff1;
+  --board-hue-6-ink: #7a2f4a;
+  --board-hue-6-wash: #f6e6ec;
+  --board-hue-7-ink: #4a5a1f;
+  --board-hue-7-wash: #eef1e2;
   --nav-width: 258px;
   --nav-row-padding-block: 6px;
   --nav-row-padding-inline: 9px;

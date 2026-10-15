@@ -15,7 +15,7 @@ Tour mirrors board chrome; live remains source-pinned and behavior-coupled.
 <!-- LOVABLE:END -->
 
 - Public demo guide stays route-local; persist only its numeric step in guarded session storage, never affecting signed-in state.
-- Both public demo entrances use DemoHomeWorkspace for identical cards, previews, loading states, and guide behavior.
+- Both public demos use DemoHomeWorkspace: identical cards, previews, loading and guide.
 
 - Keep the signed-out `/` story as a public, read-only composition fed only by `openDemoBoardFn`; `/landing-board` redirects to it and preserves hashes.
 - Keep the desktop home story zone-selected, transition-queued, and dwell-based after a static use-case section; below 640px use eleven viewport-snapped stops, including use cases as stop 2, fed by the same public payload with no sticky board or scroll-driven transforms.
@@ -47,4 +47,4 @@ Tour mirrors board chrome; live remains source-pinned and behavior-coupled.
 
 - All work owns rename; reader closure preserves the dialog.
 
-- Mirror: real evidence, lane unchanged. Canvas catch: session-add IDs, cleared on finish, never selection. Tick: discussed-work only. Beads retain timing. Nav catch: CSS location draw, not canvas.
+- Mirror: real evidence, lane unchanged. Canvas catch: session-add IDs, cleared on finish, never selection. Tick: discussed-work only. Beads retain timing. Nav catch: CSS draw, not canvas. Board glyph: id hash, never source carriers.

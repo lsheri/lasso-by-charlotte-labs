@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] BC-1: sidebar glyph hues; verify reorder, 1280/390, watched failures and one full suite.
+
 - [x] NAV-1: sidebar appearance and persistent active-row catch verified on isolated 1280/390 fixtures; controls/events unchanged, one full suite: no outside-baseline failures, f2 green, six watched failures identical.
 - [ ] NAV-1: explicit tsgo result unavailable; manual project typechecks are disallowed in this environment.
 

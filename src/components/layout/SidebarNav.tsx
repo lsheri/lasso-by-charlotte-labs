@@ -13,6 +13,7 @@ import { SidebarItemMenu } from "@/components/layout/SidebarItemMenu";
 import { SidebarDragProvider, useSidebarDrag } from "@/components/layout/sidebar-drag";
 import { applyContainerMoves, applyWorkboardMoves, type PendingMoves } from "@/lib/sidebar-drag";
 import { NavActiveCatch } from "./NavActiveCatch";
+import { SidebarBoardGlyph } from "./SidebarBoardGlyph";
 import { CircleMark } from "@/components/notebook/CircleMark";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useUnreadNotesAboutMe } from "@/hooks/use-coach-note-thread";
@@ -162,7 +163,7 @@ function EngagementRow({
         activeOptions={{ includeSearch: false }}
       >
         <NavActiveCatch />
-        {nested ? <PencilIndent /> : <GraphiteIcon name="workboard" size={20} />}
+        {nested ? <PencilIndent /> : <SidebarBoardGlyph boardId={engagement.id} />}
         {sharedBy ? (
           <TooltipProvider delayDuration={150}>
             <Tooltip>
