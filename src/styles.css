@@ -7475,3 +7475,27 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   .canvas-lab-catch, .canvas-lab-catch path { transition: none; }
   .canvas-lab-catch path { animation: none; stroke-dashoffset: 0; }
 }
+
+/* MOT-3: only discussed-work confirmations, never selection tools. */
+[data-lasso="on"] .confirmation-tick[role="checkbox"] {
+  width: 17px;
+  height: 17px;
+  border-radius: 3px;
+}
+@keyframes lasso-confirmation-draw {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+[data-lasso="on"] .confirmation-tick[data-state="checked"] svg path {
+  stroke-width: 3.6px;
+  vector-effect: non-scaling-stroke;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  animation: lasso-confirmation-draw 420ms cubic-bezier(.3, 0, .2, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-lasso="on"] .confirmation-tick[data-state="checked"] svg path {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}

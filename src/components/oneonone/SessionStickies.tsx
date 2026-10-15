@@ -209,6 +209,7 @@ export function SessionStickies({ profileId, orgId }: { profileId: string; orgId
             <div className="flex items-center justify-between gap-2">
               <label className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
                 <Checkbox
+                  className="confirmation-tick"
                   checked={note.discussed}
                   onCheckedChange={(value) => void setDiscussed(note.id, value === true)}
                   aria-label="Discussed"
