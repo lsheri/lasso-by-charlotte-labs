@@ -13,6 +13,7 @@ import { SidebarItemMenu } from "@/components/layout/SidebarItemMenu";
 import { SidebarDragProvider, useSidebarDrag } from "@/components/layout/sidebar-drag";
 import { applyContainerMoves, applyWorkboardMoves, type PendingMoves } from "@/lib/sidebar-drag";
 import { NavActiveCatch } from "./NavActiveCatch";
+import { boardHueIndex } from "@/lib/board-hue";
 import { CircleMark } from "@/components/notebook/CircleMark";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useUnreadNotesAboutMe } from "@/hooks/use-coach-note-thread";
@@ -158,6 +159,7 @@ function EngagementRow({
         aria-label={sharedBy ? `${engagementDisplayTitle(engagement)}, Shared by ${sharedBy}` : undefined}
         className={treeDepth === undefined && nested ? `${linkClass} nb-nav-item-nested` : linkClass}
         data-tree-depth={treeDepth}
+        data-board-hue={boardHueIndex(engagement.id)}
         activeProps={activeProps}
         activeOptions={{ includeSearch: false }}
       >
@@ -303,6 +305,7 @@ function SharedWithMeGroup({
                   onNavigate?.();
                 }}
                 className={`${linkClass} nb-nav-item-nested`}
+                data-board-hue={boardHueIndex(engagement.id)}
                 activeProps={activeProps}
                 activeOptions={{ includeSearch: false }}
               >
