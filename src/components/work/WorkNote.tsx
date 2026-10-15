@@ -97,7 +97,7 @@ export function WorkNote({
       data-paper-state={item.visibility}
       data-client-label={clientLabel ?? undefined}
       data-brand={brand}
-      style={item.visibility === "unmapped" ? undefined : headerGutter ? { borderLeft: `3px solid ${brandHex(brand)}` } : { borderLeftColor: brandHex(brand) }}
+      style={item.visibility === "unmapped" ? undefined : headerGutter ? { borderLeftWidth: 3, borderLeftStyle: "solid", borderLeftColor: brandHex(brand) } : { borderLeftColor: brandHex(brand) }}
     >
       <div
         {...(onOpen && openOn === "doubleClick"
