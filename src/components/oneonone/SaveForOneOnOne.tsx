@@ -222,6 +222,7 @@ export function SavedForOneOnOne({ profileId }: { profileId: string }) {
               </p>
               <label className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Checkbox
+                  className="confirmation-tick"
                   checked={note.discussed}
                   onCheckedChange={(value) => void setDiscussed(note.id, value === true)}
                 />

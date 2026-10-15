@@ -1,6 +1,5 @@
 import * as React from "react";
 import * as CheckboxPrimitive from "@radix-ui/react-checkbox";
-import { Check } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -17,7 +16,9 @@ const Checkbox = React.forwardRef<
     {...props}
   >
     <CheckboxPrimitive.Indicator className={cn("grid place-content-center text-current")}>
-      <Check className="h-4 w-4" />
+      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="m20 6-11 11-5-5" pathLength={1} />
+      </svg>
     </CheckboxPrimitive.Indicator>
   </CheckboxPrimitive.Root>
 ));
