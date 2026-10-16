@@ -12,10 +12,6 @@
 
 export type VocabProfile = { org_type?: string | null } | null | undefined;
 
-export function isEduOrg(profile: VocabProfile): boolean {
-  return profile?.org_type === "edu";
-}
-
 export type Vocab = {
   client: string;
   clients: string;

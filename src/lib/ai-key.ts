@@ -8,16 +8,14 @@
 export type KeyEnv = Record<string, string | undefined>;
 
 export const DEFAULT_KEY_NAME = "OPENAI_API_KEY";
+// OPENAI_API_KEY_EDU: school key retired 15 Oct 2026, F4
 export const EDU_KEY_NAME = "OPENAI_API_KEY_EDU";
 
 export function openAiKeyFor(
   orgType: string | null | undefined,
   env: KeyEnv,
 ): { key: string; source: "edu" | "default" } | null {
-  if (orgType === "edu") {
-    const edu = env[EDU_KEY_NAME]?.trim();
-    if (edu) return { key: edu, source: "edu" };
-  }
+  void orgType;
   const fallback = env[DEFAULT_KEY_NAME]?.trim();
   return fallback ? { key: fallback, source: "default" } : null;
 }

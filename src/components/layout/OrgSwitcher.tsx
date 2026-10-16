@@ -11,7 +11,7 @@ import { isBusinessType } from "@/lib/workspace-capabilities";
 
 export function workspaceTypeLabel(profile: Profile | null): string {
   if (!profile) return "INDIVIDUAL";
-  const type = { company: "FIRM", partner: "PARTNER", personal: "INDIVIDUAL", edu: "SCHOOL" }[profile.org_type];
+  const type = { company: "FIRM", partner: "PARTNER", personal: "INDIVIDUAL" }[profile.org_type as "company" | "partner" | "personal"] ?? "INDIVIDUAL";
   return isBusinessType(profile.org_type)
     ? `${type} · ${profile.role === "admin" ? "ADMIN" : profile.role === "lead" ? "LEAD" : "MEMBER"}` : type;
 }
