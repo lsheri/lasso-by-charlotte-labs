@@ -7043,9 +7043,8 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .source-mirror__unknown-title { font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
 .source-mirror__unknown-label { font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; }
 .ledger-work-note[data-paper-state="unmapped"] .source-mirror { margin-left: -19px; filter: saturate(.2) opacity(.72); }
-/* Tool class: light graphite, acid only when held, hover lifts without recolouring.
-   Add work is an Action, not a Tool, so it is excluded throughout. */
-[data-lasso="on"] .canvas-lab-toolbar button:not([data-toolbar-control="add-work"]) {
+/* Preserve existing non-group controls without changing their treatment. */
+[data-lasso="on"] .canvas-lab-toolbar button:not([data-toolbar-control="add-work"]):not(.canvas-lab-tool-group *) {
   background: var(--surface-sunk);
   color: var(--text-primary);
   border: 1px solid var(--line-hairline);
@@ -7054,29 +7053,89 @@ body[data-answer-drag="true"] .canvas-lab-surface {
               box-shadow var(--dur-quick) var(--ease-standard),
               background var(--dur-quick) var(--ease-standard);
 }
-[data-lasso="on"] .canvas-lab-toolbar button:not([data-toolbar-control="add-work"]):hover:not(:disabled) {
+[data-lasso="on"] .canvas-lab-toolbar button:not([data-toolbar-control="add-work"]):not(.canvas-lab-tool-group *):hover:not(:disabled) {
   transform: translateY(-1px);
   box-shadow: var(--shadow-card-new);
   background: var(--surface-sunk);
 }
-[data-lasso="on"] .canvas-lab-toolbar button:not([data-toolbar-control="add-work"]):active:not(:disabled),
-[data-lasso="on"] .canvas-lab-toolbar button:not([data-toolbar-control="add-work"])[data-state="open"],
-[data-lasso="on"] .canvas-lab-toolbar button:not([data-toolbar-control="add-work"])[aria-pressed="true"],
-[data-lasso="on"] .canvas-lab-toolbar button:not([data-toolbar-control="add-work"])[aria-expanded="true"] {
+[data-lasso="on"] .canvas-lab-toolbar button:not([data-toolbar-control="add-work"]):not(.canvas-lab-tool-group *):active:not(:disabled),
+[data-lasso="on"] .canvas-lab-toolbar button:not([data-toolbar-control="add-work"]):not(.canvas-lab-tool-group *)[data-state="open"],
+[data-lasso="on"] .canvas-lab-toolbar button:not([data-toolbar-control="add-work"]):not(.canvas-lab-tool-group *)[aria-pressed="true"],
+[data-lasso="on"] .canvas-lab-toolbar button:not([data-toolbar-control="add-work"]):not(.canvas-lab-tool-group *)[aria-expanded="true"] {
   transform: none;
   box-shadow: none;
   background: var(--state-highlight);
   color: var(--text-on-acid);
   border-color: var(--state-highlight);
 }
-[data-lasso="on"] .canvas-lab-toolbar button:not([data-toolbar-control="add-work"]):focus-visible {
+[data-lasso="on"] .canvas-lab-toolbar button:not([data-toolbar-control="add-work"]):not(.canvas-lab-tool-group *):focus-visible {
   outline: 2px solid var(--focus-ring-new);
   outline-offset: 2px;
 }
-[data-lasso="on"] .canvas-lab-toolbar button:not([data-toolbar-control="add-work"]):disabled { opacity: .45; }
+[data-lasso="on"] .canvas-lab-toolbar button:not([data-toolbar-control="add-work"]):not(.canvas-lab-tool-group *):disabled { opacity: .45; }
 @media (prefers-reduced-motion: reduce) {
-  [data-lasso="on"] .canvas-lab-toolbar button:not([data-toolbar-control="add-work"]) { transition: none; }
-  [data-lasso="on"] .canvas-lab-toolbar button:not([data-toolbar-control="add-work"]):hover:not(:disabled) { transform: none; }
+  [data-lasso="on"] .canvas-lab-toolbar button:not([data-toolbar-control="add-work"]):not(.canvas-lab-tool-group *) { transition: none; }
+  [data-lasso="on"] .canvas-lab-toolbar button:not([data-toolbar-control="add-work"]):not(.canvas-lab-tool-group *):hover:not(:disabled) { transform: none; }
+}
+
+/* TOOLS-1: one graphite group, acid held state, no tool lift or catch. */
+[data-lasso="on"] .canvas-lab-tool-group {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border-radius: var(--radius-md-new);
+  background: linear-gradient(176deg, var(--neutral-20), var(--neutral-30));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--surface-raised) 70%, transparent);
+}
+[data-lasso="on"] .canvas-lab-tool-group > div:has(> button.md\:hidden) { display: none; }
+[data-lasso="on"] .canvas-lab-tool-group button:is([data-toolbar-control="workstreams"], [data-toolbar-control="working-from"], [data-toolbar-control="add-text"], [data-toolbar-control="add-sticky"], [data-toolbar-control="grouping"], [data-toolbar-control="ask"], [data-toolbar-control="fit"], [data-toolbar-control="more"]) {
+  background: transparent;
+  color: var(--text-primary);
+  border: 0;
+  border-radius: var(--radius-md-new);
+  transform: none;
+  box-shadow: none;
+  transition: background var(--dur-quick) var(--ease-standard);
+}
+[data-lasso="on"] .canvas-lab-tool-group button[data-toolbar-control]:hover:not(:disabled) {
+  transform: none;
+  box-shadow: none;
+  background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+}
+[data-lasso="on"] .canvas-lab-tool-group button[data-toolbar-control]:is([aria-pressed="true"], [data-state="open"]):not(:disabled) {
+  background: var(--hand-live);
+  color: var(--text-on-acid);
+}
+[data-lasso="on"] .canvas-lab-tool-group button[data-toolbar-control] > svg { stroke-width: 1.5; }
+[data-lasso="on"] .canvas-lab-tool-group button[data-toolbar-control] .nb-ico path {
+  animation: none;
+  transform: none;
+  stroke-dasharray: none;
+}
+[data-lasso="on"] .canvas-lab-tool-group button[data-toolbar-control]:focus-visible {
+  outline: 2px solid var(--focus-ring-new);
+  outline-offset: 2px;
+}
+[data-lasso="on"] .canvas-lab-tool-group button[data-toolbar-control]:disabled {
+  color: color-mix(in srgb, var(--text-primary) 30%, transparent);
+  cursor: not-allowed;
+  opacity: 1;
+}
+[data-lasso="on"] .canvas-lab-toolbar button[aria-label="Zoom to 100 percent"] { font-variant-numeric: tabular-nums; }
+@media (hover: none), (max-width: 767px) {
+  [data-lasso="on"] .canvas-lab-tool-group { padding: 6px; gap: 4px; }
+}
+@media (max-width: 767px) {
+  [data-lasso="on"] .canvas-lab-tool-group > div:has(> button.md\:hidden) { display: flex; }
+  [data-lasso="on"] [data-testid="canvas-lab-shell"] > main > header > .canvas-lab-toolbar {
+    justify-content: flex-start;
+    overflow-x: auto;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-lasso="on"] .canvas-lab-tool-group button[data-toolbar-control] { transition: none; }
 }
 
 /* Action class: graphite grain, acid only as an offset sheet behind, press on activation. */

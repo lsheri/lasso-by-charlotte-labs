@@ -20,4 +20,6 @@ One row per design decision. Owner: L = Liam, C = Claude architect, M = Magic OS
 | 15 Oct 2026 | L | All work lane card takes the Bone and Acid furniture, keeps thumbnail and summary chain, no mirror | mirror face on the lane (rejected: test-pinned summary chain, lane is a scan surface) | Superseded by WC-5 |
 | 15 Oct 2026 | L | All work lane card takes the full G face, identical to the board card; summary and thumbnail leave the lane | furniture-only lane (WC-4) | Built, preview |
 
+| 14 Oct 2026, built 15 Oct | L | Board tools: light graphite group, 29px tools, acid held state, hover only, never the catch; one wrapper with Add work left, authorized redesign | separate white buttons (what PRIM-1 shipped) | Built, preview |
+
 Open: where the four --verify-* states render (chat answer, opened view, card); placement of Recent boards in the sidebar; whether the graphite grain button returns.
