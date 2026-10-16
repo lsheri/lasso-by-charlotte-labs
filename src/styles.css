@@ -7764,3 +7764,31 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 [data-lasso="on"].lasso-first-run .lasso-setup-tools > section > .grid { gap: 10px; grid-template-columns: repeat(auto-fit, minmax(176px, 1fr)); }
 [data-lasso="on"].lasso-first-run .lasso-setup-tools > section > div > .flex.items-start { gap: 10px; }
 [data-lasso="on"].lasso-first-run .lasso-setup-tools > section > div > .flex.items-start > div > p:first-child { font-family: var(--font-sans); font-size: 13px; font-weight: 500; }
+
+/* Sketch hover motions, one per drawing kind. Used by the SketchCard
+   reference components ported from the Magic Patterns design system.
+   Mirrored verbatim from that system's index.css. Nothing references these
+   until a surface renders a sketch card, so this block is inert today. */
+@keyframes lasso-sk-grow {
+from { transform: scaleY(0.15); }
+to { transform: scaleY(1); }
+}
+@keyframes lasso-sk-swipe {
+from { transform: scaleX(0); }
+to { transform: scaleX(1); }
+}
+@keyframes lasso-sk-write {
+from { stroke-dashoffset: 1; }
+to { stroke-dashoffset: 0; }
+}
+@keyframes lasso-sk-pulse {
+0%, 100% { transform: scaleY(1); }
+50% { transform: scaleY(0.35); }
+}
+@keyframes lasso-sk-play {
+from { transform: translateX(-56px); }
+to { transform: translateX(98px); }
+}
+@keyframes lasso-sk-blink {
+50% { opacity: 0; }
+}
