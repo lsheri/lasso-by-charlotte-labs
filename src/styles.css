@@ -1,5 +1,6 @@
 @layer theme, base, components, nb, utilities;
 @import "tailwindcss" source(none);
+@import "./design/tokens.css";
 @source "../src";
 @import "tw-animate-css";
 @import "@fontsource/archivo/400.css";
