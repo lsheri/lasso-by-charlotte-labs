@@ -1,4 +1,4 @@
-Tour mirrors board chrome; live remains source-pinned and behavior-coupled.
+Tour mirrors board chrome; preserve live behavior.
 - Teammate provenance marks belong only in signed-in CanvasLabPage; never expose them on shared, demo, tour, firm, or rollup surfaces.
 - Keep container colour inheritance pure in `container-colour.ts`; children never persist inherited colour.
 - Filter archived container branches while building the sidebar tree so descendants stay hidden without child writes.
@@ -43,7 +43,8 @@ Tour mirrors board chrome; live remains source-pinned and behavior-coupled.
 - Compose role- and product-specific data Settings in DataSection using the existing consent primitives and mutations; normalize legacy section IDs at entry boundaries so old links keep working without a second rail section.
 - SharedWithYou owns Home/sidebar reads and actions; never switch profiles on shared entry, so work stays owned locally.
 - Read All work shared placements once per page and compare item/board orgs, to avoid per-card requests.
-- Node formatting is local; other editors default visible.
+- Node formatting local; other editors visible.
+- Group board tools in presentation only; keep Add work outside and preserve overflow logic and handlers.
 
 - All work owns rename; reader closure preserves the dialog.
 

@@ -3062,7 +3062,9 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
         <header className="relative z-20 flex h-[52px] shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-4">
           <div className="min-w-0 shrink"><span className="block truncate text-[13px] font-medium text-foreground">{title}</span><span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{status}</span></div>
           <div ref={toolbarRef} className="canvas-lab-toolbar flex min-w-0 flex-1 items-center justify-end gap-2 overflow-hidden">
-            {toolbarItems.filter((item) => toolbarPlan.row.includes(item.spec.id)).map((item) => <div key={item.spec.id} className="flex shrink-0 items-center gap-2">{item.row}</div>)}
+            {toolbarItems.filter((item) => toolbarPlan.row.includes(item.spec.id) && item.spec.id === "add-work").map((item) => <div key={item.spec.id} className="flex shrink-0 items-center gap-2">{item.row}</div>)}
+            <div className="canvas-lab-tool-group">
+            {toolbarItems.filter((item) => toolbarPlan.row.includes(item.spec.id) && ["workstreams", "working-from", "add-text", "add-sticky", "region", "ask", "fit"].includes(item.spec.id)).map((item) => <div key={item.spec.id} className="flex shrink-0 items-center gap-2">{item.row}</div>)}
             {toolbarOverflowItems.length > 0 || canLeave ? (
               <DropdownMenu>
                 <Tooltip>
@@ -3079,6 +3081,8 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : null}
+            </div>
+            {toolbarItems.filter((item) => toolbarPlan.row.includes(item.spec.id) && !["add-work", "workstreams", "working-from", "add-text", "add-sticky", "region", "ask", "fit"].includes(item.spec.id)).map((item) => <div key={item.spec.id} className="flex shrink-0 items-center gap-2">{item.row}</div>)}
           </div>
           <Popover open={detailsOpen} onOpenChange={setDetailsOpen}>
             <PopoverAnchor virtualRef={detailsAnchorVirtualRef} />
