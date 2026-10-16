@@ -26,12 +26,13 @@ export function isFirmWorkspace(type: unknown): boolean {
 }
 
 /**
- * An invite never creates a workspace here (the accept page owns that), so it
- * falls back to the same default the screen has always used.
+ * An invite never creates a workspace here (the accept page owns that). No
+ * door signal means an individual workspace, never a business one.
  */
 export function orgTypeForChoice(choice: DoorChoice): OrgType {
+  if (choice === "company") return "company";
   if (choice === "personal") return "personal";
   if (choice === "edu") return "edu";
   if (choice === "partner") return "partner";
-  return "company";
+  return "personal";
 }

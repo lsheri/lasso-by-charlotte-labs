@@ -10,10 +10,10 @@ describe("passO1 the door decides the workspace type", () => {
     expect(orgTypeForChoice("edu")).toBe("edu");
   });
 
-  it("falls back for an invite and for no choice at all", () => {
-    expect(orgTypeForChoice("invite")).toBe("company");
-    expect(orgTypeForChoice(null)).toBe("company");
-    expect(orgTypeForChoice(undefined)).toBe("company");
+  it("falls back to personal for an invite and for no choice at all", () => {
+    expect(orgTypeForChoice("invite")).toBe("personal");
+    expect(orgTypeForChoice(null)).toBe("personal");
+    expect(orgTypeForChoice(undefined)).toBe("personal");
   });
 });
 

@@ -78,7 +78,7 @@ export function YourWorkspaceCard() {
       const settings = (orgResult.data?.settings ?? {}) as Record<string, unknown>;
       return {
         name: oneLine(orgResult.data?.name),
-        type: profile?.org_type ?? "company",
+        type: profile?.org_type ?? "personal",
         plan: oneLine(entitlementResult.data?.plan),
         seats: entitlementResult.data?.seats ?? null,
         admins: (adminsResult.data ?? [])
