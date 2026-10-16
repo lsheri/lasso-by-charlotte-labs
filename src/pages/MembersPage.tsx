@@ -203,7 +203,7 @@ function MembersConsole() {
   );
   const history = invites.filter((i) => !pending.includes(i));
   const metaLine = data
-    ? `${members.length} people · ${data.entitlement?.coaches ?? 0} coaches · a role decides what someone can see, never what they can be told`
+    ? `${members.length} ${members.length === 1 ? "person" : "people"} · ${data.entitlement?.coaches ?? 0} ${(data.entitlement?.coaches ?? 0) === 1 ? "coach" : "coaches"} · a role decides what someone can see, never what they can be told`
     : copy.blurb;
 
   return (
@@ -403,32 +403,6 @@ function MembersConsole() {
             {!business ? <WhatGoesUpSection {...sharing} /> : null}
             <PlanSection entitlement={data.entitlement} business={business} />
             {isAdmin ? <p className="text-sm leading-relaxed text-muted-foreground"><Link to="/settings" search={{ section: "your-data" }} className="underline underline-offset-4">{DATA_COPY.membersLink}</Link></p> : null}
-            {business ? <ToneCard tone="record" label="WHAT A ROLE CHANGES" className="gap-3 p-4">
-              <p className="text-sm leading-6 text-foreground">
-                A role changes what someone can see. It never changes what someone can be told.
-              </p>
-              <dl className="space-y-3 border-t border-border pt-3">
-                <div>
-                  <dt className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
-                    Member
-                  </dt>
-                  <dd>Their own work.</dd>
-                </div>
-                <div>
-                  <dt className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
-                    Coach
-                  </dt>
-                  <dd>Only work someone has shared with them.</dd>
-                </div>
-                <div>
-                  <dt className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
-                    Admin
-                  </dt>
-                  <dd>Firm counts, never a person&apos;s work.</dd>
-                </div>
-              </dl>
-              <p className="lasso-hand-voice font-hand text-green">nobody gets promoted into seeing your drafts</p>
-            </ToneCard> : null}
           </aside>
         </div>
       ) : null}

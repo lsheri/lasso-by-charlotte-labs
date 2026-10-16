@@ -284,6 +284,8 @@ function OnboardingInner() {
   const [shareBackError, setShareBackError] = useState<string | null>(null);
   const [tools, setTools] = useState<Set<ToolId>>(new Set());
   const [orgType] = useState<OrgType>(orgTypeForChoice(derived));
+  // UX-1: a business door is Work by construction, so the question is not asked.
+  const usesAsked = !segmentFieldsFor(orgType).includes("industry");
   const [displayName, setDisplayName] = useState("");
   const [orgName, setOrgName] = useState("");
   const [pending, setPending] = useState(false);
@@ -398,11 +400,12 @@ function OnboardingInner() {
     }
 
     // F4 / ST-2: the person's own people row records what Lasso is for.
-    if (sortUses(uses).length === 0 || !freshUser?.user) {
+    const usesToSave: PersonUse[] = usesAsked ? uses : ["work"];
+    if (sortUses(usesToSave).length === 0 || !freshUser?.user) {
       setPending(false);
       return;
     }
-    const savedUses = await saveUses(supabase, freshUser.user.id, uses).catch(() => ({
+    const savedUses = await saveUses(supabase, freshUser.user.id, usesToSave).catch(() => ({
       ok: false,
       uses: [] as PersonUse[],
     }));
@@ -876,7 +879,7 @@ function OnboardingInner() {
                 </div>
               ) : null}
 
-              <UsesChips value={uses} onChange={setUses} disabled={pending} />
+              {usesAsked ? <UsesChips value={uses} onChange={setUses} disabled={pending} /> : null}
 
               {!setup ? (
                 <div data-testid="signup-default-notice" className="rounded-[var(--radius-control)] border border-border px-4 py-3 text-sm leading-relaxed text-muted-foreground">
@@ -906,7 +909,7 @@ function OnboardingInner() {
 
               {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
-              <Button type="submit" className="w-full" disabled={pending || uses.length === 0}>
+              <Button type="submit" className="w-full" disabled={pending || (usesAsked && uses.length === 0)}>
                 {pending ? "Setting up…" : REGISTER_SHARED_COPY.submit}
               </Button>
               <button
