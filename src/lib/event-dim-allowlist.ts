@@ -209,6 +209,7 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "org.created": ["org_type", "register", "entry_door", "signup_ref", "tier"],
   "org.clients_changed": ["enabled"],
   "org.tier_changed": ["from", "to"],
+  "org.tier_change_opened": ["from", "to"],
   "plans.action_clicked": ["action", "plan", "source"],
   "plans.viewed": ["src"],
   "plan.picked": ["plan", "src"],
