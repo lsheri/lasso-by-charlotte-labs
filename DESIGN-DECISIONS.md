@@ -19,3 +19,4 @@ One row per design decision. Owner: L = Liam, C = Claude architect, M = Magic OS
 | 15 Oct 2026 | L | The repo is the source of truth for every design value and decision; Magic OS is where design is decided and shown. Flow: OS proposes, repo records, OS mirrors | Magic OS as the single source of truth copied exactly | Decided |
 
 Open: where the four --verify-* states render (chat answer, opened view, card); placement of Recent boards in the sidebar; whether the graphite grain button returns.
+| 15 Oct 2026 | L | All work lane card takes the Bone and Acid furniture, keeps thumbnail and summary chain, no mirror | mirror face on the lane (rejected: test-pinned summary chain, lane is a scan surface) | Built, preview |
