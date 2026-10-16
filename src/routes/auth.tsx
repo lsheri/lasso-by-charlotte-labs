@@ -85,6 +85,12 @@ export const Route = createFileRoute("/auth")({
     const target = joinTarget(search.next);
     if (search.key || search.invite || target?.code) return;
     if (target) throw redirect({ to: "/join", search: target, replace: true });
+    // PL-1: a signed-in person who picked a plan but has no workspace yet must
+    // reach setup with that choice, not /home, which would bounce them back
+    // to /plans with the choice lost.
+    if (search.intent && search.intent !== "invite") {
+      throw redirect({ to: "/onboarding", search: { intent: search.intent }, replace: true });
+    }
     throw redirect({ to: "/home" });
   },
   head: () => ({
