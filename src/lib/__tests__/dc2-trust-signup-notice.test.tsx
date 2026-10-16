@@ -139,12 +139,23 @@ describe("DC-2 starting-level disclosure", () => {
     await screen.findByText("You are already signed in");
     expect(screen.queryByText(SIGNUP_DEFAULT_NOTICE)).toBeNull();
   });
-  it.each(["personal", "company", "partner", "edu"])("shows it below the uses question for new %s setup", async (intent) => {
+  it.each(["personal", "edu"])("shows it below the uses question for new %s setup", async (intent) => {
     mocks.search = { intent };
     mount(SetupRoute);
     const notice = await screen.findByTestId("signup-default-notice");
     expect(notice.querySelector("p")?.textContent).toBe(SIGNUP_DEFAULT_NOTICE);
     expect(screen.getByText("What will you use Lasso for? Pick any that fit.").compareDocumentPosition(notice) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByRole("link", { name: "See what each level means" }).getAttribute("href")).toBe("/trust#levels");
+  });
+  it.each(["company", "partner"])("shows it below the workspace name for new %s setup, with no uses question", async (intent) => {
+    mocks.search = { intent };
+    mount(SetupRoute);
+    const notice = await screen.findByTestId("signup-default-notice");
+    expect(notice.querySelector("p")?.textContent).toBe(SIGNUP_DEFAULT_NOTICE);
+    expect(screen.queryByText("What will you use Lasso for? Pick any that fit.")).toBeNull();
+    const workspaceName = document.getElementById("org-name");
+    expect(workspaceName).not.toBeNull();
+    expect(workspaceName!.compareDocumentPosition(notice) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.getByRole("link", { name: "See what each level means" }).getAttribute("href")).toBe("/trust#levels");
   });
   it("does not show it on existing-account tool setup", async () => {

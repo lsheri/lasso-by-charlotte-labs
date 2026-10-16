@@ -203,7 +203,7 @@ function MembersConsole() {
   );
   const history = invites.filter((i) => !pending.includes(i));
   const metaLine = data
-    ? `${members.length} ${members.length === 1 ? "person" : "people"} · ${data.entitlement?.coaches ?? 0} ${(data.entitlement?.coaches ?? 0) === 1 ? "coach" : "coaches"} · a role decides what someone can see, never what they can be told`
+    ? `${members.length} ${members.length === 1 ? "person" : "people"}${(data.entitlement?.coaches ?? 0) > 0 ? ` · ${data.entitlement?.coaches ?? 0} ${(data.entitlement?.coaches ?? 0) === 1 ? "coach" : "coaches"}` : ""} · a role decides what someone can see, never what they can be told`
     : copy.blurb;
 
   return (
