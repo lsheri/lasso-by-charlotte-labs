@@ -22,7 +22,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { InviteDialog } from "@/components/invites/InviteDialog";
 import { COPY as DATA_COPY } from "@/components/settings/DataSection";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -150,8 +149,6 @@ function MembersConsole() {
   const { data, isLoading, error } = useMembers(profile?.id);
   const action = useMemberAction(profile?.id);
   const [confirm, setConfirm] = useState<MemberRow | null>(null);
-  const [roleTarget, setRoleTarget] = useState<MemberRow | null>(null);
-  const [nextRole, setNextRole] = useState<"em" | "lead">("em");
   const [showHistory, setShowHistory] = useState(false);
   const [shareTarget, setShareTarget] = useState<MemberRow | null>(null);
 
@@ -326,16 +323,6 @@ function MembersConsole() {
                                   Deactivate
                                 </DropdownMenuItem>
                               ) : null}
-                              {isAdmin && business && member.role !== "coach" ? (
-                                <DropdownMenuItem
-                                  onSelect={() => {
-                                    setRoleTarget(member);
-                                    setNextRole(member.role === "lead" ? "lead" : "em");
-                                  }}
-                                >
-                                  Change role
-                                </DropdownMenuItem>
-                              ) : null}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         ) : null}
@@ -483,40 +470,6 @@ function MembersConsole() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      <Dialog open={Boolean(roleTarget)} onOpenChange={(open) => !open && setRoleTarget(null)}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="page-title">Change role</DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            {roleTarget?.display_name} can be a member or a lead. Admin and coach roles are set
-            through an invite.
-          </p>
-          <RadioGroup
-            value={nextRole}
-            onValueChange={(value) => setNextRole(value as "em" | "lead")}
-            className="gap-2"
-          >
-            <label className="flex items-center gap-2 text-sm text-foreground">
-              <RadioGroupItem value="em" /> Workboard manager
-            </label>
-            <label className="flex items-center gap-2 text-sm text-foreground">
-              <RadioGroupItem value="lead" /> Lead
-            </label>
-          </RadioGroup>
-          <Button
-            type="button"
-            onClick={() => {
-              if (roleTarget)
-                run({ kind: "role", member_id: roleTarget.id, role: nextRole }, "Role updated");
-              setRoleTarget(null);
-            }}
-          >
-            Save role
-          </Button>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

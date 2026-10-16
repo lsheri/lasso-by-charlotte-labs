@@ -109,16 +109,6 @@ export const reactivateMember = createServerFn({ method: "POST" })
     );
   });
 
-export const changeMemberRole = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: Ctx & { member_id: string; role: "em" | "lead" }) => input)
-  .handler(async ({ data, context }) => {
-    const { callMemberRpc } = await import("./members.server");
-    return callMemberRpc(context, data.profile_id, "member.role_changed", (supabase) =>
-      supabase.rpc("set_member_role", { p_profile: data.member_id, p_role: data.role }),
-    );
-  });
-
 export const revokeInvite = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: Ctx & { code: string }) => input)

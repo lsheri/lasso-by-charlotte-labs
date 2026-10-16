@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
-  changeMemberRole,
   deactivateMember,
   listMembers,
   reactivateMember,
@@ -23,7 +22,6 @@ export function useMembers(profileId: string | undefined) {
 type Action =
   | { kind: "deactivate"; member_id: string }
   | { kind: "reactivate"; member_id: string }
-  | { kind: "role"; member_id: string; role: "em" | "lead" }
   | { kind: "revoke"; code: string }
   | { kind: "resend"; code: string };
 
@@ -36,10 +34,6 @@ export function useMemberAction(profileId: string | undefined) {
         return deactivateMember({ data: { profile_id, member_id: action.member_id } });
       if (action.kind === "reactivate")
         return reactivateMember({ data: { profile_id, member_id: action.member_id } });
-      if (action.kind === "role")
-        return changeMemberRole({
-          data: { profile_id, member_id: action.member_id, role: action.role },
-        });
       if (action.kind === "resend")
         return resendInvite({
           data: { profile_id, code: action.code },
