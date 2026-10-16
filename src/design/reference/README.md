@@ -1,0 +1,2 @@
+# Lasso design reference
+Exact component code for every decided design. Mirrored byte for byte in the Magic Patterns design system "Lasso" (components/<Name>/index.tsx). Values are CSS variables from ../tokens.css; token names here are the repo's names, including the -new suffixes that exist while the old nb token block lives. These files are not imported by the app. A dispatch names the file it matches; the app copies the values and never re-interprets them. A value changes here by commit, with a DESIGN-DECISIONS.md row, and is then mirrored to Magic Patterns. No em dashes.
