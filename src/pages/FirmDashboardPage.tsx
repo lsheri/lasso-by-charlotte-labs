@@ -12,12 +12,13 @@ import { ToneCard } from "@/components/notebook/ToneCard";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { SectionHeader } from "@/components/notebook/SectionHeader";
 import { useFirmDashboard } from "@/hooks/use-firm-dashboard";
-import { isBusinessOrg, useProfile } from "@/hooks/use-profile";
+import { useProfile } from "@/hooks/use-profile";
+import { profileHasFirmView } from "@/lib/workspace-capabilities";
 
 export function FirmDashboardPage() {
   const { data: profile } = useProfile();
   const canSee =
-    isBusinessOrg(profile) && (profile?.role === "admin" || profile?.role === "lead");
+    profileHasFirmView(profile) && (profile?.role === "admin" || profile?.role === "lead");
   const { data, isLoading, error } = useFirmDashboard(canSee ? profile?.id : undefined);
   const [reduceMotion, setReduceMotion] = useState(true);
 
