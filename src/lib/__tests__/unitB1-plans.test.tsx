@@ -39,7 +39,7 @@ describe("Unit B1: public plans", () => {
   it("shows all four plans with the approved destinations and copy", () => {
     const { container } = render(<PlansPage />);
 
-    for (const heading of ["Just me", "Team", "Partner"]) {
+    for (const heading of ["Individual", "Business", "Partner"]) {
       expect(screen.getByRole("heading", { name: heading })).toBeTruthy();
     }
 

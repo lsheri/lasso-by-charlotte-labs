@@ -7,13 +7,14 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 
 import { setActiveProfileId, type Profile } from "@/hooks/use-profile";
 import { logEvent } from "@/lib/telemetry";
-import { isBusinessType } from "@/lib/workspace-capabilities";
+import { profileIsBusiness, profileShowsAdminRole } from "@/lib/workspace-capabilities";
 
 export function workspaceTypeLabel(profile: Profile | null): string {
   if (!profile) return "INDIVIDUAL";
-  const type = { company: "FIRM", partner: "PARTNER", personal: "INDIVIDUAL" }[profile.org_type as "company" | "partner" | "personal"] ?? "INDIVIDUAL";
-  return isBusinessType(profile.org_type)
-    ? `${type} · ${profile.role === "admin" ? "ADMIN" : profile.role === "lead" ? "LEAD" : "MEMBER"}` : type;
+  const kind = profileIsBusiness(profile) ? "BUSINESS" : "INDIVIDUAL";
+  return profileShowsAdminRole(profile)
+    ? `${kind} · ${profile.role === "admin" ? "ADMIN" : "MEMBER"}`
+    : kind;
 }
 
 /**

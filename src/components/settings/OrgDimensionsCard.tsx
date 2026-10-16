@@ -21,7 +21,6 @@ import {
   USE_FOR_OPTIONS,
   segmentFieldsFor,
 } from "@/lib/org-segments";
-import { orgTypeDisplayLabel } from "@/lib/org-type";
 
 type OrgRow = {
   name: string;
@@ -141,7 +140,7 @@ export function OrgDimensionsCard() {
     <section>
       <h2 className="micro-label micro-label-section">About this workspace</h2>
       <div className="mt-3 space-y-4 rounded-[var(--radius)] border border-border bg-card px-4 py-4 shadow-card">
-        <div className="grid gap-4 sm:grid-cols-2" data-testid="workspace-identity">
+        <div className="grid gap-4" data-testid="workspace-identity">
           <Field label="Workspace name">
             <Input
               aria-label="Workspace name"
@@ -152,10 +151,6 @@ export function OrgDimensionsCard() {
               }}
             />
             {nameError ? <p className="mt-1.5 text-sm text-destructive">{NAME_REQUIRED_LINE}</p> : null}
-          </Field>
-          <Field label="Kind of organisation">
-            <p className="text-sm text-foreground">{orgTypeDisplayLabel(profile?.org_type)}</p>
-            <p className="text-sm text-muted-foreground">Set when this workspace was created.</p>
           </Field>
         </div>
         <div className="space-y-3 border-t border-border pt-4" data-testid="workspace-about">
