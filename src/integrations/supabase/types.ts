@@ -3273,10 +3273,6 @@ export type Database = {
         Row: {
           ai_maturity: string | null
           clients_enabled: boolean
-          has_firm_view: boolean
-          has_roster: boolean
-          shows_admin_role: boolean
-          tier: string
           country: string | null
           created_at: string
           data_use_tier: string | null
@@ -3298,10 +3294,6 @@ export type Database = {
         Insert: {
           ai_maturity?: string | null
           clients_enabled?: boolean
-          has_firm_view?: boolean
-          has_roster?: boolean
-          shows_admin_role?: boolean
-          tier?: string
           country?: string | null
           created_at?: string
           data_use_tier?: string | null
@@ -3323,10 +3315,6 @@ export type Database = {
         Update: {
           ai_maturity?: string | null
           clients_enabled?: boolean
-          has_firm_view?: boolean
-          has_roster?: boolean
-          shows_admin_role?: boolean
-          tier?: string
           country?: string | null
           created_at?: string
           data_use_tier?: string | null
