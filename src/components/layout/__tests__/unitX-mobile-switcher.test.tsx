@@ -30,7 +30,7 @@ import { MobileTabBar } from "@/components/layout/MobileTabBar";
 function p(id: string, org: string): Profile {
   return {
     id, user_id: "u1", org_id: `o-${id}`, role: "em", display_name: "Liam",
-    title_band: null, org_name: org, org_type: "company", clients_enabled: true, onboarding: null,
+    title_band: null, org_name: org, org_type: "company", clients_enabled: true, tier: "business", has_roster: true, shows_admin_role: true, has_firm_view: true, onboarding: null,
   };
 }
 

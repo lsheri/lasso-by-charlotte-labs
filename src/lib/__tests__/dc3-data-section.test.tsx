@@ -37,7 +37,7 @@ beforeEach(() => {
   mocks.present.mockResolvedValue({ ok: true });
   mocks.purposeSave.mockResolvedValue({ ok: true });
   mocks.research.mockResolvedValue({ ok: true });
-  mocks.profile = { id: "p1", user_id: "u1", org_id: "o1", role: "admin", display_name: "Liam", title_band: null, org_name: "Example", org_type: "personal", clients_enabled: false, onboarding: null };
+  mocks.profile = { id: "p1", user_id: "u1", org_id: "o1", role: "admin", display_name: "Liam", title_band: null, org_name: "Example", org_type: "personal", clients_enabled: false, tier: "individual", has_roster: false, shows_admin_role: false, has_firm_view: false, onboarding: null };
   mocks.consent = { role: "admin", is_admin: true, org_tier: "d", user_tier: "d", org_tier_d_switch: true, org_text_version: "dc-v4", user_text_version: "dc-v4", research_choice: null, changes: [] };
   mocks.purposes = { is_admin: true, grants: { operate: true, deidentified_improvement: true } };
 });

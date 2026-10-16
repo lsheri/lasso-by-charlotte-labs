@@ -21,6 +21,11 @@ export type Profile = {
   /** Whether this workspace uses clients at all. An admin sets it; the
    *  vocabulary does not decide it. */
   clients_enabled: boolean;
+  /** C1: capability columns on the orgs row; fail closed when absent. */
+  tier: "individual" | "business";
+  has_roster: boolean;
+  shows_admin_role: boolean;
+  has_firm_view: boolean;
 
   onboarding: unknown;
   /** When this profile was created. Used for banded age only, never shown. */
@@ -311,14 +316,14 @@ export async function fetchProfileState(): Promise<ProfileState> {
   const { data, error } = await supabase
     .from("profiles")
     .select(
-      "id, user_id, org_id, role, display_name, title_band, onboarding, created_at, deactivated_at, is_guest, orgs(name, settings, clients_enabled)",
+      "id, user_id, org_id, role, display_name, title_band, onboarding, created_at, deactivated_at, is_guest, orgs(name, settings, clients_enabled, tier, has_roster, shows_admin_role, has_firm_view)",
     )
     .eq("user_id", user.id)
     .order("created_at", { ascending: true });
   if (error) throw error;
-  const rows = (data ?? []) as unknown as (Omit<Profile, "org_name" | "org_type" | "clients_enabled"> & {
+  const rows = (data ?? []) as unknown as (Omit<Profile, "org_name" | "org_type" | "clients_enabled" | "tier" | "has_roster" | "shows_admin_role" | "has_firm_view"> & {
     deactivated_at: string | null;
-    orgs: { name: string; settings: Record<string, unknown> | null; clients_enabled?: boolean | null } | null;
+    orgs: { name: string; settings: Record<string, unknown> | null; clients_enabled?: boolean | null; tier?: string | null; has_roster?: boolean | null; shows_admin_role?: boolean | null; has_firm_view?: boolean | null } | null;
   })[];
   // A deactivated profile is simply omitted, the switcher and every query
   // behave as if that workspace isn't there.
@@ -336,6 +341,10 @@ export async function fetchProfileState(): Promise<ProfileState> {
             : "personal") as OrgType,
       // NOT NULL in the database; a non-boolean means the row failed to load.
       clients_enabled: orgs?.clients_enabled === true,
+      tier: (orgs?.tier === "business" ? "business" : "individual") as "individual" | "business",
+      has_roster: orgs?.has_roster === true,
+      shows_admin_role: orgs?.shows_admin_role === true,
+      has_firm_view: orgs?.has_firm_view === true,
 
     }));
   return { profiles, hasDeactivated: rows.some((row) => row.deactivated_at) };

@@ -44,7 +44,7 @@ import { SidebarNav } from "@/components/layout/SidebarNav";
 
 function profile(): Profile {
   return { id: "p1", user_id: "u1", org_id: "o1", org_name: "Northline", org_type: state.type as Profile["org_type"], role: state.role,
-    display_name: "Liam", title_band: null, clients_enabled: state.clients, onboarding: null };
+    display_name: "Liam", title_band: null, clients_enabled: state.clients, tier: ["company","partner"].includes(state.type) ? "business" : "individual", has_roster: ["company","partner"].includes(state.type), shows_admin_role: ["company","partner"].includes(state.type), has_firm_view: state.type === "company", onboarding: null } as Profile;
 }
 function makeProfiles(): Profile[] { return state.count === 1 ? [profile()] : [profile(), { ...profile(), id: "p2", org_id: "o2", org_name: "Bright Path" }]; }
 function context(): NavCtx {

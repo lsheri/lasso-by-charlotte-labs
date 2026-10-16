@@ -3,9 +3,12 @@
  * both read these, so a rule can never drift between the two surfaces.
  */
 import { isBusinessOrg } from "@/hooks/use-profile";
-import { hasFirmView } from "@/lib/workspace-capabilities";
+import { profileHasFirmView } from "@/lib/workspace-capabilities";
 
-export type RoleProfile = { role: string; org_type: string } | null | undefined;
+export type RoleProfile =
+  | { role: string; org_type: string; has_roster?: boolean; shows_admin_role?: boolean; has_firm_view?: boolean }
+  | null
+  | undefined;
 
 export function isCoach(profile: RoleProfile): boolean {
   return profile?.role === "coach";
@@ -31,7 +34,7 @@ export function canManageMembers(profile: RoleProfile): boolean {
 /** The firm view aggregates a roster, so a solo workspace never sees it. */
 export function canSeeFirmView(profile: RoleProfile): boolean {
   // Firm view is company only. A partner workspace holds another company's people, so a workspace-wide roll-up there would aggregate a client's staff. The server refuses it; this keeps the nav honest about that.
-  return canManageMembers(profile) && hasFirmView(profile?.org_type);
+  return canManageMembers(profile) && profileHasFirmView(profile);
 }
 
 /**

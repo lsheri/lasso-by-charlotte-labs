@@ -106,3 +106,24 @@ describe("agreement with existing predicates", () => {
     expect(hasFirmView("partner")).toBe(false);
   });
 });
+
+import { profileHasFirmView, profileHasRoster, profileShowsAdminRole } from "@/lib/workspace-capabilities";
+
+describe("C1 profile readers", () => {
+  it("prefer the column when present, true and false", () => {
+    expect(profileHasRoster({ org_type: "personal", has_roster: true })).toBe(true);
+    expect(profileHasRoster({ org_type: "company", has_roster: false })).toBe(false);
+    expect(profileShowsAdminRole({ org_type: "personal", shows_admin_role: true })).toBe(true);
+    expect(profileShowsAdminRole({ org_type: "partner", shows_admin_role: false })).toBe(false);
+    expect(profileHasFirmView({ org_type: "partner", has_firm_view: true })).toBe(true);
+    expect(profileHasFirmView({ org_type: "company", has_firm_view: false })).toBe(false);
+  });
+  it("fall back to the type when the column is absent", () => {
+    expect(profileHasRoster({ org_type: "partner" })).toBe(true);
+    expect(profileHasRoster({ org_type: "personal" })).toBe(false);
+    expect(profileShowsAdminRole({ org_type: "company" })).toBe(true);
+    expect(profileShowsAdminRole(null)).toBe(false);
+    expect(profileHasFirmView({ org_type: "company" })).toBe(true);
+    expect(profileHasFirmView({ org_type: "partner" })).toBe(false);
+  });
+});

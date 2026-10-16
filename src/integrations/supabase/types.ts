@@ -3276,14 +3276,18 @@ export type Database = {
           country: string | null
           created_at: string
           data_use_tier: string | null
+          has_firm_view: boolean
+          has_roster: boolean
           id: string
           industry: string | null
           is_demo: boolean
           name: string
           org_mode: string | null
           settings: Json
+          shows_admin_role: boolean
           signup_source: string | null
           size_band: string | null
+          tier: string
           use_for: string | null
           vendor_display: string
         }
@@ -3293,14 +3297,18 @@ export type Database = {
           country?: string | null
           created_at?: string
           data_use_tier?: string | null
+          has_firm_view?: boolean
+          has_roster?: boolean
           id?: string
           industry?: string | null
           is_demo?: boolean
           name: string
           org_mode?: string | null
           settings?: Json
+          shows_admin_role?: boolean
           signup_source?: string | null
           size_band?: string | null
+          tier?: string
           use_for?: string | null
           vendor_display?: string
         }
@@ -3310,14 +3318,18 @@ export type Database = {
           country?: string | null
           created_at?: string
           data_use_tier?: string | null
+          has_firm_view?: boolean
+          has_roster?: boolean
           id?: string
           industry?: string | null
           is_demo?: boolean
           name?: string
           org_mode?: string | null
           settings?: Json
+          shows_admin_role?: boolean
           signup_source?: string | null
           size_band?: string | null
+          tier?: string
           use_for?: string | null
           vendor_display?: string
         }
@@ -6146,6 +6158,10 @@ export type Database = {
           p_role: Database["public"]["Enums"]["app_role"]
         }
         Returns: undefined
+      }
+      set_workspace_tier: {
+        Args: { p_org: string; p_tier: string }
+        Returns: Json
       }
       share_back_prompt: {
         Args: { p_actor_profile_id?: string }
