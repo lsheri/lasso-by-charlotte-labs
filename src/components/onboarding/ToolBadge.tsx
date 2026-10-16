@@ -13,7 +13,7 @@ export function ToolBadge({ tool, size = "md" }: { tool: ToolId; size?: "sm" | "
   return (
     <span
       aria-hidden
-      className={`flex ${box} shrink-0 items-center justify-center rounded-[calc(var(--radius)-3px)] border`}
+      className={`flex ${box} shrink-0 items-center justify-center rounded-[var(--radius-md-new)] border`}
       style={{ background: styles.background, borderColor: styles.border, color: styles.color }}
     >
       {brand ? (
