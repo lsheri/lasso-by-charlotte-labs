@@ -9,13 +9,14 @@ const styles = readFileSync("src/styles.css", "utf8");
 const chatRow = readFileSync("src/components/work/ChatRow.tsx", "utf8");
 
 describe("pass 175 — preview and sticky", () => {
-  it("keeps the chat library on the shared Preview face", () => {
-    expect(page).toContain('displayMode="preview"');
+  it("keeps the chat library on the shared SketchCard face", () => {
+    expect(page).toContain("import { SketchCard } from '@/design/reference/SketchCard'");
     expect(page).not.toContain('aria-label="How conversations are shown"');
   });
 
-  it("uses the shared note and Workboard preview path", () => {
-    expect(page).toContain('import { WorkNote } from "@/components/work/WorkNote"');
+  it("uses the display adapter and retains the Workboard preview hook", () => {
+    expect(page).toContain("import { workToSketch } from '@/lib/work-sketch'");
+    expect(page).not.toMatch(/import\s+[\s\S]*?\bfrom\s*['"]@\/components\/work\/WorkNote['"]/);
     expect(page).toContain('useWorkboardCardPreviews');
     expect(page).not.toMatch(/function\s+Chat(Card|Note)\b/);
   });
