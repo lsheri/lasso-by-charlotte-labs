@@ -2,7 +2,7 @@ Tour mirrors board chrome; preserve live behavior.
 - Teammate provenance marks belong only in signed-in CanvasLabPage; never expose them on shared, demo, tour, firm, or rollup surfaces.
 - Keep container colour inheritance pure in `container-colour.ts`; children never persist inherited colour.
 - Filter archived container branches while building the sidebar tree so descendants stay hidden without child writes.
-- Resolve MapDialog's board-only placement through ensure_board_default_task and the existing remapItems path, because default placement must share first-map recording and entry attribution with optional workstreams.
+- MapDialog board-only placement uses ensure_board_default_task and remapItems, sharing first-map recording and entry attribution with optional workstreams.
 <!-- LOVABLE:BEGIN -->
 > [!IMPORTANT]
 > This project is connected to [Lovable](https://lovable.dev). Avoid rewriting
@@ -36,7 +36,7 @@ Tour mirrors board chrome; preserve live behavior.
 - Emit the tour.* event family only from OnboardingTour, with act number and register as the sole dims, so the preview harness and shared tour primitives never record anything.
 - Fit the landing tour through its local measured wrapper, preserving the shared tour's natural dimensions and reserving its scaled height, because preview and onboarding must remain unchanged.
 
-- Keep affiliation sections and their shared-board reads in AffiliationPage exports, so individual Members and business Affiliation compose one disclosure implementation.
+- AffiliationPage exports own affiliation sections and shared-board reads; individual Members and business Affiliation share one disclosure implementation.
 - Render phone All work through WorkNote's opt-in list presentation and the existing mobile breakpoint hook, so its dates, source marks, and open handlers share the desktop card truth without changing other surfaces.
 - Keep Home's board shell content-height-sized with native scrolling opted in; other board surfaces retain canvas gestures by default so the Home fix cannot alter workboard interactions.
 - Keep the signup default notice in data-consent-shared and pin its literal SHA-256 in tests; signup and new-account setup must render that same string without changing existing consent choices or writes.
