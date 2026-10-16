@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 import type { OrgType } from "@/lib/org-type";
+import { isBusinessType } from "@/lib/workspace-capabilities";
 
 
 export type Profile = {
@@ -32,7 +33,7 @@ export type Profile = {
 /** Business orgs get the members console; personal ones get "Your coaches". */
 export function isBusinessOrg(profile: { org_type: string } | null | undefined): boolean {
   // A partner firm has members and runs client engagements, so it takes the business vocabulary. Firm view is decided separately, in canSeeFirmView.
-  return profile?.org_type === "company" || profile?.org_type === "partner";
+  return isBusinessType(profile?.org_type);
 }
 
 /** Active profiles, plus whether the user holds only deactivated ones. */
