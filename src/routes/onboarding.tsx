@@ -562,13 +562,13 @@ function OnboardingInner() {
       profileIdForSegment = existing?.id ?? null;
     }
     if (!orgIdForSegment) return;
-    const full: Record<string, string | null> = isPersonal
+    const full: { use_for?: string | null; industry?: string | null; size_band?: string | null; country: string | null } = isPersonal
       ? { use_for: useFor, country }
       : { industry, size_band: sizeBand, country };
     // Fresh creation sends every key (columns are null already). An existing
     // workspace sends only answered keys, so Settings values are kept.
     const payload = existingWorkspace
-      ? Object.fromEntries(Object.entries(full).filter(([, v]) => Boolean(v)))
+      ? (Object.fromEntries(Object.entries(full).filter(([, v]) => Boolean(v))) as Partial<typeof full>)
       : full;
     const { error: saveError } = await supabase
       .from("orgs")
