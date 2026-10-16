@@ -20,7 +20,7 @@ export async function requirePartnerWorkspace(profile?: Profile | null): Promise
  */
 export async function requirePartnerSubmitter(profile?: Profile | null): Promise<void> {
   const active = profile === undefined ? await fetchProfile() : profile;
-  if (!isPartnerType(active?.org_type) || (active.role !== "admin" && active.role !== "lead")) {
+  if (!active || !isPartnerType(active.org_type) || (active.role !== "admin" && active.role !== "lead")) {
     throw redirect({ to: "/work", replace: true });
   }
 }
