@@ -27,7 +27,8 @@ import { ChatUrlLink } from "@/components/work/ChatUrlLink";
 import { PasteThreadDialog } from "@/components/work/PasteThreadDialog";
 import { Button } from "@/components/ui/button";
 import { fedPhrase } from "@/components/work/ChatRow";
-import { WorkNote } from "@/components/work/WorkNote";
+import { SketchCard } from '@/design/reference/SketchCard';
+import { workToSketch } from '@/lib/work-sketch';
 import { CardMenu } from "@/components/work/CardMenu";
 import {
   noteChatViewChangedFn,
@@ -495,7 +496,13 @@ export function AiRecordPage() {
                                  <DimmedDisabled key={item.id} dimmed={!matches} disabled={!matches} className="h-[118px] min-w-0">
                                    <div data-lane-content style={{ height: `${CONVERSATION_CARD_HEIGHT}px` }} className="h-full min-w-0">
                                    <span className={`${pileMotion.className ? "nb-sticky-wave " : ""}conversation-card-compact canvas-lab-card-paper block h-full min-w-0`} style={{ "--nb-wave-delay": `${Math.min(index, 23) * 26}ms` } as React.CSSProperties}>
-                                     <WorkNote item={item} dense displayMode="preview" chatPreview={conversationCardPreview(cardPreviews[item.id])} onOpen={() => openItem(item)} actions={(
+                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                       <SketchCard
+                                         work={workToSketch(item)}
+                                         width={230}
+                                         onSelect={() => openItem(item)}
+                                         onOpen={() => openItem(item)}
+                                       />
                                        <CardMenu item={item} onFluency={(nextItem) => setLensItem(nextItem)}>
                                          {firstEngagement(item) ? <span className="font-mono text-[9px] uppercase tracking-[0.08em]" style={{ color: `var(${engagementHue(firstEngagement(item)?.id ?? "")})` }}>{firstEngagement(item)?.code}</span> : <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">UNMAPPED</span>}
                                          {itemModel(item) ? <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{itemModel(item)}</span> : null}
@@ -503,7 +510,7 @@ export function AiRecordPage() {
                                          {(fed?.[item.id] ?? []).length > 0 ? <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-green">{fedPhrase(fed?.[item.id] ?? [])}</span> : null}
                                          <ChatUrlLink item={item} showAbsence />
                                        </CardMenu>
-                                     )} />
+                                     </div>
                                    </span>
                                    </div>
                                  </DimmedDisabled>
