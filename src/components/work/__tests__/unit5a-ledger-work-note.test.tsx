@@ -62,28 +62,22 @@ describe("Unit 5a Ledger WorkNote", () => {
     expect(container.querySelector<HTMLElement>(".ledger-work-note")?.style.borderLeftColor).toBe(rgb(brandHex(brand)));
   });
 
-  it("has no folded corner and renders a document thumbnail column", () => {
-    const { container, getByTestId } = render(<WorkNote item={item("googledrive", "document")} filePreview={preview} />);
+  it("has no folded corner and the lane renders the source mirror, not a thumbnail column", () => {
+    const { container } = render(<WorkNote item={item("googledrive", "document")} filePreview={preview} headerGutter />);
     expect(container.querySelector(".fold")).toBeNull();
-    expect(container.querySelector(".ledger-work-note__thumbnail")).not.toBeNull();
-    expect(getByTestId("file-thumbnail")).toBeTruthy();
+    expect(container.querySelector(".source-mirror")).not.toBeNull();
+    expect(container.querySelector(".ledger-work-note__thumbnail")).toBeNull();
   });
 
   it("names a document without recorded tool plumbing as Document", () => {
     const unknown = item("mcp", "document");
     unknown.source_vendor = null;
     const { container } = render(<WorkNote item={unknown} filePreview={preview} />);
-    expect(container.querySelector(".nb-paper-body > div:first-child > span")?.textContent).toBe("Document");
+    expect(container.querySelector(".nb-paper-body > div:first-child > span")?.textC  it("the lane card renders the mirror and no summary paragraph", () => {
+    const lane = render(<WorkNote item={item("claude")} headerGutter chatPreview={{ workItemId: "stored", summary: "Stored extract", turnCount: 1, model: null, firstUserTurn: { turnNo: 1, role: "user", content: "First turn" }, turns: [] }} />);
+    expect(lane.container.querySelector(".source-mirror")).not.toBeNull();
+    expect(lane.container.querySelector("[data-summary-source]")).toBeNull();
   });
-
-  it("prefers a stored summary and falls back to the first user turn", () => {
-    const stored = render(<WorkNote item={item("claude")} chatPreview={{ workItemId: "stored", summary: "Stored extract", turnCount: 1, model: null, firstUserTurn: { turnNo: 1, role: "user", content: "First turn" }, turns: [] }} />);
-    expect(stored.getByText("Stored extract")).toBeTruthy();
-    expect(stored.container.querySelector('[data-summary-source="stored"]')).not.toBeNull();
-    stored.unmount();
-
-    const fallback = render(<WorkNote item={item("chatgpt")} chatPreview={{ workItemId: "fallback", summary: null, turnCount: 1, model: null, firstUserTurn: { turnNo: 1, role: "user", content: "First turn" }, turns: [] }} />);
-    expect(fallback.getByText("First turn")).toBeTruthy();
-    expect(fallback.container.querySelector('[data-summary-source="first-turn"]')).not.toBeNull();
+t-turn"]')).not.toBeNull();
   });
 });
