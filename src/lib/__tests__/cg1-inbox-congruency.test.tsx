@@ -531,7 +531,7 @@ describe("CG1 inbox congruency", () => {
 });
 
 describe("CG2 AI conversations congruency", () => {
-  it("uses the fixed Ledger card height and shows only the first user turn", () => {
+  it("keeps the fixed lane height and renders a named SketchCard instead of chat-turn previews", () => {
     inboxRows = [conversation("Question first", "claude", "ALPHA")];
     cardPreviews["Question first"] = {
       workItemId: "Question first",
@@ -549,8 +549,8 @@ describe("CG2 AI conversations congruency", () => {
     const card = screen.getByText("Question first").closest<HTMLElement>("[data-lane-content]");
     expect(CONVERSATION_CARD_HEIGHT).toBe(118);
     expect(card?.style.height).toBe("118px");
-    expect(screen.getAllByTestId("conversation-card-turn")).toHaveLength(1);
-    expect(screen.getByText("user: How should I frame this?")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Question first. Chat from Claude. Double click to open." }).tagName).toBe("ARTICLE");
+    expect(screen.queryByText("user: How should I frame this?")).toBeNull();
     expect(screen.queryByText(/Start with the answer|Then what/)).toBeNull();
   });
 
@@ -587,7 +587,7 @@ describe("CG2 AI conversations congruency", () => {
     expect(within(july as HTMLElement).getByText("0")).toBeTruthy();
     expect(july?.querySelector(".conversation-month-grid")).toBeNull();
     expect(within(months[5] as HTMLElement).getByText("April")).toBeTruthy();
-    expect(within(stack).getAllByRole("article")).toHaveLength(15);
+    expect(within(stack).getAllByRole("button", { name: /^\d{2} conversation \d+\. Chat from Claude\. Double click to open\.$/ })).toHaveLength(15);
     expect(screen.getByRole("searchbox", { name: "Search your chats" })).toBeTruthy();
     expect(screen.getByRole("group", { name: "Filter by tool" })).toBeTruthy();
     expect(screen.getByRole("button", { name: /Workboards/ })).toBeTruthy();
