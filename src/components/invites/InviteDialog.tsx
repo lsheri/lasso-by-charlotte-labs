@@ -13,7 +13,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { isBusinessOrg, useProfile } from "@/hooks/use-profile";
+import { useProfile } from "@/hooks/use-profile";
 import { useMembers } from "@/hooks/use-members";
 import { useShareInvalidation } from "@/hooks/use-coach-share";
 import { supabase } from "@/integrations/supabase/client";
