@@ -172,6 +172,7 @@ const LIVE_KEYS_BY_EVENT: Record<string, readonly string[]> = {
   "container.deleted": ["kind", "had_workboards", "had_folders"],
   "container.reparented": ["kind", "depth", "action"],
   "org.clients_changed": ["enabled"],
+  "org.tier_changed": ["from", "to"],
   "chatlib.panel_opened": ["panel"],
   "reflect.trail_opened": ["read_band", "also_in_band", "not_read_band"],
   "work.filter_changed": ["filter", "selected", "result_band"],
