@@ -304,7 +304,7 @@ function OnboardingInner() {
 
   /** Where the flow goes once a workspace exists: everyone but edu gets the optional segment step first. */
   function afterCreation(): "segment" | "tools" {
-    return orgType === "edu" ? "tools" : "segment";
+    return "segment";
   }
 
   // KX1: name who the key belongs to without redeeming it. Never blocks.

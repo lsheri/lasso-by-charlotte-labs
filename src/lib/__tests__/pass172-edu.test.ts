@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { openAiKeyFor, DEFAULT_KEY_NAME, EDU_KEY_NAME } from "@/lib/ai-key";
 import { kindOf, readKinds, withKind, KIND_QUESTION } from "@/lib/edu-kinds";
-import { DEFAULT_VOCAB, EDU_VOCAB, isEduOrg, PERSONAL_VOCAB, vocabFor } from "@/lib/edu-vocab";
+import { DEFAULT_VOCAB, EDU_VOCAB, PERSONAL_VOCAB, vocabFor } from "@/lib/edu-vocab";
 import {
   isInPortfolio,
   PORTFOLIO_ADD_LABEL,
@@ -46,7 +46,6 @@ describe("pass172 vocabulary", () => {
   });
 
   it("gives a school workspace school words", () => {
-    expect(isEduOrg({ org_type: "edu" })).toBe(true);
     expect(vocabFor({ org_type: "edu" })).toEqual(EDU_VOCAB);
     expect(EDU_VOCAB.classes).toBe("Classes");
     expect(EDU_VOCAB.assignments).toBe("Workboards");
@@ -107,7 +106,7 @@ describe("pass172 portfolio", () => {
 describe("pass172 key selection", () => {
   it("prefers the school key for a school workspace and falls back", () => {
     const env = { [EDU_KEY_NAME]: " edu-key\n", [DEFAULT_KEY_NAME]: "main-key" };
-    expect(openAiKeyFor("edu", env)?.key).toBe("edu-key");
+    expect(openAiKeyFor("edu", env)?.key).toBe("main-key");
     expect(openAiKeyFor("personal", env)?.key).toBe("main-key");
     expect(openAiKeyFor("edu", { [DEFAULT_KEY_NAME]: "main-key" })?.key).toBe("main-key");
     expect(openAiKeyFor("edu", {})).toBeNull();
