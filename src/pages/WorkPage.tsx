@@ -72,6 +72,8 @@ import {
 } from "@/lib/work-types";
 import { WorkSubtitle } from "@/components/work/WorkSubtitle";
 import { WorkNote } from "@/components/work/WorkNote";
+import { SketchRow } from '@/design/reference/SketchCard';
+import { workToSketch } from '@/lib/work-sketch';
 import { useIsMobile } from "@/hooks/use-mobile";
 import { InboxFixedCard } from "@/components/work/InboxFixedCard";
 import {
@@ -890,7 +892,9 @@ export function WorkPage() {
               <ul className="m-0 list-none p-0">
                 {phoneEntries.slice(0, phoneLimit).map(({ entry, ...head }) => (
                   <li key={isConversationGroup(entry) ? entry.key : entry.id}>
-                    <WorkNote item={head} phoneRow onOpen={openItem(head, entry)} />
+                    <div onClick={openItem(head, entry)} style={{ cursor: 'pointer' }}>
+                      <SketchRow work={workToSketch(head)} onOpen={openItem(head, entry)} />
+                    </div>
                     {sharedChips(isConversationGroup(entry) ? entry.items : [entry])}
                   </li>
                 ))}
