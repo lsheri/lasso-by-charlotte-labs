@@ -34,6 +34,7 @@ export type BrandKey =
   | "chatgpt"
   | "copilot"
   | "gemini"
+  | "lovable"
   | "upload"
   | "thread"
   | "unknown";
@@ -55,6 +56,7 @@ const CUSTOM_HEX: Partial<Record<BrandKey, string>> = {
   sharepoint: "#036C70",
   chatgpt: "#000000",
   copilot: "#1B8BE0",
+  lovable: "#FD5628",
   slack: "#36C5F0",
   granola: "#E8763A",
   wispr: "#111111",
@@ -77,6 +79,7 @@ const LABELS: Record<BrandKey, string> = {
   chatgpt: "ChatGPT",
   copilot: "Microsoft Copilot",
   gemini: "Gemini",
+  lovable: "Lovable",
   upload: "Upload",
   thread: "Conversation",
   unknown: "Connector",
@@ -140,6 +143,29 @@ function CustomMark({ brand }: { brand: BrandKey }) {
         <path
           fill="url(#nb-copilot-grad)"
           d="M8.6 4.4h6.8a4 4 0 0 1 3.8 2.8l1.5 4.7a3.4 3.4 0 0 1-3.2 4.4H16v.5a3.2 3.2 0 0 1-3.2 3.2H9.3A5.3 5.3 0 0 1 4 14.7v-1.5a1.6 1.6 0 0 1 .6-1.3l.4-.3-.6-1.9A4 4 0 0 1 8.6 4.4Zm0 2a2 2 0 0 0-1.9 2.6l.8 2.6h6.9a1.7 1.7 0 0 1 1.6 2.2l-.6 2h2.2a1.4 1.4 0 0 0 1.3-1.8l-1.5-4.7a2 2 0 0 0-1.9-1.4H8.6Z"
+        />
+      </g>
+    );
+  }
+  if (brand === "lovable") {
+    return (
+      <g>
+        <defs>
+          <linearGradient id="nb-lovable-grad" x1="0.55" y1="0" x2="0.45" y2="1">
+            <stop offset="0%" stopColor="#FD7803" />
+            <stop offset="12%" stopColor="#FD7209" />
+            <stop offset="25%" stopColor="#FD6A10" />
+            <stop offset="38%" stopColor="#FD5628" />
+            <stop offset="50%" stopColor="#FC4B6A" />
+            <stop offset="62%" stopColor="#E65FCD" />
+            <stop offset="75%" stopColor="#AD6BF3" />
+            <stop offset="88%" stopColor="#6D70FA" />
+            <stop offset="100%" stopColor="#4C73FF" />
+          </linearGradient>
+        </defs>
+        <path
+          fill="url(#nb-lovable-grad)"
+          d="M0.202 15.279C0.209 5.648 0.198 6.476 0.32 5.808C0.503 4.793 0.92 3.816 1.534 2.958C2.452 1.677 3.794 0.725 5.307 0.283C7.018 -0.217 8.89 -0.044 10.471 0.759C11.678 1.373 12.68 2.308 13.367 3.462C13.877 4.317 14.164 5.147 14.321 6.211C14.348 6.396 14.354 6.668 14.363 8.116L14.374 9.805L15.884 9.816C17.155 9.825 17.429 9.832 17.611 9.858C19.018 10.063 20.158 10.554 21.217 11.412C21.482 11.627 21.98 12.123 22.194 12.386C23.54 14.038 24.08 16.131 23.698 18.22C23.357 20.084 22.245 21.769 20.655 22.831C19.741 23.441 18.71 23.822 17.554 23.975C17.314 24.007 16.849 24.009 8.749 24.014L0.196 24.019L0.202 15.279Z"
         />
       </g>
     );
@@ -269,5 +295,6 @@ export function brandForToolkit(toolkit: string): BrandKey {
   if (key.startsWith("chatgpt") || key === "openai") return "chatgpt";
   if (key.startsWith("copilot") || key.startsWith("microsoftcopilot")) return "copilot";
   if (key.startsWith("gemini")) return "gemini";
+  if (key.startsWith("lovable")) return "lovable";
   return "unknown";
 }
