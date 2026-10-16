@@ -17,6 +17,7 @@ One row per design decision. Owner: L = Liam, C = Claude architect, M = Magic OS
 | 14 Oct 2026 | not recorded | Primary button in graphite grain with an acid offset shadow | flat ink, concrete, letterpress, cast, smudge, pale, paper | Superseded 15 Oct |
 | 15 Oct 2026 | C via project knowledge rule 10 | Primary button is flat ink, --btn-shadow none, card shadow 15 percent | the 14 Oct graphite grain | Decided, confirmed by L |
 | 15 Oct 2026 | L | The repo is the source of truth for every design value and decision; Magic OS is where design is decided and shown. Flow: OS proposes, repo records, OS mirrors | Magic OS as the single source of truth copied exactly | Decided |
+| 15 Oct 2026 | L | All work lane card takes the Bone and Acid furniture, keeps thumbnail and summary chain, no mirror | mirror face on the lane (rejected: test-pinned summary chain, lane is a scan surface) | Superseded by WC-5 |
+| 15 Oct 2026 | L | All work lane card takes the full G face, identical to the board card; summary and thumbnail leave the lane | furniture-only lane (WC-4) | Built, preview |
 
 Open: where the four --verify-* states render (chat answer, opened view, card); placement of Recent boards in the sidebar; whether the graphite grain button returns.
-| 15 Oct 2026 | L | All work lane card takes the Bone and Acid furniture, keeps thumbnail and summary chain, no mirror | mirror face on the lane (rejected: test-pinned summary chain, lane is a scan surface) | Built, preview |
