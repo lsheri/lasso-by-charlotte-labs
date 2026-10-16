@@ -129,3 +129,22 @@
   --brand-granola:#7cb342;
   --brand-granola-ink:#111111;
 }
+
+/* Names the ported reference components use that this file did not carry.
+   Values are the Magic Patterns mirror's own, so nothing that renders today
+   moves. --font-display was already referenced by two canvas-lab rules and
+   had never been defined anywhere; it is defined here now.
+   Deliberately NOT defined: --text-sm, --text-base, --text-xs, --text-lg,
+   --text-xl, --text-2xl, --text-3xl. Tailwind v4 owns those names and
+   defining them here would resize every text-sm and text-base utility in
+   the product. SketchRow resolves --text-sm to Tailwind's 14px instead of
+   the mirror's 13px. That 1px is accepted and recorded. */
+:root {
+  --text-micro:9px;
+  --text-mini:10.5px;
+  --text-md:16px;
+
+  --font-display:"Young Serif", "Iowan Old Style", Georgia, serif;
+
+  --focus-ring:var(--focus-ring-new);
+}
