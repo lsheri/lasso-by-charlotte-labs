@@ -73,11 +73,12 @@ describe("Unit 5a Ledger WorkNote", () => {
     const unknown = item("mcp", "document");
     unknown.source_vendor = null;
     const { container } = render(<WorkNote item={unknown} filePreview={preview} />);
-    expect(container.querySelector(".nb-paper-body > div:first-child > span")?.textC  it("the lane card renders the mirror and no summary paragraph", () => {
+    expect(container.querySelector(".nb-paper-body > div:first-child > span")?.textContent).toBe("Document");
+  });
+
+  it("the lane card renders the mirror and no summary paragraph", () => {
     const lane = render(<WorkNote item={item("claude")} headerGutter chatPreview={{ workItemId: "stored", summary: "Stored extract", turnCount: 1, model: null, firstUserTurn: { turnNo: 1, role: "user", content: "First turn" }, turns: [] }} />);
     expect(lane.container.querySelector(".source-mirror")).not.toBeNull();
     expect(lane.container.querySelector("[data-summary-source]")).toBeNull();
-  });
-t-turn"]')).not.toBeNull();
   });
 });
