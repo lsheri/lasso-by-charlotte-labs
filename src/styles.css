@@ -4854,7 +4854,8 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .ledger-work-note[data-paper-state="unmapped"] { height: 138px; }
 .canvas-lab-card-paper > .ledger-work-note { height: 100%; }
 /* I1: the Inbox card alone gets room to preview; every other face keeps 118px. */
-.inbox-fixed-card .ledger-work-note { height: 156px; }
+.inbox-fixed-card { overflow: hidden; }
+.inbox-fixed-card .ledger-work-note { height: 200px; }
 .ledger-work-note .canvas-lab-document-page,
 .ledger-work-note .canvas-lab-file-preview,
 .ledger-work-note .canvas-lab-file-preview-canvas { width: 100%; height: 100%; min-height: 0; object-fit: cover; }
@@ -7708,79 +7709,3 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 [data-lasso="on"].lasso-first-run .lasso-setup-tools > section > div > .flex.items-start > span:first-child { width: 16px; height: 16px; border: 0; border-radius: var(--radius-pill); background: currentColor !important; }
 [data-lasso="on"].lasso-first-run .lasso-setup-tools > section > div > .flex.items-start > span:first-child > svg { display: none; }
 [data-lasso="on"].lasso-first-run .lasso-setup-tools > section > div > .flex.items-start > div > p:first-child { font-family: var(--font-sans); font-size: 13px; font-weight: 500; }
-
-/* WC-4: All work lane card takes the Bone and Acid furniture. Skin only; the
-   lane keeps its thumbnail and summary chain. Canvas branch (.work-note-gutter)
-   is untouched. */
-[data-lasso="on"] .nb-paper.work-note-lane {
-  border: var(--border-weight) solid var(--line-strong);
-  border-left-width: 3px;
-  background: var(--surface-raised);
-  box-shadow: var(--card-shadow);
-  border-radius: var(--radius-sm-new);
-  transition: transform var(--dur-quick) var(--ease-standard), box-shadow var(--dur-quick) var(--ease-standard);
-}
-[data-lasso="on"] .nb-paper.work-note-lane[data-paper-state="unmapped"] {
-  border: var(--border-weight) solid var(--line-pencil);
-  background: var(--surface-page);
-  box-shadow: none;
-}
-[data-lasso="on"] .nb-paper.work-note-lane[data-paper-state="unmapped"]::before {
-  width: 9px;
-  border-right: var(--border-weight) solid var(--line-pencil);
-  background: repeating-linear-gradient(135deg, transparent 0 4px, var(--line-pencil) 4px 5px);
-}
-[data-lasso="on"] .work-note-lane > .nb-paper-body > div:first-child > svg,
-[data-lasso="on"] .work-note-lane > .nb-paper-body > div:first-child > img {
-  width: 11px;
-  height: 11px;
-  border-radius: var(--radius-pill);
-}
-[data-lasso="on"] .work-note-lane > .nb-paper-body > div:first-child > span.truncate {
-  font-family: var(--font-mono);
-  font-size: 8.5px;
-  font-weight: var(--label-weight);
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-[data-lasso="on"] .work-note-lane > .nb-paper-body > div:first-child > span.text-soft {
-  font-size: 8px;
-  color: var(--line-pencil);
-}
-[data-lasso="on"] .work-note-lane > .nb-paper-body > p.truncate:not([data-summary-source]) {
-  font-family: var(--font-sans);
-  font-size: 12.5px;
-  font-weight: 600;
-  line-height: 1.22;
-  white-space: normal;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
-}
-[data-lasso="on"] .work-note-lane > .nb-paper-body > div:last-of-type.border-t,
-[data-lasso="on"] .work-note-lane > .nb-paper-body > div.border-t {
-  margin-top: 6px;
-  height: auto;
-  min-height: 16px;
-  border-top: var(--border-weight) solid var(--line-hairline);
-}
-[data-lasso="on"] .work-note-lane[data-paper-state="unmapped"] > .nb-paper-body > div.border-t {
-  border-top-style: dashed;
-  border-top-color: var(--state-no-board);
-}
-[data-lasso="on"] .work-note-lane > .nb-paper-body > div.border-t > span {
-  font-family: var(--font-mono);
-  font-size: 8px;
-}
-@media (hover: hover) {
-  [data-lasso="on"] .nb-paper.work-note-lane:hover {
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-float);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  [data-lasso="on"] .nb-paper.work-note-lane { transition: none; }
-  [data-lasso="on"] .nb-paper.work-note-lane:hover { transform: none; }
-}

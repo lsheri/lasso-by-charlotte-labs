@@ -116,7 +116,7 @@ const INBOX_LANE_LEFT = 40;
  */
 const INBOX_LANE_TOP = 76;
 /** I1: tall enough for three summary lines, or a thumbnail and its two label lines. */
-export const INBOX_CARD_HEIGHT = 156;
+export const INBOX_CARD_HEIGHT = 200;
 const INBOX_LANE_PADDING = 12;
 const INBOX_CARD_GAP = 12;
 const INBOX_LANE_HEADER_HEIGHT = 40;
