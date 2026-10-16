@@ -39,7 +39,12 @@ export function hasCoachByArrangementType(type: TypeLike): boolean {
 }
 
 /** C1: profile readers. The orgs row column wins; a profile without it falls back to the type predicate. */
-type CapProfile = { org_type?: string | null; has_roster?: boolean; shows_admin_role?: boolean; has_firm_view?: boolean } | null | undefined;
+type CapProfile = { org_type?: string | null; tier?: string | null; has_roster?: boolean; shows_admin_role?: boolean; has_firm_view?: boolean } | null | undefined;
+export function profileIsBusiness(p: CapProfile): boolean {
+  return p?.tier === "business" || p?.tier === "individual"
+    ? p.tier === "business"
+    : isBusinessType(p?.org_type);
+}
 export function profileHasRoster(p: CapProfile): boolean { return typeof p?.has_roster === "boolean" ? p.has_roster : hasRoster(p?.org_type); }
 export function profileShowsAdminRole(p: CapProfile): boolean { return typeof p?.shows_admin_role === "boolean" ? p.shows_admin_role : showsAdminRole(p?.org_type); }
 export function profileHasFirmView(p: CapProfile): boolean { return typeof p?.has_firm_view === "boolean" ? p.has_firm_view : hasFirmView(p?.org_type); }

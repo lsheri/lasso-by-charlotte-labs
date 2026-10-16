@@ -53,7 +53,7 @@ function PlansRoute() {
 
 const PLANS = [
   {
-    name: "Just me",
+    name: "Individual",
     forLine: "FOR ONE PERSON",
     price: "$0/mo",
     note: "free while we pilot",
@@ -68,7 +68,7 @@ const PLANS = [
     ],
   },
   {
-    name: "Team",
+    name: "Business",
     forLine: "FOR A COMPANY OR A GROUP AT WORK",
     price: "$0/person/mo",
     note: "free while we pilot",
@@ -228,7 +228,7 @@ export function PlansPage({ search = {} }: { search?: PlansSearch }) {
               )}
               <div className="mt-6 border-t border-rule pt-5">
                 {"plus" in plan && plan.plus ? (
-                  <p className="mb-3 text-sm font-medium">everything in Just me plus:</p>
+                  <p className="mb-3 text-sm font-medium">everything in Individual plus:</p>
                 ) : null}
                 <ul className="space-y-3 text-sm leading-5">
                   {plan.features.map((feature, index) => (
@@ -236,7 +236,7 @@ export function PlansPage({ search = {} }: { search?: PlansSearch }) {
                       <span aria-hidden="true" className="text-green">
                         ✓
                       </span>
-                      {index === plan.features.length - 1 && plan.name !== "Just me" ? (
+                      {index === plan.features.length - 1 && plan.name !== "Individual" ? (
                         <strong>{feature}</strong>
                       ) : (
                         <span>{feature}</span>

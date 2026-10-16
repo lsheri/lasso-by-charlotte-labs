@@ -38,7 +38,7 @@ describe("OrgSwitcher", () => {
     const one = profile({});
     const { container, unmount } = renderSwitcher([one], one);
     expect(container.textContent).toContain("Northline");
-    expect(container.textContent).toContain("FIRM · MEMBER");
+    expect(container.textContent).toContain("BUSINESS · MEMBER");
     unmount();
   });
 
@@ -48,7 +48,7 @@ describe("OrgSwitcher", () => {
     const coaching = profile({ id: "p2", org_id: "o2", role: "coach", org_name: "Bright Path" });
     renderSwitcher([mine, coaching], mine);
 
-    const trigger = screen.getByRole("button", { name: /change workspace.*northline.*firm/i });
+    const trigger = screen.getByRole("button", { name: /change workspace.*northline.*business/i });
     expect(trigger.getAttribute("aria-expanded")).toBe("false");
     expect(screen.queryByText("Bright Path")).toBeNull();
 

@@ -333,7 +333,7 @@ function MembersConsole() {
               {!isAdmin ? (
                 <>
                   <p className="mt-2 text-xs text-muted-foreground">
-                    Leads can see the list. Only an admin can change it.
+                    Only an admin can change this list.
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">{INVITE_ADMIN_ONLY_LINE}</p>
                 </>
