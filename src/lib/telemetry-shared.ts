@@ -4,6 +4,7 @@ import type { NavItemId } from "@/components/layout/nav-config";
 export type TelemetryEvent =
   | "nav.opened"
   | "org.created"
+  | "org.tier_changed"
   /** Unit 4h-a: an admin turned the workspace's client list on or off. The new state only, as "true" or "false". Never a name, never an id. */
   | "org.clients_changed"
   | "onboarding.tools_selected"

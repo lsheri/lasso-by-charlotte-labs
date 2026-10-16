@@ -444,6 +444,7 @@ function OnboardingInner() {
           orgId,
           {
             org_type: orgType,
+            tier: orgType === "company" || orgType === "partner" ? "business" : "individual",
             register: derived ?? "none",
             entry_door: derived ? entryDoor : entryDoor === "invite" ? "invite" : "chooser",
           },
