@@ -59,6 +59,12 @@ const opts = (Route as unknown as { options: Opts }).options;
 
 vi.setConfig({ testTimeout: 30000 });
 beforeAll(async () => {
+  // The later path reaches the first-run tour, which reads media queries.
+  window.matchMedia ??= ((q: string) => ({
+    matches: false, media: q, onchange: null,
+    addEventListener: () => {}, removeEventListener: () => {},
+    addListener: () => {}, removeListener: () => {}, dispatchEvent: () => false,
+  })) as unknown as typeof window.matchMedia;
   const c = opts.component as unknown as { preload?: () => Promise<unknown> };
   await c.preload?.();
 }, 30000);
