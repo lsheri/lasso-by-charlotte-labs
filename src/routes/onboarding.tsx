@@ -292,7 +292,7 @@ function OnboardingInner() {
   const [error, setError] = useState<string | null>(null);
   // F4 / ST-2: required uses question; the school door pre-ticks School.
   const [uses, setUses] = useState<PersonUse[]>(() =>
-    intent === "edu" || readEduIntent() ? ["school"] : [],
+    !usesAsked ? ["work"] : intent === "edu" || readEduIntent() ? ["school"] : [],
   );
   // SEG-1a/1b, ONB-Q1: the optional segment row on the tools step. Organisations
   // answer Industry and People; an individual answers one question.
@@ -400,12 +400,11 @@ function OnboardingInner() {
     }
 
     // F4 / ST-2: the person's own people row records what Lasso is for.
-    const usesToSave: PersonUse[] = usesAsked ? uses : ["work"];
-    if (sortUses(usesToSave).length === 0 || !freshUser?.user) {
+    if (sortUses(uses).length === 0 || !freshUser?.user) {
       setPending(false);
       return;
     }
-    const savedUses = await saveUses(supabase, freshUser.user.id, usesToSave).catch(() => ({
+    const savedUses = await saveUses(supabase, freshUser.user.id, uses).catch(() => ({
       ok: false,
       uses: [] as PersonUse[],
     }));
@@ -909,7 +908,7 @@ function OnboardingInner() {
 
               {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
-              <Button type="submit" className="w-full" disabled={pending || (usesAsked && uses.length === 0)}>
+              <Button type="submit" className="w-full" disabled={pending || uses.length === 0}>
                 {pending ? "Setting up…" : REGISTER_SHARED_COPY.submit}
               </Button>
               <button
