@@ -62,7 +62,7 @@ describe("UNI-1 individual sharing page", () => {
     const client = open(MembersPage);
     expect(screen.getByRole("heading", { name: /Members/ })).toBeTruthy();
     expect(screen.getByText("Role", { exact: true })).toBeTruthy();
-    expect(screen.getByText("WHAT A ROLE CHANGES")).toBeTruthy();
+    expect(screen.queryByText("WHAT A ROLE CHANGES")).toBeNull();
     expect(screen.queryByTestId("affiliation-sharing")).toBeNull();
     expect(state.noteRead).not.toHaveBeenCalled();
     client.clear();

@@ -284,13 +284,15 @@ function OnboardingInner() {
   const [shareBackError, setShareBackError] = useState<string | null>(null);
   const [tools, setTools] = useState<Set<ToolId>>(new Set());
   const [orgType] = useState<OrgType>(orgTypeForChoice(derived));
+  // UX-1: a business door is Work by construction, so the question is not asked.
+  const usesAsked = !segmentFieldsFor(orgType).includes("industry");
   const [displayName, setDisplayName] = useState("");
   const [orgName, setOrgName] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // F4 / ST-2: required uses question; the school door pre-ticks School.
   const [uses, setUses] = useState<PersonUse[]>(() =>
-    intent === "edu" || readEduIntent() ? ["school"] : [],
+    !usesAsked ? ["work"] : intent === "edu" || readEduIntent() ? ["school"] : [],
   );
   // SEG-1a/1b, ONB-Q1: the optional segment row on the tools step. Organisations
   // answer Industry and People; an individual answers one question.
@@ -876,7 +878,7 @@ function OnboardingInner() {
                 </div>
               ) : null}
 
-              <UsesChips value={uses} onChange={setUses} disabled={pending} />
+              {usesAsked ? <UsesChips value={uses} onChange={setUses} disabled={pending} /> : null}
 
               {!setup ? (
                 <div data-testid="signup-default-notice" className="rounded-[var(--radius-control)] border border-border px-4 py-3 text-sm leading-relaxed text-muted-foreground">

@@ -44,14 +44,14 @@ describe("Unit B1: public plans", () => {
     }
 
     expect(hrefs()).toEqual([
-      "/auth?intent=personal",
-      "/auth?intent=company",
+      "/auth?mode=signup&intent=personal",
+      "/auth?mode=signup&intent=company",
     ]);
 
     const comingSoon = screen.getByRole("button", { name: "Coming soon" });
     expect(comingSoon.getAttribute("aria-disabled")).toBe("true");
     expect(comingSoon.closest("a")).toBeNull();
-    expect(container.querySelector('a[href^="/auth?intent=partner"]')).toBeNull();
+    expect(container.querySelector('a[href^="/auth?mode=signup&intent=partner"]')).toBeNull();
 
     const wholePage = container.textContent ?? "";
     for (const line of [
@@ -70,8 +70,8 @@ describe("Unit D1: funnel source", () => {
   it("keeps src=front_door on all three Get started links", () => {
     render(<PlansPage search={validatePlansSearch({ src: "front_door" })} />);
     expect(hrefs()).toEqual([
-      "/auth?intent=personal&src=front_door",
-      "/auth?intent=company&src=front_door",
+      "/auth?mode=signup&intent=personal&src=front_door",
+      "/auth?mode=signup&intent=company&src=front_door",
     ]);
     expect(emitted).toContainEqual(["plans.viewed", { src: "front_door" }]);
   });
@@ -88,8 +88,8 @@ describe("Unit D1: funnel source", () => {
     expect(search).toEqual({ src: "front_door", from: "artemis" });
     render(<PlansPage search={search} />);
     expect(hrefs()).toEqual([
-      "/auth?intent=personal&src=front_door&from=artemis",
-      "/auth?intent=company&src=front_door&from=artemis",
+      "/auth?mode=signup&intent=personal&src=front_door&from=artemis",
+      "/auth?mode=signup&intent=company&src=front_door&from=artemis",
     ]);
   });
 

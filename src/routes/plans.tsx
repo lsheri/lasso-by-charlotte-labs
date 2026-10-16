@@ -209,7 +209,7 @@ export function PlansPage({ search = {} }: { search?: PlansSearch }) {
                 >
                   <Link
                     to="/auth"
-                    search={{ intent: plan.intent, ...(src ? { src } : {}), ...(from ? { from } : {}) }}
+                    search={{ mode: "signup" as const, intent: plan.intent, ...(src ? { src } : {}), ...(from ? { from } : {}) }}
                     onClick={() => emitClientEvent("plan.picked", { plan: plan.intent, src: eventSrc }, { stableVisitor: true })}
                   >
                     {plan.intent === "company" ? "Start a business workspace" : "Get started"}
