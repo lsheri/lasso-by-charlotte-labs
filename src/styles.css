@@ -7756,8 +7756,6 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 [data-lasso="on"].lasso-first-run .lasso-tool-picker > section > div { display: grid; grid-template-columns: repeat(auto-fit, minmax(176px, 1fr)); gap: 10px; }
 [data-lasso="on"].lasso-first-run .lasso-tool-picker button[role="checkbox"] { align-items: flex-start; gap: 10px; padding: 12px 13px; margin: 0; min-height: 64px; border: 1.5px solid var(--line-hairline); border-radius: var(--radius-md-new); background: var(--surface-raised); box-shadow: none; }
 [data-lasso="on"].lasso-first-run .lasso-tool-picker button[role="checkbox"][aria-checked="true"] { border-color: var(--line-strong); }
-[data-lasso="on"].lasso-first-run .lasso-tool-picker button[role="checkbox"] > span:first-child { width: 16px; height: 16px; margin-top: 2px; border: 0; border-radius: var(--radius-pill); background: currentColor !important; }
-[data-lasso="on"].lasso-first-run .lasso-tool-picker button[role="checkbox"] > span:first-child > svg { display: none; }
 [data-lasso="on"].lasso-first-run .lasso-tool-picker button[role="checkbox"] > span:nth-child(2) > span:first-child { font-family: var(--font-sans); font-size: 13px; font-weight: 500; color: var(--text-primary); overflow-wrap: anywhere; }
 [data-lasso="on"].lasso-first-run .lasso-tool-picker button[role="checkbox"] > span:last-child { display: none; }
 [data-lasso="on"].lasso-first-run .lasso-setup-tools > section > h2 { font-family: var(--font-mono); font-size: 9px; line-height: 1.6; letter-spacing: .13em; color: var(--text-muted); }
@@ -7765,6 +7763,4 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 [data-lasso="on"].lasso-first-run .lasso-setup-tools > section > .grid > :is(button, div) { border: 1.5px solid var(--line-hairline); border-radius: var(--radius-md-new); padding: 12px 13px; background: var(--surface-raised); box-shadow: none; }
 [data-lasso="on"].lasso-first-run .lasso-setup-tools > section > .grid { gap: 10px; grid-template-columns: repeat(auto-fit, minmax(176px, 1fr)); }
 [data-lasso="on"].lasso-first-run .lasso-setup-tools > section > div > .flex.items-start { gap: 10px; }
-[data-lasso="on"].lasso-first-run .lasso-setup-tools > section > div > .flex.items-start > span:first-child { width: 16px; height: 16px; border: 0; border-radius: var(--radius-pill); background: currentColor !important; }
-[data-lasso="on"].lasso-first-run .lasso-setup-tools > section > div > .flex.items-start > span:first-child > svg { display: none; }
 [data-lasso="on"].lasso-first-run .lasso-setup-tools > section > div > .flex.items-start > div > p:first-child { font-family: var(--font-sans); font-size: 13px; font-weight: 500; }
