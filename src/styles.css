@@ -7043,6 +7043,41 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .source-mirror__unknown-title { font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
 .source-mirror__unknown-label { font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; }
 .ledger-work-note[data-paper-state="unmapped"] .source-mirror { margin-left: -19px; filter: saturate(.2) opacity(.72); }
+/* Preserve existing non-group controls without changing their treatment. */
+[data-lasso="on"] .canvas-lab-toolbar button:not([data-toolbar-control="add-work"]):not(.canvas-lab-tool-group *) {
+  background: var(--surface-sunk);
+  color: var(--text-primary);
+  border: 1px solid var(--line-hairline);
+  border-radius: var(--radius-md-new);
+  transition: transform var(--dur-quick) var(--ease-standard),
+              box-shadow var(--dur-quick) var(--ease-standard),
+              background var(--dur-quick) var(--ease-standard);
+}
+[data-lasso="on"] .canvas-lab-toolbar button:not([data-toolbar-control="add-work"]):not(.canvas-lab-tool-group *):hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-card-new);
+  background: var(--surface-sunk);
+}
+[data-lasso="on"] .canvas-lab-toolbar button:not([data-toolbar-control="add-work"]):not(.canvas-lab-tool-group *):active:not(:disabled),
+[data-lasso="on"] .canvas-lab-toolbar button:not([data-toolbar-control="add-work"]):not(.canvas-lab-tool-group *)[data-state="open"],
+[data-lasso="on"] .canvas-lab-toolbar button:not([data-toolbar-control="add-work"]):not(.canvas-lab-tool-group *)[aria-pressed="true"],
+[data-lasso="on"] .canvas-lab-toolbar button:not([data-toolbar-control="add-work"]):not(.canvas-lab-tool-group *)[aria-expanded="true"] {
+  transform: none;
+  box-shadow: none;
+  background: var(--state-highlight);
+  color: var(--text-on-acid);
+  border-color: var(--state-highlight);
+}
+[data-lasso="on"] .canvas-lab-toolbar button:not([data-toolbar-control="add-work"]):not(.canvas-lab-tool-group *):focus-visible {
+  outline: 2px solid var(--focus-ring-new);
+  outline-offset: 2px;
+}
+[data-lasso="on"] .canvas-lab-toolbar button:not([data-toolbar-control="add-work"]):not(.canvas-lab-tool-group *):disabled { opacity: .45; }
+@media (prefers-reduced-motion: reduce) {
+  [data-lasso="on"] .canvas-lab-toolbar button:not([data-toolbar-control="add-work"]):not(.canvas-lab-tool-group *) { transition: none; }
+  [data-lasso="on"] .canvas-lab-toolbar button:not([data-toolbar-control="add-work"]):not(.canvas-lab-tool-group *):hover:not(:disabled) { transform: none; }
+}
+
 /* TOOLS-1: one graphite group, acid held state, no tool lift or catch. */
 [data-lasso="on"] .canvas-lab-tool-group {
   display: inline-flex;
