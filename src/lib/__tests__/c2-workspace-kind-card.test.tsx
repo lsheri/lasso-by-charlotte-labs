@@ -35,6 +35,8 @@ describe("C2 workspace kind card", () => {
     rpc.mockResolvedValue({ data: { status: "ok", tier: "business" }, error: null });
     mount();
     fireEvent.click(screen.getByRole("button", { name: "Make this a business workspace" }));
+    expect(rpc).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: WORKSPACE_KIND_COPY.confirmToBusinessAction }));
     await waitFor(() => expect(logEvent).toHaveBeenCalledTimes(1));
     expect(rpc).toHaveBeenCalledWith("set_workspace_tier", { p_org: "o1", p_tier: "business" });
     expect(logEvent).toHaveBeenCalledWith("org.tier_changed", "o1", { from: "individual", to: "business" });
