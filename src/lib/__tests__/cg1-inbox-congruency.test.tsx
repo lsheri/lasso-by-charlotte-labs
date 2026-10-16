@@ -204,7 +204,8 @@ describe("CG1 inbox congruency", () => {
       expect(screen.queryByText(/Nothing is hidden/)).toBeNull();
       expect(screen.queryByText("mapped")).toBeNull();
       expect(screen.queryByText("other")).toBeNull();
-      expect(screen.getByText("waiting")).toBeTruthy();
+      expect(within(screen.getByLabelText("All work list")).getByText("waiting", { selector: "p" })).toBeTruthy();
+      expect(within(screen.getByLabelText("All work list")).getByText("waiting", { selector: "svg text" }).closest('[aria-hidden="true"]')).not.toBeNull();
     } finally {
       Object.defineProperty(window, "innerWidth", { configurable: true, value: width });
     }
