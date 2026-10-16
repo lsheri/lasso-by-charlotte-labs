@@ -107,3 +107,25 @@
   --nav-catch-inline: -7px;
   --nav-catch-block: -5px;
 }
+
+/* Tool and work identity hues, plus the two Granola brand inks. Measured live
+   16 Oct from the running app, where they resolved from styles.css. Recorded
+   here because this file is the source of truth and the Magic Patterns design
+   system mirrors it; without them the mirror cannot render a tool badge.
+   Values are unchanged, so nothing moves on screen. styles.css still carries
+   its own copies; collapsing the duplicate is a separate unit. */
+:root {
+  --hue-slate-blue:#2f5f8c;
+  --hue-moss:#346b3f;
+  --hue-indigo:#414a94;
+  --hue-sand:#7d6423;
+  --hue-amber:#7f5a0e;
+  --hue-plum:#6f3a6c;
+  --hue-cyan:#14657f;
+  --hue-clay:#9a4a2c;
+  --hue-neutral:#55625f;
+  --hue-sage:#276b53;
+
+  --brand-granola:#7cb342;
+  --brand-granola-ink:#111111;
+}

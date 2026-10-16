@@ -22,5 +22,7 @@ One row per design decision. Owner: L = Liam, C = Claude architect, M = Magic OS
 
 | 14 Oct 2026, built 15 Oct | L | Board tools: light graphite group, 29px tools, acid held state, hover only, never the catch; one wrapper with Add work left, authorized redesign | separate white buttons (what PRIM-1 shipped) | Built, preview |
 | 15 Oct 2026 | L | Component source of truth is src/design/reference/<Name>.tsx (WorkCard, Toolbar, Button, NavRow, SettingsDialog, AskDock, StickyNote); Magic Patterns design system "Lasso" mirrors them byte for byte; dispatches cite the file, never prose | Magic Patterns as the component source; prose dispatches (rejected: re-interpretation drift seen in WC-4 and PRIM-1) | Landed, preview |
+| 16 Oct 2026 | L | Real vendor marks wherever a surface represents that vendor: Drive, Docs, Sheets, Slides, PowerPoint, Excel, ChatGPT, Claude, Gemini, Copilot, Lovable, Granola, Wispr. The first-run CSS that replaced tool badges with hue dots is deleted | hue dots with no mark (shipped 14 Oct under the re-skin flag, never recorded) | Decided, dots removed in ff46c375 |
+| 16 Oct 2026 | C | The ten work identity hues and the two Granola inks move into tokens.css so the design system mirror can render them | leaving them in styles.css only | Decided, under standing authority |
 
 Open: where the four --verify-* states render (chat answer, opened view, card); placement of Recent boards in the sidebar; whether the graphite grain button returns.
