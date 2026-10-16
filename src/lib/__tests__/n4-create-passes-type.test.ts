@@ -69,7 +69,7 @@ beforeAll(async () => {
 });
 
 beforeEach(() => {
-  mocks.search.intent = "personal";
+  mocks.search["intent"] = "personal";
   mocks.navigate.mockReset();
   mocks.rpc.mockReset();
   mocks.profilesRead.mockReset();
@@ -95,7 +95,7 @@ const createCalls = () =>
 
 describe("Unit N4: the create call passes the workspace type", () => {
   it("a company choice creates the workspace with p_type company", async () => {
-    mocks.search.intent = "company";
+    mocks.search["intent"] = "company";
     mocks.profilesRead.mockResolvedValue({ data: [], error: null });
     await submitSetup("Northwind Group");
     await waitFor(() => expect(createCalls()).toHaveLength(1));
