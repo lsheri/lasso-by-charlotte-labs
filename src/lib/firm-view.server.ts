@@ -4,6 +4,7 @@ import type { Database } from "@/integrations/supabase/types";
 
 import { requireConsoleAccess } from "./members.server";
 import type { ResolvedProfile } from "./profile-resolve";
+import { hasFirmView } from "@/lib/workspace-capabilities";
 
 /**
  * The firm view is admin or lead, and only in a company workspace. A solo
@@ -22,6 +23,6 @@ export async function requireFirmView(
     .eq("id", gate.profile.org_id)
     .maybeSingle();
   const settings = (org?.settings ?? null) as Record<string, unknown> | null;
-  if (settings?.["type"] !== "company") throw new Response("Forbidden", { status: 403 });
+  if (!hasFirmView(settings?.["type"] as string | null | undefined)) throw new Response("Forbidden", { status: 403 });
   return gate;
 }

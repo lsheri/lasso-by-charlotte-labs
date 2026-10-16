@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/use-profile";
+import { isPartnerType } from "@/lib/workspace-capabilities";
 
 /** MN-5: one board a person shared with this partner workspace via a live link. */
 export type PartnerSharedBoard = {
@@ -41,7 +42,7 @@ export function groupBySharer(boards: PartnerSharedBoard[]): PartnerSharedGroup[
 /** Enabled only while the active workspace is a partner workspace. Cached, never polled. */
 export function usePartnerSharedBoards() {
   const { data: profile } = useProfile();
-  const enabled = profile?.org_type === "partner" && Boolean(profile?.id);
+  const enabled = isPartnerType(profile?.org_type) && Boolean(profile?.id);
   return useQuery({
     queryKey: partnerSharedBoardsKey(profile?.id),
     queryFn: fetchPartnerSharedBoards,

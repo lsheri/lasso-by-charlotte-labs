@@ -1,3 +1,4 @@
+import { isBusinessType } from "@/lib/workspace-capabilities";
 /**
  * The segmentation keys for anonymous benchmarking. ONE copy, shared by the
  * settings card and the onboarding step, so the two can never drift apart.
@@ -283,7 +284,7 @@ export type SegmentField = "industry" | "size_band" | "use_for" | "country";
 
 /** DEM-1: the one decision of which questions a workspace is asked, shared by settings and onboarding. */
 export function segmentFieldsFor(orgType: string | null | undefined): readonly SegmentField[] {
-  return orgType === "company" || orgType === "partner"
+  return isBusinessType(orgType)
     ? ["industry", "size_band", "country"]
     : ["use_for", "country"];
 }

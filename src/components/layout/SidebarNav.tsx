@@ -57,6 +57,7 @@ import {
   inheritedColour,
   type ContainerColour,
 } from "@/lib/container-colour";
+import { isPartnerType } from "@/lib/workspace-capabilities";
 
 const linkClass = "nb-nav-item";
 const activeProps = { className: "nb-nav-item-active" };
@@ -337,7 +338,7 @@ export function SidebarNav({
   // MN-3b: the create menu opens the same dialog and inline rows the tile did.
   const [newBoardOpen, setNewBoardOpen] = useState(false);
   const [creating, setCreating] = useState<CreatingKind>(null);
-  const isPartnerOrg = profile?.org_type === "partner";
+  const isPartnerOrg = isPartnerType(profile?.org_type);
   const navGroupsForPerson = navFor(navCtx, labels).filter((group) => group.placement !== "workspace_menu");
   const openNavItem = (item: NavItemId) => {
     if (profile?.org_id) logEvent("nav.opened", profile.org_id, { item, surface });
