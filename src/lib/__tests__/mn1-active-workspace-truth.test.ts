@@ -128,8 +128,8 @@ describe("MN-1: the active workspace has one truth", () => {
 
   function pair(): Profile[] {
     return [
-      { id: "a", user_id: "u1", org_id: "oa", role: "em", display_name: "Liam", title_band: null, org_name: "Northline", org_type: "company", clients_enabled: true, onboarding: null },
-      { id: "b", user_id: "u1", org_id: "ob", role: "coach", display_name: "Liam", title_band: null, org_name: "Bright Path", org_type: "company", clients_enabled: true, onboarding: null },
+      { id: "a", user_id: "u1", org_id: "oa", role: "em", display_name: "Liam", title_band: null, org_name: "Northline", org_type: "company", clients_enabled: true, tier: "business", has_roster: true, shows_admin_role: true, has_firm_view: true, onboarding: null },
+      { id: "b", user_id: "u1", org_id: "ob", role: "coach", display_name: "Liam", title_band: null, org_name: "Bright Path", org_type: "company", clients_enabled: true, tier: "business", has_roster: true, shows_admin_role: true, has_firm_view: true, onboarding: null },
     ];
   }
 
