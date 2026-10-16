@@ -9,6 +9,7 @@ import {
   type InviteEmailResult,
 } from "./invites-shared";
 import type { InviteState } from "./invite-state";
+import { isFirmWorkspace } from "@/lib/org-type";
 
 /**
  * Public on purpose: the accept page must render honest states before anyone
@@ -87,10 +88,9 @@ export const sendInviteEmail = createServerFn({ method: "POST" })
       context.supabase.from("orgs").select("name, settings").eq("id", profile.org_id).maybeSingle(),
       context.supabase.from("invites").select("invited_role").eq("code", data.code).maybeSingle(),
     ]);
-    const orgType =
-      ((org?.settings ?? {}) as Record<string, unknown>)["type"] === "company"
-        ? ("business" as const)
-        : ("personal" as const);
+    const orgType = isFirmWorkspace(((org?.settings ?? {}) as Record<string, unknown>)["type"])
+      ? ("business" as const)
+      : ("personal" as const);
     const { inviteEmailVariant } = await import("@/lib/invites-shared");
     const variant = inviteEmailVariant(invite?.invited_role ?? null, orgType);
 
