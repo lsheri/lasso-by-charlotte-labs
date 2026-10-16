@@ -23,6 +23,7 @@ import { createInvite as createInviteFn, sendInviteEmail } from "@/lib/invites.f
 import { INVITE_ADMIN_ONLY_LINE } from "@/lib/invites-shared";
 import { coachToShareWithInstead, findMemberByEmail, type MemberRow } from "@/lib/members-shared";
 import { logEvent } from "@/lib/telemetry";
+import { showsAdminRole } from "@/lib/workspace-capabilities";
 
 type InviteRole = "coach" | "em" | "admin";
 
@@ -153,7 +154,7 @@ export function InviteDialog({
   const canInvite = profile?.role === "admin";
   // A personal workspace has no roster to administer, so it offers no admins.
   const roleOptions = ROLE_OPTIONS.filter(
-    (option) => option.value !== "admin" || isBusinessOrg(profile),
+    (option) => option.value !== "admin" || showsAdminRole(profile?.org_type),
   );
   // Only ever the list this viewer may already read. It never answers whether
   // an address exists anywhere else.

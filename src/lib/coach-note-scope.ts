@@ -1,3 +1,4 @@
+import { isBusinessType } from "@/lib/workspace-capabilities";
 /**
  * PASS D — what a coaching note points at.
  *
@@ -37,7 +38,7 @@ export function scopeChoices(
   orgType: string | null | undefined,
   hasTasks: boolean,
 ): NoteScope[] {
-  const workFirst = orgType !== "company" && orgType !== "partner";
+  const workFirst = !isBusinessType(orgType);
   const order: NoteScope[] = workFirst
     ? ["work_item", "engagement", "task"]
     : ["engagement", "task", "work_item"];

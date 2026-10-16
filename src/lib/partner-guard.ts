@@ -1,6 +1,7 @@
 import { redirect } from "@tanstack/react-router";
 
 import { fetchProfile, type Profile } from "@/hooks/use-profile";
+import { isPartnerType } from "@/lib/workspace-capabilities";
 
 /**
  * The workshop key requests page only means something in a partner
@@ -9,7 +10,7 @@ import { fetchProfile, type Profile } from "@/hooks/use-profile";
  */
 export async function requirePartnerWorkspace(profile?: Profile | null): Promise<void> {
   const active = profile === undefined ? await fetchProfile() : profile;
-  if (active?.org_type !== "partner") throw redirect({ to: "/work", replace: true });
+  if (!isPartnerType(active?.org_type)) throw redirect({ to: "/work", replace: true });
 }
 
 /**
@@ -19,7 +20,7 @@ export async function requirePartnerWorkspace(profile?: Profile | null): Promise
  */
 export async function requirePartnerSubmitter(profile?: Profile | null): Promise<void> {
   const active = profile === undefined ? await fetchProfile() : profile;
-  if (active?.org_type !== "partner" || (active.role !== "admin" && active.role !== "lead")) {
+  if (!isPartnerType(active?.org_type) || (active.role !== "admin" && active.role !== "lead")) {
     throw redirect({ to: "/work", replace: true });
   }
 }

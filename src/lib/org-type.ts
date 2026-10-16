@@ -1,3 +1,4 @@
+import { isBusinessType } from "@/lib/workspace-capabilities";
 /**
  * ONE mapping from what a person picks at the door to the type the workspace
  * is created with. The setup screen and its initial state both read this, so
@@ -22,7 +23,7 @@ export type DoorChoice = IntentParam | null | undefined;
 
 /** Company and partner workspaces use the same firm invitation language. */
 export function isFirmWorkspace(type: unknown): boolean {
-  return type === "company" || type === "partner";
+  return isBusinessType(type as string | null | undefined);
 }
 
 /**
