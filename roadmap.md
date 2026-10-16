@@ -1,6 +1,7 @@
 # Roadmap
 
-- [ ] TOOLS-1: wrapper, scoped graphite treatment, control parity, 1280/390 verification and suite comparison. Preview only.
+- [x] TOOLS-1: wrapper and scoped graphite treatment; control definitions identical; 1280/390 style fixtures inspected; final suite matches all 29 baseline files, 104 failed and 4012 passed. Preview only.
+- [ ] TOOLS-1: real signed-in toolbar screenshots and interactions blocked by external unmanaged authentication; both widths redirect to /auth.
 
 - [x] NAV-2a-fix: six isolated runs passed; nested glyph computed stroke rgb(107, 63, 140) in 1280/390 fixtures; mappings unchanged. Final suite compared to fresh baseline: new failing files be5-sticky-text-rich.test.tsx and sh3b-conversations-switch.test.tsx, reported without fixes; f2/pass93 passed.
 
