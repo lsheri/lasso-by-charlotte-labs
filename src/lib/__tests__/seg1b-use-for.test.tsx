@@ -144,4 +144,28 @@ describe("SEG-1b / ONB-Q1: the individual question in the tools step row", () =>
     expect(mocks.orgUpdates).toHaveLength(0);
     expect(mocks.logV2).not.toHaveBeenCalledWith("organization.segment_updated", expect.anything(), expect.anything());
   });
+
+  it("ONB-Q1b: on ?setup=1, answering only Country leaves use_for out of the write", async () => {
+    mocks.search = { intent: "personal", setup: true };
+    mocks.orgUpdates.length = 0;
+    mocks.logV2.mockClear();
+    Element.prototype.scrollIntoView ??= () => {};
+    Element.prototype.hasPointerCapture ??= () => false;
+    Element.prototype.releasePointerCapture ??= () => {};
+    render(
+      <Suspense fallback={null}>
+        {opts.component()}
+      </Suspense>,
+    );
+    const trigger = await screen.findByRole("combobox", { name: "Country" }, { timeout: 25000 });
+    fireEvent.keyDown(trigger, { key: "Enter" });
+    const options = await screen.findAllByRole("option");
+    fireEvent.click(options[0]!);
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    await waitFor(() => expect(segmentWrites()).toHaveLength(1));
+    const payload = segmentWrites()[0];
+    expect(payload).not.toHaveProperty("use_for");
+    expect(payload).toHaveProperty("country");
+    await waitFor(() => expect(mocks.logV2).toHaveBeenCalledWith("organization.segment_updated", { fields_set: 1 }, { profileId: "p1" }));
+  });
 });

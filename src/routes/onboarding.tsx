@@ -545,6 +545,9 @@ function OnboardingInner() {
   async function saveSegment() {
     let orgIdForSegment = segmentOrgId;
     let profileIdForSegment = segmentProfileId;
+    // ONB-Q1b: the org id came from creation this session only when
+    // segmentOrgId was set; otherwise it comes from the fallback profile read.
+    const existingWorkspace = !orgIdForSegment;
     const isPersonal = !segmentFieldsFor(orgType).includes("industry");
     const industry = segIndustry || null;
     const sizeBand = segSizeBand || null;
@@ -559,9 +562,14 @@ function OnboardingInner() {
       profileIdForSegment = existing?.id ?? null;
     }
     if (!orgIdForSegment) return;
-    const payload = isPersonal
+    const full: { use_for?: string | null; industry?: string | null; size_band?: string | null; country: string | null } = isPersonal
       ? { use_for: useFor, country }
       : { industry, size_band: sizeBand, country };
+    // Fresh creation sends every key (columns are null already). An existing
+    // workspace sends only answered keys, so Settings values are kept.
+    const payload = existingWorkspace
+      ? (Object.fromEntries(Object.entries(full).filter(([, v]) => Boolean(v))) as Partial<typeof full>)
+      : full;
     const { error: saveError } = await supabase
       .from("orgs")
       .update(payload)
