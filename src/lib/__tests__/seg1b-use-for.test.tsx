@@ -85,7 +85,8 @@ async function reachSegment(intent: "company" | "personal") {
   if (intent === "company") {
     fireEvent.change(screen.getByLabelText("Workspace name"), { target: { value: "Acme" } });
   }
-  fireEvent.click(screen.getByRole("button", { name: "Work" }));
+  const workChip = screen.queryByRole("button", { name: "Work" });
+  if (workChip) fireEvent.click(workChip);
   fireEvent.click(screen.getByRole("button", { name: /Create/ }));
   // ONB-Q1: the segment question is a row on the tools step, not its own screen.
   await screen.findByText("Where do you work with AI?", undefined, { timeout: 25000 });

@@ -86,7 +86,8 @@ async function submitSetup(workspaceName?: string) {
       target: { value: workspaceName },
     });
   }
-  fireEvent.click(screen.getByRole("button", { name: "Work" }));
+  const workChip = screen.queryByRole("button", { name: "Work" });
+  if (workChip) fireEvent.click(workChip);
   fireEvent.submit(screen.getByRole("button", { name: /create my workspace/i }).closest("form")!);
 }
 
