@@ -78,7 +78,7 @@ describe("workspace-capabilities truth table", () => {
   for (const t of TYPES) {
     const key = t === null ? "null" : String(t);
     it(`type ${key}`, () => {
-      const want = TRUTH[key];
+      const want = TRUTH[key]!;
       expect(isBusinessType(t)).toBe(want.isBusinessType);
       expect(hasRoster(t)).toBe(want.hasRoster);
       expect(hasFirmView(t)).toBe(want.hasFirmView);
@@ -98,7 +98,7 @@ describe("agreement with existing predicates", () => {
 
   it("isBusinessType matches isBusinessOrg for the four types", () => {
     for (const t of ["company", "partner", "personal", "edu"] as const) {
-      expect(isBusinessType(t)).toBe(isBusinessOrg({ role: "", org_type: t }));
+      expect(isBusinessType(t)).toBe(isBusinessOrg({ org_type: t }));
     }
   });
 
