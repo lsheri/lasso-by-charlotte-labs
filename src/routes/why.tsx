@@ -81,7 +81,7 @@ function WhyPage() {
         <div className="mt-16 rounded-[var(--radius-control)] border border-[var(--nb-pencil)] bg-card px-6 py-8 shadow-card">
           <p className="text-sm text-foreground">Start your record.</p>
           <Button asChild className="mt-4">
-            <Link to="/auth">Get started</Link>
+            <Link to="/auth" search={{ mode: "signup" as const }}>Get started</Link>
           </Button>
         </div>
       </main>

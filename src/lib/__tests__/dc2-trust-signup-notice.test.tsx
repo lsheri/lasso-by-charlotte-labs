@@ -156,6 +156,8 @@ describe("DC-2 starting-level disclosure", () => {
     const workspaceName = document.getElementById("org-name");
     expect(workspaceName).not.toBeNull();
     expect(workspaceName!.compareDocumentPosition(notice) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const submit = screen.getByRole("button", { name: /create my workspace/i });
+    expect(notice.compareDocumentPosition(submit) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.getByRole("link", { name: "See what each level means" }).getAttribute("href")).toBe("/trust#levels");
   });
   it("does not show it on existing-account tool setup", async () => {
