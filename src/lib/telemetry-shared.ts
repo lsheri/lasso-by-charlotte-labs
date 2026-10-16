@@ -5,6 +5,8 @@ export type TelemetryEvent =
   | "nav.opened"
   | "org.created"
   | "org.tier_changed"
+  /** N2: an admin opened the Individual/Business confirm. Fires on open only, never on cancel or on the change. */
+  | "org.tier_change_opened"
   /** Unit 4h-a: an admin turned the workspace's client list on or off. The new state only, as "true" or "false". Never a name, never an id. */
   | "org.clients_changed"
   | "onboarding.tools_selected"
