@@ -76,6 +76,9 @@
   --btn-shadow:none;
   --label-weight:500;
   --label-tracking:0.08em;
+  --sticky-paper:#fff7ae;
+  --shadow-sticky:2px 3px 8px -3px color-mix(in oklab,var(--neutral-95) 30%,transparent);
+  --shadow-dialog:0 24px 60px -24px color-mix(in oklab,var(--neutral-95) 50%,transparent);
 }
 
 :root {
