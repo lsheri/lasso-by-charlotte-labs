@@ -46,6 +46,7 @@ vi.mock("@/hooks/use-profile", () => ({
 }));
 vi.mock("@/lib/pending-invite", () => ({ readPendingInvite: () => null }));
 vi.mock("@/lib/telemetry", () => ({ logEvent: vi.fn(), logV2: mocks.logV2 }));
+vi.mock("@/lib/telemetry-v2", () => ({ logV2: mocks.logV2 }));
 vi.mock("@/components/layout/SessionHeader", () => ({ SessionHeader: () => null }));
 vi.mock("@/components/onboarding/SetupTools", () => ({ SetupTools: () => null }));
 vi.mock("@/components/onboarding/ToolPicker", () => ({ ToolPicker: () => null }));
@@ -123,7 +124,7 @@ describe("SEG-1b / ONB-Q1: the individual question in the tools step row", () =>
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
     await waitFor(() => expect(segmentWrites()).toHaveLength(1));
     expect(segmentWrites()[0]).toEqual({ use_for: null, country: null });
-    expect(mocks.logV2).toHaveBeenCalledWith("organization.segment_updated", { fields_set: 0 }, { profileId: "p1" });
+    await waitFor(() => expect(mocks.logV2).toHaveBeenCalledWith("organization.segment_updated", { fields_set: 0 }, { profileId: "p1" }));
   });
 
   it("a chosen chip saves its stored value", async () => {
@@ -132,7 +133,7 @@ describe("SEG-1b / ONB-Q1: the individual question in the tools step row", () =>
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
     await waitFor(() => expect(segmentWrites()).toHaveLength(1));
     expect(segmentWrites()[0]).toEqual({ use_for: "school", country: null });
-    expect(mocks.logV2).toHaveBeenCalledWith("organization.segment_updated", { fields_set: 1 }, { profileId: "p1" });
+    await waitFor(() => expect(mocks.logV2).toHaveBeenCalledWith("organization.segment_updated", { fields_set: 1 }, { profileId: "p1" }));
   });
 
   it("leaving the tools step for later writes nothing and fires nothing", async () => {
