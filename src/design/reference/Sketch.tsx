@@ -217,7 +217,7 @@ function Sheet({ p, ex, on }: P) {
       ))}
       {Array.from({ length: rows - 1 }).map((_, r) =>
         Array.from({ length: cols }).map((__, c) => (
-          <path key={`v${r}-${c}`} d={scribble(x + c * cw + 7, y + (r + 1) * rh + rh / 2 + 1, lens[(r + c) % 4], 1)} style={ln(p.pencil, 1.1)} />
+          <path key={`v${r}-${c}`} d={scribble(x + c * cw + 7, y + (r + 1) * rh + rh / 2 + 1, lens[(r + c) % 4]!, 1)} style={ln(p.pencil, 1.1)} />
         )),
       )}
       <rect
@@ -271,7 +271,7 @@ function Transcript({ p, ex, on }: P) {
           <g key={i}>
             <circle cx={44} cy={cy} r={7} style={sh(p.ink, i % 2 ? p.paper : p.sunk, 1.3)} />
             <text x={57} y={cy + 4} style={hand(p.pencil, 10)}>{at}</text>
-            <path d={scribble(86, cy - 2, lens[i])} style={ln(p.ink, 1.2)} />
+            <path d={scribble(86, cy - 2, lens[i]!)} style={ln(p.ink, 1.2)} />
             {i % 2 === 0 ? <path d={scribble(86, cy + 6, 50)} style={ln(p.pencil, 1.1)} /> : null}
           </g>
         );
