@@ -7,7 +7,27 @@
  * what the viewer renders; the card never reads it beyond the title.
  */
 
-export type WorkSource = 'slides' | 'docs' | 'sheets' | 'claude' | 'chatgpt' | 'granola';
+/**
+ * The DISPLAY vocabulary: which tool's face a card wears. Widened 16 Oct from
+ * six to eleven so the app's real tools have a member each.
+ *
+ * This is NOT the telemetry vocabulary. TOOL_VENDORS in src/lib/work-taxonomy.ts
+ * is a closed set of eight and stamps events; it is deliberately untouched.
+ * Nothing here is ever written to a row or an event, so this union may widen
+ * freely whenever a tool gains a face.
+ */
+export type WorkSource =
+  | 'slides'
+  | 'docs'
+  | 'sheets'
+  | 'claude'
+  | 'chatgpt'
+  | 'granola'
+  | 'gemini'
+  | 'copilot'
+  | 'perplexity'
+  | 'wispr'
+  | 'other';
 export type WorkKind = 'deck' | 'doc' | 'sheet' | 'chat' | 'transcript';
 
 export type Slide = {
@@ -60,6 +80,11 @@ export const SOURCE_LABEL: Record<WorkSource, string> = {
   claude: 'Claude',
   chatgpt: 'ChatGPT',
   granola: 'Granola',
+  gemini: 'Gemini',
+  copilot: 'Copilot',
+  perplexity: 'Perplexity',
+  wispr: 'Wispr Flow',
+  other: 'Other',
 };
 
 export const SOURCE_KIND: Record<WorkSource, WorkKind> = {
@@ -69,6 +94,11 @@ export const SOURCE_KIND: Record<WorkSource, WorkKind> = {
   claude: 'chat',
   chatgpt: 'chat',
   granola: 'transcript',
+  gemini: 'chat',
+  copilot: 'chat',
+  perplexity: 'chat',
+  wispr: 'transcript',
+  other: 'doc',
 };
 
 export const KIND_LABEL: Record<WorkKind, string> = {
