@@ -419,7 +419,6 @@ function OnboardingInner() {
         orgType === "company"
           ? orgName.trim()
           : orgName.trim() || `${displayName.trim()}'s workspace`,
-      p_type: orgType,
     });
 
     if (rpcError) {
