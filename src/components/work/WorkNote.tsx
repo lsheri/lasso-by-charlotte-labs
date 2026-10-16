@@ -93,7 +93,7 @@ export function WorkNote({
 
   return (
     <div
-      className={`nb-paper ledger-work-note ${headerGutter ? "work-note-gutter " : "work-note-lane "}${className}`}
+      className={`nb-paper ledger-work-note ${headerGutter ? "work-note-gutter " : ""}${className}`}
       data-paper-state={item.visibility}
       data-client-label={clientLabel ?? undefined}
       data-brand={brand}

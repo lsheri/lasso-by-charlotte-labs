@@ -68,6 +68,7 @@ export function WorkRow({
           lead={lead}
           clientLabel={clientLabel}
           dense
+          headerGutter
           displayMode={displayMode}
           chatPreview={chatPreview}
           filePreview={filePreview}
