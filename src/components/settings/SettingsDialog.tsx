@@ -10,6 +10,7 @@ import { McpSection } from "./McpSection";
 import { DataSection } from "./DataSection";
 import { NamingConventionsCard } from "./NamingConventionsCard";
 import { ClientsSettingCard } from "@/components/settings/ClientsSettingCard";
+import { WorkspaceKindCard } from "@/components/settings/WorkspaceKindCard";
 import { OrgDimensionsCard } from "./OrgDimensionsCard";
 import { YourWorkCard } from "./YourWorkCard";
 import { AccountEmailCard } from "./AccountEmailCard";
@@ -58,6 +59,7 @@ const SECTIONS: SettingsSection[] = [
       <div className="space-y-8">
         <YourWorkspaceCard />
         <OrgDimensionsCard />
+        <WorkspaceKindCard />
         <ClientsSettingCard />
         <NamingConventionsCard />
         <ActivationKeyCard />

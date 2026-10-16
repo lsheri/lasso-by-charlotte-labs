@@ -32,7 +32,7 @@ afterEach(() => {
 });
 
 function hrefs() {
-  return screen.getAllByRole("link", { name: "Get started" }).map((link) => link.getAttribute("href"));
+  return screen.getAllByRole("link", { name: /^(Get started|Start a business workspace)$/ }).map((link) => link.getAttribute("href"));
 }
 
 describe("Unit B1: public plans", () => {
@@ -95,7 +95,7 @@ describe("Unit D1: funnel source", () => {
 
   it("fires plan.picked on a Get started click and nothing for Coming soon", () => {
     render(<PlansPage search={validatePlansSearch({ src: "front_door" })} />);
-    screen.getAllByRole("link", { name: "Get started" })[1]!.click();
+    screen.getByRole("link", { name: "Start a business workspace" }).click();
     screen.getByRole("button", { name: "Coming soon" }).click();
     expect(emitted.filter(([name]) => name === "plan.picked")).toEqual([
       ["plan.picked", { plan: "company", src: "front_door" }],
