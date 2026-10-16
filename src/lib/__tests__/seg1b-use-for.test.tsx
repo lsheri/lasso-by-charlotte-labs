@@ -46,6 +46,7 @@ vi.mock("@/hooks/use-profile", () => ({
 }));
 vi.mock("@/lib/pending-invite", () => ({ readPendingInvite: () => null }));
 vi.mock("@/lib/telemetry", () => ({ logEvent: vi.fn(), logV2: mocks.logV2 }));
+vi.mock("@/lib/telemetry-v2", () => ({ logV2: mocks.logV2 }));
 vi.mock("@/components/layout/SessionHeader", () => ({ SessionHeader: () => null }));
 vi.mock("@/components/onboarding/SetupTools", () => ({ SetupTools: () => null }));
 vi.mock("@/components/onboarding/ToolPicker", () => ({ ToolPicker: () => null }));
@@ -59,6 +60,12 @@ const opts = (Route as unknown as { options: Opts }).options;
 
 vi.setConfig({ testTimeout: 30000 });
 beforeAll(async () => {
+  // The later path reaches the first-run tour, which reads media queries.
+  window.matchMedia ??= ((q: string) => ({
+    matches: false, media: q, onchange: null,
+    addEventListener: () => {}, removeEventListener: () => {},
+    addListener: () => {}, removeListener: () => {}, dispatchEvent: () => false,
+  })) as unknown as typeof window.matchMedia;
   const c = opts.component as unknown as { preload?: () => Promise<unknown> };
   await c.preload?.();
 }, 30000);
@@ -80,10 +87,16 @@ async function reachSegment(intent: "company" | "personal") {
   }
   fireEvent.click(screen.getByRole("button", { name: "Work" }));
   fireEvent.click(screen.getByRole("button", { name: /Create/ }));
-  await screen.findByText("One thing before you start.", undefined, { timeout: 25000 });
+  // ONB-Q1: the segment question is a row on the tools step, not its own screen.
+  await screen.findByText("Where do you work with AI?", undefined, { timeout: 25000 });
+  expect(screen.queryByText("One thing before you start.")).toBeNull();
+  expect(screen.getByText("It helps us compare like with like, never you with anyone.")).toBeTruthy();
 }
 
-describe("SEG-1b: the individual question in the segment step", () => {
+/** The segment write, apart from the tools step's own settings write. */
+const segmentWrites = () => mocks.orgUpdates.filter((p) => !("settings" in p));
+
+describe("SEG-1b / ONB-Q1: the individual question in the tools step row", () => {
   it("stores exactly the three values the constraint accepts", () => {
     expect(USE_FOR_OPTIONS.map((o) => o.value)).toEqual(["work", "school", "other"]);
     expect(USE_FOR_OPTIONS.map((o) => o.label)).toEqual(["Work", "School", "Other"]);
@@ -91,7 +104,10 @@ describe("SEG-1b: the individual question in the segment step", () => {
 
   it("personal reaches the segment stage and sees one question, not Industry or People", async () => {
     await reachSegment("personal");
-    expect(screen.getByText("What is this for")).toBeTruthy();
+    expect(screen.getByText("This is for")).toBeTruthy();
+    for (const label of ["Work", "School", "Other"]) {
+      expect(screen.getByRole("button", { name: label })).toBeTruthy();
+    }
     expect(screen.queryByText("Industry")).toBeNull();
     expect(screen.queryByText("People")).toBeNull();
   });
@@ -100,20 +116,32 @@ describe("SEG-1b: the individual question in the segment step", () => {
     await reachSegment("company");
     expect(screen.getByText("Industry")).toBeTruthy();
     expect(screen.getByText("People")).toBeTruthy();
-    expect(screen.queryByText("What is this for")).toBeNull();
+    expect(screen.queryByText("This is for")).toBeNull();
   });
 
   it("personal with nothing chosen saves only use_for: null", async () => {
     await reachSegment("personal");
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
-    await waitFor(() => expect(mocks.orgUpdates).toHaveLength(1));
-    expect(mocks.orgUpdates[0]).toEqual({ use_for: null, country: null });
+    await waitFor(() => expect(segmentWrites()).toHaveLength(1));
+    expect(segmentWrites()[0]).toEqual({ use_for: null, country: null });
+    await waitFor(() => expect(mocks.logV2).toHaveBeenCalledWith("organization.segment_updated", { fields_set: 0 }, { profileId: "p1" }));
   });
 
-  it("skip writes nothing", async () => {
+  it("a chosen chip saves its stored value", async () => {
     await reachSegment("personal");
-    fireEvent.click(screen.getByRole("button", { name: "Skip" }));
-    await screen.findByText("Where do you work with AI?", undefined, { timeout: 25000 });
+    fireEvent.click(screen.getByRole("button", { name: "School" }));
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    await waitFor(() => expect(segmentWrites()).toHaveLength(1));
+    expect(segmentWrites()[0]).toEqual({ use_for: "school", country: null });
+    await waitFor(() => expect(mocks.logV2).toHaveBeenCalledWith("organization.segment_updated", { fields_set: 1 }, { profileId: "p1" }));
+  });
+
+  it("leaving the tools step for later writes nothing and fires nothing", async () => {
+    await reachSegment("personal");
+    expect(screen.queryByRole("button", { name: "Skip" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "I'll do this later" }));
+    await new Promise((r) => setTimeout(r, 50));
     expect(mocks.orgUpdates).toHaveLength(0);
+    expect(mocks.logV2).not.toHaveBeenCalledWith("organization.segment_updated", expect.anything(), expect.anything());
   });
 });

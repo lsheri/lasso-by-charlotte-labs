@@ -88,7 +88,9 @@ describe("DEM-1 demographics", () => {
 
   it("onboarding asks Country in both shapes and writes only what it asked", () => {
     const src = readFileSync("src/routes/onboarding.tsx", "utf8");
-    const seg = src.slice(src.indexOf('if (stage === "segment")'), src.indexOf('if (stage === "tools")'));
+    // ONB-Q1: the segment screen is gone; its row sits on the tools step, above ToolPicker.
+    expect(src).not.toContain('stage === "segment"');
+    const seg = src.slice(src.indexOf('if (stage === "tools")'), src.indexOf("<ToolPicker"));
     expect(seg).toContain('htmlFor="seg-country"');
     // Country sits after the shape branch, so both shapes render it.
     expect(seg.indexOf('htmlFor="seg-country"')).toBeGreaterThan(seg.indexOf('htmlFor="seg-people"'));

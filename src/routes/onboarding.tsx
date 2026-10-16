@@ -276,7 +276,7 @@ function OnboardingInner() {
           ? "invite"
           : "chooser",
   );
-  const [stage, setStage] = useState<"setup" | "share_back" | "data_use" | "segment" | "tools" | "capture" | "tour">(setup ? "tools" : "setup");
+  const [stage, setStage] = useState<"setup" | "share_back" | "data_use" | "tools" | "capture" | "tour">(setup ? "tools" : "setup");
   const [shareBack, setShareBack] = useState<{ id: string; name: string; orgId: string | null } | null>(null);
   const [shareBackPending, setShareBackPending] = useState(false);
   // DU-1: sponsored workspaces are asked once; tier d with the content switch on is pre-chosen.
@@ -292,19 +292,18 @@ function OnboardingInner() {
   const [uses, setUses] = useState<PersonUse[]>(() =>
     intent === "edu" || readEduIntent() ? ["school"] : [],
   );
-  // SEG-1a/1b: the optional segmentation step after creation. Organisations
-  // answer Industry and People; an individual answers one question; edu skips.
+  // SEG-1a/1b, ONB-Q1: the optional segment row on the tools step. Organisations
+  // answer Industry and People; an individual answers one question.
   const [segmentOrgId, setSegmentOrgId] = useState<string | null>(null);
   const [segmentProfileId, setSegmentProfileId] = useState<string | null>(null);
   const [segIndustry, setSegIndustry] = useState("");
   const [segSizeBand, setSegSizeBand] = useState("");
   const [segUseFor, setSegUseFor] = useState("");
   const [segCountry, setSegCountry] = useState("");
-  const [segPending, setSegPending] = useState(false);
 
-  /** Where the flow goes once a workspace exists: everyone but edu gets the optional segment step first. */
-  function afterCreation(): "segment" | "tools" {
-    return "segment";
+  /** Where the flow goes once a workspace exists: the tools step, which carries the optional segment row. */
+  function afterCreation(): "tools" {
+    return "tools";
   }
 
   // KX1: name who the key belongs to without redeeming it. Never blocks.
@@ -354,6 +353,9 @@ function OnboardingInner() {
   }
 
   async function continueFromTools() {
+    await saveSegment().catch(() => {
+      /* the segment row never blocks the way in */
+    });
     const picked = [...tools];
     const orgId = await saveToolsUsed(picked);
     if (orgId) {
@@ -535,37 +537,43 @@ function OnboardingInner() {
   }
 
 
-  // SEG-1a/1b: optional, skippable, and only ever writes the fields the shape
-  // it showed actually asked about. A failed save is silent; this step never
-  // blocks the way in.
+  // SEG-1a/1b, ONB-Q1: the optional segment row on the tools step. Runs on the
+  // tools Continue and only ever writes the fields the shape it showed asked
+  // about. The org id comes from creation, or, on ?setup=1, from the same
+  // profile read the tools save uses. No id, nothing written or fired. A failed
+  // save is silent; this never blocks the way in.
   async function saveSegment() {
-    if (!segmentOrgId) {
-      setStage("tools");
-      return;
-    }
-    setSegPending(true);
+    let orgIdForSegment = segmentOrgId;
+    let profileIdForSegment = segmentProfileId;
     const isPersonal = !segmentFieldsFor(orgType).includes("industry");
     const industry = segIndustry || null;
     const sizeBand = segSizeBand || null;
     const useFor = segUseFor || null;
     const country = segCountry || null;
+    if (!orgIdForSegment) {
+      // ?setup=1: an existing workspace. Never overwrite its answers with nulls.
+      const answered = isPersonal ? [useFor, country] : [industry, sizeBand, country];
+      if (!answered.some(Boolean)) return;
+      const existing = await fetchProfile().catch(() => null);
+      orgIdForSegment = existing?.org_id ?? null;
+      profileIdForSegment = existing?.id ?? null;
+    }
+    if (!orgIdForSegment) return;
     const payload = isPersonal
       ? { use_for: useFor, country }
       : { industry, size_band: sizeBand, country };
     const { error: saveError } = await supabase
       .from("orgs")
       .update(payload)
-      .eq("id", segmentOrgId);
-    setSegPending(false);
+      .eq("id", orgIdForSegment);
     if (!saveError) {
       const asked = isPersonal ? [useFor, country] : [industry, sizeBand, country];
       logV2(
         "organization.segment_updated",
         { fields_set: asked.filter((v) => Boolean(v)).length },
-        { profileId: segmentProfileId ?? undefined },
+        { profileId: profileIdForSegment ?? undefined },
       );
     }
-    setStage("tools");
   }
 
   // TV5: the first-run tour sits in front of the existing completion path.
@@ -655,112 +663,8 @@ function OnboardingInner() {
     return <SponsoredDataUseStep profileId={duProfileId} onDone={() => setStage(afterCreation())} />;
   }
 
-  if (stage === "segment") {
-    return (
-      <>
-        <SessionHeader />
-        <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background px-4 py-16">
-          <div className="w-full max-w-md">
-            <h1 className="page-title">One thing before you start.</h1>
-            <p className="mt-1.5 text-sm text-muted-foreground">
-              It helps us compare like with like, never you with anyone.
-            </p>
-
-            <div className="mt-6 space-y-5">
-              {!segmentFieldsFor(orgType).includes("industry") ? (
-                <div className="space-y-1.5">
-                  <Label htmlFor="seg-use-for" className="micro-label">
-                    What is this for
-                  </Label>
-                  <Select value={segUseFor} onValueChange={setSegUseFor}>
-                    <SelectTrigger id="seg-use-for">
-                      <SelectValue placeholder="Not set" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {USE_FOR_OPTIONS.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              ) : (
-                <>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="seg-industry" className="micro-label">
-                      Industry
-                    </Label>
-                <Select value={segIndustry} onValueChange={setSegIndustry}>
-                  <SelectTrigger id="seg-industry">
-                    <SelectValue placeholder="Not set" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {INDUSTRIES.map((value) => (
-                      <SelectItem key={value} value={value}>
-                        {value}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="seg-people" className="micro-label">
-                  People
-                </Label>
-                <Select value={segSizeBand} onValueChange={setSegSizeBand}>
-                  <SelectTrigger id="seg-people">
-                    <SelectValue placeholder="Not set" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SIZE_BANDS.map((value) => (
-                      <SelectItem key={value} value={value}>
-                        {value}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-                </>
-              )}
-              <div className="space-y-1.5">
-                <Label htmlFor="seg-country" className="micro-label">
-                  Country
-                </Label>
-                <Select value={segCountry} onValueChange={setSegCountry}>
-                  <SelectTrigger id="seg-country">
-                    <SelectValue placeholder="Not set" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {COUNTRIES.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="mt-8 flex items-center gap-6">
-              <Button type="button" disabled={segPending} onClick={() => void saveSegment()}>
-                Continue
-              </Button>
-              <button
-                type="button"
-                onClick={() => setStage("tools")}
-                className="text-xs text-muted-foreground hover:text-foreground"
-              >
-                Skip
-              </button>
-            </div>
-          </div>
-        </main>
-      </>
-    );
-  }
-
   if (stage === "tools") {
+    const segIsPersonal = !segmentFieldsFor(orgType).includes("industry");
     return (
       <>
         <SessionHeader />
@@ -775,6 +679,93 @@ function OnboardingInner() {
               until you say so.
             </p>
             {error ? <p className="mt-3 text-sm text-destructive">{error}</p> : null}
+
+            <div className="mt-6" data-testid="segment-row">
+              <p className="text-[13px] text-muted-foreground">
+                It helps us compare like with like, never you with anyone.
+              </p>
+              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
+                {segIsPersonal ? (
+                  <div role="group" aria-labelledby="seg-use-for" className="flex flex-wrap items-center gap-2">
+                    <span id="seg-use-for" className="micro-label">
+                      This is for
+                    </span>
+                    {USE_FOR_OPTIONS.map((option) => {
+                      const on = segUseFor === option.value;
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          aria-pressed={on}
+                          onClick={() => setSegUseFor(on ? "" : option.value)}
+                          className={
+                            on
+                              ? "inline-flex min-h-[36px] items-center rounded-[var(--radius)] bg-primary px-3 text-sm text-primary-foreground"
+                              : "inline-flex min-h-[36px] items-center rounded-[var(--radius)] border border-border px-3 text-sm text-foreground"
+                          }
+                        >
+                          {option.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="seg-industry" className="micro-label">
+                        Industry
+                      </Label>
+                      <Select value={segIndustry} onValueChange={setSegIndustry}>
+                        <SelectTrigger id="seg-industry" className="h-9 w-[180px]">
+                          <SelectValue placeholder="Not set" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {INDUSTRIES.map((value) => (
+                            <SelectItem key={value} value={value}>
+                              {value}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="seg-people" className="micro-label">
+                        People
+                      </Label>
+                      <Select value={segSizeBand} onValueChange={setSegSizeBand}>
+                        <SelectTrigger id="seg-people" className="h-9 w-[120px]">
+                          <SelectValue placeholder="Not set" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {SIZE_BANDS.map((value) => (
+                            <SelectItem key={value} value={value}>
+                              {value}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </>
+                )}
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="seg-country" className="micro-label">
+                    Country
+                  </Label>
+                  <Select value={segCountry} onValueChange={setSegCountry}>
+                    <SelectTrigger id="seg-country" className="h-9 w-[180px]">
+                      <SelectValue placeholder="Not set" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {COUNTRIES.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
 
             <div className="mt-6">
               <ToolPicker selected={tools} onToggle={toggleTool} />
