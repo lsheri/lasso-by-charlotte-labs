@@ -51,7 +51,7 @@ export const SKETCH_CARD_MIN: SketchCardSize = { width: 160, height: 200 };
 export const SKETCH_CARD_MAX: SketchCardSize = { width: 560, height: 700 };
 
 export function tierFor(width: number): SketchCardTier {
-  if (width < 200) return 'compact';
+  if (width < 180) return 'compact';
   if (width < 340) return 'regular';
   return 'expanded';
 }
