@@ -4866,7 +4866,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .conversation-card-compact > .nb-paper > .nb-paper-body {
   padding: 8px 9px;
 }
-.conversation-card-compact { height: 118px; }
+.conversation-card-compact:has(> .ledger-work-note) { height: 118px; }
 
 @media (prefers-reduced-motion: reduce) {
   .nb-paper,
