@@ -38,7 +38,7 @@ const BRAND_TO_SOURCE: Partial<Record<BrandKey, WorkSource>> = {
 };
 
 /** What sourceBrandKey says, said in the display vocabulary. */
-function expectedSource(item: SourceItem): WorkSource {
+function expectedSource(item: Parameters<typeof sourceBrandKey>[0]): WorkSource {
   return BRAND_TO_SOURCE[sourceBrandKey(item)] ?? "other";
 }
 
@@ -148,7 +148,7 @@ describe("sketchSource agrees with sourceBrandKey", () => {
 
 describe("the keep-in-step comment still stands", () => {
   it("work-sketch.ts still names the two paths it mirrors", () => {
-    const source = readFileSync(resolve(__dirname, "../work-sketch.ts"), "utf8");
+    const source = readFileSync(fileURLToPath(new URL("../work-sketch.ts", import.meta.url)), "utf8");
     expect(source).toContain("Mirrors sourceVendorKey/sourceBrandKey");
     expect(source).toContain("The two paths must be kept in step.");
   });
