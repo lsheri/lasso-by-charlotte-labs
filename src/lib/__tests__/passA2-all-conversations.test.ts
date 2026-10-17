@@ -40,10 +40,13 @@ describe("pass A2 · All conversations absorbs Reflect", () => {
     expect(page).toContain('className="h-7 w-[200px] shrink-0');
   });
 
-  it("stacks month sections and wraps their fixed-height cards", () => {
+  it("stacks month sections and wraps content-sized SketchCards", () => {
     expect(page).toContain('className="conversation-month-stack p-5"');
     expect(page).toContain('className="conversation-month-grid"');
-    expect(page).toContain('className="h-[118px] min-w-0"');
+    expect(page).not.toContain("h-[118px]");
+    expect(page).toContain("import { SketchCard } from '@/design/reference/SketchCard';");
+    expect(page).toContain('<div data-lane-content className="h-full min-w-0">');
+    expect(page).not.toMatch(/<div\b[^>]*\bdata-lane-content\b[^>]*\bstyle\s*=/);
     expect(page).not.toContain("<BoardShell");
   });
 

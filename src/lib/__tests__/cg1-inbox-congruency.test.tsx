@@ -532,7 +532,7 @@ describe("CG1 inbox congruency", () => {
 });
 
 describe("CG2 AI conversations congruency", () => {
-  it("keeps the fixed lane height and renders a named SketchCard instead of chat-turn previews", () => {
+  it("lets the cell height follow its named SketchCard instead of chat-turn previews", () => {
     inboxRows = [conversation("Question first", "claude", "ALPHA")];
     cardPreviews["Question first"] = {
       workItemId: "Question first",
@@ -549,7 +549,11 @@ describe("CG2 AI conversations congruency", () => {
 
     const card = screen.getByText("Question first").closest<HTMLElement>("[data-lane-content]");
     expect(CONVERSATION_CARD_HEIGHT).toBe(118);
-    expect(card?.style.height).toBe("118px");
+    expect(card?.style.height).toBe("");
+    expect(card?.className).not.toMatch(/\b(?:h|min-h|max-h)-\[(?!auto\])/);
+    expect(card?.querySelector('article[role="button"]')).toBe(
+      screen.getByRole("button", { name: "Question first. Chat from Claude. Double click to open." }),
+    );
     expect(screen.getByRole("button", { name: "Question first. Chat from Claude. Double click to open." }).tagName).toBe("ARTICLE");
     expect(screen.queryByText("user: How should I frame this?")).toBeNull();
     expect(screen.queryByText(/Start with the answer|Then what/)).toBeNull();
