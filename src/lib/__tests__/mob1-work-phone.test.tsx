@@ -22,7 +22,7 @@ describe("MOB-1 phone work presentation", () => {
       expect(parts?.textContent).not.toContain(" · ");
       const page = readFileSync("src/pages/WorkPage.tsx", "utf8");
       expect(page).toContain("!isMobile && !isCoach && selectable.length > 0 && !selectMode");
-      expect(page).toMatch(/\) : isMobile \? \([\s\S]*?work-phone-list[\s\S]*?\) : !error && all.length === 0 \? \([\s\S]*?<BoardShell/);
+      expect(page).toMatch(/\) : isMobile \? \([\s\S]*?work-phone-list[\s\S]*?\) : !error && all.length === 0 \? \([\s\S]*?\) : error && all.length === 0 \? null : \([\s\S]*?<div aria-label="All work"/);
       expect(page.slice(page.indexOf('className="work-phone-list"'), page.indexOf(') : !error && all.length === 0 ? ('))).not.toMatch(/BoardShell|showViewControls|Select/);
       expect(screen.queryByRole("button", { name: "Select" })).toBeNull();
       expect(screen.queryByRole("group", { name: "Board zoom" })).toBeNull();

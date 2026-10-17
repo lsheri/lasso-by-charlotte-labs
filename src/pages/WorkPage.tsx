@@ -710,11 +710,6 @@ export function WorkPage() {
   }));
   const laneWidth = inboxLaneWidth(contentWidth);
   const cardWidth = laneWidth - 24;
-  function cardWrapperHeight(entry: WorkItemRow | ConversationGroup) {
-    const items = isConversationGroup(entry) ? entry.items : [entry];
-    const boards = new Set(items.flatMap((item) => (sharedPlacements.data?.[item.id] ?? []).map((board) => board.id)));
-    return Math.round(cardWidth * 1.25) + INBOX_CARD_FOOT + boards.size * 32;
-  }
 
   const arrivalCount = groupConversations(selectArrivals(all, profile?.id)).length;
 
@@ -857,7 +852,7 @@ export function WorkPage() {
                   </div>
                   <div className="work-column-cards">
                     {entries.length === 0 ? <p className="rounded-[var(--radius-md)] border border-dashed border-pencil bg-card px-3 py-4 text-center text-[11.5px] text-soft">{columnFilter === "unmapped" ? "Nothing here with no board" : columnFilter === "all" ? "Nothing here yet." : "Nothing here"}</p> : contentWidth > 0 ? entries.map((entry) => (
-                      <div key={isConversationGroup(entry) ? entry.key : entry.id} className="min-w-0 w-full" style={{ minHeight: cardWrapperHeight(entry) }}>
+                      <div key={isConversationGroup(entry) ? entry.key : entry.id} className="min-w-0 w-full">
                         <InboxFixedCard>{isConversationGroup(entry) ? renderGroup(entry, (entry.transcript ?? entry.items[0])?.visibility === "mapped" ? "mapped" : "unmapped") : renderColumnItem(entry)}</InboxFixedCard>
                         {sharedChips(isConversationGroup(entry) ? entry.items : [entry])}
                       </div>
