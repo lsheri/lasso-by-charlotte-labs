@@ -398,3 +398,6 @@ export function Sketch({
     </svg>
   );
 }
+
+/** The label measure, reachable from the component for hosts and tests. */
+Sketch.labelWidth = handTextWidth;
