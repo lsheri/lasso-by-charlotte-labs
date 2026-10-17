@@ -708,8 +708,11 @@ export function WorkPage() {
     bucket,
     entries: filteredEntries.filter((entry) => bucketKeyForEntry(entry) === bucket.key),
   }));
-  /** One card width on both list surfaces, so both land in SketchCard's regular tier. */
-  const cardWidth = 210;
+  const laneWidth = inboxLaneWidth(contentWidth);
+  /** 210 is the cap, the width shared with All AI Conversations, which puts both
+   * surfaces in SketchCard's regular tier at normal page widths. The card is the
+   * lane width minus 24 and never wider than its lane. */
+  const cardWidth = Math.min(laneWidth - 24, 210);
 
   const arrivalCount = groupConversations(selectArrivals(all, profile?.id)).length;
 
