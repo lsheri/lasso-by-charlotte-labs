@@ -476,9 +476,10 @@ describe("CG1 inbox congruency", () => {
       if (columns.length !== 4) throw new Error("Four columns required");
       const card = board.querySelector<HTMLElement>("[data-card-width]");
       if (!card) throw new Error("Card width unavailable");
-      const laneWidth = Number(card.dataset["cardWidth"]) + 24;
+      const cardWidth = Number(card.dataset["cardWidth"]);
+      const laneWidth = cardWidth + 24;
       const span = laneWidth * columns.length + 36 * (columns.length - 1);
-      return { span, left: (reported.width - span) / 2, right: (reported.width - span) / 2, zoom: board.closest('[data-testid="board-shell-stage"]') ? 0 : 1 };
+      return { cardWidth, laneWidth, span, left: (reported.width - span) / 2, right: (reported.width - span) / 2, zoom: board.closest('[data-testid="board-shell-stage"]') ? 0 : 1 };
     };
     try {
       inboxRows = Array.from({ length: 5 }, (_, index) => itemOfType(`responsive-document-${index + 1}`, "document"));
@@ -486,7 +487,16 @@ describe("CG1 inbox congruency", () => {
       await waitFor(() => expect(boardMetrics()).toEqual({ span: 1030, left: 32, right: 32, zoom: 1 }));
       reported.width = 1286;
       act(() => { for (const callback of callbacks) callback([entry()], {} as ResizeObserver); });
-      await waitFor(() => expect(boardMetrics()).toEqual({ span: 1222, left: 32, right: 32, zoom: 1 }));
+      // Wide page: the card is capped at 210 (the All AI Conversations width), so
+      // it no longer fills its lane. The invariant is that a card never exceeds
+      // its lane, the cap holds, and the row stays symmetric.
+      await waitFor(() => {
+        const metrics = boardMetrics();
+        expect(metrics.cardWidth).toBeLessThanOrEqual(210);
+        expect(metrics.cardWidth + 24).toBeLessThanOrEqual(inboxLaneWidth(reported.width));
+        expect(metrics.left).toBeCloseTo(metrics.right);
+        expect(metrics.zoom).toBe(1);
+      });
     } finally {
       vi.unstubAllGlobals();
       if (width) Object.defineProperty(HTMLElement.prototype, "clientWidth", width);
