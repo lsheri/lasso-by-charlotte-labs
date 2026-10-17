@@ -7,6 +7,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DimmedDisabled } from "@/components/common/DimmedDisabled";
 import { InboxFixedCard } from "@/components/work/InboxFixedCard";
+import { SketchCard } from "@/design/reference/SketchCard";
+import { KIND_ASPECT } from "@/design/reference/Sketch";
+import type { WorkKind } from "@/design/reference/work-types";
 import { EVENT_DIM_KEYS } from "@/lib/event-dim-allowlist";
 import { inboxFilterDims, inboxFilterMatches, recordInboxFilterChange } from "@/lib/inbox-filter";
 import type { WorkItemRow } from "@/lib/work-types";
@@ -189,6 +192,21 @@ beforeEach(() => {
 });
 
 describe("CG1 inbox congruency", () => {
+  it.each<WorkKind>(["deck", "doc", "chat", "sheet", "transcript"])("fits the %s artwork by its own viewBox while explicit board height wins", (kind) => {
+    const work = { id: kind, title: kind, source: "other" as const, kind, onBoard: true };
+    const { container, rerender } = render(<SketchCard work={work} width={190.5} />);
+    const svg = container.querySelector('svg[preserveAspectRatio="xMidYMid meet"]');
+    const view = svg?.getAttribute("viewBox")?.split(/\s+/).map(Number);
+    const viewWidth = view?.[2];
+    const viewHeight = view?.[3];
+    if (viewWidth === undefined || viewHeight === undefined) throw new Error("Artwork viewBox required");
+    expect(KIND_ASPECT[kind].compact).toBe(viewWidth / viewHeight);
+    const drawingBox = svg?.parentElement?.parentElement;
+    expect(Number(drawingBox?.style.aspectRatio)).toBe(viewWidth / viewHeight);
+    expect(container.querySelector("article")?.style.height).toBe("auto");
+    rerender(<SketchCard work={work} width={190.5} height={268} />);
+    expect(container.querySelector("article")?.style.height).toBe("268px");
+  });
   it("below 768 replaces lanes with a list and removes selection, fit and zoom from the DOM", () => {
     const width = window.innerWidth;
     Object.defineProperty(window, "innerWidth", { configurable: true, value: 390 });

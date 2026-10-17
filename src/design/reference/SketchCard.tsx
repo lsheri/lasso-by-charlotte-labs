@@ -165,6 +165,7 @@ export function SketchCard({
         style={{
           position: 'relative',
           flex: naturalHeight ? '0 0 auto' : '1 1 0',
+          display: naturalHeight ? 'flow-root' : undefined,
           minHeight: 0,
           background: ink ? 'var(--surface-inverse)' : 'var(--surface-sunk)',
           borderBottom: `var(--border-weight) solid ${ink ? 'var(--neutral-80)' : 'var(--line-hairline)'}`,
