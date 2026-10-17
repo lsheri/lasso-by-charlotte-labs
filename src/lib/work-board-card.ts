@@ -40,7 +40,7 @@ export function workToBoardCard(
   filePreview?: WorkboardFilePreview,
 ): Work {
   const work = workToSketch(item);
-  if (chatPreview && chatPreview.turns.length > 0) {
+  if (chatPreview?.turns && chatPreview.turns.length > 0) {
     const turns = [...chatPreview.turns].sort((a, b) => a.turnNo - b.turnNo);
     const first = chatPreview.firstUserTurn;
     if (first && !turns.some((turn) => turn.turnNo === first.turnNo)) turns.unshift(first);
@@ -52,13 +52,13 @@ export function workToBoardCard(
 
   if (filePreview?.kind === 'slide' && filePreview.pages?.length) {
     const slides = filePreview.pages
-      .filter((page) => Boolean(page.title?.trim()) || page.lines.length > 0)
-      .map((page) => ({ title: page.title ?? '', bullets: page.lines }));
+      .filter((page) => Boolean(page.title?.trim()) || (page.lines?.length ?? 0) > 0)
+      .map((page) => ({ title: page.title ?? '', bullets: page.lines ?? [] }));
     if (slides.length > 0) return { ...work, content: { kind: 'deck', slides } };
   }
 
   if (filePreview?.kind === 'text') {
-    const lines = filePreview.lines.filter((line) => line.trim().length > 0);
+    const lines = (filePreview.lines ?? []).filter((line) => line.trim().length > 0);
     if (item.type === 'sheet') {
       const usable = lines.filter((line) => !/^##\s*Sheet:/.test(line));
       const [header, ...rows] = usable;
