@@ -9,10 +9,10 @@
  * soften: the two resolvers answer "which tool made this" and must agree.
  */
 import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-import { sourceBrandKey, type SourceItem } from "@/components/work/SourceMark";
+import { sourceBrandKey } from "@/components/work/SourceMark";
 import type { BrandKey } from "@/components/connectors/BrandLogo";
 import type { WorkSource } from "@/design/reference/work-types";
 import { sketchSource } from "@/lib/work-sketch";
