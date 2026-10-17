@@ -46,7 +46,7 @@ function FaceOption({ face, held, words, touch, onChange }: {
   face: CardFace;
   held: boolean;
   words: boolean;
-  touch?: boolean;
+  touch?: boolean | undefined;
   onChange: (face: CardFace) => void;
 }) {
   const [hover, setHover] = useState(false);
