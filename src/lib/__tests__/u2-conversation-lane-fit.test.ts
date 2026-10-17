@@ -11,9 +11,12 @@ describe("All AI Conversations month flow", () => {
     expect(styles).toContain(".conversation-month-stack");
   });
 
-  it("wraps 118px cards into additional rows", () => {
+  it("wraps content-sized SketchCards into additional rows", () => {
     expect(styles).toContain("repeat(auto-fill");
     expect(styles).toContain("230.5px");
-    expect(page).toContain('className="h-[118px] min-w-0"');
+    expect(page).not.toContain("h-[118px]");
+    expect(page).toContain("import { SketchCard } from '@/design/reference/SketchCard';");
+    expect(page).toContain('<div data-lane-content className="h-full min-w-0">');
+    expect(page).not.toMatch(/<div\b[^>]*\bdata-lane-content\b[^>]*\bstyle\s*=/);
   });
 });
