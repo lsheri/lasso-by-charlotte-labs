@@ -893,7 +893,7 @@ export function WorkPage() {
           <p className="p-5 text-sm text-muted-foreground">Loading your work…</p>
         ) : isMobile ? (
           <div className="work-phone-list" aria-label="All work list">
-            {phoneEntries.length === 0 ? <p className="py-6 text-base text-muted-foreground">Nothing here yet. Bring work in.</p> : (
+            {phoneEntries.length === 0 ? (!error ? <p className="py-6 text-base text-muted-foreground">Nothing here yet. Bring work in.</p> : null) : (
               <ul className="m-0 list-none p-0">
                 {phoneEntries.slice(0, phoneLimit).map(({ entry, ...head }) => (
                   <li key={isConversationGroup(entry) ? entry.key : entry.id}>
@@ -912,14 +912,14 @@ export function WorkPage() {
               }}>Show more</Button>
             ) : null}
           </div>
-        ) : all.length === 0 ? (
+        ) : !error && all.length === 0 ? (
           <div className="mx-auto mt-8 max-w-lg rounded-[var(--radius)] border border-border bg-card px-8 py-12 text-center shadow-card">
             <p className="text-sm text-foreground">Your work lands here.</p>
             <div className="mt-6 inline-block text-left">
               <BringWorkInRow isCoach={isCoach} selectableCount={selectable.length} selectMode={selectMode} allChosen={allChosen} chosenCount={chosen.size} onToggleSelectAll={() => setChosen(allChosen ? new Set() : new Set(selectable))} onBulkMap={bulkMapChosen} onRemove={() => setConfirmRemove(true)} onDoneSelect={leaveSelectMode} onEnterSelect={() => setSelectMode(true)} />
             </div>
           </div>
-        ) : (
+        ) : error && all.length === 0 ? null : (
           <>
             <BoardShell
               ariaLabel="All work"

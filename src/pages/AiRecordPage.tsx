@@ -164,7 +164,7 @@ function itemModel(item: WorkItemRow): string | null {
  */
 export function AiRecordPage() {
   const { data: profile } = useProfile();
-  const { data: work } = useWorkItems();
+  const { data: work, isLoading, error, refetch } = useWorkItems();
   const fetchFileUrl = useServerFn(getWorkFileUrl);
   const [peek, setPeek] = useState<{ entry: PeekEntry } | null>(null);
   const [selected, setSelected] = useState<WorkItemRow | null>(null);
@@ -236,6 +236,7 @@ export function AiRecordPage() {
     return () => window.removeEventListener("keydown", onKey);
   });
 
+  const mappingError = work?.mappingError ?? null;
   const threads = (work?.items ?? []).filter((i) => i.type === "ai_thread");
   // The id list is sorted before it becomes part of a key, so a reordered but
   // identical set of threads does not churn the cache and repaint the page.
@@ -471,13 +472,21 @@ export function AiRecordPage() {
           </div>
         </div>
 
+        {mappingError ? <p className="px-5 py-2 text-sm text-destructive">Mapping details couldn't load: {mappingError}</p> : null}
         <div className="relative min-h-0 flex-1">
            {showingAskedHistory ? (
             <div className="h-full overflow-y-auto p-5"><AskedSessions sessions={askedSessions} onOpen={(id) => { setAskSession(id); setAskOpen(true); }} /></div>
           ) : (
             <div className="flex h-full min-h-0 flex-col">
                <div className="relative min-h-0 flex-1 overflow-y-auto">
-                {threads.length === 0 ? (
+                {isLoading && !work ? (
+                  <p role="status" className="p-5 text-sm text-muted-foreground">Loading your work…</p>
+                ) : error ? (
+                  <div className="p-5">
+                    <p role="alert" className="text-sm text-destructive">Your chats couldn't be loaded.</p>
+                    <Button type="button" variant="outline" className="mt-2" onClick={() => void refetch()}>Try again</Button>
+                  </div>
+                ) : !work ? null : threads.length === 0 ? (
                   <div className="m-5 rounded-[var(--radius)] border border-dashed border-border p-8 text-center"><p className="text-sm text-foreground">Your chat library is empty. Keep your first conversation here and it stays yours to find and reuse.</p><p className="mt-2 text-sm text-muted-foreground">Push one from your assistant, paste one in, or import from a connector on the Work page.</p></div>
                 ) : groups.length === 0 ? <p className="p-5 text-sm text-muted-foreground">No chats match that search.</p> : (
                    <div className="conversation-month-stack p-5" aria-label="AI conversations by month">
