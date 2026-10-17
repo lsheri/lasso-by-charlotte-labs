@@ -9,11 +9,11 @@ import type { Work } from './work-types';
  * Nothing is drawn or invented. No content gives an honest empty state.
  *
  * PORT DEVIATION, deliberate. `fallback` is not in the design system copy.
- * The board already renders PDFs on a canvas and renders HTML, SVG and Mermaid
- * artifacts, and this component has no branch for either, so porting it as-is
- * would turn both into the empty state and lose working behaviour. Rather than
- * duplicating a PDF renderer inside a design system, the caller may pass its
- * own node to render in place of the empty state. Mirrored back to Magic.
+ * The design system has no PDF or HTML branch, so a host that can render those
+ * may pass its own node in place of the empty state. The opened readers render
+ * PDFs and artifacts, but board cards did not: headerGutter rendered SourceMirror
+ * and skipped WorkNote's file thumbnail. The board passes no fallback today.
+ * Mirrored back to Magic.
  */
 
 export const AUTHOR_WIDTH = 480;

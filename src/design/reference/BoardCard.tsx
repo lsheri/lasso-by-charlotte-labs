@@ -37,6 +37,9 @@ export type BoardCardProps = {
   onOpen?: (work: Work) => void;
   /** Rendered instead of the empty state when the work has no content. */
   previewFallback?: React.ReactNode;
+  actions?: React.ReactNode;
+  headerInsetRight?: number;
+  provenance?: React.ReactNode;
 };
 
 export const BOARD_CARD_MIN: CardSize = { width: 200, height: 170 };
@@ -45,7 +48,7 @@ export const BOARD_CARD_MAX: CardSize = { width: 720, height: 760 };
 const MONO = 'var(--font-mono)';
 const micro: React.CSSProperties = { fontFamily: MONO, fontSize: 8, letterSpacing: '.05em', textTransform: 'uppercase' };
 
-export function BoardCard({ work, width = 260, height, resizable = false, onResize, inHand, dimmed, onSelect, onOpen, previewFallback }: BoardCardProps) {
+export function BoardCard({ work, width = 260, height, resizable = false, onResize, inHand, dimmed, onSelect, onOpen, previewFallback, actions, headerInsetRight = 0, provenance }: BoardCardProps) {
   const { size, resizing, handleProps } = useCardResize(
     { width, height: height ?? Math.round(width * 0.85) },
     BOARD_CARD_MIN,
@@ -72,24 +75,27 @@ export function BoardCard({ work, width = 260, height, resizable = false, onResi
   const kind = kindOf(work);
   const scale = box.w / AUTHOR_WIDTH;
   const lifted = hover && !dimmed && !resizing;
+  const interactive = Boolean(onSelect || onOpen);
 
   return (
     <article
-      role="button"
-      tabIndex={0}
-      aria-pressed={inHand ?? false}
+      role={interactive ? 'button' : undefined}
+      tabIndex={interactive ? 0 : undefined}
+      aria-pressed={interactive ? inHand ?? false : undefined}
       aria-label={`${work.title}. ${KIND_LABEL[kind]} from ${label}.${um ? ' No board.' : ''} Double click to open.`}
-      onClick={() => onSelect?.(work)}
-      onDoubleClick={() => onOpen?.(work)}
-      onKeyDown={(e) => {
+      onClick={onSelect ? (e) => { e.stopPropagation(); onSelect(work); } : undefined}
+      onDoubleClick={onOpen ? (e) => { e.stopPropagation(); onOpen(work); } : undefined}
+      onKeyDown={interactive ? (e) => {
         if (e.key === 'Enter') {
           e.preventDefault();
+          if (onOpen) e.stopPropagation();
           onOpen?.(work);
         } else if (e.key === ' ') {
           e.preventDefault();
+          if (onSelect) e.stopPropagation();
           onSelect?.(work);
         }
-      }}
+      } : undefined}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--focus-ring)]"
@@ -100,7 +106,7 @@ export function BoardCard({ work, width = 260, height, resizable = false, onResi
         width: size.width,
         height: size.height,
         overflow: 'hidden',
-        cursor: 'pointer',
+        cursor: interactive ? 'pointer' : 'inherit',
         border: `var(--border-weight) ${um ? 'dashed' : 'solid'} ${um ? 'var(--line-pencil)' : 'var(--line-strong)'}`,
         borderRadius: 'var(--radius-sm-new)',
         background: um ? 'var(--surface-page)' : 'var(--surface-raised)',
@@ -114,7 +120,7 @@ export function BoardCard({ work, width = 260, height, resizable = false, onResi
         userSelect: 'none',
       }}
     >
-      <header className="flex shrink-0 items-center gap-2" style={{ height: 40, padding: '0 8px 0 6px', borderBottom: 'var(--border-weight) solid var(--line-hairline)' }}>
+      <header className="flex shrink-0 items-center gap-2" style={{ height: 40, padding: `0 ${8 + headerInsetRight}px 0 6px`, borderBottom: 'var(--border-weight) solid var(--line-hairline)' }}>
         <SourceMark source={work.source} size="sm" />
         <span className="min-w-0 flex-1 truncate" style={{ fontFamily: 'var(--font-sans)', fontSize: 12.5, fontWeight: 600, color: 'var(--text-primary)' }}>
           {work.title}
@@ -138,12 +144,10 @@ export function BoardCard({ work, width = 260, height, resizable = false, onResi
             <Lock />
             No board
           </span>
-        ) : (
-          <>
-            <span className="min-w-0 flex-1 truncate" style={{ ...micro, color: 'var(--line-pencil)' }}>{work.prov ?? ''}</span>
-            {work.board ? <span className="truncate" style={{ ...micro, maxWidth: '50%', color: 'var(--text-secondary)' }}>{work.board}</span> : null}
-          </>
-        )}
+        ) : null}
+        <span className="min-w-0 flex-1 truncate" style={{ ...micro, color: 'var(--line-pencil)' }}>{provenance !== undefined ? provenance : work.prov ?? ''}</span>
+        {!um && work.board ? <span className="truncate" style={{ ...micro, maxWidth: '50%', color: 'var(--text-secondary)' }}>{work.board}</span> : null}
+        {actions ? <span style={{ flexShrink: 0 }}>{actions}</span> : null}
       </footer>
 
       {resizable ? <ResizeHandle size={size} visible={hover || resizing} handlers={handleProps} /> : null}

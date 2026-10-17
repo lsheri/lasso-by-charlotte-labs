@@ -2,7 +2,7 @@ import { RenameWorkDialog } from "@/components/work/RenameWorkDialog";
 import { displayName } from "@/lib/work-item-name";
 import { stableMemo } from "@/components/canvas-lab/stable-memo";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Paperclip } from "lucide-react";
+import { ExternalLink, Paperclip } from "lucide-react";
 
 import { Catch } from "@/components/canvas-lab/Catch";
 import { LabCardMenu } from "@/components/canvas-lab/LabCardMenu";
@@ -15,6 +15,9 @@ import { ReferenceFileCard, referenceMatchLine } from "@/components/canvas-lab/R
 import { GraphiteIcon } from "@/components/notebook/icons";
 import { Button } from "@/components/ui/button";
 import { WorkNote } from "@/components/work/WorkNote";
+import { ChatUrlLink } from "@/components/work/ChatUrlLink";
+import { BoardCard } from '@/design/reference/BoardCard';
+import { workToBoardCard } from '@/lib/work-board-card';
 import { isReferenceItem } from "@/lib/reference-file-shared";
 import {
   beginClickGesture,
@@ -75,6 +78,7 @@ function LabCardInner({
   onOpenComments,
   preview,
   filePreview,
+  face = 'note',
   onPreviewScroll: _onPreviewScroll,
   readOnly = false,
   showStatusChrome = true,
@@ -127,6 +131,7 @@ function LabCardInner({
   onOpenComments?: (() => void) | undefined;
   preview?: WorkboardCardPreview | undefined;
   filePreview?: WorkboardFilePreview | undefined;
+  face?: 'note' | 'board';
   onPreviewScroll?: ((kind: "chat" | "document" | "deck" | "html" | "mermaid") => void) | undefined;
   /** Sample board only: no drag, no menu, no anchors, no handles. */
   readOnly?: boolean;
@@ -240,6 +245,9 @@ function LabCardInner({
   }
 
   const matchLine = item && !isReferenceItem(item) ? referenceMatchLine(item) : null;
+  const sourceUrl = item?.meta?.web_view_link ?? item?.source_meta?.url ?? null;
+  const headerGutter = true;
+  const chatPreview = preview;
   const teammateTooltip = teammateMark?.name
     ? item
       ? `Added by ${teammateMark.name} from ${brandLabel(sourceBrandKey(item))}, ${formatDate(resolveWorkDate(item).iso)}`
@@ -274,7 +282,35 @@ function LabCardInner({
       className={`canvas-lab-card group absolute text-left outline-none${teammateMark ? " canvas-lab-card-teammate" : ""}`}
     >
       <div ref={paperRef} data-selected={selected} data-marquee-preview={previewSelected} data-focused={focused} data-connect-source={connectSourceAnchor !== null} className="canvas-lab-card-paper h-full w-full overflow-hidden">
-        {item && isReferenceItem(item) ? <ReferenceFileCard item={item} onOpen={() => onOpen(cardRef.current?.getBoundingClientRect())} /> : item ? (
+        {item && isReferenceItem(item) ? <ReferenceFileCard item={item} onOpen={() => onOpen(cardRef.current?.getBoundingClientRect())} /> : item && face === 'board' ? (
+          <BoardCard
+            work={workToBoardCard(item, preview, filePreview)}
+            width={node.width}
+            height={node.height}
+            resizable={false}
+            inHand={selected}
+            headerInsetRight={60}
+            actions={commentCount > 0 && onOpenComments ? (
+              <button type="button" data-testid="lab-comment-chip" aria-label={`${commentCount} ${commentCount === 1 ? "comment" : "comments"}`} onPointerDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); onOpenComments(); }} className="inline-flex items-center gap-0.5 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
+                <GraphiteIcon name="messages" size={11} animate={false} />{commentCount}
+              </button>
+            ) : undefined}
+            provenance={
+          <span className={`min-w-0 flex-1 truncate ${headerGutter ? "canvas-card-provenance" : "text-[9px] text-muted-foreground"}`} onClick={(event) => event.stopPropagation()}>
+            {item.type === "ai_thread" || pastedChatUrl((item as WorkItemRow).meta?.chat_url) ? (
+              <ChatUrlLink item={item as WorkItemRow} showAbsence turnCount={chatPreview?.turnCount} toolSteps={chatPreview?.toolSteps} />
+            ) : sourceUrl ? (
+              <a href={sourceUrl} target="_blank" rel="noopener noreferrer" className="canvas-card-url inline-flex max-w-full items-center gap-1">
+                <ExternalLink className="h-2.5 w-2.5 shrink-0" aria-hidden />
+                <span className="truncate">{sourceUrl}</span>
+              </a>
+            ) : (
+              <ChatUrlLink item={item as WorkItemRow} showAbsence turnCount={chatPreview?.turnCount} toolSteps={chatPreview?.toolSteps} />
+            )}
+          </span>
+            }
+          />
+        ) : item ? (
           <WorkNote
             item={item}
             chatPreview={preview}
