@@ -320,6 +320,8 @@ export type TelemetryEvent =
   | "canvas.zoomed"
   /** Canvas Lab Phase 2: the local work rail changed visibility. State only. */
   | "workboard.rail_toggled"
+  /** The person flipped board cards between sketch and real preview. Face only. */
+  | "workboard.face_toggled"
   /** The workboard opened, with its content-free entry point. */
   | "workboard.opened"
   /** Canvas Lab Phase 2: a local prototype node was added. Closed kinds only. */
