@@ -4,6 +4,8 @@ import { Lock } from "lucide-react";
 import { CardMenu } from "@/components/work/CardMenu";
 import { engagementDisplayTitle } from "@/lib/clients";
 import { WorkNote } from "@/components/work/WorkNote";
+import { SketchCard } from '@/design/reference/SketchCard';
+import { workToSketch } from '@/lib/work-sketch';
 import { WorkCardPreview } from "@/components/work/WorkCardPreview";
 import { SourceMark, VendorMark } from "@/components/work/SourceMark";
 import { StandAloneAction } from "@/components/work/StandAloneAction";
@@ -34,6 +36,7 @@ export function ConversationCard({
   onFluency,
   displayMode = "sticky",
   preview,
+  cardWidth,
 }: {
   group: ConversationGroup;
   variant: "mapped" | "unmapped" | "private";
@@ -54,6 +57,7 @@ export function ConversationCard({
   onFluency?: ((item: WorkItemRow) => void) | undefined;
   displayMode?: WorkboardDisplayMode;
   preview?: WorkboardCardPreview | undefined;
+  cardWidth?: number;
 }) {
   const head = group.transcript ?? group.items[0]!;
   const pieces = group.transcript ? group.attachments : group.items.slice(1);
@@ -101,6 +105,26 @@ export function ConversationCard({
   ].join(" · ");
 
   if (dense) {
+    if (cardWidth !== undefined) {
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <SketchCard
+            work={workToSketch(head)}
+            width={cardWidth}
+            onSelect={() => onOpen(head)}
+            onOpen={() => onOpen(head)}
+          />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <CardMenu item={head} onFluency={onFluency}>
+              {primaryAction}
+              {actions}
+              <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{stateStamp}</span>
+              {pieces.map((piece) => <span key={piece.id}>{footerFor?.(piece)}</span>)}
+            </CardMenu>
+          </div>
+        </div>
+      );
+    }
     return (
       <WorkNote
         item={head}

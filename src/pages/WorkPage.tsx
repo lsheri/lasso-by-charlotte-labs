@@ -119,6 +119,8 @@ const INBOX_LANE_LEFT = 40;
 const INBOX_LANE_TOP = 76;
 /** I1: tall enough for three summary lines, or a thumbnail and its two label lines. */
 export const INBOX_CARD_HEIGHT = 200;
+/** CardMenu row plus the flex gap, measured on the live card wrapper. */
+const INBOX_CARD_FOOT = 30;
 const INBOX_LANE_PADDING = 12;
 const INBOX_CARD_GAP = 12;
 const INBOX_LANE_HEADER_HEIGHT = 40;
@@ -458,6 +460,7 @@ export function WorkPage() {
       <ConversationCard
         key={group.key}
         group={group}
+        cardWidth={cardWidth}
         variant={variant}
         dense
         displayMode="preview"
@@ -714,6 +717,7 @@ export function WorkPage() {
       <WorkRow
         key={entry.id}
         item={entry}
+        cardWidth={cardWidth}
         dense
         displayMode="preview"
         chatPreview={chatPreviews[entry.id]}
@@ -759,6 +763,7 @@ export function WorkPage() {
   });
 
   const currentInboxLaneWidth = inboxLaneWidth(inboxViewportWidth);
+  const cardWidth = currentInboxLaneWidth - 24;
   const currentInboxLaneHeight = inboxLaneHeight(inboxViewportHeight);
 
   const inboxLaneFrames: InboxLaneFrame[] = lanePages.map(({ bucket, entries }, index) => ({
@@ -775,7 +780,7 @@ export function WorkPage() {
       x: 0,
       y: 0,
       width: currentInboxLaneWidth,
-      height: INBOX_CARD_HEIGHT + (() => {
+      height: Math.round(cardWidth * 1.25) + INBOX_CARD_FOOT + (() => {
         const items = isConversationGroup(entry) ? entry.items : [entry];
         const boards = new Set(items.flatMap((item) => (sharedPlacements.data?.[item.id] ?? []).map((board) => board.id)));
         return boards.size * 32;
