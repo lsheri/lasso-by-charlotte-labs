@@ -18,6 +18,9 @@ import { WorkNote } from "@/components/work/WorkNote";
 import { ChatUrlLink } from "@/components/work/ChatUrlLink";
 import { BoardCard } from '@/design/reference/BoardCard';
 import { SketchCard } from '@/design/reference/SketchCard';
+import { Sketch } from '@/design/reference/Sketch';
+import { kindOf, sketchLabel } from '@/design/reference/work-types';
+import { WorkboardFilePreview as FilePreview } from '@/components/canvas-lab/WorkboardFilePreview';
 import { workToBoardCard } from '@/lib/work-board-card';
 import { isReferenceItem } from "@/lib/reference-file-shared";
 import {
@@ -35,6 +38,8 @@ import { formatDate } from "@/lib/work-types";
 import { resolveWorkDate } from "@/lib/work-order";
 import type { WorkboardCardPreview, WorkboardFilePreview } from "@/lib/workboard-card-preview.shared";
 import type { TeammateMark } from "@/lib/teammate-mark";
+
+const ignorePreviewFailure = () => {};
 
 /**
  * One object on the board. Imported work uses the shared Ledger face.
@@ -257,6 +262,22 @@ function LabCardInner({
   const sourceUrl = item?.meta?.web_view_link ?? item?.source_meta?.url ?? null;
   const headerGutter = true;
   const chatPreview = preview;
+  const boardWork = item && face === 'board' ? workToBoardCard(item, preview, filePreview) : undefined;
+  const renderableFilePreview = filePreview && (
+    (filePreview.kind === 'pdf' && Boolean(filePreview.url)) ||
+    ((filePreview.kind === 'html' || filePreview.kind === 'mermaid') && Boolean(filePreview.html))
+  ) ? filePreview : undefined;
+  const previewFallback = boardWork && !boardWork.content ? (
+    renderableFilePreview ? (
+      <div className="absolute inset-0 flex min-h-0 flex-col">
+        <FilePreview preview={renderableFilePreview} title={boardWork.title} onFailure={ignorePreviewFailure} />
+      </div>
+    ) : (
+      <div className="absolute inset-[10%]">
+        <Sketch kind={kindOf(boardWork)} tone="bone" detail="compact" label={sketchLabel(boardWork.title)} />
+      </div>
+    )
+  ) : undefined;
   const teammateTooltip = teammateMark?.name
     ? item
       ? `Added by ${teammateMark.name} from ${brandLabel(sourceBrandKey(item))}, ${formatDate(resolveWorkDate(item).iso)}`
@@ -291,17 +312,18 @@ function LabCardInner({
       className={`canvas-lab-card group absolute text-left outline-none${teammateMark ? " canvas-lab-card-teammate" : ""}`}
     >
       <div ref={paperRef} data-selected={selected} data-marquee-preview={previewSelected} data-focused={focused} data-connect-source={connectSourceAnchor !== null} className="canvas-lab-card-paper h-full w-full overflow-hidden">
-        {item && isReferenceItem(item) ? <ReferenceFileCard item={item} onOpen={() => onOpen(cardRef.current?.getBoundingClientRect())} /> : item && face === 'board' && cardFace === 'art' ? (
+        {item && isReferenceItem(item) ? <ReferenceFileCard item={item} onOpen={() => onOpen(cardRef.current?.getBoundingClientRect())} /> : item && boardWork && face === 'board' && cardFace === 'art' ? (
           <SketchCard
-            work={workToBoardCard(item, preview, filePreview)}
+            work={boardWork}
             width={node.width}
             height={node.height}
             resizable={false}
             inHand={selected}
           />
-        ) : item && face === 'board' ? (
+        ) : item && boardWork && face === 'board' ? (
           <BoardCard
-            work={workToBoardCard(item, preview, filePreview)}
+            work={boardWork}
+            previewFallback={previewFallback}
             width={node.width}
             height={node.height}
             resizable={false}
