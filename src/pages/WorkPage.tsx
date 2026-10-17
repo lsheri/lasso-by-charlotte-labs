@@ -709,7 +709,9 @@ export function WorkPage() {
     entries: filteredEntries.filter((entry) => bucketKeyForEntry(entry) === bucket.key),
   }));
   const laneWidth = inboxLaneWidth(contentWidth);
-  const cardWidth = laneWidth - 24;
+  // 210 is the cap All AI Conversations uses: at or above it both surfaces render
+  // the same card, so a wider page shows more work instead of bigger pictures.
+  const cardWidth = Math.min(laneWidth - 24, 210);
 
   const arrivalCount = groupConversations(selectArrivals(all, profile?.id)).length;
 

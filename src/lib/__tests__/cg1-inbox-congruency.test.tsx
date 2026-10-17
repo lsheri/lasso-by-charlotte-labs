@@ -124,7 +124,7 @@ vi.mock("@/hooks/use-chat-search-signal", () => ({
 vi.mock("@/hooks/use-motion", () => ({ useMotion: () => ({ className: "" }) }));
 vi.mock("@/integrations/supabase/client", () => ({ supabase: {} }));
 
-import { WorkPage } from "@/pages/WorkPage";
+import { WorkPage, inboxLaneWidth } from "@/pages/WorkPage";
 import {
   AiRecordPage,
   CONVERSATION_CARD_HEIGHT,
