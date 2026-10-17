@@ -709,10 +709,7 @@ export function WorkPage() {
     entries: filteredEntries.filter((entry) => bucketKeyForEntry(entry) === bucket.key),
   }));
   const laneWidth = inboxLaneWidth(contentWidth);
-  /** 210 is the cap, the width shared with All AI Conversations, which puts both
-   * surfaces in SketchCard's regular tier at normal page widths. The card is the
-   * lane width minus 24 and never wider than its lane. */
-  const cardWidth = Math.min(laneWidth - 24, 210);
+  const cardWidth = laneWidth - 24;
 
   const arrivalCount = groupConversations(selectArrivals(all, profile?.id)).length;
 
