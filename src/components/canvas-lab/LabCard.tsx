@@ -262,10 +262,10 @@ function LabCardInner({
   const headerGutter = true;
   const chatPreview = preview;
   const boardWork = item && face === 'board' ? workToBoardCard(item, preview, filePreview) : undefined;
-  const [failedPreviewKey, setFailedPreviewKey] = React.useState<string | null>(null);
+  const [failedPreviewKey, setFailedPreviewKey] = useState<string | null>(null);
   const previewKey = `${item?.id ?? ''}|${filePreview?.kind ?? ''}|${filePreview && 'url' in filePreview ? String(filePreview.url ?? '') : ''}|${filePreview && 'html' in filePreview ? String(filePreview.html ?? '').length : ''}`;
   const filePreviewFailed = failedPreviewKey === previewKey;
-  const markFilePreviewFailed = React.useCallback(() => setFailedPreviewKey(previewKey), [previewKey]);
+  const markFilePreviewFailed = () => setFailedPreviewKey(previewKey);
   const renderableFilePreview = filePreview && (
     (filePreview.kind === 'pdf' && Boolean(filePreview.url)) ||
     ((filePreview.kind === 'html' || filePreview.kind === 'mermaid') && Boolean(filePreview.html))
