@@ -1,6 +1,6 @@
 import * as React from 'react';
-import { useState } from 'react';
-import { Sketch } from './Sketch';
+import { useEffect, useRef, useState } from 'react';
+import { KIND_ASPECT, Sketch } from './Sketch';
 import type { SketchTone } from './Sketch';
 import { ResizeHandle } from './ResizeHandle';
 import { useCardResize } from './useCardResize';
@@ -31,7 +31,7 @@ export type SketchCardSize = CardSize;
 export type SketchCardProps = {
   work: Work;
   width?: number;
-  /** Defaults to width x 1.25. */
+  /** Defaults to the artwork's aspect plus its naturally sized chrome. */
   height?: number;
   /** bone: drawing on bone paper. ink: drawing on the inverse surface. */
   tone?: SketchTone;
@@ -77,11 +77,14 @@ export function SketchCard({
   onSelect,
   onOpen,
 }: SketchCardProps) {
+  const cardRef = useRef<HTMLElement | null>(null);
+  const [defaultHeight, setDefaultHeight] = useState(SKETCH_CARD_MIN.height);
+  const [hasResized, setHasResized] = useState(false);
   const { size, resizing, handleProps } = useCardResize(
-    { width, height: height ?? Math.round(width * 1.25) },
+    { width, height: height ?? defaultHeight },
     SKETCH_CARD_MIN,
     SKETCH_CARD_MAX,
-    onResize,
+    (next) => { setHasResized(true); onResize?.(next); },
   );
   const [hover, setHover] = useState(false);
 
@@ -98,9 +101,26 @@ export function SketchCard({
   const markInset = 8;
   const drawTop = markInset + Math.round(28 * markScale) - 2;
   const sketchActive = hover && !dimmed && !resizing;
+  const detail = tier === 'expanded' ? 'expanded' : 'compact';
+  const naturalHeight = height === undefined && !hasResized;
+  const drawInset = tier === 'compact' ? 6 : 8;
+  useEffect(() => {
+    const card = cardRef.current;
+    if (!card || !naturalHeight) return;
+    const measure = () => {
+      const measured = card.getBoundingClientRect().height;
+      if (measured > 0) setDefaultHeight(measured);
+    };
+    measure();
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(card);
+    return () => observer.disconnect();
+  }, [naturalHeight, width, kind, detail]);
 
   return (
     <article
+      ref={cardRef}
       role={interactive ? 'button' : undefined}
       tabIndex={interactive ? 0 : undefined}
       aria-pressed={interactive ? inHand ?? false : undefined}
@@ -124,7 +144,7 @@ export function SketchCard({
         display: 'flex',
         flexDirection: 'column',
         width: size.width,
-        height: size.height,
+        height: naturalHeight ? 'auto' : size.height,
         overflow: 'hidden',
         cursor: interactive ? 'pointer' : 'inherit',
         border: `var(--border-weight) ${um ? 'dashed' : 'solid'} ${um ? 'var(--line-pencil)' : 'var(--line-strong)'}`,
@@ -144,15 +164,17 @@ export function SketchCard({
       <div
         style={{
           position: 'relative',
-          flex: '1 1 0',
+          flex: naturalHeight ? '0 0 auto' : '1 1 0',
           minHeight: 0,
           background: ink ? 'var(--surface-inverse)' : 'var(--surface-sunk)',
           borderBottom: `var(--border-weight) solid ${ink ? 'var(--neutral-80)' : 'var(--line-hairline)'}`,
           filter: um ? 'saturate(.2) opacity(.8)' : 'none',
         }}
       >
-        <div style={{ position: 'absolute', inset: tier === 'compact' ? `${drawTop}px 6px 6px` : `${drawTop}px 8px 8px` }}>
-          <Sketch kind={kind} tone={tone} detail={tier === 'expanded' ? 'expanded' : 'compact'} label={sketchLabel(work.title)} active={sketchActive} />
+        <div style={naturalHeight ? { position: 'relative', margin: `${drawTop}px ${drawInset}px ${drawInset}px`, aspectRatio: KIND_ASPECT[kind][detail] } : { position: 'absolute', inset: `${drawTop}px ${drawInset}px ${drawInset}px` }}>
+          <div style={{ position: 'absolute', inset: 0 }}>
+            <Sketch kind={kind} tone={tone} detail={detail} label={sketchLabel(work.title)} active={sketchActive} />
+          </div>
         </div>
         <div style={{ position: 'absolute', top: markInset, left: markInset, transform: `scale(${markScale})`, transformOrigin: 'top left', zIndex: 1 }}>
           <SourceMark source={work.source} size="sm" />

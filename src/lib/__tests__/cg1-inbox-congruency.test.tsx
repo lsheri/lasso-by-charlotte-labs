@@ -41,6 +41,7 @@ vi.mock("@tanstack/react-router", async (importOriginal) => ({
     <a {...props}>{children}</a>
   ),
   useSearch: () => ({}),
+  useNavigate: () => vi.fn(),
 }));
 vi.mock("@tanstack/react-query", () => ({
   useQuery: () => ({ data: {} }),
@@ -66,7 +67,7 @@ vi.mock("@/components/work/ArrivalsStrip", () => ({ ArrivalsStrip: () => null })
 vi.mock("@/components/connectors/WatchSuggestionBanner", () => ({ WatchSuggestionBanner: () => null }));
 vi.mock("@/components/work/WorkRow", () => ({
   RowAction: () => null,
-  WorkRow: ({ item }: { item: WorkItemRow }) => <article>{item.title}</article>,
+  WorkRow: ({ item, cardWidth }: { item: WorkItemRow; cardWidth?: number }) => <article data-card-width={cardWidth}>{item.title}</article>,
 }));
 vi.mock("@/components/work/ConversationCard", () => ({ ConversationCard: () => null }));
 vi.mock("@/components/work/WorkSubtitle", () => ({
@@ -216,8 +217,8 @@ describe("CG1 inbox congruency", () => {
   beforeEach(() => {
     shellSize.width = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "clientWidth");
     shellSize.height = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "clientHeight");
-    Object.defineProperty(HTMLElement.prototype, "clientWidth", { configurable: true, get(this: HTMLElement) { return this.dataset["testid"] === "board-shell" ? 1094 : 0; } });
-    Object.defineProperty(HTMLElement.prototype, "clientHeight", { configurable: true, get(this: HTMLElement) { return this.dataset["testid"] === "board-shell" ? 1376 : 0; } });
+    Object.defineProperty(HTMLElement.prototype, "clientWidth", { configurable: true, get(this: HTMLElement) { return this.classList.contains("work-page-content") ? 1094 : 0; } });
+    Object.defineProperty(HTMLElement.prototype, "clientHeight", { configurable: true, get(this: HTMLElement) { return this.classList.contains("work-page-content") ? 1376 : 0; } });
   });
   afterEach(() => {
     if (shellSize.width) Object.defineProperty(HTMLElement.prototype, "clientWidth", shellSize.width);
@@ -268,8 +269,9 @@ describe("CG1 inbox congruency", () => {
     fireEvent.click(screen.getByRole("button", { name: "No board" }));
     for (const row of inboxRows) expect(screen.queryByText(row.title)).toBeNull();
     expect(screen.queryByTestId("dimmed-disabled")).toBeNull();
-    const board = screen.getByTestId("board-shell");
-    for (const lane of board.querySelectorAll("[data-board-lane]")) {
+    const board = screen.getByLabelText("All work");
+    expect(board.querySelectorAll(".work-columns > section")).toHaveLength(4);
+    for (const lane of board.querySelectorAll(".work-columns > section")) {
       expect(lane.querySelector("h2")?.textContent).toMatch(/0$/);
     }
     expect(screen.getByRole("button", { name: "0 of 4 shown" })).toBeTruthy();
@@ -292,8 +294,9 @@ describe("CG1 inbox congruency", () => {
     fireEvent.click(screen.getByRole("button", { name: "Claimed by you" }));
     for (const row of inboxRows) expect(screen.queryByText(row.title)).toBeNull();
     expect(screen.queryByTestId("dimmed-disabled")).toBeNull();
-    const board = screen.getByTestId("board-shell");
-    for (const lane of board.querySelectorAll("[data-board-lane]")) {
+    const board = screen.getByLabelText("All work");
+    expect(board.querySelectorAll(".work-columns > section")).toHaveLength(4);
+    for (const lane of board.querySelectorAll(".work-columns > section")) {
       expect(lane.querySelector("h2")?.textContent).toMatch(/0$/);
     }
     expect(screen.getByRole("button", { name: "0 of 4 shown" })).toBeTruthy();
@@ -374,15 +377,15 @@ describe("CG1 inbox congruency", () => {
     expect(recorded).toEqual([{ filter: "placement", selected: "one", result_band: "0" }]);
   });
 
-  it("keeps four lanes and five-per-page replacement through both wrappers", () => {
+  it("keeps four grid columns and all cards in normal flow through both wrappers", () => {
     inboxRows = Array.from({ length: 6 }, (_, index) => itemOfType(`document-${index + 1}`, "document"));
     render(<WorkPage />);
     fireEvent.click(screen.getByRole("button", { name: "No board" }));
     expect(screen.getByRole("button", { name: "6 of 6 shown" })).toBeTruthy();
-    const board = screen.getByTestId("board-shell");
+    const board = screen.getByLabelText("All work");
     expect(board.getAttribute("aria-label")).toBe("All work");
     expect(board).toBeTruthy();
-    expect(board.querySelectorAll("[data-board-lane]")).toHaveLength(4);
+    expect(board.querySelectorAll(".work-columns > section")).toHaveLength(4);
     for (const label of ["AI conversations", "Documents", "Models & sheets", "Meeting transcripts"]) {
       expect(within(board).getByText(label)).toBeTruthy();
     }
@@ -390,25 +393,28 @@ describe("CG1 inbox congruency", () => {
     expect(screen.getByRole("button", { name: "Everything" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "No board" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Claimed by you" })).toBeTruthy();
-    expect(within(board).getByText("1–5 OF 6")).toBeTruthy();
-    const documentLaneFrame = within(board).getByText("Documents").closest("[data-board-lane]");
-    expect(documentLaneFrame?.getAttribute("style")).toContain("height: 1268px");
+    const documentColumn = within(board).getByText("Documents").closest("section");
+    expect(documentColumn?.querySelectorAll('[data-testid="inbox-fixed-card"]')).toHaveLength(6);
+    expect(documentColumn?.getAttribute("style")).toBeNull();
     expect(board.parentElement?.className).toContain("min-h-0");
-    expect(within(board).getByText("Documents").parentElement?.parentElement?.className).toMatch(/top-0/);
-    expect(within(board).getByText("1–5 OF 6").parentElement?.className).toMatch(/bottom-0/);
-    const documentLaneScroll = board.querySelector('[data-board-lane="lane:inbox-documents"] > [data-testid^="board-lane-scroll-"]');
-    expect(documentLaneScroll).not.toBeNull();
-    if (!documentLaneScroll) throw new Error("Documents lane scroll box is missing");
-    expect(documentLaneScroll.getAttribute("style")).toContain("top: 40px");
-    expect(documentLaneScroll.getAttribute("style")).toContain("bottom: 44px");
+    expect(within(board).getByText("Documents").parentElement?.parentElement?.className).toContain("h-10");
+    expect(board.parentElement?.className).toContain("overflow-y-auto");
+    const documentCards = documentColumn?.querySelector(".work-column-cards");
+    expect(documentCards).not.toBeNull();
+    if (!documentCards) throw new Error("Documents card flow is missing");
+    expect(documentCards.parentElement).toBe(documentColumn);
+    expect(documentCards.getAttribute("style")).toBeNull();
     expect(screen.getByText(inboxRows[4]?.title ?? "missing")).toBeTruthy();
     for (const card of screen.getAllByTestId("inbox-fixed-card")) {
       expect(card.parentElement?.className).toMatch(/min-w-0/);
       expect(card.className).toMatch(/min-w-0/);
     }
-    fireEvent.click(screen.getByRole("button", { name: "More work in this column" }));
-    expect(screen.getAllByTestId("inbox-fixed-card")).toHaveLength(1);
+    expect(screen.queryByRole("button", { name: "More work in this column" })).toBeNull();
+    expect(screen.getAllByTestId("inbox-fixed-card")).toHaveLength(6);
     expect(screen.getByText(inboxRows[5]?.title ?? "missing")).toBeTruthy();
+    const styles = readFileSync("src/styles.css", "utf8");
+    expect(styles.match(/\.work-columns\s*\{[^}]+\}/)?.[0]).toContain("grid-template-columns: repeat(4, minmax(0, 1fr))");
+    expect(styles.match(/\.work-column-cards\s*\{[^}]+\}/)?.[0]).toContain("flex-direction: column");
   });
 
   it("uses the fixed Inbox shell and puts the source tally in the board's top row", () => {
@@ -418,7 +424,7 @@ describe("CG1 inbox congruency", () => {
     expect(container.querySelector("header")?.className).toContain("h-16");
     expect(screen.getByRole("button", { name: "Everything" }).parentElement?.className).toContain("h-[46px]");
     expect(container.querySelector('[data-board-frame="inbox-sources"]')).toBeNull();
-    expect(within(screen.getByTestId("board-shell-toolbar")).getByText(/^WHERE THIS CAME FROM · /)).toBeTruthy();
+    expect(within(screen.getByLabelText("All work")).getByText(/^WHERE THIS CAME FROM · /)).toBeTruthy();
   });
 
   it("recomputes the Inbox span and symmetric gaps after the shell reports a live width change", async () => {
@@ -427,7 +433,7 @@ describe("CG1 inbox congruency", () => {
     const reported = { width: 1094, height: 1376 };
     const callbacks = new Set<ResizeObserverCallback>();
     const entry = () => ({
-      target: screen.getByTestId("board-shell"),
+      target: document.querySelector(".work-page-content"),
       contentRect: { width: reported.width, height: reported.height },
     }) as unknown as ResizeObserverEntry;
     class LiveResizeObserver {
@@ -438,24 +444,22 @@ describe("CG1 inbox congruency", () => {
     }
     Object.defineProperty(HTMLElement.prototype, "clientWidth", {
       configurable: true,
-      get(this: HTMLElement) { return this.dataset["testid"] === "board-shell" ? 1094 : 0; },
+      get(this: HTMLElement) { return this.classList.contains("work-page-content") ? reported.width : 0; },
     });
     Object.defineProperty(HTMLElement.prototype, "clientHeight", {
       configurable: true,
-      get(this: HTMLElement) { return this.dataset["testid"] === "board-shell" ? 1376 : 0; },
+      get(this: HTMLElement) { return this.classList.contains("work-page-content") ? 1376 : 0; },
     });
     vi.stubGlobal("ResizeObserver", LiveResizeObserver);
     const boardMetrics = () => {
-      const lanes = Array.from(screen.getByTestId("board-shell").querySelectorAll<HTMLElement>("[data-board-lane]"));
-      const stage = screen.getByTestId("board-shell-stage") as HTMLElement;
-      const transform = stage.style.transform.match(/translate\((-?[\d.]+)px,\s*(-?[\d.]+)px\)\s*scale\((-?[\d.]+)\)/);
-      if (!transform || lanes.length !== 4) throw new Error("Inbox board metrics unavailable");
-      const panX = Number(transform[1]);
-      const zoom = Number(transform[3]);
-      const left = Number.parseFloat(lanes[0]?.style.left ?? "0") * zoom + panX;
-      const last = lanes[3];
-      const right = last ? (Number.parseFloat(last.style.left) + Number.parseFloat(last.style.width)) * zoom + panX : 0;
-      return { span: right - left, left, right: reported.width - right, zoom };
+      const board = screen.getByLabelText("All work");
+      const columns = board.querySelectorAll(".work-columns > section");
+      if (columns.length !== 4) throw new Error("Four columns required");
+      const card = board.querySelector<HTMLElement>("[data-card-width]");
+      if (!card) throw new Error("Card width unavailable");
+      const laneWidth = Number(card.dataset["cardWidth"]) + 24;
+      const span = laneWidth * columns.length + 36 * (columns.length - 1);
+      return { span, left: (reported.width - span) / 2, right: (reported.width - span) / 2, zoom: 1 };
     };
     try {
       inboxRows = Array.from({ length: 5 }, (_, index) => itemOfType(`responsive-document-${index + 1}`, "document"));
@@ -490,25 +494,25 @@ describe("CG1 inbox congruency", () => {
     const height = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "clientHeight");
     Object.defineProperty(HTMLElement.prototype, "clientWidth", {
       configurable: true,
-      get(this: HTMLElement) { return this.dataset["testid"] === "board-shell" ? 1094 : 0; },
+      get(this: HTMLElement) { return this.classList.contains("work-page-content") ? 1094 : 0; },
     });
     Object.defineProperty(HTMLElement.prototype, "clientHeight", {
       configurable: true,
       get(this: HTMLElement) {
-        return this.dataset["testid"] === "board-shell" ? 1376 : 0;
+        return this.classList.contains("work-page-content") ? 1376 : 0;
       },
     });
     try {
       inboxRows = Array.from({ length: 5 }, (_, index) => itemOfType(`document-${index + 1}`, "document"));
       render(<WorkPage />);
       await waitFor(() => {
-        expect(screen.getByTestId("board-shell-stage").style.transform).toMatch(/scale\(1\)$/);
+        expect(Number(screen.getByText("document-1").getAttribute("data-card-width"))).toBe(206.5);
       });
-      const lanes = screen.getByTestId("board-shell").querySelectorAll<HTMLElement>("[data-board-lane]");
+      const lanes = screen.getByLabelText("All work").querySelectorAll<HTMLElement>(".work-columns > section");
       expect(lanes).toHaveLength(4);
-      for (const lane of lanes) expect(lane.style.width).toBe("230.5px");
-      const cardPlacement = screen.getByText("document-1").closest<HTMLElement>("[data-lane-content]");
-      expect(cardPlacement?.style.width).toBe("206.5px");
+      for (const lane of lanes) expect(lane.classList.contains("min-w-0")).toBe(true);
+      const cardPlacement = screen.getByText("document-1");
+      expect(cardPlacement.getAttribute("data-card-width")).toBe("206.5");
     } finally {
       if (width) Object.defineProperty(HTMLElement.prototype, "clientWidth", width);
       else Reflect.deleteProperty(HTMLElement.prototype, "clientWidth");

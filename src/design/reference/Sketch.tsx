@@ -47,6 +47,16 @@ const VIEW: Record<WorkKind, Record<SketchDetail, string>> = {
   transcript: { compact: '30 6 168 154', expanded: '30 6 168 170' },
 };
 
+export const KIND_ASPECT = Object.fromEntries(
+  Object.entries(VIEW).map(([kind, views]) => [kind, Object.fromEntries(
+    Object.entries(views).map(([detail, view]) => {
+      const [, , width, height] = view.split(/\s+/).map(Number);
+      if (width === undefined || height === undefined || height === 0) throw new Error('Invalid sketch viewBox');
+      return [detail, width / height];
+    }),
+  )]),
+) as Record<WorkKind, Record<SketchDetail, number>>;
+
 type P = { p: Pal; ex: boolean; label: string; on: boolean };
 
 const ln = (c: string, w = 1.4): React.CSSProperties => ({
