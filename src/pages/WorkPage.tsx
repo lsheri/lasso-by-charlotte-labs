@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchSharedWorkPlacements, SharedWorkChips } from "@/components/layout/SharedWithYou";
 import { BoardNewPill } from "@/components/board/BoardNewPill";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { MapDialog } from "@/components/work/MapDialog";
@@ -76,21 +76,13 @@ import { SketchRow } from '@/design/reference/SketchCard';
 import { workToSketch } from '@/lib/work-sketch';
 import { useIsMobile } from "@/hooks/use-mobile";
 import { InboxFixedCard } from "@/components/work/InboxFixedCard";
-import {
-  BoardShell,
-  type BoardShellFrame,
-  type BoardShellNode,
-} from "@/components/board/BoardShell";
 import { sourceVendorKey } from "@/components/work/SourceMark";
 import {
   BUCKETS,
   bucketKeyForEntry,
-  type Bucket,
-  type BucketKey,
 } from "@/components/work/work-buckets";
 import { useSettingsDialog } from "@/lib/settings-dialog-context";
 import { inboxFilterDims, inboxFilterMatches, recordInboxFilterChange } from "@/lib/inbox-filter";
-import { newLaneFrameId } from "@/lib/board-lane";
 import { selectArrivals } from "@/lib/inbox-arrivals";
 import {
   DropdownMenu,
@@ -99,16 +91,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
-/** Each type column pages its entries five at a time, replacing not growing. */
-const COLUMN_PAGE_SIZE = 5;
-
-type InboxLaneFrame = BoardShellFrame & { bucket: Bucket; entryCount: number };
-type InboxLaneNode = BoardShellNode & { entry: WorkItemRow | ConversationGroup };
-
 const INBOX_LANE_COUNT = 4;
 const INBOX_LANE_GAP = 36;
 /** Matches fitWorkboardViewport's own 32px padding, so a fitted board sits 32px in from each side. */
 const INBOX_BOARD_SIDE_MARGIN = 32;
+/** Historical canvas geometry, retained only for existing test imports. Not used by the page. */
 const INBOX_LANE_LEFT = 40;
 /**
  * The board's top row (WHERE THIS CAME FROM, Fit and zoom) is 54px tall.
@@ -150,38 +137,6 @@ export function inboxLaneWidth(viewportWidth: number): number {
   return (
     viewportWidth - INBOX_BOARD_SIDE_MARGIN * 2 - INBOX_LANE_GAP * (INBOX_LANE_COUNT - 1)
   ) / INBOX_LANE_COUNT;
-}
-
-/** The mark for stepping through a column. Hand drawn, in the pencil idiom
-    the nav indent uses: a short stroke that trails off into an arrow head. */
-function PageMark({ back = false }: { back?: boolean }) {
-  return (
-    <svg
-      width="26"
-      height="14"
-      viewBox="0 0 26 14"
-      aria-hidden="true"
-      focusable="false"
-      className="text-pencil transition-colors group-hover:text-ink"
-      style={back ? { transform: "scaleX(-1)" } : undefined}
-    >
-      <path
-        d="M1 7.4 C 6 6.8, 12 7.9, 19 7.1"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.3"
-        strokeLinecap="round"
-      />
-      <path
-        d="M15.2 4.1 C 17 5.3, 18.4 6.4, 19.4 7.1 C 18.2 8.2, 16.6 9.2, 15.4 10.4"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.3"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
 }
 
 type BringWorkInRowProps = {
@@ -333,22 +288,25 @@ export function WorkPage() {
       setEnteredViaNoBoard(true);
     }
   }, [filterParam]);
-  const [inboxViewportWidth, setInboxViewportWidth] = useState(0);
-  const [inboxViewportHeight, setInboxViewportHeight] = useState(0);
-  // Which page each type column is on. Presentation-only local state, exactly
-  // like columnFilter above: no query behind it and nothing to record.
-  const [columnPages, setColumnPages] = useState<Record<BucketKey, number>>({
-    llm: 0,
-    documents: 0,
-    sheets: 0,
-    calls: 0,
-  });
-
-  // A filter or the private toggle changes what every column holds, so every
-  // page index returns to its first page rather than paging a set that no
-  // longer exists. The render below also clamps a stale index, belt and braces.
+  const contentRef = useRef<HTMLDivElement | null>(null);
+  const [contentWidth, setContentWidth] = useState(0);
+  // Measure the plain content region only to preserve the card width formula.
   useEffect(() => {
-    setColumnPages({ llm: 0, documents: 0, sheets: 0, calls: 0 });
+    if (isMobile) return;
+    const content = contentRef.current;
+    if (!content) return;
+    const measure = () => setContentWidth(content.clientWidth || window.innerWidth);
+    measure();
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", measure);
+      return () => window.removeEventListener("resize", measure);
+    }
+    const observer = new ResizeObserver(measure);
+    observer.observe(content);
+    return () => observer.disconnect();
+  }, [isMobile]);
+
+  useEffect(() => {
     setPhoneLimit(25);
   }, [columnFilter, showPrivate]);
   // Rolled once per mount, never per render: a re-roll mid-animation would
@@ -746,52 +704,19 @@ export function WorkPage() {
     );
   }
 
-  const lanePages = BUCKETS.map((bucket) => {
-    const entries = filteredEntries.filter((entry) => bucketKeyForEntry(entry) === bucket.key);
-    const lastPage = Math.max(0, Math.ceil(entries.length / COLUMN_PAGE_SIZE) - 1);
-    const page = Math.min(columnPages[bucket.key], lastPage);
-    return {
-      bucket,
-      entries,
-      lastPage,
-      page,
-      pageEntries: entries.slice(
-        page * COLUMN_PAGE_SIZE,
-        page * COLUMN_PAGE_SIZE + COLUMN_PAGE_SIZE,
-      ),
-    };
-  });
-
-  const currentInboxLaneWidth = inboxLaneWidth(inboxViewportWidth);
-  const cardWidth = currentInboxLaneWidth - 24;
-  const currentInboxLaneHeight = inboxLaneHeight(inboxViewportHeight);
-
-  const inboxLaneFrames: InboxLaneFrame[] = lanePages.map(({ bucket, entries }, index) => ({
-    id: newLaneFrameId(`inbox-${bucket.key}`),
-    ...inboxLaneRects({ width: inboxViewportWidth, height: inboxViewportHeight })[index]!,
-    contentInset: { top: INBOX_LANE_HEADER_HEIGHT, bottom: INBOX_LANE_PAGING_HEIGHT },
+  const columns = BUCKETS.map((bucket) => ({
     bucket,
-    entryCount: entries.length,
+    entries: filteredEntries.filter((entry) => bucketKeyForEntry(entry) === bucket.key),
   }));
-
-  const inboxLaneNodes: InboxLaneNode[] = lanePages.flatMap(({ bucket, pageEntries }) =>
-    pageEntries.map((entry) => ({
-      id: isConversationGroup(entry) ? entry.key : entry.id,
-      x: 0,
-      y: 0,
-      width: currentInboxLaneWidth,
-      height: Math.round(cardWidth * 1.25) + INBOX_CARD_FOOT + (() => {
-        const items = isConversationGroup(entry) ? entry.items : [entry];
-        const boards = new Set(items.flatMap((item) => (sharedPlacements.data?.[item.id] ?? []).map((board) => board.id)));
-        return boards.size * 32;
-      })(),
-      frame: newLaneFrameId(`inbox-${bucket.key}`),
-      entry,
-    })),
-  );
+  const laneWidth = inboxLaneWidth(contentWidth);
+  const cardWidth = laneWidth - 24;
+  function cardWrapperHeight(entry: WorkItemRow | ConversationGroup) {
+    const items = isConversationGroup(entry) ? entry.items : [entry];
+    const boards = new Set(items.flatMap((item) => (sharedPlacements.data?.[item.id] ?? []).map((board) => board.id)));
+    return Math.round(cardWidth * 1.25) + INBOX_CARD_FOOT + boards.size * 32;
+  }
 
   const arrivalCount = groupConversations(selectArrivals(all, profile?.id)).length;
-  const inboxFrames: InboxLaneFrame[] = inboxLaneFrames;
 
   function recordPanelOpen(panel: "arrived" | "reading") {
     if (profile?.org_id) logEvent("work.panel_opened", profile.org_id, { panel });
@@ -888,7 +813,7 @@ export function WorkPage() {
         </div>
       </div>
 
-      <div className="work-page-content relative min-h-0 flex-1">
+      <div ref={contentRef} className={`work-page-content relative min-h-0 flex-1${isMobile ? "" : " lasso-paper overflow-y-auto cursor-default"}`}>
         {isLoading ? (
           <p className="p-5 text-sm text-muted-foreground">Loading your work…</p>
         ) : isMobile ? (
@@ -920,51 +845,28 @@ export function WorkPage() {
             </div>
           </div>
         ) : error && all.length === 0 ? null : (
-          <>
-            <BoardShell
-              ariaLabel="All work"
-              className={gusting ? "h-full nb-gust" : "h-full"}
-              frames={inboxFrames}
-              nodes={inboxLaneNodes}
-              showViewControls
-              toolbar={all.length > 0 ? (
-                <p className="min-w-0 flex-1 truncate font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
-                  {["WHERE THIS CAME FROM", ...sourceCounts.map((row) => `${row.label} ${row.count}`)].join(" · ")}
-                </p>
-              ) : undefined}
-              fitKey={`${visibleEntries.length}:${currentInboxLaneWidth}:${currentInboxLaneHeight}`}
-              onViewportSizeChange={({ width, height }) => {
-                setInboxViewportWidth((current) => current === width ? current : width);
-                setInboxViewportHeight((current) => current === height ? current : height);
-              }}
-              renderFrame={(frame) => {
-                const lanePage = lanePages.find((entry) => entry.bucket.key === frame.bucket.key);
-                if (!lanePage) return null;
-                const setPage = (next: number) => setColumnPages((prev) => ({ ...prev, [frame.bucket.key]: next }));
-                return (
-                  <>
-                    <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-10 border-b border-[var(--nb-rule)] px-3 py-3">
-                      <h2 className="flex items-baseline justify-between gap-3 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground"><span className="truncate">{frame.bucket.label}</span><span className="shrink-0 text-soft">{frame.entryCount}</span></h2>
-                    </div>
-                    {lanePage.pageEntries.length === 0 ? <p className="pointer-events-none absolute left-3 right-3 top-14 z-10 rounded-[var(--radius-md)] border border-dashed border-pencil bg-card px-3 py-4 text-center text-[11.5px] text-soft">{columnFilter === "unmapped" ? "Nothing here with no board" : columnFilter === "all" ? "Nothing here yet." : "Nothing here"}</p> : null}
-                    {lanePage.entries.length > COLUMN_PAGE_SIZE ? (
-                      <div className="absolute inset-x-0 bottom-0 z-10 flex h-11 items-center justify-center gap-3 border-t border-[var(--nb-rule)] bg-card">
-                        {lanePage.page > 0 ? <button type="button" aria-label="Earlier work in this column" className="group inline-flex min-h-11 min-w-11 items-center justify-center md:min-h-0 md:min-w-0" onClick={() => setPage(lanePage.page - 1)}><PageMark back /></button> : null}
-                        <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">{lanePage.page * COLUMN_PAGE_SIZE + 1}–{lanePage.page * COLUMN_PAGE_SIZE + lanePage.pageEntries.length} OF {lanePage.entries.length}</span>
-                        {lanePage.page < lanePage.lastPage ? <button type="button" aria-label="More work in this column" className="group inline-flex min-h-11 min-w-11 items-center justify-center md:min-h-0 md:min-w-0" onClick={() => setPage(lanePage.page + 1)}><PageMark /></button> : null}
+          <div aria-label="All work" className={`min-h-full cursor-default${gusting ? " nb-gust" : ""}`}>
+            <p className="work-source-tally min-w-0 truncate font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
+              {["WHERE THIS CAME FROM", ...sourceCounts.map((row) => `${row.label} ${row.count}`)].join(" · ")}
+            </p>
+            <div className="work-columns">
+              {columns.map(({ bucket, entries }) => (
+                <section key={bucket.key} className="min-w-0" aria-label={bucket.label}>
+                  <div className="flex h-10 items-center border-b border-[var(--nb-rule)] px-3">
+                    <h2 className="flex w-full items-baseline justify-between gap-3 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground"><span className="truncate">{bucket.label}</span><span className="shrink-0 text-soft">{entries.length}</span></h2>
+                  </div>
+                  <div className="work-column-cards">
+                    {entries.length === 0 ? <p className="rounded-[var(--radius-md)] border border-dashed border-pencil bg-card px-3 py-4 text-center text-[11.5px] text-soft">{columnFilter === "unmapped" ? "Nothing here with no board" : columnFilter === "all" ? "Nothing here yet." : "Nothing here"}</p> : contentWidth > 0 ? entries.map((entry) => (
+                      <div key={isConversationGroup(entry) ? entry.key : entry.id} className="min-w-0 w-full" style={{ minHeight: cardWrapperHeight(entry) }}>
+                        <InboxFixedCard>{isConversationGroup(entry) ? renderGroup(entry, (entry.transcript ?? entry.items[0])?.visibility === "mapped" ? "mapped" : "unmapped") : renderColumnItem(entry)}</InboxFixedCard>
+                        {sharedChips(isConversationGroup(entry) ? entry.items : [entry])}
                       </div>
-                    ) : null}
-                  </>
-                );
-              }}
-              renderNode={(node) => (
-                <div className="min-w-0 w-full">
-                  <InboxFixedCard>{isConversationGroup(node.entry) ? renderGroup(node.entry, (node.entry.transcript ?? node.entry.items[0]!).visibility === "mapped" ? "mapped" : "unmapped") : renderColumnItem(node.entry)}</InboxFixedCard>
-                  {sharedChips(isConversationGroup(node.entry) ? node.entry.items : [node.entry])}
-                </div>
-              )}
-            />
-          </>
+                    )) : null}
+                  </div>
+                </section>
+              ))}
+            </div>
+          </div>
         )}
       </div>
 
