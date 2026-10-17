@@ -1392,11 +1392,31 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   padding: 8px 16px;
 }
 
+.lasso-paper,
 .canvas-lab-surface {
   background-color: var(--nb-paper);
   background-image: radial-gradient(circle, var(--nb-rule) 1px, transparent 1px);
   background-size: 22px 22px;
+}
+.canvas-lab-surface {
   cursor: grab;
+}
+.work-columns {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 36px;
+  padding-inline: 32px;
+}
+.work-source-tally {
+  height: 20px;
+  padding-inline: 32px;
+  line-height: 20px;
+}
+.work-column-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
 }
 .canvas-lab-surface:has(> [data-testid="canvas-lab-stage"]) { cursor: grab; }
 /* MOB-4: only the signed-in Workboard owns one-finger pan and two-finger pinch; Home and demo boards keep native scrolling. Scrollers inside cards keep native touch scrolling, because touch-action stops at the nearest scroll container. */
