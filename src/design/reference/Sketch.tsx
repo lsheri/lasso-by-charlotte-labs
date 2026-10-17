@@ -69,6 +69,19 @@ const ln = (c: string, w = 1.4): React.CSSProperties => ({
 const sh = (c: string, fill: string, w = 1.4): React.CSSProperties => ({ ...ln(c, w), fill });
 const hand = (c: string, size: number): React.CSSProperties => ({ fontFamily: 'var(--font-hand)', fontSize: size, fill: c });
 
+/** Conservative per-character approximation, measured against every advance in
+ * the bundled Architects Daughter latin 400 WOFF (including the ellipsis):
+ * the widest advance is 1239 font units at 1024 units/em. Both faces use it. */
+export const HAND_CHARACTER_ADVANCE_EM = 1239 / 1024;
+
+function pageLabel(label: string, availableWidth: number, fontSize: number): string {
+  const budget = Math.floor(availableWidth / (fontSize * HAND_CHARACTER_ADVANCE_EM));
+  const characters = Array.from(label);
+  if (characters.length <= budget) return label;
+  if (budget < 1) return '';
+  return `${characters.slice(0, budget - 1).join('').trimEnd()}…`;
+}
+
 /** Springy state transform, held while hovered. */
 const move = (on: boolean, t: string, origin = 'center', delay = 0): React.CSSProperties => ({
   transformBox: 'fill-box',
@@ -100,14 +113,18 @@ function scribble(x: number, y: number, w: number, amp = 1.6): string {
 /** Hover: the slides fan out and the bars grow. */
 function Deck({ p, ex, label, on }: P) {
   const y = ex ? 22 : 40;
+  const pageX = 54;
+  const pageWidth = 124;
+  const labelX = pageX + 10;
+  const labelFontSize = 12;
   return (
     <g>
       <rect x={74} y={y - 14} width={124} height={80} rx={2} style={{ ...sh(p.ink, p.paper, 1.2), ...move(on, 'translate(6px,-4px) rotate(5deg)', 'left bottom') }} />
       <rect x={64} y={y - 7} width={124} height={80} rx={2} style={{ ...sh(p.ink, p.paper, 1.2), ...move(on, 'translate(3px,-2px) rotate(2.5deg)', 'left bottom', 30) }} />
       <g style={move(on, 'rotate(-2deg) translateY(-2px)', 'center', 60)}>
-        <rect x={54} y={y} width={124} height={80} rx={2} style={sh(p.ink, p.paper, 1.6)} />
+        <rect x={pageX} y={y} width={pageWidth} height={80} rx={2} style={sh(p.ink, p.paper, 1.6)} />
         <path d={`M63 ${y + 23} q24 -3 50 -1`} style={ln(p.acid, 5)} />
-        <text x={64} y={y + 20} style={hand(p.ink, 12)}>{label}</text>
+        <text x={labelX} y={y + 20} style={hand(p.ink, labelFontSize)}>{pageLabel(label, pageX + pageWidth - labelX, labelFontSize)}</text>
         <path d={scribble(64, y + 40, 54)} style={ln(p.pencil, 1.2)} />
         <path d={scribble(64, y + 50, 42)} style={ln(p.pencil, 1.2)} />
         <path d={scribble(64, y + 60, 48)} style={ln(p.pencil, 1.2)} />
@@ -139,15 +156,20 @@ function Deck({ p, ex, label, on }: P) {
 function Doc({ p, ex, label, on }: P) {
   const x = ex ? 62 : 74;
   const y = 18;
+  const pageBodyWidth = 74;
+  const foldWidth = 18;
+  const pageWidth = pageBodyWidth + foldWidth;
+  const labelX = x + 10;
+  const labelFontSize = 11;
   return (
     <g>
       {ex ? (
         <path d={`M${x + 20} ${y + 6} h74 l18 18 v120 h-92 z`} transform={`rotate(5 ${x + 66} ${y + 80})`} style={sh(p.pencil, p.paper, 1.2)} />
       ) : null}
       <g style={move(on, 'rotate(-2.5deg) translateY(-3px)', 'center bottom')}>
-        <path d={`M${x} ${y} h74 l18 18 v126 h-92 z`} style={sh(p.ink, p.paper, 1.6)} />
+        <path d={`M${x} ${y} h${pageBodyWidth} l${foldWidth} ${foldWidth} v126 h-${pageWidth} z`} style={sh(p.ink, p.paper, 1.6)} />
         <path d={`M${x + 74} ${y} v18 h18`} style={{ ...ln(p.ink, 1.2), ...move(on, 'translate(-2px,2px)', 'left bottom', 80) }} />
-        <text x={x + 10} y={y + 28} style={hand(p.ink, 11)}>{label}</text>
+        <text x={labelX} y={y + 28} style={hand(p.ink, labelFontSize)}>{pageLabel(label, x + pageWidth - labelX, labelFontSize)}</text>
         <path d={scribble(x + 10, y + 44, 66)} style={ln(p.pencil, 1.2)} />
         <path d={scribble(x + 10, y + 52, 70)} style={ln(p.pencil, 1.2)} />
         <rect x={x + 8} y={y + 56} width={58} height={8} rx={1} style={{ fill: p.acid, ...play(on, 'lasso-sk-swipe 460ms var(--ease-standard) 80ms both', 'left') }} />
