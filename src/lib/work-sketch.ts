@@ -102,7 +102,7 @@ export function workToSketch(item: WorkItemRow): Work {
 
   // The first mapping is arbitrary: the placement query has no ordering.
   // This is a known limitation, shared with the current card's board label.
-  const engagement = item.work_item_tasks[0]?.tasks?.engagements;
+  const engagement = item.work_item_tasks?.[0]?.tasks?.engagements;
   const board = engagement ? engagementDisplayTitle(engagement) : undefined;
   const summary = item.work_item_extracts?.find((extract) => extract.summary !== null)?.summary ?? undefined;
   const url = item.meta?.web_view_link ?? item.source_meta?.url ?? item.meta?.chat_url ?? undefined;
