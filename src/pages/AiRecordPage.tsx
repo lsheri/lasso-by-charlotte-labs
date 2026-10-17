@@ -508,7 +508,7 @@ export function AiRecordPage() {
                                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                                        <SketchCard
                                          work={workToSketch(item)}
-                                         width={230}
+                                         width={210}
                                          onSelect={() => openItem(item)}
                                          onOpen={() => openItem(item)}
                                        />

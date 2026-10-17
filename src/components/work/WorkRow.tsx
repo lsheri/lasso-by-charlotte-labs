@@ -103,7 +103,7 @@ export function WorkRow({
           }
         />}
 
-        {contentsUnread(item.meta as never) ? (
+        {cardWidth === undefined && contentsUnread(item.meta as never) ? (
           <p className="mt-1 text-[11px] text-muted-foreground">{UNREAD_MARKER_LINE}</p>
         ) : null}
         {footer ? <div className="mt-2">{footer}</div> : null}

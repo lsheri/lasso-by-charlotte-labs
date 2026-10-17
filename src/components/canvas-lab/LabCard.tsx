@@ -39,7 +39,6 @@ import { resolveWorkDate } from "@/lib/work-order";
 import type { WorkboardCardPreview, WorkboardFilePreview } from "@/lib/workboard-card-preview.shared";
 import type { TeammateMark } from "@/lib/teammate-mark";
 
-const ignorePreviewFailure = () => {};
 
 /**
  * One object on the board. Imported work uses the shared Ledger face.
@@ -263,14 +262,18 @@ function LabCardInner({
   const headerGutter = true;
   const chatPreview = preview;
   const boardWork = item && face === 'board' ? workToBoardCard(item, preview, filePreview) : undefined;
+  const [failedPreviewKey, setFailedPreviewKey] = useState<string | null>(null);
+  const previewKey = `${item?.id ?? ''}|${filePreview?.kind ?? ''}|${filePreview && 'url' in filePreview ? String(filePreview.url ?? '') : ''}|${filePreview && 'html' in filePreview ? String(filePreview.html ?? '').length : ''}`;
+  const filePreviewFailed = failedPreviewKey === previewKey;
+  const markFilePreviewFailed = () => setFailedPreviewKey(previewKey);
   const renderableFilePreview = filePreview && (
     (filePreview.kind === 'pdf' && Boolean(filePreview.url)) ||
     ((filePreview.kind === 'html' || filePreview.kind === 'mermaid') && Boolean(filePreview.html))
   ) ? filePreview : undefined;
   const previewFallback = boardWork && !boardWork.content ? (
-    renderableFilePreview ? (
+    renderableFilePreview && !filePreviewFailed ? (
       <div className="absolute inset-0 flex min-h-0 flex-col">
-        <FilePreview preview={renderableFilePreview} title={boardWork.title} onFailure={ignorePreviewFailure} />
+        <FilePreview preview={renderableFilePreview} title={boardWork.title} onFailure={markFilePreviewFailed} />
       </div>
     ) : (
       <div className="absolute inset-[10%]">

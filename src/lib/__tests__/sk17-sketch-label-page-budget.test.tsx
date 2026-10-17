@@ -29,14 +29,14 @@ describe('SKETCH-17 handwritten labels stay on their drawn page', () => {
     for (const detail of ['compact', 'expanded'] as const) {
       it(`${kind} ${detail} clamps a long direct label within its own geometry`, () => {
         const result = renderedLabel(kind, detail, 'WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW');
-        expect(Array.from(result.label).length * result.fontSize * HAND_CHARACTER_ADVANCE_EM).toBeLessThanOrEqual(result.availableWidth);
+        expect(Sketch.labelWidth(result.label, result.fontSize)).toBeLessThanOrEqual(result.availableWidth);
         expect(result.availableWidth).toBe(kind === 'doc' ? 82 : 114);
         expect(result.label.endsWith('…')).toBe(true);
       });
       it(`${kind} ${detail} keeps the real screenshot title within its page`, () => {
         const result = renderedLabel(kind, detail, sketchLabel('Screenshot 2026-09-30 at 14.22.18'));
-        expect(Array.from(result.label).length * result.fontSize * HAND_CHARACTER_ADVANCE_EM).toBeLessThanOrEqual(result.availableWidth);
-        expect(result.label.endsWith('…')).toBe(true);
+        expect(Sketch.labelWidth(result.label, result.fontSize)).toBeLessThanOrEqual(result.availableWidth);
+        expect(result.label.endsWith('…')).toBe(kind === 'doc');
       });
       it(`${kind} ${detail} leaves a short title unchanged`, () => {
         const result = renderedLabel(kind, detail, sketchLabel('Plan'));

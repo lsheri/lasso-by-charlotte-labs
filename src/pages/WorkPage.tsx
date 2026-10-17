@@ -708,8 +708,8 @@ export function WorkPage() {
     bucket,
     entries: filteredEntries.filter((entry) => bucketKeyForEntry(entry) === bucket.key),
   }));
-  const laneWidth = inboxLaneWidth(contentWidth);
-  const cardWidth = laneWidth - 24;
+  /** One card width on both list surfaces, so both land in SketchCard's regular tier. */
+  const cardWidth = 210;
 
   const arrivalCount = groupConversations(selectArrivals(all, profile?.id)).length;
 

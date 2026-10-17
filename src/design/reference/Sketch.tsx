@@ -41,7 +41,7 @@ const PAL: Record<SketchTone, Pal> = {
 /** Tight crop per drawing, in the 240 x 180 authoring space. */
 const VIEW: Record<WorkKind, Record<SketchDetail, string>> = {
   deck: { compact: '48 20 156 106', expanded: '46 2 160 146' },
-  doc: { compact: '68 12 104 138', expanded: '56 8 156 160' },
+  doc: { compact: '68 12 104 78', expanded: '56 8 156 160' },
   chat: { compact: '28 22 184 124', expanded: '28 8 184 170' },
   sheet: { compact: '28 18 184 138', expanded: '28 8 184 160' },
   transcript: { compact: '30 6 168 154', expanded: '30 6 168 170' },
@@ -69,17 +69,58 @@ const ln = (c: string, w = 1.4): React.CSSProperties => ({
 const sh = (c: string, fill: string, w = 1.4): React.CSSProperties => ({ ...ln(c, w), fill });
 const hand = (c: string, size: number): React.CSSProperties => ({ fontFamily: 'var(--font-hand)', fontSize: size, fill: c });
 
-/** Conservative per-character approximation, measured against every advance in
- * the bundled Architects Daughter latin 400 WOFF (including the ellipsis):
- * the widest advance is 1239 font units at 1024 units/em. Both faces use it. */
-export const HAND_CHARACTER_ADVANCE_EM = 1239 / 1024;
+/** Advance widths of the sketch label font, in font units, for U+0020 to U+007E
+ * in code point order. Read from
+ * node_modules/@fontsource/architects-daughter/files/architects-daughter-latin-400-normal.woff
+ * (hmtx table via the best cmap), unitsPerEm 1024. Changing the sketch label
+ * font (--font-hand) requires regenerating this table and the two constants
+ * below from the new font file, for example with Python fontTools:
+ *   f = TTFont(path); cm = f.getBestCmap(); hm = f['hmtx']
+ *   [hm[cm[c]][0] for c in range(32, 127)], hm[cm[0x2026]][0], f['head'].unitsPerEm */
+export const HAND_FONT_UNITS_PER_EM = 1024;
+export const HAND_ASCII_ADVANCE_UNITS: readonly number[] = [
+  410,138,242,653,570,531,686,166,305,360,520,537,182,318,144,466,646,131,586,521,697,725,642,630,664,583,171,127,487,504,483,518,
+  1068,656,728,725,664,606,709,709,620,155,542,620,709,847,642,686,653,730,730,658,638,575,642,963,614,547,803,435,514,554,314,703,
+  176,521,575,648,525,554,608,528,507,155,182,629,161,797,512,576,570,526,565,514,414,520,531,828,482,562,507,361,149,490,455,
+];
+/** Advance of the ellipsis glyph in the same font, in font units. */
+export const HAND_ELLIPSIS_ADVANCE_UNITS = 433;
+/** Widest advance in the same font (1239 units). Used for any character outside
+ * the table so an unknown glyph is never under-measured. */
+export const HAND_CHARACTER_ADVANCE_EM = 1239 / HAND_FONT_UNITS_PER_EM;
 
+/** Rendered width of a label in viewBox units at the given font size. */
+export function handTextWidth(text: string, fontSize: number): number {
+  let em = 0;
+  for (const ch of Array.from(text)) {
+    const code = ch.codePointAt(0) ?? 0;
+    if (ch === '\u2026') em += HAND_ELLIPSIS_ADVANCE_UNITS / HAND_FONT_UNITS_PER_EM;
+    else if (code >= 32 && code <= 126) em += (HAND_ASCII_ADVANCE_UNITS[code - 32] ?? 1239) / HAND_FONT_UNITS_PER_EM;
+    else em += HAND_CHARACTER_ADVANCE_EM;
+  }
+  return em * fontSize;
+}
+
+/** Right edge of a kind's visible crop, read from its VIEW string. */
+function viewRight(kind: WorkKind, detail: SketchDetail): number {
+  const [x = 0, , w = 0] = VIEW[kind][detail].split(/\s+/).map(Number);
+  return x + w;
+}
+
+/** The label's room: from its x to whichever is nearer, the page edge or the crop edge. */
+function labelRoom(kind: WorkKind, ex: boolean, labelX: number, pageRight: number): number {
+  return Math.min(pageRight, viewRight(kind, ex ? 'expanded' : 'compact')) - labelX;
+}
+
+/** Cuts only when the measured label is wider than its room. */
 function pageLabel(label: string, availableWidth: number, fontSize: number): string {
-  const budget = Math.floor(availableWidth / (fontSize * HAND_CHARACTER_ADVANCE_EM));
+  if (handTextWidth(label, fontSize) <= availableWidth) return label;
   const characters = Array.from(label);
-  if (characters.length <= budget) return label;
-  if (budget < 1) return '';
-  return `${characters.slice(0, budget - 1).join('').trimEnd()}…`;
+  for (let n = characters.length - 1; n > 0; n--) {
+    const cut = `${characters.slice(0, n).join('').trimEnd()}\u2026`;
+    if (handTextWidth(cut, fontSize) <= availableWidth) return cut;
+  }
+  return '';
 }
 
 /** Springy state transform, held while hovered. */
@@ -124,7 +165,7 @@ function Deck({ p, ex, label, on }: P) {
       <g style={move(on, 'rotate(-2deg) translateY(-2px)', 'center', 60)}>
         <rect x={pageX} y={y} width={pageWidth} height={80} rx={2} style={sh(p.ink, p.paper, 1.6)} />
         <path d={`M63 ${y + 23} q24 -3 50 -1`} style={ln(p.acid, 5)} />
-        <text x={labelX} y={y + 20} style={hand(p.ink, labelFontSize)}>{pageLabel(label, pageX + pageWidth - labelX, labelFontSize)}</text>
+        <text x={labelX} y={y + 20} style={hand(p.ink, labelFontSize)}>{pageLabel(label, labelRoom('deck', ex, labelX, pageX + pageWidth), labelFontSize)}</text>
         <path d={scribble(64, y + 40, 54)} style={ln(p.pencil, 1.2)} />
         <path d={scribble(64, y + 50, 42)} style={ln(p.pencil, 1.2)} />
         <path d={scribble(64, y + 60, 48)} style={ln(p.pencil, 1.2)} />
@@ -169,7 +210,7 @@ function Doc({ p, ex, label, on }: P) {
       <g style={move(on, 'rotate(-2.5deg) translateY(-3px)', 'center bottom')}>
         <path d={`M${x} ${y} h${pageBodyWidth} l${foldWidth} ${foldWidth} v126 h-${pageWidth} z`} style={sh(p.ink, p.paper, 1.6)} />
         <path d={`M${x + 74} ${y} v18 h18`} style={{ ...ln(p.ink, 1.2), ...move(on, 'translate(-2px,2px)', 'left bottom', 80) }} />
-        <text x={labelX} y={y + 28} style={hand(p.ink, labelFontSize)}>{pageLabel(label, x + pageWidth - labelX, labelFontSize)}</text>
+        <text x={labelX} y={y + 28} style={hand(p.ink, labelFontSize)}>{pageLabel(label, labelRoom('doc', ex, labelX, x + pageWidth), labelFontSize)}</text>
         <path d={scribble(x + 10, y + 44, 66)} style={ln(p.pencil, 1.2)} />
         <path d={scribble(x + 10, y + 52, 70)} style={ln(p.pencil, 1.2)} />
         <rect x={x + 8} y={y + 56} width={58} height={8} rx={1} style={{ fill: p.acid, ...play(on, 'lasso-sk-swipe 460ms var(--ease-standard) 80ms both', 'left') }} />
@@ -357,3 +398,6 @@ export function Sketch({
     </svg>
   );
 }
+
+/** The label measure, reachable from the component for hosts and tests. */
+Sketch.labelWidth = handTextWidth;
