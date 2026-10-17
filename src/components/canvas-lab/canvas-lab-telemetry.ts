@@ -19,6 +19,9 @@ export function noteWorkboardOpened(orgId: string | undefined, via: WorkboardOpe
 export function noteWorkboardRail(orgId: string | undefined, state: "collapsed" | "reopened"): void {
   if (orgId) logEvent("workboard.rail_toggled", orgId, { state });
 }
+export function noteWorkboardFace(orgId: string | undefined, face: "art" | "preview"): void {
+  if (orgId) logEvent("workboard.face_toggled", orgId, { face });
+}
 export function noteWorkboardNodeCreated(orgId: string | undefined, kind: LabNodeEventKind, judgmentType?: LabJudgmentEventType, via?: "button" | "drag"): void {
   if (!orgId) return;
   const dims = { kind, judgment_type: judgmentType ?? "none" };

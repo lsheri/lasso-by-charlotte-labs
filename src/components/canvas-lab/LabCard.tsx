@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { WorkNote } from "@/components/work/WorkNote";
 import { ChatUrlLink } from "@/components/work/ChatUrlLink";
 import { BoardCard } from '@/design/reference/BoardCard';
+import { SketchCard } from '@/design/reference/SketchCard';
 import { workToBoardCard } from '@/lib/work-board-card';
 import { isReferenceItem } from "@/lib/reference-file-shared";
 import {
@@ -79,6 +80,7 @@ function LabCardInner({
   preview,
   filePreview,
   face = 'note',
+  cardFace = 'preview',
   onPreviewScroll: _onPreviewScroll,
   readOnly = false,
   showStatusChrome = true,
@@ -132,6 +134,13 @@ function LabCardInner({
   preview?: WorkboardCardPreview | undefined;
   filePreview?: WorkboardFilePreview | undefined;
   face?: 'note' | 'board';
+  /**
+   * cardFace. Sketch or real. A separate axis from `face`, which says which
+   * host this is. On the board, 'preview' renders BoardCard (the default and
+   * today's behaviour) and 'art' renders SketchCard. Art drops actions,
+   * provenance and headerInsetRight, which SketchCard does not accept.
+   */
+  cardFace?: 'art' | 'preview';
   onPreviewScroll?: ((kind: "chat" | "document" | "deck" | "html" | "mermaid") => void) | undefined;
   /** Sample board only: no drag, no menu, no anchors, no handles. */
   readOnly?: boolean;
@@ -282,7 +291,15 @@ function LabCardInner({
       className={`canvas-lab-card group absolute text-left outline-none${teammateMark ? " canvas-lab-card-teammate" : ""}`}
     >
       <div ref={paperRef} data-selected={selected} data-marquee-preview={previewSelected} data-focused={focused} data-connect-source={connectSourceAnchor !== null} className="canvas-lab-card-paper h-full w-full overflow-hidden">
-        {item && isReferenceItem(item) ? <ReferenceFileCard item={item} onOpen={() => onOpen(cardRef.current?.getBoundingClientRect())} /> : item && face === 'board' ? (
+        {item && isReferenceItem(item) ? <ReferenceFileCard item={item} onOpen={() => onOpen(cardRef.current?.getBoundingClientRect())} /> : item && face === 'board' && cardFace === 'art' ? (
+          <SketchCard
+            work={workToBoardCard(item, preview, filePreview)}
+            width={node.width}
+            height={node.height}
+            resizable={false}
+            inHand={selected}
+          />
+        ) : item && face === 'board' ? (
           <BoardCard
             work={workToBoardCard(item, preview, filePreview)}
             width={node.width}
