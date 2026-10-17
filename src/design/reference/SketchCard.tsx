@@ -91,6 +91,7 @@ export function SketchCard({
   const kind = kindOf(work);
   const label = SOURCE_LABEL[work.source];
   const lifted = hover && !dimmed && !resizing;
+  const interactive = Boolean(onSelect || onOpen);
   const titleSize = tier === 'compact' ? 11.5 : tier === 'regular' ? 12.5 : 14;
   /** Mark scaled up 1.2x from SourceMark sm (28px box becomes about 34px). */
   const markScale = 1.2;
@@ -100,13 +101,13 @@ export function SketchCard({
 
   return (
     <article
-      role="button"
-      tabIndex={0}
-      aria-pressed={inHand ?? false}
+      role={interactive ? 'button' : undefined}
+      tabIndex={interactive ? 0 : undefined}
+      aria-pressed={interactive ? inHand ?? false : undefined}
       aria-label={`${work.title}. ${KIND_LABEL[kind]} from ${label}.${um ? ' No board.' : ''} Double click to open.`}
-      onClick={() => onSelect?.(work)}
-      onDoubleClick={() => onOpen?.(work)}
-      onKeyDown={(e) => {
+      onClick={onSelect ? () => onSelect(work) : undefined}
+      onDoubleClick={onOpen ? () => onOpen(work) : undefined}
+      onKeyDown={interactive ? (e) => {
         if (e.key === 'Enter') {
           e.preventDefault();
           onOpen?.(work);
@@ -114,7 +115,7 @@ export function SketchCard({
           e.preventDefault();
           onSelect?.(work);
         }
-      }}
+      } : undefined}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--focus-ring)]"
@@ -125,7 +126,7 @@ export function SketchCard({
         width: size.width,
         height: size.height,
         overflow: 'hidden',
-        cursor: 'pointer',
+        cursor: interactive ? 'pointer' : 'inherit',
         border: `var(--border-weight) ${um ? 'dashed' : 'solid'} ${um ? 'var(--line-pencil)' : 'var(--line-strong)'}`,
         borderRadius: 'var(--radius-sm-new)',
         background: um ? 'var(--surface-page)' : 'var(--surface-raised)',
