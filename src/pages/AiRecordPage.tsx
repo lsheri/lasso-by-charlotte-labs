@@ -493,8 +493,8 @@ export function AiRecordPage() {
                              {group.items.map((item, index) => {
                                const matches = matchesChipFilters(item);
                                return (
-                                 <DimmedDisabled key={item.id} dimmed={!matches} disabled={!matches} className="h-[118px] min-w-0">
-                                   <div data-lane-content style={{ height: `${CONVERSATION_CARD_HEIGHT}px` }} className="h-full min-w-0">
+                                 <DimmedDisabled key={item.id} dimmed={!matches} disabled={!matches} className="min-w-0">
+                                   <div data-lane-content className="h-full min-w-0">
                                    <span className={`${pileMotion.className ? "nb-sticky-wave " : ""}conversation-card-compact canvas-lab-card-paper block h-full min-w-0`} style={{ "--nb-wave-delay": `${Math.min(index, 23) * 26}ms` } as React.CSSProperties}>
                                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                                        <SketchCard
