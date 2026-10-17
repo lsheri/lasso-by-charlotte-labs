@@ -7,6 +7,8 @@ import { CardMenu } from "@/components/work/CardMenu";
 import { EngagementChip, TypeBadge, TypeIcon } from "@/components/work/TypeIcon";
 import { ArtifactNote, SourceMark, VendorMark } from "@/components/work/SourceMark";
 import { WorkNote } from "@/components/work/WorkNote";
+import { SketchCard } from '@/design/reference/SketchCard';
+import { workToSketch } from '@/lib/work-sketch';
 import { UNREAD_MARKER_LINE, contentsUnread, textStatusReason } from "@/lib/text-status";
 import { workIdentityLabel } from "@/lib/work-identity";
 import { effectiveWorkDate, formatDate, type WorkItemRow } from "@/lib/work-types";
@@ -27,6 +29,7 @@ export function WorkRow({
   displayMode = "preview",
   chatPreview,
   filePreview,
+  cardWidth,
 }: {
   item: WorkItemRow;
   actions: React.ReactNode;
@@ -51,6 +54,7 @@ export function WorkRow({
   displayMode?: WorkboardDisplayMode;
   chatPreview?: WorkboardCardPreview | undefined;
   filePreview?: WorkboardFilePreview | undefined;
+  cardWidth?: number;
 }) {
 
   const mapping = item.work_item_tasks[0]?.tasks ?? null;
@@ -62,7 +66,24 @@ export function WorkRow({
   if (dense) {
     return (
       <div className="relative">
-        <WorkNote
+        {cardWidth !== undefined ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <SketchCard
+              work={workToSketch(item)}
+              width={cardWidth}
+              onSelect={onOpen}
+              onOpen={onOpen}
+            />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              {lead}
+              <CardMenu item={item} clientLabel={clientLabel} onFluency={onFluency}>
+                {primaryAction}
+                {chips}
+                {actions}
+              </CardMenu>
+            </div>
+          </div>
+        ) : <WorkNote
           item={item}
           onOpen={onOpen}
           lead={lead}
@@ -81,7 +102,7 @@ export function WorkRow({
               </CardMenu>
             ) : null
           }
-        />
+        />}
 
         {contentsUnread(item.meta as never) ? (
           <p className="mt-1 text-[11px] text-muted-foreground">{UNREAD_MARKER_LINE}</p>
