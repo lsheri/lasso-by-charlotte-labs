@@ -41,7 +41,7 @@ const PAL: Record<SketchTone, Pal> = {
 /** Tight crop per drawing, in the 240 x 180 authoring space. */
 const VIEW: Record<WorkKind, Record<SketchDetail, string>> = {
   deck: { compact: '48 20 156 106', expanded: '46 2 160 146' },
-  doc: { compact: '68 12 104 138', expanded: '56 8 156 160' },
+  doc: { compact: '68 12 104 78', expanded: '56 8 156 160' },
   chat: { compact: '28 22 184 124', expanded: '28 8 184 170' },
   sheet: { compact: '28 18 184 138', expanded: '28 8 184 160' },
   transcript: { compact: '30 6 168 154', expanded: '30 6 168 170' },
