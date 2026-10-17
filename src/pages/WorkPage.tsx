@@ -711,7 +711,7 @@ export function WorkPage() {
   const laneWidth = inboxLaneWidth(contentWidth);
   // 210 is the cap All AI Conversations uses: at or above it both surfaces render
   // the same card, so a wider page shows more work instead of bigger pictures.
-  const cardWidth = Math.min(laneWidth - 24, 210);
+  const cardWidth = laneWidth + 20;
 
   const arrivalCount = groupConversations(selectArrivals(all, profile?.id)).length;
 
