@@ -384,7 +384,7 @@ export function Sketch({
       width="100%"
       height="100%"
       aria-hidden
-      style={{ display: 'block', overflow: 'visible' }}
+      style={{ display: 'block', overflow: 'hidden' }}
     >
       <defs>
         <filter id={`wob${id}`} x="-5%" y="-5%" width="110%" height="110%">
