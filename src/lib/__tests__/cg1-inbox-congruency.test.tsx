@@ -202,7 +202,8 @@ describe("CG1 inbox congruency", () => {
     if (viewWidth === undefined || viewHeight === undefined) throw new Error("Artwork viewBox required");
     expect(KIND_ASPECT[kind].compact).toBe(viewWidth / viewHeight);
     const drawingBox = svg?.parentElement?.parentElement;
-    expect(Number(drawingBox?.style.aspectRatio)).toBe(viewWidth / viewHeight);
+    const [aspectWidth, aspectHeight = "1"] = (drawingBox?.style.aspectRatio ?? "").split("/");
+    expect(Number(aspectWidth) / Number(aspectHeight)).toBe(viewWidth / viewHeight);
     expect(container.querySelector("article")?.style.height).toBe("auto");
     rerender(<SketchCard work={work} width={190.5} height={268} />);
     expect(container.querySelector("article")?.style.height).toBe("268px");
