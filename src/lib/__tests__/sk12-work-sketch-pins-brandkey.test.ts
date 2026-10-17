@@ -9,13 +9,15 @@
  * soften: the two resolvers answer "which tool made this" and must agree.
  */
 import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { sourceBrandKey } from "@/components/work/SourceMark";
 import type { BrandKey } from "@/components/connectors/BrandLogo";
 import type { WorkSource } from "@/design/reference/work-types";
 import { sketchSource } from "@/lib/work-sketch";
+import { vendorFromSource } from "@/lib/work-taxonomy";
+import type { ToolVendor } from "@/lib/work-taxonomy";
 import type { WorkItemRow } from "@/lib/work-types";
 
 /**
@@ -37,9 +39,25 @@ const BRAND_TO_SOURCE: Partial<Record<BrandKey, WorkSource>> = {
   // lovable, upload, thread, unknown: no face, fall through to 'other'.
 };
 
-/** What sourceBrandKey says, said in the display vocabulary. */
+/**
+ * The vendor fallback work-sketch applies when no brand face exists. This is
+ * the second layer of its resolution and part of the contract being pinned:
+ * a vendor with no drawable mark (perplexity) still gets its own face.
+ */
+const VENDOR_TO_SOURCE: Partial<Record<ToolVendor, WorkSource>> = {
+  claude: "claude",
+  chatgpt: "chatgpt",
+  gemini: "gemini",
+  copilot: "copilot",
+  perplexity: "perplexity",
+  wispr: "wispr",
+};
+
+/** What sourceBrandKey says, said in the display vocabulary, with the vendor fallback. */
 function expectedSource(item: Parameters<typeof sourceBrandKey>[0]): WorkSource {
-  return BRAND_TO_SOURCE[sourceBrandKey(item)] ?? "other";
+  const brand = BRAND_TO_SOURCE[sourceBrandKey(item)];
+  if (brand) return brand;
+  return VENDOR_TO_SOURCE[vendorFromSource(item)] ?? "other";
 }
 
 /** Minimal row: sketchSource reads only the origin fields. */
@@ -148,7 +166,7 @@ describe("sketchSource agrees with sourceBrandKey", () => {
 
 describe("the keep-in-step comment still stands", () => {
   it("work-sketch.ts still names the two paths it mirrors", () => {
-    const source = readFileSync(fileURLToPath(new URL("../work-sketch.ts", import.meta.url)), "utf8");
+    const source = readFileSync(resolve(process.cwd(), "src/lib/work-sketch.ts"), "utf8");
     expect(source).toContain("Mirrors sourceVendorKey/sourceBrandKey");
     expect(source).toContain("The two paths must be kept in step.");
   });
