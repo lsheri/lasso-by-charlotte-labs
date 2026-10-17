@@ -71,8 +71,7 @@ export function WorkRow({
             <SketchCard
               work={workToSketch(item)}
               width={cardWidth}
-              onSelect={onOpen}
-              onOpen={onOpen}
+              {...(onOpen ? { onSelect: onOpen, onOpen } : {})}
             />
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               {lead}
