@@ -478,7 +478,7 @@ describe("CG1 inbox congruency", () => {
       if (!card) throw new Error("Card width unavailable");
       const laneWidth = Number(card.dataset["cardWidth"]) + 24;
       const span = laneWidth * columns.length + 36 * (columns.length - 1);
-      return { span, left: (reported.width - span) / 2, right: (reported.width - span) / 2, zoom: 1 };
+      return { span, left: (reported.width - span) / 2, right: (reported.width - span) / 2, zoom: board.closest('[data-testid="board-shell-stage"]') ? 0 : 1 };
     };
     try {
       inboxRows = Array.from({ length: 5 }, (_, index) => itemOfType(`responsive-document-${index + 1}`, "document"));
