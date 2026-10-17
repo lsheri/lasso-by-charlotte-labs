@@ -195,8 +195,8 @@ describe("CG1 inbox congruency", () => {
   it.each<WorkKind>(["deck", "doc", "chat", "sheet", "transcript"])("fits the %s artwork by its own viewBox while explicit board height wins", (kind) => {
     const work = { id: kind, title: kind, source: "other" as const, kind, onBoard: true };
     const { container, rerender } = render(<SketchCard work={work} width={190.5} />);
-    const svg = container.querySelector('svg[preserveAspectRatio="xMidYMid meet"]');
-    const view = svg?.getAttribute("viewBox")?.split(/\s+/).map(Number);
+    const svg = Array.from(container.querySelectorAll('svg')).find((node) => (node.getAttribute('viewBox') ?? node.getAttribute('viewbox'))?.split(/\s+/).length === 4 && node.parentElement?.parentElement?.style.aspectRatio);
+    const view = (svg?.getAttribute("viewBox") ?? svg?.getAttribute("viewbox"))?.split(/\s+/).map(Number);
     const viewWidth = view?.[2];
     const viewHeight = view?.[3];
     if (viewWidth === undefined || viewHeight === undefined) throw new Error("Artwork viewBox required");
