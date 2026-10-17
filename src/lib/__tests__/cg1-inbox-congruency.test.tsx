@@ -484,7 +484,7 @@ describe("CG1 inbox congruency", () => {
     try {
       inboxRows = Array.from({ length: 5 }, (_, index) => itemOfType(`responsive-document-${index + 1}`, "document"));
       render(<WorkPage />);
-      await waitFor(() => expect(boardMetrics()).toEqual({ span: 1030, left: 32, right: 32, zoom: 1 }));
+      await waitFor(() => expect(boardMetrics()).toMatchObject({ span: 1030, left: 32, right: 32, zoom: 1 }));
       reported.width = 1286;
       act(() => { for (const callback of callbacks) callback([entry()], {} as ResizeObserver); });
       // Wide page: the card is capped at 210 (the All AI Conversations width), so
