@@ -8,7 +8,10 @@ import type { WorkboardCardPreview } from "@/lib/workboard-card-preview.shared";
 let mobile = false;
 const refetch = vi.fn();
 let queryState: { data: WorkItemsResult | undefined; isLoading: boolean; error: Error | null; refetch: typeof refetch };
-vi.mock("@tanstack/react-start", () => ({ useServerFn: () => vi.fn(async () => ({ ok: true })) }));
+vi.mock("@tanstack/react-start", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@tanstack/react-start")>()),
+  useServerFn: () => vi.fn(async () => ({ ok: true })),
+}));
 vi.mock("@/lib/chat-library.functions", () => ({ noteChatViewChangedFn: Symbol(), noteFilterChangedFn: Symbol(), noteReaderClosedFn: Symbol() }));
 vi.mock("@tanstack/react-router", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@tanstack/react-router")>()),
