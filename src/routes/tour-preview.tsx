@@ -39,7 +39,7 @@ export function TourPreviewPage() {
   const { renderers, instructionOverride, hint } = useTourActRenderers({ register, activeAct, onAdvance: advance, onHintShown: () => undefined, onFinish: finish });
 
   return (
-    <main className="tour-preview-page">
+    <main className="tour-preview-page" data-lasso="on">
       <TourStage
         register={register}
         activeAct={activeAct}

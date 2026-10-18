@@ -177,7 +177,7 @@ export function PlansPage({ search = {} }: { search?: PlansSearch }) {
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-5 py-12 md:px-10 md:py-16">
+      <main className="mx-auto max-w-7xl px-5 py-12 md:px-10 md:py-16" data-lasso="on">
         <div className="max-w-3xl">
           <h1 className="font-sans text-4xl font-semibold leading-tight md:text-6xl">Plans</h1>
           <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
