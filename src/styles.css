@@ -7427,7 +7427,10 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 
 /* MOT-1: secondary links and soft press, confined to the application shell. */
 [data-lasso="on"] :is(a[href], .acid-link):not(:is(.canvas-card-url, .canvas-card-provenance a, .nb-nav-item, [data-nav-item], [data-sidebar] *, .canvas-lab-toolbar *, .lasso-action, [role="button"])) {
-  background: linear-gradient(var(--hand-live), var(--hand-live)) no-repeat left bottom / 0% 2px;
+  background-image: linear-gradient(var(--hand-live), var(--hand-live));
+  background-repeat: no-repeat;
+  background-position: left bottom;
+  background-size: 0% 2px;
   transition: background-size 180ms cubic-bezier(.2, 0, 0, 1);
 }
 [data-lasso="on"] :is(a[href], .acid-link):not(:is(.canvas-card-url, .canvas-card-provenance a, .nb-nav-item, [data-nav-item], [data-sidebar] *, .canvas-lab-toolbar *, .lasso-action, [role="button"])):hover {
@@ -7773,12 +7776,6 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 [data-lasso="on"].lasso-first-run .lasso-first-run-container > h1 + p { max-width: 56ch; margin-top: 10px; font-family: var(--font-sans); font-size: 13.5px; line-height: 1.6; color: var(--text-secondary); }
 [data-lasso="on"].lasso-first-run .lasso-first-run-container > .mt-6 { margin-top: 22px; }
 [data-lasso="on"].lasso-first-run .lasso-first-run-actions { margin-top: 24px; gap: 10px; flex-wrap: wrap; }
-[data-lasso="on"].lasso-first-run .lasso-tool-picker > section > h3 { font-family: var(--font-mono); font-size: 9px; line-height: 1.6; }
-[data-lasso="on"].lasso-first-run .lasso-tool-picker > section > div { display: grid; grid-template-columns: repeat(auto-fit, minmax(176px, 1fr)); gap: 10px; }
-[data-lasso="on"].lasso-first-run .lasso-tool-picker button[role="checkbox"] { align-items: flex-start; gap: 10px; padding: 12px 13px; margin: 0; min-height: 64px; border: 1.5px solid var(--line-hairline); border-radius: var(--radius-md-new); background: var(--surface-raised); box-shadow: none; }
-[data-lasso="on"].lasso-first-run .lasso-tool-picker button[role="checkbox"][aria-checked="true"] { border-color: var(--line-strong); }
-[data-lasso="on"].lasso-first-run .lasso-tool-picker button[role="checkbox"] > span:nth-child(2) > span:first-child { font-family: var(--font-sans); font-size: 13px; font-weight: 500; color: var(--text-primary); overflow-wrap: anywhere; }
-[data-lasso="on"].lasso-first-run .lasso-tool-picker button[role="checkbox"] > span:last-child { display: none; }
 [data-lasso="on"].lasso-first-run .lasso-setup-tools > section > h2 { font-family: var(--font-mono); font-size: 9px; line-height: 1.6; letter-spacing: .13em; color: var(--text-muted); }
 [data-lasso="on"].lasso-first-run .lasso-setup-tools > section > div.rounded-\[var\(--radius\)\],
 [data-lasso="on"].lasso-first-run .lasso-setup-tools > section > .grid > :is(button, div) { border: 1.5px solid var(--line-hairline); border-radius: var(--radius-md-new); padding: 12px 13px; background: var(--surface-raised); box-shadow: none; }
@@ -7879,10 +7876,6 @@ to { transform: translateX(98px); }
   color: var(--text-primary);
   overflow-wrap: anywhere;
 }
-/* The existing first-run rule hides a picker button's LAST span, because in the
-   old row that span was the checkbox. Here the last span is the scope line, the
-   one promise on this screen, so it is shown again. This line is load-bearing. */
-[data-lasso="on"].lasso-first-run .lasso-tool-picker button[role="checkbox"].after-tool > span:last-child { display: block; }
 [data-lasso="on"] .after-tool-scope {
   font-family: var(--font-sans);
   font-size: 12.5px;
