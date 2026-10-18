@@ -6624,6 +6624,11 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .tour-keep-panel > button { align-self: flex-end; }
 .tour-shared-act { height: 100%; min-height: 0; }
 .tour-persistent-board { position: relative; height: 100%; min-height: 0; overflow: hidden; border: 1px solid var(--nb-rule); background: var(--nb-paper); }
+.tour-artboard { position: relative; height: 100%; min-height: 0; overflow: hidden; }
+.tour-artboard-inner { position: absolute; top: 0; left: 0; height: 100%; width: 100%; transform-origin: top left; }
+@media (min-width: 768px) {
+  [data-lasso="on"] .tour-artboard-inner { width: 1160px; height: 448px; transform: scale(var(--tour-scale, 1)); }
+}
 .tour-board-grid { position: absolute; inset: 0; min-height: 0; background: var(--nb-paper); }
 .tour-board-heading { position: absolute; z-index: 6; top: 2.5%; left: 3%; display: grid; gap: 1px; color: var(--nb-graphite); pointer-events: none; }
 .tour-board-heading strong { font-family: var(--font-hand); font-size: 26px; font-weight: 500; line-height: 1; }
