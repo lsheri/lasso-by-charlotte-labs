@@ -44,6 +44,18 @@ type TourBoardProps = {
   boardRef?: RefObject<HTMLDivElement | null>;
 };
 
+export const TOUR_BOARD_DESIGN = { width: 1160, height: 448 } as const;
+
+/**
+ * Scale the artboard down to fit, never up past the design size. Phones keep
+ * 1, because 276px of phone over a 1160px board is 24 percent, which is a
+ * thumbnail with unreadable text rather than a smaller board.
+ */
+export function tourBoardScale(containerWidth: number, wideViewport: boolean): number {
+  if (!wideViewport || containerWidth <= 0) return 1;
+  return Math.min(1, containerWidth / TOUR_BOARD_DESIGN.width);
+}
+
 function itemStyle(item: TourLayoutItem) {
   return {
     left: `${item.x}%`,
@@ -168,8 +180,19 @@ export function TourBoard({ register, state, className = "", children, onWorkCar
     && !(item.id === "primary-2" && state.act === 3 && !state.landedFile)
     && (state.act !== 8 || TOUR_ACT_EIGHT_BOARD_IDS.includes(item.id as (typeof TOUR_ACT_EIGHT_BOARD_IDS)[number]));
   const answer = useMemo(() => answerNode(register), [register]);
+  const frameRef = useRef<HTMLDivElement | null>(null);
+  const [scale, setScale] = useState(1);
+  useEffect(() => {
+    const frame = frameRef.current;
+    if (!frame || typeof ResizeObserver === "undefined" || typeof window === "undefined" || typeof window.matchMedia !== "function") return;
+    const measure = () => setScale(tourBoardScale(frame.clientWidth, window.matchMedia("(min-width: 768px)").matches));
+    const observer = new ResizeObserver(measure);
+    observer.observe(frame);
+    measure();
+    return () => observer.disconnect();
+  }, []);
 
-  return <div ref={boardRef} className={`tour-persistent-board ${className}`} data-tour-board="" data-act={state.act} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerCancel}>
+  return <div className="tour-artboard" ref={frameRef}><div className="tour-artboard-inner" style={{ "--tour-scale": scale } as CSSProperties}><div ref={boardRef} className={`tour-persistent-board ${className}`} data-tour-board="" data-act={state.act} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerCancel}>
     <div className="tour-board-grid" aria-label="Workstream board">
       <>
         {state.act !== 8 ? <><header className="tour-board-heading"><strong>{boardCopy.title}</strong><span>{boardCopy.owner} · {boardCopy.pieceCount} pieces</span></header>
@@ -203,5 +226,5 @@ export function TourBoard({ register, state, className = "", children, onWorkCar
       {state.connectorsVisible ? <BoardRelationships register={register} /> : null}
       {children}
     </div>
-  </div>;
+  </div></div></div>;
 }
