@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 
 import { parseInvite } from "@/components/invites/EnterInviteCode";
-import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
+import { BrandLockup } from "@/components/layout/BrandLockup";
 import { EntryDoorLink } from "@/components/layout/EntryDoorLink";
 import { rememberEntryDoor } from "@/lib/entry-door";
 import { Button } from "@/components/ui/button";
@@ -168,8 +168,7 @@ export function PlansPage({ search = {} }: { search?: PlansSearch }) {
       <header className="border-b border-rule">
         <div className="mx-auto flex min-h-16 max-w-7xl items-center justify-between gap-4 px-5 md:px-10">
           <EntryDoorLink className="flex items-center gap-2 font-mono text-sm tracking-[0.18em]">
-            <LassoLoopMark className="h-8 w-8 text-lasso-green" />
-            <span>LASSO</span>
+            <BrandLockup size="md" />
           </EntryDoorLink>
           <Button asChild variant="outline" className="min-h-11">
             <Link to="/auth">Sign in</Link>

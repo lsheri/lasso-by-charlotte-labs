@@ -10,7 +10,7 @@ import { useAuthUser, useProfile } from "@/hooks/use-profile";
 
 import { AppSidebar } from "./AppSidebar";
 import { useRememberOwnProfile } from "./SharedWithYou";
-import { LassoLoopMark } from "./LassoLoopMark";
+import { BrandLockup } from "./BrandLockup";
 import { MobileTabBar } from "./MobileTabBar";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { FeedbackDialog, FeedbackWidget } from "@/components/feedback/FeedbackWidget";
@@ -82,8 +82,7 @@ function AppShellInner() {
           <div className="flex min-w-0 flex-1 flex-col">
             <header className="sticky top-0 z-40 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border bg-background/95 px-4 pb-2 pt-[calc(0.5rem+env(safe-area-inset-top))] backdrop-blur md:hidden">
               <span className="flex min-w-0 items-center gap-2 truncate font-mono text-sm tracking-[0.24em] text-foreground">
-                <LassoLoopMark className="h-6 w-6 shrink-0 text-lasso-green" />
-                LASSO
+                <BrandLockup size="sm" />
               </span>
               <div className="flex min-w-0 items-center gap-2">
                 <span className="max-w-[28vw] truncate text-xs text-muted-foreground">
