@@ -84,19 +84,6 @@ function readHeader(name: string): string | undefined {
   }
 }
 
-/**
- * PostHog's own $device_type vocabulary, derived server side because the
- * mirror never runs in the browser. Exactly three values so breakdowns do
- * not split against autocaptured events. No user agent means no property:
- * a guess is worse than a gap.
- */
-export function deviceTypeFromUserAgent(ua: string): "Desktop" | "Mobile" | "Tablet" {
-  if (/iPad|Tablet|PlayBook|Silk|Kindle/i.test(ua)) return "Tablet";
-  if (/Android/i.test(ua) && !/Mobile/i.test(ua)) return "Tablet";
-  if (/Mobi|iPhone|iPod|Windows Phone|BlackBerry|BB10|webOS|Opera Mini|IEMobile/i.test(ua)) return "Mobile";
-  return "Desktop";
-}
-
 export function contextProperties(context: MirrorContext): Record<string, unknown> {
   const props: Record<string, unknown> = {
     environment: context.environment,
@@ -108,7 +95,6 @@ export function contextProperties(context: MirrorContext): Record<string, unknow
   if (context.account_stage) props["account_stage"] = context.account_stage;
   const ua = readHeader("user-agent");
   if (ua) props["$raw_user_agent"] = ua.slice(0, 512);
-  if (ua) props["$device_type"] = deviceTypeFromUserAgent(ua);
   if (context.anonymous) {
     const ip = readHeader("cf-connecting-ip") ?? readHeader("x-forwarded-for")?.split(",")[0]?.trim();
     if (ip) props["$ip"] = ip;
