@@ -7776,12 +7776,8 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 [data-lasso="on"].lasso-first-run .lasso-first-run-container > h1 + p { max-width: 56ch; margin-top: 10px; font-family: var(--font-sans); font-size: 13.5px; line-height: 1.6; color: var(--text-secondary); }
 [data-lasso="on"].lasso-first-run .lasso-first-run-container > .mt-6 { margin-top: 22px; }
 [data-lasso="on"].lasso-first-run .lasso-first-run-actions { margin-top: 24px; gap: 10px; flex-wrap: wrap; }
-[data-lasso="on"].lasso-first-run .lasso-setup-tools > section > h2 { font-family: var(--font-mono); font-size: 9px; line-height: 1.6; letter-spacing: .13em; color: var(--text-muted); }
-[data-lasso="on"].lasso-first-run .lasso-setup-tools > section > div.rounded-\[var\(--radius\)\],
-[data-lasso="on"].lasso-first-run .lasso-setup-tools > section > .grid > :is(button, div) { border: 1.5px solid var(--line-hairline); border-radius: var(--radius-md-new); padding: 12px 13px; background: var(--surface-raised); box-shadow: none; }
-[data-lasso="on"].lasso-first-run .lasso-setup-tools > section > .grid { gap: 10px; grid-template-columns: repeat(auto-fit, minmax(176px, 1fr)); }
-[data-lasso="on"].lasso-first-run .lasso-setup-tools > section > div > .flex.items-start { gap: 10px; }
-[data-lasso="on"].lasso-first-run .lasso-setup-tools > section > div > .flex.items-start > div > p:first-child { font-family: var(--font-sans); font-size: 13px; font-weight: 500; }
+/* The six old .lasso-setup-tools rules were retired in PORT-3: they were
+   written for the previous row markup, and one erased the new hue wash. */
 
 /* Sketch hover motions, one per drawing kind. Used by the SketchCard
    reference components ported from the Magic Patterns design system.
