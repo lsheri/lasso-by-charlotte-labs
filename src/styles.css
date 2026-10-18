@@ -7776,12 +7776,8 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 [data-lasso="on"].lasso-first-run .lasso-first-run-container > h1 + p { max-width: 56ch; margin-top: 10px; font-family: var(--font-sans); font-size: 13.5px; line-height: 1.6; color: var(--text-secondary); }
 [data-lasso="on"].lasso-first-run .lasso-first-run-container > .mt-6 { margin-top: 22px; }
 [data-lasso="on"].lasso-first-run .lasso-first-run-actions { margin-top: 24px; gap: 10px; flex-wrap: wrap; }
-[data-lasso="on"].lasso-first-run .lasso-setup-tools > section > h2 { font-family: var(--font-mono); font-size: 9px; line-height: 1.6; letter-spacing: .13em; color: var(--text-muted); }
-[data-lasso="on"].lasso-first-run .lasso-setup-tools > section > div.rounded-\[var\(--radius\)\],
-[data-lasso="on"].lasso-first-run .lasso-setup-tools > section > .grid > :is(button, div) { border: 1.5px solid var(--line-hairline); border-radius: var(--radius-md-new); padding: 12px 13px; background: var(--surface-raised); box-shadow: none; }
-[data-lasso="on"].lasso-first-run .lasso-setup-tools > section > .grid { gap: 10px; grid-template-columns: repeat(auto-fit, minmax(176px, 1fr)); }
-[data-lasso="on"].lasso-first-run .lasso-setup-tools > section > div > .flex.items-start { gap: 10px; }
-[data-lasso="on"].lasso-first-run .lasso-setup-tools > section > div > .flex.items-start > div > p:first-child { font-family: var(--font-sans); font-size: 13px; font-weight: 500; }
+/* The six old .lasso-setup-tools rules were retired in PORT-3: they were
+   written for the previous row markup, and one erased the new hue wash. */
 
 /* Sketch hover motions, one per drawing kind. Used by the SketchCard
    reference components ported from the Magic Patterns design system.
@@ -7906,4 +7902,84 @@ to { transform: translateX(98px); }
 @media (max-width: 767px) {
   [data-lasso="on"] .after-tools-grid { grid-template-columns: minmax(0, 1fr); }
   [data-lasso="on"] .after-tool { min-height: 0; grid-template-rows: auto auto; gap: 5px; padding: 11px 12px; }
+}
+
+/* -------------------------------------- the capture step, redesigned */
+
+[data-lasso="on"] .after-setup-item {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  align-items: stretch;
+  gap: 0;
+  overflow: hidden;
+  border: 1.5px solid var(--line-hairline);
+  border-radius: var(--radius-md-new);
+  background:
+    linear-gradient(color-mix(in srgb, var(--tool) 6%, transparent), color-mix(in srgb, var(--tool) 6%, transparent)),
+    var(--surface-raised);
+}
+[data-lasso="on"] .after-setup-art {
+  display: grid;
+  margin: 0;
+  place-items: center;
+  padding: 14px 10px;
+  border-right: var(--border-weight) solid var(--line-hairline);
+  background: color-mix(in srgb, var(--tool) 7%, var(--surface-sunk));
+}
+[data-lasso="on"] .after-setup-art > svg { width: 86px; height: 74px; }
+[data-lasso="on"] .after-setup-body { min-width: 0; }
+
+/* The app's own card sits inside the wrapper, so it gives up its own frame. */
+[data-lasso="on"] .after-setup-item .after-setup-body > div {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+/* The two quick ways in get the same treatment, so the cheap path is as
+   inviting as a connector. */
+[data-lasso="on"] .after-setup-quick {
+  display: grid;
+  width: 100%;
+  grid-template-columns: 76px minmax(0, 1fr);
+  align-items: center;
+  overflow: hidden;
+  border: 1.5px solid var(--line-hairline);
+  border-radius: var(--radius-md-new);
+  background:
+    linear-gradient(color-mix(in srgb, var(--tool) 6%, transparent), color-mix(in srgb, var(--tool) 6%, transparent)),
+    var(--surface-raised);
+  text-align: left;
+  transition: border-color var(--dur-quick) var(--ease-standard);
+}
+[data-lasso="on"] .after-setup-quick:not(.is-static):hover { border-color: var(--line-strong); cursor: pointer; }
+[data-lasso="on"] .after-setup-quick .after-setup-art.is-small {
+  display: grid;
+  place-items: center;
+  align-self: stretch;
+  padding: 12px 8px;
+  border-right: var(--border-weight) solid var(--line-hairline);
+  background: color-mix(in srgb, var(--tool) 7%, var(--surface-sunk));
+}
+[data-lasso="on"] .after-setup-quick .after-setup-art.is-small > svg { width: 54px; height: 46px; }
+[data-lasso="on"] .after-setup-quick .after-setup-body { padding: 12px 14px; }
+
+/* Phone: the drawing becomes a band above the card. At 390 a 112px column
+   leaves about 250px for a paragraph and a button, and the text shreds. */
+@media (max-width: 767px) {
+  [data-lasso="on"] .after-setup-item { grid-template-columns: minmax(0, 1fr); }
+  [data-lasso="on"] .after-setup-art {
+    padding: 8px;
+    border-right: 0;
+    border-bottom: var(--border-weight) solid var(--line-hairline);
+  }
+  [data-lasso="on"] .after-setup-art > svg { width: 64px; height: 44px; }
+  [data-lasso="on"] .after-setup-quick { grid-template-columns: minmax(0, 1fr); }
+  [data-lasso="on"] .after-setup-quick .after-setup-art.is-small {
+    border-right: 0;
+    border-bottom: var(--border-weight) solid var(--line-hairline);
+    padding: 7px;
+  }
+  [data-lasso="on"] .after-setup-quick .after-setup-art.is-small > svg { width: 52px; height: 36px; }
 }
