@@ -144,7 +144,7 @@
   --text-mini:10.5px;
   --text-md:16px;
 
-  --font-display:"Young Serif", "Iowan Old Style", Georgia, serif;
+  --font-display:"Instrument Sans", ui-sans-serif, system-ui, sans-serif;
 
   --focus-ring:var(--focus-ring-new);
 }
