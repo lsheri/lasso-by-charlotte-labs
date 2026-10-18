@@ -8,7 +8,7 @@ import { LassoThinkingMark } from "@/components/reflect/LassoThinkingMark";
 import { ASK_SCOPE_ALL_LABEL, ASK_SCOPE_ONE_LABEL, askScopeWorkstreamLabel } from "@/components/reflect/AskSurface";
 import { ToolBadge } from "@/components/onboarding/ToolBadge";
 import { Button } from "@/components/ui/button";
-import { WorkNote } from "@/components/work/WorkNote";
+import { SketchCard } from "@/design/reference/SketchCard";
 import { useReducedMotion as useMotionPreference } from "@/hooks/use-motion";
 import { keyTo } from "@/lib/canvas-drag";
 import type { ToolId } from "@/lib/onboarding-tools";
@@ -16,6 +16,7 @@ import type { Register } from "@/lib/register";
 import { TOUR_BOARD_LAYOUT, actById, tourAmbientCards, tourBoardCopy, type TourActId, type TourPushedChat, type TourSource } from "@/lib/tour-content";
 import type { WorkboardCardPreview } from "@/lib/workboard-card-preview.shared";
 import type { WorkItemRow } from "@/lib/work-types";
+import { workToSketch } from "@/lib/work-sketch";
 import type { TourActRenderer } from "@/components/tour/TourStage";
 
 const noop = () => undefined;
@@ -202,15 +203,16 @@ export function TourActSix({ register }: { register: Register }) {
 
 export const TOUR_TURN_DELAY_MS = 900;
 
-function TourPushChat({ chat, shown, reduced, pushed, onPush }: { chat: TourPushedChat; shown: number; reduced: boolean; pushed: boolean; onPush: () => void }) {
+function TourPushChat({ chat, shown, reduced, pushed }: { chat: TourPushedChat; shown: number; reduced: boolean; pushed: boolean }) {
   const ready = shown >= chat.turns.length + 2;
-  return <section className={`tour-chat-window${ready ? " is-ready" : ""}`} aria-label={`AI chat: ${chat.title}`} data-reduced={reduced ? "" : undefined}>
+  return <section className={`tour-chat-window${ready ? " is-ready" : ""}${pushed ? " is-pushed" : ""}`} aria-label={`AI chat: ${chat.title}`} data-reduced={reduced ? "" : undefined}>
     <header><ToolBadge tool={chat.source} size="sm" /><strong>{chat.title}</strong></header>
     <ol className="tour-chat-turns">
       {chat.turns.slice(0, Math.min(shown, chat.turns.length)).map((turn, index) => <li key={index} className="tour-chat-turn" data-role={turn.role}>{turn.text}</li>)}
       {shown > chat.turns.length ? <li className="tour-chat-turn is-push-line" data-role="user">{chat.pushLine}</li> : null}
     </ol>
-    <footer>{ready ? <Button type="button" variant="ink" className="tour-push-control" data-tour-target={!pushed ? "1" : undefined} data-pushed={pushed ? "" : undefined} onClick={onPush}>{pushed ? chat.pushedLabel : chat.pushLabel}</Button> : null}</footer>
+    {/* The window states its own outcome, so the one button stays one button. */}
+    <footer>{pushed ? <span className="after-pushed-note">{chat.pushedLabel}</span> : null}</footer>
   </section>;
 }
 
@@ -227,15 +229,26 @@ export function TourActPush({ register, onReady }: { register: Register; onReady
     const timers = Array.from({ length: total }, (_, index) => window.setTimeout(() => setStep(index + 1), TOUR_TURN_DELAY_MS * (index + 1)));
     return () => timers.forEach((timer) => window.clearTimeout(timer));
   }, [reduced, total]);
-  const push = (title: string) => {
-    if (pushed.has(title)) return;
-    const next = new Set(pushed).add(title);
-    setPushed(next);
-    if (next.size === chats.length) onReady();
+  // One control pushes both, so the act has a single thing to do.
+  const allPushed = pushed.size === chats.length;
+  const pushAll = () => {
+    if (allPushed) return;
+    setPushed(new Set(chats.map((chat) => chat.title)));
+    onReady();
   };
+  const ready = shown >= total;
   if (chats.length !== 2) return null;
-  return <div className="tour-push-stage tour-push-pair" data-testid="tour-act-push">
-    {chats.map((chat) => <TourPushChat key={chat.title} chat={chat} shown={shown} reduced={reduced} pushed={pushed.has(chat.title)} onPush={() => push(chat.title)} />)}
+  return <div className="tour-push-stage tour-push-pair after-push" data-testid="tour-act-push">
+    <div className="after-push-windows">
+      {chats.map((chat) => <TourPushChat key={chat.title} chat={chat} shown={shown} reduced={reduced} pushed={pushed.has(chat.title)} />)}
+    </div>
+    <div className="after-push-action">
+      {ready ? (
+        <Button type="button" variant="ink" className="tour-push-control" data-tour-target={!allPushed ? "1" : undefined} data-pushed={allPushed ? "" : undefined} onClick={pushAll}>
+          {allPushed ? "Pushed to Lasso" : "Push both to Lasso"}
+        </Button>
+      ) : null}
+    </div>
   </div>;
 }
 
@@ -328,9 +341,10 @@ export function TourActArrived({ register, onComplete }: { register: Register; o
               <div className="flex min-h-10 items-center gap-3"><h2 className="font-hand text-[19px] leading-none text-graphite">October</h2><span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{rows.length}</span><span className="h-px flex-1 bg-[var(--nb-rule)]" /></div>
               <ul className="conversation-month-grid" aria-label="AI conversations">
                 {rows.map((row) => <li key={row.item.id} className={row.arrived ? "tour-conversation-row is-arrived" : "tour-conversation-row"}>
-                  {row.arrived ? <Button type="button" variant="ghost" className="conversation-card-compact canvas-lab-card-paper block h-full w-full min-w-0 p-0 text-left whitespace-normal hover:bg-transparent" onClick={noop}>
-                    <WorkNote item={row.item} dense displayMode="preview" chatPreview={row.preview} lead={<span className="tour-arrived-label">{list.arrivedLabel}</span>} />
-                  </Button> : <span className="conversation-card-compact canvas-lab-card-paper block h-full min-w-0"><WorkNote item={row.item} dense displayMode="preview" chatPreview={row.preview} /></span>}
+                  {row.arrived ? <Button type="button" variant="ghost" className="after-arrived block h-full w-full min-w-0 p-0 text-left whitespace-normal hover:bg-transparent" onClick={noop}>
+                    <span className="tour-arrived-label">{list.arrivedLabel}</span>
+                    <SketchCard work={workToSketch(row.item)} width={230} />
+                  </Button> : <span className="after-arrived block h-full min-w-0"><SketchCard work={workToSketch(row.item)} width={230} /></span>}
                 </li>)}
               </ul>
             </section>
