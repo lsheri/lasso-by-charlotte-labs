@@ -341,10 +341,10 @@ export function TourActArrived({ register, onComplete }: { register: Register; o
               <div className="flex min-h-10 items-center gap-3"><h2 className="font-hand text-[19px] leading-none text-graphite">October</h2><span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{rows.length}</span><span className="h-px flex-1 bg-[var(--nb-rule)]" /></div>
               <ul className="conversation-month-grid" aria-label="AI conversations">
                 {rows.map((row) => <li key={row.item.id} className={row.arrived ? "tour-conversation-row is-arrived" : "tour-conversation-row"}>
-                  {row.arrived ? <Button type="button" variant="ghost" className="after-arrived block h-full w-full min-w-0 p-0 text-left whitespace-normal hover:bg-transparent" onClick={noop}>
+                  {row.arrived ? <button type="button" className="after-arrived" onClick={noop}>
                     <span className="tour-arrived-label">{list.arrivedLabel}</span>
                     <SketchCard work={workToSketch(row.item)} width={230} />
-                  </Button> : <span className="after-arrived block h-full min-w-0"><SketchCard work={workToSketch(row.item)} width={230} /></span>}
+                  </button> : <span className="after-arrived"><SketchCard work={workToSketch(row.item)} width={230} /></span>}
                 </li>)}
               </ul>
             </section>

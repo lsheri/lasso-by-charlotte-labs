@@ -8065,6 +8065,20 @@ to { transform: translateX(98px); }
   border: 0;
   background: transparent;
   box-shadow: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  min-width: 0;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  -webkit-appearance: none;
+  appearance: none;
+}
+[data-lasso="on"] button.after-arrived { cursor: pointer; }
+[data-lasso="on"] button.after-arrived:focus-visible {
+  outline: 2px solid var(--focus-ring-new);
+  outline-offset: 2px;
 }
 [data-lasso="on"] .after-arrived .tour-arrived-label {
   font-family: var(--font-mono);
