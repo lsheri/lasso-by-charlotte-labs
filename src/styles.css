@@ -8098,10 +8098,75 @@ to { transform: translateX(98px); }
 [data-lasso="on"] .tour-conversation-row { height: auto; }
 [data-lasso="on"] .tour-conversation-row.is-arrived > button { outline: 0; }
 
-/* Act 1 on phone: the two windows stack and the control goes full width. */
+/* Phone pass: the onboarding shells, the tools and capture cards, and the
+   tour. Everything here is inside the 767px range on purpose; the desktop
+   tour rules are fenced at min-width: 768px and the two ranges stay disjoint. */
 @media (max-width: 767px) {
-  [data-lasso="on"] .after-push-windows { grid-template-columns: minmax(0, 1fr); }
-  [data-lasso="on"] .after-push-action > button { width: 100%; }
+  [data-lasso="on"] .after-push-windows { grid-template-columns: minmax(0, 1fr); gap: 10px; overflow: auto; }
+  [data-lasso="on"] .after-push-action > button { width: 100%; min-height: 46px; }
+
+  /* The onboarding shells: one column, full width controls. */
+  [data-lasso="on"]:is(.lasso-entry, .lasso-first-run) .lasso-first-run-container,
+  [data-lasso="on"]:is(.lasso-entry, .lasso-first-run) .lasso-entry-container { padding: 20px 16px; }
+
+  /* The segment row reads as a question with answers, not a wrapped line. */
+  [data-lasso="on"].lasso-first-run [data-testid="segment-row"] > div { display: grid; gap: 10px; }
+  [data-lasso="on"].lasso-first-run [data-testid="segment-row"] [role="group"] {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 8px;
+  }
+  [data-lasso="on"].lasso-first-run [data-testid="segment-row"] [role="group"] > span:first-child { grid-column: 1 / -1; }
+  [data-lasso="on"].lasso-first-run [data-testid="segment-row"] button[aria-pressed] { justify-content: center; min-height: 44px; }
+  [data-lasso="on"].lasso-first-run [data-testid="segment-row"] > div > div { width: 100%; }
+
+  /* A select is a touch target before it is a field. */
+  [data-lasso="on"]:is(.lasso-entry, .lasso-first-run) button[role="combobox"] { width: 100%; min-height: 44px; }
+
+  /* One primary, full width, with the quiet way out under it rather than
+     beside it, where it was being cut off. */
+  [data-lasso="on"].lasso-first-run .lasso-first-run-actions { display: grid; gap: 12px; justify-items: stretch; }
+  [data-lasso="on"].lasso-first-run .lasso-first-run-actions > button:first-child { width: 100%; min-height: 46px; }
+  [data-lasso="on"].lasso-first-run .lasso-first-run-actions > button:last-child { justify-self: center; }
+
+  /* Tool cards: two up at 390 is 150px of card, which cannot hold a name and
+     a scope line. One per row, and the card becomes a row again. */
+  [data-lasso="on"] .after-tools-grid { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  [data-lasso="on"] .after-tool {
+    min-height: 0;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    align-items: center;
+    gap: 3px 12px;
+    padding: 12px 40px 12px 12px;
+  }
+  [data-lasso="on"] .after-tool > span:nth-child(2) { grid-row: 1 / span 2; }
+  [data-lasso="on"] .after-tool-label { align-self: end; }
+  [data-lasso="on"] .after-tool-scope { align-self: start; }
+
+  /* The capture cards keep their drawing, but as a band above the card
+     rather than a column beside it: at 390 a 72px column leaves about 250px
+     for a paragraph and a button, and the text wraps every four words. */
+  [data-lasso="on"] .after-setup-item { grid-template-columns: minmax(0, 1fr); }
+  [data-lasso="on"] .after-setup-art {
+    padding: 8px;
+    border-right: 0;
+    border-bottom: var(--border-weight) solid var(--line-hairline);
+  }
+  [data-lasso="on"] .after-setup-art > svg { width: 64px; height: 44px; }
+  [data-lasso="on"] .after-setup-quick { grid-template-columns: minmax(0, 1fr); }
+  [data-lasso="on"] .after-setup-quick .after-setup-art.is-small {
+    border-right: 0;
+    border-bottom: var(--border-weight) solid var(--line-hairline);
+    padding: 7px;
+  }
+  [data-lasso="on"] .after-setup-quick .after-setup-art.is-small > svg { width: 52px; height: 36px; }
+
+  /* The tour on a phone. The band was 178px of a 390 screen for one
+     sentence, nearly a quarter of the phone before the act starts. */
+  [data-lasso="on"].tour-preview-page .tour-stage { grid-template-rows: 56px 128px minmax(0, 1fr) 46px; padding: 12px 12px 10px; }
+  [data-lasso="on"].tour-preview-page .tour-instruction-band { height: 128px; padding: 2px 4px 8px; }
+  [data-lasso="on"].tour-preview-page .tour-do-line { font-size: 19px; line-height: 1.12; }
+  [data-lasso="on"] .tour-chat-window { width: 100%; }
+  [data-lasso="on"] .tour-push-stage.after-push { padding: 10px; }
 }
 
 /* Act 1 shows two whole conversations at once, so the turns are tightened
