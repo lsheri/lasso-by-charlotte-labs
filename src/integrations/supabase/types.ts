@@ -5603,6 +5603,25 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      admin_person_emails: {
+        Args: { p_email: string }
+        Returns: {
+          code: string
+          kind: string
+          last_error: string
+          link_expires_at: string
+          link_outcome: string
+          link_path: string
+          link_used_at: string
+          occurred_at: string
+          org_id: string
+          provider_id: string
+          send_status: string
+          sent_at: string
+          source: string
+          to_email: string
+        }[]
+      }
       admin_pilot_overview: {
         Args: never
         Returns: {
