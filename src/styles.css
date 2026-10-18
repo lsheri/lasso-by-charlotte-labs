@@ -8187,6 +8187,35 @@ to { transform: translateX(98px); }
     position: static;
     align-self: flex-end;
   }
+
+  /* Acts 3 to 7 on a phone. The wide scatter cannot survive 276px, so the
+     board becomes two readable columns that scroll, with the three cards the
+     tour asks you to group kept in the first two rows so they are reachable
+     without scrolling. Act 8 keeps its own treatment. */
+  [data-lasso="on"] .tour-persistent-board:not([data-act="8"]) { overflow-y: auto; overflow-x: hidden; }
+  [data-lasso="on"] .tour-persistent-board:not([data-act="8"]) .tour-board-item {
+    transform: none;
+    width: 45% !important;
+  }
+  [data-lasso="on"] .tour-persistent-board:not([data-act="8"]) .tour-board-item[data-tour-layout-id="primary-0"] { top: 2% !important; left: 3% !important; }
+  [data-lasso="on"] .tour-persistent-board:not([data-act="8"]) .tour-board-item[data-tour-layout-id="primary-1"] { top: 2% !important; left: 52% !important; }
+  [data-lasso="on"] .tour-persistent-board:not([data-act="8"]) .tour-board-item[data-tour-layout-id="primary-2"] { top: 50% !important; left: 3% !important; }
+  [data-lasso="on"] .tour-persistent-board:not([data-act="8"]) .tour-board-item[data-tour-layout-id="primary-3"] { top: 50% !important; left: 52% !important; }
+  [data-lasso="on"] .tour-persistent-board:not([data-act="8"]) .tour-board-item[data-tour-layout-id="chat-0"] { top: 98% !important; left: 3% !important; }
+  [data-lasso="on"] .tour-persistent-board:not([data-act="8"]) .tour-board-item[data-tour-layout-id="chat-1"] { top: 98% !important; left: 52% !important; }
+  [data-lasso="on"] .tour-persistent-board:not([data-act="8"]) .tour-board-item[data-tour-layout-id="whiteboard"] { top: 146% !important; left: 3% !important; }
+  [data-lasso="on"] .tour-persistent-board:not([data-act="8"]) .tour-board-item[data-tour-layout-id="deck"] { top: 146% !important; left: 52% !important; }
+  [data-lasso="on"] .tour-persistent-board:not([data-act="8"]) .tour-board-item[data-tour-layout-id="artifact"] { top: 194% !important; left: 3% !important; }
+  [data-lasso="on"] .tour-persistent-board:not([data-act="8"]) .tour-board-item[data-tour-layout-id="deliverable"] { top: 194% !important; left: 52% !important; }
+  [data-lasso="on"] .tour-persistent-board:not([data-act="8"]) .tour-board-item[data-tour-layout-id="answer"] { top: 242% !important; left: 3% !important; width: 94% !important; }
+  [data-lasso="on"] .tour-persistent-board:not([data-act="8"]) .tour-reserved-slot { top: 2% !important; left: 3% !important; width: 45% !important; }
+
+  /* The scattered decorations assume a wide board and only collide at 390. */
+  [data-lasso="on"] .tour-persistent-board:not([data-act="8"]) .tour-margin-note,
+  [data-lasso="on"] .tour-persistent-board:not([data-act="8"]) .tour-alignment-rail { display: none; }
+
+  /* The board scrolls, so the heading must not sit on top of the first row. */
+  [data-lasso="on"] .tour-persistent-board:not([data-act="8"]) .tour-board-heading { position: sticky; top: 0; left: 0; padding-bottom: 4px; }
 }
 
 /* Act 1 shows two whole conversations at once, so the turns are tightened
