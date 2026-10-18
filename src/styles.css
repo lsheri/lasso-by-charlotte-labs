@@ -71,7 +71,7 @@
 @theme inline {
   --font-sans: "Archivo", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
-  --font-serif: "Instrument Serif", "Iowan Old Style", Georgia, serif;
+  --font-serif: "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
   --font-hand: "Caveat", var(--font-sans);
   --color-ember: var(--ember);
   --color-ember-deep: var(--ember-deep);
@@ -7005,7 +7005,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   --state-amber:var(--state-yours-pending);
   --state-teal:var(--hand-ink);
   --state-indigo:var(--text-secondary);
-  --font-serif:"Young Serif", "Iowan Old Style", Georgia, serif;
+  --font-serif:"Instrument Sans", ui-sans-serif, system-ui, sans-serif;
   --font-mono:"Martian Mono", ui-monospace, monospace;
   --font-hand:"Architects Daughter", var(--font-sans);
 }
