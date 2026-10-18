@@ -4,7 +4,7 @@ import type { Profile } from "@/hooks/use-profile";
 import { markWalkthroughEntry } from "@/lib/walkthrough-entry";
 
 import { WorkspaceMenu } from "./WorkspaceMenu";
-import { LassoLoopMark } from "./LassoLoopMark";
+import { BrandLockup } from "./BrandLockup";
 import { SidebarNav } from "./SidebarNav";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 
@@ -32,8 +32,7 @@ export function AppSidebar({
     <div className="lasso-sidebar-content flex h-full w-full flex-col gap-[22px] bg-sidebar px-4 pb-[18px] pt-[22px]">
       {/* Brand */}
       <div className="flex shrink-0 items-center gap-2.5">
-        <LassoLoopMark className="h-[17px] w-5 shrink-0 text-lasso-green" />
-        <div className="min-w-0 truncate font-mono text-lg tracking-[0.24em] text-foreground">LASSO</div>
+        <BrandLockup size="sm" />
         <div className="ml-auto shrink-0">
           <NotificationBell side="right" align="start" />
         </div>

@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
 import { EntryDoorLink } from "./EntryDoorLink";
-import { LassoLoopMark } from "./LassoLoopMark";
+import { BrandLockup } from "./BrandLockup";
 
 const LINKS = [
   { to: "/why" as const, label: "Why Lasso" },
@@ -18,8 +18,7 @@ export function PublicHeader({ current, cta }: { current?: "/" | "/why" | "/trus
           className="flex min-w-0 items-center gap-2 font-mono text-base font-normal tracking-[0.18em] text-foreground sm:gap-4 sm:text-2xl sm:tracking-[0.24em]"
           aria-current={current === "/" ? "page" : undefined}
         >
-          <LassoLoopMark className="h-8 w-8 shrink-0 text-lasso-green sm:h-10 sm:w-10" />
-          <span className="truncate">LASSO</span>
+          <BrandLockup size="md" />
         </EntryDoorLink>
         <nav className={`grid min-w-0 shrink-0 items-center gap-2 sm:flex sm:gap-10 ${cta ? "grid-cols-2" : "grid-cols-1"}`}>
           {LINKS.filter((link) => link.to !== current).map((link) => (
