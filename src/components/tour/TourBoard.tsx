@@ -47,13 +47,15 @@ type TourBoardProps = {
 export const TOUR_BOARD_DESIGN = { width: 1160, height: 448 } as const;
 
 /**
- * Scale the artboard down to fit, never up past the design size. Phones keep
- * 1, because 276px of phone over a 1160px board is 24 percent, which is a
- * thumbnail with unreadable text rather than a smaller board.
+ * Scale the artboard down to fit both axes, never up past the design size.
+ * Height matters as much as width: the artboard clips, so a short wide
+ * window would cut the bottom off the board if only width were considered.
+ * Phones keep 1, because 276px of phone over a 1160px board is 24 percent,
+ * which is a thumbnail with unreadable text rather than a smaller board.
  */
-export function tourBoardScale(containerWidth: number, wideViewport: boolean): number {
-  if (!wideViewport || containerWidth <= 0) return 1;
-  return Math.min(1, containerWidth / TOUR_BOARD_DESIGN.width);
+export function tourBoardScale(containerWidth: number, containerHeight: number, wideViewport: boolean): number {
+  if (!wideViewport || containerWidth <= 0 || containerHeight <= 0) return 1;
+  return Math.min(1, containerWidth / TOUR_BOARD_DESIGN.width, containerHeight / TOUR_BOARD_DESIGN.height);
 }
 
 function itemStyle(item: TourLayoutItem) {
@@ -185,7 +187,7 @@ export function TourBoard({ register, state, className = "", children, onWorkCar
   useEffect(() => {
     const frame = frameRef.current;
     if (!frame || typeof ResizeObserver === "undefined" || typeof window === "undefined" || typeof window.matchMedia !== "function") return;
-    const measure = () => setScale(tourBoardScale(frame.clientWidth, window.matchMedia("(min-width: 768px)").matches));
+    const measure = () => setScale(tourBoardScale(frame.clientWidth, frame.clientHeight, window.matchMedia("(min-width: 768px)").matches));
     const observer = new ResizeObserver(measure);
     observer.observe(frame);
     measure();
