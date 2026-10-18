@@ -8004,22 +8004,21 @@ to { transform: translateX(98px); }
     aspect-ratio: 16 / 9;
     grid-template-rows: 54px 92px minmax(0, 1fr) 50px;
   }
-}
 
-/* The teaching sentence takes the title face the rest of the flow uses.
-   It currently declares `var(--font-ui)`, which is NOT DEFINED anywhere in
-   this project, so the declaration is invalid and the line silently inherits.
-   This gives it a real face for the first time. */
-[data-lasso="on"].tour-preview-page .tour-do-line {
-  font-family: var(--font-serif);
-  font-size: 27px;
-  font-weight: 400;
-  padding-right: 0;
-}
-[data-lasso="on"].tour-preview-page .tour-instruction-band { padding: 2px 32% 8px 8px; }
-[data-lasso="on"].tour-preview-page .tour-step-marker {
-  font-family: var(--font-mono);
-  font-size: var(--text-mini);
-  letter-spacing: var(--label-tracking);
-  text-transform: uppercase;
+  /* The teaching sentence takes the title face the rest of the flow uses.
+     It previously declared `var(--font-ui)`, which is not defined in this
+     project, so the declaration was invalid and the line silently inherited. */
+  [data-lasso="on"].tour-preview-page .tour-do-line {
+    font-family: var(--font-serif);
+    font-size: 27px;
+    font-weight: 400;
+    padding-right: 0;
+  }
+  [data-lasso="on"].tour-preview-page .tour-instruction-band { padding: 2px 32% 8px 8px; }
+  [data-lasso="on"].tour-preview-page .tour-step-marker {
+    font-family: var(--font-mono);
+    font-size: var(--text-mini);
+    letter-spacing: var(--label-tracking);
+    text-transform: uppercase;
+  }
 }
