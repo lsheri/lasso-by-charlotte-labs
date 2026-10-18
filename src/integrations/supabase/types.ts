@@ -1672,6 +1672,39 @@ export type Database = {
           },
         ]
       }
+      email_events: {
+        Row: {
+          id: string
+          occurred_at: string
+          provider: string
+          provider_id: string
+          status: string
+          subject: string | null
+          synced_at: string
+          to_email: string
+        }
+        Insert: {
+          id?: string
+          occurred_at: string
+          provider?: string
+          provider_id: string
+          status: string
+          subject?: string | null
+          synced_at?: string
+          to_email: string
+        }
+        Update: {
+          id?: string
+          occurred_at?: string
+          provider?: string
+          provider_id?: string
+          status?: string
+          subject?: string | null
+          synced_at?: string
+          to_email?: string
+        }
+        Relationships: []
+      }
       engagement_brief_files: {
         Row: {
           created_at: string

@@ -11,6 +11,8 @@ type ResendPayload = {
   created_at?: string;
   data?: {
     email_id?: string;
+    to?: string[] | string;
+    subject?: string;
     bounce?: { message?: string; subType?: string };
     reason?: string;
   };
@@ -65,7 +67,28 @@ export async function handleResendWebhook(request: Request): Promise<Response> {
     console.error("[resend-webhook] select failed for " + emailId + ": " + selectError.message);
     return Response.json({ error: "update failed" }, { status: 500 });
   }
-  if (!row) return Response.json({ ok: true, unmatched: true });
+  if (!row) {
+    const to = Array.isArray(payload.data?.to) ? payload.data?.to[0] : payload.data?.to;
+    if (!to) return Response.json({ ok: true, unmatched: "no recipient" });
+    const { error: insertError } = await supabaseAdmin
+      .from("email_events")
+      .upsert(
+        {
+          provider: "resend",
+          provider_id: emailId,
+          to_email: to,
+          subject: payload.data?.subject ?? null,
+          status,
+          occurred_at: payload.created_at ?? new Date().toISOString(),
+        },
+        { onConflict: "provider,provider_id" },
+      );
+    if (insertError) {
+      console.error("[resend-webhook] email_events upsert failed for " + emailId + ": " + insertError.message);
+      return Response.json({ error: "record failed" }, { status: 500 });
+    }
+    return Response.json({ ok: true, recorded: status });
+  }
 
   if (!shouldApply(row.status, status)) return Response.json({ ok: true, skipped: true });
 
