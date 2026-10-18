@@ -7813,3 +7813,104 @@ to { transform: translateX(98px); }
 @keyframes lasso-sk-blink {
 50% { opacity: 0; }
 }
+
+/* ---------------------------------------- the tools step, redesigned */
+
+[data-lasso="on"] .after-tools-band {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  padding: 0;
+  border: 0;
+  border-bottom: var(--border-weight) solid var(--line-hairline);
+  padding-bottom: 7px;
+  background: none;
+  font-family: var(--font-mono);
+  font-size: var(--text-mini);
+  font-weight: var(--label-weight);
+  letter-spacing: var(--label-tracking);
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+[data-lasso="on"] .after-tools-dot {
+  width: 7px;
+  height: 7px;
+  flex-shrink: 0;
+  border-radius: var(--radius-pill);
+  background: var(--band, var(--text-muted));
+}
+[data-lasso="on"] .after-tools-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(188px, 1fr));
+  gap: 10px;
+}
+[data-lasso="on"] .after-tool {
+  position: relative;
+  display: grid;
+  min-height: 112px;
+  grid-template-rows: auto auto auto;
+  align-content: start;
+  gap: 8px;
+  padding: 13px 14px;
+  border: 1.5px solid var(--line-hairline);
+  border-radius: var(--radius-md-new);
+  background:
+    linear-gradient(color-mix(in srgb, var(--tool) 8%, transparent), color-mix(in srgb, var(--tool) 8%, transparent)),
+    var(--surface-raised);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--dur-quick) var(--ease-standard), background var(--dur-quick) var(--ease-standard), transform var(--dur-instant) var(--ease-standard);
+}
+[data-lasso="on"] .after-tool:hover { border-color: color-mix(in srgb, var(--tool) 45%, var(--line-hairline)); }
+[data-lasso="on"] .after-tool:active { transform: translateY(1px); }
+[data-lasso="on"] .after-tool:focus-visible { outline: 2px solid var(--focus-ring-new); outline-offset: 2px; }
+[data-lasso="on"] .after-tool.is-on {
+  border-color: var(--line-strong);
+  background:
+    linear-gradient(color-mix(in srgb, var(--tool) 11%, transparent), color-mix(in srgb, var(--tool) 11%, transparent)),
+    var(--surface-sunk);
+}
+[data-lasso="on"] .after-tool-label {
+  font-family: var(--font-sans);
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+/* The existing first-run rule hides a picker button's LAST span, because in the
+   old row that span was the checkbox. Here the last span is the scope line, the
+   one promise on this screen, so it is shown again. This line is load-bearing. */
+[data-lasso="on"].lasso-first-run .lasso-tool-picker button[role="checkbox"].after-tool > span:last-child { display: block; }
+[data-lasso="on"] .after-tool-scope {
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+/* The tick is ink, never acid. Acid means Lasso caught something, and picking a
+   tool catches nothing yet. */
+[data-lasso="on"] .after-tool-tick {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: grid;
+  width: 17px;
+  height: 17px;
+  place-items: center;
+  border: 1.5px solid var(--line-hairline);
+  border-radius: var(--radius-sm-new);
+  background: var(--surface-raised);
+  color: var(--text-on-inverse);
+}
+[data-lasso="on"] .after-tool.is-on .after-tool-tick {
+  border-color: var(--line-strong);
+  background: var(--text-primary);
+}
+
+/* Phone: the grid collapses to one column and each card becomes a row. */
+@media (max-width: 767px) {
+  [data-lasso="on"] .after-tools-grid { grid-template-columns: minmax(0, 1fr); }
+  [data-lasso="on"] .after-tool { min-height: 0; grid-template-rows: auto auto; gap: 5px; padding: 11px 12px; }
+}
