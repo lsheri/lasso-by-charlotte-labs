@@ -7989,7 +7989,7 @@ to { transform: translateX(98px); }
 /* TVj-1: size the shell by height as well as width. 1.6 is the 16:10 the
    stage already declares; 48px is the page padding it already has. */
 [data-lasso="on"].tour-preview-page .tour-shell {
-  width: min(1440px, calc(100vw - 48px), calc((100dvh - 48px) * 1.6));
+  width: min(1440px, calc(100vw - 48px), calc((100dvh - 48px) * 1.778));
 }
 
 /* One "you are here" carrier per surface. The acid glow on the thing to click
@@ -8002,7 +8002,7 @@ to { transform: translateX(98px); }
 @media (min-width: 768px) {
   [data-lasso="on"].tour-preview-page .tour-stage {
     aspect-ratio: 16 / 9;
-    grid-template-rows: 54px 92px minmax(0, 1fr) 50px;
+    grid-template-rows: 48px 76px minmax(0, 1fr) 46px;
   }
 
   /* The teaching sentence takes the title face the rest of the flow uses.
@@ -8089,3 +8089,10 @@ to { transform: translateX(98px); }
   [data-lasso="on"] .after-push-windows { grid-template-columns: minmax(0, 1fr); }
   [data-lasso="on"] .after-push-action > button { width: 100%; }
 }
+
+/* Act 1 shows two whole conversations at once, so the turns are tightened
+   just enough that the longer chat ends inside its window. Measured: the
+   Claude chat needs 464px of turns and the window gives 370px after the
+   stage fix, so the saving has to come from the gaps and the padding. */
+[data-lasso="on"] .tour-chat-turns { row-gap: 4px; }
+[data-lasso="on"] .tour-chat-turn { padding: 4px 9px; font-size: 12.5px; }
