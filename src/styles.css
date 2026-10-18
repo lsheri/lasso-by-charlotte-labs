@@ -8162,11 +8162,26 @@ to { transform: translateX(98px); }
 
   /* The tour on a phone. The band was 178px of a 390 screen for one
      sentence, nearly a quarter of the phone before the act starts. */
-  [data-lasso="on"].tour-preview-page .tour-stage { grid-template-rows: 56px 128px minmax(0, 1fr) 46px; padding: 12px 12px 10px; }
+  [data-lasso="on"].tour-preview-page .tour-stage { grid-template-rows: 94px 128px minmax(0, 1fr) 46px; padding: 12px 12px 10px; }
   [data-lasso="on"].tour-preview-page .tour-instruction-band { height: 128px; padding: 2px 4px 8px; }
   [data-lasso="on"].tour-preview-page .tour-do-line { font-size: 19px; line-height: 1.12; }
   [data-lasso="on"] .tour-chat-window { width: 100%; }
   [data-lasso="on"] .tour-push-stage.after-push { padding: 10px; }
+
+  /* Skip is absolutely positioned over the header, which is right on desktop
+     and wrong at 390: the rail needs 316px and Skip needs 188px, so they
+     cannot share a row and step 8 ends up underneath the button. On a phone
+     Skip takes its own row above the rail. */
+  [data-lasso="on"].tour-preview-page .tour-stage-header {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+  [data-lasso="on"].tour-preview-page .tour-skip {
+    position: static;
+    align-self: flex-end;
+  }
 }
 
 /* Act 1 shows two whole conversations at once, so the turns are tightened
