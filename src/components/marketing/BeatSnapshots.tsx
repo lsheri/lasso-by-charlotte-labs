@@ -59,7 +59,7 @@ export function BeatClaimSnapshot() {
     <ScaledStage width={W} height={H} className="landing-beats-dots" label="A line in a deliverable, underlined, with the source turn opening beside it">
       <div className="landing-beats-paper" style={{ ...sheet, left: 24, top: 30, width: 260, height: 260, padding: "16px 18px", boxSizing: "border-box" }}>
         <div className="landing-beats-mono" style={{ fontSize: 8, color: muted }}>Slide 3</div>
-        <div style={{ fontFamily: "'Instrument Serif', serif", fontSize: 19, marginTop: 8 }}>Ticket bundles</div>
+        <div style={{ fontFamily: "var(--font-serif)", fontSize: 19, marginTop: 8 }}>Ticket bundles</div>
         <div style={{ fontSize: 11, color: graphite, marginTop: 10, lineHeight: 1.6 }}>
           Recommended uplift of{" "}
           <span style={{ position: "relative", display: "inline-block", color: ink, fontWeight: 500 }}>

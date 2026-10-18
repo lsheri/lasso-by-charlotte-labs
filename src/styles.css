@@ -7983,3 +7983,43 @@ to { transform: translateX(98px); }
   }
   [data-lasso="on"] .after-setup-quick .after-setup-art.is-small > svg { width: 52px; height: 36px; }
 }
+
+/* ------------------------------------------------------------- the tour */
+
+/* TVj-1: size the shell by height as well as width. 1.6 is the 16:10 the
+   stage already declares; 48px is the page padding it already has. */
+[data-lasso="on"].tour-preview-page .tour-shell {
+  width: min(1440px, calc(100vw - 48px), calc((100dvh - 48px) * 1.6));
+}
+
+/* One "you are here" carrier per surface. The acid glow on the thing to click
+   is that carrier, so the bar across the top of the stage goes. */
+[data-lasso="on"].tour-preview-page .tour-stage::before { display: none; }
+
+/* A 16:9 stage with a tighter band gives the act about a third more height.
+   Scoped to 768 and up on purpose: the app has its own phone rules for the
+   tour and a desktop stage shape must not reach them. */
+@media (min-width: 768px) {
+  [data-lasso="on"].tour-preview-page .tour-stage {
+    aspect-ratio: 16 / 9;
+    grid-template-rows: 54px 92px minmax(0, 1fr) 50px;
+  }
+}
+
+/* The teaching sentence takes the title face the rest of the flow uses.
+   It currently declares `var(--font-ui)`, which is NOT DEFINED anywhere in
+   this project, so the declaration is invalid and the line silently inherits.
+   This gives it a real face for the first time. */
+[data-lasso="on"].tour-preview-page .tour-do-line {
+  font-family: var(--font-serif);
+  font-size: 27px;
+  font-weight: 400;
+  padding-right: 0;
+}
+[data-lasso="on"].tour-preview-page .tour-instruction-band { padding: 2px 32% 8px 8px; }
+[data-lasso="on"].tour-preview-page .tour-step-marker {
+  font-family: var(--font-mono);
+  font-size: var(--text-mini);
+  letter-spacing: var(--label-tracking);
+  text-transform: uppercase;
+}
