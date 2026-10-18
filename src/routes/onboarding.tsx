@@ -632,7 +632,7 @@ function OnboardingInner() {
 
   if (stage === "tour") {
     return (
-      <main className="tour-preview-page" data-testid="onboarding-tour">
+      <main className="tour-preview-page" data-testid="onboarding-tour" data-lasso="on">
         <OnboardingTour
           register={tourProfile?.org_type ?? orgType}
           orgId={tourProfile?.org_id ?? null}
@@ -646,7 +646,7 @@ function OnboardingInner() {
     return (
       <>
         <SessionHeader />
-        <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background px-4 py-16">
+        <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background px-4 py-16" data-lasso="on">
           <div className="w-full max-w-md">
             <h1 className="page-title">{`${shareBack.name} sponsored your workspace`}</h1>
             <p className="mt-3 text-sm text-foreground">Do you want to share work with them?</p>
@@ -842,7 +842,7 @@ function OnboardingInner() {
   return (
     <>
       <SessionHeader />
-      <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background px-4 py-16">
+      <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background px-4 py-16" data-lasso="on">
         <div className="w-full max-w-md">
           <div className="rounded-[var(--radius)] border border-border bg-card p-6 shadow-card">
             <p className="micro-label">{copy.microLabel}</p>
@@ -963,7 +963,7 @@ export function SponsoredDataUseStep({ profileId, onDone }: { profileId: string 
     return (
       <>
         <SessionHeader />
-        <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background px-4 py-16">
+        <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background px-4 py-16" data-lasso="on">
           <div className="w-full max-w-md" data-testid="onboarding-data-use">
             <h1 className="page-title">What leaves this workspace</h1>
             <p className="mt-3 text-sm text-muted-foreground">You can change this at any time in Settings.</p>
