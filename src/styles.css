@@ -8022,3 +8022,70 @@ to { transform: translateX(98px); }
     text-transform: uppercase;
   }
 }
+
+/* Act 1: two chats, one control. The windows share a row and the single
+   button sits under both, so the act reads as one decision. */
+[data-lasso="on"] .tour-push-stage.after-push {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-content: stretch;
+  justify-items: stretch;
+}
+[data-lasso="on"] .after-push-windows {
+  display: grid;
+  min-height: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  justify-items: center;
+}
+[data-lasso="on"] .after-push-action { display: flex; justify-content: center; }
+[data-lasso="on"] .tour-chat-window > footer { min-height: 0; padding: 0; border-top: 0; }
+[data-lasso="on"] .tour-chat-window.is-pushed > footer {
+  min-height: 34px;
+  padding: 8px 14px;
+  border-top: var(--border-weight) solid var(--line-hairline);
+}
+[data-lasso="on"] .after-pushed-note {
+  font-family: var(--font-mono);
+  font-size: var(--text-mini);
+  letter-spacing: var(--label-tracking);
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+/* The window that has landed stops competing for attention. */
+[data-lasso="on"] .tour-chat-window.is-pushed { border-color: var(--line-strong); }
+
+/* Act 2: the sketch card brings its own frame, so the old conversation-row
+   furniture around it goes, and the arrived label sits above it. */
+[data-lasso="on"] .after-arrived {
+  display: grid;
+  gap: 5px;
+  justify-items: start;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+[data-lasso="on"] .after-arrived .tour-arrived-label {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  letter-spacing: var(--label-tracking);
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+/* The row was 118px for the old card and the grid's columns were sized for it.
+   A sketch card is 230 wide and taller, so the list is re-sized around the
+   card rather than the card squeezed into the row. */
+[data-lasso="on"] .tour-conversations-mimic .conversation-month-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr));
+  gap: 14px;
+  justify-items: start;
+}
+[data-lasso="on"] .tour-conversation-row { height: auto; }
+[data-lasso="on"] .tour-conversation-row.is-arrived > button { outline: 0; }
+
+/* Act 1 on phone: the two windows stack and the control goes full width. */
+@media (max-width: 767px) {
+  [data-lasso="on"] .after-push-windows { grid-template-columns: minmax(0, 1fr); }
+  [data-lasso="on"] .after-push-action > button { width: 100%; }
+}
