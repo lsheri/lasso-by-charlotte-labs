@@ -11,19 +11,14 @@ export function ToolPicker({
   onToggle: (tool: ToolId) => void;
 }) {
   return (
-    <div className="lasso-tool-picker space-y-6">
+    <div className="lasso-tool-picker after-tools space-y-6">
       {TOOL_CATEGORIES.map((category) => (
         <section key={category.title}>
-          <h3
-            className="rounded-[var(--radius)] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.08em]"
-            style={{
-              color: `var(${category.hue})`,
-              background: `color-mix(in oklab, var(${category.hue}) 10%, transparent)`,
-            }}
-          >
+          <h3 className="after-tools-band" style={{ ["--band" as string]: `var(${category.hue})` }}>
+            <span aria-hidden className="after-tools-dot" />
             {category.title}
           </h3>
-          <div className="mt-3 space-y-3">
+          <div className="after-tools-grid">
             {category.tools.map((id) => {
               const meta = TOOLS[id];
               const checked = selected.has(id);
@@ -34,31 +29,15 @@ export function ToolPicker({
                   role="checkbox"
                   aria-checked={checked}
                   onClick={() => onToggle(id)}
-                  className={
-                    checked
-                      ? "flex min-h-16 w-full items-center gap-4 rounded-[var(--radius)] border border-graphite bg-card px-5 py-3 text-left ring-1 ring-graphite transition-colors"
-                      : "flex min-h-16 w-full items-center gap-4 rounded-[var(--radius)] border border-border bg-card px-5 py-3 text-left transition-colors hover:border-graphite"
-                  }
+                  className={checked ? "after-tool is-on" : "after-tool"}
+                  style={{ ["--tool" as string]: `var(${meta.hue})` }}
                 >
+                  <span aria-hidden className="after-tool-tick">
+                    {checked ? <Check size={11} /> : null}
+                  </span>
                   <ToolBadge tool={id} />
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-[13px] font-semibold text-foreground">
-                      {meta.label}
-                    </span>
-                    <span className="mt-1.5 block nb-type-small text-muted-foreground">
-                      {meta.scope ?? meta.blurb}
-                    </span>
-                  </span>
-                  <span
-                    aria-hidden
-                    className={
-                    checked
-                        ? "flex h-5 w-5 shrink-0 items-center justify-center rounded-[4px] border border-graphite bg-graphite text-nb-white"
-                        : "h-5 w-5 shrink-0 rounded-[4px] border border-border"
-                    }
-                  >
-                    {checked ? <Check size={12} /> : null}
-                  </span>
+                  <span className="after-tool-label">{meta.label}</span>
+                  <span className="after-tool-scope">{meta.scope ?? meta.blurb}</span>
                 </button>
               );
             })}
