@@ -249,7 +249,7 @@ export const PEOPLE_COPY = {
   pendingTag: "Pending",
   added: (when: string) => `added ${when}`,
   noMatch: "Nobody here by that name. Type a full email to invite someone from outside.",
-  linkHeading: "Or share a view-only link",
+  linkHeading: "Link",
   linkLine: "Anyone with the link can view the board read-only and will not be identified.",
 } as const;
 
@@ -530,7 +530,7 @@ function PeopleSection({
       <ul className="space-y-2" aria-label={PEOPLE_COPY.whoHasAccess}>
         {you ? (
           <li className="text-sm text-muted-foreground">
-            {you.display_name ? `${you.display_name} (${PEOPLE_COPY.you})` : PEOPLE_COPY.you}
+            {PEOPLE_COPY.you}
           </li>
         ) : null}
         {onBoard.map((person) => {

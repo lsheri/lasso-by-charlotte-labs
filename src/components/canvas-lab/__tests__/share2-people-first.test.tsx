@@ -5,9 +5,9 @@ import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const m = vi.hoisted(() => ({
-  setAccess: vi.fn(async () => ({ status: "done", result: "granted" })),
-  setConversations: vi.fn(async () => ({ status: "done", result: "changed" })),
-  invite: vi.fn(async () => ({ ok: true, status: "sent", emailed: true })),
+  setAccess: vi.fn(async (_input: unknown) => ({ status: "done", result: "granted" })),
+  setConversations: vi.fn(async (_input: unknown) => ({ status: "done", result: "changed" })),
+  invite: vi.fn(async (_input: unknown) => ({ ok: true, status: "sent", emailed: true })),
   listInvites: vi.fn(async () => [
     { id: "i1", email: "outside@else.com", level: "review", conversations: "full", status: "sent", createdAt: "2026-10-01T00:00:00Z" },
   ]),
@@ -108,7 +108,7 @@ describe("SHARE-2 people-first Share dialog", () => {
     await waitFor(() => expect(within(list).getByText("Ben Ode")).toBeTruthy());
     await waitFor(() => expect(within(list).getByText("outside@else.com")).toBeTruthy());
     expect(within(list).getByText("Pending")).toBeTruthy();
-    expect(within(list).getByText(/Liam/)).toBeTruthy();
+    expect(within(list).getByText("You")).toBeTruthy();
     for (const row of list.querySelectorAll("[data-share-row]")) {
       expect((row.textContent ?? "").trim().length).toBeGreaterThan(0);
     }
