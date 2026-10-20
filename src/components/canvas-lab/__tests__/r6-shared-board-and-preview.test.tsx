@@ -128,7 +128,7 @@ describe("S3a shared board is the owner's board, read only", () => {
 describe("R6 share dialog contrast", () => {
   it("keeps required explanatory copy off the lowest contrast token", () => {
     const readableBlocks = [
-      SHARE_DIALOG.slice(SHARE_DIALOG.indexOf("{PEOPLE_COPY.whoHasAccess}</p>"), SHARE_DIALOG.indexOf('role="alert">{problem}')),
+      SHARE_DIALOG.slice(SHARE_DIALOG.indexOf("{PEOPLE_COPY.whoHasAccess}</p>"), SHARE_DIALOG.indexOf('role="alert">{problem}', SHARE_DIALOG.indexOf("{PEOPLE_COPY.whoHasAccess}</p>"))),
       SHARE_DIALOG.slice(SHARE_DIALOG.indexOf("aria-label={PEOPLE_COPY.linkHeading}"), SHARE_DIALOG.indexOf("<BoardLinkSection engagementId")),
       LINK_SECTION.slice(LINK_SECTION.indexOf("shareExposureSentence"), LINK_SECTION.indexOf("{freshUrl ?")),
       LINK_SECTION.slice(LINK_SECTION.indexOf("Live links"), LINK_SECTION.indexOf("</section>")),
