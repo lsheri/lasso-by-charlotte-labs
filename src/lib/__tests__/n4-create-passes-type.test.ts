@@ -46,6 +46,15 @@ vi.mock("@/integrations/supabase/client", () => ({
     },
   },
 }));
+vi.mock("@tanstack/react-start", async (orig) => ({
+  ...(await orig<object>()),
+  useServerFn: (fn: unknown) => fn,
+}));
+vi.mock("@/lib/pilot-request.functions", () => ({
+  PILOT_TEAM_SIZES: ["1-5", "6-15", "16-40", "40+"],
+  submitSignupPilotRequestFn: async () => ({ ok: true }),
+}));
+vi.mock("@/lib/client-telemetry", () => ({ emitClientEvent: vi.fn() }));
 vi.mock("@/hooks/use-profile", () => ({
   fetchProfile: async () => null,
   AUTH_USER_KEY: ["auth-user"],
@@ -95,15 +104,14 @@ const createCalls = () =>
   mocks.rpc.mock.calls.filter((c) => c[0] === "create_org_with_profile");
 
 describe("Unit N4: the create call passes the workspace type", () => {
-  it("a company choice creates the workspace with p_type company", async () => {
+  it("a company choice is gated: the pilot form renders and no workspace is created", async () => {
     mocks.search["intent"] = "company";
     mocks.profilesRead.mockResolvedValue({ data: [], error: null });
-    await submitSetup("Northwind Group");
-    await waitFor(() => expect(createCalls()).toHaveLength(1));
-    expect(createCalls()[0]?.[1]).toMatchObject({
-      p_type: "company",
-      p_org_name: "Northwind Group",
-    });
+    render(createElement(opts.component));
+    await screen.findByRole("button", { name: "Request a pilot" }, { timeout: 25000 });
+    expect(screen.queryByText("What should we call you?")).toBeNull();
+    expect(screen.queryByRole("button", { name: /create my workspace/i })).toBeNull();
+    expect(createCalls()).toHaveLength(0);
   });
 
   it("a personal choice creates the workspace with p_type personal", async () => {

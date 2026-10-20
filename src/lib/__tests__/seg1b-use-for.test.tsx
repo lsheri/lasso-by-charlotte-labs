@@ -41,6 +41,15 @@ vi.mock("@/integrations/supabase/client", () => ({
     }),
   },
 }));
+vi.mock("@tanstack/react-start", async (orig) => ({
+  ...(await orig<object>()),
+  useServerFn: (fn: unknown) => fn,
+}));
+vi.mock("@/lib/pilot-request.functions", () => ({
+  PILOT_TEAM_SIZES: ["1-5", "6-15", "16-40", "40+"],
+  submitSignupPilotRequestFn: async () => ({ ok: true }),
+}));
+vi.mock("@/lib/client-telemetry", () => ({ emitClientEvent: vi.fn() }));
 vi.mock("@/hooks/use-profile", () => ({
   fetchProfile: async () => ({ id: "p1", org_id: "org-1" }),
 }));
@@ -113,10 +122,17 @@ describe("SEG-1b / ONB-Q1: the individual question in the tools step row", () =>
     expect(screen.queryByText("People")).toBeNull();
   });
 
-  it("company still sees Industry and People and not the question", async () => {
-    await reachSegment("company");
-    expect(screen.getByText("Industry")).toBeTruthy();
-    expect(screen.getByText("People")).toBeTruthy();
+  it("company is gated to the pilot form and never reaches the segment row", async () => {
+    mocks.search = { intent: "company" };
+    render(
+      <Suspense fallback={null}>
+        {opts.component()}
+      </Suspense>,
+    );
+    await screen.findByRole("button", { name: "Request a pilot" }, { timeout: 25000 });
+    expect(screen.queryByText("What should we call you?")).toBeNull();
+    expect(screen.queryByText("Industry")).toBeNull();
+    expect(screen.queryByText("People")).toBeNull();
     expect(screen.queryByText("This is for")).toBeNull();
   });
 

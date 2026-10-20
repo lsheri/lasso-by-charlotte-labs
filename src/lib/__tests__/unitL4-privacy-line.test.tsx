@@ -43,6 +43,10 @@ vi.mock("@/lib/client-telemetry", () => ({
   aliasSignupVisitor: vi.fn(),
   emitClientEvent: vi.fn(),
 }));
+vi.mock("@/lib/pilot-request.functions", () => ({
+  PILOT_TEAM_SIZES: ["1-5", "6-15", "16-40", "40+"],
+  submitSignupPilotRequestFn: async () => ({ ok: true }),
+}));
 vi.mock("@/lib/posthog-client", () => ({ identifyPostHog: vi.fn() }));
 vi.mock("@/components/layout/SessionHeader", () => ({ SessionHeader: () => null }));
 vi.mock("@/components/onboarding/SetupTools", () => ({ SetupTools: () => null }));
@@ -73,7 +77,13 @@ describe("Unit L4: entry copy", () => {
         <Setup />
       </Suspense>,
     );
-    expect(await screen.findByText("What should we call you?")).toBeTruthy();
+    if (register === "company" || register === "partner") {
+      // Gated: company and partner see the pilot request form, not setup.
+      expect(await screen.findByRole("button", { name: "Request a pilot" })).toBeTruthy();
+      expect(screen.queryByText("What should we call you?")).toBeNull();
+    } else {
+      expect(await screen.findByText("What should we call you?")).toBeTruthy();
+    }
     expect(screen.queryByText(REGISTER_COPY[register].privacy)).toBeNull();
     expect(screen.queryByText(REGISTER_COPY[register].claim)).toBeNull();
   });
