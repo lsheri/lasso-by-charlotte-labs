@@ -20,7 +20,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
+  ACCESS_LEVEL_DISPLAY,
   type ConversationAccess,
   type EngagementAccessChoice,
 } from "@/lib/engagement-access-shared";
@@ -84,10 +86,9 @@ export function ShareDialog({
 
           <SponsorSection engagementId={engagementId} profileId={profileId} open={open} />
 
-          <section className="flex flex-col gap-3">
-            <p className="font-mono text-xs uppercase tracking-[0.08em] text-foreground">
-              Link
-            </p>
+          <section className="flex flex-col gap-3 border-t border-border pt-4" aria-label={PEOPLE_COPY.linkHeading}>
+            <p className="text-sm text-muted-foreground">{PEOPLE_COPY.linkHeading}</p>
+            <p className="text-sm text-muted-foreground">{PEOPLE_COPY.linkLine}</p>
             <BoardLinkSection engagementId={engagementId} profileId={profileId} open={open} />
           </section>
         </div>
@@ -225,14 +226,15 @@ function SponsorRow({
   );
 }
 
+
 export const PEOPLE_COPY = {
   heading: "People",
   you: "You",
   add: "Add people by name or email",
-  view: "Viewer",
-  multiplayer: "Collaborator",
-  viewLine: "Opens the board and reads the cards",
-  multiplayerLine: "Also adds and arranges work",
+  view: ACCESS_LEVEL_DISPLAY.review.label,
+  multiplayer: ACCESS_LEVEL_DISPLAY.work.label,
+  viewLine: ACCESS_LEVEL_DISPLAY.review.line,
+  multiplayerLine: ACCESS_LEVEL_DISPLAY.work.line,
   remove: "Remove",
   membersOnly: "Only people in this workspace can be added here.",
   nobodyToAdd: "Nobody else in your workspace yet.",
@@ -241,16 +243,32 @@ export const PEOPLE_COPY = {
   full: "Full conversations",
   summariesLine: "Can ask Lasso about the AI work, can't open the conversations",
   fullLine: "Can open the conversations",
+  whoHasAccess: "Who has access",
+  summariesOnly: "Share summaries only instead of full transcripts",
+  inviteOutside: (email: string) => `Invite ${email} from outside`,
+  pendingTag: "Pending",
+  added: (when: string) => `added ${when}`,
+  noMatch: "Nobody here by that name. Type a full email to invite someone from outside.",
+  linkHeading: "Or share a view-only link",
+  linkLine: "Anyone with the link can view the board read-only and will not be identified.",
 } as const;
 
 const LEVEL_CHOICES = [
   { value: "review", label: PEOPLE_COPY.view, title: PEOPLE_COPY.viewLine },
   { value: "work", label: PEOPLE_COPY.multiplayer, title: PEOPLE_COPY.multiplayerLine },
 ] as const;
+
 const CONVERSATION_CHOICES = [
   { value: "summaries", label: PEOPLE_COPY.summaries, title: PEOPLE_COPY.summariesLine },
   { value: "full", label: PEOPLE_COPY.full, title: PEOPLE_COPY.fullLine },
 ] as const;
+
+function addedWhen(iso: string | null | undefined): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+}
 
 function SegmentedChoice<T extends string>({ name, value, choices, disabled, onChoose }: {
   name: string;
@@ -290,6 +308,11 @@ function ConversationSwitch({
     choices={CONVERSATION_CHOICES} disabled={disabled} onChoose={onChoose} />;
 }
 
+/**
+ * SHARE-2: people first. One box finds anyone in the workspace by name or
+ * address; a full address that matches nobody becomes an outside invite. The
+ * person choosing never has to know which of the two paths runs.
+ */
 function PeopleSection({
   engagementId,
   profileId,
@@ -309,7 +332,10 @@ function PeopleSection({
   const invitesKey = ["board-invites", engagementId] as const;
   const [pick, setPick] = useState("");
   const [addLevel, setAddLevel] = useState<EngagementAccessChoice>("review");
-  const [addConversations, setAddConversations] = useState<ConversationAccess>("summaries");
+  // Full transcripts unless the person sharing chooses otherwise. Always
+  // passed explicitly: the database default is summaries.
+  const [summariesOnly, setSummariesOnly] = useState(false);
+  const addConversations: ConversationAccess = summariesOnly ? "summaries" : "full";
   const [inviteLine, setInviteLine] = useState<string | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
   const key = ["engagement-people", engagementId, profileId ?? ""] as const;
@@ -338,8 +364,7 @@ function PeopleSection({
     onSuccess: async (answer, input) => {
       setProblem(answer.status === "done" ? null : PEOPLE_COPY.problem);
       if (answer.status === "done") setPick("");
-      // SH-5c: a person added from the add row takes the picked conversations too.
-      if (answer.status === "done" && input.fromAdd && addConversations !== "summaries") {
+      if (answer.status === "done" && input.fromAdd) {
         await setConversations({
           data: {
             engagement_id: engagementId,
@@ -405,16 +430,27 @@ function PeopleSection({
     onError: () => setProblem(PEOPLE_COPY.problem),
   });
 
+  const canShare = Boolean(people.data?.canShare);
   const rows = people.data?.people ?? [];
   const you = rows.find((person) => person.isYou);
   const onBoard = rows.filter((person) => !person.isYou && person.access !== null);
   const canPick = rows.filter((person) => !person.isYou && person.access === null);
-  const suggestions = canPick.filter((person) =>
-    person.display_name.toLocaleLowerCase().includes(pick.trim().toLocaleLowerCase()),
-  );
   const typed = pick.trim();
-  const inviteEmail = looksLikeEmail(typed) && suggestions.length === 0 ? typed : null;
+  const needle = typed.toLocaleLowerCase();
+  const suggestions = typed
+    ? canPick.filter(
+        (person) =>
+          person.display_name.toLocaleLowerCase().includes(needle) ||
+          (person.email ?? "").toLocaleLowerCase().includes(needle),
+      )
+    : [];
+  // An address that belongs to anyone in the workspace, already on the board
+  // or not, never goes to the outside invite: the database refuses it.
+  const insideByEmail = rows.some((person) => (person.email ?? "").toLocaleLowerCase() === needle);
+  const inviteEmail = looksLikeEmail(typed) && !insideByEmail ? typed : null;
   const openInvites = invites.data ?? [];
+  const busy = people.isPending || change.isPending || sendInvite.isPending || !canShare;
+
   return (
     <section className="flex flex-col gap-3" aria-label={PEOPLE_COPY.heading}>
       <p className="font-mono text-xs uppercase tracking-[0.08em] text-foreground">{PEOPLE_COPY.heading}</p>
@@ -423,115 +459,147 @@ function PeopleSection({
           {PEOPLE_COPY.add}
         </label>
         <div className="flex flex-wrap items-center gap-2">
-        <Input
-          className="min-w-0 flex-1 basis-32"
-          id="share-person"
-          value={pick}
-          autoComplete="off"
-          disabled={people.isPending || change.isPending || sendInvite.isPending || !people.data?.canShare}
-          onChange={(event) => {
-            setPick(event.target.value);
-            setInviteLine(null);
-          }}
-        />
-        <SegmentedChoice name="New person level" value={addLevel} choices={LEVEL_CHOICES}
-          disabled={change.isPending || !people.data?.canShare}
-          onChoose={setAddLevel} />
+          <Input
+            className="min-w-0 flex-1 basis-40"
+            id="share-person"
+            role="combobox"
+            aria-expanded={suggestions.length > 0 || Boolean(inviteEmail)}
+            aria-controls="share-person-options"
+            value={pick}
+            autoComplete="off"
+            disabled={busy}
+            onChange={(event) => {
+              setPick(event.target.value);
+              setInviteLine(null);
+            }}
+          />
+          <SegmentedChoice name="New person level" value={addLevel} choices={LEVEL_CHOICES}
+            disabled={!canShare || change.isPending}
+            onChoose={setAddLevel} />
         </div>
-        <SegmentedChoice name="New person conversations" value={addConversations}
-          choices={CONVERSATION_CHOICES} disabled={change.isPending || !people.data?.canShare}
-          onChoose={setAddConversations} />
-        {people.data && canPick.length === 0 && !inviteEmail ? (
-          <p className="text-sm text-muted-foreground">{PEOPLE_COPY.nobodyToAdd}</p>
-        ) : null}
-        {pick.trim() && suggestions.length > 0 ? (
-          <ul className="space-y-1" aria-label={PEOPLE_COPY.add}>
+        <p className="text-sm text-muted-foreground">{ACCESS_LEVEL_DISPLAY[addLevel].line}</p>
+        <label className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Checkbox
+            checked={summariesOnly}
+            disabled={!canShare}
+            onCheckedChange={(next) => setSummariesOnly(next === true)}
+            aria-label={PEOPLE_COPY.summariesOnly}
+          />
+          {PEOPLE_COPY.summariesOnly}
+        </label>
+        {suggestions.length > 0 || inviteEmail ? (
+          <ul id="share-person-options" role="listbox" aria-label={PEOPLE_COPY.add}
+            className="space-y-1 rounded-md border border-border p-1">
             {suggestions.map((person) => (
-              <li key={person.id}>
+              <li key={person.id} role="option" aria-selected={false}>
                 <Button
                   variant="ghost"
-                  className="w-full justify-start"
-                  disabled={change.isPending || !people.data?.canShare}
+                  className="h-auto w-full flex-col items-start py-1.5"
+                  disabled={busy}
                   onClick={() => change.mutate({ person_id: person.id, access: addLevel, fromAdd: true })}
                 >
-                  {person.display_name}
+                  <span className="text-sm text-foreground">{person.display_name}</span>
+                  {person.email ? <span className="text-sm text-muted-foreground">{person.email}</span> : null}
                 </Button>
               </li>
             ))}
+            {inviteEmail ? (
+              <li role="option" aria-selected={false}>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start"
+                  disabled={busy}
+                  onClick={() => sendInvite.mutate(inviteEmail)}
+                >
+                  {PEOPLE_COPY.inviteOutside(inviteEmail)}
+                </Button>
+              </li>
+            ) : null}
           </ul>
         ) : null}
-        {inviteEmail ? (
-          <ul className="space-y-1" aria-label={PEOPLE_COPY.add}>
-            <li>
-              <Button
-                variant="ghost"
-                className="w-full justify-start"
-                disabled={sendInvite.isPending || !people.data?.canShare}
-                onClick={() => sendInvite.mutate(inviteEmail)}
-              >
-                {INVITE_COPY.invite(inviteEmail)}
-              </Button>
-            </li>
-          </ul>
+        {typed && suggestions.length === 0 && !inviteEmail && !looksLikeEmail(typed) ? (
+          <p className="text-sm text-muted-foreground">{PEOPLE_COPY.noMatch}</p>
+        ) : null}
+        {people.data && canPick.length === 0 && !typed ? (
+          <p className="text-sm text-muted-foreground">{PEOPLE_COPY.nobodyToAdd}</p>
         ) : null}
         {inviteLine ? <p className="text-sm text-muted-foreground" role="status">{inviteLine}</p> : null}
       </div>
 
-      <ul className="space-y-2">
+      <p className="font-mono text-xs uppercase tracking-[0.08em] text-foreground">{PEOPLE_COPY.whoHasAccess}</p>
+      <ul className="space-y-2" aria-label={PEOPLE_COPY.whoHasAccess}>
         {you ? (
           <li className="text-sm text-muted-foreground">
-            {PEOPLE_COPY.you}
+            {you.display_name ? `${you.display_name} (${PEOPLE_COPY.you})` : PEOPLE_COPY.you}
           </li>
         ) : null}
-        {onBoard.map((person) => (
-          <li key={person.id} className="flex flex-col gap-2 rounded-md border border-border p-2">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="text-sm text-foreground">{person.display_name}</span>
-              <div className="flex flex-wrap items-center gap-1">
-              <SegmentedChoice name={person.display_name} value={person.access}
-                choices={LEVEL_CHOICES} disabled={change.isPending || !people.data?.canShare}
-                onChoose={(access) => change.mutate({ person_id: person.id, access })} />
-              <Button
-                size="sm"
-                variant="ghost"
-                disabled={change.isPending || !people.data?.canShare}
-                onClick={() => change.mutate({ person_id: person.id, access: "none" })}
-              >
-                {PEOPLE_COPY.remove}
-              </Button>
-            </div>
-              </div>
-            <ConversationSwitch
-              name={person.display_name}
-              value={person.conversations ?? null}
-              disabled={changeConversations.isPending || !people.data?.canShare}
-              onChoose={(next) => changeConversations.mutate({ person_id: person.id, conversations: next })}
-            />
-          </li>
-        ))}
-      </ul>
-      {openInvites.length > 0 ? (
-        <div className="flex flex-col gap-2" aria-label={INVITE_COPY.invitedHeading} role="group">
-          <p className="font-mono text-xs uppercase tracking-[0.08em] text-foreground">{INVITE_COPY.invitedHeading}</p>
-          <ul className="space-y-2">
-            {openInvites.map((row) => (
-              <li key={row.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border p-2">
+        {onBoard.map((person) => {
+          const when = addedWhen(person.addedAt);
+          return (
+            <li key={person.id} data-share-row="member" className="flex flex-col gap-2 rounded-md border border-border p-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex min-w-0 flex-col">
-                  <span className="truncate text-sm text-foreground">{row.email}</span>
+                  <span className="text-sm text-foreground">{person.display_name}</span>
                   <span className="text-sm text-muted-foreground">
-                    {row.level === "work" ? PEOPLE_COPY.multiplayer : PEOPLE_COPY.view} · {row.conversations === "full" ? PEOPLE_COPY.full : PEOPLE_COPY.summaries} · {row.status === "pending_approval" ? INVITE_COPY.statePending : INVITE_COPY.stateSent}
+                    {[person.email, person.conversations === "full" ? PEOPLE_COPY.full : PEOPLE_COPY.summaries, when ? PEOPLE_COPY.added(when) : null]
+                      .filter(Boolean)
+                      .join(" · ")}
                   </span>
                 </div>
-                <Button size="sm" variant="ghost" disabled={withdrawOne.isPending}
-                  onClick={() => withdrawOne.mutate(row.id)}>
-                  {INVITE_COPY.withdraw}
-                </Button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
-      {problem ? <p className="text-sm text-foreground">{problem}</p> : null}
+                <div className="flex flex-wrap items-center gap-1">
+                  <SegmentedChoice name={person.display_name} value={person.access}
+                    choices={LEVEL_CHOICES} disabled={change.isPending || !canShare}
+                    onChoose={(access) => change.mutate({ person_id: person.id, access })} />
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    disabled={change.isPending || !canShare}
+                    onClick={() => change.mutate({ person_id: person.id, access: "none" })}
+                  >
+                    {PEOPLE_COPY.remove}
+                  </Button>
+                </div>
+              </div>
+              <ConversationSwitch
+                name={person.display_name}
+                value={person.conversations ?? "summaries"}
+                disabled={changeConversations.isPending || !canShare}
+                onChoose={(conversations) => changeConversations.mutate({ person_id: person.id, conversations })}
+              />
+            </li>
+          );
+        })}
+        {openInvites.map((row) => {
+          const when = addedWhen(row.createdAt);
+          return (
+            <li key={row.id} data-share-row="invite" className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border p-2">
+              <div className="flex min-w-0 flex-col">
+                <span className="flex items-center gap-2 text-sm text-foreground">
+                  <span className="truncate">{row.email}</span>
+                  <span className="rounded-full bg-muted px-2 py-0.5 font-mono text-xs uppercase text-muted-foreground">
+                    {PEOPLE_COPY.pendingTag}
+                  </span>
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  {[
+                    row.level === "work" ? PEOPLE_COPY.multiplayer : PEOPLE_COPY.view,
+                    row.conversations === "full" ? PEOPLE_COPY.full : PEOPLE_COPY.summaries,
+                    row.status === "pending_approval" ? INVITE_COPY.statePending : INVITE_COPY.stateSent,
+                    when ? PEOPLE_COPY.added(when) : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </span>
+              </div>
+              <Button size="sm" variant="ghost" disabled={withdrawOne.isPending}
+                onClick={() => withdrawOne.mutate(row.id)}>
+                {INVITE_COPY.withdraw}
+              </Button>
+            </li>
+          );
+        })}
+      </ul>
+      {problem ? <p className="text-sm text-foreground" role="alert">{problem}</p> : null}
     </section>
   );
 }
