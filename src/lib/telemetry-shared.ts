@@ -130,6 +130,8 @@ export type TelemetryEvent =
   | "import.abandoned"
   /** IMPORT-1: an export could not be read. Vendor, screen and a closed reason only. */
   | "import.failed"
+  /** GATE-1: a company or partner signup asked for a pilot. Register and team size band only. */
+  | "pilot.requested"
   /** PF1: a push through MCP. Dims include stage (options | capture | helper)
    *  and window_pos (only | first | middle | last); the full list lives in
    *  event-dim-allowlist.ts. */
