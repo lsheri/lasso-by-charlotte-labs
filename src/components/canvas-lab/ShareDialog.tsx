@@ -241,6 +241,7 @@ export const PEOPLE_COPY = {
   remove: "Remove",
   membersOnly: "Only people in this workspace can be added here.",
   nobodyToAdd: "Nobody else in your workspace yet.",
+  options: "People you can add",
   moreToFind: (n: number) => `and ${n} more, type to find them`,
   problem: "That could not be changed.",
   summaries: "Summaries",
@@ -494,7 +495,7 @@ function PeopleSection({
           {PEOPLE_COPY.summariesOnly}
         </label>
         {suggestions.length > 0 || inviteEmail ? (
-          <ul id="share-person-options" role="listbox" aria-label={PEOPLE_COPY.add}
+          <ul id="share-person-options" role="listbox" aria-label={PEOPLE_COPY.options}
             className="space-y-1 rounded-md border border-border p-1">
             {suggestions.map((person) => (
               <li key={person.id} role="option" aria-selected={false}>
