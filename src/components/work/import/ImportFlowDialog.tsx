@@ -38,6 +38,26 @@ function spanDays(list: ParsedConversation[]): number {
   return Math.round((new Date(last).getTime() - new Date(first).getTime()) / 86_400_000);
 }
 
+/**
+ * Closed reason set for import.failed. Derived only from which stage threw and
+ * the fixed error copy, never from the file's name, path, size or content.
+ */
+export type ImportFailureReason = "nothing_readable" | "no_conversations" | "invalid_json" | "zip_error";
+
+export function importFailureReason(
+  stage: "read" | "parse",
+  message: string,
+  isZip: boolean,
+): ImportFailureReason {
+  if (stage === "parse") {
+    return message === "No conversations could be read from that file."
+      ? "no_conversations"
+      : "invalid_json";
+  }
+  if (message === "Nothing readable in that file. Try the paste fallback.") return "nothing_readable";
+  return isZip ? "zip_error" : "nothing_readable";
+}
+
 function monthLabel(iso: string | null | undefined): string {
   if (!iso) return "undated";
   return new Date(iso).toLocaleDateString(undefined, { month: "short", year: "numeric" });
@@ -62,6 +82,7 @@ export function ImportFlowDialog({
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<{ imported: number; duplicates: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [reading, setReading] = useState(false);
 
   function reset() {
     setScreen("source");
@@ -95,8 +116,12 @@ export function ImportFlowDialog({
   async function handleFiles(files: FileList | null) {
     if (!files || files.length === 0 || !vendor) return;
     setError(null);
+    setReading(true);
+    let stage: "read" | "parse" = "read";
+    const isZip = Array.from(files).some((f) => f.name.toLowerCase().endsWith(".zip"));
     try {
       const parts = await readImportFiles(Array.from(files));
+      stage = "parse";
       const parsed = parseImport(vendor, parts);
       if (parsed.conversations.length === 0) {
         setFailures(parsed.failures);
@@ -115,7 +140,17 @@ export function ImportFlowDialog({
         });
       }
     } catch (e) {
-      setError((e as Error).message);
+      const message = (e as Error).message;
+      setError(message);
+      if (profile) {
+        logEvent("import.failed", profile.org_id, {
+          vendor,
+          last_screen: "file",
+          reason: importFailureReason(stage, message, isZip),
+        });
+      }
+    } finally {
+      setReading(false);
     }
   }
 
@@ -230,10 +265,21 @@ export function ImportFlowDialog({
                   className="hidden"
                   onChange={(e) => void handleFiles(e.target.files)}
                 />
-                <Button type="button" variant="outline" onClick={() => inputRef.current?.click()}>
-                  Choose file
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={reading}
+                  onClick={() => inputRef.current?.click()}
+                >
+                  {reading ? "Reading your export" : "Choose file"}
                 </Button>
               </div>
+              {reading ? (
+                <p role="status" className="text-sm text-muted-foreground">
+                  Reading your export
+                </p>
+              ) : null}
+              {error ? <p className="text-sm text-destructive">{error}</p> : null}
               <p className="text-sm text-muted-foreground">
                 Your export is read in this browser. Nothing is uploaded until you choose
                 conversations.

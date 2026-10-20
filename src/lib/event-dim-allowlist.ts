@@ -145,6 +145,7 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "import.abandoned": ["last_screen", "tier", "vendor"],
   "import.committed": ["duplicate_count_bucket", "excluded_count_bucket", "last_screen", "selected_count_bucket", "tier", "ts_precision_mix", "vendor"],
   "import.completed": ["entry", "imported_bucket", "last_screen", "tier", "vendor"],
+  "import.failed": ["last_screen", "reason", "vendor"],
   "import.parsed": ["conversations_found_bucket", "date_span_days_bucket", "last_screen", "parse_failures", "tier", "vendor"],
   "import.started": ["last_screen", "tier", "vendor"],
   "inbox.arrival_undone": ["reverted"],

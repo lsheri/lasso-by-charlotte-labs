@@ -61,3 +61,5 @@
 - [ ] UNI-1: visually verify signed-in pages at 1280 and 390; blocked by external unmanaged authentication, both pages reach Sign in.
 
 - [x] PERF-2a: the signed-in gate reads identity and profiles from cache
+
+- [ ] IMPORT-1: show file-screen error + reading state, add import.failed event, dialog test.
