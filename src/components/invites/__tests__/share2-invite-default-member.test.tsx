@@ -9,6 +9,7 @@ vi.mock("@/hooks/use-members", () => ({ useMembers: () => ({ data: { members: []
 vi.mock("@tanstack/react-start", () => ({ useServerFn: (fn: unknown) => fn }));
 vi.mock("@tanstack/react-query", () => ({ useQuery: () => ({ data: [] }), useQueryClient: () => ({ invalidateQueries: vi.fn() }) }));
 vi.mock("@/integrations/supabase/client", () => ({ supabase: {} }));
+vi.mock("@/hooks/use-coach-share", () => ({ useShareInvalidation: () => vi.fn() }));
 vi.mock("@/lib/telemetry", () => ({ logEvent: vi.fn() }));
 vi.mock("@/lib/invites.functions", () => ({ sendInviteEmail: vi.fn(), createInvite: vi.fn() }));
 
@@ -20,12 +21,9 @@ describe("SHARE-2 invite form default", () => {
   it("defaults a new person to member, not admin", async () => {
     render(<InviteDialog trigger={<button type="button">Invite someone</button>} />);
     fireEvent.click(screen.getByRole("button", { name: "Invite someone" }));
-    const pressed = await screen.findAllByRole("radio", { checked: true }).catch(() => []);
-    const text = document.body.textContent ?? "";
-    expect(text).toContain("Teammate");
-    if (pressed.length > 0) {
-      expect(pressed.map((el) => el.getAttribute("value"))).toContain("em");
-      expect(pressed.map((el) => el.getAttribute("value"))).not.toContain("admin");
-    }
+    const teammate = await screen.findByRole("button", { name: /Teammate/ });
+    expect(teammate.getAttribute("aria-pressed")).toBe("true");
+    const admin = screen.getByRole("button", { name: /^Admin/ });
+    expect(admin.getAttribute("aria-pressed")).toBe("false");
   });
 });

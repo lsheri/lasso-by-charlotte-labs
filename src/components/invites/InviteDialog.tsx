@@ -294,6 +294,7 @@ export function InviteDialog({
                 <button
                   key={option.value}
                   type="button"
+                  aria-pressed={role === option.value}
                   onClick={() => setRole(option.value)}
                   className={
                     role === option.value
