@@ -1,26 +1,65 @@
-# PERF-2 investigation (read only)
+# IMPORT-1 diagnosis: every import dies on the "file" screen
 
-## 1. SSR
-`src/routes/_authenticated/route.tsx:8` sets `ssr: false`. The server sends only the root shell (`__root.tsx` RootShell, lines ~167/54-63). /home inherits it, so the HTML has no sidebar or Home frame.
+Diagnosis only. No code was changed.
 
-## 2. What blocks first paint, in order
-1. Client bundle loads and hydrates (all 173 files).
-2. `route.tsx:10` `await supabase.auth.getUser()`: a network call to /auth/v1/user.
-3. `route.tsx:12` `await fetchProfileState()`. That runs `ensureAuthUser()` (`use-profile.ts:241`). If `sharedQueryClient` is not set yet (it is set at `use-profile.ts:117`), this makes a second getUser call (`:140`), then the profiles query (`:244-250`).
-4. Only then does `AppShell` mount (`route.tsx:18`). The ~10 queries start from hooks such as `use-nav-ctx.ts:14-24`.
-No timer floor or minimum duration exists on this path. No `pendingComponent`. No Suspense boundary.
+## 1. Where it lives and the steps
 
-## 3. Dead clicks (proven cause)
-`beforeLoad` runs again on every navigation inside `_authenticated` (`route.tsx:9-16`). Each run makes two to three network round trips before the child route can match. While it is pending, a click on All work or the Home chip starts a navigation that nothing draws: no pending UI and no new page. The event belongs to the destination, so nothing is written until that page mounts. Warm caches shorten the wait, which matches "works once warm". On /work at 1.0s the link is missing because the shell has not mounted yet (step 4). The overlay and remount candidates are not supported by the code I read.
+- Dialog and all screen logic: `src/components/work/import/ImportFlowDialog.tsx`
+- Reading and parsing the file: `src/lib/import-parsers.ts` (`readImportFiles`, `parseImport`, `parseClaude`, `parseChatGpt`)
+- Accepted types and guide text: `src/lib/import-vendors.ts`
+- Writing the rows: `src/lib/import-commit.ts` (`commitImport`)
+- Opened from: `src/pages/WorkPage.tsx` line 226 (button) and line 767 (inside a `DropdownMenuContent`), plus `ExportGuideCard` (Gemini/Copilot only, so not these users)
 
-## 4. Smallest fixes
-1. Make `beforeLoad` read cached data: `getSession()` (local, no network) instead of `getUser()`, and pass the result into `ensureQueryData`. Files: `route.tsx`, `use-profile.ts`. Gain: about 1 to 2 round trips per navigation, which ends the dead clicks. Risk: low. A session can be stale, but the existing query retry still checks it.
-2. Store the profiles in the query cache with `["profiles"]` so `useProfile` does not ask again. Files: `use-profile.ts`. Gain: one less query. Risk: low.
-3. Add a `pendingComponent` that draws the sidebar frame. Files: `route.tsx`, `AppShell.tsx`. Gain: something is visible on screen right away. Risk: low.
-4. Plain anchors cannot work before hydration under `ssr:false`, because nothing is drawn before then. Turning SSR on is a larger job and is not proposed here.
+Steps: `source` (pick vendor, fires `import.started`) → `file` → `select` (fires `import.parsed`) → `committing` → `done` (fires `import.committed`, `import.completed`) → `organize`.
 
-## Locations
-- (a) `ShareDialog.tsx:53` `onOpenChange={setOpen}`, mounted at `CanvasLabPage.tsx:2781`.
-- (b) `SettingsShell.tsx:93` (rail click) and `:69` (opened onto a named section).
-- (c) `CanvasLabPage.tsx:224-227` `workboardOpenVia` accepts only header, canvas_tab and default, so "home" falls through to "direct". Passed in at `engagements.$id_.canvas-lab.tsx:64`, emitted at `CanvasLabPage.tsx:509`, link at `HomeEngagementGrid.tsx:164`. The allowed dims are at `workboard-event-allowlist.ts:13`.
-- (d) Catalog `telemetry-shared.ts:4` (TelemetryEvent union, for example `:61`, `:315`), dims `event-dim-allowlist.ts` (for example `:137`). Pinned by `e1-environment.test.ts`, `cl1-link-ladder.test.tsx` and `cl2b-attach-chat-link.test.ts`.
+`import.abandoned` is fired only in `handleOpenChange` (line 77-80): when the dialog closes while a vendor is set and the screen is not `done`/`organize`.
+
+## 2. What the "file" screen asks for
+
+The user must already hold an export from Claude or ChatGPT. Both need an emailed download (Claude minutes, ChatGPT 20 min to 24 h). The screen offers a drop zone and a "Choose file" picker (`accept=".zip,.json"`, multiple). No size check, no type check beyond the picker filter. Everything is read in the browser: a `.zip` is unpacked whole into memory with `unzipSync` and only `conversations.json` / `conversations-NNN.json` are kept; anything else is read as text and must be JSON. No upload, no storage bucket, no policy involved at this step.
+
+On a rejected file: `handleFiles` catches the error and calls `setError(...)`. That is the bug, see H1.
+
+## 3. Is `import.abandoned` trustworthy?
+
+- Fires on dialog close only (X, Escape, clicking outside). Not on unmount, not on route change: if the dialog is unmounted while open, nothing fires at all.
+- It does not distinguish "gave up" from "closed after a failure". There is no `import.failed` or error event anywhere in the flow; a parse error emits nothing.
+- Verdict: the event is accurate about where they were, misleading about why. It cannot tell giving up from failing.
+
+## 4. Ranked hypotheses
+
+**H1 (most likely): parse errors are invisible on the file screen.**
+`error` is only shown on the `select` screen (line 293). On `file`, a thrown error ("Nothing readable in that file", "No conversations could be read from that file.", JSON errors, zip errors) sets state that is never shown. The user drops a file, nothing happens, they close. That matches 90-second abandons, repeated tries over four dates, zero `import.parsed`, zero rows. Common ways to hit it today:
+- macOS Safari auto-unzips the download, so the user drops the unzipped folder, or a file that is not `conversations.json` (`users.json`, `projects.json`, `chat.html`).
+- A current export format the parser does not recognise. Every record lands in `failures`, conversations = 0, error thrown, invisible.
+
+**H2: a large zip freezes or crashes the tab.** `unzipSync` plus `strFromU8` reads the whole archive synchronously on the main thread. A large ChatGPT history (often hundreds of MB, images included) can freeze the page or run out of memory with no message. Plausible for the long-gap abandons; cannot confirm from code.
+
+**H3: dialog nested inside a dropdown menu (WorkPage line 767).** Radix dialogs inside `DropdownMenuContent` are known to dismiss or unmount when the menu closes, or when focus leaves for the native file picker. If it closes via `onOpenChange(false)` it would log `abandoned` at `file` within seconds. Fits the 2-second abandons. Needs a browser check to confirm.
+
+**H4: genuine giving up.** The user reaches the screen with no export ready, reads "wait for the email", and closes. Also fits the 2-second abandons. The return visits on later dates suggest they did come back with a file, which points back to H1.
+
+Ruled out: storage bucket or policy (nothing uploads before `select`); disabled submit (no submit on this screen); size limit rejecting files (none exists).
+
+## 5. Changes and tests
+
+- No commits to any import file since 17 Aug 2026. Nothing changed between 5 Oct and now.
+- Tests: `src/lib/__tests__/import-parsers.test.ts` covers three small parser cases with made-up JSON. Nothing covers the dialog, the zip path, error display, or a real current export.
+
+## Smallest safe fix (for approval, not built)
+
+Two files, no database work:
+1. `ImportFlowDialog.tsx`: show `{error}` on the `file` screen under the drop zone, with the paste link beside it. Add a "Reading your export" state while `handleFiles` runs so the user sees it working.
+2. Telemetry (gate): add one new event `import.failed` with dims `{vendor, last_screen, reason}`, where `reason` is a closed set (`nothing_readable`, `no_conversations`, `invalid_json`, `zip_error`). This requires additive entries in `telemetry-shared.ts` and `event-dim-allowlist.ts`. Schema is additive only; no existing event changes; no consent surface touched. Never send file names or content.
+3. Test: a dialog test where a file with no conversations is dropped and the message appears.
+
+Follow-ups, separate units: move the line-767 importer out of the dropdown (H3) after a browser repro; consider streaming unzip for large archives (H2).
+
+## Cannot be determined from code
+
+- Which file the user actually dropped, or whether they dropped anything (no event exists).
+- The current real Claude/ChatGPT export layout. Needs a fresh sample export to test the parser against.
+- Which entry point they used (WorkPage button vs dropdown); `import.started` carries no entry dim.
+- The six MCP connections created and revoked on 19 Oct are a separate flow (`mcp_connections`), and nothing in this import code explains them. Suggests the user tried every route; worth a separate look.
+
+DECIDE: approve the two-file visible error + `import.failed` fix, and whether to run a browser repro of H3 first.
