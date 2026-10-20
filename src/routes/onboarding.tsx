@@ -107,6 +107,11 @@ import { CONTENT_SWITCH_LINE, SIGNUP_DEFAULT_NOTICE, TIER_COPY, type DataTier } 
 import { setDataConsent } from "@/lib/data-consent.functions";
 export { KEY_NOTICE_COPY, KeyNoticeSentence };
 
+/** GATE-1: types that only Charlotte Labs sets up. Plain boolean so callers are not narrowed. */
+export function isPilotGatedType(type: OrgType): boolean {
+  return type === "company" || type === "partner";
+}
+
 export const COPY = { noticeLink: "See what each level means" } as const;
 
 const REDEEM_FAILED_REASONS = [
@@ -286,7 +291,7 @@ function OnboardingInner() {
   const [tools, setTools] = useState<Set<ToolId>>(new Set());
   const [orgType, setOrgType] = useState<OrgType>(orgTypeForChoice(derived));
   // GATE-1: company and partner workspaces are set up by hand after a pilot request.
-  const pilotGated = !setup && (orgType === "company" || orgType === "partner");
+  const pilotGated = !setup && isPilotGatedType(orgType);
   // UX-1: a business door is Work by construction, so the question is not asked.
   const usesAsked = !segmentFieldsFor(orgType).includes("industry");
   const [displayName, setDisplayName] = useState("");
@@ -421,7 +426,7 @@ function OnboardingInner() {
     // This surface only ever creates a workspace, so no database message
     // about invites can reach the screen from here.
     // GATE-1: never self-serve a company or partner workspace.
-    if (orgType === "company" || orgType === "partner") {
+    if (isPilotGatedType(orgType)) {
       setPending(false);
       return;
     }
