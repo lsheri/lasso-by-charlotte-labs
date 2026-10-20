@@ -3517,7 +3517,10 @@ export type Database = {
           name: string
           note: string | null
           notify_status: string
+          source: string
+          status: string
           team_size: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -3528,7 +3531,10 @@ export type Database = {
           name: string
           note?: string | null
           notify_status?: string
+          source?: string
+          status?: string
           team_size: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -3539,7 +3545,10 @@ export type Database = {
           name?: string
           note?: string | null
           notify_status?: string
+          source?: string
+          status?: string
           team_size?: string
+          user_id?: string | null
         }
         Relationships: []
       }
