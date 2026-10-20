@@ -24,8 +24,18 @@ vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
     auth: { getUser: async () => ({ data: { user: { id: "u1" } }, error: null }) },
     rpc: async () => ({ error: null }),
+    from: () => ({ select: () => ({ eq: () => ({ eq: () => ({ limit: async () => ({ data: [] }) }) }) }) }),
   },
 }));
+vi.mock("@tanstack/react-start", async (orig) => ({
+  ...(await orig<object>()),
+  useServerFn: (fn: unknown) => fn,
+}));
+vi.mock("@/lib/pilot-request.functions", () => ({
+  PILOT_TEAM_SIZES: ["1-5", "6-15", "16-40", "40+"],
+  submitSignupPilotRequestFn: async () => ({ ok: true }),
+}));
+vi.mock("@/lib/client-telemetry", () => ({ emitClientEvent: vi.fn() }));
 vi.mock("@/hooks/use-profile", () => ({ fetchProfile: async () => null }));
 vi.mock("@/lib/pending-invite", () => ({ readPendingInvite: () => null }));
 vi.mock("@/lib/telemetry", () => ({ logEvent: vi.fn() }));
@@ -52,8 +62,13 @@ async function mount(intent: "company" | "personal" | "edu") {
       <Component />
     </Suspense>,
   );
-  // The route component is code-split; wait for the setup heading.
-  await screen.findByText("What should we call you?", undefined, { timeout: 25000 });
+  // The route component is code-split; wait for the stage heading.
+  // Company is gated: it shows the pilot request form instead of setup.
+  if (intent === "company") {
+    await screen.findByRole("button", { name: "Request a pilot" }, { timeout: 25000 });
+  } else {
+    await screen.findByText("What should we call you?", undefined, { timeout: 25000 });
+  }
   return view;
 }
 
@@ -69,11 +84,15 @@ describe("Unit G: onboarding setup stage per register", () => {
   it("company", async () => {
     await mount("company");
     expect(screen.getByText("Your organization")).toBeTruthy();
-    expect(screen.getByText("What should we call you?")).toBeTruthy();
-    expect(screen.getByText("Two details and you are in. Both are yours to change later.")).toBeTruthy();
+    expect(screen.queryByText("What should we call you?")).toBeNull();
+    expect(
+      screen.getByText("Lasso for companies starts with a free three month pilot. We set it up by hand, usually within a day."),
+    ).toBeTruthy();
     expect(screen.getByLabelText("Your name")).toBeTruthy();
-    expect(screen.getByLabelText("Workspace name")).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Create my workspace" })).toBeTruthy();
+    expect(screen.getByLabelText("Company")).toBeTruthy();
+    expect(screen.queryByLabelText("Workspace name")).toBeNull();
+    expect(screen.getByRole("button", { name: "Request a pilot" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Create my workspace" })).toBeNull();
     expect(screen.queryByText("One board. Every tool. Circle a few chats and ask.")).toBeNull();
   });
 
