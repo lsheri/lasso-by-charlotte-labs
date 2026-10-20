@@ -5449,6 +5449,17 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_create_entitlement: {
+        Args: {
+          p_ends_at?: string
+          p_notes?: string
+          p_org_id: string
+          p_plan?: string
+          p_seats: number
+          p_source?: string
+        }
+        Returns: Json
+      }
       admin_create_workspace: {
         Args: {
           p_admin_email?: string
@@ -5549,6 +5560,16 @@ export type Database = {
           p_payload: Json
         }
         Returns: undefined
+      }
+      admin_make_invite: {
+        Args: {
+          p_days?: number
+          p_email?: string
+          p_org_id: string
+          p_reason?: string
+          p_role?: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: Json
       }
       admin_mint_key: {
         Args: {

@@ -1,65 +1,68 @@
-# IMPORT-1 diagnosis: every import dies on the "file" screen
+# Company signup becomes a pilot request (diagnosis + plan)
 
-Diagnosis only. No code was changed.
+## 1. Today's signup path (verified)
 
-## 1. Where it lives and the steps
+```text
+/plans or landing CTA  ->  /auth?intent=company   (src/routes/auth.tsx, validateSearch L49-73, signup.started L155)
+  -> email confirm -> /onboarding?intent=company  (auth.tsx L91-92 / L205 / L264)
+  -> src/routes/onboarding.tsx submit handler
+       deriveRegister(intent)          src/lib/register.ts
+       orgTypeForChoice(...)           src/lib/org-type.ts
+       saveUses(...)                   people row
+       supabase.rpc("create_org_with_profile", { p_display_name, p_org_name, p_type })   L420
+       applyOrgType(profileId, type)   L58  (client-side UPDATE orgs.settings.type, read back)
+       logEvent("org.created", orgId, { org_type, tier, register, entry_door })        L448
+         entry_door = "intent" whenever a door intent was derived
+```
 
-- Dialog and all screen logic: `src/components/work/import/ImportFlowDialog.tsx`
-- Reading and parsing the file: `src/lib/import-parsers.ts` (`readImportFiles`, `parseImport`, `parseClaude`, `parseChatGpt`)
-- Accepted types and guide text: `src/lib/import-vendors.ts`
-- Writing the rows: `src/lib/import-commit.ts` (`commitImport`)
-- Opened from: `src/pages/WorkPage.tsx` line 226 (button) and line 767 (inside a `DropdownMenuContent`), plus `ExportGuideCard` (Gemini/Copilot only, so not these users)
+## 2. Where the org is created
 
-Steps: `source` (pick vendor, fires `import.started`) → `file` → `select` (fires `import.parsed`) → `committing` → `done` (fires `import.committed`, `import.completed`) → `organize`.
+A database function: `public.create_org_with_profile`, SECURITY DEFINER. It accepts `company`/`partner` from the client, inserts `orgs` and an admin `profiles` row for `auth.uid()`. No name or domain check, which is why three "Artemis Connection" orgs exist. EXECUTE is granted to `authenticated` and also `anon`.
 
-`import.abandoned` is fired only in `handleOpenChange` (line 77-80): when the dialog closes while a vendor is set and the screen is not `done`/`organize`.
+A second hole: `applyOrgType` writes `orgs.settings.type` from the browser under policy `org_admin_upd`. So any org admin can turn a personal workspace into a company one with a client-side update. Hiding the button alone does not block either path. Enforcement needs SQL (section 5).
 
-## 2. What the "file" screen asks for
+## 3. What to reuse
 
-The user must already hold an export from Claude or ChatGPT. Both need an emailed download (Claude minutes, ChatGPT 20 min to 24 h). The screen offers a drop zone and a "Choose file" picker (`accept=".zip,.json"`, multiple). No size check, no type check beyond the picker filter. Everything is read in the browser: a `.zip` is unpacked whole into memory with `unzipSync` and only `conversations.json` / `conversations-NNN.json` are kept; anything else is read as text and must be JSON. No upload, no storage bucket, no policy involved at this step.
+| Piece | Verdict |
+|---|---|
+| `pilot_requests` table + `submitPilotRequestFn` + Resend template `pilot-request-notify` to liam@ | **Reuse as the request store and the email.** It already holds name, firm, email, team_size and note, and the B2B landing pilot form already writes to it. Needs a few columns added (section 5). |
+| `admin_create_workspace` | **Reuse for approval.** Call it with `p_type 'company'`, `p_ends_at now()+3 months`, `p_with_admin_link true`, `p_admin_email = requester`. It creates the org and entitlement, mints an `ADM-` invite and queues `provision-company-admin`. |
+| `outbound_emails` / `provision-company-admin` | Reuse unchanged. It is the "you're approved, here is your admin link" email. |
+| `pilot_accounts` | Reuse after approval: insert a row (stage `pilot`, started_on, decision_on = +3 months) so the pilot shows in the console pipeline. |
+| `key_requests` + `/requests` | **Do not reuse.** It is tied to institutions and partner workshop keys (`admin_approve_request` takes `p_institution_id`). Mixing these would muddy both. |
 
-On a rejected file: `handleFiles` catches the error and calls `setError(...)`. That is the bug, see H1.
+No new table is needed. `pilot_requests` gets extended.
 
-## 3. Is `import.abandoned` trustworthy?
+## 4. Proposed flow
 
-- Fires on dialog close only (X, Escape, clicking outside). Not on unmount, not on route change: if the dialog is unmounted while open, nothing fires at all.
-- It does not distinguish "gave up" from "closed after a failure". There is no `import.failed` or error event anywhere in the flow; a parse error emits nothing.
-- Verdict: the event is accurate about where they were, misleading about why. It cannot tell giving up from failing.
+1. A person picks Company on /plans and lands on `/auth?intent=company` as today. Their account is created and confirmed as today, which keeps identity and the funnel intact.
+2. `/onboarding?intent=company` shows a **pilot request form** in place of "Create my workspace": your name, firm, team size and an optional note, with the email prefilled from the session. Copy says "Lasso for companies starts with a free 3 month pilot. Liam sets it up by hand, usually within a day." The submit button reads "Request a pilot", with a secondary link "Just me for now" that goes to `intent=personal`.
+3. Submit calls an authenticated variant of `submitPilotRequestFn`. It stores the request with `user_id`, `status 'pending'` and `source 'signup'`, then sends `pilot-request-notify` to Liam. The email adds a link to the console review screen and any **existing orgs with a matching name or email domain** (the Artemis case).
+4. The person sees "Request received" with a pending state. Returning to /onboarding shows the same pending state. No workspace exists yet, so /work keeps routing them back here.
+5. Liam opens the console's Pilot requests list and picks Approve, or Decline with a note. Approve calls a new `admin_approve_pilot_request(id, seats, name?)`. It wraps `admin_create_workspace` (company, 3 month entitlement, admin link bound to the requester's email), inserts `pilot_accounts`, and marks the request approved with its `org_id`.
+6. The requester gets `provision-company-admin` with their ADM code and joins through `/join`. `join_org_with_invite` makes them admin. Colleagues then come in through normal invites.
+7. If an org already exists for the firm, Liam can decline and send an invite to that existing org instead, so no duplicate is created.
 
-## 4. Ranked hypotheses
+**Invited company people:** `/join` uses `join_org_with_invite`, a separate function, and `/onboarding` already redirects pending invites to /join (beforeLoad L219-221). Invites never touch `create_org_with_profile`, so they keep working. The SQL change must touch only `create_org_with_profile`, never the invite function. An ADM approval link takes the same invite path.
 
-**H1 (most likely): parse errors are invisible on the file screen.**
-`error` is only shown on the `select` screen (line 293). On `file`, a thrown error ("Nothing readable in that file", "No conversations could be read from that file.", JSON errors, zip errors) sets state that is never shown. The user drops a file, nothing happens, they close. That matches 90-second abandons, repeated tries over four dates, zero `import.parsed`, zero rows. Common ways to hit it today:
-- macOS Safari auto-unzips the download, so the user drops the unzipped folder, or a file that is not `conversations.json` (`users.json`, `projects.json`, `chat.html`).
-- A current export format the parser does not recognise. Every record lands in `failures`, conversations = 0, error thrown, invisible.
+**Telemetry (additive):** `pilot.requested` {source, team_size}, `pilot.approved` {seats}, `pilot.declined`. `org.created` is no longer emitted for company from onboarding. Approval-created orgs come from the console, so check whether the console already emits for `admin_create_workspace`.
 
-**H2: a large zip freezes or crashes the tab.** `unzipSync` plus `strFromU8` reads the whole archive synchronously on the main thread. A large ChatGPT history (often hundreds of MB, images included) can freeze the page or run out of memory with no message. Plausible for the long-gap abandons; cannot confirm from code.
+## 5. Split: UI-only vs SQL you run
 
-**H3: dialog nested inside a dropdown menu (WorkPage line 767).** Radix dialogs inside `DropdownMenuContent` are known to dismiss or unmount when the menu closes, or when focus leaves for the native file picker. If it closes via `onOpenChange(false)` it would log `abandoned` at `file` within seconds. Fits the 2-second abandons. Needs a browser check to confirm.
+### SQL / RLS (yours)
+1. `create_org_with_profile`: refuse `company` and `partner` unless the caller is a platform admin. Choose between raising a clear error or downgrading to personal (raising is recommended so it is visible). REVOKE EXECUTE from `anon`.
+2. `orgs.settings.type` lock: a BEFORE UPDATE trigger that rejects a change of `settings->>'type'` to `company`/`partner` unless the caller is a platform admin. This closes the `applyOrgType` client write and the Settings WorkspaceKindCard path.
+3. `pilot_requests`: add `user_id uuid`, `status text default 'pending'` (pending/approved/declined), `source text`, `decided_at`, `decided_by`, `decision_note`, `org_id uuid`. Add an RLS select policy so a requester can read their own row by `user_id = auth.uid()` (for the pending state). Writes stay through the server function's admin client.
+4. New `admin_approve_pilot_request` and `admin_decline_pilot_request` (SECURITY DEFINER, `is_platform_admin(...,'ops')`), plus `admin_pilot_requests()` for listing, including likely duplicate orgs.
+5. Optional: a uniqueness guard against creating a company org whose name matches an existing org, case-insensitive.
+6. The three existing Artemis orgs: a data clean-up decision for you, outside this unit.
 
-**H4: genuine giving up.** The user reaches the screen with no export ready, reads "wait for the email", and closes. Also fits the 2-second abandons. The return visits on later dates suggest they did come back with a file, which points back to H1.
+### UI / server code (build)
+- `src/routes/onboarding.tsx`: company and partner registers render the request form and pending state instead of the create call. Personal and edu are unchanged.
+- `src/lib/pilot-request.functions.ts`: an authenticated `submitSignupPilotRequestFn` (requireSupabaseAuth). It reuses the schema, insert and notify.
+- `src/lib/pilot-request.server.ts`: add a console link and a duplicate hint to the template variables. The Resend template needs those variables too, so that is a template edit in Resend.
+- Console: a Pilot requests list with Approve/Decline beside the existing admin screens.
+- Copy in one exported COPY object, plus tests: the company register never calls `create_org_with_profile`, personal still does, and the invite path is untouched.
+- `/plans` Business CTA label becomes "Request a free pilot". This is a label change only.
 
-Ruled out: storage bucket or policy (nothing uploads before `select`); disabled submit (no submit on this screen); size limit rejecting files (none exists).
-
-## 5. Changes and tests
-
-- No commits to any import file since 17 Aug 2026. Nothing changed between 5 Oct and now.
-- Tests: `src/lib/__tests__/import-parsers.test.ts` covers three small parser cases with made-up JSON. Nothing covers the dialog, the zip path, error display, or a real current export.
-
-## Smallest safe fix (for approval, not built)
-
-Two files, no database work:
-1. `ImportFlowDialog.tsx`: show `{error}` on the `file` screen under the drop zone, with the paste link beside it. Add a "Reading your export" state while `handleFiles` runs so the user sees it working.
-2. Telemetry (gate): add one new event `import.failed` with dims `{vendor, last_screen, reason}`, where `reason` is a closed set (`nothing_readable`, `no_conversations`, `invalid_json`, `zip_error`). This requires additive entries in `telemetry-shared.ts` and `event-dim-allowlist.ts`. Schema is additive only; no existing event changes; no consent surface touched. Never send file names or content.
-3. Test: a dialog test where a file with no conversations is dropped and the message appears.
-
-Follow-ups, separate units: move the line-767 importer out of the dropdown (H3) after a browser repro; consider streaming unzip for large archives (H2).
-
-## Cannot be determined from code
-
-- Which file the user actually dropped, or whether they dropped anything (no event exists).
-- The current real Claude/ChatGPT export layout. Needs a fresh sample export to test the parser against.
-- Which entry point they used (WorkPage button vs dropdown); `import.started` carries no entry dim.
-- The six MCP connections created and revoked on 19 Oct are a separate flow (`mcp_connections`), and nothing in this import code explains them. Suggests the user tried every route; worth a separate look.
-
-DECIDE: approve the two-file visible error + `import.failed` fix, and whether to run a browser repro of H3 first.
+Open decisions: seats default for an approved pilot, whether `partner` signup is also gated (assumed yes), and decline wording.
