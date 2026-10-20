@@ -211,7 +211,7 @@ export function PlansPage({ search = {} }: { search?: PlansSearch }) {
                     search={{ mode: "signup" as const, intent: plan.intent, ...(src ? { src } : {}), ...(from ? { from } : {}) }}
                     onClick={() => emitClientEvent("plan.picked", { plan: plan.intent, src: eventSrc }, { stableVisitor: true })}
                   >
-                    {plan.intent === "company" ? "Start a business workspace" : "Get started"}
+                    {plan.intent === "company" ? "Request a free pilot" : "Get started"}
                   </Link>
                 </Button>
               ) : (
