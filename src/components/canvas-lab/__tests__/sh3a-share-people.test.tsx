@@ -52,7 +52,7 @@ describe("SH-3a people access", () => {
   it("does not add an unknown email", async () => {
     const section = await mount();
     fireEvent.change(within(section).getByLabelText("Add people by name or email"), { target: { value: "unknown@example.com" } });
-    expect(within(section).getByRole("button", { name: "Invite unknown@example.com" })).toBeTruthy();
+    expect(within(section).getByRole("button", { name: "Invite unknown@example.com from outside" })).toBeTruthy();
     expect(within(section).queryByText("Only people in this workspace can be added here.")).toBeNull();
     expect(setEngagementPersonAccessFn).not.toHaveBeenCalled();
   });
@@ -62,7 +62,7 @@ describe("SH-3a people access", () => {
     fireEvent.change(within(section).getByLabelText("Add people by name or email"), { target: { value: "nad" } });
     expect(within(section).queryByRole("button", { name: "Owen" })).toBeNull();
     fireEvent.click(within(section).getByRole("button", { name: "Nadia" }));
-    await waitFor(() => expect(setEngagementPersonAccessFn).toHaveBeenCalledWith({ data: { engagement_id: "board", profile_id: "me", person_id: "new", access: "review", conversations: "summaries" } }));
+    await waitFor(() => expect(setEngagementPersonAccessFn).toHaveBeenCalledWith({ data: { engagement_id: "board", profile_id: "me", person_id: "new", access: "review", conversations: "full" } }));
   });
   it("labels a non-owner viewer with their own level, never ownership", async () => {
     vi.mocked(listEngagementPeopleFn).mockResolvedValueOnce({
@@ -115,7 +115,7 @@ describe("SH-3a people access", () => {
     expect(section.textContent?.toLowerCase()).not.toMatch(/\b(coach|review)\b/);
     expect(within(section).getAllByTitle(PEOPLE_COPY.multiplayerLine)).toHaveLength(2);
     expect(Object.values(PEOPLE_COPY).join(" ")).not.toMatch(/—|\baudit\b|\bmonitor\b|\boversight\b/i);
-    expect(PEOPLE_COPY.viewLine).toBe("Opens the board and reads the cards");
-    expect(PEOPLE_COPY.multiplayerLine).toBe("Also adds and arranges work");
+    expect(PEOPLE_COPY.viewLine).toBe("Can look at the board and the work on it.");
+    expect(PEOPLE_COPY.multiplayerLine).toBe("Can add work and change the board.");
   });
 });

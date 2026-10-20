@@ -128,12 +128,16 @@ describe("S3a shared board is the owner's board, read only", () => {
 describe("R6 share dialog contrast", () => {
   it("keeps required explanatory copy off the lowest contrast token", () => {
     const readableBlocks = [
-      SHARE_DIALOG.slice(SHARE_DIALOG.indexOf("ACCESS_CHOICES.map"), SHARE_DIALOG.indexOf("{problem ?")),
-      SHARE_DIALOG.slice(SHARE_DIALOG.indexOf("Already on this board"), SHARE_DIALOG.indexOf("</section>", SHARE_DIALOG.indexOf("Already on this board"))),
+      SHARE_DIALOG.slice(SHARE_DIALOG.indexOf("{PEOPLE_COPY.whoHasAccess}</p>"), SHARE_DIALOG.indexOf('role="alert">{problem}', SHARE_DIALOG.indexOf("{PEOPLE_COPY.whoHasAccess}</p>"))),
+      SHARE_DIALOG.slice(SHARE_DIALOG.indexOf("aria-label={PEOPLE_COPY.linkHeading}"), SHARE_DIALOG.indexOf("<BoardLinkSection engagementId")),
       LINK_SECTION.slice(LINK_SECTION.indexOf("shareExposureSentence"), LINK_SECTION.indexOf("{freshUrl ?")),
       LINK_SECTION.slice(LINK_SECTION.indexOf("Live links"), LINK_SECTION.indexOf("</section>")),
     ];
+    for (const anchor of ["{PEOPLE_COPY.whoHasAccess}</p>", 'role="alert">{problem}', "aria-label={PEOPLE_COPY.linkHeading}", "<BoardLinkSection engagementId"]) {
+      expect(SHARE_DIALOG.indexOf(anchor)).toBeGreaterThan(-1);
+    }
     for (const block of readableBlocks) {
+      expect(block.length).toBeGreaterThan(0);
       expect(block).not.toContain("text-soft");
     }
     expect(readableBlocks.join("\n")).toContain("text-foreground");
