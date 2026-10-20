@@ -7,6 +7,7 @@ import { SetupTools } from "@/components/onboarding/SetupTools";
 import { OnboardingTour } from "@/components/onboarding/OnboardingTour";
 import { readOnboardingUi } from "@/lib/onboarding-ui";
 import { ToolPicker } from "@/components/onboarding/ToolPicker";
+import { PilotRequestGate } from "@/components/onboarding/PilotRequestGate";
 import { SessionHeader } from "@/components/layout/SessionHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -283,7 +284,9 @@ function OnboardingInner() {
   const [duProfileId, setDuProfileId] = useState<string | null>(null);
   const [shareBackError, setShareBackError] = useState<string | null>(null);
   const [tools, setTools] = useState<Set<ToolId>>(new Set());
-  const [orgType] = useState<OrgType>(orgTypeForChoice(derived));
+  const [orgType, setOrgType] = useState<OrgType>(orgTypeForChoice(derived));
+  // GATE-1: company and partner workspaces are set up by hand after a pilot request.
+  const pilotGated = !setup && (orgType === "company" || orgType === "partner");
   // UX-1: a business door is Work by construction, so the question is not asked.
   const usesAsked = !segmentFieldsFor(orgType).includes("industry");
   const [displayName, setDisplayName] = useState("");
@@ -417,6 +420,11 @@ function OnboardingInner() {
     // Redeeming an invite belongs to /join, which owns every honest state.
     // This surface only ever creates a workspace, so no database message
     // about invites can reach the screen from here.
+    // GATE-1: never self-serve a company or partner workspace.
+    if (orgType === "company" || orgType === "partner") {
+      setPending(false);
+      return;
+    }
     const { error: rpcError } = await supabase.rpc("create_org_with_profile", {
       p_display_name: displayName.trim(),
       p_org_name:
@@ -427,6 +435,12 @@ function OnboardingInner() {
     });
 
     if (rpcError) {
+      // GATE-1 backstop: the database refuses company workspaces; show the request form.
+      if (rpcError.code === "42501" && /company workspace/i.test(rpcError.message)) {
+        setOrgType("company");
+        setPending(false);
+        return;
+      }
       setError(rpcError.message);
       setPending(false);
       return;
@@ -836,6 +850,22 @@ function OnboardingInner() {
     );
   }
 
+
+  if (pilotGated) {
+    return (
+      <PilotRequestGate
+        register={orgType === "partner" ? "partner" : "company"}
+        onJustMe={() => {
+          setOrgType("personal");
+          navigate({
+            to: "/onboarding",
+            search: (prev: OnboardingSearch) => ({ ...prev, intent: "personal" }),
+            replace: true,
+          } as never);
+        }}
+      />
+    );
+  }
 
   const copy = REGISTER_COPY[orgType];
 
