@@ -62,4 +62,4 @@
 
 - [x] PERF-2a: the signed-in gate reads identity and profiles from cache
 
-- [ ] IMPORT-1: show file-screen error + reading state, add import.failed event, dialog test.
+- [x] IMPORT-1: file-screen error + reading state, import.failed event, dialog test passing.
