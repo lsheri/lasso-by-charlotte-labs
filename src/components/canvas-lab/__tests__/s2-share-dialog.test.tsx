@@ -151,7 +151,7 @@ describe("S2 — giving someone one of two things", () => {
   it("removes the old explanations, empty copy and link paragraphs", async () => {
     await openDialog();
     for (const text of [
-      "Who has access", "Can view: Can open the board and read the cards.",
+      "Can view: Can open the board and read the cards.",
       "Multiplayer: Can also add and arrange work.",
       "Summaries only: they can ask Lasso how AI was used here, but can't open the conversations.",
       "Nobody else is on this board yet.",
@@ -159,6 +159,8 @@ describe("S2 — giving someone one of two things", () => {
       "You can expire this link yourself at any point before the 48 hours are up.",
       "The board keeps changing, so whoever opens the link sees the board as it is then, not as it was when you made the link.",
     ]) expect(screen.queryByText(text)).toBeNull();
+    expect(screen.getByText("Who has access")).toBeTruthy();
+    expect(screen.getByText("Anyone with the link can view the board read-only and will not be identified.")).toBeTruthy();
     expect(screen.getByText("None open.")).toBeTruthy();
     expect(screen.getByText("Anyone with the link sees the cards and summaries for 48 hours. Conversations stay private.")).toBeTruthy();
   });
