@@ -67,7 +67,7 @@ describe("SHARE-2 people-first Share dialog", () => {
   it("picking a workspace member sets access and never sends an outside invite", async () => {
     openDialog();
     const box = await screen.findByRole("combobox");
-    await waitFor(() => expect(box).not.toBeDisabled());
+    await waitFor(() => expect((box as HTMLInputElement).disabled).toBe(false));
     fireEvent.change(box, { target: { value: "ana" } });
     fireEvent.click(await screen.findByRole("button", { name: /Ana Ruiz/ }));
     await waitFor(() => expect(m.setAccess).toHaveBeenCalledTimes(1));
@@ -83,7 +83,7 @@ describe("SHARE-2 people-first Share dialog", () => {
   it("typing a workspace member's email offers no outside invite", async () => {
     openDialog();
     const box = await screen.findByRole("combobox");
-    await waitFor(() => expect(box).not.toBeDisabled());
+    await waitFor(() => expect((box as HTMLInputElement).disabled).toBe(false));
     fireEvent.change(box, { target: { value: "ana@co.com" } });
     expect(await screen.findByRole("button", { name: /Ana Ruiz/ })).toBeTruthy();
     expect(screen.queryByRole("button", { name: /from outside/ })).toBeNull();
@@ -92,7 +92,7 @@ describe("SHARE-2 people-first Share dialog", () => {
   it("an outside email calls create_board_invite with full transcripts", async () => {
     openDialog();
     const box = await screen.findByRole("combobox");
-    await waitFor(() => expect(box).not.toBeDisabled());
+    await waitFor(() => expect((box as HTMLInputElement).disabled).toBe(false));
     fireEvent.change(box, { target: { value: "new@else.com" } });
     fireEvent.click(await screen.findByRole("button", { name: "Invite new@else.com from outside" }));
     await waitFor(() => expect(m.invite).toHaveBeenCalledTimes(1));
