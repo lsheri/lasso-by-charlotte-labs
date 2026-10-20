@@ -63,3 +63,6 @@
 - [x] PERF-2a: the signed-in gate reads identity and profiles from cache
 
 - [x] IMPORT-1: file-screen error + reading state, import.failed event, dialog test passing.
+
+- [x] SHARE-2: people-first Share dialog, Viewer/Collaborator mapping, full transcripts default, named access list with pending invites, link moved to bottom; invite form defaults to member. New tests 6/6.
+- [ ] SHARE-2: six older share tests pin the old copy and behaviour (s2, sh3a x3, r6 contrast, sh5cd). Waiting on authorization to update them.
