@@ -95,7 +95,8 @@ function IssuedInvites({ orgId, refreshKey }: { orgId: string; refreshKey: strin
 export function InviteDialog({
   trigger,
   engagementId,
-  defaultRole = "coach",
+  // SHARE-2: a new person joins as a member; admin is a deliberate choice.
+  defaultRole = "em",
   showHistory = true,
   onShareInstead,
 }: {
