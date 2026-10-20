@@ -161,7 +161,7 @@ export function PilotRequestGate({ register, onJustMe }: Props) {
                   <Button type="submit" className="w-full" disabled={sending}>
                     {sending ? PILOT_GATE_COPY.submitting : PILOT_GATE_COPY.submit}
                   </Button>
-                  <p className="text-xs text-muted-foreground">{PILOT_GATE_COPY.detailsUse}</p>
+                  <p className="text-sm text-muted-foreground">{PILOT_GATE_COPY.detailsUse}</p>
                   <button
                     type="button"
                     onClick={onJustMe}

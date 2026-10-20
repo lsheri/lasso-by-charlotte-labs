@@ -227,6 +227,9 @@ function SponsorRow({
 }
 
 
+/** Rows shown in the picker before anything is typed. */
+const BROWSE_CAP = 6;
+
 export const PEOPLE_COPY = {
   heading: "People",
   you: "You",
@@ -238,6 +241,7 @@ export const PEOPLE_COPY = {
   remove: "Remove",
   membersOnly: "Only people in this workspace can be added here.",
   nobodyToAdd: "Nobody else in your workspace yet.",
+  moreToFind: (n: number) => `and ${n} more, type to find them`,
   problem: "That could not be changed.",
   summaries: "Summaries",
   full: "Full conversations",
