@@ -443,7 +443,9 @@ function PeopleSection({
           person.display_name.toLocaleLowerCase().includes(needle) ||
           (person.email ?? "").toLocaleLowerCase().includes(needle),
       )
-    : [];
+    : canPick.slice(0, BROWSE_CAP);
+  // With the box empty, show who can be added so the capability is visible.
+  const moreToFind = typed ? 0 : Math.max(0, canPick.length - BROWSE_CAP);
   // An address that belongs to anyone in the workspace, already on the board
   // or not, never goes to the outside invite: the database refuses it.
   const insideByEmail = rows.some((person) => (person.email ?? "").toLocaleLowerCase() === needle);
@@ -516,6 +518,9 @@ function PeopleSection({
               </li>
             ) : null}
           </ul>
+        ) : null}
+        {moreToFind > 0 ? (
+          <p className="text-sm text-muted-foreground">{PEOPLE_COPY.moreToFind(moreToFind)}</p>
         ) : null}
         {typed && suggestions.length === 0 && !inviteEmail && !looksLikeEmail(typed) ? (
           <p className="text-sm text-muted-foreground">{PEOPLE_COPY.noMatch}</p>
