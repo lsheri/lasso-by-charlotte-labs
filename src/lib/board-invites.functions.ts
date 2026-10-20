@@ -21,6 +21,7 @@ export type OpenBoardInvite = {
   level: string;
   conversations: string;
   status: "sent" | "pending_approval";
+  createdAt?: string | null;
 };
 
 export const inviteToBoard = createServerFn({ method: "POST" })
@@ -81,7 +82,7 @@ export const listBoardInvites = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<OpenBoardInvite[]> => {
     const { data: rows, error } = await context.supabase
       .from("board_invites")
-      .select("id, email, level, conversations, status, expires_at")
+      .select("id, email, level, conversations, status, expires_at, created_at")
       .eq("engagement_id", data.engagementId)
       .in("status", ["sent", "pending_approval"])
       .gt("expires_at", new Date().toISOString())
@@ -93,6 +94,7 @@ export const listBoardInvites = createServerFn({ method: "POST" })
       level: r.level,
       conversations: r.conversations,
       status: r.status as OpenBoardInvite["status"],
+      createdAt: r.created_at ?? null,
     }));
   });
 

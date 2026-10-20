@@ -34,18 +34,22 @@ export async function listEngagementPeople(
   const [peopleRes, memberRes] = await Promise.all([
     db
       .from("profiles")
-      .select("id, display_name, deactivated_at")
+      .select("id, display_name, deactivated_at, user_id")
       .eq("org_id", profile.org_id)
       .order("display_name", { ascending: true }),
-    db.from("engagement_members").select("profile_id, member_role, conversation_access").eq("engagement_id", engagementId),
+    db.from("engagement_members").select("profile_id, member_role, conversation_access, added_at").eq("engagement_id", engagementId),
   ]);
 
   const roles = new Map<string, string>();
   const conversations = new Map<string, ConversationAccess>();
+  const addedAt = new Map<string, string | null>();
   for (const row of memberRes.data ?? []) {
     roles.set(row.profile_id, row.member_role);
+    addedAt.set(row.profile_id, row.added_at ?? null);
     if (isConversationAccess(row.conversation_access)) conversations.set(row.profile_id, row.conversation_access);
   }
+
+  const emails = await workspaceEmails((peopleRes.data ?? []).map((row) => row.user_id));
 
   const people: EngagementPerson[] = (peopleRes.data ?? [])
     .filter((row) => !row.deactivated_at)
@@ -55,9 +59,33 @@ export async function listEngagementPeople(
       access: accessFromMemberRole(roles.get(row.id) ?? null),
       isYou: row.id === profile.id,
       conversations: conversations.get(row.id) ?? "summaries",
+      email: row.user_id ? (emails.get(row.user_id) ?? null) : null,
+      addedAt: addedAt.get(row.id) ?? null,
     }));
 
   return { people, canShare: true };
+}
+
+/**
+ * SHARE-2: addresses for people in the caller's own workspace, read only after
+ * the caller is confirmed as an editor of this board. A failure leaves names.
+ */
+async function workspaceEmails(userIds: (string | null)[]): Promise<Map<string, string>> {
+  const wanted = new Set(userIds.filter((id): id is string => Boolean(id)));
+  const emails = new Map<string, string>();
+  if (wanted.size === 0) return emails;
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await Promise.all(
+      [...wanted].map(async (id) => {
+        const { data } = await supabaseAdmin.auth.admin.getUserById(id);
+        if (data?.user?.email) emails.set(id, data.user.email);
+      }),
+    );
+  } catch {
+    /* names still show without addresses */
+  }
+  return emails;
 }
 
 /** What this person has on this engagement right now, before anything changes. */

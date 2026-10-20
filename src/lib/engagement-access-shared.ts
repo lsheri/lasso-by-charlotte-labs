@@ -26,7 +26,20 @@ export type EngagementPerson = {
   isYou: boolean;
   /** SH-3b: whether they can open the conversations or only ask about them. */
   conversations?: ConversationAccess;
+  /** SHARE-2: shown under the name so two people with one name stay apart. */
+  email?: string | null;
+  /** SHARE-2: when they were put on this board, if recorded. */
+  addedAt?: string | null;
 };
+
+/**
+ * SHARE-2: the one place the database values meet the words people read.
+ * The database keeps review and work; nobody sees those words.
+ */
+export const ACCESS_LEVEL_DISPLAY = {
+  review: { label: "Viewer", line: "Can look at the board and the work on it." },
+  work: { label: "Collaborator", line: "Can add work and change the board." },
+} as const satisfies Record<EngagementAccessChoice, { label: string; line: string }>;
 
 export type ConversationAccess = "summaries" | "full";
 
