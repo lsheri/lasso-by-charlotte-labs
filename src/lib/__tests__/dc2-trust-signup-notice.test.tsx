@@ -89,12 +89,17 @@ vi.mock("@/components/invites/EnterInviteCode", () => ({
 
 vi.mock("@/components/layout/PublicHeader", () => ({ PublicHeader: () => null }));
 vi.mock("@/lib/board-invites.functions", () => ({ checkBoardInviteSignup: vi.fn() }));
+vi.mock("@/lib/pilot-request.functions", () => ({
+  PILOT_TEAM_SIZES: ["1-5", "6-15", "16-40", "40+"],
+  submitSignupPilotRequestFn: async () => ({ ok: true }),
+}));
 vi.mock("@/lib/data-consent.functions", () => ({ setDataConsent: vi.fn() }));
 
 import { createHash } from "node:crypto";
 import { SIGNUP_DEFAULT_NOTICE, SIGNUP_DEFAULT_TEXT_VERSION, TIER_COPY, DEFAULT_ORG_TIER, DEFAULT_USER_TIER } from "@/lib/data-consent-shared";
 import { Route as AuthRoute } from "@/routes/auth";
 import { Route as SetupRoute } from "@/routes/onboarding";
+import { PILOT_GATE_COPY } from "@/components/onboarding/PilotRequestGate";
 import { COPY as TRUST_COPY, Route as TrustRoute } from "@/routes/trust";
 
 type Options = { component: (() => ReactNode) & { preload?: () => Promise<unknown> } };
@@ -147,18 +152,15 @@ describe("DC-2 starting-level disclosure", () => {
     expect(screen.getByText("What will you use Lasso for? Pick any that fit.").compareDocumentPosition(notice) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.getByRole("link", { name: "See what each level means" }).getAttribute("href")).toBe("/trust#levels");
   });
-  it.each(["company", "partner"])("shows it below the workspace name for new %s setup, with no uses question", async (intent) => {
+  it.each(["company", "partner"])("omits the work-content notice on the %s pilot form and states how the details are used", async (intent) => {
     mocks.search = { intent };
     mount(SetupRoute);
-    const notice = await screen.findByTestId("signup-default-notice");
-    expect(notice.querySelector("p")?.textContent).toBe(SIGNUP_DEFAULT_NOTICE);
-    expect(screen.queryByText("What will you use Lasso for? Pick any that fit.")).toBeNull();
-    const workspaceName = document.getElementById("org-name");
-    expect(workspaceName).not.toBeNull();
-    expect(workspaceName!.compareDocumentPosition(notice) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    const submit = screen.getByRole("button", { name: /create my workspace/i });
-    expect(notice.compareDocumentPosition(submit) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(screen.getByRole("link", { name: "See what each level means" }).getAttribute("href")).toBe("/trust#levels");
+    const submit = await screen.findByRole("button", { name: PILOT_GATE_COPY.submit });
+    expect(screen.queryByTestId("signup-default-notice")).toBeNull();
+    expect(screen.queryByText(SIGNUP_DEFAULT_NOTICE)).toBeNull();
+    expect(PILOT_GATE_COPY.detailsUse).toBe("We use these details to set up your pilot and to contact you about it.");
+    const line = screen.getByText(PILOT_GATE_COPY.detailsUse);
+    expect(submit.compareDocumentPosition(line) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
   it("does not show it on existing-account tool setup", async () => {
     mocks.search = { setup: true };

@@ -227,6 +227,9 @@ function SponsorRow({
 }
 
 
+/** Rows shown in the picker before anything is typed. */
+const BROWSE_CAP = 6;
+
 export const PEOPLE_COPY = {
   heading: "People",
   you: "You",
@@ -238,6 +241,8 @@ export const PEOPLE_COPY = {
   remove: "Remove",
   membersOnly: "Only people in this workspace can be added here.",
   nobodyToAdd: "Nobody else in your workspace yet.",
+  options: "People you can add",
+  moreToFind: (n: number) => `and ${n} more, type to find them`,
   problem: "That could not be changed.",
   summaries: "Summaries",
   full: "Full conversations",
@@ -443,7 +448,9 @@ function PeopleSection({
           person.display_name.toLocaleLowerCase().includes(needle) ||
           (person.email ?? "").toLocaleLowerCase().includes(needle),
       )
-    : [];
+    : canPick.slice(0, BROWSE_CAP);
+  // With the box empty, show who can be added so the capability is visible.
+  const moreToFind = typed ? 0 : Math.max(0, canPick.length - BROWSE_CAP);
   // An address that belongs to anyone in the workspace, already on the board
   // or not, never goes to the outside invite: the database refuses it.
   const insideByEmail = rows.some((person) => (person.email ?? "").toLocaleLowerCase() === needle);
@@ -488,7 +495,7 @@ function PeopleSection({
           {PEOPLE_COPY.summariesOnly}
         </label>
         {suggestions.length > 0 || inviteEmail ? (
-          <ul id="share-person-options" role="listbox" aria-label={PEOPLE_COPY.add}
+          <ul id="share-person-options" role="listbox" aria-label={PEOPLE_COPY.options}
             className="space-y-1 rounded-md border border-border p-1">
             {suggestions.map((person) => (
               <li key={person.id} role="option" aria-selected={false}>
@@ -516,6 +523,9 @@ function PeopleSection({
               </li>
             ) : null}
           </ul>
+        ) : null}
+        {moreToFind > 0 ? (
+          <p className="text-sm text-muted-foreground">{PEOPLE_COPY.moreToFind(moreToFind)}</p>
         ) : null}
         {typed && suggestions.length === 0 && !inviteEmail && !looksLikeEmail(typed) ? (
           <p className="text-sm text-muted-foreground">{PEOPLE_COPY.noMatch}</p>

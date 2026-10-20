@@ -22,6 +22,7 @@ export const PILOT_GATE_COPY = {
   submit: "Request a pilot",
   submitting: "Sending…",
   justMe: "Just me for now",
+  detailsUse: "We use these details to set up your pilot and to contact you about it.",
   pendingTitle: "Request received",
   pending: "Request received. We will email you when your workspace is ready.",
   error: "We could not send your request just now. Please try again.",
@@ -160,6 +161,7 @@ export function PilotRequestGate({ register, onJustMe }: Props) {
                   <Button type="submit" className="w-full" disabled={sending}>
                     {sending ? PILOT_GATE_COPY.submitting : PILOT_GATE_COPY.submit}
                   </Button>
+                  <p className="text-sm text-muted-foreground">{PILOT_GATE_COPY.detailsUse}</p>
                   <button
                     type="button"
                     onClick={onJustMe}
