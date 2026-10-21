@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   GENERIC_REGION_NAMES,
@@ -6,7 +6,14 @@ import {
   validateInput,
   validateStructure,
   validateStructures,
+  chunkInput,
+  mergeDigests,
+  type StructureDigest,
 } from "@/lib/structure-suggest-shared";
+
+vi.mock("@/lib/ai.server", () => ({ chatComplete: vi.fn() }));
+import { chatComplete } from "@/lib/ai.server";
+import { suggestStructures } from "@/lib/structure-suggest.server";
 
 const base = { id: "a", cut: "workstream", title: "By cost pool", why: "The call kept returning to three cost pools." };
 
@@ -79,9 +86,104 @@ describe("structure validator", () => {
 });
 
 describe("input cap", () => {
-  it("refuses above 200 KB with a named reason", () => {
+  it("refuses above 2 MB with a named reason and accepts exactly 2 MB", () => {
+    expect(STRUCTURE_INPUT_MAX_BYTES).toBe(2 * 1024 * 1024);
     expect(validateInput({ kind: "document", text: "a".repeat(STRUCTURE_INPUT_MAX_BYTES + 1) })).toEqual({ ok: false, reason: "text_too_large" });
     expect(validateInput({ kind: "document", text: "a".repeat(STRUCTURE_INPUT_MAX_BYTES) }).ok).toBe(true);
     expect(validateInput({ kind: "email", text: "hi" })).toEqual({ ok: false, reason: "bad_kind" });
+  });
+});
+
+describe("read everything then propose", () => {
+  beforeEach(() => vi.mocked(chatComplete).mockReset());
+
+  const digest = (names: StructureDigest["names"], statedGoal: string | null = null, arc: string | null = null): StructureDigest => ({ names, statedGoal, arc });
+  const response = (value: unknown) => ({ text: JSON.stringify(value) }) as Awaited<ReturnType<typeof chatComplete>>;
+  const structures = ["question", "deliverable", "workstream"].map((cut) => ({ ...base, cut, regions: ["Warehouse cost", "Freight lanes", "Fleet leases"] }));
+
+  it("splits 95 KB into three chunks without losing text or splitting words", () => {
+    const text = "warehouse ".repeat(9728);
+    expect(new TextEncoder().encode(text).length).toBe(95 * 1024);
+    const result = chunkInput(text);
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error(result.reason);
+    expect(result.chunks).toHaveLength(3);
+    expect(result.chunks.join("")).toBe(text);
+    for (const chunk of result.chunks) {
+      expect(new TextEncoder().encode(chunk).length).toBeLessThanOrEqual(40 * 1024);
+      expect(chunk.endsWith(" ")).toBe(true);
+    }
+  });
+
+  it("counts UTF-8 bytes and prefers a paragraph near the limit", () => {
+    const first = "café ".repeat(6500) + "\n\n";
+    const text = first + "lease ".repeat(1000);
+    const result = chunkInput(text);
+    if (!result.ok) throw new Error(result.reason);
+    expect(result.chunks[0]).toBe(first);
+    expect(result.chunks.join("")).toBe(text);
+    expect(result.chunks.every((chunk) => new TextEncoder().encode(chunk).length <= 40 * 1024)).toBe(true);
+  });
+
+  it("refuses more than 50 chunks without making calls", async () => {
+    const text = "word ".repeat(409601);
+    expect(chunkInput(text)).toEqual({ ok: false, reason: "too_many_chunks" });
+    expect(await suggestStructures({ kind: "document", text })).toEqual({ status: "refused", reason: "too_many_chunks" });
+    expect(chatComplete).not.toHaveBeenCalled();
+  });
+
+  it("refuses a word larger than a chunk rather than splitting or dropping it", () => {
+    expect(chunkInput("x".repeat(40 * 1024 + 1))).toEqual({ ok: false, reason: "word_too_large" });
+  });
+
+  it("merges case-insensitively, collapses whitespace, and keeps first spelling and non-null context", () => {
+    expect(mergeDigests([
+      digest([{ name: "Warehouse  cost", kind: "cost_pool", mentions: 2 }]),
+      digest([{ name: " warehouse COST ", kind: "cost_pool", mentions: 3 }], "Reduce freight cost", "Lease review then renewal"),
+      digest([], "Later goal", "Later arc"),
+    ])).toEqual(digest([{ name: "Warehouse  cost", kind: "cost_pool", mentions: 5 }], "Reduce freight cost", "Lease review then renewal"));
+  });
+
+  it("sorts descending by mentions and caps the merged list at 60", () => {
+    const merged = mergeDigests([digest(Array.from({ length: 70 }, (_, i) => ({ name: `Asset ${i}`, kind: "object", mentions: i + 1 })))]);
+    expect(merged.names).toHaveLength(60);
+    expect(merged.names.map((entry) => entry.mentions)).toEqual(Array.from({ length: 60 }, (_, i) => 70 - i));
+    expect(merged.names[0]?.name).toBe("Asset 69");
+  });
+
+  it.each(["Liam's", "Liam’s"])("rejects possessive region %s", (name) => {
+    expect(validateStructure({ ...base, regions: [name, "Freight lanes", "Fleet leases"] })).toEqual({ ok: false, reason: "possessive_region_name" });
+  });
+
+  it("continues after one failed chunk and sends only the digest to smart tier", async () => {
+    const text = "RAW_EXPORT_MARKER ".repeat(3000);
+    const read = digest([{ name: "Warehouse cost", kind: "cost_pool", mentions: 2 }], "Reduce cost");
+    vi.mocked(chatComplete).mockRejectedValueOnce(new Error("chunk failed"))
+      .mockResolvedValueOnce(response(read)).mockResolvedValueOnce(response({ structures }));
+    const result = await suggestStructures({ text, kind: "transcript" });
+    expect(result).toMatchObject({ status: "ok", lostChunks: 1, shortfall: null });
+    expect(chatComplete).toHaveBeenCalledTimes(3);
+    expect(vi.mocked(chatComplete).mock.calls.map((call) => call[1]?.tier)).toEqual(["fast", "fast", "smart"]);
+    const proposal = vi.mocked(chatComplete).mock.calls[2];
+    expect(proposal?.[0][1]?.content).toBe(`Source kind: transcript\n\nDigest:\n${JSON.stringify(read)}`);
+    expect(JSON.stringify(proposal?.[0])).not.toContain("RAW_EXPORT_MARKER");
+    expect(proposal?.[0][0]?.content).toContain("Do not offer the phase cut");
+  });
+
+  it("retains one retry and two valid structures with a shortfall", async () => {
+    vi.mocked(chatComplete).mockResolvedValueOnce(response(digest([])))
+      .mockResolvedValueOnce(response({ structures: structures.slice(0, 2) }))
+      .mockResolvedValueOnce(response({ structures: [{ ...base, regions: ["Discovery", "Freight", "Fleet"] }] }));
+    expect(await suggestStructures({ kind: "document", text: "Warehouse cost" })).toMatchObject({
+      status: "ok", lostChunks: 0, structures: [{ cut: "question" }, { cut: "deliverable" }],
+      shortfall: "Only 2 of 3 suggestions met the naming and shape rules after one retry.",
+    });
+    expect(vi.mocked(chatComplete).mock.calls.map((call) => call[1]?.tier)).toEqual(["fast", "smart", "smart"]);
+  });
+
+  it("counts malformed digests as lost and reports all chunks lost", async () => {
+    vi.mocked(chatComplete).mockResolvedValueOnce(response({ names: [{ name: "Liam", kind: "person", mentions: 1 }], statedGoal: null, arc: null }));
+    expect(await suggestStructures({ kind: "document", text: "Warehouse" })).toEqual({ status: "failed", reason: "No chunk digest could be generated.", lostChunks: 1 });
+    expect(chatComplete).toHaveBeenCalledTimes(1);
   });
 });
