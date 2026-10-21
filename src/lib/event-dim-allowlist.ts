@@ -237,6 +237,7 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "reflect.session_created": ["context_mode", "finish_reason", "preset", "quote_repairs", "scope", "suppressed_quotes", "tier2_items", "truncated", "unmatched_quotes"],
   "shared.board_opened": ["boards_band", "granters_band", "via"],
   "shared.board_left": [],
+  "structure.suggested": ["source_kind", "input_band", "chunks_band", "lost_chunks", "returned", "retried", "outcome", "reason", "digest_cost_band", "propose_cost_band"],
   "task.updated": [],
   "thread.shape": ["from", "has_revision_loop", "role_alternation", "to", "turn_band"],
   "version.recorded": [],

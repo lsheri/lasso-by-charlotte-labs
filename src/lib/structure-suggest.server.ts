@@ -6,6 +6,8 @@
  */
 
 import { chatComplete, type AiMeta } from "@/lib/ai.server";
+import { costBucket } from "@/lib/ai-usage";
+import type { TelemetryDims } from "@/lib/telemetry-shared";
 import {
   GENERIC_REGION_NAMES,
   REGION_NAME_MAX,
@@ -70,7 +72,9 @@ function parse(text: string): unknown {
   }
 }
 
-async function ask(userText: string, meta: AiMeta | undefined, hasArc: boolean): Promise<unknown> {
+type SuggestUsage = { digestCost: number; proposeCost: number; chunks: number; retried: boolean };
+
+async function ask(userText: string, meta: AiMeta | undefined, hasArc: boolean, usage: SuggestUsage): Promise<unknown> {
   const result = await chatComplete(
     [
       { role: "system", content: `${SYSTEM_PROMPT}\n${hasArc ? "The digest has a stated time arc; phase may replace one cut." : "Do not offer the phase cut: the digest has no time arc."}` },
@@ -78,6 +82,7 @@ async function ask(userText: string, meta: AiMeta | undefined, hasArc: boolean):
     ],
     { tier: "smart", responseFormat: RESPONSE_FORMAT, ...(meta ? { meta } : {}) },
   );
+  usage.proposeCost += result.costUsd;
   return parse(result.text);
 }
 
@@ -120,12 +125,42 @@ function sourceBlock(kind: string, digest: StructureDigest): string {
 }
 
 /** Three candidate structures, or fewer with the reason said plainly. */
-export async function suggestStructures(input: unknown, meta?: AiMeta): Promise<StructureSuggestResult> {
+export async function suggestStructures(input: unknown, meta?: AiMeta, orgId?: string): Promise<StructureSuggestResult> {
+  const usage: SuggestUsage = { digestCost: 0, proposeCost: 0, chunks: 0, retried: false };
+  const result = await generateStructures(input, meta, usage);
+  if (orgId) {
+    const raw = (input ?? {}) as { text?: unknown; kind?: unknown };
+    const bytes = typeof raw.text === "string" ? new TextEncoder().encode(raw.text).length : 0;
+    const dims: TelemetryDims = {
+      input_band: bytes <= 40 * 1024 ? "0-40KB" : bytes <= 160 * 1024 ? "40-160KB" : bytes <= 760 * 1024 ? "160-760KB" : "760KB+",
+      lost_chunks: result.status === "refused" || result.lostChunks === 0 ? "0" : result.lostChunks === 1 ? "1" : "2+",
+      returned: result.status === "ok" ? String(result.structures.length) : "0",
+      retried: usage.retried,
+      outcome: result.status,
+      digest_cost_band: costBucket(usage.digestCost),
+      propose_cost_band: costBucket(usage.proposeCost),
+    };
+    if (raw.kind === "transcript" || raw.kind === "document" || raw.kind === "mixed") dims.source_kind = raw.kind;
+    if (usage.chunks > 0) dims.chunks_band = usage.chunks === 1 ? "1" : usage.chunks < 5 ? "2-4" : usage.chunks < 20 ? "5-19" : "20+";
+    if (result.status !== "ok") dims.reason = result.reason;
+    try {
+      const { recordEvent } = await import("@/lib/telemetry.server");
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      await recordEvent(supabaseAdmin, { eventType: "structure.suggested", orgId, userId: meta?.userId, profileId: meta?.profileId, dims });
+    } catch {
+      // Event delivery must not change a proposal's outcome.
+    }
+  }
+  return result;
+}
+
+async function generateStructures(input: unknown, meta: AiMeta | undefined, usage: SuggestUsage): Promise<StructureSuggestResult> {
   const checked = validateInput(input);
   if (!checked.ok) return { status: "refused", reason: checked.reason };
   const { text, kind } = checked.value;
   const chunked = chunkInput(text);
   if (!chunked.ok) return { status: "refused", reason: chunked.reason };
+  usage.chunks = chunked.chunks.length;
   const digests: StructureDigest[] = [];
   let lostChunks = 0;
   for (const chunk of chunked.chunks) {
@@ -134,6 +169,7 @@ export async function suggestStructures(input: unknown, meta?: AiMeta): Promise<
         { role: "system", content: DIGEST_PROMPT },
         { role: "user", content: chunk },
       ], { tier: "fast", responseFormat: DIGEST_FORMAT, ...(meta ? { meta } : {}) });
+      usage.digestCost += result.costUsd;
       digests.push(checkedDigest(parse(result.text)));
     } catch {
       lostChunks += 1;
@@ -144,19 +180,20 @@ export async function suggestStructures(input: unknown, meta?: AiMeta): Promise<
 
   let first: unknown;
   try {
-    first = await ask(sourceBlock(kind, digest), meta, digest.arc !== null);
+    first = await ask(sourceBlock(kind, digest), meta, digest.arc !== null, usage);
   } catch {
     return { status: "failed", reason: "The suggestion could not be generated.", lostChunks };
   }
   const kept: SuggestedStructure[] = validateStructures(first).valid.slice(0, STRUCTURE_COUNT);
 
   if (kept.length < STRUCTURE_COUNT) {
+    usage.retried = true;
     // One regeneration, for the missing structures only, with different cuts.
     const missing = STRUCTURE_COUNT - kept.length;
     const usedCuts = kept.map((entry) => entry.cut);
     const retryText = `${sourceBlock(kind, digest)}\n\nReturn ${missing} structure(s) only. Do not use these cuts: ${usedCuts.join(", ") || "none"}. Every region name must be a noun from the source; no generic names.`;
     try {
-      const second = await ask(retryText, meta, digest.arc !== null);
+      const second = await ask(retryText, meta, digest.arc !== null, usage);
       for (const entry of validateStructures(second).valid) {
         if (kept.length >= STRUCTURE_COUNT) break;
         if (kept.some((have) => have.cut === entry.cut)) continue;

@@ -20,10 +20,10 @@ export type SuggestedStructure = {
   regions: string[];
 };
 
-/** 2 MB of input, measured in UTF-8 bytes. Above it the request is refused, never cut. */
-export const STRUCTURE_INPUT_MAX_BYTES = 2 * 1024 * 1024;
 export const DIGEST_CHUNK_MAX_BYTES = 40 * 1024;
 export const DIGEST_CHUNKS_MAX = 50;
+/** The total chunk capacity in UTF-8 bytes. Above it the request is refused, never cut. */
+export const STRUCTURE_INPUT_MAX_BYTES = DIGEST_CHUNKS_MAX * DIGEST_CHUNK_MAX_BYTES;
 export type StructureDigest = {
   names: { name: string; kind: "place" | "object" | "function" | "cost_pool" | "decision" | "deliverable" | "date"; mentions: number }[];
   statedGoal: string | null;
@@ -192,4 +192,4 @@ export function validateStructures(raw: unknown): ResponseCheck {
 export type StructureSuggestResult =
   | { status: "ok"; structures: SuggestedStructure[]; shortfall: string | null; lostChunks: number }
   | { status: "refused"; reason: InputRefusal }
-  | { status: "failed"; reason: string; lostChunks: number };
+  | { status: "failed"; reason: "No chunk digest could be generated." | "The suggestion could not be generated." | "No suggestion met the naming and shape rules."; lostChunks: number };
