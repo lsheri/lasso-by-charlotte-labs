@@ -3125,7 +3125,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     });
     toolbarItems.push({
       spec: { id: "suggest", width: 84, moveOrder: 5 },
-      row: <ToolbarIcon label="Suggest workstreams"><Button size="icon" variant="outline" aria-label="Suggest workstreams" data-toolbar-control="suggest" onClick={openSuggestions}><GraphiteIcon name="workstreams" size={20} /></Button></ToolbarIcon>,
+      row: <ToolbarIcon label="Suggest workstreams"><Button size="icon" variant="outline" aria-label="Suggest workstreams" data-toolbar-control="suggest" onClick={openSuggestions}><GraphiteIcon name="analyses" size={20} /></Button></ToolbarIcon>,
       menu: <DropdownMenuItem onSelect={openSuggestions}>Suggest workstreams</DropdownMenuItem>,
     });
   }
