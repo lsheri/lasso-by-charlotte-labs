@@ -119,9 +119,6 @@ const shareMocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/telemetry", () => ({ logEvent: vi.fn() }));
-vi.mock("@/hooks/use-profile", () => ({
-  ensureProfileState: async () => ({ profiles: [{ id: "p1", org_id: "org1" }], hasDeactivated: false }),
-}));
 vi.mock("@tanstack/react-start", () => ({ useServerFn: (fn: unknown) => fn }));
 vi.mock("@/components/canvas-lab/ShareBoardDialog", () => ({ BoardLinkSection: () => null }));
 vi.mock("@/lib/board-invites.functions", () => ({
