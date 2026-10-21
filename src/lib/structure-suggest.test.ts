@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   GENERIC_REGION_NAMES,
   STRUCTURE_INPUT_MAX_BYTES,
+  DIGEST_CHUNKS_MAX,
+  DIGEST_CHUNK_MAX_BYTES,
   validateInput,
   validateStructure,
   validateStructures,
@@ -12,6 +14,10 @@ import {
 } from "@/lib/structure-suggest-shared";
 
 vi.mock("@/lib/ai.server", () => ({ chatComplete: vi.fn() }));
+vi.mock("@/lib/telemetry.server", () => ({ recordEvent: vi.fn() }));
+vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: {} }));
+import { recordEvent } from "@/lib/telemetry.server";
+import { guardEventDims } from "@/lib/event-dim-allowlist";
 import { chatComplete } from "@/lib/ai.server";
 import { suggestStructures } from "@/lib/structure-suggest.server";
 
@@ -86,8 +92,9 @@ describe("structure validator", () => {
 });
 
 describe("input cap", () => {
-  it("refuses above 2 MB with a named reason and accepts exactly 2 MB", () => {
-    expect(STRUCTURE_INPUT_MAX_BYTES).toBe(2 * 1024 * 1024);
+  it("refuses above total chunk capacity and accepts exactly that capacity", () => {
+    expect(STRUCTURE_INPUT_MAX_BYTES).toBe(DIGEST_CHUNKS_MAX * DIGEST_CHUNK_MAX_BYTES);
+    expect(STRUCTURE_INPUT_MAX_BYTES).toBe(2048000);
     expect(validateInput({ kind: "document", text: "a".repeat(STRUCTURE_INPUT_MAX_BYTES + 1) })).toEqual({ ok: false, reason: "text_too_large" });
     expect(validateInput({ kind: "document", text: "a".repeat(STRUCTURE_INPUT_MAX_BYTES) }).ok).toBe(true);
     expect(validateInput({ kind: "email", text: "hi" })).toEqual({ ok: false, reason: "bad_kind" });
@@ -95,10 +102,10 @@ describe("input cap", () => {
 });
 
 describe("read everything then propose", () => {
-  beforeEach(() => vi.mocked(chatComplete).mockReset());
+  beforeEach(() => { vi.mocked(chatComplete).mockReset(); vi.mocked(recordEvent).mockReset(); });
 
   const digest = (names: StructureDigest["names"], statedGoal: string | null = null, arc: string | null = null): StructureDigest => ({ names, statedGoal, arc });
-  const response = (value: unknown) => ({ text: JSON.stringify(value) }) as Awaited<ReturnType<typeof chatComplete>>;
+  const response = (value: unknown, costUsd = 0) => ({ text: JSON.stringify(value), costUsd }) as Awaited<ReturnType<typeof chatComplete>>;
   const structures = ["question", "deliverable", "workstream"].map((cut) => ({ ...base, cut, regions: ["Warehouse cost", "Freight lanes", "Fleet leases"] }));
 
   it("splits 95 KB into three chunks without losing text or splitting words", () => {
@@ -128,7 +135,7 @@ describe("read everything then propose", () => {
   it("refuses more than 50 chunks without making calls", async () => {
     const text = "word ".repeat(409601);
     expect(chunkInput(text)).toEqual({ ok: false, reason: "too_many_chunks" });
-    expect(await suggestStructures({ kind: "document", text })).toEqual({ status: "refused", reason: "too_many_chunks" });
+    expect(await suggestStructures({ kind: "document", text })).toEqual({ status: "refused", reason: "text_too_large" });
     expect(chatComplete).not.toHaveBeenCalled();
   });
 
@@ -185,5 +192,55 @@ describe("read everything then propose", () => {
     vi.mocked(chatComplete).mockResolvedValueOnce(response({ names: [{ name: "Liam", kind: "person", mentions: 1 }], statedGoal: null, arc: null }));
     expect(await suggestStructures({ kind: "document", text: "Warehouse" })).toEqual({ status: "failed", reason: "No chunk digest could be generated.", lostChunks: 1 });
     expect(chatComplete).toHaveBeenCalledTimes(1);
+  });
+
+  const ORG = "structure-test-org";
+  const allowedKeys = ["source_kind", "input_band", "chunks_band", "lost_chunks", "returned", "retried", "outcome", "reason", "digest_cost_band", "propose_cost_band"];
+  function emittedDims() {
+    expect(recordEvent).toHaveBeenCalledTimes(1);
+    const event = vi.mocked(recordEvent).mock.calls[0]?.[1];
+    if (!event?.dims) throw new Error("Expected event dims");
+    expect(event.eventType).toBe("structure.suggested");
+    expect(event.orgId).toBe(ORG);
+    // Like unitS8: inspect every emitted key, not just a selected safe subset.
+    for (const key of Object.keys(event.dims)) expect(allowedKeys).toContain(key);
+    expect(guardEventDims("structure.suggested", event.dims).dims).toEqual(event.dims);
+    return event.dims;
+  }
+
+  it("fires once for ok with separate summed digest and proposal cost bands, including retry", async () => {
+    const read = digest([{ name: "SECRET_DIGEST_NAME", kind: "object", mentions: 1 }], "SECRET_GOAL", "SECRET_ARC");
+    vi.mocked(chatComplete).mockResolvedValueOnce(response(read, 0.03)).mockResolvedValueOnce(response(read, 0.03))
+      .mockResolvedValueOnce(response({ structures: structures.slice(0, 2) }, 0.02))
+      .mockResolvedValueOnce(response({ structures: structures.slice(2) }, 0.02));
+    await suggestStructures({ kind: "mixed", text: "SECRET_INPUT ".repeat(4000) }, { surface: "test", orgId: "wrong-org", userId: "SECRET_PERSON" }, ORG);
+    expect(emittedDims()).toEqual({ source_kind: "mixed", input_band: "40-160KB", chunks_band: "2-4", lost_chunks: "0", returned: "3", retried: true, outcome: "ok", digest_cost_band: "$0.05-0.25", propose_cost_band: "$0.01-0.05" });
+  });
+
+  it("fires once for refused without inventing a chunk count", async () => {
+    await suggestStructures({ kind: "document", text: "x".repeat(STRUCTURE_INPUT_MAX_BYTES + 1) }, undefined, ORG);
+    expect(emittedDims()).toEqual({ source_kind: "document", input_band: "760KB+", lost_chunks: "0", returned: "0", retried: false, outcome: "refused", reason: "text_too_large", digest_cost_band: "<$0.01", propose_cost_band: "<$0.01" });
+    expect(chatComplete).not.toHaveBeenCalled();
+  });
+
+  it("fires once for failed, never copying an exception message into dims", async () => {
+    vi.mocked(chatComplete).mockRejectedValueOnce(new Error("SECRET_EXCEPTION"));
+    await suggestStructures({ kind: "transcript", text: "SECRET_INPUT" }, undefined, ORG);
+    expect(emittedDims()).toEqual({ source_kind: "transcript", input_band: "0-40KB", chunks_band: "1", lost_chunks: "1", returned: "0", retried: false, outcome: "failed", reason: "No chunk digest could be generated.", digest_cost_band: "<$0.01", propose_cost_band: "<$0.01" });
+  });
+
+  it("never substitutes meta.orgId when explicit orgId is missing", async () => {
+    vi.mocked(chatComplete).mockResolvedValueOnce(response(digest([]))).mockResolvedValueOnce(response({ structures }));
+    await suggestStructures({ kind: "document", text: "Warehouse" }, { surface: "test", orgId: ORG });
+    await suggestStructures({ kind: "document", text: "" }, { surface: "test", orgId: ORG });
+    vi.mocked(chatComplete).mockRejectedValueOnce(new Error("failure"));
+    await suggestStructures({ kind: "document", text: "Warehouse" }, { surface: "test", orgId: ORG });
+    expect(recordEvent).not.toHaveBeenCalled();
+  });
+
+  it("omits invalid source kind rather than recording arbitrary input", async () => {
+    await suggestStructures({ kind: "SECRET_KIND", text: "Warehouse" }, undefined, ORG);
+    expect(emittedDims()).not.toHaveProperty("source_kind");
+    expect(emittedDims()["reason"]).toBe("bad_kind");
   });
 });

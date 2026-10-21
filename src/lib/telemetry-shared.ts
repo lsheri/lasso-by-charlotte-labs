@@ -286,6 +286,8 @@ export type TelemetryEvent =
   | "consent.research_change"
   /** Pass 148: one captured item, the tool and coarse shape of the work. */
   | "model.used"
+  /** One structure proposal attempt. Closed outcomes and size/cost bands only. */
+  | "structure.suggested"
   /** Pass 148: the shape of a captured conversation. Bands and counts only. */
   | "thread.shape"
   /** Pass 155: the machine context of one capture. Bands, counts, codes. */
