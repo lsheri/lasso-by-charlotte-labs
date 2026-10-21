@@ -356,3 +356,31 @@ describe("what a region is allowed to be", () => {
     expect(check.rejected).toEqual([{ index: 0, reason: "region_is_the_board" }]);
   });
 });
+
+describe("out of scope material", () => {
+  beforeEach(() => { vi.mocked(chatComplete).mockReset(); vi.mocked(recordEvent).mockReset(); });
+
+  const digest = (names: StructureDigest["names"], statedGoal: string | null = null, arc: string | null = null): StructureDigest => ({ names, statedGoal, arc });
+  const response = (value: unknown, costUsd = 0) => ({ text: JSON.stringify(value), costUsd }) as Awaited<ReturnType<typeof chatComplete>>;
+  const structures = ["question", "deliverable", "workstream"].map((cut) => ({ ...base, cut, regions: ["Carrier and freight cost", "Warehouse lease decision", "Private label margin"] }));
+
+  it("marks a name out of scope when any chunk says so, and leaves it unset otherwise", () => {
+    const merged = mergeDigests([
+      digest([{ name: "Procurement savings", kind: "function", mentions: 2 }, { name: "Freight lanes", kind: "object", mentions: 1 }]),
+      digest([{ name: "procurement  SAVINGS", kind: "function", mentions: 1, outOfScope: true }]),
+      digest([{ name: "Freight lanes", kind: "object", mentions: 2, outOfScope: false }]),
+    ]);
+    expect(merged.names.find((entry) => entry.name === "Procurement savings")).toEqual({ name: "Procurement savings", kind: "function", mentions: 3, outOfScope: true });
+    expect(merged.names.find((entry) => entry.name === "Freight lanes")).toEqual({ name: "Freight lanes", kind: "object", mentions: 3 });
+  });
+
+  it("carries the outOfScope flag into the stage 2 prompt, which bars it from regions", async () => {
+    const read = digest([{ name: "Procurement savings", kind: "function", mentions: 3, outOfScope: true }]);
+    vi.mocked(chatComplete).mockResolvedValueOnce(response(read)).mockResolvedValueOnce(response({ structures }));
+    await suggestStructures({ kind: "transcript", text: "Warehouse" });
+    const proposal = vi.mocked(chatComplete).mock.calls.find((call) => call[1]?.tier === "smart");
+    expect(proposal?.[0][1]?.content).toContain('"outOfScope":true');
+    expect(proposal?.[0][0]?.content).toContain("Names marked outOfScope in the digest are never regions.");
+    expect(proposal?.[0][0]?.content).toContain("Write every region name in sentence case: capital on the first word and on proper nouns only. Never all lower case, never title case.");
+  });
+});
