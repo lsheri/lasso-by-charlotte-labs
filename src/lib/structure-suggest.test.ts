@@ -188,6 +188,71 @@ describe("read everything then propose", () => {
     expect(vi.mocked(chatComplete).mock.calls.map((call) => call[1]?.tier)).toEqual(["fast", "smart", "smart"]);
   });
 
+  it("runs at most four digests and reports every settlement including failure", async () => {
+    const text = "warehouse ".repeat(21000);
+    const chunked = chunkInput(text);
+    if (!chunked.ok) throw new Error(chunked.reason);
+    expect(chunked.chunks).toHaveLength(6);
+    const pending: { resolve: (value: Awaited<ReturnType<typeof chatComplete>>) => void; reject: (reason: Error) => void }[] = [];
+    let active = 0;
+    let peak = 0;
+    vi.mocked(chatComplete).mockImplementation((_messages, options) => {
+      if (options?.tier === "smart") return Promise.resolve(response({ structures }));
+      active += 1;
+      peak = Math.max(peak, active);
+      return new Promise((resolve, reject) => pending.push({
+        resolve: (value) => { active -= 1; resolve(value); },
+        reject: (reason) => { active -= 1; reject(reason); },
+      }));
+    });
+    const progress = vi.fn();
+    const request = suggestStructures({ text, kind: "transcript" }, undefined, ORG, progress);
+    expect(pending).toHaveLength(4);
+    pending[1]?.reject(new Error("lost"));
+    await vi.waitFor(() => expect(pending).toHaveLength(5));
+    expect(progress).toHaveBeenLastCalledWith(1, 6);
+    pending[4]?.resolve(response(digest([])));
+    await vi.waitFor(() => expect(pending).toHaveLength(6));
+    for (const index of [5, 3, 0, 2]) pending[index]?.resolve(response(digest([])));
+    expect(await request).toMatchObject({ status: "ok", lostChunks: 1 });
+    expect(peak).toBe(4);
+    expect(progress.mock.calls).toEqual([[1, 6], [2, 6], [3, 6], [4, 6], [5, 6], [6, 6]]);
+    expect(recordEvent).toHaveBeenCalledTimes(1);
+  });
+
+  it("produces the identical merged digest for different completion orders", async () => {
+    const reads = [
+      digest([{ name: "Warehouse  cost", kind: "cost_pool", mentions: 2 }, { name: "Freight lanes", kind: "object", mentions: 5 }], "First goal", "First arc"),
+      digest([{ name: "warehouse COST", kind: "cost_pool", mentions: 3 }], "Second goal", "Second arc"),
+      digest([{ name: "Fleet leases", kind: "object", mentions: 5 }]),
+    ];
+    async function finish(order: number[]) {
+      vi.mocked(chatComplete).mockReset();
+      const pending: ((value: Awaited<ReturnType<typeof chatComplete>>) => void)[] = [];
+      vi.mocked(chatComplete).mockImplementation((_messages, options) => options?.tier === "smart"
+        ? Promise.resolve(response({ structures }))
+        : new Promise((resolve) => pending.push(resolve)));
+      const request = suggestStructures({ text: "warehouse ".repeat(9728), kind: "document" });
+      expect(pending).toHaveLength(3);
+      for (const index of order) {
+        pending[index]?.(response(reads[index]));
+        await Promise.resolve();
+      }
+      await request;
+      return vi.mocked(chatComplete).mock.calls.find((call) => call[1]?.tier === "smart")?.[0][1]?.content;
+    }
+    const first = await finish([0, 1, 2]);
+    const second = await finish([2, 1, 0]);
+    expect(first).toBe(`Source kind: document\n\nDigest:\n${JSON.stringify(mergeDigests(reads))}`);
+    expect(second).toBe(first);
+  });
+
+  it("ignores progress callback exceptions without losing chunks or repeating the event", async () => {
+    vi.mocked(chatComplete).mockResolvedValueOnce(response(digest([]))).mockResolvedValueOnce(response({ structures }));
+    expect(await suggestStructures({ text: "Warehouse", kind: "document" }, undefined, ORG, () => { throw new Error("view closed"); })).toMatchObject({ status: "ok", lostChunks: 0 });
+    expect(recordEvent).toHaveBeenCalledTimes(1);
+  });
+
   it("counts malformed digests as lost and reports all chunks lost", async () => {
     vi.mocked(chatComplete).mockResolvedValueOnce(response({ names: [{ name: "Liam", kind: "person", mentions: 1 }], statedGoal: null, arc: null }));
     expect(await suggestStructures({ kind: "document", text: "Warehouse" })).toEqual({ status: "failed", reason: "No chunk digest could be generated.", lostChunks: 1 });
