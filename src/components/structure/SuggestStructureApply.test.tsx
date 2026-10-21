@@ -81,12 +81,46 @@ describe("suggestion apply and authorization", () => {
     expect(archiveFrame.mock.calls[0]?.[0]).toEqual(results[1]?.frame);
   });
 
+  it("leaves both objects alone when a card has entered the frame", async () => {
+    const deleteWorkstream = vi.fn(async () => undefined);
+    const archiveFrame = vi.fn(async () => undefined);
+    const region: SuggestionRegionResult = { name: "Warehouse cost", taskId: "task", status: "saved", frame: { id: "frame", name: "Warehouse cost", x: 0, y: 0, width: 400, height: 300 } };
+    const result = await removeSuggestedStructure([region], { hasCards: () => true, deleteWorkstream, archiveFrame });
+    expect(result.remaining).toEqual([region]);
+    expect(result.message).toBe("Warehouse cost stayed because it has work.");
+    expect(deleteWorkstream).not.toHaveBeenCalled();
+    expect(archiveFrame).not.toHaveBeenCalled();
+  });
+
+  it("keeps the created task and frame visible when naming fails", async () => {
+    const update = vi.fn();
+    const patchFrame = vi.fn(async () => { throw new Error("Unavailable"); });
+    const results = await applySuggestedStructure(structure, {
+      createFrame: async () => ({ id: "frame", name: "", x: 0, y: 0, width: 400, height: 300 }),
+      createWorkstream: async () => ({ id: "task" }), patchFrame, created: mocks.log, update,
+    });
+    render(<SuggestionApplyResult regions={results} busy={false} message={null} onRemove={() => undefined} onClose={() => undefined} />);
+    expect(screen.getByText("Warehouse cost: Workstream created, grouping did not finish")).toBeTruthy();
+    expect(results[0]?.frame?.id).toBe("frame");
+    expect(results[0]?.taskId).toBe("task");
+    expect(patchFrame).toHaveBeenCalledWith(expect.objectContaining({ id: "frame" }), "Warehouse cost", "task");
+    expect(mocks.log).toHaveBeenCalledTimes(1);
+  });
+
   it("refuses a caller without a profile in the board workspace without generating or emitting an event", async () => {
     mocks.resolve.mockResolvedValue(null);
     const boardQuery = { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), maybeSingle: vi.fn(async () => ({ data: { org_id: "board-org" }, error: null })) };
     const supabase = { from: vi.fn(() => boardQuery) };
     await expect(requireSuggestionProfile({ supabase: supabase as never, userId: "caller" }, "board")).rejects.toThrow("This board is not available to you.");
     expect(mocks.resolve).toHaveBeenCalledWith(supabase, "caller", undefined, "board-org");
+    expect(mocks.suggest).not.toHaveBeenCalled();
+    expect(mocks.log).not.toHaveBeenCalled();
+  });
+
+  it("refuses a coach in the board workspace", async () => {
+    mocks.resolve.mockResolvedValue({ id: "coach", org_id: "board-org", role: "coach" });
+    const query = { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), maybeSingle: vi.fn(async () => ({ data: { org_id: "board-org" }, error: null })) };
+    await expect(requireSuggestionProfile({ supabase: { from: () => query } as never, userId: "caller" }, "board")).rejects.toThrow("This board is not available to you.");
     expect(mocks.suggest).not.toHaveBeenCalled();
     expect(mocks.log).not.toHaveBeenCalled();
   });
