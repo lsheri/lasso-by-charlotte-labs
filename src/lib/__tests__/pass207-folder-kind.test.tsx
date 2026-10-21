@@ -5,9 +5,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { ClientPicker } from "@/components/engagements/ClientPicker";
 
 const mocks = vi.hoisted(() => ({
-  profile: { org_type: "company", role: "admin" } as {
+  profile: { org_type: "company", role: "admin", clients_enabled: true } as {
     org_type: "company" | "personal" | "edu";
     role: string;
+    clients_enabled?: boolean;
   },
   clients: [] as Array<{
     id: string;
