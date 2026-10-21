@@ -172,7 +172,8 @@ describe("read everything then propose", () => {
     expect(chatComplete).toHaveBeenCalledTimes(3);
     expect(vi.mocked(chatComplete).mock.calls.map((call) => call[1]?.tier)).toEqual(["fast", "fast", "smart"]);
     const proposal = vi.mocked(chatComplete).mock.calls[2];
-    expect(proposal?.[0][1]?.content).toBe(`Source kind: transcript\n\nDigest:\n${JSON.stringify(read)}`);
+    const readWithFlags = { ...read, names: read.names.map((entry) => ({ ...entry, outOfScope: false })) };
+    expect(proposal?.[0][1]?.content).toBe(`Source kind: transcript\n\nDigest:\n${JSON.stringify(readWithFlags)}`);
     expect(JSON.stringify(proposal?.[0])).not.toContain("RAW_EXPORT_MARKER");
     expect(proposal?.[0][0]?.content).toContain("Do not offer the phase cut");
   });
@@ -243,7 +244,8 @@ describe("read everything then propose", () => {
     }
     const first = await finish([0, 1, 2]);
     const second = await finish([2, 1, 0]);
-    expect(first).toBe(`Source kind: document\n\nDigest:\n${JSON.stringify(mergeDigests(reads))}`);
+    const readsWithFlags = reads.map((read) => ({ ...read, names: read.names.map((entry) => ({ ...entry, outOfScope: false })) }));
+    expect(first).toBe(`Source kind: document\n\nDigest:\n${JSON.stringify(mergeDigests(readsWithFlags))}`);
     expect(second).toBe(first);
   });
 
@@ -354,5 +356,33 @@ describe("what a region is allowed to be", () => {
     ] }, "Meridian Foods margin review");
     expect(check.valid.map((s) => s.id)).toEqual(["b"]);
     expect(check.rejected).toEqual([{ index: 0, reason: "region_is_the_board" }]);
+  });
+});
+
+describe("out of scope material", () => {
+  beforeEach(() => { vi.mocked(chatComplete).mockReset(); vi.mocked(recordEvent).mockReset(); });
+
+  const digest = (names: StructureDigest["names"], statedGoal: string | null = null, arc: string | null = null): StructureDigest => ({ names, statedGoal, arc });
+  const response = (value: unknown, costUsd = 0) => ({ text: JSON.stringify(value), costUsd }) as Awaited<ReturnType<typeof chatComplete>>;
+  const structures = ["question", "deliverable", "workstream"].map((cut) => ({ ...base, cut, regions: ["Carrier and freight cost", "Warehouse lease decision", "Private label margin"] }));
+
+  it("marks a name out of scope when any chunk says so, and leaves it unset otherwise", () => {
+    const merged = mergeDigests([
+      digest([{ name: "Procurement savings", kind: "function", mentions: 2 }, { name: "Freight lanes", kind: "object", mentions: 1 }]),
+      digest([{ name: "procurement  SAVINGS", kind: "function", mentions: 1, outOfScope: true }]),
+      digest([{ name: "Freight lanes", kind: "object", mentions: 2, outOfScope: false }]),
+    ]);
+    expect(merged.names.find((entry) => entry.name === "Procurement savings")).toEqual({ name: "Procurement savings", kind: "function", mentions: 3, outOfScope: true });
+    expect(merged.names.find((entry) => entry.name === "Freight lanes")).toEqual({ name: "Freight lanes", kind: "object", mentions: 3 });
+  });
+
+  it("carries the outOfScope flag into the stage 2 prompt, which bars it from regions", async () => {
+    const read = digest([{ name: "Procurement savings", kind: "function", mentions: 3, outOfScope: true }]);
+    vi.mocked(chatComplete).mockResolvedValueOnce(response(read)).mockResolvedValueOnce(response({ structures }));
+    await suggestStructures({ kind: "transcript", text: "Warehouse" });
+    const proposal = vi.mocked(chatComplete).mock.calls.find((call) => call[1]?.tier === "smart");
+    expect(proposal?.[0][1]?.content).toContain('"outOfScope":true');
+    expect(proposal?.[0][0]?.content).toContain("Names marked outOfScope in the digest are never regions.");
+    expect(proposal?.[0][0]?.content).toContain("Write every region name in sentence case: capital on the first word and on proper nouns only. Never all lower case, never title case.");
   });
 });

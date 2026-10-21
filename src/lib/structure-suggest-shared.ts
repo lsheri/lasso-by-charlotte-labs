@@ -26,7 +26,7 @@ export const DIGEST_CHUNKS_MAX = 50;
 /** The total chunk capacity in UTF-8 bytes. Above it the request is refused, never cut. */
 export const STRUCTURE_INPUT_MAX_BYTES = DIGEST_CHUNKS_MAX * DIGEST_CHUNK_MAX_BYTES;
 export type StructureDigest = {
-  names: { name: string; kind: "place" | "object" | "function" | "cost_pool" | "decision" | "deliverable" | "date"; mentions: number }[];
+  names: { name: string; kind: "place" | "object" | "function" | "cost_pool" | "decision" | "deliverable" | "date"; mentions: number; outOfScope?: boolean }[];
   statedGoal: string | null;
   arc: string | null;
 };
@@ -115,8 +115,10 @@ export function mergeDigests(digests: StructureDigest[]): StructureDigest {
     for (const entry of digest.names) {
       const key = entry.name.trim().toLowerCase().replace(/\s+/g, " ");
       const first = names.get(key);
-      if (first) first.mentions += entry.mentions;
-      else names.set(key, { ...entry });
+      if (first) {
+        first.mentions += entry.mentions;
+        if (entry.outOfScope) first.outOfScope = true;
+      } else names.set(key, { ...entry });
     }
   }
   return {
