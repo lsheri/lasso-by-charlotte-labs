@@ -4,8 +4,6 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ClientPicker } from "@/components/engagements/ClientPicker";
 import { SidebarCreateActions } from "@/components/engagements/SidebarCreateActions";
-import { canManageMembers } from "@/lib/role-access";
-
 const mocks = vi.hoisted(() => ({
   profile: { org_type: "company", role: "admin", org_id: "org-1", clients_enabled: true } as {
     org_type: "company" | "personal" | "edu";
@@ -41,10 +39,11 @@ function renderBoth() {
 }
 
 describe("unit 4c client minting gate", () => {
-  it("shows New client to a lead and keeps New folder, in both places", () => {
+  it("hides New client from a lead and keeps New folder, in both places", () => {
+    // Client creation is admin-only; a lead keeps folders, never clients.
     mocks.profile = { org_type: "company", role: "lead", org_id: "org-1", clients_enabled: true };
     renderBoth();
-    expect(screen.getAllByRole("button", { name: "New client" })).toHaveLength(2);
+    expect(screen.queryByRole("button", { name: "New client" })).toBeNull();
     expect(screen.getAllByRole("button", { name: "New folder" })).toHaveLength(2);
   });
 
@@ -62,20 +61,21 @@ describe("unit 4c client minting gate", () => {
     expect(screen.getByRole("option", { name: "No client" })).toBeTruthy();
   });
 
-  it("decides through canManageMembers and nothing else", () => {
+  it("decides through the admin role and nothing else", () => {
     // The gate is exactly the shared predicate: whatever it allows, the UI shows.
     for (const role of ["admin", "lead", "em", "coach", "worker"]) {
       mocks.profile = { org_type: "company", role, org_id: "org-1", clients_enabled: true };
       const { unmount } = render(<SidebarCreateActions empty={false} />);
       const shown = screen.queryByRole("button", { name: "New client" }) !== null;
-      expect(shown).toBe(canManageMembers(mocks.profile));
+      expect(shown).toBe(role === "admin");
       unmount();
     }
   });
 
-  it("shows New client only when clients are on AND the person can manage members", () => {
+  it("shows New client only when clients are on AND the person is an admin", () => {
     const cases: [boolean, string, boolean][] = [
       [true, "admin", true],
+      [true, "lead", false],
       [true, "em", false],
       [false, "admin", false],
       [false, "em", false],
