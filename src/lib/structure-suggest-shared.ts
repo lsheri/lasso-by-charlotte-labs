@@ -20,8 +20,15 @@ export type SuggestedStructure = {
   regions: string[];
 };
 
-/** 200 KB of input, measured in UTF-8 bytes. Above it the request is refused, never cut. */
-export const STRUCTURE_INPUT_MAX_BYTES = 200 * 1024;
+/** 2 MB of input, measured in UTF-8 bytes. Above it the request is refused, never cut. */
+export const STRUCTURE_INPUT_MAX_BYTES = 2 * 1024 * 1024;
+export const DIGEST_CHUNK_MAX_BYTES = 40 * 1024;
+export const DIGEST_CHUNKS_MAX = 50;
+export type StructureDigest = {
+  names: { name: string; kind: "place" | "object" | "function" | "cost_pool" | "decision" | "deliverable" | "date"; mentions: number }[];
+  statedGoal: string | null;
+  arc: string | null;
+};
 export const STRUCTURE_COUNT = 3;
 export const REGIONS_MIN = 3;
 export const REGIONS_MAX = 5;
@@ -59,9 +66,62 @@ export type StructureRejection =
   | "empty_region_name"
   | "region_name_too_long"
   | "generic_region_name"
+  | "possessive_region_name"
   | "duplicate_region_name";
 
-export type InputRefusal = "empty_text" | "text_too_large" | "bad_kind";
+export type InputRefusal = "empty_text" | "text_too_large" | "bad_kind" | "too_many_chunks" | "word_too_large";
+
+/** Preserve every character. Prefer paragraphs in the final tenth of a full chunk. */
+export function chunkInput(text: string): { ok: true; chunks: string[] } | { ok: false; reason: "too_many_chunks" | "word_too_large" } {
+  const chunks: string[] = [];
+  let start = 0;
+  while (start < text.length) {
+    let end = start;
+    let bytes = 0;
+    while (end < text.length) {
+      const point = text.codePointAt(end);
+      if (point === undefined) break;
+      const size = point <= 0x7f ? 1 : point <= 0x7ff ? 2 : point <= 0xffff ? 3 : 4;
+      if (bytes + size > DIGEST_CHUNK_MAX_BYTES) break;
+      bytes += size;
+      end += point > 0xffff ? 2 : 1;
+    }
+    if (end < text.length) {
+      const window = text.slice(start, end);
+      const paragraphs = [...window.matchAll(/\r?\n[\t ]*\r?\n/g)];
+      const paragraph = paragraphs.at(-1);
+      const paragraphEnd = paragraph ? paragraph.index + paragraph[0].length : 0;
+      if (paragraphEnd > 0 && new TextEncoder().encode(window.slice(0, paragraphEnd)).length >= DIGEST_CHUNK_MAX_BYTES * 0.9) {
+        end = start + paragraphEnd;
+      } else if (!/\s/u.test(text.slice(end - 1, end)) && !/\s/u.test(text.slice(end, end + 1))) {
+        const boundary = [...window.matchAll(/\s+/gu)].at(-1);
+        if (!boundary) return { ok: false, reason: "word_too_large" };
+        end = start + boundary.index + boundary[0].length;
+      }
+    }
+    chunks.push(text.slice(start, end));
+    if (chunks.length > DIGEST_CHUNKS_MAX) return { ok: false, reason: "too_many_chunks" };
+    start = end;
+  }
+  return { ok: true, chunks };
+}
+
+export function mergeDigests(digests: StructureDigest[]): StructureDigest {
+  const names = new Map<string, StructureDigest["names"][number]>();
+  for (const digest of digests) {
+    for (const entry of digest.names) {
+      const key = entry.name.trim().toLowerCase().replace(/\s+/g, " ");
+      const first = names.get(key);
+      if (first) first.mentions += entry.mentions;
+      else names.set(key, { ...entry });
+    }
+  }
+  return {
+    names: [...names.values()].sort((a, b) => b.mentions - a.mentions).slice(0, 60),
+    statedGoal: digests.find((digest) => digest.statedGoal !== null)?.statedGoal ?? null,
+    arc: digests.find((digest) => digest.arc !== null)?.arc ?? null,
+  };
+}
 
 export function isGenericRegionName(name: string): boolean {
   const key = name.trim().toLowerCase().replace(/\s+/g, " ");
@@ -91,6 +151,7 @@ export function validateStructure(raw: unknown): { ok: true; value: SuggestedStr
   for (const region of entry.regions) {
     if (typeof region !== "string" || !region.trim()) return { ok: false, reason: "empty_region_name" };
     const name = region.trim();
+    if (/['’]s$/i.test(name)) return { ok: false, reason: "possessive_region_name" };
     if (name.length > REGION_NAME_MAX) return { ok: false, reason: "region_name_too_long" };
     if (isGenericRegionName(name)) return { ok: false, reason: "generic_region_name" };
     const key = name.toLowerCase();
@@ -129,6 +190,6 @@ export function validateStructures(raw: unknown): ResponseCheck {
 }
 
 export type StructureSuggestResult =
-  | { status: "ok"; structures: SuggestedStructure[]; shortfall: string | null }
+  | { status: "ok"; structures: SuggestedStructure[]; shortfall: string | null; lostChunks: number }
   | { status: "refused"; reason: InputRefusal }
-  | { status: "failed"; reason: string };
+  | { status: "failed"; reason: string; lostChunks: number };
