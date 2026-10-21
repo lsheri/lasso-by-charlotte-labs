@@ -198,7 +198,7 @@ export function ClientPicker({
                   ))
               : null}
           </select>
-          {picked ? (
+          {picked && mayRenamePicked ? (
             <button
               type="button"
               aria-label={`Rename ${picked.name}`}
@@ -212,7 +212,7 @@ export function ClientPicker({
               <Pencil className="h-3.5 w-3.5" aria-hidden />
             </button>
           ) : null}
-          {canCreateClient || !splitByKind ? (
+          {mayCreateClient || !splitByKind ? (
             <button
               type="button"
               onClick={() => setCreating(splitByKind ? "client" : "folder")}
