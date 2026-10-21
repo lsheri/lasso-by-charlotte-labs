@@ -85,7 +85,7 @@ export function ClaimToClient({
     try {
       id = await createClient({ orgId: profile.org_id, name: trimmed, quickFolder: false });
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not save that");
+      toast.error(error instanceof Error ? clientCreateErrorMessage(error.message) : "Could not save that");
       return;
     } finally {
       setBusy(false);
