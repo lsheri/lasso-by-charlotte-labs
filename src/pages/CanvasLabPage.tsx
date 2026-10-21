@@ -3,6 +3,11 @@ import { boardHueIndex } from "@/lib/board-hue";
 import { useRecordEngagementView } from "@/hooks/use-engagement-views";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import { SuggestStructurePanel } from "@/components/structure/SuggestStructurePanel";
+import { suggestStructuresFn } from "@/lib/structure-suggest.functions";
+import { chunkInput, type StructureSourceKind, type SuggestedStructure } from "@/lib/structure-suggest-shared";
+import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Menu, X } from "lucide-react";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type Ref } from "react";
 
@@ -298,6 +303,19 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   const moveItemToWorkstream = useServerFn(moveItemToWorkstreamFn);
   const deleteWorkstreamCall = useServerFn(deleteWorkstreamFn);
   const renameWorkstreamCall = useServerFn(renameWorkstreamFn);
+  const suggestCall = useServerFn(suggestStructuresFn);
+  const suggestionMobile = useIsMobile();
+  const [suggestOpen, setSuggestOpen] = useState(false);
+  const [suggestState, setSuggestState] = useState<"idle" | "reading" | "choosing" | "error">("idle");
+  const [suggestions, setSuggestions] = useState<SuggestedStructure[]>([]);
+  const [suggestParts, setSuggestParts] = useState(1);
+  const [suggestError, setSuggestError] = useState<string | null>(null);
+  const [suggestShortfall, setSuggestShortfall] = useState<string | null>(null);
+  const [suggestBusy, setSuggestBusy] = useState(false);
+  const suggestBusyRef = useRef(false);
+  const suggestRequestRef = useRef(0);
+  const [suggestApplied, setSuggestApplied] = useState<SuggestionRegionResult[]>([]);
+  const [suggestRemoval, setSuggestRemoval] = useState<string | null>(null);
 
 
   const workItems = useMemo(() => {
@@ -2126,6 +2144,115 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     if (frame.durableId) void persistFramePatch(frame.id, { label: name });
   }
 
+  function openSuggestions() {
+    setAskOpen(false);
+    setSuggestOpen(true);
+    if (engagement?.org_id) logEvent("work.panel_opened", engagement.org_id, { panel: "suggest" });
+  }
+
+  function closeSuggestions() {
+    if (suggestBusyRef.current) return;
+    suggestRequestRef.current += 1;
+    setSuggestOpen(false);
+    if (suggestState === "reading") setSuggestState("idle");
+  }
+
+  async function submitSuggestions(text: string, kind: StructureSourceKind) {
+    const request = ++suggestRequestRef.current;
+    const chunks = chunkInput(text);
+    setSuggestParts(chunks.ok ? chunks.chunks.length : 1);
+    setSuggestState("reading");
+    setSuggestError(null);
+    try {
+      const result = await suggestCall({ data: { text, kind, engagementId } });
+      if (request !== suggestRequestRef.current) return;
+      if (result.status === "ok") {
+        setSuggestions(result.structures);
+        setSuggestShortfall(result.shortfall);
+        setSuggestState("choosing");
+      } else {
+        setSuggestError(result.status === "failed" ? result.reason : "This material could not be read. Please try a shorter passage.");
+        setSuggestState("error");
+      }
+    } catch {
+      if (request !== suggestRequestRef.current) return;
+      setSuggestError("Suggestions could not be generated. Please try again.");
+      setSuggestState("error");
+    }
+  }
+
+  async function chooseSuggestion(id: string) {
+    const structure = suggestions.find((entry) => entry.id === id);
+    if (!structure || !canAddWork || suggestBusyRef.current || suggestApplied.length > 0) return;
+    suggestBusyRef.current = true;
+    setSuggestBusy(true);
+    setSuggestRemoval(null);
+    try {
+      if (!(await materialize())) throw new Error("Board could not be saved.");
+      const bottom = Math.max(0, ...framesRef.current.map((frame) => frame.y + frame.height), ...nodesRef.current.map((node) => node.y + node.height));
+      await applySuggestedStructure(structure, {
+        createFrame: async (_name, index) => {
+          const frame: LabFrame = { id: newRegionFrameId(crypto.randomUUID()), name: "", fill: regionFill, x: 0, y: bottom + FRAME_MIN_HEIGHT + index * (FRAME_MIN_HEIGHT * 2), width: FRAME_MIN_WIDTH * 2, height: FRAME_MIN_HEIGHT };
+          const result = await lab.persist({ type: "frame_create", frame: { key: frame.id, kind: "custom", taskId: null, label: null, fill: frame.fill ?? null, x: frame.x, y: frame.y, w: frame.width, h: frame.height, ord: index } });
+          report(result, "frame", "create");
+          if (result.status !== "saved" || !result.created?.frameId) throw new Error("Grouping could not be saved.");
+          frame.durableId = result.created.frameId;
+          frame.durableVersion = result.versions[frame.durableId] ?? 1;
+          framesRef.current = [...framesRef.current, frame];
+          setFrames([...framesRef.current]);
+          return frame;
+        },
+        createWorkstream: (name) => createDrawnWorkstream({ data: { engagement_id: engagementId, name, profile_id: profile?.id } }),
+        patchFrame: async (frame, name, taskId) => {
+          frameTaskOverrideRef.current.set(frame.id, taskId);
+          const result = await lab.persist({ type: "frame_update", frameId: frame.durableId ?? "", expectedVersion: frame.durableVersion ?? 1, patch: { label: name, taskId } });
+          report(result, "frame", "update");
+          if (result.status !== "saved") throw new Error("Grouping name could not be saved.");
+          framesRef.current = framesRef.current.map((entry) => entry.id === frame.id ? { ...entry, name, durableVersion: result.versions[frame.durableId ?? ""] ?? (frame.durableVersion ?? 1) + 1 } : entry);
+          setFrames([...framesRef.current]);
+        },
+        created: () => { if (engagement?.org_id) logEvent("workboard.workstream_created", engagement.org_id, { via: "suggested", claimed: 0 }); },
+        update: setSuggestApplied,
+      });
+      // Ordinary region outlines use the same visibility mode as drawn ones.
+      setStructured(true);
+      await refreshWorkstreams();
+    } catch {
+      setSuggestRemoval("The structure could not be applied. Any saved regions remain on the board.");
+    } finally {
+      suggestBusyRef.current = false;
+      setSuggestBusy(false);
+    }
+  }
+
+  async function removeSuggestion() {
+    if (suggestBusyRef.current || !canAddWork) return;
+    suggestBusyRef.current = true;
+    setSuggestBusy(true);
+    try {
+      const result = await removeSuggestedStructure(suggestApplied, {
+        hasCards: (frame) => nodesRef.current.some((node) => node.frame === frame.id),
+        deleteWorkstream: (taskId) => deleteWorkstreamCall({ data: { task_id: taskId, profile_id: profile?.id, require_empty: true } }),
+        archiveFrame: async (frame) => {
+          const current = framesRef.current.find((entry) => entry.id === frame.id) ?? frame;
+          if (!current.durableId) throw new Error("Grouping is not saved.");
+          const result = await lab.persist({ type: "frame_archive", frameId: current.durableId, expectedVersion: current.durableVersion ?? 1 });
+          report(result, "frame", "archive");
+          if (result.status !== "saved") throw new Error("Grouping could not be removed.");
+          framesRef.current = framesRef.current.filter((entry) => entry.id !== frame.id);
+          setFrames([...framesRef.current]);
+          frameTaskOverrideRef.current.delete(frame.id);
+        },
+      });
+      setSuggestApplied(result.remaining);
+      setSuggestRemoval(result.message);
+      await refreshWorkstreams();
+    } finally {
+      suggestBusyRef.current = false;
+      setSuggestBusy(false);
+    }
+  }
+
   /** A drawn region, saved as paint: no name, no task, claiming nothing. */
   async function createPaintRegion(rect: DrawRect) {
     const nextTool = regionToolAfterDraw(regionFill);
@@ -2996,6 +3123,11 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       row: <ToolbarIcon label="Add grouping"><Button size="icon" variant={drawTool ? "secondary" : "outline"} aria-label="Add grouping" aria-pressed={drawTool} data-toolbar-control="grouping" onClick={toggleDrawTool}><GraphiteIcon name="grouping" size={20} /></Button></ToolbarIcon>,
       menu: <DropdownMenuItem onSelect={toggleDrawTool}>Add grouping</DropdownMenuItem>,
     });
+    toolbarItems.push({
+      spec: { id: "suggest", width: 84, moveOrder: 5 },
+      row: <ToolbarIcon label="Suggest workstreams"><Button size="icon" variant="outline" aria-label="Suggest workstreams" data-toolbar-control="suggest" onClick={openSuggestions}><GraphiteIcon name="analyses" size={20} /></Button></ToolbarIcon>,
+      menu: <DropdownMenuItem onSelect={openSuggestions}>Suggest workstreams</DropdownMenuItem>,
+    });
   }
   if (showExample) {
     toolbarItems.push({
@@ -3072,7 +3204,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
           <div ref={toolbarRef} className="canvas-lab-toolbar flex min-w-0 flex-1 items-center justify-end gap-2 overflow-hidden">
             {toolbarItems.filter((item) => toolbarPlan.row.includes(item.spec.id) && item.spec.id === "add-work").map((item) => <div key={item.spec.id} className="flex shrink-0 items-center gap-2">{item.row}</div>)}
             <div className="canvas-lab-tool-group">
-            {toolbarItems.filter((item) => toolbarPlan.row.includes(item.spec.id) && ["workstreams", "working-from", "add-text", "add-sticky", "region", "ask", "fit"].includes(item.spec.id)).map((item) => <div key={item.spec.id} className="flex shrink-0 items-center gap-2">{item.row}</div>)}
+            {toolbarItems.filter((item) => toolbarPlan.row.includes(item.spec.id) && ["workstreams", "working-from", "add-text", "add-sticky", "region", "suggest", "ask", "fit"].includes(item.spec.id)).map((item) => <div key={item.spec.id} className="flex shrink-0 items-center gap-2">{item.row}</div>)}
             {toolbarOverflowItems.length > 0 || canLeave ? (
               <DropdownMenu>
                 <Tooltip>
@@ -3090,7 +3222,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
               </DropdownMenu>
             ) : null}
             </div>
-            {toolbarItems.filter((item) => toolbarPlan.row.includes(item.spec.id) && !["add-work", "workstreams", "working-from", "add-text", "add-sticky", "region", "ask", "fit"].includes(item.spec.id)).map((item) => <div key={item.spec.id} className="flex shrink-0 items-center gap-2">{item.row}</div>)}
+            {toolbarItems.filter((item) => toolbarPlan.row.includes(item.spec.id) && !["add-work", "workstreams", "working-from", "add-text", "add-sticky", "region", "suggest", "ask", "fit"].includes(item.spec.id)).map((item) => <div key={item.spec.id} className="flex shrink-0 items-center gap-2">{item.row}</div>)}
           </div>
           <Popover open={detailsOpen} onOpenChange={setDetailsOpen}>
             <PopoverAnchor virtualRef={detailsAnchorVirtualRef} />
@@ -3209,6 +3341,10 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
         {boardReady && opening ? <div className={`pointer-events-none absolute inset-0 z-40 flex ${unfold.className}`} aria-hidden={!unfold.still}>{unfold.still ? <span className="sr-only">{unfold.reduced}</span> : null}<span className="canvas-lab-unfold-panel" /><span className="canvas-lab-unfold-panel" /><span className="canvas-lab-unfold-panel" /></div> : null}
       </main>
       {profile?.id && orgId ? <BoardAsk open={askOpen} onOpenChange={setAskOpen} engagementId={engagementId} engagementTitle={title} profileId={profile.id} orgId={orgId} canKeep={canAddWork} onKeep={(answer, via) => void keepAnswerAsCard(answer, { via: via ?? "button" })} boardContextHasPicks={contextNodes.length > 0} boardContextItemIds={contextNodes.flatMap((node) => { const item = itemByNode(node); return item ? [item.id] : []; })} /> : null}
+      {canAddWork && suggestOpen ? <BoardSuggestionSurface mobile={suggestionMobile} onClose={closeSuggestions}>
+        {suggestApplied.length === 0 ? <SuggestStructurePanel state={suggestState} structures={suggestions} parts={suggestParts} shortfall={suggestShortfall} error={suggestError} onSubmit={(text, kind) => void submitSuggestions(text, kind)} onChoose={(id) => void chooseSuggestion(id)} onCancel={closeSuggestions} /> : <SuggestionApplyResult regions={suggestApplied} busy={suggestBusy} message={suggestRemoval} onRemove={() => void removeSuggestion()} onClose={closeSuggestions} />}
+        {suggestApplied.length === 0 && suggestRemoval ? <p role="alert" className="text-base text-destructive">{suggestRemoval}</p> : null}
+      </BoardSuggestionSurface> : null}
       <p className="sr-only" aria-live="polite">{announcement}</p>
       {exampleOpen ? <ExampleBoardOverlay onClose={() => setExampleOpen(false)} /> : null}
       {canAddWork ? <AddWorkPanel open={addWorkOpen} onOpenChange={(next) => { setAddWorkOpen(next); if (!next) { setAddWorkAnchor(null); setAddWorkTarget("board"); } }} onPlace={addWorkToBoard} busy={addWorkBusy} engagementId={engagementId} /> : null}
@@ -3218,6 +3354,86 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     </div>
     </TooltipProvider>
   );
+}
+
+export type SuggestionRegionResult = { name: string; frame?: LabFrame; taskId?: string; status: "pending" | "frame" | "workstream" | "saved" | "failed"; taskDeleted?: boolean };
+
+/** No claim callback exists on this path. Every saved stage remains visible after failure. */
+export async function applySuggestedStructure(structure: SuggestedStructure, operations: {
+  createFrame: (name: string, index: number) => Promise<LabFrame>;
+  createWorkstream: (name: string) => Promise<{ id: string }>;
+  patchFrame: (frame: LabFrame, name: string, taskId: string) => Promise<void>;
+  created: () => void;
+  update: (regions: SuggestionRegionResult[]) => void;
+}) {
+  const regions: SuggestionRegionResult[] = structure.regions.map((name) => ({ name, status: "pending" }));
+  const publish = () => operations.update(regions.map((entry) => ({ ...entry })));
+  publish();
+  for (const [index, region] of regions.entries()) {
+    try {
+      region.frame = await operations.createFrame(region.name, index);
+      region.status = "frame";
+      publish();
+      const task = await operations.createWorkstream(region.name);
+      region.taskId = task.id;
+      region.status = "workstream";
+      operations.created();
+      publish();
+      await operations.patchFrame(region.frame, region.name, task.id);
+      region.status = "saved";
+      publish();
+    } catch {
+      region.status = "failed";
+      publish();
+      break;
+    }
+  }
+  return regions;
+}
+
+export async function removeSuggestedStructure(regions: SuggestionRegionResult[], operations: {
+  hasCards: (frame: LabFrame) => boolean;
+  deleteWorkstream: (taskId: string) => Promise<unknown>;
+  archiveFrame: (frame: LabFrame) => Promise<void>;
+}) {
+  const remaining: SuggestionRegionResult[] = [];
+  const messages: string[] = [];
+  for (const original of regions) {
+    const region = { ...original };
+    if (!region.frame) continue;
+    try {
+      if (operations.hasCards(region.frame)) {
+        remaining.push(region);
+        messages.push(`${region.name} stayed because it has work.`);
+        continue;
+      }
+      if (region.taskId && !region.taskDeleted) {
+        await operations.deleteWorkstream(region.taskId);
+        region.taskDeleted = true;
+      }
+      await operations.archiveFrame(region.frame);
+      messages.push(`${region.name} removed.`);
+    } catch (error) {
+      remaining.push(region);
+      messages.push(error instanceof Error && error.message === "Move its cards first." ? `${region.name} stayed because it has work.` : `${region.name} could not be removed. It remains available.`);
+    }
+  }
+  return { remaining, message: messages.join(" ") || "No saved regions to remove." };
+}
+
+export function SuggestionApplyResult({ regions, busy, message, onRemove, onClose }: { regions: SuggestionRegionResult[]; busy: boolean; message: string | null; onRemove: () => void; onClose: () => void }) {
+  return <section className="space-y-4 text-base text-foreground" aria-label="Structure result">
+    <h2 className="font-serif text-xl">{busy ? "Applying workstreams" : regions.every((region) => region.status === "saved") ? "Workstreams added" : "Some regions did not finish"}</h2>
+    <ul>{regions.map((region) => <li key={region.name}>{region.name}: {region.status === "saved" ? "Added" : region.status === "pending" ? "Not started" : region.status === "failed" ? region.taskId ? "Workstream created, grouping did not finish" : region.frame ? "Grouping created, workstream did not finish" : "Not added" : region.status === "frame" ? "Grouping created" : "Workstream created"}</li>)}</ul>
+    {message ? <p role="status">{message}</p> : null}
+    <Button variant="outline" disabled={busy} onClick={onRemove}>Remove this structure</Button>
+    <Button variant="ghost" disabled={busy} onClick={onClose}>Done</Button>
+  </section>;
+}
+
+function BoardSuggestionSurface({ mobile, children, onClose }: { mobile: boolean; children: ReactNode; onClose: () => void }) {
+  if (mobile) return <Sheet open onOpenChange={(open) => { if (!open) onClose(); }}><SheetContent side="bottom" className="flex h-[100dvh] max-h-[100dvh] w-full flex-col gap-0 overflow-y-auto rounded-none border-0 bg-background p-4"><SheetTitle className="sr-only">Suggest workstreams</SheetTitle><SheetDescription className="sr-only">Suggestions for this workboard</SheetDescription>{children}</SheetContent></Sheet>;
+  return <aside aria-label="Suggest workstreams" className="z-20 flex min-h-0 w-96 shrink-0 flex-col overflow-y-auto border-l border-border bg-background p-4">{children}</aside>;
 }
 
 /** BB-1: true when keys belong to a text box (input, textarea, select or editable text), or anything inside one. */
