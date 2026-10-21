@@ -172,7 +172,8 @@ describe("read everything then propose", () => {
     expect(chatComplete).toHaveBeenCalledTimes(3);
     expect(vi.mocked(chatComplete).mock.calls.map((call) => call[1]?.tier)).toEqual(["fast", "fast", "smart"]);
     const proposal = vi.mocked(chatComplete).mock.calls[2];
-    expect(proposal?.[0][1]?.content).toBe(`Source kind: transcript\n\nDigest:\n${JSON.stringify(read)}`);
+    const readWithFlags = { ...read, names: read.names.map((entry) => ({ ...entry, outOfScope: false })) };
+    expect(proposal?.[0][1]?.content).toBe(`Source kind: transcript\n\nDigest:\n${JSON.stringify(readWithFlags)}`);
     expect(JSON.stringify(proposal?.[0])).not.toContain("RAW_EXPORT_MARKER");
     expect(proposal?.[0][0]?.content).toContain("Do not offer the phase cut");
   });
@@ -243,7 +244,8 @@ describe("read everything then propose", () => {
     }
     const first = await finish([0, 1, 2]);
     const second = await finish([2, 1, 0]);
-    expect(first).toBe(`Source kind: document\n\nDigest:\n${JSON.stringify(mergeDigests(reads))}`);
+    const readsWithFlags = reads.map((read) => ({ ...read, names: read.names.map((entry) => ({ ...entry, outOfScope: false })) }));
+    expect(first).toBe(`Source kind: document\n\nDigest:\n${JSON.stringify(mergeDigests(readsWithFlags))}`);
     expect(second).toBe(first);
   });
 
