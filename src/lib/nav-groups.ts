@@ -478,6 +478,28 @@ export function mergeContainerRows<T extends NavEngagement>(
 }
 
 /**
+ * A container with nothing visible in it — no board of its own, none in any
+ * folder beneath it — is noise in the sidebar and reads as broken. Pruning
+ * drops exactly those nodes and keeps every node that holds, or ancestors
+ * that lead to, at least one visible board. Pure; the picker never sees this,
+ * so the full client list stays available wherever work is filed.
+ */
+export function pruneEmptyContainers<T extends NavEngagement>(
+  roots: readonly ContainerNode<T>[],
+): ContainerNode<T>[] {
+  const walk = (node: ContainerNode<T>): ContainerNode<T> | null => {
+    const children = node.children
+      .map(walk)
+      .filter((child): child is ContainerNode<T> => child !== null);
+    if (node.engagements.length === 0 && children.length === 0) return null;
+    return { ...node, children };
+  };
+  return roots
+    .map(walk)
+    .filter((node): node is ContainerNode<T> => node !== null);
+}
+
+/**
  * SB2: every container id below `id` in the tree, at any depth, never `id`
  * itself and never a sibling. Empty when `id` is not in the tree.
  */
