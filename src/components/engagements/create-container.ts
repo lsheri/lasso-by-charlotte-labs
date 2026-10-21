@@ -1,6 +1,6 @@
 import { toast } from "sonner";
 
-import { createClient, type ClientRow } from "@/hooks/use-clients";
+import { clientCreateErrorMessage, createClient, type ClientRow } from "@/hooks/use-clients";
 import { supabase } from "@/integrations/supabase/client";
 import { containersBand, type ContainerColour } from "@/lib/container-colour";
 import { rpcOutcome } from "@/lib/save-guard";
@@ -75,7 +75,10 @@ export async function createContainer(input: {
     }
     return id;
   } catch (e) {
-    toast.error((e as Error).message);
+    // A non-admin's client insert comes back as a bare permission error;
+    // say who may do it instead. Folder refusals keep their own words.
+    const raw = (e as Error).message;
+    toast.error(input.kind === "client" ? clientCreateErrorMessage(raw) : raw);
     return null;
   }
 }
