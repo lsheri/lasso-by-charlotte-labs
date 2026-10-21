@@ -8,6 +8,7 @@
 export type StructureSourceKind = "transcript" | "document" | "mixed";
 
 export type StructureSuggestInput = { text: string; kind: StructureSourceKind };
+export type StructureSuggestProgress = (done: number, total: number) => void;
 
 export const STRUCTURE_CUTS = ["question", "deliverable", "workstream", "phase"] as const;
 export type StructureCut = (typeof STRUCTURE_CUTS)[number];

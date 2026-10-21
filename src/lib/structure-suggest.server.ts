@@ -20,6 +20,7 @@ import {
   validateStructures,
   type StructureCut,
   type StructureDigest,
+  type StructureSuggestProgress,
   type StructureSuggestResult,
   type SuggestedStructure,
 } from "@/lib/structure-suggest-shared";
@@ -125,9 +126,9 @@ function sourceBlock(kind: string, digest: StructureDigest): string {
 }
 
 /** Three candidate structures, or fewer with the reason said plainly. */
-export async function suggestStructures(input: unknown, meta?: AiMeta, orgId?: string): Promise<StructureSuggestResult> {
+export async function suggestStructures(input: unknown, meta?: AiMeta, orgId?: string, onProgress?: StructureSuggestProgress): Promise<StructureSuggestResult> {
   const usage: SuggestUsage = { digestCost: 0, proposeCost: 0, chunks: 0, retried: false };
-  const result = await generateStructures(input, meta, usage);
+  const result = await generateStructures(input, meta, usage, onProgress);
   if (orgId) {
     const raw = (input ?? {}) as { text?: unknown; kind?: unknown };
     const bytes = typeof raw.text === "string" ? new TextEncoder().encode(raw.text).length : 0;
@@ -154,27 +155,46 @@ export async function suggestStructures(input: unknown, meta?: AiMeta, orgId?: s
   return result;
 }
 
-async function generateStructures(input: unknown, meta: AiMeta | undefined, usage: SuggestUsage): Promise<StructureSuggestResult> {
+/** Indexed slots preserve source order, including first spelling, goal and tied mentions. */
+async function digestChunks(chunks: string[], meta: AiMeta | undefined, usage: SuggestUsage, onProgress?: StructureSuggestProgress) {
+  const slots: (StructureDigest | undefined)[] = new Array(chunks.length);
+  let next = 0;
+  let done = 0;
+  let lostChunks = 0;
+  async function worker() {
+    while (next < chunks.length) {
+      const index = next++;
+      const chunk = chunks[index];
+      if (chunk === undefined) continue;
+      try {
+        const result = await chatComplete([
+          { role: "system", content: DIGEST_PROMPT },
+          { role: "user", content: chunk },
+        ], { tier: "fast", responseFormat: DIGEST_FORMAT, ...(meta ? { meta } : {}) });
+        usage.digestCost += result.costUsd;
+        slots[index] = checkedDigest(parse(result.text));
+      } catch {
+        lostChunks += 1;
+      } finally {
+        done += 1;
+        try { onProgress?.(done, chunks.length); } catch {
+          // Presentation callbacks must not change the suggestion outcome.
+        }
+      }
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(4, chunks.length) }, () => worker()));
+  return { digests: slots.filter((slot): slot is StructureDigest => slot !== undefined), lostChunks };
+}
+
+async function generateStructures(input: unknown, meta: AiMeta | undefined, usage: SuggestUsage, onProgress?: StructureSuggestProgress): Promise<StructureSuggestResult> {
   const checked = validateInput(input);
   if (!checked.ok) return { status: "refused", reason: checked.reason };
   const { text, kind } = checked.value;
   const chunked = chunkInput(text);
   if (!chunked.ok) return { status: "refused", reason: chunked.reason };
   usage.chunks = chunked.chunks.length;
-  const digests: StructureDigest[] = [];
-  let lostChunks = 0;
-  for (const chunk of chunked.chunks) {
-    try {
-      const result = await chatComplete([
-        { role: "system", content: DIGEST_PROMPT },
-        { role: "user", content: chunk },
-      ], { tier: "fast", responseFormat: DIGEST_FORMAT, ...(meta ? { meta } : {}) });
-      usage.digestCost += result.costUsd;
-      digests.push(checkedDigest(parse(result.text)));
-    } catch {
-      lostChunks += 1;
-    }
-  }
+  const { digests, lostChunks } = await digestChunks(chunked.chunks, meta, usage, onProgress);
   if (digests.length === 0) return { status: "failed", reason: "No chunk digest could be generated.", lostChunks };
   const digest = mergeDigests(digests);
 
