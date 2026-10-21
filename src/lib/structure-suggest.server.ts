@@ -140,9 +140,9 @@ export async function suggestStructures(input: unknown, meta?: AiMeta, orgId?: s
       digest_cost_band: costBucket(usage.digestCost),
       propose_cost_band: costBucket(usage.proposeCost),
     };
-    if (raw.kind === "transcript" || raw.kind === "document" || raw.kind === "mixed") dims.source_kind = raw.kind;
-    if (usage.chunks > 0) dims.chunks_band = usage.chunks === 1 ? "1" : usage.chunks < 5 ? "2-4" : usage.chunks < 20 ? "5-19" : "20+";
-    if (result.status !== "ok") dims.reason = result.reason;
+    if (raw.kind === "transcript" || raw.kind === "document" || raw.kind === "mixed") dims["source_kind"] = raw.kind;
+    if (usage.chunks > 0) dims["chunks_band"] = usage.chunks === 1 ? "1" : usage.chunks < 5 ? "2-4" : usage.chunks < 20 ? "5-19" : "20+";
+    if (result.status !== "ok") dims["reason"] = result.reason;
     try {
       const { recordEvent } = await import("@/lib/telemetry.server");
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

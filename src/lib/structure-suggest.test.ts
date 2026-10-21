@@ -241,6 +241,6 @@ describe("read everything then propose", () => {
   it("omits invalid source kind rather than recording arbitrary input", async () => {
     await suggestStructures({ kind: "SECRET_KIND", text: "Warehouse" }, undefined, ORG);
     expect(emittedDims()).not.toHaveProperty("source_kind");
-    expect(emittedDims().reason).toBe("bad_kind");
+    expect(emittedDims()["reason"]).toBe("bad_kind");
   });
 });
