@@ -66,7 +66,7 @@ export function SuggestStructurePanel({ state, structures, done, total, shortfal
       {state === "reading" && (
         <div className="space-y-3">
           <p role="status" aria-live="polite" className="text-base">{reading}</p>
-          <Progress aria-label={reading} value={total > 0 ? Math.min(100, Math.max(0, done / total * 100)) : 0} />
+          <Progress aria-label={reading} max={100} value={total > 0 ? Math.min(100, Math.max(0, done / total * 100)) : 0} />
         </div>
       )}
       {state === "choosing" && (

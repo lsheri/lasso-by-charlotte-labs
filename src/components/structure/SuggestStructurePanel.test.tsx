@@ -60,6 +60,6 @@ describe("standalone suggestion panel", () => {
     view.rerender(<SuggestStructurePanel {...callbacks} state="error" />);
     expect(screen.getByRole("alert").textContent).toBe("Suggestions could not be generated. Please try again.");
     fireEvent.click(screen.getByRole("button", { name: "Try again" }));
-    expect(callbacks.onSubmit.mock.calls).toEqual([["Freight cost comparison", "transcript"], ["Freight cost comparison", "transcript"]]);
+    expect(vi.mocked(callbacks.onSubmit).mock.calls).toEqual([["Freight cost comparison", "transcript"], ["Freight cost comparison", "transcript"]]);
   });
 });
