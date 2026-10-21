@@ -77,6 +77,7 @@ const pickerMocks = vi.hoisted(() => ({
 
 vi.mock("@/hooks/use-profile", () => ({
   useProfile: () => ({ data: pickerMocks.profile, profiles: [pickerMocks.profile] }),
+  ensureProfileState: async () => ({ profiles: [{ id: "p1", org_id: "org1" }], hasDeactivated: false }),
 }));
 vi.mock("@/hooks/use-clients", () => ({
   createClient: vi.fn(),
