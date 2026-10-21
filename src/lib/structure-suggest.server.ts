@@ -33,6 +33,13 @@ const SYSTEM_PROMPT = [
   "NAMING RULE: every region name must come from the nouns in the person's own text: a named place, object, function, cost pool or decision. Good: \"Warehouse cost\", \"Asset 1 diligence\", \"Procurement savings\".",
   "Region names must be drawn from the supplied names list.",
   `Never use generic names. Forbidden: ${GENERIC_REGION_NAMES.join(", ")}.`,
+  "WHAT A REGION IS: a region is a distinct body of work a person could own for several weeks and produce something from. It is not a topic, a fact, a number or a thing mentioned.",
+  "Each region must be a different body of work. If two names describe the same subject, they are one region. \"freight\", \"two carriers\" and \"lane data\" are one region, not three.",
+  "Never name a region after the engagement, the board, the client or the company. That is the container the regions sit inside.",
+  "Never name a region after a date, a month, a meeting or an event. \"Kickoff\" and \"November\" are not work.",
+  "Never name a region after a person or a role.",
+  "Prefer the smallest number of regions that covers the material. Three or four is usually right. Five only when there are genuinely five separate bodies of work. Each region has to hold many chats and documents, so a region that would hold one thing is too small.",
+  "WORKED EXAMPLE. Wrong: \"Meridian Foods margin review\", \"landed cost\", \"freight\", \"two carriers\", \"lane data\". Right: \"Carrier and freight cost\", \"Warehouse lease decision\", \"Private label margin\". The first name was the board itself, and three of the others were one subject.",
   "Do not use em dashes.",
 ].join("\n");
 
@@ -121,14 +128,15 @@ function checkedDigest(raw: unknown): StructureDigest {
   return value;
 }
 
-function sourceBlock(kind: string, digest: StructureDigest): string {
-  return `Source kind: ${kind}\n\nDigest:\n${JSON.stringify(digest)}`;
+function sourceBlock(kind: string, digest: StructureDigest, boardTitle?: string): string {
+  const container = boardTitle?.trim() ? `Container name, never a region: ${boardTitle.trim()}\n` : "";
+  return `Source kind: ${kind}\n${container}\nDigest:\n${JSON.stringify(digest)}`;
 }
 
 /** Three candidate structures, or fewer with the reason said plainly. */
-export async function suggestStructures(input: unknown, meta?: AiMeta, orgId?: string, onProgress?: StructureSuggestProgress): Promise<StructureSuggestResult> {
+export async function suggestStructures(input: unknown, meta?: AiMeta, orgId?: string, onProgress?: StructureSuggestProgress, boardTitle?: string): Promise<StructureSuggestResult> {
   const usage: SuggestUsage = { digestCost: 0, proposeCost: 0, chunks: 0, retried: false };
-  const result = await generateStructures(input, meta, usage, onProgress);
+  const result = await generateStructures(input, meta, usage, onProgress, boardTitle);
   if (orgId) {
     const raw = (input ?? {}) as { text?: unknown; kind?: unknown };
     const bytes = typeof raw.text === "string" ? new TextEncoder().encode(raw.text).length : 0;
@@ -187,7 +195,7 @@ async function digestChunks(chunks: string[], meta: AiMeta | undefined, usage: S
   return { digests: slots.filter((slot): slot is StructureDigest => slot !== undefined), lostChunks };
 }
 
-async function generateStructures(input: unknown, meta: AiMeta | undefined, usage: SuggestUsage, onProgress?: StructureSuggestProgress): Promise<StructureSuggestResult> {
+async function generateStructures(input: unknown, meta: AiMeta | undefined, usage: SuggestUsage, onProgress?: StructureSuggestProgress, boardTitle?: string): Promise<StructureSuggestResult> {
   const checked = validateInput(input);
   if (!checked.ok) return { status: "refused", reason: checked.reason };
   const { text, kind } = checked.value;
@@ -200,21 +208,21 @@ async function generateStructures(input: unknown, meta: AiMeta | undefined, usag
 
   let first: unknown;
   try {
-    first = await ask(sourceBlock(kind, digest), meta, digest.arc !== null, usage);
+    first = await ask(sourceBlock(kind, digest, boardTitle), meta, digest.arc !== null, usage);
   } catch {
     return { status: "failed", reason: "The suggestion could not be generated.", lostChunks };
   }
-  const kept: SuggestedStructure[] = validateStructures(first).valid.slice(0, STRUCTURE_COUNT);
+  const kept: SuggestedStructure[] = validateStructures(first, boardTitle).valid.slice(0, STRUCTURE_COUNT);
 
   if (kept.length < STRUCTURE_COUNT) {
     usage.retried = true;
     // One regeneration, for the missing structures only, with different cuts.
     const missing = STRUCTURE_COUNT - kept.length;
     const usedCuts = kept.map((entry) => entry.cut);
-    const retryText = `${sourceBlock(kind, digest)}\n\nReturn ${missing} structure(s) only. Do not use these cuts: ${usedCuts.join(", ") || "none"}. Every region name must be a noun from the source; no generic names.`;
+    const retryText = `${sourceBlock(kind, digest, boardTitle)}\n\nReturn ${missing} structure(s) only. Do not use these cuts: ${usedCuts.join(", ") || "none"}. Every region name must be a noun from the source; no generic names.`;
     try {
       const second = await ask(retryText, meta, digest.arc !== null, usage);
-      for (const entry of validateStructures(second).valid) {
+      for (const entry of validateStructures(second, boardTitle).valid) {
         if (kept.length >= STRUCTURE_COUNT) break;
         if (kept.some((have) => have.cut === entry.cut)) continue;
         if (entry.cut === "phase" && kept.some((have) => have.cut === "phase")) continue;

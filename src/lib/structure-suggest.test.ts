@@ -309,3 +309,50 @@ describe("read everything then propose", () => {
     expect(emittedDims()["reason"]).toBe("bad_kind");
   });
 });
+
+describe("what a region is allowed to be", () => {
+  beforeEach(() => { vi.mocked(chatComplete).mockReset(); vi.mocked(recordEvent).mockReset(); });
+
+  const digest = (names: StructureDigest["names"], statedGoal: string | null = null, arc: string | null = null): StructureDigest => ({ names, statedGoal, arc });
+  const response = (value: unknown, costUsd = 0) => ({ text: JSON.stringify(value), costUsd }) as Awaited<ReturnType<typeof chatComplete>>;
+  const structures = ["question", "deliverable", "workstream"].map((cut) => ({ ...base, cut, regions: ["Carrier and freight cost", "Warehouse lease decision", "Private label margin"] }));
+
+  it("rejects a region equal to the board title, case and whitespace insensitive", () => {
+    expect(validateStructure({ ...base, regions: ["Meridian Foods margin review", "Freight", "Fleet"] }, "Meridian Foods margin review"))
+      .toEqual({ ok: false, reason: "region_is_the_board" });
+    expect(validateStructure({ ...base, regions: ["  meridian foods   margin REVIEW ", "Freight", "Fleet"] }, "Meridian Foods margin review"))
+      .toEqual({ ok: false, reason: "region_is_the_board" });
+  });
+
+  it.each(["November", "November 2026", "2026"])("rejects the date-only region %s", (name) => {
+    expect(validateStructure({ ...base, regions: [name, "Freight", "Fleet"] })).toEqual({ ok: false, reason: "region_is_a_date" });
+  });
+
+  it("does not reject a deliverable that names a month", () => {
+    expect(validateStructure({ ...base, regions: ["November board pack", "Freight", "Fleet"] }).ok).toBe(true);
+  });
+
+  it("puts the board title in the stage 2 prompt as the container name", async () => {
+    vi.mocked(chatComplete).mockResolvedValueOnce(response(digest([]))).mockResolvedValueOnce(response({ structures }));
+    await suggestStructures({ kind: "document", text: "Warehouse" }, undefined, undefined, undefined, "Meridian Foods margin review");
+    const proposal = vi.mocked(chatComplete).mock.calls.find((call) => call[1]?.tier === "smart");
+    expect(proposal?.[0][1]?.content).toContain("Container name, never a region: Meridian Foods margin review");
+  });
+
+  it("passes a structure whose regions are fine unchanged, board title supplied", async () => {
+    vi.mocked(chatComplete).mockResolvedValueOnce(response(digest([]))).mockResolvedValueOnce(response({ structures }));
+    const result = await suggestStructures({ kind: "document", text: "Warehouse" }, undefined, undefined, undefined, "Meridian Foods margin review");
+    expect(result).toMatchObject({ status: "ok", shortfall: null, lostChunks: 0 });
+    if (result.status !== "ok") throw new Error("expected ok");
+    expect(result.structures.map((entry) => entry.regions)).toEqual(structures.map((entry) => entry.regions));
+  });
+
+  it("rejects a board-titled region through a whole response and keeps the valid ones", () => {
+    const check = validateStructures({ structures: [
+      { ...base, regions: ["Meridian Foods margin review", "Freight", "Fleet"] },
+      { ...base, id: "b", cut: "question", regions: ["Carrier and freight cost", "Warehouse lease decision", "Private label margin"] },
+    ] }, "Meridian Foods margin review");
+    expect(check.valid.map((s) => s.id)).toEqual(["b"]);
+    expect(check.rejected).toEqual([{ index: 0, reason: "region_is_the_board" }]);
+  });
+});

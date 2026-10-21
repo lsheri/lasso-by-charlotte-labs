@@ -68,6 +68,8 @@ export type StructureRejection =
   | "region_name_too_long"
   | "generic_region_name"
   | "possessive_region_name"
+  | "region_is_the_board"
+  | "region_is_a_date"
   | "duplicate_region_name";
 
 export type InputRefusal = "empty_text" | "text_too_large" | "bad_kind" | "too_many_chunks" | "word_too_large";
@@ -124,9 +126,21 @@ export function mergeDigests(digests: StructureDigest[]): StructureDigest {
   };
 }
 
+/** The one normalisation for name comparison: trimmed, lowercased, whitespace collapsed. */
+export function normalizeRegionName(name: string): string {
+  return name.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
 export function isGenericRegionName(name: string): boolean {
-  const key = name.trim().toLowerCase().replace(/\s+/g, " ");
-  return GENERIC_REGION_NAMES.includes(key);
+  return GENERIC_REGION_NAMES.includes(normalizeRegionName(name));
+}
+
+const MONTH_NAMES = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
+const MONTH_OR_YEAR = new RegExp(`^(?:${MONTH_NAMES.join("|")})(?:\\s+\\d{4})?$|^\\d{4}$`);
+
+/** A bare month, a bare year, or a month plus a year is a date, not a body of work. */
+export function isDateRegionName(name: string): boolean {
+  return MONTH_OR_YEAR.test(normalizeRegionName(name));
 }
 
 export function validateInput(input: unknown): { ok: true; value: StructureSuggestInput } | { ok: false; reason: InputRefusal } {
@@ -138,7 +152,7 @@ export function validateInput(input: unknown): { ok: true; value: StructureSugge
 }
 
 /** One structure, checked. Returns the cleaned structure or the first reason it fails. */
-export function validateStructure(raw: unknown): { ok: true; value: SuggestedStructure } | { ok: false; reason: StructureRejection } {
+export function validateStructure(raw: unknown, boardTitle?: string): { ok: true; value: SuggestedStructure } | { ok: false; reason: StructureRejection } {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return { ok: false, reason: "not_an_object" };
   const entry = raw as { id?: unknown; cut?: unknown; title?: unknown; why?: unknown; regions?: unknown };
   if (typeof entry.cut !== "string" || !(STRUCTURE_CUTS as readonly string[]).includes(entry.cut)) return { ok: false, reason: "bad_cut" };
@@ -155,6 +169,8 @@ export function validateStructure(raw: unknown): { ok: true; value: SuggestedStr
     if (/['’]s$/i.test(name)) return { ok: false, reason: "possessive_region_name" };
     if (name.length > REGION_NAME_MAX) return { ok: false, reason: "region_name_too_long" };
     if (isGenericRegionName(name)) return { ok: false, reason: "generic_region_name" };
+    if (boardTitle && normalizeRegionName(name) === normalizeRegionName(boardTitle)) return { ok: false, reason: "region_is_the_board" };
+    if (isDateRegionName(name)) return { ok: false, reason: "region_is_a_date" };
     const key = name.toLowerCase();
     if (seen.has(key)) return { ok: false, reason: "duplicate_region_name" };
     seen.add(key);
@@ -173,13 +189,13 @@ export type ResponseCheck = {
  * A whole model response. Each structure is checked on its own; structures
  * that pass keep their order. Cuts never repeat and "phase" appears at most once.
  */
-export function validateStructures(raw: unknown): ResponseCheck {
+export function validateStructures(raw: unknown, boardTitle?: string): ResponseCheck {
   const list = raw && typeof raw === "object" && Array.isArray((raw as { structures?: unknown }).structures)
     ? ((raw as { structures: unknown[] }).structures)
     : Array.isArray(raw) ? raw : [];
   const check: ResponseCheck = { valid: [], rejected: [] };
   list.forEach((entry, index) => {
-    const result = validateStructure(entry);
+    const result = validateStructure(entry, boardTitle);
     if (!result.ok) { check.rejected.push({ index, reason: result.reason }); return; }
     if (check.valid.some((kept) => kept.cut === result.value.cut)) {
       check.rejected.push({ index, reason: result.value.cut === "phase" ? "second_phase" : "duplicate_cut" });
