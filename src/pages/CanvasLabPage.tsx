@@ -2147,7 +2147,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   function openSuggestions() {
     setAskOpen(false);
     setSuggestOpen(true);
-    if (orgId) logEvent("work.panel_opened", orgId, { panel: "suggest" });
+    if (engagement?.org_id) logEvent("work.panel_opened", engagement.org_id, { panel: "suggest" });
   }
 
   function closeSuggestions() {
@@ -2211,9 +2211,10 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
           framesRef.current = framesRef.current.map((entry) => entry.id === frame.id ? { ...entry, name, durableVersion: result.versions[frame.durableId ?? ""] ?? (frame.durableVersion ?? 1) + 1 } : entry);
           setFrames([...framesRef.current]);
         },
-        created: () => { if (orgId) logEvent("workboard.workstream_created", orgId, { via: "suggested", claimed: 0 }); },
+        created: () => { if (engagement?.org_id) logEvent("workboard.workstream_created", engagement.org_id, { via: "suggested", claimed: 0 }); },
         update: setSuggestApplied,
       });
+      // Ordinary region outlines use the same visibility mode as drawn ones.
       setStructured(true);
       await refreshWorkstreams();
     } catch {
