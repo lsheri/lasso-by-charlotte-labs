@@ -79,7 +79,7 @@ export function validateInput(input: unknown): { ok: true; value: StructureSugge
 /** One structure, checked. Returns the cleaned structure or the first reason it fails. */
 export function validateStructure(raw: unknown): { ok: true; value: SuggestedStructure } | { ok: false; reason: StructureRejection } {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return { ok: false, reason: "not_an_object" };
-  const entry = raw as Record<string, unknown>;
+  const entry = raw as { id?: unknown; cut?: unknown; title?: unknown; why?: unknown; regions?: unknown };
   if (typeof entry.cut !== "string" || !(STRUCTURE_CUTS as readonly string[]).includes(entry.cut)) return { ok: false, reason: "bad_cut" };
   if (typeof entry.title !== "string" || !entry.title.trim()) return { ok: false, reason: "missing_title" };
   if (typeof entry.why !== "string" || !entry.why.trim()) return { ok: false, reason: "missing_why" };

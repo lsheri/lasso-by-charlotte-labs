@@ -72,7 +72,7 @@ async function ask(userText: string, meta: AiMeta | undefined): Promise<unknown>
       { role: "system", content: SYSTEM_PROMPT },
       { role: "user", content: userText },
     ],
-    { tier: "smart", responseFormat: RESPONSE_FORMAT, meta },
+    { tier: "smart", responseFormat: RESPONSE_FORMAT, ...(meta ? { meta } : {}) },
   );
   return parse(result.text);
 }
