@@ -239,6 +239,7 @@ export const PEOPLE_COPY = {
   viewLine: ACCESS_LEVEL_DISPLAY.review.line,
   multiplayerLine: ACCESS_LEVEL_DISPLAY.work.line,
   remove: "Remove",
+  ownerRemoveTitle: "The owner of a board cannot be removed from it. Archive the board instead.",
   membersOnly: "Only people in this workspace can be added here.",
   nobodyToAdd: "Nobody else in your workspace yet.",
   options: "People you can add",
@@ -436,6 +437,7 @@ function PeopleSection({
   });
 
   const canShare = Boolean(people.data?.canShare);
+  const ownerId = people.data?.ownerId ?? null;
   const rows = people.data?.people ?? [];
   const you = rows.find((person) => person.isYou);
   const onBoard = rows.filter((person) => !person.isYou && person.access !== null);
@@ -545,6 +547,9 @@ function PeopleSection({
         ) : null}
         {onBoard.map((person) => {
           const when = addedWhen(person.addedAt);
+          // The database refuses to remove the owner (errcode 53400); the
+          // control is disabled with the reason instead of failing on click.
+          const isOwner = ownerId !== null && person.id === ownerId;
           return (
             <li key={person.id} data-share-row="member" className="flex flex-col gap-2 rounded-md border border-border p-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -563,7 +568,8 @@ function PeopleSection({
                   <Button
                     size="sm"
                     variant="ghost"
-                    disabled={change.isPending || !canShare}
+                    disabled={change.isPending || !canShare || isOwner}
+                    title={isOwner ? PEOPLE_COPY.ownerRemoveTitle : undefined}
                     onClick={() => change.mutate({ person_id: person.id, access: "none" })}
                   >
                     {PEOPLE_COPY.remove}

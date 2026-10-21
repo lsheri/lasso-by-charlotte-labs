@@ -50,6 +50,12 @@ export function isConversationAccess(value: unknown): value is ConversationAcces
 export type EngagementPeoplePayload = {
   people: EngagementPerson[];
   canShare: boolean;
+  /**
+   * The board's owner, from engagements.owner_id. The owner cannot be
+   * removed from their own board; the dialog disables Remove on their row
+   * instead of letting the database refuse. Absent on older payloads.
+   */
+  ownerId?: string | null;
 };
 
 /** The two choices, said as what the person can do, never as a level. */

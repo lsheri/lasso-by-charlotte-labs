@@ -4,7 +4,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { createClient, useClients } from "@/hooks/use-clients";
+import { canCreateClient } from "@/components/engagements/create-permissions";
+import { clientCreateErrorMessage, createClient, useClients } from "@/hooks/use-clients";
 import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
 import { logV2 } from "@/lib/telemetry-v2";
@@ -84,7 +85,7 @@ export function ClaimToClient({
     try {
       id = await createClient({ orgId: profile.org_id, name: trimmed, quickFolder: false });
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not save that");
+      toast.error(error instanceof Error ? clientCreateErrorMessage(error.message) : "Could not save that");
       return;
     } finally {
       setBusy(false);
@@ -142,6 +143,7 @@ export function ClaimToClient({
             </button>
           ) : null}
         </div>
+        {canCreateClient(profile) ? (
         <div className="mt-2 border-t border-border pt-2">
           <div className="flex items-center gap-1.5">
             <input
@@ -156,10 +158,11 @@ export function ClaimToClient({
               onClick={() => void addClient()}
               className="shrink-0 rounded-[var(--radius)] border border-border px-2 py-1 text-xs text-foreground transition-opacity hover:opacity-70 disabled:opacity-40"
             >
-              Add
+            Add
             </button>
           </div>
         </div>
+        ) : null}
       </PopoverContent>
     </Popover>
   );

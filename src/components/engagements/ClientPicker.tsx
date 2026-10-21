@@ -7,10 +7,10 @@ import { Label } from "@/components/ui/label";
 import { ContainerColourSwatches } from "@/components/engagements/ContainerColourSwatches";
 import type { ContainerColour } from "@/lib/container-colour";
 import { createContainer, type ContainerFrom } from "@/components/engagements/create-container";
+import { canCreateClient } from "@/components/engagements/create-permissions";
 import { renameClient, useClients, useInvalidateClients } from "@/hooks/use-clients";
 import { useProfile } from "@/hooks/use-profile";
 import { vocabFor } from "@/lib/edu-vocab";
-import { canManageMembers } from "@/lib/role-access";
 
 /**
  * Client is optional everywhere. Pick one, make one on the spot, or leave it
@@ -48,10 +48,13 @@ export function ClientPicker({
    *  two groups would both read "Folders". */
   const splitByKind = vocab.client !== "Folder";
 
-  /** A client is canonical and billable: only an admin or lead mints one.
-   *  A folder is free to every member, always. The database enforces the
-   *  rule; this only hides the action, and its refusal still shows verbatim. */
-  const canCreateClient = canManageMembers(profile);
+  /** A client is canonical and billable: only an org admin mints or renames
+   *  one, and only where the workspace uses clients. A folder is free to
+   *  every member, always. The database enforces the rule; this only hides
+   *  the action, and its refusal still shows in plain words. */
+  const mayCreateClient = canCreateClient(profile);
+  /** Renaming a client is admin-only; renaming a folder stays open. */
+  const mayRenamePicked = picked ? mayCreateClient || (picked.kind ?? "client") === "folder" : false;
 
   /** A new folder sits inside the container picked right now, or at the top. */
   async function create() {
@@ -195,7 +198,7 @@ export function ClientPicker({
                   ))
               : null}
           </select>
-          {picked ? (
+          {picked && mayRenamePicked ? (
             <button
               type="button"
               aria-label={`Rename ${picked.name}`}
@@ -209,7 +212,7 @@ export function ClientPicker({
               <Pencil className="h-3.5 w-3.5" aria-hidden />
             </button>
           ) : null}
-          {canCreateClient || !splitByKind ? (
+          {mayCreateClient || !splitByKind ? (
             <button
               type="button"
               onClick={() => setCreating(splitByKind ? "client" : "folder")}

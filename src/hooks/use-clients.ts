@@ -41,6 +41,16 @@ export function useInvalidateClients() {
 }
 
 /**
+ * Client creation is admin-only in the database. When that refusal comes back
+ * as a bare permission error, say it plainly instead of showing the raw
+ * message. Any other message passes through unchanged.
+ */
+export const CLIENT_CREATE_REFUSAL = "Only an admin can add a client.";
+export function clientCreateErrorMessage(raw: string): string {
+  return /permission denied|row-level security/i.test(raw) ? CLIENT_CREATE_REFUSAL : raw;
+}
+
+/**
  * Creates a client or folder row and returns its id. Ordinary member insert,
  * no SQL. quick_folder is never written: the column keeps its default. The
  * database trigger owns the nesting rules and its message is thrown as is.

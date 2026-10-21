@@ -41,6 +41,7 @@ import {
   descendantContainerIds,
   mergeContainerRows,
   notInContainerLabel,
+  pruneEmptyContainers,
   type ContainerNode,
   UNMAPPED_SHELF_ID,
   type NavEngagement,
@@ -403,7 +404,10 @@ export function SidebarNav({
   const engagementList = applyWorkboardMoves(rawEngagementList, containerRows, pendingMoves);
   // Only the synthetic groupings (clientless work, quick folders) come from here.
   const { groups } = groupEngagementsByClient(engagementList);
-  const fullContainerRoots = buildContainerTree(containerRows, engagementList);
+  // A client folder with no visible board anywhere inside it is hidden; the
+  // picker still lists every client, so a new client's first board is always
+  // fileable. Pruning the tree here never touches the clients read.
+  const fullContainerRoots = pruneEmptyContainers(buildContainerTree(containerRows, engagementList));
   const [findQuery, setFindQuery] = useState("");
   const filtering = findQuery.trim().length > 0;
   const containerRoots = filterBoardTree(fullContainerRoots, findQuery);
