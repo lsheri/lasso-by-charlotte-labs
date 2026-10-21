@@ -23,5 +23,5 @@ export const suggestStructuresFn = createServerFn({ method: "POST" })
     const input = validateInput(data);
     if (!input.ok) return { status: "refused" as const, reason: input.reason };
     const { suggestStructures } = await import("@/lib/structure-suggest.server");
-    return suggestStructures(input.value, { surface: "workboard", userId: context.userId, profileId: profile.id, orgId: profile.org_id }, profile.org_id, undefined, boardTitle);
+    return suggestStructures(input.value, { surface: "structure_suggest", userId: context.userId, profileId: profile.id, orgId: profile.org_id }, profile.org_id, undefined, boardTitle);
   });
