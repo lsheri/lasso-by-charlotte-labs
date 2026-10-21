@@ -2193,7 +2193,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       await applySuggestedStructure(structure, {
         createFrame: async (_name, index) => {
           const frame: LabFrame = { id: newRegionFrameId(crypto.randomUUID()), name: "", fill: regionFill, x: 0, y: bottom + FRAME_MIN_HEIGHT + index * (FRAME_MIN_HEIGHT * 2), width: FRAME_MIN_WIDTH * 2, height: FRAME_MIN_HEIGHT };
-          const result = await lab.persist({ type: "frame_create", frame: { key: frame.id, kind: "custom", taskId: null, label: null, fill: frame.fill, x: frame.x, y: frame.y, w: frame.width, h: frame.height, ord: index } });
+          const result = await lab.persist({ type: "frame_create", frame: { key: frame.id, kind: "custom", taskId: null, label: null, fill: frame.fill ?? null, x: frame.x, y: frame.y, w: frame.width, h: frame.height, ord: index } });
           report(result, "frame", "create");
           if (result.status !== "saved" || !result.created?.frameId) throw new Error("Grouping could not be saved.");
           frame.durableId = result.created.frameId;

@@ -19,7 +19,7 @@ vi.mock("@tanstack/react-start", async (original) => {
 });
 
 import { applySuggestedStructure, removeSuggestedStructure, SuggestionApplyResult, type SuggestionRegionResult } from "@/pages/CanvasLabPage";
-import { suggestStructuresFn } from "@/lib/structure-suggest.functions";
+import { requireSuggestionProfile } from "@/lib/structure-suggest.functions";
 import { SuggestStructurePanel } from "./SuggestStructurePanel";
 import { createDrawnWorkstreamFn, moveItemToWorkstreamFn } from "@/lib/workstream-draw.functions";
 import { logEvent } from "@/lib/telemetry";
@@ -71,7 +71,7 @@ describe("suggestion apply and authorization", () => {
 
   it("retains a workstream and its frame if work arrived, removing only empty siblings", async () => {
     const deleteWorkstream = vi.fn(async (id: string) => { if (id === "occupied") throw new Error("Move its cards first."); });
-    const archiveFrame = vi.fn(async () => undefined);
+    const archiveFrame = vi.fn(async (_frame: unknown) => undefined);
     const results: SuggestionRegionResult[] = ["occupied", "empty"].map((id) => ({ name: id, taskId: id, status: "saved", frame: { id, name: id, x: 0, y: 0, width: 400, height: 300 } }));
     const result = await removeSuggestedStructure(results, { hasCards: () => false, deleteWorkstream, archiveFrame });
     render(<SuggestionApplyResult regions={result.remaining} busy={false} message={result.message} onRemove={() => undefined} onClose={() => undefined} />);
@@ -85,8 +85,7 @@ describe("suggestion apply and authorization", () => {
     mocks.resolve.mockResolvedValue(null);
     const boardQuery = { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), maybeSingle: vi.fn(async () => ({ data: { org_id: "board-org" }, error: null })) };
     const supabase = { from: vi.fn(() => boardQuery) };
-    const handler = (suggestStructuresFn as unknown as { __handler: (args: unknown) => Promise<unknown> }).__handler;
-    await expect(handler({ data: { text: "Warehouse cost", kind: "transcript", engagementId: "board" }, context: { supabase, userId: "caller" } })).rejects.toThrow("This board is not available to you.");
+    await expect(requireSuggestionProfile({ supabase: supabase as never, userId: "caller" }, "board")).rejects.toThrow("This board is not available to you.");
     expect(mocks.resolve).toHaveBeenCalledWith(supabase, "caller", undefined, "board-org");
     expect(mocks.suggest).not.toHaveBeenCalled();
     expect(mocks.log).not.toHaveBeenCalled();
