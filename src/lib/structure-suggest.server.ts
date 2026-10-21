@@ -126,7 +126,9 @@ function checkedDigest(raw: unknown): StructureDigest {
   const value = raw as StructureDigest;
   if (!Array.isArray(value.names) || (value.statedGoal !== null && typeof value.statedGoal !== "string") || (value.arc !== null && typeof value.arc !== "string")) throw new Error("Invalid digest");
   for (const entry of value.names) {
-    if (!entry || typeof entry.name !== "string" || !entry.name.trim() || !DIGEST_KINDS.includes(entry.kind) || !Number.isInteger(entry.mentions) || entry.mentions < 1 || typeof entry.outOfScope !== "boolean") throw new Error("Invalid digest name");
+    if (!entry || typeof entry.name !== "string" || !entry.name.trim() || !DIGEST_KINDS.includes(entry.kind) || !Number.isInteger(entry.mentions) || entry.mentions < 1) throw new Error("Invalid digest name");
+    if (entry.outOfScope === undefined) entry.outOfScope = false;
+    if (typeof entry.outOfScope !== "boolean") throw new Error("Invalid digest name");
   }
   return value;
 }
