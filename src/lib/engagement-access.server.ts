@@ -31,6 +31,17 @@ export async function listEngagementPeople(
   const canShare = await isEngagementEditor(db, engagementId, profile.id);
   if (!canShare) return { people: [], canShare: false };
 
+  // The owner cannot be removed from their own board; the dialog disables
+  // Remove on their row. The cast stands until the generated types pick up
+  // the owner_id column.
+  const { data: engagementRow } = await db
+    .from("engagements")
+    .select("*")
+    .eq("id", engagementId)
+    .maybeSingle();
+  const ownerId =
+    (engagementRow as unknown as { owner_id?: string | null } | null)?.owner_id ?? null;
+
   const [peopleRes, memberRes] = await Promise.all([
     db
       .from("profiles")
@@ -63,7 +74,7 @@ export async function listEngagementPeople(
       addedAt: addedAt.get(row.id) ?? null,
     }));
 
-  return { people, canShare: true };
+  return { people, canShare: true, ownerId };
 }
 
 /**
