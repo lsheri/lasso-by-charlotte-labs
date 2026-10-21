@@ -1842,6 +1842,7 @@ export type Database = {
           id: string
           org_id: string
           outcome: string | null
+          owner_id: string | null
           term_label: string | null
           title: string
         }
@@ -1856,6 +1857,7 @@ export type Database = {
           id?: string
           org_id: string
           outcome?: string | null
+          owner_id?: string | null
           term_label?: string | null
           title: string
         }
@@ -1870,6 +1872,7 @@ export type Database = {
           id?: string
           org_id?: string
           outcome?: string | null
+          owner_id?: string | null
           term_label?: string | null
           title?: string
         }
@@ -1886,6 +1889,13 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "engagements_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
