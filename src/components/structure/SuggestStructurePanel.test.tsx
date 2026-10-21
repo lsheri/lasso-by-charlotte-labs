@@ -10,7 +10,7 @@ const structures: SuggestedStructure[] = [
   { id: "outputs", cut: "deliverable", title: "By deliverable", why: "The renewal needs three outputs.", regions: ["Board memo", "Savings model", "Vendor shortlist"] },
 ];
 function props(overrides: Partial<SuggestStructurePanelProps> = {}): SuggestStructurePanelProps {
-  return { state: "idle", structures: [], done: 0, total: 0, onSubmit: vi.fn(), onChoose: vi.fn(), onCancel: vi.fn(), ...overrides };
+  return { state: "idle", structures: [], onSubmit: vi.fn(), onChoose: vi.fn(), onCancel: vi.fn(), ...overrides };
 }
 
 describe("standalone suggestion panel", () => {
@@ -27,13 +27,13 @@ describe("standalone suggestion panel", () => {
     expect(callbacks.onCancel).toHaveBeenCalledTimes(1);
   });
 
-  it("shows determinate reading part numbers and updates when the parent advances", () => {
-    const callbacks = props({ state: "reading", done: 2, total: 6 });
+  it("shows the material part count without claiming live progress", () => {
+    const callbacks = props({ state: "reading", parts: 6 });
     const view = render(<SuggestStructurePanel {...callbacks} />);
-    expect(screen.getByRole("status").textContent).toBe("Reading your material, part 2 of 6");
-    expect(Number(screen.getByRole("progressbar").getAttribute("aria-valuenow"))).toBeCloseTo(100 / 3);
-    view.rerender(<SuggestStructurePanel {...callbacks} done={5} />);
-    expect(screen.getByRole("status").textContent).toBe("Reading your material, part 5 of 6");
+    expect(screen.getByRole("status").textContent).toBe("Reading your material, about 6 parts");
+    expect(screen.getByRole("progressbar").hasAttribute("aria-valuenow")).toBe(false);
+    view.rerender(<SuggestStructurePanel {...callbacks} parts={1} />);
+    expect(screen.getByRole("status").textContent).toBe("Reading your material");
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
     expect(callbacks.onCancel).toHaveBeenCalledTimes(1);
   });
@@ -56,7 +56,7 @@ describe("standalone suggestion panel", () => {
     const view = render(<SuggestStructurePanel {...callbacks} />);
     fireEvent.change(screen.getByRole("textbox"), { target: { value: "Freight cost comparison" } });
     fireEvent.click(screen.getByRole("button", { name: "Suggest workstreams" }));
-    view.rerender(<SuggestStructurePanel {...callbacks} state="reading" done={1} total={1} />);
+    view.rerender(<SuggestStructurePanel {...callbacks} state="reading" parts={1} />);
     view.rerender(<SuggestStructurePanel {...callbacks} state="error" />);
     expect(screen.getByRole("alert").textContent).toBe("Suggestions could not be generated. Please try again.");
     fireEvent.click(screen.getByRole("button", { name: "Try again" }));

@@ -2,7 +2,7 @@ import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Progress } from "@/components/ui/progress";
+import { LoaderCircle } from "lucide-react";
 import type { StructureSourceKind, SuggestedStructure } from "@/lib/structure-suggest-shared";
 
 export const COPY = {
@@ -15,7 +15,7 @@ export const COPY = {
   document: "Document",
   mixed: "Mixed material",
   submit: "Suggest workstreams",
-  reading: (done: number, total: number) => `Reading your material, part ${done} of ${total}`,
+  reading: (parts?: number) => parts && parts > 1 ? `Reading your material, about ${parts} parts` : "Reading your material",
   choose: "Use this",
   cancel: "Cancel",
   retry: "Try again",
@@ -26,8 +26,7 @@ export const COPY = {
 export type SuggestStructurePanelProps = {
   state: "idle" | "reading" | "choosing" | "error";
   structures: SuggestedStructure[];
-  done: number;
-  total: number;
+  parts?: number;
   shortfall?: string | null;
   error?: string | null;
   onSubmit: (text: string, kind: StructureSourceKind) => void;
@@ -36,11 +35,11 @@ export type SuggestStructurePanelProps = {
 };
 
 /** Draft inputs only. The parent owns request state, results and every side effect. */
-export function SuggestStructurePanel({ state, structures, done, total, shortfall, error, onSubmit, onChoose, onCancel }: SuggestStructurePanelProps) {
+export function SuggestStructurePanel({ state, structures, parts, shortfall, error, onSubmit, onChoose, onCancel }: SuggestStructurePanelProps) {
   const id = useId();
   const [text, setText] = useState("");
   const [kind, setKind] = useState<StructureSourceKind>("transcript");
-  const reading = COPY.reading(done, total);
+  const reading = COPY.reading(parts);
   return (
     <section data-lasso="on" aria-label={COPY.heading} className="min-w-0 space-y-4 font-sans text-foreground">
       <h2 className="font-serif text-xl">{COPY.heading}</h2>
@@ -66,7 +65,7 @@ export function SuggestStructurePanel({ state, structures, done, total, shortfal
       {state === "reading" && (
         <div className="space-y-3">
           <p role="status" aria-live="polite" className="text-base">{reading}</p>
-          <Progress aria-label={reading} aria-valuemin={0} aria-valuemax={100} aria-valuenow={total > 0 ? Math.min(100, Math.max(0, done / total * 100)) : 0} value={total > 0 ? Math.min(100, Math.max(0, done / total * 100)) : 0} />
+          <div role="progressbar" aria-label={reading}><LoaderCircle aria-hidden="true" className="size-5 animate-spin motion-reduce:animate-none" /></div>
         </div>
       )}
       {state === "choosing" && (
