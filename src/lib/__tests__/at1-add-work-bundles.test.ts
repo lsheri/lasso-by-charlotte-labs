@@ -71,7 +71,8 @@ describe("ATTACH-1 orderWithBundles", () => {
   });
 
   it("returns a piece whose chat is absent from the list as a top-level row", () => {
-    const rows = orderWithBundles([piece(PIECE_A, 1), chat("chat-other")]);
+    const otherChat: BundleItem = { ...chat("chat-other"), orig_conversation_id: "conv-2" };
+    const rows = orderWithBundles([piece(PIECE_A, 1), otherChat]);
     const orphan = rows.find((row) => row.item.id === PIECE_A);
     expect(orphan).toBeDefined();
     expect(orphan?.chatId).toBeNull();
