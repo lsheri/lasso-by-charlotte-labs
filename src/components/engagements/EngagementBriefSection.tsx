@@ -173,7 +173,7 @@ export function EngagementBriefSection({
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <h2 className="micro-label micro-label-section">The brief</h2>
-            <p className="mt-1.5 text-sm font-medium text-foreground">{brief.title}</p>
+            <p className="mt-1.5 text-sm font-medium text-foreground">{displayName(brief)}</p>
             <p className="mt-0.5 text-sm text-muted-foreground">
               What this work was asked to do.
               {brief.brief_scope.type === "task" ? " Marked against one workstream." : ""}
@@ -264,7 +264,7 @@ function BriefAttachments({ engagementId }: { engagementId: string }) {
               }}
               className="max-w-full truncate text-sm text-accent-deep transition-opacity hover:opacity-70"
             >
-              {item.title}
+              {displayName(item)}
             </button>
           </li>
         ))}
