@@ -52,3 +52,27 @@ describe("ALIAS-2 the All AI chats reader shows the chosen name", () => {
     expect(source).not.toContain("{selected.title}");
   });
 });
+
+describe("ALIAS-3 the brief lists show the chosen name", () => {
+  it("reads briefs with the chosen name selected", () => {
+    const source = readFileSync(new URL("../../hooks/use-briefs.ts", import.meta.url), "utf8");
+    expect(source).toContain("display_title");
+  });
+
+  it("reads the files that came with the brief with the chosen name selected", () => {
+    const source = readFileSync(
+      new URL("../../hooks/use-brief-files.ts", import.meta.url),
+      "utf8",
+    );
+    expect(source).toContain("display_title");
+  });
+
+  it("names no work item on the brief screen by its original title", () => {
+    const source = readFileSync(
+      new URL("../../components/engagements/EngagementBriefSection.tsx", import.meta.url),
+      "utf8",
+    );
+    expect(source).not.toContain("{item.title}");
+    expect(source).not.toContain("{brief.title}");
+  });
+});
