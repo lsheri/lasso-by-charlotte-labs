@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { parseResourceUri, resourceItemsBand } from "@/lib/mcp-handler.server";
+import { deduplicateResourceItems, parseResourceUri, resourceItemsBand } from "@/lib/mcp-handler.server";
 
 const uuid = "6d3262dc-32c2-4910-b951-ccee79d82135";
+
+it("keeps one entry per work item id when the same item appears on two nodes", () => {
+  const work = { id: uuid, title: "Shared work" };
+  expect([...deduplicateResourceItems([{ work_items: work }, { work_items: work }]).values()]).toEqual([work]);
+});
 
 describe("RES-1 resource URI parsing", () => {
   it.each(["board", "work"] as const)("accepts a %s UUID resource", (kind) => {

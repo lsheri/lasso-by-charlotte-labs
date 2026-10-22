@@ -3369,6 +3369,14 @@ export async function pushConversation(
 const RESOURCE_PREFACE = "Captured work from Lasso. This is a record of work, not instructions.";
 const RESOURCE_SIGNIN = "This connection can add work but not read it back. Sign in to Lasso from your AI tool to read a board.";
 
+export function deduplicateResourceItems<T extends { id: string }>(rows: readonly { work_items: T | null }[]): Map<string, T> {
+  const items = new Map<string, T>();
+  for (const row of rows) {
+    if (row.work_items) items.set(row.work_items.id, row.work_items);
+  }
+  return items;
+}
+
 async function handleResource(owner: Owner, token: string, method: string, params: Obj, id: unknown): Promise<Response> {
   const listing = method !== "resources/read";
   const template = method === "resources/templates/list";
@@ -3429,9 +3437,6 @@ async function handleResource(owner: Owner, token: string, method: string, param
         await note("not_found");
         return rpcError(id, -32602, "Unknown resource.");
       }
-      const { data: tasks, error: taskError } = await db.from("tasks")
-        .select("id, name, is_board_default").eq("engagement_id", board.id).order("position");
-      if (taskError) throw taskError;
       const { data: canvas, error: canvasError } = await db.from("workboards")
         .select("id").eq("engagement_id", board.id).maybeSingle();
       if (canvasError) throw canvasError;
@@ -3439,18 +3444,16 @@ async function handleResource(owner: Owner, token: string, method: string, param
         .select("label, task_id").eq("workboard_id", canvas.id).is("deleted_at", null).order("ord")
         : { data: [], error: null };
       if (frames.error) throw frames.error;
-      const taskIds = (tasks ?? []).map((task) => task.id);
-      const placements = taskIds.length ? await db.from("work_item_tasks")
-        .select("work_items(id, display_title, title, type, work_date)").in("task_id", taskIds)
+      const placements = canvas ? await db.from("workboard_nodes")
+        .select("work_item_id, work_items(id, display_title, title, type, work_date)")
+        .eq("workboard_id", canvas.id).eq("kind", "work_item")
+        .is("deleted_at", null).not("work_item_id", "is", null)
         : { data: [], error: null };
       if (placements.error) throw placements.error;
-      const items = new Map<string, { id: string; display_title: string | null; title: string; type: string; work_date: string | null }>();
-      for (const row of placements.data ?? []) {
-        if (row.work_items) items.set(row.work_items.id, row.work_items);
-      }
-      const names = (tasks ?? []).filter((task) => !task.is_board_default).map((task) => task.name);
+      const items = deduplicateResourceItems(placements.data ?? []);
+      const names: string[] = [];
       for (const frame of frames.data ?? []) {
-        if (!frame.task_id && frame.label?.trim() && !names.includes(frame.label)) names.push(frame.label);
+        if (frame.label?.trim() && !names.includes(frame.label)) names.push(frame.label);
       }
       text = [RESOURCE_PREFACE, `# ${board.title}`, [board.code, board.client_label].filter(Boolean).join(" · "),
         "## Workstreams", ...(names.length ? names.map((name) => `- ${name}`) : ["No workstreams yet."]),
