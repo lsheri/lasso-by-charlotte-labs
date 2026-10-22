@@ -577,8 +577,10 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
 
   const allNodes = useMemo(() => nodes ?? [], [nodes]);
   const shownNodes = useMemo(() => allNodes.filter((node) => !hiddenIds.includes(node.id)), [allNodes, hiddenIds]);
-  /** U2: a pushed chat and the pieces it made, derived from the work items. */
-  const bundles = useMemo(() => chatBundles(shownNodes, workItems), [shownNodes, workItems]);
+  // BI-5: placement-derived items first; readable items whose placement is hidden resolve by id.
+  const { items: boardItems, pendingIds: pendingBoardItemIds } = useBoardNodeItems(nodes ?? [], workItems);
+  /** U2: a pushed chat and the pieces it made, derived from every item on the board (BUNDLE-1). */
+  const bundles = useMemo(() => chatBundles(shownNodes, boardItems), [shownNodes, boardItems]);
   const pieceChat = useMemo(() => dockedPieceChats(bundles), [bundles]);
   const pieceChatRef = useRef(pieceChat);
   pieceChatRef.current = pieceChat;
@@ -640,8 +642,6 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       queryClient.invalidateQueries({ queryKey: ["work-items"] }),
     ]);
   }
-  // BI-5: placement-derived items first; readable items whose placement is hidden resolve by id.
-  const { items: boardItems, pendingIds: pendingBoardItemIds } = useBoardNodeItems(nodes ?? [], workItems);
   const itemByNode = (node: LabNode) => node.workItemId ? boardItems.find((item) => item.id === node.workItemId) : undefined;
   const teammateMarkByNode = (node: LabNode, item: WorkItemRow | undefined) => teammateMarkFor({
     ownership: node.ownership,

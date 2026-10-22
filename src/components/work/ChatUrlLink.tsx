@@ -50,7 +50,8 @@ export function ChatUrlLink({
       target="_blank"
       rel="noopener noreferrer"
       onClick={note}
-      className="inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+      title={link.kind === "project" ? "Open the project. No link to the chat was recorded." : "Open the URL to this chat"}
+      className="inline-flex items-center gap-1 text-xs text-accent-deep hover:underline"
     >
       {chatLinkLabel(link)}
       <ExternalLink className="h-3 w-3" aria-hidden />
