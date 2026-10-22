@@ -41,6 +41,18 @@ export async function listEngagementPeople(
     .maybeSingle();
   const ownerId =
     (engagementRow as unknown as { owner_id?: string | null } | null)?.owner_id ?? null;
+  // The board's own workspace decides which ways to share are offered, never
+  // the active profile: a board can be shared from another workspace.
+  const boardOrgId = (engagementRow as unknown as { org_id?: string | null } | null)?.org_id ?? null;
+  let workspaceTier: "business" | "individual" = "individual";
+  if (boardOrgId) {
+    const { data: orgRow } = await db.from("orgs").select("tier, settings").eq("id", boardOrgId).maybeSingle();
+    const { profileIsBusiness } = await import("@/lib/workspace-capabilities");
+    const org = orgRow as unknown as { tier?: string | null; settings?: Record<string, unknown> | null } | null;
+    workspaceTier = profileIsBusiness({ tier: org?.tier ?? null, org_type: (org?.settings?.["type"] as string | undefined) ?? null })
+      ? "business"
+      : "individual";
+  }
 
   const [peopleRes, memberRes] = await Promise.all([
     db
@@ -74,7 +86,7 @@ export async function listEngagementPeople(
       addedAt: addedAt.get(row.id) ?? null,
     }));
 
-  return { people, canShare: true, ownerId };
+  return { people, canShare: true, ownerId, workspaceTier };
 }
 
 /**
