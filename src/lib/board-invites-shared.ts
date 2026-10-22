@@ -90,3 +90,38 @@ export function boardInviteCodeFrom(next: string | undefined): string | null {
   if (!isBoardInvitePath(next)) return null;
   return new URLSearchParams(next.split("?")[1] ?? "").get("code");
 }
+
+/** SHARE-3: most addresses one Send will take. */
+export const INVITE_BATCH_CAP = 20;
+
+/**
+ * SHARE-3: split on commas, semicolons, whitespace and newlines; trim,
+ * lowercase, dedupe in order. Whole addresses only; the rest are invalid.
+ * Anything beyond the cap is returned separately and left in the field.
+ */
+export function parseEmailList(text: string, cap: number = INVITE_BATCH_CAP): {
+  valid: string[];
+  invalid: string[];
+  overCap: string[];
+} {
+  const seen = new Set<string>();
+  const valid: string[] = [];
+  const invalid: string[] = [];
+  const overCap: string[] = [];
+  for (const raw of text.split(/[\s,;]+/)) {
+    const part = raw.trim().toLocaleLowerCase();
+    if (!part || seen.has(part)) continue;
+    seen.add(part);
+    if (!looksLikeEmail(part)) invalid.push(part);
+    else if (valid.length >= cap) overCap.push(part);
+    else valid.push(part);
+  }
+  return { valid, invalid, overCap };
+}
+
+/** SHARE-3: closed band for how many a single Send covered. */
+export function inviteCountBand(count: number): "1" | "2-5" | "6-20" {
+  if (count <= 1) return "1";
+  if (count <= 5) return "2-5";
+  return "6-20";
+}

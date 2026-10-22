@@ -70,6 +70,8 @@ describe("SHARE-2 people-first Share dialog", () => {
     await waitFor(() => expect((box as HTMLInputElement).disabled).toBe(false));
     fireEvent.change(box, { target: { value: "ana" } });
     fireEvent.click(await screen.findByRole("button", { name: /Ana Ruiz/ }));
+    expect(m.setAccess).not.toHaveBeenCalled();
+    fireEvent.click(within(screen.getByRole("group", { name: "People in this workspace" })).getByRole("button", { name: "Send" }));
     await waitFor(() => expect(m.setAccess).toHaveBeenCalledTimes(1));
     expect(m.setAccess.mock.calls[0]![0]).toMatchObject({
       data: { engagement_id: "e1", person_id: "p2", access: "review", conversations: "full" },
@@ -93,8 +95,8 @@ describe("SHARE-2 people-first Share dialog", () => {
     openDialog();
     const box = await screen.findByRole("combobox");
     await waitFor(() => expect((box as HTMLInputElement).disabled).toBe(false));
-    fireEvent.change(box, { target: { value: "new@else.com" } });
-    fireEvent.click(await screen.findByRole("button", { name: "Invite new@else.com from outside" }));
+    fireEvent.change(screen.getByLabelText("Email addresses"), { target: { value: "new@else.com" } });
+    fireEvent.click(within(screen.getByRole("group", { name: "Invite by email" })).getByRole("button", { name: "Send" }));
     await waitFor(() => expect(m.invite).toHaveBeenCalledTimes(1));
     expect(m.invite.mock.calls[0]![0]).toEqual({
       data: { engagementId: "e1", email: "new@else.com", level: "review", conversations: "full" },

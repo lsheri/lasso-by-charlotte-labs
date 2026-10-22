@@ -498,6 +498,8 @@ export type TelemetryEvent =
   | "notification.acted"
   /** SH-5c: a board invite by email was created. Dims: kind, status, level, conversations. No emails, codes or ids. */
   | "board.invite_sent"
+  /** SHARE-3: one Send in the Share dialog covering one or more addresses or colleagues. Dims: count_band (1 | 2-5 | 6-20), sent, failed, skipped (small integers). No emails, names or ids. */
+  | "board.invite_batch_sent"
   /** SH-5c: an open board invite was withdrawn. Dims: kind. */
   | "board.invite_withdrawn"
   /** SH-5d: a board invite was accepted. Dims: kind. */

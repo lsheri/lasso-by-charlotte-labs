@@ -53,6 +53,7 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "archive.searched": ["had_results", "matched", "result_count", "results"],
   "artifact.declared": ["ai_involvement", "disposition", "output_kind"],
   "board.invite_accepted": ["kind", "level", "via"],
+  "board.invite_batch_sent": ["count_band", "failed", "sent", "skipped"],
   "board.invite_sent": ["conversations", "kind", "level", "status"],
   "board.invite_withdrawn": ["kind"],
   "board.share_link": ["action", "reason"],

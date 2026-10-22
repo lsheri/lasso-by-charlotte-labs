@@ -139,7 +139,7 @@ describe("SH-5c-fix the Invited group refreshes", () => {
   it("a successful invite refetches the list and the new row renders with Withdraw", async () => {
     const { QueryClient, QueryClientProvider } = await import("@tanstack/react-query");
     const { ShareDialog } = await import("@/components/canvas-lab/ShareDialog");
-    const { fireEvent, waitFor } = await import("@testing-library/react");
+    const { fireEvent, waitFor, within } = await import("@testing-library/react");
     inviteState.listCalls = 0;
     inviteState.rows = [];
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -153,9 +153,9 @@ describe("SH-5c-fix the Invited group refreshes", () => {
     await waitFor(() => expect(inviteState.listCalls).toBe(1));
     expect(screen.getByText("Nobody else in your workspace yet.")).toBeTruthy();
 
-    fireEvent.change(screen.getByLabelText("Add people by name or email"), { target: { value: "jo@x.com" } });
-    expect(screen.queryByText("Nobody else in your workspace yet.")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Invite jo@x.com from outside" }));
+    fireEvent.change(screen.getByLabelText("Email addresses"), { target: { value: "jo@x.com" } });
+    expect(screen.queryByRole("button", { name: "Invite jo@x.com from outside" })).toBeNull();
+    fireEvent.click(within(screen.getByRole("group", { name: "Invite by email" })).getByRole("button", { name: "Send" }));
 
     await waitFor(() => expect(inviteState.listCalls).toBeGreaterThan(1));
     const group = await screen.findByRole("list", { name: "Who has access" });

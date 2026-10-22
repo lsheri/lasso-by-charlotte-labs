@@ -56,6 +56,8 @@ export type EngagementPeoplePayload = {
    * instead of letting the database refuse. Absent on older payloads.
    */
   ownerId?: string | null;
+  /** The board's own workspace tier, from engagements.org_id to orgs.tier. Absent on older payloads. */
+  workspaceTier?: "business" | "individual";
 };
 
 /** The two choices, said as what the person can do, never as a level. */
