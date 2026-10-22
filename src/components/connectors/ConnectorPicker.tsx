@@ -30,6 +30,7 @@ import {
   importGranolaMeetings,
 } from "@/lib/connector-picker.functions";
 import { setFolderWatch } from "@/lib/connector-watch.functions";
+import { ensureExtractsFn } from "@/lib/extract.functions";
 import { browseWisprMeetings, importWisprMeetings } from "@/lib/wispr.functions";
 import {
   AGE_LABEL,
@@ -171,6 +172,7 @@ export function ConnectorPicker({
   const importWispr = useServerFn(importWisprMeetings);
   const importThreads = useServerFn(importGmailThreads);
   const toggleWatch = useServerFn(setFolderWatch);
+  const ensureExtracts = useServerFn(ensureExtractsFn);
   const highlight = new Set(highlightIds ?? []);
 
   const [openState, setOpenState] = useState(false);
@@ -409,6 +411,11 @@ export function ConnectorPicker({
       }
       toast.success(parts.length > 0 ? parts.join(", ") : "Nothing new to bring in");
       if (onImported && result.ids && result.ids.length > 0) onImported(result.ids);
+      // Summaries are a sidecar: fire and forget, as use-capture-files.ts does.
+      // A capture that succeeded has succeeded; a failed summary never surfaces.
+      if (result.ids && result.ids.length > 0) {
+        void ensureExtracts({ data: { work_item_ids: result.ids } }).catch(() => {});
+      }
       setSelected(new Set());
       await queryClient.invalidateQueries({ queryKey: ["work-items"] });
       const refreshed = await load();
@@ -846,7 +853,7 @@ export function ConnectorPicker({
             onClick={() => void handleImport()}
           >
             {importing
-              ? <WorkingLabel>{`Bringing in ${selected.size} item${selected.size === 1 ? "" : "s"}`}</WorkingLabel>
+              ? <WorkingLabel>{`Bringing in ${selected.size} item${selected.size === 1 ? "" : "s"}. Summaries fill in after.`}</WorkingLabel>
               : `${copy.action}${selected.size ? ` (${selected.size})` : ""}`}
           </Button>
           )}
