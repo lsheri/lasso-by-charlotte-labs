@@ -17,8 +17,9 @@ export function LabBundleLinks({ nodes, bundles }: { nodes: readonly LabNode[]; 
         const branchY = (piece: LabNode) => piece.y + Math.min(28, piece.height / 2);
         return (
           <g key={chatId}>
-            <path d={`M ${spineX} ${chat.y + chat.height} L ${spineX} ${branchY(last)}`} fill="none" stroke="var(--nb-pencil)" strokeWidth={1.4} />
-            {pieces.map((piece) => <path key={piece.id} d={`M ${spineX} ${branchY(piece)} L ${piece.x} ${branchY(piece)}`} fill="none" stroke="var(--nb-pencil)" strokeWidth={1.4} />)}
+            <rect x={spineX - 4} y={chat.y + chat.height} width={8} height={8} fill="var(--accent-deep)" />
+            <path d={`M ${spineX} ${chat.y + chat.height} L ${spineX} ${branchY(last)}`} fill="none" stroke="var(--accent-deep)" strokeWidth={2} />
+            {pieces.map((piece) => <path key={piece.id} d={`M ${spineX} ${branchY(piece)} L ${piece.x} ${branchY(piece)}`} fill="none" stroke="var(--accent-deep)" strokeWidth={2} />)}
           </g>
         );
       })}
