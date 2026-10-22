@@ -107,12 +107,15 @@ export function blockedStateFor(
   state: InviteState,
   _viewerEmail: string | null,
 ): BlockedState | null {
+  if (state.status === "not_found") return null;
+  // Membership beats every terminal status. Someone who is already in the
+  // workspace is sent to it, not told their invite was spent and asked to
+  // sign in while they are already signed in.
+  if (state.viewer.signed_in && state.viewer.is_member) return "already_member";
   if (state.status === "revoked") return "revoked";
   if (state.status === "used") return "used";
   if (state.status === "expired") return "expired";
-  if (state.status === "not_found") return null;
   if (!state.viewer.signed_in) return null;
-  if (state.viewer.is_member) return "already_member";
   // email_matches is decided server-side against the verified claim, so the
   // card is right even when the bound address is withheld from this viewer.
   if (state.is_email_bound && !state.viewer.email_matches) return "mismatch";

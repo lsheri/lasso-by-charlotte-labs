@@ -159,6 +159,78 @@ describe("blockedStateFor", () => {
     expect(blockedStateFor(state({ status: "expired" }), null)).toBe("expired");
     expect(blockedStateFor(notFoundState(false), null)).toBeNull();
   });
+
+  it("sends a signed-in member with a used invite to the workspace", () => {
+    expect(
+      blockedStateFor(
+        state({
+          status: "used",
+          viewer: { signed_in: true, is_member: true, email_matches: false },
+        }),
+        null,
+      ),
+    ).toBe("already_member");
+  });
+
+  it("sends a signed-in member with a revoked invite to the workspace", () => {
+    expect(
+      blockedStateFor(
+        state({
+          status: "revoked",
+          viewer: { signed_in: true, is_member: true, email_matches: false },
+        }),
+        null,
+      ),
+    ).toBe("already_member");
+  });
+
+  it("sends a signed-in member with an expired invite to the workspace", () => {
+    expect(
+      blockedStateFor(
+        state({
+          status: "expired",
+          viewer: { signed_in: true, is_member: true, email_matches: false },
+        }),
+        null,
+      ),
+    ).toBe("already_member");
+  });
+
+  it("still reports used for a signed-in non-member", () => {
+    expect(
+      blockedStateFor(
+        state({
+          status: "used",
+          viewer: { signed_in: true, is_member: false, email_matches: false },
+        }),
+        null,
+      ),
+    ).toBe("used");
+  });
+
+  it("still reports used for a signed-out viewer", () => {
+    expect(
+      blockedStateFor(
+        state({
+          status: "used",
+          viewer: { signed_in: false, is_member: false, email_matches: false },
+        }),
+        null,
+      ),
+    ).toBe("used");
+  });
+
+  it("leaves not_found as no block, even for a signed-in member", () => {
+    expect(
+      blockedStateFor(
+        state({
+          status: "not_found",
+          viewer: { signed_in: true, is_member: true, email_matches: false },
+        }),
+        null,
+      ),
+    ).toBeNull();
+  });
 });
 
 describe("blockedStateFromRpcError", () => {
