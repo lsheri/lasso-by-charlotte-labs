@@ -227,6 +227,7 @@ const LIVE_KEYS_BY_EVENT: Record<string, readonly string[]> = {
   "mcp.consent_denied": ["client"],
   "mcp.connection_revoked": ["kind", "via"],
   "mcp.connection_revealed": ["kind"],
+  "mcp.read": ["auth_kind", "items_band", "kind", "outcome", "stage"],
 };
 
 /** Every name in the canonical union, read as data rather than as wording. */
