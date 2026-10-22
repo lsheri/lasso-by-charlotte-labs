@@ -21,3 +21,20 @@ describe("FACE-2 no-preview reason", () => {
     for (const reason of ALL) expect(NO_PREVIEW_COPY[reason].length).toBeGreaterThan(0);
   });
 });
+
+import { noPreviewReasonFor } from "@/components/canvas-lab/LabCard";
+
+describe("FACE-2b pending preview is not a missing preview", () => {
+  it("gives null for a previewable item whose preview has not arrived", () => {
+    expect(noPreviewReasonFor({ hasPreview: false, previewable: true })).toBeNull();
+  });
+  it("gives the carried reason", () => {
+    expect(noPreviewReasonFor({ hasPreview: true, previewable: true, reason: "refused" })).toBe("refused");
+  });
+  it("gives no_text for a preview with no reason", () => {
+    expect(noPreviewReasonFor({ hasPreview: true, previewable: true })).toBe("no_text");
+  });
+  it("gives not_previewable for a non-previewable item with no preview", () => {
+    expect(noPreviewReasonFor({ hasPreview: false, previewable: false })).toBe("not_previewable");
+  });
+});
