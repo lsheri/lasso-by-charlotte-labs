@@ -36,6 +36,13 @@ import type { WorkItemRow } from "@/lib/work-types";
 import { formatDate } from "@/lib/work-types";
 import { resolveWorkDate } from "@/lib/work-order";
 import type { NoPreviewReason, WorkboardCardPreview, WorkboardFilePreview } from "@/lib/workboard-card-preview.shared";
+import { isWorkboardFilePreviewItem } from "@/lib/workboard-file-preview";
+
+/** Null while a fetchable preview has not arrived yet: unknown, so nothing is claimed. */
+export function noPreviewReasonFor(input: { hasPreview: boolean; previewable: boolean; reason?: NoPreviewReason | undefined }): NoPreviewReason | null {
+  if (!input.hasPreview && input.previewable) return null;
+  return input.reason ?? (input.hasPreview ? 'no_text' : 'not_previewable');
+}
 import type { TeammateMark } from "@/lib/teammate-mark";
 
 
@@ -269,7 +276,11 @@ function LabCardInner({
     (filePreview.kind === 'pdf' && Boolean(filePreview.url)) ||
     ((filePreview.kind === 'html' || filePreview.kind === 'mermaid') && Boolean(filePreview.html))
   ) ? filePreview : undefined;
-  const noPreviewReason: NoPreviewReason = filePreview?.reason ?? (filePreview ? 'no_text' : 'not_previewable');
+  const noPreviewReason = noPreviewReasonFor({
+    hasPreview: Boolean(filePreview),
+    previewable: Boolean(item) && isWorkboardFilePreviewItem(item as WorkItemRow),
+    reason: filePreview?.reason,
+  });
   const contextAvailable = Boolean(
     item?.work_item_extracts?.some((extract) => extract.summary)
     || chatPreview?.turns?.length
@@ -280,9 +291,9 @@ function LabCardInner({
       <div className="absolute inset-0 flex min-h-0 flex-col">
         <FilePreview preview={renderableFilePreview} title={boardWork.title} onFailure={markFilePreviewFailed} />
       </div>
-    ) : (
+    ) : noPreviewReason ? (
       <NoPreview reason={noPreviewReason} contextAvailable={contextAvailable} />
-    )
+    ) : undefined
   ) : undefined;
   const teammateTooltip = teammateMark?.name
     ? item
