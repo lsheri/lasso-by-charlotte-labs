@@ -16,13 +16,32 @@ import {
 import type { WorkboardFilePreview, WorkboardFilePreviewMap } from "@/lib/workboard-card-preview.shared";
 import type { WorkItemRow } from "@/lib/work-types";
 
-const sessionCache = new Map<string, WorkboardFilePreview>();
+/** Signed preview URLs live 600s; re-mint well before that so a card never shows a dead one. */
+const PDF_URL_TTL_MS = 480_000;
+const PDF_REFRESH_INTERVAL_MS = 120_000;
+
+export type CachedFilePreview = { preview: WorkboardFilePreview; mintedAt: number };
+
+/** Only pdf previews carry a signed URL, so only they can go stale. */
+export function isStalePreview(entry: CachedFilePreview, now: number): boolean {
+  return entry.preview.kind === "pdf" && now - entry.mintedAt > PDF_URL_TTL_MS;
+}
+
+const sessionCache = new Map<string, CachedFilePreview>();
 let queue = Promise.resolve();
 
 function enqueue<T>(work: () => Promise<T>): Promise<T> {
   const next = queue.then(work, work);
   queue = next.then(() => undefined, () => undefined);
   return next;
+}
+
+function freshPreviews(now: number): WorkboardFilePreviewMap {
+  const out: WorkboardFilePreviewMap = {};
+  for (const [id, entry] of sessionCache) {
+    if (!isStalePreview(entry, now)) out[id] = entry.preview;
+  }
+  return out;
 }
 
 /** P1b: drop one item's cached preview so it is computed again after its file is added. */
@@ -85,7 +104,7 @@ export function useWorkboardFilePreviews(
 ): WorkboardFilePreviewMap {
   const readText = useServerFn(getItemTextPane);
   const readArtifact = useServerFn(getWorkboardArtifactPreview);
-  const [previews, setPreviews] = useState<WorkboardFilePreviewMap>(() => Object.fromEntries(sessionCache));
+  const [previews, setPreviews] = useState<WorkboardFilePreviewMap>(() => freshPreviews(Date.now()));
   const items = useMemo(
     () => visibleItems.filter(isWorkboardFilePreviewItem),
     [visibleItems],
@@ -95,14 +114,31 @@ export function useWorkboardFilePreviews(
   useEffect(() => {
     if (!enabled || !profileId) return;
     let cancelled = false;
-    for (const item of items) {
-      if (sessionCache.has(item.id)) continue;
+    const inFlight = new Set<string>();
+    const load = (item: WorkItemRow) => {
+      inFlight.add(item.id);
       void enqueue(() => loadWorkboardFilePreview(item, profileId, readText, readArtifact)).then((preview) => {
-        sessionCache.set(item.id, preview);
-        if (!cancelled) setPreviews(Object.fromEntries(sessionCache));
-      });
+        inFlight.delete(item.id);
+        sessionCache.set(item.id, { preview, mintedAt: Date.now() });
+        if (!cancelled) setPreviews(freshPreviews(Date.now()));
+      }, () => { inFlight.delete(item.id); });
+    };
+    const now = Date.now();
+    for (const item of items) {
+      const entry = sessionCache.get(item.id);
+      if (entry && !isStalePreview(entry, now)) continue;
+      load(item);
     }
-    return () => { cancelled = true; };
+    const timer = setInterval(() => {
+      if (cancelled) return;
+      const at = Date.now();
+      for (const item of items) {
+        const entry = sessionCache.get(item.id);
+        if (!entry || entry.preview.kind !== "pdf" || inFlight.has(item.id)) continue;
+        if (isStalePreview(entry, at)) load(item);
+      }
+    }, PDF_REFRESH_INTERVAL_MS);
+    return () => { cancelled = true; clearInterval(timer); };
   }, [enabled, key, profileId, readArtifact, readText]);
 
   return previews;
