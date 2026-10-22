@@ -61,7 +61,6 @@ export function useRowMenuParts({ item, onFluency, engagementId, onRemoved }: Ro
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [renameOpen, setRenameOpen] = useState(false);
   const [chatLinkOpen, setChatLinkOpen] = useState(false);
-  const queryClient = useQueryClient();
   const profile = useProfile().data;
   const pastedLink = pastedChatUrl(item?.meta?.chat_url);
   const isThread = item.type === "ai_thread";
@@ -142,15 +141,7 @@ export function useRowMenuParts({ item, onFluency, engagementId, onRemoved }: Ro
         <RenameWorkDialog item={item} open={renameOpen} onOpenChange={setRenameOpen} />
       ) : null}
       {owned && chatLinkEnabled ? (
-        <ChatLinkDialog
-          open={chatLinkOpen}
-          onOpenChange={setChatLinkOpen}
-          current={pastedLink}
-          onSave={async (url) => {
-            await setChatLink(item.id, url);
-            void queryClient.invalidateQueries();
-          }}
-        />
+        <RowChatLinkDialog itemId={item.id} current={pastedLink} open={chatLinkOpen} onOpenChange={setChatLinkOpen} />
       ) : null}
       {engagementId ? (
         <MarkBriefDialog
@@ -183,6 +174,21 @@ export function useRowMenuParts({ item, onFluency, engagementId, onRemoved }: Ro
   );
 
   return { items, dialogs };
+}
+
+function RowChatLinkDialog({ itemId, current, open, onOpenChange }: { itemId: string; current: string | null; open: boolean; onOpenChange: (open: boolean) => void }) {
+  const queryClient = useQueryClient();
+  return (
+    <ChatLinkDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      current={current}
+      onSave={async (url) => {
+        await setChatLink(itemId, url);
+        void queryClient.invalidateQueries();
+      }}
+    />
+  );
 }
 
 /**
