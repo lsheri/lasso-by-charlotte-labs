@@ -218,6 +218,31 @@ function JoinPage() {
     );
   }
 
+  if (blocked === "already_member") {
+    return (
+      <Shell>
+        <StateCard label="Invite" title={`You are already in ${org}`}>
+          <p>
+            This account{viewerEmail ? `, ${viewerEmail},` : ""} already belongs to {org}, so there
+            is nothing to accept.
+          </p>
+          <p>
+            If the invite was meant for someone else, sign out and let them open the link. It stays
+            valid until it expires.
+          </p>
+          <div className="flex flex-wrap gap-2 pt-1">
+            <Button type="button" onClick={() => navigate({ to: "/home" })}>
+              Go to workspace
+            </Button>
+            <Button type="button" variant="outline" onClick={() => void signOutAndStay()}>
+              Sign out and continue
+            </Button>
+          </div>
+        </StateCard>
+      </Shell>
+    );
+  }
+
   if (state.status === "revoked") {
     return (
       <Shell>
