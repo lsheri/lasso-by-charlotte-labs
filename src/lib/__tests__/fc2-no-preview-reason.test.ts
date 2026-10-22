@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+
 import { describe, expect, it } from "vitest";
 
 import { NO_PREVIEW_COPY } from "@/design/reference/NoPreview";
@@ -36,5 +38,19 @@ describe("FACE-2b pending preview is not a missing preview", () => {
   });
   it("gives not_previewable for a non-previewable item with no preview", () => {
     expect(noPreviewReasonFor({ hasPreview: false, previewable: false })).toBe("not_previewable");
+  });
+});
+
+const LAB_CARD = readFileSync("src/components/canvas-lab/LabCard.tsx", "utf8");
+
+describe("FACE-2c a pending preview renders an empty body", () => {
+  it("never lets the pending branch fall through to RealPreview's own sentence", () => {
+    expect(LAB_CARD).not.toContain(") : undefined\n  ) : undefined;");
+  });
+  it("renders a neutral empty body while the preview is still arriving", () => {
+    expect(LAB_CARD).toContain('<div className="absolute inset-0" aria-hidden />');
+  });
+  it("still passes no fallback at all for a card that has content", () => {
+    expect(LAB_CARD).toContain("  ) : undefined;");
   });
 });
