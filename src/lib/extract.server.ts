@@ -254,6 +254,7 @@ export async function ensureExtract(workItemId: string): Promise<boolean> {
       eventType: "extract.generated",
       orgId: prepared.item.org_id,
       userId: null,
+      profileId: prepared.item.owner_id,
       dims: { ...usageDims({ tokensIn, costUsd }), mode: "sync" },
     });
 
