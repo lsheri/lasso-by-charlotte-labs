@@ -107,7 +107,7 @@ describe("B2.1 a minimized chat still carries its pieces", () => {
     expect(body).not.toContain("visibleNodes");
   });
   it("bundles are derived before minimize filtering", () => {
-    const bundlesAt = page.indexOf("const bundles = useMemo(() => chatBundles(shownNodes, workItems)");
+    const bundlesAt = page.indexOf("const bundles = useMemo(() => chatBundles(shownNodes, boardItems)");
     const viewAt = page.indexOf("const bundleView = useMemo");
     const visibleAt = page.indexOf("const visibleNodes = useMemo(");
     expect(bundlesAt).toBeGreaterThan(-1);
