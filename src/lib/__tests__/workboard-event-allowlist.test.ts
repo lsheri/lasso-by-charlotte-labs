@@ -96,6 +96,7 @@ describe("the workboard allowlist", () => {
         ],
         "workboard.face_toggled": [
           "face",
+          "scope",
         ],
         "workboard.node_created": [
           "kind",

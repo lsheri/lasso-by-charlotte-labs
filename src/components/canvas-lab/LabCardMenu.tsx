@@ -8,6 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import type { CardFace } from "@/design/reference/FaceToggle";
 
 export function LabCardMenu({
   selected,
@@ -32,6 +33,8 @@ export function LabCardMenu({
   chatLinkLabel,
   onEditChatLink,
   onRename,
+  cardFace,
+  onCardFaceChange,
 }: {
   selected: boolean;
   canBranch: boolean;
@@ -60,6 +63,9 @@ export function LabCardMenu({
   onEditChatLink?: (() => void) | undefined;
   /** WI-1: only on the owner's own work card. */
   onRename?: (() => void) | undefined;
+  /** FACE-3: both present on the board only. */
+  cardFace?: CardFace | undefined;
+  onCardFaceChange?: ((face: CardFace) => void) | undefined;
 }) {
 
   return (
@@ -86,6 +92,7 @@ export function LabCardMenu({
       >
         <DropdownMenuItem onSelect={onSelect}>{selected ? "Remove context" : "Use as context"}</DropdownMenuItem>
         <DropdownMenuItem onSelect={onOpen}>Preview</DropdownMenuItem>
+        {onCardFaceChange && cardFace ? <DropdownMenuItem onSelect={() => onCardFaceChange(cardFace === 'art' ? 'preview' : 'art')}>{cardFace === 'art' ? 'Show as real' : 'Show as sketch'}</DropdownMenuItem> : null}
         {onFit ? <DropdownMenuItem onSelect={onFit}>Fit content</DropdownMenuItem> : null}
         {canBranch ? <DropdownMenuItem onSelect={onBranch}>Branch</DropdownMenuItem> : null}
         {onMoveToFrame && frameChoices.filter((frame) => frame.id !== currentFrame).map((frame) => <DropdownMenuItem key={frame.id} onSelect={() => onMoveToFrame(frame.id)}>Move to {frame.name}</DropdownMenuItem>)}
