@@ -3,6 +3,7 @@ import { SectionHeader } from "@/components/notebook/SectionHeader";
 import { formatDate } from "@/lib/work-types";
 import type { WorkItemRow } from "@/lib/work-types";
 import { workDateLabel } from "@/lib/work-date-label";
+import { displayName } from "@/lib/work-item-name";
 
 /**
  * Figma 21:2, "What Lasso is reading". The most recent pieces that arrived
@@ -37,8 +38,8 @@ export function ReadingPanel({ items }: { items: WorkItemRow[] }) {
             <li key={item.id} className="flex items-baseline justify-between gap-4">
               <span className="min-w-0 truncate text-[12px] leading-[18px] text-foreground">
                 {vendorLabel(item.source_vendor, item.source)
-                  ? `${vendorLabel(item.source_vendor, item.source)} · ${item.title}`
-                  : item.title}
+                  ? `${vendorLabel(item.source_vendor, item.source)} · ${displayName(item)}`
+                  : displayName(item)}
               </span>
               <span className="shrink-0 font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
                 {workDateLabel(item)}

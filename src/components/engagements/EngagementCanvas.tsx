@@ -571,7 +571,7 @@ export function EngagementCanvas({
                               canEdit ? (
                                 <button
                                   type="button"
-                                  aria-label={`Drag ${item.title}`}
+                                  aria-label={`Drag ${displayName(item)}`}
                                   tabIndex={-1}
                                   className="nb-canvas-handle md:hidden"
                                   onPointerDown={(event) => beginPointer(event, pos, cardId, true)}
@@ -583,7 +583,7 @@ export function EngagementCanvas({
                             actions={canEdit ? (
                             <DropdownMenu>
                               <DropdownMenuTrigger
-                                aria-label={`Move ${item.title}`}
+                                aria-label={`Move ${displayName(item)}`}
                                 onPointerDown={(e) => e.stopPropagation()}
                                 onClick={(e) => e.stopPropagation()}
                                 className="shrink-0 rounded-md p-1 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"

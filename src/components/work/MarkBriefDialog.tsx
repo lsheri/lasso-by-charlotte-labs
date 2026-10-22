@@ -14,6 +14,7 @@ import { useEngagements } from "@/hooks/use-engagements";
 import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
 import { briefScopeOf, type BriefScope } from "@/lib/brief-shared";
+import { displayName } from "@/lib/work-item-name";
 import { logEvent } from "@/lib/telemetry";
 import { logV2 } from "@/lib/telemetry-v2";
 import type { WorkItemRow } from "@/lib/work-types";
@@ -108,7 +109,7 @@ export function MarkBriefDialog({
         {engagement ? (
           <>
             <p className="text-sm text-muted-foreground">
-              What was <span className="text-foreground">{item.title}</span> the brief for on{" "}
+              What was <span className="text-foreground">{displayName(item)}</span> the brief for on{" "}
               <span className="text-foreground">{engagementLabel(engagement)}</span>? A brief shapes
               what the AI on this board is told the work was asked to do. Marking it changes nothing
               about who can see it.

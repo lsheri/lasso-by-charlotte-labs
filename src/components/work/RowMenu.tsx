@@ -27,6 +27,7 @@ import {
 } from "@/lib/work-standalone";
 import { useStandAlone } from "@/components/work/use-stand-alone";
 import { RenameWorkDialog, RENAME_COPY } from "@/components/work/RenameWorkDialog";
+import { displayName } from "@/lib/work-item-name";
 import type { WorkItemRow } from "@/lib/work-types";
 
 export type RowMenuProps = {
@@ -140,7 +141,7 @@ export function useRowMenuParts({ item, onFluency, engagementId, onRemoved }: Ro
       {owned && engagementId ? (
         <RemoveFromEngagementDialog
           workItemId={item.id}
-          title={item.title}
+          title={displayName(item)}
           engagementId={engagementId}
           open={removeOpen}
           onOpenChange={setRemoveOpen}
@@ -150,7 +151,7 @@ export function useRowMenuParts({ item, onFluency, engagementId, onRemoved }: Ro
       {owned ? (
         <DeleteWorkItemDialog
           workItemId={item.id}
-          title={item.title}
+          title={displayName(item)}
           open={deleteOpen}
           onOpenChange={setDeleteOpen}
           onDone={onRemoved}
