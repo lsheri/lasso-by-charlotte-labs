@@ -52,7 +52,9 @@ describe("SH-3a people access", () => {
   it("does not add an unknown email", async () => {
     const section = await mount();
     fireEvent.change(within(section).getByLabelText("Add people by name or email"), { target: { value: "unknown@example.com" } });
-    expect(within(section).getByRole("button", { name: "Invite unknown@example.com from outside" })).toBeTruthy();
+    expect(within(section).getByText("Nobody here by that name. To invite someone from outside, use the email field below.")).toBeTruthy();
+    fireEvent.change(within(section).getByLabelText("Email addresses"), { target: { value: "unknown@example.com" } });
+    expect((within(within(section).getByRole("group", { name: "Invite by email" })).getByRole("button", { name: "Send" }) as HTMLButtonElement).disabled).toBe(false);
     expect(within(section).queryByText("Only people in this workspace can be added here.")).toBeNull();
     expect(setEngagementPersonAccessFn).not.toHaveBeenCalled();
   });
@@ -62,6 +64,8 @@ describe("SH-3a people access", () => {
     fireEvent.change(within(section).getByLabelText("Add people by name or email"), { target: { value: "nad" } });
     expect(within(section).queryByRole("button", { name: "Owen" })).toBeNull();
     fireEvent.click(within(section).getByRole("button", { name: "Nadia" }));
+    expect(setEngagementPersonAccessFn).not.toHaveBeenCalled();
+    fireEvent.click(within(within(section).getByRole("group", { name: "People in this workspace" })).getByRole("button", { name: "Send" }));
     await waitFor(() => expect(setEngagementPersonAccessFn).toHaveBeenCalledWith({ data: { engagement_id: "board", profile_id: "me", person_id: "new", access: "review", conversations: "full" } }));
   });
   it("labels a non-owner viewer with their own level, never ownership", async () => {

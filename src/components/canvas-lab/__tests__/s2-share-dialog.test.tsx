@@ -145,6 +145,8 @@ describe("S2 — giving someone one of two things", () => {
     fireEvent.click(within(screen.getByRole("group", { name: "New person level" })).getByRole("button", { name: "Collaborator" }));
     fireEvent.change(screen.getByLabelText("Add people by name or email"), { target: { value: "nad" } });
     fireEvent.click(screen.getByRole("button", { name: "Nadia" }));
+    expect(calls).toEqual([]);
+    fireEvent.click(within(screen.getByRole("group", { name: "People in this workspace" })).getByRole("button", { name: "Send" }));
     await waitFor(() => expect(calls).toEqual([{ person_id: "p-new", access: "work" }]));
   });
 

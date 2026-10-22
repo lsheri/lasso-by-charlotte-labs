@@ -90,6 +90,7 @@ export function ShareDialog({
           <section className="flex flex-col gap-3 border-t border-border pt-4" aria-label={PEOPLE_COPY.linkHeading}>
             <p className="font-mono text-xs uppercase tracking-[0.08em] text-foreground">{PEOPLE_COPY.linkHeading}</p>
             <p className="text-sm text-muted-foreground">{SHARE3_COPY.linkLine}</p>
+            <p className="text-sm text-muted-foreground">{PEOPLE_COPY.linkLine}</p>
             <BoardLinkSection engagementId={engagementId} profileId={profileId} open={open} />
           </section>
         </div>
