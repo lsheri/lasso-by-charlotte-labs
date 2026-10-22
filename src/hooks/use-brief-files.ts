@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { WorkItemRow } from "@/lib/work-types";
 
 const COLUMNS =
-  "id, title, type, source, visibility, captured_at, content_ref, created_at_source, work_date, content_fidelity, source_vendor, orig_conversation_id, source_meta, meta";
+  "id, title, display_title, type, source, visibility, captured_at, content_ref, created_at_source, work_date, content_fidelity, source_vendor, orig_conversation_id, source_meta, meta";
 
 export type BriefFile = { workItemId: string; item: WorkItemRow | null };
 

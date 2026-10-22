@@ -8,7 +8,7 @@ import type { WorkItemRow } from "@/lib/work-types";
 export type BriefItem = WorkItemRow & { brief_scope: BriefScope };
 
 const COLUMNS =
-  "id, title, type, source, visibility, captured_at, content_ref, created_at_source, work_date, content_fidelity, source_vendor, orig_conversation_id, source_meta, meta";
+  "id, title, display_title, type, source, visibility, captured_at, content_ref, created_at_source, work_date, content_fidelity, source_vendor, orig_conversation_id, source_meta, meta";
 
 /** Every item this person has marked as a brief, whatever it briefs. */
 export async function fetchBriefs(profileId: string): Promise<BriefItem[]> {

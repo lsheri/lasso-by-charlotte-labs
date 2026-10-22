@@ -73,7 +73,7 @@ export function MarkBriefDialog({
   const takenBy = new Map(
     (briefs ?? [])
       .filter((brief) => brief.id !== item.id)
-      .map((brief) => [keyOf(brief.brief_scope), brief.title]),
+      .map((brief) => [keyOf(brief.brief_scope), displayName(brief)]),
   );
 
   const engagementTaken = takenBy.get(keyOf(engagementScope));
