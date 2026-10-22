@@ -14,7 +14,12 @@ import {
   type NotificationRow,
 } from "@/lib/notifications-shared";
 import { formatDate } from "@/lib/work-types";
-import { SHARED_WITH_YOU_COPY, useAcceptBoardShare } from "@/components/layout/SharedWithYou";
+import { SHARED_WITH_YOU_COPY, useAcceptBoardShare, useOpenShared } from "@/components/layout/SharedWithYou";
+import { supabase } from "@/integrations/supabase/client";
+import { useProfile } from "@/hooks/use-profile";
+import { logEvent } from "@/lib/telemetry";
+import { isAcceptableShare } from "@/lib/notifications-shared";
+import { useQueryClient } from "@tanstack/react-query";
 
 type Decided = { pending?: boolean; text?: string; error?: string };
 
@@ -38,12 +43,50 @@ export function NotificationPanel({
   const mark = useServerFn(markNotifications);
   const acted = useServerFn(recordNotificationActed);
   const accept = useAcceptBoardShare();
+  const openShared = useOpenShared();
+  const { data: profile } = useProfile();
+  const queryClient = useQueryClient();
   const [state, setState] = useState<Record<string, Decided>>({});
 
+  // N1: an acceptable share sits with Needs you whatever its section, and
+  // stays visible once accepted so the row reads Accepted rather than vanishing.
   const needsYou = rows.filter(
-    (r) => r.section === "needs_you" && (!r.acted_at || state[r.id]),
+    (r) => isAcceptableShare(r) || (r.section === "needs_you" && (!r.acted_at || state[r.id])),
   );
-  const updates = rows.filter((r) => r.section === "updates");
+  const updates = rows.filter((r) => r.section === "updates" && !isAcceptableShare(r));
+
+  // N1: claim with your own name, then mark acted, then open the board. The
+  // board can live in another workspace; the claim runs as you, from here.
+  async function onAcceptShare(row: NotificationRow) {
+    const code = String(row.payload["code"] ?? "");
+    const level = typeof row.payload["level"] === "string" ? row.payload["level"] : "review";
+    setState((s) => ({ ...s, [row.id]: { pending: true } }));
+    const displayName = profile?.display_name?.trim() || undefined;
+    const { data, error } = await supabase.rpc("claim_board_invite", {
+      p_code: code,
+      ...(displayName ? { p_display_name: displayName } : {}),
+    });
+    const r = (data ?? {}) as Record<string, unknown>;
+    const engagementId = typeof r["engagement_id"] === "string" ? r["engagement_id"] : null;
+    if (error || !engagementId) {
+      const reason = error?.message?.split("\n")[0]?.trim() || NOTIFICATION_COPY.acceptFailed;
+      setState((s) => ({ ...s, [row.id]: { error: reason } }));
+      return;
+    }
+    try {
+      await mark({ data: { ids: [row.id], acted: true } });
+    } catch {
+      /* the claim stands; the row is re-read below */
+    }
+    setState((s) => ({ ...s, [row.id]: { text: NOTIFICATION_COPY.accepted } }));
+    if (profile?.org_id) logEvent("board.invite_accepted", profile.org_id, { kind: "peer", level, via: "bell" });
+    void acted({ data: { kind: row.kind, action: "accept" } }).catch(() => {});
+    void queryClient.invalidateQueries({ queryKey: ["my-shared-boards"] });
+    void queryClient.invalidateQueries({ queryKey: ["my-pending-board-invites"] });
+    onChanged();
+    onNavigate();
+    openShared(engagementId, "bell");
+  }
 
   async function onDecide(row: NotificationRow, approve: boolean) {
     if (!row.subject_id) return;
@@ -107,13 +150,29 @@ export function NotificationPanel({
             {needsYou.map((row) => {
               const s = state[row.id] ?? {};
               return (
-                <li key={row.id} className="rounded-md border border-border p-3">
-                  <p className="text-sm text-foreground">{s.text ?? (row.kind === "board_shared" ? boardSharedSentence(row) : notificationSentence(row))}</p>
+                <li
+                  key={row.id}
+                  data-unread={row.read_at ? undefined : "true"}
+                  data-notification-kind={row.kind}
+                  className={`rounded-md border p-3 ${row.read_at ? "border-border" : "border-foreground/40 bg-secondary"}`}
+                >
+                  <p className={`text-sm ${row.read_at ? "text-muted-foreground" : "text-foreground"}`}>{row.kind === "board_shared" ? boardSharedSentence(row) : notificationSentence(row)}</p>
+                  {s.text ? <p className="mt-1 text-sm text-foreground" role="status">{s.text}</p> : null}
+                  {!s.text && isAcceptableShare(row) && row.acted_at ? (
+                    <p className="mt-1 text-sm text-foreground">{NOTIFICATION_COPY.accepted}</p>
+                  ) : null}
                   <p className="mt-1 text-xs text-muted-foreground">{formatDate(row.created_at)}</p>
                   {!s.text && row.kind === "board_shared" && (
                     <div className="mt-2 flex gap-2">
                       <Button size="sm" disabled={s.pending} onClick={() => void onOpenShared(row)}>
                         {SHARED_WITH_YOU_COPY.open}
+                      </Button>
+                    </div>
+                  )}
+                  {!s.text && isAcceptableShare(row) && !row.acted_at && (
+                    <div className="mt-2 flex gap-2">
+                      <Button size="sm" disabled={s.pending} onClick={() => void onAcceptShare(row)}>
+                        {s.pending ? NOTIFICATION_COPY.accepting : NOTIFICATION_COPY.accept}
                       </Button>
                     </div>
                   )}
@@ -132,7 +191,7 @@ export function NotificationPanel({
                       </Button>
                     </div>
                   )}
-                  {s.error && <p className="mt-2 truncate text-xs text-destructive">{s.error}</p>}
+                  {s.error && <p className="mt-2 text-xs text-destructive" role="alert">{s.error}</p>}
                 </li>
               );
             })}
@@ -150,7 +209,7 @@ export function NotificationPanel({
                   onClick={() => onOpen(row)}
                   className="w-full rounded-md px-2 py-2 text-left transition-colors hover:bg-secondary"
                 >
-                  <span className={`block text-sm ${row.read_at ? "text-muted-foreground" : "text-foreground"}`}>
+                  <span data-unread={row.read_at ? undefined : "true"} className={`block text-sm ${row.read_at ? "text-muted-foreground" : "font-medium text-foreground"}`}>
                     {notificationSentence(row)}
                   </span>
                   <span className="block text-xs text-muted-foreground">{formatDate(row.created_at)}</span>

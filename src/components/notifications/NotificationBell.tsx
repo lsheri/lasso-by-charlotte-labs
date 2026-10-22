@@ -9,7 +9,7 @@ import {
   markNotifications,
   recordNotificationOpened,
 } from "@/lib/notifications.functions";
-import { NOTIFICATION_COPY, badgeCount, type NotificationRow } from "@/lib/notifications-shared";
+import { NOTIFICATION_COPY, unreadCount, type NotificationRow } from "@/lib/notifications-shared";
 
 import { NotificationPanel } from "./NotificationPanel";
 
@@ -58,15 +58,16 @@ export function NotificationBell({ className, side = "bottom", align = "end" }: 
   const rows = (query.data ?? []) as NotificationRow[];
   const buttonRef = useRef<HTMLButtonElement | null>(null);
   const autoOpened = useRef(false);
-  const count = badgeCount(rows);
+  const count = unreadCount(rows);
 
   function onOpenChange(next: boolean) {
     setOpen(next);
     if (next) {
       const hasNeedsYou = rows.some((r) => r.section === "needs_you" && !r.acted_at);
       void opened({ data: { hasNeedsYou } }).catch(() => {});
-      const unread = rows.filter((r) => r.section === "updates" && !r.read_at).map((r) => r.id);
-      if (unread.length) void mark({ data: { ids: unread, acted: false } }).catch(() => {});
+      // N1: opening marks every visible unread row read; acting is separate.
+      const unread = rows.filter((r) => !r.read_at).map((r) => r.id);
+      if (unread.length) void mark({ data: { ids: unread, acted: false } }).then(() => query.refetch()).catch(() => {});
     } else {
       void query.refetch();
     }
@@ -90,7 +91,7 @@ export function NotificationBell({ className, side = "bottom", align = "end" }: 
     <button
       ref={buttonRef}
       type="button"
-      aria-label={count ? `${NOTIFICATION_COPY.bellLabel}, ${count} need you` : NOTIFICATION_COPY.bellLabel}
+      aria-label={count ? NOTIFICATION_COPY.bellUnread(count) : NOTIFICATION_COPY.bellLabel}
       onClick={narrow ? () => onOpenChange(true) : undefined}
       className={`relative grid h-11 w-11 shrink-0 place-items-center rounded-md text-foreground/70 transition-colors hover:bg-secondary ${className ?? ""}`}
     >

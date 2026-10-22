@@ -119,7 +119,7 @@ export const recordNotificationActed = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data, context }) => {
     if (!isNotificationKind(data.kind)) return { ok: false };
-    if (!["approve", "decline", "open"].includes(data.action)) return { ok: false };
+    if (!["approve", "decline", "open", "accept"].includes(data.action)) return { ok: false };
     const profile = await resolveProfile(context.supabase, context.userId, data.profile_id);
     if (!profile) return { ok: false };
     const { recordEvent } = await import("@/lib/telemetry.server");
