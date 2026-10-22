@@ -26,4 +26,6 @@ One row per design decision. Owner: L = Liam, C = Claude architect, M = Magic OS
 | 16 Oct 2026 | C | The ten work identity hues and the two Granola inks move into tokens.css so the design system mirror can render them | leaving them in styles.css only | Decided, under standing authority |
 | 16 Oct 2026 | C | ToolBadge is reference component eleven and keeps the soft tinted square; radius says --radius-md-new instead of the off-system --radius | plain white square with a hairline; no container, mark only (both built as previews in the design system and both lost: the wash is what ties the badge to its category hue, and a fixed box stops wide and narrow marks moving the label) | Decided, under standing authority |
 
+| 2026-10-21 | C | Email is its own work kind and Gmail its own source; the drawing is a page with an addressed header block, matching the Doc family rather than an envelope | envelope (generic, breaks the paper-and-fold language), stacked pages (says thread, too much for a single message) | shipped |
+
 Open: where the four --verify-* states render (chat answer, opened view, card); placement of Recent boards in the sidebar; whether the graphite grain button returns.

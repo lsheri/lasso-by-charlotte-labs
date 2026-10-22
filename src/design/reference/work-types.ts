@@ -27,8 +27,9 @@ export type WorkSource =
   | 'copilot'
   | 'perplexity'
   | 'wispr'
+  | 'gmail'
   | 'other';
-export type WorkKind = 'deck' | 'doc' | 'sheet' | 'chat' | 'transcript';
+export type WorkKind = 'deck' | 'doc' | 'sheet' | 'chat' | 'transcript' | 'email';
 
 export type Slide = {
   kicker?: string;
@@ -52,7 +53,8 @@ export type WorkContent =
       attendees?: string[];
       notes?: string[];
       turns: TranscriptTurn[];
-    };
+    }
+  | { kind: 'email'; from: string; to: string[]; subject: string; sent?: string; blocks: DocBlock[] };
 
 export type Work = {
   id: string;
@@ -84,6 +86,7 @@ export const SOURCE_LABEL: Record<WorkSource, string> = {
   copilot: 'Copilot',
   perplexity: 'Perplexity',
   wispr: 'Wispr Flow',
+  gmail: 'Gmail',
   other: 'Other',
 };
 
@@ -98,6 +101,7 @@ export const SOURCE_KIND: Record<WorkSource, WorkKind> = {
   copilot: 'chat',
   perplexity: 'chat',
   wispr: 'transcript',
+  gmail: 'email',
   other: 'doc',
 };
 
@@ -107,6 +111,7 @@ export const KIND_LABEL: Record<WorkKind, string> = {
   sheet: 'Sheet',
   chat: 'Chat',
   transcript: 'Call',
+  email: 'Email',
 };
 
 export function kindOf(work: Work): WorkKind {

@@ -74,6 +74,33 @@ export function RealPreview({ work, fallback }: { work: Work; fallback?: React.R
           </div>
         </div>
       );
+    case 'email':
+      return (
+        <div className="px-8 pt-6" style={{ background: 'var(--neutral-60)', minHeight: '100%' }}>
+          <div className="px-10 py-9" style={{ background: 'var(--surface-raised)', boxShadow: 'var(--shadow-float)', minHeight: 600 }}>
+            <h3 style={{ margin: 0, fontFamily: SANS, fontSize: 20, fontWeight: 600, lineHeight: 1.25, color: 'var(--text-primary)' }}>{c.subject}</h3>
+            <dl className="mt-4 grid gap-1" style={{ gridTemplateColumns: 'auto 1fr' }}>
+              <dt style={tag}>From</dt>
+              <dd style={{ margin: 0, fontFamily: SANS, fontSize: 12.5, color: 'var(--text-primary)' }}>{c.from}</dd>
+              <dt style={tag}>To</dt>
+              <dd style={{ margin: 0, fontFamily: SANS, fontSize: 12.5, color: 'var(--text-primary)' }}>{c.to.join(', ')}</dd>
+              {c.sent ? (<><dt style={tag}>Sent</dt><dd style={{ margin: 0, fontFamily: SANS, fontSize: 12.5, color: 'var(--text-primary)' }}>{c.sent}</dd></>) : null}
+            </dl>
+            <hr className="mt-5" style={{ border: 0, borderTop: '1px solid var(--line-pencil)' }} />
+            {c.blocks.map((b, n) =>
+              b.type === 'h2' ? (
+                <h4 key={n} style={{ margin: '18px 0 0', fontFamily: SANS, fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>
+                  {b.text}
+                </h4>
+              ) : (
+                <p key={n} style={{ margin: '10px 0 0', fontFamily: SANS, fontSize: 12.5, lineHeight: 1.6, color: 'var(--text-primary)' }}>
+                  {b.text}
+                </p>
+              ),
+            )}
+          </div>
+        </div>
+      );
     case 'sheet':
       return (
         <div style={{ background: 'var(--surface-raised)', minHeight: '100%' }}>
