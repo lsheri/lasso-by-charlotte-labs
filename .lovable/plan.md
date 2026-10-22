@@ -1,68 +1,102 @@
-# Company signup becomes a pilot request (diagnosis + plan)
+# SHARE-3 assessment: Share dialog by account type
 
-## 1. Today's signup path (verified)
+Assessment only. No code changed.
 
-```text
-/plans or landing CTA  ->  /auth?intent=company   (src/routes/auth.tsx, validateSearch L49-73, signup.started L155)
-  -> email confirm -> /onboarding?intent=company  (auth.tsx L91-92 / L205 / L264)
-  -> src/routes/onboarding.tsx submit handler
-       deriveRegister(intent)          src/lib/register.ts
-       orgTypeForChoice(...)           src/lib/org-type.ts
-       saveUses(...)                   people row
-       supabase.rpc("create_org_with_profile", { p_display_name, p_org_name, p_type })   L420
-       applyOrgType(profileId, type)   L58  (client-side UPDATE orgs.settings.type, read back)
-       logEvent("org.created", orgId, { org_type, tier, register, entry_door })        L448
-         entry_door = "intent" whenever a door intent was derived
-```
+## 1. The email path
 
-## 2. Where the org is created
+Two separate paths exist. Board invites do not use `outbound_emails` today.
 
-A database function: `public.create_org_with_profile`, SECURITY DEFINER. It accepts `company`/`partner` from the client, inserts `orgs` and an admin `profiles` row for `auth.uid()`. No name or domain check, which is why three "Artemis Connection" orgs exist. EXECUTE is granted to `authenticated` and also `anon`.
+- **Queue path (`outbound_emails`).** `runEmailQueue()` in `src/lib/email-queue.server.ts` claims queued/failed rows and calls `sendResendTemplate()` in `src/lib/invites.server.ts`. It is drained by `src/lib/egress.server.ts:237` (the egress sweep cron). `buildVariables()` maps a fixed set of payload keys (WORKSPACE_NAME, JOIN_URL, PRIVACY_LINE, PARTNER_NAME, REASON, ENDS_ON, CONVERSATIONS, SEATS, EXPIRES_DAYS, DAYS, SUPPORT_URL).
+- **Direct path (board sharing).** `inviteToBoard` in `src/lib/board-invites.functions.ts` calls the RPC, then sends immediately:
+  - if the RPC result carries a `code`: `sendBoardInviteEmail(id)` in `src/lib/board-invite-email.server.ts`, Resend template alias **`board-invite`**, variables INVITER_NAME, BOARD_NAME, ACCESS_LINE, ACCEPT_URL (`/board-invite?code=...`).
+  - if status is `pending_approval`: `sendInviteApprovalEmails()`, alias **`invite-approval-needed`**, to workspace admins.
+  - Adding a workspace member by name: `setEngagementPersonAccessFn` calls `notifyBoardShared()`, alias **`board-shared`**, plus a `share_received` bell row.
 
-A second hole: `applyOrgType` writes `orgs.settings.type` from the browser under policy `org_admin_upd`. So any org admin can turn a personal workspace into a company one with a client-side update. Hiding the button alone does not block either path. Enforcement needs SQL (section 5).
+**Where template content lives: in Resend.** `sendResendTemplate` posts `template: { id: alias, variables }`; subject, from and body come from the published Resend template. App code only supplies the alias and variables.
 
-## 3. What to reuse
+**What adding a `board-invite` template involves:** the app code already exists and already calls it. The missing piece is publishing three templates in the Resend dashboard with those exact aliases and variables: `board-invite`, `board-shared`, `invite-approval-needed`. Nothing in SQL. No app change needed for the send itself. Failures are only `console.error`'d and surface as `emailed: false`, which is why nothing would look broken in `outbound_emails`.
 
-| Piece | Verdict |
+**Unknown to confirm (you, in Resend, not SQL):** whether those three aliases are published. If they are not, every send returns a Resend 4xx and the dialog says the email did not go.
+
+**Unknown to confirm (you, in SQL, read only):** whether `create_board_invite` returns `code` for a recipient who already has a Lasso account. If it returns no code for that branch, that person gets only the in-app notice and no email, which fails the founder's "Send triggers a Resend email" rule.
+
+## 2. Account type in the dialog
+
+`ShareDialog` and `PeopleSection` know nothing about tier or type. They read `listEngagementPeopleFn` (`{ people, canShare, ownerId }`).
+
+- Existing carrier: `useProfile()` / `fetchProfile` in `src/hooks/use-profile.ts` already selects `orgs.tier`, `has_roster` and derives `org_type`. Cheapest, but it describes the **active** workspace, not necessarily the board's.
+- Correct and still cheap: add `workspaceTier: "business" | "individual"` to the `listEngagementPeopleFn` payload, read server-side from the board's org (`engagements.org_id` -> `orgs.tier`), falling back through `profileIsBusiness` rules. Additive field, app-only. Recommended.
+
+## 3. Current send paths (confirmed, with one correction)
+
+One combobox input serves both.
+- **Pick a colleague:** clicking a suggestion row immediately calls `setEngagementPersonAccessFn` (then `setPersonConversationsFn`). No confirm step. Emits `engagement.access_changed` server-side and sends `board-shared`.
+- **Outside email:** typing a valid address not belonging to the workspace shows a row "invite {email}"; clicking it immediately calls `inviteToBoard`. No confirm step. Correction: it is a listbox row under the input, not a dropdown menu. An address belonging to any workspace member is suppressed client-side, so the RPC's "already in this workspace" refusal is normally not reached.
+- Level (Viewer/Collaborator via `LEVEL_CHOICES`) and "summaries only" are chosen before clicking and apply to both.
+
+## 4. Multi-email
+
+App-only. In the dialog: split on commas, semicolons, whitespace and newlines; trim, lowercase, dedupe; classify each as invalid, inside-workspace (route to roster add instead, or report), already pending, or valid. On Send, call the existing `inviteToBoard` once per valid address sequentially (keeps RPC and email rate sane), using `Promise.allSettled`-style handling so one failure never undoes another. Show a per-address result list (sent, sent but email failed, waiting for admin approval, refused with reason). Refetch pending invites once at the end. Keep failed addresses in the field so they can be fixed and resent; clear the ones that worked. Cap one Send at 20 addresses. No server change needed; `board.invite_sent` already fires per address.
+
+## 5. Data platform gate
+
+**Coverage.**
+| Action | Event |
 |---|---|
-| `pilot_requests` table + `submitPilotRequestFn` + Resend template `pilot-request-notify` to liam@ | **Reuse as the request store and the email.** It already holds name, firm, email, team_size and note, and the B2B landing pilot form already writes to it. Needs a few columns added (section 5). |
-| `admin_create_workspace` | **Reuse for approval.** Call it with `p_type 'company'`, `p_ends_at now()+3 months`, `p_with_admin_link true`, `p_admin_email = requester`. It creates the org and entitlement, mints an `ADM-` invite and queues `provision-company-admin`. |
-| `outbound_emails` / `provision-company-admin` | Reuse unchanged. It is the "you're approved, here is your admin link" email. |
-| `pilot_accounts` | Reuse after approval: insert a row (stage `pilot`, started_on, decision_on = +3 months) so the pilot shows in the console pipeline. |
-| `key_requests` + `/requests` | **Do not reuse.** It is tied to institutions and partner workshop keys (`admin_approve_request` takes `p_institution_id`). Mixing these would muddy both. |
+| Open Share | `board.share_opened` (exists) |
+| Send to a picked colleague (new explicit button) | `engagement.access_changed` (exists, server) |
+| Send to one or more emails | `board.invite_sent` per address (exists, server) |
+| Withdraw pending invite | `board.invite_withdrawn` (exists) |
+| Make / expire public link | `board.share_link` (exists) |
+| One Send covering several addresses | new: `board.invite_batch_sent`, dims `count_band`, `sent`, `failed`, `skipped` (all small closed integers or bands). Needed so a batch is readable as one action. |
 
-No new table is needed. `pilot_requests` gets extended.
+No other new actions. Removing click-to-add is a change of trigger, not a new action; same events fire.
 
-## 4. Proposed flow
+**Consent.** No. Nothing touches consent surfaces, `resolveConsentStamp`, stamping in `telemetry.server.ts`, or `data_consent_state` / `data_consent_ledger` / `set_data_consent`. No email address, name or board title enters any event.
 
-1. A person picks Company on /plans and lands on `/auth?intent=company` as today. Their account is created and confirmed as today, which keeps identity and the funnel intact.
-2. `/onboarding?intent=company` shows a **pilot request form** in place of "Create my workspace": your name, firm, team size and an optional note, with the email prefilled from the session. Copy says "Lasso for companies starts with a free 3 month pilot. Liam sets it up by hand, usually within a day." The submit button reads "Request a pilot", with a secondary link "Just me for now" that goes to `intent=personal`.
-3. Submit calls an authenticated variant of `submitPilotRequestFn`. It stores the request with `user_id`, `status 'pending'` and `source 'signup'`, then sends `pilot-request-notify` to Liam. The email adds a link to the console review screen and any **existing orgs with a matching name or email domain** (the Artemis case).
-4. The person sees "Request received" with a pending state. Returning to /onboarding shows the same pending state. No workspace exists yet, so /work keeps routing them back here.
-5. Liam opens the console's Pilot requests list and picks Approve, or Decline with a note. Approve calls a new `admin_approve_pilot_request(id, seats, name?)`. It wraps `admin_create_workspace` (company, 3 month entitlement, admin link bound to the requester's email), inserts `pilot_accounts`, and marks the request approved with its `org_id`.
-6. The requester gets `provision-company-admin` with their ADM code and joins through `/join`. `join_org_with_invite` makes them admin. Colleagues then come in through normal invites.
-7. If an org already exists for the firm, Liam can decline and send an invite to that existing org instead, so no duplicate is created.
+**Schema.** No existing event name, payload or dim changes. One additive event name (`board.invite_batch_sent`) and its allowlist entry in `event-dim-allowlist.ts` and `telemetry-shared.ts`. Nothing repurposed.
 
-**Invited company people:** `/join` uses `join_org_with_invite`, a separate function, and `/onboarding` already redirects pending invites to /join (beforeLoad L219-221). Invites never touch `create_org_with_profile`, so they keep working. The SQL change must touch only `create_org_with_profile`, never the invite function. An ADM approval link takes the same invite path.
+## 6. Proposed dialog design
 
-**Telemetry (additive):** `pilot.requested` {source, team_size}, `pilot.approved` {seats}, `pilot.declined`. `org.created` is no longer emitted for company from onboarding. Approval-created orgs come from the console, so check whether the console already emits for `admin_create_workspace`.
+Header: "Share this board". One line under it: "Choose how someone gets to this board. Each option says what it does."
 
-## 5. Split: UI-only vs SQL you run
+Shared settings block, used by sections A and B:
+- Access: segmented Viewer / Collaborator, with the existing line from `ACCESS_LEVEL_DISPLAY`.
+  - Viewer: "Can open the board and read every card."
+  - Collaborator: "Can open the board, add cards and edit them."
+- Checkbox: "Share summaries only, not full conversations." (default off, as today)
 
-### SQL / RLS (yours)
-1. `create_org_with_profile`: refuse `company` and `partner` unless the caller is a platform admin. Choose between raising a clear error or downgrading to personal (raising is recommended so it is visible). REVOKE EXECUTE from `anon`.
-2. `orgs.settings.type` lock: a BEFORE UPDATE trigger that rejects a change of `settings->>'type'` to `company`/`partner` unless the caller is a platform admin. This closes the `applyOrgType` client write and the Settings WorkspaceKindCard path.
-3. `pilot_requests`: add `user_id uuid`, `status text default 'pending'` (pending/approved/declined), `source text`, `decided_at`, `decided_by`, `decision_note`, `org_id uuid`. Add an RLS select policy so a requester can read their own row by `user_id = auth.uid()` (for the pending state). Writes stay through the server function's admin client.
-4. New `admin_approve_pilot_request` and `admin_decline_pilot_request` (SECURITY DEFINER, `is_platform_admin(...,'ops')`), plus `admin_pilot_requests()` for listing, including likely duplicate orgs.
-5. Optional: a uniqueness guard against creating a company org whose name matches an existing org, case-insensitive.
-6. The three existing Artemis orgs: a data clean-up decision for you, outside this unit.
+**A. People in this workspace** (business and partner only)
+- Explainer: "Pick someone already in your workspace. They get an email and the board appears in their sidebar."
+- Select listing every active admin and member not already on the board, searchable. Multi-select allowed.
+- Button: **Send**. Disabled until someone is picked.
 
-### UI / server code (build)
-- `src/routes/onboarding.tsx`: company and partner registers render the request form and pending state instead of the create call. Personal and edu are unchanged.
-- `src/lib/pilot-request.functions.ts`: an authenticated `submitSignupPilotRequestFn` (requireSupabaseAuth). It reuses the schema, insert and notify.
-- `src/lib/pilot-request.server.ts`: add a console link and a duplicate hint to the template variables. The Resend template needs those variables too, so that is a template edit in Resend.
-- Console: a Pilot requests list with Approve/Decline beside the existing admin screens.
-- Copy in one exported COPY object, plus tests: the company register never calls `create_org_with_profile`, personal still does, and the invite path is untouched.
-- `/plans` Business CTA label becomes "Request a free pilot". This is a label change only.
+**B. Invite by email** (all workspaces)
+- Business/partner explainer: "For people outside your workspace. Enter one address or several, separated by commas. Each person gets an email with a link to accept."
+- Individual explainer: "Enter one address or several, separated by commas. Each person gets an email with a link to accept the board."
+- Inline helper when an address belongs to a colleague: "{address} is already in your workspace. Add them from the list above."
+- Button: **Send**. Results list below it.
 
-Open decisions: seats default for an approved pilot, whether `partner` signup is also gated (assumed yes), and decline wording.
+**C. Public link** (business and partner)
+- Explainer: "Anyone with the link can view this board. No account needed. They cannot edit, and the link expires." Then the existing `shareExposureSentence` and live links list.
+
+**Who has access** list and **Waiting to accept** list stay as today, below the three sections.
+
+## 7. The split
+
+**App only (build tonight):**
+- `workspaceTier` in the people payload.
+- Dialog restructure into A/B/C with explicit Send buttons, copy in the page `COPY` object.
+- Comma-separated parsing, per-address loop, results list.
+- `board.invite_batch_sent` event and allowlist entry.
+- Tests: tier gating of sections, explicit Send (no add on click), multi-address partial failure, existing assertions on click-to-add will need authorised updates.
+
+**Needs you, not SQL:** publish Resend templates `board-invite`, `board-shared`, `invite-approval-needed` with the variables listed in section 1.
+
+**Needs you, SQL (only if the read shows it):** if `create_board_invite` returns no `code` for an existing-account recipient, it must return one (or the app cannot email them).
+
+## Decisions for you
+
+1. **Individual workspaces and the public link.** Today every workspace can make a link. The brief says individuals get email only. Hiding the link for individuals removes a working control (rule 8). Keep it, or remove it?
+2. **Section A multi-select**, or one person per Send?
+3. **"Viewer only" for the link** is already true by construction (the shared board page is read only); confirm no change wanted there.
