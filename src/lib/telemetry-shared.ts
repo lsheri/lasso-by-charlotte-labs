@@ -136,6 +136,7 @@ export type TelemetryEvent =
    *  and window_pos (only | first | middle | last); the full list lives in
    *  event-dim-allowlist.ts. */
   | "mcp.push"
+  | "mcp.read"
   /** M3-C2: an MCP call that could not be resolved. Kind and closed reason only. */
   | "mcp.auth_failed"
   /** M2: a named connection was made in Settings. Kind only. */
