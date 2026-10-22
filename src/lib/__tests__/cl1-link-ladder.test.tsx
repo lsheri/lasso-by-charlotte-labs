@@ -51,7 +51,7 @@ describe("CL-1 ladder", () => {
     expect(itemChatUrl(item({ source_meta: { source_project: { id: PROJECT } } }))).toBe(`https://claude.ai/project/${PROJECT}`);
   });
   it("labels tell the truth", () => {
-    expect(chatLinkLabel({ url: `https://claude.ai/project/${PROJECT}`, kind: "project" })).toBe("Open the project");
+    expect(chatLinkLabel({ url: `https://claude.ai/project/${PROJECT}`, kind: "project" })).toBe("Open the project, not the chat");
     expect(chatLinkLabel({ url: "https://claude.ai/chat/x", kind: "conversation" })).toBe("Open in Claude");
     expect(chatLinkLabel({ url: "https://chatgpt.com/c/x", kind: "pasted" })).toBe("Open in ChatGPT");
     render(<ChatUrlLink item={item({ source_meta: { source_project: { id: PROJECT } } })} showAbsence />);

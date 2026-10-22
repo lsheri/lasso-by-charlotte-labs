@@ -150,6 +150,6 @@ export function itemChatUrl(item: ChatLinkItem): string | null {
 
 /** The label for a ladder rung. A project link never claims to be the conversation. */
 export function chatLinkLabel(link: ChatLink): string {
-  if (link.kind === "project") return "Open the project";
+  if (link.kind === "project") return "Open the project, not the chat";
   return chatUrlLabel(link.url);
 }
