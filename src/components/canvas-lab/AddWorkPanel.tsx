@@ -17,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useConnectorAccounts } from "@/hooks/use-connector-accounts";
 import { useProfile } from "@/hooks/use-profile";
 import { useWorkItems } from "@/hooks/use-work-items";
+import { orderWithBundles, toggleWithPieces } from "@/lib/add-work-selection";
 import { useSettingsDialogOptional } from "@/lib/settings-dialog-context";
 import { displayName } from "@/lib/work-item-name";
 import type { MappedTask } from "@/lib/work-types";
@@ -73,13 +74,18 @@ export function AddWorkPanel({
     );
   }, [work, profile?.id]);
 
+  // ATTACH-1: a chat's pieces dock under it instead of reading as strangers.
+  const rows = useMemo(() => orderWithBundles(inbox), [inbox]);
+  const piecesByChat = useMemo(() => {
+    const map = new Map<string, string[]>();
+    for (const row of rows) {
+      if (row.chatId) map.set(row.chatId, [...(map.get(row.chatId) ?? []), row.item.id]);
+    }
+    return map;
+  }, [rows]);
+
   const toggle = (id: string) =>
-    setPicked((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+    setPicked((prev) => toggleWithPieces(prev, id, piecesByChat.get(id) ?? []));
 
   async function addPicked() {
     const ids = [...picked];
