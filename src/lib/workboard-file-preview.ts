@@ -1,5 +1,5 @@
 import type { Json } from "@/integrations/supabase/types";
-import type { WorkboardFilePreview } from "@/lib/workboard-card-preview.shared";
+import type { NoPreviewReason, WorkboardFilePreview } from "@/lib/workboard-card-preview.shared";
 import { peekFormat } from "@/lib/peek-format";
 import type { WorkItemRow } from "@/lib/work-types";
 
@@ -50,7 +50,7 @@ export function slidesFromMap(value: Json | null): SlideShape[] {
   });
 }
 
-export function fallbackFilePreview(item: WorkItemRow, versionCount = 0): WorkboardFilePreview {
+export function fallbackFilePreview(item: WorkItemRow, versionCount = 0, reason: NoPreviewReason = "no_text"): WorkboardFilePreview {
   return {
     workItemId: item.id,
     kind: "fallback",
@@ -58,6 +58,7 @@ export function fallbackFilePreview(item: WorkItemRow, versionCount = 0): Workbo
     lines: [],
     slideTitle: null,
     versionCount,
+    reason,
   };
 }
 
