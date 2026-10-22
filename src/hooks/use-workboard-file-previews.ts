@@ -72,7 +72,7 @@ export async function loadWorkboardFilePreview(
       // The existing extracted-text preview remains the fallback.
     }
   }
-  if (versionError) return fallbackFilePreview(item);
+  if (versionError) return fallbackFilePreview(item, 0, "unreadable");
   const pages = item.type === "deck" ? slidesFromMap(versions?.[0]?.slide_map ?? null) : [];
   const slide = pages[0] ?? null;
   if (slide) {
@@ -84,7 +84,7 @@ export async function loadWorkboardFilePreview(
     if (signedUrl) {
       return { workItemId: item.id, kind: "pdf", url: signedUrl, lines: [], slideTitle: null, versionCount };
     }
-    return fallbackFilePreview(item, versionCount);
+    return fallbackFilePreview(item, versionCount, "unreadable");
   }
 
   try {
@@ -93,8 +93,9 @@ export async function loadWorkboardFilePreview(
     if (lines.length > 0) return { workItemId: item.id, kind: "text", url: null, lines, slideTitle: null, versionCount };
   } catch {
     // The card quietly keeps its existing excerpt when reading is refused.
+    return fallbackFilePreview(item, versionCount, "refused");
   }
-  return fallbackFilePreview(item, versionCount);
+  return fallbackFilePreview(item, versionCount, "no_text");
 }
 
 export function useWorkboardFilePreviews(

@@ -18,8 +18,7 @@ import { WorkNote } from "@/components/work/WorkNote";
 import { ChatUrlLink } from "@/components/work/ChatUrlLink";
 import { BoardCard } from '@/design/reference/BoardCard';
 import { SketchCard } from '@/design/reference/SketchCard';
-import { Sketch } from '@/design/reference/Sketch';
-import { kindOf, sketchLabel } from '@/design/reference/work-types';
+import { NoPreview } from '@/design/reference/NoPreview';
 import { WorkboardFilePreview as FilePreview } from '@/components/canvas-lab/WorkboardFilePreview';
 import { workToBoardCard } from '@/lib/work-board-card';
 import { isReferenceItem } from "@/lib/reference-file-shared";
@@ -36,7 +35,7 @@ import { cardSizeTier, type LabAnchor, type LabNode, type LabResizeCorner } from
 import type { WorkItemRow } from "@/lib/work-types";
 import { formatDate } from "@/lib/work-types";
 import { resolveWorkDate } from "@/lib/work-order";
-import type { WorkboardCardPreview, WorkboardFilePreview } from "@/lib/workboard-card-preview.shared";
+import type { NoPreviewReason, WorkboardCardPreview, WorkboardFilePreview } from "@/lib/workboard-card-preview.shared";
 import type { TeammateMark } from "@/lib/teammate-mark";
 
 
@@ -270,15 +269,19 @@ function LabCardInner({
     (filePreview.kind === 'pdf' && Boolean(filePreview.url)) ||
     ((filePreview.kind === 'html' || filePreview.kind === 'mermaid') && Boolean(filePreview.html))
   ) ? filePreview : undefined;
+  const noPreviewReason: NoPreviewReason = filePreview?.reason ?? (filePreview ? 'no_text' : 'not_previewable');
+  const contextAvailable = Boolean(
+    item?.work_item_extracts?.some((extract) => extract.summary)
+    || chatPreview?.turns?.length
+    || boardWork?.summary,
+  );
   const previewFallback = boardWork && !boardWork.content ? (
     renderableFilePreview && !filePreviewFailed ? (
       <div className="absolute inset-0 flex min-h-0 flex-col">
         <FilePreview preview={renderableFilePreview} title={boardWork.title} onFailure={markFilePreviewFailed} />
       </div>
     ) : (
-      <div className="absolute inset-[10%]">
-        <Sketch kind={kindOf(boardWork)} tone="bone" detail="compact" label={sketchLabel(boardWork.title)} />
-      </div>
+      <NoPreview reason={noPreviewReason} contextAvailable={contextAvailable} />
     )
   ) : undefined;
   const teammateTooltip = teammateMark?.name

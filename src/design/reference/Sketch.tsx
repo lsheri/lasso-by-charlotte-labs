@@ -446,3 +446,26 @@ export function Sketch({
 
 /** The label measure, reachable from the component for hosts and tests. */
 Sketch.labelWidth = handTextWidth;
+
+/** The face a card wears when the real work cannot be shown. Still Lasso's hand. */
+export function NoPreviewSketch({ tone = 'bone' }: { tone?: SketchTone }) {
+  const id = React.useId().replace(/:/g, '');
+  const p = PAL[tone];
+  return (
+    <svg viewBox="68 12 104 156" preserveAspectRatio="xMidYMid meet" width="100%" height="100%" aria-hidden style={{ display: 'block', overflow: 'hidden' }}>
+      <defs>
+        <filter id={`nowob${id}`} x="-5%" y="-5%" width="110%" height="110%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves={2} seed={4} />
+          <feDisplacementMap in="SourceGraphic" scale={2.4} xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+      </defs>
+      <g filter={`url(#nowob${id})`}>
+        <path d="M74 18 h74 l18 18 v126 h-92 z" style={sh(p.ink, p.paper, 1.6)} />
+        <path d="M148 18 v18 h18" style={ln(p.ink, 1.2)} />
+        <path d="M98 74 q5 -7 10 0" style={ln(p.ink, 1.6)} />
+        <path d="M132 74 q5 -7 10 0" style={ln(p.ink, 1.6)} />
+        <path d="M100 126 q20 -16 40 0" style={ln(p.ink, 1.6)} />
+      </g>
+    </svg>
+  );
+}

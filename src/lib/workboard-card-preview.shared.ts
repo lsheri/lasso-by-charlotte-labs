@@ -17,6 +17,8 @@ export type WorkboardCardPreview = {
   model: string | null;
 };
 
+export type NoPreviewReason = "not_previewable" | "no_text" | "unreadable" | "refused";
+
 export type WorkboardFilePreview = {
   workItemId: string;
   kind: "pdf" | "slide" | "text" | "html" | "mermaid" | "fallback";
@@ -26,6 +28,7 @@ export type WorkboardFilePreview = {
   html?: string;
   pages?: { title: string | null; lines: string[] }[];
   versionCount: number;
+  reason?: NoPreviewReason;
 };
 
 export type WorkboardFilePreviewMap = Record<string, WorkboardFilePreview>;
