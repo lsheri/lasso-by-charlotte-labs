@@ -1,5 +1,9 @@
 # Roadmap
 
+- [x] LINK-1: owner-only All work chat-link entry, project clarification, unchanged privacy pin; 24 focused tests passed, full suite once: 4332 passed / 125 failed in the same 38 reported files; preview build OK.
+- [ ] LINK-1: explicit tsgo result unavailable because manual project typechecks are prohibited by this environment.
+- [ ] LINK-1: authenticated real-save verification at 1280 and 390, blocked by external unmanaged authentication.
+
 - [x] TOOLS-1: wrapper and scoped graphite treatment; control definitions identical; 1280/390 style fixtures inspected; final suite matches all 29 baseline files, 104 failed and 4012 passed. Preview only.
 - [ ] TOOLS-1: real signed-in toolbar screenshots and interactions blocked by external unmanaged authentication; both widths redirect to /auth.
 

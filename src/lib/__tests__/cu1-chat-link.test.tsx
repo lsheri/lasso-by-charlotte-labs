@@ -96,9 +96,10 @@ describe("CU1 wiring", () => {
   const save = readFileSync("src/lib/work-chat-link.ts", "utf8");
   const push = readFileSync("src/lib/mcp-handler.server.ts", "utf8");
 
-  it("only the live board can offer the paste control, and only to the owner", () => {
+  it("only the owner's own live surfaces can offer the paste control", () => {
     expect(page).toContain("onSaveChatLink={cardItem && ownsWorkItem(profile, cardItem) ? (url) => saveChatLink(cardItem.id, url) : undefined}");
     for (const src of [shared, demo, example]) expect(src).not.toContain("onSaveChatLink");
+    expect(readFileSync("src/components/work/RowMenu.tsx", "utf8")).toContain("ownsWorkItem");
   });
   it("no event carries the link", () => {
     expect(save).not.toMatch(/recordEvent|note[A-Z]\w*\(|posthog/i);

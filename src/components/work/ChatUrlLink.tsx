@@ -45,6 +45,7 @@ export function ChatUrlLink({
   };
 
   return (
+    <>
     <a
       href={url}
       target="_blank"
@@ -55,5 +56,7 @@ export function ChatUrlLink({
       {chatLinkLabel(link)}
       <ExternalLink className="h-3 w-3" aria-hidden />
     </a>
+    {link.kind === "project" ? <span className="block text-xs text-muted-foreground">Not the chat itself.</span> : null}
+    </>
   );
 }

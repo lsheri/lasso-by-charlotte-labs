@@ -103,6 +103,11 @@ export function pastedChatUrl(raw: unknown): string | null {
   return url.toString();
 }
 
+/** Both owner surfaces choose the same label from the person's pasted link. */
+export function chatLinkAction(raw: unknown): "add" | "change" {
+  return pastedChatUrl(raw) ? "change" : "add";
+}
+
 /** CL-1: the Claude project a push named, when its id is a canonical UUID. */
 export function deriveProjectUrl(projectId: unknown): string | null {
   if (typeof projectId !== "string") return null;
