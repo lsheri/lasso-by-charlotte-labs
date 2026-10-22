@@ -334,7 +334,7 @@ function LabCardInner({
       data-size={cardSizeTier(node)}
       className={`canvas-lab-card group absolute text-left outline-none${teammateMark ? " canvas-lab-card-teammate" : ""}`}
     >
-      <div ref={paperRef} data-selected={selected} data-marquee-preview={previewSelected} data-focused={focused} data-connect-source={connectSourceAnchor !== null} className="canvas-lab-card-paper h-full w-full overflow-hidden">
+      <div ref={paperRef} data-selected={selected} data-marquee-preview={previewSelected} data-focused={focused} data-connect-source={connectSourceAnchor !== null} data-bundled-piece={Boolean(madeInChat) && face === 'board'} className="canvas-lab-card-paper h-full w-full overflow-hidden">
         {item && isReferenceItem(item) ? <ReferenceFileCard item={item} onOpen={() => onOpen(cardRef.current?.getBoundingClientRect())} /> : item && boardWork && face === 'board' && cardFace === 'art' ? (
           <SketchCard
             work={boardWork}
