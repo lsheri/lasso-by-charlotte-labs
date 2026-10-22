@@ -189,6 +189,60 @@ function JoinPage() {
     );
   }
 
+  if (state.created_by_you) {
+    return (
+      <Shell>
+        <StateCard label="Your invite" title="You created this invite">
+          <p>
+            {state.email
+              ? `It is for ${state.email}. Share the link with them.`
+              : "It is an open link. Share it with the person you want to invite."}
+          </p>
+          <p>Opening it yourself does nothing. You are already in {org}.</p>
+          <div className="flex flex-wrap gap-2 pt-1">
+            <Button
+              type="button"
+              onClick={() => {
+                void navigator.clipboard.writeText(`${window.location.origin}${joinHref}`);
+                toast.success("Invite link copied");
+              }}
+            >
+              Copy link
+            </Button>
+            <Button type="button" variant="outline" onClick={() => navigate({ to: "/home" })}>
+              Go to workspace
+            </Button>
+          </div>
+        </StateCard>
+      </Shell>
+    );
+  }
+
+  if (blocked === "already_member") {
+    return (
+      <Shell>
+        <StateCard label="Invite" title={`You are already in ${org}`}>
+          <p>
+            This account{viewerEmail ? `, ${viewerEmail},` : ""} already belongs to {org}, so there
+            is nothing to accept.
+          </p>
+          <p>
+            If the invite was meant for someone else, sign out and let them open the link. It stays
+            valid until it expires.
+          </p>
+          <div className="flex flex-wrap gap-2 pt-1">
+            <Button type="button" onClick={() => navigate({ to: "/home" })}>
+              Go to workspace
+            </Button>
+            <Button type="button" variant="outline" onClick={() => void signOutAndStay()}>
+              Sign out and continue
+            </Button>
+          </div>
+        </StateCard>
+      </Shell>
+    );
+  }
+
   if (state.status === "revoked") {
     return (
       <Shell>
@@ -219,35 +273,6 @@ function JoinPage() {
         <StateCard label="Invite" title="This invite has expired">
           <p>{expiredInviteCopy(state.expires_at)}</p>
           <p>Ask {org} for a fresh link.</p>
-        </StateCard>
-      </Shell>
-    );
-  }
-
-  if (state.created_by_you) {
-    return (
-      <Shell>
-        <StateCard label="Your invite" title="You created this invite">
-          <p>
-            {state.email
-              ? `It is for ${state.email}. Share the link with them.`
-              : "It is an open link. Share it with the person you want to invite."}
-          </p>
-          <p>Opening it yourself does nothing. You are already in {org}.</p>
-          <div className="flex flex-wrap gap-2 pt-1">
-            <Button
-              type="button"
-              onClick={() => {
-                void navigator.clipboard.writeText(`${window.location.origin}${joinHref}`);
-                toast.success("Invite link copied");
-              }}
-            >
-              Copy link
-            </Button>
-            <Button type="button" variant="outline" onClick={() => navigate({ to: "/home" })}>
-              Go to workspace
-            </Button>
-          </div>
         </StateCard>
       </Shell>
     );
@@ -296,30 +321,6 @@ function JoinPage() {
     );
   }
 
-  if (blocked === "already_member") {
-    return (
-      <Shell>
-        <StateCard label="Invite" title={`You are already in ${org}`}>
-          <p>
-            This account{viewerEmail ? `, ${viewerEmail},` : ""} already belongs to {org}, so there
-            is nothing to accept.
-          </p>
-          <p>
-            If the invite was meant for someone else, sign out and let them open the link. It stays
-            valid until it expires.
-          </p>
-          <div className="flex flex-wrap gap-2 pt-1">
-            <Button type="button" onClick={() => navigate({ to: "/home" })}>
-              Go to workspace
-            </Button>
-            <Button type="button" variant="outline" onClick={() => void signOutAndStay()}>
-              Sign out and continue
-            </Button>
-          </div>
-        </StateCard>
-      </Shell>
-    );
-  }
 
   if (blocked === "mismatch") {
     return (
