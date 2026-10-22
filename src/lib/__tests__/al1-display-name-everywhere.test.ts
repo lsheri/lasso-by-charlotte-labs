@@ -44,3 +44,11 @@ describe("AL-1 the Add work dialog shows the chosen name", () => {
     expect(source).not.toContain('{item.title ?? "Untitled"}');
   });
 });
+
+describe("ALIAS-2 the All AI chats reader shows the chosen name", () => {
+  it("names the selected chat through displayName", () => {
+    const source = readFileSync(new URL("../../pages/AiRecordPage.tsx", import.meta.url), "utf8");
+    expect(source).toContain("displayName(selected)");
+    expect(source).not.toContain("{selected.title}");
+  });
+});

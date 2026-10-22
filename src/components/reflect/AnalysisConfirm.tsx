@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { displayName } from "@/lib/work-item-name";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -54,7 +55,7 @@ export type AnalysisConfirmRequest = {
   preselectedIds?: string[] | undefined;
 };
 
-type ItemRow = CompanionRow & { type: WorkItemRow["type"] };
+type ItemRow = CompanionRow & { type: WorkItemRow["type"]; display_title?: string | null | undefined };
 
 /**
  * Step one of running an analysis: what Lasso is about to read, built from the
@@ -95,7 +96,7 @@ export function AnalysisConfirm({
     queryFn: async (): Promise<ItemRow | null> => {
       const { data } = await supabase
         .from("work_items")
-        .select("id, title, type, source, source_vendor, source_meta, meta, content_ref")
+        .select("id, title, display_title, type, source, source_vendor, source_meta, meta, content_ref")
         .eq("id", baseAnchorId as string)
         .maybeSingle();
       return (data ?? null) as ItemRow | null;
@@ -291,7 +292,7 @@ export function AnalysisConfirm({
                   <div className="flex flex-wrap items-center gap-2">
                     {anchorItem ? <SourceMark item={anchorItem as never} /> : null}
                     <span className="min-w-0 break-words text-sm text-foreground">
-                      {anchorItem?.title ?? target.title}
+                      {anchorItem ? displayName(anchorItem) || target.title : target.title}
                     </span>
                     {anchorItem ? <TypeBadge item={anchorItem as never} size="sm" /> : null}
                     {shape === "deliverable" && eligibleAnchors.length > 0 ? (

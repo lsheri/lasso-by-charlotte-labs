@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { displayName, nameMatches } from "@/lib/work-item-name";
 import { useSearch } from "@tanstack/react-router";
 import { isToolRole } from "@/lib/tool-steps";
 import { useServerFn } from "@tanstack/react-start";
@@ -245,7 +246,7 @@ export function AiRecordPage() {
   const threadKey = [...threadIds].sort().join(",");
   const needle = query.trim().toLowerCase();
   const shown = needle
-    ? threads.filter((i) => (i.title ?? "").toLowerCase().includes(needle))
+    ? threads.filter((i) => nameMatches(i, query))
     : threads;
   // Chips read the tools already present in the loaded rows, so the row never
   // offers a filter that would empty the page.
@@ -388,9 +389,9 @@ export function AiRecordPage() {
       if (targets.size === 0) return {};
       const { data: items } = await supabase
         .from("work_items")
-        .select("id, title")
+        .select("id, title, display_title")
         .in("id", Array.from(targets));
-      const titles = new Map((items ?? []).map((i) => [i.id, i.title]));
+      const titles = new Map((items ?? []).map((i) => [i.id, displayName(i)]));
       const named: Record<string, string[]> = {};
       for (const [threadId, ids] of Object.entries(byThread)) {
         named[threadId] = ids.map((id) => titles.get(id)).filter((t): t is string => Boolean(t));
@@ -565,7 +566,7 @@ export function AiRecordPage() {
           onOpenChange={(next) => {
             if (!next) setLensItem(null);
           }}
-          target={{ kind: "item", id: lensItem.id, title: lensItem.title, scope: "thread" }}
+          target={{ kind: "item", id: lensItem.id, title: displayName(lensItem), scope: "thread" }}
           profileId={profile.id}
           orgId={profile.org_id}
         />
@@ -580,13 +581,13 @@ export function AiRecordPage() {
           {selected ? (
             <article
               key={selected.id}
-              aria-label={`Reading ${selected.title}`}
+              aria-label={`Reading ${displayName(selected)}`}
               className={readingMotion.className}
             >
               <header className="border-b border-pencil pb-4">
                 <div className="flex items-start justify-between gap-3">
                   <h2 className="page-title break-words text-[22px] leading-snug">
-                    {selected.title}
+                    {displayName(selected)}
                   </h2>
                   <button
                     type="button"
