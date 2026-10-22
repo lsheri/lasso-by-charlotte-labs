@@ -297,7 +297,9 @@ function LabCardInner({
       </div>
     ) : noPreviewReason ? (
       <NoPreview reason={noPreviewReason} contextAvailable={contextAvailable} />
-    ) : undefined
+    ) : (
+      <div className="absolute inset-0" aria-hidden />
+    )
   ) : undefined;
   const teammateTooltip = teammateMark?.name
     ? item
