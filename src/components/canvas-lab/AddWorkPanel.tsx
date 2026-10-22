@@ -17,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useConnectorAccounts } from "@/hooks/use-connector-accounts";
 import { useProfile } from "@/hooks/use-profile";
 import { useWorkItems } from "@/hooks/use-work-items";
+import { orderWithBundles, toggleWithPieces } from "@/lib/add-work-selection";
 import { useSettingsDialogOptional } from "@/lib/settings-dialog-context";
 import { displayName } from "@/lib/work-item-name";
 import type { MappedTask } from "@/lib/work-types";
@@ -73,13 +74,18 @@ export function AddWorkPanel({
     );
   }, [work, profile?.id]);
 
+  // ATTACH-1: a chat's pieces dock under it instead of reading as strangers.
+  const rows = useMemo(() => orderWithBundles(inbox), [inbox]);
+  const piecesByChat = useMemo(() => {
+    const map = new Map<string, string[]>();
+    for (const row of rows) {
+      if (row.chatId) map.set(row.chatId, [...(map.get(row.chatId) ?? []), row.item.id]);
+    }
+    return map;
+  }, [rows]);
+
   const toggle = (id: string) =>
-    setPicked((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+    setPicked((prev) => toggleWithPieces(prev, id, piecesByChat.get(id) ?? []));
 
   async function addPicked() {
     const ids = [...picked];
@@ -124,12 +130,14 @@ export function AddWorkPanel({
                 className="h-72 rounded-md border"
               >
                 <ul className="divide-y">
-                  {inbox.map((item) => {
+                  {rows.map((row) => {
+                    const item = row.item;
                     const boards = boardNames(item);
                     const here = Boolean(engagementId) && isOnBoard(item, engagementId);
+                    const chat = row.chatId ? inbox.find((candidate) => candidate.id === row.chatId) : undefined;
                     return (
                       <li key={item.id}>
-                        <label className={here ? "flex items-center gap-3 px-3 py-2 text-sm" : "flex cursor-pointer items-center gap-3 px-3 py-2 text-sm"}>
+                        <label className={`${here ? "flex" : "flex cursor-pointer"} items-center gap-3 py-2 text-sm ${row.chatId ? "pl-9 pr-3" : "px-3"}`}>
                           {here ? (
                             <span className="w-4 shrink-0" aria-hidden />
                           ) : (
@@ -141,7 +149,9 @@ export function AddWorkPanel({
                           )}
                           <span className="min-w-0 flex-1">
                             <span className="block truncate">{displayName(item) || "Untitled"}</span>
-                            <span className="block truncate text-xs text-muted-foreground">{boards.length > 0 ? boards.join(", ") : "No board"}</span>
+                            <span className="block truncate text-xs text-muted-foreground">
+                              {chat ? `Part of ${displayName(chat) || "its chat"}` : boards.length > 0 ? boards.join(", ") : "No board"}
+                            </span>
                           </span>
                           <span className="shrink-0 text-xs text-muted-foreground">{here ? "Already here" : item.type}</span>
                         </label>
