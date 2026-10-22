@@ -21,6 +21,7 @@ describe("P2 Workboard file preview shaping", () => {
     expect(isWorkboardFilePreviewItem(item("document"))).toBe(true);
     expect(isWorkboardFilePreviewItem(item("deck"))).toBe(true);
     expect(isWorkboardFilePreviewItem(item("sheet"))).toBe(true);
+    expect(isWorkboardFilePreviewItem(item("email"))).toBe(true);
     expect(isWorkboardFilePreviewItem(item("ai_thread"))).toBe(false);
   });
 

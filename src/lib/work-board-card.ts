@@ -67,6 +67,29 @@ export function workToBoardCard(
           rows: rows.map((line) => splitCsvLine(line).map(sheetCell)) } };
       }
     }
+    if (item.type === 'email') {
+      const header = new Map<string, string>();
+      let bodyFrom = 0;
+      for (let i = 0; i < lines.length && i < 8; i++) {
+        const m = /^\s*(from|to|cc|sent|date|subject)\s*:\s*(.*)$/i.exec(lines[i] ?? '');
+        if (!m) break;
+        const name = m[1];
+        if (name === undefined) break;
+        header.set(name.toLowerCase(), (m[2] ?? '').trim());
+        bodyFrom = i + 1;
+      }
+      const emailBlocks: DocBlock[] = lines.slice(bodyFrom).map((line) => /^#+/.test(line)
+        ? { type: 'h2', text: line.replace(/^#+\s*/, '') }
+        : { type: 'p', text: line });
+      const to = (header.get('to') ?? '').split(/[;,]/).map((one) => one.trim()).filter(Boolean);
+      const sent = header.get('sent') ?? header.get('date');
+      return { ...work, content: { kind: 'email',
+        from: header.get('from') ?? 'Unknown sender',
+        to,
+        subject: header.get('subject') ?? work.title,
+        ...(sent ? { sent } : {}),
+        blocks: emailBlocks } };
+    }
     const blocks: DocBlock[] = lines.map((line) => /^#+/.test(line)
       ? { type: 'h2', text: line.replace(/^#+\s*/, '') }
       : { type: 'p', text: line });

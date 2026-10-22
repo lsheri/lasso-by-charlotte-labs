@@ -4,7 +4,7 @@ import { peekFormat } from "@/lib/peek-format";
 import type { WorkItemRow } from "@/lib/work-types";
 
 export function isWorkboardFilePreviewItem(item: WorkItemRow): boolean {
-  return item.type === "document" || item.type === "deck" || item.type === "sheet";
+  return item.type === "document" || item.type === "deck" || item.type === "sheet" || item.type === "email";
 }
 
 export function firstTwentyLines(text: string | null | undefined): string[] {

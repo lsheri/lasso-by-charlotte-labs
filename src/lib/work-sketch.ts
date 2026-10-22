@@ -15,6 +15,7 @@ const BRAND_SOURCE: Partial<Record<string, WorkSource>> = {
   copilot: 'copilot',
   granola: 'granola',
   wispr: 'wispr',
+  gmail: 'gmail',
 };
 
 const VENDOR_SOURCE: Partial<Record<string, WorkSource>> = {
@@ -24,6 +25,7 @@ const VENDOR_SOURCE: Partial<Record<string, WorkSource>> = {
   copilot: 'copilot',
   perplexity: 'perplexity',
   wispr: 'wispr',
+  gmail: 'gmail',
 };
 
 const WORK_KIND: Record<WorkType, WorkKind> = {
@@ -32,9 +34,8 @@ const WORK_KIND: Record<WorkType, WorkKind> = {
   deck: 'deck',
   sheet: 'sheet',
   call: 'transcript',
-  // Email, message and image have no drawing of their own and borrow one.
-  // Their own drawings are recorded here as owed design work.
-  email: 'doc',
+  // Message and image have no drawing of their own and borrow one.
+  email: 'email',
   message: 'chat',
   image: 'doc',
 };

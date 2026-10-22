@@ -45,6 +45,7 @@ const VIEW: Record<WorkKind, Record<SketchDetail, string>> = {
   chat: { compact: '28 22 184 124', expanded: '28 8 184 170' },
   sheet: { compact: '28 18 184 138', expanded: '28 8 184 160' },
   transcript: { compact: '30 6 168 154', expanded: '30 6 168 170' },
+  email: { compact: '68 12 104 84', expanded: '56 8 156 160' },
 };
 
 export const KIND_ASPECT = Object.fromEntries(
@@ -233,6 +234,49 @@ function Doc({ p, ex, label, on }: P) {
   );
 }
 
+/** Hover: the page lifts and the addressed rows write themselves in, top down. */
+function Email({ p, ex, label, on }: P) {
+  const x = ex ? 62 : 74;
+  const y = 18;
+  const pageBodyWidth = 74;
+  const foldWidth = 18;
+  const pageWidth = pageBodyWidth + foldWidth;
+  const labelX = x + 10;
+  const labelFontSize = 11;
+  return (
+    <g>
+      {ex ? (
+        <path d={`M${x + 20} ${y + 6} h74 l18 18 v120 h-92 z`} transform={`rotate(5 ${x + 66} ${y + 80})`} style={sh(p.pencil, p.paper, 1.2)} />
+      ) : null}
+      <g style={move(on, 'rotate(-2.5deg) translateY(-3px)', 'center bottom')}>
+        <path d={`M${x} ${y} h${pageBodyWidth} l${foldWidth} ${foldWidth} v126 h-${pageWidth} z`} style={sh(p.ink, p.paper, 1.6)} />
+        <path d={`M${x + 74} ${y} v18 h18`} style={{ ...ln(p.ink, 1.2), ...move(on, 'translate(-2px,2px)', 'left bottom', 80) }} />
+        {[0, 1].map((i) => (
+          <g key={i}>
+            <path d={`M${x + 10} ${y + 14 + i * 11} h11`} pathLength={1} style={{ ...ln(p.ink, 1.2), ...write(on, 60 + i * 90) }} />
+            <path d={scribble(x + 26, y + 14 + i * 11, 36)} pathLength={1} style={{ ...ln(p.pencil, 1.2), ...write(on, 100 + i * 90) }} />
+          </g>
+        ))}
+        <path d={`M${x + 8} ${y + 32} h${pageWidth - 16}`} style={ln(p.pencil, 1.2)} />
+        <rect x={x + 8} y={y + 41} width={58} height={8} rx={1} style={{ fill: p.acid, ...play(on, 'lasso-sk-swipe 460ms var(--ease-standard) 240ms both', 'left') }} />
+        <text x={labelX} y={y + 48} style={hand(p.ink, labelFontSize)}>{pageLabel(label, labelRoom('email', ex, labelX, x + pageWidth), labelFontSize)}</text>
+        <path d={scribble(x + 10, y + 70, 70)} style={ln(p.pencil, 1.2)} />
+        <path d={scribble(x + 10, y + 78, 64)} style={ln(p.pencil, 1.2)} />
+        <path d={scribble(x + 10, y + 86, 72)} style={ln(p.pencil, 1.2)} />
+        <path d={scribble(x + 10, y + 102, 66)} style={ln(p.pencil, 1.2)} />
+        <path d={scribble(x + 10, y + 110, 58)} style={ln(p.pencil, 1.2)} />
+        <path d={scribble(x + 10, y + 118, 44)} style={ln(p.pencil, 1.2)} />
+      </g>
+      {ex ? (
+        <g>
+          <path d={`M${x + 70} ${y + 24} q34 -4 48 -14`} style={ln(p.ink, 1.2)} />
+          <path d={`M${x + 112} ${y + 8} l7 2 l-3 6`} style={ln(p.ink, 1.2)} />
+        </g>
+      ) : null}
+    </g>
+  );
+}
+
 /** Hover: the question nudges in and the reply writes itself line by line. */
 function Chat({ p, ex, on }: P) {
   const y = ex ? 14 : 28;
@@ -359,6 +403,7 @@ const BODY: Record<WorkKind, (props: P) => React.ReactElement> = {
   chat: Chat,
   sheet: Sheet,
   transcript: Transcript,
+  email: Email,
 };
 
 export function Sketch({
