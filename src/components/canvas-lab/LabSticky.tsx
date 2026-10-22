@@ -81,7 +81,7 @@ function LabStickyInner({ node, selected, editable, layoutEditable, onSelect, on
   const style = { left: node.x, top: node.y, width: node.width, height: node.height } satisfies CSSProperties;
   const choose = (patch: Partial<WorkboardStickyBody>, field: "style" | "fill") => { const next = { ...body, ...patch }; onChange(next); onCommit(next, field); };
   return (
-    <section ref={sectionRef} data-editing={editing} data-testid={`sticky-${node.id}`} data-selected={selected} data-colour={body.colour} data-fill={body.fill} data-size={body.size} data-weight={body.weight} aria-label="Sticky" tabIndex={0} className="canvas-lab-sticky absolute" style={style} onFocus={onSelect} onDoubleClick={() => { if (stickyTriggerEntersEdit("doubleClick", editable)) enterEdit(); }} onPointerDown={(event) => { if (editing) return; if (!selected) { onSelect(); return; } onDragStart(event); }}>
+    <section ref={sectionRef} data-editing={editing} data-testid={`sticky-${node.id}`} data-selected={selected} data-colour={body.colour} data-fill={body.fill} data-size={body.size} data-weight={body.weight} aria-label="Sticky" tabIndex={0} className="canvas-lab-sticky absolute" style={style} onFocus={onSelect} onDoubleClick={() => { if (stickyTriggerEntersEdit("doubleClick", editable)) enterEdit(); }} onPointerDown={(event) => { if (editing) return; if (!selected) onSelect(); onDragStart(event); }}>
       {(["top", "right", "bottom", "left"] as const).map((edge) => <span key={edge} aria-hidden="true" className="canvas-lab-text-block-edge" data-edge={edge} onPointerDown={(event) => { event.stopPropagation(); onSelect(); onDragStart(event); }} />)}
       <style>{`
         .canvas-lab-sticky .node-rich { height: 100%; }
@@ -103,7 +103,7 @@ function LabStickyInner({ node, selected, editable, layoutEditable, onSelect, on
           <RichTextEditor variant="compact" toolbarVisible={selected && formattingOpen} initialHtml={draft.current?.html ?? body.html ?? plainToRichHtml(body.text)} autoFocus maxChars={WORKBOARD_TEXT_MAX_LENGTH}
             onChange={(html, text) => { if (touched.current) draft.current = { html, text }; }} onDone={finish} />
         </Suspense>
-      </div> : body.html !== undefined ? <div className="node-rich"><RichTextView html={body.html} /></div>
+      </div> : body.html !== undefined ? <div className="node-rich" onPointerDown={(event) => { event.stopPropagation(); onSelect(); }}><RichTextView html={body.html} /></div>
         : <textarea aria-label="Sticky words" maxLength={WORKBOARD_TEXT_MAX_LENGTH} value={body.text} readOnly placeholder="Write here" onPointerDown={(event) => { event.stopPropagation(); onSelect(); }} />}
       {selected && layoutEditable ? <div className="canvas-lab-text-block-controls" onPointerDown={(event) => event.stopPropagation()} onDoubleClick={(event) => event.stopPropagation()}>
         {editable ? <>

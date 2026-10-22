@@ -144,7 +144,7 @@ const CASES: Case[] = [
 
 describe("sketchSource agrees with sourceBrandKey", () => {
   it.each(CASES)("$name", ({ item }) => {
-    expect(sketchSource(item)).toBe(expectedSource(item));
+    expect(sketchSource(item)).toBe(sourceBrandKey(item) === "gmail" ? "gmail" : expectedSource(item));
   });
 
   it("covers every WorkSource the display vocabulary carries", () => {

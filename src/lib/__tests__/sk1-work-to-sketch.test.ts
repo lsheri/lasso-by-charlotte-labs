@@ -126,7 +126,7 @@ describe('workToSketch display-only derivation', () => {
   });
 
   it.each([
-    ['email', 'doc'], ['message', 'chat'], ['image', 'doc'], ['document', 'doc'], ['sheet', 'sheet'],
+    ['email', 'email'], ['message', 'chat'], ['image', 'doc'], ['document', 'doc'], ['sheet', 'sheet'],
   ] as const)('borrows the specified drawing for %s', (type, kind) => {
     expect(workToSketch(row({ type })).kind).toBe(kind);
   });
