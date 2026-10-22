@@ -6,7 +6,8 @@ export type NotificationKind =
   | "invite_decided"
   | "invite_accepted"
   | "seat_over_count"
-  | "board_activity";
+  | "board_activity"
+  | "support_request";
 
 export const NOTIFICATION_KINDS: readonly NotificationKind[] = [
   "invite_needs_approval",
@@ -15,6 +16,7 @@ export const NOTIFICATION_KINDS: readonly NotificationKind[] = [
   "invite_accepted",
   "seat_over_count",
   "board_activity",
+  "support_request",
 ];
 
 export type NotificationRow = {
@@ -44,6 +46,13 @@ export const NOTIFICATION_COPY = {
     "Approved. The email did not send; they can still use the link from the board's Share window.",
   declined: "Declined.",
   bellLabel: "Notifications",
+  bellUnread: (n: string) => `Notifications, ${n} unread`,
+  accept: "Accept",
+  accepting: "Accepting",
+  accepted: "Accepted.",
+  acceptFailed: "That board could not be opened. Ask the person who shared it for a new link.",
+  shareSentence: (by: string, board: string) => `${by} shared ${board} with you.`,
+  supportRequest: "Someone asked for support access to this workspace.",
 } as const;
 
 function text(value: unknown, fallback = ""): string {
@@ -61,6 +70,18 @@ export function badgeCount(rows: readonly Pick<NotificationRow, "section" | "act
   return n > 9 ? "9+" : String(n);
 }
 
+/** N1: unread rows, read_at null, any section. Capped at 9+. Empty string means no badge. */
+export function unreadCount(rows: readonly Pick<NotificationRow, "read_at">[]): string {
+  const n = rows.filter((r) => !r.read_at).length;
+  if (n <= 0) return "";
+  return n > 9 ? "9+" : String(n);
+}
+
+/** N1: a share that can be accepted from the bell: share_received carrying a code. */
+export function isAcceptableShare(row: Pick<NotificationRow, "kind" | "payload">): boolean {
+  return row.kind === "share_received" && typeof row.payload?.["code"] === "string" && row.payload["code"] !== "";
+}
+
 export function notificationSentence(row: { kind: string; payload: Record<string, unknown> }): string {
   const p = row.payload ?? {};
   const board = text(p["board"], "A board");
@@ -74,7 +95,9 @@ export function notificationSentence(row: { kind: string; payload: Record<string
     case "invite_accepted":
       return `${board}: your invite was accepted.`;
     case "share_received":
-      return `${board} was shared with you.`;
+      return text(p["by"]) ? NOTIFICATION_COPY.shareSentence(text(p["by"]), board) : `${board} was shared with you.`;
+    case "support_request":
+      return NOTIFICATION_COPY.supportRequest;
     case "seat_over_count":
       return `${num(p["filled"]) ?? 0} people on ${num(p["seats"]) ?? 0} seats. Add seats in Settings when you are ready.`;
     case "board_activity": {
