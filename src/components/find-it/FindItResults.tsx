@@ -11,6 +11,7 @@ import { SourceMark } from "@/components/work/SourceMark";
 import { WorkNote } from "@/components/work/WorkNote";
 import type { FoundSource, FindScope } from "@/lib/find-it.functions";
 import { fnv1a, mulberry32 } from "@/lib/journey-path";
+import { displayName } from "@/lib/work-item-name";
 import { effectiveWorkDate, formatDate, sourceLabel, type WorkItemRow } from "@/lib/work-types";
 import type { ThreadFocus } from "@/components/peek/ThreadBody";
 
@@ -49,7 +50,7 @@ function statusOf(candidate: FindItCandidate, reviewed: Record<string, "confirme
 function candidateLine(item: WorkItemRow | null): string {
   if (!item) return "A conversation you can no longer read.";
   const source = item.source ? sourceLabel(item.source) : "unknown source";
-  return `${item.title}, ${source}, ${formatDate(effectiveWorkDate(item))}`;
+  return `${displayName(item)}, ${source}, ${formatDate(effectiveWorkDate(item))}`;
 }
 
 function shuffledSlots(candidates: FindItCandidate[]): number[] {

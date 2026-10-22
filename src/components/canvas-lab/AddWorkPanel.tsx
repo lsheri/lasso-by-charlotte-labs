@@ -18,6 +18,7 @@ import { useConnectorAccounts } from "@/hooks/use-connector-accounts";
 import { useProfile } from "@/hooks/use-profile";
 import { useWorkItems } from "@/hooks/use-work-items";
 import { useSettingsDialogOptional } from "@/lib/settings-dialog-context";
+import { displayName } from "@/lib/work-item-name";
 import type { MappedTask } from "@/lib/work-types";
 
 export type AddWorkSource = "inbox" | "upload" | "connector";
@@ -135,11 +136,11 @@ export function AddWorkPanel({
                             <Checkbox
                               checked={picked.has(item.id)}
                               onCheckedChange={() => toggle(item.id)}
-                              aria-label={`Choose ${item.title ?? "this work"}`}
+                              aria-label={`Choose ${displayName(item) || "this work"}`}
                             />
                           )}
                           <span className="min-w-0 flex-1">
-                            <span className="block truncate">{item.title ?? "Untitled"}</span>
+                            <span className="block truncate">{displayName(item) || "Untitled"}</span>
                             <span className="block truncate text-xs text-muted-foreground">{boards.length > 0 ? boards.join(", ") : "No board"}</span>
                           </span>
                           <span className="shrink-0 text-xs text-muted-foreground">{here ? "Already here" : item.type}</span>

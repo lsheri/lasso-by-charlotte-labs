@@ -6,6 +6,7 @@ import { isDeliverableType } from "@/lib/lineage-shared";
 import { getDeliverableEvidence, reviewLink } from "@/lib/lineage.functions";
 import { resolveFileFormat, type FileFormat } from "@/lib/file-format";
 import { workIdentityLabel } from "@/lib/work-identity";
+import { displayName } from "@/lib/work-item-name";
 import { WhatFedThisButton } from "@/components/engagements/WhatFedThisButton";
 import { FindItLink } from "@/components/find-it/FindItLink";
 import { WorkNote } from "@/components/work/WorkNote";
@@ -118,7 +119,7 @@ export function WorkLedger({
                     className="min-w-0 flex-1 text-left"
                   >
                     <h3 className="text-base font-medium leading-snug text-foreground">
-                      {item.title}
+                      {displayName(item)}
                     </h3>
                     <p className="micro-label mt-2">
                       {workIdentityLabel(item)}

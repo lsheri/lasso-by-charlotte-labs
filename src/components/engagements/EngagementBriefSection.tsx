@@ -11,6 +11,7 @@ import { UploadFilesButton } from "@/components/work/UploadFilesButton";
 import { useBriefFiles } from "@/hooks/use-brief-files";
 import { setBriefRole, useBriefs, useInvalidateBriefs } from "@/hooks/use-briefs";
 import { useWorkItems } from "@/hooks/use-work-items";
+import { displayName, nameMatches } from "@/lib/work-item-name";
 import { supabase } from "@/integrations/supabase/client";
 import { logEvent } from "@/lib/telemetry";
 import type { WorkItemRow } from "@/lib/work-types";
@@ -291,9 +292,7 @@ function PickBriefDialog({
 }) {
   const { data } = useWorkItems();
   const [term, setTerm] = useState("");
-  const items = (data?.items ?? []).filter((item) =>
-    item.title.toLowerCase().includes(term.trim().toLowerCase()),
-  );
+  const items = (data?.items ?? []).filter((item) => nameMatches(item, term));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -314,7 +313,7 @@ function PickBriefDialog({
               onClick={() => void onPick(item)}
               className="w-full rounded-[var(--radius)] border border-border bg-card px-3 py-2 text-left text-sm text-foreground transition-colors hover:border-accent"
             >
-              <span className="block truncate">{item.title}</span>
+              <span className="block truncate">{displayName(item)}</span>
             </button>
           ))}
           {items.length === 0 ? (
