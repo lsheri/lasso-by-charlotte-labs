@@ -60,8 +60,8 @@ vi.mock("@/lib/ai.server", () => ({
 }));
 
 vi.mock("@/lib/health.server", () => ({ logHealth: mocks.logHealth }));
-vi.mock("./ai-usage", () => ({ usageDims: vi.fn(() => ({})) }));
-vi.mock("./telemetry.server", () => ({ recordEvent: mocks.recordEvent }));
+vi.mock("@/lib/ai-usage", () => ({ usageDims: vi.fn(() => ({})) }));
+vi.mock("@/lib/telemetry.server", () => ({ recordEvent: mocks.recordEvent }));
 
 import { ensureExtract } from "@/lib/extract.server";
 
