@@ -47,5 +47,6 @@ Tour mirrors board chrome; preserve live behavior.
 - Group board tools in presentation only; keep Add work outside and preserve overflow logic and handlers.
 
 - All work owns rename; reader closure preserves the dialog.
+- Enable chat-link editing only in the All work RowMenu entry point, not shared CardMenu hook consumers; reuse the board dialog and Rename's refresh pattern to preserve ownership and privacy.
 
 - Mirror: real evidence, lane unchanged. Canvas catch: session-add IDs, cleared on finish, never selection. Tick: discussed-work only. Beads retain timing. Nav catch: CSS draw, not canvas. Board hue: id hash, row CSS, not sources.

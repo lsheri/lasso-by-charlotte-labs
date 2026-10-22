@@ -1,5 +1,8 @@
 # Roadmap
 
+- [ ] LINK-1: owner-only All work chat-link entry, project clarification, unchanged privacy pin, pure tests and one full suite.
+- [ ] LINK-1: authenticated real-save verification at 1280 and 390, blocked by external unmanaged authentication.
+
 - [x] TOOLS-1: wrapper and scoped graphite treatment; control definitions identical; 1280/390 style fixtures inspected; final suite matches all 29 baseline files, 104 failed and 4012 passed. Preview only.
 - [ ] TOOLS-1: real signed-in toolbar screenshots and interactions blocked by external unmanaged authentication; both widths redirect to /auth.
 

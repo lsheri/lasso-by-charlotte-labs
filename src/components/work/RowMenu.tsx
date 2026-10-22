@@ -1,5 +1,10 @@
 import { MoreHorizontal } from "lucide-react";
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+
+import { CHAT_LINK_COPY, ChatLinkDialog } from "@/components/canvas-lab/ChatLinkDialog";
+import { chatLinkAction, pastedChatUrl } from "@/lib/chat-url";
+import { setChatLink } from "@/lib/work-chat-link";
 
 import { useDraftDecisions } from "@/components/decisions/DraftDecisionsButton";
 import { MarkBriefDialog } from "@/components/work/MarkBriefDialog";
@@ -46,7 +51,7 @@ export type RowMenuProps = {
  * an item would go with it. Splitting them lets one card put the items inside
  * a larger menu and still keep the dialogs alive.
  */
-export function useRowMenuParts({ item, onFluency, engagementId, onRemoved }: RowMenuProps): {
+export function useRowMenuParts({ item, onFluency, engagementId, onRemoved }: RowMenuProps, chatLinkEnabled = false): {
   items: React.ReactNode;
   dialogs: React.ReactNode;
 } {
@@ -55,7 +60,10 @@ export function useRowMenuParts({ item, onFluency, engagementId, onRemoved }: Ro
   const [removeOpen, setRemoveOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [renameOpen, setRenameOpen] = useState(false);
+  const [chatLinkOpen, setChatLinkOpen] = useState(false);
+  const queryClient = useQueryClient();
   const profile = useProfile().data;
+  const pastedLink = pastedChatUrl(item?.meta?.chat_url);
   const isThread = item.type === "ai_thread";
   const isDeliverable = ["document", "deck", "sheet"].includes(item.type);
   const readable = isThread || isDeliverable;
@@ -104,6 +112,9 @@ export function useRowMenuParts({ item, onFluency, engagementId, onRemoved }: Ro
       {owned ? (
         <DropdownMenuItem onSelect={() => setRenameOpen(true)}>{RENAME_COPY.menu}</DropdownMenuItem>
       ) : null}
+      {owned && chatLinkEnabled ? (
+        <DropdownMenuItem onSelect={() => setChatLinkOpen(true)}>{CHAT_LINK_COPY[chatLinkAction(item?.meta?.chat_url)]}</DropdownMenuItem>
+      ) : null}
       {owned ? <DropdownMenuSeparator /> : null}
       {owned && engagementId ? (
         <DropdownMenuItem
@@ -129,6 +140,17 @@ export function useRowMenuParts({ item, onFluency, engagementId, onRemoved }: Ro
     <>
       {owned ? (
         <RenameWorkDialog item={item} open={renameOpen} onOpenChange={setRenameOpen} />
+      ) : null}
+      {owned && chatLinkEnabled ? (
+        <ChatLinkDialog
+          open={chatLinkOpen}
+          onOpenChange={setChatLinkOpen}
+          current={pastedLink}
+          onSave={async (url) => {
+            await setChatLink(item.id, url);
+            void queryClient.invalidateQueries();
+          }}
+        />
       ) : null}
       {engagementId ? (
         <MarkBriefDialog
@@ -168,7 +190,7 @@ export function useRowMenuParts({ item, onFluency, engagementId, onRemoved }: Ro
  * full label instead of competing for row width as muted text.
  */
 export function RowMenu(props: RowMenuProps) {
-  const { items, dialogs } = useRowMenuParts(props);
+  const { items, dialogs } = useRowMenuParts(props, true);
 
   return (
     <>
