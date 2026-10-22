@@ -300,9 +300,6 @@ export const importGranolaMeetings = createServerFn({ method: "POST" })
       imported += 1;
     }
 
-    const { ensureExtracts } = await import("@/lib/extract.server");
-    await ensureExtracts(newIds);
-
     await captureEvents(supabase, {
       orgId: profile.org_id,
       userId,
@@ -429,9 +426,6 @@ export const importGmailThreads = createServerFn({ method: "POST" })
       seen.add(id);
       imported += 1;
     }
-
-    const { ensureExtracts } = await import("@/lib/extract.server");
-    await ensureExtracts(newIds);
 
     await captureEvents(supabase, {
       orgId: profile.org_id,
