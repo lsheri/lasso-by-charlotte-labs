@@ -7,7 +7,8 @@ export const TEXT_FACE_COPY = { turn: (n: number) => `TURN ${n}` };
 
 /** Plain work content in the existing preview slot, never a document renderer. */
 export function TextFace({ item, parent, summary }: { item: WorkItemRow; parent?: WorkItemRow | null | undefined; summary: string }) {
-  const turn = item.source_meta?.produced_at_turn;
+  const meta = item.source_meta;
+  const turn = meta && 'produced_at_turn' in meta ? meta.produced_at_turn : null;
   const hasTurn = typeof turn === 'number' && Number.isFinite(turn);
   return (
     <div data-testid="text-face" className="lasso-text-face absolute inset-0 flex min-h-0 flex-col gap-2 overflow-hidden p-4 font-sans text-[color:var(--text-primary)]">

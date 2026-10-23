@@ -11,12 +11,13 @@ vi.mock('@/hooks/use-vendor-display', () => ({ useVendorVisible: () => true }));
 vi.mock('../WorkboardFilePreview', () => ({ WorkboardFilePreview: () => <div data-testid="real-file">Real file</div> }));
 
 const summary = 'The research identifies three useful alternatives and describes the evidence for each.';
+const reportMeta = (turn: number | null) => ({ kind: 'research_report', produced_at_turn: turn });
 const item: WorkItemRow = {
   id: 'report', title: 'Research', type: 'document', source: 'mcp:claude',
   source_vendor: 'claude', visibility: 'mapped', captured_at: '2026-10-23T00:00:00Z',
   content_fidelity: 'verbatim', content_ref: 'reports/research.md',
   work_item_tasks: [], work_item_extracts: [{ summary }],
-  source_meta: { kind: 'research_report', produced_at_turn: null },
+  source_meta: reportMeta(null),
 };
 const node: LabNode = {
   id: 'report-node', kind: 'work', frame: null, title: 'Research', summary: '',
@@ -76,11 +77,11 @@ describe('TEXT-FACE precedence', () => {
     expect(screen.getByTestId('text-face').textContent?.toLowerCase()).not.toContain('turn');
   });
   it('prints the finite production turn', () => {
-    render(<LabCard {...props} item={{ ...item, source_meta: { ...item.source_meta, produced_at_turn: 12 } }} filePreview={fallback} />);
+    render(<LabCard {...props} item={{ ...item, source_meta: reportMeta(12) }} filePreview={fallback} />);
     expect(screen.getByTestId('text-face-turn').textContent).toBe('TURN 12');
   });
   it('rejects non-finite production turns', () => {
-    render(<LabCard {...props} item={{ ...item, source_meta: { ...item.source_meta, produced_at_turn: Infinity } }} filePreview={fallback} />);
+    render(<LabCard {...props} item={{ ...item, source_meta: reportMeta(Infinity) }} filePreview={fallback} />);
     expect(screen.queryByTestId('text-face-turn')).toBeNull();
   });
   it('renders summary characters as ordinary text, not markup or links', () => {
