@@ -35,7 +35,7 @@ export function stickyBodyOf(node: LabNode): WorkboardStickyBody {
  */
 function LabStickyInner({ node, selected, editable, layoutEditable, onSelect, onDragStart, onResizeStart, onResizeKeyDown, onResizeKeyUp, onChange, onCommit, onRemove, mentionCandidates }: {
   node: LabNode;
-  mentionCandidates?: readonly MentionCandidate[];
+  mentionCandidates?: readonly MentionCandidate[] | undefined;
   selected: boolean;
   editable: boolean;
   layoutEditable: boolean;

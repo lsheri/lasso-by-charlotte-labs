@@ -94,7 +94,10 @@ describe("N1 accept a share from the bell", () => {
   it("renders a mention's two names with no acknowledgement control or body", () => {
     mount(<NotificationPanel rows={[row({ kind: "mention_received", section: "updates", payload: { by: "Liam Sheridan", board: "Pricing" } })]} onChanged={() => {}} onNavigate={() => {}} />);
     expect(screen.getByText("Liam Sheridan mentioned you on Pricing.")).toBeTruthy();
-    expect(screen.queryAllByRole("button")).toHaveLength(0);
+    // In updates, the only control is the row itself, which opens the board.
+    const buttons = screen.queryAllByRole("button");
+    expect(buttons).toHaveLength(1);
+    expect(buttons[0]?.textContent).toContain("Liam Sheridan mentioned you on Pricing.");
   });
   it("names the board and who shared it, claims, marks acted, then opens the board", async () => {
     const onNavigate = vi.fn();

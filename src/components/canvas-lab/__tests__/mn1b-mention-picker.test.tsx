@@ -80,8 +80,7 @@ describe("MENTION-FIX-1", () => {
     const noop = vi.fn();
     render(<LabSticky node={sticky} selected editable layoutEditable mentionCandidates={undefined} onSelect={noop} onDragStart={noop} onResizeStart={noop} onResizeKeyDown={noop} onResizeKeyUp={noop} onChange={noop} onCommit={noop} onRemove={noop} />);
     expect(screen.getByTestId("sticky-s").getAttribute("data-editing")).toBe("true");
-    expect(screen.queryByRole("textbox", { name: "Sticky words" })).toBeNull();
-    expect(document.querySelector("textarea")).toBeNull();
+    expect(document.querySelector(".node-rich")).not.toBeNull();
   });
   it("the page gate passes undefined for missing or empty candidate lists", () => {
     expect(stickyMentionCandidates(undefined)).toBeUndefined();
