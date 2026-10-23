@@ -1,0 +1,3 @@
+.lasso-text-face {
+  --text-face-fade: linear-gradient(to bottom, transparent, var(--surface-raised));
+}

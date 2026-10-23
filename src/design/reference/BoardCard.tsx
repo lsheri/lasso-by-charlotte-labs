@@ -37,6 +37,8 @@ export type BoardCardProps = {
   onOpen?: (work: Work) => void;
   /** Rendered instead of the empty state when the work has no content. */
   previewFallback?: React.ReactNode;
+  /** An ordinary text face stays unscaled, with its source link interactive. */
+  unscaledPreview?: React.ReactNode;
   actions?: React.ReactNode;
   headerInsetRight?: number;
   provenance?: React.ReactNode;
@@ -48,7 +50,7 @@ export const BOARD_CARD_MAX: CardSize = { width: 720, height: 760 };
 const MONO = 'var(--font-mono)';
 const micro: React.CSSProperties = { fontFamily: MONO, fontSize: 8, letterSpacing: '.05em', textTransform: 'uppercase' };
 
-export function BoardCard({ work, width = 260, height, resizable = false, onResize, inHand, dimmed, onSelect, onOpen, previewFallback, actions, headerInsetRight = 0, provenance }: BoardCardProps) {
+export function BoardCard({ work, width = 260, height, resizable = false, onResize, inHand, dimmed, onSelect, onOpen, previewFallback, unscaledPreview, actions, headerInsetRight = 0, provenance }: BoardCardProps) {
   const { size, resizing, handleProps } = useCardResize(
     { width, height: height ?? Math.round(width * 0.85) },
     BOARD_CARD_MIN,
@@ -128,10 +130,10 @@ export function BoardCard({ work, width = 260, height, resizable = false, onResi
         {work.date ? <span style={{ ...micro, flexShrink: 0, color: 'var(--text-muted)' }}>{work.date}</span> : null}
       </header>
 
-      <div ref={area} aria-hidden className="relative min-h-0 flex-1 overflow-hidden" style={{ filter: um ? 'saturate(.2) opacity(.8)' : 'none' }}>
-        <div style={{ position: 'absolute', left: 0, top: 0, width: AUTHOR_WIDTH, height: box.h / scale, transform: `scale(${scale})`, transformOrigin: '0 0', overflow: 'hidden', pointerEvents: 'none' }}>
+      <div ref={area} aria-hidden={unscaledPreview ? undefined : true} className="relative min-h-0 flex-1 overflow-hidden" style={{ filter: um && !unscaledPreview ? 'saturate(.2) opacity(.8)' : 'none' }}>
+        {unscaledPreview ?? <div style={{ position: 'absolute', left: 0, top: 0, width: AUTHOR_WIDTH, height: box.h / scale, transform: `scale(${scale})`, transformOrigin: '0 0', overflow: 'hidden', pointerEvents: 'none' }}>
           <RealPreview work={work} fallback={previewFallback} />
-        </div>
+        </div>}
         {resizing ? <SizeReadout text={`${size.width}×${size.height}`} /> : null}
       </div>
 
