@@ -2,6 +2,9 @@ import { readFileSync } from "node:fs";
 
 import { describe, expect, it } from "vitest";
 
+import { PUSH_DESC_BUILD } from "../mcp-handler.server";
+
+
 const src = readFileSync("src/lib/mcp-handler.server.ts", "utf8");
 
 describe("PS1 — the push tool never asks the model to reproduce its own thinking", () => {
@@ -49,3 +52,44 @@ describe("PS2 — the push description states server behaviour instead of demand
     expect(conversationDef).toContain("about twenty messages");
   });
 });
+
+/**
+ * CANARY-1: the description carries a build marker so an installed client can be
+ * asked which one it shows. The value comes from the exported constant, so the
+ * marker and this test cannot drift apart.
+ */
+describe("CANARY-1 — the push_conversation description carries a build marker", () => {
+  const conversation = src.indexOf('name: "push_conversation"');
+  const thread = src.indexOf('name: "push_thread"');
+  const conversationDef = conversation > -1 ? src.slice(conversation, thread) : "";
+
+  // The description literal as written, then with its interpolations resolved
+  // the way the server resolves them, so the marker is checked as served text.
+  const literal = (() => {
+    const body = conversationDef.slice(conversationDef.indexOf("description:"));
+    return body.slice(0, body.indexOf("`,"));
+  })();
+  const rendered = literal
+    .replace("${placementLine(vocab)}", "placed")
+    .replace("${PUSH_DESC_BUILD}", PUSH_DESC_BUILD);
+
+  it("ends with the marker built from the exported constant", () => {
+    expect(rendered.endsWith(` desc-build: ${PUSH_DESC_BUILD}`)).toBe(true);
+  });
+
+  it("sits one space after the final sentence and appears once", () => {
+    expect(rendered).toContain(`Never guess. placed desc-build: ${PUSH_DESC_BUILD}`);
+    expect(rendered).not.toContain("  desc-build");
+    expect(src.split("desc-build:").length - 1).toBe(1);
+  });
+
+  it("is a date-style marker, not a commit sha", () => {
+    expect(PUSH_DESC_BUILD).toMatch(/^oct\d{2}[a-z]$/);
+  });
+
+  it("still keeps the two phrases PS1 removed out of the description", () => {
+    expect(rendered).not.toContain("Verbatim is non-negotiable");
+    expect(rendered).not.toContain("Never summarize the transcript");
+  });
+});
+
