@@ -15,5 +15,6 @@ export function useBoardMentionPeople(engagementId: string, viewerProfileId: str
     enabled: Boolean(engagementId && viewerProfileId),
     queryFn: () => readBoardMentionPeople(engagementId, viewerProfileId ?? ""),
   });
-  return query.data ?? [];
+  // Undefined until loaded, so callers can tell "not yet known" from "nobody".
+  return query.data;
 }

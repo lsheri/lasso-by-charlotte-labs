@@ -39,22 +39,26 @@ export async function notifySavedMentions(
     if (author.error || board.error || !author.data?.user_id || !author.data.display_name?.trim() || !board.data?.title?.trim() || !board.data.org_id) return;
     // Authorization and recipient membership were checked through the caller's client.
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    let notified = 0;
     for (const recipient of recipients) {
       try {
-        await supabaseAdmin.rpc("notify", {
+        // supabase-js reports rejections as { error } rather than throwing.
+        const result = await supabaseAdmin.rpc("notify", {
           p_recipient: recipient,
           p_org: board.data.org_id,
           p_kind: "mention_received",
-          p_section: "needs_you",
+          p_section: "updates",
           p_subject_type: subjectType,
           p_subject_id: subjectId,
           p_group_key: `mention:${subjectType}:${subjectId}:${recipient}`,
           p_payload: { by: author.data.display_name, board: board.data.title },
         });
+        if (result.error == null) notified += 1;
       } catch {
         // One unavailable recipient must not prevent the others or undo the save.
       }
     }
+    if (notified === 0) return;
     const { recordEvent } = await import("@/lib/telemetry.server");
     await recordEvent(db, {
       eventType: "workboard.mention_created",
@@ -63,7 +67,7 @@ export async function notifySavedMentions(
       profileId: profile.id,
       dims: {
         surface: subjectType === "workboard_node" ? "sticky" : "comment",
-        count_band: recipients.length === 1 ? "1" : recipients.length <= 4 ? "2_4" : "5_plus",
+        count_band: notified === 1 ? "1" : notified <= 4 ? "2_4" : "5_plus",
       },
     });
   } catch {

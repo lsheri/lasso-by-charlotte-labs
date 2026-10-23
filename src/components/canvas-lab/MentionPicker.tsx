@@ -18,6 +18,8 @@ export function MentionPicker({ candidates, query, onPick, onClose, inputRef }: 
   const activeId = matches[index] ? `${id}-${index}` : undefined;
   const keyDown = (event: KeyboardEvent | globalThis.KeyboardEvent) => {
     if (!["ArrowDown", "ArrowUp", "Home", "End", "Enter", "Escape"].includes(event.key)) return;
+    // With nothing to pick, Enter belongs to the editor (newline, Cmd+Enter submit).
+    if (event.key === "Enter" && matches.length === 0) return;
     event.preventDefault(); event.stopPropagation();
     if (event.key === "Escape") { onClose(); return; }
     if (event.key === "Enter") { const person = matches[index]; if (person) onPick(person); return; }
