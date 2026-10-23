@@ -4,6 +4,7 @@ import { parseWorkboardStickyBody, serializeWorkboardStickyBody } from "@/lib/ca
 import { applyDurableBoard, type LabNode } from "@/components/canvas-lab/canvas-lab-model";
 import { stickyBodyOf } from "@/components/canvas-lab/LabSticky";
 import { createComment, createReply, editComment } from "@/lib/canvas-lab-annotations.server";
+import { sharedNodeBody } from "@/lib/board-share-open.server";
 import type { Database } from "@/integrations/supabase/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ResolvedProfile } from "@/lib/profile-resolve";
@@ -29,6 +30,12 @@ describe("MENTION-1b storage", () => {
     const input = { ...body, mentions: [...body.mentions] };
     expect(parseWorkboardStickyBody(serializeWorkboardStickyBody(input))).toEqual(input);
     expect(parseWorkboardStickyBody(serializeWorkboardStickyBody({ ...input, text: "Ask" }))?.mentions).toEqual([]);
+  });
+  it("shared sticky copies retain mentions while stripping exactly the rich markup", () => {
+    const input = { ...body, html: "<p>Ask @Ben Stanton</p>", mentions: [mention] };
+    const shared = sharedNodeBody("sticky", serializeWorkboardStickyBody(input));
+    expect(parseWorkboardStickyBody(shared)).toEqual({ ...body, mentions: [mention] });
+    expect(shared).not.toContain("html");
   });
   it("keeps legacy sticky bodies unchanged and retains mentions through the durable model", () => {
     const { mentions, ...legacy } = body;
