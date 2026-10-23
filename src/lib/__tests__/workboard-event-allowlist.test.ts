@@ -98,6 +98,10 @@ describe("the workboard allowlist", () => {
           "face",
           "scope",
         ],
+        "workboard.mention_created": [
+          "surface",
+          "count_band",
+        ],
         "workboard.node_created": [
           "kind",
           "judgment_type",
@@ -279,7 +283,7 @@ describe("the workboard allowlist", () => {
       const [name, , dims] = mocked.mock.calls[0] as [string, string, Record<string, unknown>];
       expect(guardWorkboardEvent(name, dims as never)).toEqual({ keep: true, dims });
     }
-    expect(Object.keys(WORKBOARD_EVENT_DIMS)).toHaveLength(31);
+    expect(Object.keys(WORKBOARD_EVENT_DIMS)).toHaveLength(32);
   });
 
   it("keeps the additive open path for previewed document and deck cards", () => {
@@ -289,6 +293,15 @@ describe("the workboard allowlist", () => {
       kind: "deck",
       via: "open",
     });
+  });
+
+  it("pins the server mention event site and its two content-free dimensions", () => {
+    const site = readFileSync("src/lib/mention-notifications.server.ts", "utf8");
+    const union = readFileSync("src/lib/telemetry-shared.ts", "utf8");
+    expect(site).toContain('eventType: "workboard.mention_created"');
+    expect(union).toContain('| "workboard.mention_created"');
+    expect(WORKBOARD_EVENT_DIMS["workboard.mention_created"]).toEqual(["surface", "count_band"]);
+    expect(guardWorkboardEvent("workboard.mention_created", { surface: "sticky", count_band: "1", profile_id: "ben", body: "words" })).toEqual({ keep: true, dims: { surface: "sticky", count_band: "1" } });
   });
 
   it("keeps html on the existing preview-kind path", () => {

@@ -48,7 +48,11 @@ export const mutateCanvasLabBoardFn = createServerFn({ method: "POST" })
     const profile = await resolveProfile(supabase, userId, data.profile_id);
     if (!profile) return { status: "forbidden" };
     const { applyWorkboardCommand } = await import("@/lib/canvas-lab.server");
-    return applyWorkboardCommand(supabase, data.engagement_id, profile, data.command);
+    const { captureStickyMentions, notifySavedStickies } = await import("@/lib/mention-notifications.server");
+    const before = await captureStickyMentions(supabase, data.engagement_id, data.command).catch(() => []);
+    const result = await applyWorkboardCommand(supabase, data.engagement_id, profile, data.command);
+    await notifySavedStickies(supabase, profile, data.engagement_id, before, result).catch(() => undefined);
+    return result;
   });
 
 export const getWorkboardCardPreviewsFn = createServerFn({ method: "POST" })

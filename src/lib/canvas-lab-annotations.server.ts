@@ -1,5 +1,6 @@
 import { committedComment } from "@/lib/mention-editor";
 import { parseMentions, type Mention } from "@/lib/mention-shared";
+import { notifySavedComment } from "@/lib/mention-notifications.server";
 /**
  * Slice 2a unit 1: highlights on chat turns, server side.
  *
@@ -403,6 +404,7 @@ export async function createComment(
     .single();
 
   if (data) {
+    await notifySavedComment(db, profile, board.id, data.id, [], parseMentions(data.mentions)).catch(() => undefined);
     return { status: "saved", comment: commentDto(data as CommentRow, profile.id, "You") };
   }
   if (error?.code === "23505") {
@@ -465,7 +467,10 @@ export async function createReply(
     .select(COMMENT_COLUMNS)
     .single();
 
-  if (data) return { status: "saved", comment: commentDto(data as CommentRow, profile.id, "You") };
+  if (data) {
+    await notifySavedComment(db, profile, parent.workboard_id, data.id, [], parseMentions(data.mentions)).catch(() => undefined);
+    return { status: "saved", comment: commentDto(data as CommentRow, profile.id, "You") };
+  }
   if (error?.code === "23505") {
     const existing = (
       await db
@@ -496,6 +501,7 @@ export async function editComment(
   const badBody = validateCommentBody(body ?? "");
   if (badBody) return { status: "validation_error", message: badBody };
 
+  const previous = await Promise.resolve(db.from("workboard_annotations").select("workboard_id, mentions").eq("id", id).eq("version", expectedVersion).maybeSingle()).catch(() => ({ data: null, error: true }));
   const { data, error } = await db
     .from("workboard_annotations")
     .update({ ...committedComment(body, mentions), updated_by: profile.id })
@@ -504,7 +510,10 @@ export async function editComment(
     .is("archived_at", null)
     .select(COMMENT_COLUMNS)
     .maybeSingle();
-  if (data) return { status: "saved", comment: commentDto(data as CommentRow, profile.id, "You") };
+  if (data) {
+    if (!previous.error && previous.data) await notifySavedComment(db, profile, previous.data.workboard_id, data.id, parseMentions(previous.data.mentions), parseMentions(data.mentions)).catch(() => undefined);
+    return { status: "saved", comment: commentDto(data as CommentRow, profile.id, "You") };
+  }
   if (error?.code === "42501") return { status: "forbidden" };
   return { status: "conflict" };
 }
