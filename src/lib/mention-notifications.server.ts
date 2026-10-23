@@ -48,8 +48,9 @@ export async function notifySavedMentions(
           p_org: board.data.org_id,
           p_kind: "mention_received",
           p_section: "updates",
-          p_subject_type: subjectType,
-          p_subject_id: subjectId,
+          // The bell derives a row's board from an "engagement" subject; the group key keeps the real subject.
+          p_subject_type: "engagement",
+          p_subject_id: engagementId,
           p_group_key: `mention:${subjectType}:${subjectId}:${recipient}`,
           p_payload: { by: author.data.display_name, board: board.data.title },
         });
