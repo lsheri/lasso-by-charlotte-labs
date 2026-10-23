@@ -80,8 +80,9 @@ function LabStickyInner({ node, selected, editable, layoutEditable, onSelect, on
     const value = draft.current;
     draft.current = null;
     setFallbackText(null);
-    if (!value || (value.text === baseline.current.text && value.html === baseline.current.html)) return;
-    const next = { ...body, text: value.text, html: value.html, ...(value.mentions !== undefined ? { mentions: clampMentions(value.mentions, value.text.length) } : {}) };
+    if (!value || (value.text === baseline.current.text && (plainEditing || value.html === baseline.current.html))) return;
+    const { html: previousHtml, ...plainBody } = body;
+    const next = { ...plainBody, text: value.text, ...(value.html !== undefined ? { html: value.html } : {}), ...(value.mentions !== undefined ? { mentions: clampMentions(value.mentions, value.text.length) } : {}) };
     onChange(next);
     onCommit(next, "text");
   };

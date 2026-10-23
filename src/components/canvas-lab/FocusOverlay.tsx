@@ -423,7 +423,7 @@ export function FocusOverlay({
                             label="Edit your comment"
                             placeholder="What did you notice?"
                             initial={thread.body}
-                            initialMentions={thread.mentions}
+                            initialMentions={thread.mentions ?? []}
                             submitLabel="Save"
                             onSubmit={(body, mentions) => {
                               onEditComment?.(thread, body, mentions);
@@ -446,7 +446,7 @@ export function FocusOverlay({
                                     label="Edit your reply"
                                     placeholder="Add a reply"
                                     initial={reply.body}
-                                    initialMentions={reply.mentions}
+                                    initialMentions={reply.mentions ?? []}
                                     submitLabel="Save"
                                     onSubmit={(body, mentions) => {
                                       onEditComment?.(reply, body, mentions);
