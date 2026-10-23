@@ -3096,6 +3096,35 @@ export type Database = {
           },
         ]
       }
+      notification_prefs: {
+        Row: {
+          email_enabled: boolean
+          kind: string
+          profile_id: string
+          updated_at: string
+        }
+        Insert: {
+          email_enabled?: boolean
+          kind: string
+          profile_id: string
+          updated_at?: string
+        }
+        Update: {
+          email_enabled?: boolean
+          kind?: string
+          profile_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_prefs_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           acted_at: string | null
