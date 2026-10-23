@@ -1002,6 +1002,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   async function persistNodePatch(localId: string, patch: { x?: number; y?: number; w?: number; h?: number; frameId?: string | null; hidden?: boolean; title?: string; body?: string }) {
     const durable = await ensureNodeDurable(localId);
     if (!durable) return;
+    // Sticky mention deltas are read and notified by the save endpoint, never from optimistic nodes.
     const result = await lab.persist({ type: "node_update", nodeId: durable.id, expectedVersion: durable.version, patch });
     report(result, "node", "update");
     if (result.status === "saved") {

@@ -295,6 +295,15 @@ describe("the workboard allowlist", () => {
     });
   });
 
+  it("pins the server mention event site and its two content-free dimensions", () => {
+    const site = readFileSync("src/lib/mention-notifications.server.ts", "utf8");
+    const union = readFileSync("src/lib/telemetry-shared.ts", "utf8");
+    expect(site).toContain('eventType: "workboard.mention_created"');
+    expect(union).toContain('| "workboard.mention_created"');
+    expect(WORKBOARD_EVENT_DIMS["workboard.mention_created"]).toEqual(["surface", "count_band"]);
+    expect(guardWorkboardEvent("workboard.mention_created", { surface: "sticky", count_band: "1", profile_id: "ben", body: "words" })).toEqual({ keep: true, dims: { surface: "sticky", count_band: "1" } });
+  });
+
   it("keeps html on the existing preview-kind path", () => {
     const mocked = vi.mocked(logEvent);
     helpers.noteWorkboardCardContentViewed("o", "html", "open");

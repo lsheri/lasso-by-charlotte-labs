@@ -7,7 +7,7 @@ import { serializeWorkboardStickyBody } from "@/lib/canvas-lab-shared";
 import { guardWorkboardEvent, WORKBOARD_EVENT_DIMS } from "@/lib/workboard-event-allowlist";
 import type { ResolvedProfile } from "@/lib/profile-resolve";
 
-const mocks = vi.hoisted(() => ({ notify: vi.fn(async () => ({ error: null })), record: vi.fn() }));
+const mocks = vi.hoisted(() => ({ notify: vi.fn(async (_name: string, _args: Record<string, unknown>) => ({ error: null })), record: vi.fn() }));
 vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: { rpc: mocks.notify } }));
 vi.mock("@/lib/telemetry.server", () => ({ recordEvent: mocks.record, sha256Hex: async () => "hash" }));
 vi.mock("@/lib/canvas-lab.server", () => ({ boardSeatFor: async (_db: unknown, _engagement: unknown, profile: unknown) => profile, ensureBoard: async () => ({ id: "wb" }), ensureWorkItemNode: async () => "node", isEngagementEditor: async () => true }));
@@ -70,6 +70,22 @@ describe("MENTION-1c authorization and privacy", () => {
   it("fails closed when name reads fail", async () => {
     await notifySavedMentions(memoryDb({ readError: true }).db, profile, "eng", "workboard_node", "node", [], [ben]);
     expect(mocks.notify).not.toHaveBeenCalled();
+  });
+  it("fails closed on editor or membership RPC errors", async () => {
+    const editor = memoryDb();
+    editor.rpc.mockRejectedValueOnce(new Error("Unavailable"));
+    await notifySavedMentions(editor.db, profile, "eng", "workboard_node", "node", [], [ben]);
+    expect(mocks.notify).not.toHaveBeenCalled();
+    const members = memoryDb();
+    members.rpc.mockResolvedValueOnce({ data: true, error: null }).mockRejectedValueOnce(new Error("Unavailable"));
+    await notifySavedMentions(members.db, profile, "eng", "workboard_node", "node", [], [ben]);
+    expect(mocks.notify).not.toHaveBeenCalled();
+  });
+  it("keeps the same grouping key when a recipient is re-added", async () => {
+    const { db } = memoryDb();
+    await notifySavedMentions(db, profile, "eng", "workboard_node", "node", [], [ben]);
+    await notifySavedMentions(db, profile, "eng", "workboard_node", "node", [], [ben]);
+    expect(mocks.notify.mock.calls.map((call) => call[1]["p_group_key"])).toEqual(["mention:workboard_node:node:ben", "mention:workboard_node:node:ben"]);
   });
   it("event dimensions pass the runtime allowlist exactly, without raw counts", async () => {
     await notifySavedMentions(memoryDb({ members: ["ben", "outsider"] }).db, profile, "eng", "workboard_annotation", "comment", [], [ben, other]);
