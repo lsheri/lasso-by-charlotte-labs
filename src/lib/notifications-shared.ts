@@ -7,7 +7,8 @@ export type NotificationKind =
   | "invite_accepted"
   | "seat_over_count"
   | "board_activity"
-  | "support_request";
+  | "support_request"
+  | "mention_received";
 
 export const NOTIFICATION_KINDS: readonly NotificationKind[] = [
   "invite_needs_approval",
@@ -17,6 +18,7 @@ export const NOTIFICATION_KINDS: readonly NotificationKind[] = [
   "seat_over_count",
   "board_activity",
   "support_request",
+  "mention_received",
 ];
 
 export type NotificationRow = {
@@ -53,6 +55,7 @@ export const NOTIFICATION_COPY = {
   acceptFailed: "That board could not be opened. Ask the person who shared it for a new link.",
   shareSentence: (by: string, board: string) => `${by} shared ${board} with you.`,
   supportRequest: "Someone asked for support access to this workspace.",
+  mentionSentence: (by: string, board: string) => `${by} mentioned you on ${board}.`,
 } as const;
 
 function text(value: unknown, fallback = ""): string {
