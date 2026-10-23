@@ -170,6 +170,51 @@ describe("ID-2 turn link", () => {
   });
 });
 
+describe("TURN-MIRROR source_meta position", () => {
+  it("stores the named position as a positive integer on an attachment", async () => {
+    await push(base({ attachments: [{ kind: "artifact_markdown", title: "Plan", source_artifact_id: "a1", content: ART, produced_at_turn: 2 }] }));
+    const meta = attachmentRows()[0]!["source_meta"] as Record<string, unknown>;
+    expect(meta["produced_at_turn"]).toBe(2);
+  });
+
+  it("omits produced_at_turn entirely when no position is named", async () => {
+    await push(base({ attachments: [{ kind: "artifact_markdown", title: "Plan", source_artifact_id: "a1", content: ART }] }));
+    const meta = attachmentRows()[0]!["source_meta"] as Record<string, unknown>;
+    expect("produced_at_turn" in meta).toBe(false);
+  });
+
+  it("stores the position on a file_ref placeholder and omits it when unnamed", async () => {
+    await push(base({ attachments: [{ kind: "file_ref", title: "Deck", source_artifact_id: "d1", file_ref: { filename: "deck.pptx" }, produced_at_turn: 3 }] }));
+    const meta = attachmentRows()[0]!["source_meta"] as Record<string, unknown>;
+    expect(meta["produced_at_turn"]).toBe(3);
+    await push(base({ attachments: [{ kind: "file_ref", title: "Other", source_artifact_id: "d2", file_ref: { filename: "other.pptx" } }] }));
+    const other = attachmentRows()[1]!["source_meta"] as Record<string, unknown>;
+    expect("produced_at_turn" in other).toBe(false);
+  });
+
+  it("keeps a stored position on a re-push that omits it", async () => {
+    await push(base({ attachments: [{ kind: "artifact_markdown", title: "Plan", source_artifact_id: "a1", content: ART, produced_at_turn: 2 }] }));
+    await push(base({ attachments: [{ kind: "artifact_markdown", title: "Plan", source_artifact_id: "a1", content: `${ART} Now with one more line.` }] }));
+    expect(attachmentRows()).toHaveLength(1);
+    const meta = attachmentRows()[0]!["source_meta"] as Record<string, unknown>;
+    expect(meta["produced_at_turn"]).toBe(2);
+  });
+
+  it("stores nothing for a zero or non-integer position", async () => {
+    await push(base({
+      attachments: [
+        { kind: "artifact_markdown", title: "A", source_artifact_id: "a1", content: ART, produced_at_turn: 0 },
+        { kind: "artifact_markdown", title: "B", source_artifact_id: "a2", content: `${ART} Second.`, produced_at_turn: 1.5 },
+      ],
+    }));
+    for (const row of attachmentRows()) {
+      const meta = row["source_meta"] as Record<string, unknown>;
+      expect("produced_at_turn" in meta).toBe(false);
+    }
+  });
+});
+
+
 describe("ID-2 conversation id", () => {
   it("returns lasso_conversation_id in the response", async () => {
     const out = await push(base());

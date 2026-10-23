@@ -2669,7 +2669,9 @@ export async function pushConversation(
               sha256: ref.sha256 ?? null,
               download_url: ref.download_url ?? null,
               source_artifact_id: attachment.sourceArtifactId,
-              produced_at_turn: null,
+              // TURN-MIRROR: the position the caller named, never null; the
+              // key is omitted when no position is known.
+              ...(attachment.producedAtTurn ? { produced_at_turn: attachment.producedAtTurn } : {}),
               ...(renditionMeta ? { rendition: renditionMeta } : {}),
             } as unknown as Json,
             meta: { assistant_transcribed: true },
@@ -2865,6 +2867,17 @@ export async function pushConversation(
       }
 
       const producedTurnId = linkedTurnId(attachment);
+      // TURN-MIRROR: the board orders a bundle by source_meta.produced_at_turn,
+      // so mirror the position the caller named as a positive integer. On a
+      // re-push that omits it, a position already stored is kept, never nulled.
+      const priorTurnMeta =
+        match?.source_meta && typeof match.source_meta === "object" && !Array.isArray(match.source_meta)
+          ? (match.source_meta as Record<string, unknown>)
+          : null;
+      const priorTurn = priorTurnMeta?.["produced_at_turn"];
+      const priorTurnPos =
+        typeof priorTurn === "number" && Number.isInteger(priorTurn) && priorTurn >= 1 ? priorTurn : undefined;
+      const turnPosition = attachment.producedAtTurn ?? priorTurnPos;
       const fields = {
         owner_id: owner.profileId,
         org_id: owner.orgId,
@@ -2886,6 +2899,7 @@ export async function pushConversation(
           source_artifact_id: attachment.sourceArtifactId,
           chars: attachment.content.length,
           duplicate_of_transcript: false,
+          ...(turnPosition !== undefined ? { produced_at_turn: turnPosition } : {}),
         } as unknown as Json,
         // CU1: keep what the person set on this row (deliverable kind, portfolio,
         // chat link, item text) across a re-push, as the thread does above.
