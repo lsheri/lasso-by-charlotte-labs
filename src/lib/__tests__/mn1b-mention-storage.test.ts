@@ -10,6 +10,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ResolvedProfile } from "@/lib/profile-resolve";
 
 vi.mock("@/lib/canvas-lab.server", () => ({ boardSeatFor: async (_db: unknown, _engagement: unknown, profile: unknown) => profile, ensureBoard: async () => ({ id: "b" }), findBoardFor: async () => ({ id: "b" }), ensureWorkItemNode: async () => "n", isEngagementEditor: async () => true }));
+vi.mock("@/lib/telemetry.server", () => ({ sha256Hex: async () => "h", recordEvent: vi.fn() }));
+vi.mock("../telemetry.server", () => ({ sha256Hex: async () => "h", recordEvent: vi.fn() }));
 const mention = { profileId: "ben", label: "Ben Stanton", start: 4, length: 12 };
 const body = { text: "Ask @Ben Stanton", mentions: [mention], size: "body", weight: "regular", colour: "ink", fill: "yellow" } as const;
 const profile = { id: "me" } as ResolvedProfile;
