@@ -379,6 +379,8 @@ export type TelemetryEvent =
   | "workboard.undo_used"
   /** Slice 2a: a highlight was made or removed. Closed vocabulary and a length band only. */
   | "workboard.annotation_changed"
+  /** MENTION-1c: newly saved board mentions. Surface and recipient count band only. */
+  | "workboard.mention_created"
   /** B2: work was brought onto a workboard. Closed source and entry point, plus a count. */
   | "workboard.work_added"
   /** B4: a workstream was drawn on the workboard. Claimed count and whether one prompt was shown. */

@@ -29,6 +29,13 @@ function boardSharedSentence(row: NotificationRow): string {
   return `${by} shared ${board} with you`;
 }
 
+function panelSentence(row: NotificationRow): string {
+  if (row.kind !== "mention_received") return notificationSentence(row);
+  const by = typeof row.payload["by"] === "string" ? row.payload["by"] : "Someone";
+  const board = typeof row.payload["board"] === "string" ? row.payload["board"] : "A board";
+  return NOTIFICATION_COPY.mentionSentence(by, board);
+}
+
 export function NotificationPanel({
   rows,
   onChanged,
@@ -156,7 +163,7 @@ export function NotificationPanel({
                   data-notification-kind={row.kind}
                   className={`rounded-md border p-3 ${row.read_at ? "border-border" : "border-foreground/40 bg-secondary"}`}
                 >
-                  <p className={`text-sm ${row.read_at ? "text-muted-foreground" : "text-foreground"}`}>{row.kind === "board_shared" ? boardSharedSentence(row) : notificationSentence(row)}</p>
+                  <p className={`text-sm ${row.read_at ? "text-muted-foreground" : "text-foreground"}`}>{row.kind === "board_shared" ? boardSharedSentence(row) : panelSentence(row)}</p>
                   {s.text ? <p className="mt-1 text-sm text-foreground" role="status">{s.text}</p> : null}
                   {!s.text && isAcceptableShare(row) && row.acted_at ? (
                     <p className="mt-1 text-sm text-foreground">{NOTIFICATION_COPY.accepted}</p>
@@ -210,7 +217,7 @@ export function NotificationPanel({
                   className="w-full rounded-md px-2 py-2 text-left transition-colors hover:bg-secondary"
                 >
                   <span data-unread={row.read_at ? undefined : "true"} className={`block text-sm ${row.read_at ? "text-muted-foreground" : "font-medium text-foreground"}`}>
-                    {notificationSentence(row)}
+                    {panelSentence(row)}
                   </span>
                   <span className="block text-xs text-muted-foreground">{formatDate(row.created_at)}</span>
                 </button>

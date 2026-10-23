@@ -1,5 +1,5 @@
 import { MentionTextEditor } from "@/components/canvas-lab/MentionTextEditor";
-import { clampMentions, type Mention } from "@/lib/mention-shared";
+import { clampMentions, serializeMentions, type Mention } from "@/lib/mention-shared";
 import type { MentionCandidate } from "@/lib/mention-editor";
 import { stableMemo } from "@/components/canvas-lab/stable-memo";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
@@ -59,12 +59,12 @@ function LabStickyInner({ node, selected, editable, layoutEditable, onSelect, on
   const [formattingOpen, setFormattingOpen] = useState(false);
   useEffect(() => { if (!selected) setFormattingOpen(false); }, [selected]);
   const editingRef = useRef(editing);
-  const baseline = useRef({ text: body.text, html: body.html ?? plainToRichHtml(body.text) });
+  const baseline = useRef({ text: body.text, html: body.html ?? plainToRichHtml(body.text), mentions: serializeMentions(body.mentions ?? []) });
   const sectionRef = useRef<HTMLElement>(null);
   const enterEdit = () => {
     if (!editable || editingRef.current) return;
     setFormattingOpen(false);
-    baseline.current = { text: body.text, html: body.html ?? plainToRichHtml(body.text) };
+    baseline.current = { text: body.text, html: body.html ?? plainToRichHtml(body.text), mentions: serializeMentions(body.mentions ?? []) };
     draft.current = null;
     touched.current = false;
     setFallbackText(null);
@@ -80,7 +80,7 @@ function LabStickyInner({ node, selected, editable, layoutEditable, onSelect, on
     const value = draft.current;
     draft.current = null;
     setFallbackText(null);
-    if (!value || (value.text === baseline.current.text && (plainEditing || value.html === baseline.current.html))) return;
+    if (!value || (value.text === baseline.current.text && (plainEditing || value.html === baseline.current.html) && JSON.stringify(serializeMentions(value.mentions ?? body.mentions ?? [])) === JSON.stringify(baseline.current.mentions))) return;
     const { html: previousHtml, ...plainBody } = body;
     const next = { ...plainBody, text: value.text, ...(value.html !== undefined ? { html: value.html } : {}), ...(value.mentions !== undefined ? { mentions: clampMentions(value.mentions, value.text.length) } : {}) };
     onChange(next);

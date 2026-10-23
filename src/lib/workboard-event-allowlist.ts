@@ -40,6 +40,7 @@ export const WORKBOARD_EVENT_DIMS: Readonly<Record<string, readonly string[]>> =
   "workboard.document_created": ["via"],
   "workboard.reference_file_added": ["matched", "via"],
   "workboard.bundle_toggled": ["state", "pieces", "via"],
+  "workboard.mention_created": ["surface", "count_band"],
   "workboard.annotation_changed": [
     "kind",
     "action",

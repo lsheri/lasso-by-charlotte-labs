@@ -98,6 +98,10 @@ describe("the workboard allowlist", () => {
           "face",
           "scope",
         ],
+        "workboard.mention_created": [
+          "surface",
+          "count_band",
+        ],
         "workboard.node_created": [
           "kind",
           "judgment_type",
@@ -279,7 +283,7 @@ describe("the workboard allowlist", () => {
       const [name, , dims] = mocked.mock.calls[0] as [string, string, Record<string, unknown>];
       expect(guardWorkboardEvent(name, dims as never)).toEqual({ keep: true, dims });
     }
-    expect(Object.keys(WORKBOARD_EVENT_DIMS)).toHaveLength(31);
+    expect(Object.keys(WORKBOARD_EVENT_DIMS)).toHaveLength(32);
   });
 
   it("keeps the additive open path for previewed document and deck cards", () => {
