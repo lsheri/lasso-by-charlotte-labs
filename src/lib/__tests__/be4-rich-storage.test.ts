@@ -67,4 +67,16 @@ describe("BE-4 string body storage", () => {
     const context = readFileSync("src/lib/reflect-context.server.ts", "utf8");
     expect(context).not.toContain("workboard_nodes");
   });
+
+  it("keeps mention records off the public board body", () => {
+    const profileId = "11111111-1111-4111-8111-111111111111";
+    const body = serializeWorkboardStickyBody({ text: "Words from @Ben Stanton", html: "<p>Words from @Ben Stanton</p>", ...style, fill: "yellow" as const, mentions: [{ profileId, label: "Ben Stanton", start: 11, length: 12 }] });
+    // The fixture must really carry the record, or the assertions below pass vacuously.
+    expect(body).toContain(profileId);
+    const shared = sharedNodeBody("sticky", body);
+    expect(shared).toContain("Words from @Ben Stanton");
+    expect(shared).not.toContain("html");
+    expect(shared).not.toContain("mentions");
+    expect(shared).not.toContain(profileId);
+  });
 });

@@ -27,7 +27,7 @@ export function sharedNodeBody(kind: string, body: string): string {
   if (kind === "sticky") {
     const parsed = parseWorkboardStickyBody(body);
     if (!parsed) return "";
-    const { html: _html, ...plain } = parsed;
+    const { html: _html, mentions: _mentions, ...plain } = parsed;
     return serializeWorkboardStickyBody(plain);
   }
   if (kind === "text") {
