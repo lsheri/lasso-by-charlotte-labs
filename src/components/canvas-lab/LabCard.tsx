@@ -21,6 +21,7 @@ import { ChatUrlLink } from "@/components/work/ChatUrlLink";
 import { BoardCard } from '@/design/reference/BoardCard';
 import { SketchCard } from '@/design/reference/SketchCard';
 import { NoPreview } from '@/design/reference/NoPreview';
+import { TextFace } from '@/design/reference/TextFace';
 import { WorkboardFilePreview as FilePreview } from '@/components/canvas-lab/WorkboardFilePreview';
 import { workToBoardCard } from '@/lib/work-board-card';
 import { isReferenceItem } from "@/lib/reference-file-shared";
@@ -296,6 +297,11 @@ function LabCardInner({
     || chatPreview?.turns?.length
     || boardWork?.summary,
   );
+  const extractSummary = item?.work_item_extracts?.find((extract) => extract.summary?.trim())?.summary;
+  const textFace = item && boardWork && !boardWork.content && noPreviewReason && extractSummary
+    && (!renderableFilePreview || filePreviewFailed)
+    ? <TextFace item={item} parent={parent} summary={extractSummary} />
+    : undefined;
   const previewFallback = boardWork && !boardWork.content ? (
     renderableFilePreview && !filePreviewFailed ? (
       <div className="absolute inset-0 flex min-h-0 flex-col">
@@ -353,6 +359,7 @@ function LabCardInner({
           <BoardCard
             work={boardWork}
             previewFallback={previewFallback}
+            unscaledPreview={textFace}
             width={node.width}
             height={node.height}
             resizable={false}
@@ -363,7 +370,7 @@ function LabCardInner({
                 <GraphiteIcon name="messages" size={11} animate={false} />{commentCount}
               </button>
             ) : undefined}
-            provenance={
+            provenance={textFace ? null :
           <span className={`min-w-0 flex-1 truncate ${headerGutter ? "canvas-card-provenance" : "text-[9px] text-muted-foreground"}`} onClick={(event) => event.stopPropagation()}>
             {item.type === "ai_thread" || pastedChatUrl((item as WorkItemRow).meta?.chat_url) ? (
               <ChatUrlLink item={item as WorkItemRow} parent={parent} showAbsence turnCount={chatPreview?.turnCount} toolSteps={chatPreview?.toolSteps} />
