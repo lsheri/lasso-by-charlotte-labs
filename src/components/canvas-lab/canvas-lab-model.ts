@@ -7,6 +7,7 @@
  * whole state lives in memory for one visit.
  */
 
+import type { Mention } from "@/lib/mention-shared";
 import { dragTo, snapPoint, type Point } from "@/lib/canvas-drag";
 import type { LabNodeEventKind } from "@/components/canvas-lab/canvas-lab-telemetry";
 import {
@@ -108,6 +109,7 @@ export type LabNode = {
   textColour?: WorkboardTextColour;
   /** A sticky's paper fill. */
   stickyFill?: WorkboardStickyFill;
+  mentions?: Mention[];
   /** DD1-f: a dropped image's storage path and natural pixel size. */
   imagePath?: string;
   imageNaturalWidth?: number;
@@ -1226,6 +1228,7 @@ export function applyDurableBoard(base: { frames: LabFrame[]; nodes: LabNode[] }
         textWeight: sticky.weight,
         textColour: sticky.colour,
         stickyFill: sticky.fill,
+        ...(sticky.mentions !== undefined ? { mentions: sticky.mentions } : {}),
         local: durable.authorProfileId === board.viewerProfileId,
         durableId: durable.id,
         durableVersion: durable.version,

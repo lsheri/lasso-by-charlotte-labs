@@ -1,3 +1,5 @@
+import type { Mention } from "@/lib/mention-shared";
+
 /**
  * Slice 2a unit 1: the client-safe contract for highlights on chat turns.
  *
@@ -62,6 +64,7 @@ export type CommentDto = {
   authorName: string;
   isMine: boolean;
   body: string;
+  mentions?: Mention[];
   excerpt: string;
   turnNo: number | null;
   charStart: number | null;

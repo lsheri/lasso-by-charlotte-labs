@@ -1,3 +1,6 @@
+import { MentionTextEditor } from "@/components/canvas-lab/MentionTextEditor";
+import { committedComment, type MentionCandidate } from "@/lib/mention-editor";
+import { type Mention } from "@/lib/mention-shared";
 import { displayName } from "@/lib/work-item-name";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 
@@ -8,7 +11,6 @@ import type { WorkboardFilePreview as WorkboardFilePreviewData } from "@/lib/wor
 import { RenderedContent } from "@/components/peek/RenderedContent";
 import { ThreadBody } from "@/components/peek/ThreadBody";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { ChatBorderFrame } from "@/components/work/ChatPreviewWindow";
 import { SourceMark, sourceVendorKey, VendorMark } from "@/components/work/SourceMark";
 import type { CommentDto, CommentThreadDto } from "@/lib/canvas-lab-annotations-shared";
@@ -57,10 +59,12 @@ function isSubmitKey(event: React.KeyboardEvent): boolean {
   return event.key === "Enter" && (event.metaKey || event.ctrlKey);
 }
 
-function CommentComposer({
+export function CommentComposer({
   label,
   placeholder,
   initial = "",
+  initialMentions = [],
+  mentionCandidates = [],
   quote,
   submitLabel,
   onSubmit,
@@ -69,12 +73,16 @@ function CommentComposer({
   label: string;
   placeholder: string;
   initial?: string;
+  initialMentions?: readonly Mention[];
+  mentionCandidates?: readonly MentionCandidate[];
   quote?: string | undefined;
   submitLabel: string;
-  onSubmit: (body: string) => void;
+  onSubmit: (body: string, mentions: Mention[]) => void;
   onCancel: () => void;
 }) {
   const [body, setBody] = useState(initial);
+  const [mentions, setMentions] = useState<readonly Mention[]>(initialMentions);
+  const submit = () => { const value = committedComment(body, mentions); onSubmit(value.body, value.mentions); };
   const ready = body.trim().length > 0 && body.trim().length <= 4000;
   return (
     <div className="mt-2">
@@ -83,26 +91,14 @@ function CommentComposer({
           &ldquo;{quote}&rdquo;
         </p>
       ) : null}
-      <Textarea
-        rows={3}
-        autoFocus
-        value={body}
-        onChange={(event) => setBody(event.target.value)}
-        onKeyDown={(event) => {
-          if (isSubmitKey(event) && ready) {
-            event.preventDefault();
-            onSubmit(body.trim());
-          }
-        }}
-        placeholder={placeholder}
-        aria-label={label}
-        className="text-[12px]"
-      />
+      <MentionTextEditor text={body} mentions={mentions} candidates={mentionCandidates} maxLength={4000} label={label} placeholder={placeholder} className="text-base"
+        onChange={(text, nextMentions) => { setBody(text); setMentions(nextMentions); }}
+        onKeyDown={(event) => { if (isSubmitKey(event) && ready) { event.preventDefault(); submit(); } }} />
       <p className="mt-1 nb-type-small leading-[17px] text-muted-foreground">
         Visible to your workboard team
       </p>
       <div className="mt-1 flex items-center gap-2">
-        <Button size="sm" className="h-7 px-2 nb-type-small" disabled={!ready} onClick={() => onSubmit(body.trim())}>
+        <Button size="sm" className="h-7 px-2 nb-type-small" disabled={!ready} onClick={submit}>
           {submitLabel}
         </Button>
         <Button size="sm" variant="ghost" className="h-7 px-2 nb-type-small" onClick={onCancel}>
@@ -153,7 +149,9 @@ export function FocusOverlay({
   highlightTurnRange,
   focusedTurnTestId,
   closeLabel,
+  mentionCandidates = [],
 }: {
+  mentionCandidates?: readonly MentionCandidate[];
   node: LabNode;
   item: WorkItemRow | null;
   itemLoading?: boolean;
@@ -174,9 +172,9 @@ export function FocusOverlay({
   threads?: readonly CommentThreadDto[];
   /** A coach can read the review without being able to add to it. */
   canWrite?: boolean;
-  onCreateComment?: ((anchor: ComposerAnchor, body: string) => void) | undefined;
-  onCreateReply?: ((parentId: string, body: string) => void) | undefined;
-  onEditComment?: ((comment: CommentDto, body: string) => void) | undefined;
+  onCreateComment?: ((anchor: ComposerAnchor, body: string, mentions: Mention[]) => void) | undefined;
+  onCreateReply?: ((parentId: string, body: string, mentions: Mention[]) => void) | undefined;
+  onEditComment?: ((comment: CommentDto, body: string, mentions: Mention[]) => void) | undefined;
   onArchiveComment?: ((comment: CommentDto) => void) | undefined;
   /** Opened from a card's chip, so the panel starts at the comments. */
   openComments?: boolean;
@@ -421,12 +419,14 @@ export function FocusOverlay({
                         </button>
                         {editingId === thread.id ? (
                           <CommentComposer
+                            mentionCandidates={mentionCandidates}
                             label="Edit your comment"
                             placeholder="What did you notice?"
                             initial={thread.body}
+                            initialMentions={thread.mentions ?? []}
                             submitLabel="Save"
-                            onSubmit={(body) => {
-                              onEditComment?.(thread, body);
+                            onSubmit={(body, mentions) => {
+                              onEditComment?.(thread, body, mentions);
                               setEditingId(null);
                             }}
                             onCancel={() => setEditingId(null)}
@@ -442,12 +442,14 @@ export function FocusOverlay({
                                 <CommentLine comment={reply} />
                                 {editingId === reply.id ? (
                                   <CommentComposer
+                            mentionCandidates={mentionCandidates}
                                     label="Edit your reply"
                                     placeholder="Add a reply"
                                     initial={reply.body}
+                                    initialMentions={reply.mentions ?? []}
                                     submitLabel="Save"
-                                    onSubmit={(body) => {
-                                      onEditComment?.(reply, body);
+                                    onSubmit={(body, mentions) => {
+                                      onEditComment?.(reply, body, mentions);
                                       setEditingId(null);
                                     }}
                                     onCancel={() => setEditingId(null)}
@@ -482,11 +484,12 @@ export function FocusOverlay({
 
                         {replyTo === thread.id ? (
                           <CommentComposer
+                            mentionCandidates={mentionCandidates}
                             label="Write a reply"
                             placeholder="Add a reply"
                             submitLabel="Post"
-                            onSubmit={(body) => {
-                              onCreateReply?.(thread.id, body);
+                            onSubmit={(body, mentions) => {
+                              onCreateReply?.(thread.id, body, mentions);
                               setReplyTo(null);
                             }}
                             onCancel={() => setReplyTo(null)}
@@ -575,12 +578,13 @@ export function FocusOverlay({
 
                 {composerAnchor && canWrite ? (
                   <CommentComposer
+                            mentionCandidates={mentionCandidates}
                     label="Write a comment on this passage"
                     placeholder="What did you notice?"
                     quote={composerAnchor.excerpt}
                     submitLabel="Post"
-                    onSubmit={(body) => {
-                      onCreateComment?.(composerAnchor, body);
+                    onSubmit={(body, mentions) => {
+                      onCreateComment?.(composerAnchor, body, mentions);
                       clearSelection();
                     }}
                     onCancel={() => setComposerAnchor(null)}

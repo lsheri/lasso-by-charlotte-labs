@@ -1,3 +1,4 @@
+import { clampMentions, serializeMentions, type Mention } from "@/lib/mention-shared";
 /**
  * Slice 2a unit 2: comments on one chat, and the count behind each card's chip.
  * A comment is review, so the cache key is the item rather than the reader.
@@ -72,6 +73,7 @@ export function useCanvasLabComments(
       charStart: number;
       charEnd: number;
       body: string;
+      mentions?: Mention[];
       clientKey: string;
     }): Promise<CommentMutationResult> =>
       (await createFn({
@@ -81,7 +83,7 @@ export function useCanvasLabComments(
           turn_no: input.turnNo,
           char_start: input.charStart,
           char_end: input.charEnd,
-          body: input.body,
+          body: input.body, mentions: serializeMentions(clampMentions(input.mentions ?? [], input.body.length)),
           client_key: input.clientKey,
           ...profileArg,
         },
@@ -90,17 +92,17 @@ export function useCanvasLabComments(
   });
 
   const reply = useMutation({
-    mutationFn: async (input: { parentId: string; body: string; clientKey: string }): Promise<CommentMutationResult> =>
+    mutationFn: async (input: { parentId: string; body: string; mentions?: Mention[]; clientKey: string }): Promise<CommentMutationResult> =>
       (await replyFn({
-        data: { parent_id: input.parentId, body: input.body, client_key: input.clientKey, ...profileArg },
+        data: { parent_id: input.parentId, body: input.body, mentions: serializeMentions(clampMentions(input.mentions ?? [], input.body.length)), client_key: input.clientKey, ...profileArg },
       })) as CommentMutationResult,
     onSuccess: invalidate,
   });
 
   const edit = useMutation({
-    mutationFn: async (input: { id: string; body: string; expectedVersion: number }): Promise<CommentMutationResult> =>
+    mutationFn: async (input: { id: string; body: string; mentions?: Mention[]; expectedVersion: number }): Promise<CommentMutationResult> =>
       (await editFn({
-        data: { id: input.id, body: input.body, expected_version: input.expectedVersion, ...profileArg },
+        data: { id: input.id, body: input.body, mentions: serializeMentions(clampMentions(input.mentions ?? [], input.body.length)), expected_version: input.expectedVersion, ...profileArg },
       })) as CommentMutationResult,
     onSuccess: invalidate,
   });
