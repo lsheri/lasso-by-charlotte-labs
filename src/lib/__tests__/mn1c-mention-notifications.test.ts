@@ -61,8 +61,9 @@ describe("MENTION-1c authorization and privacy", () => {
   it("payload contains exactly the two names, never the saved body or identifiers", async () => {
     await notifySavedMentions(memoryDb().db, profile, "eng", "workboard_node", "node", [], [ben]);
     expect(mocks.notify).toHaveBeenCalledWith("notify", {
-      p_recipient: "ben", p_org: "org", p_kind: "mention_received", p_section: "updates", p_subject_type: "workboard_node", p_subject_id: "node", p_group_key: "mention:workboard_node:node:ben", p_payload: { by: "Liam Sheridan", board: "Pricing" },
+      p_recipient: "ben", p_org: "org", p_kind: "mention_received", p_section: "updates", p_subject_type: "engagement", p_subject_id: "eng", p_group_key: "mention:workboard_node:node:ben", p_payload: { by: "Liam Sheridan", board: "Pricing" },
     });
+    expect(mocks.notify.mock.calls[0]?.[1]["p_group_key"]).toContain("workboard_node:node");
     const args = mocks.notify.mock.calls[0]?.[1] as unknown as { p_payload: unknown };
     expect(JSON.stringify(args.p_payload)).not.toContain("Ask @Ben Stanton");
     expect(Object.keys(args.p_payload as object)).toEqual(["by", "board"]);
@@ -129,7 +130,7 @@ describe("MENTION-1c save boundaries", () => {
     const { db } = memoryDb();
     const before = await captureStickyMentions(db, "eng", { type: "materialize", frames: [], nodes: [{ clientKey: "local", frameKey: null, kind: "sticky", body: stickyBody(), x: 0, y: 0, w: 200, h: 160 }] });
     await notifySavedStickies(db, profile, "eng", before, { status: "saved", boardId: "wb", boardVersion: 1, created: { nodes: { local: "node" } }, versions: {} });
-    expect(mocks.notify.mock.calls[0]?.[1]).toMatchObject({ p_subject_id: "node" });
+    expect(mocks.notify.mock.calls[0]?.[1]).toMatchObject({ p_subject_type: "engagement", p_subject_id: "eng", p_group_key: "mention:workboard_node:node:ben" });
   });
   it("comment create and reply notify, unchanged edits do not", async () => {
     const { db } = memoryDb();

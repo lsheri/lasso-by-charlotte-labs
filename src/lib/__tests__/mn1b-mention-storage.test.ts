@@ -33,11 +33,15 @@ describe("MENTION-1b storage", () => {
     expect(parseWorkboardStickyBody(serializeWorkboardStickyBody(input))).toEqual(input);
     expect(parseWorkboardStickyBody(serializeWorkboardStickyBody({ ...input, text: "Ask" }))?.mentions).toEqual([]);
   });
-  it("shared sticky copies retain mentions while stripping exactly the rich markup", () => {
+  it("shared sticky copies keep words and style while dropping rich markup and mentions", () => {
     const input = { ...body, html: "<p>Ask @Ben Stanton</p>", mentions: [mention] };
     const shared = sharedNodeBody("sticky", serializeWorkboardStickyBody(input));
-    expect(parseWorkboardStickyBody(shared)).toEqual({ ...body, mentions: [mention] });
+    const { mentions: _mentions, ...plain } = body;
+    const parsed = parseWorkboardStickyBody(shared);
+    expect(parsed).toEqual(plain);
+    expect(parsed && "mentions" in parsed).toBe(false);
     expect(shared).not.toContain("html");
+    expect(shared).not.toContain("mentions");
   });
   it("keeps legacy sticky bodies unchanged and retains mentions through the durable model", () => {
     const { mentions, ...legacy } = body;
