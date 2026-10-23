@@ -97,4 +97,8 @@ describe('TEXT-FACE precedence', () => {
     expect(links).toHaveLength(1);
     expect(links[0]?.getAttribute('href')).toBe('https://claude.ai/chat/parent');
   });
+  it('preserves a separate existing source-document link', () => {
+    render(<LabCard {...props} item={{ ...item, meta: { web_view_link: 'https://docs.google.com/document/d/source' } }} filePreview={fallback} />);
+    expect(screen.getByRole('link').getAttribute('href')).toBe('https://docs.google.com/document/d/source');
+  });
 });
