@@ -4861,6 +4861,7 @@ export type Database = {
           id: string
           kind: string
           legal_hold: boolean
+          mentions: Json
           node_id: string | null
           page_no: number | null
           parent_id: string | null
@@ -4895,6 +4896,7 @@ export type Database = {
           id?: string
           kind: string
           legal_hold?: boolean
+          mentions?: Json
           node_id?: string | null
           page_no?: number | null
           parent_id?: string | null
@@ -4929,6 +4931,7 @@ export type Database = {
           id?: string
           kind?: string
           legal_hold?: boolean
+          mentions?: Json
           node_id?: string | null
           page_no?: number | null
           parent_id?: string | null
@@ -5868,6 +5871,13 @@ export type Database = {
         Returns: {
           engagement_id: string
           new_count: number
+        }[]
+      }
+      board_people: {
+        Args: { p_engagement: string }
+        Returns: {
+          display_name: string
+          profile_id: string
         }[]
       }
       can_manage_key_request: {
