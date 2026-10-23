@@ -501,7 +501,7 @@ export async function editComment(
   const badBody = validateCommentBody(body ?? "");
   if (badBody) return { status: "validation_error", message: badBody };
 
-  const previous = await db.from("workboard_annotations").select("workboard_id, mentions").eq("id", id).eq("version", expectedVersion).maybeSingle().catch(() => ({ data: null, error: true }));
+  const previous = await Promise.resolve(db.from("workboard_annotations").select("workboard_id, mentions").eq("id", id).eq("version", expectedVersion).maybeSingle()).catch(() => ({ data: null, error: true }));
   const { data, error } = await db
     .from("workboard_annotations")
     .update({ ...committedComment(body, mentions), updated_by: profile.id })
