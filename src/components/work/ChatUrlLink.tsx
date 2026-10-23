@@ -1,6 +1,7 @@
 import { ExternalLink } from "lucide-react";
 
 import { chatLinkLabel, itemChatLink } from "@/lib/chat-url";
+import { vendorColour, vendorFromChatUrl } from "@/lib/vendor-colour";
 import { keptContentLabel } from "@/lib/work-open";
 import type { WorkItemRow } from "@/lib/work-types";
 
@@ -51,7 +52,8 @@ export function ChatUrlLink({
       rel="noopener noreferrer"
       onClick={note}
       title={link.kind === "project" ? "Open the project. No link to the chat was recorded." : "Open the URL to this chat"}
-      className="inline-flex items-center gap-1 text-xs text-accent-deep hover:underline"
+      style={{ color: link.kind === "project" ? "var(--vendor-unknown)" : vendorColour(vendorFromChatUrl(url)) }}
+      className="inline-flex items-center gap-1 text-xs hover:underline"
     >
       {chatLinkLabel(link)}
       <ExternalLink className="h-3 w-3" aria-hidden />

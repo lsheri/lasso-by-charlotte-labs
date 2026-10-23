@@ -128,6 +128,17 @@
 
   --brand-granola:#7cb342;
   --brand-granola-ink:#111111;
+
+  /* Provenance colour per vendor. Claude deliberately reuses --orange-100
+     (the same value as --state-shared-in); the overlap is a decision taken
+     with eyes open. Gemini is a literal hex on purpose: a true light blue
+     lands near 2.1:1 on --neutral-05, while #2f7fc4 reads light blue and
+     clears 3:1 for a non-text line. No dark-mode variants: this file has no
+     dark block and none is introduced here. */
+  --vendor-claude:var(--orange-100);
+  --vendor-chatgpt:var(--neutral-60);
+  --vendor-gemini:#2f7fc4;
+  --vendor-unknown:var(--neutral-60);
 }
 
 /* Names the ported reference components use that this file did not carry.

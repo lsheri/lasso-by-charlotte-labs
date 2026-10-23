@@ -12,6 +12,7 @@ import { CHAT_LINK_COPY, ChatLinkDialog } from "@/components/canvas-lab/ChatLink
 import { brandLabel } from "@/components/connectors/BrandLogo";
 import { sourceBrandKey } from "@/components/work/SourceMark";
 import { chatLinkAction, pastedChatUrl } from "@/lib/chat-url";
+import { vendorColour } from "@/lib/vendor-colour";
 import { ReferenceFileCard, referenceMatchLine } from "@/components/canvas-lab/ReferenceFileCard";
 import { GraphiteIcon } from "@/components/notebook/icons";
 import { Button } from "@/components/ui/button";
@@ -96,6 +97,7 @@ function LabCardInner({
   readOnly = false,
   showStatusChrome = true,
   madeInChat,
+  bundleVendor,
   bundleToggleLabel,
   onBundleToggle,
   onSaveChatLink,
@@ -160,6 +162,8 @@ function LabCardInner({
   showStatusChrome?: boolean;
   /** U3: set on a piece docked under its chat, for assistive tech. */
   madeInChat?: string | undefined;
+  /** The chat's source_vendor, so the piece's border and wash take its colour. */
+  bundleVendor?: string | null | undefined;
   bundleToggleLabel?: string | undefined;
   onBundleToggle?: (() => void) | undefined;
   /** CU1: only the live board passes this, and only for the item's owner. */
@@ -334,7 +338,7 @@ function LabCardInner({
       data-size={cardSizeTier(node)}
       className={`canvas-lab-card group absolute text-left outline-none${teammateMark ? " canvas-lab-card-teammate" : ""}`}
     >
-      <div ref={paperRef} data-selected={selected} data-marquee-preview={previewSelected} data-focused={focused} data-connect-source={connectSourceAnchor !== null} data-bundled-piece={Boolean(madeInChat) && face === 'board'} className="canvas-lab-card-paper h-full w-full overflow-hidden">
+      <div ref={paperRef} data-selected={selected} data-marquee-preview={previewSelected} data-focused={focused} data-connect-source={connectSourceAnchor !== null} data-bundled-piece={Boolean(madeInChat) && face === 'board'} style={{ "--bundle-vendor": vendorColour(bundleVendor) } as React.CSSProperties} className="canvas-lab-card-paper h-full w-full overflow-hidden">
         {item && isReferenceItem(item) ? <ReferenceFileCard item={item} onOpen={() => onOpen(cardRef.current?.getBoundingClientRect())} /> : item && boardWork && face === 'board' && cardFace === 'art' ? (
           <SketchCard
             work={boardWork}

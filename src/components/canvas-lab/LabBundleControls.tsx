@@ -1,5 +1,6 @@
 import type { ChatBundles, LabNode } from "@/components/canvas-lab/canvas-lab-model";
 import { BUNDLE_GAP, BUNDLE_INDENT, BUNDLE_MORE_TILE, bundleControlScale, type BundleView } from "@/components/canvas-lab/canvas-lab-model";
+import { vendorColour } from "@/lib/vendor-colour";
 
 type Props = {
   nodes: readonly LabNode[];
@@ -59,15 +60,25 @@ export function LabBundleControls({ nodes, bundles, more, minimized, zoom, onTog
 }
 
 /** Two paper edges behind a minimized chat, 4px and 8px down and right. */
-export function LabBundleStackEdges({ nodes, minimized }: { nodes: readonly LabNode[]; minimized: ReadonlyMap<string, number> }) {
+export function LabBundleStackEdges({
+  nodes,
+  minimized,
+  vendorByChat,
+}: {
+  nodes: readonly LabNode[];
+  minimized: ReadonlyMap<string, number>;
+  /** Chat NODE id -> source_vendor; the edges take the chat's vendor colour. */
+  vendorByChat?: ReadonlyMap<string, string | null> | undefined;
+}) {
   const byId = new Map(nodes.map((node) => [node.id, node]));
   return (
     <>
       {[...minimized.keys()].flatMap((chatId) => {
         const chat = byId.get(chatId);
         if (!chat) return [];
+        const colour = vendorColour(vendorByChat?.get(chatId));
         return [8, 4].map((offset) => (
-          <div key={`${chatId}:${offset}`} aria-hidden="true" data-testid="lab-bundle-stack-edge" className="canvas-lab-bundle-edge" style={{ left: chat.x + offset, top: chat.y + offset, width: chat.width, height: chat.height }} />
+          <div key={`${chatId}:${offset}`} aria-hidden="true" data-testid="lab-bundle-stack-edge" className="canvas-lab-bundle-edge" style={{ left: chat.x + offset, top: chat.y + offset, width: chat.width, height: chat.height, "--bundle-vendor": colour } as React.CSSProperties} />
         ));
       })}
     </>
