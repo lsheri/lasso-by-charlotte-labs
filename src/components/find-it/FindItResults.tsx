@@ -317,12 +317,12 @@ export function FindItNode({ candidate, selected = false, status = "draft", expa
   );
 }
 
-function TargetCard({ target, phase }: { target: WorkItemRow; phase: FindItPhase }) {
+function TargetCard({ target, parent, phase }: { target: WorkItemRow; parent?: WorkItemRow | undefined; phase: FindItPhase }) {
   const date = formatDate(effectiveWorkDate(target));
   const origin = target.source ? sourceLabel(target.source) : null;
   return (
     <div data-testid="find-it-target" className={`find-it-target absolute z-20 w-[250px] -translate-x-1/2 -translate-y-1/2 transition-[left] duration-[480ms] [transition-timing-function:cubic-bezier(.2,.8,.2,1)] ${phase === "reading" ? "find-it-target-reading" : "find-it-target-settled"}`}>
-      <WorkNote item={target} dense />
+      <WorkNote item={target} parent={parent} dense />
       <p className="mt-2 text-center font-hand text-[16px] text-green">{phase === "reading" ? `landed ${date}${origin ? ` from ${origin}` : ""}` : "line weight says how sure. no numbers."}</p>
     </div>
   );
@@ -418,9 +418,10 @@ function ArcCaption({ candidate, index, placement, placements }: { candidate: Fi
   return <g data-testid="find-it-arrow-caption" className="find-it-arrow-caption"><rect x={position.x - captionWidth / 2 - 5} y={position.baseline - 15} width={captionWidth + 10} height={21} rx={4} /><text x={position.x} y={position.baseline} textAnchor="middle" className="fill-green font-hand text-[16px]">{caption}</text></g>;
 }
 
-export function FindItResults({ phase, target, scope, candidates, reviewed, considered, reduceMotion, onChooseTarget, onReturnToForm, onReview, onKeepAll, onDone, onOpenThread }: {
+export function FindItResults({ phase, target, parent, scope, candidates, reviewed, considered, reduceMotion, onChooseTarget, onReturnToForm, onReview, onKeepAll, onDone, onOpenThread }: {
   phase: FindItPhase;
   target: WorkItemRow;
+  parent?: WorkItemRow | undefined;
   scope: FindScope;
   candidates: FindItCandidate[];
   reviewed: Record<string, "confirmed" | "discarded">;
@@ -510,7 +511,7 @@ export function FindItResults({ phase, target, scope, candidates, reviewed, cons
       <div className="min-h-0 p-1 md:p-3">
         <div ref={stageShellRef} className="find-it-stage-shell relative hidden w-full overflow-hidden md:block" style={{ ["--stage-scale" as string]: String(stageMetrics.scale), ["--stage-left" as string]: `${stageMetrics.left}px` } as CanvasStyle}>
          <div className="find-it-stage absolute left-0 top-0 overflow-hidden rounded-[8px] border border-hairline bg-background">
-          <TargetCard target={target} phase={phase} />
+          <TargetCard target={target} parent={parent} phase={phase} />
           {phase === "reading" ? (
             <>
               {!reduceMotion ? <ReadingLines candidates={candidates.slice(0, 14)} slots={readingSlots} /> : null}

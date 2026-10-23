@@ -149,6 +149,7 @@ function isOver(element: HTMLElement | null, x: number, y: number) {
 
 function CanvasNode({
   item,
+  parent,
   position,
   onOpen,
   offset,
@@ -161,6 +162,7 @@ function CanvasNode({
   outlined,
 }: {
   item: WorkItemRow;
+  parent?: WorkItemRow | undefined;
   position: NodePosition;
   onOpen: (item: WorkItemRow) => void;
   offset: Point | null;
@@ -212,7 +214,7 @@ function CanvasNode({
         }
       }}
     >
-      <WorkNote item={item} onOpen={() => onOpen(item)} className="h-full" />
+      <WorkNote item={item} parent={parent} onOpen={() => onOpen(item)} className="h-full" />
       {showHandles ? (
         <svg
           aria-hidden="true"
@@ -1100,6 +1102,7 @@ export function EngagementCanvasView({
               <CanvasNode
                 key={position.id}
                 item={item}
+                parent={item.type !== "ai_thread" && item.orig_conversation_id ? items.find((candidate) => candidate.type === "ai_thread" && candidate.orig_conversation_id === item.orig_conversation_id && candidate.owner_id === item.owner_id) : undefined}
                 position={position}
                 onOpen={onOpen}
                 offset={dragging ? dragging.delta : null}
@@ -1232,7 +1235,7 @@ export function EngagementCanvasView({
                     event.stopPropagation();
                   }}
                 >
-                  <WorkNote item={item} onOpen={() => onOpen(item)} />
+                  <WorkNote item={item} parent={item.type !== "ai_thread" && item.orig_conversation_id ? items.find((candidate) => candidate.type === "ai_thread" && candidate.orig_conversation_id === item.orig_conversation_id && candidate.owner_id === item.owner_id) : undefined} onOpen={() => onOpen(item)} />
                 </div>
               );
             })}

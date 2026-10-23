@@ -661,6 +661,7 @@ export function FindItPage() {
           <FindItResults
             phase={canvasPhase}
             target={target}
+            parent={target.type !== "ai_thread" && target.orig_conversation_id ? items.find((item) => item.type === "ai_thread" && item.orig_conversation_id === target.orig_conversation_id && item.owner_id === target.owner_id) : undefined}
             scope={effectiveScope}
             candidates={canvasPhase === "reading" ? readingCandidates : candidates}
             reviewed={reviewed}

@@ -65,6 +65,8 @@ describe("CL-1 ladder", () => {
     const attachment = item({ type: "document", parent_work_item_id: parent.id, meta: { chat_url: null }, orig_conversation_id: slug, source_meta: { source_project: { id: PROJECT } } });
     expect(deriveChatUrl(attachment.source_vendor, attachment.orig_conversation_id)).toBeNull();
     expect(itemChatLink(attachment, parent)).toEqual({ url: parent.meta?.chat_url, kind: "conversation" });
+    render(<ChatUrlLink item={attachment} parent={parent} showAbsence />);
+    expect(screen.getByRole("link", { name: "Open in Claude" }).getAttribute("href")).toBe(parent.meta?.chat_url);
   });
   it("keeps the attachment's own pushed link ahead of the parent's pasted link", () => {
     expect(itemChatLink(item({ source_meta: { url: "https://claude.ai/chat/own" } }), item({ meta: { chat_url: `https://claude.ai/chat/${V4}` } }))).toEqual({ url: "https://claude.ai/chat/own", kind: "conversation" });
