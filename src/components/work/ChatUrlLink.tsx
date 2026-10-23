@@ -11,11 +11,13 @@ import type { WorkItemRow } from "@/lib/work-types";
  */
 export function ChatUrlLink({
   item,
+  parent,
   showAbsence = false,
   turnCount,
   toolSteps,
 }: {
   item: WorkItemRow | null | undefined;
+  parent?: WorkItemRow | null | undefined;
   /** Cards say plainly when there is no way back, so nobody is surprised. */
   showAbsence?: boolean;
   /** Already-loaded card data; this never triggers another read. */
@@ -23,7 +25,7 @@ export function ChatUrlLink({
   /** TT1: collapsed AI tool steps, named beside the turn count. */
   toolSteps?: number | null | undefined;
 }) {
-  const link = itemChatLink(item);
+  const link = itemChatLink(item, parent);
   const url = link?.url ?? null;
   if (!link || !url) {
     if (!showAbsence) return null;

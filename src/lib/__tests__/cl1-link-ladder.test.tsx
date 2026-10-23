@@ -59,6 +59,29 @@ describe("CL-1 ladder", () => {
     expect(a.getAttribute("rel")).toBe("noopener noreferrer");
     expect(screen.queryByText(/Open the conversation/)).toBeNull();
   });
+  it("inherits the production parent's pasted chat link when slug derivation cannot rescue a piece", () => {
+    const slug = "cpt-0511u-paris-research";
+    const parent = item({ id: "transcript", meta: { chat_url: `https://claude.ai/chat/${V4}` }, orig_conversation_id: slug });
+    const attachment = item({ type: "document", parent_work_item_id: parent.id, meta: { chat_url: null }, orig_conversation_id: slug, source_meta: { source_project: { id: PROJECT } } });
+    expect(deriveChatUrl(attachment.source_vendor, attachment.orig_conversation_id)).toBeNull();
+    expect(itemChatLink(attachment, parent)).toEqual({ url: parent.meta?.chat_url, kind: "conversation" });
+  });
+  it("keeps the attachment's own pushed link ahead of the parent's pasted link", () => {
+    expect(itemChatLink(item({ source_meta: { url: "https://claude.ai/chat/own" } }), item({ meta: { chat_url: `https://claude.ai/chat/${V4}` } }))).toEqual({ url: "https://claude.ai/chat/own", kind: "conversation" });
+  });
+  it("keeps the project rung without a loaded parent", () => {
+    expect(itemChatLink(item({ source_meta: { source_project: { id: PROJECT } }, orig_conversation_id: "research-slug" }))).toEqual({ url: `https://claude.ai/project/${PROJECT}`, kind: "project" });
+  });
+  it("ignores a parent with no conversation link, including its project fallback", () => {
+    const attachment = item({ source_meta: { source_project: { id: PROJECT } } });
+    const parent = item({ source_meta: { source_project: { id: V4 } }, orig_conversation_id: "research-slug" });
+    expect(itemChatLink(attachment, parent)).toEqual(itemChatLink(attachment));
+    expect(itemChatLink(item(), parent)).toBeNull();
+  });
+  it("uses the parent's pushed and derived rungs after its pasted rung", () => {
+    expect(itemChatLink(item(), item({ source_meta: { url: "https://claude.ai/chat/pushed" }, orig_conversation_id: V4 }))).toEqual({ url: "https://claude.ai/chat/pushed", kind: "conversation" });
+    expect(itemChatLink(item(), item({ orig_conversation_id: V4 }))).toEqual({ url: `https://claude.ai/chat/${V4}`, kind: "conversation" });
+  });
   it("an inherited front door is not stored", () => {
     expect(inheritedConversationUrl({ url: "https://claude.ai/" })).toBeNull();
     expect(inheritedConversationUrl({ url: "https://claude.ai/chat/x" })).toBe("https://claude.ai/chat/x");

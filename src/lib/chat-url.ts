@@ -128,16 +128,20 @@ type ChatLinkItem = {
 } | null | undefined;
 
 /**
- * CL-1 ladder: pasted, then pushed, then derived from a v4 Claude id, then the
- * Claude project the push named. Null when no rung holds.
+ * CL-1 ladder: own pasted, pushed and derived links, then the loaded parent's
+ * conversation links, then the Claude project the push named.
  */
-export function itemChatLink(item: ChatLinkItem): ChatLink | null {
+export function itemChatLink(item: ChatLinkItem, parent?: ChatLinkItem): ChatLink | null {
   const pasted = pastedChatUrl(item?.meta?.chat_url);
   if (pasted) return { url: pasted, kind: "pasted" };
   const pushed = safeChatUrl(item?.source_meta?.url);
   if (pushed) return { url: pushed, kind: "conversation" };
   const derived = deriveChatUrl(item?.source_vendor ?? null, item?.orig_conversation_id ?? null);
   if (derived) return { url: derived, kind: "conversation" };
+  const inherited = pastedChatUrl(parent?.meta?.chat_url)
+    ?? safeChatUrl(parent?.source_meta?.url)
+    ?? deriveChatUrl(parent?.source_vendor, parent?.orig_conversation_id);
+  if (inherited) return { url: inherited, kind: "conversation" };
   const project = deriveProjectUrl(item?.source_meta?.source_project?.id);
   if (project) return { url: project, kind: "project" };
   return null;
