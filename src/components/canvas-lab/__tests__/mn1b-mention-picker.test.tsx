@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { MentionPicker } from "@/components/canvas-lab/MentionPicker";
 import { CommentComposer } from "@/components/canvas-lab/FocusOverlay";
 import { LabSticky } from "@/components/canvas-lab/LabSticky";
-import { committedComment, insertMention, mentionTrigger, mentionsAfterEdit } from "@/lib/mention-editor";
+import { committedComment, insertMention, mentionTrigger, mentionsAfterEdit, stickyMentionCandidates } from "@/lib/mention-editor";
 
 vi.mock("@/integrations/supabase/client", () => ({ supabase: {} }));
 const candidates = [{ profileId: "ben", displayName: "Ben Stanton" }, { profileId: "ana", displayName: "Ana Perez" }];
@@ -71,5 +71,44 @@ describe("MENTION-1b picker", () => {
     expect(trigger).toEqual({ start: 4, end: 7, query: "be" });
     expect(insertMention("Ask @be today", [], { start: 4, end: 7, query: "be" }, candidates[0] ?? { profileId: "", displayName: "" }).text).toBe("Ask @Ben Stanton  today");
     expect(mentionTrigger("email@example.com", 17)).toBeNull();
+  });
+});
+
+describe("MENTION-FIX-1", () => {
+  const sticky = { id: "s", kind: "sticky" as const, title: "Sticky", summary: "", typeLabel: "sticky", ownership: "yours" as const, local: true, x: 0, y: 0, width: 260, height: 160 };
+  it("without candidates the sticky uses the rich editor, not the plain textarea", () => {
+    const noop = vi.fn();
+    render(<LabSticky node={sticky} selected editable layoutEditable mentionCandidates={undefined} onSelect={noop} onDragStart={noop} onResizeStart={noop} onResizeKeyDown={noop} onResizeKeyUp={noop} onChange={noop} onCommit={noop} onRemove={noop} />);
+    expect(screen.getByTestId("sticky-s").getAttribute("data-editing")).toBe("true");
+    expect(screen.queryByRole("textbox", { name: "Sticky words" })).toBeNull();
+    expect(document.querySelector("textarea")).toBeNull();
+  });
+  it("the page gate passes undefined for missing or empty candidate lists", () => {
+    expect(stickyMentionCandidates(undefined)).toBeUndefined();
+    expect(stickyMentionCandidates([])).toBeUndefined();
+    expect(stickyMentionCandidates(candidates)).toBe(candidates);
+  });
+  it("a space after @ closes the run", () => {
+    expect(mentionTrigger("meet @ 5pm", 10)).toBeNull();
+    expect(mentionTrigger("Ask @be", 7)).toEqual({ start: 4, end: 7, query: "be" });
+  });
+  it("Escape dismissal sticks to the run while typing continues", () => {
+    render(<CommentComposer label="Comment words" placeholder="Write here" submitLabel="Post" mentionCandidates={candidates} onSubmit={vi.fn()} onCancel={vi.fn()} />);
+    const input = screen.getByRole("textbox") as HTMLTextAreaElement;
+    fireEvent.change(input, { target: { value: "Ask @b", selectionStart: 6 } });
+    expect(screen.getByRole("listbox")).toBeTruthy();
+    fireEvent.keyDown(input, { key: "Escape" });
+    expect(screen.queryByRole("listbox")).toBeNull();
+    fireEvent.change(input, { target: { value: "Ask @be", selectionStart: 7 } });
+    expect(screen.queryByRole("listbox")).toBeNull();
+  });
+  it("Enter with no matches reaches the composer submit", () => {
+    const submit = vi.fn();
+    render(<CommentComposer label="Comment words" placeholder="Write here" submitLabel="Post" mentionCandidates={candidates} onSubmit={submit} onCancel={vi.fn()} />);
+    const input = screen.getByRole("textbox") as HTMLTextAreaElement;
+    fireEvent.change(input, { target: { value: "Ask @zz", selectionStart: 7 } });
+    expect(screen.getByRole("listbox")).toBeTruthy();
+    fireEvent.keyDown(input, { key: "Enter", ctrlKey: true });
+    expect(submit).toHaveBeenCalledWith("Ask @zz", []);
   });
 });
