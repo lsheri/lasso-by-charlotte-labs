@@ -61,7 +61,7 @@ describe("MENTION-1c authorization and privacy", () => {
   it("payload contains exactly the two names, never the saved body or identifiers", async () => {
     await notifySavedMentions(memoryDb().db, profile, "eng", "workboard_node", "node", [], [ben]);
     expect(mocks.notify).toHaveBeenCalledWith("notify", {
-      p_recipient: "ben", p_org: "org", p_kind: "mention_received", p_section: "needs_you", p_subject_type: "workboard_node", p_subject_id: "node", p_group_key: "mention:workboard_node:node:ben", p_payload: { by: "Liam Sheridan", board: "Pricing" },
+      p_recipient: "ben", p_org: "org", p_kind: "mention_received", p_section: "updates", p_subject_type: "workboard_node", p_subject_id: "node", p_group_key: "mention:workboard_node:node:ben", p_payload: { by: "Liam Sheridan", board: "Pricing" },
     });
     const args = mocks.notify.mock.calls[0]?.[1] as unknown as { p_payload: unknown };
     expect(JSON.stringify(args.p_payload)).not.toContain("Ask @Ben Stanton");
@@ -93,6 +93,21 @@ describe("MENTION-1c authorization and privacy", () => {
     expect(event).toMatchObject({ eventType: "workboard.mention_created", dims: { surface: "comment", count_band: "2_4" } });
     expect(WORKBOARD_EVENT_DIMS[event.eventType]).toEqual(["surface", "count_band"]);
     expect(guardWorkboardEvent(event.eventType, event.dims)).toEqual({ keep: true, dims: event.dims });
+  });
+});
+
+describe("MENTION-FIX-1 notify results", () => {
+  it("a rejected notify records no event", async () => {
+    mocks.notify.mockResolvedValueOnce({ error: { message: "check constraint" } } as never);
+    await notifySavedMentions(memoryDb().db, profile, "eng", "workboard_node", "node", [], [ben]);
+    expect(mocks.notify).toHaveBeenCalledTimes(1);
+    expect(mocks.record).not.toHaveBeenCalled();
+  });
+  it("count_band reflects recipients actually notified", async () => {
+    mocks.notify.mockResolvedValueOnce({ error: null }).mockResolvedValueOnce({ error: { message: "check constraint" } } as never);
+    await notifySavedMentions(memoryDb({ members: ["ben", "outsider"] }).db, profile, "eng", "workboard_annotation", "comment", [], [ben, other]);
+    expect(mocks.notify).toHaveBeenCalledTimes(2);
+    expect(mocks.record.mock.calls[0]?.[1]).toMatchObject({ dims: { count_band: "1" } });
   });
 });
 

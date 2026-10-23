@@ -92,7 +92,7 @@ describe("N1 unread count", () => {
 
 describe("N1 accept a share from the bell", () => {
   it("renders a mention's two names with no acknowledgement control or body", () => {
-    mount(<NotificationPanel rows={[row({ kind: "mention_received", section: "needs_you", payload: { by: "Liam Sheridan", board: "Pricing" } })]} onChanged={() => {}} onNavigate={() => {}} />);
+    mount(<NotificationPanel rows={[row({ kind: "mention_received", section: "updates", payload: { by: "Liam Sheridan", board: "Pricing" } })]} onChanged={() => {}} onNavigate={() => {}} />);
     expect(screen.getByText("Liam Sheridan mentioned you on Pricing.")).toBeTruthy();
     expect(screen.queryAllByRole("button")).toHaveLength(0);
   });

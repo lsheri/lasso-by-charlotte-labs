@@ -4,7 +4,7 @@ export type MentionCandidate = { profileId: string; displayName: string };
 export type MentionTrigger = { start: number; end: number; query: string };
 
 export function mentionTrigger(text: string, caret: number): MentionTrigger | null {
-  const match = /(?:^|\s)@([^@\n]*)$/.exec(text.slice(0, caret));
+  const match = /(?:^|\s)@([^@\s]*)$/.exec(text.slice(0, caret));
   if (!match) return null;
   const query = match[1] ?? "";
   return { start: caret - query.length - 1, end: caret, query };
@@ -37,4 +37,8 @@ export function committedComment(text: string, mentions: readonly Mention[]) {
   const leading = text.length - text.trimStart().length;
   const body = text.trim();
   return { body, mentions: serializeMentions(clampMentions(mentions.map((mention) => ({ ...mention, start: mention.start - leading })), body.length)) };
+}
+/** Sticky editor gate: the plain mention editor is used only when someone can be mentioned. */
+export function stickyMentionCandidates(list: readonly MentionCandidate[] | undefined): readonly MentionCandidate[] | undefined {
+  return list && list.length > 0 ? list : undefined;
 }

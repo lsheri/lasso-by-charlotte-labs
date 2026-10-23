@@ -54,8 +54,10 @@ function LabStickyInner({ node, selected, editable, layoutEditable, onSelect, on
   const touched = useRef(false);
   const [fallbackText, setFallbackText] = useState<string | null>(null);
   const [plainDraft, setPlainDraft] = useState({ text: body.text, mentions: body.mentions ?? [] });
-  const plainEditing = mentionCandidates !== undefined;
   const [editing, setEditing] = useState(() => stickyStartsEditing({ selected, editable, textLength: body.text.length }));
+  // Editing mode is fixed when editing begins, so candidates arriving mid-edit never swap the editor under a draft.
+  const plainEditingRef = useRef(mentionCandidates !== undefined);
+  const plainEditing = plainEditingRef.current;
   const [formattingOpen, setFormattingOpen] = useState(false);
   useEffect(() => { if (!selected) setFormattingOpen(false); }, [selected]);
   const editingRef = useRef(editing);
@@ -69,6 +71,7 @@ function LabStickyInner({ node, selected, editable, layoutEditable, onSelect, on
     touched.current = false;
     setFallbackText(null);
     setPlainDraft({ text: body.text, mentions: body.mentions ?? [] });
+    plainEditingRef.current = mentionCandidates !== undefined;
     editingRef.current = true;
     onSelect();
     setEditing(true);
@@ -80,7 +83,7 @@ function LabStickyInner({ node, selected, editable, layoutEditable, onSelect, on
     const value = draft.current;
     draft.current = null;
     setFallbackText(null);
-    if (!value || (value.text === baseline.current.text && (plainEditing || value.html === baseline.current.html) && JSON.stringify(serializeMentions(value.mentions ?? body.mentions ?? [])) === JSON.stringify(baseline.current.mentions))) return;
+    if (!value || (value.text === baseline.current.text && (plainEditingRef.current || value.html === baseline.current.html) && JSON.stringify(serializeMentions(value.mentions ?? body.mentions ?? [])) === JSON.stringify(baseline.current.mentions))) return;
     const { html: previousHtml, ...plainBody } = body;
     const next = { ...plainBody, text: value.text, ...(value.html !== undefined ? { html: value.html } : {}), ...(value.mentions !== undefined ? { mentions: clampMentions(value.mentions, value.text.length) } : {}) };
     onChange(next);
