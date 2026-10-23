@@ -478,6 +478,15 @@ export const CORS_HEADERS: Record<string, string> = {
   "Access-Control-Max-Age": "86400",
 };
 
+/**
+ * CANARY-1: the build marker at the end of the push_conversation description.
+ * An installed client that shows this value has picked up the current
+ * description; one that shows an older value or none has not.
+ * Future changes bump the letter: oct23b, oct23c.
+ */
+export const PUSH_DESC_BUILD = "oct23a";
+
+
 type Obj = Record<string, unknown>;
 
 function rpcResult(id: unknown, result: Obj): Response {
