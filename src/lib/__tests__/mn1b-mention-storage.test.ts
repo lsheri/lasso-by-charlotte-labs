@@ -18,7 +18,7 @@ function memoryDb() {
   const writes: Record<string, unknown>[] = [];
   const db = { from(table: string) {
     const result = () => ({ data: table === "turns" ? { content: "Hello world", content_hash: "h" } : table === "workboards" ? { engagement_id: "e" } : { ...row }, error: null });
-    const chain = { select: vi.fn(() => chain), eq: vi.fn(() => chain), is: vi.fn(() => chain), insert: vi.fn((value: Record<string, unknown>) => { writes.push(value); row = { ...row, ...value }; return chain; }), update: vi.fn((value: Record<string, unknown>) => { writes.push(value); row = { ...row, ...value, version: Number(row.version) + 1 }; return chain; }), single: async () => result(), maybeSingle: async () => result() };
+    const chain = { select: vi.fn(() => chain), eq: vi.fn(() => chain), is: vi.fn(() => chain), insert: vi.fn((value: Record<string, unknown>) => { writes.push(value); row = { ...row, ...value }; return chain; }), update: vi.fn((value: Record<string, unknown>) => { writes.push(value); row = { ...row, ...value, version: Number(row["version"]) + 1 }; return chain; }), single: async () => result(), maybeSingle: async () => result() };
     return chain;
   } };
   return { db: db as unknown as SupabaseClient<Database>, writes };
@@ -42,12 +42,12 @@ describe("MENTION-1b storage", () => {
     expect(created).toMatchObject({ status: "saved", comment: { body: body.text, mentions: [mention] } });
     const edited = await editComment(db, profile, "c", `${body.text} please`, 1, [mention]);
     expect(edited).toMatchObject({ status: "saved", comment: { body: `${body.text} please`, mentions: [mention] } });
-    expect(writes.map((write) => write.mentions)).toEqual([[mention], [mention]]);
+    expect(writes.map((write) => write["mentions"])).toEqual([[mention], [mention]]);
   });
   it("replies also write and read mentions and edit removes stale offsets", async () => {
     const { db, writes } = memoryDb();
     expect(await createReply(db, profile, { parentId: "c", body: body.text, clientKey: "r", mentions: [mention] })).toMatchObject({ status: "saved", comment: { mentions: [mention] } });
     expect(await editComment(db, profile, "c", "Ask", 1, [mention])).toMatchObject({ status: "saved", comment: { body: "Ask", mentions: [] } });
-    expect(writes[1]?.mentions).toEqual([]);
+    expect(writes[1]?.["mentions"]).toEqual([]);
   });
 });
