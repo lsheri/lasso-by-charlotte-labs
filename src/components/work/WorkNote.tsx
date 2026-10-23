@@ -17,6 +17,7 @@ import { formatCardDate, formatDate, type WorkItemRow } from "@/lib/work-types";
 /** The shared Ledger preview card used anywhere one piece of work is shown. */
 export function WorkNote({
   item,
+  parent,
   onOpen,
   lead,
   actions,
@@ -35,6 +36,7 @@ export function WorkNote({
   /** BI-1b: the board opens on double-click; every other caller keeps single click. */
   openOn?: "click" | "doubleClick";
   item: Omit<WorkItemRow, "work_item_tasks"> & { work_item_tasks?: WorkItemRow["work_item_tasks"] };
+  parent?: WorkItemRow | null | undefined;
   onOpen?: (() => void) | undefined;
   lead?: React.ReactNode;
   actions?: React.ReactNode;
@@ -146,14 +148,14 @@ export function WorkNote({
         <div className={`flex ${headerGutter ? "canvas-card-footer" : "mt-1 h-[16px] gap-2 border-t border-hairline pt-1"} shrink-0 select-none items-center`}>
           <span className={`min-w-0 flex-1 truncate ${headerGutter ? "canvas-card-provenance" : "text-[9px] text-muted-foreground"}`} onClick={(event) => event.stopPropagation()}>
             {item.type === "ai_thread" || pastedChatUrl((item as WorkItemRow).meta?.chat_url) ? (
-              <ChatUrlLink item={item as WorkItemRow} showAbsence turnCount={chatPreview?.turnCount} toolSteps={chatPreview?.toolSteps} />
+              <ChatUrlLink item={item as WorkItemRow} parent={parent} showAbsence turnCount={chatPreview?.turnCount} toolSteps={chatPreview?.toolSteps} />
             ) : sourceUrl ? (
               <a href={sourceUrl} target="_blank" rel="noopener noreferrer" className="canvas-card-url inline-flex max-w-full items-center gap-1">
                 <ExternalLink className="h-2.5 w-2.5 shrink-0" aria-hidden />
                 <span className="truncate">{sourceUrl}</span>
               </a>
             ) : (
-              <ChatUrlLink item={item as WorkItemRow} showAbsence turnCount={chatPreview?.turnCount} toolSteps={chatPreview?.toolSteps} />
+              <ChatUrlLink item={item as WorkItemRow} parent={parent} showAbsence turnCount={chatPreview?.turnCount} toolSteps={chatPreview?.toolSteps} />
             )}
           </span>
           {boardTitle ? <span className={`min-w-0 truncate ${headerGutter ? "canvas-card-chip" : "rounded-[3px] border border-hairline px-1 font-mono text-[8.5px] uppercase tracking-[0.08em] text-muted-foreground"}`}>{boardTitle}</span> : null}

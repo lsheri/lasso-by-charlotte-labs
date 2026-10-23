@@ -16,6 +16,7 @@ import type { WorkboardCardPreview, WorkboardDisplayMode, WorkboardFilePreview }
 
 export function WorkRow({
   item,
+  parent,
   actions,
   onOpen,
   chips,
@@ -32,6 +33,7 @@ export function WorkRow({
   cardWidth,
 }: {
   item: WorkItemRow;
+  parent?: WorkItemRow | null | undefined;
   actions: React.ReactNode;
   clientLabel?: string | null | undefined;
   onOpen?: (() => void) | undefined;
@@ -84,6 +86,7 @@ export function WorkRow({
           </div>
         ) : <WorkNote
           item={item}
+          parent={parent}
           onOpen={onOpen}
           lead={lead}
           clientLabel={clientLabel}

@@ -213,7 +213,7 @@ export function PeekBody({
           {sourceLabel(active.source)} · {formatDate(effectiveWorkDate(active))}
         </p>
         <p className="mt-1">
-          <ChatUrlLink item={active} showAbsence />
+          <ChatUrlLink item={active} parent={active.type !== "ai_thread" && active.orig_conversation_id ? items.find((item) => item.type === "ai_thread" && item.orig_conversation_id === active.orig_conversation_id && item.owner_id === active.owner_id) : undefined} showAbsence />
         </p>
         <p className="mt-1">
           {link ? (

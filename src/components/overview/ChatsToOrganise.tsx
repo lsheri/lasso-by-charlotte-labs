@@ -26,6 +26,7 @@ function Queue({
   count,
   note,
   entries,
+  items,
   remainderTestId,
   headerAction,
   cardAction,
@@ -35,6 +36,7 @@ function Queue({
   count?: number;
   note?: string;
   entries: Entry[];
+  items: WorkItemRow[];
   remainderTestId: string;
   headerAction?: ReactNode;
   cardAction: (entry: Entry) => ReactNode;
@@ -78,6 +80,7 @@ function Queue({
             <WorkNote
               key={entry.id}
               item={entry}
+              parent={entry.type !== "ai_thread" && entry.orig_conversation_id ? items.find((item) => item.type === "ai_thread" && item.orig_conversation_id === entry.orig_conversation_id && item.owner_id === entry.owner_id) : undefined}
               {...(onOpen ? { onOpen: () => onOpen(entry, entry) } : {})}
               actions={cardAction(entry)}
             />
@@ -134,6 +137,7 @@ export function ChatsToOrganise({
               filter's empty state. */}
           <Queue
             entries={unclaimed}
+            items={items}
             remainderTestId="overview-chats-remainder"
             onOpen={onOpen}
             cardAction={(entry) => (
@@ -156,6 +160,7 @@ export function ChatsToOrganise({
             count={awaiting.length}
             note="You have said whose these are. They still need a place in the work."
             entries={awaiting}
+            items={items}
             remainderTestId="overview-chats-awaiting-remainder"
             onOpen={onOpen}
             headerAction={

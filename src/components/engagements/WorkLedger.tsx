@@ -167,7 +167,7 @@ export function WorkLedger({
             <ul className="nb-paper-wall mt-3" data-testid="linked-source-notes">
               {sources.map((item) => (
                 <li key={item.id}>
-                  <WorkNote item={item} onOpen={() => onOpen(item)} />
+                  <WorkNote item={item} parent={item.type !== "ai_thread" && item.orig_conversation_id ? items.find((candidate) => candidate.type === "ai_thread" && candidate.orig_conversation_id === item.orig_conversation_id && candidate.owner_id === item.owner_id) : undefined} onOpen={() => onOpen(item)} />
                 </li>
               ))}
             </ul>

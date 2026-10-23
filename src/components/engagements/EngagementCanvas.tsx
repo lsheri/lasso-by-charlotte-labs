@@ -558,6 +558,7 @@ export function EngagementCanvas({
                         >
                           <WorkNote
                             item={item}
+                            parent={item.type !== "ai_thread" && item.orig_conversation_id ? Array.from(cards.values()).find((candidate) => candidate.work_items.type === "ai_thread" && candidate.work_items.orig_conversation_id === item.orig_conversation_id && candidate.work_items.owner_id === item.owner_id)?.work_items : undefined}
                             dense
                             className="w-full"
                             onOpen={() => {
