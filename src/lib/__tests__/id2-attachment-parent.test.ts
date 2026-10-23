@@ -158,6 +158,18 @@ describe("ID-2 turn link", () => {
     expect(attachmentRows()[0]!["produced_at_turn_id"]).toBe(turn1["id"]);
   });
 
+  it("leaves it null when the position does not exist or was not named", async () => {
+    await push(base({
+      attachments: [
+        { kind: "artifact_markdown", title: "Plan", source_artifact_id: "a1", content: ART, produced_at_turn: 9 },
+        { kind: "artifact_markdown", title: "Other", source_artifact_id: "a2", content: `${ART} Second.` },
+      ],
+    }));
+    for (const row of attachmentRows()) expect(row["produced_at_turn_id"] ?? null).toBeNull();
+    expect(events.find((e) => e.eventType === "mcp.push")!.dims["turn_linked_attachments"]).toBe("0");
+  });
+});
+
 describe("TURN-MIRROR source_meta position", () => {
   it("stores the named position as a positive integer on an attachment", async () => {
     await push(base({ attachments: [{ kind: "artifact_markdown", title: "Plan", source_artifact_id: "a1", content: ART, produced_at_turn: 2 }] }));
