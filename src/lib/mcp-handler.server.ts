@@ -2899,6 +2899,7 @@ export async function pushConversation(
           source_artifact_id: attachment.sourceArtifactId,
           chars: attachment.content.length,
           duplicate_of_transcript: false,
+          ...(turnPosition !== undefined ? { produced_at_turn: turnPosition } : {}),
         } as unknown as Json,
         // CU1: keep what the person set on this row (deliverable kind, portfolio,
         // chat link, item text) across a re-push, as the thread does above.
