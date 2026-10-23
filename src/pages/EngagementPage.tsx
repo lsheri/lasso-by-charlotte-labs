@@ -711,7 +711,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
                     </h2>
                     <div className="nb-paper-wall">
                       {boardDefaultItems.map((item) => (
-                        <WorkNote key={item.id} item={item} onOpen={() => openPeek(item)} />
+                        <WorkNote key={item.id} item={item} parent={item.type !== "ai_thread" && item.orig_conversation_id ? canvasItems.find((candidate) => candidate.type === "ai_thread" && candidate.orig_conversation_id === item.orig_conversation_id && candidate.owner_id === item.owner_id) : undefined} onOpen={() => openPeek(item)} />
                       ))}
                     </div>
                   </section>
@@ -769,6 +769,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
                         <WorkNote
                           key={item.id}
                           item={item}
+                          parent={item.type !== "ai_thread" && item.orig_conversation_id ? canvasItems.find((candidate) => candidate.type === "ai_thread" && candidate.orig_conversation_id === item.orig_conversation_id && candidate.owner_id === item.owner_id) : undefined}
                           onOpen={() => openPeek(item)}
                         />
                       ))}

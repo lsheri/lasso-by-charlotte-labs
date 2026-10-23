@@ -60,7 +60,7 @@ export function PartnerSharedBoardPage({ boardId }: { boardId: string }) {
       <p className="mt-1 text-[13px] text-muted-foreground">{SHARED_BOARD_COPY.sharedBy(board.shared_by)}</p>
       <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {(pieces.data ?? []).map((item) => (
-          <WorkNote key={item.id} item={item} />
+          <WorkNote key={item.id} item={item} parent={item.type !== "ai_thread" && item.orig_conversation_id ? pieces.data?.find((candidate) => candidate.type === "ai_thread" && candidate.orig_conversation_id === item.orig_conversation_id && candidate.owner_id === item.owner_id) : undefined} />
         ))}
       </div>
       {pieces.isSuccess && pieces.data.length === 0 ? (

@@ -56,6 +56,7 @@ import type { TeammateMark } from "@/lib/teammate-mark";
 function LabCardInner({
   node,
   item,
+  parent,
   selected,
   previewSelected = false,
   focused,
@@ -110,6 +111,7 @@ function LabCardInner({
 }: {
   node: LabNode;
   item?: WorkItemRow | undefined;
+  parent?: WorkItemRow | null | undefined;
   selected: boolean;
   previewSelected?: boolean;
   focused: boolean;
@@ -364,14 +366,14 @@ function LabCardInner({
             provenance={
           <span className={`min-w-0 flex-1 truncate ${headerGutter ? "canvas-card-provenance" : "text-[9px] text-muted-foreground"}`} onClick={(event) => event.stopPropagation()}>
             {item.type === "ai_thread" || pastedChatUrl((item as WorkItemRow).meta?.chat_url) ? (
-              <ChatUrlLink item={item as WorkItemRow} showAbsence turnCount={chatPreview?.turnCount} toolSteps={chatPreview?.toolSteps} />
+              <ChatUrlLink item={item as WorkItemRow} parent={parent} showAbsence turnCount={chatPreview?.turnCount} toolSteps={chatPreview?.toolSteps} />
             ) : sourceUrl ? (
               <a href={sourceUrl} target="_blank" rel="noopener noreferrer" className="canvas-card-url inline-flex max-w-full items-center gap-1">
                 <ExternalLink className="h-2.5 w-2.5 shrink-0" aria-hidden />
                 <span className="truncate">{sourceUrl}</span>
               </a>
             ) : (
-              <ChatUrlLink item={item as WorkItemRow} showAbsence turnCount={chatPreview?.turnCount} toolSteps={chatPreview?.toolSteps} />
+              <ChatUrlLink item={item as WorkItemRow} parent={parent} showAbsence turnCount={chatPreview?.turnCount} toolSteps={chatPreview?.toolSteps} />
             )}
           </span>
             }
@@ -379,6 +381,7 @@ function LabCardInner({
         ) : item ? (
           <WorkNote
             item={item}
+            parent={parent}
             chatPreview={preview}
             filePreview={filePreview}
             className="h-full"

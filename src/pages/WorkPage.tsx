@@ -675,6 +675,7 @@ export function WorkPage() {
       <WorkRow
         key={entry.id}
         item={entry}
+        parent={entry.type !== "ai_thread" && entry.orig_conversation_id ? all.find((item) => item.type === "ai_thread" && item.orig_conversation_id === entry.orig_conversation_id && item.owner_id === entry.owner_id) : undefined}
         cardWidth={cardWidth}
         dense
         displayMode="preview"
