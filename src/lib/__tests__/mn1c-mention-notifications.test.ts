@@ -130,7 +130,7 @@ describe("MENTION-1c save boundaries", () => {
     const { db } = memoryDb();
     const before = await captureStickyMentions(db, "eng", { type: "materialize", frames: [], nodes: [{ clientKey: "local", frameKey: null, kind: "sticky", body: stickyBody(), x: 0, y: 0, w: 200, h: 160 }] });
     await notifySavedStickies(db, profile, "eng", before, { status: "saved", boardId: "wb", boardVersion: 1, created: { nodes: { local: "node" } }, versions: {} });
-    expect(mocks.notify.mock.calls[0]?.[1]).toMatchObject({ p_subject_id: "node" });
+    expect(mocks.notify.mock.calls[0]?.[1]).toMatchObject({ p_subject_type: "engagement", p_subject_id: "eng", p_group_key: "mention:workboard_node:node:ben" });
   });
   it("comment create and reply notify, unchanged edits do not", async () => {
     const { db } = memoryDb();
