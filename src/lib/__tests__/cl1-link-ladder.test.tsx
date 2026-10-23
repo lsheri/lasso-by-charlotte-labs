@@ -5,6 +5,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { ChatUrlLink } from "@/components/work/ChatUrlLink";
+import { WorkNote } from "@/components/work/WorkNote";
 import { chatLinkLabel, deriveChatUrl, deriveProjectUrl, itemChatLink, itemChatUrl, safeChatUrl } from "@/lib/chat-url";
 import { inheritedConversationUrl } from "@/lib/mcp-push-url";
 import type { WorkItemRow } from "@/lib/work-types";
@@ -83,6 +84,16 @@ describe("CL-1 ladder", () => {
   it("uses the parent's pushed and derived rungs after its pasted rung", () => {
     expect(itemChatLink(item(), item({ source_meta: { url: "https://claude.ai/chat/pushed" }, orig_conversation_id: V4 }))).toEqual({ url: "https://claude.ai/chat/pushed", kind: "conversation" });
     expect(itemChatLink(item(), item({ orig_conversation_id: V4 }))).toEqual({ url: `https://claude.ai/chat/${V4}`, kind: "conversation" });
+  });
+  it("keeps the item's pasted and derived links ahead of all parent links", () => {
+    const parent = item({ meta: { chat_url: "https://claude.ai/chat/parent" } });
+    expect(itemChatLink(item({ meta: { chat_url: "https://claude.ai/chat/own" } }), parent)).toEqual({ url: "https://claude.ai/chat/own", kind: "pasted" });
+    expect(itemChatLink(item({ orig_conversation_id: V4 }), parent)).toEqual({ url: `https://claude.ai/chat/${V4}`, kind: "conversation" });
+  });
+  it("passes the loaded parent through the shared work card", () => {
+    const parent = item({ meta: { chat_url: `https://claude.ai/chat/${V4}` } });
+    render(<WorkNote item={item({ type: "document", meta: { chat_url: null }, orig_conversation_id: "research-slug", source_meta: { source_project: { id: PROJECT } } })} parent={parent} />);
+    expect(screen.getByRole("link", { name: "Open in Claude" }).getAttribute("href")).toBe(parent.meta?.chat_url);
   });
   it("an inherited front door is not stored", () => {
     expect(inheritedConversationUrl({ url: "https://claude.ai/" })).toBeNull();
