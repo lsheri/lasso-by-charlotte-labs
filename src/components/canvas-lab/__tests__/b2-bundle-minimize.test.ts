@@ -101,7 +101,7 @@ describe("B2 board wiring", () => {
 describe("B2.1 a minimized chat still carries its pieces", () => {
   const page = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
   it("moveToFrame looks pieces up in the stored list, never visibleNodes", () => {
-    const body = page.slice(page.indexOf("function moveToFrame("), page.indexOf("function addNode("));
+    const body = page.slice(page.indexOf("function moveToFrame("), page.indexOf("function addJudgment("));
     expect(body).toContain("const pieceIds = bundles.get(node.id) ?? [];");
     expect(body).toContain("pieceIds.map((id) => allNodes.find((entry) => entry.id === id))");
     expect(body).not.toContain("visibleNodes");
