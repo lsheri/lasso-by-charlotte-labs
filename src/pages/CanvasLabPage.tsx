@@ -584,13 +584,13 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   /** VENDOR-COLOUR-1: chat NODE id -> source_vendor, so stems, pieces and stack edges take the chat's colour. */
   const vendorByChat = useMemo(() => {
     const map = new Map<string, string | null>();
-    for (const node of shownNodes) {
-      if (node.kind !== "chat" || !node.workItemId) continue;
-      const item = boardItems.find((entry) => entry.id === node.workItemId);
-      map.set(node.id, item?.source_vendor ?? null);
+    for (const chatId of bundles.keys()) {
+      const node = shownNodes.find((entry) => entry.id === chatId);
+      const item = node?.workItemId ? boardItems.find((entry) => entry.id === node.workItemId) : undefined;
+      map.set(chatId, item?.source_vendor ?? null);
     }
     return map;
-  }, [shownNodes, boardItems]);
+  }, [bundles, shownNodes, boardItems]);
   const pieceChat = useMemo(() => dockedPieceChats(bundles), [bundles]);
   const pieceChatRef = useRef(pieceChat);
   pieceChatRef.current = pieceChat;
