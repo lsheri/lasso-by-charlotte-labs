@@ -370,7 +370,7 @@ function LabCardInner({
                 <GraphiteIcon name="messages" size={11} animate={false} />{commentCount}
               </button>
             ) : undefined}
-            provenance={textFace ? null :
+            provenance={textFace && (item.type === "ai_thread" || pastedChatUrl(item.meta?.chat_url) || !sourceUrl) ? null :
           <span className={`min-w-0 flex-1 truncate ${headerGutter ? "canvas-card-provenance" : "text-[9px] text-muted-foreground"}`} onClick={(event) => event.stopPropagation()}>
             {item.type === "ai_thread" || pastedChatUrl((item as WorkItemRow).meta?.chat_url) ? (
               <ChatUrlLink item={item as WorkItemRow} parent={parent} showAbsence turnCount={chatPreview?.turnCount} toolSteps={chatPreview?.toolSteps} />
