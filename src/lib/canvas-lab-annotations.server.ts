@@ -1,3 +1,5 @@
+import { committedComment } from "@/lib/mention-editor";
+import { parseMentions, type Mention } from "@/lib/mention-shared";
 /**
  * Slice 2a unit 1: highlights on chat turns, server side.
  *
@@ -286,7 +288,7 @@ export async function setHighlightVisibility(
  * ---------------------------------------------------------------------- */
 
 const COMMENT_COLUMNS =
-  "id, parent_id, work_item_id, turn_no, char_start, char_end, excerpt, turn_hash, body, author_profile_id, version, created_at, updated_at";
+  "id, parent_id, work_item_id, turn_no, char_start, char_end, excerpt, turn_hash, body, mentions, author_profile_id, version, created_at, updated_at";
 
 type CommentRow = {
   id: string;
@@ -298,6 +300,7 @@ type CommentRow = {
   excerpt: string | null;
   turn_hash: string | null;
   body: string | null;
+  mentions?: unknown;
   author_profile_id: string;
   version: number;
   created_at: string;
@@ -317,6 +320,7 @@ function commentDto(
     authorName,
     isMine: row.author_profile_id === viewerProfileId,
     body: row.body ?? "",
+    mentions: parseMentions(row.mentions),
     excerpt: row.excerpt ?? "",
     turnNo: row.turn_no,
     charStart: row.char_start,
@@ -341,7 +345,7 @@ function commentDbError(message: string | undefined): CommentMutationResult {
   return { status: "validation_error", message: "That comment could not be saved." };
 }
 
-export type CreateCommentInput = CreateHighlightInput & { body: string };
+export type CreateCommentInput = CreateHighlightInput & { body: string; mentions?: Mention[] };
 
 export async function createComment(
   db: Db,
@@ -388,7 +392,7 @@ export async function createComment(
       char_end: input.charEnd,
       excerpt,
       text_hash: textHash,
-      body: input.body.trim(),
+      ...committedComment(input.body, input.mentions ?? []),
       visibility: "engagement",
       author_profile_id: profile.id,
       created_by: profile.id,
@@ -419,7 +423,7 @@ export async function createComment(
 export async function createReply(
   db: Db,
   profile: ResolvedProfile,
-  input: { parentId: string; body: string; clientKey: string },
+  input: { parentId: string; body: string; clientKey: string; mentions?: Mention[] },
 ): Promise<CommentMutationResult> {
   profile = await seatForAnnotation(db, input.parentId, profile);
   if (!input.parentId || !input.clientKey) {
@@ -451,7 +455,7 @@ export async function createReply(
       anchor_kind: "item",
       // The DB forces the parent's visibility; sending it keeps the row shape complete.
       visibility: parent.visibility,
-      body: input.body.trim(),
+      ...committedComment(input.body, input.mentions ?? []),
       excerpt: "",
       author_profile_id: profile.id,
       created_by: profile.id,
@@ -483,6 +487,7 @@ export async function editComment(
   id: string,
   body: string,
   expectedVersion: number,
+  mentions: readonly Mention[] = [],
 ): Promise<CommentMutationResult> {
   profile = await seatForAnnotation(db, id, profile);
   if (!id || !Number.isInteger(expectedVersion)) {
@@ -493,7 +498,7 @@ export async function editComment(
 
   const { data, error } = await db
     .from("workboard_annotations")
-    .update({ body: body.trim(), updated_by: profile.id })
+    .update({ ...committedComment(body, mentions), updated_by: profile.id })
     .eq("id", id)
     .eq("version", expectedVersion)
     .is("archived_at", null)

@@ -9,6 +9,7 @@
  * instructions are not part of Slice 1 and stay browser-local.
  */
 
+import { clampMentions, parseMentions, serializeMentions, type Mention } from "@/lib/mention-shared";
 import { richToPlainText } from "@/lib/rich-text";
 
 export type WorkboardNodeKind = "brief" | "work_item" | "decision" | "judgment" | "draft" | "shape" | "text" | "mark" | "answer" | "sticky" | "image";
@@ -116,7 +117,7 @@ export function parseWorkboardTextBody(value: unknown): WorkboardTextBody | null
   }
 }
 
-export type WorkboardStickyBody = WorkboardTextBody & { fill: WorkboardStickyFill };
+export type WorkboardStickyBody = WorkboardTextBody & { fill: WorkboardStickyFill; mentions?: Mention[] };
 
 export function parseWorkboardStickyBody(value: unknown): WorkboardStickyBody | null {
   if (typeof value !== "string") return null;
@@ -124,12 +125,12 @@ export function parseWorkboardStickyBody(value: unknown): WorkboardStickyBody | 
     const parsed = JSON.parse(value) as unknown;
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return null;
     const body = parsed as Record<string, unknown>;
-    const keys = Object.keys(body).sort().join(",");
+    const keys = Object.keys(body).filter((key) => key !== "mentions").sort().join(",");
     if (keys !== "colour,fill,size,text,weight" && keys !== "colour,fill,html,size,text,weight") return null;
     if (!WORKBOARD_STICKY_FILLS.includes(body["fill"] as WorkboardStickyFill)) return null;
-    const { fill, ...rest } = body;
+    const { fill, mentions, ...rest } = body;
     const text = parseWorkboardTextBody(JSON.stringify(rest));
-    return text ? { ...text, fill: fill as WorkboardStickyFill } : null;
+    return text ? { ...text, fill: fill as WorkboardStickyFill, ...("mentions" in body ? { mentions: parseMentions(mentions) } : {}) } : null;
   } catch {
     return null;
   }
@@ -137,7 +138,7 @@ export function parseWorkboardStickyBody(value: unknown): WorkboardStickyBody | 
 
 export function serializeWorkboardStickyBody(body: WorkboardStickyBody): string {
   const text = body.html !== undefined && typeof document !== "undefined" ? richToPlainText(body.html) : body.text;
-  return JSON.stringify({ text, size: body.size, weight: body.weight, colour: body.colour, fill: body.fill, ...(body.html !== undefined ? { html: body.html } : {}) });
+  return JSON.stringify({ text, size: body.size, weight: body.weight, colour: body.colour, fill: body.fill, ...(body.mentions !== undefined ? { mentions: serializeMentions(clampMentions(body.mentions, text.length)) } : {}), ...(body.html !== undefined ? { html: body.html } : {}) });
 }
 
 export function serializeWorkboardTextBody(body: WorkboardTextBody): string {

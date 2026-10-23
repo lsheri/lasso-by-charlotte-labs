@@ -1,3 +1,4 @@
+import { parseMentions, type Mention } from "@/lib/mention-shared";
 /**
  * Canvas Lab Phase 3 Slice 1: authenticated Workboard entry points.
  * Identity comes from the verified session; a client-sent profile id is a
@@ -200,6 +201,7 @@ export const createCommentFn = createServerFn({ method: "POST" })
       char_start: number;
       char_end: number;
       body: string;
+      mentions?: Mention[];
       client_key: string;
       profile_id?: string;
     }) => ({
@@ -209,6 +211,7 @@ export const createCommentFn = createServerFn({ method: "POST" })
       char_start: typeof input?.char_start === "number" ? input.char_start : Number.NaN,
       char_end: typeof input?.char_end === "number" ? input.char_end : Number.NaN,
       body: typeof input?.body === "string" ? input.body : "",
+      mentions: parseMentions(input?.mentions),
       client_key: typeof input?.client_key === "string" ? input.client_key : "",
       profile_id: typeof input?.profile_id === "string" ? input.profile_id : undefined,
     }),
@@ -225,15 +228,17 @@ export const createCommentFn = createServerFn({ method: "POST" })
       charStart: data.char_start,
       charEnd: data.char_end,
       body: data.body,
+      mentions: data.mentions,
       clientKey: data.client_key,
     });
   });
 
 export const createReplyFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { parent_id: string; body: string; client_key: string; profile_id?: string }) => ({
+  .inputValidator((input: { parent_id: string; body: string; mentions?: Mention[]; client_key: string; profile_id?: string }) => ({
     parent_id: typeof input?.parent_id === "string" ? input.parent_id : "",
     body: typeof input?.body === "string" ? input.body : "",
+      mentions: parseMentions(input?.mentions),
     client_key: typeof input?.client_key === "string" ? input.client_key : "",
     profile_id: typeof input?.profile_id === "string" ? input.profile_id : undefined,
   }))
@@ -245,15 +250,17 @@ export const createReplyFn = createServerFn({ method: "POST" })
     return createReply(supabase, profile, {
       parentId: data.parent_id,
       body: data.body,
+      mentions: data.mentions,
       clientKey: data.client_key,
     });
   });
 
 export const editCommentFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { id: string; body: string; expected_version: number; profile_id?: string }) => ({
+  .inputValidator((input: { id: string; body: string; mentions?: Mention[]; expected_version: number; profile_id?: string }) => ({
     id: typeof input?.id === "string" ? input.id : "",
     body: typeof input?.body === "string" ? input.body : "",
+      mentions: parseMentions(input?.mentions),
     expected_version: typeof input?.expected_version === "number" ? input.expected_version : Number.NaN,
     profile_id: typeof input?.profile_id === "string" ? input.profile_id : undefined,
   }))
@@ -262,7 +269,7 @@ export const editCommentFn = createServerFn({ method: "POST" })
     const profile = await resolveProfile(supabase, userId, data.profile_id);
     if (!profile) return { status: "forbidden" };
     const { editComment } = await import("@/lib/canvas-lab-annotations.server");
-    return editComment(supabase, profile, data.id, data.body, data.expected_version);
+    return editComment(supabase, profile, data.id, data.body, data.expected_version, data.mentions);
   });
 
 export const archiveCommentFn = createServerFn({ method: "POST" })

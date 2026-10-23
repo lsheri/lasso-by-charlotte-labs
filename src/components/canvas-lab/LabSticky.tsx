@@ -1,3 +1,6 @@
+import { MentionTextEditor } from "@/components/canvas-lab/MentionTextEditor";
+import { clampMentions, type Mention } from "@/lib/mention-shared";
+import type { MentionCandidate } from "@/lib/mention-editor";
 import { stableMemo } from "@/components/canvas-lab/stable-memo";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent } from "react";
@@ -22,7 +25,7 @@ const RichTextEditor = lazy(() => import("@/components/rich-text/RichTextEditor"
 const CORNERS: LabResizeCorner[] = ["nw", "ne", "se", "sw"];
 
 export function stickyBodyOf(node: LabNode): WorkboardStickyBody {
-  return { text: node.summary, ...(node.html !== undefined ? { html: node.html } : {}), size: node.textSize ?? "body", weight: node.textWeight ?? "regular", colour: node.textColour ?? "ink", fill: node.stickyFill ?? "yellow" };
+  return { text: node.summary, ...(node.mentions !== undefined ? { mentions: node.mentions } : {}), ...(node.html !== undefined ? { html: node.html } : {}), size: node.textSize ?? "body", weight: node.textWeight ?? "regular", colour: node.textColour ?? "ink", fill: node.stickyFill ?? "yellow" };
 }
 
 /**
@@ -30,8 +33,9 @@ export function stickyBodyOf(node: LabNode): WorkboardStickyBody {
  * mark, no engagement edge, no fold. The sticky never grows on its own; the
  * words scroll inside it.
  */
-function LabStickyInner({ node, selected, editable, layoutEditable, onSelect, onDragStart, onResizeStart, onResizeKeyDown, onResizeKeyUp, onChange, onCommit, onRemove }: {
+function LabStickyInner({ node, selected, editable, layoutEditable, onSelect, onDragStart, onResizeStart, onResizeKeyDown, onResizeKeyUp, onChange, onCommit, onRemove, mentionCandidates }: {
   node: LabNode;
+  mentionCandidates?: readonly MentionCandidate[];
   selected: boolean;
   editable: boolean;
   layoutEditable: boolean;
@@ -46,9 +50,11 @@ function LabStickyInner({ node, selected, editable, layoutEditable, onSelect, on
 }) {
   const body: WorkboardStickyBody = stickyBodyOf(node);
   // Drafts stay inside this node until the existing commit callback runs.
-  const draft = useRef<{ html: string; text: string } | null>(null);
+  const draft = useRef<{ html?: string; text: string; mentions?: Mention[] } | null>(null);
   const touched = useRef(false);
   const [fallbackText, setFallbackText] = useState<string | null>(null);
+  const [plainDraft, setPlainDraft] = useState({ text: body.text, mentions: body.mentions ?? [] });
+  const plainEditing = mentionCandidates !== undefined;
   const [editing, setEditing] = useState(() => stickyStartsEditing({ selected, editable, textLength: body.text.length }));
   const [formattingOpen, setFormattingOpen] = useState(false);
   useEffect(() => { if (!selected) setFormattingOpen(false); }, [selected]);
@@ -62,6 +68,7 @@ function LabStickyInner({ node, selected, editable, layoutEditable, onSelect, on
     draft.current = null;
     touched.current = false;
     setFallbackText(null);
+    setPlainDraft({ text: body.text, mentions: body.mentions ?? [] });
     editingRef.current = true;
     onSelect();
     setEditing(true);
@@ -74,12 +81,12 @@ function LabStickyInner({ node, selected, editable, layoutEditable, onSelect, on
     draft.current = null;
     setFallbackText(null);
     if (!value || (value.text === baseline.current.text && value.html === baseline.current.html)) return;
-    const next = { ...body, text: value.text, html: value.html };
+    const next = { ...body, text: value.text, html: value.html, ...(value.mentions !== undefined ? { mentions: clampMentions(value.mentions, value.text.length) } : {}) };
     onChange(next);
     onCommit(next, "text");
   };
   const style = { left: node.x, top: node.y, width: node.width, height: node.height } satisfies CSSProperties;
-  const choose = (patch: Partial<WorkboardStickyBody>, field: "style" | "fill") => { const next = { ...body, ...patch }; onChange(next); onCommit(next, field); };
+  const choose = (patch: Partial<WorkboardStickyBody>, field: "style" | "fill") => { const next = { ...body, ...patch, ...(body.mentions !== undefined ? { mentions: clampMentions(body.mentions, body.text.length) } : {}) }; onChange(next); onCommit(next, field); };
   return (
     <section ref={sectionRef} data-editing={editing} data-testid={`sticky-${node.id}`} data-selected={selected} data-colour={body.colour} data-fill={body.fill} data-size={body.size} data-weight={body.weight} aria-label="Sticky" tabIndex={0} className="canvas-lab-sticky absolute" style={style} onFocus={onSelect} onDoubleClick={() => { if (stickyTriggerEntersEdit("doubleClick", editable)) enterEdit(); }} onPointerDown={(event) => { if (editing) return; if (!selected) onSelect(); onDragStart(event); }}>
       {(["top", "right", "bottom", "left"] as const).map((edge) => <span key={edge} aria-hidden="true" className="canvas-lab-text-block-edge" data-edge={edge} onPointerDown={(event) => { event.stopPropagation(); onSelect(); onDragStart(event); }} />)}
@@ -96,7 +103,7 @@ function LabStickyInner({ node, selected, editable, layoutEditable, onSelect, on
         .canvas-lab-sticky[data-weight="regular"] .node-rich .rich-text { font-weight: 400; }.canvas-lab-sticky[data-weight="medium"] .node-rich .rich-text { font-weight: 500; }.canvas-lab-sticky[data-weight="bold"] .node-rich .rich-text { font-weight: 700; }
         .canvas-lab-sticky[data-colour="ink"] .node-rich .rich-text { color: var(--nb-ink); }.canvas-lab-sticky[data-colour="graphite"] .node-rich .rich-text { color: var(--nb-graphite); }.canvas-lab-sticky[data-colour="mid"] .node-rich .rich-text { color: var(--nb-mid); }.canvas-lab-sticky[data-colour="green"] .node-rich .rich-text { color: var(--nb-green); }.canvas-lab-sticky[data-colour="blue"] .node-rich .rich-text { color: var(--nb-blue); }
       `}</style>
-      {editing ? <div className="node-rich" onInputCapture={() => { touched.current = true; }} onClickCapture={() => { touched.current = true; }} onKeyDownCapture={(event) => { if (event.key !== "Escape") touched.current = true; }} onPointerDown={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+      {editing && plainEditing ? <MentionTextEditor text={plainDraft.text} mentions={plainDraft.mentions} candidates={mentionCandidates ?? []} label="Sticky words" placeholder="Write here" maxLength={WORKBOARD_TEXT_MAX_LENGTH} className="h-full resize-none text-base" onChange={(text, mentions) => { draft.current = { text, mentions }; setPlainDraft({ text, mentions }); }} onDone={finish} /> : editing ? <div className="node-rich" onInputCapture={() => { touched.current = true; }} onClickCapture={() => { touched.current = true; }} onKeyDownCapture={(event) => { if (event.key !== "Escape") touched.current = true; }} onPointerDown={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
         <Suspense fallback={<textarea aria-label="Sticky words" autoFocus maxLength={WORKBOARD_TEXT_MAX_LENGTH} value={fallbackText ?? body.text} placeholder="Write here"
           onChange={(event) => { const text = event.target.value; draft.current = { text, html: plainToRichHtml(text) }; setFallbackText(text); }}
           onBlur={finish} onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); finish(); } }} />}>
