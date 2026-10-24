@@ -493,7 +493,7 @@ export const CORS_HEADERS: Record<string, string> = {
  * description; one that shows an older value or none has not.
  * Future changes bump the letter: oct23b, oct23c.
  */
-export const PUSH_DESC_BUILD = "oct23b";
+export const PUSH_DESC_BUILD = "oct24a";
 
 
 type Obj = Record<string, unknown>;
@@ -1013,7 +1013,7 @@ const pushTools = (vocab: McpVocab) => [
                       sha256: { type: "string", description: "64 hex characters, of the rendition text." },
                       slides: {
                         type: "array",
-                        description: "When the file is a deck, a list of its slides, each with its title, its bullets and its speaker notes.",
+                        description: "One entry per slide, in slide order, each with its title, its bullets and its speaker notes.",
                         items: {
                           type: "object",
                           properties: {
