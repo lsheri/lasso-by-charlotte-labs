@@ -1975,7 +1975,24 @@ export async function createBoard(
   if (result.status === "created" || result.status === "existing") {
     await noteCreated(owner, "board", result.status);
   }
-  return textResult(id, renderBoardResult(vocab, result, match.name));
+  // WS-FRAME-1: a board made here shows its first workstream only once its
+  // outline is drawn. A draw failure is said out loud, never swallowed.
+  let frameNote = "";
+  if (result.status === "created" && result.task_id) {
+    const engagementId = result.engagement_id ?? (await engagementIdForCode(result.code));
+    const drawn = engagementId
+      ? await drawWorkstreamFrame({
+          engagementId,
+          profileId: owner.profileId,
+          taskId: result.task_id,
+          name: result.workstream ?? title,
+        })
+      : { status: "failed" as const, reason: "frame" };
+    if (drawn.status === "failed") {
+      frameNote = ` Its first ${vocab.workstream} was made but could not be drawn on the board yet.`;
+    }
+  }
+  return textResult(id, renderBoardResult(vocab, result, match.name) + frameNote);
 }
 
 async function listEngagements(owner: Owner, id: unknown): Promise<Response> {
