@@ -208,7 +208,9 @@ export const browseWisprMeetings = createServerFn({ method: "POST" })
         const seen = await importedWisprIds(supabase, profile.id);
         const term = data.search?.trim().toLowerCase();
         return {
-          items: meetings
+          items: [...meetings]
+            // Newest first, the same ordering browseDriveTranscripts applies.
+            .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""))
             .filter((m) => !term || m.title.toLowerCase().includes(term))
             .map((m) => ({
               id: m.id,

@@ -201,7 +201,7 @@ export function ConnectorPicker({
   const [labelQuery, setLabelQuery] = useState<string>("in:inbox");
   /** Google Drive only: which part of Drive, and how the list is narrowed. */
   const isDrive = kind === "googledrive";
-  const [scope, setScope] = useState<DriveScope>("my_drive");
+  const [scope, setScope] = useState<DriveScope>("recent");
   const [typeFilter, setTypeFilter] = useState<DriveTypeFilter>("everything");
   const [ageFilter, setAgeFilter] = useState<DriveAgeFilter>("any");
   /** Everything loaded so far for this listing, in the order it arrived. */
@@ -494,7 +494,7 @@ export function ConnectorPicker({
           setTerm("");
           setRows([]);
           setPageIndex(0);
-          setScope("my_drive");
+          setScope("recent");
           setTypeFilter("everything");
           setAgeFilter("any");
         }
@@ -543,6 +543,7 @@ export function ConnectorPicker({
                       setSelected(new Set());
                       setSearch("");
                       setTerm("");
+                      setRows([]);
                       setCrumbs([{ id: null, name: SCOPE_LABEL[option] }]);
                     }}
                     className={
