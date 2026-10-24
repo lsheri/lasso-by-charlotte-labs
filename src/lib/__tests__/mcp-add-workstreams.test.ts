@@ -20,6 +20,7 @@ type TableConfig = {
 const mocks = vi.hoisted(() => ({
   tables: {} as Record<string, TableConfig>,
   inserts: [] as { table: string; row: Row }[],
+  rpcResults: {} as Record<string, unknown>,
   recordEvent: vi.fn(),
   applyWorkboardCommand: vi.fn(),
   ensureBoard: vi.fn(),
@@ -27,6 +28,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@/integrations/supabase/client.server", () => ({
   supabaseAdmin: {
+    rpc: (name: string) => Promise.resolve({ data: mocks.rpcResults[name] ?? null, error: null }),
     from(table: string) {
       const cfg = () => mocks.tables[table] ?? {};
       const query: Record<string, unknown> = {
@@ -64,9 +66,10 @@ vi.mock("@/lib/telemetry.server", () => ({
   recordAnonymousEvent: vi.fn(),
 }));
 
-const { addWorkstreams } = await import("@/lib/mcp-handler.server");
+const { addWorkstreams, createBoard } = await import("@/lib/mcp-handler.server");
 type Owner = import("@/lib/mcp-handler.server").Owner;
-const { createWorkstreamWithFrame } = await import("@/lib/workstream-create.server");
+const { createWorkstreamWithFrame, drawWorkstreamFrame } = await import("@/lib/workstream-create.server");
+const { mcpVocabFor } = await import("@/lib/mcp-vocab");
 
 const owner: Owner = {
   tokenId: "tok",
