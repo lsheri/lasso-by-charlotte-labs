@@ -14,6 +14,7 @@ import {
 } from "@/lib/attachment-guard";
 import { workTypeForFile } from "@/lib/work-types";
 import { recordAnonymousEvent, recordEvent } from "@/lib/telemetry.server";
+import { createWorkstreamWithFrame } from "@/lib/workstream-create.server";
 import { bucket } from "@/lib/telemetry-shared";
 import { dateLabel } from "@/lib/decisions-shared";
 import { coerceJsonArg, coercePushArgs } from "@/lib/mcp-args";
@@ -843,6 +844,36 @@ const ATTACH_CHAT_LINK_TOOL = {
       },
     },
     required: ["lasso_conversation_id", "chat_url"],
+  },
+};
+
+/**
+ * MCP-WS-1: workstreams onto a board that already exists. Boards and
+ * workstreams only; this description's wording is deliberate.
+ */
+const ADD_WORKSTREAMS_TOOL = {
+  name: "lasso_add_workstreams",
+  title: "Add workstreams to a board",
+  icons: ICONS,
+  description:
+    "Add one or more workstreams to an existing Lasso board. Name the board by its code or its title, exactly as lasso_list_places shows it, and give each workstream the exact name the user asked for. A name the board already has is reported as existing and never duplicated. Each new workstream is drawn on the board straight away, so a later push can place work into it by name.",
+  annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+  inputSchema: {
+    type: "object",
+    properties: {
+      board: {
+        type: "string",
+        description: "The board's code or title, exactly as lasso_list_places shows it.",
+      },
+      names: {
+        type: "array",
+        items: { type: "string" },
+        minItems: 1,
+        maxItems: 12,
+        description: "The workstream names, each exactly as the user gave it.",
+      },
+    },
+    required: ["board", "names"],
   },
 };
 
