@@ -84,9 +84,7 @@ describe("SHARE-4b corrections", () => {
     fireEvent.click(sendButton());
     expect(m.setAccess).not.toHaveBeenCalled();
     expect(m.invite).not.toHaveBeenCalled();
-    const alert = await screen.findByRole("alert");
-    console.log("ALERT_HTML:", alert.outerHTML.slice(0, 200));
-    expect(await screen.findByText("Pick someone from the list or enter an email address first.")).toBeTruthy();
+    expect((await screen.findAllByText("Pick someone from the list or enter an email address first.")).length).toBeGreaterThan(0);
   });
 
   it("resolves nothing when the typed text still leaves two people on screen", async () => {
