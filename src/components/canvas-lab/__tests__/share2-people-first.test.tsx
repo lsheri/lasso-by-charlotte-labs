@@ -31,6 +31,7 @@ vi.mock("@/lib/engagement-access.functions", () => ({
       { id: "p1", display_name: "Liam", access: "work", isYou: true, email: "liam@co.com" },
       { id: "p2", display_name: "Ana Ruiz", access: null, isYou: false, email: "ana@co.com" },
       { id: "p3", display_name: "Ben Ode", access: "review", isYou: false, email: "ben@co.com", conversations: "full", addedAt: "2026-10-02T00:00:00Z" },
+      { id: "p4", display_name: "Anabel Vega", access: null, isYou: false, email: "anabel@co.com" },
     ],
   })),
   setEngagementPersonAccessFn: m.setAccess,
@@ -55,6 +56,20 @@ function openDialog() {
   fireEvent.click(screen.getByRole("button", { name: "Share" }));
 }
 
+function sendButton() {
+  const buttons = screen.getByRole("dialog").querySelectorAll<HTMLButtonElement>('[data-share-send="all"]');
+  expect(buttons).toHaveLength(1);
+  const button = buttons[0];
+  if (!button) throw new Error("Missing combined Send button");
+  return button;
+}
+
+async function readyCombobox() {
+  const box = await screen.findByRole("combobox");
+  await waitFor(() => expect((box as HTMLInputElement).disabled).toBe(false));
+  return box;
+}
+
 beforeEach(() => vi.clearAllMocks());
 afterEach(cleanup);
 
@@ -71,13 +86,13 @@ describe("SHARE-2 people-first Share dialog", () => {
     fireEvent.change(box, { target: { value: "ana" } });
     fireEvent.click(await screen.findByRole("button", { name: /Ana Ruiz/ }));
     expect(m.setAccess).not.toHaveBeenCalled();
-    fireEvent.click(within(screen.getByRole("group", { name: "People in this workspace" })).getByRole("button", { name: "Send" }));
+    fireEvent.click(sendButton());
     await waitFor(() => expect(m.setAccess).toHaveBeenCalledTimes(1));
-    expect(m.setAccess.mock.calls[0]![0]).toMatchObject({
+    expect(m.setAccess.mock.calls[0]?.[0]).toMatchObject({
       data: { engagement_id: "e1", person_id: "p2", access: "review", conversations: "full" },
     });
     await waitFor(() =>
-      expect(m.setConversations.mock.calls[0]![0]).toMatchObject({ data: { person_id: "p2", conversations: "full" } }),
+      expect(m.setConversations.mock.calls[0]?.[0]).toMatchObject({ data: { person_id: "p2", conversations: "full" } }),
     );
     expect(m.invite).not.toHaveBeenCalled();
   });
@@ -96,12 +111,104 @@ describe("SHARE-2 people-first Share dialog", () => {
     const box = await screen.findByRole("combobox");
     await waitFor(() => expect((box as HTMLInputElement).disabled).toBe(false));
     fireEvent.change(screen.getByLabelText("Email addresses"), { target: { value: "new@else.com" } });
-    fireEvent.click(within(screen.getByRole("group", { name: "Invite by email" })).getByRole("button", { name: "Send" }));
+    fireEvent.click(sendButton());
     await waitFor(() => expect(m.invite).toHaveBeenCalledTimes(1));
-    expect(m.invite.mock.calls[0]![0]).toEqual({
+    expect(m.invite.mock.calls[0]?.[0]).toEqual({
       data: { engagementId: "e1", email: "new@else.com", level: "review", conversations: "full" },
     });
     expect(m.setAccess).not.toHaveBeenCalled();
+  });
+
+  it("resolves a unique prefix at Send without clicking a suggestion", async () => {
+    openDialog();
+    const box = await readyCombobox();
+    fireEvent.change(box, { target: { value: "Ana R" } });
+    expect(within(screen.getByRole("listbox")).getAllByRole("option")).toHaveLength(1);
+    expect(screen.queryByText(/^Chosen:/)).toBeNull();
+    fireEvent.click(sendButton());
+    await waitFor(() => expect(m.setAccess).toHaveBeenCalledTimes(1));
+    expect(m.setAccess.mock.calls[0]?.[0]).toMatchObject({
+      data: { engagement_id: "e1", person_id: "p2", access: "review", conversations: "full" },
+    });
+    await waitFor(() => expect(m.setConversations).toHaveBeenCalledTimes(1));
+    expect(m.invite).not.toHaveBeenCalled();
+  });
+
+  it("does not guess when a prefix leaves multiple suggestions", async () => {
+    openDialog();
+    const box = await readyCombobox();
+    fireEvent.change(box, { target: { value: "Ana" } });
+    expect(within(screen.getByRole("listbox")).getAllByRole("option")).toHaveLength(2);
+    expect(sendButton().disabled).toBe(false);
+    fireEvent.click(sendButton());
+    expect(await screen.findByRole("alert")).toHaveProperty(
+      "textContent", "Pick someone from the list or enter an email address first.",
+    );
+    expect(m.setAccess).not.toHaveBeenCalled();
+    expect(m.setConversations).not.toHaveBeenCalled();
+    expect(m.invite).not.toHaveBeenCalled();
+  });
+
+  it("Enter commits the top suggestion and clears the combobox", async () => {
+    openDialog();
+    const box = await readyCombobox();
+    fireEvent.change(box, { target: { value: "Ana" } });
+    const options = within(screen.getByRole("listbox")).getAllByRole("option");
+    expect(options).toHaveLength(2);
+    expect(options[0]?.textContent).toContain("Ana Ruiz");
+    expect(fireEvent.keyDown(box, { key: "Enter", code: "Enter" })).toBe(false);
+    expect(screen.getByText("Chosen: Ana Ruiz")).toBeTruthy();
+    expect((box as HTMLInputElement).value).toBe("");
+    expect(screen.getByRole("dialog")).toBeTruthy();
+    expect(m.setAccess).not.toHaveBeenCalled();
+    expect(m.invite).not.toHaveBeenCalled();
+    fireEvent.click(sendButton());
+    await waitFor(() => expect(m.setAccess).toHaveBeenCalledTimes(1));
+    expect(m.setAccess.mock.calls[0]?.[0]).toMatchObject({ data: { person_id: "p2" } });
+  });
+
+  it("routes a roster email through access and conversations instead of an invite", async () => {
+    openDialog();
+    await readyCombobox();
+    fireEvent.change(screen.getByLabelText("Email addresses"), { target: { value: "ana@co.com" } });
+    fireEvent.click(sendButton());
+    await waitFor(() => expect(m.setAccess).toHaveBeenCalledTimes(1));
+    expect(m.setAccess.mock.calls[0]?.[0]).toMatchObject({
+      data: { engagement_id: "e1", person_id: "p2", access: "review", conversations: "full" },
+    });
+    await waitFor(() => expect(m.setConversations).toHaveBeenCalledTimes(1));
+    expect(m.setConversations.mock.calls[0]?.[0]).toMatchObject({ data: { person_id: "p2", conversations: "full" } });
+    expect(m.invite).not.toHaveBeenCalled();
+  });
+
+  it("grants a picked person and invites an outside address in one Send", async () => {
+    openDialog();
+    const box = await readyCombobox();
+    fireEvent.change(box, { target: { value: "Ana R" } });
+    fireEvent.click(within(screen.getByRole("listbox")).getByRole("button", { name: /Ana Ruiz/ }));
+    fireEvent.change(screen.getByLabelText("Email addresses"), { target: { value: "new@else.com" } });
+    fireEvent.click(sendButton());
+    await waitFor(() => {
+      expect(m.setAccess).toHaveBeenCalledTimes(1);
+      expect(m.setConversations).toHaveBeenCalledTimes(1);
+      expect(m.invite).toHaveBeenCalledTimes(1);
+    });
+    expect(m.setAccess.mock.calls[0]?.[0]).toMatchObject({ data: { person_id: "p2", access: "review" } });
+    expect(m.invite.mock.calls[0]?.[0]).toEqual({
+      data: { engagementId: "e1", email: "new@else.com", level: "review", conversations: "full" },
+    });
+  });
+
+  it("names the resolved person and the current access level on Send", async () => {
+    openDialog();
+    const box = await readyCombobox();
+    fireEvent.change(box, { target: { value: "Ana R" } });
+    expect(sendButton().textContent).toBe("Add Ana Ruiz as Viewer");
+    fireEvent.click(within(screen.getByRole("group", { name: "New person level" })).getByRole("button", { name: "Collaborator" }));
+    expect(sendButton().textContent).toBe("Add Ana Ruiz as Collaborator");
+    fireEvent.click(sendButton());
+    await waitFor(() => expect(m.setAccess).toHaveBeenCalledTimes(1));
+    expect(m.setAccess.mock.calls[0]?.[0]).toMatchObject({ data: { person_id: "p2", access: "work" } });
   });
 
   it("the access list names every person and every pending invite", async () => {
