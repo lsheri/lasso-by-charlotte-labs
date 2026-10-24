@@ -14,7 +14,7 @@ import {
 } from "@/lib/attachment-guard";
 import { workTypeForFile } from "@/lib/work-types";
 import { recordAnonymousEvent, recordEvent } from "@/lib/telemetry.server";
-import { createWorkstreamWithFrame } from "@/lib/workstream-create.server";
+import { createWorkstreamWithFrame, drawWorkstreamFrame } from "@/lib/workstream-create.server";
 import { bucket } from "@/lib/telemetry-shared";
 import { dateLabel } from "@/lib/decisions-shared";
 import { coerceJsonArg, coercePushArgs } from "@/lib/mcp-args";
@@ -1917,7 +1917,14 @@ async function createContainer(
   return textResult(id, renderContainerResult(vocab, result));
 }
 
-async function createBoard(
+/** WS-FRAME-1: the create_board payload carries the engagement id; the code is the fallback. */
+async function engagementIdForCode(code: string | null | undefined): Promise<string | null> {
+  if (!code) return null;
+  const { data } = await supabaseAdmin.from("engagements").select("id").eq("code", code).maybeSingle();
+  return (data?.id as string | undefined) ?? null;
+}
+
+export async function createBoard(
   owner: Owner,
   args: Obj,
   id: unknown,
