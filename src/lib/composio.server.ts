@@ -143,7 +143,7 @@ export async function browseDrive(
   const data = await run("GOOGLEDRIVE_LIST_FILES", entityId, {
     q: query.q,
     fields: "nextPageToken, files(id,name,mimeType,modifiedTime,webViewLink,size)",
-    orderBy: opts.search?.trim() ? "modifiedTime desc" : "folder,modifiedTime desc",
+    orderBy: opts.scope === "recent" || opts.search?.trim() ? "modifiedTime desc" : "folder,modifiedTime desc",
     pageSize: 50,
     corpora: query.corpora,
     supportsAllDrives: true,
