@@ -25,6 +25,7 @@ import {
   ACCESS_LEVEL_DISPLAY,
   type ConversationAccess,
   type EngagementAccessChoice,
+  type EngagementPerson,
 } from "@/lib/engagement-access-shared";
 import {
   listEngagementPeopleFn,
@@ -281,9 +282,6 @@ export const SHARE3_COPY = {
   emailField: "Email addresses",
   emailPlaceholder: "name@example.com, another@example.com",
   emailResults: "Results for email invites",
-  colleagueHelper: (address: string) => `${address} is already in your workspace. Add them from the list above.`,
-  colleagueHelperIndividual: (address: string) => `${address} is already in this workspace.`,
-  colleagueFailed: "Already in this workspace. Add them from the list above.",
   overCap: "Up to 20 addresses per Send. The rest stay in the field for the next Send.",
   send: "Send",
   sending: "Sending",
@@ -296,7 +294,6 @@ export const SHARE3_COPY = {
     already: "Already invited",
     invalid: "Not a full email address",
     over_cap: "Not sent yet, over 20 in one Send",
-    colleague: "Already in this workspace. Add them from the list above.",
     refused: "Not sent",
   },
 } as const;
@@ -491,15 +488,58 @@ function PeopleSection({
     : canPick.slice(0, BROWSE_CAP);
   // With the box empty, show who can be added so the capability is visible.
   const moreToFind = typed ? 0 : Math.max(0, canPick.length - BROWSE_CAP);
-  // An address that belongs to anyone in the workspace never goes to the
-  // outside invite: the database refuses it. Point at the list instead.
-  const workspaceEmails = new Set(rows.map((person) => (person.email ?? "").toLocaleLowerCase()).filter(Boolean));
   const parsed = parseEmailList(emailText);
-  const colleagueTyped = parsed.valid.filter((address) => workspaceEmails.has(address));
   const openInvites = invites.data ?? [];
   const pendingEmails = new Set(openInvites.map((row) => row.email.toLocaleLowerCase()));
   const busy = people.isPending || sendingPeople || sendingEmails || !canShare;
   const pickedPeople = rows.filter((person) => picked.includes(person.id));
+
+  function resolveTargets(): { people: EngagementPerson[]; outside: string[] } {
+    const targets = new Map<string, EngagementPerson>();
+    const emails = new Set<string>();
+    function addPerson(person: EngagementPerson) {
+      const email = person.email?.trim().toLocaleLowerCase();
+      if (targets.has(person.id) || (email && emails.has(email))) return;
+      targets.set(person.id, person);
+      if (email) emails.add(email);
+    }
+    pickedPeople.forEach(addPerson);
+    const exact = typed ? canPick.filter((person) =>
+      person.display_name.toLocaleLowerCase() === needle ||
+      (person.email ?? "").toLocaleLowerCase() === needle,
+    ) : [];
+    if (exact.length === 1) addPerson(exact[0]);
+    const outside: string[] = [];
+    for (const address of parsed.valid) {
+      const email = address.toLocaleLowerCase();
+      const colleague = rows.find((person) => person.email?.trim().toLocaleLowerCase() === email);
+      if (colleague) addPerson(colleague);
+      else if (!emails.has(email)) {
+        emails.add(email);
+        outside.push(email);
+      }
+    }
+    return { people: [...targets.values()], outside };
+  }
+
+  const targets = resolveTargets();
+  const levelLabel = ACCESS_LEVEL_DISPLAY[addLevel].label;
+  const peopleLabel = targets.people.length === 1
+    ? `Add ${targets.people[0].display_name || targets.people[0].email || "person"} as ${levelLabel}`
+    : targets.people.length > 1 ? `Add ${targets.people.length} people as ${levelLabel}` : "";
+  const sendLabel = targets.outside.length > 0
+    ? `${peopleLabel || "Send"} and invite ${targets.outside.length}`
+    : peopleLabel || SHARE3_COPY.send;
+
+  async function sendAll() {
+    const resolved = resolveTargets();
+    if (resolved.people.length === 0 && resolved.outside.length === 0) {
+      setProblem("Pick someone from the list or enter an email address first.");
+      return;
+    }
+    setProblem(null);
+    await Promise.all([sendToPeople(resolved.people), sendToEmails(resolved.outside)]);
+  }
 
   function recordBatch(results: SendResult[]) {
     const sent = results.filter((r) => r.outcome === "sent" || r.outcome === "not_emailed" || r.outcome === "pending").length;
@@ -523,13 +563,13 @@ function PeopleSection({
     })().catch(() => {});
   }
 
-  async function sendToPeople() {
-    if (pickedPeople.length === 0) return;
+  async function sendToPeople(targetPeople: EngagementPerson[]) {
+    if (targetPeople.length === 0) return;
     setSendingPeople(true);
     setProblem(null);
     const results: SendResult[] = [];
     const keep: string[] = [];
-    for (const person of pickedPeople) {
+    for (const person of targetPeople) {
       const label = person.display_name || person.email || "";
       try {
         const answer = await setAccess({
@@ -568,20 +608,14 @@ function PeopleSection({
     await queryClient.invalidateQueries({ queryKey: key });
   }
 
-  async function sendToEmails() {
-    const { valid, invalid, overCap } = parseEmailList(emailText);
-    if (valid.length === 0 && invalid.length === 0) return;
+  async function sendToEmails(outside: string[]) {
+    const { invalid, overCap } = parseEmailList(emailText);
     setSendingEmails(true);
     setProblem(null);
     const results: SendResult[] = [];
     const keep: string[] = [...invalid, ...overCap];
     for (const address of invalid) results.push({ label: address, outcome: "invalid" });
-    for (const address of valid) {
-      if (workspaceEmails.has(address)) {
-        results.push({ label: address, outcome: hasRoster ? "colleague" : "refused", detail: SHARE3_COPY.colleagueFailed });
-        keep.push(address);
-        continue;
-      }
+    for (const address of outside) {
       if (pendingEmails.has(address)) {
         results.push({ label: address, outcome: "already" });
         continue;
@@ -647,6 +681,18 @@ function PeopleSection({
             autoComplete="off"
             disabled={busy}
             onChange={(event) => setPick(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key !== "Enter") return;
+              event.preventDefault();
+              const first = suggestions[0];
+              if (first) {
+                setPicked((current) => current.includes(first.id) ? current : [...current, first.id]);
+                setPick("");
+              } else if (parseEmailList(pick).valid.length === 1 && parseEmailList(pick).valid[0] === pick.trim().toLocaleLowerCase()) {
+                setEmailText((current) => [current.trim(), pick.trim()].filter(Boolean).join(", "));
+                setPick("");
+              }
+            }}
           />
           {suggestions.length > 0 ? (
             <ul id="share-person-options" role="listbox" aria-multiselectable="true" aria-label={PEOPLE_COPY.options}
@@ -686,15 +732,6 @@ function PeopleSection({
           {pickedPeople.length > 0 ? (
             <p className="text-sm text-muted-foreground">{SHARE3_COPY.picked(pickedPeople.map((p) => p.display_name))}</p>
           ) : null}
-          <Button
-            size="sm"
-            className="self-start"
-            disabled={busy || pickedPeople.length === 0}
-            onClick={() => void sendToPeople()}
-            data-share-send="roster"
-          >
-            {sendingPeople ? SHARE3_COPY.sending : SHARE3_COPY.send}
-          </Button>
           <SendResults results={peopleResults} label={SHARE3_COPY.rosterResults} />
         </div>
       ) : null}
@@ -711,22 +748,17 @@ function PeopleSection({
           disabled={busy}
           onChange={(event) => setEmailText(event.target.value)}
         />
-        {colleagueTyped.map((address) => (
-          <p key={address} className="text-sm text-muted-foreground">
-            {hasRoster ? SHARE3_COPY.colleagueHelper(address) : SHARE3_COPY.colleagueHelperIndividual(address)}
-          </p>
-        ))}
         {parsed.overCap.length > 0 ? (
           <p className="text-sm text-muted-foreground">{SHARE3_COPY.overCap}</p>
         ) : null}
         <Button
           size="sm"
           className="self-start"
-          disabled={busy || (parsed.valid.length === 0 && parsed.invalid.length === 0)}
-          onClick={() => void sendToEmails()}
-          data-share-send="email"
+          disabled={busy}
+          onClick={() => void sendAll()}
+          data-share-send="all"
         >
-          {sendingEmails ? SHARE3_COPY.sending : SHARE3_COPY.send}
+          {sendLabel}
         </Button>
         <SendResults results={emailResults} label={SHARE3_COPY.emailResults} />
       </div>
