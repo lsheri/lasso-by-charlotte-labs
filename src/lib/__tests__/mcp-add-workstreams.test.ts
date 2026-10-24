@@ -263,7 +263,7 @@ describe("WS-FRAME-1 create_engagement draws the first workstream", () => {
     );
     const text = await resultText(res);
 
-    expect(text).toContain("Created board CFT-01 · Diagnostic");
+    expect(text).toContain("Created engagement CFT-01 · Diagnostic");
     expect(mocks.applyWorkboardCommand).toHaveBeenCalledTimes(1);
     const command = mocks.applyWorkboardCommand.mock.calls[0]?.[3] as {
       type: string;
