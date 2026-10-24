@@ -2006,6 +2006,79 @@ async function listEngagements(owner: Owner, id: unknown): Promise<Response> {
   return textResult(id, lines.join("\n\n"));
 }
 
+/**
+ * MCP-WS-1. The board resolves through the caller's own non-coach
+ * memberships, the same set lasso_list_places reads, so a coach or a
+ * non-member gets the same answer as a board that does not exist.
+ */
+export async function addWorkstreams(owner: Owner, args: Obj, id: unknown): Promise<Response> {
+  if (owner.readOnly) return rpcError(id, -32603, "This connection can read but not add work right now.");
+  const wanted = typeof args["board"] === "string" ? args["board"].trim() : "";
+  const names = (Array.isArray(args["names"]) ? args["names"] : [])
+    .filter((one): one is string => typeof one === "string")
+    .map((one) => one.trim())
+    .filter((one) => one.length > 0)
+    .slice(0, 12);
+  if (!wanted || names.length === 0) {
+    return textResult(id, "Name the board and at least one workstream. Nothing was changed.");
+  }
+
+  const { data: memberships, error: memberError } = await supabaseAdmin
+    .from("engagement_members")
+    .select("engagement_id, member_role")
+    .eq("profile_id", owner.profileId);
+  if (memberError) return rpcError(id, -32603, memberError.message);
+  const ids = (memberships ?? [])
+    .filter((m) => m.member_role !== "coach")
+    .map((m) => m.engagement_id);
+  const { data: engagements, error: engError } = ids.length
+    ? await supabaseAdmin.from("engagements").select("id, code, title").in("id", ids)
+    : { data: [], error: null };
+  if (engError) return rpcError(id, -32603, engError.message);
+  const needle = wanted.toLowerCase();
+  const board = (engagements ?? []).find(
+    (e) => e.code.toLowerCase() === needle || e.title.toLowerCase() === needle,
+  );
+  if (!board) {
+    return textResult(
+      id,
+      `I could not find a board called ${wanted}. Call lasso_list_places to see the boards you can add to. Nothing was changed.`,
+    );
+  }
+
+  const lines: string[] = [];
+  for (const name of names) {
+    const result = await createWorkstreamWithFrame({
+      engagementId: board.id,
+      profileId: owner.profileId,
+      name,
+    });
+    if (result.status === "created") {
+      await recordEvent(supabaseAdmin, {
+        eventType: "workboard.workstream_created",
+        orgId: owner.orgId,
+        userId: owner.userId,
+        profileId: owner.profileId,
+        dims: { via: "mcp", claimed: "0" },
+      });
+      lines.push(`${result.name}: created`);
+    } else if (result.status === "existing") {
+      lines.push(`${result.name}: already exists`);
+    } else if (result.reason === "frame") {
+      lines.push(`${name}: the workstream was made but could not be drawn on the board`);
+    } else {
+      lines.push(`${name}: failed`);
+    }
+  }
+
+  const { places } = await readPlaces(owner);
+  const refs = places.filter((place) => place.engagementId === board.id).map((place) => place.ref);
+  if (refs.length > 0) {
+    lines.push(`Push work into one of these with destination: ${refs.map((ref) => `"${ref}"`).join(", ")}.`);
+  }
+  return textResult(id, lines.join("\n"));
+}
+
 type IncomingMessage = {
   role: string;
   content: string;
