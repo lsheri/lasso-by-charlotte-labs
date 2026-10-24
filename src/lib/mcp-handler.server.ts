@@ -14,6 +14,7 @@ import {
 } from "@/lib/attachment-guard";
 import { workTypeForFile } from "@/lib/work-types";
 import { recordAnonymousEvent, recordEvent } from "@/lib/telemetry.server";
+import { createWorkstreamWithFrame } from "@/lib/workstream-create.server";
 import { bucket } from "@/lib/telemetry-shared";
 import { dateLabel } from "@/lib/decisions-shared";
 import { coerceJsonArg, coercePushArgs } from "@/lib/mcp-args";
@@ -846,6 +847,36 @@ const ATTACH_CHAT_LINK_TOOL = {
   },
 };
 
+/**
+ * MCP-WS-1: workstreams onto a board that already exists. Boards and
+ * workstreams only; this description's wording is deliberate.
+ */
+const ADD_WORKSTREAMS_TOOL = {
+  name: "lasso_add_workstreams",
+  title: "Add workstreams to a board",
+  icons: ICONS,
+  description:
+    "Add one or more workstreams to an existing Lasso board. Name the board by its code or its title, exactly as lasso_list_places shows it, and give each workstream the exact name the user asked for. A name the board already has is reported as existing and never duplicated. Each new workstream is drawn on the board straight away, so a later push can place work into it by name.",
+  annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+  inputSchema: {
+    type: "object",
+    properties: {
+      board: {
+        type: "string",
+        description: "The board's code or title, exactly as lasso_list_places shows it.",
+      },
+      names: {
+        type: "array",
+        items: { type: "string" },
+        minItems: 1,
+        maxItems: 12,
+        description: "The workstream names, each exactly as the user gave it.",
+      },
+    },
+    required: ["board", "names"],
+  },
+};
+
 const pushTools = (vocab: McpVocab) => [
   {
     name: "push_conversation",
@@ -1186,6 +1217,7 @@ export async function handleMcpRequest(
         ATTACH_CHAT_LINK_TOOL,
         ...readToolsFor(type, ICONS),
         ...createToolsFor(type, ICONS),
+        ADD_WORKSTREAMS_TOOL,
       ],
     });
   }
@@ -1215,6 +1247,7 @@ export async function handleMcpRequest(
         if (owner.readOnly) return rpcError(id, -32603, "This connection can read but not add work right now.");
         return await attachChatLink(owner, args, id);
       }
+      if (name === "lasso_add_workstreams") return await addWorkstreams(owner, args, id);
       const type = await workspaceTypeOf(owner);
       const vocab = mcpVocabFor(type);
       if (name === vocab.createContainerTool) return await createContainer(owner, args, id, type, vocab);
@@ -1971,6 +2004,79 @@ async function listEngagements(owner: Owner, id: unknown): Promise<Response> {
   });
   await logPush(owner, { tool: "list_engagements" }, "helper");
   return textResult(id, lines.join("\n\n"));
+}
+
+/**
+ * MCP-WS-1. The board resolves through the caller's own non-coach
+ * memberships, the same set lasso_list_places reads, so a coach or a
+ * non-member gets the same answer as a board that does not exist.
+ */
+export async function addWorkstreams(owner: Owner, args: Obj, id: unknown): Promise<Response> {
+  if (owner.readOnly) return rpcError(id, -32603, "This connection can read but not add work right now.");
+  const wanted = typeof args["board"] === "string" ? args["board"].trim() : "";
+  const names = (Array.isArray(args["names"]) ? args["names"] : [])
+    .filter((one): one is string => typeof one === "string")
+    .map((one) => one.trim())
+    .filter((one) => one.length > 0)
+    .slice(0, 12);
+  if (!wanted || names.length === 0) {
+    return textResult(id, "Name the board and at least one workstream. Nothing was changed.");
+  }
+
+  const { data: memberships, error: memberError } = await supabaseAdmin
+    .from("engagement_members")
+    .select("engagement_id, member_role")
+    .eq("profile_id", owner.profileId);
+  if (memberError) return rpcError(id, -32603, memberError.message);
+  const ids = (memberships ?? [])
+    .filter((m) => m.member_role !== "coach")
+    .map((m) => m.engagement_id);
+  const { data: engagements, error: engError } = ids.length
+    ? await supabaseAdmin.from("engagements").select("id, code, title").in("id", ids)
+    : { data: [], error: null };
+  if (engError) return rpcError(id, -32603, engError.message);
+  const needle = wanted.toLowerCase();
+  const board = (engagements ?? []).find(
+    (e) => e.code.toLowerCase() === needle || e.title.toLowerCase() === needle,
+  );
+  if (!board) {
+    return textResult(
+      id,
+      `I could not find a board called ${wanted}. Call lasso_list_places to see the boards you can add to. Nothing was changed.`,
+    );
+  }
+
+  const lines: string[] = [];
+  for (const name of names) {
+    const result = await createWorkstreamWithFrame({
+      engagementId: board.id,
+      profileId: owner.profileId,
+      name,
+    });
+    if (result.status === "created") {
+      await recordEvent(supabaseAdmin, {
+        eventType: "workboard.workstream_created",
+        orgId: owner.orgId,
+        userId: owner.userId,
+        profileId: owner.profileId,
+        dims: { via: "mcp", claimed: "0" },
+      });
+      lines.push(`${result.name}: created`);
+    } else if (result.status === "existing") {
+      lines.push(`${result.name}: already exists`);
+    } else if (result.reason === "frame") {
+      lines.push(`${name}: the workstream was made but could not be drawn on the board`);
+    } else {
+      lines.push(`${name}: failed`);
+    }
+  }
+
+  const { places } = await readPlaces(owner);
+  const refs = places.filter((place) => place.engagementId === board.id).map((place) => place.ref);
+  if (refs.length > 0) {
+    lines.push(`Push work into one of these with destination: ${refs.map((ref) => `"${ref}"`).join(", ")}.`);
+  }
+  return textResult(id, lines.join("\n"));
 }
 
 type IncomingMessage = {
