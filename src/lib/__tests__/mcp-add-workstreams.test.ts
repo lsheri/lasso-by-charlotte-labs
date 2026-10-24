@@ -99,6 +99,7 @@ async function resultText(res: Response): Promise<string> {
 beforeEach(() => {
   mocks.tables = structuredClone(memberBoard);
   mocks.inserts = [];
+  mocks.rpcResults = {};
   mocks.recordEvent.mockReset();
   mocks.applyWorkboardCommand.mockReset();
   mocks.applyWorkboardCommand.mockResolvedValue({
@@ -199,6 +200,112 @@ describe("MCP-WS-1 lasso_add_workstreams", () => {
     expect(mocks.inserts).toHaveLength(0);
     expect(mocks.applyWorkboardCommand).not.toHaveBeenCalled();
     expect(mocks.recordEvent).not.toHaveBeenCalled();
+  });
+});
+
+describe("WS-FRAME-1 drawWorkstreamFrame", () => {
+  it("draws the outline when the task has none", async () => {
+    const result = await drawWorkstreamFrame({
+      engagementId: "eng1",
+      profileId: "p1",
+      taskId: "t9",
+      name: "Pricing",
+    });
+
+    expect(result).toEqual({ status: "drawn" });
+    expect(mocks.applyWorkboardCommand).toHaveBeenCalledTimes(1);
+    const command = mocks.applyWorkboardCommand.mock.calls[0]?.[3] as {
+      type: string;
+      frame: Record<string, unknown>;
+    };
+    expect(command.type).toBe("frame_create");
+    expect(command.frame).toMatchObject({ key: "task:t9", kind: "task", taskId: "t9", label: "Pricing", ord: 0 });
+  });
+
+  it("returns existing and writes nothing when the outline is already there", async () => {
+    mocks.tables["workboard_frames"] = {
+      rows: [{ key: "task:t9", label: "Pricing", x: 0, y: 0, w: 400, h: 300 }],
+    };
+    const result = await drawWorkstreamFrame({
+      engagementId: "eng1",
+      profileId: "p1",
+      taskId: "t9",
+      name: "Pricing",
+    });
+
+    expect(result).toEqual({ status: "existing" });
+    expect(mocks.applyWorkboardCommand).not.toHaveBeenCalled();
+  });
+});
+
+describe("WS-FRAME-1 create_engagement draws the first workstream", () => {
+  const vocab = mcpVocabFor("company");
+
+  beforeEach(() => {
+    mocks.tables["clients"] = { rows: [{ id: "c1", name: "Acme", quick_folder: false }] };
+    mocks.rpcResults["mcp_create_board"] = {
+      status: "created",
+      code: "CFT-01",
+      title: "Diagnostic",
+      workstream: "Pricing",
+      task_id: "t1",
+      engagement_id: "eng1",
+    };
+  });
+
+  it("draws the frame for the task the board was created with", async () => {
+    const res = await createBoard(
+      owner,
+      { container: "Acme", title: "Diagnostic", first_workstream: "Pricing" },
+      1,
+      "company",
+      vocab,
+    );
+    const text = await resultText(res);
+
+    expect(text).toContain("Created board CFT-01 · Diagnostic");
+    expect(mocks.applyWorkboardCommand).toHaveBeenCalledTimes(1);
+    const command = mocks.applyWorkboardCommand.mock.calls[0]?.[3] as {
+      type: string;
+      frame: Record<string, unknown>;
+    };
+    expect(command.type).toBe("frame_create");
+    expect(command.frame).toMatchObject({ key: "task:t1", kind: "task", taskId: "t1", label: "Pricing" });
+  });
+
+  it("says so when the outline could not be drawn", async () => {
+    mocks.applyWorkboardCommand.mockResolvedValue({ status: "error", message: "nope" });
+    const res = await createBoard(
+      owner,
+      { container: "Acme", title: "Diagnostic", first_workstream: "Pricing" },
+      1,
+      "company",
+      vocab,
+    );
+    const text = await resultText(res);
+
+    expect(text).toContain("could not be drawn on the board yet");
+  });
+
+  it("draws nothing when the board already existed", async () => {
+    mocks.rpcResults["mcp_create_board"] = {
+      status: "existing",
+      code: "CFT-01",
+      title: "Diagnostic",
+      workstream: "Pricing",
+      task_id: "t1",
+      engagement_id: "eng1",
+    };
+    const res = await createBoard(
+      owner,
+      { container: "Acme", title: "Diagnostic", first_workstream: "Pricing" },
+      1,
+      "company",
+      vocab,
+    );
+    await resultText(res);
+
+    expect(mocks.applyWorkboardCommand).not.toHaveBeenCalled();
   });
 });
 
