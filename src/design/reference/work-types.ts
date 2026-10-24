@@ -35,6 +35,7 @@ export type Slide = {
   kicker?: string;
   title: string;
   bullets?: string[];
+  notes?: string;
   stat?: { value: string; label: string };
 };
 export type DocBlock = { type: 'h2' | 'p'; text: string };

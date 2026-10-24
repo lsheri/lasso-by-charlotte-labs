@@ -36,6 +36,7 @@ describe("P2 Workboard file preview shaping", () => {
     expect(firstSlideFromMap({ slides: [{ title: "Recommendation", bullets: ["First", "Second"] }] })).toEqual({
       title: "Recommendation",
       lines: ["First", "Second"],
+      notes: null,
     });
   });
 });

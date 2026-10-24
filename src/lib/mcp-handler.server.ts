@@ -285,7 +285,7 @@ export type ParsedAttachment = {
   /** ID-2: the 1-indexed message position the caller says produced it, never guessed. */
   producedAtTurn?: number;
   /** R1: a text rendition of a file_ref, extracted in the caller's sandbox. Never the file. */
-  rendition?: { format: "markdown" | "html"; method: "extracted_by_script" | "written_by_model"; content: string; sha256?: string };
+  rendition?: { format: "markdown" | "html"; method: "extracted_by_script" | "written_by_model"; content: string; sha256?: string; slides?: { title: string; bullets?: string[]; notes?: string }[] };
   /** R1: why a sent rendition was not accepted. The placeholder is still made. */
   renditionIssue?: string;
 };
@@ -352,6 +352,7 @@ export async function storeRendition(args: {
         sha256_computed: computed,
         match,
         received_at: new Date().toISOString(),
+        ...(rendition.slides !== undefined ? { slides: rendition.slides } : {}),
       },
     };
   } catch (err) {
@@ -439,7 +440,14 @@ function parseRendition(raw: unknown): Pick<ParsedAttachment, "rendition" | "ren
     if (!/^[0-9a-f]{64}$/.test(s)) return { renditionIssue: "rendition.sha256 must be 64 hex characters" };
     sha256 = s;
   }
-  return { rendition: { format, method, content, ...(sha256 ? { sha256 } : {}) } };
+  const slides = r["slides"];
+  if (slides !== undefined && (!Array.isArray(slides) || !slides.every((slide) =>
+    slide && typeof slide === "object" && !Array.isArray(slide)
+    && typeof slide.title === "string"
+    && (slide.bullets === undefined || (Array.isArray(slide.bullets) && slide.bullets.every((bullet: unknown) => typeof bullet === "string")))
+    && (slide.notes === undefined || typeof slide.notes === "string")
+  ))) return { renditionIssue: "rendition.slides must be a list of slide objects" };
+  return { rendition: { format, method, content, ...(sha256 ? { sha256 } : {}), ...(slides !== undefined ? { slides } : {}) } };
 }
 
 /** P1b item 1. The note when this push created file placeholders. */
@@ -1003,6 +1011,19 @@ const pushTools = (vocab: McpVocab) => [
                       method: { type: "string", enum: ["extracted_by_script", "written_by_model"] },
                       content: { type: "string" },
                       sha256: { type: "string", description: "64 hex characters, of the rendition text." },
+                      slides: {
+                        type: "array",
+                        description: "When the file is a deck, a list of its slides, each with its title, its bullets and its speaker notes.",
+                        items: {
+                          type: "object",
+                          properties: {
+                            title: { type: "string" },
+                            bullets: { type: "array", items: { type: "string" } },
+                            notes: { type: "string" },
+                          },
+                          required: ["title"],
+                        },
+                      },
                     },
                     required: ["method", "content"],
                   },

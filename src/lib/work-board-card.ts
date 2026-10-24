@@ -2,6 +2,8 @@ import type { DocBlock, SheetCell, Work } from '@/design/reference/work-types';
 import type { WorkboardCardPreview, WorkboardFilePreview } from './workboard-card-preview.shared';
 import { workToSketch } from './work-sketch';
 import type { WorkItemRow } from './work-types';
+import { slidesFromMap } from './workboard-file-preview';
+import type { Json } from '@/integrations/supabase/types';
 
 /** Split one preview CSV line, preserving quoted commas and escaped quotes. */
 function splitCsvLine(line: string): string[] {
@@ -54,6 +56,25 @@ export function workToBoardCard(
     const slides = filePreview.pages
       .filter((page) => Boolean(page.title?.trim()) || (page.lines?.length ?? 0) > 0)
       .map((page) => ({ title: page.title ?? '', bullets: page.lines ?? [] }));
+    if (slides.length > 0) return { ...work, content: { kind: 'deck', slides } };
+  }
+
+  const hasUsableFilePreview = Boolean(filePreview && (
+    (filePreview.kind === 'slide' && filePreview.pages?.some((page) => page.title?.trim() || page.lines?.length))
+    || (filePreview.kind === 'text' && filePreview.lines.some((line) => line.trim()))
+    || (filePreview.kind === 'pdf' && filePreview.url)
+    || ((filePreview.kind === 'html' || filePreview.kind === 'mermaid') && filePreview.html)
+  ));
+  const meta: unknown = item.source_meta;
+  const rendition = meta && typeof meta === 'object' && !Array.isArray(meta) ? (meta as Record<string, unknown>)['rendition'] : undefined;
+  const rawSlides = rendition && typeof rendition === 'object' && !Array.isArray(rendition) ? (rendition as Record<string, unknown>)['slides'] : undefined;
+  if (item.type === 'deck' && !hasUsableFilePreview && Array.isArray(rawSlides)
+    && rawSlides.every((slide) => slide && typeof slide === 'object' && !Array.isArray(slide)
+      && typeof slide.title === 'string'
+      && (slide.bullets === undefined || (Array.isArray(slide.bullets) && slide.bullets.every((bullet: unknown) => typeof bullet === 'string')))
+      && (slide.notes === undefined || typeof slide.notes === 'string'))) {
+    const slides = slidesFromMap({ slides: rawSlides } as Json)
+      .map((slide) => ({ title: slide.title ?? '', bullets: slide.lines, ...(slide.notes !== null ? { notes: slide.notes } : {}) }));
     if (slides.length > 0) return { ...work, content: { kind: 'deck', slides } };
   }
 

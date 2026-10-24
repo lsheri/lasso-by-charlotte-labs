@@ -12,7 +12,7 @@ export function firstTwentyLines(text: string | null | undefined): string[] {
   return text.split(/\r?\n/).map((line) => line.trimEnd()).filter(Boolean).slice(0, 20);
 }
 
-type SlideShape = { title: string | null; lines: string[] };
+type SlideShape = { title: string | null; lines: string[]; notes: string | null };
 
 function stringsIn(value: Json, out: string[]): void {
   if (typeof value === "string") {
@@ -44,9 +44,16 @@ export function slidesFromMap(value: Json | null): SlideShape[] {
       : [root];
   return slides.flatMap((slide) => {
     if (!slide) return [];
+    let notes: string | null = null;
+    let body = slide as Json;
+    if (typeof slide === "object" && !Array.isArray(slide)) {
+      const { notes: rawNotes, ...rest } = slide as Record<string, Json | undefined>;
+      notes = typeof rawNotes === "string" ? rawNotes : null;
+      body = rest;
+    }
     const lines: string[] = [];
-    stringsIn(slide as Json, lines);
-    return lines.length > 0 ? [{ title: lines[0] ?? null, lines: lines.slice(1, 12) }] : [];
+    stringsIn(body, lines);
+    return lines.length > 0 ? [{ title: lines[0] ?? null, lines: lines.slice(1, 12), notes }] : [];
   });
 }
 
