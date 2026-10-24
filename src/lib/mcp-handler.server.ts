@@ -1217,6 +1217,7 @@ export async function handleMcpRequest(
         ATTACH_CHAT_LINK_TOOL,
         ...readToolsFor(type, ICONS),
         ...createToolsFor(type, ICONS),
+        ADD_WORKSTREAMS_TOOL,
       ],
     });
   }
@@ -1246,6 +1247,7 @@ export async function handleMcpRequest(
         if (owner.readOnly) return rpcError(id, -32603, "This connection can read but not add work right now.");
         return await attachChatLink(owner, args, id);
       }
+      if (name === "lasso_add_workstreams") return await addWorkstreams(owner, args, id);
       const type = await workspaceTypeOf(owner);
       const vocab = mcpVocabFor(type);
       if (name === vocab.createContainerTool) return await createContainer(owner, args, id, type, vocab);
