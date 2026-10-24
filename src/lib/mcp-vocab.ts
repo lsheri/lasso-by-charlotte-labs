@@ -201,6 +201,9 @@ export type BoardResult = {
   title?: string | null;
   workstream?: string | null;
   reason?: string | null;
+  /** WS-FRAME-1: the first workstream's task row, so its outline can be drawn. */
+  task_id?: string | null;
+  engagement_id?: string | null;
 };
 
 function refusal(vocab: McpVocab, thing: string, result: { status: string; reason?: string | null }): string {
