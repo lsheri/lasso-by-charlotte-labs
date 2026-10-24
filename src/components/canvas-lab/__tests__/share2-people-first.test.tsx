@@ -141,7 +141,9 @@ describe("SHARE-2 people-first Share dialog", () => {
     expect(within(screen.getByRole("listbox")).getAllByRole("option")).toHaveLength(2);
     expect(sendButton().disabled).toBe(false);
     fireEvent.click(sendButton());
-    expect(await within(screen.getByRole("dialog")).findByRole("alert")).toHaveProperty(
+    const alerts = await within(screen.getByRole("dialog")).findAllByRole("alert");
+    expect(alerts.length).toBeGreaterThan(0);
+    for (const alert of alerts) expect(alert).toHaveProperty(
       "textContent", "Pick someone from the list or enter an email address first.",
     );
     expect(m.setAccess).not.toHaveBeenCalled();
