@@ -508,7 +508,8 @@ function PeopleSection({
       person.display_name.toLocaleLowerCase() === needle ||
       (person.email ?? "").toLocaleLowerCase() === needle,
     ) : [];
-    if (exact.length === 1) addPerson(exact[0]);
+    const exactPerson = exact[0];
+    if (exact.length === 1 && exactPerson) addPerson(exactPerson);
     const outside: string[] = [];
     for (const address of parsed.valid) {
       const email = address.toLocaleLowerCase();
@@ -524,8 +525,9 @@ function PeopleSection({
 
   const targets = resolveTargets();
   const levelLabel = ACCESS_LEVEL_DISPLAY[addLevel].label;
-  const peopleLabel = targets.people.length === 1
-    ? `Add ${targets.people[0].display_name || targets.people[0].email || "person"} as ${levelLabel}`
+  const singlePerson = targets.people[0];
+  const peopleLabel = targets.people.length === 1 && singlePerson
+    ? `Add ${singlePerson.display_name || singlePerson.email || "person"} as ${levelLabel}`
     : targets.people.length > 1 ? `Add ${targets.people.length} people as ${levelLabel}` : "";
   const sendLabel = targets.outside.length > 0
     ? `${peopleLabel || "Send"} and invite ${targets.outside.length}`
