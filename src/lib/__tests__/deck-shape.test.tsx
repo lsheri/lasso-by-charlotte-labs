@@ -11,7 +11,7 @@ const slides = [{ title: 'Opening', bullets: ['First bullet'], notes: 'Speaker d
 const item = (value: unknown = slides): WorkItemRow => ({
   id: 'deck', title: 'Deck', type: 'deck', source: 'mcp:claude', visibility: 'mapped',
   captured_at: '2026-10-24T00:00:00Z', content_ref: null, work_item_tasks: [],
-  source_meta: { rendition: { slides: value } }, work_item_extracts: [{ summary: 'Fallback prose' }],
+  source_meta: Object.assign({}, { rendition: { slides: value } }), work_item_extracts: [{ summary: 'Fallback prose' }],
 });
 afterEach(cleanup);
 describe('DECK-SHAPE-1', () => {
@@ -36,7 +36,7 @@ describe('DECK-SHAPE-1', () => {
     { kind: 'html' as const, html: '<p>Real file</p>' },
     { kind: 'text' as const, lines: ['Real file'] },
   ])('does not replace a usable $kind file', (overrides) => {
-    const file: WorkboardFilePreview = { workItemId: 'deck', kind: 'fallback', url: null, lines: [], slideTitle: null, versionCount: 1, ...overrides };
+    const file: WorkboardFilePreview = { workItemId: 'deck', url: null, lines: [], slideTitle: null, versionCount: 1, ...overrides };
     expect(workToBoardCard(item(), undefined, file).content?.kind).not.toBe('deck');
   });
   it('renders notes beneath bullets inside the slide and no absent-note row', () => {

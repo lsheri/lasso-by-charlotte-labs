@@ -65,13 +65,13 @@ export function workToBoardCard(
     || (filePreview.kind === 'pdf' && filePreview.url)
     || ((filePreview.kind === 'html' || filePreview.kind === 'mermaid') && filePreview.html)
   ));
-  const meta = item.source_meta;
-  const rendition = meta && typeof meta === 'object' && !Array.isArray(meta) ? meta.rendition : undefined;
-  const rawSlides = rendition && typeof rendition === 'object' && !Array.isArray(rendition) ? rendition.slides : undefined;
+  const meta: unknown = item.source_meta;
+  const rendition = meta && typeof meta === 'object' && !Array.isArray(meta) ? (meta as Record<string, unknown>).rendition : undefined;
+  const rawSlides = rendition && typeof rendition === 'object' && !Array.isArray(rendition) ? (rendition as Record<string, unknown>).slides : undefined;
   if (item.type === 'deck' && !hasUsableFilePreview && Array.isArray(rawSlides)
     && rawSlides.every((slide) => slide && typeof slide === 'object' && !Array.isArray(slide)
       && typeof slide.title === 'string'
-      && (slide.bullets === undefined || (Array.isArray(slide.bullets) && slide.bullets.every((bullet) => typeof bullet === 'string')))
+      && (slide.bullets === undefined || (Array.isArray(slide.bullets) && slide.bullets.every((bullet: unknown) => typeof bullet === 'string')))
       && (slide.notes === undefined || typeof slide.notes === 'string'))) {
     const slides = slidesFromMap({ slides: rawSlides } as Json)
       .map((slide) => ({ title: slide.title ?? '', bullets: slide.lines, ...(slide.notes !== null ? { notes: slide.notes } : {}) }));
