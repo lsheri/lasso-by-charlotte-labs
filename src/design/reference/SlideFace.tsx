@@ -33,6 +33,9 @@ export function SlideFace({ slide, scale }: { slide: Slide; scale: number }) {
             ))}
           </ul>
         ) : null}
+        {slide.notes ? (
+          <p className="mt-4 text-base text-muted-foreground leading-relaxed whitespace-pre-line">{slide.notes}</p>
+        ) : null}
         {slide.stat ? (
           <div style={{ position: 'absolute', right: 88, bottom: 88, textAlign: 'right' }}>
             <div style={{ fontSize: 120, fontWeight: 700, lineHeight: 1 }}>{slide.stat.value}</div>
