@@ -66,8 +66,8 @@ export function workToBoardCard(
     || ((filePreview.kind === 'html' || filePreview.kind === 'mermaid') && filePreview.html)
   ));
   const meta: unknown = item.source_meta;
-  const rendition = meta && typeof meta === 'object' && !Array.isArray(meta) ? (meta as Record<string, unknown>).rendition : undefined;
-  const rawSlides = rendition && typeof rendition === 'object' && !Array.isArray(rendition) ? (rendition as Record<string, unknown>).slides : undefined;
+  const rendition = meta && typeof meta === 'object' && !Array.isArray(meta) ? (meta as Record<string, unknown>)['rendition'] : undefined;
+  const rawSlides = rendition && typeof rendition === 'object' && !Array.isArray(rendition) ? (rendition as Record<string, unknown>)['slides'] : undefined;
   if (item.type === 'deck' && !hasUsableFilePreview && Array.isArray(rawSlides)
     && rawSlides.every((slide) => slide && typeof slide === 'object' && !Array.isArray(slide)
       && typeof slide.title === 'string'

@@ -11,7 +11,7 @@ const slides = [{ title: 'Opening', bullets: ['First bullet'], notes: 'Speaker d
 const item = (value: unknown = slides): WorkItemRow => ({
   id: 'deck', title: 'Deck', type: 'deck', source: 'mcp:claude', visibility: 'mapped',
   captured_at: '2026-10-24T00:00:00Z', content_ref: null, work_item_tasks: [],
-  source_meta: Object.assign({}, { rendition: { slides: value } }), work_item_extracts: [{ summary: 'Fallback prose' }],
+  source_meta: Object.assign({ kind: 'file_ref' }, { rendition: { slides: value } }), work_item_extracts: [{ summary: 'Fallback prose' }],
 });
 afterEach(cleanup);
 describe('DECK-SHAPE-1', () => {
