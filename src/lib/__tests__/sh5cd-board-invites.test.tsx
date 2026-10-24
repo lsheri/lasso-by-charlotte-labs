@@ -70,6 +70,14 @@ import { EVENT_DIM_KEYS } from "@/lib/event-dim-allowlist";
 
 const base: BoardInvitePreview = { state: "sent", board: "Pricing", by: "Ana", kind: "peer", email_hint: "j***@x.com" };
 
+function sendButton() {
+  const buttons = screen.getByRole("dialog").querySelectorAll<HTMLButtonElement>('[data-share-send="all"]');
+  expect(buttons).toHaveLength(1);
+  const button = buttons[0];
+  if (!button) throw new Error("Missing combined Send button");
+  return button;
+}
+
 describe("SH-5c add field", () => {
   it("only a whole address is an email; names stay a name search", () => {
     expect(looksLikeEmail("jo@x.com")).toBe(true);
@@ -139,7 +147,7 @@ describe("SH-5c-fix the Invited group refreshes", () => {
   it("a successful invite refetches the list and the new row renders with Withdraw", async () => {
     const { QueryClient, QueryClientProvider } = await import("@tanstack/react-query");
     const { ShareDialog } = await import("@/components/canvas-lab/ShareDialog");
-    const { fireEvent, waitFor, within } = await import("@testing-library/react");
+    const { fireEvent, waitFor } = await import("@testing-library/react");
     inviteState.listCalls = 0;
     inviteState.rows = [];
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -155,7 +163,7 @@ describe("SH-5c-fix the Invited group refreshes", () => {
 
     fireEvent.change(screen.getByLabelText("Email addresses"), { target: { value: "jo@x.com" } });
     expect(screen.queryByRole("button", { name: "Invite jo@x.com from outside" })).toBeNull();
-    fireEvent.click(within(screen.getByRole("group", { name: "Invite by email" })).getByRole("button", { name: "Send" }));
+    fireEvent.click(sendButton());
 
     await waitFor(() => expect(inviteState.listCalls).toBeGreaterThan(1));
     const group = await screen.findByRole("list", { name: "Who has access" });

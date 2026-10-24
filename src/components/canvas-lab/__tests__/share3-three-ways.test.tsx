@@ -61,6 +61,14 @@ async function openDialog() {
 
 const emailGroup = () => screen.getByRole("group", { name: "Invite by email" });
 
+function sendButton() {
+  const buttons = screen.getByRole("dialog").querySelectorAll<HTMLButtonElement>('[data-share-send="all"]');
+  expect(buttons).toHaveLength(1);
+  const button = buttons[0];
+  if (!button) throw new Error("Missing combined Send button");
+  return button;
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
   m.tier = "business";
@@ -109,7 +117,7 @@ describe("SHARE-3 dialog", () => {
     fireEvent.click(within(roster).getByRole("button", { name: /Ana Ruiz/ }));
     fireEvent.click(within(roster).getByRole("button", { name: /Cleo Fern/ }));
     expect(m.setAccess).not.toHaveBeenCalled();
-    fireEvent.click(within(roster).getByRole("button", { name: "Send" }));
+    fireEvent.click(sendButton());
     await waitFor(() => expect(m.setAccess).toHaveBeenCalledTimes(2));
     expect(m.setAccess.mock.calls.map((c) => (c[0] as { data: { person_id: string } }).data.person_id)).toEqual(["p2", "p4"]);
   });
@@ -123,7 +131,7 @@ describe("SHARE-3 dialog", () => {
     await openDialog();
     const field = screen.getByLabelText("Email addresses") as HTMLTextAreaElement;
     fireEvent.change(field, { target: { value: "ok@else.com, bad@else.com; quiet@else.com" } });
-    fireEvent.click(within(emailGroup()).getByRole("button", { name: "Send" }));
+    fireEvent.click(sendButton());
     await waitFor(() => expect(m.invite).toHaveBeenCalledTimes(3));
     const results = await screen.findByRole("status", { name: "Results for email invites" });
     await waitFor(() => expect(results.querySelectorAll("li")).toHaveLength(3));
@@ -139,12 +147,29 @@ describe("SHARE-3 dialog", () => {
     );
   });
 
-  it("a colleague's address points at the list and is never invited", async () => {
+  it("a colleague's address grants access and is never invited", async () => {
     await openDialog();
     fireEvent.change(screen.getByLabelText("Email addresses"), { target: { value: "ana@co.com" } });
-    expect(screen.getByText("ana@co.com is already in your workspace. Add them from the list above.")).toBeTruthy();
-    fireEvent.click(within(emailGroup()).getByRole("button", { name: "Send" }));
-    await screen.findByRole("status", { name: "Results for email invites" });
+    fireEvent.click(sendButton());
+    await waitFor(() => expect(m.setAccess).toHaveBeenCalledTimes(1));
+    expect(m.setAccess).toHaveBeenCalledWith({
+      data: { engagement_id: "e1", profile_id: "p1", person_id: "p2", access: "review", conversations: "full" },
+    });
+    await waitFor(() => expect(m.setConversations).toHaveBeenCalledWith({
+      data: { engagement_id: "e1", profile_id: "p1", person_id: "p2", conversations: "full" },
+    }));
+    expect(m.invite).not.toHaveBeenCalled();
+    expect(screen.getByRole("dialog").textContent).not.toMatch(/add them from the list above/i);
+  });
+
+  it("keeps an empty Send enabled and explains what is missing when clicked", async () => {
+    await openDialog();
+    expect(sendButton().disabled).toBe(false);
+    fireEvent.click(sendButton());
+    const alerts = await within(screen.getByRole("dialog")).findAllByRole("alert");
+    for (const alert of alerts) expect(alert.textContent).toBe("Pick someone from the list or enter an email address first.");
+    expect(m.setAccess).not.toHaveBeenCalled();
+    expect(m.setConversations).not.toHaveBeenCalled();
     expect(m.invite).not.toHaveBeenCalled();
   });
 });
