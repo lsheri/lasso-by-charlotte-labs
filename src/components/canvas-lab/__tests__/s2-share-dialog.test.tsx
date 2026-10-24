@@ -72,6 +72,14 @@ async function openDialog() {
   await screen.findByText("Owen");
 }
 
+function sendButton() {
+  const buttons = screen.getByRole("dialog").querySelectorAll<HTMLButtonElement>('[data-share-send="all"]');
+  expect(buttons).toHaveLength(1);
+  const button = buttons[0];
+  if (!button) throw new Error("Missing combined Send button");
+  return button;
+}
+
 afterEach(cleanup);
 
 describe("S2 — giving someone one of two things", () => {
@@ -146,7 +154,7 @@ describe("S2 — giving someone one of two things", () => {
     fireEvent.change(screen.getByLabelText("Add people by name or email"), { target: { value: "nad" } });
     fireEvent.click(screen.getByRole("button", { name: "Nadia" }));
     expect(calls).toEqual([]);
-    fireEvent.click(within(screen.getByRole("group", { name: "People in this workspace" })).getByRole("button", { name: "Send" }));
+    fireEvent.click(sendButton());
     await waitFor(() => expect(calls).toEqual([{ person_id: "p-new", access: "work" }]));
   });
 
