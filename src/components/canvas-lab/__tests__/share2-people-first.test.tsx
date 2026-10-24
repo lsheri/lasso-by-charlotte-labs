@@ -102,7 +102,7 @@ describe("SHARE-2 people-first Share dialog", () => {
     const box = await screen.findByRole("combobox");
     await waitFor(() => expect((box as HTMLInputElement).disabled).toBe(false));
     fireEvent.change(box, { target: { value: "ana@co.com" } });
-    expect(await screen.findByRole("button", { name: /Ana Ruiz/ })).toBeTruthy();
+    expect(within(screen.getByRole("listbox")).getByRole("button", { name: /Ana Ruiz/ })).toBeTruthy();
     expect(screen.queryByRole("button", { name: /from outside/ })).toBeNull();
   });
 
@@ -141,7 +141,7 @@ describe("SHARE-2 people-first Share dialog", () => {
     expect(within(screen.getByRole("listbox")).getAllByRole("option")).toHaveLength(2);
     expect(sendButton().disabled).toBe(false);
     fireEvent.click(sendButton());
-    expect(await screen.findByRole("alert")).toHaveProperty(
+    expect(await within(screen.getByRole("dialog")).findByRole("alert")).toHaveProperty(
       "textContent", "Pick someone from the list or enter an email address first.",
     );
     expect(m.setAccess).not.toHaveBeenCalled();
