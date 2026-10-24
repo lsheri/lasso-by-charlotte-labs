@@ -509,7 +509,18 @@ function PeopleSection({
       (person.email ?? "").toLocaleLowerCase() === needle,
     ) : [];
     const exactPerson = exact[0];
-    if (exact.length === 1 && exactPerson) addPerson(exactPerson);
+    // An exact match wins. Otherwise the typed text resolves a person only
+    // when the list on screen is narrowed to exactly one, so the button never
+    // acts on a guess the person sharing did not make.
+    const typedPerson = !typed
+      ? undefined
+      : exact.length === 1 && exactPerson
+        ? exactPerson
+        : suggestions.length === 1
+          ? suggestions[0]
+          : undefined;
+    if (typedPerson) addPerson(typedPerson);
+
     const outside: string[] = [];
     for (const address of parsed.valid) {
       const email = address.toLocaleLowerCase();
@@ -760,7 +771,7 @@ function PeopleSection({
           onClick={() => void sendAll()}
           data-share-send="all"
         >
-          {sendLabel}
+          {sendingPeople || sendingEmails ? SHARE3_COPY.sending : sendLabel}
         </Button>
         <SendResults results={emailResults} label={SHARE3_COPY.emailResults} />
       </div>
