@@ -14,7 +14,7 @@
 
 export const DRIVE_FOLDER_MIME = "application/vnd.google-apps.folder";
 
-export const DRIVE_SCOPES = ["my_drive", "shared_with_me", "shared_drive"] as const;
+export const DRIVE_SCOPES = ["recent", "my_drive", "shared_with_me", "shared_drive"] as const;
 export type DriveScope = (typeof DRIVE_SCOPES)[number];
 
 export const DRIVE_TYPE_FILTERS = [
@@ -31,6 +31,7 @@ export const DRIVE_AGE_FILTERS = ["30d", "90d", "365d", "any"] as const;
 export type DriveAgeFilter = (typeof DRIVE_AGE_FILTERS)[number];
 
 export const SCOPE_LABEL: Record<DriveScope, string> = {
+  recent: "Recent",
   my_drive: "My Drive",
   shared_with_me: "Shared with me",
   shared_drive: "Shared drives",
@@ -66,7 +67,7 @@ export const SCOPE_UNAVAILABLE_NOTE =
 
 /** Whether a scope can be chosen right now, given what the connection allows. */
 export function scopeAvailable(scope: DriveScope, reachable = ALL_DRIVES_REACHABLE): boolean {
-  return scope === "my_drive" || reachable;
+  return scope === "recent" || scope === "my_drive" || reachable;
 }
 
 export function isDriveScope(value: unknown): value is DriveScope {
@@ -142,6 +143,8 @@ export function buildDriveQuery(input: DriveQueryInput): DriveQuery {
   if (term) {
     clauses.push(`name contains '${escape(term)}'`);
     if (scope === "shared_with_me") clauses.push("sharedWithMe = true");
+  } else if (scope === "recent") {
+    // PICK-RECENT-1: no parent clause, so the whole drive answers newest first.
   } else if (scope === "shared_with_me" && !input.folderId) {
     clauses.push("sharedWithMe = true");
   } else {
