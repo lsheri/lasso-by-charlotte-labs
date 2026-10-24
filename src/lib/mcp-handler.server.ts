@@ -493,7 +493,7 @@ export const CORS_HEADERS: Record<string, string> = {
  * description; one that shows an older value or none has not.
  * Future changes bump the letter: oct23b, oct23c.
  */
-export const PUSH_DESC_BUILD = "oct23a";
+export const PUSH_DESC_BUILD = "oct23b";
 
 
 type Obj = Record<string, unknown>;
