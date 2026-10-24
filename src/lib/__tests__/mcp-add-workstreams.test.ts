@@ -64,7 +64,8 @@ vi.mock("@/lib/telemetry.server", () => ({
   recordAnonymousEvent: vi.fn(),
 }));
 
-const { addWorkstreams, type Owner } = await import("@/lib/mcp-handler.server");
+const { addWorkstreams } = await import("@/lib/mcp-handler.server");
+type Owner = import("@/lib/mcp-handler.server").Owner;
 const { createWorkstreamWithFrame } = await import("@/lib/workstream-create.server");
 
 const owner: Owner = {
