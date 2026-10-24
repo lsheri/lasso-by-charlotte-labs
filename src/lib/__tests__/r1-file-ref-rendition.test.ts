@@ -150,6 +150,11 @@ describe("R1 renditionNote", () => {
 });
 
 describe("R1 push", () => {
+  it("preserves structured slides through the push into rendition metadata", async () => {
+    const slides = [{ title: "First", bullets: ["Evidence"], notes: "Speaker note" }, { title: "Second" }];
+    await push(base(ref({ method: "extracted_by_script", content: TEXT, slides })));
+    expect((placeholder()["source_meta"] as { rendition: { slides: unknown } }).rendition.slides).toEqual(slides);
+  });
   it("stores a matching rendition on a new placeholder", async () => {
     const out = await push(base(ref({ method: "extracted_by_script", content: TEXT, sha256: SHA })));
     const row = placeholder();

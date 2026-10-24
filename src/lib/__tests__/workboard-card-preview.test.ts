@@ -8,8 +8,8 @@ import { slidesFromMap } from "@/lib/workboard-file-preview";
 describe("workboard card previews", () => {
   it("keeps every mapped slide available to the shared renderer", () => {
     expect(slidesFromMap({ slides: [{ title: "One", body: "First" }, { title: "Two", body: "Second" }] })).toEqual([
-      { title: "One", lines: ["First"] },
-      { title: "Two", lines: ["Second"] },
+      { title: "One", lines: ["First"], notes: null },
+      { title: "Two", lines: ["Second"], notes: null },
     ]);
   });
   it("defaults to Preview and scopes the choice to viewer and engagement", () => {
