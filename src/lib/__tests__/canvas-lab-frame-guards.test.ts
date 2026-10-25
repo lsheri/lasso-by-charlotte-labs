@@ -13,6 +13,11 @@ describe("Canvas Lab frame server guards", () => {
     expect(validateFrameLabel("custom", "  Risks  ")).toBeNull();
   });
 
+  it("allows a section title to be cleared", () => {
+    expect(validateFrameLabel("custom", null, { region: true })).toBeNull();
+    expect(validateFrameLabel("custom", null, { region: false })).toBe("A workstream name must be between 1 and 60 characters.");
+  });
+
   it("refuses to archive a workstream with a live card", () => {
     expect(validateFrameArchive("custom", 1)).toBe("Move its cards first.");
   });
