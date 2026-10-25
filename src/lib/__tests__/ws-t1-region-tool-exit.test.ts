@@ -45,14 +45,14 @@ describe("WS-T1 region tool exits after creation, Escape and an empty click", ()
   it("the toolbar button still toggles the tool on and off", () => {
     const toggle = slice("function toggleDrawTool()", "async function persistDrawnFrame");
 
-    expect(toggle).toContain("if (drawTool || pendingWorkstream)");
+    expect(toggle).toContain('if ((drawTool && drawMode === "grouping") || pendingWorkstream)');
     expect(toggle).toContain("cancelDraw()");
     expect(toggle).toContain("setDrawTool(true)");
-    expect(page).toContain('aria-pressed={drawTool}');
+    expect(page).toContain('aria-pressed={drawTool && drawMode === "grouping"}');
     expect(page).toContain("onClick={toggleDrawTool}");
   });
 
   it("the swatch tray still renders only while the tool is on", () => {
-    expect(page).toContain("{drawTool ? <div className=\"canvas-lab-region-palette\">");
+    expect(page).toContain('{drawTool && drawMode === "grouping" ? <div className="canvas-lab-region-palette">');
   });
 });

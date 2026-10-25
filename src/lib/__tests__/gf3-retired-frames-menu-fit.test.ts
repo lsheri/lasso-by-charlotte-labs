@@ -23,7 +23,7 @@ describe("GF3 retired frames leave the move list, drop prompt and framing", () =
   it("the move list keeps regions and workstreams and drops every retired kind", () => {
     const choices = [region, task, ...retired].filter((frame) => !isContextFrameId(frame.id) && frame.id !== "trail" && boardFrameRenders(kindOf(frame), true)).map((frame) => frame.id);
     expect(choices).toEqual(["region:abc", "task:t1"]);
-    const filter = 'boardFrames.filter((frame) => !isContextFrameId(frame.id) && frame.id !== "trail" && boardFrameRenders(frameKindOf(frame), true)).map((frame) => ({ id: frame.id, name: frame.name }))';
+    const filter = 'boardFrames.filter((frame) => !isSectionFrameId(frame.id) && !isContextFrameId(frame.id) && frame.id !== "trail" && boardFrameRenders(frameKindOf(frame), true)).map((frame) => ({ id: frame.id, name: frame.name }))';
     expect(page.split(filter).length - 1).toBe(2);
     expect(page).not.toContain('boardFrames.filter((frame) => !isContextFrameId(frame.id) && frame.id !== "trail").map(');
   });
@@ -54,7 +54,7 @@ describe("GF3 retired frames leave the move list, drop prompt and framing", () =
     const decision = dragEndDecision({ ...input, frames: drawn([region, ...retired]) });
     expect(decision.promptFrameId).toBeNull();
     expect(decision.position).toEqual(dragEndDecision({ ...input, frames: [region, ...retired] }).position);
-    expect(page).toContain("frames: framesRef.current.filter((frame) => boardFrameRenders(frameKindOf(frame), true)),");
+    expect(page).toContain("frames: framesRef.current.filter((frame) => !isSectionFrameId(frame.id) && boardFrameRenders(frameKindOf(frame), true)),");
   });
 
   it("a card linked to a retired frame still renders and still saves", () => {
