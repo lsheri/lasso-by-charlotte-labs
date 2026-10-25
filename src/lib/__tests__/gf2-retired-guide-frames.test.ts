@@ -46,6 +46,6 @@ describe("GF2 retired guide frames stop drawing", () => {
   });
 
   it("the shared board view draws only context frames, so no retired frame", () => {
-    expect(shared).toContain('model.frames.filter((frame) => frame.id !== "trail" && frameKindOf(frame) === "context")');
+    expect(shared).toContain('model.frames.filter((frame) => frame.id !== "trail" && (frameKindOf(frame) === "context" || isSectionFrameId(frame.id)))');
   });
 });

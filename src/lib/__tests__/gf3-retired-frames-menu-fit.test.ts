@@ -54,7 +54,7 @@ describe("GF3 retired frames leave the move list, drop prompt and framing", () =
     const decision = dragEndDecision({ ...input, frames: drawn([region, ...retired]) });
     expect(decision.promptFrameId).toBeNull();
     expect(decision.position).toEqual(dragEndDecision({ ...input, frames: [region, ...retired] }).position);
-    expect(page).toContain("frames: framesRef.current.filter((frame) => boardFrameRenders(frameKindOf(frame), true)),");
+    expect(page).toContain("frames: framesRef.current.filter((frame) => !isSectionFrameId(frame.id) && boardFrameRenders(frameKindOf(frame), true)),");
   });
 
   it("a card linked to a retired frame still renders and still saves", () => {
