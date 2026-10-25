@@ -46,6 +46,12 @@ export function noteWorkboardRelationship(
 export function noteWorkboardReviewOpened(orgId: string | undefined, format: "thread" | "document" | "deck" | "sheet"): void {
   if (orgId) logEvent("workboard.review_opened", orgId, { format });
 }
+export function noteWorkboardSection(orgId: string | undefined, action: "created" | "moved" | "removed", detail?: { frames: number; cards: number }): void {
+  if (!orgId) return;
+  if (action === "created") logEvent("workboard.section_created", orgId, { via: "drawn" });
+  else if (action === "moved") logEvent("workboard.section_moved", orgId, { frames: detail?.frames ?? 0, cards: detail?.cards ?? 0 });
+  else logEvent("workboard.section_removed", orgId, {});
+}
 export function noteWorkboardTrailSelected(orgId: string | undefined, group: "context" | "ai_work" | "human_judgment" | "decisions", focus: "exact" | "item"): void {
   if (orgId) logEvent("workboard.trail_item_selected", orgId, { group, focus });
 }

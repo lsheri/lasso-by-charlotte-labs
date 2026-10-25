@@ -387,6 +387,9 @@ export type TelemetryEvent =
   | "workboard.workstream_drawn"
   | "workboard.workstream_created"
   | "workboard.region_named"
+  | "workboard.section_created"
+  | "workboard.section_moved"
+  | "workboard.section_removed"
   /** B2: a chat's docked pieces were minimized, shown, or all shown. State, count band, entry only. */
   | "workboard.bundle_toggled"
   /** D1: an empty note was started on a workstream. Entry point only, no ids and no text. */
