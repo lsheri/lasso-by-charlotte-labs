@@ -149,6 +149,14 @@ describe("the workboard allowlist", () => {
           "entity",
           "reason",
         ],
+        "workboard.section_created": [
+          "via",
+        ],
+        "workboard.section_moved": [
+          "frames",
+          "cards",
+        ],
+        "workboard.section_removed": [],
         "workboard.structure_toggled": [
           "state",
         ],
