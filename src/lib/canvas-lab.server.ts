@@ -23,6 +23,7 @@ import type {
   WorkboardNodeInput,
   WorkboardRowSnapshot,
 } from "@/lib/canvas-lab-shared";
+import { isSectionFrameId } from "@/lib/board-section";
 import { isRegionFill, isRegionFrameId } from "@/lib/board-region";
 import { WORKBOARD_ANCHORS, WORKBOARD_CARD_DEFAULT_SIZE, WORKBOARD_JUDGMENT_TYPES, WORKBOARD_NODE_KINDS, WORKBOARD_RELATIONS, WORKBOARD_SHAPE_COLOURS, isWorkboardDecorationKind, parseWorkboardImageBody, parseWorkboardStickyBody, parseWorkboardTextBody, validWorkboardNodeGeometry } from "@/lib/canvas-lab-shared";
 import type { ResolvedProfile } from "@/lib/profile-resolve";
@@ -404,7 +405,7 @@ export async function applyWorkboardCommand(
       if (invalid) return { status: "validation_error", message: invalid };
     }
     if (command.type === "frame_update" && command.patch.label !== undefined) {
-      const invalid = validateFrameLabel(target.kind, normalizedLabel, { region: isRegionFrameId((target as { key?: string }).key) });
+      const invalid = validateFrameLabel(target.kind, normalizedLabel, { region: isRegionFrameId((target as { key?: string }).key) || isSectionFrameId((target as { key?: string }).key) });
       if (invalid) return { status: "validation_error", message: invalid };
     }
     if (command.type === "frame_archive") {
