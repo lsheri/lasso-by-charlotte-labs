@@ -16,7 +16,7 @@ function props() {
 describe("SEC-2 section", () => {
   it("keeps a reloaded untitled section's key and empty name", () => {
     const result = applyDurableBoard({ frames: [], nodes: [] }, {
-      id: "board", engagementId: "engagement", version: 1, viewerProfileId: null,
+      id: "board", engagementId: "engagement", version: 1, viewerProfileId: "viewer",
       canEditStructure: false, archivedContextFrame: null, nodes: [], links: [],
       frames: [{ id: "saved-frame", key: "section:abc", kind: "custom", taskId: null, label: null, fill: null, x: 10, y: 20, w: 400, h: 300, ord: 0, version: 1 }],
     });
