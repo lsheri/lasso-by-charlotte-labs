@@ -16,6 +16,7 @@
  */
 
 import { isLaneFrameId } from "@/lib/board-lane";
+import { isSectionFrameId } from "@/lib/board-section";
 import { splitClaims, type ClaimCandidate, type ClaimSplit, type DrawRect } from "@/lib/workstream-draw";
 
 /** The stored fill names. Sixteen, exactly as the record constrains them. */
@@ -82,13 +83,13 @@ export function regionIsPaint(frame: RegionFrame): boolean {
  * and still claims nothing, maps to no task and is never @-mentionable.
  */
 export function regionIsWorkstream(frame: RegionFrame): boolean {
-  if (isLaneFrameId(frame.id)) return false;
+  if (isLaneFrameId(frame.id) || isSectionFrameId(frame.id)) return false;
   return regionName(frame.label) !== null;
 }
 
 /** Paint holds no board space, so a new card may land on top of it. */
 export function regionOccupies(frame: RegionFrame): boolean {
-  return !regionIsPaint(frame);
+  return !isSectionFrameId(frame.id) && !regionIsPaint(frame);
 }
 
 /**
