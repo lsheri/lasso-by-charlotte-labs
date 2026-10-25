@@ -7,8 +7,9 @@ import { SECTION_TITLE_PLACEHOLDER, sectionTitle } from "@/lib/board-section";
 
 const CORNERS: LabResizeCorner[] = ["nw", "ne", "se", "sw"];
 
-export function LabSection({ frame, title, selected, editable, onSelect, onDragStart, onResizeStart, onResizeKeyDown, onResizeKeyUp, onRename, onRemove, onMenuOpened }: {
+export function LabSection({ frame, title, selected, editable, autoName = false, onSelect, onDragStart, onResizeStart, onResizeKeyDown, onResizeKeyUp, onRename, onRemove, onMenuOpened }: {
   frame: LabFrame; title: string | null; selected: boolean; editable: boolean;
+  autoName?: boolean;
   onSelect: () => void;
   onDragStart?: ((event: React.PointerEvent<HTMLElement>) => void) | undefined;
   onResizeStart: (corner: LabResizeCorner, event: React.PointerEvent<HTMLButtonElement>) => void;
@@ -19,6 +20,8 @@ export function LabSection({ frame, title, selected, editable, onSelect, onDragS
   const rootRef = useRef<HTMLElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const editingRef = useRef(false);
+  const autoNamedRef = useRef(false);
+  const pressRef = useRef<{ x: number; y: number } | null>(null);
   const [renaming, setRenaming] = useState(false);
   const [draft, setDraft] = useState(title ?? "");
   const [menuOpen, setMenuOpen] = useState(false);
@@ -28,7 +31,11 @@ export function LabSection({ frame, title, selected, editable, onSelect, onDragS
     setDraft(title ?? "");
     setRenaming(true);
   }
-  useEffect(() => { if (selected && editable && title === null) beginRename(); }, [selected, editable]);
+  useEffect(() => {
+    if (!autoName || autoNamedRef.current || !editable || title !== null) return;
+    autoNamedRef.current = true;
+    beginRename();
+  }, [autoName, editable, title]);
   useEffect(() => { if (renaming) { inputRef.current?.focus({ preventScroll: true }); inputRef.current?.select(); } }, [renaming]);
   function commit() {
     if (!editingRef.current) return;
@@ -38,6 +45,7 @@ export function LabSection({ frame, title, selected, editable, onSelect, onDragS
   }
   function press(event: React.PointerEvent<HTMLElement>) {
     if (event.button !== 0) return;
+    pressRef.current = { x: event.clientX, y: event.clientY };
     onSelect();
     rootRef.current?.focus({ preventScroll: true });
     if (editable) onDragStart?.(event);
@@ -63,7 +71,12 @@ export function LabSection({ frame, title, selected, editable, onSelect, onDragS
         onChange={(event) => setDraft(event.target.value)} onBlur={commit} onPointerDown={(event) => event.stopPropagation()}
         onKeyDown={(event) => { event.stopPropagation(); if (event.key === "Enter") { event.preventDefault(); commit(); } if (event.key === "Escape") { event.preventDefault(); editingRef.current = false; setRenaming(false); setDraft(title ?? ""); } }} />
         : title ? <h2 onDoubleClick={beginRename}>{title}</h2>
-        : editable ? <Button variant="ghost" className="canvas-lab-section-placeholder" onPointerDown={press} onClick={beginRename}>{SECTION_TITLE_PLACEHOLDER}</Button>
+        : editable ? <Button variant="ghost" className="canvas-lab-section-placeholder" onPointerDown={press} onClick={(event) => {
+          const start = pressRef.current;
+          pressRef.current = null;
+          if (event.detail > 0 && start && Math.hypot(event.clientX - start.x, event.clientY - start.y) > 3) return;
+          beginRename();
+        }}>{SECTION_TITLE_PLACEHOLDER}</Button>
         : <span>{SECTION_TITLE_PLACEHOLDER}</span>}
       {editable ? <DropdownMenu open={menuOpen} onOpenChange={changeMenu}><DropdownMenuTrigger asChild>
         <Button size="icon" variant="ghost" aria-label="Section menu" className="canvas-lab-section-menu" data-visible={selected} onPointerDown={(event) => event.stopPropagation()}><MoreHorizontal /></Button>

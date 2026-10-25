@@ -33,6 +33,31 @@ describe("SEC-2 section", () => {
     screen.getByTestId("lab-section-section:pricing").querySelectorAll("[data-section-edge]").forEach((edge) => fireEvent.pointerDown(edge, { button: 0 }));
     expect(p.onDragStart).toHaveBeenCalledTimes(4);
   });
+  it("dragging an untitled section from an edge or title does not open its editor", () => {
+    const p = props();
+    const view = render(<LabSection {...p} title={null} selected={false} />);
+    const edge = screen.getByTestId("lab-section-section:pricing").querySelector('[data-section-edge="top"]');
+    if (!edge) throw new Error("Missing section edge");
+    fireEvent.pointerDown(edge, { button: 0, clientX: 20, clientY: 20 });
+    view.rerender(<LabSection {...p} title={null} selected />);
+    expect(screen.queryByRole("textbox")).toBeNull();
+    fireEvent.pointerUp(edge, { clientX: 80, clientY: 80 });
+    const title = screen.getByRole("button", { name: "Name this section" });
+    fireEvent.pointerDown(title, { button: 0, clientX: 20, clientY: 20 });
+    fireEvent.pointerUp(title, { clientX: 80, clientY: 80 });
+    fireEvent.click(title, { detail: 1, clientX: 80, clientY: 80 });
+    expect(p.onDragStart).toHaveBeenCalledTimes(2);
+    expect(screen.queryByRole("textbox")).toBeNull();
+  });
+  it("automatically names only the newly created section once", () => {
+    const p = props();
+    const view = render(<LabSection {...p} title={null} autoName />);
+    fireEvent.keyDown(screen.getByRole("textbox"), { key: "Escape" });
+    view.rerender(<LabSection {...p} title={null} autoName selected={false} />);
+    view.rerender(<LabSection {...p} title={null} autoName selected />);
+    expect(screen.queryByRole("textbox")).toBeNull();
+    expect(p.onRename).not.toHaveBeenCalled();
+  });
   it("Delete removes a focused section", () => {
     const p = props(); render(<LabSection {...p} />);
     const box = screen.getByTestId("lab-section-section:pricing"); box.focus(); fireEvent.keyDown(box, { key: "Delete" });

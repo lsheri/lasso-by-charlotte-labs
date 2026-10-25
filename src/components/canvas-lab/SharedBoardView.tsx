@@ -20,6 +20,7 @@ import { LabBundleLinks } from "@/components/canvas-lab/LabBundleLinks";
 import { LabCard } from "@/components/canvas-lab/LabCard";
 import { LabColourBlock } from "@/components/canvas-lab/LabColourBlock";
 import { LabFrame as LabFrameElement } from "@/components/canvas-lab/LabFrame";
+import { LabSection } from "@/components/canvas-lab/LabSection";
 import { LabRelationships } from "@/components/canvas-lab/LabRelationships";
 import { LabSticky } from "@/components/canvas-lab/LabSticky";
 import { LabTextBlock } from "@/components/canvas-lab/LabTextBlock";
@@ -47,6 +48,7 @@ import type { WorkboardDto } from "@/lib/canvas-lab-shared";
 import { isWorkboardDecorationKind } from "@/lib/canvas-lab-shared";
 import { clampZoom, wheelPanVector, workboardPinchZoom, zoomAbout } from "@/lib/canvas-zoom";
 import { isContextFrameId } from "@/lib/context-region";
+import { isSectionFrameId, sectionTitle } from "@/lib/board-section";
 import { isDeliverableType } from "@/lib/lineage-shared";
 
 const noop = () => undefined;
@@ -127,7 +129,7 @@ export function SharedBoardView({
 
   const itemsById = useMemo(() => new Map(board.seed.work.map((item) => [item.id, item])), [board.seed.work]);
   const frames = useMemo(
-    () => model.frames.filter((frame) => frame.id !== "trail" && frameKindOf(frame) === "context"),
+    () => model.frames.filter((frame) => frame.id !== "trail" && (frameKindOf(frame) === "context" || isSectionFrameId(frame.id))),
     [model.frames],
   );
   const bounds = stageBounds(model.frames.filter((frame) => boardFrameRenders(frameKindOf(frame), true)), model.nodes);
@@ -259,10 +261,13 @@ export function SharedBoardView({
           "--lab-inverse-zoom": labInverseZoom(zoom),
         } as CSSProperties}
       >
+        {frames.filter((frame) => isSectionFrameId(frame.id)).map((frame) => (
+          <LabSection key={frame.id} frame={frame} title={sectionTitle(frame.name)} selected={false} editable={false} onSelect={noop} onDragStart={noop} onResizeStart={noop} onResizeKeyDown={noop} onResizeKeyUp={noop} onRename={noop} onRemove={noop} onMenuOpened={noop} />
+        ))}
         {model.nodes.filter((node) => node.kind === "shape").map((node) => (
           <LabColourBlock key={node.id} node={node} selected={false} editable={false} onSelect={noop} onDragStart={noop} onResizeStart={noop} onResizeKeyDown={noop} onResizeKeyUp={noop} onRemove={noop} />
         ))}
-        {frames.map((frame) => (
+        {frames.filter((frame) => !isSectionFrameId(frame.id)).map((frame) => (
           <LabFrameElement
             key={frame.id}
             frame={frame}
