@@ -10,7 +10,7 @@ import { suggestStructuresFn } from "@/lib/structure-suggest.functions";
 import { chunkInput, type StructureSourceKind, type SuggestedStructure } from "@/lib/structure-suggest-shared";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Menu, X } from "lucide-react";
+import { Menu, SquareDashed, X } from "lucide-react";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type Ref } from "react";
 
 import {
@@ -42,6 +42,8 @@ import { LabCard } from "@/components/canvas-lab/LabCard";
 import { LabColourBlock } from "@/components/canvas-lab/LabColourBlock";
 import { LabSticky, stickyBodyOf } from "@/components/canvas-lab/LabSticky";
 import { LabTextBlock } from "@/components/canvas-lab/LabTextBlock";
+import { LabSection } from "@/components/canvas-lab/LabSection";
+import { isSectionFrameId, newSectionFrameId, sectionTitle, sectionDragSnapshot, moveSectionContents, SECTION_REMOVED_LINE } from "@/lib/board-section";
 import { LabFrame as LabFrameElement } from "@/components/canvas-lab/LabFrame";
 import { applyMarqueeSelection, cardsInMarquee, contextFlareSequence, isMarqueeClick, marqueeRect, type MarqueeRect } from "@/components/canvas-lab/canvas-lab-marquee";
 import { GroupingNamePopup } from "@/components/canvas-lab/GroupingNamePopup";
@@ -146,6 +148,7 @@ import {
   noteWorkboardRail,
   noteWorkboardRecordVisibility,
   noteWorkboardRelationship,
+  noteWorkboardSection,
   noteWorkboardReviewOpened,
   noteWorkboardSaveFailed,
   noteWorkboardTrailSelected,
@@ -452,6 +455,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   const [boardMenu, setBoardMenu] = useState<{ screen: Point; board: Point } | null>(null);
   /** B4: the workstream tool, the box being dragged and the name still to be given. */
   const [drawTool, setDrawTool] = useState(false);
+  const [drawMode, setDrawMode] = useState<"grouping" | "section">("grouping");
   const [drawing, setDrawing] = useState<{ from: Point; to: Point } | null>(null);
   const drawingRef = useRef<{ from: Point; to: Point } | null>(null);
   const [pendingWorkstream, setPendingWorkstream] = useState<{ rect: DrawRect; name: string } | null>(null);
@@ -464,7 +468,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   const shellRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<{ id: string; origin: Point; from: Point } | null>(null);
   /** A frame drag snapshots its geometric contents once, before anything moves. */
-  const frameDragRef = useRef<{ id: string; origin: Point; from: Point; members: GroupingDragMember[] } | null>(null);
+  const frameDragRef = useRef<{ id: string; origin: Point; from: Point; members: GroupingDragMember[]; frameMembers?: GroupingDragMember[] } | null>(null);
   const connectorDragRef = useRef<{ nodeId: string; anchor: LabAnchor; from: Point; moved: boolean } | null>(null);
   const cardHeightsRef = useRef(new Map<string, number>());
   const resizeRef = useRef<{ kind: LabResizeKind; id: string; corner: LabResizeCorner; start: LabRect; pointer: Point; method: "pointer" | "keyboard" } | null>(null);
@@ -1325,7 +1329,8 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       if (!current) return;
       const rect = drawnRect(current.from, current.to);
       if (!drawnRectUsable(rect)) { setDrawTool(false); setAnnouncement("Drag a bigger box to draw a grouping."); return; }
-      void createPaintRegion(rect);
+      if (drawMode === "section") void createSection(rect);
+      else void createPaintRegion(rect);
     }
     function cancelDrawing() {
       drawingRef.current = null;
@@ -1344,7 +1349,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       window.removeEventListener("blur", cancelDrawing);
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [isDrawing, pan.x, pan.y, zoom]);
+  }, [isDrawing, pan.x, pan.y, zoom, drawMode]);
 
   // BB-3: the handler reads the newest state through a ref, so the listener is bound once.
   const boardKeyRef = useRef<(event: KeyboardEvent) => void>(() => undefined);
@@ -1833,14 +1838,22 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       if (resizing?.method === "pointer") {
         const rect = resizeLabRect(resizing.start, resizing.corner, { x: (event.clientX - resizing.pointer.x) / zoom, y: (event.clientY - resizing.pointer.y) / zoom }, event.shiftKey, resizing.kind);
         if (resizing.kind !== "frame") setNodes((current) => current?.map((node) => node.id === resizing.id ? { ...node, ...rect } : node) ?? current);
-        else setFrames((current) => current?.map((frame) => frame.id === resizing.id ? { ...frame, ...containFrameMembers(rect, frame.id, nodesRef.current) } : frame) ?? current);
+        else setFrames((current) => current?.map((frame) => frame.id === resizing.id ? { ...frame, ...(isSectionFrameId(frame.id) ? rect : containFrameMembers(rect, frame.id, nodesRef.current)) } : frame) ?? current);
         return;
       }
       const trailDrag = frameDragRef.current;
       if (trailDrag) {
         const to = dragTo(trailDrag.origin, { x: (event.clientX - trailDrag.from.x) / zoom, y: (event.clientY - trailDrag.from.y) / zoom });
-        setFrames((current) => current?.map((frame) => frame.id === trailDrag.id ? { ...frame, x: to.x, y: to.y } : frame) ?? current);
-        if (trailDrag.members.length > 0) setNodes((current) => current ? moveGroupingContents(current, trailDrag.members, to) : current);
+        if (trailDrag.frameMembers) {
+          const moved = moveSectionContents(framesRef.current, nodesRef.current, { frames: trailDrag.frameMembers, cards: trailDrag.members }, to);
+          framesRef.current = moved.frames.map((frame) => frame.id === trailDrag.id ? { ...frame, x: to.x, y: to.y } : frame);
+          nodesRef.current = moved.cards;
+          setFrames(framesRef.current);
+          setNodes(nodesRef.current);
+        } else {
+          setFrames((current) => current?.map((frame) => frame.id === trailDrag.id ? { ...frame, x: to.x, y: to.y } : frame) ?? current);
+          if (trailDrag.members.length > 0) setNodes((current) => current ? moveGroupingContents(current, trailDrag.members, to) : current);
+        }
         return;
       }
       const drag = dragRef.current;
@@ -1886,12 +1899,25 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       if (trailDrag) {
         const to = dragTo(trailDrag.origin, { x: (event.clientX - trailDrag.from.x) / zoom, y: (event.clientY - trailDrag.from.y) / zoom });
         if (to.x !== trailDrag.origin.x || to.y !== trailDrag.origin.y) {
-          framesRef.current = framesRef.current.map((frame) => frame.id === trailDrag.id ? { ...frame, x: to.x, y: to.y } : frame);
-          nodesRef.current = moveGroupingContents(nodesRef.current, trailDrag.members, to);
-          setFrames((current) => current?.map((frame) => frame.id === trailDrag.id ? { ...frame, x: to.x, y: to.y } : frame) ?? current);
-          setNodes((current) => current ? moveGroupingContents(current, trailDrag.members, to) : current);
+          if (trailDrag.frameMembers) {
+            const moved = moveSectionContents(framesRef.current, nodesRef.current, { frames: trailDrag.frameMembers, cards: trailDrag.members }, to);
+            framesRef.current = moved.frames.map((frame) => frame.id === trailDrag.id ? { ...frame, x: to.x, y: to.y } : frame);
+            nodesRef.current = moved.cards;
+            setFrames(framesRef.current);
+            setNodes(nodesRef.current);
+            noteWorkboardSection(orgId, "moved", { frames: trailDrag.frameMembers.length, cards: trailDrag.members.length });
+          } else {
+            framesRef.current = framesRef.current.map((frame) => frame.id === trailDrag.id ? { ...frame, x: to.x, y: to.y } : frame);
+            nodesRef.current = moveGroupingContents(nodesRef.current, trailDrag.members, to);
+            setFrames((current) => current?.map((frame) => frame.id === trailDrag.id ? { ...frame, x: to.x, y: to.y } : frame) ?? current);
+            setNodes((current) => current ? moveGroupingContents(current, trailDrag.members, to) : current);
+          }
           void (async () => {
             await persistFramePatch(trailDrag.id, { x: to.x, y: to.y });
+            for (const member of trailDrag.frameMembers ?? []) {
+              const moved = framesRef.current.find((frame) => frame.id === member.id);
+              if (moved) await persistFramePatch(moved.id, { x: moved.x, y: moved.y });
+            }
             for (const member of trailDrag.members) {
               const moved = nodesRef.current.find((node) => node.id === member.id);
               if (moved) await persistNodePatch(moved.id, { x: moved.x, y: moved.y });
@@ -1915,7 +1941,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
             pointer: { x: event.clientX, y: event.clientY },
             zoom,
             node: moved,
-            frames: framesRef.current.filter((frame) => boardFrameRenders(frameKindOf(frame), true)),
+            frames: framesRef.current.filter((frame) => !isSectionFrameId(frame.id) && boardFrameRenders(frameKindOf(frame), true)),
             mode: structureMode,
             editable: Boolean(lab.board?.canEditStructure) && (moved.kind !== "judgment" || Boolean(moved.local)),
           });
@@ -1945,7 +1971,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
             record({ action: "resize", kind: "card", targetId: resizing.id, before: resizing.start, after: rect });
           }
         } else if (changed) {
-          const contained = containFrameMembers(rect, resizing.id, nodesRef.current);
+          const contained = isSectionFrameId(resizing.id) ? rect : containFrameMembers(rect, resizing.id, nodesRef.current);
           setFrames((current) => current?.map((frame) => frame.id === resizing.id ? { ...frame, ...contained } : frame) ?? current);
           void persistFramePatch(resizing.id, { x: contained.x, y: contained.y, w: contained.width, h: contained.height });
           noteWorkboardElementResized(orgId, "frame", "pointer", resizeAxis(resizing.start, contained));
@@ -2040,11 +2066,27 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
         if (node) void persistNodePatch(node.id, { x: node.x, y: node.y, w: node.width, h: node.height });
       }
       const frameId = trailDrag?.id ?? (resizing?.kind === "frame" ? resizing.id : null);
-      if (frameId) {
+      if (frameId && !trailDrag?.frameMembers) {
         const frame = framesRef.current.find((entry) => entry.id === frameId);
         if (frame) void persistFramePatch(frame.id, { x: frame.x, y: frame.y, w: frame.width, h: frame.height });
       }
-      if (trailDrag) {
+      if (trailDrag?.frameMembers) {
+        const section = framesRef.current.find((entry) => entry.id === trailDrag.id);
+        if (section && (section.x !== trailDrag.origin.x || section.y !== trailDrag.origin.y)) {
+          noteWorkboardSection(orgId, "moved", { frames: trailDrag.frameMembers.length, cards: trailDrag.members.length });
+        }
+        void (async () => {
+          if (section) await persistFramePatch(section.id, { x: section.x, y: section.y });
+          for (const member of trailDrag.frameMembers ?? []) {
+            const frame = framesRef.current.find((entry) => entry.id === member.id);
+            if (frame) await persistFramePatch(frame.id, { x: frame.x, y: frame.y });
+          }
+          for (const member of trailDrag.members) {
+            const node = nodesRef.current.find((entry) => entry.id === member.id);
+            if (node) await persistNodePatch(node.id, { x: node.x, y: node.y });
+          }
+        })();
+      } else if (trailDrag) {
         for (const member of trailDrag.members) {
           const node = nodesRef.current.find((entry) => entry.id === member.id);
           if (node) void persistNodePatch(node.id, { x: node.x, y: node.y });
@@ -2112,7 +2154,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     if (!resizeRef.current) resizeRef.current = { kind, id, corner, start: rect, pointer: { x: 0, y: 0 }, method: "keyboard" };
     setInteraction("resize");
     const resized = resizeLabRect(rect, corner, delta, event.shiftKey, kind);
-    const next = kind === "frame" ? containFrameMembers(resized, id, nodesRef.current) : resized;
+    const next = kind === "frame" && !isSectionFrameId(id) ? containFrameMembers(resized, id, nodesRef.current) : resized;
     if (kind !== "frame") setNodes((current) => current?.map((node) => node.id === id ? { ...node, ...next } : node) ?? current);
     else setFrames((current) => current?.map((frame) => frame.id === id ? { ...frame, ...next } : frame) ?? current);
   }
@@ -2266,6 +2308,42 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       suggestBusyRef.current = false;
       setSuggestBusy(false);
     }
+  }
+
+  async function createSection(rect: DrawRect) {
+    setDrawTool(false);
+    if (!(await materialize())) return;
+    const id = newSectionFrameId(crypto.randomUUID());
+    const result = await lab.persist({ type: "frame_create", frame: { key: id, kind: "custom", taskId: null, label: null, fill: null, x: rect.x, y: rect.y, w: rect.width, h: rect.height, ord: 0 } });
+    report(result, "frame", "create");
+    if (result.status !== "saved" || !result.created?.frameId) return;
+    const frame: LabFrame = { id, name: "", fill: null, x: rect.x, y: rect.y, width: rect.width, height: rect.height, durableId: result.created.frameId, durableVersion: result.versions[result.created.frameId] ?? 1, local: false };
+    framesRef.current = [...framesRef.current, frame];
+    setFrames(framesRef.current);
+    setSelectedFrameId(id);
+    noteWorkboardSection(orgId, "created");
+    setAnnouncement("Section drawn. Name it.");
+  }
+
+  function renameSection(frame: LabFrame, title: string | null) {
+    if (!isSectionFrameId(frame.id) || !lab.board?.canEditStructure) return;
+    framesRef.current = framesRef.current.map((entry) => entry.id === frame.id ? { ...entry, name: title ?? "" } : entry);
+    setFrames(framesRef.current);
+    void persistFramePatch(frame.id, { label: title });
+  }
+
+  async function removeSection(frame: LabFrame) {
+    if (!isSectionFrameId(frame.id) || !lab.board?.canEditStructure || !frame.durableId) return;
+    const current = framesRef.current.find((entry) => entry.id === frame.id);
+    if (!current?.durableId) return;
+    const result = await lab.persist({ type: "frame_archive", frameId: current.durableId, expectedVersion: current.durableVersion ?? 1 });
+    report(result, "frame", "archive");
+    if (result.status !== "saved") return;
+    framesRef.current = framesRef.current.filter((entry) => entry.id !== frame.id);
+    setFrames(framesRef.current);
+    setSelectedFrameId((selectedId) => selectedId === frame.id ? null : selectedId);
+    noteWorkboardSection(orgId, "removed");
+    setAnnouncement(SECTION_REMOVED_LINE);
   }
 
   /** A drawn region, saved as paint: no name, no task, claiming nothing. */
@@ -2841,12 +2919,21 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     setPendingWorkstreamError(false);
   }
 
+  function toggleSectionTool() {
+    if (drawTool && drawMode === "section") { cancelDraw(); return; }
+    cancelDraw();
+    setDrawMode("section");
+    setDrawTool(true);
+    setAnnouncement("Drag on empty board space to draw a section.");
+  }
+
   function toggleDrawTool() {
-    if (drawTool || pendingWorkstream) {
+    if ((drawTool && drawMode === "grouping") || pendingWorkstream) {
       cancelDraw();
       setAnnouncement("Grouping drawing off.");
       return;
     }
+    setDrawMode("grouping");
     if (structureMode !== "structured") {
       setStructureMode("structured");
       rememberStructureMode("structured");
@@ -3051,6 +3138,14 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     return true;
   }
 
+  function startSectionDrag(frame: LabFrame, event: React.PointerEvent) {
+    if (spaceRef.current || event.button !== 0 || !lab.board?.canEditStructure) return;
+    event.stopPropagation();
+    setInteraction("drag");
+    const snapshot = sectionDragSnapshot(frame, boardFrames.filter((entry) => boardFrameRenders(frameKindOf(entry), structureMode === "structured")), visibleNodes.filter((node) => !pieceChatRef.current.has(node.id)));
+    frameDragRef.current = { id: frame.id, origin: { x: frame.x, y: frame.y }, from: { x: event.clientX, y: event.clientY }, members: snapshot.cards, frameMembers: snapshot.frames };
+  }
+
   function startGroupingDrag(frame: LabFrame, event: React.PointerEvent) {
     if (spaceRef.current) return;
     if (event.button !== 0 || (event.target as Element).closest("button,textarea,input")) return;
@@ -3135,8 +3230,13 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     });
     toolbarItems.push({
       spec: { id: "region", width: 84, moveOrder: 5 },
-      row: <ToolbarIcon label="Add grouping"><Button size="icon" variant={drawTool ? "secondary" : "outline"} aria-label="Add grouping" aria-pressed={drawTool} data-toolbar-control="grouping" onClick={toggleDrawTool}><GraphiteIcon name="grouping" size={20} /></Button></ToolbarIcon>,
+      row: <ToolbarIcon label="Add grouping"><Button size="icon" variant={drawTool && drawMode === "grouping" ? "secondary" : "outline"} aria-label="Add grouping" aria-pressed={drawTool && drawMode === "grouping"} data-toolbar-control="grouping" onClick={toggleDrawTool}><GraphiteIcon name="grouping" size={20} /></Button></ToolbarIcon>,
       menu: <DropdownMenuItem onSelect={toggleDrawTool}>Add grouping</DropdownMenuItem>,
+    });
+    toolbarItems.push({
+      spec: { id: "section", width: 84, moveOrder: 5 },
+      row: <ToolbarIcon label="Add section"><Button size="icon" variant={drawTool && drawMode === "section" ? "secondary" : "outline"} aria-label="Add section" aria-pressed={drawTool && drawMode === "section"} data-toolbar-control="section" onClick={toggleSectionTool}><SquareDashed size={20} /></Button></ToolbarIcon>,
+      menu: <DropdownMenuItem onSelect={toggleSectionTool}>Add section</DropdownMenuItem>,
     });
     toolbarItems.push({
       spec: { id: "suggest", width: 84, moveOrder: 5 },
@@ -3219,7 +3319,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
           <div ref={toolbarRef} className="canvas-lab-toolbar flex min-w-0 flex-1 items-center justify-end gap-2 overflow-hidden">
             {toolbarItems.filter((item) => toolbarPlan.row.includes(item.spec.id) && item.spec.id === "add-work").map((item) => <div key={item.spec.id} className="flex shrink-0 items-center gap-2">{item.row}</div>)}
             <div className="canvas-lab-tool-group">
-            {toolbarItems.filter((item) => toolbarPlan.row.includes(item.spec.id) && ["workstreams", "working-from", "add-text", "add-sticky", "region", "suggest", "ask", "fit"].includes(item.spec.id)).map((item) => <div key={item.spec.id} className="flex shrink-0 items-center gap-2">{item.row}</div>)}
+            {toolbarItems.filter((item) => toolbarPlan.row.includes(item.spec.id) && ["workstreams", "working-from", "add-text", "add-sticky", "region", "section", "suggest", "ask", "fit"].includes(item.spec.id)).map((item) => <div key={item.spec.id} className="flex shrink-0 items-center gap-2">{item.row}</div>)}
             {toolbarOverflowItems.length > 0 || canLeave ? (
               <DropdownMenu>
                 <Tooltip>
@@ -3237,7 +3337,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
               </DropdownMenu>
             ) : null}
             </div>
-            {toolbarItems.filter((item) => toolbarPlan.row.includes(item.spec.id) && !["add-work", "workstreams", "working-from", "add-text", "add-sticky", "region", "suggest", "ask", "fit"].includes(item.spec.id)).map((item) => <div key={item.spec.id} className="flex shrink-0 items-center gap-2">{item.row}</div>)}
+            {toolbarItems.filter((item) => toolbarPlan.row.includes(item.spec.id) && !["add-work", "workstreams", "working-from", "add-text", "add-sticky", "region", "section", "suggest", "ask", "fit"].includes(item.spec.id)).map((item) => <div key={item.spec.id} className="flex shrink-0 items-center gap-2">{item.row}</div>)}
           </div>
           <Popover open={detailsOpen} onOpenChange={setDetailsOpen}>
             <PopoverAnchor virtualRef={detailsAnchorVirtualRef} />
@@ -3254,7 +3354,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
               <DemoPresetsAdmin engagementId={engagementId} />
             </PopoverContent>
           </Popover>
-          {drawTool ? <div className="canvas-lab-region-palette"><RegionColourSwatches value={regionFill} onChange={setRegionFill} /></div> : null}
+          {drawTool && drawMode === "grouping" ? <div className="canvas-lab-region-palette"><RegionColourSwatches value={regionFill} onChange={setRegionFill} /></div> : null}
         </header>
         {lab.saveState.status === "conflict" ? <div data-testid="canvas-lab-banner" className="canvas-lab-banner" role="alert"><p className="text-[13px] text-foreground">A newer version of this record was saved.</p><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => resolveConflict("latest")}>Load latest</Button><Button size="sm" variant="outline" onClick={() => resolveConflict("retry")}>Retry my change</Button></div></div> : null}
         {lab.saveState.status === "error" ? <div data-testid="canvas-lab-banner" className="canvas-lab-banner" role="alert"><p className="text-[13px] text-foreground">Could not save your last change. {lab.saveState.message}</p><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => resolveSaveError("retry")}>Retry</Button><Button size="sm" variant="outline" onClick={() => resolveSaveError("discard")}>Discard</Button></div></div> : null}
@@ -3265,7 +3365,8 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
             {visibleNodes.filter((node) => node.kind === "shape").map((node) => <LabColourBlock key={node.id} node={node} selected={keyboardId === node.id} editable={Boolean(lab.board?.canEditStructure)} onSelect={() => { setKeyboardId(node.id); setSelectedFrameId(null); setSelectedLinkId(null); }} onDragStart={(event) => { if (decorationPointerIntent({ selected: keyboardId === node.id, onEdge: Boolean((event.target as HTMLElement).dataset["edge"]) }) === "drag") onCardPointerDown(node, event); }} onResizeStart={(corner, event) => startResize("shape", node.id, corner, node, event)} onResizeKeyDown={(corner, event) => keyboardResize("shape", node.id, corner, node, event)} onResizeKeyUp={finishKeyboardResize} onRemove={() => deleteNode(node)} />)}
             {marquee ? <div className="canvas-lab-marquee" aria-hidden="true" style={{ left: marquee.x, top: marquee.y, width: marquee.width, height: marquee.height }} /> : null}
             {/* The context region is not a workstream, so it is drawn whether or not the workstream outlines are showing. */}
-            {boardFrames.filter((frame) => frame.id !== "trail" && boardFrameRenders(frameKindOf(frame), structureMode === "structured")).map((frame) => { const kind = frameKindOf(frame); const count = visibleNodes.filter((node) => node.frame === frame.id).length; const custom = kind === "custom"; const removable = !allNodes.some((node) => node.frame === frame.id); const region = isRegionFrameId(frame.id); return <LabFrameElement key={frame.id} frame={frame} count={count} region={region} fillStyle={region ? regionFillStyle(frame.fill) : undefined} selected={selectedFrameId === frame.id} editable={Boolean(lab.board?.canEditStructure)} custom={custom} kind={kind} namedByWorkstream={kind === "task"} removable={kind === "context" ? removable : (() => { const removal = frameRemoval(frame); return removal.offer === "none" ? removable : removal.removable; })()} removal={kind === "context" ? undefined : frameRemoval(frame).offer} renamable={kind === "context" ? undefined : frameRenamable(frame)} onSelect={() => { setSelectedFrameId(frame.id); setKeyboardId(null); setSelectedLinkId((current) => relationshipSelection(current, "deselect")); }} onDragStart={region && lab.board?.canEditStructure ? (event) => startGroupingDrag(frame, event) : undefined} onResizeStart={(corner, event) => startResize("frame", frame.id, corner, { x: frame.x, y: frame.y, width: frame.width, height: frame.height }, event)} onResizeKeyDown={(corner, event) => keyboardResize("frame", frame.id, corner, { x: frame.x, y: frame.y, width: frame.width, height: frame.height }, event)} onResizeKeyUp={finishKeyboardResize} onFit={() => fitFrame(frame)} onRename={(name) => renameFrame(frame, name)} onRemove={() => kind === "context" ? void removeContextArea(frame) : removeFrame(frame)} onMenuOpened={() => noteWorkboardCardMenuOpened(orgId, "frame", "shared")} onMenuOpenChange={setCardMenuOpen} onAddWorkstream={frame.id === "workstreams" ? addWorkstream : undefined} onAddContext={kind === "context" && canAddWork ? () => openAddWork("context_menu", null, "context") : undefined} onUseAsContext={() => useFrameAsContext(frame)} />; })}
+            {boardFrames.filter((frame) => isSectionFrameId(frame.id)).map((frame) => <LabSection key={frame.id} frame={frame} title={sectionTitle(frame.name)} selected={selectedFrameId === frame.id} editable={Boolean(lab.board?.canEditStructure)} onSelect={() => { setSelectedFrameId(frame.id); setKeyboardId(null); setSelectedLinkId((current) => relationshipSelection(current, "deselect")); }} onDragStart={(event) => startSectionDrag(frame, event)} onResizeStart={(corner, event) => startResize("frame", frame.id, corner, frame, event)} onResizeKeyDown={(corner, event) => keyboardResize("frame", frame.id, corner, frame, event)} onResizeKeyUp={finishKeyboardResize} onRename={(title) => renameSection(frame, title)} onRemove={() => void removeSection(frame)} onMenuOpened={() => undefined} />)}
+            {boardFrames.filter((frame) => !isSectionFrameId(frame.id) && frame.id !== "trail" && boardFrameRenders(frameKindOf(frame), structureMode === "structured")).map((frame) => { const kind = frameKindOf(frame); const count = visibleNodes.filter((node) => node.frame === frame.id).length; const custom = kind === "custom"; const removable = !allNodes.some((node) => node.frame === frame.id); const region = isRegionFrameId(frame.id); return <LabFrameElement key={frame.id} frame={frame} count={count} region={region} fillStyle={region ? regionFillStyle(frame.fill) : undefined} selected={selectedFrameId === frame.id} editable={Boolean(lab.board?.canEditStructure)} custom={custom} kind={kind} namedByWorkstream={kind === "task"} removable={kind === "context" ? removable : (() => { const removal = frameRemoval(frame); return removal.offer === "none" ? removable : removal.removable; })()} removal={kind === "context" ? undefined : frameRemoval(frame).offer} renamable={kind === "context" ? undefined : frameRenamable(frame)} onSelect={() => { setSelectedFrameId(frame.id); setKeyboardId(null); setSelectedLinkId((current) => relationshipSelection(current, "deselect")); }} onDragStart={region && lab.board?.canEditStructure ? (event) => startGroupingDrag(frame, event) : undefined} onResizeStart={(corner, event) => startResize("frame", frame.id, corner, { x: frame.x, y: frame.y, width: frame.width, height: frame.height }, event)} onResizeKeyDown={(corner, event) => keyboardResize("frame", frame.id, corner, { x: frame.x, y: frame.y, width: frame.width, height: frame.height }, event)} onResizeKeyUp={finishKeyboardResize} onFit={() => fitFrame(frame)} onRename={(name) => renameFrame(frame, name)} onRemove={() => kind === "context" ? void removeContextArea(frame) : removeFrame(frame)} onMenuOpened={() => noteWorkboardCardMenuOpened(orgId, "frame", "shared")} onMenuOpenChange={setCardMenuOpen} onAddWorkstream={frame.id === "workstreams" ? addWorkstream : undefined} onAddContext={kind === "context" && canAddWork ? () => openAddWork("context_menu", null, "context") : undefined} onUseAsContext={() => useFrameAsContext(frame)} />; })}
             {structureMode === "structured" && Boolean(lab.board?.canEditStructure) && !boardFrames.some((frame) => frame.id === "workstreams") ? (() => { const anchor = workstreamAddAnchor(boardFrames, visibleNodes); if (!anchor) return null; return <div className="canvas-lab-inline-add" style={{ left: anchor.x, top: anchor.y, width: BOARD_INLINE_ADD_SIZE.width, minHeight: BOARD_INLINE_ADD_SIZE.height, transform: `scale(${1 / zoom})`, transformOrigin: "top left" }}>{inlineAddOpen ? <InlineWorkstreamName inputRef={inlineNameRef} addWorkstream={addWorkstream} onClose={() => setInlineAddOpen(false)} /> : <button type="button" className="canvas-lab-add-workstream" onClick={() => setInlineAddOpen(true)}>+ workstream</button>}</div>; })() : null}
             <LabContextCoronas nodes={contextNodes} entryDelays={contextFlares} pan={pan} zoom={zoom} viewport={viewportSize} interacting={interaction !== "idle" || drawing !== null || viewportMoving} still={contextPickedMotion.still} heightOf={contextNodeHeight} />
             <svg className="canvas-lab-relationships absolute inset-0 overflow-visible" width={bounds.width} height={bounds.height} aria-label="Local workboard relationships">
@@ -3289,16 +3390,16 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
               const answer = parseAnswerBody(body);
               setNodes((current) => current?.map((entry) => entry.id === node.id ? { ...entry, summary: answer.text, ...(answer.html !== null ? { html: answer.html } : {}), ...(answer.original !== null ? { original: answer.original } : {}), ...(answer.editedAt !== null ? { editedAt: answer.editedAt } : {}), durableId: durable.id, durableVersion: result.versions[durable.id] ?? durable.version + 1 } : entry) ?? current);
               return null;
-            }} focused={keyboardId === node.id} stackZ={cardStackZ(front, node.id)} onFocus={() => { setFront((current) => bringToFront(current, node.id)); setKeyboardId(node.id); setSelectedFrameId(null); }} onPointerDown={(event) => { setFront((current) => bringToFront(current, node.id)); onCardPointerDown(node, event); }} onDelete={() => deleteNode(node)} frameChoices={structureMode === "structured" ? boardFrames.filter((frame) => !isContextFrameId(frame.id) && frame.id !== "trail" && boardFrameRenders(frameKindOf(frame), true)).map((frame) => ({ id: frame.id, name: frame.name })) : []} onMoveToFrame={structureMode === "structured" && lab.board?.canEditStructure ? (frameId) => moveToFrame(node, frameId) : undefined} />)}
+            }} focused={keyboardId === node.id} stackZ={cardStackZ(front, node.id)} onFocus={() => { setFront((current) => bringToFront(current, node.id)); setKeyboardId(node.id); setSelectedFrameId(null); }} onPointerDown={(event) => { setFront((current) => bringToFront(current, node.id)); onCardPointerDown(node, event); }} onDelete={() => deleteNode(node)} frameChoices={structureMode === "structured" ? boardFrames.filter((frame) => !isSectionFrameId(frame.id) && !isContextFrameId(frame.id) && frame.id !== "trail" && boardFrameRenders(frameKindOf(frame), true)).map((frame) => ({ id: frame.id, name: frame.name })) : []} onMoveToFrame={structureMode === "structured" && lab.board?.canEditStructure ? (frameId) => moveToFrame(node, frameId) : undefined} />)}
             {sharedSpace ? visibleNodes.filter((node) => node.kind === "work" && node.ownership === "yours").map((node) => <span key={`yours:${node.id}`} data-testid="shared-yours-label" aria-hidden="true" className="pointer-events-none absolute font-mono text-[9px] uppercase tracking-[0.12em] text-[var(--nb-shared)]" style={{ left: node.x, top: node.y - 14 }}>Yours</span>) : null}
-            {visibleNodes.filter((node) => node.kind !== "answer" && !isWorkboardDecorationKind(node.kind)).map((node) => { const bundleChatId = pieceChat.get(node.id); const canResize = !bundleChatId && Boolean(lab.board?.canEditStructure) && (node.kind !== "judgment" || Boolean(node.local)); const cardItem = itemByNode(node); const parentNode = bundleChatId ? shownNodes.find((entry) => entry.id === bundleChatId) : undefined; const parent = parentNode ? itemByNode(parentNode) : undefined; return <LabCard key={node.id} face="board" cardFace={effectiveCardFace(cardFaceOverrides, node.id, cardFace)} onCardFaceChange={(face) => { setCardFaceOverride(node.id, face); noteWorkboardFace(orgId, face, "card"); }} node={node} item={cardItem} parent={parent} catchPending={pendingCatchIds.has(node.id)} onCatchComplete={() => finishCatch(node.id)} teammateMark={teammateMarkByNode(node, cardItem)} removable={cardRemovable(profile, node, cardItem)} canRename={Boolean(cardItem && ownsWorkItem(profile, cardItem))} preview={cardItem ? cardPreviews[cardItem.id] : undefined} filePreview={cardItem ? filePreviews[cardItem.id] : undefined} onPreviewScroll={cardItem ? (kind) => notePreviewScroll(cardItem, kind) : undefined} selected={selected.includes(node.id)} previewSelected={marqueePreview.includes(node.id)} focused={keyboardId === node.id} focusOnMount={pendingJudgmentFocusId === node.id} connecting={connectSource !== null || connectorPreview !== null} connectSourceAnchor={connectSource?.nodeId === node.id ? connectSource.anchor : null} onSelect={(via = "menu") => { const call = cardContextCall(via); if (call.record === "menu") noteWorkboardContextChanged(orgId, "menu"); else if (call.record) noteWorkboardContextChanged(orgId, call.record); if (!call.toggle) return; setAnnouncement(selected.includes(node.id) ? "Removed from context" : "Added to context"); setSelected((current) => { if (!current.includes(node.id)) flareNewContext([node.id], current); return toggleContext(current, node.id); }); }} onOpen={(origin) => openNode(node, origin)} onBranch={() => requestBranch(node)} onHide={() => requestHide(node)} onDelete={() => deleteNode(node)} onTakeOutOfContext={isContextFrameId(node.frame) && node.workItemId ? () => void takeOutOfContext(node) : undefined} onEdit={(text) => { nodesRef.current = updateLocalNode(nodesRef.current, node.id, text); setNodes((current) => current ? updateLocalNode(current, node.id, text) : current); }} onEditCommitted={() => { noteWorkboardNodeEdited(orgId, eventKind(node)); const current = nodesRef.current.find((entry) => entry.id === node.id); if (current?.durableId) void persistNodePatch(current.id, { body: current.summary, title: current.title }); }} onAnchorPointerDown={(side, event) => startPointerConnect(node, side, event)} onAnchorActivate={(side) => chooseConnectAnchor(node, side)} onMenuOpened={() => { if (connectSource || connectorDragRef.current) cancelConnect(); noteWorkboardCardMenuOpened(orgId, eventKind(node), node.ownership); }} onMenuOpenChange={setCardMenuOpen} onMeasure={(height) => cardHeightsRef.current.set(node.id, height)} onPointerDown={(event) => { setFront((current) => bringToFront(current, node.id)); onCardPointerDown(node, event); }} onFocus={() => { setFront((current) => bringToFront(current, node.id)); setKeyboardId(node.id); setSelectedFrameId(null); setSelectedLinkId((current) => relationshipSelection(current, "deselect")); if (pendingJudgmentFocusId === node.id) setPendingJudgmentFocusId(null); }} onKeyDown={(event) => onCardKeyDown(node, event)} canResize={canResize} onResizeStart={(corner, event) => startResize("card", node.id, corner, { x: node.x, y: node.y, width: node.width, height: node.height }, event)} onResizeKeyDown={(corner, event) => keyboardResize("card", node.id, corner, { x: node.x, y: node.y, width: node.width, height: node.height }, event)} onResizeKeyUp={finishKeyboardResize} onFit={() => fitCard(node)} frameChoices={boardFrames.filter((frame) => !isContextFrameId(frame.id) && frame.id !== "trail" && boardFrameRenders(frameKindOf(frame), true)).map((frame) => ({ id: frame.id, name: frame.name }))} structured={structureMode === "structured"} onMoveToFrame={(frameId) => moveToFrame(node, frameId)} stackZ={cardStackZ(front, node.id)} commentCount={node.workItemId ? commentCounts[node.workItemId] ?? 0 : 0} onOpenComments={() => { setFocusOrigin(null); setFocusOpensComments(true); setFocusId(node.id); }} madeInChat={bundleChatId ? visibleNodes.find((entry) => entry.id === bundleChatId)?.title : undefined} bundleVendor={bundleChatId ? vendorByChat.get(bundleChatId) ?? null : undefined} bundleToggleLabel={bundles.has(node.id) ? (bundleView.minimized.has(node.id) ? "Show pieces" : "Minimize pieces") : undefined} onBundleToggle={bundles.has(node.id) ? () => toggleBundle(node, bundleView.minimized.has(node.id) ? "expanded" : "minimized", "menu") : undefined} onSaveChatLink={cardItem && ownsWorkItem(profile, cardItem) ? (url) => saveChatLink(cardItem.id, url) : undefined} />; })}
+            {visibleNodes.filter((node) => node.kind !== "answer" && !isWorkboardDecorationKind(node.kind)).map((node) => { const bundleChatId = pieceChat.get(node.id); const canResize = !bundleChatId && Boolean(lab.board?.canEditStructure) && (node.kind !== "judgment" || Boolean(node.local)); const cardItem = itemByNode(node); const parentNode = bundleChatId ? shownNodes.find((entry) => entry.id === bundleChatId) : undefined; const parent = parentNode ? itemByNode(parentNode) : undefined; return <LabCard key={node.id} face="board" cardFace={effectiveCardFace(cardFaceOverrides, node.id, cardFace)} onCardFaceChange={(face) => { setCardFaceOverride(node.id, face); noteWorkboardFace(orgId, face, "card"); }} node={node} item={cardItem} parent={parent} catchPending={pendingCatchIds.has(node.id)} onCatchComplete={() => finishCatch(node.id)} teammateMark={teammateMarkByNode(node, cardItem)} removable={cardRemovable(profile, node, cardItem)} canRename={Boolean(cardItem && ownsWorkItem(profile, cardItem))} preview={cardItem ? cardPreviews[cardItem.id] : undefined} filePreview={cardItem ? filePreviews[cardItem.id] : undefined} onPreviewScroll={cardItem ? (kind) => notePreviewScroll(cardItem, kind) : undefined} selected={selected.includes(node.id)} previewSelected={marqueePreview.includes(node.id)} focused={keyboardId === node.id} focusOnMount={pendingJudgmentFocusId === node.id} connecting={connectSource !== null || connectorPreview !== null} connectSourceAnchor={connectSource?.nodeId === node.id ? connectSource.anchor : null} onSelect={(via = "menu") => { const call = cardContextCall(via); if (call.record === "menu") noteWorkboardContextChanged(orgId, "menu"); else if (call.record) noteWorkboardContextChanged(orgId, call.record); if (!call.toggle) return; setAnnouncement(selected.includes(node.id) ? "Removed from context" : "Added to context"); setSelected((current) => { if (!current.includes(node.id)) flareNewContext([node.id], current); return toggleContext(current, node.id); }); }} onOpen={(origin) => openNode(node, origin)} onBranch={() => requestBranch(node)} onHide={() => requestHide(node)} onDelete={() => deleteNode(node)} onTakeOutOfContext={isContextFrameId(node.frame) && node.workItemId ? () => void takeOutOfContext(node) : undefined} onEdit={(text) => { nodesRef.current = updateLocalNode(nodesRef.current, node.id, text); setNodes((current) => current ? updateLocalNode(current, node.id, text) : current); }} onEditCommitted={() => { noteWorkboardNodeEdited(orgId, eventKind(node)); const current = nodesRef.current.find((entry) => entry.id === node.id); if (current?.durableId) void persistNodePatch(current.id, { body: current.summary, title: current.title }); }} onAnchorPointerDown={(side, event) => startPointerConnect(node, side, event)} onAnchorActivate={(side) => chooseConnectAnchor(node, side)} onMenuOpened={() => { if (connectSource || connectorDragRef.current) cancelConnect(); noteWorkboardCardMenuOpened(orgId, eventKind(node), node.ownership); }} onMenuOpenChange={setCardMenuOpen} onMeasure={(height) => cardHeightsRef.current.set(node.id, height)} onPointerDown={(event) => { setFront((current) => bringToFront(current, node.id)); onCardPointerDown(node, event); }} onFocus={() => { setFront((current) => bringToFront(current, node.id)); setKeyboardId(node.id); setSelectedFrameId(null); setSelectedLinkId((current) => relationshipSelection(current, "deselect")); if (pendingJudgmentFocusId === node.id) setPendingJudgmentFocusId(null); }} onKeyDown={(event) => onCardKeyDown(node, event)} canResize={canResize} onResizeStart={(corner, event) => startResize("card", node.id, corner, { x: node.x, y: node.y, width: node.width, height: node.height }, event)} onResizeKeyDown={(corner, event) => keyboardResize("card", node.id, corner, { x: node.x, y: node.y, width: node.width, height: node.height }, event)} onResizeKeyUp={finishKeyboardResize} onFit={() => fitCard(node)} frameChoices={boardFrames.filter((frame) => !isSectionFrameId(frame.id) && !isContextFrameId(frame.id) && frame.id !== "trail" && boardFrameRenders(frameKindOf(frame), true)).map((frame) => ({ id: frame.id, name: frame.name }))} structured={structureMode === "structured"} onMoveToFrame={(frameId) => moveToFrame(node, frameId)} stackZ={cardStackZ(front, node.id)} commentCount={node.workItemId ? commentCounts[node.workItemId] ?? 0 : 0} onOpenComments={() => { setFocusOrigin(null); setFocusOpensComments(true); setFocusId(node.id); }} madeInChat={bundleChatId ? visibleNodes.find((entry) => entry.id === bundleChatId)?.title : undefined} bundleVendor={bundleChatId ? vendorByChat.get(bundleChatId) ?? null : undefined} bundleToggleLabel={bundles.has(node.id) ? (bundleView.minimized.has(node.id) ? "Show pieces" : "Minimize pieces") : undefined} onBundleToggle={bundles.has(node.id) ? () => toggleBundle(node, bundleView.minimized.has(node.id) ? "expanded" : "minimized", "menu") : undefined} onSaveChatLink={cardItem && ownsWorkItem(profile, cardItem) ? (url) => saveChatLink(cardItem.id, url) : undefined} />; })}
             <LabBundleControls nodes={visibleNodes} bundles={bundleView.bundles} more={bundleView.more} minimized={bundleView.minimized} zoom={zoom} onToggle={(chat, state) => toggleBundle(chat, state, "control")} />
             <svg className="canvas-lab-relationship-overlays absolute inset-0 overflow-visible" width={bounds.width} height={bounds.height} aria-label="Workboard relationship labels">
               <LabRelationshipOverlays links={links} nodes={visibleNodes} measuredHeights={cardHeightsRef.current} selectedLinkId={selectedLinkId} hoveredLinkId={hoveredLinkId} inverseZoom={labInverseZoom(zoom)} zoom={zoom} editable={Boolean(lab.board?.canEditStructure)} onRemove={removeRelationship} onHover={setHoveredLinkId} />
             </svg>
             {linkRejection ? (() => { const target = visibleNodes.find((node) => node.id === linkRejection.targetId); if (!target) return null; return <LabLinkRejection target={target} message={linkRejection.message} onClear={() => setLinkRejection(null)} />; })() : null}
             {dropPrompt ? (() => { const node = visibleNodes.find((entry) => entry.id === dropPrompt.nodeId); const frame = boardFrames.find((entry) => entry.id === dropPrompt.frameId); if (!node || !frame) return null; return <div data-drop-prompt="true" className="canvas-lab-drop-prompt" style={{ left: node.x, top: node.y + node.height + 10 }}><span>Move to {frame.name}?</span><button type="button" onClick={() => { moveToFrame(node, frame.id); closeDropPrompt("yes"); }}>Yes</button><button type="button" onClick={() => closeDropPrompt("keep")}>Keep</button></div>; })() : null}
-            {drawing ? (() => { const rect = drawnRect(drawing.from, drawing.to); return <div data-testid="canvas-lab-draw-rect" className="canvas-lab-draw-rect" style={{ left: rect.x, top: rect.y, width: rect.width, height: rect.height }} aria-hidden />; })() : null}
+            {drawing ? (() => { const rect = drawnRect(drawing.from, drawing.to); return <div data-testid="canvas-lab-draw-rect" className={drawMode === "section" ? "canvas-lab-draw-rect canvas-lab-section" : "canvas-lab-draw-rect"} style={{ left: rect.x, top: rect.y, width: rect.width, height: rect.height }} aria-hidden />; })() : null}
             {pendingWorkstream ? <div className="canvas-lab-draw-rect" style={{ left: pendingWorkstream.rect.x, top: pendingWorkstream.rect.y, width: pendingWorkstream.rect.width, height: pendingWorkstream.rect.height }} aria-hidden /> : null}
             {pendingWorkstream ? <div className="canvas-lab-draw-name" style={{ left: pendingWorkstream.rect.x + 8, top: pendingWorkstream.rect.y + 8, transform: `scale(${1 / zoom})`, transformOrigin: "top left" }}><div className="canvas-lab-inline-workstream"><input aria-label="Workstream name" ref={inlineNameRef} maxLength={60} value={pendingWorkstream.name} onChange={(event) => { const name = event.target.value; setPendingWorkstream((current) => current ? { ...current, name } : current); if (name.trim()) setPendingWorkstreamError(false); }} onPointerDown={(event) => event.stopPropagation()} onKeyDown={(event) => { event.stopPropagation(); if (event.key === "Enter") { event.preventDefault(); void commitDrawnWorkstream(pendingWorkstream.name); } if (event.key === "Escape") { event.preventDefault(); cancelDraw(); } }} /><button type="button" onPointerDown={(event) => event.stopPropagation()} onClick={() => void commitDrawnWorkstream(pendingWorkstream.name)}>Add</button>{pendingWorkstreamError ? <span>a workstream needs a name</span> : null}</div></div> : null}
             {claimPrompt ? <div data-claim-prompt="true" className="canvas-lab-drop-prompt" style={{ left: claimPrompt.rect.x, top: claimPrompt.rect.y + claimPrompt.rect.height + 10 }}><span>{movePromptText(claimPrompt.cards.length)}</span><button type="button" onClick={() => void answerClaimPrompt("yes")}>Move them</button><button type="button" onClick={() => void answerClaimPrompt("keep")}>Leave them</button></div> : null}
