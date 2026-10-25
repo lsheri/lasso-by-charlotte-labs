@@ -1861,7 +1861,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .canvas-lab-section-placeholder { height: auto; min-height: 0; padding: 0; font: inherit; color: inherit; white-space: normal; }
 .canvas-lab-section-menu { width: 28px; height: 28px; min-height: 0; flex-shrink: 0; }
 .canvas-lab-section-menu[data-visible="false"] { visibility: hidden; }
-.canvas-lab-section .canvas-lab-resize-handle { pointer-events: auto; }
+.canvas-lab-section .canvas-lab-resize-handle { pointer-events: auto; width: 8px !important; height: 8px !important; min-width: 0 !important; min-height: 0 !important; padding: 0 !important; border: 1.4px solid var(--nb-green) !important; border-radius: 1px !important; background: var(--nb-paper) !important; }
 .canvas-lab-frame-fit { position: absolute; right: 4px; bottom: 4px; z-index: 14; width: 26px; height: 26px; min-height: 0; }
 .canvas-lab-frame-menu-trigger {
   position: absolute;

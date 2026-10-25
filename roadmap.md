@@ -1,6 +1,7 @@
 # Roadmap
 
-- [ ] SEC-2: canvas sections, additive event definitions, focused regression tests and preview verification; public shared renderer deferred to SEC-3.
+- [x] SEC-2: canvas sections and additive event definitions; 36 focused tests passed; fixture inspected at 1280 and 390. Public shared renderer deferred to SEC-3.
+- [ ] SEC-2: real signed-in draw/save/read-back blocked by external unmanaged authentication; explicit TypeScript exit code unavailable because manual project typechecks are prohibited.
 
 - [x] LINK-1: owner-only All work chat-link entry, project clarification, unchanged privacy pin; 24 focused tests passed, full suite once: 4332 passed / 125 failed in the same 38 reported files; preview build OK.
 - [ ] LINK-1: explicit tsgo result unavailable because manual project typechecks are prohibited by this environment.
