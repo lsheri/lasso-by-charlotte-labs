@@ -47,7 +47,7 @@ describe("GF1 retired board guides", () => {
   });
 
   it("still renders named regions through the ordinary frame component", () => {
-    expect(PAGE).toContain("boardFrames.filter((frame) => frame.id !== \"trail\"");
+    expect(PAGE).toContain("boardFrames.filter((frame) => !isSectionFrameId(frame.id) && frame.id !== \"trail\"");
     expect(PAGE).toContain("const region = isRegionFrameId(frame.id)");
     expect(PAGE).toContain("<LabFrameElement key={frame.id}");
     expect(PAGE).toContain("region={region}");
