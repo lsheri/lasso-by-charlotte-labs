@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { readFileSync } from "node:fs";
 
-import { cleanup, render, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -102,6 +102,18 @@ function sharedBoard(): SharedBoardDto {
 }
 
 describe("S3a shared board is the owner's board, read only", () => {
+  it("receives saved sections without offering any writing interaction", () => {
+    const board = sharedBoard();
+    board.board.frames = [{ id: "saved-section", key: "section:pricing", kind: "custom", taskId: null, label: "Pricing", fill: null, x: 0, y: 0, w: 900, h: 600, ord: 0, version: 1 }];
+    const rendered = renderShared(board);
+    const section = rendered.getByTestId("lab-section-section:pricing");
+    fireEvent.doubleClick(rendered.getByText("Pricing"));
+    fireEvent.keyDown(section, { key: "Delete" });
+    fireEvent.contextMenu(section);
+    expect(rendered.queryByRole("textbox", { name: "Section title" })).toBeNull();
+    expect(rendered.queryByRole("button", { name: "Section menu" })).toBeNull();
+    expect(rendered.getByTestId("lab-section-section:pricing")).toBe(section);
+  });
   it("sizes a card stored at 0 by 0 the way the live board does", () => {
     const model = buildSharedBoardModel(sharedBoard());
     const chat = model.nodes.find((entry) => entry.workItemId === "w-chat");
