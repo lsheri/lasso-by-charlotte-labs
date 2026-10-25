@@ -2,6 +2,7 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { LabSection } from "@/components/canvas-lab/LabSection";
+import { applyDurableBoard } from "@/components/canvas-lab/canvas-lab-model";
 import { noteWorkboardSection } from "@/components/canvas-lab/canvas-lab-telemetry";
 import { guardWorkboardEvent } from "@/lib/workboard-event-allowlist";
 import { logEvent } from "@/lib/telemetry";
@@ -13,6 +14,16 @@ function props() {
   return { frame, title: "Pricing", selected: true, editable: true, onSelect: vi.fn(), onDragStart: vi.fn(), onResizeStart: vi.fn(), onResizeKeyDown: vi.fn(), onResizeKeyUp: vi.fn(), onRename: vi.fn(), onRemove: vi.fn(), onMenuOpened: vi.fn() };
 }
 describe("SEC-2 section", () => {
+  it("keeps a reloaded untitled section's key and empty name", () => {
+    const result = applyDurableBoard({ frames: [], nodes: [] }, {
+      id: "board", engagementId: "engagement", version: 1, viewerProfileId: null,
+      canEditStructure: false, archivedContextFrame: null, nodes: [], links: [],
+      frames: [{ id: "saved-frame", key: "section:abc", kind: "custom", taskId: null, label: null, fill: null, x: 10, y: 20, w: 400, h: 300, ord: 0, version: 1 }],
+    });
+    expect(result.frames).toHaveLength(1);
+    expect(result.frames[0]?.id).toBe("section:abc");
+    expect(result.frames[0]?.name).toBe("");
+  });
   it("renders its title and offers an untitled name editor", () => {
     const p = props();
     const view = render(<LabSection {...p} />);
