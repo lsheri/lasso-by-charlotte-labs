@@ -10,7 +10,7 @@ vi.mock("../canvas-lab-telemetry", () => ({ noteWorkboardLedgerOpened: vi.fn() }
 import { DecisionFeedbackPicker, feedbackItems } from "../DecisionsLedger";
 import { DecisionsMemo, memoText } from "../DecisionsMemo";
 import type { WorkItemRow } from "@/lib/work-types";
-const item = (id: string, type: WorkItemRow["type"], doc_kind?: string) => ({ id, type, title: id, doc_kind, captured_at: "2026-10-26", source: "upload", visibility: "unmapped", work_item_tasks: [] }) as WorkItemRow;
+const item = (id: string, type: WorkItemRow["type"], doc_kind?: string) => ({ id, type, title: id, doc_kind, content_ref: null, captured_at: "2026-10-26", source: "upload", visibility: "unmapped", work_item_tasks: [] }) as WorkItemRow;
 afterEach(() => { cleanup(); h.link.mockReset(); });
 describe("Ledger feedback", () => {
   it("lists calls separately and excludes decisions and unrelated types", () => {
