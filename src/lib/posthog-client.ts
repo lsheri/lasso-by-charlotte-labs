@@ -1,4 +1,4 @@
-import posthog from "posthog-js";
+import posthog, { type BeforeSendFn } from "posthog-js";
 
 import { isProductionHost } from "@/lib/app-host";
 
@@ -14,8 +14,35 @@ import { isProductionHost } from "@/lib/app-host";
 
 export const POSTHOG_TOKEN = "phc_mb9PLASteZ87YA6P34n4Mb9Hp9rW3oXXRQvq6qXiy6mw";
 
+/** Redact link credentials wherever a URL is embedded, without losing its context. */
+export function scrubShareTokens(url: string): string {
+  return url
+    .replace(/\/(memo|shared-board|share)\/[^/?#&\s"'<>]+/g, "/$1/:token")
+    .replace(/(%2f(?:memo|shared-board|share)%2f)(?:(?!%2f|%3f|%23|%26)[^/?#&\s"'<>])+/gi, "$1:token");
+}
+
+function scrubProperty(value: unknown): unknown {
+  if (typeof value === "string") return scrubShareTokens(value);
+  if (Array.isArray(value)) return value.map(scrubProperty);
+  if (value && typeof value === "object" && Object.getPrototypeOf(value) === Object.prototype) {
+    return Object.fromEntries(Object.entries(value).map(([key, entry]) => [key, scrubProperty(entry)]));
+  }
+  return value;
+}
+
+const scrubShareEvent: BeforeSendFn = (event) => {
+  if (!event) return null;
+  return {
+    ...event,
+    properties: scrubProperty(event.properties) as typeof event.properties,
+    ...(event.$set ? { $set: scrubProperty(event.$set) as typeof event.$set } : {}),
+    ...(event.$set_once ? { $set_once: scrubProperty(event.$set_once) as typeof event.$set_once } : {}),
+  };
+};
+
 export const POSTHOG_CONFIG = {
   api_host: "https://us.i.posthog.com",
+  before_send: scrubShareEvent,
   // No cookie option: cookie_domain is not a posthog-js option. The shared
   // visitor id across the umbrella domain and its subdomains comes from
   // cross_subdomain_cookie, which defaults to true and scopes the cookie to
