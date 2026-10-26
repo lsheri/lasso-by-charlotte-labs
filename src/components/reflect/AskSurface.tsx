@@ -25,6 +25,7 @@ import type { KeptAnswer } from "@/components/reflect/answer-keep-context";
 import { ANSWER_DRAG_MIME, KEEP_ANSWER_LABEL } from "@/lib/answer-card";
 import type { AskTab } from "@/components/reflect/ask-dock-state";
 import type { AskLasso } from "@/components/reflect/use-ask-lasso";
+import type { AskSectionChoice } from "@/components/canvas-lab/BoardAsk";
 import { LassoThinkingMark } from "@/components/reflect/LassoThinkingMark";
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
 import { LOOP_SIZE_CHAT } from "@/lib/lasso-loop";
@@ -748,6 +749,8 @@ export function AskSurface({
   emptyActions,
   inline,
   headerTone = "graphite",
+  sections,
+  onPickSection,
 }: {
   ask: AskLasso;
   tab: AskTab;
@@ -801,7 +804,7 @@ export function AskSurface({
         </div>
       </header>
 
-      <WorkPicker ask={ask} engagementId={engagementId} />
+      <WorkPicker ask={ask} engagementId={engagementId} sections={sections} onPickSection={onPickSection} />
 
       {tab === "messages" ? <MessagesTab ask={ask} emptyActions={emptyActions} /> : null}
       {tab === "history" ? <HistoryTab ask={ask} onTab={onTab} /> : null}
