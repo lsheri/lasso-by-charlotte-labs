@@ -338,22 +338,6 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     return [...byId.values()];
   }, [page]);
 
-  // PUSH-2c: one read of push history for every item on this board, never per card.
-  const pushItemIds = useMemo(() => workItems.map((item) => item.id).sort(), [workItems]);
-  const boardPushes = useQuery({
-    queryKey: ["item-pushes", pushItemIds],
-    enabled: pushItemIds.length > 0,
-    staleTime: 60_000,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("work_item_pushes")
-        .select("id, work_item_id, pushed_at, mode, turns_added, turns_changed, attachments_added, attachments_changed")
-        .in("work_item_id", pushItemIds);
-      if (error) return {};
-      return grownDatesByItem(data ?? []);
-    },
-  });
-  const grownByItem: Record<string, string[]> = boardPushes.data ?? {};
 
   const taskIdsByWork = useMemo(() => {
     const mapping = new Map<string, string[]>();
@@ -612,6 +596,22 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   const shownNodes = useMemo(() => allNodes.filter((node) => !hiddenIds.includes(node.id)), [allNodes, hiddenIds]);
   // BI-5: placement-derived items first; readable items whose placement is hidden resolve by id.
   const { items: boardItems, pendingIds: pendingBoardItemIds } = useBoardNodeItems(nodes ?? [], workItems);
+  // PUSH-2c: one read of push history for every item on this board, never per card.
+  const pushItemIds = useMemo(() => boardItems.map((item) => item.id).sort(), [boardItems]);
+  const boardPushes = useQuery({
+    queryKey: ["item-pushes", pushItemIds],
+    enabled: pushItemIds.length > 0,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("work_item_pushes")
+        .select("id, work_item_id, pushed_at, mode, turns_added, turns_changed, attachments_added, attachments_changed")
+        .in("work_item_id", pushItemIds);
+      if (error) return {};
+      return grownDatesByItem(data ?? []);
+    },
+  });
+  const grownByItem: Record<string, string[]> = boardPushes.data ?? {};
   /** U2: a pushed chat and the pieces it made, derived from every item on the board (BUNDLE-1). */
   const bundles = useMemo(() => chatBundles(shownNodes, boardItems), [shownNodes, boardItems]);
   /** VENDOR-COLOUR-1: chat NODE id -> source_vendor, so stems, pieces and stack edges take the chat's colour. */
