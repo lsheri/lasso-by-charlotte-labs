@@ -78,3 +78,5 @@
 - [x] SHARE-2: six older share tests updated (authorized).
 
 - [x] SHARE-2 tests: six assertions updated to new dialog; full suite run once.
+- [x] SECD-3b: Sections group in the Ask scope picker (all sections, marked or not), phone sheet wired explicitly, picker door shares the menu door's askSection state with a nonce; context_changed gained the additive "picker" action; 10 new tests pass, tsgo exit 0.
+- [ ] SECD-3b: signed-in picker question and source-trail read-back still blocked by external unmanaged authentication.

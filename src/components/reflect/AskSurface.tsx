@@ -25,6 +25,7 @@ import type { KeptAnswer } from "@/components/reflect/answer-keep-context";
 import { ANSWER_DRAG_MIME, KEEP_ANSWER_LABEL } from "@/lib/answer-card";
 import type { AskTab } from "@/components/reflect/ask-dock-state";
 import type { AskLasso } from "@/components/reflect/use-ask-lasso";
+import type { AskSectionChoice } from "@/components/canvas-lab/BoardAsk";
 import { LassoThinkingMark } from "@/components/reflect/LassoThinkingMark";
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
 import { LOOP_SIZE_CHAT } from "@/lib/lasso-loop";
@@ -224,11 +225,46 @@ export function AskScopeChip({
   );
 }
 
-function WorkPicker({ ask, engagementId }: { ask: AskLasso; engagementId: string }) {
+function WorkPicker({
+  ask,
+  engagementId,
+  sections,
+  onPickSection,
+}: {
+  ask: AskLasso;
+  engagementId: string;
+  sections?: AskSectionChoice[] | undefined;
+  onPickSection?: ((frameId: string) => void) | undefined;
+}) {
   if (!ask.pickerOpen) return null;
   const checked = new Set(ask.selectedItems.map((i) => i.id));
   return (
     <div className="max-h-56 space-y-3 overflow-y-auto border-b border-border bg-secondary/40 px-4 py-3">
+      {sections && sections.length > 0 && onPickSection ? (
+        <div>
+          <p className="micro-label">Sections</p>
+          <div className="mt-1 space-y-1">
+            {sections.map((section) => (
+              <button
+                key={section.id}
+                type="button"
+                onClick={() => {
+                  onPickSection(section.id);
+                  ask.setPickerOpen(false);
+                }}
+                className="block min-h-11 w-full px-1 py-1.5 text-left text-sm"
+              >
+                <span className="block break-words">
+                  {section.title ?? section.marker ?? "Untitled section"}
+                </span>
+                {section.title && section.marker ? (
+                  <span className="block text-xs text-muted-foreground">{section.marker}</span>
+                ) : null}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
       <MappedWorkChecklist
         items={ask.mapped}
         engagementId={engagementId}
@@ -713,6 +749,8 @@ export function AskSurface({
   emptyActions,
   inline,
   headerTone = "graphite",
+  sections,
+  onPickSection,
 }: {
   ask: AskLasso;
   tab: AskTab;
@@ -726,6 +764,8 @@ export function AskSurface({
   emptyActions?: React.ReactNode;
   inline?: boolean;
   headerTone?: "graphite" | "lime";
+  sections?: AskSectionChoice[] | undefined;
+  onPickSection?: ((frameId: string) => void) | undefined;
 }) {
   return (
     <>
@@ -764,7 +804,7 @@ export function AskSurface({
         </div>
       </header>
 
-      <WorkPicker ask={ask} engagementId={engagementId} />
+      <WorkPicker ask={ask} engagementId={engagementId} sections={sections} onPickSection={onPickSection} />
 
       {tab === "messages" ? <MessagesTab ask={ask} emptyActions={emptyActions} /> : null}
       {tab === "history" ? <HistoryTab ask={ask} onTab={onTab} /> : null}

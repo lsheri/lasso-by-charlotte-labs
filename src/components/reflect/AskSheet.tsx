@@ -1,6 +1,7 @@
 import { AskSurface } from "@/components/reflect/AskSurface";
 import { useAskDockState } from "@/components/reflect/ask-dock-state";
-import { useAskLasso } from "@/components/reflect/use-ask-lasso";
+import { useAskLasso, type SectionAskSource } from "@/components/reflect/use-ask-lasso";
+import type { AskSectionChoice } from "@/components/canvas-lab/BoardAsk";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 
 /**
@@ -18,11 +19,14 @@ export function AskSheet(props: {
   profileId: string;
   orgId: string;
   headerTone?: "graphite" | "lime";
+  sectionSource?: SectionAskSource | undefined;
+  sectionChoices?: AskSectionChoice[] | undefined;
+  onPickSection?: ((frameId: string) => void) | undefined;
 }) {
   const { open, onOpenChange, engagementId, engagementTitle, profileId, orgId } =
     props;
   const { tab, setTab } = useAskDockState();
-  const ask = useAskLasso({ open, engagementId, engagementTitle, profileId, orgId });
+  const ask = useAskLasso({ open, engagementId, engagementTitle, profileId, orgId, sectionSource: props.sectionSource });
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -43,6 +47,8 @@ export function AskSheet(props: {
           onClose={() => onOpenChange(false)}
           headerTone={props.headerTone ?? "graphite"}
           mobile
+          sections={props.sectionChoices}
+          onPickSection={props.onPickSection}
         />
       </SheetContent>
     </Sheet>

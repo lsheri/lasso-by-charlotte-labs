@@ -46,7 +46,7 @@ import { LabSticky, stickyBodyOf } from "@/components/canvas-lab/LabSticky";
 import { LabTextBlock } from "@/components/canvas-lab/LabTextBlock";
 import { BoardJumpControls } from "@/components/canvas-lab/BoardJumpControls";
 import { LabSection, nextWeekSectionRect, shiftedSectionMarker, type SectionMarkerChoice } from "@/components/canvas-lab/LabSection";
-import { isSectionFrameId, newSectionFrameId, sectionTitle, containingSection, sectionDragMembers, moveSectionContents, SECTION_REMOVED_LINE, clearMarker, markedSectionAt, type SectionMarker } from "@/lib/board-section";
+import { isSectionFrameId, newSectionFrameId, sectionTitle, containingSection, sectionDragMembers, moveSectionContents, SECTION_REMOVED_LINE, clearMarker, markedSectionAt, markerLabel, type SectionMarker } from "@/lib/board-section";
 import { LabFrame as LabFrameElement } from "@/components/canvas-lab/LabFrame";
 import { applyMarqueeSelection, cardsInMarquee, contextFlareSequence, isMarqueeClick, marqueeRect, type MarqueeRect } from "@/components/canvas-lab/canvas-lab-marquee";
 import { GroupingNamePopup } from "@/components/canvas-lab/GroupingNamePopup";
@@ -459,7 +459,8 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   const [addWorkTarget, setAddWorkTarget] = useState<"board" | "context">("board");
   const [addWorkBusy, setAddWorkBusy] = useState(false);
   const [askOpen, setAskOpen] = useState(false);
-  const [askSectionId, setAskSectionId] = useState<string | null>(null);
+  /** The section Ask Lasso is scoped to. The nonce re-applies a re-pick. */
+  const [askSection, setAskSection] = useState<{ id: string; nonce: number } | null>(null);
   const [keepBusy, setKeepBusy] = useState(false);
   const [regionFill, setRegionFill] = useState<RegionFill>("green-faded");
   const [pendingRegionNameId, setPendingRegionNameId] = useState<string | null>(null);
@@ -931,21 +932,32 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   framesRef.current = boardFrames;
   const visibleAskNodesRef = useRef(visibleNodes);
   visibleAskNodesRef.current = visibleNodes;
-  const sectionAskSource = useMemo(() => askSectionId ? {
+  const sectionAskSource = useMemo(() => askSection ? {
     resolve: (): string[] | null => {
       const sections = framesRef.current.filter((frame) => isSectionFrameId(frame.id));
-      if (!sections.some((frame) => frame.id === askSectionId)) return null;
+      if (!sections.some((frame) => frame.id === askSection.id)) return null;
       return [...new Set(visibleAskNodesRef.current.flatMap((node) => {
         if (!node.workItemId || node.kind === "answer" || isWorkboardDecorationKind(node.kind)) return [];
         const rect = { ...node, height: cardHeightsRef.current.get(node.id) ?? node.height };
-        return containingSection(rect, sections)?.id === askSectionId ? [node.workItemId] : [];
+        return containingSection(rect, sections)?.id === askSection.id ? [node.workItemId] : [];
       }))];
     },
-  } : undefined, [askSectionId]);
+  } : undefined, [askSection]);
+  /** Every section on the board, marked or not, live for the Ask scope picker. */
+  const askSectionChoices = boardFrames.filter((frame) => isSectionFrameId(frame.id)).map((frame) => ({
+    id: frame.id,
+    title: sectionTitle(frame.name),
+    marker: markerLabel(frame),
+  }));
   function askAboutSection(frame: LabFrame) {
-    setAskSectionId(frame.id);
+    setAskSection({ id: frame.id, nonce: Date.now() });
     setAskOpen(true);
     noteWorkboardContextChanged(orgId, "menu");
+  }
+  /** SECD-3b: the picker door ends in the same section state as the menu door. */
+  function pickAskSection(frameId: string) {
+    setAskSection({ id: frameId, nonce: Date.now() });
+    noteWorkboardContextChanged(orgId, "picker");
   }
   const hiddenRef = useRef<string[]>([]);
   hiddenRef.current = hiddenIds;
@@ -3585,7 +3597,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
         </div>
         {boardReady && opening ? <div className={`pointer-events-none absolute inset-0 z-40 flex ${unfold.className}`} aria-hidden={!unfold.still}>{unfold.still ? <span className="sr-only">{unfold.reduced}</span> : null}<span className="canvas-lab-unfold-panel" /><span className="canvas-lab-unfold-panel" /><span className="canvas-lab-unfold-panel" /></div> : null}
       </main>
-      {profile?.id && orgId ? <BoardAsk sectionSource={sectionAskSource} open={askOpen} onOpenChange={(open) => { setAskOpen(open); if (!open) setAskSectionId(null); }} engagementId={engagementId} engagementTitle={title} profileId={profile.id} orgId={orgId} canKeep={canAddWork} onKeep={(answer, via) => void keepAnswerAsCard(answer, { via: via ?? "button" })} boardContextHasPicks={contextNodes.length > 0} boardContextItemIds={contextNodes.flatMap((node) => { const item = itemByNode(node); return item ? [item.id] : []; })} /> : null}
+      {profile?.id && orgId ? <BoardAsk sectionSource={sectionAskSource} sectionChoices={askSectionChoices} onPickSection={pickAskSection} open={askOpen} onOpenChange={(open) => { setAskOpen(open); if (!open) setAskSection(null); }} engagementId={engagementId} engagementTitle={title} profileId={profile.id} orgId={orgId} canKeep={canAddWork} onKeep={(answer, via) => void keepAnswerAsCard(answer, { via: via ?? "button" })} boardContextHasPicks={contextNodes.length > 0} boardContextItemIds={contextNodes.flatMap((node) => { const item = itemByNode(node); return item ? [item.id] : []; })} /> : null}
       {canAddWork && suggestOpen ? <BoardSuggestionSurface mobile={suggestionMobile} onClose={closeSuggestions}>
         {suggestApplied.length === 0 ? <SuggestStructurePanel state={suggestState} structures={suggestions} parts={suggestParts} shortfall={suggestShortfall} error={suggestError} onSubmit={(text, kind) => void submitSuggestions(text, kind)} onChoose={(id) => void chooseSuggestion(id)} onCancel={closeSuggestions} /> : <SuggestionApplyResult regions={suggestApplied} busy={suggestBusy} message={suggestRemoval} onRemove={() => void removeSuggestion()} onClose={closeSuggestions} />}
         {suggestApplied.length === 0 && suggestRemoval ? <p role="alert" className="text-base text-destructive">{suggestRemoval}</p> : null}
