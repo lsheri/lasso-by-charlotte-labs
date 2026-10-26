@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useRef, useState } from "react";
-import { updateDecisionLine, addDecisionLine, recordDecisionsVersion } from "@/lib/decisions.functions";
+import { useEffect, useRef, useState } from "react";
+import * as decisionsFunctions from "@/lib/decisions.functions";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -36,11 +36,16 @@ export function statusWord(status: DecisionLine["status"]): "Open" | "Agreed" | 
 
 // A failed close keeps its pending version across overlay remounts.
 const dirtyDocuments = new Set<string>();
+const dirtyListeners = new Map<string, Set<() => void>>();
+export function markDecisionDocumentDirty(documentId: string) {
+  dirtyDocuments.add(documentId);
+  dirtyListeners.get(documentId)?.forEach((notify) => notify());
+}
 export function useDecisionLineMutations(documentId: string, profileId?: string) {
   const client = useQueryClient();
-  const update = useServerFn(updateDecisionLine);
-  const add = useServerFn(addDecisionLine);
-  const version = useServerFn(recordDecisionsVersion);
+  const update = useServerFn(decisionsFunctions.updateDecisionLine);
+  const add = useServerFn(decisionsFunctions.addDecisionLine);
+  const version = useServerFn(decisionsFunctions.recordDecisionsVersion);
   const [pending, setPending] = useState(0);
   const [saved, setSaved] = useState(false);
   const [dirty, setDirty] = useState(dirtyDocuments.has(documentId));
@@ -52,10 +57,23 @@ export function useDecisionLineMutations(documentId: string, profileId?: string)
   const identity = { document_id: documentId, ...(profileId ? { profile_id: profileId } : {}) };
   function success() {
     revision.current += 1;
-    dirtyDocuments.add(documentId); setDirty(true); setSaved(true);
+    markDecisionDocumentDirty(documentId); setDirty(true); setSaved(true);
     if (savedTimer.current) clearTimeout(savedTimer.current);
     savedTimer.current = setTimeout(() => setSaved(false), 1500);
   }
+  // Restore can run from the board's undo path while this overlay is mounted.
+  const notifyRef = useRef<() => void>(() => undefined);
+  notifyRef.current = () => {
+    revision.current += 1; setDirty(true); setSaved(true);
+    if (savedTimer.current) clearTimeout(savedTimer.current);
+    savedTimer.current = setTimeout(() => setSaved(false), 1500);
+  };
+  useEffect(() => {
+    const notify = () => notifyRef.current();
+    const listeners = dirtyListeners.get(documentId) ?? new Set<() => void>();
+    listeners.add(notify); dirtyListeners.set(documentId, listeners);
+    return () => { listeners.delete(notify); if (!listeners.size) dirtyListeners.delete(documentId); };
+  }, [documentId]);
   function run<T>(id: string, operation: () => Promise<T>): Promise<T> {
     setPending((n) => n + 1); setSaved(false); setErrors((old) => ({ ...old, [id]: false }));
     const request = operation().catch((error: unknown) => {
@@ -89,6 +107,31 @@ export function useDecisionLineMutations(documentId: string, profileId?: string)
       success(); return row;
     });
   }
+  function removeLine(id: string) {
+    return run(id, async () => {
+      await client.cancelQueries({ queryKey: key });
+      const previous = client.getQueryData<DecisionLine[]>(key) ?? [];
+      const ids_in_order = [...previous].sort((a, b) => Number(a.status === "discarded") - Number(b.status === "discarded") || (a.ord ?? 0) - (b.ord ?? 0)).map((line) => line.id);
+      client.setQueryData<DecisionLine[]>(key, previous.filter((line) => line.id !== id));
+      try {
+        const row = await decisionsFunctions.removeDecisionLine({ data: { ...identity, id } });
+        success(); return { documentId, row, ids_in_order };
+      } catch (error) { client.setQueryData(key, previous); throw error; }
+    });
+  }
+  function reorderLines(ids_in_order: string[], rowId: string) {
+    return run(rowId, async () => {
+      await client.cancelQueries({ queryKey: key });
+      const previous = client.getQueryData<DecisionLine[]>(key) ?? [];
+      if (previous.length !== ids_in_order.length || new Set(ids_in_order).size !== previous.length || previous.some((line) => !ids_in_order.includes(line.id))) return;
+      const next = ids_in_order.flatMap((id, ord) => { const line = previous.find((entry) => entry.id === id); return line ? [{ ...line, ord: ord + 1 }] : []; });
+      client.setQueryData(key, next);
+      try {
+        const rows = await decisionsFunctions.reorderDecisionLines({ data: { ...identity, ids_in_order } });
+        client.setQueryData(key, rows); success();
+      } catch (error) { client.setQueryData(key, previous); throw error; }
+    });
+  }
   async function saveVersion() {
     await Promise.allSettled([...inFlight.current]);
     if (!dirtyDocuments.has(documentId)) return;
@@ -99,5 +142,5 @@ export function useDecisionLineMutations(documentId: string, profileId?: string)
       await client.invalidateQueries({ queryKey: ["document-versions", documentId] });
     });
   }
-  return { setStatus: (id: string, status: DecisionLine["status"]) => editLine(id, { status }), editLine, addLine, saveVersion, dirty, pending: pending > 0, saved, errors };
+  return { setStatus: (id: string, status: DecisionLine["status"]) => editLine(id, { status }), editLine, addLine, removeLine, reorderLines, saveVersion, dirty, pending: pending > 0, saved, errors };
 }

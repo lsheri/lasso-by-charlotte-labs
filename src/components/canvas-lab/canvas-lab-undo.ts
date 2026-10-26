@@ -7,6 +7,9 @@
  */
 
 import type { LabLink, LabNode, LabRect } from "@/components/canvas-lab/canvas-lab-model";
+import type { Database } from "@/integrations/supabase/types";
+
+export type LedgerRemoveEntry = { documentId: string; row: Database["public"]["Tables"]["decisions"]["Row"]; ids_in_order: string[] };
 
 export type UndoAction =
   | "move"
@@ -18,7 +21,8 @@ export type UndoAction =
   | "relationship_remove"
   | "link_relation"
   | "workstream_move"
-  | "bundle_workstream_move";
+  | "bundle_workstream_move"
+  | "ledger_remove_line";
 
 export type UndoDirection = "undo" | "redo";
 
@@ -32,7 +36,8 @@ export type UndoEntry =
   | { id: string; action: "relationship_remove"; link: LabLink; coalesceKey?: string; at?: number }
   | { id: string; action: "link_relation"; linkId: string; before: string; after: string; coalesceKey?: string; at?: number }
   | { id: string; action: "workstream_move"; nodeId: string; before: string; after: string; coalesceKey?: string; at?: number }
-  | { id: string; action: "bundle_workstream_move"; chatTitle: string; moves: { nodeId: string; before: string; after: string }[]; coalesceKey?: string; at?: number };
+  | { id: string; action: "bundle_workstream_move"; chatTitle: string; moves: { nodeId: string; before: string; after: string }[]; coalesceKey?: string; at?: number }
+  | ({ id: string; action: "ledger_remove_line"; coalesceKey?: string; at?: number } & LedgerRemoveEntry);
 
 export type UndoEntryDraft = UndoEntry extends infer Entry
   ? Entry extends UndoEntry ? Omit<Entry, "id" | "at"> & { at?: number } : never
@@ -84,6 +89,12 @@ export function canUndoToastEntry(stacks: UndoStacks, entryId: string): boolean 
   return stacks.undo[stacks.undo.length - 1]?.id === entryId;
 }
 
+/** Ledger removal is final when its toast expires; all other actions keep their history. */
+export function expireLedgerRemoval(stacks: UndoStacks, entryId: string): UndoStacks {
+  const keep = (entry: UndoEntry) => entry.id !== entryId || entry.action !== "ledger_remove_line";
+  return { undo: stacks.undo.filter(keep), redo: stacks.redo.filter(keep) };
+}
+
 /** The plain word said back to the person for each action. */
 export function undoActionWord(action: UndoAction): string {
   if (action === "move") return "move";
@@ -91,6 +102,7 @@ export function undoActionWord(action: UndoAction): string {
   if (action === "hide") return "removal from the board";
   if (action === "restore") return "restore";
   if (action === "remove_note") return "note removal";
+  if (action === "ledger_remove_line") return "decision removal";
   if (action === "relationship_add") return "relationship";
   if (action === "relationship_remove") return "relationship removal";
   if (action === "link_relation") return "what this link means";
