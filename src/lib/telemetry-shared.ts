@@ -404,6 +404,10 @@ export type TelemetryEvent =
   | "workboard.section_created"
   | "workboard.section_moved"
   | "workboard.section_removed"
+  /** SECD-1b: a section's period or number marker changed. Closed dimensions only, no values. */
+  | "workboard.section_marker_set"
+  | "workboard.section_marker_cleared"
+  | "workboard.section_shifted"
   /** B2: a chat's docked pieces were minimized, shown, or all shown. State, count band, entry only. */
   | "workboard.bundle_toggled"
   /** D1: an empty note was started on a workstream. Entry point only, no ids and no text. */

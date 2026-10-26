@@ -49,11 +49,22 @@ export function noteWorkboardReviewOpened(orgId: string | undefined, format: "th
 export function noteWorkboardLedgerOpened(orgId: string | undefined, via: "card" | "menu" | "key" | "memo_preview"): void {
   if (orgId) logEvent("workboard.ledger_opened", orgId, { via });
 }
-export function noteWorkboardSection(orgId: string | undefined, action: "created" | "moved" | "removed", detail?: { frames: number; cards: number }): void {
+export function noteWorkboardSection(orgId: string | undefined, action: "created" | "moved" | "removed", detail?: { frames: number; cards: number }, createdVia: "drawn" | "next_week" = "drawn"): void {
   if (!orgId) return;
-  if (action === "created") logEvent("workboard.section_created", orgId, { via: "drawn" });
+  if (action === "created") logEvent("workboard.section_created", orgId, { via: createdVia });
   else if (action === "moved") logEvent("workboard.section_moved", orgId, { frames: detail?.frames ?? 0, cards: detail?.cards ?? 0 });
   else logEvent("workboard.section_removed", orgId, {});
+}
+export type SectionMarkerEvent =
+  | { action: "set"; kind: "period" | "number"; preset: "day" | "week" | "month" | "custom" | "none"; via: "menu" | "line" }
+  | { action: "cleared" }
+  | { action: "shifted"; direction: "next" | "previous" };
+/** SECD-1b: marker changes on a section. Closed dimensions only, never the dates or number. */
+export function noteWorkboardSectionMarker(orgId: string | undefined, event: SectionMarkerEvent): void {
+  if (!orgId) return;
+  if (event.action === "set") logEvent("workboard.section_marker_set", orgId, { kind: event.kind, preset: event.preset, via: event.via });
+  else if (event.action === "cleared") logEvent("workboard.section_marker_cleared", orgId, {});
+  else logEvent("workboard.section_shifted", orgId, { direction: event.direction });
 }
 export function noteWorkboardTrailSelected(orgId: string | undefined, group: "context" | "ai_work" | "human_judgment" | "decisions", focus: "exact" | "item"): void {
   if (orgId) logEvent("workboard.trail_item_selected", orgId, { group, focus });
