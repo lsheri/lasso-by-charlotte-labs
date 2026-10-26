@@ -4,8 +4,8 @@ import { ledgerTurnOf, statusWord, type DecisionLine } from "@/hooks/use-decisio
 import { formatDate } from "@/lib/work-types";
 import { MemoComments, type MemoCommentsModel } from "./MemoComments";
 
-export const COPY = { updated: (date: string) => `Updated ${date}`, aside: "Set aside", pointer: "from a chat on this board", copy: "Copy as text", copied: "Copied", copyError: "Could not copy. Try again.", agreed: "Agreed", open: "Open", dropped: "Dropped", filter: "Decisions" };
-export type OpenedMemoLine = { id: string; ord: number | null; statement: string; reason: string | null; status: "open" | "agreed" | "dropped"; has_source: boolean };
+export const COPY = { feedback: "feedback from a call, kept on the board", updated: (date: string) => `Updated ${date}`, aside: "Set aside", pointer: "from a chat on this board", copy: "Copy as text", copied: "Copied", copyError: "Could not copy. Try again.", agreed: "Agreed", open: "Open", dropped: "Dropped", filter: "Decisions" };
+export type OpenedMemoLine = { id: string; ord: number | null; statement: string; reason: string | null; status: "open" | "agreed" | "dropped"; has_source: boolean; has_feedback?: boolean };
 type MemoLine = DecisionLine | OpenedMemoLine;
 function normalize(line: MemoLine): OpenedMemoLine {
   return "statement" in line ? line : { id: line.id, ord: line.ord, statement: line.call_text, reason: line.why, status: statusWord(line.status).toLowerCase() as OpenedMemoLine["status"], has_source: ledgerTurnOf(line) !== null };
@@ -14,7 +14,7 @@ export function memoText(title: string, date: string | undefined, lines: readonl
   const rows = lines.map(normalize);
   const live = rows.filter((line) => line.status !== "dropped");
   const dropped = rows.filter((line) => line.status === "dropped");
-  const render = (line: OpenedMemoLine, index: number) => `${index + 1}. ${line.statement}\n   ${COPY[line.status]}${line.reason ? `\n   ${line.reason}` : ""}${line.has_source ? `\n   ${COPY.pointer}` : ""}`;
+  const render = (line: OpenedMemoLine, index: number) => `${index + 1}. ${line.statement}\n   ${COPY[line.status]}${line.reason ? `\n   ${line.reason}` : ""}${line.has_source ? `\n   ${COPY.pointer}` : ""}${line.has_feedback ? `\n   ${COPY.feedback}` : ""}`;
   return [title, ...(date ? [COPY.updated(formatDate(date))] : []), ...live.map(render), ...(dropped.length ? [COPY.aside, ...dropped.map(render)] : [])].join("\n\n");
 }
 export function DecisionsMemo({ title, date, lines, comments, filters = false }: { title: string; date: string | undefined; lines: readonly MemoLine[]; comments?: MemoCommentsModel; filters?: boolean }) {
@@ -24,7 +24,7 @@ export function DecisionsMemo({ title, date, lines, comments, filters = false }:
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
   function group(rows: readonly OpenedMemoLine[]) {
-    return <ol>{rows.map((line) => <li key={line.id}><p>{line.statement}</p><span className="lasso-decisions-memo-status">{COPY[line.status]}</span>{line.reason ? <p className="lasso-decisions-reason">{line.reason}</p> : null}{line.has_source ? <p className="lasso-decisions-memo-pointer">{COPY.pointer}</p> : null}{comments ? <MemoComments decisionId={line.id} model={comments} ledger={!comments.token} /> : null}</li>)}</ol>;
+    return <ol>{rows.map((line) => <li key={line.id}><p>{line.statement}</p><span className="lasso-decisions-memo-status">{COPY[line.status]}</span>{line.reason ? <p className="lasso-decisions-reason">{line.reason}</p> : null}{line.has_source ? <p className="lasso-decisions-memo-pointer">{COPY.pointer}</p> : null}{line.has_feedback ? <p className="lasso-decisions-memo-pointer">{COPY.feedback}</p> : null}{comments ? <MemoComments decisionId={line.id} model={comments} ledger={!comments.token} /> : null}</li>)}</ol>;
   }
   const rows = lines.map(normalize).filter((line) => !filters || visible[line.status]);
   const dropped = rows.filter((line) => line.status === "dropped");

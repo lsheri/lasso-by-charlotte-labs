@@ -1,7 +1,9 @@
 import { Fragment, lazy, Suspense, useEffect, useRef, useState, type PointerEvent } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import * as decisionFunctions from "@/lib/decisions.functions";
 import { Button } from "@/components/ui/button";
-import { useDecisionLines, useDecisionLineMutations } from "@/hooks/use-decision-lines";
+import { useDecisionLines, useDecisionLineMutations, useDecisionPassages, DECISION_PASSAGES_KEY } from "@/hooks/use-decision-lines";
 import { DecisionEditor, DecisionsLine } from "./DecisionsLine";
 import { supabase } from "@/integrations/supabase/client";
 import { displayName } from "@/lib/work-item-name";
@@ -14,9 +16,22 @@ const DecisionsSharePanel = lazy(() => import("./DecisionsSharePanel").then((mod
 import { MemoComments, useDocumentLinkComments } from "./MemoComments";
 import { noteWorkboardLedgerOpened } from "./canvas-lab-telemetry";
 
-export const COPY = { back: "Back to the workboard", empty: "No decisions yet", loading: "Reading decisions…", error: "Decisions could not be opened.", version: (n: number, date: string) => `Version ${n} · ${date}`, turn: (n: number) => `turn ${n}`, add: "Add a decision", saveVersion: "Save a version", saving: "Saving", saved: "Saved", saveError: "Could not save. Try again.", removed: "Decision removed", versions: "Versions", ledger: "Ledger", memo: "Memo", share: "Share" };
+export const COPY = { feedback: "Add feedback from a call", pick: "Pick a decision", link: "Link to a decision", linked: "Linked", calls: "Calls", files: "Other files", passage: "Passage", timestamp: "Timestamp (optional)", cancel: "Cancel", choose: "Choose a transcript", noFiles: "No calls or files on this board", back: "Back to the workboard", empty: "No decisions yet", loading: "Reading decisions…", error: "Decisions could not be opened.", version: (n: number, date: string) => `Version ${n} · ${date}`, turn: (n: number) => `turn ${n}`, add: "Add a decision", saveVersion: "Save a version", saving: "Saving", saved: "Saved", saveError: "Could not save. Try again.", removed: "Decision removed", versions: "Versions", ledger: "Ledger", memo: "Memo", share: "Share" };
 
-export function DecisionsLedger({ nodeId, item, onClose, canEdit = false, profileId, onUndoableRemove, onFollowPointer }: { nodeId: string; item: WorkItemRow; onClose: () => void; canEdit?: boolean; profileId?: string | undefined; onUndoableRemove?: (entry: LedgerRemoveEntry) => void; onFollowPointer?: ((parentId: string, turn: number) => void) | undefined }) {
+export function DecisionsLedger({ nodeId, item, onClose, canEdit = false, profileId, onUndoableRemove, onFollowPointer, boardItems = [] }: { nodeId: string; boardItems?: readonly WorkItemRow[]; item: WorkItemRow; onClose: () => void; canEdit?: boolean; profileId?: string | undefined; onUndoableRemove?: (entry: LedgerRemoveEntry) => void; onFollowPointer?: ((parentId: string, turn: number) => void) | undefined }) {
+  const client = useQueryClient();
+  const passages = useDecisionPassages(item.id);
+  const [feedbackId, setFeedbackId] = useState<string | null>(null);
+  const [feedbackError, setFeedbackError] = useState(false);
+  const [feedbackPending, setFeedbackPending] = useState(false);
+  const [feedbackLinked, setFeedbackLinked] = useState(false);
+  const unlink = useServerFn(decisionFunctions.unlinkPassage);
+  async function removePassage(span_link_id: string) {
+    if (!canEdit || feedbackPending) return;
+    setFeedbackPending(true); setFeedbackError(false);
+    try { await unlink({ data: { document_id: item.id, span_link_id, ...(profileId ? { profile_id: profileId } : {}) } }); await client.invalidateQueries({ queryKey: DECISION_PASSAGES_KEY(item.id) }); }
+    catch { setFeedbackError(true); } finally { setFeedbackPending(false); }
+  }
   const closeRef = useRef<HTMLButtonElement>(null);
   const closing = useRef(false);
   const [adding, setAdding] = useState(false);
@@ -65,7 +80,7 @@ export function DecisionsLedger({ nodeId, item, onClose, canEdit = false, profil
     const previous = document.activeElement;
     closeRef.current?.focus({ preventScroll: true });
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && !event.defaultPrevented && !document.querySelector(".focus-paper-backdrop, [data-slot='dialog-content'], .lasso-decisions-source-back, .lasso-decisions-share-panel")) { event.preventDefault(); event.stopImmediatePropagation(); closeAction.current(); }
+      if (event.key === "Escape" && !event.defaultPrevented && !document.querySelector(".focus-paper-backdrop, [data-slot='dialog-content'], .lasso-decisions-source-back, .lasso-decisions-share-panel, .lasso-decisions-feedback-picker")) { event.preventDefault(); event.stopImmediatePropagation(); closeAction.current(); }
     };
     window.addEventListener("keydown", onKey);
     return () => { window.removeEventListener("keydown", onKey); if (previous instanceof HTMLElement) previous.focus({ preventScroll: true }); };
@@ -112,15 +127,40 @@ export function DecisionsLedger({ nodeId, item, onClose, canEdit = false, profil
   return <div role="dialog" aria-modal="true" aria-labelledby={`ledger-title-${nodeId}`} data-testid="decisions-ledger" className="lasso-decisions-ledger">
     <header className="lasso-decisions-header"><h1 id={`ledger-title-${nodeId}`}>{displayName(item)}</h1><div className="lasso-decisions-header-tools"><div className="lasso-decisions-mode" role="group" aria-label={COPY.ledger}><Button variant="ghost" aria-pressed={mode === "ledger"} onClick={() => setMode("ledger")}>{COPY.ledger}</Button><Button variant="ghost" aria-pressed={mode === "memo"} onClick={() => { setPointingId(null); setMode("memo"); }}>{COPY.memo}</Button></div>{canEdit ? <Button variant="ghost" onClick={() => setShareOpen(true)}>{COPY.share}</Button> : null}<Button variant="ghost" onClick={() => setVersionsOpen(true)}>{COPY.versions}</Button><Button ref={closeRef} type="button" variant="ghost" onClick={() => closeAction.current()}>{COPY.back}</Button></div></header>
     <main className="lasso-decisions-content">
-      {mode === "memo" ? isLoading ? <p>{COPY.loading}</p> : isError ? <p role="alert">{COPY.error}</p> : <DecisionsMemo title={displayName(item)} date={latest?.created_at} lines={lines} comments={{ rows: comments.rows, error: comments.error }} /> : <>
+      {mode === "memo" ? isLoading ? <p>{COPY.loading}</p> : isError ? <p role="alert">{COPY.error}</p> : <DecisionsMemo title={displayName(item)} date={latest?.created_at} lines={lines.map((line) => ({ id: line.id, ord: line.ord, statement: line.call_text, reason: line.why, status: ({ draft: "open", confirmed: "agreed", discarded: "dropped" } as const)[line.status], has_source: Array.isArray(line.srcs) && line.srcs.length > 0, has_feedback: Boolean(passages.data?.[line.id]?.length) }))} comments={{ rows: comments.rows, error: comments.error }} /> : <>
       {canEdit ? <div className="lasso-decisions-version-tools">{latest ? <p className="lasso-decisions-version">{COPY.version(latest.version_no, formatDate(latest.created_at))}</p> : null}<span className="lasso-decisions-save-mark" role="status">{mutations.pending ? COPY.saving : mutations.saved ? COPY.saved : ""}</span><Button variant="ghost" disabled={!mutations.dirty || mutations.pending} onClick={() => void mutations.saveVersion().catch(() => undefined)}>{COPY.saveVersion}</Button>{mutations.errors["version"] ? <span className="lasso-decisions-save-error">{COPY.saveError}</span> : null}</div> : latest ? <p className="lasso-decisions-version">{COPY.version(latest.version_no, formatDate(latest.created_at))}</p> : null}
-      {isLoading ? <p>{COPY.loading}</p> : isError ? <p role="alert">{COPY.error}</p> : lines.length === 0 ? <p>{COPY.empty}</p> : <ol className="lasso-decisions-lines">{lines.map((line, index) => <Fragment key={line.id}><DecisionsLine line={line} canEdit={canEdit} error={Boolean(canEdit && mutations.errors[line.id])} onStatus={(status) => void mutations.setStatus(line.id, status).catch(() => undefined)} onEdit={(patch) => void mutations.editLine(line.id, patch).catch(() => undefined)} canMoveUp={!mutations.pending && index > 0 && (lines[index - 1]?.status === "discarded") === (line.status === "discarded")} canMoveDown={!mutations.pending && index < lines.length - 1 && (lines[index + 1]?.status === "discarded") === (line.status === "discarded")} onMove={(direction) => move(line.id, direction)} onRemove={() => { if (!mutations.pending) void mutations.removeLine(line.id).then((entry) => onUndoableRemove?.(entry)).catch(() => undefined); }} onDragStart={(event) => dragStart(line.id, event)} onDragMove={dragMove} onDragEnd={dragEnd} insertion={insertion?.id === line.id ? insertion.side : undefined} parentId={parent.data} onPoint={() => setPointingId(line.id)} onClearPointer={() => void mutations.setPointer(line.id, null).catch(() => undefined)} onFollowPointer={onFollowPointer} />{comments.rows.some((comment) => comment.decision_id === line.id) ? <li className="lasso-decisions-link-comments"><MemoComments decisionId={line.id} ledger model={{ rows: comments.rows, ...(canEdit ? { onRemove: comments.remove } : {}) }} /></li> : null}</Fragment>)}</ol>}
+      {isLoading ? <p>{COPY.loading}</p> : isError ? <p role="alert">{COPY.error}</p> : lines.length === 0 ? <p>{COPY.empty}</p> : <ol className="lasso-decisions-lines">{lines.map((line, index) => <Fragment key={line.id}><DecisionsLine passages={passages.data?.[line.id] ?? []} onAddFeedback={() => { setFeedbackId(line.id); setFeedbackLinked(false); }} onUnlink={(id) => void removePassage(id)} line={line} canEdit={canEdit} error={Boolean(canEdit && mutations.errors[line.id])} onStatus={(status) => void mutations.setStatus(line.id, status).catch(() => undefined)} onEdit={(patch) => void mutations.editLine(line.id, patch).catch(() => undefined)} canMoveUp={!mutations.pending && index > 0 && (lines[index - 1]?.status === "discarded") === (line.status === "discarded")} canMoveDown={!mutations.pending && index < lines.length - 1 && (lines[index + 1]?.status === "discarded") === (line.status === "discarded")} onMove={(direction) => move(line.id, direction)} onRemove={() => { if (!mutations.pending) void mutations.removeLine(line.id).then((entry) => onUndoableRemove?.(entry)).catch(() => undefined); }} onDragStart={(event) => dragStart(line.id, event)} onDragMove={dragMove} onDragEnd={dragEnd} insertion={insertion?.id === line.id ? insertion.side : undefined} parentId={parent.data} onPoint={() => setPointingId(line.id)} onClearPointer={() => void mutations.setPointer(line.id, null).catch(() => undefined)} onFollowPointer={onFollowPointer} />{comments.rows.some((comment) => comment.decision_id === line.id) ? <li className="lasso-decisions-link-comments"><MemoComments decisionId={line.id} ledger model={{ rows: comments.rows, ...(canEdit ? { onRemove: comments.remove } : {}) }} /></li> : null}</Fragment>)}</ol>}
       {canEdit && !isLoading && !isError ? <div className="lasso-decisions-add">{adding ? <DecisionEditor value="" onCancel={() => setAdding(false)} onSave={(text) => { void mutations.addLine(text).then(() => setAdding(false)).catch(() => setAdding(false)); }} /> : <Button variant="ghost" onClick={() => setAdding(true)}>{COPY.add}</Button>}{mutations.errors["add"] ? <p className="lasso-decisions-save-error" role="status">{COPY.saveError}</p> : null}</div> : null}
       </>}
     </main>
+    {feedbackError || passages.isError ? <p role="alert" className="lasso-decisions-save-error">{COPY.saveError}</p> : null}
+    {feedbackLinked ? <p role="status" className="lasso-decisions-feedback-status">{COPY.linked}</p> : null}
+    {feedbackId && canEdit ? <DecisionFeedbackPicker documentId={item.id} decisionId={feedbackId} profileId={profileId} items={boardItems} onClose={() => setFeedbackId(null)} onLinked={() => { setFeedbackId(null); setFeedbackLinked(true); void client.invalidateQueries({ queryKey: DECISION_PASSAGES_KEY(item.id) }); }} /> : null}
     {comments.error && mode === "ledger" ? <p role="alert" className="lasso-decisions-save-error">{COPY.error}</p> : null}
     {shareOpen && canEdit ? <Suspense fallback={null}><DecisionsSharePanel documentId={item.id} onClose={() => setShareOpen(false)} /></Suspense> : null}
     {versionsOpen ? <DecisionsVersions versions={versions.data ?? []} onClose={() => setVersionsOpen(false)} /> : null}
     {canEdit && pointingId && parent.data ? <DecisionTurnPicker parentId={parent.data} onClose={() => setPointingId(null)} onSelect={(turn) => { const id = pointingId; setPointingId(null); void mutations.setPointer(id, turn).catch(() => undefined); }} /> : null}
   </div>;
+}
+
+export function feedbackItems(items: readonly WorkItemRow[], documentId: string) {
+  const allowed = items.filter((row) => row.id !== documentId && row.doc_kind !== "decisions");
+  return { calls: allowed.filter((row) => row.type === "call"), files: allowed.filter((row) => row.type === "document") };
+}
+
+export function DecisionFeedbackPicker({ documentId, decisionId, profileId, items, onClose, onLinked }: { documentId: string; decisionId: string; profileId?: string | undefined; items: readonly WorkItemRow[]; onClose: () => void; onLinked: () => void }) {
+  const link = useServerFn(decisionFunctions.linkPassageToDecision);
+  const [transcriptId, setTranscriptId] = useState("");
+  const [quote, setQuote] = useState("");
+  const [at, setAt] = useState("");
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState(false);
+  const selectRef = useRef<HTMLSelectElement>(null);
+  const groups = feedbackItems(items, documentId);
+  useEffect(() => { selectRef.current?.focus(); }, []);
+  return <div role="dialog" aria-modal="true" aria-label={COPY.feedback} className="lasso-decisions-feedback-picker" onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); if (!pending) onClose(); } }}><form onSubmit={(event) => {
+    event.preventDefault(); if (pending || !transcriptId || !quote.trim()) return;
+    setPending(true); setError(false);
+    void link({ data: { document_id: documentId, id: decisionId, transcript_id: transcriptId, quote, to_locator: { char_start: 0, char_end: quote.length, ...(at.trim() ? { at: at.trim() } : {}) }, ...(profileId ? { profile_id: profileId } : {}) } }).then(onLinked).catch(() => setError(true)).finally(() => setPending(false));
+  }}><h2>{COPY.feedback}</h2><label>{COPY.choose}<select ref={selectRef} value={transcriptId} disabled={pending} onChange={(event) => setTranscriptId(event.target.value)} required><option value="">{COPY.choose}</option><optgroup label={COPY.calls}>{groups.calls.map((row) => <option key={row.id} value={row.id}>{displayName(row)}</option>)}</optgroup><optgroup label={COPY.files}>{groups.files.map((row) => <option key={row.id} value={row.id}>{displayName(row)}</option>)}</optgroup></select></label>{!groups.calls.length && !groups.files.length ? <p>{COPY.noFiles}</p> : null}<label>{COPY.passage}<textarea maxLength={600} rows={6} required disabled={pending} value={quote} onChange={(event) => setQuote(event.target.value)} /></label><label>{COPY.timestamp}<input maxLength={12} value={at} disabled={pending} onChange={(event) => setAt(event.target.value)} /></label>{error ? <p role="alert">{COPY.saveError}</p> : null}<div className="lasso-decisions-feedback-tools"><Button type="button" variant="ghost" disabled={pending} onClick={onClose}>{COPY.cancel}</Button><Button type="submit" variant="outline" disabled={pending || !transcriptId || !quote.trim()}>{pending ? COPY.saving : COPY.link}</Button></div></form></div>;
 }

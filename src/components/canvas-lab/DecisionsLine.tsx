@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import { Button } from "@/components/ui/button";
-import { ledgerTurnOf, statusWord, type DecisionLine as Line } from "@/hooks/use-decision-lines";
+import { ledgerTurnOf, statusWord, type DecisionPassage, type DecisionLine as Line } from "@/hooks/use-decision-lines";
 
 export const COPY = {
   open: "Open", agreed: "Agreed", dropped: "Dropped", addReason: "Add a reason",
   statement: "Decision", reason: "Reason", error: "Could not save. Try again.",
   counter: (n: number, max: number) => `${n}/${max}`, turn: (n: number) => `turn ${n}`,
   actions: "Line actions", up: "Move up", down: "Move down", remove: "Remove", drag: "Drag to reorder",
-  point: "Point to a chat turn", clearPointer: "Clear pointer", noChat: "This document did not come from a chat",
+  addFeedback: "Add feedback from a call", unlink: "Unlink", from: (title: string) => `from ${title}`, point: "Point to a chat turn", clearPointer: "Clear pointer", noChat: "This document did not come from a chat",
 };
 const statuses = ["draft", "confirmed", "discarded"] as const;
 const words = { draft: COPY.open, confirmed: COPY.agreed, discarded: COPY.dropped };
@@ -31,7 +31,7 @@ export function DecisionEditor({ value, reason = false, onSave, onCancel }: { va
   }} />{text.length > 350 ? <span className="lasso-decisions-counter">{COPY.counter(text.length, max)}</span> : null}</div>;
 }
 
-export function DecisionsLine({ line, canEdit, error, onStatus, onEdit, onMove, onRemove, canMoveUp = false, canMoveDown = false, onDragStart, onDragMove, onDragEnd, insertion, parentId, onPoint, onClearPointer, onFollowPointer }: { line: Line; canEdit: boolean; error?: boolean; onStatus: (status: Line["status"]) => void; onEdit: (patch: { call_text?: string; why?: string }) => void; onMove?: (direction: -1 | 1) => void; onRemove?: () => void; canMoveUp?: boolean; canMoveDown?: boolean; onDragStart?: (event: PointerEvent<HTMLButtonElement>) => void; onDragMove?: (event: PointerEvent<HTMLButtonElement>) => void; onDragEnd?: (cancel: boolean) => void; insertion?: "before" | "after" | undefined; parentId?: string | null | undefined; onPoint?: () => void; onClearPointer?: () => void; onFollowPointer?: ((parentId: string, turn: number) => void) | undefined }) {
+export function DecisionsLine({ line, canEdit, error, onStatus, onEdit, onMove, onRemove, canMoveUp = false, canMoveDown = false, onDragStart, onDragMove, onDragEnd, insertion, parentId, onPoint, onClearPointer, onFollowPointer, passages = [], onAddFeedback, onUnlink }: { line: Line; passages?: readonly DecisionPassage[]; onAddFeedback?: () => void; onUnlink?: (id: string) => void; canEdit: boolean; error?: boolean; onStatus: (status: Line["status"]) => void; onEdit: (patch: { call_text?: string; why?: string }) => void; onMove?: (direction: -1 | 1) => void; onRemove?: () => void; canMoveUp?: boolean; canMoveDown?: boolean; onDragStart?: (event: PointerEvent<HTMLButtonElement>) => void; onDragMove?: (event: PointerEvent<HTMLButtonElement>) => void; onDragEnd?: (cancel: boolean) => void; insertion?: "before" | "after" | undefined; parentId?: string | null | undefined; onPoint?: () => void; onClearPointer?: () => void; onFollowPointer?: ((parentId: string, turn: number) => void) | undefined }) {
   const [menu, setMenu] = useState(false);
   const [actions, setActions] = useState(false);
   const [editing, setEditing] = useState<"call_text" | "why" | null>(null);
@@ -89,11 +89,12 @@ export function DecisionsLine({ line, canEdit, error, onStatus, onEdit, onMove, 
     <div>{editing === "call_text" ? <DecisionEditor value={line.call_text} onCancel={() => { setEditing(null); row.current?.focus(); }} onSave={(call_text) => { setEditing(null); onEdit({ call_text }); }} /> : <p className="lasso-decisions-line-statement">{canEdit ? <Button variant="ghost" className="lasso-decisions-text-control" onClick={() => setEditing("call_text")}>{line.call_text}</Button> : line.call_text}</p>}
       {editing === "why" ? <DecisionEditor reason value={line.why} onCancel={() => { setEditing(null); row.current?.focus(); }} onSave={(why) => { setEditing(null); onEdit({ why }); }} /> : canEdit ? <p className="lasso-decisions-reason"><Button variant="ghost" className="lasso-decisions-text-control" onClick={() => setEditing("why")}>{line.why.trim() || COPY.addReason}</Button></p> : line.why.trim() ? <p className="lasso-decisions-reason">{line.why}</p> : null}
       {turn ? <Button variant="ghost" className="lasso-decisions-turn" disabled={!parentId || !onFollowPointer} onClick={() => { if (parentId) onFollowPointer?.(parentId, turn); }}>{COPY.turn(turn)}</Button> : null}
+      {passages.map((passage) => { const loc = passage.to_locator; const at = loc && typeof loc === "object" && !Array.isArray(loc) && typeof loc["at"] === "string" ? loc["at"] : null; return <blockquote key={passage.id} className="lasso-decisions-passage"><p>{passage.quote}</p><footer>{at ? <span>{at} · </span> : null}{COPY.from(passage.transcript_title)}{canEdit ? <Button variant="ghost" onClick={() => onUnlink?.(passage.id)}>{COPY.unlink}</Button> : null}</footer></blockquote>; })}
       {error ? <p className="lasso-decisions-save-error" role="status">{COPY.error}</p> : null}
     </div>
     {canEdit ? <div className="lasso-decisions-actions" onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setActions(false); }}>
       <Button ref={actionButton} variant="ghost" className="lasso-decisions-actions-trigger" aria-label={COPY.actions} aria-haspopup="menu" aria-expanded={actions} onClick={() => { setMenu(false); setActions(!actions); }}>…</Button>
-      {actions ? <div role="menu" className="lasso-decisions-actions-menu"><Button variant="ghost" role="menuitem" disabled={!canMoveUp} onClick={() => { setActions(false); row.current?.focus(); onMove?.(-1); }}>{COPY.up}</Button><Button variant="ghost" role="menuitem" disabled={!canMoveDown} onClick={() => { setActions(false); row.current?.focus(); onMove?.(1); }}>{COPY.down}</Button><Button variant="ghost" role="menuitem" disabled={!parentId} title={!parentId ? COPY.noChat : undefined} onClick={() => { setActions(false); onPoint?.(); }}>{COPY.point}</Button>{turn ? <Button variant="ghost" role="menuitem" onClick={() => { setActions(false); onClearPointer?.(); }}>{COPY.clearPointer}</Button> : null}<Button variant="ghost" role="menuitem" onClick={() => { setActions(false); onRemove?.(); }}>{COPY.remove}</Button></div> : null}
+      {actions ? <div role="menu" className="lasso-decisions-actions-menu">{onAddFeedback ? <Button variant="ghost" role="menuitem" onClick={() => { setActions(false); onAddFeedback(); }}>{COPY.addFeedback}</Button> : null}<Button variant="ghost" role="menuitem" disabled={!canMoveUp} onClick={() => { setActions(false); row.current?.focus(); onMove?.(-1); }}>{COPY.up}</Button><Button variant="ghost" role="menuitem" disabled={!canMoveDown} onClick={() => { setActions(false); row.current?.focus(); onMove?.(1); }}>{COPY.down}</Button><Button variant="ghost" role="menuitem" disabled={!parentId} title={!parentId ? COPY.noChat : undefined} onClick={() => { setActions(false); onPoint?.(); }}>{COPY.point}</Button>{turn ? <Button variant="ghost" role="menuitem" onClick={() => { setActions(false); onClearPointer?.(); }}>{COPY.clearPointer}</Button> : null}<Button variant="ghost" role="menuitem" onClick={() => { setActions(false); onRemove?.(); }}>{COPY.remove}</Button></div> : null}
     </div> : null}
   </li>;
 }
