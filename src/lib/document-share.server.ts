@@ -12,7 +12,7 @@ type Context = { supabase: Db; userId: string };
 export type DocumentShareInput = { document_id: string; profile_id?: string };
 export type CreateDocumentShareInput = DocumentShareInput & { expires_in_hours?: number };
 export type RevokeDocumentShareInput = DocumentShareInput & { id: string };
-export type DocumentCommentInput = { token: string; decision_id?: string; display_name?: string | null; body: string };
+export type DocumentCommentInput = { token: string; decision_id?: string; display_name?: string | null | undefined; body: string };
 type CommentRow = Database["public"]["Tables"]["document_link_comments"]["Row"];
 
 function bad(message: string): never { throw new Response(message, { status: 400 }); }
