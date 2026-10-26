@@ -44,16 +44,8 @@ import { LabCard } from "@/components/canvas-lab/LabCard";
 import { LabColourBlock } from "@/components/canvas-lab/LabColourBlock";
 import { LabSticky, stickyBodyOf } from "@/components/canvas-lab/LabSticky";
 import { LabTextBlock } from "@/components/canvas-lab/LabTextBlock";
-import { LabSection, type SectionMarkerChoice } from "@/components/canvas-lab/LabSection";
-import { isSectionFrameId, newSectionFrameId, sectionTitle, sectionDragMembers, moveSectionContents, SECTION_REMOVED_LINE, clearMarker, isWeekPeriod, setPeriodMarker, shift, weekOf, type SectionMarker } from "@/lib/board-section";
-
-const NEXT_WEEK_SECTION_GAP = 40;
-/** The week after this section's week; a section without a week uses the week after today. */
-function nextWeekPeriod(frame: { periodStart?: string | null; periodEnd?: string | null }, today: Date) {
-  const own = { periodStart: frame.periodStart ?? null, periodEnd: frame.periodEnd ?? null };
-  const base = own.periodStart && own.periodEnd && isWeekPeriod(own) ? { periodStart: own.periodStart, periodEnd: own.periodEnd } : weekOf(today);
-  return shift(base, "next");
-}
+import { LabSection, nextWeekSectionRect, shiftedSectionMarker, type SectionMarkerChoice } from "@/components/canvas-lab/LabSection";
+import { isSectionFrameId, newSectionFrameId, sectionTitle, sectionDragMembers, moveSectionContents, SECTION_REMOVED_LINE, clearMarker, type SectionMarker } from "@/lib/board-section";
 import { LabFrame as LabFrameElement } from "@/components/canvas-lab/LabFrame";
 import { applyMarqueeSelection, cardsInMarquee, contextFlareSequence, isMarqueeClick, marqueeRect, type MarqueeRect } from "@/components/canvas-lab/canvas-lab-marquee";
 import { GroupingNamePopup } from "@/components/canvas-lab/GroupingNamePopup";
@@ -2404,10 +2396,9 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
 
   async function shiftSection(frame: LabFrame, direction: "next" | "previous") {
     const current = framesRef.current.find((entry) => entry.id === frame.id) ?? frame;
-    const period = { periodStart: current.periodStart ?? null, periodEnd: current.periodEnd ?? null };
-    if (!period.periodStart || !period.periodEnd || !isWeekPeriod(period)) return;
-    const moved = shift({ periodStart: period.periodStart, periodEnd: period.periodEnd }, direction);
-    if (await applySectionMarker(current, setPeriodMarker(moved))) noteWorkboardSectionMarker(orgId, { action: "shifted", direction });
+    const moved = shiftedSectionMarker(current, direction);
+    if (!moved) return;
+    if (await applySectionMarker(current, moved)) noteWorkboardSectionMarker(orgId, { action: "shifted", direction });
   }
 
   /** An empty sibling to the right, same size, set to the week after this one. */
@@ -2415,13 +2406,12 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     if (!isSectionFrameId(frame.id) || !lab.board?.canEditStructure) return;
     if (!(await materialize())) return;
     const source = framesRef.current.find((entry) => entry.id === frame.id) ?? frame;
-    const marker = setPeriodMarker(nextWeekPeriod(source, new Date()));
+    const { x, y, width, height, marker } = nextWeekSectionRect(source, new Date());
     const id = newSectionFrameId(crypto.randomUUID());
-    const x = source.x + source.width + NEXT_WEEK_SECTION_GAP;
-    const result = await lab.persist({ type: "frame_create", frame: { key: id, kind: "custom", taskId: null, label: null, fill: null, x, y: source.y, w: source.width, h: source.height, ord: 0, ...marker } });
+    const result = await lab.persist({ type: "frame_create", frame: { key: id, kind: "custom", taskId: null, label: null, fill: null, x, y, w: width, h: height, ord: 0, ...marker } });
     report(result, "frame", "create");
     if (result.status !== "saved" || !result.created?.frameId) return;
-    const created: LabFrame = { id, name: "", fill: null, x, y: source.y, width: source.width, height: source.height, durableId: result.created.frameId, durableVersion: result.versions[result.created.frameId] ?? 1, local: false, ...marker };
+    const created: LabFrame = { id, name: "", fill: null, x, y, width, height, durableId: result.created.frameId, durableVersion: result.versions[result.created.frameId] ?? 1, local: false, ...marker };
     framesRef.current = [...framesRef.current, created];
     setFrames(framesRef.current);
     setSelectedFrameId(id);

@@ -4,7 +4,23 @@ import type { LabFrame, LabResizeCorner } from "@/components/canvas-lab/canvas-l
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { SECTION_TITLE_PLACEHOLDER, dayOf, isWeekPeriod, markerLabel, monthOf, sectionTitle, setNumberMarker, setPeriodMarker, weekOf, type SectionMarker } from "@/lib/board-section";
+import { SECTION_TITLE_PLACEHOLDER, dayOf, isWeekPeriod, markerLabel, monthOf, sectionTitle, setNumberMarker, setPeriodMarker, shift, weekOf, type SectionMarker } from "@/lib/board-section";
+
+type MarkedRect = { x: number; y: number; width: number; height: number; periodStart?: string | null; periodEnd?: string | null };
+export const NEXT_WEEK_SECTION_GAP = 40;
+
+/** Shifting moves the week's dates only; null when the section is not a week. */
+export function shiftedSectionMarker(frame: MarkedRect, direction: "next" | "previous"): SectionMarker | null {
+  const period = { periodStart: frame.periodStart ?? null, periodEnd: frame.periodEnd ?? null };
+  if (!period.periodStart || !period.periodEnd || !isWeekPeriod(period)) return null;
+  return setPeriodMarker(shift({ periodStart: period.periodStart, periodEnd: period.periodEnd }, direction));
+}
+
+/** An empty sibling to the right, same size, set to the week after this section's week (or after today's). */
+export function nextWeekSectionRect(frame: MarkedRect, today: Date): { x: number; y: number; width: number; height: number; marker: SectionMarker } {
+  const base = shiftedSectionMarker(frame, "next") ?? setPeriodMarker(shift(weekOf(today), "next"));
+  return { x: frame.x + frame.width + NEXT_WEEK_SECTION_GAP, y: frame.y, width: frame.width, height: frame.height, marker: base };
+}
 
 export type SectionMarkerChoice = { kind: "period" | "number"; preset: "day" | "week" | "month" | "custom" | "none"; via: "menu" | "line" };
 type PickerState = { mode: "period" | "custom" | "number"; via: "menu" | "line" } | null;
