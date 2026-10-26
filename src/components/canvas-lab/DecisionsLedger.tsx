@@ -9,7 +9,7 @@ import { formatDate, type WorkItemRow } from "@/lib/work-types";
 
 export const COPY = { back: "Back to the workboard", empty: "No decisions yet", loading: "Reading decisions…", error: "Decisions could not be opened.", version: (n: number, date: string) => `Version ${n} · ${date}`, turn: (n: number) => `turn ${n}`, add: "Add a decision", saveVersion: "Save a version", saving: "Saving", saved: "Saved", saveError: "Could not save. Try again." };
 
-export function DecisionsLedger({ nodeId, item, onClose, canEdit = false, profileId }: { nodeId: string; item: WorkItemRow; onClose: () => void; canEdit?: boolean; profileId?: string }) {
+export function DecisionsLedger({ nodeId, item, onClose, canEdit = false, profileId }: { nodeId: string; item: WorkItemRow; onClose: () => void; canEdit?: boolean; profileId?: string | undefined }) {
   const closeRef = useRef<HTMLButtonElement>(null);
   const closing = useRef(false);
   const [adding, setAdding] = useState(false);
