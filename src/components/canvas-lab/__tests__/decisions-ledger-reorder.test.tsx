@@ -9,6 +9,8 @@ const h = vi.hoisted(() => ({ update: vi.fn(), add: vi.fn(), version: vi.fn(), v
 vi.mock("@/lib/decisions.functions", () => ({ updateDecisionLine: h.update, addDecisionLine: h.add, recordDecisionsVersion: h.version, removeDecisionLine: h.remove, restoreDecisionLine: h.restore, reorderDecisionLines: h.reorder }));
 vi.mock("@tanstack/react-start", () => ({ useServerFn: (fn: unknown) => fn }));
 vi.mock("@/integrations/supabase/client", () => ({ supabase: { from: () => ({ select: () => ({ eq: () => ({ order: h.versions }) }) }) } }));
+vi.mock("@/lib/work-files.functions", () => ({ getVersionFileUrl: vi.fn() }));
+vi.mock("../canvas-lab-telemetry", () => ({ noteWorkboardLedgerOpened: vi.fn() }));
 import { DecisionsLedger } from "../DecisionsLedger";
 import { emptyUndoStacks, expireLedgerRemoval, popUndo, recordUndo, type LedgerRemoveEntry } from "../canvas-lab-undo";
 let sequence = 0;
