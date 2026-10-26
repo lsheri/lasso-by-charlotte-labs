@@ -1715,11 +1715,8 @@ async function pushDocument(owner: Owner, args: Obj, id: unknown): Promise<Respo
   );
 }
 
-/** First push only: preserve stated statuses and point only to stored turns. */
+/** Re-push matches statements, preserves people's statuses and never relocates work. */
 async function pushDecisions(owner: Owner, args: Obj, id: unknown): Promise<Response> {
-  if (args["lasso_document_id"] !== undefined) {
-    return rpcError(id, -32602, "Updating an existing Decisions document is not available yet; push with a new title or leave lasso_document_id out.");
-  }
   const title = typeof args["title"] === "string" ? args["title"].trim() : "";
   if (!title) return rpcError(id, -32602, "title must be a non-empty string.");
   const raw = args["decisions"];
@@ -1756,6 +1753,25 @@ async function pushDecisions(owner: Owner, args: Obj, id: unknown): Promise<Resp
     threadId = thread?.id ?? null;
     inheritedUrl = inheritedConversationUrl(thread?.source_meta ?? null);
   }
+  const documentColumns = "id, title, content_ref, content_hash, captured_at, source_meta, parent_work_item_id, orig_conversation_id" as const;
+  const ownDocuments = () => supabaseAdmin.from("work_items").select(documentColumns)
+    .eq("owner_id", owner.profileId).eq("org_id", owner.orgId).eq("doc_kind", "decisions");
+  let target = null;
+  if (args["lasso_document_id"] !== undefined) {
+    const documentId = args["lasso_document_id"];
+    const invalidTarget = "lasso_document_id does not name a Decisions document of yours in Lasso. Nothing was saved.";
+    if (typeof documentId !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(documentId)) return rpcError(id, -32602, invalidTarget);
+    const found = await ownDocuments().eq("id", documentId).maybeSingle();
+    if (found.error) return rpcError(id, -32603, found.error.message);
+    if (!found.data) return rpcError(id, -32602, invalidTarget);
+    target = found.data;
+  } else if (threadId) {
+    const found = await ownDocuments().eq("parent_work_item_id", threadId);
+    if (found.error) return rpcError(id, -32603, found.error.message);
+    target = (found.data ?? []).find((doc) => doc.title.trim().toLowerCase() === title.toLowerCase()) ?? null;
+  }
+  // An id-only re-push may still refer to turns in the document's original chat.
+  threadId ??= target?.parent_work_item_id ?? null;
   const positions = new Set<number>();
   if (threadId && lines.some((line) => line.turn !== undefined)) {
     const { data: turns, error } = await supabaseAdmin.from("turns").select("turn_no").eq("work_item_id", threadId);
@@ -1763,6 +1779,72 @@ async function pushDecisions(owner: Owner, args: Obj, id: unknown): Promise<Resp
     for (const turn of turns ?? []) positions.add(turn.turn_no);
   }
   const plan = parsePlacementArgs(args);
+  if (target) {
+    const existing = await supabaseAdmin.from("decisions").select("id, call_text, why, status, ord, srcs")
+      .eq("document_id", target.id).order("ord", { ascending: true });
+    if (existing.error) return rpcError(id, -32603, existing.error.message);
+    const normalize = (statement: string) => statement.trim().replace(/\s+/g, " ").toLowerCase();
+    const remaining = [...(existing.data ?? [])];
+    const statuses = { open: "draft", agreed: "confirmed", dropped: "discarded" } as const;
+    const keptRows: NonNullable<typeof existing.data> = [];
+    const addedRows: { owner_id: string; document_id: string; ord: number; situation: string; call_text: string; why: string; status: "draft" | "confirmed" | "discarded"; author: "ai_draft"; engagement_id: string | null; srcs: Json }[] = [];
+    // Resolve the document's existing placement, not the incoming destination.
+    const { data: placements, error: placementError } = await supabaseAdmin.from("work_item_tasks").select("task_id").eq("work_item_id", target.id);
+    if (placementError) return rpcError(id, -32603, placementError.message);
+    const places = placements?.length ? (await readPlaces(owner)).places : [];
+    const engagementId = places.find((place) => placements?.some((placement) => placement.task_id === place.taskId))?.engagementId ?? null;
+    for (const [index, line] of lines.entries()) {
+      const matchIndex = remaining.findIndex((row) => normalize(row.call_text) === normalize(line.statement));
+      const pointer = line.turn !== undefined && positions.has(line.turn) ? [{ turn: line.turn }] : [];
+      if (matchIndex >= 0) {
+        const row = remaining.splice(matchIndex, 1)[0];
+        if (!row) continue;
+        const update = { ord: index + 1,
+          ...(!row.why && line.reason !== undefined ? { why: line.reason } : {}),
+          ...(Array.isArray(row.srcs) && row.srcs.length === 0 && pointer.length ? { srcs: pointer } : {}),
+        };
+        const saved = await supabaseAdmin.from("decisions").update(update).eq("id", row.id).eq("document_id", target.id);
+        if (saved.error) return rpcError(id, -32603, saved.error.message);
+        keptRows.push({ ...row, ...update });
+      } else {
+        addedRows.push({ owner_id: owner.profileId, document_id: target.id, ord: index + 1, situation: target.title,
+          call_text: line.statement, why: line.reason ?? "", status: statuses[line.status], author: "ai_draft", engagement_id: engagementId, srcs: pointer });
+      }
+    }
+    if (addedRows.length) {
+      const saved = await supabaseAdmin.from("decisions").insert(addedRows);
+      if (saved.error) return rpcError(id, -32603, saved.error.message);
+    }
+    const droppedRows = remaining.map((row, index) => ({ ...row, status: "discarded" as const, ord: lines.length + index + 1 }));
+    for (const row of droppedRows) {
+      const saved = await supabaseAdmin.from("decisions").update({ ord: row.ord, ...(remaining.find((old) => old.id === row.id)?.status !== "discarded" ? { status: "discarded" as const } : {}) }).eq("id", row.id).eq("document_id", target.id);
+      if (saved.error) return rpcError(id, -32603, saved.error.message);
+    }
+    const labels = { draft: "Open", confirmed: "Agreed", discarded: "Dropped" };
+    const full = [...keptRows, ...addedRows, ...droppedRows].sort((a, b) => (a.ord ?? 0) - (b.ord ?? 0));
+    const body = `# ${target.title}\n\n` + full.map((row) => `${row.ord}. ${row.call_text}\n   Status: ${labels[row.status]}${row.why ? `\n   Why: ${row.why}` : ""}`).join("\n\n");
+    const path = `${owner.userId}/decisions-${slugify(target.title)}-${crypto.randomUUID()}.md`;
+    const hash = await sha256Hex(body);
+    const upload = await supabaseAdmin.storage.from("work-files").upload(path, new TextEncoder().encode(body), { contentType: "text/markdown", upsert: false });
+    if (upload.error) return rpcError(id, -32603, upload.error.message);
+    const meta = target.source_meta && typeof target.source_meta === "object" && !Array.isArray(target.source_meta) ? target.source_meta : {};
+    const saved = await supabaseAdmin.from("work_items").update({ content_ref: path, content_hash: hash,
+      source_meta: { ...meta, lines: lines.length, dropped: droppedRows.length },
+      ...(!target.parent_work_item_id && threadId ? { parent_work_item_id: threadId } : {}),
+      ...(!target.orig_conversation_id && origId ? { orig_conversation_id: origId } : {}),
+    }).eq("id", target.id).eq("owner_id", owner.profileId).eq("org_id", owner.orgId);
+    if (saved.error) return rpcError(id, -32603, saved.error.message);
+    const version = await recordNewVersion(supabaseAdmin, { workItemId: target.id, previousRef: target.content_ref,
+      previousHash: target.content_hash, previousAt: target.captured_at, newRef: path, newHash: hash, sourceEvent: "mcp_repush", origin: "model_artifact" });
+    const { ensureExtracts } = await import("./extract.server");
+    await ensureExtracts([target.id]);
+    await logPush(owner, { tool: "lasso_push_decisions", kind: "decisions", target: "existing" }, "capture");
+    await recordEvent(supabaseAdmin, { eventType: "decisions_doc.version_recorded", orgId: owner.orgId, userId: owner.userId, profileId: owner.profileId,
+      dims: { changed: "repushed", added: bucket(addedRows.length), dropped: bucket(droppedRows.length) } });
+    for (const row of addedRows) await recordEvent(supabaseAdmin, { eventType: "decisions_doc.decision_added", orgId: owner.orgId, userId: owner.userId, profileId: owner.profileId,
+      dims: { via: "pushed", has_pointer: Array.isArray(row.srcs) && row.srcs.length > 0 } });
+    return textResult(id, `Updated '${target.title}' in Lasso, version ${version}: ${addedRows.length} added, ${keptRows.length} kept, ${droppedRows.length} marked dropped. Statuses set in Lasso were kept.\nlasso_document_id: ${target.id}`);
+  }
   const labels = { open: "Open", agreed: "Agreed", dropped: "Dropped" };
   const body = `# ${title}\n\n` + lines.map((line, index) => `${index + 1}. ${line.statement}\n   Status: ${labels[line.status]}${line.reason !== undefined ? `\n   Why: ${line.reason}` : ""}`).join("\n\n");
   const slug = slugify(title);

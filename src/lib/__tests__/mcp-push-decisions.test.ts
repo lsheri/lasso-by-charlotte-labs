@@ -4,6 +4,11 @@ import { EVENT_DIM_KEYS, guardEventDims } from "../event-dim-allowlist";
 type Row = Record<string, unknown>;
 const mocks = vi.hoisted(() => ({
   inserts: [] as { table: string; rows: Row[] }[],
+  updates: [] as { table: string; value: Row; filters: Row }[],
+  documents: [] as Row[],
+  decisions: [] as Row[],
+  rpcNames: [] as string[],
+  recordNewVersion: vi.fn(),
   filters: [] as [string, string, unknown][],
   thread: null as Row | null,
   turns: [] as Row[],
@@ -16,24 +21,28 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: {
-  rpc: vi.fn(async (name: string) => ({ data: name === "mcp_resolve_key" ? [{
+  rpc: vi.fn(async (name: string) => { mocks.rpcNames.push(name); return ({ data: name === "mcp_resolve_key" ? [{
     connection_id: "connection-1", profile_id: "profile-1", org_id: "org-1", user_id: "user-1",
     kind: "link", read_only: mocks.readOnly, legacy: false,
-  }] : name === "mcp_place_item" ? { status: mocks.placed ? "placed" : "error" } : null, error: null })),
+  }] : name === "mcp_place_item" ? { status: mocks.placed ? "placed" : "error" } : null, error: null }); }),
   storage: { from: () => ({ upload: mocks.upload }) },
   from(table: string) {
     let inserting = false;
-    const result = () => ({ data: inserting ? { id: "document-1" } : table === "work_items" ? mocks.thread : null, error: null });
-    const rows = () => table === "turns" ? mocks.turns : table === "engagement_members" ? [{ engagement_id: "board-1", member_role: "member" }]
+    const filters: Row = {};
+    const documents = () => mocks.documents.filter((doc) => Object.entries(filters).every(([key, value]) => doc[key] === value));
+    const result = () => ({ data: inserting ? { id: "document-1" } : table === "work_items" ? filters["doc_kind"] ? documents()[0] ?? null : mocks.thread : null, error: null });
+    const rows = () => table === "work_items" ? documents() : table === "decisions" ? mocks.decisions : table === "turns" ? mocks.turns : table === "engagement_members" ? [{ engagement_id: "board-1", member_role: "member" }]
       : table === "engagements" ? [{ id: "board-1", code: "ABC-01", title: "Pricing", clients: null }]
       : table === "tasks" ? [{ id: "task-1", engagement_id: "board-1", name: "Pricing" }] : [];
     const query = {
       select: (_columns?: string) => query,
-      eq: (key: string, value: unknown) => { mocks.filters.push([table, key, value]); return query; },
+      eq: (key: string, value: unknown) => { filters[key] = value; mocks.filters.push([table, key, value]); return query; },
+      order: (_key: string, _options?: Row) => query,
       in: (_key: string, _values: unknown[]) => query,
       maybeSingle: async () => result(),
       then: (resolve: (value: unknown) => unknown) => resolve({ data: rows(), error: null }),
       insert: (value: Row | Row[]) => { inserting = true; mocks.inserts.push({ table, rows: Array.isArray(value) ? value : [value] }); return query; },
+      update: (value: Row) => { mocks.updates.push({ table, value, filters }); return query; },
     };
     return query;
   },
@@ -42,6 +51,7 @@ vi.mock("@/lib/telemetry.server", () => ({ recordEvent: mocks.recordEvent, recor
 vi.mock("@/lib/org-type.server", () => ({ orgTypeOfStrict: vi.fn(async () => "company"), isAffiliatedStrict: vi.fn(async () => false) }));
 vi.mock("@/lib/extract.server", () => ({ ensureExtracts: mocks.ensureExtracts }));
 vi.mock("@/lib/work-taxonomy.server", () => ({ noteModelUsed: mocks.noteModelUsed, noteThreadShape: vi.fn() }));
+vi.mock("@/lib/connector-import.server", () => ({ recordNewVersion: mocks.recordNewVersion }));
 
 import { handleMcpRequest } from "../mcp-handler.server";
 
@@ -56,6 +66,11 @@ const inserted = (table: string) => mocks.inserts.filter((entry) => entry.table 
 const threadId = "11111111-1111-1111-1111-111111111111";
 
 beforeEach(() => {
+  mocks.updates = []; mocks.documents = []; mocks.decisions = []; mocks.rpcNames = [];
+  mocks.recordNewVersion.mockReset().mockImplementation(async (_client, args) => {
+    mocks.inserts.push({ table: "document_versions", rows: [{ work_item_id: args.workItemId, source_event: args.sourceEvent }] });
+    return 2;
+  });
   mocks.inserts = []; mocks.filters = []; mocks.thread = null; mocks.turns = []; mocks.readOnly = false; mocks.placed = false;
   mocks.recordEvent.mockReset(); mocks.upload.mockReset().mockResolvedValue({ error: null });
   mocks.ensureExtracts.mockReset(); mocks.noteModelUsed.mockReset();
@@ -100,9 +115,9 @@ describe("MCP-DOC-1a first Decisions document push", () => {
     expect(response.error.code).toBe(-32602); expect(response.error.message).toContain(field);
     expect(mocks.inserts).toHaveLength(0); expect(mocks.upload).not.toHaveBeenCalled();
   });
-  it("rejects a document re-push", async () => {
+  it("rejects an invalid document id", async () => {
     const response = await call({ ...input, lasso_document_id: "document-1" });
-    expect(response.error).toMatchObject({ code: -32602, message: "Updating an existing Decisions document is not available yet; push with a new title or leave lasso_document_id out." });
+    expect(response.error).toMatchObject({ code: -32602, message: "lasso_document_id does not name a Decisions document of yours in Lasso. Nothing was saved." });
     expect(mocks.inserts).toHaveLength(0);
   });
   it("refuses a read-only connection", async () => {
@@ -146,5 +161,77 @@ describe("MCP-DOC-1a first Decisions document push", () => {
     expect(EVENT_DIM_KEYS["decisions_doc.created"]).toEqual(["via", "lines"]);
     expect(EVENT_DIM_KEYS["decisions_doc.decision_added"]).toEqual(["via", "has_pointer"]);
     expect(guardEventDims("mcp.push", { kind: "decisions", title: "private" }).dims).toEqual({ kind: "decisions" });
+  });
+});
+
+const documentId = "22222222-2222-2222-2222-222222222222";
+const targetDoc = () => ({ id: documentId, title: "Pricing decisions", owner_id: "profile-1", org_id: "org-1", doc_kind: "decisions",
+  parent_work_item_id: threadId, orig_conversation_id: "original", content_ref: "old.md", content_hash: "old-hash", captured_at: "2026-10-25T00:00:00Z", source_meta: { role: "decisions" } });
+const decision = (id: string, call_text: string, status = "draft", ord = 1, why = "", srcs: Row[] = []) => ({ id, call_text, status, ord, why, srcs });
+const updatedDecision = (id: string) => mocks.updates.filter((entry) => entry.table === "decisions" && entry.filters["id"] === id).map((entry) => entry.value);
+
+describe("MCP-DOC-1b Decisions document re-push", () => {
+  it("keeps statuses, adds lines, sinks removed lines and records a version without relocating", async () => {
+    mocks.documents = [targetDoc()];
+    mocks.decisions = [decision("a", "A", "confirmed", 1), decision("b", "B", "draft", 2)];
+    const response = await call({ ...input, lasso_document_id: documentId, destination: "ABC-01 · Pricing", decisions: [{ statement: "B", status: "agreed" }, { statement: "C" }] });
+    expect(updatedDecision("a")).toEqual([{ status: "discarded", ord: 3 }]);
+    expect(updatedDecision("b")).toEqual([{ ord: 1 }]);
+    expect(inserted("decisions")).toEqual([expect.objectContaining({ call_text: "C", status: "draft", ord: 2, situation: "Pricing decisions", document_id: documentId })]);
+    expect(mocks.recordNewVersion).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ workItemId: documentId, previousRef: "old.md", previousHash: "old-hash", previousAt: "2026-10-25T00:00:00Z", sourceEvent: "mcp_repush", origin: "model_artifact" }));
+    expect(inserted("document_versions")[0]).toMatchObject({ source_event: "mcp_repush" });
+    expect(response.result.content[0].text).toContain("version 2: 1 added, 1 kept, 1 marked dropped");
+    expect(response.result.content[0].text).toContain(`lasso_document_id: ${documentId}`);
+    expect(mocks.rpcNames).not.toContain("mcp_place_item");
+    expect(inserted("work_items")).toHaveLength(0);
+    expect(mocks.updates.find((entry) => entry.table === "work_items")?.value).toMatchObject({ source_meta: { role: "decisions", lines: 2, dropped: 1 } });
+    expect(mocks.updates.find((entry) => entry.table === "work_items")?.value).not.toHaveProperty("title");
+    const body = new TextDecoder().decode(mocks.upload.mock.calls[0]?.[1]);
+    expect(body).toBe("# Pricing decisions\n\n1. B\n   Status: Open\n\n2. C\n   Status: Open\n\n3. A\n   Status: Dropped");
+    const events = mocks.recordEvent.mock.calls.map((args) => args[1]);
+    expect(events.filter((event) => event.eventType === "decisions_doc.version_recorded")).toEqual([expect.objectContaining({ dims: { changed: "repushed", added: "1-10", dropped: "1-10" } })]);
+    expect(events.filter((event) => event.eventType === "decisions_doc.decision_added")).toHaveLength(1);
+    expect(events.find((event) => event.eventType === "mcp.push")?.dims).toMatchObject({ tool: "lasso_push_decisions", kind: "decisions", target: "existing", stage: "capture" });
+  });
+  it.each([{ owner_id: "foreign" }, { org_id: "foreign" }, { doc_kind: null }])("rejects an inaccessible target without writes: %j", async (change) => {
+    mocks.documents = [{ ...targetDoc(), ...change }];
+    const response = await call({ ...input, lasso_document_id: documentId });
+    expect(response.error.code).toBe(-32602);
+    expect(mocks.inserts).toHaveLength(0); expect(mocks.updates).toHaveLength(0); expect(mocks.upload).not.toHaveBeenCalled();
+  });
+  it("finds the title-plus-thread target using trimmed case-insensitive titles", async () => {
+    mocks.thread = { id: threadId, source_meta: {} };
+    mocks.documents = [{ ...targetDoc(), title: "  PRICING DECISIONS  " }];
+    await call({ ...input, orig_conversation_id: "original" });
+    expect(mocks.recordNewVersion).toHaveBeenCalled(); expect(inserted("work_items")).toHaveLength(0);
+    expect(mocks.filters).toContainEqual(["work_items", "parent_work_item_id", threadId]);
+  });
+  it("never matches title alone", async () => {
+    mocks.documents = [targetDoc()];
+    await call(input);
+    expect(inserted("work_items")).toHaveLength(1); expect(mocks.recordNewVersion).not.toHaveBeenCalled();
+  });
+  it("does not match an identical title from a different thread", async () => {
+    mocks.thread = { id: threadId, source_meta: {} };
+    mocks.documents = [{ ...targetDoc(), parent_work_item_id: "other-thread" }];
+    await call({ ...input, lasso_conversation_id: threadId });
+    expect(inserted("work_items")).toHaveLength(1); expect(mocks.recordNewVersion).not.toHaveBeenCalled();
+  });
+  it("fills only empty reasons and empty pointers with known stored turns", async () => {
+    mocks.documents = [targetDoc()]; mocks.turns = [{ turn_no: 3 }];
+    mocks.decisions = [decision("a", "A", "confirmed", 1, "Human reason", [{ turn: 2 }]), decision("b", "B", "draft", 2)];
+    await call({ ...input, lasso_document_id: documentId, decisions: [{ statement: "A", reason: "Replacement", produced_at_turn: 3 }, { statement: "B", reason: "New reason", produced_at_turn: 3 }] });
+    expect(updatedDecision("a")).toEqual([{ ord: 1 }]);
+    expect(updatedDecision("b")).toEqual([{ ord: 2, why: "New reason", srcs: [{ turn: 3 }] }]);
+  });
+  it("matches normalized duplicates in first-unmatched order and never deletes", async () => {
+    mocks.documents = [targetDoc()];
+    mocks.decisions = [decision("a", "  Keep   A ", "confirmed", 1), decision("b", "keep a", "draft", 2), decision("c", "Old", "discarded", 3)];
+    await call({ ...input, lasso_document_id: documentId, decisions: [{ statement: "KEEP A" }, { statement: "Keep A" }] });
+    expect(updatedDecision("a")).toEqual([{ ord: 1 }]); expect(updatedDecision("b")).toEqual([{ ord: 2 }]);
+    expect(updatedDecision("c")).toEqual([{ ord: 3 }]); expect(inserted("decisions")).toHaveLength(0);
+  });
+  it("registers only the requested version dimensions", () => {
+    expect(EVENT_DIM_KEYS["decisions_doc.version_recorded"]).toEqual(["changed", "added", "dropped"]);
   });
 });
