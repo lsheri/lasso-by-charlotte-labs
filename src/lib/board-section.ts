@@ -261,8 +261,7 @@ export function adjacentSection(sections: JumpSection[], currentId: string, dire
 
 /** The marked section under a board point (the viewport centre), or null. */
 export function markedSectionAt(sections: (JumpSection & SectionRect)[], point: { x: number; y: number }): string | null {
-  const hit = sections.find((s) => (s.periodStart || typeof s.sequenceNo === "number")
-    && point.x >= s.x && point.x <= s.x + s.width && point.y >= s.y && point.y <= s.y + s.height);
+  const hit = containingSection(point, sections.filter((s) => s.periodStart || typeof s.sequenceNo === "number"));
   return hit?.id ?? null;
 }
 
