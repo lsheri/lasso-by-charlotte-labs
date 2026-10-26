@@ -64,7 +64,7 @@ beforeEach(() => {
 describe("MCP-DOC-1a first Decisions document push", () => {
   it("lists the tool with the two required arguments", async () => {
     const response = await call({}, "tools/list");
-    const tool = response.result.tools.find((entry: Row) => entry.name === "lasso_push_decisions");
+    const tool = response.result.tools.find((entry: Row) => entry["name"] === "lasso_push_decisions");
     expect(tool.inputSchema.required).toEqual(["title", "decisions"]);
     expect(tool.inputSchema.properties.decisions).toMatchObject({ minItems: 1, maxItems: 40 });
   });
@@ -82,7 +82,7 @@ describe("MCP-DOC-1a first Decisions document push", () => {
   });
   it.each([["agreed", "confirmed"], ["dropped", "discarded"], ["open", "draft"]])("maps %s to %s", async (status, expected) => {
     await call({ ...input, decisions: [{ statement: "Keep the offer", status }] });
-    expect(inserted("decisions")[0]?.status).toBe(expected);
+    expect(inserted("decisions")[0]?.["status"]).toBe(expected);
   });
   it.each([
     [{ title: " " }, "title"],
@@ -114,7 +114,7 @@ describe("MCP-DOC-1a first Decisions document push", () => {
     await call({ ...input, lasso_conversation_id: threadId, decisions: [{ statement: "A", produced_at_turn: 3 }, { statement: "B", produced_at_turn: 4 }] });
     expect(inserted("work_items")[0]).toMatchObject({ parent_work_item_id: threadId, source_meta: { url: "https://claude.ai/chat/example" } });
     expect(mocks.filters).toEqual(expect.arrayContaining([["work_items", "owner_id", "profile-1"], ["work_items", "org_id", "org-1"], ["work_items", "type", "ai_thread"]]));
-    expect(inserted("decisions").map((line) => line.srcs)).toEqual([[{ turn: 3 }], []]);
+    expect(inserted("decisions").map((line) => line["srcs"])).toEqual([[{ turn: 3 }], []]);
     const events = mocks.recordEvent.mock.calls.map((call) => call[1]);
     expect(events.filter((event) => event.eventType === "decisions_doc.created")).toEqual([expect.objectContaining({ dims: { via: "pushed", lines: "1-10" } })]);
     expect(events.filter((event) => event.eventType === "decisions_doc.decision_added").map((event) => event.dims)).toEqual([{ via: "pushed", has_pointer: true }, { via: "pushed", has_pointer: false }]);
@@ -132,8 +132,8 @@ describe("MCP-DOC-1a first Decisions document push", () => {
   });
   it("sets engagement_id from successful placement without an extra board query", async () => {
     mocks.placed = true;
-    await call({ ...input, destination: "ABC-01/Pricing" });
-    expect(inserted("decisions").map((row) => row.engagement_id)).toEqual(["board-1", "board-1"]);
+    await call({ ...input, destination: "ABC-01 · Pricing" });
+    expect(inserted("decisions").map((row) => row["engagement_id"])).toEqual(["board-1", "board-1"]);
   });
   it("uploads markdown with a unique non-overwriting path and stated reasons", async () => {
     await call({ ...input, decisions: [{ statement: "A", reason: "Because B", status: "agreed" }] });
