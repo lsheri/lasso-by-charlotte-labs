@@ -28,7 +28,7 @@ export function ThreadViewer({
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[calc(85dvh-env(safe-area-inset-top))] overflow-y-auto sm:max-w-3xl" onEscapeKeyDown={onBack ? (event) => { event.preventDefault(); onBack(); } : undefined}>
+      <DialogContent className="max-h-[calc(85dvh-env(safe-area-inset-top))] overflow-y-auto sm:max-w-3xl" {...(onBack ? { onEscapeKeyDown: (event: KeyboardEvent) => { event.preventDefault(); onBack(); } } : {})}>
         <DialogHeader>
           {onBack ? <Button variant="ghost" className="self-start" onClick={onBack}>{backLabel}</Button> : null}
           <DialogTitle className="page-title flex flex-wrap items-center gap-1.5">
