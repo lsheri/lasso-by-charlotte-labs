@@ -7,13 +7,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { displayName } from "@/lib/work-item-name";
 import { formatDate, type WorkItemRow } from "@/lib/work-types";
 import type { LedgerRemoveEntry } from "./canvas-lab-undo";
+import { DecisionTurnPicker } from "./DecisionTurnPicker";
 
 export const COPY = { back: "Back to the workboard", empty: "No decisions yet", loading: "Reading decisions…", error: "Decisions could not be opened.", version: (n: number, date: string) => `Version ${n} · ${date}`, turn: (n: number) => `turn ${n}`, add: "Add a decision", saveVersion: "Save a version", saving: "Saving", saved: "Saved", saveError: "Could not save. Try again.", removed: "Decision removed" };
 
-export function DecisionsLedger({ nodeId, item, onClose, canEdit = false, profileId, onUndoableRemove }: { nodeId: string; item: WorkItemRow; onClose: () => void; canEdit?: boolean; profileId?: string | undefined; onUndoableRemove?: (entry: LedgerRemoveEntry) => void }) {
+export function DecisionsLedger({ nodeId, item, onClose, canEdit = false, profileId, onUndoableRemove, onFollowPointer }: { nodeId: string; item: WorkItemRow; onClose: () => void; canEdit?: boolean; profileId?: string | undefined; onUndoableRemove?: (entry: LedgerRemoveEntry) => void; onFollowPointer?: ((parentId: string, turn: number) => void) | undefined }) {
   const closeRef = useRef<HTMLButtonElement>(null);
   const closing = useRef(false);
   const [adding, setAdding] = useState(false);
+  const [pointingId, setPointingId] = useState<string | null>(null);
   const [insertion, setInsertion] = useState<{ id: string; side: "before" | "after" } | null>(null);
   const drag = useRef<{ id: string; target: string; side: "before" | "after" } | null>(null);
   const mutations = useDecisionLineMutations(item.id, profileId);
@@ -25,6 +27,12 @@ export function DecisionsLedger({ nodeId, item, onClose, canEdit = false, profil
     void mutations.saveVersion().catch(() => undefined).finally(() => { closing.current = false; onClose(); });
   };
   const { data = [], isLoading, isError } = useDecisionLines(item.id);
+  // Board rows deliberately stay lean. Resolve the source locally without changing their contracts.
+  const parent = useQuery({ queryKey: ["decision-parent", item.id], queryFn: async () => {
+    const { data: row, error } = await supabase.from("work_items").select("parent_work_item_id").eq("id", item.id).maybeSingle();
+    if (error) throw error;
+    return row?.parent_work_item_id ?? null;
+  } });
   const versions = useQuery({
     queryKey: ["document-versions", item.id],
     queryFn: async () => {
@@ -38,7 +46,7 @@ export function DecisionsLedger({ nodeId, item, onClose, canEdit = false, profil
     const previous = document.activeElement;
     closeRef.current?.focus({ preventScroll: true });
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && !event.defaultPrevented) { event.preventDefault(); event.stopImmediatePropagation(); closeAction.current(); }
+      if (event.key === "Escape" && !event.defaultPrevented && !document.querySelector(".focus-paper-backdrop, [data-slot='dialog-content'], .lasso-decisions-source-back")) { event.preventDefault(); event.stopImmediatePropagation(); closeAction.current(); }
     };
     window.addEventListener("keydown", onKey);
     return () => { window.removeEventListener("keydown", onKey); if (previous instanceof HTMLElement) previous.focus({ preventScroll: true }); };
@@ -86,8 +94,9 @@ export function DecisionsLedger({ nodeId, item, onClose, canEdit = false, profil
     <header className="lasso-decisions-header"><h1 id={`ledger-title-${nodeId}`}>{displayName(item)}</h1><Button ref={closeRef} type="button" variant="ghost" onClick={() => closeAction.current()}>{COPY.back}</Button></header>
     <main className="lasso-decisions-content">
       {canEdit ? <div className="lasso-decisions-version-tools">{latest ? <p className="lasso-decisions-version">{COPY.version(latest.version_no, formatDate(latest.created_at))}</p> : null}<span className="lasso-decisions-save-mark" role="status">{mutations.pending ? COPY.saving : mutations.saved ? COPY.saved : ""}</span><Button variant="ghost" disabled={!mutations.dirty || mutations.pending} onClick={() => void mutations.saveVersion().catch(() => undefined)}>{COPY.saveVersion}</Button>{mutations.errors["version"] ? <span className="lasso-decisions-save-error">{COPY.saveError}</span> : null}</div> : latest ? <p className="lasso-decisions-version">{COPY.version(latest.version_no, formatDate(latest.created_at))}</p> : null}
-      {isLoading ? <p>{COPY.loading}</p> : isError ? <p role="alert">{COPY.error}</p> : lines.length === 0 ? <p>{COPY.empty}</p> : <ol className="lasso-decisions-lines">{lines.map((line, index) => <DecisionsLine key={line.id} line={line} canEdit={canEdit} error={Boolean(canEdit && mutations.errors[line.id])} onStatus={(status) => void mutations.setStatus(line.id, status).catch(() => undefined)} onEdit={(patch) => void mutations.editLine(line.id, patch).catch(() => undefined)} canMoveUp={!mutations.pending && index > 0 && (lines[index - 1]?.status === "discarded") === (line.status === "discarded")} canMoveDown={!mutations.pending && index < lines.length - 1 && (lines[index + 1]?.status === "discarded") === (line.status === "discarded")} onMove={(direction) => move(line.id, direction)} onRemove={() => { if (!mutations.pending) void mutations.removeLine(line.id).then((entry) => onUndoableRemove?.(entry)).catch(() => undefined); }} onDragStart={(event) => dragStart(line.id, event)} onDragMove={dragMove} onDragEnd={dragEnd} insertion={insertion?.id === line.id ? insertion.side : undefined} />)}</ol>}
+      {isLoading ? <p>{COPY.loading}</p> : isError ? <p role="alert">{COPY.error}</p> : lines.length === 0 ? <p>{COPY.empty}</p> : <ol className="lasso-decisions-lines">{lines.map((line, index) => <DecisionsLine key={line.id} line={line} canEdit={canEdit} error={Boolean(canEdit && mutations.errors[line.id])} onStatus={(status) => void mutations.setStatus(line.id, status).catch(() => undefined)} onEdit={(patch) => void mutations.editLine(line.id, patch).catch(() => undefined)} canMoveUp={!mutations.pending && index > 0 && (lines[index - 1]?.status === "discarded") === (line.status === "discarded")} canMoveDown={!mutations.pending && index < lines.length - 1 && (lines[index + 1]?.status === "discarded") === (line.status === "discarded")} onMove={(direction) => move(line.id, direction)} onRemove={() => { if (!mutations.pending) void mutations.removeLine(line.id).then((entry) => onUndoableRemove?.(entry)).catch(() => undefined); }} onDragStart={(event) => dragStart(line.id, event)} onDragMove={dragMove} onDragEnd={dragEnd} insertion={insertion?.id === line.id ? insertion.side : undefined} parentId={parent.data} onPoint={() => setPointingId(line.id)} onClearPointer={() => void mutations.setPointer(line.id, null).catch(() => undefined)} onFollowPointer={onFollowPointer} />)}</ol>}
       {canEdit && !isLoading && !isError ? <div className="lasso-decisions-add">{adding ? <DecisionEditor value="" onCancel={() => setAdding(false)} onSave={(text) => { void mutations.addLine(text).then(() => setAdding(false)).catch(() => setAdding(false)); }} /> : <Button variant="ghost" onClick={() => setAdding(true)}>{COPY.add}</Button>}{mutations.errors["add"] ? <p className="lasso-decisions-save-error" role="status">{COPY.saveError}</p> : null}</div> : null}
     </main>
+    {canEdit && pointingId && parent.data ? <DecisionTurnPicker parentId={parent.data} onClose={() => setPointingId(null)} onSelect={(turn) => { const id = pointingId; setPointingId(null); void mutations.setPointer(id, turn).catch(() => undefined); }} /> : null}
   </div>;
 }
