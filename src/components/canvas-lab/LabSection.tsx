@@ -27,6 +27,7 @@ type PickerState = { mode: "period" | "custom" | "number"; via: "menu" | "line" 
 
 /** SECD-1b: every word a person reads on the section marker controls. */
 export const SECTION_MARKER_COPY = {
+  ask: "Ask Lasso about this section",
   setPeriod: "Set period",
   setNumber: "Set number",
   clear: "Clear marker",
@@ -47,7 +48,7 @@ export const SECTION_MARKER_COPY = {
 
 const CORNERS: LabResizeCorner[] = ["nw", "ne", "se", "sw"];
 
-export function LabSection({ frame, title, selected, editable, autoName = false, onSelect, onDragStart, onResizeStart, onResizeKeyDown, onResizeKeyUp, onRename, onRemove, onMenuOpened, onMarker, onClearMarker, onShift, onNewNextWeek }: {
+export function LabSection({ frame, title, selected, editable, autoName = false, onSelect, onDragStart, onResizeStart, onResizeKeyDown, onResizeKeyUp, onRename, onRemove, onMenuOpened, onMarker, onClearMarker, onShift, onNewNextWeek, onAsk }: {
   frame: LabFrame; title: string | null; selected: boolean; editable: boolean;
   autoName?: boolean;
   onSelect: () => void;
@@ -60,6 +61,7 @@ export function LabSection({ frame, title, selected, editable, autoName = false,
   onClearMarker?: (() => void) | undefined;
   onShift?: ((direction: "next" | "previous") => void) | undefined;
   onNewNextWeek?: (() => void) | undefined;
+  onAsk?: (() => void) | undefined;
 }) {
   const rootRef = useRef<HTMLElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -160,6 +162,7 @@ export function LabSection({ frame, title, selected, editable, autoName = false,
         <Button size="icon" variant="ghost" aria-label="Section menu" className="canvas-lab-section-menu" data-visible={selected} onPointerDown={(event) => event.stopPropagation()}><MoreHorizontal /></Button>
       </DropdownMenuTrigger><DropdownMenuContent onCloseAutoFocus={(event) => { event.preventDefault(); if (!editingRef.current) rootRef.current?.focus({ preventScroll: true }); }}>
         <DropdownMenuItem onSelect={beginRename}>Rename</DropdownMenuItem>
+        {onAsk ? <DropdownMenuItem onSelect={onAsk}>{SECTION_MARKER_COPY.ask}</DropdownMenuItem> : null}
         {canMark ? <>
           <DropdownMenuItem onSelect={() => openPicker("period", "menu")}>{SECTION_MARKER_COPY.setPeriod}</DropdownMenuItem>
           <DropdownMenuItem onSelect={() => openPicker("number", "menu")}>{SECTION_MARKER_COPY.setNumber}</DropdownMenuItem>

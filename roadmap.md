@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] SECD-3a: desktop section menu, send-time live membership, empty/deleted guards, and additive scope_kind; 14 new tests pass with no new prerequisite failures, tsgo exit 0.
+- [ ] SECD-3a: real signed-in question and source-trail read-back blocked by external unmanaged authentication; public Sign in checked at 1280 and 390.
+
 - [x] SEC-2: canvas sections and additive event definitions; 36 focused tests passed; fixture inspected at 1280 and 390. Public shared renderer deferred to SEC-3.
 - [ ] SEC-2: real signed-in draw/save/read-back blocked by external unmanaged authentication; explicit TypeScript exit code unavailable because manual project typechecks are prohibited.
 
