@@ -180,6 +180,10 @@ export type WorkboardFrameDto = {
   label: string | null;
   /** W3: the stored fill name of a drawn region. Null on an ordinary outline. */
   fill: string | null;
+  /** SECD-1: a section's marker. A period (both dates) or a number, never both. */
+  periodStart?: string | null;
+  periodEnd?: string | null;
+  sequenceNo?: number | null;
   x: number;
   y: number;
   w: number;
@@ -245,6 +249,10 @@ export type WorkboardFrameInput = {
   label?: string | null;
   /** W3: the stored fill name of a drawn region. Null on an ordinary outline. */
   fill?: string | null;
+  /** SECD-1: a section's marker. Only a section: frame may carry one. */
+  periodStart?: string | null;
+  periodEnd?: string | null;
+  sequenceNo?: number | null;
   x: number;
   y: number;
   w: number;
@@ -272,7 +280,7 @@ export type WorkboardNodeInput = {
 export type WorkboardCommand =
   | { type: "materialize"; frames: WorkboardFrameInput[]; nodes: WorkboardNodeInput[] }
   | { type: "frame_create"; frame: WorkboardFrameInput }
-  | { type: "frame_update"; frameId: string; expectedVersion: number; patch: Partial<Pick<WorkboardFrameInput, "x" | "y" | "w" | "h" | "label" | "ord" | "fill" | "taskId">> }
+  | { type: "frame_update"; frameId: string; expectedVersion: number; patch: Partial<Pick<WorkboardFrameInput, "x" | "y" | "w" | "h" | "label" | "ord" | "fill" | "taskId" | "periodStart" | "periodEnd" | "sequenceNo">> }
   | { type: "frame_archive"; frameId: string; expectedVersion: number }
   | { type: "frame_restore"; frameId: string; expectedVersion: number; patch?: Pick<WorkboardFrameInput, "x" | "y" | "w" | "h"> }
   | { type: "node_create"; node: WorkboardNodeInput }
