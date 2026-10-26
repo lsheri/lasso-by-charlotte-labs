@@ -9,13 +9,13 @@ vi.setSystemTime(now);
 
 const rows: DecisionRow[] = [
   {
-    id: "awaiting", owner_id: "person", engagement_id: null, author: "ai_draft", call_text: "Hold the launch", situation: "The figures changed", why: "", status: "draft", srcs: [], pattern_tags: [], date_label: "16 Sep", created_at: "2026-09-16T07:00:00.000Z", resolved_at: null,
+    id: "awaiting", owner_id: "person", engagement_id: null, document_id: null, ord: null, author: "ai_draft", call_text: "Hold the launch", situation: "The figures changed", why: "", status: "draft", srcs: [], pattern_tags: [], date_label: "16 Sep", created_at: "2026-09-16T07:00:00.000Z", resolved_at: null,
   },
   {
-    id: "confirmed", owner_id: "person", engagement_id: null, author: "human", call_text: "Use the revised deck", situation: "The group needed detail", why: "It made the tradeoff clear.", status: "confirmed", srcs: [], pattern_tags: [], date_label: "15 Sep", created_at: "2026-09-15T07:00:00.000Z", resolved_at: "2026-09-15T08:00:00.000Z",
+    id: "confirmed", owner_id: "person", engagement_id: null, document_id: null, ord: null, author: "human", call_text: "Use the revised deck", situation: "The group needed detail", why: "It made the tradeoff clear.", status: "confirmed", srcs: [], pattern_tags: [], date_label: "15 Sep", created_at: "2026-09-15T07:00:00.000Z", resolved_at: "2026-09-15T08:00:00.000Z",
   },
   {
-    id: "needs-why", owner_id: "person", engagement_id: null, author: "human", call_text: "Keep the appendix", situation: "Questions remained", why: "", status: "confirmed", srcs: [], pattern_tags: [], date_label: "1 Sep", created_at: "2026-09-01T07:00:00.000Z", resolved_at: "2026-09-01T08:00:00.000Z",
+    id: "needs-why", owner_id: "person", engagement_id: null, document_id: null, ord: null, author: "human", call_text: "Keep the appendix", situation: "Questions remained", why: "", status: "confirmed", srcs: [], pattern_tags: [], date_label: "1 Sep", created_at: "2026-09-01T07:00:00.000Z", resolved_at: "2026-09-01T08:00:00.000Z",
   },
 ];
 
