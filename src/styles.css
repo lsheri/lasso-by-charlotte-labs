@@ -8292,6 +8292,26 @@ to { transform: translateX(98px); }
 .lasso-decisions-counter { display: block; text-align: right; }
 .lasso-decisions-line .lasso-decisions-save-error, .lasso-decisions-save-error { margin-top: 6px; font-size: 13px; color: var(--nb-mid); }
 .lasso-decisions-add { padding-top: 20px; }
+.lasso-decisions-header-tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
+.lasso-decisions-mode { display: flex; border: 1px solid var(--nb-rule); border-radius: var(--radius-control); }
+.lasso-decisions-mode button[aria-pressed="true"] { background: var(--nb-grey-2); }
+.lasso-decisions-memo h2 { font-family: var(--font-display); font-size: 26px; overflow-wrap: anywhere; }
+.lasso-decisions-memo ol { padding-left: 28px; }
+.lasso-decisions-memo li { padding: 12px 0; font-size: 16px; }
+.lasso-decisions-memo p { margin: 4px 0; font-size: 16px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+.lasso-decisions-memo .lasso-decisions-memo-pointer, .lasso-decisions-memo-status { font-family: var(--lasso-decisions-mono); font-size: 13px; color: var(--nb-mid); }
+.lasso-decisions-memo-aside { color: var(--nb-mid); border-top: 1px solid var(--nb-rule); margin-top: 24px; }
+.lasso-decisions-memo h3, .lasso-decisions-versions h3 { font-size: 18px; }
+.lasso-decisions-versions { position: absolute; inset: 0 0 0 auto; z-index: 5; width: min(560px, 100%); padding: 20px; border-left: 1px solid var(--nb-rule); background: var(--nb-paper); overflow-y: auto; }
+.lasso-decisions-versions header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.lasso-decisions-versions h2 { font-size: 24px; }
+.lasso-decisions-version-list { list-style: none; margin: 0; padding: 0; border-bottom: 1px solid var(--nb-rule); }
+.lasso-decisions-version-list button { width: 100%; height: auto; min-height: 44px; display: flex; flex-direction: column; align-items: flex-start; white-space: normal; text-align: left; gap: 4px; padding: 12px 8px; font-size: 14px; }
+.lasso-decisions-version-list button[aria-pressed="true"] { background: var(--nb-grey-2); }
+.lasso-decisions-version-lines { list-style: none; padding: 0; }
+.lasso-decisions-version-lines li { padding: 16px 0; border-bottom: 1px solid var(--nb-rule); }
+.lasso-decisions-version-lines p, .lasso-decisions-versions li { font-size: 16px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+.lasso-decisions-change { font-family: var(--lasso-decisions-mono); font-size: 13px; color: var(--nb-mid); }
 .lasso-decisions-turn { height: auto; padding: 0; text-transform: none; }
 .lasso-decisions-turn-picker { position: absolute; inset: 12px; z-index: 4; display: flex; flex-direction: column; max-width: 720px; margin-inline: auto; padding: 16px; background: var(--nb-paper); border: 1px solid var(--nb-rule); border-radius: var(--radius-control); }
 .lasso-decisions-turn-picker header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
