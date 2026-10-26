@@ -5,6 +5,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ExternalLink, Paperclip } from "lucide-react";
 
 import { Catch } from "@/components/canvas-lab/Catch";
+import { DecisionsFace } from "@/components/canvas-lab/DecisionsFace";
 import { LabCardMenu } from "@/components/canvas-lab/LabCardMenu";
 import type { CardFace } from "@/design/reference/FaceToggle";
 import { LabPaper } from "@/components/canvas-lab/LabPaper";
@@ -64,6 +65,7 @@ function LabCardInner({
   focusOnMount = false,
   onSelect,
   onOpen,
+  onOpenLedger,
   onBranch,
   onHide,
   onDelete,
@@ -120,6 +122,7 @@ function LabCardInner({
   /** Omitted means the menu item. Card body clicks pass a CardSelectVia. */
   onSelect: (via?: CardSelectVia) => void;
   onOpen: (origin?: DOMRect) => void;
+  onOpenLedger?: ((via: "menu" | "key") => void) | undefined;
   onBranch: () => void;
   onHide: () => void;
   onDelete: () => void;
@@ -298,7 +301,8 @@ function LabCardInner({
     || boardWork?.summary,
   );
   const extractSummary = item?.work_item_extracts?.find((extract) => extract.summary?.trim())?.summary;
-  const textFace = item && boardWork && !boardWork.content && noPreviewReason && extractSummary
+  const isDecisions = item?.type === "document" && item.doc_kind === "decisions";
+  const textFace = !isDecisions && item && boardWork && !boardWork.content && noPreviewReason && extractSummary
     && (!renderableFilePreview || filePreviewFailed)
     ? <TextFace item={item} parent={parent} summary={extractSummary} />
     : undefined;
@@ -347,7 +351,7 @@ function LabCardInner({
       className={`canvas-lab-card group absolute text-left outline-none${teammateMark ? " canvas-lab-card-teammate" : ""}`}
     >
       <div ref={paperRef} data-selected={selected} data-marquee-preview={previewSelected} data-focused={focused} data-connect-source={connectSourceAnchor !== null} data-bundled-piece={Boolean(madeInChat) && face === 'board'} style={{ "--bundle-vendor": vendorColour(bundleVendor) } as React.CSSProperties} className="canvas-lab-card-paper h-full w-full overflow-hidden">
-        {item && isReferenceItem(item) ? <ReferenceFileCard item={item} onOpen={() => onOpen(cardRef.current?.getBoundingClientRect())} /> : item && boardWork && face === 'board' && cardFace === 'art' ? (
+        {item && isReferenceItem(item) ? <ReferenceFileCard item={item} onOpen={() => onOpen(cardRef.current?.getBoundingClientRect())} /> : item && boardWork && face === 'board' && !isDecisions && cardFace === 'art' ? (
           <SketchCard
             work={boardWork}
             width={node.width}
@@ -359,7 +363,7 @@ function LabCardInner({
           <BoardCard
             work={boardWork}
             previewFallback={previewFallback}
-            unscaledPreview={textFace}
+            unscaledPreview={isDecisions ? <DecisionsFace documentId={item.id} /> : textFace}
             width={node.width}
             height={node.height}
             resizable={false}
@@ -409,7 +413,7 @@ function LabCardInner({
       {catchPending ? <Catch onComplete={onCatchComplete} /> : null}
       {readOnly ? null : (
         <div className="canvas-lab-card-bar" onPointerDown={(event) => event.stopPropagation()}>
-          <LabCardMenu selected={selected} canBranch={Boolean(node.workItemId) || node.kind === "chat"} local={Boolean(node.local || node.kind === "chat")} removable={(removable ?? true) && (node.kind !== "judgment" || Boolean(node.local))} open={menuOpen} onOpenChange={changeMenuOpen} cardRef={cardRef} onSelect={() => onSelect()} onOpen={() => onOpen(cardRef.current?.getBoundingClientRect())} onBranch={onBranch} onHide={onHide} onDelete={onDelete} onTakeOutOfContext={onTakeOutOfContext} onFit={canResize ? onFit : undefined} frameChoices={structured ? frameChoices : []} currentFrame={node.frame} onMoveToFrame={structured && canResize ? onMoveToFrame : undefined} bundleToggleLabel={bundleToggleLabel} onBundleToggle={onBundleToggle} chatLinkLabel={canSetChatLink ? CHAT_LINK_COPY[chatLinkAction(item?.meta?.chat_url)] : undefined} onEditChatLink={canSetChatLink ? () => setChatLinkOpen(true) : undefined} onRename={canRename && item ? () => setRenameOpen(true) : undefined} cardFace={cardFace} onCardFaceChange={onCardFaceChange} />
+          <LabCardMenu selected={selected} canBranch={Boolean(node.workItemId) || node.kind === "chat"} local={Boolean(node.local || node.kind === "chat")} removable={(removable ?? true) && (node.kind !== "judgment" || Boolean(node.local))} open={menuOpen} onOpenChange={changeMenuOpen} cardRef={cardRef} onSelect={() => onSelect()} onOpen={() => onOpen(cardRef.current?.getBoundingClientRect())} onOpenLedger={isDecisions && onOpenLedger ? () => onOpenLedger("menu") : undefined} onBranch={onBranch} onHide={onHide} onDelete={onDelete} onTakeOutOfContext={onTakeOutOfContext} onFit={canResize ? onFit : undefined} frameChoices={structured ? frameChoices : []} currentFrame={node.frame} onMoveToFrame={structured && canResize ? onMoveToFrame : undefined} bundleToggleLabel={bundleToggleLabel} onBundleToggle={onBundleToggle} chatLinkLabel={canSetChatLink ? CHAT_LINK_COPY[chatLinkAction(item?.meta?.chat_url)] : undefined} onEditChatLink={canSetChatLink ? () => setChatLinkOpen(true) : undefined} onRename={canRename && item ? () => setRenameOpen(true) : undefined} cardFace={cardFace} onCardFaceChange={onCardFaceChange} />
           {canRename && item ? <RenameWorkDialog item={item} open={renameOpen} onOpenChange={setRenameOpen} /> : null}
           <Button
             type="button"
@@ -423,7 +427,8 @@ function LabCardInner({
             }}
             onClick={(event) => {
               event.stopPropagation();
-              onOpen(cardRef.current?.getBoundingClientRect());
+              if (isDecisions && onOpenLedger && event.detail === 0) onOpenLedger("key");
+              else onOpen(cardRef.current?.getBoundingClientRect());
             }}
           >
             <GraphiteIcon name="expand" size={17} animate={false} />
