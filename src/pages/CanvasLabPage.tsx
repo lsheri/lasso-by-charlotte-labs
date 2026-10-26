@@ -459,7 +459,8 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   const [addWorkTarget, setAddWorkTarget] = useState<"board" | "context">("board");
   const [addWorkBusy, setAddWorkBusy] = useState(false);
   const [askOpen, setAskOpen] = useState(false);
-  const [askSectionId, setAskSectionId] = useState<string | null>(null);
+  /** The section Ask Lasso is scoped to. The nonce re-applies a re-pick. */
+  const [askSection, setAskSection] = useState<{ id: string; nonce: number } | null>(null);
   const [keepBusy, setKeepBusy] = useState(false);
   const [regionFill, setRegionFill] = useState<RegionFill>("green-faded");
   const [pendingRegionNameId, setPendingRegionNameId] = useState<string | null>(null);
@@ -931,21 +932,32 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   framesRef.current = boardFrames;
   const visibleAskNodesRef = useRef(visibleNodes);
   visibleAskNodesRef.current = visibleNodes;
-  const sectionAskSource = useMemo(() => askSectionId ? {
+  const sectionAskSource = useMemo(() => askSection ? {
     resolve: (): string[] | null => {
       const sections = framesRef.current.filter((frame) => isSectionFrameId(frame.id));
-      if (!sections.some((frame) => frame.id === askSectionId)) return null;
+      if (!sections.some((frame) => frame.id === askSection.id)) return null;
       return [...new Set(visibleAskNodesRef.current.flatMap((node) => {
         if (!node.workItemId || node.kind === "answer" || isWorkboardDecorationKind(node.kind)) return [];
         const rect = { ...node, height: cardHeightsRef.current.get(node.id) ?? node.height };
-        return containingSection(rect, sections)?.id === askSectionId ? [node.workItemId] : [];
+        return containingSection(rect, sections)?.id === askSection.id ? [node.workItemId] : [];
       }))];
     },
-  } : undefined, [askSectionId]);
+  } : undefined, [askSection]);
+  /** Every section on the board, marked or not, live for the Ask scope picker. */
+  const askSectionChoices = boardFrames.filter((frame) => isSectionFrameId(frame.id)).map((frame) => ({
+    id: frame.id,
+    title: sectionTitle(frame.name),
+    marker: markerLabel(frame),
+  }));
   function askAboutSection(frame: LabFrame) {
-    setAskSectionId(frame.id);
+    setAskSection({ id: frame.id, nonce: Date.now() });
     setAskOpen(true);
     noteWorkboardContextChanged(orgId, "menu");
+  }
+  /** SECD-3b: the picker door ends in the same section state as the menu door. */
+  function pickAskSection(frameId: string) {
+    setAskSection({ id: frameId, nonce: Date.now() });
+    noteWorkboardContextChanged(orgId, "picker");
   }
   const hiddenRef = useRef<string[]>([]);
   hiddenRef.current = hiddenIds;
