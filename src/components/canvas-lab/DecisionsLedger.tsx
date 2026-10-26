@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useRef, useState, type PointerEvent } from "react";
+import { Fragment, lazy, Suspense, useEffect, useRef, useState, type PointerEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { useDecisionLines, useDecisionLineMutations } from "@/hooks/use-decision-lines";
@@ -10,7 +10,7 @@ import type { LedgerRemoveEntry } from "./canvas-lab-undo";
 import { DecisionTurnPicker } from "./DecisionTurnPicker";
 import { DecisionsMemo } from "./DecisionsMemo";
 import { DecisionsVersions } from "./DecisionsVersions";
-import { DecisionsSharePanel } from "./DecisionsSharePanel";
+const DecisionsSharePanel = lazy(() => import("./DecisionsSharePanel").then((module) => ({ default: module.DecisionsSharePanel })));
 import { MemoComments, useDocumentLinkComments } from "./MemoComments";
 import { noteWorkboardLedgerOpened } from "./canvas-lab-telemetry";
 
@@ -119,7 +119,7 @@ export function DecisionsLedger({ nodeId, item, onClose, canEdit = false, profil
       </>}
     </main>
     {comments.error && mode === "ledger" ? <p role="alert" className="lasso-decisions-save-error">{COPY.error}</p> : null}
-    {shareOpen && canEdit ? <DecisionsSharePanel documentId={item.id} onClose={() => setShareOpen(false)} /> : null}
+    {shareOpen && canEdit ? <Suspense fallback={null}><DecisionsSharePanel documentId={item.id} onClose={() => setShareOpen(false)} /></Suspense> : null}
     {versionsOpen ? <DecisionsVersions versions={versions.data ?? []} onClose={() => setVersionsOpen(false)} /> : null}
     {canEdit && pointingId && parent.data ? <DecisionTurnPicker parentId={parent.data} onClose={() => setPointingId(null)} onSelect={(turn) => { const id = pointingId; setPointingId(null); void mutations.setPointer(id, turn).catch(() => undefined); }} /> : null}
   </div>;
