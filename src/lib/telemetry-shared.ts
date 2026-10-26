@@ -119,6 +119,8 @@ export type TelemetryEvent =
   | "decisions_doc.decision_status_changed"
   /** DOC-UI-1: an owner changed a ledger line; action and source only. */
   | "decisions_doc.line_changed"
+  /** DOC-UI-2a: a link comment was added; booleans only, no viewer identity. Portal row owed. */
+  | "decisions_doc.link_comment_added"
   | "connector.enabled"
   | "connector.error"
   | "connector.synced"
