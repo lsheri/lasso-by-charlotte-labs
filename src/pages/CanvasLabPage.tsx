@@ -3310,13 +3310,16 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   // SECD-2: jump to a marked section. Pans only; zoom, selection and sections are untouched.
   const jumpSections = boardFrames.filter((frame) => isSectionFrameId(frame.id));
   if (jumpSections.some((frame) => frame.periodStart && frame.periodEnd)) {
-    const centre = { x: (viewportSize.width / 2 - pan.x) / zoom, y: (viewportSize.height / 2 - pan.y) / zoom };
+    // Live refs, as the marquee's stagePoint uses, so a fresh pan never picks the wrong section.
+    const liveZoom = zoomRef.current || 1;
+    const centre = { x: (viewportSize.width / 2 - panStateRef.current.x) / liveZoom, y: (viewportSize.height / 2 - panStateRef.current.y) / liveZoom };
     toolbarItems.push({
       spec: { id: "board-jump", width: suggestionMobile ? 96 : 300, pinned: true },
       row: <BoardJumpControls orgId={orgId} sections={jumpSections} currentId={markedSectionAt(jumpSections, centre)} phone={suggestionMobile}
         onJump={(sectionId) => {
           const target = framesRef.current.find((frame) => frame.id === sectionId);
-          if (target) setPan({ x: viewportSize.width / 2 - (target.x + target.width / 2) * zoom, y: viewportSize.height / 2 - (target.y + target.height / 2) * zoom });
+          const z = zoomRef.current || 1;
+          if (target) setPan({ x: viewportSize.width / 2 - (target.x + target.width / 2) * z, y: viewportSize.height / 2 - (target.y + target.height / 2) * z });
         }} />,
     });
   }
