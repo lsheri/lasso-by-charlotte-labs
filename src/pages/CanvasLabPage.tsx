@@ -45,7 +45,7 @@ import { LabColourBlock } from "@/components/canvas-lab/LabColourBlock";
 import { LabSticky, stickyBodyOf } from "@/components/canvas-lab/LabSticky";
 import { LabTextBlock } from "@/components/canvas-lab/LabTextBlock";
 import { LabSection } from "@/components/canvas-lab/LabSection";
-import { isSectionFrameId, newSectionFrameId, sectionTitle, sectionDragSnapshot, moveSectionContents, SECTION_REMOVED_LINE } from "@/lib/board-section";
+import { isSectionFrameId, newSectionFrameId, sectionTitle, sectionDragMembers, moveSectionContents, SECTION_REMOVED_LINE } from "@/lib/board-section";
 import { LabFrame as LabFrameElement } from "@/components/canvas-lab/LabFrame";
 import { applyMarqueeSelection, cardsInMarquee, contextFlareSequence, isMarqueeClick, marqueeRect, type MarqueeRect } from "@/components/canvas-lab/canvas-lab-marquee";
 import { GroupingNamePopup } from "@/components/canvas-lab/GroupingNamePopup";
@@ -3175,14 +3175,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     event.stopPropagation();
     setInteraction("drag");
     const shownFrames = boardFrames.filter((entry) => boardFrameRenders(frameKindOf(entry), structureMode === "structured"));
-    // SEC-FIX-1: a card filed in a frame that is not drawn (a built-in lane such
-    // as foundation or decisions) stands loose on the board, so it joins by its
-    // centre. Only for the snapshot; the card's filing is never changed.
-    const shownFrameIds = new Set(shownFrames.map((entry) => entry.id));
-    const sectionCards = visibleNodes
-      .filter((node) => !pieceChatRef.current.has(node.id))
-      .map((node) => (node.frame && !shownFrameIds.has(node.frame) ? { ...node, frame: null } : node));
-    const snapshot = sectionDragSnapshot(frame, shownFrames, sectionCards);
+    const snapshot = sectionDragMembers(frame, shownFrames, visibleNodes, pieceChatRef.current);
     frameDragRef.current = { id: frame.id, origin: { x: frame.x, y: frame.y }, from: { x: event.clientX, y: event.clientY }, members: snapshot.cards, frameMembers: snapshot.frames };
   }
 
