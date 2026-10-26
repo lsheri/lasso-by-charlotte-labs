@@ -134,11 +134,11 @@ describe("PUSH-1 push_conversation history", () => {
   });
 
   it("a push with two attachments records attachments_added 2", async () => {
-    await push(msgs(...first), { attachments: [
+    const dbgOut = await push(msgs(...first), { attachments: [
       { kind: "artifact_markdown", title: "Plan", source_artifact_id: "a1", content: "# Pricing plan\n\nSegments and survey design." },
       { kind: "artifact_markdown", title: "Survey", source_artifact_id: "a2", content: "# Survey\n\nTen questions on willingness to pay." },
     ] });
-    console.log("DBG", JSON.stringify(pushes()[0]), JSON.stringify(table("work_items").map((w) => w["type"])));
+    console.log("DBG", JSON.stringify(dbgOut), JSON.stringify(pushes()[0]), JSON.stringify(table("work_items").map((w) => w["type"])));
     expect(pushes()[0]).toMatchObject({ attachments_added: 2, attachments_changed: 0 });
   });
 
