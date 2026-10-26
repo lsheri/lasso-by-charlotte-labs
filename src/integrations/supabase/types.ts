@@ -512,6 +512,13 @@ export type Database = {
             foreignKeyName: "answer_cites_node_id_fkey"
             columns: ["node_id"]
             isOneToOne: false
+            referencedRelation: "section_members"
+            referencedColumns: ["node_id"]
+          },
+          {
+            foreignKeyName: "answer_cites_node_id_fkey"
+            columns: ["node_id"]
+            isOneToOne: false
             referencedRelation: "workboard_nodes"
             referencedColumns: ["id"]
           },
@@ -5142,6 +5149,13 @@ export type Database = {
             foreignKeyName: "workboard_annotations_node_id_fkey"
             columns: ["node_id"]
             isOneToOne: false
+            referencedRelation: "section_members"
+            referencedColumns: ["node_id"]
+          },
+          {
+            foreignKeyName: "workboard_annotations_node_id_fkey"
+            columns: ["node_id"]
+            isOneToOne: false
             referencedRelation: "workboard_nodes"
             referencedColumns: ["id"]
           },
@@ -5187,6 +5201,9 @@ export type Database = {
           kind: string
           label: string | null
           ord: number
+          period_end: string | null
+          period_start: string | null
+          sequence_no: number | null
           task_id: string | null
           updated_at: string
           updated_by: string
@@ -5207,6 +5224,9 @@ export type Database = {
           kind: string
           label?: string | null
           ord?: number
+          period_end?: string | null
+          period_start?: string | null
+          sequence_no?: number | null
           task_id?: string | null
           updated_at?: string
           updated_by: string
@@ -5227,6 +5247,9 @@ export type Database = {
           kind?: string
           label?: string | null
           ord?: number
+          period_end?: string | null
+          period_start?: string | null
+          sequence_no?: number | null
           task_id?: string | null
           updated_at?: string
           updated_by?: string
@@ -5341,8 +5364,22 @@ export type Database = {
             foreignKeyName: "workboard_links_from_frame_id_fkey"
             columns: ["from_frame_id"]
             isOneToOne: false
+            referencedRelation: "section_members"
+            referencedColumns: ["frame_id"]
+          },
+          {
+            foreignKeyName: "workboard_links_from_frame_id_fkey"
+            columns: ["from_frame_id"]
+            isOneToOne: false
             referencedRelation: "workboard_frames"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workboard_links_from_node_id_fkey"
+            columns: ["from_node_id"]
+            isOneToOne: false
+            referencedRelation: "section_members"
+            referencedColumns: ["node_id"]
           },
           {
             foreignKeyName: "workboard_links_from_node_id_fkey"
@@ -5355,8 +5392,22 @@ export type Database = {
             foreignKeyName: "workboard_links_to_frame_id_fkey"
             columns: ["to_frame_id"]
             isOneToOne: false
+            referencedRelation: "section_members"
+            referencedColumns: ["frame_id"]
+          },
+          {
+            foreignKeyName: "workboard_links_to_frame_id_fkey"
+            columns: ["to_frame_id"]
+            isOneToOne: false
             referencedRelation: "workboard_frames"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workboard_links_to_node_id_fkey"
+            columns: ["to_node_id"]
+            isOneToOne: false
+            referencedRelation: "section_members"
+            referencedColumns: ["node_id"]
           },
           {
             foreignKeyName: "workboard_links_to_node_id_fkey"
@@ -5478,6 +5529,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "decisions"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workboard_nodes_frame_id_fkey"
+            columns: ["frame_id"]
+            isOneToOne: false
+            referencedRelation: "section_members"
+            referencedColumns: ["frame_id"]
           },
           {
             foreignKeyName: "workboard_nodes_frame_id_fkey"
@@ -5617,7 +5675,31 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      section_members: {
+        Row: {
+          frame_id: string | null
+          frame_key: string | null
+          node_id: string | null
+          work_item_id: string | null
+          workboard_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workboard_frames_workboard_id_fkey"
+            columns: ["workboard_id"]
+            isOneToOne: false
+            referencedRelation: "workboards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workboard_nodes_work_item_id_fkey"
+            columns: ["work_item_id"]
+            isOneToOne: false
+            referencedRelation: "work_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       account_stage: { Args: { p_org: string }; Returns: string }
