@@ -155,11 +155,20 @@ describe("the workboard allowlist", () => {
         "workboard.section_created": [
           "via",
         ],
+        "workboard.section_marker_cleared": [],
+        "workboard.section_marker_set": [
+          "kind",
+          "preset",
+          "via",
+        ],
         "workboard.section_moved": [
           "frames",
           "cards",
         ],
         "workboard.section_removed": [],
+        "workboard.section_shifted": [
+          "direction",
+        ],
         "workboard.structure_toggled": [
           "state",
         ],
@@ -294,7 +303,7 @@ describe("the workboard allowlist", () => {
       const [name, , dims] = mocked.mock.calls[0] as [string, string, Record<string, unknown>];
       expect(guardWorkboardEvent(name, dims as never)).toEqual({ keep: true, dims });
     }
-    expect(Object.keys(WORKBOARD_EVENT_DIMS)).toHaveLength(36);
+    expect(Object.keys(WORKBOARD_EVENT_DIMS)).toHaveLength(39);
   });
 
   it("keeps the additive open path for previewed document and deck cards", () => {
