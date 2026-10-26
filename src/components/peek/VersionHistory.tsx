@@ -12,6 +12,9 @@ import { getVersionFileUrl } from "@/lib/work-files.functions";
 import { formatDate } from "@/lib/work-types";
 
 const SOURCE_EVENT_LABEL: Record<string, string> = {
+  mcp_push: "Pushed from a chat",
+  mcp_repush: "Pushed again from a chat",
+  ledger_edit: "Edited in Lasso",
   connector_reimport: "re-imported from the source",
   initial_capture: "first captured",
   scheduled_recheck: "the source changed",
