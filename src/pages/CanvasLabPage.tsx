@@ -44,8 +44,16 @@ import { LabCard } from "@/components/canvas-lab/LabCard";
 import { LabColourBlock } from "@/components/canvas-lab/LabColourBlock";
 import { LabSticky, stickyBodyOf } from "@/components/canvas-lab/LabSticky";
 import { LabTextBlock } from "@/components/canvas-lab/LabTextBlock";
-import { LabSection } from "@/components/canvas-lab/LabSection";
-import { isSectionFrameId, newSectionFrameId, sectionTitle, sectionDragMembers, moveSectionContents, SECTION_REMOVED_LINE } from "@/lib/board-section";
+import { LabSection, type SectionMarkerChoice } from "@/components/canvas-lab/LabSection";
+import { isSectionFrameId, newSectionFrameId, sectionTitle, sectionDragMembers, moveSectionContents, SECTION_REMOVED_LINE, clearMarker, isWeekPeriod, setPeriodMarker, shift, weekOf, type SectionMarker } from "@/lib/board-section";
+
+const NEXT_WEEK_SECTION_GAP = 40;
+/** The week after this section's week; a section without a week uses the week after today. */
+function nextWeekPeriod(frame: { periodStart?: string | null; periodEnd?: string | null }, today: Date) {
+  const own = { periodStart: frame.periodStart ?? null, periodEnd: frame.periodEnd ?? null };
+  const base = own.periodStart && own.periodEnd && isWeekPeriod(own) ? { periodStart: own.periodStart, periodEnd: own.periodEnd } : weekOf(today);
+  return shift(base, "next");
+}
 import { LabFrame as LabFrameElement } from "@/components/canvas-lab/LabFrame";
 import { applyMarqueeSelection, cardsInMarquee, contextFlareSequence, isMarqueeClick, marqueeRect, type MarqueeRect } from "@/components/canvas-lab/canvas-lab-marquee";
 import { GroupingNamePopup } from "@/components/canvas-lab/GroupingNamePopup";
@@ -152,6 +160,7 @@ import {
   noteWorkboardRecordVisibility,
   noteWorkboardRelationship,
   noteWorkboardSection,
+  noteWorkboardSectionMarker,
   noteWorkboardReviewOpened,
   noteWorkboardLedgerOpened,
   noteWorkboardSaveFailed,
