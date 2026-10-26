@@ -10,6 +10,8 @@ vi.mock("@tanstack/react-start", () => ({ useServerFn: (fn: unknown) => fn }));
 vi.mock("@/integrations/supabase/client", () => ({ supabase: { from: () => ({ select: () => ({ eq: () => ({ order: h.versions }) }) }) } }));
 import { DecisionsLedger, COPY } from "../DecisionsLedger";
 import { COPY as LINE_COPY } from "../DecisionsLine";
+function at<T>(values: T[], index: number): T { const value = values[index]; if (value === undefined) throw new Error("Missing test element"); return value; }
+function first<T>(values: T[]): T { return at(values, 0); }
 let sequence = 0;
 let documentId = "";
 let client: QueryClient;
@@ -30,7 +32,7 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); client.clear(); vi.clearAllMocks(); });
 async function chooseAgreed() {
-  fireEvent.click(screen.getAllByRole("button", { name: "Open", exact: true })[0]);
+  fireEvent.click(first(screen.getAllByRole("button", { name: "Open" })));
   fireEvent.click(screen.getByRole("menuitemradio", { name: "Agreed" }));
 }
 describe("owner Ledger editing", () => {
@@ -38,7 +40,7 @@ describe("owner Ledger editing", () => {
     let resolve: (row: DecisionLine) => void = () => undefined;
     h.update.mockReturnValueOnce(new Promise<DecisionLine>((done) => { resolve = done; }));
     mount(); await chooseAgreed();
-    await waitFor(() => expect(screen.getByRole("button", { name: "Agreed", exact: true })).toBeTruthy());
+    await waitFor(() => expect(screen.getByRole("button", { name: "Agreed" })).toBeTruthy());
     expect(h.update).toHaveBeenCalledWith({ data: { document_id: documentId, id: "a", patch: { status: "confirmed" } } });
     expect(screen.getByText("Saving")).toBeTruthy();
     await act(async () => resolve({ ...line(), status: "confirmed" }));
@@ -47,7 +49,7 @@ describe("owner Ledger editing", () => {
   it("rolls back a rejected status save and shows the row error", async () => {
     h.update.mockRejectedValueOnce(new Error("no")); mount(); await chooseAgreed();
     expect(await screen.findByText("Could not save. Try again.")).toBeTruthy();
-    expect(screen.getAllByRole("button", { name: "Open", exact: true })).toHaveLength(2);
+    expect(screen.getAllByRole("button", { name: "Open" })).toHaveLength(2);
     expect(client.getQueryData<DecisionLine[]>(["decision-lines", documentId])?.[0]?.status).toBe("draft");
   });
   it("Enter saves only trimmed statement text and Escape restores it", async () => {
@@ -98,21 +100,21 @@ describe("owner Ledger editing", () => {
     fireEvent.click(save); await screen.findByText(/Version 2/); expect((save as HTMLButtonElement).disabled).toBe(true);
   });
   it("a reader has no editing controls and Enter or S cannot edit", () => {
-    mount(false); const row = screen.getAllByRole("listitem")[0]; row.focus();
+    mount(false); const row = first(screen.getAllByRole("listitem")); row.focus();
     fireEvent.keyDown(row, { key: "s" }); fireEvent.keyDown(row, { key: "Enter" });
     expect(screen.queryByRole("menu")).toBeNull(); expect(screen.queryByRole("textbox")).toBeNull();
     expect(screen.queryByRole("button", { name: "Add a decision" })).toBeNull(); expect(screen.queryByRole("button", { name: "Save a version" })).toBeNull(); expect(h.update).not.toHaveBeenCalled();
   });
   it("arrow keys move row focus; S opens the current-marked menu", () => {
-    mount(); const rows = screen.getAllByRole("listitem"); rows[0].focus(); fireEvent.keyDown(rows[0], { key: "ArrowDown" }); expect(document.activeElement).toBe(rows[1]);
-    fireEvent.keyDown(rows[1], { key: "ArrowUp" }); expect(document.activeElement).toBe(rows[0]);
-    fireEvent.keyDown(rows[0], { key: "s" }); const current = screen.getByRole("menuitemradio", { name: /Open/ }); expect(current.getAttribute("aria-checked")).toBe("true");
+    mount(); const rows = screen.getAllByRole("listitem"); first(rows).focus(); fireEvent.keyDown(first(rows), { key: "ArrowDown" }); expect(document.activeElement).toBe(at(rows, 1));
+    fireEvent.keyDown(at(rows, 1), { key: "ArrowUp" }); expect(document.activeElement).toBe(first(rows));
+    fireEvent.keyDown(first(rows), { key: "s" }); const current = screen.getByRole("menuitemradio", { name: /Open/ }); expect(current.getAttribute("aria-checked")).toBe("true");
     fireEvent.keyDown(current, { key: "ArrowDown" }); expect(document.activeElement).toBe(screen.getByRole("menuitemradio", { name: "Agreed" }));
     fireEvent.keyDown(document.activeElement as Element, { key: "Escape" }); expect(screen.queryByRole("menu")).toBeNull();
-    fireEvent.keyDown(rows[0], { key: "Enter" }); expect(screen.getByRole("textbox")).toBeTruthy();
+    fireEvent.keyDown(first(rows), { key: "Enter" }); expect(screen.getByRole("textbox")).toBeTruthy();
   });
   it("reason blur saves trimmed text; Shift+Enter does not save", async () => {
-    mount(); fireEvent.click(screen.getAllByRole("button", { name: "Add a reason" })[0]);
+    mount(); fireEvent.click(first(screen.getAllByRole("button", { name: "Add a reason" })));
     const editor = screen.getByRole("textbox", { name: "Reason" }); fireEvent.change(editor, { target: { value: "  First\nSecond  " } });
     fireEvent.keyDown(editor, { key: "Enter", shiftKey: true }); expect(h.update).not.toHaveBeenCalled(); fireEvent.blur(editor);
     await waitFor(() => expect(h.update).toHaveBeenCalledWith({ data: { document_id: documentId, id: "a", patch: { why: "First\nSecond" } } }));
@@ -120,11 +122,11 @@ describe("owner Ledger editing", () => {
   it("limits statement to 400 and reason to 1000 with a counter after 350", () => {
     mount(); fireEvent.click(screen.getByRole("button", { name: "First decision" })); expect(screen.getByRole("textbox").getAttribute("maxlength")).toBe("400");
     fireEvent.change(screen.getByRole("textbox"), { target: { value: "x".repeat(351) } }); expect(screen.getByText("351/400")).toBeTruthy(); fireEvent.keyDown(screen.getByRole("textbox"), { key: "Escape" });
-    fireEvent.click(screen.getAllByRole("button", { name: "Add a reason" })[0]); expect(screen.getByRole("textbox").getAttribute("maxlength")).toBe("1000");
+    fireEvent.click(first(screen.getAllByRole("button", { name: "Add a reason" }))); expect(screen.getByRole("textbox").getAttribute("maxlength")).toBe("1000");
   });
   it("Dropping a row moves it below live rows", async () => {
-    mount(); fireEvent.click(screen.getAllByRole("button", { name: "Open", exact: true })[0]); fireEvent.click(screen.getByRole("menuitemradio", { name: "Dropped" }));
-    await waitFor(() => expect(within(screen.getAllByRole("listitem")[1]).getByRole("button", { name: "First decision" })).toBeTruthy());
+    mount(); fireEvent.click(first(screen.getAllByRole("button", { name: "Open" }))); fireEvent.click(screen.getByRole("menuitemradio", { name: "Dropped" }));
+    await waitFor(() => expect(within(at(screen.getAllByRole("listitem"), 1)).getByRole("button", { name: "First decision" })).toBeTruthy());
   });
   it("pins copy values without banned language or em dashes", () => {
     expect(COPY.add).toBe("Add a decision"); expect(COPY.saveVersion).toBe("Save a version"); expect(LINE_COPY.error).toBe("Could not save. Try again.");
