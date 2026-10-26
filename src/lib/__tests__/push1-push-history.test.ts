@@ -135,8 +135,8 @@ describe("PUSH-1 push_conversation history", () => {
 
   it("a push with two attachments records attachments_added 2", async () => {
     await push(msgs(...first), { attachments: [
-      { kind: "artifact_markdown", title: "Plan", source_artifact_id: "a1", content: "# Pricing plan\n\nSegments and survey design." },
-      { kind: "artifact_markdown", title: "Survey", source_artifact_id: "a2", content: "# Survey\n\nTen questions on willingness to pay." },
+      { kind: "artifact_markdown", title: "Plan", source_artifact_id: "a1", content: "# Pricing plan\n\n" + "Segment the market by company size, then design a survey on willingness to pay. ".repeat(12) },
+      { kind: "artifact_markdown", title: "Survey", source_artifact_id: "a2", content: "# Survey\n\n" + "Ask each buyer which features they would pay for and at what annual price point. ".repeat(12) },
     ] });
     expect(pushes()[0]).toMatchObject({ attachments_added: 2, attachments_changed: 0 });
   });
