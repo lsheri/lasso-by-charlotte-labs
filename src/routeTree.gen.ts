@@ -59,6 +59,7 @@ import { Route as DemoConversationsRouteImport } from './routes/demo.conversatio
 import { Route as DemoSourcesRouteImport } from './routes/demo.sources'
 import { Route as JCodeRouteImport } from './routes/j.$code'
 import { Route as JoinEduRouteImport } from './routes/join_.edu'
+import { Route as MemoTokenRouteImport } from './routes/memo.$token'
 import { Route as OauthConsentRouteImport } from './routes/oauth/consent'
 import { Route as SharedBoardTokenRouteImport } from './routes/shared-board.$token'
 import { Route as SupportGrantIdRouteImport } from './routes/support.$grantId'
@@ -335,6 +336,11 @@ const JoinEduRoute = JoinEduRouteImport.update({
   path: '/join/edu',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MemoTokenRoute = MemoTokenRouteImport.update({
+  id: '/memo/$token',
+  path: '/memo/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OauthConsentRoute = OauthConsentRouteImport.update({
   id: '/oauth/consent',
   path: '/oauth/consent',
@@ -494,6 +500,7 @@ export interface FileRoutesByFullPath {
   '/demo/sources': typeof DemoSourcesRoute
   '/j/$code': typeof JCodeRoute
   '/join/edu': typeof JoinEduRoute
+  '/memo/$token': typeof MemoTokenRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/shared-board/$token': typeof SharedBoardTokenRoute
   '/support/$grantId': typeof SupportGrantIdRoute
@@ -565,6 +572,7 @@ export interface FileRoutesByTo {
   '/demo/sources': typeof DemoSourcesRoute
   '/j/$code': typeof JCodeRoute
   '/join/edu': typeof JoinEduRoute
+  '/memo/$token': typeof MemoTokenRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/shared-board/$token': typeof SharedBoardTokenRoute
   '/support/$grantId': typeof SupportGrantIdRoute
@@ -638,6 +646,7 @@ export interface FileRoutesById {
   '/demo/sources': typeof DemoSourcesRoute
   '/j/$code': typeof JCodeRoute
   '/join_/edu': typeof JoinEduRoute
+  '/memo/$token': typeof MemoTokenRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/shared-board/$token': typeof SharedBoardTokenRoute
   '/support/$grantId': typeof SupportGrantIdRoute
@@ -711,6 +720,7 @@ export interface FileRouteTypes {
     | '/demo/sources'
     | '/j/$code'
     | '/join/edu'
+    | '/memo/$token'
     | '/oauth/consent'
     | '/shared-board/$token'
     | '/support/$grantId'
@@ -782,6 +792,7 @@ export interface FileRouteTypes {
     | '/demo/sources'
     | '/j/$code'
     | '/join/edu'
+    | '/memo/$token'
     | '/oauth/consent'
     | '/shared-board/$token'
     | '/support/$grantId'
@@ -854,6 +865,7 @@ export interface FileRouteTypes {
     | '/demo/sources'
     | '/j/$code'
     | '/join_/edu'
+    | '/memo/$token'
     | '/oauth/consent'
     | '/shared-board/$token'
     | '/support/$grantId'
@@ -904,6 +916,7 @@ export interface RootRouteChildren {
   DemoSourcesRoute: typeof DemoSourcesRoute
   JCodeRoute: typeof JCodeRoute
   JoinEduRoute: typeof JoinEduRoute
+  MemoTokenRoute: typeof MemoTokenRoute
   OauthConsentRoute: typeof OauthConsentRoute
   SharedBoardTokenRoute: typeof SharedBoardTokenRoute
   SupportGrantIdRoute: typeof SupportGrantIdRoute
@@ -1269,6 +1282,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof JoinEduRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/memo/$token': {
+      id: '/memo/$token'
+      path: '/memo/$token'
+      fullPath: '/memo/$token'
+      preLoaderRoute: typeof MemoTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/oauth/consent': {
       id: '/oauth/consent'
       path: '/oauth/consent'
@@ -1539,6 +1559,7 @@ const rootRouteChildren: RootRouteChildren = {
   DemoSourcesRoute: DemoSourcesRoute,
   JCodeRoute: JCodeRoute,
   JoinEduRoute: JoinEduRoute,
+  MemoTokenRoute: MemoTokenRoute,
   OauthConsentRoute: OauthConsentRoute,
   SharedBoardTokenRoute: SharedBoardTokenRoute,
   SupportGrantIdRoute: SupportGrantIdRoute,

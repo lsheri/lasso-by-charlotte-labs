@@ -105,3 +105,41 @@ export const openSharedBoardFn = createServerFn({ method: "POST" })
     const { openSharedBoard } = await import("@/lib/board-share-open.server");
     return openSharedBoard(data.token);
   });
+
+export const createDocumentShareLinkFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: import("./document-share.server").CreateDocumentShareInput) => input)
+  .handler(async ({ data, context }) => {
+    const { createDocumentShareLink } = await import("./document-share.server");
+    return createDocumentShareLink(context, data);
+  });
+
+export const listDocumentShareLinksFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: import("./document-share.server").DocumentShareInput) => input)
+  .handler(async ({ data, context }) => {
+    const { listDocumentShareLinks } = await import("./document-share.server");
+    return listDocumentShareLinks(context, data);
+  });
+
+export const revokeDocumentShareLinkFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: import("./document-share.server").RevokeDocumentShareInput) => input)
+  .handler(async ({ data, context }) => {
+    const { revokeDocumentShareLink } = await import("./document-share.server");
+    return revokeDocumentShareLink(context, data);
+  });
+
+export const openDocumentShareLinkFn = createServerFn({ method: "POST" })
+  .inputValidator((input: { token: string }) => input)
+  .handler(async ({ data }) => {
+    const { openDocumentShareLink } = await import("./document-share.server");
+    return openDocumentShareLink(data);
+  });
+
+export const addDocumentLinkCommentFn = createServerFn({ method: "POST" })
+  .inputValidator((input: import("./document-share.server").DocumentCommentInput) => input)
+  .handler(async ({ data }) => {
+    const { addDocumentLinkComment } = await import("./document-share.server");
+    return addDocumentLinkComment(data);
+  });
