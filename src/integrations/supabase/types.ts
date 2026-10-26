@@ -1697,6 +1697,7 @@ export type Database = {
           origin: string | null
           parent_version_id: string | null
           prompted_by_turn: number | null
+          push_id: string | null
           slide_map: Json | null
           source_event: string
           version_no: number
@@ -1711,6 +1712,7 @@ export type Database = {
           origin?: string | null
           parent_version_id?: string | null
           prompted_by_turn?: number | null
+          push_id?: string | null
           slide_map?: Json | null
           source_event?: string
           version_no: number
@@ -1725,6 +1727,7 @@ export type Database = {
           origin?: string | null
           parent_version_id?: string | null
           prompted_by_turn?: number | null
+          push_id?: string | null
           slide_map?: Json | null
           source_event?: string
           version_no?: number
@@ -1736,6 +1739,13 @@ export type Database = {
             columns: ["parent_version_id"]
             isOneToOne: false
             referencedRelation: "document_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_versions_push_id_fkey"
+            columns: ["push_id"]
+            isOneToOne: false
+            referencedRelation: "work_item_pushes"
             referencedColumns: ["id"]
           },
           {
@@ -4428,6 +4438,7 @@ export type Database = {
           id: string
           meta: Json
           model: string | null
+          push_id: string | null
           role: Database["public"]["Enums"]["turn_role"]
           ts: string | null
           ts_precision: Database["public"]["Enums"]["ts_precision"]
@@ -4440,6 +4451,7 @@ export type Database = {
           id?: string
           meta?: Json
           model?: string | null
+          push_id?: string | null
           role: Database["public"]["Enums"]["turn_role"]
           ts?: string | null
           ts_precision?: Database["public"]["Enums"]["ts_precision"]
@@ -4452,6 +4464,7 @@ export type Database = {
           id?: string
           meta?: Json
           model?: string | null
+          push_id?: string | null
           role?: Database["public"]["Enums"]["turn_role"]
           ts?: string | null
           ts_precision?: Database["public"]["Enums"]["ts_precision"]
@@ -4459,6 +4472,13 @@ export type Database = {
           work_item_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "turns_push_id_fkey"
+            columns: ["push_id"]
+            isOneToOne: false
+            referencedRelation: "work_item_pushes"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "turns_work_item_id_fkey"
             columns: ["work_item_id"]
@@ -4743,6 +4763,65 @@ export type Database = {
           {
             foreignKeyName: "work_item_links_to_item_id_fkey"
             columns: ["to_item_id"]
+            isOneToOne: false
+            referencedRelation: "work_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_item_pushes: {
+        Row: {
+          attachments_added: number
+          attachments_changed: number
+          client_name: string | null
+          consent_ledger_version: number | null
+          consent_tier: string | null
+          id: string
+          mode: string
+          push_no: number
+          pushed_at: string
+          tool: string | null
+          turns_added: number
+          turns_changed: number
+          turns_unchanged: number
+          work_item_id: string
+        }
+        Insert: {
+          attachments_added?: number
+          attachments_changed?: number
+          client_name?: string | null
+          consent_ledger_version?: number | null
+          consent_tier?: string | null
+          id?: string
+          mode: string
+          push_no: number
+          pushed_at?: string
+          tool?: string | null
+          turns_added?: number
+          turns_changed?: number
+          turns_unchanged?: number
+          work_item_id: string
+        }
+        Update: {
+          attachments_added?: number
+          attachments_changed?: number
+          client_name?: string | null
+          consent_ledger_version?: number | null
+          consent_tier?: string | null
+          id?: string
+          mode?: string
+          push_no?: number
+          pushed_at?: string
+          tool?: string | null
+          turns_added?: number
+          turns_changed?: number
+          turns_unchanged?: number
+          work_item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_item_pushes_work_item_id_fkey"
+            columns: ["work_item_id"]
             isOneToOne: false
             referencedRelation: "work_items"
             referencedColumns: ["id"]
