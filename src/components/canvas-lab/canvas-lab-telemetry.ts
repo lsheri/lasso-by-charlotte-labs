@@ -46,6 +46,9 @@ export function noteWorkboardRelationship(
 export function noteWorkboardReviewOpened(orgId: string | undefined, format: "thread" | "document" | "deck" | "sheet"): void {
   if (orgId) logEvent("workboard.review_opened", orgId, { format });
 }
+export function noteWorkboardLedgerOpened(orgId: string | undefined, via: "card" | "menu" | "key"): void {
+  if (orgId) logEvent("workboard.ledger_opened", orgId, { via });
+}
 export function noteWorkboardSection(orgId: string | undefined, action: "created" | "moved" | "removed", detail?: { frames: number; cards: number }): void {
   if (!orgId) return;
   if (action === "created") logEvent("workboard.section_created", orgId, { via: "drawn" });
