@@ -118,14 +118,14 @@ describe("PUSH-1 push_conversation history", () => {
     expect(stamped(row!["id"])).toEqual([1, 2, 3]);
   });
 
-  it("a second push adding 2 and changing 1 writes push_no 2 appended and stamps only those 3; an identical third writes unchanged and stamps nothing", async () => {
+  it("a second push adding 2 and changing 1 writes push_no 2 appended and stamps only the 2 new turns; an identical third writes unchanged and stamps nothing", async () => {
     await push(msgs(...first));
     const second = [first[0]!, "Start with three segments and a survey, then interview ten buyers in each.", first[2]!, "Mid-market first.", "Agreed."];
     await push(msgs(...second));
     const row2 = pushes()[1]!;
     expect(row2).toMatchObject({ push_no: 2, mode: "appended", turns_added: 2, turns_changed: 1, turns_unchanged: 2 });
-    expect(stamped(row2["id"])).toEqual([2, 4, 5]);
-    expect(stamped(pushes()[0]!["id"])).toEqual([1, 3]);
+    expect(stamped(row2["id"])).toEqual([4, 5]);
+    expect(stamped(pushes()[0]!["id"])).toEqual([1, 2, 3]);
 
     await push(msgs(...second));
     const row3 = pushes()[2]!;
