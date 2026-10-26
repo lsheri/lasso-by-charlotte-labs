@@ -289,8 +289,8 @@ describe("unit 7 answer_retried", () => {
     expect(kept).toMatchObject({ answer_retried: true, finish_reason: "stop" });
   });
   it("keeps scope_source on reflect.message_sent and drops an unlisted dimension", () => {
-    const kept = guardEventDims("reflect.message_sent", { scope_source: "board_pick", picked_count: 2 }).dims;
-    expect(kept).toEqual({ scope_source: "board_pick" });
+    const kept = guardEventDims("reflect.message_sent", { scope_source: "board_pick", scope_kind: "section", picked_count: 2 }).dims;
+    expect(kept).toEqual({ scope_source: "board_pick", scope_kind: "section" });
   });
   it("keeps card and input_mode on landing.usecase_played and drops anything else", () => {
     expect(EVENT_DIM_KEYS["landing.usecase_played"]).toEqual(["card", "input_mode"]);

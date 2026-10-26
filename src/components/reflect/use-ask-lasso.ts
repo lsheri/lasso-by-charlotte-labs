@@ -227,13 +227,13 @@ export function useAskLasso({
   // A live session follows the selection, so what Lasso reads and what the
   // audit strip records are always the current choice.
   useEffect(() => {
-    if (!sessionId) return;
+    if (!sessionId || (sectionSelection && pending)) return;
     void supabase
       .from("chat_sessions")
       .update({ context_scope: scopeForSelection() })
       .eq("id", sessionId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionId, scopeKey]);
+  }, [sessionId, scopeKey, pending]);
 
   function applyBoardSelection(hasPicks: boolean, ids: string[]) {
     setSectionSelection(null);
