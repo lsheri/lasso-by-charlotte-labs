@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { WorkItemRow } from "@/lib/work-types";
 const h = vi.hoisted(() => ({ pointer: vi.fn(), parent: "chat" as string | null }));
-vi.mock("@/lib/decisions.functions", () => ({ updateDecisionLine: vi.fn(), addDecisionLine: vi.fn(), recordDecisionsVersion: vi.fn(), setDecisionPointer: h.pointer }));
+vi.mock("@/lib/decisions.functions", () => ({ linkPassageToDecision: vi.fn(), unlinkPassage: vi.fn(), updateDecisionLine: vi.fn(), addDecisionLine: vi.fn(), recordDecisionsVersion: vi.fn(), setDecisionPointer: h.pointer }));
 vi.mock("@tanstack/react-start", () => ({ useServerFn: (fn: unknown) => fn }));
 vi.mock("../canvas-lab-telemetry", () => ({ noteWorkboardLedgerOpened: vi.fn() }));
 vi.mock("@/lib/work-files.functions", () => ({ getVersionFileUrl: vi.fn() }));

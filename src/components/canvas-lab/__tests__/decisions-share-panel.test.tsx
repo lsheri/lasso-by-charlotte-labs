@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { WorkItemRow } from "@/lib/work-types";
 const h = vi.hoisted(() => ({ list: vi.fn(), create: vi.fn(), revoke: vi.fn(), deleted: vi.fn(), eq: vi.fn(), clipboard: vi.fn(), comments: [] as unknown[] }));
 vi.mock("@/lib/board-share.functions", () => ({ createDocumentShareLinkFn: h.create, listDocumentShareLinksFn: h.list, revokeDocumentShareLinkFn: h.revoke }));
-vi.mock("@/lib/decisions.functions", () => ({ updateDecisionLine: vi.fn(), addDecisionLine: vi.fn(), recordDecisionsVersion: vi.fn(), removeDecisionLine: vi.fn(), restoreDecisionLine: vi.fn(), reorderDecisionLines: vi.fn(), setDecisionPointer: vi.fn() }));
+vi.mock("@/lib/decisions.functions", () => ({ linkPassageToDecision: vi.fn(), unlinkPassage: vi.fn(), updateDecisionLine: vi.fn(), addDecisionLine: vi.fn(), recordDecisionsVersion: vi.fn(), removeDecisionLine: vi.fn(), restoreDecisionLine: vi.fn(), reorderDecisionLines: vi.fn(), setDecisionPointer: vi.fn() }));
 vi.mock("@/lib/work-files.functions", () => ({ getVersionFileUrl: vi.fn() }));
 vi.mock("@tanstack/react-start", () => ({ useServerFn: (fn: unknown) => fn }));
 vi.mock("../canvas-lab-telemetry", () => ({ noteWorkboardLedgerOpened: vi.fn() }));
