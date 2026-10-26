@@ -3174,7 +3174,15 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     if (spaceRef.current || event.button !== 0 || !lab.board?.canEditStructure) return;
     event.stopPropagation();
     setInteraction("drag");
-    const snapshot = sectionDragSnapshot(frame, boardFrames.filter((entry) => boardFrameRenders(frameKindOf(entry), structureMode === "structured")), visibleNodes.filter((node) => !pieceChatRef.current.has(node.id)));
+    const shownFrames = boardFrames.filter((entry) => boardFrameRenders(frameKindOf(entry), structureMode === "structured"));
+    // SEC-FIX-1: a card filed in a frame that is not drawn (a built-in lane such
+    // as foundation or decisions) stands loose on the board, so it joins by its
+    // centre. Only for the snapshot; the card's filing is never changed.
+    const shownFrameIds = new Set(shownFrames.map((entry) => entry.id));
+    const sectionCards = visibleNodes
+      .filter((node) => !pieceChatRef.current.has(node.id))
+      .map((node) => (node.frame && !shownFrameIds.has(node.frame) ? { ...node, frame: null } : node));
+    const snapshot = sectionDragSnapshot(frame, shownFrames, sectionCards);
     frameDragRef.current = { id: frame.id, origin: { x: frame.x, y: frame.y }, from: { x: event.clientX, y: event.clientY }, members: snapshot.cards, frameMembers: snapshot.frames };
   }
 
