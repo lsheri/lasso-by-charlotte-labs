@@ -9,10 +9,14 @@ export function ThreadViewerById({
   workItemId,
   onClose,
   focus,
+  onBack,
+  backLabel,
 }: {
   workItemId: string | null;
   onClose: () => void;
   focus?: ThreadFocus | undefined;
+  onBack?: (() => void) | undefined;
+  backLabel?: string | undefined;
 }) {
   const { data } = useQuery({
     queryKey: ["work-item", workItemId],
@@ -35,6 +39,8 @@ export function ThreadViewerById({
       item={data ?? null}
       open={Boolean(workItemId)}
       focus={focus}
+      onBack={onBack}
+      backLabel={backLabel}
       onOpenChange={(next) => {
         if (!next) onClose();
       }}
