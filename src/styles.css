@@ -8352,3 +8352,40 @@ body:has(.lasso-decisions-ledger) .canvas-lab-undo-toast { position: fixed; z-in
   .lasso-decisions-actions { grid-column: 2; grid-row: 1; }
   .lasso-decisions-actions-trigger { opacity: 1; }
 }
+
+/* DOC-UI-2b: public paper and document-only sharing. */
+.lasso-memo-page { min-height: 100dvh; background: var(--nb-paper); color: var(--nb-graphite); font-family: var(--font-sans); --lasso-decisions-mono: var(--font-mono); padding: 32px 16px 20px; }
+.lasso-memo-container { width: 100%; max-width: 680px; margin-inline: auto; min-width: 0; overflow-wrap: anywhere; }
+.lasso-memo-container .lasso-decisions-memo h2 { font-family: var(--font-display); font-size: 32px; line-height: 1.25; margin: 0 0 12px; }
+.lasso-memo-footer { max-width: 680px; margin: 40px auto 0; font-size: 13px; color: var(--nb-mid); }
+.lasso-memo-filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0; }
+.lasso-memo-filters button { min-height: 44px; font-size: 13px; border-radius: var(--radius-pill); }
+.lasso-memo-filters button[aria-pressed="true"] { background: var(--nb-grey-2); border-color: var(--nb-pencil); }
+.lasso-memo-comments { min-width: 0; margin-top: 8px; font-size: 16px; }
+.lasso-memo-comments > button { min-height: 44px; padding-inline: 0; font-size: 13px; color: var(--nb-mid); }
+.lasso-memo-comment-count { margin-left: 8px; }
+.lasso-memo-thread { border-left: 1px solid var(--nb-rule); padding-left: 16px; }
+.lasso-memo-comment { padding: 12px 0; border-bottom: 1px solid var(--nb-rule); }
+.lasso-memo-comment p { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 16px; line-height: 1.6; }
+.lasso-memo-comment .lasso-memo-comment-byline { font-size: 13px; color: var(--nb-mid); }
+.lasso-memo-composer { display: grid; gap: 10px; margin-top: 16px; min-width: 0; }
+.lasso-memo-composer input, .lasso-memo-composer textarea { width: 100%; min-width: 0; font-size: 16px; background: var(--nb-white); color: var(--nb-graphite); }
+.lasso-memo-composer textarea { min-height: 100px; }
+.lasso-memo-composer button { justify-self: start; min-height: 44px; }
+.lasso-decisions-share-panel { position: absolute; inset: 0 0 0 auto; z-index: 6; width: min(440px, 100%); padding: 20px; background: var(--nb-paper); border-left: 1px solid var(--nb-rule); overflow-y: auto; box-shadow: var(--shadow-float); }
+.lasso-decisions-share-panel header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.lasso-decisions-share-panel h2 { font-family: var(--font-display); font-size: 24px; }
+.lasso-decisions-share-panel p { font-size: 16px; line-height: 1.6; margin: 12px 0; overflow-wrap: anywhere; }
+.lasso-decisions-share-panel button { min-height: 44px; font-size: 13px; }
+.lasso-decisions-fresh-link { display: grid; gap: 8px; margin: 20px 0; }
+.lasso-decisions-fresh-link input { width: 100%; min-width: 0; font-size: 16px; }
+.lasso-decisions-fresh-link button { justify-self: start; }
+.lasso-decisions-share-links { list-style: none; margin: 24px 0 0; padding: 0; }
+.lasso-decisions-share-links li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-top: 1px solid var(--nb-rule); }
+.lasso-decisions-share-links p { font-size: 13px; margin: 0; }
+.lasso-decisions-link-comments { list-style: none; padding-left: 94px; }
+@media (max-width: 639px) {
+  .lasso-decisions-share-panel { inset: auto 0 0; width: 100%; max-height: 90dvh; border-left: 0; border-top: 1px solid var(--nb-rule); }
+  .lasso-decisions-link-comments { padding-left: 0; }
+  .lasso-memo-page { padding-top: 24px; }
+}
