@@ -8292,13 +8292,28 @@ to { transform: translateX(98px); }
 .lasso-decisions-counter { display: block; text-align: right; }
 .lasso-decisions-line .lasso-decisions-save-error, .lasso-decisions-save-error { margin-top: 6px; font-size: 13px; color: var(--nb-mid); }
 .lasso-decisions-add { padding-top: 20px; }
+.lasso-decisions-turn { height: auto; padding: 0; text-transform: none; }
+.lasso-decisions-turn-picker { position: absolute; inset: 12px; z-index: 4; display: flex; flex-direction: column; max-width: 720px; margin-inline: auto; padding: 16px; background: var(--nb-paper); border: 1px solid var(--nb-rule); border-radius: var(--radius-control); }
+.lasso-decisions-turn-picker header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.lasso-decisions-turn-picker h2 { font-size: 20px; }
+.lasso-decisions-turn-picker input { width: 100%; min-height: 44px; padding: 8px; font-size: 16px; background: var(--nb-white); color: var(--nb-graphite); border: 1px solid var(--nb-rule); border-radius: var(--radius-control); }
+.lasso-decisions-turn-picker ol { overflow-y: auto; list-style: none; margin: 12px 0 0; padding: 0; }
+.lasso-decisions-turn-picker li { border-bottom: 1px solid var(--nb-rule); }
+.lasso-decisions-turn-picker li button { display: flex; flex-direction: column; align-items: flex-start; width: 100%; height: auto; min-height: 44px; padding: 12px 8px; white-space: normal; text-align: left; gap: 8px; }
+.lasso-decisions-turn-picker li button span { font-size: 16px; overflow-wrap: anywhere; }
+.lasso-decisions-turn-picker li button span:first-child { font-family: var(--lasso-decisions-mono); font-size: 13px; }
+.lasso-decisions-ledger ~ .lasso-decisions-source-back { position: fixed; top: 8px; left: 16px; z-index: 64; background: var(--nb-paper); }
+body:has(.lasso-decisions-ledger) .focus-paper-backdrop { z-index: 62; }
+body:has(.lasso-decisions-source-back) > [data-radix-portal] { z-index: 62; }
+body:has(.lasso-decisions-source-back) .fixed[data-state="open"] { z-index: 62; }
+body:has(.lasso-decisions-source-back) [role="dialog"][data-state="open"] { z-index: 63; }
 .lasso-decisions-line[data-editable] { grid-template-columns: 44px 78px minmax(0, 1fr) 44px; gap: 12px; position: relative; }
 .lasso-decisions-drag, .lasso-decisions-actions-trigger { width: 44px; min-height: 44px; padding: 0; }
 .lasso-decisions-drag { touch-action: none; cursor: grab; }
 .lasso-decisions-actions { position: relative; }
 .lasso-decisions-actions-trigger { opacity: 0; }
 .lasso-decisions-line:hover .lasso-decisions-actions-trigger, .lasso-decisions-line:focus-within .lasso-decisions-actions-trigger { opacity: 1; }
-.lasso-decisions-actions-menu { position: absolute; top: 100%; right: 0; z-index: 3; width: 160px; padding: 4px; background: var(--nb-paper); border: 1px solid var(--nb-rule); border-radius: var(--radius-control); }
+.lasso-decisions-actions-menu { position: absolute; top: 100%; right: 0; z-index: 3; width: 220px; max-width: calc(100vw - 32px); padding: 4px; background: var(--nb-paper); border: 1px solid var(--nb-rule); border-radius: var(--radius-control); }
 .lasso-decisions-actions-menu button { width: 100%; min-height: 44px; justify-content: flex-start; }
 .lasso-decisions-line[data-insertion="before"]::before, .lasso-decisions-line[data-insertion="after"]::after { content: ""; position: absolute; left: 0; right: 0; height: 2px; background: var(--nb-green); }
 .lasso-decisions-line[data-insertion="before"]::before { top: 0; }
