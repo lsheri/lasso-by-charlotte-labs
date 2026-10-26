@@ -121,13 +121,13 @@ describe("document share server", () => {
   });
   it("revoke is owner-only and records document scope", async () => {
     expect(await revokeDocumentShareLink(context, { document_id: "doc", id: "link" })).toEqual({ status: "revoked" });
-    expect(tables["board_share_links"]?.[0]?.revoked_at).toBeTruthy();
+    expect(tables["board_share_links"]?.[0]?.["revoked_at"]).toBeTruthy();
     expect(state.events).toHaveBeenCalledWith(context.supabase, expect.objectContaining({ dims: { action: "revoked", scope: "document" } }));
   });
   it("non-owner cannot revoke", async () => {
     const document = tables["work_items"]?.[0]; if (document) document["owner_id"] = "other";
     await expect(revokeDocumentShareLink(context, { document_id: "doc", id: "link" })).rejects.toMatchObject({ status: 403 });
-    expect(tables["board_share_links"]?.[0]?.revoked_at).toBeNull();
+    expect(tables["board_share_links"]?.[0]?.["revoked_at"]).toBeNull();
   });
   it("cannot revoke another document's link", async () => {
     const link = tables["board_share_links"]?.[0]; if (link) link["work_item_id"] = "other";
@@ -173,7 +173,7 @@ describe("document share server", () => {
     expect(result).toMatchObject({ body: "Hello", display_name: null, decision_id: null });
     expect(tables["document_link_comments"]?.[0]).toMatchObject({ share_link_id: "link", work_item_id: "doc" });
     expect(state.events).toHaveBeenCalledWith(state.db, { eventType: "decisions_doc.link_comment_added", orgId: "org", userId: null, dims: { has_name: false, on_line: false } });
-    expect(tables["board_share_links"]?.[0]?.opened_count).toBe(2);
+    expect(tables["board_share_links"]?.[0]?.["opened_count"]).toBe(2);
   });
   it("accepts a named comment on a line in this document", async () => {
     expect(await addDocumentLinkComment({ token, body: "Hello", display_name: " Visitor ", decision_id: "line" })).toMatchObject({ display_name: "Visitor", decision_id: "line" });
