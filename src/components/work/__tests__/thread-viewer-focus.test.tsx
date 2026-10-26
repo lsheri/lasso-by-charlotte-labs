@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const turns = [
@@ -12,8 +12,13 @@ vi.mock("@tanstack/react-query", () => ({
 }));
 
 vi.mock("@/integrations/supabase/client", () => ({ supabase: {} }));
+vi.mock("@/components/decisions/DraftDecisionsButton", () => ({ DraftDecisionsButton: () => null }));
+vi.mock("@/components/work/ChatUrlLink", () => ({ ChatUrlLink: () => null }));
+vi.mock("@/components/work/SourceMark", () => ({ ArtifactNote: () => null, SourceMark: () => null }));
+vi.mock("@/components/work/TypeIcon", () => ({ TypeChip: () => null }));
 
 const { ThreadBody, focusedTextRange } = await import("@/components/peek/ThreadBody");
+const { ThreadViewer } = await import("@/components/work/ThreadViewer");
 
 const item = {
   id: "thread-1",
@@ -55,5 +60,27 @@ describe("conversation evidence focus", () => {
     render(<ThreadBody item={item} focus={{ turnNo: 99, text: "not present" }} reducedMotion />);
     expect(screen.queryByTestId("evidence-circle")).toBeNull();
     expect(Element.prototype.scrollIntoView).not.toHaveBeenCalled();
+  });
+  it("Back is inside the modal and calls only onBack", () => {
+    const onBack = vi.fn(); const onOpenChange = vi.fn();
+    render(<ThreadViewer item={item} open onOpenChange={onOpenChange} onBack={onBack} />);
+    const back = screen.getByRole("button", { name: "Back to the decisions" });
+    expect(screen.getByRole("dialog").contains(back)).toBe(true);
+    fireEvent.click(back); expect(onBack).toHaveBeenCalledTimes(1); expect(onOpenChange).not.toHaveBeenCalled();
+  });
+  it("Escape returns through onBack when supplied", async () => {
+    const onBack = vi.fn(); const onOpenChange = vi.fn();
+    render(<ThreadViewer item={item} open onOpenChange={onOpenChange} onBack={onBack} backLabel="Back" />);
+    await waitFor(() => expect(screen.getByRole("dialog").contains(document.activeElement)).toBe(true));
+    fireEvent.keyDown(document.activeElement ?? document, { key: "Escape" });
+    expect(onBack).toHaveBeenCalledTimes(1); expect(onOpenChange).not.toHaveBeenCalled();
+  });
+  it("without onBack there is no Back control and Escape keeps the existing close path", async () => {
+    const onOpenChange = vi.fn();
+    render(<ThreadViewer item={item} open onOpenChange={onOpenChange} />);
+    expect(screen.queryByRole("button", { name: "Back to the decisions" })).toBeNull();
+    await waitFor(() => expect(screen.getByRole("dialog").contains(document.activeElement)).toBe(true));
+    fireEvent.keyDown(document.activeElement ?? document, { key: "Escape" });
+    expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 });
