@@ -76,6 +76,7 @@ import { CANONICAL_ORIGIN } from "@/lib/app-host";
 import { pushSourceTimeFields } from "@/lib/push-source-time";
 import { countCarryGaps, carryGapBucket } from "./carry-gap";
 import { promptedByTurn } from "./version-prompt";
+import { renderDecisionsMarkdown } from "./mcp-decisions";
 
 const PROTOCOL_VERSION = "2025-11-25";
 const ACCEPTED_PROTOCOLS = new Set([
@@ -1820,9 +1821,8 @@ async function pushDecisions(owner: Owner, args: Obj, id: unknown): Promise<Resp
       const saved = await supabaseAdmin.from("decisions").update({ ord: row.ord, ...(remaining.find((old) => old.id === row.id)?.status !== "discarded" ? { status: "discarded" as const } : {}) }).eq("id", row.id).eq("document_id", target.id);
       if (saved.error) return rpcError(id, -32603, saved.error.message);
     }
-    const labels = { draft: "Open", confirmed: "Agreed", discarded: "Dropped" };
     const full = [...keptRows, ...addedRows, ...droppedRows].sort((a, b) => (a.ord ?? 0) - (b.ord ?? 0));
-    const body = `# ${target.title}\n\n` + full.map((row) => `${row.ord}. ${row.call_text}\n   Status: ${labels[row.status]}${row.why ? `\n   Why: ${row.why}` : ""}`).join("\n\n");
+    const body = renderDecisionsMarkdown(target.title, full.map((row) => ({ ...row, ord: row.ord ?? 0 })));
     const path = `${owner.userId}/decisions-${slugify(target.title)}-${crypto.randomUUID()}.md`;
     const hash = await sha256Hex(body);
     const upload = await supabaseAdmin.storage.from("work-files").upload(path, new TextEncoder().encode(body), { contentType: "text/markdown", upsert: false });
@@ -1845,8 +1845,8 @@ async function pushDecisions(owner: Owner, args: Obj, id: unknown): Promise<Resp
       dims: { via: "pushed", has_pointer: Array.isArray(row.srcs) && row.srcs.length > 0 } });
     return textResult(id, `Updated '${target.title}' in Lasso, version ${version}: ${addedRows.length} added, ${keptRows.length} kept, ${droppedRows.length} marked dropped. Statuses set in Lasso were kept.\nlasso_document_id: ${target.id}`);
   }
-  const labels = { open: "Open", agreed: "Agreed", dropped: "Dropped" };
-  const body = `# ${title}\n\n` + lines.map((line, index) => `${index + 1}. ${line.statement}\n   Status: ${labels[line.status]}${line.reason !== undefined ? `\n   Why: ${line.reason}` : ""}`).join("\n\n");
+  const bodyStatuses = { open: "draft", agreed: "confirmed", dropped: "discarded" } as const;
+  const body = renderDecisionsMarkdown(title, lines.map((line, index) => ({ ord: index + 1, call_text: line.statement, why: line.reason ?? "", status: bodyStatuses[line.status] })));
   const slug = slugify(title);
   const path = `${owner.userId}/decisions-${slug}-${crypto.randomUUID()}.md`;
   const hash = await sha256Hex(body);

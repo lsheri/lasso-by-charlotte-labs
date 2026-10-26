@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveProfile } from "@/lib/profile-resolve";
+import type { DecisionDocumentInput, UpdateDecisionLineInput, AddDecisionLineInput, RemoveDecisionLineInput, RestoreDecisionLineInput, ReorderDecisionLinesInput, SetDecisionPointerInput } from "./decisions-doc.server";
 import {
   DRAFT_SYSTEM_PROMPT,
   DRAFT_TOOL,
@@ -163,6 +164,55 @@ export const draftDecisions = createServerFn({ method: "POST" })
 
     return { drafted: rows.length, suppressed };
   });
+
+export const updateDecisionLine = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: UpdateDecisionLineInput) => {
+    if (!input || typeof input.document_id !== "string" || !input.document_id) throw new Response("document_id is required", { status: 400 });
+    return input;
+  }).handler(async ({ data, context }) => (await import("./decisions-doc.server")).updateDecisionLine(context, data));
+
+export const addDecisionLine = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: AddDecisionLineInput) => {
+    if (!input || typeof input.document_id !== "string" || !input.document_id) throw new Response("document_id is required", { status: 400 });
+    return input;
+  }).handler(async ({ data, context }) => (await import("./decisions-doc.server")).addDecisionLine(context, data));
+
+export const removeDecisionLine = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: RemoveDecisionLineInput) => {
+    if (!input || typeof input.document_id !== "string" || !input.document_id) throw new Response("document_id is required", { status: 400 });
+    return input;
+  }).handler(async ({ data, context }) => (await import("./decisions-doc.server")).removeDecisionLine(context, data));
+
+export const restoreDecisionLine = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: RestoreDecisionLineInput) => {
+    if (!input || typeof input.document_id !== "string" || !input.document_id) throw new Response("document_id is required", { status: 400 });
+    return input;
+  }).handler(async ({ data, context }) => (await import("./decisions-doc.server")).restoreDecisionLine(context, data));
+
+export const reorderDecisionLines = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: ReorderDecisionLinesInput) => {
+    if (!input || typeof input.document_id !== "string" || !input.document_id) throw new Response("document_id is required", { status: 400 });
+    return input;
+  }).handler(async ({ data, context }) => (await import("./decisions-doc.server")).reorderDecisionLines(context, data));
+
+export const setDecisionPointer = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: SetDecisionPointerInput) => {
+    if (!input || typeof input.document_id !== "string" || !input.document_id) throw new Response("document_id is required", { status: 400 });
+    return input;
+  }).handler(async ({ data, context }) => (await import("./decisions-doc.server")).setDecisionPointer(context, data));
+
+export const recordDecisionsVersion = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: DecisionDocumentInput) => {
+    if (!input || typeof input.document_id !== "string" || !input.document_id) throw new Response("document_id is required", { status: 400 });
+    return input;
+  }).handler(async ({ data, context }) => (await import("./decisions-doc.server")).recordDecisionsVersion(context, data));
 
 /**
  * Draft decisions across a whole engagement: every mapped item, threads and
