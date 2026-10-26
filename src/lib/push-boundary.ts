@@ -22,17 +22,24 @@ export function pushBoundaries(
   return out;
 }
 
-/** "Added 21 Oct", in the reader's local day. The year shows only when it is not this year. Never a time. */
-export function addedLabel(iso: string, now: Date = new Date()): string | null {
-  const when = new Date(iso);
-  if (Number.isNaN(when.getTime())) return null;
+/**
+ * "21 Oct", in the reader's local day. The year shows only when it is not
+ * this year. Never a time. Shared by the reader's push rule and section markers.
+ */
+export function dayLabel(when: Date, now: Date = new Date()): string {
   const sameYear = when.getFullYear() === now.getFullYear();
-  const day = when.toLocaleDateString("en-GB", {
+  return when.toLocaleDateString("en-GB", {
     day: "numeric",
     month: "short",
     ...(sameYear ? {} : { year: "numeric" }),
   });
-  return `Added ${day}`;
+}
+
+/** "Added 21 Oct", in the reader's local day. The year shows only when it is not this year. Never a time. */
+export function addedLabel(iso: string, now: Date = new Date()): string | null {
+  const when = new Date(iso);
+  if (Number.isNaN(when.getTime())) return null;
+  return `Added ${dayLabel(when, now)}`;
 }
 
 export type PushHistoryRow = {

@@ -104,6 +104,9 @@ function frameDto(row: FrameRow): WorkboardFrameDto {
     taskId: row.task_id,
     label: row.label,
     fill: row.fill ?? null,
+    periodStart: row.period_start ?? null,
+    periodEnd: row.period_end ?? null,
+    sequenceNo: row.sequence_no ?? null,
     x: row.x,
     y: row.y,
     w: row.w,
@@ -294,6 +297,27 @@ export function validateFrameFill(fill: unknown): string | null {
   return isRegionFill(fill) ? null : "Choose one of the available region colours.";
 }
 
+/**
+ * SECD-1: only a section carries a marker, and at most one: a period (both
+ * dates, end not before start) or a whole number of zero or more.
+ */
+export function validateFrameMarker(
+  key: string | null | undefined,
+  marker: { periodStart?: string | null; periodEnd?: string | null; sequenceNo?: number | null },
+): string | null {
+  const start = marker.periodStart ?? null;
+  const end = marker.periodEnd ?? null;
+  const number = marker.sequenceNo ?? null;
+  if (start === null && end === null && number === null) return null;
+  if (!isSectionFrameId(key)) return "Only a section can carry a period or a number.";
+  if (start !== null && number !== null) return "A section carries a period or a number, not both.";
+  if ((start === null) !== (end === null)) return "A period needs both a start and an end date.";
+  const day = /^\d{4}-\d{2}-\d{2}$/;
+  if (start !== null && end !== null && (!day.test(start) || !day.test(end) || end < start)) return "A period must end on or after the day it starts.";
+  if (number !== null && (!Number.isInteger(number) || number < 0)) return "A section number must be a whole number of zero or more.";
+  return null;
+}
+
 export function validateFrameLabel(kind: string, label: unknown, options: { region?: boolean } = {}): string | null {
   // A drawn region may have its name cleared, which turns it back into paint.
   if (options.region && (label === null || (typeof label === "string" && label.trim().length === 0))) return null;
@@ -341,6 +365,10 @@ export async function applyWorkboardCommand(
   if (command.type === "materialize") {
     if (!membership.isEditor) return { status: "forbidden" };
     if (command.frames.some((frame) => !validFrameGeometry(frame))) return { status: "validation_error", message: "Workstream dimensions are outside the supported range." };
+    for (const frame of command.frames) {
+      const badMarker = validateFrameMarker(frame.key, frame);
+      if (badMarker) return { status: "validation_error", message: badMarker };
+    }
     const existingFrames = (await db.from("workboard_frames").select("id, key").eq("workboard_id", board.id).is("deleted_at", null)).data ?? [];
     const frameIdByKey = new Map(existingFrames.map((row) => [row.key, row.id]));
     const missingFrames = command.frames.filter((frame) => !frameIdByKey.has(frame.key));
@@ -384,6 +412,8 @@ export async function applyWorkboardCommand(
     if (!validFrameGeometry(command.frame)) return { status: "validation_error", message: "Workstream dimensions are outside the supported range." };
     const badFill = validateFrameFill(command.frame.fill ?? null);
     if (badFill) return { status: "validation_error", message: badFill };
+    const badMarker = validateFrameMarker(command.frame.key, command.frame);
+    if (badMarker) return { status: "validation_error", message: badMarker };
     const { data, error } = await db
       .from("workboard_frames")
       .insert(frameInsert(board.id, profile.id, command.frame))
@@ -408,6 +438,10 @@ export async function applyWorkboardCommand(
       const invalid = validateFrameLabel(target.kind, normalizedLabel, { region: isRegionFrameId((target as { key?: string }).key) || isSectionFrameId((target as { key?: string }).key) });
       if (invalid) return { status: "validation_error", message: invalid };
     }
+    if (command.type === "frame_update" && (command.patch.periodStart !== undefined || command.patch.periodEnd !== undefined || command.patch.sequenceNo !== undefined)) {
+      const invalid = validateFrameMarker((target as { key?: string }).key, command.patch);
+      if (invalid) return { status: "validation_error", message: invalid };
+    }
     if (command.type === "frame_archive") {
       const { count } = await db.from("workboard_nodes").select("id", { count: "exact", head: true }).eq("workboard_id", board.id).eq("frame_id", command.frameId).is("deleted_at", null);
       const invalid = validateFrameArchive(target.kind, count ?? 0, Boolean((target as { task_id?: string | null }).task_id));
@@ -415,7 +449,7 @@ export async function applyWorkboardCommand(
     }
     const patch =
       command.type === "frame_update"
-        ? { ...definedPatch({ ...command.patch, taskId: undefined, ...(command.patch.taskId !== undefined ? { task_id: command.patch.taskId } : {}), ...(normalizedLabel !== undefined ? { label: normalizedLabel || null } : {}) }), ...stamp }
+        ? { ...definedPatch({ ...command.patch, taskId: undefined, periodStart: undefined, periodEnd: undefined, sequenceNo: undefined, ...(command.patch.periodStart !== undefined ? { period_start: command.patch.periodStart } : {}), ...(command.patch.periodEnd !== undefined ? { period_end: command.patch.periodEnd } : {}), ...(command.patch.sequenceNo !== undefined ? { sequence_no: command.patch.sequenceNo } : {}), ...(command.patch.taskId !== undefined ? { task_id: command.patch.taskId } : {}), ...(normalizedLabel !== undefined ? { label: normalizedLabel || null } : {}) }), ...stamp }
         : command.type === "frame_restore"
           ? { deleted_at: null, ...definedPatch(command.patch ?? {}), ...stamp }
           : { deleted_at: new Date().toISOString(), ...stamp };
@@ -563,6 +597,9 @@ function frameInsert(boardId: string, profileId: string, frame: WorkboardFrameIn
     task_id: frame.taskId ?? null,
     label: frame.label ?? null,
     fill: frame.fill ?? null,
+    period_start: frame.periodStart ?? null,
+    period_end: frame.periodEnd ?? null,
+    sequence_no: frame.sequenceNo ?? null,
     x: frame.x,
     y: frame.y,
     w: frame.w,

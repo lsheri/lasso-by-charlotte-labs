@@ -11,6 +11,7 @@
  * Pure logic only. No React, no network, no writes.
  */
 
+import { dayLabel } from "@/lib/push-boundary";
 import { groupingDragSnapshot, moveGroupingContents, type GroupingDragMember } from "@/lib/board-region";
 
 export const SECTION_FRAME_PREFIX = "section:";
@@ -105,4 +106,106 @@ export function sectionDragMembers(
     .filter((node) => !pieceIds.has(node.id))
     .map((node) => (node.frame && !shownFrameIds.has(node.frame) ? { ...node, frame: null } : node));
   return sectionDragSnapshot(section, shownFrames, cards);
+}
+
+/* ------------------------------------------------------------------ */
+/* SECD-1: a section's marker. A period or a number, never both.       */
+/* Dates are calendar days ("YYYY-MM-DD") read in the reader's day.    */
+/* ------------------------------------------------------------------ */
+
+export type SectionPeriod = { periodStart: string; periodEnd: string };
+export type SectionMarker = { periodStart: string | null; periodEnd: string | null; sequenceNo: number | null };
+
+function parseDay(day: string): Date {
+  const [y, m, d] = day.split("-").map(Number);
+  return new Date(y as number, (m as number) - 1, d as number);
+}
+
+function toDay(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function addDays(date: Date, days: number): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
+}
+
+/** The single day containing `date`. */
+export function dayOf(date: Date): SectionPeriod {
+  const day = toDay(date);
+  return { periodStart: day, periodEnd: day };
+}
+
+/** Monday to Sunday of the week containing `date`. */
+export function weekOf(date: Date): SectionPeriod {
+  const sinceMonday = (date.getDay() + 6) % 7;
+  const monday = addDays(date, -sinceMonday);
+  return { periodStart: toDay(monday), periodEnd: toDay(addDays(monday, 6)) };
+}
+
+/** First to last day of the month containing `date`. */
+export function monthOf(date: Date): SectionPeriod {
+  return {
+    periodStart: toDay(new Date(date.getFullYear(), date.getMonth(), 1)),
+    periodEnd: toDay(new Date(date.getFullYear(), date.getMonth() + 1, 0)),
+  };
+}
+
+export function isWeekPeriod(period: { periodStart: string | null; periodEnd: string | null }): boolean {
+  if (!period.periodStart || !period.periodEnd) return false;
+  const start = parseDay(period.periodStart);
+  return start.getDay() === 1 && toDay(addDays(start, 6)) === period.periodEnd;
+}
+
+function isMonthPeriod(period: SectionPeriod): boolean {
+  const month = monthOf(parseDay(period.periodStart));
+  return month.periodStart === period.periodStart && month.periodEnd === period.periodEnd;
+}
+
+/** Moves a week by seven days. Any other period comes back unchanged. */
+export function shift(period: SectionPeriod, direction: "next" | "previous"): SectionPeriod {
+  if (!isWeekPeriod(period)) return period;
+  const step = direction === "next" ? 7 : -7;
+  return {
+    periodStart: toDay(addDays(parseDay(period.periodStart), step)),
+    periodEnd: toDay(addDays(parseDay(period.periodEnd), step)),
+  };
+}
+
+/** Setting a period clears the number. */
+export function setPeriodMarker(period: SectionPeriod): SectionMarker {
+  return { periodStart: period.periodStart, periodEnd: period.periodEnd, sequenceNo: null };
+}
+
+/** Setting a number clears both dates. */
+export function setNumberMarker(sequenceNo: number): SectionMarker {
+  return { periodStart: null, periodEnd: null, sequenceNo };
+}
+
+export function clearMarker(): SectionMarker {
+  return { periodStart: null, periodEnd: null, sequenceNo: null };
+}
+
+/**
+ * The line under a section title: "Week of 20 Oct", "3 to 14 Nov", "21 Oct",
+ * "October", "#2", or null. Year only when it is not this year. Never a time.
+ */
+export function markerLabel(
+  frame: { periodStart?: string | null; periodEnd?: string | null; sequenceNo?: number | null },
+  now: Date = new Date(),
+): string | null {
+  if (frame.periodStart && frame.periodEnd) {
+    const period = { periodStart: frame.periodStart, periodEnd: frame.periodEnd };
+    const start = parseDay(period.periodStart);
+    const end = parseDay(period.periodEnd);
+    if (period.periodStart === period.periodEnd) return dayLabel(start, now);
+    if (isWeekPeriod(period)) return `Week of ${dayLabel(start, now)}`;
+    if (isMonthPeriod(period)) {
+      const month = start.toLocaleDateString("en-GB", { month: "long" });
+      return start.getFullYear() === now.getFullYear() ? month : `${month} ${start.getFullYear()}`;
+    }
+    const sameMonth = start.getFullYear() === end.getFullYear() && start.getMonth() === end.getMonth();
+    return `${sameMonth ? String(start.getDate()) : dayLabel(start, now)} to ${dayLabel(end, now)}`;
+  }
+  if (typeof frame.sequenceNo === "number") return `#${frame.sequenceNo}`;
+  return null;
 }

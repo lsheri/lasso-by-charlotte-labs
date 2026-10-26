@@ -134,6 +134,10 @@ export type LabFrame = {
   name: string;
   /** W3: the stored fill name of a drawn region. */
   fill?: string | null;
+  /** SECD-1: a section's marker, carried from its durable row. */
+  periodStart?: string | null;
+  periodEnd?: string | null;
+  sequenceNo?: number | null;
   x: number;
   y: number;
   width: number;
@@ -1073,6 +1077,12 @@ export type DurableMerge = { frames: LabFrame[]; nodes: LabNode[]; links: LabLin
  * relationships. Durable references whose source left the engagement simply
  * vanish; new canonical work without a durable row keeps its virtual spot.
  */
+/** SECD-1: the marker fields, present only when the durable row carries one. */
+function durableMarker(durable: WorkboardDto["frames"][number]): Pick<LabFrame, "periodStart" | "periodEnd" | "sequenceNo"> {
+  if (!isSectionFrameId(durable.key)) return {};
+  return { periodStart: durable.periodStart ?? null, periodEnd: durable.periodEnd ?? null, sequenceNo: durable.sequenceNo ?? null };
+}
+
 export function applyDurableBoard(base: { frames: LabFrame[]; nodes: LabNode[] }, board: WorkboardDto): DurableMerge {
   const frames: LabFrame[] = [];
   const frameIdByKey = new Map<string, string>();
@@ -1084,7 +1094,7 @@ export function applyDurableBoard(base: { frames: LabFrame[]; nodes: LabNode[] }
       continue;
     }
     frameIdByKey.set(durable.id, baseFrame.id);
-    frames.push({ ...baseFrame, x: durable.x, y: durable.y, width: durable.w, height: durable.h, fill: durable.fill ?? null, durableId: durable.id, durableVersion: durable.version });
+    frames.push({ ...baseFrame, x: durable.x, y: durable.y, width: durable.w, height: durable.h, fill: durable.fill ?? null, ...durableMarker(durable), durableId: durable.id, durableVersion: durable.version });
   }
   for (const durable of orderedDurableFrames) {
     if (base.frames.some((frame) => frame.id === durable.key)) continue;
@@ -1094,7 +1104,7 @@ export function applyDurableBoard(base: { frames: LabFrame[]; nodes: LabNode[] }
     const id = durable.key.startsWith("custom:") || isRegionFrameId(durable.key) || isSectionFrameId(durable.key) || durable.key === "trail" || isContextFrameId(durable.key) ? durable.key : `durable-frame:${durable.id}`;
     frameIdByKey.set(durable.id, id);
     // W3: a drawn region with no name is paint, so it keeps its empty name.
-    frames.push({ id, name: durable.label ?? (isRegionFrameId(id) || isSectionFrameId(id) ? "" : "Workstream"), fill: durable.fill ?? null, x: durable.x, y: durable.y, width: durable.w, height: durable.h, durableId: durable.id, durableVersion: durable.version });
+    frames.push({ id, name: durable.label ?? (isRegionFrameId(id) || isSectionFrameId(id) ? "" : "Workstream"), fill: durable.fill ?? null, ...durableMarker(durable), x: durable.x, y: durable.y, width: durable.w, height: durable.h, durableId: durable.id, durableVersion: durable.version });
   }
 
   const nodes: LabNode[] = [];
