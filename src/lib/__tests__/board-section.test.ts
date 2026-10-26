@@ -4,7 +4,7 @@ import { regionIsPaint, regionIsWorkstream, regionOccupies } from "@/lib/board-r
 import {
   SECTION_FRAME_PREFIX, SECTION_REMOVED_LINE, SECTION_TITLE_PLACEHOLDER,
   containingSection, isSectionFrameId, moveSectionContents, newSectionFrameId,
-  sectionDragSnapshot, sectionTitle,
+  sectionDragMembers, sectionDragSnapshot, sectionTitle,
 } from "@/lib/board-section";
 
 const section = { id: "section:main", x: 100, y: 80, width: 400, height: 300 };
@@ -79,5 +79,28 @@ describe("section furniture", () => {
   it("breaks equal-area ties by the nearest title corner", () => {
     const nearer = { id: "section:nearer", x: 130, y: 110, width: 400, height: 300 };
     expect(containingSection({ x: 200, y: 180 }, [section, nearer])).toBe(nearer);
+  });
+  it("SEC-FIX-1: a section drag of 120,80 moves the outline and inside cards, including lane-filed chats, and nothing else", () => {
+    const sec = { id: "section:fix", x: 100, y: 100, width: 600, height: 400 };
+    const ws = { id: "workstream:away", x: 900, y: 100, width: 300, height: 200 };
+    const chat = { id: "chat", x: 150, y: 150, width: 100, height: 60, frame: "foundation" };
+    const file = { id: "file", x: 400, y: 300, width: 100, height: 60, frame: null };
+    const piece = { id: "piece", x: 160, y: 220, width: 100, height: 60, frame: null };
+    const wsCard = { id: "ws-card", x: 950, y: 150, width: 100, height: 60, frame: ws.id };
+    const away = { id: "away", x: 1300, y: 700, width: 100, height: 60, frame: null };
+    const frames = [sec, ws];
+    const nodes = [chat, file, piece, wsCard, away];
+    const snapshot = sectionDragMembers(sec, frames, nodes, new Set(["piece"]));
+    expect(snapshot.cards.map((card) => card.id)).not.toContain("piece");
+    const to = { x: sec.x + 120, y: sec.y + 80 };
+    const moved = moveSectionContents(frames, nodes, snapshot, to);
+    const outline = moved.frames.map((frame) => frame.id === sec.id ? { ...frame, x: to.x, y: to.y } : frame);
+    const at = (id: string) => moved.cards.find((card) => card.id === id);
+    expect(outline[0]).toMatchObject({ x: 220, y: 180 });
+    expect(at("chat")).toMatchObject({ x: 270, y: 230, frame: "foundation" });
+    expect(at("file")).toMatchObject({ x: 520, y: 380 });
+    expect(at("ws-card")).toBe(wsCard);
+    expect(at("away")).toBe(away);
+    expect(outline[1]).toBe(ws);
   });
 });
