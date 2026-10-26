@@ -146,6 +146,7 @@ export function FocusOverlay({
   readOnly = false,
   filePreview,
   focusTurnNo,
+  focusLabel,
   highlightTurnRange,
   focusedTurnTestId,
   closeLabel,
@@ -186,6 +187,7 @@ export function FocusOverlay({
   filePreview?: WorkboardFilePreviewData | undefined;
   /** Unit 2: open scrolled to this turn, lit. */
   focusTurnNo?: number | null | undefined;
+  focusLabel?: string | undefined;
   /** Public proof link: quietly marks the surrounding source sequence. */
   highlightTurnRange?: readonly [number, number] | undefined;
   /** Public demo tour: stable selector placed on the focused turn once found. */
@@ -233,7 +235,7 @@ export function FocusOverlay({
         reader.scrollTo({ top: reader.scrollTop + turnRect.top - readerRect.top - 96, behavior: "auto" });
         el.classList.add("nb-turn-lit");
         el.setAttribute("data-turn-focus", "true");
-        el.setAttribute("data-focus-label", "Start here: where $2.1M came from");
+        if (focusLabel) el.setAttribute("data-focus-label", focusLabel);
         if (focusedTurnTestId) el.setAttribute("data-testid", focusedTurnTestId);
         lit = el;
         return;
@@ -249,7 +251,7 @@ export function FocusOverlay({
       lit?.removeAttribute("data-focus-label");
       if (focusedTurnTestId) lit?.removeAttribute("data-testid");
     };
-  }, [focusTurnNo, focusedTurnTestId]);
+  }, [focusTurnNo, focusedTurnTestId, focusLabel]);
 
   useEffect(() => {
     if (!highlightTurnRange) return;
