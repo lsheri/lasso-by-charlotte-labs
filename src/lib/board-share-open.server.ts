@@ -63,10 +63,11 @@ import { publicSafeWork } from "./public-work-allowlist";
 type Refusal = "expired" | "revoked" | "unknown";
 
 
-async function noteShareEvent(
+export async function noteShareEvent(
   action: "opened" | "refused",
   orgId: string | null,
   reason?: Refusal,
+  scope?: "document",
 ): Promise<void> {
   const dims = reason ? { action, reason } : { action };
   try {
@@ -77,57 +78,76 @@ async function noteShareEvent(
         eventType: "board.share_link",
         orgId,
         userId: null,
-        dims,
+        dims: scope ? { ...dims, scope } : dims,
       });
       return;
     }
     const { recordAnonymousEvent } = await import("./telemetry.server");
-    await recordAnonymousEvent("board.share_link", crypto.randomUUID(), dims);
+    await recordAnonymousEvent("board.share_link", crypto.randomUUID(), scope ? { ...dims, scope } : dims);
   } catch {
     /* coverage never surfaces to whoever opened the link */
   }
 }
 
-/** Takes a token, returns one board or nothing. No other shape exists. */
-export async function openSharedBoard(token: string): Promise<SharedBoardResult> {
+/** One token validator for board and document links; counting stays after a successful read. */
+export async function resolveShareToken(token: string, document = false) {
   if (!looksLikeShareToken(token)) {
-    await noteShareEvent("refused", null, "unknown");
-    return { status: "closed" };
+    if (document) await noteShareEvent("refused", null, "unknown", "document");
+    else await noteShareEvent("refused", null, "unknown");
+    return { status: "closed", reason: "unknown" } as const;
   }
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const tokenHash = await sha256Hex(token);
-
-  const { data: link } = await supabaseAdmin
+  const { data: link, error } = await supabaseAdmin
     .from("board_share_links")
-    .select("id, workboard_id, org_id, created_by, expires_at, revoked_at, opened_count")
+    .select("id, workboard_id, work_item_id, org_id, created_by, expires_at, revoked_at, opened_count")
     .eq("token_hash", tokenHash)
     .maybeSingle();
-
-  if (!link) {
-    await noteShareEvent("refused", null, "unknown");
-    return { status: "closed" };
+  if (error || !link) {
+    if (document) await noteShareEvent("refused", null, "unknown", "document");
+    else await noteShareEvent("refused", null, "unknown");
+    return { status: "closed", reason: "unknown" } as const;
   }
   if (link.revoked_at) {
-    await noteShareEvent("refused", link.org_id, "revoked");
-    return { status: "closed" };
+    if (document) await noteShareEvent("refused", link.org_id, "revoked", "document");
+    else await noteShareEvent("refused", link.org_id, "revoked");
+    return { status: "closed", reason: "revoked" } as const;
   }
   if (new Date(link.expires_at).getTime() <= Date.now()) {
-    await noteShareEvent("refused", link.org_id, "expired");
+    if (document) await noteShareEvent("refused", link.org_id, "expired", "document");
+    else await noteShareEvent("refused", link.org_id, "expired");
+    return { status: "closed", reason: "expired" } as const;
+  }
+  if (document && !link.work_item_id) {
+    await noteShareEvent("refused", link.org_id, "unknown", "document");
+    return { status: "closed", reason: "unknown" } as const;
+  }
+  const incrementOpened = async () => {
+    await supabaseAdmin
+      .from("board_share_links")
+      .update({ opened_count: link.opened_count + 1, ...(document ? {} : { last_opened_at: new Date().toISOString() }) })
+      .eq("id", link.id);
+  };
+  return { status: "open", link, incrementOpened } as const;
+}
+
+/** Takes a token, returns one board or nothing. No other shape exists. */
+export async function openSharedBoard(token: string): Promise<SharedBoardResult> {
+  const resolved = await resolveShareToken(token);
+  if (resolved.status === "closed") {
+    if (resolved.reason === "expired") return { status: "closed" };
+    if (resolved.reason === "revoked") return { status: "closed" };
     return { status: "closed" };
   }
-
+  const { link, incrementOpened } = resolved;
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const board = await readBoard(supabaseAdmin, link.workboard_id, link, link.created_by);
   if (!board) {
     await noteShareEvent("refused", link.org_id, "unknown");
     return { status: "closed" };
   }
-
-  await supabaseAdmin
-    .from("board_share_links")
-    .update({ opened_count: link.opened_count + 1, last_opened_at: new Date().toISOString() })
-    .eq("id", link.id);
+  await incrementOpened();
   await noteShareEvent("opened", link.org_id);
-
   return { status: "open", board: { ...board, seed: { ...board.seed, work: publicSafeWork(board.seed.work) } } };
 }
 
