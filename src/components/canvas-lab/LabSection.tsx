@@ -116,6 +116,10 @@ export function LabSection({ frame, title, selected, editable, autoName = false,
       ? <button type="button" data-testid="section-marker-line" className="self-start text-left text-sm opacity-80 hover:underline" onPointerDown={(event) => event.stopPropagation()} onClick={() => { onSelect(); openPicker("period", "line"); }}>{marker}</button>
       : <span data-testid="section-marker-line" className="text-sm opacity-80">{marker}</span>;
   }
+  /** No marker: the title renders exactly as before, with no wrapper. */
+  function withMarker(node: React.ReactNode) {
+    return hasMarker ? <span className="flex min-w-0 flex-col">{node}{markerLine()}</span> : node;
+  }
   return <section ref={rootRef} tabIndex={0} data-testid={`lab-section-${frame.id}`} data-selected={selected}
     className="canvas-lab-section" style={{ left: frame.x, top: frame.y, width: frame.width, height: frame.height }}
     onKeyDown={(event) => {
@@ -128,15 +132,14 @@ export function LabSection({ frame, title, selected, editable, autoName = false,
       {renaming && editable ? <input ref={inputRef} className="canvas-lab-frame-name-input" aria-label="Section title" value={draft} maxLength={60}
         onChange={(event) => setDraft(event.target.value)} onBlur={commit} onPointerDown={(event) => event.stopPropagation()}
         onKeyDown={(event) => { event.stopPropagation(); if (event.key === "Enter") { event.preventDefault(); commit(); } if (event.key === "Escape") { event.preventDefault(); editingRef.current = false; setRenaming(false); setDraft(title ?? ""); } }} />
-        : title ? (hasMarker ? <span className="flex min-w-0 flex-col"><h2 onDoubleClick={beginRename}>{title}</h2>{markerLine()}</span> : <h2 onDoubleClick={beginRename}>{title}</h2>)
-        : editable ? <Button variant="ghost" className="canvas-lab-section-placeholder" onPointerDown={press} onClick={(event) => {
+        : title ? withMarker(<h2 onDoubleClick={beginRename}>{title}</h2>)
+        : editable ? withMarker(<Button variant="ghost" className="canvas-lab-section-placeholder" onPointerDown={press} onClick={(event) => {
           const start = pressRef.current;
           pressRef.current = null;
           if (event.detail > 0 && start && Math.hypot(event.clientX - start.x, event.clientY - start.y) > 3) return;
           beginRename();
-        }}>{SECTION_TITLE_PLACEHOLDER}</Button>
-        : <span>{SECTION_TITLE_PLACEHOLDER}</span>}
-      {!title && !renaming && hasMarker ? markerLine() : null}
+        }}>{SECTION_TITLE_PLACEHOLDER}</Button>)
+        : withMarker(<span>{SECTION_TITLE_PLACEHOLDER}</span>)}
       {editable ? <DropdownMenu open={menuOpen} onOpenChange={changeMenu}><DropdownMenuTrigger asChild>
         <Button size="icon" variant="ghost" aria-label="Section menu" className="canvas-lab-section-menu" data-visible={selected} onPointerDown={(event) => event.stopPropagation()}><MoreHorizontal /></Button>
       </DropdownMenuTrigger><DropdownMenuContent onCloseAutoFocus={(event) => { event.preventDefault(); if (!editingRef.current) rootRef.current?.focus({ preventScroll: true }); }}>
