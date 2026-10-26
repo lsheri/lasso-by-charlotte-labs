@@ -1776,7 +1776,7 @@ async function pushDocument(owner: Owner, args: Obj, id: unknown, client?: Clien
     .select("id")
     .maybeSingle();
   if (error) return rpcError(id, -32603, error.message);
-  if (doc?.id) await writePushHistory(owner, doc.id, { mode: "created", tool: null, clientName: pushClientName(client), attachmentsAdded: 1 });
+  if (doc?.id) await writePushHistory(owner, doc.id, { mode: "created", tool: "push_document", sourceVendor: null, clientName: pushClientName(client), attachmentsAdded: 1 });
 
   const { ensureExtracts } = await import("./extract.server");
   if (doc?.id) await ensureExtracts([doc.id]);
