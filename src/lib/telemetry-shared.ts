@@ -113,6 +113,8 @@ export type TelemetryEvent =
   | "decisions_doc.created"
   /** MCP-DOC-1a: a decision line was added; source and stored-pointer presence only. */
   | "decisions_doc.decision_added"
+  /** MCP-DOC-1b: a re-push recorded a version; change and added/dropped bands only. */
+  | "decisions_doc.version_recorded"
   | "connector.enabled"
   | "connector.error"
   | "connector.synced"

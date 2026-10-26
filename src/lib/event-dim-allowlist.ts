@@ -113,6 +113,7 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "decision.resolved": ["edited", "status", "surface"],
   "decisions_doc.created": ["via", "lines"],
   "decisions_doc.decision_added": ["via", "has_pointer"],
+  "decisions_doc.version_recorded": ["changed", "added", "dropped"],
   "document.recheck_ran": ["changed", "checked", "reason", "refreshed", "source"],
   "document.version_recorded": ["changed", "checked", "reason", "source"],
   "document.versions_expanded": ["changed", "checked", "reason", "source", "version_count"],
