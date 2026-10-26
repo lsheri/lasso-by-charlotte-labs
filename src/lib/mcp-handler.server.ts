@@ -1556,8 +1556,10 @@ async function pushThread(
   if (error || !item)
     return rpcError(id, -32603, error?.message ?? "Could not save the conversation");
 
+  const threadPushId = await writePushHistory(owner, item.id, { mode: "created", tool: "push_thread", sourceVendor: sourceAi, clientName: pushClientName(client), turnsAdded: turns.length });
   const rows = await Promise.all(
     turns.map(async (t, i) => ({
+      ...(threadPushId ? { push_id: threadPushId } : {}),
       work_item_id: item.id,
       turn_no: i + 1,
       role: t.role as "user" | "assistant",
@@ -1625,7 +1627,8 @@ async function pushThread(
  */
 type PushHistoryRow = {
   mode: "created" | "appended" | "unchanged";
-  tool: string | null;
+  tool: string;
+  sourceVendor?: string | null;
   clientName: string | null;
   turnsAdded?: number;
   turnsChanged?: number;
@@ -1658,6 +1661,7 @@ async function writePushHistory(owner: Owner, workItemId: string, row: PushHisto
           attachments_added: row.attachmentsAdded ?? 0,
           attachments_changed: row.attachmentsChanged ?? 0,
           tool: row.tool,
+          source_vendor: row.sourceVendor ?? null,
           client_name: row.clientName,
           consent_tier: stamp ? stamp.tier : null,
           consent_ledger_version: stamp ? stamp.ledgerVersion : null,
@@ -1919,7 +1923,7 @@ async function pushDecisions(owner: Owner, args: Obj, id: unknown, client?: Clie
     if (saved.error) return rpcError(id, -32603, saved.error.message);
     const version = await recordNewVersion(supabaseAdmin, { workItemId: target.id, previousRef: target.content_ref,
       previousHash: target.content_hash, previousAt: target.captured_at, newRef: path, newHash: hash, sourceEvent: "mcp_repush", origin: "model_artifact" });
-    const repushId = await writePushHistory(owner, target.id, { mode: "appended", tool: null, clientName: pushClientName(client), attachmentsChanged: 1 });
+    const repushId = await writePushHistory(owner, target.id, { mode: "appended", tool: "lasso_push_decisions", sourceVendor: null, clientName: pushClientName(client), attachmentsChanged: 1 });
     await stampVersionPush(target.id, version, repushId);
     const { ensureExtracts } = await import("./extract.server");
     await ensureExtracts([target.id]);
@@ -1948,7 +1952,7 @@ async function pushDecisions(owner: Owner, args: Obj, id: unknown, client?: Clie
     meta: { assistant_transcribed: true },
   }).select("id").maybeSingle();
   if (error || !doc) return rpcError(id, -32603, error?.message ?? "Could not save the Decisions document.");
-  const createdPushId = await writePushHistory(owner, doc.id, { mode: "created", tool: null, clientName: pushClientName(client), attachmentsAdded: 1 });
+  const createdPushId = await writePushHistory(owner, doc.id, { mode: "created", tool: "lasso_push_decisions", sourceVendor: null, clientName: pushClientName(client), attachmentsAdded: 1 });
   const version = await supabaseAdmin.from("document_versions").insert({ work_item_id: doc.id, version_no: 1, content_ref: path, content_hash: hash, parent_version_id: null, source_event: "mcp_push", origin: "model_artifact", ...(createdPushId ? { push_id: createdPushId } : {}) });
   if (version.error) return rpcError(id, -32603, version.error.message);
   const docVocab = await placementVocab(owner);
@@ -2790,7 +2794,7 @@ export async function pushConversation(
   const ensurePushRow = async (mode: "created" | "appended" | "unchanged", counts: Partial<PushHistoryRow> = {}) => {
     if (!pushRowTried) {
       pushRowTried = true;
-      pushId = await writePushHistory(owner, threadId, { mode, tool: vendor, clientName: pushClientName(client), ...counts });
+      pushId = await writePushHistory(owner, threadId, { mode, tool: "push_conversation", sourceVendor: vendor, clientName: pushClientName(client), ...counts });
       return { id: pushId, fresh: true };
     }
     return { id: pushId, fresh: false };
