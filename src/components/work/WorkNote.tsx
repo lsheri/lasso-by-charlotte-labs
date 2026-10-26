@@ -12,6 +12,7 @@ import { pastedChatUrl } from "@/lib/chat-url";
 import { sourceBrandKey } from "@/components/work/SourceMark";
 import type { WorkboardCardPreview, WorkboardDisplayMode, WorkboardFilePreview } from "@/lib/workboard-card-preview.shared";
 import { resolveWorkDate } from "@/lib/work-order";
+import { grownSuffix } from "@/lib/push-boundary";
 import { formatCardDate, formatDate, type WorkItemRow } from "@/lib/work-types";
 
 /** The shared Ledger preview card used anywhere one piece of work is shown. */
@@ -32,7 +33,10 @@ export function WorkNote({
   headerGutter = false,
   phoneRow = false,
   openOn = "click",
+  grownOn,
 }: {
+  /** PUSH-2c: later pushes that grew this record. Absent or empty leaves the date line exactly as it was. */
+  grownOn?: string[] | undefined;
   /** BI-1b: the board opens on double-click; every other caller keeps single click. */
   openOn?: "click" | "doubleClick";
   item: Omit<WorkItemRow, "work_item_tasks"> & { work_item_tasks?: WorkItemRow["work_item_tasks"] };
@@ -56,8 +60,10 @@ export function WorkNote({
   const mapping = item.work_item_tasks?.[0]?.tasks ?? null;
   const boardTitle = mapping?.engagements ? engagementDisplayTitle(mapping.engagements) : null;
   const when = resolveWorkDate(item);
-  const date = when.byArrival ? `added ${formatDate(when.iso)}` : formatDate(when.iso);
-  const cardDate = when.byArrival ? `added ${formatCardDate(when.iso)}` : formatCardDate(when.iso);
+  const baseDate = when.byArrival ? `added ${formatDate(when.iso)}` : formatDate(when.iso);
+  const grown = grownSuffix(grownOn);
+  const date = `${baseDate}${grown}`;
+  const cardDate = `${when.byArrival ? `added ${formatCardDate(when.iso)}` : formatCardDate(when.iso)}${grown}`;
   const brand = sourceBrandKey(item);
   const summary = item.work_item_extracts?.find((extract) => extract.summary)?.summary
     ?? chatPreview?.summary

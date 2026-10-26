@@ -111,7 +111,10 @@ function LabCardInner({
   canRename = false,
   catchPending = false,
   onCatchComplete,
+  grownOn,
 }: {
+  /** PUSH-2c: passed straight to WorkNote; never read here. */
+  grownOn?: string[] | undefined;
   node: LabNode;
   item?: WorkItemRow | undefined;
   parent?: WorkItemRow | null | undefined;
@@ -397,6 +400,7 @@ function LabCardInner({
             filePreview={filePreview}
             className="h-full"
             contextSelected={selected}
+            grownOn={grownOn}
              headerGutter
             openOn="doubleClick"
             actions={commentCount > 0 && onOpenComments ? (
