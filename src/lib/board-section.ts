@@ -209,3 +209,63 @@ export function markerLabel(
   if (typeof frame.sequenceNo === "number") return `#${frame.sequenceNo}`;
   return null;
 }
+
+/* SECD-2: finding a marked section. Pure ordering and choosing, no canvas. */
+export type JumpSection = { id: string; periodStart?: string | null; periodEnd?: string | null; sequenceNo?: number | null };
+type PeriodJump = { id: string; periodStart: string; periodEnd: string };
+
+function periodSections(sections: JumpSection[]): PeriodJump[] {
+  return sections
+    .filter((s): s is JumpSection & PeriodJump => Boolean(s.periodStart && s.periodEnd))
+    .map((s) => ({ id: s.id, periodStart: s.periodStart, periodEnd: s.periodEnd }))
+    .sort((a, b) => a.periodStart.localeCompare(b.periodStart) || a.periodEnd.localeCompare(b.periodEnd) || a.id.localeCompare(b.id));
+}
+
+function numberSections(sections: JumpSection[]): { id: string; sequenceNo: number }[] {
+  return sections
+    .filter((s): s is JumpSection & { sequenceNo: number } => typeof s.sequenceNo === "number" && !s.periodStart)
+    .map((s) => ({ id: s.id, sequenceNo: s.sequenceNo }))
+    .sort((a, b) => a.sequenceNo - b.sequenceNo || a.id.localeCompare(b.id));
+}
+
+function daysBetween(from: string, to: string): number {
+  return Math.round((parseDay(to).getTime() - parseDay(from).getTime()) / 86_400_000);
+}
+
+export function hasPeriodSection(sections: JumpSection[]): boolean {
+  return periodSections(sections).length > 0;
+}
+
+/** The section whose period covers `day`; otherwise the nearest by date (earlier wins a tie); null with no periods. */
+export function sectionForDate(sections: JumpSection[], day: string): string | null {
+  const periods = periodSections(sections);
+  const covering = periods.find((s) => s.periodStart <= day && day <= s.periodEnd);
+  if (covering) return covering.id;
+  let best: { id: string; distance: number } | null = null;
+  for (const s of periods) {
+    const distance = s.periodEnd < day ? daysBetween(s.periodEnd, day) : daysBetween(day, s.periodStart);
+    if (!best || distance < best.distance) best = { id: s.id, distance };
+  }
+  return best?.id ?? null;
+}
+
+/** Next or previous within the current section's own kind: periods by start, numbers by number. */
+export function adjacentSection(sections: JumpSection[], currentId: string, direction: "next" | "previous"): string | null {
+  const periods = periodSections(sections).map((s) => s.id);
+  const numbers = numberSections(sections).map((s) => s.id);
+  const order = periods.includes(currentId) ? periods : numbers.includes(currentId) ? numbers : null;
+  if (!order) return null;
+  const index = order.indexOf(currentId) + (direction === "next" ? 1 : -1);
+  return order[index] ?? null;
+}
+
+/** The marked section under a board point (the viewport centre), or null. */
+export function markedSectionAt(sections: (JumpSection & SectionRect)[], point: { x: number; y: number }): string | null {
+  const hit = sections.find((s) => (s.periodStart || typeof s.sequenceNo === "number")
+    && point.x >= s.x && point.x <= s.x + s.width && point.y >= s.y && point.y <= s.y + s.height);
+  return hit?.id ?? null;
+}
+
+export function todayDay(now: Date = new Date()): string {
+  return toDay(now);
+}

@@ -53,6 +53,9 @@ describe("the workboard allowlist", () => {
           "length_band",
           "is_reply",
         ],
+        "workboard.board_jumped": [
+          "to",
+        ],
         "workboard.bundle_toggled": [
           "state",
           "pieces",
@@ -303,7 +306,7 @@ describe("the workboard allowlist", () => {
       const [name, , dims] = mocked.mock.calls[0] as [string, string, Record<string, unknown>];
       expect(guardWorkboardEvent(name, dims as never)).toEqual({ keep: true, dims });
     }
-    expect(Object.keys(WORKBOARD_EVENT_DIMS)).toHaveLength(39);
+    expect(Object.keys(WORKBOARD_EVENT_DIMS)).toHaveLength(40);
   });
 
   it("keeps the additive open path for previewed document and deck cards", () => {

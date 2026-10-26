@@ -44,8 +44,9 @@ import { LabCard } from "@/components/canvas-lab/LabCard";
 import { LabColourBlock } from "@/components/canvas-lab/LabColourBlock";
 import { LabSticky, stickyBodyOf } from "@/components/canvas-lab/LabSticky";
 import { LabTextBlock } from "@/components/canvas-lab/LabTextBlock";
+import { BoardJumpControls } from "@/components/canvas-lab/BoardJumpControls";
 import { LabSection, nextWeekSectionRect, shiftedSectionMarker, type SectionMarkerChoice } from "@/components/canvas-lab/LabSection";
-import { isSectionFrameId, newSectionFrameId, sectionTitle, sectionDragMembers, moveSectionContents, SECTION_REMOVED_LINE, clearMarker, type SectionMarker } from "@/lib/board-section";
+import { isSectionFrameId, newSectionFrameId, sectionTitle, sectionDragMembers, moveSectionContents, SECTION_REMOVED_LINE, clearMarker, markedSectionAt, type SectionMarker } from "@/lib/board-section";
 import { LabFrame as LabFrameElement } from "@/components/canvas-lab/LabFrame";
 import { applyMarqueeSelection, cardsInMarquee, contextFlareSequence, isMarqueeClick, marqueeRect, type MarqueeRect } from "@/components/canvas-lab/canvas-lab-marquee";
 import { GroupingNamePopup } from "@/components/canvas-lab/GroupingNamePopup";
@@ -3304,6 +3305,19 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       spec: { id: "remove-relationship", width: 160, moveOrder: 6 },
       row: <Button type="button" size="sm" variant="ghost" onClick={() => { const link = links.find((entry) => entry.id === selectedLinkId); if (link) removeRelationship(link); }}>Remove relationship</Button>,
       menu: <DropdownMenuItem onSelect={() => { const link = links.find((entry) => entry.id === selectedLinkId); if (link) removeRelationship(link); }}>Remove relationship</DropdownMenuItem>,
+    });
+  }
+  // SECD-2: jump to a marked section. Pans only; zoom, selection and sections are untouched.
+  const jumpSections = boardFrames.filter((frame) => isSectionFrameId(frame.id));
+  if (jumpSections.some((frame) => frame.periodStart && frame.periodEnd)) {
+    const centre = { x: (viewportSize.width / 2 - pan.x) / zoom, y: (viewportSize.height / 2 - pan.y) / zoom };
+    toolbarItems.push({
+      spec: { id: "board-jump", width: suggestionMobile ? 96 : 300, pinned: true },
+      row: <BoardJumpControls orgId={orgId} sections={jumpSections} currentId={markedSectionAt(jumpSections, centre)} phone={suggestionMobile}
+        onJump={(sectionId) => {
+          const target = framesRef.current.find((frame) => frame.id === sectionId);
+          if (target) setPan({ x: viewportSize.width / 2 - (target.x + target.width / 2) * zoom, y: viewportSize.height / 2 - (target.y + target.height / 2) * zoom });
+        }} />,
     });
   }
   if (canAddWork) {
