@@ -2907,11 +2907,11 @@ export async function pushConversation(
       );
     }
     // Only an existing thread has stored turns to revise, so this push appends.
-    const revisingPush = (await ensurePushRow("appended")).id;
+    // push_id is the push a turn first arrived in; a revision never moves it.
+    await ensurePushRow("appended");
     const { error: updError } = await supabaseAdmin
       .from("turns")
       .update({
-        ...(revisingPush ? { push_id: revisingPush } : {}),
         role: m.role as "user" | "assistant" | "tool",
         content: m.content,
         content_hash: hash,

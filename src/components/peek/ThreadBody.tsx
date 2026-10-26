@@ -9,6 +9,7 @@ import { vendorLabel } from "@/lib/conversation-shared";
 import type { WorkItemRow } from "@/lib/work-types";
 import { emitClientEvent } from "@/lib/client-telemetry";
 import { groupToolRuns, stepsBand, toolStepsLabel } from "@/lib/tool-steps";
+import { addedLabel, pushBoundaries } from "@/lib/push-boundary";
 
 type Turn = {
   id: string;
@@ -19,6 +20,7 @@ type Turn = {
   ts: string | null;
   model?: string | null;
   meta?: unknown;
+  push_id?: string | null;
 };
 
 export type ThreadFocus = { turnNo?: number; text?: string };
@@ -247,13 +249,33 @@ export function ThreadBody({
     queryFn: async (): Promise<Turn[]> => {
       const { data, error: turnsError } = await supabase
         .from("turns")
-        .select("id, turn_no, role, content, content_hash, ts, model, meta")
+        .select("id, turn_no, role, content, content_hash, ts, model, meta, push_id")
         .eq("work_item_id", item.id)
         .order("turn_no", { ascending: true });
       if (turnsError) throw turnsError;
       return (data ?? []) as Turn[];
     },
   });
+  // PUSH-2a. Push dates load only for a chat whose turns carry a push.
+  const boundaries = useMemo(() => pushBoundaries(turns ?? []), [turns]);
+  const hasPush = (turns ?? []).some((turn) => Boolean(turn.push_id));
+  const { data: pushes } = useQuery({
+    queryKey: ["turn-pushes", item.id],
+    enabled: enabled && hasPush,
+    queryFn: async (): Promise<{ id: string; pushed_at: string }[]> => {
+      const { data, error: pushError } = await supabase
+        .from("work_item_pushes")
+        .select("id, pushed_at")
+        .eq("work_item_id", item.id);
+      if (pushError) throw pushError;
+      return data ?? [];
+    },
+  });
+  const pushDay = useMemo(() => {
+    const byId = new Map<string, string>();
+    if (hasPush) for (const push of pushes ?? []) if (push?.id && push.pushed_at) byId.set(push.id, push.pushed_at);
+    return byId;
+  }, [pushes, hasPush]);
   const turnRefs = useRef(new Map<number, HTMLDivElement>());
   const focusedTurn = useMemo(() => {
     if (!focus || !turns?.length) return null;
@@ -398,8 +420,18 @@ export function ThreadBody({
             </p>
           ) : null;
           const summarisedTone = span ? " text-muted-foreground" : "";
+          const boundaryPush = boundaries.get(turn.turn_no);
+          const boundaryAt = boundaryPush ? pushDay.get(boundaryPush) : undefined;
+          const boundaryText = boundaryAt ? addedLabel(boundaryAt) : null;
           return (
           <div key={turn.id} ref={(node) => { if (node) turnRefs.current.set(turn.turn_no, node); else turnRefs.current.delete(turn.turn_no); }} data-turn-no={turn.turn_no}>
+          {boundaryText ? (
+            <div data-testid="push-boundary" role="separator" aria-label={boundaryText} className="mb-4 flex items-center gap-3 text-[11px] text-muted-foreground">
+              <span aria-hidden className="h-px flex-1 bg-border" />
+              <span>{boundaryText}</span>
+              <span aria-hidden className="h-px flex-1 bg-border" />
+            </div>
+          ) : null}
           {turn.role === "user" ? (
             <div className="flex flex-col items-end">
               <div className="micro-label mb-1">
