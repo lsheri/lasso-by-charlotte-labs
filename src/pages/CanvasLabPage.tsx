@@ -46,7 +46,7 @@ import { LabSticky, stickyBodyOf } from "@/components/canvas-lab/LabSticky";
 import { LabTextBlock } from "@/components/canvas-lab/LabTextBlock";
 import { BoardJumpControls } from "@/components/canvas-lab/BoardJumpControls";
 import { LabSection, nextWeekSectionRect, shiftedSectionMarker, type SectionMarkerChoice } from "@/components/canvas-lab/LabSection";
-import { isSectionFrameId, newSectionFrameId, sectionTitle, containingSection, sectionDragMembers, moveSectionContents, SECTION_REMOVED_LINE, clearMarker, markedSectionAt, type SectionMarker } from "@/lib/board-section";
+import { isSectionFrameId, newSectionFrameId, sectionTitle, containingSection, sectionDragMembers, moveSectionContents, SECTION_REMOVED_LINE, clearMarker, markedSectionAt, markerLabel, type SectionMarker } from "@/lib/board-section";
 import { LabFrame as LabFrameElement } from "@/components/canvas-lab/LabFrame";
 import { applyMarqueeSelection, cardsInMarquee, contextFlareSequence, isMarqueeClick, marqueeRect, type MarqueeRect } from "@/components/canvas-lab/canvas-lab-marquee";
 import { GroupingNamePopup } from "@/components/canvas-lab/GroupingNamePopup";
