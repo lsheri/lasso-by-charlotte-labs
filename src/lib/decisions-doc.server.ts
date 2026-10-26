@@ -18,6 +18,62 @@ export type RemoveDecisionLineInput = DecisionDocumentInput & { id: string };
 export type RestoreDecisionLineInput = DecisionDocumentInput & { row: Row };
 export type ReorderDecisionLinesInput = DecisionDocumentInput & { ids_in_order: string[] };
 export type SetDecisionPointerInput = DecisionDocumentInput & { id: string; turn: number | null };
+export type DecisionPassageInput = DecisionDocumentInput & { id: string; transcript_id: string; to_turn_id?: string; to_locator: { turn_no?: number; char_start: number; char_end: number; at?: string }; quote: string };
+export type UnlinkDecisionPassageInput = DecisionDocumentInput & { span_link_id: string };
+
+export function stripPassageSpeaker(text: string): string {
+  return text.trim().replace(/^[\p{L}][\p{L}\p{N} ._'’-]{0,79}(?:\s*\(\d{1,2}:\d{2}(?::\d{2})?\))?:\s*/u, "").trim().slice(0, 600);
+}
+
+export async function linkPassageToDecision(context: Context, input: DecisionPassageInput) {
+  const { document, profile, event } = await ownedDocument(context, input);
+  await lineById(context.supabase, document.id, input.id);
+  if (typeof input.quote !== "string") bad("A passage is required");
+  const quote = stripPassageSpeaker(input.quote);
+  const loc = input.to_locator;
+  if (!quote || !loc || !Number.isInteger(loc.char_start) || !Number.isInteger(loc.char_end) || loc.char_start < 0 || loc.char_end < loc.char_start || (loc.at !== undefined && (typeof loc.at !== "string" || loc.at.length > 12))) bad("A valid passage and timestamp are required");
+  const { data: transcript, error } = await context.supabase.from("work_items").select("id, type, doc_kind").eq("id", input.transcript_id).maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!transcript || transcript.id === document.id || transcript.doc_kind === "decisions" || !["call", "document"].includes(transcript.type)) throw new Response("Forbidden", { status: 403 });
+  const placements = await context.supabase.from("workboard_nodes").select("workboard_id").eq("work_item_id", document.id).is("deleted_at", null);
+  if (placements.error) throw new Error(placements.error.message);
+  let sameBoard = false;
+  for (const node of placements.data ?? []) {
+    const board = await context.supabase.from("workboards").select("id").eq("id", node.workboard_id).maybeSingle();
+    if (board.error) throw new Error(board.error.message);
+    if (!board.data) continue;
+    const target = await context.supabase.from("workboard_nodes").select("id").eq("workboard_id", node.workboard_id).eq("work_item_id", transcript.id).is("deleted_at", null).limit(1);
+    if (target.error) throw new Error(target.error.message);
+    if (target.data?.length) { sameBoard = true; break; }
+  }
+  if (!sameBoard) throw new Response("Forbidden", { status: 403 });
+  if (input.to_turn_id) {
+    const turn = await context.supabase.from("turns").select("id, turn_no").eq("id", input.to_turn_id).eq("work_item_id", transcript.id).maybeSingle();
+    if (turn.error) throw new Error(turn.error.message);
+    if (!turn.data || (loc.turn_no !== undefined && turn.data.turn_no !== loc.turn_no)) bad("That turn is not in this transcript");
+  } else if (loc.turn_no !== undefined) bad("A turn id is required for a turn number");
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const result = await supabaseAdmin.from("span_links").insert({
+    org_id: document.org_id, owner_id: profile.id, asked_by: profile.id, from_item_id: document.id,
+    locator: { decision_id: input.id }, to_item_id: transcript.id, to_turn_id: input.to_turn_id ?? null,
+    to_locator: { char_start: loc.char_start, char_end: loc.char_end, ...(loc.turn_no !== undefined ? { turn_no: loc.turn_no } : {}), ...(loc.at?.trim() ? { at: loc.at.trim() } : {}) },
+    quote, question: null, status: "exact", verification: "none_in_record",
+  }).select("*").single();
+  if (result.error) throw new Error(result.error.message);
+  await event("span_link.created", { via: "decisions_doc" });
+  return result.data;
+}
+
+export async function unlinkPassage(context: Context, input: UnlinkDecisionPassageInput) {
+  const { document } = await ownedDocument(context, input);
+  const link = await context.supabase.from("span_links").select("id, locator").eq("id", input.span_link_id).eq("from_item_id", document.id).maybeSingle();
+  if (link.error) throw new Error(link.error.message);
+  if (!link.data || !link.data.locator || typeof link.data.locator !== "object" || Array.isArray(link.data.locator) || typeof link.data.locator["decision_id"] !== "string") bad("That passage is not in this document");
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const result = await supabaseAdmin.from("span_links").delete().eq("id", link.data.id).eq("from_item_id", document.id);
+  if (result.error) throw new Error(result.error.message);
+  return { deleted: true };
+}
 
 function bad(message: string): never { throw new Response(message, { status: 400 }); }
 export function validateDecisionDocumentInput<T extends DecisionDocumentInput>(input: T): T {
