@@ -12,7 +12,7 @@ vi.mock('@/components/oneonone/SaveForOneOnOne', () => ({ SaveForOneOnOneDialog:
 vi.mock('@tanstack/react-router', () => ({ Link: ({ children }: { children: React.ReactNode }) => <a>{children}</a> }));
 vi.mock('@/components/ui/sheet', () => ({ Sheet: ({ children, open }: { children: React.ReactNode; open: boolean }) => open ? <div>{children}</div> : null, SheetContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>, SheetTitle: () => null, SheetDescription: () => null }));
 vi.mock('@/hooks/use-firm-checks', () => ({ useFirmChecks: () => ({ data: [] }) }));
-vi.mock('@/hooks/use-profile', () => ({ useProfile: () => ({ data: { id: 'p' } }) }));
+vi.mock('@/hooks/use-profile', () => ({ useProfile: () => ({ data: { id: 'p', display_name: 'Liam' } }) }));
 vi.mock('@/hooks/use-answer-sources', () => ({ useAnswerSources: () => ({ data: {} }) }));
 vi.mock('@/hooks/use-engagement-page', () => ({ useEngagementPage: () => ({ data: { tasks: [] }, isPending: false }) }));
 vi.mock('@/hooks/use-work-items', () => ({ useWorkItems: () => ({ data: { items: state.items }, isPending: false }) }));
@@ -69,7 +69,7 @@ describe('SECD-3a section Ask', () => {
   });
   it('mentions narrow only within the resolved members', async () => {
     const { result } = stableHook(() => ['a','b','c']); await send(result, 'Compare @a and @outside');
-    expect(state.requests[0]?.pointed_at).toEqual(['a']);
+    expect(state.requests[0]?.['pointed_at']).toEqual(['a']);
     expect(state.writes.at(-1)).toEqual({ context_scope: { mode: 'items', ids: ['a','b','c'] } });
   });
   it('only an outside mention stops instead of broadening', async () => {
