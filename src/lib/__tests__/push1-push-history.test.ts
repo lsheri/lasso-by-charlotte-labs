@@ -134,11 +134,10 @@ describe("PUSH-1 push_conversation history", () => {
   });
 
   it("a push with two attachments records attachments_added 2", async () => {
-    const dbgOut = await push(msgs(...first), { attachments: [
+    await push(msgs(...first), { attachments: [
       { kind: "artifact_markdown", title: "Plan", source_artifact_id: "a1", content: "# Pricing plan\n\nSegments and survey design." },
       { kind: "artifact_markdown", title: "Survey", source_artifact_id: "a2", content: "# Survey\n\nTen questions on willingness to pay." },
     ] });
-    console.log("DBG", JSON.stringify(dbgOut), JSON.stringify(pushes()[0]), JSON.stringify(table("work_items").map((w) => w["type"])));
     expect(pushes()[0]).toMatchObject({ attachments_added: 2, attachments_changed: 0 });
   });
 
@@ -146,8 +145,8 @@ describe("PUSH-1 push_conversation history", () => {
     failPushHistory = true;
     const ok = await push(msgs(...first));
     failPushHistory = false;
-    db["work_item_pushes"] = [];
-    for (const k of ["turns"]) for (const t of table(k)) expect(t["push_id"]).toBeUndefined();
+    expect(table("work_item_pushes")).toHaveLength(0);
+    for (const t of table("turns")) expect(t["push_id"]).toBeUndefined();
     expect(ok.error).toBeUndefined();
     expect(ok.result?.content[0]?.text).toContain("Saved");
     expect(table("turns")).toHaveLength(3);
