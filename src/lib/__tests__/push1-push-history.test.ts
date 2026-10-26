@@ -114,7 +114,7 @@ describe("PUSH-1 push_conversation history", () => {
     await push(msgs(...first));
     const [row] = pushes();
     expect(pushes()).toHaveLength(1);
-    expect(row).toMatchObject({ push_no: 1, mode: "created", turns_added: 3, turns_changed: 0, turns_unchanged: 0, tool: "claude", client_name: "Claude Desktop", consent_tier: "t2", consent_ledger_version: 3 });
+    expect(row).toMatchObject({ push_no: 1, mode: "created", turns_added: 3, turns_changed: 0, turns_unchanged: 0, tool: "push_conversation", source_vendor: "claude", client_name: "Claude Desktop", consent_tier: "t2", consent_ledger_version: 3 });
     expect(stamped(row!["id"])).toEqual([1, 2, 3]);
   });
 
@@ -165,7 +165,7 @@ describe("PUSH-1 document pushes", () => {
     const out = await tool("push_document", { filename: "notes.md", content: "Some notes." });
     expect(out.error).toBeUndefined();
     const doc = table("work_items")[0]!;
-    expect(pushes()).toEqual([expect.objectContaining({ work_item_id: doc["id"], push_no: 1, mode: "created", attachments_added: 1, attachments_changed: 0, turns_added: 0 })]);
+    expect(pushes()).toEqual([expect.objectContaining({ work_item_id: doc["id"], push_no: 1, mode: "created", attachments_added: 1, attachments_changed: 0, turns_added: 0, tool: "push_document", source_vendor: null })]);
   });
 
   it("a Decisions re-push writes push_no 2 appended and stamps the new document_versions row", async () => {
@@ -176,7 +176,18 @@ describe("PUSH-1 document pushes", () => {
     const out = await tool("lasso_push_decisions", { title: "Pricing decisions", lasso_document_id: doc["id"], decisions: [{ statement: "Start in Germany" }, { statement: "Offer annual plans" }] });
     expect(out.error).toBeUndefined();
     const row2 = pushes()[1]!;
-    expect(row2).toMatchObject({ push_no: 2, mode: "appended", attachments_added: 0, attachments_changed: 1 });
+    expect(row2).toMatchObject({ push_no: 2, mode: "appended", attachments_added: 0, attachments_changed: 1, tool: "lasso_push_decisions", source_vendor: null });
     expect(table("document_versions").find((v) => v["version_no"] === 2)!["push_id"]).toBe(row2["id"]);
+  });
+});
+
+describe("PUSH-1a push_thread history", () => {
+  it("a first push_thread writes push_no 1 mode created with its turn counts and stamps its turns", async () => {
+    const out = await tool("push_thread", { source_ai: "chatgpt", title: "Pricing", turns: [{ role: "user", content: "How should we price?" }, { role: "assistant", content: "Start with a survey." }] });
+    expect(out.error).toBeUndefined();
+    const [row] = pushes();
+    expect(pushes()).toHaveLength(1);
+    expect(row).toMatchObject({ push_no: 1, mode: "created", turns_added: 2, turns_changed: 0, turns_unchanged: 0, tool: "push_thread", source_vendor: "chatgpt" });
+    expect(stamped(row!["id"])).toEqual([1, 2]);
   });
 });

@@ -4780,6 +4780,7 @@ export type Database = {
           mode: string
           push_no: number
           pushed_at: string
+          source_vendor: string | null
           tool: string | null
           turns_added: number
           turns_changed: number
@@ -4796,6 +4797,7 @@ export type Database = {
           mode: string
           push_no: number
           pushed_at?: string
+          source_vendor?: string | null
           tool?: string | null
           turns_added?: number
           turns_changed?: number
@@ -4812,6 +4814,7 @@ export type Database = {
           mode?: string
           push_no?: number
           pushed_at?: string
+          source_vendor?: string | null
           tool?: string | null
           turns_added?: number
           turns_changed?: number
