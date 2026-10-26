@@ -12,7 +12,7 @@ type Context = { supabase: Db; userId: string };
 export type DocumentShareInput = { document_id: string; profile_id?: string };
 export type CreateDocumentShareInput = DocumentShareInput & { expires_in_hours?: number };
 export type RevokeDocumentShareInput = DocumentShareInput & { id: string };
-export type DocumentCommentInput = { token: string; decision_id?: string; display_name?: string; body: string };
+export type DocumentCommentInput = { token: string; decision_id?: string; display_name?: string | null; body: string };
 type CommentRow = Database["public"]["Tables"]["document_link_comments"]["Row"];
 
 function bad(message: string): never { throw new Response(message, { status: 400 }); }
@@ -83,23 +83,23 @@ export async function revokeDocumentShareLink(context: Context, input: RevokeDoc
 
 async function publicDocument(token: string) {
   const resolved = await resolveShareToken(token, true);
-  if (resolved.status === "closed") return null;
+  if (resolved.status === "closed") return resolved;
   const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
   const documentId = resolved.link.work_item_id;
-  if (!documentId) return null;
+  if (!documentId) return { status: "closed", reason: "unknown" } as const;
   const { data: document, error } = await db.from("work_items")
     .select("id, org_id, title, display_title, captured_at, doc_kind").eq("id", documentId).maybeSingle();
   check(error);
   if (!document || document.doc_kind !== "decisions") {
     await noteShareEvent("refused", resolved.link.org_id, "unknown", "document");
-    return null;
+    return { status: "closed", reason: "unknown" } as const;
   }
   return { ...resolved, db, document };
 }
 
 export async function openDocumentShareLink(input: { token: string }) {
   const resolved = await publicDocument(input?.token);
-  if (!resolved) return { status: "closed" as const };
+  if (resolved.status === "closed") return { status: "closed" as const, reason: resolved.reason };
   const { db, document } = resolved;
   const [lines, versions, comments] = await Promise.all([
     db.from("decisions").select("id, ord, call_text, why, status, srcs").eq("document_id", document.id).order("ord", { ascending: true }),
@@ -123,12 +123,12 @@ export async function openDocumentShareLink(input: { token: string }) {
 
 export async function addDocumentLinkComment(input: DocumentCommentInput) {
   const resolved = await publicDocument(input?.token);
-  if (!resolved) return { status: "closed" as const, message: "This link has expired." };
+  if (resolved.status === "closed") return { status: "closed" as const, message: "This link has expired." };
   const { db, document, link } = resolved;
   if (typeof input.body !== "string") bad("Write a comment of 1 to 2000 characters.");
   const body = input.body.trim();
   if (!body || body.length > 2000) bad("Write a comment of 1 to 2000 characters.");
-  if (input.display_name !== undefined && typeof input.display_name !== "string") bad("Use a name of up to 60 characters.");
+  if (input.display_name != null && typeof input.display_name !== "string") bad("Use a name of up to 60 characters.");
   const displayName = input.display_name?.trim() || null;
   if (displayName && displayName.length > 60) bad("Use a name of up to 60 characters.");
   const decisionId = input.decision_id ?? null;

@@ -152,20 +152,20 @@ describe("document share server", () => {
     tables["decisions"] = [{ id: "a", document_id: "doc", ord: 2, call_text: "A", why: null, status: "confirmed", srcs: [] }, { id: "b", document_id: "doc", ord: 1, call_text: "B", why: null, status: "discarded", srcs: [] }];
     expect(await openDocumentShareLink({ token })).toMatchObject({ updated_at: past, lines: [{ id: "b", status: "dropped", has_source: false }, { id: "a", status: "agreed", has_source: false }] });
   });
-  it.each(["expired", "revoked", "unknown", "no_document"])("refuses %s with the same public answer", async (reason) => {
+  it.each(["expired", "revoked", "unknown", "no_document"])("refuses %s with only its closed reason", async (reason) => {
     const link = tables["board_share_links"]?.[0];
     if (link && reason === "expired") link["expires_at"] = past;
     if (link && reason === "revoked") link["revoked_at"] = past;
     if (reason === "unknown") tables["board_share_links"] = [];
     if (link && reason === "no_document") link["work_item_id"] = null;
-    expect(await openDocumentShareLink({ token })).toEqual({ status: "closed" });
+    expect(await openDocumentShareLink({ token })).toEqual({ status: "closed", reason: reason === "no_document" ? "unknown" : reason });
     const dims = { action: "refused", scope: "document", reason: reason === "no_document" ? "unknown" : reason };
     if (reason === "unknown") expect(state.anonymous).toHaveBeenCalledWith("board.share_link", expect.any(String), dims);
     else expect(state.events).toHaveBeenCalledWith(state.db, expect.objectContaining({ dims }));
     expect(link?.["opened_count"]).toBe(2);
   });
   it("refuses a malformed token", async () => {
-    expect(await openDocumentShareLink({ token: "short" })).toEqual({ status: "closed" });
+    expect(await openDocumentShareLink({ token: "short" })).toEqual({ status: "closed", reason: "unknown" });
     expect(state.anonymous).toHaveBeenCalledWith("board.share_link", expect.any(String), { action: "refused", reason: "unknown", scope: "document" });
   });
   it("stores trimmed comments with null blank name and no identity in its event", async () => {
@@ -178,6 +178,10 @@ describe("document share server", () => {
   it("accepts a named comment on a line in this document", async () => {
     expect(await addDocumentLinkComment({ token, body: "Hello", display_name: " Visitor ", decision_id: "line" })).toMatchObject({ display_name: "Visitor", decision_id: "line" });
     expect(state.events).toHaveBeenCalledWith(state.db, expect.objectContaining({ dims: { has_name: true, on_line: true } }));
+  });
+  it.each([null, undefined, "", "   "])("stores an absent or blank name as null (%s)", async (display_name) => {
+    expect(await addDocumentLinkComment({ token, body: "Hello", display_name })).toMatchObject({ display_name: null });
+    expect(tables["document_link_comments"]?.[0]?.["display_name"]).toBeNull();
   });
   it("rejects an empty body", async () => {
     await expect(addDocumentLinkComment({ token, body: "  " })).rejects.toMatchObject({ status: 400 });
