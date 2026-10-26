@@ -44,6 +44,7 @@ export const WORKBOARD_EVENT_DIMS: Readonly<Record<string, readonly string[]>> =
   "workboard.section_marker_set": ["kind", "preset", "via"],
   "workboard.section_marker_cleared": [],
   "workboard.section_shifted": ["direction"],
+  "workboard.board_jumped": ["to"],
   "workboard.document_created": ["via"],
   "workboard.reference_file_added": ["matched", "via"],
   "workboard.bundle_toggled": ["state", "pieces", "via"],

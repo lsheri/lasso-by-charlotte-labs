@@ -408,6 +408,8 @@ export type TelemetryEvent =
   | "workboard.section_marker_set"
   | "workboard.section_marker_cleared"
   | "workboard.section_shifted"
+  /** SECD-2: the view was panned to a marked section. Entry only, never dates. */
+  | "workboard.board_jumped"
   /** B2: a chat's docked pieces were minimized, shown, or all shown. State, count band, entry only. */
   | "workboard.bundle_toggled"
   /** D1: an empty note was started on a workstream. Entry point only, no ids and no text. */
