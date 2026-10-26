@@ -38,7 +38,7 @@ function client() {
           h.lines = h.lines.filter((row) => !matches(row));
         }
         if (action !== "select") h.writes.push({ table, action, value });
-        return { data: [...rows].sort((a, b) => ascending ? Number(a["ord"] ?? 0) - Number(b["ord"] ?? 0) : Number(b["ord"] ?? 0) - Number(a["ord"] ?? 0)), error: null };
+        return { data: rows.map((row) => structuredClone(row)).sort((a, b) => ascending ? Number(a["ord"] ?? 0) - Number(b["ord"] ?? 0) : Number(b["ord"] ?? 0) - Number(a["ord"] ?? 0)), error: null };
       };
       const q = {
         select: () => q,
