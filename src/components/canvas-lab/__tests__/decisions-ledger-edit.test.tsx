@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { WorkItemRow } from "@/lib/work-types";
 import type { DecisionLine } from "@/hooks/use-decision-lines";
 const h = vi.hoisted(() => ({ update: vi.fn(), add: vi.fn(), version: vi.fn(), versions: vi.fn() }));
-vi.mock("@/lib/decisions.functions", () => ({ updateDecisionLine: h.update, addDecisionLine: h.add, recordDecisionsVersion: h.version, removeDecisionLine: vi.fn(), restoreDecisionLine: vi.fn(), reorderDecisionLines: vi.fn() }));
+vi.mock("@/lib/decisions.functions", () => ({ linkPassageToDecision: vi.fn(), unlinkPassage: vi.fn(), updateDecisionLine: h.update, addDecisionLine: h.add, recordDecisionsVersion: h.version, removeDecisionLine: vi.fn(), restoreDecisionLine: vi.fn(), reorderDecisionLines: vi.fn() }));
 vi.mock("@tanstack/react-start", () => ({ useServerFn: (fn: unknown) => fn }));
 vi.mock("../canvas-lab-telemetry", () => ({ noteWorkboardLedgerOpened: vi.fn() }));
 vi.mock("@/lib/work-files.functions", () => ({ getVersionFileUrl: vi.fn() }));

@@ -6,7 +6,7 @@ import type { WorkItemRow } from "@/lib/work-types";
 import type { DecisionLine } from "@/hooks/use-decision-lines";
 import type { Database } from "@/integrations/supabase/types";
 const h = vi.hoisted(() => ({ update: vi.fn(), add: vi.fn(), version: vi.fn(), versions: vi.fn(), remove: vi.fn(), restore: vi.fn(), reorder: vi.fn() }));
-vi.mock("@/lib/decisions.functions", () => ({ updateDecisionLine: h.update, addDecisionLine: h.add, recordDecisionsVersion: h.version, removeDecisionLine: h.remove, restoreDecisionLine: h.restore, reorderDecisionLines: h.reorder }));
+vi.mock("@/lib/decisions.functions", () => ({ linkPassageToDecision: vi.fn(), unlinkPassage: vi.fn(), updateDecisionLine: h.update, addDecisionLine: h.add, recordDecisionsVersion: h.version, removeDecisionLine: h.remove, restoreDecisionLine: h.restore, reorderDecisionLines: h.reorder }));
 vi.mock("@tanstack/react-start", () => ({ useServerFn: (fn: unknown) => fn }));
 vi.mock("@/integrations/supabase/client", () => ({ supabase: { from: () => ({ select: () => ({ eq: () => ({ order: h.versions }) }) }) } }));
 vi.mock("@/lib/work-files.functions", () => ({ getVersionFileUrl: vi.fn() }));

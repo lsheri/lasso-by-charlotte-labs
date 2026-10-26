@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const h = vi.hoisted(() => ({ open: vi.fn(), add: vi.fn() }));
 vi.mock("@tanstack/react-start", () => ({ useServerFn: (fn: unknown) => fn }));
 vi.mock("@/lib/board-share.functions", () => ({ openDocumentShareLinkFn: h.open, addDocumentLinkCommentFn: h.add }));
-vi.mock("@/lib/decisions.functions", () => ({ updateDecisionLine: vi.fn(), addDecisionLine: vi.fn(), recordDecisionsVersion: vi.fn(), removeDecisionLine: vi.fn(), restoreDecisionLine: vi.fn(), reorderDecisionLines: vi.fn(), setDecisionPointer: vi.fn() }));
+vi.mock("@/lib/decisions.functions", () => ({ linkPassageToDecision: vi.fn(), unlinkPassage: vi.fn(), updateDecisionLine: vi.fn(), addDecisionLine: vi.fn(), recordDecisionsVersion: vi.fn(), removeDecisionLine: vi.fn(), restoreDecisionLine: vi.fn(), reorderDecisionLines: vi.fn(), setDecisionPointer: vi.fn() }));
 vi.mock("@/integrations/supabase/client", () => ({ supabase: { from: vi.fn() } }));
 import { MemoPage, COPY } from "../MemoPage";
 let client: QueryClient;

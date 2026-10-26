@@ -6,7 +6,7 @@ import type { DecisionLine } from "@/hooks/use-decision-lines";
 import type { WorkItemRow } from "@/lib/work-types";
 import { renderDecisionsMarkdown } from "@/lib/mcp-decisions";
 const h = vi.hoisted(() => ({ url: vi.fn(), event: vi.fn(), clipboard: vi.fn() }));
-vi.mock("@/lib/decisions.functions", () => ({ updateDecisionLine: vi.fn(), addDecisionLine: vi.fn(), recordDecisionsVersion: vi.fn(), removeDecisionLine: vi.fn(), restoreDecisionLine: vi.fn(), reorderDecisionLines: vi.fn(), setDecisionPointer: vi.fn() }));
+vi.mock("@/lib/decisions.functions", () => ({ linkPassageToDecision: vi.fn(), unlinkPassage: vi.fn(), updateDecisionLine: vi.fn(), addDecisionLine: vi.fn(), recordDecisionsVersion: vi.fn(), removeDecisionLine: vi.fn(), restoreDecisionLine: vi.fn(), reorderDecisionLines: vi.fn(), setDecisionPointer: vi.fn() }));
 vi.mock("@/lib/work-files.functions", () => ({ getVersionFileUrl: h.url }));
 vi.mock("@tanstack/react-start", () => ({ useServerFn: (fn: unknown) => fn }));
 vi.mock("../canvas-lab-telemetry", () => ({ noteWorkboardLedgerOpened: h.event }));
