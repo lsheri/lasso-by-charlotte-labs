@@ -119,6 +119,21 @@ export function useDecisionLineMutations(documentId: string, profileId?: string)
       } catch (error) { client.setQueryData(key, previous); throw error; }
     });
   }
+  function setPointer(id: string, turn: number | null) {
+    return run(id, async () => {
+      await client.cancelQueries({ queryKey: key });
+      const previous = client.getQueryData<DecisionLine[]>(key)?.find((line) => line.id === id);
+      client.setQueryData<DecisionLine[]>(key, (rows = []) => rows.map((line) => line.id === id ? { ...line, srcs: turn === null ? [] : [{ turn }] } : line));
+      try {
+        const row = await decisionsFunctions.setDecisionPointer({ data: { ...identity, id, turn } });
+        client.setQueryData<DecisionLine[]>(key, (rows = []) => rows.map((line) => line.id === id ? { ...line, ...row } : line));
+        success(); return row;
+      } catch (error) {
+        if (previous) client.setQueryData<DecisionLine[]>(key, (rows = []) => rows.map((line) => line.id === id ? { ...line, srcs: previous.srcs } : line));
+        throw error;
+      }
+    });
+  }
   function reorderLines(ids_in_order: string[], rowId: string) {
     return run(rowId, async () => {
       await client.cancelQueries({ queryKey: key });
@@ -142,5 +157,5 @@ export function useDecisionLineMutations(documentId: string, profileId?: string)
       await client.invalidateQueries({ queryKey: ["document-versions", documentId] });
     });
   }
-  return { setStatus: (id: string, status: DecisionLine["status"]) => editLine(id, { status }), editLine, addLine, removeLine, reorderLines, saveVersion, dirty, pending: pending > 0, saved, errors };
+  return { setStatus: (id: string, status: DecisionLine["status"]) => editLine(id, { status }), editLine, addLine, removeLine, reorderLines, setPointer, saveVersion, dirty, pending: pending > 0, saved, errors };
 }
