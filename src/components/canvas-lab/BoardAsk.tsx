@@ -8,6 +8,9 @@ import { useAskLasso, type SectionAskSource } from "@/components/reflect/use-ask
 import { useIsMobile } from "@/hooks/use-mobile";
 import { usePerfOpenFinish } from "@/hooks/use-perf-timer";
 
+/** A section offered in the Ask Lasso scope picker. Live from the board. */
+export type AskSectionChoice = { id: string; title: string | null; marker: string | null };
+
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -21,6 +24,9 @@ type Props = {
   boardContextItemIds: string[];
   boardContextHasPicks: boolean;
   sectionSource?: SectionAskSource | undefined;
+  /** SECD-3b: every section on the board, for the scope picker. */
+  sectionChoices?: AskSectionChoice[] | undefined;
+  onPickSection?: ((frameId: string) => void) | undefined;
 };
 
 /**
@@ -66,6 +72,8 @@ function BoardAskPanel(props: Props) {
         onClose={() => props.onOpenChange(false)}
         headerTone="lime"
         inline
+        sections={props.sectionChoices}
+        onPickSection={props.onPickSection}
       />
     </aside>
     </AskBoardPickedContext.Provider>
@@ -85,6 +93,9 @@ export function BoardAsk(props: Props) {
       profileId={props.profileId}
       orgId={props.orgId}
       headerTone="lime"
+      sectionSource={props.sectionSource}
+      sectionChoices={props.sectionChoices}
+      onPickSection={props.onPickSection}
     />
   ) : props.open ? (
     <BoardAskPanel {...props} />
