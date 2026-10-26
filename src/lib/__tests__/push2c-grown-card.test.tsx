@@ -32,7 +32,7 @@ describe("PUSH-2c grown dates on the work card", () => {
   it("one growing push adds , grown 21 Oct after the existing date", () => {
     const before = dateText(render(<WorkNote item={item} headerGutter />).container);
     cleanup();
-    const grown = grownDatesByItem([push(1, 14), push(2, 21)]).w1;
+    const grown = grownDatesByItem([push(1, 14), push(2, 21)])["w1"];
     const after = dateText(render(<WorkNote item={item} headerGutter grownOn={grown} />).container);
     expect(grownSuffix(grown, NOW)).toBe(", grown 21 Oct");
     expect(after).toBe(`${before}, grown 21 Oct`);
@@ -43,20 +43,20 @@ describe("PUSH-2c grown dates on the work card", () => {
   });
 
   it("five growing pushes show the three most recent and earlier", () => {
-    const grown = grownDatesByItem([push(1, 1), push(2, 3), push(3, 7), push(4, 14), push(5, 21), push(6, 28)]).w1;
+    const grown = grownDatesByItem([push(1, 1), push(2, 3), push(3, 7), push(4, 14), push(5, 21), push(6, 28)])["w1"];
     expect(grownSuffix(grown, NOW)).toBe(", grown 14, 21 and 28 Oct and earlier");
   });
 
   it("an unchanged push, or one with all four counts zero, is not a growth", () => {
     const grown = grownDatesByItem([
       push(1, 7), push(2, 14, { mode: "unchanged" }), push(3, 18, { turns_added: 0 }), push(4, 21),
-    ]).w1;
+    ])["w1"];
     expect(grown).toEqual([day(21)]);
   });
 
   it("an item's first push is never listed, and a single push gives nothing", () => {
     expect(grownDatesByItem([push(1, 14)])).toEqual({});
-    expect(grownDatesByItem([push(2, 21), push(1, 14)]).w1).toEqual([day(21)]);
+    expect(grownDatesByItem([push(2, 21), push(1, 14)])["w1"]).toEqual([day(21)]);
   });
 
   it("year only when not this year, never a time", () => {
