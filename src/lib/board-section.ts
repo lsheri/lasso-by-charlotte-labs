@@ -88,3 +88,21 @@ export function containingSection<S extends SectionFrame>(
   }
   return closest;
 }
+/**
+ * SEC-FIX-1: what a section drag carries. Docked pieces are left out (they
+ * follow their chat). A card filed in a frame that is not drawn, such as a
+ * built-in lane, stands loose and joins by its centre; filing is never changed.
+ * `shownFrames` are the frames drawn on the board.
+ */
+export function sectionDragMembers(
+  section: SectionRect,
+  shownFrames: readonly SectionFrame[],
+  nodes: readonly SectionCard[],
+  pieceIds: { has(id: string): boolean },
+): SectionDragSnapshot {
+  const shownFrameIds = new Set(shownFrames.map((entry) => entry.id));
+  const cards = nodes
+    .filter((node) => !pieceIds.has(node.id))
+    .map((node) => (node.frame && !shownFrameIds.has(node.frame) ? { ...node, frame: null } : node));
+  return sectionDragSnapshot(section, shownFrames, cards);
+}
