@@ -115,3 +115,42 @@ export function renderDecisionsMarkdown(title: string, lines: { ord: number; cal
   const labels = { draft: "Open", confirmed: "Agreed", discarded: "Dropped" };
   return `# ${title}\n\n` + lines.map((line) => `${line.ord}. ${line.call_text}\n   Status: ${labels[line.status]}${line.why ? `\n   Why: ${line.why}` : ""}`).join("\n\n");
 }
+
+export type MarkdownDecisionLine = { ord: number; call_text: string; why: string; status: "draft" | "confirmed" | "discarded" };
+
+/** The stored format is unescaped; ambiguous entry-shaped reasons follow the conventional entry rule. */
+export function parseDecisionsMarkdown(body: string): { title: string; lines: MarkdownDecisionLine[] } {
+  const rows = body.replace(/\r\n/g, "\n").split("\n").map((row) => row.trimEnd());
+  const title = (rows.shift() ?? "").replace(/^# /, "");
+  const starts: { index: number; statusIndex: number }[] = [];
+  rows.forEach((row, index) => {
+    if (!/^\d+\. /.test(row)) return;
+    let next = index + 1;
+    while (next < rows.length && !rows[next]?.trim()) next += 1;
+    if (/^\s+Status: (Open|Agreed|Dropped)$/.test(rows[next] ?? "")) starts.push({ index, statusIndex: next });
+  });
+  const statuses: Record<string, MarkdownDecisionLine["status"]> = { Open: "draft", Agreed: "confirmed", Dropped: "discarded" };
+  const lines = starts.map((entry, i): MarkdownDecisionLine => {
+    const row = rows[entry.index] ?? "";
+    const status = (rows[entry.statusIndex] ?? "").trim().slice(8);
+    const rest = rows.slice(entry.statusIndex + 1, starts[i + 1]?.index ?? rows.length);
+    while (rest.length && !rest[rest.length - 1]?.trim()) rest.pop();
+    if (rest[0]?.startsWith("   Why: ")) rest[0] = rest[0].slice(8);
+    return { ord: Number(row.slice(0, row.indexOf("."))), call_text: row.slice(row.indexOf(".") + 2), status: statuses[status] ?? "draft", why: rest.join("\n") };
+  });
+  return { title, lines };
+}
+
+export function diffDecisionLines(previous: readonly MarkdownDecisionLine[], current: readonly MarkdownDecisionLine[]) {
+  const normalize = (text: string) => text.trim().replace(/\s+/g, " ").toLowerCase();
+  const used = new Set<number>();
+  const lines = current.map((line) => {
+    const index = previous.findIndex((old, i) => !used.has(i) && normalize(old.call_text) === normalize(line.call_text));
+    const old = previous[index];
+    if (!old) return { line, change: "added" as const };
+    used.add(index);
+    const change = old.why !== line.why || old.status !== line.status ? "edited" : old.ord !== line.ord ? "moved" : "unchanged";
+    return { line, change };
+  });
+  return { lines, removed: previous.filter((_, i) => !used.has(i)) };
+}
