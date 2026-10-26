@@ -16,7 +16,7 @@ let documentId: string;
 let client: QueryClient;
 let originals: DecisionLine[];
 function line(id: string, ord: number, status: DecisionLine["status"] = "draft"): DecisionLine { return { id, document_id: documentId, ord, call_text: `Decision ${id}`, why: "", status, srcs: [] }; }
-function fullRow(): Database["public"]["Tables"]["decisions"]["Row"] { return { ...line("a", 1), created_at: "2026-10-26", created_by: "p", decided_at: null, engagement_id: null, kind: "call", evidence_turn_ids: [], source_item_id: null, source_turn_id: null, statement: "Decision a", supersedes_id: null, updated_at: "2026-10-26" } as Database["public"]["Tables"]["decisions"]["Row"]; }
+function fullRow(): Database["public"]["Tables"]["decisions"]["Row"] { return { ...line("a", 1), author: "human", created_at: "2026-10-26", date_label: null, engagement_id: null, owner_id: "p", pattern_tags: [], resolved_at: null, situation: "" }; }
 function mount(canEdit = true) {
   const onUndoableRemove = vi.fn();
   const item: WorkItemRow = { id: documentId, title: "Decisions", type: "document", doc_kind: "decisions", source: "mcp:push", captured_at: "2026-10-26", content_ref: "d.md", visibility: "unmapped", work_item_tasks: [] };

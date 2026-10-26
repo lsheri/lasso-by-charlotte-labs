@@ -30,7 +30,7 @@ export function DecisionEditor({ value, reason = false, onSave, onCancel }: { va
   }} />{text.length > 350 ? <span className="lasso-decisions-counter">{COPY.counter(text.length, max)}</span> : null}</div>;
 }
 
-export function DecisionsLine({ line, canEdit, error, onStatus, onEdit, onMove, onRemove, canMoveUp = false, canMoveDown = false, onDragStart, onDragMove, onDragEnd, insertion }: { line: Line; canEdit: boolean; error?: boolean; onStatus: (status: Line["status"]) => void; onEdit: (patch: { call_text?: string; why?: string }) => void; onMove?: (direction: -1 | 1) => void; onRemove?: () => void; canMoveUp?: boolean; canMoveDown?: boolean; onDragStart?: (event: PointerEvent<HTMLButtonElement>) => void; onDragMove?: (event: PointerEvent<HTMLButtonElement>) => void; onDragEnd?: (cancel: boolean) => void; insertion?: "before" | "after" }) {
+export function DecisionsLine({ line, canEdit, error, onStatus, onEdit, onMove, onRemove, canMoveUp = false, canMoveDown = false, onDragStart, onDragMove, onDragEnd, insertion }: { line: Line; canEdit: boolean; error?: boolean; onStatus: (status: Line["status"]) => void; onEdit: (patch: { call_text?: string; why?: string }) => void; onMove?: (direction: -1 | 1) => void; onRemove?: () => void; canMoveUp?: boolean; canMoveDown?: boolean; onDragStart?: (event: PointerEvent<HTMLButtonElement>) => void; onDragMove?: (event: PointerEvent<HTMLButtonElement>) => void; onDragEnd?: (cancel: boolean) => void; insertion?: "before" | "after" | undefined }) {
   const [menu, setMenu] = useState(false);
   const [actions, setActions] = useState(false);
   const [editing, setEditing] = useState<"call_text" | "why" | null>(null);

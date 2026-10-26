@@ -64,7 +64,7 @@ export function DecisionsLedger({ nodeId, item, onClose, canEdit = false, profil
     const active = drag.current;
     if (!active) return;
     const element = document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLElement>("li[data-line-id]");
-    const target = lines.find((line) => line.id === element?.dataset.lineId);
+    const target = lines.find((line) => line.id === element?.dataset["lineId"]);
     const source = lines.find((line) => line.id === active.id);
     if (!element || !target || !source || (source.status === "discarded") !== (target.status === "discarded")) return;
     const bounds = element.getBoundingClientRect();
