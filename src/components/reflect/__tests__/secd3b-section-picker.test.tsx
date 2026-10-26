@@ -45,6 +45,17 @@ vi.mock('@/integrations/supabase/client', () => ({ supabase: { from: () => {
 
 import { BoardAsk, type AskSectionChoice } from '@/components/canvas-lab/BoardAsk';
 Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: vi.fn() });
+// jsdom has no matchMedia; the thinking trail asks it about reduced motion.
+window.matchMedia = window.matchMedia ?? ((query: string) => ({
+  matches: false,
+  media: query,
+  addEventListener: () => undefined,
+  removeEventListener: () => undefined,
+  addListener: () => undefined,
+  removeListener: () => undefined,
+  onchange: null,
+  dispatchEvent: () => false,
+}) as MediaQueryList);
 const args = { open: true, engagementId: 'e', engagementTitle: 'Board', profileId: 'p', orgId: 'o' };
 function wrapper({ children }: { children: React.ReactNode }) { return <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>{children}</QueryClientProvider>; }
 afterEach(() => { cleanup(); state.mobile = false; state.requests.length = 0; state.writes.length = 0; });
