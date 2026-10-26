@@ -1635,6 +1635,58 @@ export type Database = {
           },
         ]
       }
+      document_link_comments: {
+        Row: {
+          body: string
+          created_at: string
+          decision_id: string | null
+          display_name: string | null
+          id: string
+          share_link_id: string
+          work_item_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          decision_id?: string | null
+          display_name?: string | null
+          id?: string
+          share_link_id: string
+          work_item_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          decision_id?: string | null
+          display_name?: string | null
+          id?: string
+          share_link_id?: string
+          work_item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_link_comments_decision_id_fkey"
+            columns: ["decision_id"]
+            isOneToOne: false
+            referencedRelation: "decisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_link_comments_share_link_id_fkey"
+            columns: ["share_link_id"]
+            isOneToOne: false
+            referencedRelation: "board_share_links"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_link_comments_work_item_id_fkey"
+            columns: ["work_item_id"]
+            isOneToOne: false
+            referencedRelation: "work_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_versions: {
         Row: {
           content_hash: string
