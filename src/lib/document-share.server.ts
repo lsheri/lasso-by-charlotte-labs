@@ -115,7 +115,7 @@ export async function openDocumentShareLink(input: { token: string }) {
     updated_at: versions.data?.[0]?.created_at ?? document.captured_at,
     lines: (lines.data ?? []).map((line) => ({ id: line.id, ord: line.ord, statement: line.call_text,
       reason: line.why, status: statusWords[line.status],
-      has_source: Array.isArray(line.srcs) && line.srcs.some((source) => source !== null && typeof source === "object" && !Array.isArray(source) && typeof source.turn === "number"),
+      has_source: Array.isArray(line.srcs) && line.srcs.some((source) => source !== null && typeof source === "object" && !Array.isArray(source) && typeof source["turn"] === "number"),
     })),
     comments: (comments.data ?? []).map((row) => ({ id: row.id, decision_id: row.decision_id, display_name: row.display_name, body: row.body, created_at: row.created_at })),
   };

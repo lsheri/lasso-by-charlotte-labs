@@ -89,9 +89,9 @@ describe("document share server", () => {
   it("owner creates a hashed one-time link on the document's board with 48 hour default", async () => {
     const start = Date.now();
     const result = await createDocumentShareLink(context, { document_id: "doc" });
-    const row = tables.board_share_links?.[1];
+    const row = tables["board_share_links"]?.[1];
     expect(result.status).toBe("created");
-    expect(result.id).toBe(row?.id);
+    expect(result.id).toBe(row?.["id"]);
     expect(row).toMatchObject({ work_item_id: "doc", workboard_id: "board", created_by: "owner", token_hash: await hashShareToken(result.token) });
     expect(row).not.toHaveProperty("token");
     expect(new Date(result.expiresAt).getTime() - start).toBeGreaterThanOrEqual(48 * 3600000);
@@ -99,14 +99,14 @@ describe("document share server", () => {
     expect(state.events).toHaveBeenCalledWith(context.supabase, expect.objectContaining({ dims: { action: "created", scope: "document" } }));
   });
   it("non-owner create is 403", async () => {
-    const document = tables.work_items?.[0]; if (document) document.owner_id = "other";
+    const document = tables["work_items"]?.[0]; if (document) document["owner_id"] = "other";
     await expect(createDocumentShareLink(context, { document_id: "doc" })).rejects.toMatchObject({ status: 403 });
-    expect(tables.board_share_links).toHaveLength(1);
+    expect(tables["board_share_links"]).toHaveLength(1);
   });
   it("skips boards the caller cannot edit and refuses when none qualify", async () => {
     state.editor = false;
     await expect(createDocumentShareLink(context, { document_id: "doc" })).rejects.toMatchObject({ status: 403 });
-    expect(tables.board_share_links).toHaveLength(1);
+    expect(tables["board_share_links"]).toHaveLength(1);
   });
   it("custom expiry is used", async () => {
     const start = Date.now(); const result = await createDocumentShareLink(context, { document_id: "doc", expires_in_hours: 2 });
@@ -114,28 +114,28 @@ describe("document share server", () => {
     expect(new Date(result.expiresAt).getTime() - start).toBeLessThan(7201000);
   });
   it("list contains only live document links and no open count", async () => {
-    tables.board_share_links?.push({ id: "revoked", work_item_id: "doc", expires_at: future, revoked_at: past },
+    tables["board_share_links"]?.push({ id: "revoked", work_item_id: "doc", expires_at: future, revoked_at: past },
       { id: "expired", work_item_id: "doc", expires_at: past, revoked_at: null },
       { id: "other", work_item_id: "other", expires_at: future, revoked_at: null });
     expect(await listDocumentShareLinks(context, { document_id: "doc" })).toEqual([{ id: "link", created_at: past, expires_at: future }]);
   });
   it("revoke is owner-only and records document scope", async () => {
     expect(await revokeDocumentShareLink(context, { document_id: "doc", id: "link" })).toEqual({ status: "revoked" });
-    expect(tables.board_share_links?.[0]?.revoked_at).toBeTruthy();
+    expect(tables["board_share_links"]?.[0]?.revoked_at).toBeTruthy();
     expect(state.events).toHaveBeenCalledWith(context.supabase, expect.objectContaining({ dims: { action: "revoked", scope: "document" } }));
   });
   it("non-owner cannot revoke", async () => {
-    const document = tables.work_items?.[0]; if (document) document.owner_id = "other";
+    const document = tables["work_items"]?.[0]; if (document) document["owner_id"] = "other";
     await expect(revokeDocumentShareLink(context, { document_id: "doc", id: "link" })).rejects.toMatchObject({ status: 403 });
-    expect(tables.board_share_links?.[0]?.revoked_at).toBeNull();
+    expect(tables["board_share_links"]?.[0]?.revoked_at).toBeNull();
   });
   it("cannot revoke another document's link", async () => {
-    const link = tables.board_share_links?.[0]; if (link) link.work_item_id = "other";
+    const link = tables["board_share_links"]?.[0]; if (link) link["work_item_id"] = "other";
     expect(await revokeDocumentShareLink(context, { document_id: "doc", id: "link" })).toEqual({ status: "not_found" });
-    expect(link?.revoked_at).toBeNull();
+    expect(link?.["revoked_at"]).toBeNull();
   });
   it("opens the exact safe shape, with count-only increment and anonymous document event", async () => {
-    tables.document_link_comments?.push({ id: "comment", decision_id: null, display_name: "Visitor", body: "Yes", created_at: past, work_item_id: "doc", share_link_id: "link" });
+    tables["document_link_comments"]?.push({ id: "comment", decision_id: null, display_name: "Visitor", body: "Yes", created_at: past, work_item_id: "doc", share_link_id: "link" });
     const result = await openDocumentShareLink({ token });
     expect(result).toEqual({ title: "Decisions", updated_at: "2026-10-26T04:00:00.000Z",
       lines: [{ id: "line", ord: 1, statement: "Proceed", reason: "Evidence", status: "open", has_source: true }],
@@ -144,25 +144,25 @@ describe("document share server", () => {
       if (!value || typeof value !== "object") return;
       for (const [key, entry] of Object.entries(value)) { expect(["workboard_id", "owner_id", "turn", "name"]).not.toContain(key); inspect(entry); }
     }; inspect(result);
-    expect(tables.board_share_links?.[0]).toMatchObject({ opened_count: 3, last_opened_at: null });
+    expect(tables["board_share_links"]?.[0]).toMatchObject({ opened_count: 3, last_opened_at: null });
     expect(state.events).toHaveBeenCalledWith(state.db, expect.objectContaining({ orgId: "org", userId: null, dims: { action: "opened", scope: "document" } }));
   });
   it("falls back to capture date and maps the other two statuses without exposing source numbers", async () => {
-    tables.document_versions = [];
-    tables.decisions = [{ id: "a", document_id: "doc", ord: 2, call_text: "A", why: null, status: "confirmed", srcs: [] }, { id: "b", document_id: "doc", ord: 1, call_text: "B", why: null, status: "discarded", srcs: [] }];
+    tables["document_versions"] = [];
+    tables["decisions"] = [{ id: "a", document_id: "doc", ord: 2, call_text: "A", why: null, status: "confirmed", srcs: [] }, { id: "b", document_id: "doc", ord: 1, call_text: "B", why: null, status: "discarded", srcs: [] }];
     expect(await openDocumentShareLink({ token })).toMatchObject({ updated_at: past, lines: [{ id: "b", status: "dropped", has_source: false }, { id: "a", status: "agreed", has_source: false }] });
   });
   it.each(["expired", "revoked", "unknown", "no_document"])("refuses %s with the same public answer", async (reason) => {
-    const link = tables.board_share_links?.[0];
-    if (link && reason === "expired") link.expires_at = past;
-    if (link && reason === "revoked") link.revoked_at = past;
-    if (reason === "unknown") tables.board_share_links = [];
-    if (link && reason === "no_document") link.work_item_id = null;
+    const link = tables["board_share_links"]?.[0];
+    if (link && reason === "expired") link["expires_at"] = past;
+    if (link && reason === "revoked") link["revoked_at"] = past;
+    if (reason === "unknown") tables["board_share_links"] = [];
+    if (link && reason === "no_document") link["work_item_id"] = null;
     expect(await openDocumentShareLink({ token })).toEqual({ status: "closed" });
     const dims = { action: "refused", scope: "document", reason: reason === "no_document" ? "unknown" : reason };
     if (reason === "unknown") expect(state.anonymous).toHaveBeenCalledWith("board.share_link", expect.any(String), dims);
     else expect(state.events).toHaveBeenCalledWith(state.db, expect.objectContaining({ dims }));
-    expect(link?.opened_count).toBe(2);
+    expect(link?.["opened_count"]).toBe(2);
   });
   it("refuses a malformed token", async () => {
     expect(await openDocumentShareLink({ token: "short" })).toEqual({ status: "closed" });
@@ -171,9 +171,9 @@ describe("document share server", () => {
   it("stores trimmed comments with null blank name and no identity in its event", async () => {
     const result = await addDocumentLinkComment({ token, body: "  Hello  ", display_name: "  " });
     expect(result).toMatchObject({ body: "Hello", display_name: null, decision_id: null });
-    expect(tables.document_link_comments?.[0]).toMatchObject({ share_link_id: "link", work_item_id: "doc" });
+    expect(tables["document_link_comments"]?.[0]).toMatchObject({ share_link_id: "link", work_item_id: "doc" });
     expect(state.events).toHaveBeenCalledWith(state.db, { eventType: "decisions_doc.link_comment_added", orgId: "org", userId: null, dims: { has_name: false, on_line: false } });
-    expect(tables.board_share_links?.[0]?.opened_count).toBe(2);
+    expect(tables["board_share_links"]?.[0]?.opened_count).toBe(2);
   });
   it("accepts a named comment on a line in this document", async () => {
     expect(await addDocumentLinkComment({ token, body: "Hello", display_name: " Visitor ", decision_id: "line" })).toMatchObject({ display_name: "Visitor", decision_id: "line" });
@@ -181,7 +181,7 @@ describe("document share server", () => {
   });
   it("rejects an empty body", async () => {
     await expect(addDocumentLinkComment({ token, body: "  " })).rejects.toMatchObject({ status: 400 });
-    expect(tables.document_link_comments).toHaveLength(0);
+    expect(tables["document_link_comments"]).toHaveLength(0);
   });
   it("rejects body over 2000 characters", async () => {
     await expect(addDocumentLinkComment({ token, body: "x".repeat(2001) })).rejects.toMatchObject({ status: 400 });
@@ -190,24 +190,24 @@ describe("document share server", () => {
     await expect(addDocumentLinkComment({ token, body: "Hello", display_name: "x".repeat(61) })).rejects.toMatchObject({ status: 400 });
   });
   it("rejects a decision from another document", async () => {
-    tables.decisions?.push({ id: "other", document_id: "elsewhere" });
+    tables["decisions"]?.push({ id: "other", document_id: "elsewhere" });
     await expect(addDocumentLinkComment({ token, body: "Hello", decision_id: "other" })).rejects.toMatchObject({ status: 400 });
-    expect(tables.document_link_comments).toHaveLength(0);
+    expect(tables["document_link_comments"]).toHaveLength(0);
   });
   it.each(["revoked", "expired"])("cannot comment on a %s link", async (reason) => {
-    const link = tables.board_share_links?.[0]; if (link) link[reason === "revoked" ? "revoked_at" : "expires_at"] = past;
+    const link = tables["board_share_links"]?.[0]; if (link) link[reason === "revoked" ? "revoked_at" : "expires_at"] = past;
     expect(await addDocumentLinkComment({ token, body: "Hello" })).toMatchObject({ status: "closed" });
-    expect(tables.document_link_comments).toHaveLength(0);
+    expect(tables["document_link_comments"]).toHaveLength(0);
   });
   it("accepts the 30th and refuses the 31st comment in one hour", async () => {
-    tables.document_link_comments = Array.from({ length: 29 }, (_, i) => ({ id: String(i), share_link_id: "link", created_at: new Date().toISOString() }));
+    tables["document_link_comments"] = Array.from({ length: 29 }, (_, i) => ({ id: String(i), share_link_id: "link", created_at: new Date().toISOString() }));
     expect(await addDocumentLinkComment({ token, body: "Number 30" })).toMatchObject({ body: "Number 30" });
     expect(await addDocumentLinkComment({ token, body: "Number 31" })).toMatchObject({ status: "refused", message: expect.any(String) });
-    expect(tables.document_link_comments).toHaveLength(30);
+    expect(tables["document_link_comments"]).toHaveLength(30);
   });
   it("old comments and other links do not consume this hour's allowance", async () => {
-    tables.document_link_comments = Array.from({ length: 31 }, (_, i) => ({ id: String(i), share_link_id: "link", created_at: past }));
-    tables.document_link_comments.push(...Array.from({ length: 31 }, (_, i) => ({ id: `other${i}`, share_link_id: "other", created_at: new Date().toISOString() })));
+    tables["document_link_comments"] = Array.from({ length: 31 }, (_, i) => ({ id: String(i), share_link_id: "link", created_at: past }));
+    tables["document_link_comments"].push(...Array.from({ length: 31 }, (_, i) => ({ id: `other${i}`, share_link_id: "other", created_at: new Date().toISOString() })));
     expect(await addDocumentLinkComment({ token, body: "Hello" })).toMatchObject({ body: "Hello" });
   });
   it("registers additive content-free event dimensions", () => {
