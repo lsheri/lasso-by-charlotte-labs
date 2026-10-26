@@ -13,7 +13,7 @@ import {
   type RejectionReason,
 } from "@/lib/attachment-guard";
 import { workTypeForFile } from "@/lib/work-types";
-import { recordAnonymousEvent, recordEvent } from "@/lib/telemetry.server";
+import { recordAnonymousEvent, recordEvent, resolveConsentStamp } from "@/lib/telemetry.server";
 import { createWorkstreamWithFrame, drawWorkstreamFrame } from "@/lib/workstream-create.server";
 import { bucket } from "@/lib/telemetry-shared";
 import { dateLabel } from "@/lib/decisions-shared";
@@ -1291,10 +1291,10 @@ export async function handleMcpRequest(
       }
       if (name === "push_conversation") return await pushConversation(owner, args, id, client);
       if (name === "push_thread") return await pushThread(owner, args, id, client);
-      if (name === "push_document") return await pushDocument(owner, args, id);
+      if (name === "push_document") return await pushDocument(owner, args, id, client);
       if (name === "lasso_push_decisions") {
         if (owner.readOnly) return rpcError(id, -32603, "This connection can read but not add work right now.");
-        return await pushDecisions(owner, args, id);
+        return await pushDecisions(owner, args, id, client);
       }
       if (name === "list_engagements") return await listEngagements(owner, id);
       if (name === "lasso_fetch_branch") return await fetchBranch(owner, token, args, id);
@@ -1618,7 +1618,89 @@ async function pushThread(
   );
 }
 
-async function pushDocument(owner: Owner, args: Obj, id: unknown): Promise<Response> {
+/**
+ * PUSH-1: the record keeps its own push history. One work_item_pushes row per
+ * push. Best effort only: a failed history write is logged and the push goes
+ * on, so a person's work is never lost or refused because of it.
+ */
+type PushHistoryRow = {
+  mode: "created" | "appended" | "unchanged";
+  tool: string | null;
+  clientName: string | null;
+  turnsAdded?: number;
+  turnsChanged?: number;
+  turnsUnchanged?: number;
+  attachmentsAdded?: number;
+  attachmentsChanged?: number;
+};
+
+async function writePushHistory(owner: Owner, workItemId: string, row: PushHistoryRow): Promise<string | null> {
+  try {
+    const stamp = owner.orgId ? await resolveConsentStamp(supabaseAdmin, owner.orgId, owner.profileId ?? null) : null;
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      const { data: last, error: readError } = await supabaseAdmin
+        .from("work_item_pushes")
+        .select("push_no")
+        .eq("work_item_id", workItemId)
+        .order("push_no", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (readError) throw new Error(readError.message);
+      const { data, error } = await supabaseAdmin
+        .from("work_item_pushes")
+        .insert({
+          work_item_id: workItemId,
+          push_no: (last?.push_no ?? 0) + 1,
+          mode: row.mode,
+          turns_added: row.turnsAdded ?? 0,
+          turns_changed: row.turnsChanged ?? 0,
+          turns_unchanged: row.turnsUnchanged ?? 0,
+          attachments_added: row.attachmentsAdded ?? 0,
+          attachments_changed: row.attachmentsChanged ?? 0,
+          tool: row.tool,
+          client_name: row.clientName,
+          consent_tier: stamp ? stamp.tier : null,
+          consent_ledger_version: stamp ? stamp.ledgerVersion : null,
+        })
+        .select("id")
+        .single();
+      if (!error && data) return data.id;
+      // Another push took this number: read again and retry once.
+      if (error?.code === "23505" && attempt === 0) continue;
+      throw new Error(error?.message ?? "no row returned");
+    }
+  } catch (err) {
+    console.warn("push history write failed", err instanceof Error ? err.message : err);
+  }
+  return null;
+}
+
+async function updatePushHistory(pushId: string, patch: Database["public"]["Tables"]["work_item_pushes"]["Update"]): Promise<void> {
+  try {
+    const { error } = await supabaseAdmin.from("work_item_pushes").update(patch).eq("id", pushId);
+    if (error) throw new Error(error.message);
+  } catch (err) {
+    console.warn("push history update failed", err instanceof Error ? err.message : err);
+  }
+}
+
+/** PUSH-1: stamp the document_versions row a push recorded. Best effort. */
+async function stampVersionPush(workItemId: string, versionNo: number, pushId: string | null): Promise<void> {
+  if (!pushId) return;
+  try {
+    const { error } = await supabaseAdmin.from("document_versions").update({ push_id: pushId })
+      .eq("work_item_id", workItemId).eq("version_no", versionNo);
+    if (error) throw new Error(error.message);
+  } catch (err) {
+    console.warn("push history version stamp failed", err instanceof Error ? err.message : err);
+  }
+}
+
+function pushClientName(client: ClientIdentity | undefined): string | null {
+  return client?.name && client.name !== "unknown" ? client.name : null;
+}
+
+async function pushDocument(owner: Owner, args: Obj, id: unknown, client?: ClientIdentity): Promise<Response> {
   const plan = parsePlacementArgs(args);
   const filename = typeof args["filename"] === "string" ? args["filename"] : "";
   const content = typeof args["content"] === "string" ? args["content"] : "";
@@ -1690,6 +1772,7 @@ async function pushDocument(owner: Owner, args: Obj, id: unknown): Promise<Respo
     .select("id")
     .maybeSingle();
   if (error) return rpcError(id, -32603, error.message);
+  if (doc?.id) await writePushHistory(owner, doc.id, { mode: "created", tool: null, clientName: pushClientName(client), attachmentsAdded: 1 });
 
   const { ensureExtracts } = await import("./extract.server");
   if (doc?.id) await ensureExtracts([doc.id]);
@@ -1717,7 +1800,7 @@ async function pushDocument(owner: Owner, args: Obj, id: unknown): Promise<Respo
 }
 
 /** Re-push matches statements, preserves people's statuses and never relocates work. */
-async function pushDecisions(owner: Owner, args: Obj, id: unknown): Promise<Response> {
+async function pushDecisions(owner: Owner, args: Obj, id: unknown, client?: ClientIdentity): Promise<Response> {
   const title = typeof args["title"] === "string" ? args["title"].trim() : "";
   if (!title) return rpcError(id, -32602, "title must be a non-empty string.");
   const raw = args["decisions"];
@@ -1836,6 +1919,8 @@ async function pushDecisions(owner: Owner, args: Obj, id: unknown): Promise<Resp
     if (saved.error) return rpcError(id, -32603, saved.error.message);
     const version = await recordNewVersion(supabaseAdmin, { workItemId: target.id, previousRef: target.content_ref,
       previousHash: target.content_hash, previousAt: target.captured_at, newRef: path, newHash: hash, sourceEvent: "mcp_repush", origin: "model_artifact" });
+    const repushId = await writePushHistory(owner, target.id, { mode: "appended", tool: null, clientName: pushClientName(client), attachmentsChanged: 1 });
+    await stampVersionPush(target.id, version, repushId);
     const { ensureExtracts } = await import("./extract.server");
     await ensureExtracts([target.id]);
     await logPush(owner, { tool: "lasso_push_decisions", kind: "decisions", target: "existing" }, "capture");
@@ -1863,7 +1948,8 @@ async function pushDecisions(owner: Owner, args: Obj, id: unknown): Promise<Resp
     meta: { assistant_transcribed: true },
   }).select("id").maybeSingle();
   if (error || !doc) return rpcError(id, -32603, error?.message ?? "Could not save the Decisions document.");
-  const version = await supabaseAdmin.from("document_versions").insert({ work_item_id: doc.id, version_no: 1, content_ref: path, content_hash: hash, parent_version_id: null, source_event: "mcp_push", origin: "model_artifact" });
+  const createdPushId = await writePushHistory(owner, doc.id, { mode: "created", tool: null, clientName: pushClientName(client), attachmentsAdded: 1 });
+  const version = await supabaseAdmin.from("document_versions").insert({ work_item_id: doc.id, version_no: 1, content_ref: path, content_hash: hash, parent_version_id: null, source_event: "mcp_push", origin: "model_artifact", ...(createdPushId ? { push_id: createdPushId } : {}) });
   if (version.error) return rpcError(id, -32603, version.error.message);
   const docVocab = await placementVocab(owner);
   // Placement already returns the authorized board; no extra board query is needed.
@@ -2697,6 +2783,19 @@ export async function pushConversation(
   }
   const offset = win ? win.from - 1 : 0;
 
+  // PUSH-1: the push row is written once, just before this push's first turn
+  // write, so every turn it writes can carry its id.
+  let pushId: string | null = null;
+  let pushRowTried = false;
+  const ensurePushRow = async (mode: "created" | "appended" | "unchanged", counts: Partial<PushHistoryRow> = {}) => {
+    if (!pushRowTried) {
+      pushRowTried = true;
+      pushId = await writePushHistory(owner, threadId, { mode, tool: vendor, clientName: pushClientName(client), ...counts });
+      return { id: pushId, fresh: true };
+    }
+    return { id: pushId, fresh: false };
+  };
+
   let unchangedCount = 0;
   let changedCount = 0;
   const newRows: Record<string, unknown>[] = [];
@@ -2803,9 +2902,12 @@ export async function pushConversation(
         `Could not preserve the previous version of message ${turnNo}, so it was not overwritten: ${revError.message}`,
       );
     }
+    // Only an existing thread has stored turns to revise, so this push appends.
+    const revisingPush = (await ensurePushRow("appended")).id;
     const { error: updError } = await supabaseAdmin
       .from("turns")
       .update({
+        ...(revisingPush ? { push_id: revisingPush } : {}),
         role: m.role as "user" | "assistant" | "tool",
         content: m.content,
         content_hash: hash,
@@ -2826,6 +2928,18 @@ export async function pushConversation(
     receipts.push(receiptOf());
   }
   receipts.sort((a, b) => a.pos - b.pos);
+
+  const pushMode = !existingThread
+    ? "created"
+    : newRows.length > 0 || changedCount > 0
+      ? "appended"
+      : "unchanged";
+  const turnCounts = { turnsAdded: newRows.length, turnsChanged: changedCount, turnsUnchanged: unchangedCount };
+  const pushRow = await ensurePushRow(pushMode, turnCounts);
+  if (pushRow.id && !pushRow.fresh) {
+    await updatePushHistory(pushRow.id, { turns_added: newRows.length, turns_changed: changedCount, turns_unchanged: unchangedCount });
+  }
+  if (pushRow.id) for (const row of newRows) row["push_id"] = pushRow.id;
 
   if (newRows.length > 0) {
     const { error: turnsError } = await supabaseAdmin.from("turns").insert(newRows as never);
@@ -3361,11 +3475,13 @@ export async function pushConversation(
     })
     .eq("id", threadId);
 
-  const pushMode = !existingThread
-    ? "created"
-    : newRows.length > 0 || changedCount > 0
-      ? "appended"
-      : "unchanged";
+  if (pushRow.id) {
+    const attachmentsAdded = attachmentOutcomes.filter((o) => o.outcome === "new" || o.outcome === "reference_created").length;
+    const attachmentsChanged = attachmentOutcomes.filter((o) => o.outcome === "new_version").length;
+    if (attachmentsAdded > 0 || attachmentsChanged > 0) {
+      await updatePushHistory(pushRow.id, { attachments_added: attachmentsAdded, attachments_changed: attachmentsChanged });
+    }
+  }
 
   const convoVocab = await placementVocab(owner);
   const knownPlaces = plan.destination ? (await readPlaces(owner)).places : undefined;
