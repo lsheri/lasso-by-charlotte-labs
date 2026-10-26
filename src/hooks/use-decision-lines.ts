@@ -8,6 +8,24 @@ import type { Database } from "@/integrations/supabase/types";
 type DecisionRow = Database["public"]["Tables"]["decisions"]["Row"];
 export type DecisionLine = Pick<DecisionRow, "id" | "document_id" | "ord" | "call_text" | "why" | "status" | "srcs">;
 export const LEDGER_LINES_KEY = (documentId: string | null) => ["decision-lines", documentId] as const;
+export type DecisionPassage = Database["public"]["Tables"]["span_links"]["Row"] & { transcript_title: string };
+export const DECISION_PASSAGES_KEY = (documentId: string) => ["decision-passages", documentId] as const;
+export function useDecisionPassages(documentId: string) {
+  return useQuery({ queryKey: DECISION_PASSAGES_KEY(documentId), queryFn: async () => {
+    const result = await supabase.from("span_links").select("*").eq("from_item_id", documentId).order("created_at", { ascending: true });
+    if (result.error) throw result.error;
+    const grouped: Record<string, DecisionPassage[]> = {};
+    for (const row of result.data ?? []) {
+      const locator = row.locator;
+      const id = locator && typeof locator === "object" && !Array.isArray(locator) ? locator["decision_id"] : null;
+      if (typeof id !== "string") continue;
+      const title = row.to_item_id ? await supabase.from("work_items").select("title, display_title").eq("id", row.to_item_id).maybeSingle() : null;
+      if (title?.error) throw title.error;
+      (grouped[id] ??= []).push({ ...row, transcript_title: title?.data?.display_title ?? title?.data?.title ?? "" });
+    }
+    return grouped;
+  } });
+}
 
 export function useDecisionLines(documentId: string | null) {
   return useQuery({

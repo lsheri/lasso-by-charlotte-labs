@@ -138,7 +138,7 @@ describe("document share server", () => {
     tables["document_link_comments"]?.push({ id: "comment", decision_id: null, display_name: "Visitor", body: "Yes", created_at: past, work_item_id: "doc", share_link_id: "link" });
     const result = await openDocumentShareLink({ token });
     expect(result).toEqual({ title: "Decisions", updated_at: "2026-10-26T04:00:00.000Z",
-      lines: [{ id: "line", ord: 1, statement: "Proceed", reason: "Evidence", status: "open", has_source: true }],
+      lines: [{ id: "line", ord: 1, statement: "Proceed", reason: "Evidence", status: "open", has_source: true, has_feedback: false }],
       comments: [{ id: "comment", decision_id: null, display_name: "Visitor", body: "Yes", created_at: past }] });
     const inspect = (value: unknown) => {
       if (!value || typeof value !== "object") return;
@@ -151,6 +151,12 @@ describe("document share server", () => {
     tables["document_versions"] = [];
     tables["decisions"] = [{ id: "a", document_id: "doc", ord: 2, call_text: "A", why: null, status: "confirmed", srcs: [] }, { id: "b", document_id: "doc", ord: 1, call_text: "B", why: null, status: "discarded", srcs: [] }];
     expect(await openDocumentShareLink({ token })).toMatchObject({ updated_at: past, lines: [{ id: "b", status: "dropped", has_source: false }, { id: "a", status: "agreed", has_source: false }] });
+  });
+  it("exposes only feedback presence, never passage content or target", async () => {
+    tables["span_links"] = [{ from_item_id: "doc", locator: { decision_id: "line" }, quote: "Private passage", to_item_id: "private-call", to_locator: { at: "00:14" } }, { from_item_id: "other", locator: { decision_id: "line" }, quote: "Other passage" }];
+    const result = await openDocumentShareLink({ token });
+    expect(result).toMatchObject({ lines: [{ has_feedback: true }] });
+    expect(JSON.stringify(result)).not.toMatch(/Private passage|private-call|00:14|Other passage/);
   });
   it.each(["expired", "revoked", "unknown", "no_document"])("refuses %s with only its closed reason", async (reason) => {
     const link = tables["board_share_links"]?.[0];

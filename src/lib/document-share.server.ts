@@ -101,12 +101,13 @@ export async function openDocumentShareLink(input: { token: string }) {
   const resolved = await publicDocument(input?.token);
   if (resolved.status === "closed") return { status: "closed" as const, reason: resolved.reason };
   const { db, document } = resolved;
-  const [lines, versions, comments] = await Promise.all([
+  const [lines, versions, comments, passages] = await Promise.all([
     db.from("decisions").select("id, ord, call_text, why, status, srcs").eq("document_id", document.id).order("ord", { ascending: true }),
     db.from("document_versions").select("created_at").eq("work_item_id", document.id).order("created_at", { ascending: false }).limit(1),
     db.from("document_link_comments").select("id, decision_id, display_name, body, created_at").eq("work_item_id", document.id).order("created_at", { ascending: true }),
+    db.from("span_links").select("locator").eq("from_item_id", document.id),
   ]);
-  check(lines.error); check(versions.error); check(comments.error);
+  check(lines.error); check(versions.error); check(comments.error); check(passages.error);
   const statusWords = { draft: "open", confirmed: "agreed", discarded: "dropped" } as const;
   await resolved.incrementOpened();
   await noteShareEvent("opened", document.org_id, undefined, "document");
@@ -116,6 +117,7 @@ export async function openDocumentShareLink(input: { token: string }) {
     lines: (lines.data ?? []).map((line) => ({ id: line.id, ord: line.ord, statement: line.call_text,
       reason: line.why, status: statusWords[line.status],
       has_source: Array.isArray(line.srcs) && line.srcs.some((source) => source !== null && typeof source === "object" && !Array.isArray(source) && typeof source["turn"] === "number"),
+      has_feedback: (passages.data ?? []).some(({ locator }) => locator !== null && typeof locator === "object" && !Array.isArray(locator) && locator["decision_id"] === line.id),
     })),
     comments: (comments.data ?? []).map((row) => ({ id: row.id, decision_id: row.decision_id, display_name: row.display_name, body: row.body, created_at: row.created_at })),
   };

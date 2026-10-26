@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveProfile } from "@/lib/profile-resolve";
-import type { DecisionDocumentInput, UpdateDecisionLineInput, AddDecisionLineInput, RemoveDecisionLineInput, RestoreDecisionLineInput, ReorderDecisionLinesInput, SetDecisionPointerInput } from "./decisions-doc.server";
+import type { DecisionDocumentInput, UpdateDecisionLineInput, AddDecisionLineInput, RemoveDecisionLineInput, RestoreDecisionLineInput, ReorderDecisionLinesInput, SetDecisionPointerInput, DecisionPassageInput, UnlinkDecisionPassageInput } from "./decisions-doc.server";
 import {
   DRAFT_SYSTEM_PROMPT,
   DRAFT_TOOL,
@@ -171,6 +171,16 @@ export const updateDecisionLine = createServerFn({ method: "POST" })
     if (!input || typeof input.document_id !== "string" || !input.document_id) throw new Response("document_id is required", { status: 400 });
     return input;
   }).handler(async ({ data, context }) => (await import("./decisions-doc.server")).updateDecisionLine(context, data));
+
+export const linkPassageToDecision = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: DecisionPassageInput) => input)
+  .handler(async ({ data, context }) => (await import("./decisions-doc.server")).linkPassageToDecision(context, data));
+
+export const unlinkPassage = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: UnlinkDecisionPassageInput) => input)
+  .handler(async ({ data, context }) => (await import("./decisions-doc.server")).unlinkPassage(context, data));
 
 export const addDecisionLine = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
