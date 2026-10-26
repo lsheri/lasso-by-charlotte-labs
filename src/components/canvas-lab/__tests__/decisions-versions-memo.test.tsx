@@ -51,7 +51,7 @@ describe("versions and memo", () => {
   it("Memo uses live lines, dates and pointer marks without edit controls", async () => {
     mount(); fireEvent.click(screen.getByRole("button", { name: "Memo" }));
     const memo = document.querySelector(".lasso-decisions-memo"); if (!(memo instanceof HTMLElement)) throw new Error("Missing memo");
-    expect(within(memo).getByRole("heading", { name: "Decision memo" })).toBeTruthy(); expect(within(memo).getByText("Updated 26 Oct 2026")).toBeTruthy();
+    expect(within(memo).getByRole("heading", { name: "Decision memo" })).toBeTruthy(); expect(within(memo).getByText("Updated Oct 26, 2026")).toBeTruthy();
     expect(within(memo).getByText("Set aside")).toBeTruthy(); expect(within(memo).getByText("Live statement").closest("li")?.parentElement?.tagName).toBe("OL");
     expect(within(memo).getByText("from a chat on this board")).toBeTruthy(); expect(memo.textContent).not.toContain("42"); expect(memo.textContent).not.toMatch(/author|approved by/i);
     expect(screen.queryByRole("textbox")).toBeNull(); expect(screen.queryByRole("button", { name: "Line actions" })).toBeNull(); expect(screen.queryByRole("button", { name: "Add a decision" })).toBeNull();
@@ -60,6 +60,6 @@ describe("versions and memo", () => {
   it("Copy writes the full plain text and confirms", async () => {
     mount(); fireEvent.click(screen.getByRole("button", { name: "Memo" })); fireEvent.click(screen.getByRole("button", { name: "Copy as text" }));
     await screen.findByRole("button", { name: "Copied" });
-    expect(h.clipboard).toHaveBeenCalledWith("Decision memo\n\nUpdated 26 Oct 2026\n\n1. Live statement\n   Agreed\n   A reason\n   from a chat on this board\n\nSet aside\n\n1. Dropped statement\n   Dropped\n   Set aside reason");
+    expect(h.clipboard).toHaveBeenCalledWith("Decision memo\n\nUpdated Oct 26, 2026\n\n1. Live statement\n   Agreed\n   A reason\n   from a chat on this board\n\nSet aside\n\n1. Dropped statement\n   Dropped\n   Set aside reason");
   });
 });
