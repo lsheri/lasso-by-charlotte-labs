@@ -11,7 +11,7 @@ import type { WorkItemRow } from "@/lib/work-types";
  * policies as every other work item read.
  */
 export const BOARD_NODE_ITEM_SELECT =
-  "id, owner_id, orig_conversation_id, ungrouped_at, title, display_title, type, source, visibility, captured_at, content_ref, created_at_source, work_date, content_fidelity, source_vendor, source_meta, meta, work_item_extracts(summary)";
+  "id, owner_id, orig_conversation_id, ungrouped_at, title, display_title, type, doc_kind, source, visibility, captured_at, content_ref, created_at_source, work_date, content_fidelity, source_vendor, source_meta, meta, work_item_extracts(summary)";
 
 export function missingNodeItemIds(
   nodes: readonly { workItemId?: string | null | undefined }[],

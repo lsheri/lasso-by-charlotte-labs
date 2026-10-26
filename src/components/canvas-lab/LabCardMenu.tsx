@@ -20,6 +20,7 @@ export function LabCardMenu({
   cardRef,
   onSelect,
   onOpen,
+  onOpenLedger,
   onBranch,
   onHide,
   onDelete,
@@ -46,6 +47,7 @@ export function LabCardMenu({
   cardRef: React.RefObject<HTMLDivElement | null>;
   onSelect: () => void;
   onOpen: () => void;
+  onOpenLedger?: (() => void) | undefined;
   onBranch: () => void;
   onHide: () => void;
   onDelete: () => void;
@@ -90,8 +92,9 @@ export function LabCardMenu({
           cardRef.current?.focus({ preventScroll: true });
         }}
       >
+        {onOpenLedger ? <DropdownMenuItem onSelect={onOpenLedger}>Open ledger</DropdownMenuItem> : null}
         <DropdownMenuItem onSelect={onSelect}>{selected ? "Remove context" : "Use as context"}</DropdownMenuItem>
-        <DropdownMenuItem onSelect={onOpen}>Preview</DropdownMenuItem>
+        {onOpenLedger ? null : <DropdownMenuItem onSelect={onOpen}>Preview</DropdownMenuItem>}
         {onCardFaceChange && cardFace ? <DropdownMenuItem onSelect={() => onCardFaceChange(cardFace === 'art' ? 'preview' : 'art')}>{cardFace === 'art' ? 'Show as real' : 'Show as sketch'}</DropdownMenuItem> : null}
         {onFit ? <DropdownMenuItem onSelect={onFit}>Fit content</DropdownMenuItem> : null}
         {canBranch ? <DropdownMenuItem onSelect={onBranch}>Branch</DropdownMenuItem> : null}

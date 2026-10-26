@@ -357,6 +357,8 @@ export type TelemetryEvent =
   | "workboard.relationship_changed"
   /** Canvas Lab Phase 2: the read-only deliverable reasoning view opened. */
   | "workboard.review_opened"
+  /** Read-only Decisions ledger opened. Entry method only. */
+  | "workboard.ledger_opened"
   /** Canvas Lab Phase 2: a grouped reasoning-trail item was chosen. */
   | "workboard.trail_item_selected"
   /** Canvas Lab interaction correction: a card's contextual action menu opened. */
