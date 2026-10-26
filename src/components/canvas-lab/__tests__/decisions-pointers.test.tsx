@@ -5,13 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { WorkItemRow } from "@/lib/work-types";
 const h = vi.hoisted(() => ({ pointer: vi.fn(), parent: "chat" as string | null }));
 vi.mock("@/lib/decisions.functions", () => ({ updateDecisionLine: vi.fn(), addDecisionLine: vi.fn(), recordDecisionsVersion: vi.fn(), setDecisionPointer: h.pointer }));
-vi.mock("@tanstack/react-start", () => ({
-  useServerFn: (fn: unknown) => fn,
-  createMiddleware: () => {
-    const chain = { server: () => chain, client: () => chain, handler: () => chain };
-    return chain;
-  },
-}));
+vi.mock("@tanstack/react-start", () => ({ useServerFn: (fn: unknown) => fn }));
+vi.mock("../canvas-lab-telemetry", () => ({ noteWorkboardLedgerOpened: vi.fn() }));
 vi.mock("@/lib/work-files.functions", () => ({ getVersionFileUrl: vi.fn() }));
 vi.mock("@/integrations/supabase/client", () => ({ supabase: { from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { parent_work_item_id: h.parent }, error: null }), order: async () => ({ data: [], error: null }) }) }) }) } }));
 import { DecisionsLedger } from "../DecisionsLedger";
