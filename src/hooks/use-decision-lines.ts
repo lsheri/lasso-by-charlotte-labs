@@ -63,7 +63,11 @@ export function useDecisionLineMutations(documentId: string, profileId?: string)
   }
   // Restore can run from the board's undo path while this overlay is mounted.
   const notifyRef = useRef<() => void>(() => undefined);
-  notifyRef.current = () => { revision.current += 1; setDirty(true); };
+  notifyRef.current = () => {
+    revision.current += 1; setDirty(true); setSaved(true);
+    if (savedTimer.current) clearTimeout(savedTimer.current);
+    savedTimer.current = setTimeout(() => setSaved(false), 1500);
+  };
   useEffect(() => {
     const notify = () => notifyRef.current();
     const listeners = dirtyListeners.get(documentId) ?? new Set<() => void>();
