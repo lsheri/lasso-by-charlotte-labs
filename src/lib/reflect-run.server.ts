@@ -18,6 +18,7 @@ export type ReflectInput = {
   /** Item ids the message points at with @. Narrows this message only. */
   pointed_at?: string[] | undefined;
   scope_source?: ScopeSource | undefined;
+  scope_kind?: "section" | undefined;
 };
 
 export type ReflectResult = {
@@ -268,6 +269,7 @@ export async function runReflectTurn(
       dims: {
         scope: scope.mode,
         scope_source: effectiveScopeSource,
+        ...(data.scope_kind === "section" ? { scope_kind: "section" } : {}),
         context_mode: "catalogue",
         catalogue_size: sizeBucket(run.catalogue.entries.length),
         rounds: smallBucket(run.rounds),
@@ -432,6 +434,7 @@ export async function runReflectTurn(
     dims: {
       scope: scope.mode,
       scope_source: effectiveScopeSource,
+      ...(data.scope_kind === "section" ? { scope_kind: "section" } : {}),
       context_mode: "inline",
       truncated: assembled.truncated,
       tier2_items: tierBucket(assembled.tier2Count),

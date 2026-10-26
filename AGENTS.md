@@ -53,3 +53,4 @@ Tour mirrors board chrome; preserve live behavior.
 - Keep mention normalization in the pure shared layer with plain-text offsets, so rich-markup stripping cannot invalidate mention positions.
 - Render section-prefixed frames only through LabSection, with drag-start frame/card snapshots and no filing changes, so layout furniture never enters workstream naming or claiming.
 - Put any new board control in its own component file rather than inline in CanvasLabPage, because nothing renders that page in tests and an inline control cannot be tested.
+- Section Ask resolves membership from live browser board geometry with containingSection at send time and submits an ordinary items scope; persisted section_members remains for server-only consumers to avoid stale-position reads in interactive Ask.

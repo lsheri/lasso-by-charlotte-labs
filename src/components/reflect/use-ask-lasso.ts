@@ -29,12 +29,22 @@ export type AskMessageRow = {
   created_at: string;
 };
 
+/** A live board selector. Null means the section no longer exists. */
+export type SectionAskSource = { resolve: () => string[] | null };
+
+export const SECTION_ASK_COPY = {
+  empty: "Nothing in this section yet",
+  removed: "This section was removed. Choose work before asking.",
+  outside: "Choose a work item in this section before asking.",
+} as const;
+
 export type AskLassoArgs = {
   open: boolean;
   engagementId: string;
   engagementTitle: string;
   profileId: string;
   orgId: string;
+  sectionSource?: SectionAskSource | undefined;
 };
 
 /**
@@ -49,6 +59,7 @@ export function useAskLasso({
   engagementTitle,
   profileId,
   orgId,
+  sectionSource,
 }: AskLassoArgs) {
   const queryClient = useQueryClient();
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -59,6 +70,12 @@ export function useAskLasso({
   const [selected, setSelected] = useState<Set<string> | null>(null);
   const [boardSelection, setBoardSelectionState] = useState<{ active: boolean; ids: string[] }>({ active: false, ids: [] });
   const [scopeSource, setScopeSource] = useState<ScopeSource>("all");
+  const [sectionSelection, setSectionSelection] = useState<SectionAskSource | null>(sectionSource ?? null);
+  useEffect(() => { setSectionSelection(sectionSource ?? null); }, [sectionSource]);
+  const sectionIds = sectionSelection?.resolve();
+  const sectionState = sectionSelection
+    ? sectionIds === null ? SECTION_ASK_COPY.removed : sectionIds?.length === 0 ? SECTION_ASK_COPY.empty : null
+    : null;
   const [pickerOpen, setPickerOpen] = useState(false);
   const [saveTarget, setSaveTarget] = useState<SaveForOneOnOneTarget | null>(null);
   const [mention, setMention] = useState<{ query: string; start: number } | null>(null);
@@ -90,7 +107,10 @@ export function useAskLasso({
     setSelected(new Set(mapped.map((i) => i.id)));
   }, [open, selected, mapped]);
 
-  const selectedItems = mapped.filter((i) => (selected ? selected.has(i.id) : true));
+  const selectedItems = sectionSelection
+    ? (workQuery.data?.items ?? []).filter((item) => sectionIds?.includes(item.id))
+    : mapped.filter((i) => (selected ? selected.has(i.id) : true));
+  const mentionItems = sectionSelection ? selectedItems : mapped;
 
   // The brief can live on the engagement itself rather than as a marked item,
   // and that counts for the analyses that need one.
@@ -172,14 +192,14 @@ export function useAskLasso({
   }
 
   const mentionMatches = mention
-    ? mapped
+    ? mentionItems
         .filter((item) => item.title.toLowerCase().includes(mention.query.toLowerCase()))
         .slice(0, 6)
     : [];
 
   /** What the draft currently points at, so the narrowing is visible before send. */
-  const pointedDraftIds = pointedAtIds(draft, mapped);
-  const draftPointed = mapped.filter((item) => pointedDraftIds.includes(item.id));
+  const pointedDraftIds = pointedAtIds(draft, mentionItems);
+  const draftPointed = mentionItems.filter((item) => pointedDraftIds.includes(item.id));
 
   /** Insert the title as visible text. The tag itself narrows the read set. */
   function chooseMention(item: WorkItemRow) {
@@ -193,6 +213,7 @@ export function useAskLasso({
   }
 
   function scopeForSelection(): ContextScope {
+    if (sectionSelection) return { mode: "items", ids: sectionSelection.resolve() ?? [] };
     if (boardSelection.active) {
       return boardSelectionScope({ engagementId, hasBoardPicks: true, mappedIds: boardSelection.ids });
     }
@@ -215,21 +236,23 @@ export function useAskLasso({
   }, [sessionId, scopeKey]);
 
   function applyBoardSelection(hasPicks: boolean, ids: string[]) {
+    setSectionSelection(null);
     setBoardSelectionState({ active: hasPicks, ids });
     setScopeSource(hasPicks ? (ids.length > 0 ? "board_pick" : "board_pick_brief_only") : "all");
     setSelected(new Set(hasPicks ? ids : mapped.map((item) => item.id)));
   }
 
   function applyPickerSelection(next: Set<string> | null | ((previous: Set<string> | null) => Set<string> | null), source: ScopeSource = "picker") {
+    setSectionSelection(null);
     setBoardSelectionState({ active: false, ids: [] });
     setScopeSource(source);
     setSelected((previous) => typeof next === "function" ? next(previous) : next);
   }
 
-  async function writeCurrentScope(id: string) {
+  async function writeCurrentScope(id: string, resolved?: ContextScope) {
     const { error: scopeError } = await supabase
       .from("chat_sessions")
-      .update({ context_scope: scopeForSelection() })
+      .update({ context_scope: resolved ?? scopeForSelection() })
       .eq("id", id);
     if (scopeError) throw new Error(scopeError.message);
   }
@@ -290,8 +313,21 @@ export function useAskLasso({
 
   async function send(message: string) {
     if (!message || pending) return;
-    const ids = pointedAtIds(message, mapped);
-    const pointedItems = mapped.filter((item) => ids.includes(item.id));
+    // Resolve once at send, before any asynchronous work. Never enter a
+    // board-pick or engagement fallback for an empty/deleted section.
+    const resolvedIds = sectionSelection?.resolve();
+    if (sectionSelection && (resolvedIds === null || !resolvedIds?.length)) {
+      setError(resolvedIds === null ? SECTION_ASK_COPY.removed : SECTION_ASK_COPY.empty);
+      return;
+    }
+    const resolvedScope: ContextScope | undefined = sectionSelection ? { mode: "items", ids: resolvedIds ?? [] } : undefined;
+    const available = sectionSelection ? (workQuery.data?.items ?? []).filter((item) => resolvedIds?.includes(item.id)) : mapped;
+    const ids = pointedAtIds(message, available);
+    if (sectionSelection && pointedAtIds(message, workQuery.data?.items ?? []).length > 0 && ids.length === 0) {
+      setError(SECTION_ASK_COPY.outside);
+      return;
+    }
+    const pointedItems = available.filter((item) => ids.includes(item.id));
     setPointedNow(pointedItems);
     setPending(true);
     setError(null);
@@ -299,7 +335,8 @@ export function useAskLasso({
     try {
       const id = await ensureSession();
       if (!id) return;
-      await writeCurrentScope(id);
+      if (resolvedScope) await writeCurrentScope(id, resolvedScope);
+      else await writeCurrentScope(id);
       setStreamed("");
       setDraft("");
       const result = await streamChatRequest<ReflectResult>(
@@ -311,6 +348,7 @@ export function useAskLasso({
           surface: "ask_lasso",
           pointed_at: pointedItems.map((i) => i.id),
           scope_source: pointedItems.length > 0 ? "pointed" : scopeSource,
+          ...(sectionSelection ? { scope_kind: "section" } : {}),
         },
         (delta) => setStreamed((prev) => prev + delta),
       );
@@ -340,7 +378,7 @@ export function useAskLasso({
     draft,
     draftPointed,
     engagementBrief,
-    error,
+    error: sectionState ?? error,
     firmChecks,
     historySettled,
     liveManifest,
