@@ -67,7 +67,7 @@ beforeEach(() => {
 });
 
 describe("Decisions document owner operations", () => {
-  it.each(["update", "add", "remove", "restore", "reorder", "pointer", "version"])("rejects non-owner and wrong document kind before %s writes", async (action) => {
+  it.each(["update", "add", "remove", "restore", "reorder", "pointer", "version"] as const)("rejects non-owner and wrong document kind before %s writes", async (action) => {
     const run = () => ({ update: () => updateDecisionLine(context(), { ...doc, id: "a", patch: { status: "confirmed" } }),
       add: () => addDecisionLine(context(), { ...doc, call_text: "B" }), remove: () => removeDecisionLine(context(), { ...doc, id: "a" }),
       restore: () => restoreDecisionLine(context(), { ...doc, row: row() }), reorder: () => reorderDecisionLines(context(), { ...doc, ids_in_order: ["a"] }),
