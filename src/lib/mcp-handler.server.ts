@@ -1151,6 +1151,37 @@ const pushTools = (vocab: McpVocab) => [
     },
   },
   {
+    name: "lasso_push_decisions",
+    title: "Push current decisions",
+    icons: ICONS,
+    description:
+      "Save the current decisions or recommendations from this chat as a Decisions document in Lasso, one line per decision, each with an optional reason and status. Use when the person wants to show where things stand before a meeting or review. Send the decisions as they are stated in the chat, never invent a status: leave status out unless the chat says a decision is agreed or dropped. To change the status of a line that already exists in Lasso, do it in Lasso; a re-push adds new lines and keeps existing statuses. " + placementLine(vocab),
+    inputSchema: {
+      type: "object",
+      properties: {
+        title: { type: "string", description: "A short name for this document, EXACTLY as the person would call it, e.g. 'Pricing decisions, 25 Oct'" },
+        decisions: {
+          type: "array", minItems: 1, maxItems: 40,
+          items: {
+            type: "object",
+            properties: {
+              statement: { type: "string", maxLength: 400, description: "One decision or recommendation, as stated" },
+              reason: { type: "string", maxLength: 1000, description: "Why, in one or two sentences, as stated in the chat. Omit if the chat gives none" },
+              status: { type: "string", enum: ["open", "agreed", "dropped"], description: "Omit unless the chat says so" },
+              produced_at_turn: { type: "integer", minimum: 1, description: "1-indexed position of the turn where this decision was reached, when you know it. Never guess" },
+            },
+            required: ["statement"],
+          },
+        },
+        orig_conversation_id: { type: "string", description: "The orig_conversation_id of the conversation this document came out of, when it has one. The document inherits that conversation's stored link back to the chat; never send a URL here." },
+        lasso_conversation_id: { type: "string", description: "The Lasso id of this conversation if an earlier push returned one" },
+        lasso_document_id: { type: "string", description: "The lasso_document_id an earlier lasso_push_decisions call returned, to update that document instead of making a new one" },
+        ...placementInputs(vocab),
+      },
+      required: ["title", "decisions"],
+    },
+  },
+  {
     name: "lasso_fetch_branch",
     title: "Fetch a branch",
     icons: ICONS,
@@ -1260,6 +1291,10 @@ export async function handleMcpRequest(
       if (name === "push_conversation") return await pushConversation(owner, args, id, client);
       if (name === "push_thread") return await pushThread(owner, args, id, client);
       if (name === "push_document") return await pushDocument(owner, args, id);
+      if (name === "lasso_push_decisions") {
+        if (owner.readOnly) return rpcError(id, -32603, "This connection can read but not add work right now.");
+        return await pushDecisions(owner, args, id);
+      }
       if (name === "list_engagements") return await listEngagements(owner, id);
       if (name === "lasso_fetch_branch") return await fetchBranch(owner, token, args, id);
       if (name === "lasso_list_places") return await listPlaces(owner, id);
@@ -1678,6 +1713,94 @@ async function pushDocument(owner: Owner, args: Obj, id: unknown): Promise<Respo
       docPlacement.text ? ` ${docPlacement.text}` : ""
     }`,
   );
+}
+
+/** First push only: preserve stated statuses and point only to stored turns. */
+async function pushDecisions(owner: Owner, args: Obj, id: unknown): Promise<Response> {
+  if (args["lasso_document_id"] !== undefined) {
+    return rpcError(id, -32602, "Updating an existing Decisions document is not available yet; push with a new title or leave lasso_document_id out.");
+  }
+  const title = typeof args["title"] === "string" ? args["title"].trim() : "";
+  if (!title) return rpcError(id, -32602, "title must be a non-empty string.");
+  const raw = args["decisions"];
+  if (!Array.isArray(raw) || raw.length < 1 || raw.length > 40) {
+    return rpcError(id, -32602, "decisions must contain between 1 and 40 lines.");
+  }
+  const lines: { statement: string; reason?: string; status: "open" | "agreed" | "dropped"; turn?: number }[] = [];
+  for (const [index, entry] of raw.entries()) {
+    const line = entry && typeof entry === "object" && !Array.isArray(entry) ? entry as Obj : {};
+    const statement = typeof line["statement"] === "string" ? line["statement"].trim() : "";
+    if (!statement || statement.length > 400) return rpcError(id, -32602, `decisions[${index}].statement must be non-empty and at most 400 characters.`);
+    const reason = line["reason"];
+    if (reason !== undefined && (typeof reason !== "string" || reason.length > 1000)) return rpcError(id, -32602, `decisions[${index}].reason must be a string of at most 1000 characters.`);
+    const status = line["status"];
+    if (status !== undefined && status !== "open" && status !== "agreed" && status !== "dropped") return rpcError(id, -32602, `decisions[${index}].status must be open, agreed or dropped.`);
+    const turn = line["produced_at_turn"];
+    if (turn !== undefined && (typeof turn !== "number" || !Number.isInteger(turn) || turn < 1)) return rpcError(id, -32602, `decisions[${index}].produced_at_turn must be a positive integer.`);
+    lines.push({ statement, status: status ?? "open", ...(typeof reason === "string" ? { reason } : {}), ...(typeof turn === "number" ? { turn } : {}) });
+  }
+  if (!owner.userId) return rpcError(id, -32603, "This workspace account cannot store files yet.");
+  const origId = typeof args["orig_conversation_id"] === "string" ? args["orig_conversation_id"].trim() : "";
+  const lassoId = typeof args["lasso_conversation_id"] === "string" ? args["lasso_conversation_id"].trim() : "";
+  let threadId: string | null = null;
+  let inheritedUrl: string | null = null;
+  if (lassoId || origId) {
+    if (lassoId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(lassoId)) {
+      return rpcError(id, -32602, "lasso_conversation_id does not name a conversation of yours in Lasso.");
+    }
+    const query = supabaseAdmin.from("work_items").select("id, source_meta")
+      .eq("owner_id", owner.profileId).eq("org_id", owner.orgId).eq("type", "ai_thread");
+    const { data: thread, error } = await (lassoId ? query.eq("id", lassoId) : query.eq("orig_conversation_id", origId)).maybeSingle();
+    if (error) return rpcError(id, -32603, error.message);
+    if (lassoId && !thread) return rpcError(id, -32602, "lasso_conversation_id does not name a conversation of yours in Lasso. Nothing was saved.");
+    threadId = thread?.id ?? null;
+    inheritedUrl = inheritedConversationUrl(thread?.source_meta ?? null);
+  }
+  const positions = new Set<number>();
+  if (threadId && lines.some((line) => line.turn !== undefined)) {
+    const { data: turns, error } = await supabaseAdmin.from("turns").select("turn_no").eq("work_item_id", threadId);
+    if (error) return rpcError(id, -32603, error.message);
+    for (const turn of turns ?? []) positions.add(turn.turn_no);
+  }
+  const plan = parsePlacementArgs(args);
+  const labels = { open: "Open", agreed: "Agreed", dropped: "Dropped" };
+  const body = `# ${title}\n\n` + lines.map((line, index) => `${index + 1}. ${line.statement}\n   Status: ${labels[line.status]}${line.reason !== undefined ? `\n   Why: ${line.reason}` : ""}`).join("\n\n");
+  const slug = slugify(title);
+  const path = `${owner.userId}/decisions-${slug}-${crypto.randomUUID()}.md`;
+  const hash = await sha256Hex(body);
+  const { error: uploadError } = await supabaseAdmin.storage.from("work-files").upload(path, new TextEncoder().encode(body), { contentType: "text/markdown", upsert: false });
+  if (uploadError) return rpcError(id, -32603, uploadError.message);
+  const { data: doc, error } = await supabaseAdmin.from("work_items").insert({
+    owner_id: owner.profileId, org_id: owner.orgId, type: "document", doc_kind: "decisions",
+    source: "mcp:push", title, visibility: "unmapped", content_ref: path, content_hash: hash,
+    content_fidelity: "verbatim", ts_precision: "capture",
+    ...(origId ? { orig_conversation_id: origId } : {}),
+    ...(threadId ? { parent_work_item_id: threadId } : {}),
+    source_meta: { filename: `${slug}.md`, mime_type: "text/markdown", role: "decisions", kind: "decisions", lines: lines.length,
+      ...(inheritedUrl ? { url: inheritedUrl } : {}), ...(plan.sourceProject ? { source_project: plan.sourceProject } : {}) } as Json,
+    meta: { assistant_transcribed: true },
+  }).select("id").maybeSingle();
+  if (error || !doc) return rpcError(id, -32603, error?.message ?? "Could not save the Decisions document.");
+  const version = await supabaseAdmin.from("document_versions").insert({ work_item_id: doc.id, version_no: 1, content_ref: path, content_hash: hash, parent_version_id: null, source_event: "mcp_push", origin: "model_artifact" });
+  if (version.error) return rpcError(id, -32603, version.error.message);
+  const docVocab = await placementVocab(owner);
+  // Placement already returns the authorized board; no extra board query is needed.
+  const placement = await applyDestination(owner, docVocab, doc.id, plan, "lasso_push_decisions");
+  const statuses = { open: "draft", agreed: "confirmed", dropped: "discarded" } as const;
+  const rows = lines.map((line, index) => ({ owner_id: owner.profileId, document_id: doc.id, ord: index + 1,
+    situation: title, call_text: line.statement, why: line.reason ?? "", status: statuses[line.status], author: "ai_draft" as const,
+    engagement_id: placement.target === "workboard" ? placement.place?.engagementId ?? null : null,
+    srcs: line.turn !== undefined && positions.has(line.turn) ? [{ turn: line.turn }] : [],
+  }));
+  const saved = await supabaseAdmin.from("decisions").insert(rows);
+  if (saved.error) return rpcError(id, -32603, saved.error.message);
+  const { ensureExtracts } = await import("./extract.server");
+  await ensureExtracts([doc.id]);
+  await logPush(owner, { tool: "lasso_push_decisions", kind: "decisions", target: placement.target, suggestion_outcome: plan.suggestionOutcome }, "capture");
+  await noteModelUsed(supabaseAdmin, { orgId: owner.orgId, userId: owner.userId, profileId: owner.profileId }, { item: { type: "document", source: "mcp:push" }, via: "mcp_push" });
+  await recordEvent(supabaseAdmin, { eventType: "decisions_doc.created", orgId: owner.orgId, userId: owner.userId, profileId: owner.profileId, dims: { via: "pushed", lines: bucket(lines.length) } });
+  for (const row of rows) await recordEvent(supabaseAdmin, { eventType: "decisions_doc.decision_added", orgId: owner.orgId, userId: owner.userId, profileId: owner.profileId, dims: { via: "pushed", has_pointer: row.srcs.length > 0 } });
+  return textResult(id, `Saved '${title}' to Lasso as a Decisions document, ${lines.length} line(s), version 1.${placement.text ? ` ${placement.text}` : ""}\nlasso_document_id: ${doc.id}`);
 }
 
 /** The workspace's type, read once per call. Ceiba·Uni reads as personal. */

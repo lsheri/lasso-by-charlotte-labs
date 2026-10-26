@@ -680,6 +680,7 @@ export type Database = {
           org_id: string
           revoked_at: string | null
           token_hash: string
+          work_item_id: string | null
           workboard_id: string
         }
         Insert: {
@@ -692,6 +693,7 @@ export type Database = {
           org_id: string
           revoked_at?: string | null
           token_hash: string
+          work_item_id?: string | null
           workboard_id: string
         }
         Update: {
@@ -704,6 +706,7 @@ export type Database = {
           org_id?: string
           revoked_at?: string | null
           token_hash?: string
+          work_item_id?: string | null
           workboard_id?: string
         }
         Relationships: [
@@ -712,6 +715,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "board_share_links_work_item_id_fkey"
+            columns: ["work_item_id"]
+            isOneToOne: false
+            referencedRelation: "work_items"
             referencedColumns: ["id"]
           },
           {
@@ -1511,8 +1521,10 @@ export type Database = {
           call_text: string
           created_at: string
           date_label: string | null
+          document_id: string | null
           engagement_id: string | null
           id: string
+          ord: number | null
           owner_id: string
           pattern_tags: string[]
           resolved_at: string | null
@@ -1526,8 +1538,10 @@ export type Database = {
           call_text: string
           created_at?: string
           date_label?: string | null
+          document_id?: string | null
           engagement_id?: string | null
           id?: string
+          ord?: number | null
           owner_id: string
           pattern_tags?: string[]
           resolved_at?: string | null
@@ -1541,8 +1555,10 @@ export type Database = {
           call_text?: string
           created_at?: string
           date_label?: string | null
+          document_id?: string | null
           engagement_id?: string | null
           id?: string
+          ord?: number | null
           owner_id?: string
           pattern_tags?: string[]
           resolved_at?: string | null
@@ -1552,6 +1568,13 @@ export type Database = {
           why?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "decisions_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "work_items"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "decisions_engagement_id_fkey"
             columns: ["engagement_id"]
@@ -4724,6 +4747,7 @@ export type Database = {
           content_ref: string | null
           created_at_source: string | null
           display_title: string | null
+          doc_kind: string | null
           id: string
           import_session_id: string | null
           meta: Json
@@ -4752,6 +4776,7 @@ export type Database = {
           content_ref?: string | null
           created_at_source?: string | null
           display_title?: string | null
+          doc_kind?: string | null
           id?: string
           import_session_id?: string | null
           meta?: Json
@@ -4780,6 +4805,7 @@ export type Database = {
           content_ref?: string | null
           created_at_source?: string | null
           display_title?: string | null
+          doc_kind?: string | null
           id?: string
           import_session_id?: string | null
           meta?: Json

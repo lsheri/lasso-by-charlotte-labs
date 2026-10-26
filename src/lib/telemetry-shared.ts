@@ -109,6 +109,10 @@ export type TelemetryEvent =
   | "decision.drafted"
   | "decision.confirmed"
   | "decision.resolved"
+  /** MCP-DOC-1a: a Decisions document was pushed; source and line-count band only. */
+  | "decisions_doc.created"
+  /** MCP-DOC-1a: a decision line was added; source and stored-pointer presence only. */
+  | "decisions_doc.decision_added"
   | "connector.enabled"
   | "connector.error"
   | "connector.synced"
