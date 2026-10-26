@@ -115,6 +115,10 @@ export type TelemetryEvent =
   | "decisions_doc.decision_added"
   /** MCP-DOC-1b: a re-push recorded a version; change and added/dropped bands only. */
   | "decisions_doc.version_recorded"
+  /** DOC-UI-1: an owner changed a line's status; status words and source only. */
+  | "decisions_doc.decision_status_changed"
+  /** DOC-UI-1: an owner changed a ledger line; action and source only. */
+  | "decisions_doc.line_changed"
   | "connector.enabled"
   | "connector.error"
   | "connector.synced"

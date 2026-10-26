@@ -109,3 +109,9 @@ export function decisionsLine(receipts: readonly DecisionReceipt[]): string {
     .map(([o, n]) => `${n} ${o}`);
   return `Decisions: ${parts.join(", ")}.`;
 }
+
+/** The same ledger body is stored by chat pushes and a person's edits. */
+export function renderDecisionsMarkdown(title: string, lines: { ord: number; call_text: string; why: string; status: "draft" | "confirmed" | "discarded" }[]): string {
+  const labels = { draft: "Open", confirmed: "Agreed", discarded: "Dropped" };
+  return `# ${title}\n\n` + lines.map((line) => `${line.ord}. ${line.call_text}\n   Status: ${labels[line.status]}${line.why ? `\n   Why: ${line.why}` : ""}`).join("\n\n");
+}
