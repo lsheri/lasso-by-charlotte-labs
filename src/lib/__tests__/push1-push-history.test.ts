@@ -138,6 +138,7 @@ describe("PUSH-1 push_conversation history", () => {
       { kind: "artifact_markdown", title: "Plan", source_artifact_id: "a1", content: "# Pricing plan\n\nSegments and survey design." },
       { kind: "artifact_markdown", title: "Survey", source_artifact_id: "a2", content: "# Survey\n\nTen questions on willingness to pay." },
     ] });
+    console.log("DBG", JSON.stringify(pushes()[0]), JSON.stringify(table("work_items").map((w) => w["type"])));
     expect(pushes()[0]).toMatchObject({ attachments_added: 2, attachments_changed: 0 });
   });
 
