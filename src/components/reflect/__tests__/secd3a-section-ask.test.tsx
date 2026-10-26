@@ -25,6 +25,7 @@ vi.mock('@/integrations/supabase/client', () => ({ supabase: { from: () => {
 import { useAskLasso } from '@/components/reflect/use-ask-lasso';
 import { BoardAsk } from '@/components/canvas-lab/BoardAsk';
 import { LabSection } from '@/components/canvas-lab/LabSection';
+Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: vi.fn() });
 const args = { open: true, engagementId: 'e', engagementTitle: 'Board', profileId: 'p', orgId: 'o' };
 function wrapper({ children }: { children: React.ReactNode }) { return <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>{children}</QueryClientProvider>; }
 afterEach(() => { cleanup(); state.requests.length = 0; state.writes.length = 0; });
