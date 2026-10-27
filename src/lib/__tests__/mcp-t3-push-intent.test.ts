@@ -203,6 +203,30 @@ describe("MCP-T3 push intent", () => {
     expect(table("push_intents")[0]?.["status"]).toBe("complete");
     expect(table("push_intents")[0]?.["push_id"]).toBe(table("work_item_pushes")[0]?.["id"]);
   });
+  it("revisits a partial intent when the same push's later window arrives by id", async () => {
+    const out = await declare({ expected_messages: 4 });
+    const intentId = out.result.structuredContent.push_intent_id;
+    await push(msgs("One.", "Two."), { window: { from: 1, to: 2, total: 4 }, push_intent_id: intentId });
+    expect(table("push_intents")[0]?.["status"]).toBe("partial");
+    await push(msgs("Three.", "Four."), { window: { from: 3, to: 4, total: 4 }, push_intent_id: intentId });
+    expect(table("push_intents")[0]?.["status"]).toBe("complete");
+    expect(events.filter((e) => e.eventType === "mcp.push_intent_completed").map((e) => e.dims["status"])).toEqual(["partial", "complete"]);
+  });
+  it("revisits a partial intent through the fallback when the later window arrives", async () => {
+    await declare({ expected_messages: 4 });
+    await push(msgs("One.", "Two."), { window: { from: 1, to: 2, total: 4 } });
+    expect(table("push_intents")[0]?.["status"]).toBe("partial");
+    await push(msgs("Three.", "Four."), { window: { from: 3, to: 4, total: 4 } });
+    expect(table("push_intents")[0]?.["status"]).toBe("complete");
+    expect(events.filter((e) => e.eventType === "mcp.push_intent_completed").map((e) => e.dims["matched_by"])).toEqual(["fallback", "fallback"]);
+  });
+  it("never touches another profile's partial intent", async () => {
+    table("push_intents").push({ id: newId(), profile_id: "other", org_id: "o1", orig_conversation_id: "conv-1", status: "partial", created_at: new Date().toISOString() });
+    await push(msgs(...first));
+    expect(table("push_intents")[0]?.["status"]).toBe("partial");
+    expect(table("push_intents")[0]).not.toHaveProperty("push_id");
+    expect(events.find((e) => e.eventType === "mcp.push_intent_completed")?.dims["matched_by"]).toBe("none");
+  });
   it("does not fail options or pushes when intent storage throws", async () => {
     failIntent = true;
     const out = await declare();
