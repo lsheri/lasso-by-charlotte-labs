@@ -115,14 +115,15 @@ async function cachedPersonProperty(
 }
 
 async function pilotPersonProperties(userId: string, orgId: string): Promise<MirrorContext["personProperties"]> {
+  const admin = import("@/integrations/supabase/client.server");
   const [email, signupSource] = await Promise.all([
     cachedPersonProperty(personEmails, personEmailReads, userId, async () => {
-      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { supabaseAdmin } = await admin;
       const { data, error } = await supabaseAdmin.auth.admin.getUserById(userId);
       return error ? null : data.user?.email || null;
     }),
     cachedPersonProperty(orgSignupSources, orgSignupSourceReads, orgId, async () => {
-      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { supabaseAdmin } = await admin;
       const { data, error } = await supabaseAdmin.from("orgs").select("signup_source").eq("id", orgId).maybeSingle();
       return error ? null : data?.signup_source || null;
     }),
