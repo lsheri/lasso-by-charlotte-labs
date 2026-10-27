@@ -6096,6 +6096,22 @@ export type Database = {
           updated_at: string
         }[]
       }
+      admin_push_intents_open: {
+        Args: { p_days?: number }
+        Returns: {
+          client_name: string
+          created_at: string
+          expected_attachments: number
+          expected_messages: number
+          id: string
+          minutes_open: number
+          org_id: string
+          org_name: string
+          status: string
+          tool: string
+          vendor: string
+        }[]
+      }
       admin_revoke_key: {
         Args: { p_code: string; p_reason?: string }
         Returns: boolean
