@@ -178,6 +178,8 @@ export function readToolsFor(type: McpWorkspaceType, icons: unknown[] = []): unk
         properties: {
           title: { type: "string" },
           vendor: { type: "string" },
+          expected_messages: { type: "integer", description: "Optional. How many messages and attachments the push that follows will carry, so Lasso can tell when a push started and did not arrive." },
+          expected_attachments: { type: "integer", description: "Optional. How many messages and attachments the push that follows will carry, so Lasso can tell when a push started and did not arrive." },
           orig_conversation_id: { type: "string" },
           source_project: {
             type: "object",

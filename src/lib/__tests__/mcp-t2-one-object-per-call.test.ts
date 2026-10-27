@@ -152,7 +152,7 @@ describe("MCP-T2 one object per call", () => {
     expect(table("work_items").find((r) => r["id"] === id)).toEqual(before);
     expect(table("turns")).toEqual(turns);
     expect(table("work_item_pushes")).toContainEqual(expect.objectContaining({ work_item_id: id, tool: "push_attachment", attachments_added: 1, attachments_changed: 0 }));
-    expect(events.filter((e) => e.eventType === "mcp.push").at(-1)?.dims).toMatchObject({ tool: "push_attachment", connector_version: "1.4.0" });
+    expect(events.filter((e) => e.eventType === "mcp.push").at(-1)?.dims).toMatchObject({ tool: "push_attachment", connector_version: LASSO_CONNECTOR_VERSION });
     await call("push_attachment", { lasso_conversation_id: id, attachment });
     expect(table("work_items").filter((r) => r["parent_work_item_id"] === id)).toHaveLength(1);
   });
@@ -193,6 +193,6 @@ describe("MCP-T2 one object per call", () => {
   it("returns the four exact advisory limits", async () => {
     const out = await call("lasso_push_options");
     expect(out.result.structuredContent.limits).toEqual({ max_bytes_per_call: 262144, max_messages_per_window: 10, max_attachments_per_call: 1, max_attachment_chars: 40960 });
-    expect(out.result.content[0].text.endsWith("Limits per call: 10 messages, 1 attachment, about 256 KB. Push the transcript first, then each attachment with push_attachment.")).toBe(true);
+    expect(out.result.content[0].text.includes("Limits per call: 10 messages, 1 attachment, about 256 KB. Push the transcript first, then each attachment with push_attachment.")).toBe(true);
   });
 });

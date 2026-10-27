@@ -150,6 +150,10 @@ export type TelemetryEvent =
    *  and window_pos (only | first | middle | last); the full list lives in
    *  event-dim-allowlist.ts. */
   | "mcp.push"
+  /** MCP-T3: a push declared itself; content-free dimensions only. */
+  | "mcp.push_intent_declared"
+  /** MCP-T3: a push arrived; status and match method, never content or counts. */
+  | "mcp.push_intent_completed"
   | "mcp.read"
   /** M3-C2: an MCP call that could not be resolved. Kind and closed reason only. */
   | "mcp.auth_failed"

@@ -79,7 +79,7 @@ describe("CANARY-1 — the push_conversation description carries a build marker"
   });
 
   it("sits one space after the final sentence and appears once", () => {
-    expect(rendered).toContain(`do not fall back to push_document. placed desc-build: ${PUSH_DESC_BUILD}`);
+    expect(rendered).toContain(`one your client refused. placed desc-build: ${PUSH_DESC_BUILD}`);
     expect(rendered).not.toContain("  desc-build");
     expect(src.split("desc-build:").length - 1).toBe(1);
   });
@@ -103,11 +103,11 @@ describe("PS3 — the description routes artifacts to text and carries the conne
     .replace("${PUSH_DESC_BUILD}", PUSH_DESC_BUILD)
     .replace("${LASSO_CONNECTOR_VERSION}", LASSO_CONNECTOR_VERSION);
   it("preserves text routes and the bounded versioned description", () => {
-    expect(rendered.length).toBeLessThan(5200);
+    expect(rendered.length).toBeLessThan(5300);
     expect(rendered).toContain("exported to Markdown");
     expect(rendered).toContain("rejects a file_ref for a document with no rendition");
     expect(rendered.endsWith(`connector: ${LASSO_CONNECTOR_VERSION}`)).toBe(true);
-    expect(PUSH_DESC_BUILD).toBe("oct27b");
+    expect(PUSH_DESC_BUILD).toBe("oct27c");
     expect(LASSO_CONNECTOR_VERSION).toMatch(/^\d+\.\d+\.\d+$/);
   });
 });

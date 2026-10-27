@@ -497,9 +497,9 @@ export const CORS_HEADERS: Record<string, string> = {
  * description; one that shows an older value or none has not.
  * Future changes bump the letter: oct23b, oct23c.
  */
-export const PUSH_DESC_BUILD = "oct27b";
+export const PUSH_DESC_BUILD = "oct27c";
 /** Bumped in the same commit that closes each connector unit. Appears on every tool description, in every push result, and on the push event. */
-export const LASSO_CONNECTOR_VERSION = "1.4.0";
+export const LASSO_CONNECTOR_VERSION = "1.5.0";
 
 
 type Obj = Record<string, unknown>;
@@ -891,6 +891,11 @@ const ADD_WORKSTREAMS_TOOL = {
   },
 };
 
+const PUSH_INTENT_FIELD = {
+  type: "string",
+  description: "The push_intent_id lasso_push_options returned, so Lasso can mark this push as arrived.",
+};
+
 const pushTools = (vocab: McpVocab) => {
   const tools = [
   {
@@ -898,7 +903,7 @@ const pushTools = (vocab: McpVocab) => {
     title: "Push a conversation",
     icons: ICONS,
     description:
-      `When the user says 'Push to Lasso', 'send to Lasso', or similar, the person is saving their own conversation into their own record in Lasso, so it is kept where they and their colleagues can find it. Call push_conversation with every visible message in this conversation, each at its full length, plus any artifact, canvas or file that already existed as its own object in this app, as attachments. The transcript is the visible conversation only: what the person wrote and what the assistant wrote back. Your own thinking, reasoning summaries, chain of thought and any internal deliberation are not messages, are never part of the transcript, and are never reproduced here; skip them silently rather than noting their absence. "Every message" and "verbatim" mean every visible message, in full, and nothing about how a reply was arrived at. Never compose new summaries, recaps or section write-ups and send them as attachments. Never use push_document for conversation artifacts. The server keeps the fullest version of each message it has received and will reject a shorter overwrite of one it already holds, so send each message at full length the first time. Work in small windows by default, about ten messages at a time, fewer when the messages are long. If the whole conversation fits, push it whole. If not, push it in consecutive windows using window {from, to, total}: start with the first window of about ten messages, then follow the server's response, which tells you the next starting position, until all messages are stored. When re-pushing a conversation that grew, push only the new messages as a window, never re-send earlier messages unless correcting them. A smaller window is always the answer; a shorter message never is. Push at natural checkpoints during long work rather than only at the end, so nothing is lost if your context is compacted; re-pushing is safe and only sends what changed. For assistant turns that ran tools or wrote files, include what was done as a role: 'tool' message at that position, plainly, rather than omitting it. Attachments are only things this chat made: an artifact, a canvas, or a file you generated here. Never attach a file the person uploaded or one from project or knowledge files, even if you read or quoted it; if the person explicitly asks to include one, send it with origin: 'seen_in_chat' and include: true. Before calling push_conversation with any attachments, list them for the person in one short message, name any file you saw but did not make as left out, and ask which to include; push after they answer. If there are no attachments, push without asking. On a re-push, ask only about attachments you have not asked about before. Each artifact has a text route, and the text route is what Lasso keeps. A document artifact (a Claude Doc or similar) is exported to Markdown with its own export tool first and sent as artifact_markdown with the full text in content. A slide deck or design artifact is sent as file_ref with rendition.slides, one entry per slide in order with its title, bullets and speaker notes, built by reading the artifact; rendition.method is extracted_by_script. HTML goes as artifact_html, SVG as artifact_svg, Markdown as artifact_markdown, Mermaid as artifact_mermaid, code as artifact_code, CSV and other plain text as file, each with its text in content, up to about 40 KB. A binary this chat generated (pptx, docx, xlsx, pdf, png, jpg) or a text file over 40 KB goes as file_ref with its filename and, when you can compute it, its sha256; if you can run code, extract its text with python-pptx, python-docx or openpyxl into Markdown and send it unchanged as file_ref.rendition with method extracted_by_script. Lasso rejects a file_ref for a document with no rendition, because the text was available. A binary with no text route lands as a placeholder and the result says so. Never send bytes as base64; the model carries text, not files. For a turn that wrote a file, the role 'tool' message names the file and what it is; the file's content goes only in its attachment. If part of the conversation is no longer in your context word for word, send that span as ONE message with fidelity: summary and covers: {from, to}, or covers: {unknown: true} when the positions themselves are no longer known; never send a summary as verbatim, never invent positions, and never leave the span out. If the conversation made decisions about the work itself, send each as a draft in decisions[] citing the message positions where it was made. Never send a decision the chat did not make, and never send one about Lasso: where to file this chat, what to create or name in Lasso, or how to push are not decisions. For each attachment, set produced_at_turn to the 1-indexed position of the turn that produced or first shared this file. Omit it if you are not sure. Never guess. If a push is refused by your own client before it reaches Lasso, tell the person it was refused and what was in the call; do not resend it with content removed, and do not fall back to push_document. ${placementLine(vocab)} desc-build: ${PUSH_DESC_BUILD} connector: ${LASSO_CONNECTOR_VERSION}`,
+      `When the user says 'Push to Lasso', 'send to Lasso', or similar, the person is saving their own conversation into their own record in Lasso, so it is kept where they and their colleagues can find it. Call push_conversation with every visible message in this conversation, each at its full length, plus any artifact, canvas or file that already existed as its own object in this app, as attachments. The transcript is the visible conversation only: what the person wrote and what the assistant wrote back. Your own thinking, reasoning summaries, chain of thought and any internal deliberation are not messages, are never part of the transcript, and are never reproduced here; skip them silently rather than noting their absence. "Every message" and "verbatim" mean every visible message, in full, and nothing about how a reply was arrived at. Never compose new summaries, recaps or section write-ups and send them as attachments. Never use push_document for conversation artifacts. The server keeps the fullest version of each message it has received and will reject a shorter overwrite of one it already holds, so send each message at full length the first time. Work in small windows by default, about ten messages at a time, fewer when the messages are long. If the whole conversation fits, push it whole. If not, push it in consecutive windows using window {from, to, total}: start with the first window of about ten messages, then follow the server's response, which tells you the next starting position, until all messages are stored. When re-pushing a conversation that grew, push only the new messages as a window, never re-send earlier messages unless correcting them. A smaller window is always the answer; a shorter message never is. Push at natural checkpoints during long work rather than only at the end, so nothing is lost if your context is compacted; re-pushing is safe and only sends what changed. For assistant turns that ran tools or wrote files, include what was done as a role: 'tool' message at that position, plainly, rather than omitting it. Attachments are only things this chat made: an artifact, a canvas, or a file you generated here. Never attach a file the person uploaded or one from project or knowledge files, even if you read or quoted it; if the person explicitly asks to include one, send it with origin: 'seen_in_chat' and include: true. Before calling push_conversation with any attachments, list them for the person in one short message, name any file you saw but did not make as left out, and ask which to include; push after they answer. If there are no attachments, push without asking. On a re-push, ask only about attachments you have not asked about before. Each artifact has a text route, and the text route is what Lasso keeps. A document artifact (a Claude Doc or similar) is exported to Markdown with its own export tool first and sent as artifact_markdown with the full text in content. A slide deck or design artifact is sent as file_ref with rendition.slides, one entry per slide in order with its title, bullets and speaker notes, built by reading the artifact; rendition.method is extracted_by_script. HTML goes as artifact_html, SVG as artifact_svg, Markdown as artifact_markdown, Mermaid as artifact_mermaid, code as artifact_code, CSV and other plain text as file, each with its text in content, up to about 40 KB. A binary this chat generated (pptx, docx, xlsx, pdf, png, jpg) or a text file over 40 KB goes as file_ref with its filename and, when you can compute it, its sha256; if you can run code, extract its text with python-pptx, python-docx or openpyxl into Markdown and send it unchanged as file_ref.rendition with method extracted_by_script. Lasso rejects a file_ref for a document with no rendition, because the text was available. A binary with no text route lands as a placeholder and the result says so. Never send bytes as base64; the model carries text, not files. For a turn that wrote a file, the role 'tool' message names the file and what it is; the file's content goes only in its attachment. If part of the conversation is no longer in your context word for word, send that span as ONE message with fidelity: summary and covers: {from, to}, or covers: {unknown: true} when the positions themselves are no longer known; never send a summary as verbatim, never invent positions, and never leave the span out. If the conversation made decisions about the work itself, send each as a draft in decisions[] citing the message positions where it was made. Never send a decision the chat did not make, and never send one about Lasso: where to file this chat, what to create or name in Lasso, or how to push are not decisions. For each attachment, set produced_at_turn to the 1-indexed position of the turn that produced or first shared this file. Omit it if you are not sure. Never guess. If a push is refused by your own client before it reaches Lasso, tell the person it was refused and what was in the call; do not resend it with content removed, and do not fall back to push_document. lasso_push_options also returns a push_intent_id; send it back on the push so Lasso can tell an arrived push from one your client refused. ${placementLine(vocab)} desc-build: ${PUSH_DESC_BUILD} connector: ${LASSO_CONNECTOR_VERSION}`,
     // Windowing is the only sanctioned way to split a push, and only because
     // the alternative the model reaches for otherwise is shortening messages.
     inputSchema: {
@@ -929,6 +934,7 @@ const pushTools = (vocab: McpVocab) => {
           description:
             "Optional. The lasso_conversation_id a previous push of this conversation returned; send it to add to that same record.",
         },
+        push_intent_id: PUSH_INTENT_FIELD,
         chat_url: CHAT_URL_FIELD,
         messages: {
           type: "array",
@@ -1110,6 +1116,7 @@ const pushTools = (vocab: McpVocab) => {
             "The conversation/document title EXACTLY as it appears in the source app, verbatim.",
         },
         source_ai: { type: "string", enum: ["claude", "chatgpt", "gemini", "other"] },
+        push_intent_id: PUSH_INTENT_FIELD,
         chat_url: CHAT_URL_FIELD,
         turns: {
           type: "array",
@@ -1220,6 +1227,7 @@ const pushTools = (vocab: McpVocab) => {
       type: "object",
       properties: {
         lasso_conversation_id: { type: "string" },
+        push_intent_id: PUSH_INTENT_FIELD,
         attachment: conversation.inputSchema.properties.attachments?.items,
         destination: placementInputs(vocab)["destination"],
       },
@@ -1332,7 +1340,7 @@ export async function handleMcpRequest(
       if (name === "list_engagements") return await listEngagements(owner, id);
       if (name === "lasso_fetch_branch") return await fetchBranch(owner, token, args, id);
       if (name === "lasso_list_places") return await listPlaces(owner, id);
-      if (name === "lasso_push_options") return await pushOptions(owner, args, id);
+      if (name === "lasso_push_options") return await pushOptions(owner, args, id, client);
       if (name === "lasso_attach_chat_link") {
         if (owner.readOnly) return rpcError(id, -32603, "This connection can read but not add work right now.");
         return await attachChatLink(owner, args, id);
@@ -1606,6 +1614,10 @@ async function pushThread(
   const { error: turnsError } = await supabaseAdmin.from("turns").insert(rows);
   if (turnsError) return rpcError(id, -32603, turnsError.message);
 
+  await completePushIntent(owner, args, threadPushId, item.id,
+    typeof args["orig_conversation_id"] === "string" ? args["orig_conversation_id"] : null,
+    "push_thread", [], null, turns.length);
+
   // Pass 167. Turns of one pushed conversation are a known ordering, so the
   // chain is recorded as fact. Nothing else here writes a chain link.
   const { recordSameConversationChain } = await import("./chain-links.server");
@@ -1669,6 +1681,59 @@ type PushHistoryRow = {
   attachmentsAdded?: number;
   attachmentsChanged?: number;
 };
+
+/** MCP-T3: only declared integer counts are kept, never inferred. */
+function optionalIntentCount(value: unknown): number | null {
+  return typeof value === "number" && Number.isInteger(value) ? value : null;
+}
+
+export function intentStatus(outcomes: AttachmentOutcome[], windowTotal: number | null, storedCount: number): "complete" | "partial" {
+  return outcomes.some((one) => one.outcome === "rejected" || one.outcome === "failed")
+    || (windowTotal !== null && storedCount < windowTotal) ? "partial" : "complete";
+}
+
+/** Best effort; an intent or its event can never refuse a push. */
+async function completePushIntent(
+  owner: Owner, args: Obj, pushId: string | null, workItemId: string,
+  origId: string | null, tool: string, outcomes: AttachmentOutcome[], windowTotal: number | null, storedCount: number,
+): Promise<void> {
+  const status = intentStatus(outcomes, windowTotal, storedCount);
+  let matchedBy: "id" | "fallback" | "none" = "none";
+  try {
+    const scoped = () => supabaseAdmin.from("push_intents").select("id")
+      .eq("profile_id", owner.profileId).eq("org_id", owner.orgId).eq("status", "intent");
+    const supplied = args["push_intent_id"];
+    let intentId: string | null = null;
+    if (typeof supplied === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(supplied)) {
+      const { data, error } = await scoped().eq("id", supplied).maybeSingle();
+      if (error) throw new Error(error.message);
+      if (data) { intentId = data.id; matchedBy = "id"; }
+    } else if (supplied === undefined && origId) {
+      const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const { data, error } = await scoped().eq("orig_conversation_id", origId)
+        .gte("created_at", since).order("created_at", { ascending: false }).limit(1).maybeSingle();
+      if (error) throw new Error(error.message);
+      if (data) { intentId = data.id; matchedBy = "fallback"; }
+    }
+    if (intentId) {
+      const { error } = await supabaseAdmin.from("push_intents").update({
+        status, push_id: pushId, work_item_id: workItemId, completed_at: new Date().toISOString(),
+      }).eq("id", intentId).eq("profile_id", owner.profileId).eq("org_id", owner.orgId).eq("status", "intent");
+      if (error) throw new Error(error.message);
+    }
+  } catch (err) {
+    console.warn("push intent completion failed", err instanceof Error ? err.message : err);
+  }
+  try {
+    await recordEvent(supabaseAdmin, {
+      eventType: "mcp.push_intent_completed",
+      orgId: owner.orgId, userId: owner.userId, profileId: owner.profileId,
+      dims: { tool, status, matched_by: matchedBy, connector_version: LASSO_CONNECTOR_VERSION },
+    });
+  } catch (err) {
+    console.warn("push intent event failed", err instanceof Error ? err.message : err);
+  }
+}
 
 async function writePushHistory(owner: Owner, workItemId: string, row: PushHistoryRow): Promise<string | null> {
   try {
@@ -2134,7 +2199,7 @@ async function refsForItems(itemIds: string[], byTask: Map<string, string>): Pro
   return null;
 }
 
-async function pushOptions(owner: Owner, args: Obj, id: unknown): Promise<Response> {
+async function pushOptions(owner: Owner, args: Obj, id: unknown, client: ClientIdentity): Promise<Response> {
   const type = await workspaceTypeOf(owner);
   const vocab = mcpVocabFor(type);
   const { places } = await readPlaces(owner);
@@ -2188,6 +2253,38 @@ async function pushOptions(owner: Owner, args: Obj, id: unknown): Promise<Respon
     profileId: owner.profileId,
     dims: { has_suggestion: suggested ? "true" : "false" },
   });
+  const expectedMessages = optionalIntentCount(args["expected_messages"]);
+  const expectedAttachments = optionalIntentCount(args["expected_attachments"]);
+  let pushIntentId: string | null = null;
+  try {
+    const { data, error } = await supabaseAdmin.from("push_intents").insert({
+      profile_id: owner.profileId,
+      org_id: owner.orgId,
+      orig_conversation_id: origId,
+      title: typeof args["title"] === "string" ? args["title"] : null,
+      vendor: typeof args["vendor"] === "string" ? args["vendor"] : null,
+      tool: "push_conversation",
+      client_name: pushClientName(client),
+      expected_messages: expectedMessages,
+      expected_attachments: expectedAttachments,
+    }).select("id").single();
+    if (error || !data) throw new Error(error?.message ?? "no intent row returned");
+    pushIntentId = data.id;
+  } catch (err) {
+    console.warn("push intent declaration failed", err instanceof Error ? err.message : err);
+  }
+  try {
+    await recordEvent(supabaseAdmin, {
+      eventType: "mcp.push_intent_declared",
+      orgId: owner.orgId, userId: owner.userId, profileId: owner.profileId,
+      dims: { tool: "push_conversation", vendor: typeof args["vendor"] === "string" ? args["vendor"] : "other",
+        has_expected: expectedMessages !== null || expectedAttachments !== null ? "true" : "false",
+        connector_version: LASSO_CONNECTOR_VERSION },
+    });
+  } catch (err) {
+    console.warn("push intent event failed", err instanceof Error ? err.message : err);
+  }
+
 
   // P0 item 8. With a suggestion, the list a model reads is the container it
   // suggested; the complete list stays in structuredContent.
@@ -2213,10 +2310,12 @@ async function pushOptions(owner: Owner, args: Obj, id: unknown): Promise<Respon
       : []),
   ];
   lines.push("Limits per call: 10 messages, 1 attachment, about 256 KB. Push the transcript first, then each attachment with push_attachment.");
+  if (pushIntentId) lines.push(`push_intent_id: ${pushIntentId}`);
   const optionsText = lines.join("\n");
   return rpcResult(id, {
     content: [{ type: "text", text: optionsText }],
     structuredContent: {
+      push_intent_id: pushIntentId,
       limits: { max_bytes_per_call: 262144, max_messages_per_window: 10, max_attachments_per_call: 1, max_attachment_chars: 40960 },
       summary: optionsText,
       suggested: suggested ? { ...suggested, caution } : null,
@@ -2531,7 +2630,7 @@ async function pushAttachment(owner: Owner, args: Obj, id: unknown, client: Clie
     .eq("owner_id", owner.profileId).eq("type", "ai_thread").maybeSingle() : { data: null };
   if (!thread) return rpcError(id, -32602, `lasso_conversation_id '${lassoId}' does not name a conversation of yours in Lasso. Nothing was saved. Push again without it, or with the lasso_conversation_id an earlier push returned.`);
   return pushConversation(owner, { vendor: thread.source_vendor, orig_conversation_id: thread.orig_conversation_id,
-    lasso_conversation_id: lassoId, messages: [], attachments: [attachment], destination: args["destination"], _tool: "push_attachment" }, id, client);
+    lasso_conversation_id: lassoId, messages: [], attachments: [attachment], destination: args["destination"], push_intent_id: args["push_intent_id"], _tool: "push_attachment" }, id, client);
 }
 
 export async function pushConversation(
@@ -3556,6 +3655,8 @@ export async function pushConversation(
       await updatePushHistory(pushRow.id, { attachments_added: attachmentsAdded, attachments_changed: attachmentsChanged });
     }
   }
+
+  await completePushIntent(owner, args, pushRow.id, threadId, origId, pushTool, attachmentOutcomes, win?.total ?? null, storedCount);
 
   const convoVocab = await placementVocab(owner);
   const knownPlaces = plan.destination ? (await readPlaces(owner)).places : undefined;
