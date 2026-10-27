@@ -76,6 +76,7 @@ export function isContainedInAnyMessage(attachmentContent: string, messages: str
 
 /** Why an attachment was not made into a work item. */
 export type RejectionReason =
+  | "text_route_available"
   | "contained_in_message"
   | "restates_transcript"
   | "too_short_to_be_artifact"
@@ -83,6 +84,7 @@ export type RejectionReason =
   | "no_source_artifact_id";
 
 export const REJECTION_WORDS: Record<RejectionReason, string> = {
+  text_route_available: "has a text form; export it and resend",
   contained_in_message: "reads as a section of one of your own messages, not a separate artifact",
   restates_transcript: "restates the conversation rather than being a separate artifact",
   too_short_to_be_artifact: "is too short to be an artifact",

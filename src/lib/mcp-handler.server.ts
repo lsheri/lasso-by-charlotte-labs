@@ -271,7 +271,6 @@ export type FileRef = {
   mime_type?: string;
   bytes?: number;
   sha256?: string;
-  download_url?: string;
 };
 
 export type ParsedAttachment = {
@@ -365,7 +364,7 @@ export async function storeRendition(args: {
 export function parseIncomingAttachment(
   raw: unknown,
   kinds: readonly string[],
-): { ok: true; attachment: ParsedAttachment } | { ok: false; message: string } {
+): { ok: true; attachment: ParsedAttachment } | { ok: false; message: string; reject?: never } | { ok: false; reject: "text_route_available"; title: string; message: string } {
   const a = (raw ?? {}) as Record<string, unknown>;
   const title = typeof a["title"] === "string" ? a["title"].trim() : "";
   if (!title) {
@@ -395,15 +394,17 @@ export function parseIncomingAttachment(
     }
     const bytes = ref["bytes"];
     const mime = typeof ref["mime_type"] === "string" ? ref["mime_type"].trim() : "";
-    const url = typeof ref["download_url"] === "string" ? ref["download_url"].trim() : "";
     const fileRef: FileRef = {
       filename,
       ...(mime ? { mime_type: mime } : {}),
       ...(typeof bytes === "number" && Number.isInteger(bytes) && bytes >= 0 ? { bytes } : {}),
       ...(sha ? { sha256: sha } : {}),
-      ...(url ? { download_url: url } : {}),
     };
     const renditionPart = parseRendition(ref["rendition"]);
+    const extension = filename.slice(filename.lastIndexOf(".") + 1).toLowerCase();
+    if (["md", "txt", "html", "htm", "docx"].includes(extension) && renditionPart.rendition === undefined) {
+      return { ok: false, reject: "text_route_available", title, message: `'${filename}' has a text form. Export it and send it as artifact_markdown, or send file_ref.rendition with its text. Nothing was created for it.` };
+    }
     return { ok: true, attachment: { kind, title, content: "", sourceArtifactId, fileRef, origin, include, ...language, ...produced, ...renditionPart } };
   }
   if (typeof a["content"] !== "string") {
@@ -494,7 +495,9 @@ export const CORS_HEADERS: Record<string, string> = {
  * description; one that shows an older value or none has not.
  * Future changes bump the letter: oct23b, oct23c.
  */
-export const PUSH_DESC_BUILD = "oct24a";
+export const PUSH_DESC_BUILD = "oct27a";
+/** Bumped in the same commit that closes each connector unit. Appears on every tool description, in every push result, and on the push event. */
+export const LASSO_CONNECTOR_VERSION = "1.3.0";
 
 
 type Obj = Record<string, unknown>;
@@ -892,7 +895,7 @@ const pushTools = (vocab: McpVocab) => [
     title: "Push a conversation",
     icons: ICONS,
     description:
-      `When the user says 'Push to Lasso', 'send to Lasso', or similar, the person is saving their own conversation into their own record in Lasso, so it is kept where they and their colleagues can find it. Call push_conversation with every visible message in this conversation, each at its full length, plus any artifact, canvas or file that already existed as its own object in this app, as attachments. The transcript is the visible conversation only: what the person wrote and what the assistant wrote back. Your own thinking, reasoning summaries, chain of thought and any internal deliberation are not messages, are never part of the transcript, and are never reproduced here; skip them silently rather than noting their absence. "Every message" and "verbatim" mean every visible message, in full, and nothing about how a reply was arrived at. Never compose new summaries, recaps or section write-ups and send them as attachments. Never use push_document for conversation artifacts. The server keeps the fullest version of each message it has received and will reject a shorter overwrite of one it already holds, so send each message at full length the first time. Work in small windows by default, about twenty messages at a time, fewer when the messages are long. If the whole conversation fits, push it whole. If not, push it in consecutive windows using window {from, to, total}: start with the first window of about twenty messages, then follow the server's response, which tells you the next starting position, until all messages are stored. When re-pushing a conversation that grew, push only the new messages as a window, never re-send earlier messages unless correcting them. A smaller window is always the answer; a shorter message never is. Push at natural checkpoints during long work rather than only at the end, so nothing is lost if your context is compacted; re-pushing is safe and only sends what changed. For assistant turns that ran tools or wrote files, include what was done as a role: 'tool' message at that position, plainly, rather than omitting it. Attachments are only things this chat made: an artifact, a canvas, or a file you generated here. Never attach a file the person uploaded or one from project or knowledge files, even if you read or quoted it; if the person explicitly asks to include one, send it with origin: 'seen_in_chat' and include: true. Before calling push_conversation with any attachments, list them for the person in one short message, name any file you saw but did not make as left out, and ask which to include; push after they answer. If there are no attachments, push without asking. On a re-push, ask only about attachments you have not asked about before. Text files under about 40 KB go as content so they render at once: HTML as artifact_html, SVG as artifact_svg, Markdown as artifact_markdown, Mermaid as artifact_mermaid, code as artifact_code, CSV and other plain text as file, each with its verbatim text in content. A text file over about 40 KB, and every binary file (pptx, docx, xlsx, pdf, png, jpg), goes as kind file_ref with its filename and, when you can compute it, its sha256; never as base64. Lasso makes a placeholder for it and the person adds the file. For a pptx, docx or xlsx, if you can run code, also extract its text in your sandbox with python-pptx, python-docx or openpyxl into Markdown (slide or sheet headings, bullets, speaker notes, tables), compute that Markdown file's sha256, and send it unchanged as file_ref.rendition with method extracted_by_script. For a pptx, also send rendition.slides, one entry per slide in order, each with the slide title, its bullets, and its speaker notes if the slide has any. Never write, shorten or summarise a rendition yourself; if you cannot run code, leave rendition out. For a turn that wrote a file, the role 'tool' message names the file and what it is; the file's content goes only in its attachment. If part of the conversation is no longer in your context word for word, send that span as ONE message with fidelity: summary and covers: {from, to}; never send a summary as verbatim and never leave the span out. If the conversation made decisions about the work itself, send each as a draft in decisions[] citing the message positions where it was made. Never send a decision the chat did not make, and never send one about Lasso: where to file this chat, what to create or name in Lasso, or how to push are not decisions. For each attachment, set produced_at_turn to the 1-indexed position of the turn that produced or first shared this file. Omit it if you are not sure. Never guess. ${placementLine(vocab)} desc-build: ${PUSH_DESC_BUILD}`,
+      `When the user says 'Push to Lasso', 'send to Lasso', or similar, the person is saving their own conversation into their own record in Lasso, so it is kept where they and their colleagues can find it. Call push_conversation with every visible message in this conversation, each at its full length, plus any artifact, canvas or file that already existed as its own object in this app, as attachments. The transcript is the visible conversation only: what the person wrote and what the assistant wrote back. Your own thinking, reasoning summaries, chain of thought and any internal deliberation are not messages, are never part of the transcript, and are never reproduced here; skip them silently rather than noting their absence. "Every message" and "verbatim" mean every visible message, in full, and nothing about how a reply was arrived at. Never compose new summaries, recaps or section write-ups and send them as attachments. Never use push_document for conversation artifacts. The server keeps the fullest version of each message it has received and will reject a shorter overwrite of one it already holds, so send each message at full length the first time. Work in small windows by default, about twenty messages at a time, fewer when the messages are long. If the whole conversation fits, push it whole. If not, push it in consecutive windows using window {from, to, total}: start with the first window of about twenty messages, then follow the server's response, which tells you the next starting position, until all messages are stored. When re-pushing a conversation that grew, push only the new messages as a window, never re-send earlier messages unless correcting them. A smaller window is always the answer; a shorter message never is. Push at natural checkpoints during long work rather than only at the end, so nothing is lost if your context is compacted; re-pushing is safe and only sends what changed. For assistant turns that ran tools or wrote files, include what was done as a role: 'tool' message at that position, plainly, rather than omitting it. Attachments are only things this chat made: an artifact, a canvas, or a file you generated here. Never attach a file the person uploaded or one from project or knowledge files, even if you read or quoted it; if the person explicitly asks to include one, send it with origin: 'seen_in_chat' and include: true. Before calling push_conversation with any attachments, list them for the person in one short message, name any file you saw but did not make as left out, and ask which to include; push after they answer. If there are no attachments, push without asking. On a re-push, ask only about attachments you have not asked about before. Each artifact has a text route, and the text route is what Lasso keeps. A document artifact (a Claude Doc or similar) is exported to Markdown with its own export tool first and sent as artifact_markdown with the full text in content. A slide deck or design artifact is sent as file_ref with rendition.slides, one entry per slide in order with its title, bullets and speaker notes, built by reading the artifact; rendition.method is extracted_by_script. HTML goes as artifact_html, SVG as artifact_svg, Markdown as artifact_markdown, Mermaid as artifact_mermaid, code as artifact_code, CSV and other plain text as file, each with its text in content, up to about 40 KB. A binary this chat generated (pptx, docx, xlsx, pdf, png, jpg) or a text file over 40 KB goes as file_ref with its filename and, when you can compute it, its sha256; if you can run code, extract its text with python-pptx, python-docx or openpyxl into Markdown and send it unchanged as file_ref.rendition with method extracted_by_script. Lasso rejects a file_ref for a document with no rendition, because the text was available. A binary with no text route lands as a placeholder and the result says so. Never send bytes as base64; the model carries text, not files. For a turn that wrote a file, the role 'tool' message names the file and what it is; the file's content goes only in its attachment. If part of the conversation is no longer in your context word for word, send that span as ONE message with fidelity: summary and covers: {from, to}; never send a summary as verbatim and never leave the span out. If the conversation made decisions about the work itself, send each as a draft in decisions[] citing the message positions where it was made. Never send a decision the chat did not make, and never send one about Lasso: where to file this chat, what to create or name in Lasso, or how to push are not decisions. For each attachment, set produced_at_turn to the 1-indexed position of the turn that produced or first shared this file. Omit it if you are not sure. Never guess. ${placementLine(vocab)} desc-build: ${PUSH_DESC_BUILD} connector: ${LASSO_CONNECTOR_VERSION}`,
     // Windowing is the only sanctioned way to split a push, and only because
     // the alternative the model reaches for otherwise is shortening messages.
     inputSchema: {
@@ -1003,7 +1006,6 @@ const pushTools = (vocab: McpVocab) => [
                   mime_type: { type: "string" },
                   bytes: { type: "integer" },
                   sha256: { type: "string", description: "64 hex characters." },
-                  download_url: { type: "string" },
                   rendition: {
                     type: "object",
                     description: "Optional. The file's text, extracted by a script in your sandbox and sent unchanged. Lasso shows it as a rendition, never as the file.",
@@ -1271,7 +1273,12 @@ export async function handleMcpRequest(
         ...readToolsFor(type, ICONS),
         ...createToolsFor(type, ICONS),
         ADD_WORKSTREAMS_TOOL,
-      ],
+      ].map((tool) => ({
+        ...tool,
+        description: tool.name === "push_conversation"
+          ? tool.description
+          : `${tool.description} connector: ${LASSO_CONNECTOR_VERSION}`,
+      })),
     });
   }
 
@@ -1616,7 +1623,7 @@ async function pushThread(
     id,
     `Saved to Lasso: '${title}' (${turns.length} turns).${
       threadPlacement.target === "workboard" ? "" : " It is private until you map it."
-    }${threadPlacement.text ? ` ${threadPlacement.text}` : ""}${threadLinkLine}`,
+    }${threadPlacement.text ? ` ${threadPlacement.text}` : ""}${threadLinkLine}\nconnector: ${LASSO_CONNECTOR_VERSION}`,
   );
 }
 
@@ -1799,7 +1806,7 @@ async function pushDocument(owner: Owner, args: Obj, id: unknown, client?: Clien
     id,
     `Saved '${title}' to Lasso${docPlacement.target === "workboard" ? "" : " (private, unmapped)"}.${
       docPlacement.text ? ` ${docPlacement.text}` : ""
-    }`,
+    }\nconnector: ${LASSO_CONNECTOR_VERSION}`,
   );
 }
 
@@ -2583,10 +2590,20 @@ export async function pushConversation(
       `Too many attachments (${rawAttachments.length}). Maximum is ${MAX_ATTACHMENTS}. Send only objects that already existed in the app as their own artifact, canvas or file.`,
     );
   }
+  const rejected: RejectedAttachment[] = [];
+  const attachmentOutcomes: AttachmentOutcome[] = [];
   const attachments: IncomingAttachment[] = [];
   for (const a of rawAttachments) {
     const parsed = parseIncomingAttachment(a, ATTACHMENT_KINDS);
-    if (!parsed.ok) return rpcError(id, -32602, parsed.message);
+    if (!parsed.ok) {
+      if (parsed.reject) {
+        const sourceArtifactId = typeof a.source_artifact_id === "string" ? a.source_artifact_id.trim() : "";
+        rejected.push({ title: parsed.title, kind: "file_ref", reason: parsed.reject, chars: 0, source_artifact_id: sourceArtifactId });
+        attachmentOutcomes.push({ title: parsed.title, source_artifact_id: sourceArtifactId, outcome: "rejected", chars: 0, reason: parsed.reject });
+        continue;
+      }
+      return rpcError(id, -32602, parsed.message);
+    }
     attachments.push(parsed.attachment);
   }
 
@@ -2982,12 +2999,10 @@ export async function pushConversation(
   /** Pass 148: model.used fires once per NEW row, never on an update. */
   const createdAttachmentTypes: string[] = [];
   const problems: string[] = [];
-  const rejected: RejectedAttachment[] = [];
   const degradedAttachments: { title: string; stored_chars: number; incoming_chars: number }[] = [];
   /** document_versions rows written by this call, including v1 backfills. */
   let attachmentVersionRows = 0;
   /** P0 item 2: what happened to each attachment, one entry per attachment. */
-  const attachmentOutcomes: AttachmentOutcome[] = [];
   /** P0 item 1: the attachment rows this push touched, for placing them. */
   const attachmentIds: string[] = [];
   /** PF1: the receipt entry for each attachment row, so placement can be added to it. */
@@ -3150,7 +3165,6 @@ export async function pushConversation(
               mime_type: ref.mime_type ?? null,
               bytes: ref.bytes ?? null,
               sha256: ref.sha256 ?? null,
-              download_url: ref.download_url ?? null,
               source_artifact_id: attachment.sourceArtifactId,
               // TURN-MIRROR: the position the caller named, never null; the
               // key is omitted when no position is known.
@@ -3622,6 +3636,7 @@ export async function pushConversation(
     userId: owner.userId,
     profileId: owner.profileId,
     dims: {
+      connector_version: LASSO_CONNECTOR_VERSION,
       vendor,
       target: convoPlacement.target,
       suggestion_outcome: plan.suggestionOutcome,
@@ -3738,18 +3753,21 @@ export async function pushConversation(
 
   const verb = existingThread ? "Updated" : "Saved";
   // ID-2: the record's own id, returned every push so the caller can reuse it.
-  const conversationIdLines = `\nlasso_conversation_id: ${threadId}\nSend this lasso_conversation_id with the next push of this conversation so it adds to the same record.`;
+  const conversationIdLines = `\nlasso_conversation_id: ${threadId}\nSend this lasso_conversation_id with the next push of this conversation so it adds to the same record.\nconnector: ${LASSO_CONNECTOR_VERSION}`;
   // P0 item 2. The per-attachment line replaces the old bare count.
   const attachmentLine = attachmentSummaryLine(attachmentOutcomes);
   const warn = problems.length > 0 ? ` Some attachments didn't save: ${problems.join("; ")}.` : "";
+  const transcriptRejected = rejected.filter((r) => r.reason !== "text_route_available");
   const rejectedNote =
-    rejected.length > 0
-      ? ` Did not create ${rejected.length} separate item${rejected.length === 1 ? "" : "s"}: ${rejected
+    transcriptRejected.length > 0
+      ? ` Did not create ${transcriptRejected.length} separate item${transcriptRejected.length === 1 ? "" : "s"}: ${transcriptRejected
           .map((r) => `'${r.title}' ${REJECTION_WORDS[r.reason]}`)
           .join(
             "; ",
           )}. All of it is already stored word for word in the transcript, so nothing was lost. Only send objects that existed in the app before the push, with their own identifier.`
       : "";
+  const textRouteNote = rejected.filter((r) => r.reason === "text_route_available")
+    .map((r) => ` '${r.title}' ${REJECTION_WORDS[r.reason]}.`).join("");
   const counts = existingThread
     ? ` ${unchangedCount} message${unchangedCount === 1 ? "" : "s"} already captured, ${newRows.length} new, ${changedCount} changed since last push.`
     : ` ${messages.length} message${messages.length === 1 ? "" : "s"} captured.`;
@@ -3812,7 +3830,7 @@ export async function pushConversation(
   const decisionText = decisionsLine(decisionReceipts);
   const decisionNote = decisionText ? ` ${decisionText}` : "";
   const decisionNeedsNote = decisionReceipts.some((r) => r.outcome === "held" || r.outcome === "skipped");
-  const summary = `${verb} '${title}' in Lasso.${counts}${attachmentLine}${attachmentPlaceNote}${placeholderNote}${shortNote}${windowNote}${totalNote}${receiptNote}${degradedNote}${summaryRefusedNote}${degradedAttachmentNote}${cursor}${placementText}${rejectedNote}${warn}${continuation}${urlNote}${attachNote}${decisionNote}`;
+  const summary = `${verb} '${title}' in Lasso.${counts}${attachmentLine}${attachmentPlaceNote}${placeholderNote}${shortNote}${windowNote}${totalNote}${receiptNote}${degradedNote}${summaryRefusedNote}${degradedAttachmentNote}${cursor}${placementText}${rejectedNote}${textRouteNote}${warn}${continuation}${urlNote}${attachNote}${decisionNote}`;
   // P1 item 0. Clients that read only structuredContent must still see
   // everything the text says, as fields rather than prose.
   const progress = pushProgress(storedCount, total ?? null);
@@ -3826,6 +3844,7 @@ export async function pushConversation(
     summaryRefusedNote,
     degradedAttachmentNote,
     rejectedNote,
+    textRouteNote,
     warn,
     continuation,
     urlNote,
