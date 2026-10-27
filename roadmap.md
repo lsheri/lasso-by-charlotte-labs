@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] SEC-FILL: explicit saved-section dashes, shared background picker, existing frame persistence, additive events and design row; compare same-session suites and inspect 1280/390.
+
 - [x] AI usage pilot: detached exact-cost event and privacy tests implemented; final background suite results reported separately against the latest 38-file baseline.
 - [x] Pilot person analytics: browser properties and authenticated mirror join implemented; anonymous/canonical privacy preserved; final full-suite checks recorded separately.
 
