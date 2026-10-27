@@ -114,16 +114,18 @@ function cachedPersonProperty(
 }
 
 function pilotPersonProperties(userId: string, orgId: string): MirrorContext["personProperties"] {
+  let admin: Promise<typeof import("@/integrations/supabase/client.server")> | undefined;
+  const getAdmin = () => admin ??= import("@/integrations/supabase/client.server");
   const email = cachedPersonProperty(personEmails, personEmailReads, userId, async () => {
-      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const { data, error } = await supabaseAdmin.auth.admin.getUserById(userId);
-      return error ? null : data.user?.email || null;
-    });
+    const { supabaseAdmin } = await getAdmin();
+    const { data, error } = await supabaseAdmin.auth.admin.getUserById(userId);
+    return error ? null : data.user?.email || null;
+  });
   const signupSource = cachedPersonProperty(orgSignupSources, orgSignupSourceReads, orgId, async () => {
-      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const { data, error } = await supabaseAdmin.from("orgs").select("signup_source").eq("id", orgId).maybeSingle();
-      return error ? null : data?.signup_source || null;
-    });
+    const { supabaseAdmin } = await getAdmin();
+    const { data, error } = await supabaseAdmin.from("orgs").select("signup_source").eq("id", orgId).maybeSingle();
+    return error ? null : data?.signup_source || null;
+  });
   return {
     ...(email ? { email } : {}),
     ...(signupSource ? { signup_source: signupSource } : {}),
