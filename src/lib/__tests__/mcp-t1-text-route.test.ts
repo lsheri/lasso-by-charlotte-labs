@@ -147,7 +147,7 @@ describe("MCP-T1 text routes", () => {
     expect(out.result.content[0]?.text).toContain("'notes.docx' has a text form; export it and resend");
     expect(out.result.content[0]?.text).not.toContain("All of it is already stored word for word");
     expect(out.result.content[0]?.text.endsWith(`connector: ${LASSO_CONNECTOR_VERSION}`)).toBe(true);
-    expect(events.find((e) => e.eventType === "mcp.push")?.dims["connector_version"]).toBe("1.3.0");
+    expect(events.find((e) => e.eventType === "mcp.push")?.dims["connector_version"]).toBe(LASSO_CONNECTOR_VERSION);
     const transcript = table("work_items").find((r) => r["type"] === "ai_thread");
     expect((transcript?.["source_meta"] as Row)?.["rejected_attachments"]).toEqual([expect.objectContaining({ title: "notes.docx", reason: "text_route_available" })]);
   });
@@ -163,4 +163,9 @@ describe("MCP-T1 text routes", () => {
     expect(out.result.tools.length).toBeGreaterThanOrEqual(12);
     for (const tool of out.result.tools) expect(tool.description.endsWith(`connector: ${LASSO_CONNECTOR_VERSION}`)).toBe(true);
   });
+});
+
+import { EVENT_DIM_KEYS } from "@/lib/event-dim-allowlist";
+it("allows the connector version on mcp.push", () => {
+  expect(EVENT_DIM_KEYS["mcp.push"]).toContain("connector_version");
 });
