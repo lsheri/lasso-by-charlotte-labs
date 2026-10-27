@@ -75,7 +75,64 @@ export type MirrorContext = {
   anonymous?: boolean;
   /** Founder-facing pilot: only a consent-permitted raw auth user id is joinable. */
   joinablePerson?: boolean;
+  personProperties?: { email?: string; signup_source?: string };
 };
+
+const personEmails = new Map<string, string | null>();
+const orgSignupSources = new Map<string, string | null>();
+const personEmailReads = new Map<string, Promise<string | null>>();
+const orgSignupSourceReads = new Map<string, Promise<string | null>>();
+
+/** Cache missing/failed reads too, and share concurrent misses within the worker. */
+async function cachedPersonProperty(
+  cache: Map<string, string | null>,
+  pending: Map<string, Promise<string | null>>,
+  key: string,
+  lookup: () => Promise<string | null>,
+): Promise<string | null> {
+  if (cache.has(key)) return cache.get(key) ?? null;
+  const existing = pending.get(key);
+  if (existing) return existing;
+  const read = (async () => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let value: string | null = null;
+    try {
+      value = await Promise.race([
+        lookup(),
+        new Promise<null>((resolve) => { timer = setTimeout(() => resolve(null), 1000); }),
+      ]);
+    } catch {
+      // Person enrichment must never suppress the event or retry a failed read.
+    } finally {
+      if (timer !== undefined) clearTimeout(timer);
+    }
+    cache.set(key, value);
+    pending.delete(key);
+    return value;
+  })();
+  pending.set(key, read);
+  return read;
+}
+
+async function pilotPersonProperties(userId: string, orgId: string): Promise<MirrorContext["personProperties"]> {
+  const admin = import("@/integrations/supabase/client.server");
+  const [email, signupSource] = await Promise.all([
+    cachedPersonProperty(personEmails, personEmailReads, userId, async () => {
+      const { supabaseAdmin } = await admin;
+      const { data, error } = await supabaseAdmin.auth.admin.getUserById(userId);
+      return error ? null : data.user?.email || null;
+    }),
+    cachedPersonProperty(orgSignupSources, orgSignupSourceReads, orgId, async () => {
+      const { supabaseAdmin } = await admin;
+      const { data, error } = await supabaseAdmin.from("orgs").select("signup_source").eq("id", orgId).maybeSingle();
+      return error ? null : data?.signup_source || null;
+    }),
+  ]);
+  return {
+    ...(email ? { email } : {}),
+    ...(signupSource ? { signup_source: signupSource } : {}),
+  };
+}
 
 function readHeader(name: string): string | undefined {
   try {
@@ -147,6 +204,8 @@ export async function mirrorToPostHog(
           ...(context ? contextProperties(context) : {}),
           ...dims,
           $process_person_profile: context?.anonymous !== true && context?.joinablePerson === true,
+          ...(context?.anonymous !== true && context?.joinablePerson === true && context.personProperties && Object.keys(context.personProperties).length > 0
+            ? { $set: context.personProperties } : {}),
           ...(context?.anonymous ? {} : { $groups: { org: tenantHash } }),
         },
       }),
@@ -368,13 +427,18 @@ export async function recordEvent(
       // V2-1: at tier "a" the copy carries a fresh id, never a joinable one.
       const mirrorActorHash = mirrorDistinctId(consent.tier, stableId);
       if (mirrorActorHash) {
+        const joinablePerson = actorKind === "person" && consent.tier !== "a";
+        const personProperties = joinablePerson && input.userId
+          ? await pilotPersonProperties(input.userId, input.orgId)
+          : undefined;
         await mirrorToPostHog(input.eventType, mirrorActorHash, tenantHash, dims, {
           environment: resolveEnvironment(),
           workspace_type: stamp.workspace_type,
           affiliated: stamp.affiliated,
           partner,
           actor_kind: actorKind,
-          joinablePerson: actorKind === "person" && consent.tier !== "a",
+          joinablePerson,
+          ...(personProperties ? { personProperties } : {}),
           ...(accountStage ? { account_stage: accountStage } : {}),
         });
       }
