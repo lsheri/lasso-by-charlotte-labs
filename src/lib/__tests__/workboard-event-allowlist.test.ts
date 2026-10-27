@@ -157,6 +157,13 @@ describe("the workboard allowlist", () => {
         ],
         "workboard.section_created": [
           "via",
+          "fill_family",
+          "fill_strength",
+        ],
+        "workboard.section_filled": [
+          "fill_family",
+          "fill_strength",
+          "via",
         ],
         "workboard.section_marker_cleared": [],
         "workboard.section_marker_set": [
@@ -306,7 +313,7 @@ describe("the workboard allowlist", () => {
       const [name, , dims] = mocked.mock.calls[0] as [string, string, Record<string, unknown>];
       expect(guardWorkboardEvent(name, dims as never)).toEqual({ keep: true, dims });
     }
-    expect(Object.keys(WORKBOARD_EVENT_DIMS)).toHaveLength(40);
+    expect(Object.keys(WORKBOARD_EVENT_DIMS)).toHaveLength(41);
   });
 
   it("keeps the additive open path for previewed document and deck cards", () => {

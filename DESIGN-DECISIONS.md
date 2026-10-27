@@ -29,5 +29,6 @@ One row per design decision. Owner: L = Liam, C = Claude architect, M = Magic OS
 | 2026-10-21 | C | Email is its own work kind and Gmail its own source; the drawing is a page with an addressed header block, matching the Doc family rather than an envelope | envelope (generic, breaks the paper-and-fold language), stacked pages (says thread, too much for a single message) | shipped |
 | 2026-10-22 | L | When the real view is on and no preview exists, the card shows a no-preview face with the reason and whether the work is still usable as context, rather than silently falling back to the sketch; the sketch now only ever means the person chose it | a quiet mark in the card footer (leaves the sketch ambiguous), the sketch plus a state dot (adds chrome to every card to explain a minority case) | shipped |
 
-Open: where the four --verify-* states render (chat answer, opened view, card); placement of Recent boards in the sidebar; whether the graphite grain button returns.
 | 27 Oct 2026 | C | Sections use a 2.5px explicit dashed outline and reuse the sixteen-value region fill vocabulary with no fill as the default | a section-only neutral palette; a new section fill column | Built, preview |
+
+Open: where the four --verify-* states render (chat answer, opened view, card); placement of Recent boards in the sidebar; whether the graphite grain button returns.
