@@ -91,6 +91,7 @@ describe("P1 item 2 — a summarised span in the viewer", () => {
       from: 2,
       to: 7,
     });
+    expect(summarisedSpan({ meta: { fidelity: "summary", covers_unknown: true } })).toEqual({ unknown: true });
     expect(summarisedSpan({ meta: { revised_at: "x" } })).toBeNull();
     expect(summarisedSpan({})).toBeNull();
   });
@@ -98,6 +99,9 @@ describe("P1 item 2 — a summarised span in the viewer", () => {
   it("uses the approved wording", () => {
     expect(summarisedLabel({ from: 2, to: 7 })).toBe(
       "Summarised by the AI client. Messages 2 to 7 were not available word for word.",
+    );
+    expect(summarisedLabel({ unknown: true })).toBe(
+      "Summarised by the AI client. The earlier messages were not available word for word.",
     );
   });
 });
