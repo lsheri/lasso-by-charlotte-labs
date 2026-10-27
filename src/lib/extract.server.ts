@@ -225,6 +225,7 @@ export async function ensureExtract(workItemId: string): Promise<boolean> {
     const meta: AiMeta = {
       surface: "extract",
       orgId: prepared.item.org_id,
+      profileId: prepared.item.owner_id,
       orgName: await orgNameFor(supabaseAdmin as unknown as Db, prepared.item.org_id),
     };
     const { fields, tokensIn, costUsd } = await generate(prepared.item.title, prepared.text, meta);

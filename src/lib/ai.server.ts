@@ -261,6 +261,7 @@ async function safeLogHealth(input: Parameters<typeof logHealth>[0]): Promise<vo
 export function aiUsageRow(result: ChatResult, meta: AiMeta | undefined) {
   return {
     org_id: meta?.orgId ?? null,
+    profile_id: meta?.profileId ?? null,
     surface: meta?.surface ?? "unknown",
     model: result.model,
     tokens_in: result.tokensIn,
@@ -277,9 +278,11 @@ export function aiUsageRow(result: ChatResult, meta: AiMeta | undefined) {
  * cannot say what one workspace costs. This is the same number ChatResult
  * already computed, written down against the workspace.
  *
- * Deliberately no actor hash, no profile id, no user id and no text. Cost is
- * a fact about a workspace, never about a person. unitS8-ai-usage.test.ts
- * asserts that stays true.
+ * Carries the workspace and the person, so cost can be read per person as
+ * well as per workspace. Founder-facing accounting only: a person-level cost
+ * is never shown on a partner, firm or member surface. Still deliberately no
+ * actor hash, no user id, no org name and no text of any kind.
+ * unitS8-ai-usage.test.ts asserts that stays true.
  */
 async function recordUsage(result: ChatResult, meta: AiMeta | undefined): Promise<void> {
   try {

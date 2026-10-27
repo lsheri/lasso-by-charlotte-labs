@@ -49,7 +49,7 @@ export async function classifyQuestionIntent(
       {
         tier: "fast",
         timeoutMs: 5000,
-        meta: { surface: "question_intent", orgId: input.orgId ?? null },
+        meta: { surface: "question_intent", orgId: input.orgId ?? null, profileId: input.profileId ?? null },
       },
     );
     const match = completion.text.match(/\{[\s\S]*\}/);

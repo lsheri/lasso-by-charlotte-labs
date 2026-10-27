@@ -19,9 +19,10 @@ function aResult(): ChatResult {
 
 describe("unit S8 ai usage rows", () => {
   it("maps a ChatResult and an AiMeta onto the ai_usage columns", () => {
-    const meta: AiMeta = { surface: "ask_dock", orgId: "1f0e6d0e-0000-4000-8000-000000000001" };
+    const meta: AiMeta = { surface: "ask_dock", orgId: "1f0e6d0e-0000-4000-8000-000000000001", profileId: "2a7b8c9d-0000-4000-8000-000000000002" };
     expect(aiUsageRow(aResult(), meta)).toEqual({
       org_id: "1f0e6d0e-0000-4000-8000-000000000001",
+      profile_id: "2a7b8c9d-0000-4000-8000-000000000002",
       surface: "ask_dock",
       model: "gpt-5",
       tokens_in: 1200,
@@ -39,13 +40,15 @@ describe("unit S8 ai usage rows", () => {
     expect(row.surface).toBe("unknown");
   });
 
-  it("never carries a person field or any content", () => {
+  it("writes a null profile when there is no meta", () => {
+    expect(aiUsageRow(aResult(), undefined).profile_id).toBeNull();
+  });
+
+  it("never carries an actor hash, an org name or any content", () => {
     const keys = Object.keys(aiUsageRow(aResult(), undefined));
     const banned = [
       "actor_hash",
       "actorHash",
-      "profile_id",
-      "profileId",
       "user_id",
       "userId",
       "org_name",
