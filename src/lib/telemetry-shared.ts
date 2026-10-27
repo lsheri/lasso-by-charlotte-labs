@@ -2,6 +2,8 @@ import type { NavItemId } from "@/components/layout/nav-config";
 
 /** Canonical event registry. Every name here is mirrored to PostHog. */
 export type TelemetryEvent =
+  /** Founder-only AI accounting: exact cost and usage, never work content. */
+  | "ai.usage"
   | "nav.opened"
   | "org.created"
   | "org.tier_changed"

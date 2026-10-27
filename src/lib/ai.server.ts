@@ -284,9 +284,36 @@ export function aiUsageRow(result: ChatResult, meta: AiMeta | undefined) {
  * actor hash, no user id, no org name and no text of any kind.
  * unitS8-ai-usage.test.ts asserts that stays true.
  */
-async function recordUsage(result: ChatResult, meta: AiMeta | undefined): Promise<void> {
+export async function recordUsage(result: ChatResult, meta: AiMeta | undefined): Promise<void> {
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    if (meta?.orgId) {
+      const orgId = meta.orgId;
+      // Detached from accounting and the AI response; the existing mirror preserves dims exactly.
+      void (async () => {
+        try {
+          const { recordEvent } = await import("./telemetry.server");
+          await recordEvent(supabaseAdmin, {
+            eventType: "ai.usage",
+            orgId,
+            userId: meta.userId,
+            profileId: meta.profileId,
+            dims: {
+              surface: meta.surface,
+              model: result.model,
+              cost_usd: result.costUsd,
+              tokens_in: result.tokensIn,
+              tokens_out: result.tokensOut,
+              cached_in: result.cachedIn,
+              duration_ms: result.durationMs,
+              finish_reason: result.finishReason,
+            },
+          });
+        } catch {
+          // A mirror failure must never affect accounting or the caller.
+        }
+      })();
+    }
     const db = supabaseAdmin as unknown as { from: (t: string) => any };
     await db.from("ai_usage").insert(aiUsageRow(result, meta));
   } catch {
