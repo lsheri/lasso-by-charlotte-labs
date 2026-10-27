@@ -109,8 +109,10 @@ async function initialize(clientName: string) {
   }), "key");
   return response.json();
 }
-async function push(messages: unknown[], extra: Row = {}) {
-  const res = await pushConversation(OWNER, { vendor: "claude", orig_conversation_id: "conv-1", messages, ...extra }, 1, CLIENT);
+/** What clientIdentity returns on a cold isolate: no initialize memory. */
+const COLD = { name: "unknown", version: "unknown", protocol: "unknown" };
+async function push(messages: unknown[], extra: Row = {}, client: Row = COLD) {
+  const res = await pushConversation(OWNER, { vendor: "claude", orig_conversation_id: "conv-1", messages, ...extra }, 1, client as never);
   return (await res.json()) as { result?: { content: { text: string }[] }; error?: unknown };
 }
 
