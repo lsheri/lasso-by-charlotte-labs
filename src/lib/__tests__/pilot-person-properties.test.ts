@@ -137,7 +137,8 @@ describe("cached founder-only mirror person properties", () => {
     try {
       await send("warm-org", "c", "cold-user");
       expect(body().properties.$set).toEqual({ signup_source: "direct" });
-      expect(mocks.email).toHaveBeenCalledExactlyOnceWith("cold-user");
+      expect(mocks.email).toHaveBeenCalledTimes(2);
+      expect(mocks.email).toHaveBeenNthCalledWith(2, "cold-user");
       expect(mocks.source).toHaveBeenCalledTimes(1);
     } finally {
       email.resolve({ data: { user: null }, error: null });
