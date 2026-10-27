@@ -1273,12 +1273,15 @@ export async function handleMcpRequest(
         ...readToolsFor(type, ICONS),
         ...createToolsFor(type, ICONS),
         ADD_WORKSTREAMS_TOOL,
-      ].map((tool) => ({
-        ...tool,
-        description: tool.name === "push_conversation"
-          ? tool.description
-          : `${tool.description} connector: ${LASSO_CONNECTOR_VERSION}`,
-      })),
+      ].map((tool) => {
+        if (!tool || typeof tool !== "object" || !("description" in tool) || typeof tool.description !== "string") return tool;
+        return {
+          ...tool,
+          description: "name" in tool && tool.name === "push_conversation"
+            ? tool.description
+            : `${tool.description} connector: ${LASSO_CONNECTOR_VERSION}`,
+        };
+      }),
     });
   }
 
