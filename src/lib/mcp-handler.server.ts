@@ -497,9 +497,9 @@ export const CORS_HEADERS: Record<string, string> = {
  * description; one that shows an older value or none has not.
  * Future changes bump the letter: oct23b, oct23c.
  */
-export const PUSH_DESC_BUILD = "oct27c";
+export const PUSH_DESC_BUILD = "oct27d";
 /** Bumped in the same commit that closes each connector unit. Appears on every tool description, in every push result, and on the push event. */
-export const LASSO_CONNECTOR_VERSION = "1.5.0";
+export const LASSO_CONNECTOR_VERSION = "1.5.1";
 
 
 type Obj = Record<string, unknown>;
@@ -1701,7 +1701,7 @@ async function completePushIntent(
   let matchedBy: "id" | "fallback" | "none" = "none";
   try {
     const scoped = () => supabaseAdmin.from("push_intents").select("id")
-      .eq("profile_id", owner.profileId).eq("org_id", owner.orgId).eq("status", "intent");
+      .eq("profile_id", owner.profileId).eq("org_id", owner.orgId).in("status", ["intent", "partial"]);
     const supplied = args["push_intent_id"];
     let intentId: string | null = null;
     if (typeof supplied === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(supplied)) {
