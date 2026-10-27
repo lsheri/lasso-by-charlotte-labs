@@ -93,7 +93,6 @@ vi.mock("@/lib/org-type.server", () => ({
 import { handleMcpRequest, pushConversation } from "@/lib/mcp-handler.server";
 
 const OWNER = { tokenId: "t1", profileId: "p1", orgId: "o1", userId: "u1", kind: "link", readOnly: false, legacy: true, authKind: "link" as const };
-const CLIENT = { name: "Claude Desktop", version: "1", protocol: "2025-06-18" };
 const msgs = (...texts: string[]) => texts.map((content, i) => ({ role: i % 2 === 0 ? "user" : "assistant", content }));
 const first = ["Plan the pricing study.", "Start with three segments and a survey.", "Which segment first?"];
 
