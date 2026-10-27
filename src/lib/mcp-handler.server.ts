@@ -3887,7 +3887,7 @@ export async function pushConversation(
   const decisionText = decisionsLine(decisionReceipts);
   const decisionNote = decisionText ? ` ${decisionText}` : "";
   const decisionNeedsNote = decisionReceipts.some((r) => r.outcome === "held" || r.outcome === "skipped");
-  const summary = `${verb} '${title}' in Lasso.${counts}${attachmentLine}${attachmentPlaceNote}${placeholderNote}${shortNote}${windowNote}${totalNote}${receiptNote}${degradedNote}${summaryRefusedNote}${degradedAttachmentNote}${cursor}${placementText}${rejectedNote}${textRouteNote}${warn}${continuation}${urlNote}${attachNote}${decisionNote}`;
+  let summary = `${verb} '${title}' in Lasso.${counts}${attachmentLine}${attachmentPlaceNote}${placeholderNote}${shortNote}${windowNote}${totalNote}${receiptNote}${degradedNote}${summaryRefusedNote}${degradedAttachmentNote}${cursor}${placementText}${rejectedNote}${textRouteNote}${warn}${continuation}${urlNote}${attachNote}${decisionNote}`;
   // P1 item 0. Clients that read only structuredContent must still see
   // everything the text says, as fields rather than prose.
   const progress = pushProgress(storedCount, total ?? null);
@@ -3910,8 +3910,9 @@ export async function pushConversation(
   ]
     .map((one) => one.trim())
     .filter((one) => one.length > 0);
+  if (args["_tool"] === "push_attachment") summary = `Attachment added. ${summary}`;
   return rpcResult(id, {
-    content: [{ type: "text", text: `${args["_tool"] === "push_attachment" ? "Attachment added. " : ""}${summary}${conversationIdLines}` }],
+    content: [{ type: "text", text: `${summary}${conversationIdLines}` }],
     structuredContent: {
       lasso_conversation_id: threadId,
       summary,
