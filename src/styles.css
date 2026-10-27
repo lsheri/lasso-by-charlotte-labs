@@ -1848,7 +1848,13 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   border-radius: var(--radius-control);
 }
 .canvas-lab-frame[data-selected="true"] { outline: calc(2px * var(--lab-inverse-zoom, 1)) solid var(--nb-green); outline-offset: calc(1px * var(--lab-inverse-zoom, 1)); }
-.canvas-lab-section { position: absolute; pointer-events: none; border: 1.5px dashed color-mix(in srgb, var(--nb-mid) 60%, transparent); border-radius: var(--radius-control); background: none; outline: none; }
+.canvas-lab-section { position: absolute; pointer-events: none; border: 2.5px dashed color-mix(in srgb, var(--nb-mid) 60%, transparent); border-radius: var(--radius-control); background: none; outline: none; }
+.canvas-lab-section:not(.canvas-lab-draw-rect) { border-style: none; }
+.canvas-lab-section-outline { position: absolute; inset: 0; overflow: visible; pointer-events: none; stroke: color-mix(in srgb, var(--nb-mid) 60%, transparent); }
+.canvas-lab-section-background { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; pointer-events: auto; }
+.canvas-lab-section-background .canvas-lab-region-swatches { flex-wrap: wrap; max-width: 100%; }
+.canvas-lab-section-background-popup { position: absolute; left: 12px; top: 56px; z-index: 30; width: min(280px, calc(100% - 24px)); pointer-events: auto; }
+.canvas-lab-region-palette:has(.canvas-lab-section-background) { max-width: calc(100vw - 32px); }
 .canvas-lab-section:focus-visible { outline: 1px solid var(--nb-mid); }
 .canvas-lab-section-edge { position: absolute; pointer-events: auto; cursor: grab; }
 .canvas-lab-section-edge[data-section-edge="top"] { inset: -4px 0 auto; height: 8px; }

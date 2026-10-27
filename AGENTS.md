@@ -52,6 +52,7 @@ Tour mirrors board chrome; preserve live behavior.
 - Mirror: real evidence, lane unchanged. Canvas catch: session-add IDs, cleared on finish, never selection. Tick: discussed-work only. Beads retain timing. Nav catch: CSS draw, not canvas. Board hue: id hash, row CSS, not sources.
 - Keep mention normalization in the pure shared layer with plain-text offsets, so rich-markup stripping cannot invalidate mention positions.
 - Render section-prefixed frames only through LabSection, with drag-start frame/card snapshots and no filing changes, so layout furniture never enters workstream naming or claiming.
+- Section backgrounds compose the existing RegionColourSwatches through SectionBackgroundPicker and persist only frame.fill through persistFramePatch; the saved outline uses an SVG dash array so zoom never delegates its rhythm to browser borders.
 - Put any new board control in its own component file rather than inline in CanvasLabPage, because nothing renders that page in tests and an inline control cannot be tested.
 - Section Ask resolves membership from live browser board geometry with containingSection at send time and submits an ordinary items scope; persisted section_members remains for server-only consumers to avoid stale-position reads in interactive Ask.
 - Keep pilot person joins explicit in authenticated recordEvent mirror context, defaulting other mirror callers to person-less, so anonymous and system paths cannot inherit person-profile processing.
