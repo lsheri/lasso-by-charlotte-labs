@@ -30,5 +30,6 @@ One row per design decision. Owner: L = Liam, C = Claude architect, M = Magic OS
 | 2026-10-22 | L | When the real view is on and no preview exists, the card shows a no-preview face with the reason and whether the work is still usable as context, rather than silently falling back to the sketch; the sketch now only ever means the person chose it | a quiet mark in the card footer (leaves the sketch ambiguous), the sketch plus a state dot (adds chrome to every card to explain a minority case) | shipped |
 
 | 27 Oct 2026 | C | Sections use a 2.5px explicit dashed outline and reuse the sixteen-value region fill vocabulary with no fill as the default | a section-only neutral palette; a new section fill column | Built, preview |
+| 27 Oct 2026 | L | Toolbar creation controls leave last using the revised ten moveOrder values; card-face remains unset; reader header adds the existing vendor logo, name and tone underline only for known visible vendors | evict card-face without a fallback; add its overflow choices in this pass; theme the reader | Built, preview |
 
 Open: where the four --verify-* states render (chat answer, opened view, card); placement of Recent boards in the sidebar; whether the graphite grain button returns.
