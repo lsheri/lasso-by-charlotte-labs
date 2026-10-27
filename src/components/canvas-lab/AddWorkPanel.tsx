@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from "react";
+import { LoaderCircle } from "lucide-react";
 
 import { ConnectorPicker } from "@/components/connectors/ConnectorPicker";
 import { useCaptureFiles } from "@/components/work/use-capture-files";
@@ -19,6 +20,7 @@ import { useProfile } from "@/hooks/use-profile";
 import { useWorkItems } from "@/hooks/use-work-items";
 import { orderWithBundles, toggleWithPieces } from "@/lib/add-work-selection";
 import { useSettingsDialogOptional } from "@/lib/settings-dialog-context";
+import { usePendingAction } from "@/lib/use-pending-action";
 import { displayName } from "@/lib/work-item-name";
 import type { MappedTask } from "@/lib/work-types";
 
@@ -93,6 +95,8 @@ export function AddWorkPanel({
     await onPlace(ids, "inbox");
     setPicked(new Set());
   }
+
+  const { run: runAddPicked, pending: adding } = usePendingAction(addPicked);
 
   async function addFiles(files: File[]) {
     if (files.length === 0) return;
@@ -231,7 +235,10 @@ export function AddWorkPanel({
         </Tabs>
         {activeTab === "inbox" ? (
           <DialogFooter>
-            <Button type="button" onClick={addPicked} disabled={picked.size === 0 || busy}>
+            <Button type="button" onClick={runAddPicked} disabled={picked.size === 0 || busy} pending={adding}>
+              {adding ? (
+                <LoaderCircle aria-hidden="true" className="animate-spin motion-reduce:animate-none" />
+              ) : null}
               Add to board
             </Button>
           </DialogFooter>

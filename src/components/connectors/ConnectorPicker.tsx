@@ -502,7 +502,7 @@ export function ConnectorPicker({
     >
       {trigger ? <DialogTrigger asChild>{trigger}</DialogTrigger> : null}
       <DialogContent
-        className="max-h-[90vh] overflow-y-auto sm:max-w-3xl"
+        className="flex max-h-[90vh] flex-col overflow-hidden sm:max-w-3xl"
         onKeyDown={(e) => {
           // Alt+Left / Backspace step up a level, as in a file manager.
           const typing = (e.target as HTMLElement).tagName === "INPUT";
@@ -514,6 +514,7 @@ export function ConnectorPicker({
           }
         }}
       >
+        <div className="shrink-0 space-y-4">
         <DialogHeader>
           <DialogTitle className="page-title">{copy.title}</DialogTitle>
         </DialogHeader>
@@ -698,7 +699,9 @@ export function ConnectorPicker({
         {page?.unsupported ? (
           <p className="text-sm text-muted-foreground">{page.unsupported}</p>
         ) : null}
+        </div>
 
+        <div className="min-h-0 flex-1 overflow-y-auto">
         {loading ? (
           <p className="text-sm text-muted-foreground">Looking…</p>
         ) : items.length === 0 && !page?.unsupported ? (
@@ -837,8 +840,9 @@ export function ConnectorPicker({
             ) : null}
           </div>
         ) : null}
+        </div>
 
-        <div className="flex justify-end">
+        <div className="flex shrink-0 justify-end">
           {singlePick ? (
             <Button
               type="button"

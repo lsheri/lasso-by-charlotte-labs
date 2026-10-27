@@ -769,6 +769,7 @@ function PeopleSection({
           className="self-start"
           disabled={busy}
           onClick={() => void sendAll()}
+          pending={sendingPeople || sendingEmails}
           data-share-send="all"
         >
           {sendingPeople || sendingEmails ? SHARE3_COPY.sending : sendLabel}

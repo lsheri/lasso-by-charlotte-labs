@@ -724,7 +724,7 @@ export function AskComposer({
             rows={mobile ? 2 : 3}
             className="min-h-[64px] resize-none"
           />
-          <Button onClick={() => void ask.submit()} disabled={ask.pending || !ask.draft.trim()}>
+          <Button onClick={() => void ask.submit()} disabled={ask.pending || !ask.draft.trim()} pending={ask.pending}>
             {ask.pending ? <NbDots label="Sending" /> : "Send"}
           </Button>
         </div>
