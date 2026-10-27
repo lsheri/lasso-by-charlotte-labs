@@ -408,6 +408,7 @@ export type TelemetryEvent =
   | "workboard.workstream_created"
   | "workboard.region_named"
   | "workboard.section_created"
+  | "workboard.section_filled"
   | "workboard.section_moved"
   | "workboard.section_removed"
   /** SECD-1b: a section's period or number marker changed. Closed dimensions only, no values. */

@@ -49,11 +49,17 @@ export function noteWorkboardReviewOpened(orgId: string | undefined, format: "th
 export function noteWorkboardLedgerOpened(orgId: string | undefined, via: "card" | "menu" | "key" | "memo_preview"): void {
   if (orgId) logEvent("workboard.ledger_opened", orgId, { via });
 }
-export function noteWorkboardSection(orgId: string | undefined, action: "created" | "moved" | "removed", detail?: { frames: number; cards: number }, createdVia: "drawn" | "next_week" = "drawn"): void {
+export function noteWorkboardSection(orgId: string | undefined, action: "created" | "moved" | "removed", detail?: { frames: number; cards: number }, createdVia: "drawn" | "next_week" = "drawn", fill: string | null = null): void {
   if (!orgId) return;
-  if (action === "created") logEvent("workboard.section_created", orgId, { via: createdVia });
+  const [family = "none", strength = "none"] = (fill ?? "none").split("-");
+  if (action === "created") logEvent("workboard.section_created", orgId, { via: createdVia, fill_family: family, fill_strength: strength });
   else if (action === "moved") logEvent("workboard.section_moved", orgId, { frames: detail?.frames ?? 0, cards: detail?.cards ?? 0 });
   else logEvent("workboard.section_removed", orgId, {});
+}
+export function noteWorkboardSectionFilled(orgId: string | undefined, fill: string | null, via: "draw" | "menu"): void {
+  if (!orgId) return;
+  const [family = "none", strength = "none"] = (fill ?? "none").split("-");
+  logEvent("workboard.section_filled", orgId, { fill_family: family, fill_strength: strength, via });
 }
 export type SectionMarkerEvent =
   | { action: "set"; kind: "period" | "number"; preset: "day" | "week" | "month" | "custom" | "none"; via: "menu" | "line" }

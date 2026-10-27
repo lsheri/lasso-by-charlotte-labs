@@ -62,6 +62,7 @@ import { BranchDialog } from "@/components/work/BranchDialog";
 import { branchOwnerLabel } from "@/lib/branch-handoff";
 import { beginPinch, panView, pinchView, type PinchStart } from "@/lib/board-pinch";
 import { RegionColourSwatches } from "@/components/canvas-lab/RegionColourSwatches";
+import { SectionBackgroundPicker } from "@/components/canvas-lab/SectionBackgroundPicker";
 import { LabUndoToast } from "@/components/canvas-lab/LabUndoToast";
 import {
   canUndoToastEntry,
@@ -153,6 +154,7 @@ import {
   noteWorkboardRecordVisibility,
   noteWorkboardRelationship,
   noteWorkboardSection,
+  noteWorkboardSectionFilled,
   noteWorkboardSectionMarker,
   noteWorkboardReviewOpened,
   noteWorkboardLedgerOpened,
@@ -463,6 +465,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   const [askSection, setAskSection] = useState<{ id: string; nonce: number } | null>(null);
   const [keepBusy, setKeepBusy] = useState(false);
   const [regionFill, setRegionFill] = useState<RegionFill>("green-faded");
+  const [sectionFill, setSectionFill] = useState<RegionFill | null>(null);
   const [pendingRegionNameId, setPendingRegionNameId] = useState<string | null>(null);
   /** Right-click on empty board space. Screen coords for the menu, board coords for the drop. */
   const [boardMenu, setBoardMenu] = useState<{ screen: Point; board: Point } | null>(null);
@@ -1075,7 +1078,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     }
   }
 
-  async function persistFramePatch(localId: string, patch: { x?: number; y?: number; w?: number; h?: number; label?: string | null; taskId?: string | null; periodStart?: string | null; periodEnd?: string | null; sequenceNo?: number | null }): Promise<boolean> {
+  async function persistFramePatch(localId: string, patch: { x?: number; y?: number; w?: number; h?: number; label?: string | null; fill?: RegionFill | null; taskId?: string | null; periodStart?: string | null; periodEnd?: string | null; sequenceNo?: number | null }): Promise<boolean> {
     if (!(await materialize())) return false;
     const frame = framesRef.current.find((entry) => entry.id === localId);
     if (!frame?.durableId) {
@@ -2388,18 +2391,20 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   }
 
   async function createSection(rect: DrawRect) {
+    const fill = sectionFill;
     setDrawTool(false);
     if (!(await materialize())) return;
     const id = newSectionFrameId(crypto.randomUUID());
-    const result = await lab.persist({ type: "frame_create", frame: { key: id, kind: "custom", taskId: null, label: null, fill: null, x: rect.x, y: rect.y, w: rect.width, h: rect.height, ord: 0 } });
+    const result = await lab.persist({ type: "frame_create", frame: { key: id, kind: "custom", taskId: null, label: null, fill, x: rect.x, y: rect.y, w: rect.width, h: rect.height, ord: 0 } });
     report(result, "frame", "create");
     if (result.status !== "saved" || !result.created?.frameId) return;
-    const frame: LabFrame = { id, name: "", fill: null, x: rect.x, y: rect.y, width: rect.width, height: rect.height, durableId: result.created.frameId, durableVersion: result.versions[result.created.frameId] ?? 1, local: false };
+    const frame: LabFrame = { id, name: "", fill, x: rect.x, y: rect.y, width: rect.width, height: rect.height, durableId: result.created.frameId, durableVersion: result.versions[result.created.frameId] ?? 1, local: false };
     framesRef.current = [...framesRef.current, frame];
     setFrames(framesRef.current);
     setSelectedFrameId(id);
     setAutoNameSectionId(id);
-    noteWorkboardSection(orgId, "created");
+    noteWorkboardSection(orgId, "created", undefined, "drawn", fill);
+    if (fill !== null) noteWorkboardSectionFilled(orgId, fill, "draw");
     setAnnouncement("Section drawn. Name it.");
   }
 
@@ -2408,6 +2413,14 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     framesRef.current = framesRef.current.map((entry) => entry.id === frame.id ? { ...entry, name: title ?? "" } : entry);
     setFrames(framesRef.current);
     void persistFramePatch(frame.id, { label: title });
+  }
+
+  async function fillSection(frame: LabFrame, fill: RegionFill | null) {
+    if (!isSectionFrameId(frame.id) || !lab.board?.canEditStructure) return;
+    if (!(await persistFramePatch(frame.id, { fill }))) return;
+    framesRef.current = framesRef.current.map((entry) => entry.id === frame.id ? { ...entry, fill } : entry);
+    setFrames(framesRef.current);
+    noteWorkboardSectionFilled(orgId, fill, "menu");
   }
 
   /** SECD-1b: the marker rides the existing frame_update command; no separate write path. */
@@ -3047,6 +3060,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     if (drawTool && drawMode === "section") { cancelDraw(); return; }
     cancelDraw();
     setDrawMode("section");
+    setSectionFill(null);
     setDrawTool(true);
     setAnnouncement("Drag on empty board space to draw a section.");
   }
@@ -3496,6 +3510,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
             </PopoverContent>
           </Popover>
           {drawTool && drawMode === "grouping" ? <div className="canvas-lab-region-palette"><RegionColourSwatches value={regionFill} onChange={setRegionFill} /></div> : null}
+          {drawTool && drawMode === "section" ? <div className="canvas-lab-region-palette"><SectionBackgroundPicker value={sectionFill} onChange={setSectionFill} /></div> : null}
         </header>
         {lab.saveState.status === "conflict" ? <div data-testid="canvas-lab-banner" className="canvas-lab-banner" role="alert"><p className="text-[13px] text-foreground">A newer version of this record was saved.</p><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => resolveConflict("latest")}>Load latest</Button><Button size="sm" variant="outline" onClick={() => resolveConflict("retry")}>Retry my change</Button></div></div> : null}
         {lab.saveState.status === "error" ? <div data-testid="canvas-lab-banner" className="canvas-lab-banner" role="alert"><p className="text-[13px] text-foreground">Could not save your last change. {lab.saveState.message}</p><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => resolveSaveError("retry")}>Retry</Button><Button size="sm" variant="outline" onClick={() => resolveSaveError("discard")}>Discard</Button></div></div> : null}

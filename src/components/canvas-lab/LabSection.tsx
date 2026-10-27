@@ -4,6 +4,8 @@ import type { LabFrame, LabResizeCorner } from "@/components/canvas-lab/canvas-l
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { SectionBackgroundPicker, SECTION_BACKGROUND_COPY } from "@/components/canvas-lab/SectionBackgroundPicker";
+import type { RegionFill } from "@/lib/board-region";
 import { SECTION_TITLE_PLACEHOLDER, dayOf, isWeekPeriod, markerLabel, monthOf, sectionTitle, setNumberMarker, setPeriodMarker, shift, weekOf, type SectionMarker } from "@/lib/board-section";
 
 type MarkedRect = { x: number; y: number; width: number; height: number; periodStart?: string | null; periodEnd?: string | null };
@@ -48,8 +50,10 @@ export const SECTION_MARKER_COPY = {
 
 const CORNERS: LabResizeCorner[] = ["nw", "ne", "se", "sw"];
 
-export function LabSection({ frame, title, selected, editable, autoName = false, onSelect, onDragStart, onResizeStart, onResizeKeyDown, onResizeKeyUp, onRename, onRemove, onMenuOpened, onMarker, onClearMarker, onShift, onNewNextWeek, onAsk }: {
+export function LabSection({ frame, title, selected, editable, autoName = false, fillStyle, onFill, onSelect, onDragStart, onResizeStart, onResizeKeyDown, onResizeKeyUp, onRename, onRemove, onMenuOpened, onMarker, onClearMarker, onShift, onNewNextWeek, onAsk }: {
   frame: LabFrame; title: string | null; selected: boolean; editable: boolean;
+  fillStyle?: { fill: string; edge: string; name: string } | undefined;
+  onFill?: ((fill: RegionFill | null) => void) | undefined;
   autoName?: boolean;
   onSelect: () => void;
   onDragStart?: ((event: React.PointerEvent<HTMLElement>) => void) | undefined;
@@ -71,6 +75,7 @@ export function LabSection({ frame, title, selected, editable, autoName = false,
   const [renaming, setRenaming] = useState(false);
   const [draft, setDraft] = useState(title ?? "");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [backgroundOpen, setBackgroundOpen] = useState(false);
   const [picker, setPicker] = useState<PickerState>(null);
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
@@ -139,12 +144,15 @@ export function LabSection({ frame, title, selected, editable, autoName = false,
     return hasMarker ? <span className="flex min-w-0 flex-col">{node}{markerLine()}</span> : node;
   }
   return <section ref={rootRef} tabIndex={0} data-testid={`lab-section-${frame.id}`} data-selected={selected}
-    className="canvas-lab-section" style={{ left: frame.x, top: frame.y, width: frame.width, height: frame.height }}
+    className="canvas-lab-section" style={{ left: frame.x, top: frame.y, width: frame.width, height: frame.height, ...(fillStyle ? { background: fillStyle.fill, borderColor: fillStyle.edge } : {}) }}
     onKeyDown={(event) => {
       if (!editable || (event.target as Element).closest("input,button")) return;
       if (event.key === "Delete" || event.key === "Backspace") { event.preventDefault(); event.stopPropagation(); onRemove(); }
       if (event.key === "F2" || event.key === "Enter") { event.preventDefault(); event.stopPropagation(); beginRename(); }
     }}>
+    <svg className="canvas-lab-section-outline" aria-hidden="true" width={frame.width} height={frame.height}>
+      <rect x={1.25} y={1.25} width={Math.max(0, frame.width - 2.5)} height={Math.max(0, frame.height - 2.5)} rx="var(--radius-control)" fill="none" strokeWidth={2.5} strokeDasharray="10 6" style={fillStyle ? { stroke: fillStyle.edge } : undefined} />
+    </svg>
     {(["top", "right", "bottom", "left"] as const).map((edge) => <span key={edge} className="canvas-lab-section-edge" data-section-edge={edge} onPointerDown={press} onContextMenu={openMenu} />)}
     <div className="canvas-lab-section-title" onPointerDown={(event) => { if (!(event.target as Element).closest("input,button")) press(event); }} onContextMenu={openMenu}>
       {renaming && editable ? <input ref={inputRef} className="canvas-lab-frame-name-input" aria-label="Section title" value={draft} maxLength={60}
@@ -162,6 +170,7 @@ export function LabSection({ frame, title, selected, editable, autoName = false,
         <Button size="icon" variant="ghost" aria-label="Section menu" className="canvas-lab-section-menu" data-visible={selected} onPointerDown={(event) => event.stopPropagation()}><MoreHorizontal /></Button>
       </DropdownMenuTrigger><DropdownMenuContent onCloseAutoFocus={(event) => { event.preventDefault(); if (!editingRef.current) rootRef.current?.focus({ preventScroll: true }); }}>
         <DropdownMenuItem onSelect={beginRename}>Rename</DropdownMenuItem>
+        {onFill ? <DropdownMenuItem onSelect={() => setBackgroundOpen(true)}>{SECTION_BACKGROUND_COPY.background}</DropdownMenuItem> : null}
         {onAsk ? <DropdownMenuItem onSelect={onAsk}>{SECTION_MARKER_COPY.ask}</DropdownMenuItem> : null}
         {canMark ? <>
           <DropdownMenuItem onSelect={() => openPicker("period", "menu")}>{SECTION_MARKER_COPY.setPeriod}</DropdownMenuItem>
@@ -174,6 +183,9 @@ export function LabSection({ frame, title, selected, editable, autoName = false,
         <DropdownMenuItem onSelect={onRemove}>Remove section</DropdownMenuItem>
       </DropdownMenuContent></DropdownMenu> : null}
     </div>
+    {backgroundOpen && editable && onFill ? <div className="canvas-lab-section-background-popup" onKeyDown={(event) => { event.stopPropagation(); if (event.key === "Escape") setBackgroundOpen(false); }}>
+      <SectionBackgroundPicker value={frame.fill} onChange={(fill) => { onFill(fill); setBackgroundOpen(false); rootRef.current?.focus({ preventScroll: true }); }} />
+    </div> : null}
     {picker && canMark ? <div role="group" aria-label={SECTION_MARKER_COPY.pickerLabel} data-testid="section-marker-picker"
       className="absolute left-3 top-14 z-20 flex w-56 flex-col gap-2 rounded-md border border-border bg-popover p-2 text-sm text-popover-foreground shadow-md"
       style={{ pointerEvents: "auto" }}
