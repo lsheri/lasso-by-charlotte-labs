@@ -147,9 +147,9 @@ describe("MCP-T1 text routes", () => {
     expect(out.result.content[0]?.text).toContain("'notes.docx' has a text form; export it and resend");
     expect(out.result.content[0]?.text).not.toContain("All of it is already stored word for word");
     expect(out.result.content[0]?.text.endsWith(`connector: ${LASSO_CONNECTOR_VERSION}`)).toBe(true);
-    expect(events.find((e) => e.eventType === "mcp.push")?.dims.connector_version).toBe("1.3.0");
-    const transcript = table("work_items").find((r) => r.type === "ai_thread");
-    expect((transcript?.source_meta as Row)?.rejected_attachments).toEqual([expect.objectContaining({ title: "notes.docx", reason: "text_route_available" })]);
+    expect(events.find((e) => e.eventType === "mcp.push")?.dims["connector_version"]).toBe("1.3.0");
+    const transcript = table("work_items").find((r) => r["type"] === "ai_thread");
+    expect((transcript?.["source_meta"] as Row)?.["rejected_attachments"]).toEqual([expect.objectContaining({ title: "notes.docx", reason: "text_route_available" })]);
   });
   it("keeps every other parse failure a whole-call error", async () => {
     const response = await pushConversation(OWNER, { vendor: "claude", orig_conversation_id: "invalid",
