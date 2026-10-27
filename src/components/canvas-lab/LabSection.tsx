@@ -144,14 +144,14 @@ export function LabSection({ frame, title, selected, editable, autoName = false,
     return hasMarker ? <span className="flex min-w-0 flex-col">{node}{markerLine()}</span> : node;
   }
   return <section ref={rootRef} tabIndex={0} data-testid={`lab-section-${frame.id}`} data-selected={selected}
-    className="canvas-lab-section" style={{ left: frame.x, top: frame.y, width: frame.width, height: frame.height, ...(fillStyle ? { background: fillStyle.fill, borderColor: fillStyle.edge } : {}) }}
+    className="canvas-lab-section" style={{ left: frame.x, top: frame.y, width: frame.width, height: frame.height, ...(fillStyle ? { background: fillStyle.fill } : {}) }}
     onKeyDown={(event) => {
       if (!editable || (event.target as Element).closest("input,button")) return;
       if (event.key === "Delete" || event.key === "Backspace") { event.preventDefault(); event.stopPropagation(); onRemove(); }
       if (event.key === "F2" || event.key === "Enter") { event.preventDefault(); event.stopPropagation(); beginRename(); }
     }}>
     <svg className="canvas-lab-section-outline" aria-hidden="true" width={frame.width} height={frame.height}>
-      <rect x={1.25} y={1.25} width={Math.max(0, frame.width - 2.5)} height={Math.max(0, frame.height - 2.5)} rx="var(--radius-control)" fill="none" strokeWidth={2.5} strokeDasharray="10 6" style={fillStyle ? { stroke: fillStyle.edge } : undefined} />
+      <rect x={1.25} y={1.25} width={Math.max(0, frame.width - 2.5)} height={Math.max(0, frame.height - 2.5)} fill="none" strokeWidth={2.5} strokeDasharray="10 6" style={fillStyle ? { stroke: fillStyle.edge } : undefined} />
     </svg>
     {(["top", "right", "bottom", "left"] as const).map((edge) => <span key={edge} className="canvas-lab-section-edge" data-section-edge={edge} onPointerDown={press} onContextMenu={openMenu} />)}
     <div className="canvas-lab-section-title" onPointerDown={(event) => { if (!(event.target as Element).closest("input,button")) press(event); }} onContextMenu={openMenu}>
