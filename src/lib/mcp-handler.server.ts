@@ -1718,7 +1718,7 @@ async function completePushIntent(
     if (intentId) {
       const { error } = await supabaseAdmin.from("push_intents").update({
         status, push_id: pushId, work_item_id: workItemId, completed_at: new Date().toISOString(),
-      }).eq("id", intentId).eq("profile_id", owner.profileId).eq("org_id", owner.orgId).eq("status", "intent");
+      }).eq("id", intentId).eq("profile_id", owner.profileId).eq("org_id", owner.orgId).in("status", ["intent", "partial"]);
       if (error) throw new Error(error.message);
     }
   } catch (err) {
@@ -3652,7 +3652,13 @@ export async function pushConversation(
     const attachmentsAdded = attachmentOutcomes.filter((o) => o.outcome === "new" || o.outcome === "reference_created").length;
     const attachmentsChanged = attachmentOutcomes.filter((o) => o.outcome === "new_version").length;
     if (attachmentsAdded > 0 || attachmentsChanged > 0) {
-      await updatePushHistory(pushRow.id, { attachments_added: attachmentsAdded, attachments_changed: attachmentsChanged });
+      // FIX-2: an attachment-only call that stored or revised a file appended
+      // to the record even though no turn changed.
+      await updatePushHistory(pushRow.id, {
+        attachments_added: attachmentsAdded,
+        attachments_changed: attachmentsChanged,
+        ...(pushMode === "unchanged" ? { mode: "appended" as const } : {}),
+      });
     }
   }
 
