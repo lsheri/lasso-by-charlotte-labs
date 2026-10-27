@@ -3844,6 +3844,89 @@ export type Database = {
           },
         ]
       }
+      push_intents: {
+        Row: {
+          client_name: string | null
+          completed_at: string | null
+          created_at: string
+          expected_attachments: number | null
+          expected_messages: number | null
+          id: string
+          org_id: string
+          orig_conversation_id: string | null
+          profile_id: string
+          push_id: string | null
+          status: string
+          title: string | null
+          tool: string
+          vendor: string | null
+          work_item_id: string | null
+        }
+        Insert: {
+          client_name?: string | null
+          completed_at?: string | null
+          created_at?: string
+          expected_attachments?: number | null
+          expected_messages?: number | null
+          id?: string
+          org_id: string
+          orig_conversation_id?: string | null
+          profile_id: string
+          push_id?: string | null
+          status?: string
+          title?: string | null
+          tool?: string
+          vendor?: string | null
+          work_item_id?: string | null
+        }
+        Update: {
+          client_name?: string | null
+          completed_at?: string | null
+          created_at?: string
+          expected_attachments?: number | null
+          expected_messages?: number | null
+          id?: string
+          org_id?: string
+          orig_conversation_id?: string | null
+          profile_id?: string
+          push_id?: string | null
+          status?: string
+          title?: string | null
+          tool?: string
+          vendor?: string | null
+          work_item_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_intents_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "push_intents_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "push_intents_push_id_fkey"
+            columns: ["push_id"]
+            isOneToOne: false
+            referencedRelation: "work_item_pushes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "push_intents_work_item_id_fkey"
+            columns: ["work_item_id"]
+            isOneToOne: false
+            referencedRelation: "work_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       query_log: {
         Row: {
           answer_ref: string | null
