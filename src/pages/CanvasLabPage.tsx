@@ -3333,9 +3333,9 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     noteWorkboardStructureToggled(orgId, next);
   };
   toolbarItems.push({
-    spec: { id: "workstreams", width: 40, moveOrder: 1 },
+    spec: { id: "workstreams", width: 40, moveOrder: 4 },
     row: (
-      <ToolbarIcon label="Show workstreams"><Button type="button" size="icon" variant={structureMode === "structured" ? "secondary" : "outline"} aria-label="Show workstreams" aria-pressed={structureMode === "structured"} data-toolbar-control="workstreams" onClick={() => setStructured(structureMode !== "structured")}><GraphiteIcon name="workstreams" size={20} /></Button></ToolbarIcon>
+      <ToolbarIcon label="Show workstreams. Turn the workstream outlines on and off."><Button type="button" size="icon" variant={structureMode === "structured" ? "secondary" : "outline"} aria-label="Show workstreams" aria-pressed={structureMode === "structured"} data-toolbar-control="workstreams" onClick={() => setStructured(structureMode !== "structured")}><GraphiteIcon name="workstreams" size={20} /></Button></ToolbarIcon>
     ),
     menu: (
       <DropdownMenuCheckboxItem checked={structureMode === "structured"} onCheckedChange={setStructured}>Show workstreams</DropdownMenuCheckboxItem>
@@ -3347,8 +3347,8 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   });
   if (selectedLinkId) {
     toolbarItems.push({
-      spec: { id: "remove-relationship", width: 160, moveOrder: 6 },
-      row: <Button type="button" size="sm" variant="ghost" onClick={() => { const link = links.find((entry) => entry.id === selectedLinkId); if (link) removeRelationship(link); }}>Remove relationship</Button>,
+      spec: { id: "remove-relationship", width: 160, moveOrder: 8 },
+      row: <ToolbarIcon label="Remove relationship. Take away the line between these two pieces of work."><Button type="button" size="sm" variant="ghost" onClick={() => { const link = links.find((entry) => entry.id === selectedLinkId); if (link) removeRelationship(link); }}>Remove relationship</Button></ToolbarIcon>,
       menu: <DropdownMenuItem onSelect={() => { const link = links.find((entry) => entry.id === selectedLinkId); if (link) removeRelationship(link); }}>Remove relationship</DropdownMenuItem>,
     });
   }
@@ -3371,44 +3371,44 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   if (canAddWork) {
     toolbarItems.push({
       spec: { id: "add-work", width: 112, pinned: true },
-      row: <ToolbarIcon label="Add work"><Button size="sm" variant="outline" className="lasso-action" aria-label="Add work" data-toolbar-control="add-work" onClick={() => openAddWork("header", null)}><GraphiteIcon name="work" size={20} />Add work</Button></ToolbarIcon>,
+      row: <ToolbarIcon label="Add work. Bring a chat, document or file onto this board."><Button size="sm" variant="outline" className="lasso-action" aria-label="Add work" data-toolbar-control="add-work" onClick={() => openAddWork("header", null)}><GraphiteIcon name="work" size={20} />Add work</Button></ToolbarIcon>,
     });
     toolbarItems.push({
-      spec: { id: "add-text", width: 92, moveOrder: 4 },
-      row: <ToolbarIcon label="Add text"><Button size="icon" variant="outline" aria-label="Add text" data-toolbar-control="add-text" onClick={() => void addTextBlock()}><GraphiteIcon name="text" size={20} /></Button></ToolbarIcon>,
+      spec: { id: "add-text", width: 92, moveOrder: 5 },
+      row: <ToolbarIcon label="Add text. Write a note directly on the board."><Button size="icon" variant="outline" aria-label="Add text" data-toolbar-control="add-text" onClick={() => void addTextBlock()}><GraphiteIcon name="text" size={20} /></Button></ToolbarIcon>,
       menu: <DropdownMenuItem onSelect={() => void addTextBlock()}>Add text</DropdownMenuItem>,
     });
     toolbarItems.push({
-      spec: { id: "add-sticky", width: 92, moveOrder: 4 },
-      row: <ToolbarIcon label="Sticky"><Button size="icon" variant="outline" aria-label="Sticky" data-toolbar-control="add-sticky" onClick={() => void addSticky()}><GraphiteIcon name="sticky" size={20} /></Button></ToolbarIcon>,
+      spec: { id: "add-sticky", width: 92, moveOrder: 6 },
+      row: <ToolbarIcon label="Sticky. Leave a short reminder on the board."><Button size="icon" variant="outline" aria-label="Sticky" data-toolbar-control="add-sticky" onClick={() => void addSticky()}><GraphiteIcon name="sticky" size={20} /></Button></ToolbarIcon>,
       menu: <DropdownMenuItem onSelect={() => void addSticky()}>Sticky</DropdownMenuItem>,
     });
     toolbarItems.push({
-      spec: { id: "region", width: 84, moveOrder: 5 },
-      row: <ToolbarIcon label="Add grouping"><Button size="icon" variant={drawTool && drawMode === "grouping" ? "secondary" : "outline"} aria-label="Add grouping" aria-pressed={drawTool && drawMode === "grouping"} data-toolbar-control="grouping" onClick={toggleDrawTool}><GraphiteIcon name="grouping" size={20} /></Button></ToolbarIcon>,
+      spec: { id: "region", width: 84, moveOrder: 9 },
+      row: <ToolbarIcon label="Add grouping. Draw a workstream around related work."><Button size="icon" variant={drawTool && drawMode === "grouping" ? "secondary" : "outline"} aria-label="Add grouping" aria-pressed={drawTool && drawMode === "grouping"} data-toolbar-control="grouping" onClick={toggleDrawTool}><GraphiteIcon name="grouping" size={20} /></Button></ToolbarIcon>,
       menu: <DropdownMenuItem onSelect={toggleDrawTool}>Add grouping</DropdownMenuItem>,
     });
     toolbarItems.push({
-      spec: { id: "section", width: 84, moveOrder: 5 },
-      row: <ToolbarIcon label="Add section"><Button size="icon" variant={drawTool && drawMode === "section" ? "secondary" : "outline"} aria-label="Add section" aria-pressed={drawTool && drawMode === "section"} data-toolbar-control="section" onClick={toggleSectionTool}><SquareDashed size={20} /></Button></ToolbarIcon>,
+      spec: { id: "section", width: 84, moveOrder: 10 },
+      row: <ToolbarIcon label="Add section. Group work by a week, a phase or any span you choose."><Button size="icon" variant={drawTool && drawMode === "section" ? "secondary" : "outline"} aria-label="Add section" aria-pressed={drawTool && drawMode === "section"} data-toolbar-control="section" onClick={toggleSectionTool}><SquareDashed size={20} /></Button></ToolbarIcon>,
       menu: <DropdownMenuItem onSelect={toggleSectionTool}>Add section</DropdownMenuItem>,
     });
     toolbarItems.push({
-      spec: { id: "suggest", width: 84, moveOrder: 5 },
-      row: <ToolbarIcon label="Suggest workstreams"><Button size="icon" variant="outline" aria-label="Suggest workstreams" data-toolbar-control="suggest" onClick={openSuggestions}><GraphiteIcon name="analyses" size={20} /></Button></ToolbarIcon>,
+      spec: { id: "suggest", width: 84, moveOrder: 7 },
+      row: <ToolbarIcon label="Suggest workstreams. Lasso proposes groupings from what is already here."><Button size="icon" variant="outline" aria-label="Suggest workstreams" data-toolbar-control="suggest" onClick={openSuggestions}><GraphiteIcon name="analyses" size={20} /></Button></ToolbarIcon>,
       menu: <DropdownMenuItem onSelect={openSuggestions}>Suggest workstreams</DropdownMenuItem>,
     });
   }
   if (showExample) {
     toolbarItems.push({
-      spec: { id: "example", width: 174, moveOrder: 8 },
-      row: <ToolbarIcon label="See an example board"><Button size="sm" variant="outline" aria-label="See an example board" data-toolbar-control="example" onClick={openExample}><GraphiteIcon name="example-board" size={20} />See an example board</Button></ToolbarIcon>,
+      spec: { id: "example", width: 174, moveOrder: 1 },
+      row: <ToolbarIcon label="See an example board. Open a finished board to see how one comes together."><Button size="sm" variant="outline" aria-label="See an example board" data-toolbar-control="example" onClick={openExample}><GraphiteIcon name="example-board" size={20} />See an example board</Button></ToolbarIcon>,
       menu: <DropdownMenuItem onSelect={openExample}>See an example board</DropdownMenuItem>,
     });
   }
   toolbarItems.push({
     spec: { id: "ask", width: 40, pinned: true },
-    row: <ToolbarIcon label="Ask Lasso"><Button size="icon" variant={askOpen ? "secondary" : "outline"} aria-label="Ask Lasso" aria-pressed={askOpen} data-toolbar-control="ask" className="[&_canvas]:max-h-full [&_canvas]:max-w-full" onClick={() => setAskOpen((current) => !current)}><LassoThinkingMark kind="signature" size={LOOP_SIZE_TOOLBAR} thinking /></Button></ToolbarIcon>,
+    row: <ToolbarIcon label="Ask Lasso. Ask a question about the work on this board."><Button size="icon" variant={askOpen ? "secondary" : "outline"} aria-label="Ask Lasso" aria-pressed={askOpen} data-toolbar-control="ask" className="[&_canvas]:max-h-full [&_canvas]:max-w-full" onClick={() => setAskOpen((current) => !current)}><LassoThinkingMark kind="signature" size={LOOP_SIZE_TOOLBAR} thinking /></Button></ToolbarIcon>,
   });
   if (canAddWork) {
     toolbarItems.push({
@@ -3417,13 +3417,13 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     });
   }
   toolbarItems.push({
-    spec: { id: "details", width: 86, moveOrder: 9 },
-    row: <ToolbarIcon label="Info"><Button size="sm" variant="outline" aria-label="Info" data-toolbar-control="details" aria-expanded={detailsOpen} onClick={(event) => openDetails(event.currentTarget)}><GraphiteIcon name="working-from" size={20} />Info</Button></ToolbarIcon>,
+    spec: { id: "details", width: 86, moveOrder: 3 },
+    row: <ToolbarIcon label="Info. See what this board holds and who can see it."><Button size="sm" variant="outline" aria-label="Info" data-toolbar-control="details" aria-expanded={detailsOpen} onClick={(event) => openDetails(event.currentTarget)}><GraphiteIcon name="working-from" size={20} />Info</Button></ToolbarIcon>,
     menu: <DropdownMenuItem onSelect={() => { if (moreButtonRef.current) openDetails(moreButtonRef.current); }}>Info</DropdownMenuItem>,
   });
   toolbarItems.push({
-    spec: { id: "fit", width: 56, moveOrder: 10 },
-    row: <ToolbarIcon label="Fit"><Button size="icon" variant="outline" aria-label="Fit" data-toolbar-control="fit" onClick={() => fit(true)}><GraphiteIcon name="fit" size={20} /></Button></ToolbarIcon>,
+    spec: { id: "fit", width: 56, moveOrder: 2 },
+    row: <ToolbarIcon label="Fit. Bring the whole board into view."><Button size="icon" variant="outline" aria-label="Fit" data-toolbar-control="fit" onClick={() => fit(true)}><GraphiteIcon name="fit" size={20} /></Button></ToolbarIcon>,
     menu: <DropdownMenuItem onSelect={() => fit(true)}>Fit</DropdownMenuItem>,
   });
   toolbarItems.push({
@@ -3438,7 +3438,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   });
   toolbarItems.push({
     spec: { id: "card-face", width: 68 },
-    row: <ToolbarIcon label="Show work as"><span data-toolbar-control="card-face"><FaceToggle value={cardFace} words={false} onChange={(next) => { clearCardFaceOverrides(); setCardFace(next); noteWorkboardFace(orgId, next); }} /></span></ToolbarIcon>,
+    row: <ToolbarIcon label="Show work as. Switch between the sketch and the real page."><span data-toolbar-control="card-face"><FaceToggle value={cardFace} words={false} onChange={(next) => { clearCardFaceOverrides(); setCardFace(next); noteWorkboardFace(orgId, next); }} /></span></ToolbarIcon>,
   });
   const toolbarPlan = planToolbarOverflow(toolbarWidth > 0 ? toolbarWidth : Number.MAX_SAFE_INTEGER, toolbarItems.map((item) => item.spec));
   const toolbarOverflowItems = toolbarItems.filter((item) => toolbarPlan.overflow.includes(item.spec.id));
