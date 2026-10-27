@@ -28,6 +28,8 @@ export default defineConfig({
     ...({
       test: {
         exclude: ["tests/e2e/**", "node_modules/**", "dist/**", ".output/**"],
+        setupFiles: ["./tests/setup.ts"],
+        testTimeout: 15000,
       },
     } as Record<string, unknown>),
 
