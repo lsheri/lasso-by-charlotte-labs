@@ -7,6 +7,9 @@ import { AnchorPane } from "@/components/provenance/AnchorPane";
 import { SlidesPane } from "@/components/provenance/SlidesPane";
 import { SourceMark } from "@/components/work/SourceMark";
 import { Button } from "@/components/ui/button";
+import { brandForToolkit } from "@/components/connectors/BrandLogo";
+import { ReaderVendorMark } from "@/components/canvas-lab/ReaderVendorMark";
+import { vendorHue } from "@/lib/work-identity";
 import { inboundLabNodeIds, type LabComment, type LabLink, type LabNode } from "@/components/canvas-lab/canvas-lab-model";
 import type { DecisionRow } from "@/hooks/use-decisions";
 import { srcsOf } from "@/hooks/use-decisions";
@@ -47,8 +50,10 @@ export function CanvasLabReview({ item, anchorNodeId, links, profileId, decision
     { id: "context" as const, label: "Context", rows: (data?.upstream ?? []).filter((entry) => entry.type !== "ai_thread") },
     { id: "ai_work" as const, label: "AI work", rows: (data?.upstream ?? []).filter((entry) => entry.type === "ai_thread") },
   ];
+  const sourceHue = vendorHue(item.source_vendor);
+  const sourceBrand = item.source_vendor ? brandForToolkit(item.source_vendor) : "unknown";
   return <div className="fixed inset-0 z-[60] flex flex-col bg-background" data-testid="canvas-lab-review">
-    <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3"><div><p className="font-mono text-[9px] uppercase tracking-[0.08em] text-green">What fed this</p><h1 className="truncate font-serif text-[26px] text-foreground">{item.title}</h1></div><Button type="button" variant="ghost" onClick={onClose}>Back to the workboard</Button></header>
+    <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3"><div><p className="font-mono text-[9px] uppercase tracking-[0.08em] text-green">What fed this</p><h1 className="truncate font-serif text-[26px] text-foreground">{item.title}</h1></div>{sourceHue && sourceBrand !== "unknown" ? <div className="flex flex-wrap items-center justify-end gap-3"><ReaderVendorMark brand={sourceBrand} hue={sourceHue} /><Button type="button" variant="ghost" onClick={onClose}>Back to the workboard</Button></div> : <Button type="button" variant="ghost" onClick={onClose}>Back to the workboard</Button>}</header>
     <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
       <aside className="w-full shrink-0 overflow-y-auto border-b border-border bg-[var(--nb-paper)] p-3 lg:w-[280px] lg:border-b-0 lg:border-r">
         {isLoading ? <p className="text-[12px] text-muted-foreground">Reading the record…</p> : null}

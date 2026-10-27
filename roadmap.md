@@ -1,5 +1,8 @@
 # Roadmap
 
+- [ ] TOOLBAR-1 / READER-MARK: revised ten retention integers, exact tooltips and vendor mark; unchanged actions and tests; verify suites and 1280/390.
+- [ ] Card-face overflow fallback: separately queued by founder; no fallback today, leave unset in TOOLBAR-1.
+
 - [x] SEC-FILL: explicit saved-section dashes, shared background picker, existing frame persistence, additive events and design row; after and recovered pre-change suites both 38 failing files / 127 failed / 4,858 passed with identical failing-file sets; section fixtures inspected at 1280/390.
 - [ ] SEC-FILL: authenticated draw/save/reload verification blocked by external unmanaged authentication; explicit typecheck count unavailable because manual project typechecks are prohibited.
 
