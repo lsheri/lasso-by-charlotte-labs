@@ -699,7 +699,9 @@ export function ConnectorPicker({
         {page?.unsupported ? (
           <p className="text-sm text-muted-foreground">{page.unsupported}</p>
         ) : null}
+        </div>
 
+        <div className="min-h-0 flex-1 overflow-y-auto">
         {loading ? (
           <p className="text-sm text-muted-foreground">Looking…</p>
         ) : items.length === 0 && !page?.unsupported ? (
@@ -838,8 +840,9 @@ export function ConnectorPicker({
             ) : null}
           </div>
         ) : null}
+        </div>
 
-        <div className="flex justify-end">
+        <div className="flex shrink-0 justify-end">
           {singlePick ? (
             <Button
               type="button"
