@@ -1,6 +1,7 @@
 # Roadmap
 
-- [ ] TOOLBAR-1 / READER-MARK: revised ten retention integers, exact tooltips and vendor mark; unchanged actions and tests; verify suites and 1280/390.
+- [x] TOOLBAR-1 / READER-MARK: revised ten retention integers, exact tooltips and vendor mark; 11 focused tests pass before/after; full after 38 files / 127 failed / 4,858 passed, no new failures against same-session before 39 / 128 / 4,857 (sh6c left); vendor fixtures inspected at 1280/390, build OK.
+- [ ] TOOLBAR-1 / READER-MARK: real signed-in toolbar and reader verification blocked by external unmanaged authentication; fixture rendering and source comparison verified only.
 - [ ] Card-face overflow fallback: separately queued by founder; no fallback today, leave unset in TOOLBAR-1.
 
 - [x] SEC-FILL: explicit saved-section dashes, shared background picker, existing frame persistence, additive events and design row; after and recovered pre-change suites both 38 failing files / 127 failed / 4,858 passed with identical failing-file sets; section fixtures inspected at 1280/390.
