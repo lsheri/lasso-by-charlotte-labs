@@ -112,6 +112,7 @@ describe("non-blocking profile-to-auth mirror identity", () => {
   it("warm profile at tier a retains fresh per-event ids and no person profiling", async () => {
     await sendProfile("profile-tier-a");
     await settleLookups();
+    resetConsentCache();
     await sendProfile("profile-tier-a", null, "a");
     const first = body().distinct_id;
     await sendProfile("profile-tier-a", null, "a");
