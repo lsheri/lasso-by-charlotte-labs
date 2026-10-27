@@ -201,6 +201,7 @@ const LIVE_KEYS_BY_EVENT: Record<string, readonly string[]> = {
     "attachments_placed",
     "auth_kind",
     "channel",
+    "connector_version",
     "decisions",
     "degraded_refusals",
     "entry",
@@ -227,6 +228,8 @@ const LIVE_KEYS_BY_EVENT: Record<string, readonly string[]> = {
   "mcp.consent_denied": ["client"],
   "mcp.connection_revoked": ["kind", "via"],
   "mcp.connection_revealed": ["kind"],
+  "mcp.push_intent_completed": ["connector_version", "matched_by", "status", "tool"],
+  "mcp.push_intent_declared": ["connector_version", "has_expected", "tool", "vendor"],
   "mcp.read": ["auth_kind", "items_band", "kind", "outcome", "stage"],
 };
 
