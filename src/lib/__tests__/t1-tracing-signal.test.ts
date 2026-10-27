@@ -4,7 +4,7 @@ import { EVENT_DIM_KEYS } from "../event-dim-allowlist";
 
 const read = (p: string) => readFileSync(p, "utf8");
 const SENTENCE =
-  "For each attachment, set produced_at_turn to the 1-indexed position of the turn that produced or first shared this file. Omit it if you are not sure. Never guess.";
+  "Set produced_at_turn on each attachment only when you are sure of the position.";
 
 describe("T1 tracing signal", () => {
   const mcp = read("src/lib/mcp-handler.server.ts");

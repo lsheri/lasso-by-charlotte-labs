@@ -103,12 +103,14 @@ describe("PS3 — the description routes artifacts to text and carries the conne
     .replace("${PUSH_DESC_BUILD}", PUSH_DESC_BUILD)
     .replace("${LASSO_CONNECTOR_VERSION}", LASSO_CONNECTOR_VERSION);
   it("preserves text routes and the bounded versioned description", () => {
-    expect(rendered.length).toBeLessThan(5400);
+    expect(rendered.length).toBeLessThan(3800);
     expect(rendered).toContain("read the document's text with its own read tool");
     expect(rendered).not.toContain("export tool first");
+    expect(rendered).toContain("push_attachment once per attachment");
+    expect(rendered).toContain("Call lasso_push_options first");
     expect(rendered).toContain("rejects a file_ref for a document with no rendition");
     expect(rendered.endsWith(`connector: ${LASSO_CONNECTOR_VERSION}`)).toBe(true);
-    expect(PUSH_DESC_BUILD).toBe("oct27d");
+    expect(PUSH_DESC_BUILD).toBe("oct27e");
     expect(LASSO_CONNECTOR_VERSION).toMatch(/^\d+\.\d+\.\d+$/);
   });
 });
