@@ -499,7 +499,7 @@ export const CORS_HEADERS: Record<string, string> = {
  */
 export const PUSH_DESC_BUILD = "oct27d";
 /** Bumped in the same commit that closes each connector unit. Appears on every tool description, in every push result, and on the push event. */
-export const LASSO_CONNECTOR_VERSION = "1.5.1";
+export const LASSO_CONNECTOR_VERSION = "1.5.2";
 
 
 type Obj = Record<string, unknown>;
@@ -1266,11 +1266,27 @@ export async function handleMcpRequest(
   if (method === "initialize") {
     const asked = String((params["protocolVersion"] as string) ?? PROTOCOL_VERSION);
     const info = (params["clientInfo"] ?? {}) as Obj;
+    const reportedName = machineLabel(info["name"]);
     rememberClient(owner.tokenId, {
-      name: machineLabel(info["name"]),
+      name: reportedName,
       version: machineLabel(info["version"]),
       protocol: machineLabel(asked),
     });
+    // T1d. A link connection starts with client_name null; the first
+    // initialize that reports a real name stamps it. Best effort: a failure
+    // logs and never blocks the handshake.
+    if (reportedName !== "unknown") {
+      try {
+        const { error } = await supabaseAdmin
+          .from("mcp_connections")
+          .update({ client_name: reportedName })
+          .eq("id", owner.tokenId)
+          .is("client_name", null);
+        if (error) throw new Error(error.message);
+      } catch (err) {
+        console.warn("connection client name stamp failed", err instanceof Error ? err.message : err);
+      }
+    }
     return rpcResult(id, {
       protocolVersion: ACCEPTED_PROTOCOLS.has(asked) ? asked : PROTOCOL_VERSION,
       capabilities: { tools: {}, resources: {} },
@@ -1597,7 +1613,7 @@ async function pushThread(
   if (error || !item)
     return rpcError(id, -32603, error?.message ?? "Could not save the conversation");
 
-  const threadPushId = await writePushHistory(owner, item.id, { mode: "created", tool: "push_thread", sourceVendor: sourceAi, clientName: pushClientName(client), turnsAdded: turns.length });
+  const threadPushId = await writePushHistory(owner, item.id, { mode: "created", tool: "push_thread", sourceVendor: sourceAi, clientName: await pushClientNameFor(owner, client), turnsAdded: turns.length });
   const rows = await Promise.all(
     turns.map(async (t, i) => ({
       ...(threadPushId ? { push_id: threadPushId } : {}),
@@ -1800,6 +1816,34 @@ async function stampVersionPush(workItemId: string, versionNo: number, pushId: s
 
 function pushClientName(client: ClientIdentity | undefined): string | null {
   return client?.name && client.name !== "unknown" ? client.name : null;
+}
+
+/**
+ * T1d. A cold isolate has no initialize memory, but the connection row may
+ * carry the name an earlier initialize stamped. Read only on a map miss,
+ * only from the push handlers, best effort: a failed read is null and never
+ * blocks the push.
+ */
+async function connectionClientName(owner: Owner): Promise<string | null> {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from("mcp_connections")
+      .select("client_name")
+      .eq("id", owner.tokenId)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    const name = data?.client_name;
+    return typeof name === "string" && name.length > 0 ? name : null;
+  } catch (err) {
+    console.warn("connection client name read failed", err instanceof Error ? err.message : err);
+    return null;
+  }
+}
+
+async function pushClientNameFor(owner: Owner, client: ClientIdentity | undefined): Promise<string | null> {
+  const fromMemory = pushClientName(client);
+  if (fromMemory !== null || CLIENT_IDENTITIES.has(owner.tokenId)) return fromMemory;
+  return connectionClientName(owner);
 }
 
 async function pushDocument(owner: Owner, args: Obj, id: unknown, client?: ClientIdentity): Promise<Response> {
@@ -2264,7 +2308,7 @@ async function pushOptions(owner: Owner, args: Obj, id: unknown, client: ClientI
       title: typeof args["title"] === "string" ? args["title"] : null,
       vendor: typeof args["vendor"] === "string" ? args["vendor"] : null,
       tool: "push_conversation",
-      client_name: pushClientName(client),
+      client_name: await pushClientNameFor(owner, client),
       expected_messages: expectedMessages,
       expected_attachments: expectedAttachments,
     }).select("id").single();
@@ -2963,7 +3007,7 @@ export async function pushConversation(
   const ensurePushRow = async (mode: "created" | "appended" | "unchanged", counts: Partial<PushHistoryRow> = {}) => {
     if (!pushRowTried) {
       pushRowTried = true;
-      pushId = await writePushHistory(owner, threadId, { mode, tool: pushTool, sourceVendor: vendor, clientName: pushClientName(client), ...counts });
+      pushId = await writePushHistory(owner, threadId, { mode, tool: pushTool, sourceVendor: vendor, clientName: await pushClientNameFor(owner, client), ...counts });
       return { id: pushId, fresh: true };
     }
     return { id: pushId, fresh: false };

@@ -158,21 +158,28 @@ function revisedLabel(turn: Turn): string | null {
 
 /**
  * P1 item 2. A span the pushing client could no longer reproduce word for
- * word. The record says exactly which positions it stands for.
+ * word. The record says exactly which positions it stands for, or that the
+ * positions themselves are no longer known.
  */
-export function summarisedSpan(turn: { meta?: unknown }): { from: number; to: number } | null {
+export type SummarisedSpan = { from: number; to: number } | { unknown: true };
+
+export function summarisedSpan(turn: { meta?: unknown }): SummarisedSpan | null {
   const meta =
     turn.meta && typeof turn.meta === "object" && !Array.isArray(turn.meta)
-      ? (turn.meta as { fidelity?: unknown; covers_from?: unknown; covers_to?: unknown })
+      ? (turn.meta as { fidelity?: unknown; covers_from?: unknown; covers_to?: unknown; covers_unknown?: unknown })
       : null;
   if (meta?.fidelity !== "summary") return null;
   const from = meta.covers_from;
   const to = meta.covers_to;
-  if (typeof from !== "number" || typeof to !== "number") return null;
-  return { from, to };
+  if (typeof from === "number" && typeof to === "number") return { from, to };
+  if (meta.covers_unknown === true) return { unknown: true };
+  return null;
 }
 
-export function summarisedLabel(span: { from: number; to: number }): string {
+export function summarisedLabel(span: SummarisedSpan): string {
+  if ("unknown" in span) {
+    return "Summarised by the AI client. The earlier messages were not available word for word.";
+  }
   return `Summarised by the AI client. Messages ${span.from} to ${span.to} were not available word for word.`;
 }
 
