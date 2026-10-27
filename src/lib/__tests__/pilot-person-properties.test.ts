@@ -24,6 +24,12 @@ function send(key: string, tier = "c", userId: string | null = key) {
   return recordEvent(sb(tier), { eventType: "invite.blocked", userId, orgId: key, dims: { state: "x" }, payload: { title: "Private work" } });
 }
 function body() { return JSON.parse(fetchMock.mock.calls.at(-1)?.[1].body); }
+function settleLookups() { return new Promise<void>((resolve) => setTimeout(resolve, 0)); }
+function deferred<T>() {
+  let resolve: (value: T) => void = () => {};
+  const promise = new Promise<T>((done) => { resolve = done; });
+  return { promise, resolve };
+}
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -38,7 +44,36 @@ beforeEach(() => {
 afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); });
 
 describe("cached founder-only mirror person properties", () => {
+  it("first cold event resolves before either lookup and later event carries sourced keys", async () => {
+    const email = deferred<{ data: { user: { email: string } }; error: null }>();
+    const source = deferred<{ data: { signup_source: string }; error: null }>();
+    let lookupResolved = false;
+    mocks.email.mockReturnValue(email.promise);
+    mocks.source.mockReturnValue(source.promise);
+    let requestResolved = false;
+    const request = send("cold-first").then(() => { requestResolved = true; });
+    try {
+      await vi.waitFor(() => expect(requestResolved).toBe(true));
+      expect(lookupResolved).toBe(false);
+      expect(body().properties).not.toHaveProperty("$set");
+      expect(mocks.email).toHaveBeenCalledExactlyOnceWith("cold-first");
+      expect(mocks.source).toHaveBeenCalledTimes(1);
+    } finally {
+      lookupResolved = true;
+      email.resolve({ data: { user: { email: "pilot@example.test" } }, error: null });
+      source.resolve({ data: { signup_source: "direct" }, error: null });
+    }
+    await request;
+    await settleLookups();
+    await send("cold-first");
+    expect(body().properties.$set).toEqual({ email: "pilot@example.test", signup_source: "direct" });
+    expect(mocks.email).toHaveBeenCalledTimes(1);
+    expect(mocks.source).toHaveBeenCalledTimes(1);
+  });
   it("joinable person sets only sourced email and signup_source, never stored or work content", async () => {
+    await send("joinable");
+    expect(body().properties).not.toHaveProperty("$set");
+    await settleLookups();
     await send("joinable");
     expect(body().properties.$set).toEqual({ email: "pilot@example.test", signup_source: "direct" });
     expect(body().properties).not.toHaveProperty("title");
@@ -72,19 +107,48 @@ describe("cached founder-only mirror person properties", () => {
   });
   it("two events reuse both cached lookups", async () => {
     await send("cached");
+    await settleLookups();
     await send("cached");
     expect(mocks.email).toHaveBeenCalledExactlyOnceWith("cached");
     expect(mocks.source).toHaveBeenCalledTimes(1);
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
   it("concurrent misses share one lookup", async () => {
-    await Promise.all([send("concurrent"), send("concurrent")]);
-    expect(mocks.email).toHaveBeenCalledTimes(1);
-    expect(mocks.source).toHaveBeenCalledTimes(1);
+    const email = deferred<{ data: { user: null }; error: null }>();
+    const source = deferred<{ data: null; error: null }>();
+    mocks.email.mockReturnValue(email.promise);
+    mocks.source.mockReturnValue(source.promise);
+    try {
+      await Promise.all([send("concurrent"), send("concurrent")]);
+      expect(mocks.email).toHaveBeenCalledTimes(1);
+      expect(mocks.source).toHaveBeenCalledTimes(1);
+      expect(fetchMock.mock.calls.every((call) => !JSON.parse(call[1].body).properties.$set)).toBe(true);
+    } finally {
+      email.resolve({ data: { user: null }, error: null });
+      source.resolve({ data: null, error: null });
+      await settleLookups();
+    }
+  });
+  it("a new user sends only the already cached org key", async () => {
+    await send("warm-org");
+    await settleLookups();
+    const email = deferred<{ data: { user: null }; error: null }>();
+    mocks.email.mockReturnValue(email.promise);
+    try {
+      await send("warm-org", "c", "cold-user");
+      expect(body().properties.$set).toEqual({ signup_source: "direct" });
+      expect(mocks.email).toHaveBeenCalledTimes(2);
+      expect(mocks.email).toHaveBeenNthCalledWith(2, "cold-user");
+      expect(mocks.source).toHaveBeenCalledTimes(1);
+    } finally {
+      email.resolve({ data: { user: null }, error: null });
+      await settleLookups();
+    }
   });
   it("failed email read caches null while the event and source still send", async () => {
     mocks.email.mockRejectedValue(new Error("unavailable"));
     await send("failed-email");
+    await settleLookups();
     await send("failed-email");
     expect(body().properties.$set).toEqual({ signup_source: "direct" });
     expect(fetchMock).toHaveBeenCalledTimes(2);
@@ -93,6 +157,7 @@ describe("cached founder-only mirror person properties", () => {
   it("failed source response caches null while email still sends", async () => {
     mocks.source.mockResolvedValue({ data: { signup_source: "discard" }, error: { message: "unavailable" } });
     await send("failed-source");
+    await settleLookups();
     await send("failed-source");
     expect(body().properties.$set).toEqual({ email: "pilot@example.test" });
     expect(fetchMock).toHaveBeenCalledTimes(2);
@@ -102,6 +167,7 @@ describe("cached founder-only mirror person properties", () => {
     mocks.email.mockResolvedValue({ data: { user: null }, error: null });
     mocks.source.mockResolvedValue({ data: null, error: null });
     await send("missing");
+    await settleLookups();
     await send("missing");
     expect(body().properties).not.toHaveProperty("$set");
     expect(mocks.email).toHaveBeenCalledTimes(1);
@@ -112,8 +178,9 @@ describe("cached founder-only mirror person properties", () => {
     mocks.email.mockImplementation(() => new Promise(() => {}));
     const request = send("hanging");
     await vi.waitFor(() => expect(mocks.email).toHaveBeenCalledTimes(1));
-    await vi.advanceTimersByTimeAsync(1000);
     await request;
+    expect(body().properties).not.toHaveProperty("$set");
+    await vi.advanceTimersByTimeAsync(1000);
     await send("hanging");
     expect(body().properties.$set).toEqual({ signup_source: "direct" });
     expect(mocks.email).toHaveBeenCalledTimes(1);

@@ -83,16 +83,15 @@ const orgSignupSources = new Map<string, string | null>();
 const personEmailReads = new Map<string, Promise<string | null>>();
 const orgSignupSourceReads = new Map<string, Promise<string | null>>();
 
-/** Cache missing/failed reads too, and share concurrent misses within the worker. */
-async function cachedPersonProperty(
+/** Return only warm values; detached misses cache nulls and share concurrent reads. */
+function cachedPersonProperty(
   cache: Map<string, string | null>,
   pending: Map<string, Promise<string | null>>,
   key: string,
   lookup: () => Promise<string | null>,
-): Promise<string | null> {
+): string | null {
   if (cache.has(key)) return cache.get(key) ?? null;
-  const existing = pending.get(key);
-  if (existing) return existing;
+  if (pending.has(key)) return null;
   const read = (async () => {
     let timer: ReturnType<typeof setTimeout> | undefined;
     let value: string | null = null;
@@ -111,23 +110,22 @@ async function cachedPersonProperty(
     return value;
   })();
   pending.set(key, read);
-  return read;
+  return null;
 }
 
-async function pilotPersonProperties(userId: string, orgId: string): Promise<MirrorContext["personProperties"]> {
-  const admin = import("@/integrations/supabase/client.server");
-  const [email, signupSource] = await Promise.all([
-    cachedPersonProperty(personEmails, personEmailReads, userId, async () => {
-      const { supabaseAdmin } = await admin;
-      const { data, error } = await supabaseAdmin.auth.admin.getUserById(userId);
-      return error ? null : data.user?.email || null;
-    }),
-    cachedPersonProperty(orgSignupSources, orgSignupSourceReads, orgId, async () => {
-      const { supabaseAdmin } = await admin;
-      const { data, error } = await supabaseAdmin.from("orgs").select("signup_source").eq("id", orgId).maybeSingle();
-      return error ? null : data?.signup_source || null;
-    }),
-  ]);
+function pilotPersonProperties(userId: string, orgId: string): MirrorContext["personProperties"] {
+  let admin: Promise<typeof import("@/integrations/supabase/client.server")> | undefined;
+  const getAdmin = () => admin ??= import("@/integrations/supabase/client.server");
+  const email = cachedPersonProperty(personEmails, personEmailReads, userId, async () => {
+    const { supabaseAdmin } = await getAdmin();
+    const { data, error } = await supabaseAdmin.auth.admin.getUserById(userId);
+    return error ? null : data.user?.email || null;
+  });
+  const signupSource = cachedPersonProperty(orgSignupSources, orgSignupSourceReads, orgId, async () => {
+    const { supabaseAdmin } = await getAdmin();
+    const { data, error } = await supabaseAdmin.from("orgs").select("signup_source").eq("id", orgId).maybeSingle();
+    return error ? null : data?.signup_source || null;
+  });
   return {
     ...(email ? { email } : {}),
     ...(signupSource ? { signup_source: signupSource } : {}),
@@ -429,7 +427,7 @@ export async function recordEvent(
       if (mirrorActorHash) {
         const joinablePerson = actorKind === "person" && consent.tier !== "a";
         const personProperties = joinablePerson && input.userId
-          ? await pilotPersonProperties(input.userId, input.orgId)
+          ? pilotPersonProperties(input.userId, input.orgId)
           : undefined;
         await mirrorToPostHog(input.eventType, mirrorActorHash, tenantHash, dims, {
           environment: resolveEnvironment(),
