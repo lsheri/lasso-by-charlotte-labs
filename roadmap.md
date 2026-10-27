@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] AI usage pilot: detached exact-cost event, privacy tests, and one final background suite against the latest 38-file baseline.
+- [x] AI usage pilot: detached exact-cost event and privacy tests implemented; final background suite results reported separately against the latest 38-file baseline.
 - [x] Pilot person analytics: browser properties and authenticated mirror join implemented; anonymous/canonical privacy preserved; final full-suite checks recorded separately.
 
 - [x] SECD-3a: desktop section menu, send-time live membership, empty/deleted guards, and additive scope_kind; 14 new tests pass with no new prerequisite failures, tsgo exit 0.
