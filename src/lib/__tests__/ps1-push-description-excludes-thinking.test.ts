@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 
 import { describe, expect, it } from "vitest";
 
-import { PUSH_DESC_BUILD } from "../mcp-handler.server";
+import { PUSH_DESC_BUILD, LASSO_CONNECTOR_VERSION } from "../mcp-handler.server";
 
 
 const src = readFileSync("src/lib/mcp-handler.server.ts", "utf8");
@@ -71,10 +71,11 @@ describe("CANARY-1 — the push_conversation description carries a build marker"
   })();
   const rendered = literal
     .replace("${placementLine(vocab)}", "placed")
-    .replace("${PUSH_DESC_BUILD}", PUSH_DESC_BUILD);
+    .replace("${PUSH_DESC_BUILD}", PUSH_DESC_BUILD)
+    .replace("${LASSO_CONNECTOR_VERSION}", LASSO_CONNECTOR_VERSION);
 
   it("ends with the marker built from the exported constant", () => {
-    expect(rendered.endsWith(` desc-build: ${PUSH_DESC_BUILD}`)).toBe(true);
+    expect(rendered.endsWith(` desc-build: ${PUSH_DESC_BUILD} connector: ${LASSO_CONNECTOR_VERSION}`)).toBe(true);
   });
 
   it("sits one space after the final sentence and appears once", () => {
@@ -93,3 +94,20 @@ describe("CANARY-1 — the push_conversation description carries a build marker"
   });
 });
 
+
+
+describe("PS3 — the description routes artifacts to text and carries the connector version", () => {
+  const start = src.indexOf('`When the user');
+  const literal = src.slice(start + 1, src.indexOf('`,', start));
+  const rendered = literal.replace("${placementLine(vocab)}", "placed")
+    .replace("${PUSH_DESC_BUILD}", PUSH_DESC_BUILD)
+    .replace("${LASSO_CONNECTOR_VERSION}", LASSO_CONNECTOR_VERSION);
+  it("preserves text routes and the bounded versioned description", () => {
+    expect(rendered.length).toBeLessThan(4900);
+    expect(rendered).toContain("exported to Markdown");
+    expect(rendered).toContain("rejects a file_ref for a document with no rendition");
+    expect(rendered.endsWith(`connector: ${LASSO_CONNECTOR_VERSION}`)).toBe(true);
+    expect(PUSH_DESC_BUILD).toBe("oct27a");
+    expect(LASSO_CONNECTOR_VERSION).toMatch(/^\d+\.\d+\.\d+$/);
+  });
+});
