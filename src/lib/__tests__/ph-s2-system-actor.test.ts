@@ -71,6 +71,7 @@ describe("PH-S2 system actor mirror", () => {
     expect(standIn).not.toBeNull();
     expect(b.distinct_id).toBe(standIn);
     expect(b.properties.actor_kind).toBe("system");
+    expect(b.properties.$process_person_profile).toBe(false);
   });
 
   it("the events row for a system event keeps actor_hash null", async () => {
@@ -85,7 +86,7 @@ describe("PH-S2 system actor mirror", () => {
     expect(insertCalls[0]?.["actor_hash"]).toBeNull();
   });
 
-  it("with a user the mirror carries actor_kind person and the real hash", async () => {
+  it("with a user the mirror joins the auth id while storage keeps the hash", async () => {
     await recordEvent(fakeSupabase("t2"), {
       eventType: "invite.blocked",
       orgId: "o1",
@@ -93,8 +94,37 @@ describe("PH-S2 system actor mirror", () => {
       dims: {},
     });
     const [b] = bodies();
-    expect(b.distinct_id).toBe(await computeActorHash("u1"));
+    expect(b.distinct_id).toBe("u1");
+    expect(insertCalls[0]?.["actor_hash"]).toBe(await computeActorHash("u1"));
+    expect(b.properties.$process_person_profile).toBe(true);
     expect(b.properties.actor_kind).toBe("person");
+  });
+
+  it("tier a uses fresh person-less per-event ids", async () => {
+    const sb = fakeSupabase("a");
+    const input = { eventType: "invite.blocked" as const, orgId: "o1", userId: "u1", dims: {} };
+    await recordEvent(sb, input);
+    await recordEvent(sb, input);
+    const [first, second] = bodies();
+    expect(first.distinct_id).not.toBe("u1");
+    expect(first.distinct_id).not.toBe(second.distinct_id);
+    expect(first.properties.$process_person_profile).toBe(false);
+    expect(second.properties.$process_person_profile).toBe(false);
+  });
+
+  it("joinable b, c and d tiers mirror under the auth id", async () => {
+    for (const tier of ["b", "c", "d"]) {
+      resetConsentCache();
+      await recordEvent(fakeSupabase(tier), { eventType: "invite.blocked", orgId: "o1", userId: "u1" });
+      const body = bodies().at(-1);
+      expect(body.distinct_id).toBe("u1");
+      expect(body.properties.$process_person_profile).toBe(true);
+    }
+  });
+
+  it("t0 with a user never mirrors", async () => {
+    await recordEvent(fakeSupabase("t0"), { eventType: "invite.blocked", orgId: "o1", userId: "u1" });
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("t0 with userId null sends nothing", async () => {

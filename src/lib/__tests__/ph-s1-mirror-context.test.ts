@@ -76,6 +76,8 @@ describe("PH-S1 mirror context", () => {
     expect(p.$raw_user_agent).toBe("UA/1.0");
     expect("$ip" in p).toBe(false);
     expect(p.$groups).toBeDefined();
+    expect(b.distinct_id).toBe("u1");
+    expect(p.$process_person_profile).toBe(true);
     expect(p.state).toBe("x");
     expect(p.mode).toBe("sync");
     expect(dims).toEqual({ state: "x", mode: "sync" });
@@ -87,6 +89,7 @@ describe("PH-S1 mirror context", () => {
     const [b] = bodies();
     expect(b.properties.$ip).toBe("9.9.9.9");
     expect("$groups" in b.properties).toBe(false);
+    expect(b.properties.$process_person_profile).toBe(false);
     expect(b.properties.workspace_type).toBe("none");
     expect(b.properties.partner).toBe("none");
     expect(b.properties.variant).toBe("a");

@@ -73,6 +73,8 @@ export type MirrorContext = {
   account_stage?: string;
   /** Anonymous path only: sends $ip and drops $groups. */
   anonymous?: boolean;
+  /** Founder-facing pilot: only a consent-permitted raw auth user id is joinable. */
+  joinablePerson?: boolean;
 };
 
 function readHeader(name: string): string | undefined {
@@ -118,7 +120,7 @@ export function contextProperties(context: MirrorContext): Record<string, unknow
   return props;
 }
 
-/** Content-free mirror: hashes and dimensions only. Awaited so the edge runtime
+/** Content-free mirror: identity and dimensions only. Awaited so the edge runtime
  * does not cancel the request when the handler returns. Never throws. */
 export async function mirrorToPostHog(
   eventType: TelemetryEvent,
@@ -144,7 +146,7 @@ export async function mirrorToPostHog(
         properties: {
           ...(context ? contextProperties(context) : {}),
           ...dims,
-          $process_person_profile: false,
+          $process_person_profile: context?.anonymous !== true && context?.joinablePerson === true,
           ...(context?.anonymous ? {} : { $groups: { org: tenantHash } }),
         },
       }),
@@ -361,8 +363,8 @@ export async function recordEvent(
       }
       // PH-S2: a system event (no signed-in user) still mirrors, under a
       // stand-in distinct id. The events row keeps actor_hash null either way.
-      const stableId = actorHash ?? (await computeActorHash(`system:${input.orgId}`));
-      const actorKind = actorHash ? ("person" as const) : ("system" as const);
+      const stableId = input.userId || (await computeActorHash(`system:${input.orgId}`));
+      const actorKind = input.userId ? ("person" as const) : ("system" as const);
       // V2-1: at tier "a" the copy carries a fresh id, never a joinable one.
       const mirrorActorHash = mirrorDistinctId(consent.tier, stableId);
       if (mirrorActorHash) {
@@ -372,6 +374,7 @@ export async function recordEvent(
           affiliated: stamp.affiliated,
           partner,
           actor_kind: actorKind,
+          joinablePerson: actorKind === "person" && consent.tier !== "a",
           ...(accountStage ? { account_stage: accountStage } : {}),
         });
       }

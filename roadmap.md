@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Pilot person analytics: join browser/authenticated mirror identities, preserve anonymous and canonical privacy, run full suite once and report checks.
+
 - [x] SECD-3a: desktop section menu, send-time live membership, empty/deleted guards, and additive scope_kind; 14 new tests pass with no new prerequisite failures, tsgo exit 0.
 - [ ] SECD-3a: real signed-in question and source-trail read-back blocked by external unmanaged authentication; public Sign in checked at 1280 and 390.
 
