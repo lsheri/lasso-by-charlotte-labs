@@ -37,10 +37,14 @@ function AppShellInner() {
   useEffect(() => {
     setClientTelemetryOrg(profile?.org_id ?? null);
   }, [profile?.org_id]);
-  // Identity only, never person properties.
+  // Identity and person properties, founder-facing pilot only. Never work content.
   useEffect(() => {
-    identifyPostHog(authUser?.id ?? null);
-  }, [authUser?.id]);
+    identifyPostHog(authUser?.id ?? null, {
+      ...(profile?.display_name ? { name: profile.display_name } : {}),
+      ...(profile?.org_id ? { org_id: profile.org_id } : {}),
+      ...(profile?.org_type ? { org_type: profile.org_type } : {}),
+    });
+  }, [authUser?.id, profile?.display_name, profile?.org_id, profile?.org_type]);
   // Pass 175b: the sending sweep needs a live request to finish inside. This
   // is invisible: no UI, no state, no event, at most once every ten minutes.
   useEffect(() => {

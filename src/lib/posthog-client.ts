@@ -85,17 +85,18 @@ export function initPostHog(): void {
 }
 
 /**
- * Accepts ONLY the auth user id. No person properties, ever: no email, no display name,
- * no role. Passing null resets the identity.
+ * Founder-facing pilot identity and optional person properties. Never work content.
+ * Passing null resets the identity.
  */
-export function identifyPostHog(profileId: string | null): void {
+export function identifyPostHog(profileId: string | null, properties?: Partial<Record<"email" | "name" | "org_id" | "org_type" | "register" | "signup_source", string>>): void {
   if (typeof window === "undefined") return;
   try {
     if (!profileId) {
       posthog.reset();
       return;
     }
-    posthog.identify(profileId);
+    if (properties === undefined) posthog.identify(profileId);
+    else posthog.identify(profileId, properties);
   } catch {
     /* telemetry must never break the app */
   }
