@@ -1,18 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ email: vi.fn(), source: vi.fn(), insert: vi.fn() }));
+const mocks = vi.hoisted(() => ({ email: vi.fn(), source: vi.fn(), profile: vi.fn(), insert: vi.fn() }));
 // Mirror mock structure follows ph-s1-mirror-context.test.ts, with admin reads added.
 vi.mock("@tanstack/react-start/server", () => ({ getRequestHeader: () => undefined }));
 vi.mock("@/integrations/supabase/client.server", () => ({
   supabaseAdmin: {
     auth: { admin: { getUserById: mocks.email } },
-    from: () => ({ insert: mocks.insert, select: () => ({ eq: () => ({ maybeSingle: mocks.source }) }) }),
+    from: (table: string) => ({ insert: mocks.insert, select: () => ({ eq: (column: string, value: string) => ({ maybeSingle: () => table === "profiles" ? mocks.profile(column, value) : mocks.source() }) }) }),
   },
 }));
 vi.mock("../org-type.server", () => ({ workspaceStamp: async () => ({ workspace_type: "company", affiliated: false }), accountStageOf: async () => null }));
 vi.mock("../egress.server", () => ({ scheduleEgress: () => {} }));
 
-import { recordAnonymousEvent, recordEvent, resetConsentCache } from "../telemetry.server";
+import { computeActorHash, recordAnonymousEvent, recordEvent, resetConsentCache, sha256Hex } from "../telemetry.server";
 
 let fetchMock: ReturnType<typeof vi.fn>;
 function sb(tier: string) {
@@ -37,9 +37,94 @@ beforeEach(() => {
   process.env["TELEMETRY_SALT"] = "salt";
   mocks.email.mockResolvedValue({ data: { user: { email: "pilot@example.test" } }, error: null });
   mocks.source.mockResolvedValue({ data: { signup_source: "direct" }, error: null });
+  mocks.profile.mockResolvedValue({ data: { user_id: "resolved-auth-user" }, error: null });
   mocks.insert.mockResolvedValue({ error: null });
   fetchMock = vi.fn(async () => new Response("ok"));
   vi.stubGlobal("fetch", fetchMock);
+});
+
+describe("non-blocking profile-to-auth mirror identity", () => {
+  function sendProfile(profileId?: string, userId: string | null = null, tier = "c") {
+    return recordEvent(sb(tier), { eventType: "ai.usage", orgId: "profile-org", profileId, userId,
+      dims: { surface: "extract", cost_usd: 0.0123 } });
+  }
+  it("cold event resolves under the system stand-in before lookup; warm events join the auth person with one read", async () => {
+    const lookup = deferred<{ data: { user_id: string }; error: null }>();
+    mocks.profile.mockReturnValue(lookup.promise);
+    let requestResolved = false;
+    let lookupResolved = false;
+    const request = sendProfile("profile-cold-warm").then(() => { requestResolved = true; });
+    try {
+      await vi.waitFor(() => expect(requestResolved).toBe(true));
+      expect(lookupResolved).toBe(false);
+      expect(body().distinct_id).toBe(await computeActorHash("system:profile-org"));
+      expect(body().properties.actor_kind).toBe("system");
+      expect(body().properties.$process_person_profile).toBe(false);
+      expect(mocks.profile).toHaveBeenCalledExactlyOnceWith("id", "profile-cold-warm");
+    } finally {
+      lookupResolved = true;
+      lookup.resolve({ data: { user_id: "resolved-auth-user" }, error: null });
+    }
+    await request;
+    await settleLookups();
+    await sendProfile("profile-cold-warm");
+    expect(body().distinct_id).toBe("resolved-auth-user");
+    expect(body().properties.actor_kind).toBe("person");
+    expect(body().properties.$process_person_profile).toBe(true);
+    expect(body().properties.$groups).toEqual({ org: await sha256Hex("profile-org") });
+    expect(body().properties).not.toHaveProperty("title");
+    for (const [row] of mocks.insert.mock.calls) {
+      expect(row.actor_hash).toBeNull();
+      expect(row.profile_id).toBe("profile-cold-warm");
+      expect(row).not.toHaveProperty("user_id");
+      expect(row).not.toHaveProperty("$process_person_profile");
+    }
+    await sendProfile("profile-cold-warm");
+    expect(mocks.profile).toHaveBeenCalledTimes(1);
+  });
+  it("explicit userId never starts a profile lookup", async () => {
+    await sendProfile("profile-explicit", "explicit-auth-user");
+    expect(body().distinct_id).toBe("explicit-auth-user");
+    expect(body().properties.$process_person_profile).toBe(true);
+    expect(mocks.profile).not.toHaveBeenCalled();
+  });
+  it("neither identifier preserves hashed system behaviour", async () => {
+    await sendProfile();
+    expect(body().distinct_id).toBe(await computeActorHash("system:profile-org"));
+    expect(body().properties.actor_kind).toBe("system");
+    expect(body().properties.$process_person_profile).toBe(false);
+    expect(mocks.profile).not.toHaveBeenCalled();
+  });
+  it("concurrent cold events share a read and cache null on failure", async () => {
+    const lookup = deferred<{ data: null; error: { message: string } }>();
+    mocks.profile.mockReturnValue(lookup.promise);
+    try {
+      await Promise.all([sendProfile("profile-null"), sendProfile("profile-null")]);
+      expect(mocks.profile).toHaveBeenCalledTimes(1);
+    } finally {
+      lookup.resolve({ data: null, error: { message: "unavailable" } });
+      await settleLookups();
+    }
+    await sendProfile("profile-null");
+    expect(mocks.profile).toHaveBeenCalledTimes(1);
+    expect(body().properties.$process_person_profile).toBe(false);
+  });
+  it("warm profile at tier a retains fresh per-event ids and no person profiling", async () => {
+    await sendProfile("profile-tier-a");
+    await settleLookups();
+    await sendProfile("profile-tier-a", null, "a");
+    const first = body().distinct_id;
+    await sendProfile("profile-tier-a", null, "a");
+    expect(body().distinct_id).not.toBe(first);
+    expect(body().distinct_id).not.toBe("resolved-auth-user");
+    expect(body().properties.$process_person_profile).toBe(false);
+    expect(body().properties).not.toHaveProperty("$set");
+  });
+  it("t0 never mirrors or starts a profile lookup", async () => {
+    await sendProfile("profile-t0", null, "t0");
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(mocks.profile).not.toHaveBeenCalled();
+  });
 });
 afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); });
 
