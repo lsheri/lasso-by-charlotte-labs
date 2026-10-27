@@ -80,8 +80,10 @@ export type MirrorContext = {
 
 const personEmails = new Map<string, string | null>();
 const orgSignupSources = new Map<string, string | null>();
+const profileUserIds = new Map<string, string | null>();
 const personEmailReads = new Map<string, Promise<string | null>>();
 const orgSignupSourceReads = new Map<string, Promise<string | null>>();
+const profileUserIdReads = new Map<string, Promise<string | null>>();
 
 /** Return only warm values; detached misses cache nulls and share concurrent reads. */
 function cachedPersonProperty(
@@ -111,6 +113,14 @@ function cachedPersonProperty(
   })();
   pending.set(key, read);
   return null;
+}
+
+function cachedProfileUserId(profileId: string): string | null {
+  return cachedPersonProperty(profileUserIds, profileUserIdReads, profileId, async () => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin.from("profiles").select("user_id").eq("id", profileId).maybeSingle();
+    return error ? null : data?.user_id || null;
+  });
 }
 
 function pilotPersonProperties(userId: string, orgId: string): MirrorContext["personProperties"] {
@@ -420,14 +430,15 @@ export async function recordEvent(
       }
       // PH-S2: a system event (no signed-in user) still mirrors, under a
       // stand-in distinct id. The events row keeps actor_hash null either way.
-      const stableId = input.userId || (await computeActorHash(`system:${input.orgId}`));
-      const actorKind = input.userId ? ("person" as const) : ("system" as const);
+      const personId = input.userId || (input.profileId ? cachedProfileUserId(input.profileId) : null);
+      const stableId = personId || (await computeActorHash(`system:${input.orgId}`));
+      const actorKind = personId ? ("person" as const) : ("system" as const);
       // V2-1: at tier "a" the copy carries a fresh id, never a joinable one.
       const mirrorActorHash = mirrorDistinctId(consent.tier, stableId);
       if (mirrorActorHash) {
         const joinablePerson = actorKind === "person" && consent.tier !== "a";
-        const personProperties = joinablePerson && input.userId
-          ? pilotPersonProperties(input.userId, input.orgId)
+        const personProperties = joinablePerson && personId
+          ? pilotPersonProperties(personId, input.orgId)
           : undefined;
         await mirrorToPostHog(input.eventType, mirrorActorHash, tenantHash, dims, {
           environment: resolveEnvironment(),
