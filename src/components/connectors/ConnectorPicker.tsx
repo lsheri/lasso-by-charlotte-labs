@@ -502,7 +502,7 @@ export function ConnectorPicker({
     >
       {trigger ? <DialogTrigger asChild>{trigger}</DialogTrigger> : null}
       <DialogContent
-        className="max-h-[90vh] overflow-y-auto sm:max-w-3xl"
+        className="flex max-h-[90vh] flex-col overflow-hidden sm:max-w-3xl"
         onKeyDown={(e) => {
           // Alt+Left / Backspace step up a level, as in a file manager.
           const typing = (e.target as HTMLElement).tagName === "INPUT";
@@ -514,6 +514,7 @@ export function ConnectorPicker({
           }
         }}
       >
+        <div className="shrink-0 space-y-4">
         <DialogHeader>
           <DialogTitle className="page-title">{copy.title}</DialogTitle>
         </DialogHeader>
