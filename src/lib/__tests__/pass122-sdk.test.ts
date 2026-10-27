@@ -63,13 +63,13 @@ describe("SDK config is a trust guarantee", () => {
 });
 
 describe("founder-facing pilot identity and person properties", () => {
-  it("passes the id and the four properties available in AppShell", () => {
-    const properties = { email: "pilot@example.test", name: "Pilot", org_id: "org-1", org_type: "company" };
+  it("passes the id and the three properties available in AppShell", () => {
+    const properties = { name: "Pilot", org_id: "org-1", org_type: "company" };
     identifyPostHog("profile-1", properties);
     expect(identify).toHaveBeenCalledWith("profile-1", properties);
-    expect(Object.keys(identify.mock.calls[0]?.[1] ?? {}).sort()).toEqual(["email", "name", "org_id", "org_type"]);
+    expect(Object.keys(identify.mock.calls[0]?.[1] ?? {}).sort()).toEqual(["name", "org_id", "org_type"]);
     const shell = readFileSync("src/components/layout/AppShell.tsx", "utf8");
-    for (const field of ["email: authUser.email", "name: profile.display_name", "org_id: profile.org_id", "org_type: profile.org_type"]) expect(shell).toContain(field);
+    for (const field of ["name: profile.display_name", "org_id: profile.org_id", "org_type: profile.org_type"]) expect(shell).toContain(field);
   });
 
   it("passes only the id when properties are omitted", () => {

@@ -40,12 +40,11 @@ function AppShellInner() {
   // Identity and person properties, founder-facing pilot only. Never work content.
   useEffect(() => {
     identifyPostHog(authUser?.id ?? null, {
-      ...(authUser?.email ? { email: authUser.email } : {}),
       ...(profile?.display_name ? { name: profile.display_name } : {}),
       ...(profile?.org_id ? { org_id: profile.org_id } : {}),
       ...(profile?.org_type ? { org_type: profile.org_type } : {}),
     });
-  }, [authUser?.id, authUser?.email, profile?.display_name, profile?.org_id, profile?.org_type]);
+  }, [authUser?.id, profile?.display_name, profile?.org_id, profile?.org_type]);
   // Pass 175b: the sending sweep needs a live request to finish inside. This
   // is invisible: no UI, no state, no event, at most once every ten minutes.
   useEffect(() => {
