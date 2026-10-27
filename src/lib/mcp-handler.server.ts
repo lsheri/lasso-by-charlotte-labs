@@ -1210,7 +1210,7 @@ const pushTools = (vocab: McpVocab) => {
   },
 ];
   const conversation = tools[0];
-  if (!conversation) return tools;
+  if (!conversation || !("attachments" in conversation.inputSchema.properties)) return tools;
   return [...tools, {
     name: "push_attachment",
     title: "Push an attachment",
@@ -1221,7 +1221,7 @@ const pushTools = (vocab: McpVocab) => {
       properties: {
         lasso_conversation_id: { type: "string" },
         attachment: conversation.inputSchema.properties.attachments?.items,
-        destination: placementInputs(vocab).destination,
+        destination: placementInputs(vocab)["destination"],
       },
       required: ["lasso_conversation_id", "attachment"],
     },
