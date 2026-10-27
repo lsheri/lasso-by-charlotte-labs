@@ -345,6 +345,7 @@ export type Database = {
           id: number
           model: string
           org_id: string | null
+          profile_id: string | null
           surface: string
           tokens_in: number
           tokens_out: number
@@ -358,6 +359,7 @@ export type Database = {
           id?: number
           model: string
           org_id?: string | null
+          profile_id?: string | null
           surface: string
           tokens_in?: number
           tokens_out?: number
@@ -371,6 +373,7 @@ export type Database = {
           id?: number
           model?: string
           org_id?: string | null
+          profile_id?: string | null
           surface?: string
           tokens_in?: number
           tokens_out?: number
@@ -381,6 +384,13 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_usage_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
