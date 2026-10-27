@@ -140,6 +140,17 @@ describe("MCP-T2 one object per call", () => {
     expect(conversation.inputSchema.properties).not.toHaveProperty("_tool");
     expect(tool.description.endsWith(`connector: ${LASSO_CONNECTOR_VERSION}`)).toBe(true);
   });
+  it("writes mode appended when push_attachment adds an attachment", async () => {
+    const id = await conversationId();
+    await call("push_attachment", { lasso_conversation_id: id, attachment });
+    expect(table("work_item_pushes").at(-1)).toMatchObject({ work_item_id: id, tool: "push_attachment", mode: "appended", attachments_added: 1, attachments_changed: 0 });
+  });
+  it("writes mode unchanged when push_attachment re-sends an identical attachment", async () => {
+    const id = await conversationId();
+    await call("push_attachment", { lasso_conversation_id: id, attachment });
+    await call("push_attachment", { lasso_conversation_id: id, attachment });
+    expect(table("work_item_pushes").at(-1)).toMatchObject({ work_item_id: id, tool: "push_attachment", mode: "unchanged", attachments_added: 0, attachments_changed: 0 });
+  });
   it("creates one attachment and its push history without changing the transcript", async () => {
     const id = await conversationId();
     const before = structuredClone(table("work_items").find((r) => r["id"] === id));
