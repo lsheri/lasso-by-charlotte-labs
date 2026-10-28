@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] TOOLBAR-6: remove header, preserve all children/save alerts, flatten one floating bar and re-home selectors; compare seven named test files and inspect 1280/390. Preview only.
+
 - [x] TOOLBAR-5: independent floating/header plans, phone overflow, live Ask centring, pointer pass-through; eight matched files green before/after (38 then 39 tests), plus floating-menu guard passes (40 total). Actual surface/Button/mark fixtures viewed at 1280/390 with both menus opened. Preview compilation OK. Preview only; no database work or publish.
 - [ ] TOOLBAR-5: real signed-in board and real panning/marquee verification blocked by external unmanaged authentication; correct board URL reaches /auth. Fixture hit tests reach canvas stage beside the pill and register two drag starts. Existing card-face overflow has no menu renderer, unchanged; phone header retains native horizontal scrolling for pinned controls.
 
