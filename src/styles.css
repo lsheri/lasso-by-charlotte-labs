@@ -8409,3 +8409,11 @@ body:has(.lasso-decisions-ledger) .canvas-lab-undo-toast { position: fixed; z-in
 .lasso-decisions-passage footer { font-size: 13px; color: var(--nb-mid); }
 .lasso-decisions-passage footer button { margin-left: 8px; }
 .lasso-decisions-feedback-status { padding-inline: 20px; }
+/* BOARD-UX: Ask Lasso reads as a filled button, not an empty space. Placed after the generic toolbar rules so it wins at equal specificity. */
+[data-lasso="on"] .canvas-lab-toolbar button:not([data-toolbar-control="add-work"]):not(.canvas-lab-tool-group *)[data-toolbar-control="ask"],
+[data-lasso="on"] .canvas-lab-toolbar button:not([data-toolbar-control="add-work"]):not(.canvas-lab-tool-group *)[data-toolbar-control="ask"]:hover:not(:disabled) { background: var(--nb-grey-2); border: 1px solid var(--nb-graphite); color: var(--nb-ink); }
+[data-lasso="on"] .canvas-lab-toolbar button:not([data-toolbar-control="add-work"]):not(.canvas-lab-tool-group *)[data-toolbar-control="ask"][aria-pressed="true"] { background: var(--nb-graphite); border-color: var(--nb-graphite); color: var(--nb-paper); }
+.canvas-lab-ask-button { background: var(--nb-grey-2); border: 1px solid var(--nb-graphite); }
+.canvas-lab-ask-button[aria-pressed="true"] { background: var(--nb-graphite); }
+/* The mark reads its colours from these tokens at mount; the keyed wrapper remounts it on open so it repaints light on dark. */
+.canvas-lab-ask-button[aria-pressed="true"] .canvas-lab-ask-mark { --nb-ink: var(--nb-paper); --nb-graphite: var(--nb-paper); }
