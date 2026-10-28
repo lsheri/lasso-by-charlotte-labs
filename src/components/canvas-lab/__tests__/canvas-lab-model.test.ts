@@ -521,7 +521,7 @@ describe("dragEndDecision", () => {
     expect(sectionLabelInverseZoom(1)).toBe(1);
     expect(sectionLabelInverseZoom(0.6)).toBe(1);
     expect(sectionLabelInverseZoom(0.54)).toBe(1);
-    expect(sectionLabelInverseZoom(0.1)).toBeCloseTo(16 / 3, 10);
+    expect(sectionLabelInverseZoom(0.1)).toBeCloseTo(16 / 3.4, 10);
     expect(sectionLabelInverseZoom(0.1)).toBeCloseTo(4.7058824, 6);
     for (const z of [16 / 34, 0.48, 0.5, 1, 1.5, 2]) expect(sectionLabelInverseZoom(z)).toBeCloseTo(1, 12);
   });
