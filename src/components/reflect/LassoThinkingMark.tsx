@@ -398,7 +398,7 @@ export function LassoThinkingMark({ kind, size, count = 0, thinking = false, rop
       observer?.disconnect();
       stop();
     };
-  }, [count, kind, size, rope, still]);
+  }, [count, kind, size, rope, still, persistent]);
 
   return (
     <canvas

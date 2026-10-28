@@ -41,3 +41,19 @@ describe("R7 Ask Lasso thinking marks", () => {
     expect(mark).not.toContain("#04f85b");
   });
 });
+describe("BOARD-UX-3 persistent mark stays opt-in", () => {
+  it("passes persistent only on the board toolbar Ask control", () => {
+    for (const file of [
+      "src/components/home/HomeBoard.tsx",
+      "src/components/reflect/ContextTrail.tsx",
+      "src/components/reflect/AskThinkingFoot.tsx",
+      "src/components/reflect/AskSurface.tsx",
+      "src/components/demo/DemoWorkboardSandbox.tsx",
+      "src/components/tour/TourActs.tsx",
+    ]) {
+      const source = readFileSync(file, "utf8");
+      expect(source).toContain("<LassoThinkingMark");
+      expect(source).not.toMatch(/<LassoThinkingMark[^>]*\bpersistent\b/);
+    }
+  });
+});
