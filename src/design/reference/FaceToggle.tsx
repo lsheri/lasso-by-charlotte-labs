@@ -17,6 +17,8 @@ export type FaceToggleProps = {
   words?: boolean;
   touch?: boolean;
   label?: string;
+  /** TOOLBAR-7: outlined two-segment control, both words shown, styled by the board bar stylesheet. Off by default. */
+  segmented?: boolean;
 };
 
 export const FACE_WORD: Record<CardFace, string> = {
@@ -78,7 +80,24 @@ function FaceOption({ face, held, words, touch, onChange }: {
   );
 }
 
-export function FaceToggle({ value, onChange, words = true, touch, label = 'Show work as' }: FaceToggleProps) {
+function FaceSegment({ face, held, onChange }: { face: CardFace; held: boolean; onChange: (face: CardFace) => void }) {
+  return (
+    <button type="button" className="face-segment" aria-label={FACE_HINT[face]} title={FACE_HINT[face]} aria-pressed={held} onClick={() => onChange(face)}>
+      <FaceGlyph face={face} size={16} />
+      <span className="face-segment-word">{FACE_WORD[face]}</span>
+    </button>
+  );
+}
+
+export function FaceToggle({ value, onChange, words = true, touch, label = 'Show work as', segmented = false }: FaceToggleProps) {
+  if (segmented) {
+    return (
+      <div role="group" aria-label={label} className="face-segmented">
+        <FaceSegment face="art" held={value === 'art'} onChange={onChange} />
+        <FaceSegment face="preview" held={value === 'preview'} onChange={onChange} />
+      </div>
+    );
+  }
   return (
     <div
       role="group"

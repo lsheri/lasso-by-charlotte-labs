@@ -3373,7 +3373,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     });
     toolbarItems.push({
       spec: { id: "region", width: 40, moveOrder: 9 },
-      row: <ToolbarIcon label="Draw a workstream. Group work so Lasso treats it as one piece of context."><Button size="icon" variant={drawTool && drawMode === "grouping" ? "secondary" : "outline"} aria-label="Draw a workstream" aria-pressed={drawTool && drawMode === "grouping"} data-toolbar-control="grouping" onClick={toggleDrawTool}><GraphiteIcon name="workstream" size={20} /></Button></ToolbarIcon>,
+      row: <ToolbarIcon label="Draw a workstream. Group work so Lasso treats it as one piece of context."><Button size="icon" variant={drawTool && drawMode === "grouping" ? "secondary" : "outline"} aria-label="Draw a workstream" aria-pressed={drawTool && drawMode === "grouping"} data-toolbar-control="grouping" onClick={toggleDrawTool}><GraphiteIcon name="draw-workstream" size={20} /></Button></ToolbarIcon>,
       menu: <DropdownMenuItem onSelect={toggleDrawTool}>Draw a workstream</DropdownMenuItem>,
     });
     toolbarItems.push({
@@ -3383,7 +3383,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     });
     toolbarItems.push({
       spec: { id: "suggest", width: 40, moveOrder: 7 },
-      row: <ToolbarIcon label="Suggest workstreams. Lasso proposes groupings from what is already here."><Button size="icon" variant="outline" aria-label="Suggest workstreams" data-toolbar-control="suggest" onClick={openSuggestions}><GraphiteIcon name="analyses" size={20} /></Button></ToolbarIcon>,
+      row: <ToolbarIcon label="Suggest workstreams. Lasso proposes groupings from what is already here."><Button size="icon" variant="outline" aria-label="Suggest workstreams" data-toolbar-control="suggest" onClick={openSuggestions}><GraphiteIcon name="suggest-workstreams" size={20} animate={false} /></Button></ToolbarIcon>,
       menu: <DropdownMenuItem onSelect={openSuggestions}>Suggest workstreams</DropdownMenuItem>,
     });
   }
@@ -3425,8 +3425,8 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     ),
   });
   toolbarItems.push({
-    spec: { id: "card-face", width: 68 },
-    row: <ToolbarIcon label="Show work as. Switch between the sketch and the real page."><span data-toolbar-control="card-face"><FaceToggle value={cardFace} words={false} onChange={(next) => { clearCardFaceOverrides(); setCardFace(next); noteWorkboardFace(orgId, next); }} /></span></ToolbarIcon>,
+    spec: { id: "card-face", width: 150 },
+    row: <ToolbarIcon label="Show work as. Switch between the sketch and the real page."><span data-toolbar-control="card-face"><FaceToggle value={cardFace} segmented onChange={(next) => { clearCardFaceOverrides(); setCardFace(next); noteWorkboardFace(orgId, next); }} /></span></ToolbarIcon>,
   });
   // TOOLBAR-6: preserve all declarations and handlers; example is menu-only.
   toolbarItems.sort((a, b) => TOOLBAR_LAYOUT.indexOf(a.spec.id) - TOOLBAR_LAYOUT.indexOf(b.spec.id));
