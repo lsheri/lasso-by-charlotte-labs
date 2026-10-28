@@ -6,7 +6,7 @@
  * here, so they cannot drift apart.
  */
 
-export const ZOOM_MIN = 0.4;
+export const ZOOM_MIN = 0.1;
 export const ZOOM_MAX = 1.6;
 export const ZOOM_STEP = 0.1;
 export const ZOOM_DEFAULT = 1;
@@ -17,9 +17,12 @@ export function clampZoom(z: number): number {
   return Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z));
 }
 
-/** One step in or out, clamped. */
+export const ZOOM_STEP_RATIO = 1.25;
+
+/** One step in or out is a fixed ratio, clamped, so clicks feel even across the whole range. */
 export function stepZoom(z: number, direction: "in" | "out"): number {
-  return clampZoom(z + (direction === "in" ? ZOOM_STEP : -ZOOM_STEP));
+  const from = Number.isFinite(z) && z > 0 ? z : ZOOM_DEFAULT;
+  return clampZoom(direction === "in" ? from * ZOOM_STEP_RATIO : from / ZOOM_STEP_RATIO);
 }
 
 /**

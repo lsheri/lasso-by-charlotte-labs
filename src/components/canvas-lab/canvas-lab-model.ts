@@ -279,9 +279,9 @@ export function dragEndDecision(input: {
   return { position, promptFrameId: target ? target.id : null };
 }
 
-/** Counter-scale stage controls so their visible size stays constant. */
+/** Counter-scale stage controls so their visible size stays constant. Floored so the controls stop growing once the board is zoomed well out. */
 export function labInverseZoom(zoom: number): number {
-  return 1 / clampZoom(zoom);
+  return 1 / Math.max(clampZoom(zoom), 0.5);
 }
 
 /** Keep a newly-created card visible without disturbing an already-visible view. */
