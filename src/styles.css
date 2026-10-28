@@ -1861,11 +1861,13 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .canvas-lab-section-edge[data-section-edge="bottom"] { inset: auto 0 -4px; height: 8px; }
 .canvas-lab-section-edge[data-section-edge="left"] { inset: 0 auto 0 -4px; width: 8px; }
 .canvas-lab-section-edge[data-section-edge="right"] { inset: 0 -4px 0 auto; width: 8px; }
-.canvas-lab-section-title { position: absolute; top: 8px; left: 12px; max-width: calc(100% - 24px); display: flex; align-items: center; gap: 8px; pointer-events: auto; color: var(--nb-mid); font-family: var(--font-hand); font-size: 18px; line-height: 1.1; background: var(--nb-paper); }
+.canvas-lab-section-title { position: absolute; top: -16px; left: 14px; max-width: none; white-space: nowrap; display: flex; align-items: center; gap: 8px; pointer-events: auto; color: var(--nb-graphite); font-family: var(--font-hand); font-size: 45px; line-height: 1; background: var(--nb-grey-2); border: 1px solid var(--nb-rule); border-radius: 10px; padding: 6px 16px 8px; transform-origin: left top; transform: scale(var(--lab-inverse-zoom, 1)); }
 .canvas-lab-section-title h2 { font: inherit; overflow-wrap: anywhere; }
-.canvas-lab-section-title .canvas-lab-frame-name-input { width: min(240px, 100%); min-width: 0; font: inherit; color: inherit; }
+.canvas-lab-section-title .canvas-lab-frame-name-input { width: min(420px, 60vw); min-width: 0; font: inherit; color: inherit; }
 .canvas-lab-section-placeholder { height: auto; min-height: 0; padding: 0; font: inherit; color: inherit; white-space: normal; }
-.canvas-lab-section-menu { width: 28px; height: 28px; min-height: 0; flex-shrink: 0; }
+.canvas-lab-section-menu { width: 28px; height: 28px; min-height: 0; flex-shrink: 0; font-size: 14px; }
+.canvas-lab-section-menu svg { width: 16px; height: 16px; }
+.canvas-lab-section-title [data-testid="section-marker-line"] { font-size: 13px; font-family: var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--nb-mid); }
 .canvas-lab-section-menu[data-visible="false"] { visibility: hidden; }
 .canvas-lab-section .canvas-lab-resize-handle { pointer-events: auto; width: 8px !important; height: 8px !important; min-width: 0 !important; min-height: 0 !important; padding: 0 !important; border: 1.4px solid var(--nb-green) !important; border-radius: 1px !important; background: var(--nb-paper) !important; }
 .canvas-lab-frame-fit { position: absolute; right: 4px; bottom: 4px; z-index: 14; width: 26px; height: 26px; min-height: 0; }
