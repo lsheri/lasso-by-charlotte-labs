@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] TOOLBAR-5: independent floating/header plans, phone overflow, live Ask centring, pointer pass-through, matched tests and before/after report. Preview only; no database work or publish.
+
 - [x] TOOLBAR-4: phase/date wording and reset membership; all five required files pass; 12-file before/after both 154 passed / 16 identical baseline failures; actual Button/LabSection fixtures measured and viewed at 1280/390. Preview only, no database work.
 - [ ] TOOLBAR-4: real signed-in board visual verification blocked by external unmanaged authentication; actual component/style fixture verified only. Example is currently outside the tool group, so its added selector membership has no current board effect.
 

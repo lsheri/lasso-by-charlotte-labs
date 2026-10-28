@@ -24,7 +24,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { planToolbarOverflow, toolbarDividersBefore, type ToolbarControlSpec } from "@/lib/toolbar-overflow";
+import { BoardToolbarSurface, type BoardToolbarItem } from "@/components/canvas-lab/BoardToolbarSurface";
 
 import { BoardAsk } from "@/components/canvas-lab/BoardAsk";
 import { LabAnswerCard } from "@/components/canvas-lab/LabAnswerCard";
@@ -291,10 +291,6 @@ const TOOLBAR_GROUPS: string[][] = [
 ];
 const TOOLBAR_LAYOUT = TOOLBAR_GROUPS.flat();
 function toolbarGroupOf(id: string): number { return TOOLBAR_GROUPS.findIndex((ids) => ids.includes(id)) + 1; }
-/** Groups 2 to 4 share the graphite tool band. */
-const TOOL_GROUP_BAND = [2, 3, 4];
-const TOOL_GROUP_FIRST = 2;
-const TOOL_GROUP_LAST = 4;
 
 export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string; entryVia?: string }) {
   const navigate = useNavigate();
@@ -3332,20 +3328,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
             : lab.board?.id ? "Workboard · Saved"
               : "Workboard · Not saved";
 
-  /** The width the control row actually has, so it can shed controls instead of running past its box. */
-  const toolbarRef = useRef<HTMLDivElement | null>(null);
-  const [toolbarWidth, setToolbarWidth] = useState(0);
-  useEffect(() => {
-    const element = toolbarRef.current;
-    if (!element || typeof ResizeObserver === "undefined") return;
-    const read = () => setToolbarWidth(element.clientWidth);
-    const observer = new ResizeObserver(read);
-    observer.observe(element);
-    read();
-    return () => observer.disconnect();
-  }, []);
-
-  const toolbarItems: { spec: ToolbarControlSpec; row: ReactNode; menu?: ReactNode }[] = [];
+  const toolbarItems: BoardToolbarItem[] = [];
   const setStructured = (checked: boolean) => {
     const next = checked ? "structured" : "freeform";
     if (next === structureMode) return;
@@ -3447,16 +3430,11 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     spec: { id: "card-face", width: 68 },
     row: <ToolbarIcon label="Show work as. Switch between the sketch and the real page."><span data-toolbar-control="card-face"><FaceToggle value={cardFace} words={false} onChange={(next) => { clearCardFaceOverrides(); setCardFace(next); noteWorkboardFace(orgId, next); }} /></span></ToolbarIcon>,
   });
-  // TOOLBAR-2 (Option A): one row in five groups; the planner counts the dividers between them.
+  // TOOLBAR-5: preserve the five groups and all handlers; each surface owns its measured plan.
   toolbarItems.sort((a, b) => TOOLBAR_LAYOUT.indexOf(a.spec.id) - TOOLBAR_LAYOUT.indexOf(b.spec.id));
   for (const item of toolbarItems) item.spec = { ...item.spec, group: toolbarGroupOf(item.spec.id) };
-  const toolbarPlan = planToolbarOverflow(toolbarWidth > 0 ? toolbarWidth : Number.MAX_SAFE_INTEGER, toolbarItems.map((item) => item.spec));
-  const toolbarRowItems = toolbarItems.filter((item) => toolbarPlan.row.includes(item.spec.id));
-  const toolbarDividers = new Set(toolbarDividersBefore(toolbarRowItems.map((item) => item.spec)));
-  const toolbarDivider = <span aria-hidden="true" className="canvas-lab-toolbar-divider" />;
-  const renderToolbarItem = (item: (typeof toolbarItems)[number], withDivider = true) => <Fragment key={item.spec.id}>{withDivider && toolbarDividers.has(item.spec.id) ? toolbarDivider : null}<div className="flex shrink-0 items-center gap-2">{item.row}</div></Fragment>;
-  const toolbarToolItems = toolbarRowItems.filter((item) => TOOL_GROUP_BAND.includes(item.spec.group ?? 0));
-  const toolbarOverflowItems = toolbarItems.filter((item) => toolbarPlan.overflow.includes(item.spec.id));
+  const floatingToolbarItems = toolbarItems.filter((item) => (item.spec.group ?? 0) <= 3);
+  const headerToolbarItems = toolbarItems.filter((item) => (item.spec.group ?? 0) >= 4);
 
   return (
     <TooltipProvider delayDuration={250}>
@@ -3486,29 +3464,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
         ) : null}
         <header className="relative z-20 flex h-[52px] shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-4">
           <div className="min-w-0 shrink"><span className="block truncate text-[13px] font-medium text-foreground">{title}</span><span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{status}</span></div>
-          <div ref={toolbarRef} className="canvas-lab-toolbar flex min-w-0 flex-1 items-center justify-end gap-2 overflow-hidden">
-            {toolbarRowItems.filter((item) => (item.spec.group ?? 0) < TOOL_GROUP_FIRST).map((item) => renderToolbarItem(item))}
-            {toolbarToolItems.length > 0 ? <>{toolbarDividers.has(toolbarToolItems[0]?.spec.id ?? "") ? toolbarDivider : null}<div className="canvas-lab-tool-group">
-            {toolbarToolItems.map((item, index) => renderToolbarItem(item, index > 0))}
-            </div></> : null}
-            {toolbarRowItems.filter((item) => (item.spec.group ?? 0) > TOOL_GROUP_LAST).map((item) => renderToolbarItem(item))}
-            {toolbarOverflowItems.length > 0 || canLeave ? (
-              <DropdownMenu>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <DropdownMenuTrigger asChild>
-                      <Button ref={moreButtonRef} size="icon" variant="ghost" aria-label="More board controls" data-toolbar-control="more"><GraphiteIcon name="more" animate={false} /></Button>
-                    </DropdownMenuTrigger>
-                  </TooltipTrigger>
-                  <TooltipContent>More board controls</TooltipContent>
-                </Tooltip>
-                <DropdownMenuContent align="end">
-                  {toolbarOverflowItems.map((item) => <Fragment key={item.spec.id}>{item.menu}</Fragment>)}
-                  {canLeave ? <><DropdownMenuSeparator /><DropdownMenuItem onSelect={() => setConfirmLeave(true)}>{LEAVE_BOARD_COPY.menuItem}</DropdownMenuItem></> : null}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : null}
-          </div>
+          <BoardToolbarSurface surface="header" items={headerToolbarItems} moreRef={moreButtonRef} extraMenu={canLeave ? <><DropdownMenuSeparator /><DropdownMenuItem onSelect={() => setConfirmLeave(true)}>{LEAVE_BOARD_COPY.menuItem}</DropdownMenuItem></> : null} />
           <Popover open={detailsOpen} onOpenChange={setDetailsOpen}>
             <PopoverAnchor virtualRef={detailsAnchorVirtualRef} />
             <PopoverContent align="end" className="w-80" data-testid="board-details-popover">
@@ -3531,6 +3487,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
         {lab.saveState.status === "error" ? <div data-testid="canvas-lab-banner" className="canvas-lab-banner" role="alert"><p className="text-[13px] text-foreground">Could not save your last change. {lab.saveState.message}</p><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => resolveSaveError("retry")}>Retry</Button><Button size="sm" variant="outline" onClick={() => resolveSaveError("discard")}>Discard</Button></div></div> : null}
         <div ref={shellRef} tabIndex={-1} onDragEnter={fileDrop.handlers.onDragEnter} onDragLeave={fileDrop.handlers.onDragLeave} onDragOverCapture={fileDrop.handlers.onDragOver} onDragOver={(event) => { if (!canAddWork || !isAnswerDrag(event.dataTransfer.types)) return; event.preventDefault(); event.dataTransfer.dropEffect = "copy"; }} onDropCapture={fileDrop.handlers.onDrop} onDrop={(event) => { if (!isAnswerDrag(event.dataTransfer.types)) return; event.preventDefault(); delete document.body.dataset["answerDrag"]; const answer = parseAnswerDrop(event.dataTransfer.getData(ANSWER_DRAG_MIME)); if (!answer) return; void keepAnswerAsCard(answer, { at: stagePoint(event.clientX, event.clientY), via: "drag" }); }} onPointerDownCapture={(event) => { if (onSurfaceTouchDown(event)) return; if (event.button === 0 && spaceRef.current) { event.preventDefault(); event.stopPropagation(); startSpacePan(event); } }} onPointerDown={(event) => { const target = event.target as HTMLElement; const empty = event.target === event.currentTarget || target.dataset["testid"] === "canvas-lab-stage"; if (event.button === 0 && empty && drawTool) { event.preventDefault(); const at = stagePoint(event.clientX, event.clientY); drawingRef.current = { from: at, to: at }; setDrawing({ from: at, to: at }); return; } if (event.button === 1 && empty) { event.preventDefault(); startSpacePan(event); return; } if (event.button === 0 && empty) { event.preventDefault(); window.getSelection()?.removeAllRanges(); event.currentTarget.classList.add("select-none"); setKeyboardId(null); setSelectedFrameId(null); setSelectedLinkId((current) => relationshipSelection(current, "deselect")); if (event.pointerType === "touch") { event.currentTarget.classList.remove("select-none"); startSpacePan(event); return; } const at = stagePoint(event.clientX, event.clientY); const screen = { x: event.clientX, y: event.clientY }; marqueeRef.current = { fromScreen: screen, fromBoard: at, toScreen: screen, toBoard: at }; setInteraction("marquee"); } }} onContextMenu={(event) => { const target = event.target as HTMLElement; const empty = event.target === event.currentTarget || target.dataset["testid"] === "canvas-lab-stage"; if (!empty || !canAddWork) return; event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect(); const screen = { x: event.clientX - rect.left, y: event.clientY - rect.top }; setBoardMenu({ screen, board: boardPointFromScreen(screen) }); }} data-space-pan={spaceHeld} data-drawing={drawTool ? "true" : undefined} onScroll={(event) => keepViewportUnscrolled(event.currentTarget)} data-interacting={interaction !== "idle" || drawing !== null || viewportMoving ? "true" : undefined} className="canvas-lab-surface relative min-h-0 flex-1 overflow-hidden">
           <BoardFileDropOverlay show={fileDrop.over} />
+          {floatingToolbarItems.length > 0 ? <BoardToolbarSurface surface="floating" items={floatingToolbarItems} /> : null}
           {sharedSpace ? <div aria-hidden="true" data-testid="shared-space-frame" className="pointer-events-none absolute inset-0 z-10 shadow-[inset_0_0_0_3px_color-mix(in_srgb,var(--nb-shared)_25%,var(--card))]" /> : null}
           {boardReady ? <div data-testid="canvas-lab-stage" data-board-hue={boardHueIndex(engagementId)} ref={stageRef} tabIndex={-1} className="canvas-lab-stage absolute left-0 top-0 origin-top-left" style={{ width: bounds.width, height: bounds.height, transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, "--lab-inverse-zoom": labInverseZoom(zoom), "--lab-section-label-inverse-zoom": sectionLabelInverseZoom(zoom), "--lab-section-marker-display": zoom >= 0.45 ? "block" : "none", "--lab-section-placeholder-display": zoom >= 0.5 ? "inline-flex" : "none" } as CSSProperties}>
             {visibleNodes.filter((node) => node.kind === "shape").map((node) => <LabColourBlock key={node.id} node={node} selected={keyboardId === node.id} editable={Boolean(lab.board?.canEditStructure)} onSelect={() => { setKeyboardId(node.id); setSelectedFrameId(null); setSelectedLinkId(null); }} onDragStart={(event) => { if (decorationPointerIntent({ selected: keyboardId === node.id, onEdge: Boolean((event.target as HTMLElement).dataset["edge"]) }) === "drag") onCardPointerDown(node, event); }} onResizeStart={(corner, event) => startResize("shape", node.id, corner, node, event)} onResizeKeyDown={(corner, event) => keyboardResize("shape", node.id, corner, node, event)} onResizeKeyUp={finishKeyboardResize} onRemove={() => deleteNode(node)} />)}

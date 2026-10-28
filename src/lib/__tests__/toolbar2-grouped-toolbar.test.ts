@@ -4,6 +4,7 @@ import { TOOLBAR_GAP, TOOLBAR_DIVIDER_WIDTH, planToolbarOverflow, toolbarDivider
 
 const page = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
 const css = readFileSync("src/styles.css", "utf8");
+const surface = readFileSync("src/components/canvas-lab/BoardToolbarSurface.tsx", "utf8");
 
 describe("TOOLBAR-2 grouped toolbar", () => {
   it("orders the row in Liam's five groups", () => {
@@ -13,6 +14,13 @@ describe("TOOLBAR-2 grouped toolbar", () => {
     expect(groups).toContain('["region", "section", "suggest"]');
     expect(groups).toContain('["workstreams", "card-face", "fit", "zoom"]');
     expect(groups).toContain('"ask", "share", "details", "example"]');
+    expect(page).toContain('const floatingToolbarItems = toolbarItems.filter((item) => (item.spec.group ?? 0) <= 3)');
+    expect(page).toContain('const headerToolbarItems = toolbarItems.filter((item) => (item.spec.group ?? 0) >= 4)');
+    const header = page.slice(page.indexOf("<header className="), page.indexOf("</header>", page.indexOf("<header className=")));
+    expect(header).toContain('surface="header" items={headerToolbarItems}');
+    expect(header).not.toContain('surface="floating"');
+    const canvas = page.slice(page.indexOf('<BoardFileDropOverlay'), page.indexOf('{sharedSpace ?', page.indexOf('<BoardFileDropOverlay')));
+    expect(canvas).toContain('surface="floating" items={floatingToolbarItems}');
   });
 
   it("draws a divider only between groups that still have a control in the row", () => {
@@ -39,6 +47,6 @@ describe("TOOLBAR-2 grouped toolbar", () => {
   it("gives the armed draw tools the open-Ask look", () => {
     expect(css).toContain('button:is([data-toolbar-control="grouping"], [data-toolbar-control="section"])[aria-pressed="true"]');
     expect(page).toContain('aria-pressed={drawTool && drawMode === "section"}');
-    expect(page).toContain('<span aria-hidden="true" className="canvas-lab-toolbar-divider" />');
+    expect(surface).toContain('<span aria-hidden="true" className="canvas-lab-toolbar-divider" />');
   });
 });

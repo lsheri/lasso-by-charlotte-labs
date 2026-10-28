@@ -7,7 +7,8 @@ const page = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
 const icons = readFileSync("src/components/notebook/icons.tsx", "utf8");
 const share = readFileSync("src/components/canvas-lab/ShareDialog.tsx", "utf8");
 const css = readFileSync("src/styles.css", "utf8");
-const toolbar = page.slice(page.indexOf("const toolbarItems"), page.indexOf("const toolbarPlan"));
+const surface = readFileSync("src/components/canvas-lab/BoardToolbarSurface.tsx", "utf8");
+const toolbar = page.slice(page.indexOf("const toolbarItems"), page.indexOf("const floatingToolbarItems"));
 
 describe("R5 board toolbar", () => {
   it("uses the existing GraphiteIcon system with one distinct icon per control", () => {
@@ -53,7 +54,9 @@ describe("R5 board toolbar", () => {
 
   it("plans the icon-only Add work control with the same larger gap as the row", () => {
     expect(TOOLBAR_GAP).toBe(8);
-    expect(page).toContain('className="canvas-lab-toolbar flex min-w-0 flex-1 items-center justify-end gap-2 overflow-hidden"');
+    expect(surface).toContain('className="canvas-lab-toolbar flex min-w-0 flex-1 items-center justify-end gap-2 overflow-hidden"');
+    expect(page).toContain('<BoardToolbarSurface surface="header" items={headerToolbarItems}');
+    expect(page).toContain('<BoardToolbarSurface surface="floating" items={floatingToolbarItems}');
     const controls: ToolbarControlSpec[] = [
       { id: "workstreams", width: 40, moveOrder: 1 },
       { id: "add-work", width: 40, pinned: true },
@@ -68,7 +71,8 @@ describe("R5 board toolbar", () => {
 
   it("retains an accessible name and tooltip for every icon-only control", () => {
     for (const label of ["Show workstreams", "Working from", "Add text", "Draw a workstream", "Add work", "Info", "See an example board", "Sticky", "Draw a section", "Suggest workstreams", "Ask Lasso", "Share", "Fit", "Zoom out", "Zoom in", "More board controls"]) {
-      expect(`${page}\n${share}`).toContain(`aria-label="${label}"`);
+      if (label === "More board controls") expect(surface).toContain('"More board controls"');
+      else expect(`${page}\n${share}`).toContain(`aria-label="${label}"`);
     }
     expect(toolbar.match(/<ToolbarIcon label=/g)?.length).toBeGreaterThanOrEqual(8);
   });

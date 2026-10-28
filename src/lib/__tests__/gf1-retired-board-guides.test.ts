@@ -15,7 +15,7 @@ function sourceFiles(dir: string): string[] {
 
 describe("GF1 retired board guides", () => {
   it("removes Human judgment from the toolbar without removing its existing save path", () => {
-    const toolbar = PAGE.slice(PAGE.indexOf("const toolbarItems"), PAGE.indexOf("const toolbarPlan"));
+    const toolbar = PAGE.slice(PAGE.indexOf("const toolbarItems"), PAGE.indexOf("const floatingToolbarItems"));
     const addJudgment = PAGE.slice(PAGE.indexOf("function addJudgment"), PAGE.indexOf("function deleteNode"));
 
     expect(toolbar).toContain('data-toolbar-control="add-text"');

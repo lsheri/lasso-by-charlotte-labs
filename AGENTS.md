@@ -44,7 +44,7 @@ Tour mirrors board chrome; preserve live behavior.
 - SharedWithYou owns Home/sidebar reads and actions; never switch profiles on shared entry, so work stays owned locally.
 - Read All work shared placements once per page and compare item/board orgs, to avoid per-card requests.
 - Node formatting local; other editors visible.
-- Group board tools in presentation only; keep Add work outside and preserve overflow logic and handlers.
+- Split board toolbar groups 1 to 3 over the visible canvas and groups 4 to 5 in the header through BoardToolbarSurface; each instance measures and plans independently, preserving handlers and keeping Add work outside the reset band.
 
 - All work owns rename; reader closure preserves the dialog.
 - Enable chat-link editing only in the All work RowMenu entry point, not shared CardMenu hook consumers; reuse the board dialog and Rename's refresh pattern to preserve ownership and privacy.
