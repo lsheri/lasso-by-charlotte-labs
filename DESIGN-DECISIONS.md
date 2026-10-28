@@ -32,4 +32,6 @@ One row per design decision. Owner: L = Liam, C = Claude architect, M = Magic OS
 | 27 Oct 2026 | C | Sections use a 2.5px explicit dashed outline and reuse the sixteen-value region fill vocabulary with no fill as the default | a section-only neutral palette; a new section fill column | Built, preview |
 | 27 Oct 2026 | L | Toolbar creation controls leave last using the revised ten moveOrder values; card-face remains unset; reader header adds the existing vendor logo, name and tone underline only for known visible vendors | evict card-face without a fallback; add its overflow choices in this pass; theme the reader | Built, preview |
 
+| 28 Oct 2026 | L | --font-wordmark names the landing wordmark face (JetBrains Mono), defined in @theme inline outside the [data-lasso="on"] block on purpose, since that block redefines --font-mono to Martian Mono in the app; used only by the section label (bold, 30px, 0.04em) | reuse --font-mono (renders Martian Mono in the app); hardcode the family on the label; accept Martian Mono | Built, preview |
+
 Open: where the four --verify-* states render (chat answer, opened view, card); placement of Recent boards in the sidebar; whether the graphite grain button returns.
