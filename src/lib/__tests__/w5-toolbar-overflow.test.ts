@@ -21,7 +21,7 @@ describe("board toolbar overflow", () => {
   it("budgets all four groups together without losing menu-less controls", () => {
     const controls: ToolbarControlSpec[] = [
       { id: "add-work", width: 106, pinned: true, group: 1 },
-      ...["add-text", "add-sticky", "region", "section", "suggest"].map((id, i) => ({ id, width: 40, moveOrder: [5, 6, 9, 10, 7][i], group: 2 })),
+      ...["add-text", "add-sticky", "region", "section", "suggest"].map((id, i) => ({ id, width: 40, moveOrder: [5, 6, 9, 10, 7][i] ?? 7, group: 2 })),
       { id: "workstreams", width: 40, moveOrder: 4, group: 3 },
       { id: "card-face", width: 68, pinned: true, group: 3 },
       { id: "fit", width: 56, moveOrder: 2, group: 3 },
