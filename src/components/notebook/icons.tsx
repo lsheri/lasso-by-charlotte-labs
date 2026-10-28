@@ -1,6 +1,6 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
-export type GraphiteIconName = "connectors" | "work" | "engagement" | "folder" | "workboard" | "overview" | "reflect" | "ai-record" | "one-on-one" | "decisions" | "firm" | "members" | "settings" | "ask-lasso" | "messages" | "history" | "analyses" | "send" | "attach" | "search" | "plus" | "close" | "chevron-right" | "drag-handle" | "check" | "external-link" | "workstreams" | "preview-cards" | "sticky" | "working-from" | "text" | "grouping" | "example-board" | "share" | "fit" | "expand" | "minus" | "more";
+export type GraphiteIconName = "connectors" | "work" | "engagement" | "folder" | "workboard" | "overview" | "reflect" | "ai-record" | "one-on-one" | "decisions" | "firm" | "members" | "settings" | "ask-lasso" | "messages" | "history" | "analyses" | "send" | "attach" | "search" | "plus" | "close" | "chevron-right" | "drag-handle" | "check" | "external-link" | "workstreams" | "preview-cards" | "sticky" | "working-from" | "text" | "grouping" | "example-board" | "share" | "fit" | "expand" | "minus" | "more" | "workstream" | "section";
 type IconDef = { d: string[]; sig: string; sigIndex?: number; origin?: string };
 const ICONS: Record<GraphiteIconName, IconDef> = {
   connectors: { d: ["M7.2 3.8v3.3M12.8 3.7v3.5", "M4.8 7.3h10.5v2.5a5.2 5.2 0 01-5.3 5.2 5.2 5.2 0 01-5.2-5.3V7.3zM10 15.1c.1 1.2-.5 1.7-.4 3.1"], sig: "nb-sig-seat", sigIndex: 1 },
@@ -41,6 +41,9 @@ const ICONS: Record<GraphiteIconName, IconDef> = {
   expand: { d: ["M12.4 3.2c1.6-.2 3.2-.2 4.8.1.2 1.6.2 3.2-.1 4.8", "M17.1 3.4c-1.8 1.7-3.6 3.5-5.3 5.4", "M7.6 16.8c-1.6.2-3.2.2-4.8-.1-.2-1.6-.2-3.2.1-4.8", "M2.9 16.6c1.8-1.7 3.6-3.5 5.3-5.4"], sig: "nb-sig-leap", sigIndex: 1 },
   minus: { d: ["M4 10.2l12-.3"], sig: "nb-sig-slide" },
   more: { d: ["M4.1 10h.1M9.9 10.1h.1M15.8 9.9h.1"], sig: "nb-sig-wave" },
+  /* TOOLBAR-2: a workstream joins its context (solid box, three joined dots); a section only marks an area (dashed box, name tab, empty). */
+  workstream: { d: ["M5 3.2h10a1.8 1.8 0 011.8 1.8v10a1.8 1.8 0 01-1.8 1.8H5A1.8 1.8 0 013.2 15V5A1.8 1.8 0 015 3.2z", "M8.5 7h3M7.6 8.8l1.5 2.6M12.4 8.8l-1.5 2.6", "M6.6 6.4a.6.6 0 110 1.2.6.6 0 010-1.2zM13.4 6.4a.6.6 0 110 1.2.6.6 0 010-1.2zM10 12.6a.6.6 0 110 1.2.6.6 0 010-1.2z"], sig: "nb-sig-scuff", sigIndex: 1 },
+  section: { d: ["M10.2 5h2.3M14.8 5H17v2.3M17 9.7v1.6M17 13.7V17h-2.3M12.4 17h-1.8M8.3 17H3v-2.3M3 11.9v-1.6M3 7.9V6.6", "M3.6 2.9h4.3v2.3H3.6z"], sig: "nb-sig-flap", sigIndex: 0 },
 };
 export const ICON_NAMES = Object.keys(ICONS) as GraphiteIconName[];
 export function getIconSignature(name: GraphiteIconName) { return ICONS[name].sig; }

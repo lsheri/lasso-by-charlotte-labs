@@ -26,7 +26,7 @@ describe("GraphiteIcon", () => {
   });
 
   it("exposes all 38 glyphs", () => {
-    expect(ICON_NAMES.length).toBe(38);
+    expect(ICON_NAMES.length).toBe(40);
   });
 });
 

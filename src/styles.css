@@ -8409,14 +8409,21 @@ body:has(.lasso-decisions-ledger) .canvas-lab-undo-toast { position: fixed; z-in
 .lasso-decisions-passage footer { font-size: 13px; color: var(--nb-mid); }
 .lasso-decisions-passage footer button { margin-left: 8px; }
 .lasso-decisions-feedback-status { padding-inline: 20px; }
-/* BOARD-UX: Ask Lasso reads as a filled button, not an empty space. Placed after the generic toolbar rules so it wins at equal specificity. */
-[data-lasso="on"] .canvas-lab-toolbar button:not([data-toolbar-control="add-work"]):not(.canvas-lab-tool-group *)[data-toolbar-control="ask"],
-[data-lasso="on"] .canvas-lab-toolbar button:not([data-toolbar-control="add-work"]):not(.canvas-lab-tool-group *)[data-toolbar-control="ask"]:hover:not(:disabled) { background: var(--nb-graphite); border: 1px solid var(--nb-graphite); color: var(--nb-paper); }
-[data-lasso="on"] .canvas-lab-toolbar button:not([data-toolbar-control="add-work"]):not(.canvas-lab-tool-group *)[data-toolbar-control="ask"][aria-pressed="true"],
-[data-lasso="on"] .canvas-lab-toolbar button:not([data-toolbar-control="add-work"]):not(.canvas-lab-tool-group *)[data-toolbar-control="ask"][aria-pressed="true"]:hover:not(:disabled) { background: var(--hand-live); border-color: var(--nb-graphite); color: var(--nb-ink); }
+/* BOARD-UX: Ask Lasso reads as a filled button, not an empty space. Placed after the generic toolbar rules so it wins at equal specificity.
+   TOOLBAR-2: Ask now sits outside the tool group beside Share and Info, so the class alone carries the selector; the :not() chain is gone. */
+[data-lasso="on"] .canvas-lab-toolbar button.canvas-lab-ask-button[data-toolbar-control="ask"],
+[data-lasso="on"] .canvas-lab-toolbar button.canvas-lab-ask-button[data-toolbar-control="ask"]:hover:not(:disabled) { background: var(--nb-graphite); border: 1px solid var(--nb-graphite); color: var(--nb-paper); }
+[data-lasso="on"] .canvas-lab-toolbar button.canvas-lab-ask-button[data-toolbar-control="ask"][aria-pressed="true"],
+[data-lasso="on"] .canvas-lab-toolbar button.canvas-lab-ask-button[data-toolbar-control="ask"][aria-pressed="true"]:hover:not(:disabled) { background: var(--hand-live); border-color: var(--nb-graphite); color: var(--nb-ink); }
 .canvas-lab-ask-button { background: var(--nb-graphite); border: 1px solid var(--nb-graphite); }
 .canvas-lab-ask-button[aria-pressed="true"] { background: var(--hand-live); }
 /* BOARD-UX-4: the mark reads its colours from these tokens at mount; the keyed wrapper remounts it on open and on close.
    Closed: light on graphite (paper dashes, acid loop). Open: dark on acid, loop included, or it would be acid on acid. */
 .canvas-lab-ask-button .canvas-lab-ask-mark { --nb-ink: var(--nb-paper); --nb-graphite: var(--nb-paper); }
 .canvas-lab-ask-button[aria-pressed="true"] .canvas-lab-ask-mark { --nb-ink: var(--text-primary); --nb-graphite: var(--text-primary); --nb-lasso-green: var(--text-primary); }
+
+/* TOOLBAR-2: a quiet rule between toolbar groups. Not focusable, hidden from screen readers in the markup. */
+.canvas-lab-toolbar-divider { display: block; flex-shrink: 0; width: 1px; height: 26px; background: var(--nb-rule); }
+/* TOOLBAR-2: an armed draw tool looks like open Ask: acid ground, graphite edge. */
+[data-lasso="on"] .canvas-lab-toolbar button:is([data-toolbar-control="grouping"], [data-toolbar-control="section"])[aria-pressed="true"],
+[data-lasso="on"] .canvas-lab-toolbar button:is([data-toolbar-control="grouping"], [data-toolbar-control="section"])[aria-pressed="true"]:hover:not(:disabled) { background: var(--hand-live); border: 1px solid var(--nb-graphite); color: var(--nb-ink); }

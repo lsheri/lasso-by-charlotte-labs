@@ -19,6 +19,11 @@ export type ToolbarControlSpec = {
    * do, in the order they were listed.
    */
   moveOrder?: number;
+  /**
+   * TOOLBAR-2: controls sharing a group sit together; a divider is drawn
+   * between two groups only while both still have a control in the row.
+   */
+  group?: number;
 };
 
 export type ToolbarPlan = {
@@ -28,6 +33,24 @@ export type ToolbarPlan = {
 
 export const TOOLBAR_OVERFLOW_BUTTON_WIDTH = 36;
 export const TOOLBAR_GAP = 8;
+/** A divider is a 1px rule; it also costs one gap, like any other row item. */
+export const TOOLBAR_DIVIDER_WIDTH = 1;
+
+/**
+ * The ids, in row order, that get a divider drawn before them: the first row
+ * control of each group after the first group present. An emptied group
+ * leaves no divider behind, so no two dividers ever meet.
+ */
+export function toolbarDividersBefore(row: ToolbarControlSpec[]): string[] {
+  const before: string[] = [];
+  let last: number | undefined;
+  for (const control of row) {
+    if (control.group === undefined) continue;
+    if (last !== undefined && control.group !== last) before.push(control.id);
+    last = control.group;
+  }
+  return before;
+}
 
 function measure(widths: number[], gap: number): number {
   if (widths.length === 0) return 0;
@@ -41,10 +64,11 @@ function measure(widths: number[], gap: number): number {
 export function planToolbarOverflow(
   available: number,
   controls: ToolbarControlSpec[],
-  options?: { gap?: number; overflowWidth?: number },
+  options?: { gap?: number; overflowWidth?: number; dividerWidth?: number },
 ): ToolbarPlan {
   const gap = options?.gap ?? TOOLBAR_GAP;
   const overflowWidth = options?.overflowWidth ?? TOOLBAR_OVERFLOW_BUTTON_WIDTH;
+  const dividerWidth = options?.dividerWidth ?? TOOLBAR_DIVIDER_WIDTH;
   const byId = new Map(controls.map((control) => [control.id, control]));
   const inRow = new Set(controls.map((control) => control.id));
   const overflow: string[] = [];
@@ -60,9 +84,11 @@ export function planToolbarOverflow(
     .map((entry) => entry.control.id);
 
   const fits = () => {
-    const widths = controls.filter((control) => inRow.has(control.id)).map((control) => control.width);
+    const rowControls = controls.filter((control) => inRow.has(control.id));
+    const widths = rowControls.map((control) => control.width);
+    const dividers = toolbarDividersBefore(rowControls).map(() => dividerWidth);
     const extra = overflow.length > 0 ? [overflowWidth] : [];
-    return measure([...widths, ...extra], gap) <= available;
+    return measure([...widths, ...dividers, ...extra], gap) <= available;
   };
 
   for (const id of movable) {
