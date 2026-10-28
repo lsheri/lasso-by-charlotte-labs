@@ -94,8 +94,8 @@ describe("SECD-1b menu", () => {
     expect(p.onMarker).toHaveBeenCalledExactlyOnceWith({ periodStart: "2026-11-03", periodEnd: "2026-11-14", sequenceNo: null }, { kind: "period", preset: "custom", via: "menu" });
   });
   it("Set number sets a number and clears dates, preset none", () => {
-    const p = props(week); render(<LabSection {...p} />); openMenu(); fireEvent.click(item("Set number"));
-    fireEvent.change(screen.getByLabelText("Number"), { target: { value: "2" } });
+    const p = props(week); render(<LabSection {...p} />); openMenu(); fireEvent.click(item("Set order"));
+    fireEvent.change(screen.getByLabelText("Order"), { target: { value: "2" } });
     fireEvent.click(screen.getByRole("button", { name: "Set" }));
     expect(p.onMarker).toHaveBeenCalledExactlyOnceWith({ periodStart: null, periodEnd: null, sequenceNo: 2 }, { kind: "number", preset: "none", via: "menu" });
   });

@@ -44,9 +44,8 @@ import { LabCard } from "@/components/canvas-lab/LabCard";
 import { LabColourBlock } from "@/components/canvas-lab/LabColourBlock";
 import { LabSticky, stickyBodyOf } from "@/components/canvas-lab/LabSticky";
 import { LabTextBlock } from "@/components/canvas-lab/LabTextBlock";
-import { BoardJumpControls } from "@/components/canvas-lab/BoardJumpControls";
 import { LabSection, nextWeekSectionRect, shiftedSectionMarker, type SectionMarkerChoice } from "@/components/canvas-lab/LabSection";
-import { isSectionFrameId, newSectionFrameId, sectionTitle, containingSection, sectionDragMembers, moveSectionContents, SECTION_REMOVED_LINE, clearMarker, markedSectionAt, markerLabel, type SectionMarker } from "@/lib/board-section";
+import { isSectionFrameId, newSectionFrameId, sectionTitle, containingSection, sectionDragMembers, moveSectionContents, SECTION_REMOVED_LINE, clearMarker, markerLabel, type SectionMarker } from "@/lib/board-section";
 import { LabFrame as LabFrameElement } from "@/components/canvas-lab/LabFrame";
 import { applyMarqueeSelection, cardsInMarquee, contextFlareSequence, isMarqueeClick, marqueeRect, type MarqueeRect } from "@/components/canvas-lab/canvas-lab-marquee";
 import { GroupingNamePopup } from "@/components/canvas-lab/GroupingNamePopup";
@@ -3359,22 +3358,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       menu: <DropdownMenuItem onSelect={() => { const link = links.find((entry) => entry.id === selectedLinkId); if (link) removeRelationship(link); }}>Remove relationship</DropdownMenuItem>,
     });
   }
-  // SECD-2: jump to a marked section. Pans only; zoom, selection and sections are untouched.
-  const jumpSections = boardFrames.filter((frame) => isSectionFrameId(frame.id));
-  if (jumpSections.some((frame) => frame.periodStart && frame.periodEnd)) {
-    // Live refs, as the marquee's stagePoint uses, so a fresh pan never picks the wrong section.
-    const liveZoom = zoomRef.current || 1;
-    const centre = { x: (viewportSize.width / 2 - panStateRef.current.x) / liveZoom, y: (viewportSize.height / 2 - panStateRef.current.y) / liveZoom };
-    toolbarItems.push({
-      spec: { id: "board-jump", width: suggestionMobile ? 96 : 300, pinned: true },
-      row: <BoardJumpControls orgId={orgId} sections={jumpSections} currentId={markedSectionAt(jumpSections, centre)} phone={suggestionMobile}
-        onJump={(sectionId) => {
-          const target = framesRef.current.find((frame) => frame.id === sectionId);
-          const z = zoomRef.current || 1;
-          if (target) setPan({ x: viewportSize.width / 2 - (target.x + target.width / 2) * z, y: viewportSize.height / 2 - (target.y + target.height / 2) * z });
-        }} />,
-    });
-  }
+  // TOOLBAR-1 (28 Oct 2026): the SECD-2 jump control left the toolbar; BoardJumpControls stays in the tree unused (roadmap).
   if (canAddWork) {
     toolbarItems.push({
       spec: { id: "add-work", width: 40, pinned: true },
