@@ -179,9 +179,6 @@ describe("the workboard allowlist", () => {
         "workboard.section_shifted": [
           "direction",
         ],
-        "workboard.structure_toggled": [
-          "state",
-        ],
         "workboard.trail_item_selected": [
           "group",
           "focus",
@@ -276,7 +273,6 @@ describe("the workboard allowlist", () => {
       () => helpers.noteWorkboardConflictResolved("o", "node", "latest"),
       () => helpers.noteWorkboardElementResized("o", "card", "pointer", "both"),
       () => helpers.noteWorkboardDropPromptAnswered("o", "yes"),
-      () => helpers.noteWorkboardStructureToggled("o", "structured"),
       () => helpers.noteWorkboardExampleViewed("o", "header"),
       () => helpers.noteWorkboardDisplayModeToggled("o", "preview"),
       () => helpers.noteWorkboardCardContentViewed("o", "chat"),

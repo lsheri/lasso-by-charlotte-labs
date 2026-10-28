@@ -189,11 +189,9 @@ describe("phase 3 persistence events", () => {
     expect(helpers).not.toContain("body");
   });
 
-  it("registers content-free resize and local structure events", () => {
+  it("registers content-free resize events", () => {
     expect(catalog).toContain('"workboard.element_resized"');
-    expect(catalog).toContain('"workboard.structure_toggled"');
     expect(helpers).toContain('{ element_kind: elementKind, method, axis }');
-    expect(helpers).toContain('{ state }');
   });
 });
 
@@ -213,7 +211,6 @@ describe("drop prompt on a durable board", () => {
     const card = merged.nodes.find((node) => node.durableId === "node-1");
     expect(card?.frame).toBe("task:task-1");
     if (!card) return;
-    expect(dropPromptFrame(card, merged.frames, "structured", true)?.name).toBe("Readout deck");
-    expect(dropPromptFrame(card, merged.frames, "freeform", true)).toBeNull();
+    expect(dropPromptFrame(card, merged.frames, true)?.name).toBe("Readout deck");
   });
 });

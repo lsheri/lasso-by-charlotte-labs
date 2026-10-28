@@ -2,30 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { EXAMPLE_LINKS, EXAMPLE_NODES } from "@/components/canvas-lab/example-board";
 import { WORKBOARD_EVENT_DIMS } from "@/lib/workboard-event-allowlist";
-import { boardIsNearEmpty, readWorkboardStructureMode, workboardStructureModeKey } from "@/lib/workboard-view-mode";
-
-describe("stored outline choice", () => {
-  it("falls back to freeform when nothing is stored", () => {
-    expect(readWorkboardStructureMode(null)).toBe("freeform");
-    expect(readWorkboardStructureMode(undefined)).toBe("freeform");
-  });
-
-  it("uses the stored value when there is one", () => {
-    expect(readWorkboardStructureMode("structured")).toBe("structured");
-    expect(readWorkboardStructureMode("freeform")).toBe("freeform");
-  });
-
-  it("falls back on a value it does not recognise", () => {
-    expect(readWorkboardStructureMode("Structured")).toBe("freeform");
-    expect(readWorkboardStructureMode("")).toBe("freeform");
-    expect(readWorkboardStructureMode("{}")).toBe("freeform");
-  });
-
-  it("keys the choice by viewer and board", () => {
-    expect(workboardStructureModeKey("p1", "e1")).toBe("lasso:workboard:p1:e1:structure");
-    expect(workboardStructureModeKey("p1", "e1")).not.toBe(workboardStructureModeKey("p2", "e1"));
-  });
-});
+import { boardIsNearEmpty } from "@/lib/workboard-view-mode";
 
 describe("near-empty rule", () => {
   const card = (kind: string) => ({ kind });

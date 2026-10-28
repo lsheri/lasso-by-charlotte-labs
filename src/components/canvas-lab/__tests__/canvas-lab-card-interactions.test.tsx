@@ -35,11 +35,8 @@ describe("Canvas Lab card interaction correction", () => {
     cleanup();
   });
 
-  it("keeps resize, structure, and reassignment bounded to the workboard", () => {
+  it("keeps resize and reassignment bounded to the workboard", () => {
     const page = read("src/pages/CanvasLabPage.tsx");
-    expect(page).toContain('useState<LabStructureMode>("freeform")');
-    expect(page).toContain('checked ? "structured" : "freeform"');
-    expect(page).toContain("noteWorkboardStructureToggled(orgId, next)");
     expect(page).toContain('noteWorkboardElementResized(orgId, "card"');
     expect(page).toContain('frameId: durableTarget');
     expect(page).not.toContain("frameWithChildren");

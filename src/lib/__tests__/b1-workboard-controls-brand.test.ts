@@ -4,17 +4,6 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) => readFileSync(path, "utf8");
 
 describe("B1 workboard controls and brand identity", () => {
-  it("uses one labelled workstream switch without changing event values", () => {
-    const page = read("src/pages/CanvasLabPage.tsx");
-    expect(page).toContain('aria-label="Show workstreams"');
-    expect(page).toContain('aria-pressed={structureMode === "structured"}');
-    expect(page).toContain('checked={structureMode === "structured"}');
-    expect(page).toContain('checked ? "structured" : "freeform"');
-    expect(page).toContain("noteWorkboardStructureToggled(orgId, next)");
-    expect(page).not.toContain(">Structured</Button>");
-    expect(page).not.toContain(">Freeform</Button>");
-  });
-
   it("keeps the shared canvas coordinate path unbounded", () => {
     const drag = read("src/lib/canvas-drag.ts");
     const page = read("src/pages/CanvasLabPage.tsx");
