@@ -3415,7 +3415,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   }
   toolbarItems.push({
     spec: { id: "ask", width: 40, pinned: true },
-    row: <ToolbarIcon label="Ask Lasso. Ask a question about the work on this board."><Button size="icon" variant={askOpen ? "secondary" : "outline"} aria-label="Ask Lasso" aria-pressed={askOpen} data-toolbar-control="ask" className="canvas-lab-ask-button [&_canvas]:max-h-full [&_canvas]:max-w-full" onClick={() => setAskOpen((current) => !current)}><span key={askOpen ? "open" : "closed"} className="canvas-lab-ask-mark flex items-center justify-center"><LassoThinkingMark kind="signature" size={LOOP_SIZE_TOOLBAR} thinking /></span></Button></ToolbarIcon>,
+    row: <ToolbarIcon label="Ask Lasso. Ask a question about the work on this board."><Button size="icon" variant={askOpen ? "secondary" : "outline"} aria-label="Ask Lasso" aria-pressed={askOpen} data-toolbar-control="ask" className="canvas-lab-ask-button [&_canvas]:max-h-full [&_canvas]:max-w-full" onClick={() => setAskOpen((current) => !current)}><span key={askOpen ? "open" : "closed"} className="canvas-lab-ask-mark flex items-center justify-center"><LassoThinkingMark kind="signature" size={LOOP_SIZE_TOOLBAR} thinking persistent /></span></Button></ToolbarIcon>,
   });
   if (canAddWork) {
     toolbarItems.push({

@@ -10,8 +10,8 @@ describe("R7 Ask Lasso thinking marks", () => {
   it("uses the signature mark in the toolbar and removes the old CSS drift", () => {
     const toolbar = page.slice(page.indexOf("const toolbarItems"), page.indexOf("const toolbarPlan"));
     // BI-2c-ii: thinking in the toolbar means the animated lime working motion, never a settled frame.
-    expect(toolbar).toContain('<LassoThinkingMark kind="signature" size={LOOP_SIZE_TOOLBAR} thinking />');
-    expect(toolbar).not.toContain("thinking still");
+    expect(toolbar).toContain('<LassoThinkingMark kind="signature" size={LOOP_SIZE_TOOLBAR} thinking persistent />');
+    expect(toolbar).not.toContain("still");
     // The still setting stays on the component for any surface that needs one settled frame.
     expect(mark).toContain("still?: boolean;");
     expect(mark).toContain("if (still) {");
@@ -39,5 +39,21 @@ describe("R7 Ask Lasso thinking marks", () => {
   it("reads Lasso lime from its existing token rather than a literal", () => {
     expect(mark).toContain('getPropertyValue("--nb-lasso-green")');
     expect(mark).not.toContain("#04f85b");
+  });
+});
+describe("BOARD-UX-3 persistent mark stays opt-in", () => {
+  it("passes persistent only on the board toolbar Ask control", () => {
+    for (const file of [
+      "src/components/home/HomeBoard.tsx",
+      "src/components/reflect/ContextTrail.tsx",
+      "src/components/reflect/AskThinkingFoot.tsx",
+      "src/components/reflect/AskSurface.tsx",
+      "src/components/demo/DemoWorkboardSandbox.tsx",
+      "src/components/tour/TourActs.tsx",
+    ]) {
+      const source = readFileSync(file, "utf8");
+      expect(source).toContain("<LassoThinkingMark");
+      expect(source).not.toMatch(/<LassoThinkingMark[^>]*\bpersistent\b/);
+    }
   });
 });
