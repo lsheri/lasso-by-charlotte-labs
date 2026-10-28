@@ -47,7 +47,9 @@ function builder(name: string) {
     eq: (k: string, v: unknown) => (filters.push((r) => !k.includes("->>") && r[k] === v), b),
     is: (k: string, v: unknown) => (filters.push((r) => r[k] === v), b),
     gte: (k: string, v: string) => (filters.push((r) => String(r[k]) >= v), b),
-    neq: (k: string, v: unknown) => (filters.push((r) => r[k] !== v), b),
+    // SQL null semantics: NULL <> v is NULL, never true, so a null column
+    // never matches neq.
+    neq: (k: string, v: unknown) => (filters.push((r) => r[k] != null && r[k] !== v), b),
     in: (k: string, vs: unknown[]) => (filters.push((r) => vs.includes(r[k])), b),
     order: (k: string, o?: { ascending?: boolean }) => (sorts.push([k, o?.ascending !== false]), b),
     limit: () => b,

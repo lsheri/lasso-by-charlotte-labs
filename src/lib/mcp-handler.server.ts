@@ -1275,16 +1275,24 @@ export async function handleMcpRequest(
     // T1d/T1f. A link connection starts with client_name null; every
     // initialize that reports a real name stamps it when it differs, so two
     // apps sharing one connection each label their own pushes. An unchanged
-    // name matches no row and writes nothing. Best effort: a failure logs
-    // and never blocks the handshake.
+    // name matches no row and writes nothing. Two updates because in SQL
+    // NULL <> 'name' is NULL, not true: the first catches a null column,
+    // the second a different one. Best effort: a failure logs and never
+    // blocks the handshake.
     if (reportedName !== "unknown") {
       try {
-        const { error } = await supabaseAdmin
+        const first = await supabaseAdmin
+          .from("mcp_connections")
+          .update({ client_name: reportedName })
+          .eq("id", owner.tokenId)
+          .is("client_name", null);
+        if (first.error) throw new Error(first.error.message);
+        const second = await supabaseAdmin
           .from("mcp_connections")
           .update({ client_name: reportedName })
           .eq("id", owner.tokenId)
           .neq("client_name", reportedName);
-        if (error) throw new Error(error.message);
+        if (second.error) throw new Error(second.error.message);
       } catch (err) {
         console.warn("connection client name stamp failed", err instanceof Error ? err.message : err);
       }
