@@ -33,6 +33,7 @@ import {
   dockBundles,
   fitWorkboardViewport,
   labInverseZoom,
+  sectionLabelInverseZoom,
   seedBlankCanvas,
   seedCanvas,
   sizeSeedFrames,
