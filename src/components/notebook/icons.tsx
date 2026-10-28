@@ -1,6 +1,6 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
-export type GraphiteIconName = "connectors" | "work" | "engagement" | "folder" | "workboard" | "overview" | "reflect" | "ai-record" | "one-on-one" | "decisions" | "firm" | "members" | "settings" | "ask-lasso" | "messages" | "history" | "analyses" | "send" | "attach" | "search" | "plus" | "close" | "chevron-right" | "drag-handle" | "check" | "external-link" | "workstreams" | "preview-cards" | "sticky" | "working-from" | "text" | "grouping" | "example-board" | "share" | "fit" | "expand" | "minus" | "more" | "workstream" | "section";
+export type GraphiteIconName = "connectors" | "work" | "engagement" | "folder" | "workboard" | "overview" | "reflect" | "ai-record" | "one-on-one" | "decisions" | "firm" | "members" | "settings" | "ask-lasso" | "messages" | "history" | "analyses" | "send" | "attach" | "search" | "plus" | "close" | "chevron-right" | "drag-handle" | "check" | "external-link" | "workstreams" | "preview-cards" | "sticky" | "working-from" | "text" | "grouping" | "example-board" | "share" | "fit" | "expand" | "minus" | "more" | "workstream" | "section" | "draw-workstream" | "suggest-workstreams";
 type IconDef = { d: string[]; sig: string; sigIndex?: number; origin?: string };
 const ICONS: Record<GraphiteIconName, IconDef> = {
   connectors: { d: ["M7.2 3.8v3.3M12.8 3.7v3.5", "M4.8 7.3h10.5v2.5a5.2 5.2 0 01-5.3 5.2 5.2 5.2 0 01-5.2-5.3V7.3zM10 15.1c.1 1.2-.5 1.7-.4 3.1"], sig: "nb-sig-seat", sigIndex: 1 },
