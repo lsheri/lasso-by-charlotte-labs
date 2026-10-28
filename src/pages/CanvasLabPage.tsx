@@ -15,7 +15,6 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSPr
 
 import {
   DropdownMenu,
-  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
