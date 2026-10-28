@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import { SharedBoardView, buildSharedBoardModel } from "@/components/canvas-lab/SharedBoardView";
-import { CARD_HEIGHT, CARD_WIDTH, fitWorkboardViewport } from "@/components/canvas-lab/canvas-lab-model";
+import { CARD_HEIGHT, CARD_WIDTH, fitWorkboardViewport, sectionLabelInverseZoom } from "@/components/canvas-lab/canvas-lab-model";
 import type { SharedBoardDto } from "@/lib/board-share-shared";
 import { serializeWorkboardTextBody, type WorkboardNodeDto } from "@/lib/canvas-lab-shared";
 
