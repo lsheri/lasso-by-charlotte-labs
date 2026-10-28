@@ -26,6 +26,6 @@ describe("B1 — the board header", () => {
   it("names the control Info and draws the working-from page", () => {
     const page = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
     expect(page).toContain('aria-label="Info" data-toolbar-control="details"');
-    expect(page).toMatch(/data-toolbar-control="details"[^\n]*<GraphiteIcon name="working-from" size=\{20\} \/>Info<\/Button>/);
+    expect(page).toMatch(/data-toolbar-control="details"[^\n]*<GraphiteIcon name="working-from" size=\{20\} \/><\/Button>/);
   });
 });
