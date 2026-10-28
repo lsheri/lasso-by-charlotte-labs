@@ -154,7 +154,7 @@ export function LabSection({ frame, title, selected, editable, autoName = false,
       <rect x={1.25} y={1.25} width={Math.max(0, frame.width - 2.5)} height={Math.max(0, frame.height - 2.5)} fill="none" strokeWidth={2.5} strokeDasharray="10 6" style={fillStyle ? { stroke: fillStyle.edge } : undefined} />
     </svg>
     {(["top", "right", "bottom", "left"] as const).map((edge) => <span key={edge} className="canvas-lab-section-edge" data-section-edge={edge} onPointerDown={press} onContextMenu={openMenu} />)}
-    <div className="canvas-lab-section-title" style={fillStyle ? { borderColor: fillStyle.edge } : undefined} onPointerDown={(event) => { if (!(event.target as Element).closest("input,button")) press(event); }} onContextMenu={openMenu}>
+    <div className="canvas-lab-section-title" style={fillStyle ? ({ "--lab-section-title-fill": fillStyle.fill } as React.CSSProperties) : undefined} onPointerDown={(event) => { if (!(event.target as Element).closest("input,button")) press(event); }} onContextMenu={openMenu}>
       {renaming && editable ? <input ref={inputRef} className="canvas-lab-frame-name-input" aria-label="Section title" value={draft} maxLength={60}
         onChange={(event) => setDraft(event.target.value)} onBlur={commit} onPointerDown={(event) => event.stopPropagation()}
         onKeyDown={(event) => { event.stopPropagation(); if (event.key === "Enter") { event.preventDefault(); commit(); } if (event.key === "Escape") { event.preventDefault(); editingRef.current = false; setRenaming(false); setDraft(title ?? ""); } }} />
