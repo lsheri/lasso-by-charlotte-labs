@@ -519,11 +519,11 @@ describe("dragEndDecision", () => {
 
   it("scales the section label with the board down to a 16px on-screen floor", () => {
     expect(sectionLabelInverseZoom(1)).toBe(1);
-    expect(sectionLabelInverseZoom(0.5)).toBe(1);
-    expect(sectionLabelInverseZoom(0.48)).toBe(1);
-    expect(sectionLabelInverseZoom(0.1)).toBeCloseTo(16 / 3.4, 10);
-    expect(sectionLabelInverseZoom(0.1)).toBeCloseTo(4.7058824, 6);
-    for (const z of [16 / 34, 0.48, 0.6, 1, 1.5, 2]) expect(sectionLabelInverseZoom(z)).toBeCloseTo(1, 12);
+    expect(sectionLabelInverseZoom(0.6)).toBe(1);
+    expect(sectionLabelInverseZoom(0.54)).toBe(1);
+    expect(sectionLabelInverseZoom(0.1)).toBeCloseTo(16 / 3, 10);
+    expect(sectionLabelInverseZoom(0.1)).toBeCloseTo(5.3333333, 6);
+    for (const z of [16 / 30, 0.54, 0.6, 1, 1.5, 2]) expect(sectionLabelInverseZoom(z)).toBeCloseTo(1, 12);
   });
 
   it("saves without prompting in Freeform or for a read-only card", () => {
