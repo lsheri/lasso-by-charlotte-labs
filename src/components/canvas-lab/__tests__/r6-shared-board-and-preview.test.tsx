@@ -58,6 +58,9 @@ describe("R6 shared board opening", () => {
     const stage = rendered.getByTestId("shared-board-stage");
     await waitFor(() => expect(stage.style.visibility).toBe("visible"));
     expect(stage.style.transform).toMatch(/^translate\([^)]*px, [^)]*px\) scale\([^)]+\)$/);
+    const stageZoom = Number(stage.style.transform.match(/scale\(([^)]+)\)/)?.[1]);
+    expect(stageZoom).toBeGreaterThan(0);
+    expect(Number(stage.style.getPropertyValue("--lab-section-label-inverse-zoom"))).toBeCloseTo(sectionLabelInverseZoom(stageZoom), 6);
   });
 });
 
