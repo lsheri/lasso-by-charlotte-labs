@@ -75,7 +75,7 @@ describe("an answer kept as a card", () => {
   it("is a saved kind but never a card anyone can create", () => {
     expect(WORKBOARD_NODE_KINDS).toContain("answer");
     const page = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
-    const toolbar = page.slice(page.indexOf("const toolbarItems"), page.indexOf("const toolbarPlan"));
+    const toolbar = page.slice(page.indexOf("const toolbarItems"), page.indexOf("const floatingToolbarItems"));
     expect(toolbar).not.toContain('data-toolbar-control="add-answer"');
   });
 });

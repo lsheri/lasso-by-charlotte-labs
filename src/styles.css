@@ -8424,6 +8424,10 @@ body:has(.lasso-decisions-ledger) .canvas-lab-undo-toast { position: fixed; z-in
 
 /* TOOLBAR-2: a quiet rule between toolbar groups. Not focusable, hidden from screen readers in the markup. */
 .canvas-lab-toolbar-divider { display: block; flex-shrink: 0; width: 1px; height: 26px; background: var(--nb-rule); }
+/* TOOLBAR-5: the measured allocation is inert; only the actual tool pill receives presses.
+   Its containing surface shrinks live with the sibling Ask panel. */
+[data-lasso="on"] .canvas-lab-floating-tools-wrapper { position: absolute; inset: 72px 12px auto; z-index: 15; display: flex; justify-content: center; pointer-events: none; padding-inline: 9px; }
+[data-lasso="on"] .canvas-lab-floating-tools { display: flex; flex-shrink: 0; align-items: center; gap: 8px; max-width: calc(100% + 18px); padding: 8px; border: 1px solid var(--nb-rule); border-radius: var(--radius-pill); background: var(--nb-white); box-shadow: var(--shadow-float); pointer-events: auto; }
 /* TOOLBAR-2: an armed draw tool looks like open Ask: acid ground, graphite edge. */
 [data-lasso="on"] .canvas-lab-toolbar button:is([data-toolbar-control="grouping"], [data-toolbar-control="section"])[aria-pressed="true"],
 [data-lasso="on"] .canvas-lab-toolbar button:is([data-toolbar-control="grouping"], [data-toolbar-control="section"])[aria-pressed="true"]:hover:not(:disabled) { background: var(--hand-live); border: 1px solid var(--nb-graphite); color: var(--nb-ink); }

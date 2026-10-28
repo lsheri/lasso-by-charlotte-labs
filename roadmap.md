@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] TOOLBAR-5: independent floating/header plans, phone overflow, live Ask centring, pointer pass-through; eight matched files green before/after (38 then 39 tests), plus floating-menu guard passes (40 total). Actual surface/Button/mark fixtures viewed at 1280/390 with both menus opened. Preview compilation OK. Preview only; no database work or publish.
+- [ ] TOOLBAR-5: real signed-in board and real panning/marquee verification blocked by external unmanaged authentication; correct board URL reaches /auth. Fixture hit tests reach canvas stage beside the pill and register two drag starts. Existing card-face overflow has no menu renderer, unchanged; phone header retains native horizontal scrolling for pinned controls.
+
 - [x] TOOLBAR-4: phase/date wording and reset membership; all five required files pass; 12-file before/after both 154 passed / 16 identical baseline failures; actual Button/LabSection fixtures measured and viewed at 1280/390. Preview only, no database work.
 - [ ] TOOLBAR-4: real signed-in board visual verification blocked by external unmanaged authentication; actual component/style fixture verified only. Example is currently outside the tool group, so its added selector membership has no current board effect.
 
