@@ -165,7 +165,7 @@ export function LabSection({ frame, title, selected, editable, autoName = false,
           if (event.detail > 0 && start && Math.hypot(event.clientX - start.x, event.clientY - start.y) > 3) return;
           beginRename();
         }}>{SECTION_TITLE_PLACEHOLDER}</Button>)
-        : withMarker(<span>{SECTION_TITLE_PLACEHOLDER}</span>)}
+        : hasMarker ? markerLine() : null}
       {editable ? <DropdownMenu open={menuOpen} onOpenChange={changeMenu}><DropdownMenuTrigger asChild>
         <Button size="icon" variant="ghost" aria-label="Section menu" className="canvas-lab-section-menu" data-visible={selected} onPointerDown={(event) => event.stopPropagation()}><MoreHorizontal /></Button>
       </DropdownMenuTrigger><DropdownMenuContent onCloseAutoFocus={(event) => { event.preventDefault(); if (!editingRef.current) rootRef.current?.focus({ preventScroll: true }); }}>
