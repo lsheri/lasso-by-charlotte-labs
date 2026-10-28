@@ -24,11 +24,12 @@ describe("R5 board toolbar", () => {
     expect(toolbar).not.toContain("thinking still");
   });
 
-  it("keeps Add work visible and labels only the unclear controls", () => {
-    expect(toolbar).toMatch(/data-toolbar-control="add-work"[\s\S]*?<GraphiteIcon name="work"[\s\S]*?>Add work<\/Button>/);
+  it("keeps Add work visible as an icon with its accessible name and tooltip", () => {
+    // BOARD-UX: Add work, Info and the example board are icon-only; the words move to aria-label and the tooltip.
+    expect(toolbar).toMatch(/<ToolbarIcon label="Add work\.[^"]*"><Button size="icon"[^>]*aria-label="Add work" data-toolbar-control="add-work"[^\n]*?><GraphiteIcon name="work" size=\{20\} \/><\/Button>/);
     // R9: Details opens the glance popover in place instead of linking away.
-    expect(toolbar).toMatch(/data-toolbar-control="details"[\s\S]*?>Info<\/Button>/);
-    expect(toolbar).toMatch(/data-toolbar-control="example"[\s\S]*?>See an example board<\/Button>/);
+    expect(toolbar).toMatch(/<ToolbarIcon label="Info\.[^"]*"><Button size="icon"[^>]*aria-label="Info" data-toolbar-control="details"[^\n]*?><GraphiteIcon name="working-from" size=\{20\} \/><\/Button>/);
+    expect(toolbar).toMatch(/<ToolbarIcon label="See an example board\.[^"]*"><Button size="icon"[^>]*aria-label="See an example board" data-toolbar-control="example"[^\n]*?><GraphiteIcon name="example-board" size=\{20\} \/><\/Button>/);
   });
 
   it("gives the canvas loop only to the Ask Lasso control", () => {
@@ -50,23 +51,23 @@ describe("R5 board toolbar", () => {
     expect(toolbar).not.toContain('data-toolbar-control="sticky"');
   });
 
-  it("plans the wider labelled Add work control with the same larger gap as the row", () => {
+  it("plans the icon-only Add work control with the same larger gap as the row", () => {
     expect(TOOLBAR_GAP).toBe(8);
     expect(page).toContain('className="canvas-lab-toolbar flex min-w-0 flex-1 items-center justify-end gap-2 overflow-hidden"');
     const controls: ToolbarControlSpec[] = [
       { id: "workstreams", width: 40, moveOrder: 1 },
-      { id: "add-work", width: 112, pinned: true },
+      { id: "add-work", width: 40, pinned: true },
       { id: "ask", width: 40, pinned: true },
       { id: "zoom", width: 116, pinned: true },
     ];
-    const plan = planToolbarOverflow(280, controls);
+    const plan = planToolbarOverflow(240, controls);
     expect(plan.row).toContain("add-work");
     expect(plan.overflow.length).toBeGreaterThan(0);
     expect([...plan.row, ...plan.overflow].sort()).toEqual(controls.map((control) => control.id).sort());
   });
 
   it("retains an accessible name and tooltip for every icon-only control", () => {
-    for (const label of ["Show workstreams", "Working from", "Add text", "Add grouping", "Ask Lasso", "Share", "Fit", "Zoom out", "Zoom in", "More board controls"]) {
+    for (const label of ["Show workstreams", "Working from", "Add text", "Add grouping", "Add work", "Info", "See an example board", "Sticky", "Add section", "Suggest workstreams", "Ask Lasso", "Share", "Fit", "Zoom out", "Zoom in", "More board controls"]) {
       expect(`${page}\n${share}`).toContain(`aria-label="${label}"`);
     }
     expect(toolbar.match(/<ToolbarIcon label=/g)?.length).toBeGreaterThanOrEqual(8);

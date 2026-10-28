@@ -151,7 +151,7 @@ export function LabSection({ frame, title, selected, editable, autoName = false,
       if (event.key === "F2" || event.key === "Enter") { event.preventDefault(); event.stopPropagation(); beginRename(); }
     }}>
     <svg className="canvas-lab-section-outline" aria-hidden="true" width={frame.width} height={frame.height}>
-      <rect x={1.25} y={1.25} width={Math.max(0, frame.width - 2.5)} height={Math.max(0, frame.height - 2.5)} fill="none" strokeWidth={2.5} strokeDasharray="10 6" style={fillStyle ? { stroke: fillStyle.edge } : undefined} />
+      <rect x={1.75} y={1.75} width={Math.max(0, frame.width - 3.5)} height={Math.max(0, frame.height - 3.5)} fill="none" strokeWidth={3.5} strokeDasharray="12 8" style={fillStyle ? { stroke: fillStyle.edge } : undefined} />
     </svg>
     {(["top", "right", "bottom", "left"] as const).map((edge) => <span key={edge} className="canvas-lab-section-edge" data-section-edge={edge} onPointerDown={press} onContextMenu={openMenu} />)}
     <div className="canvas-lab-section-title" style={fillStyle ? ({ "--lab-section-title-fill": fillStyle.fill } as React.CSSProperties) : undefined} onPointerDown={(event) => { if (!(event.target as Element).closest("input,button")) press(event); }} onContextMenu={openMenu}>
