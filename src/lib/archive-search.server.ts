@@ -90,6 +90,7 @@ export async function runArchiveSearch(
   const aiMeta = await resolveAiMeta(caller as never, {
     surface: "archive_search",
     orgId: input.orgId,
+    profileId: input.profileId,
     userId: input.userId,
   });
 

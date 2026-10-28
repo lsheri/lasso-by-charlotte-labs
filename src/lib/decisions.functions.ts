@@ -75,6 +75,7 @@ export const draftDecisions = createServerFn({ method: "POST" })
     const meta = await resolveAiMeta(supabase, {
       surface: "decision_draft_item",
       orgId: profile.org_id,
+      profileId: profile.id,
       userId: context.userId,
     });
     const completion = await chatComplete(
@@ -252,6 +253,7 @@ export const draftEngagementDecisions = createServerFn({ method: "POST" })
     const meta = await resolveAiMeta(supabase, {
       surface: "decision_draft_engagement",
       orgId: profile.org_id,
+      profileId: profile.id,
       userId,
     });
     const completion = await chatComplete(

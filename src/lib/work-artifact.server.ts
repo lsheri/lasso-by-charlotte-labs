@@ -146,6 +146,7 @@ export async function runWorkArtifact(
     const aiMeta = await resolveAiMeta(supabase, {
       surface: `analysis:${WORK_ARTIFACT_PRESET}`,
       orgId: profile.org_id,
+      profileId: profile.id,
       userId,
     });
     const messages = [

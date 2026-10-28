@@ -168,6 +168,7 @@ export async function runReflectTurn(
   const aiMeta = await resolveAiMeta(supabase, {
     surface,
     orgId: profile.org_id,
+    profileId: profile.id,
     userId,
   });
 
