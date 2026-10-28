@@ -8,7 +8,7 @@ const fit = (width: number) => fitWorkboardViewport({ width: width - 52, height:
 describe("phone workboard opening", () => {
   it("opens many cards at native text size rather than fitting everything", () => {
     const fitted = fit(390);
-    expect(fitted.zoom).toBe(0.4);
+    expect(fitted.zoom).toBeCloseTo((390 - 64) / 2056);
     const opened = workboardOpeningView(390, fitted, nodes);
     expect(opened.zoom).toBe(1);
     expect(opened.pan).toEqual({ x: -68, y: -68 });

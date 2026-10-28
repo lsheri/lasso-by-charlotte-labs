@@ -323,8 +323,8 @@ describe("canvas lab model", () => {
     expect(large.pan.x + (large.bounds.x + large.bounds.width / 2) * large.zoom).toBeCloseTo(1048 / 2);
     expect(large.pan.y + (large.bounds.y + large.bounds.height / 2) * large.zoom).toBeCloseTo(713 / 2);
 
-    const oversized = fitWorkboardViewport({ width: 1048, height: 713 }, [{ ...largeFrame, width: 2600, height: 1800 }], [], new Map());
-    expect(oversized.zoom).toBe(0.4);
+    const oversized = fitWorkboardViewport({ width: 1048, height: 713 }, [{ ...largeFrame, width: 26000, height: 18000 }], [], new Map());
+    expect(oversized.zoom).toBe(0.1);
     expect(oversized.pan.x + oversized.bounds.x * oversized.zoom).toBe(32);
     expect(oversized.pan.y + oversized.bounds.y * oversized.zoom).toBe(32);
 
@@ -511,7 +511,8 @@ describe("dragEndDecision", () => {
   });
 
   it("provides the stage inverse zoom", () => {
-    expect(labInverseZoom(0.45)).toBeCloseTo(1 / 0.45);
+    expect(labInverseZoom(0.45)).toBeCloseTo(1 / 0.5);
+    expect(labInverseZoom(0.1)).toBeCloseTo(2);
     expect(labInverseZoom(1.6)).toBeCloseTo(1 / 1.6);
   });
 
