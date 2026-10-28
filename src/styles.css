@@ -73,7 +73,6 @@
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
   --font-serif: "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
   --font-hand: "Caveat", var(--font-sans);
-  --font-wordmark: "JetBrains Mono", ui-monospace, monospace;
   --color-ember: var(--ember);
   --color-ember-deep: var(--ember-deep);
   --color-ember-foreground: var(--ember-foreground);
@@ -1862,7 +1861,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .canvas-lab-section-edge[data-section-edge="bottom"] { inset: auto 0 -4px; height: 8px; }
 .canvas-lab-section-edge[data-section-edge="left"] { inset: 0 auto 0 -4px; width: 8px; }
 .canvas-lab-section-edge[data-section-edge="right"] { inset: 0 -4px 0 auto; width: 8px; }
-.canvas-lab-section-title { position: absolute; top: -20px; left: 14px; max-width: calc((100% - 24px) / var(--lab-section-label-inverse-zoom, 1)); white-space: nowrap; overflow: hidden; display: flex; align-items: center; gap: 8px; pointer-events: auto; color: var(--nb-graphite); font-family: var(--font-wordmark); font-weight: 700; letter-spacing: 0.04em; font-size: 30px; line-height: 1; background: var(--lab-section-title-fill, var(--nb-paper)); border: 0; border-radius: 6px; padding: 2px 10px 3px; box-shadow: none; transition: background 120ms ease, box-shadow 120ms ease; transform-origin: left top; transform: scale(var(--lab-section-label-inverse-zoom, 1)); }
+.canvas-lab-section-title { position: absolute; top: -20px; left: 14px; max-width: calc((100% - 24px) / var(--lab-section-label-inverse-zoom, 1)); white-space: nowrap; overflow: hidden; display: flex; align-items: center; gap: 8px; pointer-events: auto; color: var(--nb-graphite); font-family: var(--font-serif); font-weight: 700; letter-spacing: -0.01em; font-size: 34px; line-height: 1; background: var(--lab-section-title-fill, var(--nb-paper)); border: 0; border-radius: 6px; padding: 2px 10px 3px; box-shadow: none; transition: background 120ms ease, box-shadow 120ms ease; transform-origin: left top; transform: scale(var(--lab-section-label-inverse-zoom, 1)); }
 .canvas-lab-section-title:hover { background: var(--nb-grey-1); box-shadow: 0 0 0 1px var(--nb-rule); }
 .canvas-lab-section[data-selected="true"] .canvas-lab-section-title { background: var(--nb-grey-1); box-shadow: 0 0 0 1px var(--nb-graphite); }
 .canvas-lab-section-title h2 { font: inherit; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
