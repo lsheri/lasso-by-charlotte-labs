@@ -75,27 +75,27 @@ describe("SECD-1b marker line", () => {
 });
 
 describe("SECD-1b menu", () => {
-  it("Set period: Week defaults to the week containing today", () => {
-    const p = props(); render(<LabSection {...p} />); openMenu(); fireEvent.click(item("Set period"));
+  it("Set dates: Week defaults to the week containing today", () => {
+    const p = props(); render(<LabSection {...p} />); openMenu(); fireEvent.click(item("Set dates"));
     fireEvent.click(screen.getByRole("button", { name: "Week" }));
     expect(p.onMarker).toHaveBeenCalledExactlyOnceWith({ periodStart: "2026-10-19", periodEnd: "2026-10-25", sequenceNo: null }, { kind: "period", preset: "week", via: "menu" });
   });
-  it("Set period: Month defaults to this month", () => {
-    const p = props(); render(<LabSection {...p} />); openMenu(); fireEvent.click(item("Set period"));
+  it("Set dates: Month defaults to this month", () => {
+    const p = props(); render(<LabSection {...p} />); openMenu(); fireEvent.click(item("Set dates"));
     fireEvent.click(screen.getByRole("button", { name: "Month" }));
     expect(p.onMarker).toHaveBeenCalledExactlyOnceWith({ periodStart: "2026-10-01", periodEnd: "2026-10-31", sequenceNo: null }, { kind: "period", preset: "month", via: "menu" });
   });
-  it("Set period: Custom range opens two date fields", () => {
-    const p = props(); render(<LabSection {...p} />); openMenu(); fireEvent.click(item("Set period"));
+  it("Set dates: Custom range opens two date fields", () => {
+    const p = props(); render(<LabSection {...p} />); openMenu(); fireEvent.click(item("Set dates"));
     fireEvent.click(screen.getByRole("button", { name: "Custom range" }));
     fireEvent.change(screen.getByLabelText("From"), { target: { value: "2026-11-03" } });
     fireEvent.change(screen.getByLabelText("To"), { target: { value: "2026-11-14" } });
     fireEvent.click(screen.getByRole("button", { name: "Set" }));
     expect(p.onMarker).toHaveBeenCalledExactlyOnceWith({ periodStart: "2026-11-03", periodEnd: "2026-11-14", sequenceNo: null }, { kind: "period", preset: "custom", via: "menu" });
   });
-  it("Set number sets a number and clears dates, preset none", () => {
-    const p = props(week); render(<LabSection {...p} />); openMenu(); fireEvent.click(item("Set order"));
-    fireEvent.change(screen.getByLabelText("Order"), { target: { value: "2" } });
+  it("Set phase sets a number and clears dates, preset none", () => {
+    const p = props(week); render(<LabSection {...p} />); openMenu(); fireEvent.click(item("Set phase"));
+    fireEvent.change(screen.getByLabelText("Phase"), { target: { value: "2" } });
     fireEvent.click(screen.getByRole("button", { name: "Set" }));
     expect(p.onMarker).toHaveBeenCalledExactlyOnceWith({ periodStart: null, periodEnd: null, sequenceNo: 2 }, { kind: "number", preset: "none", via: "menu" });
   });

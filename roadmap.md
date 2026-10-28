@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] TOOLBAR-4: phase/date wording and reset membership; all five required files pass; 12-file before/after both 154 passed / 16 identical baseline failures; actual Button/LabSection fixtures measured and viewed at 1280/390. Preview only, no database work.
+- [ ] TOOLBAR-4: real signed-in board visual verification blocked by external unmanaged authentication; actual component/style fixture verified only. Example is currently outside the tool group, so its added selector membership has no current board effect.
+
 - [x] TOOLBAR-1 / READER-MARK: revised ten retention integers, exact tooltips and vendor mark; 11 focused tests pass before/after; full after 38 files / 127 failed / 4,858 passed, no new failures against same-session before 39 / 128 / 4,857 (sh6c left); vendor fixtures inspected at 1280/390, build OK.
 - [ ] TOOLBAR-1 / READER-MARK: real signed-in toolbar and reader verification blocked by external unmanaged authentication; fixture rendering and source comparison verified only.
 - [ ] Card-face overflow fallback: separately queued by founder; no fallback today, leave unset in TOOLBAR-1.

@@ -101,7 +101,7 @@ describe("SECD-1a markerLabel", () => {
     expect(markerLabel({ periodStart: "2026-11-03", periodEnd: "2026-11-14" }, NOW)).toBe("3 to 14 Nov");
     expect(markerLabel({ periodStart: "2026-10-21", periodEnd: "2026-10-21" }, NOW)).toBe("21 Oct");
     expect(markerLabel({ periodStart: "2026-10-01", periodEnd: "2026-10-31" }, NOW)).toBe("October");
-    expect(markerLabel({ sequenceNo: 2 }, NOW)).toBe("#2");
+    expect(markerLabel({ sequenceNo: 2 }, NOW)).toBe("Phase 2");
     expect(markerLabel({}, NOW)).toBeNull();
   });
 

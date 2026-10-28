@@ -30,8 +30,8 @@ type PickerState = { mode: "period" | "custom" | "number"; via: "menu" | "line" 
 /** SECD-1b: every word a person reads on the section marker controls. */
 export const SECTION_MARKER_COPY = {
   ask: "Ask Lasso about this section",
-  setPeriod: "Set period",
-  setNumber: "Set order",
+  setPeriod: "Set dates",
+  setNumber: "Set phase",
   clear: "Clear marker",
   shiftNext: "Shift to next week",
   shiftPrevious: "Shift to previous week",
@@ -42,7 +42,7 @@ export const SECTION_MARKER_COPY = {
   custom: "Custom range",
   from: "From",
   to: "To",
-  number: "Order",
+  number: "Phase",
   set: "Set",
   cancel: "Cancel",
   pickerLabel: "Section marker",
