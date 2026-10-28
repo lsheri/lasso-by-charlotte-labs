@@ -39,7 +39,7 @@ describe("SECD-1b marker line", () => {
     const markerRule = styles.match(/\.canvas-lab-section-title \[data-testid="section-marker-line"\] \{([^}]+)\}/)?.[1];
     expect(markerRule).toContain("font-size: 13px;");
     expect(markerRule).toContain("font-family: var(--font-mono);");
-    expect(markerRule).not.toContain("font-size: 30px;");
+    expect(markerRule).not.toContain("font-size: 34px;");
     const view = render(<LabSection {...props(week)} />);
     expect(screen.getByTestId("section-marker-line").parentElement?.className).toContain("flex-col");
     expect(screen.getByTestId("section-marker-line").parentElement?.className).toContain("items-start");
