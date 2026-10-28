@@ -20,8 +20,8 @@ describe("R5 board toolbar", () => {
     expect(mappings.length).toBeGreaterThanOrEqual(10);
     expect(new Set(iconNames).size).toBe(iconNames.length);
     // BI-2c-ii: the toolbar mark runs the green working motion, so it must not be drawn still.
-    expect(toolbar).toContain('<LassoThinkingMark kind="signature" size={LOOP_SIZE_TOOLBAR} thinking />');
-    expect(toolbar).not.toContain("thinking still");
+    expect(toolbar).toContain('<LassoThinkingMark kind="signature" size={LOOP_SIZE_TOOLBAR} thinking persistent />');
+    expect(toolbar).not.toContain("still");
   });
 
   it("keeps Add work visible as an icon with its accessible name and tooltip", () => {
@@ -34,8 +34,8 @@ describe("R5 board toolbar", () => {
 
   it("gives the canvas loop only to the Ask Lasso control", () => {
     const ask = toolbar.match(/data-toolbar-control="ask"[\s\S]*?toolbarItems\.push/s)?.[0] ?? "";
-    expect(ask).toContain('<LassoThinkingMark kind="signature" size={LOOP_SIZE_TOOLBAR} thinking />');
-    expect(ask).not.toContain("thinking still");
+    expect(ask).toContain('<LassoThinkingMark kind="signature" size={LOOP_SIZE_TOOLBAR} thinking persistent />');
+    expect(ask).not.toContain("still");
     expect(toolbar.replace(ask, "")).not.toContain("LassoThinkingMark");
     expect(toolbar.replace(ask, "")).not.toContain("text-green");
     const askEntry = icons.match(/"ask-lasso": \{ d: \[(.*?)\], sig:/)?.[1] ?? "";

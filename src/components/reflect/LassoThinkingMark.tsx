@@ -31,6 +31,8 @@ type LassoThinkingMarkProps = {
   rope?: boolean;
   /** signature only: draw one settled frame with no animation loop. */
   still?: boolean;
+  /** signature only, opt-in: a faint lime loop always sits behind the motion and strokes hold at least 1.6px, for small toolbar targets. */
+  persistent?: boolean;
   className?: string;
 };
 
@@ -38,6 +40,9 @@ type RingPoint = { x: number; y: number; z: number };
 type GatherArrival = { born: number; slot: number; side: -1 | 1 };
 
 const TILT = 0.18;
+/** BOARD-UX-3: strength of the always-on loop behind a persistent mark, and its stroke minimum. */
+export const PERSISTENT_GHOST_ALPHA = 0.3;
+export const PERSISTENT_STROKE_MIN = 1.6;
 
 function ring(cx: number, cy: number, radius: number, phase: number): RingPoint {
   return {
@@ -92,6 +97,7 @@ function runSignature(
   thinkingRef: { current: boolean },
   ropeRef: { current: boolean },
   still = false,
+  persistent = false,
 ): () => void {
   const dpr = Math.min(window.devicePixelRatio || 1, 3);
   canvas.width = Math.round(size * dpr);
@@ -103,7 +109,9 @@ function runSignature(
   const ink = styles.getPropertyValue("--nb-ink").trim();
   const rest = styles.getPropertyValue("--nb-graphite").trim();
   const els = scatterPieces(size);
-  const { w, dot: dotSize, unit } = scatterStroke(size);
+  const stroke = scatterStroke(size);
+  const w = persistent ? Math.max(stroke.w, PERSISTENT_STROKE_MIN) : stroke.w;
+  const { dot: dotSize, unit } = stroke;
   const { cx, cy, R } = scatterGeometry(size);
 
   function draw(t: number, forceCinch: boolean) {
@@ -115,6 +123,19 @@ function runSignature(
     const hot = think ? acc : rest;
     context.lineCap = "round";
     context.lineJoin = "round";
+    if (persistent) {
+      context.globalAlpha = PERSISTENT_GHOST_ALPHA;
+      context.strokeStyle = hot;
+      context.lineWidth = w * 1.25;
+      context.beginPath();
+      const ghostSteps = Math.max(40, Math.round(size * 1.2));
+      for (let j = 0; j <= ghostSteps; j += 1) {
+        const pt = scatterLoopPoint(j / ghostSteps, R, cx, cy, cinch);
+        if (j === 0) context.moveTo(pt.x, pt.y);
+        else context.lineTo(pt.x, pt.y);
+      }
+      context.stroke();
+    }
     for (let i = 0; i < els.length; i += 1) {
       const e = els[i]!;
       const swirl = omega * t * e.sp * (1 + 0.7 * (1 - e.r));
@@ -219,7 +240,7 @@ function runSignature(
   };
 }
 
-export function LassoThinkingMark({ kind, size, count = 0, thinking = false, rope = true, still = false, className }: LassoThinkingMarkProps) {
+export function LassoThinkingMark({ kind, size, count = 0, thinking = false, rope = true, still = false, persistent = false, className }: LassoThinkingMarkProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const thinkingRef = useRef(thinking);
   thinkingRef.current = thinking;
@@ -234,7 +255,7 @@ export function LassoThinkingMark({ kind, size, count = 0, thinking = false, rop
     const foundContext = canvas.getContext("2d");
     if (!foundContext) return;
     const context: CanvasRenderingContext2D = foundContext;
-    if (kind === "signature") return runSignature(canvas, context, size, thinkingRef, ropeRef, still);
+    if (kind === "signature") return runSignature(canvas, context, size, thinkingRef, ropeRef, still, persistent);
 
     const width = size;
     const height = size;
