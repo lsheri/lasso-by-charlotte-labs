@@ -31,7 +31,7 @@ type PickerState = { mode: "period" | "custom" | "number"; via: "menu" | "line" 
 export const SECTION_MARKER_COPY = {
   ask: "Ask Lasso about this section",
   setPeriod: "Set period",
-  setNumber: "Set number",
+  setNumber: "Set order",
   clear: "Clear marker",
   shiftNext: "Shift to next week",
   shiftPrevious: "Shift to previous week",
@@ -42,7 +42,7 @@ export const SECTION_MARKER_COPY = {
   custom: "Custom range",
   from: "From",
   to: "To",
-  number: "Number",
+  number: "Order",
   set: "Set",
   cancel: "Cancel",
   pickerLabel: "Section marker",
