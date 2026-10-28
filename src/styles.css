@@ -7191,10 +7191,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 }
 @media (max-width: 767px) {
   [data-lasso="on"] .canvas-lab-tool-group > div:has(> button.md\:hidden) { display: flex; }
-  [data-lasso="on"] [data-testid="canvas-lab-shell"] > main > header > .canvas-lab-toolbar {
-    justify-content: flex-start;
-    overflow-x: auto;
-  }
+  [data-lasso="on"] .canvas-lab-floating-tools { overflow-x: auto; }
 }
 @media (prefers-reduced-motion: reduce) {
   [data-lasso="on"] .canvas-lab-tool-group button[data-toolbar-control] { transition: none; }
@@ -7230,49 +7227,8 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr);
 }
-[data-lasso="on"] [data-testid="canvas-lab-shell"] > main > header {
-  grid-area: 1 / 1;
-  align-self: start;
-  margin: 8px 8px 0;
-  padding-left: 8px;
-  padding-right: 8px;
-  background: transparent;
-  border-bottom-color: transparent;
-  pointer-events: none;
-}
-[data-lasso="on"] [data-testid="canvas-lab-shell"] > main > header > div:first-child {
-  padding: 6px;
-  margin-left: -7px;
-  margin-right: -7px;
-  border: 1px solid var(--line-hairline);
-  border-radius: var(--radius-md-new);
-  background: var(--surface-raised);
-  box-shadow: var(--shadow-float);
-  pointer-events: auto;
-}
-[data-lasso="on"] [data-testid="canvas-lab-shell"] > main > header > .canvas-lab-toolbar {
-  padding-top: 6px;
-  padding-bottom: 6px;
-  margin-left: -1px;
-  margin-right: -1px;
-  border: 1px solid var(--line-hairline);
-  border-radius: var(--radius-md-new);
-  background: var(--surface-raised);
-  box-shadow: var(--shadow-float);
-  pointer-events: auto;
-}
 [data-lasso="on"] [data-testid="canvas-lab-shell"] > main > .canvas-lab-surface {
   grid-area: 1 / 1;
-}
-[data-lasso="on"] [data-testid="canvas-lab-shell"] > main > .canvas-lab-banner {
-  grid-area: 1 / 1;
-  position: relative;
-  align-self: start;
-  top: auto;
-  margin-top: 72px;
-}
-[data-lasso="on"] [data-testid="canvas-lab-shell"] > main > header > .canvas-lab-region-palette {
-  pointer-events: auto;
 }
 [data-lasso="on"] [data-testid="canvas-lab-shell"] > main:has(> [data-testid="shared-space-band"]) {
   grid-template-rows: auto minmax(0, 1fr);
@@ -7280,17 +7236,13 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 [data-lasso="on"] [data-testid="canvas-lab-shell"] > main > [data-testid="shared-space-band"] {
   grid-area: 1 / 1;
 }
-[data-lasso="on"] [data-testid="canvas-lab-shell"] > main:has(> [data-testid="shared-space-band"]) > :is(header, .canvas-lab-surface, .canvas-lab-banner) {
+[data-lasso="on"] [data-testid="canvas-lab-shell"] > main:has(> [data-testid="shared-space-band"]) > .canvas-lab-surface {
   grid-area: 2 / 1;
 }
 /* Keep the phone's existing hidden-main state and clear the open region palette. */
 @media (max-width: 767px) {
   [data-lasso="on"] [data-testid="canvas-lab-shell"] > main.hidden { display: none; }
 }
-[data-lasso="on"] [data-testid="canvas-lab-shell"] > main:has(> header > .canvas-lab-region-palette) > .canvas-lab-banner {
-  margin-top: 116px;
-}
-
 /* Here: the same current-location rule on navigation, settings, and Ask tabs. */
 [data-lasso="on"] > aside nav a.nb-nav-item[aria-current="page"] {
   box-shadow: none;
@@ -8426,8 +8378,36 @@ body:has(.lasso-decisions-ledger) .canvas-lab-undo-toast { position: fixed; z-in
 .canvas-lab-toolbar-divider { display: block; flex-shrink: 0; width: 1px; height: 26px; background: var(--nb-rule); }
 /* TOOLBAR-5: the measured allocation is inert; only the actual tool pill receives presses.
    Its containing surface shrinks live with the sibling Ask panel. */
-[data-lasso="on"] .canvas-lab-floating-tools-wrapper { position: absolute; inset: 72px 12px auto; z-index: 15; display: flex; justify-content: center; pointer-events: none; padding-inline: 9px; }
+[data-lasso="on"] .canvas-lab-floating-tools-wrapper { position: absolute; inset: 16px 12px auto; z-index: 15; display: flex; justify-content: center; pointer-events: none; padding-inline: 9px; }
 [data-lasso="on"] .canvas-lab-floating-tools { display: flex; flex-shrink: 0; align-items: center; gap: 8px; max-width: calc(100% + 18px); padding: 8px; border: 1px solid var(--nb-rule); border-radius: var(--radius-pill); background: var(--nb-white); box-shadow: var(--shadow-float); pointer-events: auto; }
 /* TOOLBAR-2: an armed draw tool looks like open Ask: acid ground, graphite edge. */
 [data-lasso="on"] .canvas-lab-toolbar button:is([data-toolbar-control="grouping"], [data-toolbar-control="section"])[aria-pressed="true"],
 [data-lasso="on"] .canvas-lab-toolbar button:is([data-toolbar-control="grouping"], [data-toolbar-control="section"])[aria-pressed="true"]:hover:not(:disabled) { background: var(--hand-live); border: 1px solid var(--nb-graphite); color: var(--nb-ink); }
+
+/* TOOLBAR-6: one plane; historical group styles remain for non-toolbar consumers. */
+[data-lasso="on"] .canvas-lab-floating-tools button:not([data-toolbar-control="add-work"]):not([data-toolbar-control="ask"]) {
+  width: 36px; height: 36px; min-width: 36px; min-height: 36px; padding: 0;
+  background: transparent !important; color: var(--text-primary); border: 0; border-radius: var(--radius-md-new);
+  box-shadow: none; transform: none; transition: background var(--dur-quick) var(--ease-standard);
+}
+[data-lasso="on"] .canvas-lab-floating-tools button:not([data-toolbar-control="add-work"]):not([data-toolbar-control="ask"]):hover:not(:disabled) { background: var(--surface-sunk-2) !important; transform: none; box-shadow: none; }
+[data-lasso="on"] .canvas-lab-floating-tools button:focus-visible { outline: 2px solid var(--focus-ring-new); outline-offset: 2px; }
+[data-lasso="on"] .canvas-lab-floating-tools button:disabled { opacity: .45; cursor: not-allowed; }
+[data-lasso="on"] .canvas-lab-floating-tools [data-toolbar-control="card-face"] > [role="group"] { display: contents !important; }
+[data-lasso="on"] .canvas-lab-floating-tools [data-toolbar-control="card-face"] button[aria-pressed="true"] { text-decoration: underline; text-underline-offset: 4px; }
+[data-lasso="on"] .canvas-lab-floating-tools button:is([data-toolbar-control="grouping"], [data-toolbar-control="section"])[aria-pressed="true"] { background: var(--hand-live) !important; border: 1px solid var(--nb-graphite); color: var(--nb-ink); }
+[data-lasso="on"] .canvas-lab-floating-tools button[data-toolbar-control="ask"] { width: 124px; min-width: 124px; height: 36px; min-height: 36px; padding-inline: 8px; gap: 8px; border-radius: var(--radius-md-new); }
+[data-lasso="on"] .canvas-lab-floating-tools button[data-toolbar-control="add-work"] { width: 106px; min-width: 106px; height: 36px; min-height: 36px; }
+[data-lasso="on"] .canvas-lab-floating-tools button:not([data-toolbar-control="ask"]) > svg { width: 20px; height: 20px; max-width: 20px; max-height: 20px; }
+[data-lasso="on"] .canvas-lab-floating-tools > div:has(> button.md\:hidden) { display: none; }
+[data-lasso="on"] .canvas-lab-board-status { position: absolute; top: 82px; left: 16px; z-index: 25; max-width: min(280px, calc(100% - 32px)); pointer-events: auto; }
+[data-lasso="on"] .canvas-lab-board-status .canvas-lab-banner { position: static; padding: 0; border: 0; background: transparent; flex-wrap: wrap; }
+[data-lasso="on"] .canvas-lab-surface > .canvas-lab-region-palette { top: 78px; left: 50%; right: auto; transform: translateX(-50%); max-width: calc(100% - 24px); pointer-events: auto; }
+@media (max-width: 767px) {
+  [data-lasso="on"] .canvas-lab-floating-tools { overflow-x: auto; }
+  [data-lasso="on"] .canvas-lab-floating-tools button[data-toolbar-control="ask"] { width: 36px; min-width: 36px; padding: 0; }
+  .canvas-lab-ask-label { display: none; }
+  [data-lasso="on"] .canvas-lab-floating-tools > div:has(> button.md\:hidden) { display: flex; }
+  [data-lasso="on"] .canvas-lab-board-status { top: 82px; }
+}
+@media (prefers-reduced-motion: reduce) { [data-lasso="on"] .canvas-lab-floating-tools button { transition: none; } }

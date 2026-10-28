@@ -18,22 +18,24 @@ const CONTROLS: ToolbarControlSpec[] = [
 const total = (ids: string[]) => ids.slice().sort();
 
 describe("board toolbar overflow", () => {
-  it("budgets creation and board controls independently at desktop and phone widths", () => {
-    const floating: ToolbarControlSpec[] = [
+  it("budgets all four groups together without losing menu-less controls", () => {
+    const controls: ToolbarControlSpec[] = [
       { id: "add-work", width: 106, pinned: true, group: 1 },
-      { id: "add-text", width: 40, moveOrder: 5, group: 2 },
-      { id: "add-sticky", width: 40, moveOrder: 6, group: 2 },
-      { id: "region", width: 40, moveOrder: 9, group: 3 },
-      { id: "section", width: 40, moveOrder: 10, group: 3 },
-      { id: "suggest", width: 40, moveOrder: 7, group: 3 },
+      ...["add-text", "add-sticky", "region", "section", "suggest"].map((id, i) => ({ id, width: 40, moveOrder: [5, 6, 9, 10, 7][i] ?? 7, group: 2 })),
+      { id: "workstreams", width: 40, moveOrder: 4, group: 3 },
+      { id: "card-face", width: 68, pinned: true, group: 3 },
+      { id: "fit", width: 56, moveOrder: 2, group: 3 },
+      { id: "zoom", width: 116, pinned: true, group: 3 },
+      { id: "working-from", width: 0, pinned: true, group: 4 },
+      { id: "ask", width: 36, pinned: true, group: 4 },
+      { id: "share", width: 80, pinned: true, group: 4 },
+      { id: "details", width: 40, moveOrder: 3, group: 4 },
     ];
-    const header = CONTROLS.filter((control) => ["workstreams", "details", "fit", "ask", "zoom"].includes(control.id));
-    expect(planToolbarOverflow(1186, floating).overflow).toEqual([]);
-    expect(planToolbarOverflow(296, floating)).toEqual({ row: ["add-work", "region", "section"], overflow: ["add-text", "add-sticky", "suggest"] });
-    const headerBefore = planToolbarOverflow(760, header);
-    planToolbarOverflow(100, floating);
-    expect(planToolbarOverflow(760, header)).toEqual(headerBefore);
-    expect(planToolbarOverflow(1186, floating)).toEqual({ row: floating.map((control) => control.id), overflow: [] });
+    expect(planToolbarOverflow(1186, controls).overflow).toEqual([]);
+    const phone = planToolbarOverflow(296, controls);
+    expect(phone.row).toEqual(["add-work", "card-face", "zoom", "working-from", "ask", "share"]);
+    expect(phone.overflow).toEqual(["fit", "details", "workstreams", "add-text", "add-sticky", "suggest", "region", "section"]);
+    expect([...phone.row, ...phone.overflow].sort()).toEqual(controls.map((control) => control.id).sort());
   });
   it("places every control either in the row or in the overflow, at any width", () => {
     const everything = total(CONTROLS.map((control) => control.id));
