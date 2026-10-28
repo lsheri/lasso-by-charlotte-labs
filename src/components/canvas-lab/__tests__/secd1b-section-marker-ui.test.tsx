@@ -22,16 +22,24 @@ function openMenu() { fireEvent.contextMenu(screen.getByText("Pricing")); }
 function item(name: string) { return screen.getByRole("menuitem", { name }); }
 
 describe("SECD-1b marker line", () => {
+  it("renders no placeholder text on a non-editable untitled section, keeping its marker", () => {
+    const plain = render(<LabSection {...props()} title={null as unknown as string} editable={false} />);
+    expect(plain.container.textContent).not.toContain("Name this section");
+    plain.unmount();
+    render(<LabSection {...props(week)} title={null as unknown as string} editable={false} />);
+    expect(screen.queryByText("Name this section")).toBeNull();
+    expect(screen.getByTestId("section-marker-line").textContent).toBe("Week of 19 Oct");
+  });
   it("renders the marker line beside the title", () => {
     render(<LabSection {...props(week)} />);
     expect(screen.getByTestId("section-marker-line").textContent).toBe("Week of 19 Oct");
   });
-  it("gives both marker branches their own 13px type rather than the 45px badge type", () => {
+  it("gives both marker branches their own 13px type rather than the 34px badge type", () => {
     const styles = readFileSync("src/styles.css", "utf8");
     const markerRule = styles.match(/\.canvas-lab-section-title \[data-testid="section-marker-line"\] \{([^}]+)\}/)?.[1];
     expect(markerRule).toContain("font-size: 13px;");
     expect(markerRule).toContain("font-family: var(--font-mono);");
-    expect(markerRule).not.toContain("font-size: 45px;");
+    expect(markerRule).not.toContain("font-size: 34px;");
     const view = render(<LabSection {...props(week)} />);
     expect(screen.getByTestId("section-marker-line").parentElement?.className).toContain("flex-col");
     expect(screen.getByTestId("section-marker-line").parentElement?.className).toContain("items-start");

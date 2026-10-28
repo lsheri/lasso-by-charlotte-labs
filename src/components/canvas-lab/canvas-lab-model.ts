@@ -284,8 +284,8 @@ export function labInverseZoom(zoom: number): number {
   return 1 / Math.max(clampZoom(zoom), 0.5);
 }
 
-export const SECTION_LABEL_BOARD_PX = 45;
-export const SECTION_LABEL_FLOOR_PX = 18;
+export const SECTION_LABEL_BOARD_PX = 34;
+export const SECTION_LABEL_FLOOR_PX = 16;
 
 /** The label is a board object, not chrome: it scales with the board down to a legibility floor, then holds. */
 export function sectionLabelInverseZoom(zoom: number): number {
