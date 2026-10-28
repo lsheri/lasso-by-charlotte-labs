@@ -33,6 +33,7 @@ import {
   dockBundles,
   fitWorkboardViewport,
   labInverseZoom,
+  sectionLabelInverseZoom,
   seedBlankCanvas,
   seedCanvas,
   sizeSeedFrames,
@@ -259,6 +260,7 @@ export function SharedBoardView({
           transform: view ? `translate(${view.pan.x}px, ${view.pan.y}px) scale(${view.zoom})` : undefined,
           transformOrigin: "0 0",
           "--lab-inverse-zoom": labInverseZoom(zoom),
+          "--lab-section-label-inverse-zoom": sectionLabelInverseZoom(zoom),
         } as CSSProperties}
       >
         {frames.filter((frame) => isSectionFrameId(frame.id)).map((frame) => (
