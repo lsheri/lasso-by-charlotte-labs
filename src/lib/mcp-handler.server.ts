@@ -499,7 +499,7 @@ export const CORS_HEADERS: Record<string, string> = {
  */
 export const PUSH_DESC_BUILD = "oct27e";
 /** Bumped in the same commit that closes each connector unit. Appears on every tool description, in every push result, and on the push event. */
-export const LASSO_CONNECTOR_VERSION = "1.6.1";
+export const LASSO_CONNECTOR_VERSION = "1.6.2";
 
 
 type Obj = Record<string, unknown>;
@@ -1272,16 +1272,18 @@ export async function handleMcpRequest(
       version: machineLabel(info["version"]),
       protocol: machineLabel(asked),
     });
-    // T1d. A link connection starts with client_name null; the first
-    // initialize that reports a real name stamps it. Best effort: a failure
-    // logs and never blocks the handshake.
+    // T1d/T1f. A link connection starts with client_name null; every
+    // initialize that reports a real name stamps it when it differs, so two
+    // apps sharing one connection each label their own pushes. An unchanged
+    // name matches no row and writes nothing. Best effort: a failure logs
+    // and never blocks the handshake.
     if (reportedName !== "unknown") {
       try {
         const { error } = await supabaseAdmin
           .from("mcp_connections")
           .update({ client_name: reportedName })
           .eq("id", owner.tokenId)
-          .is("client_name", null);
+          .neq("client_name", reportedName);
         if (error) throw new Error(error.message);
       } catch (err) {
         console.warn("connection client name stamp failed", err instanceof Error ? err.message : err);
