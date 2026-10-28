@@ -26,10 +26,10 @@ describe("R5 board toolbar", () => {
 
   it("keeps Add work visible as an icon with its accessible name and tooltip", () => {
     // BOARD-UX: Add work, Info and the example board are icon-only; the words move to aria-label and the tooltip.
-    expect(toolbar).toMatch(/<ToolbarIcon label="Add work\.[^"]*"><Button size="icon"[^>]*aria-label="Add work" data-toolbar-control="add-work"[^>]*><GraphiteIcon name="work" size=\{20\} \/><\/Button>/);
+    expect(toolbar).toMatch(/<ToolbarIcon label="Add work\.[^"]*"><Button size="icon"[^>]*aria-label="Add work" data-toolbar-control="add-work"[^\n]*?><GraphiteIcon name="work" size=\{20\} \/><\/Button>/);
     // R9: Details opens the glance popover in place instead of linking away.
-    expect(toolbar).toMatch(/<ToolbarIcon label="Info\.[^"]*"><Button size="icon"[^>]*aria-label="Info" data-toolbar-control="details"[^>]*><GraphiteIcon name="working-from" size=\{20\} \/><\/Button>/);
-    expect(toolbar).toMatch(/<ToolbarIcon label="See an example board\.[^"]*"><Button size="icon"[^>]*aria-label="See an example board" data-toolbar-control="example"[^>]*><GraphiteIcon name="example-board" size=\{20\} \/><\/Button>/);
+    expect(toolbar).toMatch(/<ToolbarIcon label="Info\.[^"]*"><Button size="icon"[^>]*aria-label="Info" data-toolbar-control="details"[^\n]*?><GraphiteIcon name="working-from" size=\{20\} \/><\/Button>/);
+    expect(toolbar).toMatch(/<ToolbarIcon label="See an example board\.[^"]*"><Button size="icon"[^>]*aria-label="See an example board" data-toolbar-control="example"[^\n]*?><GraphiteIcon name="example-board" size=\{20\} \/><\/Button>/);
   });
 
   it("gives the canvas loop only to the Ask Lasso control", () => {
