@@ -6,6 +6,7 @@ import { LabSection, SECTION_MARKER_COPY, nextWeekSectionRect, shiftedSectionMar
 import { noteWorkboardSection, noteWorkboardSectionMarker } from "@/components/canvas-lab/canvas-lab-telemetry";
 import { guardWorkboardEvent } from "@/lib/workboard-event-allowlist";
 import { logEvent } from "@/lib/telemetry";
+import { readFileSync } from "node:fs";
 
 vi.mock("@/lib/telemetry", () => ({ logEvent: vi.fn() }));
 // Wednesday 21 Oct 2026, local time.
@@ -21,9 +22,20 @@ function openMenu() { fireEvent.contextMenu(screen.getByText("Pricing")); }
 function item(name: string) { return screen.getByRole("menuitem", { name }); }
 
 describe("SECD-1b marker line", () => {
-  it("renders the marker line under the title", () => {
+  it("renders the marker line beside the title", () => {
     render(<LabSection {...props(week)} />);
     expect(screen.getByTestId("section-marker-line").textContent).toBe("Week of 19 Oct");
+  });
+  it("gives both marker branches their own 13px type rather than the 45px badge type", () => {
+    const styles = readFileSync("src/styles.css", "utf8");
+    const markerRule = styles.match(/\.canvas-lab-section-title \[data-testid="section-marker-line"\] \{([^}]+)\}/)?.[1];
+    expect(markerRule).toContain("font-size: 13px !important;");
+    expect(markerRule).toContain("font-family: var(--font-mono);");
+    expect(markerRule).not.toContain("font-size: 45px;");
+    const view = render(<LabSection {...props(week)} />);
+    expect(screen.getByTestId("section-marker-line").parentElement?.className).toContain("items-baseline");
+    view.rerender(<LabSection {...props(week)} editable={false} />);
+    expect(screen.getByTestId("section-marker-line").tagName).toBe("SPAN");
   });
   it("renders nothing extra without a marker", () => {
     const view = render(<LabSection {...props()} />);
