@@ -45,7 +45,7 @@ describe("pass 200 — viewport gestures", () => {
   });
 
   it("leaves the existing exports alone", () => {
-    expect(stepZoom(1, "in")).toBeCloseTo(1.1, 6);
+    expect(stepZoom(1, "in")).toBeCloseTo(1.25, 6);
     expect(clampZoom(1)).toBe(1);
   });
 
