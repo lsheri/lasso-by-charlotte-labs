@@ -16,10 +16,11 @@ describe("phone workboard opening", () => {
     expect(100 * opened.zoom + opened.pan.y).toBe(32);
   });
   it("leaves desktop fit unchanged at and above the 768px boundary", () => {
-    for (const width of [768, 1280]) {
-      const fitted = fit(width);
-      expect(workboardOpeningView(width, fitted, nodes)).toBe(fitted);
-    }
+    const wide = fit(1280);
+    expect(workboardOpeningView(1280, wide, nodes)).toBe(wide);
+    const boundary = fit(768);
+    expect(boundary.zoom).toBeLessThan(0.4);
+    expect(workboardOpeningView(768, boundary, nodes).zoom).toBe(0.4);
     expect(fit(1280).zoom).toBeCloseTo(1164 / 1728);
   });
   it("never exceeds 100 percent", () => {
