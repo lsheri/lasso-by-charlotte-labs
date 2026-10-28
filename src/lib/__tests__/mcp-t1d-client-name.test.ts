@@ -130,10 +130,14 @@ describe("MCP-T1d client name", () => {
     expect(out.error).toBeUndefined();
     expect(table("mcp_connections")[0]?.["client_name"]).toBe("Claude");
   });
-  it("leaves an existing client_name alone on initialize", async () => {
-    table("mcp_connections").push({ id: "c1", client_name: "Existing" });
+  it("overwrites when a different app connects, writes nothing when the name is unchanged", async () => {
+    table("mcp_connections").push({ id: "c1", client_name: "claude-code" });
     await initialize("Claude");
-    expect(table("mcp_connections")[0]?.["client_name"]).toBe("Existing");
+    expect(table("mcp_connections")[0]?.["client_name"]).toBe("Claude");
+    writes.length = 0;
+    await initialize("Claude");
+    expect(table("mcp_connections")[0]?.["client_name"]).toBe("Claude");
+    expect(writes.filter((w) => w === "mcp_connections")).toHaveLength(0);
   });
   it("falls back to the connection row on the push history when the isolate is cold", async () => {
     table("mcp_connections").push({ id: "t1", client_name: "Claude" });
