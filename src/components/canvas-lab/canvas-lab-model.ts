@@ -284,11 +284,14 @@ export function labInverseZoom(zoom: number): number {
   return 1 / Math.max(clampZoom(zoom), 0.5);
 }
 
-/** The section label is the navigation layer of a zoomed-out board, so it holds its size further down than the other stage controls. */
-export const SECTION_LABEL_ZOOM_FLOOR = 0.15;
+export const SECTION_LABEL_BOARD_PX = 45;
+export const SECTION_LABEL_FLOOR_PX = 18;
 
+/** The label is a board object, not chrome: it scales with the board down to a legibility floor, then holds. */
 export function sectionLabelInverseZoom(zoom: number): number {
-  return 1 / Math.max(clampZoom(zoom), SECTION_LABEL_ZOOM_FLOOR);
+  const z = clampZoom(zoom);
+  const onScreen = Math.max(SECTION_LABEL_FLOOR_PX, SECTION_LABEL_BOARD_PX * z);
+  return onScreen / (SECTION_LABEL_BOARD_PX * z);
 }
 
 /** Keep a newly-created card visible without disturbing an already-visible view. */

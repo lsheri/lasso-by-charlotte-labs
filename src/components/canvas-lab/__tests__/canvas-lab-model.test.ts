@@ -519,9 +519,10 @@ describe("dragEndDecision", () => {
 
   it("holds section label size down to its own 0.15 zoom floor", () => {
     expect(sectionLabelInverseZoom(1)).toBe(1);
-    expect(sectionLabelInverseZoom(0.15)).toBeCloseTo(6.6666667);
-    expect(sectionLabelInverseZoom(0.1)).toBeCloseTo(6.6666667);
-    expect(sectionLabelInverseZoom(0.1)).toBeGreaterThan(labInverseZoom(0.1));
+    expect(sectionLabelInverseZoom(0.5)).toBe(1);
+    expect(sectionLabelInverseZoom(0.4)).toBe(1);
+    expect(sectionLabelInverseZoom(0.1)).toBeCloseTo(4, 10);
+    for (const z of [0.4, 0.45, 0.6, 1, 1.5, 2]) expect(sectionLabelInverseZoom(z)).toBe(1);
   });
 
   it("saves without prompting in Freeform or for a read-only card", () => {

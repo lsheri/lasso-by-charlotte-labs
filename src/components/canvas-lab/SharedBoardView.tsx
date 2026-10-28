@@ -261,6 +261,8 @@ export function SharedBoardView({
           transformOrigin: "0 0",
           "--lab-inverse-zoom": labInverseZoom(zoom),
           "--lab-section-label-inverse-zoom": sectionLabelInverseZoom(zoom),
+          "--lab-section-marker-display": zoom >= 0.45 ? "block" : "none",
+          "--lab-section-placeholder-display": zoom >= 0.5 ? "inline-flex" : "none",
         } as CSSProperties}
       >
         {frames.filter((frame) => isSectionFrameId(frame.id)).map((frame) => (

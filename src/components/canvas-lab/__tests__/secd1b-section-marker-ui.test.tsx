@@ -33,7 +33,9 @@ describe("SECD-1b marker line", () => {
     expect(markerRule).toContain("font-family: var(--font-mono);");
     expect(markerRule).not.toContain("font-size: 45px;");
     const view = render(<LabSection {...props(week)} />);
-    expect(screen.getByTestId("section-marker-line").parentElement?.className).toContain("items-baseline");
+    expect(screen.getByTestId("section-marker-line").parentElement?.className).toContain("flex-col");
+    expect(screen.getByTestId("section-marker-line").parentElement?.className).toContain("items-start");
+    expect(screen.getByTestId("section-marker-line").parentElement?.className).not.toContain("items-baseline");
     expect(screen.getByTestId("section-marker-line").classList.contains("text-sm")).toBe(false);
     expect(screen.getByTestId("section-marker-line").classList.contains("self-start")).toBe(false);
     view.rerender(<LabSection {...props(week)} editable={false} />);

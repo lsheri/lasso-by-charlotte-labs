@@ -141,7 +141,7 @@ export function LabSection({ frame, title, selected, editable, autoName = false,
   }
   /** No marker: the title renders exactly as before, with no wrapper. */
   function withMarker(node: React.ReactNode) {
-    return hasMarker ? <span className="flex min-w-0 flex-row items-baseline gap-[10px]">{node}{markerLine()}</span> : node;
+    return hasMarker ? <span className="flex min-w-0 flex-col items-start gap-[2px]">{node}{markerLine()}</span> : node;
   }
   return <section ref={rootRef} tabIndex={0} data-testid={`lab-section-${frame.id}`} data-selected={selected}
     className="canvas-lab-section" style={{ left: frame.x, top: frame.y, width: frame.width, height: frame.height, ...(fillStyle ? { background: fillStyle.fill } : {}) }}
