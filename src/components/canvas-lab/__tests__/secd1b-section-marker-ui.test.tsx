@@ -29,7 +29,7 @@ describe("SECD-1b marker line", () => {
   it("gives both marker branches their own 13px type rather than the 45px badge type", () => {
     const styles = readFileSync("src/styles.css", "utf8");
     const markerRule = styles.match(/\.canvas-lab-section-title \[data-testid="section-marker-line"\] \{([^}]+)\}/)?.[1];
-    expect(markerRule).toContain("font-size: 13px;");
+    expect(markerRule).toContain("font-size: 13px !important;");
     expect(markerRule).toContain("font-family: var(--font-mono);");
     expect(markerRule).not.toContain("font-size: 45px;");
     const view = render(<LabSection {...props(week)} />);
