@@ -6,6 +6,8 @@ type Row = Record<string, unknown>;
 const db: Record<string, Row[]> = {};
 const uploads: { path: string; opts: Record<string, unknown> }[] = [];
 const events: { eventType: string; dims: Record<string, unknown> }[] = [];
+/** Tables an update actually wrote to (matched at least one row). */
+const writes: string[] = [];
 let seq = 0;
 let failConnections = false;
 const newId = () => `00000000-0000-4000-8000-${String(++seq).padStart(12, "0")}`;
@@ -31,6 +33,7 @@ function builder(name: string) {
     const hit = table(name).filter((r) => filters.every((f) => f(r)));
     for (const [k, asc] of sorts) hit.sort((a, b) => (k === "created_at" ? String(a[k]).localeCompare(String(b[k])) : Number(a[k]) - Number(b[k])) * (asc ? 1 : -1));
     if (op === "update") {
+      if (hit.length > 0) writes.push(name);
       for (const r of hit) Object.assign(r, payload);
       written = hit;
       return hit;
@@ -119,6 +122,7 @@ beforeEach(() => {
   for (const k of Object.keys(db)) delete db[k];
   events.length = 0;
   uploads.length = 0;
+  writes.length = 0;
   seq = 0;
   failConnections = false;
 });
