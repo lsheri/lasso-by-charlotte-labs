@@ -47,7 +47,7 @@ const ICONS: Record<GraphiteIconName, IconDef> = {
   /* TOOLBAR-7: you draw this boundary (solid rounded box, one corner drag handle). */
   "draw-workstream": { d: ["M11.6 15H5a1.8 1.8 0 01-1.8-1.8V5A1.8 1.8 0 015 3.2h8.2A1.8 1.8 0 0115 5v6.6", "M13.4 13.4h3.4v3.4h-3.4z"], sig: "nb-sig-scuff", sigIndex: 1 },
   /* TOOLBAR-7: Lasso finds the grouping (three loose dots, one open loop, no box). Static graphite only. */
-  "suggest-workstreams": { d: ["M14.6 14.4c2.4-1.9 2.9-5.3.8-7.6-2.3-2.6-7.2-2.9-9.8-.6-2.4 2.1-2 5.6.8 7.3 1.9 1.1 4.3 1.3 6.3.7M12.7 14.2l1.4 3", "M7.6 8.6a.6.6 0 110 1.2.6.6 0 010-1.2zM11.8 7.8a.6.6 0 110 1.2.6.6 0 010-1.2zM9.8 11.4a.6.6 0 110 1.2.6.6 0 010-1.2z"], sig: "nb-sig-pop", sigIndex: 1 },
+  "suggest-workstreams": { d: ["M7.2 15.4c-3-1-4.6-3.9-3.5-6.6 1.3-3.2 5.7-4.7 9.3-3.5 3.4 1.2 4.8 4.3 3.1 6.9-1.2 1.9-3.6 3-6.3 3.1M9.8 15.3c-1.2.8-1.6 1.9-1 3", "M7.6 8.6a.6.6 0 110 1.2.6.6 0 010-1.2zM11.8 7.8a.6.6 0 110 1.2.6.6 0 010-1.2zM9.8 11.4a.6.6 0 110 1.2.6.6 0 010-1.2z"], sig: "nb-sig-pop", sigIndex: 1 },
 };
 export const ICON_NAMES = Object.keys(ICONS) as GraphiteIconName[];
 export function getIconSignature(name: GraphiteIconName) { return ICONS[name].sig; }
