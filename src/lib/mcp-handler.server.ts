@@ -499,7 +499,7 @@ export const CORS_HEADERS: Record<string, string> = {
  */
 export const PUSH_DESC_BUILD = "oct27e";
 /** Bumped in the same commit that closes each connector unit. Appears on every tool description, in every push result, and on the push event. */
-export const LASSO_CONNECTOR_VERSION = "1.6.0";
+export const LASSO_CONNECTOR_VERSION = "1.6.1";
 
 
 type Obj = Record<string, unknown>;
@@ -1462,6 +1462,23 @@ function directPlacement(status: string): AttachmentPlacement | null {
   return null;
 }
 
+/** Where a conversation already sits: its one place, none, or ambiguous. */
+async function conversationPlaceInfo(
+  owner: Owner,
+  threadId: string,
+): Promise<{ place: PlaceRow | null; ambiguous: boolean }> {
+  const { data: rows } = await supabaseAdmin
+    .from("work_item_tasks")
+    .select("task_id")
+    .eq("work_item_id", threadId);
+  const taskIds = [...new Set((rows ?? []).map((r) => String(r.task_id)))];
+  if (taskIds.length > 1) return { place: null, ambiguous: true };
+  const place = taskIds.length === 1
+    ? ((await readPlaces(owner)).places.find((one) => one.taskId === taskIds[0]) ?? null)
+    : null;
+  return { place, ambiguous: false };
+}
+
 /**
  * PF1. Places a destination-free call's attachments where their conversation
  * already is, only when that is exactly one place. Never moves anything.
@@ -1472,20 +1489,15 @@ async function inheritConversationPlacement(
   threadId: string,
   itemIds: string[],
   tool: string,
+  /** T1e: the caller may already have read where the conversation sits. */
+  known?: { place: PlaceRow | null; ambiguous: boolean },
 ): Promise<{ place: PlaceRow | null; placed: number; byItem: Map<string, AttachmentPlacement> }> {
   const byItem = new Map<string, AttachmentPlacement>();
-  const { data: rows } = await supabaseAdmin
-    .from("work_item_tasks")
-    .select("task_id")
-    .eq("work_item_id", threadId);
-  const taskIds = [...new Set((rows ?? []).map((r) => String(r.task_id)))];
-  if (taskIds.length > 1) {
+  const { place, ambiguous } = known ?? (await conversationPlaceInfo(owner, threadId));
+  if (ambiguous) {
     for (const itemId of itemIds) byItem.set(itemId, "inbox_ambiguous");
     return { place: null, placed: 0, byItem };
   }
-  const place = taskIds.length === 1
-    ? ((await readPlaces(owner)).places.find((one) => one.taskId === taskIds[0]) ?? null)
-    : null;
   if (!place) {
     for (const itemId of itemIds) byItem.set(itemId, "inbox_no_destination");
     return { place: null, placed: 0, byItem };
@@ -2670,11 +2682,13 @@ async function pushAttachment(owner: Owner, args: Obj, id: unknown, client: Clie
   if (args["destination"] !== undefined && typeof args["destination"] !== "string") return rpcError(id, -32602, "destination must be a string");
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(lassoId);
   const { data: thread } = isUuid ? await supabaseAdmin.from("work_items")
-    .select("source_vendor, orig_conversation_id").eq("id", lassoId)
+    .select("source_vendor, orig_conversation_id, title, display_title").eq("id", lassoId)
     .eq("owner_id", owner.profileId).eq("type", "ai_thread").maybeSingle() : { data: null };
   if (!thread) return rpcError(id, -32602, `lasso_conversation_id '${lassoId}' does not name a conversation of yours in Lasso. Nothing was saved. Push again without it, or with the lasso_conversation_id an earlier push returned.`);
+  // T1e: the result names the stored conversation, never "Untitled
+  // conversation". The stored title itself is not written here.
   return pushConversation(owner, { vendor: thread.source_vendor, orig_conversation_id: thread.orig_conversation_id,
-    lasso_conversation_id: lassoId, messages: [], attachments: [attachment], destination: args["destination"], push_intent_id: args["push_intent_id"], _tool: "push_attachment" }, id, client);
+    lasso_conversation_id: lassoId, title: thread.display_title ?? thread.title, messages: [], attachments: [attachment], destination: args["destination"], push_intent_id: args["push_intent_id"], _tool: "push_attachment" }, id, client);
 }
 
 export async function pushConversation(
@@ -3711,6 +3725,10 @@ export async function pushConversation(
   const convoVocab = await placementVocab(owner);
   const knownPlaces = plan.destination ? (await readPlaces(owner)).places : undefined;
   const convoPlacement = await applyDestination(owner, convoVocab, threadId, plan, "push_conversation", knownPlaces);
+  // T1e. A destination-free call still reports where the conversation already
+  // sits. The same read feeds the attachment inheritance below, so a push
+  // with attachments reads the place once.
+  const threadPlaceInfo = plan.destination ? null : await conversationPlaceInfo(owner, threadId);
 
   // P0 item 1. An attachment belongs where its conversation went. The place is
   // already resolved, so each one is a single call with the same task.
@@ -3736,7 +3754,7 @@ export async function pushConversation(
     // PF1. No destination on this call: the attachments follow their
     // conversation when it already sits in exactly one place. Read only; the
     // conversation itself is never placed or moved here.
-    const inherited = await inheritConversationPlacement(owner, convoVocab, threadId, placeTargets, "push_conversation");
+    const inherited = await inheritConversationPlacement(owner, convoVocab, threadId, placeTargets, "push_conversation", threadPlaceInfo ?? undefined);
     attachmentsPlaced = inherited.placed;
     for (const [itemId, placement] of inherited.byItem) {
       const entry = outcomeById.get(itemId);
@@ -4031,10 +4049,19 @@ export async function pushConversation(
       : "";
   // P1b item 1. Placeholders ask the person for the file.
   const placeholderNote = fileRefNote(fileRefsCreated);
+  // T1e BUG 1. No destination named and the conversation already sits on a
+  // board: the result says where it is. "Stays private" is only for a
+  // conversation that is in fact unmapped.
+  const reportedPlacement =
+    !plan.destination && convoPlacement.target !== "workboard" && threadPlaceInfo?.place
+      ? { text: "", target: "workboard" as const, place: threadPlaceInfo.place, status: "already_there" }
+      : convoPlacement;
   const placementText =
-    convoPlacement.target === "workboard"
-      ? ` ${convoPlacement.text}`
-      : ` It stays private until the user maps it.${convoPlacement.text ? ` ${convoPlacement.text}` : ""}`;
+    reportedPlacement.target === "workboard"
+      ? reportedPlacement.text
+        ? ` ${reportedPlacement.text}`
+        : ""
+      : ` It stays private until the user maps it.${reportedPlacement.text ? ` ${reportedPlacement.text}` : ""}`;
   const decisionText = decisionsLine(decisionReceipts);
   const decisionNote = decisionText ? ` ${decisionText}` : "";
   const decisionNeedsNote = decisionReceipts.some((r) => r.outcome === "held" || r.outcome === "skipped");
@@ -4072,9 +4099,9 @@ export async function pushConversation(
       next_from: progress.next_from,
       complete: progress.complete,
       placement: {
-        target: convoPlacement.target,
-        ref: convoPlacement.place?.ref ?? null,
-        status: convoPlacement.status,
+        target: reportedPlacement.target,
+        ref: reportedPlacement.place?.ref ?? null,
+        status: reportedPlacement.status,
         note: placementText.trim(),
       },
       attachments_placed: attachmentsPlaced,
