@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { BoardToolbarSurface, type BoardToolbarItem } from "@/components/canvas-lab/BoardToolbarSurface";
@@ -15,6 +16,6 @@ describe("TOOLBAR-5 independent surfaces", () => {
     const more = screen.getByRole("button", { name: "More drawing tools" });
     fireEvent.pointerDown(more, { button: 0, ctrlKey: false, pointerType: "mouse" });
     expect(presses).toBe(0);
-    expect(screen.getByRole("menuitem", { name: "Add text" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "Add text" })).toBeTruthy();
   });
 });
