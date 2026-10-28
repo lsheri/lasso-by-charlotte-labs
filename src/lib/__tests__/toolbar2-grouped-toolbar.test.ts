@@ -7,20 +7,26 @@ const css = readFileSync("src/styles.css", "utf8");
 const surface = readFileSync("src/components/canvas-lab/BoardToolbarSurface.tsx", "utf8");
 
 describe("TOOLBAR-2 grouped toolbar", () => {
-  it("orders the row in Liam's five groups", () => {
+  it("orders all controls in four groups on one canvas surface", () => {
     const groups = page.match(/const TOOLBAR_GROUPS: string\[\]\[\] = \[([\s\S]*?)\];/)?.[1] ?? "";
     expect(groups).toContain('["add-work"]');
-    expect(groups).toContain('["add-text", "add-sticky"]');
-    expect(groups).toContain('["region", "section", "suggest"]');
+    expect(groups).toContain('["add-text", "add-sticky", "region", "section", "suggest"]');
     expect(groups).toContain('["workstreams", "card-face", "fit", "zoom"]');
     expect(groups).toContain('"ask", "share", "details", "example"]');
-    expect(page).toContain('const floatingToolbarItems = toolbarItems.filter((item) => (item.spec.group ?? 0) <= 3)');
-    expect(page).toContain('const headerToolbarItems = toolbarItems.filter((item) => (item.spec.group ?? 0) >= 4)');
-    const header = page.slice(page.indexOf("<header className="), page.indexOf("</header>", page.indexOf("<header className=")));
-    expect(header).toContain('surface="header" items={headerToolbarItems}');
-    expect(header).not.toContain('surface="floating"');
+    expect(page).toContain('const boardToolbarItems = toolbarItems.filter((item) => item.spec.id !== "example")');
+    expect(page).not.toContain('<header className="relative z-20 flex h-[52px]');
+    expect(page.match(/<BoardToolbarSurface /g)).toHaveLength(1);
     const canvas = page.slice(page.indexOf('<BoardFileDropOverlay'), page.indexOf('{sharedSpace ?', page.indexOf('<BoardFileDropOverlay')));
-    expect(canvas).toContain('surface="floating" items={floatingToolbarItems}');
+    expect(canvas).toContain('<BoardToolbarSurface items={boardToolbarItems}');
+    expect(canvas).toContain('exampleToolbarItem?.menu');
+    expect(canvas).toContain('virtualRef={detailsAnchorVirtualRef}');
+    expect(canvas).toContain('<DemoPresetsAdmin engagementId={engagementId} />');
+    expect(canvas).toContain('role="alert"');
+    expect(canvas).toContain('{title}');
+    expect(canvas).toContain('{status}');
+    expect(canvas).toContain('<RegionColourSwatches');
+    expect(canvas).toContain('<SectionBackgroundPicker');
+    expect(surface).not.toContain('className="canvas-lab-tool-group"');
   });
 
   it("draws a divider only between groups that still have a control in the row", () => {
