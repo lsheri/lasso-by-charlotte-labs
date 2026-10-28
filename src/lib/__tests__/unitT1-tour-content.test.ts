@@ -59,7 +59,7 @@ describe("T1 tour content", () => {
       expect(TOUR_CONTENT[register].acts[3]?.captionTouch).toBe("Tap one of the outlined cards.");
       expect(TOUR_CONTENT[register].acts[3]?.why).toBe("Lasso can answer from a full board, single piece of work, or grouped works treams. Think of each card as \"context\" for Lasso's AI chat.");
       expect(TOUR_CONTENT[register].acts[4]?.captionPointer).toBe("Draw a box around the three selected cards.");
-      expect(TOUR_CONTENT[register].acts[4]?.captionTouch).toBe("Tap Add grouping to group the three cards.");
+      expect(TOUR_CONTENT[register].acts[4]?.captionTouch).toBe("Tap Draw a workstream to group the three cards.");
       expect(TOUR_CONTENT[register].acts[4]?.why).toBe("We are deciding that these pieces of work should share the same context.");
     }
   });

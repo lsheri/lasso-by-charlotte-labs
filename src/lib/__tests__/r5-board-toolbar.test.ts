@@ -67,7 +67,7 @@ describe("R5 board toolbar", () => {
   });
 
   it("retains an accessible name and tooltip for every icon-only control", () => {
-    for (const label of ["Show workstreams", "Working from", "Add text", "Add grouping", "Add work", "Info", "See an example board", "Sticky", "Add section", "Suggest workstreams", "Ask Lasso", "Share", "Fit", "Zoom out", "Zoom in", "More board controls"]) {
+    for (const label of ["Show workstreams", "Working from", "Add text", "Draw a workstream", "Add work", "Info", "See an example board", "Sticky", "Draw a section", "Suggest workstreams", "Ask Lasso", "Share", "Fit", "Zoom out", "Zoom in", "More board controls"]) {
       expect(`${page}\n${share}`).toContain(`aria-label="${label}"`);
     }
     expect(toolbar.match(/<ToolbarIcon label=/g)?.length).toBeGreaterThanOrEqual(8);

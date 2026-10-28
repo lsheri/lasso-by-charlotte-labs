@@ -198,7 +198,7 @@ describe("tour acts one to three", () => {
 
   it("renders the exported context sentence after grouping", () => {
     render(<TourActThree register="company" onComplete={vi.fn()} />);
-    fireEvent.click(screen.getByRole("button", { name: "Add grouping" }));
+    fireEvent.click(screen.getByRole("button", { name: "Draw a workstream" }));
     expect(screen.getByText(TOUR_CONTEXT_SENTENCE)).toBeTruthy();
   });
 

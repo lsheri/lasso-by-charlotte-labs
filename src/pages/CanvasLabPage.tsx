@@ -3392,13 +3392,13 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     });
     toolbarItems.push({
       spec: { id: "region", width: 40, moveOrder: 9 },
-      row: <ToolbarIcon label="Draw a workstream. Group work so Lasso treats it as one piece of context."><Button size="icon" variant={drawTool && drawMode === "grouping" ? "secondary" : "outline"} aria-label="Add grouping" aria-pressed={drawTool && drawMode === "grouping"} data-toolbar-control="grouping" onClick={toggleDrawTool}><GraphiteIcon name="workstream" size={20} /></Button></ToolbarIcon>,
-      menu: <DropdownMenuItem onSelect={toggleDrawTool}>Add grouping</DropdownMenuItem>,
+      row: <ToolbarIcon label="Draw a workstream. Group work so Lasso treats it as one piece of context."><Button size="icon" variant={drawTool && drawMode === "grouping" ? "secondary" : "outline"} aria-label="Draw a workstream" aria-pressed={drawTool && drawMode === "grouping"} data-toolbar-control="grouping" onClick={toggleDrawTool}><GraphiteIcon name="workstream" size={20} /></Button></ToolbarIcon>,
+      menu: <DropdownMenuItem onSelect={toggleDrawTool}>Draw a workstream</DropdownMenuItem>,
     });
     toolbarItems.push({
       spec: { id: "section", width: 40, moveOrder: 10 },
-      row: <ToolbarIcon label="Draw a section. Mark an area of the board. Nothing inside is joined up."><Button size="icon" variant={drawTool && drawMode === "section" ? "secondary" : "outline"} aria-label="Add section" aria-pressed={drawTool && drawMode === "section"} data-toolbar-control="section" onClick={toggleSectionTool}><GraphiteIcon name="section" size={20} /></Button></ToolbarIcon>,
-      menu: <DropdownMenuItem onSelect={toggleSectionTool}>Add section</DropdownMenuItem>,
+      row: <ToolbarIcon label="Draw a section. Mark an area of the board. Nothing inside is joined up."><Button size="icon" variant={drawTool && drawMode === "section" ? "secondary" : "outline"} aria-label="Draw a section" aria-pressed={drawTool && drawMode === "section"} data-toolbar-control="section" onClick={toggleSectionTool}><GraphiteIcon name="section" size={20} /></Button></ToolbarIcon>,
+      menu: <DropdownMenuItem onSelect={toggleSectionTool}>Draw a section</DropdownMenuItem>,
     });
     toolbarItems.push({
       spec: { id: "suggest", width: 40, moveOrder: 7 },

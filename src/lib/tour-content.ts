@@ -225,7 +225,7 @@ function acts(
     {
       id: 5,
       captionPointer: "Draw a box around the three selected cards.",
-      captionTouch: "Tap Add grouping to group the three cards.",
+      captionTouch: "Tap Draw a workstream to group the three cards.",
       why: "We are deciding that these pieces of work should share the same context.",
       contextSentence: TOUR_CONTEXT_SENTENCE,
       frameTitle,

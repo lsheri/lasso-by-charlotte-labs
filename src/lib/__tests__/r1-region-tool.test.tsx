@@ -37,7 +37,7 @@ describe("R1 region tool", () => {
   it("renders icon controls with accessible names for grouping and text", () => {
     const page = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
 
-    expect(page).toMatch(/aria-label="Add grouping"[\s\S]*?<GraphiteIcon name="workstream"/);
+    expect(page).toMatch(/aria-label="Draw a workstream"[\s\S]*?<GraphiteIcon name="workstream"/);
     expect(page).toMatch(/aria-label="Add text"[\s\S]*?<GraphiteIcon name="text"/);
   });
 
@@ -48,7 +48,7 @@ describe("R1 region tool", () => {
 
     const visibleCopy = `${toolbar}\n${drawingFlow}`.match(/(?:aria-label|label)=\"[^\"]*\"|setAnnouncement\(\"[^\"]*\"\)|>[^<>{}]+</g)?.join("\n") ?? "";
     expect(visibleCopy).not.toMatch(/\bregion\b/i);
-    expect(toolbar).toContain('aria-label="Add grouping"');
+    expect(toolbar).toContain('aria-label="Draw a workstream"');
     expect(drawingFlow).toContain('"Drag on empty board space to draw a grouping."');
   });
 
