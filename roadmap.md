@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] WS-REMOVE: remove mode/control/event and inert tour mirror; named baseline/after tests and 1280/390 placement verification.
+
 - [x] TOOLBAR-6: header children/save alerts preserved on canvas; one flat bar at 16px, opening inset 86px; seven files 33/33 before and after, preview build OK. Actual controls/mark/FaceToggle fixture inspected at 1280/390; phone menu opens and canvas press-through works.
 - [ ] TOOLBAR-6: real signed-in populated-board verification blocked by external unmanaged authentication; real board redirects to /auth. Fixture only for visual checks.
 

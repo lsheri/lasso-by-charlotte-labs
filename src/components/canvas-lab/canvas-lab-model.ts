@@ -70,7 +70,6 @@ export function ownerLabel(node: LabNode): "yours" | "teammate" | "local draft" 
 export type LabFrameId = string;
 export type LabAnchor = "top" | "right" | "bottom" | "left";
 export type LabResizeCorner = "nw" | "ne" | "se" | "sw";
-export type LabStructureMode = "structured" | "freeform";
 
 export type LabNode = {
   id: string;
@@ -249,8 +248,8 @@ export function frameContainingPoint(frames: LabFrame[], point: Point): LabFrame
   return holding.reduce((smallest, frame) => (frame.width * frame.height < smallest.width * smallest.height ? frame : smallest));
 }
 
-export function dropPromptFrame(node: LabNode, frames: LabFrame[], mode: LabStructureMode, editable: boolean): LabFrame | null {
-  if (mode !== "structured" || !editable) return null;
+export function dropPromptFrame(node: LabNode, frames: LabFrame[], editable: boolean): LabFrame | null {
+  if (!editable) return null;
   const target = frameContainingPoint(frames, { x: node.x + node.width / 2, y: node.y + node.height / 2 });
   return target && target.id !== node.frame ? target : null;
 }
@@ -270,14 +269,13 @@ export function dragEndDecision(input: {
   zoom: number;
   node: LabNode;
   frames: LabFrame[];
-  mode: LabStructureMode;
   editable: boolean;
 }): { position: Point | null; promptFrameId: string | null } {
-  const { origin, from, pointer, zoom, node, frames, mode, editable } = input;
+  const { origin, from, pointer, zoom, node, frames, editable } = input;
   if (Math.hypot(pointer.x - from.x, pointer.y - from.y) < 4) return { position: null, promptFrameId: null };
   const position = dragTo(origin, { x: (pointer.x - from.x) / zoom, y: (pointer.y - from.y) / zoom });
   if (position.x === origin.x && position.y === origin.y) return { position: null, promptFrameId: null };
-  const target = dropPromptFrame({ ...node, x: position.x, y: position.y }, frames, mode, editable);
+  const target = dropPromptFrame({ ...node, x: position.x, y: position.y }, frames, editable);
   return { position, promptFrameId: target ? target.id : null };
 }
 

@@ -58,3 +58,5 @@ Tour mirrors board chrome; preserve live behavior.
 - Section Ask resolves membership from live browser board geometry with containingSection at send time and submits an ordinary items scope; persisted section_members remains for server-only consumers to avoid stale-position reads in interactive Ask.
 - Keep pilot person joins explicit in authenticated recordEvent mirror context, defaulting other mirror callers to person-less, so anonymous and system paths cannot inherit person-profile processing.
 - Emit AI spend through detached recordEvent calls from recordUsage with exact content-free dimensions, so mirrors cannot delay AI responses and other event bucketing stays unchanged.
+
+- Workstream frames always render on the live board; drop prompts have no view-mode parameter, so hiding outlines cannot suppress reassignment.
