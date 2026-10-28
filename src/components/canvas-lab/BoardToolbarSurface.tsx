@@ -45,7 +45,7 @@ export function BoardToolbarSurface({ surface, items, moreRef, extraMenu }: {
   </>;
   return surface === "floating" ? (
     <div ref={measureRef} className="canvas-lab-floating-tools-wrapper" data-toolbar-surface="floating" data-toolbar-budget={width} data-toolbar-row={toolbarPlan.row.join(",")} data-toolbar-overflow={toolbarPlan.overflow.join(",")}>
-      <div role="toolbar" aria-label="Drawing tools" className="canvas-lab-toolbar canvas-lab-floating-tools" onPointerDownCapture={(event) => event.stopPropagation()}>{content}</div>
+      <div role="toolbar" aria-label="Drawing tools" className="canvas-lab-toolbar canvas-lab-floating-tools" onPointerDown={(event) => event.stopPropagation()}>{content}</div>
     </div>
   ) : (
     <div ref={measureRef} role="toolbar" aria-label="Board controls" data-toolbar-surface="header" data-toolbar-budget={width} data-toolbar-row={toolbarPlan.row.join(",")} data-toolbar-overflow={toolbarPlan.overflow.join(",")} className="canvas-lab-toolbar flex min-w-0 flex-1 items-center justify-end gap-2 overflow-hidden">{content}</div>
