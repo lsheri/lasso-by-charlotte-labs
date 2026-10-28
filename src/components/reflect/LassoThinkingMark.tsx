@@ -41,7 +41,7 @@ type GatherArrival = { born: number; slot: number; side: -1 | 1 };
 
 const TILT = 0.18;
 /** BOARD-UX-3: strength of the always-on loop behind a persistent mark, and its stroke minimum. */
-export const PERSISTENT_GHOST_ALPHA = 0.5;
+export const PERSISTENT_GHOST_ALPHA = 0.4;
 export const PERSISTENT_STROKE_MIN = 1.6;
 
 function ring(cx: number, cy: number, radius: number, phase: number): RingPoint {
