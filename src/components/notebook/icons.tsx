@@ -42,7 +42,7 @@ const ICONS: Record<GraphiteIconName, IconDef> = {
   minus: { d: ["M4 10.2l12-.3"], sig: "nb-sig-slide" },
   more: { d: ["M4.1 10h.1M9.9 10.1h.1M15.8 9.9h.1"], sig: "nb-sig-wave" },
   /* TOOLBAR-2: a workstream joins its context (solid box, three joined dots); a section only marks an area (dashed box, name tab, empty). */
-  workstream: { d: ["M5 3.2h10a1.8 1.8 0 011.8 1.8v10a1.8 1.8 0 01-1.8 1.8H5A1.8 1.8 0 013.2 15V5A1.8 1.8 0 015 3.2z", "M7 8h6M7 8l3 4.6M13 8l-3 4.6", "M7 7.3a.7.7 0 110 1.4.7.7 0 010-1.4zM13 7.3a.7.7 0 110 1.4.7.7 0 010-1.4zM10 11.9a.7.7 0 110 1.4.7.7 0 010-1.4z"], sig: "nb-sig-scuff", sigIndex: 1 },
+  workstream: { d: ["M5 3.2h10a1.8 1.8 0 011.8 1.8v10a1.8 1.8 0 01-1.8 1.8H5A1.8 1.8 0 013.2 15V5A1.8 1.8 0 015 3.2z", "M8.5 7h3M7.6 8.8l1.5 2.6M12.4 8.8l-1.5 2.6", "M6.6 6.4a.6.6 0 110 1.2.6.6 0 010-1.2zM13.4 6.4a.6.6 0 110 1.2.6.6 0 010-1.2zM10 12.6a.6.6 0 110 1.2.6.6 0 010-1.2z"], sig: "nb-sig-scuff", sigIndex: 1 },
   section: { d: ["M10.2 5h2.3M14.8 5H17v2.3M17 9.7v1.6M17 13.7V17h-2.3M12.4 17h-1.8M8.3 17H3v-2.3M3 11.9v-1.6M3 7.9V6.6", "M3.6 2.9h4.3v2.3H3.6z"], sig: "nb-sig-flap", sigIndex: 0 },
 };
 export const ICON_NAMES = Object.keys(ICONS) as GraphiteIconName[];
