@@ -293,6 +293,8 @@ const TOOLBAR_LAYOUT = TOOLBAR_GROUPS.flat();
 function toolbarGroupOf(id: string): number { return TOOLBAR_GROUPS.findIndex((ids) => ids.includes(id)) + 1; }
 /** Groups 2 to 4 share the graphite tool band. */
 const TOOL_GROUP_BAND = [2, 3, 4];
+const TOOL_GROUP_FIRST = 2;
+const TOOL_GROUP_LAST = 4;
 
 export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string; entryVia?: string }) {
   const navigate = useNavigate();
@@ -3485,11 +3487,11 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
         <header className="relative z-20 flex h-[52px] shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-4">
           <div className="min-w-0 shrink"><span className="block truncate text-[13px] font-medium text-foreground">{title}</span><span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{status}</span></div>
           <div ref={toolbarRef} className="canvas-lab-toolbar flex min-w-0 flex-1 items-center justify-end gap-2 overflow-hidden">
-            {toolbarRowItems.filter((item) => (item.spec.group ?? 0) < TOOL_GROUP_BAND[0]).map((item) => renderToolbarItem(item))}
-            {toolbarToolItems.length > 0 ? <>{toolbarDividers.has(toolbarToolItems[0].spec.id) ? toolbarDivider : null}<div className="canvas-lab-tool-group">
+            {toolbarRowItems.filter((item) => (item.spec.group ?? 0) < TOOL_GROUP_FIRST).map((item) => renderToolbarItem(item))}
+            {toolbarToolItems.length > 0 ? <>{toolbarDividers.has(toolbarToolItems[0]?.spec.id ?? "") ? toolbarDivider : null}<div className="canvas-lab-tool-group">
             {toolbarToolItems.map((item, index) => renderToolbarItem(item, index > 0))}
             </div></> : null}
-            {toolbarRowItems.filter((item) => (item.spec.group ?? 0) > TOOL_GROUP_BAND[TOOL_GROUP_BAND.length - 1]).map((item) => renderToolbarItem(item))}
+            {toolbarRowItems.filter((item) => (item.spec.group ?? 0) > TOOL_GROUP_LAST).map((item) => renderToolbarItem(item))}
             {toolbarOverflowItems.length > 0 || canLeave ? (
               <DropdownMenu>
                 <Tooltip>
