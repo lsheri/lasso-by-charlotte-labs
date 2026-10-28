@@ -10,7 +10,7 @@ import { suggestStructuresFn } from "@/lib/structure-suggest.functions";
 import { chunkInput, type StructureSourceKind, type SuggestedStructure } from "@/lib/structure-suggest-shared";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Menu, SquareDashed, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type Ref } from "react";
 
 import {
@@ -24,7 +24,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { planToolbarOverflow, type ToolbarControlSpec } from "@/lib/toolbar-overflow";
+import { planToolbarOverflow, toolbarDividersBefore, type ToolbarControlSpec } from "@/lib/toolbar-overflow";
 
 import { BoardAsk } from "@/components/canvas-lab/BoardAsk";
 import { LabAnswerCard } from "@/components/canvas-lab/LabAnswerCard";
@@ -3361,8 +3361,8 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   // TOOLBAR-1 (28 Oct 2026): the SECD-2 jump control left the toolbar; BoardJumpControls stays in the tree unused (roadmap).
   if (canAddWork) {
     toolbarItems.push({
-      spec: { id: "add-work", width: 40, pinned: true },
-      row: <ToolbarIcon label="Add work. Bring a chat, document or file onto this board."><Button size="icon" variant="outline" className="lasso-action" aria-label="Add work" data-toolbar-control="add-work" onClick={() => openAddWork("header", null)}><GraphiteIcon name="work" size={20} /></Button></ToolbarIcon>,
+      spec: { id: "add-work", width: 106, pinned: true },
+      row: <ToolbarIcon label="Add work. Bring a chat, document or file onto this board."><Button size="sm" variant="outline" className="lasso-action" aria-label="Add work" data-toolbar-control="add-work" onClick={() => openAddWork("header", null)}><GraphiteIcon name="work" size={20} />Add work</Button></ToolbarIcon>,
     });
     toolbarItems.push({
       spec: { id: "add-text", width: 40, moveOrder: 5 },
@@ -3376,12 +3376,12 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     });
     toolbarItems.push({
       spec: { id: "region", width: 40, moveOrder: 9 },
-      row: <ToolbarIcon label="Add grouping. Draw a workstream around related work."><Button size="icon" variant={drawTool && drawMode === "grouping" ? "secondary" : "outline"} aria-label="Add grouping" aria-pressed={drawTool && drawMode === "grouping"} data-toolbar-control="grouping" onClick={toggleDrawTool}><GraphiteIcon name="grouping" size={20} /></Button></ToolbarIcon>,
+      row: <ToolbarIcon label="Draw a workstream. Group work so Lasso treats it as one piece of context."><Button size="icon" variant={drawTool && drawMode === "grouping" ? "secondary" : "outline"} aria-label="Add grouping" aria-pressed={drawTool && drawMode === "grouping"} data-toolbar-control="grouping" onClick={toggleDrawTool}><GraphiteIcon name="workstream" size={20} /></Button></ToolbarIcon>,
       menu: <DropdownMenuItem onSelect={toggleDrawTool}>Add grouping</DropdownMenuItem>,
     });
     toolbarItems.push({
       spec: { id: "section", width: 40, moveOrder: 10 },
-      row: <ToolbarIcon label="Add section. Group work by a week, a phase or any span you choose."><Button size="icon" variant={drawTool && drawMode === "section" ? "secondary" : "outline"} aria-label="Add section" aria-pressed={drawTool && drawMode === "section"} data-toolbar-control="section" onClick={toggleSectionTool}><SquareDashed size={20} /></Button></ToolbarIcon>,
+      row: <ToolbarIcon label="Draw a section. Mark an area of the board. Nothing inside is joined up."><Button size="icon" variant={drawTool && drawMode === "section" ? "secondary" : "outline"} aria-label="Add section" aria-pressed={drawTool && drawMode === "section"} data-toolbar-control="section" onClick={toggleSectionTool}><GraphiteIcon name="section" size={20} /></Button></ToolbarIcon>,
       menu: <DropdownMenuItem onSelect={toggleSectionTool}>Add section</DropdownMenuItem>,
     });
     toolbarItems.push({
@@ -3431,7 +3431,15 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     spec: { id: "card-face", width: 68 },
     row: <ToolbarIcon label="Show work as. Switch between the sketch and the real page."><span data-toolbar-control="card-face"><FaceToggle value={cardFace} words={false} onChange={(next) => { clearCardFaceOverrides(); setCardFace(next); noteWorkboardFace(orgId, next); }} /></span></ToolbarIcon>,
   });
+  // TOOLBAR-2 (Option A): one row in five groups; the planner counts the dividers between them.
+  toolbarItems.sort((a, b) => TOOLBAR_LAYOUT.indexOf(a.spec.id) - TOOLBAR_LAYOUT.indexOf(b.spec.id));
+  for (const item of toolbarItems) item.spec = { ...item.spec, group: toolbarGroupOf(item.spec.id) };
   const toolbarPlan = planToolbarOverflow(toolbarWidth > 0 ? toolbarWidth : Number.MAX_SAFE_INTEGER, toolbarItems.map((item) => item.spec));
+  const toolbarRowItems = toolbarItems.filter((item) => toolbarPlan.row.includes(item.spec.id));
+  const toolbarDividers = new Set(toolbarDividersBefore(toolbarRowItems.map((item) => item.spec)));
+  const toolbarDivider = <span aria-hidden="true" className="canvas-lab-toolbar-divider" />;
+  const renderToolbarItem = (item: (typeof toolbarItems)[number], withDivider = true) => <Fragment key={item.spec.id}>{withDivider && toolbarDividers.has(item.spec.id) ? toolbarDivider : null}<div className="flex shrink-0 items-center gap-2">{item.row}</div></Fragment>;
+  const toolbarToolItems = toolbarRowItems.filter((item) => TOOL_GROUP_BAND.includes(item.spec.group ?? 0));
   const toolbarOverflowItems = toolbarItems.filter((item) => toolbarPlan.overflow.includes(item.spec.id));
 
   return (
@@ -3463,9 +3471,11 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
         <header className="relative z-20 flex h-[52px] shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-4">
           <div className="min-w-0 shrink"><span className="block truncate text-[13px] font-medium text-foreground">{title}</span><span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{status}</span></div>
           <div ref={toolbarRef} className="canvas-lab-toolbar flex min-w-0 flex-1 items-center justify-end gap-2 overflow-hidden">
-            {toolbarItems.filter((item) => toolbarPlan.row.includes(item.spec.id) && item.spec.id === "add-work").map((item) => <div key={item.spec.id} className="flex shrink-0 items-center gap-2">{item.row}</div>)}
-            <div className="canvas-lab-tool-group">
-            {toolbarItems.filter((item) => toolbarPlan.row.includes(item.spec.id) && ["workstreams", "working-from", "add-text", "add-sticky", "region", "section", "suggest", "ask", "fit"].includes(item.spec.id)).map((item) => <div key={item.spec.id} className="flex shrink-0 items-center gap-2">{item.row}</div>)}
+            {toolbarRowItems.filter((item) => (item.spec.group ?? 0) < TOOL_GROUP_BAND[0]).map((item) => renderToolbarItem(item))}
+            {toolbarToolItems.length > 0 ? <>{toolbarDividers.has(toolbarToolItems[0].spec.id) ? toolbarDivider : null}<div className="canvas-lab-tool-group">
+            {toolbarToolItems.map((item, index) => renderToolbarItem(item, index > 0))}
+            </div></> : null}
+            {toolbarRowItems.filter((item) => (item.spec.group ?? 0) > TOOL_GROUP_BAND[TOOL_GROUP_BAND.length - 1]).map((item) => renderToolbarItem(item))}
             {toolbarOverflowItems.length > 0 || canLeave ? (
               <DropdownMenu>
                 <Tooltip>
@@ -3482,8 +3492,6 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : null}
-            </div>
-            {toolbarItems.filter((item) => toolbarPlan.row.includes(item.spec.id) && !["add-work", "workstreams", "working-from", "add-text", "add-sticky", "region", "section", "suggest", "ask", "fit"].includes(item.spec.id)).map((item) => <div key={item.spec.id} className="flex shrink-0 items-center gap-2">{item.row}</div>)}
           </div>
           <Popover open={detailsOpen} onOpenChange={setDetailsOpen}>
             <PopoverAnchor virtualRef={detailsAnchorVirtualRef} />
