@@ -49,7 +49,7 @@ describe("GF3 retired frames leave the move list, drop prompt and framing", () =
 
   it("dropping a card over a retired frame's area asks nothing", () => {
     const moved = { ...node, frame: null } as LabNode;
-    const input = { origin: { x: 100, y: 100 }, from: { x: 0, y: 0 }, pointer: { x: 2000, y: 1800 }, zoom: 1, node: moved, mode: "structured" as const, editable: true };
+    const input = { origin: { x: 100, y: 100 }, from: { x: 0, y: 0 }, pointer: { x: 2000, y: 1800 }, zoom: 1, node: moved, editable: true };
     expect(dragEndDecision({ ...input, frames: [region, ...retired] }).promptFrameId).toBe("decisions");
     const decision = dragEndDecision({ ...input, frames: drawn([region, ...retired]) });
     expect(decision.promptFrameId).toBeNull();

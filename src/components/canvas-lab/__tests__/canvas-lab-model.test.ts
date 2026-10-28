@@ -155,7 +155,7 @@ describe("canvas lab model", () => {
     }
   });
 
-  it("finds a containing frame and prompts only for a different Structured workstream", () => {
+  it("finds a containing frame and prompts only for a different editable workstream", () => {
     const frames = createLabFrames(SEED.tasks);
     const node = { ...seedCanvas(SEED, frames).find((entry) => entry.id === "work:w1") };
     expect(node.id).toBe("work:w1");
@@ -163,10 +163,9 @@ describe("canvas lab model", () => {
     if (!decisions || !node.id || node.width === undefined || node.height === undefined) return;
     const moved = { ...node, x: decisions.x + 30, y: decisions.y + 80 } as ReturnType<typeof seedCanvas>[number];
     expect(frameContainingPoint(frames, { x: moved.x + moved.width / 2, y: moved.y + moved.height / 2 })?.id).toBe("decisions");
-    expect(dropPromptFrame(moved, frames, "structured", true)?.id).toBe("decisions");
-    expect(dropPromptFrame(moved, frames, "freeform", true)).toBeNull();
-    expect(dropPromptFrame(moved, frames, "structured", false)).toBeNull();
-    expect(dropPromptFrame({ ...moved, frame: "decisions" }, frames, "structured", true)).toBeNull();
+    expect(dropPromptFrame(moved, frames, true)?.id).toBe("decisions");
+    expect(dropPromptFrame(moved, frames, false)).toBeNull();
+    expect(dropPromptFrame({ ...moved, frame: "decisions" }, frames, true)).toBeNull();
   });
 
   it("prompts when a grown home workstream still overlaps the card's new frame", () => {
@@ -176,7 +175,7 @@ describe("canvas lab model", () => {
     ];
     const node = { id: "work:w1", frame: "task:tier2", x: 1000, y: 520, width: 232, height: 120 } as ReturnType<typeof seedCanvas>[number];
     expect(frameContainingPoint(frames, { x: node.x + node.width / 2, y: node.y + node.height / 2 })?.id).toBe("task:readout");
-    expect(dropPromptFrame(node, frames, "structured", true)?.id).toBe("task:readout");
+    expect(dropPromptFrame(node, frames, true)?.id).toBe("task:readout");
   });
 
   it("places a new workstream and the add control clear of every frame and card", () => {
@@ -224,7 +223,7 @@ describe("canvas lab model", () => {
     const node = nodes.find((entry) => entry.id === "work:w1");
     expect(node).toBeDefined();
     if (!node) return;
-    expect(dragEndDecision({ origin: { x: 22, y: 22 }, from: { x: 100, y: 100 }, pointer: { x: 40, y: 30 }, zoom: 1, node, frames: [], mode: "freeform", editable: true }).position).toEqual({ x: -44, y: -44 });
+    expect(dragEndDecision({ origin: { x: 22, y: 22 }, from: { x: 100, y: 100 }, pointer: { x: 40, y: 30 }, zoom: 1, node, frames: [], editable: true }).position).toEqual({ x: -44, y: -44 });
   });
 
   it("adds and removes context", () => {
@@ -482,7 +481,6 @@ describe("dragEndDecision", () => {
       zoom: 1,
       node,
       frames,
-      mode: "structured",
       editable: true,
     });
     expect(decision.position).toEqual({ x: 924, y: 726 });
@@ -497,7 +495,6 @@ describe("dragEndDecision", () => {
       zoom: 1,
       node,
       frames,
-      mode: "structured",
       editable: true,
     });
     expect(decision.position).toBeNull();
@@ -505,7 +502,7 @@ describe("dragEndDecision", () => {
   });
 
   it("ignores hand jitter in screen pixels at every zoom", () => {
-    const base = { origin: { x: node.x, y: node.y }, from: { x: 500, y: 400 }, node, frames, mode: "structured" as const, editable: true };
+    const base = { origin: { x: node.x, y: node.y }, from: { x: 500, y: 400 }, node, frames, editable: true };
     expect(dragEndDecision({ ...base, pointer: { x: 503, y: 400 }, zoom: 0.45 }).position).toBeNull();
     expect(dragEndDecision({ ...base, pointer: { x: 503, y: 400 }, zoom: 2 }).position).toBeNull();
     expect(dragEndDecision({ ...base, pointer: { x: 506, y: 400 }, zoom: 0.45 }).position).not.toBeNull();
@@ -526,11 +523,10 @@ describe("dragEndDecision", () => {
     for (const z of [16 / 34, 0.48, 0.5, 1, 1.5, 2]) expect(sectionLabelInverseZoom(z)).toBeCloseTo(1, 12);
   });
 
-  it("saves without prompting in Freeform or for a read-only card", () => {
+  it("saves without prompting for a read-only card", () => {
     const base = { origin: { x: node.x, y: node.y }, from: { x: 500, y: 400 }, pointer: { x: 676, y: 477 }, zoom: 1, node, frames };
-    expect(dragEndDecision({ ...base, mode: "freeform", editable: true }).position).not.toBeNull();
-    expect(dragEndDecision({ ...base, mode: "freeform", editable: true }).promptFrameId).toBeNull();
-    expect(dragEndDecision({ ...base, mode: "structured", editable: false }).promptFrameId).toBeNull();
+    expect(dragEndDecision({ ...base, editable: false }).position).not.toBeNull();
+    expect(dragEndDecision({ ...base, editable: false }).promptFrameId).toBeNull();
   });
 });
 

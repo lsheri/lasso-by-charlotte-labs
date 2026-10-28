@@ -58,7 +58,7 @@ describe("R5 board toolbar", () => {
     expect(page.match(/<BoardToolbarSurface /g)).toHaveLength(1);
     expect(page).toContain('<BoardToolbarSurface items={boardToolbarItems}');
     const controls: ToolbarControlSpec[] = [
-      { id: "workstreams", width: 40, moveOrder: 1 },
+      { id: "fit", width: 40, moveOrder: 1 },
       { id: "add-work", width: 40, pinned: true },
       { id: "ask", width: 40, pinned: true },
       { id: "zoom", width: 116, pinned: true },
@@ -70,7 +70,7 @@ describe("R5 board toolbar", () => {
   });
 
   it("retains an accessible name and tooltip for every icon-only control", () => {
-    for (const label of ["Show workstreams", "Working from", "Add text", "Draw a workstream", "Add work", "Info", "See an example board", "Sticky", "Draw a section", "Suggest workstreams", "Ask Lasso", "Share", "Fit", "Zoom out", "Zoom in", "More tools"]) {
+    for (const label of ["Working from", "Add text", "Draw a workstream", "Add work", "Info", "See an example board", "Sticky", "Draw a section", "Suggest workstreams", "Ask Lasso", "Share", "Fit", "Zoom out", "Zoom in", "More tools"]) {
       if (label === "More tools") expect(surface).toContain('"More tools"');
       else expect(`${page}\n${share}`).toContain(`aria-label="${label}"`);
     }

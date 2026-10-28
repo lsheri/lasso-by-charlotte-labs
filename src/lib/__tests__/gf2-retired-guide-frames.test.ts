@@ -24,8 +24,7 @@ describe("GF2 retired guide frames stop drawing", () => {
   });
 
   it("the board's frame list goes through the helper, the trail stays excluded", () => {
-    expect(page).toContain('boardFrames.filter((frame) => !isSectionFrameId(frame.id) && frame.id !== "trail" && boardFrameRenders(frameKindOf(frame), structureMode === "structured")).map(');
-    expect(page).not.toContain('(structureMode === "structured" || frameKindOf(frame) === "context")).map(');
+    expect(page).toContain('boardFrames.filter((frame) => !isSectionFrameId(frame.id) && frame.id !== "trail" && boardFrameRenders(frameKindOf(frame), true)).map(');
   });
 
   it("cards inside a retired frame still render at their own coordinates", () => {

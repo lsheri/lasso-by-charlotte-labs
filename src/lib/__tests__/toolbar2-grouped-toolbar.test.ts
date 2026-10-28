@@ -11,7 +11,7 @@ describe("TOOLBAR-2 grouped toolbar", () => {
     const groups = page.match(/const TOOLBAR_GROUPS: string\[\]\[\] = \[([\s\S]*?)\];/)?.[1] ?? "";
     expect(groups).toContain('["add-work"]');
     expect(groups).toContain('["add-text", "add-sticky", "region", "section", "suggest"]');
-    expect(groups).toContain('["workstreams", "card-face", "fit", "zoom"]');
+    expect(groups).toContain('["card-face", "fit", "zoom"]');
     expect(groups).toContain('"ask", "share", "details", "example"]');
     expect(page).toContain('const boardToolbarItems = toolbarItems.filter((item) => item.spec.id !== "example")');
     expect(page).not.toContain('<header className="relative z-20 flex h-[52px]');

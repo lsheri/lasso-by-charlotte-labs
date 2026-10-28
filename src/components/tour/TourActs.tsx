@@ -57,7 +57,6 @@ type TourWorkboardTool = "add" | "select" | "group" | "ask" | null;
 function TourWorkboard({ active, onAddWork, onGroup, onAsk, children }: { active: TourWorkboardTool; onAddWork?: () => void; onGroup?: () => void; onAsk?: () => void; children: ReactNode }) {
   const toolClass = (tool: Exclude<TourWorkboardTool, null>) => `tour-board-tool${active === tool ? " is-active" : ""}`;
   const toolbar = <WorkboardToolbar className="tour-board-toolbar" ariaLabel="Board tools">
-    <Button type="button" size="icon" variant="outline" aria-label="Show workstreams" onClick={noop}><GraphiteIcon name="workstreams" size={20} /></Button>
     <Button type="button" size="sm" variant="outline" aria-label="Add work" data-toolbar-control="add-work" data-tour-target={active === "add" ? "3" : undefined} className={toolClass("add")} onClick={active === "add" ? onAddWork : noop}><GraphiteIcon name="work" size={20} /><span>Add work</span></Button>
     <Button type="button" size="icon" variant="outline" aria-label="Select work" aria-pressed={active === "select"} className={toolClass("select")} onClick={noop}><GraphiteIcon name="connectors" size={20} /></Button>
     <Button type="button" size="icon" variant="outline" aria-label="Draw a workstream" aria-pressed={active === "group"} data-tour-target={active === "group" ? "5" : undefined} className={toolClass("group")} onClick={active === "group" ? onGroup : noop}><GraphiteIcon name="grouping" size={20} /></Button>

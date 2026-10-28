@@ -381,8 +381,6 @@ export type TelemetryEvent =
   | "workboard.element_resized"
   /** Canvas Lab polish: a move prompt after a drop was answered. Answer only. */
   | "workboard.drop_prompt_answered"
-  /** Canvas Lab polish: the local frame-boundary view changed. State only. */
-  | "workboard.structure_toggled"
   /** B3a: the built-in sample board was opened. Entry point only. */
   | "workboard.example_viewed"
   | "workboard.display_mode_toggled"

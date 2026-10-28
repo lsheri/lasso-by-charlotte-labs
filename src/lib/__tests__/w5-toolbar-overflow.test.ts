@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { TOOLBAR_GAP, planToolbarOverflow, type ToolbarControlSpec } from "@/lib/toolbar-overflow";
 
 const CONTROLS: ToolbarControlSpec[] = [
-  { id: "workstreams", width: 170, moveOrder: 1 },
+  { id: "suggest", width: 170, moveOrder: 1 },
   { id: "display", width: 140, moveOrder: 2 },
   { id: "region-fill", width: 120, moveOrder: 3 },
   { id: "add-text", width: 86, moveOrder: 4 },
@@ -22,8 +22,7 @@ describe("board toolbar overflow", () => {
     const controls: ToolbarControlSpec[] = [
       { id: "add-work", width: 106, pinned: true, group: 1 },
       ...["add-text", "add-sticky", "region", "section", "suggest"].map((id, i) => ({ id, width: 40, moveOrder: [5, 6, 9, 10, 7][i] ?? 7, group: 2 })),
-      { id: "workstreams", width: 40, moveOrder: 4, group: 3 },
-      { id: "card-face", width: 68, pinned: true, group: 3 },
+      { id: "card-face", width: 150, pinned: true, group: 3 },
       { id: "fit", width: 56, moveOrder: 2, group: 3 },
       { id: "zoom", width: 116, pinned: true, group: 3 },
       { id: "working-from", width: 0, pinned: true, group: 4 },
@@ -34,7 +33,7 @@ describe("board toolbar overflow", () => {
     expect(planToolbarOverflow(1186, controls).overflow).toEqual([]);
     const phone = planToolbarOverflow(296, controls);
     expect(phone.row).toEqual(["add-work", "card-face", "zoom", "working-from", "ask", "share"]);
-    expect(phone.overflow).toEqual(["fit", "details", "workstreams", "add-text", "add-sticky", "suggest", "region", "section"]);
+    expect(phone.overflow).toEqual(["fit", "details", "add-text", "add-sticky", "suggest", "region", "section"]);
     expect([...phone.row, ...phone.overflow].sort()).toEqual(controls.map((control) => control.id).sort());
   });
   it("places every control either in the row or in the overflow, at any width", () => {

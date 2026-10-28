@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] WS-REMOVE: mode/control/helper/event removed; inert tour mirror removed with no scripted step change; 12 named files before 148/1, after 143/1, same TourActs count failure; preview build OK. Surface fixture viewed at 1280/390, all controls assigned and phone menu reachable.
+- [ ] WS-REMOVE: signed-in populated-board verification blocked by external unmanaged authentication; real board redirects to /auth. Fixture verifies allocation/menu only, not real board behavior.
+
 - [x] TOOLBAR-6: header children/save alerts preserved on canvas; one flat bar at 16px, opening inset 86px; seven files 33/33 before and after, preview build OK. Actual controls/mark/FaceToggle fixture inspected at 1280/390; phone menu opens and canvas press-through works.
 - [ ] TOOLBAR-6: real signed-in populated-board verification blocked by external unmanaged authentication; real board redirects to /auth. Fixture only for visual checks.
 
