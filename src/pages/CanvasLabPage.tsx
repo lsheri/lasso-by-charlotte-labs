@@ -280,6 +280,20 @@ function claimMyWork(nodes: LabNode[], mine: Set<string>, owners: Map<string, st
   });
 }
 
+/* TOOLBAR-2 (Option A): row order and groups. 1 Add work | 2 text, sticky | 3 draw tools | 4 view | 5 Ask, Share, Info, example.
+   remove-relationship stays contextual at the head of the last group, where it sat before. */
+const TOOLBAR_GROUPS: string[][] = [
+  ["add-work"],
+  ["add-text", "add-sticky"],
+  ["region", "section", "suggest"],
+  ["workstreams", "card-face", "fit", "zoom"],
+  ["remove-relationship", "working-from", "ask", "share", "details", "example"],
+];
+const TOOLBAR_LAYOUT = TOOLBAR_GROUPS.flat();
+function toolbarGroupOf(id: string): number { return TOOLBAR_GROUPS.findIndex((ids) => ids.includes(id)) + 1; }
+/** Groups 2 to 4 share the graphite tool band. */
+const TOOL_GROUP_BAND = [2, 3, 4];
+
 export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string; entryVia?: string }) {
   const navigate = useNavigate();
   // F3: opening a board writes the viewer's own last-viewed row and clears its "N NEW".
