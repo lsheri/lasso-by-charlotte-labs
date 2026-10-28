@@ -24,6 +24,7 @@ import {
   labConnectorPath,
   labConnectorMidpoint,
   labInverseZoom,
+  sectionLabelInverseZoom,
   moveNode,
   nearestLabAnchor,
   removeContext,
@@ -514,6 +515,13 @@ describe("dragEndDecision", () => {
     expect(labInverseZoom(0.45)).toBeCloseTo(1 / 0.5);
     expect(labInverseZoom(0.1)).toBeCloseTo(2);
     expect(labInverseZoom(1.6)).toBeCloseTo(1 / 1.6);
+  });
+
+  it("holds section label size down to its own 0.15 zoom floor", () => {
+    expect(sectionLabelInverseZoom(1)).toBe(1);
+    expect(sectionLabelInverseZoom(0.15)).toBeCloseTo(6.6666667);
+    expect(sectionLabelInverseZoom(0.1)).toBeCloseTo(6.6666667);
+    expect(sectionLabelInverseZoom(0.1)).toBeGreaterThan(labInverseZoom(0.1));
   });
 
   it("saves without prompting in Freeform or for a read-only card", () => {
