@@ -36,3 +36,5 @@ One row per design decision. Owner: L = Liam, C = Claude architect, M = Magic OS
 | 28 Oct 2026 | L | Dated-section jump control (board-jump: This week, date field, arrows) removed from the board toolbar to reclaim 300px; the behaviour is parked as a roadmap item and BoardJumpControls remains in the tree unused | keep it pinned on the toolbar; move it into the overflow menu | Built, preview |
 
 Open: where the four --verify-* states render (chat answer, opened view, card); placement of Recent boards in the sidebar; whether the graphite grain button returns.
+
+| 28 Oct 2026 | L | TOOLBAR-4: sequence markers say Phase 0 onward; menus say Set phase and Set dates. Phase matches consulting engagement language and makes the menu and rendered label agree. Extend the existing tool-group reset to section, suggest and example without changing declarations, layout, data or event values | bare #1 (cryptic), Set order / Order 1 (incoherent and clunky), Set period (jargon); keep outline defaults on group children | Built, preview |

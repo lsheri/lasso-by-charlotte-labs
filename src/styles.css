@@ -7152,7 +7152,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   box-shadow: inset 0 1px 0 color-mix(in srgb, var(--surface-raised) 70%, transparent);
 }
 [data-lasso="on"] .canvas-lab-tool-group > div:has(> button.md\:hidden) { display: none; }
-[data-lasso="on"] .canvas-lab-tool-group button:is([data-toolbar-control="workstreams"], [data-toolbar-control="working-from"], [data-toolbar-control="add-text"], [data-toolbar-control="add-sticky"], [data-toolbar-control="grouping"], [data-toolbar-control="ask"], [data-toolbar-control="fit"], [data-toolbar-control="more"]) {
+[data-lasso="on"] .canvas-lab-tool-group button:is([data-toolbar-control="workstreams"], [data-toolbar-control="working-from"], [data-toolbar-control="add-text"], [data-toolbar-control="add-sticky"], [data-toolbar-control="grouping"], [data-toolbar-control="section"], [data-toolbar-control="suggest"], [data-toolbar-control="example"], [data-toolbar-control="ask"], [data-toolbar-control="fit"], [data-toolbar-control="more"]) {
   background: transparent;
   color: var(--text-primary);
   border: 0;

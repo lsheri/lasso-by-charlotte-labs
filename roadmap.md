@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] TOOLBAR-4: phase/date wording, three-control reset membership, same-session test comparison and 1280/390 preview measurement. No publish or database work.
+
 - [x] TOOLBAR-1 / READER-MARK: revised ten retention integers, exact tooltips and vendor mark; 11 focused tests pass before/after; full after 38 files / 127 failed / 4,858 passed, no new failures against same-session before 39 / 128 / 4,857 (sh6c left); vendor fixtures inspected at 1280/390, build OK.
 - [ ] TOOLBAR-1 / READER-MARK: real signed-in toolbar and reader verification blocked by external unmanaged authentication; fixture rendering and source comparison verified only.
 - [ ] Card-face overflow fallback: separately queued by founder; no fallback today, leave unset in TOOLBAR-1.

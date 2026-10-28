@@ -187,7 +187,7 @@ export function clearMarker(): SectionMarker {
 
 /**
  * The line under a section title: "Week of 20 Oct", "3 to 14 Nov", "21 Oct",
- * "October", "#2", or null. Year only when it is not this year. Never a time.
+ * "October", "Phase 2", or null. Year only when it is not this year. Never a time.
  */
 export function markerLabel(
   frame: { periodStart?: string | null; periodEnd?: string | null; sequenceNo?: number | null },
@@ -206,7 +206,7 @@ export function markerLabel(
     const sameMonth = start.getFullYear() === end.getFullYear() && start.getMonth() === end.getMonth();
     return `${sameMonth ? String(start.getDate()) : dayLabel(start, now)} to ${dayLabel(end, now)}`;
   }
-  if (typeof frame.sequenceNo === "number") return `#${frame.sequenceNo}`;
+  if (typeof frame.sequenceNo === "number") return `Phase ${frame.sequenceNo}`;
   return null;
 }
 
