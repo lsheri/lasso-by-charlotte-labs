@@ -173,6 +173,7 @@ export async function runCoachChat(
   const aiMeta = await resolveAiMeta(supabase, {
     surface: "coach_chat",
     orgId: profile.org_id,
+    profileId: profile.id,
     userId,
   });
   const conversation = [

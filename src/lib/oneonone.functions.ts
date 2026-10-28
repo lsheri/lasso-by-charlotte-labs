@@ -44,6 +44,7 @@ export const prepareOneOnOne = createServerFn({ method: "POST" })
     const meta = await resolveAiMeta(supabase, {
       surface: "oneonone",
       orgId: profile.org_id,
+      profileId: profile.id,
       userId,
     });
     const completion = await chatComplete(

@@ -256,6 +256,7 @@ export async function runSpanProvenance(
     const aiMeta = await resolveAiMeta(supabase, {
       surface: "analysis:span_provenance",
       orgId: profile.org_id,
+      profileId: profile.id,
       userId,
     });
     const result = await chatComplete(

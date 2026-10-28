@@ -90,6 +90,7 @@ export const suggestMappings = createServerFn({ method: "POST" })
     const meta = await resolveAiMeta(supabase, {
       surface: "mapping_suggest",
       orgId: profile.org_id,
+      profileId: profile.id,
       userId,
     });
     const completion = await chatComplete(

@@ -171,6 +171,7 @@ export async function runAnalysis(
     aiMeta = await resolveAiMeta(supabase, {
       surface: `analysis:${preset.id}`,
       orgId: profile.org_id,
+      profileId: profile.id,
       userId,
     });
 
