@@ -136,8 +136,8 @@ export function LabSection({ frame, title, selected, editable, autoName = false,
   function markerLine() {
     if (!marker) return null;
     return canMark
-      ? <button type="button" data-testid="section-marker-line" className="self-start text-left text-sm opacity-80 hover:underline" onPointerDown={(event) => event.stopPropagation()} onClick={() => { onSelect(); openPicker("period", "line"); }}>{marker}</button>
-      : <span data-testid="section-marker-line" className="text-sm opacity-80">{marker}</span>;
+      ? <button type="button" data-testid="section-marker-line" className="text-left opacity-80 hover:underline" onPointerDown={(event) => event.stopPropagation()} onClick={() => { onSelect(); openPicker("period", "line"); }}>{marker}</button>
+      : <span data-testid="section-marker-line" className="opacity-80">{marker}</span>;
   }
   /** No marker: the title renders exactly as before, with no wrapper. */
   function withMarker(node: React.ReactNode) {

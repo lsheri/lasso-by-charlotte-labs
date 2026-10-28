@@ -284,6 +284,13 @@ export function labInverseZoom(zoom: number): number {
   return 1 / Math.max(clampZoom(zoom), 0.5);
 }
 
+/** The section label is the navigation layer of a zoomed-out board, so it holds its size further down than the other stage controls. */
+export const SECTION_LABEL_ZOOM_FLOOR = 0.15;
+
+export function sectionLabelInverseZoom(zoom: number): number {
+  return 1 / Math.max(clampZoom(zoom), SECTION_LABEL_ZOOM_FLOOR);
+}
+
 /** Keep a newly-created card visible without disturbing an already-visible view. */
 export function panToRevealNode(pan: Point, zoom: number, node: LabNode, viewport: { width: number; height: number }): Point {
   const left = pan.x + node.x * zoom;
