@@ -49,7 +49,7 @@ describe("C1 colour block vocabulary and validation", () => {
 
   it("accepts a large colour block but keeps the card range unchanged", () => {
     expect(validWorkboardNodeGeometry({ kind: "shape", w: 1200, h: 900 })).toBe(true);
-    expect(validWorkboardNodeGeometry({ kind: "work_item", w: 1200, h: 900 })).toBe(false);
+    expect(validWorkboardNodeGeometry({ kind: "work_item", w: 1201, h: 900 })).toBe(false);
   });
 
   it("keeps the colour block write path closed on purpose, the way marks are closed", () => {

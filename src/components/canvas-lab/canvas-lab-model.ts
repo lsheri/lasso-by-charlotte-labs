@@ -153,6 +153,8 @@ export const CARD_WIDTH = WORKBOARD_CARD_DEFAULT_SIZE.width;
 export const CARD_HEIGHT = WORKBOARD_CARD_DEFAULT_SIZE.height;
 export const CARD_MAX_WIDTH = WORKBOARD_CARD_MAX_WIDTH;
 export const CARD_MAX_HEIGHT = WORKBOARD_CARD_MAX_HEIGHT;
+/** Fit content tidies a card to its own content and stops here; a person dragging a corner may go to CARD_MAX_HEIGHT. */
+export const CARD_AUTO_MAX_HEIGHT = 520;
 export const FRAME_MIN_WIDTH = 260;
 export const FRAME_MIN_HEIGHT = 220;
 export const CARD_GAP_Y = CARD_HEIGHT + 32;
@@ -162,7 +164,7 @@ export const FRAME_PADDING = 24;
 export function fitCardRect(node: Pick<LabNode, "width" | "height">, measuredHeight: number): Pick<LabNode, "width" | "height"> {
   return {
     width: Math.max(CARD_MIN_WIDTH, Math.min(CARD_MAX_WIDTH, node.width)),
-    height: Math.max(CARD_MIN_HEIGHT, Math.min(CARD_MAX_HEIGHT, measuredHeight || node.height)),
+    height: Math.max(CARD_MIN_HEIGHT, Math.min(CARD_AUTO_MAX_HEIGHT, measuredHeight || node.height)),
   };
 }
 
