@@ -24,5 +24,5 @@ function Q() {
     icon("details", "Info", 36, 3),
   ];
   for (const i of items) i.spec = { ...i.spec, group: toolbarGroupOf(i.spec.id) };
-  return <TooltipProvider><div data-lasso="on" className="fixed inset-0"><div className="canvas-lab-surface relative h-full">{w ? <BoardToolbarSurface key={w} items={items} /> : null}</div></div></TooltipProvider>;
+  return <TooltipProvider><div data-lasso="on" className="fixed inset-0"><div className="canvas-lab-surface relative h-full" style={{ marginLeft: 52 }}>{w ? <BoardToolbarSurface key={w} items={items} /> : null}</div></div></TooltipProvider>;
 }
