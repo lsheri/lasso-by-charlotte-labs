@@ -31,7 +31,6 @@ export function DeckStrip({ content, cardRef, expanded, onExpandedChange, orgId 
   onExpandedChange: (open: boolean) => void;
   orgId?: string;
 }) {
-  const stripRef = useRef<HTMLDivElement>(null);
   const [box, setBox] = useState({ width: 0, left: 0 });
   useLayoutEffect(() => {
     if (!expanded) return;
@@ -67,7 +66,7 @@ export function DeckStrip({ content, cardRef, expanded, onExpandedChange, orgId 
       onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); toggle(); }}>
       <GraphiteIcon name={expanded ? 'minus' : 'workstreams'} size={17} animate={false} />
     </Button>
-    {expanded && cardRef.current ? createPortal(<div ref={stripRef} data-deck-strip className="deck-strip" style={{ width: box.width, left: box.left }}
+    {expanded && cardRef.current ? createPortal(<div data-deck-strip className="deck-strip" style={{ width: box.width, left: box.left }}
       onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()} onWheel={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
       <header><Button type="button" size="icon" variant="ghost" title={COPY.close} aria-label={COPY.close} onClick={toggle}><GraphiteIcon name="minus" size={17} animate={false} /></Button></header>
       <div className="deck-strip-scroll" tabIndex={0} aria-label={COPY.pages}><DeckStripFace content={content} /></div>
