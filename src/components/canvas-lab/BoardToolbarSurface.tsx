@@ -27,7 +27,7 @@ export function BoardToolbarSurface({ items, moreRef, extraMenu }: {
     read();
     return () => observer.disconnect();
   }, []);
-  const toolbarPlan = planToolbarOverflow(width > 0 ? width : Number.MAX_SAFE_INTEGER, items.map((item) => ({ ...item.spec, pinned: item.spec.pinned || !item.menu })));
+  const toolbarPlan = planToolbarOverflow(width > 0 ? width : Number.MAX_SAFE_INTEGER, items.map((item) => ({ ...item.spec, pinned: item.spec.pinned || !item.menu })), { reserveOverflow: Boolean(extraMenu) });
   const row = items.filter((item) => toolbarPlan.row.includes(item.spec.id));
   const overflow = items.filter((item) => toolbarPlan.overflow.includes(item.spec.id));
   const dividers = new Set(toolbarDividersBefore(row.map((item) => item.spec)));

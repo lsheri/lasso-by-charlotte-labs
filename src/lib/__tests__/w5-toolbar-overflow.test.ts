@@ -21,6 +21,7 @@ describe("board toolbar overflow", () => {
   it("budgets all four groups together without losing menu-less controls", () => {
     // TOOLBAR-8: declared widths match the rendered ones at each viewport.
     const controlsAt = (phone: boolean): ToolbarControlSpec[] => [
+      ...(phone ? [] : [{ id: "board-identity", width: 200, pinned: true, group: 0 }]),
       { id: "add-work", width: phone ? 36 : 106, pinned: true, group: 1 },
       ...["add-text", "add-sticky", "region", "section", "suggest"].map((id, i) => ({ id, width: 36, moveOrder: [5, 6, 9, 10, 7][i] ?? 7, group: 2 })),
       { id: "fit", width: 36, moveOrder: 2, group: 3 },
@@ -33,6 +34,15 @@ describe("board toolbar overflow", () => {
     ];
     const desk = controlsAt(false);
     expect(planToolbarOverflow(1186, desk).overflow).toEqual([]);
+    expect(planToolbarOverflow(1058, desk, { reserveOverflow: true }).overflow).toEqual(["fit"]);
+    expect(planToolbarOverflow(930, desk, { reserveOverflow: true }).overflow).toEqual(["fit", "details", "add-text", "add-sticky"]);
+    for (const budget of [798, 930, 1058, 1186]) {
+      const plan = planToolbarOverflow(budget, desk);
+      expect(plan.row).toContain("board-identity");
+      expect(plan.row).toContain("add-work");
+      expect(plan.row).toContain("ask");
+      expect([...plan.row, ...plan.overflow].sort()).toEqual(desk.map((control) => control.id).sort());
+    }
     const controls = controlsAt(true);
     const phone = planToolbarOverflow(296, controls);
     expect(phone.row).toEqual(["add-work", "working-from", "ask", "share"]);

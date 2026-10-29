@@ -64,7 +64,7 @@ function measure(widths: number[], gap: number): number {
 export function planToolbarOverflow(
   available: number,
   controls: ToolbarControlSpec[],
-  options?: { gap?: number; overflowWidth?: number; dividerWidth?: number },
+  options?: { gap?: number; overflowWidth?: number; dividerWidth?: number; reserveOverflow?: boolean },
 ): ToolbarPlan {
   const gap = options?.gap ?? TOOLBAR_GAP;
   const overflowWidth = options?.overflowWidth ?? TOOLBAR_OVERFLOW_BUTTON_WIDTH;
@@ -87,7 +87,7 @@ export function planToolbarOverflow(
     const rowControls = controls.filter((control) => inRow.has(control.id));
     const widths = rowControls.map((control) => control.width);
     const dividers = toolbarDividersBefore(rowControls).map(() => dividerWidth);
-    const extra = overflow.length > 0 ? [overflowWidth] : [];
+    const extra = overflow.length > 0 || options?.reserveOverflow ? [overflowWidth] : [];
     return measure([...widths, ...dividers, ...extra], gap) <= available;
   };
 

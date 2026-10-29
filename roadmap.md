@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] TOOLBAR-9b option C: fixed pinned desktop identity first in the bar, existing recessed ground/divider; phone omission, alerts unchanged. Extra-menu button explicitly budgeted; actual-source fixture measured at 768/900/1024/1152/1280/390. Preview only.
+- [ ] TOOLBAR-9b: authenticated populated-board verification blocked by external unmanaged authentication; actual-component fixture verified instead.
+
 - [x] STRIP: local deck overlay and borderless pages, canvas-capped scroll, FACE-2 empty/restricted boundary, additive event count 43 to 44. Named baseline 35/35; final 48/48. Actual LabCard fixture viewed at 1280/390 with forty pages and unchanged neighbours; preview only.
 - [ ] STRIP: authenticated populated-board end-to-end verification unavailable with external unmanaged authentication; actual-component fixture verified instead.
 
