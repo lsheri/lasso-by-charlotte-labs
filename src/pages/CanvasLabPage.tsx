@@ -24,6 +24,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { BoardToolbarSurface, type BoardToolbarItem } from "@/components/canvas-lab/BoardToolbarSurface";
+import { BoardCardFaceMenu } from "@/components/canvas-lab/BoardCardFaceMenu";
 
 import { BoardAsk } from "@/components/canvas-lab/BoardAsk";
 import { LabAnswerCard } from "@/components/canvas-lab/LabAnswerCard";
@@ -177,7 +178,7 @@ import {
   type WorkboardPersistEntity,
   noteWorkboardFace,
 } from "@/components/canvas-lab/canvas-lab-telemetry";
-import { FaceToggle } from "@/design/reference/FaceToggle";
+import { FaceToggle, type CardFace } from "@/design/reference/FaceToggle";
 import { useCardFace, useCardFaceOverrides, effectiveCardFace, BOARD_FACE_KEY } from "@/design/reference/useCardFace";
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
 import { SHARED_WITH_YOU_COPY, useSharedWithYou } from "@/components/layout/SharedWithYou";
@@ -3295,6 +3296,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
               : "Workboard · Not saved";
 
   const toolbarItems: BoardToolbarItem[] = [];
+  const changeBoardCardFace = (next: CardFace) => { clearCardFaceOverrides(); setCardFace(next); noteWorkboardFace(orgId, next); };
   toolbarItems.push({
     spec: { id: "working-from", width: 0, pinned: true },
       row: <ToolbarIcon label="Working from"><Button type="button" size="icon" variant="outline" className="md:hidden" aria-label="Working from" data-toolbar-control="working-from" onClick={() => setAskOpen(true)}><GraphiteIcon name="ask-lasso" size={20} /></Button></ToolbarIcon>,
@@ -3377,7 +3379,8 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   });
   toolbarItems.push({
     spec: { id: "card-face", width: 150 },
-    row: <ToolbarIcon label="Show work as. Switch between the sketch and the real page."><span data-toolbar-control="card-face"><FaceToggle value={cardFace} segmented onChange={(next) => { clearCardFaceOverrides(); setCardFace(next); noteWorkboardFace(orgId, next); }} /></span></ToolbarIcon>,
+    row: <ToolbarIcon label="Show work as. Switch between the sketch and the real page."><span data-toolbar-control="card-face"><FaceToggle value={cardFace} segmented onChange={changeBoardCardFace} /></span></ToolbarIcon>,
+    menu: <BoardCardFaceMenu value={cardFace} onChange={changeBoardCardFace} />,
   });
   // TOOLBAR-6: preserve all declarations and handlers; example is menu-only.
   toolbarItems.sort((a, b) => TOOLBAR_LAYOUT.indexOf(a.spec.id) - TOOLBAR_LAYOUT.indexOf(b.spec.id));

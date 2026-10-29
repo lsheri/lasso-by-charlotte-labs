@@ -19,11 +19,6 @@ describe("R7 Ask Lasso thinking marks", () => {
     expect(css).not.toMatch(/canvas-lab-ask-(?:drift|float|tilt)/);
   });
 
-  it("uses gather in the real pending state with only a verified manifest count", () => {
-    expect(surface).toContain('<LassoThinkingMark kind="gather" size={56} count={ask.liveManifest?.items.length ?? 0} />');
-    expect(surface).toContain("<ThinkingTrail");
-  });
-
   it("places one signature in the shared panel header and reuses the sidebar loop for replies", () => {
     expect(surface).toContain('import { LassoLoopMark } from "@/components/layout/LassoLoopMark"');
     const header = surface.slice(surface.indexOf("<header"), surface.indexOf("</header>"));

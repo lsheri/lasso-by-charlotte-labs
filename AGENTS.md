@@ -45,6 +45,7 @@ Tour mirrors board chrome; preserve live behavior.
 - Read All work shared placements once per page and compare item/board orgs, to avoid per-card requests.
 - Node formatting local; other editors visible.
 - Render every board control through one measured floating BoardToolbarSurface, keeping menu-less controls in the row and example in overflow, so flattening cannot strand an action; title and save alerts remain on canvas paper.
+- Board card-face overflow uses BoardCardFaceMenu and the row's shared handler, so both choices clear per-card overrides and emit the same face event.
 
 - All work owns rename; reader closure preserves the dialog.
 - Enable chat-link editing only in the All work RowMenu entry point, not shared CardMenu hook consumers; reuse the board dialog and Rename's refresh pattern to preserve ownership and privacy.
