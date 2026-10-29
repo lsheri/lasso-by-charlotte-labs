@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState, type RefObject } from 'react';
+import { useLayoutEffect, useState, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import type { WorkContent } from '@/design/reference/work-types';
 import { NoPreview } from '@/design/reference/NoPreview';
@@ -41,7 +41,7 @@ export function DeckStrip({ content, cardRef, expanded, onExpandedChange, orgId 
       const cr = card.getBoundingClientRect();
       const vr = canvas.getBoundingClientRect();
       const scale = cr.width / card.offsetWidth;
-      if (scale <= 0) return;
+      if (!Number.isFinite(scale) || scale <= 0) return;
       const width = Math.min(content.slides.length * 336 + 16, Math.max(0, vr.width - 24) / scale);
       const left = Math.max(vr.left + 12 - cr.left, Math.min(0, vr.right - 12 - cr.left - width * scale)) / scale;
       setBox({ width, left });
