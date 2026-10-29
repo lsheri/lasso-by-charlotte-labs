@@ -5,6 +5,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ExternalLink, Paperclip } from "lucide-react";
 
 import { Catch } from "@/components/canvas-lab/Catch";
+import { DeckStrip } from "@/components/canvas-lab/DeckStrip";
 import { DecisionsFace } from "@/components/canvas-lab/DecisionsFace";
 import { LabCardMenu } from "@/components/canvas-lab/LabCardMenu";
 import type { CardFace } from "@/design/reference/FaceToggle";
@@ -112,9 +113,12 @@ function LabCardInner({
   catchPending = false,
   onCatchComplete,
   grownOn,
+  deckEventOrgId,
 }: {
   /** PUSH-2c: passed straight to WorkNote; never read here. */
   grownOn?: string[] | undefined;
+  /** Only the live board opts into deck controls and their existing event path. */
+  deckEventOrgId?: string | undefined;
   node: LabNode;
   item?: WorkItemRow | undefined;
   parent?: WorkItemRow | null | undefined;
@@ -203,6 +207,7 @@ function LabCardInner({
   const [menuOpen, setMenuOpen] = useState(false);
   const [chatLinkOpen, setChatLinkOpen] = useState(false);
   const [renameOpen, setRenameOpen] = useState(false);
+  const [deckExpanded, setDeckExpanded] = useState(false);
   const pastedLink = pastedChatUrl(item?.meta?.chat_url);
   const canSetChatLink = Boolean(item && onSaveChatLink && !readOnly);
 
@@ -349,7 +354,7 @@ function LabCardInner({
         if ((event.shiftKey && event.key === "F10") || event.key === "ContextMenu") openMenu(event);
         else if (event.target === event.currentTarget) onKeyDown(event);
       }}
-      style={{ left: node.x, top: node.y, width: node.width, height: node.height, zIndex: stackZ } as React.CSSProperties}
+      style={{ left: node.x, top: node.y, width: node.width, height: node.height, zIndex: deckExpanded ? 100000 : stackZ } as React.CSSProperties}
       data-size={cardSizeTier(node)}
       className={`canvas-lab-card group absolute text-left outline-none${teammateMark ? " canvas-lab-card-teammate" : ""}`}
     >
@@ -371,7 +376,7 @@ function LabCardInner({
             height={node.height}
             resizable={false}
             inHand={selected}
-            headerInsetRight={60}
+            headerInsetRight={deckEventOrgId && boardWork.content?.kind === 'deck' && boardWork.content.slides.length ? 86 : 60}
             actions={commentCount > 0 && onOpenComments ? (
               <button type="button" data-testid="lab-comment-chip" aria-label={`${commentCount} ${commentCount === 1 ? "comment" : "comments"}`} onPointerDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); onOpenComments(); }} className="inline-flex items-center gap-0.5 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
                 <GraphiteIcon name="messages" size={11} animate={false} />{commentCount}
@@ -417,6 +422,7 @@ function LabCardInner({
       {catchPending ? <Catch onComplete={onCatchComplete} /> : null}
       {readOnly ? null : (
         <div className="canvas-lab-card-bar" onPointerDown={(event) => event.stopPropagation()}>
+          {deckEventOrgId && boardWork?.content?.kind === 'deck' && boardWork.content.slides.length > 0 ? <DeckStrip content={boardWork.content} cardRef={cardRef} expanded={deckExpanded} onExpandedChange={setDeckExpanded} orgId={deckEventOrgId} /> : null}
           <LabCardMenu selected={selected} canBranch={Boolean(node.workItemId) || node.kind === "chat"} local={Boolean(node.local || node.kind === "chat")} removable={(removable ?? true) && (node.kind !== "judgment" || Boolean(node.local))} open={menuOpen} onOpenChange={changeMenuOpen} cardRef={cardRef} onSelect={() => onSelect()} onOpen={() => onOpen(cardRef.current?.getBoundingClientRect())} onOpenLedger={isDecisions && onOpenLedger ? () => onOpenLedger("menu") : undefined} onBranch={onBranch} onHide={onHide} onDelete={onDelete} onTakeOutOfContext={onTakeOutOfContext} onFit={canResize ? onFit : undefined} frameChoices={structured ? frameChoices : []} currentFrame={node.frame} onMoveToFrame={structured && canResize ? onMoveToFrame : undefined} bundleToggleLabel={bundleToggleLabel} onBundleToggle={onBundleToggle} chatLinkLabel={canSetChatLink ? CHAT_LINK_COPY[chatLinkAction(item?.meta?.chat_url)] : undefined} onEditChatLink={canSetChatLink ? () => setChatLinkOpen(true) : undefined} onRename={canRename && item ? () => setRenameOpen(true) : undefined} cardFace={cardFace} onCardFaceChange={onCardFaceChange} />
           {canRename && item ? <RenameWorkDialog item={item} open={renameOpen} onOpenChange={setRenameOpen} /> : null}
           <Button

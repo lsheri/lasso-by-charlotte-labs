@@ -31,6 +31,12 @@ export function noteWorkboardZoomChanged(orgId: string | undefined, direction: "
 export function noteWorkboardViewFitted(orgId: string | undefined, via: "button" | "menu"): void {
   if (orgId) logEvent("workboard.view_fitted", orgId, { via });
 }
+export function deckSlidesBand(count: number): "1_5" | "6_10" | "11_20" | "21_plus" {
+  return count <= 5 ? "1_5" : count <= 10 ? "6_10" : count <= 20 ? "11_20" : "21_plus";
+}
+export function noteWorkboardDeckExpanded(orgId: string | undefined, state: "open" | "closed", slides: number): void {
+  if (orgId && slides > 0) logEvent("workboard.deck_expanded", orgId, { state, slides_band: deckSlidesBand(slides) });
+}
 export function noteWorkboardFace(orgId: string | undefined, face: "art" | "preview", scope: "board" | "card" = "board"): void {
   if (orgId) logEvent("workboard.face_toggled", orgId, { face, scope });
 }

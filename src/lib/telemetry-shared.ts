@@ -349,6 +349,8 @@ export type TelemetryEvent =
   | "workboard.zoom_changed"
   /** TOOLBAR-9c: Fit chosen from the toolbar button or overflow menu. */
   | "workboard.view_fitted"
+  /** Local deck contact sheet. Open/closed and band only, never a slide count. */
+  | "workboard.deck_expanded"
   /** The person flipped board cards between sketch and real preview. Face only. */
   | "workboard.face_toggled"
   /** The workboard opened, with its content-free entry point. */
