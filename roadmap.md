@@ -1,6 +1,7 @@
 # Roadmap
 
-- [ ] JANITOR-1: preserve parked date-jump feature; delete removed gather-mark test; add shared-handler card-face menu fallback; compare five named files and inspect 390px access.
+- [x] JANITOR-1: parked date-jump feature untouched; removed gather test deleted; shared-handler Sketch/Real overflow added. Five named files before 32 pass/2 fail, after 33 pass/1 fail (same signature-mark baseline); actual-component fixture at 1280/390 reaches both choices, with face in phone menu. Preview build OK.
+- [ ] JANITOR-1: signed-in populated-board verification blocked by external unmanaged authentication; actual-component fixture confirms menu access, not production-session behavior.
 
 - [x] WS-REMOVE: mode/control/helper/event removed; inert tour mirror removed with no scripted step change; 12 named files before 148/1, after 143/1, same TourActs count failure; preview build OK. Surface fixture viewed at 1280/390, all controls assigned and phone menu reachable.
 - [ ] WS-REMOVE: signed-in populated-board verification blocked by external unmanaged authentication; real board redirects to /auth. Fixture verifies allocation/menu only, not real board behavior.
