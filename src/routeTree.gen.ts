@@ -22,6 +22,7 @@ import { Route as NoAccessRouteImport } from './routes/no-access'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as PersonalRouteImport } from './routes/personal'
 import { Route as PlansRouteImport } from './routes/plans'
+import { Route as QaT8RouteImport } from './routes/qa-t8'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as TourPreviewRouteImport } from './routes/tour-preview'
 import { Route as TrustRouteImport } from './routes/trust'
@@ -143,6 +144,11 @@ const PersonalRoute = PersonalRouteImport.update({
 const PlansRoute = PlansRouteImport.update({
   id: '/plans',
   path: '/plans',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QaT8Route = QaT8RouteImport.update({
+  id: '/qa-t8',
+  path: '/qa-t8',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -464,6 +470,7 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof OnboardingRoute
   '/personal': typeof PersonalRoute
   '/plans': typeof PlansRoute
+  '/qa-t8': typeof QaT8Route
   '/reset-password': typeof ResetPasswordRoute
   '/tour-preview': typeof TourPreviewRoute
   '/trust': typeof TrustRoute
@@ -536,6 +543,7 @@ export interface FileRoutesByTo {
   '/onboarding': typeof OnboardingRoute
   '/personal': typeof PersonalRoute
   '/plans': typeof PlansRoute
+  '/qa-t8': typeof QaT8Route
   '/reset-password': typeof ResetPasswordRoute
   '/tour-preview': typeof TourPreviewRoute
   '/trust': typeof TrustRoute
@@ -610,6 +618,7 @@ export interface FileRoutesById {
   '/onboarding': typeof OnboardingRoute
   '/personal': typeof PersonalRoute
   '/plans': typeof PlansRoute
+  '/qa-t8': typeof QaT8Route
   '/reset-password': typeof ResetPasswordRoute
   '/tour-preview': typeof TourPreviewRoute
   '/trust': typeof TrustRoute
@@ -684,6 +693,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/personal'
     | '/plans'
+    | '/qa-t8'
     | '/reset-password'
     | '/tour-preview'
     | '/trust'
@@ -756,6 +766,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/personal'
     | '/plans'
+    | '/qa-t8'
     | '/reset-password'
     | '/tour-preview'
     | '/trust'
@@ -829,6 +840,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/personal'
     | '/plans'
+    | '/qa-t8'
     | '/reset-password'
     | '/tour-preview'
     | '/trust'
@@ -903,6 +915,7 @@ export interface RootRouteChildren {
   OnboardingRoute: typeof OnboardingRoute
   PersonalRoute: typeof PersonalRoute
   PlansRoute: typeof PlansRoute
+  QaT8Route: typeof QaT8Route
   ResetPasswordRoute: typeof ResetPasswordRoute
   TourPreviewRoute: typeof TourPreviewRoute
   TrustRoute: typeof TrustRoute
@@ -1021,6 +1034,13 @@ declare module '@tanstack/react-router' {
       path: '/plans'
       fullPath: '/plans'
       preLoaderRoute: typeof PlansRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/qa-t8': {
+      id: '/qa-t8'
+      path: '/qa-t8'
+      fullPath: '/qa-t8'
+      preLoaderRoute: typeof QaT8RouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reset-password': {
@@ -1545,6 +1565,7 @@ const rootRouteChildren: RootRouteChildren = {
   OnboardingRoute: OnboardingRoute,
   PersonalRoute: PersonalRoute,
   PlansRoute: PlansRoute,
+  QaT8Route: QaT8Route,
   ResetPasswordRoute: ResetPasswordRoute,
   TourPreviewRoute: TourPreviewRoute,
   TrustRoute: TrustRoute,
