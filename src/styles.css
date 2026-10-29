@@ -8365,6 +8365,8 @@ body:has(.lasso-decisions-ledger) .canvas-lab-undo-toast { position: fixed; z-in
   [data-lasso="on"] .canvas-lab-floating-tools { overflow-x: auto; }
   [data-lasso="on"] .canvas-lab-floating-tools button[data-toolbar-control="ask"] { width: 36px; min-width: 36px; padding: 0; }
   .canvas-lab-ask-label { display: none; }
+  [data-lasso="on"] .canvas-lab-floating-tools button[data-toolbar-control="add-work"] { width: 36px; min-width: 36px; padding: 0; }
+  .canvas-lab-add-work-label { display: none; }
   [data-lasso="on"] .canvas-lab-floating-tools > div:has(> button.md\:hidden) { display: flex; }
   [data-lasso="on"] .canvas-lab-board-status { top: 82px; }
 }

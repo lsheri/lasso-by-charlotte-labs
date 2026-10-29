@@ -3298,7 +3298,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   const toolbarItems: BoardToolbarItem[] = [];
   const changeBoardCardFace = (next: CardFace) => { clearCardFaceOverrides(); setCardFace(next); noteWorkboardFace(orgId, next); };
   toolbarItems.push({
-    spec: { id: "working-from", width: 0, pinned: true },
+    spec: { id: "working-from", width: viewportSize.width < 768 ? 36 : 0, pinned: true },
       row: <ToolbarIcon label="Working from"><Button type="button" size="icon" variant="outline" className="md:hidden" aria-label="Working from" data-toolbar-control="working-from" onClick={() => setAskOpen(true)}><GraphiteIcon name="ask-lasso" size={20} /></Button></ToolbarIcon>,
   });
   if (selectedLinkId) {
@@ -3311,38 +3311,38 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   // TOOLBAR-1 (28 Oct 2026): the SECD-2 jump control left the toolbar; BoardJumpControls stays in the tree unused (roadmap).
   if (canAddWork) {
     toolbarItems.push({
-      spec: { id: "add-work", width: 106, pinned: true },
-      row: <ToolbarIcon label="Add work. Bring a chat, document or file onto this board."><Button size="sm" variant="outline" className="lasso-action" aria-label="Add work" data-toolbar-control="add-work" onClick={() => openAddWork("header", null)}><GraphiteIcon name="work" size={20} />Add work</Button></ToolbarIcon>,
+      spec: { id: "add-work", width: viewportSize.width < 768 ? 36 : 106, pinned: true },
+      row: <ToolbarIcon label="Add work. Bring a chat, document or file onto this board."><Button size="sm" variant="outline" className="lasso-action" aria-label="Add work" data-toolbar-control="add-work" onClick={() => openAddWork("header", null)}><GraphiteIcon name="work" size={20} /><span className="canvas-lab-add-work-label">Add work</span></Button></ToolbarIcon>,
     });
     toolbarItems.push({
-      spec: { id: "add-text", width: 40, moveOrder: 5 },
+      spec: { id: "add-text", width: 36, moveOrder: 5 },
       row: <ToolbarIcon label="Add text. Write a note directly on the board."><Button size="icon" variant="outline" aria-label="Add text" data-toolbar-control="add-text" onClick={() => void addTextBlock()}><GraphiteIcon name="text" size={20} /></Button></ToolbarIcon>,
       menu: <DropdownMenuItem onSelect={() => void addTextBlock()}>Add text</DropdownMenuItem>,
     });
     toolbarItems.push({
-      spec: { id: "add-sticky", width: 40, moveOrder: 6 },
+      spec: { id: "add-sticky", width: 36, moveOrder: 6 },
       row: <ToolbarIcon label="Sticky. Leave a short reminder on the board."><Button size="icon" variant="outline" aria-label="Sticky" data-toolbar-control="add-sticky" onClick={() => void addSticky()}><GraphiteIcon name="sticky" size={20} /></Button></ToolbarIcon>,
       menu: <DropdownMenuItem onSelect={() => void addSticky()}>Sticky</DropdownMenuItem>,
     });
     toolbarItems.push({
-      spec: { id: "region", width: 40, moveOrder: 9 },
+      spec: { id: "region", width: 36, moveOrder: 9 },
       row: <ToolbarIcon label="Draw a workstream. Group work so Lasso treats it as one piece of context."><Button size="icon" variant={drawTool && drawMode === "grouping" ? "secondary" : "outline"} aria-label="Draw a workstream" aria-pressed={drawTool && drawMode === "grouping"} data-toolbar-control="grouping" onClick={toggleDrawTool}><GraphiteIcon name="draw-workstream" size={20} /></Button></ToolbarIcon>,
       menu: <DropdownMenuItem onSelect={toggleDrawTool}>Draw a workstream</DropdownMenuItem>,
     });
     toolbarItems.push({
-      spec: { id: "section", width: 40, moveOrder: 10 },
+      spec: { id: "section", width: 36, moveOrder: 10 },
       row: <ToolbarIcon label="Draw a section. Mark an area of the board. Nothing inside is joined up."><Button size="icon" variant={drawTool && drawMode === "section" ? "secondary" : "outline"} aria-label="Draw a section" aria-pressed={drawTool && drawMode === "section"} data-toolbar-control="section" onClick={toggleSectionTool}><GraphiteIcon name="section" size={20} /></Button></ToolbarIcon>,
       menu: <DropdownMenuItem onSelect={toggleSectionTool}>Draw a section</DropdownMenuItem>,
     });
     toolbarItems.push({
-      spec: { id: "suggest", width: 40, moveOrder: 7 },
+      spec: { id: "suggest", width: 36, moveOrder: 7 },
       row: <ToolbarIcon label="Suggest workstreams. Lasso proposes groupings from what is already here."><Button size="icon" variant="outline" aria-label="Suggest workstreams" data-toolbar-control="suggest" onClick={openSuggestions}><GraphiteIcon name="suggest-workstreams" size={20} animate={false} /></Button></ToolbarIcon>,
       menu: <DropdownMenuItem onSelect={openSuggestions}>Suggest workstreams</DropdownMenuItem>,
     });
   }
   if (showExample) {
     toolbarItems.push({
-      spec: { id: "example", width: 40, moveOrder: 1 },
+      spec: { id: "example", width: 36, moveOrder: 1 },
       row: <ToolbarIcon label="See an example board. Open a finished board to see how one comes together."><Button size="icon" variant="outline" aria-label="See an example board" data-toolbar-control="example" onClick={openExample}><GraphiteIcon name="example-board" size={20} /></Button></ToolbarIcon>,
       menu: <DropdownMenuItem onSelect={openExample}>See an example board</DropdownMenuItem>,
     });
@@ -3353,22 +3353,23 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   });
   if (canAddWork) {
     toolbarItems.push({
-      spec: { id: "share", width: 80, pinned: true },
+      spec: { id: "share", width: 36, pinned: true },
       row: <ShareDialog engagementId={engagementId} profileId={profile?.id} />,
     });
   }
   toolbarItems.push({
-    spec: { id: "details", width: 40, moveOrder: 3 },
+    spec: { id: "details", width: 36, moveOrder: 3 },
     row: <ToolbarIcon label="Info. See what this board holds and who can see it."><Button size="icon" variant="outline" aria-label="Info" data-toolbar-control="details" aria-expanded={detailsOpen} onClick={(event) => openDetails(event.currentTarget)}><GraphiteIcon name="working-from" size={20} /></Button></ToolbarIcon>,
     menu: <DropdownMenuItem onSelect={() => { if (moreButtonRef.current) openDetails(moreButtonRef.current); }}>Info</DropdownMenuItem>,
   });
   toolbarItems.push({
-    spec: { id: "fit", width: 56, moveOrder: 2 },
+    spec: { id: "fit", width: 36, moveOrder: 2 },
     row: <ToolbarIcon label="Fit. Bring the whole board into view."><Button size="icon" variant="outline" aria-label="Fit" data-toolbar-control="fit" onClick={() => fit(true)}><GraphiteIcon name="fit" size={20} /></Button></ToolbarIcon>,
     menu: <DropdownMenuItem onSelect={() => fit(true)}>Fit</DropdownMenuItem>,
   });
   toolbarItems.push({
-    spec: { id: "zoom", width: 116, pinned: true },
+    spec: viewportSize.width < 768 ? { id: "zoom", width: 124, moveOrder: 0 } : { id: "zoom", width: 124, pinned: true },
+    menu: <><DropdownMenuItem onSelect={() => zoomAtCentre(stepZoom(zoomRef.current, "in"))}>Zoom in</DropdownMenuItem><DropdownMenuItem onSelect={() => zoomAtCentre(stepZoom(zoomRef.current, "out"))}>Zoom out</DropdownMenuItem></>,
     row: (
       <>
         <ToolbarIcon label="Zoom out"><Button size="icon" variant="ghost" aria-label="Zoom out" data-toolbar-control="zoom-out" onClick={() => zoomAtCentre(stepZoom(zoomRef.current, "out"))}><GraphiteIcon name="minus" size={18} /></Button></ToolbarIcon>
@@ -3378,7 +3379,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     ),
   });
   toolbarItems.push({
-    spec: { id: "card-face", width: 150 },
+    spec: { id: "card-face", width: viewportSize.width < 768 ? 68 : 165 },
     row: <ToolbarIcon label="Show work as. Switch between the sketch and the real page."><span data-toolbar-control="card-face"><FaceToggle value={cardFace} segmented onChange={changeBoardCardFace} /></span></ToolbarIcon>,
     menu: <BoardCardFaceMenu value={cardFace} onChange={changeBoardCardFace} />,
   });
