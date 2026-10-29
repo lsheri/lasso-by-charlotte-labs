@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] JANITOR-1: preserve parked date-jump feature; delete removed gather-mark test; add shared-handler card-face menu fallback; compare five named files and inspect 390px access.
+
 - [x] WS-REMOVE: mode/control/helper/event removed; inert tour mirror removed with no scripted step change; 12 named files before 148/1, after 143/1, same TourActs count failure; preview build OK. Surface fixture viewed at 1280/390, all controls assigned and phone menu reachable.
 - [ ] WS-REMOVE: signed-in populated-board verification blocked by external unmanaged authentication; real board redirects to /auth. Fixture verifies allocation/menu only, not real board behavior.
 
@@ -14,7 +16,7 @@
 
 - [x] TOOLBAR-1 / READER-MARK: revised ten retention integers, exact tooltips and vendor mark; 11 focused tests pass before/after; full after 38 files / 127 failed / 4,858 passed, no new failures against same-session before 39 / 128 / 4,857 (sh6c left); vendor fixtures inspected at 1280/390, build OK.
 - [ ] TOOLBAR-1 / READER-MARK: real signed-in toolbar and reader verification blocked by external unmanaged authentication; fixture rendering and source comparison verified only.
-- [ ] Card-face overflow fallback: separately queued by founder; no fallback today, leave unset in TOOLBAR-1.
+- [x] Card-face overflow fallback: JANITOR-1 adds Sketch/Real menu choices using the row's shared handler; retention order stays unset.
 
 - [x] SEC-FILL: explicit saved-section dashes, shared background picker, existing frame persistence, additive events and design row; after and recovered pre-change suites both 38 failing files / 127 failed / 4,858 passed with identical failing-file sets; section fixtures inspected at 1280/390.
 - [ ] SEC-FILL: authenticated draw/save/reload verification blocked by external unmanaged authentication; explicit typecheck count unavailable because manual project typechecks are prohibited.
