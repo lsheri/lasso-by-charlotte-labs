@@ -179,6 +179,9 @@ describe("the workboard allowlist", () => {
         "workboard.section_shifted": [
           "direction",
         ],
+        "workboard.structure_toggled": [
+          "state",
+        ],
         "workboard.trail_item_selected": [
           "group",
           "focus",
@@ -309,7 +312,7 @@ describe("the workboard allowlist", () => {
       const [name, , dims] = mocked.mock.calls[0] as [string, string, Record<string, unknown>];
       expect(guardWorkboardEvent(name, dims as never)).toEqual({ keep: true, dims });
     }
-    expect(Object.keys(WORKBOARD_EVENT_DIMS)).toHaveLength(40);
+    expect(Object.keys(WORKBOARD_EVENT_DIMS)).toHaveLength(41);
   });
 
   it("keeps the additive open path for previewed document and deck cards", () => {

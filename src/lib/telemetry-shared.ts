@@ -384,6 +384,8 @@ export type TelemetryEvent =
   /** B3a: the built-in sample board was opened. Entry point only. */
   | "workboard.example_viewed"
   | "workboard.display_mode_toggled"
+  /** WS-REMOVE removed the Show workstreams emitter; the name stays because the event schema is additive-only. */
+  | "workboard.structure_toggled"
   | "workboard.card_content_viewed"
   /** C1: a person chose rendered output or stored source in the enlarged preview. */
   | "work.preview_mode_changed"
