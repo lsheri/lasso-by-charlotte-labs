@@ -23,9 +23,9 @@ describe("board toolbar overflow", () => {
     const controlsAt = (phone: boolean): ToolbarControlSpec[] => [
       { id: "add-work", width: phone ? 36 : 106, pinned: true, group: 1 },
       ...["add-text", "add-sticky", "region", "section", "suggest"].map((id, i) => ({ id, width: 36, moveOrder: [5, 6, 9, 10, 7][i] ?? 7, group: 2 })),
-      { id: "card-face", width: phone ? 68 : 165, group: 3 },
       { id: "fit", width: 36, moveOrder: 2, group: 3 },
       phone ? { id: "zoom", width: 124, moveOrder: 0, group: 3 } : { id: "zoom", width: 124, pinned: true, group: 3 },
+      { id: "card-face", width: 68, group: 3 },
       { id: "working-from", width: phone ? 36 : 0, pinned: true, group: 4 },
       { id: "ask", width: phone ? 36 : 124, pinned: true, group: 4 },
       { id: "share", width: 36, pinned: true, group: 4 },
