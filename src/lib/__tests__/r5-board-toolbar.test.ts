@@ -92,7 +92,7 @@ describe("R5 board toolbar", () => {
       { id: "fit", width: 40, moveOrder: 1 },
       { id: "add-work", width: 40, pinned: true },
       { id: "ask", width: 40, pinned: true },
-      { id: "zoom", width: 116, pinned: true },
+      { id: "zoom", width: 124, pinned: true },
     ];
     const plan = planToolbarOverflow(240, controls);
     expect(plan.row).toContain("add-work");
