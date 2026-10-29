@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] STRIP: local deck expansion, borderless pages, existing no-preview boundary, additive banded event and focused verification.
+
 - [x] JANITOR-1: parked date-jump feature untouched; removed gather test deleted; shared-handler Sketch/Real overflow added. Five named files before 32 pass/2 fail, after 33 pass/1 fail (same signature-mark baseline); actual-component fixture at 1280/390 reaches both choices, with face in phone menu. Preview build OK.
 - [ ] JANITOR-1: signed-in populated-board verification blocked by external unmanaged authentication; actual-component fixture confirms menu access, not production-session behavior.
 
