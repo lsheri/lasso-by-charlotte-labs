@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useRef, useState } from 'react';
+import { LabCard } from '../LabCard';
 import { DeckStrip, DeckStripFace } from '../DeckStrip';
 import { deckSlidesBand } from '../canvas-lab-telemetry';
 import { WORKBOARD_EVENT_DIMS } from '@/lib/workboard-event-allowlist';
@@ -52,6 +53,31 @@ describe('STRIP', () => {
   });
   it.each([[1, '1_5'], [5, '1_5'], [6, '6_10'], [10, '6_10'], [11, '11_20'], [20, '11_20'], [21, '21_plus'], [40, '21_plus']])('bands %s slides as %s', (count, band) => {
     expect(deckSlidesBand(Number(count))).toBe(band);
+  });
+  it('keeps the real LabCard measured paper and board handlers untouched on expansion', () => {
+    vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} });
+    const boardAction = vi.fn();
+    const measure = vi.fn();
+    const noop = () => undefined;
+    const node = Object.freeze({ id: 'n', kind: 'work' as const, frame: 'f', title: 'Deck', summary: '', typeLabel: 'document', ownership: 'yours' as const, x: 40, y: 70, width: 260, height: 220 });
+    render(<div className="canvas-lab-surface"><LabCard node={node} face="board" deckEventOrgId="org"
+      item={{ id: 'w', type: 'document', title: 'Deck', source: 'upload', visibility: 'mapped', captured_at: '2026-10-29T00:00:00Z', meta: {}, source_meta: {}, work_item_tasks: [] } as never}
+      filePreview={{ workItemId: 'w', kind: 'slide', url: null, lines: [], slideTitle: null, versionCount: 1, pages: content.slides.map(s => ({ title: s.title, lines: s.bullets })) }}
+      selected={false} focused={false} connecting={false} connectSourceAnchor={null} canResize={false} structured={false} frameChoices={[]}
+      onPointerDown={boardAction} onMeasure={measure} onSelect={boardAction} onOpen={boardAction} onBranch={boardAction} onHide={boardAction} onDelete={boardAction} onEdit={boardAction} onEditCommitted={boardAction}
+      onAnchorPointerDown={boardAction} onAnchorActivate={boardAction} onMenuOpened={noop} onMenuOpenChange={noop} onFocus={noop} onKeyDown={boardAction} onResizeStart={boardAction} onFit={boardAction} onResizeKeyDown={boardAction} onResizeKeyUp={boardAction} onMoveToFrame={boardAction} /></div>);
+    measure.mockClear();
+    const card = screen.getByTestId('lab-card-n');
+    const geometry = [card.style.left, card.style.top, card.style.width, card.style.height];
+    const button = screen.getByRole('button', { name: 'Expand deck' });
+    fireEvent.pointerDown(button);
+    fireEvent.click(button);
+    expect(document.querySelector('[data-deck-strip]')).toBeTruthy();
+    expect(card.querySelector('.canvas-lab-card-paper [data-deck-strip]')).toBeNull();
+    expect([card.style.left, card.style.top, card.style.width, card.style.height]).toEqual(geometry);
+    expect(boardAction).not.toHaveBeenCalled();
+    expect(measure).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
   });
   it('registers the additive event in the allowlist and type union', () => {
     expect(WORKBOARD_EVENT_DIMS['workboard.deck_expanded']).toEqual(['state', 'slides_band']);
