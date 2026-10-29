@@ -282,6 +282,7 @@ function claimMyWork(nodes: LabNode[], mine: Set<string>, owners: Map<string, st
 
 /* TOOLBAR-6: four groups on one plane; contextual controls retain the last group. */
 const TOOLBAR_GROUPS: string[][] = [
+  ["board-identity"],
   ["add-work"],
   ["add-text", "add-sticky", "region", "section", "suggest"],
   ["fit", "zoom", "card-face"],
@@ -3298,6 +3299,12 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
               : "Workboard · Not saved";
 
   const toolbarItems: BoardToolbarItem[] = [];
+  if (viewportSize.width >= 768 && lab.saveState.status !== "conflict" && lab.saveState.status !== "error") {
+    toolbarItems.push({
+      spec: { id: "board-identity", width: 200, pinned: true },
+      row: <div className="canvas-lab-board-identity"><span className="block truncate text-[13px] font-medium text-foreground">{title}</span><span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{status}</span></div>,
+    });
+  }
   const changeBoardCardFace = (next: CardFace) => { clearCardFaceOverrides(); setCardFace(next); noteWorkboardFace(orgId, next); };
   toolbarItems.push({
     spec: { id: "working-from", width: viewportSize.width < 768 ? 36 : 0, pinned: true },
@@ -3420,7 +3427,6 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
         <div ref={shellRef} tabIndex={-1} onDragEnter={fileDrop.handlers.onDragEnter} onDragLeave={fileDrop.handlers.onDragLeave} onDragOverCapture={fileDrop.handlers.onDragOver} onDragOver={(event) => { if (!canAddWork || !isAnswerDrag(event.dataTransfer.types)) return; event.preventDefault(); event.dataTransfer.dropEffect = "copy"; }} onDropCapture={fileDrop.handlers.onDrop} onDrop={(event) => { if (!isAnswerDrag(event.dataTransfer.types)) return; event.preventDefault(); delete document.body.dataset["answerDrag"]; const answer = parseAnswerDrop(event.dataTransfer.getData(ANSWER_DRAG_MIME)); if (!answer) return; void keepAnswerAsCard(answer, { at: stagePoint(event.clientX, event.clientY), via: "drag" }); }} onPointerDownCapture={(event) => { if (event.target instanceof Element && event.target.closest(".canvas-lab-floating-tools")) return; if (onSurfaceTouchDown(event)) return; if (event.button === 0 && spaceRef.current) { event.preventDefault(); event.stopPropagation(); startSpacePan(event); } }} onPointerDown={(event) => { const target = event.target as HTMLElement; const empty = event.target === event.currentTarget || target.dataset["testid"] === "canvas-lab-stage"; if (event.button === 0 && empty && drawTool) { event.preventDefault(); const at = stagePoint(event.clientX, event.clientY); drawingRef.current = { from: at, to: at }; setDrawing({ from: at, to: at }); return; } if (event.button === 1 && empty) { event.preventDefault(); startSpacePan(event); return; } if (event.button === 0 && empty) { event.preventDefault(); window.getSelection()?.removeAllRanges(); event.currentTarget.classList.add("select-none"); setKeyboardId(null); setSelectedFrameId(null); setSelectedLinkId((current) => relationshipSelection(current, "deselect")); if (event.pointerType === "touch") { event.currentTarget.classList.remove("select-none"); startSpacePan(event); return; } const at = stagePoint(event.clientX, event.clientY); const screen = { x: event.clientX, y: event.clientY }; marqueeRef.current = { fromScreen: screen, fromBoard: at, toScreen: screen, toBoard: at }; setInteraction("marquee"); } }} onContextMenu={(event) => { const target = event.target as HTMLElement; const empty = event.target === event.currentTarget || target.dataset["testid"] === "canvas-lab-stage"; if (!empty || !canAddWork) return; event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect(); const screen = { x: event.clientX - rect.left, y: event.clientY - rect.top }; setBoardMenu({ screen, board: boardPointFromScreen(screen) }); }} data-space-pan={spaceHeld} data-drawing={drawTool ? "true" : undefined} onScroll={(event) => keepViewportUnscrolled(event.currentTarget)} data-interacting={interaction !== "idle" || drawing !== null || viewportMoving ? "true" : undefined} className="canvas-lab-surface relative min-h-0 flex-1 overflow-hidden">
           <BoardFileDropOverlay show={fileDrop.over} />
           <div className="canvas-lab-board-status" onPointerDown={(event) => event.stopPropagation()}>
-            {lab.saveState.status !== "conflict" && lab.saveState.status !== "error" ? <div className="min-w-0"><span className="block truncate text-[13px] font-medium text-foreground">{title}</span><span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{status}</span></div> : null}
         {lab.saveState.status === "conflict" ? <div data-testid="canvas-lab-banner" className="canvas-lab-banner" role="alert"><p className="text-[13px] text-foreground">A newer version of this record was saved.</p><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => resolveConflict("latest")}>Load latest</Button><Button size="sm" variant="outline" onClick={() => resolveConflict("retry")}>Retry my change</Button></div></div> : null}
         {lab.saveState.status === "error" ? <div data-testid="canvas-lab-banner" className="canvas-lab-banner" role="alert"><p className="text-[13px] text-foreground">Could not save your last change. {lab.saveState.message}</p><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => resolveSaveError("retry")}>Retry</Button><Button size="sm" variant="outline" onClick={() => resolveSaveError("discard")}>Discard</Button></div></div> : null}
           </div>

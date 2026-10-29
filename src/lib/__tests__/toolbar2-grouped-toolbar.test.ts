@@ -23,8 +23,8 @@ describe("TOOLBAR-2 grouped toolbar", () => {
     expect(canvas).toContain('virtualRef={detailsAnchorVirtualRef}');
     expect(canvas).toContain('<DemoPresetsAdmin engagementId={engagementId} />');
     expect(canvas).toContain('role="alert"');
-    expect(canvas).toContain('{title}');
-    expect(canvas).toContain('{status}');
+    expect(page).toContain('{title}');
+    expect(page).toContain('{status}');
     expect(canvas).toContain('<RegionColourSwatches');
     expect(canvas).toContain('<SectionBackgroundPicker');
     expect(surface).not.toContain('className="canvas-lab-tool-group"');
