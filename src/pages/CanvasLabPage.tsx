@@ -282,7 +282,7 @@ function claimMyWork(nodes: LabNode[], mine: Set<string>, owners: Map<string, st
 const TOOLBAR_GROUPS: string[][] = [
   ["add-work"],
   ["add-text", "add-sticky", "region", "section", "suggest"],
-  ["card-face", "fit", "zoom"],
+  ["fit", "zoom", "card-face"],
   ["remove-relationship", "working-from", "ask", "share", "details", "example"],
 ];
 const TOOLBAR_LAYOUT = TOOLBAR_GROUPS.flat();
@@ -3379,7 +3379,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     ),
   });
   toolbarItems.push({
-    spec: { id: "card-face", width: viewportSize.width < 768 ? 68 : 165 },
+    spec: { id: "card-face", width: 68 },
     row: <ToolbarIcon label="Show work as. Switch between the sketch and the real page."><span data-toolbar-control="card-face"><FaceToggle value={cardFace} segmented onChange={changeBoardCardFace} /></span></ToolbarIcon>,
     menu: <BoardCardFaceMenu value={cardFace} onChange={changeBoardCardFace} />,
   });

@@ -8344,15 +8344,12 @@ body:has(.lasso-decisions-ledger) .canvas-lab-undo-toast { position: fixed; z-in
 /* TOOLBAR-7: the card face toggle is the one bar control allowed a container: one control, two states. */
 [data-lasso="on"] .canvas-lab-floating-tools [data-toolbar-control="card-face"] { display: inline-flex; }
 [data-lasso="on"] .canvas-lab-floating-tools .face-segmented { display: inline-flex; align-items: stretch; gap: 2px; box-sizing: border-box; height: 36px; padding: 2px; border: 1px solid var(--line-hairline); border-radius: var(--radius-md-new); background: transparent; }
-[data-lasso="on"] .canvas-lab-floating-tools .face-segmented button.face-segment { display: inline-flex; align-items: center; justify-content: center; gap: 6px; width: auto; min-width: 30px; height: 30px; min-height: 30px; padding: 0 10px; border: 0; border-radius: calc(var(--radius-md-new) - 2px); background: transparent; color: var(--text-primary); font-family: var(--font-sans); font-size: var(--text-sm); font-weight: 500; box-shadow: none; transform: none; cursor: pointer; transition: background var(--dur-quick) var(--ease-standard); }
+[data-lasso="on"] .canvas-lab-floating-tools .face-segmented button.face-segment { display: inline-flex; align-items: center; justify-content: center; gap: 6px; width: auto; min-width: 30px; height: 30px; min-height: 30px; padding: 0 7px; border: 0; border-radius: calc(var(--radius-md-new) - 2px); background: transparent; color: var(--text-primary); font-family: var(--font-sans); font-size: var(--text-sm); font-weight: 500; box-shadow: none; transform: none; cursor: pointer; transition: background var(--dur-quick) var(--ease-standard); }
 [data-lasso="on"] .canvas-lab-floating-tools .face-segmented button.face-segment:hover:not(:disabled) { background: var(--surface-sunk-2); color: var(--text-primary); box-shadow: none; transform: none; }
 [data-lasso="on"] .canvas-lab-floating-tools .face-segmented button.face-segment[aria-pressed="true"],
 [data-lasso="on"] .canvas-lab-floating-tools .face-segmented button.face-segment[aria-pressed="true"]:hover:not(:disabled) { background: var(--nb-graphite); color: var(--nb-paper); border-color: transparent; }
 [data-lasso="on"] .canvas-lab-floating-tools .face-segmented button.face-segment > svg { width: 16px; height: 16px; flex-shrink: 0; }
-@media (max-width: 767px) {
-  [data-lasso="on"] .canvas-lab-floating-tools .face-segmented button.face-segment { padding: 0 7px; }
-  .face-segment-word { display: none; }
-}
+[data-lasso="on"] .canvas-lab-floating-tools .face-segment-word { display: none; }
 [data-lasso="on"] .canvas-lab-floating-tools button:is([data-toolbar-control="grouping"], [data-toolbar-control="section"])[aria-pressed="true"] { background: var(--hand-live) !important; border: 1px solid var(--nb-graphite); color: var(--nb-ink); }
 [data-lasso="on"] .canvas-lab-floating-tools button[data-toolbar-control="ask"] { width: 124px; min-width: 124px; height: 36px; min-height: 36px; padding-inline: 8px; gap: 8px; border-radius: var(--radius-md-new); }
 [data-lasso="on"] .canvas-lab-floating-tools button[data-toolbar-control="add-work"] { width: 106px; min-width: 106px; height: 36px; min-height: 36px; }
