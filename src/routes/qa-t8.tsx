@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { GraphiteIcon } from "@/components/notebook/icons";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { TooltipProvider } from "@/components/ui/tooltip";
-const G = [["add-work","add-text","add-sticky","region","section","suggest","example"],["card-face","fit","zoom"],["working-from","ask","share","details"]];
+const G = [["add-work"],["add-text","add-sticky","region","section","suggest"],["card-face","fit","zoom"],["working-from","ask","share","details"]];
 const toolbarGroupOf = (id: string) => G.findIndex((g) => g.includes(id)) + 1;
 export const Route = createFileRoute("/qa-t8")({ component: Q });
 function Q() {
