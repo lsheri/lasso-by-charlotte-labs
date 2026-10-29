@@ -179,6 +179,9 @@ describe("the workboard allowlist", () => {
         "workboard.section_shifted": [
           "direction",
         ],
+        "workboard.structure_toggled": [
+          "state",
+        ],
         "workboard.trail_item_selected": [
           "group",
           "focus",
