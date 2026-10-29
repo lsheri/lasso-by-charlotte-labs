@@ -1492,6 +1492,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .deck-strip-page h3 { margin: 0; font-size: 20px; line-height: 1.3; font-weight: 600; }
 .deck-strip-page ul { margin: 16px 0 0; padding-left: 20px; font-size: 16px; line-height: 1.5; }
 .deck-strip-page li + li { margin-top: 8px; }
+.deck-strip-boundary { position: absolute; inset: 40px 0 26px; background: var(--surface-raised); }
 .canvas-lab-card-paper[data-bundled-piece="true"] > article {
   background: color-mix(in srgb, var(--bundle-vendor, var(--vendor-unknown)) 10%, var(--card)) !important;
 }

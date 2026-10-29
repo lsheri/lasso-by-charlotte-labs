@@ -310,7 +310,7 @@ function LabCardInner({
   );
   const extractSummary = item?.work_item_extracts?.find((extract) => extract.summary?.trim())?.summary;
   const isDecisions = item?.type === "document" && item.doc_kind === "decisions";
-  const textFace = !isDecisions && item && boardWork && !boardWork.content && noPreviewReason && extractSummary
+  const textFace = !isDecisions && item?.type !== 'deck' && item && boardWork && !boardWork.content && noPreviewReason && extractSummary
     && (!renderableFilePreview || filePreviewFailed)
     ? <TextFace item={item} parent={parent} summary={extractSummary} />
     : undefined;
@@ -415,6 +415,7 @@ function LabCardInner({
             ) : undefined}
           />
         ) : <LabPaper node={node} selected={selected && showStatusChrome} showOwnership={!readOnly && showStatusChrome} onEdit={onEdit} onEditCommitted={onEditCommitted} onOpenTrail={readOnly || !node.deliverable ? undefined : () => onOpen(cardRef.current?.getBoundingClientRect())} />}
+        {readOnly && item?.type === 'deck' && filePreview?.kind === 'fallback' ? <div className="deck-strip-boundary"><NoPreview reason={filePreview.reason ?? 'no_text'} contextAvailable={contextAvailable} /></div> : null}
         {matchLine ? <span data-testid="reference-match-line" className="absolute bottom-1 left-2 text-xs text-muted-foreground">{matchLine}</span> : null}
         {selected ? <Paperclip aria-hidden="true" className="canvas-lab-context-mark" /> : null}
         {madeInChat ? <span className="sr-only" data-testid="lab-card-made-in-chat">Made in the chat {madeInChat}</span> : null}

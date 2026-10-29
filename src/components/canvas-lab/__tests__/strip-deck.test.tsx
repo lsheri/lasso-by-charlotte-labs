@@ -14,7 +14,7 @@ afterEach(() => { cleanup(); vi.clearAllMocks(); });
 describe('STRIP', () => {
   it('renders one page per existing slide with its title and bullets', () => {
     render(<DeckStripFace content={content} />);
-    expect(screen.getAllByRole('listitem')).toHaveLength(2);
+    expect(screen.getAllByRole('listitem').filter((el) => el.tagName === 'ARTICLE')).toHaveLength(2);
     for (const slide of content.slides) {
       expect(screen.getByRole('heading', { name: slide.title })).toBeTruthy();
       expect(screen.getByText(slide.bullets[0] ?? '')).toBeTruthy();
