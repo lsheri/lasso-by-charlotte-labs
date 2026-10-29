@@ -1,5 +1,11 @@
+// @vitest-environment jsdom
 import { readFileSync } from "node:fs";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { createElement, useState } from "react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { BoardCardFaceMenu } from "@/components/canvas-lab/BoardCardFaceMenu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import type { CardFace } from "@/design/reference/FaceToggle";
 
 import { TOOLBAR_GAP, planToolbarOverflow, type ToolbarControlSpec } from "@/lib/toolbar-overflow";
 
@@ -11,6 +17,31 @@ const surface = readFileSync("src/components/canvas-lab/BoardToolbarSurface.tsx"
 const toolbar = page.slice(page.indexOf("const toolbarItems"), page.indexOf("const boardToolbarItems"));
 
 describe("R5 board toolbar", () => {
+  it("reaches both existing card-face states through the same row and menu handler", () => {
+    const change = vi.fn();
+    function MenuHarness() {
+      const [value, setValue] = useState<CardFace>("preview");
+      return createElement(DropdownMenu, { open: true, modal: false },
+        createElement(DropdownMenuTrigger, null, "More tools"),
+        createElement(DropdownMenuContent, null,
+          createElement(BoardCardFaceMenu, { value, onChange: (next: CardFace) => { change(next); setValue(next); } })));
+    }
+    render(createElement(MenuHarness));
+    try {
+      expect(screen.getByRole("menuitemradio", { name: "Real" }).getAttribute("aria-checked")).toBe("true");
+      fireEvent.click(screen.getByRole("menuitemradio", { name: "Sketch" }));
+      expect(change).toHaveBeenLastCalledWith("art");
+      expect(screen.getByRole("menuitemradio", { name: "Sketch" }).getAttribute("aria-checked")).toBe("true");
+      fireEvent.click(screen.getByRole("menuitemradio", { name: "Real" }));
+      expect(change).toHaveBeenLastCalledWith("preview");
+      expect(change).toHaveBeenCalledTimes(2);
+      expect(toolbar).toContain("<FaceToggle value={cardFace} segmented onChange={changeBoardCardFace}");
+      expect(toolbar).toContain("menu: <BoardCardFaceMenu value={cardFace} onChange={changeBoardCardFace} />");
+      expect(toolbar).toContain("const changeBoardCardFace = (next: CardFace) => { clearCardFaceOverrides(); setCardFace(next); noteWorkboardFace(orgId, next); }");
+    } finally {
+      cleanup();
+    }
+  });
   it("uses the existing GraphiteIcon system with one distinct icon per control", () => {
     expect(page).toContain('import { GraphiteIcon } from "@/components/notebook/icons"');
     expect(toolbar).not.toMatch(/<(?:Square|Type|StickyNote|LayoutTemplate|Eye|Info|Maximize2|Sparkles|FileText)\b/);
