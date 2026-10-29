@@ -34,6 +34,8 @@ describe("board toolbar overflow", () => {
     ];
     const desk = controlsAt(false);
     expect(planToolbarOverflow(1186, desk).overflow).toEqual([]);
+    expect(planToolbarOverflow(1058, desk, { reserveOverflow: true }).overflow).toEqual(["fit", "details"]);
+    expect(planToolbarOverflow(930, desk, { reserveOverflow: true }).overflow).toEqual(["fit", "details", "add-text", "add-sticky"]);
     for (const budget of [798, 930, 1058, 1186]) {
       const plan = planToolbarOverflow(budget, desk);
       expect(plan.row).toContain("board-identity");

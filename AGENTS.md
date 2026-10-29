@@ -44,7 +44,7 @@ Tour mirrors board chrome; preserve live behavior.
 - SharedWithYou owns Home/sidebar reads and actions; never switch profiles on shared entry, so work stays owned locally.
 - Read All work shared placements once per page and compare item/board orgs, to avoid per-card requests.
 - Node formatting local; other editors visible.
-- Render every board control through one measured floating BoardToolbarSurface, keeping menu-less controls in the row and example in overflow, so flattening cannot strand an action; title and save alerts remain on canvas paper.
+- Render every board control through one measured floating BoardToolbarSurface, keeping menu-less controls and desktop identity pinned and reserving the overflow button for extra menu entries, so identity cannot strand an action; save alerts remain below the bar.
 - Board card-face overflow uses BoardCardFaceMenu and the row's shared handler, so both choices clear per-card overrides and emit the same face event.
 
 - All work owns rename; reader closure preserves the dialog.
