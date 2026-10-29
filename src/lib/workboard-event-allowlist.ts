@@ -12,6 +12,8 @@ import type { TelemetryDims } from "./telemetry-shared";
 export const WORKBOARD_EVENT_DIMS: Readonly<Record<string, readonly string[]>> = {
   "workboard.opened": ["via", "bundles"],
   "workboard.rail_toggled": ["state"],
+  "workboard.zoom_changed": ["direction", "method"],
+  "workboard.view_fitted": ["via"],
   "workboard.face_toggled": ["face", "scope"],
   "workboard.node_created": ["kind", "judgment_type", "via"],
   "workboard.node_deleted": ["kind"],

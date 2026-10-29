@@ -190,6 +190,9 @@ describe("the workboard allowlist", () => {
           "action",
           "direction",
         ],
+        "workboard.view_fitted": [
+          "via",
+        ],
         "workboard.work_added": [
           "source",
           "via",
@@ -203,6 +206,10 @@ describe("the workboard allowlist", () => {
         "workboard.workstream_drawn": [
           "claimed",
           "asked",
+        ],
+        "workboard.zoom_changed": [
+          "direction",
+          "method",
         ],
       }
     `);
@@ -255,6 +262,8 @@ describe("the workboard allowlist", () => {
     const calls: Array<() => void> = [
       () => helpers.noteWorkboardOpened("o", "header"),
       () => helpers.noteWorkboardRail("o", "collapsed"),
+      () => helpers.noteWorkboardZoomChanged("o", "in", "button"),
+      () => helpers.noteWorkboardViewFitted("o", "menu"),
       () => helpers.noteWorkboardNodeCreated("o", "source", "corrected_ai"),
       () => helpers.noteWorkboardNodeCreated("o", "source"),
       () => helpers.noteWorkboardNodeDeleted("o", "decision"),
@@ -312,7 +321,32 @@ describe("the workboard allowlist", () => {
       const [name, , dims] = mocked.mock.calls[0] as [string, string, Record<string, unknown>];
       expect(guardWorkboardEvent(name, dims as never)).toEqual({ keep: true, dims });
     }
-    expect(Object.keys(WORKBOARD_EVENT_DIMS)).toHaveLength(41);
+    expect(Object.keys(WORKBOARD_EVENT_DIMS)).toHaveLength(43);
+  });
+
+  it.each(["in", "out", "reset"] as const)("reports zoom %s with only direction and method", (direction) => {
+    for (const method of ["button", "keyboard"] as const) {
+      vi.mocked(logEvent).mockClear();
+      helpers.noteWorkboardZoomChanged("o", direction, method);
+      expect(logEvent).toHaveBeenCalledExactlyOnceWith("workboard.zoom_changed", "o", { direction, method });
+    }
+    expect(WORKBOARD_EVENT_DIMS["workboard.zoom_changed"]).toEqual(["direction", "method"]);
+    expect(readFileSync("src/lib/telemetry-shared.ts", "utf8")).toContain('| "workboard.zoom_changed"');
+  });
+
+  it.each(["button", "menu"] as const)("reports Fit via %s with only via", (via) => {
+    vi.mocked(logEvent).mockClear();
+    helpers.noteWorkboardViewFitted("o", via);
+    expect(logEvent).toHaveBeenCalledExactlyOnceWith("workboard.view_fitted", "o", { via });
+    expect(WORKBOARD_EVENT_DIMS["workboard.view_fitted"]).toEqual(["via"]);
+    expect(readFileSync("src/lib/telemetry-shared.ts", "utf8")).toContain('| "workboard.view_fitted"');
+  });
+
+  it("skips both control events without an organisation", () => {
+    vi.mocked(logEvent).mockClear();
+    helpers.noteWorkboardZoomChanged(undefined, "in", "button");
+    helpers.noteWorkboardViewFitted(undefined, "button");
+    expect(logEvent).not.toHaveBeenCalled();
   });
 
   it("keeps the additive open path for previewed document and deck cards", () => {

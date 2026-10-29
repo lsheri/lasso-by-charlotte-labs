@@ -345,6 +345,10 @@ export type TelemetryEvent =
   | "canvas.zoomed"
   /** Canvas Lab Phase 2: the local work rail changed visibility. State only. */
   | "workboard.rail_toggled"
+  /** TOOLBAR-9c: zoom controls only, never wheel/pinch. Direction and input method. */
+  | "workboard.zoom_changed"
+  /** TOOLBAR-9c: Fit chosen from the toolbar button or overflow menu. */
+  | "workboard.view_fitted"
   /** The person flipped board cards between sketch and real preview. Face only. */
   | "workboard.face_toggled"
   /** The workboard opened, with its content-free entry point. */

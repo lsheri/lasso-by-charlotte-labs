@@ -150,6 +150,8 @@ import {
   noteWorkboardNodeEdited,
   noteWorkboardOpened,
   noteWorkboardRail,
+  noteWorkboardZoomChanged,
+  noteWorkboardViewFitted,
   noteWorkboardRecordVisibility,
   noteWorkboardRelationship,
   noteWorkboardSection,
@@ -1828,14 +1830,14 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       if (!event.ctrlKey && !event.metaKey) return;
       const active = document.activeElement as HTMLElement | null;
       if (active?.closest("textarea,input,[contenteditable='true']")) return;
-      if (event.key === "=" || event.key === "+") { event.preventDefault(); zoomAtCentre(stepZoom(zoomRef.current, "in")); return; }
-      if (event.key === "-" || event.key === "_") { event.preventDefault(); zoomAtCentre(stepZoom(zoomRef.current, "out")); return; }
+      if (event.key === "=" || event.key === "+") { event.preventDefault(); zoomAtCentre(stepZoom(zoomRef.current, "in")); noteWorkboardZoomChanged(orgId, "in", "keyboard"); return; }
+      if (event.key === "-" || event.key === "_") { event.preventDefault(); zoomAtCentre(stepZoom(zoomRef.current, "out")); noteWorkboardZoomChanged(orgId, "out", "keyboard"); return; }
       if (event.key === "0") { event.preventDefault(); fit(true); return; }
-      if (event.key === "1") { event.preventDefault(); zoomAtCentre(1); }
+      if (event.key === "1") { event.preventDefault(); zoomAtCentre(1); noteWorkboardZoomChanged(orgId, "reset", "keyboard"); }
     }
     window.addEventListener("keydown", onZoomKey, { passive: false });
     return () => window.removeEventListener("keydown", onZoomKey);
-  }, [fit, zoomAtCentre]);
+  }, [fit, orgId, zoomAtCentre]);
 
   /** MOB-5: a second finger turns a pan (or nothing) into a pinch; it never starts a card drag, box or link. */
   function onSurfaceTouchDown(event: React.PointerEvent): boolean {
@@ -3364,17 +3366,17 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   });
   toolbarItems.push({
     spec: { id: "fit", width: 36, moveOrder: 2 },
-    row: <ToolbarIcon label="Fit. Bring the whole board into view."><Button size="icon" variant="outline" aria-label="Fit" data-toolbar-control="fit" onClick={() => fit(true)}><GraphiteIcon name="fit" size={20} /></Button></ToolbarIcon>,
-    menu: <DropdownMenuItem onSelect={() => fit(true)}>Fit</DropdownMenuItem>,
+    row: <ToolbarIcon label="Fit. Bring the whole board into view."><Button size="icon" variant="outline" aria-label="Fit" data-toolbar-control="fit" onClick={() => { fit(true); noteWorkboardViewFitted(orgId, "button"); }}><GraphiteIcon name="fit" size={20} /></Button></ToolbarIcon>,
+    menu: <DropdownMenuItem onSelect={() => { fit(true); noteWorkboardViewFitted(orgId, "menu"); }}>Fit</DropdownMenuItem>,
   });
   toolbarItems.push({
     spec: viewportSize.width < 768 ? { id: "zoom", width: 124, moveOrder: 0 } : { id: "zoom", width: 124, pinned: true },
-    menu: <><DropdownMenuItem onSelect={() => zoomAtCentre(stepZoom(zoomRef.current, "in"))}>Zoom in</DropdownMenuItem><DropdownMenuItem onSelect={() => zoomAtCentre(stepZoom(zoomRef.current, "out"))}>Zoom out</DropdownMenuItem></>,
+    menu: <><DropdownMenuItem onSelect={() => { zoomAtCentre(stepZoom(zoomRef.current, "in")); noteWorkboardZoomChanged(orgId, "in", "button"); }}>Zoom in</DropdownMenuItem><DropdownMenuItem onSelect={() => { zoomAtCentre(stepZoom(zoomRef.current, "out")); noteWorkboardZoomChanged(orgId, "out", "button"); }}>Zoom out</DropdownMenuItem></>,
     row: (
       <>
-        <ToolbarIcon label="Zoom out"><Button size="icon" variant="ghost" aria-label="Zoom out" data-toolbar-control="zoom-out" onClick={() => zoomAtCentre(stepZoom(zoomRef.current, "out"))}><GraphiteIcon name="minus" size={18} /></Button></ToolbarIcon>
-        <button type="button" aria-label="Zoom to 100 percent" className="w-10 text-center font-mono text-[10px] text-soft" onClick={() => zoomAtCentre(1)}>{Math.round(zoom * 100)}%</button>
-        <ToolbarIcon label="Zoom in"><Button size="icon" variant="ghost" aria-label="Zoom in" data-toolbar-control="zoom-in" onClick={() => zoomAtCentre(stepZoom(zoomRef.current, "in"))}><GraphiteIcon name="plus" size={18} /></Button></ToolbarIcon>
+        <ToolbarIcon label="Zoom out"><Button size="icon" variant="ghost" aria-label="Zoom out" data-toolbar-control="zoom-out" onClick={() => { zoomAtCentre(stepZoom(zoomRef.current, "out")); noteWorkboardZoomChanged(orgId, "out", "button"); }}><GraphiteIcon name="minus" size={18} /></Button></ToolbarIcon>
+        <button type="button" aria-label="Zoom to 100 percent" className="w-10 text-center font-mono text-[10px] text-soft" onClick={() => { zoomAtCentre(1); noteWorkboardZoomChanged(orgId, "reset", "button"); }}>{Math.round(zoom * 100)}%</button>
+        <ToolbarIcon label="Zoom in"><Button size="icon" variant="ghost" aria-label="Zoom in" data-toolbar-control="zoom-in" onClick={() => { zoomAtCentre(stepZoom(zoomRef.current, "in")); noteWorkboardZoomChanged(orgId, "in", "button"); }}><GraphiteIcon name="plus" size={18} /></Button></ToolbarIcon>
       </>
     ),
   });
