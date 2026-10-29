@@ -19,6 +19,18 @@ export function noteWorkboardOpened(orgId: string | undefined, via: WorkboardOpe
 export function noteWorkboardRail(orgId: string | undefined, state: "collapsed" | "reopened"): void {
   if (orgId) logEvent("workboard.rail_toggled", orgId, { state });
 }
+/**
+ * TOOLBAR-9c: toolbar controls and keyboard zoom shortcuts only, never wheel
+ * or pinch zoom, which emit continuously during a gesture and would flood
+ * the dataset. These events answer whether people use the zoom controls,
+ * intentionally not how often people zoom. Fit's via covers button/menu only.
+ */
+export function noteWorkboardZoomChanged(orgId: string | undefined, direction: "in" | "out" | "reset", method: "button" | "keyboard"): void {
+  if (orgId) logEvent("workboard.zoom_changed", orgId, { direction, method });
+}
+export function noteWorkboardViewFitted(orgId: string | undefined, via: "button" | "menu"): void {
+  if (orgId) logEvent("workboard.view_fitted", orgId, { via });
+}
 export function noteWorkboardFace(orgId: string | undefined, face: "art" | "preview", scope: "board" | "card" = "board"): void {
   if (orgId) logEvent("workboard.face_toggled", orgId, { face, scope });
 }
