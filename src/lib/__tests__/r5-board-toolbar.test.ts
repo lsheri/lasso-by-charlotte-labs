@@ -58,7 +58,7 @@ describe("R5 board toolbar", () => {
 
   it("keeps Add work labelled with its accessible name and tooltip", () => {
     // TOOLBAR-2: Add work carries its words again beside the icon; Info and the example board stay icon-only.
-    expect(toolbar).toMatch(/<ToolbarIcon label="Add work\.[^"]*"><Button size="sm"[^>]*className="lasso-action" aria-label="Add work" data-toolbar-control="add-work"[^\n]*?><GraphiteIcon name="work" size=\{20\} \/>Add work<\/Button>/);
+    expect(toolbar).toMatch(/<ToolbarIcon label="Add work\.[^"]*"><Button size="sm"[^>]*className="lasso-action" aria-label="Add work" data-toolbar-control="add-work"[^\n]*?><GraphiteIcon name="work" size=\{20\} \/><span className="canvas-lab-add-work-label">Add work<\/span><\/Button>/);
     // R9: Details opens the glance popover in place instead of linking away.
     expect(toolbar).toMatch(/<ToolbarIcon label="Info\.[^"]*"><Button size="icon"[^>]*aria-label="Info" data-toolbar-control="details"[^\n]*?><GraphiteIcon name="working-from" size=\{20\} \/><\/Button>/);
     expect(toolbar).toMatch(/<ToolbarIcon label="See an example board\.[^"]*"><Button size="icon"[^>]*aria-label="See an example board" data-toolbar-control="example"[^\n]*?><GraphiteIcon name="example-board" size=\{20\} \/><\/Button>/);
