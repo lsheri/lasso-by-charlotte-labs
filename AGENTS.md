@@ -61,3 +61,4 @@ Tour mirrors board chrome; preserve live behavior.
 - Emit AI spend through detached recordEvent calls from recordUsage with exact content-free dimensions, so mirrors cannot delay AI responses and other event bucketing stays unchanged.
 
 - Workstream frames always render on the live board; drop prompts have no view-mode parameter, so hiding outlines cannot suppress reassignment.
+- Deck strips render as local overlays outside LabCard's measured paper; only the live board opts in, so saved geometry and frozen public surfaces stay unchanged.
