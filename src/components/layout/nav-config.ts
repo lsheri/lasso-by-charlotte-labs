@@ -63,6 +63,7 @@ export type NavGroupId =
   | "coach"
   | "firm"
   | "account"
+  | "sources"
   | "coaching"
   | "guest-account"
   | "workspace";
@@ -182,6 +183,7 @@ export const NAV_GROUPS: NavManifestGroup[] = [
           : "Run the firm",
   },
   { id: "account", label: "Your account" },
+  { id: "sources", label: "Sources", headless: true },
   // Shown only to someone given Review on at least one engagement.
   { id: "coaching", label: "Coaching", show: (ctx) => ctx.canReview },
   { id: "guest-account", label: "Your account", guest: true },
@@ -199,8 +201,8 @@ export const NAV_ITEMS: NavManifestItem[] = [
   { id: "home", placement: "main", group: "landed", label: "Home", to: "/home", icon: "overview" },
   { id: "all-work", placement: "main", group: "landed", label: "All work", to: "/work", icon: "work" },
   { id: "ai-record", placement: "main", group: "landed", label: "All AI Conversations", to: "/ai-record", icon: "ai-record" },
-  // MN-3b: shown only while the workspace holds no work items.
-  { id: "connect_tools", placement: "main", group: "landed", label: "Connect your AI tools", to: "/connectors", icon: "connectors", runtimeOnly: true, show: (ctx) => ctx.workItemCount === 0 },
+  // NAV-1: retired render row; preserve its event dimension id.
+  { id: "connect_tools", retired: true, placement: "main", group: "landed", label: "Connect your AI tools", to: "/connectors", icon: "connectors", runtimeOnly: true, show: (ctx) => ctx.workItemCount === 0 },
   // A partner's extra rows render after the shelves.
   { id: "workshop-keys", placement: "workspace_menu", group: "engagements", label: "Workshop keys", to: "/requests", icon: "members", types: ["partner"], show: (ctx) => ctx.canManageMembers },
   { id: "adding-people", placement: "workspace_menu", group: "engagements", label: "Adding people", to: "/adding-people", icon: "members", types: ["partner"], show: (ctx) => ctx.canManageMembers },
@@ -235,8 +237,8 @@ export const NAV_ITEMS: NavManifestItem[] = [
     show: (ctx) => ctx.affiliated && isBusinessType(ctx.type),
   },
   { id: "settings", placement: "workspace_menu", group: "account", label: "Settings", action: "openSettings", icon: "settings" },
-  // MN-3b: once work has arrived, the sources page lives in the workspace menu.
-  { id: "connectors", placement: "workspace_menu", group: "account", legacyGroup: "landed", label: "Where work comes from", to: "/connectors", icon: "connectors", show: (ctx) => ctx.workItemCount !== 0 },
+  // NAV-1: a stable, heading-free footer row regardless of work count.
+  { id: "connectors", placement: "bottom", group: "sources", legacyGroup: "landed", label: "Sources", to: "/connectors", icon: "connectors" },
   { id: "people-you-coach", placement: "main", group: "coaching", label: "People you coach", to: "/coaching", icon: "members" },
   { id: "guest-one-on-one", placement: "main", group: "guest-account", label: "1:1 prep", to: "/one-on-one", icon: "one-on-one" },
   { id: "guest-settings", placement: "workspace_menu", group: "guest-account", label: "Settings", action: "openSettings", icon: "settings" },
