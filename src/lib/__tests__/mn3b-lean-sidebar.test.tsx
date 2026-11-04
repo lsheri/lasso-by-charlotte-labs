@@ -80,29 +80,29 @@ const LANDED = ["# What landed", "Home -> /home", "All work -> /work", "All AI C
 
 describe("MN-3b lean sidebar", () => {
   it("company admin with no work: Connect your AI tools shows in the sidebar, not the menu", () => {
-    expect(sidebarRows()).toEqual([...LANDED, "Connect your AI tools -> /connectors", "# Where it goes", "Look back -> /archive", "Your coach -> /one-on-one"]);
+    expect(sidebarRows()).toEqual([...LANDED, "# Where it goes", "Look back -> /archive", "Your coach -> /one-on-one", "Sources -> /connectors"]);
     expect(menuIds()).toEqual(["firm-view", "members", "settings", "trust", "why", "feedback", "sign-out"]);
   });
   it("company admin with five work items: the sources page moves into the menu after Settings", () => {
     state.work = 5;
-    expect(sidebarRows()).toEqual([...LANDED, "# Where it goes", "Look back -> /archive", "Your coach -> /one-on-one"]);
-    expect(menuIds()).toEqual(["firm-view", "members", "settings", "connectors", "trust", "why", "feedback", "sign-out"]);
+    expect(sidebarRows()).toEqual([...LANDED, "# Where it goes", "Look back -> /archive", "Your coach -> /one-on-one", "Sources -> /connectors"]);
+    expect(menuIds()).toEqual(["firm-view", "members", "settings", "trust", "why", "feedback", "sign-out"]);
     const view = mount(<WorkspaceMenu />);
-    expect(within(openMenu()).getByText("Where work comes from")).toBeTruthy();
+    expect(within(openMenu()).queryByText("Sources")).toBeNull();
     view.unmount();
   });
   it("partner admin never sees Your coach", () => {
     state.type = "partner"; state.work = 5;
-    expect(sidebarRows()).toEqual([...LANDED, "# Your clients", "Look back -> /archive"]);
+    expect(sidebarRows()).toEqual([...LANDED, "# Your clients", "Look back -> /archive", "Sources -> /connectors"]);
   });
   it("personal admin keeps Who you share with", () => {
     state.type = "personal"; state.work = 5;
-    expect(sidebarRows()).toEqual([...LANDED, "# Where it goes", "Look back -> /archive", "# Who you share with", "Your coaches -> /members"]);
+    expect(sidebarRows()).toEqual([...LANDED, "# Where it goes", "Look back -> /archive", "# Who you share with", "Your coaches -> /members", "Sources -> /connectors"]);
   });
   it("edu admin: classes after the tree, then the bottom rows", () => {
     state.type = "edu"; state.work = 5;
     expect(sidebarRows()).toEqual([...LANDED, "# Workboards",
-      "Look back -> /archive", "Your coach -> /one-on-one", "# Who you share with", "Your coaches -> /members"]);
+      "Look back -> /archive", "Your coach -> /one-on-one", "# Who you share with", "Your coaches -> /members", "Sources -> /connectors"]);
   });
   it("guest keeps the 1:1 prep row", () => {
     state.role = "coach"; state.review = true;
@@ -110,7 +110,7 @@ describe("MN-3b lean sidebar", () => {
   });
   it("People you coach sits between What landed and Where it goes", () => {
     state.role = "em"; state.review = true; state.work = 5;
-    expect(sidebarRows()).toEqual([...LANDED, "# Coaching", "People you coach -> /coaching", "# Where it goes", "Look back -> /archive", "Your coach -> /one-on-one"]);
+    expect(sidebarRows()).toEqual([...LANDED, "# Coaching", "People you coach -> /coaching", "# Where it goes", "Look back -> /archive", "Your coach -> /one-on-one", "Sources -> /connectors"]);
   });
   it("Your coach shows the unread note count only above zero", () => {
     state.unread = 2;
@@ -133,7 +133,7 @@ describe("MN-3b lean sidebar", () => {
   });
   it("Look back, Your coach and Connect your AI tools emit their manifest ids", () => {
     mount(<SidebarNav />);
-    for (const [name, item] of [["Look back", "look_back"], ["Your coach", "your_coach"], ["Connect your AI tools", "connect_tools"]] as const) {
+    for (const [name, item] of [["Look back", "look_back"], ["Your coach", "your_coach"], ["Sources", "connectors"]] as const) {
       fireEvent.click(screen.getByRole("link", { name }));
       expect(state.events).toHaveBeenLastCalledWith("nav.opened", "o1", { item, surface: "sidebar" });
     }
