@@ -78,12 +78,12 @@ afterEach(cleanup);
 
 const LANDED = ["# What landed", "Home -> /home", "All work -> /work", "All AI Conversations -> /ai-record"];
 
-describe("MN-3b lean sidebar", () => {
+describe("NAV-1 sidebar and the sources row", () => {
   it("company admin with no work: Connect your AI tools shows in the sidebar, not the menu", () => {
     expect(sidebarRows()).toEqual([...LANDED, "# Where it goes", "Look back -> /archive", "Your coach -> /one-on-one", "Sources -> /connectors"]);
     expect(menuIds()).toEqual(["firm-view", "members", "settings", "trust", "why", "feedback", "sign-out"]);
   });
-  it("company admin with five work items: the sources page moves into the menu after Settings", () => {
+  it("company admin with five work items: Sources stays in the sidebar and is absent from the menu", () => {
     state.work = 5;
     expect(sidebarRows()).toEqual([...LANDED, "# Where it goes", "Look back -> /archive", "Your coach -> /one-on-one", "Sources -> /connectors"]);
     expect(menuIds()).toEqual(["firm-view", "members", "settings", "trust", "why", "feedback", "sign-out"]);
@@ -131,7 +131,7 @@ describe("MN-3b lean sidebar", () => {
     expect(createItems()).toEqual(expected);
     expect(state.events).toHaveBeenCalledWith("nav.opened", "o1", { item: "create_menu", surface: "sidebar" });
   });
-  it("Look back, Your coach and Connect your AI tools emit their manifest ids", () => {
+  it("Look back, Your coach and Sources emit their manifest ids", () => {
     mount(<SidebarNav />);
     for (const [name, item] of [["Look back", "look_back"], ["Your coach", "your_coach"], ["Sources", "connectors"]] as const) {
       fireEvent.click(screen.getByRole("link", { name }));
