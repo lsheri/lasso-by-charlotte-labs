@@ -34,7 +34,8 @@ describe("partner navigation", () => {
       expect(partner.emptyState).toEqual(group.emptyState);
       if (partner.label !== group.label) diffs.push(`${group.label} -> ${partner.label}`);
     }
-    expect(diffs).toEqual(["Where it goes -> Your clients", "Run the firm -> Your practice"]);
+    // NAV-2: Boards is one string for every workspace type, so only the legacy firm heading differs.
+    expect(diffs).toEqual(["Run the firm -> Your practice"]);
   });
 
   it("omits Your coach for partners and retains it for company workspaces", () => {

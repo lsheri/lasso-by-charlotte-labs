@@ -13,7 +13,7 @@ describe("pass 142: your organization", () => {
     // SB-N1: the row itself leads Look back now, above the past chats.
     const lookback = navGroups.find((g) => g.id === "lookback");
     expect(lookback?.items[0]?.label).toBe("Past work");
-    const shelves = navGroups.find((g) => g.label === "Where it goes");
+    const shelves = navGroups.find((g) => g.label === "Boards"); // NAV-2: the shelves group is Boards
     expect(shelves?.items.some((i) => i.to === "/archive")).toBe(false);
     expect(navGroups.some((g) => g.label === "Firm")).toBe(false);
   });

@@ -60,7 +60,7 @@ describe("MN-3a workspace menu", () => {
     ["company", "admin", "FIRM · ADMIN", ["firm-view", "members", "settings", "trust", "why", "feedback", "sign-out"]],
     ["company", "em", "FIRM · MEMBER", ["settings", "trust", "why", "feedback", "sign-out"]],
     ["partner", "admin", "PARTNER · ADMIN", ["workshop-keys", "adding-people", "members", "settings", "trust", "why", "feedback", "sign-out"]],
-    ["personal", "admin", "INDIVIDUAL", ["settings", "trust", "why", "feedback", "sign-out"]],
+    ["personal", "admin", "INDIVIDUAL", ["feedback", "sign-out"]], // NAV-2: the switcher carries only Feedback and Sign out
     ["edu", "admin", "SCHOOL", ["settings", "trust", "why", "feedback", "sign-out"]],
     ["company", "coach", "FIRM · MEMBER", ["guest-settings", "trust", "why", "feedback", "sign-out"]],
   ])("%s %s: name, type and ordered menu", (type, role, label, expected) => {
@@ -94,8 +94,14 @@ describe("MN-3a workspace menu", () => {
     expect(within(openMenu()).queryByText("Your coaches")).toBeNull();
   });
   it.each(["admin", "lead"])("company %s sees Firm view and member role does not", (role) => {
-    state.role = role; mount(<WorkspaceMenu />);
-    expect(within(openMenu()).getByText("Firm view")).toBeTruthy();
+    // NAV-2: Firm view is a rail row now, not a switcher row.
+    state.role = role; mount(<SidebarNav />);
+    expect(screen.getByRole("link", { name: "Firm view" })).toBeTruthy();
+  });
+  it("NAV-2: the Firm view rail row emits its manifest id", () => {
+    mount(<SidebarNav />);
+    fireEvent.click(screen.getByRole("link", { name: "Firm view" }));
+    expect(state.events).toHaveBeenLastCalledWith("nav.opened", "o1", { item: "firm-view", surface: "sidebar" });
   });
   it("sidebar links emit the manifest ID and drawer uses drawer surface", () => {
     const view = mount(<SidebarNav />);
@@ -109,7 +115,8 @@ describe("MN-3a workspace menu", () => {
     fireEvent.click(within(menu).getByText("Settings"));
     expect(state.events).toHaveBeenLastCalledWith("nav.opened", "o1", { item: "settings", surface: "drawer" });
   });
-  it.each(["firm-view", "members", "trust", "why", "feedback", "sign-out"])("menu action %s emits its exact dimensions", (id) => {
+  // NAV-2: firm-view moved to the rail; members, trust and why retired to Settings.
+  it.each(["feedback", "sign-out"])("menu action %s emits its exact dimensions", (id) => {
     mount(<WorkspaceMenu />); const menu = openMenu();
     const row = menu.querySelector(`[data-nav-item="${id}"]`);
     if (!row) throw new Error("Missing menu row");
