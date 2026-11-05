@@ -11,7 +11,8 @@ vi.mock("@/components/reflect/use-ask-lasso", () => ({ useAskLasso: () => ({
   sourcesByMessage: {}, pending: false, draft: "", mentionMatches: [], selectedItems: [], composerRef: { current: null }, bottomRef: { current: null },
 }) }));
 vi.mock("@/components/oneonone/SaveForOneOnOne", () => ({ SaveForOneOnOneDialog: () => null }));
-vi.mock("@tanstack/react-router", () => ({ Link: ({ children }: { children: React.ReactNode }) => <a>{children}</a> }));
+vi.mock("@tanstack/react-router", () => ({ Link: ({ children }: { children: React.ReactNode }) => <a>{children}</a>, useRouter: () => ({ navigate: vi.fn() }), useNavigate: () => vi.fn(), useRouterState: () => ({}) }));
+vi.mock("@/components/work/ThreadViewerById", () => ({ ThreadViewerById: () => null }));
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BoardAsk } from "@/components/canvas-lab/BoardAsk";
