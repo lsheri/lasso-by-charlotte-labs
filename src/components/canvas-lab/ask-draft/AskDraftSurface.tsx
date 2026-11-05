@@ -6,6 +6,7 @@ import type { AskLasso } from "@/components/reflect/use-ask-lasso";
 import type { AskTab } from "@/components/reflect/ask-dock-state";
 import type { AskSectionChoice } from "@/components/canvas-lab/BoardAsk";
 import { noteWorkboardAskMoved } from "@/components/canvas-lab/canvas-lab-telemetry";
+import { AskPlacingGhost } from "@/components/canvas-lab/ask-draft/AskPlacing";
 import {
   ASK_DRAFT_WIDTH, askDropTargets, clampFree, readAskPosition, resolveAskDrop, writeAskPosition,
   type AskDraft, type AskDraftPosition, type SavedAskPosition,
@@ -100,6 +101,7 @@ export function AskDraftSurface(props: Props) {
 
   return createPortal(
     <>
+      <AskPlacingGhost host={host} />
       {drag ? (
         <div className="ask-draft-targets" aria-hidden="true">
           {(Object.keys(targets) as Array<keyof typeof targets>).map((key) => {

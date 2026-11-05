@@ -27,6 +27,8 @@ import { BoardToolbarSurface, type BoardToolbarItem } from "@/components/canvas-
 import { BoardCardFaceMenu } from "@/components/canvas-lab/BoardCardFaceMenu";
 
 import { BoardAsk } from "@/components/canvas-lab/BoardAsk";
+import { consumeAskPlacingPress } from "@/components/canvas-lab/ask-draft/AskPlacing";
+import { autoPinPoint, revealPan, writeAskPin } from "@/lib/ask-draft";
 import { LabAnswerCard } from "@/components/canvas-lab/LabAnswerCard";
 import { useRegisterAskLasso } from "@/components/reflect/ask-lasso-context";
 import { LassoThinkingMark } from "@/components/reflect/LassoThinkingMark";
@@ -2704,15 +2706,27 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
    * it was written in, and stored references to the turns it read. The person
    * who asked is the author of the record.
    */
-  async function keepAnswerAsCard(answer: KeptAnswer, options?: { at?: Point; via?: "button" | "drag" }) {
-    if (!canKeepAnswer({ onBoard: true, finished: true, canEdit: canAddWork }) || keepBusy) return;
+  async function keepAnswerAsCard(answer: KeptAnswer, options?: { at?: Point; via?: "button" | "drag" }): Promise<string | null> {
+    const via = answer.pinVia ?? options?.via;
+    if (!canKeepAnswer({ onBoard: true, finished: true, canEdit: canAddWork }) || keepBusy) return null;
     setKeepBusy(true);
     try {
-      if (!(await materialize())) return;
+      if (!(await materialize())) return null;
       let at: Point;
+      const autoAt = via === "auto" && !options?.at
+        ? autoPinPoint(placementRectsForNodes(contextNodes), [
+          ...placementRectsForNodes(visibleNodes),
+          ...placementRectsForFrames(boardFrames.map((frame) => ({ id: frame.id, label: frame.name, x: frame.x, y: frame.y, width: frame.width, height: frame.height }))),
+        ])
+        : null;
       if (options?.at) {
         // A drop places the card's top-left exactly where it was let go.
         at = options.at;
+      } else if (autoAt) {
+        // ASK-D2: an attached ask lands beside its cards; pan just enough to show it.
+        at = autoAt;
+        const nextPan = revealPan(at, panStateRef.current, zoomRef.current || 1, viewportSize);
+        if (nextPan) setPan(nextPan);
       } else {
         const anchor = boardPointFromScreen(viewportCentre());
         const taken: PlacementRect[] = [
@@ -2724,9 +2738,16 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       const input = answerNodeInput({ clientKey: `answer:${crypto.randomUUID()}`, at, text: answer.text });
       const result = await lab.persist({ type: "node_create", node: input });
       report(result, "node", "create");
-      if (result.status !== "saved" || !result.created?.nodeId) return;
+      if (result.status !== "saved" || !result.created?.nodeId) return null;
       const nodeId = result.created.nodeId;
-      noteWorkboardNodeCreated(orgId, "answer", undefined, options?.via);
+      noteWorkboardNodeCreated(orgId, "answer", undefined, via);
+      // ASK-D2 draft plumbing: only a draft keep carries a session id.
+      if (answer.sessionId) {
+        let store: Storage | null = null;
+        try { store = window.localStorage; } catch { store = null; }
+        writeAskPin(nodeId, answer.sessionId, store);
+      }
+      if (via === "auto") setSelected([]);
       const cites = answerCiteRows(nodeId, answer.reads);
       if (cites.length > 0) await supabase.from("answer_cites").insert(cites);
       // Re-read the saved board and apply it, so the kept card is on the stage
@@ -2734,6 +2755,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       await reloadDurableBoard();
 
       setAnnouncement(KEEP_ANSWER_ANNOUNCEMENT);
+      return nodeId;
     } finally {
       setKeepBusy(false);
     }
@@ -3428,7 +3450,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
             ) : null}
           </div>
         ) : null}
-        <div ref={shellRef} tabIndex={-1} onDragEnter={fileDrop.handlers.onDragEnter} onDragLeave={fileDrop.handlers.onDragLeave} onDragOverCapture={fileDrop.handlers.onDragOver} onDragOver={(event) => { if (!canAddWork || !isAnswerDrag(event.dataTransfer.types)) return; event.preventDefault(); event.dataTransfer.dropEffect = "copy"; }} onDropCapture={fileDrop.handlers.onDrop} onDrop={(event) => { if (!isAnswerDrag(event.dataTransfer.types)) return; event.preventDefault(); delete document.body.dataset["answerDrag"]; const answer = parseAnswerDrop(event.dataTransfer.getData(ANSWER_DRAG_MIME)); if (!answer) return; void keepAnswerAsCard(answer, { at: stagePoint(event.clientX, event.clientY), via: "drag" }); }} onPointerDownCapture={(event) => { if (event.target instanceof Element && event.target.closest(".canvas-lab-floating-tools")) return; if (onSurfaceTouchDown(event)) return; if (event.button === 0 && spaceRef.current) { event.preventDefault(); event.stopPropagation(); startSpacePan(event); } }} onPointerDown={(event) => { const target = event.target as HTMLElement; const empty = event.target === event.currentTarget || target.dataset["testid"] === "canvas-lab-stage"; if (event.button === 0 && empty && drawTool) { event.preventDefault(); const at = stagePoint(event.clientX, event.clientY); drawingRef.current = { from: at, to: at }; setDrawing({ from: at, to: at }); return; } if (event.button === 1 && empty) { event.preventDefault(); startSpacePan(event); return; } if (event.button === 0 && empty) { event.preventDefault(); window.getSelection()?.removeAllRanges(); event.currentTarget.classList.add("select-none"); setKeyboardId(null); setSelectedFrameId(null); setSelectedLinkId((current) => relationshipSelection(current, "deselect")); if (event.pointerType === "touch") { event.currentTarget.classList.remove("select-none"); startSpacePan(event); return; } const at = stagePoint(event.clientX, event.clientY); const screen = { x: event.clientX, y: event.clientY }; marqueeRef.current = { fromScreen: screen, fromBoard: at, toScreen: screen, toBoard: at }; setInteraction("marquee"); } }} onContextMenu={(event) => { const target = event.target as HTMLElement; const empty = event.target === event.currentTarget || target.dataset["testid"] === "canvas-lab-stage"; if (!empty || !canAddWork) return; event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect(); const screen = { x: event.clientX - rect.left, y: event.clientY - rect.top }; setBoardMenu({ screen, board: boardPointFromScreen(screen) }); }} data-space-pan={spaceHeld} data-drawing={drawTool ? "true" : undefined} onScroll={(event) => keepViewportUnscrolled(event.currentTarget)} data-interacting={interaction !== "idle" || drawing !== null || viewportMoving ? "true" : undefined} className="canvas-lab-surface relative min-h-0 flex-1 overflow-hidden">
+        <div ref={shellRef} tabIndex={-1} onDragEnter={fileDrop.handlers.onDragEnter} onDragLeave={fileDrop.handlers.onDragLeave} onDragOverCapture={fileDrop.handlers.onDragOver} onDragOver={(event) => { if (!canAddWork || !isAnswerDrag(event.dataTransfer.types)) return; event.preventDefault(); event.dataTransfer.dropEffect = "copy"; }} onDropCapture={fileDrop.handlers.onDrop} onDrop={(event) => { if (!isAnswerDrag(event.dataTransfer.types)) return; event.preventDefault(); delete document.body.dataset["answerDrag"]; const answer = parseAnswerDrop(event.dataTransfer.getData(ANSWER_DRAG_MIME)); if (!answer) return; void keepAnswerAsCard(answer, { at: stagePoint(event.clientX, event.clientY), via: "drag" }); }} onPointerDownCapture={(event) => { if (consumeAskPlacingPress(event, stagePoint)) return; if (event.target instanceof Element && event.target.closest(".canvas-lab-floating-tools")) return; if (onSurfaceTouchDown(event)) return; if (event.button === 0 && spaceRef.current) { event.preventDefault(); event.stopPropagation(); startSpacePan(event); } }} onPointerDown={(event) => { const target = event.target as HTMLElement; const empty = event.target === event.currentTarget || target.dataset["testid"] === "canvas-lab-stage"; if (event.button === 0 && empty && drawTool) { event.preventDefault(); const at = stagePoint(event.clientX, event.clientY); drawingRef.current = { from: at, to: at }; setDrawing({ from: at, to: at }); return; } if (event.button === 1 && empty) { event.preventDefault(); startSpacePan(event); return; } if (event.button === 0 && empty) { event.preventDefault(); window.getSelection()?.removeAllRanges(); event.currentTarget.classList.add("select-none"); setKeyboardId(null); setSelectedFrameId(null); setSelectedLinkId((current) => relationshipSelection(current, "deselect")); if (event.pointerType === "touch") { event.currentTarget.classList.remove("select-none"); startSpacePan(event); return; } const at = stagePoint(event.clientX, event.clientY); const screen = { x: event.clientX, y: event.clientY }; marqueeRef.current = { fromScreen: screen, fromBoard: at, toScreen: screen, toBoard: at }; setInteraction("marquee"); } }} onContextMenu={(event) => { const target = event.target as HTMLElement; const empty = event.target === event.currentTarget || target.dataset["testid"] === "canvas-lab-stage"; if (!empty || !canAddWork) return; event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect(); const screen = { x: event.clientX - rect.left, y: event.clientY - rect.top }; setBoardMenu({ screen, board: boardPointFromScreen(screen) }); }} data-space-pan={spaceHeld} data-drawing={drawTool ? "true" : undefined} onScroll={(event) => keepViewportUnscrolled(event.currentTarget)} data-interacting={interaction !== "idle" || drawing !== null || viewportMoving ? "true" : undefined} className="canvas-lab-surface relative min-h-0 flex-1 overflow-hidden">
           <BoardFileDropOverlay show={fileDrop.over} />
           <div className="canvas-lab-board-status" onPointerDown={(event) => event.stopPropagation()}>
         {lab.saveState.status === "conflict" ? <div data-testid="canvas-lab-banner" className="canvas-lab-banner" role="alert"><p className="text-[13px] text-foreground">A newer version of this record was saved.</p><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => resolveConflict("latest")}>Load latest</Button><Button size="sm" variant="outline" onClick={() => resolveConflict("retry")}>Retry my change</Button></div></div> : null}
@@ -3548,7 +3570,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
         </div>
         {boardReady && opening ? <div className={`pointer-events-none absolute inset-0 z-40 flex ${unfold.className}`} aria-hidden={!unfold.still}>{unfold.still ? <span className="sr-only">{unfold.reduced}</span> : null}<span className="canvas-lab-unfold-panel" /><span className="canvas-lab-unfold-panel" /><span className="canvas-lab-unfold-panel" /></div> : null}
       </main>
-      {profile?.id && orgId ? <BoardAsk floatHost={askFloatHost} sectionSource={sectionAskSource} sectionChoices={askSectionChoices} onPickSection={pickAskSection} open={askOpen} onOpenChange={(open) => { setAskOpen(open); if (!open) setAskSection(null); }} engagementId={engagementId} engagementTitle={title} profileId={profile.id} orgId={orgId} canKeep={canAddWork} onKeep={(answer, via) => void keepAnswerAsCard(answer, { via: via ?? "button" })} boardContextHasPicks={contextNodes.length > 0} boardContextItemIds={contextNodes.flatMap((node) => { const item = itemByNode(node); return item ? [item.id] : []; })} /> : null}
+      {profile?.id && orgId ? <BoardAsk floatHost={askFloatHost} sectionSource={sectionAskSource} sectionChoices={askSectionChoices} onPickSection={pickAskSection} open={askOpen} onOpenChange={(open) => { setAskOpen(open); if (!open) setAskSection(null); }} engagementId={engagementId} engagementTitle={title} profileId={profile.id} orgId={orgId} canKeep={canAddWork} onKeep={(answer, via, at) => keepAnswerAsCard(answer, at ? { via: via ?? "button", at } : { via: via ?? "button" })} boardContextHasPicks={contextNodes.length > 0} boardContextItemIds={contextNodes.flatMap((node) => { const item = itemByNode(node); return item ? [item.id] : []; })} /> : null}
       {canAddWork && suggestOpen ? <BoardSuggestionSurface mobile={suggestionMobile} onClose={closeSuggestions}>
         {suggestApplied.length === 0 ? <SuggestStructurePanel state={suggestState} structures={suggestions} parts={suggestParts} shortfall={suggestShortfall} error={suggestError} onSubmit={(text, kind) => void submitSuggestions(text, kind)} onChoose={(id) => void chooseSuggestion(id)} onCancel={closeSuggestions} /> : <SuggestionApplyResult regions={suggestApplied} busy={suggestBusy} message={suggestRemoval} onRemove={() => void removeSuggestion()} onClose={closeSuggestions} />}
         {suggestApplied.length === 0 && suggestRemoval ? <p role="alert" className="text-base text-destructive">{suggestRemoval}</p> : null}

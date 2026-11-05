@@ -8429,3 +8429,11 @@ main[data-ask-lock] .canvas-lab-floating-tools-wrapper { left: calc(12px + var(-
 .ask-draft-targets { position: absolute; inset: 0; z-index: 29; pointer-events: none; }
 .ask-draft-targets span { position: absolute; border: 2px dashed var(--nb-graphite); border-radius: 16px; }
 .ask-draft-targets span[data-hover="true"] { background: color-mix(in srgb, var(--hand-live) 42%, transparent); }
+/* ASK-D2: preview-gated pinning. */
+.ask-draft-ghost { position: absolute; z-index: 31; width: 240px; padding: 10px 12px; transform: translate(8px, 8px); border: 1.4px solid var(--nb-lasso-green); border-radius: var(--radius-md); background: var(--nb-white); box-shadow: var(--shadow-float); font-size: 13px; color: var(--muted-foreground); pointer-events: none; }
+.ask-draft-pinned-chat { margin-top: 8px; border-top: 1px solid var(--nb-rule); padding-top: 6px; }
+.ask-draft-pinned-chat-row { display: flex; width: 100%; align-items: center; justify-content: space-between; font-size: 12px; color: var(--foreground); }
+.ask-draft-pinned-chat-note { margin-top: 6px; font-size: 12px; color: var(--muted-foreground); }
+.ask-draft-pinned-chat-list { margin-top: 6px; display: flex; flex-direction: column; gap: 8px; font-size: 12px; line-height: 1.45; }
+.ask-draft-pinned-chat-list p { white-space: pre-wrap; color: var(--foreground); }
+.ask-draft-pinned-chat-who { font-size: 11px; font-weight: 600; color: var(--muted-foreground); }
