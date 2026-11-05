@@ -9,6 +9,9 @@ import type { AskSectionChoice } from "@/components/canvas-lab/BoardAsk";
 import { AskPastList, type PinnedAnswerRow } from "@/components/canvas-lab/ask-draft/AskPastList";
 import { noteWorkboardAskMoved, noteWorkboardAskView } from "@/components/canvas-lab/canvas-lab-telemetry";
 import { AskPlacingGhost } from "@/components/canvas-lab/ask-draft/AskPlacing";
+import { AskReadingLines } from "@/components/canvas-lab/ask-draft/AskReadingLines";
+import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
+import { LassoThinkingMark } from "@/components/reflect/LassoThinkingMark";
 import { readAskPosition, writeAskPosition, type AskDraft } from "@/lib/ask-draft";
 import { ASK_DOCK_CONFIG, DOCK_SPOTS, useAskDock, type DockId } from "@/lib/ask-dock-engine";
 
@@ -31,11 +34,13 @@ type Props = {
   onPickSection?: ((frameId: string) => void) | undefined;
   pinnedAnswers?: PinnedAnswerRow[] | undefined;
   onJumpToAnswer?: ((nodeId: string) => void) | undefined;
+  /** ASK-LOOK-1: board node ids of the picked cards Lasso reads, for draft b's reading lines. */
+  readingNodeIds?: string[] | undefined;
 };
 
 const FOOT_H = 34;
 
-const HEADER_H = 44;
+const HEADER_H = 46;
 
 /** ASK-B1: Ask Lasso floating over the board, carried by the dock engine. Preview-gated. */
 export function AskDraftSurface(props: Props) {
@@ -43,6 +48,7 @@ export function AskDraftSurface(props: Props) {
   const bodyRef = useRef<HTMLDivElement>(null);
   const initial = useRef(readAskPosition(draft, safeStore())).current;
   const [folded, setFolded] = useState(false);
+  const [linesShowing, setLinesShowing] = useState(false);
   const empty = props.tab === "messages" && (ask.messages ?? []).length === 0;
   const collapsed = empty || folded;
   const foldedRef = useRef(folded);
@@ -138,6 +144,7 @@ export function AskDraftSurface(props: Props) {
           ))}
         </div>
       ) : null}
+      {draft === "b" && ask.pending && (props.readingNodeIds?.length ?? 0) > 0 ? <AskReadingLines host={host} surfaceRef={dock.surfaceRef} nodeIds={props.readingNodeIds ?? []} onShowing={setLinesShowing} /> : null}
       <section
         ref={dock.surfaceRef as RefObject<HTMLElement>}
         aria-label="Ask Lasso"
@@ -146,6 +153,7 @@ export function AskDraftSurface(props: Props) {
         data-collapsed={collapsed ? "true" : undefined}
         data-locked={locked ? "true" : undefined}
         data-dragging={dock.carried ? "true" : undefined}
+        data-thinking={ask.pending ? "true" : undefined}
         onPointerDown={(event) => { event.stopPropagation(); dock.bind.onPointerDown(event); }}
         onPointerMove={dock.bind.onPointerMove}
         onPointerUp={dock.bind.onPointerUp}
@@ -158,6 +166,13 @@ export function AskDraftSurface(props: Props) {
               {[2, 8, 14].flatMap((cy) => [2, 8].map((cx) => <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r="1.5" fill="currentColor" />))}
             </svg>
           </div>
+          {draft === "b" ? (
+            <span className="ask-draft-mark" aria-hidden="true">
+              {ask.pending && !linesShowing
+                ? <LassoThinkingMark kind="signature" size={22} thinking persistent />
+                : <LassoLoopMark className="h-[22px] w-[22px]" />}
+            </span>
+          ) : null}
           <span className="ask-draft-title">Ask Lasso</span>
           {collapsed ? null : (
             <button type="button" className="ask-draft-head-btn ask-draft-new" onClick={() => { ask.newSession(); props.onTab("messages"); }}>New ask</button>

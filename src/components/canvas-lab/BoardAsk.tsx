@@ -37,6 +37,8 @@ type Props = {
   /** ASK-B2: answers pinned on this board, for the past list in the floating draft only. */
   pinnedAnswers?: { nodeId: string; durableId: string | null; text: string }[] | undefined;
   onJumpToAnswer?: ((nodeId: string) => void) | undefined;
+  /** ASK-LOOK-1: picked board nodes with their work item ids, for draft b's reading lines. */
+  readingNodes?: { nodeId: string; itemId: string }[] | undefined;
 };
 
 /**
@@ -91,6 +93,7 @@ function BoardAskPanel(props: Props & { draft?: AskDraft | null; pendingSessionI
   }, [pendingSessionId]);
 
   if (props.draft && props.floatHost) {
+    const readingNodeIds = props.sectionSource ? [] : (props.readingNodes ?? []).filter((row) => ask.mapped.some((item) => item.id === row.itemId)).map((row) => row.nodeId);
     const surface = (
       <AskBoardPickedContext.Provider value={ask.boardPickActive}>
         <AskDraftSurface
@@ -108,6 +111,7 @@ function BoardAskPanel(props: Props & { draft?: AskDraft | null; pendingSessionI
           onPickSection={props.onPickSection}
           pinnedAnswers={props.pinnedAnswers}
           onJumpToAnswer={props.onJumpToAnswer}
+          readingNodeIds={readingNodeIds}
         />
       </AskBoardPickedContext.Provider>
     );
