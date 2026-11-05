@@ -1,4 +1,5 @@
 import { useBoardMentionPeople } from "@/hooks/use-board-mention-people";
+import { useBoardPaste } from "@/components/canvas-lab/useBoardPaste";
 import { stickyMentionCandidates } from "@/lib/mention-editor";
 import { displayName } from "@/lib/work-item-name";
 import { boardHueIndex } from "@/lib/board-hue";
@@ -759,6 +760,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   const canAddWork = lab.board?.canEditStructure !== false;
   // DD1-a: files dropped from the desktop land at the release point.
   const fileDrop = useBoardFileDrop({ enabled: canAddWork, toBoard: (x, y) => stagePoint(x, y), place: (ids, at) => addWorkToBoard(ids, "upload", at), placeImage: (image, at) => addImageToBoard(image, at) });
+  useBoardPaste({ enabled: canAddWork, shellRef, toBoard: (x, y) => stagePoint(x, y), viewportPoint: () => boardPointFromScreen(viewportCentre()), addFiles: fileDrop.addFiles, addText: (text, at) => addSticky(at, text), orgId });
   const showExample = boardIsNearEmpty(visibleNodes);
   const loadingBoard = isLoading || lab.boardLoading;
   // SH-7a: a board from another workspace opens in place, marked as shared.
@@ -3257,25 +3259,26 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     setAnnouncement("Text block added.");
   }
 
-  async function addSticky(at = boardPointFromScreen(viewportCentre())) {
+  async function addSticky(at = boardPointFromScreen(viewportCentre()), text?: string): Promise<boolean> {
     const id = `sticky:${crypto.randomUUID()}`;
     const { width, height } = WORKBOARD_STICKY_DEFAULT_SIZE;
     const node: LabNode = {
-      id, clientKey: id, kind: "sticky", frame: null, title: "Sticky", summary: "", typeLabel: "sticky",
+      id, clientKey: id, kind: "sticky", frame: null, title: "Sticky", summary: text ?? "", typeLabel: "sticky",
       ownership: "yours", textSize: "body", textWeight: "regular", textColour: "ink", stickyFill: "yellow", local: true,
       x: Math.round(at.x - width / 2), y: Math.round(at.y - height / 2), width, height,
     };
     nodesRef.current = [...nodesRef.current, node];
     setNodes((current) => [...(current ?? []), node]);
-    setKeyboardId(id);
+    if (text === undefined) setKeyboardId(id);
     if (!(await ensureNodeDurable(id))) {
       nodesRef.current = nodesRef.current.filter((entry) => entry.id !== id);
       setNodes((current) => current?.filter((entry) => entry.id !== id) ?? current);
       setAnnouncement("That sticky could not be saved.");
-      return;
+      return false;
     }
     noteWorkboardNodeCreated(orgId, "sticky");
     setAnnouncement("Sticky added.");
+    return true;
   }
 
   /** DD1-f: a dropped image lands at the drop point, sized to fit 420px on its longest edge. */

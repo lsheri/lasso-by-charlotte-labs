@@ -358,6 +358,7 @@ export type TelemetryEvent =
   | "workboard.node_moved"
   /** ASK-D1: preview-only floating Ask moved or locked. Closed position and draft only. */
   | "workboard.ask_moved"
+  | "workboard.pasted"
   /** ASK-D2: preview-only pinned answer opened its chat. Draft only. */
   | "workboard.pinned_chat_opened"
   /** The workboard opened, with its content-free entry point. */

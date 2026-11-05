@@ -12,7 +12,7 @@ import { buildUploadSourceMeta, storageObjectKey } from "@/lib/upload-payload";
 import { workTypeForFile } from "@/lib/work-types";
 
 /** How a file came in: the upload button, or a file dropped on the board. */
-export type CaptureChannel = "upload" | "drop";
+export type CaptureChannel = "upload" | "drop" | "paste";
 
 /**
  * One capture path for files, so the upload button and the drop zone on Find
