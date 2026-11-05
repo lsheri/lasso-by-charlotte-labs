@@ -37,6 +37,10 @@ export function deckSlidesBand(count: number): "1_5" | "6_10" | "11_20" | "21_pl
 export function noteWorkboardDeckExpanded(orgId: string | undefined, state: "open" | "closed", slides: number): void {
   if (orgId && slides > 0) logEvent("workboard.deck_expanded", orgId, { state, slides_band: deckSlidesBand(slides) });
 }
+/** A card landed in a new place. Kind and gesture only: no ids, titles or content. */
+export function noteWorkboardNodeMoved(orgId: string | undefined, kind: LabNodeEventKind, via: "body" | "edge" | "keyboard"): void {
+  if (orgId) logEvent("workboard.node_moved", orgId, { kind, via });
+}
 export function noteWorkboardFace(orgId: string | undefined, face: "art" | "preview", scope: "board" | "card" = "board"): void {
   if (orgId) logEvent("workboard.face_toggled", orgId, { face, scope });
 }

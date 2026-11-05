@@ -1369,7 +1369,8 @@ export function cardPressStartsDrag(event: { button: number; target: EventTarget
   if (event.button !== 0) return false;
   const el = event.target as Element | null;
   if (!el || typeof el.closest !== "function") return false;
-  if (el.closest("button,textarea") && !(el as HTMLElement).hasAttribute?.("data-edge")) return false;
+  // A read-only textarea is a card face, not a text box: pressing it moves the card.
+  if (el.closest("button,textarea:not([readonly])") && !(el as HTMLElement).hasAttribute?.("data-edge")) return false;
   return true;
 }
 
