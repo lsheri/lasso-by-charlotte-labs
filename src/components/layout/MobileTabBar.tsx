@@ -1,5 +1,5 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { BoardNewPill } from "@/components/board/BoardNewPill";
 
 import { CoachAskSheet } from "@/components/coaching/CoachAskSheet";
@@ -10,6 +10,7 @@ import { useEngagements } from "@/hooks/use-engagements";
 import { BoardFinder } from "./BoardFinder";
 import { TREE_COPY, useLoadedTreeBoards } from "@/lib/sidebar-tree-state";
 import { FromYourPeopleGroup } from "./FromYourPeople";
+import { SharedWithYouSection } from "./SharedWithYou";
 import { OrgSwitcher } from "./OrgSwitcher";
 import { engagementDisplayTitle } from "@/lib/clients";
 import { signOut } from "@/lib/sign-out";
@@ -40,7 +41,9 @@ export function MobileTabBar() {
   const groups = manifest
     .filter((group) => group.placement !== "workspace_menu")
     .filter((group) => group.id !== "engagements")
-    .map((group) => ({ ...group, items: group.items.filter((item) => item.id !== "all-work") }))
+    // NAV-3, decided 4 Nov (not derived from the rail): the More sheet carries
+    // neither Create nor All work; All work is the Work tab.
+    .map((group) => ({ ...group, items: group.items.filter((item) => item.id !== "all-work" && item.id !== "create") }))
     .filter((group) => group.items.length > 0);
   const tabs = guestNav
     ? [...(canReview ? [TAB_ITEMS.coaching, TAB_ITEMS.prep, { ...TAB_ITEMS.coachAsk, action: "coach-ask" as const }] : [TAB_ITEMS.prep]), TAB_ITEMS.more]
@@ -49,6 +52,29 @@ export function MobileTabBar() {
   function opened(item: NavOpenedDims["item"], surface: NavOpenedDims["surface"]) {
     if (profile?.org_id) logEvent("nav.opened", profile.org_id, { item, surface } satisfies NavOpenedDims);
   }
+
+  const renderMoreItem = (item) => {
+                  const content = <><GraphiteIcon name={item.icon} size={16} /><span>{item.label}</span></>;
+                  if (item.disabled) return (
+                    <button key={item.id} type="button" aria-disabled="true" title={item.disabledReason}
+                      data-nav-item={item.id} className="nb-nav-item nb-nav-item-disabled min-h-[48px] w-full text-left">
+                      <GraphiteIcon name={item.icon} size={16} />
+                      <span className="flex flex-1 items-center justify-between gap-2"><span>{item.label}</span><span className="font-mono text-[12px] uppercase tracking-[0.08em]">{item.disabledReason}</span></span>
+                    </button>
+                  );
+                  if (item.action === "openSettings") return (
+                    <button key={item.id} type="button" data-nav-item={item.id} className="nb-nav-item min-h-[48px] w-full text-left"
+                      onClick={() => { opened(item.id, "more"); setMoreOpen(false); settings?.openSettings(); }}>
+                      {content}
+                    </button>
+                  );
+                  if (!item.to) return null;
+                  return <Link key={item.id} to={item.to} {...(item.search ? { search: item.search } : {})} {...(item.hash ? { hash: item.hash } : {})}
+                    data-nav-item={item.id} onClick={() => { opened(item.id, "more"); setMoreOpen(false); }}
+                    className="nb-nav-item min-h-[48px]" activeProps={{ className: "nb-nav-item-active" }}>
+                    {content}
+                  </Link>;
+                };
 
   return (
     <>
@@ -136,47 +162,36 @@ export function MobileTabBar() {
           <SheetTitle className="font-mono text-[13px] uppercase tracking-[0.12em] text-muted-foreground">
             {profile?.display_name ?? "You"}
           </SheetTitle>
+          {guestNav ? (
           <div className="mt-3 flex flex-col gap-0.5">
             {groups.map((group) => (
-              group.id === "from_your_people" ? (
-                <FromYourPeopleGroup key="from_your_people" rowClassName="nb-nav-item min-h-[48px]"
-                  onOpen={() => { opened("from_your_people", "more"); setMoreOpen(false); }} />
-              ) : (
               <section key={`${group.id}:${group.placement}`} data-nav-group={group.id}>
                 {group.headless ? null : <div className="nb-group-header">{group.label}</div>}
-                {group.items.map((item) => {
-                  const content = <><GraphiteIcon name={item.icon} size={16} /><span>{item.label}</span></>;
-                  if (item.disabled) return (
-                    <button key={item.id} type="button" aria-disabled="true" title={item.disabledReason}
-                      data-nav-item={item.id} className="nb-nav-item nb-nav-item-disabled min-h-[48px] w-full text-left">
-                      <GraphiteIcon name={item.icon} size={16} />
-                      <span className="flex flex-1 items-center justify-between gap-2"><span>{item.label}</span><span className="font-mono text-[12px] uppercase tracking-[0.08em]">{item.disabledReason}</span></span>
-                    </button>
-                  );
-                  if (item.action === "openSettings") return (
-                    <button key={item.id} type="button" data-nav-item={item.id} className="nb-nav-item min-h-[48px] w-full text-left"
-                      onClick={() => { opened(item.id, "more"); setMoreOpen(false); settings?.openSettings(); }}>
-                      {content}
-                    </button>
-                  );
-                  if (!item.to) return null;
-                  return <Link key={item.id} to={item.to} {...(item.search ? { search: item.search } : {})} {...(item.hash ? { hash: item.hash } : {})}
-                    data-nav-item={item.id} onClick={() => { opened(item.id, "more"); setMoreOpen(false); }}
-                    className="nb-nav-item min-h-[48px]" activeProps={{ className: "nb-nav-item-active" }}>
-                    {content}
-                  </Link>;
-                })}
+                {group.items.map(renderMoreItem)}
               </section>
-              )
             ))}
           </div>
+          ) : (
+          // NAV-3: one flat list with no group headings. Shared with you follows Home when present.
+          <div className="mt-3 flex flex-col gap-0.5">
+            {groups.flatMap((group) => group.items).map((item) => item.id === "home" ? (
+              <Fragment key={item.id}>
+                {renderMoreItem(item)}
+                <SharedWithYouSection onNavigate={() => setMoreOpen(false)} extraPresent={ctx.type === "partner" && (ctx.partnerShareCount ?? 0) > 0}>
+                  {ctx.type === "partner" ? <FromYourPeopleGroup headless rowClassName="nb-nav-item min-h-[48px]"
+                    onOpen={() => { opened("from_your_people", "more"); setMoreOpen(false); }} /> : null}
+                </SharedWithYouSection>
+              </Fragment>
+            ) : renderMoreItem(item))}
+          </div>
+          )}
           {switcherProfiles(profiles).length > 1 ? (
             <div className="mt-4" data-testid="mobile-workspace-switcher">
               <OrgSwitcher profiles={switcherProfiles(profiles)} active={profile} />
             </div>
           ) : null}
           <section className="mt-4 border-t border-border pt-3" data-nav-group="workspace_menu">
-            <div className="nb-group-header">Workspace</div>
+            {guestNav ? <div className="nb-group-header">Workspace</div> : null}
             <WorkspaceMenuItems items={workspaceItems} onOpened={(item) => opened(item, "more")}
               onSettings={() => settings?.openSettings()} onSignOut={() => void signOut(navigate)}
               onNavigate={() => setMoreOpen(false)} />
