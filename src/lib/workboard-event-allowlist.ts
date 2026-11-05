@@ -17,6 +17,7 @@ export const WORKBOARD_EVENT_DIMS: Readonly<Record<string, readonly string[]>> =
   "workboard.deck_expanded": ["state", "slides_band"],
   "workboard.face_toggled": ["face", "scope"],
   "workboard.node_moved": ["kind", "via"],
+  "workboard.ask_moved": ["to", "draft"],
   "workboard.node_created": ["kind", "judgment_type", "via"],
   "workboard.node_deleted": ["kind"],
   "workboard.node_edited": ["kind"],

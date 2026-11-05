@@ -1,5 +1,8 @@
 import { AskSheet } from "@/components/reflect/AskSheet";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+
+import { AskDraftSurface } from "@/components/canvas-lab/ask-draft/AskDraftSurface";
+import { resolveAskDraft, type AskDraft } from "@/lib/ask-draft";
 
 import { AskBoardPickedContext, AskSurface } from "@/components/reflect/AskSurface";
 import { AnswerKeepProvider, type KeptAnswer } from "@/components/reflect/answer-keep-context";
@@ -27,6 +30,8 @@ type Props = {
   /** SECD-3b: every section on the board, for the scope picker. */
   sectionChoices?: AskSectionChoice[] | undefined;
   onPickSection?: ((frameId: string) => void) | undefined;
+  /** ASK-D1: the board's <main>, where a preview-gated draft floats. */
+  floatHost?: HTMLElement | null | undefined;
 };
 
 /**
@@ -34,7 +39,7 @@ type Props = {
  * it, so the toolbar, the zoom controls and the canvas all keep their space
  * and the stage simply gets narrower.
  */
-function BoardAskPanel(props: Props) {
+function BoardAskPanel(props: Props & { draft?: AskDraft | null }) {
   const { engagementId, engagementTitle, profileId, orgId } = props;
   const { width, tab, setTab } = useAskDockState();
   const ask = useAskLasso({ open: true, engagementId, engagementTitle, profileId, orgId, sectionSource: props.sectionSource });
@@ -53,6 +58,27 @@ function BoardAskPanel(props: Props) {
     ask.setBoardSelection(props.boardContextHasPicks, inMapped);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.boardContextHasPicks, idsKey, mappedKey, props.sectionSource]);
+
+  if (props.draft && props.floatHost) {
+    return (
+      <AskBoardPickedContext.Provider value={ask.boardPickActive}>
+        <AskDraftSurface
+          draft={props.draft}
+          host={props.floatHost}
+          ask={ask}
+          tab={tab}
+          onTab={setTab}
+          engagementId={engagementId}
+          engagementTitle={engagementTitle}
+          profileId={profileId}
+          orgId={orgId}
+          onClose={() => props.onOpenChange(false)}
+          sections={props.sectionChoices}
+          onPickSection={props.onPickSection}
+        />
+      </AskBoardPickedContext.Provider>
+    );
+  }
 
   return (
     <AskBoardPickedContext.Provider value={ask.boardPickActive}>
@@ -83,6 +109,7 @@ function BoardAskPanel(props: Props) {
 export function BoardAsk(props: Props) {
   const isMobile = useIsMobile();
   usePerfOpenFinish("ask_dock.open", props.open);
+  const askDraft = useAskDraft();
 
   const surface = isMobile ? (
     <AskSheet
@@ -98,7 +125,7 @@ export function BoardAsk(props: Props) {
       onPickSection={props.onPickSection}
     />
   ) : props.open ? (
-    <BoardAskPanel {...props} />
+    <BoardAskPanel {...props} draft={askDraft} />
   ) : null;
 
   if (!surface) return null;
@@ -107,4 +134,15 @@ export function BoardAsk(props: Props) {
   ) : (
     surface
   );
+}
+
+/** ASK-D1: read after hydration so SSR and the closed gate render as today. */
+function useAskDraft(): AskDraft | null {
+  const [draft, setDraft] = useState<AskDraft | null>(null);
+  useEffect(() => {
+    let store: Storage | null = null;
+    try { store = window.localStorage; } catch { store = null; }
+    setDraft(resolveAskDraft(window.location.host, window.location.search, store));
+  }, []);
+  return draft;
 }

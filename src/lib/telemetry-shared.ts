@@ -356,6 +356,8 @@ export type TelemetryEvent =
   /** The person flipped board cards between sketch and real preview. Face only. */
   | "workboard.face_toggled"
   | "workboard.node_moved"
+  /** ASK-D1: preview-only floating Ask moved or locked. Closed position and draft only. */
+  | "workboard.ask_moved"
   /** The workboard opened, with its content-free entry point. */
   | "workboard.opened"
   /** Canvas Lab Phase 2: a local prototype node was added. Closed kinds only. */
