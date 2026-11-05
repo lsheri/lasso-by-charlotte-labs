@@ -73,4 +73,12 @@ describe("ASK-B2 header and foot", () => {
     fireEvent.click(foot);
     expect(screen.getByRole("button", { name: "Back to this chat" })).toBeTruthy();
   });
+  it("ASK-B2a: opening the card picker unfolds a folded chat", () => {
+    document.body.appendChild(document.createElement("main"));
+    render(<Harness messages={[{ id: "m1", role: "user", content: "hi" }]} />);
+    fireEvent.click(screen.getByRole("button", { name: "Collapse Ask Lasso" }));
+    expect(screen.getByRole("button", { name: "Expand Ask Lasso" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "open card picker" }));
+    expect(screen.getByRole("button", { name: "Collapse Ask Lasso" })).toBeTruthy();
+  });
 });
