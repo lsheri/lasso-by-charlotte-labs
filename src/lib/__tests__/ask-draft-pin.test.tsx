@@ -40,6 +40,12 @@ describe("ASK-D2 pinned card", () => {
     await new Promise((r) => setTimeout(r, 0));
     expect(screen.queryByRole("button", { name: /^Chat/ })).toBeNull();
   });
+  it("ASK-B2: reads the pin under the durable id, where keep writes it", async () => {
+    window.history.replaceState(null, "", "/?ask=b");
+    window.localStorage.setItem("lasso.ask-draft.pins", JSON.stringify({ "durable-1": "s1" }));
+    render(<LabAnswerCard {...cardProps} node={{ ...node, id: "answer:local", durableId: "durable-1" } as LabNode} />);
+    expect(await screen.findByRole("button", { name: /^Chat/ })).toBeTruthy();
+  });
 });
 
 import { citedCardAnchors } from "@/lib/answer-card";
