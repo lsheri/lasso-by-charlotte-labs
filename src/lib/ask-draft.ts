@@ -1,4 +1,4 @@
-import { placeAddedCards } from "@/lib/workboard-placement";
+import { PLACEMENT_CARD, placeAddedCards } from "@/lib/workboard-placement";
 /**
  * ASK-D1: preview-only gate for the floating Ask drafts. Production hosts
  * always resolve to null, whatever the query, so nobody outside a Lovable
@@ -115,7 +115,8 @@ export function autoPinPoint(picked: Rect[] | { x: number; y: number; width: num
   const right = Math.max(...rects.map((r) => r.x + r.width));
   const top = Math.min(...rects.map((r) => r.y));
   const anchor = { x: right + 40, y: top };
-  return placeAddedCards(anchor, taken, 1)[0] ?? anchor;
+  const clear = taken.every((r) => anchor.x >= r.x + r.width || anchor.x + PLACEMENT_CARD.width <= r.x || anchor.y >= r.y + r.height || anchor.y + PLACEMENT_CARD.height <= r.y);
+  return clear ? anchor : placeAddedCards(anchor, taken, 1)[0] ?? anchor;
 }
 
 /** ASK-D2: the smallest pan that brings a board point (and a card-sized box) into the visible canvas. */

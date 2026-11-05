@@ -13,6 +13,7 @@ vi.mock("@/components/reflect/use-ask-lasso", () => ({ useAskLasso: () => ({
 vi.mock("@/components/oneonone/SaveForOneOnOne", () => ({ SaveForOneOnOneDialog: () => null }));
 vi.mock("@tanstack/react-router", () => ({ Link: ({ children }: { children: React.ReactNode }) => <a>{children}</a> }));
 
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BoardAsk } from "@/components/canvas-lab/BoardAsk";
 
 afterEach(() => { cleanup(); window.history.replaceState(null, "", "/"); });
@@ -20,7 +21,7 @@ afterEach(() => { cleanup(); window.history.replaceState(null, "", "/"); });
 describe("ASK-D2 closed gate keep", () => {
   it("reads Put on board and keeps exactly as before", () => {
     const onKeep = vi.fn();
-    render(<BoardAsk engagementId="b" engagementTitle="B" profileId="p" orgId="o" open onOpenChange={vi.fn()} canKeep onKeep={onKeep} boardContextItemIds={[]} boardContextHasPicks={false} />);
+    render(<QueryClientProvider client={new QueryClient()}><BoardAsk engagementId="b" engagementTitle="B" profileId="p" orgId="o" open onOpenChange={vi.fn()} canKeep onKeep={onKeep} boardContextItemIds={[]} boardContextHasPicks={false} /></QueryClientProvider>);
     const button = screen.getByRole("button", { name: /Put on board/ });
     expect(screen.queryByText("Pin to board")).toBeNull();
     fireEvent.click(button);

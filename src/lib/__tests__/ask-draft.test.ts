@@ -51,7 +51,8 @@ describe("ASK-D2 automatic pin point", () => {
     const picked = [{ x: 100, y: 200, width: 240, height: 120 }];
     const blocker = { x: 380, y: 200, width: 280, height: 200 };
     const at = autoPinPoint(picked, [...picked, blocker])!;
-    const overlaps = at.x < blocker.x + blocker.width && at.x + 240 > blocker.x && at.y < blocker.y + blocker.height && at.y + 120 > blocker.y;
+    expect(at).not.toEqual({ x: 380, y: 200 });
+    const overlaps = at.x < blocker.x + blocker.width && at.x + 280 > blocker.x && at.y < blocker.y + blocker.height && at.y + 120 > blocker.y;
     expect(overlaps).toBe(false);
   });
   it("pans only when the point is off the visible canvas", () => {
