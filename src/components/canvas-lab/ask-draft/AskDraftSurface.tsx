@@ -51,10 +51,10 @@ export function AskDraftSurface(props: Props) {
     const locked = pos.to === "lock_left" || pos.to === "lock_right";
     if (!locked) return;
     const offset = `${ASK_DRAFT_WIDTH.lock_left + 12}px`;
-    host.dataset.askLock = pos.to;
+    host.setAttribute("data-ask-lock", pos.to);
     host.style.setProperty(pos.to === "lock_left" ? "--ask-draft-lock-left" : "--ask-draft-lock-right", offset);
     return () => {
-      delete host.dataset.askLock;
+      host.removeAttribute("data-ask-lock");
       host.style.removeProperty("--ask-draft-lock-left");
       host.style.removeProperty("--ask-draft-lock-right");
     };
