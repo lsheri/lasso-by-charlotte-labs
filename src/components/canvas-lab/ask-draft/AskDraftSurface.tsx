@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, type RefObject } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, type KeyboardEvent as ReactKeyboardEvent, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import { History, X } from "lucide-react";
 
@@ -101,7 +101,7 @@ export function AskDraftSurface(props: Props) {
     };
   }, [host, place]);
 
-  const onGripKey = (event: React.KeyboardEvent<HTMLDivElement>) => {
+  const onGripKey = (event: ReactKeyboardEvent<HTMLDivElement>) => {
     const to: DockId | null = event.key === "ArrowLeft" ? "lock_left"
       : event.key === "ArrowRight" ? "lock_right"
         : event.key === "ArrowDown" ? "bottom_centre"
