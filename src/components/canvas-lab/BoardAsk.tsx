@@ -34,6 +34,9 @@ type Props = {
   onPickSection?: ((frameId: string) => void) | undefined;
   /** ASK-D1: the board's <main>, where a preview-gated draft floats. */
   floatHost?: HTMLElement | null | undefined;
+  /** ASK-B2: answers pinned on this board, for the past list in the floating draft only. */
+  pinnedAnswers?: { nodeId: string; durableId: string | null; text: string }[] | undefined;
+  onJumpToAnswer?: ((nodeId: string) => void) | undefined;
 };
 
 /**
@@ -103,6 +106,8 @@ function BoardAskPanel(props: Props & { draft?: AskDraft | null; pendingSessionI
           onClose={() => props.onOpenChange(false)}
           sections={props.sectionChoices}
           onPickSection={props.onPickSection}
+          pinnedAnswers={props.pinnedAnswers}
+          onJumpToAnswer={props.onJumpToAnswer}
         />
       </AskBoardPickedContext.Provider>
     );

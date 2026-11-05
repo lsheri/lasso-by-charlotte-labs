@@ -74,7 +74,7 @@ function LabAnswerCardInner({
   const draft = useRef({ html: "", plain: "", changed: false });
   const saving = useRef(false);
   const canEdit = node.ownership === "yours" && Boolean(onCommit);
-  const pin = useAskDraftPin(node.id);
+  const pin = useAskDraftPin(node.durableId ?? node.id);
   const [chatOpen, setChatOpen] = useState(false);
   const grown = expanded || editing || originalOpen || chatOpen;
   function startEdit() {
