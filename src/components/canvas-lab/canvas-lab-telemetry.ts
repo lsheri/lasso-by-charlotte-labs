@@ -41,6 +41,10 @@ export function noteWorkboardDeckExpanded(orgId: string | undefined, state: "ope
 export function noteWorkboardNodeMoved(orgId: string | undefined, kind: LabNodeEventKind, via: "body" | "edge" | "keyboard"): void {
   if (orgId) logEvent("workboard.node_moved", orgId, { kind, via });
 }
+/** ASK-D1: the floating Ask was dropped. Position and draft only. */
+export function noteWorkboardAskMoved(orgId: string | undefined, to: "bottom_centre" | "bottom_right" | "lock_left" | "lock_right" | "free", draft: "a" | "b"): void {
+  if (orgId) logEvent("workboard.ask_moved", orgId, { to, draft });
+}
 export function noteWorkboardFace(orgId: string | undefined, face: "art" | "preview", scope: "board" | "card" = "board"): void {
   if (orgId) logEvent("workboard.face_toggled", orgId, { face, scope });
 }
