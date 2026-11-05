@@ -8379,3 +8379,17 @@ body:has(.lasso-decisions-ledger) .canvas-lab-undo-toast { position: fixed; z-in
   [data-lasso="on"] .canvas-lab-board-status { top: 82px; }
 }
 @media (prefers-reduced-motion: reduce) { [data-lasso="on"] .canvas-lab-floating-tools button { transition: none; } }
+
+/* DRAG-1: a read-only sticky or text block face is a handle. Pressing its words moves it and never paints a selection; editing keeps text selection and the text cursor. */
+.canvas-lab-sticky:not([data-editing="true"]),
+.canvas-lab-sticky:not([data-editing="true"]) textarea,
+.canvas-lab-sticky:not([data-editing="true"]) .node-rich,
+.canvas-lab-text-block:not([data-editing="true"]),
+.canvas-lab-text-block:not([data-editing="true"]) textarea,
+.canvas-lab-text-block:not([data-editing="true"]) .node-rich { user-select: none; -webkit-user-select: none; }
+.canvas-lab-sticky[data-movable="true"]:not([data-editing="true"]),
+.canvas-lab-sticky[data-movable="true"]:not([data-editing="true"]) textarea,
+.canvas-lab-sticky[data-movable="true"]:not([data-editing="true"]) .node-rich,
+.canvas-lab-text-block[data-movable="true"]:not([data-editing="true"]),
+.canvas-lab-text-block[data-movable="true"]:not([data-editing="true"]) textarea,
+.canvas-lab-text-block[data-movable="true"]:not([data-editing="true"]) .node-rich { cursor: grab; }

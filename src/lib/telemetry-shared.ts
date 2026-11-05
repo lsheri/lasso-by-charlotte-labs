@@ -353,6 +353,7 @@ export type TelemetryEvent =
   | "workboard.deck_expanded"
   /** The person flipped board cards between sketch and real preview. Face only. */
   | "workboard.face_toggled"
+  | "workboard.node_moved"
   /** The workboard opened, with its content-free entry point. */
   | "workboard.opened"
   /** Canvas Lab Phase 2: a local prototype node was added. Closed kinds only. */

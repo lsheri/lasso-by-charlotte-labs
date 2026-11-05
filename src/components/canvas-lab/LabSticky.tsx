@@ -92,8 +92,8 @@ function LabStickyInner({ node, selected, editable, layoutEditable, onSelect, on
   const style = { left: node.x, top: node.y, width: node.width, height: node.height } satisfies CSSProperties;
   const choose = (patch: Partial<WorkboardStickyBody>, field: "style" | "fill") => { const next = { ...body, ...patch, ...(body.mentions !== undefined ? { mentions: clampMentions(body.mentions, body.text.length) } : {}) }; onChange(next); onCommit(next, field); };
   return (
-    <section ref={sectionRef} data-editing={editing} data-testid={`sticky-${node.id}`} data-selected={selected} data-colour={body.colour} data-fill={body.fill} data-size={body.size} data-weight={body.weight} aria-label="Sticky" tabIndex={0} className="canvas-lab-sticky absolute" style={style} onFocus={onSelect} onDoubleClick={() => { if (stickyTriggerEntersEdit("doubleClick", editable)) enterEdit(); }} onPointerDown={(event) => { if (editing) return; if (!selected) onSelect(); onDragStart(event); }}>
-      {(["top", "right", "bottom", "left"] as const).map((edge) => <span key={edge} aria-hidden="true" className="canvas-lab-text-block-edge" data-edge={edge} onPointerDown={(event) => { event.stopPropagation(); onSelect(); onDragStart(event); }} />)}
+    <section ref={sectionRef} data-editing={editing} data-movable={layoutEditable} data-testid={`sticky-${node.id}`} data-selected={selected} data-colour={body.colour} data-fill={body.fill} data-size={body.size} data-weight={body.weight} aria-label="Sticky" tabIndex={0} className="canvas-lab-sticky absolute" style={style} onFocus={onSelect} onDoubleClick={() => { if (stickyTriggerEntersEdit("doubleClick", editable)) enterEdit(); }} onPointerDown={(event) => { if (editing) return; if (!selected) onSelect(); if (layoutEditable) onDragStart(event); }}>
+      {layoutEditable ? (["top", "right", "bottom", "left"] as const).map((edge) => <span key={edge} aria-hidden="true" className="canvas-lab-text-block-edge" data-edge={edge} onPointerDown={(event) => { event.stopPropagation(); onSelect(); onDragStart(event); }} />) : null}
       <style>{`
         .canvas-lab-sticky .node-rich { height: 100%; }
         .canvas-lab-sticky .node-rich > .relative { height: 100%; }
@@ -114,8 +114,8 @@ function LabStickyInner({ node, selected, editable, layoutEditable, onSelect, on
           <RichTextEditor variant="compact" toolbarVisible={selected && formattingOpen} initialHtml={draft.current?.html ?? body.html ?? plainToRichHtml(body.text)} autoFocus maxChars={WORKBOARD_TEXT_MAX_LENGTH}
             onChange={(html, text) => { if (touched.current) draft.current = { html, text }; }} onDone={finish} />
         </Suspense>
-      </div> : body.html !== undefined ? <div className="node-rich" onPointerDown={(event) => { event.stopPropagation(); onSelect(); }}><RichTextView html={body.html} /></div>
-        : <textarea aria-label="Sticky words" maxLength={WORKBOARD_TEXT_MAX_LENGTH} value={body.text} readOnly placeholder="Write here" onPointerDown={(event) => { event.stopPropagation(); onSelect(); }} />}
+      </div> : body.html !== undefined ? <div className="node-rich"><RichTextView html={body.html} /></div>
+        : <textarea aria-label="Sticky words" maxLength={WORKBOARD_TEXT_MAX_LENGTH} value={body.text} readOnly placeholder="Write here" />}
       {selected && layoutEditable ? <div className="canvas-lab-text-block-controls" onPointerDown={(event) => event.stopPropagation()} onDoubleClick={(event) => event.stopPropagation()}>
         {editable ? <>
           <Button type="button" size="sm" variant="ghost" title="Formatting" aria-label="Formatting" aria-pressed={formattingOpen} onPointerDown={(event) => event.preventDefault()} onClick={() => setFormattingOpen((open) => !open)}><Pencil size={12} aria-hidden="true" /></Button>

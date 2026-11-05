@@ -69,7 +69,7 @@ function LabTextBlockInner({ node, selected, editable, layoutEditable, onSelect,
   };
   const style = { left: node.x, top: node.y, width: node.width, height: node.height, pointerEvents: layoutEditable || editable || selected ? "auto" : "none" } satisfies CSSProperties;
   return (
-    <section ref={sectionRef} data-testid={`text-block-${node.id}`} data-selected={selected} data-editing={editing} data-empty={body.text.length === 0} data-size={body.size} data-weight={body.weight} data-colour={body.colour} aria-label="Text block" tabIndex={selected ? 0 : -1} className="canvas-lab-text-block absolute" style={style} onFocus={onSelect}
+    <section ref={sectionRef} data-testid={`text-block-${node.id}`} data-movable={layoutEditable} data-selected={selected} data-editing={editing} data-empty={body.text.length === 0} data-size={body.size} data-weight={body.weight} data-colour={body.colour} aria-label="Text block" tabIndex={selected ? 0 : -1} className="canvas-lab-text-block absolute" style={style} onFocus={onSelect}
       onPointerDown={(event) => {
         if (editing || !layoutEditable) return;
         onSelect();
@@ -102,7 +102,7 @@ function LabTextBlockInner({ node, selected, editable, layoutEditable, onSelect,
             onChange={(html, text) => { if (touched.current) draft.current = { html, text }; }} onDone={finish} />
         </Suspense>
       </div> : body.html !== undefined ? <div className="node-rich" onClick={() => { if (!body.text) enterEdit(); }}><RichTextView html={body.html} /></div>
-        : <textarea aria-label="Text block words" maxLength={WORKBOARD_TEXT_MAX_LENGTH} value={body.text} readOnly placeholder="Type something" onPointerDown={(event) => { event.stopPropagation(); onSelect(); }} onClick={() => { if (!body.text) enterEdit(); }} />}
+        : <textarea aria-label="Text block words" maxLength={WORKBOARD_TEXT_MAX_LENGTH} value={body.text} readOnly placeholder="Type something" onClick={() => { if (!body.text) enterEdit(); }} />}
       {selected && layoutEditable ? <div className="canvas-lab-text-block-controls" onPointerDown={(event) => event.stopPropagation()} onDoubleClick={(event) => event.stopPropagation()}>
         {editable ? <>
         <Button type="button" size="sm" variant="ghost" title="Formatting" aria-label="Formatting" aria-pressed={formattingOpen} onPointerDown={(event) => event.preventDefault()} onClick={() => setFormattingOpen((open) => !open)}><Pencil size={12} aria-hidden="true" /></Button>

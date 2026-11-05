@@ -204,7 +204,7 @@ export function DemoWorkboardSandbox({ board, presets, proof, clientLabel, engag
   }, []);
 
   const beginNodeDrag = (event: ReactPointerEvent, id: string) => {
-    if ((event.target as HTMLElement).closest("button,textarea,input,select")) return;
+    if ((event.target as HTMLElement).closest("button,textarea:not([readonly]),input,select")) return;
     if (event.pointerType === "touch" && touchRef.current.size >= 2) { event.stopPropagation(); return; }
     event.stopPropagation(); clearTimer(); setHint(false); setSelected(id);
     const node = nodes.find((entry) => entry.id === id); if (!node) return;

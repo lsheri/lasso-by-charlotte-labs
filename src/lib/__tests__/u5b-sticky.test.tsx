@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { render } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { LabSticky } from "@/components/canvas-lab/LabSticky";
 import { applyDurableBoard, deleteLocalNode, resizeLabRect, type LabNode } from "@/components/canvas-lab/canvas-lab-model";
@@ -72,5 +72,57 @@ describe("unit 5b sticky", () => {
 
   it("the allowlist keeps kind sticky on node_created", () => {
     expect(guardWorkboardEvent("workboard.node_created", { kind: "sticky", judgment_type: "none" })).toEqual({ keep: true, dims: { kind: "sticky", judgment_type: "none" } });
+  });
+
+  describe("DRAG-1 the words move the sticky", () => {
+    afterEach(cleanup);
+    const noop = () => {};
+    const renderSticky = (patch: Partial<LabNode>, props: { layoutEditable?: boolean; onDragStart?: () => void } = {}) => render(<LabSticky node={{ ...sticky, ...patch }} selected={false} editable layoutEditable={props.layoutEditable ?? true} onSelect={noop} onDragStart={props.onDragStart ?? noop} onResizeStart={noop} onResizeKeyDown={noop} onResizeKeyUp={noop} onChange={noop} onCommit={noop} onRemove={noop} />);
+
+    it("pressing the read-only plain words calls onDragStart", () => {
+      const onDragStart = vi.fn();
+      const { container } = renderSticky({}, { onDragStart });
+      fireEvent.pointerDown(container.querySelector("textarea[readonly]")!, { button: 0 });
+      expect(onDragStart).toHaveBeenCalledTimes(1);
+    });
+
+    it("pressing the read-only rich words calls onDragStart", () => {
+      const onDragStart = vi.fn();
+      const { container } = renderSticky({ html: "<p>hi</p>" }, { onDragStart });
+      fireEvent.pointerDown(container.querySelector(".node-rich .rich-text, .node-rich")!, { button: 0 });
+      expect(onDragStart).toHaveBeenCalledTimes(1);
+    });
+
+    it("with layoutEditable false the words do not start a drag and no edge strips render", () => {
+      const onDragStart = vi.fn();
+      const { container } = renderSticky({}, { layoutEditable: false, onDragStart });
+      fireEvent.pointerDown(container.querySelector("textarea[readonly]")!, { button: 0 });
+      expect(onDragStart).not.toHaveBeenCalled();
+      expect(container.querySelector("[data-edge]")).toBeNull();
+    });
+
+    it("with data-editing true a press does not start a drag", () => {
+      const onDragStart = vi.fn();
+      const { container } = renderSticky({}, { onDragStart });
+      const section = container.querySelector("section")!;
+      fireEvent.doubleClick(section);
+      expect(section.getAttribute("data-editing")).toBe("true");
+      fireEvent.pointerDown(section, { button: 0 });
+      expect(onDragStart).not.toHaveBeenCalled();
+    });
+
+    it("press then double click on either face still enters editing", () => {
+      for (const patch of [{}, { html: "<p>hi</p>" }]) {
+        const onDragStart = vi.fn();
+        const { container, unmount } = renderSticky(patch, { onDragStart });
+        const face = container.querySelector("textarea, .node-rich")!;
+        fireEvent.pointerDown(face, { button: 0 }); fireEvent.pointerUp(face); fireEvent.click(face);
+        fireEvent.pointerDown(face, { button: 0 }); fireEvent.pointerUp(face); fireEvent.click(face);
+        fireEvent.doubleClick(face);
+        expect(onDragStart).toHaveBeenCalledTimes(2);
+        expect(container.querySelector("section")!.getAttribute("data-editing")).toBe("true");
+        unmount();
+      }
+    });
   });
 });

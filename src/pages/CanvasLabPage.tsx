@@ -179,6 +179,7 @@ import {
   type WorkboardPersistAction,
   type WorkboardPersistEntity,
   noteWorkboardFace,
+  noteWorkboardNodeMoved,
 } from "@/components/canvas-lab/canvas-lab-telemetry";
 import { FaceToggle, type CardFace } from "@/design/reference/FaceToggle";
 import { useCardFace, useCardFaceOverrides, effectiveCardFace, BOARD_FACE_KEY } from "@/design/reference/useCardFace";
@@ -493,7 +494,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   const undoIdRef = useRef(0);
 
   const shellRef = useRef<HTMLDivElement | null>(null);
-  const dragRef = useRef<{ id: string; origin: Point; from: Point } | null>(null);
+  const dragRef = useRef<{ id: string; origin: Point; from: Point; via?: "body" | "edge" } | null>(null);
   /** A frame drag snapshots its geometric contents once, before anything moves. */
   const frameDragRef = useRef<{ id: string; origin: Point; from: Point; members: GroupingDragMember[]; frameMembers?: GroupingDragMember[] } | null>(null);
   const connectorDragRef = useRef<{ nodeId: string; anchor: LabAnchor; from: Point; moved: boolean } | null>(null);
@@ -1882,7 +1883,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     setKeyboardId(picked.id);
     setSelectedFrameId(null);
     setInteraction("drag");
-    dragRef.current = { id: node.id, origin: { x: node.x, y: node.y }, from: { x: event.clientX, y: event.clientY } };
+    dragRef.current = { id: node.id, origin: { x: node.x, y: node.y }, from: { x: event.clientX, y: event.clientY }, via: (event.target as HTMLElement | null)?.hasAttribute?.("data-edge") ? "edge" : "body" };
   }
 
   useEffect(() => {
@@ -2025,6 +2026,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
             setNodes((current) => current ? moveNode(current, drag.id, landed) : current);
             void persistNodePatch(drag.id, { x: landed.x, y: landed.y });
             record({ action: "move", nodeId: drag.id, before: drag.origin, after: landed });
+            noteWorkboardNodeMoved(orgId, eventKind(moved), drag.via ?? "body");
             const target = decision.promptFrameId ? framesRef.current.find((frame) => frame.id === decision.promptFrameId) : null;
             if (target) {
               setDropPrompt({ nodeId: moved.id, frameId: target.id });
@@ -2201,6 +2203,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       setNodes((current) => current ? moveNode(current, node.id, to) : current);
       void persistNodePatch(node.id, { x: to.x, y: to.y });
       record({ action: "move", nodeId: node.id, before: { x: node.x, y: node.y }, after: to, coalesceKey: `nudge:${node.id}` });
+      noteWorkboardNodeMoved(orgId, eventKind(node), "keyboard");
     }
   }
 
