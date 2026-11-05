@@ -123,6 +123,10 @@ describe("the workboard allowlist", () => {
         "workboard.node_edited": [
           "kind",
         ],
+        "workboard.node_moved": [
+          "kind",
+          "via",
+        ],
         "workboard.opened": [
           "via",
           "bundles",

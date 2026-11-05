@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { fireEvent, render } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { LabSticky } from "@/components/canvas-lab/LabSticky";
 import { applyDurableBoard, deleteLocalNode, resizeLabRect, type LabNode } from "@/components/canvas-lab/canvas-lab-model";
@@ -75,6 +75,7 @@ describe("unit 5b sticky", () => {
   });
 
   describe("DRAG-1 the words move the sticky", () => {
+    afterEach(cleanup);
     const noop = () => {};
     const renderSticky = (patch: Partial<LabNode>, props: { layoutEditable?: boolean; onDragStart?: () => void } = {}) => render(<LabSticky node={{ ...sticky, ...patch }} selected={false} editable layoutEditable={props.layoutEditable ?? true} onSelect={noop} onDragStart={props.onDragStart ?? noop} onResizeStart={noop} onResizeKeyDown={noop} onResizeKeyUp={noop} onChange={noop} onCommit={noop} onRemove={noop} />);
 
