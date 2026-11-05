@@ -45,8 +45,8 @@ export function AskDraftSurface(props: Props) {
   const [folded, setFolded] = useState(false);
   const empty = props.tab === "messages" && (ask.messages ?? []).length === 0;
   const collapsed = empty || folded;
-  const foldedRef = useRef(collapsed);
-  foldedRef.current = collapsed;
+  const foldedRef = useRef(folded);
+  foldedRef.current = folded;
 
   const contentHeight = useCallback(() => {
     const body = bodyRef.current;
@@ -97,7 +97,7 @@ export function AskDraftSurface(props: Props) {
     return () => ro.disconnect();
   }, [refresh, ask.messages, props.tab]);
 
-  useLayoutEffect(() => { refresh(); }, [refresh, collapsed]);
+  useLayoutEffect(() => { refresh(); }, [refresh, collapsed, folded]);
 
   const place: DockId = dock.hover ?? dock.dock;
   const locked = place === "lock_left" || place === "lock_right";
@@ -203,7 +203,7 @@ export function AskDraftSurface(props: Props) {
           />
           )}
         </div>
-        {collapsed ? null : (
+        {folded ? null : (
           <button
             type="button"
             className="ask-draft-foot"
