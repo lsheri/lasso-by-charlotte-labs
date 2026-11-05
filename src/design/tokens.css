@@ -44,6 +44,7 @@
   --state-shared-in:var(--orange-100);
   --state-shared-wash:var(--orange-20);
   --state-destructive-new:var(--red-100);
+  --hint-green:#0f8a4b;
 
   --here-rule:var(--acid-100);
   --here-weight:2.5px;

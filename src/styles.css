@@ -8420,18 +8420,21 @@ main[data-ask-lock] .canvas-lab-floating-tools-wrapper { left: calc(12px + var(-
 .ask-draft-body > div.sticky { position: static; flex-shrink: 0; margin: 8px; overflow: hidden; border: 1px solid var(--nb-rule); border-radius: 24px; background: var(--nb-white); }
 .ask-draft-body > div.sticky footer { border-top: 0; }
 .ask-draft-body > div.sticky footer * { min-width: 0; }
-.ask-draft-body > a { flex-shrink: 0; border-top: 0; padding-bottom: 6px; text-align: center; }
+.ask-draft-body > a { display: none; }
 .ask-draft[data-collapsed="true"] .ask-draft-body > .nb-binder { display: none; }
+.ask-draft[data-collapsed="true"] .ask-draft-body > :not(.nb-binder):not(div.sticky) { display: none; }
 .ask-draft-spots { position: absolute; inset: 0; z-index: 29; pointer-events: none; }
-.ask-draft-spots span { position: absolute; border-radius: 20px; outline: 1.5px solid transparent; outline-offset: -1.5px; transition: background-color 140ms, outline-color 140ms; }
-.ask-draft-spots i { position: absolute; width: 18px; height: 18px; border: 0 solid color-mix(in srgb, var(--nb-graphite) 26%, transparent); transition: border-color 140ms; }
-.ask-draft-spots i:nth-child(1) { left: 0; top: 0; border-left-width: 1.5px; border-top-width: 1.5px; border-top-left-radius: 18px; }
-.ask-draft-spots i:nth-child(2) { right: 0; top: 0; border-right-width: 1.5px; border-top-width: 1.5px; border-top-right-radius: 18px; }
-.ask-draft-spots i:nth-child(3) { left: 0; bottom: 0; border-left-width: 1.5px; border-bottom-width: 1.5px; border-bottom-left-radius: 18px; }
-.ask-draft-spots i:nth-child(4) { right: 0; bottom: 0; border-right-width: 1.5px; border-bottom-width: 1.5px; border-bottom-right-radius: 18px; }
-.ask-draft-spots span[data-near="true"] { outline-color: color-mix(in srgb, var(--nb-graphite) 55%, transparent); background-color: color-mix(in srgb, var(--hand-live) 14%, transparent); }
-.ask-draft-spots span[data-near="true"] i { border-color: transparent; }
-@media (prefers-reduced-motion: reduce) { .ask-draft, .ask-draft-spots span, .ask-draft-spots i { transition: none; } }
+.ask-draft-spots span { position: absolute; border: 1.5px dotted color-mix(in srgb, var(--hint-green) 50%, transparent); border-radius: var(--radius-pill); background: color-mix(in srgb, var(--hint-green) 7%, transparent); transition: transform 140ms cubic-bezier(.2,0,0,1), background-color 140ms, border-color 140ms; }
+.ask-draft-spots span[data-spot="lock_left"] { left: 6px; top: 50%; width: 12px; height: 112px; margin-top: -56px; transform-origin: left center; }
+.ask-draft-spots span[data-spot="lock_right"] { right: 6px; top: 50%; width: 12px; height: 112px; margin-top: -56px; transform-origin: right center; }
+.ask-draft-spots span[data-spot="bottom_centre"] { left: 50%; bottom: 6px; width: 144px; height: 12px; margin-left: -72px; transform-origin: center bottom; }
+.ask-draft-spots span[data-spot="bottom_right"] { right: 28px; bottom: 6px; width: 96px; height: 12px; transform-origin: right bottom; }
+.ask-draft-spots span[data-near="true"] { border-color: color-mix(in srgb, var(--hint-green) 80%, transparent); background: color-mix(in srgb, var(--hint-green) 16%, transparent); }
+.ask-draft-spots span[data-spot^="lock"][data-near="true"] { transform: scaleX(1.5); }
+.ask-draft-spots span[data-spot^="bottom"][data-near="true"] { transform: scaleY(1.5); }
+.ask-draft-foot { flex-shrink: 0; width: 100%; height: 34px; border-top: 1px solid var(--nb-rule); font-size: 12px; font-weight: 600; color: var(--foreground); white-space: nowrap; }
+.ask-draft-foot:hover { background: var(--surface-sunk-2); }
+@media (prefers-reduced-motion: reduce) { .ask-draft, .ask-draft-spots span { transition: none; } }
 /* ASK-D2: preview-gated pinning. */
 .ask-draft-ghost { position: absolute; z-index: 31; width: 240px; padding: 10px 12px; transform: translate(8px, 8px); border: 1.4px solid var(--nb-lasso-green); border-radius: var(--radius-md); background: var(--nb-white); box-shadow: var(--shadow-float); font-size: 13px; color: var(--muted-foreground); pointer-events: none; }
 .ask-draft-pinned-chat { margin-top: 8px; border-top: 1px solid var(--nb-rule); padding-top: 6px; }
