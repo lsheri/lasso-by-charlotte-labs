@@ -15,6 +15,8 @@ vi.mock("@tanstack/react-router", () => ({ Link: ({ children }: { children: Reac
 vi.mock("@/components/work/ThreadViewerById", () => ({ ThreadViewerById: () => null }));
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+window.matchMedia = ((q: string) => ({ matches: false, media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} })) as unknown as typeof window.matchMedia;
+window.HTMLElement.prototype.scrollIntoView = () => {};
 import { BoardAsk } from "@/components/canvas-lab/BoardAsk";
 
 afterEach(() => { cleanup(); window.history.replaceState(null, "", "/"); });
