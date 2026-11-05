@@ -314,7 +314,7 @@ export function TourActArrived({ register, onComplete }: { register: Register; o
           </div></div>
           <div className="flex flex-col gap-0.5">
             <Button type="button" variant="ghost" className="nb-nav-item nb-nav-item-active w-full justify-start" onClick={noop}><GraphiteIcon name="work" size={20} /><span>All work</span></Button>
-            <Button type="button" variant="ghost" className="nb-nav-item w-full justify-start" onClick={noop}><GraphiteIcon name="archive" size={20} /><span>Look back</span></Button>
+            <Button type="button" variant="ghost" className="nb-nav-item w-full justify-start" onClick={noop}><GraphiteIcon name="history" size={20} /><span>Look back</span></Button>
           </div>
         </nav>
       </aside>
