@@ -35,7 +35,7 @@ import { LassoThinkingMark } from "@/components/reflect/LassoThinkingMark";
 import { LOOP_SIZE_TOOLBAR } from "@/lib/lasso-loop";
 import type { KeptAnswer } from "@/components/reflect/answer-keep-context";
 import { supabase } from "@/integrations/supabase/client";
-import { ANSWER_DRAG_MIME, KEEP_ANSWER_ANNOUNCEMENT, answerCiteRows, answerNodeInput, canKeepAnswer, isAnswerDrag, parseAnswerDrop } from "@/lib/answer-card";
+import { ANSWER_DRAG_MIME, KEEP_ANSWER_ANNOUNCEMENT, answerCiteRows, answerNodeInput, canKeepAnswer, citedCardAnchors, isAnswerDrag, parseAnswerDrop } from "@/lib/answer-card";
 
 import { DecisionsLedger, COPY as LEDGER_COPY } from "@/components/canvas-lab/DecisionsLedger";
 import { CanvasLabReview } from "@/components/canvas-lab/CanvasLabReview";
@@ -2750,6 +2750,14 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       if (via === "auto") setSelected([]);
       const cites = answerCiteRows(nodeId, answer.reads);
       if (cites.length > 0) await supabase.from("answer_cites").insert(cites);
+      // ASK-B1: a pinned answer connects to the cards it read. Not a person's action, so no relationship event; a refused line never fails the pin.
+      if (answer.sessionId) {
+        for (const link of citedCardAnchors(cites, visibleNodes.filter((n) => n.kind === "work"), at)) {
+          const from = await ensureNodeDurable(link.cardId);
+          if (!from) continue;
+          await lab.persist({ type: "link_create", fromNodeId: from.id, fromAnchor: link.fromAnchor, toNodeId: nodeId, toAnchor: link.toAnchor, relation: "cited" });
+        }
+      }
       // Re-read the saved board and apply it, so the kept card is on the stage
       // straight away rather than only after the page is opened again.
       await reloadDurableBoard();
