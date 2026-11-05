@@ -25,6 +25,8 @@ export type NavPlacement = "main" | "bottom" | "workspace_menu";
 
 export type NavItemId =
   | "home"
+  /** NAV-2: the Create row in the rail. */
+  | "create"
   | "all-work"
   | "ai-record"
   | "connectors"
@@ -147,19 +149,17 @@ const asProfile = (ctx: NavCtx) => ({ role: ctx.role, org_type: ctx.type });
 const isBusinessType = (type: OrgType) => type === "company" || type === "partner";
 
 /**
- * The weekly loop: what landed, where it goes, what you look back on, your
- * coach, run the firm, your account. Group order is the render order.
+ * NAV-2 (decided 4 Nov): one rail, one shape for every workspace type. Home
+ * and Create, then Boards (the only visible heading besides Shared with
+ * you), then All work, Look back, Your coach, People you coach and Firm view
+ * as headless rows, with Sources and Settings pinned to the rail's foot.
+ * Row presence varies by role; wording never varies. Group order is the
+ * render order. Labels kept on headless groups serve the legacy exports.
  */
 export const NAV_GROUPS: NavManifestGroup[] = [
-  { id: "landed", label: "What landed" },
-  {
-    id: "engagements",
-    label: (l) =>
-      l.type === "edu" ? EDU_VOCAB.engagements : l.type === "partner" ? "Your clients" : "Where it goes",
-    emptyState: "No workboards yet",
-    alwaysShow: true,
-  },
-  // MN-5: directly below Where it goes; partner only, absent when nothing is shared.
+  { id: "landed", label: "Home", headless: true },
+  { id: "engagements", label: "Boards", emptyState: "No workboards yet", alwaysShow: true },
+  // NAV-2: kept so the legacy exports compile; its row is retired and the partner list renders under Shared with you.
   { id: "from_your_people", label: "From your people", types: ["partner"], show: (ctx) => (ctx.partnerShareCount ?? 0) > 0 },
   { id: "lookback", label: "Look back", headless: true },
   {
@@ -173,8 +173,11 @@ export const NAV_GROUPS: NavManifestGroup[] = [
     show: (ctx) =>
       roles.hasCoachByArrangement(asProfile(ctx)) || (ctx.type === "personal" && ctx.hasCoachLink),
   },
+  // Shown only to someone given Review on at least one engagement. The guest shell draws its own heading.
+  { id: "coaching", label: "Coaching", headless: true, show: (ctx) => ctx.canReview },
   {
     id: "firm",
+    headless: true,
     label: (l) =>
       l.type === "partner"
         ? "Your practice"
@@ -184,8 +187,6 @@ export const NAV_GROUPS: NavManifestGroup[] = [
   },
   { id: "account", label: "Your account" },
   { id: "sources", label: "Sources", headless: true },
-  // Shown only to someone given Review on at least one engagement.
-  { id: "coaching", label: "Coaching", show: (ctx) => ctx.canReview },
   { id: "guest-account", label: "Your account", guest: true },
   { id: "workspace", label: "Workspace", shared: true },
 ];
@@ -199,27 +200,28 @@ export function showsYourCoach(ctx: Pick<NavCtx, "type" | "role" | "hasCoachLink
 
 export const NAV_ITEMS: NavManifestItem[] = [
   { id: "home", placement: "main", group: "landed", label: "Home", to: "/home", icon: "overview" },
-  { id: "all-work", placement: "main", group: "landed", label: "All work", to: "/work", icon: "work" },
-  { id: "ai-record", placement: "main", group: "landed", label: "All AI Conversations", to: "/ai-record", icon: "ai-record" },
+  { id: "create", placement: "main", group: "landed", label: "Create", icon: "plus", runtimeOnly: true },
+  { id: "all-work", placement: "main", group: "lookback", legacyGroup: "landed", label: "All work", to: "/work", icon: "work" },
+  { id: "ai-record", retired: true, placement: "main", group: "landed", label: "All AI Conversations", to: "/ai-record", icon: "ai-record" },
   // NAV-1: retired render row; preserve its event dimension id.
   { id: "connect_tools", retired: true, placement: "main", group: "landed", label: "Connect your AI tools", to: "/connectors", icon: "connectors", runtimeOnly: true, show: (ctx) => ctx.workItemCount === 0 },
   // A partner's extra rows render after the shelves.
-  { id: "workshop-keys", placement: "workspace_menu", group: "engagements", label: "Workshop keys", to: "/requests", icon: "members", types: ["partner"], show: (ctx) => ctx.canManageMembers },
-  { id: "adding-people", placement: "workspace_menu", group: "engagements", label: "Adding people", to: "/adding-people", icon: "members", types: ["partner"], show: (ctx) => ctx.canManageMembers },
+  { id: "workshop-keys", retired: true, placement: "workspace_menu", group: "engagements", label: "Workshop keys", to: "/requests", icon: "members", types: ["partner"], show: (ctx) => ctx.canManageMembers },
+  { id: "adding-people", retired: true, placement: "workspace_menu", group: "engagements", label: "Adding people", to: "/adding-people", icon: "members", types: ["partner"], show: (ctx) => ctx.canManageMembers },
   // Past work first, because it is where finished work is found.
   { id: "past-work", retired: true, placement: "main", group: "lookback", label: "Past work", to: "/archive", icon: "firm" },
   { id: "archived", retired: true, placement: "main", group: "lookback", label: "Archived", to: "/archive", hash: "archived", icon: "history" },
   { id: "past-ask", retired: true, placement: "main", group: "lookback", label: "Past Ask Lasso chats", to: "/ai-record", icon: "history", search: { view: "asked" } },
   { id: "find-it", retired: true, placement: "main", group: "lookback", label: "Find it", to: "/find-it", icon: "work", disabled: true, disabledReason: "Coming soon" },
   { id: "decisions", retired: true, placement: "main", group: "lookback", label: "Decision log", to: "/decisions", icon: "decisions", disabled: true, disabledReason: "Coming soon" },
-  { id: "from_your_people", placement: "main", group: "from_your_people", label: "From your people", icon: "members", types: ["partner"], runtimeOnly: true, show: (ctx) => (ctx.partnerShareCount ?? 0) > 0 },
-  { id: "look_back", placement: "bottom", group: "lookback", label: "Look back", to: "/archive", icon: "history", runtimeOnly: true },
+  { id: "from_your_people", retired: true, placement: "main", group: "from_your_people", label: "From your people", icon: "members", types: ["partner"], runtimeOnly: true, show: (ctx) => (ctx.partnerShareCount ?? 0) > 0 },
+  { id: "look_back", placement: "main", group: "lookback", label: "Look back", to: "/archive", icon: "history", runtimeOnly: true },
   { id: "one-on-one", retired: true, placement: "main", group: "coach", label: "1:1 prep", to: "/one-on-one", icon: "one-on-one" },
   { id: "coach-notes", retired: true, placement: "main", group: "coach", label: "Notes from your coach", to: "/coach-notes", icon: "messages" },
-  { id: "your_coach", placement: "bottom", group: "coach", label: "Your coach", to: "/one-on-one", icon: "one-on-one", runtimeOnly: true },
-  { id: "firm-view", placement: "workspace_menu", group: "firm", label: "Firm view", to: "/firm", icon: "firm", show: (ctx) => ctx.canSeeFirmView },
+  { id: "your_coach", placement: "main", group: "coach", label: "Your coach", to: "/one-on-one", icon: "one-on-one", runtimeOnly: true },
+  { id: "firm-view", placement: "main", group: "firm", label: "Firm view", to: "/firm", icon: "firm", show: (ctx) => ctx.canSeeFirmView },
   {
-    id: "members", placement: "bottom",
+    id: "members", retired: true, placement: "bottom",
     group: "firm",
     label: (l) => (l.legacy ? "Members" : roles.membersLabel({ role: "", org_type: l.type })),
     to: "/members",
@@ -228,7 +230,7 @@ export const NAV_ITEMS: NavManifestItem[] = [
   },
   {
     // An affiliated business workspace names its institution first.
-    id: "affiliation", placement: "bottom",
+    id: "affiliation", retired: true, placement: "bottom",
     group: "account",
     label: (l) => `Your ${l.institutionName ?? ""} link`,
     to: "/affiliation",
@@ -236,14 +238,14 @@ export const NAV_ITEMS: NavManifestItem[] = [
     runtimeOnly: true,
     show: (ctx) => ctx.affiliated && isBusinessType(ctx.type),
   },
-  { id: "settings", placement: "workspace_menu", group: "account", label: "Settings", action: "openSettings", icon: "settings" },
+  { id: "settings", placement: "bottom", group: "sources", legacyGroup: "account", label: "Settings", action: "openSettings", icon: "settings" },
   // NAV-1: a stable, heading-free footer row regardless of work count.
   { id: "connectors", placement: "bottom", group: "sources", legacyGroup: "landed", label: "Sources", to: "/connectors", icon: "connectors" },
   { id: "people-you-coach", placement: "main", group: "coaching", label: "People you coach", to: "/coaching", icon: "members" },
   { id: "guest-one-on-one", placement: "main", group: "guest-account", label: "1:1 prep", to: "/one-on-one", icon: "one-on-one" },
   { id: "guest-settings", placement: "workspace_menu", group: "guest-account", label: "Settings", action: "openSettings", icon: "settings" },
-  { id: "trust", placement: "workspace_menu", group: "workspace", label: "Trust & data", to: "/trust", icon: "settings", runtimeOnly: true },
-  { id: "why", placement: "workspace_menu", group: "workspace", label: "Why Lasso", to: "/why", icon: "overview", runtimeOnly: true },
+  { id: "trust", retired: true, placement: "workspace_menu", group: "workspace", label: "Trust & data", to: "/trust", icon: "settings", runtimeOnly: true },
+  { id: "why", retired: true, placement: "workspace_menu", group: "workspace", label: "Why Lasso", to: "/why", icon: "overview", runtimeOnly: true },
   { id: "feedback", placement: "workspace_menu", group: "workspace", label: "Feedback", action: "openFeedback", icon: "messages", runtimeOnly: true },
   { id: "sign-out", placement: "workspace_menu", group: "workspace", label: "Sign out", action: "signOut", icon: "chevron-right", runtimeOnly: true },
 ];
@@ -274,7 +276,6 @@ export function navFor(ctx: NavCtx, l: Omit<NavLabelCtx, "type">): ResolvedNavGr
         item.group === group.id && !item.retired && presentFor(item.types, ctx.type) && (!item.show || item.show(ctx)),
     ).map(({ label, show: _s, types: _t, runtimeOnly: _r, retired: _x, legacyGroup: _g, ...rest }) => ({
       ...rest,
-      placement: rest.id === "members" && isBusinessType(ctx.type) ? "workspace_menu" as const : rest.placement,
       label: resolve(label, labels),
     }));
     for (const placement of ["main", "bottom", "workspace_menu"] as const) {
@@ -282,16 +283,11 @@ export function navFor(ctx: NavCtx, l: Omit<NavLabelCtx, "type">): ResolvedNavGr
       if (rows.length === 0 && !(group.alwaysShow && placement === "main")) continue;
       placed[placement].push({ id: group.id, placement, label: resolve(group.label, labels),
         ...(group.emptyState ? { emptyState: group.emptyState } : {}),
-        ...(group.headless && placement === "bottom" ? { headless: true } : {}), items: rows });
+        ...(group.headless ? { headless: true } : {}), items: rows });
     }
   }
-  // MN-3b: main rows first, People you coach right after What landed, then
-  // the bottom rows, then the workspace menu.
-  const coaching = guest ? [] : placed.main.filter((g) => g.id === "coaching");
-  const main = placed.main.filter((g) => !coaching.includes(g));
-  const landedAt = main.findIndex((g) => g.id === "landed") + 1;
-  main.splice(landedAt, 0, ...coaching);
-  return [...main, ...placed.bottom, ...placed.workspace_menu];
+  // NAV-2: order comes from NAV_GROUPS; main rows, then the pinned foot, then the switcher menu.
+  return [...placed.main, ...placed.bottom, ...placed.workspace_menu];
 }
 
 /* ---- Legacy exports, derived from the manifest for existing importers. ---- */
