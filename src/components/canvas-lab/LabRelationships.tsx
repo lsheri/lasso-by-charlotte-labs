@@ -68,11 +68,11 @@ export function LabRelationships({
               } : undefined}
               d={path}
               fill="none"
-              stroke={quiet ? CITED_STROKE : selected ? "var(--nb-green)" : "var(--nb-graphite)"}
-              strokeWidth={quiet ? 1 * inverseZoom : (selected ? 2.4 : 1.4) * inverseZoom}
-              strokeDasharray={quiet ? `${4 * inverseZoom} ${4 * inverseZoom}` : undefined}
+              stroke={selected ? "var(--nb-green)" : "var(--nb-graphite)"}
+              strokeWidth={(selected ? 2.4 : 1.4) * inverseZoom}
               strokeLinecap="round"
-              markerEnd={quiet ? "url(#canvas-lab-arrow-muted)" : selected ? "url(#canvas-lab-arrow-green)" : "url(#canvas-lab-arrow-graphite)"}
+              markerEnd={selected ? "url(#canvas-lab-arrow-green)" : "url(#canvas-lab-arrow-graphite)"}
+              {...(quiet ? { stroke: CITED_STROKE, strokeWidth: 1 * inverseZoom, strokeDasharray: `${4 * inverseZoom} ${4 * inverseZoom}`, markerEnd: "url(#canvas-lab-arrow-muted)" } : {})}
               className="canvas-lab-relationship-line cursor-pointer outline-none"
             />
           </g>
