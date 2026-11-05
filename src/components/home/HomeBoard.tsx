@@ -12,6 +12,7 @@ import { useEngagementViews } from "@/hooks/use-engagement-views";
 import { useEngagementWorkCounts } from "@/hooks/use-engagement-work-counts";
 import { useEngagementBoardPreviews } from "@/hooks/use-engagement-board-previews";
 import { useProfile } from "@/hooks/use-profile";
+import { useWorkItems } from "@/hooks/use-work-items";
 import { emitClientEvent } from "@/lib/client-telemetry";
 import { logEvent } from "@/lib/telemetry";
 import type { HomeGridEngagement } from "@/lib/home-grid";
@@ -71,6 +72,30 @@ export function openIdeasMailClient(idea: string): void {
   window.location.assign(ideasMailto(idea));
 }
 
+export const CONNECT_PROMPT_LINE = "Lasso fills from the AI tools you already use. Connect one to bring in your first piece of work.";
+
+/** NAV-1d: true only once the work count is known and is zero, read the way use-nav-ctx.ts reads it. */
+export function useShowConnectPrompt(): boolean {
+  const { data: work } = useWorkItems();
+  return work ? work.items.length === 0 : false;
+}
+
+/** NAV-1d: the empty-workspace connect prompt. Renders nothing unless the work count is known and zero. */
+export function ConnectToolsPrompt() {
+  const show = useShowConnectPrompt();
+  if (!show) return null;
+  return (
+    <div data-testid="home-connect-prompt" className="mx-auto mt-6 flex max-w-[780px] flex-col items-center gap-3">
+      <p className="text-[17px] leading-[1.5] text-muted-foreground">{CONNECT_PROMPT_LINE}</p>
+      <Button asChild type="button" variant="ink" className="h-11 px-6 text-[16px]">
+        <Link to="/connectors" onClick={() => emitClientEvent("home.connect_tools_opened", {})}>
+          Connect your AI tools
+        </Link>
+      </Button>
+    </div>
+  );
+}
+
 export function IdeasNote({ openMailClient = openIdeasMailClient }: { openMailClient?: (idea: string) => void }) {
   const [idea, setIdea] = useState("");
   const canSend = idea.trim().length > 0;
@@ -122,6 +147,7 @@ export function HomeBoard() {
     logEvent("home.opened", orgId, {});
   }, [orgId]);
 
+  const showConnectPrompt = useShowConnectPrompt();
   const countLabel = engagements ? `HOME · ${engagements.length} WORKBOARDS` : "HOME";
   const { data: views } = useEngagementViews(profile?.id);
   const { data: workCounts } = useEngagementWorkCounts(engagements?.map((e) => e.id));
@@ -169,7 +195,7 @@ export function HomeBoard() {
             <NewEngagementDialog
               from="home"
               trigger={(
-                <Button type="button" variant="ink" className="h-9" onClick={() => emitClientEvent("home.new_engagement_started", {})}>
+                <Button type="button" variant={showConnectPrompt ? "outline" : "ink"} className="h-9" onClick={() => emitClientEvent("home.new_engagement_started", {})}>
                   New workboard
                 </Button>
               )}
@@ -195,6 +221,7 @@ export function HomeBoard() {
             <p className="mx-auto mt-6 max-w-[780px] text-[21.75px] leading-[1.6] text-muted-foreground">
               Every AI conversation, document and decision from your work, kept in one place that belongs to you. Nothing here was written by Lasso.
             </p>
+            <ConnectToolsPrompt />
             <div className="mx-auto mt-[18px]" style={{ maxWidth: HOME_CONTENT_WIDTH }}>
               <IdeasNote />
             </div>
