@@ -13,17 +13,20 @@ export const FROM_YOUR_PEOPLE_COPY = { heading: "From your people" } as const;
 export function FromYourPeopleGroup({
   onOpen,
   rowClassName = "nb-nav-item nb-nav-item-nested",
+  headless = false,
 }: {
   onOpen: () => void;
   rowClassName?: string;
+  /** NAV-2: drop the heading when rendered under Shared with you. */
+  headless?: boolean;
 }) {
   const { data } = usePartnerSharedBoards();
   const groups = groupBySharer(Array.isArray(data) ? data : []);
   if (groups.length === 0) return null;
   return (
     <div data-nav-group="from_your_people">
-      <div className="nb-group-header px-2">{FROM_YOUR_PEOPLE_COPY.heading}</div>
-      <div className="mt-2 flex flex-col gap-0.5">
+      {headless ? null : <div className="nb-group-header px-2">{FROM_YOUR_PEOPLE_COPY.heading}</div>}
+      <div className={headless ? "flex flex-col gap-0.5" : "mt-2 flex flex-col gap-0.5"}>
         {groups.map((group) => (
           <div key={group.sharedBy}>
             <div className="truncate px-2 py-1 font-mono text-[13px] text-muted-foreground">{group.sharedBy}</div>
@@ -33,7 +36,7 @@ export function FromYourPeopleGroup({
                 to="/shared/$boardId"
                 params={{ boardId: board.board_id }}
                 onClick={onOpen}
-                className={rowClassName}
+                className={`${rowClassName} min-w-0`}
                 activeProps={{ className: "nb-nav-item-active" }}
               >
                 <NavActiveCatch />

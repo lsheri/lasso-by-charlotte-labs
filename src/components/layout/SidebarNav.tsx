@@ -359,6 +359,7 @@ export function SidebarNav({
   const unreadCount = (unreadNotes ?? []).length;
   const createMenu = (
     <SidebarCreateMenu
+      row
       items={[
         { id: "workboard", label: vocab.newEngagement, onSelect: () => setNewBoardOpen(true) },
         ...(canCreateClient(profile)
@@ -602,7 +603,6 @@ export function SidebarNav({
 
   return (
     <nav className="lasso-sidebar-nav flex shrink-0 flex-col gap-7">
-      <SharedWithYouSection onNavigate={onNavigate} />
       {navGroupsForPerson.map((group) => {
         if (group.id === "from_your_people") {
           return <FromYourPeopleGroup key="from_your_people" onOpen={() => openNavItem("from_your_people")} />;
@@ -638,6 +638,9 @@ export function SidebarNav({
                   <TooltipContent side="right">{item.disabledReason ?? "Coming soon"}</TooltipContent>
                 </Tooltip>
               </TooltipProvider>
+            ) : item.id === "create" ? (
+              // NAV-2: the existing create menu, drawn as a normal row.
+              <Fragment key={item.id}>{createMenu}</Fragment>
             ) : item.action === "openSettings" ? (
               <button
                 key={item.id}
@@ -646,7 +649,7 @@ export function SidebarNav({
                   onOpenSettings?.();
                   openNavItem(item.id);
                 }}
-                className={`${linkClass} w-full text-left`}
+                className={`${linkClass} w-full min-w-0 text-left`}
               >
                 <GraphiteIcon name={item.icon} size={20} />
                 <span className="truncate">{item.label}</span>
@@ -715,12 +718,11 @@ export function SidebarNav({
 
         return (
           <Fragment key={group.label}>
-          <div data-nav-placement={group.placement} className={isEngagementGroup ? "flex shrink-0 flex-col" : "shrink-0"}>
+          <div data-nav-placement={group.placement} {...(group.id === "sources" ? { "data-nav-footer": "true" } : {})} className={group.id === "sources" ? "lasso-sidebar-footer shrink-0" : isEngagementGroup ? "flex shrink-0 flex-col" : "shrink-0"}>
             {isEngagementGroup && everyCollapsibleId.length > 0 ? (
               <div className="flex items-center justify-between gap-2 px-2">
                 <div className="nb-group-header">{groupLabel}</div>
                 <span className="ml-auto flex items-center gap-2">
-                {createMenu}
                 <button
                   type="button"
                   data-testid="nav-collapse-all"
@@ -734,7 +736,6 @@ export function SidebarNav({
             ) : isEngagementGroup ? (
               <div className="flex items-center justify-between gap-2 px-2">
                 <div className="nb-group-header">{groupLabel}</div>
-                {createMenu}
               </div>
             ) : group.headless ? null : (
               <div className="nb-group-header px-2">{groupLabel}</div>
@@ -811,6 +812,15 @@ export function SidebarNav({
             </div>
           </div>
           {isEngagementGroup ? (
+            // NAV-2: Shared with you sits directly below Boards; a partner's From your people list shares its heading.
+            <SharedWithYouSection
+              onNavigate={onNavigate}
+              extraPresent={isPartnerOrg && (navCtx.partnerShareCount ?? 0) > 0}
+            >
+              {isPartnerOrg ? <FromYourPeopleGroup headless onOpen={() => openNavItem("from_your_people")} /> : null}
+            </SharedWithYouSection>
+          ) : null}
+          {isEngagementGroup ? (
             <SharedWithMeGroup
               profiles={profiles}
               orgId={profile?.org_id}
@@ -828,9 +838,12 @@ export function SidebarNav({
 function SidebarCreateMenu({
   items,
   onOpen,
+  row = false,
 }: {
   items: { id: string; label: string; onSelect: () => void }[];
   onOpen: () => void;
+  /** NAV-2: drawn as the Create nav row rather than a heading "+". */
+  row?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   return (
@@ -843,13 +856,15 @@ function SidebarCreateMenu({
           data-testid="nav-create-menu"
           onPointerDown={(event) => event.preventDefault()}
           onClick={() => { if (!open) onOpen(); setOpen((value) => !value); }}
-          className="shrink-0 rounded-[var(--radius-md)] p-0.5 text-muted-foreground transition-colors hover:text-foreground"
+          {...(row ? { "data-nav-item": "create" } : {})}
+          className={row ? `${linkClass} w-full min-w-0 text-left` : "shrink-0 rounded-[var(--radius-md)] p-0.5 text-muted-foreground transition-colors hover:text-foreground"}
         >
-          <GraphiteIcon name="plus" size={14} />
+          <GraphiteIcon name="plus" size={row ? 20 : 14} />
+          {row ? <span className="truncate">Create</span> : null}
         </button>
       </DropdownMenuTrigger>
       {open ? (
-        <DropdownMenuContent align="end" className="min-w-[200px] bg-sidebar">
+        <DropdownMenuContent align={row ? "start" : "end"} className="min-w-[200px] bg-sidebar">
           {items.map((item) => (
             <DropdownMenuItem key={item.id} data-create-item={item.id} onSelect={item.onSelect}>
               <GraphiteIcon name="plus" size={16} />
