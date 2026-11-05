@@ -36,7 +36,7 @@ import { LassoThinkingMark } from "@/components/reflect/LassoThinkingMark";
 import { LOOP_SIZE_TOOLBAR } from "@/lib/lasso-loop";
 import type { KeptAnswer } from "@/components/reflect/answer-keep-context";
 import { supabase } from "@/integrations/supabase/client";
-import { ANSWER_DRAG_MIME, KEEP_ANSWER_ANNOUNCEMENT, answerCiteRows, answerNodeInput, canKeepAnswer, citedCardAnchors, isAnswerDrag, parseAnswerDrop } from "@/lib/answer-card";
+import { ANSWER_CARD_SIZE, ANSWER_CARD_TITLE, ANSWER_DRAG_MIME, KEEP_ANSWER_ANNOUNCEMENT, answerCiteRows, answerNodeInput, canKeepAnswer, citedCardAnchors, isAnswerDrag, parseAnswerDrop } from "@/lib/answer-card";
 
 import { DecisionsLedger, COPY as LEDGER_COPY } from "@/components/canvas-lab/DecisionsLedger";
 import { CanvasLabReview } from "@/components/canvas-lab/CanvasLabReview";
@@ -2737,6 +2737,58 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
         ];
         at = placeAddedCards(anchor, taken, 1)[0] ?? anchor;
       }
+      // ASK-B2: a draft pin paints at once from local state; the server catches up in the background.
+      if (answer.sessionId) {
+        const sessionId = answer.sessionId;
+        const localId = `answer:${crypto.randomUUID()}`;
+        const node: LabNode = { id: localId, clientKey: localId, kind: "answer", frame: null, title: ANSWER_CARD_TITLE, summary: answer.text, typeLabel: "answer", ownership: "yours", local: true, x: at.x, y: at.y, width: ANSWER_CARD_SIZE.width, height: ANSWER_CARD_SIZE.height };
+        nodesRef.current = [...nodesRef.current, node];
+        setNodes((current) => [...(current ?? []), node]);
+        const citeReads = answerCiteRows("pending", answer.reads);
+        const lines = citedCardAnchors(citeReads, visibleNodes.filter((n) => n.kind === "work"), at);
+        let nextLinks = linksRef.current;
+        for (const line of lines) {
+          const added = addLabLink(nextLinks, line.cardId, line.fromAnchor, localId, line.toAnchor);
+          if (added.error) continue;
+          nextLinks = added.links.map((link, index) => index === added.links.length - 1 ? { ...link, relation: "cited" as const } : link);
+        }
+        const localLinkIds = nextLinks.filter((link) => !linksRef.current.includes(link)).map((link) => link.id);
+        if (localLinkIds.length > 0) {
+          linksRef.current = nextLinks;
+          setLinks(nextLinks);
+        }
+        const saved = await ensureNodeDurable(localId);
+        if (!saved) {
+          nodesRef.current = nodesRef.current.filter((entry) => entry.id !== localId);
+          setNodes((current) => current?.filter((entry) => entry.id !== localId) ?? current);
+          linksRef.current = linksRef.current.filter((link) => !localLinkIds.includes(link.id));
+          setLinks((current) => current.filter((link) => !localLinkIds.includes(link.id)));
+          setAnnouncement("That answer could not be pinned.");
+          return null;
+        }
+        noteWorkboardNodeCreated(orgId, "answer", undefined, via);
+        let store: Storage | null = null;
+        try { store = window.localStorage; } catch { store = null; }
+        writeAskPin(saved.id, sessionId, store);
+        if (via === "auto") setSelected([]);
+        // In series on purpose: rapid parallel board writes have produced save conflicts. A failure never removes the card.
+        void (async () => {
+          try {
+            const cites = answerCiteRows(saved.id, answer.reads);
+            if (cites.length > 0) await supabase.from("answer_cites").insert(cites);
+            for (const line of lines) {
+              const from = await ensureNodeDurable(line.cardId);
+              if (!from) continue;
+              await lab.persist({ type: "link_create", fromNodeId: from.id, fromAnchor: line.fromAnchor, toNodeId: saved.id, toAnchor: line.toAnchor, relation: "cited" });
+            }
+            await reloadDurableBoard();
+          } catch {
+            // The card stays; the lines and cites arrive on the next board read.
+          }
+        })();
+        setAnnouncement(KEEP_ANSWER_ANNOUNCEMENT);
+        return saved.id;
+      }
       const input = answerNodeInput({ clientKey: `answer:${crypto.randomUUID()}`, at, text: answer.text });
       const result = await lab.persist({ type: "node_create", node: input });
       report(result, "node", "create");
@@ -2769,6 +2821,16 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     } finally {
       setKeepBusy(false);
     }
+  }
+
+  /** ASK-B2: bring a pinned answer into view and select it. */
+  function jumpToAnswer(nodeId: string) {
+    const node = nodesRef.current.find((entry) => entry.id === nodeId);
+    if (!node) return;
+    const next = revealPan({ x: node.x, y: node.y }, panStateRef.current, zoomRef.current || 1, viewportSize);
+    if (next) setPan(next);
+    setSelected([nodeId]);
+    noteWorkboardAskView(orgId, "pinned_jump", "b");
   }
 
   /** B2: a person's own click or menu choice. Restoring a saved view never comes through here. */
@@ -3581,7 +3643,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
         </div>
         {boardReady && opening ? <div className={`pointer-events-none absolute inset-0 z-40 flex ${unfold.className}`} aria-hidden={!unfold.still}>{unfold.still ? <span className="sr-only">{unfold.reduced}</span> : null}<span className="canvas-lab-unfold-panel" /><span className="canvas-lab-unfold-panel" /><span className="canvas-lab-unfold-panel" /></div> : null}
       </main>
-      {profile?.id && orgId ? <BoardAsk floatHost={askFloatHost} sectionSource={sectionAskSource} sectionChoices={askSectionChoices} onPickSection={pickAskSection} open={askOpen} onOpenChange={(open) => { setAskOpen(open); if (!open) setAskSection(null); }} engagementId={engagementId} engagementTitle={title} profileId={profile.id} orgId={orgId} canKeep={canAddWork} onKeep={(answer, via, at) => keepAnswerAsCard(answer, at ? { via: via ?? "button", at } : { via: via ?? "button" })} boardContextHasPicks={contextNodes.length > 0} boardContextItemIds={contextNodes.flatMap((node) => { const item = itemByNode(node); return item ? [item.id] : []; })} /> : null}
+      {profile?.id && orgId ? <BoardAsk floatHost={askFloatHost} pinnedAnswers={visibleNodes.filter((n) => n.kind === "answer").map((n) => ({ nodeId: n.id, durableId: n.durableId ?? null, text: n.summary }))} onJumpToAnswer={jumpToAnswer} sectionSource={sectionAskSource} sectionChoices={askSectionChoices} onPickSection={pickAskSection} open={askOpen} onOpenChange={(open) => { setAskOpen(open); if (!open) setAskSection(null); }} engagementId={engagementId} engagementTitle={title} profileId={profile.id} orgId={orgId} canKeep={canAddWork} onKeep={(answer, via, at) => keepAnswerAsCard(answer, at ? { via: via ?? "button", at } : { via: via ?? "button" })} boardContextHasPicks={contextNodes.length > 0} boardContextItemIds={contextNodes.flatMap((node) => { const item = itemByNode(node); return item ? [item.id] : []; })} /> : null}
       {canAddWork && suggestOpen ? <BoardSuggestionSurface mobile={suggestionMobile} onClose={closeSuggestions}>
         {suggestApplied.length === 0 ? <SuggestStructurePanel state={suggestState} structures={suggestions} parts={suggestParts} shortfall={suggestShortfall} error={suggestError} onSubmit={(text, kind) => void submitSuggestions(text, kind)} onChoose={(id) => void chooseSuggestion(id)} onCancel={closeSuggestions} /> : <SuggestionApplyResult regions={suggestApplied} busy={suggestBusy} message={suggestRemoval} onRemove={() => void removeSuggestion()} onClose={closeSuggestions} />}
         {suggestApplied.length === 0 && suggestRemoval ? <p role="alert" className="text-base text-destructive">{suggestRemoval}</p> : null}
