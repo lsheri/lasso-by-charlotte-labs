@@ -135,6 +135,9 @@ describe("the workboard allowlist", () => {
           "via",
           "bundles",
         ],
+        "workboard.pinned_chat_opened": [
+          "draft",
+        ],
         "workboard.rail_toggled": [
           "state",
         ],
