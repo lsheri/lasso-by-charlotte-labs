@@ -20,7 +20,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { parseManifest } from "@/lib/context-manifest";
 import { ArtifactNote, SourceMark } from "@/components/work/SourceMark";
 import { TypeBadge } from "@/components/work/TypeIcon";
-import { useAnswerKeep } from "@/components/reflect/answer-keep-context";
+import { useAnswerKeep, useAnswerKeepLabel } from "@/components/reflect/answer-keep-context";
 import type { KeptAnswer } from "@/components/reflect/answer-keep-context";
 import { ANSWER_DRAG_MIME, KEEP_ANSWER_LABEL } from "@/lib/answer-card";
 import type { AskTab } from "@/components/reflect/ask-dock-state";
@@ -130,6 +130,7 @@ export function AnswerKeepControl({
   keep: (answer: KeptAnswer, via?: "button" | "drag") => void;
   canDrag: boolean;
 }) {
+  const label = useAnswerKeepLabel();
   return (
     <div className="inline-flex items-stretch">
       <Button
@@ -140,7 +141,7 @@ export function AnswerKeepControl({
         className={`nb-put-on-board h-8 rounded-l-[var(--radius-md)] border-graphite bg-background px-3 font-sans text-[13px] font-normal text-foreground shadow-none hover:border-graphite hover:bg-secondary focus-visible:z-10 ${canDrag ? "rounded-r-none" : "rounded-r-[var(--radius-md)]"}`}
       >
         <GraphiteIcon name="example-board" size={16} />
-        {KEEP_ANSWER_LABEL}
+        {label ?? KEEP_ANSWER_LABEL}
       </Button>
       {canDrag ? (
         <span

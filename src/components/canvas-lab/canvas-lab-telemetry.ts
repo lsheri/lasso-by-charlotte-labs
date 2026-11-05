@@ -45,10 +45,14 @@ export function noteWorkboardNodeMoved(orgId: string | undefined, kind: LabNodeE
 export function noteWorkboardAskMoved(orgId: string | undefined, to: "bottom_centre" | "bottom_right" | "lock_left" | "lock_right" | "free", draft: "a" | "b"): void {
   if (orgId) logEvent("workboard.ask_moved", orgId, { to, draft });
 }
+/** ASK-D2: the chat under a pinned answer was opened. Draft only. */
+export function noteWorkboardPinnedChatOpened(orgId: string | undefined, draft: "a" | "b"): void {
+  if (orgId) logEvent("workboard.pinned_chat_opened", orgId, { draft });
+}
 export function noteWorkboardFace(orgId: string | undefined, face: "art" | "preview", scope: "board" | "card" = "board"): void {
   if (orgId) logEvent("workboard.face_toggled", orgId, { face, scope });
 }
-export function noteWorkboardNodeCreated(orgId: string | undefined, kind: LabNodeEventKind, judgmentType?: LabJudgmentEventType, via?: "button" | "drag"): void {
+export function noteWorkboardNodeCreated(orgId: string | undefined, kind: LabNodeEventKind, judgmentType?: LabJudgmentEventType, via?: "button" | "drag" | "place" | "auto"): void {
   if (!orgId) return;
   const dims = { kind, judgment_type: judgmentType ?? "none" };
   logEvent("workboard.node_created", orgId, via ? { ...dims, via } : dims);
