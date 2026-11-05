@@ -8,7 +8,7 @@ vi.mock("@/components/reflect/ask-dock-state", () => ({ useAskDockState: () => (
 vi.mock("@/components/reflect/use-ask-lasso", () => ({ useAskLasso: () => ({
   mapped: [], setBoardSelection: vi.fn(), historySettled: true, sessions: [], newSession: vi.fn(), sessionId: "s1",
   messages: [{ id: 1, role: "user", content: "Q", created_at: "2026-11-05T08:00:00Z" }, { id: 2, role: "assistant", content: "The answer", created_at: "2026-11-05T08:00:01Z", context_manifest: null }],
-  sourcesByMessage: {}, pending: false, draft: "", mentionMatches: [], selectedItems: [], composerRef: { current: null }, bottomRef: { current: null },
+  sourcesByMessage: {}, pending: false, draft: "", mentionMatches: [], selectedItems: [], draftPointed: [], pointedNow: [], selected: [], firmChecks: [], coverage: null, composerRef: { current: null }, bottomRef: { current: null },
 }) }));
 vi.mock("@/components/oneonone/SaveForOneOnOne", () => ({ SaveForOneOnOneDialog: () => null }));
 vi.mock("@tanstack/react-router", () => ({ Link: ({ children }: { children: React.ReactNode }) => <a>{children}</a>, useRouter: () => ({ navigate: vi.fn() }), useNavigate: () => vi.fn(), useRouterState: () => ({}) }));
