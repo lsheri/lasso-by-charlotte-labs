@@ -8407,19 +8407,19 @@ main[data-ask-lock] .canvas-lab-floating-tools-wrapper { left: calc(12px + var(-
 .ask-draft-head-btn:hover, .ask-draft-head-btn[aria-pressed="true"] { background: var(--surface-sunk-2); color: var(--foreground); }
 .ask-draft-body { display: flex; flex: 1; flex-direction: column; min-height: 0; overflow-y: auto; }
 .ask-draft-body > header { display: none; }
-.ask-draft .nb-binder-line { background-image: none; }
+.ask-draft .nb-binder, .ask-draft .nb-binder-line { background-image: none; }
 .ask-draft-body > a { border-top: 0; }
 .ask-draft[data-collapsed="true"] .ask-draft-title,
 .ask-draft[data-collapsed="true"] .ask-draft-new { visibility: hidden; }
 .ask-draft[data-collapsed="true"] .ask-draft-head { position: absolute; inset: 4px 10px auto; z-index: 11; padding: 0; pointer-events: none; }
 .ask-draft[data-collapsed="true"] .ask-draft-head button { pointer-events: auto; }
-.ask-draft[data-collapsed="true"] .ask-draft-body > div:not(.sticky):not(:has(footer)) { display: none; }
+.ask-draft[data-collapsed="true"] .ask-draft-body > .nb-binder { display: none; }
 .ask-draft-b { gap: 0; }
 .ask-draft-b .ask-draft-head { border: 1px solid var(--nb-rule); border-bottom: 0; border-radius: 20px 20px 0 0; background: var(--nb-white); }
 .ask-draft-b .ask-draft-body { overflow: visible; }
 .ask-draft-b .ask-draft-body > :not(div.sticky):not(a) { border-inline: 1px solid var(--nb-rule); background: var(--nb-white); }
 .ask-draft-b .ask-draft-body > :has(+ div.sticky) { border-bottom: 1px solid var(--nb-rule); border-radius: 0 0 20px 20px; box-shadow: var(--shadow-float); }
-.ask-draft-b .ask-draft-body > div:not(.sticky):not(:has(footer)) { flex: 1; min-height: 0; overflow-y: auto; }
+.ask-draft-b .ask-draft-body > .nb-binder { flex: 1; min-height: 0; overflow-y: auto; }
 .ask-draft-b .ask-draft-body > div.sticky { margin-top: 8px; overflow: hidden; border: 1px solid var(--nb-rule); border-radius: 999px; background: var(--nb-white); box-shadow: var(--shadow-float); }
 .ask-draft-b .ask-draft-body > div.sticky footer { border-top: 0; padding-inline: 24px; }
 .ask-draft-b .ask-draft-body > a { background: transparent; text-align: center; }
