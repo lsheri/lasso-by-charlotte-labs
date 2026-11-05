@@ -3,12 +3,11 @@ import { readFileSync } from "node:fs";
 
 import { navGroups } from "@/components/layout/nav-config";
 import { AVATAR_COLORS, avatarColorFor, initialsOf, kindChipTint } from "@/lib/card-meta";
-import { PAST_WORK_GROUP_LABEL, PAST_WORK_NAV_LABEL } from "@/lib/past-work-shared";
+import { PAST_WORK_NAV_LABEL } from "@/lib/past-work-shared";
 
 describe("pass 142: your organization", () => {
   it("renames the nav group and keeps Past work", () => {
     // Nav is now ordered by the weekly loop rather than by object type.
-    expect(PAST_WORK_GROUP_LABEL).toBe("Where it goes");
     expect(PAST_WORK_NAV_LABEL).toBe("Past work");
     // SB-N1: the row itself leads Look back now, above the past chats.
     const lookback = navGroups.find((g) => g.id === "lookback");

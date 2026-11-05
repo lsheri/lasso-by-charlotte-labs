@@ -58,13 +58,13 @@ test("solo person walks setup and sets a full data level", async ({ page }) => {
     });
   });
 
-  for (const group of ["What landed", "Where it goes", "Look back"]) {
+  for (const group of ["Home", "Boards", "Look back"]) {
     await check(`sidebar group ${group}`, `text="${group}"`, async () => {
       await expect(page.getByText(group, { exact: true }).first()).toBeVisible({ timeout: 20_000 });
     });
   }
 
-  for (const group of ["Your coach", "Run the firm"]) {
+  for (const group of ["Your coach", "Firm view"]) {
     await check(`sidebar hides ${group}`, `text="${group}"`, async () => {
       await expect(page.getByText(group, { exact: true })).toHaveCount(0);
     });

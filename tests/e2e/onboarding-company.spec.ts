@@ -13,7 +13,7 @@ const NAV_GROUPS = [
   "Boards",
   "Look back",
   "Your coach",
-  "Run the firm",
+  "Firm view",
 ];
 
 const THREAD = [
