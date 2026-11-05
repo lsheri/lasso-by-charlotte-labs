@@ -60,7 +60,7 @@ import {
 } from "@/lib/container-colour";
 import { isPartnerType } from "@/lib/workspace-capabilities";
 
-const linkClass = "nb-nav-item";
+const linkClass = "nb-nav-item min-w-0";
 const activeProps = { className: "nb-nav-item-active" };
 
 type CachedNavTask = { id: string; name: string; is_wrap?: boolean };
