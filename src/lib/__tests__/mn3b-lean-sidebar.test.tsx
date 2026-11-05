@@ -80,7 +80,7 @@ afterEach(cleanup);
 const LANDED = ["Home -> /home", "# Boards", "All work -> /work"];
 
 describe("NAV-1 sidebar and the sources row", () => {
-  it("company admin with no work: Connect your AI tools shows in the sidebar, not the menu", () => {
+  it("company admin with no work: Sources shows in the sidebar, not the menu", () => {
     expect(sidebarRows()).toEqual([...LANDED, "Look back -> /archive", "Your coach -> /one-on-one", "Firm view -> /firm", "Sources -> /connectors"]);
     expect(menuIds()).toEqual(["feedback", "sign-out"]);
   });
@@ -100,7 +100,7 @@ describe("NAV-1 sidebar and the sources row", () => {
     state.type = "personal"; state.work = 5;
     expect(sidebarRows()).toEqual([...LANDED, "Look back -> /archive", "Sources -> /connectors"]);
   });
-  it("edu admin: classes after the tree, then the bottom rows", () => {
+  it("edu admin: Look back and Your coach after the tree, then Sources", () => {
     state.type = "edu"; state.work = 5;
     expect(sidebarRows()).toEqual([...LANDED,
       "Look back -> /archive", "Your coach -> /one-on-one", "Sources -> /connectors"]);
@@ -109,7 +109,7 @@ describe("NAV-1 sidebar and the sources row", () => {
     state.role = "coach"; state.review = true;
     expect(sidebarRows()).toEqual(["# Coaching", "People you coach -> /coaching", "# Your account", "1:1 prep -> /one-on-one"]);
   });
-  it("People you coach sits between What landed and Where it goes", () => {
+  it("People you coach sits after Your coach, above Sources", () => {
     state.role = "em"; state.review = true; state.work = 5;
     expect(sidebarRows()).toEqual([...LANDED, "Look back -> /archive", "Your coach -> /one-on-one", "People you coach -> /coaching", "Sources -> /connectors"]);
   });

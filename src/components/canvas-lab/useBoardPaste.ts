@@ -12,7 +12,7 @@ export function useBoardPaste(args: {
   shellRef: RefObject<HTMLElement | null>;
   toBoard: (clientX: number, clientY: number) => Point;
   viewportPoint: () => Point;
-  addFiles: (files: File[], at: Point, channel: "drop" | "paste") => Promise<void>;
+  addFiles: (files: File[], at: Point, channel: "drop" | "paste") => Promise<{ added: number; failed: number }>;
   addText: (text: string, at: Point) => Promise<boolean>;
   orgId: string | undefined;
 }): void {
@@ -39,8 +39,11 @@ export function useBoardPaste(args: {
       const at = last ? a.toBoard(last.x, last.y) : a.viewportPoint();
       void (async () => {
         if (read.kind === "files") {
-          await a.addFiles(files, at, "paste");
-          noteWorkboardPasted(a.orgId, files.every(isBoardImageFile) ? "image" : "file", "added");
+          let result = { added: 0, failed: 0 };
+          try { result = await a.addFiles(files, at, "paste"); } catch { result = { added: 0, failed: files.length }; }
+          // Zeros on both sides means addFiles returned early (busy or disabled): nothing came in and nothing toasted yet.
+          if (result.added === 0 && result.failed === 0) toast(BOARD_PASTE_COPY.failed);
+          noteWorkboardPasted(a.orgId, files.every(isBoardImageFile) ? "image" : "file", result.added > 0 ? "added" : "failed");
           return;
         }
         if (read.kind === "text") {
