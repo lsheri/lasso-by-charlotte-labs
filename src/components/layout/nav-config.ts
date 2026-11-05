@@ -238,9 +238,10 @@ export const NAV_ITEMS: NavManifestItem[] = [
     runtimeOnly: true,
     show: (ctx) => ctx.affiliated && isBusinessType(ctx.type),
   },
-  { id: "settings", placement: "bottom", group: "sources", legacyGroup: "account", label: "Settings", action: "openSettings", icon: "settings" },
   // NAV-1: a stable, heading-free footer row regardless of work count.
   { id: "connectors", placement: "bottom", group: "sources", legacyGroup: "landed", label: "Sources", to: "/connectors", icon: "connectors" },
+  // NAV-2: Settings follows Sources at the rail's foot.
+  { id: "settings", placement: "bottom", group: "sources", legacyGroup: "account", label: "Settings", action: "openSettings", icon: "settings" },
   { id: "people-you-coach", placement: "main", group: "coaching", label: "People you coach", to: "/coaching", icon: "members" },
   { id: "guest-one-on-one", placement: "main", group: "guest-account", label: "1:1 prep", to: "/one-on-one", icon: "one-on-one" },
   { id: "guest-settings", placement: "workspace_menu", group: "guest-account", label: "Settings", action: "openSettings", icon: "settings" },

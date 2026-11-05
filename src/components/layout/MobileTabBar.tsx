@@ -166,7 +166,8 @@ export function MobileTabBar() {
           <div className="mt-3 flex flex-col gap-0.5">
             {groups.map((group) => (
               <section key={`${group.id}:${group.placement}`} data-nav-group={group.id}>
-                {group.headless ? null : <div className="nb-group-header">{group.label}</div>}
+                {/* The guest sheet keeps its Coaching heading exactly as before NAV-2. */}
+                {group.headless && group.id !== "coaching" ? null : <div className="nb-group-header">{group.label}</div>}
                 {group.items.map(renderMoreItem)}
               </section>
             ))}
