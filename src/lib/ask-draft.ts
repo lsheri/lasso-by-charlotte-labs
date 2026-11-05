@@ -34,16 +34,18 @@ const STORE_KEY = "lasso.ask-draft";
 
 type Store = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 
-/** The query wins; ask=off clears; otherwise the remembered choice for this host. */
+/** The query wins; ask=off is remembered as off; otherwise the remembered choice, or draft b, on a preview host. */
 export function resolveAskDraft(host: string, search: string, store: Store | null): AskDraft | null {
   if (!isAskDraftHost(host)) return null;
   const value = new URLSearchParams(search).get("ask");
   try {
-    if (value === "off") { store?.removeItem(STORE_KEY); return null; }
+    if (value === "off") { store?.setItem(STORE_KEY, "off"); return null; }
     const fromQuery = askDraftFromLocation(host, search);
     if (fromQuery) { store?.setItem(STORE_KEY, fromQuery); return fromQuery; }
     const saved = store?.getItem(STORE_KEY);
-    return saved === "a" || saved === "b" ? saved : null;
+    if (saved === "off") return null;
+    // ASK-B1: draft b is the default floating surface on preview hosts.
+    return saved === "a" || saved === "b" ? saved : "b";
   } catch {
     return askDraftFromLocation(host, search);
   }
@@ -68,46 +70,6 @@ export function writeAskPosition(draft: AskDraft, pos: SavedAskPosition, store: 
 }
 
 export type Rect = { x: number; y: number; w: number; h: number };
-export type DropTarget = Exclude<AskDraftPosition, "free">;
-
-/** The four dashed drop targets inside a canvas of width w and height h. */
-export function askDropTargets(w: number, h: number): Record<DropTarget, Rect> {
-  const bandH = 96;
-  const lockH = Math.max(80, h - 24 - bandH - 32);
-  return {
-    lock_left: { x: 12, y: 12, w: 120, h: lockH },
-    lock_right: { x: w - 132, y: 12, w: 120, h: lockH },
-    bottom_centre: { x: w / 2 - 150, y: h - 16 - bandH, w: 300, h: bandH },
-    bottom_right: { x: w - 16 - 200, y: h - 16 - bandH, w: 200, h: bandH },
-  };
-}
-
-/** Pure: which drop target a canvas-relative point lands on, or free. */
-export function resolveAskDrop(px: number, py: number, w: number, h: number): AskDraftPosition {
-  const targets = askDropTargets(w, h);
-  for (const key of ["bottom_right", "bottom_centre", "lock_left", "lock_right"] as const) {
-    const r = targets[key];
-    if (px >= r.x && px <= r.x + r.w && py >= r.y && py <= r.y + r.h) return key;
-  }
-  return "free";
-}
-
-export const ASK_DRAFT_WIDTH: Record<AskDraftPosition, number> = {
-  bottom_centre: 600,
-  bottom_right: 430,
-  lock_left: 380,
-  lock_right: 380,
-  free: 460,
-};
-
-/** Keep a free surface inside the canvas after a resize. */
-export function clampFree(x: number, y: number, w: number, h: number, width = ASK_DRAFT_WIDTH.free, minVisible = 80): { x: number; y: number } {
-  return {
-    x: Math.min(Math.max(0, x), Math.max(0, w - Math.min(width, w))),
-    y: Math.min(Math.max(0, y), Math.max(0, h - minVisible)),
-  };
-}
-
 /** ASK-D2: an automatic pin sits 40 board pixels right of the picked cards, top aligned, clear of other cards. */
 export function autoPinPoint(picked: Rect[] | { x: number; y: number; width: number; height: number }[], taken: { x: number; y: number; width: number; height: number }[]): { x: number; y: number } | null {
   const rects = picked.map((r) => ("w" in r ? { x: r.x, y: r.y, width: r.w, height: r.h } : r));

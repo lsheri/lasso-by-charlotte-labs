@@ -157,3 +157,26 @@ export function answerAsOf(createdAt: string | null | undefined): string {
 export function canKeepAnswer(state: { onBoard: boolean; finished: boolean; canEdit: boolean }): boolean {
   return state.onBoard && state.finished && state.canEdit;
 }
+
+/** The cards a pinned answer read that can carry a line. At most six, in reading order. */
+export function citedCardAnchors(
+  cites: readonly { work_item_id: string }[],
+  cards: readonly { id: string; workItemId?: string | null | undefined; x: number; y: number; width: number; height: number }[],
+  at: { x: number; y: number },
+): { cardId: string; fromAnchor: "left" | "right" | "top" | "bottom"; toAnchor: "left" | "right" | "top" | "bottom" }[] {
+  const out: { cardId: string; fromAnchor: "left" | "right" | "top" | "bottom"; toAnchor: "left" | "right" | "top" | "bottom" }[] = [];
+  for (const cite of cites) {
+    const card = cards.find((c) => c.workItemId === cite.work_item_id);
+    if (!card || out.some((o) => o.cardId === card.id)) continue;
+    const dx = at.x + ANSWER_CARD_SIZE.width / 2 - (card.x + card.width / 2);
+    const dy = at.y + ANSWER_CARD_SIZE.height / 2 - (card.y + card.height / 2);
+    const across = Math.abs(dx) >= Math.abs(dy);
+    out.push({
+      cardId: card.id,
+      fromAnchor: across ? (dx >= 0 ? "right" : "left") : (dy >= 0 ? "bottom" : "top"),
+      toAnchor: across ? (dx >= 0 ? "left" : "right") : (dy >= 0 ? "top" : "bottom"),
+    });
+    if (out.length === 6) break;
+  }
+  return out;
+}

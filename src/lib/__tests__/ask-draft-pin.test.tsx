@@ -33,9 +33,24 @@ describe("ASK-D2 pinned card", () => {
     await waitFor(() => expect(screen.getByText("This chat is not available to you here.")).toBeTruthy());
   });
   it("with the gate closed a map entry still shows no Chat row", async () => {
+    // ASK-B1: preview hosts default to draft b, so the gate is closed with ask=off.
+    window.history.replaceState(null, "", "/?ask=off");
     window.localStorage.setItem("lasso.ask-draft.pins", JSON.stringify({ n1: "s1" }));
     render(<LabAnswerCard {...cardProps} />);
     await new Promise((r) => setTimeout(r, 0));
     expect(screen.queryByRole("button", { name: /^Chat/ })).toBeNull();
+  });
+});
+
+import { citedCardAnchors } from "@/lib/answer-card";
+
+describe("ASK-B1 cited card lines", () => {
+  const card = (id: string, wi: string, x = 0) => ({ id, workItemId: wi, x, y: 0, width: 200, height: 120 });
+  it("skips cites with no card and duplicates, caps at six, and an answer to the right links right to left", () => {
+    const cards = Array.from({ length: 8 }, (_, i) => card(`c${i}`, `w${i}`));
+    const cites = [{ work_item_id: "missing" }, { work_item_id: "w0" }, { work_item_id: "w0" }, ...cards.slice(1).map((c) => ({ work_item_id: c.workItemId }))];
+    const out = citedCardAnchors(cites, cards, { x: 1000, y: 0 });
+    expect(out.map((o) => o.cardId)).toEqual(["c0", "c1", "c2", "c3", "c4", "c5"]);
+    expect(out[0]).toEqual({ cardId: "c0", fromAnchor: "right", toAnchor: "left" });
   });
 });

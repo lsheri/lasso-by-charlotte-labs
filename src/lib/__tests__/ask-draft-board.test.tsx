@@ -17,6 +17,8 @@ afterEach(() => { cleanup(); window.localStorage.clear(); window.history.replace
 
 describe("ASK-D1 BoardAsk gate", () => {
   it("with the gate closed renders the existing side panel", async () => {
+    // ASK-B1: preview hosts default to draft b, so the gate is closed with ask=off.
+    window.history.replaceState(null, "", "/?ask=off");
     const host = document.createElement("main");
     document.body.appendChild(host);
     const { baseElement } = render(<BoardAsk {...props} floatHost={host} />);
