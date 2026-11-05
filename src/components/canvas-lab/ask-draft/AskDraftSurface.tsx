@@ -1,15 +1,16 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, type KeyboardEvent as ReactKeyboardEvent, type RefObject } from "react";
+import { useCallback, useEffect, useState, useLayoutEffect, useRef, type KeyboardEvent as ReactKeyboardEvent, type RefObject } from "react";
 import { createPortal } from "react-dom";
-import { History, X } from "lucide-react";
+import { ChevronsDownUp, ChevronsUpDown, History, X } from "lucide-react";
 
 import { AskSurface } from "@/components/reflect/AskSurface";
 import type { AskLasso } from "@/components/reflect/use-ask-lasso";
 import type { AskTab } from "@/components/reflect/ask-dock-state";
 import type { AskSectionChoice } from "@/components/canvas-lab/BoardAsk";
-import { noteWorkboardAskMoved } from "@/components/canvas-lab/canvas-lab-telemetry";
+import { AskPastList, type PinnedAnswerRow } from "@/components/canvas-lab/ask-draft/AskPastList";
+import { noteWorkboardAskMoved, noteWorkboardAskView } from "@/components/canvas-lab/canvas-lab-telemetry";
 import { AskPlacingGhost } from "@/components/canvas-lab/ask-draft/AskPlacing";
 import { readAskPosition, writeAskPosition, type AskDraft } from "@/lib/ask-draft";
-import { ASK_DOCK_CONFIG, useAskDock, type DockId } from "@/lib/ask-dock-engine";
+import { ASK_DOCK_CONFIG, DOCK_SPOTS, useAskDock, type DockId } from "@/lib/ask-dock-engine";
 
 function safeStore(): Storage | null {
   try { return window.localStorage; } catch { return null; }
@@ -28,7 +29,11 @@ type Props = {
   onClose: () => void;
   sections?: AskSectionChoice[] | undefined;
   onPickSection?: ((frameId: string) => void) | undefined;
+  pinnedAnswers?: PinnedAnswerRow[] | undefined;
+  onJumpToAnswer?: ((nodeId: string) => void) | undefined;
 };
+
+const FOOT_H = 34;
 
 const HEADER_H = 44;
 
@@ -37,6 +42,11 @@ export function AskDraftSurface(props: Props) {
   const { draft, host, ask } = props;
   const bodyRef = useRef<HTMLDivElement>(null);
   const initial = useRef(readAskPosition(draft, safeStore())).current;
+  const [folded, setFolded] = useState(false);
+  const empty = props.tab === "messages" && (ask.messages ?? []).length === 0;
+  const collapsed = empty || folded;
+  const foldedRef = useRef(collapsed);
+  foldedRef.current = collapsed;
 
   const contentHeight = useCallback(() => {
     const body = bodyRef.current;
@@ -50,6 +60,7 @@ export function AskDraftSurface(props: Props) {
         : child.offsetHeight;
       total += inner + (parseFloat(cs.marginTop) || 0) + (parseFloat(cs.marginBottom) || 0);
     }
+    if (!foldedRef.current) total += FOOT_H;
     return total;
   }, []);
 
@@ -69,7 +80,10 @@ export function AskDraftSurface(props: Props) {
     },
   });
 
-  const collapsed = props.tab === "messages" && (ask.messages ?? []).length === 0;
+  // Unfold when a read starts and when history opens.
+  useEffect(() => { if (ask.pending) setFolded(false); }, [ask.pending]);
+  useEffect(() => { if (props.tab === "history") setFolded(false); }, [props.tab]);
+
   const { refresh } = dock;
 
   // Content changes size: re-measure the body and the binder's scroll content.
@@ -117,10 +131,8 @@ export function AskDraftSurface(props: Props) {
       <AskPlacingGhost host={host} />
       {dock.spots ? (
         <div className="ask-draft-spots" aria-hidden="true">
-          {Object.entries(dock.spots).map(([id, box]) => (
-            <span key={id} data-near={dock.hover === id ? "true" : undefined} style={{ left: box.x, top: box.y, width: box.w, height: box.h }}>
-              <i /><i /><i /><i />
-            </span>
+          {DOCK_SPOTS.map((id) => (
+            <span key={id} data-spot={id} data-near={dock.hover === id ? "true" : undefined} />
           ))}
         </div>
       ) : null}
@@ -151,11 +163,30 @@ export function AskDraftSurface(props: Props) {
           <button type="button" className="ask-draft-head-icon" aria-label="History" aria-pressed={props.tab === "history"} onClick={() => props.onTab(props.tab === "history" ? "messages" : "history")}>
             <History size={16} aria-hidden="true" />
           </button>
+          {empty ? null : (
+            <button
+              type="button"
+              className="ask-draft-head-icon"
+              aria-label={folded ? "Expand Ask Lasso" : "Collapse Ask Lasso"}
+              aria-expanded={!folded}
+              onClick={() => { noteWorkboardAskView(props.orgId, folded ? "expanded" : "folded", draft); setFolded(!folded); }}
+            >
+              {folded ? <ChevronsUpDown size={16} aria-hidden="true" /> : <ChevronsDownUp size={16} aria-hidden="true" />}
+            </button>
+          )}
           <button type="button" className="ask-draft-head-icon" aria-label="Close Ask Lasso" onClick={props.onClose}>
             <X size={16} aria-hidden="true" />
           </button>
         </div>
         <div ref={bodyRef} className="ask-draft-body">
+          {props.tab === "history" ? (
+            <AskPastList
+              ask={ask}
+              pinned={props.pinnedAnswers ?? []}
+              onOpen={(id) => { ask.openSession(id); props.onTab("messages"); }}
+              onJump={(nodeId) => props.onJumpToAnswer?.(nodeId)}
+            />
+          ) : (
           <AskSurface
             ask={ask}
             tab={props.tab}
@@ -170,7 +201,22 @@ export function AskDraftSurface(props: Props) {
             sections={props.sections}
             onPickSection={props.onPickSection}
           />
+          )}
         </div>
+        {collapsed ? null : (
+          <button
+            type="button"
+            className="ask-draft-foot"
+            aria-pressed={props.tab === "history"}
+            onClick={() => {
+              const next = props.tab === "history" ? "messages" : "history";
+              if (next === "history") noteWorkboardAskView(props.orgId, "past_opened", draft);
+              props.onTab(next);
+            }}
+          >
+            {props.tab === "history" ? "Back to this chat" : "Past conversations"}
+          </button>
+        )}
       </section>
     </>,
     host,

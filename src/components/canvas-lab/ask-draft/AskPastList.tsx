@@ -1,7 +1,7 @@
 import { Pin } from "lucide-react";
 
 import type { AskLasso } from "@/components/reflect/use-ask-lasso";
-import { NbDots } from "@/components/notebook/NbDots";
+import { NbDots } from "@/components/reflect/AskSurface";
 import { readAskPins } from "@/lib/ask-draft";
 
 export type PinnedAnswerRow = { nodeId: string; durableId: string | null; text: string };
