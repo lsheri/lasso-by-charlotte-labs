@@ -44,15 +44,15 @@ describe("ASK-D1 BoardAsk gate", () => {
   });
 });
 
-function Harness({ messages }: { messages: unknown[] }) {
+function Harness({ messages, pending = false, readingNodeIds }: { messages: unknown[]; pending?: boolean; readingNodeIds?: string[] }) {
   const [tab, setTab] = useState<AskTab>("messages");
   const [pickerOpen, setPickerOpen] = useState(false);
   const host = document.body.querySelector("main") as HTMLElement;
-  const ask = { messages, sessions: [], historySettled: true, pending: false, pickerOpen, error: null, newSession: vi.fn(), openSession: vi.fn() } as unknown as AskLasso;
+  const ask = { messages, sessions: [], historySettled: true, pending, pickerOpen, error: null, newSession: vi.fn(), openSession: vi.fn() } as unknown as AskLasso;
   return (
     <>
       <button type="button" onClick={() => setPickerOpen(true)}>open card picker</button>
-      <AskDraftSurface draft="b" host={host} ask={ask} tab={tab} onTab={setTab} engagementId="board" engagementTitle="Board" profileId="person" orgId="workspace" onClose={vi.fn()} />
+      <AskDraftSurface draft="b" host={host} ask={ask} tab={tab} onTab={setTab} engagementId="board" engagementTitle="Board" profileId="person" orgId="workspace" onClose={vi.fn()} readingNodeIds={readingNodeIds} />
     </>
   );
 }
@@ -80,5 +80,39 @@ describe("ASK-B2 header and foot", () => {
     expect(screen.getByRole("button", { name: "Expand Ask Lasso" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "open card picker" }));
     expect(screen.getByRole("button", { name: "Collapse Ask Lasso" })).toBeTruthy();
+  });
+});
+
+describe("ASK-LOOK-1 ink cap and reading lines", () => {
+  const msgs = [{ id: "m1", role: "user", content: "hi" }];
+  it("pending with no reading ids shows the signature mark and no lines", () => {
+    document.body.appendChild(document.createElement("main"));
+    const { baseElement } = render(<Harness messages={msgs} pending />);
+    expect(baseElement.querySelector('[data-lasso-thinking-mark="signature"]')).not.toBeNull();
+    expect(baseElement.querySelector(".ask-reading-lines")).toBeNull();
+  });
+  it("pending with reading ids renders the lines", () => {
+    document.body.appendChild(document.createElement("main"));
+    const { baseElement } = render(<Harness messages={msgs} pending readingNodeIds={["n1"]} />);
+    expect(baseElement.querySelector(".ask-reading-lines")).not.toBeNull();
+  });
+  it("not pending with reading ids renders no lines and no signature mark", () => {
+    document.body.appendChild(document.createElement("main"));
+    const { baseElement } = render(<Harness messages={msgs} readingNodeIds={["n1"]} />);
+    expect(baseElement.querySelector(".ask-reading-lines")).toBeNull();
+    expect(baseElement.querySelector('[data-lasso-thinking-mark="signature"]')).toBeNull();
+  });
+  it("section carries data-thinking only while pending", () => {
+    document.body.appendChild(document.createElement("main"));
+    const { baseElement, unmount } = render(<Harness messages={msgs} pending />);
+    expect(baseElement.querySelector(".ask-draft")?.getAttribute("data-thinking")).toBe("true");
+    unmount();
+    const second = render(<Harness messages={msgs} />);
+    expect(second.baseElement.querySelector(".ask-draft")?.hasAttribute("data-thinking")).toBe(false);
+  });
+  it("keeps the title text Ask Lasso", () => {
+    document.body.appendChild(document.createElement("main"));
+    const { baseElement } = render(<Harness messages={msgs} />);
+    expect(baseElement.querySelector(".ask-draft-title")?.textContent).toBe("Ask Lasso");
   });
 });
