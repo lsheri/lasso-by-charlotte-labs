@@ -8422,7 +8422,6 @@ main[data-ask-lock] .canvas-lab-floating-tools-wrapper { left: calc(12px + var(-
 .ask-draft-body > div.sticky footer * { min-width: 0; }
 .ask-draft-body > a { display: none; }
 .ask-draft[data-collapsed="true"] .ask-draft-body > .nb-binder { display: none; }
-.ask-draft[data-collapsed="true"] .ask-draft-body > :not(.nb-binder):not(div.sticky) { display: none; }
 .ask-draft-spots { position: absolute; inset: 0; z-index: 29; pointer-events: none; }
 .ask-draft-spots span { position: absolute; border: 1.5px dotted color-mix(in srgb, var(--hint-green) 50%, transparent); border-radius: var(--radius-pill); background: color-mix(in srgb, var(--hint-green) 7%, transparent); transition: transform 140ms cubic-bezier(.2,0,0,1), background-color 140ms, border-color 140ms; }
 .ask-draft-spots span[data-spot="lock_left"] { left: 6px; top: 50%; width: 12px; height: 112px; margin-top: -56px; transform-origin: left center; }

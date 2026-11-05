@@ -83,6 +83,8 @@ export function AskDraftSurface(props: Props) {
   // Unfold when a read starts and when history opens.
   useEffect(() => { if (ask.pending) setFolded(false); }, [ask.pending]);
   useEffect(() => { if (props.tab === "history") setFolded(false); }, [props.tab]);
+  // ASK-B2a: a picked-cards picker or a failed send needs room to show.
+  useEffect(() => { if (ask.pickerOpen || ask.error) setFolded(false); }, [ask.pickerOpen, ask.error]);
 
   const { refresh } = dock;
 

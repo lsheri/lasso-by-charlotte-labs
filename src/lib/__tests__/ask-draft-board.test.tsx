@@ -46,9 +46,15 @@ describe("ASK-D1 BoardAsk gate", () => {
 
 function Harness({ messages }: { messages: unknown[] }) {
   const [tab, setTab] = useState<AskTab>("messages");
+  const [pickerOpen, setPickerOpen] = useState(false);
   const host = document.body.querySelector("main") as HTMLElement;
-  const ask = { messages, sessions: [], historySettled: true, pending: false, newSession: vi.fn(), openSession: vi.fn() } as unknown as AskLasso;
-  return <AskDraftSurface draft="b" host={host} ask={ask} tab={tab} onTab={setTab} engagementId="board" engagementTitle="Board" profileId="person" orgId="workspace" onClose={vi.fn()} />;
+  const ask = { messages, sessions: [], historySettled: true, pending: false, pickerOpen, error: null, newSession: vi.fn(), openSession: vi.fn() } as unknown as AskLasso;
+  return (
+    <>
+      <button type="button" onClick={() => setPickerOpen(true)}>open card picker</button>
+      <AskDraftSurface draft="b" host={host} ask={ask} tab={tab} onTab={setTab} engagementId="board" engagementTitle="Board" profileId="person" orgId="workspace" onClose={vi.fn()} />
+    </>
+  );
 }
 
 describe("ASK-B2 header and foot", () => {
@@ -66,5 +72,13 @@ describe("ASK-B2 header and foot", () => {
     const foot = screen.getByRole("button", { name: "Past conversations" });
     fireEvent.click(foot);
     expect(screen.getByRole("button", { name: "Back to this chat" })).toBeTruthy();
+  });
+  it("ASK-B2a: opening the card picker unfolds a folded chat", () => {
+    document.body.appendChild(document.createElement("main"));
+    render(<Harness messages={[{ id: "m1", role: "user", content: "hi" }]} />);
+    fireEvent.click(screen.getByRole("button", { name: "Collapse Ask Lasso" }));
+    expect(screen.getByRole("button", { name: "Expand Ask Lasso" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "open card picker" }));
+    expect(screen.getByRole("button", { name: "Collapse Ask Lasso" })).toBeTruthy();
   });
 });
