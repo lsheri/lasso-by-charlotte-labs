@@ -57,6 +57,10 @@ describe("the workboard allowlist", () => {
           "to",
           "draft",
         ],
+        "workboard.ask_view": [
+          "action",
+          "draft",
+        ],
         "workboard.board_jumped": [
           "to",
         ],
