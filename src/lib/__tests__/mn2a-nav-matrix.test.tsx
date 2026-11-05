@@ -506,9 +506,9 @@ describe("MN-5: From your people in the manifest", () => {
   const base = { role: "em", canReview: false, canManageMembers: false, canSeeFirmView: false,
     hasCoachLink: false, affiliated: false, clientsEnabled: true, workItemCount: 3 };
   const labels = { vocab: vocabFor({ org_type: "partner" }), institutionName: null };
-  it("a partner with shared boards gets from_your_people directly below the board tree", () => {
+  it("a partner with shared boards: NAV-2 retired the row, so the list renders under Shared with you, not as a manifest group", () => {
     const ids = navFor({ ...base, type: "partner", partnerShareCount: 2 }, labels).map((g) => g.id);
-    expect(ids[ids.indexOf("engagements") + 1]).toBe("from_your_people");
+    expect(ids).not.toContain("from_your_people");
   });
   it("absent with no shares and outside partner workspaces", () => {
     expect(navFor({ ...base, type: "partner", partnerShareCount: 0 }, labels).map((g) => g.id)).not.toContain("from_your_people");
