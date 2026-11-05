@@ -8,6 +8,8 @@ export type KeptAnswer = {
   reads: { id: string; depth: string }[];
   /** ASK-D2: the Ask session it came from. Only the preview-gated drafts set it. */
   sessionId?: string | undefined;
+  /** ASK-D2: how a draft pin was placed. Only the preview-gated drafts set it. */
+  pinVia?: "place" | "auto" | undefined;
 };
 
 type Keep = (answer: KeptAnswer, via?: "button" | "drag") => void;

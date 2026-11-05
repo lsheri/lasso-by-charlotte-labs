@@ -23,8 +23,8 @@ type Props = {
   profileId: string;
   orgId: string;
   canKeep: boolean;
-  /** ASK-D2 widens via with "place" and "auto" and adds a board point; the closed path only ever sends button or drag. */
-  onKeep: (answer: KeptAnswer, via?: "button" | "drag" | "place" | "auto", at?: { x: number; y: number }) => void | Promise<string | null | void>;
+  /** ASK-D2 adds an optional board point and returns the saved node id; the closed path never passes a point. */
+  onKeep: (answer: KeptAnswer, via?: "button" | "drag", at?: { x: number; y: number }) => void | Promise<string | null | void>;
   /** Work item ids of the cards picked "in context" on the board. */
   boardContextItemIds: string[];
   boardContextHasPicks: boolean;
@@ -73,9 +73,9 @@ function BoardAskPanel(props: Props & { draft?: AskDraft | null; pendingSessionI
       requestAnimationFrame(() => ask.composerRef.current?.focus());
     };
     if (via === "drag") { void Promise.resolve(onKeep(withSession, "drag")).then(after); return; }
-    if (boardContextHasPicks) { void Promise.resolve(onKeep(withSession, "auto")).then(after); return; }
+    if (boardContextHasPicks) { void Promise.resolve(onKeep({ ...withSession, pinVia: "auto" }, "button")).then(after); return; }
     if (isAskPlacingArmed()) { cancelAskPlacing(); return; }
-    armAskPlacing({ onPlace: (at) => { void Promise.resolve(onKeep(withSession, "place", at)).then(after); } });
+    armAskPlacing({ onPlace: (at) => { void Promise.resolve(onKeep({ ...withSession, pinVia: "place" }, "button", at)).then(after); } });
   }, [ask, onKeep, boardContextHasPicks, setTab]);
 
   const { pendingSessionId, onPendingDone } = props;

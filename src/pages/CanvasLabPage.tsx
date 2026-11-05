@@ -2706,13 +2706,14 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
    * it was written in, and stored references to the turns it read. The person
    * who asked is the author of the record.
    */
-  async function keepAnswerAsCard(answer: KeptAnswer, options?: { at?: Point; via?: "button" | "drag" | "place" | "auto" }): Promise<string | null> {
+  async function keepAnswerAsCard(answer: KeptAnswer, options?: { at?: Point; via?: "button" | "drag" }): Promise<string | null> {
+    const via = answer.pinVia ?? options?.via;
     if (!canKeepAnswer({ onBoard: true, finished: true, canEdit: canAddWork }) || keepBusy) return null;
     setKeepBusy(true);
     try {
       if (!(await materialize())) return null;
       let at: Point;
-      const autoAt = options?.via === "auto" && !options.at
+      const autoAt = via === "auto" && !options?.at
         ? autoPinPoint(placementRectsForNodes(contextNodes), [
           ...placementRectsForNodes(visibleNodes),
           ...placementRectsForFrames(boardFrames.map((frame) => ({ id: frame.id, label: frame.name, x: frame.x, y: frame.y, width: frame.width, height: frame.height }))),
@@ -2739,14 +2740,14 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       report(result, "node", "create");
       if (result.status !== "saved" || !result.created?.nodeId) return null;
       const nodeId = result.created.nodeId;
-      noteWorkboardNodeCreated(orgId, "answer", undefined, options?.via);
+      noteWorkboardNodeCreated(orgId, "answer", undefined, via);
       // ASK-D2 draft plumbing: only a draft keep carries a session id.
       if (answer.sessionId) {
         let store: Storage | null = null;
         try { store = window.localStorage; } catch { store = null; }
         writeAskPin(nodeId, answer.sessionId, store);
       }
-      if (options?.via === "auto") setSelected([]);
+      if (via === "auto") setSelected([]);
       const cites = answerCiteRows(nodeId, answer.reads);
       if (cites.length > 0) await supabase.from("answer_cites").insert(cites);
       // Re-read the saved board and apply it, so the kept card is on the stage
