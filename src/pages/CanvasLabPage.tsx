@@ -148,6 +148,7 @@ import {
   noteWorkboardConflictResolved,
   noteWorkboardElementResized,
   noteWorkboardNodeCreated,
+  noteWorkboardAskView,
   noteWorkboardCardMenuOpened,
   noteWorkboardNodeDeleted,
   noteWorkboardNodeEdited,
