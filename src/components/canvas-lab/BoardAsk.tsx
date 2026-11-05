@@ -1,11 +1,12 @@
 import { AskSheet } from "@/components/reflect/AskSheet";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { AskDraftSurface } from "@/components/canvas-lab/ask-draft/AskDraftSurface";
-import { resolveAskDraft, type AskDraft } from "@/lib/ask-draft";
+import { armAskPlacing, cancelAskPlacing, isAskPlacingArmed } from "@/components/canvas-lab/ask-draft/AskPlacing";
+import { ASK_DRAFT_OPEN_SESSION_EVENT, resolveAskDraft, type AskDraft } from "@/lib/ask-draft";
 
 import { AskBoardPickedContext, AskSurface } from "@/components/reflect/AskSurface";
-import { AnswerKeepProvider, type KeptAnswer } from "@/components/reflect/answer-keep-context";
+import { AnswerKeepProvider, useAnswerKeep, type KeptAnswer } from "@/components/reflect/answer-keep-context";
 import { useAskDockState } from "@/components/reflect/ask-dock-state";
 import { useAskLasso, type SectionAskSource } from "@/components/reflect/use-ask-lasso";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -22,7 +23,8 @@ type Props = {
   profileId: string;
   orgId: string;
   canKeep: boolean;
-  onKeep: (answer: KeptAnswer, via?: "button" | "drag") => void;
+  /** ASK-D2 widens via with "place" and "auto" and adds a board point; the closed path only ever sends button or drag. */
+  onKeep: (answer: KeptAnswer, via?: "button" | "drag" | "place" | "auto", at?: { x: number; y: number }) => void | Promise<string | null | void>;
   /** Work item ids of the cards picked "in context" on the board. */
   boardContextItemIds: string[];
   boardContextHasPicks: boolean;
@@ -39,7 +41,7 @@ type Props = {
  * it, so the toolbar, the zoom controls and the canvas all keep their space
  * and the stage simply gets narrower.
  */
-function BoardAskPanel(props: Props & { draft?: AskDraft | null }) {
+function BoardAskPanel(props: Props & { draft?: AskDraft | null; pendingSessionId?: string | null; onPendingDone?: () => void }) {
   const { engagementId, engagementTitle, profileId, orgId } = props;
   const { width, tab, setTab } = useAskDockState();
   const ask = useAskLasso({ open: true, engagementId, engagementTitle, profileId, orgId, sectionSource: props.sectionSource });
@@ -59,8 +61,34 @@ function BoardAskPanel(props: Props & { draft?: AskDraft | null }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.boardContextHasPicks, idsKey, mappedKey, props.sectionSource]);
 
+  // ASK-D2: pinning, draft branch only. The outer keep exists only for people who may arrange the board.
+  const outerKeep = useAnswerKeep();
+  const { onKeep, boardContextHasPicks } = props;
+  const draftKeep = useCallback((answer: KeptAnswer, via?: "button" | "drag") => {
+    const withSession: KeptAnswer = { ...answer, sessionId: ask.sessionId ?? undefined };
+    const after = (nodeId: string | null | void) => {
+      if (!nodeId) return;
+      ask.newSession();
+      setTab("messages");
+      requestAnimationFrame(() => ask.composerRef.current?.focus());
+    };
+    if (via === "drag") { void Promise.resolve(onKeep(withSession, "drag")).then(after); return; }
+    if (boardContextHasPicks) { void Promise.resolve(onKeep(withSession, "auto")).then(after); return; }
+    if (isAskPlacingArmed()) { cancelAskPlacing(); return; }
+    armAskPlacing({ onPlace: (at) => { void Promise.resolve(onKeep(withSession, "place", at)).then(after); } });
+  }, [ask, onKeep, boardContextHasPicks, setTab]);
+
+  const { pendingSessionId, onPendingDone } = props;
+  useEffect(() => {
+    if (!pendingSessionId) return;
+    ask.openSession(pendingSessionId);
+    setTab("messages");
+    onPendingDone?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingSessionId]);
+
   if (props.draft && props.floatHost) {
-    return (
+    const surface = (
       <AskBoardPickedContext.Provider value={ask.boardPickActive}>
         <AskDraftSurface
           draft={props.draft}
@@ -78,6 +106,7 @@ function BoardAskPanel(props: Props & { draft?: AskDraft | null }) {
         />
       </AskBoardPickedContext.Provider>
     );
+    return outerKeep ? <AnswerKeepProvider keep={draftKeep} label="Pin to board">{surface}</AnswerKeepProvider> : surface;
   }
 
   return (
@@ -110,6 +139,20 @@ export function BoardAsk(props: Props) {
   const isMobile = useIsMobile();
   usePerfOpenFinish("ask_dock.open", props.open);
   const askDraft = useAskDraft();
+  const [pendingSessionId, setPendingSessionId] = useState<string | null>(null);
+  const { onOpenChange } = props;
+  // ASK-D2 draft b: a pinned card asks for its chat; open Ask on that session.
+  useEffect(() => {
+    if (askDraft !== "b") return;
+    const listen = (event: Event) => {
+      const id = (event as CustomEvent<{ sessionId?: string }>).detail?.sessionId;
+      if (!id) return;
+      setPendingSessionId(id);
+      onOpenChange(true);
+    };
+    window.addEventListener(ASK_DRAFT_OPEN_SESSION_EVENT, listen);
+    return () => window.removeEventListener(ASK_DRAFT_OPEN_SESSION_EVENT, listen);
+  }, [askDraft, onOpenChange]);
 
   const surface = isMobile ? (
     <AskSheet
@@ -125,12 +168,12 @@ export function BoardAsk(props: Props) {
       onPickSection={props.onPickSection}
     />
   ) : props.open ? (
-    <BoardAskPanel {...props} draft={askDraft} />
+    <BoardAskPanel {...props} draft={askDraft} pendingSessionId={askDraft ? pendingSessionId : null} onPendingDone={() => setPendingSessionId(null)} />
   ) : null;
 
   if (!surface) return null;
   return props.canKeep ? (
-    <AnswerKeepProvider keep={props.onKeep}>{surface}</AnswerKeepProvider>
+    <AnswerKeepProvider keep={props.onKeep as (answer: KeptAnswer, via?: "button" | "drag") => void}>{surface}</AnswerKeepProvider>
   ) : (
     surface
   );

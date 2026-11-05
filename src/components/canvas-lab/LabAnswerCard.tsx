@@ -8,6 +8,7 @@ import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
 import { Button } from "@/components/ui/button";
 
 import { answerAsOf, serializeAnswerBody } from "@/lib/answer-card";
+import { PinnedChatRow, useAskDraftPin } from "@/components/canvas-lab/ask-draft/PinnedChatRow";
 import type { LabNode } from "@/components/canvas-lab/canvas-lab-model";
 import {
   DropdownMenu,
@@ -73,7 +74,9 @@ function LabAnswerCardInner({
   const draft = useRef({ html: "", plain: "", changed: false });
   const saving = useRef(false);
   const canEdit = node.ownership === "yours" && Boolean(onCommit);
-  const grown = expanded || editing || originalOpen;
+  const pin = useAskDraftPin(node.id);
+  const [chatOpen, setChatOpen] = useState(false);
+  const grown = expanded || editing || originalOpen || chatOpen;
   function startEdit() {
     if (!canEdit || editing) return;
     draft.current = { html: node.html ?? plainToRichHtml(node.summary), plain: node.summary, changed: false };
@@ -170,6 +173,7 @@ function LabAnswerCardInner({
       {error ? <p role="alert" className="mt-1 text-[13px] text-destructive">{error}</p> : null}
       {node.original != null && !editing ? <Button variant="ghost" className="canvas-lab-answer-toggle" aria-expanded={originalOpen} onPointerDown={(event) => event.stopPropagation()} onClick={() => { if (!originalOpen && orgId) logEvent("answer.original_viewed", orgId, {}); setOriginalOpen((value) => !value); }}>{originalOpen ? EDIT_COPY.hideOriginal : EDIT_COPY.seeOriginal}</Button> : null}
       {originalOpen && node.original != null ? <section className="mt-2 border-t border-border bg-muted p-2" aria-label={EDIT_COPY.original}><h3 className="mb-1 text-[13px] text-soft">{EDIT_COPY.original}</h3><MarkdownMessage content={node.original} /></section> : null}
+      {pin ? <PinnedChatRow draft={pin.draft} sessionId={pin.sessionId} orgId={orgId} onOpenChange={setChatOpen} /> : null}
       <footer className="mt-2 flex items-center justify-between gap-2">
         <span className="font-mono text-[9px] text-soft">Kept by {node.authorName ?? "you"}{node.editedAt ? <> · {node.ownership === "yours" ? EDIT_COPY.editedYou : `${EDIT_COPY.editedBy} ${node.authorName ?? "you"}`}</> : null}</span>
         {node.local ? (
