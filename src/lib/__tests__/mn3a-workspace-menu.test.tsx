@@ -14,6 +14,8 @@ vi.mock("@tanstack/react-router", () => ({
   useRouter: () => ({ navigate: state.navigate }),
   useMatchRoute: () => () => false,
   useSearch: () => ({}),
+  // NAV-2: Shared with you now renders inside the rail under Boards and reads the path.
+  useRouterState: () => "/home",
 }));
 vi.mock("@/hooks/use-profile", async (original) => ({ ...(await original<object>()),
   setActiveProfileId: state.setActive,
@@ -74,9 +76,12 @@ describe("MN-3a workspace menu", () => {
     expect(state.events).toHaveBeenCalledExactlyOnceWith("nav.opened", "o1", { item: "workspace", surface: "sidebar" });
     const resolved = navFor(context(), { vocab: vocabFor(profile()), institutionName: null }).filter((g) => g.placement === "workspace_menu").flatMap((g) => g.items);
     expect(resolved.map((item) => item.id)).toEqual(expected);
-    fireEvent.click(within(menu).getByRole("menuitem", { name: "Settings" }));
-    expect(state.settings).toHaveBeenCalledOnce();
-    expect(state.events).toHaveBeenLastCalledWith("nav.opened", "o1", { item: role === "coach" ? "guest-settings" : "settings", surface: "workspace_menu" });
+    // NAV-2: worker Settings moved to the rail's foot; only the guest switcher still carries it.
+    if (role === "coach") {
+      fireEvent.click(within(menu).getByRole("menuitem", { name: "Settings" }));
+      expect(state.settings).toHaveBeenCalledOnce();
+      expect(state.events).toHaveBeenLastCalledWith("nav.opened", "o1", { item: "guest-settings", surface: "workspace_menu" });
+    }
   });
   it("one workspace still shows a menu, without a workspace list", () => {
     state.count = 1; mount(<WorkspaceMenu />);
