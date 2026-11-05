@@ -81,8 +81,8 @@ describe("unit 5b sticky", () => {
 
     it("pressing the read-only plain words calls onDragStart", () => {
       const onDragStart = vi.fn();
-      const { getByLabelText } = renderSticky({}, { onDragStart });
-      fireEvent.pointerDown(getByLabelText("Sticky words"), { button: 0 });
+      const { container } = renderSticky({}, { onDragStart });
+      fireEvent.pointerDown(container.querySelector("textarea[readonly]")!, { button: 0 });
       expect(onDragStart).toHaveBeenCalledTimes(1);
     });
 
@@ -95,8 +95,8 @@ describe("unit 5b sticky", () => {
 
     it("with layoutEditable false the words do not start a drag and no edge strips render", () => {
       const onDragStart = vi.fn();
-      const { getByLabelText, container } = renderSticky({}, { layoutEditable: false, onDragStart });
-      fireEvent.pointerDown(getByLabelText("Sticky words"), { button: 0 });
+      const { container } = renderSticky({}, { layoutEditable: false, onDragStart });
+      fireEvent.pointerDown(container.querySelector("textarea[readonly]")!, { button: 0 });
       expect(onDragStart).not.toHaveBeenCalled();
       expect(container.querySelector("[data-edge]")).toBeNull();
     });
