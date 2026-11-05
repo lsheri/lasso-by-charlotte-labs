@@ -53,6 +53,10 @@ describe("the workboard allowlist", () => {
           "length_band",
           "is_reply",
         ],
+        "workboard.ask_moved": [
+          "to",
+          "draft",
+        ],
         "workboard.board_jumped": [
           "to",
         ],
@@ -126,10 +130,6 @@ describe("the workboard allowlist", () => {
         "workboard.node_moved": [
           "kind",
           "via",
-        ],
-        "workboard.ask_moved": [
-          "to",
-          "draft",
         ],
         "workboard.opened": [
           "via",
