@@ -80,7 +80,7 @@ export function dockZoneAt(p: { x: number; y: number }, W: number, H: number, c:
 }
 
 export type AskDock = {
-  surfaceRef: RefObject<HTMLElement>;
+  surfaceRef: RefObject<HTMLElement | null>;
   dock: DockId;
   hover: DockId | null;
   carried: boolean;
