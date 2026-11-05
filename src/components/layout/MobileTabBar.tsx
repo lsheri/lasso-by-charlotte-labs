@@ -17,7 +17,7 @@ import { signOut } from "@/lib/sign-out";
 import { logEvent } from "@/lib/telemetry";
 import type { NavOpenedDims } from "@/lib/telemetry-shared";
 import { useSettingsDialogOptional } from "@/lib/settings-dialog-context";
-import { navFor, TAB_ITEMS } from "./nav-config";
+import { navFor, TAB_ITEMS, type ResolvedNavItem } from "./nav-config";
 import { useNavCtx } from "./use-nav-ctx";
 import { WorkspaceMenuItems } from "./WorkspaceMenuItems";
 
@@ -53,7 +53,7 @@ export function MobileTabBar() {
     if (profile?.org_id) logEvent("nav.opened", profile.org_id, { item, surface } satisfies NavOpenedDims);
   }
 
-  const renderMoreItem = (item) => {
+  const renderMoreItem = (item: ResolvedNavItem) => {
                   const content = <><GraphiteIcon name={item.icon} size={16} /><span>{item.label}</span></>;
                   if (item.disabled) return (
                     <button key={item.id} type="button" aria-disabled="true" title={item.disabledReason}
