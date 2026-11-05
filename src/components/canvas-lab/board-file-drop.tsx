@@ -106,6 +106,31 @@ export function useBoardFileDrop({
     return saved;
   }, [placeImage, readSize]);
 
+  /** PASTE-1: one path for dropped and pasted files. Applies the cap, keeps the busy guard. */
+  const addFiles = useCallback(async (all: File[], at: Point, channel: "drop" | "paste"): Promise<void> => {
+    if (!enabled || busy.current) return;
+    if (all.length === 0) return;
+    const files = all.slice(0, BOARD_FILE_DROP_CAP);
+    if (all.length > BOARD_FILE_DROP_CAP) toast(BOARD_FILE_DROP_COPY.capped);
+    busy.current = true;
+    try {
+      // Images never touch the capture path: no work item, no card, no inbox.
+      const images = placeImage ? files.filter(isBoardImageFile) : [];
+      const documents = files.filter((file) => !images.includes(file));
+      if (documents.length > 0) {
+        const { ids, failures } = await captureWithResult(documents, { channel });
+        for (const failure of failures) toast.error(BOARD_FILE_DROP_COPY.failed(failure.name));
+        if (ids.length > 0) await place(ids, at);
+      }
+      for (const [index, file] of images.entries()) {
+        const ok = await dropImage(file, { x: at.x + index * 24, y: at.y + index * 24 });
+        if (!ok) toast.error(BOARD_FILE_DROP_COPY.failed(file.name));
+      }
+    } finally {
+      busy.current = false;
+    }
+  }, [enabled, place, placeImage, captureWithResult, dropImage]);
+
   const onDrop = useCallback((event: DragEvent<HTMLElement>) => {
     if (!isFileDrag(event.dataTransfer?.types)) return;
     event.preventDefault();
@@ -115,31 +140,10 @@ export function useBoardFileDrop({
     if (!enabled || busy.current) return;
     const all = Array.from(event.dataTransfer.files ?? []);
     if (all.length === 0) return;
-    const files = all.slice(0, BOARD_FILE_DROP_CAP);
-    if (all.length > BOARD_FILE_DROP_CAP) toast(BOARD_FILE_DROP_COPY.capped);
-    const at = toBoard(event.clientX, event.clientY);
-    busy.current = true;
-    void (async () => {
-      try {
-        // Images never touch the capture path: no work item, no card, no inbox.
-        const images = placeImage ? files.filter(isBoardImageFile) : [];
-        const documents = files.filter((file) => !images.includes(file));
-        if (documents.length > 0) {
-          const { ids, failures } = await captureWithResult(documents, { channel: "drop" });
-          for (const failure of failures) toast.error(BOARD_FILE_DROP_COPY.failed(failure.name));
-          if (ids.length > 0) await place(ids, at);
-        }
-        for (const [index, file] of images.entries()) {
-          const ok = await dropImage(file, { x: at.x + index * 24, y: at.y + index * 24 });
-          if (!ok) toast.error(BOARD_FILE_DROP_COPY.failed(file.name));
-        }
-      } finally {
-        busy.current = false;
-      }
-    })();
-  }, [enabled, toBoard, place, captureWithResult, localPoint, dropImage]);
+    void addFiles(all, toBoard(event.clientX, event.clientY), "drop");
+  }, [enabled, toBoard, localPoint, addFiles]);
 
-  return { over, pointer, dropBurst, clearSignal, handlers: { onDragEnter, onDragOver, onDragLeave, onDrop } };
+  return { over, pointer, dropBurst, clearSignal, addFiles, handlers: { onDragEnter, onDragOver, onDragLeave, onDrop } };
 }
 
 function makeFlakes(point: Point, count: number, firstId: number): PencilFlake[] {

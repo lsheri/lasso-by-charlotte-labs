@@ -18,6 +18,7 @@ export const WORKBOARD_EVENT_DIMS: Readonly<Record<string, readonly string[]>> =
   "workboard.face_toggled": ["face", "scope"],
   "workboard.node_moved": ["kind", "via"],
   "workboard.ask_moved": ["to", "draft"],
+  "workboard.pasted": ["what", "outcome"],
   "workboard.pinned_chat_opened": ["draft"],
   "workboard.node_created": ["kind", "judgment_type", "via"],
   "workboard.node_deleted": ["kind"],
