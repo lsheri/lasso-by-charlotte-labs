@@ -304,15 +304,18 @@ export function TourActArrived({ register, onComplete }: { register: Register; o
     <section className="tour-conversations-mimic nb-chatview" data-reader="closed" aria-label="All AI Conversations tour example">
       <aside className="tour-conversations-sidebar" aria-label="Tour navigation">
         <nav className="flex flex-col gap-7">
-          <div><div className="nb-group-header px-2">What landed</div><div className="mt-2 flex flex-col gap-0.5">
+          <div className="flex flex-col gap-0.5">
             <Button type="button" variant="ghost" className="nb-nav-item w-full justify-start" onClick={noop}><GraphiteIcon name="overview" size={20} /><span>Home</span></Button>
-            <Button type="button" variant="ghost" className="nb-nav-item w-full justify-start" onClick={noop}><GraphiteIcon name="work" size={20} /><span>All work</span></Button>
-            <Button type="button" variant="ghost" className="nb-nav-item nb-nav-item-active w-full justify-start" onClick={noop}><GraphiteIcon name="ai-record" size={20} /><span>All AI Conversations</span></Button>
-          </div></div>
-          <div><div className="nb-group-header px-2">Where it goes</div><div className="mt-2 flex flex-col gap-0.5">
+            <Button type="button" variant="ghost" className="nb-nav-item w-full justify-start" onClick={noop}><GraphiteIcon name="plus" size={20} /><span>Create</span></Button>
+          </div>
+          <div><div className="nb-group-header px-2">Boards</div><div className="mt-2 flex flex-col gap-0.5">
             <Button type="button" variant="ghost" className="tour-workboard-nav-row nb-nav-item nb-nav-item-nested w-full justify-start" data-tour-target="2" onClick={openWorkboard}><GraphiteIcon name="workboard" size={20} /><span>{boardTitle}</span></Button>
             <Button type="button" variant="ghost" className="nb-nav-item w-full justify-start" onClick={noop}><GraphiteIcon name="plus" size={20} /><span>New workboard</span></Button>
           </div></div>
+          <div className="flex flex-col gap-0.5">
+            <Button type="button" variant="ghost" className="nb-nav-item nb-nav-item-active w-full justify-start" onClick={noop}><GraphiteIcon name="work" size={20} /><span>All work</span></Button>
+            <Button type="button" variant="ghost" className="nb-nav-item w-full justify-start" onClick={noop}><GraphiteIcon name="history" size={20} /><span>Look back</span></Button>
+          </div>
         </nav>
       </aside>
       <div className="nb-chatview-list flex min-h-0 flex-col overflow-hidden">

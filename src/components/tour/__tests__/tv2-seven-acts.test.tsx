@@ -162,9 +162,8 @@ describe("TV2 and TVc tour sequence", () => {
     expect(within(mimic).getByText(`${rows.length} conversations on the record · 2 new this week`)).toBeTruthy();
     expect(within(mimic).getByRole("button", { name: "Home" })).toBeTruthy();
     expect(within(mimic).getByRole("button", { name: "All work" })).toBeTruthy();
-    expect(within(mimic).getByRole("button", { name: "All AI Conversations" })).toBeTruthy();
-    expect(within(mimic).getByText("What landed")).toBeTruthy();
-    expect(within(mimic).getByText("Where it goes")).toBeTruthy();
+    expect(within(mimic).queryByRole("button", { name: "All AI Conversations" })).toBeNull();
+    expect(within(mimic).getByText("Boards")).toBeTruthy();
   });
 
   it("completes acts one and two by keyboard alone", async () => {
