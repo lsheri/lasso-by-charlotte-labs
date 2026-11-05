@@ -3,12 +3,13 @@ import { StrictMode } from "react";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { HOME_HERO_CONTENT_HEIGHT, HOME_HERO_FRAME_HEIGHT, HomeBoard, IdeasNote, homeFramesForViewport, ideasMailto } from "@/components/home/HomeBoard";
+import { CONNECT_PROMPT_LINE, ConnectToolsPrompt, HOME_HERO_CONTENT_HEIGHT, HOME_HERO_FRAME_HEIGHT, HomeBoard, IdeasNote, homeFramesForViewport, ideasMailto } from "@/components/home/HomeBoard";
 
 const mocks = vi.hoisted(() => ({
   engagements: undefined as undefined | { id: string }[],
   emitClientEvent: vi.fn(),
   logEvent: vi.fn(),
+  work: undefined as undefined | { items: unknown[] },
   profile: { id: "profile-1", org_id: "org-1" } as null | { id: string; org_id: string },
 }));
 
@@ -22,6 +23,10 @@ vi.mock("@tanstack/react-router", () => ({
 
 vi.mock("@/hooks/use-profile", () => ({
   useProfile: () => ({ data: mocks.profile }),
+}));
+
+vi.mock("@/hooks/use-work-items", () => ({
+  useWorkItems: () => ({ data: mocks.work }),
 }));
 
 vi.mock("@/hooks/use-engagements", () => ({
@@ -81,6 +86,7 @@ vi.mock("@/components/reflect/LassoThinkingMark", () => ({
 afterEach(() => {
   cleanup();
   mocks.engagements = undefined;
+  mocks.work = undefined;
   mocks.emitClientEvent.mockClear();
   mocks.logEvent.mockClear();
   mocks.profile = { id: "profile-1", org_id: "org-1" };
@@ -255,5 +261,27 @@ describe("the ideas note", () => {
     fetchSpy.mockRestore();
     localWrite.mockRestore();
     sessionWrite.mockRestore();
+  });
+});
+
+describe("NAV-1d connect prompt", () => {
+  it("shows at zero work items and emits home.connect_tools_opened with an empty payload, and hides while loading or above zero", () => {
+    mocks.work = { items: [] };
+    const { unmount } = render(<ConnectToolsPrompt />);
+    expect(screen.getByText(CONNECT_PROMPT_LINE)).toBeTruthy();
+    const link = screen.getByRole("link", { name: "Connect your AI tools" });
+    expect(link.getAttribute("href")).toBe("/connectors");
+    fireEvent.click(link);
+    expect(mocks.emitClientEvent).toHaveBeenCalledWith("home.connect_tools_opened", {});
+    unmount();
+
+    mocks.work = undefined;
+    const loading = render(<ConnectToolsPrompt />);
+    expect(screen.queryByTestId("home-connect-prompt")).toBeNull();
+    loading.unmount();
+
+    mocks.work = { items: [{ id: "w1" }] };
+    render(<ConnectToolsPrompt />);
+    expect(screen.queryByTestId("home-connect-prompt")).toBeNull();
   });
 });

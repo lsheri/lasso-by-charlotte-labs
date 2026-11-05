@@ -72,6 +72,8 @@ export type TelemetryEvent =
   | "home.ideas_note_composed"
   /** P4b: an engagement was opened from the Home grid. Content-free. */
   | "home.engagement_opened"
+  /** NAV-1d: the empty-workspace connect prompt on Home was opened. Content-free. */
+  | "home.connect_tools_opened"
   /** TV4: the first-run tour mounted for a person, once. Register only. */
   | "tour.started"
   /** TV4: an act's action completed and its teaching callout appeared. Act number and register. */
