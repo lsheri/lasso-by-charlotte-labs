@@ -33,6 +33,8 @@ describe("ASK-D2 pinned card", () => {
     await waitFor(() => expect(screen.getByText("This chat is not available to you here.")).toBeTruthy());
   });
   it("with the gate closed a map entry still shows no Chat row", async () => {
+    // ASK-B1: preview hosts default to draft b, so the gate is closed with ask=off.
+    window.history.replaceState(null, "", "/?ask=off");
     window.localStorage.setItem("lasso.ask-draft.pins", JSON.stringify({ n1: "s1" }));
     render(<LabAnswerCard {...cardProps} />);
     await new Promise((r) => setTimeout(r, 0));
