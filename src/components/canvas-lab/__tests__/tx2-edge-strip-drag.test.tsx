@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -7,6 +7,11 @@ import { LabColourBlock } from "@/components/canvas-lab/LabColourBlock";
 import { LabSticky } from "@/components/canvas-lab/LabSticky";
 import { LabTextBlock } from "@/components/canvas-lab/LabTextBlock";
 import { cardPressStartsDrag, type LabNode } from "@/components/canvas-lab/canvas-lab-model";
+
+const logEvent = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/telemetry", () => ({ logEvent }));
+import { noteWorkboardNodeMoved } from "@/components/canvas-lab/canvas-lab-telemetry";
+import { guardWorkboardEvent } from "@/lib/workboard-event-allowlist";
 
 afterEach(cleanup);
 
@@ -99,5 +104,41 @@ describe("TX2 shared board", () => {
     const css = readFileSync(`${process.cwd()}/src/styles.css`, "utf8");
     expect(css).toMatch(/\.shared-board-stage \.canvas-lab-text-block-edge/);
     expect(css).toMatch(/\.shared-board-stage \.canvas-lab-colour-block-edge/);
+  });
+});
+
+describe("DRAG-1 read-only faces", () => {
+  it("a readOnly textarea starts a drag", () => {
+    const area = document.createElement("textarea");
+    area.readOnly = true;
+    expect(press(area)).toBe(true);
+  });
+
+  it("a writable textarea does not start a drag", () => {
+    expect(press(document.createElement("textarea"))).toBe(false);
+  });
+
+  it("a press on the read-only text block words starts its drag, and double click still edits", () => {
+    const onDragStart = vi.fn();
+    const noop = () => {};
+    const { container } = render(<LabTextBlock node={node("text")} selected={false} editable layoutEditable onSelect={noop} onDragStart={onDragStart} onResizeStart={noop} onResizeKeyDown={noop} onResizeKeyUp={noop} onChange={noop} onCommit={noop} onRemove={noop} />);
+    const words = screen.getByLabelText("Text block words");
+    fireEvent.pointerDown(words, { button: 0 });
+    expect(onDragStart).toHaveBeenCalledTimes(1);
+    fireEvent.doubleClick(words);
+    expect(container.querySelector("section")!.getAttribute("data-editing")).toBe("true");
+  });
+
+  it("workboard.node_moved carries kind and via only", () => {
+    logEvent.mockClear();
+    noteWorkboardNodeMoved("org-1", "sticky", "body");
+    noteWorkboardNodeMoved("org-1", "text", "edge");
+    noteWorkboardNodeMoved("org-1", "sticky", "keyboard");
+    expect(logEvent.mock.calls).toEqual([
+      ["workboard.node_moved", "org-1", { kind: "sticky", via: "body" }],
+      ["workboard.node_moved", "org-1", { kind: "text", via: "edge" }],
+      ["workboard.node_moved", "org-1", { kind: "sticky", via: "keyboard" }],
+    ]);
+    expect(guardWorkboardEvent("workboard.node_moved", { kind: "sticky", via: "edge" })).toEqual({ keep: true, dims: { kind: "sticky", via: "edge" } });
   });
 });
