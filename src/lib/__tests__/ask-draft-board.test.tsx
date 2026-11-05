@@ -46,9 +46,15 @@ describe("ASK-D1 BoardAsk gate", () => {
 
 function Harness({ messages }: { messages: unknown[] }) {
   const [tab, setTab] = useState<AskTab>("messages");
+  const [pickerOpen, setPickerOpen] = useState(false);
   const host = document.body.querySelector("main") as HTMLElement;
-  const ask = { messages, sessions: [], historySettled: true, pending: false, newSession: vi.fn(), openSession: vi.fn() } as unknown as AskLasso;
-  return <AskDraftSurface draft="b" host={host} ask={ask} tab={tab} onTab={setTab} engagementId="board" engagementTitle="Board" profileId="person" orgId="workspace" onClose={vi.fn()} />;
+  const ask = { messages, sessions: [], historySettled: true, pending: false, pickerOpen, error: null, newSession: vi.fn(), openSession: vi.fn() } as unknown as AskLasso;
+  return (
+    <>
+      <button type="button" onClick={() => setPickerOpen(true)}>open card picker</button>
+      <AskDraftSurface draft="b" host={host} ask={ask} tab={tab} onTab={setTab} engagementId="board" engagementTitle="Board" profileId="person" orgId="workspace" onClose={vi.fn()} />
+    </>
+  );
 }
 
 describe("ASK-B2 header and foot", () => {
