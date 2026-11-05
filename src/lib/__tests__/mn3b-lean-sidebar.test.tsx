@@ -76,33 +76,34 @@ function createItems() {
 beforeEach(() => { vi.clearAllMocks(); state.type = "company"; state.role = "admin"; state.count = 1; state.work = 0; state.clients = true; state.review = false; state.unread = 0; });
 afterEach(cleanup);
 
-const LANDED = ["# What landed", "Home -> /home", "All work -> /work", "All AI Conversations -> /ai-record"];
+// NAV-2: Home and Create, then Boards; All work leads the headless rows below the tree.
+const LANDED = ["Home -> /home", "# Boards", "All work -> /work"];
 
 describe("NAV-1 sidebar and the sources row", () => {
   it("company admin with no work: Connect your AI tools shows in the sidebar, not the menu", () => {
-    expect(sidebarRows()).toEqual([...LANDED, "# Where it goes", "Look back -> /archive", "Your coach -> /one-on-one", "Sources -> /connectors"]);
-    expect(menuIds()).toEqual(["firm-view", "members", "settings", "trust", "why", "feedback", "sign-out"]);
+    expect(sidebarRows()).toEqual([...LANDED, "Look back -> /archive", "Your coach -> /one-on-one", "Firm view -> /firm", "Sources -> /connectors"]);
+    expect(menuIds()).toEqual(["feedback", "sign-out"]);
   });
   it("company admin with five work items: Sources stays in the sidebar and is absent from the menu", () => {
     state.work = 5;
-    expect(sidebarRows()).toEqual([...LANDED, "# Where it goes", "Look back -> /archive", "Your coach -> /one-on-one", "Sources -> /connectors"]);
-    expect(menuIds()).toEqual(["firm-view", "members", "settings", "trust", "why", "feedback", "sign-out"]);
+    expect(sidebarRows()).toEqual([...LANDED, "Look back -> /archive", "Your coach -> /one-on-one", "Firm view -> /firm", "Sources -> /connectors"]);
+    expect(menuIds()).toEqual(["feedback", "sign-out"]);
     const view = mount(<WorkspaceMenu />);
     expect(within(openMenu()).queryByText("Sources")).toBeNull();
     view.unmount();
   });
   it("partner admin never sees Your coach", () => {
     state.type = "partner"; state.work = 5;
-    expect(sidebarRows()).toEqual([...LANDED, "# Your clients", "Look back -> /archive", "Sources -> /connectors"]);
+    expect(sidebarRows()).toEqual([...LANDED, "Look back -> /archive", "Sources -> /connectors"]);
   });
   it("personal admin keeps Who you share with", () => {
     state.type = "personal"; state.work = 5;
-    expect(sidebarRows()).toEqual([...LANDED, "# Where it goes", "Look back -> /archive", "# Who you share with", "Your coaches -> /members", "Sources -> /connectors"]);
+    expect(sidebarRows()).toEqual([...LANDED, "Look back -> /archive", "Sources -> /connectors"]);
   });
   it("edu admin: classes after the tree, then the bottom rows", () => {
     state.type = "edu"; state.work = 5;
-    expect(sidebarRows()).toEqual([...LANDED, "# Workboards",
-      "Look back -> /archive", "Your coach -> /one-on-one", "# Who you share with", "Your coaches -> /members", "Sources -> /connectors"]);
+    expect(sidebarRows()).toEqual([...LANDED,
+      "Look back -> /archive", "Your coach -> /one-on-one", "Sources -> /connectors"]);
   });
   it("guest keeps the 1:1 prep row", () => {
     state.role = "coach"; state.review = true;
@@ -110,7 +111,7 @@ describe("NAV-1 sidebar and the sources row", () => {
   });
   it("People you coach sits between What landed and Where it goes", () => {
     state.role = "em"; state.review = true; state.work = 5;
-    expect(sidebarRows()).toEqual([...LANDED, "# Coaching", "People you coach -> /coaching", "# Where it goes", "Look back -> /archive", "Your coach -> /one-on-one", "Sources -> /connectors"]);
+    expect(sidebarRows()).toEqual([...LANDED, "Look back -> /archive", "Your coach -> /one-on-one", "People you coach -> /coaching", "Sources -> /connectors"]);
   });
   it("Your coach shows the unread note count only above zero", () => {
     state.unread = 2;
