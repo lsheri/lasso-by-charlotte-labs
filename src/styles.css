@@ -8386,4 +8386,10 @@ body:has(.lasso-decisions-ledger) .canvas-lab-undo-toast { position: fixed; z-in
 .canvas-lab-sticky:not([data-editing="true"]) .node-rich,
 .canvas-lab-text-block:not([data-editing="true"]),
 .canvas-lab-text-block:not([data-editing="true"]) textarea,
-.canvas-lab-text-block:not([data-editing="true"]) .node-rich { user-select: none; -webkit-user-select: none; cursor: grab; }
+.canvas-lab-text-block:not([data-editing="true"]) .node-rich { user-select: none; -webkit-user-select: none; }
+.canvas-lab-sticky[data-movable="true"]:not([data-editing="true"]),
+.canvas-lab-sticky[data-movable="true"]:not([data-editing="true"]) textarea,
+.canvas-lab-sticky[data-movable="true"]:not([data-editing="true"]) .node-rich,
+.canvas-lab-text-block[data-movable="true"]:not([data-editing="true"]),
+.canvas-lab-text-block[data-movable="true"]:not([data-editing="true"]) textarea,
+.canvas-lab-text-block[data-movable="true"]:not([data-editing="true"]) .node-rich { cursor: grab; }

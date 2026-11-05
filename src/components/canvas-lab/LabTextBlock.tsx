@@ -69,7 +69,7 @@ function LabTextBlockInner({ node, selected, editable, layoutEditable, onSelect,
   };
   const style = { left: node.x, top: node.y, width: node.width, height: node.height, pointerEvents: layoutEditable || editable || selected ? "auto" : "none" } satisfies CSSProperties;
   return (
-    <section ref={sectionRef} data-testid={`text-block-${node.id}`} data-selected={selected} data-editing={editing} data-empty={body.text.length === 0} data-size={body.size} data-weight={body.weight} data-colour={body.colour} aria-label="Text block" tabIndex={selected ? 0 : -1} className="canvas-lab-text-block absolute" style={style} onFocus={onSelect}
+    <section ref={sectionRef} data-testid={`text-block-${node.id}`} data-movable={layoutEditable} data-selected={selected} data-editing={editing} data-empty={body.text.length === 0} data-size={body.size} data-weight={body.weight} data-colour={body.colour} aria-label="Text block" tabIndex={selected ? 0 : -1} className="canvas-lab-text-block absolute" style={style} onFocus={onSelect}
       onPointerDown={(event) => {
         if (editing || !layoutEditable) return;
         onSelect();
