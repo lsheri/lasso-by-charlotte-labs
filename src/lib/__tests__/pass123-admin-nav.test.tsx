@@ -78,8 +78,9 @@ describe("Pass 123: the sidebar follows the weekly loop", () => {
   it("config places Look back before Run the firm", () => {
     // Nav is now ordered by the weekly loop rather than by object type.
     expect(navGroups.map((g) => g.label)).toEqual([
-      "What landed",
-      "Where it goes",
+      // NAV-2: the rail's group labels.
+      "Home",
+      "Boards",
       "Look back",
       "Your coach",
       "Run the firm",

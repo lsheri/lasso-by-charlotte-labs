@@ -2167,6 +2167,11 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   gap: 2px;
   flex: 0 0 auto;
 }
+/* NAV-2: the rail scrolls as a whole; Sources and Settings stay pinned at its foot. */
+.lasso-sidebar-nav { min-height: 100%; }
+.lasso-sidebar-footer { position: sticky; bottom: 0; margin-top: auto; padding-top: 10px; border-top: 1px solid var(--line-hairline); background: var(--sidebar); z-index: 1; }
+/* --sidebar resolves at :root to the old paper; under the shell the rail itself paints --surface-page. */
+[data-lasso="on"] .lasso-sidebar-footer { background: var(--surface-page); }
 .nb-nav-actions {
   flex-shrink: 0;
   display: flex;

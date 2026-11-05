@@ -19,6 +19,7 @@ import { YourWorkspaceCard } from "./YourWorkspaceCard";
 import { InviteDialog } from "@/components/invites/InviteDialog";
 import { EnterInviteCode } from "@/components/invites/EnterInviteCode";
 import { Button } from "@/components/ui/button";
+import { SettingsPlacesCard } from "@/components/settings/SettingsPlacesCard";
 
 /**
  * SECTIONS mirrors SettingsPage.tsx — they are kept in sync manually.
@@ -84,6 +85,7 @@ const SECTIONS: SettingsSection[] = [
       <div className="space-y-6">
         <InviteDialog trigger={<Button type="button">Invite someone</Button>} />
         <EnterInviteCode label="Joining another workspace?" />
+        <SettingsPlacesCard which="people" />
       </div>
     ),
   },
@@ -94,6 +96,14 @@ const SECTIONS: SettingsSection[] = [
     group: "Account",
     title: "Your data",
     content: <DataSection />,
+  },
+  {
+    id: "about",
+    label: "About",
+    hint: "trust and why",
+    group: "Account",
+    title: "About",
+    content: <SettingsPlacesCard which="about" />,
   },
   {
     id: "support",

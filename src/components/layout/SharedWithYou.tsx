@@ -4,7 +4,7 @@
  * SH-7a: a shared board opens inside the person's own workspace. The guest
  * seat is never made the active profile from the UI.
  */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 
@@ -173,14 +173,19 @@ export function SharedWorkChips({ boards }: { boards: { id: string; title: strin
 }
 
 /** Sidebar section, shown in every workspace; silent when both lists are empty. */
-export function SharedWithYouSection({ onNavigate }: { onNavigate?: (() => void) | undefined }) {
+export function SharedWithYouSection({ onNavigate, children, extraPresent = false }: {
+  onNavigate?: (() => void) | undefined;
+  /** NAV-2: further shared lists (a partner's From your people) rendered under the one heading. */
+  children?: ReactNode;
+  extraPresent?: boolean;
+}) {
   const { shared, pending } = useSharedWithYou(true);
   const accept = useAcceptBoardShare();
   const openShared = useOpenShared();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  if (shared.length === 0 && pending.length === 0) return null;
+  if (shared.length === 0 && pending.length === 0 && !extraPresent) return null;
   const row = "flex w-full min-w-0 flex-col rounded-md px-2 py-1 text-left transition-colors hover:bg-secondary";
   return (
     <div data-testid="shared-with-you">
@@ -225,6 +230,7 @@ export function SharedWithYouSection({ onNavigate }: { onNavigate?: (() => void)
           </div>
         ))}
         {error && <p className="px-2 text-xs text-destructive">{error}</p>}
+        {children}
       </div>
     </div>
   );

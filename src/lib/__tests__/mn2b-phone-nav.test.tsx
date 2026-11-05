@@ -61,7 +61,7 @@ describe("MN-2b phone navigation", () => {
       renderTab(<><ContextProbe /><MobileTabBar /></>);
       const ctx = JSON.parse(screen.getByTestId("ctx").textContent ?? "{}") as NavCtx;
       const expected = navFor(ctx, { vocab: vocabFor({ org_type: ctx.type }), institutionName: null })
-        .filter(g => g.placement !== "workspace_menu" && g.id !== "engagements").flatMap(g => g.items.filter(i => i.id !== "all-work"))
+        .filter(g => g.placement !== "workspace_menu" && g.id !== "engagements").flatMap(g => g.items.filter(i => i.id !== "all-work" && i.id !== "create")) // NAV-3: decided, the sheet carries no Create
         .concat(navFor(ctx, { vocab: vocabFor({ org_type: ctx.type }), institutionName: null })
           .filter(g => g.placement === "workspace_menu").flatMap(g => g.items));
       fireEvent.click(screen.getByRole("button", { name: "More" }));

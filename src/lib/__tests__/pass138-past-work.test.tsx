@@ -72,14 +72,15 @@ describe("Pass 138: Past work nav", () => {
     const labels = navGroups.map((group) => group.label);
     // Nav is now ordered by the weekly loop rather than by object type.
     expect(labels).toEqual([
-      "What landed",
-      "Where it goes",
+      // NAV-2: the rail's group labels.
+      "Home",
+      "Boards",
       "Look back",
       "Your coach",
       "Run the firm",
       "Your account",
     ]);
-    expect(labels.indexOf("Look back")).toBe(labels.indexOf("Where it goes") + 1);
+    expect(labels.indexOf("Look back")).toBe(labels.indexOf("Boards") + 1);
 
     // SB-N1: Past work finds work rather than making it, so it leads Look back.
     const lookback = navGroups.find((group) => group.id === "lookback")!;

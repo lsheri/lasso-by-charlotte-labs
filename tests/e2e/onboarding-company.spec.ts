@@ -9,8 +9,8 @@ const EMAIL = "qa.company.admin@qaprobe.test";
 const PASSWORD = process.env["LASSO_QA_PASSWORD"] ?? "";
 
 const NAV_GROUPS = [
-  "What landed",
-  "Where it goes",
+  "Home",
+  "Boards",
   "Look back",
   "Your coach",
   "Run the firm",
