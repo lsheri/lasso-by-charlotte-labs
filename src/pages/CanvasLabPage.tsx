@@ -1239,9 +1239,15 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     }
     if (entry.action === "remove_note") {
       const stored = entry.node;
+      let store: Storage | null = null;
+      try { store = window.localStorage; } catch { store = null; }
       if (direction === "undo") {
         setNodes((current) => current && !current.some((node) => node.id === stored.id) ? [...current, stored] : current);
         setLinks((current) => [...current, ...entry.links.filter((link) => !current.some((existing) => existing.id === link.id))]);
+        if (entry.pin) {
+          writeAskPin(entry.pin.key, entry.pin.sessionId, store);
+          clearUnpinned(entry.pin.sessionId, store);
+        }
         if (stored.durableId) {
           const durableId = stored.durableId;
           const fallback = liveNode(stored.id, stored)?.durableVersion ?? stored.durableVersion ?? 1;
@@ -1254,6 +1260,10 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
           });
         }
         return;
+      }
+      if (entry.pin) {
+        writeUnpinned(entry.pin.sessionId, engagementId, store);
+        removeAskPin(entry.pin.key, store);
       }
       if (stored.durableId) {
         const version = liveNode(stored.id, stored)?.durableVersion ?? stored.durableVersion ?? 1;
@@ -2931,10 +2941,10 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       writeUnpinned(sessionId, engagementId, store);
       removeAskPin(key, store);
     }
-    deleteNode(node);
+    deleteNode(node, sessionId ? { pin: { key, sessionId } } : undefined);
   }
 
-  function deleteNode(node: LabNode) {
+  function deleteNode(node: LabNode, extra?: { pin?: { key: string; sessionId: string } }) {
     // A judgment belongs to whoever wrote it. Nobody else removes it, and the
     // author's removal is a soft archive the record keeps.
     // DD1-f: only the person who dropped an image can remove it, because only
@@ -2966,7 +2976,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     }
     noteWorkboardNodeDeleted(orgId, eventKind(node));
     setAnnouncement(node.kind === "shape" ? "Colour block removed." : node.kind === "text" ? "Text block removed." : node.kind === "sticky" ? "Sticky removed." : `${node.title} removed from this workboard.`);
-    const entry = record({ action: "remove_note", node, links: links.filter((link) => link.fromId === node.id || link.toId === node.id) });
+    const entry = record({ action: "remove_note", node, links: links.filter((link) => link.fromId === node.id || link.toId === node.id), ...(extra?.pin ? { pin: extra.pin } : {}) });
     if (entry) setUndoToast({ message: "Note removed", entry });
   }
 

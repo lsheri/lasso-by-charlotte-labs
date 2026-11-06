@@ -31,7 +31,7 @@ export type UndoEntry =
   | { id: string; action: "resize"; kind: "card" | "frame"; targetId: string; before: LabRect; after: LabRect; coalesceKey?: string; at?: number }
   | { id: string; action: "hide"; nodeId: string; coalesceKey?: string; at?: number }
   | { id: string; action: "restore"; nodeId: string; before: { x: number; y: number }; after: { x: number; y: number }; coalesceKey?: string; at?: number }
-  | { id: string; action: "remove_note"; node: LabNode; links: LabLink[]; coalesceKey?: string; at?: number }
+  | { id: string; action: "remove_note"; node: LabNode; links: LabLink[]; pin?: { key: string; sessionId: string }; coalesceKey?: string; at?: number }
   | { id: string; action: "relationship_add"; link: LabLink; coalesceKey?: string; at?: number }
   | { id: string; action: "relationship_remove"; link: LabLink; coalesceKey?: string; at?: number }
   | { id: string; action: "link_relation"; linkId: string; before: string; after: string; coalesceKey?: string; at?: number }
