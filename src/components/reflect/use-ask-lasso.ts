@@ -151,7 +151,7 @@ export function useAskLasso({
         .order("created_at", { ascending: false })
         .limit(50);
       return (data ?? []).filter((row) =>
-        sessionRelatedToEngagement(parseScope(row.context_scope), {
+        sessionBelongsHere(row.context_scope, {
           engagementId,
           mappedItemIds: mappedIds,
           taskIds,
@@ -213,14 +213,16 @@ export function useAskLasso({
   }
 
   function scopeForSelection(): ContextScope {
-    if (sectionSelection) return { mode: "items", ids: sectionSelection.resolve() ?? [] };
+    // LOOK-2: "Only this board". An additive `board` key inside context_scope.
+    const tag = (s: ContextScope) => engagementId ? { ...s, board: engagementId } : s;
+    if (sectionSelection) return tag({ mode: "items", ids: sectionSelection.resolve() ?? [] });
     if (boardSelection.active) {
-      return boardSelectionScope({ engagementId, hasBoardPicks: true, mappedIds: boardSelection.ids });
+      return tag(boardSelectionScope({ engagementId, hasBoardPicks: true, mappedIds: boardSelection.ids }));
     }
     if (!selected || selectedItems.length === 0 || selectedItems.length === mapped.length) {
-      return { mode: "engagements", ids: [engagementId] };
+      return tag({ mode: "engagements", ids: [engagementId] });
     }
-    return { mode: "items", ids: selectedItems.map((i) => i.id) };
+    return tag({ mode: "items", ids: selectedItems.map((i) => i.id) });
   }
   const scopeKey = scopeForSelection().ids.join(",") + selectedItems.length;
 
@@ -415,3 +417,13 @@ export function useAskLasso({
 }
 
 export type AskLasso = ReturnType<typeof useAskLasso>;
+
+/** LOOK-2: a session stamped with a board belongs only to that board; unstamped sessions keep today's rule. */
+export function sessionBelongsHere(
+  raw: unknown,
+  where: { engagementId: string; mappedItemIds: Iterable<string>; taskIds: Iterable<string> },
+): boolean {
+  const board = (raw as { board?: string } | null)?.board;
+  if (board) return board === where.engagementId;
+  return sessionRelatedToEngagement(parseScope(raw), where);
+}
