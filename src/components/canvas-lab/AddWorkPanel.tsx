@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { LoaderCircle } from "lucide-react";
 
 import { useQuery } from "@tanstack/react-query";
@@ -80,6 +80,7 @@ export function AddWorkPanel({
   const [pickerKind, setPickerKind] = useState<PickerKind | null>(null);
   const [aiPanel, setAiPanel] = useState<SourceRow | null>(null);
   const [copied, setCopied] = useState(false);
+  useEffect(() => { if (open) { setActiveTab("connectors"); setAiPanel(null); setPickerKind(null); setCopied(false); } }, [open]);
   const phraseRef = useRef<HTMLElement | null>(null);
   const fetchConnections = useServerFn(listConnections);
   const { data: connections } = useQuery({

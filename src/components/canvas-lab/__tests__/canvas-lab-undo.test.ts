@@ -24,6 +24,51 @@ function workNode(deliverable: boolean): LabNode {
 }
 
 describe("canvas lab undo stack", () => {
+  it("FIX-1 deleteNode on a pinned answer remembers the pin for its remove_note entry", () => {
+    // Execute the page's actual deleteNode pin block in isolation.
+    const source = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
+    const start = source.indexOf("    // FIX-1: a kept answer removed by any path");
+    const end = source.indexOf("    // A judgment belongs to whoever wrote it.", start);
+    expect(start).toBeGreaterThan(-1);
+    expect(end).toBeGreaterThan(start);
+    const run = new Function("node", "extra", "context", `
+      const { window, engagementId, readAskPins, writeUnpinned, removeAskPin } = context;
+      ${source.slice(start, end).replace("let store: Storage | null = null;", "let store = null;")}
+      return extra;
+    `);
+    const data = new Map<string, string>();
+    const store = { getItem: (key: string) => data.get(key) ?? null, setItem: (key: string, value: string) => { data.set(key, value); }, removeItem: (key: string) => { data.delete(key); } };
+    writeAskPin("answer:1", "chat:1", store);
+    const node = { ...workNode(false), id: "answer:1", kind: "answer" as const, local: true };
+    const context = { window: { localStorage: store }, engagementId: "board:1", readAskPins, writeUnpinned, removeAskPin };
+    expect(run(node, undefined, context)).toEqual({ pin: { key: "answer:1", sessionId: "chat:1" } });
+    expect(readAskPins(store)).toEqual({});
+    expect(readUnpinned(store)).toEqual({ "chat:1": "board:1" });
+    // Already carried by unpinAnswer-style callers: untouched, no second write.
+    const given = { pin: { key: "answer:1", sessionId: "chat:1" } };
+    expect(run(node, given, context)).toBe(given);
+  });
+
+  it("FIX-1 restoreNode puts the work placement back for a work card", () => {
+    const source = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
+    const start = source.indexOf("  function restoreNode(id: string) {");
+    const end = source.indexOf("\n  }\n", start);
+    expect(start).toBeGreaterThan(-1);
+    const body = source.slice(source.indexOf("{", start) + 1, end);
+    const run = new Function("id", "context", `
+      const { allNodes, boardFrames, localNodeAnchor, visibleNodes, setNodes, setHiddenIds, setWorkPlacement, persistNodePatch, noteWorkboardRecordVisibility, orgId, setAnnouncement, record } = context;
+      ${body}
+    `);
+    const setWorkPlacement = vi.fn(async () => undefined);
+    const node = workNode(false);
+    run(node.id, {
+      allNodes: [node], boardFrames: [{ id: "foundation" }], localNodeAnchor: () => ({ x: 1, y: 2 }), visibleNodes: [],
+      setNodes: vi.fn(), setHiddenIds: vi.fn(), setWorkPlacement, persistNodePatch: vi.fn(async () => undefined),
+      noteWorkboardRecordVisibility: vi.fn(), orgId: "org", setAnnouncement: vi.fn(), record: vi.fn(),
+    });
+    expect(setWorkPlacement).toHaveBeenCalledWith("work:1", true);
+  });
+
   it("PIN-2 restores a removed chat pin on undo and removes it again on redo", () => {
     // Execute the page's actual remove_note branch without mounting its unrelated queries.
     const source = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");

@@ -2933,18 +2933,22 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   function unpinAnswer(nodeId: string) {
     const node = nodesRef.current.find((entry) => entry.id === nodeId) ?? visibleNodes.find((entry) => entry.id === nodeId);
     if (!node) return;
-    let store: Storage | null = null;
-    try { store = window.localStorage; } catch { store = null; }
-    const key = node.durableId ?? node.id;
-    const sessionId = readAskPins(store)[key];
-    if (sessionId) {
-      writeUnpinned(sessionId, engagementId, store);
-      removeAskPin(key, store);
-    }
-    deleteNode(node, sessionId ? { pin: { key, sessionId } } : undefined);
+    deleteNode(node);
   }
 
   function deleteNode(node: LabNode, extra?: { pin?: { key: string; sessionId: string } }) {
+    // FIX-1: a kept answer removed by any path remembers its pin, so undo restores it.
+    if (node.kind === "answer" && !extra?.pin) {
+      let store: Storage | null = null;
+      try { store = window.localStorage; } catch { store = null; }
+      const key = node.durableId ?? node.id;
+      const sessionId = readAskPins(store)[key];
+      if (sessionId) {
+        writeUnpinned(sessionId, engagementId, store);
+        removeAskPin(key, store);
+        extra = { ...extra, pin: { key, sessionId } };
+      }
+    }
     // A judgment belongs to whoever wrote it. Nobody else removes it, and the
     // author's removal is a soft archive the record keeps.
     // DD1-f: only the person who dropped an image can remove it, because only
@@ -3033,6 +3037,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     const point = localNodeAnchor(frame, visibleNodes);
     setNodes((current) => current?.map((entry) => entry.id === id ? { ...entry, ...point } : entry) ?? current);
     setHiddenIds((current) => current.filter((entry) => entry !== id));
+    if (node.workItemId) void setWorkPlacement(id, true);
     void persistNodePatch(id, { hidden: false, x: point.x, y: point.y });
     noteWorkboardRecordVisibility(orgId, "restored", node.kind === "decision" ? "decision" : node.kind === "brief" ? "brief" : "work");
     setAnnouncement(`${node.title} returned to this local workboard.`);
