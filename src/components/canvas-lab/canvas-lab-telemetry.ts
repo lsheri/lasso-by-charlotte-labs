@@ -118,6 +118,11 @@ export function noteWorkboardCardMenuOpened(orgId: string | undefined, nodeKind:
   if (orgId) logEvent("workboard.card_menu_opened", orgId, { node_kind: nodeKind, ownership });
 }
 
+/** MENU-1: the board's own menu (empty stage or a frame) opened. Closed dims only. */
+export function noteWorkboardBoardMenuOpened(orgId: string | undefined, target: "stage" | "frame", via: "mouse" | "keyboard"): void {
+  if (orgId) logEvent("workboard.board_menu_opened", orgId, { target, via });
+}
+
 /** Widened additively for context documents, the trail, and the context area. */
 export type WorkboardPersistEntity = "board" | "frame" | "node" | "relationship" | "context_doc" | "trail" | "context_area";
 export type WorkboardPersistAction = "create" | "update" | "archive" | "restore" | "added" | "removed" | "created";

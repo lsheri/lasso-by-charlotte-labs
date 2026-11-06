@@ -67,6 +67,10 @@ describe("the workboard allowlist", () => {
         "workboard.board_jumped": [
           "to",
         ],
+        "workboard.board_menu_opened": [
+          "target",
+          "via",
+        ],
         "workboard.bundle_toggled": [
           "state",
           "pieces",
@@ -300,6 +304,7 @@ describe("the workboard allowlist", () => {
       () => helpers.noteWorkboardReviewOpened("o", "thread"),
       () => helpers.noteWorkboardTrailSelected("o", "ai_work", "exact"),
       () => helpers.noteWorkboardCardMenuOpened("o", "frame", "shared"),
+      () => helpers.noteWorkboardBoardMenuOpened("o", "stage", "keyboard"),
       () => helpers.noteWorkboardChangeSaved("o", "node", "create"),
       () => helpers.noteWorkboardChangeSaved("o", "context_doc", "added"),
       () => helpers.noteWorkboardChangeSaved("o", "context_doc", "removed"),
@@ -347,7 +352,7 @@ describe("the workboard allowlist", () => {
       const [name, , dims] = mocked.mock.calls[0] as [string, string, Record<string, unknown>];
       expect(guardWorkboardEvent(name, dims as never)).toEqual({ keep: true, dims });
     }
-    expect(Object.keys(WORKBOARD_EVENT_DIMS)).toHaveLength(50);
+    expect(Object.keys(WORKBOARD_EVENT_DIMS)).toHaveLength(51);
   });
 
   it.each(["in", "out", "reset"] as const)("reports zoom %s with only direction and method", (direction) => {

@@ -386,6 +386,8 @@ export type TelemetryEvent =
   | "workboard.trail_item_selected"
   /** Canvas Lab interaction correction: a card's contextual action menu opened. */
   | "workboard.card_menu_opened"
+  /** MENU-1: the board's own menu (stage or frame) opened. Target and entry method only. */
+  | "workboard.board_menu_opened"
   /** Canvas Lab Phase 3: a durable Workboard change was confirmed. Entity and action only. */
   | "workboard.change_saved"
   /** Canvas Lab Phase 3: a durable Workboard change failed. Entity and closed reason only. */

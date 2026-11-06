@@ -1,4 +1,7 @@
 import { MoreHorizontal } from "lucide-react";
+import { useEffect, useRef } from "react";
+
+import { noteWorkboardBoardMenuOpened } from "@/components/canvas-lab/canvas-lab-telemetry";
 
 import { Button } from "@/components/ui/button";
 import { BOARD_WORKSTREAM_COPY } from "@/lib/board-workstream-delete";
@@ -23,6 +26,7 @@ export function LabFrameMenu({
   onUseAsContext,
   removal,
   renamable,
+  orgId,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -39,7 +43,23 @@ export function LabFrameMenu({
   removal?: "none" | "box" | "workstream" | undefined;
   /** WK2: absent means today's rule. False hides Rename on somebody else's workstream. */
   renamable?: boolean | undefined;
+  /** MENU-1: workspace for workboard.board_menu_opened. */
+  orgId?: string | undefined;
 }) {
+  const viaRef = useRef<"mouse" | "keyboard">("mouse");
+  const wasOpenRef = useRef(open);
+  useEffect(() => {
+    if (!editable) return;
+    const onKey = () => { viaRef.current = "keyboard"; };
+    const onPointer = () => { viaRef.current = "mouse"; };
+    document.addEventListener("keydown", onKey, true);
+    document.addEventListener("pointerdown", onPointer, true);
+    return () => { document.removeEventListener("keydown", onKey, true); document.removeEventListener("pointerdown", onPointer, true); };
+  }, [editable]);
+  useEffect(() => {
+    if (open && !wasOpenRef.current && editable) noteWorkboardBoardMenuOpened(orgId, "frame", viaRef.current);
+    wasOpenRef.current = open;
+  }, [open, editable, orgId]);
   if (!editable) return null;
   const offersRemove = removal ? removal !== "none" : custom;
   const removeLabel = removal === "workstream" ? BOARD_WORKSTREAM_COPY.removeAndDelete : BOARD_WORKSTREAM_COPY.removeBox;
@@ -59,21 +79,21 @@ export function LabFrameMenu({
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
-        className="canvas-lab-card-menu"
+        className="canvas-lab-menu canvas-lab-card-menu"
         onCloseAutoFocus={(event) => {
           event.preventDefault();
           restoreFocus();
         }}
       >
-        {onUseAsContext ? <DropdownMenuItem onSelect={onUseAsContext}>Use as context</DropdownMenuItem> : null}
-        <DropdownMenuItem onSelect={onFit}>Fit contents</DropdownMenuItem>
-        {editable && custom && renamable !== false ? <DropdownMenuItem onSelect={(event) => { event.preventDefault(); onRename(); }}>Rename</DropdownMenuItem> : null}
+        {onUseAsContext ? <DropdownMenuItem className="canvas-lab-menu-item" onSelect={onUseAsContext}>Use as context</DropdownMenuItem> : null}
+        <DropdownMenuItem className="canvas-lab-menu-item" onSelect={onFit}>Fit contents</DropdownMenuItem>
+        {editable && custom && renamable !== false ? <DropdownMenuItem className="canvas-lab-menu-item" onSelect={(event) => { event.preventDefault(); onRename(); }}>Rename</DropdownMenuItem> : null}
         {editable && offersRemove ? (
-          <DropdownMenuItem disabled={!removable} title={removable ? undefined : "Move its cards first"} onSelect={onRemove}>
+          <DropdownMenuItem className="canvas-lab-menu-item" disabled={!removable} title={removable ? undefined : "Move its cards first"} onSelect={onRemove}>
             {removeLabel}{removable ? "" : " · Move its cards first"}
           </DropdownMenuItem>
         ) : null}
-        {editable && context ? <DropdownMenuItem onSelect={onRemove}>Remove the context area</DropdownMenuItem> : null}
+        {editable && context ? <DropdownMenuItem className="canvas-lab-menu-item" onSelect={onRemove}>Remove the context area</DropdownMenuItem> : null}
       </DropdownMenuContent>
     </DropdownMenu>
   );
