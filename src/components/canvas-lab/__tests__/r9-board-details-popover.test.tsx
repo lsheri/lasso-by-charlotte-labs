@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { readFileSync } from "fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -12,6 +12,9 @@ import type { EngagementRow } from "@/lib/engagement-page-shared";
 vi.mock("@tanstack/react-router", () => ({
   Link: ({ children, ...props }: { children: React.ReactNode }) => <a {...props}>{children}</a>,
 }));
+
+const settingsMock = vi.hoisted(() => ({ value: null as null | { openSettings: (id?: string, from?: string) => void } }));
+vi.mock("@/lib/settings-dialog-context", () => ({ useSettingsDialogOptional: () => settingsMock.value }));
 
 const toolbarSource = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
 
@@ -132,5 +135,19 @@ describe("R9 board details popover", () => {
       <BoardDetailsContent engagement={null} coaches={[]} members={[]} engagementId="eng-1" />,
     );
     expect(screen.getByText("Nothing to show yet.")).toBeTruthy();
+  });
+});
+
+describe("SET-1 Where Ask Lasso opens link", () => {
+  it("shows with a settings provider and opens Your work by deep link; absent without one", () => {
+    const openSettings = vi.fn();
+    settingsMock.value = { openSettings };
+    const { unmount } = render(<BoardDetailsContent engagement={ENGAGEMENT} coaches={COACHES} members={MEMBERS} engagementId="eng-1" />);
+    fireEvent.click(screen.getByRole("button", { name: "Where Ask Lasso opens" }));
+    expect(openSettings).toHaveBeenCalledWith("your-work", "deep_link");
+    unmount();
+    settingsMock.value = null;
+    render(<BoardDetailsContent engagement={ENGAGEMENT} coaches={COACHES} members={MEMBERS} engagementId="eng-1" />);
+    expect(screen.queryByRole("button", { name: "Where Ask Lasso opens" })).toBeNull();
   });
 });

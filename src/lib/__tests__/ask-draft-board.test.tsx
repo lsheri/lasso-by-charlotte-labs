@@ -176,3 +176,15 @@ describe("PIN-1 header pin", () => {
     expect(pin?.getAttribute("data-was")).toBe("true");
   });
 });
+
+describe("SET-1 New ask goes home, closed", () => {
+  it("clicking New ask moves to the saved home and folds", () => {
+    window.localStorage.setItem("lasso.ask-draft.home", "lock_left");
+    document.body.appendChild(document.createElement("main"));
+    const { baseElement } = render(<Harness messages={[{ id: "m1", role: "user", content: "hi" }]} />);
+    fireEvent.click(screen.getByRole("button", { name: "New ask" }));
+    expect(baseElement.querySelector(".ask-draft")?.getAttribute("data-position")).toBe("lock_left");
+    expect(screen.getByRole("button", { name: "Expand Ask Lasso" })).toBeTruthy();
+    window.localStorage.removeItem("lasso.ask-draft.home");
+  });
+});
