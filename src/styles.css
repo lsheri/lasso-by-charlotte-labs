@@ -2002,7 +2002,10 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .canvas-lab-inline-workstream span { flex-basis: 100%; color: var(--destructive); font-family: var(--font-hand); font-size: 13px; }
 /* A kept answer: white face, lime edge, so it reads apart from work cards. */
 .canvas-lab-answer-card { display: flex; flex-direction: column; border: 1.4px solid var(--nb-lasso-green); border-radius: var(--radius-card); background: var(--nb-white); padding: 10px 12px; box-shadow: var(--shadow-card); }
-.canvas-lab-answer-card[data-focused="true"] { border-color: transparent; outline: 2.4px solid var(--nb-lasso-green); outline-offset: -1.4px; }
+.canvas-lab-answer-card[data-focused="true"] { border-color: transparent; outline: 2.4px solid var(--neutral-95); outline-offset: -1.4px; }
+.canvas-lab-answer-pin { position: absolute; left: 50%; top: calc(-12px * var(--lab-inverse-zoom, 1)); z-index: 3; display: grid; place-items: center; width: calc(24px * var(--lab-inverse-zoom, 1)); height: calc(24px * var(--lab-inverse-zoom, 1)); margin-left: calc(-12px * var(--lab-inverse-zoom, 1)); border: 2px solid var(--nb-white); border-radius: var(--radius-pill); background: var(--pin); color: var(--nb-white); box-shadow: 0 1px 3px color-mix(in oklab, var(--neutral-95) 25%, transparent); }
+.canvas-lab-answer-pin:hover { background: color-mix(in srgb, var(--pin) 85%, var(--neutral-95)); }
+.canvas-lab-answer-card { border-color: var(--nb-rule); }
 .canvas-lab-answer-card > header, .canvas-lab-answer-card > footer { flex-shrink: 0; }
 .canvas-lab-answer-body { position: relative; flex: 1 1 auto; min-height: 0; overflow: hidden; margin-top: 8px; overflow-wrap: anywhere; font-size: 12px; line-height: 1.5; }
 .canvas-lab-answer-card[data-expanded="true"] .canvas-lab-answer-body { flex: 0 0 auto; overflow: visible; }
@@ -8326,8 +8329,8 @@ body:has(.lasso-decisions-ledger) .canvas-lab-undo-toast { position: fixed; z-in
 [data-lasso="on"] .canvas-lab-toolbar button.canvas-lab-ask-button[data-toolbar-control="ask"][aria-pressed="true"]:hover:not(:disabled) { background: color-mix(in srgb, var(--halo-1) 16%, var(--nb-white)); border-color: var(--ask-mark); box-shadow: 0 0 var(--halo-blur) var(--halo-spread) color-mix(in srgb, var(--halo-1) calc(var(--picked-glow-bright) * 100%), transparent); }
 /* BOARD-UX-4: the mark reads its colours from these tokens at mount; the keyed wrapper remounts it on open and on close.
    Closed: light on graphite (paper dashes, acid loop). Open: dark on acid, loop included, or it would be acid on acid. */
-.canvas-lab-ask-button .canvas-lab-ask-mark { --nb-ink: var(--nb-paper); --nb-graphite: var(--nb-paper); }
-.canvas-lab-ask-button[aria-pressed="true"] .canvas-lab-ask-mark { --nb-ink: var(--text-primary); --nb-graphite: var(--text-primary); --nb-lasso-green: var(--text-primary); }
+.canvas-lab-ask-button .canvas-lab-ask-mark { --nb-ink: var(--ask-mark); --nb-graphite: var(--ask-mark); --nb-lasso-green: var(--ask-mark); }
+.canvas-lab-ask-button[aria-pressed="true"] .canvas-lab-ask-mark { --nb-ink: var(--ask-mark); --nb-graphite: var(--ask-mark); --nb-lasso-green: var(--ask-mark); }
 
 /* TOOLBAR-2: a quiet rule between toolbar groups. Not focusable, hidden from screen readers in the markup. */
 .canvas-lab-toolbar-divider { display: block; flex-shrink: 0; width: 1px; height: 26px; background: var(--nb-rule); }
@@ -8393,7 +8396,8 @@ body:has(.lasso-decisions-ledger) .canvas-lab-undo-toast { position: fixed; z-in
 
 /* ASK-D1: preview-gated floating Ask drafts. Only reachable when the gate is open. */
 main[data-ask-lock] .canvas-lab-floating-tools-wrapper { left: calc(12px + var(--ask-draft-lock-left, 0px)); right: calc(12px + var(--ask-draft-lock-right, 0px)); }
-.ask-draft { position: absolute; left: 0; top: 0; z-index: 30; display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; contain: layout paint; will-change: transform; pointer-events: auto; border: 1px solid var(--nb-rule); border-radius: 20px; background: var(--nb-white); box-shadow: var(--shadow-float); transition: box-shadow 160ms; }
+.ask-draft { position: absolute; left: 0; top: 0; z-index: 30; display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; contain: layout paint; container-type: inline-size; will-change: transform; pointer-events: auto; border: 1px solid var(--nb-rule); border-radius: 20px; background: var(--nb-white); box-shadow: var(--shadow-float); transition: box-shadow 160ms; }
+.ask-draft-b[data-dragging="true"] { animation: none; }
 .ask-draft[data-dragging="true"] { box-shadow: 0 22px 48px color-mix(in oklab, var(--neutral-95) 18%, transparent); }
 .ask-draft-head { display: flex; flex-shrink: 0; align-items: center; gap: 4px; min-width: 0; height: 44px; padding: 0 8px 0 10px; border-bottom: 1px solid var(--nb-rule); cursor: grab; touch-action: none; user-select: none; }
 .ask-draft[data-dragging="true"] .ask-draft-head { cursor: grabbing; }
@@ -8411,6 +8415,16 @@ main[data-ask-lock] .canvas-lab-floating-tools-wrapper { left: calc(12px + var(-
 .ask-draft-b .ask-draft-title { font-family: var(--font-mono); font-size: 11.5px; font-weight: 500; letter-spacing: .22em; text-transform: uppercase; color: var(--nb-ink); }
 .ask-draft-mark { display: inline-flex; flex-shrink: 0; align-items: center; margin-right: 6px; color: var(--ask-mark); }
 .ask-draft-b .ask-reading-beads { display: none; }
+.ask-draft-pin { position: absolute; left: 50%; top: 7px; z-index: 2; display: grid; place-items: center; width: 32px; height: 32px; margin-left: -16px; border-radius: var(--radius-pill); color: var(--pin-off); }
+.ask-draft-pin:hover { background: color-mix(in srgb, var(--pin) 10%, transparent); color: var(--pin); }
+.ask-draft-pin[data-on="true"] { background: var(--pin); color: var(--nb-white); }
+.ask-draft-pin[data-on="true"]:hover { background: color-mix(in srgb, var(--pin) 85%, var(--neutral-95)); }
+.ask-draft-pin[data-was="true"] { color: var(--text-muted); }
+.ask-draft-pin[data-was="true"] svg { stroke-dasharray: 2.4 2.4; }
+.ask-draft-pin:disabled { opacity: .4; cursor: default; }
+.ask-draft-pin:focus-visible { outline: 2px solid var(--focus-ring-new); outline-offset: 1px; }
+.ask-draft-b .ask-draft-head { position: relative; }
+@container (max-width: 400px) { .ask-draft-b .ask-draft-new { width: 28px; padding: 0; font-size: 0; } .ask-draft-b .ask-draft-new::before { content: "+"; font-size: 17px; line-height: 1; } }
 @media (prefers-reduced-motion: reduce) { .ask-draft-b { animation: none; } }
 .ask-draft-body { display: flex; flex: 1; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; }
 .ask-draft-body > header { display: none; }

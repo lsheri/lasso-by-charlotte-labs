@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, useLayoutEffect, useRef, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type RefObject } from "react";
 import { createPortal } from "react-dom";
-import { ChevronsDownUp, ChevronsUpDown, History, X } from "lucide-react";
+import { ChevronsDownUp, ChevronsUpDown, History, Pin, X } from "lucide-react";
 
 import { AskSurface } from "@/components/reflect/AskSurface";
 import type { AskLasso } from "@/components/reflect/use-ask-lasso";
@@ -11,7 +11,7 @@ import { noteWorkboardAskMoved, noteWorkboardAskView } from "@/components/canvas
 import { AskPlacingGhost } from "@/components/canvas-lab/ask-draft/AskPlacing";
 import { AskReadingLines } from "@/components/canvas-lab/ask-draft/AskReadingLines";
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
-import { readAskPosition, writeAskPosition, type AskDraft } from "@/lib/ask-draft";
+import { readAskPosition, readUnpinned, writeAskPosition, type AskDraft } from "@/lib/ask-draft";
 import { ASK_DOCK_CONFIG, DOCK_SPOTS, useAskDock, type DockId } from "@/lib/ask-dock-engine";
 
 function safeStore(): Storage | null {
@@ -41,6 +41,12 @@ type Props = {
   onJumpToAnswer?: ((nodeId: string) => void) | undefined;
   /** ASK-LOOK-1: board node ids of the picked cards Lasso reads, for draft b's reading lines. */
   readingNodeIds?: string[] | undefined;
+  /** PIN-1: the board node this chat is pinned as, if any. */
+  pinnedNodeId?: string | null | undefined;
+  /** PIN-1: this chat was pinned once and taken off. */
+  wasPinned?: boolean | undefined;
+  onPinChat?: ((atScreen: { x: number; y: number } | null) => void) | undefined;
+  onUnpinChat?: ((nodeId: string) => void) | undefined;
 };
 
 const FOOT_H = 34;
@@ -210,6 +216,16 @@ export function AskDraftSurface(props: Props) {
     onKeyDown: edgeKey(edge),
   });
   const showEdges = !locked && !folded && !empty;
+  const pinned = Boolean(props.pinnedNodeId);
+  const canPin = (ask.messages ?? []).some((m) => m.role === "assistant" && m.content.trim() !== "") && !ask.pending;
+  const pinLabel = pinned ? "Take off the board" : props.wasPinned ? "Pin this chat again" : "Pin this chat to the board";
+  const onPinClick = () => {
+    if (pinned) { props.onUnpinChat?.(props.pinnedNodeId as string); return; }
+    const rect = dock.dock === "free" ? dock.surfaceRef.current?.getBoundingClientRect() : undefined;
+    const point = rect ? { x: rect.left, y: rect.top } : null;
+    props.onPinChat?.(point);
+    if (point) { dock.moveTo(initial.to); setFolded(true); }
+  };
 
   const onGripKey = (event: ReactKeyboardEvent<HTMLDivElement>) => {
     const to: DockId | null = event.key === "ArrowLeft" ? "lock_left"
@@ -262,6 +278,11 @@ export function AskDraftSurface(props: Props) {
             </span>
           ) : null}
           <span className="ask-draft-title">Ask Lasso</span>
+          {!empty && props.tab !== "history" ? (
+            <button type="button" className="ask-draft-pin" data-on={pinned ? "true" : undefined} data-was={!pinned && props.wasPinned ? "true" : undefined} aria-pressed={pinned} aria-label={pinLabel} title={pinLabel} disabled={!pinned && !canPin} onClick={onPinClick}>
+              <Pin size={18} aria-hidden="true" fill={pinned ? "currentColor" : "none"} />
+            </button>
+          ) : null}
           {collapsed ? null : (
             <button type="button" className="ask-draft-head-btn ask-draft-new" onClick={() => { ask.newSession(); props.onTab("messages"); }}>New ask</button>
           )}
@@ -290,6 +311,8 @@ export function AskDraftSurface(props: Props) {
               pinned={props.pinnedAnswers ?? []}
               onOpen={(id) => { ask.openSession(id); props.onTab("messages"); }}
               onJump={(nodeId) => props.onJumpToAnswer?.(nodeId)}
+              onUnpin={props.onUnpinChat}
+              unpinned={readUnpinned(safeStore())}
             />
           ) : (
           <AskSurface

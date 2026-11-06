@@ -120,4 +120,41 @@ export function writeAskPin(nodeId: string, sessionId: string, store: Store | nu
   } catch { /* storage unavailable */ }
 }
 
+export function removeAskPin(nodeId: string, store: Store | null): void {
+  try {
+    const pins = readAskPins(store);
+    delete pins[nodeId];
+    store?.setItem(PINS_KEY, JSON.stringify(pins));
+  } catch { /* storage unavailable */ }
+}
+
+// PIN-1: chats taken off the board, so the header and the past list can say "Was pinned". This browser only.
+const UNPINNED_KEY = "lasso.ask-draft.unpinned";
+
+export function readUnpinned(store: Store | null): Record<string, string> {
+  try {
+    const raw = store?.getItem(UNPINNED_KEY);
+    const parsed = raw ? (JSON.parse(raw) as unknown) : {};
+    return parsed && typeof parsed === "object" ? (parsed as Record<string, string>) : {};
+  } catch {
+    return {};
+  }
+}
+
+export function writeUnpinned(sessionId: string, engagementId: string, store: Store | null): void {
+  try {
+    const unpinned = readUnpinned(store);
+    unpinned[sessionId] = engagementId;
+    store?.setItem(UNPINNED_KEY, JSON.stringify(unpinned));
+  } catch { /* storage unavailable */ }
+}
+
+export function clearUnpinned(sessionId: string, store: Store | null): void {
+  try {
+    const unpinned = readUnpinned(store);
+    delete unpinned[sessionId];
+    store?.setItem(UNPINNED_KEY, JSON.stringify(unpinned));
+  } catch { /* storage unavailable */ }
+}
+
 export const ASK_DRAFT_OPEN_SESSION_EVENT = "lasso:ask-draft-open-session";
