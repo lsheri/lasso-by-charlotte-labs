@@ -19,3 +19,15 @@ export function openAiKeyFor(
   const fallback = env[DEFAULT_KEY_NAME]?.trim();
   return fallback ? { key: fallback, source: "default" } : null;
 }
+
+/** KEY-1: the Anthropic key, same seam and same shape. One key for every workspace type today. */
+export const ANTHROPIC_KEY_NAME = "ANTHROPIC_API_KEY";
+
+export function anthropicKeyFor(
+  orgType: string | null | undefined,
+  env: KeyEnv,
+): { key: string; source: "edu" | "default" } | null {
+  void orgType;
+  const key = env[ANTHROPIC_KEY_NAME]?.trim();
+  return key ? { key, source: "default" } : null;
+}

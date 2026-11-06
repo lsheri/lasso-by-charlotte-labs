@@ -42,10 +42,12 @@ beforeEach(() => {
   mocks.insert.mockReset().mockResolvedValue({ error: null });
   telemetry.resetConsentCache();
   process.env["TELEMETRY_SALT"] = "test-salt";
+  // KEY-1: this file pins the OpenAI wire shape, so it pins the provider too.
+  process.env["AI_PROVIDER"] = "openai";
   fetchMock = vi.fn(async () => new Response("ok"));
   vi.stubGlobal("fetch", fetchMock);
 });
-afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
+afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); delete process.env["AI_PROVIDER"]; });
 
 describe("AI usage accounting mirror", () => {
   it("an AI call emits once with all eight exact dimensions and caller identity", async () => {
