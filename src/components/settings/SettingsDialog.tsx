@@ -12,6 +12,7 @@ import { NamingConventionsCard } from "./NamingConventionsCard";
 import { ClientsSettingCard } from "@/components/settings/ClientsSettingCard";
 import { WorkspaceKindCard } from "@/components/settings/WorkspaceKindCard";
 import { OrgDimensionsCard } from "./OrgDimensionsCard";
+import { AskHomeCard } from "./AskHomeCard";
 import { YourWorkCard } from "./YourWorkCard";
 import { AccountEmailCard } from "./AccountEmailCard";
 import { ActivationKeyCard } from "./ActivationKeyCard";
@@ -48,7 +49,12 @@ const SECTIONS: SettingsSection[] = [
     hint: "how you describe it",
     group: "You",
     title: "Your work",
-    content: <YourWorkCard />,
+    content: (
+      <div className="space-y-8">
+        <YourWorkCard />
+        <AskHomeCard />
+      </div>
+    ),
   },
   {
     id: "workspace",
