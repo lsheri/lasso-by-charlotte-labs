@@ -54,7 +54,7 @@ export function resolveAskDraft(host: string, search: string, store: Store | nul
 export type SavedAskPosition = { to: AskDraftPosition; x?: number; y?: number; h?: number };
 
 export function readAskPosition(draft: AskDraft, store: Store | null): SavedAskPosition {
-  const fallback: SavedAskPosition = { to: draft === "a" ? "bottom_centre" : "bottom_right" };
+  const fallback: SavedAskPosition = { to: draft === "a" ? "bottom_centre" : readAskHome(store) };
   try {
     const raw = store?.getItem(`lasso.ask-draft.pos.${draft}`);
     if (!raw) return fallback;
@@ -158,3 +158,26 @@ export function clearUnpinned(sessionId: string, store: Store | null): void {
 }
 
 export const ASK_DRAFT_OPEN_SESSION_EVENT = "lasso:ask-draft-open-session";
+
+/** SET-1: where a new Ask chat opens, per person, browser-local. */
+export type AskHome = "bottom_right" | "bottom_centre" | "lock_left" | "lock_right";
+export const ASK_HOMES: { id: AskHome; label: string }[] = [
+  { id: "bottom_right", label: "Bottom right" },
+  { id: "bottom_centre", label: "Bottom centre" },
+  { id: "lock_left", label: "Locked left" },
+  { id: "lock_right", label: "Locked right" },
+];
+const ASK_HOME_KEY = "lasso.ask-draft.home";
+
+export function readAskHome(store: Store | null): AskHome {
+  try {
+    const raw = store?.getItem(ASK_HOME_KEY);
+    return ASK_HOMES.some((home) => home.id === raw) ? (raw as AskHome) : "bottom_right";
+  } catch {
+    return "bottom_right";
+  }
+}
+
+export function writeAskHome(home: AskHome, store: Store | null): void {
+  try { store?.setItem(ASK_HOME_KEY, home); } catch { /* storage unavailable */ }
+}

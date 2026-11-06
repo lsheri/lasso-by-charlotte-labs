@@ -8,6 +8,7 @@
 
 import { Link } from "@tanstack/react-router";
 
+import { useSettingsDialogOptional } from "@/lib/settings-dialog-context";
 import { clientDisplayName, engagementDisplayCode, engagementDisplayTitle } from "@/lib/clients";
 import { DETAILS_SEARCH } from "@/lib/engagement-default-view";
 import type {
@@ -31,6 +32,7 @@ export function BoardDetailsContent({
   members: EngagementMemberName[];
   engagementId: string;
 }) {
+  const settings = useSettingsDialogOptional();
   if (!engagement) {
     return <p className="nb-type-small text-muted">Nothing to show yet.</p>;
   }
@@ -83,6 +85,9 @@ export function BoardDetailsContent({
             ))}
           </ul>
         </div>
+      ) : null}
+      {settings ? (
+        <button type="button" className="nb-type-small text-muted underline-offset-2 hover:underline" onClick={() => settings.openSettings("your-work", "deep_link")}>Where Ask Lasso opens</button>
       ) : null}
     </div>
   );

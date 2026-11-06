@@ -11,7 +11,7 @@ import { noteWorkboardAskMoved, noteWorkboardAskView } from "@/components/canvas
 import { AskPlacingGhost } from "@/components/canvas-lab/ask-draft/AskPlacing";
 import { AskReadingLines } from "@/components/canvas-lab/ask-draft/AskReadingLines";
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
-import { readAskPosition, readUnpinned, writeAskPosition, type AskDraft } from "@/lib/ask-draft";
+import { readAskHome, readAskPosition, readUnpinned, writeAskPosition, type AskDraft } from "@/lib/ask-draft";
 import { ASK_DOCK_CONFIG, DOCK_SPOTS, useAskDock, type DockId } from "@/lib/ask-dock-engine";
 
 function safeStore(): Storage | null {
@@ -264,6 +264,7 @@ export function AskDraftSurface(props: Props) {
         onPointerUp={dock.bind.onPointerUp}
         onPointerCancel={dock.bind.onPointerCancel}
         onWheel={(event) => event.stopPropagation()}
+        onFocusCapture={(event) => { if (event.target instanceof HTMLTextAreaElement) setFolded(false); }}
       >
         {showEdges ? <div {...edgeProps("top")} /> : null}
         <div className="ask-draft-head">
@@ -284,7 +285,7 @@ export function AskDraftSurface(props: Props) {
             </button>
           ) : null}
           {collapsed ? null : (
-            <button type="button" className="ask-draft-head-btn ask-draft-new" onClick={() => { ask.newSession(); props.onTab("messages"); }}>New ask</button>
+            <button type="button" className="ask-draft-head-btn ask-draft-new" onClick={() => { ask.newSession(); props.onTab("messages"); dock.moveTo(readAskHome(safeStore())); setFolded(true); }}>New ask</button>
           )}
           <button type="button" className="ask-draft-head-icon" aria-label="History" aria-pressed={props.tab === "history"} onClick={() => props.onTab(props.tab === "history" ? "messages" : "history")}>
             <History size={16} aria-hidden="true" />

@@ -33,6 +33,7 @@ export const SETTINGS_KEYS = [
   "data_level_personal",
   "research_participation",
   "connector",
+  "ask_home",
 ] as const;
 
 export const SETTINGS_CHANGES = ["on", "off", "updated", "added", "removed"] as const;
