@@ -22,7 +22,7 @@ import { fireEvent, screen } from "@testing-library/react";
 import { useState } from "react";
 
 const props = { engagementId: "board", engagementTitle: "Board", profileId: "person", orgId: "workspace", open: true, onOpenChange: vi.fn(), canKeep: false, onKeep: vi.fn(), boardContextItemIds: [], boardContextHasPicks: false };
-afterEach(() => { cleanup(); window.localStorage.clear(); window.history.replaceState(null, "", "/"); });
+afterEach(() => { cleanup(); vi.restoreAllMocks(); window.localStorage.clear(); window.history.replaceState(null, "", "/"); });
 
 describe("ASK-D1 BoardAsk gate", () => {
   it("with the gate closed renders the existing side panel", async () => {
@@ -186,5 +186,26 @@ describe("SET-1 New ask goes home, closed", () => {
     expect(baseElement.querySelector(".ask-draft")?.getAttribute("data-position")).toBe("lock_left");
     expect(screen.getByRole("button", { name: "Expand Ask Lasso" })).toBeTruthy();
     window.localStorage.removeItem("lasso.ask-draft.home");
+  });
+});
+
+describe("HAND-1 Continue conversations", () => {
+  it("copies the prompt and opens Claude from the header", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
+    const open = vi.spyOn(window, "open").mockReturnValue(null);
+    document.body.appendChild(document.createElement("main"));
+    render(<Harness messages={[{ role: "assistant", content: "An answer" }]} />);
+    fireEvent.click(screen.getByRole("button", { name: "Continue in Claude" }));
+    await waitFor(() => expect(open).toHaveBeenCalledWith("https://claude.ai/new", "_blank", "noopener"));
+    expect(writeText).toHaveBeenCalledWith(expect.stringContaining("Lasso: An answer"));
+    expect(screen.getByRole("status").textContent).toBe("Prompt copied. Paste it there to carry on.");
+  });
+  it("offers the six-turn nudge and Not now hides it", () => {
+    document.body.appendChild(document.createElement("main"));
+    render(<Harness messages={Array.from({ length: 6 }, (_, i) => ({ role: "assistant", content: `Answer ${i}` }))} />);
+    expect(screen.getByText("This is a long one. Keep what matters to the board, or carry it on in Claude with the board as context.")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Not now" }));
+    expect(screen.queryByRole("button", { name: "Not now" })).toBeNull();
   });
 });
