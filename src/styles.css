@@ -8469,3 +8469,9 @@ main[data-ask-lock] .canvas-lab-floating-tools-wrapper { left: calc(12px + var(-
 .ask-draft-pinned-chat-list { margin-top: 6px; display: flex; flex-direction: column; gap: 8px; font-size: 12px; line-height: 1.45; }
 .ask-draft-pinned-chat-list p { white-space: pre-wrap; color: var(--foreground); }
 .ask-draft-pinned-chat-who { font-size: 11px; font-weight: 600; color: var(--muted-foreground); }
+
+/* HAND-1 */
+.ask-draft-nudge { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 12px 8px; padding: 8px 10px; border: 1px solid var(--nb-rule); border-radius: 10px; font-size: 12px; line-height: 1.4; color: var(--text-primary); background: var(--surface-raised); }
+.ask-draft-nudge button { text-decoration: underline; color: inherit; border: none; background: none; }
+.ask-draft-handoff-hint { font-size: 11px; font-family: var(--font-mono); color: var(--text-muted); padding: 0 12px 6px; }
+@container (max-width: 400px) { .ask-draft-handoff-vendor { display: none; } }

@@ -7,7 +7,7 @@
  */
 
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { HANDOFF_VENDORS, readHandoffDestination, writeHandoffDestination, type HandoffDestination } from "@/lib/ask-handoff";
 
 function safeStore(): Storage | null {
@@ -42,15 +42,12 @@ export function BoardDetailsContent({
   const [dest, setDest] = useState<HandoffDestination>(() => readHandoffDestination(engagementId, null));
   const [projectLink, setProjectLink] = useState("");
   const [linkDropped, setLinkDropped] = useState(false);
-  const [loadedBoard, setLoadedBoard] = useState<string | null>(null);
-  // Read browser-only settings after mount, keeping the first render SSR-safe.
-  const loadRef = (element: HTMLFieldSetElement | null) => {
-    if (!element || loadedBoard === engagementId) return;
+  useEffect(() => {
     const saved = readHandoffDestination(engagementId, safeStore());
     setDest(saved);
     setProjectLink(saved.url ?? "");
-    setLoadedBoard(engagementId);
-  };
+    setLinkDropped(false);
+  }, [engagementId]);
   const changeDestination = (next: HandoffDestination, link: string) => {
     writeHandoffDestination(engagementId, next, safeStore());
     const saved = readHandoffDestination(engagementId, safeStore());
@@ -97,19 +94,6 @@ export function BoardDetailsContent({
 
         </div>
       ) : null}
-      <fieldset ref={loadRef} className="flex min-w-0 flex-col gap-2 nb-type-small text-muted">
-        <legend>Continue conversations in</legend>
-        <div className="flex gap-3">
-          {HANDOFF_VENDORS.map((vendor) => (
-            <label key={vendor.id} className="flex items-center gap-1">
-              <input type="radio" name={`ask-handoff-${engagementId}`} value={vendor.id} checked={dest.vendor === vendor.id} onChange={() => changeDestination({ vendor: vendor.id, ...(projectLink ? { url: projectLink } : {}) }, projectLink)} />
-              {vendor.label}
-            </label>
-          ))}
-        </div>
-        <input type="text" aria-label="Project link" placeholder="Project link (optional)" className="min-w-0 rounded border border-border bg-background px-2 py-1 text-foreground" value={projectLink} onChange={(event) => changeDestination({ vendor: dest.vendor, url: event.target.value }, event.target.value)} />
-        {linkDropped ? <p>That link is not a {HANDOFF_VENDORS.find((vendor) => vendor.id === dest.vendor)?.label} link.</p> : null}
-      </fieldset>
       {people.length > 0 ? (
         <div className="flex flex-col gap-1">
           <p className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">
@@ -127,6 +111,19 @@ export function BoardDetailsContent({
       {settings ? (
         <button type="button" className="nb-type-small text-muted underline-offset-2 hover:underline" onClick={() => settings.openSettings("your-work", "deep_link")}>Where Ask Lasso opens</button>
       ) : null}
+      <fieldset className="flex min-w-0 flex-col gap-2 nb-type-small text-muted">
+        <legend>Continue conversations in</legend>
+        <div className="flex gap-3">
+          {HANDOFF_VENDORS.map((vendor) => (
+            <label key={vendor.id} className="flex items-center gap-1">
+              <input type="radio" name={`ask-handoff-${engagementId}`} value={vendor.id} checked={dest.vendor === vendor.id} onChange={() => changeDestination({ vendor: vendor.id, ...(projectLink ? { url: projectLink } : {}) }, projectLink)} />
+              {vendor.label}
+            </label>
+          ))}
+        </div>
+        <input type="text" aria-label="Project link" placeholder="Project link (optional)" className="min-w-0 rounded border border-border bg-background px-2 py-1 text-foreground" value={projectLink} onChange={(event) => changeDestination({ vendor: dest.vendor, url: event.target.value }, event.target.value)} />
+        {linkDropped ? <p>That link is not a {HANDOFF_VENDORS.find((vendor) => vendor.id === dest.vendor)?.label} link.</p> : null}
+      </fieldset>
     </div>
   );
 }
