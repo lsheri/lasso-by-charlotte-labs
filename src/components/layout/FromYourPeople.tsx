@@ -1,6 +1,5 @@
 import { Link } from "@tanstack/react-router";
 
-import { NavActiveCatch } from "./NavActiveCatch";
 import { GraphiteIcon } from "@/components/notebook/icons";
 import { groupBySharer, usePartnerSharedBoards } from "@/hooks/use-partner-shared-boards";
 
@@ -39,7 +38,6 @@ export function FromYourPeopleGroup({
                 className={`${rowClassName} min-w-0`}
                 activeProps={{ className: "nb-nav-item-active" }}
               >
-                <NavActiveCatch />
                 <span className="nb-shared-ink inline-flex shrink-0" aria-hidden="true">
                   <GraphiteIcon name="members" size={16} animate={false} />
                 </span>
