@@ -7069,6 +7069,8 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 [data-lasso="on"] .font-mono { font-family: var(--font-mono); }
 [data-lasso="on"] .font-serif { font-family: var(--font-serif); }
 [data-lasso="on"] .font-sans { font-family: var(--font-sans); }
+[data-lasso="on"] { --font-hand: var(--font-sans); }
+[data-lasso="on"] .font-hand { font-family: var(--font-sans); }
 
 /* Isolated source-tool theme tokens for decorative canvas miniatures. */
 .source-mirror {
@@ -7491,30 +7493,6 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   font-weight: var(--nav-active-weight);
   color: var(--text-primary);
 }
-.lasso-nav-catch { display: none; }
-[data-lasso="on"] .lasso-sidebar-nav a.nb-nav-item-active > .lasso-nav-catch {
-  display: block;
-  position: absolute;
-  left: var(--nav-catch-inline);
-  right: var(--nav-catch-inline);
-  top: var(--nav-catch-block);
-  bottom: var(--nav-catch-block);
-  width: calc(100% - 2 * var(--nav-catch-inline));
-  height: calc(100% - 2 * var(--nav-catch-block));
-  overflow: visible;
-  pointer-events: none;
-  z-index: 1;
-}
-.lasso-nav-catch path {
-  stroke: var(--state-highlight);
-  stroke-dasharray: 1;
-  stroke-dashoffset: 0;
-  animation: lasso-catch-draw var(--dur-catch) var(--ease-catch) both;
-}
-@media (prefers-reduced-motion: reduce) {
-  .lasso-nav-catch path { animation: none; stroke-dashoffset: 0; }
-}
-
 /* BC-1a: board identity colours only the existing row glyph, never source marks. */
 [data-lasso="on"] .lasso-sidebar-nav [data-board-hue="0"] { --board-hue-ink: var(--board-hue-0-ink); }
 [data-lasso="on"] .lasso-sidebar-nav [data-board-hue="1"] { --board-hue-ink: var(--board-hue-1-ink); }
