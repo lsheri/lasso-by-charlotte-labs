@@ -116,3 +116,31 @@ describe("ASK-LOOK-1 ink cap and reading lines", () => {
     expect(baseElement.querySelector(".ask-draft-title")?.textContent).toBe("Ask Lasso");
   });
 });
+
+describe("ASK-B3 resize handles", () => {
+  const msgs = [{ id: "m1", role: "user", content: "hi" }];
+  const edges = () => Array.from(document.querySelectorAll(".ask-draft-edge")).map((e) => e.getAttribute("data-edge"));
+  it("absent on an empty chat", () => {
+    document.body.appendChild(document.createElement("main"));
+    render(<Harness messages={[]} />);
+    expect(edges()).toEqual([]);
+  });
+  it("absent when locked", () => {
+    window.localStorage.setItem("lasso.ask-draft.pos.b", JSON.stringify({ to: "lock_left" }));
+    document.body.appendChild(document.createElement("main"));
+    render(<Harness messages={msgs} />);
+    expect(edges()).toEqual([]);
+  });
+  it("top only when docked at the bottom with messages", () => {
+    document.body.appendChild(document.createElement("main"));
+    render(<Harness messages={msgs} />);
+    expect(edges()).toEqual(["top"]);
+    expect(screen.getByRole("separator", { name: "Make Ask Lasso longer or shorter" }).getAttribute("aria-valuemin")).not.toBeNull();
+  });
+  it("top and bottom when free", () => {
+    window.localStorage.setItem("lasso.ask-draft.pos.b", JSON.stringify({ to: "free", x: 200, y: 200 }));
+    document.body.appendChild(document.createElement("main"));
+    render(<Harness messages={msgs} />);
+    expect(edges()).toEqual(["top", "bottom"]);
+  });
+});
