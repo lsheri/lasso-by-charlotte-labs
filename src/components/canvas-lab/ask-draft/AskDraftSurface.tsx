@@ -83,10 +83,10 @@ export function AskDraftSurface(props: Props) {
   }, [props.tab]);
   const handoffOpen = async () => {
     const prompt = handoffPrompt({ boardTitle: props.engagementTitle, messages: ask.messages ?? [] });
+    const opened = window.open(handoffUrl(dest), "_blank", "noopener");
     try { await navigator.clipboard.writeText(prompt); } catch { /* Carry on even when clipboard access is unavailable. */ }
-    window.open(handoffUrl(dest), "_blank", "noopener");
     noteWorkboardAskView(props.orgId, "handoff_opened", draft);
-    setHandoffHint("Prompt copied. Paste it there to carry on.");
+    setHandoffHint(opened !== null ? "Prompt copied. Paste it there to carry on." : "Pop-up blocked. The prompt is on your clipboard.");
     if (hintTimer.current !== null) clearTimeout(hintTimer.current);
     hintTimer.current = setTimeout(() => setHandoffHint(null), 2500);
   };
@@ -252,7 +252,7 @@ export function AskDraftSurface(props: Props) {
     const rect = dock.dock === "free" ? dock.surfaceRef.current?.getBoundingClientRect() : undefined;
     const point = rect ? { x: rect.left, y: rect.top } : null;
     props.onPinChat?.(point);
-    if (point) { dock.moveTo(initial.to); setFolded(true); }
+    if (point) { dock.moveTo(readAskHome(safeStore())); setFolded(true); }
   };
 
   const onGripKey = (event: ReactKeyboardEvent<HTMLDivElement>) => {
