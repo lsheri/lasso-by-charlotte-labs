@@ -1,6 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { describe, expect, it, vi } from "vitest";
+import { clearUnpinned, readAskPins, readUnpinned, removeAskPin, writeAskPin, writeUnpinned } from "@/lib/ask-draft";
 
-import { eventKind, retryAction, type LabNode } from "@/components/canvas-lab/canvas-lab-model";
+import { deleteLocalNode, eventKind, retryAction, type LabLink, type LabNode } from "@/components/canvas-lab/canvas-lab-model";
 import {
   UNDO_LIMIT,
   canUndoToastEntry,
@@ -22,6 +24,44 @@ function workNode(deliverable: boolean): LabNode {
 }
 
 describe("canvas lab undo stack", () => {
+  it("PIN-2 restores a removed chat pin on undo and removes it again on redo", () => {
+    // Execute the page's actual remove_note branch without mounting its unrelated queries.
+    const source = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
+    const start = source.indexOf('    if (entry.action === "remove_note") {');
+    const end = source.indexOf('    if (entry.action === "relationship_add"', start);
+    expect(start).toBeGreaterThan(-1);
+    expect(end).toBeGreaterThan(start);
+    const apply = new Function("entry", "direction", "context", `
+      const { window, engagementId, setNodes, setLinks, setSelected, linksRef, selected,
+        writeAskPin, clearUnpinned, writeUnpinned, removeAskPin, deleteLocalNode } = context;
+      ${source.slice(start, end).replace("let store: Storage | null = null;", "let store = null;")}
+    `);
+    const data = new Map<string, string>();
+    const store = { getItem: (key: string) => data.get(key) ?? null, setItem: (key: string, value: string) => { data.set(key, value); }, removeItem: (key: string) => { data.delete(key); } };
+    const node = { ...workNode(false), id: "answer:1", kind: "answer" as const, local: true };
+    const entry: UndoEntry = { id: "remove:1", action: "remove_note", node, links: [], pin: { key: "answer:1", sessionId: "chat:1" } };
+    let nodes: LabNode[] = [];
+    let links: LabLink[] = [];
+    const context = {
+      window: { localStorage: store }, engagementId: "board:1",
+      setNodes: (update: (current: LabNode[]) => LabNode[]) => { nodes = update(nodes); },
+      setLinks: (update: LabLink[] | ((current: LabLink[]) => LabLink[])) => { links = typeof update === "function" ? update(links) : update; },
+      setSelected: vi.fn(), linksRef: { current: links }, selected: [],
+      writeAskPin, clearUnpinned, writeUnpinned, removeAskPin, deleteLocalNode,
+    };
+    writeUnpinned("chat:1", "board:1", store);
+    writeUnpinned("chat:other", "board:other", store);
+    const undone = popUndo(recordUndo(emptyUndoStacks(), entry));
+    apply(undone.entry, "undo", context);
+    expect(nodes.map((node) => node.id)).toEqual(["answer:1"]);
+    expect(readAskPins(store)).toEqual({ "answer:1": "chat:1" });
+    expect(readUnpinned(store)).toEqual({ "chat:other": "board:other" });
+    apply(popRedo(undone.stacks).entry, "redo", context);
+    expect(nodes).toEqual([]);
+    expect(readAskPins(store)).toEqual({});
+    expect(readUnpinned(store)).toEqual({ "chat:1": "board:1", "chat:other": "board:other" });
+  });
+
   it("pushes, undoes and redoes one step", () => {
     const stacks = recordUndo(emptyUndoStacks(), move("a", 10), 1_000);
     const undone = popUndo(stacks);
