@@ -10,7 +10,7 @@ vi.mock("@/components/oneonone/SaveForOneOnOne", () => ({ SaveForOneOnOneDialog:
 vi.mock("@tanstack/react-router", () => ({ Link: ({ children }: { children: React.ReactNode }) => <a>{children}</a> }));
 vi.mock("@/components/reflect/AskSurface", async () => {
   const React = await import("react");
-  return { AskBoardPickedContext: React.createContext(false), AskSurface: () => <div className="sticky" />, NbDots: () => null };
+  return { AskBoardPickedContext: React.createContext(false), AskSurface: ({ sendAside }: { sendAside?: React.ReactNode }) => <div className="sticky">{sendAside}</div>, NbDots: () => null };
 });
 if (!("ResizeObserver" in globalThis)) (globalThis as unknown as { ResizeObserver: unknown }).ResizeObserver = class { observe() {} disconnect() {} };
 
@@ -150,10 +150,13 @@ describe("ASK-B3 resize handles", () => {
 
 describe("PIN-1 header pin", () => {
   const msgs = [{ id: 1, role: "user", content: "hi" }, { id: 2, role: "assistant", content: "An answer" }];
-  it("absent on an empty chat and on the history tab", () => {
+  it("ASK-C1: idle on an empty chat and absent on the history tab", () => {
     document.body.appendChild(document.createElement("main"));
     const { baseElement, unmount } = render(<Harness messages={[]} />);
-    expect(baseElement.querySelector(".ask-draft-pin")).toBeNull();
+    const pin = screen.getByRole("button", { name: "Ask something first, then pin the answer here" });
+    expect(pin.getAttribute("data-idle")).toBe("true");
+    expect((pin as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: "Continue in Claude" }) as HTMLButtonElement).disabled).toBe(true);
     unmount();
     const second = render(<Harness messages={msgs} startTab="history" />);
     expect(second.baseElement.querySelector(".ask-draft-pin")).toBeNull();
@@ -199,13 +202,23 @@ describe("SET-1 New ask goes home, closed", () => {
 });
 
 describe("HAND-1 Continue conversations", () => {
-  it("copies the prompt and opens Claude from the header", async () => {
+  it("ASK-C1: a user message alone cannot enable pin or handoff", () => {
+    document.body.appendChild(document.createElement("main"));
+    render(<Harness messages={[{ role: "user", content: "A question" }]} />);
+    const pin = screen.getByRole("button", { name: "Ask something first, then pin the answer here" }) as HTMLButtonElement;
+    expect(pin.disabled).toBe(true);
+    expect(pin.getAttribute("data-idle")).toBe("true");
+    expect((screen.getByRole("button", { name: "Continue in Claude" }) as HTMLButtonElement).disabled).toBe(true);
+  });
+  it("copies the prompt and opens Claude beside Send, not from the header", async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
     const open = vi.spyOn(window, "open").mockReturnValue(null);
     document.body.appendChild(document.createElement("main"));
     render(<Harness messages={[{ role: "assistant", content: "An answer" }]} />);
     fireEvent.click(screen.getByRole("button", { name: "Continue in Claude" }));
+    expect(document.querySelector(".ask-draft-head .ask-draft-handoff")).toBeNull();
+    expect(screen.getByRole("button", { name: "Continue in Claude" }).closest(".sticky")).not.toBeNull();
     await waitFor(() => expect(open).toHaveBeenCalledWith("https://claude.ai/new", "_blank", "noopener"));
     expect(writeText).toHaveBeenCalledWith(expect.stringContaining("Lasso: An answer"));
     expect(screen.getByRole("status").textContent).toBe("Pop-up blocked. The prompt is on your clipboard.");

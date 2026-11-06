@@ -603,11 +603,13 @@ export function AskComposer({
   mobile,
   engagementId,
   orgId,
+  sendAside,
 }: {
   ask: AskLasso;
   mobile?: boolean;
   engagementId: string;
   orgId?: string;
+  sendAside?: React.ReactNode;
 }) {
   const slash = useSlashMenu(ask, engagementId, () =>
     noteWorkboardContextChanged(orgId, "workstream"),
@@ -728,6 +730,7 @@ export function AskComposer({
             rows={mobile ? 2 : 3}
             className="min-h-[64px] resize-none"
           />
+          {sendAside}
           <Button onClick={() => void ask.submit()} disabled={ask.pending || !ask.draft.trim()} pending={ask.pending}>
             {ask.pending ? <NbDots label="Sending" /> : "Send"}
           </Button>
@@ -755,6 +758,7 @@ export function AskSurface({
   headerTone = "graphite",
   sections,
   onPickSection,
+  sendAside,
 }: {
   ask: AskLasso;
   tab: AskTab;
@@ -770,6 +774,7 @@ export function AskSurface({
   headerTone?: "graphite" | "lime";
   sections?: AskSectionChoice[] | undefined;
   onPickSection?: ((frameId: string) => void) | undefined;
+  sendAside?: React.ReactNode;
 }) {
   return (
     <>
@@ -822,6 +827,7 @@ export function AskSurface({
             mobile={mobile ?? false}
             engagementId={engagementId}
             orgId={orgId}
+            sendAside={sendAside}
           />
         ) : null}
       </div>
