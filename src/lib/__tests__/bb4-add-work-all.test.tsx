@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 let items: unknown[] = [];
 vi.mock("@tanstack/react-query", () => ({ useQuery: () => ({ data: [] }) }));
-vi.mock("@tanstack/react-start", () => ({ useServerFn: (fn: unknown) => fn }));
+vi.mock("@tanstack/react-start", async (orig) => ({ ...(await orig<object>()), useServerFn: (fn: unknown) => fn }));
 vi.mock("@/lib/mcp-connections.functions", () => ({ listConnections: () => Promise.resolve([]) }));
 vi.mock("@/components/connectors/ConnectYourAiCard", () => ({ CONNECTIONS_KEY: ["mcp-connections"] }));
 vi.mock("@/components/connectors/ConnectorPicker", () => ({ ConnectorPicker: ({ trigger }: { trigger: React.ReactNode }) => trigger }));
