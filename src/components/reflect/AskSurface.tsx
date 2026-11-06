@@ -64,6 +64,18 @@ export function hasTouchInput(): boolean {
 }
 
 /** Three grey dots used by compact loading and sending states inside Ask Lasso. */
+/** PIN-1: the one builder for a kept answer, shared by Pin to board and the floating Ask header pin. */
+export function keptAnswerFromMessage(
+  message: { id: number | string; content: string },
+  sourcesByMessage: Record<number, { id: string; depth: string }[]> | undefined | null,
+): KeptAnswer {
+  return {
+    messageId: Number(message.id),
+    text: message.content,
+    reads: (sourcesByMessage?.[Number(message.id)] ?? []).map((source) => ({ id: source.id, depth: source.depth })),
+  };
+}
+
 export function NbDots({ label = "Thinking" }: { label?: string }) {
   return (
     <span className="nb-dots" role="status" aria-label={label}>
@@ -414,16 +426,7 @@ export function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions
                       <div className="mt-1 flex items-center gap-1" data-testid="answer-actions">
                         {keep && !ask.pending ? (
                           <AnswerKeepControl
-                            answer={{
-                              messageId: Number(message.id),
-                              text: message.content,
-                              reads: (ask.sourcesByMessage?.[Number(message.id)] ?? []).map(
-                                (source) => ({
-                                  id: source.id,
-                                  depth: source.depth,
-                                }),
-                              ),
-                            }}
+                            answer={keptAnswerFromMessage(message, ask.sourcesByMessage)}
                             keep={keep}
                             canDrag={canDragAnswer}
                           />

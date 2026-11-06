@@ -1,5 +1,5 @@
 import { stableMemo } from "@/components/canvas-lab/stable-memo";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, Pin } from "lucide-react";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { RichTextView } from "@/components/rich-text/RichTextView";
 import { plainToRichHtml } from "@/lib/rich-text";
@@ -52,6 +52,7 @@ function LabAnswerCardInner({
   onMoveToFrame,
   onCommit,
   orgId,
+  onUnpin,
 }: {
   node: LabNode;
   orgId?: string | undefined;
@@ -63,6 +64,8 @@ function LabAnswerCardInner({
   onDelete: () => void;
   frameChoices?: { id: string; name: string }[];
   onMoveToFrame?: ((id: string) => void) | undefined;
+  /** PIN-1: takes this pinned answer off the board. */
+  onUnpin?: ((nodeId: string) => void) | undefined;
 }) {
   const asOf = answerAsOf(node.createdAt ?? null);
   const moveTargets = onMoveToFrame ? frameChoices.filter((frame) => frame.id !== node.frame) : [];
@@ -126,6 +129,7 @@ function LabAnswerCardInner({
       style={{ left: node.x, top: node.y, width: node.width, height: grown ? "auto" : node.height, minHeight: grown ? node.height : undefined, ...(editing ? { overflow: "visible" as const } : {}), zIndex: stackZ }}
     >
       <style>{`.canvas-lab-answer-body > .rich-text { font-size: inherit; line-height: inherit; } .canvas-lab-answer-card[data-editing="true"] .canvas-lab-answer-body { overflow: visible; } .canvas-lab-answer-card[data-editing="true"] [role="toolbar"] { bottom: calc(100% + 2.5rem); }`}</style>
+      {pin ? <button type="button" className="canvas-lab-answer-pin" aria-label="Take off the board" title="Take off the board" onClick={(e) => { e.stopPropagation(); onUnpin?.(node.id); }}><Pin size={14} aria-hidden="true" fill="currentColor" /></button> : null}
       <header className="flex items-baseline justify-between gap-2">
         <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">Answer</span>
         <span className="flex items-center gap-1">

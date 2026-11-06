@@ -3,9 +3,9 @@ import { useCallback, useEffect, useState } from "react";
 
 import { AskDraftSurface } from "@/components/canvas-lab/ask-draft/AskDraftSurface";
 import { armAskPlacing, cancelAskPlacing, isAskPlacingArmed } from "@/components/canvas-lab/ask-draft/AskPlacing";
-import { ASK_DRAFT_OPEN_SESSION_EVENT, resolveAskDraft, type AskDraft } from "@/lib/ask-draft";
+import { ASK_DRAFT_OPEN_SESSION_EVENT, readAskPins, readUnpinned, resolveAskDraft, type AskDraft } from "@/lib/ask-draft";
 
-import { AskBoardPickedContext, AskSurface } from "@/components/reflect/AskSurface";
+import { AskBoardPickedContext, AskSurface, keptAnswerFromMessage } from "@/components/reflect/AskSurface";
 import { AnswerKeepProvider, useAnswerKeep, type KeptAnswer } from "@/components/reflect/answer-keep-context";
 import { useAskDockState } from "@/components/reflect/ask-dock-state";
 import { useAskLasso, type SectionAskSource } from "@/components/reflect/use-ask-lasso";
@@ -39,7 +39,15 @@ type Props = {
   onJumpToAnswer?: ((nodeId: string) => void) | undefined;
   /** ASK-LOOK-1: picked board nodes with their work item ids, for draft b's reading lines. */
   readingNodes?: { nodeId: string; itemId: string }[] | undefined;
+  /** PIN-1: turns a screen point into a board point for a header pin from a free Ask. */
+  toBoardPoint?: ((screen: { x: number; y: number }) => { x: number; y: number }) | undefined;
+  /** PIN-1: takes a pinned answer off the board. */
+  onUnpinAnswer?: ((nodeId: string) => void) | undefined;
 };
+
+function safeStore(): Storage | null {
+  try { return window.localStorage; } catch { return null; }
+}
 
 /**
  * Ask Lasso beside the board. It sits in the board's own row rather than over
@@ -93,6 +101,16 @@ function BoardAskPanel(props: Props & { draft?: AskDraft | null; pendingSessionI
   }, [pendingSessionId]);
 
   if (props.draft && props.floatHost) {
+    const pins = readAskPins(safeStore());
+    const pinnedNodeId = (props.pinnedAnswers ?? []).find((r) => r.durableId && pins[r.durableId] === ask.sessionId)?.nodeId ?? null;
+    const wasPinned = Boolean(ask.sessionId && readUnpinned(safeStore())[ask.sessionId]);
+    // PIN-1: the header pin keeps the chat open, so it skips draftKeep's new session.
+    const onPinChat = (atScreen: { x: number; y: number } | null) => {
+      const latest = [...(ask.messages ?? [])].reverse().find((m) => m.role === "assistant" && m.content.trim() !== "");
+      if (!latest) return;
+      const answer: KeptAnswer = { ...keptAnswerFromMessage(latest, ask.sourcesByMessage), sessionId: ask.sessionId ?? undefined };
+      void onKeep({ ...answer, pinVia: atScreen ? "place" : "auto" }, "button", atScreen && props.toBoardPoint ? props.toBoardPoint(atScreen) : undefined);
+    };
     const readingNodeIds = props.sectionSource ? [] : (props.readingNodes ?? []).filter((row) => ask.mapped.some((item) => item.id === row.itemId)).map((row) => row.nodeId);
     const surface = (
       <AskBoardPickedContext.Provider value={ask.boardPickActive}>
@@ -112,6 +130,10 @@ function BoardAskPanel(props: Props & { draft?: AskDraft | null; pendingSessionI
           pinnedAnswers={props.pinnedAnswers}
           onJumpToAnswer={props.onJumpToAnswer}
           readingNodeIds={readingNodeIds}
+          pinnedNodeId={pinnedNodeId}
+          wasPinned={wasPinned}
+          onPinChat={outerKeep ? onPinChat : undefined}
+          onUnpinChat={props.onUnpinAnswer}
         />
       </AskBoardPickedContext.Provider>
     );

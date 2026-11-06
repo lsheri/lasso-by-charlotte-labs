@@ -29,7 +29,7 @@ import { BoardCardFaceMenu } from "@/components/canvas-lab/BoardCardFaceMenu";
 
 import { BoardAsk } from "@/components/canvas-lab/BoardAsk";
 import { consumeAskPlacingPress } from "@/components/canvas-lab/ask-draft/AskPlacing";
-import { autoPinPoint, resolveAskDraft, revealPan, writeAskPin } from "@/lib/ask-draft";
+import { autoPinPoint, clearUnpinned, readAskPins, removeAskPin, resolveAskDraft, revealPan, writeAskPin, writeUnpinned } from "@/lib/ask-draft";
 import { LabAnswerCard } from "@/components/canvas-lab/LabAnswerCard";
 import { useRegisterAskLasso } from "@/components/reflect/ask-lasso-context";
 import { LassoThinkingMark } from "@/components/reflect/LassoThinkingMark";
@@ -2773,6 +2773,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
         let store: Storage | null = null;
         try { store = window.localStorage; } catch { store = null; }
         writeAskPin(saved.id, sessionId, store);
+        clearUnpinned(sessionId, store);
         if (via === "auto") setSelected([]);
         // In series on purpose: rapid parallel board writes have produced save conflicts. A failure never removes the card.
         void (async () => {
@@ -2803,6 +2804,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
         let store: Storage | null = null;
         try { store = window.localStorage; } catch { store = null; }
         writeAskPin(nodeId, answer.sessionId, store);
+        clearUnpinned(answer.sessionId, store);
       }
       if (via === "auto") setSelected([]);
       const cites = answerCiteRows(nodeId, answer.reads);
@@ -2915,6 +2917,21 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
         setNodes((current) => current?.map((entry) => entry.id === node.id ? { ...entry, durableId: id, durableVersion: result.versions[id] ?? 1 } : entry) ?? current);
       }
     })();
+  }
+
+  /** PIN-1: take a pinned answer off the board, remembering its chat was pinned. Removal goes through deleteNode and its undo. */
+  function unpinAnswer(nodeId: string) {
+    const node = nodesRef.current.find((entry) => entry.id === nodeId) ?? visibleNodes.find((entry) => entry.id === nodeId);
+    if (!node) return;
+    let store: Storage | null = null;
+    try { store = window.localStorage; } catch { store = null; }
+    const key = node.durableId ?? node.id;
+    const sessionId = readAskPins(store)[key];
+    if (sessionId) {
+      writeUnpinned(sessionId, engagementId, store);
+      removeAskPin(key, store);
+    }
+    deleteNode(node);
   }
 
   function deleteNode(node: LabNode) {
@@ -3569,7 +3586,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
             {visibleNodes.filter((node) => node.kind === "sticky").map((node) => <LabSticky key={node.id} mentionCandidates={stickyMentionCandidates(mentionCandidates)} node={node} selected={keyboardId === node.id} editable={Boolean(node.local)} layoutEditable={Boolean(lab.board?.canEditStructure)} onSelect={() => { setKeyboardId(node.id); setSelectedFrameId(null); setSelectedLinkId(null); }} onDragStart={(event) => onCardPointerDown(node, event)} onResizeStart={(corner, event) => startResize("sticky", node.id, corner, node, event)} onResizeKeyDown={(corner, event) => keyboardResize("sticky", node.id, corner, node, event)} onResizeKeyUp={finishKeyboardResize} onChange={(body) => setNodes((current) => current?.map((entry) => entry.id === node.id ? (() => { const { html, mentions, ...rest } = entry; return { ...rest, summary: body.text, ...(body.html !== undefined ? { html: body.html } : {}), ...(body.mentions !== undefined ? { mentions: body.mentions } : {}), textSize: body.size, textWeight: body.weight, textColour: body.colour, stickyFill: body.fill }; })() : entry) ?? current)} onCommit={(body) => { noteWorkboardNodeEdited(orgId, "sticky"); void persistNodePatch(node.id, { body: serializeWorkboardStickyBody(body) }); }} onRemove={() => deleteNode(node)} />)}
             {visibleNodes.filter((node) => node.kind === "text").map((node) => <LabTextBlock key={node.id} node={node} selected={keyboardId === node.id} editable={Boolean(node.local)} layoutEditable={Boolean(lab.board?.canEditStructure)} onSelect={() => { setKeyboardId(node.id); setSelectedFrameId(null); setSelectedLinkId(null); }} onDragStart={(event) => onCardPointerDown(node, event)} onResizeStart={(corner, event) => startResize("text", node.id, corner, node, event)} onResizeKeyDown={(corner, event) => keyboardResize("text", node.id, corner, node, event)} onResizeKeyUp={finishKeyboardResize} onChange={(body) => setNodes((current) => current?.map((entry) => entry.id === node.id ? { ...entry, summary: body.text, ...(body.html !== undefined ? { html: body.html } : {}), textSize: body.size, textWeight: body.weight, textColour: body.colour } : entry) ?? current)} onCommit={(body: WorkboardTextBody) => { noteWorkboardNodeEdited(orgId, "text"); void persistNodePatch(node.id, { body: serializeWorkboardTextBody(body) }); }} onRemove={() => deleteNode(node)} />)}
             <LabBundleStackEdges nodes={visibleNodes} minimized={bundleView.minimized} vendorByChat={vendorByChat} />
-            {visibleNodes.filter((node) => node.kind === "answer").map((node) => <LabAnswerCard key={node.id} node={node} orgId={orgId} onCommit={async (body) => {
+            {visibleNodes.filter((node) => node.kind === "answer").map((node) => <LabAnswerCard key={node.id} node={node} orgId={orgId} onUnpin={unpinAnswer} onCommit={async (body) => {
               if (node.ownership !== "yours") return "Only the author can edit this answer.";
               const durable = await ensureNodeDurable(node.id);
               if (!durable) return "Could not save your last change.";
@@ -3646,7 +3663,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
         </div>
         {boardReady && opening ? <div className={`pointer-events-none absolute inset-0 z-40 flex ${unfold.className}`} aria-hidden={!unfold.still}>{unfold.still ? <span className="sr-only">{unfold.reduced}</span> : null}<span className="canvas-lab-unfold-panel" /><span className="canvas-lab-unfold-panel" /><span className="canvas-lab-unfold-panel" /></div> : null}
       </main>
-      {profile?.id && orgId ? <BoardAsk floatHost={askFloatHost} pinnedAnswers={visibleNodes.filter((n) => n.kind === "answer").map((n) => ({ nodeId: n.id, durableId: n.durableId ?? null, text: n.summary }))} onJumpToAnswer={jumpToAnswer} sectionSource={sectionAskSource} sectionChoices={askSectionChoices} onPickSection={pickAskSection} open={askOpen} onOpenChange={(open) => { setAskOpen(open); if (!open) setAskSection(null); }} engagementId={engagementId} engagementTitle={title} profileId={profile.id} orgId={orgId} canKeep={canAddWork} onKeep={(answer, via, at) => keepAnswerAsCard(answer, at ? { via: via ?? "button", at } : { via: via ?? "button" })} boardContextHasPicks={contextNodes.length > 0} boardContextItemIds={contextNodes.flatMap((node) => { const item = itemByNode(node); return item ? [item.id] : []; })} readingNodes={contextNodes.flatMap((node) => { const item = itemByNode(node); return item ? [{ nodeId: node.id, itemId: item.id }] : []; })} /> : null}
+      {profile?.id && orgId ? <BoardAsk floatHost={askFloatHost} pinnedAnswers={visibleNodes.filter((n) => n.kind === "answer").map((n) => ({ nodeId: n.id, durableId: n.durableId ?? null, text: n.summary }))} onJumpToAnswer={jumpToAnswer} toBoardPoint={boardPointFromScreen} onUnpinAnswer={unpinAnswer} sectionSource={sectionAskSource} sectionChoices={askSectionChoices} onPickSection={pickAskSection} open={askOpen} onOpenChange={(open) => { setAskOpen(open); if (!open) setAskSection(null); }} engagementId={engagementId} engagementTitle={title} profileId={profile.id} orgId={orgId} canKeep={canAddWork} onKeep={(answer, via, at) => keepAnswerAsCard(answer, at ? { via: via ?? "button", at } : { via: via ?? "button" })} boardContextHasPicks={contextNodes.length > 0} boardContextItemIds={contextNodes.flatMap((node) => { const item = itemByNode(node); return item ? [item.id] : []; })} readingNodes={contextNodes.flatMap((node) => { const item = itemByNode(node); return item ? [{ nodeId: node.id, itemId: item.id }] : []; })} /> : null}
       {canAddWork && suggestOpen ? <BoardSuggestionSurface mobile={suggestionMobile} onClose={closeSuggestions}>
         {suggestApplied.length === 0 ? <SuggestStructurePanel state={suggestState} structures={suggestions} parts={suggestParts} shortfall={suggestShortfall} error={suggestError} onSubmit={(text, kind) => void submitSuggestions(text, kind)} onChoose={(id) => void chooseSuggestion(id)} onCancel={closeSuggestions} /> : <SuggestionApplyResult regions={suggestApplied} busy={suggestBusy} message={suggestRemoval} onRemove={() => void removeSuggestion()} onClose={closeSuggestions} />}
         {suggestApplied.length === 0 && suggestRemoval ? <p role="alert" className="text-base text-destructive">{suggestRemoval}</p> : null}
