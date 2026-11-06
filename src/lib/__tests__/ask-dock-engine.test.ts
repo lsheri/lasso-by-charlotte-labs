@@ -33,3 +33,26 @@ describe("ASK-B1 dockZoneAt", () => {
     expect(dockZoneAt({ x: 150, y: 300 }, W, H, C, 0, "lock_left")).toBeNull();
   });
 });
+
+describe("ASK-B3 dockBox height options", () => {
+  it("userH sets the height", () => {
+    expect(dockBox("bottom_centre", W, H, C, 300, F, 0, { userH: 420 }).h).toBe(420);
+  });
+  it("userH is capped by the toolbar clearance", () => {
+    expect(dockBox("bottom_centre", W, H, C, 300, F, 0, { userH: 5000 }).h).toBe(800 - 16 - 74);
+  });
+  it("a bottom spot grows upward", () => {
+    const a = dockBox("bottom_right", W, H, C, 300, F, 0, { userH: 300 });
+    const b = dockBox("bottom_right", W, H, C, 300, F, 0, { userH: 400 });
+    expect(a.y + a.h).toBe(b.y + b.h);
+    expect(b.y).toBe(a.y - 100);
+  });
+  it("fitLock gives a lock its natural height", () => {
+    expect(dockBox("lock_right", W, H, C, 300, F, 0, { fitLock: true }).h).toBe(300);
+  });
+  it("with no opts every spot is unchanged", () => {
+    for (const id of ["bottom_centre", "bottom_right", "lock_left", "lock_right", "free"] as const) {
+      expect(dockBox(id, W, H, C, 300, F, 0, {})).toEqual(dockBox(id, W, H, C, 300, F));
+    }
+  });
+});

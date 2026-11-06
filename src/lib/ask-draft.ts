@@ -51,7 +51,7 @@ export function resolveAskDraft(host: string, search: string, store: Store | nul
   }
 }
 
-export type SavedAskPosition = { to: AskDraftPosition; x?: number; y?: number };
+export type SavedAskPosition = { to: AskDraftPosition; x?: number; y?: number; h?: number };
 
 export function readAskPosition(draft: AskDraft, store: Store | null): SavedAskPosition {
   const fallback: SavedAskPosition = { to: draft === "a" ? "bottom_centre" : "bottom_right" };

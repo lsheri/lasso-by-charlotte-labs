@@ -42,7 +42,7 @@ export function noteWorkboardNodeMoved(orgId: string | undefined, kind: LabNodeE
   if (orgId) logEvent("workboard.node_moved", orgId, { kind, via });
 }
 /** ASK-D1: the floating Ask was dropped. Position and draft only. */
-export function noteWorkboardAskView(orgId: string | undefined, action: "folded" | "expanded" | "past_opened" | "pinned_jump", draft: "a" | "b"): void {
+export function noteWorkboardAskView(orgId: string | undefined, action: "folded" | "expanded" | "past_opened" | "pinned_jump" | "resized", draft: "a" | "b"): void {
   if (orgId) logEvent("workboard.ask_view", orgId, { action, draft });
 }
 

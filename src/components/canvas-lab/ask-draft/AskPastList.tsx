@@ -23,7 +23,8 @@ export function AskPastList({ ask, pinned, onOpen, onJump }: {
   const sessions = ask.sessions ?? [];
   const pinnedSessions = new Set(Object.values(readAskPins(safeStore())));
   return (
-    <div className="min-h-0 flex-1 space-y-1 overflow-y-auto px-4 py-4">
+    <div data-ask-list className="min-h-0 flex-1 overflow-y-auto">
+      <div className="space-y-1 px-4 py-4">
       {pinned.length > 0 ? (
         <div>
           <p className={HEADING}>Pinned on this board</p>
@@ -42,7 +43,7 @@ export function AskPastList({ ask, pinned, onOpen, onJump }: {
         </div>
       ) : sessions.length > 0 ? (
         <div>
-          <p className={HEADING}>Past conversations</p>
+          <p className={HEADING}>Past conversations on this board</p>
           {sessions.map((row) => (
             <button key={row.id} type="button" onClick={() => onOpen(row.id)} className={`${ROW} flex items-center gap-2 ${row.id === ask.sessionId ? "text-foreground" : "text-muted-foreground"}`}>
               {pinnedSessions.has(row.id) ? <Pin size={13} aria-hidden="true" className="shrink-0" data-testid="ask-past-pin" /> : null}
@@ -56,6 +57,7 @@ export function AskPastList({ ask, pinned, onOpen, onJump }: {
       ) : pinned.length === 0 ? (
         <p className="text-sm text-muted-foreground">No earlier chats on this workboard yet.</p>
       ) : null}
+      </div>
     </div>
   );
 }

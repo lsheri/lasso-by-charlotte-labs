@@ -8439,14 +8439,22 @@ main[data-ask-lock] .canvas-lab-floating-tools-wrapper { left: calc(12px + var(-
 .ask-reading-lines circle { fill: var(--nb-lasso-green); stroke: var(--nb-graphite); stroke-width: 1.5; }
 @keyframes ask-reading-march { to { stroke-dashoffset: -16; } }
 @media (prefers-reduced-motion: reduce) { .ask-reading-lines path { animation: none; } .ask-reading-lines circle { display: none; } }
-.ask-draft-spots span { position: absolute; border: 1.5px dotted color-mix(in srgb, var(--hint-green) 50%, transparent); border-radius: var(--radius-pill); background: color-mix(in srgb, var(--hint-green) 7%, transparent); transition: transform 140ms cubic-bezier(.2,0,0,1), background-color 140ms, border-color 140ms; }
-.ask-draft-spots span[data-spot="lock_left"] { left: 6px; top: 50%; width: 12px; height: 112px; margin-top: -56px; transform-origin: left center; }
-.ask-draft-spots span[data-spot="lock_right"] { right: 6px; top: 50%; width: 12px; height: 112px; margin-top: -56px; transform-origin: right center; }
-.ask-draft-spots span[data-spot="bottom_centre"] { left: 50%; bottom: 6px; width: 144px; height: 12px; margin-left: -72px; transform-origin: center bottom; }
-.ask-draft-spots span[data-spot="bottom_right"] { right: 28px; bottom: 6px; width: 96px; height: 12px; transform-origin: right bottom; }
-.ask-draft-spots span[data-near="true"] { border-color: color-mix(in srgb, var(--hint-green) 80%, transparent); background: color-mix(in srgb, var(--hint-green) 16%, transparent); }
-.ask-draft-spots span[data-spot^="lock"][data-near="true"] { transform: scaleX(1.5); }
-.ask-draft-spots span[data-spot^="bottom"][data-near="true"] { transform: scaleY(1.5); }
+.ask-draft-spots span { position: absolute; border: 1.5px dashed color-mix(in srgb, var(--hint-green) 55%, transparent); border-radius: 14px; background: color-mix(in srgb, var(--hint-green) 6%, transparent); transition: background-color 140ms, border-color 140ms; }
+.ask-draft-spots span[data-spot="lock_left"] { left: 8px; top: 50%; width: 120px; height: max(320px, 52%); transform: translateY(-50%); }
+.ask-draft-spots span[data-spot="lock_right"] { right: 8px; top: 50%; width: 120px; height: max(320px, 52%); transform: translateY(-50%); }
+.ask-draft-spots span[data-spot="bottom_centre"] { left: 50%; bottom: 6px; width: 190px; height: 18px; margin-left: -95px; border-radius: var(--radius-pill); }
+.ask-draft-spots span[data-spot="bottom_right"] { right: 28px; bottom: 6px; width: 130px; height: 18px; border-radius: var(--radius-pill); }
+.ask-draft-spots span[data-near="true"] { border-color: color-mix(in srgb, var(--hint-green) 90%, transparent); background: color-mix(in srgb, var(--hint-green) 15%, transparent); }
+.ask-draft[data-caught="true"] { outline: 1.5px dashed color-mix(in srgb, var(--hint-green) 90%, transparent); outline-offset: 4px; }
+.ask-draft-edge { position: absolute; left: 0; right: 0; z-index: 4; height: 7px; cursor: ns-resize; touch-action: none; }
+.ask-draft-edge[data-edge="top"] { top: 0; }
+.ask-draft-edge[data-edge="bottom"] { bottom: 0; }
+.ask-draft-edge::after { content: ""; position: absolute; left: 50%; width: 36px; height: 3px; margin-left: -18px; border-radius: 3px; background: color-mix(in srgb, var(--nb-graphite) 26%, transparent); transition: width 120ms, margin 120ms, background-color 120ms; }
+.ask-draft-edge[data-edge="top"]::after { top: 2px; background: color-mix(in srgb, var(--nb-white) 38%, transparent); }
+.ask-draft-edge[data-edge="bottom"]::after { bottom: 2px; }
+.ask-draft-edge:hover::after, .ask-draft-edge:focus-visible::after { width: 52px; margin-left: -26px; background: var(--nb-graphite); }
+.ask-draft-edge[data-edge="top"]:hover::after, .ask-draft-edge[data-edge="top"]:focus-visible::after { background: var(--nb-white); }
+.ask-draft-edge:focus-visible { outline: 0; }
 .ask-draft-foot { flex-shrink: 0; width: 100%; height: 34px; border-top: 1px solid var(--nb-rule); font-size: 12px; font-weight: 600; color: var(--foreground); white-space: nowrap; }
 .ask-draft-foot:hover { background: var(--surface-sunk-2); }
 @media (prefers-reduced-motion: reduce) { .ask-draft, .ask-draft-spots span { transition: none; } }

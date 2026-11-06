@@ -16,7 +16,7 @@ describe("ASK-B2 AskPastList", () => {
   it("renders both groups", () => {
     render(<AskPastList ask={ask(sessions)} pinned={pinned} onOpen={vi.fn()} onJump={vi.fn()} />);
     expect(screen.getByText("Pinned on this board")).toBeTruthy();
-    expect(screen.getByText("Past conversations")).toBeTruthy();
+    expect(screen.getByText("Past conversations on this board")).toBeTruthy();
   });
   it("a pinned row calls onJump with the node id", () => {
     const onJump = vi.fn();
@@ -39,5 +39,16 @@ describe("ASK-B2 AskPastList", () => {
     render(<AskPastList ask={ask(sessions)} pinned={[]} onOpen={vi.fn()} onJump={vi.fn()} />);
     expect(screen.getAllByTestId("ask-past-pin")).toHaveLength(1);
     expect(screen.getByRole("button", { name: /Pricing chat/ }).querySelector("[data-testid='ask-past-pin']")).not.toBeNull();
+  });
+});
+
+describe("ASK-B3 AskPastList measuring", () => {
+  it("the scroller carries data-ask-list and its first child holds the rows", () => {
+    const { container } = render(<AskPastList ask={ask(sessions)} pinned={[]} onOpen={vi.fn()} onJump={vi.fn()} />);
+    const list = container.querySelector("[data-ask-list]") as HTMLElement;
+    expect(list).not.toBeNull();
+    expect(list.children.length).toBe(1);
+    expect(list.firstElementChild?.textContent).toContain("Pricing chat");
+    expect(screen.getByText("Past conversations on this board")).toBeTruthy();
   });
 });
