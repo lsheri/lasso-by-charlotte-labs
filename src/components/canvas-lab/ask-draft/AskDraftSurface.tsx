@@ -11,7 +11,6 @@ import { noteWorkboardAskMoved, noteWorkboardAskView } from "@/components/canvas
 import { AskPlacingGhost } from "@/components/canvas-lab/ask-draft/AskPlacing";
 import { AskReadingLines } from "@/components/canvas-lab/ask-draft/AskReadingLines";
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
-import { LassoThinkingMark } from "@/components/reflect/LassoThinkingMark";
 import { readAskPosition, writeAskPosition, type AskDraft } from "@/lib/ask-draft";
 import { ASK_DOCK_CONFIG, DOCK_SPOTS, useAskDock, type DockId } from "@/lib/ask-dock-engine";
 
@@ -54,7 +53,7 @@ export function AskDraftSurface(props: Props) {
   const bodyRef = useRef<HTMLDivElement>(null);
   const initial = useRef(readAskPosition(draft, safeStore())).current;
   const [folded, setFolded] = useState(false);
-  const [linesShowing, setLinesShowing] = useState(false);
+  const [, setLinesShowing] = useState(false);
   const empty = props.tab === "messages" && (ask.messages ?? []).length === 0;
   const collapsed = empty || folded;
   const foldedRef = useRef(folded);
@@ -259,9 +258,7 @@ export function AskDraftSurface(props: Props) {
           </div>
           {draft === "b" ? (
             <span className="ask-draft-mark" aria-hidden="true">
-              {ask.pending && !linesShowing
-                ? <LassoThinkingMark kind="signature" size={22} thinking persistent />
-                : <LassoLoopMark className="h-[22px] w-[22px]" />}
+              <LassoLoopMark className="h-[24px] w-[24px]" />
             </span>
           ) : null}
           <span className="ask-draft-title">Ask Lasso</span>

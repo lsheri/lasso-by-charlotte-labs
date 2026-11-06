@@ -1724,18 +1724,11 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   outline: calc(2px * var(--lab-inverse-zoom, 1)) solid var(--nb-green);
   outline-offset: calc(1px * var(--lab-inverse-zoom, 1));
 }
-.canvas-lab-card-paper::before {
-  content: "";
-  position: absolute;
-  inset: calc(-2px * var(--lab-inverse-zoom, 1));
-  z-index: 10;
-  border-radius: inherit;
-  pointer-events: none;
-  border: calc(2px * var(--lab-inverse-zoom, 1)) solid var(--nb-lasso-green);
-  opacity: 0;
-  transition: opacity 180ms ease-out;
-}
+.canvas-lab-card-paper::before { content: ""; position: absolute; inset: calc(-1px * var(--lab-inverse-zoom, 1)); z-index: 10; border-radius: inherit; pointer-events: none; border: calc(1.5px * var(--lab-inverse-zoom, 1)) solid var(--neutral-95); opacity: 0; transition: opacity 180ms ease-out; }
 .canvas-lab-card-paper[data-selected="true"]::before { opacity: 1; }
+.canvas-lab-card-paper[data-selected="true"] { box-shadow: 0 0 var(--halo-blur) var(--halo-spread) color-mix(in srgb, var(--halo-1) calc(var(--picked-glow-dim) * 100%), transparent); animation: picked-halo var(--halo-clock) ease-in-out infinite; }
+@keyframes picked-halo { 50% { box-shadow: 0 0 var(--halo-blur) var(--halo-spread) color-mix(in srgb, var(--halo-1) calc(var(--picked-glow-bright) * 100%), transparent); } }
+@media (prefers-reduced-motion: reduce) { .canvas-lab-card-paper[data-selected="true"] { animation: none; } }
 .canvas-lab-card-paper[data-marquee-preview="true"]::before { opacity: .5; }
 .canvas-lab-card-teammate::before {
   content: "";
@@ -8326,12 +8319,11 @@ body:has(.lasso-decisions-ledger) .canvas-lab-undo-toast { position: fixed; z-in
 .lasso-decisions-feedback-status { padding-inline: 20px; }
 /* BOARD-UX: Ask Lasso reads as a filled button, not an empty space. Placed after the generic toolbar rules so it wins at equal specificity.
    TOOLBAR-2: Ask now sits outside the tool group beside Share and Info, so the class alone carries the selector; the :not() chain is gone. */
-[data-lasso="on"] .canvas-lab-toolbar button.canvas-lab-ask-button[data-toolbar-control="ask"],
-[data-lasso="on"] .canvas-lab-toolbar button.canvas-lab-ask-button[data-toolbar-control="ask"]:hover:not(:disabled) { background: var(--nb-graphite); border: 1px solid var(--nb-graphite); color: var(--nb-paper); }
+[data-lasso="on"] .canvas-lab-toolbar button.canvas-lab-ask-button[data-toolbar-control="ask"] { background: var(--nb-white); border: 1.5px solid var(--ask-mark); color: var(--nb-ink); transition: background-color 140ms, box-shadow 140ms; }
+[data-lasso="on"] .canvas-lab-toolbar button.canvas-lab-ask-button[data-toolbar-control="ask"] svg { color: var(--ask-mark); }
+[data-lasso="on"] .canvas-lab-toolbar button.canvas-lab-ask-button[data-toolbar-control="ask"]:hover:not(:disabled) { background: var(--surface-sunk-2); }
 [data-lasso="on"] .canvas-lab-toolbar button.canvas-lab-ask-button[data-toolbar-control="ask"][aria-pressed="true"],
-[data-lasso="on"] .canvas-lab-toolbar button.canvas-lab-ask-button[data-toolbar-control="ask"][aria-pressed="true"]:hover:not(:disabled) { background: var(--hand-live); border-color: var(--nb-graphite); color: var(--nb-ink); }
-.canvas-lab-ask-button { background: var(--nb-graphite); border: 1px solid var(--nb-graphite); }
-.canvas-lab-ask-button[aria-pressed="true"] { background: var(--hand-live); }
+[data-lasso="on"] .canvas-lab-toolbar button.canvas-lab-ask-button[data-toolbar-control="ask"][aria-pressed="true"]:hover:not(:disabled) { background: color-mix(in srgb, var(--halo-1) 16%, var(--nb-white)); border-color: var(--ask-mark); box-shadow: 0 0 var(--halo-blur) var(--halo-spread) color-mix(in srgb, var(--halo-1) calc(var(--picked-glow-bright) * 100%), transparent); }
 /* BOARD-UX-4: the mark reads its colours from these tokens at mount; the keyed wrapper remounts it on open and on close.
    Closed: light on graphite (paper dashes, acid loop). Open: dark on acid, loop included, or it would be acid on acid. */
 .canvas-lab-ask-button .canvas-lab-ask-mark { --nb-ink: var(--nb-paper); --nb-graphite: var(--nb-paper); }
@@ -8412,17 +8404,14 @@ main[data-ask-lock] .canvas-lab-floating-tools-wrapper { left: calc(12px + var(-
 .ask-draft-head-btn:hover { background: var(--surface-sunk-2); }
 .ask-draft-head-icon { display: grid; flex-shrink: 0; width: 28px; height: 28px; place-items: center; border-radius: var(--radius-pill); color: var(--muted-foreground); }
 .ask-draft-head-icon:hover, .ask-draft-head-icon[aria-pressed="true"] { background: var(--surface-sunk-2); color: var(--foreground); }
-.ask-draft-b { border-color: var(--nb-graphite); }
-.ask-draft-b .ask-draft-head { height: 46px; border-bottom: 0; background: var(--nb-graphite); color: var(--nb-white); }
-.ask-draft-b .ask-draft-grip, .ask-draft-b .ask-draft-head-icon { color: color-mix(in srgb, var(--nb-white) 72%, transparent); }
-.ask-draft-b .ask-draft-grip:focus-visible { outline-color: var(--nb-white); }
-.ask-draft-b .ask-draft-head-icon:hover, .ask-draft-b .ask-draft-head-icon[aria-pressed="true"] { background: color-mix(in srgb, var(--nb-white) 14%, transparent); color: var(--nb-white); }
-.ask-draft-b .ask-draft-head-btn { border-color: color-mix(in srgb, var(--nb-white) 30%, transparent); color: var(--nb-white); }
-.ask-draft-b .ask-draft-head-btn:hover { background: color-mix(in srgb, var(--nb-white) 14%, transparent); }
-.ask-draft-b .ask-draft-title { font-family: var(--font-mono); font-size: 11.5px; font-weight: 500; letter-spacing: .22em; text-transform: uppercase; color: var(--nb-white); }
-.ask-draft-mark { display: inline-flex; flex-shrink: 0; align-items: center; margin-right: 4px; color: var(--nb-white); --nb-ink: var(--nb-white); --nb-graphite: var(--nb-white); }
-.ask-draft-b[data-thinking="true"] .ask-draft-mark { color: var(--nb-lasso-green); }
+.ask-draft-b { border: var(--ask-border) solid color-mix(in srgb, var(--ask-mark) 30%, transparent); border-radius: var(--float-radius); box-shadow: 0 0 var(--halo-blur) var(--halo-spread) color-mix(in srgb, var(--halo-1) calc(var(--halo-dim) * 100%), transparent), 0 10px 28px color-mix(in oklab, var(--neutral-95) 7%, transparent); animation: ask-halo var(--halo-clock) ease-in-out infinite; }
+.ask-draft-b[data-thinking="true"] { animation-duration: calc(var(--halo-clock) * 0.4); }
+@keyframes ask-halo { 50% { box-shadow: 0 0 var(--halo-blur) var(--halo-spread) color-mix(in srgb, var(--halo-1) calc(var(--halo-bright) * 100%), transparent), 0 10px 28px color-mix(in oklab, var(--neutral-95) 7%, transparent); } }
+.ask-draft-b .ask-draft-head { height: 46px; border-bottom: 1px solid color-mix(in srgb, var(--nb-rule) 70%, transparent); background: var(--nb-white); }
+.ask-draft-b .ask-draft-title { font-family: var(--font-mono); font-size: 11.5px; font-weight: 500; letter-spacing: .22em; text-transform: uppercase; color: var(--nb-ink); }
+.ask-draft-mark { display: inline-flex; flex-shrink: 0; align-items: center; margin-right: 6px; color: var(--ask-mark); }
 .ask-draft-b .ask-reading-beads { display: none; }
+@media (prefers-reduced-motion: reduce) { .ask-draft-b { animation: none; } }
 .ask-draft-body { display: flex; flex: 1; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; }
 .ask-draft-body > header { display: none; }
 .ask-draft-body > .nb-binder { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
@@ -8439,13 +8428,13 @@ main[data-ask-lock] .canvas-lab-floating-tools-wrapper { left: calc(12px + var(-
 .ask-reading-lines circle { fill: var(--nb-lasso-green); stroke: var(--nb-graphite); stroke-width: 1.5; }
 @keyframes ask-reading-march { to { stroke-dashoffset: -16; } }
 @media (prefers-reduced-motion: reduce) { .ask-reading-lines path { animation: none; } .ask-reading-lines circle { display: none; } }
-.ask-draft-spots span { position: absolute; border: 1.5px dashed color-mix(in srgb, var(--hint-green) 55%, transparent); border-radius: 14px; background: color-mix(in srgb, var(--hint-green) 6%, transparent); transition: background-color 140ms, border-color 140ms; }
+.ask-draft-spots span { position: absolute; border: 1.5px dashed color-mix(in srgb, var(--lock-edge) 55%, transparent); border-radius: 14px; background: color-mix(in srgb, var(--lock-edge) 6%, transparent); transition: background-color 140ms, border-color 140ms; }
 .ask-draft-spots span[data-spot="lock_left"] { left: 8px; top: 50%; width: 120px; height: max(320px, 52%); transform: translateY(-50%); }
 .ask-draft-spots span[data-spot="lock_right"] { right: 8px; top: 50%; width: 120px; height: max(320px, 52%); transform: translateY(-50%); }
 .ask-draft-spots span[data-spot="bottom_centre"] { left: 50%; bottom: 6px; width: 190px; height: 18px; margin-left: -95px; border-radius: var(--radius-pill); }
 .ask-draft-spots span[data-spot="bottom_right"] { right: 28px; bottom: 6px; width: 130px; height: 18px; border-radius: var(--radius-pill); }
-.ask-draft-spots span[data-near="true"] { border-color: color-mix(in srgb, var(--hint-green) 90%, transparent); background: color-mix(in srgb, var(--hint-green) 15%, transparent); }
-.ask-draft[data-caught="true"] { outline: 1.5px dashed color-mix(in srgb, var(--hint-green) 90%, transparent); outline-offset: 4px; }
+.ask-draft-spots span[data-near="true"] { border-color: color-mix(in srgb, var(--lock-edge) 90%, transparent); background: color-mix(in srgb, var(--lock-edge) 15%, transparent); }
+.ask-draft[data-caught="true"] { outline: 1.5px dashed color-mix(in srgb, var(--lock-edge) 90%, transparent); outline-offset: 4px; }
 .ask-draft-edge { position: absolute; left: 0; right: 0; z-index: 4; height: 7px; cursor: ns-resize; touch-action: none; }
 .ask-draft-edge[data-edge="top"] { top: 0; }
 .ask-draft-edge[data-edge="bottom"] { bottom: 0; }

@@ -83,13 +83,16 @@ describe("ASK-B2 header and foot", () => {
   });
 });
 
-describe("ASK-LOOK-1 ink cap and reading lines", () => {
+describe("ASK-LOOK-1 reading lines, LOOK-2 still mark", () => {
   const msgs = [{ id: "m1", role: "user", content: "hi" }];
-  it("pending with no reading ids shows the signature mark and no lines", () => {
+  it("LOOK-2: the mark is the still loop while pending and after, never the signature mark", () => {
     document.body.appendChild(document.createElement("main"));
-    const { baseElement } = render(<Harness messages={msgs} pending />);
-    expect(baseElement.querySelector('[data-lasso-thinking-mark="signature"]')).not.toBeNull();
-    expect(baseElement.querySelector(".ask-reading-lines")).toBeNull();
+    const { baseElement, unmount } = render(<Harness messages={msgs} pending />);
+    expect(baseElement.querySelector(".ask-draft-mark svg")).not.toBeNull();
+    expect(baseElement.querySelector('[data-lasso-thinking-mark="signature"]')).toBeNull();
+    unmount();
+    const second = render(<Harness messages={msgs} />);
+    expect(second.baseElement.querySelector(".ask-draft-mark svg")).not.toBeNull();
   });
   it("pending with reading ids renders the lines", () => {
     document.body.appendChild(document.createElement("main"));

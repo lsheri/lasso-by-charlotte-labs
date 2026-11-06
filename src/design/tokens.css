@@ -45,6 +45,14 @@
   --state-shared-wash:var(--orange-20);
   --state-destructive-new:var(--red-100);
   --hint-green:#0f8a4b;
+  /* LOOK-2: the one halo. Liam's values, 5 Nov. */
+  --halo-1:#c8ff00; --halo-2:#94f0d9;
+  --halo-spread:3px; --halo-blur:19px;
+  --halo-dim:0.1; --halo-bright:0.2; --halo-clock:6s;
+  --picked-glow-dim:0.25; --picked-glow-bright:0.5;
+  --ask-mark:#8f8f8a; --ask-border:1.5px; --float-radius:15px;
+  --pin:var(--red-100); --pin-off:var(--neutral-60);
+  --lock-edge:color-mix(in srgb, var(--neutral-95) 32%, transparent);
 
   --here-rule:var(--acid-100);
   --here-weight:2.5px;
