@@ -8,12 +8,15 @@ import { formatDate } from "@/lib/work-types";
 
 const mocks = vi.hoisted(() => ({
   emitClientEvent: vi.fn(),
+  logEvent: vi.fn(),
+  navigate: vi.fn(),
   upsert: vi.fn(),
-  profile: { id: "p1" } as { id: string } | null,
+  profile: { id: "p1", org_id: "org-1" } as { id: string; org_id?: string } | null,
 }));
 
 vi.mock("@tanstack/react-router", () => ({
-  Link: ({ children, params, onClick }: { children: React.ReactNode; params: { id: string }; onClick?: () => void }) => (
+  useNavigate: () => mocks.navigate,
+  Link: ({ children, params, onClick }: { children: React.ReactNode; params: { id: string }; onClick?: (event: React.MouseEvent) => void }) => (
     <a href={`/engagements/${params.id}/canvas-lab`} onClick={onClick}>{children}</a>
   ),
 }));
@@ -21,6 +24,7 @@ vi.mock("@tanstack/react-router", () => ({
 vi.mock("@/hooks/use-profile", () => ({ useProfile: () => ({ data: mocks.profile }) }));
 
 vi.mock("@/lib/client-telemetry", () => ({ emitClientEvent: mocks.emitClientEvent }));
+vi.mock("@/lib/telemetry", () => ({ logEvent: mocks.logEvent }));
 
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: { from: () => ({ upsert: mocks.upsert }) },
@@ -29,6 +33,8 @@ vi.mock("@/integrations/supabase/client", () => ({
 afterEach(() => {
   cleanup();
   mocks.emitClientEvent.mockClear();
+  mocks.logEvent.mockClear();
+  mocks.navigate.mockClear();
   mocks.upsert.mockReset();
 });
 
@@ -42,6 +48,14 @@ const card = (id: string, lastViewedAt: string | null, workCount: number | null 
 });
 
 describe("the Home grid order", () => {
+  it("sorts a shared added date among opened boards using the same lastViewedAt rule", () => {
+    expect(orderHomeGrid([
+      card("never", null),
+      card("old", "2026-09-01T09:00:00.000Z"),
+      { ...card("shared", "2026-09-10T09:00:00.000Z", null), shared: { hostOrg: "Partner", addedAt: "2026-09-10T09:00:00.000Z" } },
+      card("new", "2026-09-21T09:00:00.000Z"),
+    ]).map((entry) => entry.id)).toEqual(["new", "shared", "old", "never"]);
+  });
   it("puts the most recently opened first and the never opened last", () => {
     const ordered = orderHomeGrid([
       card("never-a", null),
@@ -69,6 +83,21 @@ describe("the Home grid layout", () => {
 });
 
 describe("a Home card", () => {
+  it("marks a shared card and opens it through the exact existing shared event, not the own-board event", () => {
+    const ownOpen = vi.fn();
+    const view = render(<HomeEngagementGrid cards={[{
+      ...card("shared", "2026-09-10T09:00:00.000Z", null),
+      code: "", clientLabel: "Host workspace", shared: { hostOrg: "Host workspace", addedAt: "2026-09-10T09:00:00.000Z" },
+    }]} availableWidth={1030} onOpen={ownOpen} />);
+    expect(view.container.querySelector('[data-shared="true"]')).toBeTruthy();
+    expect(screen.getByText("Shared")).toBeTruthy();
+    expect(screen.getByText("Host workspace")).toBeTruthy();
+    fireEvent.click(screen.getByRole("link"));
+    expect(mocks.logEvent).toHaveBeenCalledExactlyOnceWith("shared.board_opened", "org-1", { via: "home" });
+    expect(mocks.navigate).toHaveBeenCalledWith({ to: "/engagements/$id/canvas-lab", params: { id: "shared" } });
+    expect(mocks.emitClientEvent).not.toHaveBeenCalled();
+    expect(ownOpen).not.toHaveBeenCalled();
+  });
   it("shows the date and time it was last opened, and a real count", () => {
     const iso = "2026-09-21T09:30:00.000Z";
     render(<HomeEngagementGrid cards={[card("one", iso, 3)]} availableWidth={1030} />);

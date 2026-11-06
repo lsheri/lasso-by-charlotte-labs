@@ -4,6 +4,12 @@ import { describe, expect, it } from "vitest";
 const read = (p: string) => readFileSync(p, "utf8");
 
 describe("H-W1 home cleanup", () => {
+  it("HOME-1: Home no longer renders the shared shelf or reserves its separate height", () => {
+    const home = read("src/components/home/HomeBoard.tsx");
+    expect(home).not.toContain("SharedWithYouShelf");
+    expect(home).not.toContain("home-shared-shelf");
+    expect(home).not.toContain("sharedHeight");
+  });
   it("Home no longer mounts the welcome board", () => {
     const home = read("src/pages/HomePage.tsx");
     expect(home).not.toContain("WelcomeBoard");
