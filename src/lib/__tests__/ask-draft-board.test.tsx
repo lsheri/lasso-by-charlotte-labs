@@ -202,6 +202,14 @@ describe("SET-1 New ask goes home, closed", () => {
 });
 
 describe("HAND-1 Continue conversations", () => {
+  it("ASK-C1: a user message alone cannot enable pin or handoff", () => {
+    document.body.appendChild(document.createElement("main"));
+    render(<Harness messages={[{ role: "user", content: "A question" }]} />);
+    const pin = screen.getByRole("button", { name: "Ask something first, then pin the answer here" }) as HTMLButtonElement;
+    expect(pin.disabled).toBe(true);
+    expect(pin.getAttribute("data-idle")).toBe("true");
+    expect((screen.getByRole("button", { name: "Continue in Claude" }) as HTMLButtonElement).disabled).toBe(true);
+  });
   it("copies the prompt and opens Claude beside Send, not from the header", async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
