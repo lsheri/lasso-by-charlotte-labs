@@ -2,6 +2,9 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("@/lib/telemetry", () => ({ logEvent: vi.fn() }));
+
+import { logEvent } from "@/lib/telemetry";
 import { LabFrame } from "@/components/canvas-lab/LabFrame";
 import type { LabFrame as LabFrameModel } from "@/components/canvas-lab/canvas-lab-model";
 
@@ -135,5 +138,13 @@ describe("pass 2b-v frame fixes", () => {
     first.unmount();
     renderFrame({ frame: { ...customFrame, local: false } });
     expect(screen.queryByText(/local/)).toBeNull();
+  });
+  it("MENU-1: the frame menu wears the house class and logs board_menu_opened", () => {
+    vi.mocked(logEvent).mockClear();
+    renderFrame({ orgId: "org-1" });
+    fireEvent.pointerDown(screen.getByRole("button", { name: "Workstream options" }), { button: 0, ctrlKey: false });
+    expect(screen.getByRole("menu").className).toContain("canvas-lab-menu");
+    expect(screen.getByRole("menuitem", { name: "Fit contents" }).className).toContain("canvas-lab-menu-item");
+    expect(logEvent).toHaveBeenCalledWith("workboard.board_menu_opened", "org-1", { target: "frame", via: "mouse" });
   });
 });
