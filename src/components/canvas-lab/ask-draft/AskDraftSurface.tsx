@@ -13,6 +13,8 @@ import { AskReadingLines } from "@/components/canvas-lab/ask-draft/AskReadingLin
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
 import { readAskHome, readAskPosition, readUnpinned, writeAskPosition, type AskDraft } from "@/lib/ask-draft";
 import { ASK_DOCK_CONFIG, DOCK_SPOTS, useAskDock, type DockId } from "@/lib/ask-dock-engine";
+import { HANDOFF_VENDORS, handoffPrompt, handoffUrl, readHandoffDestination, shouldNudge } from "@/lib/ask-handoff";
+import { Button } from "@/components/ui/button";
 
 function safeStore(): Storage | null {
   try { return window.localStorage; } catch { return null; }
@@ -62,6 +64,32 @@ export function AskDraftSurface(props: Props) {
   const [, setLinesShowing] = useState(false);
   const empty = props.tab === "messages" && (ask.messages ?? []).length === 0;
   const collapsed = empty || folded;
+  const dest = readHandoffDestination(props.engagementId, safeStore());
+  const vendorLabel = HANDOFF_VENDORS.find((vendor) => vendor.id === dest.vendor)?.label ?? "Claude";
+  const turns = (ask.messages ?? []).filter((m) => m.role === "assistant").length;
+  const [dismissedAt, setDismissedAt] = useState<number | null>(null);
+  const [handoffHint, setHandoffHint] = useState<string | null>(null);
+  const hintTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [nudgeHost, setNudgeHost] = useState<HTMLElement | null>(null);
+  useEffect(() => { setDismissedAt(null); }, [ask.sessionId]);
+  useEffect(() => () => { if (hintTimer.current !== null) clearTimeout(hintTimer.current); }, []);
+  useLayoutEffect(() => {
+    const composer = bodyRef.current?.querySelector("div.sticky");
+    if (!composer) return;
+    const slot = document.createElement("div");
+    composer.before(slot);
+    setNudgeHost(slot);
+    return () => { slot.remove(); };
+  }, [props.tab]);
+  const handoffOpen = async () => {
+    const prompt = handoffPrompt({ boardTitle: props.engagementTitle, messages: ask.messages ?? [] });
+    try { await navigator.clipboard.writeText(prompt); } catch { /* Carry on even when clipboard access is unavailable. */ }
+    window.open(handoffUrl(dest), "_blank", "noopener");
+    noteWorkboardAskView(props.orgId, "handoff_opened", draft);
+    setHandoffHint("Prompt copied. Paste it there to carry on.");
+    if (hintTimer.current !== null) clearTimeout(hintTimer.current);
+    hintTimer.current = setTimeout(() => setHandoffHint(null), 2500);
+  };
   const foldedRef = useRef(folded);
   foldedRef.current = folded;
 
@@ -284,6 +312,11 @@ export function AskDraftSurface(props: Props) {
               <Pin size={18} aria-hidden="true" fill={pinned ? "currentColor" : "none"} />
             </button>
           ) : null}
+          {draft === "b" && !empty && props.tab !== "history" ? (
+            <Button type="button" variant="ghost" className="ask-draft-head-btn ask-draft-handoff" onClick={handoffOpen}>
+              Continue<span className="ask-draft-handoff-vendor"> in {vendorLabel}</span>
+            </Button>
+          ) : null}
           {collapsed ? null : (
             <button type="button" className="ask-draft-head-btn ask-draft-new" onClick={() => { ask.newSession(); props.onTab("messages"); dock.moveTo(readAskHome(safeStore())); setFolded(true); }}>New ask</button>
           )}
@@ -305,6 +338,7 @@ export function AskDraftSurface(props: Props) {
             <X size={16} aria-hidden="true" />
           </button>
         </div>
+        {handoffHint ? <p className="ask-draft-handoff-hint" role="status">{handoffHint}</p> : null}
         <div ref={bodyRef} className="ask-draft-body">
           {props.tab === "history" ? (
             <AskPastList
@@ -332,6 +366,13 @@ export function AskDraftSurface(props: Props) {
           />
           )}
         </div>
+        {draft === "b" && props.tab === "messages" && shouldNudge(turns, dismissedAt) && !ask.pending && nudgeHost ? createPortal(
+          <div className="ask-draft-nudge">
+            <span>This is a long one. Keep what matters to the board, or carry it on in {vendorLabel} with the board as context.</span>
+            <Button type="button" variant="link" className="h-auto p-0 text-inherit" onClick={handoffOpen}>Continue in {vendorLabel}</Button>
+            <Button type="button" variant="link" className="h-auto p-0 text-inherit" onClick={() => setDismissedAt(turns)}>Not now</Button>
+          </div>, nudgeHost,
+        ) : null}
         {folded ? null : (
           <button
             type="button"
