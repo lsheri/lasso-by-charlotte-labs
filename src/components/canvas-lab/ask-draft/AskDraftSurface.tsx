@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, useLayoutEffect, useRef, type KeyboardEvent as ReactKeyboardEvent, type RefObject } from "react";
+import { useCallback, useEffect, useState, useLayoutEffect, useRef, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import { ChevronsDownUp, ChevronsUpDown, History, X } from "lucide-react";
 
@@ -17,6 +17,12 @@ import { ASK_DOCK_CONFIG, DOCK_SPOTS, useAskDock, type DockId } from "@/lib/ask-
 
 function safeStore(): Storage | null {
   try { return window.localStorage; } catch { return null; }
+}
+
+/** The free spot's saved corner, read back from the transform the engine paints. */
+function readFree(el: HTMLElement): { x: number; y: number } {
+  const m = /translate3d\(([-\d.]+)px,\s*([-\d.]+)px/.exec(el.style.transform);
+  return m ? { x: Number(m[1]), y: Number(m[2]) } : { x: 240, y: 200 };
 }
 
 type Props = {
@@ -63,10 +69,14 @@ export function AskDraftSurface(props: Props) {
       if (cs.display === "none") continue;
       const inner = child.classList.contains("nb-binder")
         ? ((child.firstElementChild as HTMLElement | null)?.offsetHeight ?? 0)
-        : child.offsetHeight;
+        : child.hasAttribute("data-ask-list")
+          ? ((child.firstElementChild as HTMLElement | null)?.offsetHeight ?? 0)
+          : child.offsetHeight;
       total += inner + (parseFloat(cs.marginTop) || 0) + (parseFloat(cs.marginBottom) || 0);
     }
     if (!foldedRef.current) total += FOOT_H;
+    const shell = body.parentElement;
+    if (shell) total += shell.offsetHeight - shell.clientHeight;
     return total;
   }, []);
 
@@ -80,11 +90,68 @@ export function AskDraftSurface(props: Props) {
     initial,
     contentHeight,
     topInset,
+    initialHeight: initial.h ?? null,
+    fitLock: () => foldedRef.current,
     onLand: (to, free) => {
-      writeAskPosition(draft, to === "free" ? { to, x: free.x, y: free.y } : { to }, safeStore());
+      savePosition(to, free);
       noteWorkboardAskMoved(props.orgId, to, draft);
     },
   });
+
+  // ASK-B3: one save path, so a resize keeps the position and a move keeps the height.
+  const userHRef = useRef<number | null>(initial.h ?? null);
+  const lastPos = useRef<{ to: DockId; free: { x: number; y: number } }>({ to: initial.to, free: { x: initial.x ?? 240, y: initial.y ?? 200 } });
+  function savePosition(to: DockId, free: { x: number; y: number }) {
+    lastPos.current = { to, free };
+    const h = userHRef.current;
+    writeAskPosition(draft, {
+      to,
+      ...(to === "free" ? { x: free.x, y: free.y } : {}),
+      ...(h != null ? { h } : {}),
+    }, safeStore());
+  }
+  const minHeight = () => { const composer = bodyRef.current?.querySelector<HTMLElement>("div.sticky"); return HEADER_H + FOOT_H + 2 + (composer ? composer.offsetHeight + 16 : 96); };
+  const maxHeight = () => (host.clientHeight || 0) - ASK_DOCK_CONFIG.insets.bottom - ASK_DOCK_CONFIG.toolbarClear - topInset();
+  const saveHeight = (h: number | null) => {
+    userHRef.current = h;
+    const el = dock.surfaceRef.current;
+    const free = dock.dock === "free" && el ? readFree(el) : lastPos.current.free;
+    savePosition(dock.dock, free);
+  };
+  const drag = useRef<{ startY: number; start: number; raw: number; edge: "top" | "bottom"; logged: boolean } | null>(null);
+  const edgeDown = (edge: "top" | "bottom") => (event: ReactPointerEvent<HTMLDivElement>) => {
+    event.stopPropagation();
+    event.preventDefault();
+    try { event.currentTarget.setPointerCapture(event.pointerId); } catch { /* the pointer is already gone */ }
+    const start = dock.height();
+    drag.current = { startY: event.clientY, start, raw: start, edge, logged: false };
+  };
+  const edgeMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const d = drag.current;
+    if (!d) return;
+    event.stopPropagation();
+    const dy = event.clientY - d.startY;
+    d.raw = d.start + (d.edge === "top" ? -dy : dy);
+    if (!d.logged && Math.abs(dy) > 2) { d.logged = true; noteWorkboardAskView(props.orgId, "resized", draft); }
+    dock.setHeight(Math.max(d.raw, minHeight()), d.edge);
+  };
+  const edgeUp = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const d = drag.current;
+    drag.current = null;
+    if (!d) return;
+    event.stopPropagation();
+    if (d.raw < minHeight() - 40) { dock.setHeight(null); saveHeight(null); setFolded(true); return; }
+    if (d.logged) saveHeight(dock.height());
+  };
+  const edgeKey = (edge: "top" | "bottom") => (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Home") { event.preventDefault(); dock.setHeight(null); saveHeight(null); return; }
+    if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
+    event.preventDefault();
+    const longer = edge === "top" ? event.key === "ArrowUp" : event.key === "ArrowDown";
+    dock.setHeight(Math.max(dock.height() + (longer ? 24 : -24), minHeight()), edge);
+    saveHeight(dock.height());
+    noteWorkboardAskView(props.orgId, "resized", draft);
+  };
 
   // Unfold when a read starts and when history opens.
   useEffect(() => { if (ask.pending) setFolded(false); }, [ask.pending]);
@@ -102,6 +169,8 @@ export function AskDraftSurface(props: Props) {
     ro.observe(body);
     const binderBody = body.querySelector(".nb-binder-body");
     if (binderBody) ro.observe(binderBody);
+    const listInner = body.querySelector("[data-ask-list] > div");
+    if (listInner) ro.observe(listInner);
     return () => ro.disconnect();
   }, [refresh, ask.messages, props.tab]);
 
@@ -122,6 +191,26 @@ export function AskDraftSurface(props: Props) {
       host.style.removeProperty("--ask-draft-lock-right");
     };
   }, [host, place]);
+
+  const edgeProps = (edge: "top" | "bottom") => ({
+    className: "ask-draft-edge",
+    "data-edge": edge,
+    "data-no-drag": "",
+    role: "separator",
+    "aria-orientation": "horizontal" as const,
+    "aria-label": "Make Ask Lasso longer or shorter",
+    tabIndex: 0,
+    "aria-valuemin": Math.round(minHeight()),
+    "aria-valuemax": Math.max(Math.round(minHeight()), Math.round(maxHeight())),
+    "aria-valuenow": Math.round(dock.height()),
+    onPointerDown: edgeDown(edge),
+    onPointerMove: edgeMove,
+    onPointerUp: edgeUp,
+    onPointerCancel: edgeUp,
+    onDoubleClick: () => { dock.setHeight(null); saveHeight(null); },
+    onKeyDown: edgeKey(edge),
+  });
+  const showEdges = !locked && !folded && !empty;
 
   const onGripKey = (event: ReactKeyboardEvent<HTMLDivElement>) => {
     const to: DockId | null = event.key === "ArrowLeft" ? "lock_left"
@@ -154,12 +243,14 @@ export function AskDraftSurface(props: Props) {
         data-locked={locked ? "true" : undefined}
         data-dragging={dock.carried ? "true" : undefined}
         data-thinking={ask.pending ? "true" : undefined}
+        data-caught={dock.hover ? "true" : undefined}
         onPointerDown={(event) => { event.stopPropagation(); dock.bind.onPointerDown(event); }}
         onPointerMove={dock.bind.onPointerMove}
         onPointerUp={dock.bind.onPointerUp}
         onPointerCancel={dock.bind.onPointerCancel}
         onWheel={(event) => event.stopPropagation()}
       >
+        {showEdges ? <div {...edgeProps("top")} /> : null}
         <div className="ask-draft-head">
           <div role="button" tabIndex={0} className="ask-draft-grip" aria-label="Move Ask Lasso" onKeyDown={onGripKey}>
             <svg width="10" height="16" viewBox="0 0 10 16" aria-hidden="true">
@@ -234,6 +325,7 @@ export function AskDraftSurface(props: Props) {
             {props.tab === "history" ? "Back to this chat" : "Past conversations"}
           </button>
         )}
+        {showEdges && dock.dock === "free" ? <div {...edgeProps("bottom")} /> : null}
       </section>
     </>,
     host,
