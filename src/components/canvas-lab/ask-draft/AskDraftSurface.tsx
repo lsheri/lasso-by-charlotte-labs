@@ -11,7 +11,7 @@ import { noteWorkboardAskMoved, noteWorkboardAskView } from "@/components/canvas
 import { AskPlacingGhost } from "@/components/canvas-lab/ask-draft/AskPlacing";
 import { AskReadingLines } from "@/components/canvas-lab/ask-draft/AskReadingLines";
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
-import { readAskPosition, readUnpinned, writeAskPosition, type AskDraft } from "@/lib/ask-draft";
+import { readAskHome, readAskPosition, readUnpinned, writeAskPosition, type AskDraft } from "@/lib/ask-draft";
 import { ASK_DOCK_CONFIG, DOCK_SPOTS, useAskDock, type DockId } from "@/lib/ask-dock-engine";
 
 function safeStore(): Storage | null {
