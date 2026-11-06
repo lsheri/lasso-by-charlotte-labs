@@ -40,16 +40,18 @@ export const ASK_DOCK_CONFIG: DockConfig = {
 
 const clamp = (n: number, a: number, b: number) => Math.min(Math.max(n, a), Math.max(a, b));
 
-export function dockBox(id: DockId, W: number, H: number, c: DockConfig, contentH: number, free: { x: number; y: number }, topInset = 0): DockBox {
+export function dockBox(id: DockId, W: number, H: number, c: DockConfig, contentH: number, free: { x: number; y: number }, topInset = 0, opts: { userH?: number | null; fitLock?: boolean } = {}): DockBox {
   const { left, right, bottom } = c.insets;
   const top = c.insets.top + topInset;
   const room = W - left - right;
   const clearTop = c.toolbarClear + topInset;
-  const h = Math.min(contentH, H * 0.74, H - bottom - clearTop);
-  if (id === "lock_left") return { x: left, y: top, w: Math.min(c.widths.lock, room), h: H - top - bottom };
+  const natural = Math.min(contentH, H * 0.74, H - bottom - clearTop);
+  const h = opts.userH != null ? Math.min(opts.userH, H - bottom - clearTop) : natural;
+  const lockH = opts.fitLock ? natural : H - top - bottom;
+  if (id === "lock_left") return { x: left, y: top, w: Math.min(c.widths.lock, room), h: lockH };
   if (id === "lock_right") {
     const w = Math.min(c.widths.lock, room);
-    return { x: W - right - w, y: top, w, h: H - top - bottom };
+    return { x: W - right - w, y: top, w, h: lockH };
   }
   if (id === "bottom_right") {
     const w = Math.min(c.widths.right, room);
@@ -87,6 +89,8 @@ export type AskDock = {
   spots: Record<string, DockBox> | null;
   moveTo: (id: DockId) => void;
   refresh: () => void;
+  setHeight: (h: number | null, edge?: "top" | "bottom") => void;
+  height: () => number;
   bind: {
     onPointerDown: (e: ReactPointerEvent<HTMLElement>) => void;
     onPointerMove: (e: ReactPointerEvent<HTMLElement>) => void;
@@ -102,6 +106,8 @@ export function useAskDock(args: {
   topInset: () => number;
   onLand: (to: DockId, free: { x: number; y: number }) => void;
   config?: DockConfig;
+  initialHeight?: number | null;
+  fitLock?: () => boolean;
 }): AskDock {
   const { host } = args;
   const surfaceRef = useRef<HTMLElement>(null);
@@ -125,6 +131,7 @@ export function useAskDock(args: {
     gx: 0.5, gy: 0.5, px: 0, py: 0, sx: 0, sy: 0,
     hist: [] as { t: number; x: number; y: number }[],
     raf: 0, last: 0, cancelTo: args.initial.to as DockId,
+    userH: (args.initialHeight ?? null) as number | null,
   }).current;
 
   const reduced = () => {
@@ -139,7 +146,7 @@ export function useAskDock(args: {
     el.style.height = `${m.h.toFixed(2)}px`;
   }, [m]);
 
-  const box = useCallback((id: DockId) => dockBox(id, m.W, m.H, cfg.current, latest.current.contentHeight(), m.free, latest.current.topInset()), [m]);
+  const box = useCallback((id: DockId) => dockBox(id, m.W, m.H, cfg.current, latest.current.contentHeight(), m.free, latest.current.topInset(), { userH: m.userH, fitLock: latest.current.fitLock?.() ?? false }), [m]);
   const allSpots = useCallback(() => Object.fromEntries(DOCK_SPOTS.map((id) => [id, box(id)])), [box]);
   const kickRef = useRef<() => void>(() => undefined);
 
@@ -364,6 +371,18 @@ export function useAskDock(args: {
 
   return {
     surfaceRef, dock, hover, carried, spots, moveTo, refresh,
+    setHeight: (h: number | null, edge: "top" | "bottom" = "bottom") => {
+      if (h === null) { m.userH = null; refresh(); return; }
+      const bottomGap = cfg.current.insets.bottom;
+      const next = Math.min(h, m.H - bottomGap - cfg.current.toolbarClear - (latest.current.topInset?.() ?? 0));
+      if (dockRef.current === "free" && edge === "top") m.free = { x: m.free.x, y: m.y + m.h - next };
+      m.userH = next;
+      const b = box(dockRef.current);
+      m.tx = b.x; m.ty = b.y; m.tw = b.w; m.th = b.h; m.x = b.x; m.y = b.y; m.w = b.w; m.h = b.h;
+      m.vx = 0; m.vy = 0; m.vw = 0; m.vh = 0;
+      paint();
+    },
+    height: () => m.h,
     bind: { onPointerDown, onPointerMove, onPointerUp: () => end(false), onPointerCancel: () => end(true) },
   };
 }
