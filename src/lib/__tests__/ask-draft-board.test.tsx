@@ -173,6 +173,15 @@ describe("PIN-1 header pin", () => {
     const { baseElement } = render(<Harness messages={msgs} wasPinned />);
     const pin = baseElement.querySelector(".ask-draft-pin");
     expect(pin?.getAttribute("aria-label")).toBe("Pin this chat again");
+  });
+  it("FIX-1: pin while free returns the chat to its saved home", () => {
+    window.localStorage.setItem("lasso.ask-draft.home", "lock_left");
+    window.localStorage.setItem("lasso.ask-draft.pos.b", JSON.stringify({ to: "free", x: 200, y: 200 }));
+    document.body.appendChild(document.createElement("main"));
+    const { baseElement } = render(<Harness messages={msgs} />);
+    expect(baseElement.querySelector(".ask-draft")?.getAttribute("data-position")).toBe("free");
+    fireEvent.click(baseElement.querySelector(".ask-draft-pin") as HTMLElement);
+    expect(baseElement.querySelector(".ask-draft")?.getAttribute("data-position")).toBe("lock_left");
     expect(pin?.getAttribute("data-was")).toBe("true");
   });
 });
@@ -199,7 +208,18 @@ describe("HAND-1 Continue conversations", () => {
     fireEvent.click(screen.getByRole("button", { name: "Continue in Claude" }));
     await waitFor(() => expect(open).toHaveBeenCalledWith("https://claude.ai/new", "_blank", "noopener"));
     expect(writeText).toHaveBeenCalledWith(expect.stringContaining("Lasso: An answer"));
-    expect(screen.getByRole("status").textContent).toBe("Prompt copied. Paste it there to carry on.");
+    expect(screen.getByRole("status").textContent).toBe("Pop-up blocked. The prompt is on your clipboard.");
+  });
+  it("FIX-1: opens the window before the clipboard write, and says copied when it opened", async () => {
+    const order: string[] = [];
+    const writeText = vi.fn(async () => { order.push("clipboard"); });
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
+    vi.spyOn(window, "open").mockImplementation(() => { order.push("open"); return {} as Window; });
+    document.body.appendChild(document.createElement("main"));
+    render(<Harness messages={[{ role: "assistant", content: "An answer" }]} />);
+    fireEvent.click(screen.getByRole("button", { name: "Continue in Claude" }));
+    await waitFor(() => expect(screen.getByRole("status").textContent).toBe("Prompt copied. Paste it there to carry on."));
+    expect(order).toEqual(["open", "clipboard"]);
   });
   it("offers the six-turn nudge and Not now hides it", () => {
     document.body.appendChild(document.createElement("main"));

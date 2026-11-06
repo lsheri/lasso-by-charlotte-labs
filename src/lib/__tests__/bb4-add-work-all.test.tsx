@@ -37,6 +37,16 @@ describe("BB-4 Add work lists all your work", () => {
     expect(screen.getByRole("tab", { name: "Connected apps" }).getAttribute("aria-selected")).toBe("true");
   });
 
+  it("FIX-1: reopening after switching tab shows Connected apps selected again", () => {
+    const view = render(<AddWorkPanel open onOpenChange={() => undefined} onPlace={() => undefined} engagementId="here" />);
+    const yours = screen.getByRole("tab", { name: "Your work" });
+    fireEvent.mouseDown(yours); fireEvent.click(yours);
+    expect(yours.getAttribute("aria-selected")).toBe("true");
+    view.rerender(<AddWorkPanel open={false} onOpenChange={() => undefined} onPlace={() => undefined} engagementId="here" />);
+    view.rerender(<AddWorkPanel open onOpenChange={() => undefined} onPlace={() => undefined} engagementId="here" />);
+    expect(screen.getByRole("tab", { name: "Connected apps" }).getAttribute("aria-selected")).toBe("true");
+  });
+
   it("lists mapped work with its board names, excludes private and other owners", () => {
     items = [
       work("Mapped deck", { work_item_tasks: [link("a", "Board A"), link("a", "Board A"), link("b", "Board B")] }),
