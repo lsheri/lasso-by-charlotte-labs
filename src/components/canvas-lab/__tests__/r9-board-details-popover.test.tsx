@@ -18,7 +18,7 @@ vi.mock("@/lib/settings-dialog-context", () => ({ useSettingsDialogOptional: () 
 
 const toolbarSource = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
 
-afterEach(cleanup);
+afterEach(() => { cleanup(); localStorage.clear(); settingsMock.value = null; });
 
 const ENGAGEMENT = {
   id: "eng-1",
@@ -68,7 +68,7 @@ describe("R9 board details popover", () => {
     expect(screen.getByText("Spring 2026 · ACME-24")).toBeTruthy();
   });
 
-  it("renders no edit control of any kind", () => {
+  it("renders no engagement edit controls, only HAND-1 destination inputs", () => {
     const { container } = render(
       <BoardDetailsContent
         engagement={ENGAGEMENT}
@@ -78,7 +78,7 @@ describe("R9 board details popover", () => {
       />,
     );
     expect(container.querySelector("button")).toBeNull();
-    expect(container.querySelector("input")).toBeNull();
+    expect(container.querySelectorAll("input")).toHaveLength(3);
     expect(container.querySelector("textarea")).toBeNull();
     expect(container.querySelector("select")).toBeNull();
   });
@@ -149,5 +149,16 @@ describe("SET-1 Where Ask Lasso opens link", () => {
     settingsMock.value = null;
     render(<BoardDetailsContent engagement={ENGAGEMENT} coaches={COACHES} members={MEMBERS} engagementId="eng-1" />);
     expect(screen.queryByRole("button", { name: "Where Ask Lasso opens" })).toBeNull();
+  });
+});
+
+describe("HAND-1 board destination", () => {
+  it("offers vendor radios and keeps a pasted Claude project link locally", () => {
+    render(<BoardDetailsContent engagement={ENGAGEMENT} coaches={COACHES} members={MEMBERS} engagementId="eng-1" />);
+    expect(screen.getByRole("group", { name: "Continue conversations in" })).toBeTruthy();
+    expect((screen.getByRole("radio", { name: "Claude" }) as HTMLInputElement).checked).toBe(true);
+    expect(screen.getByRole("radio", { name: "ChatGPT" })).toBeTruthy();
+    fireEvent.change(screen.getByRole("textbox", { name: "Project link" }), { target: { value: "https://claude.ai/project/123" } });
+    expect(JSON.parse(localStorage.getItem("lasso.ask-handoff.eng-1") ?? "null")).toEqual({ vendor: "claude", url: "https://claude.ai/project/123" });
   });
 });
