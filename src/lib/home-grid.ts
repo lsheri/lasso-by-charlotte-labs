@@ -17,6 +17,7 @@ export type HomeGridEngagement = {
   lastViewedAt: string | null;
   /** Pieces of work mapped into the engagement, or null when unknown. */
   workCount: number | null;
+  shared?: { hostOrg: string; addedAt: string };
 };
 
 export const NEVER_OPENED_LABEL = "Not opened yet";

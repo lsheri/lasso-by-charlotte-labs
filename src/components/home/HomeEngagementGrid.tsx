@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 
 import { emitClientEvent } from "@/lib/client-telemetry";
+import { useOpenShared } from "@/components/layout/SharedWithYou";
 import { regionFillStyle } from "@/lib/board-region";
 import {
   HOME_PREVIEW_HEIGHT,
@@ -121,6 +122,7 @@ export function HomeEngagementGrid({
   /** Signed-in Home only: the grid sits on a pannable board, so a press on a card must not start a pan. */
   onOpen?: (id: string) => void;
 }) {
+  const openShared = useOpenShared();
   if (cards.length === 0) return null;
   const ordered = orderHomeGrid(cards);
   const columns = homeGridColumnCount(availableWidth);
@@ -129,11 +131,11 @@ export function HomeEngagementGrid({
     <section aria-label="Your workboards" className="h-full w-full text-left">
       <ul
         data-testid="home-engagement-grid"
-        className="grid gap-6"
+        className={demo ? "grid gap-6" : "grid gap-6 pt-3"}
         style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
       >
         {ordered.map((card) => (
-          <li key={card.id} className="h-[228px] min-w-0">
+          <li key={card.id} data-shared={card.shared ? "true" : undefined} className="h-[228px] min-w-0">
             {demo ? (
               <Link
                 to="/demo/$code"
@@ -164,9 +166,16 @@ export function HomeEngagementGrid({
               search={{ from: "home" }}
               data-testid={`home-engagement-${card.id}`}
               onPointerDown={onOpen ? (event) => event.stopPropagation() : undefined}
-              onClick={() => (onOpen ? onOpen(card.id) : emitClientEvent("home.engagement_opened", {}))}
-              className="block h-full rounded-[var(--radius-control)] border border-border bg-card p-3 transition-colors hover:border-foreground/40 focus:outline-none focus:ring-2 focus:ring-ring"
+              onClick={(event) => {
+                if (card.shared) {
+                  event.preventDefault();
+                  openShared(card.id, "home");
+                } else if (onOpen) onOpen(card.id);
+                else emitClientEvent("home.engagement_opened", {});
+              }}
+              className="relative block h-full rounded-[var(--radius-control)] border border-border bg-card p-3 transition-colors hover:border-foreground/40 focus:outline-none focus:ring-2 focus:ring-ring"
             >
+              {card.shared ? <span className="home-card-tab" aria-hidden="true">Shared</span> : null}
               <HomeBoardPreview state={previews?.get(card.id) ?? { status: "loading" }} />
               <p className="mt-3 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
                 {card.clientLabel ?? card.code}

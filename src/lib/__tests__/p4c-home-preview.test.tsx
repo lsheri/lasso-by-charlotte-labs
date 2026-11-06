@@ -24,6 +24,7 @@ const query = vi.hoisted(() => {
 });
 
 vi.mock("@tanstack/react-router", () => ({ Link: ({ children }: { children: React.ReactNode }) => <a>{children}</a> }));
+vi.mock("@/components/layout/SharedWithYou", () => ({ useOpenShared: () => vi.fn() }));
 vi.mock("@/lib/client-telemetry", () => ({ emitClientEvent: vi.fn() }));
 vi.mock("@/integrations/supabase/client", () => ({ supabase: { from: query.from } }));
 
@@ -86,6 +87,11 @@ describe("Home preview states", () => {
 });
 
 describe("the bounded preview read", () => {
+  it("accepts a shared engagement id in the same bounded read", async () => {
+    const { fetchEngagementBoardPreviews } = await import("@/hooks/use-engagement-board-previews");
+    await fetchEngagementBoardPreviews(["own-id", "shared-id"]);
+    expect(query.chain["in"]).toHaveBeenCalledWith("engagement_id", ["own-id", "shared-id"]);
+  });
   it("uses one query for many engagements with no board text columns", async () => {
     const { fetchEngagementBoardPreviews, HOME_PREVIEW_SELECT } = await import("@/hooks/use-engagement-board-previews");
     await fetchEngagementBoardPreviews(["e1", "e2", "e3"]);
