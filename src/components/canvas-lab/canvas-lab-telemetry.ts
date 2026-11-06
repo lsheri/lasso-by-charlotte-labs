@@ -2,6 +2,7 @@ import type { UndoAction, UndoDirection } from "@/components/canvas-lab/canvas-l
 import { lengthBand } from "@/lib/canvas-lab-annotations-shared";
 import type { WorkboardRelation } from "@/lib/canvas-lab-shared";
 import { logEvent } from "@/lib/telemetry";
+import type { SourceId } from "@/components/connectors/SourceGrid";
 
 export type LabNodeEventKind = "source" | "ai_work" | "human_judgment" | "decision" | "deliverable" | "draft_thread" | "shape" | "text" | "answer" | "sticky";
 export type LabJudgmentEventType = "added_constraint" | "corrected_ai" | "rejected_option" | "requested_evidence" | "changed_direction" | "accepted_but_rewrote";
@@ -274,4 +275,9 @@ export function noteHighlightChanged(
 /** B2: a person folded a chat's pieces away, opened them, or opened all of them. Never on restore. */
 export function noteWorkboardBundleToggled(orgId: string | undefined, state: "expanded" | "minimized" | "all_shown", pieces: "1" | "2_4" | "5_plus", via: "control" | "menu"): void {
   if (orgId) logEvent("workboard.bundle_toggled", orgId, { state, pieces, via });
+}
+
+/** ADD-1: a source tile was chosen in Add work. Closed source id only. */
+export function noteWorkboardAddWorkSourceOpened(orgId: string | undefined, source: SourceId): void {
+  if (orgId) logEvent("workboard.add_work_source_opened", orgId, { source });
 }
