@@ -44,15 +44,15 @@ describe("ASK-D1 BoardAsk gate", () => {
   });
 });
 
-function Harness({ messages, pending = false, readingNodeIds }: { messages: unknown[]; pending?: boolean; readingNodeIds?: string[] }) {
-  const [tab, setTab] = useState<AskTab>("messages");
+function Harness({ messages, pending = false, readingNodeIds, pinnedNodeId, wasPinned, startTab = "messages" }: { messages: unknown[]; pending?: boolean; readingNodeIds?: string[]; pinnedNodeId?: string | null; wasPinned?: boolean; startTab?: AskTab }) {
+  const [tab, setTab] = useState<AskTab>(startTab);
   const [pickerOpen, setPickerOpen] = useState(false);
   const host = document.body.querySelector("main") as HTMLElement;
   const ask = { messages, sessions: [], historySettled: true, pending, pickerOpen, error: null, newSession: vi.fn(), openSession: vi.fn() } as unknown as AskLasso;
   return (
     <>
       <button type="button" onClick={() => setPickerOpen(true)}>open card picker</button>
-      <AskDraftSurface draft="b" host={host} ask={ask} tab={tab} onTab={setTab} engagementId="board" engagementTitle="Board" profileId="person" orgId="workspace" onClose={vi.fn()} readingNodeIds={readingNodeIds} />
+      <AskDraftSurface draft="b" host={host} ask={ask} tab={tab} onTab={setTab} engagementId="board" engagementTitle="Board" profileId="person" orgId="workspace" onClose={vi.fn()} readingNodeIds={readingNodeIds} pinnedNodeId={pinnedNodeId} wasPinned={wasPinned} />
     </>
   );
 }
@@ -145,5 +145,34 @@ describe("ASK-B3 resize handles", () => {
     document.body.appendChild(document.createElement("main"));
     render(<Harness messages={msgs} />);
     expect(edges()).toEqual(["top", "bottom"]);
+  });
+});
+
+describe("PIN-1 header pin", () => {
+  const msgs = [{ id: 1, role: "user", content: "hi" }, { id: 2, role: "assistant", content: "An answer" }];
+  it("absent on an empty chat and on the history tab", () => {
+    document.body.appendChild(document.createElement("main"));
+    const { baseElement, unmount } = render(<Harness messages={[]} />);
+    expect(baseElement.querySelector(".ask-draft-pin")).toBeNull();
+    unmount();
+    const second = render(<Harness messages={msgs} startTab="history" />);
+    expect(second.baseElement.querySelector(".ask-draft-pin")).toBeNull();
+  });
+  it("present with messages, and the label flips with pinnedNodeId", () => {
+    document.body.appendChild(document.createElement("main"));
+    const { baseElement, unmount } = render(<Harness messages={msgs} />);
+    expect(baseElement.querySelector(".ask-draft-pin")?.getAttribute("aria-label")).toBe("Pin this chat to the board");
+    unmount();
+    const second = render(<Harness messages={msgs} pinnedNodeId="answer:1" />);
+    const pin = second.baseElement.querySelector(".ask-draft-pin");
+    expect(pin?.getAttribute("aria-label")).toBe("Take off the board");
+    expect(pin?.getAttribute("data-on")).toBe("true");
+  });
+  it("wasPinned gives the dashed again label", () => {
+    document.body.appendChild(document.createElement("main"));
+    const { baseElement } = render(<Harness messages={msgs} wasPinned />);
+    const pin = baseElement.querySelector(".ask-draft-pin");
+    expect(pin?.getAttribute("aria-label")).toBe("Pin this chat again");
+    expect(pin?.getAttribute("data-was")).toBe("true");
   });
 });

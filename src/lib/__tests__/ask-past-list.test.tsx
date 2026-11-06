@@ -52,3 +52,16 @@ describe("ASK-B3 AskPastList measuring", () => {
     expect(screen.getByText("Past conversations on this board")).toBeTruthy();
   });
 });
+
+describe("PIN-1 AskPastList", () => {
+  it("a pinned row has a remove button that calls onUnpin", () => {
+    const onUnpin = vi.fn();
+    render(<AskPastList ask={ask([])} pinned={pinned} onOpen={vi.fn()} onJump={vi.fn()} onUnpin={onUnpin} />);
+    fireEvent.click(screen.getByRole("button", { name: "Take off the board" }));
+    expect(onUnpin).toHaveBeenCalledWith("answer:1");
+  });
+  it("a session in unpinned shows Was pinned", () => {
+    render(<AskPastList ask={ask(sessions)} pinned={[]} onOpen={vi.fn()} onJump={vi.fn()} unpinned={{ s1: "board" }} />);
+    expect(screen.getAllByText("Was pinned")).toHaveLength(1);
+  });
+});

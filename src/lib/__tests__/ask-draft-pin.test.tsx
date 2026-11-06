@@ -60,3 +60,20 @@ describe("ASK-B1 cited card lines", () => {
     expect(out[0]).toEqual({ cardId: "c0", fromAnchor: "right", toAnchor: "left" });
   });
 });
+
+import { readAskPins, writeAskPin, removeAskPin, readUnpinned, writeUnpinned, clearUnpinned } from "@/lib/ask-draft";
+
+describe("PIN-1 pins store", () => {
+  it("removeAskPin deletes a key", () => {
+    writeAskPin("d1", "s1", window.localStorage);
+    writeAskPin("d2", "s2", window.localStorage);
+    removeAskPin("d1", window.localStorage);
+    expect(readAskPins(window.localStorage)).toEqual({ d2: "s2" });
+  });
+  it("writeUnpinned then readUnpinned round trips, and clearUnpinned removes", () => {
+    writeUnpinned("s1", "board-1", window.localStorage);
+    expect(readUnpinned(window.localStorage)).toEqual({ s1: "board-1" });
+    clearUnpinned("s1", window.localStorage);
+    expect(readUnpinned(window.localStorage)).toEqual({});
+  });
+});
