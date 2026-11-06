@@ -38,7 +38,7 @@ describe("canvas lab undo stack", () => {
     `);
     const data = new Map<string, string>();
     const store = { getItem: (key: string) => data.get(key) ?? null, setItem: (key: string, value: string) => { data.set(key, value); }, removeItem: (key: string) => { data.delete(key); } };
-    const node = { ...workNode(false), id: "answer:1", kind: "answer" as const };
+    const node = { ...workNode(false), id: "answer:1", kind: "answer" as const, local: true };
     const entry: UndoEntry = { id: "remove:1", action: "remove_note", node, links: [], pin: { key: "answer:1", sessionId: "chat:1" } };
     let nodes: LabNode[] = [];
     let links: LabLink[] = [];
