@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { BoardShell, type BoardShellFrame } from "@/components/board/BoardShell";
 import { NewEngagementDialog } from "@/components/engagements/NewEngagementDialog";
 import { HomeEngagementGrid, homeGridHeight } from "@/components/home/HomeEngagementGrid";
-import { SharedWithYouShelf, useSharedWithYou } from "@/components/layout/SharedWithYou";
+import { SHARED_WITH_YOU_COPY, useAcceptBoardShare, useSharedWithYou, type PendingInviteRow } from "@/components/layout/SharedWithYou";
 import { LassoThinkingMark } from "@/components/reflect/LassoThinkingMark";
 import { Button } from "@/components/ui/button";
 import { useEngagements } from "@/hooks/use-engagements";
@@ -28,12 +28,12 @@ export const HOME_HERO_CONTENT_HEIGHT = 286;
 export const HOME_HERO_BOTTOM_MARGIN = 48;
 export const HOME_HERO_FRAME_HEIGHT = HOME_CONTENT_TOP - BOARD_FIT_PADDING + HOME_HERO_CONTENT_HEIGHT + HOME_HERO_BOTTOM_MARGIN;
 
-type HomeFrame = BoardShellFrame & { kind: "hero" | "grid" | "shared" };
+type HomeFrame = BoardShellFrame & { kind: "hero" | "grid" };
 
 export function homeFramesForViewport(
   viewport: { width: number; height: number },
   cardCount: number,
-  sharedCount = 0,
+  pendingHeight = 0,
 ): HomeFrame[] {
   const width = Math.max(1, viewport.width - BOARD_FIT_PADDING * 2);
   const hero: HomeFrame = {
@@ -50,17 +50,9 @@ export function homeFramesForViewport(
     x: BOARD_FIT_PADDING,
     y: hero.y + hero.height + HOME_FRAME_GAP,
     width,
-    height: homeGridHeight(cardCount, width),
+    height: homeGridHeight(cardCount, width) + (cardCount > 0 ? 12 : 0) + (pendingHeight > 0 ? pendingHeight + HOME_FRAME_GAP : 0),
   };
-  if (sharedCount === 0) return [hero, grid];
-  const shared: HomeFrame = {
-    ...grid,
-    id: "home-shared",
-    kind: "shared",
-    height: 160 + homeGridHeight(sharedCount, width),
-  };
-  grid.y = shared.y + shared.height + HOME_FRAME_GAP;
-  return [hero, shared, grid];
+  return [hero, grid];
 }
 
 export function ideasMailto(idea: string): string {
@@ -128,12 +120,53 @@ export function IdeasNote({ openMailClient = openIdeasMailClient }: { openMailCl
   );
 }
 
+function HomePendingInvites({ pending, onHeight }: { pending: PendingInviteRow[]; onHeight: (height: number) => void }) {
+  const accept = useAcceptBoardShare();
+  const [busy, setBusy] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const ref = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+    const measure = () => onHeight(Math.ceil(element.getBoundingClientRect().height));
+    measure();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [onHeight, pending.length]);
+  return <div ref={ref} className="mb-6" data-testid="home-pending-invites">
+    <ul className="grid gap-4">
+      {pending.map((invite) => <li key={invite.invite_id} className="flex min-w-0 flex-wrap items-center justify-between gap-3 rounded-[var(--radius-control)] border border-dashed border-border bg-card p-4">
+        <div className="min-w-0">
+          <p className="break-words font-mono text-[13px] text-[var(--nb-shared)]">{SHARED_WITH_YOU_COPY.inviteLabel}</p>
+          <h3 className="break-words text-[19.5px] text-foreground">{invite.board}</h3>
+          <p className="text-base text-muted-foreground">{SHARED_WITH_YOU_COPY.invited(invite.invited_by)}</p>
+        </div>
+        <Button variant="outline" disabled={busy !== null} onClick={async () => {
+          setBusy(invite.invite_id);
+          setError(null);
+          try {
+            const message = await accept(invite.code, invite.level, "home");
+            if (message) setError(message);
+          } catch {
+            setError(SHARED_WITH_YOU_COPY.failed);
+          } finally {
+            setBusy(null);
+          }
+        }}>{SHARED_WITH_YOU_COPY.accept}</Button>
+      </li>)}
+    </ul>
+    {error ? <p role="alert" className="mt-3 text-base text-destructive">{error}</p> : null}
+  </div>;
+}
+
 export function HomeBoard() {
   const { data: profile } = useProfile();
   const { shared, pending } = useSharedWithYou(Boolean(profile?.id));
   const { data: engagements } = useEngagements(profile?.id);
   const [viewport, setViewport] = useState(HOME_VIEWPORT_SEED);
-  const [sharedHeight, setSharedHeight] = useState(0);
+  const [pendingHeight, setPendingHeight] = useState(0);
 
   // CS-1: one home.opened per mount and org, through the same signed-in
   // pipeline as nav.opened, and only once the acting profile has resolved.
@@ -148,26 +181,28 @@ export function HomeBoard() {
   }, [orgId]);
 
   const showConnectPrompt = useShowConnectPrompt();
-  const countLabel = engagements ? `HOME · ${engagements.length} WORKBOARDS` : "HOME";
+  const countLabel = engagements ? `HOME · ${engagements.length + shared.length} WORKBOARDS` : "HOME";
   const { data: views } = useEngagementViews(profile?.id);
   const { data: workCounts } = useEngagementWorkCounts(engagements?.map((e) => e.id));
-  const { previews } = useEngagementBoardPreviews(engagements?.map((e) => e.id));
+  const { previews } = useEngagementBoardPreviews([...(engagements ?? []).map((e) => e.id), ...shared.map((e) => e.engagement_id)]);
   const viewedAt = new Map((views ?? []).map((row) => [row.engagement_id, row.last_viewed_at]));
-  const cards: HomeGridEngagement[] = (engagements ?? []).map((engagement) => ({
+  const cards: HomeGridEngagement[] = [...(engagements ?? []).map((engagement) => ({
     id: engagement.id,
     code: engagement.code,
     title: engagement.title,
     clientLabel: engagement.clients?.name ?? engagement.client_label,
     lastViewedAt: viewedAt.get(engagement.id) ?? null,
     workCount: workCounts ? workCounts.get(engagement.id) ?? 0 : null,
-  }));
-  const frames = homeFramesForViewport(viewport, cards.length, shared.length + pending.length);
-  const sharedFrame = frames.find((frame) => frame.kind === "shared");
-  const gridFrame = frames.find((frame) => frame.kind === "grid");
-  if (sharedFrame && gridFrame && sharedHeight > 0) {
-    sharedFrame.height = sharedHeight;
-    gridFrame.y = sharedFrame.y + sharedHeight + HOME_FRAME_GAP;
-  }
+  })), ...shared.map((board) => ({
+    id: board.engagement_id,
+    code: "",
+    title: board.title,
+    clientLabel: board.host_org,
+    lastViewedAt: viewedAt.get(board.engagement_id) ?? board.added_at,
+    workCount: null,
+    shared: { hostOrg: board.host_org, addedAt: board.added_at },
+  }))];
+  const frames = homeFramesForViewport(viewport, cards.length, pending.length > 0 ? pendingHeight : 0);
   const contentHeight = Math.max(...frames.map((frame) => frame.y + frame.height)) + BOARD_FIT_PADDING;
 
   return (
@@ -226,15 +261,16 @@ export function HomeBoard() {
               <IdeasNote />
             </div>
           </section>
-        ) : currentFrame.kind === "shared" ? (
-          <SharedWithYouShelf shared={shared} pending={pending} onHeight={setSharedHeight} />
         ) : (
+          <>
+          {pending.length > 0 ? <HomePendingInvites pending={pending} onHeight={setPendingHeight} /> : null}
           <HomeEngagementGrid
             cards={cards}
             availableWidth={currentFrame.width}
             previews={previews}
             onOpen={() => emitClientEvent("home.engagement_opened", {})}
           />
+          </>
         )}
         renderNode={() => null}
       />
