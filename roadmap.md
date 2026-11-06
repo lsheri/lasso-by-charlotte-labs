@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] NAV-4: remove eleven SidebarNav loops and the remaining FromYourPeople dependency; delete component/nav CSS, preserve canvas draw keyframes, add exact app-only font overrides. Navigation tests 31 before, 32 after; partner tests 10 passed; preview build OK. Style fixtures inspected at 1280/390, public Caveat preserved.
+- [ ] NAV-4: authenticated sidebar inspection unavailable with external unmanaged authentication; real preview showed Opening Lasso at 1280 and Sign in at 390, style fixtures only.
+
 - [x] TOOLBAR-9b option C: fixed pinned desktop identity first in the bar, existing recessed ground/divider; phone omission, alerts unchanged. Extra-menu button explicitly budgeted; actual-source fixture measured at 768/900/1024/1152/1280/390. Preview only.
 - [ ] TOOLBAR-9b: authenticated populated-board verification blocked by external unmanaged authentication; actual-component fixture verified instead.
 
