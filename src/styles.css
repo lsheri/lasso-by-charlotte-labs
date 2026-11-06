@@ -8452,7 +8452,14 @@ main[data-ask-lock] .canvas-lab-floating-tools-wrapper { left: calc(12px + var(-
 .ask-draft-nudge { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 12px 8px; padding: 8px 10px; border: 1px solid var(--nb-rule); border-radius: 10px; font-size: 12px; line-height: 1.4; color: var(--text-primary); background: var(--surface-raised); }
 .ask-draft-nudge button { text-decoration: underline; color: inherit; border: none; background: none; }
 .ask-draft-handoff-hint { font-size: 11px; font-family: var(--font-mono); color: var(--text-muted); padding: 0 12px 6px; }
-@container (max-width: 400px) { .ask-draft-handoff-vendor { display: none; } }
 
 /* HOME-1 */
 .home-card-tab { position: absolute; top: -1px; left: 12px; transform: translateY(-100%); padding: 2px 8px; border: 1px solid var(--border); border-bottom: 0; border-radius: 6px 6px 0 0; background: var(--card); font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--nb-shared); line-height: 1.4; }
+
+/* ASK-C1 */
+.ask-draft-pin[data-idle="true"] { color: color-mix(in srgb, var(--pin-off) 45%, transparent); cursor: default; }
+.ask-draft-pin[data-idle="true"]:hover { background: transparent; color: color-mix(in srgb, var(--pin-off) 45%, transparent); }
+.ask-draft-send-aside { display: inline-flex; align-items: center; gap: 2px; height: 40px; padding: 0 10px; border: 1.5px solid var(--nb-rule); border-radius: var(--radius-pill); background: var(--surface-raised); color: var(--text-primary); }
+.ask-draft-send-aside:hover { border-color: var(--neutral-95); }
+.ask-draft-send-aside:disabled { opacity: .45; cursor: default; }
+.ask-draft-send-aside:disabled:hover { border-color: var(--nb-rule); }

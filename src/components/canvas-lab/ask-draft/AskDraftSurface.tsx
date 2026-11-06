@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, useLayoutEffect, useRef, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type RefObject } from "react";
 import { createPortal } from "react-dom";
-import { ChevronsDownUp, ChevronsUpDown, History, Pin, X } from "lucide-react";
+import { ArrowUpRight, ChevronsDownUp, ChevronsUpDown, History, Pin, X } from "lucide-react";
+import { BrandLogo } from "@/components/connectors/BrandLogo";
 
 import { AskSurface } from "@/components/reflect/AskSurface";
 import type { AskLasso } from "@/components/reflect/use-ask-lasso";
@@ -246,7 +247,7 @@ export function AskDraftSurface(props: Props) {
   const showEdges = !locked && !folded && !empty;
   const pinned = Boolean(props.pinnedNodeId);
   const canPin = (ask.messages ?? []).some((m) => m.role === "assistant" && m.content.trim() !== "") && !ask.pending;
-  const pinLabel = pinned ? "Take off the board" : props.wasPinned ? "Pin this chat again" : "Pin this chat to the board";
+  const pinLabel = !pinned && !canPin ? "Ask something first, then pin the answer here" : pinned ? "Take off the board" : props.wasPinned ? "Pin this chat again" : "Pin this chat to the board";
   const onPinClick = () => {
     if (pinned) { props.onUnpinChat?.(props.pinnedNodeId as string); return; }
     const rect = dock.dock === "free" ? dock.surfaceRef.current?.getBoundingClientRect() : undefined;
@@ -307,15 +308,10 @@ export function AskDraftSurface(props: Props) {
             </span>
           ) : null}
           <span className="ask-draft-title">Ask Lasso</span>
-          {!empty && props.tab !== "history" ? (
-            <button type="button" className="ask-draft-pin" data-on={pinned ? "true" : undefined} data-was={!pinned && props.wasPinned ? "true" : undefined} aria-pressed={pinned} aria-label={pinLabel} title={pinLabel} disabled={!pinned && !canPin} onClick={onPinClick}>
+          {draft === "b" && props.tab !== "history" ? (
+            <button type="button" className="ask-draft-pin" data-idle={!pinned && !canPin ? "true" : undefined} data-on={pinned ? "true" : undefined} data-was={!pinned && props.wasPinned ? "true" : undefined} aria-pressed={pinned} aria-label={pinLabel} title={pinLabel} disabled={!pinned && !canPin} onClick={onPinClick}>
               <Pin size={18} aria-hidden="true" fill={pinned ? "currentColor" : "none"} />
             </button>
-          ) : null}
-          {draft === "b" && !empty && props.tab !== "history" ? (
-            <Button type="button" variant="ghost" className="ask-draft-head-btn ask-draft-handoff" onClick={handoffOpen}>
-              Continue{" "}<span className="ask-draft-handoff-vendor">in {vendorLabel}</span>
-            </Button>
           ) : null}
           {collapsed ? null : (
             <button type="button" className="ask-draft-head-btn ask-draft-new" onClick={() => { ask.newSession(); props.onTab("messages"); dock.moveTo(readAskHome(safeStore())); setFolded(true); }}>New ask</button>
@@ -363,6 +359,12 @@ export function AskDraftSurface(props: Props) {
             inline
             sections={props.sections}
             onPickSection={props.onPickSection}
+            sendAside={draft === "b" ? (
+              <button type="button" className="ask-draft-send-aside" aria-label={`Continue in ${vendorLabel}`} title={`Continue in ${vendorLabel}`} disabled={!canPin} onClick={handoffOpen}>
+                <BrandLogo brand={dest.vendor === "chatgpt" ? "chatgpt" : "claude"} size={18} />
+                <ArrowUpRight size={14} aria-hidden="true" />
+              </button>
+            ) : undefined}
           />
           )}
         </div>
