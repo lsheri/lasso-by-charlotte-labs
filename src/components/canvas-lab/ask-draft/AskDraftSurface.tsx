@@ -314,7 +314,7 @@ export function AskDraftSurface(props: Props) {
           ) : null}
           {draft === "b" && !empty && props.tab !== "history" ? (
             <Button type="button" variant="ghost" className="ask-draft-head-btn ask-draft-handoff" onClick={handoffOpen}>
-              Continue<span className="ask-draft-handoff-vendor"> in {vendorLabel}</span>
+              Continue{" "}<span className="ask-draft-handoff-vendor">in {vendorLabel}</span>
             </Button>
           ) : null}
           {collapsed ? null : (
