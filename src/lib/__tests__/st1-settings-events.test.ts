@@ -20,6 +20,7 @@ describe("S-T1 closed vocabulary", () => {
   it("keeps a fixed setting list", () => {
     expect(SETTINGS_KEYS).toContain("data_level_workspace");
     expect(SETTINGS_KEYS).toContain("connector");
+    expect(SETTINGS_KEYS).toContain("ask_home");
   });
 
   it("drops unknown keys, sections, changes and levels", () => {
