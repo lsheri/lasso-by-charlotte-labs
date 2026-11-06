@@ -222,6 +222,9 @@ describe("the workboard allowlist", () => {
           "count",
           "shared",
         ],
+        "workboard.add_work_source_opened": [
+          "source",
+        ],
         "workboard.workstream_created": [
           "via",
           "claimed",
