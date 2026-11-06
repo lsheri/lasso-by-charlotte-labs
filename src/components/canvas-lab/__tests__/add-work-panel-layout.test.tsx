@@ -2,6 +2,10 @@
 import { cleanup, render, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("@tanstack/react-query", () => ({ useQuery: () => ({ data: [] }) }));
+vi.mock("@tanstack/react-start", () => ({ useServerFn: (fn: unknown) => fn }));
+vi.mock("@/lib/mcp-connections.functions", () => ({ listConnections: () => Promise.resolve([]) }));
+vi.mock("@/components/connectors/ConnectYourAiCard", () => ({ CONNECTIONS_KEY: ["mcp-connections"] }));
 vi.mock("@/components/connectors/ConnectorPicker", () => ({
   ConnectorPicker: ({ trigger }: { trigger: React.ReactNode }) => trigger,
 }));

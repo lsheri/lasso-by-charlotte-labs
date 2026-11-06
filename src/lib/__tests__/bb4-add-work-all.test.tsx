@@ -1,9 +1,13 @@
 // @vitest-environment jsdom
 /** BB-4: Add work lists all of your non-private work, with where it already sits. */
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 let items: unknown[] = [];
+vi.mock("@tanstack/react-query", () => ({ useQuery: () => ({ data: [] }) }));
+vi.mock("@tanstack/react-start", () => ({ useServerFn: (fn: unknown) => fn }));
+vi.mock("@/lib/mcp-connections.functions", () => ({ listConnections: () => Promise.resolve([]) }));
+vi.mock("@/components/connectors/ConnectYourAiCard", () => ({ CONNECTIONS_KEY: ["mcp-connections"] }));
 vi.mock("@/components/connectors/ConnectorPicker", () => ({ ConnectorPicker: ({ trigger }: { trigger: React.ReactNode }) => trigger }));
 vi.mock("@/components/work/use-capture-files", () => ({ useCaptureFiles: () => ({ capture: vi.fn(), pending: false, error: null }) }));
 vi.mock("@/hooks/use-connector-accounts", () => ({ useConnectorAccounts: () => ({ data: {} }) }));
@@ -17,9 +21,22 @@ const link = (engId: string, title: string) => ({ task_id: `t-${engId}`, tasks: 
 const work = (id: string, extra: Record<string, unknown>) => ({ id, owner_id: "me", visibility: "mapped", title: id, type: "document", work_item_tasks: [], ...extra });
 
 afterEach(cleanup);
-const show = () => render(<AddWorkPanel open onOpenChange={() => undefined} onPlace={() => undefined} engagementId="here" />);
+const show = (tab = "Your work") => {
+  const view = render(<AddWorkPanel open onOpenChange={() => undefined} onPlace={() => undefined} engagementId="here" />);
+  const trigger = screen.getByRole("tab", { name: tab });
+  fireEvent.mouseDown(trigger, { button: 0 });
+  fireEvent.click(trigger);
+  return view;
+};
 
 describe("BB-4 Add work lists all your work", () => {
+  it("ADD-1: tabs read Connected apps, From your computer, Your work, with Connected apps selected on open", () => {
+    items = [];
+    render(<AddWorkPanel open onOpenChange={() => undefined} onPlace={() => undefined} engagementId="here" />);
+    expect(screen.getAllByRole("tab").map((tab) => tab.textContent)).toEqual(["Connected apps", "From your computer", "Your work"]);
+    expect(screen.getByRole("tab", { name: "Connected apps" }).getAttribute("aria-selected")).toBe("true");
+  });
+
   it("lists mapped work with its board names, excludes private and other owners", () => {
     items = [
       work("Mapped deck", { work_item_tasks: [link("a", "Board A"), link("a", "Board A"), link("b", "Board B")] }),
