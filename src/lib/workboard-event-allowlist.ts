@@ -30,6 +30,7 @@ export const WORKBOARD_EVENT_DIMS: Readonly<Record<string, readonly string[]>> =
   "workboard.ledger_opened": ["via"],
   "workboard.trail_item_selected": ["group", "focus"],
   "workboard.card_menu_opened": ["node_kind", "ownership"],
+  "workboard.board_menu_opened": ["target", "via"],
   "workboard.change_saved": ["entity", "action"],
   "workboard.save_failed": ["entity", "reason"],
   "workboard.conflict_resolved": ["entity", "choice"],

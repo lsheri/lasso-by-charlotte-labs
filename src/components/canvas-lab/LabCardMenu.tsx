@@ -86,30 +86,30 @@ export function LabCardMenu({
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
-        className="canvas-lab-card-menu"
+        className="canvas-lab-menu canvas-lab-card-menu"
         onCloseAutoFocus={(event) => {
           event.preventDefault();
           cardRef.current?.focus({ preventScroll: true });
         }}
       >
-        {onOpenLedger ? <DropdownMenuItem onSelect={onOpenLedger}>Open ledger</DropdownMenuItem> : null}
-        <DropdownMenuItem onSelect={onSelect}>{selected ? "Remove context" : "Use as context"}</DropdownMenuItem>
-        {onOpenLedger ? null : <DropdownMenuItem onSelect={onOpen}>Preview</DropdownMenuItem>}
-        {onCardFaceChange && cardFace ? <DropdownMenuItem onSelect={() => onCardFaceChange(cardFace === 'art' ? 'preview' : 'art')}>{cardFace === 'art' ? 'Show as real' : 'Show as sketch'}</DropdownMenuItem> : null}
-        {onFit ? <DropdownMenuItem onSelect={onFit}>Fit content</DropdownMenuItem> : null}
-        {canBranch ? <DropdownMenuItem onSelect={onBranch}>Branch</DropdownMenuItem> : null}
-        {onMoveToFrame && frameChoices.filter((frame) => frame.id !== currentFrame).map((frame) => <DropdownMenuItem key={frame.id} onSelect={() => onMoveToFrame(frame.id)}>Move to {frame.name}</DropdownMenuItem>)}
-        {onBundleToggle && bundleToggleLabel ? <DropdownMenuItem onSelect={onBundleToggle}>{bundleToggleLabel}</DropdownMenuItem> : null}
-        {onEditChatLink && chatLinkLabel ? <DropdownMenuItem onSelect={onEditChatLink}>{chatLinkLabel}</DropdownMenuItem> : null}
-        {onRename ? <DropdownMenuItem onSelect={onRename}>Rename for others</DropdownMenuItem> : null}
-        {onTakeOutOfContext ? <DropdownMenuItem onSelect={onTakeOutOfContext}>Take out of context</DropdownMenuItem> : null}
-        <DropdownMenuSeparator />
+        {onOpenLedger ? <DropdownMenuItem className="canvas-lab-menu-item" onSelect={onOpenLedger}>Open ledger</DropdownMenuItem> : null}
+        <DropdownMenuItem className="canvas-lab-menu-item" onSelect={onSelect}>{selected ? "Remove context" : "Use as context"}</DropdownMenuItem>
+        {onOpenLedger ? null : <DropdownMenuItem className="canvas-lab-menu-item" onSelect={onOpen}>Preview</DropdownMenuItem>}
+        {onCardFaceChange && cardFace ? <DropdownMenuItem className="canvas-lab-menu-item" onSelect={() => onCardFaceChange(cardFace === 'art' ? 'preview' : 'art')}>{cardFace === 'art' ? 'Show as real' : 'Show as sketch'}</DropdownMenuItem> : null}
+        {onFit ? <DropdownMenuItem className="canvas-lab-menu-item" onSelect={onFit}>Fit content</DropdownMenuItem> : null}
+        {canBranch ? <DropdownMenuItem className="canvas-lab-menu-item" onSelect={onBranch}>Branch</DropdownMenuItem> : null}
+        {onMoveToFrame && frameChoices.filter((frame) => frame.id !== currentFrame).map((frame) => <DropdownMenuItem className="canvas-lab-menu-item" key={frame.id} onSelect={() => onMoveToFrame(frame.id)}>Move to {frame.name}</DropdownMenuItem>)}
+        {onBundleToggle && bundleToggleLabel ? <DropdownMenuItem className="canvas-lab-menu-item" onSelect={onBundleToggle}>{bundleToggleLabel}</DropdownMenuItem> : null}
+        {onEditChatLink && chatLinkLabel ? <DropdownMenuItem className="canvas-lab-menu-item" onSelect={onEditChatLink}>{chatLinkLabel}</DropdownMenuItem> : null}
+        {onRename ? <DropdownMenuItem className="canvas-lab-menu-item" onSelect={onRename}>Rename for others</DropdownMenuItem> : null}
+        {onTakeOutOfContext ? <DropdownMenuItem className="canvas-lab-menu-item" onSelect={onTakeOutOfContext}>Take out of context</DropdownMenuItem> : null}
+        <DropdownMenuSeparator className="canvas-lab-menu-sep" />
         {local ? (
-          <DropdownMenuItem onSelect={onDelete}>Delete this work</DropdownMenuItem>
+          <DropdownMenuItem className="canvas-lab-menu-item" onSelect={onDelete}>Delete this work</DropdownMenuItem>
         ) : removable ? (
-          <DropdownMenuItem onSelect={onHide}>Remove from board</DropdownMenuItem>
+          <DropdownMenuItem className="canvas-lab-menu-item" onSelect={onHide}>Remove from board</DropdownMenuItem>
         ) : (
-          <DropdownMenuItem disabled>Only the author can remove this</DropdownMenuItem>
+          <DropdownMenuItem className="canvas-lab-menu-item" disabled>Only the author can remove this</DropdownMenuItem>
         )}
       </DropdownMenuContent>
     </DropdownMenu>
