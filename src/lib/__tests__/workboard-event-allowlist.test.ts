@@ -45,6 +45,9 @@ describe("the workboard allowlist", () => {
   it("pins every name and its dim keys", () => {
     expect(WORKBOARD_EVENT_DIMS).toMatchInlineSnapshot(`
       {
+        "workboard.add_work_source_opened": [
+          "source",
+        ],
         "workboard.annotation_changed": [
           "kind",
           "action",
@@ -221,9 +224,6 @@ describe("the workboard allowlist", () => {
           "via",
           "count",
           "shared",
-        ],
-        "workboard.add_work_source_opened": [
-          "source",
         ],
         "workboard.workstream_created": [
           "via",

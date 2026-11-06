@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@tanstack/react-query", () => ({ useQuery: () => ({ data: [] }) }));
@@ -55,6 +55,9 @@ function renderPanel() {
 describe("AddWorkPanel layout containment", () => {
   it("keeps the inbox confirmation in the dialog footer, outside the scrolling tab panel", () => {
     renderPanel();
+    const tab = screen.getByRole("tab", { name: "Your work" });
+    fireEvent.mouseDown(tab, { button: 0 });
+    fireEvent.click(tab);
     const dialog = document.querySelector<HTMLElement>("[role=dialog]");
     expect(dialog).not.toBeNull();
 
