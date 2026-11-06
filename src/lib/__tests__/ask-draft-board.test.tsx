@@ -173,6 +173,7 @@ describe("PIN-1 header pin", () => {
     const { baseElement } = render(<Harness messages={msgs} wasPinned />);
     const pin = baseElement.querySelector(".ask-draft-pin");
     expect(pin?.getAttribute("aria-label")).toBe("Pin this chat again");
+    expect(pin?.getAttribute("data-was")).toBe("true");
   });
   it("FIX-1: pin while free returns the chat to its saved home", () => {
     window.localStorage.setItem("lasso.ask-draft.home", "lock_left");
@@ -182,7 +183,6 @@ describe("PIN-1 header pin", () => {
     expect(baseElement.querySelector(".ask-draft")?.getAttribute("data-position")).toBe("free");
     fireEvent.click(baseElement.querySelector(".ask-draft-pin") as HTMLElement);
     expect(baseElement.querySelector(".ask-draft")?.getAttribute("data-position")).toBe("lock_left");
-    expect(pin?.getAttribute("data-was")).toBe("true");
   });
 });
 
