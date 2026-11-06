@@ -1,7 +1,11 @@
 // @vitest-environment jsdom
-import { cleanup, render, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("@tanstack/react-query", () => ({ useQuery: () => ({ data: [] }) }));
+vi.mock("@tanstack/react-start", async (orig) => ({ ...(await orig<object>()), useServerFn: (fn: unknown) => fn }));
+vi.mock("@/lib/mcp-connections.functions", () => ({ listConnections: () => Promise.resolve([]) }));
+vi.mock("@/components/connectors/ConnectYourAiCard", () => ({ CONNECTIONS_KEY: ["mcp-connections"] }));
 vi.mock("@/components/connectors/ConnectorPicker", () => ({
   ConnectorPicker: ({ trigger }: { trigger: React.ReactNode }) => trigger,
 }));
@@ -51,6 +55,9 @@ function renderPanel() {
 describe("AddWorkPanel layout containment", () => {
   it("keeps the inbox confirmation in the dialog footer, outside the scrolling tab panel", () => {
     renderPanel();
+    const tab = screen.getByRole("tab", { name: "Your work" });
+    fireEvent.mouseDown(tab, { button: 0 });
+    fireEvent.click(tab);
     const dialog = document.querySelector<HTMLElement>("[role=dialog]");
     expect(dialog).not.toBeNull();
 

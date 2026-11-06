@@ -1,7 +1,16 @@
 import { useMemo, useRef, useState } from "react";
 import { LoaderCircle } from "lucide-react";
 
-import { ConnectorPicker } from "@/components/connectors/ConnectorPicker";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+
+import { noteWorkboardAddWorkSourceOpened } from "@/components/canvas-lab/canvas-lab-telemetry";
+import { BrandLogo } from "@/components/connectors/BrandLogo";
+import { CONNECTIONS_KEY } from "@/components/connectors/ConnectYourAiCard";
+import { ConnectorPicker, type PickerKind } from "@/components/connectors/ConnectorPicker";
+import { SourceGrid, type SourceId, type SourceRow } from "@/components/connectors/SourceGrid";
+import { listConnections } from "@/lib/mcp-connections.functions";
+import { MCP_PUSH_PHRASE } from "@/lib/mcp-setup-steps";
 import { useCaptureFiles } from "@/components/work/use-capture-files";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -67,7 +76,18 @@ export function AddWorkPanel({
   const { capture, pending: capturing, error: captureError } = useCaptureFiles();
   const fileInput = useRef<HTMLInputElement | null>(null);
   const [picked, setPicked] = useState<Set<string>>(new Set());
-  const [activeTab, setActiveTab] = useState("inbox");
+  const [activeTab, setActiveTab] = useState("connectors");
+  const [pickerKind, setPickerKind] = useState<PickerKind | null>(null);
+  const [aiPanel, setAiPanel] = useState<SourceRow | null>(null);
+  const [copied, setCopied] = useState(false);
+  const phraseRef = useRef<HTMLElement | null>(null);
+  const fetchConnections = useServerFn(listConnections);
+  const { data: connections } = useQuery({
+    queryKey: [...CONNECTIONS_KEY, profile?.id ?? null],
+    queryFn: () => fetchConnections({ data: { profile_id: profile?.id } }),
+  });
+  // listConnections returns only rows whose revoked_at is null.
+  const aiConnected = (connections ?? []).length > 0;
 
   const inbox = useMemo(() => {
     const items = work?.items ?? [];
@@ -104,10 +124,48 @@ export function AddWorkPanel({
     if (ids.length > 0) await onPlace(ids, "upload");
   }
 
-  const drive = isConnected(accounts?.["googledrive"]?.status);
-  const gmail = isConnected(accounts?.["gmail"]?.status);
-  const granola = isConnected(accounts?.["granola_mcp"]?.status);
-  const anyConnector = drive || gmail || granola;
+  const sourceRows: SourceRow[] = [
+    { id: "googledrive", name: "Google Drive", brand: "googledrive", connected: isConnected(accounts?.["googledrive"]?.status) },
+    { id: "gmail", name: "Gmail", brand: "gmail", connected: isConnected(accounts?.["gmail"]?.status) },
+    { id: "granola", name: "Granola", brand: "granola", connected: isConnected(accounts?.["granola_mcp"]?.status) },
+    { id: "onedrive", name: "OneDrive", brand: "onedrive", connected: isConnected(accounts?.["one_drive"]?.status) },
+    { id: "sharepoint", name: "SharePoint", brand: "sharepoint", connected: isConnected(accounts?.["sharepoint_graph"]?.status) },
+    { id: "wispr", name: "Wispr Flow", brand: "wispr", connected: isConnected(accounts?.["wispr"]?.status) },
+    { id: "claude", name: "Claude", brand: "claude", connected: aiConnected, ai: true },
+    { id: "chatgpt", name: "ChatGPT", brand: "chatgpt", connected: aiConnected, ai: true },
+  ];
+
+  function pickSource(id: SourceId) {
+    noteWorkboardAddWorkSourceOpened(profile?.org_id ?? undefined, id);
+    const row = sourceRows.find((candidate) => candidate.id === id);
+    if (!row) return;
+    if (row.ai) {
+      setCopied(false);
+      setAiPanel(row);
+      return;
+    }
+    if (!row.connected) {
+      settings?.openSettings("connectors", "deep_link");
+      return;
+    }
+    setPickerKind(id as PickerKind);
+  }
+
+  async function copyPhrase() {
+    try {
+      await navigator.clipboard.writeText(MCP_PUSH_PHRASE);
+      setCopied(true);
+    } catch {
+      const node = phraseRef.current;
+      const selection = typeof window !== "undefined" ? window.getSelection() : null;
+      if (node && selection) {
+        const range = document.createRange();
+        range.selectNodeContents(node);
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+    }
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -119,9 +177,9 @@ export function AddWorkPanel({
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
-            <TabsTrigger value="inbox">Your work</TabsTrigger>
-            <TabsTrigger value="upload">From your computer</TabsTrigger>
             <TabsTrigger value="connectors">Connected apps</TabsTrigger>
+            <TabsTrigger value="upload">From your computer</TabsTrigger>
+            <TabsTrigger value="inbox">Your work</TabsTrigger>
           </TabsList>
 
           <TabsContent value="inbox" className="space-y-3">
@@ -193,44 +251,42 @@ export function AddWorkPanel({
           </TabsContent>
 
           <TabsContent value="connectors" className="space-y-3">
-            {anyConnector ? (
-              <div className="flex flex-wrap gap-2">
-                {drive ? (
-                  <ConnectorPicker
-                    kind="googledrive"
-                    trigger={<Button type="button" variant="outline">Google Drive</Button>}
-                    onImported={(ids) => void onPlace(ids, "connector")}
-                  />
-                ) : null}
-                {gmail ? (
-                  <ConnectorPicker
-                    kind="gmail"
-                    trigger={<Button type="button" variant="outline">Gmail</Button>}
-                    onImported={(ids) => void onPlace(ids, "connector")}
-                  />
-                ) : null}
-                {granola ? (
-                  <ConnectorPicker
-                    kind="granola"
-                    trigger={<Button type="button" variant="outline">Granola</Button>}
-                    onImported={(ids) => void onPlace(ids, "connector")}
-                  />
-                ) : null}
+            {aiPanel ? (
+              <div className="space-y-3">
+                <Button type="button" variant="ghost" onClick={() => setAiPanel(null)}>Back</Button>
+                <div className="flex items-center gap-2.5">
+                  <BrandLogo brand={aiPanel.brand} size={24} />
+                  <p className="text-sm font-medium">{aiPanel.connected ? `${aiPanel.name} sends work here` : `Set up ${aiPanel.name} in Settings`}</p>
+                </div>
+                {aiPanel.connected ? (
+                  <>
+                    <p className="text-sm text-muted-foreground">Say this in {aiPanel.name} and the chat lands in Your work.</p>
+                    <div className="flex items-center gap-2">
+                      <code ref={phraseRef} className="min-w-0 flex-1 rounded-md border border-border bg-muted px-2.5 py-2 font-mono text-sm">{MCP_PUSH_PHRASE}</code>
+                      <Button type="button" variant="outline" onClick={() => void copyPhrase()}>{copied ? "Copied" : "Copy"}</Button>
+                    </div>
+                    <Button type="button" variant="link" className="h-auto p-0" onClick={() => setActiveTab("inbox")}>
+                      See what {aiPanel.name} has already sent
+                    </Button>
+                  </>
+                ) : (
+                  <Button type="button" variant="outline" onClick={() => settings?.openSettings("mcp", "deep_link")}>
+                    Set up {aiPanel.name} in Settings
+                  </Button>
+                )}
               </div>
             ) : (
-              <div className="space-y-3">
-                <p className="text-sm text-muted-foreground">
-                  No apps are connected yet.
-                </p>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => settings?.openSettings("connectors", "deep_link")}
-                >
-                  Open your connected apps
-                </Button>
-              </div>
+              <SourceGrid rows={sourceRows} onPick={pickSource} />
             )}
+            {pickerKind ? (
+              <ConnectorPicker
+                key={pickerKind}
+                kind={pickerKind}
+                open
+                onOpenChange={(next) => { if (!next) setPickerKind(null); }}
+                onImported={(ids) => void onPlace(ids, "connector")}
+              />
+            ) : null}
           </TabsContent>
         </Tabs>
         {activeTab === "inbox" ? (

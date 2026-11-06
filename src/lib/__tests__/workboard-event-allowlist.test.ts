@@ -45,6 +45,9 @@ describe("the workboard allowlist", () => {
   it("pins every name and its dim keys", () => {
     expect(WORKBOARD_EVENT_DIMS).toMatchInlineSnapshot(`
       {
+        "workboard.add_work_source_opened": [
+          "source",
+        ],
         "workboard.annotation_changed": [
           "kind",
           "action",
@@ -344,7 +347,7 @@ describe("the workboard allowlist", () => {
       const [name, , dims] = mocked.mock.calls[0] as [string, string, Record<string, unknown>];
       expect(guardWorkboardEvent(name, dims as never)).toEqual({ keep: true, dims });
     }
-    expect(Object.keys(WORKBOARD_EVENT_DIMS)).toHaveLength(49);
+    expect(Object.keys(WORKBOARD_EVENT_DIMS)).toHaveLength(50);
   });
 
   it.each(["in", "out", "reset"] as const)("reports zoom %s with only direction and method", (direction) => {

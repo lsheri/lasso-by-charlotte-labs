@@ -125,7 +125,7 @@ function LabAnswerCardInner({
       data-focused={focused ? "true" : undefined}
       data-expanded={grown ? "true" : undefined}
       data-editing={editing ? "true" : undefined}
-      className="canvas-lab-answer-card absolute overflow-hidden"
+      className="canvas-lab-answer-card absolute overflow-visible"
       style={{ left: node.x, top: node.y, width: node.width, height: grown ? "auto" : node.height, minHeight: grown ? node.height : undefined, ...(editing ? { overflow: "visible" as const } : {}), zIndex: stackZ }}
     >
       <style>{`.canvas-lab-answer-body > .rich-text { font-size: inherit; line-height: inherit; } .canvas-lab-answer-card[data-editing="true"] .canvas-lab-answer-body { overflow: visible; } .canvas-lab-answer-card[data-editing="true"] [role="toolbar"] { bottom: calc(100% + 2.5rem); }`}</style>

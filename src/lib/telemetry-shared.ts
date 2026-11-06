@@ -418,6 +418,8 @@ export type TelemetryEvent =
   | "workboard.mention_created"
   /** B2: work was brought onto a workboard. Closed source and entry point, plus a count. */
   | "workboard.work_added"
+  /** ADD-1: a source tile was chosen in Add work. Closed source id only. */
+  | "workboard.add_work_source_opened"
   /** B4: a workstream was drawn on the workboard. Claimed count and whether one prompt was shown. */
   | "workboard.workstream_drawn"
   | "workboard.workstream_created"
