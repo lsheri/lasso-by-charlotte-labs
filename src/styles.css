@@ -8463,3 +8463,11 @@ main[data-ask-lock] .canvas-lab-floating-tools-wrapper { left: calc(12px + var(-
 .ask-draft-send-aside:hover { border-color: var(--neutral-95); }
 .ask-draft-send-aside:disabled { opacity: .45; cursor: default; }
 .ask-draft-send-aside:disabled:hover { border-color: var(--nb-rule); }
+
+/* MENU-1 */
+.canvas-lab-menu { min-width: 200px; padding: 6px; border: 1.5px solid var(--neutral-95); border-radius: 12px; background: var(--surface-raised); box-shadow: var(--shadow-float); color: var(--text-primary); }
+.canvas-lab-menu-item { display: flex; width: 100%; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 8px; font: 500 13px/1.3 var(--font-sans); color: var(--text-primary); text-align: left; cursor: default; }
+.canvas-lab-menu-item:hover, .canvas-lab-menu-item:focus-visible, .canvas-lab-menu-item[data-highlighted] { background: var(--surface-sunk-2); outline: none; }
+.canvas-lab-menu-item[data-disabled], .canvas-lab-menu-item:disabled { color: var(--text-muted); }
+.canvas-lab-menu-label { padding: 6px 10px 2px; font: 500 9px/1.4 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--text-muted); }
+.canvas-lab-menu-sep { height: 1px; margin: 4px 6px; background: var(--nb-rule); }

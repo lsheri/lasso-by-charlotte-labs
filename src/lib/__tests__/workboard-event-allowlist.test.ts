@@ -67,6 +67,10 @@ describe("the workboard allowlist", () => {
         "workboard.board_jumped": [
           "to",
         ],
+        "workboard.board_menu_opened": [
+          "target",
+          "via",
+        ],
         "workboard.bundle_toggled": [
           "state",
           "pieces",
@@ -300,6 +304,7 @@ describe("the workboard allowlist", () => {
       () => helpers.noteWorkboardReviewOpened("o", "thread"),
       () => helpers.noteWorkboardTrailSelected("o", "ai_work", "exact"),
       () => helpers.noteWorkboardCardMenuOpened("o", "frame", "shared"),
+      () => helpers.noteWorkboardBoardMenuOpened("o", "stage", "keyboard"),
       () => helpers.noteWorkboardChangeSaved("o", "node", "create"),
       () => helpers.noteWorkboardChangeSaved("o", "context_doc", "added"),
       () => helpers.noteWorkboardChangeSaved("o", "context_doc", "removed"),
