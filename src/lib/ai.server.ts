@@ -22,9 +22,21 @@ export type AiErrorClass =
 
 export type ToolCall = { id: string; name: string; arguments: string };
 
+/** KEY-3: a picture attached to a user turn. Text stays in `content`; images ride alongside. */
+export type ChatImagePart = {
+  type: "image";
+  mediaType: "image/png" | "image/jpeg" | "image/gif" | "image/webp";
+  /** Base64, no data: prefix. */
+  data: string;
+  /** Where it came from, for the manifest; never sent to the model. */
+  nodeId?: string;
+};
+
 export type ChatMessage = {
   role: "system" | "user" | "assistant" | "tool";
   content: string;
+  /** KEY-3: images on a user turn. Ignored on other roles. */
+  images?: ChatImagePart[];
   tool_calls?: { id: string; type: "function"; function: { name: string; arguments: string } }[];
   tool_call_id?: string;
 };
@@ -243,7 +255,23 @@ function buildBody(
   stream: boolean,
 ): Record<string, unknown> {
   const maxTokens = options.maxTokens ?? 8000;
-  const body: Record<string, unknown> = { model, messages };
+  // KEY-3: a user turn with images becomes OpenAI content parts; everything else is sent as is.
+  const wire = messages.map((message) => {
+    if (message.role !== "user" || !message.images || message.images.length === 0) {
+      const { images: _images, ...rest } = message;
+      void _images;
+      return rest;
+    }
+    const { images, ...rest } = message;
+    return {
+      ...rest,
+      content: [
+        ...images.map((image) => ({ type: "image_url", image_url: { url: `data:${image.mediaType};base64,${image.data}` } })),
+        { type: "text", text: message.content },
+      ],
+    };
+  });
+  const body: Record<string, unknown> = { model, messages: wire };
   if (isReasoningModel(model)) {
     body["max_completion_tokens"] = maxTokens;
     body["reasoning_effort"] = options.reasoningEffort ?? "low";
@@ -572,6 +600,16 @@ async function routedRequest(
   return { attempt, model, provider };
 }
 
+/** KEY-2: Anthropic bills cache writes at 1.25x input. The extra quarter on top of what computeCostUsd already charged. */
+export function cacheWriteUsd(model: string, cacheWriteIn: number): number {
+  if (cacheWriteIn <= 0) return 0;
+  const key = priceKeyFor(model);
+  if (!key) return 0;
+  const price = MODEL_PRICES[key];
+  if (!price) return 0;
+  return (cacheWriteIn / 1_000_000) * price.input * 0.25;
+}
+
 function notePricing(servedModel: string, meta: AiMeta | undefined): void {
   if (priceKeyFor(servedModel) !== null) return;
   void logHealth({
@@ -642,7 +680,7 @@ export async function chatComplete(
       tokensIn: parsed.tokensIn,
       tokensOut: parsed.tokensOut,
       cachedIn: parsed.cachedIn,
-      costUsd: computeCostUsd(parsed.servedModel, parsed.tokensIn, parsed.cachedIn, parsed.tokensOut),
+      costUsd: computeCostUsd(parsed.servedModel, parsed.tokensIn, parsed.cachedIn, parsed.tokensOut) + cacheWriteUsd(parsed.servedModel, parsed.cacheWriteIn),
       durationMs: Date.now() - startedAt,
     };
     notePricing(result.model, options.meta);
@@ -772,7 +810,7 @@ export async function streamChat(
       tokensIn: parsed.tokensIn,
       tokensOut: parsed.tokensOut,
       cachedIn: parsed.cachedIn,
-      costUsd: computeCostUsd(parsed.servedModel, parsed.tokensIn, parsed.cachedIn, parsed.tokensOut),
+      costUsd: computeCostUsd(parsed.servedModel, parsed.tokensIn, parsed.cachedIn, parsed.tokensOut) + cacheWriteUsd(parsed.servedModel, parsed.cacheWriteIn),
       durationMs: Date.now() - startedAt,
     };
     notePricing(result.model, options.meta);
