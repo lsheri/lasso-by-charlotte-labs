@@ -7,6 +7,7 @@
  * model as 385,057 tokens (1.67 chars per token, once turn blocks, headers,
  * the record index and docx tables are counted). The whole record, sized at
  * the old 4:1, reached 1,161,851 tokens and the provider refused it.
+ * The golden set re-measures this ratio on every run; revise it from there.
  */
 export const CHARS_PER_TOKEN = 1.6;
 
