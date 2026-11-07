@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { DAILY_ANALYSIS_CAP, assertUnderDailyCap } from "@/lib/analysis-cap.server";
 import { accountTextResults } from "@/lib/reflect-context.server";
-import { buildAnalysisConversation, buildReflectConversation } from "@/lib/prompt-assembly";
+import { RECORD_ACK, buildAnalysisConversation, buildReflectConversation } from "@/lib/prompt-assembly";
 
 function fakeSupabase(count: number) {
   const chain = {
@@ -70,26 +70,48 @@ describe("text budget accounting", () => {
 });
 
 describe("prompt prefix stability", () => {
-  it("keeps system prompts and history ahead of the volatile record", () => {
+  it("TOTAL-1: the record is the stable prefix; history and the question follow it", () => {
     const prompts = [{ role: "system" as const, content: "SYS" }];
-    const history = [{ role: "user" as const, content: "earlier" }];
     const one = buildReflectConversation({
       prompts,
-      historyMessages: history,
+      historyMessages: [{ role: "user" as const, content: "earlier" }, { role: "assistant" as const, content: "answer one" }],
       scopeMode: "whole",
       context: "CTX A",
       message: "q",
+      perQuestionNote: "WHAT LASSO READ FOR EARLIER ANSWERS: answer 1 read X",
     });
     const two = buildReflectConversation({
       prompts,
-      historyMessages: history,
+      historyMessages: [],
       scopeMode: "whole",
-      context: "CTX B",
+      context: "CTX A",
+      message: "q2",
+    });
+    // Same read set, different history: the first three turns are byte identical.
+    expect(one.slice(0, 3)).toEqual(two.slice(0, 3));
+    expect(one[1]!.role).toBe("user");
+    expect(one[1]!.content).toContain("CTX A");
+    expect(one[2]!.content).toBe(RECORD_ACK);
+    // Anything that changes per question rides in the question turn, never ahead of the record.
+    expect(one.at(-1)!.content).toContain("WHAT LASSO READ FOR EARLIER ANSWERS");
+    expect(one.at(-1)!.content.endsWith("q")).toBe(true);
+    expect(one.slice(1).some((t) => t.role === "system")).toBe(false);
+  });
+
+  it("TOTAL-1: documents ride on the record turn with the preamble as its text", () => {
+    const docs = [{ id: "a", title: "Chat", kind: "conversation" as const, turnNumbers: [1, 2], blocks: ["(turn 1, you said) hi", "(turn 2, the assistant replied) hello"] }];
+    const out = buildReflectConversation({
+      prompts: [],
+      historyMessages: [],
+      scopeMode: "items",
+      context: "FULL TEXT FORM",
+      preamble: "RECORD INDEX: 1 item",
+      documents: docs,
       message: "q",
     });
-    expect(one.slice(0, 2)).toEqual(two.slice(0, 2));
-    expect(one[2]!.content).toContain("CTX A");
-    expect(one.at(-1)).toEqual({ role: "user", content: "q" });
+    expect(out[0]!.documents).toEqual(docs);
+    expect(out[0]!.content).toContain("RECORD INDEX: 1 item");
+    expect(out[0]!.content).not.toContain("FULL TEXT FORM");
   });
 
   it("keeps the preset prompt byte identical whether or not firm checks exist", () => {

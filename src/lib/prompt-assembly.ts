@@ -3,11 +3,21 @@
  * passed in by the caller. Keeping the ordering pure makes prefix stability
  * testable without a database or a model.
  */
-export type ChatTurn = { role: "system" | "user" | "assistant"; content: string };
+import type { RecordDocument } from "./ai.server";
+
+export type ChatTurn = { role: "system" | "user" | "assistant"; content: string; documents?: RecordDocument[] };
+
+/** The one-line acknowledgement that closes the record turn so history can follow it. */
+export const RECORD_ACK = "I have read the record above and will cite it by item and turn.";
 
 /**
- * Chat: the stable prefix first (system prompts, then the running history),
- * then the assembled record, then the new question.
+ * Chat, TOTAL-1 order: the stable system prompts, then the record as the
+ * first user turn (preamble text plus one citable document per item, with
+ * the cache breakpoint on its last block), a fixed assistant acknowledgement,
+ * then the running history, then anything that changes per question (the
+ * earlier-reads note) folded into the question turn. The record is the same
+ * bytes on every question about the same read set, so it is a cache hit from
+ * the second question on; nothing that changes per turn sits in front of it.
  */
 export function buildReflectConversation(input: {
   prompts: ChatTurn[];
@@ -15,15 +25,22 @@ export function buildReflectConversation(input: {
   scopeMode: string;
   context: string;
   message: string;
+  documents?: RecordDocument[];
+  preamble?: string;
+  perQuestionNote?: string | null;
 }): ChatTurn[] {
+  const heading = `THE PERSON'S RECORDED WORK (scope: ${input.scopeMode}):`;
+  const record: ChatTurn =
+    input.documents && input.documents.length > 0
+      ? { role: "user", content: `${heading}\n\n${input.preamble ?? ""}`.trimEnd(), documents: input.documents }
+      : { role: "user", content: `${heading}\n\n${input.context}` };
+  const question = input.perQuestionNote ? `${input.perQuestionNote}\n\n${input.message}` : input.message;
   return [
     ...input.prompts,
+    record,
+    { role: "assistant", content: RECORD_ACK },
     ...input.historyMessages,
-    {
-      role: "system",
-      content: `THE PERSON'S RECORDED WORK (scope: ${input.scopeMode}):\n\n${input.context}`,
-    },
-    { role: "user", content: input.message },
+    { role: "user", content: question },
   ];
 }
 

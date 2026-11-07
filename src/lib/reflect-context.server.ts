@@ -8,6 +8,7 @@ import {
 } from "@/lib/clients";
 
 import type { AiReadInput, AiReadRole } from "./ai-reads.server";
+import type { RecordDocument } from "./ai.server";
 import { loadBriefContext } from "./brief.server";
 import {
   manifestKind,
@@ -120,6 +121,10 @@ export type AssembledContext = {
   readSet: ManifestReadSet;
   /** TOTAL-1: the record index of the whole board, read set and the rest marked not read. */
   recordIndex: string;
+  /** TOTAL-1: every item read, as a citable document, oldest first. */
+  documents: RecordDocument[];
+  /** TOTAL-1: the record minus the documents: brief, index, structure, and the lines for items not read. */
+  preamble: string;
 };
 
 /** TOTAL-1: one row of the record index, for the whole board the scope sits on. */
@@ -666,16 +671,20 @@ export async function assembleReflectContext(
   // Titles and the structure block are exact words too: a quoted title must
   // never fail the guard and cost a second model call.
   const quotableParts: string[] = [brief.block, recordIndex, ...engagementBlocks, ...items.map((i) => i.title)];
+  // TOTAL-1: the same record as citable documents, one per item read, in the
+  // same oldest-first order. The preamble is everything that is not a document.
+  const documents: RecordDocument[] = [];
+  const preambleParts: string[] = [brief.block, ...(recordIndex ? [recordIndex] : []), ...engagementBlocks];
 
   for (const item of oldestFirst) {
     const extract = extractFor.get(item.id);
     const raw = fullText.get(item.id) ?? null;
     const mapped = taskNameFor.get(item.id);
-    const lines = [
-      `WORK ITEM: ${item.title}`,
+    const headerLines = [
       `  Type: ${item.type} · Source: ${item.source}${item.source_vendor ? ` (${item.source_vendor})` : ""} · Fidelity: ${item.content_fidelity ?? "unknown"}`,
       `  Date: ${isEngagementScope ? datePrecisionLine(item) : effectiveDate(item).slice(0, 10)} · ${mapped ? `Mapped to ${mapped}` : "Unmapped"}${item.visibility === "private" ? " · MARKED PRIVATE" : ""}`,
     ];
+    const lines = [`WORK ITEM: ${item.title}`, ...headerLines];
     if (extract) {
       lines.push(...extractLines(extract));
     }
@@ -685,6 +694,7 @@ export async function assembleReflectContext(
       const shown = item.type === "ai_thread" ? naturalTurnLabels(raw) : raw;
       lines.push(`  Full text:\n${shown}`);
       quotableParts.push(shown);
+      documents.push(recordDocument(item, raw, headerLines.map((l) => l.trim()).join(" · ")));
       tier2 += 1;
       reads.push({ workItemId: item.id, ownerId, depth: "full" });
       sources.push({
@@ -719,6 +729,7 @@ export async function assembleReflectContext(
       });
     }
     parts.push(lines.join("\n"));
+    if (!raw) preambleParts.push(lines.join("\n"));
   }
 
   const tier1 = items.length + brief.itemIds.length;
@@ -830,7 +841,36 @@ export async function assembleReflectContext(
     manifest,
     readSet,
     recordIndex,
+    documents,
+    preamble: preambleParts.filter(Boolean).join("\n\n---\n\n"),
   };
+}
+
+const TURN_SPLIT = /^TURN (\d+) (USER|ASSISTANT|TOOL): /gm;
+
+/**
+ * One item as a citable document. A conversation is split on its stored turn
+ * tags into one block per turn, labelled in the plain words the model cites
+ * ("(turn 5, you said) ..."); a file is one block of text.
+ */
+export function recordDocument(item: { id: string; title: string; type: string }, raw: string, context: string): RecordDocument {
+  if (item.type !== "ai_thread") {
+    return { id: item.id, title: item.title, kind: "text", turnNumbers: [], blocks: [raw], context };
+  }
+  const turnNumbers: number[] = [];
+  const blocks: string[] = [];
+  const matches = [...raw.matchAll(TURN_SPLIT)];
+  if (matches.length === 0) {
+    return { id: item.id, title: item.title, kind: "text", turnNumbers: [], blocks: [naturalTurnLabels(raw)], context };
+  }
+  matches.forEach((m, i) => {
+    const start = m.index ?? 0;
+    const end = i + 1 < matches.length ? (matches[i + 1]?.index ?? raw.length) : raw.length;
+    const turnText = raw.slice(start, end).trimEnd();
+    turnNumbers.push(Number(m[1]));
+    blocks.push(naturalTurnLabels(turnText));
+  });
+  return { id: item.id, title: item.title, kind: "conversation", turnNumbers, blocks, context };
 }
 
 /** The size a previous read cached on the row, or 0 when nothing is known. */
