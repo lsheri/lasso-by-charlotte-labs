@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { AskLasso } from "@/components/reflect/use-ask-lasso";
 
@@ -21,6 +21,8 @@ vi.mock("@/components/canvas-lab/canvas-lab-telemetry", () => ({ noteWorkboardAs
 
 import { AskReadChip, AskSurface, MessagesTab } from "@/components/reflect/AskSurface";
 import { AskDraftSurface } from "@/components/canvas-lab/ask-draft/AskDraftSurface";
+
+globalThis.ResizeObserver = class { observe() {} unobserve() {} disconnect() {} };
 
 // Illustrative input pins the owner's exact acceptance counts, never a fallback.
 const items = Array.from({ length: 20 }, (_, i) => ({ id: `w${i}`, title: `Work ${i}`, meta: { text_chars: i < 19 ? (i === 0 ? 30000 : 34000) : 0 } }));

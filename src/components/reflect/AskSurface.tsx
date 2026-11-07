@@ -193,7 +193,7 @@ export function AskReadChip({ ask }: { ask: AskLasso }) {
   if (items.length === 0) return null;
   const chars = items.reduce((total, item) => {
     const meta = item.meta;
-    const value = meta && typeof meta === "object" && !Array.isArray(meta) ? meta["text_chars"] : undefined;
+    const value = meta && typeof meta === "object" && !Array.isArray(meta) && "text_chars" in meta ? meta.text_chars : undefined;
     return total + (typeof value === "number" && Number.isFinite(value) && value > 0 ? value : 0);
   }, 0);
   return <p className="mt-1 font-mono text-xs text-muted-foreground" data-testid="ask-read-chip">{items.length} items{chars > 0 ? ` · about ${Math.round(chars / 1000)}k characters` : ""}</p>;
@@ -401,7 +401,7 @@ export function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions
             fullCount: manifest.items.filter((item) => (item.chars_in ?? 0) > 0 || item.detail.startsWith("turns") || item.detail.endsWith("words")).length,
             noTextCount: manifest.items.filter((item) => item.chars_total === 0 && item.detail.includes("no stored text")).length,
             summaryCount: manifest.items.filter((item) => item.detail.includes("summary only")).length,
-            share: manifest.read_set?.share,
+            share: manifest.read_set?.share ?? null,
           } : null;
           const previous = messages[index - 1];
           const followsSameSpeaker =
