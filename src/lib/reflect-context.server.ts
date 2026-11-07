@@ -15,18 +15,25 @@ import {
   type ContextManifest,
   type ManifestExcluded,
   type ManifestItem,
+  type ManifestReadSet,
 } from "./context-manifest";
 import { ensureExtract, type ClassifiableItem } from "./extract.server";
 import { ITEM_TEXT_COLUMNS, getItemText, type ItemTextStatus } from "./item-text.server";
 import type { ContextScope, ContextSource } from "./reflect-shared";
-import { naturalTurnLabels } from "./turn-labels";
+import { naturalTurnLabels, turnNumbersIn } from "./turn-labels";
 import { readFromRendition } from "./reference-rendition-shared";
 
-/** Tier 2 is the expensive tier: raw text, bounded hard. */
-const RAW_BUDGET = 120_000;
-const PER_ITEM_CHARS = 40_000;
-const HEAD_CHARS = 8_000;
-const TAIL_CHARS = 32_000;
+/**
+ * TOTAL-1: the read set is read as written. The budget is the window, not a
+ * tier: 3.2M characters is about 800k tokens, inside the 1M window of every
+ * current Claude model with room for prompts, history and the answer. Above
+ * it the person is told, never silently summarised. A single item is only
+ * ever cut when it alone would not fit.
+ */
+const RAW_BUDGET = 3_200_000;
+const PER_ITEM_CHARS = 1_200_000;
+/** When an item must be cut, the head keeps the framing and the tail keeps the decisions. */
+const HEAD_SHARE = 0.2;
 const OMITTED_MARKER = "[... middle of this item omitted ...]";
 /**
  * Backfilling is a side effect of asking a question, so almost none of it
@@ -109,7 +116,53 @@ export type AssembledContext = {
   sources: ContextSource[];
   /** Exactly what went into the prompt, for the person to inspect after. */
   manifest: ContextManifest;
+  /** TOTAL-1: the read-set proof line, also carried on the manifest. */
+  readSet: ManifestReadSet;
+  /** TOTAL-1: the record index of the whole board, read set and the rest marked not read. */
+  recordIndex: string;
 };
+
+/** TOTAL-1: one row of the record index, for the whole board the scope sits on. */
+export type IndexRow = {
+  id: string;
+  title: string;
+  type: string;
+  date: string;
+  selected: boolean;
+  turns: number | null;
+  chars: number | null;
+  charsExact: boolean;
+};
+
+/**
+ * The record index: every item on the board in one line each, so a count or a
+ * "what else is here" question has exact numbers to read, and so a selection
+ * never hides the shape of the board it came from. Unselected items are
+ * marked not read and carry no content.
+ */
+export function recordIndexBlock(rows: IndexRow[], boardName: string | null): string {
+  if (rows.length === 0) return "";
+  const selected = rows.filter((r) => r.selected).length;
+  const threads = rows.filter((r) => r.type === "ai_thread");
+  const turnsKnown = threads.filter((r) => r.turns !== null);
+  const totalTurns = turnsKnown.reduce((sum, r) => sum + (r.turns ?? 0), 0);
+  const lines = [
+    `RECORD INDEX${boardName ? ` for workboard ${boardName}` : ""}: ${rows.length} item${rows.length === 1 ? "" : "s"}, ${threads.length} conversation${threads.length === 1 ? "" : "s"}${turnsKnown.length === threads.length ? ` with ${totalTurns} turns in total` : ""}. ${selected} of ${rows.length} ${selected === 1 ? "is" : "are"} in the read set below, as written. Items marked NOT READ are on the board but were not selected for this question; you know they exist and nothing else about them.`,
+  ];
+  rows.forEach((r, i) => {
+    const kind = r.type === "ai_thread" ? "conversation" : r.type;
+    const size =
+      r.type === "ai_thread"
+        ? r.turns !== null
+          ? `${r.turns} turn${r.turns === 1 ? "" : "s"}`
+          : "turns not stored"
+        : r.chars !== null && r.chars > 0
+          ? `${r.charsExact ? "" : "about "}${r.chars.toLocaleString("en-GB")} characters`
+          : "no stored text";
+    lines.push(`  ${i + 1}. ${r.title} (${kind}, ${r.date}, ${size})${r.selected ? "" : " NOT READ"}`);
+  });
+  return lines.join("\n");
+}
 
 /**
  * The proof line for one item, derived from the text that actually went into
@@ -228,11 +281,22 @@ export function datePrecisionLine(item: ItemRow): string {
 }
 
 
-/** Endings carry the decisions, so a cut item keeps its head AND its tail. */
+/**
+ * Endings carry the decisions, so a cut item keeps its head AND its tail, and
+ * the cut is sized to the cap it was given. The old constants ignored the cap,
+ * so the last item of a full budget always landed at 40k whatever room was
+ * left; now the room decides.
+ */
 export function headAndTail(text: string, cap = PER_ITEM_CHARS): { text: string; cut: boolean } {
   if (text.length <= cap) return { text, cut: false };
+  // Too little room for a marker and both ends: keep the tail, which is where
+  // the decisions live, and still report the cut.
+  if (cap <= OMITTED_MARKER.length + 16) return { text: text.slice(-Math.max(0, cap)), cut: true };
+  const room = Math.max(0, cap - OMITTED_MARKER.length - 4);
+  const head = Math.floor(room * HEAD_SHARE);
+  const tail = room - head;
   return {
-    text: `${text.slice(0, HEAD_CHARS)}\n\n${OMITTED_MARKER}\n\n${text.slice(-TAIL_CHARS)}`,
+    text: `${text.slice(0, head)}\n\n${OMITTED_MARKER}\n\n${tail > 0 ? text.slice(-tail) : ""}`,
     cut: true,
   };
 }
@@ -256,6 +320,8 @@ export function accountTextResults(
     fullText: Map<string, string>;
     unreadable: Map<string, { status: ItemTextStatus; note: string | null }>;
     rawUsed: number;
+    /** TOTAL-1: stored characters per item, before any cut. Optional for older callers. */
+    charsTotal?: Map<string, number>;
   },
 ): { rawUsed: number; anyCut: boolean; stop: boolean } {
   let rawUsed = state.rawUsed;
@@ -272,6 +338,7 @@ export function accountTextResults(
     }
     const text = (result.text ?? "").trim();
     if (!text) continue;
+    state.charsTotal?.set(item.id, text.length);
     const clipped = headAndTail(text);
     if (clipped.cut) anyCut = true;
     const remaining = rawBudget - rawUsed;
@@ -534,18 +601,19 @@ export async function assembleReflectContext(
   // 5. Structure block, unchanged in shape.
   const engagementBlocks = buildEngagementBlocks(tasks, linkRows, items);
 
-  // 6. Tier 2 priority: explicitly named items first, then most recent.
+  // 6. Read order, founder's order of needs: conversations first (they are
+  // the work itself), then anything the person named, then most recent. With
+  // the budget at the window this only matters on a board that cannot fit.
   const byNewest = [...items].sort(
     (a, b) => new Date(effectiveDate(b)).getTime() - new Date(effectiveDate(a)).getTime(),
   );
   const named = scope.mode === "items" ? new Set(scope.ids) : new Set<string>();
-  const priority = [
-    ...byNewest.filter((i) => named.has(i.id)),
-    ...byNewest.filter((i) => !named.has(i.id)),
-  ];
+  const rank = (i: ItemRow) => (i.type === "ai_thread" ? 0 : 1) * 2 + (named.has(i.id) ? 0 : 1);
+  const priority = [...byNewest].sort((a, b) => rank(a) - rank(b));
 
   const fullText = new Map<string, string>();
   const unreadable = new Map<string, { status: ItemTextStatus; note: string | null }>();
+  const charsTotal = new Map<string, number>();
   let rawUsed = 0;
   let anyCut = false;
   let renditionsRead = 0;
@@ -561,7 +629,7 @@ export async function assembleReflectContext(
     const fetched = await Promise.all(
       chunk.map(async (item) => ({ item, result: await getItemText(supabase, item) })),
     );
-    const applied = accountTextResults(fetched, rawBudget, { fullText, unreadable, rawUsed });
+    const applied = accountTextResults(fetched, rawBudget, { fullText, unreadable, rawUsed, charsTotal });
     rawUsed = applied.rawUsed;
     for (const f of fetched) if (fullText.has(f.item.id) && readFromRendition(f.item, f.result.status)) renditionsRead += 1;
     if (applied.anyCut) anyCut = true;
@@ -570,6 +638,11 @@ export async function assembleReflectContext(
   console.log(
     `[reflect-context] text pass: ${fullText.size} full, ${unreadable.size} unreadable, ${Date.now() - textStarted}ms`,
   );
+
+  // 6b. TOTAL-1: the record index of the whole board the scope sits on.
+  const indexRows = await loadRecordIndex(supabase, ownerId, scope, tasks, items, fullText, charsTotal);
+  const indexBoardName = tasks.find((t) => t.engagements)?.engagements?.title ?? null;
+  const recordIndex = recordIndexBlock(indexRows, indexBoardName);
 
   // 7. Serialize oldest to newest so the record reads as a story. Engagement
   // scope orders on the day the work carries (work_date, else capture) so a
@@ -584,13 +657,15 @@ export async function assembleReflectContext(
 
   // The brief sits above the engagement structure and above every item: long
   // framing material belongs at the top, and a stable prefix caches well.
-  const parts: string[] = [brief.block, ...engagementBlocks];
+  const parts: string[] = [brief.block, ...(recordIndex ? [recordIndex] : []), ...engagementBlocks];
   const reads: AiReadInput[] = [...brief.reads];
   const sources: ContextSource[] = [...brief.sources];
   let tier2 = brief.itemIds.length;
   let unreadableCount = 0;
   // Quotation is a promise of exact wording, so only verbatim text counts.
-  const quotableParts: string[] = [brief.block];
+  // Titles and the structure block are exact words too: a quoted title must
+  // never fail the guard and cost a second model call.
+  const quotableParts: string[] = [brief.block, recordIndex, ...engagementBlocks, ...items.map((i) => i.title)];
 
   for (const item of oldestFirst) {
     const extract = extractFor.get(item.id);
@@ -652,15 +727,27 @@ export async function assembleReflectContext(
   // The manifest: built from what was assembled above, never from the answer.
   const manifestItems: ManifestItem[] = [];
   const excluded: ManifestExcluded[] = [];
+  let readSetCharsTotal = 0;
+  let readSetCharsIn = 0;
+  let itemsWithText = 0;
   for (const item of oldestFirst) {
     const raw = fullText.get(item.id) ?? null;
     const blocked = unreadable.get(item.id);
+    // Fetched items know their exact size; an item the clock or the window
+    // kept closed falls back to the size the last read cached on its row.
+    const total = charsTotal.get(item.id) ?? (blocked ? 0 : storedCharsHint(item));
     if (raw) {
+      const charsIn = raw.includes(OMITTED_MARKER) ? Math.max(0, raw.length - OMITTED_MARKER.length - 4) : total;
+      readSetCharsTotal += total;
+      readSetCharsIn += Math.min(charsIn, total);
+      itemsWithText += 1;
       manifestItems.push({
         id: item.id,
         title: item.title,
         kind: manifestKind(item.type),
         detail: detailFor(item, raw),
+        chars_in: Math.min(charsIn, total),
+        chars_total: total,
       });
     } else if (blocked) {
       excluded.push({
@@ -668,11 +755,19 @@ export async function assembleReflectContext(
         reason: blocked.note ?? "the stored file could not be read",
       });
     } else {
+      // Stored text that did not reach the model: over the window, or out of
+      // time. Counted against the share so the proof line cannot flatter.
+      if (total > 0) {
+        readSetCharsTotal += total;
+        itemsWithText += 1;
+      }
       manifestItems.push({
         id: item.id,
         title: item.title,
         kind: manifestKind(item.type),
-        detail: extractFor.get(item.id) ? "summary only, full text not opened" : "no stored text",
+        detail: total > 0 ? "stored text not read, over the window" : extractFor.get(item.id) ? "summary only, full text not opened" : "no stored text",
+        chars_in: 0,
+        chars_total: total,
       });
     }
   }
@@ -682,6 +777,13 @@ export async function assembleReflectContext(
       reason: "over the context limit, the middle of those items was left out",
     });
   }
+  const readSet: ManifestReadSet = {
+    ids: items.map((i) => i.id),
+    items_with_text: itemsWithText,
+    chars_total: readSetCharsTotal,
+    chars_in: readSetCharsIn,
+    share: readSetCharsTotal > 0 ? Math.round((readSetCharsIn / readSetCharsTotal) * 10000) / 10000 : 1,
+  };
   const selection =
     scope.mode === "items" && !options?.pointedAt
       ? await selectionContext(
@@ -711,11 +813,12 @@ export async function assembleReflectContext(
     items: manifestItems,
     excluded: [...excluded, ...selection.excluded],
     assembled_at: new Date().toISOString(),
+    read_set: readSet,
   };
 
   return {
     context: parts.join("\n\n---\n\n") || "(No recorded work in this scope yet.)",
-    quotable: quotableParts.join("\n\n"),
+    quotable: quotableParts.filter(Boolean).join("\n\n"),
     truncated: anyCut || extractOnly > 0,
     itemCount: tier1,
     tier1Count: tier1,
@@ -725,5 +828,72 @@ export async function assembleReflectContext(
     reads,
     sources,
     manifest,
+    readSet,
+    recordIndex,
   };
+}
+
+/** The size a previous read cached on the row, or 0 when nothing is known. */
+export function storedCharsHint(item: { meta?: unknown }): number {
+  const meta = (item.meta ?? null) as { text_chars?: unknown; text_status?: unknown } | null;
+  if (!meta) return 0;
+  const status = typeof meta.text_status === "string" ? meta.text_status : null;
+  if (status && status !== "ok") return 0;
+  return typeof meta.text_chars === "number" && meta.text_chars > 0 ? meta.text_chars : 0;
+}
+
+/**
+ * The rows of the record index: every item on the board the scope sits on,
+ * with the read set marked. Turn counts are exact (one id-only query); sizes
+ * are exact for items that were read and the cached hint otherwise.
+ */
+export async function loadRecordIndex(
+  supabase: Db,
+  ownerId: string,
+  scope: ContextScope,
+  tasks: TaskRow[],
+  readSetItems: ItemRow[],
+  fullText: Map<string, string>,
+  charsTotal: Map<string, number>,
+): Promise<IndexRow[]> {
+  const inReadSet = new Set(readSetItems.map((i) => i.id));
+  const boardId =
+    scope.board ??
+    (scope.mode === "engagements" && scope.ids.length === 1 ? scope.ids[0] : undefined) ??
+    tasks.find((t) => t.engagement_id)?.engagement_id;
+  let boardItems: ItemRow[] = readSetItems;
+  if (boardId && !(scope.mode === "engagements" && scope.ids.length === 1 && scope.ids[0] === boardId)) {
+    try {
+      const loaded = await loadScopeData(supabase, ownerId, { mode: "engagements", ids: [boardId] });
+      const seen = new Set<string>();
+      boardItems = [...loaded.items, ...readSetItems].filter((i) => (seen.has(i.id) ? false : (seen.add(i.id), true)));
+    } catch {
+      boardItems = readSetItems;
+    }
+  }
+  if (scope.mode === "whole") boardItems = readSetItems;
+  const threadIds = boardItems.filter((i) => i.type === "ai_thread").map((i) => i.id);
+  const turnCounts = new Map<string, number>();
+  if (threadIds.length > 0) {
+    const { data } = await supabase.from("turns").select("work_item_id").in("work_item_id", threadIds);
+    for (const row of data ?? []) turnCounts.set(row.work_item_id, (turnCounts.get(row.work_item_id) ?? 0) + 1);
+  }
+  const rows: IndexRow[] = boardItems.map((item) => {
+    const read = fullText.get(item.id);
+    const exact = charsTotal.get(item.id);
+    const chars = exact ?? (storedCharsHint(item) || null);
+    const turns = item.type === "ai_thread" ? turnCounts.get(item.id) ?? (read ? turnNumbersIn(read).length : null) : null;
+    return {
+      id: item.id,
+      title: item.title,
+      type: item.type,
+      date: effectiveDate(item).slice(0, 10),
+      selected: inReadSet.has(item.id),
+      turns: turns === 0 && !turnCounts.has(item.id) ? null : turns,
+      chars,
+      charsExact: exact !== undefined,
+    };
+  });
+  rows.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+  return rows;
 }

@@ -24,9 +24,26 @@ export type ManifestItem = {
   kind: ManifestKind;
   /** The proof: "turns 1-12", "1,842 words", "42 min". Empty when unknown. */
   detail: string;
+  /** TOTAL-1: characters of this item's stored text that reached the model. */
+  chars_in?: number;
+  /** TOTAL-1: characters of stored text this item has. 0 when nothing is stored. */
+  chars_total?: number;
 };
 
 export type ManifestExcluded = { title: string; reason: string };
+
+/**
+ * TOTAL-1: the read set, which is the proof that need 1 is met. `share` is
+ * chars_in over chars_total across every item in the read set with stored
+ * text; 1 means every word the person selected was in the model's context.
+ */
+export type ManifestReadSet = {
+  ids: string[];
+  items_with_text: number;
+  chars_total: number;
+  chars_in: number;
+  share: number;
+};
 
 export type ContextManifest = {
   engagement: { id: string; name: string } | null;
@@ -36,7 +53,16 @@ export type ContextManifest = {
   excluded: ManifestExcluded[];
   assembled_at: string;
   scope?: { source: ScopeSource; picked: number | null };
+  read_set?: ManifestReadSet;
 };
+
+/** Content-free bucket for the read-set share, the only form it leaves as a dim. */
+export function shareBucket(share: number | null | undefined): "100" | "90-99" | "under-90" | "none" {
+  if (share === null || share === undefined || Number.isNaN(share)) return "none";
+  if (share >= 0.999) return "100";
+  if (share >= 0.9) return "90-99";
+  return "under-90";
+}
 
 /** Work item types as plain words, never internal enum names. */
 export function manifestKind(type: string): ManifestKind {
@@ -71,11 +97,15 @@ export function parseManifest(value: unknown): ContextManifest | null {
     if (!isRecord(entry)) continue;
     const title = str(entry, "title");
     if (!title) continue;
+    const charsIn = entry["chars_in"];
+    const charsTotal = entry["chars_total"];
     items.push({
       id: str(entry, "id") ?? "",
       title,
       kind: (str(entry, "kind") ?? "item") as ManifestKind,
       detail: str(entry, "detail") ?? "",
+      ...(typeof charsIn === "number" ? { chars_in: charsIn } : {}),
+      ...(typeof charsTotal === "number" ? { chars_total: charsTotal } : {}),
     });
   }
   const rawExcluded = Array.isArray(value["excluded"]) ? (value["excluded"] as unknown[]) : [];
@@ -96,6 +126,21 @@ export function parseManifest(value: unknown): ContextManifest | null {
   const rawScope = value["scope"];
   const scopeSource = isRecord(rawScope) ? str(rawScope, "source") : null;
   const picked = isRecord(rawScope) ? rawScope["picked"] : null;
+  const rawReadSet = value["read_set"];
+  const num = (source: Record<string, unknown>, key: string): number | null => {
+    const found = source[key];
+    return typeof found === "number" && Number.isFinite(found) ? found : null;
+  };
+  const readSet: ManifestReadSet | null =
+    isRecord(rawReadSet) && num(rawReadSet, "chars_total") !== null && num(rawReadSet, "chars_in") !== null
+      ? {
+          ids: Array.isArray(rawReadSet["ids"]) ? (rawReadSet["ids"] as unknown[]).filter((id): id is string => typeof id === "string") : [],
+          items_with_text: num(rawReadSet, "items_with_text") ?? 0,
+          chars_total: num(rawReadSet, "chars_total") ?? 0,
+          chars_in: num(rawReadSet, "chars_in") ?? 0,
+          share: num(rawReadSet, "share") ?? 0,
+        }
+      : null;
   const manifest: ContextManifest = {
     engagement,
     brief_included: value["brief_included"] === true,
@@ -106,6 +151,7 @@ export function parseManifest(value: unknown): ContextManifest | null {
     ...(scopeSource && (SCOPE_SOURCES as readonly string[]).includes(scopeSource)
       ? { scope: { source: scopeSource as ScopeSource, picked: typeof picked === "number" && Number.isInteger(picked) && picked >= 0 ? picked : null } }
       : {}),
+    ...(readSet ? { read_set: readSet } : {}),
   };
   if (
     !manifest.scope &&

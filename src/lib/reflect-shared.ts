@@ -37,7 +37,13 @@ ABSOLUTE RULE ON UNREAD FILES: some items are marked CONTENT COULD NOT BE READ. 
 export const SCOPE_MODES = ["whole", "engagements", "tasks", "items"] as const;
 export type ScopeMode = (typeof SCOPE_MODES)[number];
 
-export type ContextScope = { mode: ScopeMode; ids: string[] };
+/**
+ * TOTAL-1: `board` is the workboard the person was on when they chose the
+ * scope (LOOK-2 writes it beside mode and ids). A selection of items or
+ * workstreams keeps its board so the record index can list the rest of that
+ * board as not read. Optional and additive; older sessions carry none.
+ */
+export type ContextScope = { mode: ScopeMode; ids: string[]; board?: string };
 
 export const SCOPE_SOURCES = [
   "board_pick",
@@ -56,14 +62,16 @@ export function parseScopeSource(value: unknown): ScopeSource {
 export const DEFAULT_SCOPE: ContextScope = { mode: "whole", ids: [] };
 
 export function parseScope(value: unknown): ContextScope {
-  const raw = (value ?? {}) as { mode?: unknown; ids?: unknown };
+  const raw = (value ?? {}) as { mode?: unknown; ids?: unknown; board?: unknown };
   const mode = (SCOPE_MODES as readonly string[]).includes(String(raw.mode))
     ? (raw.mode as ScopeMode)
     : "whole";
   const ids = Array.isArray(raw.ids)
     ? raw.ids.filter((id): id is string => typeof id === "string")
     : [];
-  return mode === "whole" ? DEFAULT_SCOPE : { mode, ids };
+  if (mode === "whole") return DEFAULT_SCOPE;
+  const board = typeof raw.board === "string" && raw.board ? raw.board : undefined;
+  return board ? { mode, ids, board } : { mode, ids };
 }
 
 export function scopeLabel(scope: ContextScope): string {
