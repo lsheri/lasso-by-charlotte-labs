@@ -12,13 +12,32 @@ import type { AiErrorClass, ChatMessage, ChatOptions, ToolCall } from "./ai.serv
 export const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 export const ANTHROPIC_VERSION = "2023-06-01";
 
+/** Below this many characters a system block is not worth a cache breakpoint (about 1,000 tokens). */
+export const CACHE_MIN_CHARS = 4000;
+
 /** The forced tool that carries a json_schema response format. */
 export const RESPOND_TOOL = "respond";
 
 type TextBlock = { type: "text"; text: string };
 type ToolUseBlock = { type: "tool_use"; id: string; name: string; input: unknown };
 type ToolResultBlock = { type: "tool_result"; tool_use_id: string; content: string };
-type AnthropicMessage = { role: "user" | "assistant"; content: string | (TextBlock | ToolUseBlock | ToolResultBlock)[] };
+type CacheControl = { cache_control: { type: "ephemeral" } };
+type AnthropicMessage = { role: "user" | "assistant"; content: string | ((TextBlock | ToolUseBlock | ToolResultBlock) & Partial<CacheControl>)[] };
+
+function markLastAssistant(messages: AnthropicMessage[]): void {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+    if (!message || message.role !== "assistant") continue;
+    if (typeof message.content === "string") {
+      if (!message.content) return;
+      message.content = [{ type: "text", text: message.content, cache_control: { type: "ephemeral" } }];
+    } else if (message.content.length > 0) {
+      const last = message.content[message.content.length - 1];
+      if (last) last.cache_control = { type: "ephemeral" };
+    }
+    return;
+  }
+}
 
 type OpenAiTool = { type?: string; function?: { name?: string; description?: string; parameters?: unknown } };
 
@@ -119,7 +138,17 @@ export function toAnthropicBody(
     systemParts.push("Reply with one JSON object and nothing else.");
   }
 
-  if (systemParts.length > 0) body["system"] = systemParts.join("\n\n");
+  if (systemParts.length > 0) {
+    const system = systemParts.join("\n\n");
+    // KEY-2: a long system block (board context, rules) is marked cacheable so the
+    // next turn on the same board pays the cache-read price for it.
+    body["system"] = system.length >= CACHE_MIN_CHARS
+      ? [{ type: "text", text: system, cache_control: { type: "ephemeral" } }]
+      : system;
+  }
+  // KEY-2: the last assistant turn is a second breakpoint, so a growing chat
+  // re-reads its own earlier turns from cache instead of paying for them again.
+  if (out.length >= 3) markLastAssistant(out);
   if (tools) body["tools"] = tools;
   if (toolChoice && tools) body["tool_choice"] = toolChoice;
   if (options.reasoningEffort) {
@@ -137,6 +166,8 @@ export type AnthropicParsed = {
   tokensIn: number;
   tokensOut: number;
   cachedIn: number;
+  /** Tokens written to the cache this call; billed at 1.25x the input price. */
+  cacheWriteIn: number;
 };
 
 type Usage = {
@@ -205,6 +236,7 @@ export function fromAnthropicResponse(payload: unknown, requestedModel: string, 
     tokensIn: tokensInFrom(json.usage),
     tokensOut: json.usage?.output_tokens ?? 0,
     cachedIn: json.usage?.cache_read_input_tokens ?? 0,
+    cacheWriteIn: json.usage?.cache_creation_input_tokens ?? 0,
   };
 }
 
@@ -229,6 +261,7 @@ export async function readAnthropicStream(
   let tokensIn = 0;
   let tokensOut = 0;
   let cachedIn = 0;
+  let cacheWriteIn = 0;
   let interrupted = false;
   const jsonObject = (options.responseFormat as { type?: string } | undefined)?.type === "json_object";
 
@@ -262,6 +295,7 @@ export async function readAnthropicStream(
             if (event.message?.model) servedModel = event.message.model;
             tokensIn = tokensInFrom(event.message?.usage);
             cachedIn = event.message?.usage?.cache_read_input_tokens ?? 0;
+            cacheWriteIn = event.message?.usage?.cache_creation_input_tokens ?? 0;
             break;
           }
           case "content_block_start": {
@@ -286,6 +320,7 @@ export async function readAnthropicStream(
             if (event.usage?.output_tokens !== undefined) tokensOut = event.usage.output_tokens;
             if (event.usage?.input_tokens !== undefined) tokensIn = tokensInFrom(event.usage);
             if (event.usage?.cache_read_input_tokens !== undefined) cachedIn = event.usage.cache_read_input_tokens;
+            if (event.usage?.cache_creation_input_tokens !== undefined) cacheWriteIn = event.usage.cache_creation_input_tokens;
             break;
           }
           default:
@@ -308,6 +343,7 @@ export async function readAnthropicStream(
     tokensIn,
     tokensOut,
     cachedIn,
+    cacheWriteIn,
     interrupted,
   };
 }
