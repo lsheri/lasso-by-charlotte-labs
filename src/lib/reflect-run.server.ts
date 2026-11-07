@@ -177,10 +177,27 @@ export async function runReflectTurn(
 
   // Above the threshold, the record is too large to pour into one prompt, so
   // the model gets an index of all of it and fetches what the question needs.
-  const { scopeItemCount, CATALOGUE_THRESHOLD } = await import("./record-catalogue.server");
+  const catalogueModule = await import("./record-catalogue.server");
+  const { scopeItemCount, CATALOGUE_THRESHOLD } = catalogueModule;
   const inScopeCount = await scopeItemCount(supabase, profile.id, scope);
+  // TOTAL-1: size decides, not count. The read set goes inline as written
+  // whenever its stored text fits the window; only a read set past the
+  // window (or past the item ceiling the loader can see) is catalogued.
+  let sizeOf: typeof catalogueModule.scopeStoredChars | undefined;
+  let windowChars = 3_200_000;
+  try {
+    sizeOf = catalogueModule.scopeStoredChars;
+    windowChars = catalogueModule.CATALOGUE_CHARS ?? windowChars;
+  } catch {
+    sizeOf = undefined;
+  }
+  const storedChars =
+    !briefOnly && inScopeCount <= CATALOGUE_THRESHOLD && typeof sizeOf === "function"
+      ? await sizeOf(supabase, profile.id, scope)
+      : 0;
+  const overWindow = storedChars > windowChars;
   const contextMode: "inline" | "catalogue" =
-    !briefOnly && inScopeCount > CATALOGUE_THRESHOLD ? "catalogue" : "inline";
+    !briefOnly && (inScopeCount > CATALOGUE_THRESHOLD || overWindow) ? "catalogue" : "inline";
 
   if (contextMode === "catalogue") {
     const { runCatalogueAnswer } = await import("./record-answer.server");

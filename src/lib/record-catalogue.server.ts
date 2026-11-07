@@ -19,10 +19,36 @@ import type { ContextScope, ContextSource } from "./reflect-shared";
 type Db = SupabaseClient<Database>;
 
 /**
- * Below this, pouring the whole scope into the prompt is cheaper and better
- * than making the model fetch it. Above it, the record must be searched.
+ * TOTAL-1: the switch is the size of the read set, not a count of items.
+ * Below CATALOGUE_CHARS (the inline budget, about 800k tokens) the whole
+ * read set is poured in as written. Above it, or past the item ceiling the
+ * scope loader can see, the record must be searched and the person is told.
  */
-export const CATALOGUE_THRESHOLD = 25;
+export const CATALOGUE_THRESHOLD = 300;
+export const CATALOGUE_CHARS = 3_200_000;
+/** Turns with no cached size are costed at the measured board average. */
+const CHARS_PER_TURN_ESTIMATE = 650;
+
+/**
+ * The stored characters a scope would pour in, from cached sizes and turn
+ * counts only: no file is opened and no turn text is read to decide.
+ */
+export async function scopeStoredChars(supabase: Db, ownerId: string, scope: ContextScope): Promise<number> {
+  const { items } = await loadScopeData(supabase, ownerId, scope);
+  const { storedCharsHint } = await import("./reflect-context.server");
+  let total = 0;
+  const unhinted: string[] = [];
+  for (const item of items) {
+    const hint = storedCharsHint(item);
+    if (hint > 0) total += hint;
+    else if (item.type === "ai_thread") unhinted.push(item.id);
+  }
+  if (unhinted.length > 0) {
+    const { data } = await supabase.from("turns").select("work_item_id").in("work_item_id", unhinted);
+    total += (data?.length ?? 0) * CHARS_PER_TURN_ESTIMATE;
+  }
+  return total;
+}
 
 /** Extracts prefetched before the first model call, so easy questions need no tools. */
 const PREFETCH_RECENT = 5;

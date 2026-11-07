@@ -87,3 +87,11 @@ describe("TOTAL-1 read-set contract", () => {
     expect(storedCharsHint({ meta: null })).toBe(0);
   });
 });
+
+describe("TOTAL-1 size switch", () => {
+  it("the catalogue trigger is the window, with an item ceiling the loader can see", async () => {
+    const mod = await import("@/lib/record-catalogue.server");
+    expect(mod.CATALOGUE_CHARS).toBe(3_200_000);
+    expect(mod.CATALOGUE_THRESHOLD).toBe(300);
+  });
+});
