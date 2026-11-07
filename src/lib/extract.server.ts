@@ -12,6 +12,15 @@ type Db = SupabaseClient<Database>;
 /** Cheap tier on purpose: the sidecar runs on every capture. */
 export const EXTRACT_MODEL = MODELS.fast;
 export const EXTRACT_SCHEMA_VERSION = 1;
+/**
+ * KEY-3: output ceiling for the card. 700 was sized for gpt-4.1-mini; Haiku
+ * writes longer and hit it on 3 of 9 preview calls (6 Nov), cutting the JSON
+ * mid-object so the card was lost. The prompt still asks for under 1,200
+ * characters (about 350 tokens) and clamp() trims every field, so this is
+ * headroom, not a bigger card. Haiku output at $0.50/MTok: 1,500 tokens is
+ * under $0.001 per extract at worst.
+ */
+export const EXTRACT_MAX_TOKENS = 1500;
 const MAX_SOURCE_CHARS = 60_000;
 /** A capture request stops opening files after this, and says so. */
 const BATCH_BUDGET_MS = 60_000;
@@ -43,11 +52,11 @@ async function sha256Hex(value: string): Promise<string> {
 }
 
 const SYSTEM = `You compress one piece of somebody's work into a compact index card another model will read later. Be concrete and factual. Never invent. Never evaluate or grade the person. Return strict JSON with exactly these keys: summary, decisions, entities, handoff.
-- summary: 2 to 4 sentences on what this is and what happened.
-- decisions: what was decided or concluded, as short bullet lines separated by newlines. null if nothing was decided.
-- entities: key names, projects, clients, tools and topics, comma separated.
-- handoff: what this fed into or what came next. null if not inferable.
-Keep the whole JSON under 1200 characters.`;
+- summary: 2 to 4 sentences on what this is and what happened. At most 600 characters.
+- decisions: what was decided or concluded, as at most 5 short bullet lines separated by newlines. At most 450 characters. null if nothing was decided.
+- entities: key names, projects, clients, tools and topics, comma separated. At most 250 characters.
+- handoff: what this fed into or what came next. At most 250 characters. null if not inferable.
+Keep the whole JSON under 1200 characters. Stop after the closing brace.`;
 
 type ExtractFields = {
   summary: string;
@@ -102,7 +111,7 @@ async function generate(
       ],
       {
         tier: "fast",
-        maxTokens: 700,
+        maxTokens: EXTRACT_MAX_TOKENS,
         responseFormat: { type: "json_object" },
         meta,
       },

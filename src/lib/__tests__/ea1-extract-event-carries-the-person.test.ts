@@ -63,7 +63,7 @@ vi.mock("@/lib/health.server", () => ({ logHealth: mocks.logHealth }));
 vi.mock("@/lib/ai-usage", () => ({ usageDims: vi.fn(() => ({})) }));
 vi.mock("@/lib/telemetry.server", () => ({ recordEvent: mocks.recordEvent }));
 
-import { ensureExtract } from "@/lib/extract.server";
+import { EXTRACT_MAX_TOKENS, EXTRACT_SYSTEM_PROMPT, ensureExtract, parseExtractJson } from "@/lib/extract.server";
 
 const COMPLETION = {
   text: JSON.stringify({ summary: "A pricing memo." }),
@@ -115,5 +115,24 @@ describe("ea1: extract.generated carries the person (EXTRACT-ATTR)", () => {
     const ok = await ensureExtract("wi-1");
     expect(ok).toBe(true);
     expect(mocks.recordEvent).not.toHaveBeenCalled();
+  });
+});
+
+describe("key3: the extract card has room to finish", () => {
+  it("asks for 1,500 output tokens, not the 700 that cut Haiku's JSON mid-object", async () => {
+    await ensureExtract("wi-1");
+    const options = (mocks.chat.mock.calls[0] as unknown[])[1] as Record<string, unknown>;
+    expect(options["maxTokens"]).toBe(EXTRACT_MAX_TOKENS);
+    expect(EXTRACT_MAX_TOKENS).toBeGreaterThanOrEqual(1500);
+  });
+
+  it("gives every field a character budget and keeps the whole-card limit", () => {
+    expect(EXTRACT_SYSTEM_PROMPT).toContain("At most 600 characters");
+    expect(EXTRACT_SYSTEM_PROMPT).toContain("At most 450 characters");
+    expect(EXTRACT_SYSTEM_PROMPT).toContain("under 1200 characters");
+  });
+
+  it("still rejects a card cut off mid-object, which is what the cap used to cause", () => {
+    expect(parseExtractJson('{"summary": "A long pricing memo that ran out of ro')).toBeNull();
   });
 });
