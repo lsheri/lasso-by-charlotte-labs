@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { providerFor } from "../ai.server";
+import { cacheWriteUsd, providerFor } from "../ai.server";
 import {
+  CACHE_MIN_CHARS,
   RESPOND_TOOL,
   anthropicProviderCode,
   classifyAnthropic,
@@ -84,7 +85,8 @@ describe("KEY-1 request body", () => {
       role: "assistant",
       content: [
         { type: "tool_use", id: "toolu_1", name: "record_links", input: { a: 1 } },
-        { type: "tool_use", id: "toolu_2", name: "record_links", input: { a: 2 } },
+        // KEY-2: the last assistant block carries the cache breakpoint once the chat has three turns.
+        { type: "tool_use", id: "toolu_2", name: "record_links", input: { a: 2 }, cache_control: { type: "ephemeral" } },
       ],
     });
     expect(messages[2]).toEqual({
@@ -230,3 +232,48 @@ describe("KEY-1 errors", () => {
     expect(anthropicProviderCode("{}")).toBeNull();
   });
 });
+
+describe("KEY-2 prompt caching", () => {
+  it("marks a long system block cacheable and leaves a short one as a string", () => {
+    const long = "x".repeat(CACHE_MIN_CHARS);
+    const cached = toAnthropicBody([{ role: "system", content: long }, { role: "user", content: "hi" }], "m", {}, false);
+    expect(cached["system"]).toEqual([{ type: "text", text: long, cache_control: { type: "ephemeral" } }]);
+    const plain = toAnthropicBody([{ role: "system", content: "short" }, { role: "user", content: "hi" }], "m", {}, false);
+    expect(plain["system"]).toBe("short");
+  });
+
+  it("marks the last assistant turn once the chat has three or more turns", () => {
+    const body = toAnthropicBody(
+      [
+        { role: "user", content: "one" },
+        { role: "assistant", content: "two" },
+        { role: "user", content: "three" },
+        { role: "assistant", content: "four" },
+        { role: "user", content: "five" },
+      ],
+      "m",
+      {},
+      false,
+    );
+    const messages = body["messages"] as { role: string; content: unknown }[];
+    expect(messages[1]?.content).toBe("two");
+    expect(messages[3]?.content).toEqual([{ type: "text", text: "four", cache_control: { type: "ephemeral" } }]);
+    expect(messages[4]?.content).toBe("five");
+    const short = toAnthropicBody([{ role: "user", content: "one" }, { role: "assistant", content: "two" }], "m", {}, false);
+    expect((short["messages"] as { content: unknown }[])[1]?.content).toBe("two");
+  });
+
+  it("reads cache writes from usage and prices them at a quarter of input on top", () => {
+    const parsed = fromAnthropicResponse(
+      { stop_reason: "end_turn", content: [{ type: "text", text: "ok" }], usage: { input_tokens: 10, cache_creation_input_tokens: 8000, cache_read_input_tokens: 0, output_tokens: 1 } },
+      "claude-sonnet-5-5",
+      {},
+    );
+    expect(parsed.cacheWriteIn).toBe(8000);
+    expect(parsed.tokensIn).toBe(8010);
+    expect(cacheWriteUsd("claude-sonnet-5-5", 8000)).toBeCloseTo((8000 / 1_000_000) * 2 * 0.25, 10);
+    expect(cacheWriteUsd("claude-sonnet-5-5", 0)).toBe(0);
+    expect(cacheWriteUsd("nope", 8000)).toBe(0);
+  });
+});
+
