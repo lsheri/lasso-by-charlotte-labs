@@ -42,26 +42,53 @@ function demoteQuote(answer: string, span: string): string {
   return out;
 }
 
+export type QuoteGuardOptions = {
+  /**
+   * TOTAL-2: when the model returned citations, every cited span is a
+   * verified pointer, so the corrective model turn is not run. Spans that
+   * still fail the check are demoted in place, which costs nothing. The
+   * repair turn stays for providers without citations (the OpenAI hop).
+   */
+  citedTexts?: string[];
+  repair?: boolean;
+};
+
 export async function guardQuotes(
   answer: string,
   context: string,
   cutOff: boolean,
   conversation: ChatMessage[],
   meta?: AiMeta,
+  options: QuoteGuardOptions = {},
 ): Promise<QuoteGuardResult> {
-  const failed = unmatchedQuotes(answer, context, cutOff);
-  if (failed.length === 0) {
+  const cited = options.citedTexts ?? [];
+  const verifiable = cited.length > 0 ? `${context}\n\n${cited.join("\n\n")}` : context;
+  const repairAllowed = options.repair ?? cited.length === 0;
+  const failed = unmatchedQuotes(answer, verifiable, cutOff);
+  if (failed.length === 0 || !repairAllowed) {
+    let demoted = answer;
+    for (const span of failed) demoted = demoteQuote(demoted, span);
+    if (failed.length > 0) {
+      void logHealth({
+        kind: "quote_refusal",
+        surface: meta?.surface ?? "quote_repair",
+        orgId: meta?.orgId,
+        model: null,
+        detail: "quote_unverifiable_demoted_without_repair",
+        meta: { spans_withheld: failed.length },
+      });
+    }
     return {
-      answer,
-      unmatchedBefore: 0,
+      answer: demoted,
+      unmatchedBefore: failed.length,
       repairs: 0,
-      suppressed: 0,
-      failedSpans: [],
+      suppressed: failed.length,
+      failedSpans: failed,
       tokensIn: 0,
       tokensOut: 0,
       cachedIn: 0,
       costUsd: 0,
-      claims: longQuotes(answer).length,
+      claims: longQuotes(demoted).length,
     };
   }
 
@@ -103,7 +130,7 @@ export async function guardQuotes(
   }
 
   // Refuse: whatever still cannot be verified is not rendered as a quote.
-  const stillFailing = unmatchedQuotes(finalAnswer, context, false);
+  const stillFailing = unmatchedQuotes(finalAnswer, verifiable, false);
   for (const span of stillFailing) finalAnswer = demoteQuote(finalAnswer, span);
   if (stillFailing.length > 0) {
     console.error("[quote-guard] suppressed unverifiable quotes", {

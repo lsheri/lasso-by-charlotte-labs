@@ -142,7 +142,7 @@ describe('SECD-3b section picker door', () => {
     await sendQuestion();
     await waitFor(() => expect(state.requests).toHaveLength(1));
     expect(state.requests[0]).toMatchObject({ scope_kind: 'section', pointed_at: [] });
-    expect(state.writes.filter((v: any) => v.context_scope).at(-1)).toEqual({ context_scope: { mode: 'items', ids: ['a', 'b'] } });
+    expect(state.writes.filter((v: any) => v.context_scope).at(-1)).toEqual({ context_scope: { mode: 'items', ids: ['a', 'b'], board: 'e' } });
   });
 
   it('picking an empty section stops and says so', async () => {
