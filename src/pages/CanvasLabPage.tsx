@@ -1414,7 +1414,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
    * Viewport, rail, selection and unsent composer text are left alone.
    */
   /** One reload path, shared by Load latest and Discard. */
-  async function reloadDurableBoard(): Promise<boolean> {
+  async function reloadDurableBoard(preserveUndo = false): Promise<boolean> {
     const fresh = await lab.refresh();
     const base = virtualBaseRef.current;
     if (!fresh?.id || !base) {
@@ -1424,11 +1424,13 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     const merged = applyDurableBoard(base, fresh);
     const localOnly = (nodesRef.current ?? []).filter((entry) => !entry.durableId && (entry.kind === "chat" || (entry.local && entry.kind !== "judgment")));
     setFrames(merged.frames);
-    setNodes([...claimMyWork(merged.nodes, myProfileIds, workOwners(fresh)), ...localOnly]);
+    const refreshedNodes = [...claimMyWork(merged.nodes, myProfileIds, workOwners(fresh)), ...localOnly];
+    if (preserveUndo) nodesRef.current = refreshedNodes;
+    setNodes(refreshedNodes);
     setLinks(merged.links);
     setHiddenIds(merged.hiddenIds);
     setSelectedLinkId(null);
-    undoRef.current = emptyUndoStacks();
+    if (!preserveUndo) undoRef.current = emptyUndoStacks();
     setUndoToast(null);
     lab.clearSaveState();
     return true;
@@ -2873,7 +2875,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
               if (!from) continue;
               await lab.persist({ type: "link_create", fromNodeId: from.id, fromAnchor: line.fromAnchor, toNodeId: saved.id, toAnchor: line.toAnchor, relation: "cited" });
             }
-            await reloadDurableBoard();
+            await reloadDurableBoard(true);
           } catch {
             // The card stays; the lines and cites arrive on the next board read.
           }
@@ -2907,7 +2909,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       }
       // Re-read the saved board and apply it, so the kept card is on the stage
       // straight away rather than only after the page is opened again.
-      await reloadDurableBoard();
+      await reloadDurableBoard(true);
 
       const savedNode = nodesRef.current.find((node) => node.durableId === nodeId);
       if (savedNode) record({ action: "add_node", node: savedNode });
@@ -3426,8 +3428,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     nodesRef.current = [...nodesRef.current, node];
     setNodes((current) => [...(current ?? []), node]);
     setKeyboardId(id);
-    const saved = await ensureNodeDurable(id);
-    if (!saved) {
+    if (!(await ensureNodeDurable(id))) {
       nodesRef.current = nodesRef.current.filter((entry) => entry.id !== id);
       setNodes((current) => current?.filter((entry) => entry.id !== id) ?? current);
       setAnnouncement("That text block could not be saved.");
@@ -3448,7 +3449,8 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     nodesRef.current = [...nodesRef.current, node];
     setNodes((current) => [...(current ?? []), node]);
     if (text === undefined) setKeyboardId(id);
-    if (!(await ensureNodeDurable(id))) {
+    const saved = await ensureNodeDurable(id);
+    if (!saved) {
       nodesRef.current = nodesRef.current.filter((entry) => entry.id !== id);
       setNodes((current) => current?.filter((entry) => entry.id !== id) ?? current);
       setAnnouncement("That sticky could not be saved.");
