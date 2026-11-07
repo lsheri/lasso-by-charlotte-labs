@@ -7,7 +7,7 @@ import { BoardStageMenu } from "@/components/canvas-lab/BoardStageMenu";
 afterEach(cleanup);
 
 function renderMenu(at = { x: 40, y: 40 }, hostWidth = 1000) {
-  const props = { at, hidden: [{ id: "n1", title: "Pricing memo" }], canAddContextArea: true, onClose: vi.fn(), onAddWork: vi.fn(), onRestore: vi.fn(), onAddContextArea: vi.fn() };
+  const props = { at, hidden: [{ id: "n1", title: "Pricing memo" }], canAddContextArea: true, onClose: vi.fn(), onPaste: vi.fn(), onAddWork: vi.fn(), onRestore: vi.fn(), onAddContextArea: vi.fn() };
   const host = document.createElement("div");
   host.className = "canvas-lab-surface";
   Object.defineProperty(host, "clientWidth", { configurable: true, value: hostWidth });
@@ -18,6 +18,14 @@ function renderMenu(at = { x: 40, y: 40 }, hostWidth = 1000) {
 }
 
 describe("BoardStageMenu", () => {
+  it("Paste here is first and calls paste and close", () => {
+    const props = renderMenu();
+    const first = screen.getAllByRole("menuitem")[0];
+    expect(first.textContent).toBe("Paste here");
+    fireEvent.click(first);
+    expect(props.onPaste).toHaveBeenCalledTimes(1);
+    expect(props.onClose).toHaveBeenCalledTimes(1);
+  });
   it("renders the three items with the hidden group and house classes", () => {
     renderMenu();
     expect(screen.getByRole("menu").className).toContain("canvas-lab-menu");
@@ -29,9 +37,9 @@ describe("BoardStageMenu", () => {
 
   it("focuses the first item and ArrowDown moves focus", () => {
     renderMenu();
-    expect(document.activeElement).toBe(screen.getByRole("menuitem", { name: "Bring in work here" }));
+    expect(document.activeElement).toBe(screen.getByRole("menuitem", { name: "Paste here" }));
     fireEvent.keyDown(screen.getByRole("menu"), { key: "ArrowDown" });
-    expect(document.activeElement).toBe(screen.getByRole("menuitem", { name: "Pricing memo" }));
+    expect(document.activeElement).toBe(screen.getByRole("menuitem", { name: "Bring in work here" }));
     fireEvent.keyDown(screen.getByRole("menu"), { key: "End" });
     expect(document.activeElement).toBe(screen.getByRole("menuitem", { name: "Add a context area" }));
   });
