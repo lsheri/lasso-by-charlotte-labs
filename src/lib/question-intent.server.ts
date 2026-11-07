@@ -50,7 +50,9 @@ export async function classifyQuestionIntent(
         tier: "fast",
         timeoutMs: 5000,
         // KEY-2: three short fields; a cap stops a chatty model paying for prose.
-        maxTokens: 120,
+        // KEY-3: 120 -> 300. Haiku used 185 output tokens on average and 249 at
+        // most on this step in preview (6 Nov), so 120 would cut most calls.
+        maxTokens: 300,
         responseFormat: { type: "json_object" },
         meta: { surface: "question_intent", orgId: input.orgId ?? null, profileId: input.profileId ?? null },
       },
