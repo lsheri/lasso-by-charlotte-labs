@@ -27,7 +27,7 @@ describe("PASTE-2 image sizing", () => {
     vi.stubGlobal("URL", { createObjectURL: vi.fn(() => "blob:test"), revokeObjectURL: vi.fn() });
     const draw = vi.fn();
     vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue({ drawImage: draw } as unknown as CanvasRenderingContext2D);
-    const encode = vi.spyOn(HTMLCanvasElement.prototype, "toBlob").mockImplementation((callback, mime) => callback(new Blob(["scaled"], { type: mime })));
+    const encode = vi.spyOn(HTMLCanvasElement.prototype, "toBlob").mockImplementation((callback, mime) => callback(new Blob(["scaled"], { type: mime ?? "image/png" })));
     const file = new File(["original"], "original-name.webp", { type });
     expect(await readImageSize(file)).toEqual({ width: 2048, height: 1536 });
     await uploadBoardImage(file);

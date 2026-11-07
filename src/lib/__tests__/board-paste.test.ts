@@ -8,6 +8,7 @@ const input = (p: Partial<PasteInput>): PasteInput => ({ files: [], text: "", ht
 describe("PASTE-1 readPaste", () => {
   it("reads a clipboard PNG and text, then chooses files", async () => {
     const item = {
+      presentationStyle: "unspecified",
       types: ["image/png", "text/plain", "text/html"],
       getType: async (type: string) => type === "image/png" ? new Blob(["png"], { type }) : ({ text: async () => type === "text/plain" ? "Memo" : "<b>Memo</b>" } as Blob),
     } as ClipboardItem;

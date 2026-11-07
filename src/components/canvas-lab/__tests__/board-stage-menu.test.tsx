@@ -21,6 +21,7 @@ describe("BoardStageMenu", () => {
   it("Paste here is first and calls paste and close", () => {
     const props = renderMenu();
     const first = screen.getAllByRole("menuitem")[0];
+    if (!first) throw new Error("Missing first menu item");
     expect(first.textContent).toBe("Paste here");
     fireEvent.click(first);
     expect(props.onPaste).toHaveBeenCalledTimes(1);
