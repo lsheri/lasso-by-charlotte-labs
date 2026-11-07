@@ -373,25 +373,31 @@ export async function narrowToPointed(
   ownerId: string,
   sessionScope: ContextScope,
   pointedIds: string[],
-): Promise<{ scope: ContextScope; excluded: ManifestExcluded[] }> {
+): Promise<{ scope: ContextScope; excluded: ManifestExcluded[]; offBoard: string[] }> {
   const { items } = await loadScopeData(supabase, ownerId, sessionScope);
   const inScope = new Map(items.map((i) => [i.id, i.title]));
   const wanted = new Set(pointedIds);
   const allowed = pointedIds.filter((id) => inScope.has(id));
-  if (allowed.length === 0) return { scope: sessionScope, excluded: [] };
 
+  // FIX-2: a pointed item outside the read set is named, never read. The
+  // lookup goes through the person's own login, so an item they cannot see
+  // returns no row and stays silent: Lasso does not confirm it exists.
   const excluded: ManifestExcluded[] = [];
-  for (const [id, title] of inScope) {
-    if (!wanted.has(id)) excluded.push({ title, reason: "not pointed at for this question" });
-  }
+  const offBoard: string[] = [];
   const strays = pointedIds.filter((id) => !inScope.has(id));
   if (strays.length > 0) {
     const { data } = await supabase.from("work_items").select("id, title").in("id", strays);
     for (const row of data ?? []) {
       excluded.push({ title: row.title, reason: "not part of this workboard" });
+      offBoard.push(row.title);
     }
   }
-  return { scope: { mode: "items", ids: allowed }, excluded };
+  if (allowed.length === 0) return { scope: sessionScope, excluded, offBoard };
+
+  for (const [id, title] of inScope) {
+    if (!wanted.has(id)) excluded.push({ title, reason: "not pointed at for this question" });
+  }
+  return { scope: { mode: "items", ids: allowed }, excluded, offBoard };
 }
 
 /**

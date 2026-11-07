@@ -107,12 +107,21 @@ export async function runReflectTurn(
   // this message only. The brief stays ambient.
   const pointed = (data.pointed_at ?? []).filter(Boolean);
   let pointedExcluded: { title: string; reason: string }[] = [];
+  let pointedOffBoard: string[] = [];
   if (pointed.length > 0) {
     const { narrowToPointed } = await import("./reflect-context.server");
     const narrowed = await narrowToPointed(supabase, profile.id, sessionScope, pointed);
     scope = narrowed.scope;
     pointedExcluded = narrowed.excluded;
+    pointedOffBoard = narrowed.offBoard ?? [];
   }
+  // FIX-2: the person pointed at their own work outside this read set. The
+  // model is told it was not read, so the answer says so instead of quietly
+  // answering about something else.
+  const offBoardNote =
+    pointedOffBoard.length > 0
+      ? `THE PERSON POINTED AT WORK YOU HAVE NOT READ: ${pointedOffBoard.map((t) => `"${t}"`).join(", ")}. It sits outside this workboard or selection, so it is not in front of you. Say so in your first sentence, name it, and suggest opening it from its own board. Do not guess at its contents. Then answer only from what you did read, if anything there is relevant.`
+      : null;
   const isPointed = pointedExcluded.length > 0 || (pointed.length > 0 && scope !== sessionScope);
   const effectiveScopeSource = isPointed ? "pointed" : scopeSource;
   const picked = effectiveScopeSource === "board_pick" ? sessionScope.ids.length : effectiveScopeSource === "board_pick_brief_only" ? 0 : null;
@@ -152,9 +161,10 @@ export async function runReflectTurn(
   // the cached record, so identical content is one cache entry. The catalogue
   // path has no cached record and keeps both as system notes, as before.
   const prompts = askPrompts({ presetPrompt: preset?.systemPrompt ?? null, surface, whereLine: null });
-  const questionNote = [whereLine, earlierReads].filter(Boolean).join("\n\n") || null;
+  const questionNote = [whereLine, offBoardNote, earlierReads].filter(Boolean).join("\n\n") || null;
   const cataloguePrompts = [
     ...askPrompts({ presetPrompt: preset?.systemPrompt ?? null, surface, whereLine }),
+    ...(offBoardNote ? [{ role: "system" as const, content: offBoardNote }] : []),
     ...(earlierReads ? [{ role: "system" as const, content: earlierReads }] : []),
   ];
 
