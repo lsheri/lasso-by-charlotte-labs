@@ -6,7 +6,7 @@
  * module only decides what is on the stack and in what order.
  */
 
-import type { LabLink, LabNode, LabRect } from "@/components/canvas-lab/canvas-lab-model";
+import type { LabFrame, LabLink, LabNode, LabRect } from "@/components/canvas-lab/canvas-lab-model";
 import type { Database } from "@/integrations/supabase/types";
 
 export type LedgerRemoveEntry = { documentId: string; row: Database["public"]["Tables"]["decisions"]["Row"]; ids_in_order: string[] };
@@ -17,6 +17,8 @@ export type UndoAction =
   | "hide"
   | "restore"
   | "remove_note"
+  | "add_node"
+  | "add_frame"
   | "relationship_add"
   | "relationship_remove"
   | "link_relation"
@@ -32,6 +34,8 @@ export type UndoEntry =
   | { id: string; action: "hide"; nodeId: string; coalesceKey?: string; at?: number }
   | { id: string; action: "restore"; nodeId: string; before: { x: number; y: number }; after: { x: number; y: number }; coalesceKey?: string; at?: number }
   | { id: string; action: "remove_note"; node: LabNode; links: LabLink[]; pin?: { key: string; sessionId: string }; coalesceKey?: string; at?: number }
+  | { id: string; action: "add_node"; node: LabNode; coalesceKey?: string; at?: number }
+  | { id: string; action: "add_frame"; frame: LabFrame; coalesceKey?: string; at?: number }
   | { id: string; action: "relationship_add"; link: LabLink; coalesceKey?: string; at?: number }
   | { id: string; action: "relationship_remove"; link: LabLink; coalesceKey?: string; at?: number }
   | { id: string; action: "link_relation"; linkId: string; before: string; after: string; coalesceKey?: string; at?: number }
@@ -102,6 +106,8 @@ export function undoActionWord(action: UndoAction): string {
   if (action === "hide") return "removal from the board";
   if (action === "restore") return "restore";
   if (action === "remove_note") return "note removal";
+  if (action === "add_node") return "addition to the board";
+  if (action === "add_frame") return "context area addition";
   if (action === "ledger_remove_line") return "decision removal";
   if (action === "relationship_add") return "relationship";
   if (action === "relationship_remove") return "relationship removal";
