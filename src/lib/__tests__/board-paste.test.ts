@@ -81,6 +81,9 @@ describe("PASTE-1 pasteBelongsToBoard", () => {
 
 describe("PASTE-2 shared paste path", () => {
   const at = { x: 12, y: 34 };
+  function clipboard(value: Partial<Clipboard>) {
+    Object.defineProperty(navigator, "clipboard", { configurable: true, get: () => value });
+  }
   function harness() {
     document.body.focus();
     const addFiles = vi.fn(async () => ({ added: 1, failed: 0 }));
@@ -94,7 +97,7 @@ describe("PASTE-2 shared paste path", () => {
 
   it("menu and keys both add text at the requested point with their own via", async () => {
     const read = vi.fn(async () => [{ types: ["text/plain"], presentationStyle: "unspecified", getType: async () => ({ text: async () => "Memo" } as Blob) } as ClipboardItem]);
-    vi.spyOn(navigator, "clipboard", "get").mockReturnValue({ read } as unknown as Clipboard);
+    clipboard({ read });
     const hook = harness();
     await act(() => hook.result.current.pasteFromClipboard(at));
     expect(hook.addText).toHaveBeenLastCalledWith("Memo", at);
@@ -108,7 +111,7 @@ describe("PASTE-2 shared paste path", () => {
   });
 
   it("reports unsupported menu access without reading or adding content", async () => {
-    vi.spyOn(navigator, "clipboard", "get").mockReturnValue({} as Clipboard);
+    clipboard({});
     const hook = harness();
     await act(() => hook.result.current.pasteFromClipboard(at));
     expect(announce).toHaveBeenCalledWith("Your browser cannot paste from a menu. Press Cmd+V on the board instead.");
@@ -117,7 +120,7 @@ describe("PASTE-2 shared paste path", () => {
   });
 
   it("reports denied clipboard access without adding content", async () => {
-    vi.spyOn(navigator, "clipboard", "get").mockReturnValue({ read: async () => { throw new Error("denied"); } } as unknown as Clipboard);
+    clipboard({ read: async () => { throw new Error("denied"); } });
     const hook = harness();
     await act(() => hook.result.current.pasteFromClipboard(at));
     expect(announce).toHaveBeenCalledWith("Paste needs clipboard access. Allow it in the address bar, or press Cmd+V.");
