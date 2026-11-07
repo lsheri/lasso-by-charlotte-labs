@@ -62,3 +62,4 @@ Tour mirrors board chrome; preserve live behavior.
 
 - Workstream frames always render on the live board; drop prompts have no view-mode parameter, so hiding outlines cannot suppress reassignment.
 - Deck strips render as local overlays outside LabCard's measured paper; only the live board opts in, so saved geometry and frozen public surfaces stay unchanged.
+- Ask read details use loaded scope items and each assistant message's stored manifest; only pending answers use live coverage, so reopened chats retain their own read evidence without extra requests.

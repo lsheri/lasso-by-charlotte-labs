@@ -185,6 +185,20 @@ export const ASK_SCOPE_ALL_LABEL = "All work in this workboard";
 export const ASK_SCOPE_ONE_LABEL = "1 piece of work selected";
 export const askScopeWorkstreamLabel = (name: string) => `Workstream: ${name}`;
 
+/** Loaded scope only: no request or persisted count is needed for this label. */
+export function AskReadChip({ ask }: { ask: AskLasso }) {
+  const items = ask.pending && ask.pointedNow?.length
+    ? ask.pointedNow
+    : ask.draftPointed?.length ? ask.draftPointed : ask.selectedItems ?? ask.mapped ?? [];
+  if (items.length === 0) return null;
+  const chars = items.reduce((total, item) => {
+    const meta = item.meta;
+    const value = meta && typeof meta === "object" && !Array.isArray(meta) && "text_chars" in meta ? meta.text_chars : undefined;
+    return total + (typeof value === "number" && Number.isFinite(value) && value > 0 ? value : 0);
+  }, 0);
+  return <p className="mt-1 font-mono text-xs text-muted-foreground" data-testid="ask-read-chip">{items.length} items{chars > 0 ? ` · about ${Math.round(chars / 1000)}k characters` : ""}</p>;
+}
+
 export function AskScopeChip({
   ask,
   block,
@@ -382,6 +396,13 @@ export function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions
 
         {messages.map((message, index) => {
           const role = message.role === "user" ? "user" : "assistant";
+          const manifest = role === "assistant" ? parseManifest(message.context_manifest) : null;
+          const coverage = manifest ? {
+            fullCount: manifest.items.filter((item) => (item.chars_in ?? 0) > 0 || item.detail.startsWith("turns") || item.detail.endsWith("words")).length,
+            noTextCount: manifest.items.filter((item) => item.chars_total === 0 && item.detail.includes("no stored text")).length,
+            summaryCount: manifest.items.filter((item) => item.detail.includes("summary only")).length,
+            share: manifest.read_set?.share ?? null,
+          } : null;
           const previous = messages[index - 1];
           const followsSameSpeaker =
             previous !== undefined && (previous.role === "user" ? "user" : "assistant") === role;
@@ -424,9 +445,10 @@ export function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions
                     />
                     <div className="nb-binder-inset">
                       <ContextAudit
-                        manifest={parseManifest(message.context_manifest)}
+                        manifest={manifest}
                         reads={ask.sourcesByMessage?.[Number(message.id)] ?? []}
                       />
+                      {coverage && ((coverage.share ?? 1) < 0.999 || coverage.noTextCount > 0 || coverage.summaryCount > 0) ? <CoverageNote {...coverage} /> : null}
                       <div className="mt-1 flex items-center gap-1" data-testid="answer-actions">
                         {keep && !ask.pending ? (
                           <AnswerKeepControl
@@ -503,7 +525,7 @@ export function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions
           </div>
         ) : null}
 
-        {ask.coverage && (ask.coverage.truncated || (ask.coverage.share ?? 1) < 0.999 || (ask.coverage.noTextCount ?? 0) > 0) ? (
+        {ask.pending && ask.coverage && (ask.coverage.truncated || (ask.coverage.share ?? 1) < 0.999 || (ask.coverage.noTextCount ?? 0) > 0) ? (
           <div className="nb-binder-inset">
             <CoverageNote {...ask.coverage} />
           </div>
@@ -620,7 +642,7 @@ export function AskComposer({
   );
   return (
     <footer className="shrink-0 border-t border-border bg-card">
-      {mobile ? <AskScopeChip ask={ask} block workstream={slash.chosen} /> : null}
+      {mobile ? <><AskScopeChip ask={ask} block workstream={slash.chosen} /><div className="px-4"><AskReadChip ask={ask} /></div></> : null}
       <div className="px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3">
         {slash.open ? (
           <div
@@ -674,6 +696,7 @@ export function AskComposer({
         {!mobile ? (
           <div className="mb-2">
             <AskScopeChip ask={ask} workstream={slash.chosen} />
+            <AskReadChip ask={ask} />
           </div>
         ) : null}
         <div className="flex items-end gap-2">
@@ -763,6 +786,7 @@ export function AskSurface({
   sections,
   onPickSection,
   sendAside,
+  beforeComposer,
 }: {
   ask: AskLasso;
   tab: AskTab;
@@ -779,6 +803,7 @@ export function AskSurface({
   sections?: AskSectionChoice[] | undefined;
   onPickSection?: ((frameId: string) => void) | undefined;
   sendAside?: React.ReactNode;
+  beforeComposer?: React.ReactNode;
 }) {
   return (
     <>
@@ -825,6 +850,7 @@ export function AskSurface({
       {ask.error ? <p className="px-4 pb-2 text-sm text-destructive">{ask.error}</p> : null}
 
       <div className={inline ? "sticky bottom-0 z-10" : undefined}>
+        {tab === "messages" ? beforeComposer : null}
         {tab === "messages" ? (
           <AskComposer
             ask={ask}
