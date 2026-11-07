@@ -1,3 +1,4 @@
+import { resolveEnvironment as resolveHostEnvironment } from "./environment.server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
@@ -320,14 +321,19 @@ export async function pseudonyms(
   return { tenant, actor, subject };
 }
 
-/** QA traffic must never pollute the panel. */
-function resolveEnvironment(email: string | null, orgName: string | null): string {
+/**
+ * QA traffic must never pollute the panel. Otherwise the environment comes
+ * from the request host, the same way the v1 path reads it (AUDIT-1b, 7 Nov
+ * 2026). Before this the function defaulted to "production", so every v2 row
+ * from a preview build, and its PostHog mirror, said production.
+ */
+export function resolveV2Environment(email: string | null, orgName: string | null): string {
   const configured = process.env["LASSO_ENVIRONMENT"];
   const domain = (email ?? "").split("@")[1]?.toLowerCase() ?? "";
   if (domain === "qaprobe.test") return "qa";
   if ((orgName ?? "").startsWith("QA Probe")) return "qa";
   if (configured === "staging" || configured === "test" || configured === "qa") return configured;
-  return "production";
+  return resolveHostEnvironment();
 }
 
 /** Outbound representation: every exact number is bucketed on the way out. */
@@ -404,7 +410,7 @@ export async function recordEventV2(
       .select("name, data_use_tier, settings")
       .eq("id", profile.org_id)
       .maybeSingle();
-    const environment = resolveEnvironment(input.email ?? null, org?.name ?? null);
+    const environment = resolveV2Environment(input.email ?? null, org?.name ?? null);
 
     // Stamped at write time, never joined at read: a workspace can change type.
     // Affiliation does not exist yet, so it is false here for now.
