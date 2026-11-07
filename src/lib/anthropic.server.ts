@@ -19,10 +19,11 @@ export const CACHE_MIN_CHARS = 4000;
 export const RESPOND_TOOL = "respond";
 
 type TextBlock = { type: "text"; text: string };
+type ImageBlock = { type: "image"; source: { type: "base64"; media_type: string; data: string } };
 type ToolUseBlock = { type: "tool_use"; id: string; name: string; input: unknown };
 type ToolResultBlock = { type: "tool_result"; tool_use_id: string; content: string };
 type CacheControl = { cache_control: { type: "ephemeral" } };
-type AnthropicMessage = { role: "user" | "assistant"; content: string | ((TextBlock | ToolUseBlock | ToolResultBlock) & Partial<CacheControl>)[] };
+type AnthropicMessage = { role: "user" | "assistant"; content: string | ((TextBlock | ImageBlock | ToolUseBlock | ToolResultBlock) & Partial<CacheControl>)[] };
 
 function markLastAssistant(messages: AnthropicMessage[]): void {
   for (let index = messages.length - 1; index >= 0; index -= 1) {
@@ -113,6 +114,17 @@ export function toAnthropicBody(
         blocks.push({ type: "tool_use", id: call.id, name: call.function.name, input: parseArguments(call.function.arguments) });
       }
       out.push({ role: "assistant", content: blocks });
+      continue;
+    }
+    if (message.role === "user" && message.images && message.images.length > 0) {
+      // KEY-3: pictures first, then the words, the order the model reads best.
+      out.push({
+        role: "user",
+        content: [
+          ...message.images.map((image): ImageBlock => ({ type: "image", source: { type: "base64", media_type: image.mediaType, data: image.data } })),
+          { type: "text", text: message.content },
+        ],
+      });
       continue;
     }
     out.push({ role: message.role === "assistant" ? "assistant" : "user", content: message.content });
