@@ -1,26 +1,249 @@
 {
-  "version": 1,
+  "version": 2,
   "purpose": "The ruler for Ask Lasso's read-set contract. Every release runs these against preview and records the manifest share and whether the expected facts appear. Expected facts are checked against the database on the day the set runs, never trusted from this file alone.",
   "boards": {
-    "max": { "title": "D8 - Liam Plan", "engagement_id": "a0b035b5-93b6-42c3-ba89-e193556dd174", "owner": "liam@charlotte-labs.com" },
-    "min": { "title": "Cohort Purpose", "engagement_id": "0134be5e-c1e3-430d-8cb0-8b8b1447bfb5", "owner": "gaby (Ceiba_Uni)" }
+    "max": {
+      "title": "D8 - Liam Plan",
+      "engagement_id": "a0b035b5-93b6-42c3-ba89-e193556dd174",
+      "owner": "liam@charlotte-labs.com"
+    },
+    "min": {
+      "title": "Pilot Tracking Recommendation",
+      "engagement_id": "fbc495ba-8532-4c10-bbfd-cb7012b230b5",
+      "owner": "liam@charlotte-labs.com",
+      "why": "v1 named Cohort Purpose, a Ceiba_Uni board owned by Gaby. Liam has no access, and reading it to grade Lasso would break 'the person owns the record'. Golden boards must be owned by the person running the set."
+    }
   },
   "questions": [
-    { "id": "max-count-turns", "board": "max", "selection": "whole board", "kind": "count", "question": "How many turns have I had with AI in total on this board?", "expect": { "share": 1.0, "facts": ["62"], "sql": "select count(*) from turns t join work_item_tasks wt on wt.work_item_id=t.work_item_id join tasks k on k.id=wt.task_id where k.engagement_id='a0b035b5-93b6-42c3-ba89-e193556dd174'" } },
-    { "id": "max-pointed-prompt", "board": "max", "selection": "one card: D8TAOPS venture-scale diligence", "kind": "pointed", "question": "What is my strongest prompt in this conversation, judged by how specific and well framed it is?", "expect": { "share": 1.0, "facts": ["a turn number between 1 and 50 cited from this conversation"], "must_not": ["summary", "I only read", "doesn't contain your prompts"] } },
-    { "id": "max-synthesis-pricing", "board": "max", "selection": "whole board", "kind": "synthesis", "question": "What have I decided about pricing and deal points for D8taOps?", "expect": { "share": 1.0, "facts": ["cites the Deal Points redline", "cites the Counter-Redline Summary"], "must_not": ["summary only"] } },
-    { "id": "max-whole-retro", "board": "max", "selection": "whole board", "kind": "whole record", "question": "Write the retrospective of this engagement so far.", "expect": { "share": 1.0, "facts": ["names all 19 items with stored text", "lists the branch as not stored"] } },
-    { "id": "max-section", "board": "max", "selection": "section: the four Artemis 1:1 calls", "kind": "pointed", "question": "What does each person think the biggest risk is?", "expect": { "share": 1.0, "facts": ["four transcripts read, none with the middle omitted"], "index_marks_rest_not_read": true } },
-    { "id": "max-marquee", "board": "max", "selection": "marquee: three uploaded docx files", "kind": "synthesis", "question": "Summarise what changed between the two redline versions.", "expect": { "share": 1.0, "facts": ["both redline files read in full"] } },
-    { "id": "max-workstream", "board": "max", "selection": "one workstream", "kind": "synthesis", "question": "What is still open in this workstream?", "expect": { "share": 1.0 } },
-    { "id": "max-at-mention", "board": "max", "selection": "whole board with @D8 Notes.md", "kind": "pointed", "question": "@D8 Notes.md what did I write down as next steps?", "expect": { "share": 1.0, "read_set_size": 1, "excluded_reason": "not pointed at for this question" } },
-    { "id": "min-count", "board": "min", "selection": "whole board", "kind": "count", "question": "How many items are on this board and how many conversations?", "expect": { "share": 1.0, "facts": ["1 item", "0 conversations"] } },
-    { "id": "min-pointed", "board": "min", "selection": "one card: the deck", "kind": "pointed", "question": "Which slide states the purpose of the cohort?", "expect": { "share": 1.0, "facts": ["a slide number cited"] } },
-    { "id": "min-synthesis", "board": "min", "selection": "whole board", "kind": "synthesis", "question": "What is this cohort for, in two sentences?", "expect": { "share": 1.0 } },
-    { "id": "min-whole", "board": "min", "selection": "whole board", "kind": "whole record", "question": "Write a one-paragraph retrospective of this board.", "expect": { "share": 1.0, "facts": ["names the deck"] } },
-    { "id": "min-absent", "board": "min", "selection": "whole board", "kind": "honesty", "question": "What did the students say in the interviews?", "expect": { "share": 1.0, "facts": ["says no interviews are on this board"], "must_not": ["invented quotes"] } },
-    { "id": "max-image-later", "board": "max", "selection": "one card: a pasted slide screenshot (add when IMG-1 ships)", "kind": "pointed", "question": "What does the table on this slide say?", "expect": { "deferred_until": "IMG-1" } },
-    { "id": "max-twice-placed", "board": "max", "selection": "section containing a chat placed twice (add when the 26 Oct question is decided)", "kind": "semantics", "question": "How many conversations are in this section?", "expect": { "deferred_until": "decision on placing a chat twice" } },
-    { "id": "whole-record-liam", "board": "max", "selection": "no board open, whole record", "kind": "count", "question": "How many boards do I have with conversations on them?", "expect": { "mode": "inline", "share": 1.0, "note": "179 items, about 415k tokens, must not fall into catalogue mode" } }
+    {
+      "id": "max-count-turns",
+      "board": "max",
+      "selection": "whole board",
+      "kind": "count",
+      "question": "How many turns have I had with AI in total on this board?",
+      "expect": {
+        "share": 1.0,
+        "facts": [
+          "62"
+        ],
+        "sql": "select count(*) from turns t join work_item_tasks wt on wt.work_item_id=t.work_item_id join tasks k on k.id=wt.task_id where k.engagement_id='a0b035b5-93b6-42c3-ba89-e193556dd174'",
+        "must_not": [
+          "a turn chip that names the wrong conversation",
+          "(restated, not verbatim) on an item title"
+        ]
+      }
+    },
+    {
+      "id": "max-pointed-prompt",
+      "board": "max",
+      "selection": "one card: 'Prompt Creation - Deep Research - SAFE + Series A' (stored title 'D8TAOPS venture-scale diligence', 50 turns, dc234cce). Not the Branch card, which has no stored text.",
+      "kind": "pointed",
+      "question": "What is my strongest prompt in this conversation, judged by how specific and well framed it is?",
+      "expect": {
+        "share": 1.0,
+        "facts": [
+          "cites a turn between 1 and 50 from this conversation",
+          "declines to score the person; describes the prompt instead"
+        ],
+        "must_not": [
+          "summary",
+          "I only read",
+          "doesn't contain your prompts"
+        ]
+      }
+    },
+    {
+      "id": "max-synthesis-pricing",
+      "board": "max",
+      "selection": "whole board",
+      "kind": "synthesis",
+      "question": "What have I decided about pricing and deal points for D8taOps?",
+      "expect": {
+        "share": 1.0,
+        "facts": [
+          "cites the Deal Points redline",
+          "cites the Counter-Redline Summary"
+        ],
+        "must_not": [
+          "summary only"
+        ]
+      }
+    },
+    {
+      "id": "max-whole-retro",
+      "board": "max",
+      "selection": "whole board",
+      "kind": "whole record",
+      "question": "Write the retrospective of this engagement so far.",
+      "expect": {
+        "share": 1.0,
+        "facts": [
+          "names all 19 items with stored text",
+          "lists the branch as not stored"
+        ],
+        "must_not": [
+          "asks who the retrospective is for instead of writing it"
+        ]
+      }
+    },
+    {
+      "id": "max-section",
+      "board": "max",
+      "selection": "section: the four Artemis 1:1 calls",
+      "kind": "pointed",
+      "question": "What does each person think the biggest risk is?",
+      "expect": {
+        "share": 1.0,
+        "facts": [
+          "four transcripts read, none with the middle omitted"
+        ],
+        "index_marks_rest_not_read": true
+      }
+    },
+    {
+      "id": "max-marquee",
+      "board": "max",
+      "selection": "marquee: three uploaded docx files",
+      "kind": "synthesis",
+      "question": "Summarise what changed between the two redline versions.",
+      "expect": {
+        "share": 1.0,
+        "facts": [
+          "reads all three files in full",
+          "says whether the two redline files differ"
+        ]
+      }
+    },
+    {
+      "id": "max-workstream",
+      "board": "max",
+      "selection": "one workstream. D8 has none besides 'Not in a workstream', so this reads the whole board under a workstream label",
+      "kind": "synthesis",
+      "question": "What is still open in this workstream?",
+      "expect": {
+        "share": 1.0,
+        "cache": "cached_in above 90% when run within 5 minutes of a whole-board question (fails until the where-line moves after the record)"
+      }
+    },
+    {
+      "id": "max-at-mention",
+      "board": "max",
+      "selection": "whole board with @D8 Notes.md",
+      "kind": "pointed",
+      "question": "@D8 Notes.md what did I write down as next steps?",
+      "expect": {
+        "share": 1.0,
+        "read_set_size": 1,
+        "excluded_reason": "not pointed at for this question"
+      }
+    },
+    {
+      "id": "min-count",
+      "board": "min",
+      "selection": "whole board",
+      "kind": "count",
+      "question": "How many items are on this board and how many conversations?",
+      "expect": {
+        "share": 1.0,
+        "facts": [
+          "3 items",
+          "1 conversation",
+          "14 turns",
+          "2 items with no stored text"
+        ]
+      }
+    },
+    {
+      "id": "min-pointed",
+      "board": "min",
+      "selection": "one card: the Evolocity project sync deck (no stored text)",
+      "kind": "honesty",
+      "question": "Which slide states the purpose of the project?",
+      "expect": {
+        "share": 1.0,
+        "facts": [
+          "says the deck has no readable text"
+        ],
+        "must_not": [
+          "a slide number"
+        ]
+      }
+    },
+    {
+      "id": "min-synthesis",
+      "board": "min",
+      "selection": "whole board",
+      "kind": "synthesis",
+      "question": "What is this pilot for, in two sentences?",
+      "expect": {
+        "share": 1.0
+      }
+    },
+    {
+      "id": "min-whole",
+      "board": "min",
+      "selection": "whole board",
+      "kind": "whole record",
+      "question": "Write a one-paragraph retrospective of this board.",
+      "expect": {
+        "share": 1.0,
+        "facts": [
+          "says the deck and work plan could not be read"
+        ]
+      }
+    },
+    {
+      "id": "min-absent",
+      "board": "min",
+      "selection": "whole board",
+      "kind": "honesty",
+      "question": "What did the students say in the interviews?",
+      "expect": {
+        "share": 1.0,
+        "facts": [
+          "says no interviews are on this board"
+        ],
+        "must_not": [
+          "invented quotes"
+        ]
+      }
+    },
+    {
+      "id": "max-image-later",
+      "board": "max",
+      "selection": "one card: a pasted slide screenshot (add when IMG-1 ships)",
+      "kind": "pointed",
+      "question": "What does the table on this slide say?",
+      "expect": {
+        "deferred_until": "IMG-1"
+      }
+    },
+    {
+      "id": "max-twice-placed",
+      "board": "max",
+      "selection": "section containing a chat placed twice (add when the 26 Oct question is decided)",
+      "kind": "semantics",
+      "question": "How many conversations are in this section?",
+      "expect": {
+        "deferred_until": "decision on placing a chat twice"
+      }
+    },
+    {
+      "id": "whole-record-liam",
+      "board": "max",
+      "selection": "no board open, whole record",
+      "kind": "count",
+      "question": "How many boards do I have with conversations on them?",
+      "expect": {
+        "mode": "inline or catalogue, never an error",
+        "share": 1.0,
+        "note": "1,161,851 tokens on 7 Nov: over the 1M window. Must fall back to catalogue, not fail"
+      }
+    }
+  ],
+  "rules": [
+    "Every golden board is owned by the person running the set.",
+    "Expected facts are recomputed from the database on the day of the run.",
+    "Selections are sent as the scope the dock would build; a question that needs a UI gesture (marquee, @) uses that gesture's scope_source."
   ]
 }
