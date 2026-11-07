@@ -51,8 +51,8 @@ export function noteWorkboardAskMoved(orgId: string | undefined, to: "bottom_cen
   if (orgId) logEvent("workboard.ask_moved", orgId, { to, draft });
 }
 /** PASTE-1: something was pasted on the board. Category and outcome only: never clipboard content, names or text. */
-export function noteWorkboardPasted(orgId: string | undefined, what: "image" | "file" | "text" | "figma" | "finder", outcome: "added" | "refused" | "failed"): void {
-  if (orgId) logEvent("workboard.pasted", orgId, { what, outcome });
+export function noteWorkboardPasted(orgId: string | undefined, what: "image" | "file" | "text" | "figma" | "finder", outcome: "added" | "refused" | "failed", via: "keys" | "menu" = "keys"): void {
+  if (orgId) logEvent("workboard.pasted", orgId, { what, outcome, via });
 }
 /** ASK-D2: the chat under a pinned answer was opened. Draft only. */
 export function noteWorkboardPinnedChatOpened(orgId: string | undefined, draft: "a" | "b"): void {

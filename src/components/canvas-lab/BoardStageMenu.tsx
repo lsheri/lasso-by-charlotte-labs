@@ -8,11 +8,12 @@ export function BoardStageMenu(props: {
   hidden: { id: string; title: string }[];
   canAddContextArea: boolean;
   onClose: () => void;
+  onPaste: () => void;
   onAddWork: () => void;
   onRestore: (id: string) => void;
   onAddContextArea: () => void;
 }) {
-  const { at, hidden, canAddContextArea, onClose, onAddWork, onRestore, onAddContextArea } = props;
+  const { at, hidden, canAddContextArea, onClose, onPaste, onAddWork, onRestore, onAddContextArea } = props;
   const menuRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<{ left: number; top: number }>({ left: at.x, top: at.y });
 
@@ -50,6 +51,8 @@ export function BoardStageMenu(props: {
     <>
       <div className="fixed inset-0 z-40" onPointerDown={onClose} onContextMenu={(event) => { event.preventDefault(); onClose(); }} />
       <div ref={menuRef} role="menu" aria-label="Board options" className="canvas-lab-menu absolute z-50" style={{ left: pos.left, top: pos.top }} onKeyDown={onKeyDown}>
+        <button type="button" role="menuitem" tabIndex={-1} className="canvas-lab-menu-item" onClick={() => { onClose(); onPaste(); }}>Paste here</button>
+        <span className="canvas-lab-menu-hint">Images and text from your clipboard</span>
         <button type="button" role="menuitem" tabIndex={-1} className="canvas-lab-menu-item" onClick={() => { onClose(); onAddWork(); }}>Bring in work here</button>
         {hidden.length > 0 ? (
           <div role="group" aria-label={`Put back on the board (${hidden.length})`}>

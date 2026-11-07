@@ -21,8 +21,63 @@ export function isBoardImageFile(file: File): boolean {
   return (BOARD_IMAGE_MIME_TYPES as readonly string[]).includes(file.type);
 }
 
-/** Read the natural pixel size in the browser. The object URL is always revoked. */
-export function readImageSize(file: File): Promise<{ width: number; height: number }> {
+export function fitWithin(width: number, height: number, max = 2048): { width: number; height: number } {
+  const ratio = Math.min(1, max / Math.max(width, height));
+  return { width: Math.round(width * ratio), height: Math.round(height * ratio) };
+}
+
+type PreparedImage = { file: File; size: { width: number; height: number } };
+const preparedImages = new WeakMap<File, Promise<PreparedImage>>();
+
+/** Prepare once per file so sizing and upload always use the same bytes. */
+function prepareBoardImage(file: File): Promise<PreparedImage> {
+  const existing = preparedImages.get(file);
+  if (existing) return existing;
+  const prepared = new Promise<PreparedImage>((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const image = new Image();
+    image.onerror = () => { URL.revokeObjectURL(url); reject(new Error("unreadable")); };
+    image.onload = () => {
+      const original = { width: image.naturalWidth, height: image.naturalHeight };
+      const size = fitWithin(original.width, original.height);
+      if (original.width <= 0 || original.height <= 0) {
+        URL.revokeObjectURL(url);
+        reject(new Error("no size"));
+        return;
+      }
+      if (size.width === original.width && size.height === original.height) {
+        URL.revokeObjectURL(url);
+        resolve({ file, size: original });
+        return;
+      }
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = size.width;
+        canvas.height = size.height;
+        const context = canvas.getContext("2d");
+        if (!context) { URL.revokeObjectURL(url); resolve({ file, size: original }); return; }
+        context.drawImage(image, 0, 0, size.width, size.height);
+        URL.revokeObjectURL(url);
+        const type = file.type === "image/png" ? "image/png" : "image/jpeg";
+        canvas.toBlob(async (blob) => {
+          if (!blob) { resolve({ file, size: original }); return; }
+          const scaled = new File([blob], file.name, { type });
+          try { resolve({ file: scaled, size: await readNaturalImageSize(scaled) }); }
+          catch { resolve({ file, size: original }); }
+        }, type, 0.9);
+      } catch {
+        URL.revokeObjectURL(url);
+        resolve({ file, size: original });
+      }
+    };
+    image.src = url;
+  });
+  preparedImages.set(file, prepared);
+  return prepared;
+}
+
+/** Read the encoded blob's natural pixel size. The object URL is always revoked. */
+function readNaturalImageSize(file: File): Promise<{ width: number; height: number }> {
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file);
     const image = new Image();
@@ -40,13 +95,19 @@ export function readImageSize(file: File): Promise<{ width: number; height: numb
   });
 }
 
+export async function readImageSize(file: File): Promise<{ width: number; height: number }> {
+  return (await prepareBoardImage(file)).size;
+}
+
 /** Same bucket and folder convention as the existing capture path: {userId}/{uuid}-{name}. */
 export async function uploadBoardImage(file: File): Promise<string | null> {
   const { data } = await supabase.auth.getUser();
   const userId = data.user?.id;
   if (!userId) return null;
+  let upload = file;
+  try { upload = (await prepareBoardImage(file)).file; } catch { /* Undecodable files upload unchanged. */ }
   const path = storageObjectKey(userId, crypto.randomUUID(), file.name);
-  const { error } = await supabase.storage.from("work-files").upload(path, file);
+  const { error } = await supabase.storage.from("work-files").upload(path, upload);
   return error ? null : path;
 }
 

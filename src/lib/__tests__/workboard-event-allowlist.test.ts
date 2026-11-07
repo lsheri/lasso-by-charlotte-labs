@@ -149,6 +149,7 @@ describe("the workboard allowlist", () => {
         "workboard.pasted": [
           "what",
           "outcome",
+          "via",
         ],
         "workboard.pinned_chat_opened": [
           "draft",
@@ -290,6 +291,8 @@ describe("the workboard allowlist", () => {
 
   it("passes every current helper's output through unchanged", () => {
     const calls: Array<() => void> = [
+      () => helpers.noteWorkboardPasted("o", "text", "added"),
+      () => helpers.noteWorkboardPasted("o", "image", "added", "menu"),
       () => helpers.noteWorkboardOpened("o", "header"),
       () => helpers.noteWorkboardRail("o", "collapsed"),
       () => helpers.noteWorkboardZoomChanged("o", "in", "button"),
