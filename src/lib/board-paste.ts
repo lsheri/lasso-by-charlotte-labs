@@ -19,7 +19,25 @@ export const BOARD_PASTE_COPY = {
   finder: "Your browser only gets an icon from a Finder copy. Drag the file onto the board instead.",
   capped: "Added the first 4,000 characters.",
   failed: "That paste did not come in.",
+  unsupported: "Your browser cannot paste from a menu. Press Cmd+V on the board instead.",
+  denied: "Paste needs clipboard access. Allow it in the address bar, or press Cmd+V.",
 } as const;
+
+export async function readClipboardItems(items: ClipboardItems): Promise<PasteInput> {
+  const files: File[] = [];
+  let text = "";
+  let html = "";
+  for (const item of items) {
+    for (const type of item.types) {
+      if (type.startsWith("image/")) {
+        const extension = type === "image/jpeg" ? "jpg" : type.slice(6).split("+")[0];
+        files.push(new File([await item.getType(type)], `pasted-image.${extension}`, { type }));
+      } else if (type === "text/plain") text += await (await item.getType(type)).text();
+      else if (type === "text/html") html += await (await item.getType(type)).text();
+    }
+  }
+  return { files, text, html, uriList: "" };
+}
 
 const FILE_NAME = /^[^\t/\\:]+\.[A-Za-z0-9]{1,8}$/;
 

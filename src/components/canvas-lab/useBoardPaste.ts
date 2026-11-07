@@ -3,7 +3,7 @@ import { toast } from "sonner";
 
 import { isBoardImageFile } from "@/components/canvas-lab/board-image";
 import { noteWorkboardPasted } from "@/components/canvas-lab/canvas-lab-telemetry";
-import { BOARD_PASTE_COPY, pasteBelongsToBoard, readPaste } from "@/lib/board-paste";
+import { BOARD_PASTE_COPY, pasteBelongsToBoard, readClipboardItems, readPaste, type PasteRead } from "@/lib/board-paste";
 import type { Point } from "@/lib/canvas-drag";
 
 /** PASTE-1: Cmd+V on the board lands files, images or a sticky at the pointer. */
@@ -15,10 +15,55 @@ export function useBoardPaste(args: {
   addFiles: (files: File[], at: Point, channel: "drop" | "paste") => Promise<{ added: number; failed: number }>;
   addText: (text: string, at: Point) => Promise<boolean>;
   orgId: string | undefined;
-}): void {
+}): { pasteFromClipboard: (at: Point) => Promise<void> } {
   const latest = useRef(args);
   latest.current = args;
   const { enabled, shellRef } = args;
+
+  async function applyPaste(read: PasteRead, files: File[], at: Point, via: "keys" | "menu") {
+    const a = latest.current;
+    if (!a.enabled || read.kind === "none") return;
+    if (read.kind === "files") {
+      let result = { added: 0, failed: 0 };
+      try { result = await a.addFiles(files, at, "paste"); } catch { result = { added: 0, failed: files.length }; }
+      // Zeros on both sides means addFiles returned early (busy or disabled).
+      if (result.added === 0 && result.failed === 0) toast(BOARD_PASTE_COPY.failed);
+      noteWorkboardPasted(a.orgId, files.every(isBoardImageFile) ? "image" : "file", result.added > 0 ? "added" : "failed", via);
+      return;
+    }
+    if (read.kind === "text") {
+      let ok = false;
+      try { ok = await a.addText(read.text, at); } catch { ok = false; }
+      if (!ok) {
+        toast(BOARD_PASTE_COPY.failed);
+        noteWorkboardPasted(a.orgId, "text", "failed", via);
+        return;
+      }
+      if (read.capped) toast(BOARD_PASTE_COPY.capped);
+      noteWorkboardPasted(a.orgId, "text", "added", via);
+      return;
+    }
+    toast(BOARD_PASTE_COPY[read.reason]);
+    noteWorkboardPasted(a.orgId, read.reason, "refused", via);
+  }
+
+  async function pasteFromClipboard(at: Point): Promise<void> {
+    const a = latest.current;
+    if (!a.enabled) return;
+    if (!navigator.clipboard?.read) {
+      toast(BOARD_PASTE_COPY.unsupported);
+      noteWorkboardPasted(a.orgId, "text", "failed", "menu");
+      return;
+    }
+    let items: ClipboardItems;
+    try { items = await navigator.clipboard.read(); } catch {
+      toast(BOARD_PASTE_COPY.denied);
+      noteWorkboardPasted(a.orgId, "text", "failed", "menu");
+      return;
+    }
+    const input = await readClipboardItems(items);
+    await applyPaste(readPaste(input), input.files as File[], at, "menu");
+  }
 
   useEffect(() => {
     if (!enabled) return;
@@ -37,30 +82,7 @@ export function useBoardPaste(args: {
       event.preventDefault();
       const a = latest.current;
       const at = last ? a.toBoard(last.x, last.y) : a.viewportPoint();
-      void (async () => {
-        if (read.kind === "files") {
-          let result = { added: 0, failed: 0 };
-          try { result = await a.addFiles(files, at, "paste"); } catch { result = { added: 0, failed: files.length }; }
-          // Zeros on both sides means addFiles returned early (busy or disabled): nothing came in and nothing toasted yet.
-          if (result.added === 0 && result.failed === 0) toast(BOARD_PASTE_COPY.failed);
-          noteWorkboardPasted(a.orgId, files.every(isBoardImageFile) ? "image" : "file", result.added > 0 ? "added" : "failed");
-          return;
-        }
-        if (read.kind === "text") {
-          let ok = false;
-          try { ok = await a.addText(read.text, at); } catch { ok = false; }
-          if (!ok) {
-            toast(BOARD_PASTE_COPY.failed);
-            noteWorkboardPasted(a.orgId, "text", "failed");
-            return;
-          }
-          if (read.capped) toast(BOARD_PASTE_COPY.capped);
-          noteWorkboardPasted(a.orgId, "text", "added");
-          return;
-        }
-        toast(BOARD_PASTE_COPY[read.reason]);
-        noteWorkboardPasted(a.orgId, read.reason, "refused");
-      })();
+      void applyPaste(read, files, at, "keys");
     };
 
     document.addEventListener("paste", onPaste);
@@ -72,4 +94,5 @@ export function useBoardPaste(args: {
       shell?.removeEventListener("pointerleave", onLeave);
     };
   }, [enabled, shellRef]);
+  return { pasteFromClipboard };
 }

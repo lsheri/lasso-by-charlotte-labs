@@ -764,7 +764,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   const canAddWork = lab.board?.canEditStructure !== false;
   // DD1-a: files dropped from the desktop land at the release point.
   const fileDrop = useBoardFileDrop({ enabled: canAddWork, toBoard: (x, y) => stagePoint(x, y), place: (ids, at) => addWorkToBoard(ids, "upload", at), placeImage: (image, at) => addImageToBoard(image, at) });
-  useBoardPaste({ enabled: canAddWork, shellRef, toBoard: (x, y) => stagePoint(x, y), viewportPoint: () => boardPointFromScreen(viewportCentre()), addFiles: fileDrop.addFiles, addText: (text, at) => addSticky(at, text), orgId });
+  const { pasteFromClipboard } = useBoardPaste({ enabled: canAddWork, shellRef, toBoard: (x, y) => stagePoint(x, y), viewportPoint: () => boardPointFromScreen(viewportCentre()), addFiles: fileDrop.addFiles, addText: (text, at) => addSticky(at, text), orgId });
   const showExample = boardIsNearEmpty(visibleNodes);
   const loadingBoard = isLoading || lab.boardLoading;
   // SH-7a: a board from another workspace opens in place, marked as shared.
@@ -3664,7 +3664,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
             </AlertDialogContent>
           </AlertDialog>
           {pendingRegionName && shellRef.current ? <GroupingNamePopup frame={pendingRegionName} pan={pan} zoom={zoom} viewport={viewportSize} portalRoot={shellRef.current} onName={(name) => { setPendingRegionNameId(null); renameFrame(pendingRegionName, name); }} onDismiss={() => setPendingRegionNameId(null)} /> : null}
-          {boardMenu ? <BoardStageMenu at={boardMenu.screen} hidden={hiddenNodes} canAddContextArea={!boardFrames.some((frame) => isContextFrameId(frame.id))} onClose={() => setBoardMenu(null)} onAddWork={() => openAddWork("context_menu", boardMenu.board)} onRestore={restoreNode} onAddContextArea={() => void addContextArea(boardMenu.board)} /> : null}
+          {boardMenu ? <BoardStageMenu at={boardMenu.screen} hidden={hiddenNodes} canAddContextArea={!boardFrames.some((frame) => isContextFrameId(frame.id))} onClose={() => setBoardMenu(null)} onPaste={() => void pasteFromClipboard(boardMenu.board)} onAddWork={() => openAddWork("context_menu", boardMenu.board)} onRestore={restoreNode} onAddContextArea={() => void addContextArea(boardMenu.board)} /> : null}
           {undoToast ? <LabUndoToast key={undoToast.entry.action === "ledger_remove_line" ? undoToast.entry.id : "board"} message={undoToast.message} onUndo={() => undoFromToast(undoToast.entry)} onClose={() => { if (undoToast.entry.action === "ledger_remove_line") undoRef.current = expireLedgerRemoval(undoRef.current, undoToast.entry.id); setUndoToast(null); }} /> : null}
           <CanvasLabStatusLine loading={loadingBoard} unavailable={isError || notAvailable} empty={boardReady && visibleNodes.length === 0} />
         </div>
