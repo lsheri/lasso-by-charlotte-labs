@@ -1193,6 +1193,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   }
 
   /** Apply one stack entry, either backwards or forwards. No action events. */
+  const addedPinsRef = useRef(new Map<string, { key: string; sessionId: string }>());
   function applyUndoEntry(entry: UndoEntry, direction: UndoDirection): void {
     if (entry.action === "ledger_remove_line") {
       void (async () => {
@@ -1236,6 +1237,80 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     if (entry.action === "restore") {
       if (direction === "undo") setNodeHidden(entry.nodeId, true, entry.before);
       else setNodeHidden(entry.nodeId, false, entry.after);
+      return;
+    }
+    if (entry.action === "add_node") {
+      const stored = entry.node;
+      let store: Storage | null = null;
+      try { store = window.localStorage; } catch { store = null; }
+      if (direction === "undo") {
+        if (stored.kind === "answer") {
+          const key = stored.durableId ?? stored.id;
+          const sessionId = readAskPins(store)[key];
+          if (sessionId) {
+            addedPinsRef.current.set(entry.id, { key, sessionId });
+            writeUnpinned(sessionId, engagementId, store);
+            removeAskPin(key, store);
+          }
+        }
+        if (stored.durableId) archiveDurable(stored.durableId, liveNode(stored.id, stored)?.durableVersion ?? stored.durableVersion ?? 1);
+        setNodes((current) => {
+          if (!current) return current;
+          const result = deleteLocalNode(current, linksRef.current, selected, stored.id);
+          setLinks(result.links);
+          setSelected(result.selected);
+          return result.nodes;
+        });
+        // Adds have no undo toast: Cmd+Z is enough, including after paste.
+        return;
+      }
+      setNodes((current) => current && !current.some((node) => node.id === stored.id) ? [...current, stored] : current);
+      const pin = addedPinsRef.current.get(entry.id);
+      if (pin) {
+        writeAskPin(pin.key, pin.sessionId, store);
+        clearUnpinned(pin.sessionId, store);
+      }
+      if (stored.durableId) {
+        const durableId = stored.durableId;
+        const fallback = liveNode(stored.id, stored)?.durableVersion ?? stored.durableVersion ?? 1;
+        void restoreVersion(durableId, fallback).then((version) => lab.persist({ type: "node_restore", nodeId: durableId, expectedVersion: version })).then((result) => {
+          report(result, "node", "restore");
+          if (result.status === "saved") {
+            const next = result.versions[durableId];
+            if (next) setNodes((current) => current?.map((node) => node.id === stored.id ? { ...node, durableVersion: next } : node) ?? current);
+          }
+        });
+      }
+      return;
+    }
+    if (entry.action === "add_frame") {
+      const stored = entry.frame;
+      if (!stored.durableId) return;
+      const durableId = stored.durableId;
+      const current = framesRef.current.find((frame) => frame.id === stored.id) ?? stored;
+      if (direction === "undo") {
+        const expectedVersion = current.durableVersion ?? 1;
+        const pending = lab.persist({ type: "frame_archive", frameId: durableId, expectedVersion }).then((result) => {
+          report(result, "frame", "archive");
+          if (result.status !== "saved") return null;
+          const version = result.versions[durableId] ?? expectedVersion + 1;
+          removedContextRef.current = { id: durableId, version };
+          framesRef.current = framesRef.current.filter((frame) => frame.id !== stored.id);
+          setFrames((frames) => frames?.filter((frame) => frame.id !== stored.id) ?? frames);
+          setSelectedFrameId(null);
+          return version;
+        });
+        archivedVersionsRef.current.set(durableId, pending);
+        return;
+      }
+      void restoreVersion(durableId, current.durableVersion ?? 1).then((version) => lab.persist({ type: "frame_restore", frameId: durableId, expectedVersion: version, patch: { x: stored.x, y: stored.y, w: stored.width, h: stored.height } })).then((result) => {
+        report(result, "frame", "restore");
+        if (result.status !== "saved") return;
+        const restored = { ...stored, durableVersion: result.versions[durableId] ?? (current.durableVersion ?? 1) + 1 };
+        removedContextRef.current = null;
+        framesRef.current = [...framesRef.current.filter((frame) => frame.id !== stored.id), restored];
+        setFrames((frames) => [...(frames ?? []).filter((frame) => frame.id !== stored.id), restored]);
+      });
       return;
     }
     if (entry.action === "remove_note") {
@@ -2714,6 +2789,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     setFrames((entries) => [...(entries ?? []).filter((frame) => !isContextFrameId(frame.id)), created]);
     await clearRegionOfStrangers(created, memberIds);
     await placeInContext(created, memberIds);
+    record({ action: "add_frame", frame: created });
     setAnnouncement("Context area added.");
   }
 
@@ -2785,6 +2861,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
         try { store = window.localStorage; } catch { store = null; }
         writeAskPin(saved.id, sessionId, store);
         clearUnpinned(sessionId, store);
+        record({ action: "add_node", node: { ...(liveNode(localId, node) ?? node), durableId: saved.id, durableVersion: saved.version } });
         if (via === "auto") setSelected([]);
         // In series on purpose: rapid parallel board writes have produced save conflicts. A failure never removes the card.
         void (async () => {
@@ -2832,6 +2909,8 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       // straight away rather than only after the page is opened again.
       await reloadDurableBoard();
 
+      const savedNode = nodesRef.current.find((node) => node.durableId === nodeId);
+      if (savedNode) record({ action: "add_node", node: savedNode });
       setAnnouncement(KEEP_ANSWER_ANNOUNCEMENT);
       return nodeId;
     } finally {
@@ -3347,7 +3426,8 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     nodesRef.current = [...nodesRef.current, node];
     setNodes((current) => [...(current ?? []), node]);
     setKeyboardId(id);
-    if (!(await ensureNodeDurable(id))) {
+    const saved = await ensureNodeDurable(id);
+    if (!saved) {
       nodesRef.current = nodesRef.current.filter((entry) => entry.id !== id);
       setNodes((current) => current?.filter((entry) => entry.id !== id) ?? current);
       setAnnouncement("That text block could not be saved.");
@@ -3374,6 +3454,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       setAnnouncement("That sticky could not be saved.");
       return false;
     }
+    record({ action: "add_node", node: { ...(liveNode(id, node) ?? node), durableId: saved.id, durableVersion: saved.version } });
     noteWorkboardNodeCreated(orgId, "sticky");
     setAnnouncement("Sticky added.");
     return true;
@@ -3390,11 +3471,13 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     };
     nodesRef.current = [...nodesRef.current, node];
     setNodes((current) => [...(current ?? []), node]);
-    if (!(await ensureNodeDurable(id))) {
+    const saved = await ensureNodeDurable(id);
+    if (!saved) {
       nodesRef.current = nodesRef.current.filter((entry) => entry.id !== id);
       setNodes((current) => current?.filter((entry) => entry.id !== id) ?? current);
       return false;
     }
+    record({ action: "add_node", node: { ...(liveNode(id, node) ?? node), durableId: saved.id, durableVersion: saved.version } });
     setAnnouncement("Image added.");
     return true;
   }
