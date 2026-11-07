@@ -44,6 +44,11 @@ export function turnNumbersIn(text: string): number[] {
   return found;
 }
 
+/** Lowercase words only: punctuation and dashes become single spaces. */
+function titleKey(value: string): string {
+  return value.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+}
+
 /**
  * The turns an answer cites, as work item id and turn number. A citation is
  * tied to the conversation whose title is named nearest before it in the same
@@ -57,24 +62,33 @@ export function extractTurnRefs(
 ): TurnRef[] {
   const refs: TurnRef[] = [];
   const seen = new Set<string>();
-  const usable = conversations.filter((c) => c.id && c.title.trim().length > 0);
+  const usable = conversations
+    .filter((c) => c.id && c.title.trim().length > 0)
+    .map((c) => ({ ...c, key: titleKey(c.title) }))
+    .filter((c) => c.key.length > 0);
   if (usable.length === 0) return refs;
   for (const paragraph of answer.split(/\n\s*\n/)) {
-    const lower = paragraph.toLowerCase();
+    // FIX-1: titles are matched on their words, not their punctuation. The
+    // model rewrites "A — B" as "A, B" (house style bans the dash), and a
+    // failed match let a turn attach to the previous chat named in the paragraph.
+    const whole = titleKey(paragraph);
     for (const match of paragraph.matchAll(
       /\bturns? (\d{1,4})(?:\s*(?:-|\u2013|to|and)\s*(\d{1,4}))?/gi,
     )) {
-      const at = match.index ?? 0;
-      let best: { id: string; title: string } | null = null;
-      let bestAt = -1;
+      const before = titleKey(paragraph.slice(0, match.index ?? 0));
+      let best: { id: string; title: string; key: string } | null = null;
+      let bestEnd = -1;
       for (const c of usable) {
-        const idx = lower.lastIndexOf(c.title.toLowerCase(), at);
-        if (idx >= 0 && idx > bestAt) {
+        const idx = before.lastIndexOf(c.key);
+        if (idx < 0) continue;
+        // Nearest title wins; when one title ends inside another, the longer one.
+        const end = idx + c.key.length;
+        if (end > bestEnd || (end === bestEnd && best && c.key.length > best.key.length)) {
           best = c;
-          bestAt = idx;
+          bestEnd = end;
         }
       }
-      if (!best) best = usable.find((c) => lower.includes(c.title.toLowerCase())) ?? null;
+      if (!best) best = usable.find((c) => whole.includes(c.key)) ?? null;
       if (!best && usable.length === 1) best = usable[0]!;
       if (!best) continue;
       const nums = [Number(match[1])];
@@ -97,8 +111,9 @@ export type StoredCitation = { item_id: string | null; turn_no: number | null; t
 
 /**
  * Citations that land on a conversation turn become turn links beside the
- * answer, merged with the refs found in the prose so a turn is never listed
- * twice. A citation on a file carries no turn and is rendered by the trail.
+ * answer. When there are any, they replace the refs found in the prose
+ * (FIX-1); with none, the prose refs stand. A citation on a file carries no
+ * turn and is rendered by the trail.
  */
 export function turnRefsFromCitations(
   citations: readonly StoredCitation[] | null | undefined,
@@ -106,8 +121,10 @@ export function turnRefsFromCitations(
   existing: readonly TurnRef[] = [],
   max = 12,
 ): TurnRef[] {
-  const out: TurnRef[] = [...existing];
-  const seen = new Set(existing.map((r) => `${r.work_item_id}:${r.turn_no}`));
+  // FIX-1: when the model cited a turn, the chips come from citations alone.
+  // Prose refs are only the fallback for an answer with no turn citations.
+  const out: TurnRef[] = [];
+  const seen = new Set<string>();
   const titles = new Map(conversations.map((c) => [c.id, c.title]));
   for (const c of citations ?? []) {
     if (!c.item_id || typeof c.turn_no !== "number") continue;
@@ -119,7 +136,7 @@ export function turnRefsFromCitations(
     out.push({ work_item_id: c.item_id, turn_no: c.turn_no, label: `${title}, turn ${c.turn_no}` });
     if (out.length >= max) break;
   }
-  return out;
+  return out.length > 0 ? out : [...existing].slice(0, max);
 }
 
 /** Reads the stored citations off a manifest value without trusting its shape. */

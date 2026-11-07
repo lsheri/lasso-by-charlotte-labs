@@ -8,13 +8,16 @@ const MIN_QUOTE_CHARS = 40;
  */
 export const QUOTE_RULE = `ABSOLUTE RULE ON QUOTATION: quotation marks are used ONLY around text copied character for character from the work supplied to you. Anything you restate, condense, summarise or characterise is written as plain prose with NO quotation marks of any kind. Every quotation must name the item it came from. If you are not certain of the exact wording, do not use quotation marks.`;
 
+/**
+ * FIX-1: a quote is checked on its words, in order. Punctuation, dashes,
+ * quote marks and markdown are ignored on both sides, because house style
+ * rewrites "A \u2014 B" as "A, B" and that is the same wording, not a
+ * paraphrase. Apostrophes inside a word are dropped so "don't" matches "dont".
+ */
 function normalise(value: string): string {
   return value
-    .replace(/[\u2018\u2019\u201B\u2032]/g, "'")
-    .replace(/[\u201C\u201D\u201F\u2033]/g, '"')
-    .replace(/[\u2013\u2014]/g, "-")
-    .replace(/[*_`~]/g, "")
-    .replace(/\s+/g, " ")
+    .replace(/[\u2018\u2019\u201B\u2032']/g, "")
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
     .trim()
     .toLowerCase();
 }

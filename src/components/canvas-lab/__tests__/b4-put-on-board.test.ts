@@ -62,9 +62,10 @@ describe("B4 put on board", () => {
     expect(read("src/styles.css")).toContain('body[data-answer-drag="true"] .canvas-lab-surface iframe { pointer-events: none; }');
   });
 
-  it("tells Lasso it never claims and asks before a document", () => {
+  it("tells Lasso it never claims, and writes a requested document without a confirm step (FIX-1)", () => {
     expect(ASK_LASSO_MAKING_RULES).toContain("Never say you added, saved, created, placed or drafted something onto the board or into a document.");
-    expect(ASK_LASSO_MAKING_RULES).toContain("before drafting ask one short question confirming they want it drafted");
+    expect(ASK_LASSO_MAKING_RULES).toContain("write it now. Do not ask who it is for or confirm first.");
+    expect(ASK_LASSO_MAKING_RULES).not.toContain("Draft only after they say yes");
     expect(run).toContain('surface === "ask_lasso" ? [{ role: "system" as const, content: ASK_LASSO_MAKING_RULES }]');
   });
 });

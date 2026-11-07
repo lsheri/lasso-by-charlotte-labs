@@ -5,8 +5,11 @@ import { accountTextResults, headAndTail, recordIndexBlock, storedCharsHint, RAW
 import { parseScope } from "@/lib/reflect-shared";
 
 describe("TOTAL-1 read-set contract", () => {
-  it("budget is the window, not a tier", () => {
-    expect(RAW_BUDGET).toBe(3_200_000);
+  it("budget is the window in tokens at the measured ratio (FIX-1)", () => {
+    expect(RAW_BUDGET).toBe(1_376_000);
+    // D8 measured 7 Nov: 642,092 chars reached the model as 385,057 tokens.
+    expect(642_092 / 1.6).toBeGreaterThan(385_057);
+    expect(RAW_BUDGET / 1.6).toBeLessThan(1_000_000 - 8_000);
   });
 
   it("a 221k-character item is read whole", () => {
@@ -91,7 +94,7 @@ describe("TOTAL-1 read-set contract", () => {
 describe("TOTAL-1 size switch", () => {
   it("the catalogue trigger is the window, with an item ceiling the loader can see", async () => {
     const mod = await import("@/lib/record-catalogue.server");
-    expect(mod.CATALOGUE_CHARS).toBe(3_200_000);
+    expect(mod.CATALOGUE_CHARS).toBe(1_376_000);
     expect(mod.CATALOGUE_THRESHOLD).toBe(300);
   });
 });
