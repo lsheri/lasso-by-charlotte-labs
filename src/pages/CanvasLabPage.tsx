@@ -1240,7 +1240,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       return;
     }
     if (entry.action === "add_node") {
-      const stored = entry.node;
+      const stored = nodesRef.current.find((node) => node.durableId === entry.node.durableId) ?? entry.node;
       let store: Storage | null = null;
       try { store = window.localStorage; } catch { store = null; }
       if (direction === "undo") {
@@ -1256,7 +1256,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
         if (stored.durableId) archiveDurable(stored.durableId, liveNode(stored.id, stored)?.durableVersion ?? stored.durableVersion ?? 1);
         setNodes((current) => {
           if (!current) return current;
-          const result = deleteLocalNode(current, linksRef.current, selected, stored.id);
+          const result = deleteLocalNode(current.map((node) => node.id === stored.id ? { ...node, local: true } : node), linksRef.current, selected, stored.id);
           setLinks(result.links);
           setSelected(result.selected);
           return result.nodes;

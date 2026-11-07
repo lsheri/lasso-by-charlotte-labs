@@ -34,7 +34,7 @@ describe("canvas lab undo stack", () => {
       const { window, engagementId, addedPinsRef, readAskPins, writeAskPin, clearUnpinned,
         writeUnpinned, removeAskPin, archiveDurable, liveNode, setNodes, setLinks, setSelected,
         linksRef, selected, deleteLocalNode, restoreVersion, lab, report, framesRef,
-        removedContextRef, setFrames, setSelectedFrameId, archivedVersionsRef } = context;
+        removedContextRef, setFrames, setSelectedFrameId, archivedVersionsRef, nodesRef } = context;
       ${source.slice(start, end).replace("let store: Storage | null = null;", "let store = null;")}
     `);
     let nodes: LabNode[] = [];
@@ -45,10 +45,11 @@ describe("canvas lab undo stack", () => {
     const persist = vi.fn(async (input: { type: string; expectedVersion: number }) => ({ status: "saved", versions: { durable: input.expectedVersion + 1 } }));
     const context = {
       window: { localStorage: store }, engagementId: "board:1", addedPinsRef: { current: new Map() },
+      nodesRef: { current: [] as LabNode[] },
       readAskPins, writeAskPin, clearUnpinned, writeUnpinned, removeAskPin,
       archiveDurable: vi.fn((id: string, version: number) => { archivedVersionsRef.current.set(id, Promise.resolve(version + 1)); }),
       liveNode: (id: string, fallback: LabNode) => nodes.find((node) => node.id === id) ?? fallback,
-      setNodes: (update: (current: LabNode[]) => LabNode[]) => { nodes = update(nodes); },
+      setNodes: (update: (current: LabNode[]) => LabNode[]) => { nodes = update(nodes); context.nodesRef.current = nodes; },
       setLinks: vi.fn(), setSelected: vi.fn(), linksRef: { current: [] }, selected: [], deleteLocalNode,
       restoreVersion: async (id: string, fallback: number) => (await archivedVersionsRef.current.get(id)) ?? fallback,
       lab: { persist }, report: vi.fn(), framesRef: { current: frames }, removedContextRef: { current: null },
@@ -56,7 +57,7 @@ describe("canvas lab undo stack", () => {
       setSelectedFrameId: vi.fn(), archivedVersionsRef,
     };
     return { apply: (entry: UndoEntry, direction: "undo" | "redo") => apply(entry, direction, context), context, store,
-      getNodes: () => nodes, setNodes: (next: LabNode[]) => { nodes = next; },
+      getNodes: () => nodes, setNodes: (next: LabNode[]) => { nodes = next; context.nodesRef.current = next; },
       getFrames: () => frames, setFrames: (next: typeof frames) => { frames = next; context.framesRef.current = next; } };
   }
 
