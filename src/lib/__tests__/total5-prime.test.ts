@@ -51,3 +51,35 @@ describe("TOTAL-5 cache priming, the prefix the prime shares with the question",
     expect(prime.at(-1)!.content).toBe("Ready.");
   });
 });
+
+describe("TOTAL-5b: Send waits for a prime in flight", () => {
+  beforeEach(() => {
+    fetchMock.mockReset();
+    resetPrimeMemory();
+  });
+
+  it("a question for the same read set waits for the prime; another read set does not", async () => {
+    const { awaitPrime } = await import("@/lib/ask-prime-client");
+    let finish: (v: { ok: boolean }) => void = () => {};
+    fetchMock.mockReturnValueOnce(new Promise((resolve) => (finish = resolve)));
+    const scope = { mode: "engagements" as const, ids: ["b1"], board: "b1" };
+    const priming = primeReadSet(scope, "p");
+    await Promise.resolve();
+    await new Promise((r) => setTimeout(r, 0));
+    const waiting = awaitPrime(scope, 1000);
+    expect(await awaitPrime({ mode: "items", ids: ["other"] }, 1000)).toBe("none");
+    finish({ ok: true });
+    await priming;
+    expect(await waiting).toBe("waited");
+    expect(await awaitPrime(scope, 1000)).toBe("none");
+  });
+
+  it("a prime that never answers does not hold the question past the limit", async () => {
+    const { awaitPrime } = await import("@/lib/ask-prime-client");
+    fetchMock.mockReturnValueOnce(new Promise(() => {}));
+    const scope = { mode: "engagements" as const, ids: ["b2"] };
+    void primeReadSet(scope, "p");
+    await new Promise((r) => setTimeout(r, 0));
+    expect(await awaitPrime(scope, 20)).toBe("timeout");
+  });
+});

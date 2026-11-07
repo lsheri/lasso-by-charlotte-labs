@@ -9,7 +9,7 @@ import { useEngagementPage } from "@/hooks/use-engagement-page";
 import { useWorkItems } from "@/hooks/use-work-items";
 import { supabase } from "@/integrations/supabase/client";
 import { streamChatRequest } from "@/lib/stream-client";
-import { primeReadSet } from "@/lib/ask-prime-client";
+import { awaitPrime, primeReadSet } from "@/lib/ask-prime-client";
 import type { ReflectResult } from "@/lib/reflect-run.server";
 import {
   boardSelectionScope,
@@ -348,6 +348,8 @@ export function useAskLasso({
       if (!id) return;
       if (resolvedScope) await writeCurrentScope(id, resolvedScope);
       else await writeCurrentScope(id);
+      // TOTAL-5b: never race a prime for the same read set; ride its cache.
+      if (pointedItems.length === 0) await awaitPrime(resolvedScope ?? scopeForSelection());
       setStreamed("");
       setDraft("");
       const result = await streamChatRequest<ReflectResult>(
