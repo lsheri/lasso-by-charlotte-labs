@@ -1,7 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { earlierReadsNote } from "@/lib/earlier-reads";
-import { extractTurnRefs, stripTurnTags, TURN_CITATION_RULE, type TurnRef } from "@/lib/turn-labels";
+import { extractTurnRefs, stripTurnTags, TURN_CITATION_RULE, turnRefsFromCitations, type TurnRef } from "@/lib/turn-labels";
+import { INLINE_CHAR_BUDGET } from "@/lib/context-budget";
 
 import type { Database } from "@/integrations/supabase/types";
 import { ASK_LASSO_MAKING_RULES, REFLECT_SYSTEM_PROMPT, type ContextScope, type ContextSource, type ScopeSource } from "@/lib/reflect-shared";
@@ -145,11 +146,17 @@ export async function runReflectTurn(
   const earlierReads = earlierReadsNote(
     (history ?? []) as { role: string; content: string; context_manifest?: unknown }[],
   );
-  const prompts = askPrompts({ presetPrompt: preset?.systemPrompt ?? null, surface, whereLine });
-  // TOTAL-1: the earlier-reads note changes after every answer, so it rides
-  // in the question turn (inline path) rather than ahead of the cached record.
-  // The catalogue path keeps it as a system note, as before.
-  const cataloguePrompts = [...prompts, ...(earlierReads ? [{ role: "system" as const, content: earlierReads }] : [])];
+  // FIX-1: the where-line names the selection, so it changes when the same
+  // content is asked about from a different view (whole board, workstream,
+  // section). It rides in the question turn with the earlier-reads note, after
+  // the cached record, so identical content is one cache entry. The catalogue
+  // path has no cached record and keeps both as system notes, as before.
+  const prompts = askPrompts({ presetPrompt: preset?.systemPrompt ?? null, surface, whereLine: null });
+  const questionNote = [whereLine, earlierReads].filter(Boolean).join("\n\n") || null;
+  const cataloguePrompts = [
+    ...askPrompts({ presetPrompt: preset?.systemPrompt ?? null, surface, whereLine }),
+    ...(earlierReads ? [{ role: "system" as const, content: earlierReads }] : []),
+  ];
 
   const { chatComplete, streamChat, resolveAiMeta } = await import("./ai.server");
   const aiMeta = await resolveAiMeta(supabase, {
@@ -168,7 +175,7 @@ export async function runReflectTurn(
   // whenever its stored text fits the window; only a read set past the
   // window (or past the item ceiling the loader can see) is catalogued.
   let sizeOf: typeof catalogueModule.scopeStoredChars | undefined;
-  let windowChars = 3_200_000;
+  let windowChars = INLINE_CHAR_BUDGET;
   try {
     sizeOf = catalogueModule.scopeStoredChars;
     windowChars = catalogueModule.CATALOGUE_CHARS ?? windowChars;
@@ -183,7 +190,10 @@ export async function runReflectTurn(
   const contextMode: "inline" | "catalogue" =
     !briefOnly && (inScopeCount > CATALOGUE_THRESHOLD || overWindow) ? "catalogue" : "inline";
 
-  if (contextMode === "catalogue") {
+  // FIX-1: the catalogue answer, both when size sends the read set there and
+  // when the provider refuses an inline prompt as over its window (the size
+  // estimate is a ratio, so it can be wrong; the person never sees the error).
+  const runCatalogue = async (fallback: boolean): Promise<ReflectResult> => {
     const { runCatalogueAnswer } = await import("./record-answer.server");
     const run = await runCatalogueAnswer(
       supabase,
@@ -276,6 +286,7 @@ export async function runReflectTurn(
         scope_source: effectiveScopeSource,
         ...(data.scope_kind === "section" ? { scope_kind: "section" } : {}),
         context_mode: "catalogue",
+        ...(fallback ? { catalogue_fallback: "over_window" } : {}),
         catalogue_size: sizeBucket(run.catalogue.entries.length),
         rounds: smallBucket(run.rounds),
         tool_calls: smallBucket(run.toolCalls),
@@ -310,11 +321,12 @@ export async function runReflectTurn(
       messageId: written.messageId,
       sources: run.sources,
       cutOff: cutOffCat,
-      contextMode,
+      contextMode: "catalogue",
       manifest: catalogueManifest,
       turnRefs: turnRefsCat,
     };
-  }
+  };
+  if (contextMode === "catalogue") return runCatalogue(false);
 
   const { assembleReflectContext } = await import("./reflect-context.server");
   const assembled = await assembleReflectContext(supabase, profile.id, scope, {
@@ -353,26 +365,33 @@ export async function runReflectTurn(
     context: assembled.context,
     documents: assembled.documents,
     preamble: assembled.preamble,
-    perQuestionNote: earlierReads,
+    perQuestionNote: questionNote,
     message,
   });
   // Chat never asks for a structured tail, but if a model ever emits the
   // sentinel fence it is held back rather than flashed into the answer.
   const { createHoldback, stripHandoffTail } = await import("./handoffs-shared");
   const holdback = onDelta ? createHoldback(onDelta) : null;
-  const completion = onDelta
-    ? await streamChat(conversation, (delta) => holdback!.push(delta), {
-        tier: "smart",
-        maxTokens: 8000,
-        timeoutMs: ANSWER_TIMEOUT_MS,
-        meta: aiMeta,
-      })
-    : await chatComplete(conversation, {
-        tier: "smart",
-        maxTokens: 8000,
-        timeoutMs: ANSWER_TIMEOUT_MS,
-        meta: aiMeta,
-      });
+  let completion: Awaited<ReturnType<typeof chatComplete>>;
+  try {
+    completion = onDelta
+      ? await streamChat(conversation, (delta) => holdback!.push(delta), {
+          tier: "smart",
+          maxTokens: 8000,
+          timeoutMs: ANSWER_TIMEOUT_MS,
+          meta: aiMeta,
+        })
+      : await chatComplete(conversation, {
+          tier: "smart",
+          maxTokens: 8000,
+          timeoutMs: ANSWER_TIMEOUT_MS,
+          meta: aiMeta,
+        });
+  } catch (e) {
+    // A refusal for size comes back before any text, so nothing has streamed.
+    if ((e as { errorClass?: string } | null)?.errorClass === "context_length") return runCatalogue(true);
+    throw e;
+  }
   void chatComplete;
   const cutOff = completion.finishReason === "length";
   const { CUT_OFF_NOTE } = await import("./quote-check");
@@ -396,10 +415,6 @@ export async function runReflectTurn(
   });
   // Never present a cut-off answer as if it were complete, and never discard it.
   const answer = stripTurnTags(cutOff ? `${guarded.answer}\n\n${CUT_OFF_NOTE}` : guarded.answer);
-  const turnRefs = extractTurnRefs(
-    answer,
-    assembled.sources.filter((src) => src.type === "ai_thread" && src.depth === "full"),
-  );
 
   // TOTAL-1: the verified pointers the model returned, kept beside the answer.
   // Content stays in the person's own row, never in telemetry.
@@ -408,6 +423,10 @@ export async function runReflectTurn(
     turn_no: c.turn_no,
     text: c.cited_text.slice(0, 400),
   }));
+  // FIX-1: when the model cited turns, the chips come from those citations
+  // alone; turn numbers read out of the prose can attach to the wrong chat.
+  const fullThreads = assembled.sources.filter((src) => src.type === "ai_thread" && src.depth === "full");
+  const turnRefs = turnRefsFromCitations(citations, fullThreads, extractTurnRefs(answer, fullThreads));
   const manifestToStore = citations.length > 0 ? { ...assembled.manifest, citations } : assembled.manifest;
   const { data: written, error: insertError } = await supabase
     .from("chat_messages")
@@ -637,8 +656,8 @@ export async function primeReflectContext(
   const stored = await catalogueModule.scopeStoredChars(supabase, profile.id, scope);
   if (stored > catalogueModule.CATALOGUE_CHARS) return { primed: false, reason: "catalogue" };
 
-  const whereLine = await whereLineFor(supabase, scope);
-  const prompts = askPrompts({ surface: "ask_lasso", whereLine });
+  // FIX-1: the where-line rides in the question turn, so the prime leaves it out.
+  const prompts = askPrompts({ surface: "ask_lasso", whereLine: null });
   const { assembleReflectContext } = await import("./reflect-context.server");
   const assembled = await assembleReflectContext(supabase, profile.id, scope, { pointedAt: false, briefOnly: false });
   if (assembled.documents.length === 0) return { primed: false, reason: "nothing_to_read" };

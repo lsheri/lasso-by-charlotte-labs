@@ -30,9 +30,12 @@ export function buildReflectConversation(input: {
   perQuestionNote?: string | null;
 }): ChatTurn[] {
   const heading = `THE PERSON'S RECORDED WORK (scope: ${input.scopeMode}):`;
+  // FIX-1: the cited record carries no scope label. The same content asked
+  // about from the whole board, a workstream or a section is the same bytes,
+  // so one cache entry; where the person is asking from rides in the question.
   const record: ChatTurn =
     input.documents && input.documents.length > 0
-      ? { role: "user", content: `${heading}\n\n${input.preamble ?? ""}`.trimEnd(), documents: input.documents }
+      ? { role: "user", content: `THE PERSON'S RECORDED WORK:\n\n${input.preamble ?? ""}`.trimEnd(), documents: input.documents }
       : { role: "user", content: `${heading}\n\n${input.context}` };
   const question = input.perQuestionNote ? `${input.perQuestionNote}\n\n${input.message}` : input.message;
   return [

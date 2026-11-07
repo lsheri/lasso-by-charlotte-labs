@@ -38,7 +38,7 @@ describe("TOTAL-2 quote guard with citations", () => {
 describe("TOTAL-2 citations become turn links", () => {
   const conversations = [{ id: "c1", title: "Diligence chat" }];
 
-  it("a cited turn joins the chips once, a file citation does not", () => {
+  it("cited turns replace prose refs, once each; a file citation adds none (FIX-1)", () => {
     const refs = turnRefsFromCitations(
       [
         { item_id: "c1", turn_no: 7, text: "x" },
@@ -48,10 +48,13 @@ describe("TOTAL-2 citations become turn links", () => {
       conversations,
       [{ work_item_id: "c1", turn_no: 2, label: "Diligence chat, turn 2" }],
     );
-    expect(refs).toEqual([
-      { work_item_id: "c1", turn_no: 2, label: "Diligence chat, turn 2" },
-      { work_item_id: "c1", turn_no: 7, label: "Diligence chat, turn 7" },
-    ]);
+    expect(refs).toEqual([{ work_item_id: "c1", turn_no: 7, label: "Diligence chat, turn 7" }]);
+  });
+
+  it("with no turn citations, the prose refs stand", () => {
+    const prose = [{ work_item_id: "c1", turn_no: 2, label: "Turn 2 in Diligence chat" }];
+    expect(turnRefsFromCitations([{ item_id: "doc", turn_no: null, text: "z" }], conversations, prose)).toEqual(prose);
+    expect(turnRefsFromCitations([], conversations, prose)).toEqual(prose);
   });
 
   it("reads citations off a stored manifest without trusting its shape", () => {

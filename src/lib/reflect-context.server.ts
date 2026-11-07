@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/integrations/supabase/types";
+import { INLINE_CHAR_BUDGET } from "./context-budget";
 import {
   clientDisplayName,
   engagementDisplayCode,
@@ -26,12 +27,13 @@ import { readFromRendition } from "./reference-rendition-shared";
 
 /**
  * TOTAL-1: the read set is read as written. The budget is the window, not a
- * tier: 3.2M characters is about 800k tokens, inside the 1M window of every
- * current Claude model with room for prompts, history and the answer. Above
+ * tier: about 860k tokens at the measured 1.6 chars per token (FIX-1, see
+ * context-budget.ts), inside the 1M window with room for prompts, history
+ * and the answer. Above
  * it the person is told, never silently summarised. A single item is only
  * ever cut when it alone would not fit.
  */
-const RAW_BUDGET = 3_200_000;
+const RAW_BUDGET = INLINE_CHAR_BUDGET;
 const PER_ITEM_CHARS = 1_200_000;
 /** When an item must be cut, the head keeps the framing and the tail keeps the decisions. */
 const HEAD_SHARE = 0.2;
@@ -658,7 +660,10 @@ export async function assembleReflectContext(
   // 7. Serialize oldest to newest so the record reads as a story. Engagement
   // scope orders on the day the work carries (work_date, else capture) so a
   // reconstruction of sequence reads the same order a person would.
-  const isEngagementScope = scope.mode === "engagements";
+  // FIX-1: any read set taken from a board (LOOK-2 tags it) reads in the
+  // board's own order and date form, so the same items asked about from the
+  // whole board or from a workstream assemble to the same bytes.
+  const isEngagementScope = scope.mode === "engagements" || Boolean(scope.board);
   const sortKey = (item: ItemRow) =>
     new Date(
       isEngagementScope ? (item.work_date ?? item.captured_at) : effectiveDate(item),

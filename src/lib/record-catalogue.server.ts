@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/integrations/supabase/types";
+import { INLINE_CHAR_BUDGET } from "./context-budget";
 
 import type { AiReadInput } from "./ai-reads.server";
 import { loadBriefContext } from "./brief.server";
@@ -20,12 +21,13 @@ type Db = SupabaseClient<Database>;
 
 /**
  * TOTAL-1: the switch is the size of the read set, not a count of items.
- * Below CATALOGUE_CHARS (the inline budget, about 800k tokens) the whole
+ * Below CATALOGUE_CHARS (the inline budget, about 860k tokens) the whole
  * read set is poured in as written. Above it, or past the item ceiling the
  * scope loader can see, the record must be searched and the person is told.
  */
 export const CATALOGUE_THRESHOLD = 300;
-export const CATALOGUE_CHARS = 3_200_000;
+/** FIX-1: sized in tokens at the measured ratio, see context-budget.ts. */
+export const CATALOGUE_CHARS = INLINE_CHAR_BUDGET;
 /** Turns with no cached size are costed at the measured board average. */
 const CHARS_PER_TURN_ESTIMATE = 650;
 
