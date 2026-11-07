@@ -4,6 +4,10 @@
  * The TypeScript union is a compile time promise. This file is the runtime
  * one: a key that is not listed against an event name never reaches the
  * events table, so no client content can arrive through a dim by accident.
+ * Both write paths run it: the client path through guardEventDims (this
+ * family only) and the server path through guardServerEventDims (the whole
+ * union, AUDIT-1, 7 Nov 2026). Before AUDIT-1 the server path inserted dims
+ * unguarded, so the promise above was true for client events only.
  *
  * Keyed by full event name, never by family, so a new name in an existing
  * family inherits nothing. Keys only: values are not narrowed here.
@@ -91,7 +95,7 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "coachnote.replied": ["by", "newest_age_band", "notes_shown_band", "surface"],
   "coachnote.scoped": ["by", "newest_age_band", "notes_shown_band", "scope", "surface"],
   "connector.browse_paged": ["age_filter", "auth_mode", "connected_count", "from", "had_connector", "imported", "page_index", "scope", "surface", "toolkit", "total_count", "type_filter"],
-  "connector.browse_result": ["age_filter", "auth_mode", "connected_count", "from", "had_connector", "imported", "page_index", "scope", "surface", "toolkit", "total_count", "type_filter"],
+  "connector.browse_result": ["age_filter", "auth_mode", "connected_count", "from", "had_connector", "imported", "page_index", "reason", "result_band", "scope", "surface", "tool_chosen", "toolkit", "total_count", "type_filter"],
   "connector.enabled": ["age_filter", "auth_mode", "connected_count", "entry", "from", "had_connector", "imported", "page_index", "scope", "surface", "toolkit", "total_count", "type_filter"],
   "connector.error": ["age_filter", "auth_mode", "connected_count", "error_class", "from", "had_connector", "imported", "page_index", "provider", "scope", "surface", "toolkit", "total_count", "type_filter"],
   "connector.setup_opened": ["age_filter", "auth_mode", "connected_count", "from", "had_connector", "imported", "page_index", "scope", "surface", "toolkit", "total_count", "type_filter"],
@@ -193,7 +197,7 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "link.drafted": ["action", "considered", "cost_bucket", "count", "relation", "scope", "source", "surface", "tokens_in_bucket"],
   "link.drawn": ["action", "considered", "cost_bucket", "count", "relation", "scope", "source", "surface", "tokens_in_bucket"],
   "link.reviewed": ["action", "considered", "cost_bucket", "count", "relation", "scope", "source", "surface", "tokens_in_bucket"],
-  "mcp.container_created": ["attachment_count", "attachment_versions", "degraded_refusals", "has_suggestion", "mode", "rejected_attachments", "suggestion_outcome", "target", "tool", "vendor", "windowed"],
+  "mcp.container_created": ["attachment_count", "attachment_versions", "degraded_refusals", "entity", "has_suggestion", "mode", "outcome", "rejected_attachments", "suggestion_outcome", "target", "tool", "vendor", "windowed"],
   // CL-2b. Portal needs this event added when it exists.
   "mcp.chat_link_attached": ["had_prior_link", "source"],
   "mcp.auth_failed": ["kind", "reason", "repeats_band"],
@@ -245,7 +249,7 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "presence.active": ["engagement_count_band", "week_start"],
   "profile.active_reconciled": ["source"],
   "profile.switched": ["from_role", "same_org", "to_role"],
-  "reflect.message_sent": ["answer_retried", "catalogue_size", "context_mode", "finish_reason", "items_fetched", "preset", "quote_repairs", "rounds", "scope", "scope_source", "scope_kind", "searches", "suppressed_quotes", "tier2_items", "tool_calls", "truncated", "unmatched_quotes", "renditions_read"],
+  "reflect.message_sent": ["answer_retried", "catalogue_fallback", "catalogue_size", "context_mode", "context_share", "finish_reason", "items_fetched", "preset", "quote_repairs", "rounds", "scope", "scope_source", "scope_kind", "searches", "suppressed_quotes", "tier2_items", "tool_calls", "truncated", "unmatched_quotes", "renditions_read"],
   "reflect.session_created": ["context_mode", "finish_reason", "preset", "quote_repairs", "scope", "suppressed_quotes", "tier2_items", "truncated", "unmatched_quotes"],
   "shared.board_opened": ["boards_band", "granters_band", "via"],
   "shared.board_left": [],
@@ -288,7 +292,36 @@ export const ALL_EVENT_DIM_KEYS: Readonly<Record<TelemetryEvent, readonly string
   ...WORKBOARD_EVENT_DIMS,
 } as Readonly<Record<TelemetryEvent, readonly string[]>>;
 
-export type EventDimGuardResult = { keep: true; dims: TelemetryDims };
+export type EventDimGuardResult = { keep: true; dims: TelemetryDims; dropped?: string[] };
+
+/**
+ * Keys the server may stamp on any event. They describe where the request
+ * came from, never what the person did, so they ride outside the per-event
+ * lists. AUDIT-1: host_class says which kind of host produced an "unknown"
+ * environment, as a closed bucket (see hostClassFromHost), never the host.
+ */
+export const UNIVERSAL_DIM_KEYS = ["host_class"] as const;
+
+/**
+ * The server-side guard: the whole union, workboard included, plus the
+ * universal keys. Drops anything else and names the dropped keys (keys only,
+ * never values) so a silent loss shows up in the logs.
+ */
+export function guardServerEventDims(name: string, dims: TelemetryDims): EventDimGuardResult {
+  const allowed = (ALL_EVENT_DIM_KEYS as Readonly<Record<string, readonly string[]>>)[name];
+  const clean: TelemetryDims = {};
+  const dropped: string[] = [];
+  for (const key of Object.keys(dims)) {
+    const ok =
+      (allowed?.includes(key) ?? false) || (UNIVERSAL_DIM_KEYS as readonly string[]).includes(key);
+    if (ok) clean[key] = dims[key] as TelemetryDims[string];
+    else dropped.push(key);
+  }
+  if (dropped.length > 0) {
+    console.warn(`[telemetry] ${name}: dims dropped by the server guard: ${dropped.join(",")}`);
+  }
+  return { keep: true, dims: clean, dropped };
+}
 
 /**
  * Keeps the event, drops any key not listed against its name. An unknown name

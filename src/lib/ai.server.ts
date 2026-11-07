@@ -459,7 +459,9 @@ function afterCall(result: ChatResult, meta: AiMeta | undefined): Promise<void> 
       meta: { slow_threshold_ms: SLOW_CALL_MS, cached_in: result.cachedIn },
     });
   }
-  if (result.finishReason === "length") {
+  // AUDIT-1 (7 Nov 2026): a cache prime asks for one token by design, so its
+  // finish_reason is always "length". That is the point, not a truncation.
+  if (result.finishReason === "length" && surface !== "ask_prime") {
     void logHealth({
       kind: "truncated",
       surface,
