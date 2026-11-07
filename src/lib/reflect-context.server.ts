@@ -46,6 +46,8 @@ const MAX_BACKFILL_INLINE = 2;
 const TEXT_BUDGET_MS = 25_000;
 /** How many files are opened at once. Accounting stays strictly serial. */
 const TEXT_FETCH_CHUNK = 4;
+/** TOTAL-3: above this many items the all-at-once open falls back to chunks, to keep storage connections bounded. */
+const TEXT_FETCH_ALL_MAX = 60;
 
 type Db = SupabaseClient<Database>;
 
@@ -623,14 +625,18 @@ export async function assembleReflectContext(
   let anyCut = false;
   let renditionsRead = 0;
   const textStarted = Date.now();
-  // Files are opened a few at a time, in priority order, and then accounted
-  // for one by one in that same order, so every inclusion decision is the one
-  // the old serial pass would have made.
-  for (let i = 0; i < priority.length; i += TEXT_FETCH_CHUNK) {
+  // TOTAL-3: when the read set's known size fits the window, every item is
+  // opened at once (one round trip instead of one per chunk) and accounted
+  // for in priority order afterwards. The chunked path stays for a read set
+  // that may not fit, where opening order decides what gets in.
+  const knownChars = priority.reduce((sum, item) => sum + storedCharsHint(item), 0);
+  const fetchAll = knownChars > 0 && knownChars <= rawBudget * 0.9 && priority.length <= TEXT_FETCH_ALL_MAX;
+  const step = fetchAll ? priority.length : TEXT_FETCH_CHUNK;
+  for (let i = 0; i < priority.length; i += step) {
     // Once the budget or the clock is gone, stop opening files entirely: the
     // remaining items still appear, as their extract.
     if (rawUsed >= rawBudget || Date.now() - textStarted > TEXT_BUDGET_MS) break;
-    const chunk = priority.slice(i, i + TEXT_FETCH_CHUNK);
+    const chunk = priority.slice(i, i + step);
     const fetched = await Promise.all(
       chunk.map(async (item) => ({ item, result: await getItemText(supabase, item) })),
     );
@@ -641,7 +647,7 @@ export async function assembleReflectContext(
     if (applied.stop) break;
   }
   console.log(
-    `[reflect-context] text pass: ${fullText.size} full, ${unreadable.size} unreadable, ${Date.now() - textStarted}ms`,
+    `[reflect-context] text pass: ${fullText.size} full, ${unreadable.size} unreadable, ${Date.now() - textStarted}ms, ${fetchAll ? "all at once" : "chunked"}`,
   );
 
   // 6b. TOTAL-1: the record index of the whole board the scope sits on.

@@ -9,6 +9,7 @@ import { useEngagementPage } from "@/hooks/use-engagement-page";
 import { useWorkItems } from "@/hooks/use-work-items";
 import { supabase } from "@/integrations/supabase/client";
 import { streamChatRequest } from "@/lib/stream-client";
+import { primeReadSet } from "@/lib/ask-prime-client";
 import type { ReflectResult } from "@/lib/reflect-run.server";
 import {
   boardSelectionScope,
@@ -227,6 +228,12 @@ export function useAskLasso({
     return tag({ mode: "items", ids: selectedItems.map((i) => i.id) });
   }
   const scopeKey = scopeForSelection().ids.join(",") + selectedItems.length;
+  // TOTAL-5: warm the cache for the current read set when the person turns to
+  // the composer, so the first question is a cache hit. No content, no event.
+  const primeNow = () => {
+    if (pending) return;
+    void primeReadSet(scopeForSelection(), profileId);
+  };
 
   // A live session follows the selection, so what Lasso reads and what the
   // audit strip records are always the current choice.
@@ -383,6 +390,7 @@ export function useAskLasso({
     coverage,
     draft,
     draftPointed,
+    primeNow,
     engagementBrief,
     error: sectionState ?? error,
     firmChecks,

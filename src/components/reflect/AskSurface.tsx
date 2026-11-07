@@ -706,6 +706,7 @@ export function AskComposer({
             value={ask.draft}
             enterKeyHint="send"
             inputMode="text"
+            onFocus={() => ask.primeNow?.()}
             onChange={(event) => {
               ask.onDraftChange(event.target.value, event.target.selectionStart ?? 0);
               slash.onChange(event.target.value, event.target.selectionStart ?? 0);
