@@ -1,6 +1,15 @@
 // @vitest-environment jsdom
-import { describe, expect, it } from "vitest";
+import { act, cleanup, renderHook } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { BOARD_PASTE_TEXT_CAP, pasteBelongsToBoard, readClipboardItems, readPaste, type PasteInput } from "@/lib/board-paste";
+
+const { announce, pasted } = vi.hoisted(() => ({ announce: vi.fn(), pasted: vi.fn() }));
+vi.mock("sonner", () => ({ toast: announce }));
+vi.mock("@/components/canvas-lab/canvas-lab-telemetry", () => ({ noteWorkboardPasted: pasted }));
+vi.mock("@/components/canvas-lab/board-image", () => ({ isBoardImageFile: (file: File) => file.type.startsWith("image/") }));
+import { useBoardPaste } from "@/components/canvas-lab/useBoardPaste";
+
+afterEach(() => { cleanup(); vi.restoreAllMocks(); announce.mockClear(); pasted.mockClear(); });
 
 const png = { name: "image.png", type: "image/png" };
 const input = (p: Partial<PasteInput>): PasteInput => ({ files: [], text: "", html: "", uriList: "", ...p });
@@ -67,5 +76,52 @@ describe("PASTE-1 pasteBelongsToBoard", () => {
     d.appendChild(inner);
     document.body.appendChild(d);
     expect(pasteBelongsToBoard(inner, document.body)).toBe(false);
+  });
+});
+
+describe("PASTE-2 shared paste path", () => {
+  const at = { x: 12, y: 34 };
+  function harness() {
+    document.body.focus();
+    const addFiles = vi.fn(async () => ({ added: 1, failed: 0 }));
+    const addText = vi.fn(async () => true);
+    const hook = renderHook(() => useBoardPaste({
+      enabled: true, shellRef: { current: document.body }, toBoard: () => at,
+      viewportPoint: () => at, addFiles, addText, orgId: "o",
+    }));
+    return { ...hook, addFiles, addText };
+  }
+
+  it("menu and keys both add text at the requested point with their own via", async () => {
+    const read = vi.fn(async () => [{ types: ["text/plain"], presentationStyle: "unspecified", getType: async () => ({ text: async () => "Memo" } as Blob) } as ClipboardItem]);
+    vi.spyOn(navigator, "clipboard", "get").mockReturnValue({ read } as unknown as Clipboard);
+    const hook = harness();
+    await act(() => hook.result.current.pasteFromClipboard(at));
+    expect(hook.addText).toHaveBeenLastCalledWith("Memo", at);
+    expect(pasted).toHaveBeenLastCalledWith("o", "text", "added", "menu");
+    const event = new Event("paste", { bubbles: true, cancelable: true });
+    Object.defineProperty(event, "clipboardData", { value: { files: [], getData: (type: string) => type === "text/plain" ? "Memo" : "" } });
+    await act(async () => { document.body.dispatchEvent(event); });
+    expect(hook.addText).toHaveBeenCalledTimes(2);
+    expect(pasted).toHaveBeenLastCalledWith("o", "text", "added", "keys");
+    expect(event.defaultPrevented).toBe(true);
+  });
+
+  it("reports unsupported menu access without reading or adding content", async () => {
+    vi.spyOn(navigator, "clipboard", "get").mockReturnValue({} as Clipboard);
+    const hook = harness();
+    await act(() => hook.result.current.pasteFromClipboard(at));
+    expect(announce).toHaveBeenCalledWith("Your browser cannot paste from a menu. Press Cmd+V on the board instead.");
+    expect(pasted).toHaveBeenCalledWith("o", "text", "failed", "menu");
+    expect(hook.addText).not.toHaveBeenCalled();
+  });
+
+  it("reports denied clipboard access without adding content", async () => {
+    vi.spyOn(navigator, "clipboard", "get").mockReturnValue({ read: async () => { throw new Error("denied"); } } as unknown as Clipboard);
+    const hook = harness();
+    await act(() => hook.result.current.pasteFromClipboard(at));
+    expect(announce).toHaveBeenCalledWith("Paste needs clipboard access. Allow it in the address bar, or press Cmd+V.");
+    expect(pasted).toHaveBeenCalledWith("o", "text", "failed", "menu");
+    expect(hook.addText).not.toHaveBeenCalled();
   });
 });
