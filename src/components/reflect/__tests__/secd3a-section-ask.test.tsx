@@ -37,7 +37,7 @@ describe('SECD-3a section Ask', () => {
   it('asks about exactly three live cards and writes ordinary items scope', async () => {
     const { result } = stableHook(() => ['a','b','c']);
     await send(result);
-    expect(state.writes.filter((v: any) => v.context_scope).at(-1)).toEqual({ context_scope: { mode: 'items', ids: ['a','b','c'] } });
+    expect(state.writes.filter((v: any) => v.context_scope).at(-1)).toEqual({ context_scope: { mode: 'items', ids: ['a','b','c'], board: 'e' } });
     expect(state.requests).toHaveLength(1);
     expect(state.requests[0]).toMatchObject({ scope_kind: 'section', pointed_at: [] });
     expect(state.requests[0]).not.toHaveProperty('section_id');
@@ -54,14 +54,14 @@ describe('SECD-3a section Ask', () => {
   });
   it('recomputes members at send rather than freezing the menu selection', async () => {
     let ids = ['a']; const { result } = stableHook(() => ids); ids = ['b','c']; await send(result);
-    expect(state.writes.at(-1)).toEqual({ context_scope: { mode: 'items', ids: ['b','c'] } });
+    expect(state.writes.at(-1)).toEqual({ context_scope: { mode: 'items', ids: ['b','c'], board: 'e' } });
   });
   it('nested card belongs only to the inner section', async () => {
     const outer = { id: 'outer', x: 0, y: 0, width: 1000, height: 1000 };
     const inner = { id: 'inner', x: 100, y: 100, width: 200, height: 200 };
     const cards = [{ id: 'a', x: 150, y: 150, width: 40, height: 40 }, { id: 'b', x: 400, y: 400, width: 40, height: 40 }];
     const { result } = stableHook(() => cards.filter(card => containingSection(card, [outer, inner])?.id === 'outer').map(card => card.id));
-    await send(result); expect(state.writes.at(-1)).toEqual({ context_scope: { mode: 'items', ids: ['b'] } });
+    await send(result); expect(state.writes.at(-1)).toEqual({ context_scope: { mode: 'items', ids: ['b'], board: 'e' } });
   });
   it('deleted section stops before asking', async () => {
     let ids: string[] | null = ['a']; const { result } = stableHook(() => ids); ids = null; await send(result);
@@ -71,7 +71,7 @@ describe('SECD-3a section Ask', () => {
   it('mentions narrow only within the resolved members', async () => {
     const { result } = stableHook(() => ['a','b','c']); await send(result, 'Compare @a and @outside');
     expect(state.requests[0]?.['pointed_at']).toEqual(['a']);
-    expect(state.writes.at(-1)).toEqual({ context_scope: { mode: 'items', ids: ['a','b','c'] } });
+    expect(state.writes.at(-1)).toEqual({ context_scope: { mode: 'items', ids: ['a','b','c'], board: 'e' } });
   });
   it('only an outside mention stops instead of broadening', async () => {
     const { result } = stableHook(() => ['a']); await send(result, 'Read @outside');

@@ -85,6 +85,8 @@ export function useAskLasso({
     truncated: boolean;
     fullCount: number;
     summaryCount: number;
+    noTextCount?: number;
+    share?: number | null;
   } | null>(null);
   const [liveManifest, setLiveManifest] = useState<ContextManifest | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -358,6 +360,8 @@ export function useAskLasso({
         truncated: result.truncated,
         fullCount: result.fullCount,
         summaryCount: result.summaryCount,
+        noTextCount: result.noTextCount ?? 0,
+        share: result.share ?? null,
       });
       setLiveManifest(result.manifest ?? null);
       await queryClient.invalidateQueries({ queryKey: ["reflect-messages", id] });

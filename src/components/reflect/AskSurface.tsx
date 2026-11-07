@@ -30,7 +30,7 @@ import { LassoThinkingMark } from "@/components/reflect/LassoThinkingMark";
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
 import { LOOP_SIZE_CHAT } from "@/lib/lasso-loop";
 import { useHasLiveCoachLink } from "@/hooks/use-coaching-links";
-import { extractTurnRefs, type TurnRef } from "@/lib/turn-labels";
+import { citationsFromManifest, extractTurnRefs, turnRefsFromCitations, type TurnRef } from "@/lib/turn-labels";
 import { AnswerTurnLinks } from "@/components/reflect/AnswerTurnLinks";
 import { ThreadViewerById } from "@/components/work/ThreadViewerById";
 
@@ -412,9 +412,13 @@ export function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions
                   <AnswerRail state="done">
                     <MarkdownMessage content={message.content} variant="binder" />
                     <AnswerTurnLinks
-                      refs={extractTurnRefs(
-                        message.content,
+                      refs={turnRefsFromCitations(
+                        citationsFromManifest(message.context_manifest),
                         ask.sourcesByMessage?.[Number(message.id)] ?? [],
+                        extractTurnRefs(
+                          message.content,
+                          ask.sourcesByMessage?.[Number(message.id)] ?? [],
+                        ),
                       )}
                       onOpen={setOpenTurn}
                     />
@@ -499,7 +503,7 @@ export function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions
           </div>
         ) : null}
 
-        {ask.coverage?.truncated ? (
+        {ask.coverage && (ask.coverage.truncated || (ask.coverage.share ?? 1) < 0.999 || (ask.coverage.noTextCount ?? 0) > 0) ? (
           <div className="nb-binder-inset">
             <CoverageNote {...ask.coverage} />
           </div>

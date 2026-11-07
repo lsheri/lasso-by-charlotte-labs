@@ -191,7 +191,13 @@ export function auditReadRows(manifest: ContextManifest, allReads: ContextSource
       key: item.id || item.title,
       title: displayName(item),
       kind: item.kind,
-      detail: read ? READ_DEPTH_DETAIL[read.depth] : item.detail,
+      // TOTAL-2: an item with nothing stored was never a summary choice; say so.
+      detail:
+        read && read.depth === "extract" && item.chars_total === 0 && /no stored text/i.test(item.detail)
+          ? "no stored text"
+          : read
+            ? READ_DEPTH_DETAIL[read.depth]
+            : item.detail,
       openId: read ? read.id : null,
     };
   });

@@ -91,3 +91,51 @@ export function extractTurnRefs(
   }
   return refs;
 }
+
+/** TOTAL-2: a citation the model returned, as stored on the answer's manifest. */
+export type StoredCitation = { item_id: string | null; turn_no: number | null; text: string };
+
+/**
+ * Citations that land on a conversation turn become turn links beside the
+ * answer, merged with the refs found in the prose so a turn is never listed
+ * twice. A citation on a file carries no turn and is rendered by the trail.
+ */
+export function turnRefsFromCitations(
+  citations: readonly StoredCitation[] | null | undefined,
+  conversations: readonly { id: string; title: string }[],
+  existing: readonly TurnRef[] = [],
+  max = 12,
+): TurnRef[] {
+  const out: TurnRef[] = [...existing];
+  const seen = new Set(existing.map((r) => `${r.work_item_id}:${r.turn_no}`));
+  const titles = new Map(conversations.map((c) => [c.id, c.title]));
+  for (const c of citations ?? []) {
+    if (!c.item_id || typeof c.turn_no !== "number") continue;
+    const title = titles.get(c.item_id);
+    if (!title) continue;
+    const key = `${c.item_id}:${c.turn_no}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ work_item_id: c.item_id, turn_no: c.turn_no, label: `${title}, turn ${c.turn_no}` });
+    if (out.length >= max) break;
+  }
+  return out;
+}
+
+/** Reads the stored citations off a manifest value without trusting its shape. */
+export function citationsFromManifest(value: unknown): StoredCitation[] {
+  if (!value || typeof value !== "object") return [];
+  const raw = (value as { citations?: unknown }).citations;
+  if (!Array.isArray(raw)) return [];
+  const out: StoredCitation[] = [];
+  for (const entry of raw) {
+    if (!entry || typeof entry !== "object") continue;
+    const e = entry as { item_id?: unknown; turn_no?: unknown; text?: unknown };
+    out.push({
+      item_id: typeof e.item_id === "string" ? e.item_id : null,
+      turn_no: typeof e.turn_no === "number" ? e.turn_no : null,
+      text: typeof e.text === "string" ? e.text : "",
+    });
+  }
+  return out;
+}

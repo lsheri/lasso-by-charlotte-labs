@@ -27,6 +27,10 @@ export type ReflectResult = {
   title: string | null;
   fullCount: number;
   summaryCount: number;
+  /** TOTAL-2: read-set items with nothing stored to read. */
+  noTextCount?: number;
+  /** TOTAL-2: share of selected text in context, 0 to 1. */
+  share?: number;
   messageId: number | null;
   sources: ContextSource[];
   cutOff: boolean;
@@ -403,7 +407,13 @@ export async function runReflectTurn(
   // Prevent, verify, repair, then refuse. The reader never sees a warning.
   const { guardQuotes } = await import("./quote-guard.server");
   // Verified against verbatim text only: an extract is not a quotable source.
-  const guarded = await guardQuotes(raw, assembled.quotable, cutOff, conversation, aiMeta);
+  // TOTAL-2: with citations in hand the guard verifies against them and never
+  // spends a second model call; the repair turn is only for the OpenAI hop.
+  const citedTexts = (completion.citations ?? []).map((c) => c.cited_text);
+  const guarded = await guardQuotes(raw, assembled.quotable, cutOff, conversation, aiMeta, {
+    citedTexts,
+    repair: citedTexts.length === 0,
+  });
   // Never present a cut-off answer as if it were complete, and never discard it.
   const answer = stripTurnTags(cutOff ? `${guarded.answer}\n\n${CUT_OFF_NOTE}` : guarded.answer);
   const turnRefs = extractTurnRefs(
@@ -489,15 +499,21 @@ export async function runReflectTurn(
     scopeMode: scope.mode,
   });
 
+  const noTextCount = assembled.manifest.items.filter(
+    (item) => item.chars_total === 0 && /no stored text/i.test(item.detail),
+  ).length;
+
   return {
     answer,
     truncated: assembled.truncated,
     title,
     fullCount: assembled.tier2Count,
     summaryCount: Math.max(
-      assembled.tier1Count - assembled.tier2Count - assembled.unreadableCount,
+      assembled.tier1Count - assembled.tier2Count - assembled.unreadableCount - noTextCount,
       0,
     ),
+    noTextCount,
+    share: assembled.readSet?.share,
     messageId: answerId,
     sources: assembled.sources,
     cutOff,
