@@ -202,6 +202,12 @@ export type ChatOptions = {
   tools?: unknown[];
   toolChoice?: unknown;
   meta?: AiMeta;
+  /**
+   * TOTAL-5b: wait for the cost row before returning. A route that answers
+   * the moment the call ends (the cache prime) otherwise lets the server tear
+   * down the detached write, and the call goes unrecorded.
+   */
+  awaitAccounting?: boolean;
 };
 
 const SLOW_CALL_MS = 20_000;
@@ -437,8 +443,8 @@ export async function recordUsage(result: ChatResult, meta: AiMeta | undefined):
   }
 }
 
-function afterCall(result: ChatResult, meta: AiMeta | undefined): void {
-  void recordUsage(result, meta);
+function afterCall(result: ChatResult, meta: AiMeta | undefined): Promise<void> {
+  const accounted = recordUsage(result, meta);
   const surface = meta?.surface ?? "unknown";
   if (result.durationMs > SLOW_CALL_MS) {
     void logHealth({
@@ -466,6 +472,7 @@ function afterCall(result: ChatResult, meta: AiMeta | undefined): void {
       meta: { finish_reason: "length" },
     });
   }
+  return accounted;
 }
 
 async function failed(
@@ -730,7 +737,8 @@ export async function chatComplete(
       citations: resolveCitations(parsed.citations, messages),
     };
     notePricing(result.model, options.meta);
-    afterCall(result, options.meta);
+    const accounted = afterCall(result, options.meta);
+    if (options.awaitAccounting) await accounted;
     return result;
   }
 

@@ -654,6 +654,6 @@ export async function primeReflectContext(
   });
   const { chatComplete, resolveAiMeta } = await import("./ai.server");
   const aiMeta = await resolveAiMeta(supabase, { surface: "ask_prime", orgId: profile.org_id, profileId: profile.id, userId });
-  const result = await chatComplete(conversation, { tier: "smart", maxTokens: 1, timeoutMs: ANSWER_TIMEOUT_MS, meta: aiMeta });
+  const result = await chatComplete(conversation, { tier: "smart", maxTokens: 1, timeoutMs: ANSWER_TIMEOUT_MS, meta: aiMeta, awaitAccounting: true });
   return { primed: true, tokens_in: result.tokensIn, cache_write_in: Math.max(0, result.tokensIn - result.cachedIn) };
 }
