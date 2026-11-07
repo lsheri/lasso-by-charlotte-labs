@@ -33,31 +33,44 @@ const preparedImages = new WeakMap<File, Promise<PreparedImage>>();
 function prepareBoardImage(file: File): Promise<PreparedImage> {
   const existing = preparedImages.get(file);
   if (existing) return existing;
-  const prepared = new Promise<PreparedImage>((resolve, reject) => {
-    const url = URL.createObjectURL(file);
+  const unchanged: PreparedImage = { file, size: { width: 0, height: 0 } };
+  const canvas = typeof document === "undefined" ? null : document.createElement("canvas");
+  let context: CanvasRenderingContext2D | null = null;
+  try { context = canvas?.getContext("2d") ?? null; } catch { /* Canvas is unavailable. */ }
+  if (!canvas || !context) {
+    const fallback = Promise.resolve(unchanged);
+    preparedImages.set(file, fallback);
+    return fallback;
+  }
+  const drawingContext = context;
+  let url: string | null = null;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<PreparedImage>((resolve) => {
+    timer = setTimeout(() => resolve(unchanged), 4000);
+  });
+  const decode = new Promise<PreparedImage>((resolve, reject) => {
+    url = URL.createObjectURL(file);
+    const imageUrl = url;
     const image = new Image();
-    image.onerror = () => { URL.revokeObjectURL(url); reject(new Error("unreadable")); };
+    image.onerror = () => { URL.revokeObjectURL(imageUrl); reject(new Error("unreadable")); };
     image.onload = () => {
       const original = { width: image.naturalWidth, height: image.naturalHeight };
       const size = fitWithin(original.width, original.height);
       if (original.width <= 0 || original.height <= 0) {
-        URL.revokeObjectURL(url);
+        URL.revokeObjectURL(imageUrl);
         reject(new Error("no size"));
         return;
       }
       if (size.width === original.width && size.height === original.height) {
-        URL.revokeObjectURL(url);
+        URL.revokeObjectURL(imageUrl);
         resolve({ file, size: original });
         return;
       }
       try {
-        const canvas = document.createElement("canvas");
         canvas.width = size.width;
         canvas.height = size.height;
-        const context = canvas.getContext("2d");
-        if (!context) { URL.revokeObjectURL(url); resolve({ file, size: original }); return; }
-        context.drawImage(image, 0, 0, size.width, size.height);
-        URL.revokeObjectURL(url);
+        drawingContext.drawImage(image, 0, 0, size.width, size.height);
+        URL.revokeObjectURL(imageUrl);
         const type = file.type === "image/png" ? "image/png" : "image/jpeg";
         canvas.toBlob(async (blob) => {
           if (!blob) { resolve({ file, size: original }); return; }
@@ -66,11 +79,15 @@ function prepareBoardImage(file: File): Promise<PreparedImage> {
           catch { resolve({ file, size: original }); }
         }, type, 0.9);
       } catch {
-        URL.revokeObjectURL(url);
+        URL.revokeObjectURL(imageUrl);
         resolve({ file, size: original });
       }
     };
-    image.src = url;
+    image.src = imageUrl;
+  });
+  const prepared = Promise.race([decode.catch(() => unchanged), timeout]).finally(() => {
+    if (timer !== undefined) clearTimeout(timer);
+    if (url !== null) URL.revokeObjectURL(url);
   });
   preparedImages.set(file, prepared);
   return prepared;

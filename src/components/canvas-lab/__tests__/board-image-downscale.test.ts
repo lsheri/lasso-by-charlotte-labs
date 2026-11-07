@@ -9,7 +9,7 @@ vi.mock("@/integrations/supabase/client", () => ({ supabase: {
 vi.mock("@/lib/workboard-file-sign", () => ({ signWorkboardFileUrl: vi.fn() }));
 import { fitWithin, readImageSize, uploadBoardImage } from "../board-image";
 
-afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); upload.mockClear(); });
+afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); vi.unstubAllGlobals(); upload.mockClear(); });
 
 describe("PASTE-2 image sizing", () => {
   it("fits landscape to 2048 by 1536", () => expect(fitWithin(4000, 3000)).toEqual({ width: 2048, height: 1536 }));
@@ -41,6 +41,7 @@ describe("PASTE-2 image sizing", () => {
   });
 
   it("uploads an undecodable file unchanged", async () => {
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue({} as CanvasRenderingContext2D);
     vi.stubGlobal("URL", { createObjectURL: () => "blob:bad", revokeObjectURL: vi.fn() });
     vi.stubGlobal("Image", class {
       onerror: (() => void) | null = null;
@@ -49,5 +50,43 @@ describe("PASTE-2 image sizing", () => {
     const file = new File(["bad"], "bad.png", { type: "image/png" });
     await uploadBoardImage(file);
     expect(upload).toHaveBeenCalledWith(expect.any(String), file);
+  });
+
+  it("uploads unchanged within 100 ms when 2D canvas is unavailable", async () => {
+    vi.useFakeTimers();
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null);
+    const image = vi.fn();
+    vi.stubGlobal("Image", image);
+    const file = new File(["original"], "no-canvas.png", { type: "image/png" });
+    let done = false;
+    const pending = uploadBoardImage(file).then(() => { done = true; });
+    await vi.advanceTimersByTimeAsync(100);
+    expect(done).toBe(true);
+    expect(image).not.toHaveBeenCalled();
+    expect(upload).toHaveBeenCalledWith(expect.any(String), file);
+    await pending;
+  });
+
+  it("a stuck decode uploads unchanged at 4000 ms and reuses the cached result", async () => {
+    vi.useFakeTimers();
+    const context = vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue({} as CanvasRenderingContext2D);
+    const revoke = vi.fn();
+    vi.stubGlobal("URL", { createObjectURL: () => "blob:stuck", revokeObjectURL: revoke });
+    const image = vi.fn(function () { return {}; });
+    vi.stubGlobal("Image", image);
+    const file = new File(["original"], "stuck.png", { type: "image/png" });
+    let done = false;
+    const pending = uploadBoardImage(file).then(() => { done = true; });
+    await vi.advanceTimersByTimeAsync(3999);
+    expect(done).toBe(false);
+    expect(upload).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1);
+    expect(done).toBe(true);
+    expect(upload).toHaveBeenCalledWith(expect.any(String), file);
+    expect(revoke).toHaveBeenCalledWith("blob:stuck");
+    await pending;
+    await uploadBoardImage(file);
+    expect(context).toHaveBeenCalledTimes(1);
+    expect(image).toHaveBeenCalledTimes(1);
   });
 });
