@@ -50,17 +50,17 @@ describe("TOTAL-4 read details", () => {
   });
   it("uses narrowed selection, pointed draft, then pending pointed scope", () => {
     const { rerender } = render(<AskReadChip ask={ask({ selectedItems: [items[0]] })} />);
-    expect(screen.getByTestId("ask-read-chip").textContent).toBe("1 items · about 30k characters");
+    expect(screen.getByTestId("ask-read-chip").textContent).toBe("1 item · about 30k characters");
     rerender(<AskReadChip ask={ask({ draftPointed: [items[1]] })} />);
-    expect(screen.getByTestId("ask-read-chip").textContent).toBe("1 items · about 34k characters");
+    expect(screen.getByTestId("ask-read-chip").textContent).toBe("1 item · about 34k characters");
     rerender(<AskReadChip ask={ask({ pending: true, draftPointed: [items[1]], pointedNow: [items[0]] })} />);
-    expect(screen.getByTestId("ask-read-chip").textContent).toBe("1 items · about 30k characters");
+    expect(screen.getByTestId("ask-read-chip").textContent).toBe("1 item · about 30k characters");
   });
   it("hides an empty scope and omits missing character counts", () => {
     const { rerender } = render(<AskReadChip ask={ask({ selectedItems: [] })} />);
     expect(screen.queryByTestId("ask-read-chip")).toBeNull();
     rerender(<AskReadChip ask={ask({ selectedItems: [{ id: "x", title: "X", meta: {} }] })} />);
-    expect(screen.getByTestId("ask-read-chip").textContent).toBe("1 items");
+    expect(screen.getByTestId("ask-read-chip").textContent).toBe("1 item");
   });
   it("places the read chip after the scope label on desktop and phone", () => {
     const props = { tab: "messages" as const, onTab: vi.fn(), engagementId: "board", engagementTitle: "Board", profileId: "p", orgId: "o", onClose: vi.fn() };

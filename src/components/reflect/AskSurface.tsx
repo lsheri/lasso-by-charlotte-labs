@@ -196,7 +196,8 @@ export function AskReadChip({ ask }: { ask: AskLasso }) {
     const value = meta && typeof meta === "object" && !Array.isArray(meta) && "text_chars" in meta ? meta.text_chars : undefined;
     return total + (typeof value === "number" && Number.isFinite(value) && value > 0 ? value : 0);
   }, 0);
-  return <p className="mt-1 font-mono text-xs text-muted-foreground" data-testid="ask-read-chip">{items.length} items{chars > 0 ? ` · about ${Math.round(chars / 1000)}k characters` : ""}</p>;
+  const count = `${items.length} ${items.length === 1 ? "item" : "items"}`;
+  return <p className="mt-1 font-mono text-xs text-muted-foreground" data-testid="ask-read-chip">{count}{chars > 0 ? ` · about ${Math.round(chars / 1000)}k characters` : ""}</p>;
 }
 
 export function AskScopeChip({
