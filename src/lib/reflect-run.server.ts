@@ -4,7 +4,7 @@ import { earlierReadsNote } from "@/lib/earlier-reads";
 import { extractTurnRefs, stripTurnTags, TURN_CITATION_RULE, type TurnRef } from "@/lib/turn-labels";
 
 import type { Database } from "@/integrations/supabase/types";
-import type { ContextSource, ScopeSource } from "@/lib/reflect-shared";
+import { ASK_LASSO_MAKING_RULES, REFLECT_SYSTEM_PROMPT, type ContextScope, type ContextSource, type ScopeSource } from "@/lib/reflect-shared";
 import type { AnalysisPresetId } from "@/lib/analysis-presets";
 import { shareBucket, type ContextManifest } from "@/lib/context-manifest";
 import { renditionsReadBucket } from "./reference-rendition-shared";
@@ -96,7 +96,7 @@ export async function runReflectTurn(
     throw new Response("Forbidden", { status: 403 });
   }
 
-  const { parseScope, parseScopeSource, scopeLabel, titleFromMessage, REFLECT_SYSTEM_PROMPT, ASK_LASSO_MAKING_RULES } = await import("./reflect-shared");
+  const { parseScope, parseScopeSource, titleFromMessage } = await import("./reflect-shared");
   const { analysisPreset } = await import("./analysis-presets");
   const sessionScope = parseScope(session.context_scope);
   const scopeSource = parseScopeSource(data.scope_source);
@@ -141,31 +141,11 @@ export async function runReflectTurn(
   // Where the person is asking from. The request carries no page, so this is
   // derived from the session scope: one engagement names it, otherwise the
   // whole record (no board open).
-  let whereLine: string | null = null;
-  if (surface === "ask_lasso") {
-    let place = "Ask Lasso, across their whole record, with no board open";
-    if (sessionScope.mode === "engagements" && sessionScope.ids.length === 1) {
-      const { data: engagement } = await supabase
-        .from("engagements")
-        .select("title")
-        .eq("id", sessionScope.ids[0]!)
-        .maybeSingle();
-      if (engagement?.title) place = `Ask Lasso, on the workboard ${engagement.title}`;
-    } else if (sessionScope.mode !== "whole" && sessionScope.ids.length > 0) {
-      place = `Ask Lasso, on a chosen set of ${scopeLabel(sessionScope).toLowerCase()}`;
-    }
-    whereLine = `WHERE THE PERSON IS: ${place}.`;
-  }
+  const whereLine = surface === "ask_lasso" ? await whereLineFor(supabase, sessionScope) : null;
   const earlierReads = earlierReadsNote(
     (history ?? []) as { role: string; content: string; context_manifest?: unknown }[],
   );
-  const prompts = [
-    { role: "system" as const, content: REFLECT_SYSTEM_PROMPT },
-    ...(preset ? [{ role: "system" as const, content: preset.systemPrompt }] : []),
-    ...(surface === "ask_lasso" ? [{ role: "system" as const, content: ASK_LASSO_MAKING_RULES }] : []),
-    ...(whereLine ? [{ role: "system" as const, content: whereLine }] : []),
-    { role: "system" as const, content: TURN_CITATION_RULE },
-  ];
+  const prompts = askPrompts({ presetPrompt: preset?.systemPrompt ?? null, surface, whereLine });
   // TOTAL-1: the earlier-reads note changes after every answer, so it rides
   // in the question turn (inline path) rather than ahead of the cached record.
   // The catalogue path keeps it as a system note, as before.
@@ -598,4 +578,82 @@ async function persistTurn(
   const messageId = (written ?? []).find((row) => row.role === "assistant")?.id ?? null;
   const title = await finishTurn(supabase, { ...input, messageId });
   return { messageId, title };
+}
+
+/** The one line that says where the person is asking from, derived from the session scope. */
+export async function whereLineFor(supabase: SupabaseClient<Database>, sessionScope: ContextScope): Promise<string> {
+  const { scopeLabel } = await import("./reflect-shared");
+  let place = "Ask Lasso, across their whole record, with no board open";
+  if (sessionScope.mode === "engagements" && sessionScope.ids.length === 1) {
+    const { data: engagement } = await supabase
+      .from("engagements")
+      .select("title")
+      .eq("id", sessionScope.ids[0]!)
+      .maybeSingle();
+    if (engagement?.title) place = `Ask Lasso, on the workboard ${engagement.title}`;
+  } else if (sessionScope.mode !== "whole" && sessionScope.ids.length > 0) {
+    place = `Ask Lasso, on a chosen set of ${scopeLabel(sessionScope).toLowerCase()}`;
+  }
+  return `WHERE THE PERSON IS: ${place}.`;
+}
+
+/** The system prompts every Ask turn starts with. Byte identical between a prime and the question that follows it. */
+export function askPrompts(input: { presetPrompt?: string | null; surface: "ask_lasso" | "reflect"; whereLine: string | null }): { role: "system"; content: string }[] {
+  return [
+    { role: "system" as const, content: REFLECT_SYSTEM_PROMPT },
+    ...(input.presetPrompt ? [{ role: "system" as const, content: input.presetPrompt }] : []),
+    ...(input.surface === "ask_lasso" ? [{ role: "system" as const, content: ASK_LASSO_MAKING_RULES }] : []),
+    ...(input.whereLine ? [{ role: "system" as const, content: input.whereLine }] : []),
+    { role: "system" as const, content: TURN_CITATION_RULE },
+  ];
+}
+
+export type PrimeInput = { profile_id?: string; scope: unknown };
+
+/**
+ * TOTAL-5: warm the cache for a read set before the question is typed. The
+ * same prompts, the same record, the same acknowledgement as the question
+ * that follows, then a one-token call, so the record is a cache hit when the
+ * person presses Send. Content never leaves beyond what the question itself
+ * would send, and the reads are recorded like any other read. Returns
+ * counts only.
+ */
+export async function primeReflectContext(
+  supabase: SupabaseClient<Database>,
+  userId: string,
+  data: PrimeInput,
+): Promise<{ primed: boolean; reason?: string; tokens_in?: number; cache_write_in?: number }> {
+  const { resolveProfile } = await import("./profile-resolve");
+  const profile = await resolveProfile(supabase, userId, data.profile_id);
+  if (!profile) throw new Response("Forbidden", { status: 403 });
+  const { parseScope } = await import("./reflect-shared");
+  const scope = parseScope(data.scope);
+  if (scope.mode === "whole") return { primed: false, reason: "whole_record" };
+
+  const catalogueModule = await import("./record-catalogue.server");
+  const count = await catalogueModule.scopeItemCount(supabase, profile.id, scope);
+  if (count === 0) return { primed: false, reason: "empty" };
+  if (count > catalogueModule.CATALOGUE_THRESHOLD) return { primed: false, reason: "catalogue" };
+  const stored = await catalogueModule.scopeStoredChars(supabase, profile.id, scope);
+  if (stored > catalogueModule.CATALOGUE_CHARS) return { primed: false, reason: "catalogue" };
+
+  const whereLine = await whereLineFor(supabase, scope);
+  const prompts = askPrompts({ surface: "ask_lasso", whereLine });
+  const { assembleReflectContext } = await import("./reflect-context.server");
+  const assembled = await assembleReflectContext(supabase, profile.id, scope, { pointedAt: false, briefOnly: false });
+  if (assembled.documents.length === 0) return { primed: false, reason: "nothing_to_read" };
+  const { buildReflectConversation } = await import("./prompt-assembly");
+  const conversation = buildReflectConversation({
+    prompts,
+    historyMessages: [],
+    scopeMode: scope.mode,
+    context: assembled.context,
+    documents: assembled.documents,
+    preamble: assembled.preamble,
+    message: "Ready.",
+  });
+  const { chatComplete, resolveAiMeta } = await import("./ai.server");
+  const aiMeta = await resolveAiMeta(supabase, { surface: "ask_prime", orgId: profile.org_id, profileId: profile.id, userId });
+  const result = await chatComplete(conversation, { tier: "smart", maxTokens: 1, timeoutMs: ANSWER_TIMEOUT_MS, meta: aiMeta });
+  return { primed: true, tokens_in: result.tokensIn, cache_write_in: Math.max(0, result.tokensIn - result.cachedIn) };
 }
