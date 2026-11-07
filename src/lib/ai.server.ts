@@ -22,11 +22,39 @@ export type AiErrorClass =
 
 export type ToolCall = { id: string; name: string; arguments: string };
 
+/**
+ * TOTAL-1: one piece of the person's work handed to the model as a document
+ * the model can cite from. A conversation carries one block per turn so a
+ * citation lands on a turn; a file carries its whole text as one block.
+ */
+export type RecordDocument = {
+  /** The work item id, so a citation resolves back to the item. */
+  id: string;
+  title: string;
+  kind: "conversation" | "text";
+  /** Conversation: turn numbers, in order, one per block. Text: empty. */
+  turnNumbers: number[];
+  blocks: string[];
+  /** The header line a person would see: type, source, date, mapping. */
+  context?: string;
+};
+
+/** A verified pointer the model returned: this text, from that document. */
+export type Citation = {
+  document_index: number;
+  document_id: string | null;
+  document_title: string | null;
+  turn_no: number | null;
+  cited_text: string;
+};
+
 export type ChatMessage = {
   role: "system" | "user" | "assistant" | "tool";
   content: string;
   tool_calls?: { id: string; type: "function"; function: { name: string; arguments: string } }[];
   tool_call_id?: string;
+  /** TOTAL-1: documents carried by a user turn. Anthropic sends them as citable blocks; OpenAI gets them flattened into text. */
+  documents?: RecordDocument[];
 };
 
 /**
@@ -160,6 +188,8 @@ export type ChatResult = {
   cachedIn: number;
   costUsd: number;
   durationMs: number;
+  /** TOTAL-1: citations the model returned, in answer order. Empty on providers without them; absent on older fakes. */
+  citations?: Citation[];
 };
 
 export type ChatOptions = {
@@ -236,6 +266,42 @@ function isReasoningModel(model: string): boolean {
   return /^(gpt-5|o[0-9])/.test(model);
 }
 
+/** A document as the plain text every surface has always seen: header, then the body. */
+export function flattenDocument(doc: RecordDocument): string {
+  const head = [`WORK ITEM: ${doc.title}`, doc.context ? `  ${doc.context}` : null].filter(Boolean).join("\n");
+  return `${head}\n  Full text:\n${doc.blocks.join("\n\n")}`;
+}
+
+/**
+ * A raw citation names a document by its index in the request. The documents
+ * were ours, so the index resolves to the work item and, for a conversation,
+ * to the turn the cited block belongs to. Nothing is guessed: a citation that
+ * points outside the documents we sent is dropped.
+ */
+export function resolveCitations(raw: RawCitation[], messages: ChatMessage[]): Citation[] {
+  const docs = messages.flatMap((m) => m.documents ?? []);
+  const out: Citation[] = [];
+  for (const c of raw) {
+    const doc = docs[c.document_index];
+    if (!doc) continue;
+    let turn: number | null = null;
+    if (doc.kind === "conversation" && typeof c.start_block_index === "number") {
+      turn = doc.turnNumbers[c.start_block_index] ?? null;
+    }
+    out.push({ document_index: c.document_index, document_id: doc.id, document_title: doc.title, turn_no: turn, cited_text: c.cited_text });
+  }
+  return out;
+}
+
+export type RawCitation = {
+  document_index: number;
+  cited_text: string;
+  start_block_index?: number;
+  end_block_index?: number;
+  start_char_index?: number;
+  end_char_index?: number;
+};
+
 function buildBody(
   messages: ChatMessage[],
   model: string,
@@ -243,7 +309,14 @@ function buildBody(
   stream: boolean,
 ): Record<string, unknown> {
   const maxTokens = options.maxTokens ?? 8000;
-  const body: Record<string, unknown> = { model, messages };
+  // OpenAI has no document blocks: the record travels as the same plain text
+  // the Anthropic path cites from, so the quote guard verifies it the old way.
+  const flat = messages.map((message) =>
+    message.documents && message.documents.length > 0
+      ? { ...message, content: [message.content, ...message.documents.map(flattenDocument)].filter(Boolean).join("\n\n---\n\n"), documents: undefined }
+      : message,
+  );
+  const body: Record<string, unknown> = { model, messages: flat };
   if (isReasoningModel(model)) {
     body["max_completion_tokens"] = maxTokens;
     body["reasoning_effort"] = options.reasoningEffort ?? "low";
@@ -654,6 +727,7 @@ export async function chatComplete(
       cachedIn: parsed.cachedIn,
       costUsd: computeCostUsd(parsed.servedModel, parsed.tokensIn, parsed.cachedIn, parsed.tokensOut) + cacheWriteUsd(parsed.servedModel, parsed.cacheWriteIn),
       durationMs: Date.now() - startedAt,
+      citations: resolveCitations(parsed.citations, messages),
     };
     notePricing(result.model, options.meta);
     afterCall(result, options.meta);
@@ -709,6 +783,7 @@ export async function chatComplete(
     cachedIn,
     costUsd: computeCostUsd(servedModel, tokensIn, cachedIn, tokensOut),
     durationMs: Date.now() - startedAt,
+    citations: [],
   };
   if (priceKeyFor(servedModel) === null) {
     void logHealth({
@@ -784,6 +859,7 @@ export async function streamChat(
       cachedIn: parsed.cachedIn,
       costUsd: computeCostUsd(parsed.servedModel, parsed.tokensIn, parsed.cachedIn, parsed.tokensOut) + cacheWriteUsd(parsed.servedModel, parsed.cacheWriteIn),
       durationMs: Date.now() - startedAt,
+      citations: resolveCitations(parsed.citations, messages),
     };
     notePricing(result.model, options.meta);
     afterCall(result, options.meta);
@@ -893,6 +969,7 @@ export async function streamChat(
     cachedIn,
     costUsd: computeCostUsd(servedModel, tokensIn, cachedIn, tokensOut),
     durationMs: Date.now() - startedAt,
+    citations: [],
   };
   if (priceKeyFor(servedModel) === null) {
     void logHealth({

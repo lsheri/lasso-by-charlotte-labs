@@ -6,7 +6,7 @@ import { extractTurnRefs, stripTurnTags, TURN_CITATION_RULE, type TurnRef } from
 import type { Database } from "@/integrations/supabase/types";
 import type { ContextSource, ScopeSource } from "@/lib/reflect-shared";
 import type { AnalysisPresetId } from "@/lib/analysis-presets";
-import type { ContextManifest } from "@/lib/context-manifest";
+import { shareBucket, type ContextManifest } from "@/lib/context-manifest";
 import { renditionsReadBucket } from "./reference-rendition-shared";
 
 export type ReflectInput = {
@@ -160,9 +160,12 @@ export async function runReflectTurn(
     ...(preset ? [{ role: "system" as const, content: preset.systemPrompt }] : []),
     ...(surface === "ask_lasso" ? [{ role: "system" as const, content: ASK_LASSO_MAKING_RULES }] : []),
     ...(whereLine ? [{ role: "system" as const, content: whereLine }] : []),
-    ...(earlierReads ? [{ role: "system" as const, content: earlierReads }] : []),
     { role: "system" as const, content: TURN_CITATION_RULE },
   ];
+  // TOTAL-1: the earlier-reads note changes after every answer, so it rides
+  // in the question turn (inline path) rather than ahead of the cached record.
+  // The catalogue path keeps it as a system note, as before.
+  const cataloguePrompts = [...prompts, ...(earlierReads ? [{ role: "system" as const, content: earlierReads }] : [])];
 
   const { chatComplete, streamChat, resolveAiMeta } = await import("./ai.server");
   const aiMeta = await resolveAiMeta(supabase, {
@@ -174,10 +177,27 @@ export async function runReflectTurn(
 
   // Above the threshold, the record is too large to pour into one prompt, so
   // the model gets an index of all of it and fetches what the question needs.
-  const { scopeItemCount, CATALOGUE_THRESHOLD } = await import("./record-catalogue.server");
+  const catalogueModule = await import("./record-catalogue.server");
+  const { scopeItemCount, CATALOGUE_THRESHOLD } = catalogueModule;
   const inScopeCount = await scopeItemCount(supabase, profile.id, scope);
+  // TOTAL-1: size decides, not count. The read set goes inline as written
+  // whenever its stored text fits the window; only a read set past the
+  // window (or past the item ceiling the loader can see) is catalogued.
+  let sizeOf: typeof catalogueModule.scopeStoredChars | undefined;
+  let windowChars = 3_200_000;
+  try {
+    sizeOf = catalogueModule.scopeStoredChars;
+    windowChars = catalogueModule.CATALOGUE_CHARS ?? windowChars;
+  } catch {
+    sizeOf = undefined;
+  }
+  const storedChars =
+    !briefOnly && inScopeCount <= CATALOGUE_THRESHOLD && typeof sizeOf === "function"
+      ? await sizeOf(supabase, profile.id, scope)
+      : 0;
+  const overWindow = storedChars > windowChars;
   const contextMode: "inline" | "catalogue" =
-    !briefOnly && inScopeCount > CATALOGUE_THRESHOLD ? "catalogue" : "inline";
+    !briefOnly && (inScopeCount > CATALOGUE_THRESHOLD || overWindow) ? "catalogue" : "inline";
 
   if (contextMode === "catalogue") {
     const { runCatalogueAnswer } = await import("./record-answer.server");
@@ -186,7 +206,7 @@ export async function runReflectTurn(
       {
         ownerId: profile.id,
         scope,
-        prompts,
+        prompts: cataloguePrompts,
         history: historyMessages,
         question: message,
         meta: aiMeta,
@@ -202,7 +222,7 @@ export async function runReflectTurn(
       run.answer || "I couldn't draw an answer out of that. Try asking a different way.",
       run.quotable,
       cutOffCat,
-      [...prompts, { role: "user" as const, content: message }],
+      [...cataloguePrompts, { role: "user" as const, content: message }],
       aiMeta,
     );
     const answerCat = stripTurnTags(cutOffCat ? `${guardedCat.answer}\n\n${CUT_OFF}` : guardedCat.answer);
@@ -347,6 +367,9 @@ export async function runReflectTurn(
     historyMessages,
     scopeMode: scope.mode,
     context: assembled.context,
+    documents: assembled.documents,
+    preamble: assembled.preamble,
+    perQuestionNote: earlierReads,
     message,
   });
   // Chat never asks for a structured tail, but if a model ever emits the
@@ -388,6 +411,14 @@ export async function runReflectTurn(
     assembled.sources.filter((src) => src.type === "ai_thread" && src.depth === "full"),
   );
 
+  // TOTAL-1: the verified pointers the model returned, kept beside the answer.
+  // Content stays in the person's own row, never in telemetry.
+  const citations = (completion.citations ?? []).slice(0, 60).map((c) => ({
+    item_id: c.document_id,
+    turn_no: c.turn_no,
+    text: c.cited_text.slice(0, 400),
+  }));
+  const manifestToStore = citations.length > 0 ? { ...assembled.manifest, citations } : assembled.manifest;
   const { data: written, error: insertError } = await supabase
     .from("chat_messages")
     .insert([
@@ -395,7 +426,7 @@ export async function runReflectTurn(
         session_id: session.id,
         role: "assistant",
         content: answer,
-        context_manifest: assembled.manifest as unknown as never,
+        context_manifest: manifestToStore as unknown as never,
       },
     ])
     .select("id, role");
@@ -444,6 +475,7 @@ export async function runReflectTurn(
       suppressed_quotes: quoteBucket(guarded.suppressed),
       finish_reason: completion.finishReason,
       renditions_read: renditionsReadBucket(assembled.renditionsRead ?? 0),
+      context_share: shareBucket(assembled.readSet?.share),
       ...(preset ? { preset: preset.id } : {}),
     },
   });

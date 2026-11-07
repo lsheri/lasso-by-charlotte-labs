@@ -7,7 +7,7 @@
  * and see the same ChatResult shape whichever provider answered.
  */
 
-import type { AiErrorClass, ChatMessage, ChatOptions, ToolCall } from "./ai.server";
+import type { AiErrorClass, ChatMessage, ChatOptions, RawCitation, RecordDocument, ToolCall } from "./ai.server";
 
 export const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 export const ANTHROPIC_VERSION = "2023-06-01";
@@ -21,8 +21,25 @@ export const RESPOND_TOOL = "respond";
 type TextBlock = { type: "text"; text: string };
 type ToolUseBlock = { type: "tool_use"; id: string; name: string; input: unknown };
 type ToolResultBlock = { type: "tool_result"; tool_use_id: string; content: string };
+/** TOTAL-1: a citable document. Plain text is chunked by sentence; custom content keeps our blocks (one per turn). */
+type DocumentBlock = {
+  type: "document";
+  source: { type: "text"; media_type: "text/plain"; data: string } | { type: "content"; content: { type: "text"; text: string }[] };
+  title: string;
+  context?: string;
+  citations: { enabled: true };
+};
 type CacheControl = { cache_control: { type: "ephemeral" } };
-type AnthropicMessage = { role: "user" | "assistant"; content: string | ((TextBlock | ToolUseBlock | ToolResultBlock) & Partial<CacheControl>)[] };
+type AnthropicMessage = { role: "user" | "assistant"; content: string | ((TextBlock | ToolUseBlock | ToolResultBlock | DocumentBlock) & Partial<CacheControl>)[] };
+
+/** TOTAL-1: the blocks a user turn with documents becomes. Exported for tests. */
+export function documentBlocks(doc: RecordDocument): DocumentBlock {
+  const base = { type: "document" as const, title: doc.title.slice(0, 500), citations: { enabled: true as const }, ...(doc.context ? { context: doc.context.slice(0, 2000) } : {}) };
+  if (doc.kind === "conversation") {
+    return { ...base, source: { type: "content", content: doc.blocks.map((text) => ({ type: "text" as const, text })) } };
+  }
+  return { ...base, source: { type: "text", media_type: "text/plain", data: doc.blocks.join("\n\n") } };
+}
 
 function markLastAssistant(messages: AnthropicMessage[]): void {
   for (let index = messages.length - 1; index >= 0; index -= 1) {
@@ -115,6 +132,18 @@ export function toAnthropicBody(
       out.push({ role: "assistant", content: blocks });
       continue;
     }
+    if (message.role === "user" && message.documents && message.documents.length > 0) {
+      // TOTAL-1: the record. Its text header first, then one citable document
+      // per item, with the cache breakpoint on the last document so the whole
+      // record is one stable, cached prefix for every question that follows.
+      const blocks: (TextBlock | DocumentBlock)[] = [];
+      if (message.content) blocks.push({ type: "text", text: message.content });
+      for (const doc of message.documents) blocks.push(documentBlocks(doc));
+      const last = blocks[blocks.length - 1] as (TextBlock | DocumentBlock) & Partial<CacheControl>;
+      last.cache_control = { type: "ephemeral" };
+      out.push({ role: "user", content: blocks });
+      continue;
+    }
     out.push({ role: message.role === "assistant" ? "assistant" : "user", content: message.content });
   }
 
@@ -168,7 +197,32 @@ export type AnthropicParsed = {
   cachedIn: number;
   /** Tokens written to the cache this call; billed at 1.25x the input price. */
   cacheWriteIn: number;
+  /** TOTAL-1: raw citations in answer order; resolved against our documents by the caller. */
+  citations: RawCitation[];
 };
+
+/** A citation as the API sends it, in a text block or a citations_delta. */
+type ApiCitation = {
+  type?: string;
+  cited_text?: string;
+  document_index?: number;
+  start_block_index?: number;
+  end_block_index?: number;
+  start_char_index?: number;
+  end_char_index?: number;
+};
+
+function rawCitation(c: ApiCitation): RawCitation | null {
+  if (typeof c.document_index !== "number" || typeof c.cited_text !== "string") return null;
+  return {
+    document_index: c.document_index,
+    cited_text: c.cited_text,
+    ...(typeof c.start_block_index === "number" ? { start_block_index: c.start_block_index } : {}),
+    ...(typeof c.end_block_index === "number" ? { end_block_index: c.end_block_index } : {}),
+    ...(typeof c.start_char_index === "number" ? { start_char_index: c.start_char_index } : {}),
+    ...(typeof c.end_char_index === "number" ? { end_char_index: c.end_char_index } : {}),
+  };
+}
 
 type Usage = {
   input_tokens?: number;
@@ -220,13 +274,20 @@ export function fromAnthropicResponse(payload: unknown, requestedModel: string, 
   const json = payload as {
     model?: string;
     stop_reason?: string | null;
-    content?: ({ type?: string; text?: string; id?: string; name?: string; input?: unknown })[];
+    content?: ({ type?: string; text?: string; id?: string; name?: string; input?: unknown; citations?: ApiCitation[] | null })[];
     usage?: Usage;
   };
   const text: string[] = [];
   const tools: ToolCall[] = [];
+  const citations: RawCitation[] = [];
   for (const block of json.content ?? []) {
-    if (block.type === "text" && typeof block.text === "string") text.push(block.text);
+    if (block.type === "text" && typeof block.text === "string") {
+      text.push(block.text);
+      for (const c of block.citations ?? []) {
+        const parsed = rawCitation(c);
+        if (parsed) citations.push(parsed);
+      }
+    }
     if (block.type === "tool_use") tools.push({ id: block.id ?? `toolu_${tools.length}`, name: block.name ?? "", arguments: JSON.stringify(block.input ?? {}) });
   }
   const jsonObject = (options.responseFormat as { type?: string } | undefined)?.type === "json_object";
@@ -237,6 +298,7 @@ export function fromAnthropicResponse(payload: unknown, requestedModel: string, 
     tokensOut: json.usage?.output_tokens ?? 0,
     cachedIn: json.usage?.cache_read_input_tokens ?? 0,
     cacheWriteIn: json.usage?.cache_creation_input_tokens ?? 0,
+    citations,
   };
 }
 
@@ -263,6 +325,7 @@ export async function readAnthropicStream(
   let cachedIn = 0;
   let cacheWriteIn = 0;
   let interrupted = false;
+  const citations: RawCitation[] = [];
   const jsonObject = (options.responseFormat as { type?: string } | undefined)?.type === "json_object";
 
   try {
@@ -282,7 +345,7 @@ export async function readAnthropicStream(
           index?: number;
           message?: { model?: string; usage?: Usage };
           content_block?: { type?: string; id?: string; name?: string };
-          delta?: { type?: string; text?: string; partial_json?: string; stop_reason?: string | null };
+          delta?: { type?: string; text?: string; partial_json?: string; stop_reason?: string | null; citation?: ApiCitation };
           usage?: Usage;
         };
         try {
@@ -309,6 +372,9 @@ export async function readAnthropicStream(
               // A forced respond tool never streams text, so text deltas are always answer text.
               text.push(event.delta.text);
               await onDelta(event.delta.text);
+            } else if (event.delta?.type === "citations_delta" && event.delta.citation) {
+              const parsed = rawCitation(event.delta.citation);
+              if (parsed) citations.push(parsed);
             } else if (event.delta?.type === "input_json_delta") {
               const existing = toolParts.get(event.index ?? 0) ?? { id: "", name: "", json: "" };
               toolParts.set(event.index ?? 0, { ...existing, json: existing.json + (event.delta.partial_json ?? "") });
@@ -344,6 +410,7 @@ export async function readAnthropicStream(
     tokensOut,
     cachedIn,
     cacheWriteIn,
+    citations,
     interrupted,
   };
 }
