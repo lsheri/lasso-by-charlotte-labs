@@ -14,8 +14,8 @@ export function CoverageNote({
 }) {
   if (fullCount === 0 && summaryCount === 0 && noTextCount === 0) return null;
   const parts: string[] = [`Read as written: ${fullCount} ${fullCount === 1 ? "item" : "items"}`];
-  if (summaryCount > 0) parts.push(`read as summary only: ${summaryCount} ${summaryCount === 1 ? "item" : "items"}`);
-  if (noTextCount > 0) parts.push(`no stored text: ${noTextCount} ${noTextCount === 1 ? "item" : "items"}`);
+  if (summaryCount > 0) parts.push(`Read as summary only: ${summaryCount} ${summaryCount === 1 ? "item" : "items"}`);
+  if (noTextCount > 0) parts.push(`No stored text: ${noTextCount} ${noTextCount === 1 ? "item" : "items"}`);
   const pct = typeof share === "number" && Number.isFinite(share) ? Math.round(share * 100) : null;
   return (
     <p className="text-xs text-muted-foreground" data-testid="coverage-note">

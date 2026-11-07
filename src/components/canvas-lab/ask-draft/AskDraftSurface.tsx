@@ -62,6 +62,9 @@ export function AskDraftSurface(props: Props) {
   const bodyRef = useRef<HTMLDivElement>(null);
   const initial = useRef(readAskPosition(draft, safeStore())).current;
   const [folded, setFolded] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const expandedRef = useRef(expanded);
+  expandedRef.current = expanded;
   const [, setLinesShowing] = useState(false);
   const empty = props.tab === "messages" && (ask.messages ?? []).length === 0;
   const collapsed = empty || folded;
@@ -126,6 +129,7 @@ export function AskDraftSurface(props: Props) {
     topInset,
     initialHeight: initial.h ?? null,
     fitLock: () => foldedRef.current,
+    expanded: () => expandedRef.current,
     onLand: (to, free) => {
       savePosition(to, free);
       noteWorkboardAskMoved(props.orgId, to, draft);
@@ -208,7 +212,7 @@ export function AskDraftSurface(props: Props) {
     return () => ro.disconnect();
   }, [refresh, ask.messages, props.tab]);
 
-  useLayoutEffect(() => { refresh(); }, [refresh, collapsed, folded]);
+  useLayoutEffect(() => { refresh(); }, [refresh, collapsed, folded, expanded]);
 
   const place: DockId = dock.hover ?? dock.dock;
   const locked = place === "lock_left" || place === "lock_right";
@@ -325,7 +329,7 @@ export function AskDraftSurface(props: Props) {
               className="ask-draft-head-icon"
               aria-label={folded ? "Expand Ask Lasso" : "Collapse Ask Lasso"}
               aria-expanded={!folded}
-              onClick={() => { noteWorkboardAskView(props.orgId, folded ? "expanded" : "folded", draft); setFolded(!folded); }}
+              onClick={() => { noteWorkboardAskView(props.orgId, folded ? "expanded" : "folded", draft); setExpanded(folded); setFolded(!folded); }}
             >
               {folded ? <ChevronsUpDown size={16} aria-hidden="true" /> : <ChevronsDownUp size={16} aria-hidden="true" />}
             </button>
@@ -359,6 +363,11 @@ export function AskDraftSurface(props: Props) {
             inline
             sections={props.sections}
             onPickSection={props.onPickSection}
+            beforeComposer={ask.pending ? (
+              <p className="px-4 py-2 text-xs text-muted-foreground" role="status" data-testid="ask-reading-scope">
+                Reading {(ask.pointedNow?.length ? ask.pointedNow : ask.selectedItems ?? ask.mapped ?? []).length} {(ask.pointedNow?.length ? ask.pointedNow : ask.selectedItems ?? ask.mapped ?? []).length === 1 ? "item" : "items"} as written
+              </p>
+            ) : undefined}
             sendAside={draft === "b" ? (
               <button type="button" className="ask-draft-send-aside" aria-label={`Continue in ${vendorLabel}`} title={`Continue in ${vendorLabel}`} disabled={!canPin} onClick={handoffOpen}>
                 <BrandLogo brand={dest.vendor === "chatgpt" ? "chatgpt" : "claude"} size={18} />

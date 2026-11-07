@@ -12,7 +12,7 @@ describe("ASK-B1 dockBox", () => {
     expect(dockBox("bottom_centre", W, H, C, 300, F)).toEqual({ x: 300, y: 484, w: 600, h: 300 });
   });
   it("tall content caps height", () => {
-    expect(dockBox("bottom_centre", W, H, C, 2000, F).h).toBe(Math.min(800 * 0.74, 800 - 16 - 74));
+    expect(dockBox("bottom_centre", W, H, C, 2000, F).h).toBe(Math.min(800 * 0.52, 800 - 16 - 74));
   });
   it("a free y of 0 clamps to the toolbar clearance", () => {
     expect(dockBox("free", W, H, C, 300, { x: 240, y: 0 }).y).toBe(74);
@@ -35,6 +35,16 @@ describe("ASK-B1 dockZoneAt", () => {
 });
 
 describe("ASK-B3 dockBox height options", () => {
+  it("TOTAL-4: a laptop's default bottom-right dock is 400px by 52%", () => {
+    expect(dockBox("bottom_right", 1280, 800, C, 2000, F)).toEqual({ x: 868, y: 368, w: 400, h: 416 });
+  });
+  it.each([[900, 320], [1000, 340], [1280, 400], [390, 320]])("TOTAL-4: width at %i is %i", (width, expected) => {
+    expect(dockBox("bottom_right", width, H, C, 300, F).w).toBe(expected);
+  });
+  it("TOTAL-4: explicit expansion retains 74% and locks retain full height", () => {
+    expect(dockBox("bottom_right", W, H, C, 2000, F, 0, { expanded: true }).h).toBe(592);
+    expect(dockBox("lock_right", W, H, C, 2000, F).h).toBe(772);
+  });
   it("userH sets the height", () => {
     expect(dockBox("bottom_centre", W, H, C, 300, F, 0, { userH: 420 }).h).toBe(420);
   });

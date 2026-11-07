@@ -40,12 +40,12 @@ export const ASK_DOCK_CONFIG: DockConfig = {
 
 const clamp = (n: number, a: number, b: number) => Math.min(Math.max(n, a), Math.max(a, b));
 
-export function dockBox(id: DockId, W: number, H: number, c: DockConfig, contentH: number, free: { x: number; y: number }, topInset = 0, opts: { userH?: number | null; fitLock?: boolean } = {}): DockBox {
+export function dockBox(id: DockId, W: number, H: number, c: DockConfig, contentH: number, free: { x: number; y: number }, topInset = 0, opts: { userH?: number | null; fitLock?: boolean; expanded?: boolean } = {}): DockBox {
   const { left, right, bottom } = c.insets;
   const top = c.insets.top + topInset;
   const room = W - left - right;
   const clearTop = c.toolbarClear + topInset;
-  const natural = Math.min(contentH, H * 0.74, H - bottom - clearTop);
+  const natural = Math.min(contentH, H * (opts.userH != null || opts.expanded ? 0.74 : 0.52), H - bottom - clearTop);
   const h = opts.userH != null ? Math.min(opts.userH, H - bottom - clearTop) : natural;
   const lockH = opts.fitLock ? natural : H - top - bottom;
   if (id === "lock_left") return { x: left, y: top, w: Math.min(c.widths.lock, room), h: lockH };
@@ -54,7 +54,7 @@ export function dockBox(id: DockId, W: number, H: number, c: DockConfig, content
     return { x: W - right - w, y: top, w, h: lockH };
   }
   if (id === "bottom_right") {
-    const w = Math.min(c.widths.right, room);
+    const w = Math.min(clamp(Math.round(W * 0.34), 320, 400), room);
     return { x: W - right - w, y: H - bottom - h, w, h };
   }
   if (id === "bottom_centre") {
@@ -108,6 +108,7 @@ export function useAskDock(args: {
   config?: DockConfig;
   initialHeight?: number | null;
   fitLock?: () => boolean;
+  expanded?: () => boolean;
 }): AskDock {
   const { host } = args;
   const surfaceRef = useRef<HTMLElement>(null);
@@ -146,7 +147,7 @@ export function useAskDock(args: {
     el.style.height = `${m.h.toFixed(2)}px`;
   }, [m]);
 
-  const box = useCallback((id: DockId) => dockBox(id, m.W, m.H, cfg.current, latest.current.contentHeight(), m.free, latest.current.topInset(), { userH: m.userH, fitLock: latest.current.fitLock?.() ?? false }), [m]);
+  const box = useCallback((id: DockId) => dockBox(id, m.W, m.H, cfg.current, latest.current.contentHeight(), m.free, latest.current.topInset(), { userH: m.userH, fitLock: latest.current.fitLock?.() ?? false, expanded: latest.current.expanded?.() ?? false }), [m]);
   const allSpots = useCallback(() => Object.fromEntries(DOCK_SPOTS.map((id) => [id, box(id)])), [box]);
   const kickRef = useRef<() => void>(() => undefined);
 
