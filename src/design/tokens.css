@@ -51,6 +51,8 @@
   --halo-dim:0.1; --halo-bright:0.2; --halo-clock:6s;
   --picked-glow-dim:0.25; --picked-glow-bright:0.5;
   --ask-mark:#8f8f8a; --ask-border:1.5px; --float-radius:15px;
+  /* COLOR-1: Ask's own green is the landing lime, not acid. Acid stays the highlight colour everywhere else. */
+  --ask-live:#04f85b;
   --pin:var(--red-100); --pin-off:var(--neutral-60);
   --lock-edge:color-mix(in srgb, var(--neutral-95) 32%, transparent);
 

@@ -8330,11 +8330,11 @@ body:has(.lasso-decisions-ledger) .canvas-lab-undo-toast { position: fixed; z-in
 [data-lasso="on"] .canvas-lab-toolbar button.canvas-lab-ask-button[data-toolbar-control="ask"] svg { color: var(--ask-mark); }
 [data-lasso="on"] .canvas-lab-toolbar button.canvas-lab-ask-button[data-toolbar-control="ask"]:hover:not(:disabled) { background: var(--surface-sunk-2); }
 [data-lasso="on"] .canvas-lab-toolbar button.canvas-lab-ask-button[data-toolbar-control="ask"][aria-pressed="true"],
-[data-lasso="on"] .canvas-lab-toolbar button.canvas-lab-ask-button[data-toolbar-control="ask"][aria-pressed="true"]:hover:not(:disabled) { background: color-mix(in srgb, var(--halo-1) 16%, var(--nb-white)); border-color: var(--ask-mark); box-shadow: 0 0 var(--halo-blur) var(--halo-spread) color-mix(in srgb, var(--halo-1) calc(var(--picked-glow-bright) * 100%), transparent); }
+[data-lasso="on"] .canvas-lab-toolbar button.canvas-lab-ask-button[data-toolbar-control="ask"][aria-pressed="true"]:hover:not(:disabled) { background: color-mix(in srgb, var(--ask-live) 16%, var(--nb-white)); border-color: var(--ask-mark); box-shadow: 0 0 var(--halo-blur) var(--halo-spread) color-mix(in srgb, var(--ask-live) calc(var(--picked-glow-bright) * 100%), transparent); }
 /* BOARD-UX-4: the mark reads its colours from these tokens at mount; the keyed wrapper remounts it on open and on close.
-   Closed: light on graphite (paper dashes, acid loop). Open: dark on acid, loop included, or it would be acid on acid. */
-.canvas-lab-ask-button .canvas-lab-ask-mark { --nb-ink: var(--ask-mark); --nb-graphite: var(--ask-mark); --nb-lasso-green: var(--ask-mark); }
-.canvas-lab-ask-button[aria-pressed="true"] .canvas-lab-ask-mark { --nb-ink: var(--ask-mark); --nb-graphite: var(--ask-mark); --nb-lasso-green: var(--ask-mark); }
+   COLOR-1: the rope stays quiet grey and the loop is Ask lime (--ask-live), open or closed. */
+.canvas-lab-ask-button .canvas-lab-ask-mark { --nb-ink: var(--ask-mark); --nb-graphite: var(--ask-mark); --nb-lasso-green: var(--ask-live); }
+.canvas-lab-ask-button[aria-pressed="true"] .canvas-lab-ask-mark { --nb-ink: var(--ask-mark); --nb-graphite: var(--ask-mark); --nb-lasso-green: var(--ask-live); }
 
 /* TOOLBAR-2: a quiet rule between toolbar groups. Not focusable, hidden from screen readers in the markup. */
 .canvas-lab-toolbar-divider { display: block; flex-shrink: 0; width: 1px; height: 26px; background: var(--nb-rule); }
@@ -8412,9 +8412,9 @@ main[data-ask-lock] .canvas-lab-floating-tools-wrapper { left: calc(12px + var(-
 .ask-draft-head-btn:hover { background: var(--surface-sunk-2); }
 .ask-draft-head-icon { display: grid; flex-shrink: 0; width: 28px; height: 28px; place-items: center; border-radius: var(--radius-pill); color: var(--muted-foreground); }
 .ask-draft-head-icon:hover, .ask-draft-head-icon[aria-pressed="true"] { background: var(--surface-sunk-2); color: var(--foreground); }
-.ask-draft-b { border: var(--ask-border) solid color-mix(in srgb, var(--ask-mark) 30%, transparent); border-radius: var(--float-radius); box-shadow: 0 0 var(--halo-blur) var(--halo-spread) color-mix(in srgb, var(--halo-1) calc(var(--halo-dim) * 100%), transparent), 0 10px 28px color-mix(in oklab, var(--neutral-95) 7%, transparent); animation: ask-halo var(--halo-clock) ease-in-out infinite; }
+.ask-draft-b { border: var(--ask-border) solid color-mix(in srgb, var(--ask-mark) 30%, transparent); border-radius: var(--float-radius); box-shadow: 0 0 var(--halo-blur) var(--halo-spread) color-mix(in srgb, var(--ask-live) calc(var(--halo-dim) * 100%), transparent), 0 10px 28px color-mix(in oklab, var(--neutral-95) 7%, transparent); animation: ask-halo var(--halo-clock) ease-in-out infinite; }
 .ask-draft-b[data-thinking="true"] { animation-duration: calc(var(--halo-clock) * 0.4); }
-@keyframes ask-halo { 50% { box-shadow: 0 0 var(--halo-blur) var(--halo-spread) color-mix(in srgb, var(--halo-1) calc(var(--halo-bright) * 100%), transparent), 0 10px 28px color-mix(in oklab, var(--neutral-95) 7%, transparent); } }
+@keyframes ask-halo { 50% { box-shadow: 0 0 var(--halo-blur) var(--halo-spread) color-mix(in srgb, var(--ask-live) calc(var(--halo-bright) * 100%), transparent), 0 10px 28px color-mix(in oklab, var(--neutral-95) 7%, transparent); } }
 .ask-draft-b .ask-draft-head { height: 46px; border-bottom: 1px solid color-mix(in srgb, var(--nb-rule) 70%, transparent); background: var(--nb-white); }
 .ask-draft-b .ask-draft-title { font-family: var(--font-mono); font-size: 11.5px; font-weight: 500; letter-spacing: .22em; text-transform: uppercase; color: var(--nb-ink); }
 .ask-draft-mark { display: inline-flex; flex-shrink: 0; align-items: center; margin-right: 6px; color: var(--ask-mark); }

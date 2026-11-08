@@ -19,7 +19,7 @@ export const ASK_THINKING_STYLES = `
 .ask-reading-beads { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; }
 .ask-reading-beads .ask-a1-dot {
   position: absolute; left: 0; top: 0; width: 3.5px; height: 3.5px;
-  border-radius: var(--radius-pill); background: var(--state-highlight);
+  border-radius: var(--radius-pill); background: var(--ask-live);
   offset-path: path("M38 7C33 2 14 1 7 5 1 8 1 15 6 18c6 4 24 4 32 1 7-2 10-6 7-9-2-3-8-4-15-4-2 0-3 0-4 1");
   offset-rotate: 0deg; animation: ask-reading-beads 2600ms linear infinite;
 }
