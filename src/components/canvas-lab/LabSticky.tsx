@@ -6,19 +6,16 @@ import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent } from "react";
 
 import type { LabNode, LabResizeCorner } from "@/components/canvas-lab/canvas-lab-model";
-import { Button } from "@/components/ui/button";
 import {
   WORKBOARD_STICKY_FILLS,
   WORKBOARD_TEXT_MAX_LENGTH,
-  WORKBOARD_TEXT_SIZES,
-  WORKBOARD_TEXT_WEIGHTS,
   type WorkboardStickyBody,
 } from "@/lib/canvas-lab-shared";
 
 import { RichTextView } from "@/components/rich-text/RichTextView";
 import { plainToRichHtml } from "@/lib/rich-text";
 import { stickyClickTypes, stickyStartsEditing, stickyTriggerEntersEdit } from "@/lib/card-click";
-import { Pencil } from "lucide-react";
+import { Link2, Trash2 } from "lucide-react";
 
 const RichTextEditor = lazy(() => import("@/components/rich-text/RichTextEditor"));
 
@@ -27,6 +24,9 @@ const CORNERS: LabResizeCorner[] = ["nw", "ne", "se", "sw"];
 export function stickyBodyOf(node: LabNode): WorkboardStickyBody {
   return { text: node.summary, ...(node.mentions !== undefined ? { mentions: node.mentions } : {}), ...(node.html !== undefined ? { html: node.html } : {}), size: node.textSize ?? "body", weight: node.textWeight ?? "regular", colour: node.textColour ?? "ink", fill: node.stickyFill ?? "yellow" };
 }
+
+/** STICKY-2: the four sizes as short labels in the bar. */
+const STICKY_SIZE_CHOICES = [["small", "S", "Small"], ["body", "M", "Body"], ["label", "L", "Label"], ["heading", "XL", "Heading"]] as const;
 
 /**
  * A note a person puts on the board. Plain paper, never a source: no brand
@@ -118,18 +118,22 @@ function LabStickyInner({ node, selected, editable, layoutEditable, onSelect, on
         </Suspense>
       </div> : body.html !== undefined ? <div className="node-rich"><RichTextView html={body.html} /></div>
         : <textarea aria-label="Sticky words" maxLength={WORKBOARD_TEXT_MAX_LENGTH} value={body.text} readOnly placeholder="Write here" />}
-      {selected && layoutEditable ? <div className="canvas-lab-text-block-controls" onPointerDown={(event) => event.stopPropagation()} onDoubleClick={(event) => event.stopPropagation()}>
+      {selected && layoutEditable ? <div className="canvas-lab-text-block-controls canvas-lab-sticky-bar" role="group" aria-label="Sticky formatting" onPointerDown={(event) => event.stopPropagation()} onDoubleClick={(event) => event.stopPropagation()}>
+        {/* STICKY-2 (F1): one slim bar above the note. Colour, size, bold and delete always there; link and list join while typing. */}
         {editable ? <>
-          <Button type="button" size="sm" variant="ghost" title="Formatting" aria-label="Formatting" aria-pressed={formattingOpen} onPointerDown={(event) => event.preventDefault()} onClick={() => setFormattingOpen((open) => !open)}><Pencil size={12} aria-hidden="true" /></Button>
-          {formattingOpen ? <>
           <div className="canvas-lab-sticky-swatches" role="group" aria-label="Sticky colour">
             {WORKBOARD_STICKY_FILLS.map((fill) => <button key={fill} type="button" className="canvas-lab-sticky-swatch" data-fill={fill} aria-label={fill} aria-pressed={body.fill === fill} onPointerDown={(event) => event.preventDefault()} onClick={() => choose({ fill }, "fill")} />)}
           </div>
-          <select aria-label="Text size" value={body.size} onChange={(event) => choose({ size: event.target.value as WorkboardStickyBody["size"] }, "style")}>{WORKBOARD_TEXT_SIZES.map((value) => <option key={value} value={value}>{value}</option>)}</select>
-          <select aria-label="Text weight" value={body.weight} onChange={(event) => choose({ weight: event.target.value as WorkboardStickyBody["weight"] }, "style")}>{WORKBOARD_TEXT_WEIGHTS.map((value) => <option key={value} value={value}>{value}</option>)}</select>
-          </> : null}
+          <span className="canvas-lab-sticky-bar-sep" aria-hidden="true" />
+          <div className="canvas-lab-sticky-sizes" role="group" aria-label="Text size">
+            {STICKY_SIZE_CHOICES.map(([value, short, name]) => <button key={value} type="button" aria-label={`${name} text`} aria-pressed={body.size === value} onPointerDown={(event) => event.preventDefault()} onClick={() => choose({ size: value }, "style")}>{short}</button>)}
+          </div>
+          <span className="canvas-lab-sticky-bar-sep" aria-hidden="true" />
+          <button type="button" className="canvas-lab-sticky-bold" aria-label="Bold" aria-pressed={body.weight === "bold"} onPointerDown={(event) => event.preventDefault()} onClick={() => choose({ weight: body.weight === "bold" ? "regular" : "bold" }, "style")}>B</button>
+          {editing ? <button type="button" aria-label="Link and list" title="Link and list" aria-pressed={formattingOpen} onPointerDown={(event) => event.preventDefault()} onClick={() => setFormattingOpen((open) => !open)}><Link2 size={14} aria-hidden="true" /></button> : null}
+          <span className="canvas-lab-sticky-bar-sep" aria-hidden="true" />
         </> : null}
-        <Button type="button" size="sm" variant="ghost" onClick={onRemove}>Remove sticky</Button>
+        <button type="button" aria-label="Remove sticky" title="Remove sticky" onClick={onRemove}><Trash2 size={14} aria-hidden="true" /></button>
       </div> : null}
       {selected && layoutEditable ? CORNERS.map((corner) => <button key={corner} type="button" className="canvas-lab-resize-handle" data-corner={corner} aria-label={`Resize sticky from ${corner}`} onPointerDown={(event) => onResizeStart(corner, event)} onKeyDown={(event) => onResizeKeyDown(corner, event)} onKeyUp={onResizeKeyUp} />) : null}
     </section>
