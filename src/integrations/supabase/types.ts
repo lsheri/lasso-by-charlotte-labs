@@ -191,9 +191,12 @@ export type Database = {
           day: string
           fetched_at: string
           input_tokens: number | null
+          note: string | null
           openai_project_id: string
           output_tokens: number | null
           project_label: string | null
+          provider: string
+          source: string
         }
         Insert: {
           amount_usd?: number
@@ -201,9 +204,12 @@ export type Database = {
           day: string
           fetched_at?: string
           input_tokens?: number | null
+          note?: string | null
           openai_project_id: string
           output_tokens?: number | null
           project_label?: string | null
+          provider?: string
+          source?: string
         }
         Update: {
           amount_usd?: number
@@ -211,9 +217,12 @@ export type Database = {
           day?: string
           fetched_at?: string
           input_tokens?: number | null
+          note?: string | null
           openai_project_id?: string
           output_tokens?: number | null
           project_label?: string | null
+          provider?: string
+          source?: string
         }
         Relationships: []
       }
@@ -338,9 +347,11 @@ export type Database = {
       ai_usage: {
         Row: {
           cached_in: number
+          context_mode: string | null
           cost_usd: number
           created_at: string
           duration_ms: number | null
+          environment: string | null
           finish_reason: string | null
           id: number
           model: string
@@ -352,9 +363,11 @@ export type Database = {
         }
         Insert: {
           cached_in?: number
+          context_mode?: string | null
           cost_usd?: number
           created_at?: string
           duration_ms?: number | null
+          environment?: string | null
           finish_reason?: string | null
           id?: number
           model: string
@@ -366,9 +379,11 @@ export type Database = {
         }
         Update: {
           cached_in?: number
+          context_mode?: string | null
           cost_usd?: number
           created_at?: string
           duration_ms?: number | null
+          environment?: string | null
           finish_reason?: string | null
           id?: number
           model?: string
@@ -3851,6 +3866,7 @@ export type Database = {
           created_at: string
           expected_attachments: number | null
           expected_messages: number | null
+          expired_at: string | null
           id: string
           org_id: string
           orig_conversation_id: string | null
@@ -3868,6 +3884,7 @@ export type Database = {
           created_at?: string
           expected_attachments?: number | null
           expected_messages?: number | null
+          expired_at?: string | null
           id?: string
           org_id: string
           orig_conversation_id?: string | null
@@ -3885,6 +3902,7 @@ export type Database = {
           created_at?: string
           expected_attachments?: number | null
           expected_messages?: number | null
+          expired_at?: string | null
           id?: string
           org_id?: string
           orig_conversation_id?: string | null
@@ -5613,6 +5631,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "workboard_nodes_chat_session_id_fkey"
+            columns: ["chat_session_id"]
+            isOneToOne: false
+            referencedRelation: "chat_sessions"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "workboard_nodes_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
@@ -5803,29 +5828,39 @@ export type Database = {
       active_profile_id: { Args: never; Returns: string }
       admin_account_view: { Args: { p_org_id: string }; Returns: Json }
       admin_ai_cost_reconciliation: {
-        Args: { p_days?: number }
+        Args: { p_days?: number; p_provider?: string }
         Returns: {
           billed_usd: number
           day: string
           difference_usd: number
           estimated_usd: number
           pct_off: number
+          provider: string
         }[]
+      }
+      admin_ai_cost_record_billed: {
+        Args: {
+          p_amount_usd: number
+          p_day: string
+          p_note?: string
+          p_provider: string
+        }
+        Returns: undefined
       }
       admin_ai_usage: {
         Args: { p_days?: number; p_group?: string }
         Returns: {
           cached_in: number
           calls: number
-          cost_per_person: number | null
+          cost_per_person: number
           cost_usd: number
           last_call: string
           org_id: string
           org_name: string
           org_type: string
-          people: number | null
-          person: string | null
-          profile_id: string | null
+          people: number
+          person: string
+          profile_id: string
           tokens_in: number
           tokens_out: number
         }[]
@@ -6078,7 +6113,7 @@ export type Database = {
           days_to_decision: number
           decision_on: string
           first_ai_capture: string
-          furthest_step_28d: string | null
+          furthest_step_28d: string
           goal: string
           last_active: string
           last_email_status: string
@@ -6212,6 +6247,7 @@ export type Database = {
           signup_source: string
         }[]
       }
+      ai_provider_of_model: { Args: { p_model: string }; Returns: string }
       analytics_insert: {
         Args: { p_row: Json; p_table: string }
         Returns: undefined
@@ -6359,6 +6395,10 @@ export type Database = {
       ensure_board_default_task: {
         Args: { p_engagement: string }
         Returns: string
+      }
+      expire_stale_push_intents: {
+        Args: { p_older_than?: string }
+        Returns: number
       }
       expire_support_grants: { Args: never; Returns: number }
       has_org_role: {
