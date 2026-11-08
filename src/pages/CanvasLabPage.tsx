@@ -763,7 +763,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   /** Bringing work in is arranging the board, so a coach never sees it. */
   const canAddWork = lab.board?.canEditStructure !== false;
   // DD1-a: files dropped from the desktop land at the release point.
-  const fileDrop = useBoardFileDrop({ enabled: canAddWork, toBoard: (x, y) => stagePoint(x, y), place: (ids, at) => addWorkToBoard(ids, "upload", at), placeImage: (image, at) => addImageToBoard(image, at) });
+  const fileDrop = useBoardFileDrop({ enabled: canAddWork, toBoard: (x, y) => stagePoint(x, y), place: (ids, at) => addWorkToBoard(ids, "upload", at), placeImage: (image, at) => addImageToBoard(image, at), paintImage: (preview, at) => paintImageOnBoard(preview, at) });
   const { pasteFromClipboard } = useBoardPaste({ enabled: canAddWork, shellRef, toBoard: (x, y) => stagePoint(x, y), viewportPoint: () => boardPointFromScreen(viewportCentre()), addFiles: fileDrop.addFiles, addText: (text, at) => addSticky(at, text), orgId });
   const showExample = boardIsNearEmpty(visibleNodes);
   const loadingBoard = isLoading || lab.boardLoading;
@@ -3489,6 +3489,40 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     record({ action: "add_node", node: { ...(liveNode(id, node) ?? node), durableId: saved.id, durableVersion: saved.version } });
     setAnnouncement("Image added.");
     return true;
+  }
+
+  /** IMG-3c: paint a dropped image now from its local copy; persist once the upload returns its path. */
+  function paintImageOnBoard(preview: { previewUrl: string; naturalWidth: number; naturalHeight: number }, at: { x: number; y: number }) {
+    const id = `image:${crypto.randomUUID()}`;
+    const { width, height } = fitWorkboardImageSize(preview.naturalWidth, preview.naturalHeight);
+    const node: LabNode = {
+      id, clientKey: id, kind: "image", frame: null, title: "Image", summary: "", typeLabel: "image",
+      ownership: "yours", local: true, imagePreviewUrl: preview.previewUrl, imageNaturalWidth: preview.naturalWidth, imageNaturalHeight: preview.naturalHeight,
+      x: Math.round(at.x), y: Math.round(at.y), width, height,
+    };
+    nodesRef.current = [...nodesRef.current, node];
+    setNodes((current) => [...(current ?? []), node]);
+    let discarded = false;
+    const discard = () => {
+      if (discarded) return;
+      discarded = true;
+      nodesRef.current = nodesRef.current.filter((entry) => entry.id !== id);
+      setNodes((current) => current?.filter((entry) => entry.id !== id) ?? current);
+      URL.revokeObjectURL(preview.previewUrl);
+    };
+    const persist = async (path: string): Promise<boolean> => {
+      if (!nodesRef.current.some((entry) => entry.id === id)) { discard(); return false; }
+      nodesRef.current = nodesRef.current.map((entry) => entry.id === id ? { ...entry, imagePath: path } : entry);
+      setNodes((current) => current?.map((entry) => entry.id === id ? { ...entry, imagePath: path } : entry) ?? current);
+      const saved = await ensureNodeDurable(id);
+      if (!saved) { discard(); return false; }
+      const live = liveNode(id, node) ?? node;
+      const { imagePreviewUrl: _preview, ...rest } = live;
+      record({ action: "add_node", node: { ...rest, imagePath: path, durableId: saved.id, durableVersion: saved.version } });
+      setAnnouncement("Image added.");
+      return true;
+    };
+    return { persist, discard };
   }
 
   function startSectionDrag(frame: LabFrame, event: React.PointerEvent) {
