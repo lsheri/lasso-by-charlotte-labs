@@ -6,7 +6,8 @@ vi.mock("@/integrations/supabase/client", () => ({
   supabase: { auth: { getSession: async () => ({ data: { session: { access_token: "t" } } }) } },
 }));
 
-import { primeKey, primeReadSet, resetPrimeMemory } from "@/lib/ask-prime-client";
+import { primeKey, primeReadSet, resetPrimeMemory, shouldPrimeForDraft } from "@/lib/ask-prime-client";
+import { readFileSync } from "node:fs";
 import { RECORD_ACK, buildReflectConversation } from "@/lib/prompt-assembly";
 
 describe("TOTAL-5 cache priming, client", () => {
@@ -81,5 +82,20 @@ describe("TOTAL-5b: Send waits for a prime in flight", () => {
     void primeReadSet(scope, "p");
     await new Promise((r) => setTimeout(r, 0));
     expect(await awaitPrime(scope, 20)).toBe("timeout");
+  });
+});
+
+describe("PRIME-COST: prime on typing, not on focus", () => {
+  it("primes only once the draft has real text and no @ pointer", () => {
+    expect(shouldPrimeForDraft("")).toBe(false);
+    expect(shouldPrimeForDraft("   ")).toBe(false);
+    expect(shouldPrimeForDraft("w")).toBe(true);
+    expect(shouldPrimeForDraft("what did we decide")).toBe(true);
+    expect(shouldPrimeForDraft("compare @")).toBe(false);
+    expect(shouldPrimeForDraft("compare @deck with the memo")).toBe(false);
+  });
+  it("the composer no longer primes on focus; the draft handler does", () => {
+    expect(readFileSync("src/components/reflect/AskSurface.tsx", "utf8")).not.toMatch(/onFocus=\{\(\) => ask\.primeNow/);
+    expect(readFileSync("src/components/reflect/use-ask-lasso.ts", "utf8")).toMatch(/if \(shouldPrimeForDraft\(value\)\) primeNow\(\);/);
   });
 });

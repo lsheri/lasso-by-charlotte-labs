@@ -12,6 +12,18 @@ export function primeKey(scope: ContextScope): string {
 }
 
 /**
+ * PRIME-COST (7 Nov): prime once the person has started typing, not on focus.
+ * On focus the selection is often not settled yet: 2 of the first 7 primes
+ * warmed a read set the question never used ($0.98 of $3.01), including a
+ * whole-board prime followed by a question about three picked cards. A draft
+ * that points at something with @ reads the pointed item instead of the board,
+ * so it is not primed either.
+ */
+export function shouldPrimeForDraft(draft: string): boolean {
+  return draft.trim().length > 0 && !draft.includes("@");
+}
+
+/**
  * TOTAL-5: warm the model cache for the read set the person is about to ask
  * about. Fire and forget, once per read set per TTL, never on the whole
  * record. Failures are silent: the question still works, only slower.
