@@ -9,7 +9,7 @@ import { useEngagementPage } from "@/hooks/use-engagement-page";
 import { useWorkItems } from "@/hooks/use-work-items";
 import { supabase } from "@/integrations/supabase/client";
 import { streamChatRequest } from "@/lib/stream-client";
-import { awaitPrime, primeReadSet } from "@/lib/ask-prime-client";
+import { awaitPrime, primeReadSet, shouldPrimeForDraft } from "@/lib/ask-prime-client";
 import type { ReflectResult } from "@/lib/reflect-run.server";
 import {
   boardSelectionScope,
@@ -180,6 +180,8 @@ export function useAskLasso({
   // The @ menu reads the word being typed just before the caret.
   function onDraftChange(value: string, caret: number) {
     setDraft(value);
+    // PRIME-COST: warm the cache once typing starts, when the selection has settled.
+    if (shouldPrimeForDraft(value)) primeNow();
     const upTo = value.slice(0, caret);
     const at = upTo.lastIndexOf("@");
     if (at === -1 || /\s/.test(upTo.slice(at + 1))) {
@@ -228,8 +230,9 @@ export function useAskLasso({
     return tag({ mode: "items", ids: selectedItems.map((i) => i.id) });
   }
   const scopeKey = scopeForSelection().ids.join(",") + selectedItems.length;
-  // TOTAL-5: warm the cache for the current read set when the person turns to
-  // the composer, so the first question is a cache hit. No content, no event.
+  // TOTAL-5: warm the cache for the current read set so the first question is a
+  // cache hit. PRIME-COST: called from onDraftChange once typing starts, no longer
+  // on composer focus. No content, no event.
   const primeNow = () => {
     if (pending) return;
     void primeReadSet(scopeForSelection(), profileId);
