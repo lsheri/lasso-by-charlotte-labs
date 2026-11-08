@@ -219,7 +219,7 @@ import { cardContextCall } from "@/lib/card-click";
 import { teammateMarkFor } from "@/lib/teammate-mark";
 import { dragTo, keyTo, type Point } from "@/lib/canvas-drag";
 import { filedWorkCount, groupingDragSnapshot, isRegionFrameId, moveGroupingContents, newRegionFrameId, regionClaimable, regionClaims, regionFillStyle, regionNameChange, regionToolAfterDraw, type GroupingDragMember, type RegionFill } from "@/lib/board-region";
-import { fitWorkboardImageSize, isWorkboardDecorationKind, serializeWorkboardStickyBody, serializeWorkboardTextBody, WORKBOARD_STICKY_DEFAULT_SIZE, type WorkboardCommand, type WorkboardNodeInput, type WorkboardRelation, type WorkboardTextBody, type WorkboardImageBody } from "@/lib/canvas-lab-shared";
+import { fitWorkboardImageSize, isWorkboardAskReadableKind, isWorkboardDecorationKind, serializeWorkboardStickyBody, serializeWorkboardTextBody, WORKBOARD_STICKY_DEFAULT_SIZE, type WorkboardCommand, type WorkboardNodeInput, type WorkboardRelation, type WorkboardTextBody, type WorkboardImageBody } from "@/lib/canvas-lab-shared";
 import { noteCanvasOpenedFn } from "@/lib/canvas.functions";
 import { clampZoom, scrollableUnder, stepZoom, wheelPanVector, workboardPinchZoom, zoomAbout } from "@/lib/canvas-zoom";
 import { needsHighlightForComment } from "@/lib/canvas-lab-annotations-shared";
@@ -704,7 +704,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   const pendingRegionName = useMemo(() => boardFrames.find((frame) => frame.id === pendingRegionNameId && isRegionFrameId(frame.id) && !frame.name) ?? null, [boardFrames, pendingRegionNameId]);
   const drawnBoardFrames = useMemo(() => boardFrames.filter((frame) => boardFrameRenders(frameKindOf(frame), true)), [boardFrames]);
   const bounds = useMemo(() => stageBounds(drawnBoardFrames, visibleNodes), [drawnBoardFrames, visibleNodes]);
-  const contextNodes = visibleNodes.filter((node) => selected.includes(node.id));
+  const contextNodes = visibleNodes.filter((node) => selected.includes(node.id) && isWorkboardAskReadableKind(node.kind));
   const contextNodeHeight = useCallback((node: LabNode) => cardHeightsRef.current.get(node.id) ?? node.height, []);
   const focusNode = visibleNodes.find((node) => node.id === focusId) ?? null;
   const reviewNode = visibleNodes.find((node) => node.id === reviewId) ?? null;
@@ -947,9 +947,17 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       const sections = framesRef.current.filter((frame) => isSectionFrameId(frame.id));
       if (!sections.some((frame) => frame.id === askSection.id)) return null;
       return [...new Set(visibleAskNodesRef.current.flatMap((node) => {
-        if (!node.workItemId || node.kind === "answer" || isWorkboardDecorationKind(node.kind)) return [];
+        if (!node.workItemId || node.kind === "answer" || !isWorkboardAskReadableKind(node.kind)) return [];
         const rect = { ...node, height: cardHeightsRef.current.get(node.id) ?? node.height };
         return containingSection(rect, sections)?.id === askSection.id ? [node.workItemId] : [];
+      }))];
+    },
+    resolveImages: (): string[] | null => {
+      const sections = framesRef.current.filter((frame) => isSectionFrameId(frame.id));
+      if (!sections.some((frame) => frame.id === askSection.id)) return null;
+      return [...new Set(visibleAskNodesRef.current.flatMap((node) => {
+        if (node.kind !== "image" || !node.durableId) return [];
+        return containingSection(node, sections)?.id === askSection.id ? [node.durableId] : [];
       }))];
     },
   } : undefined, [askSection]);
@@ -3103,7 +3111,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
 
   /** B3: every card in a workstream or region becomes the context. Membership first, the region's area when it has none. */
   function useFrameAsContext(frame: LabFrame) {
-    const members = visibleNodes.filter((node) => node.frame === frame.id && node.kind !== "answer" && !isWorkboardDecorationKind(node.kind)).map((node) => node.id);
+    const members = visibleNodes.filter((node) => node.frame === frame.id && node.kind !== "answer" && isWorkboardAskReadableKind(node.kind)).map((node) => node.id);
     const ids = members.length > 0 ? members : cardsInMarquee({ x: frame.x, y: frame.y, width: frame.width, height: frame.height }, visibleNodes, cardHeightsRef.current);
     flareNewContext(ids, selectedRef.current);
     setSelected(ids);
@@ -3183,7 +3191,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   function finishPointerConnect(source: { nodeId: string; anchor: LabAnchor }, event: { clientX: number; clientY: number }) {
     const element = document.elementFromPoint(event.clientX, event.clientY) as HTMLElement | null;
     const anchorElement = element?.closest<HTMLElement>("[data-side][data-node-id]");
-    const cardElement = element?.closest<HTMLElement>("[data-testid^='lab-card-']");
+    const cardElement = element?.closest<HTMLElement>("[data-testid^='lab-card-'],[data-testid^='image-']");
     const targetId = anchorElement?.dataset["nodeId"] ?? cardElement?.dataset["nodeId"];
     const target = visibleNodes.find((node) => node.id === targetId);
     if (!target) {
@@ -3192,7 +3200,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       return;
     }
     const explicitSide = anchorElement?.dataset["side"] as LabAnchor | undefined;
-    const height = cardHeightsRef.current.get(target.id) ?? 108;
+    const height = cardHeightsRef.current.get(target.id) ?? (target.kind === "image" ? target.height : 108);
     const targetAnchor = explicitSide ?? nearestLabAnchor(stagePoint(event.clientX, event.clientY), target, height);
     createConnection(source.nodeId, source.anchor, target.id, targetAnchor);
   }
@@ -3682,7 +3690,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
               <LabRelationships links={links} nodes={visibleNodes} measuredHeights={cardHeightsRef.current} selectedLinkId={selectedLinkId} inverseZoom={labInverseZoom(zoom)} onSelect={(id) => { setKeyboardId(null); setSelectedFrameId(null); setSelectedLinkId((current) => relationshipSelection(current, "select", id)); }} onHover={setHoveredLinkId} />
               {connectorPreview && connectorDragRef.current ? (() => { const source = visibleNodes.find((node) => node.id === connectorDragRef.current?.nodeId); if (!source || !connectorDragRef.current) return null; const from = labAnchorPoint(source, connectorDragRef.current.anchor, cardHeightsRef.current.get(source.id) ?? 108); return <path d={labConnectorPath(from, connectorDragRef.current.anchor, connectorPreview, connectorDragRef.current.anchor)} fill="none" stroke="var(--nb-green)" strokeWidth="2.4" strokeLinecap="round" className="pointer-events-none" />; })() : null}
             </svg>
-            {visibleNodes.filter((node) => node.kind === "image").map((node) => <LabImage key={node.id} node={node} selected={keyboardId === node.id} layoutEditable={Boolean(lab.board?.canEditStructure) && Boolean(node.local)} onSelect={() => { setKeyboardId(node.id); setSelectedFrameId(null); setSelectedLinkId(null); }} onDragStart={(event) => onCardPointerDown(node, event)} onResizeStart={(corner, event) => startResize("image", node.id, corner, node, event)} onResizeKeyDown={(corner, event) => keyboardResize("image", node.id, corner, node, event)} onResizeKeyUp={finishKeyboardResize} onRemove={() => deleteNode(node)} />)}
+            {visibleNodes.filter((node) => node.kind === "image").map((node) => <LabImage key={node.id} node={node} selected={keyboardId === node.id} contextSelected={selected.includes(node.id)} previewSelected={marqueePreview.includes(node.id)} connecting={connectSource !== null || connectorPreview !== null} connectSourceAnchor={connectSource?.nodeId === node.id ? connectSource.anchor : null} onContextSelect={(via) => { const call = cardContextCall(via); if (call.record) noteWorkboardContextChanged(orgId, call.record); if (!call.toggle) return; setAnnouncement(selected.includes(node.id) ? "Removed from context" : "Added to context"); setSelected((current) => { if (!current.includes(node.id)) flareNewContext([node.id], current); return toggleContext(current, node.id); }); }} onAnchorPointerDown={(side, event) => startPointerConnect(node, side, event)} onAnchorActivate={(side) => chooseConnectAnchor(node, side)} layoutEditable={Boolean(lab.board?.canEditStructure) && Boolean(node.local)} onSelect={() => { setKeyboardId(node.id); setSelectedFrameId(null); setSelectedLinkId(null); }} onDragStart={(event) => onCardPointerDown(node, event)} onResizeStart={(corner, event) => startResize("image", node.id, corner, node, event)} onResizeKeyDown={(corner, event) => keyboardResize("image", node.id, corner, node, event)} onResizeKeyUp={finishKeyboardResize} onRemove={() => deleteNode(node)} />)}
             {visibleNodes.filter((node) => node.kind === "sticky").map((node) => <LabSticky key={node.id} mentionCandidates={stickyMentionCandidates(mentionCandidates)} node={node} selected={keyboardId === node.id} editable={Boolean(node.local)} layoutEditable={Boolean(lab.board?.canEditStructure)} onSelect={() => { setKeyboardId(node.id); setSelectedFrameId(null); setSelectedLinkId(null); }} onDragStart={(event) => onCardPointerDown(node, event)} onResizeStart={(corner, event) => startResize("sticky", node.id, corner, node, event)} onResizeKeyDown={(corner, event) => keyboardResize("sticky", node.id, corner, node, event)} onResizeKeyUp={finishKeyboardResize} onChange={(body) => setNodes((current) => current?.map((entry) => entry.id === node.id ? (() => { const { html, mentions, ...rest } = entry; return { ...rest, summary: body.text, ...(body.html !== undefined ? { html: body.html } : {}), ...(body.mentions !== undefined ? { mentions: body.mentions } : {}), textSize: body.size, textWeight: body.weight, textColour: body.colour, stickyFill: body.fill }; })() : entry) ?? current)} onCommit={(body) => { noteWorkboardNodeEdited(orgId, "sticky"); void persistNodePatch(node.id, { body: serializeWorkboardStickyBody(body) }); }} onRemove={() => deleteNode(node)} />)}
             {visibleNodes.filter((node) => node.kind === "text").map((node) => <LabTextBlock key={node.id} node={node} selected={keyboardId === node.id} editable={Boolean(node.local)} layoutEditable={Boolean(lab.board?.canEditStructure)} onSelect={() => { setKeyboardId(node.id); setSelectedFrameId(null); setSelectedLinkId(null); }} onDragStart={(event) => onCardPointerDown(node, event)} onResizeStart={(corner, event) => startResize("text", node.id, corner, node, event)} onResizeKeyDown={(corner, event) => keyboardResize("text", node.id, corner, node, event)} onResizeKeyUp={finishKeyboardResize} onChange={(body) => setNodes((current) => current?.map((entry) => entry.id === node.id ? { ...entry, summary: body.text, ...(body.html !== undefined ? { html: body.html } : {}), textSize: body.size, textWeight: body.weight, textColour: body.colour } : entry) ?? current)} onCommit={(body: WorkboardTextBody) => { noteWorkboardNodeEdited(orgId, "text"); void persistNodePatch(node.id, { body: serializeWorkboardTextBody(body) }); }} onRemove={() => deleteNode(node)} />)}
             <LabBundleStackEdges nodes={visibleNodes} minimized={bundleView.minimized} vendorByChat={vendorByChat} />
@@ -3754,7 +3762,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
         </div>
         {boardReady && opening ? <div className={`pointer-events-none absolute inset-0 z-40 flex ${unfold.className}`} aria-hidden={!unfold.still}>{unfold.still ? <span className="sr-only">{unfold.reduced}</span> : null}<span className="canvas-lab-unfold-panel" /><span className="canvas-lab-unfold-panel" /><span className="canvas-lab-unfold-panel" /></div> : null}
       </main>
-      {profile?.id && orgId ? <BoardAsk floatHost={askFloatHost} pinnedAnswers={visibleNodes.filter((n) => n.kind === "answer").map((n) => ({ nodeId: n.id, durableId: n.durableId ?? null, text: n.summary, chatSessionId: n.chatSessionId ?? null }))} onJumpToAnswer={jumpToAnswer} toBoardPoint={boardPointFromScreen} onUnpinAnswer={unpinAnswer} sectionSource={sectionAskSource} sectionChoices={askSectionChoices} onPickSection={pickAskSection} open={askOpen} onOpenChange={(open) => { setAskOpen(open); if (!open) setAskSection(null); }} engagementId={engagementId} engagementTitle={title} profileId={profile.id} orgId={orgId} canKeep={canAddWork} onKeep={(answer, via, at) => keepAnswerAsCard(answer, at ? { via: via ?? "button", at } : { via: via ?? "button" })} boardContextHasPicks={contextNodes.length > 0} boardContextItemIds={contextNodes.flatMap((node) => { const item = itemByNode(node); return item ? [item.id] : []; })} readingNodes={contextNodes.flatMap((node) => { const item = itemByNode(node); return item ? [{ nodeId: node.id, itemId: item.id }] : []; })} /> : null}
+      {profile?.id && orgId ? <BoardAsk floatHost={askFloatHost} pinnedAnswers={visibleNodes.filter((n) => n.kind === "answer").map((n) => ({ nodeId: n.id, durableId: n.durableId ?? null, text: n.summary, chatSessionId: n.chatSessionId ?? null }))} onJumpToAnswer={jumpToAnswer} toBoardPoint={boardPointFromScreen} onUnpinAnswer={unpinAnswer} sectionSource={sectionAskSource} sectionChoices={askSectionChoices} onPickSection={pickAskSection} open={askOpen} onOpenChange={(open) => { setAskOpen(open); if (!open) setAskSection(null); }} engagementId={engagementId} engagementTitle={title} profileId={profile.id} orgId={orgId} canKeep={canAddWork} onKeep={(answer, via, at) => keepAnswerAsCard(answer, at ? { via: via ?? "button", at } : { via: via ?? "button" })} boardContextHasPicks={contextNodes.length > 0} boardContextImageIds={contextNodes.flatMap((node) => node.kind === "image" && node.durableId ? [node.durableId] : [])} boardContextItemIds={contextNodes.flatMap((node) => { const item = itemByNode(node); return item ? [item.id] : []; })} readingNodes={contextNodes.flatMap((node) => { const item = itemByNode(node); return item ? [{ nodeId: node.id, itemId: item.id }] : []; })} /> : null}
       {canAddWork && suggestOpen ? <BoardSuggestionSurface mobile={suggestionMobile} onClose={closeSuggestions}>
         {suggestApplied.length === 0 ? <SuggestStructurePanel state={suggestState} structures={suggestions} parts={suggestParts} shortfall={suggestShortfall} error={suggestError} onSubmit={(text, kind) => void submitSuggestions(text, kind)} onChoose={(id) => void chooseSuggestion(id)} onCancel={closeSuggestions} /> : <SuggestionApplyResult regions={suggestApplied} busy={suggestBusy} message={suggestRemoval} onRemove={() => void removeSuggestion()} onClose={closeSuggestions} />}
         {suggestApplied.length === 0 && suggestRemoval ? <p role="alert" className="text-base text-destructive">{suggestRemoval}</p> : null}
