@@ -83,7 +83,8 @@ describe("DD1-f board image drop", () => {
     await removeBoardImageObject("u1/a-shot.png");
     expect(remove).toHaveBeenCalledWith(["u1/a-shot.png"]);
     const page = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
-    expect(page).toContain("if (node.imagePath) void removeBoardImageObject(node.imagePath);");
+    // IMG-4: still removed in the same delete action, but only once the archive is saved.
+    expect(page).toContain("void removeBoardImageObject(path);");
   });
   it("8. a failed signed URL shows the quiet line and no toast", async () => {
     const node = { id: "image:1", kind: "image", title: "Image", summary: "", typeLabel: "image", ownership: "yours", imagePath: "u1/a-shot.png", x: 0, y: 0, width: 200, height: 100 } as LabNode;

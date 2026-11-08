@@ -135,3 +135,18 @@ describe("IMG-2b wiring", () => {
     expect(body).toMatch(/requireSupabaseAuth/);
   });
 });
+
+describe("IMG-4 no ghosts", () => {
+  it("an image file is removed only after its card is really archived", () => {
+    const page = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
+    expect(page).toMatch(/const archived = node\.durableId \? archiveDurable\(/);
+    expect(page).toMatch(/void archived\.then\(\(version\) => \{\s*if \(!node\.durableId \|\| version !== null\) void removeBoardImageObject\(path\);/);
+    expect(page).not.toMatch(/if \(node\.imagePath\) void removeBoardImageObject\(node\.imagePath\);/);
+  });
+  it("the migration keeps description writes out of versions and history, and clears on delete", () => {
+    const sql = readFileSync("supabase/migrations/20261108140000_img4_describe_never_bumps_version_and_delete_clears.sql", "utf8");
+    expect(sql).toMatch(/\(to_jsonb\(new\) - v_image_cols\) = \(to_jsonb\(old\) - v_image_cols\) then\s+return new;/);
+    expect(sql).toMatch(/to_jsonb\(old\) - v_image_cols, 'after', to_jsonb\(new\) - v_image_cols/);
+    expect(sql).toMatch(/old\.deleted_at is null and new\.deleted_at is not null then\s+new\.image_text := null;/);
+  });
+});
