@@ -322,6 +322,17 @@ export async function pseudonyms(
 }
 
 /**
+ * Q7 (8 Nov 2026): which v2 rows leave for PostHog. Production and preview
+ * mirror, each carrying its `environment` label; preview is excluded from
+ * production charts by that label. QA, local, staging, test and unknown never
+ * mirror. Events a v1 call site already mirrors never mirror twice.
+ */
+const V2_MIRRORED_ENVIRONMENTS = new Set<string>(["production", "preview"]);
+export function shouldMirrorV2(environment: string, eventName: string): boolean {
+  return V2_MIRRORED_ENVIRONMENTS.has(environment) && !V1_MIRRORED.has(eventName);
+}
+
+/**
  * QA traffic must never pollute the panel. Otherwise the environment comes
  * from the request host, the same way the v1 path reads it (AUDIT-1b, 7 Nov
  * 2026). Before this the function defaulted to "production", so every v2 row
@@ -456,7 +467,9 @@ export async function recordEventV2(
     // The mirror leaves bucketed. QA traffic is never mirrored, and neither is
     // an event a v1 call site already captured: one action, one PostHog row.
     // V2-1: the same consent gate and identity as v1. t0 never leaves.
-    if (environment === "production" && !V1_MIRRORED.has(input.eventName)) {
+    // Q7: preview mirrors too, labelled, as the v1 path does, so work tested
+    // on preview is measurable. Charts exclude it with environment is_not preview.
+    if (shouldMirrorV2(environment, input.eventName)) {
       const tel = await import("./telemetry.server");
       const consent = await tel.resolveConsentStamp(supabase, profile.org_id, profile.id);
       if (consent.tier !== "t0") {
