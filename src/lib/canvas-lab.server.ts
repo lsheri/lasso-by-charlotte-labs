@@ -262,7 +262,7 @@ export function validNodeInput(node: WorkboardNodeInput): string | null {
 }
 
 export function validateLinkNodeKinds(kinds: string[]): string | null {
-  const decorationKind = kinds.find(isWorkboardDecorationKind);
+  const decorationKind = kinds.find((kind) => kind !== "image" && isWorkboardDecorationKind(kind));
   if (decorationKind === "shape") return "A colour block cannot be connected.";
   if (decorationKind === "text") return "A text block cannot be connected.";
   if (decorationKind === "mark") return "A mark cannot be connected.";
