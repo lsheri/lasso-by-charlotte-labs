@@ -25,7 +25,7 @@ import type {
 } from "@/lib/canvas-lab-shared";
 import { isSectionFrameId } from "@/lib/board-section";
 import { isRegionFill, isRegionFrameId } from "@/lib/board-region";
-import { WORKBOARD_ANCHORS, WORKBOARD_CARD_DEFAULT_SIZE, WORKBOARD_JUDGMENT_TYPES, WORKBOARD_NODE_KINDS, WORKBOARD_RELATIONS, WORKBOARD_SHAPE_COLOURS, isWorkboardDecorationKind, parseWorkboardImageBody, parseWorkboardStickyBody, parseWorkboardTextBody, validWorkboardNodeGeometry } from "@/lib/canvas-lab-shared";
+import { WORKBOARD_ANCHORS, WORKBOARD_MOVE_MANY_MAX, WORKBOARD_CARD_DEFAULT_SIZE, WORKBOARD_JUDGMENT_TYPES, WORKBOARD_NODE_KINDS, WORKBOARD_RELATIONS, WORKBOARD_SHAPE_COLOURS, isWorkboardDecorationKind, parseWorkboardImageBody, parseWorkboardStickyBody, parseWorkboardTextBody, validWorkboardNodeGeometry } from "@/lib/canvas-lab-shared";
 import type { ResolvedProfile } from "@/lib/profile-resolve";
 import { validateAnswerBody } from "@/lib/answer-card";
 
@@ -474,6 +474,8 @@ export async function applyWorkboardCommand(
     return { status: "saved", boardId: board.id, boardVersion: board.version, versions: { [row.id]: row.version } };
   }
 
+  if (command.type === "move_many") return moveMany(db, board, profile.id, command);
+
   if (command.type === "node_create") {
     const invalid = validNodeInput(command.node);
     if (invalid) return { status: "validation_error", message: invalid };
@@ -724,4 +726,61 @@ export type ReadableWorkItemFields = { itemTitle?: string; itemType?: string; it
 function readableItemFields(item: { title?: string | null; display_title?: string | null; type?: string | null; owner_id?: string | null } | undefined): ReadableWorkItemFields {
   if (!item) return {};
   return { itemTitle: displayName(item), itemType: item.type ?? "", itemOwnerId: item.owner_id ?? null };
+}
+
+/** MOVE-1: a section or workstream move. Every version is checked before
+ * anything is written, so a stale row moves nothing and shows one conflict. */
+export async function moveMany(
+  db: Db,
+  board: { id: string; version: number },
+  profileId: string,
+  command: Extract<WorkboardCommand, { type: "move_many" }>,
+): Promise<WorkboardMutationResult> {
+  const stamp = { updated_by: profileId };
+  const frames = Array.isArray(command.frames) ? command.frames : [];
+  const nodes = Array.isArray(command.nodes) ? command.nodes : [];
+  if (frames.length + nodes.length === 0) return { status: "saved", boardId: board.id, boardVersion: board.version, versions: {} };
+  if (frames.length + nodes.length > WORKBOARD_MOVE_MANY_MAX) return { status: "validation_error", message: "Too many things moved at once." };
+  const finite = (entry: { x: unknown; y: unknown; expectedVersion: unknown }) => Number.isFinite(entry.x) && Number.isFinite(entry.y) && Number.isInteger(entry.expectedVersion);
+  if (!frames.every(finite) || !nodes.every(finite)) return { status: "validation_error", message: "Nothing to save." };
+  if (frames.some((entry) => !validFrameGeometry({ x: entry.x, y: entry.y }))) return { status: "validation_error", message: "Workstream dimensions are outside the supported range." };
+  const frameRows = frames.length ? (await db.from("workboard_frames").select("*").eq("workboard_id", board.id).is("deleted_at", null).in("id", frames.map((entry) => entry.frameId))).data ?? [] : [];
+  const nodeRows = nodes.length ? (await db.from("workboard_nodes").select("*").eq("workboard_id", board.id).is("deleted_at", null).in("id", nodes.map((entry) => entry.nodeId))).data ?? [] : [];
+  for (const entry of frames) {
+    const row = frameRows.find((candidate) => candidate.id === entry.frameId);
+    if (!row) return { status: "validation_error", message: "That workstream is gone." };
+    if (row.version !== entry.expectedVersion) return conflict("frame", row.id, snapshot(row));
+  }
+  for (const entry of nodes) {
+    const row = nodeRows.find((candidate) => candidate.id === entry.nodeId);
+    if (!row) return { status: "validation_error", message: "That card is gone." };
+    // Same rule as node_update: authored cards move only for their author.
+    if ((row.kind === "judgment" || row.kind === "draft") && row.author_profile_id !== profileId) return { status: "forbidden" };
+    const invalid = validNodeUpdate(row.kind as WorkboardNodeDto["kind"], { x: entry.x, y: entry.y }, row.body);
+    if (invalid) return { status: "validation_error", message: invalid };
+    if (row.version !== entry.expectedVersion) return conflict("node", row.id, snapshot(row));
+  }
+  const versions: Record<string, number> = {};
+  for (const entry of frames) {
+    const { data } = await db.from("workboard_frames").update({ x: entry.x, y: entry.y, ...stamp }).eq("id", entry.frameId).eq("workboard_id", board.id).eq("version", entry.expectedVersion).select("id, version");
+    const row = data?.[0];
+    if (!row) {
+      // Lost a race after the check. Rows already written keep their new place.
+      const latest = (await db.from("workboard_frames").select("*").eq("id", entry.frameId).maybeSingle()).data;
+      return latest ? conflict("frame", latest.id, snapshot(latest)) : { status: "validation_error", message: "That workstream is gone." };
+    }
+    versions[row.id] = row.version;
+  }
+  for (const entry of nodes) {
+    const { data, error } = await db.from("workboard_nodes").update({ x: entry.x, y: entry.y, ...stamp }).eq("id", entry.nodeId).eq("workboard_id", board.id).eq("version", entry.expectedVersion).select("id, version");
+    if (error) return { status: "forbidden" };
+    const row = data?.[0];
+    if (!row) {
+      const latest = (await db.from("workboard_nodes").select("*").eq("id", entry.nodeId).maybeSingle()).data;
+      return latest ? conflict("node", latest.id, snapshot(latest)) : { status: "validation_error", message: "That card is gone." };
+    }
+    versions[row.id] = row.version;
+  }
+  return { status: "saved", boardId: board.id, boardVersion: board.version, versions };
+
 }

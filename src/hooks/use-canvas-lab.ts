@@ -20,6 +20,7 @@ export function commandEntityKind(command: WorkboardCommand): WorkboardCommandEn
   if (command.type === "materialize") return "board";
   if (command.type.startsWith("frame_")) return "frame";
   if (command.type.startsWith("link_")) return "relationship";
+  if (command.type === "move_many") return command.nodes.length === 0 ? "frame" : "node";
   return "node";
 }
 

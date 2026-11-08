@@ -221,7 +221,7 @@ import { cardContextCall } from "@/lib/card-click";
 import { teammateMarkFor } from "@/lib/teammate-mark";
 import { dragTo, keyTo, type Point } from "@/lib/canvas-drag";
 import { filedWorkCount, groupingDragSnapshot, isRegionFrameId, moveGroupingContents, newRegionFrameId, regionClaimable, regionClaims, regionFillStyle, regionNameChange, regionToolAfterDraw, type GroupingDragMember, type RegionFill } from "@/lib/board-region";
-import { fitWorkboardImageSize, isWorkboardAskReadableKind, isWorkboardDecorationKind, serializeWorkboardStickyBody, serializeWorkboardTextBody, WORKBOARD_STICKY_DEFAULT_SIZE, type WorkboardCommand, type WorkboardNodeInput, type WorkboardRelation, type WorkboardTextBody, type WorkboardImageBody } from "@/lib/canvas-lab-shared";
+import { fitWorkboardImageSize, isWorkboardAskReadableKind, isWorkboardDecorationKind, serializeWorkboardStickyBody, serializeWorkboardTextBody, WORKBOARD_STICKY_DEFAULT_SIZE, WORKBOARD_MOVE_MANY_MAX, type WorkboardMoveEntry, type WorkboardCommand, type WorkboardNodeInput, type WorkboardRelation, type WorkboardTextBody, type WorkboardImageBody } from "@/lib/canvas-lab-shared";
 import { noteCanvasOpenedFn } from "@/lib/canvas.functions";
 import { clampZoom, scrollableUnder, stepZoom, wheelPanVector, workboardPinchZoom, zoomAbout } from "@/lib/canvas-zoom";
 import { needsHighlightForComment } from "@/lib/canvas-lab-annotations-shared";
@@ -1137,6 +1137,47 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     report(result, "frame", "update");
     if (result.status === "saved") setFrames((current) => current?.map((entry) => entry.id === localId ? { ...entry, durableVersion: result.versions[frame.durableId ?? ""] ?? (frame.durableVersion ?? 1) + 1 } : entry) ?? current);
     return result.status === "saved";
+  }
+
+  /** MOVE-1: a section or workstream move saves every position in one request, never one save per card. */
+  async function persistMoveMany(frameIds: readonly string[], nodeIds: readonly string[]): Promise<boolean> {
+    if (!(await materialize())) return false;
+    const frames: WorkboardMoveEntry<"frameId">[] = [];
+    for (const localId of frameIds) {
+      const frame = framesRef.current.find((entry) => entry.id === localId);
+      if (!frame) continue;
+      if (!frame.durableId) {
+        setAnnouncement("That grouping is not saved yet, so this change did not save.");
+        continue;
+      }
+      frames.push({ frameId: frame.durableId, expectedVersion: frame.durableVersion ?? 1, x: frame.x, y: frame.y });
+    }
+    const nodes: WorkboardMoveEntry<"nodeId">[] = [];
+    for (const localId of nodeIds) {
+      const node = nodesRef.current.find((entry) => entry.id === localId);
+      if (!node) continue;
+      // A card with no row yet is created where it now sits, so it needs no move.
+      if (!node.durableId) {
+        await ensureNodeDurable(localId);
+        continue;
+      }
+      nodes.push({ nodeId: node.durableId, expectedVersion: node.durableVersion ?? 1, x: node.x, y: node.y });
+    }
+    let saved = true;
+    for (let start = 0; start < frames.length + nodes.length; start += WORKBOARD_MOVE_MANY_MAX) {
+      const end = start + WORKBOARD_MOVE_MANY_MAX;
+      const chunk = { frames: frames.slice(start, end), nodes: nodes.slice(Math.max(0, start - frames.length), Math.max(0, end - frames.length)) };
+      const result = await lab.persist({ type: "move_many", ...chunk });
+      report(result, chunk.nodes.length === 0 ? "frame" : "node", "update");
+      if (result.status !== "saved") {
+        saved = false;
+        break;
+      }
+      const versions = result.versions;
+      setFrames((current) => current?.map((entry) => { const next = entry.durableId ? versions[entry.durableId] : undefined; return next !== undefined ? { ...entry, durableVersion: next } : entry; }) ?? current);
+      setNodes((current) => current?.map((entry) => { const next = entry.durableId ? versions[entry.durableId] : undefined; return next !== undefined ? { ...entry, durableVersion: next } : entry; }) ?? current);
+    }
+    return saved;
   }
 
   async function persistLink(link: LabLink) {
@@ -2168,17 +2209,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
             setFrames((current) => current?.map((frame) => frame.id === trailDrag.id ? { ...frame, x: to.x, y: to.y } : frame) ?? current);
             setNodes((current) => current ? moveGroupingContents(current, trailDrag.members, to) : current);
           }
-          void (async () => {
-            await persistFramePatch(trailDrag.id, { x: to.x, y: to.y });
-            for (const member of trailDrag.frameMembers ?? []) {
-              const moved = framesRef.current.find((frame) => frame.id === member.id);
-              if (moved) await persistFramePatch(moved.id, { x: moved.x, y: moved.y });
-            }
-            for (const member of trailDrag.members) {
-              const moved = nodesRef.current.find((node) => node.id === member.id);
-              if (moved) await persistNodePatch(moved.id, { x: moved.x, y: moved.y });
-            }
-          })();
+          void persistMoveMany([trailDrag.id, ...(trailDrag.frameMembers ?? []).map((member) => member.id)], trailDrag.members.map((member) => member.id));
         }
         setInteraction("idle");
         return;
@@ -2321,8 +2352,8 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
         const node = nodesRef.current.find((entry) => entry.id === nodeId);
         if (node) void persistNodePatch(node.id, { x: node.x, y: node.y, w: node.width, h: node.height });
       }
-      const frameId = trailDrag?.id ?? (resizing?.kind === "frame" ? resizing.id : null);
-      if (frameId && !trailDrag?.frameMembers) {
+      const frameId = resizing?.kind === "frame" ? resizing.id : null;
+      if (frameId && !trailDrag) {
         const frame = framesRef.current.find((entry) => entry.id === frameId);
         if (frame) void persistFramePatch(frame.id, { x: frame.x, y: frame.y, w: frame.width, h: frame.height });
       }
@@ -2331,21 +2362,13 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
         if (section && (section.x !== trailDrag.origin.x || section.y !== trailDrag.origin.y)) {
           noteWorkboardSection(orgId, "moved", { frames: trailDrag.frameMembers.length, cards: trailDrag.members.length });
         }
-        void (async () => {
-          if (section) await persistFramePatch(section.id, { x: section.x, y: section.y });
-          for (const member of trailDrag.frameMembers ?? []) {
-            const frame = framesRef.current.find((entry) => entry.id === member.id);
-            if (frame) await persistFramePatch(frame.id, { x: frame.x, y: frame.y });
-          }
-          for (const member of trailDrag.members) {
-            const node = nodesRef.current.find((entry) => entry.id === member.id);
-            if (node) await persistNodePatch(node.id, { x: node.x, y: node.y });
-          }
-        })();
+        if (section && (section.x !== trailDrag.origin.x || section.y !== trailDrag.origin.y)) {
+          void persistMoveMany([trailDrag.id, ...trailDrag.frameMembers.map((member) => member.id)], trailDrag.members.map((member) => member.id));
+        }
       } else if (trailDrag) {
-        for (const member of trailDrag.members) {
-          const node = nodesRef.current.find((entry) => entry.id === member.id);
-          if (node) void persistNodePatch(node.id, { x: node.x, y: node.y });
+        const grouping = framesRef.current.find((entry) => entry.id === trailDrag.id);
+        if (grouping && (grouping.x !== trailDrag.origin.x || grouping.y !== trailDrag.origin.y)) {
+          void persistMoveMany([trailDrag.id], trailDrag.members.map((member) => member.id));
         }
       }
     }

@@ -312,7 +312,13 @@ export type WorkboardCommand =
   | { type: "node_restore"; nodeId: string; expectedVersion: number }
   | { type: "link_create"; fromNodeId: string; fromAnchor: WorkboardAnchor; toNodeId: string; toAnchor: WorkboardAnchor; relation?: WorkboardRelation }
   | { type: "link_update"; linkId: string; expectedVersion: number; relation: WorkboardRelation }
-  | { type: "link_archive"; linkId: string; expectedVersion: number };
+  | { type: "link_archive"; linkId: string; expectedVersion: number }
+  /** MOVE-1: one request carries every position of a section or workstream move. All or nothing on versions. */
+  | { type: "move_many"; frames: WorkboardMoveEntry<"frameId">[]; nodes: WorkboardMoveEntry<"nodeId">[] };
+
+export type WorkboardMoveEntry<K extends "frameId" | "nodeId"> = { [P in K]: string } & { expectedVersion: number; x: number; y: number };
+/** MOVE-1: the most rows one move may carry. A larger section saves in more than one request. */
+export const WORKBOARD_MOVE_MANY_MAX = 400;
 
 /** JSON-safe snapshot of the newer row shipped with a conflict. */
 export type WorkboardRowSnapshot = Record<string, string | number | boolean | null>;

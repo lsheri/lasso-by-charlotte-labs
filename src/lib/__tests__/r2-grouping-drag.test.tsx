@@ -88,14 +88,14 @@ describe("R2 grouping movement", () => {
     expect(moveGroupingContents([shared], paintSnapshot, { x: 300, y: 80 })[0]).toMatchObject({ x: 330, y: 130 });
   });
 
-  it("keeps resize separate from card movement and persists each moved row", () => {
+  it("keeps resize separate from card movement and persists every moved row in one move (MOVE-1)", () => {
     const page = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
     const resizePath = page.slice(page.indexOf("const resizing = resizeRef.current"), page.indexOf("const trailDrag = frameDragRef.current"));
     const dragEnd = page.match(/function endInteraction\(event[^)]*\)[\s\S]*?const connector = connectorDragRef\.current/)?.[0] ?? "";
 
     expect(resizePath).not.toContain("moveGroupingContents");
-    expect(dragEnd).toContain("persistFramePatch");
-    expect(dragEnd).toContain("persistNodePatch");
+    expect(dragEnd).toContain("persistMoveMany(");
+    expect(page).toContain('lab.persist({ type: "move_many", ...chunk })');
   });
 
   it("shows no guidance for unnamed paint and preserves named guidance", () => {
