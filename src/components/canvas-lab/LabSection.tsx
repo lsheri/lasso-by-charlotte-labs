@@ -143,7 +143,13 @@ export function LabSection({ frame, title, selected, editable, autoName = false,
   function withMarker(node: React.ReactNode) {
     return hasMarker ? <span className="flex min-w-0 flex-col items-start gap-[2px]">{node}{markerLine()}</span> : node;
   }
-  return <section ref={rootRef} tabIndex={0} data-testid={`lab-section-${frame.id}`} data-selected={selected}
+  return <section ref={rootRef} tabIndex={0} data-testid={`lab-section-${frame.id}`} data-selected={selected} data-movable={editable ? "true" : undefined}
+    onPointerDown={(event) => {
+      // DRAG-1: once selected, a press anywhere inside the section (not on a card or workstream) moves it.
+      if (!selected || !editable) return;
+      const target = event.target as Element;
+      if (target === event.currentTarget || target.closest(".canvas-lab-section-outline")) press(event);
+    }}
     className="canvas-lab-section" style={{ left: frame.x, top: frame.y, width: frame.width, height: frame.height, ...(fillStyle ? { background: fillStyle.fill } : {}) }}
     onKeyDown={(event) => {
       if (!editable || (event.target as Element).closest("input,button")) return;

@@ -37,7 +37,7 @@ describe("GF2 retired guide frames stop drawing", () => {
   });
 
   it("a context frame keeps its menu, and a drawn region stays movable, renamable and deletable", () => {
-    expect(page).toContain("onDragStart={region && boardEditable ? (event) => startGroupingDrag(frame, event) : undefined}");
+    expect(page).toContain("onDragStart={(region || kind === \"task\" || kind === \"custom\") && boardEditable ? (event) => startGroupingDrag(frame, event) : undefined}");
     expect(page).toContain('onRemove={() => kind === "context" ? void removeContextArea(frame) : removeFrame(frame)}');
     expect(page).toContain("onUseAsContext={() => useFrameAsContext(frame)}");
     expect(menu).toContain("Use as context");

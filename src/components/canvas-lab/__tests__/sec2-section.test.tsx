@@ -32,12 +32,22 @@ describe("SEC-2 section", () => {
     fireEvent.click(screen.getByRole("button", { name: "Name this section" }));
     expect(screen.getByRole("textbox", { name: "Section title" })).toBeTruthy();
   });
-  it("does not select from the interior but selects and starts drag from the title", () => {
-    const p = props(); render(<LabSection {...p} />);
+  it("does not select from the interior while unselected but selects and starts drag from the title", () => {
+    const p = { ...props(), selected: false }; render(<LabSection {...p} />);
     fireEvent.pointerDown(screen.getByTestId("lab-section-section:pricing"), { button: 0 });
     expect(p.onSelect).not.toHaveBeenCalled(); expect(p.onDragStart).not.toHaveBeenCalled();
     fireEvent.pointerDown(screen.getByText("Pricing"), { button: 0 });
     expect(p.onSelect).toHaveBeenCalledOnce(); expect(p.onDragStart).toHaveBeenCalledOnce();
+  });
+  it("DRAG-1: once selected, a press anywhere inside moves it; a viewer's never does", () => {
+    const p = props(); const view = render(<LabSection {...p} />);
+    fireEvent.pointerDown(screen.getByTestId("lab-section-section:pricing"), { button: 0 });
+    expect(p.onDragStart).toHaveBeenCalledOnce();
+    expect(screen.getByTestId("lab-section-section:pricing").getAttribute("data-movable")).toBe("true");
+    view.unmount();
+    const viewer = { ...props(), editable: false }; render(<LabSection {...viewer} />);
+    fireEvent.pointerDown(screen.getByTestId("lab-section-section:pricing"), { button: 0 });
+    expect(viewer.onDragStart).not.toHaveBeenCalled();
   });
   it("selects and starts drag from all four edges", () => {
     const p = props(); render(<LabSection {...p} />);
