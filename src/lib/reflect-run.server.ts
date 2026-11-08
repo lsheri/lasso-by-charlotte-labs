@@ -199,6 +199,9 @@ export async function runReflectTurn(
   const overWindow = storedChars > windowChars;
   const contextMode: "inline" | "catalogue" =
     !briefOnly && (inScopeCount > CATALOGUE_THRESHOLD || overWindow) ? "catalogue" : "inline";
+  // AUDIT-4 Q8: the usage row records which mode answered, so cost per
+  // question can be read by mode. The catalogue fallback restamps below.
+  const askMeta = { ...aiMeta, contextMode };
 
   // FIX-1: the catalogue answer, both when size sends the read set there and
   // when the provider refuses an inline prompt as over its window (the size
@@ -213,7 +216,7 @@ export async function runReflectTurn(
         prompts: cataloguePrompts,
         history: historyMessages,
         question: message,
-        meta: aiMeta,
+        meta: { ...aiMeta, contextMode: "catalogue" as const },
         tier: "smart",
         timeoutMs: ANSWER_TIMEOUT_MS,
       },
@@ -389,13 +392,13 @@ export async function runReflectTurn(
           tier: "smart",
           maxTokens: 8000,
           timeoutMs: ANSWER_TIMEOUT_MS,
-          meta: aiMeta,
+          meta: askMeta,
         })
       : await chatComplete(conversation, {
           tier: "smart",
           maxTokens: 8000,
           timeoutMs: ANSWER_TIMEOUT_MS,
-          meta: aiMeta,
+          meta: askMeta,
         });
   } catch (e) {
     // A refusal for size comes back before any text, so nothing has streamed.

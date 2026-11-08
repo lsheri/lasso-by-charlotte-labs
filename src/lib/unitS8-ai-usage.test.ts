@@ -24,6 +24,8 @@ describe("unit S8 ai usage rows", () => {
       org_id: "1f0e6d0e-0000-4000-8000-000000000001",
       profile_id: "2a7b8c9d-0000-4000-8000-000000000002",
       surface: "ask_dock",
+      environment: "unknown",
+      context_mode: null,
       model: "gpt-5",
       tokens_in: 1200,
       cached_in: 200,
