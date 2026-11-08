@@ -550,6 +550,60 @@ export function extractLines(extract: ExtractRow): string[] {
  * budgeted subset. Everything is read as the caller, so row-level policies
  * decide what can be assembled at all.
  */
+/**
+ * IMG-3: board images in this read set, with their stored AI description.
+ * Picked images come from scope.images; a whole-board (engagements) scope
+ * includes every live image on those boards. Read with the caller's own client,
+ * so row level security decides what is visible. An image never described yet
+ * is described now (at most MAX_IMAGE_DESCRIBE_INLINE per ask), then re-read.
+ */
+export const MAX_IMAGE_DESCRIBE_INLINE = 4;
+export const IMAGE_DESCRIPTION_LABEL = "AI description of an image on the board. Not the image itself.";
+export type BoardImageRead = { id: string; text: string | null; status: string | null };
+
+export function imageTitle(text: string | null): string {
+  const first = (text ?? "").split("\n").map((line) => line.trim()).find(Boolean) ?? "";
+  const clean = first.replace(/^1\.\s*/, "").slice(0, 90);
+  return clean ? `Image: ${clean}` : "Image on the board";
+}
+
+export async function loadBoardImages(
+  supabase: Db,
+  scope: ContextScope,
+  describe?: (nodeId: string) => Promise<unknown>,
+): Promise<BoardImageRead[]> {
+  const columns = "id, image_text, image_text_status";
+  async function read(): Promise<{ id: string; image_text: string | null; image_text_status: string | null }[]> {
+    if (scope.images && scope.images.length > 0) {
+      const { data } = await supabase.from("workboard_nodes").select(columns).in("id", scope.images).eq("kind", "image").is("deleted_at", null);
+      return (data ?? []) as { id: string; image_text: string | null; image_text_status: string | null }[];
+    }
+    if (scope.mode === "engagements" && scope.ids.length > 0) {
+      const { data: boards } = await supabase.from("workboards").select("id").in("engagement_id", scope.ids);
+      const boardIds = ((boards ?? []) as { id: string }[]).map((b) => b.id);
+      if (boardIds.length === 0) return [];
+      const { data } = await supabase.from("workboard_nodes").select(columns).in("workboard_id", boardIds).eq("kind", "image").is("deleted_at", null);
+      return (data ?? []) as { id: string; image_text: string | null; image_text_status: string | null }[];
+    }
+    return [];
+  }
+  try {
+    let rows = await read();
+    const undescribed = rows.filter((row) => row.image_text_status === null).slice(0, MAX_IMAGE_DESCRIBE_INLINE);
+    if (undescribed.length > 0) {
+      const run = describe ?? (async (nodeId: string) => (await import("./image-describe.server")).describeBoardImage(nodeId));
+      await Promise.all(undescribed.map((row) => run(row.id).catch(() => null)));
+      rows = await read();
+    }
+    return rows
+      .map((row) => ({ id: row.id, text: row.image_text_status === "ok" ? row.image_text : null, status: row.image_text_status }))
+      .sort((a, b) => a.id.localeCompare(b.id));
+  } catch (error) {
+    console.error("[reflect-context] board images:", (error as Error).message);
+    return [];
+  }
+}
+
 export async function assembleReflectContext(
   supabase: Db,
   profileId: string,
@@ -749,6 +803,17 @@ export async function assembleReflectContext(
     if (!raw) preambleParts.push(lines.join("\n"));
   }
 
+  // IMG-3: board images, read as their stored AI description, after the work.
+  const images = options?.briefOnly && !(scope.images && scope.images.length > 0) ? [] : await loadBoardImages(supabase, scope);
+  for (const image of images) {
+    if (!image.text) continue;
+    const title = imageTitle(image.text);
+    const block = [`IMAGE ON THE BOARD: ${title}`, `  [${IMAGE_DESCRIPTION_LABEL}]`, `  Description:\n${image.text}`].join("\n");
+    parts.push(block);
+    // Not quotable: an AI description is not anyone's exact words.
+    documents.push({ id: `image:${image.id}`, title, kind: "text", turnNumbers: [], blocks: [image.text], context: IMAGE_DESCRIPTION_LABEL });
+  }
+
   const tier1 = items.length + brief.itemIds.length;
   const extractOnly = tier1 - tier2;
 
@@ -796,6 +861,23 @@ export async function assembleReflectContext(
         detail: total > 0 ? "stored text not read, over the window" : extractFor.get(item.id) ? "summary only, full text not opened" : "no stored text",
         chars_in: 0,
         chars_total: total,
+      });
+    }
+  }
+  for (const image of images) {
+    if (image.text) {
+      manifestItems.push({
+        id: `image:${image.id}`,
+        title: imageTitle(image.text),
+        kind: "item",
+        detail: "AI description of an image",
+        chars_in: image.text.length,
+        chars_total: image.text.length,
+      });
+    } else {
+      excluded.push({
+        title: "An image on the board",
+        reason: image.status === "skipped" ? "this image type or size cannot be read" : image.status === "failed" ? "the image could not be read" : "the image is still being read",
       });
     }
   }
