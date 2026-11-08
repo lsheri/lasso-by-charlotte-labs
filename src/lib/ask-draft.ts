@@ -1,4 +1,5 @@
 import { PLACEMENT_CARD, placeAddedCards } from "@/lib/workboard-placement";
+import { flagEnabled } from "@/lib/feature-flags";
 /**
  * ASK-D1: the floating Ask drafts. Until 7 Nov production hosts always resolved
  * to null. GATE-LIFT: production now resolves to draft b (see resolveAskDraft);
@@ -42,8 +43,15 @@ type Store = Pick<Storage, "getItem" | "setItem" | "removeItem">;
  * ?ask=a|b switch, stay preview-only because they are the experiment, not the product.
  * Future flags belong in PostHog (Liam, 7 Nov); this host rule is the last of its kind.
  */
-export function resolveAskDraft(host: string, search: string, store: Store | null): AskDraft | null {
+export function resolveAskDraft(
+  host: string,
+  search: string,
+  store: Store | null,
+  // FLAGS: the ask-floating kill switch in PostHog; code default on. It wins over ?ask=on.
+  floating: boolean = flagEnabled("ask-floating"),
+): AskDraft | null {
   if (!isAskDraftHost(host)) {
+    if (!floating) return null;
     const asked = new URLSearchParams(search).get("ask");
     try {
       if (asked === "off") { store?.setItem(STORE_KEY, "off"); return null; }

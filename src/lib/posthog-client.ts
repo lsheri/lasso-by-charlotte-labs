@@ -149,3 +149,46 @@ export function resetPostHog(): void {
     /* telemetry must never break the app */
   }
 }
+
+/**
+ * FLAGS (7 Nov): declare the person's workspace to PostHog as the same
+ * sha256(org id) the server mirror already sends in $groups, never a name.
+ * Lets replays and browser events be read per workspace. null does nothing;
+ * sign-out clears it through posthog.reset().
+ */
+export function groupWorkspace(orgHash: string | null): void {
+  if (typeof window === "undefined" || !orgHash) return;
+  try {
+    posthog.group("org", orgHash);
+  } catch {
+    /* telemetry must never break the app */
+  }
+}
+
+/**
+ * FLAGS: PostHog's answer for one flag, or undefined when it has no answer yet
+ * (before flags load, SSR, blocked by an ad blocker). Callers never use this
+ * directly; they go through flagEnabled in feature-flags.ts, which supplies the
+ * code default. posthog-js keeps the last answer in its own storage, so from
+ * the second page load on the answer is there at first paint.
+ */
+export function readFeatureFlag(key: string): boolean | undefined {
+  if (typeof window === "undefined") return undefined;
+  try {
+    const value = posthog.isFeatureEnabled(key);
+    return typeof value === "boolean" ? value : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/** FLAGS: run cb whenever PostHog (re)loads flags. Returns an unsubscribe. */
+export function onFeatureFlagsLoaded(cb: () => void): () => void {
+  if (typeof window === "undefined") return () => {};
+  try {
+    const off = posthog.onFeatureFlags(() => cb());
+    return typeof off === "function" ? off : () => {};
+  } catch {
+    return () => {};
+  }
+}

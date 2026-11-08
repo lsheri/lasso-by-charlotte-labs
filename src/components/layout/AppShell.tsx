@@ -3,7 +3,8 @@ import { MessageSquare } from "lucide-react";
 import { useEffect } from "react";
 
 import { setClientTelemetryOrg } from "@/lib/client-telemetry";
-import { identifyPostHog } from "@/lib/posthog-client";
+import { groupWorkspace, identifyPostHog } from "@/lib/posthog-client";
+import { sha256Hex } from "@/lib/data-consent-shared";
 import { signOut } from "@/lib/sign-out";
 
 import { useAuthUser, useProfile } from "@/hooks/use-profile";
@@ -45,6 +46,15 @@ function AppShellInner() {
       ...(profile?.org_type ? { org_type: profile.org_type } : {}),
     });
   }, [authUser?.id, profile?.display_name, profile?.org_id, profile?.org_type]);
+  // FLAGS: the workspace as PostHog's org group, the same sha256(org id) the server
+  // mirror sends in $groups. A hash, never the workspace name.
+  useEffect(() => {
+    const orgId = profile?.org_id;
+    if (!authUser?.id || !orgId) return;
+    let live = true;
+    void sha256Hex(orgId).then((hash) => { if (live) groupWorkspace(hash); }).catch(() => {});
+    return () => { live = false; };
+  }, [authUser?.id, profile?.org_id]);
   // Pass 175b: the sending sweep needs a live request to finish inside. This
   // is invisible: no UI, no state, no event, at most once every ten minutes.
   useEffect(() => {
