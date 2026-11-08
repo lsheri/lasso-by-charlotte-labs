@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import type React from "react";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { readFileSync } from "node:fs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -21,7 +22,7 @@ import { PIN_TIP_COPY, PIN_TIP_KEY, resetPinTip } from "@/components/canvas-lab/
 import type { LabNode } from "@/components/canvas-lab/canvas-lab-model";
 
 const node = { id: "n1", kind: "answer", title: "Answer", summary: "The answer text", x: 0, y: 0, width: 280, height: 160, ownership: "yours", chatSessionId: "s1" } as unknown as LabNode;
-const props = (over: Partial<Parameters<typeof LabAnswerCard>[0]> = {}) => ({ node, focused: true, stackZ: 1, onFocus: vi.fn(), onPointerDown: vi.fn(), onDelete: vi.fn(), orgId: "org", onCommit: vi.fn(async () => null), ...over });
+const props = (over: Partial<React.ComponentProps<typeof LabAnswerCard>> = {}) => ({ node, focused: true, stackZ: 1, onFocus: vi.fn(), onPointerDown: vi.fn(), onDelete: vi.fn(), orgId: "org", onCommit: vi.fn(async () => null), ...over });
 
 function clickText(dx = 0) {
   const body = screen.getByTestId("canvas-lab-answer-card").querySelector(".canvas-lab-answer-body")!;
