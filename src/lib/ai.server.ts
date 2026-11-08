@@ -449,17 +449,36 @@ export async function resolveUsageEnvironment(): Promise<Environment> {
   }
 }
 
+/**
+ * COST-MIRROR (8 Nov 2026): how long accounting waits for the ai.usage copy.
+ * Long enough for the events row and the PostHog mirror (both awaited inside
+ * recordEvent), short enough that a slow analytics call never holds a caller.
+ */
+export const USAGE_MIRROR_WAIT_MS = 4_000;
+
+function settleWithin(work: Promise<unknown>, ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    const timer = setTimeout(resolve, ms);
+    void work.then(
+      () => { clearTimeout(timer); resolve(); },
+      () => { clearTimeout(timer); resolve(); },
+    );
+  });
+}
+
 export async function recordUsage(result: ChatResult, meta: AiMeta | undefined): Promise<void> {
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const environment = await resolveUsageEnvironment();
+    let mirror: Promise<void> = Promise.resolve();
     if (meta?.orgId) {
       const orgId = meta.orgId;
-      // Detached from accounting and the AI response; the existing mirror preserves dims exactly.
-      // PRIME (7 Nov): registered with the host's waitUntil so a request that returns fast
-      // (the one-token ask_prime call) cannot tear the mirror down part way. A bare detached
-      // promise lost 1 of 4 primes before the events row and 1 more before PostHog.
-      runAfterResponse(async () => {
+      // COST-MIRROR (8 Nov): the copy runs alongside the ledger insert and accounting
+      // waits for it (capped). It used to run only through runAfterResponse, which
+      // the board's server functions do not keep alive: over 7 days PostHog got
+      // 151 of 159 calls but only $11.02 of $14.01, because whole-board primes return
+      // fast and lost their copy. It is still handed to the host as a backstop past the cap.
+      mirror = (async () => {
         try {
           const { recordEvent } = await import("./telemetry.server");
           await recordEvent(supabaseAdmin, {
@@ -482,10 +501,14 @@ export async function recordUsage(result: ChatResult, meta: AiMeta | undefined):
         } catch {
           // A mirror failure must never affect accounting or the caller.
         }
-      });
+      })();
+      runAfterResponse(() => mirror);
     }
     const db = supabaseAdmin as unknown as { from: (t: string) => any };
-    await db.from("ai_usage").insert(aiUsageRow(result, meta, environment));
+    const insert = (async () => {
+      try { await db.from("ai_usage").insert(aiUsageRow(result, meta, environment)); } catch { /* accounting never surfaces */ }
+    })();
+    await Promise.all([insert, settleWithin(mirror, USAGE_MIRROR_WAIT_MS)]);
   } catch {
     // Accounting must never surface as a failure in front of someone.
   }

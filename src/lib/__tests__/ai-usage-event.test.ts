@@ -20,7 +20,7 @@ vi.mock("../ai-key", () => ({ openAiKeyFor: () => ({ key: "test-only" }) }));
 vi.mock("../health.server", () => ({ logHealth: async () => {} }));
 vi.mock("../egress.server", () => ({ scheduleEgress: () => {} }));
 
-import { chatComplete, recordUsage, type ChatResult } from "../ai.server";
+import { chatComplete, recordUsage, USAGE_MIRROR_WAIT_MS, type ChatResult } from "../ai.server";
 import * as telemetry from "../telemetry.server";
 import { guardEventDims } from "../event-dim-allowlist";
 import { resetRequestContext, setRequestContext } from "../background";
@@ -89,16 +89,41 @@ describe("AI usage accounting mirror", () => {
     await vi.waitFor(() => expect(emit).toHaveBeenCalledTimes(1));
     expect(mocks.insert).toHaveBeenCalledWith("ai_usage", expect.objectContaining({ cost_usd: 0.00235 }));
   });
-  it("recordUsage resolves while the event emit is still pending", async () => {
+  it("COST-MIRROR: recordUsage waits for the event copy when it lands within the cap", async () => {
     let finish: (() => void) | undefined;
     let completed = false;
     const pending = new Promise<void>((resolve) => { finish = () => { completed = true; resolve(); }; });
-    const emit = vi.spyOn(telemetry, "recordEvent").mockReturnValue(pending);
+    vi.spyOn(telemetry, "recordEvent").mockReturnValue(pending);
+    let resolved = false;
+    const run = recordUsage(result, meta).then(() => { resolved = true; });
+    await new Promise((r) => setTimeout(r, 20));
+    expect(resolved).toBe(false);
+    finish?.();
+    await run;
+    expect(completed).toBe(true);
+    expect(resolved).toBe(true);
+  });
+  it("COST-MIRROR: a hung copy never holds accounting past the cap", async () => {
+    vi.useFakeTimers();
     try {
-      await expect(recordUsage(result, meta)).resolves.toBeUndefined();
-      await vi.waitFor(() => expect(emit).toHaveBeenCalledTimes(1));
-      expect(completed).toBe(false);
-    } finally { finish?.(); }
+      vi.spyOn(telemetry, "recordEvent").mockReturnValue(new Promise<void>(() => undefined));
+      let resolved = false;
+      const run = recordUsage(result, meta).then(() => { resolved = true; });
+      await vi.advanceTimersByTimeAsync(USAGE_MIRROR_WAIT_MS - 100);
+      expect(resolved).toBe(false);
+      await vi.advanceTimersByTimeAsync(200);
+      await run;
+      expect(resolved).toBe(true);
+      expect(mocks.insert).toHaveBeenCalledWith("ai_usage", expect.objectContaining({ cost_usd: 0.00235 }));
+    } finally { vi.useRealTimers(); }
+  });
+  it("COST-MIRROR: a fast prime whose request ends at once still gets its copy, because accounting waited", async () => {
+    // The 8 Nov failure: no host context kept the background job alive.
+    resetRequestContext();
+    let copied = false;
+    vi.spyOn(telemetry, "recordEvent").mockImplementation(async () => { await new Promise((r) => setTimeout(r, 30)); copied = true; });
+    await recordUsage(result, { ...meta, surface: "ask_prime" });
+    expect(copied).toBe(true);
   });
   it("sends only the eight permitted dimensions and never content", async () => {
     const emit = vi.spyOn(telemetry, "recordEvent");
@@ -110,21 +135,22 @@ describe("AI usage accounting mirror", () => {
     }
     expect(JSON.stringify(mirrors()[0])).not.toContain(result.text);
   });
-  it("PRIME: hands the mirror to the host's waitUntil so a fast request cannot cut it off", async () => {
+  it("PRIME: still hands the copy to the host's waitUntil as a backstop past the cap", async () => {
     const kept: Promise<unknown>[] = [];
     setRequestContext({ waitUntil: (p: Promise<unknown>) => { kept.push(p); } });
     let finish: (() => void) | undefined;
     const pending = new Promise<void>((resolve) => { finish = resolve; });
     const emit = vi.spyOn(telemetry, "recordEvent").mockReturnValue(pending);
     try {
-      await expect(recordUsage(result, { ...meta, surface: "ask_prime" })).resolves.toBeUndefined();
-      expect(kept).toHaveLength(1);
+      const run = recordUsage(result, { ...meta, surface: "ask_prime" });
       await vi.waitFor(() => expect(emit).toHaveBeenCalledTimes(1));
+      expect(kept).toHaveLength(1);
       let settled = false;
       void kept[0]!.then(() => { settled = true; });
       await Promise.resolve();
       expect(settled).toBe(false);
       finish?.();
+      await run;
       await kept[0];
       expect(settled).toBe(true);
     } finally { finish?.(); resetRequestContext(); }
