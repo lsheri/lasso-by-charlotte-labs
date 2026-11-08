@@ -5810,17 +5810,19 @@ export type Database = {
         }[]
       }
       admin_ai_usage: {
-        Args: { p_days?: number }
+        Args: { p_days?: number; p_group?: string }
         Returns: {
           cached_in: number
           calls: number
-          cost_per_person: number
+          cost_per_person: number | null
           cost_usd: number
           last_call: string
           org_id: string
           org_name: string
           org_type: string
-          people: number
+          people: number | null
+          person: string | null
+          profile_id: string | null
           tokens_in: number
           tokens_out: number
         }[]
