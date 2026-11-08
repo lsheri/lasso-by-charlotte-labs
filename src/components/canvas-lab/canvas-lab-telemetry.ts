@@ -286,3 +286,8 @@ export function noteWorkboardBundleToggled(orgId: string | undefined, state: "ex
 export function noteWorkboardAddWorkSourceOpened(orgId: string | undefined, source: SourceId): void {
   if (orgId) logEvent("workboard.add_work_source_opened", orgId, { source });
 }
+
+/** LIVE-1: the open board applied a change saved elsewhere. Content-free: only what prompted the re-read. */
+export function noteWorkboardLiveApplied(orgId: string | undefined, trigger: "change" | "reconnect" | "online" | "focus"): void {
+  if (orgId) logEvent("workboard.live_applied", orgId, { trigger });
+}
