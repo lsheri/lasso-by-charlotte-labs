@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { readFileSync } from "node:fs";
 
 const logEvent = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/telemetry", () => ({ logEvent }));
@@ -45,6 +46,40 @@ describe("ASK-D2 pinned card", () => {
     window.localStorage.setItem("lasso.ask-draft.pins", JSON.stringify({ "durable-1": "s1" }));
     render(<LabAnswerCard {...cardProps} node={{ ...node, id: "answer:local", durableId: "durable-1" } as LabNode} />);
     expect(await screen.findByRole("button", { name: /^Chat/ })).toBeTruthy();
+  });
+  it("opens the saved chat without browser storage, ahead of an old pin", async () => {
+    window.history.replaceState(null, "", "/?ask=b");
+    window.localStorage.setItem("lasso.ask-draft.pins", JSON.stringify({ n1: "old-chat" }));
+    const opened = vi.fn();
+    window.addEventListener("lasso.ask-draft.open-session", opened);
+    try {
+      render(<LabAnswerCard {...cardProps} node={{ ...node, chatSessionId: "saved-chat" }} />);
+      fireEvent.click(await screen.findByRole("button", { name: /^Chat/ }));
+      expect(opened).toHaveBeenCalledTimes(1);
+      expect((opened.mock.calls[0]?.[0] as CustomEvent).detail).toEqual({ sessionId: "saved-chat" });
+    } finally {
+      window.removeEventListener("lasso.ask-draft.open-session", opened);
+    }
+  });
+  it("a teammate's answer remains visible but never offers or opens their chat", async () => {
+    window.history.replaceState(null, "", "/?ask=b");
+    render(<LabAnswerCard {...cardProps} node={{ ...node, chatSessionId: "private-chat", ownership: "teammate", authorName: "Alex" }} />);
+    await waitFor(() => expect(screen.queryByRole("button", { name: /^Chat/ })).toBeNull());
+    expect(screen.getByTestId("canvas-lab-answer-card")).toBeTruthy();
+    expect(logEvent).not.toHaveBeenCalled();
+  });
+});
+
+describe("PINS-2 answer input", () => {
+  it("the page's nodeToInput carries the answer chat ID into node_create input", () => {
+    const source = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
+    const start = source.indexOf("  function nodeToInput(node: LabNode): WorkboardNodeInput | null {");
+    const end = source.indexOf("\n\n\n  function report", start);
+    expect(start).toBeGreaterThan(-1);
+    expect(end).toBeGreaterThan(start);
+    const body = source.slice(start, end).replace("function nodeToInput(node: LabNode): WorkboardNodeInput | null", "function nodeToInput(node)");
+    const build = new Function("hiddenRef", `${body}; return nodeToInput;`)({ current: [] });
+    expect(build({ ...node, chatSessionId: "b86aa215-17cc-4bca-8b54-48d7245be9a8" }).chatSessionId).toBe("b86aa215-17cc-4bca-8b54-48d7245be9a8");
   });
 });
 
