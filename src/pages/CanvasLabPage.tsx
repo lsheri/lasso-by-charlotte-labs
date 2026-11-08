@@ -1172,12 +1172,13 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   /** Whatever the board holds right now, never the version stored on a stack. */
   /** BB-1: the version each archive left behind, so an undo restore never sends a stale one. */
   const archivedVersionsRef = useRef(new Map<string, Promise<number | null>>());
-  function archiveDurable(durableId: string, expectedVersion: number) {
+  function archiveDurable(durableId: string, expectedVersion: number): Promise<number | null> {
     const pending = lab.persist({ type: "node_archive", nodeId: durableId, expectedVersion }).then((result) => {
       report(result, "node", "archive");
       return result.status === "saved" ? result.versions[durableId] ?? expectedVersion + 1 : null;
     });
     archivedVersionsRef.current.set(durableId, pending);
+    return pending;
   }
   async function restoreVersion(durableId: string, fallback: number): Promise<number> {
     const pending = archivedVersionsRef.current.get(durableId);
@@ -3056,9 +3057,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       setAnnouncement("This card belongs to a teammate, so only they can remove it.");
       return;
     }
-    if (node.durableId) {
-      archiveDurable(node.durableId, node.durableVersion ?? 1);
-    }
+    const archived = node.durableId ? archiveDurable(node.durableId, node.durableVersion ?? 1) : Promise.resolve(null);
     setNodes((current) => {
       if (!current) return current;
       const result = deleteLocalNode(current, links, selected, node.id);
@@ -3069,7 +3068,14 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     setKeyboardId(null);
     if (node.kind === "image") {
       // The file goes in the same action. No node_deleted: its kind set has no image.
-      if (node.imagePath) void removeBoardImageObject(node.imagePath);
+      // IMG-4: only once the card is really archived. A refused archive must
+      // never leave a live card with no file (the blank ghost of 8 Nov).
+      const path = node.imagePath;
+      if (path) {
+        void archived.then((version) => {
+          if (!node.durableId || version !== null) void removeBoardImageObject(path);
+        }).catch(() => undefined);
+      }
       setAnnouncement("Image removed.");
       return;
     }
