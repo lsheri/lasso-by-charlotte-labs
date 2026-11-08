@@ -30,7 +30,9 @@ type DocumentBlock = {
   citations: { enabled: true };
 };
 type CacheControl = { cache_control: { type: "ephemeral" } };
-type AnthropicMessage = { role: "user" | "assistant"; content: string | ((TextBlock | ToolUseBlock | ToolResultBlock | DocumentBlock) & Partial<CacheControl>)[] };
+/** IMG-2: an image the model reads. */
+type ImageBlock = { type: "image"; source: { type: "base64"; media_type: string; data: string } };
+type AnthropicMessage = { role: "user" | "assistant"; content: string | ((TextBlock | ToolUseBlock | ToolResultBlock | DocumentBlock | ImageBlock) & Partial<CacheControl>)[] };
 
 /** TOTAL-1: the blocks a user turn with documents becomes. Exported for tests. */
 export function documentBlocks(doc: RecordDocument): DocumentBlock {
@@ -130,6 +132,13 @@ export function toAnthropicBody(
         blocks.push({ type: "tool_use", id: call.id, name: call.function.name, input: parseArguments(call.function.arguments) });
       }
       out.push({ role: "assistant", content: blocks });
+      continue;
+    }
+    if (message.role === "user" && message.images && message.images.length > 0 && !(message.documents && message.documents.length > 0)) {
+      // IMG-2: images first, then the instruction, as the Messages API recommends.
+      const blocks: (TextBlock | ImageBlock)[] = message.images.map((image) => ({ type: "image", source: { type: "base64", media_type: image.mediaType, data: image.data } }));
+      if (message.content) blocks.push({ type: "text", text: message.content });
+      out.push({ role: "user", content: blocks });
       continue;
     }
     if (message.role === "user" && message.documents && message.documents.length > 0) {
