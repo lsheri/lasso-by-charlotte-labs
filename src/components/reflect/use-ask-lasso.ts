@@ -66,6 +66,8 @@ export function useAskLasso({
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [pending, setPending] = useState(false);
+  // ASK-FIX: the question as sent, shown in the thread at once while Lasso works.
+  const [asked, setAsked] = useState<string | null>(null);
   const [streamed, setStreamed] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string> | null>(null);
@@ -296,7 +298,7 @@ export function useAskLasso({
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages?.length, pending]);
+  }, [messages?.length, pending, asked]);
 
   async function ensureSession(): Promise<string | null> {
     if (sessionId) return sessionId;
@@ -350,17 +352,21 @@ export function useAskLasso({
     const pointedItems = available.filter((item) => ids.includes(item.id));
     setPointedNow(pointedItems);
     setPending(true);
+    setAsked(message);
+    setDraft("");
     setError(null);
     setLiveManifest(null);
     try {
       const id = await ensureSession();
-      if (!id) return;
+      if (!id) {
+        setDraft((current) => current || message);
+        return;
+      }
       if (resolvedScope) await writeCurrentScope(id, resolvedScope);
       else await writeCurrentScope(id);
       // TOTAL-5b: never race a prime for the same read set; ride its cache.
       if (pointedItems.length === 0) await awaitPrime(resolvedScope ?? scopeForSelection());
       setStreamed("");
-      setDraft("");
       const result = await streamChatRequest<ReflectResult>(
         "/api/reflect/stream",
         {
@@ -386,8 +392,11 @@ export function useAskLasso({
       await queryClient.invalidateQueries({ queryKey: ["reflect-sessions"] });
     } catch (e) {
       setError((e as Error).message);
+      // Give the words back if the send failed and nothing new was typed.
+      setDraft((current) => current || message);
     } finally {
       setPending(false);
+      setAsked(null);
       setStreamed("");
       setPointedNow([]);
       if (sessionId) void queryClient.invalidateQueries({ queryKey: ["reflect-messages", sessionId] });
@@ -395,6 +404,7 @@ export function useAskLasso({
   }
 
   return {
+    asked,
     bottomRef,
     chooseMention,
     composerRef,

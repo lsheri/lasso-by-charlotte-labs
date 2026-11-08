@@ -479,7 +479,7 @@ export function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions
         {(() => {
           // Shown on send, before the server answers. Hidden once the saved
           // copy of the same question is back in the thread.
-          const asked = (ask as AskLasso & { asked?: string | null }).asked;
+          const asked = ask.asked;
           const last = messages[messages.length - 1];
           if (!ask.pending || !asked || (last?.role === "user" && last.content === asked))
             return null;
