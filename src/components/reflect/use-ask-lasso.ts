@@ -256,13 +256,17 @@ export function useAskLasso({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId, scopeKey, pending]);
 
-  function applyBoardSelection(hasPicks: boolean, mappedIds: string[], imageIds: string[] = [], videoCount = 0) {
+  function applyBoardSelection(hasPicks: boolean, mappedIds: string[], imageIds: string[] = []) {
     const ids = [...mappedIds, ...imageIds];
     setSectionSelection(null);
-    // V2-2: videos are never context. The count only lets Ask say "not read".
-    setBoardSelectionState({ active: hasPicks, ids: mappedIds, images: imageIds, videos: videoCount });
+    setBoardSelectionState((current) => ({ active: hasPicks, ids: mappedIds, images: imageIds, ...(current.videos ? { videos: current.videos } : {}) }));
     setScopeSource(hasPicks ? (ids.length > 0 ? "board_pick" : "board_pick_brief_only") : "all");
     setSelected(new Set(hasPicks ? mappedIds : mapped.map((item) => item.id)));
+  }
+
+  /** V2-2: videos are never context. The count only lets Ask say "not read". */
+  function setBoardPickedVideos(count: number) {
+    setBoardSelectionState((current) => (current.videos ?? 0) === count ? current : { ...current, videos: count });
   }
 
   function applyPickerSelection(next: Set<string> | null | ((previous: Set<string> | null) => Set<string> | null), source: ScopeSource = "picker") {
@@ -447,6 +451,7 @@ export function useAskLasso({
     setSaveTarget,
     setSelected: applyPickerSelection,
     setBoardSelection: applyBoardSelection,
+    setBoardPickedVideos,
     sourcesByMessage,
     streamed,
     submit,
