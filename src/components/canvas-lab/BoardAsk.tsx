@@ -27,6 +27,7 @@ type Props = {
   onKeep: (answer: KeptAnswer, via?: "button" | "drag", at?: { x: number; y: number }) => void | Promise<string | null | void>;
   /** Work item ids of the cards picked "in context" on the board. */
   boardContextItemIds: string[];
+  boardContextImageIds?: string[];
   boardContextHasPicks: boolean;
   sectionSource?: SectionAskSource | undefined;
   /** SECD-3b: every section on the board, for the scope picker. */
@@ -66,13 +67,14 @@ function BoardAskPanel(props: Props & { draft?: AskDraft | null; pendingSessionI
   // The board selection is the chat's context. Picked cards narrow what Lasso
   // reads; clearing the board selection puts the whole engagement back.
   const idsKey = props.boardContextItemIds.join("|");
+  const imagesKey = props.boardContextImageIds?.join("|") ?? "";
   const mappedKey = ask.mapped.map((i) => i.id).join("|");
   const inMapped = props.boardContextItemIds.filter((id) => ask.mapped.some((i) => i.id === id));
   useEffect(() => {
     if (props.sectionSource) return;
-    ask.setBoardSelection(props.boardContextHasPicks, inMapped);
+    ask.setBoardSelection(props.boardContextHasPicks, inMapped, props.boardContextImageIds ?? []);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props.boardContextHasPicks, idsKey, mappedKey, props.sectionSource]);
+  }, [props.boardContextHasPicks, idsKey, imagesKey, mappedKey, props.sectionSource]);
 
   // ASK-D2: pinning, draft branch only. The outer keep exists only for people who may arrange the board.
   const outerKeep = useAnswerKeep();

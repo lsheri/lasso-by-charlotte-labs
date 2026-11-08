@@ -98,6 +98,11 @@ export function isWorkboardDecorationKind(kind: string): kind is WorkboardNodeKi
   return WORKBOARD_DECORATION_KINDS.includes(kind as WorkboardNodeKind);
 }
 
+/** Images keep their decoration renderer but participate in Ask and links. */
+export function isWorkboardAskReadableKind(kind: string): boolean {
+  return kind === "image" || !isWorkboardDecorationKind(kind);
+}
+
 export function parseWorkboardTextBody(value: unknown): WorkboardTextBody | null {
   if (typeof value !== "string") return null;
   try {

@@ -21,7 +21,7 @@ import {
   WORKBOARD_TEXT_MAX_SIZE,
   WORKBOARD_TEXT_MIN_HEIGHT,
   WORKBOARD_TEXT_MIN_WIDTH,
-  isWorkboardDecorationKind,
+  isWorkboardAskReadableKind,
   parseWorkboardTextBody,
   parseWorkboardStickyBody,
   parseWorkboardImageBody,
@@ -1312,7 +1312,7 @@ export function applyDurableBoard(base: { frames: LabFrame[]; nodes: LabNode[] }
   }
   for (const virtual of base.nodes) if (!matchedVirtual.has(virtual.id)) nodes.push(virtual);
 
-  const decorationIds = new Set(board.nodes.filter((node) => isWorkboardDecorationKind(node.kind)).map((node) => node.id));
+  const decorationIds = new Set(board.nodes.filter((node) => !isWorkboardAskReadableKind(node.kind)).map((node) => node.id));
   const links: LabLink[] = board.links.flatMap((link) => {
     if (decorationIds.has(link.fromNodeId) || decorationIds.has(link.toNodeId)) return [];
     const fromId = localIdByDurable.get(link.fromNodeId);
@@ -1331,7 +1331,7 @@ export function applyDurableBoard(base: { frames: LabFrame[]; nodes: LabNode[] }
  * and node kinds contribute nothing.
  */
 export function inboundLabNodeIds(nodes: LabNode[], links: LabLink[], anchorId: string, maxDepth = 8): Set<string> {
-  const nodeIds = new Set(nodes.filter((node) => !isWorkboardDecorationKind(node.kind)).map((node) => node.id));
+  const nodeIds = new Set(nodes.filter((node) => isWorkboardAskReadableKind(node.kind)).map((node) => node.id));
   if (!nodeIds.has(anchorId)) return new Set();
   const inbound = new Map<string, string[]>();
   for (const link of links) {

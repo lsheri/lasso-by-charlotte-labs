@@ -185,25 +185,26 @@ export function auditReadRows(manifest: ContextManifest, allReads: ContextSource
   const byId = new Map(reads.map((read) => [read.id, read]));
   const matched = new Set<string>();
   const rows: AuditReadRow[] = manifest.items.map((item) => {
+    const image = item.id?.startsWith("image:") ?? false;
     const read = item.id ? byId.get(item.id) : undefined;
     if (read) matched.add(read.id);
     return {
       key: item.id || item.title,
       title: displayName(item),
-      kind: item.kind,
+      kind: image ? "item" : item.kind,
       // TOTAL-2: an item with nothing stored was never a summary choice; say so.
-      detail:
+      detail: image ? item.detail :
         read && read.depth === "extract" && item.chars_total === 0 && /no stored text/i.test(item.detail)
           ? "no stored text"
           : read
             ? READ_DEPTH_DETAIL[read.depth]
             : item.detail,
-      openId: read ? read.id : null,
+      openId: image ? null : read ? read.id : null,
     };
   });
   for (const read of reads) {
     if (matched.has(read.id)) continue;
-    rows.push({ key: `read:${read.id}`, title: read.title, kind: "item", detail: READ_DEPTH_DETAIL[read.depth], openId: read.id });
+    rows.push({ key: `read:${read.id}`, title: read.title, kind: "item", detail: READ_DEPTH_DETAIL[read.depth], openId: read.id.startsWith("image:") ? null : read.id });
   }
   return rows;
 }

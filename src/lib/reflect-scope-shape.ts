@@ -57,11 +57,12 @@ export function boardSelectionScope(input: {
   engagementId: string;
   hasBoardPicks: boolean;
   mappedIds: string[];
+  imageIds?: string[];
 }): ContextScope {
-  if (!input.hasBoardPicks || input.mappedIds.length === 0) {
+  if (!input.hasBoardPicks || (input.mappedIds.length === 0 && !input.imageIds?.length)) {
     return { mode: "engagements", ids: [input.engagementId] };
   }
-  return { mode: "items", ids: input.mappedIds };
+  return { mode: "items", ids: input.mappedIds, ...(input.imageIds ? { images: input.imageIds } : {}) };
 }
 
 export type ChipShape =

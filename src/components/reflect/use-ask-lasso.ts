@@ -31,7 +31,7 @@ export type AskMessageRow = {
 };
 
 /** A live board selector. Null means the section no longer exists. */
-export type SectionAskSource = { resolve: () => string[] | null };
+export type SectionAskSource = { resolve: () => string[] | null; resolveImages?: () => string[] | null };
 
 export const SECTION_ASK_COPY = {
   empty: "Nothing in this section yet",
@@ -69,13 +69,14 @@ export function useAskLasso({
   const [streamed, setStreamed] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string> | null>(null);
-  const [boardSelection, setBoardSelectionState] = useState<{ active: boolean; ids: string[] }>({ active: false, ids: [] });
+  const [boardSelection, setBoardSelectionState] = useState<{ active: boolean; ids: string[]; images: string[] }>({ active: false, ids: [], images: [] });
   const [scopeSource, setScopeSource] = useState<ScopeSource>("all");
   const [sectionSelection, setSectionSelection] = useState<SectionAskSource | null>(sectionSource ?? null);
   useEffect(() => { setSectionSelection(sectionSource ?? null); }, [sectionSource]);
   const sectionIds = sectionSelection?.resolve();
+  const sectionImageIds = sectionSelection?.resolveImages?.() ?? [];
   const sectionState = sectionSelection
-    ? sectionIds === null ? SECTION_ASK_COPY.removed : sectionIds?.length === 0 ? SECTION_ASK_COPY.empty : null
+    ? sectionIds === null ? SECTION_ASK_COPY.removed : sectionIds?.length === 0 && sectionImageIds.length === 0 ? SECTION_ASK_COPY.empty : null
     : null;
   const [pickerOpen, setPickerOpen] = useState(false);
   const [saveTarget, setSaveTarget] = useState<SaveForOneOnOneTarget | null>(null);
@@ -220,16 +221,19 @@ export function useAskLasso({
   function scopeForSelection(): ContextScope {
     // LOOK-2: "Only this board". An additive `board` key inside context_scope.
     const tag = (s: ContextScope) => engagementId ? { ...s, board: engagementId } : s;
-    if (sectionSelection) return tag({ mode: "items", ids: sectionSelection.resolve() ?? [] });
+    if (sectionSelection) {
+      const images = sectionSelection.resolveImages?.() ?? [];
+      return tag({ mode: "items", ids: sectionSelection.resolve() ?? [], ...(images.length ? { images } : {}) });
+    }
     if (boardSelection.active) {
-      return tag(boardSelectionScope({ engagementId, hasBoardPicks: true, mappedIds: boardSelection.ids }));
+      return tag(boardSelectionScope({ engagementId, hasBoardPicks: true, mappedIds: boardSelection.ids, ...(boardSelection.images.length ? { imageIds: boardSelection.images } : {}) }));
     }
     if (!selected || selectedItems.length === 0 || selectedItems.length === mapped.length) {
       return tag({ mode: "engagements", ids: [engagementId] });
     }
     return tag({ mode: "items", ids: selectedItems.map((i) => i.id) });
   }
-  const scopeKey = scopeForSelection().ids.join(",") + selectedItems.length;
+  const scopeKey = JSON.stringify(scopeForSelection()) + selectedItems.length;
   // TOTAL-5: warm the cache for the current read set so the first question is a
   // cache hit. PRIME-COST: called from onDraftChange once typing starts, no longer
   // on composer focus. No content, no event.
@@ -249,16 +253,17 @@ export function useAskLasso({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId, scopeKey, pending]);
 
-  function applyBoardSelection(hasPicks: boolean, ids: string[]) {
+  function applyBoardSelection(hasPicks: boolean, mappedIds: string[], imageIds: string[] = []) {
+    const ids = [...mappedIds, ...imageIds];
     setSectionSelection(null);
-    setBoardSelectionState({ active: hasPicks, ids });
+    setBoardSelectionState({ active: hasPicks, ids: mappedIds, images: imageIds });
     setScopeSource(hasPicks ? (ids.length > 0 ? "board_pick" : "board_pick_brief_only") : "all");
-    setSelected(new Set(hasPicks ? ids : mapped.map((item) => item.id)));
+    setSelected(new Set(hasPicks ? mappedIds : mapped.map((item) => item.id)));
   }
 
   function applyPickerSelection(next: Set<string> | null | ((previous: Set<string> | null) => Set<string> | null), source: ScopeSource = "picker") {
     setSectionSelection(null);
-    setBoardSelectionState({ active: false, ids: [] });
+    setBoardSelectionState({ active: false, ids: [], images: [] });
     setScopeSource(source);
     setSelected((previous) => typeof next === "function" ? next(previous) : next);
   }
@@ -330,11 +335,12 @@ export function useAskLasso({
     // Resolve once at send, before any asynchronous work. Never enter a
     // board-pick or engagement fallback for an empty/deleted section.
     const resolvedIds = sectionSelection?.resolve();
-    if (sectionSelection && (resolvedIds === null || !resolvedIds?.length)) {
+    const resolvedImages = sectionSelection?.resolveImages?.() ?? [];
+    if (sectionSelection && (resolvedIds === null || (!resolvedIds?.length && resolvedImages.length === 0))) {
       setError(resolvedIds === null ? SECTION_ASK_COPY.removed : SECTION_ASK_COPY.empty);
       return;
     }
-    const resolvedScope: ContextScope | undefined = sectionSelection ? { mode: "items", ids: resolvedIds ?? [] } : undefined;
+    const resolvedScope: ContextScope | undefined = sectionSelection ? { mode: "items", ids: resolvedIds ?? [], ...(resolvedImages.length ? { images: resolvedImages } : {}) } : undefined;
     const available = sectionSelection ? (workQuery.data?.items ?? []).filter((item) => resolvedIds?.includes(item.id)) : mapped;
     const ids = pointedAtIds(message, available);
     if (sectionSelection && pointedAtIds(message, workQuery.data?.items ?? []).length > 0 && ids.length === 0) {
@@ -417,7 +423,7 @@ export function useAskLasso({
     selected,
     selectedItems,
     boardPickActive: boardSelection.active,
-    boardPickedCount: boardSelection.ids.length,
+    boardPickedCount: boardSelection.ids.length + boardSelection.images.length,
     sessionId,
     sessions,
     setMention,
