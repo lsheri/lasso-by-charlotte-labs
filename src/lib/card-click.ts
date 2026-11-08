@@ -40,6 +40,12 @@ export function stickyTriggerEntersEdit(trigger: StickyEditTrigger, editable: bo
   return trigger === "doubleClick" || trigger === "pencil";
 }
 
+/** STICKY-1: a click on a sticky that was already selected types; a press that moved 4px or more was a drag. */
+export const STICKY_DRAG_THRESHOLD_PX = 4;
+export function stickyClickTypes(start: { x: number; y: number }, end: { x: number; y: number }): boolean {
+  return Math.hypot(end.x - start.x, end.y - start.y) < STICKY_DRAG_THRESHOLD_PX;
+}
+
 /** A brand-new empty sticky that is selected takes typing straight away. */
 export function stickyStartsEditing(input: { selected: boolean; editable: boolean; textLength: number }): boolean {
   return input.selected && input.editable && input.textLength === 0;
