@@ -1393,6 +1393,32 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   padding: 8px 16px;
 }
 
+/* LIVE-2b: offline is a floating ink pill. Ink, never green: green means Lasso is live. */
+.canvas-lab-offline-pill {
+  position: absolute;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 26;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: calc(100% - 32px);
+  width: max-content;
+  border-radius: 15px;
+  background: var(--action-primary, #0a0a0a);
+  color: var(--action-primary-fg, #fafaf7);
+  padding: 8px 14px 8px 10px;
+  box-shadow: 0 6px 20px -8px color-mix(in srgb, #0a0a0a 45%, transparent);
+  pointer-events: none;
+}
+.canvas-lab-offline-pill p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.35;
+  color: inherit;
+}
+
 .lasso-paper,
 .canvas-lab-surface {
   background-color: var(--nb-paper);

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { readFileSync } from "node:fs";
-import { act, render, renderHook, screen } from "@testing-library/react";
+import { act, cleanup, render, renderHook, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 type StatusCb = (status: string) => void;
@@ -32,7 +32,7 @@ function mount(refresh: () => Promise<boolean>) {
 }
 
 beforeEach(() => { vi.useFakeTimers(); setOnline(true); realtime.status = null; });
-afterEach(() => { vi.useRealTimers(); });
+afterEach(() => { vi.useRealTimers(); cleanup(); });
 
 describe("LIVE-2 the connection state", () => {
   it("live updates blocked but the server answers: stays editable and re-reads on a timer", async () => {
@@ -94,6 +94,19 @@ describe("LIVE-2 the banner", () => {
     render(<BoardOfflineBanner offline syncedAt={new Date(2026, 10, 8, 12, 4).getTime()} />);
     expect(screen.getByTestId("board-offline-banner").textContent).toMatch(/^You're offline\. This is the board as of 12:04.*\. Editing is paused until you're back\.$/);
     expect(BOARD_OFFLINE_COPY.offline("12:04")).not.toMatch(/—/);
+  });
+  it("is a round ink pill with a sad face and a wifi-off mark, never green", () => {
+    render(<BoardOfflineBanner offline syncedAt={null} />);
+    const pill = screen.getByTestId("board-offline-banner");
+    expect(pill.className).toBe("canvas-lab-offline-pill");
+    expect(screen.getByTestId("board-offline-face")).toBeTruthy();
+    expect(screen.getByTestId("board-offline-wifi")).toBeTruthy();
+    const css = readFileSync("src/styles.css", "utf8");
+    const block = css.slice(css.indexOf(".canvas-lab-offline-pill {"), css.indexOf("}", css.indexOf(".canvas-lab-offline-pill p")));
+    expect(block).toMatch(/border-radius: 15px;/);
+    expect(block).toMatch(/background: var\(--action-primary/);
+    expect(block).not.toMatch(/green|hand-live|acid/);
+    expect(block).toMatch(/pointer-events: none;/);
   });
   it("renders nothing when online", () => {
     const { container } = render(<BoardOfflineBanner offline={false} syncedAt={null} />);
