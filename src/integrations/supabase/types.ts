@@ -6073,6 +6073,7 @@ export type Database = {
           days_to_decision: number
           decision_on: string
           first_ai_capture: string
+          furthest_step_28d: string | null
           goal: string
           last_active: string
           last_email_status: string
@@ -6082,9 +6083,11 @@ export type Database = {
           org_name: string
           org_type: string
           problems_7d: number
+          read_back_28d: number
           s1_showed_up: boolean
           s2_captured: boolean
           s3_ai_capture: boolean
+          s3b_read_back: boolean
           s4_organized: boolean
           s5_judgment: boolean
           s6_asked: boolean
