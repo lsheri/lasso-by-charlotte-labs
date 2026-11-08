@@ -11,7 +11,7 @@ import {
 } from "./data-consent-shared";
 import { getRequestHeader } from "@tanstack/react-start/server";
 
-import { resolveEnvironment } from "./environment.server";
+import { resolveEnvironment, resolveHostClass } from "./environment.server";
 import type { TelemetryDims, TelemetryEvent } from "./telemetry-shared";
 
 
@@ -286,24 +286,28 @@ export async function recordAnonymousEvent(
     // Unit D6: a stable browser visitor id, when sent, replaces the per-view id.
     const actorHash = await computeActorHash(`anon:${visitorId || viewId}`);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // AUDIT-1: an "unknown" environment carries its host bucket here too.
+    const anonEnvironment = resolveEnvironment();
+    const anonDims: TelemetryDims =
+      anonEnvironment === "unknown" ? { ...dims, host_class: resolveHostClass() } : dims;
     const { error } = await supabaseAdmin.from("events").insert({
       // This path has no org: an anonymous marketing view.
       workspace_type: "none",
       affiliated: null,
-      environment: resolveEnvironment(),
+      environment: anonEnvironment,
       event_type: eventType,
       schema_version: "v1",
       tenant_hash: tenantHash,
       actor_hash: actorHash,
-      dims,
+      dims: anonDims,
       payload: {},
       // These rows have no workspace and never leave; say so at write time instead of leaving them unreasoned.
       egress_skipped_reason: "no_org",
     });
     if (error)
       console.error(`[telemetry] anonymous insert failed for ${eventType}:`, error.message);
-    await mirrorToPostHog(eventType, actorHash, tenantHash, dims, {
-      environment: resolveEnvironment(),
+    await mirrorToPostHog(eventType, actorHash, tenantHash, anonDims, {
+      environment: anonEnvironment,
       workspace_type: "none",
       affiliated: null,
       partner: "none",
@@ -374,7 +378,14 @@ export async function recordEvent(
   },
 ): Promise<void> {
   try {
-    const dims = input.dims ?? {};
+    // AUDIT-1 (7 Nov 2026): the server path runs the same allowlist as the
+    // client path, over the whole union. An "unknown" environment carries the
+    // host bucket so the next audit can see where it came from.
+    const environment = resolveEnvironment();
+    const rawDims: TelemetryDims = { ...(input.dims ?? {}) };
+    if (environment === "unknown") rawDims["host_class"] = resolveHostClass();
+    const { guardServerEventDims } = await import("./event-dim-allowlist");
+    const dims = guardServerEventDims(input.eventType, rawDims).dims;
     const tenantHash = await sha256Hex(input.orgId);
     const actorHash = await computeActorHash(input.userId);
     const consent = await resolveConsentStamp(supabase, input.orgId, input.profileId ?? null);
@@ -391,7 +402,7 @@ export async function recordEvent(
     }
     const { error } = await supabase.from("events").insert({
       ...stamp,
-      environment: resolveEnvironment(),
+      environment,
       event_type: input.eventType,
       schema_version: "v2",
       tenant_hash: tenantHash,
@@ -441,7 +452,7 @@ export async function recordEvent(
           ? pilotPersonProperties(personId, input.orgId)
           : undefined;
         await mirrorToPostHog(input.eventType, mirrorActorHash, tenantHash, dims, {
-          environment: resolveEnvironment(),
+          environment,
           workspace_type: stamp.workspace_type,
           affiliated: stamp.affiliated,
           partner,

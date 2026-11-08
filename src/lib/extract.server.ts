@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/integrations/supabase/types";
 import { MODELS, chatComplete, orgNameFor, type AiMeta } from "@/lib/ai.server";
-import { logHealth } from "@/lib/health.server";
+import { logHealth, logHealthOncePerDay } from "@/lib/health.server";
 import { getItemText, ITEM_TEXT_COLUMNS, type TextItem } from "@/lib/item-text.server";
 import { needsTextFetch, peekFormat } from "@/lib/peek-format";
 import type { WorkItemRow } from "@/lib/work-types";
@@ -159,7 +159,8 @@ export async function prepareExtract(workItemId: string): Promise<PreparedExtrac
     .trim()
     .slice(0, MAX_SOURCE_CHARS);
   if (!text) {
-    void logHealth({
+    // AUDIT-1: one row per item per day, not one per extract attempt.
+    void logHealthOncePerDay(`extract:${workItemId}:no_readable_text`, {
       kind: "empty_context",
       surface: "extract",
       orgId: item.org_id,
