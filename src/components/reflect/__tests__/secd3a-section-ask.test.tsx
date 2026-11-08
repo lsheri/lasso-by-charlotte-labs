@@ -81,6 +81,29 @@ describe('SECD-3a section Ask', () => {
     const { result } = renderHook(() => useAskLasso(args), { wrapper }); await send(result);
     expect(state.requests[0]).not.toHaveProperty('scope_kind');
   });
+  it('images-only board picks are real picks and persist their image scope through New chat', async () => {
+    const { result } = renderHook(() => useAskLasso(args), { wrapper });
+    act(() => result.current.setBoardSelection(true, [], ['image-node']));
+    expect(result.current.boardPickActive).toBe(true);
+    expect(result.current.boardPickedCount).toBe(1);
+    await send(result);
+    expect(state.requests[0]?.['scope_source']).toBe('board_pick');
+    expect(state.writes.at(-1)).toEqual({ context_scope: { mode: 'items', ids: [], images: ['image-node'], board: 'e' } });
+    act(() => result.current.newSession());
+    await send(result);
+    expect(state.writes.at(-1)).toEqual({ context_scope: { mode: 'items', ids: [], images: ['image-node'], board: 'e' } });
+  });
+  it('reads an image inside a section and recomputes its durable id at send', async () => {
+    const section = { id: 'section:s', x: 0, y: 0, width: 300, height: 300 };
+    let image = { id: 'image-node', x: 40, y: 40, width: 100, height: 80 };
+    const sectionSource = { resolve: () => [], resolveImages: () => containingSection(image, [section])?.id === section.id ? [image.id] : [] };
+    const { result } = renderHook(() => useAskLasso({ ...args, sectionSource }), { wrapper });
+    expect(result.current.error).toBeNull();
+    image = { ...image, id: 'new-image-node' };
+    await send(result);
+    expect(state.writes.at(-1)).toEqual({ context_scope: { mode: 'items', ids: [], images: ['new-image-node'], board: 'e' } });
+    expect(state.requests[0]).toMatchObject({ scope_kind: 'section', pointed_at: [] });
+  });
   it('desktop menu calls the optional door once and read-only has no menu', () => {
     const onAsk = vi.fn();
     const props = { frame: { id: 'section:s', name: 'Section', x: 0, y: 0, width: 500, height: 500 }, title: 'Section', selected: true, editable: true, onSelect: vi.fn(), onResizeStart: vi.fn(), onRename: vi.fn(), onRemove: vi.fn(), onMenuOpened: vi.fn(), onAsk };

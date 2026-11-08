@@ -35,6 +35,11 @@ describe("B2 one chat on the board", () => {
     expect(boardSelectionScope({ engagementId: "e", hasBoardPicks: true, mappedIds: [] })).toEqual({ mode: "engagements", ids: ["e"] });
   });
 
+  it("carries durable image ids in mixed and images-only picks", () => {
+    expect(boardSelectionScope({ engagementId: "e", hasBoardPicks: true, mappedIds: ["a"], imageIds: ["image-node"] })).toEqual({ mode: "items", ids: ["a"], images: ["image-node"] });
+    expect(boardSelectionScope({ engagementId: "e", hasBoardPicks: true, mappedIds: [], imageIds: ["image-node"] })).toEqual({ mode: "items", ids: [], images: ["image-node"] });
+  });
+
   it("labels a board pick distinctly from the picker and all-work states", () => {
     const surface = read("src/components/reflect/AskSurface.tsx");
     expect(surface).toContain(`ask.engagementBrief

@@ -8,7 +8,7 @@ import { readFileSync } from "node:fs";
 
 import { AnswerMoreMenu } from "@/components/reflect/AnswerMoreMenu";
 import { AnswerKeepControl } from "@/components/reflect/AskSurface";
-import { AnswerRail, ContextAudit, ThinkingTrail } from "@/components/reflect/ContextTrail";
+import { AnswerRail, ContextAudit, ThinkingTrail, auditReadRows } from "@/components/reflect/ContextTrail";
 import { ANSWER_DRAG_MIME } from "@/lib/answer-card";
 import type { ContextManifest } from "@/lib/context-manifest";
 
@@ -104,6 +104,10 @@ describe("ThinkingTrail", () => {
 });
 
 describe("ContextAudit", () => {
+  it("keeps image descriptions non-openable and preserves the stored detail", () => {
+    const imageManifest: ContextManifest = { ...manifest, items: [{ id: "image:node-1", title: "Image: Whiteboard", kind: "item", detail: "AI description of an image" }] };
+    expect(auditReadRows(imageManifest, [{ id: "image:node-1", title: "Image: Whiteboard", depth: "full" }])).toEqual([{ key: "image:node-1", title: "Image: Whiteboard", kind: "item", detail: "AI description of an image", openId: null }]);
+  });
   beforeEach(() => {
     setReducedMotion(false);
     mocks.emitClientEvent.mockClear();
