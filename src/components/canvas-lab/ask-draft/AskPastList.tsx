@@ -4,7 +4,7 @@ import type { AskLasso } from "@/components/reflect/use-ask-lasso";
 import { NbDots } from "@/components/reflect/AskSurface";
 import { readAskPins } from "@/lib/ask-draft";
 
-export type PinnedAnswerRow = { nodeId: string; durableId: string | null; text: string };
+export type PinnedAnswerRow = { nodeId: string; durableId: string | null; text: string; chatSessionId?: string | null };
 
 function safeStore(): Storage | null {
   try { return window.localStorage; } catch { return null; }
@@ -25,7 +25,12 @@ export function AskPastList({ ask, pinned, onOpen, onJump, onUnpin, unpinned = {
   unpinned?: Record<string, string> | undefined;
 }) {
   const sessions = ask.sessions ?? [];
-  const pinnedSessions = new Set(Object.values(readAskPins(safeStore())));
+  const legacyPins = readAskPins(safeStore());
+  const pinnedSessions = new Set(Object.entries(legacyPins).filter(([key]) => !pinned.some((row) => row.durableId === key && row.chatSessionId != null)).map(([, sessionId]) => sessionId));
+  for (const row of pinned) {
+    const sessionId = row.chatSessionId ?? (row.durableId ? legacyPins[row.durableId] : null);
+    if (sessionId) pinnedSessions.add(sessionId);
+  }
   return (
     <div data-ask-list className="min-h-0 flex-1 overflow-y-auto">
       <div className="space-y-1 px-4 py-4">

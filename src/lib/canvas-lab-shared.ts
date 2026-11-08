@@ -198,6 +198,7 @@ export type WorkboardNodeDto = {
   kind: WorkboardNodeKind;
   workItemId: string | null;
   decisionId: string | null;
+  chatSessionId?: string | null;
   authorProfileId: string;
   authorName: string;
   title: string;
@@ -267,6 +268,8 @@ export type WorkboardNodeInput = {
   kind: WorkboardNodeKind;
   workItemId?: string | null;
   decisionId?: string | null;
+  /** Answer cards only: the author's saved chat. */
+  chatSessionId?: string | null;
   title?: string;
   body?: string;
   judgmentType?: WorkboardJudgmentType | null;

@@ -1006,7 +1006,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     if (node.kind === "shape" && node.colour) return { ...base, frameKey: null, kind: "shape", body: node.colour };
     if (node.kind === "text") return { ...base, frameKey: null, kind: "text", body: serializeWorkboardTextBody({ text: node.summary, ...(node.html !== undefined ? { html: node.html } : {}), size: node.textSize ?? "label", weight: node.textWeight ?? "medium", colour: node.textColour ?? "ink" }) };
     if (node.kind === "sticky") return { ...base, frameKey: null, kind: "sticky", body: serializeWorkboardStickyBody(stickyBodyOf(node)) };
-    if (node.kind === "answer") return { ...base, kind: "answer", title: node.title, body: node.summary };
+    if (node.kind === "answer") return { ...base, kind: "answer", title: node.title, body: node.summary, chatSessionId: node.chatSessionId };
     if (node.kind === "image" && node.imagePath && node.imageNaturalWidth && node.imageNaturalHeight) return buildImageNodeInput({ clientKey: base.clientKey, body: { path: node.imagePath, naturalWidth: node.imageNaturalWidth, naturalHeight: node.imageNaturalHeight }, x: base.x, y: base.y, w: base.w, h: base.h, hidden: base.hidden });
     return null;
   }
@@ -1246,7 +1246,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       if (direction === "undo") {
         if (stored.kind === "answer") {
           const key = stored.durableId ?? stored.id;
-          const sessionId = readAskPins(store)[key];
+          const sessionId = stored.chatSessionId ?? readAskPins(store)[key];
           if (sessionId) {
             addedPinsRef.current.set(entry.id, { key, sessionId });
             writeUnpinned(sessionId, engagementId, store);
@@ -1264,10 +1264,10 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
         // Adds have no undo toast: Cmd+Z is enough, including after paste.
         return;
       }
-      setNodes((current) => current && !current.some((node) => node.id === stored.id) ? [...current, stored] : current);
       const pin = addedPinsRef.current.get(entry.id);
+      const restored = stored.kind === "answer" ? { ...stored, chatSessionId: stored.chatSessionId ?? pin?.sessionId ?? null } : stored;
+      setNodes((current) => current && !current.some((node) => node.id === stored.id) ? [...current, restored] : current);
       if (pin) {
-        writeAskPin(pin.key, pin.sessionId, store);
         clearUnpinned(pin.sessionId, store);
       }
       if (stored.durableId) {
@@ -1318,10 +1318,10 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       let store: Storage | null = null;
       try { store = window.localStorage; } catch { store = null; }
       if (direction === "undo") {
-        setNodes((current) => current && !current.some((node) => node.id === stored.id) ? [...current, stored] : current);
+        const restored = stored.kind === "answer" ? { ...stored, chatSessionId: stored.chatSessionId ?? entry.pin?.sessionId ?? null } : stored;
+        setNodes((current) => current && !current.some((node) => node.id === stored.id) ? [...current, restored] : current);
         setLinks((current) => [...current, ...entry.links.filter((link) => !current.some((existing) => existing.id === link.id))]);
         if (entry.pin) {
-          writeAskPin(entry.pin.key, entry.pin.sessionId, store);
           clearUnpinned(entry.pin.sessionId, store);
         }
         if (stored.durableId) {
@@ -2833,7 +2833,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       if (answer.sessionId) {
         const sessionId = answer.sessionId;
         const localId = `answer:${crypto.randomUUID()}`;
-        const node: LabNode = { id: localId, clientKey: localId, kind: "answer", frame: null, title: ANSWER_CARD_TITLE, summary: answer.text, typeLabel: "answer", ownership: "yours", local: true, x: at.x, y: at.y, width: ANSWER_CARD_SIZE.width, height: ANSWER_CARD_SIZE.height };
+        const node: LabNode = { id: localId, clientKey: localId, kind: "answer", chatSessionId: sessionId, frame: null, title: ANSWER_CARD_TITLE, summary: answer.text, typeLabel: "answer", ownership: "yours", local: true, x: at.x, y: at.y, width: ANSWER_CARD_SIZE.width, height: ANSWER_CARD_SIZE.height };
         nodesRef.current = [...nodesRef.current, node];
         setNodes((current) => [...(current ?? []), node]);
         const citeReads = answerCiteRows("pending", answer.reads);
@@ -2861,7 +2861,6 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
         noteWorkboardNodeCreated(orgId, "answer", undefined, via);
         let store: Storage | null = null;
         try { store = window.localStorage; } catch { store = null; }
-        writeAskPin(saved.id, sessionId, store);
         clearUnpinned(sessionId, store);
         record({ action: "add_node", node: { ...(liveNode(localId, node) ?? node), durableId: saved.id, durableVersion: saved.version } });
         if (via === "auto") setSelected([]);
@@ -3024,7 +3023,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       let store: Storage | null = null;
       try { store = window.localStorage; } catch { store = null; }
       const key = node.durableId ?? node.id;
-      const sessionId = readAskPins(store)[key];
+      const sessionId = node.chatSessionId ?? readAskPins(store)[key];
       if (sessionId) {
         writeUnpinned(sessionId, engagementId, store);
         removeAskPin(key, store);
@@ -3755,7 +3754,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
         </div>
         {boardReady && opening ? <div className={`pointer-events-none absolute inset-0 z-40 flex ${unfold.className}`} aria-hidden={!unfold.still}>{unfold.still ? <span className="sr-only">{unfold.reduced}</span> : null}<span className="canvas-lab-unfold-panel" /><span className="canvas-lab-unfold-panel" /><span className="canvas-lab-unfold-panel" /></div> : null}
       </main>
-      {profile?.id && orgId ? <BoardAsk floatHost={askFloatHost} pinnedAnswers={visibleNodes.filter((n) => n.kind === "answer").map((n) => ({ nodeId: n.id, durableId: n.durableId ?? null, text: n.summary }))} onJumpToAnswer={jumpToAnswer} toBoardPoint={boardPointFromScreen} onUnpinAnswer={unpinAnswer} sectionSource={sectionAskSource} sectionChoices={askSectionChoices} onPickSection={pickAskSection} open={askOpen} onOpenChange={(open) => { setAskOpen(open); if (!open) setAskSection(null); }} engagementId={engagementId} engagementTitle={title} profileId={profile.id} orgId={orgId} canKeep={canAddWork} onKeep={(answer, via, at) => keepAnswerAsCard(answer, at ? { via: via ?? "button", at } : { via: via ?? "button" })} boardContextHasPicks={contextNodes.length > 0} boardContextItemIds={contextNodes.flatMap((node) => { const item = itemByNode(node); return item ? [item.id] : []; })} readingNodes={contextNodes.flatMap((node) => { const item = itemByNode(node); return item ? [{ nodeId: node.id, itemId: item.id }] : []; })} /> : null}
+      {profile?.id && orgId ? <BoardAsk floatHost={askFloatHost} pinnedAnswers={visibleNodes.filter((n) => n.kind === "answer").map((n) => ({ nodeId: n.id, durableId: n.durableId ?? null, text: n.summary, chatSessionId: n.chatSessionId }))} onJumpToAnswer={jumpToAnswer} toBoardPoint={boardPointFromScreen} onUnpinAnswer={unpinAnswer} sectionSource={sectionAskSource} sectionChoices={askSectionChoices} onPickSection={pickAskSection} open={askOpen} onOpenChange={(open) => { setAskOpen(open); if (!open) setAskSection(null); }} engagementId={engagementId} engagementTitle={title} profileId={profile.id} orgId={orgId} canKeep={canAddWork} onKeep={(answer, via, at) => keepAnswerAsCard(answer, at ? { via: via ?? "button", at } : { via: via ?? "button" })} boardContextHasPicks={contextNodes.length > 0} boardContextItemIds={contextNodes.flatMap((node) => { const item = itemByNode(node); return item ? [item.id] : []; })} readingNodes={contextNodes.flatMap((node) => { const item = itemByNode(node); return item ? [{ nodeId: node.id, itemId: item.id }] : []; })} /> : null}
       {canAddWork && suggestOpen ? <BoardSuggestionSurface mobile={suggestionMobile} onClose={closeSuggestions}>
         {suggestApplied.length === 0 ? <SuggestStructurePanel state={suggestState} structures={suggestions} parts={suggestParts} shortfall={suggestShortfall} error={suggestError} onSubmit={(text, kind) => void submitSuggestions(text, kind)} onChoose={(id) => void chooseSuggestion(id)} onCancel={closeSuggestions} /> : <SuggestionApplyResult regions={suggestApplied} busy={suggestBusy} message={suggestRemoval} onRemove={() => void removeSuggestion()} onClose={closeSuggestions} />}
         {suggestApplied.length === 0 && suggestRemoval ? <p role="alert" className="text-base text-destructive">{suggestRemoval}</p> : null}

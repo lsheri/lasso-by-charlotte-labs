@@ -35,7 +35,7 @@ type Props = {
   /** ASK-D1: the board's <main>, where a preview-gated draft floats. */
   floatHost?: HTMLElement | null | undefined;
   /** ASK-B2: answers pinned on this board, for the past list in the floating draft only. */
-  pinnedAnswers?: { nodeId: string; durableId: string | null; text: string }[] | undefined;
+  pinnedAnswers?: { nodeId: string; durableId: string | null; text: string; chatSessionId?: string | null }[] | undefined;
   onJumpToAnswer?: ((nodeId: string) => void) | undefined;
   /** ASK-LOOK-1: picked board nodes with their work item ids, for draft b's reading lines. */
   readingNodes?: { nodeId: string; itemId: string }[] | undefined;
@@ -102,7 +102,7 @@ function BoardAskPanel(props: Props & { draft?: AskDraft | null; pendingSessionI
 
   if (props.draft && props.floatHost) {
     const pins = readAskPins(safeStore());
-    const pinnedNodeId = (props.pinnedAnswers ?? []).find((r) => r.durableId && pins[r.durableId] === ask.sessionId)?.nodeId ?? null;
+    const pinnedNodeId = (props.pinnedAnswers ?? []).find((r) => ask.sessionId && (r.chatSessionId ?? (r.durableId ? pins[r.durableId] : null)) === ask.sessionId)?.nodeId ?? null;
     const wasPinned = Boolean(ask.sessionId && readUnpinned(safeStore())[ask.sessionId]);
     // PIN-1: the header pin keeps the chat open, so it skips draftKeep's new session.
     const onPinChat = (atScreen: { x: number; y: number } | null) => {

@@ -117,6 +117,7 @@ export type LabNode = {
   /** Kept answers only: when the row was saved, and who asked. */
   createdAt?: string | null;
   authorName?: string;
+  chatSessionId?: string | null;
   /** The person who authored a durable board-native card. */
   authorProfileId?: string;
 
@@ -1296,6 +1297,7 @@ export function applyDurableBoard(base: { frames: LabFrame[]; nodes: LabNode[] }
         typeLabel: "answer",
         ownership: durable.authorProfileId === board.viewerProfileId ? "yours" : "teammate",
         authorName: durable.authorName,
+        chatSessionId: durable.chatSessionId ?? null,
         createdAt: durable.createdAt ?? null,
         local: durable.authorProfileId === board.viewerProfileId,
         durableId: durable.id,
