@@ -38,6 +38,7 @@ describe("C1 colour block vocabulary and validation", () => {
       answer: input({ kind: "answer", body: "The answer body.", w: 320, h: 240 }),
       sticky: input({ kind: "sticky", body: JSON.stringify({ text: "Note", size: "body", weight: "regular", colour: "ink", fill: "yellow" }), w: 200, h: 140 }),
       image: input({ kind: "image", body: JSON.stringify({ path: "u1/a-shot.png", naturalWidth: 800, naturalHeight: 600 }), w: 420, h: 315 }),
+      video: input({ kind: "video", body: JSON.stringify({ path: "u1/a-clip.mov", naturalWidth: 1280, naturalHeight: 720 }), w: 420, h: 236 }),
     } satisfies Record<(typeof WORKBOARD_NODE_KINDS)[number], WorkboardNodeInput>;
 
     for (const kind of WORKBOARD_NODE_KINDS) {

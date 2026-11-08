@@ -50,7 +50,7 @@ import { resolveWorkDate } from "@/lib/work-order";
 import { parseAnswerBody } from "@/lib/answer-card";
 import { isDeliverableType } from "@/lib/lineage-shared";
 
-export type LabNodeKind = "brief" | "task" | "work" | "decision" | "chat" | "source" | "ai_work" | "judgment" | "deliverable" | "shape" | "text" | "answer" | "sticky" | "image";
+export type LabNodeKind = "brief" | "task" | "work" | "decision" | "chat" | "source" | "ai_work" | "judgment" | "deliverable" | "shape" | "text" | "answer" | "sticky" | "image" | "video";
 export type LabJudgmentType = "added_constraint" | "corrected_ai" | "rejected_option" | "requested_evidence" | "changed_direction" | "accepted_but_rewrote";
 
 /** Who the thing belongs to, which is what decides the offered actions. */
@@ -990,10 +990,10 @@ export function fitWorkboardViewport(
   };
 }
 
-export type LabResizeKind = "card" | "frame" | "shape" | "text" | "sticky" | "image";
+export type LabResizeKind = "card" | "frame" | "shape" | "text" | "sticky" | "image" | "video";
 
 export function resizeLabRect(start: LabRect, corner: LabResizeCorner, delta: Point, preserveAspect = false, kind: LabResizeKind = "card"): LabRect {
-  if (kind === "image") return resizeImageRect(start, corner, delta);
+  if (kind === "image" || kind === "video") return resizeImageRect(start, corner, delta);
   const minWidth = kind === "sticky" ? WORKBOARD_STICKY_MIN_WIDTH : kind === "shape" ? WORKBOARD_SHAPE_MIN_SIZE : kind === "text" ? WORKBOARD_TEXT_MIN_WIDTH : kind === "card" ? CARD_MIN_WIDTH : FRAME_MIN_WIDTH;
   const minHeight = kind === "sticky" ? WORKBOARD_STICKY_MIN_HEIGHT : kind === "shape" ? WORKBOARD_SHAPE_MIN_SIZE : kind === "text" ? WORKBOARD_TEXT_MIN_HEIGHT : kind === "card" ? CARD_MIN_HEIGHT : FRAME_MIN_HEIGHT;
   const maxWidth = kind === "sticky" ? WORKBOARD_STICKY_MAX_SIZE : kind === "shape" ? WORKBOARD_SHAPE_MAX_SIZE : kind === "text" ? WORKBOARD_TEXT_MAX_SIZE : kind === "card" ? CARD_MAX_WIDTH : 2400;
@@ -1215,15 +1215,16 @@ export function applyDurableBoard(base: { frames: LabFrame[]; nodes: LabNode[] }
         height: durable.h,
       });
     }
-    if (durable.kind === "image") {
+    if (durable.kind === "image" || durable.kind === "video") {
+      // VID-1: a video card has the same body as an image card, and is never read.
       const image = parseWorkboardImageBody(durable.body);
       if (image) nodes.push({
         id: localId,
-        kind: "image",
+        kind: durable.kind,
         frame: null,
-        title: "Image",
+        title: durable.kind === "video" ? "Video" : "Image",
         summary: "",
-        typeLabel: "image",
+        typeLabel: durable.kind,
         ownership: durable.authorProfileId === board.viewerProfileId ? "yours" : "teammate",
         imagePath: image.path,
         imageNaturalWidth: image.naturalWidth,

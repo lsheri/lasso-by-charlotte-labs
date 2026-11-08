@@ -22,6 +22,60 @@ export function isBoardImageFile(file: File): boolean {
   return (BOARD_IMAGE_MIME_TYPES as readonly string[]).includes(file.type);
 }
 
+/**
+ * VID-1: a dropped video stays on the board and plays in place. Nothing is
+ * read from it: no description, no work item, Ask never sees it.
+ */
+export const BOARD_VIDEO_COPY = {
+  label: "Video",
+  failed: "This video could not be played here.",
+  remove: "Remove video",
+  tooBig: (name: string) => `${name} is over 50 MB. Videos up to 50 MB can go on a board for now.`,
+} as const;
+export const BOARD_VIDEO_MIME_TYPES = ["video/mp4", "video/quicktime", "video/webm", "video/x-m4v"] as const;
+export const BOARD_VIDEO_MAX_BYTES = 50 * 1024 * 1024;
+/** The strip above the player that moves the card. The player itself never starts a drag. */
+export const BOARD_VIDEO_HANDLE_HEIGHT = 24;
+
+export function isBoardVideoFile(file: File): boolean {
+  return (BOARD_VIDEO_MIME_TYPES as readonly string[]).includes(file.type);
+}
+
+/** The video's own frame size. Falls back to 16:9 when the browser cannot read it, since it may still play elsewhere. */
+export function readVideoSize(file: File, timeoutMs = 4000): Promise<{ width: number; height: number }> {
+  const fallback = { width: 1280, height: 720 };
+  if (typeof document === "undefined") return Promise.resolve(fallback);
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const video = document.createElement("video");
+    let done = false;
+    const finish = (size: { width: number; height: number }) => {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      video.removeAttribute("src");
+      URL.revokeObjectURL(url);
+      resolve(size);
+    };
+    const timer = setTimeout(() => finish(fallback), timeoutMs);
+    video.preload = "metadata";
+    video.muted = true;
+    video.onloadedmetadata = () => finish(video.videoWidth > 0 && video.videoHeight > 0 ? { width: video.videoWidth, height: video.videoHeight } : fallback);
+    video.onerror = () => finish(fallback);
+    video.src = url;
+  });
+}
+
+/** VID-1: the file goes up unchanged, same bucket and folder as images. */
+export async function uploadBoardVideo(file: File): Promise<string | null> {
+  const { data } = await supabase.auth.getUser();
+  const userId = data.user?.id;
+  if (!userId) return null;
+  const path = storageObjectKey(userId, crypto.randomUUID(), file.name);
+  const { error } = await supabase.storage.from("work-files").upload(path, file, { contentType: file.type || undefined });
+  return error ? null : path;
+}
+
 export function fitWithin(width: number, height: number, max = 2048): { width: number; height: number } {
   const ratio = Math.min(1, max / Math.max(width, height));
   return { width: Math.round(width * ratio), height: Math.round(height * ratio) };
@@ -135,11 +189,11 @@ export async function removeBoardImageObject(path: string): Promise<boolean> {
   return !error;
 }
 
-export function buildImageNodeInput(input: { clientKey: string; body: WorkboardImageBody; x: number; y: number; w: number; h: number; hidden?: boolean }): WorkboardNodeInput {
+export function buildImageNodeInput(input: { clientKey: string; body: WorkboardImageBody; x: number; y: number; w: number; h: number; hidden?: boolean; kind?: "image" | "video" }): WorkboardNodeInput {
   return {
     clientKey: input.clientKey,
     frameKey: null,
-    kind: "image",
+    kind: input.kind ?? "image",
     workItemId: null,
     decisionId: null,
     body: serializeWorkboardImageBody(input.body),
@@ -205,21 +259,42 @@ function LabImageInner({ node, selected, layoutEditable, onSelect, onContextSele
       .catch(() => { if (live) setState({ status: "failed", url: null }); });
     return () => { live = false; };
   }, [path]);
+  const isVideo = node.kind === "video";
   const revokedRef = useRef<string | null>(null);
   useEffect(() => {
+    // A video keeps playing from its local copy for this visit; swapping the source would restart it.
+    if (isVideo) return;
     if (state.status !== "ready" || !preview || revokedRef.current === preview) return;
     revokedRef.current = preview;
     URL.revokeObjectURL(preview);
   }, [state.status, preview]);
-  const showSrc = state.status === "ready" && state.url ? state.url : preview && state.status !== "failed" ? preview : null;
+  useEffect(() => {
+    if (!isVideo || !preview) return;
+    return () => URL.revokeObjectURL(preview);
+  }, [isVideo, preview]);
+  const showSrc = isVideo && preview
+    ? preview
+    : state.status === "ready" && state.url ? state.url : preview && state.status !== "failed" ? preview : null;
+  const copy = isVideo ? BOARD_VIDEO_COPY : BOARD_IMAGE_COPY;
   const style = { left: node.x, top: node.y, width: node.width, height: node.height } satisfies CSSProperties;
   return (
-    <section data-testid={`image-${node.id}`} data-node-id={node.id} data-connecting={connecting} data-selected={selected} data-status={state.status} aria-label={BOARD_IMAGE_COPY.label} tabIndex={0} className={`canvas-lab-card absolute rounded-[2px] ${selected ? "outline outline-2 outline-offset-2 outline-primary" : ""}`} style={style} onFocus={onSelect} onPointerDown={(event) => { clickDownRef.current = { x: event.clientX, y: event.clientY }; if (!selected) onSelect(); onDragStart(event); }} onPointerCancel={() => { clickDownRef.current = null; }} onClick={(event) => {
+    <section data-testid={`${isVideo ? "video" : "image"}-${node.id}`} data-node-id={node.id} data-kind={node.kind} data-connecting={connecting} data-selected={selected} data-status={state.status} aria-label={copy.label} tabIndex={0} className={`canvas-lab-card absolute rounded-[2px] ${selected ? "outline outline-2 outline-offset-2 outline-primary" : ""}`} style={style} onFocus={onSelect} onPointerDown={(event) => { clickDownRef.current = { x: event.clientX, y: event.clientY }; if (!selected) onSelect(); onDragStart(event); }} onPointerCancel={() => { clickDownRef.current = null; }} onClick={(event) => {
       const onControl = Boolean((event.target as Element).closest("button,textarea,a,input,select,[role='menu'],[role='menuitem']"));
       if (cardBodyClickSelects({ readOnly: !onContextSelect, clickCount: event.detail, down: clickDownRef.current, up: { x: event.clientX, y: event.clientY }, onControl })) clickControllerRef.current?.click();
     }} onDoubleClick={() => clickControllerRef.current?.undo()}>
       <div data-selected={contextSelected} data-marquee-preview={previewSelected} className="canvas-lab-card-paper h-full w-full rounded-[2px]">
-      {showSrc ? (
+      {isVideo ? (
+        <div className="flex h-full w-full flex-col overflow-hidden rounded-[2px]">
+          <div data-testid="board-video-handle" className="flex shrink-0 cursor-grab items-center px-2 nb-type-small text-muted-foreground select-none" style={{ height: BOARD_VIDEO_HANDLE_HEIGHT }}>{BOARD_VIDEO_COPY.label}</div>
+          {showSrc && state.status !== "failed" ? (
+            <video data-testid="board-video-player" src={showSrc} controls preload="metadata" playsInline className="block min-h-0 w-full flex-1 bg-black object-contain" onPointerDown={(event) => { event.stopPropagation(); if (!selected) onSelect(); }} onError={() => setState({ status: "failed", url: null })} />
+          ) : (
+            <div data-testid="board-image-placeholder" className="flex min-h-0 w-full flex-1 items-center justify-center bg-muted p-2 text-center nb-type-small text-muted-foreground">
+              {state.status === "failed" ? <span>{BOARD_VIDEO_COPY.failed}</span> : null}
+            </div>
+          )}
+        </div>
+      ) : showSrc ? (
         <img src={showSrc} alt="" draggable={false} className="block h-full w-full rounded-[2px] select-none" onError={() => setState({ status: "failed", url: null })} />
       ) : (
         <div data-testid="board-image-placeholder" className="flex h-full w-full items-center justify-center rounded-[2px] bg-muted p-2 text-center nb-type-small text-muted-foreground">
@@ -228,9 +303,9 @@ function LabImageInner({ node, selected, layoutEditable, onSelect, onContextSele
       )}
       </div>
       {selected && layoutEditable ? <div className="canvas-lab-text-block-controls" onPointerDown={(event) => event.stopPropagation()}>
-        <Button type="button" size="sm" variant="ghost" onClick={onRemove}>{BOARD_IMAGE_COPY.remove}</Button>
+        <Button type="button" size="sm" variant="ghost" onClick={onRemove}>{copy.remove}</Button>
       </div> : null}
-      {selected && layoutEditable ? CORNERS.map((corner) => <button key={corner} type="button" className="canvas-lab-resize-handle" data-corner={corner} aria-label={`Resize image from ${corner}`} onPointerDown={(event) => onResizeStart(corner, event)} onKeyDown={(event) => onResizeKeyDown(corner, event)} onKeyUp={onResizeKeyUp} />) : null}
+      {selected && layoutEditable ? CORNERS.map((corner) => <button key={corner} type="button" className="canvas-lab-resize-handle" data-corner={corner} aria-label={`Resize ${isVideo ? "video" : "image"} from ${corner}`} onPointerDown={(event) => onResizeStart(corner, event)} onKeyDown={(event) => onResizeKeyDown(corner, event)} onKeyUp={onResizeKeyUp} />) : null}
       {onAnchorPointerDown && onAnchorActivate ? (["top", "right", "bottom", "left"] as LabAnchor[]).map((side) => <button key={side} type="button" className="canvas-lab-anchor" data-node-id={node.id} data-side={side} data-active={connectSourceAnchor === side} aria-label={`Connect from ${side}`} onPointerDown={(event) => { anchorDownRef.current = { x: event.clientX, y: event.clientY }; onAnchorPointerDown(side, event); }} onClick={(event) => { event.stopPropagation(); const down = anchorDownRef.current; anchorDownRef.current = null; if (down && Math.hypot(event.clientX - down.x, event.clientY - down.y) >= 6) return; onAnchorActivate(side); }} />) : null}
     </section>
   );
