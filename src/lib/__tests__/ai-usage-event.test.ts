@@ -23,6 +23,7 @@ vi.mock("../egress.server", () => ({ scheduleEgress: () => {} }));
 import { chatComplete, recordUsage, type ChatResult } from "../ai.server";
 import * as telemetry from "../telemetry.server";
 import { guardEventDims } from "../event-dim-allowlist";
+import { resetRequestContext, setRequestContext } from "../background";
 
 const result: ChatResult = {
   text: "Private answer", toolArgs: null, toolCalls: [], finishReason: "stop",
@@ -108,6 +109,25 @@ describe("AI usage accounting mirror", () => {
       expect(mirrors()[0].properties).not.toHaveProperty(key);
     }
     expect(JSON.stringify(mirrors()[0])).not.toContain(result.text);
+  });
+  it("PRIME: hands the mirror to the host's waitUntil so a fast request cannot cut it off", async () => {
+    const kept: Promise<unknown>[] = [];
+    setRequestContext({ waitUntil: (p: Promise<unknown>) => { kept.push(p); } });
+    let finish: (() => void) | undefined;
+    const pending = new Promise<void>((resolve) => { finish = resolve; });
+    const emit = vi.spyOn(telemetry, "recordEvent").mockReturnValue(pending);
+    try {
+      await expect(recordUsage(result, { ...meta, surface: "ask_prime" })).resolves.toBeUndefined();
+      expect(kept).toHaveLength(1);
+      await vi.waitFor(() => expect(emit).toHaveBeenCalledTimes(1));
+      let settled = false;
+      void kept[0]!.then(() => { settled = true; });
+      await Promise.resolve();
+      expect(settled).toBe(false);
+      finish?.();
+      await kept[0];
+      expect(settled).toBe(true);
+    } finally { finish?.(); resetRequestContext(); }
   });
   it("registers ai.usage without a direct PostHog path in AI accounting", () => {
     expect(readFileSync("src/lib/telemetry-shared.ts", "utf8")).toContain('| "ai.usage"');
