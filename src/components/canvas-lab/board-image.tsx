@@ -181,15 +181,37 @@ function LabImageInner({ node, selected, layoutEditable, onSelect, onContextSele
   useEffect(() => () => clickControllerRef.current?.flush(), []);
   const [state, setState] = useState<{ status: "loading" | "ready" | "failed"; url: string | null }>({ status: "loading", url: null });
   const path = node.imagePath;
+  const preview = node.imagePreviewUrl;
+  const previewRef = useRef(preview);
+  previewRef.current = preview;
   useEffect(() => {
     let live = true;
-    if (!path) { setState({ status: "failed", url: null }); return; }
+    if (!path) { setState({ status: previewRef.current ? "loading" : "failed", url: null }); return; }
     setState({ status: "loading", url: null });
     signWorkboardFileUrl(path, 3600)
-      .then((url) => { if (live) setState(url ? { status: "ready", url } : { status: "failed", url: null }); })
+      .then((url) => {
+        if (!live) return;
+        if (!url) { setState({ status: "failed", url: null }); return; }
+        // IMG-3c: while the local copy shows, swap only once the stored copy has loaded, so nothing flashes.
+        if (previewRef.current && typeof Image !== "undefined") {
+          const loader = new Image();
+          loader.onload = () => { if (live) setState({ status: "ready", url }); };
+          loader.onerror = () => { if (live) setState({ status: "ready", url }); };
+          loader.src = url;
+          return;
+        }
+        setState({ status: "ready", url });
+      })
       .catch(() => { if (live) setState({ status: "failed", url: null }); });
     return () => { live = false; };
   }, [path]);
+  const revokedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (state.status !== "ready" || !preview || revokedRef.current === preview) return;
+    revokedRef.current = preview;
+    URL.revokeObjectURL(preview);
+  }, [state.status, preview]);
+  const showSrc = state.status === "ready" && state.url ? state.url : preview && state.status !== "failed" ? preview : null;
   const style = { left: node.x, top: node.y, width: node.width, height: node.height } satisfies CSSProperties;
   return (
     <section data-testid={`image-${node.id}`} data-node-id={node.id} data-connecting={connecting} data-selected={selected} data-status={state.status} aria-label={BOARD_IMAGE_COPY.label} tabIndex={0} className={`canvas-lab-card absolute rounded-[2px] ${selected ? "outline outline-2 outline-offset-2 outline-primary" : ""}`} style={style} onFocus={onSelect} onPointerDown={(event) => { clickDownRef.current = { x: event.clientX, y: event.clientY }; if (!selected) onSelect(); onDragStart(event); }} onPointerCancel={() => { clickDownRef.current = null; }} onClick={(event) => {
@@ -197,8 +219,8 @@ function LabImageInner({ node, selected, layoutEditable, onSelect, onContextSele
       if (cardBodyClickSelects({ readOnly: !onContextSelect, clickCount: event.detail, down: clickDownRef.current, up: { x: event.clientX, y: event.clientY }, onControl })) clickControllerRef.current?.click();
     }} onDoubleClick={() => clickControllerRef.current?.undo()}>
       <div data-selected={contextSelected} data-marquee-preview={previewSelected} className="canvas-lab-card-paper h-full w-full rounded-[2px]">
-      {state.status === "ready" && state.url ? (
-        <img src={state.url} alt="" draggable={false} className="block h-full w-full rounded-[2px] select-none" onError={() => setState({ status: "failed", url: null })} />
+      {showSrc ? (
+        <img src={showSrc} alt="" draggable={false} className="block h-full w-full rounded-[2px] select-none" onError={() => setState({ status: "failed", url: null })} />
       ) : (
         <div data-testid="board-image-placeholder" className="flex h-full w-full items-center justify-center rounded-[2px] bg-muted p-2 text-center nb-type-small text-muted-foreground">
           {state.status === "failed" ? <span>{BOARD_IMAGE_COPY.failed}</span> : null}
@@ -209,7 +231,7 @@ function LabImageInner({ node, selected, layoutEditable, onSelect, onContextSele
         <Button type="button" size="sm" variant="ghost" onClick={onRemove}>{BOARD_IMAGE_COPY.remove}</Button>
       </div> : null}
       {selected && layoutEditable ? CORNERS.map((corner) => <button key={corner} type="button" className="canvas-lab-resize-handle" data-corner={corner} aria-label={`Resize image from ${corner}`} onPointerDown={(event) => onResizeStart(corner, event)} onKeyDown={(event) => onResizeKeyDown(corner, event)} onKeyUp={onResizeKeyUp} />) : null}
-      {onAnchorPointerDown && onAnchorActivate ? (["top", "right", "bottom", "left"] as LabAnchor[]).map((side) => <Button key={side} type="button" variant="ghost" size="icon" className="canvas-lab-anchor" data-node-id={node.id} data-side={side} data-active={connectSourceAnchor === side} aria-label={`Connect from ${side}`} onPointerDown={(event) => { anchorDownRef.current = { x: event.clientX, y: event.clientY }; onAnchorPointerDown(side, event); }} onClick={(event) => { event.stopPropagation(); const down = anchorDownRef.current; anchorDownRef.current = null; if (down && Math.hypot(event.clientX - down.x, event.clientY - down.y) >= 6) return; onAnchorActivate(side); }} />) : null}
+      {onAnchorPointerDown && onAnchorActivate ? (["top", "right", "bottom", "left"] as LabAnchor[]).map((side) => <button key={side} type="button" className="canvas-lab-anchor" data-node-id={node.id} data-side={side} data-active={connectSourceAnchor === side} aria-label={`Connect from ${side}`} onPointerDown={(event) => { anchorDownRef.current = { x: event.clientX, y: event.clientY }; onAnchorPointerDown(side, event); }} onClick={(event) => { event.stopPropagation(); const down = anchorDownRef.current; anchorDownRef.current = null; if (down && Math.hypot(event.clientX - down.x, event.clientY - down.y) >= 6) return; onAnchorActivate(side); }} />) : null}
     </section>
   );
 }

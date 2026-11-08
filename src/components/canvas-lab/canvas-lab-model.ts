@@ -114,6 +114,8 @@ export type LabNode = {
   imagePath?: string;
   imageNaturalWidth?: number;
   imageNaturalHeight?: number;
+  /** IMG-3c: local object URL shown while a dropped image uploads. Never sent to the server, never saved. */
+  imagePreviewUrl?: string;
   /** Kept answers only: when the row was saved, and who asked. */
   createdAt?: string | null;
   authorName?: string;

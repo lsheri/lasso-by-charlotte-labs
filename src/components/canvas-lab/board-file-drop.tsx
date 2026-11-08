@@ -10,6 +10,10 @@ import type { WorkboardImageBody } from "@/lib/canvas-lab-shared";
 /** DD1-f: one uploaded image ready to become a board node. Resolves false when the node was not saved. */
 export type PlaceBoardImage = (image: WorkboardImageBody, at: Point) => Promise<boolean> | boolean;
 
+/** IMG-3c: a painted-but-unsaved image. persist resolves false when the node was not saved (and is then removed). */
+export type PaintedBoardImage = { persist: (path: string) => Promise<boolean>; discard: () => void };
+export type PaintBoardImage = (preview: { previewUrl: string; naturalWidth: number; naturalHeight: number }, at: Point) => PaintedBoardImage;
+
 export const BOARD_FILE_DROP_COPY = {
   prompt: "Drop to add to this board",
   capped: "Added the first 10. Drop the rest in another go.",
@@ -50,12 +54,14 @@ export function useBoardFileDrop({
   toBoard,
   place,
   placeImage,
+  paintImage,
   readSize = readImageSize,
 }: {
   enabled: boolean;
   toBoard: (clientX: number, clientY: number) => Point;
   place: (ids: string[], at: Point) => Promise<void> | void;
   placeImage?: PlaceBoardImage;
+  paintImage?: PaintBoardImage;
   readSize?: (file: File) => Promise<{ width: number; height: number }>;
 }) {
   const { captureWithResult } = useCaptureFiles();
@@ -94,9 +100,21 @@ export function useBoardFileDrop({
   }, []);
 
   const dropImage = useCallback(async (file: File, at: Point): Promise<boolean> => {
-    if (!placeImage) return false;
+    if (!placeImage && !paintImage) return false;
     let size: { width: number; height: number };
     try { size = await readSize(file); } catch { return false; }
+    if (paintImage) {
+      // IMG-3c: paint now from the local file, upload behind it.
+      const painted = paintImage({ previewUrl: URL.createObjectURL(file), naturalWidth: size.width, naturalHeight: size.height }, at);
+      let uploaded: string | null = null;
+      try { uploaded = await uploadBoardImage(file); } catch { uploaded = null; }
+      if (!uploaded) { painted.discard(); return false; }
+      let ok = false;
+      try { ok = await painted.persist(uploaded); } catch { ok = false; painted.discard(); }
+      if (!ok) await removeBoardImageObject(uploaded);
+      return ok;
+    }
+    if (!placeImage) return false;
     const path = await uploadBoardImage(file);
     if (!path) return false;
     let saved = false;
@@ -104,7 +122,7 @@ export function useBoardFileDrop({
     // A file whose node was never saved would be an orphan, so it goes too.
     if (!saved) await removeBoardImageObject(path);
     return saved;
-  }, [placeImage, readSize]);
+  }, [placeImage, paintImage, readSize]);
 
   /** PASTE-1: one path for dropped and pasted files. Applies the cap, keeps the busy guard. */
   const addFiles = useCallback(async (all: File[], at: Point, channel: "drop" | "paste"): Promise<{ added: number; failed: number }> => {
@@ -117,7 +135,7 @@ export function useBoardFileDrop({
     busy.current = true;
     try {
       // Images never touch the capture path: no work item, no card, no inbox.
-      const images = placeImage ? files.filter(isBoardImageFile) : [];
+      const images = placeImage || paintImage ? files.filter(isBoardImageFile) : [];
       const documents = files.filter((file) => !images.includes(file));
       if (documents.length > 0) {
         const { ids, failures } = await captureWithResult(documents, { channel });
@@ -135,7 +153,7 @@ export function useBoardFileDrop({
       busy.current = false;
     }
     return { added, failed };
-  }, [enabled, place, placeImage, captureWithResult, dropImage]);
+  }, [enabled, place, placeImage, paintImage, captureWithResult, dropImage]);
 
   const onDrop = useCallback((event: DragEvent<HTMLElement>) => {
     if (!isFileDrag(event.dataTransfer?.types)) return;
