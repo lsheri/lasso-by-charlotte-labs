@@ -291,3 +291,8 @@ export function noteWorkboardAddWorkSourceOpened(orgId: string | undefined, sour
 export function noteWorkboardLiveApplied(orgId: string | undefined, trigger: "change" | "reconnect" | "online" | "focus"): void {
   if (orgId) logEvent("workboard.live_applied", orgId, { trigger });
 }
+
+/** LIVE-2: the board was offline and caught up. Content-free: only how long, banded. */
+export function noteWorkboardOffline(orgId: string | undefined, duration: "under_30s" | "30s_to_5m" | "over_5m"): void {
+  if (orgId) logEvent("workboard.offline", orgId, { duration });
+}
