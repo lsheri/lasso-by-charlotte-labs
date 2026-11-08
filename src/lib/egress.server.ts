@@ -27,7 +27,7 @@ export type EgressResult = { sent: number; skipped: number; failed: number };
 export const EGRESS_POST_TIMEOUT_MS = 30_000;
 
 const EVENT_COLUMNS =
-  "id, event_uuid, event_type, ts, server_ts, tenant_hash, actor_hash, org_id, schema_version, consent_tier, consent_ledger_version, dims, payload";
+  "id, event_uuid, event_type, ts, server_ts, tenant_hash, actor_hash, org_id, schema_version, consent_tier, consent_ledger_version, dims, payload, environment";
 
 type Admin = Awaited<typeof import("@/integrations/supabase/client.server")>["supabaseAdmin"];
 

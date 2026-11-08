@@ -29,7 +29,16 @@ export type EgressEventRow = {
   consent_ledger_version: number | null;
   dims: unknown;
   payload: unknown;
+  /** Q21: the world the event came from, stamped from the request host at write time. */
+  environment?: string | null;
 };
+
+/** Q21: the environment as the Console receives it. Anything unrecognised is unknown, never guessed. */
+export type EgressEnvironment = "production" | "preview" | "local" | "unknown";
+
+export function egressEnvironment(value: string | null | undefined): EgressEnvironment {
+  return value === "production" || value === "preview" || value === "local" ? value : "unknown";
+}
 
 export type EgressEvent = {
   event_uuid: string | null;
@@ -42,6 +51,8 @@ export type EgressEvent = {
   consent_ledger_version: number | null;
   schema_version: string;
   dims: Record<string, unknown>;
+  /** Q21: envelope field, never a dim, so the Console can filter preview out of every page. */
+  environment: EgressEnvironment;
 };
 
 /**
@@ -139,6 +150,7 @@ export function mapEventForEgress(
     consent_ledger_version: row.consent_ledger_version ?? null,
     schema_version: row.schema_version,
     dims: asRecord(row.dims),
+    environment: egressEnvironment(row.environment),
   };
 
   if (tier === "a") return { kind: "send", id: row.id, event: base };
