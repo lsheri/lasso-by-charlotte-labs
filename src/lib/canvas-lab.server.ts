@@ -760,27 +760,25 @@ export async function moveMany(
     if (invalid) return { status: "validation_error", message: invalid };
     if (row.version !== entry.expectedVersion) return conflict("node", row.id, snapshot(row));
   }
-  const versions: Record<string, number> = {};
-  for (const entry of frames) {
+  // MOVE-2: the rows are independent, so write them together; each still checks its own version.
+  const frameWrites = frames.map(async (entry) => {
     const { data } = await db.from("workboard_frames").update({ x: entry.x, y: entry.y, ...stamp }).eq("id", entry.frameId).eq("workboard_id", board.id).eq("version", entry.expectedVersion).select("id, version");
-    const row = data?.[0];
-    if (!row) {
-      // Lost a race after the check. Rows already written keep their new place.
-      const latest = (await db.from("workboard_frames").select("*").eq("id", entry.frameId).maybeSingle()).data;
-      return latest ? conflict("frame", latest.id, snapshot(latest)) : { status: "validation_error", message: "That workstream is gone." };
-    }
-    versions[row.id] = row.version;
-  }
-  for (const entry of nodes) {
+    return { kind: "frame" as const, id: entry.frameId, row: data?.[0] ?? null, refused: false };
+  });
+  const nodeWrites = nodes.map(async (entry) => {
     const { data, error } = await db.from("workboard_nodes").update({ x: entry.x, y: entry.y, ...stamp }).eq("id", entry.nodeId).eq("workboard_id", board.id).eq("version", entry.expectedVersion).select("id, version");
-    if (error) return { status: "forbidden" };
-    const row = data?.[0];
-    if (!row) {
-      const latest = (await db.from("workboard_nodes").select("*").eq("id", entry.nodeId).maybeSingle()).data;
-      return latest ? conflict("node", latest.id, snapshot(latest)) : { status: "validation_error", message: "That card is gone." };
-    }
-    versions[row.id] = row.version;
+    return { kind: "node" as const, id: entry.nodeId, row: data?.[0] ?? null, refused: Boolean(error) };
+  });
+  const written = await Promise.all([...frameWrites, ...nodeWrites]);
+  if (written.some((write) => write.refused)) return { status: "forbidden" };
+  const lost = written.find((write) => !write.row);
+  if (lost) {
+    // Lost a race after the check. Rows already written keep their new place.
+    const table = lost.kind === "frame" ? "workboard_frames" : "workboard_nodes";
+    const latest = (await db.from(table).select("*").eq("id", lost.id).maybeSingle()).data;
+    return latest ? conflict(lost.kind, latest.id, snapshot(latest)) : { status: "validation_error", message: lost.kind === "frame" ? "That workstream is gone." : "That card is gone." };
   }
+  const versions: Record<string, number> = Object.fromEntries(written.map((write) => [write.id, (write.row as { version: number }).version]));
   return { status: "saved", boardId: board.id, boardVersion: board.version, versions };
 
 }

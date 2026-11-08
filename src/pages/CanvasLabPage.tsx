@@ -218,6 +218,7 @@ import { useProfile, useProfiles } from "@/hooks/use-profile";
 import { ownsWorkItem } from "@/lib/work-ownership";
 import { cardRemovable } from "@/lib/card-removable";
 import { cardContextCall, STICKY_DRAG_THRESHOLD_PX } from "@/lib/card-click";
+import { createSerialQueue } from "@/lib/serial-queue";
 import { teammateMarkFor } from "@/lib/teammate-mark";
 import { dragTo, keyTo, type Point } from "@/lib/canvas-drag";
 import { filedWorkCount, groupingDragSnapshot, isRegionFrameId, moveGroupingContents, newRegionFrameId, regionClaimable, regionClaims, regionFillStyle, regionNameChange, regionToolAfterDraw, type GroupingDragMember, type RegionFill } from "@/lib/board-region";
@@ -956,6 +957,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   const nodesRef = useRef<LabNode[]>([]);
   nodesRef.current = allNodes;
   const framesRef = useRef<LabFrame[]>([]);
+  const moveQueueRef = useRef(createSerialQueue());
   /** STICKY-2: new stickies take the last colour picked; a drag off the toolbar shows a ghost until it lands. */
   const lastStickyFillRef = useRef<WorkboardStickyFill>("yellow");
   const stickyDragOutRef = useRef(false);
@@ -1144,7 +1146,12 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   }
 
   /** MOVE-1: a section or workstream move saves every position in one request, never one save per card. */
-  async function persistMoveMany(frameIds: readonly string[], nodeIds: readonly string[]): Promise<boolean> {
+  function persistMoveMany(frameIds: readonly string[], nodeIds: readonly string[]): Promise<boolean> {
+    // MOVE-2: one group move at a time; each reads versions only once the one before it has landed.
+    return moveQueueRef.current(() => sendMoveMany(frameIds, nodeIds));
+  }
+
+  async function sendMoveMany(frameIds: readonly string[], nodeIds: readonly string[]): Promise<boolean> {
     if (!(await materialize())) return false;
     const frames: WorkboardMoveEntry<"frameId">[] = [];
     for (const localId of frameIds) {
@@ -1178,8 +1185,12 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
         break;
       }
       const versions = result.versions;
-      setFrames((current) => current?.map((entry) => { const next = entry.durableId ? versions[entry.durableId] : undefined; return next !== undefined ? { ...entry, durableVersion: next } : entry; }) ?? current);
-      setNodes((current) => current?.map((entry) => { const next = entry.durableId ? versions[entry.durableId] : undefined; return next !== undefined ? { ...entry, durableVersion: next } : entry; }) ?? current);
+      const bump = <E extends { durableId?: string; durableVersion?: number }>(entry: E): E => { const next = entry.durableId ? versions[entry.durableId] : undefined; return next !== undefined ? { ...entry, durableVersion: next } : entry; };
+      // Refs first, so a queued move reads the new versions before the next render.
+      framesRef.current = framesRef.current.map(bump);
+      nodesRef.current = nodesRef.current.map(bump);
+      setFrames((current) => current?.map(bump) ?? current);
+      setNodes((current) => current?.map(bump) ?? current);
     }
     return saved;
   }
@@ -1592,6 +1603,24 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
         await reloadDurableBoard();
         setAnnouncement("Loaded the newer version of this workboard.");
       })();
+      return;
+    }
+    if (state.retry.type === "move_many") {
+      // MOVE-2: a group move retries with every row's current version, not just the one that clashed.
+      const stale = state.retry;
+      lab.clearSaveState();
+      void (async () => {
+        const fresh = await lab.refresh();
+        const versionOf = new Map<string, number>([...(fresh?.frames ?? []).map((frame) => [frame.id, frame.version] as const), ...(fresh?.nodes ?? []).map((node) => [node.id, node.version] as const)]);
+        const retried: WorkboardCommand = {
+          type: "move_many",
+          frames: stale.frames.map((entry) => ({ ...entry, expectedVersion: versionOf.get(entry.frameId) ?? entry.expectedVersion })),
+          nodes: stale.nodes.map((entry) => ({ ...entry, expectedVersion: versionOf.get(entry.nodeId) ?? entry.expectedVersion })),
+        };
+        const result = await lab.persist(retried);
+        report(result, stale.nodes.length === 0 ? "frame" : "node", "update");
+      })();
+      setAnnouncement("Retried your change.");
       return;
     }
     const retry = { ...state.retry, expectedVersion: state.latestVersion } as WorkboardCommand;
