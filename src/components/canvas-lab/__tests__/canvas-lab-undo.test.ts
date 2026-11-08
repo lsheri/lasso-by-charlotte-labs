@@ -72,7 +72,7 @@ describe("canvas lab undo stack", () => {
     h.apply(entry, "redo");
     await vi.waitFor(() => expect(h.getNodes()[0]?.durableVersion).toBe(5));
     expect(h.context.lab.persist).toHaveBeenCalledWith({ type: "node_restore", nodeId: "durable", expectedVersion: 4 });
-    expect(h.getNodes()[0]).toEqual({ ...node, durableVersion: 5 });
+    expect(h.getNodes()[0]).toEqual({ ...node, durableVersion: 5, ...(kind === "answer" ? { chatSessionId: null } : {}) });
     h.apply(entry, "undo");
     expect(h.context.archiveDurable).toHaveBeenLastCalledWith("durable", 5);
   });
@@ -87,8 +87,13 @@ describe("canvas lab undo stack", () => {
     h.apply(entry, "undo");
     expect(readAskPins(h.store)).toEqual({});
     expect(readUnpinned(h.store)).toEqual({ "chat:1": "board:1", "chat:other": "board:other" });
+    const writePin = vi.spyOn(h.context, "writeAskPin");
+    const clearPin = vi.spyOn(h.context, "clearUnpinned");
     h.apply(entry, "redo");
-    expect(readAskPins(h.store)).toEqual({ durable: "chat:1" });
+    expect(h.getNodes()[0]?.chatSessionId).toBe("chat:1");
+    expect(readAskPins(h.store)).toEqual({});
+    expect(clearPin).toHaveBeenCalledWith("chat:1", h.store);
+    expect(writePin).not.toHaveBeenCalled();
     expect(readUnpinned(h.store)).toEqual({ "chat:other": "board:other" });
     await vi.waitFor(() => expect(h.getNodes()[0]?.durableVersion).toBe(3));
   });
@@ -184,15 +189,21 @@ describe("canvas lab undo stack", () => {
     };
     writeUnpinned("chat:1", "board:1", store);
     writeUnpinned("chat:other", "board:other", store);
+    const writePin = vi.spyOn(context, "writeAskPin");
+    const clearPin = vi.spyOn(context, "clearUnpinned");
     const undone = popUndo(recordUndo(emptyUndoStacks(), entry));
     apply(undone.entry, "undo", context);
     expect(nodes.map((node) => node.id)).toEqual(["answer:1"]);
-    expect(readAskPins(store)).toEqual({ "answer:1": "chat:1" });
+    expect(nodes[0]?.chatSessionId).toBe("chat:1");
+    expect(readAskPins(store)).toEqual({});
+    expect(clearPin).toHaveBeenCalledWith("chat:1", store);
+    expect(writePin).not.toHaveBeenCalled();
     expect(readUnpinned(store)).toEqual({ "chat:other": "board:other" });
     apply(popRedo(undone.stacks).entry, "redo", context);
     expect(nodes).toEqual([]);
     expect(readAskPins(store)).toEqual({});
     expect(readUnpinned(store)).toEqual({ "chat:1": "board:1", "chat:other": "board:other" });
+    expect(writePin).not.toHaveBeenCalled();
   });
 
   it("pushes, undoes and redoes one step", () => {
