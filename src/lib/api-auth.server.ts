@@ -39,9 +39,12 @@ export async function authenticateBearer(request: Request): Promise<AuthedReques
   return { supabase, userId: data.claims.sub };
 }
 
-/** One newline-delimited JSON frame per event. Deltas first, one done frame last. */
+/** One newline-delimited JSON frame per event. An optional read frame, deltas, one done frame last. */
 export type StreamFrame =
-  { t: "delta"; v: string } | { t: "done"; payload: unknown } | { t: "error"; message: string };
+  | { t: "read"; manifest: unknown }
+  | { t: "delta"; v: string }
+  | { t: "done"; payload: unknown }
+  | { t: "error"; message: string };
 
 export function ndjsonStream(
   run: (emit: (frame: StreamFrame) => void) => Promise<unknown>,

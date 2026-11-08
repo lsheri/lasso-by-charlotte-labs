@@ -8,6 +8,8 @@ export async function streamChatRequest<T>(
   path: string,
   body: unknown,
   onDelta: (delta: string) => void,
+  /** V2-0: the read frame, when the route sends one. Optional; other routes never do. */
+  onRead?: (manifest: unknown) => void,
 ): Promise<T> {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
@@ -36,10 +38,14 @@ export async function streamChatRequest<T>(
     for (const line of lines) {
       if (!line.trim()) continue;
       const frame = JSON.parse(line) as
-        { t: "delta"; v: string } | { t: "done"; payload: T } | { t: "error"; message: string };
+        | { t: "read"; manifest: unknown }
+        | { t: "delta"; v: string }
+        | { t: "done"; payload: T }
+        | { t: "error"; message: string };
       if (frame.t === "delta") onDelta(frame.v);
+      else if (frame.t === "read") onRead?.(frame.manifest);
       else if (frame.t === "error") throw new Error(frame.message);
-      else result = frame.payload;
+      else if (frame.t === "done") result = frame.payload;
     }
   }
 

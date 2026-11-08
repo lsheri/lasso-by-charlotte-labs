@@ -12,8 +12,12 @@ export const Route = createFileRoute("/api/reflect/stream")({
         const body = { ...raw, scope_source: parseScopeSource(raw.scope_source) };
         return ndjsonStream(async (emit) => {
           const { runReflectTurn } = await import("@/lib/reflect-run.server");
-          return runReflectTurn(auth.supabase, auth.userId, body, (delta) =>
-            emit({ t: "delta", v: delta }),
+          return runReflectTurn(
+            auth.supabase,
+            auth.userId,
+            body,
+            (delta) => emit({ t: "delta", v: delta }),
+            (manifest) => emit({ t: "read", manifest }),
           );
         });
       },
