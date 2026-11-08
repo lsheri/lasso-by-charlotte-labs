@@ -1,8 +1,8 @@
 import { PLACEMENT_CARD, placeAddedCards } from "@/lib/workboard-placement";
 /**
- * ASK-D1: preview-only gate for the floating Ask drafts. Production hosts
- * always resolve to null, whatever the query, so nobody outside a Lovable
- * preview or localhost ever sees a draft.
+ * ASK-D1: the floating Ask drafts. Until 7 Nov production hosts always resolved
+ * to null. GATE-LIFT: production now resolves to draft b (see resolveAskDraft);
+ * isAskDraftHost still decides who may pick draft a or use ?ask=a|b.
  */
 export type AskDraft = "a" | "b";
 export type AskDraftPosition = "bottom_centre" | "bottom_right" | "lock_left" | "lock_right" | "free";
@@ -34,9 +34,25 @@ const STORE_KEY = "lasso.ask-draft";
 
 type Store = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 
-/** The query wins; ask=off is remembered as off; otherwise the remembered choice, or draft b, on a preview host. */
+/**
+ * The query wins; ask=off is remembered as off; otherwise the remembered choice, or draft b.
+ *
+ * GATE-LIFT (7 Nov, Liam): draft b ships on every host, production included. Production gets
+ * only b, plus ask=off as the escape hatch back to the docked panel; choosing draft a, and the
+ * ?ask=a|b switch, stay preview-only because they are the experiment, not the product.
+ * Future flags belong in PostHog (Liam, 7 Nov); this host rule is the last of its kind.
+ */
 export function resolveAskDraft(host: string, search: string, store: Store | null): AskDraft | null {
-  if (!isAskDraftHost(host)) return null;
+  if (!isAskDraftHost(host)) {
+    const asked = new URLSearchParams(search).get("ask");
+    try {
+      if (asked === "off") { store?.setItem(STORE_KEY, "off"); return null; }
+      if (asked === "on") { store?.removeItem(STORE_KEY); return "b"; }
+      return store?.getItem(STORE_KEY) === "off" ? null : "b";
+    } catch {
+      return asked === "off" ? null : "b";
+    }
+  }
   const value = new URLSearchParams(search).get("ask");
   try {
     if (value === "off") { store?.setItem(STORE_KEY, "off"); return null; }

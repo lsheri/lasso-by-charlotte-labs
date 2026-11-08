@@ -3,13 +3,30 @@ import { askDraftFromLocation, resolveAskDraft } from "@/lib/ask-draft";
 
 const ID = "id-preview--57cd51ce-f7b4-4cd0-a7d0-761453b5935b.lovable.app";
 
-describe("ASK-D1 gate", () => {
-  it.each(["lasso.charlotte-labs.com", "lasso-coaching-hub.lovable.app", "project--57cd51ce-f7b4-4cd0-a7d0-761453b5935b.lovable.app"])("is null on %s whatever the query", (host) => {
+describe("ASK-D1 gate, lifted 7 Nov for draft b", () => {
+  const PROD_HOSTS = ["lasso.charlotte-labs.com", "lasso-coaching-hub.lovable.app", "project--57cd51ce-f7b4-4cd0-a7d0-761453b5935b.lovable.app"];
+  const mkStore = (seed: [string, string][] = []) => { const store = new Map<string, string>(seed); return { store, s: { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => void store.set(k, v), removeItem: (k: string) => void store.delete(k) } }; };
+  it.each(PROD_HOSTS)("the ?ask=a|b experiment switch stays off on %s", (host) => {
     expect(askDraftFromLocation(host, "?ask=a")).toBeNull();
     expect(askDraftFromLocation(host, "?ask=b")).toBeNull();
-    const store = new Map<string, string>([["lasso.ask-draft", "a"]]);
-    const s = { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => void store.set(k, v), removeItem: (k: string) => void store.delete(k) };
+  });
+  it.each(PROD_HOSTS)("%s gets draft b by default, never a, even with a remembered a or ?ask=a", (host) => {
+    expect(resolveAskDraft(host, "", mkStore().s)).toBe("b");
+    expect(resolveAskDraft(host, "", mkStore([["lasso.ask-draft", "a"]]).s)).toBe("b");
+    expect(resolveAskDraft(host, "?ask=a", mkStore().s)).toBe("b");
+  });
+  it.each(PROD_HOSTS)("ask=off on %s is remembered and returns the docked panel; ask=on undoes it", (host) => {
+    const { store, s } = mkStore();
+    expect(resolveAskDraft(host, "?ask=off", s)).toBeNull();
+    expect(store.get("lasso.ask-draft")).toBe("off");
     expect(resolveAskDraft(host, "", s)).toBeNull();
+    expect(resolveAskDraft(host, "?ask=on", s)).toBe("b");
+    expect(resolveAskDraft(host, "", s)).toBe("b");
+  });
+  it("survives storage that throws", () => {
+    const bad = { getItem: () => { throw new Error("blocked"); }, setItem: () => { throw new Error("blocked"); }, removeItem: () => { throw new Error("blocked"); } };
+    expect(resolveAskDraft("lasso.charlotte-labs.com", "", bad)).toBe("b");
+    expect(resolveAskDraft("lasso.charlotte-labs.com", "?ask=off", bad)).toBeNull();
   });
   it("returns a and b on an id-preview host", () => {
     expect(askDraftFromLocation(ID, "?ask=a")).toBe("a");
