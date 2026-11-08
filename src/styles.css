@@ -1886,6 +1886,10 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .canvas-lab-region-palette:has(.canvas-lab-section-background) { max-width: calc(100vw - 32px); }
 .canvas-lab-section:focus-visible { outline: 1px solid var(--nb-mid); }
 .canvas-lab-section-edge { position: absolute; pointer-events: auto; cursor: grab; }
+/* DRAG-1: a selected section takes presses inside it, so it moves from anywhere inside; unselected, the inside stays the board. */
+.canvas-lab-section[data-selected="true"][data-movable="true"] { pointer-events: auto; cursor: grab; }
+.canvas-lab-frame[data-movable="true"] > [data-frame-name] { cursor: grab; }
+.canvas-lab-frame[data-movable="true"][data-selected="true"] { cursor: grab; }
 .canvas-lab-section-edge[data-section-edge="top"] { inset: -4px 0 auto; height: 8px; }
 .canvas-lab-section-edge[data-section-edge="bottom"] { inset: auto 0 -4px; height: 8px; }
 .canvas-lab-section-edge[data-section-edge="left"] { inset: 0 auto 0 -4px; width: 8px; }

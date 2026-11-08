@@ -145,10 +145,14 @@ export function LabFrame({ frame, count, selected, editable, custom, namedByWork
       style={{ left: frame.x, top: frame.y, width: frame.width, height: frame.height, ...(fillStyle ? { background: fillStyle.fill, borderColor: fillStyle.edge } : {}) }}
       data-region={region ? (frame.name ? "workstream" : "paint") : undefined}
       className="canvas-lab-frame absolute outline-none"
+      data-movable={editable && onDragStart ? "true" : undefined}
       onPointerDown={(event) => {
         if ((event.target as Element).closest("button,input")) return;
+        // DRAG-1: the name strip moves it any time; inside moves it once it is selected.
+        const onName = Boolean((event.target as Element).closest("[data-frame-name]"));
+        const wasSelected = selected;
         onSelect();
-        onDragStart?.(event);
+        if (onName || wasSelected) onDragStart?.(event);
       }}
       onFocus={(event) => { if (event.target === event.currentTarget) onSelect(); }}
       onContextMenu={openMenu}
@@ -156,7 +160,7 @@ export function LabFrame({ frame, count, selected, editable, custom, namedByWork
         if ((event.shiftKey && event.key === "F10") || event.key === "ContextMenu") openMenu(event);
       }}
     >
-      <div className="absolute inset-x-3 top-2 flex items-baseline justify-between gap-2">
+      <div data-frame-name="" className="absolute inset-x-3 top-2 flex items-baseline justify-between gap-2">
         {renaming ? (
           <div>
             <input
