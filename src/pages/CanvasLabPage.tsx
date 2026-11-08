@@ -3682,12 +3682,12 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     });
     toolbarItems.push({
       spec: { id: "region", width: 36, moveOrder: 9 },
-      row: <ToolbarIcon label="Draw a workstream. Group work so Lasso treats it as one piece of context."><Button size="icon" variant={drawTool && drawMode === "grouping" ? "secondary" : "outline"} aria-label="Draw a workstream" aria-pressed={drawTool && drawMode === "grouping"} data-toolbar-control="grouping" onClick={toggleDrawTool}><GraphiteIcon name="draw-workstream" size={20} /></Button></ToolbarIcon>,
+      row: <ToolbarIcon label="Draw a workstream. Work inside counts as one piece."><Button size="icon" variant={drawTool && drawMode === "grouping" ? "secondary" : "outline"} aria-label="Draw a workstream" aria-pressed={drawTool && drawMode === "grouping"} data-toolbar-control="grouping" onClick={toggleDrawTool}><GraphiteIcon name="draw-workstream" size={20} /></Button></ToolbarIcon>,
       menu: <DropdownMenuItem onSelect={toggleDrawTool}>Draw a workstream</DropdownMenuItem>,
     });
     toolbarItems.push({
       spec: { id: "section", width: 36, moveOrder: 10 },
-      row: <ToolbarIcon label="Draw a section. Mark an area of the board. Nothing inside is joined up."><Button size="icon" variant={drawTool && drawMode === "section" ? "secondary" : "outline"} aria-label="Draw a section" aria-pressed={drawTool && drawMode === "section"} data-toolbar-control="section" onClick={toggleSectionTool}><GraphiteIcon name="section" size={20} /></Button></ToolbarIcon>,
+      row: <ToolbarIcon label="Draw a section. Just an area. Nothing inside is joined."><Button size="icon" variant={drawTool && drawMode === "section" ? "secondary" : "outline"} aria-label="Draw a section" aria-pressed={drawTool && drawMode === "section"} data-toolbar-control="section" onClick={toggleSectionTool}><GraphiteIcon name="section" size={20} /></Button></ToolbarIcon>,
       menu: <DropdownMenuItem onSelect={toggleSectionTool}>Draw a section</DropdownMenuItem>,
     });
     toolbarItems.push({
