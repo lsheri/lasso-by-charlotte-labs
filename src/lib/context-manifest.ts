@@ -16,7 +16,10 @@ export type ManifestKind =
   | "note"
   | "transcript"
   | "brief"
-  | "item";
+  | "item"
+  /** V2-2: display only. The server tags images "item" with an "image:" id; videos are never context. */
+  | "image"
+  | "video";
 
 export type ManifestItem = {
   id: string;

@@ -28,6 +28,8 @@ type Props = {
   /** Work item ids of the cards picked "in context" on the board. */
   boardContextItemIds: string[];
   boardContextImageIds?: string[];
+  /** V2-2: videos in the pick. Never context; Ask only names them "not read". */
+  boardContextVideoCount?: number;
   boardContextHasPicks: boolean;
   sectionSource?: SectionAskSource | undefined;
   /** SECD-3b: every section on the board, for the scope picker. */
@@ -72,9 +74,9 @@ function BoardAskPanel(props: Props & { draft?: AskDraft | null; pendingSessionI
   const inMapped = props.boardContextItemIds.filter((id) => ask.mapped.some((i) => i.id === id));
   useEffect(() => {
     if (props.sectionSource) return;
-    ask.setBoardSelection(props.boardContextHasPicks, inMapped, props.boardContextImageIds ?? []);
+    ask.setBoardSelection(props.boardContextHasPicks, inMapped, props.boardContextImageIds ?? [], props.boardContextVideoCount ?? 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props.boardContextHasPicks, idsKey, imagesKey, mappedKey, props.sectionSource]);
+  }, [props.boardContextHasPicks, idsKey, imagesKey, mappedKey, props.sectionSource, props.boardContextVideoCount]);
 
   // ASK-D2: pinning, draft branch only. The outer keep exists only for people who may arrange the board.
   const outerKeep = useAnswerKeep();

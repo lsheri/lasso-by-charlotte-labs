@@ -72,7 +72,7 @@ export function useAskLasso({
   const [streamed, setStreamed] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string> | null>(null);
-  const [boardSelection, setBoardSelectionState] = useState<{ active: boolean; ids: string[]; images: string[] }>({ active: false, ids: [], images: [] });
+  const [boardSelection, setBoardSelectionState] = useState<{ active: boolean; ids: string[]; images: string[]; videos?: number }>({ active: false, ids: [], images: [] });
   const [scopeSource, setScopeSource] = useState<ScopeSource>("all");
   const [sectionSelection, setSectionSelection] = useState<SectionAskSource | null>(sectionSource ?? null);
   useEffect(() => { setSectionSelection(sectionSource ?? null); }, [sectionSource]);
@@ -256,10 +256,11 @@ export function useAskLasso({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId, scopeKey, pending]);
 
-  function applyBoardSelection(hasPicks: boolean, mappedIds: string[], imageIds: string[] = []) {
+  function applyBoardSelection(hasPicks: boolean, mappedIds: string[], imageIds: string[] = [], videoCount = 0) {
     const ids = [...mappedIds, ...imageIds];
     setSectionSelection(null);
-    setBoardSelectionState({ active: hasPicks, ids: mappedIds, images: imageIds });
+    // V2-2: videos are never context. The count only lets Ask say "not read".
+    setBoardSelectionState({ active: hasPicks, ids: mappedIds, images: imageIds, videos: videoCount });
     setScopeSource(hasPicks ? (ids.length > 0 ? "board_pick" : "board_pick_brief_only") : "all");
     setSelected(new Set(hasPicks ? mappedIds : mapped.map((item) => item.id)));
   }
@@ -437,6 +438,7 @@ export function useAskLasso({
     selectedItems,
     boardPickActive: boardSelection.active,
     boardPickedCount: boardSelection.ids.length + boardSelection.images.length,
+    boardPickedVideos: boardSelection.videos ?? 0,
     sessionId,
     sessions,
     setMention,

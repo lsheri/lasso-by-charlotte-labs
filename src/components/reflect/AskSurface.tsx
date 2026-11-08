@@ -12,6 +12,9 @@ import { CoverageNote } from "@/components/reflect/CoverageNote";
 import { GraphiteIcon, type GraphiteIconName } from "@/components/notebook/icons";
 import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
 import { AnswerRail, ContextAudit, ThinkingTrail } from "@/components/reflect/ContextTrail";
+import { AskReadingV2 } from "@/components/reflect/AskReadingV2";
+import { receiptLine } from "@/lib/ask-reading-v2";
+import { flagEnabled } from "@/lib/feature-flags";
 import { AnswerMoreMenu } from "@/components/reflect/AnswerMoreMenu";
 import { SaveForOneOnOneDialog } from "@/components/oneonone/SaveForOneOnOne";
 import { Button } from "@/components/ui/button";
@@ -318,6 +321,17 @@ function WorkPicker({
 export function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions?: React.ReactNode }) {
   const messages = ask.messages ?? [];
   const unanswered = unansweredQuestionIds(messages, ask.pending);
+  // V2-2 (ask-v2, default off): reading states and the one-line receipt. Off renders today's trail exactly.
+  const askV2 = flagEnabled("ask-v2");
+  const previousManifest = askV2
+    ? (() => {
+        for (let i = messages.length - 1; i >= 0; i -= 1) {
+          const m = messages[i];
+          if (m && m.role !== "user") return parseManifest(m.context_manifest);
+        }
+        return null;
+      })()
+    : null;
   const viewerInitial = ask.profile?.display_name.trim().charAt(0).toUpperCase() || "Y";
   // Only the workboard offers a place to keep an answer, and only to someone
   // who may arrange that board.
@@ -448,6 +462,7 @@ export function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions
                       <ContextAudit
                         manifest={manifest}
                         reads={ask.sourcesByMessage?.[Number(message.id)] ?? []}
+                        v2={askV2 && manifest ? { receipt: receiptLine(manifest, citationsFromManifest(message.context_manifest).map((c) => c.item_id)) } : undefined}
                       />
                       {coverage && ((coverage.share ?? 1) < 0.999 || coverage.noTextCount > 0 || coverage.summaryCount > 0) ? <CoverageNote {...coverage} /> : null}
                       <div className="mt-1 flex items-center gap-1" data-testid="answer-actions">
@@ -507,15 +522,25 @@ export function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions
               <AnswerRail state="working">
                 {
                   <div className="nb-binder-inset">
-                    <ThinkingTrail
-                      items={(ask.pointedNow.length > 0 ? ask.pointedNow : ask.selectedItems).map(
-                        (item) => ({ id: item.id, title: displayName(item) }),
-                      )}
-                      finalPhase="Writing"
-                      manifest={ask.liveManifest}
-                      lead={ask.pointedNow.length > 0 ? "Reading what you pointed at" : undefined}
-                      ask={{ answered: Boolean(ask.streamed) }}
-                    />
+                    {askV2 ? (
+                      <AskReadingV2
+                        manifest={ask.liveManifest}
+                        previousManifest={previousManifest}
+                        streamed={ask.streamed}
+                        pickedCount={ask.pointedNow.length > 0 ? ask.pointedNow.length : ask.boardPickActive ? ask.boardPickedCount : ask.selectedItems.length < ask.mapped.length ? ask.selectedItems.length : 0}
+                        pickedVideos={ask.boardPickActive ? ask.boardPickedVideos : 0}
+                      />
+                    ) : (
+                      <ThinkingTrail
+                        items={(ask.pointedNow.length > 0 ? ask.pointedNow : ask.selectedItems).map(
+                          (item) => ({ id: item.id, title: displayName(item) }),
+                        )}
+                        finalPhase="Writing"
+                        manifest={ask.liveManifest}
+                        lead={ask.pointedNow.length > 0 ? "Reading what you pointed at" : undefined}
+                        ask={{ answered: Boolean(ask.streamed) }}
+                      />
+                    )}
                   </div>
                 }
                 {ask.streamed ? (
