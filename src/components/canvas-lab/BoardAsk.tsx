@@ -74,7 +74,8 @@ function BoardAskPanel(props: Props & { draft?: AskDraft | null; pendingSessionI
   const inMapped = props.boardContextItemIds.filter((id) => ask.mapped.some((i) => i.id === id));
   useEffect(() => {
     if (props.sectionSource) return;
-    ask.setBoardSelection(props.boardContextHasPicks, inMapped, props.boardContextImageIds ?? [], props.boardContextVideoCount ?? 0);
+    ask.setBoardSelection(props.boardContextHasPicks, inMapped, props.boardContextImageIds ?? []);
+    ask.setBoardPickedVideos(props.boardContextHasPicks ? props.boardContextVideoCount ?? 0 : 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.boardContextHasPicks, idsKey, imagesKey, mappedKey, props.sectionSource, props.boardContextVideoCount]);
 
