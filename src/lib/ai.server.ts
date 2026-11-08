@@ -57,7 +57,12 @@ export type ChatMessage = {
   tool_call_id?: string;
   /** TOTAL-1: documents carried by a user turn. Anthropic sends them as citable blocks; OpenAI gets them flattened into text. */
   documents?: RecordDocument[];
+  /** IMG-2: images carried by a user turn, base64 without a data: prefix. Both providers read them. */
+  images?: ChatImage[];
 };
+
+export type ChatImageMediaType = "image/png" | "image/jpeg" | "image/gif" | "image/webp";
+export type ChatImage = { mediaType: ChatImageMediaType; data: string };
 
 /**
  * Two tiers, named here so the vendor or the model can change in one edit.
@@ -315,7 +320,7 @@ export type RawCitation = {
   end_char_index?: number;
 };
 
-function buildBody(
+export function buildBody(
   messages: ChatMessage[],
   model: string,
   options: ChatOptions,
@@ -324,11 +329,21 @@ function buildBody(
   const maxTokens = options.maxTokens ?? 8000;
   // OpenAI has no document blocks: the record travels as the same plain text
   // the Anthropic path cites from, so the quote guard verifies it the old way.
-  const flat = messages.map((message) =>
-    message.documents && message.documents.length > 0
+  const flat = messages.map((message) => {
+    const withDocs = message.documents && message.documents.length > 0
       ? { ...message, content: [message.content, ...message.documents.map(flattenDocument)].filter(Boolean).join("\n\n---\n\n"), documents: undefined }
-      : message,
-  );
+      : message;
+    // IMG-2: OpenAI reads images as content parts with a data URL.
+    if (!withDocs.images || withDocs.images.length === 0) return withDocs;
+    const { images, ...rest } = withDocs;
+    return {
+      ...rest,
+      content: [
+        ...images.map((image) => ({ type: "image_url", image_url: { url: `data:${image.mediaType};base64,${image.data}` } })),
+        ...(rest.content ? [{ type: "text", text: rest.content }] : []),
+      ],
+    };
+  });
   const body: Record<string, unknown> = { model, messages: flat };
   if (isReasoningModel(model)) {
     body["max_completion_tokens"] = maxTokens;
