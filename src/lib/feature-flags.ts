@@ -24,6 +24,12 @@ export const FEATURE_FLAGS = {
    * the docked panel on the next page load. Preview hosts are not affected.
    */
   "ask-floating": { default: true },
+  /**
+   * The Ask redesign (8 Nov decisions). Default off: today's panel is the code
+   * default. Turn it on per person in PostHog to try the new idle bar, reading
+   * states and receipt. It changes what Ask looks like, never what it reads.
+   */
+  "ask-v2": { default: false },
 } as const satisfies Record<string, { default: boolean }>;
 
 export type FeatureFlag = keyof typeof FEATURE_FLAGS;

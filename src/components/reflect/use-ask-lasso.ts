@@ -20,6 +20,7 @@ import {
 import { logEvent } from "@/lib/telemetry";
 import { parseScope, type ContextScope, type ScopeSource } from "@/lib/reflect-shared";
 import type { ContextManifest } from "@/lib/context-manifest";
+import { flagEnabled } from "@/lib/feature-flags";
 import type { WorkItemRow } from "@/lib/work-types";
 
 export type AskMessageRow = {
@@ -379,6 +380,8 @@ export function useAskLasso({
           ...(sectionSelection ? { scope_kind: "section" } : {}),
         },
         (delta) => setStreamed((prev) => prev + delta),
+        // V2-0: behind ask-v2, show what is being read as soon as the server knows it.
+        flagEnabled("ask-v2") ? (manifest) => setLiveManifest(manifest as ContextManifest) : undefined,
       );
       setCoverage({
         truncated: result.truncated,

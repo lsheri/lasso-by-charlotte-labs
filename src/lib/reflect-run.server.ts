@@ -79,6 +79,8 @@ export async function runReflectTurn(
   userId: string,
   data: ReflectInput,
   onDelta?: (delta: string) => void,
+  /** V2-0: told once, before the model writes, what this answer is reading. Additive; nothing waits on it. */
+  onRead?: (manifest: ContextManifest) => void,
 ): Promise<ReflectResult> {
   const message = data.message.trim();
   if (!message) throw new Error("Write something first.");
@@ -349,6 +351,11 @@ export async function runReflectTurn(
   assembled.manifest.scope = { source: effectiveScopeSource, picked };
   if (pointedExcluded.length > 0) {
     assembled.manifest.excluded = [...assembled.manifest.excluded, ...pointedExcluded];
+  }
+  try {
+    onRead?.(assembled.manifest);
+  } catch {
+    // A failed early notice never costs the answer.
   }
 
   // The defect class that cost trust before: items were in scope and none of
