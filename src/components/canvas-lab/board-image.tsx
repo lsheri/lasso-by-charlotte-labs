@@ -1,8 +1,9 @@
 import { stableMemo } from "@/components/canvas-lab/stable-memo";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent } from "react";
 
-import type { LabNode, LabResizeCorner } from "@/components/canvas-lab/canvas-lab-model";
+import type { LabAnchor, LabNode, LabResizeCorner } from "@/components/canvas-lab/canvas-lab-model";
+import { cardBodyClickSelects, createCardClickController, type CardSelectVia } from "@/lib/card-click";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { serializeWorkboardImageBody, type WorkboardImageBody, type WorkboardNodeInput } from "@/lib/canvas-lab-shared";
@@ -153,17 +154,31 @@ export function buildImageNodeInput(input: { clientKey: string; body: WorkboardI
 const CORNERS: LabResizeCorner[] = ["nw", "ne", "se", "sw"];
 
 /** DD1-f: the picture itself on the board, no card chrome. */
-function LabImageInner({ node, selected, layoutEditable, onSelect, onDragStart, onResizeStart, onResizeKeyDown, onResizeKeyUp, onRemove }: {
+function LabImageInner({ node, selected, layoutEditable, onSelect, onContextSelect, contextSelected = false, previewSelected = false, connecting = false, connectSourceAnchor = null, onAnchorPointerDown, onAnchorActivate, onDragStart, onResizeStart, onResizeKeyDown, onResizeKeyUp, onRemove }: {
   node: LabNode;
   selected: boolean;
   layoutEditable: boolean;
   onSelect: () => void;
+  onContextSelect?: (via: CardSelectVia) => void;
+  contextSelected?: boolean;
+  previewSelected?: boolean;
+  connecting?: boolean;
+  connectSourceAnchor?: LabAnchor | null;
+  onAnchorPointerDown?: (side: LabAnchor, event: ReactPointerEvent<HTMLButtonElement>) => void;
+  onAnchorActivate?: (side: LabAnchor) => void;
   onDragStart: (event: ReactPointerEvent<HTMLElement>) => void;
   onResizeStart: (corner: LabResizeCorner, event: ReactPointerEvent<HTMLButtonElement>) => void;
   onResizeKeyDown: (corner: LabResizeCorner, event: ReactKeyboardEvent<HTMLButtonElement>) => void;
   onResizeKeyUp: (event: ReactKeyboardEvent<HTMLButtonElement>) => void;
   onRemove: () => void;
 }) {
+  const clickDownRef = useRef<{ x: number; y: number } | null>(null);
+  const anchorDownRef = useRef<{ x: number; y: number } | null>(null);
+  const contextSelectRef = useRef(onContextSelect);
+  contextSelectRef.current = onContextSelect;
+  const clickControllerRef = useRef<ReturnType<typeof createCardClickController> | null>(null);
+  clickControllerRef.current ??= createCardClickController({ select: (via) => contextSelectRef.current?.(via), schedule: (run, ms) => window.setTimeout(run, ms), cancel: (id) => window.clearTimeout(id) });
+  useEffect(() => () => clickControllerRef.current?.flush(), []);
   const [state, setState] = useState<{ status: "loading" | "ready" | "failed"; url: string | null }>({ status: "loading", url: null });
   const path = node.imagePath;
   useEffect(() => {
@@ -177,7 +192,11 @@ function LabImageInner({ node, selected, layoutEditable, onSelect, onDragStart, 
   }, [path]);
   const style = { left: node.x, top: node.y, width: node.width, height: node.height } satisfies CSSProperties;
   return (
-    <section data-testid={`image-${node.id}`} data-selected={selected} data-status={state.status} aria-label={BOARD_IMAGE_COPY.label} tabIndex={0} className={`absolute rounded-[2px] ${selected ? "outline outline-2 outline-offset-2 outline-primary" : ""}`} style={style} onFocus={onSelect} onPointerDown={(event) => { if (!selected) onSelect(); onDragStart(event); }}>
+    <section data-testid={`image-${node.id}`} data-node-id={node.id} data-connecting={connecting} data-selected={selected} data-status={state.status} aria-label={BOARD_IMAGE_COPY.label} tabIndex={0} className={`canvas-lab-card absolute rounded-[2px] ${selected ? "outline outline-2 outline-offset-2 outline-primary" : ""}`} style={style} onFocus={onSelect} onPointerDown={(event) => { clickDownRef.current = { x: event.clientX, y: event.clientY }; if (!selected) onSelect(); onDragStart(event); }} onPointerCancel={() => { clickDownRef.current = null; }} onClick={(event) => {
+      const onControl = Boolean((event.target as Element).closest("button,textarea,a,input,select,[role='menu'],[role='menuitem']"));
+      if (cardBodyClickSelects({ readOnly: !onContextSelect, clickCount: event.detail, down: clickDownRef.current, up: { x: event.clientX, y: event.clientY }, onControl })) clickControllerRef.current?.click();
+    }} onDoubleClick={() => clickControllerRef.current?.undo()}>
+      <div data-selected={contextSelected} data-marquee-preview={previewSelected} className="canvas-lab-card-paper h-full w-full rounded-[2px]">
       {state.status === "ready" && state.url ? (
         <img src={state.url} alt="" draggable={false} className="block h-full w-full rounded-[2px] select-none" onError={() => setState({ status: "failed", url: null })} />
       ) : (
@@ -185,10 +204,12 @@ function LabImageInner({ node, selected, layoutEditable, onSelect, onDragStart, 
           {state.status === "failed" ? <span>{BOARD_IMAGE_COPY.failed}</span> : null}
         </div>
       )}
+      </div>
       {selected && layoutEditable ? <div className="canvas-lab-text-block-controls" onPointerDown={(event) => event.stopPropagation()}>
         <Button type="button" size="sm" variant="ghost" onClick={onRemove}>{BOARD_IMAGE_COPY.remove}</Button>
       </div> : null}
       {selected && layoutEditable ? CORNERS.map((corner) => <button key={corner} type="button" className="canvas-lab-resize-handle" data-corner={corner} aria-label={`Resize image from ${corner}`} onPointerDown={(event) => onResizeStart(corner, event)} onKeyDown={(event) => onResizeKeyDown(corner, event)} onKeyUp={onResizeKeyUp} />) : null}
+      {onAnchorPointerDown && onAnchorActivate ? (["top", "right", "bottom", "left"] as LabAnchor[]).map((side) => <Button key={side} type="button" variant="ghost" size="icon" className="canvas-lab-anchor" data-node-id={node.id} data-side={side} data-active={connectSourceAnchor === side} aria-label={`Connect from ${side}`} onPointerDown={(event) => { anchorDownRef.current = { x: event.clientX, y: event.clientY }; onAnchorPointerDown(side, event); }} onClick={(event) => { event.stopPropagation(); const down = anchorDownRef.current; anchorDownRef.current = null; if (down && Math.hypot(event.clientX - down.x, event.clientY - down.y) >= 6) return; onAnchorActivate(side); }} />) : null}
     </section>
   );
 }

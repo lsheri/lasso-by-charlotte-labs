@@ -24,6 +24,15 @@ describe("B3 marquee", () => {
     expect(cardsInMarquee({ x: 0, y: 250, width: 20, height: 20 }, nodes, heights, ["gone"])).toEqual(["tall"]);
   });
 
+  it("picks an image card but not a sticky or answer", () => {
+    expect(cardsInMarquee({ x: 0, y: 0, width: 200, height: 200 }, [card("image", 10, 10, "image"), card("sticky", 10, 10, "sticky"), card("answer", 10, 10, "answer")])).toEqual(["image"]);
+  });
+
+  it("includes an image inside a workstream box in its members", () => {
+    const box = { x: 0, y: 0, width: 300, height: 300 };
+    expect(cardsInMarquee(box, [card("inside-image", 80, 80, "image"), card("outside-image", 400, 400, "image")])).toEqual(["inside-image"]);
+  });
+
   it("treats under 4px in both directions as a click", () => {
     expect(isMarqueeClick(marqueeRect({ x: 0, y: 0 }, { x: 3, y: 3 }))).toBe(true);
     expect(isMarqueeClick(marqueeRect({ x: 0, y: 0 }, { x: 4, y: 1 }))).toBe(false);

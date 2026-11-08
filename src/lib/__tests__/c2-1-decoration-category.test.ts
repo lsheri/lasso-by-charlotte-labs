@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { inboundLabNodeIds, type LabLink, type LabNode } from "@/components/canvas-lab/canvas-lab-model";
 import { validateLinkNodeKinds, validNodeInput, validNodeUpdate } from "@/lib/canvas-lab.server";
-import { WORKBOARD_NODE_KINDS, isWorkboardDecorationKind, type WorkboardNodeInput, type WorkboardNodeKind } from "@/lib/canvas-lab-shared";
+import { WORKBOARD_NODE_KINDS, isWorkboardAskReadableKind, isWorkboardDecorationKind, type WorkboardNodeInput, type WorkboardNodeKind } from "@/lib/canvas-lab-shared";
 import { placementRectsForNodes } from "@/lib/workboard-placement";
 
 describe("C2.1 decoration boundary", () => {
@@ -46,9 +46,14 @@ describe("C2.1 decoration boundary", () => {
       const links = [{ id: "link", fromId: "candidate", toId: "anchor", fromAnchor: "right", toAnchor: "left" }] as LabLink[];
 
       expect(isWorkboardDecorationKind(kind)).toBe(decoration);
-      expect(validateLinkNodeKinds([kind, "work_item"]) !== null).toBe(decoration);
+      expect(validateLinkNodeKinds([kind, "work_item"]) !== null).toBe(!isWorkboardAskReadableKind(kind));
       expect(placementRectsForNodes(nodes).some((rect) => rect.x === 0)).toBe(!decoration);
-      expect(inboundLabNodeIds(nodes, links, "anchor").has("candidate")).toBe(!decoration);
+      expect(inboundLabNodeIds(nodes, links, "anchor").has("candidate")).toBe(isWorkboardAskReadableKind(kind));
     }
+  });
+  it("allows image links while sticky links remain forbidden, regardless of endpoint order", () => {
+    expect(validateLinkNodeKinds(["image", "work_item"])).toBeNull();
+    expect(validateLinkNodeKinds(["sticky", "work_item"])).toBe("A sticky cannot be connected.");
+    expect(validateLinkNodeKinds(["image", "sticky"])).toBe("A sticky cannot be connected.");
   });
 });

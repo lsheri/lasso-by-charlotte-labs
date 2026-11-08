@@ -267,7 +267,6 @@ export function validateLinkNodeKinds(kinds: string[]): string | null {
   if (decorationKind === "text") return "A text block cannot be connected.";
   if (decorationKind === "mark") return "A mark cannot be connected.";
   if (decorationKind === "sticky") return "A sticky cannot be connected.";
-  if (decorationKind === "image") return "An image cannot be connected.";
   return null;
 }
 

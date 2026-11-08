@@ -1,4 +1,4 @@
-import { isWorkboardDecorationKind } from "@/lib/canvas-lab-shared";
+import { isWorkboardAskReadableKind } from "@/lib/canvas-lab-shared";
 
 /** B3: box-select on the board. Pure, so the rules can be tested alone. */
 export type MarqueePoint = { x: number; y: number };
@@ -51,7 +51,7 @@ export function cardsInMarquee(
   const right = rect.x + rect.width;
   const bottom = rect.y + rect.height;
   return nodes
-    .filter((node) => node.kind !== "answer" && !isWorkboardDecorationKind(node.kind as never) && !hiddenIds.includes(node.id))
+    .filter((node) => node.kind !== "answer" && isWorkboardAskReadableKind(node.kind) && !hiddenIds.includes(node.id))
     .filter((node) => {
       const height = measuredHeights?.get(node.id) ?? node.height;
       return node.x < right && node.x + node.width > rect.x && node.y < bottom && node.y + height > rect.y;
