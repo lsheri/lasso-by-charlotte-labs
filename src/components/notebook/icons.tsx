@@ -43,9 +43,10 @@ const ICONS: Record<GraphiteIconName, IconDef> = {
   more: { d: ["M4.1 10h.1M9.9 10.1h.1M15.8 9.9h.1"], sig: "nb-sig-wave" },
   /* TOOLBAR-2: a workstream joins its context (solid box, three joined dots); a section only marks an area (dashed box, name tab, empty). */
   workstream: { d: ["M5 3.2h10a1.8 1.8 0 011.8 1.8v10a1.8 1.8 0 01-1.8 1.8H5A1.8 1.8 0 013.2 15V5A1.8 1.8 0 015 3.2z", "M8.5 7h3M7.6 8.8l1.5 2.6M12.4 8.8l-1.5 2.6", "M6.6 6.4a.6.6 0 110 1.2.6.6 0 010-1.2zM13.4 6.4a.6.6 0 110 1.2.6.6 0 010-1.2zM10 12.6a.6.6 0 110 1.2.6.6 0 010-1.2z"], sig: "nb-sig-scuff", sigIndex: 1 },
-  section: { d: ["M10.2 5h2.3M14.8 5H17v2.3M17 9.7v1.6M17 13.7V17h-2.3M12.4 17h-1.8M8.3 17H3v-2.3M3 11.9v-1.6M3 7.9V6.6", "M3.6 2.9h4.3v2.3H3.6z"], sig: "nb-sig-flap", sigIndex: 0 },
-  /* TOOLBAR-7: you draw this boundary (solid rounded box, one corner drag handle). */
-  "draw-workstream": { d: ["M11.6 15H5a1.8 1.8 0 01-1.8-1.8V5A1.8 1.8 0 015 3.2h8.2A1.8 1.8 0 0115 5v6.6", "M13.4 13.4h3.4v3.4h-3.4z"], sig: "nb-sig-scuff", sigIndex: 1 },
+  /* ICON-1 (8 Nov, Liam): a section is just an area. Dashed landscape outline with a title line, nothing inside. */
+  section: { d: ["M2.6 6.4v-.8a1.2 1.2 0 011.2-1.2h.8M7.4 4.4h1.6M11 4.4h1.6M15.4 4.4h.8a1.2 1.2 0 011.2 1.2v.8M17.4 9.2v1.6M17.4 13.6v.8a1.2 1.2 0 01-1.2 1.2h-.8M12.6 15.6H11M9 15.6H7.4M4.6 15.6h-.8a1.2 1.2 0 01-1.2-1.2v-.8M2.6 10.8V9.2", "M5.6 7.8h3.6"], sig: "nb-sig-flap", sigIndex: 1 },
+  /* ICON-1 (8 Nov, Liam): a workstream holds work. A lane: a column with a header line holding two cards. */
+  "draw-workstream": { d: ["M6.4 2.8h7.2a1.8 1.8 0 011.8 1.8v10.8a1.8 1.8 0 01-1.8 1.8H6.4a1.8 1.8 0 01-1.8-1.8V4.6a1.8 1.8 0 011.8-1.8z", "M4.6 6.6h10.8", "M7.6 10h4.8M7.6 13.4h4.8"], sig: "nb-sig-scuff", sigIndex: 2 },
   /* TOOLBAR-7: Lasso finds the grouping (three loose dots, one open loop, no box). Static graphite only. */
   "suggest-workstreams": { d: ["M7.2 15.4c-3-1-4.6-3.9-3.5-6.6 1.3-3.2 5.7-4.7 9.3-3.5 3.4 1.2 4.8 4.3 3.1 6.9-1.2 1.9-3.6 3-6.3 3.1M9.8 15.3c-1.2.8-1.6 1.9-1 3", "M7.6 8.6a.6.6 0 110 1.2.6.6 0 010-1.2zM11.8 7.8a.6.6 0 110 1.2.6.6 0 010-1.2zM9.8 11.4a.6.6 0 110 1.2.6.6 0 010-1.2z"], sig: "nb-sig-pop", sigIndex: 1 },
 };
