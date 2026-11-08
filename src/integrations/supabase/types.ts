@@ -5529,6 +5529,7 @@ export type Database = {
         Row: {
           author_profile_id: string
           body: string
+          chat_session_id: string | null
           client_key: string | null
           created_at: string
           created_by: string
@@ -5554,6 +5555,7 @@ export type Database = {
         Insert: {
           author_profile_id: string
           body?: string
+          chat_session_id?: string | null
           client_key?: string | null
           created_at?: string
           created_by: string
@@ -5579,6 +5581,7 @@ export type Database = {
         Update: {
           author_profile_id?: string
           body?: string
+          chat_session_id?: string | null
           client_key?: string | null
           created_at?: string
           created_by?: string
