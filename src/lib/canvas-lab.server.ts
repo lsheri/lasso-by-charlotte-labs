@@ -28,7 +28,6 @@ import { isRegionFill, isRegionFrameId } from "@/lib/board-region";
 import { WORKBOARD_ANCHORS, WORKBOARD_CARD_DEFAULT_SIZE, WORKBOARD_JUDGMENT_TYPES, WORKBOARD_NODE_KINDS, WORKBOARD_RELATIONS, WORKBOARD_SHAPE_COLOURS, isWorkboardDecorationKind, parseWorkboardImageBody, parseWorkboardStickyBody, parseWorkboardTextBody, validWorkboardNodeGeometry } from "@/lib/canvas-lab-shared";
 import type { ResolvedProfile } from "@/lib/profile-resolve";
 import { validateAnswerBody } from "@/lib/answer-card";
-import { runAfterResponse } from "./background";
 
 type Db = SupabaseClient<Database>;
 type BoardRow = Database["public"]["Tables"]["workboards"]["Row"];
@@ -476,14 +475,8 @@ export async function applyWorkboardCommand(
     const frameId = command.node.frameKey ? await frameIdForKey(db, board.id, command.node.frameKey) : null;
     const saved = await insertNodeIdempotent(db, board.id, profile.id, command.node, frameId);
     if (!saved) return { status: "validation_error", message: "The card could not be saved." };
-    // IMG-2: an image is described once, after the response, so Ask can read it.
-    if (command.node.kind === "image") {
-      const nodeId = saved.id;
-      runAfterResponse(async () => {
-        const { describeBoardImage } = await import("./image-describe.server");
-        await describeBoardImage(nodeId);
-      });
-    }
+    // IMG-2b: the board asks for the description itself (describeBoardImageFn)
+    // right after this save; background work after the response never ran here.
     return { status: "saved", boardId: board.id, boardVersion: board.version, created: { nodeId: saved.id }, versions: { [saved.id]: saved.version } };
   }
 

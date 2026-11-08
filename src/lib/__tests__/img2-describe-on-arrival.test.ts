@@ -117,9 +117,21 @@ describe("IMG-2 describeBoardImage", () => {
   });
 });
 
-describe("IMG-2 wiring", () => {
-  it("a new image card is described after the response, never inline", () => {
+describe("IMG-2b wiring", () => {
+  it("node_create no longer relies on background work for images", () => {
     const server = readFileSync("src/lib/canvas-lab.server.ts", "utf8");
-    expect(server).toMatch(/if \(command\.node\.kind === "image"\) \{[\s\S]{0,200}runAfterResponse\(async \(\) => \{[\s\S]{0,160}describeBoardImage\(nodeId\)/);
+    expect(server).not.toMatch(/describeBoardImage\(|image-describe\.server/);
+  });
+  it("the board asks for a description after both image save paths", () => {
+    const page = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
+    expect(page.match(/requestImageDescription\(saved\.id\);/g)).toHaveLength(2);
+    expect(page).toMatch(/void describeImage\(\{ data: \{ node_id: nodeId \} \}\)\.catch\(\(\) => undefined\)/);
+  });
+  it("the describe request checks the caller can see the card before the server-only writer runs", () => {
+    const fns = readFileSync("src/lib/canvas-lab.functions.ts", "utf8");
+    const body = fns.slice(fns.indexOf("export const describeBoardImageFn"));
+    expect(body.indexOf('.from("workboard_nodes")')).toBeGreaterThan(-1);
+    expect(body.indexOf('.from("workboard_nodes")')).toBeLessThan(body.indexOf("describeBoardImage(data.node_id)"));
+    expect(body).toMatch(/requireSupabaseAuth/);
   });
 });

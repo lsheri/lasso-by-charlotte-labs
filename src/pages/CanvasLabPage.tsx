@@ -233,6 +233,7 @@ import { BoardFileDropOverlay, useBoardFileDrop } from "@/components/canvas-lab/
 import { LabImage, buildImageNodeInput, removeBoardImageObject } from "@/components/canvas-lab/board-image";
 import { CARD_HEIGHT, CARD_WIDTH, boardFrameRenders, bundleCountBand, chatBundles, dockBundles, dockedPieceChats, applyBundleViews, bundlePiecesBand, readBundleViews, workboardBundlesKey, writeBundleViews, type BundleView } from "@/components/canvas-lab/canvas-lab-model";
 import { placeWorkOnBoardFn } from "@/lib/workboard-add-work.functions";
+import { describeBoardImageFn } from "@/lib/canvas-lab.functions";
 import { placeAddedCards, placementRectsForFrames, placementRectsForNodes, type PlacementRect } from "@/lib/workboard-placement";
 import { briefAttachmentPoints, pendingBriefAttachments } from "@/lib/brief-files";
 import { addBriefFiles, removeBriefFile, useBriefFiles, useInvalidateBriefFiles } from "@/hooks/use-brief-files";
@@ -333,6 +334,11 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   }
   const queryClient = useQueryClient();
   const placeWork = useServerFn(placeWorkOnBoardFn);
+  const describeImage = useServerFn(describeBoardImageFn);
+  /** IMG-2b: ask for a saved image's description; the person never waits on it. */
+  function requestImageDescription(nodeId: string) {
+    void describeImage({ data: { node_id: nodeId } }).catch(() => undefined);
+  }
   const createDrawnWorkstream = useServerFn(createDrawnWorkstreamFn);
   const moveItemToWorkstream = useServerFn(moveItemToWorkstreamFn);
   const deleteWorkstreamCall = useServerFn(deleteWorkstreamFn);
@@ -3487,6 +3493,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       return false;
     }
     record({ action: "add_node", node: { ...(liveNode(id, node) ?? node), durableId: saved.id, durableVersion: saved.version } });
+    requestImageDescription(saved.id);
     setAnnouncement("Image added.");
     return true;
   }
@@ -3519,6 +3526,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       const live = liveNode(id, node) ?? node;
       const { imagePreviewUrl: _preview, ...rest } = live;
       record({ action: "add_node", node: { ...rest, imagePath: path, durableId: saved.id, durableVersion: saved.version } });
+      requestImageDescription(saved.id);
       setAnnouncement("Image added.");
       return true;
     };
