@@ -5557,6 +5557,9 @@ export type Database = {
           h: number
           hidden: boolean
           id: string
+          image_text: string | null
+          image_text_at: string | null
+          image_text_status: string | null
           judgment_type: string | null
           kind: string
           linked_item_removed_at: string | null
@@ -5583,6 +5586,9 @@ export type Database = {
           h?: number
           hidden?: boolean
           id?: string
+          image_text?: string | null
+          image_text_at?: string | null
+          image_text_status?: string | null
           judgment_type?: string | null
           kind: string
           linked_item_removed_at?: string | null
@@ -5609,6 +5615,9 @@ export type Database = {
           h?: number
           hidden?: boolean
           id?: string
+          image_text?: string | null
+          image_text_at?: string | null
+          image_text_status?: string | null
           judgment_type?: string | null
           kind?: string
           linked_item_removed_at?: string | null
