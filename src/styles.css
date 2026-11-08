@@ -5599,12 +5599,29 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   --sticky-pink: #f9dfe7; --sticky-pink-edge: #e2b1c1;
   --sticky-grey: #ededea; --sticky-grey-edge: #c7c8c2;
 }
-.canvas-lab-sticky { z-index: 2; --sticky-fill: var(--sticky-yellow); --sticky-edge: var(--sticky-yellow-edge); background: var(--sticky-fill); border: 1px solid var(--sticky-edge); border-radius: 3px; box-shadow: var(--shadow-card); padding: 10px 12px; }
+.canvas-lab-sticky { z-index: 2; --sticky-fill: var(--sticky-yellow); --sticky-edge: var(--sticky-yellow-edge); background: var(--sticky-fill); border: 1px solid var(--sticky-edge); border-radius: 6px; box-shadow: var(--shadow-card); padding: 10px 12px; }
 .canvas-lab-sticky[data-fill="green"] { --sticky-fill: var(--sticky-green); --sticky-edge: var(--sticky-green-edge); }
 .canvas-lab-sticky[data-fill="blue"] { --sticky-fill: var(--sticky-blue); --sticky-edge: var(--sticky-blue-edge); }
 .canvas-lab-sticky[data-fill="pink"] { --sticky-fill: var(--sticky-pink); --sticky-edge: var(--sticky-pink-edge); }
 .canvas-lab-sticky[data-fill="grey"] { --sticky-fill: var(--sticky-grey); --sticky-edge: var(--sticky-grey-edge); }
 .canvas-lab-sticky[data-selected="true"] { z-index: 40; outline: calc(2px * var(--lab-inverse-zoom, 1)) solid var(--nb-graphite); outline-offset: calc(1px * var(--lab-inverse-zoom, 1)); }
+/* STICKY-2: the sticky you are dragging off the toolbar, until it lands. */
+.canvas-lab-sticky-ghost { position: fixed; z-index: 80; pointer-events: none; --sticky-fill: var(--sticky-yellow); --sticky-edge: var(--sticky-yellow-edge); background: var(--sticky-fill); border: 1px solid var(--sticky-edge); border-radius: 6px; box-shadow: 0 18px 30px -14px rgba(10,10,10,.45); transform: rotate(-3deg); opacity: .95; }
+.canvas-lab-sticky-ghost[data-fill="green"] { --sticky-fill: var(--sticky-green); --sticky-edge: var(--sticky-green-edge); }
+.canvas-lab-sticky-ghost[data-fill="blue"] { --sticky-fill: var(--sticky-blue); --sticky-edge: var(--sticky-blue-edge); }
+.canvas-lab-sticky-ghost[data-fill="pink"] { --sticky-fill: var(--sticky-pink); --sticky-edge: var(--sticky-pink-edge); }
+.canvas-lab-sticky-ghost[data-fill="grey"] { --sticky-fill: var(--sticky-grey); --sticky-edge: var(--sticky-grey-edge); }
+/* STICKY-2 (F1): one slim ink bar above the note, Lasso style. */
+.canvas-lab-sticky-bar { gap: 2px; padding: 4px; border: 0; border-radius: 12px; background: var(--neutral-95); color: var(--neutral-05); box-shadow: 0 12px 24px -12px rgba(0,0,0,.45); white-space: nowrap; }
+.canvas-lab-sticky-bar button:not(.canvas-lab-sticky-swatch) { display: inline-flex; align-items: center; justify-content: center; height: 28px; min-width: 28px; padding: 0 7px; border: 0; border-radius: 8px; background: transparent; color: inherit; font: 600 12px var(--font-ui); cursor: pointer; }
+.canvas-lab-sticky-bar button:not(.canvas-lab-sticky-swatch):hover { background: color-mix(in srgb, var(--neutral-05) 14%, transparent); }
+.canvas-lab-sticky-bar button:not(.canvas-lab-sticky-swatch)[aria-pressed="true"] { background: color-mix(in srgb, var(--neutral-05) 22%, transparent); }
+.canvas-lab-sticky-bar button:focus-visible { outline: 2px solid var(--neutral-05); outline-offset: 1px; }
+.canvas-lab-sticky-bar .canvas-lab-sticky-swatches, .canvas-lab-sticky-bar .canvas-lab-sticky-sizes { display: inline-flex; align-items: center; gap: 2px; }
+.canvas-lab-sticky-bar .canvas-lab-sticky-swatch { width: 18px; min-width: 18px; height: 18px; margin: 0 3px; padding: 0; border-radius: 999px; cursor: pointer; }
+.canvas-lab-sticky-bar .canvas-lab-sticky-swatch[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--neutral-95), 0 0 0 3.5px var(--neutral-05); }
+.canvas-lab-sticky-bar .canvas-lab-sticky-bold { font-weight: 800; }
+.canvas-lab-sticky-bar-sep { width: 1px; height: 18px; margin: 0 4px; background: color-mix(in srgb, var(--neutral-05) 24%, transparent); }
 .canvas-lab-sticky textarea { width: 100%; height: 100%; resize: none; overflow-y: auto; border: 0; background: transparent; color: var(--nb-ink); font-family: var(--font-ui); line-height: 1.35; }
 .canvas-lab-sticky textarea:focus { outline: none; }
 .canvas-lab-sticky textarea::placeholder { color: var(--nb-faint); }

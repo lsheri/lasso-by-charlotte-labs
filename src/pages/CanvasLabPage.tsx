@@ -217,11 +217,11 @@ import { useMotion } from "@/hooks/use-motion";
 import { useProfile, useProfiles } from "@/hooks/use-profile";
 import { ownsWorkItem } from "@/lib/work-ownership";
 import { cardRemovable } from "@/lib/card-removable";
-import { cardContextCall } from "@/lib/card-click";
+import { cardContextCall, STICKY_DRAG_THRESHOLD_PX } from "@/lib/card-click";
 import { teammateMarkFor } from "@/lib/teammate-mark";
 import { dragTo, keyTo, type Point } from "@/lib/canvas-drag";
 import { filedWorkCount, groupingDragSnapshot, isRegionFrameId, moveGroupingContents, newRegionFrameId, regionClaimable, regionClaims, regionFillStyle, regionNameChange, regionToolAfterDraw, type GroupingDragMember, type RegionFill } from "@/lib/board-region";
-import { fitWorkboardImageSize, isWorkboardAskReadableKind, isWorkboardDecorationKind, serializeWorkboardStickyBody, serializeWorkboardTextBody, WORKBOARD_STICKY_DEFAULT_SIZE, WORKBOARD_MOVE_MANY_MAX, type WorkboardMoveEntry, type WorkboardCommand, type WorkboardNodeInput, type WorkboardRelation, type WorkboardTextBody, type WorkboardImageBody } from "@/lib/canvas-lab-shared";
+import { fitWorkboardImageSize, isWorkboardAskReadableKind, isWorkboardDecorationKind, serializeWorkboardStickyBody, serializeWorkboardTextBody, WORKBOARD_STICKY_DEFAULT_SIZE, WORKBOARD_MOVE_MANY_MAX, type WorkboardStickyFill, type WorkboardMoveEntry, type WorkboardCommand, type WorkboardNodeInput, type WorkboardRelation, type WorkboardTextBody, type WorkboardImageBody } from "@/lib/canvas-lab-shared";
 import { noteCanvasOpenedFn } from "@/lib/canvas.functions";
 import { clampZoom, scrollableUnder, stepZoom, wheelPanVector, workboardPinchZoom, zoomAbout } from "@/lib/canvas-zoom";
 import { needsHighlightForComment } from "@/lib/canvas-lab-annotations-shared";
@@ -956,6 +956,10 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   const nodesRef = useRef<LabNode[]>([]);
   nodesRef.current = allNodes;
   const framesRef = useRef<LabFrame[]>([]);
+  /** STICKY-2: new stickies take the last colour picked; a drag off the toolbar shows a ghost until it lands. */
+  const lastStickyFillRef = useRef<WorkboardStickyFill>("yellow");
+  const stickyDragOutRef = useRef(false);
+  const [stickyGhost, setStickyGhost] = useState<{ x: number; y: number } | null>(null);
   framesRef.current = boardFrames;
   const visibleAskNodesRef = useRef(visibleNodes);
   visibleAskNodesRef.current = visibleNodes;
@@ -3554,12 +3558,45 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     setAnnouncement("Text block added.");
   }
 
+  /** STICKY-2: drag a sticky off the toolbar to exactly where it should land; a click still drops one in the middle. */
+  function startStickyDragOut(event: React.PointerEvent<HTMLButtonElement>) {
+    if (event.button !== 0 || !canAddWork) return;
+    const from = { x: event.clientX, y: event.clientY };
+    let moved = false;
+    const move = (next: PointerEvent) => {
+      if (!moved && Math.hypot(next.clientX - from.x, next.clientY - from.y) < STICKY_DRAG_THRESHOLD_PX) return;
+      moved = true;
+      stickyDragOutRef.current = true;
+      setStickyGhost({ x: next.clientX, y: next.clientY });
+    };
+    const up = (next: PointerEvent) => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", cancel);
+      setStickyGhost(null);
+      if (!moved) return;
+      const rect = shellRef.current?.getBoundingClientRect();
+      const overTools = (document.elementFromPoint?.(next.clientX, next.clientY) as Element | null)?.closest(".canvas-lab-floating-tools, .canvas-lab-toolbar");
+      if (!rect || overTools || next.clientX < rect.left || next.clientX > rect.right || next.clientY < rect.top || next.clientY > rect.bottom) return;
+      void addSticky(boardPointFromScreen({ x: next.clientX - rect.left, y: next.clientY - rect.top }));
+    };
+    const cancel = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", cancel);
+      setStickyGhost(null);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", cancel);
+  }
+
   async function addSticky(at = boardPointFromScreen(viewportCentre()), text?: string): Promise<boolean> {
     const id = `sticky:${crypto.randomUUID()}`;
     const { width, height } = WORKBOARD_STICKY_DEFAULT_SIZE;
     const node: LabNode = {
       id, clientKey: id, kind: "sticky", frame: null, title: "Sticky", summary: text ?? "", typeLabel: "sticky",
-      ownership: "yours", textSize: "body", textWeight: "regular", textColour: "ink", stickyFill: "yellow", local: true,
+      ownership: "yours", textSize: "body", textWeight: "regular", textColour: "ink", stickyFill: lastStickyFillRef.current, local: true,
       x: Math.round(at.x - width / 2), y: Math.round(at.y - height / 2), width, height,
     };
     nodesRef.current = [...nodesRef.current, node];
@@ -3706,7 +3743,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     });
     toolbarItems.push({
       spec: { id: "add-sticky", width: 36, moveOrder: 6 },
-      row: <ToolbarIcon label="Sticky. Leave a short reminder on the board."><Button size="icon" variant="outline" aria-label="Sticky" data-toolbar-control="add-sticky" onClick={() => void addSticky()}><GraphiteIcon name="sticky" size={20} /></Button></ToolbarIcon>,
+      row: <ToolbarIcon label="Sticky. Drag one onto the board, or click to drop one in the middle."><Button size="icon" variant="outline" aria-label="Sticky" data-toolbar-control="add-sticky" onPointerDown={startStickyDragOut} onClick={() => { if (stickyDragOutRef.current) { stickyDragOutRef.current = false; return; } void addSticky(); }}><GraphiteIcon name="sticky" size={20} /></Button></ToolbarIcon>,
       menu: <DropdownMenuItem onSelect={() => void addSticky()}>Sticky</DropdownMenuItem>,
     });
     toolbarItems.push({
@@ -3777,6 +3814,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   return (
     <TooltipProvider delayDuration={250}>
     <div className="fixed inset-0 z-50 flex bg-[var(--nb-paper)]" data-testid="canvas-lab-shell" data-interaction={interaction === "idle" && connectSource ? "connect" : interaction}>
+      {stickyGhost ? <div aria-hidden="true" data-testid="sticky-drag-ghost" className="canvas-lab-sticky-ghost" data-fill={lastStickyFillRef.current} style={{ left: stickyGhost.x - (WORKBOARD_STICKY_DEFAULT_SIZE.width * zoom) / 2, top: stickyGhost.y - (WORKBOARD_STICKY_DEFAULT_SIZE.height * zoom) / 2, width: WORKBOARD_STICKY_DEFAULT_SIZE.width * zoom, height: WORKBOARD_STICKY_DEFAULT_SIZE.height * zoom }} /> : null}
       <aside className="z-30 flex w-[52px] shrink-0 flex-col items-center border-r border-border bg-card py-3">
         <LassoLoopMark className="h-7 w-7 text-lasso-green" />
         <div className="mt-2 hidden md:flex">
@@ -3842,7 +3880,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
             </svg>
             {visibleNodes.filter((node) => node.kind === "image").map((node) => <LabImage key={node.id} node={node} selected={keyboardId === node.id} contextSelected={selected.includes(node.id)} previewSelected={marqueePreview.includes(node.id)} connecting={connectSource !== null || connectorPreview !== null} connectSourceAnchor={connectSource?.nodeId === node.id ? connectSource.anchor : null} onContextSelect={(via) => { const call = cardContextCall(via); if (call.record) noteWorkboardContextChanged(orgId, call.record); if (!call.toggle) return; setAnnouncement(selected.includes(node.id) ? "Removed from context" : "Added to context"); setSelected((current) => { if (!current.includes(node.id)) flareNewContext([node.id], current); return toggleContext(current, node.id); }); }} onAnchorPointerDown={(side, event) => startPointerConnect(node, side, event)} onAnchorActivate={(side) => chooseConnectAnchor(node, side)} layoutEditable={boardEditable && Boolean(node.local)} onSelect={() => { setKeyboardId(node.id); setSelectedFrameId(null); setSelectedLinkId(null); }} onDragStart={(event) => onCardPointerDown(node, event)} onResizeStart={(corner, event) => startResize("image", node.id, corner, node, event)} onResizeKeyDown={(corner, event) => keyboardResize("image", node.id, corner, node, event)} onResizeKeyUp={finishKeyboardResize} onRemove={() => deleteNode(node)} />)}
             {visibleNodes.filter((node) => node.kind === "video").map((node) => <LabImage key={node.id} node={node} selected={keyboardId === node.id} previewSelected={marqueePreview.includes(node.id)} connecting={connectSource !== null || connectorPreview !== null} layoutEditable={boardEditable && Boolean(node.local)} onSelect={() => { setKeyboardId(node.id); setSelectedFrameId(null); setSelectedLinkId(null); }} onDragStart={(event) => onCardPointerDown(node, event)} onResizeStart={(corner, event) => startResize("video", node.id, corner, node, event)} onResizeKeyDown={(corner, event) => keyboardResize("video", node.id, corner, node, event)} onResizeKeyUp={finishKeyboardResize} onRemove={() => deleteNode(node)} />)}
-            {visibleNodes.filter((node) => node.kind === "sticky").map((node) => <LabSticky key={node.id} mentionCandidates={stickyMentionCandidates(mentionCandidates)} node={node} selected={keyboardId === node.id} editable={Boolean(node.local) && !offline} layoutEditable={boardEditable} onSelect={() => { setKeyboardId(node.id); setSelectedFrameId(null); setSelectedLinkId(null); }} onDragStart={(event) => onCardPointerDown(node, event)} onResizeStart={(corner, event) => startResize("sticky", node.id, corner, node, event)} onResizeKeyDown={(corner, event) => keyboardResize("sticky", node.id, corner, node, event)} onResizeKeyUp={finishKeyboardResize} onChange={(body) => setNodes((current) => current?.map((entry) => entry.id === node.id ? (() => { const { html, mentions, ...rest } = entry; return { ...rest, summary: body.text, ...(body.html !== undefined ? { html: body.html } : {}), ...(body.mentions !== undefined ? { mentions: body.mentions } : {}), textSize: body.size, textWeight: body.weight, textColour: body.colour, stickyFill: body.fill }; })() : entry) ?? current)} onCommit={(body) => { noteWorkboardNodeEdited(orgId, "sticky"); void persistNodePatch(node.id, { body: serializeWorkboardStickyBody(body) }); }} onRemove={() => deleteNode(node)} />)}
+            {visibleNodes.filter((node) => node.kind === "sticky").map((node) => <LabSticky key={node.id} mentionCandidates={stickyMentionCandidates(mentionCandidates)} node={node} selected={keyboardId === node.id} editable={Boolean(node.local) && !offline} layoutEditable={boardEditable} onSelect={() => { setKeyboardId(node.id); setSelectedFrameId(null); setSelectedLinkId(null); }} onDragStart={(event) => onCardPointerDown(node, event)} onResizeStart={(corner, event) => startResize("sticky", node.id, corner, node, event)} onResizeKeyDown={(corner, event) => keyboardResize("sticky", node.id, corner, node, event)} onResizeKeyUp={finishKeyboardResize} onChange={(body) => setNodes((current) => current?.map((entry) => entry.id === node.id ? (() => { const { html, mentions, ...rest } = entry; return { ...rest, summary: body.text, ...(body.html !== undefined ? { html: body.html } : {}), ...(body.mentions !== undefined ? { mentions: body.mentions } : {}), textSize: body.size, textWeight: body.weight, textColour: body.colour, stickyFill: body.fill }; })() : entry) ?? current)} onCommit={(body, field) => { if (field === "fill") lastStickyFillRef.current = body.fill; noteWorkboardNodeEdited(orgId, "sticky"); void persistNodePatch(node.id, { body: serializeWorkboardStickyBody(body) }); }} onRemove={() => deleteNode(node)} />)}
             {visibleNodes.filter((node) => node.kind === "text").map((node) => <LabTextBlock key={node.id} node={node} selected={keyboardId === node.id} editable={Boolean(node.local) && !offline} layoutEditable={boardEditable} onSelect={() => { setKeyboardId(node.id); setSelectedFrameId(null); setSelectedLinkId(null); }} onDragStart={(event) => onCardPointerDown(node, event)} onResizeStart={(corner, event) => startResize("text", node.id, corner, node, event)} onResizeKeyDown={(corner, event) => keyboardResize("text", node.id, corner, node, event)} onResizeKeyUp={finishKeyboardResize} onChange={(body) => setNodes((current) => current?.map((entry) => entry.id === node.id ? { ...entry, summary: body.text, ...(body.html !== undefined ? { html: body.html } : {}), textSize: body.size, textWeight: body.weight, textColour: body.colour } : entry) ?? current)} onCommit={(body: WorkboardTextBody) => { noteWorkboardNodeEdited(orgId, "text"); void persistNodePatch(node.id, { body: serializeWorkboardTextBody(body) }); }} onRemove={() => deleteNode(node)} />)}
             <LabBundleStackEdges nodes={visibleNodes} minimized={bundleView.minimized} vendorByChat={vendorByChat} />
             {visibleNodes.filter((node) => node.kind === "answer").map((node) => <LabAnswerCard key={node.id} node={node} orgId={orgId} onUnpin={unpinAnswer} onCommit={async (body) => {

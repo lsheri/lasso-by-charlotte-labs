@@ -9,7 +9,8 @@ Object.defineProperty(Range.prototype, "getClientRects", { configurable: true, v
 Object.defineProperty(Range.prototype, "getBoundingClientRect", { configurable: true, value: () => ({ left: 0, right: 0, top: 0, bottom: 0, width: 0, height: 0 }) });
 afterEach(cleanup);
 
-for (const kind of ["sticky", "text"] as const) {
+// STICKY-2 (8 Nov): the sticky moved to the always-visible slim bar (sticky2-format-bar.test.tsx); the pencil stays on text blocks.
+for (const kind of ["text"] as ("sticky" | "text")[]) {
   const Component = kind === "sticky" ? LabSticky : LabTextBlock;
   const removeLabel = kind === "sticky" ? "Remove sticky" : "Remove text block";
   function mount(summary = "Hello") {
