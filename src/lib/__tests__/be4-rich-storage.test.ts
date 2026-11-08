@@ -61,7 +61,8 @@ describe("BE-4 string body storage", () => {
     expect(sharedNodeBody("text", serializeWorkboardTextBody({ text: "Words", html: "<p>Words</p>", ...style }))).not.toContain("<");
     // Ask receives selected work-item IDs, not authored answer bodies. Do not introduce new context content.
     const ask = readFileSync("src/components/canvas-lab/BoardAsk.tsx", "utf8");
-    expect(ask).toContain("ask.setBoardSelection(props.boardContextHasPicks, inMapped)");
+    // IMG-3b: picked image card ids ride along; still ids only, never card text.
+    expect(ask).toContain("ask.setBoardSelection(props.boardContextHasPicks, inMapped, props.boardContextImageIds ?? [])");
     expect(ask).not.toContain(".body");
     expect(ask).not.toContain(".summary");
     const context = readFileSync("src/lib/reflect-context.server.ts", "utf8");
