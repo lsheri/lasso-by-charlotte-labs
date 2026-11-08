@@ -8438,6 +8438,11 @@ main[data-ask-lock] .canvas-lab-floating-tools-wrapper { left: calc(12px + var(-
 @keyframes ask-halo { 50% { box-shadow: 0 0 var(--halo-blur) var(--halo-spread) color-mix(in srgb, var(--ask-live) calc(var(--halo-bright) * 100%), transparent), 0 10px 28px color-mix(in oklab, var(--neutral-95) 7%, transparent); } }
 .ask-draft-b .ask-draft-head { height: 46px; border-bottom: 1px solid color-mix(in srgb, var(--nb-rule) 70%, transparent); background: var(--nb-white); }
 .ask-draft-b .ask-draft-title { font-family: var(--font-mono); font-size: 11.5px; font-weight: 500; letter-spacing: .22em; text-transform: uppercase; color: var(--nb-ink); }
+/* V2-1 (A1, behind ask-v2): unused, Ask is one slim row. Grip, mark, composer and close only; the scope line,
+   hints and tabs come back the moment you click into it. Height follows, because hidden parts are not measured. */
+.ask-draft[data-idle-bar="true"] .ask-draft-body > :not(.sticky) { display: none; }
+.ask-draft[data-idle-bar="true"] .ask-draft-head :is(.ask-draft-title, .ask-draft-pin, .ask-draft-new, [aria-label="History"]) { display: none; }
+.ask-draft[data-idle-bar="true"] .ask-draft-handoff-hint { display: none; }
 .ask-draft-mark { display: inline-flex; flex-shrink: 0; align-items: center; margin-right: 6px; color: var(--ask-mark); }
 .ask-draft-b .ask-reading-beads { display: none; }
 .ask-draft-pin { position: absolute; left: 50%; top: 7px; z-index: 2; display: grid; place-items: center; width: 32px; height: 32px; margin-left: -16px; border-radius: var(--radius-pill); color: var(--pin-off); }

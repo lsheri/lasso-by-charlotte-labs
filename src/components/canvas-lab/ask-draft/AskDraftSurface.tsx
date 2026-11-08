@@ -16,6 +16,7 @@ import { readAskHome, readAskPosition, readUnpinned, writeAskPosition, type AskD
 import { ASK_DOCK_CONFIG, DOCK_SPOTS, useAskDock, type DockId } from "@/lib/ask-dock-engine";
 import { HANDOFF_VENDORS, handoffPrompt, handoffUrl, readHandoffDestination, shouldNudge } from "@/lib/ask-handoff";
 import { Button } from "@/components/ui/button";
+import { flagEnabled } from "@/lib/feature-flags";
 
 function safeStore(): Storage | null {
   try { return window.localStorage; } catch { return null; }
@@ -68,6 +69,11 @@ export function AskDraftSurface(props: Props) {
   const [, setLinesShowing] = useState(false);
   const empty = props.tab === "messages" && (ask.messages ?? []).length === 0;
   const collapsed = empty || folded;
+  // V2-1 (A1, behind ask-v2): an unused Ask is one slim row until you click into it. Focus never primes the cache;
+  // priming stays on typing (onDraftChange -> shouldPrimeForDraft -> primeNow).
+  const askV2 = flagEnabled("ask-v2");
+  const [focusedIn, setFocusedIn] = useState(false);
+  const idleBar = askV2 && empty && !ask.pending && !focusedIn && !ask.error && !ask.pickerOpen;
   const dest = readHandoffDestination(props.engagementId, safeStore());
   const vendorLabel = HANDOFF_VENDORS.find((vendor) => vendor.id === dest.vendor)?.label ?? "Claude";
   const turns = (ask.messages ?? []).filter((m) => m.role === "assistant").length;
@@ -212,7 +218,7 @@ export function AskDraftSurface(props: Props) {
     return () => ro.disconnect();
   }, [refresh, ask.messages, props.tab]);
 
-  useLayoutEffect(() => { refresh(); }, [refresh, collapsed, folded, expanded]);
+  useLayoutEffect(() => { refresh(); }, [refresh, collapsed, folded, expanded, idleBar]);
 
   const place: DockId = dock.hover ?? dock.dock;
   const locked = place === "lock_left" || place === "lock_right";
@@ -297,7 +303,9 @@ export function AskDraftSurface(props: Props) {
         onPointerUp={dock.bind.onPointerUp}
         onPointerCancel={dock.bind.onPointerCancel}
         onWheel={(event) => event.stopPropagation()}
-        onFocusCapture={(event) => { if (event.target instanceof HTMLTextAreaElement) setFolded(false); }}
+        data-idle-bar={idleBar ? "true" : undefined}
+        onFocusCapture={(event) => { setFocusedIn(true); if (event.target instanceof HTMLTextAreaElement) setFolded(false); }}
+        onBlurCapture={(event) => { const next = event.relatedTarget as Node | null; if (!next || !event.currentTarget.contains(next)) setFocusedIn(false); }}
       >
         {showEdges ? <div {...edgeProps("top")} /> : null}
         <div className="ask-draft-head">
