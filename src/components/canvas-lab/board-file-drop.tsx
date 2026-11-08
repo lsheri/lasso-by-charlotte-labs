@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { useCaptureFiles } from "@/components/work/use-capture-files";
 import { useReducedMotion } from "@/hooks/use-motion";
 import type { Point } from "@/lib/canvas-drag";
-import { isBoardImageFile, readImageSize, removeBoardImageObject, uploadBoardImage } from "@/components/canvas-lab/board-image";
+import { BOARD_VIDEO_COPY, BOARD_VIDEO_MAX_BYTES, isBoardImageFile, isBoardVideoFile, readImageSize, readVideoSize, removeBoardImageObject, uploadBoardImage, uploadBoardVideo } from "@/components/canvas-lab/board-image";
 import type { WorkboardImageBody } from "@/lib/canvas-lab-shared";
 
 /** DD1-f: one uploaded image ready to become a board node. Resolves false when the node was not saved. */
@@ -55,14 +55,19 @@ export function useBoardFileDrop({
   place,
   placeImage,
   paintImage,
+  paintVideo,
   readSize = readImageSize,
+  readVideo = readVideoSize,
 }: {
   enabled: boolean;
   toBoard: (clientX: number, clientY: number) => Point;
   place: (ids: string[], at: Point) => Promise<void> | void;
   placeImage?: PlaceBoardImage;
   paintImage?: PaintBoardImage;
+  /** VID-1: a video lands as a playable card, never as captured work. */
+  paintVideo?: PaintBoardImage;
   readSize?: (file: File) => Promise<{ width: number; height: number }>;
+  readVideo?: (file: File) => Promise<{ width: number; height: number }>;
 }) {
   const { captureWithResult } = useCaptureFiles();
   const [over, setOver] = useState(false);
@@ -124,6 +129,20 @@ export function useBoardFileDrop({
     return saved;
   }, [placeImage, paintImage, readSize]);
 
+  /** VID-1: paint from the local file now, upload behind it, exactly like an image. */
+  const dropVideo = useCallback(async (file: File, at: Point): Promise<boolean> => {
+    if (!paintVideo) return false;
+    const size = await readVideo(file);
+    const painted = paintVideo({ previewUrl: URL.createObjectURL(file), naturalWidth: size.width, naturalHeight: size.height }, at);
+    let uploaded: string | null = null;
+    try { uploaded = await uploadBoardVideo(file); } catch { uploaded = null; }
+    if (!uploaded) { painted.discard(); return false; }
+    let ok = false;
+    try { ok = await painted.persist(uploaded); } catch { ok = false; painted.discard(); }
+    if (!ok) await removeBoardImageObject(uploaded);
+    return ok;
+  }, [paintVideo, readVideo]);
+
   /** PASTE-1: one path for dropped and pasted files. Applies the cap, keeps the busy guard. */
   const addFiles = useCallback(async (all: File[], at: Point, channel: "drop" | "paste"): Promise<{ added: number; failed: number }> => {
     if (!enabled || busy.current) return { added: 0, failed: 0 };
@@ -136,7 +155,9 @@ export function useBoardFileDrop({
     try {
       // Images never touch the capture path: no work item, no card, no inbox.
       const images = placeImage || paintImage ? files.filter(isBoardImageFile) : [];
-      const documents = files.filter((file) => !images.includes(file));
+      // VID-1: videos never touch the capture path either. Nothing is read from them.
+      const videos = paintVideo ? files.filter(isBoardVideoFile) : [];
+      const documents = files.filter((file) => !images.includes(file) && !videos.includes(file));
       if (documents.length > 0) {
         const { ids, failures } = await captureWithResult(documents, { channel });
         for (const failure of failures) toast.error(BOARD_FILE_DROP_COPY.failed(failure.name));
@@ -149,11 +170,18 @@ export function useBoardFileDrop({
         if (ok) added += 1;
         else { failed += 1; toast.error(BOARD_FILE_DROP_COPY.failed(file.name)); }
       }
+      for (const [index, file] of videos.entries()) {
+        const offset = (images.length + index) * 24;
+        if (file.size > BOARD_VIDEO_MAX_BYTES) { failed += 1; toast.error(BOARD_VIDEO_COPY.tooBig(file.name)); continue; }
+        const ok = await dropVideo(file, { x: at.x + offset, y: at.y + offset });
+        if (ok) added += 1;
+        else { failed += 1; toast.error(BOARD_FILE_DROP_COPY.failed(file.name)); }
+      }
     } finally {
       busy.current = false;
     }
     return { added, failed };
-  }, [enabled, place, placeImage, paintImage, captureWithResult, dropImage]);
+  }, [enabled, place, placeImage, paintImage, paintVideo, captureWithResult, dropImage, dropVideo]);
 
   const onDrop = useCallback((event: DragEvent<HTMLElement>) => {
     if (!isFileDrag(event.dataTransfer?.types)) return;

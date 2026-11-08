@@ -12,7 +12,7 @@
 import { clampMentions, parseMentions, serializeMentions, type Mention } from "@/lib/mention-shared";
 import { richToPlainText } from "@/lib/rich-text";
 
-export type WorkboardNodeKind = "brief" | "work_item" | "decision" | "judgment" | "draft" | "shape" | "text" | "mark" | "answer" | "sticky" | "image";
+export type WorkboardNodeKind = "brief" | "work_item" | "decision" | "judgment" | "draft" | "shape" | "text" | "mark" | "answer" | "sticky" | "image" | "video";
 export type WorkboardFrameKind = "foundation" | "task" | "decisions" | "outputs" | "custom" | "context";
 export type WorkboardAnchor = "top" | "right" | "bottom" | "left";
 export type WorkboardRelation = "informed" | "produced" | "revised" | "cited" | "context";
@@ -92,7 +92,17 @@ export type WorkboardTextBody = { text: string; size: WorkboardTextSize; weight:
  * connected, and are skipped by context selection, the marquee, region
  * membership and placement. A sticky is one of them.
  */
-const WORKBOARD_DECORATION_KINDS: readonly WorkboardNodeKind[] = ["shape", "text", "mark", "sticky", "image"];
+const WORKBOARD_DECORATION_KINDS: readonly WorkboardNodeKind[] = ["shape", "text", "mark", "sticky", "image", "video"];
+
+/**
+ * VID-1: images and videos are media cards: a file in work-files plus a
+ * rectangle that keeps the file's shape. Only images are read (described);
+ * a video is never read, so it stays a plain decoration for Ask and links.
+ */
+export type WorkboardMediaKind = "image" | "video";
+export function isWorkboardMediaKind(kind: string | undefined): kind is WorkboardMediaKind {
+  return kind === "image" || kind === "video";
+}
 
 export function isWorkboardDecorationKind(kind: string): kind is WorkboardNodeKind {
   return WORKBOARD_DECORATION_KINDS.includes(kind as WorkboardNodeKind);
@@ -154,7 +164,7 @@ export function serializeWorkboardTextBody(body: WorkboardTextBody): string {
 export function validWorkboardNodeGeometry(node: { kind?: WorkboardNodeKind; x?: number; y?: number; w?: number; h?: number }): boolean {
   const values = [node.x, node.y, node.w, node.h].filter((value): value is number => value !== undefined);
   if (!values.every(Number.isFinite)) return false;
-  if (node.kind === "image") {
+  if (isWorkboardMediaKind(node.kind)) {
     if (node.w !== undefined && (node.w < WORKBOARD_IMAGE_MIN_SIZE || node.w > WORKBOARD_IMAGE_MAX_SIZE)) return false;
     return node.h === undefined || (node.h >= WORKBOARD_IMAGE_MIN_SIZE && node.h <= WORKBOARD_IMAGE_MAX_SIZE);
   }
@@ -328,7 +338,7 @@ export const WORKBOARD_ANCHORS: WorkboardAnchor[] = ["top", "right", "bottom", "
  * writes a shape again; the kind stays in the type only so old code paths
  * still read, and the server refuses it the way it refuses a mark.
  */
-export const WORKBOARD_NODE_KINDS: WorkboardNodeKind[] = ["brief", "work_item", "decision", "judgment", "draft", "text", "mark", "answer", "sticky", "image"];
+export const WORKBOARD_NODE_KINDS: WorkboardNodeKind[] = ["brief", "work_item", "decision", "judgment", "draft", "text", "mark", "answer", "sticky", "image", "video"];
 export const WORKBOARD_JUDGMENT_TYPES: WorkboardJudgmentType[] = [
   "added_constraint",
   "corrected_ai",
