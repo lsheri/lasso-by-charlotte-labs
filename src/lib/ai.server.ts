@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 
 import { logHealth } from "./health.server";
+import type { Environment } from "./environment-shared";
 
 export type AiErrorClass =
   | "rate_limit"
@@ -174,6 +175,11 @@ export type AiMeta = {
   orgId?: string | null | undefined;
   orgName?: string | null | undefined;
   actorHash?: string | null | undefined;
+  /**
+   * AUDIT-4 Q8: how the answer's context was assembled, for cost per question
+   * by mode. Only Ask answers set it; prime, intent and extract leave it null.
+   */
+  contextMode?: "inline" | "catalogue" | null | undefined;
 };
 
 export type ChatResult = {
@@ -380,11 +386,18 @@ async function safeLogHealth(input: Parameters<typeof logHealth>[0]): Promise<vo
 }
 
 /** The row S8 writes. Exported so the guard test can assert its keys. */
-export function aiUsageRow(result: ChatResult, meta: AiMeta | undefined) {
+export function aiUsageRow(
+  result: ChatResult,
+  meta: AiMeta | undefined,
+  environment: Environment = "unknown",
+) {
   return {
     org_id: meta?.orgId ?? null,
     profile_id: meta?.profileId ?? null,
     surface: meta?.surface ?? "unknown",
+    // AUDIT-4 Q8: see resolveUsageEnvironment; "unknown" outside a request.
+    environment,
+    context_mode: meta?.contextMode ?? null,
     model: result.model,
     tokens_in: result.tokensIn,
     cached_in: result.cachedIn,
@@ -406,9 +419,24 @@ export function aiUsageRow(result: ChatResult, meta: AiMeta | undefined) {
  * actor hash, no user id, no org name and no text of any kind.
  * unitS8-ai-usage.test.ts asserts that stays true.
  */
+/**
+ * AUDIT-4 Q8: the world the call served, read from the request host the same
+ * way every event is. Loaded lazily because the header reader is server-only
+ * and this module is also imported by client-side tests.
+ */
+export async function resolveUsageEnvironment(): Promise<Environment> {
+  try {
+    const { resolveEnvironment } = await import("./environment.server");
+    return resolveEnvironment();
+  } catch {
+    return "unknown";
+  }
+}
+
 export async function recordUsage(result: ChatResult, meta: AiMeta | undefined): Promise<void> {
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const environment = await resolveUsageEnvironment();
     if (meta?.orgId) {
       const orgId = meta.orgId;
       // Detached from accounting and the AI response; the existing mirror preserves dims exactly.
@@ -429,6 +457,7 @@ export async function recordUsage(result: ChatResult, meta: AiMeta | undefined):
               cached_in: result.cachedIn,
               duration_ms: result.durationMs,
               finish_reason: result.finishReason,
+              ...(meta.contextMode ? { context_mode: meta.contextMode } : {}),
             },
           });
         } catch {
@@ -437,7 +466,7 @@ export async function recordUsage(result: ChatResult, meta: AiMeta | undefined):
       })();
     }
     const db = supabaseAdmin as unknown as { from: (t: string) => any };
-    await db.from("ai_usage").insert(aiUsageRow(result, meta));
+    await db.from("ai_usage").insert(aiUsageRow(result, meta, environment));
   } catch {
     // Accounting must never surface as a failure in front of someone.
   }
