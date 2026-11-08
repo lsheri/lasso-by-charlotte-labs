@@ -43,7 +43,15 @@ export type ScopeMode = (typeof SCOPE_MODES)[number];
  * workstreams keeps its board so the record index can list the rest of that
  * board as not read. Optional and additive; older sessions carry none.
  */
-export type ContextScope = { mode: ScopeMode; ids: string[]; board?: string };
+/**
+ * IMG-3: `images` names board image cards (workboard_nodes ids) picked for this
+ * ask. Ask reads their stored AI description, never the image. Optional and
+ * additive: a scope without it reads exactly as before.
+ */
+export type ContextScope = { mode: ScopeMode; ids: string[]; board?: string; images?: string[] };
+
+/** IMG-3: at most this many picked images ride in one scope. */
+export const MAX_SCOPE_IMAGES = 50;
 
 export const SCOPE_SOURCES = [
   "board_pick",
@@ -62,7 +70,7 @@ export function parseScopeSource(value: unknown): ScopeSource {
 export const DEFAULT_SCOPE: ContextScope = { mode: "whole", ids: [] };
 
 export function parseScope(value: unknown): ContextScope {
-  const raw = (value ?? {}) as { mode?: unknown; ids?: unknown; board?: unknown };
+  const raw = (value ?? {}) as { mode?: unknown; ids?: unknown; board?: unknown; images?: unknown };
   const mode = (SCOPE_MODES as readonly string[]).includes(String(raw.mode))
     ? (raw.mode as ScopeMode)
     : "whole";
@@ -71,7 +79,11 @@ export function parseScope(value: unknown): ContextScope {
     : [];
   if (mode === "whole") return DEFAULT_SCOPE;
   const board = typeof raw.board === "string" && raw.board ? raw.board : undefined;
-  return board ? { mode, ids, board } : { mode, ids };
+  const images = Array.isArray(raw.images)
+    ? [...new Set(raw.images.filter((id): id is string => typeof id === "string" && id.length > 0))].slice(0, MAX_SCOPE_IMAGES)
+    : [];
+  const base: ContextScope = board ? { mode, ids, board } : { mode, ids };
+  return images.length > 0 ? { ...base, images } : base;
 }
 
 export function scopeLabel(scope: ContextScope): string {

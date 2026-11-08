@@ -65,7 +65,12 @@ describe("BE-4 string body storage", () => {
     expect(ask).not.toContain(".body");
     expect(ask).not.toContain(".summary");
     const context = readFileSync("src/lib/reflect-context.server.ts", "utf8");
-    expect(context).not.toContain("workboard_nodes");
+    // IMG-3: the one exception. Ask reads board cards only for an image's stored
+    // AI description, never a card's body, title or markup.
+    const nodeReads = context.match(/from\("workboard_nodes"\)\.select\([^)]*\)/g) ?? [];
+    expect(nodeReads.length).toBeGreaterThan(0);
+    for (const read of nodeReads) expect(read).toBe('from("workboard_nodes").select(columns)');
+    expect(context).toContain('const columns = "id, image_text, image_text_status";');
   });
 
   it("keeps mention records off the public board body", () => {
