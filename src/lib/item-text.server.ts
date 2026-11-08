@@ -170,8 +170,9 @@ async function writeCache(item: TextItem, hash: string, result: ItemTextResult):
 /** One health row per unreadable file, always carrying the work item id. */
 async function reportUnread(item: TextItem, result: ItemTextResult, shape: string): Promise<void> {
   if (result.status === "ok") return;
-  const { logHealth } = await import("@/lib/health.server");
-  await logHealth({
+  const { logHealthOncePerDay } = await import("@/lib/health.server");
+  // AUDIT-1: one row per item per day, not one per read.
+  await logHealthOncePerDay(`item_text:${item.id}:${result.status}:${result.reason ?? ""}`, {
     kind: result.status === "failed" ? "error" : "empty_context",
     surface: "item_text",
     detail: result.reason ?? result.status,

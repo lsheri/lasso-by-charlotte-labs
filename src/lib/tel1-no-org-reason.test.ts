@@ -30,6 +30,7 @@ describe("TEL-1: no_org skip reason", () => {
     expect(inserts).toHaveLength(1);
     expect(inserts[0]!["egress_skipped_reason"]).toBe("no_org");
     expect(inserts[0]!["workspace_type"]).toBe("none");
-    expect(inserts[0]!["dims"]).toEqual({ src: "front_door" });
+    // AUDIT-1: an unknown environment carries a bucketed host_class; outside a request it is "none".
+    expect(inserts[0]!["dims"]).toEqual({ src: "front_door", host_class: "none" });
   });
 });

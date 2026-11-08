@@ -35,3 +35,30 @@ export function environmentFromHost(host: string | null | undefined): Environmen
   if (LOCAL_HOSTS.includes(value)) return "local";
   return "unknown";
 }
+
+/**
+ * AUDIT-1 (7 Nov 2026): which kind of host produced a request, as a closed
+ * bucket. Stamped as the host_class dim only when environmentFromHost says
+ * "unknown", so the next audit can see why instead of inferring it. Never the
+ * host itself: a bucket name cannot carry a tenant, a path or a person.
+ */
+export const HOST_CLASSES = [
+  "lovable_project", // *.lovableproject.com, the editor's own preview pane
+  "lovable_app", // *.lovable.app, would have been preview
+  "charlotte_labs", // another charlotte-labs.com host
+  "loopback", // localhost or 127.0.0.1
+  "none", // no host header at all
+  "other",
+] as const;
+
+export type HostClass = (typeof HOST_CLASSES)[number];
+
+export function hostClassFromHost(host: string | null | undefined): HostClass {
+  const value = parseHost(host);
+  if (!value) return "none";
+  if (value === "lovableproject.com" || value.endsWith(".lovableproject.com")) return "lovable_project";
+  if (value === PREVIEW_SUFFIX || value.endsWith(`.${PREVIEW_SUFFIX}`)) return "lovable_app";
+  if (value === "charlotte-labs.com" || value.endsWith(".charlotte-labs.com")) return "charlotte_labs";
+  if (LOCAL_HOSTS.includes(value)) return "loopback";
+  return "other";
+}

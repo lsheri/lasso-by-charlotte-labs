@@ -58,3 +58,37 @@ export async function logHealth(input: HealthInput): Promise<void> {
     console.error("[health] log failed:", (e as Error).message);
   }
 }
+
+/**
+ * AUDIT-1 (7 Nov 2026): the same unreadable item was logged on every read
+ * (94 of 164 empty_context rows in one week came from four items), which
+ * drowned the health channel. One row per key per UTC day; the key is a
+ * reason code plus an item id, never text. Process-local on purpose: a second
+ * server instance may write a second row, and that is cheaper than a table.
+ */
+const loggedToday = new Map<string, string>();
+const LOGGED_TODAY_CAP = 5000;
+
+function utcDay(now: number): string {
+  return new Date(now).toISOString().slice(0, 10);
+}
+
+/** True the first time a key is seen on a given UTC day, false after that. */
+export function healthFirstToday(key: string, now: number = Date.now()): boolean {
+  const day = utcDay(now);
+  if (loggedToday.get(key) === day) return false;
+  if (loggedToday.size >= LOGGED_TODAY_CAP) loggedToday.clear();
+  loggedToday.set(key, day);
+  return true;
+}
+
+/** Test seam. */
+export function resetHealthDedupe(): void {
+  loggedToday.clear();
+}
+
+/** logHealth, at most once per key per UTC day. */
+export async function logHealthOncePerDay(key: string, input: HealthInput): Promise<void> {
+  if (!healthFirstToday(key)) return;
+  await logHealth(input);
+}

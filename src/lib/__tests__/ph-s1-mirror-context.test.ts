@@ -60,6 +60,9 @@ afterEach(() => vi.unstubAllGlobals());
 describe("PH-S1 mirror context", () => {
   it("signed-in mirror carries context, geoip off, no $ip, dims unchanged", async () => {
     headers["cf-connecting-ip"] = "1.2.3.4";
+    // AUDIT-1 (7 Nov 2026): the server path now runs the allowlist, so an
+    // unlisted key ("mode" is not a dim of invite.blocked) is dropped before
+    // the mirror. The caller's object is still left untouched.
     const dims = { state: "x", mode: "sync" };
     await recordEvent(fakeSupabase("t2"), {
       eventType: "invite.blocked",
@@ -80,7 +83,7 @@ describe("PH-S1 mirror context", () => {
     expect(b.distinct_id).toBe("u1");
     expect(p.$process_person_profile).toBe(true);
     expect(p.state).toBe("x");
-    expect(p.mode).toBe("sync");
+    expect("mode" in p).toBe(false);
     expect(dims).toEqual({ state: "x", mode: "sync" });
   });
 

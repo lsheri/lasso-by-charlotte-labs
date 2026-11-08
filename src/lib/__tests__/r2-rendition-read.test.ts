@@ -22,7 +22,7 @@ vi.mock("@/integrations/supabase/client.server", () => ({
     from: () => ({ update: () => ({ eq: async () => ({ error: null }) }) }),
   },
 }));
-vi.mock("@/lib/health.server", () => ({ logHealth }));
+vi.mock("@/lib/health.server", () => ({ logHealth, logHealthOncePerDay: logHealth }));
 
 import { getItemText, type TextItem } from "@/lib/item-text.server";
 import {
