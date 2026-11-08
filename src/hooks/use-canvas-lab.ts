@@ -51,6 +51,9 @@ export function useCanvasLab(engagementId: string, profileId: string | undefined
   const mutateFn = useServerFn(mutateCanvasLabBoardFn);
   const [saveState, setSaveState] = useState<WorkboardSaveState>({ status: "idle" });
   const boardRef = useRef<WorkboardDto | null>(null);
+  /** LIVE-1: saves in flight and when the last one settled, so a live refresh never lands mid-save. */
+  const inFlightRef = useRef(0);
+  const settledAtRef = useRef(0);
 
   const query = useQuery(canvasLabBoardQuery(engagementId, profileId));
   if (query.data && boardRef.current !== query.data) boardRef.current = query.data;
@@ -59,10 +62,14 @@ export function useCanvasLab(engagementId: string, profileId: string | undefined
     async (command: WorkboardCommand): Promise<WorkboardClientResult> => {
       setSaveState({ status: "saving" });
       let result: WorkboardClientResult;
+      inFlightRef.current += 1;
       try {
         result = (await mutateFn({ data: { engagement_id: engagementId, command, ...(profileId ? { profile_id: profileId } : {}) } })) as WorkboardMutationResult;
       } catch {
         result = { status: "network_error", message: "Could not reach the record." };
+      } finally {
+        inFlightRef.current = Math.max(0, inFlightRef.current - 1);
+        settledAtRef.current = Date.now();
       }
       if (result.status === "saved") {
         setSaveState({ status: "saved" });
@@ -87,11 +94,15 @@ export function useCanvasLab(engagementId: string, profileId: string | undefined
 
   /** Read the durable board again, so a reconcile sees every entity kind. */
   const refresh = useCallback(async (): Promise<WorkboardDto | null> => {
-    const fresh = (await queryClient.fetchQuery(canvasLabBoardQuery(engagementId, profileId))) as WorkboardDto | null;
+    // Always a fresh read: a cached copy up to 10 seconds old is exactly the stale board this exists to replace.
+    const fresh = (await queryClient.fetchQuery({ ...canvasLabBoardQuery(engagementId, profileId), staleTime: 0 })) as WorkboardDto | null;
     boardRef.current = fresh;
     return fresh;
   }, [engagementId, profileId, queryClient]);
 
-  return { board: query.data ?? null, boardLoading: query.isLoading, saveState, persist, clearSaveState, refresh, orgId };
+  /** LIVE-1: true while a save is in flight or just settled (a group move saves one row after another). */
+  const isSaving = useCallback((quietMs = 400) => inFlightRef.current > 0 || Date.now() - settledAtRef.current < quietMs, []);
+
+  return { board: query.data ?? null, boardLoading: query.isLoading, saveState, persist, clearSaveState, refresh, isSaving, orgId };
 }
 

@@ -147,6 +147,7 @@ import {
 import {
   noteWorkboardChangeSaved,
   noteWorkboardConflictResolved,
+  noteWorkboardLiveApplied,
   noteWorkboardElementResized,
   noteWorkboardNodeCreated,
   noteWorkboardAskView,
@@ -230,6 +231,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { grownDatesByItem } from "@/lib/push-boundary";
 import { AddWorkPanel, type AddWorkSource } from "@/components/canvas-lab/AddWorkPanel";
 import { BoardFileDropOverlay, useBoardFileDrop } from "@/components/canvas-lab/board-file-drop";
+import { boardRowIds, knownVersions, liveBoardChanged, useBoardLive, type BoardLiveTrigger } from "@/components/canvas-lab/board-live";
 import { BOARD_VIDEO_HANDLE_HEIGHT, LabImage, buildImageNodeInput, removeBoardImageObject } from "@/components/canvas-lab/board-image";
 import { CARD_HEIGHT, CARD_WIDTH, boardFrameRenders, bundleCountBand, chatBundles, dockBundles, dockedPieceChats, applyBundleViews, bundlePiecesBand, readBundleViews, workboardBundlesKey, writeBundleViews, type BundleView } from "@/components/canvas-lab/canvas-lab-model";
 import { placeWorkOnBoardFn } from "@/lib/workboard-add-work.functions";
@@ -594,6 +596,8 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   const viewedPreviewIdsRef = useRef(new Set<string>());
   /** The deterministic virtual seed a durable board is overlaid onto. */
   const virtualBaseRef = useRef<{ frames: LabFrame[]; nodes: LabNode[] } | null>(null);
+  /** LIVE-1: every row id in the board read the canvas was last built from. */
+  const seenRowIdsRef = useRef<Set<string>>(new Set());
 
 
   useEffect(() => {
@@ -619,6 +623,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     const board = lab.board;
 
     if (board?.id) {
+      seenRowIdsRef.current = boardRowIds(board);
       const merged = applyDurableBoard({ frames: virtualFrames, nodes: virtualNodes }, board);
       setFrames(merged.frames);
       setNodes(claimMyWork(merged.nodes, myProfileIds, workOwners(board)));
@@ -992,6 +997,16 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   /** Coaches read the board, so nothing they do lands on an undo stack. */
   const canArrangeRef = useRef(true);
   canArrangeRef.current = lab.board?.canEditStructure !== false;
+  const interactionRef = useRef(interaction);
+  interactionRef.current = interaction;
+  /** LIVE-1: the open board follows every saved change, wherever it came from. */
+  useBoardLive({
+    boardId: lab.board?.id ?? null,
+    enabled: Boolean(lab.board?.id) && nodes !== null,
+    known: () => knownVersions(nodesRef.current, framesRef.current, linksRef.current),
+    isBusy: () => liveBusy(),
+    refresh: (trigger) => applyLiveBoard(trigger),
+  });
 
   /** Put one arranging step on the stack. A new step clears the redo side. */
   function record(entry: UndoEntryDraft): UndoEntry | null {
@@ -1436,6 +1451,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       lab.clearSaveState();
       return false;
     }
+    seenRowIdsRef.current = boardRowIds(fresh);
     const merged = applyDurableBoard(base, fresh);
     const localOnly = (nodesRef.current ?? []).filter((entry) => !entry.durableId && (entry.kind === "chat" || (entry.local && entry.kind !== "judgment")));
     setFrames(merged.frames);
@@ -1449,6 +1465,48 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     setUndoToast(null);
     lab.clearSaveState();
     return true;
+  }
+
+  /**
+   * LIVE-1: re-read the board and reapply it only when a saved row moved
+   * somewhere else (another tab, device, teammate or Lasso). Unlike Load
+   * latest it keeps undo, the undo toast, link selection and the save state.
+   */
+  async function applyLiveBoard(trigger: BoardLiveTrigger): Promise<boolean> {
+    const fresh = await lab.refresh();
+    const base = virtualBaseRef.current;
+    if (!fresh?.id || !base) return false;
+    const before = knownVersions(nodesRef.current, framesRef.current, linksRef.current);
+    if (!liveBoardChanged(fresh, before, seenRowIdsRef.current)) return false;
+    // Checked again after the read: a gesture or save may have started while it was in flight.
+    if (liveBusy()) return false;
+    const seenBefore = seenRowIdsRef.current;
+    seenRowIdsRef.current = boardRowIds(fresh);
+    const merged = applyDurableBoard(base, fresh);
+    const localOnly = nodesRef.current.filter((entry) => !entry.durableId && (entry.kind === "chat" || (entry.local && entry.kind !== "judgment")));
+    const refreshedNodes = [...claimMyWork(merged.nodes, myProfileIds, workOwners(fresh)), ...localOnly];
+    nodesRef.current = refreshedNodes;
+    setFrames(merged.frames);
+    setNodes(refreshedNodes);
+    setLinks(merged.links);
+    setHiddenIds(merged.hiddenIds);
+    // New work placed elsewhere needs its card content, which the page reads separately.
+    if (fresh.nodes.some((row) => row.kind === "work_item" && !seenBefore.has(row.id))) {
+      void queryClient.invalidateQueries({ queryKey: ["engagement-page", engagementId] });
+      void queryClient.invalidateQueries({ queryKey: ["work-items"] });
+    }
+    noteWorkboardLiveApplied(orgId, trigger);
+    return true;
+  }
+
+  /** LIVE-1: never move the board under someone's hand, mid-save, or while a conflict waits for an answer. */
+  function liveBusy(): boolean {
+    if (interactionRef.current !== "idle" || drawingRef.current !== null) return true;
+    if (lab.isSaving() || lab.saveState.status === "conflict") return true;
+    const shell = shellRef.current;
+    if (shell?.querySelector("[data-editing='true']")) return true;
+    const active = typeof document === "undefined" ? null : document.activeElement;
+    return Boolean(active && shell?.contains(active) && isTypingTarget(active) && active.closest("[data-node-id], [data-testid^='sticky-'], [data-testid^='text-'], [data-frame-id]"));
   }
 
   /** Retry the exact failed change, or go back to the last saved version. */
