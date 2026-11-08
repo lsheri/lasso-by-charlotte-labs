@@ -290,3 +290,29 @@ export const archiveCommentFn = createServerFn({ method: "POST" })
     const { archiveComment } = await import("@/lib/canvas-lab-annotations.server");
     return archiveComment(supabase, profile, data.id, data.expected_version);
   });
+
+/**
+ * IMG-2b (8 Nov): describe one board image, finishing before the reply.
+ * The board calls this right after an image card saves. It replaces the
+ * runAfterResponse hook in node_create, which never ran on this host (3 of 3
+ * images dropped on 8 Nov were never described). The caller must be able to
+ * see the card through their own client (RLS) before the server-only writer runs.
+ */
+export const describeBoardImageFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { node_id: string }) => ({
+    node_id: typeof input?.node_id === "string" ? input.node_id : "",
+  }))
+  .handler(async ({ data, context }): Promise<{ status: string }> => {
+    if (!data.node_id) return { status: "not_found" };
+    const { supabase } = context;
+    const { data: visible } = await supabase
+      .from("workboard_nodes")
+      .select("id")
+      .eq("id", data.node_id)
+      .eq("kind", "image")
+      .maybeSingle();
+    if (!visible) return { status: "not_found" };
+    const { describeBoardImage } = await import("@/lib/image-describe.server");
+    return { status: await describeBoardImage(data.node_id) };
+  });
