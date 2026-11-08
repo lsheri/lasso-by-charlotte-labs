@@ -17,7 +17,7 @@ vi.mock("@/components/rich-text/RichTextEditor", () => ({
   ),
 }));
 
-import { clickStartsTyping, EDIT_COPY, LabAnswerCard, PIN_DRAG_THRESHOLD_PX } from "@/components/canvas-lab/LabAnswerCard";
+import { clickStartsTyping, PIN_EDIT_COPY as EDIT_COPY, LabAnswerCard, PIN_DRAG_THRESHOLD_PX } from "@/components/canvas-lab/LabAnswerCard";
 import { PIN_TIP_COPY, PIN_TIP_KEY, resetPinTip } from "@/components/canvas-lab/PinEditTip";
 import type { LabNode } from "@/components/canvas-lab/canvas-lab-model";
 
@@ -136,6 +136,13 @@ describe("PIN-1 P4 one-time tip", () => {
     render(<><LabAnswerCard {...props()} /><LabAnswerCard {...props({ node: { ...node, id: "n2", chatSessionId: "s2" } as unknown as LabNode })} /></>);
     await screen.findAllByTestId("pin-edit-tip");
     expect(screen.getAllByTestId("pin-edit-tip")).toHaveLength(1);
+  });
+});
+
+describe("PIN-1 copy", () => {
+  it("plain words, no em dash, no watching words", () => {
+    expect(Object.values(EDIT_COPY).join(" ")).not.toMatch(/—|\b(score|monitor|track|surveillance|analytics)\b/i);
+    expect(PIN_TIP_COPY.text).not.toMatch(/—/);
   });
 });
 

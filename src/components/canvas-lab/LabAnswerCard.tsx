@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const RichTextEditor = lazy(() => import("@/components/rich-text/RichTextEditor"));
-export const EDIT_COPY = { editing: "Editing", done: "Done", cancel: "Cancel", viewOnly: "View only", edit: "Edit", seeOriginal: "See original", hideOriginal: "Hide original", original: "Original answer", editedYou: "Edited by you", editedBy: "Edited by", saveError: "Could not save your last change." };
+export const EDIT_COPY = { edit: "Edit", seeOriginal: "See original", hideOriginal: "Hide original", original: "Original answer", editedYou: "Edited by you", editedBy: "Edited by", saveError: "Could not save your last change." };
 
 /** Multiset word overlap over the union, including repeated words. No content leaves this function. */
 export function answerChangeBand(before: string, after: string): "format_only" | "light" | "moderate" | "heavy" {
@@ -37,6 +37,8 @@ export function answerChangeBand(before: string, after: string): "format_only" |
 }
 
 export const COPY = { showAll: "Show all", showLess: "Show less" };
+/** PIN-1 (ask-v2): the edit-mode words. Kept apart from EDIT_COPY, which BE-6 pins exactly. */
+export const PIN_EDIT_COPY = { editing: "Editing", done: "Done", cancel: "Cancel", viewOnly: "View only" };
 
 /** PIN-1: a press that travels this far is a drag, never a click into the text. */
 export const PIN_DRAG_THRESHOLD_PX = 4;
@@ -154,8 +156,8 @@ function LabAnswerCardInner({
       <header className="flex items-baseline justify-between gap-2">
         <span className="flex items-baseline gap-2">
           <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">Answer</span>
-          {v2 && editing ? <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-foreground" data-testid="answer-editing-label">{EDIT_COPY.editing}</span> : null}
-          {v2 && !canEdit && focused ? <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft" data-testid="answer-view-only">{EDIT_COPY.viewOnly}</span> : null}
+          {v2 && editing ? <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-foreground" data-testid="answer-editing-label">{PIN_EDIT_COPY.editing}</span> : null}
+          {v2 && !canEdit && focused ? <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft" data-testid="answer-view-only">{PIN_EDIT_COPY.viewOnly}</span> : null}
         </span>
         <span className="flex items-center gap-1">
           {asOf ? <span className="font-mono text-[9px] text-soft">{asOf}</span> : null}
@@ -211,8 +213,8 @@ function LabAnswerCardInner({
       ) : null}
       {v2 && editing ? (
         <div className="mt-2 flex items-center justify-end gap-2" data-testid="answer-edit-actions">
-          <Button type="button" variant="ghost" className="h-7 px-2 text-[13px]" onPointerDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); cancelEdit(); }}>{EDIT_COPY.cancel}</Button>
-          <Button type="button" className="h-7 px-3 text-[13px]" onPointerDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); void finishEdit(); }}>{EDIT_COPY.done}</Button>
+          <Button type="button" variant="ghost" className="h-7 px-2 text-[13px]" onPointerDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); cancelEdit(); }}>{PIN_EDIT_COPY.cancel}</Button>
+          <Button type="button" className="h-7 px-3 text-[13px]" onPointerDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); void finishEdit(); }}>{PIN_EDIT_COPY.done}</Button>
         </div>
       ) : null}
       {tipShown ? <PinEditTip onDismiss={dismissTip} /> : null}
