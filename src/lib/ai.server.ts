@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/integrations/supabase/types";
 
+import { runAfterResponse } from "./background";
 import { logHealth } from "./health.server";
 import type { Environment } from "./environment-shared";
 
@@ -440,7 +441,10 @@ export async function recordUsage(result: ChatResult, meta: AiMeta | undefined):
     if (meta?.orgId) {
       const orgId = meta.orgId;
       // Detached from accounting and the AI response; the existing mirror preserves dims exactly.
-      void (async () => {
+      // PRIME (7 Nov): registered with the host's waitUntil so a request that returns fast
+      // (the one-token ask_prime call) cannot tear the mirror down part way. A bare detached
+      // promise lost 1 of 4 primes before the events row and 1 more before PostHog.
+      runAfterResponse(async () => {
         try {
           const { recordEvent } = await import("./telemetry.server");
           await recordEvent(supabaseAdmin, {
@@ -463,7 +467,7 @@ export async function recordUsage(result: ChatResult, meta: AiMeta | undefined):
         } catch {
           // A mirror failure must never affect accounting or the caller.
         }
-      })();
+      });
     }
     const db = supabaseAdmin as unknown as { from: (t: string) => any };
     await db.from("ai_usage").insert(aiUsageRow(result, meta, environment));
