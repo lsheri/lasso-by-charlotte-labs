@@ -17,7 +17,7 @@ import {
 
 import { RichTextView } from "@/components/rich-text/RichTextView";
 import { plainToRichHtml } from "@/lib/rich-text";
-import { stickyStartsEditing, stickyTriggerEntersEdit } from "@/lib/card-click";
+import { stickyClickTypes, stickyStartsEditing, stickyTriggerEntersEdit } from "@/lib/card-click";
 import { Pencil } from "lucide-react";
 
 const RichTextEditor = lazy(() => import("@/components/rich-text/RichTextEditor"));
@@ -63,6 +63,8 @@ function LabStickyInner({ node, selected, editable, layoutEditable, onSelect, on
   const editingRef = useRef(editing);
   const baseline = useRef({ text: body.text, html: body.html ?? plainToRichHtml(body.text), mentions: serializeMentions(body.mentions ?? []) });
   const sectionRef = useRef<HTMLElement>(null);
+  // STICKY-1: where a press on an already-selected sticky began; a click there (no drag) starts typing.
+  const typePressRef = useRef<{ x: number; y: number } | null>(null);
   const enterEdit = () => {
     if (!editable || editingRef.current) return;
     setFormattingOpen(false);
@@ -92,7 +94,7 @@ function LabStickyInner({ node, selected, editable, layoutEditable, onSelect, on
   const style = { left: node.x, top: node.y, width: node.width, height: node.height } satisfies CSSProperties;
   const choose = (patch: Partial<WorkboardStickyBody>, field: "style" | "fill") => { const next = { ...body, ...patch, ...(body.mentions !== undefined ? { mentions: clampMentions(body.mentions, body.text.length) } : {}) }; onChange(next); onCommit(next, field); };
   return (
-    <section ref={sectionRef} data-editing={editing} data-movable={layoutEditable} data-testid={`sticky-${node.id}`} data-selected={selected} data-colour={body.colour} data-fill={body.fill} data-size={body.size} data-weight={body.weight} aria-label="Sticky" tabIndex={0} className="canvas-lab-sticky absolute" style={style} onFocus={onSelect} onDoubleClick={() => { if (stickyTriggerEntersEdit("doubleClick", editable)) enterEdit(); }} onPointerDown={(event) => { if (editing) return; if (!selected) onSelect(); if (layoutEditable) onDragStart(event); }}>
+    <section ref={sectionRef} data-editing={editing} data-movable={layoutEditable} data-testid={`sticky-${node.id}`} data-selected={selected} data-colour={body.colour} data-fill={body.fill} data-size={body.size} data-weight={body.weight} aria-label="Sticky" tabIndex={0} className="canvas-lab-sticky absolute" style={style} onFocus={onSelect} onDoubleClick={() => { if (stickyTriggerEntersEdit("doubleClick", editable)) enterEdit(); }} onPointerDown={(event) => { if (editing) return; typePressRef.current = selected && editable && event.button === 0 ? { x: event.clientX, y: event.clientY } : null; if (!selected) onSelect(); if (layoutEditable) onDragStart(event); }} onPointerUp={(event) => { const start = typePressRef.current; typePressRef.current = null; if (!start || editing || !stickyClickTypes(start, { x: event.clientX, y: event.clientY })) return; enterEdit(); }}>
       {layoutEditable ? (["top", "right", "bottom", "left"] as const).map((edge) => <span key={edge} aria-hidden="true" className="canvas-lab-text-block-edge" data-edge={edge} onPointerDown={(event) => { event.stopPropagation(); onSelect(); onDragStart(event); }} />) : null}
       <style>{`
         .canvas-lab-sticky .node-rich { height: 100%; }
