@@ -11,7 +11,9 @@ describe("R7 Ask Lasso thinking marks", () => {
     const toolbar = page.slice(page.indexOf("const toolbarItems"), page.indexOf("const toolbarPlan"));
     // BI-2c-ii: thinking in the toolbar means the animated lime working motion, never a settled frame.
     expect(toolbar).toContain('<LassoThinkingMark kind="signature" size={LOOP_SIZE_TOOLBAR} thinking persistent />');
-    expect(toolbar).not.toContain("still");
+    // The toolbar's thinking mark is never a settled frame. Other components in the
+    // same slice (context motion, the unfold) have their own unrelated `still` props.
+    expect(toolbar).not.toMatch(/<LassoThinkingMark[^>]*\bstill\b/);
     // The still setting stays on the component for any surface that needs one settled frame.
     expect(mark).toContain("still?: boolean;");
     expect(mark).toContain("if (still) {");

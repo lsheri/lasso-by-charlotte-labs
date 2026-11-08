@@ -127,9 +127,18 @@ describe("shared Lasso loop color", () => {
       "src/pages/CanvasLabPage.tsx",
       "src/components/find-it/FindItLink.tsx",
     ];
+    // NAV/LOOK: PublicHeader, AppSidebar and AppShell render the loop through
+    // BrandLockup, which carries the lime; B2BLanding no longer draws the loop.
+    const viaLockup = new Set([
+      "src/components/layout/PublicHeader.tsx",
+      "src/components/layout/AppSidebar.tsx",
+      "src/components/layout/AppShell.tsx",
+    ]);
     for (const file of files) {
       const source = readFileSync(file, "utf8");
-      expect(source).toContain("text-lasso-green");
+      if (file === "src/components/marketing/B2BLanding.tsx") continue;
+      if (viaLockup.has(file)) expect(source).toMatch(/<BrandLockup\b/);
+      else expect(source).toContain("text-lasso-green");
     }
     expect(readFileSync("src/styles.css", "utf8")).toContain("--color-lasso-green: var(--nb-lasso-green)");
   });

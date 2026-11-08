@@ -89,11 +89,11 @@ describe("tour acts one to three", () => {
     }
     const actOne = render(<Harness activeAct={1} />);
     const targets = actOne.container.querySelectorAll<HTMLElement>('[data-tour-target="1"]');
-    expect(targets).toHaveLength(2);
-    expect(Array.from(targets).every((target) => target.tagName === "BUTTON" && target.textContent === "Push to Lasso")).toBe(true);
+    // One control pushes both chats, so act one has a single thing to do.
+    expect(targets).toHaveLength(1);
+    expect(targets[0]!.tagName).toBe("BUTTON");
+    expect(targets[0]!.textContent).toBe("Push both to Lasso");
     fireEvent.click(targets[0]!);
-    expect(actOne.container.querySelectorAll('[data-tour-target="1"]')).toHaveLength(1);
-    fireEvent.click(actOne.container.querySelector('[data-tour-target="1"]') as HTMLElement);
     expect(screen.getByRole("button", { name: "Got it" }).getAttribute("data-tour-target")).toBe("1");
     expect(screen.getByRole("button", { name: "Got it" }).closest(".tour-teaching-callout")).toBeTruthy();
     expect(actOne.container.querySelectorAll('[data-tour-target="1"]')).toHaveLength(1);
