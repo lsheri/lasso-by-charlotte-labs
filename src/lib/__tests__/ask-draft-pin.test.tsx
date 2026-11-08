@@ -51,20 +51,21 @@ describe("ASK-D2 pinned card", () => {
     window.history.replaceState(null, "", "/?ask=b");
     window.localStorage.setItem("lasso.ask-draft.pins", JSON.stringify({ n1: "old-chat" }));
     const opened = vi.fn();
-    window.addEventListener("lasso.ask-draft.open-session", opened);
+    window.addEventListener("lasso:ask-draft-open-session", opened);
     try {
       render(<LabAnswerCard {...cardProps} node={{ ...node, chatSessionId: "saved-chat" }} />);
       fireEvent.click(await screen.findByRole("button", { name: /^Chat/ }));
       expect(opened).toHaveBeenCalledTimes(1);
       expect((opened.mock.calls[0]?.[0] as CustomEvent).detail).toEqual({ sessionId: "saved-chat" });
     } finally {
-      window.removeEventListener("lasso.ask-draft.open-session", opened);
+      window.removeEventListener("lasso:ask-draft-open-session", opened);
     }
   });
   it("a teammate's answer remains visible but never offers or opens their chat", async () => {
     window.history.replaceState(null, "", "/?ask=b");
     render(<LabAnswerCard {...cardProps} node={{ ...node, chatSessionId: "private-chat", ownership: "teammate", authorName: "Alex" }} />);
-    await waitFor(() => expect(screen.queryByRole("button", { name: /^Chat/ })).toBeNull());
+    await screen.findByText("Pinned from Alex's chat. The chat is theirs.");
+    expect(screen.queryByRole("button", { name: /^Chat/ })).toBeNull();
     expect(screen.getByTestId("canvas-lab-answer-card")).toBeTruthy();
     expect(logEvent).not.toHaveBeenCalled();
   });
