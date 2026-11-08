@@ -60,6 +60,12 @@ export function useCanvasLab(engagementId: string, profileId: string | undefined
 
   const persist = useCallback(
     async (command: WorkboardCommand): Promise<WorkboardClientResult> => {
+      // LIVE-2: with no connection, fail at once instead of waiting on a request that cannot land.
+      if (typeof navigator !== "undefined" && navigator.onLine === false) {
+        const offline = { status: "network_error", message: "You're offline. This change was not saved." } as const;
+        setSaveState({ status: "error", message: offline.message, retry: command, entityKind: commandEntityKind(command) });
+        return offline;
+      }
       setSaveState({ status: "saving" });
       let result: WorkboardClientResult;
       inFlightRef.current += 1;
@@ -95,7 +101,7 @@ export function useCanvasLab(engagementId: string, profileId: string | undefined
   /** Read the durable board again, so a reconcile sees every entity kind. */
   const refresh = useCallback(async (): Promise<WorkboardDto | null> => {
     // Always a fresh read: a cached copy up to 10 seconds old is exactly the stale board this exists to replace.
-    const fresh = (await queryClient.fetchQuery({ ...canvasLabBoardQuery(engagementId, profileId), staleTime: 0 })) as WorkboardDto | null;
+    const fresh = (await queryClient.fetchQuery({ ...canvasLabBoardQuery(engagementId, profileId), staleTime: 0, retry: 1 })) as WorkboardDto | null;
     boardRef.current = fresh;
     return fresh;
   }, [engagementId, profileId, queryClient]);

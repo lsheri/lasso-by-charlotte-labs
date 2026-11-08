@@ -145,6 +145,9 @@ describe("the workboard allowlist", () => {
           "kind",
           "via",
         ],
+        "workboard.offline": [
+          "duration",
+        ],
         "workboard.opened": [
           "via",
           "bundles",
@@ -321,6 +324,7 @@ describe("the workboard allowlist", () => {
       () => helpers.noteWorkboardSaveFailed("o", "node", "network"),
       () => helpers.noteWorkboardConflictResolved("o", "node", "latest"),
       () => helpers.noteWorkboardLiveApplied("o", "reconnect"),
+      () => helpers.noteWorkboardOffline("o", "30s_to_5m"),
       () => helpers.noteWorkboardElementResized("o", "card", "pointer", "both"),
       () => helpers.noteWorkboardDropPromptAnswered("o", "yes"),
       () => helpers.noteWorkboardExampleViewed("o", "header"),
@@ -359,7 +363,7 @@ describe("the workboard allowlist", () => {
       const [name, , dims] = mocked.mock.calls[0] as [string, string, Record<string, unknown>];
       expect(guardWorkboardEvent(name, dims as never)).toEqual({ keep: true, dims });
     }
-    expect(Object.keys(WORKBOARD_EVENT_DIMS)).toHaveLength(52);
+    expect(Object.keys(WORKBOARD_EVENT_DIMS)).toHaveLength(53);
   });
 
   it.each(["in", "out", "reset"] as const)("reports zoom %s with only direction and method", (direction) => {

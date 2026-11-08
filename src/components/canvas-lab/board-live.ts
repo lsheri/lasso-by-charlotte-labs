@@ -70,10 +70,31 @@ export function liveRowIsNew(row: { id?: unknown; version?: unknown } | null | u
   return version === null || version > held;
 }
 
+/** LIVE-2: how long the live connection may be down before the server is tested. */
+export const BOARD_LIVE_DOWN_GRACE_MS = 5_000;
+/** LIVE-2: with live updates down but the server reachable, re-read this often. */
+export const BOARD_LIVE_FALLBACK_POLL_MS = 30_000;
+
+/**
+ * LIVE-2: whether the board can be trusted as live.
+ * offline: the server cannot be reached, so the board is shown as of syncedAt
+ * and editing is paused. Live updates being blocked while the server answers
+ * (some company networks block WebSockets) is NOT offline: the board stays
+ * editable and re-reads itself on a timer instead.
+ */
+export type BoardConnection = { offline: boolean; syncedAt: number | null; offlineSince: number | null };
+export const BOARD_CONNECTION_ONLINE: BoardConnection = { offline: false, syncedAt: null, offlineSince: null };
+
+export function offlineDurationBand(ms: number): "under_30s" | "30s_to_5m" | "over_5m" {
+  if (ms < 30_000) return "under_30s";
+  if (ms < 300_000) return "30s_to_5m";
+  return "over_5m";
+}
+
 /**
  * Subscribe while the board is open. `isBusy` holds a pending refresh while
  * the person is mid-gesture or a save is in flight; `refresh` re-reads and
- * reapplies the board and says whether anything changed.
+ * reapplies the board, and rejects when the server cannot be reached.
  */
 export function useBoardLive({
   boardId,
@@ -81,12 +102,14 @@ export function useBoardLive({
   known,
   isBusy,
   refresh,
+  onConnection,
 }: {
   boardId: string | null | undefined;
   enabled: boolean;
   known: () => ReadonlyMap<string, number>;
   isBusy: () => boolean;
   refresh: (trigger: BoardLiveTrigger) => Promise<boolean>;
+  onConnection?: (state: BoardConnection) => void;
 }) {
   const knownRef = useRef(known);
   knownRef.current = known;
@@ -94,14 +117,28 @@ export function useBoardLive({
   busyRef.current = isBusy;
   const refreshRef = useRef(refresh);
   refreshRef.current = refresh;
+  const connectionRef = useRef(onConnection);
+  connectionRef.current = onConnection;
 
   useEffect(() => {
     if (!enabled || !boardId) return;
     let live = true;
     let timer: ReturnType<typeof setTimeout> | undefined;
+    let downTimer: ReturnType<typeof setTimeout> | undefined;
+    let poll: ReturnType<typeof setInterval> | undefined;
     let pending: BoardLiveTrigger | null = null;
     let running = false;
-    let wasDown = false;
+    let channelDown = false;
+    let state: BoardConnection = { offline: false, syncedAt: Date.now(), offlineSince: null };
+
+    const publish = (next: BoardConnection) => {
+      if (next.offline === state.offline && next.syncedAt === state.syncedAt) return;
+      state = next;
+      connectionRef.current?.(state);
+    };
+    const browserOffline = () => typeof navigator !== "undefined" && navigator.onLine === false;
+    const goOffline = () => { if (!state.offline) publish({ ...state, offline: true, offlineSince: Date.now() }); };
+    const synced = () => publish({ offline: false, syncedAt: Date.now(), offlineSince: null });
 
     const flush = () => {
       timer = undefined;
@@ -110,12 +147,22 @@ export function useBoardLive({
       const trigger = pending;
       pending = null;
       running = true;
-      void refreshRef.current(trigger).catch(() => false).finally(() => { running = false; });
+      void refreshRef.current(trigger)
+        .then(() => { if (live && !browserOffline()) synced(); })
+        // The server did not answer: offline, unless this was only a single missed change.
+        .catch(() => { if (live && (channelDown || browserOffline() || trigger !== "change")) goOffline(); })
+        .finally(() => { running = false; });
     };
     const schedule = (trigger: BoardLiveTrigger) => {
       // A resync outranks a single change: it covers anything missed.
       if (!pending || pending === "change") pending = trigger;
       if (timer === undefined) timer = setTimeout(flush, BOARD_LIVE_DEBOUNCE_MS);
+    };
+    const stopFallback = () => {
+      if (downTimer !== undefined) clearTimeout(downTimer);
+      if (poll !== undefined) clearInterval(poll);
+      downTimer = undefined;
+      poll = undefined;
     };
 
     const channel = supabase.channel(`board-live:${boardId}`);
@@ -132,22 +179,35 @@ export function useBoardLive({
       if (!live) return;
       if (status === "SUBSCRIBED") {
         // Anything written between the board's first read and now, or while disconnected, is read again.
-        schedule(wasDown ? "reconnect" : "change");
-        wasDown = false;
+        schedule(channelDown ? "reconnect" : "change");
+        channelDown = false;
+        stopFallback();
       } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
-        wasDown = true;
+        if (channelDown) return;
+        channelDown = true;
+        // LIVE-2: after a grace period, test the server. A failed read means offline;
+        // a good one means only live updates are blocked, so re-read on a timer.
+        downTimer = setTimeout(() => {
+          schedule("reconnect");
+          poll = setInterval(() => schedule("reconnect"), BOARD_LIVE_FALLBACK_POLL_MS);
+        }, BOARD_LIVE_DOWN_GRACE_MS);
       }
     });
 
     const onOnline = () => schedule("online");
+    const onOffline = () => goOffline();
     const onVisible = () => { if (document.visibilityState === "visible") schedule("focus"); };
     window.addEventListener("online", onOnline);
+    window.addEventListener("offline", onOffline);
     document.addEventListener("visibilitychange", onVisible);
+    if (browserOffline()) goOffline();
 
     return () => {
       live = false;
       if (timer !== undefined) clearTimeout(timer);
+      stopFallback();
       window.removeEventListener("online", onOnline);
+      window.removeEventListener("offline", onOffline);
       document.removeEventListener("visibilitychange", onVisible);
       void supabase.removeChannel(channel);
     };

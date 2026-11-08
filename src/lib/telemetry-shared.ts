@@ -395,6 +395,7 @@ export type TelemetryEvent =
   /** Canvas Lab Phase 3: a person settled a newer-version conflict. Entity and choice only. */
   | "workboard.conflict_resolved"
   | "workboard.live_applied"
+  | "workboard.offline"
   /** Canvas Lab polish: one completed card or frame resize. Closed geometry vocabulary only. */
   | "workboard.element_resized"
   /** Canvas Lab polish: a move prompt after a drop was answered. Answer only. */

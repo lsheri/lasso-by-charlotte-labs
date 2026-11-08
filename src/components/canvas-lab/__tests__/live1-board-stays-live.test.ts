@@ -57,7 +57,7 @@ describe("LIVE-1 wiring", () => {
   });
 
   it("resyncs on reconnect, coming back online and returning to the tab", () => {
-    expect(hook).toMatch(/schedule\(wasDown \? "reconnect" : "change"\)/);
+    expect(hook).toMatch(/schedule\(channelDown \? "reconnect" : "change"\)/);
     expect(hook).toMatch(/addEventListener\("online", onOnline\)/);
     expect(hook).toMatch(/visibilityState === "visible"\) schedule\("focus"\)/);
     expect(hook).toMatch(/removeChannel\(channel\)/);
@@ -81,7 +81,7 @@ describe("LIVE-1 wiring", () => {
   });
 
   it("Load latest and live reads always go to the server, never a cached copy", () => {
-    expect(lab).toMatch(/fetchQuery\(\{ \.\.\.canvasLabBoardQuery\(engagementId, profileId\), staleTime: 0 \}\)/);
+    expect(lab).toMatch(/fetchQuery\(\{ \.\.\.canvasLabBoardQuery\(engagementId, profileId\), staleTime: 0, retry: 1 \}\)/);
   });
 
   it("the live event is content-free", () => {
