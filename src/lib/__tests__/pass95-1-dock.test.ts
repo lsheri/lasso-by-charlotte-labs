@@ -16,7 +16,10 @@ describe("95.1 plain white chat", () => {
     // Ruled backgrounds were removed from all surfaces on 12 Sep 2026;
     // the binder-body class and its rhythm remain.
     expect(css).toContain(".nb-binder-body {");
-    expect(css).not.toContain("repeating-linear-gradient");
+    // The only repeating gradients left are the 135deg hatch on the unmapped
+    // work-note gutter, a state marker rather than a ruled background.
+    const gradients = css.match(/repeating-linear-gradient\([^;]*/g) ?? [];
+    for (const g of gradients) expect(g).toMatch(/^repeating-linear-gradient\(135deg,/);
   });
 });
 

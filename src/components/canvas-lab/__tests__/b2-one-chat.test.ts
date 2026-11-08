@@ -57,7 +57,10 @@ describe("B2 one chat on the board", () => {
   });
 
   it("keeps removed cards reachable from the board menu", () => {
-    expect(page).toContain("Put back on the board (");
-    expect(page).toMatch(/restoreNode\(node\.id\)/);
+    // The board menu moved into BoardStageMenu (NAV); the page wires restoreNode into it.
+    const menu = read("src/components/canvas-lab/BoardStageMenu.tsx");
+    expect(menu).toContain("Put back on the board (");
+    expect(menu).toMatch(/onRestore\(node\.id\)/);
+    expect(page).toMatch(/<BoardStageMenu[^\n]{0,600}onRestore=\{restoreNode\}/);
   });
 });
