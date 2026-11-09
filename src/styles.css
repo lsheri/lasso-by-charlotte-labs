@@ -1958,7 +1958,8 @@ html:has([data-testid="canvas-lab-shell"]), body:has([data-testid="canvas-lab-sh
 .canvas-lab-frame-name-error { display: block; margin-top: 3px; color: var(--destructive); font-size: 13px; line-height: 1; }
 /* LEG-1: workstream and grouping names read like section titles: 34 px bold, scaled up as the board zooms out,
    sitting on the frame's top edge on a knock-out. The count stays inside the frame, top right. */
-.canvas-lab-frame > [data-frame-name] { top: -20px; left: 14px; right: 12px; align-items: flex-start; pointer-events: none; }
+/* LEG-1b: the frame name's own classes no longer set size or place (utilities outrank this layer), so these hold. */
+.canvas-lab-frame > [data-frame-name] { position: absolute; top: -20px; left: 14px; right: 12px; align-items: flex-start; pointer-events: none; }
 .canvas-lab-frame > [data-frame-name] > * { pointer-events: auto; }
 .canvas-lab-frame > [data-frame-name] h2,
 .canvas-lab-frame > [data-frame-name] .canvas-lab-frame-name-input { max-width: calc((100% - 24px) / var(--lab-section-label-inverse-zoom, 1)); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-radius: 6px; padding: 2px 10px 3px; background: var(--lab-section-title-fill, var(--nb-paper)); font-family: var(--font-serif); font-size: 34px; font-weight: 700; line-height: 1; letter-spacing: -0.01em; color: var(--nb-graphite); transform-origin: left top; transform: scale(var(--lab-section-label-inverse-zoom, 1)); }
