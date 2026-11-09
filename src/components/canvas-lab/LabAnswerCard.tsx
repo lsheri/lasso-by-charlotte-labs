@@ -8,6 +8,8 @@ import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
 import { Button } from "@/components/ui/button";
 
 import { answerAsOf, serializeAnswerBody } from "@/lib/answer-card";
+import { flagEnabled } from "@/lib/feature-flags";
+import { PinEditTip, usePinTip } from "@/components/canvas-lab/PinEditTip";
 import { PinnedChatRow, useAskDraftPin } from "@/components/canvas-lab/ask-draft/PinnedChatRow";
 import type { LabNode } from "@/components/canvas-lab/canvas-lab-model";
 import {
@@ -35,6 +37,16 @@ export function answerChangeBand(before: string, after: string): "format_only" |
 }
 
 export const COPY = { showAll: "Show all", showLess: "Show less" };
+/** PIN-1 (ask-v2): the edit-mode words. Kept apart from EDIT_COPY, which BE-6 pins exactly. */
+export const PIN_EDIT_COPY = { editing: "Editing", done: "Done", cancel: "Cancel", viewOnly: "View only" };
+
+/** PIN-1: a press that travels this far is a drag, never a click into the text. */
+export const PIN_DRAG_THRESHOLD_PX = 4;
+
+/** P3: a second click on the text of a selected card starts typing. Links, buttons and drags never do. */
+export function clickStartsTyping({ v2, canEdit, editing, wasFocused, moved, onControl }: { v2: boolean; canEdit: boolean; editing: boolean; wasFocused: boolean; moved: number; onControl: boolean }): boolean {
+  return v2 && canEdit && !editing && wasFocused && !onControl && moved < PIN_DRAG_THRESHOLD_PX;
+}
 
 /**
  * An answer kept on the board. White face, lime edge, so it reads apart from
@@ -80,10 +92,19 @@ function LabAnswerCardInner({
   const pin = useAskDraftPin(node);
   const [chatOpen, setChatOpen] = useState(false);
   const grown = expanded || editing || originalOpen || chatOpen;
+  // PIN-1 (ask-v2, default off): click into the text, Editing label, tools in the card, Done and Cancel, one-time tip.
+  const v2 = flagEnabled("ask-v2");
+  const [tipShown, dismissTip] = usePinTip(node.id, v2 && canEdit && Boolean(pin) && !editing);
+  const press = useRef<{ x: number; y: number; wasFocused: boolean } | null>(null);
+  function cancelEdit() {
+    draft.current = { html: "", plain: "", changed: false };
+    setError(null); setEditing(false);
+  }
   function startEdit() {
     if (!canEdit || editing) return;
     draft.current = { html: node.html ?? plainToRichHtml(node.summary), plain: node.summary, changed: false };
     setError(null); setEditing(true);
+    if (tipShown) dismissTip();
   }
   async function finishEdit() {
     if (saving.current || !onCommit || !editing) return;
@@ -122,19 +143,25 @@ function LabAnswerCardInner({
       aria-label={`Answer kept by ${node.authorName ?? "you"}`}
       onFocus={onFocus}
       onPointerDown={(event) => { if (editing) event.stopPropagation(); else onPointerDown(event); }}
+      onKeyDown={v2 && editing ? (event) => { if (event.key === "Escape") event.stopPropagation(); } : undefined}
+      data-v2={v2 ? "true" : undefined}
       data-focused={focused ? "true" : undefined}
       data-expanded={grown ? "true" : undefined}
       data-editing={editing ? "true" : undefined}
       className="canvas-lab-answer-card absolute overflow-visible"
       style={{ left: node.x, top: node.y, width: node.width, height: grown ? "auto" : node.height, minHeight: grown ? node.height : undefined, ...(editing ? { overflow: "visible" as const } : {}), zIndex: stackZ }}
     >
-      <style>{`.canvas-lab-answer-body > .rich-text { font-size: inherit; line-height: inherit; } .canvas-lab-answer-card[data-editing="true"] .canvas-lab-answer-body { overflow: visible; } .canvas-lab-answer-card[data-editing="true"] [role="toolbar"] { bottom: calc(100% + 2.5rem); }`}</style>
+      <style>{`.canvas-lab-answer-body > .rich-text { font-size: inherit; line-height: inherit; } .canvas-lab-answer-card[data-editing="true"] .canvas-lab-answer-body { overflow: visible; } .canvas-lab-answer-card[data-editing="true"] [role="toolbar"] { bottom: calc(100% + 2.5rem); } .canvas-lab-answer-card[data-v2="true"][data-editing="true"] [role="toolbar"] { position: static; margin: 0 0 8px; box-shadow: none; } .canvas-lab-answer-card[data-v2="true"][data-editing="true"] .canvas-lab-answer-pin { opacity: .35; pointer-events: none; }`}</style>
       {pin ? <button type="button" className="canvas-lab-answer-pin" aria-label="Take off the board" title="Take off the board" onClick={(e) => { e.stopPropagation(); onUnpin?.(node.id); }}><Pin size={14} aria-hidden="true" fill="currentColor" /></button> : null}
       <header className="flex items-baseline justify-between gap-2">
-        <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">Answer</span>
+        <span className="flex items-baseline gap-2">
+          <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">Answer</span>
+          {v2 && editing ? <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-foreground" data-testid="answer-editing-label">{PIN_EDIT_COPY.editing}</span> : null}
+          {v2 && !canEdit && focused ? <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft" data-testid="answer-view-only">{PIN_EDIT_COPY.viewOnly}</span> : null}
+        </span>
         <span className="flex items-center gap-1">
           {asOf ? <span className="font-mono text-[9px] text-soft">{asOf}</span> : null}
-          {moveTargets.length > 0 || canEdit ? (
+          {(moveTargets.length > 0 || canEdit) && !(v2 && editing) ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -159,7 +186,17 @@ function LabAnswerCardInner({
           ) : null}
         </span>
       </header>
-      <div ref={bodyRef} className="canvas-lab-answer-body" onDoubleClick={(event) => { event.stopPropagation(); startEdit(); }} data-overflow={overflows && !grown ? "true" : undefined}>
+      <div
+        ref={bodyRef}
+        className="canvas-lab-answer-body"
+        onPointerDownCapture={v2 ? (event) => { press.current = { x: event.clientX, y: event.clientY, wasFocused: focused }; } : undefined}
+        onPointerUp={v2 ? (event) => {
+          const down = press.current; press.current = null;
+          if (!down) return;
+          const onControl = event.target instanceof Element && Boolean(event.target.closest("a, button, input, select, textarea, [role='button']"));
+          if (clickStartsTyping({ v2, canEdit, editing, wasFocused: down.wasFocused, moved: Math.hypot(event.clientX - down.x, event.clientY - down.y), onControl })) startEdit();
+        } : undefined}
+        onDoubleClick={(event) => { event.stopPropagation(); startEdit(); }} data-overflow={overflows && !grown ? "true" : undefined}>
         {editing ? <Suspense fallback={node.html ? <RichTextView html={node.html} /> : <MarkdownMessage content={node.summary} />}><RichTextEditor initialHtml={draft.current.html} autoFocus onChange={(html, plain) => { draft.current = { html, plain, changed: true }; }} onDone={() => { void finishEdit(); }} /></Suspense> : node.html ? <RichTextView html={node.html} /> : <MarkdownMessage content={node.summary} />}
         {overflows && !grown ? <span className="canvas-lab-answer-fade" aria-hidden="true" data-testid="answer-body-fade" /> : null}
       </div>
@@ -174,10 +211,17 @@ function LabAnswerCardInner({
           {expanded ? COPY.showLess : COPY.showAll}
         </Button>
       ) : null}
+      {v2 && editing ? (
+        <div className="mt-2 flex items-center justify-end gap-2" data-testid="answer-edit-actions">
+          <Button type="button" variant="ghost" className="h-7 px-2 text-[13px]" onPointerDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); cancelEdit(); }}>{PIN_EDIT_COPY.cancel}</Button>
+          <Button type="button" className="h-7 px-3 text-[13px]" onPointerDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); void finishEdit(); }}>{PIN_EDIT_COPY.done}</Button>
+        </div>
+      ) : null}
+      {tipShown ? <PinEditTip onDismiss={dismissTip} /> : null}
       {error ? <p role="alert" className="mt-1 text-[13px] text-destructive">{error}</p> : null}
       {node.original != null && !editing ? <Button variant="ghost" className="canvas-lab-answer-toggle" aria-expanded={originalOpen} onPointerDown={(event) => event.stopPropagation()} onClick={() => { if (!originalOpen && orgId) logEvent("answer.original_viewed", orgId, {}); setOriginalOpen((value) => !value); }}>{originalOpen ? EDIT_COPY.hideOriginal : EDIT_COPY.seeOriginal}</Button> : null}
       {originalOpen && node.original != null ? <section className="mt-2 border-t border-border bg-muted p-2" aria-label={EDIT_COPY.original}><h3 className="mb-1 text-[13px] text-soft">{EDIT_COPY.original}</h3><MarkdownMessage content={node.original} /></section> : null}
-      {pin ? <PinnedChatRow draft={pin.draft} sessionId={pin.sessionId} ownership={node.ownership} authorName={node.authorName} orgId={orgId} onOpenChange={setChatOpen} /> : null}
+      {pin && !(v2 && editing) ? <PinnedChatRow draft={pin.draft} sessionId={pin.sessionId} ownership={node.ownership} authorName={node.authorName} orgId={orgId} onOpenChange={setChatOpen} /> : null}
       <footer className="mt-2 flex items-center justify-between gap-2">
         <span className="font-mono text-[9px] text-soft">Kept by {node.authorName ?? "you"}{node.editedAt ? <> · {node.ownership === "yours" ? EDIT_COPY.editedYou : `${EDIT_COPY.editedBy} ${node.authorName ?? "you"}`}</> : null}</span>
         {node.local ? (
