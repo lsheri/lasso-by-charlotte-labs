@@ -10,9 +10,11 @@ const css = read("src/styles.css");
 const hook = read("src/components/reflect/use-ask-lasso.ts");
 
 describe("V2-1 idle bar", () => {
-  it("is only on behind ask-v2, only while unused, and leaves the moment you click in", () => {
+  // C2 (9 Nov): the agreed capsule stays while you type into an empty chat (the scope sentence shows under
+  // it) and a collapsed chat returns to it; clicking into a collapsed chat unfolds it.
+  it("is only on behind ask-v2, empty or collapsed, and never while a question is in flight", () => {
     expect(surface).toContain('const askV2 = flagEnabled("ask-v2");');
-    expect(surface).toContain("const idleBar = askV2 && empty && !ask.pending && !focusedIn && !ask.error && !ask.pickerOpen;");
+    expect(surface).toContain('const idleBar = askV2 && draft === "b" && props.tab === "messages" && (empty || folded) && !ask.pending && !ask.error && !ask.pickerOpen;');
     expect(surface).toContain('data-idle-bar={idleBar ? "true" : undefined}');
     expect(surface).toContain("onFocusCapture={(event) => { setFocusedIn(true);");
   });
@@ -30,6 +32,6 @@ describe("V2-1 idle bar", () => {
   it("hides everything but the composer, and the hidden parts drop out of the measured height", () => {
     expect(css).toContain('.ask-draft[data-idle-bar="true"] .ask-draft-body > :not(.sticky) { display: none; }');
     expect(surface).toContain('if (cs.display === "none") continue;');
-    expect(surface).toContain("useLayoutEffect(() => { refresh(); }, [refresh, collapsed, folded, expanded, idleBar]);");
+    expect(surface).toContain("useLayoutEffect(() => { refresh(); }, [refresh, collapsed, folded, expanded, idleBar, focusedIn]);");
   });
 });
