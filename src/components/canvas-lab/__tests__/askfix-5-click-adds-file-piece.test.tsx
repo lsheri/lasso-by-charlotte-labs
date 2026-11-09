@@ -125,9 +125,10 @@ describe("ASK-FIX-5 a clean click adds a file piece to Ask", () => {
 });
 
 describe("ASK-FIX-5 scope", () => {
-  it("the file card still keeps body presses from arming a drag (P1b unchanged)", () => {
+  it("the file card's strip still drags, and its body now drags too unless the press is on a control (LIFT-1 L1)", () => {
     const source = readFileSync("src/components/canvas-lab/ReferenceFileCard.tsx", "utf8");
     expect(source).toContain('closest("[data-reference-drag-strip]")');
+    expect(source).toContain("if (referenceBodyPressDrags(event.currentTarget, event.target)) return;");
   });
   it("the capture handler only notes the press; it never starts a drag or selects", () => {
     const source = readFileSync("src/components/canvas-lab/LabCard.tsx", "utf8");

@@ -24,6 +24,7 @@ import {
   renditionTitle,
 } from "@/lib/reference-rendition-shared";
 import { storageObjectKey } from "@/lib/upload-payload";
+import { referenceBodyPressDrags } from "@/components/canvas-lab/reference-press";
 import { effectiveWorkDate, formatCardDate, type WorkItemRow } from "@/lib/work-types";
 
 /**
@@ -119,6 +120,7 @@ export function ReferenceFileCard({ item, onOpen }: { item: WorkItemRow; onOpen:
       style={{ borderLeftColor: sourceColour }}
       onPointerDown={(event) => {
         if ((event.target as Element).closest("[data-reference-drag-strip]")) return;
+        if (referenceBodyPressDrags(event.currentTarget, event.target)) return;
         event.stopPropagation();
       }}
     >

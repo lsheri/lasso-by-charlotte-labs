@@ -1456,6 +1456,11 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 [data-testid="canvas-lab-shell"][data-interaction="pan"] .canvas-lab-stage,
 [data-testid="canvas-lab-shell"][data-interaction="resize"] .canvas-lab-stage,
 [data-testid="canvas-lab-shell"][data-interaction="connect"] .canvas-lab-stage { user-select: none; }
+/* LIFT-1 (L1): a live card's face is static on the board. The rule above only applies once a drag has
+   started, a render after the press, which is when the browser begins a text selection; so the face never
+   selects at all. Copying text is for the reader. Edit fields keep their selection. */
+[data-testid="canvas-lab-shell"] .canvas-lab-stage [role="group"][data-node-id][data-read-only="false"] { user-select: none; -webkit-user-select: none; }
+[data-testid="canvas-lab-shell"] .canvas-lab-stage [role="group"][data-node-id][data-read-only="false"] :is(input, textarea, [contenteditable="true"]) { user-select: text; -webkit-user-select: text; }
 .canvas-lab-card { cursor: grab; }
 /* HAND-1: with the hand on, every press on the board pans, so everything on it shows the hand. */
 .canvas-lab-surface[data-hand="true"], .canvas-lab-surface[data-hand="true"] [data-testid="canvas-lab-stage"] * { cursor: grab !important; }
