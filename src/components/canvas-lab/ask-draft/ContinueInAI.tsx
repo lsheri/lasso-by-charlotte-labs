@@ -34,11 +34,16 @@ export const H7_COPY = {
   hint: {
     connector: (label: string) => `Opened ${label}. It reads the board through Lasso.`,
     link: (label: string) => `Opened ${label} with this filled in.`,
-    clipboard: (label: string) => `Copied. Paste it into ${label} to carry on.`,
+    clipboard: (label: string) => `Too long for a link, so it is copied. In ${label}, paste it into the new chat and send.`,
     file: (label: string) => `Saved as a file. Drop it into ${label} to carry on.`,
     blocked: "Pop-up blocked. It is on your clipboard.",
   },
 };
+
+/** H7f: how long the hint stays. A paste or a file needs the person to act, so it stays long enough to read. */
+export function hintMs(route: H7Route | "blocked"): number {
+  return route === "link" || route === "connector" ? 2500 : 8000;
+}
 
 /**
  * H7 signals, read once per board for this person: pushes of this board's work,

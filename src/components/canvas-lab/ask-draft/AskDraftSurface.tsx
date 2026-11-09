@@ -19,7 +19,7 @@ import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
 import { readAskHome, readAskPosition, readUnpinned, writeAskPosition, type AskDraft } from "@/lib/ask-draft";
 import { ASK_DOCK_CONFIG, DOCK_SPOTS, useAskDock, type DockId } from "@/lib/ask-dock-engine";
 import { HANDOFF_VENDORS, handoffLine, handoffLineFits, handoffPrompt, handoffUrl, pickHandoffTool, readAskedTool, readHandoffDestination, shouldNudge, type H7Route } from "@/lib/ask-handoff";
-import { ContinueInAI, H7_COPY, carryOut, useHandoffSignals } from "@/components/canvas-lab/ask-draft/ContinueInAI";
+import { ContinueInAI, H7_COPY, carryOut, hintMs, useHandoffSignals } from "@/components/canvas-lab/ask-draft/ContinueInAI";
 import { displayKind, kindNoun, usedItems, usedPhrase } from "@/lib/ask-reading-v2";
 import { parseManifest } from "@/lib/context-manifest";
 import { citationsFromManifest } from "@/lib/turn-labels";
@@ -135,7 +135,7 @@ export function AskDraftSurface(props: Props) {
     noteWorkboardAskView(props.orgId, "handoff_opened", draft);
     setHandoffHint(blocked ? H7_COPY.hint.blocked : H7_COPY.hint[route](label));
     if (hintTimer.current !== null) clearTimeout(hintTimer.current);
-    hintTimer.current = setTimeout(() => setHandoffHint(null), 2500);
+    hintTimer.current = setTimeout(() => setHandoffHint(null), hintMs(blocked ? "blocked" : route));
   };
   const h7Tool = askV2 ? pickHandoffTool({ ...(h7Signals ?? { boardPushes: [], myPushes: [], connected: [] }), asked: readAskedTool(props.profileId, safeStore()) }) : null;
   // H7c: words inside an @ card name never trigger the line.
