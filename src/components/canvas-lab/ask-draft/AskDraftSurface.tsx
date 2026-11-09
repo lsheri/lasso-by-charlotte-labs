@@ -17,7 +17,11 @@ import { beginTurn, turnKeyFor } from "@/lib/ask-reading-clock";
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
 import { readAskHome, readAskPosition, readUnpinned, writeAskPosition, type AskDraft } from "@/lib/ask-draft";
 import { ASK_DOCK_CONFIG, DOCK_SPOTS, useAskDock, type DockId } from "@/lib/ask-dock-engine";
-import { HANDOFF_VENDORS, handoffPrompt, handoffUrl, readHandoffDestination, shouldNudge } from "@/lib/ask-handoff";
+import { HANDOFF_VENDORS, handoffLine, handoffLineFits, handoffPrompt, handoffUrl, pickHandoffTool, readAskedTool, readHandoffDestination, shouldNudge, type H7Route } from "@/lib/ask-handoff";
+import { ContinueInAI, H7_COPY, carryOut, useHandoffSignals } from "@/components/canvas-lab/ask-draft/ContinueInAI";
+import { displayKind, kindNoun, usedItems, usedPhrase } from "@/lib/ask-reading-v2";
+import { parseManifest } from "@/lib/context-manifest";
+import { citationsFromManifest } from "@/lib/turn-labels";
 import { Button } from "@/components/ui/button";
 import { flagEnabled } from "@/lib/feature-flags";
 
@@ -111,6 +115,26 @@ export function AskDraftSurface(props: Props) {
     if (hintTimer.current !== null) clearTimeout(hintTimer.current);
     hintTimer.current = setTimeout(() => setHandoffHint(null), 2500);
   };
+  // H7 (ask-v2): one Continue button, the AI worked out from pushes, packaged only on a click.
+  const h7Signals = useHandoffSignals({ profileId: props.profileId, itemIds: (ask.mapped ?? []).map((item) => item.id), enabled: askV2 });
+  const lastAnswer = [...(ask.messages ?? [])].reverse().find((m) => m.role === "assistant");
+  const lastQuestion = [...(ask.messages ?? [])].reverse().find((m) => m.role === "user")?.content ?? "";
+  const lastManifest = askV2 && lastAnswer ? parseManifest(lastAnswer.context_manifest) : null;
+  const lastUsed = lastManifest && lastAnswer ? usedItems(lastManifest, citationsFromManifest(lastAnswer.context_manifest).map((c) => c.item_id)) : [];
+  const h7Build = () => ({
+    boardTitle: props.engagementTitle,
+    messages: (ask.messages ?? []).map((m) => ({ role: m.role, content: m.content })),
+    used: lastUsed.map((item) => ({ title: item.title, kind: kindNoun(displayKind(item), 1) })),
+    board: (ask.mapped ?? []).map((item) => ({ title: item.display_title ?? item.title, kind: item.type === "ai_thread" ? "conversation" : item.type })),
+  });
+  const h7Done = (route: H7Route, blocked: boolean, label: string) => {
+    noteWorkboardAskView(props.orgId, "handoff_opened", draft);
+    setHandoffHint(blocked ? H7_COPY.hint.blocked : H7_COPY.hint[route](label));
+    if (hintTimer.current !== null) clearTimeout(hintTimer.current);
+    hintTimer.current = setTimeout(() => setHandoffHint(null), 2500);
+  };
+  const h7Tool = askV2 ? pickHandoffTool({ ...(h7Signals ?? { boardPushes: [], myPushes: [], connected: [] }), asked: readAskedTool(props.profileId, safeStore()) }) : null;
+  const h7LineShown = askV2 && Boolean(lastAnswer) && !ask.pending && handoffLineFits(lastQuestion) && h7Tool !== null;
   const foldedRef = useRef(folded);
   foldedRef.current = folded;
 
@@ -390,7 +414,9 @@ export function AskDraftSurface(props: Props) {
                 Reading {(ask.pointedNow?.length ? ask.pointedNow : ask.selectedItems ?? ask.mapped ?? []).length} {(ask.pointedNow?.length ? ask.pointedNow : ask.selectedItems ?? ask.mapped ?? []).length === 1 ? "item" : "items"} as written
               </p>
             ) : undefined}
-            sendAside={draft === "b" ? (
+            sendAside={draft === "b" && askV2 ? (
+              <ContinueInAI profileId={props.profileId} disabled={!canPin} signals={h7Signals} build={h7Build} onDone={h7Done} />
+            ) : draft === "b" ? (
               <button type="button" className="ask-draft-send-aside" aria-label={`Continue in ${vendorLabel}`} title={`Continue in ${vendorLabel}`} disabled={!canPin} onClick={handoffOpen}>
                 <BrandLogo brand={dest.vendor === "chatgpt" ? "chatgpt" : "claude"} size={18} />
                 <ArrowUpRight size={14} aria-hidden="true" />
@@ -399,7 +425,12 @@ export function AskDraftSurface(props: Props) {
           />
           )}
         </div>
-        {draft === "b" && props.tab === "messages" && shouldNudge(turns, dismissedAt) && !ask.pending && nudgeHost ? createPortal(
+        {draft === "b" && askV2 && props.tab === "messages" && h7LineShown && h7Tool && nudgeHost ? createPortal(
+          <div className="ask-draft-nudge" data-testid="h7-line">
+            <Button type="button" variant="link" className="h-auto p-0 text-inherit" onClick={() => { void carryOut(h7Tool, { ...h7Build(), choice: "chat_and_used" }, Boolean(h7Signals?.signin) && h7Tool !== "gemini").then((r) => h7Done(r.route, r.blocked, h7Tool === "chatgpt" ? "ChatGPT" : h7Tool === "gemini" ? "Gemini" : "Claude")); }}>{handoffLine(h7Tool, usedPhrase(lastUsed))}</Button>
+          </div>, nudgeHost,
+        ) : null}
+        {draft === "b" && !askV2 && props.tab === "messages" && shouldNudge(turns, dismissedAt) && !ask.pending && nudgeHost ? createPortal(
           <div className="ask-draft-nudge">
             <span>This is a long one. Keep what matters to the board, or carry it on in {vendorLabel} with the board as context.</span>
             <Button type="button" variant="link" className="h-auto p-0 text-inherit" onClick={handoffOpen}>Continue in {vendorLabel}</Button>
