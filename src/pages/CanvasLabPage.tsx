@@ -11,7 +11,7 @@ import { suggestStructuresFn } from "@/lib/structure-suggest.functions";
 import { chunkInput, type StructureSourceKind, type SuggestedStructure } from "@/lib/structure-suggest-shared";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Menu, X } from "lucide-react";
+import { Hand, Menu, X } from "lucide-react";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type Ref } from "react";
 
 import {
@@ -297,10 +297,12 @@ const TOOLBAR_GROUPS: string[][] = [
   ["board-identity"],
   ["add-work"],
   ["add-text", "add-sticky", "region", "section", "suggest"],
-  ["fit", "zoom", "card-face"],
+  ["hand", "fit", "zoom", "card-face"],
   ["remove-relationship", "working-from", "ask", "share", "details", "example"],
 ];
 const TOOLBAR_LAYOUT = TOOLBAR_GROUPS.flat();
+/** HAND-1: presses the hand tool leaves alone: Ask, menus, dialogs and the toolbar keep working while it is on. */
+const HAND_SKIPS = ".canvas-lab-floating-tools, .ask-draft, [role='dialog'], [role='menu'], [role='listbox'], [data-radix-popper-content-wrapper]";
 function toolbarGroupOf(id: string): number { return TOOLBAR_GROUPS.findIndex((ids) => ids.includes(id)) + 1; }
 
 export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string; entryVia?: string }) {
@@ -595,6 +597,11 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   }, []);
   const spaceRef = useRef(false);
   const [spaceHeld, setSpaceHeld] = useState(false);
+  // HAND-1: the hand tool pans the board on a plain press until it is clicked off, the same path Space uses.
+  // For touch screens without two fingers free, and laptops whose two-finger swipe goes back a page.
+  const [handOn, setHandOn] = useState(false);
+  const handRef = useRef(false);
+  handRef.current = handOn;
   const openedRef = useRef(false);
   const fittedReadyRef = useRef(false);
   const viewportChangedRef = useRef(false);
@@ -2127,7 +2134,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   function onCardPointerDown(picked: LabNode, event: React.PointerEvent) {
     // A docked piece is carried by its chat: the drag moves the chat.
     const node = bundleChatFor(picked);
-    if (spaceRef.current) return; // Space pans the board, even over a card.
+    if (spaceRef.current || handRef.current) return; // Space or the hand tool pans the board, even over a card.
     // Buttons and text boxes keep their press, except the data-edge strips: they are buttons whose only job is to start this drag.
     if (!cardPressStartsDrag(event)) return;
     event.stopPropagation();
@@ -3723,7 +3730,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   }
 
   function startSectionDrag(frame: LabFrame, event: React.PointerEvent) {
-    if (spaceRef.current || event.button !== 0 || !boardEditable) return;
+    if (spaceRef.current || handRef.current || event.button !== 0 || !boardEditable) return;
     event.stopPropagation();
     setInteraction("drag");
     const shownFrames = boardFrames.filter((entry) => boardFrameRenders(frameKindOf(entry), true));
@@ -3732,7 +3739,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   }
 
   function startGroupingDrag(frame: LabFrame, event: React.PointerEvent) {
-    if (spaceRef.current) return;
+    if (spaceRef.current || handRef.current) return;
     if (event.button !== 0 || (event.target as Element).closest("button,textarea,input")) return;
     event.stopPropagation();
     setInteraction("drag");
@@ -3825,6 +3832,11 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     });
   }
   toolbarItems.push({
+    spec: { id: "hand", width: 36, moveOrder: 4 },
+    row: <ToolbarIcon label="Hand. Drag the board to move around. Click again to stop."><Button size="icon" variant={handOn ? "secondary" : "outline"} aria-label="Hand" aria-pressed={handOn} data-toolbar-control="hand" onClick={() => setHandOn((on) => !on)}><Hand size={19} strokeWidth={1.75} aria-hidden /></Button></ToolbarIcon>,
+    menu: <DropdownMenuItem onSelect={() => setHandOn((on) => !on)}>{handOn ? "Stop moving the board" : "Hand"}</DropdownMenuItem>,
+  });
+  toolbarItems.push({
     spec: { id: "details", width: 36, moveOrder: 3 },
     row: <ToolbarIcon label="Info. See what this board holds and who can see it."><Button size="icon" variant="outline" aria-label="Info" data-toolbar-control="details" aria-expanded={detailsOpen} onClick={(event) => openDetails(event.currentTarget)}><GraphiteIcon name="working-from" size={20} /></Button></ToolbarIcon>,
     menu: <DropdownMenuItem onSelect={() => { if (moreButtonRef.current) openDetails(moreButtonRef.current); }}>Info</DropdownMenuItem>,
@@ -3883,7 +3895,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
             ) : null}
           </div>
         ) : null}
-        <div ref={shellRef} tabIndex={-1} onDragEnter={fileDrop.handlers.onDragEnter} onDragLeave={fileDrop.handlers.onDragLeave} onDragOverCapture={fileDrop.handlers.onDragOver} onDragOver={(event) => { if (!canAddWork || !isAnswerDrag(event.dataTransfer.types)) return; event.preventDefault(); event.dataTransfer.dropEffect = "copy"; }} onDropCapture={fileDrop.handlers.onDrop} onDrop={(event) => { if (!isAnswerDrag(event.dataTransfer.types)) return; event.preventDefault(); delete document.body.dataset["answerDrag"]; const answer = parseAnswerDrop(event.dataTransfer.getData(ANSWER_DRAG_MIME)); if (!answer) return; void keepAnswerAsCard(answer, { at: stagePoint(event.clientX, event.clientY), via: "drag" }); }} onPointerDownCapture={(event) => { if (consumeAskPlacingPress(event, stagePoint)) return; if (event.target instanceof Element && event.target.closest(".canvas-lab-floating-tools")) return; if (onSurfaceTouchDown(event)) return; if (event.button === 0 && spaceRef.current) { event.preventDefault(); event.stopPropagation(); startSpacePan(event); } }} onPointerDown={(event) => { const target = event.target as HTMLElement; const empty = event.target === event.currentTarget || target.dataset["testid"] === "canvas-lab-stage"; if (event.button === 0 && empty && drawTool) { event.preventDefault(); const at = stagePoint(event.clientX, event.clientY); drawingRef.current = { from: at, to: at }; setDrawing({ from: at, to: at }); return; } if (event.button === 1 && empty) { event.preventDefault(); startSpacePan(event); return; } if (event.button === 0 && empty) { event.preventDefault(); window.getSelection()?.removeAllRanges(); event.currentTarget.classList.add("select-none"); setKeyboardId(null); setSelectedFrameId(null); setSelectedLinkId((current) => relationshipSelection(current, "deselect")); if (event.pointerType === "touch") { event.currentTarget.classList.remove("select-none"); startSpacePan(event); return; } const at = stagePoint(event.clientX, event.clientY); const screen = { x: event.clientX, y: event.clientY }; marqueeRef.current = { fromScreen: screen, fromBoard: at, toScreen: screen, toBoard: at }; setInteraction("marquee"); } }} onContextMenu={(event) => { const target = event.target as HTMLElement; const empty = event.target === event.currentTarget || target.dataset["testid"] === "canvas-lab-stage"; if (!empty || !canAddWork) return; event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect(); const screen = { x: event.clientX - rect.left, y: event.clientY - rect.top }; setBoardMenu({ screen, board: boardPointFromScreen(screen) }); noteWorkboardBoardMenuOpened(orgId, "stage", "mouse"); }} onKeyDown={(event) => { if (event.target !== event.currentTarget || !canAddWork) return; if (event.key !== "ContextMenu" && !(event.shiftKey && event.key === "F10")) return; event.preventDefault(); const screen = viewportCentre(); setBoardMenu({ screen, board: boardPointFromScreen(screen) }); noteWorkboardBoardMenuOpened(orgId, "stage", "keyboard"); }} data-space-pan={spaceHeld} data-drawing={drawTool ? "true" : undefined} onScroll={(event) => keepViewportUnscrolled(event.currentTarget)} data-interacting={interaction !== "idle" || drawing !== null || viewportMoving ? "true" : undefined} className="canvas-lab-surface relative min-h-0 flex-1 overflow-hidden">
+        <div ref={shellRef} tabIndex={-1} onDragEnter={fileDrop.handlers.onDragEnter} onDragLeave={fileDrop.handlers.onDragLeave} onDragOverCapture={fileDrop.handlers.onDragOver} onDragOver={(event) => { if (!canAddWork || !isAnswerDrag(event.dataTransfer.types)) return; event.preventDefault(); event.dataTransfer.dropEffect = "copy"; }} onDropCapture={fileDrop.handlers.onDrop} onDrop={(event) => { if (!isAnswerDrag(event.dataTransfer.types)) return; event.preventDefault(); delete document.body.dataset["answerDrag"]; const answer = parseAnswerDrop(event.dataTransfer.getData(ANSWER_DRAG_MIME)); if (!answer) return; void keepAnswerAsCard(answer, { at: stagePoint(event.clientX, event.clientY), via: "drag" }); }} onPointerDownCapture={(event) => { if (consumeAskPlacingPress(event, stagePoint)) return; if (event.target instanceof Element && event.target.closest(".canvas-lab-floating-tools")) return; if (onSurfaceTouchDown(event)) return; if (event.button === 0 && (spaceRef.current || (handRef.current && !(event.target instanceof Element && event.target.closest(HAND_SKIPS))))) { event.preventDefault(); event.stopPropagation(); startSpacePan(event); } }} onPointerDown={(event) => { const target = event.target as HTMLElement; const empty = event.target === event.currentTarget || target.dataset["testid"] === "canvas-lab-stage"; if (event.button === 0 && empty && drawTool) { event.preventDefault(); const at = stagePoint(event.clientX, event.clientY); drawingRef.current = { from: at, to: at }; setDrawing({ from: at, to: at }); return; } if (event.button === 1 && empty) { event.preventDefault(); startSpacePan(event); return; } if (event.button === 0 && empty) { event.preventDefault(); window.getSelection()?.removeAllRanges(); event.currentTarget.classList.add("select-none"); setKeyboardId(null); setSelectedFrameId(null); setSelectedLinkId((current) => relationshipSelection(current, "deselect")); if (event.pointerType === "touch") { event.currentTarget.classList.remove("select-none"); startSpacePan(event); return; } const at = stagePoint(event.clientX, event.clientY); const screen = { x: event.clientX, y: event.clientY }; marqueeRef.current = { fromScreen: screen, fromBoard: at, toScreen: screen, toBoard: at }; setInteraction("marquee"); } }} onContextMenu={(event) => { const target = event.target as HTMLElement; const empty = event.target === event.currentTarget || target.dataset["testid"] === "canvas-lab-stage"; if (!empty || !canAddWork) return; event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect(); const screen = { x: event.clientX - rect.left, y: event.clientY - rect.top }; setBoardMenu({ screen, board: boardPointFromScreen(screen) }); noteWorkboardBoardMenuOpened(orgId, "stage", "mouse"); }} onKeyDown={(event) => { if (event.target !== event.currentTarget || !canAddWork) return; if (event.key !== "ContextMenu" && !(event.shiftKey && event.key === "F10")) return; event.preventDefault(); const screen = viewportCentre(); setBoardMenu({ screen, board: boardPointFromScreen(screen) }); noteWorkboardBoardMenuOpened(orgId, "stage", "keyboard"); }} data-space-pan={spaceHeld} data-hand={handOn ? "true" : undefined} data-drawing={drawTool ? "true" : undefined} onScroll={(event) => keepViewportUnscrolled(event.currentTarget)} data-interacting={interaction !== "idle" || drawing !== null || viewportMoving ? "true" : undefined} className="canvas-lab-surface relative min-h-0 flex-1 overflow-hidden">
           <BoardFileDropOverlay show={fileDrop.over} />
           <div className="canvas-lab-board-status" onPointerDown={(event) => event.stopPropagation()}>
         <BoardOfflineBanner offline={offline} syncedAt={boardConnection.syncedAt} />

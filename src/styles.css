@@ -1457,6 +1457,12 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 [data-testid="canvas-lab-shell"][data-interaction="resize"] .canvas-lab-stage,
 [data-testid="canvas-lab-shell"][data-interaction="connect"] .canvas-lab-stage { user-select: none; }
 .canvas-lab-card { cursor: grab; }
+/* HAND-1: with the hand on, every press on the board pans, so everything on it shows the hand. */
+.canvas-lab-surface[data-hand="true"], .canvas-lab-surface[data-hand="true"] [data-testid="canvas-lab-stage"] * { cursor: grab !important; }
+[data-testid="canvas-lab-shell"][data-interaction="pan"] .canvas-lab-surface[data-hand="true"], [data-testid="canvas-lab-shell"][data-interaction="pan"] .canvas-lab-surface[data-hand="true"] [data-testid="canvas-lab-stage"] * { cursor: grabbing !important; }
+/* HAND-1: a sideways two-finger swipe on the board never turns into the browser's back or forward. */
+.canvas-lab-surface { overscroll-behavior-x: none; }
+html:has([data-testid="canvas-lab-shell"]), body:has([data-testid="canvas-lab-shell"]) { overscroll-behavior-x: none; }
 /* FIX-CURSOR: anything being edited on the board gets the document cursor, never the board's hand. */
 [data-testid="canvas-lab-stage"] [data-editing="true"] { cursor: auto; }
 [data-testid="canvas-lab-stage"] [data-editing="true"] :is([contenteditable="true"], textarea, input[type="text"]) { cursor: text; }
