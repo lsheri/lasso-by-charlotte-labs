@@ -64,6 +64,8 @@ type Props = {
 const FOOT_H = 34;
 
 const HEADER_H = 46;
+/** V2-1b: the idle bar's composer row (36 px box plus 13 px above and below); 64 px with the shell's border. */
+const IDLE_ROW_H = 62;
 
 /** ASK-B1: Ask Lasso floating over the board, carried by the dock engine. Preview-gated. */
 export function AskDraftSurface(props: Props) {
@@ -141,10 +143,18 @@ export function AskDraftSurface(props: Props) {
   const h7LineShown = askV2 && Boolean(lastAnswer) && !ask.pending && handoffLineFits(lastQuestion, mentionNames) && h7Tool !== null;
   const foldedRef = useRef(folded);
   foldedRef.current = folded;
+  const idleRef = useRef(idleBar);
+  idleRef.current = idleBar;
 
   const contentHeight = useCallback(() => {
     const body = bodyRef.current;
     if (!body || body.children.length === 0) return 160;
+    // V2-1b: the idle bar is one row; its height is the composer row plus the shell's border.
+    if (idleRef.current) {
+      const row = body.querySelector<HTMLElement>(":scope > .sticky");
+      const shell = body.parentElement;
+      return (row?.offsetHeight ?? IDLE_ROW_H) + (shell ? shell.offsetHeight - shell.clientHeight : 0);
+    }
     let total = HEADER_H;
     for (const child of Array.from(body.children) as HTMLElement[]) {
       const cs = getComputedStyle(child);
@@ -173,7 +183,8 @@ export function AskDraftSurface(props: Props) {
     contentHeight,
     topInset,
     initialHeight: initial.h ?? null,
-    fitLock: () => foldedRef.current,
+    // V2-1b: docked to a side, the idle bar keeps its own height instead of filling the edge.
+    fitLock: () => foldedRef.current || idleRef.current,
     expanded: () => expandedRef.current,
     onLand: (to, free) => {
       savePosition(to, free);

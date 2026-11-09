@@ -8443,6 +8443,20 @@ main[data-ask-lock] .canvas-lab-floating-tools-wrapper { left: calc(12px + var(-
 .ask-draft[data-idle-bar="true"] .ask-draft-body > :not(.sticky) { display: none; }
 .ask-draft[data-idle-bar="true"] .ask-draft-head :is(.ask-draft-title, .ask-draft-pin, .ask-draft-new, [aria-label="History"]) { display: none; }
 .ask-draft[data-idle-bar="true"] .ask-draft-handoff-hint { display: none; }
+/* V2-1b: the idle bar is one 64 px row: grip, mark, a one-line composer, close. The head's box steps aside
+   (display: contents) so its controls sit in the same row as the composer; the scope line and Past
+   conversations come back with everything else the moment you click in. */
+.ask-draft[data-idle-bar="true"] { flex-direction: row; align-items: center; }
+.ask-draft[data-idle-bar="true"] .ask-draft-head { display: contents; }
+.ask-draft[data-idle-bar="true"] .ask-draft-grip { margin-left: 8px; }
+.ask-draft[data-idle-bar="true"] .ask-draft-head [aria-label="Close Ask Lasso"] { order: 3; margin: 0 10px 0 2px; }
+.ask-draft[data-idle-bar="true"] .ask-draft-body { order: 2; flex: 1; align-self: stretch; justify-content: center; }
+.ask-draft[data-idle-bar="true"] .ask-draft-body footer { border-top: 0; background: transparent; }
+.ask-draft[data-idle-bar="true"] [data-ask-composer-pad] { padding: 13px 0 13px 4px; }
+.ask-draft[data-idle-bar="true"] [data-ask-scope-line] { display: none; }
+.ask-draft[data-idle-bar="true"] .ask-draft-body textarea { min-height: 36px; height: 36px; padding-top: 7px; padding-bottom: 7px; overflow: hidden; }
+.ask-draft[data-idle-bar="true"] [data-testid="continue-in-ai"] { display: none; }
+.ask-draft[data-idle-bar="true"] .ask-draft-foot { display: none; }
 .ask-draft-mark { display: inline-flex; flex-shrink: 0; align-items: center; margin-right: 6px; color: var(--ask-mark); }
 .ask-draft-b .ask-reading-beads { display: none; }
 .ask-draft-pin { position: absolute; left: 50%; top: 7px; z-index: 2; display: grid; place-items: center; width: 32px; height: 32px; margin-left: -16px; border-radius: var(--radius-pill); color: var(--pin-off); }
