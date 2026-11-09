@@ -246,6 +246,16 @@ function LabCardInner({
     onPointerDown(event);
   }
 
+  /**
+   * ASK-FIX-5: note where a press starts before any child can stop it. A file made in a chat
+   * (ReferenceFileCard) keeps body presses from arming a drag, which also hid the press from the
+   * click check, so a clean click never added that piece to Ask. Drag behaviour is unchanged.
+   */
+  function handleCardPointerDownCapture(event: React.PointerEvent) {
+    clickDownRef.current = { x: event.clientX, y: event.clientY };
+    lastClickMovedRef.current = false;
+  }
+
   function handleCardPointerUp(event: React.PointerEvent) {
     const down = cardDownRef.current;
     cardDownRef.current = null;
@@ -342,6 +352,7 @@ function LabCardInner({
       data-node-id={node.id}
       data-connecting={connecting}
       data-read-only={readOnly}
+      onPointerDownCapture={readOnly ? undefined : handleCardPointerDownCapture}
       onPointerDown={readOnly ? undefined : handleCardPointerDown}
       onPointerUp={readOnly ? undefined : handleCardPointerUp}
       onPointerCancel={readOnly ? undefined : handleCardPointerCancel}
