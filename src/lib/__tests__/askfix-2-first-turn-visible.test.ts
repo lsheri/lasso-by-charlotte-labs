@@ -23,7 +23,12 @@ describe("ASK-FIX-2 the first turn is visible while Lasso works", () => {
 describe("ASK-FIX-2 a follow-up scrolls to the new turn", () => {
   const effect = hook.slice(hook.indexOf("// ASK-FIX-2: scroll"), hook.indexOf("async function ensureSession"));
   it("waits for the panel to grow, then scrolls to the end", () => {
-    expect(effect).toMatch(/raf\(\(\) => \{ frame = raf\(\(\) => bottomRef\.current\?\.scrollIntoView\(\{ behavior: "smooth", block: "end" \}\)\); \}\)/);
+    expect(effect).toMatch(/frame = raf\(\(\) => \{ frame = raf\(\(\) => \{/);
+    expect(effect).toMatch(/else bottomRef\.current\?\.scrollIntoView\(\{ behavior: "smooth", block: "end" \}\);/);
+  });
+  it("V2-2c: with the reading state shown, brings that whole block into view instead of the very end", () => {
+    expect(effect).toMatch(/querySelector<HTMLElement>\('\[data-testid="ask-reading-v2"\]'\)/);
+    expect(effect).toMatch(/if \(reading\) reading\.scrollIntoView\(\{ behavior: "smooth", block: "nearest" \}\);/);
   });
   it("scrolls again when the read set arrives, never on every streamed word", () => {
     expect(effect).toMatch(/\[pending, asked, liveManifest\]/);

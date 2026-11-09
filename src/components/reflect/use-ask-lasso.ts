@@ -312,7 +312,13 @@ export function useAskLasso({
     if (!pending) return;
     let frame = 0;
     const raf = typeof requestAnimationFrame === "function" ? requestAnimationFrame : (cb: FrameRequestCallback) => setTimeout(() => cb(0), 0) as unknown as number;
-    frame = raf(() => { frame = raf(() => bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" })); });
+    frame = raf(() => { frame = raf(() => {
+      // V2-2c: when the reading state is shown (ask-v2), bring that whole block into view. Scrolling to the very end
+      // overshoots by the spacer that holds the question near the top, which hid the status and chips.
+      const reading = bottomRef.current?.parentElement?.querySelector<HTMLElement>('[data-testid="ask-reading-v2"]');
+      if (reading) reading.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      else bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    }); });
     return () => { if (typeof cancelAnimationFrame === "function") cancelAnimationFrame(frame); };
   }, [pending, asked, liveManifest]);
 
