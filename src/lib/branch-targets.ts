@@ -6,12 +6,20 @@
 export type BranchTool = "claude" | "chatgpt" | "gemini";
 export type BranchVendor = "claude" | "openai" | "gemini";
 
+/** The default guard for a tool whose real ceiling has not been measured. */
 export const BRANCH_URL_LIMIT = 1800;
 
-export const BRANCH_TARGETS: Record<BranchTool, { label: string; vendor: BranchVendor; prefill: boolean; prefix: string; home: string }> = {
-  claude: { label: "Claude", vendor: "claude", prefill: true, prefix: "https://claude.ai/new?q=", home: "https://claude.ai/new" },
-  chatgpt: { label: "ChatGPT", vendor: "openai", prefill: true, prefix: "https://chatgpt.com/?q=", home: "https://chatgpt.com/" },
-  gemini: { label: "Gemini", vendor: "gemini", prefill: false, prefix: "", home: "https://gemini.google.com/app" },
+/**
+ * H7f: claude.ai/new?q= was measured on 9 Nov 2026: links of 16,000 and 32,000 characters
+ * filled the new chat whole (not sent). 30,000 keeps a margin under what was seen. At 1,800
+ * almost every real chat fell to the clipboard, so Claude opened empty.
+ */
+export const CLAUDE_URL_LIMIT = 30_000;
+
+export const BRANCH_TARGETS: Record<BranchTool, { label: string; vendor: BranchVendor; prefill: boolean; prefix: string; home: string; urlLimit: number }> = {
+  claude: { label: "Claude", vendor: "claude", prefill: true, prefix: "https://claude.ai/new?q=", home: "https://claude.ai/new", urlLimit: CLAUDE_URL_LIMIT },
+  chatgpt: { label: "ChatGPT", vendor: "openai", prefill: true, prefix: "https://chatgpt.com/?q=", home: "https://chatgpt.com/", urlLimit: BRANCH_URL_LIMIT },
+  gemini: { label: "Gemini", vendor: "gemini", prefill: false, prefix: "", home: "https://gemini.google.com/app", urlLimit: BRANCH_URL_LIMIT },
 };
 
 export const BRANCH_TOOLS: readonly BranchTool[] = ["claude", "chatgpt", "gemini"];
@@ -25,7 +33,7 @@ export function branchOpenPlan(tool: BranchTool, prompt: string): BranchOpenPlan
   const target = BRANCH_TARGETS[tool];
   if (!target.prefill) return { handoff: "clipboard", url: target.home, reason: "no_prefill" };
   const url = `${target.prefix}${encodeURIComponent(prompt)}`;
-  if (url.length > BRANCH_URL_LIMIT) return { handoff: "clipboard", url: target.home, reason: "too_long" };
+  if (url.length > target.urlLimit) return { handoff: "clipboard", url: target.home, reason: "too_long" };
   return { handoff: "link", url };
 }
 

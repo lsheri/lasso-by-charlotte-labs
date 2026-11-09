@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { BRANCH_COPY, branchMarkdown, branchOwnerLabel, branchPrompt } from "@/lib/branch-handoff";
-import { BRANCH_URL_LIMIT, branchOpenPlan } from "@/lib/branch-targets";
+import { BRANCH_URL_LIMIT, CLAUDE_URL_LIMIT, branchOpenPlan } from "@/lib/branch-targets";
 
 const ID = "7f1c2b9e-1111-4222-8333-944455556666";
 
@@ -75,8 +75,8 @@ describe("branch targets", () => {
     expect(branchOpenPlan("gemini", "hi")).toEqual({ handoff: "clipboard", url: "https://gemini.google.com/app", reason: "no_prefill" });
   });
   it("falls back to the clipboard past the length guard", () => {
-    const plan = branchOpenPlan("claude", "x".repeat(BRANCH_URL_LIMIT));
-    expect(plan.handoff).toBe("clipboard");
+    expect(branchOpenPlan("chatgpt", "x".repeat(BRANCH_URL_LIMIT)).handoff).toBe("clipboard");
+    expect(branchOpenPlan("claude", "x".repeat(CLAUDE_URL_LIMIT)).handoff).toBe("clipboard");
   });
 });
 
