@@ -1,5 +1,5 @@
 import { stableMemo } from "@/components/canvas-lab/stable-memo";
-import { MoreHorizontal, Pin } from "lucide-react";
+import { ChevronDown, ChevronUp, MoreHorizontal, Pin } from "lucide-react";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { RichTextView } from "@/components/rich-text/RichTextView";
 import { plainToRichHtml } from "@/lib/rich-text";
@@ -7,11 +7,11 @@ import { logEvent } from "@/lib/telemetry";
 import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
 import { Button } from "@/components/ui/button";
 
-import { answerAsOf, serializeAnswerBody } from "@/lib/answer-card";
+import { answerAsOf, answerRolled, serializeAnswerBody } from "@/lib/answer-card";
 import { flagEnabled } from "@/lib/feature-flags";
 import { PinEditTip, usePinTip } from "@/components/canvas-lab/PinEditTip";
 import { PinnedChatRow, useAskDraftPin } from "@/components/canvas-lab/ask-draft/PinnedChatRow";
-import type { LabNode } from "@/components/canvas-lab/canvas-lab-model";
+import type { LabNode, LabResizeCorner } from "@/components/canvas-lab/canvas-lab-model";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -65,6 +65,11 @@ function LabAnswerCardInner({
   onCommit,
   orgId,
   onUnpin,
+  layoutEditable = false,
+  onResizeStart,
+  onResizeKeyDown,
+  onResizeKeyUp,
+  onRoll,
 }: {
   node: LabNode;
   orgId?: string | undefined;
@@ -78,6 +83,12 @@ function LabAnswerCardInner({
   onMoveToFrame?: ((id: string) => void) | undefined;
   /** PIN-1: takes this pinned answer off the board. */
   onUnpin?: ((nodeId: string) => void) | undefined;
+  /** PIN-2: who may arrange the board may resize the answer and roll it up to its title. */
+  layoutEditable?: boolean;
+  onResizeStart?: ((corner: LabResizeCorner, event: React.PointerEvent<HTMLButtonElement>) => void) | undefined;
+  onResizeKeyDown?: ((corner: LabResizeCorner, event: React.KeyboardEvent<HTMLButtonElement>) => void) | undefined;
+  onResizeKeyUp?: ((event: React.KeyboardEvent<HTMLButtonElement>) => void) | undefined;
+  onRoll?: ((rolled: boolean) => void) | undefined;
 }) {
   const asOf = answerAsOf(node.createdAt ?? null);
   const moveTargets = onMoveToFrame ? frameChoices.filter((frame) => frame.id !== node.frame) : [];
@@ -91,7 +102,9 @@ function LabAnswerCardInner({
   const canEdit = node.ownership === "yours" && Boolean(onCommit);
   const pin = useAskDraftPin(node);
   const [chatOpen, setChatOpen] = useState(false);
-  const grown = expanded || editing || originalOpen || chatOpen;
+  // PIN-2: rolled up is a saved height (the title row), so everyone on the board sees the same thing.
+  const rolled = answerRolled(node.height) && !editing;
+  const grown = !rolled && (expanded || editing || originalOpen || chatOpen);
   // PIN-1 (ask-v2, default off): click into the text, Editing label, tools in the card, Done and Cancel, one-time tip.
   const v2 = flagEnabled("ask-v2");
   const [tipShown, dismissTip] = usePinTip(node.id, v2 && canEdit && Boolean(pin) && !editing);
@@ -148,11 +161,12 @@ function LabAnswerCardInner({
       data-focused={focused ? "true" : undefined}
       data-expanded={grown ? "true" : undefined}
       data-editing={editing ? "true" : undefined}
+      data-rolled={rolled ? "true" : undefined}
       className="canvas-lab-answer-card absolute overflow-visible"
       style={{ left: node.x, top: node.y, width: node.width, height: grown ? "auto" : node.height, minHeight: grown ? node.height : undefined, ...(editing ? { overflow: "visible" as const } : {}), zIndex: stackZ }}
     >
       {/* PIN-1b: Done and Cancel keep a steady size on screen as the board zooms out (the stage's inverse zoom, capped at 2x). */}
-      <style>{`.canvas-lab-answer-body > .rich-text { font-size: inherit; line-height: inherit; } .canvas-lab-answer-card[data-editing="true"] .canvas-lab-answer-body { overflow: visible; } .canvas-lab-answer-card[data-editing="true"] [role="toolbar"] { bottom: calc(100% + 2.5rem); } .canvas-lab-answer-card[data-v2="true"][data-editing="true"] [role="toolbar"] { position: static; margin: 0 0 8px; box-shadow: none; } .canvas-lab-answer-card[data-v2="true"][data-editing="true"] .canvas-lab-answer-pin { opacity: .35; pointer-events: none; } .canvas-lab-answer-card[data-v2="true"] [data-testid="answer-edit-actions"] { zoom: var(--lab-inverse-zoom, 1); }`}</style>
+      <style>{`.canvas-lab-answer-body > .rich-text { font-size: inherit; line-height: inherit; } .canvas-lab-answer-card[data-editing="true"] .canvas-lab-answer-body { overflow: visible; } .canvas-lab-answer-card[data-editing="true"] [role="toolbar"] { bottom: calc(100% + 2.5rem); } .canvas-lab-answer-card[data-v2="true"][data-editing="true"] [role="toolbar"] { position: static; margin: 0 0 8px; box-shadow: none; } .canvas-lab-answer-card[data-v2="true"][data-editing="true"] .canvas-lab-answer-pin { opacity: .35; pointer-events: none; } .canvas-lab-answer-card[data-v2="true"] [data-testid="answer-edit-actions"] { zoom: var(--lab-inverse-zoom, 1); } .canvas-lab-answer-card[data-rolled="true"] { overflow: hidden; } .canvas-lab-answer-card[data-rolled="true"] > :not(header):not(.canvas-lab-answer-pin):not(.canvas-lab-answer-rolled):not(.canvas-lab-resize-handle) { display: none; } .canvas-lab-answer-rolled { display: block; margin-top: 4px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 13px; color: var(--foreground); } .canvas-lab-answer-roll { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: var(--radius-pill); color: var(--text-soft, var(--muted-foreground)); } .canvas-lab-answer-roll:hover { color: var(--foreground); background: var(--surface-sunk-2); }`}</style>
       {pin ? <button type="button" className="canvas-lab-answer-pin" aria-label="Take off the board" title="Take off the board" onClick={(e) => { e.stopPropagation(); onUnpin?.(node.id); }}><Pin size={14} aria-hidden="true" fill="currentColor" /></button> : null}
       <header className="flex items-baseline justify-between gap-2">
         <span className="flex items-baseline gap-2">
@@ -162,6 +176,20 @@ function LabAnswerCardInner({
         </span>
         <span className="flex items-center gap-1">
           {asOf ? <span className="font-mono text-[9px] text-soft">{asOf}</span> : null}
+          {layoutEditable && onRoll && !editing ? (
+            <button
+              type="button"
+              className="canvas-lab-answer-roll"
+              data-testid="answer-roll"
+              aria-label={rolled ? "Show the answer" : "Roll up to the title"}
+              title={rolled ? "Show the answer" : "Roll up to the title"}
+              aria-expanded={!rolled}
+              onPointerDown={(event) => event.stopPropagation()}
+              onClick={(event) => { event.stopPropagation(); onRoll(!rolled); }}
+            >
+              {rolled ? <ChevronDown className="h-3.5 w-3.5" aria-hidden /> : <ChevronUp className="h-3.5 w-3.5" aria-hidden />}
+            </button>
+          ) : null}
           {(moveTargets.length > 0 || canEdit) && !(v2 && editing) ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -187,6 +215,7 @@ function LabAnswerCardInner({
           ) : null}
         </span>
       </header>
+      {rolled ? <span className="canvas-lab-answer-rolled" data-testid="answer-rolled-line">{(node.summary.split("\n").find((line) => line.trim()) ?? "").replace(/[#*_>`]/g, "").trim()}</span> : null}
       <div
         ref={bodyRef}
         className="canvas-lab-answer-body"
@@ -235,6 +264,9 @@ function LabAnswerCardInner({
           </button>
         ) : null}
       </footer>
+      {layoutEditable && focused && !editing && !rolled && onResizeStart ? (["nw", "ne", "se", "sw"] as LabResizeCorner[]).map((corner) => (
+        <button key={corner} type="button" className="canvas-lab-resize-handle" data-corner={corner} aria-label={`Resize the answer from ${corner}`} onPointerDown={(event) => onResizeStart(corner, event)} onKeyDown={(event) => onResizeKeyDown?.(corner, event)} onKeyUp={(event) => onResizeKeyUp?.(event)} />
+      )) : null}
     </article>
   );
 }
