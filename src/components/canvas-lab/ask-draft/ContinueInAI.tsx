@@ -188,7 +188,7 @@ export function ContinueInAI({
   signals: (Omit<H7Signals, "asked"> & { signin: boolean }) | null;
   /** Called only on a click, to read what to carry from the current chat. */
   build: () => Omit<H7Input, "viaConnector" | "choice">;
-  onDone: (route: H7Route, blocked: boolean, label: string) => void;
+  onDone: (route: H7Route, blocked: boolean, label: string, choice: H7Choice) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [asked, setAsked] = useState<H7Tool | null>(() => readAskedTool(profileId, safeStore()));
@@ -240,7 +240,7 @@ export function ContinueInAI({
     setOpen(false);
     const viaConnector = Boolean(signals?.signin) && chosen !== "gemini";
     const result = await carryOut(chosen, { ...build(), choice }, viaConnector);
-    onDone(result.route, result.blocked, BRANCH_TARGETS[chosen].label);
+    onDone(result.route, result.blocked, BRANCH_TARGETS[chosen].label, choice);
   }
 
   return (

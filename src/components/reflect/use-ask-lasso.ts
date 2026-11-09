@@ -1,5 +1,6 @@
 import { displayName, nameMatches } from "@/lib/work-item-name";
 import { queuedStillWanted } from "@/lib/ask-queue";
+import { noteWorkboardAskHeld } from "@/components/canvas-lab/canvas-lab-telemetry";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 
@@ -189,7 +190,7 @@ export function useAskLasso({
   function onDraftChange(value: string, caret: number) {
     setDraft(value);
     // ASK-FIX-3: editing a held question drops the hold; the person sends it again when ready.
-    if (queued !== null && value.trim() !== queued) setQueued(null);
+    if (queued !== null && value.trim() !== queued) { noteWorkboardAskHeld(orgId, "cancelled"); setQueued(null); }
     // PRIME-COST: warm the cache once typing starts, when the selection has settled.
     if (shouldPrimeForDraft(value)) primeNow();
     const upTo = value.slice(0, caret);
@@ -380,10 +381,13 @@ export function useAskLasso({
   /** ASK-FIX-3: hold the box's question until the answer in flight is done. */
   function queueSend() {
     const text = draft.trim();
-    if (text) setQueued(text);
+    if (!text) return;
+    if (queued === null) noteWorkboardAskHeld(orgId, "queued");
+    setQueued(text);
   }
 
   function cancelQueued() {
+    if (queued !== null) noteWorkboardAskHeld(orgId, "cancelled");
     setQueued(null);
   }
 
@@ -392,7 +396,9 @@ export function useAskLasso({
     if (pending || queued === null) return;
     const text = queued;
     setQueued(null);
-    if (queuedStillWanted(text, draft)) void send(text);
+    const wanted = queuedStillWanted(text, draft);
+    noteWorkboardAskHeld(orgId, wanted ? "sent" : "cancelled");
+    if (wanted) void send(text);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pending, queued]);
 

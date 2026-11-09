@@ -18,7 +18,7 @@ import { beginTurn, turnKeyFor } from "@/lib/ask-reading-clock";
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
 import { readAskHome, readAskPosition, readUnpinned, writeAskPosition, type AskDraft } from "@/lib/ask-draft";
 import { ASK_DOCK_CONFIG, DOCK_SPOTS, useAskDock, type DockId } from "@/lib/ask-dock-engine";
-import { HANDOFF_VENDORS, handoffLine, handoffLineFits, handoffPrompt, handoffUrl, pickHandoffTool, readAskedTool, readHandoffDestination, shouldNudge, type H7Route } from "@/lib/ask-handoff";
+import { HANDOFF_VENDORS, handoffLine, handoffLineFits, handoffPrompt, handoffUrl, pickHandoffTool, readAskedTool, readHandoffDestination, shouldNudge, type H7Choice, type H7Route } from "@/lib/ask-handoff";
 import { AskTitleStatus } from "@/components/reflect/AskReadingV2";
 import { ContinueInAI, H7_COPY, carryOut, hintMs, useHandoffSignals } from "@/components/canvas-lab/ask-draft/ContinueInAI";
 import { displayKind, kindNoun, usedItems, usedPhrase } from "@/lib/ask-reading-v2";
@@ -134,8 +134,8 @@ export function AskDraftSurface(props: Props) {
     used: lastUsed.map((item) => ({ title: item.title, kind: kindNoun(displayKind(item), 1) })),
     board: (ask.mapped ?? []).map((item) => ({ title: item.display_title ?? item.title, kind: item.type === "ai_thread" ? "conversation" : item.type })),
   });
-  const h7Done = (route: H7Route, blocked: boolean, label: string) => {
-    noteWorkboardAskView(props.orgId, "handoff_opened", draft);
+  const h7Done = (route: H7Route, blocked: boolean, label: string, choice: H7Choice) => {
+    noteWorkboardAskView(props.orgId, "handoff_opened", draft, { choice, route });
     setHandoffHint(blocked ? H7_COPY.hint.blocked : H7_COPY.hint[route](label));
     if (hintTimer.current !== null) clearTimeout(hintTimer.current);
     hintTimer.current = setTimeout(() => setHandoffHint(null), hintMs(blocked ? "blocked" : route));
@@ -473,7 +473,7 @@ export function AskDraftSurface(props: Props) {
         </div>
         {draft === "b" && askV2 && !idleBar && props.tab === "messages" && h7LineShown && h7Tool && nudgeHost ? createPortal(
           <div className="ask-draft-nudge" data-testid="h7-line">
-            <Button type="button" variant="link" className="h-auto min-w-0 whitespace-normal p-0 text-left text-inherit" onClick={() => { void carryOut(h7Tool, { ...h7Build(), choice: "chat_and_used" }, Boolean(h7Signals?.signin) && h7Tool !== "gemini").then((r) => h7Done(r.route, r.blocked, h7Tool === "chatgpt" ? "ChatGPT" : h7Tool === "gemini" ? "Gemini" : "Claude")); }}>{handoffLine(h7Tool, usedPhrase(lastUsed))}</Button>
+            <Button type="button" variant="link" className="h-auto min-w-0 whitespace-normal p-0 text-left text-inherit" onClick={() => { void carryOut(h7Tool, { ...h7Build(), choice: "chat_and_used" }, Boolean(h7Signals?.signin) && h7Tool !== "gemini").then((r) => h7Done(r.route, r.blocked, h7Tool === "chatgpt" ? "ChatGPT" : h7Tool === "gemini" ? "Gemini" : "Claude", "chat_and_used")); }}>{handoffLine(h7Tool, usedPhrase(lastUsed))}</Button>
           </div>, nudgeHost,
         ) : null}
         {draft === "b" && !askV2 && props.tab === "messages" && shouldNudge(turns, dismissedAt) && !ask.pending && nudgeHost ? createPortal(

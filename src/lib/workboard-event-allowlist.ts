@@ -18,7 +18,8 @@ export const WORKBOARD_EVENT_DIMS: Readonly<Record<string, readonly string[]>> =
   "workboard.face_toggled": ["face", "scope"],
   "workboard.node_moved": ["kind", "via"],
   "workboard.ask_moved": ["to", "draft"],
-  "workboard.ask_view": ["action", "draft"],
+  // COV-1 (9 Nov): choice and route for H7 hand-offs; held for a question held while an answer finishes.
+  "workboard.ask_view": ["action", "draft", "choice", "route", "held"],
   "workboard.pasted": ["what", "outcome", "via"],
   "workboard.pinned_chat_opened": ["draft"],
   "workboard.node_created": ["kind", "judgment_type", "via"],
