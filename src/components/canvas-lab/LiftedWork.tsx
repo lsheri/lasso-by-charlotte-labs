@@ -7,14 +7,30 @@ import {
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
-import { Maximize2, Minimize2 } from "lucide-react";
+import {
+  File,
+  FileText,
+  Image,
+  Mail,
+  Maximize2,
+  MessageSquare,
+  MessagesSquare,
+  Minimize2,
+  Phone,
+  Presentation,
+  Table2,
+  Video,
+  type LucideIcon,
+} from "lucide-react";
 
 import {
   LIFT_MORPH_MS,
+  liftFlip,
   liftMoved,
   liftOpenRect,
   liftResized,
   type LiftCorner,
+  type LiftKind,
   type LiftRect,
 } from "@/lib/lift-view";
 
@@ -26,6 +42,23 @@ export const LIFT_COPY = {
 } as const;
 
 const CORNERS: readonly LiftCorner[] = ["nw", "ne", "se", "sw"];
+
+/** LIFT-6: one header for every kind; only the icon says what it is. */
+export const LIFT_KIND_ICON: Record<LiftKind, LucideIcon> = {
+  chat: MessageSquare,
+  document: FileText,
+  deck: Presentation,
+  sheet: Table2,
+  call: Phone,
+  email: Mail,
+  message: MessagesSquare,
+  image: Image,
+  video: Video,
+  other: File,
+};
+
+/** from: sitting on the card's box. open: at its own box. closing: shrinking back into the card. */
+type LiftPhase = "from" | "open" | "closing";
 
 function viewport() {
   return { width: window.innerWidth, height: window.innerHeight };
@@ -46,7 +79,13 @@ type Gesture =
 /**
  * LIFT (behind lift-v1): a piece of work lifted off the board. It morphs out of the card, the board
  * behind dims and blurs, and it can be moved by its header and resized from its corners. Back to the
- * board (or Esc, or a press on the dimmed board) morphs it home. Expand opens the full view.
+ * board (or Esc, or a press on the dimmed board) morphs it home. Expand opens the full view, where the
+ * work has one.
+ *
+ * LIFT-6: one view for every kind of work and for images, so the frame, the size, the corners and the
+ * motion never change with what is inside. The morph is a transform: the view is laid out once at its
+ * own box and starts scaled onto the card's box, so nothing inside reflows while it moves, and a 40-page
+ * PDF morphs as smoothly as a note. The content fades in once the box is on its way.
  *
  * Nothing here writes to the board: a move or a resize lasts until the view closes. It is portalled to
  * the body, and every press, key and wheel inside it stops at its root, so the board behind never pans,
@@ -54,6 +93,7 @@ type Gesture =
  */
 export function LiftedWork({
   title,
+  kind,
   origin,
   returnFocusTo,
   onClose,
@@ -61,35 +101,41 @@ export function LiftedWork({
   children,
 }: {
   title: string;
+  kind: LiftKind;
   /** The card's box on screen when it was lifted; the view grows out of it and shrinks back into it. */
   origin: LiftRect | null;
   returnFocusTo?: (() => HTMLElement | null) | undefined;
   onClose: () => void;
-  onExpand: (rect: LiftRect) => void;
+  /** Absent when there is no fuller view to open (an image): the Expand button is not drawn. */
+  onExpand?: ((rect: LiftRect) => void) | undefined;
   children: (bodyWidth: number) => ReactNode;
 }) {
   const still = useRef(reducedMotion()).current;
-  const target = useRef(liftOpenRect(viewport())).current;
-  const [rect, setRect] = useState<LiftRect>(origin && !still ? origin : target);
-  const [morphing, setMorphing] = useState(false);
-  const [closing, setClosing] = useState(false);
+  const animate = Boolean(origin) && !still;
+  const [rect, setRect] = useState<LiftRect>(() => liftOpenRect(viewport()));
+  const [phase, setPhase] = useState<LiftPhase>(animate ? "from" : "open");
   const gesture = useRef<Gesture | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const finished = useRef(false);
+  const Icon = LIFT_KIND_ICON[kind];
 
-  // Grow out of the card: start on its box, then move to the default size on the next frame.
+  // Grow out of the card: the first paint sits on the card's box; the next frame lets it go.
   useLayoutEffect(() => {
     panelRef.current?.focus({ preventScroll: true });
-    if (!origin || still) return;
-    setMorphing(true);
-    const frame = requestAnimationFrame(() => setRect(target));
-    const done = setTimeout(() => setMorphing(false), LIFT_MORPH_MS + 40);
+    if (!animate) return;
+    panelRef.current?.getBoundingClientRect();
+    let second = 0;
+    const first = requestAnimationFrame(() => {
+      second = requestAnimationFrame(() => setPhase((current) => (current === "from" ? "open" : current)));
+    });
     return () => {
-      cancelAnimationFrame(frame);
-      clearTimeout(done);
+      cancelAnimationFrame(first);
+      cancelAnimationFrame(second);
     };
-  }, [origin, still, target]);
+    // Once, on lift. The view's own box changes only by hand after that.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(
     () => () => {
@@ -106,14 +152,12 @@ export function LiftedWork({
   }
 
   function close() {
-    if (closing) return;
-    if (!origin || still) {
+    if (phase === "closing") return;
+    if (!animate) {
       finish(onClose);
       return;
     }
-    setClosing(true);
-    setMorphing(true);
-    setRect(origin);
+    setPhase("closing");
     closeTimer.current = setTimeout(() => finish(onClose), LIFT_MORPH_MS);
   }
 
@@ -173,7 +217,7 @@ export function LiftedWork({
     <div
       className="lift-layer"
       data-testid="lift-layer"
-      data-closing={closing ? "true" : undefined}
+      data-closing={phase === "closing" ? "true" : undefined}
       onPointerDown={stop}
       onPointerUp={stop}
       onClick={stop}
@@ -199,13 +243,15 @@ export function LiftedWork({
         tabIndex={-1}
         className="lift-panel"
         data-testid="lift-panel"
-        data-morphing={morphing ? "true" : undefined}
+        data-phase={phase}
+        data-kind={kind}
         style={{
           left: rect.left,
           top: rect.top,
           width: rect.width,
           height: rect.height,
-          transitionDuration: `${LIFT_MORPH_MS}ms`,
+          transform: phase !== "open" && origin ? liftFlip(origin, rect) : undefined,
+          transitionDuration: animate ? `${LIFT_MORPH_MS}ms` : undefined,
         }}
       >
         <header
@@ -216,16 +262,19 @@ export function LiftedWork({
           onPointerUp={endGesture}
           onPointerCancel={endGesture}
         >
+          <Icon className="lift-kind" size={15} aria-hidden="true" data-testid="lift-kind" />
           <span className="lift-title">{title}</span>
-          <button
-            type="button"
-            className="lift-icon"
-            aria-label={LIFT_COPY.expand}
-            title={LIFT_COPY.expand}
-            onClick={() => finish(() => onExpand(rect))}
-          >
-            <Maximize2 size={15} aria-hidden="true" />
-          </button>
+          {onExpand ? (
+            <button
+              type="button"
+              className="lift-icon"
+              aria-label={LIFT_COPY.expand}
+              title={LIFT_COPY.expand}
+              onClick={() => finish(() => onExpand(rect))}
+            >
+              <Maximize2 size={15} aria-hidden="true" />
+            </button>
+          ) : null}
           <button
             type="button"
             className="lift-icon"

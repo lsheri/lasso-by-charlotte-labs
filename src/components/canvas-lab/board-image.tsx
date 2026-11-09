@@ -208,7 +208,7 @@ export function buildImageNodeInput(input: { clientKey: string; body: WorkboardI
 const CORNERS: LabResizeCorner[] = ["nw", "ne", "se", "sw"];
 
 /** DD1-f: the picture itself on the board, no card chrome. */
-function LabImageInner({ node, selected, layoutEditable, onSelect, onContextSelect, contextSelected = false, previewSelected = false, connecting = false, connectSourceAnchor = null, onAnchorPointerDown, onAnchorActivate, onDragStart, onResizeStart, onResizeKeyDown, onResizeKeyUp, onRemove }: {
+function LabImageInner({ node, selected, layoutEditable, onSelect, onContextSelect, contextSelected = false, previewSelected = false, connecting = false, connectSourceAnchor = null, onAnchorPointerDown, onAnchorActivate, onDragStart, onResizeStart, onResizeKeyDown, onResizeKeyUp, onRemove, onLift }: {
   node: LabNode;
   selected: boolean;
   layoutEditable: boolean;
@@ -225,6 +225,8 @@ function LabImageInner({ node, selected, layoutEditable, onSelect, onContextSele
   onResizeKeyDown: (corner: LabResizeCorner, event: ReactKeyboardEvent<HTMLButtonElement>) => void;
   onResizeKeyUp: (event: ReactKeyboardEvent<HTMLButtonElement>) => void;
   onRemove: () => void;
+  /** LIFT-6: a clean double-click lifts the picture into the same view every card lifts into. */
+  onLift?: ((origin: DOMRect) => void) | undefined;
 }) {
   const clickDownRef = useRef<{ x: number; y: number } | null>(null);
   const anchorDownRef = useRef<{ x: number; y: number } | null>(null);
@@ -281,7 +283,14 @@ function LabImageInner({ node, selected, layoutEditable, onSelect, onContextSele
     <section data-testid={`${isVideo ? "video" : "image"}-${node.id}`} data-node-id={node.id} data-kind={node.kind} data-connecting={connecting} data-selected={selected} data-status={state.status} aria-label={copy.label} tabIndex={0} className={`canvas-lab-card absolute rounded-[2px] ${selected ? "outline outline-2 outline-offset-2 outline-primary" : ""}`} style={style} onFocus={onSelect} onPointerDown={(event) => { clickDownRef.current = { x: event.clientX, y: event.clientY }; if (!selected) onSelect(); onDragStart(event); }} onPointerCancel={() => { clickDownRef.current = null; }} onClick={(event) => {
       const onControl = Boolean((event.target as Element).closest("button,textarea,a,input,select,[role='menu'],[role='menuitem']"));
       if (cardBodyClickSelects({ readOnly: !onContextSelect, clickCount: event.detail, down: clickDownRef.current, up: { x: event.clientX, y: event.clientY }, onControl })) clickControllerRef.current?.click();
-    }} onDoubleClick={() => clickControllerRef.current?.undo()}>
+    }} onDoubleClick={(event) => {
+      clickControllerRef.current?.undo();
+      if (!onLift || (event.target as Element).closest("button,video")) return;
+      const down = clickDownRef.current;
+      if (down && Math.hypot(event.clientX - down.x, event.clientY - down.y) >= 6) return;
+      event.stopPropagation();
+      onLift(event.currentTarget.getBoundingClientRect());
+    }}>
       <div data-selected={contextSelected} data-marquee-preview={previewSelected} className="canvas-lab-card-paper h-full w-full rounded-[2px]">
       {isVideo ? (
         <div className="flex h-full w-full flex-col overflow-hidden rounded-[2px]">

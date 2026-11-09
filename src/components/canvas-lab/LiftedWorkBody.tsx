@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import { WorkboardFilePreview as FilePreview } from "@/components/canvas-lab/WorkboardFilePreview";
+import { NO_PREVIEW_COPY } from "@/design/reference/NoPreview";
 import { RealPreview } from "@/design/reference/RealPreview";
 import { LIFT_AUTHOR_WIDTH, liftZoom } from "@/lib/lift-view";
 import { workToBoardCard } from "@/lib/work-board-card";
@@ -12,15 +13,24 @@ import type { WorkItemRow } from "@/lib/work-types";
 
 export const LIFT_BODY_COPY = {
   nothing: "Nothing to show here yet. Open the full view to read it.",
+  context: "The work is still here and can be used as context.",
 } as const;
 
-/** A PDF, an HTML artifact or a diagram the card can draw: in the lifted view it is live, not a snapshot. */
+/**
+ * What a file shows in the lifted view. A PDF, an HTML artifact or a diagram is live, not a snapshot;
+ * LIFT-6: slides and text taken from a file show too, so a deck or a sheet captured from a chat lifts
+ * like any other work instead of falling back to the old reader.
+ */
 export function liftFilePreview(
   filePreview: WorkboardFilePreview | undefined,
 ): WorkboardFilePreview | undefined {
   if (!filePreview) return undefined;
   if (filePreview.kind === "pdf" && filePreview.url) return filePreview;
   if ((filePreview.kind === "html" || filePreview.kind === "mermaid") && filePreview.html)
+    return filePreview;
+  if (filePreview.kind === "slide" && (filePreview.pages?.length || filePreview.lines.length))
+    return filePreview;
+  if (filePreview.kind === "text" && filePreview.lines.some((line) => line.trim()))
     return filePreview;
   return undefined;
 }
@@ -58,8 +68,9 @@ export function LiftedWorkBody({
     );
   }
   if (file) {
+    const reading = file.kind === "slide" || file.kind === "text";
     return (
-      <div className="lift-file" data-testid="lift-file">
+      <div className={reading ? "lift-file lift-file-reading" : "lift-file"} data-testid="lift-file">
         <FilePreview preview={file} title={title} focused onFailure={() => setFileFailed(true)} />
       </div>
     );
@@ -76,9 +87,12 @@ export function LiftedWorkBody({
       </div>
     );
   }
+  // LIFT-6: the card's own no-preview words, so the view never says something the card did not.
+  const reason = filePreview?.kind === "fallback" ? filePreview.reason : undefined;
   return (
-    <p className="lift-nothing" data-testid="lift-nothing">
-      {LIFT_BODY_COPY.nothing}
-    </p>
+    <div className="lift-nothing" data-testid="lift-nothing">
+      <p>{reason ? NO_PREVIEW_COPY[reason] : LIFT_BODY_COPY.nothing}</p>
+      {reason ? <p className="lift-nothing-note">{LIFT_BODY_COPY.context}</p> : null}
+    </div>
   );
 }

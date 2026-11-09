@@ -1,5 +1,3 @@
-import { isReferenceItem } from "@/lib/reference-file-shared";
-
 /**
  * LIFT (claude/SPEC-nov09-LIFT-double-click-lifts-work.md): the geometry and the rules for the view a
  * piece of work lifts into. Pure, so the shell stays thin and these stay tested.
@@ -23,7 +21,10 @@ export const LIFT_DEFAULT = {
 export const LIFT_MIN = { width: 320, height: 240 } as const;
 /** Keep this much of the view on screen while it is dragged, so its header can always be caught again. */
 export const LIFT_KEEP_ON_SCREEN = 80;
-export const LIFT_MORPH_MS = 200;
+/** LIFT-6: the box moves for this long; the content fades in over its second half. */
+export const LIFT_MORPH_MS = 240;
+/** LIFT-6 (Liam, 9 Nov): the lifted view has slightly rounded corners. */
+export const LIFT_RADIUS = 12;
 
 export function liftDefaultSize(viewport: LiftViewport): { width: number; height: number } {
   return {
@@ -112,16 +113,14 @@ type LiftableItem =
   | undefined;
 
 /**
- * Which cards lift on a double-click. Work only: a chat, document, deck, sheet, file, email or artifact.
- * Not the decisions document (it has its own ledger), and not a file piece whose bytes were never added
- * (there is nothing to read yet; double-click still opens it). Cards without a work item (a local note)
- * keep their own double-click.
+ * Which cards lift on a double-click. LIFT-6 (Liam, 9 Nov: "the same for all document types and images"):
+ * every card that carries work lifts, whatever it is and however it arrived: a chat, a document, a deck,
+ * a sheet, a file, an email, a piece captured from a chat with no bytes yet, and the decisions document
+ * (Expand still opens its ledger). Images and videos lift through the same view. Cards without a work
+ * item (a local note, a text block) keep double-click to edit: they are the editor, not work to read.
  */
 export function liftable(item: LiftableItem): boolean {
-  if (!item?.type) return false;
-  if (item.type === "document" && item.doc_kind === "decisions") return false;
-  if (isReferenceItem(item)) return false;
-  return true;
+  return Boolean(item?.type);
 }
 
 /** The kind of work on a lift event: the work type, a chat called a chat. A closed set, never a title. */
@@ -134,6 +133,7 @@ export const LIFT_KINDS = [
   "email",
   "message",
   "image",
+  "video",
   "other",
 ] as const;
 export type LiftKind = (typeof LIFT_KINDS)[number];
@@ -145,6 +145,7 @@ const LIFT_WORK_TYPES: readonly string[] = [
   "email",
   "message",
   "image",
+  "video",
 ];
 export function liftKindOf(type: string | null | undefined): LiftKind {
   if (type === "ai_thread") return "chat";
@@ -157,4 +158,16 @@ export const LIFT_AUTHOR_WIDTH = 480;
 export function liftZoom(bodyWidth: number): number {
   const fit = (bodyWidth - 48) / LIFT_AUTHOR_WIDTH;
   return Math.round(Math.min(1.5, Math.max(1, fit)) * 100) / 100;
+}
+
+/**
+ * LIFT-6: the morph is a transform, never a layout change. The view is laid out once at its final box;
+ * this is the transform that makes that box sit exactly on the card's box. Animating it to "none" grows
+ * the view out of the card, and back to it shrinks the view into the card, with nothing inside reflowing.
+ */
+export function liftFlip(from: LiftRect, to: LiftRect): string {
+  const sx = to.width > 0 ? from.width / to.width : 1;
+  const sy = to.height > 0 ? from.height / to.height : 1;
+  const r = (n: number) => Math.round(n * 1000) / 1000;
+  return `translate(${r(from.left - to.left)}px, ${r(from.top - to.top)}px) scale(${r(sx)}, ${r(sy)})`;
 }

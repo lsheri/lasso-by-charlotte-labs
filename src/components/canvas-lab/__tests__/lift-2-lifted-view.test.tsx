@@ -101,9 +101,13 @@ describe("LIFT which cards lift", () => {
     for (const type of ["ai_thread", "document", "deck", "sheet", "email", "file"])
       expect(liftable({ type })).toBe(true);
   });
-  it("the decisions document keeps its ledger, and a file piece with no bytes yet keeps its open", () => {
-    expect(liftable({ type: "document", doc_kind: "decisions" })).toBe(false);
-    expect(liftable({ type: "document", content_fidelity: "reference" })).toBe(false);
+  // LIFT-6 (Liam, 9 Nov): the same view for every document type. A piece captured from a chat and the
+  // decisions document lift like any other work; Expand still opens the decisions ledger.
+  it("the decisions document and a piece captured from a chat lift too", () => {
+    expect(liftable({ type: "document", doc_kind: "decisions" })).toBe(true);
+    expect(liftable({ type: "document", content_fidelity: "reference" })).toBe(true);
+    expect(liftable({ type: "deck", content_fidelity: "reference" })).toBe(true);
+    expect(liftable({ type: "ai_thread", content_fidelity: "reference" })).toBe(true);
   });
   it("a card with no work item (a local note) keeps its own double-click", () => {
     expect(liftable(undefined)).toBe(false);
@@ -125,6 +129,7 @@ function renderLift(props: Partial<Parameters<typeof LiftedWork>[0]> = {}) {
   const utils = render(
     <LiftedWork
       title="Series A brief"
+      kind="document"
       origin={null}
       onClose={onClose}
       onExpand={onExpand}
@@ -182,10 +187,12 @@ describe("LIFT the view", () => {
     act(() => {
       vi.advanceTimersByTime(LIFT_MORPH_MS + 100);
     });
-    fireEvent.click(screen.getByRole("button", { name: LIFT_COPY.compress }));
     const panel = screen.getByTestId("lift-panel");
-    expect(panel.style.left).toBe("10px");
-    expect(panel.style.width).toBe("260px");
+    fireEvent.click(screen.getByRole("button", { name: LIFT_COPY.compress }));
+    // LIFT-6: it shrinks by transform onto the card's box; its own box never changes, so nothing reflows.
+    expect(panel.getAttribute("data-phase")).toBe("closing");
+    expect(panel.style.transform).toContain("scale(");
+    expect(panel.style.width).not.toBe("260px");
     expect(onClose).not.toHaveBeenCalled();
     act(() => {
       vi.advanceTimersByTime(LIFT_MORPH_MS);
@@ -201,7 +208,7 @@ describe("LIFT the view", () => {
         onWheel={outside.wheel}
         onKeyDown={outside.keyDown}
       >
-        <LiftedWork title="t" origin={null} onClose={() => undefined} onExpand={() => undefined}>
+        <LiftedWork title="t" kind="chat" origin={null} onClose={() => undefined} onExpand={() => undefined}>
           {() => <p data-testid="inside">x</p>}
         </LiftedWork>
       </div>,
@@ -338,7 +345,7 @@ describe("LIFT on the board page (nothing renders that page in tests, so its wir
   });
   it("a lifted card that leaves the board closes its view", () => {
     expect(page).toContain(
-      "useEffect(() => { if (lifted && (!liftedNode || !liftedItem)) setLifted(null); }, [lifted, liftedNode, liftedItem]);",
+      "useEffect(() => { if (lifted && (!liftedNode || (!liftedItem && !liftedPicture))) setLifted(null); }, [lifted, liftedNode, liftedItem, liftedPicture]);",
     );
   });
   it("Expand opens the full reader from the view's box, and lifting writes nothing to the board", () => {

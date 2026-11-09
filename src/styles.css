@@ -8626,28 +8626,38 @@ footer[data-compact] [data-ask-composer-pad] { padding: 8px 8px 8px 14px; }
    view grows out of its card and shrinks back into it. Light blur only: a heavy blur over a board full of
    live previews can drop frames. */
 .lift-layer { position: fixed; inset: 0; z-index: 200000; }
-.lift-backdrop { position: absolute; inset: 0; background: color-mix(in oklab, var(--nb-ink) 16%, transparent); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); animation: lift-fade 200ms ease-out both; }
-.lift-layer[data-closing="true"] .lift-backdrop { animation: lift-fade-out 200ms ease-in both; }
-.lift-panel { position: fixed; display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--nb-rule); border-radius: 8px; background: var(--nb-paper); box-shadow: 0 18px 48px color-mix(in oklab, var(--nb-ink) 22%, transparent), var(--nb-paper-shadow-contact); outline: none; }
-.lift-panel[data-morphing="true"] { transition-property: left, top, width, height; transition-timing-function: cubic-bezier(.2, .8, .2, 1); }
-.lift-head { display: flex; flex-shrink: 0; align-items: center; gap: 4px; height: 44px; padding: 0 8px 0 14px; border-bottom: 1px solid var(--nb-rule); cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
+.lift-backdrop { position: absolute; inset: 0; background: color-mix(in oklab, var(--nb-ink) 16%, transparent); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); animation: lift-fade 240ms ease-out both; }
+.lift-layer[data-closing="true"] .lift-backdrop { animation: lift-fade-out 240ms ease-in both; }
+.lift-panel { position: fixed; display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--nb-rule); border-radius: 12px; background: var(--nb-paper); box-shadow: 0 24px 64px color-mix(in oklab, var(--nb-ink) 20%, transparent), 0 2px 6px color-mix(in oklab, var(--nb-ink) 8%, transparent); outline: none; transform-origin: 0 0; transition-property: transform; transition-timing-function: cubic-bezier(.2, .8, .2, 1); }
+/* LIFT-6: the content waits for the box, then fades in; on the way home it leaves first. */
+.lift-panel > .lift-head, .lift-panel > .lift-body { transition: opacity 150ms ease-out 90ms; }
+.lift-panel[data-phase="from"] > .lift-head, .lift-panel[data-phase="from"] > .lift-body { opacity: 0; transition: none; }
+.lift-panel[data-phase="closing"] > .lift-head, .lift-panel[data-phase="closing"] > .lift-body { opacity: 0; transition: opacity 90ms ease-in; }
+.lift-head { display: flex; flex-shrink: 0; align-items: center; gap: 6px; height: 44px; padding: 0 8px 0 14px; border-bottom: 1px solid var(--nb-rule); cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
 .lift-head:active { cursor: grabbing; }
+.lift-kind { flex-shrink: 0; color: color-mix(in oklab, var(--nb-graphite) 72%, transparent); }
 .lift-title { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font: 600 14px/1.2 var(--font-sans); color: var(--nb-graphite); }
 .lift-icon { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: var(--radius-control); color: var(--nb-graphite); cursor: pointer; }
 .lift-icon:hover { background: color-mix(in oklab, var(--nb-ink) 7%, transparent); }
 .lift-icon:focus-visible { outline: 2px solid var(--nb-graphite); outline-offset: 1px; }
-.lift-body { position: relative; flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; }
-.lift-real { margin: 0 auto; }
+/* One stage behind every kind of work, so a page, a deck, a sheet, a chat and a picture sit on the same ground. */
+.lift-body { position: relative; flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; background: var(--surface-sunk); }
+.lift-real { margin: 0 auto; --neutral-60: var(--surface-sunk); --surface-sunk-2: var(--surface-sunk); }
 .lift-file { position: relative; height: 100%; min-height: 320px; }
-.lift-file .canvas-lab-html-preview, .lift-file .canvas-lab-html-preview iframe { width: 100%; height: 100%; border: 0; }
-.lift-summary { max-width: 62ch; margin: 0 auto; padding: 20px 24px; font: 400 15px/1.55 var(--font-sans); color: var(--nb-graphite); }
+.lift-file .canvas-lab-html-preview, .lift-file .canvas-lab-html-preview iframe { width: 100%; height: 100%; border: 0; background: var(--nb-paper); }
+.lift-file-reading { height: auto; max-width: 72ch; margin: 24px auto; padding: 28px 32px; background: var(--nb-paper); border-radius: var(--radius-card); box-shadow: var(--nb-paper-shadow-contact); font-size: 15px; line-height: 1.55; }
+.lift-summary { max-width: 62ch; margin: 24px auto; padding: 28px 32px; background: var(--nb-paper); border-radius: var(--radius-card); box-shadow: var(--nb-paper-shadow-contact); font: 400 15px/1.55 var(--font-sans); color: var(--nb-graphite); }
 .lift-summary p { margin: 0 0 12px; }
-.lift-nothing { margin: 0; padding: 32px 24px; text-align: center; font: 400 14px/1.5 var(--font-sans); color: color-mix(in oklab, var(--nb-graphite) 70%, transparent); }
-.lift-corner { position: absolute; width: 16px; height: 16px; z-index: 1; }
+.lift-nothing { display: grid; place-content: center; gap: 6px; height: 100%; min-height: 200px; padding: 32px 24px; text-align: center; font: 400 14px/1.5 var(--font-sans); color: color-mix(in oklab, var(--nb-graphite) 78%, transparent); }
+.lift-nothing p { margin: 0; }
+.lift-nothing-note { font-size: 13px; color: color-mix(in oklab, var(--nb-graphite) 60%, transparent); }
+.lift-image { display: grid; place-items: center; height: 100%; padding: 16px; }
+.lift-image img, .lift-image video { display: block; max-width: 100%; max-height: 100%; object-fit: contain; border-radius: var(--radius-card); box-shadow: var(--nb-paper-shadow-contact); }
+.lift-corner { position: absolute; width: 18px; height: 18px; z-index: 1; }
 .lift-corner[data-corner="nw"] { left: 0; top: 0; cursor: nwse-resize; }
 .lift-corner[data-corner="ne"] { right: 0; top: 0; cursor: nesw-resize; }
 .lift-corner[data-corner="se"] { right: 0; bottom: 0; cursor: nwse-resize; }
 .lift-corner[data-corner="sw"] { left: 0; bottom: 0; cursor: nesw-resize; }
 @keyframes lift-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes lift-fade-out { from { opacity: 1; } to { opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { .lift-backdrop, .lift-layer[data-closing="true"] .lift-backdrop { animation: none; } .lift-panel[data-morphing="true"] { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .lift-backdrop, .lift-layer[data-closing="true"] .lift-backdrop { animation: none; } .lift-panel, .lift-panel > .lift-head, .lift-panel > .lift-body { transition: none; } }
