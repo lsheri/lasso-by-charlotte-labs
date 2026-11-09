@@ -8473,6 +8473,18 @@ main[data-ask-lock] .canvas-lab-floating-tools-wrapper { left: calc(12px + var(-
 .ask-draft-pin:disabled { opacity: .4; cursor: default; }
 .ask-draft-pin:focus-visible { outline: 2px solid var(--focus-ring-new); outline-offset: 1px; }
 .ask-draft-b .ask-draft-head { position: relative; }
+/* C1 (ask-v2): status in the title bar, a 2px progress line on its bottom edge. Lab "Idle bar and sizing", .sh .band and .sh-prog. */
+.ask-draft-b .ask-draft-title.ask-draft-status { display: flex; align-items: baseline; gap: 8px; padding-right: 40px; font-family: var(--font-sans); font-size: 12.5px; font-weight: 500; letter-spacing: .02em; text-transform: none; color: var(--nb-graphite); }
+.ask-draft-status-word { background: linear-gradient(90deg, var(--foreground) 0 40%, var(--muted-foreground) 50%, var(--foreground) 60% 100%); background-size: 250% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: ask-status-shimmer 2.2s linear infinite; }
+.ask-draft-status-clock { font-family: var(--font-mono); font-size: 11px; font-variant-numeric: tabular-nums; color: var(--muted-foreground); }
+.ask-draft-prog { position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; overflow: hidden; background: var(--surface-sunk-2, var(--muted)); pointer-events: none; }
+.ask-draft-prog > i { position: absolute; top: 0; bottom: 0; left: 0; width: 45%; background: var(--nb-green-deep); transition: width 420ms cubic-bezier(.32,.72,0,1); }
+.ask-draft-prog[data-phase="gathering"] > i { width: 28%; animation: ask-prog-sweep 1.4s cubic-bezier(.32,.72,0,1) infinite; }
+.ask-draft-prog[data-phase="writing"] > i { width: 70%; animation: ask-prog-creep 24s cubic-bezier(.1,.6,.2,1) forwards; }
+@keyframes ask-status-shimmer { from { background-position: 100% 0; } to { background-position: -150% 0; } }
+@keyframes ask-prog-sweep { from { left: -28%; } to { left: 100%; } }
+@keyframes ask-prog-creep { from { width: 70%; } to { width: 95%; } }
+@media (prefers-reduced-motion: reduce) { .ask-draft-status-word { animation: none; color: var(--foreground); background: none; } .ask-draft-prog > i { animation: none !important; } }
 @container (max-width: 400px) { .ask-draft-b .ask-draft-new { width: 28px; padding: 0; font-size: 0; } .ask-draft-b .ask-draft-new::before { content: "+"; font-size: 17px; line-height: 1; } }
 @media (prefers-reduced-motion: reduce) { .ask-draft-b { animation: none; } }
 .ask-draft-body { display: flex; flex: 1; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; }

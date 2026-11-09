@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { TrailGlyph } from "@/components/reflect/ContextTrail";
 import type { ContextManifest } from "@/lib/context-manifest";
+import { anchorStart } from "@/lib/ask-reading-clock";
 import {
   ASK_PHASE_LABEL,
   askPhase,
@@ -33,7 +34,7 @@ export const ASK_READING_V2_STYLES = `
 }
 `;
 
-function elapsedLabel(milliseconds: number): string {
+export function elapsedLabel(milliseconds: number): string {
   const seconds = Math.floor(milliseconds / 1_000);
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 }
@@ -49,6 +50,7 @@ export function AskReadingV2({
   streamed,
   pickedCount,
   pickedVideos = 0,
+  statusInTitle = false,
 }: {
   /** The live manifest from the read frame. Null until the server has assembled the read set. */
   manifest: ContextManifest | null | undefined;
@@ -59,6 +61,8 @@ export function AskReadingV2({
   pickedCount: number;
   /** Videos in the person's pick. Never context, never counted, named "not read". */
   pickedVideos?: number;
+  /** C1 (ask-v2 dock): the status word, clock and progress line sit in the window's title bar instead. */
+  statusInTitle?: boolean;
 }) {
   const mountedAt = useRef(Date.now());
   const [elapsed, setElapsed] = useState(0);
@@ -86,18 +90,22 @@ export function AskReadingV2({
       aria-live="polite"
     >
       <style>{ASK_READING_V2_STYLES}</style>
-      <div className="flex items-center gap-2 text-[13px]">
-        <span className="text-foreground" data-testid="ask-v2-status">
-          {ASK_PHASE_LABEL[phase]}
-        </span>
-        <span className="ml-auto font-mono text-[11px] tabular-nums">{elapsedLabel(elapsed)}</span>
-      </div>
-      <div className="ask-v2-steps mt-1.5" data-testid="ask-v2-steps" data-step={step} aria-hidden>
-        {[1, 2, 3].map((n) => (
-          <span key={n} data-on={n <= step ? "true" : "false"} />
-        ))}
-      </div>
-      <div className="mt-2.5 flex flex-wrap items-center gap-1.5" data-testid="ask-v2-chips">
+      {statusInTitle ? null : (
+        <>
+          <div className="flex items-center gap-2 text-[13px]">
+            <span className="text-foreground" data-testid="ask-v2-status">
+              {ASK_PHASE_LABEL[phase]}
+            </span>
+            <span className="ml-auto font-mono text-[11px] tabular-nums">{elapsedLabel(elapsed)}</span>
+          </div>
+          <div className="ask-v2-steps mt-1.5" data-testid="ask-v2-steps" data-step={step} aria-hidden>
+            {[1, 2, 3].map((n) => (
+              <span key={n} data-on={n <= step ? "true" : "false"} />
+            ))}
+          </div>
+        </>
+      )}
+      <div className={`${statusInTitle ? "" : "mt-2.5 "}flex flex-wrap items-center gap-1.5`} data-testid="ask-v2-chips">
         {manifest ? null : (
           <span className="ask-v2-chip" data-read="none" data-testid="ask-v2-chip">
             <TrailGlyph kind="item" />
@@ -151,5 +159,41 @@ export function AskReadingV2({
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * C1 (ask-v2 dock): the status lives in the window's title bar, as agreed in the lab
+ * ("Idle bar and sizing", status band). The word and clock replace "Ask Lasso" while
+ * Lasso works; a 2px line along the bar's bottom edge shows the step. Gathering sweeps
+ * (nothing confirmed yet); Reading holds at 45%; Writing creeps from 70% toward 95%
+ * and never reaches the end until the answer is saved.
+ */
+export function AskTitleStatus({
+  manifest,
+  streamed,
+  turnKey,
+}: {
+  manifest: ContextManifest | null | undefined;
+  streamed: string | null | undefined;
+  /** The turn's clock (ask-reading-clock), so folding and unfolding never restarts the count. */
+  turnKey: string;
+}) {
+  const [elapsed, setElapsed] = useState(() => performance.now() - anchorStart(turnKey, performance.now()));
+  useEffect(() => {
+    const tick = () => setElapsed(performance.now() - anchorStart(turnKey, performance.now()));
+    tick();
+    const timer = window.setInterval(tick, 1_000);
+    return () => window.clearInterval(timer);
+  }, [turnKey]);
+  const phase = askPhase({ manifest, streamed });
+  return (
+    <>
+      <span className="ask-draft-title ask-draft-status" data-testid="ask-title-status" data-phase={phase} role="status" aria-live="polite">
+        <span className="ask-draft-status-word">{ASK_PHASE_LABEL[phase]}</span>
+        <span className="ask-draft-status-clock">{elapsedLabel(elapsed)}</span>
+      </span>
+      <span className="ask-draft-prog" data-testid="ask-title-prog" data-phase={phase} aria-hidden="true"><i /></span>
+    </>
   );
 }
