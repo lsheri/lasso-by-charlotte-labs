@@ -241,7 +241,7 @@ export const importGranolaMeetings = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<ImportResult> => {
     const { supabase, userId } = context;
     const { resolveProfile } = await import("@/lib/profile-resolve");
-    const { importedGranolaIds, storeFile, captureEvents } =
+    const { existingByProviderId, storeFile, captureEvents, sha256Bytes, recordNewVersion } =
       await import("@/lib/connector-import.server");
     const { requireGranolaKey, fetchGranolaNote } = await import("@/lib/granola.server");
     const { guardConnector } = await import("@/lib/connector-error.server");
@@ -251,16 +251,18 @@ export const importGranolaMeetings = createServerFn({ method: "POST" })
 
     const guard = { provider: "granola", orgId: profile.org_id, userId };
     const key = await guardConnector(supabase, guard, () => requireGranolaKey(profile.id));
-    const seen = await importedGranolaIds(supabase, profile.id);
+    // GRANOLA-1: a note already in Lasso is refreshed rather than skipped. When its text
+    // changed (for example, speaker labels now read correctly), the new text becomes the
+    // current version and the old one stays in version history, as Drive re-imports do.
+    const existing = await existingByProviderId(supabase, profile.id, "connector:granola", "granola_id");
     const newIds: string[] = [];
+    const touchedIds: string[] = [];
     let imported = 0;
     let skipped = 0;
+    let updated = 0;
+    let unchanged = 0;
 
     for (const [index, id] of data.ids.entries()) {
-      if (seen.has(id)) {
-        skipped += 1;
-        continue;
-      }
       // One note at a time, with a breath between calls: Granola rate-limits.
       if (index > 0) await new Promise((r) => setTimeout(r, 250));
       const note = await guardConnector(supabase, guard, () => fetchGranolaNote(key, id));
@@ -269,6 +271,32 @@ export const importGranolaMeetings = createServerFn({ method: "POST" })
         continue;
       }
       const bytes = new TextEncoder().encode(note.markdown);
+      const hash = await sha256Bytes(bytes);
+      const prior = existing.get(id);
+      if (prior) {
+        if (prior.content_hash === hash) {
+          unchanged += 1;
+          continue;
+        }
+        const newRef = await storeFile(userId, `${note.title}.md`, bytes, "text/markdown; charset=utf-8");
+        await recordNewVersion(supabase, {
+          workItemId: prior.id,
+          previousRef: prior.content_ref,
+          previousHash: prior.content_hash,
+          previousAt: prior.captured_at,
+          newRef,
+          newHash: hash,
+          sourceEvent: "connector_reimport",
+        });
+        const update = await supabase
+          .from("work_items")
+          .update({ content_ref: newRef, content_hash: hash })
+          .eq("id", prior.id);
+        if (update.error) throw new Error(update.error.message);
+        touchedIds.push(prior.id);
+        updated += 1;
+        continue;
+      }
       const path = await storeFile(
         userId,
         `${note.title}.md`,
@@ -286,6 +314,7 @@ export const importGranolaMeetings = createServerFn({ method: "POST" })
           title: note.title,
           visibility: "unmapped",
           content_ref: path,
+          content_hash: hash,
           content_fidelity: "transcribed",
           ts_precision: note.date ? "source" : "capture",
           created_at_source: note.date,
@@ -295,10 +324,15 @@ export const importGranolaMeetings = createServerFn({ method: "POST" })
         .select("id")
         .maybeSingle();
       if (insert.error) throw new Error(insert.error.message);
-      if (insert.data?.id) newIds.push(insert.data.id);
-      seen.add(id);
+      if (insert.data?.id) {
+        newIds.push(insert.data.id);
+        existing.set(id, { id: insert.data.id, content_ref: path, content_hash: hash, captured_at: new Date().toISOString() });
+      }
       imported += 1;
     }
+
+    const { ensureExtracts } = await import("@/lib/extract.server");
+    await ensureExtracts([...newIds, ...touchedIds]);
 
     await captureEvents(supabase, {
       orgId: profile.org_id,
@@ -308,7 +342,7 @@ export const importGranolaMeetings = createServerFn({ method: "POST" })
       source: "granola",
       imported,
     });
-    return { imported, skipped, updated: 0, unchanged: 0, ids: newIds };
+    return { imported, skipped, updated, unchanged, ids: [...newIds, ...touchedIds] };
   });
 
 /** Gmail: label chips stand in for folders, plus Gmail query syntax passthrough. */
