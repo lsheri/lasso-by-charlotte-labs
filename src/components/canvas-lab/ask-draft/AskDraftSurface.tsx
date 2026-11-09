@@ -253,6 +253,21 @@ export function AskDraftSurface(props: Props) {
   // ASK-B2a: a picked-cards picker or a failed send needs room to show.
   useEffect(() => { if (ask.pickerOpen || ask.error) setFolded(false); }, [ask.pickerOpen, ask.error]);
 
+  // V2-1d (ask-v2): a press on the empty board cancels its default (no text selection), which also kept
+  // focus in Ask, so the idle row never came back. A press anywhere outside Ask now takes focus out of it.
+  useEffect(() => {
+    if (!askV2 || !focusedIn) return;
+    const onPress = (event: PointerEvent) => {
+      const surface = dock.surfaceRef.current;
+      if (!surface || !pressLeavesAsk(event.target, surface)) return;
+      const active = document.activeElement;
+      if (active instanceof HTMLElement && surface.contains(active)) active.blur();
+      setFocusedIn(false);
+    };
+    document.addEventListener("pointerdown", onPress, true);
+    return () => document.removeEventListener("pointerdown", onPress, true);
+  }, [askV2, focusedIn, dock.surfaceRef]);
+
   const { refresh } = dock;
 
   // Content changes size: re-measure the body and the binder's scroll content.
@@ -471,4 +486,11 @@ export function AskDraftSurface(props: Props) {
     </>,
     host,
   );
+}
+
+/** V2-1d: a press outside Ask and outside any menu, popup or dialog it may have opened. */
+export function pressLeavesAsk(target: EventTarget | null, surface: HTMLElement): boolean {
+  if (!(target instanceof Element)) return false;
+  if (surface.contains(target)) return false;
+  return !target.closest('[role="menu"], [role="dialog"], [role="listbox"], [data-radix-popper-content-wrapper], [data-testid="continue-menu"]');
 }
