@@ -121,7 +121,7 @@ describe("H7 nothing is put together until the person continues", () => {
     );
     expect(screen.getAllByRole("menuitem")[0]!.getAttribute("data-default")).toBe("true");
     fireEvent.click(screen.getAllByRole("menuitem")[0]!);
-    await waitFor(() => expect(onDone).toHaveBeenCalledWith("link", false, "Claude"));
+    await waitFor(() => expect(onDone).toHaveBeenCalledWith("link", false, "Claude", "chat_and_used"));
     expect(build).toHaveBeenCalledTimes(1);
     expect(open.mock.calls[0]![0]).toMatch(/^https:\/\/claude\.ai\/new\?q=/);
   });
@@ -243,7 +243,7 @@ describe("H7 behind the flag, events unchanged", () => {
     expect(src).toMatch(/draft === "b" && !askV2 && props\.tab === "messages" && shouldNudge/);
     expect(src).toMatch(/useHandoffSignals\(\{[^}]*enabled: askV2 \}\)/);
     expect(
-      src.match(/noteWorkboardAskView\(props\.orgId, "handoff_opened", draft\)/g)?.length,
+      src.match(/noteWorkboardAskView\(props\.orgId, "handoff_opened", draft(\)|, \{ choice, route \}\))/g)?.length,
     ).toBe(2);
   });
 });

@@ -115,12 +115,12 @@ describe("ASK-FIX-3 the hook sends it once the answer is done", () => {
   const hook = readFileSync("src/components/reflect/use-ask-lasso.ts", "utf8");
   it("waits for pending to clear, clears the hold, and sends only if the box still says it", () => {
     expect(hook).toMatch(
-      /if \(pending \|\| queued === null\) return;\s*const text = queued;\s*setQueued\(null\);\s*if \(queuedStillWanted\(text, draft\)\) void send\(text\);/,
+      /if \(pending \|\| queued === null\) return;\s*const text = queued;\s*setQueued\(null\);\s*const wanted = queuedStillWanted\(text, draft\);\s*noteWorkboardAskHeld\(orgId, wanted \? "sent" : "cancelled"\);\s*if \(wanted\) void send\(text\);/,
     );
     expect(hook).toMatch(/\}, \[pending, queued\]\);/);
   });
   it("editing the box drops the hold", () => {
-    expect(hook).toMatch(/if \(queued !== null && value\.trim\(\) !== queued\) setQueued\(null\);/);
+    expect(hook).toMatch(/if \(queued !== null && value\.trim\(\) !== queued\) \{ noteWorkboardAskHeld\(orgId, "cancelled"\); setQueued\(null\); \}/);
   });
   it("send itself is unchanged: one in flight at a time", () => {
     expect(hook).toContain("if (!message || pending) return;");

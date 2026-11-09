@@ -4,6 +4,7 @@ import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { RichTextView } from "@/components/rich-text/RichTextView";
 import { plainToRichHtml } from "@/lib/rich-text";
 import { logEvent } from "@/lib/telemetry";
+import { noteWorkboardAskView } from "@/components/canvas-lab/canvas-lab-telemetry";
 import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
 import { Button } from "@/components/ui/button";
 
@@ -112,6 +113,7 @@ function LabAnswerCardInner({
   function cancelEdit() {
     draft.current = { html: "", plain: "", changed: false };
     setError(null); setEditing(false);
+    noteWorkboardAskView(orgId, "pin_edit_cancelled", "b");
   }
   function startEdit() {
     if (!canEdit || editing) return;
@@ -247,7 +249,7 @@ function LabAnswerCardInner({
           <Button type="button" className="h-7 px-3 text-[13px]" onPointerDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); void finishEdit(); }}>{PIN_EDIT_COPY.done}</Button>
         </div>
       ) : null}
-      {tipShown ? <PinEditTip onDismiss={dismissTip} /> : null}
+      {tipShown ? <PinEditTip onDismiss={() => { noteWorkboardAskView(orgId, "pin_tip_dismissed", "b"); dismissTip(); }} /> : null}
       {error ? <p role="alert" className="mt-1 text-[13px] text-destructive">{error}</p> : null}
       {node.original != null && !editing ? <Button variant="ghost" className="canvas-lab-answer-toggle" aria-expanded={originalOpen} onPointerDown={(event) => event.stopPropagation()} onClick={() => { if (!originalOpen && orgId) logEvent("answer.original_viewed", orgId, {}); setOriginalOpen((value) => !value); }}>{originalOpen ? EDIT_COPY.hideOriginal : EDIT_COPY.seeOriginal}</Button> : null}
       {originalOpen && node.original != null ? <section className="mt-2 border-t border-border bg-muted p-2" aria-label={EDIT_COPY.original}><h3 className="mb-1 text-[13px] text-soft">{EDIT_COPY.original}</h3><MarkdownMessage content={node.original} /></section> : null}

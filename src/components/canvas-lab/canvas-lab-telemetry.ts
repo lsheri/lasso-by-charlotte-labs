@@ -43,8 +43,19 @@ export function noteWorkboardNodeMoved(orgId: string | undefined, kind: LabNodeE
   if (orgId) logEvent("workboard.node_moved", orgId, { kind, via });
 }
 /** ASK-D1: the floating Ask was dropped. Position and draft only. */
-export function noteWorkboardAskView(orgId: string | undefined, action: "folded" | "expanded" | "past_opened" | "pinned_jump" | "resized" | "handoff_opened", draft: "a" | "b"): void {
-  if (orgId) logEvent("workboard.ask_view", orgId, { action, draft });
+export function noteWorkboardAskView(
+  orgId: string | undefined,
+  action: "folded" | "expanded" | "past_opened" | "pinned_jump" | "resized" | "handoff_opened" | "pin_edit_cancelled" | "pin_tip_dismissed",
+  draft: "a" | "b",
+  /** COV-1: H7's choice and route ride on handoff_opened. Category values only. */
+  extra?: { choice?: "chat_and_used" | "answer_used" | "full_board"; route?: "connector" | "link" | "clipboard" | "file" },
+): void {
+  if (orgId) logEvent("workboard.ask_view", orgId, { action, draft, ...(extra?.choice ? { choice: extra.choice } : {}), ...(extra?.route ? { route: extra.route } : {}) });
+}
+
+/** COV-1 (ASK-FIX-3): a question held while an answer finishes: queued, then sent or cancelled. Never the question. */
+export function noteWorkboardAskHeld(orgId: string | undefined, held: "queued" | "sent" | "cancelled"): void {
+  if (orgId) logEvent("workboard.ask_view", orgId, { action: "question_held", held });
 }
 
 export function noteWorkboardAskMoved(orgId: string | undefined, to: "bottom_centre" | "bottom_right" | "lock_left" | "lock_right" | "free", draft: "a" | "b"): void {
