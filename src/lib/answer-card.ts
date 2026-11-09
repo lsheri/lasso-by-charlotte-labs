@@ -96,9 +96,12 @@ export function parseAnswerDrop(raw: string): { messageId: number; text: string;
 
 /** An answer card is wider than a work card so the text has somewhere to sit. */
 export const ANSWER_CARD_SIZE = { width: 320, height: 240 } as const;
-/** PIN-2: an answer rolled up to its title row is saved at this height; anything at or under ANSWER_ROLLED_MAX reads as rolled. */
-export const ANSWER_ROLLED_HEIGHT = 44;
-export const ANSWER_ROLLED_MAX = 60;
+/**
+ * PIN-2: an answer rolled up to its title row is saved at this height; anything at or under ANSWER_ROLLED_MAX reads
+ * as rolled. PIN-2b: 60, not 44, so the answer's first line shows under the title (44 clipped it, seen live 9 Nov).
+ */
+export const ANSWER_ROLLED_HEIGHT = 60;
+export const ANSWER_ROLLED_MAX = 64;
 export function answerRolled(height: number): boolean {
   return height <= ANSWER_ROLLED_MAX;
 }
