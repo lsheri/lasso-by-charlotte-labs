@@ -160,13 +160,13 @@ export function LabFrame({ frame, count, selected, editable, custom, namedByWork
         if ((event.shiftKey && event.key === "F10") || event.key === "ContextMenu") openMenu(event);
       }}
     >
-      <div data-frame-name="" className="absolute inset-x-3 top-2 flex items-baseline justify-between gap-2">
+      <div data-frame-name="" className="canvas-lab-frame-label flex items-baseline justify-between gap-2">
         {renaming ? (
           <div>
             <input
               ref={inputRef}
               aria-label={region && !frame.name ? "Name this grouping" : "Rename workstream"}
-              className="canvas-lab-frame-name-input font-hand text-[18px] leading-none text-[var(--nb-mid)]"
+              className="canvas-lab-frame-name-input canvas-lab-frame-title"
               value={draftName}
               maxLength={60}
               onChange={(event) => { setDraftName(event.target.value); if (event.target.value.trim()) setRenameError(false); }}
@@ -182,7 +182,7 @@ export function LabFrame({ frame, count, selected, editable, custom, namedByWork
           </div>
         ) : (
           <h2
-            className="font-hand text-[18px] leading-none text-[var(--nb-mid)]"
+            className="canvas-lab-frame-title"
             style={fillStyle && frame.name ? { color: fillStyle.name } : undefined}
             title={namedByWorkstream ? "Named by the workstream" : undefined}
             onDoubleClick={(custom || region) && editable && renamable !== false ? beginRename : undefined}
