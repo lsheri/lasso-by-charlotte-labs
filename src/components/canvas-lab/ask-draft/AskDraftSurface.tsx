@@ -26,6 +26,7 @@ import { parseManifest } from "@/lib/context-manifest";
 import { citationsFromManifest } from "@/lib/turn-labels";
 import { Button } from "@/components/ui/button";
 import { flagEnabled } from "@/lib/feature-flags";
+import { openInNewTab } from "@/lib/open-tab";
 
 function safeStore(): Storage | null {
   try { return window.localStorage; } catch { return null; }
@@ -115,10 +116,10 @@ export function AskDraftSurface(props: Props) {
   }, [props.tab]);
   const handoffOpen = async () => {
     const prompt = handoffPrompt({ boardTitle: props.engagementTitle, messages: ask.messages ?? [] });
-    const opened = window.open(handoffUrl(dest), "_blank", "noopener");
+    const opened = openInNewTab(handoffUrl(dest));
     try { await navigator.clipboard.writeText(prompt); } catch { /* Carry on even when clipboard access is unavailable. */ }
     noteWorkboardAskView(props.orgId, "handoff_opened", draft);
-    setHandoffHint(opened !== null ? "Prompt copied. Paste it there to carry on." : "Pop-up blocked. The prompt is on your clipboard.");
+    setHandoffHint(opened ? "Prompt copied. Paste it there to carry on." : "Pop-up blocked. The prompt is on your clipboard.");
     if (hintTimer.current !== null) clearTimeout(hintTimer.current);
     hintTimer.current = setTimeout(() => setHandoffHint(null), 2500);
   };

@@ -219,7 +219,7 @@ describe("HAND-1 Continue conversations", () => {
     fireEvent.click(screen.getByRole("button", { name: "Continue in Claude" }));
     expect(document.querySelector(".ask-draft-head .ask-draft-handoff")).toBeNull();
     expect(screen.getByRole("button", { name: "Continue in Claude" }).closest(".sticky")).not.toBeNull();
-    await waitFor(() => expect(open).toHaveBeenCalledWith("https://claude.ai/new", "_blank", "noopener"));
+    await waitFor(() => expect(open).toHaveBeenCalledWith("https://claude.ai/new", "_blank"));
     expect(writeText).toHaveBeenCalledWith(expect.stringContaining("Lasso: An answer"));
     expect(screen.getByRole("status").textContent).toBe("Pop-up blocked. The prompt is on your clipboard.");
   });

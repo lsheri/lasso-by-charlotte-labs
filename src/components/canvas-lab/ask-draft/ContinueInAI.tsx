@@ -1,3 +1,4 @@
+import { openInNewTab } from "@/lib/open-tab";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { ArrowUpRight } from "lucide-react";
@@ -160,15 +161,15 @@ export async function carryOut(
       /* Carry on without the clipboard. */
     }
   }
-  const opened = window.open(url, "_blank", "noopener");
-  if (opened === null && route !== "clipboard") {
+  const opened = openInNewTab(url);
+  if (!opened && route !== "clipboard") {
     try {
       await navigator.clipboard.writeText(text);
     } catch {
       /* nothing more to try */
     }
   }
-  return { route, blocked: opened === null };
+  return { route, blocked: !opened };
 }
 
 /**
