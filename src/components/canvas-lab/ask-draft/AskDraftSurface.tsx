@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState, useLayoutEffect, useRef, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type RefObject } from "react";
+import { useCallback, useEffect, useMemo, useState, useLayoutEffect, useRef, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type RefObject } from "react";
+import { displayName } from "@/lib/work-item-name";
 import { createPortal } from "react-dom";
 import { ArrowUpRight, ChevronsDownUp, ChevronsUpDown, History, Pin, X } from "lucide-react";
 import { BrandLogo } from "@/components/connectors/BrandLogo";
@@ -135,7 +136,9 @@ export function AskDraftSurface(props: Props) {
     hintTimer.current = setTimeout(() => setHandoffHint(null), 2500);
   };
   const h7Tool = askV2 ? pickHandoffTool({ ...(h7Signals ?? { boardPushes: [], myPushes: [], connected: [] }), asked: readAskedTool(props.profileId, safeStore()) }) : null;
-  const h7LineShown = askV2 && Boolean(lastAnswer) && !ask.pending && handoffLineFits(lastQuestion) && h7Tool !== null;
+  // H7c: words inside an @ card name never trigger the line.
+  const mentionNames = useMemo(() => (ask.mapped ?? []).flatMap((item) => [displayName(item), item.title]), [ask.mapped]);
+  const h7LineShown = askV2 && Boolean(lastAnswer) && !ask.pending && handoffLineFits(lastQuestion, mentionNames) && h7Tool !== null;
   const foldedRef = useRef(folded);
   foldedRef.current = folded;
 

@@ -171,9 +171,25 @@ export function handoffRoute(tool: H7Tool, text: string, viaConnector: boolean):
   return { route: "clipboard", url: plan.url };
 }
 
-/** The line under an answer: research, drafting and planning questions only. */
-export function handoffLineFits(question: string): boolean {
-  return /\b(research|look into|dig into|find out|explore|investigate|compare|draft|write|rewrite|outline|plan|planning|roadmap|next steps|strategy|proposal|memo)\b/i.test(question);
+/**
+ * H7c: take out the pieces the question points at, so words inside a card's name
+ * ("@Research-->Presentation", "@Q3 plan") never count as what the person asked for.
+ * Known names go first, longest first, so a name with spaces comes out whole; any
+ * other @word is dropped too.
+ */
+export function stripMentions(question: string, names: readonly string[] = []): string {
+  let text = question;
+  const sorted = [...new Set(names.map((n) => n.trim()).filter(Boolean))].sort((a, b) => b.length - a.length);
+  for (const name of sorted) {
+    const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    text = text.replace(new RegExp(`@${escaped}`, "gi"), " ");
+  }
+  return text.replace(/@\S+/g, " ");
+}
+
+/** The line under an answer: research, drafting and planning questions only. Names of pointed-at pieces never count. */
+export function handoffLineFits(question: string, names: readonly string[] = []): boolean {
+  return /\b(research|look into|dig into|find out|explore|investigate|compare|draft|write|rewrite|outline|plan|planning|roadmap|next steps|strategy|proposal|memo)\b/i.test(stripMentions(question, names));
 }
 
 export function handoffLine(tool: H7Tool, usedPhrase: string | null): string {
