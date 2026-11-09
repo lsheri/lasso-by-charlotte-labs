@@ -30,7 +30,7 @@ type DisplayLine = TrailLine & {
   detail?: string;
 };
 
-function TrailGlyph({ kind }: { kind: DisplayLine["kind"] }) {
+export function TrailGlyph({ kind }: { kind: DisplayLine["kind"] }) {
   const common = {
     fill: "none",
     stroke: "currentColor",
@@ -50,6 +50,8 @@ function TrailGlyph({ kind }: { kind: DisplayLine["kind"] }) {
     brief: <><path {...common} d="M3.5 2h7l2 2v10h-9zM6 6h4M6 8.5h4M6 11h2.5" /><path {...common} d="M10.5 2v2h2" /></>,
     item: <><rect {...common} x="3" y="3" width="10" height="10" rx="1" /><path {...common} d="M5.5 6h5M5.5 8.5h5M5.5 11h3" /></>,
     checks: <><circle {...common} cx="7" cy="7" r="4" /><path {...common} d="m10 10 3.2 3.2" /></>,
+    image: <><rect {...common} x="2.5" y="3" width="11" height="10" rx=".8" /><circle {...common} cx="6" cy="6.5" r="1.1" /><path {...common} d="m2.8 11.5 3.4-3 2.4 2 2-1.6 2.6 2.4" /></>,
+    video: <><rect {...common} x="2" y="3.5" width="12" height="9" rx="1" /><path {...common} d="M6.8 6v4l3.4-2z" /></>,
   };
   const motionClass = kind === "conversation" ? "nb-trail-glyph-conversation" : kind === "document" || kind === "deck" || kind === "sheet" || kind === "email" || kind === "transcript" || kind === "item" ? "nb-trail-glyph-document" : kind === "note" ? "nb-trail-glyph-pen" : kind === "brief" ? "nb-trail-glyph-brief" : kind === "checks" ? "nb-trail-glyph-search" : "";
   return <span aria-hidden className="flex size-4 shrink-0 items-center justify-center bg-background"><svg viewBox="0 0 16 16" className={`size-4 ${motionClass}`}>{paths[kind]}</svg></span>;
@@ -242,7 +244,10 @@ export function ContextAudit({
   initialOpen = false,
   testId,
   onOpenChange,
+  v2,
 }: {
+  /** V2-2 (ask-v2): the one-line receipt replaces the label and count; images draw their own icon. */
+  v2?: { receipt: string } | undefined;
   manifest: ContextManifest | null;
   buttonLabel?: string;
   /** Unit 2: the public demo. Nothing opens and nothing is sent. */
@@ -280,8 +285,8 @@ export function ContextAudit({
     <div className={`text-foreground ${reduced ? "" : "nb-audit-settle"}`}>
       <Button data-testid={testId} type="button" variant="ghost" onClick={toggle} aria-expanded={open} className="h-[30px] w-full justify-start gap-2 px-0 text-left text-[13px] font-normal hover:bg-transparent">
         <span aria-hidden className={`inline-block text-[11px] text-muted-foreground transition-transform duration-200 ${open ? "rotate-90" : ""}`}>›</span>
-        <span className="min-w-0 truncate">{buttonLabel ?? "Read what went into this response"}</span>
-        <span className="font-mono text-[10.5px] text-muted-foreground">{total}</span>
+        <span className="min-w-0 truncate" {...(v2 ? { "data-testid": "ask-receipt" } : {})}>{v2 ? v2.receipt : buttonLabel ?? "Read what went into this response"}</span>
+        {v2 ? null : <span className="font-mono text-[10.5px] text-muted-foreground">{total}</span>}
         {closedTag ? <span className="font-mono text-[9px] uppercase text-muted-foreground" data-testid="scope-closed-tag">{closedTag}</span> : null}
       </Button>
       {open ? (
@@ -293,7 +298,7 @@ export function ContextAudit({
               <div className="space-y-2">
                 {readRows.map((row) => (
                   <p key={row.key} className="flex min-w-0 items-center" data-audit-row={row.key}>
-                    <AuditGlyph kind={row.kind} />
+                    <AuditGlyph kind={v2 && row.key.startsWith("image:") ? "image" : row.kind} />
                     {row.openId && !readOnly ? (
                       <button type="button" onClick={() => setOpenItem(row.openId)} className="ml-[9px] min-w-0 break-words text-left hover:underline">{row.title}</button>
                     ) : (

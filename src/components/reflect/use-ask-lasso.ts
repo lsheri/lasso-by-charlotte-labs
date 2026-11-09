@@ -72,7 +72,7 @@ export function useAskLasso({
   const [streamed, setStreamed] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string> | null>(null);
-  const [boardSelection, setBoardSelectionState] = useState<{ active: boolean; ids: string[]; images: string[] }>({ active: false, ids: [], images: [] });
+  const [boardSelection, setBoardSelectionState] = useState<{ active: boolean; ids: string[]; images: string[]; videos?: number }>({ active: false, ids: [], images: [] });
   const [scopeSource, setScopeSource] = useState<ScopeSource>("all");
   const [sectionSelection, setSectionSelection] = useState<SectionAskSource | null>(sectionSource ?? null);
   useEffect(() => { setSectionSelection(sectionSource ?? null); }, [sectionSource]);
@@ -259,9 +259,14 @@ export function useAskLasso({
   function applyBoardSelection(hasPicks: boolean, mappedIds: string[], imageIds: string[] = []) {
     const ids = [...mappedIds, ...imageIds];
     setSectionSelection(null);
-    setBoardSelectionState({ active: hasPicks, ids: mappedIds, images: imageIds });
+    setBoardSelectionState((current) => ({ active: hasPicks, ids: mappedIds, images: imageIds, ...(current.videos ? { videos: current.videos } : {}) }));
     setScopeSource(hasPicks ? (ids.length > 0 ? "board_pick" : "board_pick_brief_only") : "all");
     setSelected(new Set(hasPicks ? mappedIds : mapped.map((item) => item.id)));
+  }
+
+  /** V2-2: videos are never context. The count only lets Ask say "not read". */
+  function setBoardPickedVideos(count: number) {
+    setBoardSelectionState((current) => (current.videos ?? 0) === count ? current : { ...current, videos: count });
   }
 
   function applyPickerSelection(next: Set<string> | null | ((previous: Set<string> | null) => Set<string> | null), source: ScopeSource = "picker") {
@@ -437,6 +442,7 @@ export function useAskLasso({
     selectedItems,
     boardPickActive: boardSelection.active,
     boardPickedCount: boardSelection.ids.length + boardSelection.images.length,
+    boardPickedVideos: boardSelection.videos ?? 0,
     sessionId,
     sessions,
     setMention,
@@ -445,6 +451,7 @@ export function useAskLasso({
     setSaveTarget,
     setSelected: applyPickerSelection,
     setBoardSelection: applyBoardSelection,
+    setBoardPickedVideos,
     sourcesByMessage,
     streamed,
     submit,
