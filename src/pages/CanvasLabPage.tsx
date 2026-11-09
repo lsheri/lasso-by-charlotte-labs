@@ -270,7 +270,7 @@ import { boardIsNearEmpty } from "@/lib/workboard-view-mode";
 import { ExampleBoardOverlay } from "@/components/canvas-lab/ExampleBoardOverlay";
 import { LiftedWork } from "@/components/canvas-lab/LiftedWork";
 import { LiftedWorkBody } from "@/components/canvas-lab/LiftedWorkBody";
-import { flagEnabled } from "@/lib/feature-flags";
+import { useFeatureFlag } from "@/hooks/use-feature-flag";
 import { liftable, liftKindOf, type LiftRect } from "@/lib/lift-view";
 
 
@@ -444,7 +444,9 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   const [focusOpensComments, setFocusOpensComments] = useState(false);
   const [reviewId, setReviewId] = useState<string | null>(null);
   // LIFT (lift-v1): the card lifted off the board, if any, and the box it grew out of. Never saved.
-  const liftV1 = flagEnabled("lift-v1");
+  // LIFT-5: listen for the flag. Read once per render, a board that rendered before PostHog's flags
+  // arrived kept lift off until something else redrew it, so a double-click still opened the full reader.
+  const liftV1 = useFeatureFlag("lift-v1");
   const [lifted, setLifted] = useState<{ id: string; origin: LiftRect | null } | null>(null);
   const liftedRef = useRef(lifted);
   liftedRef.current = lifted;

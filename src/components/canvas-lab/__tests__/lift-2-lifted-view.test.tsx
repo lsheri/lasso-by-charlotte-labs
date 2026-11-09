@@ -314,8 +314,10 @@ describe("LIFT on the card", () => {
 describe("LIFT on the board page (nothing renders that page in tests, so its wiring is pinned in source)", () => {
   const page = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
   it("lifts only behind lift-v1 and only work that lifts", () => {
-    expect(page).toContain('const liftV1 = flagEnabled("lift-v1");');
+    expect(page).toContain('const liftV1 = useFeatureFlag("lift-v1");');
     expect(page).toContain("onLift={liftV1 && liftable(cardItem) ? ");
+    // LIFT-5: the board listens for the flag, so it turns on when PostHog's flags arrive, not at the next redraw.
+    expect(page).not.toContain('flagEnabled("lift-v1")');
   });
   it("the board's Delete, Backspace and Esc stand down while a view is lifted", () => {
     const fn = page.slice(
