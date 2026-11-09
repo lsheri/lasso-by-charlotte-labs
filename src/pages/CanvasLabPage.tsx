@@ -3648,7 +3648,8 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     const { width, height } = WORKBOARD_STICKY_DEFAULT_SIZE;
     const node: LabNode = {
       id, clientKey: id, kind: "sticky", frame: null, title: "Sticky", summary: text ?? "", typeLabel: "sticky",
-      ownership: "yours", textSize: "body", textWeight: "regular", textColour: "ink", stickyFill: lastStickyFillRef.current, local: true,
+      // LEG-1: new stickies start at 26 px (Heading, twice Body) so they read from a full-board view; saved stickies keep their size.
+      ownership: "yours", textSize: "heading", textWeight: "regular", textColour: "ink", stickyFill: lastStickyFillRef.current, local: true,
       x: Math.round(at.x - width / 2), y: Math.round(at.y - height / 2), width, height,
     };
     nodesRef.current = [...nodesRef.current, node];
