@@ -326,7 +326,8 @@ export function PeekBody({
           />
         )}
         {canEdit ? <AiReads workItemId={active.id} /> : null}
-        {isDeliverableType(active.type) ? (
+        {/* GRANOLA-1b: a re-imported call keeps its earlier versions, so calls show their history too. */}
+        {isDeliverableType(active.type) || active.type === "call" ? (
           <>
             <VersionHistory
               workItemId={active.id}
@@ -340,7 +341,7 @@ export function PeekBody({
                 (active.meta as Record<string, unknown> | null)?.[TEXT_CONTENT_HASH_KEY],
               )}
             />
-            <WhatFedThis workItemId={active.id} itemType={active.type} canEdit={canEdit} />
+            {isDeliverableType(active.type) ? <WhatFedThis workItemId={active.id} itemType={active.type} canEdit={canEdit} /> : null}
           </>
         ) : null}
       </div>
