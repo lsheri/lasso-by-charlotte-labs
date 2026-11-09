@@ -29,14 +29,34 @@ export function pointedAtIds(
 ): string[] {
   if (!text.includes("@")) return [];
   const haystack = text.toLowerCase();
+  // ASK-FIX-4: @ matches the name on the card (the chosen name) as well as the original title,
+  // so a renamed piece can still be pointed at.
+  const named = items.map((item) => ({
+    id: item.id,
+    names: [...new Set([displayName(item), item.title].map((name) => (name ?? "").trim().toLowerCase()).filter(Boolean))],
+  }));
   const ids: string[] = [];
-  for (const item of items) {
-    // ASK-FIX-4: @ matches the name on the card (the chosen name) as well as the original title,
-    // so a renamed piece can still be pointed at.
-    const names = [displayName(item), item.title].map((name) => (name ?? "").trim().toLowerCase());
-    if (names.some((name) => name && haystack.includes(`@${name}`))) ids.push(item.id);
+  // ASK-FIX-6: each @ points at the longest name that matches there and ends at a word boundary, so
+  // "@Kickoff call" means the card "Kickoff call", not also "Kickoff", and "@Kickoff" never means "Kickoff call".
+  for (let at = haystack.indexOf("@"); at !== -1; at = haystack.indexOf("@", at + 1)) {
+    let best = 0;
+    let hits: string[] = [];
+    for (const item of named) {
+      for (const name of item.names) {
+        if (name.length < best || !haystack.startsWith(name, at + 1) || !endsAtBoundary(haystack, at + 1 + name.length)) continue;
+        if (name.length > best) { best = name.length; hits = []; }
+        hits.push(item.id);
+      }
+    }
+    ids.push(...hits);
   }
   return Array.from(new Set(ids));
+}
+
+/** ASK-FIX-6: a name ends where the text ends or the next character is not a letter or digit. */
+function endsAtBoundary(text: string, index: number): boolean {
+  const next = text.charAt(index);
+  return next === "" || !/[\p{L}\p{N}]/u.test(next);
 }
 
 
