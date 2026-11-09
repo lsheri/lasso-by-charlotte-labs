@@ -2,6 +2,7 @@ import type { UndoAction, UndoDirection } from "@/components/canvas-lab/canvas-l
 import { lengthBand } from "@/lib/canvas-lab-annotations-shared";
 import type { WorkboardRelation } from "@/lib/canvas-lab-shared";
 import { logEvent } from "@/lib/telemetry";
+import type { LiftKind } from "@/lib/lift-view";
 import type { SourceId } from "@/components/connectors/SourceGrid";
 
 export type LabNodeEventKind = "source" | "ai_work" | "human_judgment" | "decision" | "deliverable" | "draft_thread" | "shape" | "text" | "answer" | "sticky";
@@ -93,6 +94,19 @@ export function noteWorkboardRelationship(
 ): void {
   if (orgId) logEvent("workboard.relationship_changed", orgId, relation ? { action, relation } : { action });
 }
+/**
+ * LIFT (lift-v1): a piece of work lifted off the board, by kind of work. A count, so the founder can see
+ * whether people read work on the board; never how long, which would describe the reader, not the work.
+ */
+export function noteWorkboardWorkLifted(orgId: string | undefined, kind: LiftKind): void {
+  if (orgId) logEvent("workboard.work_lifted", orgId, { kind });
+}
+
+/** LIFT (lift-v1): a lifted view taken on to the full reader, by kind of work. */
+export function noteWorkboardWorkLiftExpanded(orgId: string | undefined, kind: LiftKind): void {
+  if (orgId) logEvent("workboard.work_lift_expanded", orgId, { kind });
+}
+
 export function noteWorkboardReviewOpened(orgId: string | undefined, format: "thread" | "document" | "deck" | "sheet"): void {
   if (orgId) logEvent("workboard.review_opened", orgId, { format });
 }

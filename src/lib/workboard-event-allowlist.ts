@@ -14,6 +14,9 @@ export const WORKBOARD_EVENT_DIMS: Readonly<Record<string, readonly string[]>> =
   "workboard.rail_toggled": ["state"],
   "workboard.zoom_changed": ["direction", "method"],
   "workboard.view_fitted": ["via"],
+  // LIFT (lift-v1): what kind of work was lifted, and expanded. Counts only, never reading time.
+  "workboard.work_lifted": ["kind"],
+  "workboard.work_lift_expanded": ["kind"],
   "workboard.deck_expanded": ["state", "slides_band"],
   "workboard.face_toggled": ["face", "scope"],
   "workboard.node_moved": ["kind", "via"],

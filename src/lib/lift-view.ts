@@ -124,6 +124,34 @@ export function liftable(item: LiftableItem): boolean {
   return true;
 }
 
+/** The kind of work on a lift event: the work type, a chat called a chat. A closed set, never a title. */
+export const LIFT_KINDS = [
+  "chat",
+  "document",
+  "deck",
+  "sheet",
+  "call",
+  "email",
+  "message",
+  "image",
+  "other",
+] as const;
+export type LiftKind = (typeof LIFT_KINDS)[number];
+const LIFT_WORK_TYPES: readonly string[] = [
+  "document",
+  "deck",
+  "sheet",
+  "call",
+  "email",
+  "message",
+  "image",
+];
+export function liftKindOf(type: string | null | undefined): LiftKind {
+  if (type === "ai_thread") return "chat";
+  if (type && LIFT_WORK_TYPES.includes(type)) return type as LiftKind;
+  return "other";
+}
+
 /** How far the 480 px authored preview is enlarged inside the view: fill the width, never past 1.5. */
 export const LIFT_AUTHOR_WIDTH = 480;
 export function liftZoom(bodyWidth: number): number {

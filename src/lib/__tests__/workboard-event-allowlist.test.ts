@@ -239,6 +239,12 @@ describe("the workboard allowlist", () => {
           "count",
           "shared",
         ],
+        "workboard.work_lift_expanded": [
+          "kind",
+        ],
+        "workboard.work_lifted": [
+          "kind",
+        ],
         "workboard.workstream_created": [
           "via",
           "claimed",
@@ -306,6 +312,8 @@ describe("the workboard allowlist", () => {
       () => helpers.noteWorkboardRail("o", "collapsed"),
       () => helpers.noteWorkboardZoomChanged("o", "in", "button"),
       () => helpers.noteWorkboardViewFitted("o", "menu"),
+      () => helpers.noteWorkboardWorkLifted("o", "deck"),
+      () => helpers.noteWorkboardWorkLiftExpanded("o", "chat"),
       () => helpers.noteWorkboardNodeCreated("o", "source", "corrected_ai"),
       () => helpers.noteWorkboardNodeCreated("o", "source"),
       () => helpers.noteWorkboardNodeDeleted("o", "decision"),
@@ -366,7 +374,8 @@ describe("the workboard allowlist", () => {
       const [name, , dims] = mocked.mock.calls[0] as [string, string, Record<string, unknown>];
       expect(guardWorkboardEvent(name, dims as never)).toEqual({ keep: true, dims });
     }
-    expect(Object.keys(WORKBOARD_EVENT_DIMS)).toHaveLength(53);
+    // LIFT (9 Nov): work_lifted and work_lift_expanded.
+    expect(Object.keys(WORKBOARD_EVENT_DIMS)).toHaveLength(55);
   });
 
   it.each(["in", "out", "reset"] as const)("reports zoom %s with only direction and method", (direction) => {

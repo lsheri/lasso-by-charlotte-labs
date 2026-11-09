@@ -339,13 +339,13 @@ describe("LIFT on the board page (nothing renders that page in tests, so its wir
       "useEffect(() => { if (lifted && (!liftedNode || !liftedItem)) setLifted(null); }, [lifted, liftedNode, liftedItem]);",
     );
   });
-  it("Expand opens the full reader from the view's box, and lifting writes nothing", () => {
+  it("Expand opens the full reader from the view's box, and lifting writes nothing to the board", () => {
     expect(page).toContain(
       "openNode(liftedNode, new DOMRect(rect.left, rect.top, rect.width, rect.height))",
     );
     const liftLine = page.slice(page.indexOf("<LiftedWork "), page.indexOf("</LiftedWork>"));
     expect(liftLine).not.toMatch(
-      /persistNodePatch|persistFramePatch|recordEvent|logEvent|note[A-Z]/,
+      /persistNodePatch|persistFramePatch|setNodes|setFrames|record\(/,
     );
   });
 });
