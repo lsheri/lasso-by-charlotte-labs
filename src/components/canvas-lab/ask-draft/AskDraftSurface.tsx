@@ -11,6 +11,9 @@ import { AskPastList, type PinnedAnswerRow } from "@/components/canvas-lab/ask-d
 import { noteWorkboardAskMoved, noteWorkboardAskView } from "@/components/canvas-lab/canvas-lab-telemetry";
 import { AskPlacingGhost } from "@/components/canvas-lab/ask-draft/AskPlacing";
 import { AskReadingLines } from "@/components/canvas-lab/ask-draft/AskReadingLines";
+import { AskLiveMark } from "@/components/canvas-lab/ask-draft/AskLiveMark";
+import { ASK_LIFT_STYLES, AskReadingLoops, useAskLift } from "@/components/canvas-lab/ask-draft/AskReadingLoops";
+import { beginTurn, turnKeyFor } from "@/lib/ask-reading-clock";
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
 import { readAskHome, readAskPosition, readUnpinned, writeAskPosition, type AskDraft } from "@/lib/ask-draft";
 import { ASK_DOCK_CONFIG, DOCK_SPOTS, useAskDock, type DockId } from "@/lib/ask-dock-engine";
@@ -74,6 +77,14 @@ export function AskDraftSurface(props: Props) {
   const askV2 = flagEnabled("ask-v2");
   const [focusedIn, setFocusedIn] = useState(false);
   const idleBar = askV2 && empty && !ask.pending && !focusedIn && !ask.error && !ask.pickerOpen;
+  // V2-3 (ask-v2): the turn's clock starts on a real send only, so a redraw or remount resumes the light and loops.
+  const turnKey = turnKeyFor(ask.asked);
+  const sawPending = useRef(ask.pending);
+  useEffect(() => {
+    if (askV2 && ask.pending && !sawPending.current) beginTurn(turnKey, performance.now());
+    sawPending.current = ask.pending;
+  }, [askV2, ask.pending, turnKey]);
+  useAskLift({ host: askV2 ? host : null, nodeIds: props.readingNodeIds ?? [], pending: ask.pending, error: Boolean(ask.error), turnKey });
   const dest = readHandoffDestination(props.engagementId, safeStore());
   const vendorLabel = HANDOFF_VENDORS.find((vendor) => vendor.id === dest.vendor)?.label ?? "Claude";
   const turns = (ask.messages ?? []).filter((m) => m.role === "assistant").length;
@@ -287,7 +298,10 @@ export function AskDraftSurface(props: Props) {
           ))}
         </div>
       ) : null}
-      {draft === "b" && ask.pending && (props.readingNodeIds?.length ?? 0) > 0 ? <AskReadingLines host={host} surfaceRef={dock.surfaceRef} nodeIds={props.readingNodeIds ?? []} onShowing={setLinesShowing} /> : null}
+      {askV2 ? <style>{ASK_LIFT_STYLES}</style> : null}
+      {draft === "b" && ask.pending && (props.readingNodeIds?.length ?? 0) > 0 ? (askV2
+        ? <AskReadingLoops host={host} surfaceRef={dock.surfaceRef} nodeIds={props.readingNodeIds ?? []} turnKey={turnKey} onShowing={setLinesShowing} />
+        : <AskReadingLines host={host} surfaceRef={dock.surfaceRef} nodeIds={props.readingNodeIds ?? []} onShowing={setLinesShowing} />) : null}
       <section
         ref={dock.surfaceRef as RefObject<HTMLElement>}
         aria-label="Ask Lasso"
@@ -316,7 +330,7 @@ export function AskDraftSurface(props: Props) {
           </div>
           {draft === "b" ? (
             <span className="ask-draft-mark" aria-hidden="true">
-              <LassoLoopMark className="h-[24px] w-[24px]" />
+              {askV2 ? <AskLiveMark pending={ask.pending} error={Boolean(ask.error)} turnKey={turnKey} /> : <LassoLoopMark className="h-[24px] w-[24px]" />}
             </span>
           ) : null}
           <span className="ask-draft-title">Ask Lasso</span>
