@@ -74,7 +74,8 @@ export function AskDraftSurface(props: Props) {
   const expandedRef = useRef(expanded);
   expandedRef.current = expanded;
   const [, setLinesShowing] = useState(false);
-  const empty = props.tab === "messages" && (ask.messages ?? []).length === 0;
+  // ASK-FIX-2: a question in flight is not an empty chat, so the first turn shows its question and reading state.
+  const empty = props.tab === "messages" && (ask.messages ?? []).length === 0 && !ask.pending;
   const collapsed = empty || folded;
   // V2-1 (A1, behind ask-v2): an unused Ask is one slim row until you click into it. Focus never primes the cache;
   // priming stays on typing (onDraftChange -> shouldPrimeForDraft -> primeNow).
