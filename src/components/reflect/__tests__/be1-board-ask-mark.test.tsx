@@ -7,7 +7,7 @@ const state = vi.hoisted(() => ({ mobile: false }));
 vi.mock("@/hooks/use-mobile", () => ({ useIsMobile: () => state.mobile }));
 vi.mock("@/hooks/use-perf-timer", () => ({ usePerfOpenFinish: vi.fn() }));
 vi.mock("@/components/reflect/ask-dock-state", () => ({ useAskDockState: () => ({ width: 360, tab: "history", setTab: vi.fn() }) }));
-vi.mock("@/components/reflect/use-ask-lasso", () => ({ useAskLasso: () => ({ mapped: [], setBoardSelection: vi.fn(), historySettled: true, sessions: [], newSession: vi.fn() }) }));
+vi.mock("@/components/reflect/use-ask-lasso", () => ({ useAskLasso: () => ({ mapped: [], setBoardSelection: vi.fn(), setBoardPickedVideos: vi.fn(), historySettled: true, sessions: [], newSession: vi.fn() }) }));
 vi.mock("@/components/oneonone/SaveForOneOnOne", () => ({ SaveForOneOnOneDialog: () => null }));
 vi.mock("@tanstack/react-router", () => ({ Link: ({ children }: { children: React.ReactNode }) => <a>{children}</a> }));
 vi.mock("@/components/ui/sheet", () => ({

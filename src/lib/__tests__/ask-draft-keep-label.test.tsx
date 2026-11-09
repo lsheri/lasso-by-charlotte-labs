@@ -6,7 +6,7 @@ vi.mock("@/hooks/use-mobile", () => ({ useIsMobile: () => false }));
 vi.mock("@/hooks/use-perf-timer", () => ({ usePerfOpenFinish: vi.fn() }));
 vi.mock("@/components/reflect/ask-dock-state", () => ({ useAskDockState: () => ({ width: 360, tab: "messages", setTab: vi.fn() }) }));
 vi.mock("@/components/reflect/use-ask-lasso", () => ({ useAskLasso: () => ({
-  mapped: [], setBoardSelection: vi.fn(), historySettled: true, sessions: [], newSession: vi.fn(), sessionId: "s1",
+  mapped: [], setBoardSelection: vi.fn(), setBoardPickedVideos: vi.fn(), historySettled: true, sessions: [], newSession: vi.fn(), sessionId: "s1",
   messages: [{ id: 1, role: "user", content: "Q", created_at: "2026-11-05T08:00:00Z" }, { id: 2, role: "assistant", content: "The answer", created_at: "2026-11-05T08:00:01Z", context_manifest: null }],
   sourcesByMessage: {}, pending: false, draft: "", mentionMatches: [], selectedItems: [], draftPointed: [], pointedNow: [], selected: [], firmChecks: [], coverage: null, composerRef: { current: null }, bottomRef: { current: null },
 }) }));
