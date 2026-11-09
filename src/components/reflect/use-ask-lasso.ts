@@ -306,6 +306,16 @@ export function useAskLasso({
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages?.length, pending, asked]);
 
+  // ASK-FIX-2: scroll again after the panel has grown to fit, and when the read set arrives,
+  // so a follow-up's question and reading state come into view. The stream itself is not followed.
+  useEffect(() => {
+    if (!pending) return;
+    let frame = 0;
+    const raf = typeof requestAnimationFrame === "function" ? requestAnimationFrame : (cb: FrameRequestCallback) => setTimeout(() => cb(0), 0) as unknown as number;
+    frame = raf(() => { frame = raf(() => bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" })); });
+    return () => { if (typeof cancelAnimationFrame === "function") cancelAnimationFrame(frame); };
+  }, [pending, asked, liveManifest]);
+
   async function ensureSession(): Promise<string | null> {
     if (sessionId) return sessionId;
     const scope: ContextScope = scopeForSelection();
