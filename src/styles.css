@@ -8621,3 +8621,33 @@ footer[data-compact] [data-ask-composer-pad] { padding: 8px 8px 8px 14px; }
 /* PASTE-2 */
 .canvas-lab-menu-hint { display: block; padding: 0 10px 6px; margin-top: -4px; font: 400 11px/1.3 var(--font-sans); color: var(--text-muted); }
 .canvas-lab-menu [role="menuitemradio"].canvas-lab-menu-item { padding-left: 32px; }
+
+/* LIFT (lift-v1): a piece of work lifted off the board. The board dims and blurs a little behind it; the
+   view grows out of its card and shrinks back into it. Light blur only: a heavy blur over a board full of
+   live previews can drop frames. */
+.lift-layer { position: fixed; inset: 0; z-index: 200000; }
+.lift-backdrop { position: absolute; inset: 0; background: color-mix(in oklab, var(--nb-ink) 16%, transparent); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); animation: lift-fade 200ms ease-out both; }
+.lift-layer[data-closing="true"] .lift-backdrop { animation: lift-fade-out 200ms ease-in both; }
+.lift-panel { position: fixed; display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--nb-rule); border-radius: 8px; background: var(--nb-paper); box-shadow: 0 18px 48px color-mix(in oklab, var(--nb-ink) 22%, transparent), var(--nb-paper-shadow-contact); outline: none; }
+.lift-panel[data-morphing="true"] { transition-property: left, top, width, height; transition-timing-function: cubic-bezier(.2, .8, .2, 1); }
+.lift-head { display: flex; flex-shrink: 0; align-items: center; gap: 4px; height: 44px; padding: 0 8px 0 14px; border-bottom: 1px solid var(--nb-rule); cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
+.lift-head:active { cursor: grabbing; }
+.lift-title { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font: 600 14px/1.2 var(--font-sans); color: var(--nb-graphite); }
+.lift-icon { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: var(--radius-control); color: var(--nb-graphite); cursor: pointer; }
+.lift-icon:hover { background: color-mix(in oklab, var(--nb-ink) 7%, transparent); }
+.lift-icon:focus-visible { outline: 2px solid var(--nb-graphite); outline-offset: 1px; }
+.lift-body { position: relative; flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; }
+.lift-real { margin: 0 auto; }
+.lift-file { position: relative; height: 100%; min-height: 320px; }
+.lift-file .canvas-lab-html-preview, .lift-file .canvas-lab-html-preview iframe { width: 100%; height: 100%; border: 0; }
+.lift-summary { max-width: 62ch; margin: 0 auto; padding: 20px 24px; font: 400 15px/1.55 var(--font-sans); color: var(--nb-graphite); }
+.lift-summary p { margin: 0 0 12px; }
+.lift-nothing { margin: 0; padding: 32px 24px; text-align: center; font: 400 14px/1.5 var(--font-sans); color: color-mix(in oklab, var(--nb-graphite) 70%, transparent); }
+.lift-corner { position: absolute; width: 16px; height: 16px; z-index: 1; }
+.lift-corner[data-corner="nw"] { left: 0; top: 0; cursor: nwse-resize; }
+.lift-corner[data-corner="ne"] { right: 0; top: 0; cursor: nesw-resize; }
+.lift-corner[data-corner="se"] { right: 0; bottom: 0; cursor: nwse-resize; }
+.lift-corner[data-corner="sw"] { left: 0; bottom: 0; cursor: nesw-resize; }
+@keyframes lift-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes lift-fade-out { from { opacity: 1; } to { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .lift-backdrop, .lift-layer[data-closing="true"] .lift-backdrop { animation: none; } .lift-panel[data-morphing="true"] { transition: none; } }
