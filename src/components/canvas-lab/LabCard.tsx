@@ -78,6 +78,7 @@ function LabCardInner({
   focusOnMount = false,
   onSelect,
   onOpen,
+  onLift,
   onOpenLedger,
   onBranch,
   onHide,
@@ -141,6 +142,8 @@ function LabCardInner({
   /** Omitted means the menu item. Card body clicks pass a CardSelectVia. */
   onSelect: (via?: CardSelectVia) => void;
   onOpen: (origin?: DOMRect) => void;
+  /** LIFT (lift-v1): when given, a double-click lifts the work instead of opening it. The Open button and the menu still open. */
+  onLift?: ((origin?: DOMRect) => void) | undefined;
   onOpenLedger?: ((via: "menu" | "key") => void) | undefined;
   onBranch: () => void;
   onHide: () => void;
@@ -304,7 +307,8 @@ function LabCardInner({
     if (!result.open) return;
     event.stopPropagation();
     if (result.undoSelect) controller?.undo();
-    onOpen(cardRef.current?.getBoundingClientRect());
+    if (onLift) onLift(cardRef.current?.getBoundingClientRect());
+    else onOpen(cardRef.current?.getBoundingClientRect());
   }
 
   const matchLine = item && !isReferenceItem(item) ? referenceMatchLine(item) : null;
