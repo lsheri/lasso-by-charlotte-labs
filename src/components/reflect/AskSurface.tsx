@@ -671,7 +671,7 @@ export function AskComposer({
   return (
     <footer className="shrink-0 border-t border-border bg-card">
       {mobile ? <><AskScopeChip ask={ask} block workstream={slash.chosen} /><div className="px-4"><AskReadChip ask={ask} /></div></> : null}
-      <div className="px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3">
+      <div className="px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3" data-ask-composer-pad>
         {slash.open ? (
           <div
             role="listbox"
@@ -722,7 +722,7 @@ export function AskComposer({
           </div>
         ) : null}
         {!mobile ? (
-          <div className="mb-2">
+          <div className="mb-2" data-ask-scope-line>
             <AskScopeChip ask={ask} workstream={slash.chosen} />
             <AskReadChip ask={ask} />
           </div>
