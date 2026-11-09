@@ -2,7 +2,8 @@ import { displayName } from "@/lib/work-item-name";
 import { NoAnswerSaved } from "@/components/reflect/NoAnswerSaved";
 import { unansweredQuestionIds } from "@/lib/ask-question-persist";
 import { Link } from "@tanstack/react-router";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useLayoutEffect, useState } from "react";
+import { ArrowUp } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 import { noteWorkboardContextChanged } from "@/components/canvas-lab/canvas-lab-telemetry";
@@ -257,6 +258,75 @@ export function AskScopeChip({
   );
 }
 
+/**
+ * C2 (ask-v2): what the next message reads, as a short pill and as a sentence. Same rules as
+ * AskScopeChip; the long labels stay for the tour and the phone sheet.
+ */
+export function askScopeSummary(
+  ask: Pick<AskLasso, "draftPointed" | "boardPickedCount" | "engagementBrief" | "selectedItems" | "mapped">,
+  boardPicked: boolean,
+  workstream?: { name: string; ids: string[] } | null,
+): { pill: string; count: number; sentence: string } {
+  const onWorkstream =
+    workstream != null &&
+    ask.selectedItems.length === workstream.ids.length &&
+    ask.selectedItems.every((i) => workstream.ids.includes(i.id));
+  const pieces = (n: number) => `${n} ${n === 1 ? "piece" : "pieces"}`;
+  if (ask.draftPointed.length > 0) {
+    const n = ask.draftPointed.length;
+    return { pill: "Pointed at", count: n, sentence: `Lasso will read the ${pieces(n)} you pointed at, as written.` };
+  }
+  if (boardPicked && ask.boardPickedCount === 0) {
+    return ask.engagementBrief
+      ? { pill: "Brief only", count: 0, sentence: "Nothing you picked has work to read, so Lasso will use the brief." }
+      : { pill: "Nothing picked", count: 0, sentence: "Nothing you picked has work to read." };
+  }
+  if (boardPicked) {
+    const n = ask.boardPickedCount;
+    return { pill: "Picked", count: n, sentence: `Lasso will read the ${pieces(n)} you picked on the board, as written.` };
+  }
+  if (onWorkstream) {
+    const n = ask.selectedItems.length;
+    return { pill: workstream.name, count: n, sentence: `Lasso will read the ${pieces(n)} in ${workstream.name}, as written.` };
+  }
+  if (ask.selectedItems.length === ask.mapped.length) {
+    const n = ask.mapped.length;
+    return { pill: "Whole board", count: n, sentence: `Lasso will read all ${n} ${n === 1 ? "piece" : "pieces"} of work on this board, as written.` };
+  }
+  const n = ask.selectedItems.length;
+  return { pill: "Selected", count: n, sentence: `Lasso will read the ${pieces(n)} of work you selected, as written.` };
+}
+
+export function AskScopePill({ ask, workstream }: { ask: AskLasso; workstream?: { name: string; ids: string[] } | null }) {
+  const boardPicked = useContext(AskBoardPickedContext);
+  const scope = askScopeSummary(ask, boardPicked, workstream);
+  return (
+    <button
+      type="button"
+      className="ask-cc-pill"
+      data-testid="ask-scope-pill"
+      title={scope.sentence}
+      aria-label={`${scope.sentence} Change what Lasso reads`}
+      aria-expanded={ask.pickerOpen}
+      onClick={() => ask.setPickerOpen(!ask.pickerOpen)}
+    >
+      <span className="truncate">{scope.pill}</span>
+      {scope.count > 0 ? <i>· {scope.count}</i> : null}
+    </button>
+  );
+}
+
+export function AskScopeLine({ ask, workstream }: { ask: AskLasso; workstream?: { name: string; ids: string[] } | null }) {
+  const boardPicked = useContext(AskBoardPickedContext);
+  const scope = askScopeSummary(ask, boardPicked, workstream);
+  return (
+    <p className="ask-cc-scope" data-testid="ask-scope-line">
+      {scope.sentence}{" "}
+      <button type="button" onClick={() => ask.setPickerOpen(!ask.pickerOpen)}>Change</button>
+    </p>
+  );
+}
+
 function WorkPicker({
   ask,
   engagementId,
@@ -398,14 +468,17 @@ export function MessagesTab({ ask, emptyActions, statusInTitle = false }: { ask:
         {messages.length === 0 ? (
           <>
             <AskPrivacyLine />
-            <div className="nb-binder-inset mt-[1.75rem] space-y-[1.75rem]">
-              <p className="text-sm text-foreground">
-                Try: what did I decide here, and what did I decide it on?
-              </p>
-              <p className="text-sm text-foreground">
-                Try: where has this workboard drifted from the brief?
-              </p>
-            </div>
+            {/* C2 (ask-v2): the agreed idle bar has no suggestions; flag off keeps them. */}
+            {askV2 ? null : (
+              <div className="nb-binder-inset mt-[1.75rem] space-y-[1.75rem]">
+                <p className="text-sm text-foreground">
+                  Try: what did I decide here, and what did I decide it on?
+                </p>
+                <p className="text-sm text-foreground">
+                  Try: where has this workboard drifted from the brief?
+                </p>
+              </div>
+            )}
             {emptyActions}
           </>
         ) : null}
@@ -658,19 +731,46 @@ export function AskComposer({
   engagementId,
   orgId,
   sendAside,
+  compact = false,
+  rowExtra,
+  scopeLine = false,
 }: {
   ask: AskLasso;
   mobile?: boolean;
   engagementId: string;
   orgId?: string;
   sendAside?: React.ReactNode;
+  /** C2 (ask-v2 dock): one growing line, then a row with the scope pill and a round Send. */
+  compact?: boolean;
+  /** C2: controls placed in the row just before Send (the idle bar's history button). */
+  rowExtra?: React.ReactNode;
+  /** C2: the idle bar, focused: say what the next message will read. */
+  scopeLine?: boolean;
 }) {
   const slash = useSlashMenu(ask, engagementId, () =>
     noteWorkboardContextChanged(orgId, "workstream"),
   );
   const askV2 = flagEnabled("ask-v2");
+  // C2: the compact line grows with what is typed, up to six lines, then scrolls.
+  // An empty box drops its measured height so the idle bar's one-line rule applies; a width change re-measures.
+  useLayoutEffect(() => {
+    const box = ask.composerRef.current;
+    if (!compact || !box) return;
+    const fit = () => {
+      box.style.height = "";
+      if (!box.value) return;
+      box.style.height = "auto";
+      box.style.height = `${Math.min(box.scrollHeight, 144)}px`;
+    };
+    fit();
+    if (typeof ResizeObserver !== "function") return;
+    let width = box.clientWidth;
+    const ro = new ResizeObserver(() => { if (box.clientWidth !== width) { width = box.clientWidth; fit(); } });
+    ro.observe(box);
+    return () => ro.disconnect();
+  }, [compact, ask.draft, ask.composerRef]);
   return (
-    <footer className="shrink-0 border-t border-border bg-card">
+    <footer className={compact ? "shrink-0 bg-card" : "shrink-0 border-t border-border bg-card"} data-compact={compact ? "true" : undefined}>
       {mobile ? <><AskScopeChip ask={ask} block workstream={slash.chosen} /><div className="px-4"><AskReadChip ask={ask} /></div></> : null}
       <div className="px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3" data-ask-composer-pad>
         {slash.open ? (
@@ -722,13 +822,13 @@ export function AskComposer({
             ))}
           </div>
         ) : null}
-        {!mobile ? (
+        {!mobile && !compact ? (
           <div className="mb-2" data-ask-scope-line>
             <AskScopeChip ask={ask} workstream={slash.chosen} />
             <AskReadChip ask={ask} />
           </div>
         ) : null}
-        <div className="flex items-end gap-2">
+        <div className={compact ? "ask-cc" : "flex items-end gap-2"} data-ask-cc={compact ? "" : undefined}>
           <Textarea
             ref={ask.composerRef}
             value={ask.draft}
@@ -792,15 +892,40 @@ export function AskComposer({
               event.preventDefault();
               void ask.submit();
             }}
-            placeholder="What do you want to think through? Type @ to point at a piece of work. Type / for a workstream."
-            rows={mobile ? 2 : 3}
-            className="min-h-[64px] resize-none"
+            placeholder={compact
+              ? ((ask.messages ?? []).length > 0 ? "Ask a follow-up" : "Ask this board")
+              : "What do you want to think through? Type @ to point at a piece of work. Type / for a workstream."}
+            title={compact ? "Type @ to point at a piece of work. Type / for a workstream." : undefined}
+            rows={compact ? 1 : mobile ? 2 : 3}
+            className={compact ? "ask-cc-input resize-none" : "min-h-[64px] resize-none"}
           />
-          {sendAside}
-          <Button onClick={() => void ask.submit()} disabled={ask.pending || !ask.draft.trim()} pending={ask.pending}>
-            {ask.pending ? <NbDots label="Sending" /> : "Send"}
-          </Button>
+          {compact ? (
+            <div className="ask-cc-row">
+              <AskScopePill ask={ask} workstream={slash.chosen} />
+              <span className="ask-cc-sp" />
+              {sendAside}
+              {rowExtra}
+              <button
+                type="button"
+                className="ask-cc-send"
+                aria-label="Send"
+                data-ready={ask.draft.trim() && !ask.pending ? "true" : undefined}
+                disabled={ask.pending || !ask.draft.trim()}
+                onClick={() => void ask.submit()}
+              >
+                {ask.pending ? <span className="ask-cc-wait" aria-hidden /> : <ArrowUp size={16} strokeWidth={2.25} aria-hidden />}
+              </button>
+            </div>
+          ) : (
+            <>
+              {sendAside}
+              <Button onClick={() => void ask.submit()} disabled={ask.pending || !ask.draft.trim()} pending={ask.pending}>
+                {ask.pending ? <NbDots label="Sending" /> : "Send"}
+              </Button>
+            </>
+          )}
         </div>
+        {compact && scopeLine ? <AskScopeLine ask={ask} workstream={slash.chosen} /> : null}
         {askV2 && ask.queued !== null ? (
           <p className="mt-1 flex items-center gap-2 text-[12px] text-muted-foreground" data-testid="ask-queued" role="status">
             {ASK_QUEUE_COPY.waiting}
@@ -835,6 +960,9 @@ export function AskSurface({
   sendAside,
   beforeComposer,
   statusInTitle = false,
+  compactComposer = false,
+  composerRowExtra,
+  composerScopeLine = false,
 }: {
   ask: AskLasso;
   tab: AskTab;
@@ -854,6 +982,10 @@ export function AskSurface({
   beforeComposer?: React.ReactNode;
   /** C1 (ask-v2 dock): the window's title bar shows the status, so the thread does not repeat it. */
   statusInTitle?: boolean;
+  /** C2 (ask-v2 dock): the compact composer and its idle-bar extras. */
+  compactComposer?: boolean;
+  composerRowExtra?: React.ReactNode;
+  composerScopeLine?: boolean;
 }) {
   return (
     <>
@@ -908,6 +1040,9 @@ export function AskSurface({
             engagementId={engagementId}
             orgId={orgId}
             sendAside={sendAside}
+            compact={compactComposer}
+            rowExtra={composerRowExtra}
+            scopeLine={composerScopeLine}
           />
         ) : null}
       </div>

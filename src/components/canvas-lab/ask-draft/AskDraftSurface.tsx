@@ -85,7 +85,9 @@ export function AskDraftSurface(props: Props) {
   // priming stays on typing (onDraftChange -> shouldPrimeForDraft -> primeNow).
   const askV2 = flagEnabled("ask-v2");
   const [focusedIn, setFocusedIn] = useState(false);
-  const idleBar = askV2 && empty && !ask.pending && !focusedIn && !ask.error && !ask.pickerOpen;
+  // C2 (ask-v2): the idle bar is the agreed capsule. It stays a capsule while you type into an empty chat
+  // (the scope sentence shows under it), and collapsing a chat returns to it; clicking in brings the chat back.
+  const idleBar = askV2 && draft === "b" && props.tab === "messages" && (empty || folded) && !ask.pending && !ask.error && !ask.pickerOpen;
   // V2-3 (ask-v2): the turn's clock starts on a real send only, so a redraw or remount resumes the light and loops.
   const turnKey = turnKeyFor(ask.asked);
   const sawPending = useRef(ask.pending);
@@ -284,7 +286,8 @@ export function AskDraftSurface(props: Props) {
     return () => ro.disconnect();
   }, [refresh, ask.messages, props.tab]);
 
-  useLayoutEffect(() => { refresh(); }, [refresh, collapsed, folded, expanded, idleBar]);
+  // C2: focusing the idle bar adds the scope sentence under it, so the bar re-measures.
+  useLayoutEffect(() => { refresh(); }, [refresh, collapsed, folded, expanded, idleBar, focusedIn]);
 
   const place: DockId = dock.hover ?? dock.dock;
   const locked = place === "lock_left" || place === "lock_right";
@@ -445,7 +448,14 @@ export function AskDraftSurface(props: Props) {
             statusInTitle={draft === "b" && askV2}
             sections={props.sections}
             onPickSection={props.onPickSection}
-            beforeComposer={ask.pending ? (
+            compactComposer={draft === "b" && askV2}
+            composerScopeLine={idleBar && empty && focusedIn}
+            composerRowExtra={idleBar ? (
+              <button type="button" className="ask-cc-icon" aria-label="Past conversations" title="Past conversations" onClick={() => { noteWorkboardAskView(props.orgId, "past_opened", draft); props.onTab("history"); }}>
+                <History size={16} aria-hidden="true" />
+              </button>
+            ) : undefined}
+            beforeComposer={ask.pending && !askV2 ? (
               <p className="px-4 py-2 text-xs text-muted-foreground" role="status" data-testid="ask-reading-scope">
                 Reading {(ask.pointedNow?.length ? ask.pointedNow : ask.selectedItems ?? ask.mapped ?? []).length} {(ask.pointedNow?.length ? ask.pointedNow : ask.selectedItems ?? ask.mapped ?? []).length === 1 ? "item" : "items"} as written
               </p>
@@ -461,7 +471,7 @@ export function AskDraftSurface(props: Props) {
           />
           )}
         </div>
-        {draft === "b" && askV2 && props.tab === "messages" && h7LineShown && h7Tool && nudgeHost ? createPortal(
+        {draft === "b" && askV2 && !idleBar && props.tab === "messages" && h7LineShown && h7Tool && nudgeHost ? createPortal(
           <div className="ask-draft-nudge" data-testid="h7-line">
             <Button type="button" variant="link" className="h-auto min-w-0 whitespace-normal p-0 text-left text-inherit" onClick={() => { void carryOut(h7Tool, { ...h7Build(), choice: "chat_and_used" }, Boolean(h7Signals?.signin) && h7Tool !== "gemini").then((r) => h7Done(r.route, r.blocked, h7Tool === "chatgpt" ? "ChatGPT" : h7Tool === "gemini" ? "Gemini" : "Claude")); }}>{handoffLine(h7Tool, usedPhrase(lastUsed))}</Button>
           </div>, nudgeHost,
