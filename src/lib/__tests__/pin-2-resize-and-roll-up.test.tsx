@@ -9,11 +9,12 @@ const card = readFileSync("src/components/canvas-lab/LabAnswerCard.tsx", "utf8")
 const page = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
 
 describe("PIN-2: roll a pinned answer up to its title", () => {
-  it("rolled is a saved height: the 44 px title row, read as rolled up to 60 px", () => {
-    expect(ANSWER_ROLLED_HEIGHT).toBe(44);
-    expect(WORKBOARD_ANSWER_ROLLED_HEIGHT).toBe(ANSWER_ROLLED_HEIGHT);
+  it("rolled is a saved height: the 60 px title row and first line, read as rolled up to 64 px", () => {
+    expect(ANSWER_ROLLED_HEIGHT).toBe(60);
+    expect(WORKBOARD_ANSWER_ROLLED_HEIGHT).toBeLessThanOrEqual(ANSWER_ROLLED_HEIGHT);
     expect(answerRolled(44)).toBe(true);
-    expect(answerRolled(60)).toBe(true);
+    expect(answerRolled(64)).toBe(true);
+    expect(answerRolled(65)).toBe(false);
     expect(answerRolled(ANSWER_CARD_SIZE.height)).toBe(false);
   });
   it("the server accepts a rolled answer and still refuses other cards that short", () => {

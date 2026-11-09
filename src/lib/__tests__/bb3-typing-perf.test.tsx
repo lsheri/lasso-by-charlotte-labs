@@ -12,7 +12,7 @@ import { Profiler, useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 const answerAsOf = vi.fn((_: string | null) => null);
-vi.mock("@/lib/answer-card", () => ({ answerAsOf: (v: string | null) => answerAsOf(v), answerRolled: (h: number) => h <= 60 }));
+vi.mock("@/lib/answer-card", () => ({ answerAsOf: (v: string | null) => answerAsOf(v), answerRolled: (h: number) => h <= 64 }));
 const { LabAnswerCard } = await import("@/components/canvas-lab/LabAnswerCard");
 import { LabTextBlock } from "@/components/canvas-lab/LabTextBlock";
 import { sameCardProps, stableMemo } from "@/components/canvas-lab/stable-memo";

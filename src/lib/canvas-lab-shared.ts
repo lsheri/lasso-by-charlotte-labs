@@ -18,7 +18,7 @@ export type WorkboardAnchor = "top" | "right" | "bottom" | "left";
 export type WorkboardRelation = "informed" | "produced" | "revised" | "cited" | "context";
 export const WORKBOARD_CARD_MIN_WIDTH = 180;
 export const WORKBOARD_CARD_MIN_HEIGHT = 112;
-/** PIN-2: kept answers roll up to a title row this tall. Matches ANSWER_ROLLED_HEIGHT in answer-card. */
+/** PIN-2: kept answers roll up to a title row this tall; 44 still saves, for answers rolled before PIN-2b. */
 export const WORKBOARD_ANSWER_ROLLED_HEIGHT = 44;
 export const WORKBOARD_CARD_MAX_WIDTH = 1200;
 export const WORKBOARD_CARD_MAX_HEIGHT = 1200;
@@ -175,7 +175,7 @@ export function validWorkboardNodeGeometry(node: { kind?: WorkboardNodeKind; x?:
     return node.h === undefined || (node.h >= WORKBOARD_STICKY_MIN_HEIGHT && node.h <= WORKBOARD_STICKY_MAX_SIZE);
   }
   const minWidth = node.kind === "shape" ? WORKBOARD_SHAPE_MIN_SIZE : node.kind === "text" ? WORKBOARD_TEXT_MIN_WIDTH : WORKBOARD_CARD_MIN_WIDTH;
-  // PIN-2: a kept answer can roll up to its 44 px title row.
+  // PIN-2: a kept answer can roll up to its title row (60 px since PIN-2b; 44 is the floor).
   const minHeight = node.kind === "shape" ? WORKBOARD_SHAPE_MIN_SIZE : node.kind === "text" ? WORKBOARD_TEXT_MIN_HEIGHT : node.kind === "answer" ? WORKBOARD_ANSWER_ROLLED_HEIGHT : WORKBOARD_CARD_MIN_HEIGHT;
   const maxWidth = node.kind === "shape" ? WORKBOARD_SHAPE_MAX_SIZE : node.kind === "text" ? WORKBOARD_TEXT_MAX_SIZE : WORKBOARD_CARD_MAX_WIDTH;
   const maxHeight = node.kind === "shape" ? WORKBOARD_SHAPE_MAX_SIZE : node.kind === "text" ? WORKBOARD_TEXT_MAX_SIZE : WORKBOARD_CARD_MAX_HEIGHT;
