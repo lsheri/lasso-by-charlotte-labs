@@ -465,7 +465,7 @@ export function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions
                         reads={ask.sourcesByMessage?.[Number(message.id)] ?? []}
                         v2={askV2 && manifest ? { receipt: receiptLine(manifest, citationsFromManifest(message.context_manifest).map((c) => c.item_id)) } : undefined}
                       />
-                      {coverage && ((coverage.share ?? 1) < 0.999 || coverage.noTextCount > 0 || coverage.summaryCount > 0) ? <CoverageNote {...coverage} /> : null}
+                      {coverage && ((coverage.share ?? 1) < 0.999 || coverage.noTextCount > 0 || coverage.summaryCount > 0) ? <CoverageNote {...coverage} compact={askV2 && Boolean(manifest)} /> : null}
                       <div className="mt-1 flex items-center gap-1" data-testid="answer-actions">
                         {keep && !ask.pending ? (
                           <AnswerKeepControl
