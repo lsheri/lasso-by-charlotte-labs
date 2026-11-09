@@ -1,3 +1,4 @@
+import { displayName } from "@/lib/work-item-name";
 import type { ContextScope } from "@/lib/reflect-shared";
 import { isDeliverableType } from "@/lib/lineage-shared";
 import type { WorkItemRow } from "@/lib/work-types";
@@ -22,13 +23,18 @@ export function engagementIdsOf(item: WorkItemRow): string[] {
  * The pieces of work a message points at with @ tags. A tag is the item title
  * written verbatim after an @, which is exactly what the picker inserts.
  */
-export function pointedAtIds(text: string, items: { id: string; title: string }[]): string[] {
+export function pointedAtIds(
+  text: string,
+  items: { id: string; title: string; display_title?: string | null | undefined }[],
+): string[] {
   if (!text.includes("@")) return [];
   const haystack = text.toLowerCase();
   const ids: string[] = [];
   for (const item of items) {
-    const title = item.title.trim().toLowerCase();
-    if (title && haystack.includes(`@${title}`)) ids.push(item.id);
+    // ASK-FIX-4: @ matches the name on the card (the chosen name) as well as the original title,
+    // so a renamed piece can still be pointed at.
+    const names = [displayName(item), item.title].map((name) => (name ?? "").trim().toLowerCase());
+    if (names.some((name) => name && haystack.includes(`@${name}`))) ids.push(item.id);
   }
   return Array.from(new Set(ids));
 }
