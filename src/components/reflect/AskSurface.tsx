@@ -15,6 +15,7 @@ import { AnswerRail, ContextAudit, ThinkingTrail } from "@/components/reflect/Co
 import { AskReadingV2 } from "@/components/reflect/AskReadingV2";
 import { receiptLine } from "@/lib/ask-reading-v2";
 import { flagEnabled } from "@/lib/feature-flags";
+import { ASK_QUEUE_COPY, shouldQueueAskOnEnter } from "@/lib/ask-queue";
 import { AnswerMoreMenu } from "@/components/reflect/AnswerMoreMenu";
 import { SaveForOneOnOneDialog } from "@/components/oneonone/SaveForOneOnOne";
 import { Button } from "@/components/ui/button";
@@ -666,6 +667,7 @@ export function AskComposer({
   const slash = useSlashMenu(ask, engagementId, () =>
     noteWorkboardContextChanged(orgId, "workstream"),
   );
+  const askV2 = flagEnabled("ask-v2");
   return (
     <footer className="shrink-0 border-t border-border bg-card">
       {mobile ? <><AskScopeChip ask={ask} block workstream={slash.chosen} /><div className="px-4"><AskReadChip ask={ask} /></div></> : null}
@@ -770,6 +772,16 @@ export function AskComposer({
                 }
                 return;
               }
+              // ASK-FIX-3 (ask-v2): Enter while the answer finishes holds the question instead of doing nothing.
+              if (askV2 && shouldQueueAskOnEnter(event.nativeEvent, hasTouchInput(), ask.draft, ask.pending)) {
+                event.preventDefault();
+                ask.queueSend();
+                return;
+              }
+              if (askV2 && ask.queued !== null && event.key === "Escape") {
+                ask.cancelQueued();
+                return;
+              }
               if (!shouldSendAskOnEnter(
                 event.nativeEvent,
                 hasTouchInput(),
@@ -788,6 +800,14 @@ export function AskComposer({
             {ask.pending ? <NbDots label="Sending" /> : "Send"}
           </Button>
         </div>
+        {askV2 && ask.queued !== null ? (
+          <p className="mt-1 flex items-center gap-2 text-[12px] text-muted-foreground" data-testid="ask-queued" role="status">
+            {ASK_QUEUE_COPY.waiting}
+            <button type="button" className="underline underline-offset-2" onClick={() => ask.cancelQueued()}>
+              {ASK_QUEUE_COPY.cancel}
+            </button>
+          </p>
+        ) : null}
       </div>
     </footer>
   );

@@ -1,3 +1,4 @@
+import { queuedStillWanted } from "@/lib/ask-queue";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 
@@ -69,6 +70,8 @@ export function useAskLasso({
   const [pending, setPending] = useState(false);
   // ASK-FIX: the question as sent, shown in the thread at once while Lasso works.
   const [asked, setAsked] = useState<string | null>(null);
+  // ASK-FIX-3 (ask-v2): a question entered while an answer is still finishing, sent when it is done.
+  const [queued, setQueued] = useState<string | null>(null);
   const [streamed, setStreamed] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string> | null>(null);
@@ -184,6 +187,8 @@ export function useAskLasso({
   // The @ menu reads the word being typed just before the caret.
   function onDraftChange(value: string, caret: number) {
     setDraft(value);
+    // ASK-FIX-3: editing a held question drops the hold; the person sends it again when ready.
+    if (queued !== null && value.trim() !== queued) setQueued(null);
     // PRIME-COST: warm the cache once typing starts, when the selection has settled.
     if (shouldPrimeForDraft(value)) primeNow();
     const upTo = value.slice(0, caret);
@@ -369,6 +374,25 @@ export function useAskLasso({
     return send(draft.trim());
   }
 
+  /** ASK-FIX-3: hold the box's question until the answer in flight is done. */
+  function queueSend() {
+    const text = draft.trim();
+    if (text) setQueued(text);
+  }
+
+  function cancelQueued() {
+    setQueued(null);
+  }
+
+  // ASK-FIX-3: send the held question the moment the answer is done, if the box still says it.
+  useEffect(() => {
+    if (pending || queued === null) return;
+    const text = queued;
+    setQueued(null);
+    if (queuedStillWanted(text, draft)) void send(text);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pending, queued]);
+
   /** AQ-1: send a saved question again. The server reuses its row. */
   async function resend(text: string) {
     return send(text.trim());
@@ -470,6 +494,9 @@ export function useAskLasso({
     onDraftChange,
     openSession,
     pending,
+    queued,
+    queueSend,
+    cancelQueued,
     pickerOpen,
     pointedNow,
     profile,
