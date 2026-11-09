@@ -56,7 +56,7 @@ describe("pass 200 — viewport gestures", () => {
     expect(page).toContain("scrollableUnder(target, shell!, delta)");
     expect(page).toContain('addEventListener("wheel", onSurfaceWheel, { passive: false })');
     expect(page).toContain("zoomAtCentre(1)");
-    expect(page).toContain("spaceRef.current) return; // Space pans the board");
+    expect(page).toContain("if (spaceRef.current || handRef.current) return; // Space or the hand tool pans the board");
   });
 
   it("keeps native Space activation for focused controls", () => {
