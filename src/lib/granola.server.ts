@@ -97,32 +97,110 @@ export async function listGranolaNotes(
   return { notes, cursor: hasMore ? cursor : null };
 }
 
+type GranolaPerson = { name: string | null; email: string | null };
+
+function person(value: unknown): GranolaPerson | null {
+  if (!value || typeof value !== "object") return null;
+  const row = value as Record<string, unknown>;
+  const name = pickString(row, ["name", "display_name", "full_name"]);
+  const email = pickString(row, ["email"]);
+  return name || email ? { name, email } : null;
+}
+
+/**
+ * GRANOLA-1: who the transcript's audio sources stand for. Granola records audio
+ * sources, not voices: the microphone belongs to whoever recorded (the note's
+ * owner) and call audio is everyone else. A name is used for call audio only when
+ * exactly one other person is on the invite.
+ */
+export function granolaSpeakers(note: Record<string, unknown>): { recorder: string | null; other: string | null } {
+  const owner = person(note["owner"]) ?? person(note["creator"]);
+  const list = Array.isArray(note["attendees"]) ? (note["attendees"] as unknown[]) : [];
+  const ownerKey = (owner?.email ?? owner?.name ?? "").toLowerCase();
+  const others = list
+    .map(person)
+    .filter((p): p is GranolaPerson => Boolean(p))
+    .filter((p) => (p.email ?? p.name ?? "").toLowerCase() !== ownerKey);
+  const unique = [...new Map(others.map((p) => [(p.email ?? p.name ?? "").toLowerCase(), p])).values()];
+  return {
+    recorder: owner?.name ?? owner?.email ?? null,
+    other: unique.length === 1 ? (unique[0]!.name ?? unique[0]!.email) : null,
+  };
+}
+
+/**
+ * GRANOLA-1: the label for one transcript line. Granola sends the speaker as an
+ * object ({ source: "microphone" | "speaker", diarization_label? }); older notes
+ * may carry a plain string. Before this, the object was read as text and dropped,
+ * so every imported transcript had no speakers at all.
+ */
+export function granolaSpeakerLabel(speaker: unknown, who: { recorder: string | null; other: string | null }): string | null {
+  if (typeof speaker === "string") return speaker.trim() || null;
+  if (!speaker || typeof speaker !== "object") return null;
+  const row = speaker as Record<string, unknown>;
+  const diarized = pickString(row, ["diarization_label"]);
+  if (diarized) return diarized;
+  const source = (pickString(row, ["source"]) ?? "").toLowerCase();
+  if (source === "microphone") return who.recorder ?? "Microphone";
+  if (source === "speaker" || source === "system" || source === "system_audio") return who.other ?? "Others on the call";
+  return pickString(row, ["name", "label"]);
+}
+
+/** GRANOLA-1: one plain line saying how the speaker labels were assigned, so a reader can judge them. */
+export function granolaSpeakerNote(who: { recorder: string | null; other: string | null }, used: { mic: boolean; call: boolean }): string | null {
+  if (!used.mic && !used.call) return null;
+  const parts: string[] = [];
+  if (used.mic) parts.push(`the microphone is labelled ${who.recorder ?? "Microphone"}, who recorded the call`);
+  if (used.call) parts.push(who.other ? `call audio is labelled ${who.other}, the only other person on the invite` : "call audio is labelled Others on the call");
+  return `_Speakers: ${parts.join("; ")}. Granola records audio sources, not voices, so a label can be wrong if someone else spoke into the same source._`;
+}
+
+export function renderGranolaTranscript(raw: unknown, who: { recorder: string | null; other: string | null }): string | null {
+  if (typeof raw === "string") return raw;
+  if (!Array.isArray(raw)) return null;
+  const used = { mic: false, call: false };
+  const lines = (raw as Record<string, unknown>[])
+    .map((line) => {
+      const text = pickString(line, ["text", "content", "value"]);
+      if (!text) return null;
+      const speaker = line["speaker"] ?? line["source"] ?? line["role"];
+      if (speaker && typeof speaker === "object") {
+        const source = (pickString(speaker as Record<string, unknown>, ["source"]) ?? "").toLowerCase();
+        const diarized = pickString(speaker as Record<string, unknown>, ["diarization_label"]);
+        if (!diarized && source === "microphone") used.mic = true;
+        if (!diarized && source && source !== "microphone") used.call = true;
+      }
+      const label = granolaSpeakerLabel(speaker, who);
+      return label ? `**${label}:** ${text}` : text;
+    })
+    .filter((l): l is string => Boolean(l));
+  if (lines.length === 0) return null;
+  const note = granolaSpeakerNote(who, used);
+  return [note, lines.join("\n\n")].filter(Boolean).join("\n\n");
+}
+
 /** One note with its transcript, rendered as markdown for the work item. */
 export async function fetchGranolaNote(
   key: string,
   id: string,
 ): Promise<{ title: string; date: string | null; markdown: string } | null> {
-  const body = await call(key, `/notes/${encodeURIComponent(id)}?include=transcript`);
+  let body: Record<string, unknown>;
+  let separateTranscript: unknown = undefined;
+  try {
+    body = await call(key, `/notes/${encodeURIComponent(id)}?include=transcript`);
+  } catch (error) {
+    // Granola answers 413 TRANSCRIPT_TOO_LARGE for long calls; the transcript then has its own endpoint.
+    if (!(error instanceof GranolaError) || error.status !== 413) throw error;
+    body = await call(key, `/notes/${encodeURIComponent(id)}`);
+    const t = await call(key, `/notes/${encodeURIComponent(id)}/transcript`);
+    separateTranscript = t["transcript"] ?? t["data"] ?? t["items"];
+  }
   const note = (body["note"] ?? body["data"] ?? body ?? {}) as Record<string, unknown>;
   const title = pickString(note, ["title", "name"]) ?? "Untitled meeting";
   const date = pickString(note, ["created_at", "createdAt", "date", "started_at"]);
 
   const summary = pickString(note, ["summary", "ai_summary", "markdown", "content", "notes"]);
-  const transcriptRaw = note["transcript"];
-  const transcript =
-    typeof transcriptRaw === "string"
-      ? transcriptRaw
-      : Array.isArray(transcriptRaw)
-        ? (transcriptRaw as Record<string, unknown>[])
-            .map((line) => {
-              const text = pickString(line, ["text", "content", "value"]);
-              if (!text) return null;
-              const speaker = pickString(line, ["speaker", "source", "role"]);
-              return speaker ? `**${speaker}:** ${text}` : text;
-            })
-            .filter((l): l is string => Boolean(l))
-            .join("\n\n")
-        : null;
+  const transcript = renderGranolaTranscript(separateTranscript ?? note["transcript"], granolaSpeakers(note));
 
   if (!summary && !transcript) return null;
 

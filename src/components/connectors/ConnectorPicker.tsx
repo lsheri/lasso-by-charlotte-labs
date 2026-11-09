@@ -48,6 +48,9 @@ import {
   type DriveTypeFilter,
 } from "@/lib/drive-scope";
 
+/** GRANOLA-1: shown on a Granola call already in Lasso; picking it again refreshes it, keeping the old version. */
+export const GRANOLA_REFRESH_LABEL = "In Lasso · pick to refresh";
+
 type Crumb = { id: string | null; name: string };
 
 export type PickerKind =
@@ -784,7 +787,8 @@ export function ConnectorPicker({
                     >
                       <Checkbox
                         checked={selected.has(item.id)}
-                        disabled={singlePick ? false : item.alreadyInLasso}
+                        // GRANOLA-1: a Granola call already in Lasso can be picked again to refresh it.
+                        disabled={singlePick ? false : item.alreadyInLasso && kind !== "granola"}
                         onCheckedChange={() => toggle(item.id)}
                         aria-label={`Select ${item.title}`}
                       />
@@ -812,7 +816,7 @@ export function ConnectorPicker({
                         ) : null}
                       </div>
                       <span className="shrink-0 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-                        {item.alreadyInLasso ? "In Lasso" : dateLabel(item.date)}
+                        {item.alreadyInLasso ? (kind === "granola" ? GRANOLA_REFRESH_LABEL : "In Lasso") : dateLabel(item.date)}
                       </span>
                     </li>
                   ))}
