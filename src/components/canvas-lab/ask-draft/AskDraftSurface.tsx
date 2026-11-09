@@ -371,7 +371,7 @@ export function AskDraftSurface(props: Props) {
         data-dragging={dock.carried ? "true" : undefined}
         data-thinking={ask.pending ? "true" : undefined}
         data-caught={dock.hover ? "true" : undefined}
-        onPointerDown={(event) => { event.stopPropagation(); dock.bind.onPointerDown(event); }}
+        onPointerDown={(event) => { event.stopPropagation(); if (event.target instanceof HTMLTextAreaElement && foldedRef.current) setFolded(false); dock.bind.onPointerDown(event); }}
         onPointerMove={dock.bind.onPointerMove}
         onPointerUp={dock.bind.onPointerUp}
         onPointerCancel={dock.bind.onPointerCancel}

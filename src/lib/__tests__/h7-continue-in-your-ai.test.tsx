@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 vi.mock("@/integrations/supabase/client", () => ({ supabase: { from: () => ({}) } }));
 
 import { ContinueInAI } from "@/components/canvas-lab/ask-draft/ContinueInAI";
-import { BRANCH_URL_LIMIT, CLAUDE_URL_LIMIT } from "@/lib/branch-targets";
+import { BRANCH_URL_LIMIT, CHATGPT_URL_LIMIT, CLAUDE_URL_LIMIT } from "@/lib/branch-targets";
 import {
   H7_CHOICES,
   H7_FILE_LIMIT,
@@ -186,7 +186,8 @@ describe("H7 what goes, and how", () => {
   it("routes: connector, filled-in link, clipboard, or file", () => {
     expect(handoffRoute("claude", "short", true).route).toBe("connector");
     expect(handoffRoute("claude", "short", false).route).toBe("link");
-    expect(handoffRoute("chatgpt", "x".repeat(BRANCH_URL_LIMIT), false).route).toBe("clipboard");
+    expect(handoffRoute("chatgpt", "x".repeat(CHATGPT_URL_LIMIT), false).route).toBe("clipboard");
+    expect(handoffRoute("chatgpt", "x".repeat(CHATGPT_URL_LIMIT - "https://chatgpt.com/?q=".length - 1), false).route).toBe("link");
     expect(handoffRoute("claude", "x".repeat(CLAUDE_URL_LIMIT), false).route).toBe("clipboard");
     expect(handoffRoute("gemini", "short", false).route).toBe("clipboard");
     expect(handoffRoute("chatgpt", "x".repeat(H7_FILE_LIMIT + 1), false).route).toBe("file");
