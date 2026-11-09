@@ -15,10 +15,12 @@ export const BRANCH_URL_LIMIT = 1800;
  * almost every real chat fell to the clipboard, so Claude opened empty.
  */
 export const CLAUDE_URL_LIMIT = 30_000;
+/** H7h: chatgpt.com/?q= was measured on 9 Nov 2026: prompts of 16,000 and 32,000 characters (links of about 21,000 and 42,000) filled the composer whole (not sent). 30,000 matches Claude's margin. */
+export const CHATGPT_URL_LIMIT = 30_000;
 
 export const BRANCH_TARGETS: Record<BranchTool, { label: string; vendor: BranchVendor; prefill: boolean; prefix: string; home: string; urlLimit: number }> = {
   claude: { label: "Claude", vendor: "claude", prefill: true, prefix: "https://claude.ai/new?q=", home: "https://claude.ai/new", urlLimit: CLAUDE_URL_LIMIT },
-  chatgpt: { label: "ChatGPT", vendor: "openai", prefill: true, prefix: "https://chatgpt.com/?q=", home: "https://chatgpt.com/", urlLimit: BRANCH_URL_LIMIT },
+  chatgpt: { label: "ChatGPT", vendor: "openai", prefill: true, prefix: "https://chatgpt.com/?q=", home: "https://chatgpt.com/", urlLimit: CHATGPT_URL_LIMIT },
   gemini: { label: "Gemini", vendor: "gemini", prefill: false, prefix: "", home: "https://gemini.google.com/app", urlLimit: BRANCH_URL_LIMIT },
 };
 

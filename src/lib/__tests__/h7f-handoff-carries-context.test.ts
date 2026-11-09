@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/integrations/supabase/client", () => ({ supabase: { from: () => ({}) } }));
 
-import { BRANCH_TARGETS, BRANCH_URL_LIMIT, CLAUDE_URL_LIMIT, branchOpenPlan } from "@/lib/branch-targets";
+import { BRANCH_TARGETS, BRANCH_URL_LIMIT, CHATGPT_URL_LIMIT, CLAUDE_URL_LIMIT, branchOpenPlan } from "@/lib/branch-targets";
 import { handoffRoute, packageHandoff } from "@/lib/ask-handoff";
 import { H7_COPY, hintMs } from "@/components/canvas-lab/ask-draft/ContinueInAI";
 
@@ -38,7 +38,8 @@ describe("H7f: Continue in Claude carries the chat", () => {
     expect(BRANCH_TARGETS.claude.urlLimit).toBe(CLAUDE_URL_LIMIT);
   });
   it("ChatGPT and Gemini keep the old guard: not measured, not changed", () => {
-    expect(BRANCH_TARGETS.chatgpt.urlLimit).toBe(BRANCH_URL_LIMIT);
+    expect(BRANCH_TARGETS.chatgpt.urlLimit).toBe(CHATGPT_URL_LIMIT);
+    expect(BRANCH_TARGETS.gemini.urlLimit).toBe(BRANCH_URL_LIMIT);
     expect(branchOpenPlan("chatgpt", chat).handoff).toBe("clipboard");
     expect(branchOpenPlan("gemini", "hi").handoff).toBe("clipboard");
   });
