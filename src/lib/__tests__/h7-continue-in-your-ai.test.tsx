@@ -215,6 +215,26 @@ describe("H7 the line under an answer", () => {
   });
 });
 
+describe("H7b fits the panel", () => {
+  it("the menu sits over the page, not inside the clipped panel, and a choice inside it still works", async () => {
+    const open = vi.spyOn(window, "open").mockReturnValue({} as Window);
+    const onDone = vi.fn();
+    render(<div style={{ overflow: "hidden" }}><ContinueInAI profileId="p" disabled={false} signals={{ boardPushes: [{ vendor: "claude", at: "x" }], myPushes: [], connected: [], signin: false }} build={() => ({ boardTitle: "B", messages: [], used: [], board: [] })} onDone={onDone} /></div>);
+    fireEvent.click(screen.getByRole("button", { name: "Continue in Claude" }));
+    const menu = await screen.findByTestId("continue-menu");
+    expect(menu.parentElement).toBe(document.body);
+    expect(menu.style.position).toBe("fixed");
+    fireEvent.pointerDown(screen.getAllByRole("menuitem")[1]!);
+    fireEvent.click(screen.getAllByRole("menuitem")[1]!);
+    await waitFor(() => expect(onDone).toHaveBeenCalled());
+    expect(open).toHaveBeenCalledTimes(1);
+  });
+  it("the line under an answer wraps inside the panel", () => {
+    const src = readFileSync("src/components/canvas-lab/ask-draft/AskDraftSurface.tsx", "utf8");
+    expect(src).toMatch(/data-testid="h7-line">\s*<Button[^>]*className="[^"]*whitespace-normal[^"]*"/);
+  });
+});
+
 describe("H7 behind the flag, events unchanged", () => {
   it("the Ask surface only reaches H7 through ask-v2, and still emits handoff_opened", () => {
     const src = readFileSync("src/components/canvas-lab/ask-draft/AskDraftSurface.tsx", "utf8");
