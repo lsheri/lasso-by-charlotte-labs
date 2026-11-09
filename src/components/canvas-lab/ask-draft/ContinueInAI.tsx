@@ -194,6 +194,7 @@ export function ContinueInAI({
   const label = tool ? BRANCH_TARGETS[tool].label : "your AI";
   const box = useRef<HTMLDivElement>(null);
   const menu = useRef<HTMLDivElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
   // H7b: the Ask panel clips its overflow, so the menu is placed over the page at the button's position.
   const [place, setPlace] = useState<CSSProperties | null>(null);
   useEffect(() => {
@@ -213,8 +214,21 @@ export function ContinueInAI({
       if (box.current?.contains(event.target) || menu.current?.contains(event.target)) return;
       setOpen(false);
     };
+    // H7e: Escape closes the menu, and only the menu: caught before the board's own Escape (which clears
+    // picked cards) can see it, and focus goes back to the button that opened it.
+    const escape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      setOpen(false);
+      trigger.current?.focus();
+    };
     document.addEventListener("pointerdown", away);
-    return () => document.removeEventListener("pointerdown", away);
+    document.addEventListener("keydown", escape, true);
+    return () => {
+      document.removeEventListener("pointerdown", away);
+      document.removeEventListener("keydown", escape, true);
+    };
   }, [open]);
 
   async function go(choice: H7Choice, chosen: H7Tool) {
@@ -227,6 +241,7 @@ export function ContinueInAI({
   return (
     <div ref={box} className="relative inline-flex" data-testid="continue-in-ai">
       <button
+        ref={trigger}
         type="button"
         className="ask-draft-send-aside"
         aria-label={`Continue in ${label}`}
