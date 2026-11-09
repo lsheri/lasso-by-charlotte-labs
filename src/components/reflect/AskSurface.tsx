@@ -319,7 +319,7 @@ function WorkPicker({
 }
 
 /** The transcript, on binder paper. Every line sits on the 28px pitch. */
-export function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions?: React.ReactNode }) {
+export function MessagesTab({ ask, emptyActions, statusInTitle = false }: { ask: AskLasso; emptyActions?: React.ReactNode; statusInTitle?: boolean }) {
   const messages = ask.messages ?? [];
   const unanswered = unansweredQuestionIds(messages, ask.pending);
   // V2-2 (ask-v2, default off): reading states and the one-line receipt. Off renders today's trail exactly.
@@ -530,6 +530,7 @@ export function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions
                         streamed={ask.streamed}
                         pickedCount={ask.pointedNow.length > 0 ? ask.pointedNow.length : ask.boardPickActive ? ask.boardPickedCount : ask.selectedItems.length < ask.mapped.length ? ask.selectedItems.length : 0}
                         pickedVideos={ask.boardPickActive ? ask.boardPickedVideos : 0}
+                        statusInTitle={statusInTitle}
                       />
                     ) : (
                       <ThinkingTrail
@@ -833,6 +834,7 @@ export function AskSurface({
   onPickSection,
   sendAside,
   beforeComposer,
+  statusInTitle = false,
 }: {
   ask: AskLasso;
   tab: AskTab;
@@ -850,6 +852,8 @@ export function AskSurface({
   onPickSection?: ((frameId: string) => void) | undefined;
   sendAside?: React.ReactNode;
   beforeComposer?: React.ReactNode;
+  /** C1 (ask-v2 dock): the window's title bar shows the status, so the thread does not repeat it. */
+  statusInTitle?: boolean;
 }) {
   return (
     <>
@@ -890,7 +894,7 @@ export function AskSurface({
 
       <WorkPicker ask={ask} engagementId={engagementId} sections={sections} onPickSection={onPickSection} />
 
-      {tab === "messages" ? <MessagesTab ask={ask} emptyActions={emptyActions} /> : null}
+      {tab === "messages" ? <MessagesTab ask={ask} emptyActions={emptyActions} statusInTitle={statusInTitle} /> : null}
       {tab === "history" ? <HistoryTab ask={ask} onTab={onTab} /> : null}
 
       {ask.error ? <p className="px-4 pb-2 text-sm text-destructive">{ask.error}</p> : null}

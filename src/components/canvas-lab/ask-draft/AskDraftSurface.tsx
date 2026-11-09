@@ -19,6 +19,7 @@ import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
 import { readAskHome, readAskPosition, readUnpinned, writeAskPosition, type AskDraft } from "@/lib/ask-draft";
 import { ASK_DOCK_CONFIG, DOCK_SPOTS, useAskDock, type DockId } from "@/lib/ask-dock-engine";
 import { HANDOFF_VENDORS, handoffLine, handoffLineFits, handoffPrompt, handoffUrl, pickHandoffTool, readAskedTool, readHandoffDestination, shouldNudge, type H7Route } from "@/lib/ask-handoff";
+import { AskTitleStatus } from "@/components/reflect/AskReadingV2";
 import { ContinueInAI, H7_COPY, carryOut, hintMs, useHandoffSignals } from "@/components/canvas-lab/ask-draft/ContinueInAI";
 import { displayKind, kindNoun, usedItems, usedPhrase } from "@/lib/ask-reading-v2";
 import { parseManifest } from "@/lib/context-manifest";
@@ -387,7 +388,11 @@ export function AskDraftSurface(props: Props) {
               {askV2 ? <AskLiveMark pending={ask.pending} error={Boolean(ask.error)} turnKey={turnKey} /> : <LassoLoopMark className="h-[24px] w-[24px]" />}
             </span>
           ) : null}
-          <span className="ask-draft-title">Ask Lasso</span>
+          {draft === "b" && askV2 && ask.pending ? (
+            <AskTitleStatus turnKey={turnKey} manifest={ask.liveManifest} streamed={ask.streamed} />
+          ) : (
+            <span className="ask-draft-title">Ask Lasso</span>
+          )}
           {draft === "b" && props.tab !== "history" ? (
             <button type="button" className="ask-draft-pin" data-idle={!pinned && !canPin ? "true" : undefined} data-on={pinned ? "true" : undefined} data-was={!pinned && props.wasPinned ? "true" : undefined} aria-pressed={pinned} aria-label={pinLabel} title={pinLabel} disabled={!pinned && !canPin} onClick={onPinClick}>
               <Pin size={18} aria-hidden="true" fill={pinned ? "currentColor" : "none"} />
@@ -437,6 +442,7 @@ export function AskDraftSurface(props: Props) {
             onClose={props.onClose}
             headerTone="lime"
             inline
+            statusInTitle={draft === "b" && askV2}
             sections={props.sections}
             onPickSection={props.onPickSection}
             beforeComposer={ask.pending ? (
