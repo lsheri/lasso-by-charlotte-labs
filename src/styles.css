@@ -8454,7 +8454,8 @@ main[data-ask-lock] .canvas-lab-floating-tools-wrapper { left: calc(12px + var(-
 .ask-draft[data-idle-bar="true"] .ask-draft-body footer { border-top: 0; background: transparent; }
 .ask-draft[data-idle-bar="true"] [data-ask-composer-pad] { padding: 13px 0 13px 4px; }
 .ask-draft[data-idle-bar="true"] [data-ask-scope-line] { display: none; }
-.ask-draft[data-idle-bar="true"] .ask-draft-body textarea { min-height: 36px; height: 36px; padding-top: 7px; padding-bottom: 7px; overflow: hidden; }
+.ask-draft[data-idle-bar="true"] .ask-draft-body > .sticky { border: 0; border-radius: 0; margin: 0; background: transparent; }
+.ask-draft[data-idle-bar="true"] .ask-draft-body textarea { min-height: 36px; height: 36px; padding-top: 7px; padding-bottom: 7px; overflow: hidden; white-space: nowrap; }
 .ask-draft[data-idle-bar="true"] [data-testid="continue-in-ai"] { display: none; }
 .ask-draft[data-idle-bar="true"] .ask-draft-foot { display: none; }
 .ask-draft-mark { display: inline-flex; flex-shrink: 0; align-items: center; margin-right: 6px; color: var(--ask-mark); }

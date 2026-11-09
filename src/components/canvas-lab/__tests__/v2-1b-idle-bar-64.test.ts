@@ -38,6 +38,10 @@ describe("V2-1b idle bar is one row", () => {
       /if \(idleRef\.current\) \{[^]*querySelector<HTMLElement>\(":scope > \.sticky"\)[^]*return \(row\?\.offsetHeight \?\? IDLE_ROW_H\)/,
     );
   });
+  it("V2-1c: no card border around the composer and no second placeholder line peeking", () => {
+    expect(idle).toContain('.ask-draft[data-idle-bar="true"] .ask-draft-body > .sticky { border: 0; border-radius: 0; margin: 0; background: transparent; }');
+    expect(idle).toMatch(/textarea \{[^}]*white-space: nowrap; \}/);
+  });
   it("docked to a side, the idle bar keeps its own height", () => {
     expect(surface).toContain("fitLock: () => foldedRef.current || idleRef.current,");
   });
