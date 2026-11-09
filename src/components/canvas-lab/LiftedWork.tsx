@@ -119,6 +119,12 @@ export function LiftedWork({
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const finished = useRef(false);
   const Icon = LIFT_KIND_ICON[kind];
+  // LIFT-6: the page passes fresh callbacks on every render. Held in refs, so a board redraw in the middle
+  // of a close (a live push, presence) can never cancel the close timer and leave an invisible layer up.
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+  const returnFocusRef = useRef(returnFocusTo);
+  returnFocusRef.current = returnFocusTo;
 
   // Grow out of the card: the first paint sits on the card's box; the next frame lets it go.
   useLayoutEffect(() => {
@@ -140,9 +146,9 @@ export function LiftedWork({
   useEffect(
     () => () => {
       if (closeTimer.current !== null) clearTimeout(closeTimer.current);
-      returnFocusTo?.()?.focus({ preventScroll: true });
+      returnFocusRef.current?.()?.focus({ preventScroll: true });
     },
-    [returnFocusTo],
+    [],
   );
 
   function finish(after: () => void) {
@@ -154,11 +160,11 @@ export function LiftedWork({
   function close() {
     if (phase === "closing") return;
     if (!animate) {
-      finish(onClose);
+      finish(() => onCloseRef.current());
       return;
     }
     setPhase("closing");
-    closeTimer.current = setTimeout(() => finish(onClose), LIFT_MORPH_MS);
+    closeTimer.current = setTimeout(() => finish(() => onCloseRef.current()), LIFT_MORPH_MS);
   }
 
   // Esc closes from anywhere while the view is up, before the board's own Esc can clear its selection.
@@ -174,7 +180,7 @@ export function LiftedWork({
   });
 
   function beginMove(event: ReactPointerEvent<HTMLElement>) {
-    if (event.button !== 0) return;
+    if (event.button !== 0 || phase !== "open") return;
     if ((event.target as Element).closest("button")) return;
     try {
       event.currentTarget.setPointerCapture(event.pointerId);
@@ -185,7 +191,7 @@ export function LiftedWork({
   }
 
   function beginResize(corner: LiftCorner, event: ReactPointerEvent<HTMLElement>) {
-    if (event.button !== 0) return;
+    if (event.button !== 0 || phase !== "open") return;
     event.preventDefault();
     try {
       event.currentTarget.setPointerCapture(event.pointerId);
@@ -198,6 +204,11 @@ export function LiftedWork({
   function onGestureMove(event: ReactPointerEvent<HTMLElement>) {
     const g = gesture.current;
     if (!g) return;
+    // Never re-aim the box while it is shrinking home.
+    if (phase === "closing") {
+      gesture.current = null;
+      return;
+    }
     const dx = event.clientX - g.x;
     const dy = event.clientY - g.y;
     setRect(

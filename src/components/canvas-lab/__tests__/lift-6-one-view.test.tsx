@@ -172,3 +172,44 @@ describe("LIFT-6 on the board (wiring pinned in source)", () => {
     expect(image).toContain("Math.hypot(event.clientX - down.x, event.clientY - down.y) >= 6) return;");
   });
 });
+
+describe("LIFT-6 QA fixes", () => {
+  it("a board redraw in the middle of a close never cancels it", () => {
+    vi.useFakeTimers();
+    const onClose = vi.fn();
+    const origin = { left: 10, top: 20, width: 260, height: 220 };
+    const view = (n: number) => (
+      <LiftedWork title={`Deck ${n}`} kind="deck" origin={origin} onClose={() => onClose()} returnFocusTo={() => null}>
+        {() => <p>x</p>}
+      </LiftedWork>
+    );
+    const { rerender } = render(view(1));
+    act(() => {
+      vi.advanceTimersByTime(LIFT_MORPH_MS);
+    });
+    fireEvent.click(screen.getByRole("button", { name: LIFT_COPY.compress }));
+    rerender(view(2));
+    act(() => {
+      vi.advanceTimersByTime(LIFT_MORPH_MS);
+    });
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+  it("a dead local copy waits for the signed link instead of saying it failed", async () => {
+    render(<LiftedImageBody node={{ kind: "image", imagePath: "org/board/pic.png", imagePreviewUrl: "blob:revoked" }} />);
+    const img = screen.getByTestId("lift-image").querySelector("img") as HTMLImageElement;
+    fireEvent.error(img);
+    expect(screen.queryByTestId("lift-image-missing")).toBeNull();
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.getByTestId("lift-image").querySelector("img")?.getAttribute("src")).toBe("https://signed.example/pic.png");
+  });
+  it("chat bubbles keep their own colour inside the view", () => {
+    const css = readFileSync("src/styles.css", "utf8");
+    expect(css).not.toContain("--surface-sunk-2: var(--surface-sunk)");
+  });
+  it("no move or resize while it shrinks home", () => {
+    const src = readFileSync("src/components/canvas-lab/LiftedWork.tsx", "utf8");
+    expect(src).toContain('if (event.button !== 0 || phase !== "open") return;');
+  });
+});
