@@ -8445,7 +8445,7 @@ main[data-ask-lock] .canvas-lab-floating-tools-wrapper { left: calc(12px + var(-
 /* V2-1 (A1, behind ask-v2): unused, Ask is one slim row. Grip, mark, composer and close only; the scope line,
    hints and tabs come back the moment you click into it. Height follows, because hidden parts are not measured. */
 .ask-draft[data-idle-bar="true"] .ask-draft-body > :not(.sticky) { display: none; }
-.ask-draft[data-idle-bar="true"] .ask-draft-head :is(.ask-draft-title, .ask-draft-pin, .ask-draft-new, [aria-label="History"]) { display: none; }
+.ask-draft[data-idle-bar="true"] .ask-draft-head :is(.ask-draft-title, .ask-draft-pin, .ask-draft-new, [aria-label="History"], [aria-label="Expand Ask Lasso"], [aria-label="Collapse Ask Lasso"]) { display: none; }
 .ask-draft[data-idle-bar="true"] .ask-draft-handoff-hint { display: none; }
 /* V2-1b: the idle bar is one 64 px row: grip, mark, a one-line composer, close. The head's box steps aside
    (display: contents) so its controls sit in the same row as the composer; the scope line and Past
@@ -8495,6 +8495,40 @@ main[data-ask-lock] .canvas-lab-floating-tools-wrapper { left: calc(12px + var(-
 .ask-draft-body > div.sticky { position: static; flex-shrink: 0; margin: 8px; overflow: hidden; border: 1px solid var(--nb-rule); border-radius: 24px; background: var(--nb-white); }
 .ask-draft-body > div.sticky footer { border-top: 0; }
 .ask-draft-body > div.sticky footer * { min-width: 0; }
+/* C2 (ask-v2): the compact composer. One line that grows, then a row: scope pill, Continue, round Send.
+   Lab "Idle bar and sizing" (.cc). The dock's rounded box is the composer's border. */
+.ask-draft-body > div.sticky:has(footer[data-compact]) { border-radius: 20px; }
+footer[data-compact] [data-ask-composer-pad] { padding: 8px 8px 8px 14px; }
+.ask-cc { display: flex; flex-direction: column; gap: 2px; }
+.ask-cc .ask-cc-input { display: block; width: 100%; min-height: 26px; max-height: 144px; padding: 3px 0 5px; border: 0; border-radius: 0; background: transparent; box-shadow: none; font-size: 13.5px; line-height: 1.45; color: var(--foreground); overflow-y: auto; }
+.ask-cc .ask-cc-input:focus, .ask-cc .ask-cc-input:focus-visible { outline: none; box-shadow: none; }
+.ask-cc .ask-cc-input::placeholder { color: var(--muted-foreground); }
+.ask-cc-row { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.ask-cc-sp { flex: 1; }
+.ask-cc-pill { display: inline-flex; align-items: center; gap: 5px; min-width: 0; max-width: 62%; height: 24px; padding: 0 9px; border-radius: var(--radius-pill); background: var(--surface-sunk-2); font-size: 11.5px; color: var(--nb-graphite); white-space: nowrap; }
+.ask-cc-pill i { flex-shrink: 0; font-style: normal; color: var(--muted-foreground); }
+.ask-cc-pill:hover, .ask-cc-pill[aria-expanded="true"] { background: color-mix(in srgb, var(--nb-graphite) 12%, var(--surface-sunk-2)); }
+.ask-cc-icon { display: grid; flex-shrink: 0; width: 28px; height: 28px; place-items: center; border-radius: var(--radius-pill); color: var(--muted-foreground); }
+.ask-cc-icon:hover { background: var(--surface-sunk-2); color: var(--foreground); }
+.ask-cc-send { display: grid; flex-shrink: 0; width: 32px; height: 32px; place-items: center; border-radius: var(--radius-pill); background: var(--surface-sunk-2); color: var(--muted-foreground); }
+.ask-cc-send[data-ready="true"] { background: var(--nb-ink); color: var(--nb-white); }
+.ask-cc-send:focus-visible, .ask-cc-pill:focus-visible, .ask-cc-icon:focus-visible { outline: 2px solid var(--focus-ring-new); outline-offset: 1px; }
+.ask-cc-wait { width: 8px; height: 8px; border-radius: var(--radius-pill); background: var(--nb-graphite); animation: ask-cc-wait 1.2s ease-in-out infinite; }
+@keyframes ask-cc-wait { 50% { opacity: .3; transform: scale(.7); } }
+.ask-cc-scope { margin: 6px 0 2px; font-size: 12px; line-height: 1.4; color: var(--muted-foreground); }
+.ask-cc-scope button { font-weight: 600; color: var(--accent-deep); }
+/* C2 idle capsule: mark, prompt, scope pill, history, Send, close, in one 62 px row. */
+.ask-draft[data-idle-bar="true"] { align-items: flex-start; }
+/* No grip on the bar: the mark is the handle (the dock drags from anything that is not a control). */
+.ask-draft[data-idle-bar="true"] .ask-draft-grip { display: none; }
+.ask-draft[data-idle-bar="true"] .ask-draft-mark { align-self: flex-start; margin: 19px 2px 0 14px; cursor: grab; }
+.ask-draft[data-idle-bar="true"] .ask-draft-head [aria-label="Close Ask Lasso"] { align-self: flex-start; margin-top: 17px; }
+.ask-draft[data-idle-bar="true"] footer[data-compact] [data-ask-composer-pad] { padding: 13px 0 13px 4px; }
+.ask-draft[data-idle-bar="true"] .ask-cc { flex-direction: row; align-items: center; gap: 6px; }
+.ask-draft[data-idle-bar="true"] .ask-cc .ask-cc-input { flex: 1; min-width: 0; min-height: 36px; height: 36px; padding: 8px 0; font-size: 14px; white-space: nowrap; overflow: hidden; }
+.ask-draft[data-idle-bar="true"] .ask-cc-row { flex-shrink: 0; }
+.ask-draft[data-idle-bar="true"] .ask-cc-sp { display: none; }
+@media (prefers-reduced-motion: reduce) { .ask-cc-wait { animation: none; } }
 .ask-draft-body > a { display: none; }
 .ask-draft[data-collapsed="true"] .ask-draft-body > .nb-binder { display: none; }
 .ask-draft-spots { position: absolute; inset: 0; z-index: 29; pointer-events: none; }
