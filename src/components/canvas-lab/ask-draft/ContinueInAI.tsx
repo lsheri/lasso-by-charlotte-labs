@@ -114,6 +114,23 @@ export function useHandoffSignals({
   return signals;
 }
 
+/**
+ * H7d: where the menu goes. It opens up from the button, right edges aligned. If the Continue line
+ * sits above the button and overlaps it sideways, the menu opens above the line instead, so the
+ * line's words stay readable. Never closer than 8 px to the viewport edge; the menu scrolls if short of room.
+ */
+export function menuPlacement(
+  button: { top: number; right: number },
+  line: { top: number; bottom: number; left: number; right: number } | null,
+  viewport: { width: number; height: number },
+): { right: number; bottom: number; maxHeight: number } {
+  let anchorTop = button.top;
+  // Above the line only when there is room for the menu there; otherwise covering the line beats leaving the screen.
+  if (line && line.bottom <= button.top + 1 && line.right > button.right - 256 && line.left < button.right && line.top - 16 >= 140) anchorTop = Math.min(anchorTop, line.top);
+  const bottom = Math.max(8, viewport.height - anchorTop + 8);
+  return { right: Math.max(8, viewport.width - button.right), bottom, maxHeight: Math.max(120, viewport.height - bottom - 8) };
+}
+
 /** Carries out one hand-off on the person's click. Returns the route taken. */
 export async function carryOut(
   tool: H7Tool,
@@ -185,12 +202,9 @@ export function ContinueInAI({
       return;
     }
     const rect = box.current.getBoundingClientRect();
-    setPlace({
-      position: "fixed",
-      right: Math.max(8, window.innerWidth - rect.right),
-      bottom: Math.max(8, window.innerHeight - rect.top + 8),
-      zIndex: 80,
-    });
+    // H7d: when the Continue line shows above the composer, open above it rather than over it.
+    const line = box.current.closest(".ask-draft")?.querySelector<HTMLElement>('[data-testid="h7-line"]') ?? null;
+    setPlace({ position: "fixed", zIndex: 80, ...menuPlacement(rect, line?.getBoundingClientRect() ?? null, { width: window.innerWidth, height: window.innerHeight }) });
   }, [open]);
   useEffect(() => {
     if (!open) return;
@@ -230,7 +244,7 @@ export function ContinueInAI({
           ref={menu}
           role="menu"
           style={place}
-          className="w-64 rounded-[var(--radius-control)] border border-border bg-background p-1 text-[13px] shadow-sm"
+          className="w-64 overflow-y-auto rounded-[var(--radius-control)] border border-border bg-background p-1 text-[13px] shadow-sm"
           data-testid="continue-menu"
           onPointerDown={(event) => event.stopPropagation()}
         >
