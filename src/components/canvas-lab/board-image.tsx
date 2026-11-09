@@ -72,7 +72,7 @@ export async function uploadBoardVideo(file: File): Promise<string | null> {
   const userId = data.user?.id;
   if (!userId) return null;
   const path = storageObjectKey(userId, crypto.randomUUID(), file.name);
-  const { error } = await supabase.storage.from("work-files").upload(path, file, { contentType: file.type || undefined });
+  const { error } = await supabase.storage.from("work-files").upload(path, file, file.type ? { contentType: file.type } : {});
   return error ? null : path;
 }
 
