@@ -322,6 +322,26 @@ export function useAskLasso({
     return () => { if (typeof cancelAnimationFrame === "function") cancelAnimationFrame(frame); };
   }, [pending, asked, liveManifest]);
 
+  // V2-2d: the panel keeps growing for a moment after send (57 px to 165 px on the small board), after the
+  // scroll above has run, so the reading state sat above view until the read set arrived. While a question is
+  // in flight, bring the reading block back into view whenever the scroll area or the block changes size.
+  // Dropped when the turn ends, so reading an answer is never pulled around.
+  useEffect(() => {
+    if (!pending || typeof ResizeObserver !== "function") return;
+    const anchor = bottomRef.current;
+    const scroller = anchor ? scrollAreaOf(anchor) : null;
+    if (!anchor || !scroller) return;
+    const refit = () => {
+      const reading = anchor.parentElement?.querySelector<HTMLElement>('[data-testid="ask-reading-v2"]');
+      if (reading && !fitsIn(reading, scroller)) reading.scrollIntoView({ behavior: "auto", block: "nearest" });
+    };
+    const watch = new ResizeObserver(refit);
+    watch.observe(scroller);
+    const reading = anchor.parentElement?.querySelector<HTMLElement>('[data-testid="ask-reading-v2"]');
+    if (reading) watch.observe(reading);
+    return () => watch.disconnect();
+  }, [pending, asked, liveManifest]);
+
   async function ensureSession(): Promise<string | null> {
     if (sessionId) return sessionId;
     const scope: ContextScope = scopeForSelection();
@@ -485,4 +505,22 @@ export function sessionBelongsHere(
   const board = (raw as { board?: string } | null)?.board;
   if (board) return board === where.engagementId;
   return sessionRelatedToEngagement(parseScope(raw), where);
+}
+
+/** V2-2d: the nearest ancestor that scrolls vertically. */
+export function scrollAreaOf(el: HTMLElement): HTMLElement | null {
+  let node = el.parentElement;
+  while (node) {
+    const overflow = getComputedStyle(node).overflowY;
+    if (overflow === "auto" || overflow === "scroll") return node;
+    node = node.parentElement;
+  }
+  return null;
+}
+
+/** V2-2d: true when the block sits wholly inside the scroll area (1 px slack for rounding). */
+export function fitsIn(block: HTMLElement, area: HTMLElement): boolean {
+  const b = block.getBoundingClientRect();
+  const a = area.getBoundingClientRect();
+  return b.top >= a.top - 1 && b.bottom <= a.bottom + 1;
 }
