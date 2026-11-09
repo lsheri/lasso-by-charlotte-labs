@@ -1,3 +1,4 @@
+import { displayName, nameMatches } from "@/lib/work-item-name";
 import { queuedStillWanted } from "@/lib/ask-queue";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
@@ -207,7 +208,8 @@ export function useAskLasso({
 
   const mentionMatches = mention
     ? mentionItems
-        .filter((item) => item.title.toLowerCase().includes(mention.query.toLowerCase()))
+        // ASK-FIX-4: the list finds a piece by the name on its card or by its original title.
+        .filter((item) => nameMatches(item, mention.query))
         .slice(0, 6)
     : [];
 
@@ -219,7 +221,8 @@ export function useAskLasso({
   function chooseMention(item: WorkItemRow) {
     if (!mention) return;
     const caret = composerRef.current?.selectionStart ?? draft.length;
-    const next = `${draft.slice(0, mention.start)}@${item.title} ${draft.slice(caret)}`;
+    // ASK-FIX-4: insert the name the person sees on the card, not the stored title.
+    const next = `${draft.slice(0, mention.start)}@${displayName(item)} ${draft.slice(caret)}`;
     setDraft(next);
     setMention(null);
     setScopeSource("pointed");
