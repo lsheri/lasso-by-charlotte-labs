@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { createPortal } from "react-dom";
 import { ArrowUpRight } from "lucide-react";
 
 import { BrandLogo } from "@/components/connectors/BrandLogo";
@@ -175,11 +176,28 @@ export function ContinueInAI({
   });
   const label = tool ? BRANCH_TARGETS[tool].label : "your AI";
   const box = useRef<HTMLDivElement>(null);
+  const menu = useRef<HTMLDivElement>(null);
+  // H7b: the Ask panel clips its overflow, so the menu is placed over the page at the button's position.
+  const [place, setPlace] = useState<CSSProperties | null>(null);
+  useEffect(() => {
+    if (!open || !box.current) {
+      setPlace(null);
+      return;
+    }
+    const rect = box.current.getBoundingClientRect();
+    setPlace({
+      position: "fixed",
+      right: Math.max(8, window.innerWidth - rect.right),
+      bottom: Math.max(8, window.innerHeight - rect.top + 8),
+      zIndex: 80,
+    });
+  }, [open]);
   useEffect(() => {
     if (!open) return;
     const away = (event: PointerEvent) => {
-      if (box.current && event.target instanceof Node && !box.current.contains(event.target))
-        setOpen(false);
+      if (!(event.target instanceof Node)) return;
+      if (box.current?.contains(event.target) || menu.current?.contains(event.target)) return;
+      setOpen(false);
     };
     document.addEventListener("pointerdown", away);
     return () => document.removeEventListener("pointerdown", away);
@@ -207,10 +225,12 @@ export function ContinueInAI({
         {tool ? <BrandLogo brand={tool === "chatgpt" ? "chatgpt" : tool} size={18} /> : null}
         <ArrowUpRight size={14} aria-hidden="true" />
       </button>
-      {open ? (
+      {open && place ? createPortal(
         <div
+          ref={menu}
           role="menu"
-          className="absolute bottom-full right-0 z-50 mb-2 w-64 rounded-[var(--radius-control)] border border-border bg-background p-1 text-[13px] shadow-sm"
+          style={place}
+          className="w-64 rounded-[var(--radius-control)] border border-border bg-background p-1 text-[13px] shadow-sm"
           data-testid="continue-menu"
           onPointerDown={(event) => event.stopPropagation()}
         >
@@ -254,7 +274,8 @@ export function ContinueInAI({
               ))}
             </>
           )}
-        </div>
+        </div>,
+        document.body,
       ) : null}
     </div>
   );

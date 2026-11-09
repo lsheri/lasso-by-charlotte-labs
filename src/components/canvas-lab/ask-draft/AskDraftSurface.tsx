@@ -428,7 +428,7 @@ export function AskDraftSurface(props: Props) {
         </div>
         {draft === "b" && askV2 && props.tab === "messages" && h7LineShown && h7Tool && nudgeHost ? createPortal(
           <div className="ask-draft-nudge" data-testid="h7-line">
-            <Button type="button" variant="link" className="h-auto p-0 text-inherit" onClick={() => { void carryOut(h7Tool, { ...h7Build(), choice: "chat_and_used" }, Boolean(h7Signals?.signin) && h7Tool !== "gemini").then((r) => h7Done(r.route, r.blocked, h7Tool === "chatgpt" ? "ChatGPT" : h7Tool === "gemini" ? "Gemini" : "Claude")); }}>{handoffLine(h7Tool, usedPhrase(lastUsed))}</Button>
+            <Button type="button" variant="link" className="h-auto min-w-0 whitespace-normal p-0 text-left text-inherit" onClick={() => { void carryOut(h7Tool, { ...h7Build(), choice: "chat_and_used" }, Boolean(h7Signals?.signin) && h7Tool !== "gemini").then((r) => h7Done(r.route, r.blocked, h7Tool === "chatgpt" ? "ChatGPT" : h7Tool === "gemini" ? "Gemini" : "Claude")); }}>{handoffLine(h7Tool, usedPhrase(lastUsed))}</Button>
           </div>, nudgeHost,
         ) : null}
         {draft === "b" && !askV2 && props.tab === "messages" && shouldNudge(turns, dismissedAt) && !ask.pending && nudgeHost ? createPortal(
