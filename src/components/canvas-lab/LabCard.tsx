@@ -44,6 +44,18 @@ import type { NoPreviewReason, WorkboardCardPreview, WorkboardFilePreview } from
 import { isWorkboardFilePreviewItem } from "@/lib/workboard-file-preview";
 
 /** Null while a fetchable preview has not arrived yet: unknown, so nothing is claimed. */
+/**
+ * FIX-SHIMMER: the card's text is on its way. Stored text, no summary yet, and it reached Lasso
+ * under three minutes ago: the summary pass is still running, so show a loading shimmer, not the
+ * no-preview sketch. Past three minutes the honest "no preview" note comes back.
+ */
+export const TEXT_ON_ITS_WAY_MS = 180_000;
+export function textOnItsWay(item: { content_ref: string | null; captured_at: string } | undefined, hasSummary: boolean, now: number = Date.now()): boolean {
+  if (!item || hasSummary || !item.content_ref) return false;
+  const at = Date.parse(item.captured_at);
+  return Number.isFinite(at) && now - at >= 0 && now - at < TEXT_ON_ITS_WAY_MS;
+}
+
 export function noPreviewReasonFor(input: { hasPreview: boolean; previewable: boolean; reason?: NoPreviewReason | undefined }): NoPreviewReason | null {
   if (!input.hasPreview && input.previewable) return null;
   return input.reason ?? (input.hasPreview ? 'no_text' : 'not_previewable');
@@ -328,6 +340,10 @@ function LabCardInner({
     renderableFilePreview && !filePreviewFailed ? (
       <div className="absolute inset-0 flex min-h-0 flex-col">
         <FilePreview preview={renderableFilePreview} title={boardWork.title} onFailure={markFilePreviewFailed} />
+      </div>
+    ) : noPreviewReason && !contextAvailable && textOnItsWay(item, Boolean(extractSummary)) ? (
+      <div className="lab-card-text-loading" data-testid="card-text-loading" role="status" aria-label="Reading this work">
+        <span style={{ width: "88%" }} /><span style={{ width: "72%" }} /><span style={{ width: "80%" }} /><span style={{ width: "54%" }} />
       </div>
     ) : noPreviewReason ? (
       <NoPreview reason={noPreviewReason} contextAvailable={contextAvailable} />

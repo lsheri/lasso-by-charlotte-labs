@@ -1457,6 +1457,14 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 [data-testid="canvas-lab-shell"][data-interaction="resize"] .canvas-lab-stage,
 [data-testid="canvas-lab-shell"][data-interaction="connect"] .canvas-lab-stage { user-select: none; }
 .canvas-lab-card { cursor: grab; }
+/* FIX-CURSOR: anything being edited on the board gets the document cursor, never the board's hand. */
+[data-testid="canvas-lab-stage"] [data-editing="true"] { cursor: auto; }
+[data-testid="canvas-lab-stage"] [data-editing="true"] :is([contenteditable="true"], textarea, input[type="text"]) { cursor: text; }
+/* FIX-SHIMMER: a card whose text is on its way shows lines that shimmer, not the no-preview sketch. */
+.lab-card-text-loading { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; gap: 10px; padding: 18px 16px; }
+.lab-card-text-loading > span { display: block; height: 9px; border-radius: var(--radius-pill); background: linear-gradient(90deg, var(--surface-sunk-2) 0 40%, color-mix(in srgb, var(--surface-sunk-2) 60%, var(--nb-white)) 50%, var(--surface-sunk-2) 60% 100%); background-size: 250% 100%; animation: lab-card-shimmer 1.8s linear infinite; }
+@keyframes lab-card-shimmer { from { background-position: 100% 0; } to { background-position: -150% 0; } }
+@media (prefers-reduced-motion: reduce) { .lab-card-text-loading > span { animation: none; } }
 .canvas-lab-colour-block {
   z-index: 0;
   border-radius: 18px;
