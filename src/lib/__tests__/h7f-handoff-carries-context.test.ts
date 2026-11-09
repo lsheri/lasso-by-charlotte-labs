@@ -37,10 +37,11 @@ describe("H7f: Continue in Claude carries the chat", () => {
     expect(CLAUDE_URL_LIMIT).toBe(30_000);
     expect(BRANCH_TARGETS.claude.urlLimit).toBe(CLAUDE_URL_LIMIT);
   });
-  it("ChatGPT and Gemini keep the old guard: not measured, not changed", () => {
+  it("ChatGPT is measured (H7h); Gemini keeps the old guard", () => {
     expect(BRANCH_TARGETS.chatgpt.urlLimit).toBe(CHATGPT_URL_LIMIT);
     expect(BRANCH_TARGETS.gemini.urlLimit).toBe(BRANCH_URL_LIMIT);
-    expect(branchOpenPlan("chatgpt", chat).handoff).toBe("clipboard");
+    expect(branchOpenPlan("chatgpt", chat).handoff).toBe("link");
+    expect(branchOpenPlan("chatgpt", "x".repeat(CHATGPT_URL_LIMIT)).handoff).toBe("clipboard");
     expect(branchOpenPlan("gemini", "hi").handoff).toBe("clipboard");
   });
   it("past the ceiling the clipboard hint says what to do and stays long enough to read", () => {
