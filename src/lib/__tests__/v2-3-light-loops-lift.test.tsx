@@ -100,6 +100,23 @@ describe("V2-3 lift on done", () => {
     expect(errHost.querySelector("[data-node-id]")?.getAttribute("data-ask-lift")).toBeNull();
     host.remove();
   });
+  it("every turn lifts, even though the question clears as the answer lands (V2-3b)", () => {
+    vi.useFakeTimers();
+    const host = document.createElement("div");
+    host.innerHTML = `<div data-node-id="n1"></div>`;
+    document.body.appendChild(host);
+    const card = host.querySelector("[data-node-id]")!;
+    type P = { pending: boolean; turnKey: string };
+    const { rerender } = renderHook((p: P) => useAskLift({ host, nodeIds: ["n1"], error: false, ...p }), { initialProps: { pending: true, turnKey: turnKeyFor("first") } });
+    // The answer lands and Ask clears the question in the same render.
+    rerender({ pending: false, turnKey: turnKeyFor(null) });
+    expect(card.getAttribute("data-ask-lift")).toBe("on");
+    act(() => { vi.advanceTimersByTime(LIFT_MS); });
+    rerender({ pending: true, turnKey: turnKeyFor("second") });
+    rerender({ pending: false, turnKey: turnKeyFor(null) });
+    expect(card.getAttribute("data-ask-lift")).toBe("on");
+    host.remove();
+  });
   it("decoration only: never sets data-editing, so it can never hold the board's redraw", () => {
     const src = readFileSync("src/components/canvas-lab/ask-draft/AskReadingLoops.tsx", "utf8") + readFileSync("src/components/canvas-lab/ask-draft/AskLiveMark.tsx", "utf8") + readFileSync("src/lib/ask-reading-clock.ts", "utf8");
     const code = src.split("\n").filter((l) => !/^\s*(\*|\/\/|\/\*)/.test(l)).join("\n");

@@ -118,13 +118,18 @@ export function AskReadingLoops({ host, surfaceRef, nodeIds, turnKey, onShowing 
  */
 export function useAskLift({ host, nodeIds, pending, error, turnKey }: { host: HTMLElement | null; nodeIds: string[]; pending: boolean; error: boolean; turnKey: string }) {
   const wasPending = useRef(pending);
+  // V2-3b: Ask clears the question in the same render the answer lands, so the key at that moment is blank
+  // for every turn. Hold the key the turn was asked under, or only the first turn on a page ever lifts.
+  const askedKey = useRef(turnKey);
+  if (pending) askedKey.current = turnKey;
   useEffect(() => {
     const finished = wasPending.current && !pending;
     wasPending.current = pending;
     if (!finished || error || !host) return;
+    const key = askedKey.current;
     const cards: HTMLElement[] = [];
     for (const id of nodeIds) {
-      if (!takeLift(turnKey, id)) continue;
+      if (!takeLift(key, id)) continue;
       const card = cardFor(host, id);
       if (!card) continue;
       card.setAttribute("data-ask-lift", "on");
