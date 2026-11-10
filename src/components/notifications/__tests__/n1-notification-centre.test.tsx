@@ -27,6 +27,8 @@ vi.mock("@/lib/notifications.functions", () => ({
   recordNotificationActed: async () => ({ ok: true }),
   decideInvite: async () => ({ ok: true }),
 }));
+// S4b-2: the panel can tick a sticky done; these tests never do.
+vi.mock("@/lib/stickies.functions", () => ({ setStickyDoneFn: vi.fn() }));
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
     rpc: (fn: string, args: Record<string, unknown>) => {

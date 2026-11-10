@@ -816,9 +816,10 @@ export function CanvasLabPage({ engagementId, entryVia, openSticky }: { engageme
   const canComment = boardEditable;
   // S2b: stickies on the work in the one view: the rail's pad, the layer on the work, the Stickies tab.
   const [liftBody, setLiftBody] = useState<HTMLDivElement | null>(null);
-  const liftStickies = useLiftedStickies({ engagementId, item: liftedItem ?? null, profileId: profile?.id, orgId, canWrite: canComment, body: liftBody });
-  // S4b-2: a notification opens its piece of work in the one view, on the Stickies tab.
-  useStickyDeepLink({ target: openSticky, nodes: nodes ? shownNodes : null, items: boardItems, pendingIds: pendingBoardItemIds, open: (node, item) => { liftCard(node, item, cardRect(node.id), "stickies"); noteWorkboardStickyOpened(orgId, "notification"); }, gone: () => setAnnouncement(STICKY_LINK_COPY.gone) });
+  // S4b-2: a notification opens its piece of work in the one view, on the Stickies tab, with the sticky open on its spot.
+  const [stickyFocus, setStickyFocus] = useState<{ stickyId: string; at: number; for: string } | null>(null);
+  const liftStickies = useLiftedStickies({ engagementId, item: liftedItem ?? null, profileId: profile?.id, orgId, canWrite: canComment, body: liftBody, focus: stickyFocus && stickyFocus.for === liftedItem?.id ? stickyFocus : null });
+  useStickyDeepLink({ target: openSticky, nodes: nodes ? shownNodes : null, items: boardItems, pendingIds: pendingBoardItemIds, open: (node, item, stickyId) => { liftCard(node, item, cardRect(node.id), "stickies"); setStickyFocus({ stickyId, at: Date.now(), for: item.id }); noteWorkboardStickyOpened(orgId, "notification"); }, gone: () => setAnnouncement(STICKY_LINK_COPY.gone) });
   /** Bringing work in is arranging the board, so a coach never sees it. */
   const canAddWork = (lab.board?.canEditStructure !== false && !offline);
   // DD1-a: files dropped from the desktop land at the release point.

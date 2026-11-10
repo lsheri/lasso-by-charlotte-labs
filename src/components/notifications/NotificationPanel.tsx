@@ -18,10 +18,24 @@ import { SHARED_WITH_YOU_COPY, useAcceptBoardShare, useOpenShared } from "@/comp
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/use-profile";
 import { logEvent } from "@/lib/telemetry";
+import { noteWorkboardStickyDone } from "@/components/canvas-lab/canvas-lab-telemetry";
+import { setStickyDoneFn } from "@/lib/stickies.functions";
 import { isAcceptableShare } from "@/lib/notifications-shared";
 import { useQueryClient } from "@tanstack/react-query";
 
 type Decided = { pending?: boolean; text?: string; error?: string };
+
+/** S4b-2: the sticky a row is about, when it names one and its work. */
+function stickyOf(row: NotificationRow): { stickyId: string; workItemId: string } | null {
+  if (row.kind !== "sticky_assigned" && row.kind !== "sticky_done") return null;
+  const stickyId = typeof row.payload["sticky_id"] === "string" ? row.payload["sticky_id"] : "";
+  const workItemId = typeof row.payload["work_item_id"] === "string" ? row.payload["work_item_id"] : "";
+  return stickyId && workItemId ? { stickyId, workItemId } : null;
+}
+
+export const STICKY_ROW_COPY = {
+  movedOn: "That sticky has moved on: it is done, changed or removed.",
+} as const;
 
 function boardSharedSentence(row: NotificationRow): string {
   const by = typeof row.payload["by"] === "string" && row.payload["by"] ? row.payload["by"] : "Someone";
@@ -49,6 +63,7 @@ export function NotificationPanel({
   const decide = useServerFn(decideInvite);
   const mark = useServerFn(markNotifications);
   const acted = useServerFn(recordNotificationActed);
+  const markStickyDone = useServerFn(setStickyDoneFn);
   const accept = useAcceptBoardShare();
   const openShared = useOpenShared();
   const { data: profile } = useProfile();
@@ -134,11 +149,37 @@ export function NotificationPanel({
   }
 
   function onOpen(row: NotificationRow) {
-    void mark({ data: { ids: [row.id], acted: true } }).then(onChanged).catch(() => {});
+    // S4b-2: a sticky someone asks of you stays in Needs you until it is done; opening it only reads it.
+    void mark({ data: { ids: [row.id], acted: row.kind !== "sticky_assigned" } }).then(onChanged).catch(() => {});
     void acted({ data: { kind: row.kind, action: "open" } }).catch(() => {});
     if (row.engagement_id) {
       onNavigate();
-      void navigate({ to: "/engagements/$id/canvas-lab", params: { id: row.engagement_id } });
+      const sticky = stickyOf(row);
+      void navigate({
+        to: "/engagements/$id/canvas-lab",
+        params: { id: row.engagement_id },
+        ...(sticky ? { search: { sticky: sticky.stickyId, work: sticky.workItemId } } : {}),
+      });
+    }
+  }
+
+  // S4b-2: tick the sticky done from here. The server reads its current version and settles this row.
+  async function onStickyDone(row: NotificationRow) {
+    const sticky = stickyOf(row);
+    if (!sticky) return;
+    setState((s) => ({ ...s, [row.id]: { pending: true } }));
+    try {
+      const result = await markStickyDone({ data: { id: sticky.stickyId, done: true } });
+      if (result.status !== "saved") {
+        setState((s) => ({ ...s, [row.id]: { error: STICKY_ROW_COPY.movedOn } }));
+        return;
+      }
+      setState((s) => ({ ...s, [row.id]: { text: NOTIFICATION_COPY.markedDone } }));
+      noteWorkboardStickyDone(row.org_id ?? profile?.org_id, "inbox");
+      void mark({ data: { ids: [row.id], acted: true } }).catch(() => {});
+      onChanged();
+    } catch {
+      setState((s) => ({ ...s, [row.id]: { error: STICKY_ROW_COPY.movedOn } }));
     }
   }
 
@@ -180,6 +221,16 @@ export function NotificationPanel({
                     <div className="mt-2 flex gap-2">
                       <Button size="sm" disabled={s.pending} onClick={() => void onAcceptShare(row)}>
                         {s.pending ? NOTIFICATION_COPY.accepting : NOTIFICATION_COPY.accept}
+                      </Button>
+                    </div>
+                  )}
+                  {!s.text && row.kind === "sticky_assigned" && stickyOf(row) && (
+                    <div className="mt-2 flex gap-2">
+                      <Button size="sm" disabled={s.pending} onClick={() => onOpen(row)}>
+                        {NOTIFICATION_COPY.openSticky}
+                      </Button>
+                      <Button size="sm" variant="ghost" disabled={s.pending} onClick={() => void onStickyDone(row)}>
+                        {NOTIFICATION_COPY.markDone}
                       </Button>
                     </div>
                   )}

@@ -60,6 +60,8 @@ describe("S4b-2 wiring (pinned in source)", () => {
   });
   it("the board opens the piece on its Stickies tab and records it came from a notification", () => {
     const page = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
-    expect(page).toContain('liftCard(node, item, cardRect(node.id), "stickies"); noteWorkboardStickyOpened(orgId, "notification");');
+    expect(page).toContain('liftCard(node, item, cardRect(node.id), "stickies"); setStickyFocus({ stickyId, at: Date.now(), for: item.id }); noteWorkboardStickyOpened(orgId, "notification");');
+    // The sticky opens only on the piece it belongs to.
+    expect(page).toContain("focus: stickyFocus && stickyFocus.for === liftedItem?.id ? stickyFocus : null");
   });
 });
