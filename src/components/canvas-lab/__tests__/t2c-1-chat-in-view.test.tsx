@@ -115,6 +115,12 @@ describe("T2c-1 a chat in the one view: its whole conversation", () => {
     expect(document.body.textContent).toContain("The pricing floor is 40 percent.");
   });
 
+  it("a vendor-neutral workspace never sees the tool or model named in the conversation (review finding 2)", () => {
+    vendor.visible = false;
+    render(<Harness />);
+    expect(screen.getByTestId("lift-chat").textContent?.toLowerCase()).not.toContain("claude");
+  });
+
   it("wears the chat tool's border, and a vendor-neutral workspace a plain one", () => {
     render(<Harness />);
     expect(
@@ -215,6 +221,32 @@ describe("T2c-1 keys inside the one view", () => {
     expect(LIFT_COPY.compress).toBeTruthy();
   });
 
+  it("after Esc leaves a comment in the side panel, an arrow does not step away from the draft (review finding 4)", () => {
+    const onStep = vi.fn();
+    render(
+      <LiftedWork
+        title="Chat"
+        kind="chat"
+        origin={null}
+        animateOpen={false}
+        onClose={vi.fn()}
+        onStep={onStep}
+        initialPanel="comments"
+        panels={[
+          { id: "comments", label: "Comments", render: () => <textarea aria-label="comment" /> },
+        ]}
+      >
+        {() => <p>x</p>}
+      </LiftedWork>,
+    );
+    const box = screen.getByRole("textbox", { name: "comment" });
+    box.focus();
+    fireEvent.keyDown(box, { key: "Escape" });
+    expect(document.activeElement).toBe(screen.getByTestId("lift-side"));
+    fireEvent.keyDown(screen.getByTestId("lift-side"), { key: "ArrowRight" });
+    expect(onStep).not.toHaveBeenCalled();
+  });
+
   it("Shift with an arrow grows a selection and never steps to the next piece", () => {
     const { onStep } = view();
     fireEvent.keyDown(window, { key: "ArrowRight", shiftKey: true });
@@ -241,8 +273,30 @@ describe("T2c-1 on the board (wiring pinned in source)", () => {
   });
   it("one set of note writers serves both readers, so telemetry and writes stay identical", () => {
     expect(page).toContain("const notesThreadId = liftedChatId ?? focusThreadId;");
-    expect(page.match(/\{\.\.\.chatNoteHandlers\(\)\}/g)?.length).toBe(2);
+    expect(page).toContain("{...chatNoteHandlers()} /> }]");
+    expect(page).toContain("{...(notesThreadId === focusThreadId ? chatNoteHandlers() : {})} />");
     expect(page).not.toContain("onHighlight={focusThreadId ?");
+  });
+  it("every new note names the chat it was made on, so stepping mid-save cannot move it (review finding 1)", () => {
+    const fn = page.slice(
+      page.indexOf("function chatNoteHandlers"),
+      page.indexOf("function liftCard"),
+    );
+    expect(fn).toContain("const threadId = notesThreadId;");
+    expect(fn.match(/createHighlight\(\{ workItemId: threadId,/g)?.length).toBe(2);
+    expect(fn).toContain("createComment({ workItemId: threadId,");
+    const hooks =
+      readFileSync("src/hooks/use-canvas-lab-annotations.ts", "utf8") +
+      readFileSync("src/hooks/use-canvas-lab-comments.ts", "utf8");
+    expect(hooks.match(/work_item_id: input\.workItemId \?\? workItemId \?\? ""/g)?.length).toBe(2);
+  });
+  it("the focus reader never shows or writes another chat's notes (review finding 3)", () => {
+    expect(page).toContain(
+      "highlights={notesThreadId === focusThreadId ? annotations.highlights : []}",
+    );
+    expect(page).toContain(
+      "threads={notesThreadId === focusThreadId ? commentThreads.threads : []}",
+    );
   });
   it("opening Comments is not counted as opening the trail", () => {
     expect(page).toContain(

@@ -69,6 +69,11 @@ function typingIn(target: EventTarget | null): boolean {
   return Boolean(target.closest("input, textarea, select, [contenteditable='true'], [contenteditable='']"));
 }
 
+/** The side panel (Trail, Comments) keeps its own keys: an arrow there never steps away. */
+function inSidePanel(target: EventTarget | null): boolean {
+  return target instanceof Element && Boolean(target.closest(".lift-side"));
+}
+
 function viewport() {
   return { width: window.innerWidth, height: window.innerHeight };
 }
@@ -224,7 +229,7 @@ export function LiftedWork({
       // T3: left and right move to the previous or next piece on the board, without closing the view.
       const plain = !event.shiftKey && !event.altKey && !event.metaKey && !event.ctrlKey;
       // Shift with an arrow grows a text selection in the work; only a plain arrow steps.
-      if ((event.key === "ArrowLeft" || event.key === "ArrowRight") && plain && onStep && !menuOpen && !typingIn(event.target)) {
+      if ((event.key === "ArrowLeft" || event.key === "ArrowRight") && plain && onStep && !menuOpen && !typingIn(event.target) && !inSidePanel(event.target)) {
         event.preventDefault();
         event.stopImmediatePropagation();
         onStep(event.key === "ArrowRight" ? 1 : -1, panel);
@@ -235,7 +240,10 @@ export function LiftedWork({
       event.stopImmediatePropagation();
       // T2c-1: Esc in a comment leaves the field and keeps the draft; the next Esc closes the view.
       if (typingIn(event.target) && event.target instanceof HTMLElement) {
+        // Focus stays in the side panel, where arrows never step away from a draft.
+        const side = event.target.closest<HTMLElement>(".lift-side");
         event.target.blur();
+        side?.focus();
         return;
       }
       if (menuOpen) {
@@ -360,7 +368,7 @@ export function LiftedWork({
             {children(bodyWidth)}
           </div>
           {openPanel ? (
-            <aside className="lift-side" data-testid="lift-side" aria-label={openPanel.label} style={{ width: LIFT_SIDE.panel }}>
+            <aside className="lift-side" data-testid="lift-side" aria-label={openPanel.label} tabIndex={-1} style={{ width: LIFT_SIDE.panel }}>
               {openPanel.render()}
             </aside>
           ) : null}

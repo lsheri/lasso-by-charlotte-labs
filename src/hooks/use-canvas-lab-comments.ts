@@ -69,6 +69,8 @@ export function useCanvasLabComments(
 
   const create = useMutation({
     mutationFn: async (input: {
+      /** T2c-1: the chat the write was made on, so a view that has since moved on cannot redirect it. */
+      workItemId?: string | undefined;
       turnNo: number;
       charStart: number;
       charEnd: number;
@@ -79,7 +81,7 @@ export function useCanvasLabComments(
       (await createFn({
         data: {
           engagement_id: engagementId,
-          work_item_id: workItemId ?? "",
+          work_item_id: input.workItemId ?? workItemId ?? "",
           turn_no: input.turnNo,
           char_start: input.charStart,
           char_end: input.charEnd,
@@ -88,7 +90,10 @@ export function useCanvasLabComments(
           ...profileArg,
         },
       })) as CommentMutationResult,
-    onSuccess: invalidate,
+    onSuccess: (_result, input) => {
+      void queryClient.invalidateQueries({ queryKey: commentsQueryKey(engagementId, input.workItemId ?? workItemId ?? "") });
+      void queryClient.invalidateQueries({ queryKey: commentCountsQueryKey(engagementId) });
+    },
   });
 
   const reply = useMutation({

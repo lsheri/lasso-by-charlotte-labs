@@ -233,8 +233,11 @@ export function ThreadBody({
   focus,
   highlights = [],
   commentMarks = [],
+  hideVendor = false,
 }: {
   item: WorkItemRow;
+  /** T2c-1: a vendor-neutral workspace reads the conversation without the tool or model named. */
+  hideVendor?: boolean;
   enabled?: boolean;
   /** Verification ink to settle on model turns. Empty everywhere else. */
   marks?: readonly ThreadMark[];
@@ -354,7 +357,7 @@ export function ThreadBody({
 
   return (
     <div className="space-y-4">
-      {item.source_vendor || model ? (
+      {!hideVendor && (item.source_vendor || model) ? (
         <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
           {vendorLabel(item.source_vendor ?? meta?.vendor)}
           {model ? ` · ${model}` : ""}
@@ -484,7 +487,7 @@ export function ThreadBody({
                     </span>
                     <span className="micro-label">
                       Turn {turn.turn_no} · {turn.role === "tool" ? "tool step" : turn.role}
-                      {turn.role !== "tool" ? (turn.model ? ` · ${turn.model}` : model ? ` · ${model}` : "") : ""}
+                      {turn.role !== "tool" && !hideVendor ? (turn.model ? ` · ${turn.model}` : model ? ` · ${model}` : "") : ""}
                       {turnTime(turn.ts) ? ` · ${turnTime(turn.ts)}` : ""}
                     </span>
                   </div>

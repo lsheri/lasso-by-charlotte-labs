@@ -156,6 +156,8 @@ export function useChatNotesState(isThread: boolean, resetKey: string | null = n
     setComposerAnchor(null);
     setReplyTo(null);
     setEditingId(null);
+    if (typeof CSS !== "undefined" && "highlights" in CSS)
+      CSS.highlights?.delete("canvas-lab-selection");
   }
 
   useEffect(() => {
@@ -605,7 +607,13 @@ export function ChatReader({
       onMouseUp={notes.captureSelection}
       onKeyUp={notes.captureSelection}
     >
-      <ThreadBody item={item} enabled highlights={myHighlights} commentMarks={commentMarks} />
+      <ThreadBody
+        item={item}
+        enabled
+        highlights={myHighlights}
+        commentMarks={commentMarks}
+        hideVendor={vendorKey === null}
+      />
     </ChatBorderFrame>
   );
 }
