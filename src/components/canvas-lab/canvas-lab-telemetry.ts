@@ -107,6 +107,11 @@ export function noteWorkboardWorkLiftExpanded(orgId: string | undefined, kind: L
   if (orgId) logEvent("workboard.work_lift_expanded", orgId, { kind });
 }
 
+/** T2b: the Trail tab opened on a lifted piece, by kind of work. A count of trails read, never who read them. */
+export function noteWorkboardWorkTrailOpened(orgId: string | undefined, kind: LiftKind): void {
+  if (orgId) logEvent("workboard.work_trail_opened", orgId, { kind });
+}
+
 export function noteWorkboardReviewOpened(orgId: string | undefined, format: "thread" | "document" | "deck" | "sheet"): void {
   if (orgId) logEvent("workboard.review_opened", orgId, { format });
 }

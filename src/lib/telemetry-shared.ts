@@ -354,6 +354,7 @@ export type TelemetryEvent =
   /** LIFT (lift-v1): a piece of work lifted off the board, and a lifted view expanded to the full reader. Kind only: never how long anyone read it. */
   | "workboard.work_lifted"
   | "workboard.work_lift_expanded"
+  | "workboard.work_trail_opened"
   /** Local deck contact sheet. Open/closed and band only, never a slide count. */
   | "workboard.deck_expanded"
   /** The person flipped board cards between sketch and real preview. Face only. */

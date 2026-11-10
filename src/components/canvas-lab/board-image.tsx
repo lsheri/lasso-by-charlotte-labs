@@ -226,7 +226,7 @@ function LabImageInner({ node, selected, layoutEditable, onSelect, onContextSele
   onResizeKeyUp: (event: ReactKeyboardEvent<HTMLButtonElement>) => void;
   onRemove: () => void;
   /** LIFT-6: a clean double-click lifts the picture into the same view every card lifts into. */
-  onLift?: ((origin: DOMRect) => void) | undefined;
+  onLift?: ((origin: DOMRect, src?: string | null) => void) | undefined;
 }) {
   const clickDownRef = useRef<{ x: number; y: number } | null>(null);
   const anchorDownRef = useRef<{ x: number; y: number } | null>(null);
@@ -289,7 +289,9 @@ function LabImageInner({ node, selected, layoutEditable, onSelect, onContextSele
       const down = clickDownRef.current;
       if (down && Math.hypot(event.clientX - down.x, event.clientY - down.y) >= 6) return;
       event.stopPropagation();
-      onLift(event.currentTarget.getBoundingClientRect());
+      // T2b: hand over the link the board already shows, so the view never waits on a second signing.
+      const shown = event.currentTarget.querySelector<HTMLImageElement | HTMLVideoElement>("img, video");
+      onLift(event.currentTarget.getBoundingClientRect(), shown?.currentSrc || null);
     }}>
       <div data-selected={contextSelected} data-marquee-preview={previewSelected} className="canvas-lab-card-paper h-full w-full rounded-[2px]">
       {isVideo ? (
