@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { fallback, zodValidator } from "@tanstack/zod-adapter";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { z } from "zod";
 
 import { useQueryClient } from "@tanstack/react-query";
@@ -9,10 +9,14 @@ import { canvasLabBoardQuery } from "@/hooks/use-canvas-lab";
 import { useRecordEngagementView } from "@/hooks/use-engagement-views";
 import { useRememberBoardOpen } from "@/lib/sidebar-tree-state";
 import { useProfile } from "@/hooks/use-profile";
+import type { StickyTarget } from "@/components/canvas-lab/useStickyDeepLink";
 import { CanvasLabPage } from "@/pages/CanvasLabPage";
 
 const canvasLabSearchSchema = z.object({
   from: fallback(z.string(), "").default(""),
+  // S4b-2: a notification names the sticky and its work; the board opens it, then the address is cleaned.
+  sticky: fallback(z.string(), "").default(""),
+  work: fallback(z.string(), "").default(""),
 });
 
 export const Route = createFileRoute("/_authenticated/engagements/$id_/canvas-lab")({
@@ -39,7 +43,8 @@ export const Route = createFileRoute("/_authenticated/engagements/$id_/canvas-la
 
 function CanvasLabRoute() {
   const { id } = Route.useParams();
-  const { from } = Route.useSearch();
+  const { from, sticky, work } = Route.useSearch();
+  const [openSticky, setOpenSticky] = useState<StickyTarget | null>(null);
   const navigate = Route.useNavigate();
   const queryClient = useQueryClient();
   const { data: profile } = useProfile();
@@ -61,5 +66,11 @@ function CanvasLabRoute() {
     void navigate({ search: {}, replace: true });
   }, [from, navigate]);
 
-  return <CanvasLabPage engagementId={id} entryVia={from} />;
+  useEffect(() => {
+    if (!sticky || !work) return;
+    setOpenSticky({ stickyId: sticky, workItemId: work, at: Date.now() });
+    void navigate({ search: {}, replace: true });
+  }, [sticky, work, navigate]);
+
+  return <CanvasLabPage engagementId={id} entryVia={from} openSticky={openSticky} />;
 }

@@ -276,6 +276,7 @@ import { LIFT_NOTES_COPY, LiftedChatBody, LiftedCommentsPanel } from "@/componen
 import { LiftedNoteBody } from "@/components/canvas-lab/LiftedNoteBody";
 import { StickyMark } from "@/components/canvas-lab/StickyMark";
 import { useLiftedStickies } from "@/components/canvas-lab/useLiftedStickies";
+import { STICKY_LINK_COPY, useStickyDeepLink, type StickyTarget } from "@/components/canvas-lab/useStickyDeepLink";
 import { useStickyCounts } from "@/hooks/use-stickies";
 import { useChatNotesState, type ChatNotesHandlers } from "@/components/canvas-lab/chat-notes";
 import { liftable, liftKindOf, type LiftRect } from "@/lib/lift-view";
@@ -318,7 +319,7 @@ const TOOLBAR_LAYOUT = TOOLBAR_GROUPS.flat();
 const HAND_SKIPS = ".canvas-lab-floating-tools, .ask-draft, [role='dialog'], [role='menu'], [role='listbox'], [data-radix-popper-content-wrapper]";
 function toolbarGroupOf(id: string): number { return TOOLBAR_GROUPS.findIndex((ids) => ids.includes(id)) + 1; }
 
-export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string; entryVia?: string }) {
+export function CanvasLabPage({ engagementId, entryVia, openSticky }: { engagementId: string; entryVia?: string; openSticky?: StickyTarget | null }) {
   const navigate = useNavigate();
   // F3: opening a board writes the viewer's own last-viewed row and clears its "N NEW".
   useRecordEngagementView(engagementId);
@@ -816,6 +817,8 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   // S2b: stickies on the work in the one view: the rail's pad, the layer on the work, the Stickies tab.
   const [liftBody, setLiftBody] = useState<HTMLDivElement | null>(null);
   const liftStickies = useLiftedStickies({ engagementId, item: liftedItem ?? null, profileId: profile?.id, orgId, canWrite: canComment, body: liftBody });
+  // S4b-2: a notification opens its piece of work in the one view, on the Stickies tab.
+  useStickyDeepLink({ target: openSticky, nodes: nodes ? shownNodes : null, items: boardItems, pendingIds: pendingBoardItemIds, open: (node, item) => { liftCard(node, item, cardRect(node.id), "stickies"); noteWorkboardStickyOpened(orgId, "notification"); }, gone: () => setAnnouncement(STICKY_LINK_COPY.gone) });
   /** Bringing work in is arranging the board, so a coach never sees it. */
   const canAddWork = (lab.board?.canEditStructure !== false && !offline);
   // DD1-a: files dropped from the desktop land at the release point.
