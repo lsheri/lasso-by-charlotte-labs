@@ -112,10 +112,21 @@ describe("T2c-2 on the board (wiring pinned in source)", () => {
     expect(fn).toContain("liftCard(node, item, origin);");
   });
   it("a card with no work, or work still loading, lifts into the same view", () => {
-    expect(page).toContain("{liftedNode && !liftedItem && !liftedPicture && lifted ? <LiftedWork");
+    expect(page).toContain(
+      "{liftedNode && !liftedPicture && lifted ? <LiftedWork key={liftedNode.id}",
+    );
     expect(page).toContain(
       'state={!liftedNode.workItemId ? "note" : pendingBoardItemIds.has(liftedNode.workItemId) ? "loading" : "unavailable"}',
     );
+  });
+  it("one view for a card whether its work has landed or not, so it never re-mounts or replays the grow (review 2)", () => {
+    expect(page).toContain("{(bodyWidth) => !liftedItem ? <LiftedNoteBody");
+    expect(page).not.toContain("{liftedNode && !liftedItem && !liftedPicture && lifted ?");
+  });
+  it("closing a pointer's chat returns focus to the ledger, and the board under the ledger takes no keys (review 1, 3)", () => {
+    expect(page).toContain("returnFocusTo={() => (lifted.still ? stillFocusRef.current :");
+    expect(page).toContain("if (liftedRef.current || ledgerRef.current) return;");
+    expect(page).toContain("...(lifted.still ? { still: true } : {})");
   });
   it("a ledger pointer lifts the chat in place at its turn; a chat not on the board keeps the source reader", () => {
     expect(page).toContain(

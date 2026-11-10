@@ -132,8 +132,8 @@ describe("T3 on the board and on the server (pinned in source)", () => {
   const server = readFileSync("src/lib/trail.functions.ts", "utf8");
   it("both work and pictures step through the board in reading order", () => {
     expect(page).toContain(".sort((a, b) => a.y - b.y || a.x - b.x);");
-    // T2c-2: notes and pending cards lift too, through their own view.
-    expect(page.match(/onStep=\{stepLift\}/g)?.length).toBe(3);
+    // T2c-2: notes and pending cards lift through the same view as work.
+    expect(page.match(/onStep=\{stepLift\}/g)?.length).toBe(2);
   });
   it("stepping writes nothing to the board", () => {
     const fn = page.slice(page.indexOf("function stepLift"), page.indexOf("function stepLift") + 400);

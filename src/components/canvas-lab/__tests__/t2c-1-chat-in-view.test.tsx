@@ -294,7 +294,7 @@ describe("T2c-1 on the board (wiring pinned in source)", () => {
   });
   it("opening Comments is not counted as opening the trail", () => {
     expect(page).toContain(
-      'onPanelOpened={(id) => { if (id === "trail") noteWorkboardWorkTrailOpened(',
+      'onPanelOpened={(id) => { if (id === "trail" && liftedItem) noteWorkboardWorkTrailOpened(',
     );
   });
 });

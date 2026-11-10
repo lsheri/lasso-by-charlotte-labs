@@ -97,11 +97,10 @@ describe("ONE VIEW on the board (pinned in source)", () => {
   it("every view closes into its own card's box as it is now", () => {
     // A ledger pointer opens the chat in place over the ledger, and closes in place.
     expect(page).toContain("closeTo={() => (lifted.still ? null : cardRect(liftedNode.id))} animateOpen={!lifted.swapped && !lifted.still}");
-    expect(page).toContain("closeTo={() => cardRect(liftedNode.id)} animateOpen={!lifted.swapped}");
     expect(page).toContain("closeTo={() => cardRect(liftedPicture.id)} animateOpen={!lifted.swapped}");
   });
   it("the arrows and the trail open in place, remembering their card", () => {
-    expect(page).toContain("setLifted({ id: next.id, origin: cardRect(next.id), swapped: true,");
+    expect(page).toContain("setLifted({ id: next.id, origin: lifted.still ? null : cardRect(next.id), swapped: true,");
     expect(page).toContain('setLifted({ id: node.id, origin: cardRect(node.id), swapped: true, panel: "trail" });');
   });
 });

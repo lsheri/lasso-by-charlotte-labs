@@ -324,7 +324,7 @@ describe("LIFT on the board page (nothing renders that page in tests, so its wir
       page.indexOf("function onBoardKey"),
       page.indexOf("function onBoardKey") + 400,
     );
-    expect(fn).toContain("if (liftedRef.current) return;");
+    expect(fn).toContain("if (liftedRef.current || ledgerRef.current) return;");
   });
   it("undo and zoom keys stand down too", () => {
     expect(page).toContain(

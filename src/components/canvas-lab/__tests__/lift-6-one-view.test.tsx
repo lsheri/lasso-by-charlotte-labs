@@ -162,7 +162,7 @@ describe("LIFT-6 on the board (wiring pinned in source)", () => {
     expect(page).toContain('kind={liftedPicture.kind === "video" ? "video" : "image"}');
   });
   it("every lifted card names its kind, so the frame's icon follows the work", () => {
-    expect(page).toContain("kind={liftKindOf(liftedItem.type)}");
+    expect(page).toContain('kind={liftedItem ? liftKindOf(liftedItem.type) : "other"}');
   });
   it("lifting a picture writes nothing to the board", () => {
     const fn = page.slice(page.indexOf("function liftPicture"), page.indexOf("function liftPicture") + 400);
