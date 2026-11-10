@@ -2,6 +2,7 @@
 import { readFileSync } from "node:fs";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+vi.mock("@/hooks/use-vendor-display", () => ({ useVendorVisible: () => true }));
 
 vi.mock("@/lib/telemetry", () => ({ logEvent: vi.fn() }));
 vi.mock("@/lib/workboard-file-sign", () => ({ signWorkboardFileUrl: vi.fn(async () => "https://signed.example/pic.png") }));
@@ -84,7 +85,7 @@ describe("LIFT-6 one frame for every kind", () => {
         {() => <p>x</p>}
       </LiftedWork>,
     );
-    expect(screen.queryByRole("button", { name: LIFT_COPY.expand })).toBeNull();
+    expect(screen.queryByRole("button", { name: /full view|expand/i })).toBeNull();
     expect(screen.getByRole("button", { name: LIFT_COPY.compress })).toBeTruthy();
     expect(screen.getByTestId("lift-kind")).toBeTruthy();
   });

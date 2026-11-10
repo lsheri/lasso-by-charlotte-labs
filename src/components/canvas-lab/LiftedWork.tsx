@@ -12,10 +12,8 @@ import {
   FileText,
   Image,
   Mail,
-  Maximize2,
   MessageSquare,
   MessagesSquare,
-  Minimize2,
   Phone,
   Presentation,
   Table2,
@@ -33,9 +31,10 @@ import {
   type LiftKind,
   type LiftRect,
 } from "@/lib/lift-view";
+import { brandHex, type BrandKey } from "@/components/connectors/BrandLogo";
+import { LiftedWorkHead, type LiftMenuItem } from "@/components/canvas-lab/LiftedWorkHead";
 
 export const LIFT_COPY = {
-  expand: "Open the full view",
   compress: "Back to the board",
   move: "Move this view",
   resize: (corner: LiftCorner) => `Resize from ${corner}`,
@@ -79,8 +78,11 @@ type Gesture =
 /**
  * LIFT (behind lift-v1): a piece of work lifted off the board. It morphs out of the card, the board
  * behind dims and blurs, and it can be moved by its header and resized from its corners. Back to the
- * board (or Esc, or a press on the dimmed board) morphs it home. Expand opens the full view, where the
- * work has one.
+ * board (or Esc, or a press on the dimmed board) morphs it home.
+ *
+ * T2a (one view, 9 Nov, Liam): there is no fuller view to expand into. Every piece of work has this one
+ * view, from a double-click, the card's Open button or its menu. The header says which tool the work lives
+ * in and opens it there; anything else lives in the "More" menu.
  *
  * LIFT-6: one view for every kind of work and for images, so the frame, the size, the corners and the
  * motion never change with what is inside. The morph is a transform: the view is laid out once at its
@@ -97,7 +99,10 @@ export function LiftedWork({
   origin,
   returnFocusTo,
   onClose,
-  onExpand,
+  brand = null,
+  dateLine = null,
+  openUrl = null,
+  menu = [],
   children,
 }: {
   title: string;
@@ -106,8 +111,14 @@ export function LiftedWork({
   origin: LiftRect | null;
   returnFocusTo?: (() => HTMLElement | null) | undefined;
   onClose: () => void;
-  /** Absent when there is no fuller view to open (an image): the Expand button is not drawn. */
-  onExpand?: ((rect: LiftRect) => void) | undefined;
+  /** Where the work lives. Null for a picture or anything with no known tool. */
+  brand?: BrandKey | null | undefined;
+  /** "Captured Oct 14" and the like: when the work was made or brought in. Never who did it. */
+  dateLine?: string | null | undefined;
+  /** The work in its own tool. Only https links are drawn. */
+  openUrl?: string | null | undefined;
+  /** Everything that is not reading the work: continue it elsewhere, its ledger, and so on. */
+  menu?: LiftMenuItem[] | undefined;
   children: (bodyWidth: number) => ReactNode;
 }) {
   const still = useRef(reducedMotion()).current;
@@ -119,6 +130,7 @@ export function LiftedWork({
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const finished = useRef(false);
   const Icon = LIFT_KIND_ICON[kind];
+  const [menuOpen, setMenuOpen] = useState(false);
   // LIFT-6: the page passes fresh callbacks on every render. Held in refs, so a board redraw in the middle
   // of a close (a live push, presence) can never cancel the close timer and leave an invisible layer up.
   const onCloseRef = useRef(onClose);
@@ -173,6 +185,10 @@ export function LiftedWork({
       if (event.key !== "Escape") return;
       event.preventDefault();
       event.stopImmediatePropagation();
+      if (menuOpen) {
+        setMenuOpen(false);
+        return;
+      }
       close();
     }
     window.addEventListener("keydown", onKey, true);
@@ -181,7 +197,7 @@ export function LiftedWork({
 
   function beginMove(event: ReactPointerEvent<HTMLElement>) {
     if (event.button !== 0 || phase !== "open") return;
-    if ((event.target as Element).closest("button")) return;
+    if ((event.target as Element).closest("button, a, [role='menu']")) return;
     try {
       event.currentTarget.setPointerCapture(event.pointerId);
     } catch {
@@ -263,6 +279,7 @@ export function LiftedWork({
           height: rect.height,
           transform: phase !== "open" && origin ? liftFlip(origin, rect) : undefined,
           transitionDuration: animate ? `${LIFT_MORPH_MS}ms` : undefined,
+          ["--lift-brand" as string]: brand && brand !== "unknown" ? brandHex(brand) : undefined,
         }}
       >
         <header
@@ -273,30 +290,19 @@ export function LiftedWork({
           onPointerUp={endGesture}
           onPointerCancel={endGesture}
         >
-          <Icon className="lift-kind" size={15} aria-hidden="true" data-testid="lift-kind" />
-          <span className="lift-title">{title}</span>
-          {onExpand ? (
-            <button
-              type="button"
-              className="lift-icon"
-              aria-label={LIFT_COPY.expand}
-              title={LIFT_COPY.expand}
-              onClick={() => finish(() => onExpand(rect))}
-            >
-              <Maximize2 size={15} aria-hidden="true" />
-            </button>
-          ) : null}
-          <button
-            type="button"
-            className="lift-icon"
-            aria-label={LIFT_COPY.compress}
-            title={LIFT_COPY.compress}
-            onClick={close}
-          >
-            <Minimize2 size={15} aria-hidden="true" />
-          </button>
+          <LiftedWorkHead
+            title={title}
+            icon={Icon}
+            brand={brand}
+            dateLine={dateLine}
+            openUrl={openUrl}
+            menu={menu}
+            menuOpen={menuOpen}
+            onMenuOpenChange={setMenuOpen}
+            onBack={close}
+          />
         </header>
-        <div className="lift-body" data-testid="lift-body">
+        <div className="lift-body" data-testid="lift-body" onPointerDown={() => setMenuOpen(false)}>
           {children(rect.width)}
         </div>
         {CORNERS.map((corner) => (
