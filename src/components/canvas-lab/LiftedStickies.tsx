@@ -11,7 +11,7 @@ import { createPortal } from "react-dom";
 import { STICKY_FILL_NAMES, StickyMark } from "@/components/canvas-lab/StickyMark";
 import type { AnnotationVisibility } from "@/lib/canvas-lab-annotations-shared";
 import { WORKBOARD_STICKY_FILLS, type WorkboardStickyFill } from "@/lib/canvas-lab-shared";
-import { anchorElement, placeIn, spotAt, type DropSpot } from "@/lib/sticky-anchors";
+import { anchorElement, onAnotherPage, placeIn, spotAt, type DropSpot } from "@/lib/sticky-anchors";
 import {
   stickyPlace,
   validateStickyBody,
@@ -245,7 +245,13 @@ function useStickyPositions(
             if (next && next !== content) resize?.observe(next);
             bump();
           });
-    mutate?.observe(scroller, { childList: true, subtree: true });
+    // A paged file turning its page changes which page is a spot; watch that attribute too.
+    mutate?.observe(scroller, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["data-anchor-page"],
+    });
     window.addEventListener("resize", bump);
     // Slides, pages and turns arrive after the view opens; measure again as they settle.
     const settle = [120, 400, 900, 1600].map((ms) => setTimeout(bump, ms));
@@ -602,11 +608,19 @@ export function StickiesPanel({
   const sorted = [...stickies].sort(
     (a, b) => placeOrder(a.anchor) - placeOrder(b.anchor) || a.createdAt.localeCompare(b.createdAt),
   );
-  // A sticky whose spot left the work is listed apart, never drawn somewhere else.
+  // A sticky on a page not shown (a paged file) is listed and opens its page. A sticky whose spot left the
+  // work is listed apart, never drawn somewhere else.
   const placed = content
-    ? sorted.filter((sticky) => anchorElement(content, sticky.anchor))
+    ? sorted.filter(
+        (sticky) => anchorElement(content, sticky.anchor) || onAnotherPage(content, sticky.anchor),
+      )
     : sorted;
-  const moved = content ? sorted.filter((sticky) => !anchorElement(content, sticky.anchor)) : [];
+  const moved = content
+    ? sorted.filter(
+        (sticky) =>
+          !anchorElement(content, sticky.anchor) && !onAnotherPage(content, sticky.anchor),
+      )
+    : [];
   const row = (sticky: StickyDto, go: boolean) => (
     <li key={sticky.id}>
       <button type="button" className="sticky-list-row" disabled={!go} onClick={() => onGo(sticky)}>
