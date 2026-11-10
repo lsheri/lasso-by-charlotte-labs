@@ -22,7 +22,7 @@ export const LIFT_MIN = { width: 320, height: 240 } as const;
 /** Keep this much of the view on screen while it is dragged, so its header can always be caught again. */
 export const LIFT_KEEP_ON_SCREEN = 80;
 /** LIFT-6: the box moves for this long; the content fades in over its second half. */
-export const LIFT_MORPH_MS = 240;
+export const LIFT_MORPH_MS = 320;
 /** LIFT-6 (Liam, 9 Nov): the lifted view has slightly rounded corners. */
 export const LIFT_RADIUS = 12;
 

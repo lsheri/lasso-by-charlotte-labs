@@ -8626,13 +8626,13 @@ footer[data-compact] [data-ask-composer-pad] { padding: 8px 8px 8px 14px; }
    view grows out of its card and shrinks back into it. Light blur only: a heavy blur over a board full of
    live previews can drop frames. */
 .lift-layer { position: fixed; inset: 0; z-index: 200000; }
-.lift-backdrop { position: absolute; inset: 0; background: color-mix(in oklab, var(--nb-ink) 16%, transparent); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); animation: lift-fade 240ms ease-out both; }
-.lift-layer[data-closing="true"] .lift-backdrop { animation: lift-fade-out 240ms ease-in both; }
+.lift-backdrop { position: absolute; inset: 0; background: color-mix(in oklab, var(--nb-ink) 16%, transparent); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); animation: lift-fade 320ms ease-out both; }
+.lift-layer[data-closing="true"] .lift-backdrop { animation: lift-fade-out 320ms ease-in both; }
 .lift-panel { position: fixed; display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--nb-rule); border-radius: 12px; background: var(--nb-paper); box-shadow: 0 24px 64px color-mix(in oklab, var(--nb-ink) 20%, transparent), 0 2px 6px color-mix(in oklab, var(--nb-ink) 8%, transparent); outline: none; transform-origin: 0 0; transition-property: transform; transition-timing-function: cubic-bezier(.2, .8, .2, 1); }
 /* LIFT-6: the content waits for the box, then fades in; on the way home it leaves first. */
-.lift-panel > .lift-head, .lift-panel > .lift-body { transition: opacity 150ms ease-out 90ms; }
-.lift-panel[data-phase="from"] > .lift-head, .lift-panel[data-phase="from"] > .lift-body { opacity: 0; transition: none; }
-.lift-panel[data-phase="closing"] > .lift-head, .lift-panel[data-phase="closing"] > .lift-body { opacity: 0; transition: opacity 90ms ease-in; }
+.lift-panel > .lift-head, .lift-panel > .lift-main { transition: opacity 180ms ease-out 130ms; }
+.lift-panel[data-phase="from"] > .lift-head, .lift-panel[data-phase="from"] > .lift-main { opacity: 0; transition: none; }
+.lift-panel[data-phase="closing"] > .lift-head, .lift-panel[data-phase="closing"] > .lift-main { opacity: 0; transition: opacity 110ms ease-in; }
 .lift-head { display: flex; flex-shrink: 0; align-items: center; gap: 6px; height: 44px; padding: 0 8px 0 14px; border-bottom: 1px solid var(--nb-rule); cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
 .lift-head:active { cursor: grabbing; }
 .lift-kind { flex-shrink: 0; color: color-mix(in oklab, var(--nb-graphite) 72%, transparent); }
@@ -8707,4 +8707,4 @@ button.lift-trail-item:hover, button.lift-trail-item:focus-visible { background:
 .lift-corner[data-corner="sw"] { left: 0; bottom: 0; cursor: nesw-resize; }
 @keyframes lift-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes lift-fade-out { from { opacity: 1; } to { opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { .lift-backdrop, .lift-layer[data-closing="true"] .lift-backdrop { animation: none; } .lift-panel, .lift-panel > .lift-head, .lift-panel > .lift-body { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .lift-backdrop, .lift-layer[data-closing="true"] .lift-backdrop { animation: none; } .lift-panel, .lift-panel > .lift-head, .lift-panel > .lift-main { transition: none; } }

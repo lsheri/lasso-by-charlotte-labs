@@ -115,9 +115,9 @@ describe("T2a on the board (wiring pinned in source)", () => {
   const head = readFileSync("src/components/canvas-lab/LiftedWorkHead.tsx", "utf8");
   it("the card's Open button and menu lift the work too, behind the same flag", () => {
     expect(page).toContain(
-      "onOpen={(origin) => { if (liftV1 && liftable(cardItem)) liftCard(node, cardItem, origin); else openNode(node, origin); }}",
+      "onOpen={(origin) => { if (liftable(cardItem)) liftCard(node, cardItem, origin); else openNode(node, origin); }}",
     );
-    expect(page).toContain("onLift={liftV1 && liftable(cardItem) ? (origin) => liftCard(node, cardItem, origin) : undefined}");
+    expect(page).toContain("onLift={liftable(cardItem) ? (origin) => liftCard(node, cardItem, origin) : undefined}");
   });
   it("the view is given no Expand", () => {
     const lifted = page.slice(page.indexOf("<LiftedWork key={liftedNode.id}"), page.indexOf("<LiftedWorkBody"));

@@ -167,7 +167,7 @@ describe("T2b on the board (wiring pinned in source)", () => {
   });
   it("opening from the trail keeps the trail open and writes nothing to the board", () => {
     const fn = page.slice(page.indexOf("function openFromTrail"), page.indexOf("function openFromTrail") + 300);
-    expect(fn).toContain('setLifted({ id: node.id, origin: null, panel: "trail" });');
+    expect(fn).toContain('setLifted({ id: node.id, origin: cardRect(node.id), swapped: true, panel: "trail" });');
     expect(fn).not.toMatch(/persistNodePatch|setNodes|record\(/);
   });
   it("the trail never reads the rest of the engagement on the client either", () => {

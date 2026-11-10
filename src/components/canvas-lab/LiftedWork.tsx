@@ -117,6 +117,8 @@ export function LiftedWork({
   initialPanel = null,
   onPanelOpened,
   onStep,
+  closeTo,
+  animateOpen = true,
   children,
 }: {
   title: string;
@@ -140,12 +142,21 @@ export function LiftedWork({
   initialPanel?: string | null | undefined;
   /** T3: move to the previous (-1) or next (1) piece; the open panel goes with it. */
   onStep?: ((direction: 1 | -1, panel: string | null) => void) | undefined;
+  /**
+   * Where the work sits on the board right now, read when the view closes, so it always shrinks back into
+   * its own card (Liam, 9 Nov: "a morph from area clicked both to open and when it closes").
+   */
+  closeTo?: (() => LiftRect | null) | undefined;
+  /** False when reached by the arrows or the trail: it appears in place, and still closes into its card. */
+  animateOpen?: boolean | undefined;
   children: (bodyWidth: number) => ReactNode;
 }) {
   const still = useRef(reducedMotion()).current;
-  const animate = Boolean(origin) && !still;
+  const animate = Boolean(origin) && !still && animateOpen;
   const [rect, setRect] = useState<LiftRect>(() => liftOpenRect(viewport()));
   const [phase, setPhase] = useState<LiftPhase>(animate ? "from" : "open");
+  /** The card's box the view shrinks into on close; the opening box until then. */
+  const [homeRect, setHomeRect] = useState<LiftRect | null>(origin);
   const gesture = useRef<Gesture | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -161,6 +172,8 @@ export function LiftedWork({
   onCloseRef.current = onClose;
   const returnFocusRef = useRef(returnFocusTo);
   returnFocusRef.current = returnFocusTo;
+  const closeToRef = useRef(closeTo);
+  closeToRef.current = closeTo;
 
   // Grow out of the card: the first paint sits on the card's box; the next frame lets it go.
   useLayoutEffect(() => {
@@ -195,10 +208,12 @@ export function LiftedWork({
 
   function close() {
     if (phase === "closing") return;
-    if (!animate) {
+    const home = closeToRef.current?.() ?? origin;
+    if (still || !home) {
       finish(() => onCloseRef.current());
       return;
     }
+    setHomeRect(home);
     setPhase("closing");
     closeTimer.current = setTimeout(() => finish(() => onCloseRef.current()), LIFT_MORPH_MS);
   }
@@ -308,8 +323,8 @@ export function LiftedWork({
           top: rect.top,
           width: rect.width,
           height: rect.height,
-          transform: phase !== "open" && origin ? liftFlip(origin, rect) : undefined,
-          transitionDuration: animate ? `${LIFT_MORPH_MS}ms` : undefined,
+          transform: phase !== "open" && homeRect ? liftFlip(homeRect, rect) : undefined,
+          transitionDuration: still ? undefined : `${LIFT_MORPH_MS}ms`,
           ["--lift-brand" as string]: brand && brand !== "unknown" ? brandHex(brand) : undefined,
         }}
       >
