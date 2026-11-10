@@ -316,7 +316,7 @@ describe("LIFT on the card", () => {
 describe("LIFT on the board page (nothing renders that page in tests, so its wiring is pinned in source)", () => {
   const page = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
   it("lifts every piece of work, for everyone, with no flag in the way", () => {
-    expect(page).toContain("onLift={liftable(cardItem) ? ");
+    expect(page).toContain("onLift={(origin) => liftCard(node, cardItem, origin)}");
     expect(page).not.toMatch(/liftV1|lift-v1/);
   });
   it("the board's Delete, Backspace and Esc stand down while a view is lifted", () => {
@@ -324,11 +324,11 @@ describe("LIFT on the board page (nothing renders that page in tests, so its wir
       page.indexOf("function onBoardKey"),
       page.indexOf("function onBoardKey") + 400,
     );
-    expect(fn).toContain("if (liftedRef.current) return;");
+    expect(fn).toContain("if (liftedRef.current || ledgerRef.current) return;");
   });
   it("undo and zoom keys stand down too", () => {
     expect(page).toContain(
-      "if (cardMenuOpen || menuOpen || focusId || reviewId || liftedRef.current) return;",
+      "if (cardMenuOpen || menuOpen || liftedRef.current) return;",
     );
     const zoom = page.slice(
       page.indexOf("function onZoomKey"),
@@ -338,7 +338,7 @@ describe("LIFT on the board page (nothing renders that page in tests, so its wir
   });
   it("a lifted card that leaves the board closes its view", () => {
     expect(page).toContain(
-      "useEffect(() => { if (lifted && (!liftedNode || (!liftedItem && !liftedPicture))) setLifted(null); }, [lifted, liftedNode, liftedItem, liftedPicture]);",
+      "useEffect(() => { if (lifted && !liftedNode) setLifted(null); }, [lifted, liftedNode]);",
     );
   });
   it("lifting writes nothing to the board", () => {

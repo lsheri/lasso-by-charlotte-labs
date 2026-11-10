@@ -92,14 +92,15 @@ describe("ONE VIEW on the board (pinned in source)", () => {
   it("no flag decides which view opens: the old full-screen reader is never reached from a work card", () => {
     expect(page).not.toMatch(/liftV1|lift-v1/);
     expect(flags).not.toContain("lift-v1");
-    expect(page).toContain("onOpen={(origin) => { if (liftable(cardItem)) liftCard(node, cardItem, origin); else openNode(node, origin); }}");
+    expect(page).toContain("onOpen={(origin) => liftCard(node, cardItem, origin)} onLift={(origin) => liftCard(node, cardItem, origin)}");
   });
   it("every view closes into its own card's box as it is now", () => {
-    expect(page).toContain("closeTo={() => cardRect(liftedNode.id)} animateOpen={!lifted.swapped}");
+    // A ledger pointer opens the chat in place over the ledger, and closes in place.
+    expect(page).toContain("closeTo={() => (lifted.still ? null : cardRect(liftedNode.id))} animateOpen={!lifted.swapped && !lifted.still}");
     expect(page).toContain("closeTo={() => cardRect(liftedPicture.id)} animateOpen={!lifted.swapped}");
   });
   it("the arrows and the trail open in place, remembering their card", () => {
-    expect(page).toContain("setLifted({ id: next.id, origin: cardRect(next.id), swapped: true,");
+    expect(page).toContain("setLifted({ id: next.id, origin: lifted.still ? null : cardRect(next.id), swapped: true,");
     expect(page).toContain('setLifted({ id: node.id, origin: cardRect(node.id), swapped: true, panel: "trail" });');
   });
 });

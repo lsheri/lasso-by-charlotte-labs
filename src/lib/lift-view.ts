@@ -116,8 +116,9 @@ type LiftableItem =
  * Which cards lift on a double-click. LIFT-6 (Liam, 9 Nov: "the same for all document types and images"):
  * every card that carries work lifts, whatever it is and however it arrived: a chat, a document, a deck,
  * a sheet, a file, an email, a piece captured from a chat with no bytes yet, and the decisions document
- * (Expand still opens its ledger). Images and videos lift through the same view. Cards without a work
- * item (a local note, a text block) keep double-click to edit: they are the editor, not work to read.
+ * (Expand still opens its ledger). Images and videos lift through the same view. T2c-2: a card with no
+ * work item (a board note) or work still loading lifts too, as its words; its text field keeps edits.
+ * `liftable` now only decides what the arrows step through.
  */
 export function liftable(item: LiftableItem): boolean {
   return Boolean(item?.type);

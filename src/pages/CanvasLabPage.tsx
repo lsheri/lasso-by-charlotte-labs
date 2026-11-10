@@ -39,9 +39,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ANSWER_CARD_SIZE, ANSWER_CARD_TITLE, ANSWER_ROLLED_HEIGHT, ANSWER_DRAG_MIME, KEEP_ANSWER_ANNOUNCEMENT, answerCiteRows, answerNodeInput, canKeepAnswer, citedCardAnchors, isAnswerDrag, parseAnswerDrop } from "@/lib/answer-card";
 
 import { DecisionsLedger, COPY as LEDGER_COPY } from "@/components/canvas-lab/DecisionsLedger";
-import { CanvasLabReview } from "@/components/canvas-lab/CanvasLabReview";
 import { CanvasLabStatusLine } from "@/components/canvas-lab/CanvasLabStatusLine";
-import { FocusOverlay } from "@/components/canvas-lab/FocusOverlay";
 import { ThreadViewerById } from "@/components/work/ThreadViewerById";
 import { LabCard } from "@/components/canvas-lab/LabCard";
 import { LabColourBlock } from "@/components/canvas-lab/LabColourBlock";
@@ -134,7 +132,6 @@ import {
   updateLocalNode,
    cardPressStartsDrag,
    viewportSizeChanged,
-  type LabComment,
   type LabAnchor,
   type LabFrame,
   type LabJudgmentType,
@@ -164,10 +161,8 @@ import {
   noteWorkboardSection,
   noteWorkboardSectionFilled,
   noteWorkboardSectionMarker,
-  noteWorkboardReviewOpened,
   noteWorkboardLedgerOpened,
   noteWorkboardSaveFailed,
-  noteWorkboardTrailSelected,
   noteWorkboardDropPromptAnswered,
   noteWorkboardCardContentViewed,
   noteWorkboardExampleViewed,
@@ -277,6 +272,7 @@ import { sourceBrandKey } from "@/components/work/SourceMark";
 import { resolveWorkDate } from "@/lib/work-order";
 import { LiftedWorkBody } from "@/components/canvas-lab/LiftedWorkBody";
 import { LIFT_NOTES_COPY, LiftedChatBody, LiftedCommentsPanel } from "@/components/canvas-lab/LiftedChat";
+import { LiftedNoteBody } from "@/components/canvas-lab/LiftedNoteBody";
 import { useChatNotesState, type ChatNotesHandlers } from "@/components/canvas-lab/chat-notes";
 import { liftable, liftKindOf, type LiftRect } from "@/lib/lift-view";
 
@@ -442,24 +438,23 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   const [selected, setSelected] = useState<string[]>([]);
   const selectedRef = useRef<string[]>([]);
   selectedRef.current = selected;
-  const [comments] = useState<LabComment[]>([]);
-  const [focusId, setFocusId] = useState<string | null>(null);
   const [focusTurnNo, setFocusTurnNo] = useState<number | null>(null);
   const [pointerChatId, setPointerChatId] = useState<string | null>(null);
-  const [focusOrigin, setFocusOrigin] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
-  /** A card's chip opens the reader already at the comments. */
-  const [focusOpensComments, setFocusOpensComments] = useState(false);
-  const [reviewId, setReviewId] = useState<string | null>(null);
   // LIFT: the card lifted off the board, if any, and the box it grew out of. Never saved.
   // LIFT-5: listen for the flag. Read once per render, a board that rendered before PostHog's flags
   // arrived kept lift off until something else redrew it, so a double-click still opened the full reader.
   // One view (9 Nov, Liam: "it must be the same for each type of work card across any board"): every
   // piece of work opens in the one view, for everyone. The lift flag is retired; a flag read before
   // PostHog answered is what sent some opens to the old full-screen reader.
-  const [lifted, setLifted] = useState<{ id: string; origin: LiftRect | null; panel?: string; src?: string | null; swapped?: boolean } | null>(null);
+  const [lifted, setLifted] = useState<{ id: string; origin: LiftRect | null; panel?: string; src?: string | null; swapped?: boolean; turn?: number; still?: boolean } | null>(null);
   const liftedRef = useRef(lifted);
   liftedRef.current = lifted;
   const [ledgerId, setLedgerId] = useState<string | null>(null);
+  // T2c-2: with the ledger up, the board under it takes no keys (a card behind it must never move or go).
+  const ledgerRef = useRef(ledgerId);
+  ledgerRef.current = ledgerId;
+  /** What had focus when a ledger pointer lifted a chat, so closing it returns there, not to the board. */
+  const stillFocusRef = useRef<HTMLElement | null>(null);
   const [keyboardId, setKeyboardId] = useState<string | null>(null);
   const [selectedLinkId, setSelectedLinkId] = useState<string | null>(null);
   const [linkRejection, setLinkRejection] = useState<{ targetId: string; message: string } | null>(null);
@@ -753,8 +748,6 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   const bounds = useMemo(() => stageBounds(drawnBoardFrames, visibleNodes), [drawnBoardFrames, visibleNodes]);
   const contextNodes = visibleNodes.filter((node) => selected.includes(node.id) && isWorkboardAskReadableKind(node.kind));
   const contextNodeHeight = useCallback((node: LabNode) => cardHeightsRef.current.get(node.id) ?? node.height, []);
-  const focusNode = visibleNodes.find((node) => node.id === focusId) ?? null;
-  const reviewNode = visibleNodes.find((node) => node.id === reviewId) ?? null;
   // CU1: no event; the link itself never goes anywhere but the item row.
   async function saveChatLink(workItemId: string, url: string | null) {
     const { setChatLink } = await import("@/lib/work-chat-link");
@@ -770,17 +763,15 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     ownerProfileId: item ? item.owner_id : node.authorProfileId,
     members: page?.members ?? [],
   });
-  const focusItem = focusNode ? itemByNode(focusNode) ?? null : null;
   const [branchItemId, setBranchItemId] = useState<string | null>(null);
   const branchItem = branchItemId ? boardItems.find((item) => item.id === branchItemId) ?? null : null;
-  const reviewItem = reviewNode ? itemByNode(reviewNode) ?? null : null;
   const liftedNode = lifted ? visibleNodes.find((node) => node.id === lifted.id) ?? null : null;
   const liftedItem = liftedNode ? itemByNode(liftedNode) ?? null : null;
   // LIFT-6: an image or a video lifts into the same view, with the picture as its body.
   const liftedPicture = liftedNode && (liftedNode.kind === "image" || liftedNode.kind === "video") ? liftedNode : null;
   // LIFT: a lifted card that leaves the board (removed here or by someone else) closes its view, so the
   // board's keys are not held back by a view nobody can see.
-  useEffect(() => { if (lifted && (!liftedNode || (!liftedItem && !liftedPicture))) setLifted(null); }, [lifted, liftedNode, liftedItem, liftedPicture]);
+  useEffect(() => { if (lifted && !liftedNode) setLifted(null); }, [lifted, liftedNode]);
   const onScreenChatIds = useMemo(() => {
     if (viewportSize.width === 0 || zoom <= 0) return [];
     const left = -pan.x / zoom;
@@ -809,10 +800,9 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   }, [pan.x, pan.y, viewportSize.height, viewportSize.width, visibleNodes, boardItems, zoom]);
   const cardPreviews = useWorkboardCardPreviews(engagementId, profile?.id, true, onScreenChatIds);
   const filePreviews = useWorkboardFilePreviews(profile?.id, true, onScreenFileItems);
-  const focusThreadId = focusItem && focusItem.type === "ai_thread" ? focusItem.id : null;
-  // T2c-1: a chat lifted into the one view reads and writes its own notes; the focus reader keeps its own.
+  // T2c-1: a chat lifted into the one view reads and writes its own notes. T2c-2: it is the only reader on the board.
   const liftedChatId = liftedItem?.type === "ai_thread" ? liftedItem.id : null;
-  const notesThreadId = liftedChatId ?? focusThreadId;
+  const notesThreadId = liftedChatId;
   const annotations = useCanvasLabAnnotations(engagementId, notesThreadId, profile?.id);
   const commentThreads = useCanvasLabComments(engagementId, notesThreadId, profile?.id);
   const liftNotes = useChatNotesState(Boolean(liftedChatId), liftedChatId);
@@ -1733,7 +1723,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   function onBoardKey(event: KeyboardEvent) {
     // LIFT: keys pressed while a piece of work is lifted belong to that view. Above all, Delete and
     // Backspace must never remove the card behind it. The view takes Esc itself.
-    if (liftedRef.current) return;
+    if (liftedRef.current || ledgerRef.current) return;
     {
       if (event.key === "Escape") {
         if (drawTool || pendingWorkstream || drawingRef.current) { cancelDraw(); setAnnouncement("Workstream drawing cancelled."); return; }
@@ -1748,9 +1738,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
           setAnnouncement("Resize cancelled.");
           return;
         }
-        if (reviewId) setReviewId(null);
-        else if (focusId) setFocusId(null);
-        else if (cardMenuOpen) return;
+        if (cardMenuOpen) return;
         else if (connectSource || connectorDragRef.current) cancelConnect();
         else if (menuOpen) setMenuOpen(false);
         else if (selectedLinkId) setSelectedLinkId((current) => relationshipSelection(current, "deselect"));
@@ -1793,13 +1781,13 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       const active = document.activeElement as HTMLElement | null;
       const direction = undoKeyIntent(event, isTypingTarget(active));
       if (!direction) return;
-      if (cardMenuOpen || menuOpen || focusId || reviewId || liftedRef.current) return;
+      if (cardMenuOpen || menuOpen || liftedRef.current) return;
       event.preventDefault();
       runUndo(direction);
     }
     window.addEventListener("keydown", onUndoKey, { passive: false });
     return () => window.removeEventListener("keydown", onUndoKey);
-  }, [cardMenuOpen, focusId, menuOpen, orgId, reviewId]);
+  }, [cardMenuOpen, menuOpen, orgId]);
 
   useEffect(() => {
     if (!dropPrompt) return;
@@ -2472,6 +2460,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
 
   function onCardKeyDown(picked: LabNode, event: React.KeyboardEvent) {
     const node = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key) ? bundleChatFor(picked) : picked;
+    if (liftedRef.current || ledgerRef.current) return;
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
       setSelected((current) => {
@@ -3478,7 +3467,8 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     const at = order.findIndex((node) => node.id === lifted.id);
     if (at < 0 || order.length < 2) return;
     const next = order[(at + direction + order.length) % order.length];
-    if (next) setLifted({ id: next.id, origin: cardRect(next.id), swapped: true, ...(panel ? { panel } : {}) });
+    // Over the ledger, the next piece opens in place too; a cited turn belongs to its own chat only.
+    if (next) setLifted({ id: next.id, origin: lifted.still ? null : cardRect(next.id), swapped: true, ...(panel ? { panel } : {}), ...(lifted.still ? { still: true } : {}) });
   }
 
   /** T2b: a piece on the trail that sits on this board opens in the same view, with the trail still open. */
@@ -3498,24 +3488,15 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     noteWorkboardWorkLifted(orgId, node.kind === "video" ? "video" : "image");
   }
 
+  /** The decisions document's Expand opens its ledger; anything else opens in the one view (T2c-2). */
   function openNode(node: LabNode, origin?: DOMRect, via: "card" | "menu" | "key" = "card") {
     const item = itemByNode(node);
     if (item?.type === "document" && item.doc_kind === "decisions") {
-      setFocusOrigin(origin ?? null);
       setLedgerId(node.id);
       noteWorkboardLedgerOpened(orgId, via);
       return;
     }
-    setFocusOrigin(origin ? { left: origin.left, top: origin.top, width: origin.width, height: origin.height } : null);
-    const openedPreview = item ? filePreviews[item.id] : undefined;
-    if (item && openedPreview && openedPreview.kind !== "fallback" && (item.type === "document" || item.type === "deck" || item.type === "sheet") && !viewedPreviewIdsRef.current.has(item.id)) {
-      viewedPreviewIdsRef.current.add(item.id);
-      noteWorkboardCardContentViewed(orgId, openedPreview.kind === "html" ? "html" : openedPreview.kind === "mermaid" ? "mermaid" : item.type === "deck" ? "deck" : "document", "open");
-    }
-    if (item && isDeliverableType(item.type)) {
-      setReviewId(node.id);
-      noteWorkboardReviewOpened(orgId, item.type === "ai_thread" ? "thread" : item.type as "document" | "deck" | "sheet");
-    } else setFocusId(node.id);
+    liftCard(node, item, origin);
   }
 
   /* ---------------- B4: draw a workstream ---------------- */
@@ -4064,7 +4045,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
               return null;
             }} focused={keyboardId === node.id} stackZ={cardStackZ(front, node.id)} onFocus={() => { setFront((current) => bringToFront(current, node.id)); setKeyboardId(node.id); setSelectedFrameId(null); }} onPointerDown={(event) => { setFront((current) => bringToFront(current, node.id)); onCardPointerDown(node, event); }} onDelete={() => deleteNode(node)} frameChoices={boardFrames.filter((frame) => !isSectionFrameId(frame.id) && !isContextFrameId(frame.id) && frame.id !== "trail" && boardFrameRenders(frameKindOf(frame), true)).map((frame) => ({ id: frame.id, name: frame.name }))} onMoveToFrame={boardEditable ? (frameId) => moveToFrame(node, frameId) : undefined} layoutEditable={boardEditable} onResizeStart={(corner, event) => startResize("card", node.id, corner, { x: node.x, y: node.y, width: node.width, height: node.height }, event)} onResizeKeyDown={(corner, event) => keyboardResize("card", node.id, corner, { x: node.x, y: node.y, width: node.width, height: node.height }, event)} onResizeKeyUp={finishKeyboardResize} onRoll={(rolled) => rollAnswer(node, rolled)} />)}
             {sharedSpace ? visibleNodes.filter((node) => node.kind === "work" && node.ownership === "yours").map((node) => <span key={`yours:${node.id}`} data-testid="shared-yours-label" aria-hidden="true" className="pointer-events-none absolute font-mono text-[9px] uppercase tracking-[0.12em] text-[var(--nb-shared)]" style={{ left: node.x, top: node.y - 14 }}>Yours</span>) : null}
-            {visibleNodes.filter((node) => node.kind !== "answer" && !isWorkboardDecorationKind(node.kind)).map((node) => { const bundleChatId = pieceChat.get(node.id); const canResize = !bundleChatId && boardEditable && (node.kind !== "judgment" || Boolean(node.local)); const cardItem = itemByNode(node); const parentNode = bundleChatId ? shownNodes.find((entry) => entry.id === bundleChatId) : undefined; const parent = parentNode ? itemByNode(parentNode) : undefined; return <LabCard key={node.id} deckEventOrgId={orgId} face="board" cardFace={effectiveCardFace(cardFaceOverrides, node.id, cardFace)} onCardFaceChange={(face) => { setCardFaceOverride(node.id, face); noteWorkboardFace(orgId, face, "card"); }} node={node} item={cardItem} parent={parent} catchPending={pendingCatchIds.has(node.id)} onCatchComplete={() => finishCatch(node.id)} teammateMark={teammateMarkByNode(node, cardItem)} removable={cardRemovable(profile, node, cardItem)} canRename={Boolean(cardItem && ownsWorkItem(profile, cardItem))} grownOn={cardItem ? grownByItem[cardItem.id] : undefined} preview={cardItem ? cardPreviews[cardItem.id] : undefined} filePreview={cardItem ? filePreviews[cardItem.id] : undefined} onPreviewScroll={cardItem ? (kind) => notePreviewScroll(cardItem, kind) : undefined} selected={selected.includes(node.id)} previewSelected={marqueePreview.includes(node.id)} focused={keyboardId === node.id} focusOnMount={pendingJudgmentFocusId === node.id} connecting={connectSource !== null || connectorPreview !== null} connectSourceAnchor={connectSource?.nodeId === node.id ? connectSource.anchor : null} onSelect={(via = "menu") => { const call = cardContextCall(via); if (call.record === "menu") noteWorkboardContextChanged(orgId, "menu"); else if (call.record) noteWorkboardContextChanged(orgId, call.record); if (!call.toggle) return; setAnnouncement(selected.includes(node.id) ? "Removed from context" : "Added to context"); setSelected((current) => { if (!current.includes(node.id)) flareNewContext([node.id], current); return toggleContext(current, node.id); }); }} onOpen={(origin) => { if (liftable(cardItem)) liftCard(node, cardItem, origin); else openNode(node, origin); }} onLift={liftable(cardItem) ? (origin) => liftCard(node, cardItem, origin) : undefined} onOpenLedger={cardItem?.type === "document" && cardItem.doc_kind === "decisions" ? (via) => openNode(node, undefined, via) : undefined} onBranch={() => requestBranch(node)} onHide={() => requestHide(node)} onDelete={() => deleteNode(node)} onTakeOutOfContext={isContextFrameId(node.frame) && node.workItemId ? () => void takeOutOfContext(node) : undefined} onEdit={(text) => { nodesRef.current = updateLocalNode(nodesRef.current, node.id, text); setNodes((current) => current ? updateLocalNode(current, node.id, text) : current); }} onEditCommitted={() => { noteWorkboardNodeEdited(orgId, eventKind(node)); const current = nodesRef.current.find((entry) => entry.id === node.id); if (current?.durableId) void persistNodePatch(current.id, { body: current.summary, title: current.title }); }} onAnchorPointerDown={(side, event) => startPointerConnect(node, side, event)} onAnchorActivate={(side) => chooseConnectAnchor(node, side)} onMenuOpened={() => { if (connectSource || connectorDragRef.current) cancelConnect(); noteWorkboardCardMenuOpened(orgId, eventKind(node), node.ownership); }} onMenuOpenChange={setCardMenuOpen} onMeasure={(height) => cardHeightsRef.current.set(node.id, height)} onPointerDown={(event) => { setFront((current) => bringToFront(current, node.id)); onCardPointerDown(node, event); }} onFocus={() => { setFront((current) => bringToFront(current, node.id)); setKeyboardId(node.id); setSelectedFrameId(null); setSelectedLinkId((current) => relationshipSelection(current, "deselect")); if (pendingJudgmentFocusId === node.id) setPendingJudgmentFocusId(null); }} onKeyDown={(event) => onCardKeyDown(node, event)} canResize={canResize} onResizeStart={(corner, event) => startResize("card", node.id, corner, { x: node.x, y: node.y, width: node.width, height: node.height }, event)} onResizeKeyDown={(corner, event) => keyboardResize("card", node.id, corner, { x: node.x, y: node.y, width: node.width, height: node.height }, event)} onResizeKeyUp={finishKeyboardResize} onFit={() => fitCard(node)} frameChoices={boardFrames.filter((frame) => !isSectionFrameId(frame.id) && !isContextFrameId(frame.id) && frame.id !== "trail" && boardFrameRenders(frameKindOf(frame), true)).map((frame) => ({ id: frame.id, name: frame.name }))} structured onMoveToFrame={(frameId) => moveToFrame(node, frameId)} stackZ={cardStackZ(front, node.id)} commentCount={node.workItemId ? commentCounts[node.workItemId] ?? 0 : 0} onOpenComments={() => { if (cardItem?.type === "ai_thread") liftCard(node, cardItem, cardRect(node.id), "comments"); else { setFocusOrigin(null); setFocusOpensComments(true); setFocusId(node.id); } }} madeInChat={bundleChatId ? visibleNodes.find((entry) => entry.id === bundleChatId)?.title : undefined} bundleVendor={bundleChatId ? vendorByChat.get(bundleChatId) ?? null : undefined} bundleToggleLabel={bundles.has(node.id) ? (bundleView.minimized.has(node.id) ? "Show pieces" : "Minimize pieces") : undefined} onBundleToggle={bundles.has(node.id) ? () => toggleBundle(node, bundleView.minimized.has(node.id) ? "expanded" : "minimized", "menu") : undefined} onSaveChatLink={cardItem && ownsWorkItem(profile, cardItem) ? (url) => saveChatLink(cardItem.id, url) : undefined} />; })}
+            {visibleNodes.filter((node) => node.kind !== "answer" && !isWorkboardDecorationKind(node.kind)).map((node) => { const bundleChatId = pieceChat.get(node.id); const canResize = !bundleChatId && boardEditable && (node.kind !== "judgment" || Boolean(node.local)); const cardItem = itemByNode(node); const parentNode = bundleChatId ? shownNodes.find((entry) => entry.id === bundleChatId) : undefined; const parent = parentNode ? itemByNode(parentNode) : undefined; return <LabCard key={node.id} deckEventOrgId={orgId} face="board" cardFace={effectiveCardFace(cardFaceOverrides, node.id, cardFace)} onCardFaceChange={(face) => { setCardFaceOverride(node.id, face); noteWorkboardFace(orgId, face, "card"); }} node={node} item={cardItem} parent={parent} catchPending={pendingCatchIds.has(node.id)} onCatchComplete={() => finishCatch(node.id)} teammateMark={teammateMarkByNode(node, cardItem)} removable={cardRemovable(profile, node, cardItem)} canRename={Boolean(cardItem && ownsWorkItem(profile, cardItem))} grownOn={cardItem ? grownByItem[cardItem.id] : undefined} preview={cardItem ? cardPreviews[cardItem.id] : undefined} filePreview={cardItem ? filePreviews[cardItem.id] : undefined} onPreviewScroll={cardItem ? (kind) => notePreviewScroll(cardItem, kind) : undefined} selected={selected.includes(node.id)} previewSelected={marqueePreview.includes(node.id)} focused={keyboardId === node.id} focusOnMount={pendingJudgmentFocusId === node.id} connecting={connectSource !== null || connectorPreview !== null} connectSourceAnchor={connectSource?.nodeId === node.id ? connectSource.anchor : null} onSelect={(via = "menu") => { const call = cardContextCall(via); if (call.record === "menu") noteWorkboardContextChanged(orgId, "menu"); else if (call.record) noteWorkboardContextChanged(orgId, call.record); if (!call.toggle) return; setAnnouncement(selected.includes(node.id) ? "Removed from context" : "Added to context"); setSelected((current) => { if (!current.includes(node.id)) flareNewContext([node.id], current); return toggleContext(current, node.id); }); }} onOpen={(origin) => liftCard(node, cardItem, origin)} onLift={(origin) => liftCard(node, cardItem, origin)} onOpenLedger={cardItem?.type === "document" && cardItem.doc_kind === "decisions" ? (via) => openNode(node, undefined, via) : undefined} onBranch={() => requestBranch(node)} onHide={() => requestHide(node)} onDelete={() => deleteNode(node)} onTakeOutOfContext={isContextFrameId(node.frame) && node.workItemId ? () => void takeOutOfContext(node) : undefined} onEdit={(text) => { nodesRef.current = updateLocalNode(nodesRef.current, node.id, text); setNodes((current) => current ? updateLocalNode(current, node.id, text) : current); }} onEditCommitted={() => { noteWorkboardNodeEdited(orgId, eventKind(node)); const current = nodesRef.current.find((entry) => entry.id === node.id); if (current?.durableId) void persistNodePatch(current.id, { body: current.summary, title: current.title }); }} onAnchorPointerDown={(side, event) => startPointerConnect(node, side, event)} onAnchorActivate={(side) => chooseConnectAnchor(node, side)} onMenuOpened={() => { if (connectSource || connectorDragRef.current) cancelConnect(); noteWorkboardCardMenuOpened(orgId, eventKind(node), node.ownership); }} onMenuOpenChange={setCardMenuOpen} onMeasure={(height) => cardHeightsRef.current.set(node.id, height)} onPointerDown={(event) => { setFront((current) => bringToFront(current, node.id)); onCardPointerDown(node, event); }} onFocus={() => { setFront((current) => bringToFront(current, node.id)); setKeyboardId(node.id); setSelectedFrameId(null); setSelectedLinkId((current) => relationshipSelection(current, "deselect")); if (pendingJudgmentFocusId === node.id) setPendingJudgmentFocusId(null); }} onKeyDown={(event) => onCardKeyDown(node, event)} canResize={canResize} onResizeStart={(corner, event) => startResize("card", node.id, corner, { x: node.x, y: node.y, width: node.width, height: node.height }, event)} onResizeKeyDown={(corner, event) => keyboardResize("card", node.id, corner, { x: node.x, y: node.y, width: node.width, height: node.height }, event)} onResizeKeyUp={finishKeyboardResize} onFit={() => fitCard(node)} frameChoices={boardFrames.filter((frame) => !isSectionFrameId(frame.id) && !isContextFrameId(frame.id) && frame.id !== "trail" && boardFrameRenders(frameKindOf(frame), true)).map((frame) => ({ id: frame.id, name: frame.name }))} structured onMoveToFrame={(frameId) => moveToFrame(node, frameId)} stackZ={cardStackZ(front, node.id)} commentCount={node.workItemId ? commentCounts[node.workItemId] ?? 0 : 0} onOpenComments={() => liftCard(node, cardItem, cardRect(node.id), cardItem?.type === "ai_thread" ? "comments" : undefined)} madeInChat={bundleChatId ? visibleNodes.find((entry) => entry.id === bundleChatId)?.title : undefined} bundleVendor={bundleChatId ? vendorByChat.get(bundleChatId) ?? null : undefined} bundleToggleLabel={bundles.has(node.id) ? (bundleView.minimized.has(node.id) ? "Show pieces" : "Minimize pieces") : undefined} onBundleToggle={bundles.has(node.id) ? () => toggleBundle(node, bundleView.minimized.has(node.id) ? "expanded" : "minimized", "menu") : undefined} onSaveChatLink={cardItem && ownsWorkItem(profile, cardItem) ? (url) => saveChatLink(cardItem.id, url) : undefined} />; })}
             <LabBundleControls nodes={visibleNodes} bundles={bundleView.bundles} more={bundleView.more} minimized={bundleView.minimized} zoom={zoom} onToggle={(chat, state) => toggleBundle(chat, state, "control")} />
             <svg className="canvas-lab-relationship-overlays absolute inset-0 overflow-visible" width={bounds.width} height={bounds.height} aria-label="Workboard relationship labels">
               <LabRelationshipOverlays links={links} nodes={visibleNodes} measuredHeights={cardHeightsRef.current} selectedLinkId={selectedLinkId} hoveredLinkId={hoveredLinkId} inverseZoom={labInverseZoom(zoom)} zoom={zoom} editable={boardEditable} onRemove={removeRelationship} onHover={setHoveredLinkId} />
@@ -4128,12 +4109,10 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       {exampleOpen ? <ExampleBoardOverlay onClose={() => setExampleOpen(false)} /> : null}
       {canAddWork ? <AddWorkPanel open={addWorkOpen} onOpenChange={(next) => { setAddWorkOpen(next); if (!next) { setAddWorkAnchor(null); setAddWorkTarget("board"); } }} onPlace={addWorkToBoard} busy={addWorkBusy} engagementId={engagementId} /> : null}
       {branchItem ? <BranchDialog source={branchItem} sourceOwnerLabel={branchOwnerLabel(branchItem.owner_id, page?.members ?? [])} open={Boolean(branchItem)} onOpenChange={(next) => { if (!next) setBranchItemId(null); }} onBranched={(id) => void addWorkToBoard([id], "inbox")} /> : null}
-      {focusNode ? <FocusOverlay focusTurnNo={focusTurnNo} mentionCandidates={mentionCandidates ?? []} node={focusNode} item={focusItem} viewerOwnsItem={Boolean(focusItem && ownsWorkItem(profile, focusItem))} itemLoading={Boolean(focusNode.workItemId && pendingBoardItemIds.has(focusNode.workItemId))} origin={focusOrigin} onContentScroll={focusItem?.type === "ai_thread" ? () => notePreviewScroll(focusItem, "chat") : undefined} onBranch={() => { requestBranch(focusNode); setFocusId(null); }} onClose={() => { setFocusId(null); setFocusTurnNo(null); setFocusOrigin(null); setFocusOpensComments(false); }} highlights={notesThreadId === focusThreadId ? annotations.highlights : []} canWrite={canComment} openComments={focusOpensComments} threads={notesThreadId === focusThreadId ? commentThreads.threads : []} {...(notesThreadId === focusThreadId ? chatNoteHandlers() : {})} /> : null}
-      {ledgerId ? (() => { const node = visibleNodes.find((entry) => entry.id === ledgerId); const item = node ? itemByNode(node) : undefined; return item ? <DecisionsLedger boardItems={boardItems.filter((row) => visibleNodes.some((node) => node.workItemId === row.id))} onFollowPointer={(parentId, turn) => { const chat = visibleNodes.find((entry) => entry.workItemId === parentId); setFocusTurnNo(turn); setFocusOrigin(null); if (chat) { setPointerChatId(null); setFocusId(chat.id); } else { setFocusId(null); setPointerChatId(parentId); } }} nodeId={ledgerId} item={item} canEdit={ownsWorkItem(profile, item)} profileId={profile?.id} onUndoableRemove={(removed) => { if (undoToast?.entry.action === "ledger_remove_line") undoRef.current = expireLedgerRemoval(undoRef.current, undoToast.entry.id); const entry = record({ action: "ledger_remove_line", ...removed }); /* A viewer who cannot arrange can still remove owned lines, without a toast. */ if (entry) setUndoToast({ message: LEDGER_COPY.removed, entry }); }} onClose={() => setLedgerId(null)} /> : null; })() : null}
+      {ledgerId ? (() => { const node = visibleNodes.find((entry) => entry.id === ledgerId); const item = node ? itemByNode(node) : undefined; return item ? <DecisionsLedger boardItems={boardItems.filter((row) => visibleNodes.some((node) => node.workItemId === row.id))} onFollowPointer={(parentId, turn) => { const chat = visibleNodes.find((entry) => entry.workItemId === parentId); if (chat) { setPointerChatId(null); setFocusTurnNo(null); stillFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; setLifted({ id: chat.id, origin: null, still: true, ...(turn ? { turn } : {}) }); noteWorkboardWorkLifted(orgId, liftKindOf(itemByNode(chat)?.type)); } else { setFocusTurnNo(turn); setPointerChatId(parentId); } }} nodeId={ledgerId} item={item} canEdit={ownsWorkItem(profile, item)} profileId={profile?.id} onUndoableRemove={(removed) => { if (undoToast?.entry.action === "ledger_remove_line") undoRef.current = expireLedgerRemoval(undoRef.current, undoToast.entry.id); const entry = record({ action: "ledger_remove_line", ...removed }); /* A viewer who cannot arrange can still remove owned lines, without a toast. */ if (entry) setUndoToast({ message: LEDGER_COPY.removed, entry }); }} onClose={() => setLedgerId(null)} /> : null; })() : null}
       {pointerChatId ? <div className="lasso-decisions-source-back"><ThreadViewerById workItemId={pointerChatId} focus={focusTurnNo === null ? undefined : { turnNo: focusTurnNo }} onBack={() => { setPointerChatId(null); setFocusTurnNo(null); }} onClose={() => { setPointerChatId(null); setFocusTurnNo(null); }} /></div> : null}
       {liftedPicture && lifted ? <LiftedWork key={liftedPicture.id} title={liftedPicture.title || (liftedPicture.kind === "video" ? BOARD_VIDEO_COPY.label : BOARD_IMAGE_COPY.label)} kind={liftedPicture.kind === "video" ? "video" : "image"} origin={lifted.origin} returnFocusTo={() => document.querySelector<HTMLElement>(`[data-node-id="${CSS.escape(liftedPicture.id)}"]`)} onClose={() => setLifted(null)} onStep={stepLift} closeTo={() => cardRect(liftedPicture.id)} animateOpen={!lifted.swapped}>{() => <LiftedImageBody node={liftedPicture} initialSrc={lifted.src ?? null} />}</LiftedWork> : null}
-      {liftedNode && liftedItem && lifted ? <LiftedWork key={liftedNode.id} title={displayName(liftedItem) || liftedNode.title} kind={liftKindOf(liftedItem.type)} origin={lifted.origin} returnFocusTo={() => document.querySelector<HTMLElement>(`[role="group"][data-node-id="${CSS.escape(liftedNode.id)}"]`)} onClose={() => setLifted(null)} brand={sourceBrandKey(liftedItem)} dateLine={formatDate(resolveWorkDate(liftedItem).iso)} openUrl={liftedItem.meta?.web_view_link ?? liftedItem.meta?.chat_url ?? liftedItem.source_meta?.url ?? null} menu={liftMenu(liftedNode, liftedItem)} closeTo={() => cardRect(liftedNode.id)} animateOpen={!lifted.swapped} initialPanel={lifted.panel ?? null} panels={[{ id: "trail", label: TRAIL_COPY.tab, render: () => <LiftedTrail workItemId={liftedItem.id} workboardId={lab.board?.id ?? null} profileId={profile?.id ?? null} canOpen={(id) => Boolean(trailNode(id))} onOpenItem={openFromTrail} canFindSources={ownsWorkItem(profile, liftedItem) && isDeliverableType(liftedItem.type)} /> }, ...(liftedChatId ? [{ id: "comments", label: LIFT_NOTES_COPY.tab, render: () => <LiftedCommentsPanel notes={liftNotes} canWrite={canComment} threads={commentThreads.threads} highlights={annotations.highlights} mentionCandidates={mentionCandidates ?? []} {...chatNoteHandlers()} /> }] : [])]} onPanelOpened={(id) => { if (id === "trail") noteWorkboardWorkTrailOpened(orgId, liftKindOf(liftedItem.type)); }} onStep={stepLift}>{(bodyWidth) => liftedChatId ? <LiftedChatBody item={liftedItem} notes={liftNotes} threads={commentThreads.threads} highlights={annotations.highlights} onContentScroll={() => notePreviewScroll(liftedItem, "chat")} /> : <LiftedWorkBody item={liftedItem} preview={cardPreviews[liftedItem.id]} filePreview={filePreviews[liftedItem.id]} bodyWidth={bodyWidth} />}</LiftedWork> : null}
-      {reviewItem && reviewNode ? <CanvasLabReview item={reviewItem} anchorNodeId={reviewNode.id} links={links} profileId={profile?.id} decisions={page?.decisions ?? []} nodes={visibleNodes} comments={comments} onTrailSelect={(group, focus) => noteWorkboardTrailSelected(orgId, group, focus)} onClose={() => setReviewId(null)} /> : null}
+      {liftedNode && !liftedPicture && lifted ? <LiftedWork key={liftedNode.id} title={liftedItem ? displayName(liftedItem) || liftedNode.title : liftedNode.title || liftedNode.typeLabel} kind={liftedItem ? liftKindOf(liftedItem.type) : "other"} origin={lifted.origin} returnFocusTo={() => (lifted.still ? stillFocusRef.current : document.querySelector<HTMLElement>(`[role="group"][data-node-id="${CSS.escape(liftedNode.id)}"]`))} onClose={() => setLifted(null)} brand={liftedItem ? sourceBrandKey(liftedItem) : undefined} dateLine={liftedItem ? formatDate(resolveWorkDate(liftedItem).iso) : undefined} openUrl={liftedItem ? liftedItem.meta?.web_view_link ?? liftedItem.meta?.chat_url ?? liftedItem.source_meta?.url ?? null : null} menu={liftedItem ? liftMenu(liftedNode, liftedItem) : undefined} closeTo={() => (lifted.still ? null : cardRect(liftedNode.id))} animateOpen={!lifted.swapped && !lifted.still} initialPanel={lifted.panel ?? null} panels={!liftedItem ? [] : [{ id: "trail", label: TRAIL_COPY.tab, render: () => <LiftedTrail workItemId={liftedItem.id} workboardId={lab.board?.id ?? null} profileId={profile?.id ?? null} canOpen={(id) => Boolean(trailNode(id))} onOpenItem={openFromTrail} canFindSources={ownsWorkItem(profile, liftedItem) && isDeliverableType(liftedItem.type)} /> }, ...(liftedChatId ? [{ id: "comments", label: LIFT_NOTES_COPY.tab, render: () => <LiftedCommentsPanel notes={liftNotes} canWrite={canComment} threads={commentThreads.threads} highlights={annotations.highlights} mentionCandidates={mentionCandidates ?? []} {...chatNoteHandlers()} /> }] : [])]} onPanelOpened={(id) => { if (id === "trail" && liftedItem) noteWorkboardWorkTrailOpened(orgId, liftKindOf(liftedItem.type)); }} onStep={stepLift}>{(bodyWidth) => !liftedItem ? <LiftedNoteBody summary={liftedNode.summary} prompt={liftedNode.prompt} state={!liftedNode.workItemId ? "note" : pendingBoardItemIds.has(liftedNode.workItemId) ? "loading" : "unavailable"} /> : liftedChatId ? <LiftedChatBody item={liftedItem} notes={liftNotes} focusTurnNo={lifted.turn ?? null} threads={commentThreads.threads} highlights={annotations.highlights} onContentScroll={() => notePreviewScroll(liftedItem, "chat")} /> : <LiftedWorkBody item={liftedItem} preview={cardPreviews[liftedItem.id]} filePreview={filePreviews[liftedItem.id]} bodyWidth={bodyWidth} />}</LiftedWork> : null}
     </div>
     </TooltipProvider>
   );

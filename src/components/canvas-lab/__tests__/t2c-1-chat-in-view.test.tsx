@@ -268,14 +268,13 @@ describe("T2c-1 on the board (wiring pinned in source)", () => {
   });
   it("the comment chip on a chat lifts it with Comments open", () => {
     expect(page).toContain(
-      'if (cardItem?.type === "ai_thread") liftCard(node, cardItem, cardRect(node.id), "comments");',
+      'onOpenComments={() => liftCard(node, cardItem, cardRect(node.id), cardItem?.type === "ai_thread" ? "comments" : undefined)}',
     );
   });
-  it("one set of note writers serves both readers, so telemetry and writes stay identical", () => {
-    expect(page).toContain("const notesThreadId = liftedChatId ?? focusThreadId;");
+  it("the one view is the only reader writing notes on the board (T2c-2)", () => {
+    expect(page).toContain("const notesThreadId = liftedChatId;");
     expect(page).toContain("{...chatNoteHandlers()} /> }]");
-    expect(page).toContain("{...(notesThreadId === focusThreadId ? chatNoteHandlers() : {})} />");
-    expect(page).not.toContain("onHighlight={focusThreadId ?");
+    expect(page).not.toContain("focusThreadId");
   });
   it("every new note names the chat it was made on, so stepping mid-save cannot move it (review finding 1)", () => {
     const fn = page.slice(
@@ -290,17 +289,12 @@ describe("T2c-1 on the board (wiring pinned in source)", () => {
       readFileSync("src/hooks/use-canvas-lab-comments.ts", "utf8");
     expect(hooks.match(/work_item_id: input\.workItemId \?\? workItemId \?\? ""/g)?.length).toBe(2);
   });
-  it("the focus reader never shows or writes another chat's notes (review finding 3)", () => {
-    expect(page).toContain(
-      "highlights={notesThreadId === focusThreadId ? annotations.highlights : []}",
-    );
-    expect(page).toContain(
-      "threads={notesThreadId === focusThreadId ? commentThreads.threads : []}",
-    );
+  it("the focus reader is gone from the board, so no second reader can show another chat's notes (T2c-2)", () => {
+    expect(page).not.toContain("<FocusOverlay");
   });
   it("opening Comments is not counted as opening the trail", () => {
     expect(page).toContain(
-      'onPanelOpened={(id) => { if (id === "trail") noteWorkboardWorkTrailOpened(',
+      'onPanelOpened={(id) => { if (id === "trail" && liftedItem) noteWorkboardWorkTrailOpened(',
     );
   });
 });

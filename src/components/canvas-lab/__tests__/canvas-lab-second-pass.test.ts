@@ -54,7 +54,9 @@ describe("Canvas Lab second prototype pass", () => {
     // T2c-1: the selection state moved to chat-notes.tsx; the focus reader composes it.
     const overlay = read("src/components/canvas-lab/FocusOverlay.tsx") + read("src/components/canvas-lab/chat-notes.tsx");
     const page = read("src/pages/CanvasLabPage.tsx");
-    expect(page).toContain("<CanvasLabReview");
+    // T2c-2: the Lab review and the focus reader are retired from the signed-in board.
+    expect(page).not.toContain("<CanvasLabReview");
+    expect(page).not.toContain("<FocusOverlay");
     expect(overlay).not.toContain("WhatFedThisButton");
     expect(overlay).toContain('CSS.highlights?.delete("canvas-lab-selection")');
     expect(overlay).not.toContain("notes in the margin");

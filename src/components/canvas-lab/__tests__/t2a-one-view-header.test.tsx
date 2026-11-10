@@ -114,16 +114,13 @@ describe("T2a on the board (wiring pinned in source)", () => {
   const page = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
   const head = readFileSync("src/components/canvas-lab/LiftedWorkHead.tsx", "utf8");
   it("the card's Open button and menu lift the work too, behind the same flag", () => {
-    expect(page).toContain(
-      "onOpen={(origin) => { if (liftable(cardItem)) liftCard(node, cardItem, origin); else openNode(node, origin); }}",
-    );
-    expect(page).toContain("onLift={liftable(cardItem) ? (origin) => liftCard(node, cardItem, origin) : undefined}");
+    expect(page).toContain("onOpen={(origin) => liftCard(node, cardItem, origin)} onLift={(origin) => liftCard(node, cardItem, origin)}");
   });
   it("the view is given no Expand", () => {
     const lifted = page.slice(page.indexOf("<LiftedWork key={liftedNode.id}"), page.indexOf("<LiftedWorkBody"));
     expect(lifted).not.toContain("onExpand");
-    expect(lifted).toContain("brand={sourceBrandKey(liftedItem)}");
-    expect(lifted).toContain("menu={liftMenu(liftedNode, liftedItem)}");
+    expect(lifted).toContain("brand={liftedItem ? sourceBrandKey(liftedItem) : undefined}");
+    expect(lifted).toContain("menu={liftedItem ? liftMenu(liftedNode, liftedItem) : undefined}");
   });
   it("menu entries close the view before opening something of their own; the ledger is there for the decisions doc", () => {
     const fn = page.slice(page.indexOf("function liftMenu"), page.indexOf("function liftMenu") + 700);

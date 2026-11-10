@@ -18,15 +18,16 @@ afterEach(() => { cleanup(); h.lines = []; vi.clearAllMocks(); });
 function opening(target: WorkItemRow) {
   const source = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
   const start = source.indexOf("  function openNode(");
-  const body = source.slice(source.indexOf("{", start) + 1, source.indexOf("\n  /* ---------------- B4", start)).replace(/\n  }\s*$/, "").replace(' as "document" | "deck" | "sheet"', "");
+  const body = source.slice(source.indexOf("{", start) + 1, source.indexOf("\n  /* ---------------- B4", start)).replace(/\n  }\s*$/, "");
+  // T2c-2: anything that is not the decisions document opens in the one view (review stands for that path).
   const ledger = vi.fn(), review = vi.fn(), event = vi.fn();
-  const run = new Function("itemByNode", "setFocusOrigin", "setLedgerId", "noteWorkboardLedgerOpened", "orgId", "filePreviews", "viewedPreviewIdsRef", "noteWorkboardCardContentViewed", "isDeliverableType", "setReviewId", "noteWorkboardReviewOpened", "setFocusId", "node", "origin", "via", body);
-  run(() => target, vi.fn(), ledger, event, "o", {}, { current: new Set() }, vi.fn(), (type: string) => type === "document", review, vi.fn(), vi.fn(), { id: "n" }, undefined, "card");
+  const run = new Function("itemByNode", "setLedgerId", "noteWorkboardLedgerOpened", "orgId", "liftCard", "node", "origin", "via", body);
+  run(() => target, ledger, event, "o", (node: { id: string }) => review(node.id), { id: "n" }, undefined, "card");
   return { ledger, review, event };
 }
 describe("Decisions ledger entry", () => {
   it("opens a decisions document before the review path", () => { const { ledger, review, event } = opening(item); expect(ledger).toHaveBeenCalledWith("n"); expect(review).not.toHaveBeenCalled(); expect(event).toHaveBeenCalledWith("o", "card"); });
-  it("keeps plain documents on the review path", () => { const { ledger, review } = opening({ ...item, doc_kind: null }); expect(ledger).not.toHaveBeenCalled(); expect(review).toHaveBeenCalledWith("n"); });
+  it("opens plain documents in the one view", () => { const { ledger, review } = opening({ ...item, doc_kind: null }); expect(ledger).not.toHaveBeenCalled(); expect(review).toHaveBeenCalledWith("n"); });
   it("shows Open ledger first and never Preview for a Decisions card", () => {
     const open = vi.fn();
     render(<LabCardMenu selected={false} canBranch={false} local={false} open onOpenChange={() => undefined} cardRef={{ current: null }} onSelect={() => undefined} onOpen={() => undefined} onOpenLedger={open} onBranch={() => undefined} onHide={() => undefined} onDelete={() => undefined} />);

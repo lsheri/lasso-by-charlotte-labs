@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type Ref } from "react";
+import { useEffect, useRef, useState, type Ref, type RefObject } from "react";
 
 import { MentionTextEditor } from "@/components/canvas-lab/MentionTextEditor";
 import { ThreadBody } from "@/components/peek/ThreadBody";
@@ -133,6 +133,52 @@ export function CommentLine({ comment }: { comment: CommentDto }) {
       {comment.edited ? " · edited" : ""}
     </span>
   );
+}
+
+/**
+ * Open a chat scrolled to one turn, lit: a decision's source, a demo tour stop. Moved from the focus
+ * reader (T2c-2) so the one view opens a ledger's pointer at the same turn, the same way.
+ */
+export function useTurnFocus(
+  readerRef: RefObject<HTMLElement | null>,
+  focusTurnNo: number | null | undefined,
+  { label, testId }: { label?: string | undefined; testId?: string | undefined } = {},
+) {
+  useEffect(() => {
+    if (!focusTurnNo) return;
+    let tries = 0;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let lit: Element | null = null;
+    const find = () => {
+      const el = readerRef.current?.querySelector(`[data-turn-no="${focusTurnNo}"]`) ?? null;
+      if (el) {
+        const reader = readerRef.current;
+        if (!reader) return;
+        const readerRect = reader.getBoundingClientRect();
+        const turnRect = el.getBoundingClientRect();
+        reader.scrollTo({
+          top: reader.scrollTop + turnRect.top - readerRect.top - 96,
+          behavior: "auto",
+        });
+        el.classList.add("nb-turn-lit");
+        el.setAttribute("data-turn-focus", "true");
+        if (label) el.setAttribute("data-focus-label", label);
+        if (testId) el.setAttribute("data-testid", testId);
+        lit = el;
+        return;
+      }
+      tries += 1;
+      if (tries < 40) timer = setTimeout(find, 100);
+    };
+    find();
+    return () => {
+      if (timer) clearTimeout(timer);
+      lit?.classList.remove("nb-turn-lit");
+      lit?.removeAttribute("data-turn-focus");
+      lit?.removeAttribute("data-focus-label");
+      if (testId) lit?.removeAttribute("data-testid");
+    };
+  }, [focusTurnNo, testId, label, readerRef]);
 }
 
 /** The selection and composer state a chat's reader and its notes share. */
@@ -575,7 +621,10 @@ export function ChatReader({
   highlights,
   onContentScroll,
   vendorKey,
+  focusTurnNo,
 }: {
+  /** T2c-2: open scrolled to this turn, lit (a decision's source). */
+  focusTurnNo?: number | null | undefined;
   item: WorkItemRow;
   /** The border's vendor treatment; null keeps a vendor-neutral workspace neutral. Defaults to the chat's own. */
   vendorKey?: string | null | undefined;
@@ -585,6 +634,7 @@ export function ChatReader({
   onContentScroll?: (() => void) | undefined;
 }) {
   const scrollNotedRef = useRef(false);
+  useTurnFocus(notes.readerRef, focusTurnNo);
   const commentMarks = threads.map((thread) => ({
     id: thread.id,
     turnNo: thread.turnNo ?? -1,
