@@ -8664,6 +8664,8 @@ footer[data-compact] [data-ask-composer-pad] { padding: 8px 8px 8px 14px; }
 .lift-chat { height: 100%; box-sizing: border-box; padding: var(--nb-preview-inset); user-select: text; -webkit-user-select: text; }
 .lift-main > .lift-body:has(> .lift-chat) { overflow: hidden; }
 .lift-notes { padding: 14px 14px 18px; }
+/* T2c-2: a board note or a card whose work is on the way, in the same view. */
+.lift-note { display: flex; flex-direction: column; gap: 10px; padding: 18px 20px; font-size: 13.5px; line-height: 20px; color: var(--foreground); background: var(--nb-paper); min-height: 100%; box-sizing: border-box; }
 .lift-tabs { display: flex; flex-shrink: 0; flex-direction: column; align-items: center; gap: 6px; padding-top: 10px; border-left: 1px solid var(--nb-rule); background: var(--nb-paper); }
 .lift-tab { padding: 10px 6px; border-radius: var(--radius-control); writing-mode: vertical-rl; transform: rotate(180deg); font: 500 12px/1 var(--font-sans); color: var(--nb-graphite); cursor: pointer; }
 .lift-tab:hover { background: color-mix(in oklab, var(--nb-ink) 6%, transparent); }

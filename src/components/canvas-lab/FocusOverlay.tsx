@@ -1,4 +1,4 @@
-import { ChatNotesPanel, ChatReader, useChatNotesState, type ComposerAnchor, type OverlayHighlight } from "@/components/canvas-lab/chat-notes";
+import { ChatNotesPanel, ChatReader, useChatNotesState, useTurnFocus, type ComposerAnchor, type OverlayHighlight } from "@/components/canvas-lab/chat-notes";
 import type { MentionCandidate } from "@/lib/mention-editor";
 import { type Mention } from "@/lib/mention-shared";
 import { displayName } from "@/lib/work-item-name";
@@ -112,38 +112,7 @@ export function FocusOverlay({
     "--focus-from-scale": String(Math.max(0.18, Math.min(0.72, origin.width / Math.min(1200, window.innerWidth - 64)))),
   } as CSSProperties : undefined;
 
-  useEffect(() => {
-    if (!focusTurnNo) return;
-    let tries = 0;
-    let timer: ReturnType<typeof setTimeout> | null = null;
-    let lit: Element | null = null;
-    const find = () => {
-      const el = readerRef.current?.querySelector(`[data-turn-no="${focusTurnNo}"]`) ?? null;
-      if (el) {
-        const reader = readerRef.current;
-        if (!reader) return;
-        const readerRect = reader.getBoundingClientRect();
-        const turnRect = el.getBoundingClientRect();
-        reader.scrollTo({ top: reader.scrollTop + turnRect.top - readerRect.top - 96, behavior: "auto" });
-        el.classList.add("nb-turn-lit");
-        el.setAttribute("data-turn-focus", "true");
-        if (focusLabel) el.setAttribute("data-focus-label", focusLabel);
-        if (focusedTurnTestId) el.setAttribute("data-testid", focusedTurnTestId);
-        lit = el;
-        return;
-      }
-      tries += 1;
-      if (tries < 40) timer = setTimeout(find, 100);
-    };
-    find();
-    return () => {
-      if (timer) clearTimeout(timer);
-      lit?.classList.remove("nb-turn-lit");
-      lit?.removeAttribute("data-turn-focus");
-      lit?.removeAttribute("data-focus-label");
-      if (focusedTurnTestId) lit?.removeAttribute("data-testid");
-    };
-  }, [focusTurnNo, focusedTurnTestId, focusLabel]);
+  useTurnFocus(readerRef, focusTurnNo, { label: focusLabel, testId: focusedTurnTestId });
 
   useEffect(() => {
     if (!highlightTurnRange) return;

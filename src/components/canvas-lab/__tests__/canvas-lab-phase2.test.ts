@@ -70,7 +70,8 @@ describe("Canvas Lab Phase 2", () => {
     expect(review).toContain('node.kind === "judgment" && connectedNodeIds.has(node.id)');
     expect(review).toContain("connectedNodeIds.has(comment.nodeId)");
     expect(review).not.toContain('nodes.filter((node) => node.kind === "judgment").map');
-    expect(page).toContain("anchorNodeId={reviewNode.id} links={links}");
+    // T2c-2: the board no longer opens the Lab review; every card opens in the one view.
+    expect(page).not.toContain("<CanvasLabReview");
   });
 
   it("uses green Lab emphasis and leaves production canvas untouched", () => {
