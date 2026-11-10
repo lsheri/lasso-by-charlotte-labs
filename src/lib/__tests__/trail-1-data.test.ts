@@ -92,7 +92,7 @@ describe("TRAIL T1: only what Lasso saw happen or a person confirmed", () => {
   it("a piece the reader may not open drops out, and nothing says how many did", () => {
     const trail = buildTrail(input({ parentId: "secret", workLinks: [link("hidden", "deck")] }));
     expect(trail.madeFrom).toEqual([]);
-    expect(Object.keys(trail)).toEqual(["madeFrom", "usedIn", "leadsWith"]);
+    expect(Object.keys(trail)).toEqual(["madeFrom", "usedIn", "decisions", "leadsWith"]);
   });
 
   it("a link from the piece to itself is ignored", () => {

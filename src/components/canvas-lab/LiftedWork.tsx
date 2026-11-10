@@ -63,6 +63,12 @@ export const LIFT_KIND_ICON: Record<LiftKind, LucideIcon> = {
 /** from: sitting on the card's box. open: at its own box. closing: shrinking back into the card. */
 type LiftPhase = "from" | "open" | "closing";
 
+/** Arrows inside a field move the caret, never the view. */
+function typingIn(target: EventTarget | null): boolean {
+  if (!(target instanceof Element)) return false;
+  return Boolean(target.closest("input, textarea, select, [contenteditable='true'], [contenteditable='']"));
+}
+
 function viewport() {
   return { width: window.innerWidth, height: window.innerHeight };
 }
@@ -110,6 +116,7 @@ export function LiftedWork({
   panels = [],
   initialPanel = null,
   onPanelOpened,
+  onStep,
   children,
 }: {
   title: string;
@@ -131,6 +138,8 @@ export function LiftedWork({
   onPanelOpened?: ((id: string) => void) | undefined;
   /** Opened from another piece's trail: the trail stays open on the piece it led to. */
   initialPanel?: string | null | undefined;
+  /** T3: move to the previous (-1) or next (1) piece; the open panel goes with it. */
+  onStep?: ((direction: 1 | -1, panel: string | null) => void) | undefined;
   children: (bodyWidth: number) => ReactNode;
 }) {
   const still = useRef(reducedMotion()).current;
@@ -197,6 +206,13 @@ export function LiftedWork({
   // Esc closes from anywhere while the view is up, before the board's own Esc can clear its selection.
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
+      // T3: left and right move to the previous or next piece on the board, without closing the view.
+      if ((event.key === "ArrowLeft" || event.key === "ArrowRight") && onStep && !menuOpen && !typingIn(event.target)) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        onStep(event.key === "ArrowRight" ? 1 : -1, panel);
+        return;
+      }
       if (event.key !== "Escape") return;
       event.preventDefault();
       event.stopImmediatePropagation();

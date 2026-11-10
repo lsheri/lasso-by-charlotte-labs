@@ -8,7 +8,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Trail, TrailEntry } from "@/lib/trail-shared";
 
 const vendor = { visible: true };
-const trailResult: { value: Trail } = { value: { madeFrom: [], usedIn: [], leadsWith: "made" } };
+const trailResult: { value: Trail } = { value: { madeFrom: [], usedIn: [], decisions: [], leadsWith: "made" } };
 vi.mock("@/hooks/use-vendor-display", () => ({ useVendorVisible: () => vendor.visible }));
 vi.mock("@/lib/telemetry", () => ({ logEvent: vi.fn() }));
 vi.mock("@/lib/trail.functions", () => ({ getTrail: vi.fn() }));
@@ -23,7 +23,7 @@ import { LiftedImageBody } from "@/components/canvas-lab/LiftedImageBody";
 afterEach(() => {
   cleanup();
   vendor.visible = true;
-  trailResult.value = { madeFrom: [], usedIn: [], leadsWith: "made" };
+  trailResult.value = { madeFrom: [], usedIn: [], decisions: [], leadsWith: "made" };
 });
 
 const entry = (id: string, how: TrailEntry["how"], over: Partial<TrailEntry> = {}): TrailEntry => ({
@@ -101,14 +101,14 @@ describe("T2b the Trail tab in the one view", () => {
 
 describe("T2b what the trail says", () => {
   it("a deliverable opens on Made from, then Used in", async () => {
-    trailResult.value = { madeFrom: [entry("chat", "born")], usedIn: [entry("call", "drawn")], leadsWith: "made" };
+    trailResult.value = { madeFrom: [entry("chat", "born")], usedIn: [entry("call", "drawn")], decisions: [], leadsWith: "made" };
     await trail();
     const sections = [...screen.getByTestId("lift-trail").querySelectorAll("section")].map((s) => s.getAttribute("data-testid"));
     expect(sections).toEqual(["trail-made-from", "trail-used-in"]);
   });
 
   it("a chat or a source opens on Used in, then Made from", async () => {
-    trailResult.value = { madeFrom: [], usedIn: [entry("deck", "confirmed")], leadsWith: "used" };
+    trailResult.value = { madeFrom: [], usedIn: [entry("deck", "confirmed")], decisions: [], leadsWith: "used" };
     await trail({ workItemId: "chat" });
     const sections = [...screen.getByTestId("lift-trail").querySelectorAll("section")].map((s) => s.getAttribute("data-testid"));
     expect(sections).toEqual(["trail-used-in", "trail-made-from"]);
@@ -130,7 +130,7 @@ describe("T2b what the trail says", () => {
   });
 
   it("a piece on this board opens in the view; one that is not stays a line and says so", async () => {
-    trailResult.value = { madeFrom: [entry("sheet", "drawn"), entry("far", "born")], usedIn: [], leadsWith: "made" };
+    trailResult.value = { madeFrom: [entry("sheet", "drawn"), entry("far", "born")], usedIn: [], decisions: [], leadsWith: "made" };
     const { onOpenItem } = await trail({ canOpen: (id) => id === "sheet" });
     fireEvent.click(screen.getByRole("button", { name: /Piece sheet/ }));
     expect(onOpenItem).toHaveBeenCalledWith("sheet");
@@ -140,7 +140,7 @@ describe("T2b what the trail says", () => {
 
   it("a vendor-neutral workspace sees no tool marks on the trail", async () => {
     vendor.visible = false;
-    trailResult.value = { madeFrom: [entry("chat", "born")], usedIn: [], leadsWith: "made" };
+    trailResult.value = { madeFrom: [entry("chat", "born")], usedIn: [], decisions: [], leadsWith: "made" };
     await trail();
     expect(screen.getByTestId("lift-trail").querySelector("svg title, img")).toBeNull();
     expect(screen.getByTestId("lift-trail").querySelector(".lift-trail-dot")).toBeTruthy();

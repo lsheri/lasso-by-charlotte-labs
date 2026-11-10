@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveProfile } from "@/lib/profile-resolve";
-import { boardLinksToWork, buildTrail, type Trail, type TrailBoardLink, type TrailItem } from "@/lib/trail-shared";
+import { boardLinksToWork, buildTrail, trailDecisions, type Trail, type TrailBoardLink, type TrailItem } from "@/lib/trail-shared";
 
 /**
  * TRAIL T1: the trail for one piece of work, read as the caller so row policies decide what is
@@ -30,10 +30,10 @@ export const getTrail = createServerFn({ method: "POST" })
       .select("id, owner_id, org_id, type, parent_work_item_id")
       .eq("id", data.work_item_id)
       .maybeSingle();
-    if (!item) return { madeFrom: [], usedIn: [], leadsWith: "used" };
+    if (!item) return { madeFrom: [], usedIn: [], decisions: [], leadsWith: "used" };
     const isOwner = item.owner_id === profile.id;
 
-    const [{ data: org }, { data: children }, { data: workLinks }] = await Promise.all([
+    const [{ data: org }, { data: children }, { data: workLinks }, { data: decisionRows }] = await Promise.all([
       supabase.from("orgs").select("vendor_display").eq("id", item.org_id).maybeSingle(),
       supabase.from("work_items").select("id").eq("parent_work_item_id", item.id),
       supabase
@@ -41,6 +41,13 @@ export const getTrail = createServerFn({ method: "POST" })
         .select("from_item_id, to_item_id, relation, status, source, rationale")
         .or(`from_item_id.eq.${item.id},to_item_id.eq.${item.id}`)
         .eq("status", "confirmed"),
+      // T3: decisions whose sources include this piece (decisions.srcs holds {work_item_id, turn_id}).
+      supabase
+        .from("decisions")
+        .select("id, call_text, status")
+        .contains("srcs", JSON.stringify([{ work_item_id: item.id }]))
+        .neq("status", "discarded")
+        .limit(20),
     ]);
     const vendorVisible = isOwner || org?.vendor_display !== "vendor_neutral";
 
@@ -91,7 +98,7 @@ export const getTrail = createServerFn({ method: "POST" })
       ]),
     );
 
-    return buildTrail({
+    const trail = buildTrail({
       itemId: item.id,
       itemType: item.type as string,
       isOwner,
@@ -101,4 +108,5 @@ export const getTrail = createServerFn({ method: "POST" })
       boardLinks,
       readable,
     });
+    return { ...trail, decisions: trailDecisions(decisionRows ?? []) };
   });
