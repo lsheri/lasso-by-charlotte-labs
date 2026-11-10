@@ -172,11 +172,12 @@ describe("S2a the server (pinned in source)", () => {
     expect(server).not.toMatch(/service_role|supabaseAdmin|createAdminClient/);
   });
   it("only the author changes, moves or removes a sticky", () => {
-    expect(server.match(/\.eq\("author_profile_id", profile\.id\)/g)?.length).toBe(2);
+    // S4a adds the read of the saved assignee before a change, also limited to the author.
+    expect(server.match(/\.eq\("author_profile_id", profile\.id\)/g)?.length).toBe(3);
   });
   it("only stickies: never a comment or a highlight", () => {
-    // S3 adds the count read.
-    expect(server.match(/\.eq\("kind", "sticky"\)/g)?.length).toBe(4);
+    // S3 adds the count read; S4a the assignee read and the read back after done.
+    expect(server.match(/\.eq\("kind", "sticky"\)/g)?.length).toBe(6);
     expect(server).toContain('kind: "sticky",');
   });
   it("a just-me sticky drops any assignee", () => {

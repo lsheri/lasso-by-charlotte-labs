@@ -17,6 +17,7 @@ import {
   editStickyFn,
   listStickiesFn,
   listStickyCountsFn,
+  setStickyDoneFn,
 } from "@/lib/stickies.functions";
 
 export function stickiesQueryKey(engagementId: string, workItemId: string) {
@@ -48,6 +49,7 @@ export type NewSticky = {
   body: string;
   visibility: AnnotationVisibility;
   clientKey: string;
+  assigneeProfileId?: string | null | undefined;
 };
 
 export type StickyEdit = {
@@ -59,6 +61,8 @@ export type StickyEdit = {
   visibility?: AnnotationVisibility | undefined;
   posX?: number | undefined;
   posY?: number | undefined;
+  /** S4: undefined leaves it alone; null clears it. */
+  assigneeProfileId?: string | null | undefined;
 };
 
 export function useStickies(
@@ -71,6 +75,7 @@ export function useStickies(
   const createFn = useServerFn(createStickyFn);
   const editFn = useServerFn(editStickyFn);
   const archiveFn = useServerFn(archiveStickyFn);
+  const doneFn = useServerFn(setStickyDoneFn);
   const who = profileId ? { profile_id: profileId } : {};
 
   const query = useQuery({
@@ -104,6 +109,7 @@ export function useStickies(
           body: input.body,
           visibility: input.visibility,
           client_key: input.clientKey,
+          ...(input.assigneeProfileId ? { assignee_profile_id: input.assigneeProfileId } : {}),
           ...who,
         },
       })) as StickyMutationResult,
@@ -121,6 +127,9 @@ export function useStickies(
           ...(input.visibility !== undefined ? { visibility: input.visibility } : {}),
           ...(input.posX !== undefined ? { pos_x: input.posX } : {}),
           ...(input.posY !== undefined ? { pos_y: input.posY } : {}),
+          ...(input.assigneeProfileId !== undefined
+            ? { assignee_profile_id: input.assigneeProfileId }
+            : {}),
           ...who,
         },
       })) as StickyMutationResult,
@@ -139,11 +148,25 @@ export function useStickies(
     onSuccess: (_result, input) => invalidateFor(input.workItemId),
   });
 
+  const done = useMutation({
+    mutationFn: async (input: {
+      workItemId: string;
+      id: string;
+      done: boolean;
+      expectedVersion: number;
+    }): Promise<StickyMutationResult> =>
+      (await doneFn({
+        data: { id: input.id, done: input.done, expected_version: input.expectedVersion, ...who },
+      })) as StickyMutationResult,
+    onSuccess: (_result, input) => invalidateFor(input.workItemId),
+  });
+
   return {
     stickies: query.data ?? [],
     loading: query.isLoading,
     createSticky: create.mutateAsync,
     editSticky: edit.mutateAsync,
     archiveSticky: archive.mutateAsync,
+    setStickyDone: done.mutateAsync,
   };
 }

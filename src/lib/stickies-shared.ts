@@ -7,8 +7,8 @@ import { MAX_BODY_LENGTH, type AnnotationVisibility } from "@/lib/canvas-lab-ann
  * an anchor (a slide or page, a chat turn, a doc section, a sheet row, a picture, or the piece as a whole)
  * at a position inside that anchor, 0 to 1 across and down.
  *
- * It describes the work, never the person: what is on it is a note and a next step. Assigning one to
- * someone, and marking it done, arrive in S4.
+ * It describes the work, never the person: what is on it is a note and a next step. S4: it can ask one
+ * person on the board to act, and that person (or the author) marks it done. Nothing counts per person.
  */
 
 export type StickyAnchorKind = "page" | "turn" | "section" | "row" | "media" | "item";
@@ -42,8 +42,16 @@ export type StickyDto = {
   /** The reader wrote it, so the reader can change, move or remove it. */
   isMine: boolean;
   authorName: string;
+  /** S4: who the sticky asks to act, if anyone. Only a board-visible sticky can be assigned. */
+  assigneeId: string | null;
+  assigneeName: string | null;
+  /** S4: the reader is the assignee, so the sticky asks something of them. */
+  isAssignedToMe: boolean;
+  /** S4: the assignee can mark it done or reopen it; so can its author. */
+  canMarkDone: boolean;
   /** Done stickies stay where they are, marked done (S4). */
   doneAt: string | null;
+  doneByName: string | null;
   /** A turn sticky whose turn has changed since. Shown, never moved. */
   stale: boolean;
   version: number;
@@ -61,6 +69,8 @@ export const STICKY_COPY = {
   tooLong: "That is longer than a sticky can be.",
   noSpot: "That spot could not be read.",
   noColour: "Pick one of the sticky colours.",
+  notOnBoard: "Assign a sticky to someone on this board.",
+  justMeUnassigned: "A just-me sticky stays with you. Show it to the board to assign it.",
 } as const;
 
 export function isStickyFill(value: unknown): value is WorkboardStickyFill {

@@ -23,6 +23,7 @@ import {
   anchorFromRow,
   clampUnit,
   isStickyFill,
+  STICKY_COPY,
   validateStickyAnchor,
   validateStickyBody,
   type StickyAnchor,
@@ -30,11 +31,16 @@ import {
   type StickyMutationResult,
 } from "@/lib/stickies-shared";
 import type { WorkboardStickyFill } from "@/lib/canvas-lab-shared";
+import {
+  notifyStickyAssigned,
+  notifyStickyDone,
+  type StickyNotice,
+} from "@/lib/sticky-notifications.server";
 
 type Db = SupabaseClient<Database>;
 
 const STICKY_COLUMNS =
-  "id, work_item_id, anchor_kind, page_no, turn_no, section_key, row_key, turn_hash, pos_x, pos_y, fill, body, visibility, author_profile_id, done_at, version, created_at";
+  "id, work_item_id, anchor_kind, page_no, turn_no, section_key, row_key, turn_hash, pos_x, pos_y, fill, body, visibility, author_profile_id, assignee_profile_id, done_at, done_by, version, created_at";
 
 type StickyRow = {
   id: string;
@@ -51,17 +57,33 @@ type StickyRow = {
   body: string | null;
   visibility: string | null;
   author_profile_id: string;
+  assignee_profile_id: string | null;
   done_at: string | null;
+  done_by: string | null;
   version: number;
   created_at: string;
 };
+
+/** A name for a profile as the reader sees it: "You" for themselves. */
+function nameFor(
+  id: string | null,
+  viewerProfileId: string,
+  names?: ReadonlyMap<string, string>,
+): string | null {
+  if (!id) return null;
+  if (id === viewerProfileId) return "You";
+  return names?.get(id) ?? "A colleague";
+}
 
 export function stickyDto(
   row: StickyRow,
   viewerProfileId: string,
   authorName: string,
   contentHash?: string | null,
+  names?: ReadonlyMap<string, string>,
 ): StickyDto {
+  const isMine = row.author_profile_id === viewerProfileId;
+  const isAssignedToMe = row.assignee_profile_id === viewerProfileId;
   return {
     id: row.id,
     workItemId: row.work_item_id ?? "",
@@ -71,9 +93,14 @@ export function stickyDto(
     fill: isStickyFill(row.fill) ? row.fill : "yellow",
     body: row.body ?? "",
     visibility: row.visibility === "just_me" ? "just_me" : "engagement",
-    isMine: row.author_profile_id === viewerProfileId,
+    isMine,
     authorName,
+    assigneeId: row.assignee_profile_id,
+    assigneeName: nameFor(row.assignee_profile_id, viewerProfileId, names),
+    isAssignedToMe,
+    canMarkDone: isMine || isAssignedToMe,
     doneAt: row.done_at,
+    doneByName: nameFor(row.done_by, viewerProfileId, names),
     stale:
       row.anchor_kind === "turn"
         ? isStaleHighlight(row.turn_hash, contentHash ?? row.turn_hash)
@@ -89,21 +116,60 @@ async function seatForSticky(
   id: string,
   profile: ResolvedProfile,
 ): Promise<ResolvedProfile> {
-  if (!id) return profile;
+  return (await stickySeat(db, id, profile)).profile;
+}
+
+/** The caller's seat on the sticky's board, and that board's engagement. */
+async function stickySeat(
+  db: Db,
+  id: string,
+  profile: ResolvedProfile,
+): Promise<{ profile: ResolvedProfile; engagementId: string | null }> {
+  if (!id) return { profile, engagementId: null };
   const { data: row } = await db
     .from("workboard_annotations")
     .select("workboard_id")
     .eq("id", id)
     .maybeSingle();
   const boardId = (row as { workboard_id?: string } | null)?.workboard_id;
-  if (!boardId) return profile;
+  if (!boardId) return { profile, engagementId: null };
   const { data: board } = await db
     .from("workboards")
     .select("engagement_id")
     .eq("id", boardId)
     .maybeSingle();
-  const engagementId = (board as { engagement_id?: string } | null)?.engagement_id;
-  return engagementId ? boardSeatFor(db, engagementId, profile) : profile;
+  const engagementId = (board as { engagement_id?: string } | null)?.engagement_id ?? null;
+  return {
+    profile: engagementId ? await boardSeatFor(db, engagementId, profile) : profile,
+    engagementId,
+  };
+}
+
+/** Display names for the people a set of stickies mentions by id: authors, assignees, who marked done. */
+async function namesFor(db: Db, rows: readonly StickyRow[]): Promise<Map<string, string>> {
+  const ids = [
+    ...new Set(
+      rows.flatMap((row) => [row.author_profile_id, row.assignee_profile_id, row.done_by]).filter(
+        (id): id is string => !!id,
+      ),
+    ),
+  ];
+  if (!ids.length) return new Map();
+  const { data } = await db.from("profiles").select("id, display_name").in("id", ids);
+  return new Map((data ?? []).map((row) => [row.id, row.display_name || "A colleague"]));
+}
+
+/** S4: an assignee has to be on the board (the database checks this too). Yourself always counts. */
+async function onBoard(
+  db: Db,
+  engagementId: string,
+  profileId: string,
+  assigneeId: string,
+): Promise<boolean> {
+  if (assigneeId === profileId) return true;
+  const { data, error } = await db.rpc("board_people", { p_engagement: engagementId });
+  if (error || !Array.isArray(data)) return false;
+  return data.some((person) => person.profile_id === assigneeId);
 }
 
 /** Every sticky on one piece of work on this board that the reader may see: their own, and the team's. */
@@ -133,7 +199,7 @@ export async function listStickies(
         .map((row) => row.turn_no as number),
     ),
   ];
-  const [{ data: turns }, { data: authors }] = await Promise.all([
+  const [{ data: turns }, names] = await Promise.all([
     turnNos.length
       ? db
           .from("turns")
@@ -141,25 +207,18 @@ export async function listStickies(
           .eq("work_item_id", workItemId)
           .in("turn_no", turnNos)
       : Promise.resolve({ data: [] as { turn_no: number; content_hash: string | null }[] }),
-    db
-      .from("profiles")
-      .select("id, display_name")
-      .in("id", [...new Set(rows.map((row) => row.author_profile_id))]),
+    namesFor(db, rows),
   ]);
   const hashByTurn = new Map(
     (turns ?? []).map((turn) => [turn.turn_no, turn.content_hash ?? null]),
-  );
-  const nameById = new Map(
-    (authors ?? []).map((row) => [row.id, row.display_name || "A colleague"]),
   );
   return rows.map((row) =>
     stickyDto(
       row,
       profile.id,
-      row.author_profile_id === profile.id
-        ? "You"
-        : (nameById.get(row.author_profile_id) ?? "A colleague"),
+      nameFor(row.author_profile_id, profile.id, names) ?? "A colleague",
       row.turn_no !== null ? (hashByTurn.get(row.turn_no) ?? null) : null,
+      names,
     ),
   );
 }
@@ -174,6 +233,8 @@ export type CreateStickyInput = {
   body: string;
   visibility: AnnotationVisibility;
   clientKey: string;
+  /** S4: someone on the board this sticky asks to act. Only on a board-visible sticky. */
+  assigneeProfileId?: string | null | undefined;
 };
 
 export async function createSticky(
@@ -192,6 +253,13 @@ export async function createSticky(
     return { status: "validation_error", message: "Pick one of the sticky colours." };
   if (!(await isEngagementEditor(db, input.engagementId, profile.id)))
     return { status: "forbidden" };
+  const assigneeId = input.assigneeProfileId || null;
+  if (assigneeId) {
+    if (input.visibility === "just_me")
+      return { status: "validation_error", message: STICKY_COPY.justMeUnassigned };
+    if (!(await onBoard(db, input.engagementId, profile.id, assigneeId)))
+      return { status: "validation_error", message: STICKY_COPY.notOnBoard };
+  }
 
   // A turn sticky remembers the turn as it was, so a changed turn can say so instead of pointing wrong.
   let turnHash: string | null = null;
@@ -224,6 +292,7 @@ export async function createSticky(
       fill: input.fill,
       body: input.body.trim(),
       visibility: input.visibility === "just_me" ? "just_me" : "engagement",
+      assignee_profile_id: assigneeId,
       author_profile_id: profile.id,
       created_by: profile.id,
       updated_by: profile.id,
@@ -232,8 +301,13 @@ export async function createSticky(
     .select(STICKY_COLUMNS)
     .single();
 
-  if (data)
-    return { status: "saved", sticky: stickyDto(data as unknown as StickyRow, profile.id, "You") };
+  if (data) {
+    const row = data as unknown as StickyRow;
+    // Only a fresh save notifies; a retried save with the same client key does not ask twice.
+    if (assigneeId)
+      await notifyStickyAssigned(db, profile, noticeFor(input.engagementId, row), assigneeId);
+    return { status: "saved", sticky: stickyDto(row, profile.id, "You", null, await namesFor(db, [row])) };
+  }
   if (error?.code === "23505") {
     const existing = (
       await db
@@ -243,17 +317,22 @@ export async function createSticky(
         .eq("client_key", input.clientKey)
         .maybeSingle()
     ).data;
-    if (existing)
+    if (existing) {
+      const row = existing as unknown as StickyRow;
       return {
         status: "saved",
-        sticky: stickyDto(existing as unknown as StickyRow, profile.id, "You"),
+        sticky: stickyDto(row, profile.id, "You", null, await namesFor(db, [row])),
       };
+    }
   }
   if (error?.code === "42501") return { status: "forbidden" };
   return { status: "validation_error", message: "That sticky could not be saved." };
 }
 
-/** What the author can change: the words, the colour, who sees it, and where it sits on its spot. */
+/**
+ * What the author can change: the words, the colour, who sees it, where it sits on its spot, and (S4) who
+ * it asks to act. Choosing someone new reopens a done sticky, since it now asks something of them.
+ */
 export type EditStickyInput = {
   id: string;
   expectedVersion: number;
@@ -262,6 +341,8 @@ export type EditStickyInput = {
   visibility?: AnnotationVisibility | undefined;
   posX?: number | undefined;
   posY?: number | undefined;
+  /** S4: undefined leaves it as it is; null clears it. */
+  assigneeProfileId?: string | null | undefined;
 };
 
 export async function editSticky(
@@ -269,9 +350,33 @@ export async function editSticky(
   profile: ResolvedProfile,
   input: EditStickyInput,
 ): Promise<StickyMutationResult> {
-  profile = await seatForSticky(db, input.id, profile);
+  const seat = await stickySeat(db, input.id, profile);
+  profile = seat.profile;
   if (!input.id || !Number.isInteger(input.expectedVersion))
     return { status: "validation_error", message: "That sticky could not be read." };
+  // S4: a change of assignee, when the caller asked for one and it differs from what is saved.
+  let assigneeChange: { to: string | null } | null = null;
+  if (input.assigneeProfileId !== undefined) {
+    const before = (
+      await db
+        .from("workboard_annotations")
+        .select("assignee_profile_id, visibility")
+        .eq("id", input.id)
+        .eq("kind", "sticky")
+        .eq("author_profile_id", profile.id)
+        .maybeSingle()
+    ).data as { assignee_profile_id: string | null; visibility: string | null } | null;
+    if (!before) return { status: "conflict" };
+    const next = input.assigneeProfileId || null;
+    if (next !== before.assignee_profile_id) {
+      const visibility = input.visibility ?? before.visibility;
+      if (next && visibility === "just_me")
+        return { status: "validation_error", message: STICKY_COPY.justMeUnassigned };
+      if (next && (!seat.engagementId || !(await onBoard(db, seat.engagementId, profile.id, next))))
+        return { status: "validation_error", message: STICKY_COPY.notOnBoard };
+      assigneeChange = { to: next };
+    }
+  }
   const patch: Database["public"]["Tables"]["workboard_annotations"]["Update"] = {
     updated_by: profile.id,
   };
@@ -292,6 +397,12 @@ export async function editSticky(
   }
   if (input.posX !== undefined) patch.pos_x = clampUnit(input.posX);
   if (input.posY !== undefined) patch.pos_y = clampUnit(input.posY);
+  // Going just-me already cleared the assignee above; otherwise a new assignee reopens the sticky.
+  if (assigneeChange && patch.visibility !== "just_me") {
+    patch.assignee_profile_id = assigneeChange.to;
+    patch.done_at = null;
+    patch.done_by = null;
+  }
 
   const { data, error } = await db
     .from("workboard_annotations")
@@ -303,10 +414,70 @@ export async function editSticky(
     .is("archived_at", null)
     .select(STICKY_COLUMNS)
     .maybeSingle();
-  if (data)
-    return { status: "saved", sticky: stickyDto(data as unknown as StickyRow, profile.id, "You") };
+  if (data) {
+    const row = data as unknown as StickyRow;
+    if (assigneeChange?.to && row.assignee_profile_id === assigneeChange.to && seat.engagementId)
+      await notifyStickyAssigned(db, profile, noticeFor(seat.engagementId, row), assigneeChange.to);
+    return { status: "saved", sticky: stickyDto(row, profile.id, "You", null, await namesFor(db, [row])) };
+  }
   if (error?.code === "42501") return { status: "forbidden" };
   return { status: "conflict" };
+}
+
+/** What a notification needs to name the spot. */
+function noticeFor(engagementId: string, row: StickyRow): StickyNotice {
+  return {
+    engagementId,
+    stickyId: row.id,
+    workItemId: row.work_item_id ?? "",
+    anchor: anchorFromRow(row),
+  };
+}
+
+/**
+ * S4: mark a sticky done, or reopen it. The assignee does this, and the author can always close their own.
+ * Runs through set_sticky_done, which checks who is calling; the database guard checks again that nothing
+ * but done moves. Marking done tells the author (when someone else did it) and the board, once.
+ */
+export async function setStickyDone(
+  db: Db,
+  profile: ResolvedProfile,
+  id: string,
+  done: boolean,
+  expectedVersion: number,
+): Promise<StickyMutationResult> {
+  const seat = await stickySeat(db, id, profile);
+  profile = seat.profile;
+  if (!id || !Number.isInteger(expectedVersion))
+    return { status: "validation_error", message: "That sticky could not be read." };
+  const { data: changed, error } = await db.rpc("set_sticky_done", {
+    p_annotation: id,
+    p_done: done,
+    p_expected_version: expectedVersion,
+  });
+  if (error?.code === "42501") return { status: "forbidden" };
+  if (error || !Array.isArray(changed) || changed.length === 0) return { status: "conflict" };
+  const { data } = await db
+    .from("workboard_annotations")
+    .select(STICKY_COLUMNS)
+    .eq("id", id)
+    .eq("kind", "sticky")
+    .maybeSingle();
+  if (!data) return { status: "conflict" };
+  const row = data as unknown as StickyRow;
+  if (done && seat.engagementId)
+    await notifyStickyDone(
+      db,
+      profile,
+      noticeFor(seat.engagementId, row),
+      row.author_profile_id,
+      row.assignee_profile_id !== null,
+    );
+  const names = await namesFor(db, [row]);
+  return {
+    status: "saved",
+    sticky: stickyDto(row, profile.id, nameFor(row.author_profile_id, profile.id, names) ?? "A colleague", null, names),
+  };
 }
 
 /** Removing a sticky archives it, as with comments; only its author can. */

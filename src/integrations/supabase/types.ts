@@ -6708,6 +6708,15 @@ export type Database = {
         Args: { p_access: string; p_engagement: string; p_link: string }
         Returns: string
       }
+      set_sticky_done: {
+        Args: { p_annotation: string; p_done: boolean; p_expected_version: number }
+        Returns: {
+          done_at: string | null
+          done_by: string | null
+          id: string
+          version: number
+        }[]
+      }
       set_member_conversation_access: {
         Args: { p_access: string; p_engagement: string; p_profile: string }
         Returns: string
