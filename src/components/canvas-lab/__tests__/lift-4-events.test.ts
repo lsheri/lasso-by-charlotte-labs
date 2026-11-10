@@ -42,10 +42,11 @@ describe("LIFT L4: the two lift events carry the kind of work and nothing else",
       dims: { kind: "deck" },
     });
   });
-  it("the board sends them on a lift and on an expand, and never a duration", () => {
+  // T2a: Expand is gone, so the board sends only the lift. The expanded event stays on the allowlist for history.
+  it("the board sends the lift, never an expand, and never a duration", () => {
     const page = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
-    expect(page).toContain("noteWorkboardWorkLifted(orgId, liftKindOf(cardItem?.type));");
-    expect(page).toContain("noteWorkboardWorkLiftExpanded(orgId, liftKindOf(liftedItem.type));");
+    expect(page).toContain("noteWorkboardWorkLifted(orgId, liftKindOf(item?.type));");
+    expect(page).not.toContain("noteWorkboardWorkLiftExpanded(");
     expect(page).not.toMatch(/work_lift\w*[^\n]*(duration|seconds|ms)\b/);
   });
 });

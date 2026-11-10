@@ -2,6 +2,7 @@
 import { readFileSync } from "node:fs";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+vi.mock("@/hooks/use-vendor-display", () => ({ useVendorVisible: () => true }));
 
 vi.mock("@/lib/telemetry", () => ({ logEvent: vi.fn() }));
 
@@ -125,20 +126,18 @@ describe("LIFT reading size", () => {
 
 function renderLift(props: Partial<Parameters<typeof LiftedWork>[0]> = {}) {
   const onClose = vi.fn();
-  const onExpand = vi.fn();
   const utils = render(
     <LiftedWork
       title="Series A brief"
       kind="document"
       origin={null}
       onClose={onClose}
-      onExpand={onExpand}
       {...props}
     >
       {(width) => <p data-testid="lift-content">width {width}</p>}
     </LiftedWork>,
   );
-  return { onClose, onExpand, ...utils };
+  return { onClose, ...utils };
 }
 
 describe("LIFT the view", () => {
@@ -170,15 +169,10 @@ describe("LIFT the view", () => {
     fireEvent.pointerDown(screen.getByTestId("lift-backdrop"), { button: 0 });
     expect(onClose).toHaveBeenCalledTimes(1);
   });
-  it("Expand hands over the view's box for the full reader to grow from", () => {
-    const { onExpand, onClose } = renderLift();
-    fireEvent.click(screen.getByRole("button", { name: LIFT_COPY.expand }));
-    expect(onExpand).toHaveBeenCalledTimes(1);
-    expect(onExpand.mock.calls[0]?.[0]).toMatchObject({
-      width: expect.any(Number),
-      height: expect.any(Number),
-    });
-    expect(onClose).not.toHaveBeenCalled();
+  // T2a (one view, 9 Nov): there is no fuller view to expand into.
+  it("has no Expand button", () => {
+    renderLift();
+    expect(screen.queryByRole("button", { name: /full view|expand/i })).toBeNull();
   });
   it("grown from a card, it shrinks back into that card before it closes", () => {
     vi.useFakeTimers();
@@ -208,7 +202,7 @@ describe("LIFT the view", () => {
         onWheel={outside.wheel}
         onKeyDown={outside.keyDown}
       >
-        <LiftedWork title="t" kind="chat" origin={null} onClose={() => undefined} onExpand={() => undefined}>
+        <LiftedWork title="t" kind="chat" origin={null} onClose={() => undefined}>
           {() => <p data-testid="inside">x</p>}
         </LiftedWork>
       </div>,
@@ -224,7 +218,7 @@ describe("LIFT the view", () => {
     expect(outside.keyDown).not.toHaveBeenCalled();
   });
   it("a header drag moves it and a corner drag resizes it, and neither calls anything outside", () => {
-    const { onClose, onExpand } = renderLift();
+    const { onClose } = renderLift();
     const panel = screen.getByTestId("lift-panel");
     const before = { left: parseFloat(panel.style.left), width: parseFloat(panel.style.width) };
     const head = panel.querySelector("header")!;
@@ -238,7 +232,6 @@ describe("LIFT the view", () => {
     fireEvent.pointerUp(se, { pointerId: 2 });
     expect(parseFloat(panel.style.width)).toBe(Math.max(LIFT_MIN.width, before.width - 100));
     expect(onClose).not.toHaveBeenCalled();
-    expect(onExpand).not.toHaveBeenCalled();
   });
 });
 
@@ -348,10 +341,7 @@ describe("LIFT on the board page (nothing renders that page in tests, so its wir
       "useEffect(() => { if (lifted && (!liftedNode || (!liftedItem && !liftedPicture))) setLifted(null); }, [lifted, liftedNode, liftedItem, liftedPicture]);",
     );
   });
-  it("Expand opens the full reader from the view's box, and lifting writes nothing to the board", () => {
-    expect(page).toContain(
-      "openNode(liftedNode, new DOMRect(rect.left, rect.top, rect.width, rect.height))",
-    );
+  it("lifting writes nothing to the board", () => {
     const liftLine = page.slice(page.indexOf("<LiftedWork "), page.indexOf("</LiftedWork>"));
     expect(liftLine).not.toMatch(
       /persistNodePatch|persistFramePatch|setNodes|setFrames|record\(/,

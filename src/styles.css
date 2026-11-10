@@ -8636,6 +8636,20 @@ footer[data-compact] [data-ask-composer-pad] { padding: 8px 8px 8px 14px; }
 .lift-head { display: flex; flex-shrink: 0; align-items: center; gap: 6px; height: 44px; padding: 0 8px 0 14px; border-bottom: 1px solid var(--nb-rule); cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
 .lift-head:active { cursor: grabbing; }
 .lift-kind { flex-shrink: 0; color: color-mix(in oklab, var(--nb-graphite) 72%, transparent); }
+/* T2a: the tool's mark and colour say where the work lives; a vendor-neutral workspace keeps the plain rule. */
+.lift-panel:has(.lift-brand) { border-top: 3px solid var(--lift-brand, var(--nb-rule)); }
+.lift-brand { display: inline-grid; flex-shrink: 0; place-items: center; width: 20px; height: 20px; }
+.lift-id { display: flex; flex: 1; flex-direction: column; min-width: 0; margin-left: 4px; }
+.lift-id .lift-title { flex: none; line-height: 1.2; }
+.lift-meta { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font: 400 11.5px/1.3 var(--font-sans); color: color-mix(in oklab, var(--nb-graphite) 66%, transparent); }
+.lift-open { display: inline-flex; flex-shrink: 0; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border: 1px solid var(--nb-rule); border-radius: var(--radius-control); font: 500 12px/1 var(--font-sans); color: var(--nb-graphite); text-decoration: none; white-space: nowrap; }
+.lift-open:hover { background: color-mix(in oklab, var(--nb-ink) 6%, transparent); }
+.lift-open:focus-visible { outline: 2px solid var(--nb-graphite); outline-offset: 1px; }
+.lift-menu-wrap { position: relative; display: inline-flex; }
+.lift-menu { position: absolute; top: 36px; right: 0; z-index: 2; display: flex; flex-direction: column; min-width: 220px; padding: 6px; border: 1px solid var(--nb-rule); border-radius: 10px; background: var(--nb-paper); box-shadow: 0 16px 40px color-mix(in oklab, var(--nb-ink) 16%, transparent); cursor: default; }
+.lift-menu-item { padding: 8px 10px; border-radius: 7px; text-align: left; font: 400 13px/1.3 var(--font-sans); color: var(--nb-graphite); cursor: pointer; }
+.lift-menu-item:hover, .lift-menu-item:focus-visible { background: color-mix(in oklab, var(--nb-ink) 6%, transparent); outline: none; }
+@media (max-width: 640px) { .lift-open span { display: none; } }
 .lift-title { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font: 600 14px/1.2 var(--font-sans); color: var(--nb-graphite); }
 .lift-icon { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: var(--radius-control); color: var(--nb-graphite); cursor: pointer; }
 .lift-icon:hover { background: color-mix(in oklab, var(--nb-ink) 7%, transparent); }

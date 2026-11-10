@@ -171,3 +171,9 @@ export function liftFlip(from: LiftRect, to: LiftRect): string {
   const r = (n: number) => Math.round(n * 1000) / 1000;
   return `translate(${r(from.left - to.left)}px, ${r(from.top - to.top)}px) scale(${r(sx)}, ${r(sy)})`;
 }
+
+/** T2a: the lifted view's More menu, worded as the card menu words the same actions. */
+export const LIFT_MENU_COPY = {
+  ledger: "Open the decisions ledger",
+  branch: "Branch",
+} as const;
