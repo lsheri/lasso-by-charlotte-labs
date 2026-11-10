@@ -424,6 +424,21 @@ export async function editSticky(
   return { status: "conflict" };
 }
 
+/** The caller's own "left you a sticky" row, marked acted once the sticky is done. Best effort. */
+async function settleAssignedNotice(db: Db, stickyId: string, profileId: string): Promise<void> {
+  try {
+    const { data } = await db
+      .from("notifications")
+      .select("id")
+      .eq("group_key", `sticky:${stickyId}:assigned:${profileId}`)
+      .is("acted_at", null);
+    const ids = ((data ?? []) as { id: string }[]).map((row) => row.id);
+    if (ids.length) await db.rpc("mark_notifications", { p_ids: ids, p_acted: true });
+  } catch {
+    // The sticky is done either way.
+  }
+}
+
 /** What a notification needs to name the spot. */
 function noticeFor(engagementId: string, row: StickyRow): StickyNotice {
   return {
@@ -438,17 +453,28 @@ function noticeFor(engagementId: string, row: StickyRow): StickyNotice {
  * S4: mark a sticky done, or reopen it. The assignee does this, and the author can always close their own.
  * Runs through set_sticky_done, which checks who is calling; the database guard checks again that nothing
  * but done moves. Marking done tells the author (when someone else did it) and the board, once.
+ *
+ * S4b-2: from the inbox there is no version in hand (null), so the current one is read first. Marking done
+ * also settles the caller's own "left you a sticky" notification, wherever the tick happened.
  */
 export async function setStickyDone(
   db: Db,
   profile: ResolvedProfile,
   id: string,
   done: boolean,
-  expectedVersion: number,
+  expectedVersion: number | null,
 ): Promise<StickyMutationResult> {
   const seat = await stickySeat(db, id, profile);
   profile = seat.profile;
-  if (!id || !Number.isInteger(expectedVersion))
+  if (!id) return { status: "validation_error", message: "That sticky could not be read." };
+  if (expectedVersion === null) {
+    const current = (
+      await db.from("workboard_annotations").select("version").eq("id", id).eq("kind", "sticky").maybeSingle()
+    ).data as { version: number } | null;
+    if (!current) return { status: "conflict" };
+    expectedVersion = current.version;
+  }
+  if (!Number.isInteger(expectedVersion))
     return { status: "validation_error", message: "That sticky could not be read." };
   const { data: changed, error } = await db.rpc("set_sticky_done", {
     p_annotation: id,
@@ -465,6 +491,7 @@ export async function setStickyDone(
     .maybeSingle();
   if (!data) return { status: "conflict" };
   const row = data as unknown as StickyRow;
+  if (done && row.assignee_profile_id === profile.id) await settleAssignedNotice(db, id, profile.id);
   if (done && seat.engagementId)
     await notifyStickyDone(
       db,
