@@ -99,3 +99,29 @@ export function placeIn(
     top: rect.top - box.top + content.scrollTop + posY * rect.height,
   };
 }
+
+/**
+ * S2c: a paged file (a PDF deck) shows one page at a time. A page sticky whose page is in the file but not
+ * on screen is on another page, not gone.
+ */
+export function pagedHost(root: HTMLElement): { el: HTMLElement; count: number } | null {
+  const el = root.matches("[data-anchor-pages]")
+    ? root
+    : root.querySelector<HTMLElement>("[data-anchor-pages]");
+  const count = Number(el?.getAttribute("data-anchor-pages"));
+  return el && Number.isInteger(count) && count > 0 ? { el, count } : null;
+}
+
+export function onAnotherPage(root: HTMLElement, anchor: StickyAnchor): boolean {
+  if (anchor.kind !== "page") return false;
+  const host = pagedHost(root);
+  return Boolean(host && anchor.pageNo <= host.count && !anchorElement(root, anchor));
+}
+
+/** Ask a paged file to show a page. */
+export function showPage(root: HTMLElement, pageNo: number): boolean {
+  const host = pagedHost(root);
+  if (!host || pageNo > host.count) return false;
+  host.el.dispatchEvent(new CustomEvent("lasso-go-page", { detail: pageNo }));
+  return true;
+}

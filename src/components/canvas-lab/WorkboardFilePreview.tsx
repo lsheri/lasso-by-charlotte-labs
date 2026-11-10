@@ -12,6 +12,19 @@ function PdfPages({ url, onFailure, onPageChange }: { url: string; onFailure: ()
   const [ready, setReady] = useState(false);
   const [pageNumber, setPageNumber] = useState(1);
   const [pageCount, setPageCount] = useState(0);
+  const pagesRef = useRef<HTMLDivElement | null>(null);
+
+  // S2c: a sticky on another page asks for its page (StickiesPanel), like the page arrows do.
+  useEffect(() => {
+    const el = pagesRef.current;
+    if (!el) return;
+    const go = (event: Event) => {
+      const page = Number((event as CustomEvent<number>).detail);
+      if (Number.isInteger(page) && page >= 1) setPageNumber(page);
+    };
+    el.addEventListener("lasso-go-page", go);
+    return () => el.removeEventListener("lasso-go-page", go);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -46,7 +59,8 @@ function PdfPages({ url, onFailure, onPageChange }: { url: string; onFailure: ()
     };
   }, [onFailure, pageNumber, url]);
 
-  return <div className="canvas-lab-document-page"><canvas ref={canvasRef} data-ready={ready} className="canvas-lab-file-preview-canvas" />{pageCount > 0 ? <PageControls page={pageNumber} count={pageCount} onPage={(page) => { setPageNumber(page); onPageChange?.(); }} /> : null}</div>;
+  // S2c: the shown page is a spot for stickies; the count tells a sticky on another page apart from one whose page is gone.
+  return <div ref={pagesRef} className="canvas-lab-document-page" data-anchor-pages={pageCount || undefined}><canvas ref={canvasRef} data-ready={ready} data-anchor-page={pageNumber} className="canvas-lab-file-preview-canvas" />{pageCount > 0 ? <PageControls page={pageNumber} count={pageCount} onPage={(page) => { setPageNumber(page); onPageChange?.(); }} /> : null}</div>;
 }
 
 function PageControls({ page, count, onPage }: { page: number; count: number; onPage: (page: number) => void }) {

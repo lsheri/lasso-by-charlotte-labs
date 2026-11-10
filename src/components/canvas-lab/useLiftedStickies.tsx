@@ -16,7 +16,7 @@ import {
 } from "@/components/canvas-lab/canvas-lab-telemetry";
 import { useStickies } from "@/hooks/use-stickies";
 import { liftKindOf } from "@/lib/lift-view";
-import { anchorElement } from "@/lib/sticky-anchors";
+import { anchorElement, showPage } from "@/lib/sticky-anchors";
 import type { StickyDto } from "@/lib/stickies-shared";
 import type { WorkItemRow } from "@/lib/work-types";
 
@@ -80,6 +80,8 @@ export function useLiftedStickies({
     (sticky: StickyDto) => {
       const content = stickyContent(stickyScroller(body));
       const el = content ? anchorElement(content, sticky.anchor) : null;
+      // On a paged file, a sticky on another page turns the file to its page first.
+      if (!el && content && sticky.anchor.kind === "page") showPage(content, sticky.anchor.pageNo);
       el?.scrollIntoView({ block: "center", behavior: "smooth" });
       setOpen(sticky.id);
       noteWorkboardStickyOpened(orgId, "list");
