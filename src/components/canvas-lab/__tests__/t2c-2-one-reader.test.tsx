@@ -120,7 +120,8 @@ describe("T2c-2 on the board (wiring pinned in source)", () => {
     );
   });
   it("one view for a card whether its work has landed or not, so it never re-mounts or replays the grow (review 2)", () => {
-    expect(page).toContain("{(bodyWidth) => !liftedItem ? <LiftedNoteBody");
+    // S2b: the stickies layer rides along in the same body.
+    expect(page).toContain("{(bodyWidth) => <>{!liftedItem ? <LiftedNoteBody");
     expect(page).not.toContain("{liftedNode && !liftedItem && !liftedPicture && lifted ?");
   });
   it("closing a pointer's chat returns focus to the ledger, and the board under the ledger takes no keys (review 1, 3)", () => {
