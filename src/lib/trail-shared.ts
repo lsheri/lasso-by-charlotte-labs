@@ -31,9 +31,14 @@ export type TrailEntry = {
   note: string | null;
 };
 
+/** A decision whose sources include this piece. Its words and whether it is settled; never who made it. */
+export type TrailDecision = { id: string; text: string; settled: boolean };
+
 export type Trail = {
   madeFrom: TrailEntry[];
   usedIn: TrailEntry[];
+  /** T3: decisions that cite this piece. Discarded decisions never appear. */
+  decisions: TrailDecision[];
   /** Which direction this kind of work opens on: a deliverable on what made it, anything else on where it went. */
   leadsWith: "made" | "used";
 };
@@ -107,10 +112,18 @@ export function buildTrail(input: TrailInput): Trail {
       (a, b) => HOW_ORDER[a.how] - HOW_ORDER[b.how] || (a.item.date ?? "").localeCompare(b.item.date ?? ""),
     );
 
-  return { madeFrom: ordered(made), usedIn: ordered(used), leadsWith: trailLeadsWith(input.itemType) };
+  return { madeFrom: ordered(made), usedIn: ordered(used), decisions: [], leadsWith: trailLeadsWith(input.itemType) };
 }
 
 /** Board arrows join nodes; the trail joins work. Arrows to anything that is not a work card drop out. */
+/** T3: decisions citing the piece, settled first, discarded never. */
+export function trailDecisions(rows: { id: string; call_text: string; status: string }[]): TrailDecision[] {
+  return rows
+    .filter((row) => row.status !== "discarded" && row.call_text.trim())
+    .map((row) => ({ id: row.id, text: row.call_text.trim(), settled: row.status === "confirmed" }))
+    .sort((a, b) => Number(b.settled) - Number(a.settled));
+}
+
 export function boardLinksToWork(
   nodes: { id: string; work_item_id: string | null }[],
   links: { from_node_id: string | null; to_node_id: string | null; relation: string | null }[],

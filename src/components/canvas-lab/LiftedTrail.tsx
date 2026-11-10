@@ -17,6 +17,8 @@ export const TRAIL_COPY = {
   confirmed: "Confirmed link",
   drawn: "Linked on the board",
   offBoard: "Not on this board",
+  decisions: "Decisions that cite this",
+  unsettled: "Not settled yet",
   loading: "Reading the trail",
   failed: "The trail could not be read. Close and open the work to try again.",
   rule: "Only links Lasso saw happen or a person confirmed.",
@@ -120,6 +122,19 @@ export function LiftedTrail({
           {made}
         </>
       )}
+      {data.decisions.length > 0 ? (
+        <section className="lift-trail-section" data-testid="trail-decisions">
+          <h3 className="lift-trail-heading">{TRAIL_COPY.decisions}</h3>
+          <ul className="lift-trail-list">
+            {data.decisions.map((decision) => (
+              <li key={decision.id} className="lift-trail-decision">
+                <span className="lift-trail-title lift-trail-wrap">{decision.text}</span>
+                {decision.settled ? null : <span className="lift-trail-how">{TRAIL_COPY.unsettled}</span>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
       {canFindSources ? (
         <TrailSources
           workItemId={workItemId}
