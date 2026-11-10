@@ -157,7 +157,8 @@ export function liftKindOf(type: string | null | undefined): LiftKind {
 export const LIFT_AUTHOR_WIDTH = 480;
 export function liftZoom(bodyWidth: number): number {
   const fit = (bodyWidth - 48) / LIFT_AUTHOR_WIDTH;
-  return Math.round(Math.min(1.5, Math.max(1, fit)) * 100) / 100;
+  // T4: down to 0.75, so a chat still fits beside an open Trail panel instead of being cut off.
+  return Math.round(Math.min(1.5, Math.max(0.75, fit)) * 100) / 100;
 }
 
 /**

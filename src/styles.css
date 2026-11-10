@@ -8679,6 +8679,13 @@ button.lift-trail-item:hover, button.lift-trail-item:focus-visible { background:
 .lift-trail-how { font: 400 11.5px/1.35 var(--font-sans); color: color-mix(in oklab, var(--nb-graphite) 62%, transparent); }
 .lift-trail-empty, .lift-trail-note { margin: 0; padding: 4px 6px; font: 400 13px/1.4 var(--font-sans); color: color-mix(in oklab, var(--nb-graphite) 62%, transparent); }
 .lift-trail-note { padding: 16px; }
+.lift-trail-sources { margin-top: 18px; }
+.lift-trail-suggestion { display: flex; flex-direction: column; gap: 2px; margin-bottom: 8px; padding: 9px 10px; border-radius: 8px; background: color-mix(in oklab, var(--nb-green) 9%, transparent); }
+.lift-trail-actions { display: flex; gap: 6px; margin-top: 6px; }
+.lift-trail-accept, .lift-trail-dismiss, .lift-trail-find { padding: 4px 10px; border: 1px solid var(--nb-rule); border-radius: var(--radius-control); background: var(--nb-paper); font: 500 12px/1.3 var(--font-sans); color: var(--nb-graphite); cursor: pointer; }
+.lift-trail-accept { border-color: var(--nb-ink); background: var(--nb-ink); color: var(--nb-paper); }
+.lift-trail-find { width: 100%; padding: 7px 10px; }
+.lift-trail-accept:disabled, .lift-trail-dismiss:disabled, .lift-trail-find:disabled { cursor: default; opacity: 0.6; }
 .lift-trail-rule { margin: 20px 6px 0; font: 400 11.5px/1.4 var(--font-sans); color: color-mix(in oklab, var(--nb-graphite) 55%, transparent); }
 .lift-real { margin: 0 auto; --neutral-60: var(--surface-sunk); }
 .lift-file { position: relative; height: 100%; min-height: 320px; }

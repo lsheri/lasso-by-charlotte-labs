@@ -12,6 +12,7 @@ const trailResult: { value: Trail } = { value: { madeFrom: [], usedIn: [], leads
 vi.mock("@/hooks/use-vendor-display", () => ({ useVendorVisible: () => vendor.visible }));
 vi.mock("@/lib/telemetry", () => ({ logEvent: vi.fn() }));
 vi.mock("@/lib/trail.functions", () => ({ getTrail: vi.fn() }));
+vi.mock("@/lib/lineage.functions", () => ({ getDeliverableEvidence: vi.fn(), draftLineage: vi.fn(), reviewLink: vi.fn() }));
 vi.mock("@tanstack/react-start", () => ({ useServerFn: () => async () => trailResult.value }));
 vi.mock("@/lib/workboard-file-sign", () => ({ signWorkboardFileUrl: vi.fn(() => new Promise(() => undefined)) }));
 

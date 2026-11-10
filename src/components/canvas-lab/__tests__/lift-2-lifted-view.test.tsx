@@ -120,7 +120,8 @@ describe("LIFT reading size", () => {
   it("enlarges the 480 px preview to fill the view, never past 1.5, never shrinking it", () => {
     expect(liftZoom(760)).toBe(1.48);
     expect(liftZoom(2000)).toBe(1.5);
-    expect(liftZoom(320)).toBe(1);
+    expect(liftZoom(320)).toBe(0.75);
+    expect(liftZoom(420)).toBe(0.78);
   });
 });
 
