@@ -71,6 +71,8 @@ describe("MN1 mention storage", () => {
       board_activity: true,
       support_request: true,
       mention_received: true,
+      sticky_assigned: true,
+      sticky_done: true,
     } satisfies Record<NotificationKind, true>;
     expectTypeOf<keyof typeof kinds>().toEqualTypeOf<NotificationKind>();
     expect(NOTIFICATION_KINDS).toEqual(Object.keys(kinds));

@@ -8,7 +8,9 @@ export type NotificationKind =
   | "seat_over_count"
   | "board_activity"
   | "support_request"
-  | "mention_received";
+  | "mention_received"
+  | "sticky_assigned"
+  | "sticky_done";
 
 export const NOTIFICATION_KINDS: readonly NotificationKind[] = [
   "invite_needs_approval",
@@ -19,6 +21,8 @@ export const NOTIFICATION_KINDS: readonly NotificationKind[] = [
   "board_activity",
   "support_request",
   "mention_received",
+  "sticky_assigned",
+  "sticky_done",
 ];
 
 export type NotificationRow = {
@@ -56,6 +60,14 @@ export const NOTIFICATION_COPY = {
   shareSentence: (by: string, board: string) => `${by} shared ${board} with you.`,
   supportRequest: "Someone asked for support access to this workspace.",
   mentionSentence: (by: string, board: string) => `${by} mentioned you on ${board}.`,
+  // S4: a sticky names the spot and the work, never a tally of anyone.
+  stickyAssigned: (by: string, work: string, place: string) => `${by} left you a sticky on ${work}, ${place}.`,
+  stickyDone: (by: string, work: string, place: string) => `${by} marked your sticky on ${work}, ${place} done.`,
+  stickiesDone: (board: string, count: number) =>
+    `${board}: ${count} ${count === 1 ? "sticky" : "stickies"} done.`,
+  openSticky: "Open",
+  markDone: "Mark done",
+  markedDone: "Done.",
 } as const;
 
 function text(value: unknown, fallback = ""): string {
@@ -105,8 +117,13 @@ export function notificationSentence(row: { kind: string; payload: Record<string
       return `${num(p["filled"]) ?? 0} people on ${num(p["seats"]) ?? 0} seats. Add seats in Settings when you are ready.`;
     case "board_activity": {
       const count = num(p["count"]) ?? 1;
+      if (p["what"] === "stickies_done") return NOTIFICATION_COPY.stickiesDone(board, count);
       return `${board}: ${count} new ${count === 1 ? "card" : "cards"}.`;
     }
+    case "sticky_assigned":
+      return NOTIFICATION_COPY.stickyAssigned(text(p["by"], "Someone"), text(p["work"], "a piece of work"), text(p["place"], "on this piece"));
+    case "sticky_done":
+      return NOTIFICATION_COPY.stickyDone(text(p["by"], "Someone"), text(p["work"], "a piece of work"), text(p["place"], "on this piece"));
     default:
       return "";
   }

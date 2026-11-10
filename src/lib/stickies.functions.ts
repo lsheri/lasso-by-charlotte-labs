@@ -79,6 +79,7 @@ export const createStickyFn = createServerFn({ method: "POST" })
       body: string;
       visibility: AnnotationVisibility;
       client_key: string;
+      assignee_profile_id?: string | null;
       profile_id?: string;
     }) => ({
       engagement_id: str(input?.engagement_id),
@@ -90,6 +91,7 @@ export const createStickyFn = createServerFn({ method: "POST" })
       body: str(input?.body),
       visibility: vis(input?.visibility) ?? "engagement",
       client_key: str(input?.client_key),
+      assignee_profile_id: str(input?.assignee_profile_id) || null,
       profile_id: str(input?.profile_id) || undefined,
     }),
   )
@@ -110,6 +112,7 @@ export const createStickyFn = createServerFn({ method: "POST" })
       body: data.body,
       visibility: data.visibility,
       clientKey: data.client_key,
+      assigneeProfileId: data.assignee_profile_id,
     });
   });
 
@@ -124,6 +127,7 @@ export const editStickyFn = createServerFn({ method: "POST" })
       visibility?: AnnotationVisibility;
       pos_x?: number;
       pos_y?: number;
+      assignee_profile_id?: string | null;
       profile_id?: string;
     }) => ({
       id: str(input?.id),
@@ -133,6 +137,9 @@ export const editStickyFn = createServerFn({ method: "POST" })
       visibility: vis(input?.visibility),
       pos_x: optNum(input?.pos_x),
       pos_y: optNum(input?.pos_y),
+      // Absent leaves the assignee alone; null or "" clears it.
+      assignee_profile_id:
+        input && "assignee_profile_id" in input ? str(input.assignee_profile_id) || null : undefined,
       profile_id: str(input?.profile_id) || undefined,
     }),
   )
@@ -149,7 +156,27 @@ export const editStickyFn = createServerFn({ method: "POST" })
       visibility: data.visibility,
       posX: data.pos_x,
       posY: data.pos_y,
+      assigneeProfileId: data.assignee_profile_id,
     });
+  });
+
+/** S4: the assignee (or the author) marks a sticky done, or reopens it. */
+export const setStickyDoneFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: { id: string; done: boolean; expected_version: number; profile_id?: string }) => ({
+      id: str(input?.id),
+      done: input?.done === true,
+      expected_version: num(input?.expected_version),
+      profile_id: str(input?.profile_id) || undefined,
+    }),
+  )
+  .handler(async ({ data, context }): Promise<StickyMutationResult> => {
+    const { supabase, userId } = context;
+    const profile = await resolveProfile(supabase, userId, data.profile_id);
+    if (!profile) return { status: "forbidden" };
+    const { setStickyDone } = await import("@/lib/stickies.server");
+    return setStickyDone(supabase, profile, data.id, data.done, data.expected_version);
   });
 
 export const archiveStickyFn = createServerFn({ method: "POST" })
