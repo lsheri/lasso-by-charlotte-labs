@@ -225,12 +225,16 @@ describe("the workboard allowlist", () => {
           "assigned",
           "visibility",
         ],
+        "workboard.sticky_done": [
+          "via",
+        ],
         "workboard.sticky_opened": [
           "from",
         ],
         "workboard.sticky_removed": [
           "anchor_kind",
         ],
+        "workboard.sticky_reopened": [],
         "workboard.structure_toggled": [
           "state",
         ],
@@ -391,7 +395,7 @@ describe("the workboard allowlist", () => {
       expect(guardWorkboardEvent(name, dims as never)).toEqual({ keep: true, dims });
     }
     // LIFT (9 Nov): work_lifted and work_lift_expanded. T2b: work_trail_opened. S2: three sticky events.
-    expect(Object.keys(WORKBOARD_EVENT_DIMS)).toHaveLength(59);
+    expect(Object.keys(WORKBOARD_EVENT_DIMS)).toHaveLength(61);
   });
 
   it.each(["in", "out", "reset"] as const)("reports zoom %s with only direction and method", (direction) => {

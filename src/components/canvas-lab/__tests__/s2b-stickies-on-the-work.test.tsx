@@ -160,6 +160,8 @@ describe("S2b where stickies are drawn", () => {
       "Source the 24",
       "blue",
       "just_me",
+      // S4b: a just-me sticky asks no one.
+      null,
     );
   });
 
@@ -301,7 +303,8 @@ describe("S2b on the board (wiring pinned in source)", () => {
   it("a sticky is saved on the piece it was dropped on, and counted without naming anyone", () => {
     expect(hook).toContain("workItemId: pieceId,");
     expect(hook).toContain("noteWorkboardStickyCreated(orgId, {");
-    expect(hook).toContain("assigned: false,");
+    // S4b: assigned is true when a board sticky asks someone.
+    expect(hook).toContain('assigned: visibility !== "just_me" && !!assigneeId,');
   });
   it("the drag listens in the capture phase, because the view stops presses at its root", () => {
     expect(pad).toContain('window.addEventListener("pointerup", up, true);');
