@@ -51,17 +51,29 @@ export function useLiftedStickies({
     draft: StickyDraft | null;
     openId: string | null;
   }>({ for: null, draft: null, openId: null });
+  // Moving to another piece starts clean, and coming back does not bring an old draft back.
+  if (state.for !== workItemId) setState({ for: workItemId, draft: null, openId: null });
   const current = state.for === workItemId ? state : { for: workItemId, draft: null, openId: null };
   const workKind = item ? liftKindOf(item.type) : "other";
 
+  // One sticky at a time: writing one closes any open sticky, and opening one drops an unsaved draft.
   const setDraft = useCallback(
-    (draft: StickyDraft | null) => setState({ for: workItemId, draft, openId: null }),
+    (draft: StickyDraft | null) =>
+      setState({
+        for: workItemId,
+        draft: draft ? { ...draft, clientKey: draft.clientKey ?? crypto.randomUUID() } : null,
+        openId: null,
+      }),
     [workItemId],
   );
   const setOpen = useCallback(
-    (openId: string | null) =>
-      setState((s) => ({ for: workItemId, draft: s.for === workItemId ? s.draft : null, openId })),
+    (openId: string | null) => setState({ for: workItemId, draft: null, openId }),
     [workItemId],
+  );
+  /** A save that returns after the view moved on clears only its own piece's draft, never another's. */
+  const clearDraftFor = useCallback(
+    (pieceId: string) => setState((s) => (s.for === pieceId ? { ...s, draft: null } : s)),
+    [],
   );
 
   const go = useCallback(
@@ -103,7 +115,7 @@ export function useLiftedStickies({
             fill,
             body: text,
             visibility,
-            clientKey: crypto.randomUUID(),
+            clientKey: draft.clientKey ?? crypto.randomUUID(),
           });
           if (result.status !== "saved") return false;
           noteWorkboardStickyCreated(orgId, {
@@ -112,7 +124,7 @@ export function useLiftedStickies({
             assigned: false,
             visibility: visibility === "just_me" ? "just_me" : "board",
           });
-          setDraft(null);
+          clearDraftFor(pieceId);
           return true;
         } catch {
           return false;

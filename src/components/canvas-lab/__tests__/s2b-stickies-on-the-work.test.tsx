@@ -302,3 +302,57 @@ describe("S2b on the board (wiring pinned in source)", () => {
     expect(pad).toContain('window.addEventListener("pointerup", up, true);');
   });
 });
+
+describe("S2b review fixes", () => {
+  it("the work is found past the layer, even after the work swaps its root", () => {
+    const scroller = document.createElement("div");
+    const layer = document.createElement("div");
+    layer.className = "sticky-layer";
+    const work = document.createElement("div");
+    work.id = "new-root";
+    scroller.append(layer, work);
+    expect(stickyContent(scroller)?.id).toBe("new-root");
+  });
+
+  it("Enter or Space on the pad leaves a sticky in the middle of the work", async () => {
+    const { StickyPad } = await import("@/components/canvas-lab/LiftedStickies");
+    const body = document.createElement("div");
+    body.innerHTML = '<div id="w"></div>';
+    document.body.appendChild(body);
+    const onDrop = vi.fn();
+    const original = document.elementsFromPoint;
+    document.elementsFromPoint = () => [body.querySelector("#w") as Element];
+    render(<StickyPad body={body} onDrop={onDrop} />);
+    fireEvent.click(screen.getByTestId("sticky-pad"), { detail: 0 });
+    document.elementsFromPoint = original;
+    body.remove();
+    expect(onDrop).toHaveBeenCalledWith(expect.objectContaining({ anchor: { kind: "item" } }));
+  });
+
+  it("one sticky at a time, a save clears only its own piece, and a retry reuses its key", () => {
+    const hook = readFileSync("src/components/canvas-lab/useLiftedStickies.tsx", "utf8");
+    expect(hook).toContain("setState({ for: workItemId, draft: null, openId })");
+    expect(hook).toContain("(s.for === pieceId ? { ...s, draft: null } : s)");
+    expect(hook).toContain("clientKey: draft.clientKey ?? crypto.randomUUID(),");
+  });
+
+  it("the comment and highlight endpoints can never change a sticky", () => {
+    const server = readFileSync("src/lib/canvas-lab-annotations.server.ts", "utf8");
+    for (const fn of [
+      "archiveHighlight",
+      "setHighlightVisibility",
+      "editComment",
+      "archiveComment",
+    ]) {
+      const start = server.indexOf(`export async function ${fn}(`);
+      const body = server.slice(start, server.indexOf("\nexport ", start + 10));
+      expect(body).toMatch(/\.eq\("kind", "(highlight|comment)"\)/);
+    }
+  });
+
+  it("a cancelled drag stops listening, and so does a view closed mid-drag", () => {
+    const pad = readFileSync("src/components/canvas-lab/LiftedStickies.tsx", "utf8");
+    expect(pad).toContain('window.addEventListener("pointercancel", stop, true);');
+    expect(pad).toContain("useEffect(() => () => stopDrag.current?.(), []);");
+  });
+});

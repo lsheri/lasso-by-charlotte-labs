@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useId,
   useLayoutEffect,
   useRef,
   useState,
@@ -48,7 +49,13 @@ export const STICKY_UI_COPY = {
 } as const;
 
 /** A sticky being written: where it was dropped, before it is saved. */
-export type StickyDraft = { anchor: StickyAnchor; posX: number; posY: number };
+export type StickyDraft = {
+  anchor: StickyAnchor;
+  posX: number;
+  posY: number;
+  /** One key per sticky being written, so a retry after a slow save never makes a second sticky. */
+  clientKey?: string | undefined;
+};
 
 /** The element that scrolls the work: a chat scrolls inside its frame, anything else is the body. */
 export function stickyScroller(body: HTMLElement | null): HTMLElement | null {
@@ -59,7 +66,12 @@ export function stickyScroller(body: HTMLElement | null): HTMLElement | null {
 /** The work's own content inside the scroller: spots live in it, and "the whole piece" is it. */
 export function stickyContent(scroller: HTMLElement | null): HTMLElement | null {
   if (!scroller) return null;
-  return (scroller.firstElementChild as HTMLElement | null) ?? scroller;
+  // The layer lives in the same scroller. When the work swaps its root (a preview arrives, a file fails),
+  // the new root lands after the layer, so the work is the first child that is not the layer.
+  for (const child of Array.from(scroller.children)) {
+    if (!child.classList.contains("sticky-layer")) return child as HTMLElement;
+  }
+  return scroller;
 }
 
 /** Where a drop at a point lands, or null when it is not on the work. */
@@ -76,6 +88,15 @@ export function dropSpot(
 
 /* ---------------- the pad in the rail ---------------- */
 
+/** The work under a point, looking through stickies already on it. */
+function workAt(x: number, y: number): Element | null {
+  const all =
+    typeof document.elementsFromPoint === "function"
+      ? document.elementsFromPoint(x, y)
+      : [document.elementFromPoint(x, y)];
+  return all.find((el) => el && !el.closest(".sticky-layer, .sticky-ghost")) ?? null;
+}
+
 export function StickyPad({
   body,
   workKind,
@@ -89,6 +110,21 @@ export function StickyPad({
   const [ghost, setGhost] = useState<{ x: number; y: number; label: string } | null>(null);
   const moved = useRef(false);
   const lit = useRef<HTMLElement | null>(null);
+  const stopDrag = useRef<(() => void) | null>(null);
+
+  // A view that closes mid-drag leaves nothing listening.
+  useEffect(() => () => stopDrag.current?.(), []);
+
+  /** Without a drag (a keyboard press, or a press and release): a sticky in the middle of what is on screen. */
+  function dropInMiddle() {
+    const scroller = stickyScroller(body);
+    if (!scroller) return;
+    const box = scroller.getBoundingClientRect();
+    const x = box.left + box.width / 2;
+    const y = box.top + Math.min(box.height / 2, 160);
+    const spot = dropSpot(body, x, y, workAt(x, y));
+    if (spot) onDrop(spot);
+  }
 
   function light(el: HTMLElement | null) {
     if (lit.current && lit.current !== el) lit.current.classList.remove("sticky-drop-target");
@@ -104,12 +140,7 @@ export function StickyPad({
     const startY = event.clientY;
     const move = (ev: PointerEvent) => {
       if (Math.abs(ev.clientX - startX) + Math.abs(ev.clientY - startY) > 4) moved.current = true;
-      const spot = dropSpot(
-        body,
-        ev.clientX,
-        ev.clientY,
-        document.elementFromPoint(ev.clientX, ev.clientY),
-      );
+      const spot = dropSpot(body, ev.clientX, ev.clientY, workAt(ev.clientX, ev.clientY));
       light(spot?.el ?? null);
       setGhost({
         x: ev.clientX,
@@ -117,24 +148,30 @@ export function StickyPad({
         label: spot ? stickyPlace(spot.anchor, workKind) : STICKY_UI_COPY.dropHere,
       });
     };
-    const up = (ev: PointerEvent) => {
+    const stop = () => {
       window.removeEventListener("pointermove", move, true);
       window.removeEventListener("pointerup", up, true);
+      window.removeEventListener("pointercancel", stop, true);
+      stopDrag.current = null;
       light(null);
       setGhost(null);
-      const scroller = stickyScroller(body);
-      if (!scroller) return;
-      // A press without a drag drops the sticky in the middle of what is on screen.
-      const box = scroller.getBoundingClientRect();
-      const x = moved.current ? ev.clientX : box.left + box.width / 2;
-      const y = moved.current ? ev.clientY : box.top + box.height / 2;
-      const spot = dropSpot(body, x, y, document.elementFromPoint(x, y));
+    };
+    const up = (ev: PointerEvent) => {
+      stop();
+      if (!moved.current) {
+        dropInMiddle();
+        return;
+      }
+      const spot = dropSpot(body, ev.clientX, ev.clientY, workAt(ev.clientX, ev.clientY));
       if (spot) onDrop(spot);
     };
+    stopDrag.current?.();
+    stopDrag.current = stop;
     // Capture phase: the one view stops presses at its root so the board never sees them, which would
     // also stop a bubbling listener here from ever hearing the release.
     window.addEventListener("pointermove", move, true);
     window.addEventListener("pointerup", up, true);
+    window.addEventListener("pointercancel", stop, true);
   }
 
   return (
@@ -146,6 +183,10 @@ export function StickyPad({
         aria-label={STICKY_UI_COPY.padHint}
         title={STICKY_UI_COPY.padHint}
         onPointerDown={begin}
+        onClick={(event) => {
+          // Enter or Space: the keyboard's way to leave a sticky.
+          if (event.detail === 0) dropInMiddle();
+        }}
       >
         <StickyMark variant="stack" size={26} />
         <span>{STICKY_UI_COPY.pad}</span>
@@ -189,8 +230,22 @@ function useStickyPositions(
     const resize = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(bump);
     resize?.observe(scroller);
     if (content) resize?.observe(content);
-    const mutate = typeof MutationObserver === "undefined" ? null : new MutationObserver(bump);
-    if (content) mutate?.observe(content, { childList: true, subtree: true });
+    // Watch the whole scroller, so a swapped root is seen too; changes inside the layer are its own.
+    const layerOnly = (records: MutationRecord[]) =>
+      records.every(
+        (record) =>
+          record.target instanceof Element && Boolean(record.target.closest(".sticky-layer")),
+      );
+    const mutate =
+      typeof MutationObserver === "undefined"
+        ? null
+        : new MutationObserver((records) => {
+            if (layerOnly(records)) return;
+            const next = stickyContent(scroller);
+            if (next && next !== content) resize?.observe(next);
+            bump();
+          });
+    mutate?.observe(scroller, { childList: true, subtree: true });
     window.addEventListener("resize", bump);
     // Slides, pages and turns arrive after the view opens; measure again as they settle.
     const settle = [120, 400, 900, 1600].map((ms) => setTimeout(bump, ms));
@@ -340,6 +395,7 @@ function StickyCard({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
+  const visName = `sticky-vis-${useId()}`;
   const writing = mode !== "view";
 
   // Esc (from the view) cancels what is being written, or closes the sticky.
@@ -439,7 +495,7 @@ function StickyCard({
             <label>
               <input
                 type="radio"
-                name="sticky-vis"
+                name={visName}
                 checked={visibility === "engagement"}
                 onChange={() => setVisibility("engagement")}
               />{" "}
@@ -448,7 +504,7 @@ function StickyCard({
             <label>
               <input
                 type="radio"
-                name="sticky-vis"
+                name={visName}
                 checked={visibility === "just_me"}
                 onChange={() => setVisibility("just_me")}
               />{" "}

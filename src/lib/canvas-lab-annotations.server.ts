@@ -237,6 +237,7 @@ export async function archiveHighlight(
       updated_by: profile.id,
     })
     .eq("id", id)
+    .eq("kind", "highlight")
     .eq("version", expectedVersion)
     .is("archived_at", null)
     .select(ANNOTATION_COLUMNS)
@@ -501,11 +502,13 @@ export async function editComment(
   const badBody = validateCommentBody(body ?? "");
   if (badBody) return { status: "validation_error", message: badBody };
 
-  const previous = await Promise.resolve(db.from("workboard_annotations").select("workboard_id, mentions").eq("id", id).eq("version", expectedVersion).maybeSingle()).catch(() => ({ data: null, error: true }));
+  const previous = await Promise.resolve(db.from("workboard_annotations").select("workboard_id, mentions").eq("id", id)
+    .eq("kind", "comment").eq("version", expectedVersion).maybeSingle()).catch(() => ({ data: null, error: true }));
   const { data, error } = await db
     .from("workboard_annotations")
     .update({ ...committedComment(body, mentions), updated_by: profile.id })
     .eq("id", id)
+    .eq("kind", "comment")
     .eq("version", expectedVersion)
     .is("archived_at", null)
     .select(COMMENT_COLUMNS)
@@ -537,6 +540,7 @@ export async function archiveComment(
       updated_by: profile.id,
     })
     .eq("id", id)
+    .eq("kind", "comment")
     .eq("version", expectedVersion)
     .is("archived_at", null)
     .select(COMMENT_COLUMNS)
