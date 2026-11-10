@@ -30,12 +30,6 @@ export const FEATURE_FLAGS = {
    * states and receipt. It changes what Ask looks like, never what it reads.
    */
   "ask-v2": { default: false },
-  /**
-   * LIFT (9 Nov, Liam): double-click lifts a piece of work off the board into a larger view to read,
-   * scroll or page, with the board dimmed behind it. Default off: double-click opens the full reader,
-   * as before. It changes what someone sees, never what they can reach, and never writes to the board.
-   */
-  "lift-v1": { default: false },
 } as const satisfies Record<string, { default: boolean }>;
 
 export type FeatureFlag = keyof typeof FEATURE_FLAGS;

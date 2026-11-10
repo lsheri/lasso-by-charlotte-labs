@@ -95,7 +95,7 @@ describe("LIFT-6 one frame for every kind", () => {
     expect(css).toContain("border-radius: 12px; background: var(--nb-paper);");
     expect(css).toContain("transform-origin: 0 0; transition-property: transform;");
     expect(css).not.toContain("transition-property: left, top, width, height");
-    expect(css).toContain('.lift-panel[data-phase="from"] > .lift-head, .lift-panel[data-phase="from"] > .lift-body { opacity: 0; transition: none; }');
+    expect(css).toContain('.lift-panel[data-phase="from"] > .lift-head, .lift-panel[data-phase="from"] > .lift-main { opacity: 0; transition: none; }');
     expect(css).toContain(".lift-body { position: relative; flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; background: var(--surface-sunk); }");
     // The document's dark grey desk becomes the same stage every other kind sits on.
     expect(css).toContain(".lift-real { margin: 0 auto; --neutral-60: var(--surface-sunk);");
@@ -157,7 +157,7 @@ describe("LIFT-6 on the board (wiring pinned in source)", () => {
   const page = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
   const image = readFileSync("src/components/canvas-lab/board-image.tsx", "utf8");
   it("images and videos lift behind the same flag, through the same view", () => {
-    expect(page.match(/onLift=\{liftV1 \? \(origin, src\) => liftPicture\(node, origin, src\) : undefined\}/g)?.length).toBe(2);
+    expect(page.match(/onLift=\{\(origin, src\) => liftPicture\(node, origin, src\)\}/g)?.length).toBe(2);
     expect(page).toContain("<LiftedImageBody node={liftedPicture} initialSrc={lifted.src ?? null} />");
     expect(page).toContain('kind={liftedPicture.kind === "video" ? "video" : "image"}');
   });

@@ -6,7 +6,7 @@ vi.mock("@/hooks/use-vendor-display", () => ({ useVendorVisible: () => true }));
 
 vi.mock("@/lib/telemetry", () => ({ logEvent: vi.fn() }));
 
-import { FEATURE_FLAGS, flagEnabled } from "@/lib/feature-flags";
+import { FEATURE_FLAGS } from "@/lib/feature-flags";
 import {
   LIFT_MIN,
   LIFT_MORPH_MS,
@@ -34,9 +34,10 @@ afterEach(() => {
 });
 
 describe("LIFT flag", () => {
-  it("lift-v1 exists and is off by default, so double-click opens the full reader as before", () => {
-    expect(FEATURE_FLAGS["lift-v1"].default).toBe(false);
-    expect(flagEnabled("lift-v1")).toBe(false);
+  // One view (9 Nov): the flag is retired, so a flag read before PostHog answers can never send an open
+  // to the old reader again.
+  it("lift-v1 is retired", () => {
+    expect(Object.keys(FEATURE_FLAGS)).not.toContain("lift-v1");
   });
 });
 
@@ -314,11 +315,9 @@ describe("LIFT on the card", () => {
 
 describe("LIFT on the board page (nothing renders that page in tests, so its wiring is pinned in source)", () => {
   const page = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
-  it("lifts only behind lift-v1 and only work that lifts", () => {
-    expect(page).toContain('const liftV1 = useFeatureFlag("lift-v1");');
-    expect(page).toContain("onLift={liftV1 && liftable(cardItem) ? ");
-    // LIFT-5: the board listens for the flag, so it turns on when PostHog's flags arrive, not at the next redraw.
-    expect(page).not.toContain('flagEnabled("lift-v1")');
+  it("lifts every piece of work, for everyone, with no flag in the way", () => {
+    expect(page).toContain("onLift={liftable(cardItem) ? ");
+    expect(page).not.toMatch(/liftV1|lift-v1/);
   });
   it("the board's Delete, Backspace and Esc stand down while a view is lifted", () => {
     const fn = page.slice(
