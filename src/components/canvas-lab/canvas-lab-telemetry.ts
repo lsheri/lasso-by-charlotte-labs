@@ -123,7 +123,17 @@ export function noteWorkboardStickyRemoved(orgId: string | undefined, anchorKind
   if (orgId) logEvent("workboard.sticky_removed", orgId, { anchor_kind: anchorKind });
 }
 
-/** S2: a sticky opened, from its spot on the work or from the Stickies list. S3: from a card's corner sticky. Notification arrives in S4. */
+/** S4b: a sticky marked done, from the sticky in the view or from the inbox. No time-to-done, no person. */
+export function noteWorkboardStickyDone(orgId: string | undefined, via: "view" | "inbox"): void {
+  if (orgId) logEvent("workboard.sticky_done", orgId, { via });
+}
+
+/** S4b: a done sticky reopened. */
+export function noteWorkboardStickyReopened(orgId: string | undefined): void {
+  if (orgId) logEvent("workboard.sticky_reopened", orgId, {});
+}
+
+/** S2: a sticky opened, from its spot on the work or from the Stickies list. S3: from a card's corner sticky. S4b: from a notification. */
 export function noteWorkboardStickyOpened(orgId: string | undefined, from: "pin" | "list" | "card" | "notification"): void {
   if (orgId) logEvent("workboard.sticky_opened", orgId, { from });
 }

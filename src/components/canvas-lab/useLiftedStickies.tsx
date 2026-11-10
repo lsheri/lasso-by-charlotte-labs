@@ -11,9 +11,12 @@ import {
 } from "@/components/canvas-lab/LiftedStickies";
 import {
   noteWorkboardStickyCreated,
+  noteWorkboardStickyDone,
   noteWorkboardStickyOpened,
   noteWorkboardStickyRemoved,
+  noteWorkboardStickyReopened,
 } from "@/components/canvas-lab/canvas-lab-telemetry";
+import { useBoardMentionPeople } from "@/hooks/use-board-mention-people";
 import { useStickies } from "@/hooks/use-stickies";
 import { liftKindOf } from "@/lib/lift-view";
 import { anchorElement, showPage } from "@/lib/sticky-anchors";
@@ -41,11 +44,13 @@ export function useLiftedStickies({
   body: HTMLElement | null;
 }): { pad: ReactNode; layer: ReactNode; panel: ReactNode; label: string } {
   const workItemId = item?.id ?? null;
-  const { stickies, createSticky, editSticky, archiveSticky } = useStickies(
+  const { stickies, createSticky, editSticky, archiveSticky, setStickyDone } = useStickies(
     engagementId,
     workItemId,
     profileId,
   );
+  // S4b: the people a sticky can ask, the same list mentions use. Undefined until it loads.
+  const people = useBoardMentionPeople(engagementId, canWrite ? profileId : undefined);
   const [state, setState] = useState<{
     for: string | null;
     draft: StickyDraft | null;
@@ -106,7 +111,8 @@ export function useLiftedStickies({
         if (id) noteWorkboardStickyOpened(orgId, "pin");
       }}
       onCancelDraft={() => setDraft(null)}
-      onCreate={async (draft, text, fill, visibility) => {
+      people={people}
+      onCreate={async (draft, text, fill, visibility, assigneeId) => {
         try {
           const result = await createSticky({
             // The piece the sticky was dropped on, never whatever is open by the time the save returns.
@@ -118,12 +124,13 @@ export function useLiftedStickies({
             body: text,
             visibility,
             clientKey: draft.clientKey ?? crypto.randomUUID(),
+            assigneeProfileId: visibility === "just_me" ? null : assigneeId,
           });
           if (result.status !== "saved") return false;
           noteWorkboardStickyCreated(orgId, {
             anchor_kind: draft.anchor.kind,
             work_kind: workKind,
-            assigned: false,
+            assigned: visibility !== "just_me" && !!assigneeId,
             visibility: visibility === "just_me" ? "just_me" : "board",
           });
           clearDraftFor(pieceId);
@@ -141,6 +148,22 @@ export function useLiftedStickies({
             ...patch,
           });
           return result.status === "saved";
+        } catch {
+          return false;
+        }
+      }}
+      onSetDone={async (sticky, done) => {
+        try {
+          const result = await setStickyDone({
+            workItemId: pieceId,
+            id: sticky.id,
+            done,
+            expectedVersion: sticky.version,
+          });
+          if (result.status !== "saved") return false;
+          if (done) noteWorkboardStickyDone(orgId, "view");
+          else noteWorkboardStickyReopened(orgId);
+          return true;
         } catch {
           return false;
         }
@@ -171,7 +194,7 @@ export function useLiftedStickies({
       />
     ) : null,
     layer,
-    panel: <StickiesPanel body={body} workKind={workKind} stickies={open} onGo={go} />,
+    panel: <StickiesPanel body={body} workKind={workKind} stickies={stickies} onGo={go} />,
     label: open.length ? `${STICKY_UI_COPY.tab} · ${open.length}` : STICKY_UI_COPY.tab,
   };
 }

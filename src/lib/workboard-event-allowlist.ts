@@ -22,6 +22,9 @@ export const WORKBOARD_EVENT_DIMS: Readonly<Record<string, readonly string[]>> =
   "workboard.sticky_created": ["anchor_kind", "work_kind", "assigned", "visibility"],
   "workboard.sticky_removed": ["anchor_kind"],
   "workboard.sticky_opened": ["from"],
+  // S4b: done from the sticky or from the inbox, and reopened. Never who, never how long it took.
+  "workboard.sticky_done": ["via"],
+  "workboard.sticky_reopened": [],
   "workboard.deck_expanded": ["state", "slides_band"],
   "workboard.face_toggled": ["face", "scope"],
   "workboard.node_moved": ["kind", "via"],
