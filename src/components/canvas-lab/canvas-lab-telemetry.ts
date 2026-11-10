@@ -123,8 +123,8 @@ export function noteWorkboardStickyRemoved(orgId: string | undefined, anchorKind
   if (orgId) logEvent("workboard.sticky_removed", orgId, { anchor_kind: anchorKind });
 }
 
-/** S2: a sticky opened, from its spot on the work or from the Stickies list (notification arrives in S4). */
-export function noteWorkboardStickyOpened(orgId: string | undefined, from: "pin" | "list" | "notification"): void {
+/** S2: a sticky opened, from its spot on the work or from the Stickies list. S3: from a card's corner sticky. Notification arrives in S4. */
+export function noteWorkboardStickyOpened(orgId: string | undefined, from: "pin" | "list" | "card" | "notification"): void {
   if (orgId) logEvent("workboard.sticky_opened", orgId, { from });
 }
 

@@ -339,3 +339,28 @@ export async function archiveSticky(
   if (error?.code === "42501") return { status: "forbidden" };
   return { status: "conflict" };
 }
+
+/**
+ * S3: open stickies per piece of work on this board that the reader may see (their own, and the team's).
+ * A count about the work, for the corner sticky on its card. Never per person.
+ */
+export async function listStickyCounts(
+  db: Db,
+  engagementId: string,
+): Promise<Record<string, number>> {
+  const board = await findBoardFor(db, engagementId);
+  if (!board) return {};
+  const { data } = await db
+    .from("workboard_annotations")
+    .select("work_item_id")
+    .eq("workboard_id", board.id)
+    .eq("kind", "sticky")
+    .is("done_at", null)
+    .is("archived_at", null);
+  const counts: Record<string, number> = {};
+  for (const row of (data ?? []) as { work_item_id: string | null }[]) {
+    if (!row.work_item_id) continue;
+    counts[row.work_item_id] = (counts[row.work_item_id] ?? 0) + 1;
+  }
+  return counts;
+}
