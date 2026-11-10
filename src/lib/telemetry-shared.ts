@@ -358,6 +358,8 @@ export type TelemetryEvent =
   | "workboard.sticky_created"
   | "workboard.sticky_removed"
   | "workboard.sticky_opened"
+  | "workboard.sticky_done"
+  | "workboard.sticky_reopened"
   /** Local deck contact sheet. Open/closed and band only, never a slide count. */
   | "workboard.deck_expanded"
   /** The person flipped board cards between sketch and real preview. Face only. */

@@ -23,7 +23,8 @@ import {
  * S2b (stickies on the work, 10 Nov, Liam): while a piece of work is open in the one view, a sticky is
  * dragged from the rail onto a spot (a slide, a page, a chat turn, a doc section, a sheet row, or the piece
  * as a whole). It stays on that spot every time the work opens, for everyone on the board, unless its author
- * keeps it to themselves. Assigning one to someone and marking it done arrive in S4.
+ * keeps it to themselves. S4b: a board sticky can ask one person on the board to act, and that person (or
+ * the author) ticks it done. A done sticky stays on its spot, quieter.
  *
  * A sticky describes the work: its words and where it sits. Nothing here counts, times or ranks a person.
  */
@@ -46,7 +47,17 @@ export const STICKY_UI_COPY = {
   movedHint: "The spot these were left on is no longer in the work. They stay here, never moved.",
   failed: "That sticky could not be saved. Try again.",
   you: "You",
+  ask: "Ask",
+  noOne: "No one",
+  askJustMe: "Show it to the board to ask someone.",
+  forWho: (name: string) => `For ${name}`,
+  markDone: "Mark done",
+  doneBy: (name: string) => `Done · ${name}`,
+  done: "Done",
 } as const;
+
+/** S4b: someone on the board a sticky can ask. */
+export type StickyPerson = { profileId: string; displayName: string };
 
 /** A sticky being written: where it was dropped, before it is saved. */
 export type StickyDraft = {
@@ -296,12 +307,22 @@ export type StickyLayerProps = {
     body: string,
     fill: WorkboardStickyFill,
     visibility: AnnotationVisibility,
+    assigneeId: string | null,
   ) => Promise<boolean>;
   onEdit: (
     sticky: StickyDto,
-    patch: { body: string; fill: WorkboardStickyFill; visibility: AnnotationVisibility },
+    patch: {
+      body: string;
+      fill: WorkboardStickyFill;
+      visibility: AnnotationVisibility;
+      assigneeProfileId?: string | null;
+    },
   ) => Promise<boolean>;
   onRemove: (sticky: StickyDto) => Promise<boolean>;
+  /** S4b: the people on the board a sticky can ask. Undefined while they load. */
+  people?: readonly StickyPerson[] | undefined;
+  /** S4b: tick done, or reopen. */
+  onSetDone?: ((sticky: StickyDto, done: boolean) => Promise<boolean>) | undefined;
 };
 
 export function StickyLayer(props: StickyLayerProps) {
@@ -332,7 +353,9 @@ export function StickyLayer(props: StickyLayerProps) {
             data-testid="sticky-pin"
             data-open={openId === sticky.id ? "true" : undefined}
             data-just-me={sticky.visibility === "just_me" ? "true" : undefined}
-            aria-label={`Sticky on ${stickyPlace(sticky.anchor, workKind)}: ${sticky.body}`}
+            data-done={sticky.doneAt ? "true" : undefined}
+            data-for-me={sticky.isAssignedToMe && !sticky.doneAt ? "true" : undefined}
+            aria-label={`${sticky.doneAt ? `${STICKY_UI_COPY.done} sticky` : "Sticky"} on ${stickyPlace(sticky.anchor, workKind)}: ${sticky.body}`}
             style={{ left: spot.left, top: spot.top }}
             onClick={() => onOpen(openId === sticky.id ? null : sticky.id)}
           >
@@ -385,6 +408,8 @@ function StickyCard({
   onCreate,
   onEdit,
   onRemove,
+  people,
+  onSetDone,
 }: StickyLayerProps & {
   mode: "new" | "view";
   sticky?: StickyDto | undefined;
@@ -398,10 +423,16 @@ function StickyCard({
   const [visibility, setVisibility] = useState<AnnotationVisibility>(
     sticky?.visibility ?? "engagement",
   );
+  const [assignee, setAssignee] = useState<string | null>(sticky?.assigneeId ?? null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
-  const visName = `sticky-vis-${useId()}`;
+  const id = useId();
+  const visName = `sticky-vis-${id}`;
+  // Whoever it already asks stays in the list even if they are not among the people loaded (yourself, say).
+  const askable: StickyPerson[] = [...(people ?? [])];
+  if (sticky?.assigneeId && !askable.some((person) => person.profileId === sticky.assigneeId))
+    askable.push({ profileId: sticky.assigneeId, displayName: sticky.assigneeName ?? STICKY_UI_COPY.you });
   const writing = mode !== "view";
 
   // Esc (from the view) cancels what is being written, or closes the sticky.
@@ -441,11 +472,18 @@ function StickyCard({
     }
     setBusy(true);
     setError(null);
+    // A just-me sticky never asks anyone.
+    const askId = visibility === "just_me" ? null : assignee;
     const ok =
       mode === "new" && draft
-        ? await onCreate(draft, text, fill, visibility)
+        ? await onCreate(draft, text, fill, visibility, askId)
         : sticky
-          ? await onEdit(sticky, { body: text, fill, visibility })
+          ? await onEdit(sticky, {
+              body: text,
+              fill,
+              visibility,
+              ...(askId !== sticky.assigneeId ? { assigneeProfileId: askId } : {}),
+            })
           : false;
     setBusy(false);
     if (!ok) setError(STICKY_UI_COPY.failed);
@@ -517,6 +555,23 @@ function StickyCard({
               {STICKY_UI_COPY.justMe}
             </label>
           </div>
+          <label className="sticky-card-ask">
+            <span>{STICKY_UI_COPY.ask}</span>
+            <select
+              aria-label={STICKY_UI_COPY.ask}
+              value={visibility === "just_me" ? "" : (assignee ?? "")}
+              disabled={visibility === "just_me" || people === undefined}
+              title={visibility === "just_me" ? STICKY_UI_COPY.askJustMe : undefined}
+              onChange={(event) => setAssignee(event.target.value || null)}
+            >
+              <option value="">{STICKY_UI_COPY.noOne}</option>
+              {askable.map((person) => (
+                <option key={person.profileId} value={person.profileId}>
+                  {person.displayName}
+                </option>
+              ))}
+            </select>
+          </label>
           {error ? (
             <p className="sticky-card-error" role="alert">
               {error}
@@ -542,10 +597,33 @@ function StickyCard({
         </>
       ) : sticky ? (
         <>
-          <p className="sticky-card-body">{sticky.body}</p>
+          <p className="sticky-card-body" data-done={sticky.doneAt ? "true" : undefined}>
+            {sticky.body}
+          </p>
           <p className="sticky-card-meta">
             {sticky.isMine ? STICKY_UI_COPY.you : sticky.authorName}
+            {sticky.assigneeName ? ` · ${STICKY_UI_COPY.forWho(sticky.assigneeName)}` : ""}
           </p>
+          {sticky.doneAt ? (
+            <p className="sticky-card-done">{STICKY_UI_COPY.doneBy(sticky.doneByName ?? STICKY_UI_COPY.you)}</p>
+          ) : null}
+          {sticky.canMarkDone && onSetDone ? (
+            <label className="sticky-card-tick">
+              <input
+                type="checkbox"
+                checked={!!sticky.doneAt}
+                disabled={busy}
+                onChange={async (event) => {
+                  setBusy(true);
+                  setError(null);
+                  const ok = await onSetDone(sticky, event.target.checked);
+                  setBusy(false);
+                  if (!ok) setError(STICKY_UI_COPY.failed);
+                }}
+              />{" "}
+              {sticky.doneAt ? STICKY_UI_COPY.done : STICKY_UI_COPY.markDone}
+            </label>
+          ) : null}
           {sticky.isMine && canWrite ? (
             <div className="sticky-card-acts">
               <button type="button" onClick={() => setMode("edit")}>
@@ -605,7 +683,9 @@ export function StickiesPanel({
   onGo: (sticky: StickyDto) => void;
 }) {
   const content = stickyContent(stickyScroller(body));
-  const sorted = [...stickies].sort(
+  // S4b: done stickies are listed last, apart, so the list reads as what is still open.
+  const done = stickies.filter((sticky) => sticky.doneAt);
+  const sorted = stickies.filter((sticky) => !sticky.doneAt).sort(
     (a, b) => placeOrder(a.anchor) - placeOrder(b.anchor) || a.createdAt.localeCompare(b.createdAt),
   );
   // A sticky on a page not shown (a paged file) is listed and opens its page. A sticky whose spot left the
@@ -630,6 +710,7 @@ export function StickiesPanel({
           <small>
             {stickyPlace(sticky.anchor, workKind)} ·{" "}
             {sticky.isMine ? STICKY_UI_COPY.you : sticky.authorName}
+            {sticky.assigneeName ? ` · ${STICKY_UI_COPY.forWho(sticky.assigneeName)}` : ""}
             {sticky.visibility === "just_me" ? ` · ${STICKY_UI_COPY.justMe}` : ""}
           </small>
         </span>
@@ -641,14 +722,24 @@ export function StickiesPanel({
       <h4>{STICKY_UI_COPY.heading}</h4>
       {placed.length ? (
         <ul className="sticky-list">{placed.map((sticky) => row(sticky, true))}</ul>
-      ) : (
+      ) : !moved.length && !done.length ? (
         <p className="stickies-empty">{STICKY_UI_COPY.empty}</p>
-      )}
+      ) : null}
       {moved.length ? (
         <>
           <h4>{STICKY_UI_COPY.moved}</h4>
           <p className="stickies-empty">{STICKY_UI_COPY.movedHint}</p>
           <ul className="sticky-list">{moved.map((sticky) => row(sticky, false))}</ul>
+        </>
+      ) : null}
+      {done.length ? (
+        <>
+          <h4>{STICKY_UI_COPY.done}</h4>
+          <ul className="sticky-list" data-done="true">
+            {done.map((sticky) =>
+              row(sticky, !content || !!anchorElement(content, sticky.anchor) || onAnotherPage(content, sticky.anchor)),
+            )}
+          </ul>
         </>
       ) : null}
     </div>
