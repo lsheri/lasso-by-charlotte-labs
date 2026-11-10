@@ -166,3 +166,14 @@ export const archiveStickyFn = createServerFn({ method: "POST" })
     const { archiveSticky } = await import("@/lib/stickies.server");
     return archiveSticky(supabase, profile, data.id, data.expected_version);
   });
+
+export const listStickyCountsFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { engagement_id: string }) => ({
+    engagement_id: str(input?.engagement_id),
+  }))
+  .handler(async ({ data, context }): Promise<Record<string, number>> => {
+    if (!data.engagement_id) return {};
+    const { listStickyCounts } = await import("@/lib/stickies.server");
+    return listStickyCounts(context.supabase, data.engagement_id);
+  });

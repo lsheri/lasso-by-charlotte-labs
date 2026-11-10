@@ -8699,6 +8699,12 @@ footer[data-compact] [data-ask-composer-pad] { padding: 8px 8px 8px 14px; }
 .sticky-card-meta { margin: 8px 0 0; font-size: 11.5px; color: var(--nb-graphite); }
 .sticky-card-error { margin: 8px 0 0; font-size: 12px; color: #9b2c22; }
 .stickies-panel { padding: 14px; font-size: 13px; }
+/* S3: the corner sticky on a card that carries open stickies. Stuck over the top corner, slightly crooked. */
+.card-corner-sticky { position: absolute; top: -18px; right: -17px; z-index: 4; width: 34px; height: 34px; padding: 0; border: 0; background: none; cursor: pointer; transform: rotate(7deg); transition: transform .15s ease; }
+.card-corner-sticky:hover, .card-corner-sticky:focus-visible { transform: rotate(-3deg) scale(1.08); }
+.card-corner-sticky:disabled { cursor: default; }
+.card-corner-sticky > svg { position: absolute; inset: 0; }
+.card-corner-sticky > span { position: absolute; inset: 0; display: grid; place-items: center; padding: 0 0 3px 1px; font: 700 12px var(--font-ui); color: #6b5400; }
 .stickies-panel h4 { margin: 0 0 8px; font: 600 10.5px var(--font-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--nb-graphite); }
 .stickies-panel h4 + .stickies-empty { margin-top: 0; }
 .stickies-empty { color: var(--nb-graphite); font-size: 12.5px; }

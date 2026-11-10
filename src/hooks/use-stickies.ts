@@ -16,10 +16,27 @@ import {
   createStickyFn,
   editStickyFn,
   listStickiesFn,
+  listStickyCountsFn,
 } from "@/lib/stickies.functions";
 
 export function stickiesQueryKey(engagementId: string, workItemId: string) {
   return ["workboard-stickies", engagementId, workItemId] as const;
+}
+
+export function stickyCountsQueryKey(engagementId: string) {
+  return ["workboard-sticky-counts", engagementId] as const;
+}
+
+/** S3: open stickies per piece of work on the board, for the corner sticky on each card. */
+export function useStickyCounts(engagementId: string): Record<string, number> {
+  const countsFn = useServerFn(listStickyCountsFn);
+  const query = useQuery({
+    queryKey: stickyCountsQueryKey(engagementId),
+    enabled: !!engagementId,
+    queryFn: async (): Promise<Record<string, number>> =>
+      (await countsFn({ data: { engagement_id: engagementId } })) as Record<string, number>,
+  });
+  return query.data ?? {};
 }
 
 export type NewSticky = {
@@ -66,8 +83,11 @@ export function useStickies(
   });
 
   const invalidateFor = useCallback(
-    (pieceId: string) =>
-      void queryClient.invalidateQueries({ queryKey: stickiesQueryKey(engagementId, pieceId) }),
+    (pieceId: string) => {
+      void queryClient.invalidateQueries({ queryKey: stickiesQueryKey(engagementId, pieceId) });
+      // S3: the card's corner sticky follows.
+      void queryClient.invalidateQueries({ queryKey: stickyCountsQueryKey(engagementId) });
+    },
     [engagementId, queryClient],
   );
 

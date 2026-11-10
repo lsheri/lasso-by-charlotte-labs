@@ -175,7 +175,8 @@ describe("S2a the server (pinned in source)", () => {
     expect(server.match(/\.eq\("author_profile_id", profile\.id\)/g)?.length).toBe(2);
   });
   it("only stickies: never a comment or a highlight", () => {
-    expect(server.match(/\.eq\("kind", "sticky"\)/g)?.length).toBe(3);
+    // S3 adds the count read.
+    expect(server.match(/\.eq\("kind", "sticky"\)/g)?.length).toBe(4);
     expect(server).toContain('kind: "sticky",');
   });
   it("a just-me sticky drops any assignee", () => {

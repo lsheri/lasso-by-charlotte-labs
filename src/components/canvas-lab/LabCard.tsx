@@ -1,4 +1,5 @@
 import { RenameWorkDialog } from "@/components/work/RenameWorkDialog";
+import { CardCornerSticky } from "@/components/canvas-lab/CardCornerSticky";
 import { displayName } from "@/lib/work-item-name";
 import { stableMemo } from "@/components/canvas-lab/stable-memo";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -107,6 +108,8 @@ function LabCardInner({
   stackZ = 1,
   commentCount = 0,
   onOpenComments,
+  stickyCount = 0,
+  onOpenStickies,
   preview,
   filePreview,
   face = 'note',
@@ -173,6 +176,9 @@ function LabCardInner({
   /** Slice 2a unit 2: live top-level comments on this card's item. */
   commentCount?: number;
   onOpenComments?: (() => void) | undefined;
+  /** S3: open stickies on this card's work, shown as a corner sticky. */
+  stickyCount?: number;
+  onOpenStickies?: (() => void) | undefined;
   preview?: WorkboardCardPreview | undefined;
   filePreview?: WorkboardFilePreview | undefined;
   face?: 'note' | 'board';
@@ -487,6 +493,7 @@ function LabCardInner({
       ) : null}
       {canSetChatLink && onSaveChatLink ? <ChatLinkDialog open={chatLinkOpen} onOpenChange={setChatLinkOpen} current={pastedLink} onSave={onSaveChatLink} /> : null}
       {canResize && focused && !readOnly ? (["nw", "ne", "se", "sw"] as LabResizeCorner[]).map((corner) => <button key={corner} type="button" className="canvas-lab-resize-handle" data-corner={corner} aria-label={`Resize ${node.title} from ${corner}`} onDoubleClick={(event) => { event.stopPropagation(); onFit(); }} onPointerDown={(event) => onResizeStart(corner, event)} onKeyDown={(event) => onResizeKeyDown(corner, event)} onKeyUp={onResizeKeyUp} />) : null}
+      {readOnly ? null : <CardCornerSticky count={stickyCount} onOpen={onOpenStickies} />}
       {readOnly ? null : anchors.map((side) => <button key={side} type="button" className="canvas-lab-anchor" data-node-id={node.id} data-side={side} data-active={connectSourceAnchor === side} aria-label={`Connect from ${side}`} onPointerDown={(event) => { anchorDownRef.current = { x: event.clientX, y: event.clientY }; onAnchorPointerDown(side, event); }} onClick={(event) => { event.stopPropagation(); const down = anchorDownRef.current; anchorDownRef.current = null; if (down && Math.hypot(event.clientX - down.x, event.clientY - down.y) >= 6) return; onAnchorActivate(side); }} />)}
     </div>
   );
