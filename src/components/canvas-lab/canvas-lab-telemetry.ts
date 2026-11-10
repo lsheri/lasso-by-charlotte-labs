@@ -107,6 +107,27 @@ export function noteWorkboardWorkLiftExpanded(orgId: string | undefined, kind: L
   if (orgId) logEvent("workboard.work_lift_expanded", orgId, { kind });
 }
 
+/**
+ * S2: a sticky left on a spot in a piece of work. Where it sits (anchor kind), on what kind of work, and
+ * whether the board can see it. Assigned is always false until S4. Never who wrote it or who it is for.
+ */
+export function noteWorkboardStickyCreated(
+  orgId: string | undefined,
+  dims: { anchor_kind: string; work_kind: LiftKind; assigned: boolean; visibility: "board" | "just_me" },
+): void {
+  if (orgId) logEvent("workboard.sticky_created", orgId, dims);
+}
+
+/** S2: a sticky removed by its author, by where it sat. */
+export function noteWorkboardStickyRemoved(orgId: string | undefined, anchorKind: string): void {
+  if (orgId) logEvent("workboard.sticky_removed", orgId, { anchor_kind: anchorKind });
+}
+
+/** S2: a sticky opened, from its spot on the work or from the Stickies list (notification arrives in S4). */
+export function noteWorkboardStickyOpened(orgId: string | undefined, from: "pin" | "list" | "notification"): void {
+  if (orgId) logEvent("workboard.sticky_opened", orgId, { from });
+}
+
 /** T2b: the Trail tab opened on a lifted piece, by kind of work. A count of trails read, never who read them. */
 export function noteWorkboardWorkTrailOpened(orgId: string | undefined, kind: LiftKind): void {
   if (orgId) logEvent("workboard.work_trail_opened", orgId, { kind });

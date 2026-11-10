@@ -18,6 +18,10 @@ export const WORKBOARD_EVENT_DIMS: Readonly<Record<string, readonly string[]>> =
   "workboard.work_lifted": ["kind"],
   "workboard.work_lift_expanded": ["kind"],
   "workboard.work_trail_opened": ["kind"],
+  // S2 (10 Nov): stickies on the work. Where and on what, never who, never how long.
+  "workboard.sticky_created": ["anchor_kind", "work_kind", "assigned", "visibility"],
+  "workboard.sticky_removed": ["anchor_kind"],
+  "workboard.sticky_opened": ["from"],
   "workboard.deck_expanded": ["state", "slides_band"],
   "workboard.face_toggled": ["face", "scope"],
   "workboard.node_moved": ["kind", "via"],

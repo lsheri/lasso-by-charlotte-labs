@@ -5140,6 +5140,13 @@ export type Database = {
           kind: string
           legal_hold: boolean
           mentions: Json
+          assignee_profile_id: string | null
+          done_at: string | null
+          done_by: string | null
+          fill: string | null
+          pos_x: number | null
+          pos_y: number | null
+          row_key: string | null
           node_id: string | null
           page_no: number | null
           parent_id: string | null
@@ -5175,6 +5182,13 @@ export type Database = {
           kind: string
           legal_hold?: boolean
           mentions?: Json
+          assignee_profile_id?: string | null
+          done_at?: string | null
+          done_by?: string | null
+          fill?: string | null
+          pos_x?: number | null
+          pos_y?: number | null
+          row_key?: string | null
           node_id?: string | null
           page_no?: number | null
           parent_id?: string | null
@@ -5210,6 +5224,13 @@ export type Database = {
           kind?: string
           legal_hold?: boolean
           mentions?: Json
+          assignee_profile_id?: string | null
+          done_at?: string | null
+          done_by?: string | null
+          fill?: string | null
+          pos_x?: number | null
+          pos_y?: number | null
+          row_key?: string | null
           node_id?: string | null
           page_no?: number | null
           parent_id?: string | null
