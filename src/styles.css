@@ -5627,8 +5627,9 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 /* Unit 5b: the user sticky. Pale fills keep 13px ink (#16181a) above 4.5:1. */
 :root {
   --sticky-yellow: #fff3b8; --sticky-yellow-edge: #e3cf72;
-  --sticky-green: #dcf2e2; --sticky-green-edge: #a7d4b4;
-  --sticky-blue: #dde9f7; --sticky-blue-edge: #a9c4e2;
+  /* S1 (10 Nov): green is mint and blue is turquoise, the colours of the sticky mark. Stored keys unchanged. */
+  --sticky-green: #d6f5e4; --sticky-green-edge: #9fd9b9;
+  --sticky-blue: #cdf1ee; --sticky-blue-edge: #86d0c8;
   --sticky-pink: #f9dfe7; --sticky-pink-edge: #e2b1c1;
   --sticky-grey: #ededea; --sticky-grey-edge: #c7c8c2;
 }

@@ -273,6 +273,7 @@ import { resolveWorkDate } from "@/lib/work-order";
 import { LiftedWorkBody } from "@/components/canvas-lab/LiftedWorkBody";
 import { LIFT_NOTES_COPY, LiftedChatBody, LiftedCommentsPanel } from "@/components/canvas-lab/LiftedChat";
 import { LiftedNoteBody } from "@/components/canvas-lab/LiftedNoteBody";
+import { StickyMark } from "@/components/canvas-lab/StickyMark";
 import { useChatNotesState, type ChatNotesHandlers } from "@/components/canvas-lab/chat-notes";
 import { liftable, liftKindOf, type LiftRect } from "@/lib/lift-view";
 
@@ -3887,7 +3888,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     });
     toolbarItems.push({
       spec: { id: "add-sticky", width: 36, moveOrder: 6 },
-      row: <ToolbarIcon label="Sticky. Drag one onto the board, or click to drop one in the middle."><Button size="icon" variant="outline" aria-label="Sticky" data-toolbar-control="add-sticky" onPointerDown={startStickyDragOut} onClick={() => { if (stickyDragOutRef.current) { stickyDragOutRef.current = false; return; } void addSticky(); }}><GraphiteIcon name="sticky" size={20} /></Button></ToolbarIcon>,
+      row: <ToolbarIcon label="Sticky. Drag one onto the board, or click to drop one in the middle."><Button size="icon" variant="outline" aria-label="Sticky" data-toolbar-control="add-sticky" onPointerDown={startStickyDragOut} onClick={() => { if (stickyDragOutRef.current) { stickyDragOutRef.current = false; return; } void addSticky(); }}><StickyMark variant="stack" size={22} /></Button></ToolbarIcon>,
       menu: <DropdownMenuItem onSelect={() => void addSticky()}>Sticky</DropdownMenuItem>,
     });
     toolbarItems.push({
