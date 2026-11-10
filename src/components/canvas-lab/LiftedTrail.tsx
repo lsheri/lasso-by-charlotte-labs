@@ -1,7 +1,8 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 
 import { BrandLogo, brandForToolkit } from "@/components/connectors/BrandLogo";
+import { TrailSources } from "@/components/canvas-lab/TrailSources";
 import { useVendorVisible } from "@/hooks/use-vendor-display";
 import { getTrail } from "@/lib/trail.functions";
 import type { Trail, TrailEntry } from "@/lib/trail-shared";
@@ -40,15 +41,19 @@ export function LiftedTrail({
   profileId,
   canOpen,
   onOpenItem,
+  canFindSources = false,
 }: {
   workItemId: string;
   workboardId: string | null;
   profileId: string | null;
   canOpen: (workItemId: string) => boolean;
   onOpenItem: (workItemId: string) => void;
+  /** T4: the owner of a deck, document or sheet can ask Lasso to suggest sources. */
+  canFindSources?: boolean | undefined;
 }) {
   const load = useServerFn(getTrail);
   const vendorVisible = useVendorVisible();
+  const queryClient = useQueryClient();
   const { data, isLoading, isError } = useQuery<Trail>({
     queryKey: ["trail", workItemId, workboardId, profileId],
     enabled: Boolean(profileId),
@@ -115,6 +120,13 @@ export function LiftedTrail({
           {made}
         </>
       )}
+      {canFindSources ? (
+        <TrailSources
+          workItemId={workItemId}
+          profileId={profileId}
+          onChanged={() => void queryClient.invalidateQueries({ queryKey: ["trail", workItemId] })}
+        />
+      ) : null}
       <p className="lift-trail-rule">{TRAIL_COPY.rule}</p>
     </div>
   );

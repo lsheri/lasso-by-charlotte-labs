@@ -73,7 +73,7 @@ export const getTrail = createServerFn({ method: "POST" })
     const { data: rows } = ids.size
       ? await supabase
           .from("work_items")
-          .select("id, title, type, source_vendor, work_date, created_at_source, captured_at")
+          .select("id, title, display_title, type, source_vendor, work_date, created_at_source, captured_at")
           .in("id", [...ids])
       : { data: [] };
     // A piece the caller may not read never comes back from the query above, so it drops out here.
@@ -82,7 +82,8 @@ export const getTrail = createServerFn({ method: "POST" })
         row.id,
         {
           id: row.id,
-          title: row.title,
+          // The name the person gave it, as its card shows it.
+          title: row.display_title?.trim() || row.title,
           type: row.type as string,
           source_vendor: vendorVisible ? row.source_vendor : null,
           date: row.work_date ?? row.created_at_source ?? row.captured_at ?? null,
