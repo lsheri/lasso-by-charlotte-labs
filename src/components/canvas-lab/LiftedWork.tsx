@@ -222,7 +222,9 @@ export function LiftedWork({
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
       // T3: left and right move to the previous or next piece on the board, without closing the view.
-      if ((event.key === "ArrowLeft" || event.key === "ArrowRight") && onStep && !menuOpen && !typingIn(event.target)) {
+      const plain = !event.shiftKey && !event.altKey && !event.metaKey && !event.ctrlKey;
+      // Shift with an arrow grows a text selection in the work; only a plain arrow steps.
+      if ((event.key === "ArrowLeft" || event.key === "ArrowRight") && plain && onStep && !menuOpen && !typingIn(event.target)) {
         event.preventDefault();
         event.stopImmediatePropagation();
         onStep(event.key === "ArrowRight" ? 1 : -1, panel);
@@ -231,6 +233,11 @@ export function LiftedWork({
       if (event.key !== "Escape") return;
       event.preventDefault();
       event.stopImmediatePropagation();
+      // T2c-1: Esc in a comment leaves the field and keeps the draft; the next Esc closes the view.
+      if (typingIn(event.target) && event.target instanceof HTMLElement) {
+        event.target.blur();
+        return;
+      }
       if (menuOpen) {
         setMenuOpen(false);
         return;
