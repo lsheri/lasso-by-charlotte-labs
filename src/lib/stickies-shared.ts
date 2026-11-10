@@ -112,7 +112,7 @@ export function anchorColumns(anchor: StickyAnchor): {
     anchor_kind: anchor.kind,
     page_no: anchor.kind === "page" ? anchor.pageNo : null,
     turn_no: anchor.kind === "turn" ? anchor.turnNo : null,
-    section_key: anchor.kind === "section" ? anchor.sectionKey.trim().slice(0, 200) : null,
+    section_key: anchor.kind === "section" ? anchor.sectionKey.trim().slice(0, 1000) : null,
     row_key: anchor.kind === "row" ? anchor.rowKey.trim().slice(0, 64) : null,
   };
 }

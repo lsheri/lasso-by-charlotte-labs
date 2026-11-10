@@ -124,6 +124,8 @@ export function LiftedWork({
   onStep,
   closeTo,
   animateOpen = true,
+  bodyRef,
+  railFoot,
   children,
 }: {
   title: string;
@@ -154,6 +156,10 @@ export function LiftedWork({
   closeTo?: (() => LiftRect | null) | undefined;
   /** False when reached by the arrows or the trail: it appears in place, and still closes into its card. */
   animateOpen?: boolean | undefined;
+  /** S2: the scrolling body, for anything drawn on the work itself (stickies). */
+  bodyRef?: ((el: HTMLDivElement | null) => void) | undefined;
+  /** S2: sits at the foot of the tab rail (the sticky pad). */
+  railFoot?: ReactNode | undefined;
   children: (bodyWidth: number) => ReactNode;
 }) {
   const still = useRef(reducedMotion()).current;
@@ -170,7 +176,7 @@ export function LiftedWork({
   const [menuOpen, setMenuOpen] = useState(false);
   const [panel, setPanel] = useState<string | null>(initialPanel);
   const openPanel = panels.find((entry) => entry.id === panel) ?? null;
-  const bodyWidth = rect.width - (panels.length ? LIFT_SIDE.rail : 0) - (openPanel ? LIFT_SIDE.panel : 0);
+  const bodyWidth = rect.width - (panels.length || railFoot ? LIFT_SIDE.rail : 0) - (openPanel ? LIFT_SIDE.panel : 0);
   // LIFT-6: the page passes fresh callbacks on every render. Held in refs, so a board redraw in the middle
   // of a close (a live push, presence) can never cancel the close timer and leave an invisible layer up.
   const onCloseRef = useRef(onClose);
@@ -238,6 +244,12 @@ export function LiftedWork({
       if (event.key !== "Escape") return;
       event.preventDefault();
       event.stopImmediatePropagation();
+      // S2: an open sticky takes the first Esc (it cancels what was being written), then the view.
+      const layer = panelRef.current?.querySelector("[data-lift-esc]");
+      if (layer) {
+        layer.dispatchEvent(new CustomEvent("lift-esc"));
+        return;
+      }
       // T2c-1: Esc in a comment leaves the field and keeps the draft; the next Esc closes the view.
       if (typingIn(event.target) && event.target instanceof HTMLElement) {
         // Focus stays in the side panel, where arrows never step away from a draft.
@@ -364,7 +376,7 @@ export function LiftedWork({
           />
         </header>
         <div className="lift-main">
-          <div className="lift-body" data-testid="lift-body" onPointerDown={() => setMenuOpen(false)}>
+          <div ref={bodyRef} className="lift-body" data-testid="lift-body" onPointerDown={() => setMenuOpen(false)}>
             {children(bodyWidth)}
           </div>
           {openPanel ? (
@@ -372,7 +384,7 @@ export function LiftedWork({
               {openPanel.render()}
             </aside>
           ) : null}
-          {panels.length ? (
+          {panels.length || railFoot ? (
             <div className="lift-tabs" role="tablist" aria-orientation="vertical" style={{ width: LIFT_SIDE.rail }}>
               {panels.map((entry) => (
                 <button
@@ -390,6 +402,7 @@ export function LiftedWork({
                   {entry.label}
                 </button>
               ))}
+              {railFoot ? <div className="lift-rail-foot">{railFoot}</div> : null}
             </div>
           ) : null}
         </div>

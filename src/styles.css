@@ -8668,6 +8668,47 @@ footer[data-compact] [data-ask-composer-pad] { padding: 8px 8px 8px 14px; }
 /* T2c-2: a board note or a card whose work is on the way, in the same view. */
 .lift-note { display: flex; flex-direction: column; gap: 10px; padding: 18px 20px; font-size: 13.5px; line-height: 20px; color: var(--foreground); background: var(--nb-paper); min-height: 100%; box-sizing: border-box; }
 .lift-tabs { display: flex; flex-shrink: 0; flex-direction: column; align-items: center; gap: 6px; padding-top: 10px; border-left: 1px solid var(--nb-rule); background: var(--nb-paper); }
+/* S2b: stickies on the work. The pad sits at the foot of the rail; stickies are drawn inside the work's own scroller so they scroll with it. */
+.lift-rail-foot { margin-top: auto; padding: 10px 0 12px; display: flex; justify-content: center; }
+.sticky-pad { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 4px 2px; border: 0; border-radius: 8px; background: transparent; color: var(--nb-graphite); font: 500 10px var(--font-ui); cursor: grab; touch-action: none; user-select: none; }
+.sticky-pad:hover { background: var(--surface-sunk); }
+.sticky-pad:hover svg { transform: rotate(-6deg) scale(1.06); }
+.sticky-pad svg { transition: transform .15s ease; }
+.sticky-ghost { position: fixed; z-index: 400000; pointer-events: none; width: 128px; min-height: 64px; padding: 8px 9px; border-radius: 3px 3px 12px 3px; background: linear-gradient(#ffe98a, #ffd94d); box-shadow: 0 14px 30px rgba(0,0,0,.22); font: 500 11px var(--font-ui); color: #5a4a00; transform: translate(-30%, -30%) rotate(-3deg); }
+.sticky-drop-target { outline: 2px dashed #d9b600; outline-offset: 3px; border-radius: 4px; }
+.has-stickies { position: relative; }
+.sticky-layer { position: absolute; left: 0; top: 0; width: 0; height: 0; z-index: 6; }
+.sticky-pin { position: absolute; width: 30px; height: 30px; margin: -15px 0 0 -15px; padding: 0; border: 0; background: none; cursor: pointer; transition: transform .15s ease; }
+.sticky-pin:hover, .sticky-pin[data-open="true"] { transform: scale(1.12) rotate(-4deg); }
+.sticky-pin[data-just-me="true"] { opacity: .85; }
+.sticky-card { position: absolute; z-index: 7; width: 268px; padding: 12px; border: 1px solid var(--sticky-yellow-edge); border-radius: 4px 4px 14px 4px; background: #fff8cf; box-shadow: 0 18px 40px rgba(0,0,0,.2); font: 400 13px/1.45 var(--font-ui); color: var(--nb-ink); }
+.sticky-card[data-fill="green"] { background: #ecfaf2; border-color: var(--sticky-green-edge); }
+.sticky-card[data-fill="blue"] { background: #e8f8f6; border-color: var(--sticky-blue-edge); }
+.sticky-card[data-fill="pink"] { background: #fdeef3; border-color: var(--sticky-pink-edge); }
+.sticky-card[data-fill="grey"] { background: #f5f5f2; border-color: var(--sticky-grey-edge); }
+.sticky-card-place { margin: 0 0 6px; font: 600 10.5px var(--font-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--nb-graphite); }
+.sticky-card-text { width: 100%; min-height: 74px; box-sizing: border-box; padding: 7px; border: 1px solid var(--nb-rule); border-radius: 6px; background: rgba(255,255,255,.7); font: 400 13px/1.45 var(--font-ui); resize: vertical; }
+.sticky-card-fills { display: flex; gap: 4px; margin-top: 8px; }
+.sticky-card-fills .canvas-lab-sticky-swatch[aria-pressed="true"] { box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px var(--nb-graphite); }
+.sticky-card-vis { display: flex; gap: 12px; margin-top: 8px; font-size: 12px; color: var(--nb-graphite); }
+.sticky-card-acts { display: flex; align-items: center; gap: 6px; margin-top: 10px; }
+.sticky-card-acts > span { flex: 1; }
+.sticky-card-acts button { height: 28px; padding: 0 10px; border: 1px solid var(--nb-rule); border-radius: 7px; background: #fff; font: 500 12px var(--font-ui); cursor: pointer; }
+.sticky-card-acts .sticky-card-go { background: var(--nb-ink); border-color: var(--nb-ink); color: #fff; }
+.sticky-card-body { margin: 0; white-space: pre-wrap; }
+.sticky-card-meta { margin: 8px 0 0; font-size: 11.5px; color: var(--nb-graphite); }
+.sticky-card-error { margin: 8px 0 0; font-size: 12px; color: #9b2c22; }
+.stickies-panel { padding: 14px; font-size: 13px; }
+.stickies-panel h4 { margin: 0 0 8px; font: 600 10.5px var(--font-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--nb-graphite); }
+.stickies-panel h4 + .stickies-empty { margin-top: 0; }
+.stickies-empty { color: var(--nb-graphite); font-size: 12.5px; }
+.sticky-list { list-style: none; margin: 0 0 14px; padding: 0; }
+.sticky-list-row { display: flex; gap: 8px; width: 100%; padding: 7px 6px; border: 0; border-radius: 8px; background: none; text-align: left; font: inherit; cursor: pointer; }
+.sticky-list-row:hover:not(:disabled) { background: var(--surface-sunk); }
+.sticky-list-row:disabled { cursor: default; opacity: .75; }
+.sticky-list-row svg { margin-top: 2px; }
+.sticky-list-row small { display: block; margin-top: 2px; font-size: 11.5px; color: var(--nb-graphite); }
+.sticky-list-text { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .lift-tab { padding: 10px 6px; border-radius: var(--radius-control); writing-mode: vertical-rl; transform: rotate(180deg); font: 500 12px/1 var(--font-sans); color: var(--nb-graphite); cursor: pointer; }
 .lift-tab:hover { background: color-mix(in oklab, var(--nb-ink) 6%, transparent); }
 .lift-tab[aria-selected="true"] { background: color-mix(in oklab, var(--nb-green) 12%, transparent); color: var(--nb-green); }
