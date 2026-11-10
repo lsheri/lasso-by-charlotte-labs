@@ -1,4 +1,5 @@
 import { MentionTextEditor } from "@/components/canvas-lab/MentionTextEditor";
+import { STICKY_FILL_NAMES } from "@/components/canvas-lab/StickyMark";
 import { clampMentions, serializeMentions, type Mention } from "@/lib/mention-shared";
 import type { MentionCandidate } from "@/lib/mention-editor";
 import { stableMemo } from "@/components/canvas-lab/stable-memo";
@@ -122,7 +123,7 @@ function LabStickyInner({ node, selected, editable, layoutEditable, onSelect, on
         {/* STICKY-2 (F1): one slim bar above the note. Colour, size, bold and delete always there; link and list join while typing. */}
         {editable ? <>
           <div className="canvas-lab-sticky-swatches" role="group" aria-label="Sticky colour">
-            {WORKBOARD_STICKY_FILLS.map((fill) => <button key={fill} type="button" className="canvas-lab-sticky-swatch" data-fill={fill} aria-label={fill} aria-pressed={body.fill === fill} onPointerDown={(event) => event.preventDefault()} onClick={() => choose({ fill }, "fill")} />)}
+            {WORKBOARD_STICKY_FILLS.map((fill) => <button key={fill} type="button" className="canvas-lab-sticky-swatch" data-fill={fill} aria-label={STICKY_FILL_NAMES[fill]} title={STICKY_FILL_NAMES[fill]} aria-pressed={body.fill === fill} onPointerDown={(event) => event.preventDefault()} onClick={() => choose({ fill }, "fill")} />)}
           </div>
           <span className="canvas-lab-sticky-bar-sep" aria-hidden="true" />
           <div className="canvas-lab-sticky-sizes" role="group" aria-label="Text size">

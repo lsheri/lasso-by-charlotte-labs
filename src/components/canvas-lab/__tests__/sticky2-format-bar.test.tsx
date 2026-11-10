@@ -29,7 +29,8 @@ describe("STICKY-2 slim bar, drag-out, last colour", () => {
     expect(screen.queryByRole("button", { name: "Formatting" })).toBeNull();
     expect(screen.queryAllByRole("combobox")).toHaveLength(0);
     expect(within(bar.getByRole("group", { name: "Sticky colour" })).getAllByRole("button")).toHaveLength(5);
-    fireEvent.click(bar.getByRole("button", { name: "green" }));
+    // S1: swatches are named as people see them; the stored key stays "green".
+    fireEvent.click(bar.getByRole("button", { name: "Mint" }));
     expect(props.onCommit).toHaveBeenLastCalledWith(expect.objectContaining({ fill: "green" }), "fill");
     fireEvent.click(bar.getByRole("button", { name: "Heading text" }));
     expect(props.onCommit).toHaveBeenLastCalledWith(expect.objectContaining({ size: "heading" }), "style");
