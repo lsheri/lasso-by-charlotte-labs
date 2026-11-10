@@ -219,6 +219,18 @@ describe("the workboard allowlist", () => {
         "workboard.section_shifted": [
           "direction",
         ],
+        "workboard.sticky_created": [
+          "anchor_kind",
+          "work_kind",
+          "assigned",
+          "visibility",
+        ],
+        "workboard.sticky_opened": [
+          "from",
+        ],
+        "workboard.sticky_removed": [
+          "anchor_kind",
+        ],
         "workboard.structure_toggled": [
           "state",
         ],
@@ -378,8 +390,8 @@ describe("the workboard allowlist", () => {
       const [name, , dims] = mocked.mock.calls[0] as [string, string, Record<string, unknown>];
       expect(guardWorkboardEvent(name, dims as never)).toEqual({ keep: true, dims });
     }
-    // LIFT (9 Nov): work_lifted and work_lift_expanded. T2b: work_trail_opened.
-    expect(Object.keys(WORKBOARD_EVENT_DIMS)).toHaveLength(56);
+    // LIFT (9 Nov): work_lifted and work_lift_expanded. T2b: work_trail_opened. S2: three sticky events.
+    expect(Object.keys(WORKBOARD_EVENT_DIMS)).toHaveLength(59);
   });
 
   it.each(["in", "out", "reset"] as const)("reports zoom %s with only direction and method", (direction) => {

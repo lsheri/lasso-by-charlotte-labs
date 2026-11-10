@@ -6,6 +6,7 @@ import type { Work } from './work-types';
 /**
  * The real work, authored at 480px wide and scaled to the card. A taller card
  * shows more of it: more slides, more of the page, more rows, more turns.
+ * S2 (10 Nov): slides, doc sections and sheet rows carry data-anchor-* marks so a sticky can sit on them.
  * Nothing is drawn or invented. No content gives an honest empty state.
  *
  * PORT DEVIATION, deliberate. `fallback` is not in the design system copy.
@@ -49,7 +50,7 @@ export function RealPreview({ work, fallback }: { work: Work; fallback?: React.R
       return (
         <div className="flex flex-col gap-4 p-5" style={{ background: 'var(--surface-sunk-2)', minHeight: '100%' }}>
           {c.slides.map((s, n) => (
-            <div key={n} style={{ boxShadow: 'var(--shadow-card)', alignSelf: 'center' }}>
+            <div key={n} data-anchor-page={n + 1} style={{ boxShadow: 'var(--shadow-card)', alignSelf: 'center' }}>
               <SlideFace slide={s} scale={440 / 960} />
             </div>
           ))}
@@ -58,11 +59,11 @@ export function RealPreview({ work, fallback }: { work: Work; fallback?: React.R
     case 'doc':
       return (
         <div className="px-8 pt-6" style={{ background: 'var(--neutral-60)', minHeight: '100%' }}>
-          <div className="px-10 py-9" style={{ background: 'var(--surface-raised)', boxShadow: 'var(--shadow-float)', minHeight: 600 }}>
+          <div data-anchor-doc="" className="px-10 py-9" style={{ background: 'var(--surface-raised)', boxShadow: 'var(--shadow-float)', minHeight: 600 }}>
             <h3 style={{ margin: 0, fontFamily: SANS, fontSize: 20, fontWeight: 600, lineHeight: 1.25, color: 'var(--text-primary)' }}>{c.heading}</h3>
             {c.blocks.map((b, n) =>
               b.type === 'h2' ? (
-                <h4 key={n} style={{ margin: '18px 0 0', fontFamily: SANS, fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>
+                <h4 key={n} data-anchor-section={b.text} style={{ margin: '18px 0 0', fontFamily: SANS, fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>
                   {b.text}
                 </h4>
               ) : (
@@ -117,7 +118,7 @@ export function RealPreview({ work, fallback }: { work: Work; fallback?: React.R
             </thead>
             <tbody>
               {[c.columns, ...c.rows].map((row, r) => (
-                <tr key={r}>
+                <tr key={r} data-anchor-row={r + 1}>
                   <td style={{ textAlign: 'center', fontSize: 11, color: 'var(--text-muted)', background: 'var(--surface-sunk)', borderRight: 'var(--border-weight) solid var(--line-hairline)', borderBottom: 'var(--border-weight) solid var(--line-hairline)' }}>{r + 1}</td>
                   {row.map((cell, n) => (
                     <td
