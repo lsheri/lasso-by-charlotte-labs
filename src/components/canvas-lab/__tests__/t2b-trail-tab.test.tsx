@@ -163,7 +163,8 @@ describe("T2b on the board (wiring pinned in source)", () => {
   const page = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
   it("every lifted work card gets the Trail tab, read for this board and this person", () => {
     expect(page).toContain('panels={[{ id: "trail", label: TRAIL_COPY.tab, render: () => <LiftedTrail workItemId={liftedItem.id} workboardId={lab.board?.id ?? null} profileId={profile?.id ?? null}');
-    expect(page).toContain("onPanelOpened={() => noteWorkboardWorkTrailOpened(orgId, liftKindOf(liftedItem.type))}");
+    // T2c-1: the Comments tab sits beside it, so only the trail panel counts as opening the trail.
+    expect(page).toContain('onPanelOpened={(id) => { if (id === "trail") noteWorkboardWorkTrailOpened(orgId, liftKindOf(liftedItem.type)); }}');
   });
   it("opening from the trail keeps the trail open and writes nothing to the board", () => {
     const fn = page.slice(page.indexOf("function openFromTrail"), page.indexOf("function openFromTrail") + 300);

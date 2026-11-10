@@ -8660,6 +8660,10 @@ footer[data-compact] [data-ask-composer-pad] { padding: 8px 8px 8px 14px; }
 .lift-main { display: flex; flex: 1; min-height: 0; }
 .lift-main > .lift-body { min-width: 0; }
 .lift-side { flex-shrink: 0; overflow: auto; overscroll-behavior: contain; border-left: 1px solid var(--nb-rule); background: var(--nb-paper); }
+/* T2c-1: a chat in the one view is its whole conversation; the frame scrolls, the body around it does not. */
+.lift-chat { height: 100%; box-sizing: border-box; padding: var(--nb-preview-inset); user-select: text; -webkit-user-select: text; }
+.lift-main > .lift-body:has(> .lift-chat) { overflow: hidden; }
+.lift-notes { padding: 14px 14px 18px; }
 .lift-tabs { display: flex; flex-shrink: 0; flex-direction: column; align-items: center; gap: 6px; padding-top: 10px; border-left: 1px solid var(--nb-rule); background: var(--nb-paper); }
 .lift-tab { padding: 10px 6px; border-radius: var(--radius-control); writing-mode: vertical-rl; transform: rotate(180deg); font: 500 12px/1 var(--font-sans); color: var(--nb-graphite); cursor: pointer; }
 .lift-tab:hover { background: color-mix(in oklab, var(--nb-ink) 6%, transparent); }

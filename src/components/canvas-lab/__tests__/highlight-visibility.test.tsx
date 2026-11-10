@@ -126,7 +126,8 @@ describe("the per highlight visibility choice", () => {
 
   it("uses the team visibility label in the comment composer", () => {
     renderOverlay([mine]);
-    const source = readFileSync("src/components/canvas-lab/FocusOverlay.tsx", "utf8");
+    // T2c-1: the composer moved to chat-notes.tsx; the focus reader composes it.
+    const source = readFileSync("src/components/canvas-lab/chat-notes.tsx", "utf8");
     expect(source).toContain("Visible to your workboard team");
     expect(source).not.toContain("Visible to everyone on this workboard");
     expect(source).not.toContain("Visible to people who can open this chat");

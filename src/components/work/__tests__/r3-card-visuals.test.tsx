@@ -67,7 +67,8 @@ describe("R4 paper preview craft pass", () => {
   });
 
   it("keeps the card header marks and vendor border in the enlarged view", () => {
-    const overlay = readFileSync(resolve(process.cwd(), "src/components/canvas-lab/FocusOverlay.tsx"), "utf8");
+    // T2c-1: the chat reader moved to chat-notes.tsx; the focus reader composes it.
+    const overlay = ["FocusOverlay.tsx", "chat-notes.tsx"].map((f) => readFileSync(resolve(process.cwd(), "src/components/canvas-lab", f), "utf8")).join("\n");
     expect(overlay).toContain("<SourceMark item={item}");
     expect(overlay).toContain("<VendorMark item={item}");
     expect(overlay).toContain("formatDate(effectiveWorkDate(item))");

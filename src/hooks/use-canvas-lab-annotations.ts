@@ -55,6 +55,8 @@ export function useCanvasLabAnnotations(
 
   const create = useMutation({
     mutationFn: async (input: {
+      /** T2c-1: the chat the write was made on, so a view that has since moved on cannot redirect it. */
+      workItemId?: string | undefined;
       turnNo: number;
       charStart: number;
       charEnd: number;
@@ -63,7 +65,7 @@ export function useCanvasLabAnnotations(
       (await createFn({
         data: {
           engagement_id: engagementId,
-          work_item_id: workItemId ?? "",
+          work_item_id: input.workItemId ?? workItemId ?? "",
           turn_no: input.turnNo,
           char_start: input.charStart,
           char_end: input.charEnd,
@@ -71,7 +73,11 @@ export function useCanvasLabAnnotations(
           ...(profileId ? { profile_id: profileId } : {}),
         },
       })) as AnnotationMutationResult,
-    onSuccess: invalidate,
+    onSuccess: (_result, input) => {
+      void queryClient.invalidateQueries({
+        queryKey: annotationsQueryKey(engagementId, input.workItemId ?? workItemId ?? ""),
+      });
+    },
   });
 
   const archive = useMutation({

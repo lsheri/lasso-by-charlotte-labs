@@ -1,122 +1,27 @@
-import { MentionTextEditor } from "@/components/canvas-lab/MentionTextEditor";
-import { committedComment, type MentionCandidate } from "@/lib/mention-editor";
+import { ChatNotesPanel, ChatReader, useChatNotesState, type ComposerAnchor, type OverlayHighlight } from "@/components/canvas-lab/chat-notes";
+import type { MentionCandidate } from "@/lib/mention-editor";
 import { type Mention } from "@/lib/mention-shared";
 import { displayName } from "@/lib/work-item-name";
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, type CSSProperties } from "react";
 
 import { actionsFor, type LabNode } from "@/components/canvas-lab/canvas-lab-model";
 import { WorkboardFilePreview } from "@/components/canvas-lab/WorkboardFilePreview";
 import { Spinner } from "@/components/common/Working";
 import type { WorkboardFilePreview as WorkboardFilePreviewData } from "@/lib/workboard-card-preview.shared";
 import { RenderedContent } from "@/components/peek/RenderedContent";
-import { ThreadBody } from "@/components/peek/ThreadBody";
 import { Button } from "@/components/ui/button";
-import { ChatBorderFrame } from "@/components/work/ChatPreviewWindow";
-import { SourceMark, sourceVendorKey, VendorMark } from "@/components/work/SourceMark";
+import { SourceMark, VendorMark } from "@/components/work/SourceMark";
 import type { CommentDto, CommentThreadDto } from "@/lib/canvas-lab-annotations-shared";
-import { resolveTurnSelection, type TurnSelection } from "@/lib/turn-selection";
+import type { TurnSelection } from "@/lib/turn-selection";
 import { effectiveWorkDate, formatDate, type WorkItemRow } from "@/lib/work-types";
 import { useWorkFileDownload } from "@/hooks/use-work-file-download";
+
+export { CommentComposer, type OverlayHighlight } from "@/components/canvas-lab/chat-notes";
 
 export const COPY = {
   loading: "Loading work…",
   unavailable: "This card's work could not be loaded. Please try again.",
 } as const;
-
-/** One saved highlight, already told whether its turn has moved on. */
-export type OverlayHighlight = {
-  id: string;
-  turnNo: number;
-  charStart: number;
-  charEnd: number;
-  excerpt: string;
-  stale: boolean;
-  version: number;
-  /** Teammate visibility: who can read this one, and who made it. */
-  visibility?: "just_me" | "engagement";
-  isMine?: boolean;
-  authorName?: string;
-};
-
-
-/** Where a composer is anchored: a fresh selection or an existing highlight. */
-type ComposerAnchor = { turnNo: number; charStart: number; charEnd: number; excerpt: string };
-
-function relativeTime(iso: string): string {
-  const then = new Date(iso).getTime();
-  if (Number.isNaN(then)) return "";
-  const seconds = Math.max(0, Math.round((Date.now() - then) / 1000));
-  if (seconds < 60) return "just now";
-  const minutes = Math.round(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.round(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.round(hours / 24)}d ago`;
-}
-
-/** Cmd or Ctrl with Enter posts, the way every other composer here behaves. */
-function isSubmitKey(event: React.KeyboardEvent): boolean {
-  return event.key === "Enter" && (event.metaKey || event.ctrlKey);
-}
-
-export function CommentComposer({
-  label,
-  placeholder,
-  initial = "",
-  initialMentions = [],
-  mentionCandidates = [],
-  quote,
-  submitLabel,
-  onSubmit,
-  onCancel,
-}: {
-  label: string;
-  placeholder: string;
-  initial?: string;
-  initialMentions?: readonly Mention[];
-  mentionCandidates?: readonly MentionCandidate[];
-  quote?: string | undefined;
-  submitLabel: string;
-  onSubmit: (body: string, mentions: Mention[]) => void;
-  onCancel: () => void;
-}) {
-  const [body, setBody] = useState(initial);
-  const [mentions, setMentions] = useState<readonly Mention[]>(initialMentions);
-  const submit = () => { const value = committedComment(body, mentions); onSubmit(value.body, value.mentions); };
-  const ready = body.trim().length > 0 && body.trim().length <= 4000;
-  return (
-    <div className="mt-2">
-      {quote ? (
-        <p className="mb-1 line-clamp-2 nb-type-small italic leading-[17px] text-muted-foreground">
-          &ldquo;{quote}&rdquo;
-        </p>
-      ) : null}
-      <MentionTextEditor text={body} mentions={mentions} candidates={mentionCandidates} maxLength={4000} label={label} placeholder={placeholder} className="text-base"
-        onChange={(text, nextMentions) => { setBody(text); setMentions(nextMentions); }}
-        onKeyDown={(event) => { if (isSubmitKey(event) && ready) { event.preventDefault(); submit(); } }} />
-      <p className="mt-1 nb-type-small leading-[17px] text-muted-foreground">
-        Visible to your workboard team
-      </p>
-      <div className="mt-1 flex items-center gap-2">
-        <Button size="sm" className="h-7 px-2 nb-type-small" disabled={!ready} onClick={submit}>
-          {submitLabel}
-        </Button>
-        <Button size="sm" variant="ghost" className="h-7 px-2 nb-type-small" onClick={onCancel}>
-          Cancel
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-function CommentLine({ comment }: { comment: CommentDto }) {
-  return (
-    <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
-      {comment.authorName} · {relativeTime(comment.createdAt)}
-      {comment.edited ? " · edited" : ""}
-    </span>
-  );
-}
 
 /**
  * Reading at full size without losing the board. The overlay sits above the
@@ -196,29 +101,16 @@ export function FocusOverlay({
   closeLabel?: string | undefined;
 }) {
   const download = useWorkFileDownload("focus");
-  const [quote, setQuote] = useState("");
-  const [turnSelection, setTurnSelection] = useState<TurnSelection | null>(null);
-  const [crossTurn, setCrossTurn] = useState(false);
-  const [composerAnchor, setComposerAnchor] = useState<ComposerAnchor | null>(null);
-  const [replyTo, setReplyTo] = useState<string | null>(null);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const readerRef = useRef<HTMLDivElement | null>(null);
-  const commentsRef = useRef<HTMLDivElement | null>(null);
-  const actions = actionsFor(node.ownership);
   const isThread = item?.type === "ai_thread";
-  const scrollNotedRef = useRef(false);
+  const notes = useChatNotesState(isThread);
+  const { readerRef, captureSelection } = notes;
+  const commentsRef = useRef<HTMLElement | null>(null);
+  const actions = actionsFor(node.ownership);
   const originStyle = origin && typeof window !== "undefined" ? {
     "--focus-from-x": `${origin.left + origin.width / 2 - window.innerWidth / 2}px`,
     "--focus-from-y": `${origin.top + origin.height / 2 - window.innerHeight / 2}px`,
     "--focus-from-scale": String(Math.max(0.18, Math.min(0.72, origin.width / Math.min(1200, window.innerWidth - 64)))),
   } as CSSProperties : undefined;
-
-  useEffect(() => {
-    return () => {
-      if (typeof CSS === "undefined" || !("highlights" in CSS)) return;
-      CSS.highlights?.delete("canvas-lab-selection");
-    };
-  }, []);
 
   useEffect(() => {
     if (!focusTurnNo) return;
@@ -283,47 +175,6 @@ export function FocusOverlay({
     commentsRef.current?.scrollIntoView({ block: "start" });
   }, [openComments]);
 
-  function captureSelection() {
-    if (typeof window === "undefined") return;
-    const selection = window.getSelection();
-    const text = selection?.toString() ?? "";
-    if (!selection || text.trim().length === 0) return;
-    const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
-    if (!range || !readerRef.current?.contains(range.commonAncestorContainer)) return;
-    setQuote(text.trim());
-    if (isThread) {
-      const resolved = resolveTurnSelection(range);
-      setCrossTurn(resolved.kind === "cross_turn");
-      setTurnSelection(resolved.kind === "ok" ? resolved.selection : null);
-    }
-    if (typeof CSS === "undefined" || !("highlights" in CSS) || typeof Highlight === "undefined") return;
-    CSS.highlights?.set("canvas-lab-selection", new Highlight(range.cloneRange()));
-  }
-
-  function clearSelection() {
-    setTurnSelection(null);
-    setQuote("");
-    setComposerAnchor(null);
-  }
-
-  function goToTurn(turnNo: number | null) {
-    if (turnNo === null) return;
-    readerRef.current?.querySelector(`[data-turn-no="${turnNo}"]`)?.scrollIntoView({ block: "center" });
-  }
-
-  const commentMarks = threads.map((thread) => ({
-    id: thread.id,
-    turnNo: thread.turnNo ?? -1,
-    charStart: thread.charStart ?? 0,
-    charEnd: thread.charEnd ?? 0,
-    stale: thread.stale,
-  }));
-
-  // A teammate's shared highlight is listed, not drawn over the reader's text.
-  const myHighlights = highlights.filter((highlight) => highlight.isMine !== false);
-  const teamHighlights = highlights.filter((highlight) => highlight.isMine === false);
-
-
   return (
     <div className="focus-paper-backdrop">
       <div className="focus-paper" style={originStyle}>
@@ -351,21 +202,7 @@ export function FocusOverlay({
 
         <div className="flex min-h-0 flex-1 flex-col gap-0 overflow-hidden lg:flex-row">
           <div className="min-h-0 flex-1 p-[var(--nb-preview-inset)]">
-            {item && item.type === "ai_thread" ? <ChatBorderFrame
-              vendorKey={sourceVendorKey(item)}
-              mode="expanded"
-              testId="workboard-expanded-conversation"
-              bodyRef={readerRef}
-              onScroll={() => {
-                if (scrollNotedRef.current) return;
-                scrollNotedRef.current = true;
-                onContentScroll?.();
-              }}
-              onMouseUp={captureSelection}
-              onKeyUp={captureSelection}
-            >
-              <ThreadBody item={item} enabled highlights={myHighlights} commentMarks={commentMarks} />
-            </ChatBorderFrame> : item ? (
+            {item && item.type === "ai_thread" ? <ChatReader item={item} notes={notes} threads={threads} highlights={highlights} onContentScroll={onContentScroll} /> : item ? (
               <div ref={readerRef} className="focus-paper-reader h-full px-5 py-4" onMouseUp={captureSelection} onKeyUp={captureSelection}>
               {readOnly ? (
                 filePreview && filePreview.kind !== "fallback"
@@ -392,295 +229,22 @@ export function FocusOverlay({
           </div>
 
           {readOnly ? null : <aside className="focus-paper-aside w-full shrink-0 overflow-y-auto border-t border-border px-4 py-4 lg:w-[320px] lg:border-l lg:border-t-0">
-            {isThread ? (
-              <section ref={commentsRef} className="mb-5 border-b border-border pb-4">
-                <h2 className="section-title mb-2">comments</h2>
-                {threads.length === 0 ? (
-                  <p className="nb-type-small leading-[17px] text-muted-foreground">
-                    {canWrite
-                      ? "Select a passage, then leave a comment for people who can open this chat."
-                      : "No comments on this chat yet."}
-                  </p>
-                ) : (
-                  <ul className="flex flex-col gap-3">
-                    {threads.map((thread) => (
-                      <li
-                        key={thread.id}
-                        className="rounded-[var(--radius-control)] border border-border bg-card px-2.5 py-2"
-                      >
-                        <button
-                          type="button"
-                          className="block w-full text-left"
-                          onClick={() => goToTurn(thread.turnNo)}
-                        >
-                          <CommentLine comment={thread} />
-                          <p className="mt-1 line-clamp-2 nb-type-small italic leading-[17px] text-muted-foreground">
-                            &ldquo;{thread.excerpt}&rdquo;
-                            {thread.stale ? " · From an earlier version" : ""}
-                          </p>
-                        </button>
-                        {editingId === thread.id ? (
-                          <CommentComposer
-                            mentionCandidates={mentionCandidates}
-                            label="Edit your comment"
-                            placeholder="What did you notice?"
-                            initial={thread.body}
-                            initialMentions={thread.mentions ?? []}
-                            submitLabel="Save"
-                            onSubmit={(body, mentions) => {
-                              onEditComment?.(thread, body, mentions);
-                              setEditingId(null);
-                            }}
-                            onCancel={() => setEditingId(null)}
-                          />
-                        ) : (
-                          <p className="mt-1 text-[12px] leading-[18px] text-foreground">{thread.body}</p>
-                        )}
-
-                        {thread.replies.length > 0 ? (
-                          <ul className="mt-2 flex flex-col gap-2 border-l border-border pl-2.5">
-                            {thread.replies.map((reply) => (
-                              <li key={reply.id}>
-                                <CommentLine comment={reply} />
-                                {editingId === reply.id ? (
-                                  <CommentComposer
-                            mentionCandidates={mentionCandidates}
-                                    label="Edit your reply"
-                                    placeholder="Add a reply"
-                                    initial={reply.body}
-                                    initialMentions={reply.mentions ?? []}
-                                    submitLabel="Save"
-                                    onSubmit={(body, mentions) => {
-                                      onEditComment?.(reply, body, mentions);
-                                      setEditingId(null);
-                                    }}
-                                    onCancel={() => setEditingId(null)}
-                                  />
-                                ) : (
-                                  <p className="mt-1 text-[12px] leading-[18px] text-foreground">{reply.body}</p>
-                                )}
-                                {reply.isMine && editingId !== reply.id ? (
-                                  <div className="flex items-center gap-1">
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      className="h-6 px-1.5 nb-type-small"
-                                      onClick={() => setEditingId(reply.id)}
-                                    >
-                                      Edit
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      className="h-6 px-1.5 nb-type-small"
-                                      onClick={() => onArchiveComment?.(reply)}
-                                    >
-                                      Remove
-                                    </Button>
-                                  </div>
-                                ) : null}
-                              </li>
-                            ))}
-                          </ul>
-                        ) : null}
-
-                        {replyTo === thread.id ? (
-                          <CommentComposer
-                            mentionCandidates={mentionCandidates}
-                            label="Write a reply"
-                            placeholder="Add a reply"
-                            submitLabel="Post"
-                            onSubmit={(body, mentions) => {
-                              onCreateReply?.(thread.id, body, mentions);
-                              setReplyTo(null);
-                            }}
-                            onCancel={() => setReplyTo(null)}
-                          />
-                        ) : (
-                          <div className="mt-1 flex items-center gap-1">
-                            {canWrite ? (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-6 px-1.5 nb-type-small"
-                                onClick={() => setReplyTo(thread.id)}
-                              >
-                                Reply
-                              </Button>
-                            ) : null}
-                            {thread.isMine && editingId !== thread.id ? (
-                              <>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-6 px-1.5 nb-type-small"
-                                  onClick={() => setEditingId(thread.id)}
-                                >
-                                  Edit
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-6 px-1.5 nb-type-small"
-                                  onClick={() => onArchiveComment?.(thread)}
-                                >
-                                  Remove
-                                </Button>
-                              </>
-                            ) : null}
-                          </div>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </section>
-            ) : null}
-
-            {isThread ? (
-              <section>
-                <h2 className="section-title mb-2">your highlights</h2>
-                {crossTurn ? (
-                  <p className="mb-2 nb-type-small leading-[17px] text-muted-foreground">
-                    Highlight one turn at a time
-                  </p>
-                ) : turnSelection && canWrite ? (
-                  <div className="mb-2 flex items-center gap-2">
-                    <Button
-                      size="sm"
-                      className="h-7 flex-1 px-2 nb-type-small"
-                      onClick={() => {
-                        onHighlight?.(turnSelection);
-                        clearSelection();
-                      }}
-                    >
-                      Highlight
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-7 flex-1 px-2 nb-type-small"
-                      onClick={() =>
-                        setComposerAnchor({
-                          turnNo: turnSelection.turnNo,
-                          charStart: turnSelection.charStart,
-                          charEnd: turnSelection.charEnd,
-                          excerpt: quote,
-                        })
-                      }
-                    >
-                      Comment
-                    </Button>
-                  </div>
-                ) : canWrite ? (
-                  <p className="mb-2 nb-type-small leading-[17px] text-muted-foreground">
-                    Select a passage in one turn to highlight it.
-                  </p>
-                ) : null}
-
-                {composerAnchor && canWrite ? (
-                  <CommentComposer
-                            mentionCandidates={mentionCandidates}
-                    label="Write a comment on this passage"
-                    placeholder="What did you notice?"
-                    quote={composerAnchor.excerpt}
-                    submitLabel="Post"
-                    onSubmit={(body, mentions) => {
-                      onCreateComment?.(composerAnchor, body, mentions);
-                      clearSelection();
-                    }}
-                    onCancel={() => setComposerAnchor(null)}
-                  />
-                ) : null}
-
-                {myHighlights.length === 0 ? null : (
-                  <ul className="mt-2 flex flex-col gap-2">
-                    {myHighlights.map((highlight) => (
-                      <li
-                        key={highlight.id}
-                        className="rounded-[var(--radius-control)] border border-border bg-card px-2.5 py-2"
-                      >
-                        <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
-                          Turn {highlight.turnNo}
-                          {highlight.stale ? " · From an earlier version" : ""}
-                        </span>
-                        <p className="mt-1 line-clamp-2 text-[12px] leading-[18px] text-foreground">
-                          {highlight.excerpt}
-                        </p>
-                        <div className="mt-1 flex items-center gap-1">
-                          {canWrite && !highlight.stale ? (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-7 px-2 nb-type-small"
-                              onClick={() =>
-                                setComposerAnchor({
-                                  turnNo: highlight.turnNo,
-                                  charStart: highlight.charStart,
-                                  charEnd: highlight.charEnd,
-                                  excerpt: highlight.excerpt,
-                                })
-                              }
-                            >
-                              Comment
-                            </Button>
-                          ) : null}
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-7 px-2 nb-type-small"
-                            onClick={() => onRemoveHighlight?.(highlight)}
-                          >
-                            Remove
-                          </Button>
-                        </div>
-                        {onSetHighlightVisibility ? (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="mt-1 h-6 px-1.5 nb-type-small text-muted-foreground"
-                            aria-pressed={highlight.visibility !== "just_me"}
-                            onClick={() =>
-                              onSetHighlightVisibility(
-                                highlight,
-                                highlight.visibility === "just_me" ? "engagement" : "just_me",
-                              )
-                            }
-                          >
-                            {highlight.visibility === "just_me"
-                              ? "Just me"
-                              : "Visible to your workboard team"}
-                          </Button>
-                        ) : null}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-
-                {teamHighlights.length === 0 ? null : (
-                  <>
-                    <h2 className="section-title mb-2 mt-4">shared by your team</h2>
-                    <ul className="flex flex-col gap-2">
-                      {teamHighlights.map((highlight) => (
-                        <li
-                          key={highlight.id}
-                          className="rounded-[var(--radius-control)] border border-border bg-card px-2.5 py-2"
-                        >
-                          <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
-                            {highlight.authorName ?? "A colleague"} · Turn {highlight.turnNo}
-                            {highlight.stale ? " · From an earlier version" : ""}
-                          </span>
-                          <p className="mt-1 line-clamp-2 text-[12px] leading-[18px] text-foreground">
-                            {highlight.excerpt}
-                          </p>
-                        </li>
-                      ))}
-                    </ul>
-                  </>
-                )}
-              </section>
-
-            ) : null}
+            <ChatNotesPanel
+              notes={notes}
+              isThread={isThread}
+              canWrite={canWrite}
+              threads={threads}
+              highlights={highlights}
+              mentionCandidates={mentionCandidates}
+              onHighlight={onHighlight}
+              onRemoveHighlight={onRemoveHighlight}
+              onSetHighlightVisibility={onSetHighlightVisibility}
+              onCreateComment={onCreateComment}
+              onCreateReply={onCreateReply}
+              onEditComment={onEditComment}
+              onArchiveComment={onArchiveComment}
+              commentsRef={commentsRef}
+            />
           </aside>}
         </div>
       </div>
