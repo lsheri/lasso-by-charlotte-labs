@@ -8656,6 +8656,30 @@ footer[data-compact] [data-ask-composer-pad] { padding: 8px 8px 8px 14px; }
 .lift-icon:focus-visible { outline: 2px solid var(--nb-graphite); outline-offset: 1px; }
 /* One stage behind every kind of work, so a page, a deck, a sheet, a chat and a picture sit on the same ground. */
 .lift-body { position: relative; flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; background: var(--surface-sunk); }
+/* T2b: the work, then its side panel, then the tab rail. */
+.lift-main { display: flex; flex: 1; min-height: 0; }
+.lift-main > .lift-body { min-width: 0; }
+.lift-side { flex-shrink: 0; overflow: auto; overscroll-behavior: contain; border-left: 1px solid var(--nb-rule); background: var(--nb-paper); }
+.lift-tabs { display: flex; flex-shrink: 0; flex-direction: column; align-items: center; gap: 6px; padding-top: 10px; border-left: 1px solid var(--nb-rule); background: var(--nb-paper); }
+.lift-tab { padding: 10px 6px; border-radius: var(--radius-control); writing-mode: vertical-rl; transform: rotate(180deg); font: 500 12px/1 var(--font-sans); color: var(--nb-graphite); cursor: pointer; }
+.lift-tab:hover { background: color-mix(in oklab, var(--nb-ink) 6%, transparent); }
+.lift-tab[aria-selected="true"] { background: color-mix(in oklab, var(--nb-green) 12%, transparent); color: var(--nb-green); }
+.lift-tab:focus-visible { outline: 2px solid var(--nb-graphite); outline-offset: 1px; }
+.lift-trail { padding: 14px 16px 24px; }
+.lift-trail-section + .lift-trail-section { margin-top: 18px; }
+.lift-trail-heading { margin: 0 0 6px; font: 600 11px/1.2 var(--font-sans); letter-spacing: 0.06em; text-transform: uppercase; color: color-mix(in oklab, var(--nb-graphite) 62%, transparent); }
+.lift-trail-list { margin: 0; padding: 0; list-style: none; }
+.lift-trail-item { display: flex; gap: 8px; width: 100%; padding: 7px 6px; border-radius: 7px; text-align: left; color: var(--nb-graphite); }
+button.lift-trail-item { cursor: pointer; }
+button.lift-trail-item:hover, button.lift-trail-item:focus-visible { background: color-mix(in oklab, var(--nb-ink) 6%, transparent); outline: none; }
+.lift-trail-mark { display: inline-grid; flex-shrink: 0; place-items: center; width: 14px; height: 14px; margin-top: 2px; }
+.lift-trail-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--nb-rule); }
+.lift-trail-text { display: flex; flex-direction: column; min-width: 0; }
+.lift-trail-title { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font: 500 13px/1.35 var(--font-sans); }
+.lift-trail-how { font: 400 11.5px/1.35 var(--font-sans); color: color-mix(in oklab, var(--nb-graphite) 62%, transparent); }
+.lift-trail-empty, .lift-trail-note { margin: 0; padding: 4px 6px; font: 400 13px/1.4 var(--font-sans); color: color-mix(in oklab, var(--nb-graphite) 62%, transparent); }
+.lift-trail-note { padding: 16px; }
+.lift-trail-rule { margin: 20px 6px 0; font: 400 11.5px/1.4 var(--font-sans); color: color-mix(in oklab, var(--nb-graphite) 55%, transparent); }
 .lift-real { margin: 0 auto; --neutral-60: var(--surface-sunk); }
 .lift-file { position: relative; height: 100%; min-height: 320px; }
 .lift-file .canvas-lab-html-preview, .lift-file .canvas-lab-html-preview iframe { width: 100%; height: 100%; border: 0; background: var(--nb-paper); }

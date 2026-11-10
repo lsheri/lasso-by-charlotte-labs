@@ -42,6 +42,10 @@ export const LIFT_COPY = {
 
 const CORNERS: readonly LiftCorner[] = ["nw", "ne", "se", "sw"];
 
+export type LiftPanel = { id: string; label: string; render: () => ReactNode };
+/** T2b: the side panel's width and its tab rail's, taken off the work's own width when they show. */
+export const LIFT_SIDE = { panel: 300, rail: 40 } as const;
+
 /** LIFT-6: one header for every kind; only the icon says what it is. */
 export const LIFT_KIND_ICON: Record<LiftKind, LucideIcon> = {
   chat: MessageSquare,
@@ -103,6 +107,9 @@ export function LiftedWork({
   dateLine = null,
   openUrl = null,
   menu = [],
+  panels = [],
+  initialPanel = null,
+  onPanelOpened,
   children,
 }: {
   title: string;
@@ -119,6 +126,11 @@ export function LiftedWork({
   openUrl?: string | null | undefined;
   /** Everything that is not reading the work: continue it elsewhere, its ledger, and so on. */
   menu?: LiftMenuItem[] | undefined;
+  /** T2b: side panels beside the work (the Trail first), closed until asked for. */
+  panels?: LiftPanel[] | undefined;
+  onPanelOpened?: ((id: string) => void) | undefined;
+  /** Opened from another piece's trail: the trail stays open on the piece it led to. */
+  initialPanel?: string | null | undefined;
   children: (bodyWidth: number) => ReactNode;
 }) {
   const still = useRef(reducedMotion()).current;
@@ -131,6 +143,9 @@ export function LiftedWork({
   const finished = useRef(false);
   const Icon = LIFT_KIND_ICON[kind];
   const [menuOpen, setMenuOpen] = useState(false);
+  const [panel, setPanel] = useState<string | null>(initialPanel);
+  const openPanel = panels.find((entry) => entry.id === panel) ?? null;
+  const bodyWidth = rect.width - (panels.length ? LIFT_SIDE.rail : 0) - (openPanel ? LIFT_SIDE.panel : 0);
   // LIFT-6: the page passes fresh callbacks on every render. Held in refs, so a board redraw in the middle
   // of a close (a live push, presence) can never cancel the close timer and leave an invisible layer up.
   const onCloseRef = useRef(onClose);
@@ -302,8 +317,35 @@ export function LiftedWork({
             onBack={close}
           />
         </header>
-        <div className="lift-body" data-testid="lift-body" onPointerDown={() => setMenuOpen(false)}>
-          {children(rect.width)}
+        <div className="lift-main">
+          <div className="lift-body" data-testid="lift-body" onPointerDown={() => setMenuOpen(false)}>
+            {children(bodyWidth)}
+          </div>
+          {openPanel ? (
+            <aside className="lift-side" data-testid="lift-side" aria-label={openPanel.label} style={{ width: LIFT_SIDE.panel }}>
+              {openPanel.render()}
+            </aside>
+          ) : null}
+          {panels.length ? (
+            <div className="lift-tabs" role="tablist" aria-orientation="vertical" style={{ width: LIFT_SIDE.rail }}>
+              {panels.map((entry) => (
+                <button
+                  key={entry.id}
+                  type="button"
+                  role="tab"
+                  className="lift-tab"
+                  aria-selected={panel === entry.id}
+                  onClick={() => {
+                    const next = panel === entry.id ? null : entry.id;
+                    setPanel(next);
+                    if (next) onPanelOpened?.(next);
+                  }}
+                >
+                  {entry.label}
+                </button>
+              ))}
+            </div>
+          ) : null}
         </div>
         {CORNERS.map((corner) => (
           <span

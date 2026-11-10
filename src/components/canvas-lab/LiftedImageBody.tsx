@@ -13,7 +13,14 @@ export const LIFT_IMAGE_COPY = {
  * fitted inside the view, never cropped and never enlarged past its own size. It signs its own short-lived
  * link, as the board does, and shows the local copy while that link is on its way.
  */
-export function LiftedImageBody({ node }: { node: Pick<LabNode, "kind" | "imagePath" | "imagePreviewUrl"> }) {
+export function LiftedImageBody({
+  node,
+  initialSrc = null,
+}: {
+  node: Pick<LabNode, "kind" | "imagePath" | "imagePreviewUrl">;
+  /** T2b: the link the board was already showing, used until this view's own link is signed. */
+  initialSrc?: string | null | undefined;
+}) {
   const isVideo = node.kind === "video";
   const [state, setState] = useState<{ url: string | null; failed: boolean; settled?: boolean }>({ url: null, failed: false });
   // The board revokes its local copy once the stored copy loads, so the local link can already be dead.
@@ -35,7 +42,7 @@ export function LiftedImageBody({ node }: { node: Pick<LabNode, "kind" | "imageP
       live = false;
     };
   }, [node.imagePath, node.imagePreviewUrl]);
-  const src = state.url ?? (previewDead ? null : node.imagePreviewUrl ?? null);
+  const src = state.url ?? (previewDead ? null : node.imagePreviewUrl ?? initialSrc ?? null);
   // Only the stored copy failing is a failure; a dead local copy just waits for the signed link.
   const onMediaError = () => {
     if (state.url && src === state.url) setState({ url: null, failed: true });
