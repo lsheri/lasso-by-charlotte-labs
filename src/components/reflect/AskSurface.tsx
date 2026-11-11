@@ -596,7 +596,7 @@ export function MessagesTab({ ask, emptyActions, statusInTitle = false }: { ask:
               {ask.streamed && answerStartedAt ? <div className="ask-a1-name-in">{speakerName("assistant", answerStartedAt)}</div> : null}
               <AnswerRail state="working">
                 {
-                  <div className="nb-binder-inset">
+                  <div className={askV2 ? "nb-binder-inset ask-v2-inset" : "nb-binder-inset"}>
                     {askV2 ? (
                       <AskReadingV2
                         manifest={ask.liveManifest}
