@@ -8549,8 +8549,13 @@ footer[data-compact] [data-ask-composer-pad] { padding: 8px 8px 8px 14px; }
 .ask-cc-scope button { font-weight: 600; color: var(--accent-deep); }
 /* C2 idle capsule: mark, prompt, scope pill, history, Send, close, in one 62 px row. */
 .ask-draft[data-idle-bar="true"] { align-items: flex-start; }
-/* No grip on the bar: the mark is the handle (the dock drags from anything that is not a control). */
-.ask-draft[data-idle-bar="true"] .ask-draft-grip { display: none; }
+/* GRIP-1 (10 Nov, Liam): the bar keeps a small grip in its top-left corner so people know it moves. Same six
+   dots as the open panel's grip at about half the size, faded, in the empty corner above and left of the mark
+   (measured on the preview: no overlap with the mark or any control). Out of the row's flow, so nothing shifts. The whole bar still drags
+   from anything that is not a control; the grip keeps its label and arrow-key moves. */
+.ask-draft[data-idle-bar="true"] .ask-draft-grip { position: absolute; left: 5px; top: 3px; z-index: 3; width: 12px; height: 15px; margin: 0; opacity: .55; transition: opacity .12s ease; }
+.ask-draft[data-idle-bar="true"] .ask-draft-grip svg { width: 7px; height: 11px; }
+.ask-draft[data-idle-bar="true"] .ask-draft-grip:hover, .ask-draft[data-idle-bar="true"] .ask-draft-grip:focus-visible { opacity: .95; }
 .ask-draft[data-idle-bar="true"] .ask-draft-mark { align-self: flex-start; margin: 19px 2px 0 14px; cursor: grab; }
 .ask-draft[data-idle-bar="true"] .ask-draft-head [aria-label="Close Ask Lasso"] { align-self: flex-start; margin-top: 17px; }
 .ask-draft[data-idle-bar="true"] footer[data-compact] [data-ask-composer-pad] { padding: 13px 0 13px 4px; }
