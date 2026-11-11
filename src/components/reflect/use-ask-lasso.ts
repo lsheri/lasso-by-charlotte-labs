@@ -312,7 +312,12 @@ export function useAskLasso({
   );
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    // ASK-V2-FIX-2: the thread refetch (the saved question at send, the saved answer at the end) ran this and
+    // scrolled to the very end: the question sat 117 px above view while Gathering, and a finished answer opened on
+    // its last lines. With ask-v2 the latest question goes to the top instead; the answer reads down from it.
+    const anchor = bottomRef.current;
+    if (ASK_V2 && anchor && showLatestQuestion(anchor)) return;
+    anchor?.scrollIntoView({ behavior: "smooth" });
   }, [messages?.length, pending, asked]);
 
   // ASK-FIX-2: scroll again after the panel has grown to fit, and when the read set arrives,
@@ -574,6 +579,15 @@ export function questionInFlight(anchor: HTMLElement): HTMLElement | null {
   if (now) return now;
   const asked = thread.querySelectorAll<HTMLElement>('[data-turn-role="user"]');
   return asked.length ? asked[asked.length - 1]! : null;
+}
+
+/** ASK-V2-FIX-2: put the latest question at the top of the panel. False when there is none to show. */
+export function showLatestQuestion(anchor: HTMLElement): boolean {
+  const scroller = scrollAreaOf(anchor);
+  const question = questionInFlight(anchor);
+  if (!scroller || !question) return false;
+  alignTopIn(question, scroller, "smooth");
+  return true;
 }
 
 /** ASK-V2-FIX-1: true when the top of the element is inside the scroll area. */
