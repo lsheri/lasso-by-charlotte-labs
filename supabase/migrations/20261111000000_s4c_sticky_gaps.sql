@@ -5,7 +5,7 @@
 --    signed by the seat that is not on that board (insert checked the login, not the seat). Now the author must
 --    be a non-coach member seat of the board. All 9 existing annotations already are (checked 10 Nov).
 -- 2. Rewriting who did it. The author could change done_by on its own, so a sticky could say someone else
---    marked it done. Now done_by can only ever be the person making the change.
+--    marked it done. Now done_by changes only as part of a new tick, and only to the person ticking.
 -- 3. Asking someone who left. An open sticky kept naming a person after they were taken off the board, and
 --    their "left you a sticky" row stayed in Needs you. Now leaving clears the assignee on open stickies and
 --    settles those rows. Done stickies keep their history.
@@ -79,7 +79,8 @@ begin
     if not (new.updated_by = any (select public.my_profile_ids())) then raise exception 'A change records the person who made it.'; end if;
     -- S4a/S4c: whoever marks a sticky done is the one recorded as doing it. The doer cannot be rewritten on
     -- its own either (S4c: the S4a check only looked when the done time changed).
-    if new.done_by is not null and new.done_by is distinct from old.done_by and new.done_by is distinct from new.updated_by then raise exception 'Done records who marked it.'; end if;
+    if new.done_by is not null and new.done_by is distinct from old.done_by
+       and (new.done_by is distinct from new.updated_by or new.done_at is not distinct from old.done_at) then raise exception 'Done records who marked it.'; end if;
     -- S4a: a new assignee has to be on the board.
     if new.assignee_profile_id is not null and new.assignee_profile_id is distinct from old.assignee_profile_id and not exists (
       select 1 from public.workboards b join public.engagement_members em on em.engagement_id = b.engagement_id
