@@ -43,9 +43,9 @@ describe("V2-2e the note under a receipt says only what the receipt does not", (
 });
 
 describe("V2-2e wiring", () => {
-  it("the note under a saved answer is compact under ask-v2 only; the in-flight note is unchanged", () => {
+  it("the note under a saved answer is compact; FLAGS-1: the in-flight note is compact too, so the long form never shows", () => {
     const src = readFileSync("src/components/reflect/AskSurface.tsx", "utf8");
     expect(src).toContain("<CoverageNote {...coverage} compact={askV2 && Boolean(manifest)} />");
-    expect(src).toContain("<CoverageNote {...ask.coverage} />");
+    expect(src).toContain("<CoverageNote {...ask.coverage} compact={askV2} />");
   });
 });

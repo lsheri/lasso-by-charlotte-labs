@@ -94,14 +94,6 @@ describe("ASK-FIX-3 the composer", () => {
     fireEvent.keyDown(screen.getByRole("textbox"), { key: "Escape" });
     expect(ask.cancelQueued).toHaveBeenCalledTimes(2);
   });
-  it("flag off is today's composer: nothing held, no line", () => {
-    flag.on = false;
-    const ask = fakeAsk({ queued: "x" });
-    render(<AskComposer ask={ask} mobile engagementId="e" />);
-    fireEvent.keyDown(screen.getByRole("textbox"), { key: "Enter", keyCode: 13 });
-    expect(ask.queueSend).not.toHaveBeenCalled();
-    expect(screen.queryByTestId("ask-queued")).toBeNull();
-  });
   it("when idle, Enter still sends as before", () => {
     const ask = fakeAsk({ pending: false });
     render(<AskComposer ask={ask} mobile engagementId="e" />);

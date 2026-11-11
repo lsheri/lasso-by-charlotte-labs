@@ -15,7 +15,7 @@ import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
 import { AnswerRail, ContextAudit, ThinkingTrail } from "@/components/reflect/ContextTrail";
 import { AskReadingV2 } from "@/components/reflect/AskReadingV2";
 import { receiptLine } from "@/lib/ask-reading-v2";
-import { flagEnabled } from "@/lib/feature-flags";
+import { ASK_V2 } from "@/lib/ask-v2";
 import { ASK_QUEUE_COPY, shouldQueueAskOnEnter } from "@/lib/ask-queue";
 import { AnswerMoreMenu } from "@/components/reflect/AnswerMoreMenu";
 import { SaveForOneOnOneDialog } from "@/components/oneonone/SaveForOneOnOne";
@@ -393,7 +393,7 @@ export function MessagesTab({ ask, emptyActions, statusInTitle = false }: { ask:
   const messages = ask.messages ?? [];
   const unanswered = unansweredQuestionIds(messages, ask.pending);
   // V2-2 (ask-v2, default off): reading states and the one-line receipt. Off renders today's trail exactly.
-  const askV2 = flagEnabled("ask-v2");
+  const askV2 = ASK_V2;
   const previousManifest = askV2
     ? (() => {
         for (let i = messages.length - 1; i >= 0; i -= 1) {
@@ -628,7 +628,8 @@ export function MessagesTab({ ask, emptyActions, statusInTitle = false }: { ask:
 
         {ask.pending && ask.coverage && (ask.coverage.truncated || (ask.coverage.share ?? 1) < 0.999 || (ask.coverage.noTextCount ?? 0) > 0) ? (
           <div className="nb-binder-inset">
-            <CoverageNote {...ask.coverage} />
+            {/* FLAGS-1: the live note is short too; the reading chips above already say what was read. */}
+            <CoverageNote {...ask.coverage} compact={askV2} />
           </div>
         ) : null}
         <div ref={ask.bottomRef} />
@@ -750,7 +751,7 @@ export function AskComposer({
   const slash = useSlashMenu(ask, engagementId, () =>
     noteWorkboardContextChanged(orgId, "workstream"),
   );
-  const askV2 = flagEnabled("ask-v2");
+  const askV2 = ASK_V2;
   // C2: the compact line grows with what is typed, up to six lines, then scrolls.
   // An empty box drops its measured height so the idle bar's one-line rule applies; a width change re-measures.
   useLayoutEffect(() => {

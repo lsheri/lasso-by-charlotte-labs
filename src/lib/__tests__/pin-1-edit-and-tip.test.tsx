@@ -146,19 +146,5 @@ describe("PIN-1 copy", () => {
   });
 });
 
-describe("PIN-1 flag off is today's card", () => {
-  it("no click-to-type, no Editing label, no Done or Cancel", async () => {
-    flag.on = false;
-    render(<LabAnswerCard {...props()} />);
-    clickText();
-    expect(screen.queryByTestId("answer-editing-label")).toBeNull();
-    expect(screen.getByTestId("canvas-lab-answer-card").getAttribute("data-v2")).toBeNull();
-    fireEvent.doubleClick(screen.getByTestId("canvas-lab-answer-card").querySelector(".canvas-lab-answer-body")!);
-    expect(screen.getByTestId("canvas-lab-answer-card").getAttribute("data-editing")).toBe("true");
-    expect(screen.queryByRole("button", { name: EDIT_COPY.done })).toBeNull();
-  });
-  it("the tip stores only a seen mark, never pin data", () => {
-    const src = readFileSync("src/components/canvas-lab/PinEditTip.tsx", "utf8");
-    expect(src.match(/localStorage\.(set|get)Item\(([^,)]+)/g)?.every((call) => call.includes("PIN_TIP_KEY"))).toBe(true);
-  });
-});
+// FLAGS-1 (10 Nov): the flag-off card is retired; every user has the PIN-1 edit.
+

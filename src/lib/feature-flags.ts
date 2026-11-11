@@ -16,6 +16,8 @@ import { readFeatureFlag } from "./posthog-client";
  *    reading this first.
  * 4. The key in PostHog matches the key here exactly.
  * 5. Retire a flag by deleting it here and in PostHog in the same change.
+ * 6. FLAGS-1 (10 Nov, Liam): every user sees every feature. A flag is added only for a future need (a
+ *    staged rollout, a kill switch), never to hold a finished feature back from people.
  */
 export const FEATURE_FLAGS = {
   /**
@@ -24,12 +26,6 @@ export const FEATURE_FLAGS = {
    * the docked panel on the next page load. Preview hosts are not affected.
    */
   "ask-floating": { default: true },
-  /**
-   * The Ask redesign (8 Nov decisions). Default off: today's panel is the code
-   * default. Turn it on per person in PostHog to try the new idle bar, reading
-   * states and receipt. It changes what Ask looks like, never what it reads.
-   */
-  "ask-v2": { default: false },
 } as const satisfies Record<string, { default: boolean }>;
 
 export type FeatureFlag = keyof typeof FEATURE_FLAGS;

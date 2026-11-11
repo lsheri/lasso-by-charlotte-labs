@@ -245,7 +245,7 @@ describe("V2-2 only show what's new", () => {
 describe("V2-2 flag off is today's trail", () => {
   it("MessagesTab only reaches the V2 pieces through the ask-v2 flag", () => {
     const src = readFileSync("src/components/reflect/AskSurface.tsx", "utf8");
-    expect(src).toMatch(/const askV2 = flagEnabled\("ask-v2"\)/);
+    expect(src).toMatch(/const askV2 = ASK_V2/);
     expect(src).toMatch(/\{askV2 \? \(\s*<AskReadingV2/);
     expect(src).toMatch(/v2=\{askV2 && manifest \?/);
   });

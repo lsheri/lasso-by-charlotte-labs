@@ -23,6 +23,8 @@ function fakeAsk(over: Partial<Record<string, unknown>>): AskLasso {
     streamed: "",
     pointedNow: [],
     selectedItems: [],
+    mapped: [],
+    boardPickedCount: 0,
     liveManifest: null,
     sourcesByMessage: {},
     coverage: null,
