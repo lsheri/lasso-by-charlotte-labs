@@ -52,7 +52,7 @@ export type StickyDto = {
   /** Done stickies stay where they are, marked done (S4). */
   doneAt: string | null;
   doneByName: string | null;
-  /** A turn sticky whose turn has changed since. Shown, never moved. */
+  /** The spot's work has changed since the sticky was left: a turn's text, or (S5) the piece itself. Shown, never moved. */
   stale: boolean;
   version: number;
   createdAt: string;

@@ -8705,6 +8705,9 @@ footer[data-compact] [data-ask-composer-pad] { padding: 8px 8px 8px 14px; }
 .sticky-card-tick { display: flex; align-items: center; gap: 6px; margin-top: 10px; font: 500 12.5px var(--font-ui); cursor: pointer; }
 .sticky-card-tick input { width: 15px; height: 15px; accent-color: var(--nb-green); }
 .sticky-card-done { margin: 4px 0 0; font: 600 11.5px var(--font-ui); color: var(--nb-green); }
+/* S5: the work under a sticky changed since it was left. A quiet note on the card and a dashed edge on the pin. */
+.sticky-card-changed { margin: 4px 0 0; font: 500 11.5px/1.35 var(--font-ui); color: var(--muted-foreground); }
+.sticky-pin[data-stale="true"] { outline: 1.4px dashed var(--muted-foreground); outline-offset: 2px; border-radius: 4px; }
 .sticky-card-body[data-done="true"] { color: var(--nb-graphite); text-decoration: line-through; text-decoration-color: color-mix(in oklab, var(--nb-graphite) 60%, transparent); }
 .sticky-pin[data-done="true"] { opacity: .5; filter: saturate(.4); }
 .sticky-pin[data-for-me="true"]::after { content: ""; position: absolute; top: -3px; right: -3px; width: 9px; height: 9px; border: 2px solid #fff; border-radius: 50%; background: var(--nb-green); }

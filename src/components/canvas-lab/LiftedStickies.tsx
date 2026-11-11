@@ -54,6 +54,9 @@ export const STICKY_UI_COPY = {
   markDone: "Mark done",
   doneBy: (name: string) => `Done · ${name}`,
   done: "Done",
+  /** S5: the work under the sticky has changed since it was left. Says so; never moves it. */
+  changed: "This changed since the sticky was left. Check it still points to the right spot.",
+  changedShort: "changed since",
 } as const;
 
 /** S4b: someone on the board a sticky can ask. */
@@ -355,6 +358,7 @@ export function StickyLayer(props: StickyLayerProps) {
             data-just-me={sticky.visibility === "just_me" ? "true" : undefined}
             data-done={sticky.doneAt ? "true" : undefined}
             data-for-me={sticky.isAssignedToMe && !sticky.doneAt ? "true" : undefined}
+            data-stale={sticky.stale ? "true" : undefined}
             aria-label={`${sticky.doneAt ? `${STICKY_UI_COPY.done} sticky` : "Sticky"} on ${stickyPlace(sticky.anchor, workKind)}: ${sticky.body}`}
             style={{ left: spot.left, top: spot.top }}
             onClick={() => onOpen(openId === sticky.id ? null : sticky.id)}
@@ -604,6 +608,9 @@ function StickyCard({
             {sticky.isMine ? STICKY_UI_COPY.you : sticky.authorName}
             {sticky.assigneeName ? ` · ${STICKY_UI_COPY.forWho(sticky.assigneeName)}` : ""}
           </p>
+          {sticky.stale ? (
+            <p className="sticky-card-changed" data-testid="sticky-card-changed">{STICKY_UI_COPY.changed}</p>
+          ) : null}
           {sticky.doneAt ? (
             <p className="sticky-card-done">{STICKY_UI_COPY.doneBy(sticky.doneByName ?? STICKY_UI_COPY.you)}</p>
           ) : null}
@@ -712,6 +719,7 @@ export function StickiesPanel({
             {sticky.isMine ? STICKY_UI_COPY.you : sticky.authorName}
             {sticky.assigneeName ? ` · ${STICKY_UI_COPY.forWho(sticky.assigneeName)}` : ""}
             {sticky.visibility === "just_me" ? ` · ${STICKY_UI_COPY.justMe}` : ""}
+            {sticky.stale ? ` · ${STICKY_UI_COPY.changedShort}` : ""}
           </small>
         </span>
       </button>
