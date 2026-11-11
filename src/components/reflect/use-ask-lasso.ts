@@ -324,9 +324,15 @@ export function useAskLasso({
     frame = raf(() => { frame = raf(() => {
       // V2-2c: when the reading state is shown (ask-v2), bring that whole block into view. Scrolling to the very end
       // overshoots by the spacer that holds the question near the top, which hid the status and chips.
-      const reading = bottomRef.current?.parentElement?.querySelector<HTMLElement>('[data-testid="ask-reading-v2"]');
+      // ASK-V2-FIX-1: anchor on the question itself: it sits at the top of the panel and the chips follow under it.
+      // Scrolling to the chips alone left the question just above view for the whole wait (seen 10 Nov).
+      const anchor = bottomRef.current;
+      const scroller = anchor ? scrollAreaOf(anchor) : null;
+      const question = anchor ? questionInFlight(anchor) : null;
+      if (question && scroller) { alignTopIn(question, scroller, "smooth"); return; }
+      const reading = anchor?.parentElement?.querySelector<HTMLElement>('[data-testid="ask-reading-v2"]');
       if (reading) reading.scrollIntoView({ behavior: "smooth", block: "nearest" });
-      else bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+      else anchor?.scrollIntoView({ behavior: "smooth", block: "end" });
     }); });
     return () => { if (typeof cancelAnimationFrame === "function") cancelAnimationFrame(frame); };
   }, [pending, asked, liveManifest]);
@@ -341,6 +347,9 @@ export function useAskLasso({
     const scroller = anchor ? scrollAreaOf(anchor) : null;
     if (!anchor || !scroller) return;
     const refit = () => {
+      // ASK-V2-FIX-1: the question stays at the top while the panel grows; the chips follow under it.
+      const question = questionInFlight(anchor);
+      if (question) { if (!topInView(question, scroller)) alignTopIn(question, scroller, "auto"); return; }
       const reading = anchor.parentElement?.querySelector<HTMLElement>('[data-testid="ask-reading-v2"]');
       if (reading && !fitsIn(reading, scroller)) reading.scrollIntoView({ behavior: "auto", block: "nearest" });
     };
@@ -552,6 +561,35 @@ export function scrollAreaOf(el: HTMLElement): HTMLElement | null {
     node = node.parentElement;
   }
   return null;
+}
+
+/**
+ * ASK-V2-FIX-1: the question Lasso is answering: the one just sent, or once its saved copy is back, the last
+ * question in the thread.
+ */
+export function questionInFlight(anchor: HTMLElement): HTMLElement | null {
+  const thread = anchor.parentElement;
+  if (!thread) return null;
+  const now = thread.querySelector<HTMLElement>('[data-testid="asked-now"]');
+  if (now) return now;
+  const asked = thread.querySelectorAll<HTMLElement>('[data-turn-role="user"]');
+  return asked.length ? asked[asked.length - 1]! : null;
+}
+
+/** ASK-V2-FIX-1: true when the top of the element is inside the scroll area. */
+export function topInView(el: HTMLElement, area: HTMLElement): boolean {
+  const e = el.getBoundingClientRect();
+  const a = area.getBoundingClientRect();
+  return e.top >= a.top - 1 && e.top <= a.bottom - 24;
+}
+
+/** ASK-V2-FIX-1: scroll the area so the element's top sits just under the area's top edge. */
+export function alignTopIn(el: HTMLElement, area: HTMLElement, behavior: ScrollBehavior): void {
+  const delta = el.getBoundingClientRect().top - area.getBoundingClientRect().top - 8;
+  if (Math.abs(delta) < 1) return;
+  const top = area.scrollTop + delta;
+  if (typeof area.scrollTo === "function") area.scrollTo({ top, behavior });
+  else area.scrollTop = top;
 }
 
 /** V2-2d: true when the block sits wholly inside the scroll area (1 px slack for rounding). */

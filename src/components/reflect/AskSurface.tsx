@@ -500,6 +500,7 @@ export function MessagesTab({ ask, emptyActions, statusInTitle = false }: { ask:
             <div
               key={message.id}
               className="nb-conversation-message max-w-none flex-row items-start gap-3"
+              data-turn-role={role}
             >
               <div className="grid w-7 shrink-0 grid-rows-[28px]">
                 {followsSameSpeaker ? <span aria-hidden className="size-7" /> : speakerAvatar(role)}
