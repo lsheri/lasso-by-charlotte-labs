@@ -57,10 +57,12 @@ describe("C2: idle bar and collapse", () => {
     expect(draft).toMatch(/composerScopeLine=\{idleBar && empty && focusedIn\}/);
     expect(draft).toMatch(/\[refresh, collapsed, folded, expanded, idleBar, focusedIn\]/);
   });
-  it("history sits in the row before Send; the head hides its own history, collapse and grip", () => {
+  it("history sits in the row before Send; the head hides its own history and collapse", () => {
     expect(draft).toMatch(/composerRowExtra=\{idleBar \? \(\s*<button type="button" className="ask-cc-icon" aria-label="Past conversations"/);
     expect(css).toMatch(/\[aria-label="Expand Ask Lasso"\], \[aria-label="Collapse Ask Lasso"\]\) \{ display: none; \}/);
-    expect(css).toMatch(/\.ask-draft\[data-idle-bar="true"\] \.ask-draft-grip \{ display: none; \}/);
+    // GRIP-1: the grip stays, small, in the corner and out of the row's flow.
+    expect(css).toContain('.ask-draft[data-idle-bar="true"] .ask-draft-grip { position: absolute; left: 5px; top: 3px; z-index: 3; width: 12px; height: 15px; margin: 0; opacity: .55;');
+    expect(css).not.toContain('.ask-draft[data-idle-bar="true"] .ask-draft-grip { display: none; }');
   });
   it("the Continue line never shows over the bar", () => {
     expect(draft).toMatch(/draft === "b" && !idleBar && props\.tab === "messages" && h7LineShown/);
