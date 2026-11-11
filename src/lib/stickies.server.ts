@@ -40,7 +40,7 @@ import {
 type Db = SupabaseClient<Database>;
 
 const STICKY_COLUMNS =
-  "id, work_item_id, anchor_kind, page_no, turn_no, section_key, row_key, turn_hash, pos_x, pos_y, fill, body, visibility, author_profile_id, assignee_profile_id, done_at, done_by, version, created_at";
+  "id, work_item_id, anchor_kind, page_no, turn_no, section_key, row_key, turn_hash, source_hash, pos_x, pos_y, fill, body, visibility, author_profile_id, assignee_profile_id, done_at, done_by, version, created_at";
 
 type StickyRow = {
   id: string;
@@ -51,6 +51,8 @@ type StickyRow = {
   section_key: string | null;
   row_key: string | null;
   turn_hash: string | null;
+  /** S5: the work's content hash when the sticky was left (non-turn anchors), to tell when the work has changed. */
+  source_hash: string | null;
   pos_x: number | null;
   pos_y: number | null;
   fill: string | null;
@@ -81,6 +83,8 @@ export function stickyDto(
   authorName: string,
   contentHash?: string | null,
   names?: ReadonlyMap<string, string>,
+  /** S5: the work's content hash now, for stickies on a page, section, row, picture or the whole piece. */
+  itemHash?: string | null,
 ): StickyDto {
   const isMine = row.author_profile_id === viewerProfileId;
   const isAssignedToMe = row.assignee_profile_id === viewerProfileId;
@@ -104,10 +108,19 @@ export function stickyDto(
     stale:
       row.anchor_kind === "turn"
         ? isStaleHighlight(row.turn_hash, contentHash ?? row.turn_hash)
-        : false,
+        : workChangedSince(row.source_hash, itemHash),
     version: row.version,
     createdAt: row.created_at,
   };
+}
+
+/**
+ * S5: a sticky on a page, section, row, picture or the whole piece remembers the work's content hash when it was
+ * left. A different hash now means the work changed under it (a new version, a re-import), so the sticky says so.
+ * The work is compared as a whole: Lasso cannot yet tell which page changed. Unknown on either side is not a change.
+ */
+export function workChangedSince(leftOn: string | null | undefined, now: string | null | undefined): boolean {
+  return Boolean(leftOn && now && leftOn !== now);
 }
 
 /** SH-7b: on a shared board, the caller's own guest seat writes and owns stickies, as with comments. */
@@ -199,7 +212,8 @@ export async function listStickies(
         .map((row) => row.turn_no as number),
     ),
   ];
-  const [{ data: turns }, names] = await Promise.all([
+  const needsItemHash = rows.some((row) => row.anchor_kind !== "turn" && row.source_hash);
+  const [{ data: turns }, names, { data: item }] = await Promise.all([
     turnNos.length
       ? db
           .from("turns")
@@ -208,6 +222,9 @@ export async function listStickies(
           .in("turn_no", turnNos)
       : Promise.resolve({ data: [] as { turn_no: number; content_hash: string | null }[] }),
     namesFor(db, rows),
+    needsItemHash
+      ? db.from("work_items").select("content_hash").eq("id", workItemId).maybeSingle()
+      : Promise.resolve({ data: null as { content_hash: string | null } | null }),
   ]);
   const hashByTurn = new Map(
     (turns ?? []).map((turn) => [turn.turn_no, turn.content_hash ?? null]),
@@ -219,6 +236,7 @@ export async function listStickies(
       nameFor(row.author_profile_id, profile.id, names) ?? "A colleague",
       row.turn_no !== null ? (hashByTurn.get(row.turn_no) ?? null) : null,
       names,
+      item?.content_hash ?? null,
     ),
   );
 }
@@ -274,6 +292,17 @@ export async function createSticky(
     turnHash = turn.content_hash ?? null;
   }
 
+  // S5: any other sticky remembers the work as it was, so a changed work can say so too.
+  let sourceHash: string | null = null;
+  if (input.anchor.kind !== "turn") {
+    const { data: item } = await db
+      .from("work_items")
+      .select("content_hash")
+      .eq("id", input.workItemId)
+      .maybeSingle();
+    sourceHash = item?.content_hash ?? null;
+  }
+
   const board = await ensureBoard(db, input.engagementId, profile);
   if (!board) return { status: "forbidden" };
   const nodeId = await ensureWorkItemNode(db, board.id, profile.id, input.workItemId);
@@ -287,6 +316,7 @@ export async function createSticky(
       kind: "sticky",
       ...anchorColumns(input.anchor),
       turn_hash: turnHash,
+      source_hash: sourceHash,
       pos_x: clampUnit(input.posX),
       pos_y: clampUnit(input.posY),
       fill: input.fill,
