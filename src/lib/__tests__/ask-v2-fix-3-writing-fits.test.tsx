@@ -38,7 +38,7 @@ describe("ASK-V2-FIX-3 the answer streams in view", () => {
   it("the working card drops the binder's baseline padding in the dock only", () => {
     expect(ASK_READING_V2_STYLES).toContain(".nb-binder-inset.ask-v2-inset { padding: 4px 0; margin: 4px 0 8px; box-shadow: none; }");
     const surface = readFileSync("src/components/reflect/AskSurface.tsx", "utf8");
-    expect(surface).toContain('className={askV2 ? "nb-binder-inset ask-v2-inset" : "nb-binder-inset"}');
+    expect(surface).toContain('<div className="nb-binder-inset ask-v2-inset">');
   });
 });
 

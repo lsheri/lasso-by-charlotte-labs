@@ -47,9 +47,9 @@ describe("ASK-V2-FIX-2 the latest question goes to the top, not the end of the t
 });
 
 describe("ASK-V2-FIX-2 wiring (pinned in source)", () => {
-  it("the thread-change scroll tries the question first, only with ask-v2", () => {
+  it("the thread-change scroll tries the question first", () => {
     const hook = readFileSync("src/components/reflect/use-ask-lasso.ts", "utf8");
-    expect(hook).toContain("if (ASK_V2 && anchor && showLatestQuestion(anchor)) return;");
+    expect(hook).toContain("if (anchor && showLatestQuestion(anchor)) return;");
     expect(hook).toContain('anchor?.scrollIntoView({ behavior: "smooth" });\n  }, [messages?.length, pending, asked]);');
   });
 });

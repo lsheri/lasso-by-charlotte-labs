@@ -39,18 +39,19 @@ describe("C2: compact composer (ask-v2 dock only)", () => {
     expect(surface).toMatch(/box\.style\.height = "";\s*if \(!box\.value\) return;/);
   });
   it("no 'Reading N items as written' line and no Try suggestions under ask-v2", () => {
-    expect(draft).toMatch(/beforeComposer=\{ask\.pending && !askV2 \? \(/);
-    expect(surface).toMatch(/\{askV2 \? null : \(\s*<div className="nb-binder-inset mt-\[1\.75rem\]/);
+    // ASK-V2-CLEANUP: both old pieces are deleted, not just switched off.
+    expect(draft).not.toContain("beforeComposer=");
+    expect(surface).not.toContain("Try: what did I decide here");
   });
-  it("flag off keeps today's composer", () => {
-    expect(draft).toMatch(/compactComposer=\{draft === "b" && askV2\}/);
+  it("the dock draws the compact composer; other hosts keep the full one", () => {
+    expect(draft).toMatch(/compactComposer=\{draft === "b"\}/);
     expect(surface).toMatch(/compactComposer = false,/);
   });
 });
 
 describe("C2: idle bar and collapse", () => {
   it("the capsule covers an empty chat and a collapsed one, and stays while typing until the question outgrows it (ASK-V2-FIX-1)", () => {
-    expect(draft).toMatch(/const idleBar = askV2 && draft === "b" && props\.tab === "messages" && \(empty \|\| folded\) && !ask\.pending && !ask\.error && !ask\.pickerOpen && !draftLong;/);
+    expect(draft).toMatch(/const idleBar = draft === "b" && props\.tab === "messages" && \(empty \|\| folded\) && !ask\.pending && !ask\.error && !ask\.pickerOpen && !draftLong;/);
   });
   it("focused and empty, the scope sentence shows and the bar re-measures", () => {
     expect(draft).toMatch(/composerScopeLine=\{idleBar && empty && focusedIn\}/);
@@ -62,6 +63,6 @@ describe("C2: idle bar and collapse", () => {
     expect(css).toMatch(/\.ask-draft\[data-idle-bar="true"\] \.ask-draft-grip \{ display: none; \}/);
   });
   it("the Continue line never shows over the bar", () => {
-    expect(draft).toMatch(/draft === "b" && askV2 && !idleBar && props\.tab === "messages" && h7LineShown/);
+    expect(draft).toMatch(/draft === "b" && !idleBar && props\.tab === "messages" && h7LineShown/);
   });
 });

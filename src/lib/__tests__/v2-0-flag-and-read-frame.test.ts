@@ -9,7 +9,6 @@ vi.mock("@/lib/posthog-client", () => ({ readFeatureFlag: () => undefined }));
 
 import { streamChatRequest } from "@/lib/stream-client";
 import { FEATURE_FLAGS } from "@/lib/feature-flags";
-import { ASK_V2 } from "@/lib/ask-v2";
 
 const read = (p: string) => readFileSync(resolve(process.cwd(), p), "utf8");
 function respondWith(lines: object[]) {
@@ -22,7 +21,6 @@ describe("V2-0 flag and read frame", () => {
 
   it("FLAGS-1: ask-v2 is no longer a flag; the redesign is on for everyone and nothing reads PostHog for it", () => {
     expect(Object.keys(FEATURE_FLAGS)).not.toContain("ask-v2");
-    expect(ASK_V2).toBe(true);
     for (const file of [
       "src/components/reflect/AskSurface.tsx",
       "src/components/reflect/use-ask-lasso.ts",
@@ -56,7 +54,7 @@ describe("V2-0 flag and read frame", () => {
 
   it("the client reads it early only behind ask-v2, and event names and the warm-up stay untouched", () => {
     const hook = read("src/components/reflect/use-ask-lasso.ts");
-    expect(hook).toContain('ASK_V2 ? (manifest) => setLiveManifest(manifest as ContextManifest) : undefined');
+    expect(hook).toContain('(manifest) => setLiveManifest(manifest as ContextManifest),');
     expect(hook).toMatch(/shouldPrimeForDraft\(/);
   });
 });

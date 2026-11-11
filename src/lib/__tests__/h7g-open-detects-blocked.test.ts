@@ -18,12 +18,11 @@ describe("H7g: an opened tab reads as opened", () => {
     vi.spyOn(window, "open").mockReturnValue(null);
     expect(openInNewTab("https://claude.ai/new")).toBe(false);
   });
-  it("the hand-off and the old Continue button both use it; neither reads a noopener window", () => {
+  it("the hand-off uses it and never reads a noopener window", () => {
     const h7 = readFileSync("src/components/canvas-lab/ask-draft/ContinueInAI.tsx", "utf8");
     const draft = readFileSync("src/components/canvas-lab/ask-draft/AskDraftSurface.tsx", "utf8");
     expect(h7).toContain("const opened = openInNewTab(url);");
     expect(h7).toContain("return { route, blocked: !opened };");
-    expect(draft).toContain("const opened = openInNewTab(handoffUrl(dest));");
     expect(h7 + draft).not.toMatch(/window\.open\([^)]*"noopener"\)/);
   });
 });

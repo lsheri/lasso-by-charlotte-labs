@@ -12,10 +12,9 @@ import { useSlashMenu } from "./use-slash-menu";
 import { CoverageNote } from "@/components/reflect/CoverageNote";
 import { GraphiteIcon, type GraphiteIconName } from "@/components/notebook/icons";
 import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
-import { AnswerRail, ContextAudit, ThinkingTrail } from "@/components/reflect/ContextTrail";
+import { AnswerRail, ContextAudit } from "@/components/reflect/ContextTrail";
 import { AskReadingV2 } from "@/components/reflect/AskReadingV2";
 import { receiptLine } from "@/lib/ask-reading-v2";
-import { ASK_V2 } from "@/lib/ask-v2";
 import { ASK_QUEUE_COPY, shouldQueueAskOnEnter } from "@/lib/ask-queue";
 import { AnswerMoreMenu } from "@/components/reflect/AnswerMoreMenu";
 import { SaveForOneOnOneDialog } from "@/components/oneonone/SaveForOneOnOne";
@@ -392,17 +391,14 @@ function WorkPicker({
 export function MessagesTab({ ask, emptyActions, statusInTitle = false }: { ask: AskLasso; emptyActions?: React.ReactNode; statusInTitle?: boolean }) {
   const messages = ask.messages ?? [];
   const unanswered = unansweredQuestionIds(messages, ask.pending);
-  // V2-2 (ask-v2, default off): reading states and the one-line receipt. Off renders today's trail exactly.
-  const askV2 = ASK_V2;
-  const previousManifest = askV2
-    ? (() => {
+  // V2-2: reading states and the one-line receipt compare against the last answer's read set.
+  const previousManifest = (() => {
         for (let i = messages.length - 1; i >= 0; i -= 1) {
           const m = messages[i];
           if (m && m.role !== "user") return parseManifest(m.context_manifest);
         }
         return null;
-      })()
-    : null;
+      })();
   const viewerInitial = ask.profile?.display_name.trim().charAt(0).toUpperCase() || "Y";
   // Only the workboard offers a place to keep an answer, and only to someone
   // who may arrange that board.
@@ -468,17 +464,6 @@ export function MessagesTab({ ask, emptyActions, statusInTitle = false }: { ask:
         {messages.length === 0 ? (
           <>
             <AskPrivacyLine />
-            {/* C2 (ask-v2): the agreed idle bar has no suggestions; flag off keeps them. */}
-            {askV2 ? null : (
-              <div className="nb-binder-inset mt-[1.75rem] space-y-[1.75rem]">
-                <p className="text-sm text-foreground">
-                  Try: what did I decide here, and what did I decide it on?
-                </p>
-                <p className="text-sm text-foreground">
-                  Try: where has this workboard drifted from the brief?
-                </p>
-              </div>
-            )}
             {emptyActions}
           </>
         ) : null}
@@ -537,9 +522,9 @@ export function MessagesTab({ ask, emptyActions, statusInTitle = false }: { ask:
                       <ContextAudit
                         manifest={manifest}
                         reads={ask.sourcesByMessage?.[Number(message.id)] ?? []}
-                        v2={askV2 && manifest ? { receipt: receiptLine(manifest, citationsFromManifest(message.context_manifest).map((c) => c.item_id)) } : undefined}
+                        v2={manifest ? { receipt: receiptLine(manifest, citationsFromManifest(message.context_manifest).map((c) => c.item_id)) } : undefined}
                       />
-                      {coverage && ((coverage.share ?? 1) < 0.999 || coverage.noTextCount > 0 || coverage.summaryCount > 0) ? <CoverageNote {...coverage} compact={askV2 && Boolean(manifest)} /> : null}
+                      {coverage && ((coverage.share ?? 1) < 0.999 || coverage.noTextCount > 0 || coverage.summaryCount > 0) ? <CoverageNote {...coverage} compact={Boolean(manifest)} /> : null}
                       <div className="mt-1 flex items-center gap-1" data-testid="answer-actions">
                         {keep && !ask.pending ? (
                           <AnswerKeepControl
@@ -596,27 +581,15 @@ export function MessagesTab({ ask, emptyActions, statusInTitle = false }: { ask:
               {ask.streamed && answerStartedAt ? <div className="ask-a1-name-in">{speakerName("assistant", answerStartedAt)}</div> : null}
               <AnswerRail state="working">
                 {
-                  <div className={askV2 ? "nb-binder-inset ask-v2-inset" : "nb-binder-inset"}>
-                    {askV2 ? (
-                      <AskReadingV2
-                        manifest={ask.liveManifest}
-                        previousManifest={previousManifest}
-                        streamed={ask.streamed}
-                        pickedCount={ask.pointedNow.length > 0 ? ask.pointedNow.length : ask.boardPickActive ? ask.boardPickedCount : ask.selectedItems.length < ask.mapped.length ? ask.selectedItems.length : 0}
-                        pickedVideos={ask.boardPickActive ? ask.boardPickedVideos : 0}
-                        statusInTitle={statusInTitle}
-                      />
-                    ) : (
-                      <ThinkingTrail
-                        items={(ask.pointedNow.length > 0 ? ask.pointedNow : ask.selectedItems).map(
-                          (item) => ({ id: item.id, title: displayName(item) }),
-                        )}
-                        finalPhase="Writing"
-                        manifest={ask.liveManifest}
-                        lead={ask.pointedNow.length > 0 ? "Reading what you pointed at" : undefined}
-                        ask={{ answered: Boolean(ask.streamed) }}
-                      />
-                    )}
+                  <div className="nb-binder-inset ask-v2-inset">
+                    <AskReadingV2
+                      manifest={ask.liveManifest}
+                      previousManifest={previousManifest}
+                      streamed={ask.streamed}
+                      pickedCount={ask.pointedNow.length > 0 ? ask.pointedNow.length : ask.boardPickActive ? ask.boardPickedCount : ask.selectedItems.length < ask.mapped.length ? ask.selectedItems.length : 0}
+                      pickedVideos={ask.boardPickActive ? ask.boardPickedVideos : 0}
+                      statusInTitle={statusInTitle}
+                    />
                   </div>
                 }
                 {ask.streamed ? (
@@ -630,7 +603,7 @@ export function MessagesTab({ ask, emptyActions, statusInTitle = false }: { ask:
         {ask.pending && ask.coverage && (ask.coverage.truncated || (ask.coverage.share ?? 1) < 0.999 || (ask.coverage.noTextCount ?? 0) > 0) ? (
           <div className="nb-binder-inset">
             {/* FLAGS-1: the live note is short too; the reading chips above already say what was read. */}
-            <CoverageNote {...ask.coverage} compact={askV2} />
+            <CoverageNote {...ask.coverage} compact />
           </div>
         ) : null}
         <div ref={ask.bottomRef} />
@@ -752,7 +725,6 @@ export function AskComposer({
   const slash = useSlashMenu(ask, engagementId, () =>
     noteWorkboardContextChanged(orgId, "workstream"),
   );
-  const askV2 = ASK_V2;
   // C2: the compact line grows with what is typed, up to six lines, then scrolls.
   // An empty box drops its measured height so the idle bar's one-line rule applies; a width change re-measures.
   useLayoutEffect(() => {
@@ -876,12 +848,12 @@ export function AskComposer({
                 return;
               }
               // ASK-FIX-3 (ask-v2): Enter while the answer finishes holds the question instead of doing nothing.
-              if (askV2 && shouldQueueAskOnEnter(event.nativeEvent, hasTouchInput(), ask.draft, ask.pending)) {
+              if (shouldQueueAskOnEnter(event.nativeEvent, hasTouchInput(), ask.draft, ask.pending)) {
                 event.preventDefault();
                 ask.queueSend();
                 return;
               }
-              if (askV2 && ask.queued !== null && event.key === "Escape") {
+              if (ask.queued !== null && event.key === "Escape") {
                 ask.cancelQueued();
                 return;
               }
@@ -928,7 +900,7 @@ export function AskComposer({
           )}
         </div>
         {compact && scopeLine ? <AskScopeLine ask={ask} workstream={slash.chosen} /> : null}
-        {askV2 && ask.queued !== null ? (
+        {ask.queued !== null ? (
           <p className="mt-1 flex items-center gap-2 text-[12px] text-muted-foreground" data-testid="ask-queued" role="status">
             {ASK_QUEUE_COPY.waiting}
             <button type="button" className="underline underline-offset-2" onClick={() => ask.cancelQueued()}>

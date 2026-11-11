@@ -237,14 +237,16 @@ describe("H7b fits the panel", () => {
   });
 });
 
-describe("H7 behind the flag, events unchanged", () => {
-  it("the Ask surface only reaches H7 through ask-v2, and still emits handoff_opened", () => {
+describe("H7 is the only hand-off, events unchanged", () => {
+  it("the Ask surface reaches H7 only, and still emits handoff_opened with choice and route", () => {
     const src = readFileSync("src/components/canvas-lab/ask-draft/AskDraftSurface.tsx", "utf8");
-    expect(src).toMatch(/draft === "b" && askV2 \? \(\s*<ContinueInAI/);
-    expect(src).toMatch(/draft === "b" && !askV2 && props\.tab === "messages" && shouldNudge/);
-    expect(src).toMatch(/useHandoffSignals\(\{[^}]*enabled: askV2 \}\)/);
+    expect(src).toMatch(/sendAside=\{draft === "b" \? \(\s*<ContinueInAI/);
+    // ASK-V2-CLEANUP: the old "long one" nudge and the old Continue button are deleted.
+    expect(src).not.toContain("shouldNudge");
+    expect(src).not.toContain("handoffOpen");
+    expect(src).toMatch(/useHandoffSignals\(\{[^}]*enabled: true \}\)/);
     expect(
-      src.match(/noteWorkboardAskView\(props\.orgId, "handoff_opened", draft(\)|, \{ choice, route \}\))/g)?.length,
-    ).toBe(2);
+      src.match(/noteWorkboardAskView\(props\.orgId, "handoff_opened", draft, \{ choice, route \}\)/g)?.length,
+    ).toBe(1);
   });
 });

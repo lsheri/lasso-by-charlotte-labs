@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, useLayoutEffect, useRef, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type RefObject } from "react";
 import { displayName } from "@/lib/work-item-name";
 import { createPortal } from "react-dom";
-import { ArrowUpRight, ChevronsDownUp, ChevronsUpDown, History, Pin, X } from "lucide-react";
-import { BrandLogo } from "@/components/connectors/BrandLogo";
+import { ChevronsDownUp, ChevronsUpDown, History, Pin, X } from "lucide-react";
 
 import { AskSurface } from "@/components/reflect/AskSurface";
 import type { AskLasso } from "@/components/reflect/use-ask-lasso";
@@ -11,22 +10,18 @@ import type { AskSectionChoice } from "@/components/canvas-lab/BoardAsk";
 import { AskPastList, type PinnedAnswerRow } from "@/components/canvas-lab/ask-draft/AskPastList";
 import { noteWorkboardAskMoved, noteWorkboardAskView } from "@/components/canvas-lab/canvas-lab-telemetry";
 import { AskPlacingGhost } from "@/components/canvas-lab/ask-draft/AskPlacing";
-import { AskReadingLines } from "@/components/canvas-lab/ask-draft/AskReadingLines";
 import { AskLiveMark } from "@/components/canvas-lab/ask-draft/AskLiveMark";
 import { ASK_LIFT_STYLES, AskReadingLoops, useAskLift } from "@/components/canvas-lab/ask-draft/AskReadingLoops";
 import { beginTurn, turnKeyFor } from "@/lib/ask-reading-clock";
-import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
 import { readAskHome, readAskPosition, readUnpinned, writeAskPosition, type AskDraft } from "@/lib/ask-draft";
 import { ASK_DOCK_CONFIG, DOCK_SPOTS, useAskDock, type DockId } from "@/lib/ask-dock-engine";
-import { HANDOFF_VENDORS, handoffLine, handoffLineFits, handoffPrompt, handoffUrl, pickHandoffTool, readAskedTool, readHandoffDestination, shouldNudge, type H7Choice, type H7Route } from "@/lib/ask-handoff";
+import { handoffLine, handoffLineFits, pickHandoffTool, readAskedTool, type H7Choice, type H7Route } from "@/lib/ask-handoff";
 import { AskTitleStatus } from "@/components/reflect/AskReadingV2";
 import { ContinueInAI, H7_COPY, carryOut, hintMs, useHandoffSignals } from "@/components/canvas-lab/ask-draft/ContinueInAI";
 import { displayKind, kindNoun, usedItems, usedPhrase } from "@/lib/ask-reading-v2";
 import { parseManifest } from "@/lib/context-manifest";
 import { citationsFromManifest } from "@/lib/turn-labels";
 import { Button } from "@/components/ui/button";
-import { ASK_V2 } from "@/lib/ask-v2";
-import { openInNewTab } from "@/lib/open-tab";
 
 function safeStore(): Storage | null {
   try { return window.localStorage; } catch { return null; }
@@ -84,29 +79,23 @@ export function AskDraftSurface(props: Props) {
   const collapsed = empty || folded;
   // V2-1 (A1, behind ask-v2): an unused Ask is one slim row until you click into it. Focus never primes the cache;
   // priming stays on typing (onDraftChange -> shouldPrimeForDraft -> primeNow).
-  const askV2 = ASK_V2;
   const [focusedIn, setFocusedIn] = useState(false);
   // C2 (ask-v2): the idle bar is the agreed capsule. It stays a capsule while you type into an empty chat
   // (the scope sentence shows under it), and collapsing a chat returns to it; clicking in brings the chat back.
   // ASK-V2-FIX-1: a question longer than the bar opens the panel, whose composer wraps and grows to six lines.
   const [draftLong, setDraftLong] = useState(false);
-  const idleBar = askV2 && draft === "b" && props.tab === "messages" && (empty || folded) && !ask.pending && !ask.error && !ask.pickerOpen && !draftLong;
+  const idleBar = draft === "b" && props.tab === "messages" && (empty || folded) && !ask.pending && !ask.error && !ask.pickerOpen && !draftLong;
   // V2-3 (ask-v2): the turn's clock starts on a real send only, so a redraw or remount resumes the light and loops.
   const turnKey = turnKeyFor(ask.asked);
   const sawPending = useRef(ask.pending);
   useEffect(() => {
-    if (askV2 && ask.pending && !sawPending.current) beginTurn(turnKey, performance.now());
+    if (ask.pending && !sawPending.current) beginTurn(turnKey, performance.now());
     sawPending.current = ask.pending;
-  }, [askV2, ask.pending, turnKey]);
-  useAskLift({ host: askV2 ? host : null, nodeIds: props.readingNodeIds ?? [], pending: ask.pending, error: Boolean(ask.error), turnKey });
-  const dest = readHandoffDestination(props.engagementId, safeStore());
-  const vendorLabel = HANDOFF_VENDORS.find((vendor) => vendor.id === dest.vendor)?.label ?? "Claude";
-  const turns = (ask.messages ?? []).filter((m) => m.role === "assistant").length;
-  const [dismissedAt, setDismissedAt] = useState<number | null>(null);
+  }, [ask.pending, turnKey]);
+  useAskLift({ host, nodeIds: props.readingNodeIds ?? [], pending: ask.pending, error: Boolean(ask.error), turnKey });
   const [handoffHint, setHandoffHint] = useState<string | null>(null);
   const hintTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [nudgeHost, setNudgeHost] = useState<HTMLElement | null>(null);
-  useEffect(() => { setDismissedAt(null); }, [ask.sessionId]);
   useEffect(() => () => { if (hintTimer.current !== null) clearTimeout(hintTimer.current); }, []);
   useLayoutEffect(() => {
     const composer = bodyRef.current?.querySelector("div.sticky");
@@ -116,20 +105,11 @@ export function AskDraftSurface(props: Props) {
     setNudgeHost(slot);
     return () => { slot.remove(); };
   }, [props.tab]);
-  const handoffOpen = async () => {
-    const prompt = handoffPrompt({ boardTitle: props.engagementTitle, messages: ask.messages ?? [] });
-    const opened = openInNewTab(handoffUrl(dest));
-    try { await navigator.clipboard.writeText(prompt); } catch { /* Carry on even when clipboard access is unavailable. */ }
-    noteWorkboardAskView(props.orgId, "handoff_opened", draft);
-    setHandoffHint(opened ? "Prompt copied. Paste it there to carry on." : "Pop-up blocked. The prompt is on your clipboard.");
-    if (hintTimer.current !== null) clearTimeout(hintTimer.current);
-    hintTimer.current = setTimeout(() => setHandoffHint(null), 2500);
-  };
   // H7 (ask-v2): one Continue button, the AI worked out from pushes, packaged only on a click.
-  const h7Signals = useHandoffSignals({ profileId: props.profileId, itemIds: (ask.mapped ?? []).map((item) => item.id), enabled: askV2 });
+  const h7Signals = useHandoffSignals({ profileId: props.profileId, itemIds: (ask.mapped ?? []).map((item) => item.id), enabled: true });
   const lastAnswer = [...(ask.messages ?? [])].reverse().find((m) => m.role === "assistant");
   const lastQuestion = [...(ask.messages ?? [])].reverse().find((m) => m.role === "user")?.content ?? "";
-  const lastManifest = askV2 && lastAnswer ? parseManifest(lastAnswer.context_manifest) : null;
+  const lastManifest = lastAnswer ? parseManifest(lastAnswer.context_manifest) : null;
   const lastUsed = lastManifest && lastAnswer ? usedItems(lastManifest, citationsFromManifest(lastAnswer.context_manifest).map((c) => c.item_id)) : [];
   const h7Build = () => ({
     boardTitle: props.engagementTitle,
@@ -143,10 +123,10 @@ export function AskDraftSurface(props: Props) {
     if (hintTimer.current !== null) clearTimeout(hintTimer.current);
     hintTimer.current = setTimeout(() => setHandoffHint(null), hintMs(blocked ? "blocked" : route));
   };
-  const h7Tool = askV2 ? pickHandoffTool({ ...(h7Signals ?? { boardPushes: [], myPushes: [], connected: [] }), asked: readAskedTool(props.profileId, safeStore()) }) : null;
+  const h7Tool = pickHandoffTool({ ...(h7Signals ?? { boardPushes: [], myPushes: [], connected: [] }), asked: readAskedTool(props.profileId, safeStore()) });
   // H7c: words inside an @ card name never trigger the line.
   const mentionNames = useMemo(() => (ask.mapped ?? []).flatMap((item) => [displayName(item), item.title]), [ask.mapped]);
-  const h7LineShown = askV2 && Boolean(lastAnswer) && !ask.pending && handoffLineFits(lastQuestion, mentionNames) && h7Tool !== null;
+  const h7LineShown = Boolean(lastAnswer) && !ask.pending && handoffLineFits(lastQuestion, mentionNames) && h7Tool !== null;
   const foldedRef = useRef(folded);
   foldedRef.current = folded;
   const idleRef = useRef(idleBar);
@@ -271,7 +251,7 @@ export function AskDraftSurface(props: Props) {
   // V2-1d (ask-v2): a press on the empty board cancels its default (no text selection), which also kept
   // focus in Ask, so the idle row never came back. A press anywhere outside Ask now takes focus out of it.
   useEffect(() => {
-    if (!askV2 || !focusedIn) return;
+    if (!focusedIn) return;
     const onPress = (event: PointerEvent) => {
       const surface = dock.surfaceRef.current;
       if (!surface || !pressLeavesAsk(event.target, surface)) return;
@@ -281,7 +261,7 @@ export function AskDraftSurface(props: Props) {
     };
     document.addEventListener("pointerdown", onPress, true);
     return () => document.removeEventListener("pointerdown", onPress, true);
-  }, [askV2, focusedIn, dock.surfaceRef]);
+  }, [focusedIn, dock.surfaceRef]);
 
   const { refresh } = dock;
 
@@ -368,10 +348,10 @@ export function AskDraftSurface(props: Props) {
           ))}
         </div>
       ) : null}
-      {askV2 ? <style>{ASK_LIFT_STYLES}</style> : null}
-      {draft === "b" && ask.pending && (props.readingNodeIds?.length ?? 0) > 0 ? (askV2
-        ? <AskReadingLoops host={host} surfaceRef={dock.surfaceRef} nodeIds={props.readingNodeIds ?? []} turnKey={turnKey} onShowing={setLinesShowing} />
-        : <AskReadingLines host={host} surfaceRef={dock.surfaceRef} nodeIds={props.readingNodeIds ?? []} onShowing={setLinesShowing} />) : null}
+      <style>{ASK_LIFT_STYLES}</style>
+      {draft === "b" && ask.pending && (props.readingNodeIds?.length ?? 0) > 0 ? (
+        <AskReadingLoops host={host} surfaceRef={dock.surfaceRef} nodeIds={props.readingNodeIds ?? []} turnKey={turnKey} onShowing={setLinesShowing} />
+      ) : null}
       <section
         ref={dock.surfaceRef as RefObject<HTMLElement>}
         aria-label="Ask Lasso"
@@ -400,10 +380,10 @@ export function AskDraftSurface(props: Props) {
           </div>
           {draft === "b" ? (
             <span className="ask-draft-mark" aria-hidden="true">
-              {askV2 ? <AskLiveMark pending={ask.pending} error={Boolean(ask.error)} turnKey={turnKey} /> : <LassoLoopMark className="h-[24px] w-[24px]" />}
+              <AskLiveMark pending={ask.pending} error={Boolean(ask.error)} turnKey={turnKey} />
             </span>
           ) : null}
-          {draft === "b" && askV2 && ask.pending ? (
+          {draft === "b" && ask.pending ? (
             <AskTitleStatus turnKey={turnKey} manifest={ask.liveManifest} streamed={ask.streamed} />
           ) : (
             <span className="ask-draft-title">Ask Lasso</span>
@@ -457,42 +437,25 @@ export function AskDraftSurface(props: Props) {
             onClose={props.onClose}
             headerTone="lime"
             inline
-            statusInTitle={draft === "b" && askV2}
+            statusInTitle={draft === "b"}
             sections={props.sections}
             onPickSection={props.onPickSection}
-            compactComposer={draft === "b" && askV2}
+            compactComposer={draft === "b"}
             composerScopeLine={idleBar && empty && focusedIn}
             composerRowExtra={idleBar ? (
               <button type="button" className="ask-cc-icon" aria-label="Past conversations" title="Past conversations" onClick={() => { noteWorkboardAskView(props.orgId, "past_opened", draft); props.onTab("history"); }}>
                 <History size={16} aria-hidden="true" />
               </button>
             ) : undefined}
-            beforeComposer={ask.pending && !askV2 ? (
-              <p className="px-4 py-2 text-xs text-muted-foreground" role="status" data-testid="ask-reading-scope">
-                Reading {(ask.pointedNow?.length ? ask.pointedNow : ask.selectedItems ?? ask.mapped ?? []).length} {(ask.pointedNow?.length ? ask.pointedNow : ask.selectedItems ?? ask.mapped ?? []).length === 1 ? "item" : "items"} as written
-              </p>
-            ) : undefined}
-            sendAside={draft === "b" && askV2 ? (
+            sendAside={draft === "b" ? (
               <ContinueInAI profileId={props.profileId} disabled={!canPin} signals={h7Signals} build={h7Build} onDone={h7Done} />
-            ) : draft === "b" ? (
-              <button type="button" className="ask-draft-send-aside" aria-label={`Continue in ${vendorLabel}`} title={`Continue in ${vendorLabel}`} disabled={!canPin} onClick={handoffOpen}>
-                <BrandLogo brand={dest.vendor === "chatgpt" ? "chatgpt" : "claude"} size={18} />
-                <ArrowUpRight size={14} aria-hidden="true" />
-              </button>
             ) : undefined}
           />
           )}
         </div>
-        {draft === "b" && askV2 && !idleBar && props.tab === "messages" && h7LineShown && h7Tool && nudgeHost ? createPortal(
+        {draft === "b" && !idleBar && props.tab === "messages" && h7LineShown && h7Tool && nudgeHost ? createPortal(
           <div className="ask-draft-nudge" data-testid="h7-line">
             <Button type="button" variant="link" className="h-auto min-w-0 whitespace-normal p-0 text-left text-inherit" onClick={() => { void carryOut(h7Tool, { ...h7Build(), choice: "chat_and_used" }, Boolean(h7Signals?.signin) && h7Tool !== "gemini").then((r) => h7Done(r.route, r.blocked, h7Tool === "chatgpt" ? "ChatGPT" : h7Tool === "gemini" ? "Gemini" : "Claude", "chat_and_used")); }}>{handoffLine(h7Tool, usedPhrase(lastUsed))}</Button>
-          </div>, nudgeHost,
-        ) : null}
-        {draft === "b" && !askV2 && props.tab === "messages" && shouldNudge(turns, dismissedAt) && !ask.pending && nudgeHost ? createPortal(
-          <div className="ask-draft-nudge">
-            <span>This is a long one. Keep what matters to the board, or carry it on in {vendorLabel} with the board as context.</span>
-            <Button type="button" variant="link" className="h-auto p-0 text-inherit" onClick={handoffOpen}>Continue in {vendorLabel}</Button>
-            <Button type="button" variant="link" className="h-auto p-0 text-inherit" onClick={() => setDismissedAt(turns)}>Not now</Button>
           </div>, nudgeHost,
         ) : null}
         {folded ? null : (

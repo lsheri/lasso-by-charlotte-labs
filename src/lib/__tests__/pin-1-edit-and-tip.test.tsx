@@ -35,14 +35,13 @@ afterEach(() => { cleanup(); logEvent.mockReset(); window.localStorage.clear(); 
 
 describe("PIN-1 P3 select vs type vs drag", () => {
   it("the rule: only a still click on the text of an already-selected card you own", () => {
-    const base = { v2: true, canEdit: true, editing: false, wasFocused: true, moved: 0, onControl: false };
+    const base = { canEdit: true, editing: false, wasFocused: true, moved: 0, onControl: false };
     expect(clickStartsTyping(base)).toBe(true);
     expect(clickStartsTyping({ ...base, wasFocused: false })).toBe(false); // first click selects
     expect(clickStartsTyping({ ...base, moved: PIN_DRAG_THRESHOLD_PX })).toBe(false); // 4px is a drag
     expect(clickStartsTyping({ ...base, moved: PIN_DRAG_THRESHOLD_PX - 0.5 })).toBe(true);
     expect(clickStartsTyping({ ...base, onControl: true })).toBe(false);
     expect(clickStartsTyping({ ...base, canEdit: false })).toBe(false);
-    expect(clickStartsTyping({ ...base, v2: false })).toBe(false);
   });
   it("a first click on an unselected card selects and does not type", () => {
     render(<LabAnswerCard {...props({ focused: false })} />);

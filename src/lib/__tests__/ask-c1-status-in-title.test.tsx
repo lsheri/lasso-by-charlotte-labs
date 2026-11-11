@@ -30,8 +30,8 @@ describe("C1: the status sits in the title bar", () => {
   });
   it("only the ask-v2 dock wires it, only while an answer is in flight", () => {
     const src = readFileSync("src/components/canvas-lab/ask-draft/AskDraftSurface.tsx", "utf8");
-    expect(src).toMatch(/\{draft === "b" && askV2 && ask\.pending \? \(\s*<AskTitleStatus turnKey=\{turnKey\}/);
-    expect(src).toMatch(/statusInTitle=\{draft === "b" && askV2\}/);
+    expect(src).toMatch(/\{draft === "b" && ask\.pending \? \(\s*<AskTitleStatus turnKey=\{turnKey\}/);
+    expect(src).toMatch(/statusInTitle=\{draft === "b"\}/);
   });
   it("the line sweeps while gathering, holds while reading, creeps but never finishes while writing", () => {
     const css = readFileSync("src/styles.css", "utf8");

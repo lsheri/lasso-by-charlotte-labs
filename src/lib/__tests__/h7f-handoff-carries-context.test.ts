@@ -51,10 +51,9 @@ describe("H7f: Continue in Claude carries the chat", () => {
     expect(hintMs("blocked")).toBe(8000);
     expect(hintMs("link")).toBe(2500);
   });
-  it("the hint timer uses hintMs; flag-off hand-off is unchanged", () => {
+  it("the hint timer uses hintMs", () => {
     const src = readFileSync("src/components/canvas-lab/ask-draft/AskDraftSurface.tsx", "utf8");
     expect(src).toMatch(/setTimeout\(\(\) => setHandoffHint\(null\), hintMs\(blocked \? "blocked" : route\)\)/);
-    expect(src).toMatch(/"Prompt copied\. Paste it there to carry on\."/);
   });
   it("no em dashes in the copy", () => {
     expect(Object.values(H7_COPY.hint).map((h) => (typeof h === "string" ? h : h("Claude"))).join(" ")).not.toMatch(/—/);
