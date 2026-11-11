@@ -25,7 +25,7 @@ import { displayKind, kindNoun, usedItems, usedPhrase } from "@/lib/ask-reading-
 import { parseManifest } from "@/lib/context-manifest";
 import { citationsFromManifest } from "@/lib/turn-labels";
 import { Button } from "@/components/ui/button";
-import { flagEnabled } from "@/lib/feature-flags";
+import { ASK_V2 } from "@/lib/ask-v2";
 import { openInNewTab } from "@/lib/open-tab";
 
 function safeStore(): Storage | null {
@@ -84,7 +84,7 @@ export function AskDraftSurface(props: Props) {
   const collapsed = empty || folded;
   // V2-1 (A1, behind ask-v2): an unused Ask is one slim row until you click into it. Focus never primes the cache;
   // priming stays on typing (onDraftChange -> shouldPrimeForDraft -> primeNow).
-  const askV2 = flagEnabled("ask-v2");
+  const askV2 = ASK_V2;
   const [focusedIn, setFocusedIn] = useState(false);
   // C2 (ask-v2): the idle bar is the agreed capsule. It stays a capsule while you type into an empty chat
   // (the scope sentence shows under it), and collapsing a chat returns to it; clicking in brings the chat back.

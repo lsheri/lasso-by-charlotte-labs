@@ -9,7 +9,7 @@ import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
 import { Button } from "@/components/ui/button";
 
 import { answerAsOf, answerRolled, serializeAnswerBody } from "@/lib/answer-card";
-import { flagEnabled } from "@/lib/feature-flags";
+import { ASK_V2 } from "@/lib/ask-v2";
 import { PinEditTip, usePinTip } from "@/components/canvas-lab/PinEditTip";
 import { PinnedChatRow, useAskDraftPin } from "@/components/canvas-lab/ask-draft/PinnedChatRow";
 import type { LabNode, LabResizeCorner } from "@/components/canvas-lab/canvas-lab-model";
@@ -107,7 +107,7 @@ function LabAnswerCardInner({
   const rolled = answerRolled(node.height) && !editing;
   const grown = !rolled && (expanded || editing || originalOpen || chatOpen);
   // PIN-1 (ask-v2, default off): click into the text, Editing label, tools in the card, Done and Cancel, one-time tip.
-  const v2 = flagEnabled("ask-v2");
+  const v2 = ASK_V2;
   const [tipShown, dismissTip] = usePinTip(node.id, v2 && canEdit && Boolean(pin) && !editing);
   const press = useRef<{ x: number; y: number; wasFocused: boolean } | null>(null);
   function cancelEdit() {

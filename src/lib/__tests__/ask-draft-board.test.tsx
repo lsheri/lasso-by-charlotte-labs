@@ -94,11 +94,6 @@ describe("ASK-LOOK-1 reading lines, LOOK-2 still mark", () => {
     const second = render(<Harness messages={msgs} />);
     expect(second.baseElement.querySelector(".ask-draft-mark svg")).not.toBeNull();
   });
-  it("pending with reading ids renders the lines", () => {
-    document.body.appendChild(document.createElement("main"));
-    const { baseElement } = render(<Harness messages={msgs} pending readingNodeIds={["n1"]} />);
-    expect(baseElement.querySelector(".ask-reading-lines")).not.toBeNull();
-  });
   it("not pending with reading ids renders no lines and no signature mark", () => {
     document.body.appendChild(document.createElement("main"));
     const { baseElement } = render(<Harness messages={msgs} readingNodeIds={["n1"]} />);
@@ -156,7 +151,6 @@ describe("PIN-1 header pin", () => {
     const pin = screen.getByRole("button", { name: "Ask something first, then pin the answer here" });
     expect(pin.getAttribute("data-idle")).toBe("true");
     expect((pin as HTMLButtonElement).disabled).toBe(true);
-    expect((screen.getByRole("button", { name: "Continue in Claude" }) as HTMLButtonElement).disabled).toBe(true);
     unmount();
     const second = render(<Harness messages={msgs} startTab="history" />);
     expect(second.baseElement.querySelector(".ask-draft-pin")).toBeNull();
@@ -201,44 +195,7 @@ describe("SET-1 New ask goes home, closed", () => {
   });
 });
 
-describe("HAND-1 Continue conversations", () => {
-  it("ASK-C1: a user message alone cannot enable pin or handoff", () => {
-    document.body.appendChild(document.createElement("main"));
-    render(<Harness messages={[{ role: "user", content: "A question" }]} />);
-    const pin = screen.getByRole("button", { name: "Ask something first, then pin the answer here" }) as HTMLButtonElement;
-    expect(pin.disabled).toBe(true);
-    expect(pin.getAttribute("data-idle")).toBe("true");
-    expect((screen.getByRole("button", { name: "Continue in Claude" }) as HTMLButtonElement).disabled).toBe(true);
-  });
-  it("copies the prompt and opens Claude beside Send, not from the header", async () => {
-    const writeText = vi.fn().mockResolvedValue(undefined);
-    Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
-    const open = vi.spyOn(window, "open").mockReturnValue(null);
-    document.body.appendChild(document.createElement("main"));
-    render(<Harness messages={[{ role: "assistant", content: "An answer" }]} />);
-    fireEvent.click(screen.getByRole("button", { name: "Continue in Claude" }));
-    expect(document.querySelector(".ask-draft-head .ask-draft-handoff")).toBeNull();
-    expect(screen.getByRole("button", { name: "Continue in Claude" }).closest(".sticky")).not.toBeNull();
-    await waitFor(() => expect(open).toHaveBeenCalledWith("https://claude.ai/new", "_blank"));
-    expect(writeText).toHaveBeenCalledWith(expect.stringContaining("Lasso: An answer"));
-    expect(screen.getByRole("status").textContent).toBe("Pop-up blocked. The prompt is on your clipboard.");
-  });
-  it("FIX-1: opens the window before the clipboard write, and says copied when it opened", async () => {
-    const order: string[] = [];
-    const writeText = vi.fn(async () => { order.push("clipboard"); });
-    Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
-    vi.spyOn(window, "open").mockImplementation(() => { order.push("open"); return {} as Window; });
-    document.body.appendChild(document.createElement("main"));
-    render(<Harness messages={[{ role: "assistant", content: "An answer" }]} />);
-    fireEvent.click(screen.getByRole("button", { name: "Continue in Claude" }));
-    await waitFor(() => expect(screen.getByRole("status").textContent).toBe("Prompt copied. Paste it there to carry on."));
-    expect(order).toEqual(["open", "clipboard"]);
-  });
-  it("offers the six-turn nudge and Not now hides it", () => {
-    document.body.appendChild(document.createElement("main"));
-    render(<Harness messages={Array.from({ length: 6 }, (_, i) => ({ role: "assistant", content: `Answer ${i}` }))} />);
-    expect(screen.getByText("This is a long one. Keep what matters to the board, or carry it on in Claude with the board as context.")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Not now" }));
-    expect(screen.queryByRole("button", { name: "Not now" })).toBeNull();
-  });
-});
+// FLAGS-1 (10 Nov): HAND-1's button beside Send and the six-turn nudge are retired; every user has H7
+// (continue in your AI, worked out from pushes), pinned in h7-continue-in-your-ai. The reading lines are now
+// V2-3's board loops, pinned in v2-3-light-loops-lift.
+

@@ -1,4 +1,5 @@
-// V2-0: the ask-v2 flag (default off) and the additive read frame on the Ask stream.
+// V2-0: the additive read frame on the Ask stream. FLAGS-1 (10 Nov): the ask-v2 flag is retired; the
+// redesign is the Ask panel for everyone.
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -7,7 +8,8 @@ vi.mock("@/integrations/supabase/client", () => ({ supabase: { auth: { getSessio
 vi.mock("@/lib/posthog-client", () => ({ readFeatureFlag: () => undefined }));
 
 import { streamChatRequest } from "@/lib/stream-client";
-import { FEATURE_FLAGS, flagEnabled } from "@/lib/feature-flags";
+import { FEATURE_FLAGS } from "@/lib/feature-flags";
+import { ASK_V2 } from "@/lib/ask-v2";
 
 const read = (p: string) => readFileSync(resolve(process.cwd(), p), "utf8");
 function respondWith(lines: object[]) {
@@ -18,9 +20,16 @@ function respondWith(lines: object[]) {
 describe("V2-0 flag and read frame", () => {
   afterEach(() => vi.unstubAllGlobals());
 
-  it("ask-v2 exists and is off by default, so today's panel is the code default", () => {
-    expect(FEATURE_FLAGS["ask-v2"].default).toBe(false);
-    expect(flagEnabled("ask-v2")).toBe(false);
+  it("FLAGS-1: ask-v2 is no longer a flag; the redesign is on for everyone and nothing reads PostHog for it", () => {
+    expect(Object.keys(FEATURE_FLAGS)).not.toContain("ask-v2");
+    expect(ASK_V2).toBe(true);
+    for (const file of [
+      "src/components/reflect/AskSurface.tsx",
+      "src/components/reflect/use-ask-lasso.ts",
+      "src/components/canvas-lab/LabAnswerCard.tsx",
+      "src/components/canvas-lab/ask-draft/AskDraftSurface.tsx",
+    ])
+      expect(read(file)).not.toContain('flagEnabled("ask-v2")');
   });
 
   it("hands the read frame to onRead and still returns the done payload", async () => {
@@ -47,7 +56,7 @@ describe("V2-0 flag and read frame", () => {
 
   it("the client reads it early only behind ask-v2, and event names and the warm-up stay untouched", () => {
     const hook = read("src/components/reflect/use-ask-lasso.ts");
-    expect(hook).toContain('flagEnabled("ask-v2") ? (manifest) => setLiveManifest(manifest as ContextManifest) : undefined');
+    expect(hook).toContain('ASK_V2 ? (manifest) => setLiveManifest(manifest as ContextManifest) : undefined');
     expect(hook).toMatch(/shouldPrimeForDraft\(/);
   });
 });

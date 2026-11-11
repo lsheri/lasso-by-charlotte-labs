@@ -25,6 +25,8 @@ function fakeAsk(streamed: string, n = 3): AskLasso {
     streamed,
     pointedNow: [],
     selectedItems: items(n),
+    mapped: items(n),
+    boardPickedCount: 0,
     liveManifest: null,
     sourcesByMessage: {},
     coverage: null,
@@ -41,17 +43,12 @@ describe("A1 Ask Lasso thinking state", () => {
     render(<MessagesTab ask={fakeAsk("")} />);
     expect(screen.queryByText("Lasso")).toBeNull();
   });
-  it("2. while thinking, exactly one thinking glyph renders", () => {
+  it("2. FLAGS-1: while thinking, the thread holds no thinking glyph; status lives in the title bar (ask-c1)", () => {
     setReducedMotion(false);
     render(<MessagesTab ask={fakeAsk("")} />);
-    expect(screen.getAllByTestId("ask-thinking-glyph")).toHaveLength(1);
-    const glyph = screen.getByTestId("ask-thinking-glyph");
-    expect(glyph.getAttribute("data-state")).toBe("thinking");
-    expect(glyph.querySelectorAll('canvas[data-lasso-thinking-mark="signature"]')).toHaveLength(1);
-    expect(glyph.querySelector("canvas")?.getAttribute("data-thinking")).toBe("true");
-    expect(glyph.querySelector("canvas")?.getAttribute("data-rope")).toBe("false");
-    expect(document.querySelectorAll("canvas")).toHaveLength(1);
+    expect(screen.queryByTestId("ask-thinking-glyph")).toBeNull();
   });
+
   it("3. on the first character, the Lasso name appears", () => {
     setReducedMotion(false);
     render(<MessagesTab ask={fakeAsk("T")} />);

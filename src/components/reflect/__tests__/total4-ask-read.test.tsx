@@ -11,7 +11,7 @@ vi.mock("@/components/oneonone/SaveForOneOnOne", () => ({ SaveForOneOnOneDialog:
 vi.mock("@/components/work/ThreadViewerById", () => ({ ThreadViewerById: () => null }));
 vi.mock("@/components/reflect/ContextTrail", () => ({
   AnswerRail: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  ContextAudit: () => <div>Context</div>, ThinkingTrail: () => null,
+  ContextAudit: () => <div>Context</div>, ThinkingTrail: () => null, TrailGlyph: () => null,
 }));
 vi.mock("@/components/reflect/LassoThinkingMark", () => ({ LassoThinkingMark: () => null }));
 vi.mock("@/components/reflect/AnswerMoreMenu", () => ({ AnswerMoreMenu: () => null }));
@@ -31,7 +31,8 @@ const manifest = {
   read_set: { chars_in: 642000, chars_total: 642000, share: 1 },
 };
 const answer = { id: "1", role: "assistant", content: "An answer", created_at: "2026-11-07T06:12:00Z", context_manifest: manifest };
-const expected = "Read as written: 19 items. No stored text: 1 item. 100% of the selected text was in front of Lasso.";
+// V2-2e (the redesign, everyone since FLAGS-1): the note says only what Lasso did not read as written.
+const expected = "1 item with no stored text.";
 function ask(overrides: Record<string, unknown> = {}): AskLasso {
   return {
     messages: [], mapped: items, selectedItems: items, draftPointed: [], pointedNow: [], pending: false,
@@ -82,7 +83,7 @@ describe("TOTAL-4 read details", () => {
       items: [ { title: "A", detail: "turns 1-3" }, { title: "B", detail: "42 words" }, { title: "C", detail: "summary only" } ],
       read_set: { chars_in: 500, chars_total: 1000, share: 0.5 },
     } }] })} />);
-    expect(screen.getByTestId("coverage-note").textContent).toBe("Read as written: 2 items. Read as summary only: 1 item. 50% of the selected text was in front of Lasso.");
+    expect(screen.getByTestId("coverage-note").textContent).toBe("1 item read as summary only. 50% of the selected text was in front of Lasso.");
   });
   it("omits a perfect stored read and does not duplicate stale live coverage", () => {
     render(<MessagesTab ask={ask({ coverage: { fullCount: 19, noTextCount: 1, summaryCount: 0, share: 1 }, messages: [{ ...answer, context_manifest: { ...manifest, items: manifest.items.slice(0, 19) } }] })} />);
@@ -92,20 +93,16 @@ describe("TOTAL-4 read details", () => {
     render(<MessagesTab ask={ask({ pending: true, streamed: "A", coverage: { fullCount: 19, noTextCount: 1, summaryCount: 0, share: 1 } })} />);
     expect(screen.getByTestId("coverage-note").textContent).toBe(expected);
   });
-  it("keeps the reading line before and during stream, removes it on completion", () => {
+  it("FLAGS-1: no 'Reading N items as written' line while Lasso works; the note comes after the answer", () => {
     const host = document.createElement("main"); document.body.appendChild(host);
     const props = { draft: "b" as const, host, tab: "messages" as const, onTab: vi.fn(), engagementId: "board", engagementTitle: "Board", profileId: "p", orgId: "o", onClose: vi.fn() };
     const { rerender } = render(<AskDraftSurface {...props} ask={ask({ pending: true })} />);
-    expect(screen.getByTestId("ask-reading-scope").textContent?.trim()).toBe("Reading 20 items as written");
-    rerender(<AskDraftSurface {...props} ask={ask({ pending: true, streamed: "A" })} />);
-    expect(screen.getByTestId("ask-reading-scope").textContent?.trim()).toBe("Reading 20 items as written");
-    rerender(<AskDraftSurface {...props} ask={ask({ messages: [answer] })} />);
     expect(screen.queryByTestId("ask-reading-scope")).toBeNull();
+    rerender(<AskDraftSurface {...props} ask={ask({ pending: true, streamed: "A" })} />);
+    expect(screen.queryByTestId("ask-reading-scope")).toBeNull();
+    rerender(<AskDraftSurface {...props} ask={ask({ messages: [answer] })} />);
     expect(screen.getByTestId("coverage-note").textContent).toBe(expected);
   });
-  it("reads the pointed scope as a singular item", () => {
-    const host = document.createElement("main"); document.body.appendChild(host);
-    render(<AskDraftSurface draft="b" host={host} tab="messages" onTab={vi.fn()} engagementId="board" engagementTitle="Board" profileId="p" orgId="o" onClose={vi.fn()} ask={ask({ pending: true, pointedNow: [items[0]] })} />);
-    expect(screen.getByTestId("ask-reading-scope").textContent?.trim()).toBe("Reading 1 item as written");
-  });
+
+
 });
