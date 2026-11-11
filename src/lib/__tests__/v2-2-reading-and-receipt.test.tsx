@@ -242,12 +242,13 @@ describe("V2-2 only show what's new", () => {
   });
 });
 
-describe("V2-2 flag off is today's trail", () => {
-  it("MessagesTab only reaches the V2 pieces through the ask-v2 flag", () => {
+describe("V2-2 is the only reading state (ASK-V2-CLEANUP)", () => {
+  it("MessagesTab draws the V2 pieces with no flag and no old trail", () => {
     const src = readFileSync("src/components/reflect/AskSurface.tsx", "utf8");
-    expect(src).toMatch(/const askV2 = ASK_V2/);
-    expect(src).toMatch(/\{askV2 \? \(\s*<AskReadingV2/);
-    expect(src).toMatch(/v2=\{askV2 && manifest \?/);
+    expect(src).not.toMatch(/askV2|ASK_V2/);
+    expect(src).toMatch(/<div className="nb-binder-inset">\s*<AskReadingV2/);
+    expect(src).toMatch(/v2=\{manifest \?/);
+    expect(src).not.toContain("ThinkingTrail");
   });
   it("ContextAudit without v2 keeps its label and count", () => {
     const man = m([t("1"), t("2")]);

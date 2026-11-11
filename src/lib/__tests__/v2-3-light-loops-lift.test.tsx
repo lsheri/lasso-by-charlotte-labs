@@ -161,11 +161,13 @@ describe("V2-3 board loops", () => {
   });
 });
 
-describe("V2-3 flag off is today's board", () => {
-  it("the Ask surface reaches the V2 mark, loops and lift only through ask-v2", () => {
+describe("V2-3 is the only board treatment (ASK-V2-CLEANUP)", () => {
+  it("the Ask surface draws the V2 mark, loops and lift, and the old mark and lines are gone", () => {
     const src = readFileSync("src/components/canvas-lab/ask-draft/AskDraftSurface.tsx", "utf8");
-    expect(src).toMatch(/askV2 \? <AskLiveMark[^]*: <LassoLoopMark/);
-    expect(src).toMatch(/askV2\s*\?\s*<AskReadingLoops[^]*: <AskReadingLines/);
-    expect(src).toMatch(/useAskLift\(\{ host: askV2 \? host : null/);
+    expect(src).toContain("<AskLiveMark pending={ask.pending}");
+    expect(src).not.toContain("LassoLoopMark");
+    expect(src).toContain("<AskReadingLoops host={host}");
+    expect(src).not.toContain("AskReadingLines");
+    expect(src).toMatch(/useAskLift\(\{ host, /);
   });
 });

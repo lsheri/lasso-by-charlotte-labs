@@ -13,7 +13,7 @@ describe("ASK-FIX-2 the first turn is visible while Lasso works", () => {
     expect(css).toMatch(/\.ask-draft\[data-collapsed="true"\] \.ask-draft-body > \.nb-binder \{ display: none; \}/);
   });
   it("the idle bar still needs no question in flight", () => {
-    expect(surface).toMatch(/const idleBar = askV2 && draft === "b" && props\.tab === "messages" && \(empty \|\| folded\) && !ask\.pending/);
+    expect(surface).toMatch(/const idleBar = draft === "b" && props\.tab === "messages" && \(empty \|\| folded\) && !ask\.pending/);
   });
   it("sending unfolds a folded Ask", () => {
     expect(surface).toMatch(/useEffect\(\(\) => \{ if \(ask\.pending\) setFolded\(false\); \}, \[ask\.pending\]\);/);

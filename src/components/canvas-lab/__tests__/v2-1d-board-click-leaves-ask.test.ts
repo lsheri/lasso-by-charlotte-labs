@@ -39,7 +39,7 @@ describe("V2-1d wiring", () => {
     src.indexOf("const { refresh } = dock;"),
   );
   it("only under ask-v2 and only while focus is in Ask", () => {
-    expect(effect).toContain("if (!askV2 || !focusedIn) return;");
+    expect(effect).toContain("if (!focusedIn) return;");
   });
   it("listens in the capture phase, so the board's own handlers cannot hide the press", () => {
     expect(effect).toContain('document.addEventListener("pointerdown", onPress, true);');

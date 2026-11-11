@@ -23,7 +23,6 @@ import {
 import { logEvent } from "@/lib/telemetry";
 import { parseScope, type ContextScope, type ScopeSource } from "@/lib/reflect-shared";
 import type { ContextManifest } from "@/lib/context-manifest";
-import { ASK_V2 } from "@/lib/ask-v2";
 import type { WorkItemRow } from "@/lib/work-types";
 
 export type AskMessageRow = {
@@ -316,7 +315,7 @@ export function useAskLasso({
     // scrolled to the very end: the question sat 117 px above view while Gathering, and a finished answer opened on
     // its last lines. With ask-v2 the latest question goes to the top instead; the answer reads down from it.
     const anchor = bottomRef.current;
-    if (ASK_V2 && anchor && showLatestQuestion(anchor)) return;
+    if (anchor && showLatestQuestion(anchor)) return;
     anchor?.scrollIntoView({ behavior: "smooth" });
   }, [messages?.length, pending, asked]);
 
@@ -469,7 +468,7 @@ export function useAskLasso({
         },
         (delta) => setStreamed((prev) => prev + delta),
         // V2-0: behind ask-v2, show what is being read as soon as the server knows it.
-        ASK_V2 ? (manifest) => setLiveManifest(manifest as ContextManifest) : undefined,
+        (manifest) => setLiveManifest(manifest as ContextManifest),
       );
       setCoverage({
         truncated: result.truncated,
