@@ -164,10 +164,11 @@ export const editStickyFn = createServerFn({ method: "POST" })
 export const setStickyDoneFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    (input: { id: string; done: boolean; expected_version: number; profile_id?: string }) => ({
+    (input: { id: string; done: boolean; expected_version?: number; profile_id?: string }) => ({
       id: str(input?.id),
       done: input?.done === true,
-      expected_version: num(input?.expected_version),
+      // S4b-2: the inbox has no version in hand; the server reads the current one.
+      expected_version: typeof input?.expected_version === "number" ? input.expected_version : null,
       profile_id: str(input?.profile_id) || undefined,
     }),
   )

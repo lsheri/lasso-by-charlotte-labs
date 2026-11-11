@@ -125,7 +125,7 @@ describe("S4b asking someone", () => {
     expect(onCreate).toHaveBeenCalledWith(expect.anything(), "Mine", "yellow", "just_me", null);
   });
   it("editing sends the assignee only when it changed", async () => {
-    const onEdit = vi.fn(async () => true);
+    const onEdit = vi.fn(async (_sticky: unknown, _patch: unknown) => true);
     render(<Harness stickies={[sticky({ assigneeId: "ben", assigneeName: "Ben Stanton" })]} open="s1" onEdit={onEdit} />);
     fireEvent.click(await screen.findByRole("button", { name: STICKY_UI_COPY.edit }));
     fireEvent.click(screen.getByRole("button", { name: STICKY_UI_COPY.save }));

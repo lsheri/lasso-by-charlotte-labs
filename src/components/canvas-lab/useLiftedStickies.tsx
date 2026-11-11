@@ -1,4 +1,4 @@
-import { useCallback, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
 import {
   STICKY_UI_COPY,
@@ -35,6 +35,7 @@ export function useLiftedStickies({
   orgId,
   canWrite,
   body,
+  focus,
 }: {
   engagementId: string;
   item: WorkItemRow | null;
@@ -42,6 +43,8 @@ export function useLiftedStickies({
   orgId?: string | undefined;
   canWrite: boolean;
   body: HTMLElement | null;
+  /** S4b-2: a sticky to open on this piece (from a notification), once its list has loaded. */
+  focus?: { stickyId: string; at: number } | null | undefined;
 }): { pad: ReactNode; layer: ReactNode; panel: ReactNode; label: string } {
   const workItemId = item?.id ?? null;
   const { stickies, createSticky, editSticky, archiveSticky, setStickyDone } = useStickies(
@@ -81,7 +84,8 @@ export function useLiftedStickies({
     [],
   );
 
-  const go = useCallback(
+  /** Turn to the sticky's spot and open it. */
+  const reveal = useCallback(
     (sticky: StickyDto) => {
       const content = stickyContent(stickyScroller(body));
       const el = content ? anchorElement(content, sticky.anchor) : null;
@@ -89,10 +93,32 @@ export function useLiftedStickies({
       if (!el && content && sticky.anchor.kind === "page") showPage(content, sticky.anchor.pageNo);
       el?.scrollIntoView({ block: "center", behavior: "smooth" });
       setOpen(sticky.id);
+    },
+    [body, setOpen],
+  );
+  const go = useCallback(
+    (sticky: StickyDto) => {
+      reveal(sticky);
       noteWorkboardStickyOpened(orgId, "list");
     },
-    [body, orgId, setOpen],
+    [orgId, reveal],
   );
+
+  // S4b-2: a notification's sticky opens on its spot once the work is drawn and its stickies have loaded.
+  // The board records the open as from a notification; this only turns to it.
+  const focused = useRef<number | null>(null);
+  useEffect(() => {
+    if (!focus || focused.current === focus.at || !body) return;
+    const sticky = stickies.find((one) => one.id === focus.stickyId);
+    if (!sticky) return;
+    // Give the work a moment to draw its pages before turning to one. Handled only once it has opened, so
+    // a list refresh in between does not lose it.
+    const timer = window.setTimeout(() => {
+      focused.current = focus.at;
+      reveal(sticky);
+    }, 250);
+    return () => window.clearTimeout(timer);
+  }, [focus, stickies, body, reveal]);
 
   if (!item) return { pad: null, layer: null, panel: null, label: STICKY_UI_COPY.tab };
   const pieceId = item.id;
