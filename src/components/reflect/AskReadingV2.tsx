@@ -10,6 +10,7 @@ import {
   chipLabel,
   freshLine,
   kindChips,
+  receiptLine,
   sameSetLine,
   videoLine,
   whatsNew,
@@ -17,6 +18,8 @@ import {
 
 /** V2-2 keyframes live with the component, never in the global stylesheet. */
 export const ASK_READING_V2_STYLES = `
+/* ASK-V2-FIX-3: in the dock the working card drops the binder's baseline padding and margins (56 px above and below the chips in a 295 px panel). */
+.nb-binder-inset.ask-v2-inset { padding: 4px 0; margin: 4px 0 8px; box-shadow: none; }
 .ask-v2-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; height: 2px; }
 .ask-v2-steps > span { border-radius: var(--radius-pill); background: var(--border); transition: background 240ms ease-out; }
 .ask-v2-steps > span[data-on="true"] { background: var(--ask-live); }
@@ -105,6 +108,13 @@ export function AskReadingV2({
           </div>
         </>
       )}
+      {statusInTitle && phase === "writing" && manifest ? (
+        // ASK-V2-FIX-3: once the answer starts, the chips fold to the done receipt's first words, one line,
+        // so the answer streams in view. Measured 10 Nov: in the 295 px dock the answer began 41 px below the fold.
+        <div className="text-[12px]" data-testid="ask-v2-writing-receipt">
+          {receiptLine(manifest)}
+        </div>
+      ) : (
       <div className={`${statusInTitle ? "" : "mt-2.5 "}flex flex-wrap items-center gap-1.5`} data-testid="ask-v2-chips">
         {manifest ? null : (
           <span className="ask-v2-chip" data-read="none" data-testid="ask-v2-chip">
@@ -151,6 +161,7 @@ export function AskReadingV2({
           </span>
         ) : null}
       </div>
+      )}
       {phase === "writing" ? null : (
         <div className="ask-v2-shape mt-3 space-y-1.5" data-testid="ask-v2-shape" aria-hidden>
           <span style={{ width: "92%" }} />
