@@ -246,7 +246,7 @@ describe("V2-2 is the only reading state (ASK-V2-CLEANUP)", () => {
   it("MessagesTab draws the V2 pieces with no flag and no old trail", () => {
     const src = readFileSync("src/components/reflect/AskSurface.tsx", "utf8");
     expect(src).not.toMatch(/askV2|ASK_V2/);
-    expect(src).toMatch(/<div className="nb-binder-inset">\s*<AskReadingV2/);
+    expect(src).toMatch(/<div className="nb-binder-inset ask-v2-inset">\s*<AskReadingV2/);
     expect(src).toMatch(/v2=\{manifest \?/);
     expect(src).not.toContain("ThinkingTrail");
   });
