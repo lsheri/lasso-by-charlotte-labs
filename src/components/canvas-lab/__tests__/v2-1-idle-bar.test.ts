@@ -14,7 +14,7 @@ describe("V2-1 idle bar", () => {
   // it) and a collapsed chat returns to it; clicking into a collapsed chat unfolds it.
   it("is only on behind ask-v2, empty or collapsed, and never while a question is in flight", () => {
     expect(surface).toContain('const askV2 = ASK_V2;');
-    expect(surface).toContain('const idleBar = askV2 && draft === "b" && props.tab === "messages" && (empty || folded) && !ask.pending && !ask.error && !ask.pickerOpen;');
+    expect(surface).toContain('const idleBar = askV2 && draft === "b" && props.tab === "messages" && (empty || folded) && !ask.pending && !ask.error && !ask.pickerOpen && !draftLong;');
     expect(surface).toContain('data-idle-bar={idleBar ? "true" : undefined}');
     expect(surface).toContain("onFocusCapture={(event) => { setFocusedIn(true);");
   });

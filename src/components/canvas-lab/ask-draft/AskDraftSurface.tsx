@@ -88,7 +88,9 @@ export function AskDraftSurface(props: Props) {
   const [focusedIn, setFocusedIn] = useState(false);
   // C2 (ask-v2): the idle bar is the agreed capsule. It stays a capsule while you type into an empty chat
   // (the scope sentence shows under it), and collapsing a chat returns to it; clicking in brings the chat back.
-  const idleBar = askV2 && draft === "b" && props.tab === "messages" && (empty || folded) && !ask.pending && !ask.error && !ask.pickerOpen;
+  // ASK-V2-FIX-1: a question longer than the bar opens the panel, whose composer wraps and grows to six lines.
+  const [draftLong, setDraftLong] = useState(false);
+  const idleBar = askV2 && draft === "b" && props.tab === "messages" && (empty || folded) && !ask.pending && !ask.error && !ask.pickerOpen && !draftLong;
   // V2-3 (ask-v2): the turn's clock starts on a real send only, so a redraw or remount resumes the light and loops.
   const turnKey = turnKeyFor(ask.asked);
   const sawPending = useRef(ask.pending);
@@ -149,6 +151,15 @@ export function AskDraftSurface(props: Props) {
   foldedRef.current = folded;
   const idleRef = useRef(idleBar);
   idleRef.current = idleBar;
+  // ASK-V2-FIX-1: the bar is one line, so a question that runs past its width scrolled sideways out of sight.
+  // Once it no longer fits, open the panel; it returns to a bar only when the box is empty again, so it never
+  // flips back and forth as the wrapped text fits its wider box.
+  useLayoutEffect(() => {
+    if (!ask.draft) { setDraftLong(false); return; }
+    if (draftLong || !idleRef.current) return;
+    const box = ask.composerRef.current;
+    if (box && box.scrollWidth > box.clientWidth + 1) setDraftLong(true);
+  }, [ask.draft, draftLong, ask.composerRef]);
 
   const contentHeight = useCallback(() => {
     const body = bodyRef.current;

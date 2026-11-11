@@ -49,8 +49,8 @@ describe("C2: compact composer (ask-v2 dock only)", () => {
 });
 
 describe("C2: idle bar and collapse", () => {
-  it("the capsule covers an empty chat and a collapsed one, and stays while typing", () => {
-    expect(draft).toMatch(/const idleBar = askV2 && draft === "b" && props\.tab === "messages" && \(empty \|\| folded\) && !ask\.pending && !ask\.error && !ask\.pickerOpen;/);
+  it("the capsule covers an empty chat and a collapsed one, and stays while typing until the question outgrows it (ASK-V2-FIX-1)", () => {
+    expect(draft).toMatch(/const idleBar = askV2 && draft === "b" && props\.tab === "messages" && \(empty \|\| folded\) && !ask\.pending && !ask\.error && !ask\.pickerOpen && !draftLong;/);
   });
   it("focused and empty, the scope sentence shows and the bar re-measures", () => {
     expect(draft).toMatch(/composerScopeLine=\{idleBar && empty && focusedIn\}/);

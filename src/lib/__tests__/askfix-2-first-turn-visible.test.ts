@@ -24,7 +24,8 @@ describe("ASK-FIX-2 a follow-up scrolls to the new turn", () => {
   const effect = hook.slice(hook.indexOf("// ASK-FIX-2: scroll"), hook.indexOf("async function ensureSession"));
   it("waits for the panel to grow, then scrolls to the end", () => {
     expect(effect).toMatch(/frame = raf\(\(\) => \{ frame = raf\(\(\) => \{/);
-    expect(effect).toMatch(/else bottomRef\.current\?\.scrollIntoView\(\{ behavior: "smooth", block: "end" \}\);/);
+    // ASK-V2-FIX-1: the end is the last resort, after the question and the reading block.
+    expect(effect).toMatch(/else anchor\?\.scrollIntoView\(\{ behavior: "smooth", block: "end" \}\);/);
   });
   it("V2-2c: with the reading state shown, brings that whole block into view instead of the very end", () => {
     expect(effect).toMatch(/querySelector<HTMLElement>\('\[data-testid="ask-reading-v2"\]'\)/);
