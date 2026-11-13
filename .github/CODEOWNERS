@@ -1,0 +1,20 @@
+# Code owners for Lasso by Charlotte Labs.
+# GitHub asks the owners below to review any pull request that touches a matching path.
+# The last matching line wins, so keep specific paths below the default.
+#
+# This file only suggests reviewers until branch protection on main turns on
+# "Require review from Code Owners". That setting is a separate decision.
+
+# Default: Liam reviews everything.
+*                         @lsheri
+
+# Design surface. Same owner today. When a design reviewer joins, add their
+# handle after @lsheri on these lines and nothing else needs to change.
+/src/design/              @lsheri
+/src/styles.css           @lsheri
+/docs/design/             @lsheri
+/DESIGN-DECISIONS.md      @lsheri
+/.storybook/              @lsheri
+
+# Review plumbing itself.
+/.github/                 @lsheri
