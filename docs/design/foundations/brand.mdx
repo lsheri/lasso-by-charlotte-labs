@@ -1,0 +1,23 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Foundations/Brand" />
+
+# Brand
+
+## Lasso, the default skin
+
+- The existing lockup stays; only its colour moved to acid (14 Oct 2026).
+- The "you are here" cue is a sunk fill with weight 600. The settings rail and Ask tabs keep the 2.5px acid rule (`--here-rule`, `--here-weight`).
+- Ask's own green is the landing lime (`--ask-live`, #04f85b), and acid stays the highlight everywhere else.
+
+## Never rename
+
+`--lasso-*` tokens, the `lasso_*` MCP tools, PostHog events, the repo, Supabase and the MCP URL keep their names whatever the skin.
+
+## Voice
+
+Lasso describes work, never workers. No scores about people, and no audit or surveillance words in copy. No em dashes.
+
+## A second skin
+
+A skin is a parameter: `data-skin` on the page, overriding the job-named tokens in `tokens.css`. Its glyphs, mark and motion are built in Storybook first, and nothing in the app imports them until a reviewed pull request does.

@@ -1,0 +1,35 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Foundations/Color" />
+
+# Color
+
+Values live in `src/design/tokens.css`. The live sheet is **Foundations / Tokens**, which reads that file, so it never drifts.
+
+## Palette: Bone and Acid
+
+Neutrals run from `--neutral-00` (white) to `--neutral-95` (near black). Acid (`--acid-100`, #c8ff00) is the one highlight colour. Orange, red and gold each have a full value and a wash. Decided 13 to 14 Oct 2026.
+
+## Three layers
+
+1. **Raw values**: `--neutral-*`, `--acid-*`, `--orange-*`, `--red-*`, `--gold-*`.
+2. **Roles**: surfaces (`--surface-page`, `--surface-raised`, `--surface-sunk`), text (`--text-primary`, `--text-secondary`, `--text-muted`), lines, actions and states.
+3. **Jobs**: one name per job a colour does. A skin overrides this layer only.
+
+| Job | Today points at | Used for |
+|---|---|---|
+| `--focus-ring` | `--focus-ring-new` | Keyboard focus outlines |
+| `--state-on-record` | `--nb-green` | "On the record" state |
+| `--wrap-mark` | `--nb-green` | The wrap-up dot on a task row |
+| `--selection` | `--nb-green-wash` | Highlighted text on the canvas |
+| `--live` | `--nb-lasso-green` | Live elements only |
+| `--icon-ink` | `currentColor` | Glyph stroke at rest |
+| `--icon-ink-active` | `--nb-ink` | Glyph stroke on the active row |
+
+The job names are declared on both `:root` and `[data-lasso="on"]`. Inside the app shell `--nb-green` and `--nb-ink` are remapped, and a variable that points at another resolves where it is declared. Nothing reads the job names yet; they are migrated onto one job at a time, starting with focus.
+
+## Rules
+
+- A hue is a name, never a status. Board hues (`--board-hue-0` to `--board-hue-7`) tint the board glyph only and never touch a work card.
+- Focus outlines need 3:1 against their background, and text needs 4.5:1.
+- Real vendor marks keep their own colours wherever a surface represents that vendor.

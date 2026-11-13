@@ -27,7 +27,14 @@ export default defineConfig({
     // app. Vitest must leave them alone; `bunx playwright test` still runs them.
     ...({
       test: {
-        exclude: ["tests/e2e/**", "node_modules/**", "dist/**", ".output/**"],
+        // **/node_modules: storybook/ has its own install, and packages ship their own tests.
+        exclude: [
+          "tests/e2e/**",
+          "**/node_modules/**",
+          "dist/**",
+          ".output/**",
+          "storybook/storybook-static/**",
+        ],
         setupFiles: ["./tests/setup.ts"],
         testTimeout: 15000,
       },

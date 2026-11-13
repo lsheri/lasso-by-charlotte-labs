@@ -1,0 +1,31 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Foundations/Motion" />
+
+# Motion
+
+Scene by scene, motion is listed in `docs/motion.md`, whose source of truth is `src/lib/motion-scenes.ts`. This page covers the tokens and rules.
+
+## Durations
+
+| Token | Value |
+|---|---|
+| `--dur-instant` | 80ms |
+| `--dur-quick` | 160ms |
+| `--dur-move` | 200ms |
+| `--dur-base` | 300ms |
+| `--dur-enter` | 400ms |
+| `--dur-settle` | 550ms |
+| `--dur-draw` | 800ms |
+| `--dur-catch` | 900ms |
+| `--dur-story` | 2200ms |
+
+## Easing
+
+`--ease-standard` for most movement, `--ease-catch` for the acid catch, and `--ease-spring` and `--ease-lively` for small playful settles.
+
+## Rules
+
+- Reduced motion is always respected. Glyph signatures still themselves under `prefers-reduced-motion`, as pinned by the pass84 test. New motion matches that.
+- The reading state is beads on the rope: three acid beads on a 44 by 24 loop, 2600ms.
+- Canvas catch confirms discussed work only, never selection tools.

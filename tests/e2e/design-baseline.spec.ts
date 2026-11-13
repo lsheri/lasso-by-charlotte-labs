@@ -3,6 +3,13 @@ import path from "node:path";
 
 import { test, type Page } from "@playwright/test";
 
+import {
+  BASELINE_SURFACES,
+  VIEWPORTS,
+  type BaselineSurface,
+  type SurfaceId,
+} from "./baseline-surfaces";
+
 /**
  * Design baseline: one picture of every surface a brand change can touch.
  *
@@ -22,7 +29,8 @@ import { test, type Page } from "@playwright/test";
  *                       than lasso is requested with ?brand=<skin> on first load.
  *   LASSO_SHOT_DIR      where pictures go (default tests/e2e/__baseline__)
  *
- * Adding a skin needs no code here. Adding a surface is one entry in SURFACES.
+ * Adding a skin needs no code here. Adding a surface is one entry in
+ * baseline-surfaces.ts and its opener in OPENERS.
  */
 
 const EMAIL = process.env["LASSO_QA_EMAIL"] ?? "qa.company.admin@qaprobe.test";
@@ -30,22 +38,8 @@ const PASSWORD = process.env["LASSO_QA_PASSWORD"] ?? "";
 const SKIN = process.env["LASSO_SKIN"] ?? "lasso";
 const OUT = process.env["LASSO_SHOT_DIR"] ?? "tests/e2e/__baseline__";
 
-const VIEWPORTS = [
-  { id: "desktop-1280", width: 1280, height: 900 },
-  { id: "phone-375", width: 375, height: 812 },
-] as const;
-
-type Viewport = (typeof VIEWPORTS)[number];
-
-type Surface = {
-  id: string;
-  /** Needs a signed-in session. */
-  auth: boolean;
-  /** Skip on a viewport where the surface does not exist. */
-  only?: Viewport["id"];
-  /** Bring the surface on screen. Throwing marks the picture SOFT-FAIL. */
-  open: (page: Page) => Promise<void>;
-};
+/** Bring a surface on screen. Throwing marks the picture SOFT-FAIL. */
+type Opener = (page: Page) => Promise<void>;
 
 async function go(page: Page, route: string): Promise<void> {
   const response = await page.goto(route, { waitUntil: "domcontentloaded" });
@@ -68,72 +62,56 @@ async function openFirstBoard(page: Page): Promise<void> {
   });
 }
 
-const SURFACES: Surface[] = [
-  {
-    id: "01-landing",
-    auth: false,
-    open: async (p) => {
-      await go(p, "/");
-      // The logo rain covers the wait for the public demo board; picture the story behind it.
-      await p.getByTestId("landing-logo-rain").waitFor({ state: "detached", timeout: 30_000 });
-      await p.locator(".lb-phone-loading").first().waitFor({ state: "detached", timeout: 30_000 });
-    },
+const OPENERS: Record<SurfaceId, Opener> = {
+  "01-landing": async (p) => {
+    await go(p, "/");
+    // The logo rain covers the wait for the public demo board; picture the story behind it.
+    await p.getByTestId("landing-logo-rain").waitFor({ state: "detached", timeout: 30_000 });
+    await p.locator(".lb-phone-loading").first().waitFor({ state: "detached", timeout: 30_000 });
   },
-  { id: "02-sign-in", auth: false, open: (p) => go(p, "/auth") },
-  { id: "03-plans", auth: false, open: (p) => go(p, "/plans") },
+  "02-sign-in": (p) => go(p, "/auth"),
+  "03-plans": (p) => go(p, "/plans"),
   // The first-run tour, shown through its public preview harness so no account is created.
-  { id: "04-onboarding-tour", auth: false, open: (p) => go(p, "/tour-preview") },
-  { id: "05-home", auth: true, open: (p) => go(p, "/home") },
-  { id: "06-all-work", auth: true, open: (p) => go(p, "/work") },
-  {
-    id: "07-sidebar-open",
-    auth: true,
-    only: "desktop-1280",
-    open: async (p) => {
-      await go(p, "/home");
-      // Open every collapsed folder so nesting, scope rows and shared rows show.
-      for (let i = 0; i < 12; i += 1) {
-        const closed = p.locator('nav [aria-label="Expand"]').first();
-        if (!(await closed.count())) break;
-        await closed.click();
-      }
-    },
+  "04-onboarding-tour": (p) => go(p, "/tour-preview"),
+  "05-home": (p) => go(p, "/home"),
+  "06-all-work": (p) => go(p, "/work"),
+  "07-sidebar-open": async (p) => {
+    await go(p, "/home");
+    // Open every collapsed folder so nesting, scope rows and shared rows show.
+    for (let i = 0; i < 12; i += 1) {
+      const closed = p.locator('nav [aria-label="Expand"]').first();
+      if (!(await closed.count())) break;
+      await closed.click();
+    }
   },
-  { id: "08-board-and-toolbar", auth: true, open: openFirstBoard },
-  {
-    id: "09-ask-idle",
-    auth: true,
-    open: async (p) => {
-      await openFirstBoard(p);
-      await p.locator('[aria-label="Ask Lasso"]').first().click();
-    },
+  "08-board-and-toolbar": openFirstBoard,
+  "09-ask-idle": async (p) => {
+    await openFirstBoard(p);
+    await p.locator('[aria-label="Ask Lasso"]').first().click();
   },
-  {
-    // Best effort: a moving state. The picture is taken just after sending.
-    id: "10-ask-thinking",
-    auth: true,
-    open: async (p) => {
-      await openFirstBoard(p);
-      await p.locator('[aria-label="Ask Lasso"]').first().click();
-      const box = p.locator("textarea").last();
-      await box.fill("What is on this board?");
-      await box.press("Enter");
-      await p.locator("[data-lasso-thinking-mark]").first().waitFor({ timeout: 15_000 });
-    },
+  // Best effort: a moving state. The picture is taken just after sending.
+  "10-ask-thinking": async (p) => {
+    await openFirstBoard(p);
+    await p.locator('[aria-label="Ask Lasso"]').first().click();
+    const box = p.locator("textarea").last();
+    await box.fill("What is on this board?");
+    await box.press("Enter");
+    await p.locator("[data-lasso-thinking-mark]").first().waitFor({ timeout: 15_000 });
   },
-  {
-    id: "11-share-dialog",
-    auth: true,
-    open: async (p) => {
-      await openFirstBoard(p);
-      await p.locator('[aria-label="Share"]').first().click();
-      await p.getByRole("dialog").waitFor({ timeout: 20_000 });
-    },
+  "11-share-dialog": async (p) => {
+    await openFirstBoard(p);
+    await p.locator('[aria-label="Share"]').first().click();
+    await p.getByRole("dialog").waitFor({ timeout: 20_000 });
   },
-  { id: "12-settings", auth: true, open: (p) => go(p, "/settings") },
-  { id: "13-sources", auth: true, open: (p) => go(p, "/connectors") },
-  { id: "14-mobile-tab-bar", auth: true, only: "phone-375", open: (p) => go(p, "/home") },
-];
+  "12-settings": (p) => go(p, "/settings"),
+  "13-sources": (p) => go(p, "/connectors"),
+  "14-mobile-tab-bar": (p) => go(p, "/home"),
+};
+
+const SURFACES = BASELINE_SURFACES.map((surface): BaselineSurface & { open: Opener } => ({
+  ...surface,
+  open: OPENERS[surface.id],
+}));
 
 async function signIn(page: Page): Promise<void> {
   await go(page, "/auth");

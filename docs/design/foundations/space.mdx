@@ -1,0 +1,27 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Foundations/Space" />
+
+# Space, radius and depth
+
+## Furniture
+
+Soft furniture, decided 13 to 14 Oct 2026: a 1px border (`--border-weight`), a soft card shadow, a 2px card radius and a 5px button radius.
+
+| Token | Value | Job |
+|---|---|---|
+| `--radius-sm-new` | 2px | Cards |
+| `--radius-md-new` | 5px | Buttons, tool groups, badges |
+| `--radius-pill` | 999px | Pills only |
+| `--shadow-card-new` | 15 percent ink, 1 2 3px | Cards (`--card-shadow`) |
+| `--shadow-float` | 10 percent ink, 0 12 32px | Floating bars |
+| `--shadow-dialog` | 50 percent ink, 0 24 60px | Dialogs |
+| `--btn-shadow` | none | Primary buttons are flat ink |
+
+## Spacing
+
+There is no spacing scale in `tokens.css` yet. Components use Tailwind's spacing utilities, and a few surfaces carry their own metrics, such as the sidebar (`--nav-width` 258px, rows padded `--nav-row-padding-block` 6px by `--nav-row-padding-inline` 9px). A spacing scale is open design debt.
+
+## Touch
+
+Touch targets are 44px from `@media (hover: none)` or below 768px. The board tools are 29px with a pointer and 44px on touch.

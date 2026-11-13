@@ -1,0 +1,24 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Foundations/Iconography" />
+
+# Iconography
+
+Every glyph is in **Foundations / Icons**, read from `ICON_NAMES` so a new glyph appears there without a story change.
+
+## GraphiteIcon
+
+- 42 glyphs on one 20px grid (`viewBox 0 0 20 20`), stroke 1.75, round caps and joins, `currentColor`.
+- Source: `src/components/notebook/icons.tsx`. The glyph count is pinned by the pass84 test, and two glyph shapes by icon1.
+- Each glyph has a signature: one stroke that draws when it plays. `animate` turns it on and `playOnMount` plays it once on mount. Reduced motion stills it.
+- A glyph with a `title` is an image with that label. Without one it is hidden from assistive technology, and its control carries the label.
+
+## Two languages today
+
+`lucide-react` is imported in 93 files and GraphiteIcon is used in 33. Lucide sits on a 24 grid, so a 1.5 stroke at 12px renders under 1px. Small Lucide icons keep stroke 2. One glyph map per skin is the plan; see `docs/design/debt.md`.
+
+## Rules
+
+- Real vendor marks wherever a surface represents that vendor, never a hue dot standing in for one.
+- Board hue tints the board glyph only.
+- Icon-only controls always carry an aria-label and a tooltip.
