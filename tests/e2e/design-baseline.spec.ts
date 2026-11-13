@@ -15,7 +15,9 @@ import { test, type Page } from "@playwright/test";
  *   LASSO_QA_EMAIL=... LASSO_QA_PASSWORD=... bunx playwright test design-baseline
  *
  * Options, all by environment variable:
- *   LASSO_E2E_BASE_URL  where the app is (defaults to the Lovable preview)
+ *   LASSO_E2E_BASE_URL  where the app is (defaults to the Lovable preview, which
+ *                       sends signed-out browsers to a Lovable login; for a local
+ *                       run start `bun run dev` and use http://localhost:8080)
  *   LASSO_SKIN          "lasso" (default) or any future skin name. A skin other
  *                       than lasso is requested with ?brand=<skin> on first load.
  *   LASSO_SHOT_DIR      where pictures go (default tests/e2e/__baseline__)
@@ -46,7 +48,12 @@ type Surface = {
 };
 
 async function go(page: Page, route: string): Promise<void> {
-  await page.goto(route, { waitUntil: "domcontentloaded" });
+  const response = await page.goto(route, { waitUntil: "domcontentloaded" });
+  // A picture of someone else's login wall is not a baseline. The Lovable
+  // preview, for one, redirects signed-out browsers to lovable.dev.
+  const wanted = new URL(response?.request().url() ?? page.url()).origin;
+  const landed = new URL(page.url()).origin;
+  if (landed !== wanted) throw new Error(`left the app: landed on ${landed}`);
 }
 
 async function openFirstBoard(page: Page): Promise<void> {
@@ -62,7 +69,16 @@ async function openFirstBoard(page: Page): Promise<void> {
 }
 
 const SURFACES: Surface[] = [
-  { id: "01-landing", auth: false, open: (p) => go(p, "/") },
+  {
+    id: "01-landing",
+    auth: false,
+    open: async (p) => {
+      await go(p, "/");
+      // The logo rain covers the wait for the public demo board; picture the story behind it.
+      await p.getByTestId("landing-logo-rain").waitFor({ state: "detached", timeout: 30_000 });
+      await p.locator(".lb-phone-loading").first().waitFor({ state: "detached", timeout: 30_000 });
+    },
+  },
   { id: "02-sign-in", auth: false, open: (p) => go(p, "/auth") },
   { id: "03-plans", auth: false, open: (p) => go(p, "/plans") },
   // The first-run tour, shown through its public preview harness so no account is created.
@@ -124,20 +140,45 @@ async function signIn(page: Page): Promise<void> {
   await page.locator("input#email").fill(EMAIL);
   await page.locator('input[type="password"]').fill(PASSWORD);
   await page.getByRole("button", { name: /^sign in$/i }).click();
-  await page.waitForURL((url) => !url.pathname.startsWith("/auth"), { timeout: 60_000 });
+  // Leave as soon as the app either lets us in or says why it will not.
+  const rejected = page.getByText(/invalid login credentials/i).first();
+  await Promise.race([
+    page.waitForURL((url) => !url.pathname.startsWith("/auth"), { timeout: 60_000 }),
+    rejected.waitFor({ timeout: 60_000 }).then(() => {
+      throw new Error("the app said: Invalid login credentials");
+    }),
+  ]);
 }
 
 /** Stops motion and removes toasts so two runs of the same commit match. */
 async function settle(page: Page): Promise<void> {
-  await page.addStyleTag({
-    content:
-      "*,*::before,*::after{animation-duration:0s!important;animation-delay:0s!important;" +
-      "transition-duration:0s!important;caret-color:transparent!important}",
-  });
-  await page.locator("[data-sonner-toast], [data-sonner-toaster]").evaluateAll((nodes) => {
-    for (const node of nodes) node.remove();
-  });
-  await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => undefined);
+  // A page may still be navigating (a client redirect, or a dev server's first
+  // reload). Wait for it, and retry if the page changes underneath us.
+  for (let attempt = 0; ; attempt += 1) {
+    await page.waitForLoadState("load", { timeout: 30_000 }).catch(() => undefined);
+    await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => undefined);
+    try {
+      await page.addStyleTag({
+        content:
+          "*,*::before,*::after{animation-duration:0s!important;animation-delay:0s!important;" +
+          "transition-duration:0s!important;caret-color:transparent!important}",
+      });
+      await page.locator("[data-sonner-toast], [data-sonner-toaster]").evaluateAll((nodes) => {
+        for (const node of nodes) node.remove();
+      });
+      // A playing video lands on a different frame every run; hold each on its first frame.
+      await page.locator("video").evaluateAll((nodes) => {
+        for (const node of nodes as HTMLVideoElement[]) {
+          node.pause();
+          node.currentTime = 0;
+        }
+      });
+      break;
+    } catch (error) {
+      if (attempt >= 3) throw error;
+      await page.waitForTimeout(1_000);
+    }
+  }
   await page.evaluate(() => document.fonts.ready.then(() => undefined));
   await page.waitForTimeout(400);
 }
@@ -159,13 +200,21 @@ for (const viewport of VIEWPORTS) {
     if (SKIN !== "lasso") await go(page, `/?brand=${encodeURIComponent(SKIN)}`);
 
     let signedIn = false;
+    let signInError = "";
     for (const surface of SURFACES) {
       if (surface.only && surface.only !== viewport.id) continue;
       let result = "PASS";
       try {
         if (surface.auth && !signedIn) {
           if (!PASSWORD) throw new Error("LASSO_QA_PASSWORD is not set");
-          await signIn(page);
+          // One failed sign-in is enough; retrying per surface only burns a minute each.
+          if (signInError) throw new Error(`skipped, sign-in failed: ${signInError}`);
+          try {
+            await signIn(page);
+          } catch (error) {
+            signInError = (error as Error).message.split("\n")[0] ?? "unknown";
+            throw new Error(`sign-in failed (check the password): ${signInError}`);
+          }
           signedIn = true;
         }
         await surface.open(page);
