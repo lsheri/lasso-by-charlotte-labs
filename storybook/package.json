@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "storybook dev -p 6006",
+    "dev": "storybook dev -p 6106 --exact-port",
     "build": "storybook build -o storybook-static",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },

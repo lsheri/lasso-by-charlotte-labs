@@ -35,7 +35,7 @@ Storybook runs on this Mac only for now. It is its own package, so the app's ins
 ```
 cd storybook
 bun install
-bun run dev       # opens on http://localhost:6006
+bun run dev       # opens on http://localhost:6106 (6006 belongs to another project)
 bun run build     # static build in storybook/storybook-static
 ```
 
