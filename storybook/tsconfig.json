@@ -1,0 +1,7 @@
+{
+  "extends": "../tsconfig.json",
+  "include": [".storybook/**/*", "stories/**/*", "*.ts", "../tests/e2e/baseline-surfaces.ts"],
+  "compilerOptions": {
+    "types": ["vite/client", "node"]
+  }
+}

@@ -1,0 +1,25 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Foundations/Type" />
+
+# Type
+
+| Token | In the app shell | Job |
+|---|---|---|
+| `--font-sans` | Archivo | Interface text |
+| `--font-serif` | Instrument Sans | Headings, including section labels (700, 34px) |
+| `--font-display` | Instrument Sans | Display headings in reference components |
+| `--font-mono` | Martian Mono | Micro labels, counts, signatures |
+| `--font-hand` | resolves to `--font-sans` | Retired inside the app since NAV-4 (6 Nov 2026) |
+
+Outside the app shell, on the landing page, `--font-mono` is JetBrains Mono and `--font-hand` is Caveat. The app shell overrides both under `[data-lasso="on"]`.
+
+## Weights that exist
+
+Instrument Sans is imported at 700. JetBrains Mono and Martian Mono are imported at 400 and 500 only, so any 700 in them is synthetic. Do not set them bold.
+
+## Sizes
+
+`--text-micro` (9px), `--text-mini` (10.5px) and `--text-md` (16px) are this system's own. Tailwind owns `--text-xs` to `--text-3xl`, and defining them here would resize every utility in the product. Nav rows use `--nav-row-size` (13px), weight 400, active 600.
+
+Labels use `--label-weight` (500) and `--label-tracking` (0.08em).
