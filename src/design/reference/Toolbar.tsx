@@ -40,8 +40,8 @@ export const ToolButton = ({ d, label, held, disabled, touch, onClick }: ToolBut
       style={{
         display: "grid", placeItems: "center", width: size, height: size, minWidth: size, minHeight: size, padding: 0,
         border: 0, borderRadius: "var(--radius-md-new)",
-        background: held ? "var(--hand-live)" : hover && !disabled ? "color-mix(in srgb, var(--text-primary) 8%, transparent)" : "transparent",
-        color: disabled ? "color-mix(in srgb, var(--text-primary) 30%, transparent)" : "var(--text-primary)",
+        background: held ? "var(--state-held)" : hover && !disabled ? "color-mix(in srgb, var(--text-primary) 8%, transparent)" : "transparent",
+        color: disabled ? "color-mix(in srgb, var(--text-primary) 30%, transparent)" : held ? "var(--state-held-ink)" : "var(--text-primary)",
         cursor: disabled ? "not-allowed" : "pointer",
         transition: "background var(--dur-quick) var(--ease-standard)",
       }}

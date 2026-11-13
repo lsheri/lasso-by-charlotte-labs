@@ -18,6 +18,20 @@ import { Meta } from "@storybook/addon-docs/blocks";
 
 Lasso describes work, never workers. No scores about people, and no audit or surveillance words in copy. No em dashes.
 
+## Charlotte (second skin, Storybook only)
+
+Exhibit direction (12 Nov 2026): white paper, navy ink, lime only when something is live. Values live in `src/design/skins/charlotte.css`; switch the Skin menu to Charlotte, or open **Foundations / Skins** to see both side by side with contrast.
+
+| Job | Charlotte | Contrast on white |
+|---|---|---|
+| Text, focus, state, highlight, the "on the record" mark | navy `#0B2A4A` | 14.5:1 |
+| Secondary text | `#55697A` | 5.7:1 |
+| Muted text | `#73859A` | 3.8:1 |
+| Selection | navy at 10% on white | text stays 12:1 |
+| Live (Ask, live dots, link underlines) | lime `#04F85B` | 1.44:1, so fill and decoration only |
+
+Lime never carries focus, text or state. A link is navy text with a lime underline, never lime alone. A test fails if a token edit breaks either rule.
+
 ## A second skin
 
 A skin is a parameter: `data-skin` on the page, overriding the job-named tokens in `tokens.css`. Its glyphs, mark and motion are built in Storybook first, and nothing in the app imports them until a reviewed pull request does.

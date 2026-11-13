@@ -1,0 +1,64 @@
+/* Charlotte skin. Exhibit picks (12 Nov 2026) with the Lab glass palette: white paper, navy ink, lime only when live.
+   Overrides role tokens and the job names in tokens.css, never a hue's own name, and never --lasso-* tokens.
+   Selector: one attribute stronger than the [data-lasso="on"] remaps, on the same element, so --nb-* resolve to these values.
+   Descendant (not :root) so Storybook can frame a skin inside the page; the app sets data-skin on <html>.
+   Lime is 1.44:1 on white: fill and decoration only, never focus, text or state. A test in src/design/__tests__ enforces this.
+   Not imported by src/styles.css until PR2. No em dashes. */
+
+[data-skin="charlotte"] [data-lasso="on"] {
+  --ch-navy:#0B2A4A;
+  --ch-lime:#04F85B;
+  --ch-page:#FAFBF9;
+  --ch-white:#FFFFFF;
+  --ch-wash:#EEF4F8;
+  --ch-muted:#55697A;
+  --ch-faint:#73859A;
+  --ch-navy-wash:#e7eaed; /* navy at 10% on white */
+  --ch-sunk-2:#e2e6e8; /* navy at 10% on page */
+  --ch-hairline:#d9dee0; /* navy at 14% on page */
+  --ch-pencil:#b2bcc4; /* navy at 30% on page */
+
+  --surface-page:var(--ch-page);
+  --surface-raised:var(--ch-white);
+  --surface-sunk:var(--ch-wash);
+  --surface-sunk-2:var(--ch-sunk-2);
+  --surface-inverse:var(--ch-navy);
+
+  --text-primary:var(--ch-navy);
+  --text-secondary:var(--ch-muted);
+  --text-muted:var(--ch-faint);
+  --text-on-inverse:var(--ch-page);
+
+  --line-hairline:var(--ch-hairline);
+  --line-pencil:var(--ch-pencil);
+  --line-strong:var(--ch-navy);
+
+  --action-primary:var(--ch-navy);
+  --action-primary-fg:var(--ch-page);
+  --action-primary-shadow:var(--ch-navy);
+  --action-secondary:var(--ch-navy);
+  --action-secondary-underline:var(--ch-lime);
+  --focus-ring-new:var(--ch-navy);
+  --focus-ring:var(--ch-navy); /* declared on :root in tokens.css, so it must be restated here to change */
+
+  --hand-ink:var(--ch-navy);
+  --hand-live:var(--ch-lime);
+  --hand-wash:var(--ch-wash);
+
+  --state-highlight:var(--ch-navy);
+  --state-highlight-wash:var(--ch-navy-wash);
+  --here-rule:var(--ch-navy);
+  --ask-live:var(--ch-lime);
+
+  --state-on-record:var(--ch-navy);
+  --wrap-mark:var(--ch-navy);
+  --selection:var(--ch-navy-wash);
+  --live:var(--ch-lime);
+  --icon-ink:currentColor;
+  --icon-ink-active:var(--ch-navy);
+  --state-held:var(--ch-navy);
+  --state-held-ink:var(--ch-page);
+}
+
+/* No motion in chrome (13 Nov audit): the nav catch loop does not draw under Charlotte. The live app already retired it (NAV-4). */
+[data-skin="charlotte"] [data-lasso="on"] .nav-catch { display:none; }
