@@ -1,0 +1,17 @@
+{
+  "name": "lasso-storybook",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "storybook dev -p 6106 --exact-port",
+    "build": "storybook build -o storybook-static",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@storybook/addon-a11y": "10.6.5",
+    "@storybook/addon-docs": "10.6.5",
+    "@storybook/react-vite": "10.6.5",
+    "remark-gfm": "4.0.1",
+    "storybook": "10.6.5"
+  }
+}

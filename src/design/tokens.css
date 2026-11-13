@@ -170,3 +170,21 @@
 
   --focus-ring:var(--focus-ring-new);
 }
+
+/* Job names. Each token names a job, not a hue, and points at the token that
+   does that job today, so Lasso renders exactly as before. A skin overrides
+   these names and nothing else. Declared on both :root and the app shell
+   because --nb-green and --nb-ink are remapped inside [data-lasso="on"]; a
+   variable that points at another resolves where it is declared, so a
+   :root-only declaration would carry the landing values into the app.
+   --focus-ring already exists above and is not redeclared. Nothing reads
+   these yet; PR2 moves usages onto them. */
+:root,
+[data-lasso="on"] {
+  --state-on-record:var(--nb-green);
+  --wrap-mark:var(--nb-green);
+  --selection:var(--nb-green-wash);
+  --live:var(--nb-lasso-green);
+  --icon-ink:currentColor;
+  --icon-ink-active:var(--nb-ink);
+}

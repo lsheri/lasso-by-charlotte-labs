@@ -1,0 +1,7 @@
+[install]
+saveTextLockfile = true
+# Supply-chain guard: skip package versions published less than two weeks ago.
+minimumReleaseAge = 1209600
+# React, Vite, Tailwind and TypeScript come from the app's own node_modules one
+# folder up, so Storybook renders with the exact copies the app ships.
+peer = false
