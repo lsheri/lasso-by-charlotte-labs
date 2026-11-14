@@ -1,0 +1,13 @@
+/* Charlotte mark (.wm), from the 13 Nov spec. Colours come from the skin's job tokens, so the mark follows the skin:
+   ink from --text-primary, the live hub from --live (lime under Charlotte), node fill from the raised surface.
+   Names are --wm-* so they never shadow the --live job token. No em dashes. */
+.wm{display:block;overflow:visible;flex-shrink:0;--wm-ink:var(--text-primary);--wm-live:var(--live);--wm-surface:var(--surface-raised)}
+.wm .ln{fill:none;stroke:var(--wm-ink);stroke-width:var(--sw);stroke-linecap:round;stroke-linejoin:round}
+.wm .st{fill:none;stroke:var(--wm-ink);stroke-width:var(--ws);stroke-linecap:round;stroke-linejoin:round}
+.wm .nd{fill:var(--wm-surface);stroke:var(--wm-ink);stroke-width:calc(2.4 * var(--k))}
+.wm .lv{fill:var(--wm-live);stroke:var(--wm-ink);stroke-width:calc(2.4 * var(--k));transform-box:fill-box;transform-origin:center}
+.wm .dot{fill:var(--wm-ink)}
+.wm.idle .lv{fill:var(--wm-ink)}
+.wm.reading .lv{animation:wm-pulse 1.4s cubic-bezier(.45,0,.55,1) infinite}
+@keyframes wm-pulse{50%{transform:scale(.78);opacity:.7}}
+@media (prefers-reduced-motion:reduce){.wm.reading .lv{animation:none}}
