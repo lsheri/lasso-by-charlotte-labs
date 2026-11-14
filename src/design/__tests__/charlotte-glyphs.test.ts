@@ -56,7 +56,7 @@ function sourceFiles(dir: string): string[] {
 describe("Charlotte glyphs", () => {
   it("has a Charlotte glyph for every GraphiteIconName, and no others", () => {
     expect(Object.keys(CHARLOTTE_GLYPHS).sort()).toEqual([...ICON_NAMES].sort());
-    expect(ICON_NAMES).toHaveLength(42);
+    expect(ICON_NAMES).toHaveLength(52);
   });
 
   it("matches the spec's RR and DOT formulas wherever it used them", () => {
@@ -77,10 +77,13 @@ describe("Charlotte glyphs", () => {
     for (const p of all) expect(text(p)).not.toMatch(/^~/);
   });
 
-  it("keeps the 10 extras out of the shared names", () => {
+  it("brings the 10 extras into the shared names, drawn from charlotte-extra (PR4b)", () => {
     expect(CHARLOTTE_EXTRA_NAMES).toHaveLength(10);
     expect(Object.keys(CHARLOTTE_EXTRA_GLYPHS).sort()).toEqual([...CHARLOTTE_EXTRA_NAMES].sort());
-    for (const name of CHARLOTTE_EXTRA_NAMES) expect(ICON_NAMES).not.toContain(name);
+    for (const name of CHARLOTTE_EXTRA_NAMES) {
+      expect(ICON_NAMES).toContain(name);
+      expect(CHARLOTTE_GLYPHS[name]).toBe(CHARLOTTE_EXTRA_GLYPHS[name]);
+    }
   });
 
   it("has 12 kinds across all 6 families", () => {
@@ -91,7 +94,7 @@ describe("Charlotte glyphs", () => {
     expect(Object.keys(KIND_FAMILIES)).toHaveLength(6);
   });
 
-  it("reaches the app only through GraphiteIcon (PR4) and SkinnedKindIcon (PR5)", () => {
+  it("reaches the app only through GraphiteIcon (PR4, extras via charlotte.ts in PR4b) and SkinnedKindIcon (PR5)", () => {
     const readers = sourceFiles("src")
       .filter((path) => /\.(css|tsx?)$/.test(path) && !path.startsWith("src/design/"))
       .filter((path) => !path.includes("__tests__"))
