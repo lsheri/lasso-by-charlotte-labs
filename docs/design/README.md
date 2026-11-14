@@ -39,7 +39,7 @@ bun run dev       # opens on http://localhost:6106 (6006 belongs to another proj
 bun run build     # static build in storybook/storybook-static
 ```
 
-Use the Skin menu in the Storybook toolbar to switch skins. Charlotte renders as Lasso until its tokens land.
+Use the Skin menu in the Storybook toolbar to switch skins. Storybook loads the skins through `src/styles.css`, the same way the app does.
 
 ## Rules that apply to every design change
 
