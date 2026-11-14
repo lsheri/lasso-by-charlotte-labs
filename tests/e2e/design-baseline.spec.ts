@@ -18,15 +18,18 @@ import {
  * as SOFT-FAIL and the walk carries on, so one moved button never hides the
  * other pictures.
  *
- * Run (never paste the password into a chat or commit it):
- *   LASSO_QA_EMAIL=... LASSO_QA_PASSWORD=... bunx playwright test design-baseline
+ * Run (never paste the password into a chat or commit it). The QA password lives in a Pane secret,
+ * set from the Reset button on /qa/seed:
+ *   runpane secrets exec --project lasso-by-charlotte-labs --only LASSO_QA_PASSWORD -- \
+ *     bunx playwright test design-baseline
  *
  * Options, all by environment variable:
  *   LASSO_E2E_BASE_URL  where the app is (defaults to the Lovable preview, which
  *                       sends signed-out browsers to a Lovable login; for a local
  *                       run start `bun run dev` and use http://localhost:8080)
  *   LASSO_SKIN          "lasso" (default) or any future skin name. A skin other
- *                       than lasso is requested with ?brand=<skin> on first load.
+ *                       than lasso is requested with ?brand=<skin> right after
+ *                       sign-in; signed-out surfaces always show Lasso.
  *   LASSO_SHOT_DIR      where pictures go (default tests/e2e/__baseline__)
  *
  * Adding a skin needs no code here. Adding a surface is one entry in
@@ -174,9 +177,6 @@ for (const viewport of VIEWPORTS) {
     });
     const page = await context.newPage();
 
-    // A skin is chosen once, on the first load, the way a person would get it.
-    if (SKIN !== "lasso") await go(page, `/?brand=${encodeURIComponent(SKIN)}`);
-
     let signedIn = false;
     let signInError = "";
     for (const surface of SURFACES) {
@@ -194,6 +194,17 @@ for (const viewport of VIEWPORTS) {
             throw new Error(`sign-in failed (check the password): ${signInError}`);
           }
           signedIn = true;
+          // A skin is chosen once, after sign-in: only an allowed signed-in account can turn one on (PR1),
+          // so the public surfaces before this point always show Lasso.
+          if (SKIN !== "lasso") {
+            await go(page, `/home?brand=${encodeURIComponent(SKIN)}`);
+            // The switch applies once the session is known; wait for it before the next surface navigates.
+            await page.waitForFunction(
+              (skin) => document.documentElement.getAttribute("data-skin") === skin,
+              SKIN,
+              { timeout: 30_000 },
+            );
+          }
         }
         await surface.open(page);
       } catch (error) {
