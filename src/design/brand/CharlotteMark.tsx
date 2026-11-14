@@ -13,6 +13,7 @@ import {
   type MarkWeight,
   cycleAt,
   growFrame,
+  webVars,
   wmVars,
 } from "./charlotte-mark";
 
@@ -44,7 +45,6 @@ export function CharlotteMark({
 }) {
   const [systemReduced] = useState(prefersReducedMotion);
   const reduced = reducedMotion ?? systemReduced;
-  const v = wmVars(size, weight);
 
   // What to draw before (or instead of) the loop.
   const grown = state === "reading" || progress !== undefined;
@@ -52,6 +52,8 @@ export function CharlotteMark({
   const frame: MarkFrame | null = grown ? growFrame(pinned, size) : null;
   const cls = !frame ? state : frame.done ? "live" : "reading";
   const running = state === "reading" && progress === undefined && !reduced;
+  // The web has its own, thinner small weights; the still C keeps the spec's.
+  const v = frame ? webVars(size, weight) : wmVars(size, weight);
 
   const svg = useRef<SVGSVGElement>(null);
   const spokes = useRef<SVGPathElement>(null);

@@ -24,8 +24,8 @@ function States({ reducedMotion }: { reducedMotion?: boolean }) {
     <div style={page}>
       <p style={note}>
         Idle is the still Monoline C. Reading grows the web on a 6.4s cycle and pulses the hub. Live
-        is the C with the lime hub. At 24px and below the strokes get heavier and the web drops its
-        nodes and outer ring.
+        is the C with the lime hub. At 24px and below the still C gets heavier; the reading web
+        stays a thinner, smaller version of the 32px web.
       </p>
       <div
         style={{

@@ -66,6 +66,17 @@ export function wmVars(size: number, weight: MarkWeight = "thin") {
   };
 }
 
+/** Weights for the web (reading, and the finished web under reduced motion). Above 24px it is the 32px look,
+    the same as the C. At 24px and below it is a smaller web, thinner, with a smaller live hub (Liam, 14 Nov),
+    instead of the spec's heavier small weights, which stay on the still C. */
+export function webVars(size: number, weight: MarkWeight = "thin") {
+  const v = wmVars(size, weight);
+  if (!v.small) return v;
+  // Set in screen pixels so it reads as the 32px web, smaller: a 1px rim at 24 (0.8px at 16), 0.5px strands.
+  const px = 64 / size;
+  return { small: true, k: 0.6, sw: f((size >= 24 ? 1 : 0.8) * px), ws: f(0.5 * px), hub: 4.5 };
+}
+
 /** The still Monoline C: three spokes and the open arc. */
 export const MONO_SPOKES = spokesD(MARK_R, [180, 225, 135]);
 export const MONO_ARC = `M${P(MARK_R, 315)}A${MARK_R} ${MARK_R} 0 1 0 ${P(MARK_R, 45)}`;
@@ -86,7 +97,7 @@ export const GROW_SPOKES = [
   { a: 0, s: 0.36 },
 ] as const;
 
-/** Ring radius factor and its draw window in p. The outer ring never draws when small. */
+/** Ring radius factor and its draw window in p. Below 24px only the inner ring draws. */
 const RINGS = [
   { k: 0.45, from: 0.5, to: 0.8 },
   { k: 0.75, from: 0.62, to: 0.96 },
@@ -129,7 +140,11 @@ export function growFrame(p: number, size: number): MarkFrame {
       : `M${P(r, -gap)}A${r} ${r} 0 1 0 ${P(r, gap)}`;
   const rings = RINGS.map((q) => {
     const t = win(p, q.from, q.to);
-    return { d: sag(r, A8, [q.k]), offset: f(1 - t), visible: t > 0 && !(small && q.k === 0.75) };
+    return {
+      d: sag(r, A8, [q.k]),
+      offset: f(1 - t),
+      visible: t > 0 && !(size < 24 && q.k === 0.75),
+    };
   });
   return { done: p >= 1, spokes, gap, arc, rings, nodes };
 }

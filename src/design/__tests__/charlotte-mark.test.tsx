@@ -6,7 +6,7 @@ import { render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { CharlotteMark } from "@/design/brand/CharlotteMark";
-import { MONO_SPOKES, cycleAt, growFrame, wmVars } from "@/design/brand/charlotte-mark";
+import { MONO_SPOKES, cycleAt, growFrame, webVars, wmVars } from "@/design/brand/charlotte-mark";
 
 function sourceFiles(dir: string): string[] {
   return readdirSync(dir).flatMap((entry) => {
@@ -40,8 +40,20 @@ describe("Charlotte mark geometry", () => {
     expect(spokeCount(growFrame(1, 64).spokes)).toBe(8);
   });
 
-  it("never draws nodes, or the outer ring, at 24px and below", () => {
+  it("draws the web thinner, with a smaller hub, at 24px and below; above that it matches the C", () => {
+    for (const size of [16, 24]) {
+      const web = webVars(size);
+      const c = wmVars(size);
+      expect(web.sw).toBeLessThan(c.sw);
+      expect(web.ws).toBeLessThan(c.ws);
+      expect(web.hub).toBeLessThan(c.hub);
+    }
+    expect(webVars(32)).toEqual(wmVars(32));
+  });
+
+  it("never draws nodes at 24px and below, and drops the outer ring below 24px", () => {
     expect(growFrame(1, 24).nodes).toEqual([]);
+    expect(growFrame(1, 24).rings.map((r) => r.visible)).toEqual([true, true]);
     expect(growFrame(1, 16).rings.map((r) => r.visible)).toEqual([true, false]);
     expect(growFrame(1, 32).nodes).toHaveLength(8);
     expect(growFrame(1, 32).rings.map((r) => r.visible)).toEqual([true, true]);

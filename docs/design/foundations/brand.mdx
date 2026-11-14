@@ -39,7 +39,7 @@ See **Brand / Charlotte mark**. Storybook only until PR6 gives LassoThinkingMark
 - **Idle** is the still C: an open arc (gap from 315 to 45 degrees) with three spokes and an ink hub.
 - **Reading** grows the web on a 6.4s cycle: 4.4s of growth, a hold, then a fade from 6.0s to 6.4s. The gap closes between 0.3 and 0.7 of the growth, two rings draw in, and the hub pulses.
 - **Live** is the C with the lime hub.
-- At 24px and below the strokes get heavier, and the web drops its nodes and outer ring.
+- At 24px and below the still C gets heavier strokes so it holds up. The reading web goes the other way: it stays a smaller version of the 32px web, thinner (a 1px rim at 24px, 0.8px at 16px, half-pixel strands) with a smaller lime hub. It drops its nodes, and below 24px its outer ring.
 - One animation loop writes SVG attributes directly, so React does not re-render each frame. It runs only while reading and on screen. Under reduced motion the mark shows the finished web, still.
 - Colours follow the skin: ink is `--text-primary`, the hub is `--live`.
 - The lapel tile (future app icon and avatar) uses fixed brand colours. The suggest-workstreams version (open C, three dots) waits on G6.
