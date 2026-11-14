@@ -187,4 +187,6 @@
   --live:var(--nb-lasso-green);
   --icon-ink:currentColor;
   --icon-ink-active:var(--nb-ink);
+  --state-held:var(--hand-live);
+  --state-held-ink:var(--text-primary);
 }

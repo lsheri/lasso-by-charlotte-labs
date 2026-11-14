@@ -42,7 +42,7 @@ const Indent = () => (
 );
 
 const Catch = () => (
-  <svg viewBox="0 0 240 40" preserveAspectRatio="none" aria-hidden
+  <svg className="nav-catch" viewBox="0 0 240 40" preserveAspectRatio="none" aria-hidden
     style={{ position: "absolute", left: -7, right: -7, top: -5, bottom: -5, width: "calc(100% + 14px)", height: "calc(100% + 10px)", overflow: "visible", pointerEvents: "none", zIndex: 1 }}>
     <path d={CATCH_PATH} pathLength={1} fill="none" stroke="var(--hand-live)" strokeWidth={2.6} strokeLinecap="round" vectorEffect="non-scaling-stroke"
       style={{ strokeDasharray: 1, strokeDashoffset: 1, animation: "lasso-catch var(--dur-catch) var(--ease-catch) both" }} />

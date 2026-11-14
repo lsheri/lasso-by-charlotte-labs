@@ -2,8 +2,10 @@ import type { Decorator, Preview } from "@storybook/react-vite";
 import { useEffect, type ReactNode } from "react";
 
 import "../../src/styles.css";
+// Skins Storybook can show. The app imports these from styles.css only once each skin ships (Charlotte: PR2).
+import "../../src/design/skins/charlotte.css";
 
-/** Every skin the stories can show. Charlotte renders as Lasso until Phase 2 adds its tokens. */
+/** Every skin the stories can show. */
 const SKINS = ["lasso", "charlotte"] as const;
 
 /** Stories render inside the app shell's attribute, as every signed-in surface does. */
