@@ -78,13 +78,13 @@ function SideBySide() {
   );
 }
 
-/** The 10 names only Charlotte has today. Lasso gets a path for each when they join the shared names (PR4b). */
+/** The 10 names Charlotte drew first. Since PR4b they are shared names with a Lasso path too, so they also appear in the full set above. */
 function Extras() {
   return (
     <Charlotte>
       <div style={{ ...page, padding: 16 }}>
         <p style={note}>
-          {CHARLOTTE_EXTRA_NAMES.length} Charlotte-only glyphs. Not in ICON_NAMES yet.
+          {CHARLOTTE_EXTRA_NAMES.length} glyphs Charlotte drew first. Shared names since PR4b.
         </p>
         <div style={grid}>
           {CHARLOTTE_EXTRA_NAMES.map((name) => (
