@@ -3,9 +3,15 @@
    Selector: one attribute stronger than the [data-lasso="on"] remaps, on the same element, so --nb-* resolve to these values.
    Descendant (not :root) so Storybook can frame a skin inside the page; the app sets data-skin on <html>.
    Lime is 1.44:1 on white: fill and decoration only, never focus, text or state. A test in src/design/__tests__ enforces this.
-   Imported by src/styles.css since Phase 3 PR2; only an allowed account can set data-skin. No em dashes. */
+   Imported by src/styles.css since Phase 3 PR2; only an allowed account can set data-skin.
+   Overlays (dialogs, menus, toasts) open at <body>, outside the shell, so they are listed too, but only on pages
+   that have an app shell, so pages without one (the landing page) never change. No em dashes. */
 
-[data-skin="charlotte"] [data-lasso="on"] {
+[data-skin="charlotte"] [data-lasso="on"],
+[data-skin="charlotte"] body:has([data-lasso="on"]) > [role="dialog"],
+[data-skin="charlotte"] body:has([data-lasso="on"]) > [role="alertdialog"],
+[data-skin="charlotte"] body:has([data-lasso="on"]) > [data-radix-popper-content-wrapper],
+[data-skin="charlotte"] body:has([data-lasso="on"]) [data-sonner-toaster] {
   --ch-navy:#0B2A4A;
   --ch-lime:#04F85B;
   --ch-page:#FAFBF9;
@@ -73,4 +79,109 @@
 /* Lucide icons at Charlotte's stroke, 1.5, from 16px up. Small ones (12 and 14px) keep their 2 so they do not thin out. */
 [data-skin="charlotte"] [data-lasso="on"] svg.lucide:not(.h-3):not(.w-3):not(.size-3):not(.h-3\.5):not(.w-3\.5):not(.size-3\.5):not([width="12"]):not([width="14"]) {
   stroke-width: 1.5;
+}
+
+/* Overlays get the same names the app shell maps in styles.css ([data-lasso="on"] block), pointed at the Charlotte
+   values above. Lasso overlays still use the older root palette; that is a separate Lasso decision. */
+[data-skin="charlotte"] body:has([data-lasso="on"]) > [role="dialog"],
+[data-skin="charlotte"] body:has([data-lasso="on"]) > [role="alertdialog"],
+[data-skin="charlotte"] body:has([data-lasso="on"]) > [data-radix-popper-content-wrapper],
+[data-skin="charlotte"] body:has([data-lasso="on"]) [data-sonner-toaster] {
+  --nb-white:var(--surface-raised);
+  --nb-paper:var(--surface-page);
+  --nb-grey-1:var(--surface-sunk);
+  --nb-grey-2:var(--surface-sunk-2);
+  --nb-rule:var(--line-hairline);
+  --nb-line-hairline:var(--line-hairline);
+  --nb-pencil:var(--line-pencil);
+  --nb-ink:var(--text-primary);
+  --nb-graphite:var(--text-primary);
+  --nb-mid:var(--text-secondary);
+  --nb-soft:var(--text-muted);
+  --nb-green:var(--hand-ink);
+  --nb-lasso-green:var(--hand-live);
+  --nb-green-wash:var(--hand-wash);
+  --nb-blue:var(--action-secondary);
+  --nb-amber:var(--state-yours-pending);
+  --nb-ink-yellow:var(--state-highlight);
+  --nb-shared:var(--state-shared-in);
+  --nb-ink-ember:var(--state-destructive-new);
+  --nb-danger-text:var(--state-destructive-new);
+
+  --background:var(--surface-page);
+  --foreground:var(--text-primary);
+  --card:var(--surface-raised);
+  --primary:var(--action-primary);
+  --primary-foreground:var(--action-primary-fg);
+  --muted-foreground:var(--text-secondary);
+  --border:var(--line-hairline);
+  --ring:var(--focus-ring-new);
+  --destructive:var(--state-destructive-new);
+
+  --ember:var(--action-primary);
+  --ember-foreground:var(--action-primary-fg);
+  --electric:var(--action-secondary);
+  --accent-deep:var(--action-secondary);
+  --state-amber:var(--state-yours-pending);
+  --state-teal:var(--hand-ink);
+  --state-indigo:var(--text-secondary);
+
+  --font-serif:"Instrument Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono:"Martian Mono", ui-monospace, monospace;
+  color:var(--text-primary);
+}
+
+/* Root tokens built from other tokens (in styles.css :root, such as --sidebar: var(--nb-paper)) resolve once, at the
+   root, from Lasso's values. Restated here with the same formulas so they resolve against Charlotte's values.
+   Chart colours are left out on purpose: re-resolved, every series would turn navy. */
+[data-skin="charlotte"] [data-lasso="on"],
+[data-skin="charlotte"] body:has([data-lasso="on"]) > [role="dialog"],
+[data-skin="charlotte"] body:has([data-lasso="on"]) > [role="alertdialog"],
+[data-skin="charlotte"] body:has([data-lasso="on"]) > [data-radix-popper-content-wrapper],
+[data-skin="charlotte"] body:has([data-lasso="on"]) [data-sonner-toaster] {
+  --shadow-modal:0 12px 32px color-mix(in oklab, var(--nb-ink) 10%, transparent);
+  --status-exact:var(--nb-green);
+  --status-exact-wash:var(--nb-green-wash);
+  --status-paraphrase:var(--nb-amber);
+  --status-paraphrase-wash:var(--nb-amber-wash);
+  --status-unsourced:var(--nb-soft);
+  --status-unsourced-wash:var(--nb-grey-1);
+  --card-foreground:var(--nb-ink);
+  --popover:var(--nb-white);
+  --popover-foreground:var(--nb-ink);
+  --secondary:var(--nb-grey-1);
+  --secondary-foreground:var(--nb-ink);
+  --muted:var(--nb-grey-2);
+  --accent:var(--nb-rule);
+  --accent-foreground:var(--nb-ink);
+  --accent-soft:var(--nb-grey-1);
+  --navy:var(--nb-ink);
+  --mint:var(--nb-white);
+  --suggest:var(--nb-blue);
+  --suggest-wash:var(--nb-grey-2);
+  --suggest-edge:var(--nb-blue);
+  --cream:var(--nb-grey-1);
+  --pattern-bg:var(--nb-grey-1);
+  --pattern-border:var(--nb-rule);
+  --pattern-fg:var(--nb-ink);
+  --input:var(--nb-rule);
+  --sidebar:var(--nb-paper);
+  --sidebar-foreground:var(--nb-ink);
+  --sidebar-primary:var(--nb-ink);
+  --sidebar-primary-foreground:var(--nb-white);
+  --sidebar-accent:var(--nb-grey-1);
+  --sidebar-accent-foreground:var(--nb-ink);
+  --sidebar-border:var(--nb-rule);
+  --sidebar-ring:var(--nb-blue);
+  --ember-deep:var(--nb-ink);
+  --ember-deep-foreground:var(--nb-white);
+  --ember-wash:var(--nb-grey-1);
+  --electric-deep:var(--nb-blue);
+  --electric-wash:var(--nb-grey-1);
+  --state-amber-wash:var(--nb-yellow-wash);
+  --state-amber-band:var(--nb-ink-yellow);
+  --state-teal-wash:var(--nb-green-wash);
+  --state-teal-band:var(--nb-green-wash);
+  --state-indigo-wash:var(--nb-grey-1);
+  --state-indigo-band:var(--nb-rule);
 }

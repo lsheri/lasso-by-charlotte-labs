@@ -40,11 +40,15 @@ describe("screens canvas", () => {
     }
   });
 
-  it("places the committed Lasso pictures: 8 found, 18 pending", () => {
+  it("places every committed picture: all 26 Lasso, and the 18 signed-in Charlotte ones", () => {
     const cells = screensGrid(committedPictures()).flatMap((b) => b.rows.flatMap((r) => r.cells));
     const lasso = cells.filter((c) => c.skin === "lasso");
-    expect(lasso.filter((c) => c.src !== null)).toHaveLength(8);
-    expect(lasso.filter((c) => c.src === null)).toHaveLength(18);
+    expect(lasso.filter((c) => c.src === null)).toHaveLength(0);
+    expect(lasso).toHaveLength(26);
+    // Signed-out surfaces (01 to 04) always show Lasso, so Charlotte has no picture for them.
+    const charlotte = cells.filter((c) => c.skin === "charlotte");
+    expect(charlotte.filter((c) => c.src !== null)).toHaveLength(18);
+    expect(charlotte.filter((c) => c.src === null)).toHaveLength(8);
   });
 
   it("adds a column for a new skin folder with no code change", () => {

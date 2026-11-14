@@ -19,7 +19,17 @@ const VIEWPORT_LABEL: Record<string, string> = {
 /** Desktop pictures show at half size, phone pictures at full size, so a row fits one screen. */
 const SCALE: Record<string, number> = { "desktop-1280": 0.5, "phone-375": 1 };
 
-function Pending({ width, height, auth }: { width: number; height: number; auth: boolean }) {
+function Pending({
+  width,
+  height,
+  auth,
+  lassoOnly,
+}: {
+  width: number;
+  height: number;
+  auth: boolean;
+  lassoOnly: boolean;
+}) {
   return (
     <div
       style={{
@@ -38,9 +48,13 @@ function Pending({ width, height, auth }: { width: number; height: number; auth:
         fontSize: 12,
       }}
     >
-      Pending
+      {lassoOnly ? "Lasso only" : "Pending"}
       <br />
-      {auth ? "needs the signed-in QA run" : "not captured yet"}
+      {lassoOnly
+        ? "signed out, so this page always shows Lasso"
+        : auth
+          ? "needs the signed-in QA run"
+          : "not captured yet"}
     </div>
   );
 }
@@ -98,7 +112,14 @@ function BandView({ band }: { band: Band }) {
                   }}
                 />
               ) : (
-                <Pending key={cell.skin} width={width} height={height} auth={row.surface.auth} />
+                <Pending
+                  key={cell.skin}
+                  width={width}
+                  height={height}
+                  auth={row.surface.auth}
+                  // Only allowed signed-in accounts can turn a skin on, so signed-out pages are Lasso in every skin.
+                  lassoOnly={!row.surface.auth && cell.skin !== "lasso"}
+                />
               ),
             )}
           </div>

@@ -108,6 +108,7 @@ describe("Charlotte skin", () => {
       "--ch-lime",
       "--hand-live",
       "--live",
+      "--nb-lasso-green",
     ]);
   });
 
@@ -118,9 +119,11 @@ describe("Charlotte skin", () => {
     expect(readers).toEqual(["src/styles.css"]);
   });
 
-  it("scopes every rule to the Charlotte skin inside the app shell", () => {
+  it("scopes every rule to the Charlotte skin, so Lasso cannot change", () => {
     const selectors = [...css.replace(/\/\*[\s\S]*?\*\//g, "").matchAll(/([^{}]+)\{/g)].map((m) => (m[1] ?? "").trim());
     expect(selectors.length).toBeGreaterThan(3);
-    for (const selector of selectors) expect(selector, selector).toMatch(/^\[data-skin="charlotte"\] \[data-lasso="on"\]/);
+    for (const list of selectors)
+      for (const selector of list.split(",").map((part) => part.trim()))
+        expect(selector, selector).toMatch(/^\[data-skin="charlotte"\] (\[data-lasso="on"\]|body:has\(\[data-lasso="on"\]\))/);
   });
 });
