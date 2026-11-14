@@ -1,8 +1,9 @@
 /* Charlotte (Exhibit) glyphs, keyed by the same names as GraphiteIcon. Viewbox 20, stroke 1.5, round caps and joins.
    Ported from the 13 Nov glyph spec (Drive: SPEC 13 Nov, Charlotte glyph map). The spec's RR (rounded rectangle) and
    DOT (circle) helpers are precomputed into literal path strings; a test checks them against the formulas.
-   Storybook only until PR4 makes GraphiteIcon skin-aware. A test fences these files out of the app. */
+   GraphiteIcon draws them under the Charlotte skin (PR4). Only icons.tsx imports this file; a test checks. */
 import type { GraphiteIconName } from "@/components/notebook/icons";
+import { CHARLOTTE_EXTRA_GLYPHS } from "./charlotte-extra";
 
 /** A path string, or a dashed path (drawn with EXHIBIT_DASH). */
 export type ExhibitPath = string | { d: string; dashed: true };
@@ -134,4 +135,5 @@ export const CHARLOTTE_GLYPHS: Record<GraphiteIconName, readonly ExhibitPath[]> 
     "M7.5 10h5M7.5 13h5",
   ],
   "suggest-workstreams": ["M14.6 5.4A6.5 6.5 0 1 0 14.6 14.6", "M7.5 10h.01M10 10h.01M12.5 10h.01"],
+  ...CHARLOTTE_EXTRA_GLYPHS,
 };
