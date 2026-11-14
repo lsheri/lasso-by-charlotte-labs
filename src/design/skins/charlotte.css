@@ -64,6 +64,32 @@
   --icon-ink-active:var(--ch-navy);
   --state-held:var(--ch-navy);
   --state-held-ink:var(--ch-page);
+
+  /* Work-kind families (Phase 3 PR5, option B "Exhibit chart"): six muted inks, each 5.6:1 or better on page,
+     raised and sunk. No green family, so green never competes with lime, which means live. */
+  --t-talk:#2F5A86;
+  --t-words:#7A5A1E;
+  --t-numbers:#1F6670;
+  --t-slides:#9A4A2C;
+  --t-visual:#6A3F75;
+  --t-code:#3E4A57;
+  /* Today's kind hues share a family (a remap, no code change). --hue-neutral stays neutral: it also means "no board". */
+  --hue-slate-blue:var(--t-talk);
+  --hue-plum:var(--t-talk);
+  --hue-cyan:var(--t-talk);
+  --hue-sand:var(--t-words);
+  --hue-indigo:var(--t-words);
+  --hue-sage:var(--t-numbers);
+  --hue-clay:var(--t-slides);
+  --hue-amber:var(--t-visual);
+  --hue-moss:var(--t-code);
+  /* KindIcon accent hooks; Lasso leaves them unset. */
+  --kind-accent-document:var(--t-words);
+  --kind-accent-deck:var(--t-slides);
+  --kind-accent-sheet:var(--t-numbers);
+  --kind-accent-envelope:var(--t-talk);
+  --kind-accent-code:var(--t-code);
+  --kind-accent-pen:var(--t-visual);
 }
 
 /* No motion in chrome (13 Nov audit): the nav catch loop does not draw under Charlotte. The live app already retired it (NAV-4). */

@@ -1,6 +1,6 @@
-/* Charlotte work-kind glyphs: 12 kinds in 6 families. These will replace the Lucide kind icons in
-   src/lib/work-identity.ts in a later PR; here they are Storybook only. Each family maps onto a --t-* token,
-   which several --hue-* tokens will share (a token remap, no code change). Those tokens do not exist yet. */
+/* Charlotte work-kind glyphs: 12 kinds in 6 families. Since PR5, src/components/work/SkinnedKindIcon.tsx draws them
+   in place of the Lucide kind icons under the Charlotte skin. Each family maps onto a --t-* token in the
+   Charlotte skin stylesheet, which several --hue-* tokens share (a token remap, no code change). */
 import { CHARLOTTE_GLYPHS, type ExhibitPath } from "./charlotte";
 
 export const KIND_FAMILIES = {
@@ -14,7 +14,22 @@ export const KIND_FAMILIES = {
 
 export type KindFamily = keyof typeof KIND_FAMILIES;
 
+export type CharlotteKindId =
+  | "ai-thread"
+  | "message"
+  | "call"
+  | "email"
+  | "document"
+  | "research-report"
+  | "deck"
+  | "sheet"
+  | "image"
+  | "diagram"
+  | "code"
+  | "file";
+
 export type CharlotteKind = {
+  id: CharlotteKindId;
   label: string;
   /** Today's kind ids, Lucide icon and hue, from the spec. */
   source: string;
@@ -24,6 +39,7 @@ export type CharlotteKind = {
 
 export const CHARLOTTE_KINDS: readonly CharlotteKind[] = [
   {
+    id: "ai-thread",
     label: "AI thread",
     source: "ai_thread · MessageSquare · slate-blue",
     family: "talk",
@@ -33,12 +49,14 @@ export const CHARLOTTE_KINDS: readonly CharlotteKind[] = [
     ],
   },
   {
+    id: "message",
     label: "Message",
     source: "message · MessageSquare (same as AI thread)",
     family: "talk",
     d: CHARLOTTE_GLYPHS.messages,
   },
   {
+    id: "call",
     label: "Call",
     source: "call · Phone · plum",
     family: "talk",
@@ -47,6 +65,7 @@ export const CHARLOTTE_KINDS: readonly CharlotteKind[] = [
     ],
   },
   {
+    id: "email",
     label: "Email",
     source: "email · Mail · cyan",
     family: "talk",
@@ -56,6 +75,7 @@ export const CHARLOTTE_KINDS: readonly CharlotteKind[] = [
     ],
   },
   {
+    id: "document",
     label: "Document",
     source: "document, markdown · FileText · sand",
     family: "words",
@@ -66,6 +86,7 @@ export const CHARLOTTE_KINDS: readonly CharlotteKind[] = [
     ],
   },
   {
+    id: "research-report",
     label: "Research report",
     source: "research_report · BookOpen · indigo",
     family: "words",
@@ -76,6 +97,7 @@ export const CHARLOTTE_KINDS: readonly CharlotteKind[] = [
     ],
   },
   {
+    id: "deck",
     label: "Deck",
     source: "deck · Presentation · clay",
     family: "slides",
@@ -87,6 +109,7 @@ export const CHARLOTTE_KINDS: readonly CharlotteKind[] = [
     ],
   },
   {
+    id: "sheet",
     label: "Sheet",
     source: "sheet · Table2 · sage",
     family: "numbers",
@@ -96,6 +119,7 @@ export const CHARLOTTE_KINDS: readonly CharlotteKind[] = [
     ],
   },
   {
+    id: "image",
     label: "Image",
     source: "image, svg · ImageIcon · amber",
     family: "visual",
@@ -106,18 +130,21 @@ export const CHARLOTTE_KINDS: readonly CharlotteKind[] = [
     ],
   },
   {
+    id: "diagram",
     label: "Diagram",
     source: "mermaid · Code2 labelled Diagram",
     family: "visual",
     d: ["M3 3.5h5v4H3zM12 3.5h5v4h-5zM12 12.5h5v4h-5z", "M5.5 7.5v7H12", "M8 5.5h4"],
   },
   {
+    id: "code",
     label: "Code",
     source: "artifact_code, react, html · Code2 · moss",
     family: "code",
     d: ["M7 6 3 10l4 4", "M13 6l4 4-4 4", "M11.25 4.5l-2.5 11"],
   },
   {
+    id: "file",
     label: "File",
     source: "page, file, other · File · neutral",
     family: "words",

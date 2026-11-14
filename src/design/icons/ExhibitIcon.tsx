@@ -1,4 +1,4 @@
-/* Renders one Charlotte (Exhibit) glyph. Storybook only: the app keeps GraphiteIcon until PR4 makes it skin-aware. */
+/* Renders one Charlotte (Exhibit) glyph. Storybook only: the app draws Charlotte glyphs through GraphiteIcon (PR4). */
 import { EXHIBIT_DASH, EXHIBIT_STROKE, type ExhibitPath } from "./charlotte";
 
 export function ExhibitIcon({

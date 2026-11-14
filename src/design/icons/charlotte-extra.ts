@@ -1,5 +1,5 @@
-/* The 10 Charlotte-only glyphs. They stay out of GraphiteIconName, so ICON_NAMES stays 42 and pass84 is unchanged.
-   Joining the union (with a Lasso path for each) is PR4b. Same grid and stroke as charlotte.ts. */
+/* The 10 glyphs Charlotte drew first. Since PR4b they are shared GraphiteIcon names with a Lasso path each
+   (ICON_NAMES is 52); charlotte.ts spreads them into CHARLOTTE_GLYPHS. Same grid and stroke as charlotte.ts. */
 import type { ExhibitPath } from "./charlotte";
 
 export const CHARLOTTE_EXTRA_NAMES = [

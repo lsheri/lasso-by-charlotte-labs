@@ -2,7 +2,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 import { useSkin } from "@/components/skin/use-skin";
 import { CHARLOTTE_GLYPHS, EXHIBIT_DASH, EXHIBIT_STROKE } from "@/design/icons/charlotte";
-export type GraphiteIconName = "connectors" | "work" | "engagement" | "folder" | "workboard" | "overview" | "reflect" | "ai-record" | "one-on-one" | "decisions" | "firm" | "members" | "settings" | "ask-lasso" | "messages" | "history" | "analyses" | "send" | "attach" | "search" | "plus" | "close" | "chevron-right" | "drag-handle" | "check" | "external-link" | "workstreams" | "preview-cards" | "sticky" | "working-from" | "text" | "grouping" | "example-board" | "share" | "fit" | "expand" | "minus" | "more" | "workstream" | "section" | "draw-workstream" | "suggest-workstreams";
+export type GraphiteIconName = "connectors" | "work" | "engagement" | "folder" | "workboard" | "overview" | "reflect" | "ai-record" | "one-on-one" | "decisions" | "firm" | "members" | "settings" | "ask-lasso" | "messages" | "history" | "analyses" | "send" | "attach" | "search" | "plus" | "close" | "chevron-right" | "drag-handle" | "check" | "external-link" | "workstreams" | "preview-cards" | "sticky" | "working-from" | "text" | "grouping" | "example-board" | "share" | "fit" | "expand" | "minus" | "more" | "workstream" | "section" | "draw-workstream" | "suggest-workstreams" | "sign-out" | "pin" | "lock" | "trash" | "edit" | "link" | "download" | "info" | "bell" | "submit";
 type IconDef = { d: string[]; sig: string; sigIndex?: number; origin?: string };
 const ICONS: Record<GraphiteIconName, IconDef> = {
   connectors: { d: ["M7.2 3.8v3.3M12.8 3.7v3.5", "M4.8 7.3h10.5v2.5a5.2 5.2 0 01-5.3 5.2 5.2 5.2 0 01-5.2-5.3V7.3zM10 15.1c.1 1.2-.5 1.7-.4 3.1"], sig: "nb-sig-seat", sigIndex: 1 },
@@ -51,6 +51,17 @@ const ICONS: Record<GraphiteIconName, IconDef> = {
   "draw-workstream": { d: ["M6.4 2.8h7.2a1.8 1.8 0 011.8 1.8v10.8a1.8 1.8 0 01-1.8 1.8H6.4a1.8 1.8 0 01-1.8-1.8V4.6a1.8 1.8 0 011.8-1.8z", "M4.6 6.6h10.8", "M7.6 10h4.8M7.6 13.4h4.8"], sig: "nb-sig-scuff", sigIndex: 2 },
   /* TOOLBAR-7: Lasso finds the grouping (three loose dots, one open loop, no box). Static graphite only. */
   "suggest-workstreams": { d: ["M7.2 15.4c-3-1-4.6-3.9-3.5-6.6 1.3-3.2 5.7-4.7 9.3-3.5 3.4 1.2 4.8 4.3 3.1 6.9-1.2 1.9-3.6 3-6.3 3.1M9.8 15.3c-1.2.8-1.6 1.9-1 3", "M7.6 8.6a.6.6 0 110 1.2.6.6 0 010-1.2zM11.8 7.8a.6.6 0 110 1.2.6.6 0 010-1.2zM9.8 11.4a.6.6 0 110 1.2.6.6 0 010-1.2z"], sig: "nb-sig-pop", sigIndex: 1 },
+  /* PR4b: the 10 names Charlotte drew first join the shared set, each with a hand-drawn Lasso path in its familiar Lucide shape. */
+  "sign-out": { d: ["M8.1 3.4H4.6c-.6 0-1.1.5-1.1 1.1v11c0 .6.5 1.1 1.1 1.1h3.5", "M12.6 6.4l3.6 3.7-3.7 3.5", "M16.1 10.1l-8.5-.2"], sig: "nb-sig-forward", sigIndex: 1 },
+  pin: { d: ["M7.6 3.1l4.9.1-1.1 4.5 3.1 3H5.4l3.1-3-.9-4.6z", "M10 10.8l.1 6.4"], sig: "nb-sig-seat", sigIndex: 0 },
+  lock: { d: ["M5.4 9.1l9.3-.1c.5 0 .9.4.9.9v6.1c0 .5-.4.9-.9.9l-9.2.1c-.5 0-.9-.4-.9-.9V10c0-.5.4-.9.8-.9z", "M7.1 9V6.5a2.9 2.9 0 015.8-.1v2.6"], sig: "nb-sig-lift", sigIndex: 1, origin: "10px 9px" },
+  trash: { d: ["M3.4 5.6l13.2-.2", "M8 5.4V3.5l4.1.1v1.9", "M5 5.6l.8 10.9 8.4-.1.8-10.9", "M8.5 8.6l.1 4.9M11.5 8.5l-.1 5"], sig: "nb-sig-tilt", sigIndex: 1, origin: "10px 5px" },
+  edit: { d: ["M12.6 3.9l3.5 3.6-8.5 8.6-3.6-.1.1-3.5 8.5-8.6z", "M10.6 6l3.4 3.5"], sig: "nb-sig-scuff", sigIndex: 0 },
+  link: { d: ["M8.6 11.5a3 3 0 004.2-.1l2.5-2.4a3 3 0 00-4.3-4.3l-1 1.1", "M11.4 8.6a3 3 0 00-4.2 0l-2.5 2.5a3 3 0 004.3 4.2l1-1"], sig: "nb-sig-pinch", origin: "10px 10px" },
+  download: { d: ["M10 3.4l.1 9.1", "M6.5 9.1l3.6 3.4 3.4-3.6", "M3.4 16.6l13.2-.2"], sig: "nb-sig-nudge", sigIndex: 1 },
+  info: { d: ["M17 10.1a7 7 0 11-14-.2 7 7 0 0114 .2z", "M10 9.1l.1 4.4", "M10 6.5h.1"], sig: "nb-sig-pop", sigIndex: 2, origin: "10px 6.5px" },
+  bell: { d: ["M5 14.1V9a5 5 0 0110-.1v5.1l1.5 1.4-13 .1L5 14.1z", "M8.3 17a2 2 0 003.5 0"], sig: "nb-sig-tilt", sigIndex: 0, origin: "10px 4px" },
+  submit: { d: ["M10 16.1l.1-11.6", "M5.5 9l4.6-4.5 4.4 4.6"], sig: "nb-sig-leap", sigIndex: 1 },
 };
 export const ICON_NAMES = Object.keys(ICONS) as GraphiteIconName[];
 export function getIconSignature(name: GraphiteIconName) { return ICONS[name].sig; }
