@@ -63,7 +63,7 @@ describe("job-named tokens", () => {
     expect(tokens).toContain("--focus-ring:var(--focus-ring-new);");
   });
 
-  it("is read by nothing the app renders yet, so the app looks exactly as before", () => {
+  it("is read only where a Phase 3 PR wires it, with Lasso fallbacks, so Lasso looks exactly as before", () => {
     // Reference components the app imports count as app code; the rest of src/design/ does not.
     const appRead = sourceFiles("src").filter(
       (path) =>
@@ -75,7 +75,12 @@ describe("job-named tokens", () => {
       const text = readFileSync(path, "utf8");
       return Object.keys(JOBS).some((name) => new RegExp(`var\\(${name}[,)]`).test(text));
     });
-    expect(readers).toEqual([]);
+    // PR3: the sidebar's wrap-up dot reads --wrap-mark, with --nb-green as the fallback, so Lasso is unchanged.
+    expect(readers).toEqual(["src/components/layout/SidebarNav.tsx"]);
+    const sidebar = readFileSync("src/components/layout/SidebarNav.tsx", "utf8");
+    expect(sidebar).toContain('"var(--wrap-mark, var(--nb-green))"');
+    for (const name of Object.keys(JOBS).filter((n) => n !== "--wrap-mark"))
+      expect(sidebar).not.toMatch(new RegExp(`var\\(${name}[,)]`));
   });
 
   it("sees the app's real reference imports, so the fence cannot pass on an empty list", () => {

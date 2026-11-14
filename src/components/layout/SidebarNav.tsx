@@ -245,8 +245,9 @@ function EngagementRow({
                 {task.is_wrap === true ? (
                   <span
                     aria-hidden="true"
+                    data-wrap-mark=""
                     className="h-[5px] w-[5px] shrink-0 rounded-full"
-                    style={{ background: "var(--nb-green)" }}
+                    style={{ background: "var(--wrap-mark, var(--nb-green))" }}
                   />
                 ) : null}
                 <span className="truncate">{task.name}</span>
