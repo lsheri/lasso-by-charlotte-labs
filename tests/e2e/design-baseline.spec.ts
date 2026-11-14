@@ -53,6 +53,14 @@ async function go(page: Page, route: string): Promise<void> {
   if (landed !== wanted) throw new Error(`left the app: landed on ${landed}`);
 }
 
+/** The Ask box. On desktop it is often already open as a dock; clicking Ask Lasso then would close it. */
+async function openAsk(page: Page) {
+  const box = page.getByPlaceholder(/^Ask |^What do you want to think through/).last();
+  if (!(await box.isVisible())) await page.locator('[aria-label="Ask Lasso"]').first().click();
+  await box.waitFor({ state: "visible", timeout: 15_000 });
+  return box;
+}
+
 async function openFirstBoard(page: Page): Promise<void> {
   await go(page, "/home");
   const board = page.locator('a[href*="/canvas-lab"]').first();
@@ -90,14 +98,13 @@ const OPENERS: Record<SurfaceId, Opener> = {
   "08-board-and-toolbar": openFirstBoard,
   "09-ask-idle": async (p) => {
     await openFirstBoard(p);
-    await p.locator('[aria-label="Ask Lasso"]').first().click();
+    await openAsk(p);
   },
   // Best effort: a moving state. The picture is taken just after sending.
   "10-ask-thinking": async (p) => {
     await openFirstBoard(p);
-    await p.locator('[aria-label="Ask Lasso"]').first().click();
-    const box = p.locator("textarea").last();
-    await box.fill("What is on this board?");
+    const box = await openAsk(p);
+    await box.fill("What is on this board?", { timeout: 15_000 });
     await box.press("Enter");
     await p.locator("[data-lasso-thinking-mark]").first().waitFor({ timeout: 15_000 });
   },
