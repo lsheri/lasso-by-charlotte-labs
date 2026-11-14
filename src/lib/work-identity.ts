@@ -9,8 +9,9 @@ import {
   Phone,
   Presentation,
   Table2,
-  type LucideIcon,
 } from "lucide-react";
+
+import { skinnedKindIcon, type KindIconComponent } from "@/components/work/SkinnedKindIcon";
 
 import { attachmentKindLabel } from "./conversation-shared";
 import type { WorkItemRow, WorkType } from "./work-types";
@@ -22,41 +23,58 @@ import type { WorkItemRow, WorkType } from "./work-types";
  * thing everywhere it appears.
  */
 export type WorkIdentity = {
-  icon: LucideIcon;
+  /** Lucide under Lasso, the Charlotte kind glyph under Charlotte (PR5). */
+  icon: KindIconComponent;
   /** CSS custom property name holding the hue. */
   hue: string;
   label: string;
 };
 
+/* One skin-aware icon per Charlotte kind, built once. */
+const I = {
+  aiThread: skinnedKindIcon(MessageSquare, "ai-thread"),
+  message: skinnedKindIcon(MessageSquare, "message"),
+  call: skinnedKindIcon(Phone, "call"),
+  email: skinnedKindIcon(Mail, "email"),
+  document: skinnedKindIcon(FileText, "document"),
+  research: skinnedKindIcon(BookOpen, "research-report"),
+  deck: skinnedKindIcon(Presentation, "deck"),
+  sheet: skinnedKindIcon(Table2, "sheet"),
+  image: skinnedKindIcon(ImageIcon, "image"),
+  diagram: skinnedKindIcon(Code2, "diagram"),
+  code: skinnedKindIcon(Code2, "code"),
+  file: skinnedKindIcon(File, "file"),
+};
+
 const BY_TYPE: Record<WorkType, WorkIdentity> = {
-  ai_thread: { icon: MessageSquare, hue: "--hue-slate-blue", label: "Conversation" },
-  document: { icon: FileText, hue: "--hue-sand", label: "Document" },
-  deck: { icon: Presentation, hue: "--hue-clay", label: "Deck" },
-  sheet: { icon: Table2, hue: "--hue-sage", label: "Sheet" },
-  call: { icon: Phone, hue: "--hue-plum", label: "Call" },
-  email: { icon: Mail, hue: "--hue-cyan", label: "Email" },
-  message: { icon: MessageSquare, hue: "--hue-slate-blue", label: "Message" },
-  image: { icon: ImageIcon, hue: "--hue-amber", label: "Image" },
+  ai_thread: { icon: I.aiThread, hue: "--hue-slate-blue", label: "Conversation" },
+  document: { icon: I.document, hue: "--hue-sand", label: "Document" },
+  deck: { icon: I.deck, hue: "--hue-clay", label: "Deck" },
+  sheet: { icon: I.sheet, hue: "--hue-sage", label: "Sheet" },
+  call: { icon: I.call, hue: "--hue-plum", label: "Call" },
+  email: { icon: I.email, hue: "--hue-cyan", label: "Email" },
+  message: { icon: I.message, hue: "--hue-slate-blue", label: "Message" },
+  image: { icon: I.image, hue: "--hue-amber", label: "Image" },
 };
 
 /** Attachment kinds override the coarse work type when a client pushed one. */
 const BY_KIND: Record<string, WorkIdentity> = {
-  artifact_code: { icon: Code2, hue: "--hue-moss", label: "Code" },
-  artifact_react: { icon: Code2, hue: "--hue-moss", label: "Code" },
-  artifact_html: { icon: Code2, hue: "--hue-moss", label: "Code" },
-  artifact_svg: { icon: ImageIcon, hue: "--hue-amber", label: "Image" },
-  artifact_mermaid: { icon: Code2, hue: "--hue-moss", label: "Diagram" },
-  artifact_markdown: { icon: FileText, hue: "--hue-sand", label: "Markdown" },
-  canvas_code: { icon: Code2, hue: "--hue-moss", label: "Code" },
-  canvas_document: { icon: FileText, hue: "--hue-sand", label: "Document" },
-  image_description: { icon: ImageIcon, hue: "--hue-amber", label: "Image" },
-  research_report: { icon: BookOpen, hue: "--hue-indigo", label: "Research report" },
-  page: { icon: File, hue: "--hue-neutral", label: "Page" },
-  file: { icon: File, hue: "--hue-neutral", label: "File" },
-  other: { icon: File, hue: "--hue-neutral", label: "Attachment" },
+  artifact_code: { icon: I.code, hue: "--hue-moss", label: "Code" },
+  artifact_react: { icon: I.code, hue: "--hue-moss", label: "Code" },
+  artifact_html: { icon: I.code, hue: "--hue-moss", label: "Code" },
+  artifact_svg: { icon: I.image, hue: "--hue-amber", label: "Image" },
+  artifact_mermaid: { icon: I.diagram, hue: "--hue-moss", label: "Diagram" },
+  artifact_markdown: { icon: I.document, hue: "--hue-sand", label: "Markdown" },
+  canvas_code: { icon: I.code, hue: "--hue-moss", label: "Code" },
+  canvas_document: { icon: I.document, hue: "--hue-sand", label: "Document" },
+  image_description: { icon: I.image, hue: "--hue-amber", label: "Image" },
+  research_report: { icon: I.research, hue: "--hue-indigo", label: "Research report" },
+  page: { icon: I.file, hue: "--hue-neutral", label: "Page" },
+  file: { icon: I.file, hue: "--hue-neutral", label: "File" },
+  other: { icon: I.file, hue: "--hue-neutral", label: "Attachment" },
 };
 
-const FALLBACK: WorkIdentity = { icon: File, hue: "--hue-neutral", label: "Item" };
+const FALLBACK: WorkIdentity = { icon: I.file, hue: "--hue-neutral", label: "Item" };
 
 export function workIdentity(
   item: Pick<WorkItemRow, "type"> & { source_meta?: WorkItemRow["source_meta"] },

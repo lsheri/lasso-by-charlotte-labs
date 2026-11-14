@@ -91,12 +91,17 @@ describe("Charlotte glyphs", () => {
     expect(Object.keys(KIND_FAMILIES)).toHaveLength(6);
   });
 
-  it("reaches the app only through GraphiteIcon (PR4); the extras and kinds stay out until their PRs", () => {
+  it("reaches the app only through GraphiteIcon (PR4) and SkinnedKindIcon (PR5)", () => {
     const readers = sourceFiles("src")
       .filter((path) => /\.(css|tsx?)$/.test(path) && !path.startsWith("src/design/"))
       .filter((path) => !path.includes("__tests__"))
       .filter((path) => /design\/icons\//.test(readFileSync(path, "utf8")));
-    expect(readers).toEqual(["src/components/notebook/icons.tsx"]);
+    expect(readers.sort()).toEqual([
+      "src/components/notebook/icons.tsx",
+      "src/components/work/SkinnedKindIcon.tsx",
+    ]);
+    const kinds = readFileSync("src/components/work/SkinnedKindIcon.tsx", "utf8");
+    expect(kinds).not.toMatch(/design\/icons\/(charlotte-extra|ExhibitIcon)/);
     const icons = readFileSync("src/components/notebook/icons.tsx", "utf8");
     expect(icons).toContain('from "@/design/icons/charlotte"');
     expect(icons).not.toMatch(/design\/icons\/(charlotte-extra|charlotte-kinds|ExhibitIcon)/);
