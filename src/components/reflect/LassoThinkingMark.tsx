@@ -263,7 +263,8 @@ function CharlotteThinkingMark({ kind, size, thinking = false, rope = true, stil
   return (
     <span
       className={className}
-      style={{ display: "inline-flex", width: size, height: size }}
+      // Block at a fixed size, like the canvas under Tailwind preflight, so no line box adds height around it.
+      style={{ display: "block", width: size, height: size }}
       aria-hidden="true"
       data-lasso-thinking-mark={kind}
       data-thinking={kind === "signature" ? (thinking ? "true" : "false") : undefined}
