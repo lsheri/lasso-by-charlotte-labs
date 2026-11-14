@@ -1,4 +1,4 @@
-// P2b: Charlotte glyphs match the 13 Nov spec, cover every GraphiteIconName, and stay out of the app.
+// P2b and PR4: Charlotte glyphs match the 13 Nov spec, cover every GraphiteIconName, and reach the app only through GraphiteIcon.
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -91,10 +91,14 @@ describe("Charlotte glyphs", () => {
     expect(Object.keys(KIND_FAMILIES)).toHaveLength(6);
   });
 
-  it("is imported by nothing outside src/design and storybook", () => {
+  it("reaches the app only through GraphiteIcon (PR4); the extras and kinds stay out until their PRs", () => {
     const readers = sourceFiles("src")
       .filter((path) => /\.(css|tsx?)$/.test(path) && !path.startsWith("src/design/"))
+      .filter((path) => !path.includes("__tests__"))
       .filter((path) => /design\/icons\//.test(readFileSync(path, "utf8")));
-    expect(readers).toEqual([]);
+    expect(readers).toEqual(["src/components/notebook/icons.tsx"]);
+    const icons = readFileSync("src/components/notebook/icons.tsx", "utf8");
+    expect(icons).toContain('from "@/design/icons/charlotte"');
+    expect(icons).not.toMatch(/design\/icons\/(charlotte-extra|charlotte-kinds|ExhibitIcon)/);
   });
 });
