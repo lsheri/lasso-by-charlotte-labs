@@ -17,6 +17,16 @@ Every glyph is in **Foundations / Icons**, read from `ICON_NAMES` so a new glyph
 
 `lucide-react` is imported in 93 files and GraphiteIcon is used in 33. Lucide sits on a 24 grid, so a 1.5 stroke at 12px renders under 1px. Small Lucide icons keep stroke 2. One glyph map per skin is the plan; see `docs/design/debt.md`.
 
+## Charlotte (Exhibit) glyphs
+
+See **Foundations / Charlotte glyphs**. Storybook only until PR4 makes GraphiteIcon skin-aware.
+
+- The same 42 names, keyed by `GraphiteIconName`, on the same 20px grid with stroke 1.5. Source: `src/design/icons/charlotte.ts`.
+- 10 Charlotte-only names (sign-out, pin, lock, trash, edit, link, download, info, bell, submit) in `charlotte-extra.ts`. They stay out of `ICON_NAMES` until PR4b gives each a Lasso path too.
+- 12 work-kind glyphs in 6 families in `charlotte-kinds.ts`. Family colours wait for the `--t-*` tokens.
+- The section outline is dashed (2.1 on, 1.9 off). It is marked as data, and drawn without `pathLength`, because `pathLength` rescales the dash and would draw it solid.
+- A test checks every precomputed rounded rectangle and circle against the spec's formulas, and fences these files out of the app.
+
 ## Rules
 
 - Real vendor marks wherever a surface represents that vendor, never a hue dot standing in for one.
