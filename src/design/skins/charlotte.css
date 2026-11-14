@@ -131,6 +131,30 @@
   color:var(--text-primary);
 }
 
+/* Sidebar (Phase 3 PR3, gate G4: board as a colour tab). Shape and size only; colours come from the tokens above. */
+/* Nav icons 18, tree rows 16, chevrons 12. */
+[data-skin="charlotte"] [data-lasso="on"] .lasso-sidebar-nav .nb-nav-item > svg.nb-ico:not([data-icon="chevron-right"]) { width:18px; height:18px; }
+[data-skin="charlotte"] [data-lasso="on"] .lasso-sidebar-nav :is(.nb-nav-item-nested, .nb-nav-item-nested-2, .nb-nav-item-nested-3, [data-tree-depth]) > svg.nb-ico:not([data-icon="chevron-right"]) { width:16px; height:16px; }
+[data-skin="charlotte"] [data-lasso="on"] .lasso-sidebar-nav :is(svg[data-icon="chevron-right"], svg.lucide-chevron-right, svg.lucide-chevron-down) { width:12px; height:12px; }
+/* The pencil indent becomes a straight hairline 16px wide. Kept, not hidden: scope rows, unfiled shelves and
+   Shared with me have no tree line, so depth would flatten without it. The active indent is navy via --nb-green. */
+[data-skin="charlotte"] [data-lasso="on"] .lasso-sidebar-nav .nb-nav-indent {
+  width:16px;
+  background:linear-gradient(currentColor, currentColor) 0 50% / 100% 1px no-repeat;
+}
+[data-skin="charlotte"] [data-lasso="on"] .lasso-sidebar-nav .nb-nav-indent path { display:none; }
+/* A board's glyph becomes a colour tab in its board hue. The hue already tinted the glyph, so nothing is added or lost. */
+[data-skin="charlotte"] [data-lasso="on"] .lasso-sidebar-nav .nb-nav-item[data-board-hue] > svg[data-icon="workboard"] {
+  width:4px;
+  height:14px;
+  margin-inline:6px;
+  border-radius:2px;
+  background:var(--board-hue-ink, var(--board-hue-0-ink));
+}
+[data-skin="charlotte"] [data-lasso="on"] .lasso-sidebar-nav .nb-nav-item[data-board-hue] > svg[data-icon="workboard"] path { display:none; }
+/* The wrap-up dot is the only wrap-up cue: a filled 6px dot, navy through --wrap-mark. */
+[data-skin="charlotte"] [data-lasso="on"] .lasso-sidebar-nav [data-wrap-mark] { width:6px; height:6px; }
+
 /* Root tokens built from other tokens (in styles.css :root, such as --sidebar: var(--nb-paper)) resolve once, at the
    root, from Lasso's values. Restated here with the same formulas so they resolve against Charlotte's values.
    Chart colours are left out on purpose: re-resolved, every series would turn navy. */

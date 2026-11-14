@@ -32,6 +32,23 @@ function contrast(a: string, b: string): number {
   return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
 }
 
+/** Splits a selector list on its top-level commas, leaving the commas inside :is() and :has() alone. */
+function topLevelParts(list: string): string[] {
+  const parts: string[] = [];
+  let depth = 0;
+  let current = "";
+  for (const char of list) {
+    if (char === "(") depth += 1;
+    if (char === ")") depth -= 1;
+    if (char === "," && depth === 0) {
+      parts.push(current.trim());
+      current = "";
+    } else current += char;
+  }
+  parts.push(current.trim());
+  return parts;
+}
+
 function sourceFiles(dir: string): string[] {
   return readdirSync(dir).flatMap((entry) => {
     const path = join(dir, entry);
@@ -123,7 +140,7 @@ describe("Charlotte skin", () => {
     const selectors = [...css.replace(/\/\*[\s\S]*?\*\//g, "").matchAll(/([^{}]+)\{/g)].map((m) => (m[1] ?? "").trim());
     expect(selectors.length).toBeGreaterThan(3);
     for (const list of selectors)
-      for (const selector of list.split(",").map((part) => part.trim()))
+      for (const selector of topLevelParts(list))
         expect(selector, selector).toMatch(/^\[data-skin="charlotte"\] (\[data-lasso="on"\]|body:has\(\[data-lasso="on"\]\))/);
   });
 });
