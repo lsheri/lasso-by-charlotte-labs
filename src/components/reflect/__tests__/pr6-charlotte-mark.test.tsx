@@ -44,6 +44,8 @@ describe("LassoThinkingMark under Charlotte", () => {
     expect(host.getAttribute("data-lasso-thinking-mark")).toBe("signature");
     expect(host.getAttribute("data-thinking")).toBe("true");
     expect(host.getAttribute("data-rope")).toBe("true");
+    expect(host.style.display).toBe("block");
+    expect([host.style.width, host.style.height]).toEqual(["22px", "22px"]);
     const svg = host.querySelector("svg")!;
     expect(svg.getAttribute("data-charlotte-mark")).toBe("idle");
     expect(svg.getAttribute("class")).toBe("wm idle");
