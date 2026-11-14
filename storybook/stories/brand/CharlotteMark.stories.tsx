@@ -87,7 +87,7 @@ function Scrub() {
   );
 }
 
-/** Suggest workstreams: the open C with three loose dots. Pending G6. */
+/** Suggest workstreams: the open C with three dots in a row (G6, option B). */
 function SuggestMark({ size }: { size: number }) {
   const v = wmVars(size);
   return (
@@ -111,8 +111,8 @@ function Suggest() {
   return (
     <div style={page}>
       <p style={note}>
-        <strong>Pending G6.</strong> The suggest-workstreams derivative: the open C with three loose
-        dots, for the board tool that asks Lasso to find groupings.
+        <strong>G6 approved (option B).</strong> The suggest-workstreams mark: the open C with three
+        dots in a row, for the board tool that asks Lasso to find groupings.
       </p>
       <div style={{ display: "flex", alignItems: "center", gap: 32 }}>
         {SIZES.map((size) => (
@@ -155,7 +155,7 @@ export const AllStates: Story = {};
 export const ReducedMotion: Story = { args: { reducedMotion: true } };
 export const ScrubTheCycle: Story = { render: () => <Scrub /> };
 export const SuggestWorkstreams: Story = {
-  name: "Suggest workstreams (pending G6)",
+  name: "Suggest workstreams (G6)",
   render: () => <Suggest />,
 };
 export const LapelTile: Story = { render: () => <Tiles /> };

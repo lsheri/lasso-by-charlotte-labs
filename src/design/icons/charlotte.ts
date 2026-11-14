@@ -133,5 +133,5 @@ export const CHARLOTTE_GLYPHS: Record<GraphiteIconName, readonly ExhibitPath[]> 
     "M5 6.75h10",
     "M7.5 10h5M7.5 13h5",
   ],
-  "suggest-workstreams": ["M14.6 5.4A6.5 6.5 0 1 0 14.6 14.6", "M8 8.5h.01M12 8.5h.01M10 12h.01"],
+  "suggest-workstreams": ["M14.6 5.4A6.5 6.5 0 1 0 14.6 14.6", "M7.5 10h.01M10 10h.01M12.5 10h.01"],
 };

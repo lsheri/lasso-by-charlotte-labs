@@ -157,13 +157,14 @@ export function cycleAt(tSeconds: number): { p: number; opacity: number } {
   return { p, opacity };
 }
 
-/** Suggest workstreams (pending G6): the open C with three loose dots, no spokes. */
+/** Suggest workstreams (G6, Liam 14 Nov: option B): the open C with three dots in a row, no spokes. In a row,
+    not a triangle, so it reads as Lasso thinking rather than a face. */
 export function suggestDots(size: number) {
   const r = wmVars(size).small ? 3.2 : 2.4;
   return [
-    [24, 28],
-    [38, 27],
-    [31, 39],
+    [24, 32],
+    [32, 32],
+    [40, 32],
   ].map(([cx, cy]) => ({ cx: cx!, cy: cy!, r }));
 }
 
