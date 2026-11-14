@@ -1,4 +1,4 @@
-// P2a: Charlotte colours pass contrast, keep lime off focus, text and state, and stay out of the app until PR2.
+// P2a and Phase 3 PR2: Charlotte colours pass contrast, keep lime off focus, text and state, and match only under the skin switch.
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -111,10 +111,16 @@ describe("Charlotte skin", () => {
     ]);
   });
 
-  it("is not imported by the app yet; only Storybook reads it until PR2", () => {
+  it("reaches the app only through src/styles.css, behind the skin switch", () => {
     const readers = sourceFiles("src")
       .filter((path) => /\.(css|tsx?)$/.test(path) && !path.includes("__tests__"))
       .filter((path) => readFileSync(path, "utf8").includes("skins/charlotte.css"));
-    expect(readers).toEqual([]);
+    expect(readers).toEqual(["src/styles.css"]);
+  });
+
+  it("scopes every rule to the Charlotte skin inside the app shell", () => {
+    const selectors = [...css.replace(/\/\*[\s\S]*?\*\//g, "").matchAll(/([^{}]+)\{/g)].map((m) => (m[1] ?? "").trim());
+    expect(selectors.length).toBeGreaterThan(3);
+    for (const selector of selectors) expect(selector, selector).toMatch(/^\[data-skin="charlotte"\] \[data-lasso="on"\]/);
   });
 });

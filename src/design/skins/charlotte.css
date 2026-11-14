@@ -3,7 +3,7 @@
    Selector: one attribute stronger than the [data-lasso="on"] remaps, on the same element, so --nb-* resolve to these values.
    Descendant (not :root) so Storybook can frame a skin inside the page; the app sets data-skin on <html>.
    Lime is 1.44:1 on white: fill and decoration only, never focus, text or state. A test in src/design/__tests__ enforces this.
-   Not imported by src/styles.css until PR2. No em dashes. */
+   Imported by src/styles.css since Phase 3 PR2; only an allowed account can set data-skin. No em dashes. */
 
 [data-skin="charlotte"] [data-lasso="on"] {
   --ch-navy:#0B2A4A;
@@ -62,3 +62,15 @@
 
 /* No motion in chrome (13 Nov audit): the nav catch loop does not draw under Charlotte. The live app already retired it (NAV-4). */
 [data-skin="charlotte"] [data-lasso="on"] .nav-catch { display:none; }
+
+/* Text inherits navy inside the shell. Some shells (Plans) set no colour and would inherit Lasso's ink from <body>. */
+[data-skin="charlotte"] [data-lasso="on"] { color: var(--text-primary); }
+
+/* No motion in chrome: GraphiteIcon draws its glyphs without the draw-on and signature moves.
+   !important because the hover and focus rules that start them are more specific. */
+[data-skin="charlotte"] [data-lasso="on"] .nb-ico path { animation: none !important; }
+
+/* Lucide icons at Charlotte's stroke, 1.5, from 16px up. Small ones (12 and 14px) keep their 2 so they do not thin out. */
+[data-skin="charlotte"] [data-lasso="on"] svg.lucide:not(.h-3):not(.w-3):not(.size-3):not(.h-3\.5):not(.w-3\.5):not(.size-3\.5):not([width="12"]):not([width="14"]) {
+  stroke-width: 1.5;
+}
