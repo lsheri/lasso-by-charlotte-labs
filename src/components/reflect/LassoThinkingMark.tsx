@@ -1,5 +1,8 @@
 import { useEffect, useRef } from "react";
 
+import { useSkin } from "@/components/skin/use-skin";
+import { CharlotteMark } from "@/design/brand/CharlotteMark";
+
 import {
   LOOP_CYCLE_MS,
   cohesionAt,
@@ -240,7 +243,39 @@ function runSignature(
   };
 }
 
-export function LassoThinkingMark({ kind, size, count = 0, thinking = false, rope = true, still = false, persistent = false, className }: LassoThinkingMarkProps) {
+/**
+ * PR6: the mark by skin. Two components, so a skin change mid-session swaps whole trees instead of changing the
+ * hook order inside one. Lasso renders the canvas exactly as before.
+ */
+export function LassoThinkingMark(props: LassoThinkingMarkProps) {
+  return useSkin() === "charlotte" ? <CharlotteThinkingMark {...props} /> : <LassoCanvasMark {...props} />;
+}
+
+/**
+ * Charlotte: the Monoline C. It grows into the web only while Lasso is actually reading. The toolbar's persistent
+ * mark is a standing button, not a reading state, so it stays the still C (13 Nov handoff, risk 6). A still mark
+ * that is thinking shows the web pinned part-grown, with no loop. The same data attributes as the canvas, and
+ * aria-hidden, so the surrounding UI keeps announcing "Reading".
+ */
+function CharlotteThinkingMark({ kind, size, thinking = false, rope = true, still = false, persistent = false, className }: LassoThinkingMarkProps) {
+  const reading = kind === "signature" ? thinking && !persistent : true;
+  const pinned = still && reading ? 0.78 : undefined;
+  return (
+    <span
+      className={className}
+      style={{ display: "inline-flex", width: size, height: size }}
+      aria-hidden="true"
+      data-lasso-thinking-mark={kind}
+      data-thinking={kind === "signature" ? (thinking ? "true" : "false") : undefined}
+      data-rope={rope ? "true" : "false"}
+      data-skin-mark="charlotte"
+    >
+      <CharlotteMark state={reading ? "reading" : "idle"} size={size} progress={pinned} />
+    </span>
+  );
+}
+
+function LassoCanvasMark({ kind, size, count = 0, thinking = false, rope = true, still = false, persistent = false, className }: LassoThinkingMarkProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const thinkingRef = useRef(thinking);
   thinkingRef.current = thinking;

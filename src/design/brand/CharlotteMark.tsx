@@ -1,7 +1,7 @@
 /* The Charlotte mark: the still Monoline C, and the growing web while Lasso is reading.
    One requestAnimationFrame loop writes SVG attributes directly; React does not re-render per frame.
    The loop runs only while reading and on screen. Reduced motion shows the finished web, still.
-   Storybook only until PR6 gives LassoThinkingMark a Charlotte branch. */
+   LassoThinkingMark renders it under the Charlotte skin (PR6); nothing else in the app imports it. */
 import { type CSSProperties, useEffect, useRef, useState } from "react";
 
 import "./charlotte-mark.css";
