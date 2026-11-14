@@ -22,6 +22,8 @@ import { initPostHog } from "@/lib/posthog-client";
 import { Toaster } from "@/components/ui/sonner";
 import { CANONICAL_ORIGIN, maybeRedirectToCanonical } from "@/lib/app-host";
 import { registerProfileQueryClient } from "@/hooks/use-profile";
+import { readSkinCookie } from "@/lib/skin";
+import { SkinProvider } from "@/components/skin/SkinProvider";
 
 /** One source for the page title and the link preview card. Mirrors the Front Door. */
 const META_TITLE = "Lasso | The knowledge trace for AI-assisted work";
@@ -93,6 +95,8 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+  // Read on the server during render, so a Charlotte page never paints as Lasso first.
+  beforeLoad: () => ({ skin: readSkinCookie() }),
   head: () => ({
     meta: [
       { charSet: "utf-8" },
@@ -171,8 +175,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 });
 
 function RootShell({ children }: { children: ReactNode }) {
+  const { skin } = Route.useRouteContext();
   return (
-    <html lang="en">
+    // No attribute at all for Lasso, so the default page is unchanged. SkinProvider may update it after load.
+    <html lang="en" data-skin={skin === "lasso" ? undefined : skin}>
       <head>
         <HeadContent />
       </head>
@@ -185,7 +191,7 @@ function RootShell({ children }: { children: ReactNode }) {
 }
 
 function RootComponent() {
-  const { queryClient } = Route.useRouteContext();
+  const { queryClient, skin } = Route.useRouteContext();
   const router = useRouter();
 
   // The identity helpers outside React share this one cache, so concurrent
@@ -211,9 +217,11 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
-      <Toaster />
+      <SkinProvider initial={skin}>
+        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+        <Outlet />
+        <Toaster />
+      </SkinProvider>
     </QueryClientProvider>
   );
 }
