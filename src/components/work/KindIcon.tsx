@@ -4,14 +4,16 @@ import { cn } from "@/lib/utils";
 /**
  * Pass 139: one small kind glyph per shipped card, drawn in graphite with a
  * single accent stroke per kind. Existing tokens only.
+ * PR5: each accent reads a --kind-accent-* hook first. Lasso never sets the hooks, so the fallback is today's
+ * value; Charlotte points them at its family colours (--nb-green is navy there, which would hide the accent).
  */
 const ACCENT: Record<DeliverableGlyph, string> = {
-  document: "var(--nb-graphite)",
-  deck: "var(--nb-green)",
-  sheet: "var(--nb-ink-yellow)",
-  envelope: "var(--nb-green)",
-  code: "var(--nb-ink-yellow)",
-  pen: "var(--nb-green)",
+  document: "var(--kind-accent-document, var(--nb-graphite))",
+  deck: "var(--kind-accent-deck, var(--nb-green))",
+  sheet: "var(--kind-accent-sheet, var(--nb-ink-yellow))",
+  envelope: "var(--kind-accent-envelope, var(--nb-green))",
+  code: "var(--kind-accent-code, var(--nb-ink-yellow))",
+  pen: "var(--kind-accent-pen, var(--nb-green))",
 };
 
 /** Each glyph: graphite paths first, exactly one accent path last. */
