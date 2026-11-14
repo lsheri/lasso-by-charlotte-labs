@@ -2,8 +2,7 @@ import type { Decorator, Preview } from "@storybook/react-vite";
 import { useEffect, type ReactNode } from "react";
 
 import "../../src/styles.css";
-// Skins Storybook can show. The app imports these from styles.css only once each skin ships (Charlotte: PR2).
-import "../../src/design/skins/charlotte.css";
+// Skins come in through styles.css (Charlotte since Phase 3 PR2), the same way the app gets them.
 
 /** Every skin the stories can show. */
 const SKINS = ["lasso", "charlotte"] as const;
