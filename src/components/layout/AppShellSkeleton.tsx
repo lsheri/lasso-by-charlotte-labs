@@ -1,13 +1,15 @@
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { BrandLockup } from "./BrandLockup";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 const blockClass = "motion-reduce:animate-none";
 
 export function AppShellSkeleton() {
+  const copy = useBrandCopy();
   return (
     <div aria-busy="true" className="flex min-h-screen w-full bg-background">
-      <span className="sr-only">Opening Lasso</span>
+      <span className="sr-only">{copy("Opening Lasso")}</span>
       <aside aria-hidden="true" className="lasso-sidebar-shell hidden shrink-0 md:block">
         <div className="sticky top-0 flex h-screen flex-col gap-[22px] bg-sidebar px-4 pb-[18px] pt-[22px]">
           <BrandLockup className="gap-2.5 [&_svg]:h-[17px] [&_svg]:w-5 [&_span]:text-lg" />

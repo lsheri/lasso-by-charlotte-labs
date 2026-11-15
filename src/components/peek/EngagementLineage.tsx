@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { draftEngagementLineage } from "@/lib/lineage.functions";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 /**
  * Engagement-wide equivalent of "Find what fed this". Every proposal is a
@@ -17,6 +18,7 @@ export function EngagementLineage({
   engagementId: string;
   profileId: string;
 }) {
+  const copy = useBrandCopy();
   const run = useServerFn(draftEngagementLineage);
   const queryClient = useQueryClient();
   const [pending, setPending] = useState(false);
@@ -44,8 +46,7 @@ export function EngagementLineage({
     <section className="rounded-[var(--radius)] border border-border bg-card px-5 py-5 shadow-card">
       <h2 className="micro-label micro-label-section">Lineage</h2>
       <p className="mt-1.5 text-sm text-muted-foreground">
-        Lasso can look across this workboard and propose what fed each document, deck and sheet.
-        Every proposal is a draft you confirm or discard.
+        {copy("Lasso can look across this workboard and propose what fed each document, deck and sheet. Every proposal is a draft you confirm or discard.")}
       </p>
       <Button className="mt-4" onClick={() => void start()} disabled={pending}>
         {pending ? "Looking…" : "Find what fed these deliverables"}

@@ -13,6 +13,7 @@ import { formatDate } from "@/lib/work-types";
 import { useMotion } from "@/hooks/use-motion";
 import { useProfile } from "@/hooks/use-profile";
 import { workDateLabel } from "@/lib/work-date-label";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 /**
  * PASS B · the calls waiting on a person, as the storyboard draws them: a mono
@@ -24,6 +25,7 @@ import { workDateLabel } from "@/lib/work-date-label";
  */
 
 export function WaitingOnYou() {
+  const copy = useBrandCopy();
   const { data: profile } = useProfile();
   const { data: decisions } = useDecisions();
   const actions = useDecisionActions("inbox");
@@ -138,7 +140,7 @@ export function WaitingOnYou() {
       </div>
 
       <p className="mt-3 max-w-[520px] nb-type-small leading-[17px] text-muted-foreground">
-        Lasso drafted these from your conversations. Nothing goes on the record until you say so.
+        {copy("Lasso drafted these from your conversations. Nothing goes on the record until you say so.")}
       </p>
 
       {actions.error ? <p className="mt-2 text-sm text-destructive">{actions.error}</p> : null}

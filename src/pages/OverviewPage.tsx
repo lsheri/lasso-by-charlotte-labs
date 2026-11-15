@@ -16,6 +16,7 @@ import { useWorkItems } from "@/hooks/use-work-items";
 import { useEngagements } from "@/hooks/use-engagements";
 import { useProfile } from "@/hooks/use-profile";
 import { usesGuestNav } from "@/lib/role-access";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 /** "2 SEP" — the mono date the cards use. */
 function shortDate(value: string | null | undefined): string {
@@ -36,6 +37,7 @@ function plural(n: number, one: string, many: string): string {
 }
 
 export function OverviewPage() {
+  const copy = useBrandCopy();
   const { data: profile } = useProfile();
   const navigate = useNavigate();
   const [prepOpen, setPrepOpen] = useState(false);
@@ -138,8 +140,7 @@ export function OverviewPage() {
                 </Button>
               </div>
               <p className="text-[11.5px] leading-[17px] text-muted-foreground">
-                Lasso drafted these from your conversations. Nothing goes on the record until you
-                say so.
+                {copy("Lasso drafted these from your conversations. Nothing goes on the record until you say so.")}
               </p>
             </div>
           </div>

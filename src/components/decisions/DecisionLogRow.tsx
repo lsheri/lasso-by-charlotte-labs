@@ -11,6 +11,7 @@ import { vendorLabel } from "@/lib/conversation-shared";
 import { isDeliverableType } from "@/lib/lineage-shared";
 import { formatDate } from "@/lib/work-types";
 import { workDateLabel } from "@/lib/work-date-label";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 type SourceDetail = {
   workItemId: string;
@@ -31,6 +32,7 @@ export function DecisionLogRow({
   onSaveReasoning: (decision: DecisionRow, reasoning: string) => void;
   onDiscard: (decision: DecisionRow) => void;
 }) {
+  const copy = useBrandCopy();
   const srcs = srcsOf(decision);
   const ids = Array.from(new Set(srcs.map((source) => source.work_item_id).filter(Boolean)));
   const { data: sourceItems } = useDecisionSourceItems(ids);
@@ -48,7 +50,7 @@ export function DecisionLogRow({
     const date = info ? workDateLabel(info) : null;
     return {
       workItemId: id,
-      heading: [vendor, date, turn ? `turn ${turn.turn_no}` : null, "Lasso drafted this"]
+      heading: [vendor, date, turn ? `turn ${turn.turn_no}` : null, copy("Lasso drafted this")]
         .filter(Boolean)
         .join(" · "),
       quote: turn?.content ?? null,
@@ -155,7 +157,7 @@ export function DecisionLogRow({
                 className="h-auto w-full justify-start whitespace-normal rounded-none bg-[var(--nb-ink-yellow)] px-3 py-2 text-left hover:bg-[var(--nb-ink-yellow)]"
               >
                 <span className="font-mono text-[10px] font-normal leading-[15px] text-foreground">
-                  “{citedTurn.quote}” · {citedTurn.heading.replace(" · Lasso drafted this", "")}
+                  “{citedTurn.quote}” · {citedTurn.heading.replace(` · ${copy("Lasso drafted this")}`, "")}
                 </span>
               </Button>
               <p className="mt-1 font-hand text-[16px] text-muted-foreground">this is the turn it came from</p>

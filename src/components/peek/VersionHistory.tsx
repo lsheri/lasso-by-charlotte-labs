@@ -10,6 +10,7 @@ import { TEXT_CONTENT_HASH_KEY } from "@/lib/text-hash-shared";
 import { logEvent } from "@/lib/telemetry";
 import { getVersionFileUrl } from "@/lib/work-files.functions";
 import { formatDate } from "@/lib/work-types";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 const SOURCE_EVENT_LABEL: Record<string, string> = {
   mcp_push: "Pushed from a chat",
@@ -32,6 +33,7 @@ export function VersionHistory({
   lastCheckedAt?: string | null | undefined;
   hasTextBaseline?: boolean | undefined;
 }) {
+  const copy = useBrandCopy();
   const { data: profile } = useProfile();
   const open = useServerFn(getVersionFileUrl);
   const [expanded, setExpanded] = useState(false);
@@ -130,7 +132,7 @@ export function VersionHistory({
                     className="hover:text-foreground hover:underline"
                   >
                     Version {version.version_no}, {formatDate(version.created_at)},{" "}
-                    {SOURCE_EVENT_LABEL[version.source_event] ?? version.source_event}
+                    {copy(SOURCE_EVENT_LABEL[version.source_event] ?? version.source_event)}
                   </button>
                 </li>
               ))}

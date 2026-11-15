@@ -6,6 +6,7 @@ import { TrailSources } from "@/components/canvas-lab/TrailSources";
 import { useVendorVisible } from "@/hooks/use-vendor-display";
 import { getTrail } from "@/lib/trail.functions";
 import type { Trail, TrailEntry } from "@/lib/trail-shared";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 export const TRAIL_COPY = {
   tab: "Trail",
@@ -25,8 +26,9 @@ export const TRAIL_COPY = {
 } as const;
 
 /** How a link got onto the trail, in words. Never who made it. */
-export function trailHowLine(entry: TrailEntry): string {
-  if (entry.how === "born") return TRAIL_COPY.born;
+/** `name` is the skin's (Phase 4); a confirmed link's note is the person's own words and is returned as written. */
+export function trailHowLine(entry: TrailEntry, name = "Lasso"): string {
+  if (entry.how === "born") return TRAIL_COPY.born.replace("Lasso", name);
   if (entry.how === "confirmed") return entry.note?.trim() || TRAIL_COPY.confirmed;
   return entry.relation && entry.relation !== "context" ? `${TRAIL_COPY.drawn} · ${entry.relation}` : TRAIL_COPY.drawn;
 }
@@ -53,6 +55,7 @@ export function LiftedTrail({
   /** T4: the owner of a deck, document or sheet can ask Lasso to suggest sources. */
   canFindSources?: boolean | undefined;
 }) {
+  const copy = useBrandCopy();
   const load = useServerFn(getTrail);
   const vendorVisible = useVendorVisible();
   const queryClient = useQueryClient();
@@ -84,7 +87,7 @@ export function LiftedTrail({
                 </span>
                 <span className="lift-trail-text">
                   <span className="lift-trail-title">{entry.item.title}</span>
-                  <span className="lift-trail-how">{openable ? trailHowLine(entry) : `${trailHowLine(entry)} · ${TRAIL_COPY.offBoard}`}</span>
+                  <span className="lift-trail-how">{openable ? trailHowLine(entry, copy("Lasso")) : `${trailHowLine(entry, copy("Lasso"))} · ${TRAIL_COPY.offBoard}`}</span>
                 </span>
               </>
             );
@@ -142,7 +145,7 @@ export function LiftedTrail({
           onChanged={() => void queryClient.invalidateQueries({ queryKey: ["trail", workItemId] })}
         />
       ) : null}
-      <p className="lift-trail-rule">{TRAIL_COPY.rule}</p>
+      <p className="lift-trail-rule">{copy(TRAIL_COPY.rule)}</p>
     </div>
   );
 }

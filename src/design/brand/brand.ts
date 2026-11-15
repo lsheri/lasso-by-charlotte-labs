@@ -38,3 +38,12 @@ export function brandCopy(brand: Brand, text: string): string {
     .replaceAll("LASSO", brand.wordmark)
     .replaceAll("Lasso", brand.name);
 }
+
+/**
+ * A route's tab title in the current skin. Only the product name at the start ("Lasso | ...") or end ("... | Lasso")
+ * moves: the part before the bar can be a board or chat title, the person's own words.
+ */
+export function brandTitle(brand: Brand, title: string): string {
+  if (brand.name === "Lasso") return title;
+  return title.replace(/ \| Lasso$/, ` | ${brand.name}`).replace(/^Lasso \| /, `${brand.name} | `);
+}

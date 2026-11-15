@@ -219,6 +219,7 @@ function TourPushChat({ chat, shown, reduced, pushed }: { chat: TourPushedChat; 
 }
 
 export function TourActPush({ register, onReady }: { register: Register; onReady: () => void }) {
+  const copy = useBrandCopy();
   const act = actById(register, 1);
   const chats = [act?.chat, act?.companionChat].filter((chat): chat is TourPushedChat => chat !== undefined);
   const reduced = useMotionPreference();
@@ -247,7 +248,7 @@ export function TourActPush({ register, onReady }: { register: Register; onReady
     <div className="after-push-action">
       {ready ? (
         <Button type="button" variant="ink" className="tour-push-control" data-tour-target={!allPushed ? "1" : undefined} data-pushed={allPushed ? "" : undefined} onClick={pushAll}>
-          {allPushed ? "Pushed to Lasso" : "Push both to Lasso"}
+          {copy(allPushed ? "Pushed to Lasso" : "Push both to Lasso")}
         </Button>
       ) : null}
     </div>

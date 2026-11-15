@@ -10,6 +10,7 @@ import {
   type FirmCheck,
 } from "@/hooks/use-firm-checks";
 import { useMyMemberRole } from "@/hooks/use-member-role";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 /**
  * The checks a coach or the firm wrote for this work. Everyone who the checks
@@ -31,6 +32,7 @@ export function FirmChecksCard({
   subjectProfileId?: string | null;
   subjectName?: string;
 }) {
+  const copy = useBrandCopy();
   // Writing is the engagement relationship the policies check: a coach member
   // of this engagement writes, whatever their workspace wide role says. An
   // admin writes anywhere. With no engagement in scope there is no
@@ -77,8 +79,7 @@ export function FirmChecksCard({
         <div>
           <h2 className="micro-label micro-label-section">Firm checks</h2>
           <p className="mt-1 text-xs text-muted-foreground">
-            What this firm asks of work like this. Lasso can run these against a finished piece of
-            work.
+            {copy("What this firm asks of work like this. Lasso can run these against a finished piece of work.")}
           </p>
         </div>
         {canWrite ? (

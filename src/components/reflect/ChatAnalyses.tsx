@@ -335,11 +335,12 @@ export function InlineAnalysisBlocks({
   onSaveForOneOnOne?:
     ((input: { text: string; kind: "analysis_finding"; sessionId: string }) => void) | undefined;
 }) {
+  const copy = useBrandCopy();
   return (
     <>
       {results.map((result, index) => (
         <div key={result.key}>
-          <p className="micro-label">Lasso · {result.preset.label}</p>
+          <p className="micro-label">{copy("Lasso · ")}{result.preset.label}</p>
           {result.reused ? (
             <p className="mt-1 text-xs text-muted-foreground">
               This analysis already ran on this exact work. Showing that result.
@@ -549,7 +550,7 @@ export function AnalysisChips({
       />
 
       <div className="mt-4">
-        <p className="micro-label micro-label-ai mb-2">Lasso analyses</p>
+        <p className="micro-label micro-label-ai mb-2">{copy("Lasso analyses")}</p>
         <div className="flex flex-wrap gap-2">
           {stock.map((preset) => {
             const blocked = shortFor(preset);
@@ -699,6 +700,7 @@ export function SelectionAnalysisChips({
   profileId?: string | undefined;
   onAdjust?: (() => void) | undefined;
 }) {
+  const copy = useBrandCopy();
   const [confirming, setConfirming] = useState<{
     request: AnalysisConfirmRequest;
     target: ChipTarget;
@@ -776,7 +778,7 @@ export function SelectionAnalysisChips({
         }}
       />
       <div className="mt-4">
-        <p className="micro-label micro-label-ai mb-2">Lasso analyses</p>
+        <p className="micro-label micro-label-ai mb-2">{copy("Lasso analyses")}</p>
         <div className="flex flex-wrap gap-2">
           {stock.map(({ preset, target, reason }) => (
             <StockPill

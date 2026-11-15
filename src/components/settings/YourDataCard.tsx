@@ -47,6 +47,7 @@ import {
 } from "@/lib/data-consent.functions";
 
 import { SampleEventDialog } from "./SampleEventDialog";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 export function useConsent() {
   const { data: profile } = useProfile();
@@ -122,6 +123,7 @@ export function ConfirmDialog({
   onConfirm: () => void;
   busy: boolean;
 }) {
+  const copy = useBrandCopy();
   return (
     <AlertDialog open={Boolean(pending)} onOpenChange={(open) => (open ? null : onCancel())}>
       <AlertDialogContent>
@@ -132,7 +134,7 @@ export function ConfirmDialog({
           <AlertDialogDescription>
             {pending ? tierCopy(pending).description : ""}
             {scope === "org"
-              ? " This sets how Lasso may use the whole organization's data. People can choose less for themselves."
+              ? copy(" This sets how Lasso may use the whole organization's data. People can choose less for themselves.")
               : " You can change this at any time."}
           </AlertDialogDescription>
         </AlertDialogHeader>
@@ -170,6 +172,7 @@ function dateLabel(iso: string): string {
 
 /** The organization level, admin only. Lives beside People and invites. */
 export function OrgDataCard() {
+  const copy = useBrandCopy();
   const { profile, data } = useConsent();
   const queryClient = useQueryClient();
   const save = useServerFn(setDataConsent);
@@ -203,7 +206,7 @@ export function OrgDataCard() {
     <section>
       <h2 className="micro-label micro-label-section">{SURFACE_NAME}</h2>
       <p className="mt-1.5 text-sm text-muted-foreground">
-        Choose how Lasso may use your workspace's data outside the workspace. You can change it at any time.
+        {copy("Choose how Lasso may use your workspace's data outside the workspace. You can change it at any time.")}
       </p>
       <div className="mt-1 flex flex-wrap items-center gap-3">
         <p className="text-sm text-foreground">Current level: {tierLabel(data.org_tier)}</p>

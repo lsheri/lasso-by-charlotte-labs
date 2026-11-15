@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { PILOT_TEAM_SIZES, submitSignupPilotRequestFn } from "@/lib/pilot-request.functions";
 import { emitClientEvent } from "@/lib/client-telemetry";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 /** GATE-1: company and partner signup asks for a pilot instead of creating a workspace. */
 export const PILOT_GATE_COPY = {
@@ -38,6 +39,7 @@ const TEAM_LABELS: Record<(typeof PILOT_TEAM_SIZES)[number], string> = {
 type Props = { register: "company" | "partner"; onJustMe: () => void };
 
 export function PilotRequestGate({ register, onJustMe }: Props) {
+  const copy = useBrandCopy();
   const submit = useServerFn(submitSignupPilotRequestFn);
   const [checking, setChecking] = useState(true);
   const [requested, setRequested] = useState(false);
@@ -120,7 +122,7 @@ export function PilotRequestGate({ register, onJustMe }: Props) {
             ) : checking ? null : (
               <>
                 <h1 className="page-title mt-2">{PILOT_GATE_COPY.title}</h1>
-                <p className="mt-1.5 text-sm text-muted-foreground">{PILOT_GATE_COPY.body}</p>
+                <p className="mt-1.5 text-sm text-muted-foreground">{copy(PILOT_GATE_COPY.body)}</p>
                 <form onSubmit={onSubmit} className="mt-6 space-y-5">
                   <div className="space-y-1.5">
                     <Label htmlFor="pilot-name" className="micro-label">{PILOT_GATE_COPY.nameLabel}</Label>

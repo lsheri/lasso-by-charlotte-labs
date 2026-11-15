@@ -1,3 +1,5 @@
+import { useBrandCopy } from "@/components/skin/use-skin";
+
 /**
  * The suggestion treatment: "Lasso suggested this, a person decides."
  *
@@ -38,10 +40,11 @@ export function SuggestDot() {
 
 /** Said once, where suggestions first appear. */
 export function SuggestLegend({ className = "" }: { className?: string }) {
+  const copy = useBrandCopy();
   return (
     <p className={`flex items-center gap-2 text-xs text-muted-foreground ${className}`}>
       <SuggestDot />
-      Green means Lasso suggested it. Nothing is saved until you confirm.
+      {copy("Green means Lasso suggested it. Nothing is saved until you confirm.")}
     </p>
   );
 }

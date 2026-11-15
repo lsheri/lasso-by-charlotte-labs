@@ -47,6 +47,7 @@ import {
   type DriveScope,
   type DriveTypeFilter,
 } from "@/lib/drive-scope";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 /** GRANOLA-1: shown on a Granola call already in Lasso; picking it again refreshes it, keeping the old version. */
 export const GRANOLA_REFRESH_LABEL = "In Lasso · pick to refresh";
@@ -155,6 +156,8 @@ export function ConnectorPicker({
    */
   onPickFile?: (file: { id: string; mimeType: string | null }) => Promise<void>;
 }) {
+  // Phase 4: `copy` here is this picker's own wording table, so the skin's rewriter is `say`.
+  const say = useBrandCopy();
   const singlePick = Boolean(onPickFile);
   const isTranscripts = kind === "transcripts";
   const isWispr = kind === "wispr";
@@ -340,7 +343,7 @@ export function ConnectorPicker({
       });
       toast.success(
         result.watched
-          ? `Watching “${item.title}” | Lasso will suggest new files, never import them.`
+          ? `Watching “${item.title}” | ${say("Lasso")} will suggest new files, never import them.`
           : `Stopped watching “${item.title}”`,
       );
       const refreshed = await load();
@@ -742,7 +745,7 @@ export function ConnectorPicker({
                           aria-pressed={Boolean(item.isWatched)}
                           title={
                             item.isWatched
-                              ? "Watching | Lasso suggests new files, never imports them"
+                              ? say("Watching | Lasso suggests new files, never imports them")
                               : "Watch this folder for new work"
                           }
                           aria-label={
@@ -816,7 +819,7 @@ export function ConnectorPicker({
                         ) : null}
                       </div>
                       <span className="shrink-0 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-                        {item.alreadyInLasso ? (kind === "granola" ? GRANOLA_REFRESH_LABEL : "In Lasso") : dateLabel(item.date)}
+                        {item.alreadyInLasso ? say(kind === "granola" ? GRANOLA_REFRESH_LABEL : "In Lasso") : dateLabel(item.date)}
                       </span>
                     </li>
                   ))}
@@ -863,7 +866,7 @@ export function ConnectorPicker({
           >
             {importing
               ? <WorkingLabel>{`Bringing in ${selected.size} item${selected.size === 1 ? "" : "s"}. Summaries fill in after.`}</WorkingLabel>
-              : `${copy.action}${selected.size ? ` (${selected.size})` : ""}`}
+              : `${say(copy.action)}${selected.size ? ` (${selected.size})` : ""}`}
           </Button>
           )}
         </div>

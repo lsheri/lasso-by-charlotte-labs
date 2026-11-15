@@ -1,6 +1,8 @@
 import { useEffect, useState, type ReactNode } from "react";
 
 import { useSession } from "@/hooks/use-session";
+import { brandFor, brandTitle } from "@/design/brand/brand";
+
 import { SkinContext } from "./use-skin";
 import { resolveSkin, skinFromBrandParam, writeSkinCookie, type Skin } from "@/lib/skin";
 
@@ -26,6 +28,21 @@ export function SkinProvider({ initial, children }: { initial: Skin; children: R
     else document.documentElement.setAttribute("data-skin", next);
     setSkin(next);
   }, [loading, email, skin]);
+
+  // Phase 4: route heads write "... | Lasso" without knowing the skin, so under Charlotte the tab title is renamed
+  // each time the router sets it. Lasso never observes anything.
+  useEffect(() => {
+    if (skin === "lasso") return;
+    const brand = brandFor(skin);
+    const rename = () => {
+      const next = brandTitle(brand, document.title);
+      if (next !== document.title) document.title = next;
+    };
+    rename();
+    const observer = new MutationObserver(rename);
+    observer.observe(document.head, { childList: true, subtree: true, characterData: true });
+    return () => observer.disconnect();
+  }, [skin]);
 
   return <SkinContext.Provider value={skin}>{children}</SkinContext.Provider>;
 }

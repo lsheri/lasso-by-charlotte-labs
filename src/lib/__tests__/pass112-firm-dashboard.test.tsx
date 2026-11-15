@@ -60,8 +60,8 @@ describe("trust summary", () => {
     // The disclosure now lives in the privacy panel at the foot of the page.
     render(<PrivacyPanel />);
     fireEvent.click(screen.getByRole("button", { name: /read the rules/i }));
-    const source = readFileSync("src/components/firm/PrivacyPanel.tsx", "utf8");
-    expect(source).toContain("Never a pass rate or a score, here or anywhere else in Lasso.");
+    // Phase 4: the product name comes from the skin, so check the rendered line rather than the source text.
+    expect(screen.getByText(/Never a pass rate or a score, here or anywhere else in Lasso\./)).toBeTruthy();
     expect(
       screen.getByText(/Never a conversation with Lasso, and never a prompt someone wrote\./),
     ).toBeTruthy();

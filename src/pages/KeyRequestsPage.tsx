@@ -45,6 +45,7 @@ export function parseEmails(raw: string): string[] {
 
 export { adminLink, attendeeLink } from "@/lib/join-link";
 import { adminLink, attendeeLink } from "@/lib/join-link";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 /** RQ-1: closed seats_band vocabulary for key_request.submitted. */
 export function seatsBand(n: number): "1" | "2-5" | "6-20" | "21+" {
@@ -279,6 +280,7 @@ function LinkLine({ label, url }: { label: string; url: string }) {
 }
 
 function RequestRow({ r, orgId }: { r: KeyRequest; orgId: string | null }) {
+  const copy = useBrandCopy();
   const tone = r.status === "provisioned" ? "record" : r.status === "declined" ? "attention" : "paper";
   const attendee = r.issued_code ? attendeeLink(r.issued_code, r.workspace_kind) : null;
   const admin = r.admin_invite_code ? adminLink(r.admin_invite_code) : null;
@@ -293,7 +295,7 @@ function RequestRow({ r, orgId }: { r: KeyRequest; orgId: string | null }) {
         {dateLabel(r.ends_on)}
       </p>
 
-      {r.status === "submitted" ? <p className="text-sm">Waiting on Lasso.</p> : null}
+      {r.status === "submitted" ? <p className="text-sm">{copy("Waiting on Lasso.")}</p> : null}
       {r.status === "declined" && r.decision_note ? <p className="text-sm">{r.decision_note}</p> : null}
 
       {r.status === "provisioned" ? (

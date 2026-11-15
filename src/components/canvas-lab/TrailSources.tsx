@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 
 import { draftLineage, getDeliverableEvidence, reviewLink } from "@/lib/lineage.functions";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 export const TRAIL_SOURCES_COPY = {
   heading: "Possible sources",
@@ -31,6 +32,7 @@ export function TrailSources({
   profileId: string | null;
   onChanged: () => void;
 }) {
+  const copy = useBrandCopy();
   const load = useServerFn(getDeliverableEvidence);
   const draft = useServerFn(draftLineage);
   const review = useServerFn(reviewLink);
@@ -103,7 +105,7 @@ export function TrailSources({
           <button type="button" className="lift-trail-find" disabled={busy !== null} onClick={() => void find()}>
             {busy === "finding" ? TRAIL_SOURCES_COPY.finding : TRAIL_SOURCES_COPY.find}
           </button>
-          {searched && busy === null ? <p className="lift-trail-empty">{TRAIL_SOURCES_COPY.none}</p> : <p className="lift-trail-rule">{TRAIL_SOURCES_COPY.fine}</p>}
+          {searched && busy === null ? <p className="lift-trail-empty">{TRAIL_SOURCES_COPY.none}</p> : <p className="lift-trail-rule">{copy(TRAIL_SOURCES_COPY.fine)}</p>}
         </>
       )}
       {failed ? <p className="lift-trail-empty" role="status">{TRAIL_SOURCES_COPY.failed}</p> : null}

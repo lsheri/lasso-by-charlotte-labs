@@ -1,3 +1,5 @@
+import { useBrandCopy } from "@/components/skin/use-skin";
+
 /** Never truncate silently: say plainly how much of the record was read. */
 export function CoverageNote({
   fullCount,
@@ -18,6 +20,7 @@ export function CoverageNote({
    */
   compact?: boolean;
 }) {
+  const copy = useBrandCopy();
   if (fullCount === 0 && summaryCount === 0 && noTextCount === 0) return null;
   if (compact) return <CompactCoverageNote summaryCount={summaryCount} noTextCount={noTextCount} share={share} />;
   const parts: string[] = [`Read as written: ${fullCount} ${fullCount === 1 ? "item" : "items"}`];
@@ -26,7 +29,7 @@ export function CoverageNote({
   const pct = typeof share === "number" && Number.isFinite(share) ? Math.round(share * 100) : null;
   return (
     <p className="text-xs text-muted-foreground" data-testid="coverage-note">
-      {parts.join(". ")}.{pct !== null ? ` ${pct}% of the selected text was in front of Lasso.` : ""}
+      {parts.join(". ")}.{pct !== null ? copy(` ${pct}% of the selected text was in front of Lasso.`) : ""}
     </p>
   );
 }
@@ -46,11 +49,12 @@ export function compactCoverageLine({ summaryCount, noTextCount, share }: { summ
 }
 
 function CompactCoverageNote(props: { summaryCount: number; noTextCount: number; share?: number | null | undefined }) {
+  const copy = useBrandCopy();
   const line = compactCoverageLine(props);
   if (!line) return null;
   return (
     <p className="text-xs text-muted-foreground" data-testid="coverage-note" data-compact="true">
-      {line}
+      {copy(line)}
     </p>
   );
 }

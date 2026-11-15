@@ -7,6 +7,7 @@ import { WorkspaceMenu } from "./WorkspaceMenu";
 import { BrandLockup } from "./BrandLockup";
 import { SidebarNav } from "./SidebarNav";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 const footerLink =
   "font-mono text-[9px] uppercase tracking-[0.08em] text-soft transition-colors hover:text-foreground";
@@ -28,6 +29,7 @@ export function AppSidebar({
   onNavigate?: (() => void) | undefined;
   onOpenSettings?: (() => void) | undefined;
 }) {
+  const copy = useBrandCopy();
   return (
     <div className="lasso-sidebar-content flex h-full w-full flex-col gap-[22px] bg-sidebar px-4 pb-[18px] pt-[22px]">
       {/* Brand */}
@@ -58,7 +60,7 @@ export function AppSidebar({
             }}
             className={footerLink}
           >
-            How Lasso works
+            {copy("How Lasso works")}
           </Link>
 
         </div>

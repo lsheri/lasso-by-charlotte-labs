@@ -4,6 +4,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LoaderCircle } from "lucide-react";
 import type { StructureSourceKind, SuggestedStructure } from "@/lib/structure-suggest-shared";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 export const COPY = {
   heading: "Suggestions for your board",
@@ -36,6 +37,7 @@ export type SuggestStructurePanelProps = {
 
 /** Draft inputs only. The parent owns request state, results and every side effect. */
 export function SuggestStructurePanel({ state, structures, parts, shortfall, error, onSubmit, onChoose, onCancel }: SuggestStructurePanelProps) {
+  const copy = useBrandCopy();
   const id = useId();
   const [text, setText] = useState("");
   const [kind, setKind] = useState<StructureSourceKind>("transcript");
@@ -47,7 +49,7 @@ export function SuggestStructurePanel({ state, structures, parts, shortfall, err
         <form className="space-y-4" onSubmit={(event) => { event.preventDefault(); onSubmit(text, kind); }}>
           <label htmlFor={`${id}-text`} className="block text-sm font-medium">{COPY.material}</label>
           <Textarea id={`${id}-text`} value={text} onChange={(event) => setText(event.target.value)} placeholder={COPY.placeholder} className="min-h-40 md:text-base" />
-          <p className="text-base text-muted-foreground">{COPY.helper}</p>
+          <p className="text-base text-muted-foreground">{copy(COPY.helper)}</p>
           <Select value={kind} onValueChange={(value) => {
             if (value === "transcript" || value === "document" || value === "mixed") setKind(value);
           }}>

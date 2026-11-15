@@ -17,6 +17,7 @@ import { emitClientEvent } from "@/lib/client-telemetry";
 import { logEvent } from "@/lib/telemetry";
 import type { HomeGridEngagement } from "@/lib/home-grid";
 import { LOOP_SIZE_TITLE } from "@/lib/lasso-loop";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 const HOME_VIEWPORT_SEED = { width: 980, height: 720 };
 const BOARD_FIT_PADDING = 32;
@@ -74,11 +75,12 @@ export function useShowConnectPrompt(): boolean {
 
 /** NAV-1d: the empty-workspace connect prompt. Renders nothing unless the work count is known and zero. */
 export function ConnectToolsPrompt() {
+  const copy = useBrandCopy();
   const show = useShowConnectPrompt();
   if (!show) return null;
   return (
     <div data-testid="home-connect-prompt" className="mx-auto mt-6 flex max-w-[780px] flex-col items-center gap-3">
-      <p className="text-[17px] leading-[1.5] text-muted-foreground">{CONNECT_PROMPT_LINE}</p>
+      <p className="text-[17px] leading-[1.5] text-muted-foreground">{copy(CONNECT_PROMPT_LINE)}</p>
       <Button asChild type="button" variant="ink" className="h-11 px-6 text-[16px]">
         <Link to="/connectors" onClick={() => emitClientEvent("home.connect_tools_opened", {})}>
           Connect your AI tools
@@ -162,6 +164,7 @@ function HomePendingInvites({ pending, onHeight }: { pending: PendingInviteRow[]
 }
 
 export function HomeBoard() {
+  const copy = useBrandCopy();
   const { data: profile } = useProfile();
   const { shared, pending } = useSharedWithYou(Boolean(profile?.id));
   const { data: engagements } = useEngagements(profile?.id);
@@ -250,11 +253,11 @@ export function HomeBoard() {
             <div className="flex items-center justify-center gap-3">
               <LassoThinkingMark kind="signature" size={LOOP_SIZE_TITLE} thinking />
               <h1 id="home-title" className="font-serif text-[66px] font-normal leading-[1.05] text-foreground">
-                Welcome to Lasso
+                {copy("Welcome to Lasso")}
               </h1>
             </div>
             <p className="mx-auto mt-6 max-w-[780px] text-[21.75px] leading-[1.6] text-muted-foreground">
-              Every AI conversation, document and decision from your work, kept in one place that belongs to you. Nothing here was written by Lasso.
+              {copy("Every AI conversation, document and decision from your work, kept in one place that belongs to you. Nothing here was written by Lasso.")}
             </p>
             <ConnectToolsPrompt />
             <div className="mx-auto mt-[18px]" style={{ maxWidth: HOME_CONTENT_WIDTH }}>

@@ -5,9 +5,11 @@ import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useProfile } from "@/hooks/use-profile";
 import { getDocumentRecheck, setDocumentRecheck } from "@/lib/document-recheck.functions";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 /** The per-account switch for re-reading connected documents. */
 export function DocumentRecheckCard() {
+  const copy = useBrandCopy();
   const { data: profile } = useProfile();
   const read = useServerFn(getDocumentRecheck);
   const write = useServerFn(setDocumentRecheck);
@@ -39,11 +41,10 @@ export function DocumentRecheckCard() {
       />
       <span className="min-w-0 flex-1">
         <span className="block text-[13px] font-medium text-foreground">
-          Let Lasso check connected documents for new versions
+          {copy("Let Lasso check connected documents for new versions")}
         </span>
         <span className="mt-0.5 block nb-type-small leading-[17px] text-muted-foreground">
-          Off by default. Lasso only reads a connected document when you ask it to. Turn this on and
-          it will also check on its own, re-reading a document only when its source says it changed.
+          {copy("Off by default. Lasso only reads a connected document when you ask it to. Turn this on and it will also check on its own, re-reading a document only when its source says it changed.")}
         </span>
       </span>
     </label>

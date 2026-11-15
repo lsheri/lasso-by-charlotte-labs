@@ -6,6 +6,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { reextractItemText } from "@/lib/item-text.functions";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 /**
  * Owner-only, and only where the title-only state is already shown: re-runs the
@@ -13,6 +14,7 @@ import { reextractItemText } from "@/lib/item-text.functions";
  * except another honest attempt.
  */
 export function ReextractAction({ workItemId }: { workItemId: string }) {
+  const copy = useBrandCopy();
   const queryClient = useQueryClient();
   const { data: profile } = useProfile();
   const run = useServerFn(reextractItemText);
@@ -26,7 +28,7 @@ export function ReextractAction({ workItemId }: { workItemId: string }) {
         setBusy(true);
         void run({ data: { work_item_id: workItemId, profile_id: profile?.id } })
           .then(async (result) => {
-            if (result.status === "ok") toast.success("Lasso read this file.");
+            if (result.status === "ok") toast.success(copy("Lasso read this file."));
             else toast.message(`Still not readable${result.note ? `: ${result.note}` : "."}`);
             await queryClient.invalidateQueries({ queryKey: ["work-items"] });
             await queryClient.invalidateQueries({ queryKey: ["item-text-pane", workItemId] });

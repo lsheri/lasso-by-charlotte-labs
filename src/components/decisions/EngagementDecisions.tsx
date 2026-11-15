@@ -15,6 +15,7 @@ import { useDecisionSourceItems } from "@/hooks/use-decisions";
 import { useEngagementSlice } from "@/hooks/use-engagement-page";
 import { srcsOf, useEngagementDecisions, type DecisionRow } from "@/hooks/use-decisions";
 import { draftEngagementDecisions } from "@/lib/decisions.functions";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 /**
  * The decision record, on the page that holds the context. Drafts wear the
@@ -30,6 +31,7 @@ export function EngagementDecisions({
   profileId: string | undefined;
   canEdit: boolean;
 }) {
+  const copy = useBrandCopy();
   const { data: decisions, isLoading } = useEngagementDecisions(engagementId);
   const actions = useDecisionActions("engagement");
   const queryClient = useQueryClient();
@@ -86,7 +88,7 @@ export function EngagementDecisions({
           ? "Nothing mapped into this workboard yet, so there is nothing to read."
           : result.drafted > 0
             ? `${result.drafted} decision${result.drafted === 1 ? "" : "s"} drafted for you to confirm or correct.`
-            : "Lasso did not find a consequential decision in this workboard yet.",
+            : copy("Lasso did not find a consequential decision in this workboard yet."),
       );
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Couldn't look for decisions");
@@ -128,8 +130,7 @@ export function EngagementDecisions({
           }}
         >
           <p className="mx-auto max-w-md text-sm text-foreground">
-            No decisions recorded yet. Lasso can look across this workboard and propose what you
-            decided, for you to confirm or correct.
+            {copy("No decisions recorded yet. Lasso can look across this workboard and propose what you decided, for you to confirm or correct.")}
           </p>
           {findButton ? <div className="mt-5">{findButton}</div> : null}
         </div>

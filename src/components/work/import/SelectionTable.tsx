@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { ParsedConversation } from "@/lib/import-parsers";
 import type { ImportVendor } from "@/lib/import-vendors";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 function dayOf(iso: string | null): string {
   return iso ? iso.slice(0, 10) : "";
@@ -32,6 +33,7 @@ export function SelectionTable({
   /** The tool this export came from, so each row can wear its logo. */
   vendor?: ImportVendor | undefined;
 }) {
+  const copy = useBrandCopy();
   const [search, setSearch] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
@@ -67,8 +69,7 @@ export function SelectionTable({
   return (
     <div className="space-y-4">
       <p className="text-sm text-foreground">
-        Choose what to bring into Lasso. Everything you leave unchecked stays on your computer. It
-        is not uploaded, and Lasso never sees it.
+        {copy("Choose what to bring into Lasso. Everything you leave unchecked stays on your computer. It is not uploaded, and Lasso never sees it.")}
       </p>
 
       <div className="rounded-[var(--radius)] border border-accent/40 bg-accent-soft p-4">
