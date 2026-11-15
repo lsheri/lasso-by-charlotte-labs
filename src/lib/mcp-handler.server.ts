@@ -77,7 +77,7 @@ import { pushSourceTimeFields } from "@/lib/push-source-time";
 import { countCarryGaps, carryGapBucket } from "./carry-gap";
 import { promptedByTurn } from "./version-prompt";
 import { renderDecisionsMarkdown } from "./mcp-decisions";
-import { brandCopyDeep, launchBrand, makerLine } from "@/design/brand/brand";
+import { BRAND_FLIPPED, brandCopyDeep, launchBrand, makerLine } from "@/design/brand/brand";
 import { earlierNameLine } from "@/lib/mcp-earlier-name";
 
 /** The product name in the server's own words: Lasso until the flip. People's titles are never passed through it. */
@@ -484,8 +484,9 @@ function looksCondensed(incomingChars: number, storedChars: number): boolean {
 
 // Contract surface: external MCP clients read this. Canonical host only.
 const SITE_URL = CANONICAL_ORIGIN;
+// The flip swaps in Charlotte's icon (Phase 4 PR12); the file names stay apart so Lasso's icon is untouched.
 const ICONS = [
-  { src: `${SITE_URL}/favicon.svg`, mimeType: "image/svg+xml", sizes: ["any"] },
+  { src: `${SITE_URL}/${BRAND_FLIPPED ? "charlotte-favicon.svg" : "favicon.svg"}`, mimeType: "image/svg+xml", sizes: ["any"] },
 ];
 
 export const CORS_HEADERS: Record<string, string> = {
