@@ -3,8 +3,9 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-import { BRAND_FLIPPED, brandCopy, launchBrand, makerLine } from "@/design/brand/brand";
+import { BRAND_FLIPPED, brandCopy, brandCopyDeep, launchBrand, makerLine } from "@/design/brand/brand";
 import { BRANCH_NEEDS_SIGNIN } from "@/lib/branch-fetch";
+import { earlierNameLine } from "@/lib/mcp-earlier-name";
 import { MCP_SERVER_NAME } from "@/lib/mcp-setup-steps";
 import { resolveSkin } from "@/lib/skin";
 
@@ -48,5 +49,21 @@ describe("the connector's replies to the AI", () => {
       .split("\n")
       .filter((line) => !/^\s*(\*|\/\/|\/\*\*)/.test(line));
     expect(code.filter((line) => /\bLasso\b/.test(line))).toEqual([]);
+  });
+});
+
+describe("the earlier name after the flip (PR10)", () => {
+  it("adds nothing before the flip", () => {
+    expect(earlierNameLine(launchBrand().name)).toBe("");
+  });
+
+  it("keeps 'Push to Lasso' working once the push tool says Charlotte", () => {
+    const product = launchBrand(true).name;
+    // tools/list renames first, then adds the earlier-name line, so the rename cannot touch it.
+    const renamed = brandCopyDeep(launchBrand(true), { description: "When the user says 'Push to Lasso', save it." });
+    const description = `${earlierNameLine(product)}${renamed.description}`;
+    expect(description).toContain("'Push to Charlotte'");
+    expect(description).toContain("'Push to Lasso'");
+    expect(description).toContain("Lasso was Charlotte's earlier name");
   });
 });

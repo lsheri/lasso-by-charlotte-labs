@@ -78,6 +78,7 @@ import { countCarryGaps, carryGapBucket } from "./carry-gap";
 import { promptedByTurn } from "./version-prompt";
 import { renderDecisionsMarkdown } from "./mcp-decisions";
 import { brandCopyDeep, launchBrand, makerLine } from "@/design/brand/brand";
+import { earlierNameLine } from "@/lib/mcp-earlier-name";
 
 /** The product name in the server's own words: Lasso until the flip. People's titles are never passed through it. */
 const PRODUCT = launchBrand().name;
@@ -1342,7 +1343,12 @@ export async function handleMcpRequest(
             ? tool.description
             : `${tool.description} connector: ${LASSO_CONNECTOR_VERSION}`,
         };
-      })),
+      })).map((tool) =>
+        // Added after the rename above, so the earlier name survives it.
+        tool && typeof tool === "object" && "name" in tool && tool.name === "push_conversation" && "description" in tool && typeof tool.description === "string"
+          ? { ...tool, description: `${earlierNameLine(PRODUCT)}${tool.description}` }
+          : tool,
+      ),
     });
   }
 
