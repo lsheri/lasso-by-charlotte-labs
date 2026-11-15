@@ -21,6 +21,7 @@ export function SkinProvider({ initial, children }: { initial: Skin; children: R
       current: skin,
       requested: skinFromBrandParam(window.location.search),
       email,
+      host: window.location.hostname,
     });
     if (next === skin) return;
     writeSkinCookie(next);

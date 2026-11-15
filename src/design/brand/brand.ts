@@ -39,6 +39,25 @@ export function brandCopy(brand: Brand, text: string): string {
     .replaceAll("Lasso", brand.name);
 }
 
+/** brandCopy over every string in a fixed copy table (nested objects and arrays). Lasso returns the same table. */
+export function brandCopyDeep<T>(brand: Brand, table: T): T {
+  if (brand.name === "Lasso") return table;
+  const walk = (value: unknown): unknown =>
+    typeof value === "string"
+      ? brandCopy(brand, value)
+      : Array.isArray(value)
+        ? value.map(walk)
+        : value && typeof value === "object"
+          ? Object.fromEntries(Object.entries(value).map(([k, v]) => [k, walk(v)]))
+          : value;
+  return walk(table) as T;
+}
+
+/** The maker's line: "Lasso by Charlotte Labs", or "Charlotte Labs" alone when the product shares the company's name. */
+export function makerLine(brand: Brand): string {
+  return brand.name === "Lasso" ? "Lasso by Charlotte Labs" : "Charlotte Labs";
+}
+
 /**
  * A route's tab title in the current skin. Only the product name at the start ("Lasso | ...") or end ("... | Lasso")
  * moves: the part before the bar can be a board or chat title, the person's own words.

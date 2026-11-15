@@ -36,6 +36,7 @@ import { AUTH_COPY } from "@/lib/auth-copy";
 import { isKeyInvalid, resolveKeyCheck } from "@/lib/auth-key-check";
 import { KEY_NOTICE_COPY, KeyNoticeSentence } from "@/lib/key-notice";
 import { SIGNUP_DEFAULT_NOTICE } from "@/lib/data-consent-shared";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 export const COPY = { noticeLink: "Trust & data" } as const;
 
@@ -148,6 +149,7 @@ export function noteSignUpIdentity(result: {
 }
 
 function AuthPage() {
+  const copy = useBrandCopy();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { next, intent, invite, from, src, key, mode: modeParam } = Route.useSearch();
@@ -406,7 +408,7 @@ function AuthPage() {
       if (isExistingAccountSignup(data, signUpError)) {
         setMode("signin");
         setPassword("");
-        setMessage(inviteCode ? EXISTING_ACCOUNT_INVITED : EXISTING_ACCOUNT_OPEN);
+        setMessage(copy(inviteCode ? EXISTING_ACCOUNT_INVITED : EXISTING_ACCOUNT_OPEN));
         emitClientEvent("signup.existing_account", { via: inviteCode ? "invite" : "open" }, { stableVisitor: true });
         setPending(false);
         return;
@@ -507,10 +509,10 @@ function AuthPage() {
             {mode === "signin" || invited ? (
               <>
                 {" "}
-                <em className="italic">to Lasso</em>
+                <em className="italic">{copy("to Lasso")}</em>
               </>
             ) : (
-              AUTH_COPY.signupHeading
+              copy(AUTH_COPY.signupHeading)
             )}
           </h1>
           {consentTarget(next) && mode === "signin" ? (
@@ -584,7 +586,7 @@ function AuthPage() {
                 {linkSent ? (
                   <div>
                     <p className="text-sm font-medium text-foreground">{SIGN_IN_LINK_COPY.sentTitle}</p>
-                    <p className="mt-1 text-sm text-muted-foreground">{linkNote ?? SIGN_IN_LINK_COPY.sentBody}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">{linkNote ?? copy(SIGN_IN_LINK_COPY.sentBody)}</p>
                     <button type="button" className="mt-2 text-sm text-muted-foreground transition-colors hover:text-foreground" onClick={() => { setLinkSent(false); setLinkNote(null); }}>
                       {SIGN_IN_LINK_COPY.back}
                     </button>
