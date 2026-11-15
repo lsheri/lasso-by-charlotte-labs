@@ -24,9 +24,11 @@ import { CANONICAL_ORIGIN, maybeRedirectToCanonical } from "@/lib/app-host";
 import { registerProfileQueryClient } from "@/hooks/use-profile";
 import { readSkinCookie } from "@/lib/skin";
 import { SkinProvider } from "@/components/skin/SkinProvider";
+import { brandCopy, launchBrand } from "@/design/brand/brand";
 
 /** One source for the page title and the link preview card. Mirrors the Front Door. */
-const META_TITLE = "Lasso | The knowledge trace for AI-assisted work";
+// The default head names the product: Lasso until the flip (BRAND_FLIPPED), Charlotte after.
+const META_TITLE = brandCopy(launchBrand(), "Lasso | The knowledge trace for AI-assisted work");
 const META_DESCRIPTION =
   "Your AI conversations, files and decisions in one place, next to the work they produced. You choose what goes in, and it stays yours.";
 
@@ -132,8 +134,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "mobile-web-app-capable", content: "yes" },
-      { name: "apple-mobile-web-app-title", content: "Lasso" },
-      { name: "application-name", content: "Lasso" },
+      { name: "apple-mobile-web-app-title", content: launchBrand().name },
+      { name: "application-name", content: launchBrand().name },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
     ],
     links: [

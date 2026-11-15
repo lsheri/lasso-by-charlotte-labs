@@ -17,6 +17,7 @@ import {
 import { logEvent } from "@/lib/telemetry";
 import { ToolBadge } from "./ToolBadge";
 import { useBrand, useBrandCopy } from "@/components/skin/use-skin";
+import { launchBrand } from "@/design/brand/brand";
 
 /** Counts everything this person has ever received over MCP. */
 async function countMcpItems(profileId: string): Promise<number> {
@@ -130,8 +131,8 @@ export function McpSetupCard({ vendor }: { vendor: McpVendor }) {
               </li>
             ))}
           </ol>
-          {/* The connector server names itself Lasso until the flip, so Charlotte leaves this line out rather than say it. */}
-          {brand.name === "Lasso" ? (
+          {/* The connector server names itself Lasso until the flip, so a brand it does not match leaves this line out. */}
+          {brand.name === launchBrand().name ? (
             <p className="text-sm text-muted-foreground">
               The server shows up in your AI as{" "}
               <span className="text-foreground">{MCP_SERVER_NAME}</span>.

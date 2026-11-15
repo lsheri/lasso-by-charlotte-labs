@@ -4,6 +4,8 @@
  * wording can never drift into two versions again.
  */
 
+import { launchBrand, makerLine } from "@/design/brand/brand";
+
 export type McpVendor = "claude" | "chatgpt";
 
 export const MCP_SETUP_STEPS: Record<McpVendor, readonly string[]> = {
@@ -38,7 +40,7 @@ export const MCP_SIGNIN_NOTE =
 export const MCP_VENDORS: readonly McpVendor[] = ["claude", "chatgpt"];
 
 /** What Claude and ChatGPT show in their connector list once it is added. */
-export const MCP_SERVER_NAME = "Lasso by Charlotte Labs";
+export const MCP_SERVER_NAME = makerLine(launchBrand());
 
 /** What people say at the end of a session to send the work over. */
 export const MCP_PUSH_PHRASE = "Push this conversation to Lasso.";

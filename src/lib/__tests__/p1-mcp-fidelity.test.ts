@@ -47,7 +47,7 @@ describe("P1 item 1 — a summary says which positions it stands for", () => {
   it("keeps a verbatim turn when a summary arrives at its position", () => {
     expect(handler).toContain("if (isSummary && priorFidelity === \"verbatim\") {");
     expect(handler).toContain("summaryRefused.push(turnNo);");
-    expect(handler).toContain("is verbatim in Lasso; a summary never replaces it");
+    expect(handler).toContain("is verbatim in ${PRODUCT}; a summary never replaces it");
   });
 
   it("lets a verbatim message replace a stored summary and clears the flag", () => {

@@ -1,6 +1,8 @@
 import { createIsomorphicFn } from "@tanstack/react-start";
 import { getCookie } from "@tanstack/react-start/server";
 
+import { BRAND_FLIPPED } from "@/design/brand/brand";
+
 /**
  * The brand skin. Lasso is the default and the only skin users see. Charlotte is the second brand, built
  * behind this switch, and turned on only by an allowed account until the default flip (P5).
@@ -39,13 +41,17 @@ export function resolveSkin({
   requested,
   email,
   host,
+  flipped = BRAND_FLIPPED,
 }: {
   current: Skin;
   requested: Skin | null;
   email: string | null | undefined;
   /** The page's hostname. Signed-out pages may follow ?brand=charlotte on preview and local hosts only (Phase 4 PR5). */
   host?: string | null | undefined;
+  /** After the flip Charlotte is the only brand, for everyone (Phase 4 PR9). */
+  flipped?: boolean;
 }): Skin {
+  if (flipped) return "charlotte";
   if (requested === "lasso") return "lasso";
   if (canUseCharlotte(email)) return requested ?? current;
   if (!email && isPreviewHost(host)) return requested ?? current;
@@ -74,12 +80,12 @@ function cookieValue(cookies: string, name: string): string | undefined {
 export const readSkinCookie = createIsomorphicFn()
   .server((): Skin => {
     try {
-      return parseSkin(getCookie(SKIN_COOKIE));
+      return BRAND_FLIPPED ? "charlotte" : parseSkin(getCookie(SKIN_COOKIE));
     } catch {
       return "lasso";
     }
   })
-  .client((): Skin => parseSkin(cookieValue(document.cookie, SKIN_COOKIE)));
+  .client((): Skin => (BRAND_FLIPPED ? "charlotte" : parseSkin(cookieValue(document.cookie, SKIN_COOKIE))));
 
 /** Browser only. Lasso clears the cookie, so the default leaves nothing behind. */
 export function writeSkinCookie(skin: Skin): void {

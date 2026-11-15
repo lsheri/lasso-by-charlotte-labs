@@ -3,11 +3,13 @@ import { render } from '@react-email/render'
 import { EmailAPIError, sendLovableEmail } from '@lovable.dev/email-js'
 import { TEMPLATES } from './registry'
 import { sendViaResend } from '../invites.server'
+import { launchBrand } from '@/design/brand/brand'
 
 // Server-only: reads LOVABLE_API_KEY or RESEND_API_KEY. Never import from client components.
 
 // Configuration baked in at scaffold time
-const SITE_NAME = "Lasso"
+// Lasso until the flip (BRAND_FLIPPED in the brand module).
+const SITE_NAME = launchBrand().name
 // SENDER_DOMAIN is the verified sender subdomain FQDN (e.g., "notify.example.com").
 // It MUST match the subdomain delegated to Lovable's nameservers. NEVER use the root domain.
 const SENDER_DOMAIN = "notify.lasso.charlotte-labs.com"

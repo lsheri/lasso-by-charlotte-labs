@@ -1,12 +1,16 @@
 /**
  * BR-2: the pure rules behind the connector's branch fetch. No network.
  */
+import { brandCopy, launchBrand } from "@/design/brand/brand";
 
 /** One answer for a missing branch, someone else's branch, or a source the caller cannot read. */
 export const BRANCH_REFUSAL = "No branch with that id is available to this connection.";
 
 /** Branch fetches read as the signed-in person, so a key-only connection cannot use them. */
-export const BRANCH_NEEDS_SIGNIN = "Branches open through the signed-in Lasso connector. Connect Lasso by signing in, then try again.";
+export const BRANCH_NEEDS_SIGNIN = brandCopy(
+  launchBrand(),
+  "Branches open through the signed-in Lasso connector. Connect Lasso by signing in, then try again.",
+);
 
 export type BranchRow = { id: string; owner_id: string | null; parent_work_item_id: string | null; source_vendor: string | null; meta: unknown };
 
