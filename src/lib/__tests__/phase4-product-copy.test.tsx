@@ -29,6 +29,13 @@ describe("brandTitle", () => {
     expect(brandTitle(charlotte, "Lasso plan | Lasso")).toBe("Lasso plan | Charlotte");
     expect(brandTitle(charlotte, "Why Lasso works")).toBe("Why Lasso works");
   });
+
+  it("moves the app's own mid-sentence titles whole (Phase 4 PR6)", () => {
+    const charlotte = brandFor("charlotte");
+    expect(brandTitle(charlotte, "Why Lasso, the coach in your corner")).toBe("Why Charlotte, the coach in your corner");
+    expect(brandTitle(charlotte, "Lasso for students | Your work record, yours")).toBe("Charlotte for students | Your work record, yours");
+    expect(brandTitle(brandFor("lasso"), "Why Lasso, the coach in your corner")).toBe("Why Lasso, the coach in your corner");
+  });
 });
 
 describe("swept components follow the skin", () => {

@@ -22,6 +22,7 @@ export function LassoLoopMark({
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
+      data-brand-mark="lasso"
     >
       <path
         d="M20 6c-7.7 0-14 6.3-14 14s6.3 14 14 14 14-6.3 14-14S27.7 6 20 6z"

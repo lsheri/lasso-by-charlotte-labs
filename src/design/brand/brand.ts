@@ -58,11 +58,21 @@ export function makerLine(brand: Brand): string {
   return brand.name === "Lasso" ? "Lasso by Charlotte Labs" : "Charlotte Labs";
 }
 
+// The app's own tab titles that name the product mid-sentence. They are matched whole, so a board titled "Why Lasso
+// works" is never mistaken for one.
+const FIXED_TITLES = new Set([
+  "Why Lasso, the coach in your corner",
+  "Lasso for students | Your work record, yours",
+  "Icons · Lasso design system",
+]);
+
 /**
  * A route's tab title in the current skin. Only the product name at the start ("Lasso | ...") or end ("... | Lasso")
- * moves: the part before the bar can be a board or chat title, the person's own words.
+ * moves, or a whole title from the app's fixed list: the part before the bar can be a board or chat title, the
+ * person's own words.
  */
 export function brandTitle(brand: Brand, title: string): string {
   if (brand.name === "Lasso") return title;
+  if (FIXED_TITLES.has(title)) return brandCopy(brand, title);
   return title.replace(/ \| Lasso$/, ` | ${brand.name}`).replace(/^Lasso \| /, `${brand.name} | `);
 }
