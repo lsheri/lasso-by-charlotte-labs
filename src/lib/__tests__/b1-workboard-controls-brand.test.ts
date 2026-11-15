@@ -47,6 +47,7 @@ describe("B1 workboard controls and brand identity", () => {
     // Phase 4 PR9: the name reads through PRODUCT, which is "Lasso" until the flip.
     expect(mcp).toContain("name: PRODUCT,");
     expect(mcp).toContain('websiteUrl: SITE_URL');
-    expect(mcp).toContain('`${SITE_URL}/favicon.svg`');
+    // Phase 4 PR12: the loop icon until the flip, Charlotte's after it.
+    expect(mcp).toContain('`${SITE_URL}/${BRAND_FLIPPED ? "charlotte-favicon.svg" : "favicon.svg"}`');
   });
 });
