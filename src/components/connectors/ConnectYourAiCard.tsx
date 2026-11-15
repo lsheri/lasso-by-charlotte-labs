@@ -37,6 +37,7 @@ import {
 } from "@/lib/mcp-setup-steps";
 import { logEvent } from "@/lib/telemetry";
 import { useBrand, useBrandCopy } from "@/components/skin/use-skin";
+import { launchBrand } from "@/design/brand/brand";
 
 /**
  * Sign-in connections now show in the list beside link connections.
@@ -150,8 +151,8 @@ export function SetupSteps({ showSignin = true }: { showSignin?: boolean }) {
           </div>
         );
       })}
-      {/* The connector server names itself Lasso until the flip, so Charlotte leaves this line out rather than say it. */}
-      {brand.name === "Lasso" ? (
+      {/* The connector server names itself Lasso until the flip, so a brand it does not match leaves this line out. */}
+      {brand.name === launchBrand().name ? (
         <p className="text-sm text-muted-foreground">
           The server shows up in your AI as <span className="text-foreground">{MCP_SERVER_NAME}</span>
           .

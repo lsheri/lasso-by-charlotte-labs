@@ -8,6 +8,7 @@
  */
 
 import { McpClientError } from "@/lib/mcp-client.server";
+import { launchBrand, makerLine } from "@/design/brand/brand";
 
 export type ProtectedResource = {
   resource: string;
@@ -132,7 +133,7 @@ export async function registerClient(
     method: "POST",
     headers: { "Content-Type": "application/json", Accept: "application/json" },
     body: JSON.stringify({
-      client_name: "Lasso by Charlotte Labs",
+      client_name: makerLine(launchBrand()),
       client_uri: new URL(redirectUri).origin,
       redirect_uris: [redirectUri],
       grant_types: ["authorization_code", "refresh_token"],

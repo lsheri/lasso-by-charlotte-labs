@@ -21,6 +21,20 @@ export function brandFor(skin: Skin): Brand {
   return BRANDS[skin];
 }
 
+/**
+ * The flip (Liam, 15 Nov 2026: "Build a flip switch, off"). While false, Lasso is the product everyone sees and
+ * Charlotte is a skin for allowed accounts and preview links. Setting it true makes Charlotte the default skin for
+ * everyone and renames what the server says on its own behalf: the connector's name and tool descriptions, its
+ * replies to the AI, the sign-in client name, the email sender name and the site's default head. Icons, the share
+ * image and the videos are files, swapped in the same PR as the flip.
+ */
+export const BRAND_FLIPPED = false;
+
+/** The brand the server speaks as when no person's skin applies: Lasso until the flip, Charlotte after. */
+export function launchBrand(flipped: boolean = BRAND_FLIPPED): Brand {
+  return BRANDS[flipped ? "charlotte" : "lasso"];
+}
+
 // "Ask Lasso" names the panel and its control ("Close Ask Lasso", "Past Ask Lasso chats"), which under Charlotte is her
 // name alone. When a verb phrase follows ("Ask Lasso about this section"), it stays an invitation: "Ask Charlotte about".
 const ASK_AS_VERB = /Ask Lasso(?= (?:about|for|where|what|how|why|anything|a |the ))/g;

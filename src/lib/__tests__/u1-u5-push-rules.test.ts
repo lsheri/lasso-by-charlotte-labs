@@ -14,7 +14,7 @@ const src = readFileSync("src/lib/mcp-handler.server.ts", "utf8");
 
 describe("U1 push rules", () => {
   it("states the new push instructions", () => {
-    for (const s of ["Never attach a file the person uploaded", "list them for the person", "under about 40 KB", "never send one about Lasso"]) {
+    for (const s of ["Never attach a file the person uploaded", "list them for the person", "under about 40 KB", "never send one about ${PRODUCT}"]) {
       expect(src).toContain(s);
     }
   });
