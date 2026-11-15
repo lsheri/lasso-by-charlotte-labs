@@ -22,7 +22,7 @@ import { displayKind, kindNoun, usedItems, usedPhrase } from "@/lib/ask-reading-
 import { parseManifest } from "@/lib/context-manifest";
 import { citationsFromManifest } from "@/lib/turn-labels";
 import { Button } from "@/components/ui/button";
-import { useBrandCopy } from "@/components/skin/use-skin";
+import { useBrand, useBrandCopy } from "@/components/skin/use-skin";
 
 function safeStore(): Storage | null {
   try { return window.localStorage; } catch { return null; }
@@ -68,6 +68,7 @@ const IDLE_ROW_H = 62;
 /** ASK-B1: Ask Lasso floating over the board, carried by the dock engine. Preview-gated. */
 export function AskDraftSurface(props: Props) {
   const copy = useBrandCopy();
+  const brand = useBrand();
   const { draft, host, ask } = props;
   const bodyRef = useRef<HTMLDivElement>(null);
   const initial = useRef(readAskPosition(draft, safeStore())).current;
@@ -118,6 +119,7 @@ export function AskDraftSurface(props: Props) {
     messages: (ask.messages ?? []).map((m) => ({ role: m.role, content: m.content })),
     used: lastUsed.map((item) => ({ title: item.title, kind: kindNoun(displayKind(item), 1) })),
     board: (ask.mapped ?? []).map((item) => ({ title: item.display_title ?? item.title, kind: item.type === "ai_thread" ? "conversation" : item.type })),
+    brand,
   });
   const h7Done = (route: H7Route, blocked: boolean, label: string, choice: H7Choice) => {
     noteWorkboardAskView(props.orgId, "handoff_opened", draft, { choice, route });

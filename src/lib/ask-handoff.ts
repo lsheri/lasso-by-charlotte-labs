@@ -1,5 +1,6 @@
 import { BRANCH_TARGETS, BRANCH_TOOLS, branchOpenPlan, isBranchTool, type BranchTool } from "@/lib/branch-targets";
 import { MCP_PUSH_PHRASE } from "@/lib/mcp-setup-steps";
+import { BRANDS, brandCopy, type Brand } from "@/design/brand/brand";
 
 type Store = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 export type HandoffVendor = "claude" | "chatgpt";
@@ -138,6 +139,8 @@ export type H7Input = {
   board: H7Piece[];
   /** A signed-in Lasso connector in that AI can read the board itself. */
   viaConnector: boolean;
+  /** Phase 4 PR4: the product name in the fixed lines. Lasso by default, byte-identical. */
+  brand?: Brand;
 };
 
 function pieceLines(pieces: H7Piece[]): string {
@@ -146,7 +149,10 @@ function pieceLines(pieces: H7Piece[]): string {
 
 /** Builds the text only when called, which is only on the person's click. */
 export function packageHandoff(input: H7Input): string {
-  const head = `I was working on the Lasso board "${input.boardTitle}". Carry it on from here.`;
+  // Only the app's fixed words go through brandCopy; board titles, messages and pieces are the person's own.
+  // The connector keeps its real name ("Lasso") until the flip renames the MCP server.
+  const b = (text: string) => brandCopy(input.brand ?? BRANDS.lasso, text);
+  const head = `${b("I was working on the Lasso board")} "${input.boardTitle}". Carry it on from here.`;
   const connector = input.viaConnector
     ? `\n\nUse the Lasso connector to open the board "${input.boardTitle}" and read the pieces named below in full.`
     : "";
@@ -155,11 +161,11 @@ export function packageHandoff(input: H7Input): string {
   if (input.choice === "full_board") {
     return `${head}${connector}\n\nEverything on the board:\n${pieceLines(input.board)}${suffix}`;
   }
-  const used = input.used.length > 0 ? `\n\nWhat Lasso used:\n${pieceLines(input.used)}` : "";
+  const used = input.used.length > 0 ? `\n\n${b("What Lasso used:")}\n${pieceLines(input.used)}` : "";
   if (input.choice === "answer_used") {
-    return `${head}${connector}\n\nLasso's answer:\n${lastAnswer}${used}${suffix}`;
+    return `${head}${connector}\n\n${b("Lasso's answer:")}\n${lastAnswer}${used}${suffix}`;
   }
-  const transcript = input.messages.map((m) => `${m.role === "user" ? "You" : "Lasso"}: ${m.content}`).join("\n\n");
+  const transcript = input.messages.map((m) => `${m.role === "user" ? "You" : b("Lasso")}: ${m.content}`).join("\n\n");
   return `${head}${connector}\n\nOur conversation:\n${transcript}${used}${suffix}`;
 }
 

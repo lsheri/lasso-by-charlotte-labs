@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/integrations/supabase/types";
+import { BRANDS, brandCopy, type Brand } from "@/design/brand/brand";
 
 import type { AiReadInput } from "./ai-reads.server";
 import type { AiMeta, ChatMessage, ModelTier } from "./ai.server";
@@ -107,9 +108,14 @@ export async function runCatalogueAnswer(
     meta: AiMeta;
     tier?: ModelTier;
     timeoutMs?: number;
+    /** Phase 4 PR4: the name in the fixed rules ("what Lasso can or cannot do"). Lasso leaves them byte-identical. */
+    brand?: Brand;
   },
   onDelta?: (delta: string) => void,
 ): Promise<CatalogueAnswer & { catalogue: Catalogue }> {
+  const brand = input.brand ?? BRANDS.lasso;
+  const catalogueRules = brandCopy(brand, CATALOGUE_RULES);
+  const answerRules = brandCopy(brand, ANSWER_RULES);
   const catalogue = await buildCatalogue(supabase, input.ownerId, input.scope);
   const state: ToolState = {
     supabase,
@@ -128,7 +134,7 @@ export async function runCatalogueAnswer(
 
   const base: ChatMessage[] = [
     ...input.prompts,
-    { role: "system", content: CATALOGUE_RULES },
+    { role: "system", content: catalogueRules },
     { role: "system", content: catalogueContext(catalogue) },
     ...input.history,
     { role: "user", content: input.question },
@@ -196,8 +202,8 @@ export async function runCatalogueAnswer(
   // The write call never sees CATALOGUE_RULES (its rule 5 says "reply READY").
   // Catalogue context and every tool result stay, so nothing fetched is lost.
   const writeConversation: ChatMessage[] = conversation.flatMap((m) =>
-    m.role === "system" && m.content === CATALOGUE_RULES
-      ? [{ role: "system" as const, content: ANSWER_RULES }]
+    m.role === "system" && m.content === catalogueRules
+      ? [{ role: "system" as const, content: answerRules }]
       : [m],
   );
   writeConversation.push({

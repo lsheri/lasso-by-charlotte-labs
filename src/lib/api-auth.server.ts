@@ -2,7 +2,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/integrations/supabase/types";
 
-export type AuthedRequest = { supabase: SupabaseClient<Database>; userId: string };
+export type AuthedRequest = { supabase: SupabaseClient<Database>; userId: string; email: string | null };
 
 /**
  * The same bearer check the server-function middleware does, for the streaming
@@ -36,7 +36,8 @@ export async function authenticateBearer(request: Request): Promise<AuthedReques
 
   const { data, error } = await supabase.auth.getClaims(token);
   if (error || !data?.claims?.sub) return null;
-  return { supabase, userId: data.claims.sub };
+  const email = typeof data.claims["email"] === "string" ? (data.claims["email"] as string) : null;
+  return { supabase, userId: data.claims.sub, email };
 }
 
 /** One newline-delimited JSON frame per event. An optional read frame, deltas, one done frame last. */
