@@ -32,7 +32,7 @@ export function AppSidebar({
     <div className="lasso-sidebar-content flex h-full w-full flex-col gap-[22px] bg-sidebar px-4 pb-[18px] pt-[22px]">
       {/* Brand */}
       <div className="flex shrink-0 items-center gap-2.5">
-        <BrandLockup size="sm" skinned />
+        <BrandLockup size="sm" />
         <div className="ml-auto shrink-0">
           <NotificationBell side="right" align="start" />
         </div>

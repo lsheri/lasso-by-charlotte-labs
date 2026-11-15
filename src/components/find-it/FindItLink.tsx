@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 
-import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
+import { BrandMark } from "@/components/layout/BrandLockup";
 
 /** One name for this way in, wherever it is offered. */
 export const FIND_IT_LINK_LABEL = "What fed this?";
@@ -31,7 +31,7 @@ export function FindItLink({
           : ""
       } ${className}`}
     >
-      <LassoLoopMark className="h-4 w-4 text-lasso-green" />
+      <BrandMark className="h-4 w-4 text-lasso-green" px={16} />
       <span>{FIND_IT_LINK_LABEL}</span>
     </Link>
   );

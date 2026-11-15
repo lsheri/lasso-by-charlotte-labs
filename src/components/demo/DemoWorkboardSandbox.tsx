@@ -8,7 +8,7 @@ import { LabRelationships } from "@/components/canvas-lab/LabRelationships";
 import { LabSticky, stickyBodyOf } from "@/components/canvas-lab/LabSticky";
 import { buildSharedBoardModel } from "@/components/canvas-lab/SharedBoardView";
 import { fitWorkboardViewport, type LabFrame, type LabLink, type LabNode, type LabResizeCorner, labInverseZoom, stageBounds } from "@/components/canvas-lab/canvas-lab-model";
-import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
+import { BrandMark, BrandWordmark } from "@/components/layout/BrandLockup";
 import { GraphiteIcon } from "@/components/notebook/icons";
 import { DeckSlide, PlaygroundProofCard, PlaygroundReplayAnswer } from "@/components/marketing/LandingBoard";
 import { LassoThinkingMark } from "@/components/reflect/LassoThinkingMark";
@@ -128,7 +128,7 @@ function DemoDeliverable({ node, clientLabel, proof, activeSlide, onSelectSlide,
 
 function DemoSidebar({ clientLabel }: { clientLabel: string }) {
   return <aside className="demo-sandbox-sidebar" aria-label="Demo workspace navigation">
-    <div className="demo-sandbox-brand"><LassoLoopMark /><span>LASSO</span></div>
+    <div className="demo-sandbox-brand"><BrandMark px={30} /><span><BrandWordmark /></span></div>
     <div className="demo-sandbox-person"><span>YS</span><div><strong>YellowSigil</strong><small>Demo workspace</small></div></div>
     <nav><p>Your organization</p><span aria-label="Overview"><GraphiteIcon name="overview" /><b>Overview</b></span><span aria-label="Work"><GraphiteIcon name="work" /><b>Work</b></span><span data-current="true" aria-label="YSM-01"><GraphiteIcon name="engagement" /><b>YSM-01</b></span><p>Workboard</p><span aria-label="Workboard"><GraphiteIcon name="example-board" /><b>Workboard</b></span><span aria-label="Conversations"><GraphiteIcon name="messages" /><b>Conversations</b></span></nav>
     <div className="demo-sandbox-client">{clientLabel}</div>

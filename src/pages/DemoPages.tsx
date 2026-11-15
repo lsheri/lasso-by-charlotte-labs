@@ -12,7 +12,6 @@ import { SharedBoardView } from "@/components/canvas-lab/SharedBoardView";
 import { DemoHomeWorkspace } from "@/components/demo/DemoHomeWorkspace";
 import { DemoWorkboardSandbox } from "@/components/demo/DemoWorkboardSandbox";
 import { DemoTourNote } from "@/components/demo/DemoTourNote";
-import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
 import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
 import { ContextAudit } from "@/components/reflect/ContextTrail";
 import { AnswerTurnLinks } from "@/components/reflect/AnswerTurnLinks";

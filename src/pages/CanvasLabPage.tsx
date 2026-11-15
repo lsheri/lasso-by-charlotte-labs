@@ -188,7 +188,7 @@ import {
 } from "@/components/canvas-lab/canvas-lab-telemetry";
 import { FaceToggle, type CardFace } from "@/design/reference/FaceToggle";
 import { useCardFace, useCardFaceOverrides, effectiveCardFace, BOARD_FACE_KEY } from "@/design/reference/useCardFace";
-import { ShellMark } from "@/components/layout/BrandLockup";
+import { BrandMark } from "@/components/layout/BrandLockup";
 import { SHARED_WITH_YOU_COPY, useSharedWithYou } from "@/components/layout/SharedWithYou";
 import { isSharedSpace } from "@/lib/shared-space";
 import { initialsOf } from "@/lib/initials";
@@ -3977,7 +3977,7 @@ export function CanvasLabPage({ engagementId, entryVia, openSticky }: { engageme
     <div className="fixed inset-0 z-50 flex bg-[var(--nb-paper)]" data-testid="canvas-lab-shell" data-interaction={interaction === "idle" && connectSource ? "connect" : interaction}>
       {stickyGhost ? <div aria-hidden="true" data-testid="sticky-drag-ghost" className="canvas-lab-sticky-ghost" data-fill={lastStickyFillRef.current} style={{ left: stickyGhost.x - (WORKBOARD_STICKY_DEFAULT_SIZE.width * zoom) / 2, top: stickyGhost.y - (WORKBOARD_STICKY_DEFAULT_SIZE.height * zoom) / 2, width: WORKBOARD_STICKY_DEFAULT_SIZE.width * zoom, height: WORKBOARD_STICKY_DEFAULT_SIZE.height * zoom }} /> : null}
       <aside className="z-30 flex w-[52px] shrink-0 flex-col items-center border-r border-border bg-card py-3">
-        <ShellMark className="h-7 w-7 text-lasso-green" />
+        <BrandMark className="h-7 w-7 text-lasso-green" px={28} />
         <div className="mt-2 hidden md:flex">
           <NotificationBell side="right" align="start" />
         </div>
