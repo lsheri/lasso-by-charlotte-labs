@@ -38,14 +38,28 @@ export function resolveSkin({
   current,
   requested,
   email,
+  host,
 }: {
   current: Skin;
   requested: Skin | null;
   email: string | null | undefined;
+  /** The page's hostname. Signed-out pages may follow ?brand=charlotte on preview and local hosts only (Phase 4 PR5). */
+  host?: string | null | undefined;
 }): Skin {
   if (requested === "lasso") return "lasso";
-  if (!canUseCharlotte(email)) return "lasso";
-  return requested ?? current;
+  if (canUseCharlotte(email)) return requested ?? current;
+  if (!email && isPreviewHost(host)) return requested ?? current;
+  return "lasso";
+}
+
+/**
+ * Hosts where a signed-out visitor may preview Charlotte: this machine and the Lovable preview. Production
+ * (lasso.charlotte-labs.com) and the published Lovable address are not here, so they stay Lasso until the flip.
+ */
+export function isPreviewHost(host: string | null | undefined): boolean {
+  if (!host) return false;
+  const h = host.toLowerCase();
+  return h === "localhost" || h === "127.0.0.1" || /^(id-)?preview--[a-z0-9-]+\.lovable\.app$/.test(h);
 }
 
 function cookieValue(cookies: string, name: string): string | undefined {

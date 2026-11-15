@@ -2,6 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 
 import { Button } from "@/components/ui/button";
 import { PublicHeader } from "@/components/layout/PublicHeader";
+import { useBrand } from "@/components/skin/use-skin";
+import { brandCopy, brandCopyDeep, makerLine } from "@/design/brand/brand";
 
 export const Route = createFileRoute("/why")({
   head: () => ({
@@ -50,6 +52,8 @@ const SECTIONS: { heading: string; body: string[] }[] = [
 ];
 
 function WhyPage() {
+  const brand = useBrand();
+  const sections = brandCopyDeep(brand, SECTIONS);
   return (
     <div className="min-h-screen bg-background">
       <PublicHeader current="/why" />
@@ -59,12 +63,14 @@ function WhyPage() {
           The best coach you didn't know you needed.
         </h1>
         <p className="mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground">
-          Lasso turns the work you already do with AI into a record you own, and makes it easy to
-          put that record in front of someone who can help you get better at it.
+          {brandCopy(
+            brand,
+            "Lasso turns the work you already do with AI into a record you own, and makes it easy to put that record in front of someone who can help you get better at it.",
+          )}
         </p>
 
         <div className="mt-16 space-y-14">
-          {SECTIONS.map((section) => (
+          {sections.map((section) => (
             <section key={section.heading} className="border-t border-[var(--nb-pencil)] pt-8">
               <p className="section-title">{section.heading}</p>
               <div className="mt-3 space-y-4">
@@ -89,7 +95,7 @@ function WhyPage() {
       <footer className="border-t border-[var(--nb-pencil)]">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-6 py-8 md:px-10">
           <p className="font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
-            Lasso by Charlotte Labs
+            {makerLine(brand)}
           </p>
           <Link
             to="/trust"

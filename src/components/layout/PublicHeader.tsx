@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 
 import { EntryDoorLink } from "./EntryDoorLink";
 import { BrandLockup } from "./BrandLockup";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 const LINKS = [
   { to: "/why" as const, label: "Why Lasso" },
@@ -11,6 +12,7 @@ const LINKS = [
 
 /** Shared marketing header. `current` hides the link for the page you're on. */
 export function PublicHeader({ current, cta }: { current?: "/" | "/why" | "/trust"; cta?: ReactNode }) {
+  const copy = useBrandCopy();
   return (
     <header className="sticky top-0 z-50 bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/75">
       <div className="grid w-full grid-cols-1 items-center gap-3 px-4 pb-4 pt-[calc(1rem+env(safe-area-inset-top))] sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-6 sm:px-8 sm:pb-6 sm:pt-[calc(1.5rem+env(safe-area-inset-top))] md:px-12">
@@ -27,7 +29,7 @@ export function PublicHeader({ current, cta }: { current?: "/" | "/why" | "/trus
               to={link.to}
               className="hidden font-mono text-[18px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground sm:inline"
             >
-              {link.label}
+              {copy(link.label)}
             </Link>
           ))}
           <Link

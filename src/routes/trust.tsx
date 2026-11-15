@@ -3,6 +3,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { TIER_COPY } from "@/lib/data-consent-shared";
 
 import { PublicHeader } from "@/components/layout/PublicHeader";
+import { useBrand } from "@/components/skin/use-skin";
+import { brandCopyDeep } from "@/design/brand/brand";
 
 export const Route = createFileRoute("/trust")({
   head: () => ({
@@ -89,21 +91,22 @@ function Section({
 }
 
 function TrustPage() {
+  const C = brandCopyDeep(useBrand(), COPY);
   return (
     <>
       <PublicHeader current="/trust" />
       <main className="min-h-screen bg-background px-6 py-16 md:px-12">
         <div className="mx-auto max-w-2xl">
-          <p className="micro-label text-[9px]">{COPY.label}</p>
-          <h1 className="page-title mt-2">{COPY.heading}</h1>
+          <p className="micro-label text-[9px]">{C.label}</p>
+          <h1 className="page-title mt-2">{C.heading}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            {COPY.intro}
+            {C.intro}
           </p>
 
           <div className="mt-12 space-y-10">
-            <Section label="01" title={COPY.titles[0]}>
+            <Section label="01" title={C.titles[0]}>
               <div className="overflow-hidden rounded-[var(--radius-control)] border border-[var(--nb-pencil)] bg-card shadow-card">
-                {COPY.matrix.map(([who, what], index) => (
+                {C.matrix.map(([who, what], index) => (
                   <div
                     key={who}
                     className={
@@ -121,27 +124,27 @@ function TrustPage() {
               </div>
             </Section>
 
-            <Section label="02" title={COPY.titles[1]}>
-              <p>{COPY.capture}</p>
-              <p>{COPY.connectors}</p>
+            <Section label="02" title={C.titles[1]}>
+              <p>{C.capture}</p>
+              <p>{C.connectors}</p>
             </Section>
 
-            <Section label="03" title={COPY.titles[2]} id="levels">
-              <p>{COPY.levelsIntro}</p>
+            <Section label="03" title={C.titles[2]} id="levels">
+              <p>{C.levelsIntro}</p>
               <ul className="space-y-3">
                 {TIER_COPY.map(({ tier, label }) => (
                   <li key={tier}>
                     <p className="font-medium">{label}</p>
-                    <p>{COPY.levels[tier]}</p>
+                    <p>{C.levels[tier]}</p>
                   </li>
                 ))}
               </ul>
-              <p>{COPY.levelsRights}</p>
+              <p>{C.levelsRights}</p>
             </Section>
 
-            <Section label="04" title={COPY.titles[3]}>
+            <Section label="04" title={C.titles[3]}>
               <ul className="space-y-2">
-                {COPY.never.map((line) => (
+                {C.never.map((line) => (
                   <li key={line} className="flex gap-3">
                     <span aria-hidden className="text-accent">◆</span>
                     <span>{line}</span>
@@ -150,22 +153,22 @@ function TrustPage() {
               </ul>
             </Section>
 
-            <Section label="05" title={COPY.titles[4]}>
-              <p>{COPY.measurement}</p>
+            <Section label="05" title={C.titles[4]}>
+              <p>{C.measurement}</p>
             </Section>
 
-            <Section label="06" title={COPY.titles[5]}>
-              <p>{COPY.deletion}</p>
+            <Section label="06" title={C.titles[5]}>
+              <p>{C.deletion}</p>
             </Section>
 
-            <Section label="07" title={COPY.titles[6]}>
-              <p>{COPY.ai}</p>
-              <p>{COPY.aiDeletion}</p>
+            <Section label="07" title={C.titles[6]}>
+              <p>{C.ai}</p>
+              <p>{C.aiDeletion}</p>
             </Section>
 
-            <Section label="08" title={COPY.titles[7]}>
+            <Section label="08" title={C.titles[7]}>
               <div className="space-y-2">
-                {COPY.subprocessors.map(([name, role]) => (
+                {C.subprocessors.map(([name, role]) => (
                   <div key={name} className="flex flex-wrap gap-x-3 gap-y-1">
                     <span className="font-medium text-foreground">{name}</span>
                     <span className="text-muted-foreground">{role}</span>
@@ -177,7 +180,7 @@ function TrustPage() {
                   href="/.well-known/trust.html"
                   className="text-accent-deep underline underline-offset-4"
                 >
-                  {COPY.attestation}
+                  {C.attestation}
                 </a>
               </p>
             </Section>
@@ -188,7 +191,7 @@ function TrustPage() {
               to="/auth"
               className="font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
             >
-              {COPY.back}
+              {C.back}
             </Link>
           </div>
         </div>

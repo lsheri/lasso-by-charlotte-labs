@@ -18,6 +18,7 @@ import {
   SET_BUTTON,
   SET_TITLE,
 } from "@/lib/password-reset";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 export const Route = createFileRoute("/reset-password")({
   ssr: false,
@@ -46,6 +47,7 @@ function isNetworkOrRate(error: { message?: string | undefined; status?: number 
 }
 
 function ResetPasswordPage() {
+  const copy = useBrandCopy();
   const { next } = Route.useSearch();
   const navigate = useNavigate();
   const [mode, setMode] = useState<"request" | "set">("request");
@@ -129,9 +131,9 @@ function ResetPasswordPage() {
             </form>
           ) : (
             <>
-              <p className="mt-3 text-[11.5px] leading-relaxed text-muted-foreground">{RESET_BODY}</p>
+              <p className="mt-3 text-[11.5px] leading-relaxed text-muted-foreground">{copy(RESET_BODY)}</p>
               {sent ? (
-                <p className="mt-8 text-sm text-accent-deep">{RESET_SENT}</p>
+                <p className="mt-8 text-sm text-accent-deep">{copy(RESET_SENT)}</p>
               ) : (
                 <form onSubmit={requestLink} className="mt-8 space-y-4">
                   <div className="space-y-1.5">
