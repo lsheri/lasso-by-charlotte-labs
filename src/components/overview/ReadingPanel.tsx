@@ -4,6 +4,7 @@ import { formatDate } from "@/lib/work-types";
 import type { WorkItemRow } from "@/lib/work-types";
 import { workDateLabel } from "@/lib/work-date-label";
 import { displayName } from "@/lib/work-item-name";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 /**
  * Figma 21:2, "What Lasso is reading". The most recent pieces that arrived
@@ -24,6 +25,7 @@ function vendorLabel(vendor: string | null | undefined, source: string | null | 
 }
 
 export function ReadingPanel({ items }: { items: WorkItemRow[] }) {
+  const copy = useBrandCopy();
   if (items.length === 0) return null;
 
   const count = items.length;
@@ -31,7 +33,7 @@ export function ReadingPanel({ items }: { items: WorkItemRow[] }) {
 
   return (
     <section className="mt-10" data-testid="overview-reading">
-      <SectionHeader title="What Lasso is reading" />
+      <SectionHeader title={copy("What Lasso is reading")} />
       <ToneCard tone="paper" label={label} className="w-[560px] max-w-full">
         <ul className="mt-1 flex flex-col gap-2">
           {items.map((item) => (

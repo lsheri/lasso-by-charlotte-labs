@@ -22,6 +22,7 @@ import { displayKind, kindNoun, usedItems, usedPhrase } from "@/lib/ask-reading-
 import { parseManifest } from "@/lib/context-manifest";
 import { citationsFromManifest } from "@/lib/turn-labels";
 import { Button } from "@/components/ui/button";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 function safeStore(): Storage | null {
   try { return window.localStorage; } catch { return null; }
@@ -66,6 +67,7 @@ const IDLE_ROW_H = 62;
 
 /** ASK-B1: Ask Lasso floating over the board, carried by the dock engine. Preview-gated. */
 export function AskDraftSurface(props: Props) {
+  const copy = useBrandCopy();
   const { draft, host, ask } = props;
   const bodyRef = useRef<HTMLDivElement>(null);
   const initial = useRef(readAskPosition(draft, safeStore())).current;
@@ -303,7 +305,7 @@ export function AskDraftSurface(props: Props) {
     "data-no-drag": "",
     role: "separator",
     "aria-orientation": "horizontal" as const,
-    "aria-label": "Make Ask Lasso longer or shorter",
+    "aria-label": copy("Make Ask Lasso longer or shorter"),
     tabIndex: 0,
     "aria-valuemin": Math.round(minHeight()),
     "aria-valuemax": Math.max(Math.round(minHeight()), Math.round(maxHeight())),
@@ -354,7 +356,7 @@ export function AskDraftSurface(props: Props) {
       ) : null}
       <section
         ref={dock.surfaceRef as RefObject<HTMLElement>}
-        aria-label="Ask Lasso"
+        aria-label={copy("Ask Lasso")}
         className={`ask-draft ask-draft-${draft}`}
         data-position={dock.dock}
         data-collapsed={collapsed ? "true" : undefined}
@@ -373,7 +375,7 @@ export function AskDraftSurface(props: Props) {
       >
         {showEdges ? <div {...edgeProps("top")} /> : null}
         <div className="ask-draft-head">
-          <div role="button" tabIndex={0} className="ask-draft-grip" aria-label="Move Ask Lasso" onKeyDown={onGripKey}>
+          <div role="button" tabIndex={0} className="ask-draft-grip" aria-label={copy("Move Ask Lasso")} onKeyDown={onGripKey}>
             <svg width="10" height="16" viewBox="0 0 10 16" aria-hidden="true">
               {[2, 8, 14].flatMap((cy) => [2, 8].map((cx) => <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r="1.5" fill="currentColor" />))}
             </svg>
@@ -386,7 +388,7 @@ export function AskDraftSurface(props: Props) {
           {draft === "b" && ask.pending ? (
             <AskTitleStatus turnKey={turnKey} manifest={ask.liveManifest} streamed={ask.streamed} />
           ) : (
-            <span className="ask-draft-title">Ask Lasso</span>
+            <span className="ask-draft-title">{copy("Ask Lasso")}</span>
           )}
           {draft === "b" && props.tab !== "history" ? (
             <button type="button" className="ask-draft-pin" data-idle={!pinned && !canPin ? "true" : undefined} data-on={pinned ? "true" : undefined} data-was={!pinned && props.wasPinned ? "true" : undefined} aria-pressed={pinned} aria-label={pinLabel} title={pinLabel} disabled={!pinned && !canPin} onClick={onPinClick}>
@@ -403,14 +405,15 @@ export function AskDraftSurface(props: Props) {
             <button
               type="button"
               className="ask-draft-head-icon"
-              aria-label={folded ? "Expand Ask Lasso" : "Collapse Ask Lasso"}
+              aria-label={copy(folded ? "Expand Ask Lasso" : "Collapse Ask Lasso")}
+              data-ask-head="fold"
               aria-expanded={!folded}
               onClick={() => { noteWorkboardAskView(props.orgId, folded ? "expanded" : "folded", draft); setExpanded(folded); setFolded(!folded); }}
             >
               {folded ? <ChevronsUpDown size={16} aria-hidden="true" /> : <ChevronsDownUp size={16} aria-hidden="true" />}
             </button>
           )}
-          <button type="button" className="ask-draft-head-icon" aria-label="Close Ask Lasso" onClick={props.onClose}>
+          <button type="button" className="ask-draft-head-icon" aria-label={copy("Close Ask Lasso")} data-ask-head="close" onClick={props.onClose}>
             <X size={16} aria-hidden="true" />
           </button>
         </div>

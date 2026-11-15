@@ -103,6 +103,7 @@ describe("R5 board toolbar", () => {
   it("retains an accessible name and tooltip for every icon-only control", () => {
     for (const label of ["Working from", "Add text", "Draw a workstream", "Add work", "Info", "See an example board", "Sticky", "Draw a section", "Suggest workstreams", "Ask Lasso", "Share", "Fit", "Zoom out", "Zoom in", "More tools"]) {
       if (label === "More tools") expect(surface).toContain('"More tools"');
+      else if (label === "Ask Lasso") expect(page).toContain('aria-label={copy("Ask Lasso")}'); // Phase 4: the skin names it
       else expect(`${page}\n${share}`).toContain(`aria-label="${label}"`);
     }
     expect(toolbar.match(/<ToolbarIcon label=/g)?.length).toBeGreaterThanOrEqual(8);

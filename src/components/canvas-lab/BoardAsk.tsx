@@ -11,6 +11,7 @@ import { useAskDockState } from "@/components/reflect/ask-dock-state";
 import { useAskLasso, type SectionAskSource } from "@/components/reflect/use-ask-lasso";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { usePerfOpenFinish } from "@/hooks/use-perf-timer";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 /** A section offered in the Ask Lasso scope picker. Live from the board. */
 export type AskSectionChoice = { id: string; title: string | null; marker: string | null };
@@ -58,6 +59,7 @@ function safeStore(): Storage | null {
  * and the stage simply gets narrower.
  */
 function BoardAskPanel(props: Props & { draft?: AskDraft | null; pendingSessionId?: string | null; onPendingDone?: () => void }) {
+  const copy = useBrandCopy();
   const { engagementId, engagementTitle, profileId, orgId } = props;
   const { width, tab, setTab } = useAskDockState();
   const ask = useAskLasso({ open: true, engagementId, engagementTitle, profileId, orgId, sectionSource: props.sectionSource });
@@ -148,7 +150,7 @@ function BoardAskPanel(props: Props & { draft?: AskDraft | null; pendingSessionI
   return (
     <AskBoardPickedContext.Provider value={ask.boardPickActive}>
     <aside
-      aria-label="Ask Lasso"
+      aria-label={copy("Ask Lasso")}
       className="z-20 flex min-h-0 shrink-0 flex-col border-l border-border bg-background"
       style={{ width }}
     >

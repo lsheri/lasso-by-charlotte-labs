@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { SectionBackgroundPicker, SECTION_BACKGROUND_COPY } from "@/components/canvas-lab/SectionBackgroundPicker";
 import type { RegionFill } from "@/lib/board-region";
 import { SECTION_TITLE_PLACEHOLDER, dayOf, isWeekPeriod, markerLabel, monthOf, sectionTitle, setNumberMarker, setPeriodMarker, shift, weekOf, type SectionMarker } from "@/lib/board-section";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 type MarkedRect = { x: number; y: number; width: number; height: number; periodStart?: string | null; periodEnd?: string | null };
 export const NEXT_WEEK_SECTION_GAP = 40;
@@ -67,6 +68,7 @@ export function LabSection({ frame, title, selected, editable, autoName = false,
   onNewNextWeek?: (() => void) | undefined;
   onAsk?: (() => void) | undefined;
 }) {
+  const copy = useBrandCopy();
   const rootRef = useRef<HTMLElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const editingRef = useRef(false);
@@ -177,7 +179,7 @@ export function LabSection({ frame, title, selected, editable, autoName = false,
       </DropdownMenuTrigger><DropdownMenuContent onCloseAutoFocus={(event) => { event.preventDefault(); if (!editingRef.current) rootRef.current?.focus({ preventScroll: true }); }}>
         <DropdownMenuItem onSelect={beginRename}>Rename</DropdownMenuItem>
         {onFill ? <DropdownMenuItem onSelect={() => setBackgroundOpen(true)}>{SECTION_BACKGROUND_COPY.background}</DropdownMenuItem> : null}
-        {onAsk ? <DropdownMenuItem onSelect={onAsk}>{SECTION_MARKER_COPY.ask}</DropdownMenuItem> : null}
+        {onAsk ? <DropdownMenuItem onSelect={onAsk}>{copy(SECTION_MARKER_COPY.ask)}</DropdownMenuItem> : null}
         {canMark ? <>
           <DropdownMenuItem onSelect={() => openPicker("period", "menu")}>{SECTION_MARKER_COPY.setPeriod}</DropdownMenuItem>
           <DropdownMenuItem onSelect={() => openPicker("number", "menu")}>{SECTION_MARKER_COPY.setNumber}</DropdownMenuItem>

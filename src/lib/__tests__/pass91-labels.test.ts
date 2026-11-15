@@ -52,7 +52,7 @@ describe("pass91 label colour hierarchy", () => {
   it("paints AI-presence labels green and never as a filled surface", () => {
     expect(read("src/components/reflect/AnalysisLens.tsx")).toContain("micro-label micro-label-ai");
     expect(read("src/components/reflect/AskSurface.tsx")).toContain(
-      '<p className="micro-label micro-label-ai pr-12">Ask Lasso</p>',
+      '<p className="micro-label micro-label-ai pr-12">{copy("Ask Lasso")}</p>',
     );
     expect(read("src/components/peek/AiReads.tsx")).toContain("micro-label micro-label-ai");
     expect(styles).not.toMatch(/@utility micro-label-ai \{[^}]*background/);

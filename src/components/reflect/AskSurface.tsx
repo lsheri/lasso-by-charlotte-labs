@@ -37,6 +37,7 @@ import { useHasLiveCoachLink } from "@/hooks/use-coaching-links";
 import { citationsFromManifest, extractTurnRefs, turnRefsFromCitations, type TurnRef } from "@/lib/turn-labels";
 import { AnswerTurnLinks } from "@/components/reflect/AnswerTurnLinks";
 import { ThreadViewerById } from "@/components/work/ThreadViewerById";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 type AskComposerKeyEvent = {
   key: string;
@@ -109,8 +110,9 @@ export function AskTabs({
   onTab: (tab: AskTab) => void;
   onNewChat?: (() => void) | undefined;
 }) {
+  const copy = useBrandCopy();
   return (
-    <div className="nb-ask-tabs" role="tablist" aria-label="Ask Lasso">
+    <div className="nb-ask-tabs" role="tablist" aria-label={copy("Ask Lasso")} data-ask-tabs="">
       {TABS.map((entry) => (
         <button
           key={entry.id}
@@ -265,6 +267,8 @@ export function askScopeSummary(
   ask: Pick<AskLasso, "draftPointed" | "boardPickedCount" | "engagementBrief" | "selectedItems" | "mapped">,
   boardPicked: boolean,
   workstream?: { name: string; ids: string[] } | null,
+  /** The skin's name for who reads (Phase 4). Passed in, never rewritten afterwards, because a workstream name is the person's own words. */
+  name = "Lasso",
 ): { pill: string; count: number; sentence: string } {
   const onWorkstream =
     workstream != null &&
@@ -273,39 +277,40 @@ export function askScopeSummary(
   const pieces = (n: number) => `${n} ${n === 1 ? "piece" : "pieces"}`;
   if (ask.draftPointed.length > 0) {
     const n = ask.draftPointed.length;
-    return { pill: "Pointed at", count: n, sentence: `Lasso will read the ${pieces(n)} you pointed at, as written.` };
+    return { pill: "Pointed at", count: n, sentence: `${name} will read the ${pieces(n)} you pointed at, as written.` };
   }
   if (boardPicked && ask.boardPickedCount === 0) {
     return ask.engagementBrief
-      ? { pill: "Brief only", count: 0, sentence: "Nothing you picked has work to read, so Lasso will use the brief." }
+      ? { pill: "Brief only", count: 0, sentence: `Nothing you picked has work to read, so ${name} will use the brief.` }
       : { pill: "Nothing picked", count: 0, sentence: "Nothing you picked has work to read." };
   }
   if (boardPicked) {
     const n = ask.boardPickedCount;
-    return { pill: "Picked", count: n, sentence: `Lasso will read the ${pieces(n)} you picked on the board, as written.` };
+    return { pill: "Picked", count: n, sentence: `${name} will read the ${pieces(n)} you picked on the board, as written.` };
   }
   if (onWorkstream) {
     const n = ask.selectedItems.length;
-    return { pill: workstream.name, count: n, sentence: `Lasso will read the ${pieces(n)} in ${workstream.name}, as written.` };
+    return { pill: workstream.name, count: n, sentence: `${name} will read the ${pieces(n)} in ${workstream.name}, as written.` };
   }
   if (ask.selectedItems.length === ask.mapped.length) {
     const n = ask.mapped.length;
-    return { pill: "Whole board", count: n, sentence: `Lasso will read all ${n} ${n === 1 ? "piece" : "pieces"} of work on this board, as written.` };
+    return { pill: "Whole board", count: n, sentence: `${name} will read all ${n} ${n === 1 ? "piece" : "pieces"} of work on this board, as written.` };
   }
   const n = ask.selectedItems.length;
-  return { pill: "Selected", count: n, sentence: `Lasso will read the ${pieces(n)} of work you selected, as written.` };
+  return { pill: "Selected", count: n, sentence: `${name} will read the ${pieces(n)} of work you selected, as written.` };
 }
 
 export function AskScopePill({ ask, workstream }: { ask: AskLasso; workstream?: { name: string; ids: string[] } | null }) {
+  const copy = useBrandCopy();
   const boardPicked = useContext(AskBoardPickedContext);
-  const scope = askScopeSummary(ask, boardPicked, workstream);
+  const scope = askScopeSummary(ask, boardPicked, workstream, copy("Lasso"));
   return (
     <button
       type="button"
       className="ask-cc-pill"
       data-testid="ask-scope-pill"
       title={scope.sentence}
-      aria-label={`${scope.sentence} Change what Lasso reads`}
+      aria-label={`${scope.sentence} ${copy("Change what Lasso reads")}`}
       aria-expanded={ask.pickerOpen}
       onClick={() => ask.setPickerOpen(!ask.pickerOpen)}
     >
@@ -316,8 +321,9 @@ export function AskScopePill({ ask, workstream }: { ask: AskLasso; workstream?: 
 }
 
 export function AskScopeLine({ ask, workstream }: { ask: AskLasso; workstream?: { name: string; ids: string[] } | null }) {
+  const copy = useBrandCopy();
   const boardPicked = useContext(AskBoardPickedContext);
-  const scope = askScopeSummary(ask, boardPicked, workstream);
+  const scope = askScopeSummary(ask, boardPicked, workstream, copy("Lasso"));
   return (
     <p className="ask-cc-scope" data-testid="ask-scope-line">
       {scope.sentence}{" "}
@@ -389,6 +395,7 @@ function WorkPicker({
 
 /** The transcript, on binder paper. Every line sits on the 28px pitch. */
 export function MessagesTab({ ask, emptyActions, statusInTitle = false }: { ask: AskLasso; emptyActions?: React.ReactNode; statusInTitle?: boolean }) {
+  const copy = useBrandCopy();
   const messages = ask.messages ?? [];
   const unanswered = unansweredQuestionIds(messages, ask.pending);
   // V2-2: reading states and the one-line receipt compare against the last answer's read set.
@@ -449,7 +456,7 @@ export function MessagesTab({ ask, emptyActions, statusInTitle = false }: { ask:
     return (
       <span className="nb-binder-line flex min-w-0 items-baseline gap-2">
         <span className="font-sans text-[13px] font-semibold text-ink">
-          {assistant ? "Lasso" : "You"}
+          {assistant ? copy("Lasso") : "You"}
         </span>
         <time className="text-[11px] text-soft" dateTime={dateTime} suppressHydrationWarning>
           {shortTime(time)}
@@ -961,6 +968,7 @@ export function AskSurface({
   composerRowExtra?: React.ReactNode;
   composerScopeLine?: boolean;
 }) {
+  const copy = useBrandCopy();
   return (
     <>
       <header className="shrink-0 border-b border-border px-4 pb-2 pt-[calc(1rem+env(safe-area-inset-top))]">
@@ -978,7 +986,7 @@ export function AskSurface({
               />
             ) : (
               <>
-                <p className="micro-label micro-label-ai pr-12">Ask Lasso</p>
+                <p className="micro-label micro-label-ai pr-12">{copy("Ask Lasso")}</p>
                 <h2 className="page-title mt-1 break-words text-[17px] leading-snug">
                   {engagementTitle}
                 </h2>

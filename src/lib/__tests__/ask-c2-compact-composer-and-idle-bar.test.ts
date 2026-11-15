@@ -59,7 +59,7 @@ describe("C2: idle bar and collapse", () => {
   });
   it("history sits in the row before Send; the head hides its own history and collapse", () => {
     expect(draft).toMatch(/composerRowExtra=\{idleBar \? \(\s*<button type="button" className="ask-cc-icon" aria-label="Past conversations"/);
-    expect(css).toMatch(/\[aria-label="Expand Ask Lasso"\], \[aria-label="Collapse Ask Lasso"\]\) \{ display: none; \}/);
+    expect(css).toMatch(/\[aria-label="History"\], \[data-ask-head="fold"\]\) \{ display: none; \}/);
     // GRIP-1: the grip stays, small, in the corner and out of the row's flow.
     expect(css).toContain('.ask-draft[data-idle-bar="true"] .ask-draft-grip { position: absolute; left: 5px; top: 3px; z-index: 3; width: 12px; height: 15px; margin: 0; opacity: .55;');
     expect(css).not.toContain('.ask-draft[data-idle-bar="true"] .ask-draft-grip { display: none; }');

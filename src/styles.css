@@ -7294,7 +7294,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 [data-lasso="on"] nav[data-testid="settings-rail"] button[aria-current="true"] {
   box-shadow: inset var(--here-weight) 0 0 0 var(--here-rule), var(--tw-ring-offset-shadow, 0 0 transparent), var(--tw-ring-shadow, 0 0 transparent), var(--tw-shadow, 0 0 transparent);
 }
-[data-lasso="on"] .nb-ask-tabs[role="tablist"][aria-label="Ask Lasso"] > .nb-ask-tab[role="tab"][aria-selected="true"] {
+[data-lasso="on"] .nb-ask-tabs[role="tablist"][data-ask-tabs] > .nb-ask-tab[role="tab"][aria-selected="true"] {
   border-bottom-color: transparent;
   box-shadow: inset 0 calc(-1 * var(--here-weight)) 0 0 var(--here-rule), var(--tw-ring-offset-shadow, 0 0 transparent), var(--tw-ring-shadow, 0 0 transparent), var(--tw-shadow, 0 0 transparent);
 }
@@ -8477,7 +8477,7 @@ main[data-ask-lock] .canvas-lab-floating-tools-wrapper { left: calc(12px + var(-
 /* V2-1 (A1, behind ask-v2): unused, Ask is one slim row. Grip, mark, composer and close only; the scope line,
    hints and tabs come back the moment you click into it. Height follows, because hidden parts are not measured. */
 .ask-draft[data-idle-bar="true"] .ask-draft-body > :not(.sticky) { display: none; }
-.ask-draft[data-idle-bar="true"] .ask-draft-head :is(.ask-draft-title, .ask-draft-pin, .ask-draft-new, [aria-label="History"], [aria-label="Expand Ask Lasso"], [aria-label="Collapse Ask Lasso"]) { display: none; }
+.ask-draft[data-idle-bar="true"] .ask-draft-head :is(.ask-draft-title, .ask-draft-pin, .ask-draft-new, [aria-label="History"], [data-ask-head="fold"]) { display: none; }
 .ask-draft[data-idle-bar="true"] .ask-draft-handoff-hint { display: none; }
 /* V2-1b: the idle bar is one 64 px row: grip, mark, a one-line composer, close. The head's box steps aside
    (display: contents) so its controls sit in the same row as the composer; the scope line and Past
@@ -8485,7 +8485,7 @@ main[data-ask-lock] .canvas-lab-floating-tools-wrapper { left: calc(12px + var(-
 .ask-draft[data-idle-bar="true"] { flex-direction: row; align-items: center; }
 .ask-draft[data-idle-bar="true"] .ask-draft-head { display: contents; }
 .ask-draft[data-idle-bar="true"] .ask-draft-grip { margin-left: 8px; }
-.ask-draft[data-idle-bar="true"] .ask-draft-head [aria-label="Close Ask Lasso"] { order: 3; margin: 0 10px 0 2px; }
+.ask-draft[data-idle-bar="true"] .ask-draft-head [data-ask-head="close"] { order: 3; margin: 0 10px 0 2px; }
 .ask-draft[data-idle-bar="true"] .ask-draft-body { order: 2; flex: 1; align-self: stretch; justify-content: center; }
 .ask-draft[data-idle-bar="true"] .ask-draft-body footer { border-top: 0; background: transparent; }
 .ask-draft[data-idle-bar="true"] [data-ask-composer-pad] { padding: 13px 0 13px 4px; }
@@ -8559,7 +8559,7 @@ footer[data-compact] [data-ask-composer-pad] { padding: 8px 8px 8px 14px; }
 .ask-draft[data-idle-bar="true"] .ask-draft-grip svg { width: 7px; height: 11px; }
 .ask-draft[data-idle-bar="true"] .ask-draft-grip:hover, .ask-draft[data-idle-bar="true"] .ask-draft-grip:focus-visible { opacity: .95; }
 .ask-draft[data-idle-bar="true"] .ask-draft-mark { align-self: flex-start; margin: 19px 2px 0 14px; cursor: grab; }
-.ask-draft[data-idle-bar="true"] .ask-draft-head [aria-label="Close Ask Lasso"] { align-self: flex-start; margin-top: 17px; }
+.ask-draft[data-idle-bar="true"] .ask-draft-head [data-ask-head="close"] { align-self: flex-start; margin-top: 17px; }
 .ask-draft[data-idle-bar="true"] footer[data-compact] [data-ask-composer-pad] { padding: 13px 0 13px 4px; }
 .ask-draft[data-idle-bar="true"] .ask-cc { flex-direction: row; align-items: center; gap: 6px; }
 .ask-draft[data-idle-bar="true"] .ask-cc .ask-cc-input { flex: 1; min-width: 0; min-height: 36px; height: 36px; padding: 8px 0; font-size: 14px; white-space: nowrap; overflow: hidden; }

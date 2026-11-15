@@ -34,6 +34,7 @@ import { ContextAudit } from "@/components/reflect/ContextTrail";
 import { logEvent } from "@/lib/telemetry";
 import { isDeliverableType } from "@/lib/lineage-shared";
 import type { WorkItemRow } from "@/lib/work-types";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 /** What the chips point at, worked out from the chat's current scope. */
 export type ChipTarget =
@@ -440,6 +441,7 @@ export function AnalysisChips({
   orgId?: string | undefined;
   profileId?: string | undefined;
 }) {
+  const copy = useBrandCopy();
   const [confirming, setConfirming] = useState<AnalysisConfirmRequest | null>(null);
   // Each active check is offered on its own, so the chips need the checks
   // themselves and not only how many of them there are.
@@ -455,7 +457,7 @@ export function AnalysisChips({
       <Suggested className={className}>
         <div className="flex items-center gap-2">
           <SuggestDot />
-          <p className="text-xs text-ember-deep">Analyses Lasso can run on this work</p>
+          <p className="text-xs text-ember-deep">{copy("Analyses Lasso can run on this work")}</p>
         </div>
         {target.reason === "empty" || engagementOptions.length === 0 ? (
           <p className="mt-2 text-xs text-muted-foreground">
