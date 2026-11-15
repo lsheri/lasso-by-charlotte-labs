@@ -30,8 +30,8 @@ export function SkinProvider({ initial, children }: { initial: Skin; children: R
     setSkin(next);
   }, [loading, email, skin]);
 
-  // Phase 4: route heads write "... | Lasso" without knowing the skin, so under Charlotte the tab title is renamed
-  // each time the router sets it. Lasso never observes anything.
+  // Phase 4: route heads write "... | Lasso" without knowing the skin. BrandHeadContent renames the first title on the
+  // server (PR11); this catches a skin chosen after load, renaming each time the router sets it. Lasso never observes anything.
   useEffect(() => {
     if (skin === "lasso") return;
     const brand = brandFor(skin);
