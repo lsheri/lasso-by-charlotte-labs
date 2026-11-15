@@ -121,6 +121,7 @@ export function TourActTwo({ register, hint: _hint, onComplete }: { register: Re
 }
 
 export function TourActThree({ register, onComplete }: { register: Register; onComplete: () => void }) {
+  const copy = useBrandCopy();
   const act = actById(register, 5); const [grouped, setGrouped] = useState(false); const [box, setBox] = useState<Box | null>(null);
   const boardRef = useRef<HTMLDivElement>(null); const startRef = useRef<{ x: number; y: number } | null>(null);
   const group = () => { if (grouped) return; setGrouped(true); onComplete(); };
@@ -128,7 +129,7 @@ export function TourActThree({ register, onComplete }: { register: Register; onC
     const required = GROUP_IDS.map((id) => boardRef.current?.querySelector<HTMLElement>(`[data-tour-layout-id="${id}"]`)?.getBoundingClientRect()).filter((rect) => rect !== undefined);
     if (required.length === 3 && required.every((rect) => left <= rect.left && top <= rect.top && right >= rect.right && bottom >= rect.bottom)) group();
   });
-  return <TourWorkboard active={grouped ? null : "group"} onGroup={group}><div className="tour-shared-act" data-testid="tour-act-three" {...handlers} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); group(); } }}><TourBoard register={register} state={{ act: 5, selectedIds: GROUP_IDS, groupedIds: grouped ? GROUP_IDS : [], glowingIds: grouped ? GROUP_IDS : [] }} className="tour-board-act" boardRef={boardRef}>{box ? <span className="tour-marquee" style={{ left: `calc(${box.x}px / var(--tour-scale, 1))`, top: `calc(${box.y}px / var(--tour-scale, 1))`, width: `calc(${box.width}px / var(--tour-scale, 1))`, height: `calc(${box.height}px / var(--tour-scale, 1))` }} /> : null}{grouped ? <p className="tour-context-sentence">{act?.contextSentence}</p> : null}</TourBoard></div></TourWorkboard>;
+  return <TourWorkboard active={grouped ? null : "group"} onGroup={group}><div className="tour-shared-act" data-testid="tour-act-three" {...handlers} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); group(); } }}><TourBoard register={register} state={{ act: 5, selectedIds: GROUP_IDS, groupedIds: grouped ? GROUP_IDS : [], glowingIds: grouped ? GROUP_IDS : [] }} className="tour-board-act" boardRef={boardRef}>{box ? <span className="tour-marquee" style={{ left: `calc(${box.x}px / var(--tour-scale, 1))`, top: `calc(${box.y}px / var(--tour-scale, 1))`, width: `calc(${box.width}px / var(--tour-scale, 1))`, height: `calc(${box.height}px / var(--tour-scale, 1))` }} /> : null}{grouped ? <p className="tour-context-sentence">{act?.contextSentence ? copy(act.contextSentence) : null}</p> : null}</TourBoard></div></TourWorkboard>;
 }
 
 function TourAskMimic({ register, visibleClaims, generating, onAsk }: { register: Register; visibleClaims: number; generating: boolean; onAsk: () => void }) {
@@ -206,15 +207,16 @@ export function TourActSix({ register }: { register: Register }) {
 export const TOUR_TURN_DELAY_MS = 900;
 
 function TourPushChat({ chat, shown, reduced, pushed }: { chat: TourPushedChat; shown: number; reduced: boolean; pushed: boolean }) {
+  const copy = useBrandCopy();
   const ready = shown >= chat.turns.length + 2;
   return <section className={`tour-chat-window${ready ? " is-ready" : ""}${pushed ? " is-pushed" : ""}`} aria-label={`AI chat: ${chat.title}`} data-reduced={reduced ? "" : undefined}>
     <header><ToolBadge tool={chat.source} size="sm" /><strong>{chat.title}</strong></header>
     <ol className="tour-chat-turns">
       {chat.turns.slice(0, Math.min(shown, chat.turns.length)).map((turn, index) => <li key={index} className="tour-chat-turn" data-role={turn.role}>{turn.text}</li>)}
-      {shown > chat.turns.length ? <li className="tour-chat-turn is-push-line" data-role="user">{chat.pushLine}</li> : null}
+      {shown > chat.turns.length ? <li className="tour-chat-turn is-push-line" data-role="user">{copy(chat.pushLine)}</li> : null}
     </ol>
     {/* The window states its own outcome, so the one button stays one button. */}
-    <footer>{pushed ? <span className="after-pushed-note">{chat.pushedLabel}</span> : null}</footer>
+    <footer>{pushed ? <span className="after-pushed-note">{copy(chat.pushedLabel)}</span> : null}</footer>
   </section>;
 }
 

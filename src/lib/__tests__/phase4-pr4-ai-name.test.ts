@@ -69,13 +69,14 @@ describe("the hand-off to another AI", () => {
     }
   });
 
-  it("uses Charlotte's name for the app's words and keeps the person's words and the connector's real name", () => {
+  it("uses Charlotte's name for the app's words, the connector line and the push phrase, and keeps the person's words", () => {
     const chat = packageHandoff({ ...base, choice: "chat_and_used", brand: charlotte });
     expect(chat).toContain('I was working on the Charlotte board "Lasso pilot board".');
     expect(chat).toContain("Charlotte: Yes.");
     expect(chat).toContain("You: Can I push to Lasso from Claude?");
     expect(chat).toContain("What Charlotte used:");
-    expect(chat).toContain("Use the Lasso connector");
+    expect(chat).toContain("Use the Charlotte connector");
+    expect(chat).toContain("When we are done, say: Push this conversation to Charlotte.");
     const answer = packageHandoff({ ...base, choice: "answer_used", brand: charlotte });
     expect(answer).toContain("Charlotte's answer:\nYes.");
   });

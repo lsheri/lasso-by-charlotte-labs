@@ -37,6 +37,8 @@ const SURFACES: Surface[] = [
   { id: "join", path: "/join?brand=charlotte", auth: false },
   { id: "board-invite", path: "/board-invite?brand=charlotte", auth: false },
   { id: "no-access", path: "/no-access?brand=charlotte", auth: false },
+  { id: "demo-sources", path: "/demo/sources?brand=charlotte", auth: false },
+  { id: "tour-preview", path: "/tour-preview?brand=charlotte", auth: false },
   { id: "home", path: "/home", auth: true },
   { id: "all-work", path: "/work", auth: true },
   { id: "board", path: "/home", auth: true, open: openFirstBoard },

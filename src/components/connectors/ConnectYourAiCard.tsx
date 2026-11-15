@@ -36,6 +36,7 @@ import {
   VENDOR_LABELS,
 } from "@/lib/mcp-setup-steps";
 import { logEvent } from "@/lib/telemetry";
+import { useBrand, useBrandCopy } from "@/components/skin/use-skin";
 
 /**
  * Sign-in connections now show in the list beside link connections.
@@ -105,6 +106,8 @@ export function connectorStatusLine(
 }
 
 export function SetupSteps({ showSignin = true }: { showSignin?: boolean }) {
+  const copy = useBrandCopy();
+  const brand = useBrand();
   return (
     <div className="space-y-4 rounded-[var(--radius)] border border-border bg-secondary/60 px-4 py-4">
       {MCP_VENDORS.map((vendor) => {
@@ -120,7 +123,7 @@ export function SetupSteps({ showSignin = true }: { showSignin?: boolean }) {
                   {signinSteps.map((step, index) => (
                     <li key={step} className="flex gap-2 text-sm text-muted-foreground">
                       <span className="font-mono text-[11px] text-accent-deep">{index + 1}</span>
-                      <span>{step}</span>
+                      <span>{copy(step)}</span>
                     </li>
                   ))}
                 </ol>
@@ -129,7 +132,7 @@ export function SetupSteps({ showSignin = true }: { showSignin?: boolean }) {
                   {MCP_SETUP_STEPS[vendor].map((step, index) => (
                     <li key={step} className="flex gap-2 text-sm text-muted-foreground">
                       <span className="font-mono text-[11px] text-accent-deep">{index + 1}</span>
-                      <span>{step}</span>
+                      <span>{copy(step)}</span>
                     </li>
                   ))}
                 </ol>
@@ -139,7 +142,7 @@ export function SetupSteps({ showSignin = true }: { showSignin?: boolean }) {
                 {MCP_SETUP_STEPS[vendor].map((step, index) => (
                   <li key={step} className="flex gap-2 text-sm text-muted-foreground">
                     <span className="font-mono text-[11px] text-accent-deep">{index + 1}</span>
-                    <span>{step}</span>
+                    <span>{copy(step)}</span>
                   </li>
                 ))}
               </ol>
@@ -147,12 +150,15 @@ export function SetupSteps({ showSignin = true }: { showSignin?: boolean }) {
           </div>
         );
       })}
+      {/* The connector server names itself Lasso until the flip, so Charlotte leaves this line out rather than say it. */}
+      {brand.name === "Lasso" ? (
+        <p className="text-sm text-muted-foreground">
+          The server shows up in your AI as <span className="text-foreground">{MCP_SERVER_NAME}</span>
+          .
+        </p>
+      ) : null}
       <p className="text-sm text-muted-foreground">
-        The server shows up in your AI as <span className="text-foreground">{MCP_SERVER_NAME}</span>
-        .
-      </p>
-      <p className="text-sm text-muted-foreground">
-        Then, at the end of any session, say “{MCP_PUSH_PHRASE}”
+        Then, at the end of any session, say “{copy(MCP_PUSH_PHRASE)}”
       </p>
       <p className="text-sm text-muted-foreground">{MCP_PUSH_BLOCKED_NOTE}</p>
     </div>
@@ -412,6 +418,7 @@ export function ConnectionRowView({
 }
 
 export function ConnectYourAiCard() {
+  const copy = useBrandCopy();
   const queryClient = useQueryClient();
   const { data: profile } = useProfile();
   const fetchList = useServerFn(listConnections);
@@ -493,7 +500,7 @@ export function ConnectYourAiCard() {
           </div>
         </div>
         <p className="mt-1.5 max-w-2xl nb-type-small leading-[17px] text-muted-foreground">
-          {AI_TOOLS_COPY.sub}
+          {copy(AI_TOOLS_COPY.sub)}
         </p>
 
         {visible.length > 0 ? (
@@ -552,7 +559,7 @@ export function ConnectYourAiCard() {
         <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-2">
           <button
             type="button"
-            onClick={() => void copyText(SETUP_INSTRUCTIONS, "Setup instructions")}
+            onClick={() => void copyText(copy(SETUP_INSTRUCTIONS), "Setup instructions")}
             className="text-xs font-medium text-accent-deep transition-opacity hover:opacity-70"
           >
             Copy setup instructions

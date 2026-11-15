@@ -32,6 +32,7 @@ import { useSettingsDialogOptional } from "@/lib/settings-dialog-context";
 import { usePendingAction } from "@/lib/use-pending-action";
 import { displayName } from "@/lib/work-item-name";
 import type { MappedTask } from "@/lib/work-types";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 export type AddWorkSource = "inbox" | "upload" | "connector";
 
@@ -69,6 +70,7 @@ export function AddWorkPanel({
   /** BB-4: the board being added to, so work already here is shown, not offered. */
   engagementId?: string | undefined;
 }) {
+  const copy = useBrandCopy();
   const { data: profile } = useProfile();
   const { data: work } = useWorkItems();
   const { data: accounts } = useConnectorAccounts();
@@ -154,7 +156,7 @@ export function AddWorkPanel({
 
   async function copyPhrase() {
     try {
-      await navigator.clipboard.writeText(MCP_PUSH_PHRASE);
+      await navigator.clipboard.writeText(copy(MCP_PUSH_PHRASE));
       setCopied(true);
     } catch {
       const node = phraseRef.current;
@@ -263,7 +265,7 @@ export function AddWorkPanel({
                   <>
                     <p className="text-sm text-muted-foreground">Say this in {aiPanel.name} and the chat lands in Your work.</p>
                     <div className="flex items-center gap-2">
-                      <code ref={phraseRef} className="min-w-0 flex-1 rounded-md border border-border bg-muted px-2.5 py-2 font-mono text-sm">{MCP_PUSH_PHRASE}</code>
+                      <code ref={phraseRef} className="min-w-0 flex-1 rounded-md border border-border bg-muted px-2.5 py-2 font-mono text-sm">{copy(MCP_PUSH_PHRASE)}</code>
                       <Button type="button" variant="outline" onClick={() => void copyPhrase()}>{copied ? "Copied" : "Copy"}</Button>
                     </div>
                     <Button type="button" variant="link" className="h-auto p-0" onClick={() => setActiveTab("inbox")}>

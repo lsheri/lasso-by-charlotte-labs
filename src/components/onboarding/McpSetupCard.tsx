@@ -16,6 +16,7 @@ import {
 } from "@/lib/mcp-setup-steps";
 import { logEvent } from "@/lib/telemetry";
 import { ToolBadge } from "./ToolBadge";
+import { useBrand, useBrandCopy } from "@/components/skin/use-skin";
 
 /** Counts everything this person has ever received over MCP. */
 async function countMcpItems(profileId: string): Promise<number> {
@@ -28,6 +29,8 @@ async function countMcpItems(profileId: string): Promise<number> {
 }
 
 export function McpSetupCard({ vendor }: { vendor: McpVendor }) {
+  const say = useBrandCopy();
+  const brand = useBrand();
   const meta = TOOLS[vendor];
   const queryClient = useQueryClient();
   const { data: profile } = useProfile();
@@ -105,10 +108,11 @@ export function McpSetupCard({ vendor }: { vendor: McpVendor }) {
       <div className="flex items-start gap-3">
         <ToolBadge tool={vendor} />
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium text-foreground">Connect {meta.label} to Lasso</p>
+          <p className="text-sm font-medium text-foreground">{say(`Connect ${meta.label} to Lasso`)}</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            One connector, set up once. Then you just say “push this to Lasso” at the end of a
-            session, and only that lands here.
+            {say(
+              "One connector, set up once. Then you just say “push this to Lasso” at the end of a session, and only that lands here.",
+            )}
           </p>
         </div>
       </div>
@@ -122,14 +126,17 @@ export function McpSetupCard({ vendor }: { vendor: McpVendor }) {
             {MCP_SETUP_STEPS[vendor].map((step, index) => (
               <li key={step} className="flex gap-2 text-sm text-muted-foreground">
                 <span className="font-mono text-[11px] text-accent-deep">{index + 1}</span>
-                <span>{step}</span>
+                <span>{say(step)}</span>
               </li>
             ))}
           </ol>
-          <p className="text-sm text-muted-foreground">
-            The server shows up in your AI as{" "}
-            <span className="text-foreground">{MCP_SERVER_NAME}</span>.
-          </p>
+          {/* The connector server names itself Lasso until the flip, so Charlotte leaves this line out rather than say it. */}
+          {brand.name === "Lasso" ? (
+            <p className="text-sm text-muted-foreground">
+              The server shows up in your AI as{" "}
+              <span className="text-foreground">{MCP_SERVER_NAME}</span>.
+            </p>
+          ) : null}
         </div>
       ) : (
         <div className="mt-4 space-y-4">
@@ -152,7 +159,7 @@ export function McpSetupCard({ vendor }: { vendor: McpVendor }) {
             {MCP_SETUP_STEPS[vendor].map((step, index) => (
               <li key={step} className="flex gap-2 text-sm text-muted-foreground">
                 <span className="font-mono text-[11px] text-accent-deep">{index + 1}</span>
-                <span>{step}</span>
+                <span>{say(step)}</span>
               </li>
             ))}
           </ol>
@@ -175,7 +182,7 @@ export function McpSetupCard({ vendor }: { vendor: McpVendor }) {
                 <Loader2 size={15} className="animate-spin" />
                 <span>
                   Waiting for your first push…{" "}
-                  {baseline === null ? "" : "try saying “Push this conversation to Lasso.”"}
+                  {baseline === null ? "" : say("try saying “Push this conversation to Lasso.”")}
                 </span>
               </>
             )}

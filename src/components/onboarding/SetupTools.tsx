@@ -7,6 +7,7 @@ import { LiveConnectCard } from "./LiveConnectCard";
 import { McpSetupCard } from "./McpSetupCard";
 import { Sketch } from "@/design/reference/Sketch";
 import type { WorkKind } from "@/design/reference/work-types";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 /**
  * Composed only from what the person checked. Every path here is opt-in:
@@ -51,6 +52,7 @@ function Band({ hue, children }: { hue: string; children: React.ReactNode }) {
 }
 
 export function SetupTools({ tools }: { tools: ToolId[]; register?: Register }) {
+  const copy = useBrandCopy();
   const has = (id: ToolId) => tools.includes(id);
   const mcp = (["claude", "chatgpt"] as const).filter(has);
   const connectors = (["googledrive", "granola", "transcripts", "gmail"] as const).filter(has);
@@ -72,14 +74,14 @@ export function SetupTools({ tools }: { tools: ToolId[]; register?: Register }) 
 
       {mcp.length > 0 ? (
         <section className="space-y-3">
-          <Band hue="--hue-slate-blue">Let your AI push to Lasso</Band>
+          <Band hue="--hue-slate-blue">{copy("Let your AI push to Lasso")}</Band>
           {mcp.map((id) => (
             <Lands key={id} tool={id}>
               <McpSetupCard vendor={id} />
             </Lands>
           ))}
           <p className="text-sm text-muted-foreground">
-            Once it&apos;s set up, try saying “Push to Lasso” in any conversation.
+            {copy("Once it’s set up, try saying “Push to Lasso” in any conversation.")}
           </p>
         </section>
       ) : null}

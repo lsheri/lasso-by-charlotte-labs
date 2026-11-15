@@ -4,6 +4,7 @@ import { DrawnCheck, GraphiteRule } from "@/components/notebook/marks";
 import { Button } from "@/components/ui/button";
 import { TOUR_CONTENT, actById, type TourActId } from "@/lib/tour-content";
 import type { Register } from "@/lib/register";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 export type TourActRenderer = {
   id: TourActId;
@@ -140,6 +141,7 @@ export function TourStage({
   onHintShown,
   instructionOverride,
 }: TourStageProps) {
+  const say = useBrandCopy();
   const copy = TOUR_CONTENT[register];
   const touch = useTouchPresentation();
   const act = actById(register, activeAct);
@@ -207,7 +209,7 @@ export function TourStage({
 
         <div className={`tour-instruction-band${instructionOverride ? " is-complete" : ""}`}>
           <span className="tour-step-marker">Step {activeAct} of {copy.acts.length}</span>
-          <p className="tour-do-line" data-tour-do>{instructionOverride ?? (touch ? act.captionTouch : act.captionPointer)}</p>
+          <p className="tour-do-line" data-tour-do>{say(instructionOverride ?? (touch ? act.captionTouch : act.captionPointer))}</p>
         </div>
 
         <div className="tour-act" data-testid="tour-act" data-tour-beat={teaching ? "teach" : "do"} inert={teaching}>
@@ -233,7 +235,7 @@ export function TourStage({
           <>
             <div className="tour-teach-scrim" data-testid="tour-teach-scrim" aria-hidden />
             <aside className="tour-teaching-callout is-teaching" role="dialog" aria-label={copy.stage.stageLabel}>
-              <p>{act.why}</p>
+              <p>{say(act.why)}</p>
               <Button ref={continueRef} type="button" variant="ink" size="sm" className="tour-got-it" data-tour-target={activeAct} onClick={renderer.onContinue}>
                 {renderer.continueLabel ?? copy.stage.gotIt}
               </Button>
