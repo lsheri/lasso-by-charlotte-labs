@@ -1,5 +1,6 @@
 import { GraphiteIcon } from "@/components/notebook/icons";
 import { USES_COPY, type PersonUse } from "@/lib/person-uses";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 export function UsesChips({
   value,
@@ -10,9 +11,10 @@ export function UsesChips({
   onChange: (next: PersonUse[]) => void;
   disabled?: boolean;
 }) {
+  const copy = useBrandCopy();
   return (
     <fieldset className="space-y-2" disabled={disabled}>
-      <legend className="micro-label">{USES_COPY.question}</legend>
+      <legend className="micro-label">{copy(USES_COPY.question)}</legend>
       <div className="flex flex-wrap gap-2">
         {USES_COPY.options.map((opt) => {
           const on = value.includes(opt.value);
@@ -36,7 +38,7 @@ export function UsesChips({
           );
         })}
       </div>
-      <p className="text-[13px] text-muted-foreground">{USES_COPY.age}</p>
+      <p className="text-[13px] text-muted-foreground">{copy(USES_COPY.age)}</p>
     </fieldset>
   );
 }
