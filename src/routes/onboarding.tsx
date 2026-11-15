@@ -6,6 +6,7 @@ import { StepRail } from "@/components/onboarding/StepRail";
 import { SetupTools } from "@/components/onboarding/SetupTools";
 import { OnboardingTour } from "@/components/onboarding/OnboardingTour";
 import { readOnboardingUi } from "@/lib/onboarding-ui";
+import { FIRST_RUN_TOUR_ON } from "@/lib/first-run-tour";
 import { ToolPicker } from "@/components/onboarding/ToolPicker";
 import { PilotRequestGate } from "@/components/onboarding/PilotRequestGate";
 import { SessionHeader } from "@/components/layout/SessionHeader";
@@ -623,7 +624,8 @@ function OnboardingInner() {
   }
 
   async function finish() {
-    if (!setup) {
+    // Phase 4: the tour is off while it is rewritten for the flip (first-run-tour.ts).
+    if (!setup && FIRST_RUN_TOUR_ON) {
       const profile = await fetchProfile().catch(() => null);
       if (profile && firstRunTourPending(setup, profile)) {
         setTourProfile(profile);
