@@ -4,7 +4,6 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
-  HeadContent,
   Scripts,
   type ErrorComponentProps,
 } from "@tanstack/react-router";
@@ -23,6 +22,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { CANONICAL_ORIGIN, maybeRedirectToCanonical } from "@/lib/app-host";
 import { registerProfileQueryClient } from "@/hooks/use-profile";
 import { readSkinCookie } from "@/lib/skin";
+import { BrandHeadContent } from "@/components/skin/BrandHeadContent";
 import { SkinProvider } from "@/components/skin/SkinProvider";
 import { brandCopy, launchBrand } from "@/design/brand/brand";
 
@@ -182,7 +182,7 @@ function RootShell({ children }: { children: ReactNode }) {
     // No attribute at all for Lasso, so the default page is unchanged. SkinProvider may update it after load.
     <html lang="en" data-skin={skin === "lasso" ? undefined : skin}>
       <head>
-        <HeadContent />
+        <BrandHeadContent skin={skin} />
       </head>
       <body>
         {children}
