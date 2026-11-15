@@ -33,6 +33,7 @@ import { streamChatRequest } from "@/lib/stream-client";
 import { sendReflectMessage } from "@/lib/reflect.functions";
 import { logEvent } from "@/lib/telemetry";
 import { parseManifest, type ContextManifest } from "@/lib/context-manifest";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 type MessageRow = { id: number; role: string; content: string; context_manifest: unknown };
 
@@ -96,6 +97,7 @@ export function AnalysisLensPanel({
   initialPreset,
   isCoach = false,
 }: AnalysisLensPanelProps) {
+  const copy = useBrandCopy();
 
   const queryClient = useQueryClient();
   const send = useServerFn(sendReflectMessage);
@@ -327,7 +329,7 @@ export function AnalysisLensPanel({
         {(messages ?? []).map((message, index) =>
           message.role === "user" && index === 0 ? null : (
             <div key={message.id}>
-              <p className="micro-label">{message.role === "user" ? "You" : "Lasso"}</p>
+              <p className="micro-label">{message.role === "user" ? "You" : copy("Lasso")}</p>
               {message.role === "user" ? (
                 <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-foreground">
                   {message.content}
@@ -380,7 +382,7 @@ export function AnalysisLensPanel({
         <Suggested className="mb-3">
           <div className="flex items-center gap-2">
             <SuggestDot />
-            <p className="text-xs text-ember-deep">Analyses Lasso can run on this work</p>
+            <p className="text-xs text-ember-deep">{copy("Analyses Lasso can run on this work")}</p>
           </div>
           <div className="mt-2 flex flex-wrap gap-2">
             {presets

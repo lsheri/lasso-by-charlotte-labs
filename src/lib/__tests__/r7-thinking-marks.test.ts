@@ -30,7 +30,7 @@ describe("R7 Ask Lasso thinking marks", () => {
     expect(surface.match(/kind="signature"/g)).toHaveLength(1);
     expect(messages).not.toContain('kind="signature"');
     expect(surface).toContain('<BrandMark className="size-7 shrink-0 text-lasso-green" px={28} />');
-    expect(surface).toContain('{assistant ? "Lasso" : "You"}');
+    expect(surface).toContain('{assistant ? copy("Lasso") : "You"}');
   });
 
   it("reads Lasso lime from its existing token rather than a literal", () => {

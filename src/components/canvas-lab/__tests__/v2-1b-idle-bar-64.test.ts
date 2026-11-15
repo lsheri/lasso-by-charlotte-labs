@@ -15,7 +15,7 @@ describe("V2-1b idle bar is one row", () => {
     expect(idle).toContain(
       '.ask-draft[data-idle-bar="true"] .ask-draft-head { display: contents; }',
     );
-    expect(idle).toContain('[aria-label="Close Ask Lasso"] { order: 3;');
+    expect(idle).toContain('[data-ask-head="close"] { order: 3;');
     expect(idle).toContain(".ask-draft-body { order: 2; flex: 1;");
   });
   it("drops the scope line, the second and third lines of the box, Continue and Past conversations", () => {

@@ -22,6 +22,7 @@ import type {
   EngagementMemberName,
   EngagementRow,
 } from "@/lib/engagement-page-shared";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 /* The clamp below is the only truncation boundary; whenever a brief exists the
    details page link is offered, so nothing can be cut with no way to read on. */
@@ -38,6 +39,7 @@ export function BoardDetailsContent({
   members: EngagementMemberName[];
   engagementId: string;
 }) {
+  const copy = useBrandCopy();
   const settings = useSettingsDialogOptional();
   const [dest, setDest] = useState<HandoffDestination>(() => readHandoffDestination(engagementId, null));
   const [projectLink, setProjectLink] = useState("");
@@ -109,7 +111,7 @@ export function BoardDetailsContent({
         </div>
       ) : null}
       {settings ? (
-        <button type="button" className="nb-type-small text-muted underline-offset-2 hover:underline" onClick={() => settings.openSettings("your-work", "deep_link")}>Where Ask Lasso opens</button>
+        <button type="button" className="nb-type-small text-muted underline-offset-2 hover:underline" onClick={() => settings.openSettings("your-work", "deep_link")}>{copy("Where Ask Lasso opens")}</button>
       ) : null}
       <fieldset className="flex min-w-0 flex-col gap-2 nb-type-small text-muted">
         <legend>Continue conversations in</legend>

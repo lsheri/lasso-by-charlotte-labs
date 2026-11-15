@@ -9,6 +9,7 @@ import {
   useAskDockState,
 } from "@/components/reflect/ask-dock-state";
 import { useAskLasso } from "@/components/reflect/use-ask-lasso";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 /**
  * Ask Lasso, docked on the right of the page. Resizable between 320 and 560,
@@ -23,6 +24,7 @@ export function AskDock(props: {
   profileId: string;
   orgId: string;
 }) {
+  const copy = useBrandCopy();
   const { open, onOpenChange, engagementId, engagementTitle, profileId, orgId } =
     props;
   const { width, setWidth, tab, setTab } = useAskDockState();
@@ -81,13 +83,13 @@ export function AskDock(props: {
         className="nb-ask-backdrop fixed inset-0 z-30"
       />
     <aside
-      aria-label="Ask Lasso"
+      aria-label={copy("Ask Lasso")}
       className="nb-ask-plain fixed inset-y-0 right-0 z-40 flex flex-col border-l border-border bg-background"
       style={{ width }}
     >
       <div
         role="separator"
-        aria-label="Resize Ask Lasso"
+        aria-label={copy("Resize Ask Lasso")}
         aria-orientation="vertical"
         aria-valuemin={DOCK_MIN_WIDTH}
         aria-valuemax={maxDockWidth()}
@@ -108,7 +110,7 @@ export function AskDock(props: {
       <button
         type="button"
         onClick={() => onOpenChange(false)}
-        aria-label="Close Ask Lasso"
+        aria-label={copy("Close Ask Lasso")}
         className="absolute right-3 top-3 z-10 rounded-full p-1.5 text-muted-foreground transition-colors hover:text-foreground"
       >
         <X className="h-4 w-4" aria-hidden />

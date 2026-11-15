@@ -20,6 +20,7 @@ import type { DemoPreset } from "@/lib/demo-presets-shared";
 import { noteDemoOpened, noteDemoPlayInteracted, type DemoPlayAction } from "@/lib/demo-telemetry";
 import { parseLandingProof, type LandingProof } from "@/lib/landing-proof-shared";
 import type { WorkboardStickyBody } from "@/lib/canvas-lab-shared";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 const noop = () => undefined;
 type Point = { x: number; y: number };
@@ -136,11 +137,12 @@ function DemoSidebar({ clientLabel }: { clientLabel: string }) {
 }
 
 function DemoAskRail({ presets, proof, engagementTitle, open, onOpenChange, emit }: { presets: DemoPreset[]; proof: LandingProof | null; engagementTitle: string; open: boolean; onOpenChange: (open: boolean) => void; emit: (action: DemoPlayAction) => void }) {
+  const copy = useBrandCopy();
   const [activePosition, setActivePosition] = useState(presets.find((entry) => entry.position === 1)?.position ?? presets[0]?.position ?? 1);
   const active = presets.find((entry) => entry.position === activePosition);
   const model = proof ? parseLandingProof(proof) : null;
-  return <aside className="demo-sandbox-ask" data-open={open} aria-label="Ask Lasso" data-component="BoardAsk">
-    <button type="button" className="demo-sandbox-ask-toggle" onClick={() => onOpenChange(!open)}><LassoThinkingMark kind="signature" size={34} /><span><b>Ask Lasso</b><small>{engagementTitle}</small></span></button>
+  return <aside className="demo-sandbox-ask" data-open={open} aria-label={copy("Ask Lasso")} data-component="BoardAsk">
+    <button type="button" className="demo-sandbox-ask-toggle" onClick={() => onOpenChange(!open)}><LassoThinkingMark kind="signature" size={34} /><span><b>{copy("Ask Lasso")}</b><small>{engagementTitle}</small></span></button>
     <div className="demo-sandbox-ask-body">
       <div className="demo-play-presets">{presets.map((preset) => <Button key={preset.position} size="sm" variant={preset.position === activePosition ? "secondary" : "outline"} onClick={() => { setActivePosition(preset.position); emit("preset_opened"); }}>{preset.question}</Button>)}</div>
       <div className="demo-play-answer">{active?.position === 1 && proof && model ? <PlaygroundProofCard proof={proof} model={model} emit={emit} /> : active ? <><div className="lb-replay-question"><span>You</span><p>{active.question}</p></div><PlaygroundReplayAnswer preset={active} /></> : <p>The saved answer is not available right now.</p>}</div>
@@ -150,6 +152,7 @@ function DemoAskRail({ presets, proof, engagementTitle, open, onOpenChange, emit
 }
 
 export function DemoWorkboardSandbox({ board, presets, proof, clientLabel, engagementTitle }: { board: SharedBoardDto; presets: DemoPreset[]; proof: LandingProof | null; clientLabel: string; engagementTitle: string }) {
+  const copy = useBrandCopy();
   const initial = useMemo(() => finishedModel(board), [board]);
   const items = useMemo(() => itemMap(board), [board]);
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -303,7 +306,7 @@ export function DemoWorkboardSandbox({ board, presets, proof, clientLabel, engag
       <div className="demo-workboard-row">
         <section className="demo-workboard-board" aria-label="Workboard">
           <p className="demo-play-hint" data-visible={hint}>Drag anything. Add a sticky. It all goes back in 5 seconds.</p>
-          <div className="demo-workboard-toolbar" aria-label="Board tools"><Button size="sm" variant="outline" onClick={addSticky}><StickyMark variant="stack" size={18} />Add sticky</Button><Button size="sm" variant="outline" onClick={() => setAskOpen((open) => !open)}><GraphiteIcon name="ask-lasso" />Ask Lasso</Button><Button size="sm" variant="outline" onClick={() => resetBoard(false)}><GraphiteIcon name="history" />Reset</Button>{resetAt && !drag && !resize && !editing ? <span className="demo-reset-countdown"><i style={{ "--demo-reset-progress": `${remaining / 5}` } as CSSProperties} />Back to the finished board in {remaining}s</span> : null}</div>
+          <div className="demo-workboard-toolbar" aria-label="Board tools"><Button size="sm" variant="outline" onClick={addSticky}><StickyMark variant="stack" size={18} />Add sticky</Button><Button size="sm" variant="outline" onClick={() => setAskOpen((open) => !open)}><GraphiteIcon name="ask-lasso" />{copy("Ask Lasso")}</Button><Button size="sm" variant="outline" onClick={() => resetBoard(false)}><GraphiteIcon name="history" />Reset</Button>{resetAt && !drag && !resize && !editing ? <span className="demo-reset-countdown"><i style={{ "--demo-reset-progress": `${remaining / 5}` } as CSSProperties} />Back to the finished board in {remaining}s</span> : null}</div>
           <div ref={viewportRef} className="canvas-lab-surface demo-sandbox-viewport" data-testid="canvas-lab-viewport" onPointerDownCapture={beginTouchGesture} onPointerDown={(event) => { if ((event.target as HTMLElement).closest("[data-node-id],.canvas-lab-frame")) return; if (event.pointerType === "touch") touchRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY }); panRef.current = { from: { x: event.clientX, y: event.clientY }, origin: view.pan }; event.currentTarget.setPointerCapture?.(event.pointerId); }} onPointerMove={moveGesture} onPointerUp={endGesture} onPointerCancel={endGesture} onWheel={(event) => { event.preventDefault(); if (event.ctrlKey || event.metaKey) { const rect = event.currentTarget.getBoundingClientRect(); const next = workboardPinchZoom(view.zoom, event.deltaY, event.deltaMode); setView((current) => ({ zoom: next, pan: zoomAbout(current.pan, current.zoom, next, { x: event.clientX - rect.left, y: event.clientY - rect.top }) })); } else { const delta = wheelPanVector(event); setView((current) => ({ ...current, pan: { x: current.pan.x - delta.x, y: current.pan.y - delta.y } })); } }}>
             <div className="canvas-lab-stage demo-sandbox-stage" data-testid="canvas-lab-stage" style={{ width: Math.max(bounds.width, 1500), height: Math.max(bounds.height, 820), transform: `translate(${view.pan.x}px, ${view.pan.y}px) scale(${view.zoom})`, "--lab-inverse-zoom": labInverseZoom(view.zoom) } as CSSProperties}>
               {frames.map((frame) => <LabFrameElement key={frame.id} frame={frame} count={nodes.filter((node) => node.frame === frame.id).length} kind="task" selected={selected === frame.id} editable={false} custom={false} namedByWorkstream removable={false} onSelect={() => setSelected(frame.id)} onDragStart={(event) => beginFrameDrag(event, frame.id)} onResizeStart={noop} onFit={noop} onRename={noop} onRemove={noop} onMenuOpened={noop} onMenuOpenChange={noop} />)}

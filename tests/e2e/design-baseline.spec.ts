@@ -3,6 +3,8 @@ import path from "node:path";
 
 import { test, type Page } from "@playwright/test";
 
+import { brandFor } from "../../src/design/brand/brand";
+
 import {
   BASELINE_SURFACES,
   VIEWPORTS,
@@ -39,6 +41,8 @@ import {
 const EMAIL = process.env["LASSO_QA_EMAIL"] ?? "qa.company.admin@qaprobe.test";
 const PASSWORD = process.env["LASSO_QA_PASSWORD"] ?? "";
 const SKIN = process.env["LASSO_SKIN"] ?? "lasso";
+/** Phase 4: the Ask control is named by the skin ("Charlotte" under Charlotte). */
+const ASK_LABEL = brandFor(SKIN === "charlotte" ? "charlotte" : "lasso").askLabel;
 const OUT = process.env["LASSO_SHOT_DIR"] ?? "tests/e2e/__baseline__";
 
 /** Bring a surface on screen. Throwing marks the picture SOFT-FAIL. */
@@ -53,10 +57,10 @@ async function go(page: Page, route: string): Promise<void> {
   if (landed !== wanted) throw new Error(`left the app: landed on ${landed}`);
 }
 
-/** The Ask box. On desktop it is often already open as a dock; clicking Ask Lasso then would close it. */
+/** The Ask box. On desktop it is often already open as a dock; clicking the Ask control then would close it. */
 async function openAsk(page: Page) {
   const box = page.getByPlaceholder(/^Ask |^What do you want to think through/).last();
-  if (!(await box.isVisible())) await page.locator('[aria-label="Ask Lasso"]').first().click();
+  if (!(await box.isVisible())) await page.locator(`[aria-label="${ASK_LABEL}"]`).first().click();
   await box.waitFor({ state: "visible", timeout: 15_000 });
   return box;
 }
@@ -68,7 +72,7 @@ async function openFirstBoard(page: Page): Promise<void> {
   const href = await board.getAttribute("href");
   if (!href) throw new Error("no board link found");
   await go(page, href);
-  await page.locator('[data-toolbar-control], [aria-label="Ask Lasso"]').first().waitFor({
+  await page.locator(`[data-toolbar-control], [aria-label="${ASK_LABEL}"]`).first().waitFor({
     timeout: 60_000,
   });
 }

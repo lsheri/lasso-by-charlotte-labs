@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { GraphiteIcon } from "@/components/notebook/icons";
 import { useAskLassoHandler } from "@/components/reflect/ask-lasso-context";
 import { useProfile } from "@/hooks/use-profile";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 const FAB_CLASS =
   "fixed right-4 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-30 inline-flex min-h-[56px] items-center gap-2 rounded-full border border-accent-deep/30 bg-accent-deep px-5 text-sm text-[var(--nb-white)] shadow-card transition-opacity hover:opacity-90 md:hidden print:hidden";
@@ -32,6 +33,7 @@ function writeHintSeen(): void {
  * has its own Ask Lasso context, this opens that dock instead of navigating.
  */
 export function AskLassoFab() {
+  const copy = useBrandCopy();
   const path = useRouterState({ select: (s) => s.location.pathname });
   const handler = useAskLassoHandler();
   const { data: profile } = useProfile();
@@ -79,7 +81,7 @@ export function AskLassoFab() {
   const label = (
     <>
       <GraphiteIcon name="ask-lasso" size={16} />
-      Ask Lasso
+      {copy("Ask Lasso")}
     </>
   );
 
@@ -100,7 +102,7 @@ export function AskLassoFab() {
             dismissHint();
             handler();
           }}
-          aria-label="Ask Lasso"
+          aria-label={copy("Ask Lasso")}
           className={FAB_CLASS}
         >
           {label}
@@ -109,7 +111,7 @@ export function AskLassoFab() {
         <Link
           to="/ai-record"
           search={{ ask: true }}
-          aria-label="Ask Lasso"
+          aria-label={copy("Ask Lasso")}
           onClick={dismissHint}
           className={FAB_CLASS}
         >

@@ -280,6 +280,7 @@ import { STICKY_LINK_COPY, useStickyDeepLink, type StickyTarget } from "@/compon
 import { useStickyCounts } from "@/hooks/use-stickies";
 import { useChatNotesState, type ChatNotesHandlers } from "@/components/canvas-lab/chat-notes";
 import { liftable, liftKindOf, type LiftRect } from "@/lib/lift-view";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 
 /** A local workboard over one permission-filtered engagement read. */
@@ -320,6 +321,7 @@ const HAND_SKIPS = ".canvas-lab-floating-tools, .ask-draft, [role='dialog'], [ro
 function toolbarGroupOf(id: string): number { return TOOLBAR_GROUPS.findIndex((ids) => ids.includes(id)) + 1; }
 
 export function CanvasLabPage({ engagementId, entryVia, openSticky }: { engagementId: string; entryVia?: string; openSticky?: StickyTarget | null }) {
+  const copy = useBrandCopy();
   const navigate = useNavigate();
   // F3: opening a board writes the viewer's own last-viewed row and clears its "N NEW".
   useRecordEngagementView(engagementId);
@@ -3927,7 +3929,7 @@ export function CanvasLabPage({ engagementId, entryVia, openSticky }: { engageme
   }
   toolbarItems.push({
     spec: { id: "ask", width: viewportSize.width < 768 ? 36 : 124, pinned: true },
-    row: <ToolbarIcon label="Ask Lasso. Ask a question about the work on this board."><Button size="sm" variant={askOpen ? "secondary" : "outline"} aria-label="Ask Lasso" aria-pressed={askOpen} data-toolbar-control="ask" className="canvas-lab-ask-button [&_canvas]:max-h-full [&_canvas]:max-w-full" onClick={() => setAskOpen((current) => !current)}><span key={askOpen ? "open" : "closed"} className="canvas-lab-ask-mark flex items-center justify-center"><LassoThinkingMark kind="signature" size={LOOP_SIZE_TOOLBAR} thinking persistent /></span><span className="canvas-lab-ask-label">Ask Lasso</span></Button></ToolbarIcon>,
+    row: <ToolbarIcon label={copy("Ask Lasso. Ask a question about the work on this board.")}><Button size="sm" variant={askOpen ? "secondary" : "outline"} aria-label={copy("Ask Lasso")} aria-pressed={askOpen} data-toolbar-control="ask" className="canvas-lab-ask-button [&_canvas]:max-h-full [&_canvas]:max-w-full" onClick={() => setAskOpen((current) => !current)}><span key={askOpen ? "open" : "closed"} className="canvas-lab-ask-mark flex items-center justify-center"><LassoThinkingMark kind="signature" size={LOOP_SIZE_TOOLBAR} thinking persistent /></span><span className="canvas-lab-ask-label">{copy("Ask Lasso")}</span></Button></ToolbarIcon>,
   });
   if (canAddWork) {
     toolbarItems.push({

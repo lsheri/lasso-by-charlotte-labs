@@ -5,6 +5,7 @@ import type { LabNode } from "@/components/canvas-lab/canvas-lab-model";
 import { supabase } from "@/integrations/supabase/client";
 import { noteWorkboardPinnedChatOpened } from "@/components/canvas-lab/canvas-lab-telemetry";
 import { ASK_DRAFT_OPEN_SESSION_EVENT, readAskPins, resolveAskDraft, type AskDraft } from "@/lib/ask-draft";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 export const PINNED_CHAT_COPY = { row: "Chat", unavailable: "This chat is not available to you here.", loading: "Opening the chat" };
 
@@ -33,6 +34,7 @@ type Row = { id: number | string; role: string; content: string };
  * normal client, so row level security decides; nothing is written to the node.
  */
 export function PinnedChatRow({ draft, sessionId, ownership, authorName, orgId, onOpenChange }: { draft: AskDraft; sessionId: string; ownership: LabNode["ownership"]; authorName?: string | undefined; orgId?: string | undefined; onOpenChange: (open: boolean) => void }) {
+  const copy = useBrandCopy();
   const [open, setOpen] = useState(false);
   const [rows, setRows] = useState<Row[] | null>(null);
 
@@ -81,7 +83,7 @@ export function PinnedChatRow({ draft, sessionId, ownership, authorName, orgId, 
           <ol className="ask-draft-pinned-chat-list" aria-label="Chat">
             {rows.map((row) => (
               <li key={row.id} data-role={row.role}>
-                <span className="ask-draft-pinned-chat-who">{row.role === "user" ? "You" : "Lasso"}</span>
+                <span className="ask-draft-pinned-chat-who">{row.role === "user" ? "You" : copy("Lasso")}</span>
                 <p>{row.content}</p>
               </li>
             ))}

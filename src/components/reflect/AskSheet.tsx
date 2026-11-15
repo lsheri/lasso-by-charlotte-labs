@@ -3,6 +3,7 @@ import { useAskDockState } from "@/components/reflect/ask-dock-state";
 import { useAskLasso, type SectionAskSource } from "@/components/reflect/use-ask-lasso";
 import type { AskSectionChoice } from "@/components/canvas-lab/BoardAsk";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 /**
  * On a phone the Ask tab fills the screen: same tabs, same binder paper, the
@@ -23,6 +24,7 @@ export function AskSheet(props: {
   sectionChoices?: AskSectionChoice[] | undefined;
   onPickSection?: ((frameId: string) => void) | undefined;
 }) {
+  const copy = useBrandCopy();
   const { open, onOpenChange, engagementId, engagementTitle, profileId, orgId } =
     props;
   const { tab, setTab } = useAskDockState();
@@ -34,7 +36,7 @@ export function AskSheet(props: {
         side="bottom"
         className="flex h-[100dvh] max-h-[100dvh] w-full flex-col gap-0 rounded-none border-0 bg-background p-0"
       >
-        <SheetTitle className="sr-only">Ask Lasso</SheetTitle>
+        <SheetTitle className="sr-only">{copy("Ask Lasso")}</SheetTitle>
         <SheetDescription className="sr-only">Reflect on this workboard</SheetDescription>
         <AskSurface
           ask={ask}

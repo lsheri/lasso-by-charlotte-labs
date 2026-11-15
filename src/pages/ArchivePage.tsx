@@ -13,6 +13,7 @@ import { useShippedWork } from "@/hooks/use-shipped-work";
 import { usesGuestNav } from "@/lib/role-access";
 import { showsYourCoach } from "@/components/layout/nav-config";
 import { useHasLiveCoachLink } from "@/hooks/use-coaching-links";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 /** MN-3b: the plain links under the Look back header. */
 export const ARCHIVE_LINKS_COPY = {
@@ -41,6 +42,7 @@ function SoloCoachNotesLink({ profileId, role }: { profileId: string; role: stri
  * person, ever.
  */
 export function ArchivePage() {
+  const copy = useBrandCopy();
   const navigate = useNavigate();
   const { data: profile } = useProfile();
   const { data, isLoading } = useShippedWork();
@@ -80,7 +82,7 @@ export function ArchivePage() {
       <PageHeader title="Look" italicWord="back" subtitle={null} />
       <p className="-mt-2 mb-8 flex flex-wrap gap-x-5 gap-y-1 text-sm" data-testid="archive-links">
         <Link to="/ai-record" search={{ view: "asked" }} className="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
-          {ARCHIVE_LINKS_COPY.pastAsk}
+          {copy(ARCHIVE_LINKS_COPY.pastAsk)}
         </Link>
         {profile.org_type === "personal" ? (
           <SoloCoachNotesLink profileId={profile.id} role={profile.role} />

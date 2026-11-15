@@ -29,6 +29,7 @@ import {
 } from "@/lib/deliverable-kinds";
 import type { WorkItemRow } from "@/lib/work-types";
 import { TITLE_ONLY_LINE, contentsUnread, readCounts } from "@/lib/text-status";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 /** What a confirm step is pointed at, taken from the run request itself. */
 export type ConfirmTarget =
@@ -76,6 +77,7 @@ export function AnalysisConfirm({
   /** The anchor the run reads from, plus the extra work kept ticked. */
   onConfirm: (anchorItemId: string | null, extraItemIds: string[]) => void;
 }) {
+  const copy = useBrandCopy();
   const target = request?.target ?? null;
   const preset = request?.preset ?? null;
   const baseAnchorId = target?.kind === "item" ? target.id : null;
@@ -473,7 +475,7 @@ export function AnalysisConfirm({
                 onClick={request.onAdjust}
                 className="text-xs text-accent-deep underline underline-offset-2"
               >
-                Adjust what Lasso reads
+                {copy("Adjust what Lasso reads")}
               </button>
             ) : null}
           </div>

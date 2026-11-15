@@ -56,6 +56,7 @@ import { useWorkboardCardPreviews } from "@/hooks/use-workboard-card-previews";
 import type { WorkboardCardPreview } from "@/lib/workboard-card-preview.shared";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { logEvent } from "@/lib/telemetry";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 type MonthGroup = { key: string; label: string; items: WorkItemRow[] };
 export const CONVERSATION_CARD_HEIGHT = 118;
@@ -164,6 +165,7 @@ function itemModel(item: WorkItemRow): string | null {
  * nothing else.
  */
 export function AiRecordPage() {
+  const copy = useBrandCopy();
   const { data: profile } = useProfile();
   const { data: work, isLoading, error, refetch } = useWorkItems();
   const fetchFileUrl = useServerFn(getWorkFileUrl);
@@ -412,7 +414,7 @@ export function AiRecordPage() {
           {isCoach ? null : (
             <Button type="button" variant="outline" className="h-9" onClick={() => { setAskSession(null); setAskOpen(true); }}>
               <span aria-hidden="true" className="h-3.5 w-3.5 rounded-full border-2 border-[var(--nb-lasso-green)]" />
-              Ask Lasso
+              {copy("Ask Lasso")}
             </Button>
           )}
         </header>
@@ -537,7 +539,7 @@ export function AiRecordPage() {
           )}
         </div>
 
-        <SlideOver open={askOpen} onOpenChange={(next) => { setAskOpen(next); if (!next) setAskSession(null); }} title="Ask Lasso" description="Private to you. Your coach never sees this." className="sm:w-[720px] sm:max-w-[760px]">
+        <SlideOver open={askOpen} onOpenChange={(next) => { setAskOpen(next); if (!next) setAskSession(null); }} title={copy("Ask Lasso")} description="Private to you. Your coach never sees this." className="sm:w-[720px] sm:max-w-[760px]">
           <div className="overflow-y-auto p-4">{askOpen ? <ReflectPage embedded initialSessionId={askSession} autoStart={askSession === null} /> : null}</div>
         </SlideOver>
         <SlideOver open={recursOpen && Boolean(selectedEngagement)} onOpenChange={(open) => setRecursOpen(open)} title="What recurs">

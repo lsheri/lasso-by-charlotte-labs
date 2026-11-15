@@ -18,6 +18,7 @@ import type { WorkboardCardPreview } from "@/lib/workboard-card-preview.shared";
 import type { WorkItemRow } from "@/lib/work-types";
 import { workToSketch } from "@/lib/work-sketch";
 import type { TourActRenderer } from "@/components/tour/TourStage";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 const noop = () => undefined;
 type DragFile = { title: string; pointerId: number; x: number; y: number };
@@ -55,12 +56,13 @@ function useReducedMotion() {
 
 type TourWorkboardTool = "add" | "select" | "group" | "ask" | null;
 function TourWorkboard({ active, onAddWork, onGroup, onAsk, children }: { active: TourWorkboardTool; onAddWork?: () => void; onGroup?: () => void; onAsk?: () => void; children: ReactNode }) {
+  const copy = useBrandCopy();
   const toolClass = (tool: Exclude<TourWorkboardTool, null>) => `tour-board-tool${active === tool ? " is-active" : ""}`;
   const toolbar = <WorkboardToolbar className="tour-board-toolbar" ariaLabel="Board tools">
     <Button type="button" size="sm" variant="outline" aria-label="Add work" data-toolbar-control="add-work" data-tour-target={active === "add" ? "3" : undefined} className={toolClass("add")} onClick={active === "add" ? onAddWork : noop}><GraphiteIcon name="work" size={20} /><span>Add work</span></Button>
     <Button type="button" size="icon" variant="outline" aria-label="Select work" aria-pressed={active === "select"} className={toolClass("select")} onClick={noop}><GraphiteIcon name="connectors" size={20} /></Button>
     <Button type="button" size="icon" variant="outline" aria-label="Draw a workstream" aria-pressed={active === "group"} data-tour-target={active === "group" ? "5" : undefined} className={toolClass("group")} onClick={active === "group" ? onGroup : noop}><GraphiteIcon name="grouping" size={20} /></Button>
-    <Button type="button" size="icon" variant="outline" aria-label="Ask Lasso" aria-pressed={active === "ask"} data-tour-target={active === "ask" ? "6" : undefined} className={toolClass("ask")} onClick={active === "ask" ? onAsk : noop}><LassoThinkingMark kind="signature" size={24} /></Button>
+    <Button type="button" size="icon" variant="outline" aria-label={copy("Ask Lasso")} aria-pressed={active === "ask"} data-tour-target={active === "ask" ? "6" : undefined} className={toolClass("ask")} onClick={active === "ask" ? onAsk : noop}><LassoThinkingMark kind="signature" size={24} /></Button>
     <Button type="button" size="icon" variant="outline" aria-label="Info" onClick={noop}><GraphiteIcon name="working-from" size={20} /></Button>
     <Button type="button" size="icon" variant="outline" aria-label="Fit" onClick={noop}><GraphiteIcon name="fit" size={20} /></Button>
   </WorkboardToolbar>;
@@ -130,9 +132,10 @@ export function TourActThree({ register, onComplete }: { register: Register; onC
 }
 
 function TourAskMimic({ register, visibleClaims, generating, onAsk }: { register: Register; visibleClaims: number; generating: boolean; onAsk: () => void }) {
+  const copy = useBrandCopy();
   const act = actById(register, 6); const chatCard = (actById(register, 4)?.cards ?? []).find((card) => card.title === act?.chatLink?.cardTitle);
   const activeScope = askScopeWorkstreamLabel(actById(register, 5)?.frameTitle ?? "Workstream");
-  return <aside className="tour-ask-mimic" aria-label="Ask Lasso tour example"><header><BrandMark className={generating ? "tour-ask-loop is-generating" : "tour-ask-loop"} px={28} /><strong>Ask Lasso</strong></header><div className="tour-ask-scopes" aria-label="Question scope"><span className="tour-ask-scope is-active" aria-current="true">{activeScope}</span><Button type="button" variant="outline" size="sm" className="tour-ask-scope" aria-pressed="false" onClick={noop}>{ASK_SCOPE_ONE_LABEL}</Button><Button type="button" variant="outline" size="sm" className="tour-ask-scope" aria-pressed="false" onClick={noop}>{ASK_SCOPE_ALL_LABEL}</Button></div><div className="tour-ask-question" aria-label="Preset question" aria-readonly="true">{act?.question}</div><div className="tour-ask-claims" aria-live="polite">
+  return <aside className="tour-ask-mimic" aria-label={copy("Ask Lasso tour example")}><header><BrandMark className={generating ? "tour-ask-loop is-generating" : "tour-ask-loop"} px={28} /><strong>{copy("Ask Lasso")}</strong></header><div className="tour-ask-scopes" aria-label="Question scope"><span className="tour-ask-scope is-active" aria-current="true">{activeScope}</span><Button type="button" variant="outline" size="sm" className="tour-ask-scope" aria-pressed="false" onClick={noop}>{ASK_SCOPE_ONE_LABEL}</Button><Button type="button" variant="outline" size="sm" className="tour-ask-scope" aria-pressed="false" onClick={noop}>{ASK_SCOPE_ALL_LABEL}</Button></div><div className="tour-ask-question" aria-label="Preset question" aria-readonly="true">{act?.question}</div><div className="tour-ask-claims" aria-live="polite">
     {(act?.answer ?? []).slice(0, visibleClaims).map((claim) => <article key={claim.sourceCardTitle} className="tour-ask-claim"><p>{claim.text}</p><span>{claim.sourceCardTitle}</span></article>)}
     {visibleClaims === (act?.answer?.length ?? 0) && act?.chatLink && chatCard ? <Button type="button" variant="outline" className="tour-chat-link" onClick={noop} aria-label={`${act.chatLink.label}: ${act.chatLink.cardTitle}`}><ToolBadge tool={sourceTool(chatCard.source)} size="sm" /><span>{act.chatLink.label}</span><strong>{act.chatLink.cardTitle}</strong></Button> : null}
   </div><Button type="button" variant="ink" data-tour-target={visibleClaims < 3 ? "6" : undefined} onClick={onAsk} disabled={generating || visibleClaims === 3}>Ask</Button></aside>;
@@ -284,6 +287,7 @@ function tourChatPreview(id: string, excerpt: string): WorkboardCardPreview {
 }
 
 export function TourActArrived({ register, onComplete }: { register: Register; onComplete: () => void }) {
+  const copy = useBrandCopy();
   const list = actById(register, 2)?.conversations;
   const actOne = actById(register, 1);
   const chats = [actOne?.chat, actOne?.companionChat].filter((chat): chat is TourPushedChat => chat !== undefined);
@@ -325,7 +329,7 @@ export function TourActArrived({ register, onComplete }: { register: Register; o
             <p className="mt-1 truncate font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">{rows.length} conversations on the record · {arrivedCount} new this week</p>
           </div>
           <Button type="button" variant="outline" className="h-9" onClick={noop}>Add a chat</Button>
-          <Button type="button" variant="outline" className="h-9" onClick={noop}><span aria-hidden="true" className="h-3.5 w-3.5 rounded-full border-2 border-[var(--nb-lasso-green)]" />Ask Lasso</Button>
+          <Button type="button" variant="outline" className="h-9" onClick={noop}><span aria-hidden="true" className="h-3.5 w-3.5 rounded-full border-2 border-[var(--nb-lasso-green)]" />{copy("Ask Lasso")}</Button>
         </header>
         <div className="tour-conversations-toolbar flex h-[46px] shrink-0 items-center gap-2 overflow-x-auto border-b border-[var(--nb-rule)] px-5 whitespace-nowrap">
           <label htmlFor="tour-chat-library-search" className="sr-only">Search your chats</label>
