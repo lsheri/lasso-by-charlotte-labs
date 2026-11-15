@@ -10,7 +10,7 @@ export function AppShellSkeleton() {
       <span className="sr-only">Opening Lasso</span>
       <aside aria-hidden="true" className="lasso-sidebar-shell hidden shrink-0 md:block">
         <div className="sticky top-0 flex h-screen flex-col gap-[22px] bg-sidebar px-4 pb-[18px] pt-[22px]">
-          <BrandLockup className="gap-2.5 [&_svg]:h-[17px] [&_svg]:w-5 [&_span]:text-lg" />
+          <BrandLockup skinned className="gap-2.5 [&_svg]:h-[17px] [&_svg]:w-5 [&_span]:text-lg" />
           <Skeleton className={`${blockClass} h-12 w-full`} />
           <div className="flex flex-col gap-5">
             {Array.from({ length: 4 }, (_, index) => (
@@ -27,7 +27,7 @@ export function AppShellSkeleton() {
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header aria-hidden="true" className="sticky top-0 z-40 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border bg-background/95 px-4 pb-2 pt-[calc(0.5rem+env(safe-area-inset-top))] md:hidden">
-          <BrandLockup className="gap-2 [&_svg]:h-6 [&_svg]:w-6 [&_span]:text-sm" />
+          <BrandLockup skinned className="gap-2 [&_svg]:h-6 [&_svg]:w-6 [&_span]:text-sm" />
           <Skeleton className={`${blockClass} h-11 w-28`} />
         </header>
         <main aria-hidden="true" className="flex-1 px-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-6 md:px-8 md:py-12 md:pb-14 lg:px-10 xl:px-14">

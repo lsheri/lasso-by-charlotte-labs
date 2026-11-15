@@ -96,11 +96,11 @@ describe("CharlotteMark", () => {
     expect(svg.querySelectorAll("circle.nd")).toHaveLength(8);
   });
 
-  it("reaches the app only through LassoThinkingMark (PR6)", () => {
+  it("reaches the app only through LassoThinkingMark (PR6) and the signed-in brand lockup (PR7)", () => {
     const readers = sourceFiles("src")
       .filter((path) => /\.(css|tsx?)$/.test(path) && !path.startsWith("src/design/"))
       .filter((path) => !path.includes("__tests__"))
       .filter((path) => /design\/brand\//.test(readFileSync(path, "utf8")));
-    expect(readers).toEqual(["src/components/reflect/LassoThinkingMark.tsx"]);
+    expect(readers).toEqual(["src/components/layout/BrandLockup.tsx", "src/components/reflect/LassoThinkingMark.tsx"]);
   });
 });

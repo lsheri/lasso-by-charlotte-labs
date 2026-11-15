@@ -27,14 +27,14 @@ const PAL: Record<SketchTone, Pal> = {
     pencil: 'var(--line-pencil)',
     paper: 'var(--surface-raised)',
     sunk: 'var(--surface-sunk-2)',
-    acid: 'var(--hand-live)',
+    acid: 'var(--sketch-acid, var(--hand-live))',
   },
   ink: {
     ink: 'var(--text-on-inverse)',
     pencil: 'var(--neutral-50)',
     paper: 'var(--neutral-80)',
     sunk: 'var(--neutral-60)',
-    acid: 'var(--hand-live)',
+    acid: 'var(--sketch-acid, var(--hand-live))',
   },
 };
 

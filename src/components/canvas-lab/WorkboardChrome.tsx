@@ -1,6 +1,6 @@
 import { forwardRef, type ReactNode } from "react";
 
-import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
+import { ShellMark } from "@/components/layout/BrandLockup";
 import { cn } from "@/lib/utils";
 
 export function WorkboardSideRail({ menuControl, closeControl, className }: {
@@ -10,7 +10,7 @@ export function WorkboardSideRail({ menuControl, closeControl, className }: {
 }) {
   return (
     <aside className={cn("workboard-side-rail z-30 flex w-[52px] shrink-0 flex-col items-center border-r border-border bg-card py-3", className)}>
-      <LassoLoopMark className="h-7 w-7 text-lasso-green" />
+      <ShellMark className="h-7 w-7 text-lasso-green" />
       <div className="mt-5">{menuControl}</div>
       <div className="mt-auto">{closeControl}</div>
     </aside>

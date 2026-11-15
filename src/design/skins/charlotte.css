@@ -90,6 +90,134 @@
   --kind-accent-envelope:var(--t-talk);
   --kind-accent-code:var(--t-code);
   --kind-accent-pen:var(--t-visual);
+
+  /* PR7 colour sweep (R3, 15 Nov). Names Lasso components read directly, which kept Lasso's colours under Charlotte. */
+  /* The neutral ramp, navy-tinted, so rules that name a step (toolbar ink, sketch ink tone) land on Charlotte greys. */
+  --neutral-00:var(--ch-white);
+  --neutral-05:var(--ch-page);
+  --neutral-10:#f3f6f8;
+  --neutral-20:var(--ch-wash);
+  --neutral-30:var(--ch-hairline);
+  --neutral-40:var(--ch-pencil);
+  --neutral-50:var(--ch-faint);
+  --neutral-60:var(--ch-muted);
+  --neutral-80:#24384e;
+  --neutral-95:var(--ch-navy);
+  /* Shared with you reads navy, not orange: Charlotte has no orange. */
+  --state-shared-in:var(--ch-navy);
+  --state-shared-wash:var(--ch-navy-wash);
+  /* "Waiting on you" and the old amber slots take the words ink. */
+  --state-yours-pending:var(--t-words);
+  --hint-green:var(--ch-navy);
+  /* Ink on a lime fill (pressed toolbar toggles): navy, not Lasso near-black. */
+  --text-on-acid:var(--ch-navy);
+  --nb-green-deep:var(--t-numbers);
+  /* Ask's mark and border are navy; lime stays for the hub while reading. */
+  --ask-mark:var(--ch-navy);
+  --halo-1:var(--ch-navy);
+  --halo-2:var(--ch-wash);
+  /* Provenance lines and tints are one quiet slate. The tools' own logos keep their colours. */
+  --vendor-claude:var(--ch-muted);
+  --vendor-chatgpt:var(--ch-muted);
+  --vendor-gemini:var(--ch-muted);
+  --vendor-copilot:var(--ch-muted);
+  --vendor-gdrive:var(--ch-muted);
+  --vendor-granola:var(--ch-muted);
+  --vendor-notion:var(--ch-muted);
+  --vendor-slack:var(--ch-muted);
+  --vendor-microsoft:var(--ch-muted);
+  --vendor-gmail:var(--ch-muted);
+  --vendor-unknown:var(--ch-muted);
+  /* Drawn regions and client folder colours: each Lasso family moves to its nearest Charlotte family. Soft is the
+     ink at 7% on white, the soft edge at 22%. Charlotte has no green, so green becomes the numbers teal. */
+  --nb-region-green-vivid:var(--t-numbers);
+  --nb-region-green-soft:color-mix(in oklab, var(--t-numbers) 7%, var(--ch-white));
+  --nb-region-green-soft-edge:color-mix(in oklab, var(--t-numbers) 22%, var(--ch-white));
+  --nb-region-blue-vivid:var(--t-talk);
+  --nb-region-blue-soft:color-mix(in oklab, var(--t-talk) 7%, var(--ch-white));
+  --nb-region-blue-soft-edge:color-mix(in oklab, var(--t-talk) 22%, var(--ch-white));
+  --nb-region-rose-vivid:var(--t-slides);
+  --nb-region-rose-soft:color-mix(in oklab, var(--t-slides) 7%, var(--ch-white));
+  --nb-region-rose-soft-edge:color-mix(in oklab, var(--t-slides) 22%, var(--ch-white));
+  --nb-region-yellow-vivid:var(--t-words);
+  --nb-region-yellow-soft:color-mix(in oklab, var(--t-words) 7%, var(--ch-white));
+  --nb-region-yellow-soft-edge:color-mix(in oklab, var(--t-words) 22%, var(--ch-white));
+  --nb-region-lavender-vivid:var(--t-visual);
+  --nb-region-lavender-soft:color-mix(in oklab, var(--t-visual) 7%, var(--ch-white));
+  --nb-region-lavender-soft-edge:color-mix(in oklab, var(--t-visual) 22%, var(--ch-white));
+  --nb-region-slate-vivid:var(--t-code);
+  --nb-region-slate-soft:color-mix(in oklab, var(--t-code) 7%, var(--ch-white));
+  --nb-region-slate-soft-edge:color-mix(in oklab, var(--t-code) 22%, var(--ch-white));
+  --nb-region-paper-white:var(--ch-white);
+  --nb-region-paper-warm:var(--ch-page);
+  --nb-region-paper-cool:var(--ch-wash);
+  --nb-region-paper-sand:var(--ch-sunk-2);
+  /* Board hues (the sidebar colour tab): eight Charlotte inks, washes at 8% on white. */
+  --board-hue-0-ink:var(--ch-faint);
+  --board-hue-0-wash:color-mix(in oklab, var(--ch-faint) 8%, var(--ch-white));
+  --board-hue-1-ink:var(--t-talk);
+  --board-hue-1-wash:color-mix(in oklab, var(--t-talk) 8%, var(--ch-white));
+  --board-hue-2-ink:var(--t-numbers);
+  --board-hue-2-wash:color-mix(in oklab, var(--t-numbers) 8%, var(--ch-white));
+  --board-hue-3-ink:var(--t-visual);
+  --board-hue-3-wash:color-mix(in oklab, var(--t-visual) 8%, var(--ch-white));
+  --board-hue-4-ink:var(--t-slides);
+  --board-hue-4-wash:color-mix(in oklab, var(--t-slides) 8%, var(--ch-white));
+  --board-hue-5-ink:var(--t-code);
+  --board-hue-5-wash:color-mix(in oklab, var(--t-code) 8%, var(--ch-white));
+  --board-hue-6-ink:var(--t-words);
+  --board-hue-6-wash:color-mix(in oklab, var(--t-words) 8%, var(--ch-white));
+  --board-hue-7-ink:var(--ch-navy);
+  --board-hue-7-wash:var(--ch-navy-wash);
+  /* Deliverable kind chips (Look back, firm cards): the kind's family ink on its 8% wash. */
+  --kind-chip-deck-bg:color-mix(in oklab, var(--t-slides) 8%, var(--ch-white));
+  --kind-chip-deck-ink:var(--t-slides);
+  --kind-chip-proposal-bg:color-mix(in oklab, var(--t-words) 8%, var(--ch-white));
+  --kind-chip-proposal-ink:var(--t-words);
+  --kind-chip-numbers-bg:color-mix(in oklab, var(--t-numbers) 8%, var(--ch-white));
+  --kind-chip-numbers-ink:var(--t-numbers);
+}
+
+/* PR7: a sketch card's kind speaks in its family ink: the kind label, and the one accent stroke in the drawing
+   (deck highlight, sheet cell, waveform playhead), which was lime on resting cards. Lime now means live only. */
+[data-skin="charlotte"] [data-lasso="on"] [data-sketch-kind="chat"],
+[data-skin="charlotte"] [data-lasso="on"] [data-sketch-kind="email"],
+[data-skin="charlotte"] [data-lasso="on"] [data-sketch-kind="transcript"] { --sketch-acid:var(--t-talk); --sketch-kind-ink:var(--t-talk); }
+[data-skin="charlotte"] [data-lasso="on"] [data-sketch-kind="doc"] { --sketch-acid:var(--t-words); --sketch-kind-ink:var(--t-words); }
+[data-skin="charlotte"] [data-lasso="on"] [data-sketch-kind="sheet"] { --sketch-acid:var(--t-numbers); --sketch-kind-ink:var(--t-numbers); }
+[data-skin="charlotte"] [data-lasso="on"] [data-sketch-kind="deck"] { --sketch-acid:var(--t-slides); --sketch-kind-ink:var(--t-slides); }
+
+/* PR7: every tool logo sits on the same white tile with a hairline, as the Google marks already do. The kind
+   colour lives on the kind label, so the tile no longer carries a tint that fights the logo. */
+[data-skin="charlotte"] [data-lasso="on"] [data-tool-badge] {
+  background:var(--surface-raised) !important;
+  border-color:var(--line-hairline) !important;
+}
+
+/* PR7: the Ask button is a secondary control like its toolbar neighbours: navy ink, a navy hairline, no glow.
+   Open, it takes the navy wash. Lime appears only in the mark's hub while Lasso reads. */
+[data-skin="charlotte"] [data-lasso="on"] .canvas-lab-toolbar button.canvas-lab-ask-button[data-toolbar-control="ask"] {
+  border:1px solid color-mix(in oklab, var(--ch-navy) 25%, transparent);
+  color:var(--text-primary);
+}
+[data-skin="charlotte"] [data-lasso="on"] .canvas-lab-toolbar button.canvas-lab-ask-button[data-toolbar-control="ask"][aria-pressed="true"],
+[data-skin="charlotte"] [data-lasso="on"] .canvas-lab-toolbar button.canvas-lab-ask-button[data-toolbar-control="ask"][aria-pressed="true"]:hover:not(:disabled) {
+  background:var(--ch-navy-wash);
+  border-color:var(--ch-navy);
+  box-shadow:none;
+}
+
+/* PR7: drawn regions and workstreams on a board are a quiet navy wash with a pencil hairline and a navy sans
+   title, instead of the board hue's tinted box and handwritten name. */
+[data-skin="charlotte"] [data-lasso="on"] .canvas-lab-stage[data-board-hue] > .canvas-lab-frame[data-region] {
+  border:1px solid var(--line-pencil) !important;
+  background:var(--surface-sunk) !important;
+}
+[data-skin="charlotte"] [data-lasso="on"] .canvas-lab-stage[data-board-hue] > .canvas-lab-frame[data-region] > div:first-child > h2 {
+  font-family:var(--font-sans);
+  font-size:13px;
+  font-weight:600;
+  color:var(--text-primary) !important;
 }
 
 /* No motion in chrome (13 Nov audit): the nav catch loop does not draw under Charlotte. The live app already retired it (NAV-4). */
@@ -235,3 +363,11 @@
   --state-indigo-wash:var(--nb-grey-1);
   --state-indigo-band:var(--nb-rule);
 }
+
+/* PR7: the Charlotte mark fills the fixed block that hosts it. Buttons size their icons to 16px ([&_svg]:size-4),
+   which shrank the toolbar's C into the block's top-left corner. */
+[data-skin="charlotte"] [data-lasso="on"] [data-skin-mark="charlotte"] > svg.wm { width:100% !important; height:100% !important; }
+
+/* PR7: the floating Ask box has no breathing lime halo at rest (chrome has no motion under Charlotte; lime means
+   live). It keeps the float shadow every other floating surface uses. Reading still shows in the mark's web. */
+[data-skin="charlotte"] [data-lasso="on"] .ask-draft-b { animation:none; box-shadow:var(--shadow-float); }
