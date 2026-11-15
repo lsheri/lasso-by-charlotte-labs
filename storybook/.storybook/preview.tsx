@@ -1,6 +1,8 @@
 import type { Decorator, Preview } from "@storybook/react-vite";
 import { useEffect, type ReactNode } from "react";
 
+import { SkinContext } from "@/components/skin/use-skin";
+
 import "../../src/styles.css";
 // Skins come in through styles.css (Charlotte since Phase 3 PR2), the same way the app gets them.
 
@@ -8,7 +10,9 @@ import "../../src/styles.css";
 const SKINS = ["lasso", "charlotte"] as const;
 
 /** Stories render inside the app shell's attribute, as every signed-in surface does. */
-function SkinFrame({ skin, children }: { skin: string; children: ReactNode }) {
+/** Also provides the skin to React, so components that branch in code (GraphiteIcon, work kinds, the thinking mark)
+    switch with the toolbar, not only the CSS. */
+function SkinFrame({ skin, children }: { skin: (typeof SKINS)[number]; children: ReactNode }) {
   useEffect(() => {
     document.documentElement.dataset["skin"] = skin;
   }, [skin]);
@@ -18,13 +22,13 @@ function SkinFrame({ skin, children }: { skin: string; children: ReactNode }) {
       data-skin={skin}
       style={{ padding: 16, background: "var(--surface-page)" }}
     >
-      {children}
+      <SkinContext.Provider value={skin}>{children}</SkinContext.Provider>
     </div>
   );
 }
 
 const withSkin: Decorator = (Story, context) => (
-  <SkinFrame skin={String(context.globals["skin"] ?? "lasso")}>
+  <SkinFrame skin={context.globals["skin"] === "charlotte" ? "charlotte" : "lasso"}>
     <Story />
   </SkinFrame>
 );
