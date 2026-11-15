@@ -34,6 +34,7 @@ describe("brandTitle", () => {
     const charlotte = brandFor("charlotte");
     expect(brandTitle(charlotte, "Why Lasso, the coach in your corner")).toBe("Why Charlotte, the coach in your corner");
     expect(brandTitle(charlotte, "Lasso for students | Your work record, yours")).toBe("Charlotte for students | Your work record, yours");
+    expect(brandTitle(charlotte, "Lasso: the human judgment in your team's AI work, traced")).toBe("Charlotte: the human judgment in your team's AI work, traced");
     expect(brandTitle(brandFor("lasso"), "Why Lasso, the coach in your corner")).toBe("Why Lasso, the coach in your corner");
   });
 });

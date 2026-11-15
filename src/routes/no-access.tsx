@@ -4,6 +4,7 @@ import { SessionHeader } from "@/components/layout/SessionHeader";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { clearPendingInvite } from "@/lib/pending-invite";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 export const Route = createFileRoute("/no-access")({
   ssr: false,
@@ -24,6 +25,7 @@ export const Route = createFileRoute("/no-access")({
 });
 
 function NoAccessPage() {
+  const copy = useBrandCopy();
   const navigate = useNavigate();
   return (
     <>
@@ -31,7 +33,7 @@ function NoAccessPage() {
       <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background px-6">
         <div className="max-w-md rounded-[var(--radius-control)] border border-[var(--nb-pencil)] bg-card px-8 py-10 text-center shadow-card">
           <div className="font-mono text-[9px] uppercase tracking-[0.24em] text-muted-foreground">
-            LASSO
+            {copy("LASSO")}
           </div>
           <h1 className="section-title mt-6">You don&apos;t have access to a workspace right now.</h1>
           <p className="mt-3 text-sm text-muted-foreground">

@@ -64,6 +64,7 @@ const FIXED_TITLES = new Set([
   "Why Lasso, the coach in your corner",
   "Lasso for students | Your work record, yours",
   "Icons · Lasso design system",
+  "Lasso: the human judgment in your team's AI work, traced",
 ]);
 
 /**
