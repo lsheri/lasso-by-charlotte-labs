@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 import { render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { BrandLockup, ShellMark } from "@/components/layout/BrandLockup";
+import { BrandLockup, BrandMark, BrandWordmark } from "@/components/layout/BrandLockup";
 import { SkinContext } from "@/components/skin/use-skin";
 import { ToolBadge } from "@/design/reference/ToolBadge";
 import { kindChipTint } from "@/lib/card-meta";
@@ -80,15 +80,12 @@ describe("PR7 brand marks in the signed-in shell", () => {
   });
   afterEach(() => vi.restoreAllMocks());
 
-  it("shows the C with its lime hub and CHARLOTTE only when skinned and the skin is Charlotte (PR7b)", () => {
-    const charlotte = render(inSkin("charlotte", <BrandLockup size="sm" skinned />)).container;
+  it("the lockup follows the skin everywhere: the C with its lime hub and CHARLOTTE, or the lime loop and LASSO (Phase 4)", () => {
+    const charlotte = render(inSkin("charlotte", <BrandLockup size="sm" />)).container;
     expect(charlotte.querySelector('[data-skin-mark="charlotte"] svg.wm.live')).not.toBeNull();
+    expect(charlotte.querySelector("svg.text-lasso-green")).toBeNull();
     expect(charlotte.textContent).toBe("CHARLOTTE");
-    for (const node of [
-      inSkin("charlotte", <BrandLockup size="sm" />),
-      inSkin("lasso", <BrandLockup size="sm" skinned />),
-      <BrandLockup size="sm" skinned />,
-    ]) {
+    for (const node of [inSkin("lasso", <BrandLockup size="sm" />), <BrandLockup size="sm" />]) {
       const { container } = render(node);
       expect(container.querySelector("[data-skin-mark]")).toBeNull();
       expect(container.querySelector("svg.text-lasso-green")).not.toBeNull();
@@ -96,8 +93,11 @@ describe("PR7 brand marks in the signed-in shell", () => {
     }
   });
 
-  it("the board rail mark follows the skin", () => {
-    expect(render(inSkin("charlotte", <ShellMark />)).container.querySelector("svg.wm")).not.toBeNull();
-    expect(render(inSkin("lasso", <ShellMark />)).container.querySelector("svg.text-lasso-green")).not.toBeNull();
+  it("the still mark and the wordmark follow the skin", () => {
+    expect(render(inSkin("charlotte", <BrandMark px={28} />)).container.querySelector("svg.wm")).not.toBeNull();
+    const lasso = render(inSkin("lasso", <BrandMark className="h-7 w-7 text-lasso-green" px={28} />)).container;
+    expect(lasso.querySelector("svg.text-lasso-green")).not.toBeNull();
+    expect(render(inSkin("charlotte", <BrandWordmark />)).container.textContent).toBe("CHARLOTTE");
+    expect(render(inSkin("lasso", <BrandWordmark />)).container.textContent).toBe("LASSO");
   });
 });

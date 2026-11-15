@@ -31,7 +31,7 @@ import type { AskTab } from "@/components/reflect/ask-dock-state";
 import type { AskLasso } from "@/components/reflect/use-ask-lasso";
 import type { AskSectionChoice } from "@/components/canvas-lab/BoardAsk";
 import { LassoThinkingMark } from "@/components/reflect/LassoThinkingMark";
-import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
+import { BrandMark } from "@/components/layout/BrandLockup";
 import { LOOP_SIZE_CHAT } from "@/lib/lasso-loop";
 import { useHasLiveCoachLink } from "@/hooks/use-coaching-links";
 import { citationsFromManifest, extractTurnRefs, turnRefsFromCitations, type TurnRef } from "@/lib/turn-labels";
@@ -431,7 +431,7 @@ export function MessagesTab({ ask, emptyActions, statusInTitle = false }: { ask:
   function speakerAvatar(role: "user" | "assistant") {
     const assistant = role === "assistant";
     if (assistant) {
-      return <LassoLoopMark className="size-7 shrink-0 text-lasso-green" />;
+      return <BrandMark className="size-7 shrink-0 text-lasso-green" px={28} />;
     }
     return (
       <span

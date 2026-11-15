@@ -14,7 +14,7 @@ import {
   useState,
 } from "react";
 
-import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
+import { BrandMark, BrandWordmark } from "@/components/layout/BrandLockup";
 import { EntryDoorLink } from "@/components/layout/EntryDoorLink";
 import { BrandLogo, type BrandKey } from "@/components/connectors/BrandLogo";
 import { LandingParticlePhrase } from "@/components/marketing/LandingParticlePhrase";
@@ -252,8 +252,8 @@ function LandingLogoRain() {
       </div>
       <div className="lb-intro-brand" aria-hidden="true">
         <div className="lb-brand-lockup-main">
-          <LassoLoopMark />
-          <span>LASSO</span>
+          <BrandMark px={64} />
+          <span><BrandWordmark /></span>
         </div>
         <span className="lb-brand-byline">by Charlotte Labs</span>
       </div>
@@ -437,7 +437,7 @@ function ReplayAnswer({
 }) {
   return (
     <div className="nb-conversation-message max-w-none flex-row items-start gap-3">
-      <LassoLoopMark className="size-7 shrink-0 text-lasso-green" />
+      <BrandMark className="size-7 shrink-0 text-lasso-green" px={28} />
       <div className="nb-conversation-body min-w-0 flex-1 gap-0">
         <span className="nb-binder-line font-sans text-[13px] font-semibold text-ink">Lasso</span>
         <AnswerRail state="done">
@@ -2207,8 +2207,8 @@ function LandingBoardHeader() {
       <div className="lb-header-main">
         <EntryDoorLink className="lb-brand">
           <span className="lb-brand-lockup-main">
-            <LassoLoopMark />
-            <span>LASSO</span>
+            <BrandMark px={34} />
+            <span><BrandWordmark /></span>
           </span>
           <span className="lb-brand-byline">by Charlotte Labs</span>
         </EntryDoorLink>
