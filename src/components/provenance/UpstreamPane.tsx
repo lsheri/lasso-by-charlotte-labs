@@ -9,6 +9,7 @@ import type { AuditPaneItem } from "@/lib/span-provenance.functions";
 import type { SpanStatus } from "@/lib/span-provenance-shared";
 import { turnLabel } from "@/lib/span-readability";
 import { spanStatusClass } from "@/lib/span-status-style";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 /**
  * The upstream spine: the engagement's other work, oldest first, each one
@@ -35,6 +36,7 @@ export function UpstreamPane({
   /** How many stitches cite each upstream item. Uncited items stay quiet. */
   citations?: Record<string, number>;
 }) {
+  const copy = useBrandCopy();
   const [open, setOpen] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -166,7 +168,7 @@ export function UpstreamPane({
                     <p className="mt-2 whitespace-pre-wrap text-sm text-foreground">{item.text}</p>
                   ) : (
                     <p className="mt-2 text-sm text-muted-foreground">
-                      {item.text_note ?? "Lasso could not read this file's contents."}
+                      {item.text_note ?? copy("Lasso could not read this file's contents.")}
                     </p>
                   )}
                 </div>

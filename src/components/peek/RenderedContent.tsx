@@ -25,6 +25,7 @@ import {
 } from "@/lib/text-status";
 import { fileNameFor, needsTextFetch, peekFormat, type PeekFormat } from "@/lib/peek-format";
 import type { WorkItemRow } from "@/lib/work-types";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 
 function useFileUrl(item: WorkItemRow, enabled: boolean) {
@@ -96,6 +97,7 @@ function TextPane({
   canEdit?: boolean | undefined;
   onDownload?: (() => void) | undefined;
 }) {
+  const copy = useBrandCopy();
   const { data: profile } = useProfile();
   const fetchText = useServerFn(getItemTextPane);
   const query = useQuery({
@@ -114,7 +116,7 @@ function TextPane({
           <Notice>{SUMMARY_ONLY_LINE}</Notice>
         ) : (
           <Notice>
-            Lasso could not read this file&apos;s contents
+            {copy("Lasso could not read this file's contents")}
             {pane?.note ? `: ${pane.note}.` : "."} You can still download the original.
           </Notice>
         )}
@@ -165,6 +167,7 @@ export function FallbackCard({
   onDownload: () => void;
   canEdit?: boolean | undefined;
 }) {
+  const copy = useBrandCopy();
   const link = item.meta?.web_view_link ?? null;
   const unread = contentsUnread(item.meta as never);
   const reason = textStatusReason(item.meta as never);
@@ -174,7 +177,7 @@ export function FallbackCard({
       <p className="mt-1 text-sm text-muted-foreground">{label}</p>
       {unread ? (
         <p className="mt-1 text-sm text-muted-foreground">
-          Lasso could not read this file&apos;s contents{reason ? `: ${reason}` : ""}. Only its
+          {copy("Lasso could not read this file's contents")}{reason ? `: ${reason}` : ""}. Only its
           title is available to analysis.
         </p>
       ) : null}

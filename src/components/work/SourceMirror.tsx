@@ -3,6 +3,7 @@ import { sourceVendorKey } from "@/components/work/SourceMark";
 import { displayName } from "@/lib/work-item-name";
 import type { WorkItemRow } from "@/lib/work-types";
 import type { WorkboardCardPreview, WorkboardFilePreview } from "@/lib/workboard-card-preview.shared";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 export const COPY = { unknown: "Lasso cannot preview this" };
 const THEMES: Record<string, string> = { claude: "Claude", chatgpt: "ChatGPT", gemini: "Gemini", granola: "Granola", default: "Assistant" };
@@ -13,6 +14,7 @@ export function SourceMirror({ item, chatPreview, filePreview }: {
   chatPreview?: WorkboardCardPreview | undefined;
   filePreview?: WorkboardFilePreview | undefined;
 }) {
+  const copy = useBrandCopy();
   const vendor = sourceVendorKey(item)?.toLowerCase();
   const key = vendor === "anthropic" ? "claude" : vendor === "openai" ? "chatgpt" : vendor === "google-gemini" ? "gemini" : vendor;
   const theme = key && Object.hasOwn(THEMES, key) ? key : "default";
@@ -38,7 +40,7 @@ export function SourceMirror({ item, chatPreview, filePreview }: {
             <div className="source-mirror__bars">{Array.from({ length: 8 }, (_, index) => <div key={index} />)}</div>
           </div></div>
         ) : (
-          <div className="source-mirror__unknown"><FileText size={34} strokeWidth={1.4} /><div className="source-mirror__unknown-title">{title}</div><div className="source-mirror__unknown-label">{COPY.unknown}</div></div>
+          <div className="source-mirror__unknown"><FileText size={34} strokeWidth={1.4} /><div className="source-mirror__unknown-title">{title}</div><div className="source-mirror__unknown-label">{copy(COPY.unknown)}</div></div>
         )}
       </div>
     </div>

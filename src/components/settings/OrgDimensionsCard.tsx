@@ -21,6 +21,7 @@ import {
   USE_FOR_OPTIONS,
   segmentFieldsFor,
 } from "@/lib/org-segments";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 type OrgRow = {
   name: string;
@@ -74,6 +75,7 @@ const asOptions = (list: readonly string[]) => list.map((v) => ({ value: v, labe
 
 /** Admin only. Every field is optional and none of it is shown as a score. */
 export function OrgDimensionsCard() {
+  const copy = useBrandCopy();
   const { data: profile } = useProfile();
   const queryClient = useQueryClient();
   const [form, setForm] = useState<OrgRow | null>(null);
@@ -156,7 +158,7 @@ export function OrgDimensionsCard() {
         <div className="space-y-3 border-t border-border pt-4" data-testid="workspace-about">
           <h3 className="micro-label">About this workspace, for our understanding only</h3>
           <p className="text-sm text-muted-foreground">
-            All optional. We use this to understand who Lasso is for, and nothing on this card changes how Lasso behaves.
+            {copy("All optional. We use this to understand who Lasso is for, and nothing on this card changes how Lasso behaves.")}
           </p>
           <div className="grid gap-4 sm:grid-cols-2">
             {isOrg ? (

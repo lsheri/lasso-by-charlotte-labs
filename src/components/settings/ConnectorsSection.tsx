@@ -40,6 +40,7 @@ import {
 import type { ConnectorToolkit } from "@/lib/connector-toolkits";
 import { useSettingsDialogOptional, type SettingsOpenFrom } from "@/lib/settings-dialog-context";
 import { logEvent } from "@/lib/telemetry";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 const DESCRIPTIONS: Record<ConnectorToolkit, string> = {
   googledrive: "Docs, decks and sheets you've touched recently.",
@@ -65,6 +66,7 @@ const PICKER_KIND: Partial<Record<ConnectorToolkit, PickerKind>> = {
 const COMING_SOON = ["Zoom", "Teams", "ChatGPT Enterprise"];
 
 export function ConnectorsSection({ from }: { from?: SettingsOpenFrom }) {
+  const copy = useBrandCopy();
   const { data: profile } = useProfile();
   const { data: accounts, error } = useConnectorAccounts();
   const queryClient = useQueryClient();
@@ -157,7 +159,7 @@ export function ConnectorsSection({ from }: { from?: SettingsOpenFrom }) {
     : 0;
   const totalCount = Object.keys(DESCRIPTIONS).length;
   const notConnectedCount = Math.max(totalCount - connectedCount, 0);
-  const subtitle = `${connectedCount} connected · ${notConnectedCount} not · Lasso reads only what you point it at`;
+  const subtitle = `${connectedCount} connected · ${notConnectedCount} not · ${copy("Lasso")} reads only what you point it at`;
 
   // Sections stay mounted for the life of the settings shell, so mounting is
   // not the signal: this must fire when connectors is the section on screen,
@@ -266,7 +268,7 @@ export function ConnectorsSection({ from }: { from?: SettingsOpenFrom }) {
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">
-          <ToneCard tone="record" label="WHAT LASSO READS" title="Only what you point it at.">
+          <ToneCard tone="record" label={copy("WHAT LASSO READS")} title="Only what you point it at.">
             <ul className="space-y-1">
               <li>The files you open in a connected tool</li>
               <li>The conversations you send</li>
@@ -275,7 +277,7 @@ export function ConnectorsSection({ from }: { from?: SettingsOpenFrom }) {
             </ul>
           </ToneCard>
 
-          <ToneCard tone="paper" label="WHAT LASSO NEVER READS" title="Everything else.">
+          <ToneCard tone="paper" label={copy("WHAT LASSO NEVER READS")} title="Everything else.">
             <ul className="space-y-1">
               <li>Anything in a tool you have not connected</li>
               <li>Anything you have not sent</li>

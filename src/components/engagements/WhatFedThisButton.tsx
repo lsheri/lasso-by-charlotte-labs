@@ -11,6 +11,7 @@ import {
 import { analysisPreset } from "@/lib/analysis-presets";
 import { isDeliverableType } from "@/lib/lineage-shared";
 import { effectiveWorkDate, type WorkItemRow } from "@/lib/work-types";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 export const WHAT_FED_THIS_EMPTY_HINT =
   "Add a finished deliverable to trace where its facts came from.";
@@ -72,6 +73,7 @@ export function WhatFedThisButton({
   orgId?: string | undefined;
   profileId?: string | undefined;
 }) {
+  const copy = useBrandCopy();
   const [confirming, setConfirming] = useState<AnalysisConfirmRequest | null>(null);
   const [infoOpen, setInfoOpen] = useState(false);
   const anchor = useMemo(() => latestDeliverable(items), [items]);
@@ -122,7 +124,7 @@ export function WhatFedThisButton({
       </button>
       <CtaInfoTrigger open={infoOpen} onToggle={() => setInfoOpen((prev) => !prev)} />
 
-      {infoOpen ? <CtaInfoPopover>{WHAT_FED_THIS_INFO}</CtaInfoPopover> : null}
+      {infoOpen ? <CtaInfoPopover>{copy(WHAT_FED_THIS_INFO)}</CtaInfoPopover> : null}
     </div>
   );
 }

@@ -13,6 +13,7 @@ import {
   getWisprStatus,
   startWisprConnect,
 } from "@/lib/wispr.functions";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 /**
  * Wispr Flow signs you in through your browser, so this card sends you to
@@ -20,6 +21,7 @@ import {
  * pasted, because Wispr does not issue a key to paste.
  */
 export function WisprCard() {
+  const copy = useBrandCopy();
   const { data: profile } = useProfile();
   const queryClient = useQueryClient();
   const start = useServerFn(startWisprConnect);
@@ -96,8 +98,7 @@ export function WisprCard() {
             {busy ? "Pending" : connected ? "Connected" : "Not connected"}
           </p>
           <p className="mt-1 nb-type-small leading-[17px] text-muted-foreground">
-            Meetings, notes and transcripts from your calls. Read only, so Lasso never writes
-            anything back to Wispr.
+            {copy("Meetings, notes and transcripts from your calls. Read only, so Lasso never writes anything back to Wispr.")}
           </p>
           {connected && data?.identity ? (
             <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">

@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ONEONONE_WINDOWS, type OneOnOneWindow } from "@/lib/oneonone-shared";
 import { prepareOneOnOne, saveBriefToDrive } from "@/lib/oneonone.functions";
 import { logV2 } from "@/lib/telemetry-v2";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 /** A brief the person owns: their work, their decisions, their questions. */
 export function OneOnOneBrief({
@@ -27,6 +28,7 @@ export function OneOnOneBrief({
   engagementId?: string | undefined;
   scopeLabel: string;
 }) {
+  const copy = useBrandCopy();
   const prepare = useServerFn(prepareOneOnOne);
   const save = useServerFn(saveBriefToDrive);
   const [days, setDays] = useState<OneOnOneWindow>(7);
@@ -127,9 +129,7 @@ export function OneOnOneBrief({
           <MarkdownMessage content={markdown} />
         ) : (
           <p className="text-sm text-muted-foreground">
-            Lasso reads your recorded work for the window you pick and drafts a brief: what you
-            worked on, the decisions you made, and where you want input. You edit it before anyone
-            sees it.
+            {copy("Lasso reads your recorded work for the window you pick and drafts a brief: what you worked on, the decisions you made, and where you want input. You edit it before anyone sees it.")}
           </p>
         )}
       </div>

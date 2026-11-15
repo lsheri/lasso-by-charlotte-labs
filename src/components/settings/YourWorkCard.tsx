@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 const SENIORITY = ["student", "early_career", "mid", "senior", "lead", "exec"];
 const EXPERIENCE = ["<1", "1-2", "3+"];
@@ -49,6 +50,7 @@ type Row = {
 
 /** One screen, all optional. Never shown to anyone as a score. */
 export function YourWorkCard() {
+  const copy = useBrandCopy();
   const { data: profile } = useProfile();
   const queryClient = useQueryClient();
   const [form, setForm] = useState<Row | null>(null);
@@ -130,8 +132,7 @@ export function YourWorkCard() {
       <h2 className="micro-label micro-label-section">Your work</h2>
       <div className="mt-3 space-y-4 rounded-[var(--radius)] border border-border bg-card px-4 py-4 shadow-card">
         <p className="text-sm text-muted-foreground">
-          This helps Lasso make decisions and 1:1 prep more relevant. It is never shown to anyone as
-          a score.
+          {copy("This helps Lasso make decisions and 1:1 prep more relevant. It is never shown to anyone as a score.")}
         </p>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>

@@ -8,8 +8,10 @@ import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
 import { settingsChangedDims } from "@/lib/settings-events";
 import { logEvent } from "@/lib/telemetry";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 export function NamingConventionsCard() {
+  const copy = useBrandCopy();
   const { data: profile } = useProfile();
   const queryClient = useQueryClient();
   const [value, setValue] = useState("");
@@ -63,9 +65,7 @@ export function NamingConventionsCard() {
       <h2 className="micro-label micro-label-section">Naming conventions</h2>
       <div className="mt-3 space-y-3 rounded-[var(--radius)] border border-border bg-card px-4 py-4 shadow-card">
         <p className="text-sm text-muted-foreground">
-          Teach Lasso your team&apos;s labels, workboard codes, client shorthand, folder patterns.
-          Suggestions get sharper. e.g. &quot;EMP-COAL = Employer Coalition workboard. Client
-          folders look like /Clients/&lt;code&gt;/…&quot;
+          {copy("Teach Lasso your team's labels, workboard codes, client shorthand, folder patterns. Suggestions get sharper. e.g. \"EMP-COAL = Employer Coalition workboard. Client folders look like /Clients/<code>/…\"")}
         </p>
         {!canEdit ? (
           <p className="whitespace-pre-wrap text-sm text-foreground">
@@ -76,7 +76,7 @@ export function NamingConventionsCard() {
             rows={5}
             value={value}
             onChange={(e) => setValue(e.target.value)}
-            placeholder="Teach Lasso your labels. e.g. EMP-COAL = Employer Coalition workboard; files starting WM_ belong to Weight Management; decks named *_client are final versions."
+            placeholder={copy("Teach Lasso your labels. e.g. EMP-COAL = Employer Coalition workboard; files starting WM_ belong to Weight Management; decks named *_client are final versions.")}
           />
         )}
         {canEdit ? (

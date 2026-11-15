@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { supabase } from "@/integrations/supabase/client";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 const MONTHS = [
   "January",
@@ -45,6 +46,7 @@ export function CaptureCoverage({
   isOwner?: boolean | undefined;
   eligibleEpisodes?: number | undefined;
 }) {
+  const copy = useBrandCopy();
   const { data, isPending } = useQuery({
     queryKey: ["capture-coverage", profileId],
     enabled: Boolean(profileId),
@@ -100,7 +102,7 @@ export function CaptureCoverage({
       {typeof eligibleEpisodes === "number"
         ? ` Read across ${eligibleEpisodes} ${eligibleEpisodes === 1 ? "piece" : "pieces"} of work.`
         : ""}{" "}
-      Lasso only sees what you connect and map.
+      {copy("Lasso only sees what you connect and map.")}
     </p>
   );
 }

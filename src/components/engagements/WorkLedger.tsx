@@ -18,6 +18,7 @@ import { useProfile } from "@/hooks/use-profile";
 import { orderByWorkDate } from "@/lib/work-order";
 import type { WorkItemRow } from "@/lib/work-types";
 import type { CanvasTask } from "@/components/engagements/EngagementCanvas";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 const FORMAT_LABELS: Record<FileFormat, string> = {
   word: "Word",
@@ -196,6 +197,7 @@ export function WorkLedger({
  * reappear. The write path is the same reviewLink the peek panel uses.
  */
 function PendingSuggestions({ item }: { item: WorkItemRow }) {
+  const copy = useBrandCopy();
   const { data: profile } = useProfile();
   const queryClient = useQueryClient();
   const load = useServerFn(getDeliverableEvidence);
@@ -236,7 +238,7 @@ function PendingSuggestions({ item }: { item: WorkItemRow }) {
     <div className="mt-3">
       <p className="micro-label">SUGGESTED, NOT YET CONFIRMED</p>
       <p className="mt-1 text-[13px] text-muted-foreground">
-        Lasso thinks these fed this piece of work. Nothing is part of the record until you say so.
+        {copy("Lasso thinks these fed this piece of work. Nothing is part of the record until you say so.")}
       </p>
       <ul className="mt-2 space-y-2">
         {drafts.map((link) => (

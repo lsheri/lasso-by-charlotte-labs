@@ -45,6 +45,7 @@ import {
 import { INVITE_COPY, inviteCountBand, parseEmailList } from "@/lib/board-invites-shared";
 import { Textarea } from "@/components/ui/textarea";
 import { inviteToBoard, listBoardInvites, withdrawBoardInvite } from "@/lib/board-invites.functions";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 export function ShareDialog({
   engagementId,
@@ -341,13 +342,14 @@ function SegmentedChoice<T extends string>({ name, value, choices, disabled, onC
   disabled: boolean;
   onChoose: (next: T) => void;
 }) {
+  const copy = useBrandCopy();
   return (
     <div role="group" aria-label={name} className="flex flex-wrap gap-1">
       {choices.map((choice) => (
         <Button key={choice.value} size="sm"
           variant={value === choice.value ? "ink" : "ghost"}
           className="text-sm"
-          title={choice.title} aria-pressed={value === choice.value}
+          title={copy(choice.title)} aria-pressed={value === choice.value}
           disabled={disabled} onClick={() => onChoose(choice.value)}>
           {value === choice.value ? <span aria-hidden="true" data-selected-check="true"><GraphiteIcon name="check" size={16} /></span> : null}
           {choice.label}

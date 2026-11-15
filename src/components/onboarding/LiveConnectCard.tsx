@@ -13,6 +13,7 @@ import { logEvent } from "@/lib/telemetry";
 import { TOOLS, type ToolId } from "@/lib/onboarding-tools";
 import { ToolBadge } from "./ToolBadge";
 import { useSetupOpened } from "./use-setup-opened";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 /**
  * Real OAuth in the first session. On success the folder-first picker opens
@@ -33,6 +34,7 @@ export function LiveConnectCard({ tool }: { tool: ConnectTool }) {
 }
 
 function OAuthConnectCard({ tool }: { tool: ConnectTool }) {
+  const copy = useBrandCopy();
   // Call transcripts reuse the same Google Drive connection, no second OAuth.
   // Gmail values match PICKER_KIND / toolkit ids in ConnectorsSection.tsx.
   const toolkit =
@@ -98,7 +100,7 @@ function OAuthConnectCard({ tool }: { tool: ConnectTool }) {
           <p className="text-sm font-medium text-foreground">{meta.label}</p>
           <p className="mt-1 text-sm text-muted-foreground">
             {tool === "transcripts"
-              ? "Uses your Google Drive connection. Lasso looks where recordings usually live, then you tick the ones you want."
+              ? copy("Uses your Google Drive connection. Lasso looks where recordings usually live, then you tick the ones you want.")
               : tool === "gmail"
                 ? "Connect once, then pick the threads you want."
                 : "Connect once, then browse your folders and tick only the files you want."}

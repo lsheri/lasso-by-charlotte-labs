@@ -26,6 +26,7 @@ import {
 import { recordEventFn } from "@/lib/telemetry.functions";
 import { hueStyles, vendorHue, workIdentity } from "@/lib/work-identity";
 import { formatDate, type WorkType } from "@/lib/work-types";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 const VISIBLE_PROMPTS = 5;
 
@@ -130,6 +131,7 @@ export function WhatFedThis({
   itemType: WorkType;
   canEdit: boolean;
 }) {
+  const copy = useBrandCopy();
   const { data: profile } = useProfile();
   const load = useServerFn(getDeliverableEvidence);
   const run = useServerFn(draftLineage);
@@ -164,7 +166,7 @@ export function WhatFedThis({
           ? "Nothing else is mapped into this workboard yet, so there is nothing to compare."
           : result.drafted > 0
             ? `${result.drafted} link${result.drafted === 1 ? "" : "s"} proposed from ${result.considered} item${result.considered === 1 ? "" : "s"} considered.`
-            : `Lasso read ${result.considered} item${result.considered === 1 ? "" : "s"} and did not find evidence of a connection.`,
+            : `${copy("Lasso")} read ${result.considered} item${result.considered === 1 ? "" : "s"} and did not find evidence of a connection.`,
       );
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Couldn't look for what fed this");
@@ -251,8 +253,7 @@ export function WhatFedThis({
           }}
         >
           <p className="text-sm text-foreground">
-            Nothing linked yet. Lasso can look at this workboard and propose what fed this
-            deliverable.
+            {copy("Nothing linked yet. Lasso can look at this workboard and propose what fed this deliverable.")}
           </p>
           {busy ? (
             <PaperTrail

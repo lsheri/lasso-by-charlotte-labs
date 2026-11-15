@@ -90,6 +90,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 const INBOX_LANE_COUNT = 4;
 const INBOX_LANE_GAP = 36;
@@ -236,6 +237,7 @@ function BringWorkInRow({
 }
 
 export function WorkPage() {
+  const copy = useBrandCopy();
   const isMobile = useIsMobile();
   const [phoneLimit, setPhoneLimit] = useState(25);
   const { data: profile, profiles } = useProfile();
@@ -353,7 +355,7 @@ export function WorkPage() {
       });
       toast.success(
         result.removed > 0
-          ? `${result.removed} item${result.removed === 1 ? "" : "s"} removed from Lasso`
+          ? `${result.removed} item${result.removed === 1 ? "" : "s"} removed from ${copy("Lasso")}`
           : "Nothing was removed",
       );
       await queryClient.invalidateQueries({ queryKey: ["work-items"] });
@@ -557,7 +559,7 @@ export function WorkPage() {
       });
       toast.success(
         result.removed > 0
-          ? `${result.removed} item${result.removed === 1 ? "" : "s"} removed from Lasso`
+          ? `${result.removed} item${result.removed === 1 ? "" : "s"} removed from ${copy("Lasso")}`
           : "Nothing was removed",
       );
       setConfirmRemove(false);
@@ -943,8 +945,7 @@ export function WorkPage() {
               Remove {chosen.size} item{chosen.size === 1 ? "" : "s"}?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              This deletes them from Lasso only. The originals in Drive and your AI apps are
-              untouched.
+              {copy("This deletes them from Lasso only. The originals in Drive and your AI apps are untouched.")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -956,7 +957,7 @@ export function WorkPage() {
                 void handleRemove();
               }}
             >
-              {removing ? "Removing…" : "Remove from Lasso"}
+              {removing ? "Removing…" : copy("Remove from Lasso")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -10,6 +10,7 @@ import type { ThreadFocus } from "@/components/peek/ThreadBody";
 import { vendorLabel } from "@/lib/conversation-shared";
 import { formatDate } from "@/lib/work-types";
 import { workDateLabel } from "@/lib/work-date-label";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 export function DecisionCard({
   decision,
@@ -31,6 +32,7 @@ export function DecisionCard({
    */
   arrowToSourceId?: string | null;
 }) {
+  const copy = useBrandCopy();
   const isDraft = decision.status === "draft";
   const [editing, setEditing] = useState(false);
   const [situation, setSituation] = useState(decision.situation);
@@ -73,7 +75,7 @@ export function DecisionCard({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <span className="micro-label relative flex items-center gap-2">
           {isDraft ? <SuggestDot /> : null}
-          {isDraft ? "Drafted by Lasso · Awaiting your review" : "Confirmed"}
+          {isDraft ? copy("Drafted by Lasso · Awaiting your review") : "Confirmed"}
           {strike.shown ? <DrawnStrike key={strike.markKey} /> : null}
         </span>
         {check.shown ? (

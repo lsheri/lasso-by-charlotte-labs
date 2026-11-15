@@ -2,8 +2,10 @@ import { SuggestionChip } from "@/components/work/SuggestionChip";
 import { Button } from "@/components/ui/button";
 import { useMappingSuggestions } from "@/hooks/use-mapping-suggestions";
 import { useWorkItems } from "@/hooks/use-work-items";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 export function OrganizeStep({ onDone }: { onDone: () => void }) {
+  const copy = useBrandCopy();
   const { data } = useWorkItems();
   const { active, taskLabels, suggesting, acceptPending, error, suggest, accept, dismiss } =
     useMappingSuggestions();
@@ -14,8 +16,7 @@ export function OrganizeStep({ onDone }: { onDone: () => void }) {
   return (
     <div className="space-y-4">
       <p className="text-sm text-foreground">
-        Optional: let Lasso suggest where this work belongs. Suggestions are drafts, nothing is
-        shared until you accept.
+        {copy("Optional: let Lasso suggest where this work belongs. Suggestions are drafts, nothing is shared until you accept.")}
       </p>
 
       {active.length === 0 ? (

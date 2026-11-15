@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ToneCard } from "@/components/notebook/ToneCard";
 import { cn } from "@/lib/utils";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 /**
  * Required content, not decoration. The rules of the page sit behind one quiet
@@ -10,6 +11,7 @@ import { cn } from "@/lib/utils";
  * show, word for word.
  */
 export function PrivacyPanel() {
+  const copy = useBrandCopy();
   const [isExpanded, setIsExpanded] = useState(false);
   return (
     <ToneCard tone="record" label="PRIVATE BY DEFAULT">
@@ -50,9 +52,9 @@ export function PrivacyPanel() {
                 is the archive: work appears there only when the person who owns it ships it, and
                 they can take it back.
               </li>
-              <li>Never a conversation with Lasso, and never a prompt someone wrote.</li>
+              <li>{copy("Never a conversation with Lasso, and never a prompt someone wrote.")}</li>
               <li>Never a number attached to a person&apos;s name, and never a ranking of people.</li>
-              <li>Never a pass rate or a score, here or anywhere else in Lasso.</li>
+              <li>{copy("Never a pass rate or a score, here or anywhere else in Lasso.")}</li>
               <li>
                 Work that has not been shared is invisible here by construction, not by setting.
                 There is no switch that turns it on.

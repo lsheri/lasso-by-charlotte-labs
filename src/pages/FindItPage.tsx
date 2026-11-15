@@ -32,6 +32,7 @@ import { reviewLink as reviewLinkFn } from "@/lib/lineage.functions";
 import { isDeliverableType, linkBucket } from "@/lib/lineage-shared";
 import { logEvent } from "@/lib/telemetry";
 import { effectiveWorkDate, formatDate, type WorkItemRow } from "@/lib/work-types";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 /** Files Find it can read. Anything else is left alone, and said so. */
 const READABLE_EXTENSIONS = [
@@ -114,6 +115,7 @@ function Highlighted({ text, needle }: { text: string; needle: string }) {
 }
 
 export function FindItPage() {
+  const copy = useBrandCopy();
   const { data: profile } = useProfile();
   const navigate = useNavigate();
   const search = useSearch({ from: "/_authenticated/find-it" });
@@ -183,7 +185,7 @@ export function FindItPage() {
   async function onDrop(files: File[]) {
     const readable = files.filter(isReadableFile);
     if (readable.length === 0) {
-      toast(UNREADABLE_FILE_MESSAGE);
+      toast(copy(UNREADABLE_FILE_MESSAGE));
       return;
     }
     const ids = await capture(readable);
@@ -389,9 +391,9 @@ export function FindItPage() {
                   onClick={() => { setMode(chip.mode); setCanvasPhase(null); }}
                   className={`${chipClass(mode === chip.mode)} h-auto font-normal hover:bg-card`}
                   aria-pressed={mode === chip.mode}
-                  title={MODE_HELP[chip.mode]}
+                  title={copy(MODE_HELP[chip.mode])}
                 >
-                  {chip.label}<HelpMark text={MODE_HELP[chip.mode]} />
+                  {chip.label}<HelpMark text={copy(MODE_HELP[chip.mode])} />
                 </Button>
               ))}
             </div>

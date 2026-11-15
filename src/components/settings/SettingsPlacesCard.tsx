@@ -4,6 +4,7 @@ import { NAV_ITEMS, type NavCtx, type NavItemId } from "@/components/layout/nav-
 import { useNavCtx } from "@/components/layout/use-nav-ctx";
 import { useSettingsDialogOptional } from "@/lib/settings-dialog-context";
 import * as roles from "@/lib/role-access";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 /** NAV-2: places that left the rail, reached from Settings. Presence reads the manifest's own rules. */
 export const SETTINGS_PLACES_COPY = {
@@ -23,6 +24,7 @@ function presentFor(id: NavItemId, ctx: NavCtx): boolean {
 }
 
 export function SettingsPlacesCard({ which }: { which: "people" | "about" }) {
+  const copy = useBrandCopy();
   const { ctx, profile, institution } = useNavCtx();
   const settings = useSettingsDialogOptional();
   const rows: { id: NavItemId; label: string; to: string; hint: string }[] = which === "people"
@@ -33,8 +35,8 @@ export function SettingsPlacesCard({ which }: { which: "people" | "about" }) {
         ...(presentFor("affiliation", ctx) && institution ? [{ id: "affiliation" as const, label: `Your ${institution.name} link`, to: "/affiliation", hint: SETTINGS_PLACES_COPY.affiliation }] : []),
       ]
     : [
-        { id: "trust", label: "Trust & data", to: "/trust", hint: SETTINGS_PLACES_COPY.trust },
-        { id: "why", label: "Why Lasso", to: "/why", hint: SETTINGS_PLACES_COPY.why },
+        { id: "trust", label: "Trust & data", to: "/trust", hint: copy(SETTINGS_PLACES_COPY.trust) },
+        { id: "why", label: copy("Why Lasso"), to: "/why", hint: copy(SETTINGS_PLACES_COPY.why) },
       ];
   if (rows.length === 0) return null;
   return (

@@ -20,6 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getReflectBoot } from "@/lib/reflect-boot.functions";
 import type { ReflectBoot, ReflectSessionRow } from "@/lib/reflect-boot-shared";
 import { parseScope } from "@/lib/reflect-shared";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 /**
  * PASS A2 — the conversations a person started with Lasso, listed beside the
@@ -63,6 +64,7 @@ export function AskedSessions({
   sessions: ReflectSessionRow[];
   onOpen: (sessionId: string) => void;
 }) {
+  const copy = useBrandCopy();
   const queryClient = useQueryClient();
   const { data: work } = useWorkItems();
   const { data: profile } = useProfile();
@@ -79,7 +81,7 @@ export function AskedSessions({
   return (
     <section className="mb-8 space-y-3" data-testid="asked-sessions">
       <div className="flex items-center gap-3 pb-2 pt-1">
-        <span className="font-hand text-[19px] leading-none text-graphite">Asked Lasso</span>
+        <span className="font-hand text-[19px] leading-none text-graphite">{copy("Asked Lasso")}</span>
         <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">
           {sessions.length}
         </span>
@@ -91,7 +93,7 @@ export function AskedSessions({
       </p>
 
       {sessions.length === 0 ? (
-        <p className="text-sm text-muted-foreground">You have not asked Lasso anything yet.</p>
+        <p className="text-sm text-muted-foreground">{copy("You have not asked Lasso anything yet.")}</p>
       ) : (
         <div className="space-y-1">
           {sessions.map((session) => (

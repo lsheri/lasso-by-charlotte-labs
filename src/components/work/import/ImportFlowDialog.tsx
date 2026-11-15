@@ -24,6 +24,7 @@ import {
 } from "@/lib/import-parsers";
 import { VENDORS, VENDOR_ORDER, type ImportVendor } from "@/lib/import-vendors";
 import { bucket, logEvent } from "@/lib/telemetry";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 type Screen = "source" | "file" | "select" | "committing" | "done" | "organize";
 
@@ -70,6 +71,7 @@ export function ImportFlowDialog({
   trigger: React.ReactNode;
   initialVendor?: ImportVendor;
 }) {
+  const copy = useBrandCopy();
   const { data: profile } = useProfile();
   const queryClient = useQueryClient();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -358,7 +360,7 @@ export function ImportFlowDialog({
             <p className="text-sm text-foreground">
               {result.imported} conversation{result.imported === 1 ? "" : "s"} added. They are
               private until you map them.
-              {result.duplicates > 0 ? ` ${result.duplicates} already in Lasso, skipped.` : ""}
+              {result.duplicates > 0 ? copy(` ${result.duplicates} already in Lasso, skipped.`) : ""}
             </p>
             <div className="flex flex-wrap gap-2">
               <Button type="button" onClick={() => setScreen("organize")}>

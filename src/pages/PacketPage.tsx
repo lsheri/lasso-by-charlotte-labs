@@ -20,6 +20,7 @@ import { logEvent } from "@/lib/telemetry";
 import { engagementLabel } from "@/lib/clients";
 import type { WorkItemRow } from "@/lib/work-types";
 import { markOpenStart } from "@/lib/perf-timing";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 const SEEN_PREFIX = "lasso.packet_seen.";
 
@@ -56,6 +57,7 @@ export function PacketPage({
   engagementId: string;
   subjectId: string;
 }) {
+  const copy = useBrandCopy();
   const { data: profile } = useProfile();
   const { data, isLoading, error } = usePacket(engagementId, subjectId);
   // A note is offered only where the note policy would accept it: the reader
@@ -330,7 +332,7 @@ export function PacketPage({
         <aside className="mt-10 space-y-4 lg:mt-0">
           <ToneCard
             tone="record"
-            label="WHAT LASSO READ TO BUILD THIS"
+            label={copy("WHAT LASSO READ TO BUILD THIS")}
             title={`${data.decisions.length} confirmed decision${data.decisions.length === 1 ? "" : "s"}`}
             className="gap-3 p-4"
           >
