@@ -44,6 +44,7 @@ import { noteDemoOpened, noteDemoPlayInteracted, type DemoPlayAction } from "@/l
 import headerVideoMp4 from "@/assets/landing/lasso-board-header.mp4.asset.json";
 import headerVideoPoster from "@/assets/landing/lasso-board-header-poster.webp.asset.json";
 import headerVideoWebm from "@/assets/landing/lasso-board-header.webm.asset.json";
+import { useBrand, useBrandCopy } from "@/components/skin/use-skin";
 
 export const LANDING_BOARD_STEPS = [
   {
@@ -236,9 +237,11 @@ const LANDING_INTRO_BRANDS = [
 const LANDING_INTRO_DURATION_MS = 4000;
 
 function LandingLogoRain() {
+  const copy = useBrandCopy();
+  const brand = useBrand();
   const marks = [...LANDING_INTRO_BRANDS, "powerpoint" as const];
   return (
-    <main className="lb-intro" aria-label="Opening Lasso" data-testid="landing-logo-rain">
+    <main className="lb-intro" aria-label={copy("Opening Lasso")} data-testid="landing-logo-rain">
       <div className="lb-intro-rain" aria-hidden="true">
         {[...marks, ...marks].map((brand, index) => (
           <span className="lb-intro-drop" key={`${brand}-${index}`}>
@@ -255,7 +258,7 @@ function LandingLogoRain() {
           <BrandMark px={64} />
           <span><BrandWordmark /></span>
         </div>
-        <span className="lb-brand-byline">by Charlotte Labs</span>
+        {brand.name === "Lasso" ? <span className="lb-brand-byline">by Charlotte Labs</span> : null}
       </div>
     </main>
   );
@@ -435,11 +438,12 @@ function ReplayAnswer({
   showAudit?: boolean;
   onOpenTurn?: (() => void) | undefined;
 }) {
+  const copy = useBrandCopy();
   return (
     <div className="nb-conversation-message max-w-none flex-row items-start gap-3">
       <BrandMark className="size-7 shrink-0 text-lasso-green" px={28} />
       <div className="nb-conversation-body min-w-0 flex-1 gap-0">
-        <span className="nb-binder-line font-sans text-[13px] font-semibold text-ink">Lasso</span>
+        <span className="nb-binder-line font-sans text-[13px] font-semibold text-ink">{copy("Lasso")}</span>
         <AnswerRail state="done">
           <MarkdownMessage content={preset.answer} variant="binder" />
           {finished && onOpenTurn ? (
@@ -615,6 +619,7 @@ export function PlayableDemoBoard({
   clientLabel: string;
   engagementTitle: string;
 }) {
+  const copy = useBrandCopy();
   const deckItem = board.seed.work.find((item) => /board deck/i.test(item.title));
   const items = board.seed.work.filter((item) => item.id !== deckItem?.id).slice(0, 8);
   const visibleTasks = board.seed.tasks
@@ -742,7 +747,7 @@ export function PlayableDemoBoard({
           Add sticky
         </Button>
         <Button size="sm" variant="outline" onClick={() => setAskOpen((open) => !open)}>
-          Ask Lasso
+          {copy("Ask Lasso")}
         </Button>
         <Button size="sm" variant="outline" onClick={() => resetBoard(false)}>
           Reset
@@ -874,14 +879,14 @@ export function PlayableDemoBoard({
             </article>
           ))}
         </div>
-        <aside className="demo-play-ask" data-open={askOpen} aria-label="Ask Lasso">
+        <aside className="demo-play-ask" data-open={askOpen} aria-label={copy("Ask Lasso")}>
           <button
             type="button"
             className="demo-play-ask-toggle"
             onClick={() => setAskOpen((open) => !open)}
           >
             <span>
-              <b>Ask Lasso</b>
+              <b>{copy("Ask Lasso")}</b>
               <small>{engagementTitle}</small>
             </span>
           </button>
@@ -960,6 +965,7 @@ function AskReplay({
   onOpenTurn: () => void;
   onOpenDecisionTurn: () => void;
 }) {
+  const copy = useBrandCopy();
   const replay = usePresetReplay(step, presets);
   const threadRef = useRef<HTMLDivElement>(null);
   const shownPositions = step === 5 ? [1] : step === 6 ? [2] : [1, 2, 4];
@@ -981,13 +987,13 @@ function AskReplay({
   return (
     <aside
       className="lb-answer-sheet"
-      aria-label="Ask Lasso replay"
+      aria-label={copy("Ask Lasso replay")}
       data-replay-phase={replay.phase}
       data-story-scroll="locked"
     >
       <header className="lb-ask-header">
         <div>
-          <p className="lb-micro">ASK LASSO</p>
+          <p className="lb-micro">{copy("ASK LASSO")}</p>
           <h3>{clientLabel}</h3>
           <p className="lb-ask-engagement-title">{engagementTitle}</p>
         </div>
@@ -1061,7 +1067,7 @@ function AskReplay({
           value={replay.phase === "typing" ? replay.typed : ""}
           readOnly
           rows={2}
-          aria-label="Ask Lasso question"
+          aria-label={copy("Ask Lasso question")}
         />
         <Button disabled data-replay-send={replay.phase === "reading" ? "pressed" : undefined}>
           {replay.phase === "reading" ? "Sending" : "Send"}
@@ -1396,6 +1402,7 @@ function PhoneStory({
   onOpenDecisionTurn: () => void;
   onUseCasePlayed: (key: UseCaseKey, inputMode: "hover" | "tap") => void;
 }) {
+  const copy = useBrandCopy();
   const rootRef = useRef<HTMLDivElement>(null);
   const proofModel = proof ? parseLandingProof(proof) : null;
   const deckItem = board.seed.work.find((item) => /board deck/i.test(item.title));
@@ -1457,9 +1464,9 @@ function PhoneStory({
             team's work went invisible.
           </h1>
           <p>
-            Lasso keeps the thinking behind AI-assisted work. The chats, files and decisions you
-            send sit next to the deliverable they produced, so you can show where a claim came
-            from and why it stayed.
+            {copy(
+              "Lasso keeps the thinking behind AI-assisted work. The chats, files and decisions you send sit next to the deliverable they produced, so you can show where a claim came from and why it stayed.",
+            )}
           </p>
           <div>
             <Button asChild>
@@ -2202,6 +2209,7 @@ function PhoneHeroAssemble() {
 }
 
 function LandingBoardHeader() {
+  const brand = useBrand();
   return (
     <header className="lb-header">
       <div className="lb-header-main">
@@ -2210,7 +2218,7 @@ function LandingBoardHeader() {
             <BrandMark px={34} />
             <span><BrandWordmark /></span>
           </span>
-          <span className="lb-brand-byline">by Charlotte Labs</span>
+          {brand.name === "Lasso" ? <span className="lb-brand-byline">by Charlotte Labs</span> : null}
         </EntryDoorLink>
         <nav className="lb-header-nav" aria-label="Primary navigation">
           <a href="#lb-canvas">How it works</a>
@@ -2349,6 +2357,7 @@ function LandingBoardUseCase({
   onBeforeUserPlay: (video: HTMLVideoElement) => void;
   onPlayed: (key: UseCaseKey, inputMode: "hover" | "tap") => void;
 }) {
+  const copy = useBrandCopy();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const inputMode = useRef<"hover" | "tap">("hover");
   const playIntent = useRef<"auto" | "user">("auto");
@@ -2398,14 +2407,14 @@ function LandingBoardUseCase({
             <ToolLogo key={tool} vendor={tool} compact />
           ))}
         </div>
-        <h3>{card.title}</h3>
-        <p>{card.body}</p>
+        <h3>{copy(card.title)}</h3>
+        <p>{copy(card.body)}</p>
       </div>
       <Button
         type="button"
         variant="ghost"
         className="landing-usecase-media"
-        aria-label={`Play: ${card.title}`}
+        aria-label={`Play: ${copy(card.title)}`}
         data-playing={playing}
         onPointerEnter={(pointerEvent) => {
           if (pointerEvent.pointerType === "mouse") play("hover");
@@ -2456,6 +2465,7 @@ function LandingBoardUseCase({
 }
 
 function LandingBoardImageUseCase({ card }: { card: Extract<LandingUseCase, { kind: "image" }> }) {
+  const copy = useBrandCopy();
   return (
     <article className="landing-usecase" data-usecase={card.key} data-usecase-kind="image">
       <div className="landing-usecase-copy">
@@ -2464,8 +2474,8 @@ function LandingBoardImageUseCase({ card }: { card: Extract<LandingUseCase, { ki
             <ToolLogo key={tool} vendor={tool} compact />
           ))}
         </div>
-        <h3>{card.title}</h3>
-        <p>{card.body}</p>
+        <h3>{copy(card.title)}</h3>
+        <p>{copy(card.body)}</p>
       </div>
       <div className="landing-usecase-media landing-usecase-media-still">
         <img className="landing-usecase-poster" src={card.image} alt="" aria-hidden="true" />
@@ -2483,6 +2493,7 @@ function UseCaseSection({
   phone?: boolean;
   onPlayed: (key: UseCaseKey, inputMode: "hover" | "tap") => void;
 }) {
+  const copy = useBrandCopy();
   const sectionRef = useRef<HTMLElement | null>(null);
   const [activeClip, setActiveClip] = useState(0);
   const [sectionVisible, setSectionVisible] = useState(false);
@@ -2527,7 +2538,7 @@ function UseCaseSection({
       id={id}
       className={`landing-usecases${phone ? " lb-phone-step lb-phone-usecases" : ""}`}
       data-phone-step={phone ? 1 : undefined}
-      aria-label="What Lasso does"
+      aria-label={copy("What Lasso does")}
     >
       <div className="landing-section-head">
         <span className="lb-section-label-space" aria-hidden="true" />
@@ -2718,6 +2729,7 @@ function LandingBoardContinuation({
 }
 
 export function LandingBoard() {
+  const copy = useBrandCopy();
   const open = useServerFn(openDemoBoardFn);
   const query = useQuery({
     queryKey: ["landing-board", "YSM-01"],
@@ -2941,9 +2953,9 @@ export function LandingBoard() {
                 team's work went invisible.
               </h1>
               <h2>
-                Lasso keeps the thinking behind AI-assisted work. The chats, files and decisions
-                you send sit next to the deliverable they produced, so you can show where a claim
-                came from and why it stayed.
+                {copy(
+                  "Lasso keeps the thinking behind AI-assisted work. The chats, files and decisions you send sit next to the deliverable they produced, so you can show where a claim came from and why it stayed.",
+                )}
               </h2>
               <div className="lb-hero-zone-1">
                 <Button asChild>
