@@ -12,6 +12,7 @@ import {
   type WalkthroughSection,
   type WalkthroughVariant,
 } from "@/lib/walkthrough";
+import { useBrand } from "@/components/skin/use-skin";
 
 function SectionBlock({
   section,
@@ -95,7 +96,7 @@ function SectionBlock({
 export function HowLassoWorksPage() {
   const { data: profile } = useProfile();
   const variant = walkthroughVariant(profile);
-  const guide = walkthroughFor(variant);
+  const guide = walkthroughFor(variant, useBrand());
   const orgId = profile?.org_id;
   const opened = useRef(false);
   const seen = useRef(new Set<string>());

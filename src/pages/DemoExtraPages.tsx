@@ -18,6 +18,7 @@ import type { DemoConversationItem } from "@/lib/demo-board.server";
 import { effectiveWorkDate } from "@/lib/work-types";
 import { vendorFromSource } from "@/lib/work-taxonomy";
 import { Route as DemoConversationsRoute } from "@/routes/demo.conversations";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 export const DEMO_TOOLS = [
   { key: "all", label: "All" },
@@ -209,13 +210,14 @@ export function DemoConversationsPage() {
 }
 
 export function DemoSourcesPage() {
+  const copy = useBrandCopy();
   useEffect(() => noteDemoOpened("sources", "none"), []);
   return (
     <Shell title="Where work comes from">
       <section aria-labelledby="demo-sources-ai" className="rounded-[var(--radius-lg)] border border-border bg-card px-4 py-4">
         <h2 id="demo-sources-ai" className="text-[13px] font-medium text-foreground">Add to Claude or ChatGPT</h2>
         <p className="mt-1 text-[13px] text-muted-foreground">
-          Add Lasso to your AI once. At the end of a working session, ask it to push the conversation to Lasso.
+          {copy("Add Lasso to your AI once. At the end of a working session, ask it to push the conversation to Lasso.")}
         </p>
         <div className="mt-4"><SetupSteps showSignin={false} /></div>
         <p className="mt-4 text-[13px] text-foreground" data-testid="demo-sources-link-line">{DEMO_SOURCES_LINK_LINE}</p>

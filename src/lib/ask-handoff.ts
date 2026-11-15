@@ -150,14 +150,15 @@ function pieceLines(pieces: H7Piece[]): string {
 /** Builds the text only when called, which is only on the person's click. */
 export function packageHandoff(input: H7Input): string {
   // Only the app's fixed words go through brandCopy; board titles, messages and pieces are the person's own.
-  // The connector keeps its real name ("Lasso") until the flip renames the MCP server.
+  // Phase 4 PR8: the connector line names Charlotte too; the server's own name, "Lasso by Charlotte Labs" until the
+  // flip, still matches it.
   const b = (text: string) => brandCopy(input.brand ?? BRANDS.lasso, text);
   const head = `${b("I was working on the Lasso board")} "${input.boardTitle}". Carry it on from here.`;
   const connector = input.viaConnector
-    ? `\n\nUse the Lasso connector to open the board "${input.boardTitle}" and read the pieces named below in full.`
+    ? `\n\n${b("Use the Lasso connector")} to open the board "${input.boardTitle}" and read the pieces named below in full.`
     : "";
   const lastAnswer = [...input.messages].reverse().find((m) => m.role !== "user")?.content ?? "";
-  const suffix = `\n\nWhen we are done, say: ${MCP_PUSH_PHRASE}`;
+  const suffix = `\n\nWhen we are done, say: ${b(MCP_PUSH_PHRASE)}`;
   if (input.choice === "full_board") {
     return `${head}${connector}\n\nEverything on the board:\n${pieceLines(input.board)}${suffix}`;
   }

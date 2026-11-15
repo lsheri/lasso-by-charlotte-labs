@@ -10,6 +10,7 @@ import { BRANCH_COPY, branchHasSigninConnector, branchPrimaryAction, branchMarkd
 import { BRANCH_TARGETS, BRANCH_TOOLS, branchOpenPlan, isBranchTool, type BranchTool } from "@/lib/branch-targets";
 import { logEvent } from "@/lib/telemetry";
 import { displayName } from "@/lib/work-item-name";
+import { useBrandCopy } from "@/components/skin/use-skin";
 
 const TOOL_KEY = "lasso.branch.tool";
 
@@ -51,6 +52,7 @@ export function BranchDialog({
   /** The new branch row exists; the caller places it on the board. */
   onBranched?: ((branchId: string) => void) | undefined;
 }) {
+  const copy = useBrandCopy();
   const { data: profile } = useProfile();
   const [tool, setTool] = useState<BranchTool>("claude");
   const [busy, setBusy] = useState(false);
@@ -153,11 +155,11 @@ export function BranchDialog({
     const chosen = tool;
     writeTool(chosen);
     const id = created.current?.id ?? crypto.randomUUID();
-    const plan = branchOpenPlan(chosen, branchPrompt(id));
+    const plan = branchOpenPlan(chosen, copy(branchPrompt(id)));
     // Open inside the click so the browser allows the new tab.
     window.open(plan.url, "_blank", "noopener,noreferrer");
     if (plan.handoff === "clipboard") {
-      try { await navigator.clipboard.writeText(branchPrompt(id)); } catch { toast.error(BRANCH_COPY.copyFailed); }
+      try { await navigator.clipboard.writeText(copy(branchPrompt(id))); } catch { toast.error(BRANCH_COPY.copyFailed); }
     }
     setBusy(true);
     const branch = await ensureBranch(id, chosen);
@@ -195,7 +197,7 @@ export function BranchDialog({
             </Button>
           ))}
         </div>
-        {primary === "download" ? <p className="text-[13px] text-muted-foreground">{BRANCH_COPY.needsSignin}</p> : null}
+        {primary === "download" ? <p className="text-[13px] text-muted-foreground">{copy(BRANCH_COPY.needsSignin)}</p> : null}
         {notice ? <p role="status" className="text-[13px] text-foreground">{notice}</p> : null}
         <DialogFooter className="mt-2 gap-2">
           {primary === "download" ? (

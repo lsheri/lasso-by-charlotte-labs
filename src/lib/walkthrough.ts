@@ -5,6 +5,7 @@
  * connector steps are read from mcp-setup-steps.ts so this can never drift
  * from the connector card.
  */
+import { BRANDS, brandCopyDeep, type Brand } from "@/design/brand/brand";
 import { MCP_PUSH_PHRASE, MCP_SETUP_STEPS, MCP_SERVER_NAME } from "@/lib/mcp-setup-steps";
 import { isCoach } from "@/lib/role-access";
 import { isBusinessOrg } from "@/hooks/use-profile";
@@ -265,6 +266,20 @@ const BY_VARIANT: Record<WalkthroughVariant, Walkthrough> = {
   coach,
 };
 
-export function walkthroughFor(variant: WalkthroughVariant): Walkthrough {
-  return BY_VARIANT[variant];
+const SERVER_NAME_LINE = `In your AI's connector list Lasso shows up as "${MCP_SERVER_NAME}".`;
+
+/**
+ * Phase 4 PR8: the walkthrough in the current brand. Lasso returns the table unchanged. Charlotte leaves out the
+ * connector-list sentence, because the connector server names itself Lasso until the flip, and brands the rest.
+ */
+export function walkthroughFor(variant: WalkthroughVariant, brand: Brand = BRANDS.lasso): Walkthrough {
+  const guide = BY_VARIANT[variant];
+  if (brand.name === "Lasso") return guide;
+  const sections = guide.sections.map((section) => ({
+    ...section,
+    body: section.body
+      .map((line) => (line.startsWith(SERVER_NAME_LINE) ? line.slice(SERVER_NAME_LINE.length).trim() : line))
+      .filter(Boolean),
+  }));
+  return brandCopyDeep(brand, { ...guide, sections });
 }
