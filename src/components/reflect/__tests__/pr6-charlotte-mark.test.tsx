@@ -37,7 +37,7 @@ describe("LassoThinkingMark under Charlotte", () => {
     const { container } = render(
       inSkin("charlotte", <LassoThinkingMark kind="signature" size={22} thinking persistent className="ask-mark" />),
     );
-    const host = container.firstElementChild!;
+    const host = container.firstElementChild as HTMLElement;
     expect(host.tagName).toBe("SPAN");
     expect(host.getAttribute("class")).toBe("ask-mark");
     expect(host.getAttribute("aria-hidden")).toBe("true");

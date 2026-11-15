@@ -12,5 +12,8 @@ export const sendReflectMessage = createServerFn({ method: "POST" })
   .inputValidator((input: ReflectInput) => input)
   .handler(async ({ data, context }): Promise<ReflectResult> => {
     const { runReflectTurn } = await import("./reflect-run.server");
-    return runReflectTurn(context.supabase, context.userId, data);
+    const { serverBrand } = await import("./brand-server");
+    const { readSkinCookie } = await import("./skin");
+    const email = typeof context.claims?.["email"] === "string" ? (context.claims["email"] as string) : null;
+    return runReflectTurn(context.supabase, context.userId, data, undefined, undefined, serverBrand(readSkinCookie(), email));
   });

@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { ArrowUpRight } from "lucide-react";
 
 import { BrandLogo } from "@/components/connectors/BrandLogo";
+import { useBrandCopy } from "@/components/skin/use-skin";
 import { supabase } from "@/integrations/supabase/client";
 import { BRANCH_TARGETS, BRANCH_TOOLS } from "@/lib/branch-targets";
 import {
@@ -191,6 +192,7 @@ export function ContinueInAI({
   build: () => Omit<H7Input, "viaConnector" | "choice">;
   onDone: (route: H7Route, blocked: boolean, label: string, choice: H7Choice) => void;
 }) {
+  const copy = useBrandCopy();
   const [open, setOpen] = useState(false);
   const [asked, setAsked] = useState<H7Tool | null>(() => readAskedTool(profileId, safeStore()));
   const tool = pickHandoffTool({
@@ -284,7 +286,7 @@ export function ContinueInAI({
                   className={`flex w-full items-center rounded-[var(--radius-control)] px-2 py-1.5 text-left hover:bg-muted ${index === 0 ? "font-medium" : ""}`}
                   onClick={() => void go(choice.id, tool)}
                 >
-                  {choice.label}
+                  {copy(choice.label)}
                 </button>
               ))}
             </>

@@ -6,6 +6,7 @@ import { INLINE_CHAR_BUDGET } from "@/lib/context-budget";
 
 import type { Database } from "@/integrations/supabase/types";
 import { ASK_LASSO_MAKING_RULES, REFLECT_SYSTEM_PROMPT, type ContextScope, type ContextSource, type ScopeSource } from "@/lib/reflect-shared";
+import { BRANDS, brandCopy, type Brand } from "@/design/brand/brand";
 import type { AnalysisPresetId } from "@/lib/analysis-presets";
 import { shareBucket, type ContextManifest } from "@/lib/context-manifest";
 import { renditionsReadBucket } from "./reference-rendition-shared";
@@ -81,6 +82,8 @@ export async function runReflectTurn(
   onDelta?: (delta: string) => void,
   /** V2-0: told once, before the model writes, what this answer is reading. Additive; nothing waits on it. */
   onRead?: (manifest: ContextManifest) => void,
+  /** Phase 4 PR4: the name the model's fixed prompts use. Lasso leaves every prompt byte-identical. */
+  brand: Brand = BRANDS.lasso,
 ): Promise<ReflectResult> {
   const message = data.message.trim();
   if (!message) throw new Error("Write something first.");
@@ -153,7 +156,8 @@ export async function runReflectTurn(
   // Where the person is asking from. The request carries no page, so this is
   // derived from the session scope: one engagement names it, otherwise the
   // whole record (no board open).
-  const whereLine = surface === "ask_lasso" ? await whereLineFor(supabase, sessionScope) : null;
+  const whereLine = surface === "ask_lasso" ? await whereLineFor(supabase, sessionScope, brand) : null;
+  const presetPrompt = preset?.systemPrompt ? brandCopy(brand, preset.systemPrompt) : null;
   const earlierReads = earlierReadsNote(
     (history ?? []) as { role: string; content: string; context_manifest?: unknown }[],
   );
@@ -162,10 +166,10 @@ export async function runReflectTurn(
   // section). It rides in the question turn with the earlier-reads note, after
   // the cached record, so identical content is one cache entry. The catalogue
   // path has no cached record and keeps both as system notes, as before.
-  const prompts = askPrompts({ presetPrompt: preset?.systemPrompt ?? null, surface, whereLine: null });
+  const prompts = askPrompts({ presetPrompt, surface, whereLine: null });
   const questionNote = [whereLine, offBoardNote, earlierReads].filter(Boolean).join("\n\n") || null;
   const cataloguePrompts = [
-    ...askPrompts({ presetPrompt: preset?.systemPrompt ?? null, surface, whereLine }),
+    ...askPrompts({ presetPrompt, surface, whereLine }),
     ...(offBoardNote ? [{ role: "system" as const, content: offBoardNote }] : []),
     ...(earlierReads ? [{ role: "system" as const, content: earlierReads }] : []),
   ];
@@ -221,6 +225,7 @@ export async function runReflectTurn(
         meta: { ...aiMeta, contextMode: "catalogue" as const },
         tier: "smart",
         timeoutMs: ANSWER_TIMEOUT_MS,
+        brand,
       },
       onDelta,
     );
@@ -620,7 +625,7 @@ async function persistTurn(
 }
 
 /** The one line that says where the person is asking from, derived from the session scope. */
-export async function whereLineFor(supabase: SupabaseClient<Database>, sessionScope: ContextScope): Promise<string> {
+export async function whereLineFor(supabase: SupabaseClient<Database>, sessionScope: ContextScope, brand: Brand = BRANDS.lasso): Promise<string> {
   const { scopeLabel } = await import("./reflect-shared");
   let place = "Ask Lasso, across their whole record, with no board open";
   if (sessionScope.mode === "engagements" && sessionScope.ids.length === 1) {
@@ -633,7 +638,7 @@ export async function whereLineFor(supabase: SupabaseClient<Database>, sessionSc
   } else if (sessionScope.mode !== "whole" && sessionScope.ids.length > 0) {
     place = `Ask Lasso, on a chosen set of ${scopeLabel(sessionScope).toLowerCase()}`;
   }
-  return `WHERE THE PERSON IS: ${place}.`;
+  return `WHERE THE PERSON IS: ${brandCopy(brand, place)}.`;
 }
 
 /** The system prompts every Ask turn starts with. Byte identical between a prime and the question that follows it. */
