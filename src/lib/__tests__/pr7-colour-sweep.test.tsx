@@ -80,9 +80,10 @@ describe("PR7 brand marks in the signed-in shell", () => {
   });
   afterEach(() => vi.restoreAllMocks());
 
-  it("shows the navy C only when skinned and the skin is Charlotte", () => {
+  it("shows the C with its lime hub and CHARLOTTE only when skinned and the skin is Charlotte (PR7b)", () => {
     const charlotte = render(inSkin("charlotte", <BrandLockup size="sm" skinned />)).container;
-    expect(charlotte.querySelector('[data-skin-mark="charlotte"] svg.wm')).not.toBeNull();
+    expect(charlotte.querySelector('[data-skin-mark="charlotte"] svg.wm.live')).not.toBeNull();
+    expect(charlotte.textContent).toBe("CHARLOTTE");
     for (const node of [
       inSkin("charlotte", <BrandLockup size="sm" />),
       inSkin("lasso", <BrandLockup size="sm" skinned />),
@@ -91,6 +92,7 @@ describe("PR7 brand marks in the signed-in shell", () => {
       const { container } = render(node);
       expect(container.querySelector("[data-skin-mark]")).toBeNull();
       expect(container.querySelector("svg.text-lasso-green")).not.toBeNull();
+      expect(container.textContent).toBe("LASSO");
     }
   });
 
