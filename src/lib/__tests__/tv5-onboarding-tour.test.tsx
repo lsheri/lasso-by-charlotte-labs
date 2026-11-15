@@ -61,6 +61,8 @@ vi.mock("@/components/onboarding/OnboardingTour", () => ({
   },
 }));
 
+// These cases cover the tour itself, so they switch it on; first-run-tour-off.test.ts covers the shipped default.
+vi.mock("@/lib/first-run-tour", () => ({ FIRST_RUN_TOUR_ON: true }));
 import { Route, firstRunTourPending } from "@/routes/onboarding";
 
 const opts = (Route as unknown as { options: { component: () => ReactNode } }).options;
