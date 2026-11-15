@@ -15,10 +15,10 @@ const GREY_TINT: ChipTint = { background: "var(--nb-grey-2)", color: "var(--nb-g
 /** Soft washes only, and no reds anywhere. */
 const KIND_TINTS: Record<string, ChipTint> = {
   memo_or_report: GREY_TINT,
-  deck: { background: "#faf1e2", color: "var(--nb-amber)" },
-  proposal: { background: "#e7efe9", color: "var(--nb-green-deep)" },
-  model_or_budget: { background: "#e8f0fb", color: "var(--nb-blue)" },
-  sheet: { background: "#e8f0fb", color: "var(--nb-blue)" },
+  deck: { background: "var(--kind-chip-deck-bg, #faf1e2)", color: "var(--kind-chip-deck-ink, var(--nb-amber))" },
+  proposal: { background: "var(--kind-chip-proposal-bg, #e7efe9)", color: "var(--kind-chip-proposal-ink, var(--nb-green-deep))" },
+  model_or_budget: { background: "var(--kind-chip-numbers-bg, #e8f0fb)", color: "var(--kind-chip-numbers-ink, var(--nb-blue))" },
+  sheet: { background: "var(--kind-chip-numbers-bg, #e8f0fb)", color: "var(--kind-chip-numbers-ink, var(--nb-blue))" },
 };
 
 /**

@@ -136,6 +136,7 @@ export function SketchCard({
           onSelect?.(work);
         }
       } : undefined}
+      data-sketch-kind={ink ? undefined : kind}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--focus-ring)]"
@@ -190,7 +191,7 @@ export function SketchCard({
               fontSize: 'var(--text-micro)',
               letterSpacing: 'var(--label-tracking)',
               textTransform: 'uppercase',
-              color: ink ? 'var(--neutral-50)' : 'var(--text-muted)',
+              color: ink ? 'var(--neutral-50)' : 'var(--sketch-kind-ink, var(--text-muted))',
             }}
           >
             {KIND_LABEL[kind]}
