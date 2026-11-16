@@ -96,11 +96,15 @@ describe("CharlotteMark", () => {
     expect(svg.querySelectorAll("circle.nd")).toHaveLength(8);
   });
 
-  it("reaches the app only through LassoThinkingMark (PR6) and BrandLockup (PR7, Phase 4); the brand names are separate", () => {
+  it("reaches the app only through LassoThinkingMark (PR6), BrandLockup (PR7, Phase 4) and AskLiveMark (15 Nov); the brand names are separate", () => {
     const readers = sourceFiles("src")
       .filter((path) => /\.(css|tsx?)$/.test(path) && !path.startsWith("src/design/"))
       .filter((path) => !path.includes("__tests__"))
       .filter((path) => /design\/brand\/(?!brand["'])/.test(readFileSync(path, "utf8")));
-    expect(readers).toEqual(["src/components/layout/BrandLockup.tsx", "src/components/reflect/LassoThinkingMark.tsx"]);
+    expect(readers.sort()).toEqual([
+      "src/components/canvas-lab/ask-draft/AskLiveMark.tsx",
+      "src/components/layout/BrandLockup.tsx",
+      "src/components/reflect/LassoThinkingMark.tsx",
+    ]);
   });
 });

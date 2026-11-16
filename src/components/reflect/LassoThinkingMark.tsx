@@ -446,6 +446,7 @@ function LassoCanvasMark({ kind, size, count = 0, thinking = false, rope = true,
       data-lasso-thinking-mark={kind}
       data-thinking={kind === "signature" ? (thinking ? "true" : "false") : undefined}
       data-rope={rope ? "true" : "false"}
+      data-brand-mark="lasso"
     />
   );
 }

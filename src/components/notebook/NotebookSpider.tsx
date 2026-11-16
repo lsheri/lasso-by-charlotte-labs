@@ -211,6 +211,7 @@ export function NotebookSpider({
   return (
     <div
       aria-hidden="true"
+      data-brand-mark="mascot"
       className={`nb-spider ${reading ? "nb-spider-reading" : ""} ${className}`}
       style={{
         position: "relative",
