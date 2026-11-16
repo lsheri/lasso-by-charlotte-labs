@@ -176,6 +176,7 @@ export function SidebarItemMenu({
           <button
             type="button"
             aria-label={COPY.moreActions(target.name)}
+            data-row-menu=""
             className="shrink-0 rounded-[var(--radius-control,6px)] p-0.5 text-muted-foreground opacity-60 transition-opacity hover:opacity-100 focus-visible:opacity-100"
           >
             <MoreHorizontal size={16} aria-hidden="true" />

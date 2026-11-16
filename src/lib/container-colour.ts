@@ -8,11 +8,8 @@ export function isContainerColour(value: unknown): value is ContainerColour {
   return typeof value === "string" && CONTAINER_COLOURS.includes(value as ContainerColour);
 }
 
-export function containerColourStyle(colour: ContainerColour): { dot: string; wash: string } {
-  return {
-    dot: `var(--nb-region-${colour}-vivid)`,
-    wash: `var(--nb-region-${colour}-soft)`,
-  };
+export function containerColourStyle(colour: ContainerColour): { dot: string } {
+  return { dot: `var(--nb-region-${colour}-vivid)` };
 }
 
 /** The node wins over its ancestors; ancestors are ordered nearest first. */

@@ -91,3 +91,23 @@ export function useContainerOpenState(profileId: string | undefined, ids: string
   }
   return { collapsed, setCollapsed };
 }
+/**
+ * One top-level folder open at a time (Liam, 15 Nov). `collapsed` lists closed ids; `roots` are the top-level ids
+ * in display order, each with its descendants. Opening a root closes every other root and everything inside it;
+ * folders inside the open root keep their own choices.
+ */
+export function openOneRoot(collapsed: readonly string[], roots: readonly { id: string; descendants: readonly string[] }[], openId: string): string[] {
+  const others = roots.filter((root) => root.id !== openId).flatMap((root) => [root.id, ...root.descendants]);
+  return [...new Set([...collapsed.filter((id) => id !== openId), ...others])];
+}
+
+/**
+ * What the tree shows when saved choices (or an older session) left several roots open: the root holding the active
+ * board wins, otherwise the first open root in display order. Nothing is written; the next toggle saves the rule.
+ */
+export function withOneRootOpen(collapsed: readonly string[], roots: readonly { id: string; descendants: readonly string[] }[], activeRoot: string | undefined): string[] {
+  const open = roots.filter((root) => !collapsed.includes(root.id));
+  if (open.length <= 1) return [...collapsed];
+  const keep = open.find((root) => root.id === activeRoot) ?? open[0]!;
+  return openOneRoot(collapsed, roots, keep.id);
+}

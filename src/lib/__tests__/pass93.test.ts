@@ -64,7 +64,7 @@ describe("93.2 sidebar hierarchy", () => {
   it("marks a shelf with the folder glyph and a state chevron", () => {
     expect(nav).toMatch(/nb-nav-shelf[\s\S]{0,400}name="folder" size=\{20\}/);
     expect(nav).toMatch(/name="chevron-right"\s*\n\s*size=\{13\}/);
-    expect(nav).toContain('className={collapsed ? "" : "rotate-90"}');
+    expect(nav).toContain('className={`nb-roll-chevron${collapsed ? "" : " rotate-90"}`}');
     expect(nav).toContain("aria-expanded");
   });
 
