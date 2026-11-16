@@ -11,6 +11,7 @@ export function CharlotteTile({ size = 64, radius }: { size?: number; radius?: n
       viewBox="0 0 64 64"
       aria-hidden="true"
       data-charlotte-tile={size}
+      data-brand-mark="charlotte"
     >
       <rect width="64" height="64" rx={t.rx} fill="#0B2A4A" />
       <g fill="none" stroke="#FAFAF7" strokeLinecap="round">

@@ -14,6 +14,7 @@ export function LassoLogo({
     <img
       src={logoAsset.url}
       alt="Lasso by Charlotte Labs"
+      data-brand-mark="lasso"
       className={`${SIZES[size]} w-auto shrink-0 select-none ${className}`}
       loading="lazy"
       decoding="async"

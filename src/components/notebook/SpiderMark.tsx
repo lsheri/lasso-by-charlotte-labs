@@ -26,6 +26,7 @@ export function SpiderMark({
         height={size}
         style={{ width: size, height: size }}
         src={staticUrl}
+        data-brand-mark="mascot"
         className="nb-spider-wobble align-middle"
       />
     </span>

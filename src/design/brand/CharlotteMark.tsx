@@ -1,7 +1,8 @@
 /* The Charlotte mark: the still Monoline C, and the growing web while Lasso is reading.
    One requestAnimationFrame loop writes SVG attributes directly; React does not re-render per frame.
    The loop runs only while reading and on screen. Reduced motion shows the finished web, still.
-   LassoThinkingMark (PR6) and the signed-in BrandLockup (PR7) render it under the Charlotte skin; nothing else in the app imports it. */
+   LassoThinkingMark (PR6), the signed-in BrandLockup (PR7) and AskLiveMark render it under the Charlotte skin; nothing else
+   in the app imports it (see brand-marks.ts). */
 import { type CSSProperties, useEffect, useRef, useState } from "react";
 
 import "./charlotte-mark.css";
@@ -138,6 +139,7 @@ export function CharlotteMark({
       aria-hidden="true"
       style={style}
       data-charlotte-mark={state}
+      data-brand-mark="charlotte"
       data-size={size}
     >
       <path ref={spokes} className="st" d={frame ? frame.spokes : MONO_SPOKES} />
