@@ -2,7 +2,7 @@ import { clientsEnabled } from "@/lib/workspace-settings";
 import { useQueryClient } from "@tanstack/react-query";
 import { BoardNewPill } from "@/components/board/BoardNewPill";
 import { Link, useMatchRoute, useSearch } from "@tanstack/react-router";
-import { Fragment, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
+import { Fragment, useState, useSyncExternalStore, type ReactNode } from "react";
 
 import { NewEngagementDialog } from "@/components/engagements/NewEngagementDialog";
 import { SidebarCreateActions, type CreatingKind } from "@/components/engagements/SidebarCreateActions";
@@ -49,7 +49,8 @@ import {
 import { navFor, type NavItemId } from "./nav-config";
 import { useNavCtx } from "./use-nav-ctx";
 import { BoardFinder } from "./BoardFinder";
-import { activeBoardChain, filterBoardTree, treeBoards, useContainerOpenState, TREE_COPY } from "@/lib/sidebar-tree-state";
+import { RollDown } from "./RollDown";
+import { activeBoardChain, filterBoardTree, openOneRoot, treeBoards, useContainerOpenState, withOneRootOpen, TREE_COPY } from "@/lib/sidebar-tree-state";
 import type { NavOpenedDims } from "@/lib/telemetry-shared";
 import { engagementDisplayTitle } from "@/lib/clients";
 import {
@@ -423,24 +424,35 @@ export function SidebarNav({
     return engagements.length ? [{ ...shelf, engagements }] : [];
   }) : allSyntheticShelves;
   const everyCollapsibleId = [...allContainerIds(fullContainerRoots), ...allSyntheticShelves.map((shelf) => shelf.clientId)];
+  const activeChain = activeBoardChain(fullContainerRoots, activeEngagementId);
   const { collapsed: savedCollapsed, setCollapsed: setCollapsedClients } = useContainerOpenState(
-    profile?.id, everyCollapsibleId, activeBoardChain(fullContainerRoots, activeEngagementId),
+    profile?.id, everyCollapsibleId, activeChain,
   );
-  const collapsedClients = filtering ? [] : savedCollapsed;
+  // One top-level folder open at a time (Liam, 15 Nov); a search still opens every match.
+  const treeRoots = [
+    ...fullContainerRoots.map((node) => ({ id: node.clientId, descendants: descendantContainerIds(fullContainerRoots, node.clientId) })),
+    ...allSyntheticShelves.map((shelf) => ({ id: shelf.clientId, descendants: [] })),
+  ];
+  const shownCollapsed = withOneRootOpen(savedCollapsed, treeRoots, activeChain[0]);
+  const collapsedClients = filtering ? [] : shownCollapsed;
   const boardNavigate = () => {
     // CS-3: a tree board click is a board open; a filtered one stays a find result.
     if (profile?.org_id) logEvent("nav.opened", profile.org_id, { item: filtering ? "find_result" : "board", surface } satisfies NavOpenedDims);
     onNavigate?.();
   };
-  function toggleClient(clientId: string) {
-    const next = savedCollapsed.includes(clientId)
-      ? savedCollapsed.filter((id) => id !== clientId)
-      : [...new Set([...savedCollapsed, clientId, ...descendantContainerIds(fullContainerRoots, clientId)])];
-    setCollapsedClients(next);
+  function openClient(clientId: string) {
+    setCollapsedClients(treeRoots.some((root) => root.id === clientId)
+      ? openOneRoot(shownCollapsed, treeRoots, clientId)
+      : shownCollapsed.filter((id) => id !== clientId));
   }
-  const allCollapsed = everyCollapsibleId.length > 0 && everyCollapsibleId.every((id) => savedCollapsed.includes(id));
-  function toggleAll() { setCollapsedClients(allCollapsed ? [] : everyCollapsibleId); }
-  function expandClient(clientId: string) { setCollapsedClients(savedCollapsed.filter((id) => id !== clientId)); }
+  function toggleClient(clientId: string) {
+    if (shownCollapsed.includes(clientId)) openClient(clientId);
+    else setCollapsedClients([...new Set([...shownCollapsed, clientId, ...descendantContainerIds(fullContainerRoots, clientId)])]);
+  }
+  const allCollapsed = everyCollapsibleId.length > 0 && everyCollapsibleId.every((id) => shownCollapsed.includes(id));
+  // Opening everything at once would break the one-open rule, so only Collapse all remains.
+  function collapseAll() { setCollapsedClients(everyCollapsibleId); }
+  function expandClient(clientId: string) { openClient(clientId); }
 
   function renderShelf(shelf: (typeof groups)[number]) {
                     const collapsed = collapsedClients.includes(shelf.clientId);
@@ -467,7 +479,7 @@ export function SidebarNav({
                             <GraphiteIcon
                               name="chevron-right"
                               size={13}
-                              className={collapsed ? "" : "rotate-90"}
+                              className={`nb-roll-chevron${collapsed ? "" : " rotate-90"}`}
                             />
                           </button>
                           </ShelfDropZone>
@@ -508,14 +520,13 @@ export function SidebarNav({
                               <GraphiteIcon
                                 name="chevron-right"
                                 size={13}
-                                className={collapsed ? "" : "rotate-90"}
+                                className={`nb-roll-chevron${collapsed ? "" : " rotate-90"}`}
                               />
                             </button>
                           </div>
                         )}
 
-                        {collapsed ? null : (
-                          <>
+                        <RollDown open={!collapsed}>
                             {shelf.engagements.map((engagement) => (
                                 <EngagementRow
                                   key={engagement.id}
@@ -525,8 +536,7 @@ export function SidebarNav({
                                   scope={scopeFor(engagement.id)}
                                 />
                               ))}
-                          </>
-                        )}
+                        </RollDown>
                       </div>
                     );
   }
@@ -710,17 +720,17 @@ export function SidebarNav({
         return (
           <Fragment key={group.label}>
           <div data-nav-placement={group.placement} {...(group.id === "sources" ? { "data-nav-footer": "true" } : {})} className={group.id === "sources" ? "lasso-sidebar-footer shrink-0" : isEngagementGroup ? "flex shrink-0 flex-col" : "shrink-0"}>
-            {isEngagementGroup && everyCollapsibleId.length > 0 ? (
+            {isEngagementGroup && everyCollapsibleId.length > 0 && !allCollapsed && !filtering ? (
               <div className="flex items-center justify-between gap-2 px-2">
                 <div className="nb-group-header">{groupLabel}</div>
                 <span className="ml-auto flex items-center gap-2">
                 <button
                   type="button"
                   data-testid="nav-collapse-all"
-                  onClick={toggleAll}
+                  onClick={collapseAll}
                   className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft transition-colors hover:text-foreground"
                 >
-                  {allCollapsed ? "Expand all" : "Collapse all"}
+                  Collapse all
                 </button>
                 </span>
               </div>
@@ -1013,17 +1023,19 @@ function ContainerShelfRow({
                 onClick={() => onToggle(node.clientId)}
                 className="shrink-0"
               >
-                <GraphiteIcon name="chevron-right" size={13} className={collapsed ? "" : "rotate-90"} />
+                <GraphiteIcon name="chevron-right" size={13} className={`nb-roll-chevron${collapsed ? "" : " rotate-90"}`} />
               </button>
             </div>
-            {!collapsed && node.engagements.length === 0 && node.children.length === 0 ? (
-              <p className="px-2 py-1 pl-10 text-sm italic text-muted-foreground" data-tree-depth={depth + 1}>Nothing in here yet</p>
-            ) : null}
-            {collapsed || !hasChildren ? null : (
+            {hasChildren ? null : (
+              <RollDown open={!collapsed}>
+                <p className="px-2 py-1 pl-10 text-sm italic text-muted-foreground" data-tree-depth={depth + 1}>Nothing in here yet</p>
+              </RollDown>
+            )}
+            {hasChildren ? (
+              <RollDown open={!collapsed}>
               <div
                 className="nb-tree-branch"
                 data-container-colour={colour ?? undefined}
-                style={colourStyle ? { "--container-wash": colourStyle.wash } as CSSProperties : undefined}
               >
                 {node.engagements.map((engagement) => (
                   <div key={engagement.id} className="nb-tree-child" data-tree-depth={depth + 1}>
@@ -1052,7 +1064,8 @@ function ContainerShelfRow({
                   />
                 ))}
               </div>
-            )}
+              </RollDown>
+            ) : null}
           </div>
         );
 }

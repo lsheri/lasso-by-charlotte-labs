@@ -2312,21 +2312,8 @@ html:has([data-testid="canvas-lab-shell"]), body:has([data-testid="canvas-lab-sh
   margin-left: 15px;
   border-left: 1px solid var(--nb-pencil);
 }
-.nb-tree-branch[data-container-colour] {
-  border-radius: var(--radius-control);
-  background: var(--container-wash);
-}
 .nb-tree-child {
   position: relative;
-}
-.nb-tree-branch > .nb-tree-child::before {
-  position: absolute;
-  top: 13px;
-  left: 0;
-  width: 8px;
-  border-top: 1px solid var(--nb-pencil);
-  content: "";
-  pointer-events: none;
 }
 .nb-tree-branch > .nb-tree-child > .nb-nav-item,
 .nb-tree-branch > .nb-tree-child > div > .nb-nav-item {
@@ -2339,12 +2326,27 @@ html:has([data-testid="canvas-lab-shell"]), body:has([data-testid="canvas-lab-sh
    text/muted, matching Figma 12:332, so a shelf never reads as one more
    engagement row. pass92.test.ts pins the muted token. */
 .nb-nav-shelf {
-  font-family: var(--font-mono, ui-monospace, monospace);
-  font-size: 11px;
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  font-weight: 500;
   line-height: 1.2;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
   color: var(--nb-soft);
+}
+/* Simpler tree (Liam, 15 Nov): folder names in plain case, one quiet guide line for depth (no elbows, no wash,
+   no indent mark inside the tree), and row menus that appear on hover where there is hover. */
+.nb-tree-branch .nb-nav-item[data-tree-depth] > .nb-nav-indent { display: none; }
+/* !important: these sit in the nb layer, under the trigger's own opacity utilities. */
+@media (hover: hover) {
+  .lasso-sidebar-nav [data-row-menu]:not([data-state="open"]) { opacity: 0 !important; }
+  .lasso-sidebar-nav :is([data-drag-row], .nb-nav-shelf):is(:hover, :focus-within) [data-row-menu] { opacity: 1 !important; }
+}
+/* A folder rolls open and shut (Liam, 15 Nov). RollDown mounts and unmounts it; ROLL_MS matches the 200ms. */
+.nb-roll { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 200ms var(--nb-ease); }
+.nb-roll[data-open="true"] { grid-template-rows: 1fr; }
+.nb-roll-inner { min-height: 0; overflow: hidden; }
+.nb-roll-chevron { transition: transform 200ms var(--nb-ease); }
+@media (prefers-reduced-motion: reduce) {
+  .nb-roll, .nb-roll-chevron { transition: none; }
 }
 
 /* ---------------------------------------------------------------------------

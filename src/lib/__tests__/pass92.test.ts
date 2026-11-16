@@ -101,7 +101,8 @@ describe("92.2 shelf typography", () => {
   it("gives shelf headers the micro label voice in muted text", () => {
     expect(styles).toContain(".nb-nav-shelf");
     expect(styles).toMatch(/\.nb-nav-shelf\s*{[^}]*var\(--nb-soft\)/);
-    expect(styles).toMatch(/\.nb-nav-shelf\s*{[^}]*uppercase/);
+    // 15 Nov: plain case now (Liam asked for a simpler tree); the muted token stays.
+    expect(styles).not.toMatch(/\.nb-nav-shelf\s*{[^}]*uppercase/);
   });
 
   it("keeps the chevron, collapse state and hover row on the header", () => {
