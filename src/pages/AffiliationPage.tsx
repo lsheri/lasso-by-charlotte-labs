@@ -75,6 +75,7 @@ function SharedBoardRow({ board }: { board: { linkId: string; engagementId: stri
       setProblem(null);
       await queryClient.invalidateQueries({ queryKey: ["partner-share-engagements", board.linkId] });
       await queryClient.invalidateQueries({ queryKey: ["affiliation-shared-boards"] });
+      await queryClient.invalidateQueries({ queryKey: ["boards-shared-up"] });
     },
   });
 

@@ -20,6 +20,8 @@ import { FromYourPeopleGroup } from "./FromYourPeople";
 import { useSharedWithMe } from "@/hooks/use-shared-with-me";
 import { SharedWithYouSection } from "./SharedWithYou";
 import { useSharedBoardMarks } from "@/hooks/use-shared-board-marks";
+import { useBoardsSharedUp } from "@/hooks/use-boards-shared-up";
+import { SHARE_UP_COPY } from "@/lib/share-up-copy";
 
 import { useWorkItems } from "@/hooks/use-work-items";
 import { groupConversations } from "@/lib/work-types";
@@ -150,6 +152,9 @@ function EngagementRow({
 }) {
   const canEdit = useCanEditContainers();
   const sharedBy = useSharedBoardMarks().get(engagement.id);
+  // Shared up stays in the owner's menu (Liam, 15 Nov), so the row says so.
+  const sharedUp = useBoardsSharedUp().get(engagement.id);
+  const sharedUpLine = sharedUp ? SHARE_UP_COPY.ownerMark(sharedUp) : null;
   const [menuOpen, setMenuOpen] = useState(false);
   const drag = useSidebarDrag();
   const link = (
@@ -158,7 +163,7 @@ function EngagementRow({
         params={{ id: engagement.id }}
         search={{ work: undefined }}
         onClick={onNavigate}
-        aria-label={sharedBy ? `${engagementDisplayTitle(engagement)}, Shared by ${sharedBy}` : undefined}
+        aria-label={sharedBy || sharedUpLine ? [engagementDisplayTitle(engagement), sharedBy ? `Shared by ${sharedBy}` : null, sharedUpLine].filter(Boolean).join(", ") : undefined}
         className={treeDepth === undefined && nested ? `${linkClass} nb-nav-item-nested` : linkClass}
         data-tree-depth={treeDepth}
         data-board-hue={boardHueIndex(engagement.id)}
@@ -180,6 +185,18 @@ function EngagementRow({
           </TooltipProvider>
         ) : null}
         <span className="truncate">{engagementDisplayTitle(engagement)}</span>
+        {sharedUpLine ? (
+          <TooltipProvider delayDuration={150}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="nb-shared-up ml-auto inline-flex shrink-0" aria-hidden="true" data-shared-up="">
+                  <GraphiteIcon name="firm" size={14} animate={false} />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="right">{sharedUpLine}</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        ) : null}
         <BoardNewPill engagementId={engagement.id} />
       </Link>
   );
