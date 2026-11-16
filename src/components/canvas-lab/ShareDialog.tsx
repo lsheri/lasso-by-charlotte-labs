@@ -43,6 +43,7 @@ import {
   type PartnerShare,
 } from "@/lib/partner-share";
 import { SHARE_UP_COPY } from "@/lib/share-up-copy";
+import { FirmShareSection } from "@/components/canvas-lab/FirmShareSection";
 import { INVITE_COPY, inviteCountBand, parseEmailList } from "@/lib/board-invites-shared";
 import { Textarea } from "@/components/ui/textarea";
 import { inviteToBoard, listBoardInvites, withdrawBoardInvite } from "@/lib/board-invites.functions";
@@ -87,6 +88,8 @@ export function ShareDialog({
 
         <div className="flex max-h-[70vh] flex-col gap-6 overflow-y-auto">
           <PeopleSection engagementId={engagementId} profileId={profileId} open={open} />
+
+          <FirmShareSection engagementId={engagementId} profileId={profileId} open={open} />
 
           <SponsorSection engagementId={engagementId} profileId={profileId} open={open} />
 

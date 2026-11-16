@@ -97,6 +97,8 @@ describe("C1 the from dim", () => {
         // Banded, never a raw count, the same convention as the other counts.
         brief_files: "0",
         client_inline: "false",
+        // 15 Nov: a company workspace is asked to share with the firm; the answer defaults to off.
+        firm_share: "off",
       },
     });
   });

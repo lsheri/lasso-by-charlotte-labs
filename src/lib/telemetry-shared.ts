@@ -512,6 +512,8 @@ export type TelemetryEvent =
   | "board.share_link"
   /** PERF-2c: the board Share dialog went from closed to open. No dims. */
   | "board.share_opened"
+  /** 15 Nov: Share with firm turned on or off. Dims: to (on | off), by_role (owner | admin). Portal registration required. */
+  | "board.firm_share_changed"
   /**
    * T1: a traced question was saved to span_links. Dims: via (short fixed
    * code-path name) only. No ids, text, names or counts.

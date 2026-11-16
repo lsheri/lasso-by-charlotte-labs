@@ -10,7 +10,8 @@ export type NotificationKind =
   | "support_request"
   | "mention_received"
   | "sticky_assigned"
-  | "sticky_done";
+  | "sticky_done"
+  | "firm_share_changed";
 
 export const NOTIFICATION_KINDS: readonly NotificationKind[] = [
   "invite_needs_approval",
@@ -23,6 +24,7 @@ export const NOTIFICATION_KINDS: readonly NotificationKind[] = [
   "mention_received",
   "sticky_assigned",
   "sticky_done",
+  "firm_share_changed",
 ];
 
 export type NotificationRow = {
@@ -68,6 +70,8 @@ export const NOTIFICATION_COPY = {
   openSticky: "Open",
   markDone: "Mark done",
   markedDone: "Done.",
+  firmShareOn: (by: string, board: string) => `${by} shared ${board} with the firm.`,
+  firmShareOff: (by: string, board: string) => `${by} stopped sharing ${board} with the firm.`,
 } as const;
 
 function text(value: unknown, fallback = ""): string {
@@ -124,6 +128,10 @@ export function notificationSentence(row: { kind: string; payload: Record<string
       return NOTIFICATION_COPY.stickyAssigned(text(p["by"], "Someone"), text(p["work"], "a piece of work"), text(p["place"], "on this piece"));
     case "sticky_done":
       return NOTIFICATION_COPY.stickyDone(text(p["by"], "Someone"), text(p["work"], "a piece of work"), text(p["place"], "on this piece"));
+    case "firm_share_changed":
+      return p["on"] === true
+        ? NOTIFICATION_COPY.firmShareOn(text(p["by"], "Someone"), board)
+        : NOTIFICATION_COPY.firmShareOff(text(p["by"], "Someone"), board);
     default:
       return "";
   }

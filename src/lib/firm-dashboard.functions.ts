@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 import type { FirmCheckLibraryRow, FirmDashboard } from "./firm-dashboard-shared";
+import type { FirmLiveBoard } from "./firm-live-boards-shared";
 
 type Ctx = { profile_id?: string | undefined };
 
@@ -58,4 +59,15 @@ export const setFirmCheckActive = createServerFn({ method: "POST" })
     });
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+/** Boards shared with the firm (15 Nov). Same gate as the dashboard: admin or lead, company workspace. */
+export const getFirmLiveBoards = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: Ctx) => input)
+  .handler(async ({ data, context }): Promise<FirmLiveBoard[]> => {
+    const { requireFirmView } = await import("./firm-view.server");
+    const { listFirmLiveBoards } = await import("./firm-live-boards.server");
+    const { profile, supabaseAdmin } = await requireFirmView(context.supabase, context.userId, data.profile_id);
+    return listFirmLiveBoards(supabaseAdmin, profile.org_id);
   });

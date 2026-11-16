@@ -22,6 +22,8 @@ import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
 import { briefConfirmShape } from "@/lib/brief-files";
 import { vocabFor } from "@/lib/edu-vocab";
+import { FIRM_SHARE_COPY } from "@/lib/firm-share-copy";
+import { profileHasFirmView } from "@/lib/workspace-capabilities";
 import { logEvent } from "@/lib/telemetry";
 import { bucket } from "@/lib/telemetry-shared";
 import { placeWorkOnBoardFn } from "@/lib/workboard-add-work.functions";
@@ -48,6 +50,7 @@ export function NewEngagementDialog({
   onOpenChange?: (open: boolean) => void;
 }) {
   const { data: profile } = useProfile();
+  const firmQuestion = Boolean(profile) && profileHasFirmView(profile);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const vocab = vocabFor(profile);
@@ -63,6 +66,8 @@ export function NewEngagementDialog({
   const [title, setTitle] = useState("");
   const [clientId, setClientId] = useState<string | null>(initialClientId ?? null);
   const [brief, setBrief] = useState("");
+  // Company workspaces only, asked every time, Not now by default (Liam, 15 Nov).
+  const [shareWithFirm, setShareWithFirm] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   /** The chosen container was made inline, inside this same form. */
   const [clientInline, setClientInline] = useState(false);
@@ -81,6 +86,7 @@ export function NewEngagementDialog({
     setTitle("");
     setClientId(initialClientId ?? null);
     setBrief("");
+    setShareWithFirm(false);
     setFiles([]);
     setClientInline(false);
     setConfirmNoBrief(false);
@@ -126,6 +132,7 @@ export function NewEngagementDialog({
       title: title.trim(),
       client_id: clientId,
       brief: brief.trim() || null,
+      shared_with_firm: firmQuestion && shareWithFirm,
       // code is left out on purpose: the database fills it on insert. The
       // generated insert type still marks it required, hence the cast.
     } as TablesInsert<"engagements">);
@@ -175,6 +182,7 @@ export function NewEngagementDialog({
       brief_files: bucket(files.length),
       from,
       client_inline: clientId && clientInline ? "true" : "false",
+      ...(firmQuestion ? { firm_share: shareWithFirm ? "on" : "off" } : {}),
     });
 
     // The engagement exists now, so nothing below is allowed to roll anything
@@ -300,6 +308,27 @@ export function NewEngagementDialog({
                 </p>
               ) : null}
             </div>
+
+            {firmQuestion ? (
+              <fieldset className="space-y-1.5" data-testid="firm-share-question">
+                <legend className="micro-label">{FIRM_SHARE_COPY.question(profile?.org_name ?? "your firm")}</legend>
+                <div role="radiogroup" className="flex gap-2">
+                  {[false, true].map((on) => (
+                    <button
+                      key={String(on)}
+                      type="button"
+                      role="radio"
+                      aria-checked={shareWithFirm === on}
+                      onClick={() => setShareWithFirm(on)}
+                      className="rounded-[var(--radius-control)] border border-border px-3 py-1.5 text-sm text-foreground aria-checked:border-foreground aria-checked:bg-secondary"
+                    >
+                      {on ? FIRM_SHARE_COPY.share : FIRM_SHARE_COPY.notNow}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">{FIRM_SHARE_COPY.createLine}</p>
+              </fieldset>
+            ) : null}
 
             <div className="space-y-2">
               <input
