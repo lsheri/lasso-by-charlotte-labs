@@ -34,6 +34,11 @@ export const WORKBOARD_STICKY_MAX_SIZE = 4000;
 export const WORKBOARD_IMAGE_MIN_SIZE = 8;
 export const WORKBOARD_IMAGE_MAX_SIZE = 4000;
 export const WORKBOARD_IMAGE_LONGEST_EDGE = 420;
+/** A grouping's rectangle. The server refuses anything outside these bounds. */
+export const WORKBOARD_FRAME_MIN_WIDTH = 260;
+export const WORKBOARD_FRAME_MIN_HEIGHT = 220;
+export const WORKBOARD_FRAME_MAX_WIDTH = 2400;
+export const WORKBOARD_FRAME_MAX_HEIGHT = 1800;
 export type WorkboardImageBody = { path: string; naturalWidth: number; naturalHeight: number };
 
 export function parseWorkboardImageBody(value: unknown): WorkboardImageBody | null {

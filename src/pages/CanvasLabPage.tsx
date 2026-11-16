@@ -261,7 +261,7 @@ import { createDrawnWorkstreamFn, moveItemToWorkstreamFn } from "@/lib/workstrea
 import { deleteWorkstream as deleteWorkstreamFn, renameWorkstream as renameWorkstreamFn } from "@/lib/workstreams.functions";
 import { BOARD_WORKSTREAM_COPY, boxRemoval, canRenameBox, regionNameAction, type ManagedTask } from "@/lib/board-workstream-delete";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { defaultWorkstreamName, drawnRect, drawnRectUsable, movePromptText, splitClaims, type ClaimCandidate, type DrawRect } from "@/lib/workstream-draw";
+import { defaultWorkstreamName, drawnRect, drawnRectUsable, fittedDrawnRect, movePromptText, splitClaims, type ClaimCandidate, type DrawRect } from "@/lib/workstream-draw";
 import { boardIsNearEmpty } from "@/lib/workboard-view-mode";
 import { ExampleBoardOverlay } from "@/components/canvas-lab/ExampleBoardOverlay";
 import { LiftedWork } from "@/components/canvas-lab/LiftedWork";
@@ -1704,8 +1704,8 @@ export function CanvasLabPage({ engagementId, entryVia, openSticky }: { engageme
       if (!current) return;
       const rect = drawnRect(current.from, current.to);
       if (!drawnRectUsable(rect)) { setDrawTool(false); setAnnouncement("Drag a bigger box to draw a grouping."); return; }
-      if (drawMode === "section") void createSection(rect);
-      else void createPaintRegion(rect);
+      if (drawMode === "section") void createSection(fittedDrawnRect(rect));
+      else void createPaintRegion(fittedDrawnRect(rect));
     }
     function cancelDrawing() {
       drawingRef.current = null;
