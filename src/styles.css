@@ -5294,6 +5294,36 @@ html:has([data-testid="canvas-lab-shell"]), body:has([data-testid="canvas-lab-sh
 /* B1: while a drag, pan, resize or connect is live, embedded previews let the release reach the board. */
 .canvas-lab-surface[data-interacting="true"] iframe { pointer-events: none; }
 
+/* The folder page (Liam, 15 Nov): folders, boards as cards, and context as a list. */
+.folder-page-rows { display: flex; flex-direction: column; border-top: 1px solid var(--nb-rule); }
+.folder-page-row { display: flex; width: 100%; min-height: 44px; align-items: center; gap: 12px; border-bottom: 1px solid var(--nb-rule); padding: 8px 4px; text-align: left; font-size: 14px; color: var(--nb-ink); transition: background-color 120ms var(--nb-ease); }
+.folder-page-row:hover { background: var(--nb-grey-1); }
+.folder-page-row:focus-visible { outline: 2px solid var(--nb-green); outline-offset: -2px; }
+.folder-page-row-where { flex: 0 0 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12.5px; color: var(--nb-mid); }
+.folder-page-row-when { flex: 0 0 96px; text-align: right; font-family: var(--font-mono); font-size: 11px; color: var(--nb-soft); }
+.folder-page-boards { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.folder-page-board { position: relative; display: flex; min-height: 96px; flex-direction: column; justify-content: space-between; gap: 12px; overflow: hidden; border: 1px solid var(--nb-rule); border-radius: var(--radius-card); background: var(--nb-white); padding: 14px 14px 12px 20px; box-shadow: var(--shadow-card); transition: border-color 120ms var(--nb-ease), box-shadow 120ms var(--nb-ease); }
+.folder-page-board:hover { border-color: var(--nb-graphite); }
+.folder-page-board:focus-visible { outline: 2px solid var(--nb-green); outline-offset: 2px; }
+.folder-page-board-tab { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--board-hue-ink, var(--board-hue-0-ink)); }
+.folder-page-board-title { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font-size: 15px; font-weight: 500; line-height: 1.3; color: var(--nb-ink); }
+.folder-page-board-meta { font-family: var(--font-mono); font-size: 11px; color: var(--nb-soft); }
+.folder-page-board[data-board-hue="0"] { --board-hue-ink: var(--board-hue-0-ink); }
+.folder-page-board[data-board-hue="1"] { --board-hue-ink: var(--board-hue-1-ink); }
+.folder-page-board[data-board-hue="2"] { --board-hue-ink: var(--board-hue-2-ink); }
+.folder-page-board[data-board-hue="3"] { --board-hue-ink: var(--board-hue-3-ink); }
+.folder-page-board[data-board-hue="4"] { --board-hue-ink: var(--board-hue-4-ink); }
+.folder-page-board[data-board-hue="5"] { --board-hue-ink: var(--board-hue-5-ink); }
+.folder-page-board[data-board-hue="6"] { --board-hue-ink: var(--board-hue-6-ink); }
+.folder-page-board[data-board-hue="7"] { --board-hue-ink: var(--board-hue-7-ink); }
+.folder-page-context-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; }
+.folder-page-filters { display: inline-flex; gap: 2px; border-radius: 999px; background: var(--nb-grey-1); padding: 2px; }
+.folder-page-filter { min-height: 28px; border-radius: 999px; padding: 0 12px; font-size: 12.5px; color: var(--nb-mid); }
+.folder-page-filter[aria-pressed="true"] { background: var(--nb-white); color: var(--nb-ink); box-shadow: var(--shadow-card); }
+@media (max-width: 639px) {
+  .folder-page-row-where { display: none; }
+}
+
 /* B3: the box dragged out on empty board to pick cards as context. */
 .canvas-lab-marquee {
   position: absolute;

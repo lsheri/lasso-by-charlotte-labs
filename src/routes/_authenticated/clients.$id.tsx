@@ -5,12 +5,12 @@ import { ClientPage } from "@/pages/ClientPage";
 export const Route = createFileRoute("/_authenticated/clients/$id")({
   head: () => ({
     meta: [
-      { title: "Client | Lasso" },
-      { name: "description", content: "Everything claimed to this client, placed or not." },
-      { property: "og:title", content: "Client | Lasso" },
+      { title: "Folder | Lasso" },
+      { name: "description", content: "The folders, boards, docs and chats in this folder." },
+      { property: "og:title", content: "Folder | Lasso" },
       {
         property: "og:description",
-        content: "Everything claimed to this client, placed or not.",
+        content: "The folders, boards, docs and chats in this folder.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
