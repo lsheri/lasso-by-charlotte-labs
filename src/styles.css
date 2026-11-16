@@ -2340,6 +2340,8 @@ html:has([data-testid="canvas-lab-shell"]), body:has([data-testid="canvas-lab-sh
   .lasso-sidebar-nav [data-row-menu]:not([data-state="open"]) { opacity: 0 !important; }
   .lasso-sidebar-nav :is([data-drag-row], .nb-nav-shelf):is(:hover, :focus-within) [data-row-menu] { opacity: 1 !important; }
 }
+/* A board its owner shares live with their firm: a quiet mark, still their board (Liam, 15 Nov). */
+.nb-shared-up { color: var(--nb-soft); }
 /* A folder rolls open and shut (Liam, 15 Nov). RollDown mounts and unmounts it; ROLL_MS matches the 200ms. */
 .nb-roll { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 200ms var(--nb-ease); }
 .nb-roll[data-open="true"] { grid-template-rows: 1fr; }

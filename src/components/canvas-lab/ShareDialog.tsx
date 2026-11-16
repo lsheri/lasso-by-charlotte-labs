@@ -42,6 +42,7 @@ import {
   unshareEngagement,
   type PartnerShare,
 } from "@/lib/partner-share";
+import { SHARE_UP_COPY } from "@/lib/share-up-copy";
 import { INVITE_COPY, inviteCountBand, parseEmailList } from "@/lib/board-invites-shared";
 import { Textarea } from "@/components/ui/textarea";
 import { inviteToBoard, listBoardInvites, withdrawBoardInvite } from "@/lib/board-invites.functions";
@@ -130,6 +131,7 @@ function SponsorSection({
       <p className="font-mono text-xs uppercase tracking-[0.08em] text-foreground">
         Partner
       </p>
+      <p className="text-sm text-muted-foreground">{SHARE_UP_COPY.ownerLine}</p>
 
       <ul className="space-y-2">
         {list.map((share) => (
@@ -197,6 +199,7 @@ function SponsorRow({
       setProblem(null);
       await queryClient.invalidateQueries({ queryKey: key });
       await queryClient.invalidateQueries({ queryKey: ["affiliation-shared-boards"] });
+      await queryClient.invalidateQueries({ queryKey: ["boards-shared-up"] });
     },
   });
 
