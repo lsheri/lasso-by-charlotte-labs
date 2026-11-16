@@ -18,14 +18,15 @@ const text = (skin: Skin) =>
 describe("SetupSteps", () => {
   it("keeps the Lasso steps and the server's name for Lasso", () => {
     expect(text("lasso")).toContain("Paste your Lasso URL");
-    expect(text("lasso")).toContain("The server shows up in your AI as Lasso by Charlotte Labs.");
+    // The server says Charlotte now, so a Lasso page leaves the name line out.
+    expect(text("lasso")).not.toContain("The server shows up in your AI");
   });
 
-  it("names Charlotte and leaves out the server name it does not use yet", () => {
+  it("names Charlotte and the server name it now uses", () => {
     const charlotte = text("charlotte");
     // The sign-in address is the MCP URL, which never changes (lasso.charlotte-labs.com).
     expect(charlotte.replaceAll(MCP_SIGNIN_URL, "")).not.toMatch(/lasso/i);
     expect(charlotte).toContain("Push this conversation to Charlotte.");
-    expect(charlotte).not.toContain("The server shows up in your AI");
+    expect(charlotte).toContain("The server shows up in your AI as Charlotte Labs.");
   });
 });

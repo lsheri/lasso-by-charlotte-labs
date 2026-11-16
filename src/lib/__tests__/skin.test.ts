@@ -43,33 +43,37 @@ describe("skin switch", () => {
 
   it("turns Charlotte on only for an allowed account that asks for it", () => {
     const qa = "a@qaprobe.test";
-    expect(resolveSkin({ current: "lasso", requested: "charlotte", email: qa })).toBe("charlotte");
-    expect(resolveSkin({ current: "lasso", requested: "charlotte", email: "a@gmail.com" })).toBe(
+    expect(resolveSkin({ current: "lasso", requested: "charlotte", email: qa, flipped: false })).toBe("charlotte");
+    expect(resolveSkin({ current: "lasso", requested: "charlotte", email: "a@gmail.com", flipped: false })).toBe(
       "lasso",
     );
-    expect(resolveSkin({ current: "lasso", requested: "charlotte", email: null })).toBe("lasso");
-    expect(resolveSkin({ current: "lasso", requested: null, email: qa })).toBe("lasso");
+    expect(resolveSkin({ current: "lasso", requested: "charlotte", email: null, flipped: false })).toBe("lasso");
+    expect(resolveSkin({ current: "lasso", requested: null, email: qa, flipped: false })).toBe("lasso");
   });
 
   it("keeps Charlotte for an allowed account, and drops it for anyone else or on ?brand=lasso", () => {
-    expect(resolveSkin({ current: "charlotte", requested: null, email: "a@qaprobe.test" })).toBe(
+    expect(resolveSkin({ current: "charlotte", requested: null, email: "a@qaprobe.test", flipped: false })).toBe(
       "charlotte",
     );
-    expect(resolveSkin({ current: "charlotte", requested: null, email: "a@gmail.com" })).toBe(
+    expect(resolveSkin({ current: "charlotte", requested: null, email: "a@gmail.com", flipped: false })).toBe(
       "lasso",
     );
-    expect(resolveSkin({ current: "charlotte", requested: null, email: null })).toBe("lasso");
-    expect(resolveSkin({ current: "charlotte", requested: "lasso", email: "a@qaprobe.test" })).toBe(
+    expect(resolveSkin({ current: "charlotte", requested: null, email: null, flipped: false })).toBe("lasso");
+    expect(resolveSkin({ current: "charlotte", requested: "lasso", email: "a@qaprobe.test", flipped: false })).toBe(
       "lasso",
     );
   });
 
   it("writes the cookie for Charlotte and clears it for Lasso", () => {
     writeSkinCookie("charlotte");
-    expect(readSkinCookie()).toBe("charlotte");
+    expect(document.cookie).toContain("skin=charlotte");
     writeSkinCookie("lasso");
-    expect(readSkinCookie()).toBe("lasso");
     expect(document.cookie).not.toContain("skin=charlotte");
+  });
+
+  it("reads Charlotte after the flip, whatever the cookie says", () => {
+    writeSkinCookie("lasso");
+    expect(readSkinCookie()).toBe("charlotte");
   });
 
   it("puts no data-skin on <html> for Lasso, so the default page is unchanged", () => {

@@ -146,7 +146,7 @@ describe("MCP-T3 push intent", () => {
     expect(options.inputSchema.properties.expected_messages.type).toBe("integer");
     expect(options.inputSchema.properties.expected_attachments.type).toBe("integer");
     for (const name of ["push_conversation", "push_thread", "push_attachment"]) {
-      expect(tools.find((t: Row) => t["name"] === name).inputSchema.properties.push_intent_id).toEqual({ type: "string", description: "The push_intent_id lasso_push_options returned, so Lasso can mark this push as arrived." });
+      expect(tools.find((t: Row) => t["name"] === name).inputSchema.properties.push_intent_id).toEqual({ type: "string", description: "The push_intent_id lasso_push_options returned, so Charlotte can mark this push as arrived." });
     }
   });
   it("declares an intent with sourced fields and returns its id", async () => {

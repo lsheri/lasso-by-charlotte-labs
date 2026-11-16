@@ -1,5 +1,5 @@
 // Phase 4 PR9: one switch flips the product from Lasso to Charlotte (Liam, 15 Nov 2026: "Build a flip switch, off").
-// It ships off, so nothing anyone sees changes; on, Charlotte is the only brand and the server speaks as Charlotte.
+// It shipped off; Liam switched it on 16 Nov 2026. On, Charlotte is the only brand and the server speaks as Charlotte.
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
@@ -10,16 +10,21 @@ import { MCP_SERVER_NAME } from "@/lib/mcp-setup-steps";
 import { resolveSkin } from "@/lib/skin";
 
 describe("the flip switch", () => {
-  it("ships off", () => {
-    expect(BRAND_FLIPPED).toBe(false);
-    expect(launchBrand().name).toBe("Lasso");
+  it("is on", () => {
+    expect(BRAND_FLIPPED).toBe(true);
+    expect(launchBrand().name).toBe("Charlotte");
   });
 
-  it("off, the server's own names are exactly what pilots already see", () => {
-    expect(MCP_SERVER_NAME).toBe("Lasso by Charlotte Labs");
+  it("on, the server's own names say Charlotte", () => {
+    expect(MCP_SERVER_NAME).toBe("Charlotte Labs");
     expect(BRANCH_NEEDS_SIGNIN).toBe(
-      "Branches open through the signed-in Lasso connector. Connect Lasso by signing in, then try again.",
+      "Branches open through the signed-in Charlotte connector. Connect Charlotte by signing in, then try again.",
     );
+  });
+
+  it("off, the server spoke as Lasso", () => {
+    expect(launchBrand(false).name).toBe("Lasso");
+    expect(makerLine(launchBrand(false))).toBe("Lasso by Charlotte Labs");
   });
 
   it("on, the server speaks as Charlotte", () => {
@@ -37,7 +42,7 @@ describe("the flip switch", () => {
         );
       }
     }
-    expect(resolveSkin({ current: "lasso", requested: "charlotte", email: null, host: "lasso.charlotte-labs.com" })).toBe(
+    expect(resolveSkin({ current: "lasso", requested: "charlotte", email: null, host: "lasso.charlotte-labs.com", flipped: false })).toBe(
       "lasso",
     );
   });
@@ -54,7 +59,7 @@ describe("the connector's replies to the AI", () => {
 
 describe("the earlier name after the flip (PR10)", () => {
   it("adds nothing before the flip", () => {
-    expect(earlierNameLine(launchBrand().name)).toBe("");
+    expect(earlierNameLine(launchBrand(false).name)).toBe("");
   });
 
   it("keeps 'Push to Lasso' working once the push tool says Charlotte", () => {
