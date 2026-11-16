@@ -6,7 +6,6 @@ import { toast } from "sonner";
 
 import { PageHeader } from "@/components/layout/PageHeader";
 import { SectionHeader } from "@/components/notebook/SectionHeader";
-import { NotebookSpider } from "@/components/notebook/NotebookSpider";
 import { ToneCard } from "@/components/notebook/ToneCard";
 import { FindItResults, type FindItCandidate, type FindItPhase } from "@/components/find-it/FindItResults";
 import { WorkNote } from "@/components/work/WorkNote";
@@ -373,14 +372,8 @@ export function FindItPage() {
                 }}
                 placeholder="What are you looking for?"
                 aria-label="What are you looking for?"
-                className="h-12 pr-[68px] font-hand text-[16px]"
+                className="h-12 font-hand text-[16px]"
               />
-              <span
-                aria-hidden
-                className="pointer-events-none absolute right-3 top-1/2 hidden -translate-y-1/2 opacity-70 sm:block"
-              >
-                <NotebookSpider size={44} />
-              </span>
             </div>
             <div className="mt-3 flex flex-wrap items-center gap-2">
               {MODE_CHIPS.map((chip) => (

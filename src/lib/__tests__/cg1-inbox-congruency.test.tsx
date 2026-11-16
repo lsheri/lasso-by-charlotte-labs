@@ -64,7 +64,6 @@ vi.mock("@/lib/telemetry", () => ({
   logEvent: (_name: string, _org: string, dims: ReturnType<typeof inboxFilterDims>) => recorded.push(dims),
 }));
 vi.mock("@/components/coaching/CoachingLinkNotices", () => ({ CoachingLinkNotices: () => null }));
-vi.mock("@/components/motion/SpiderLassoScene", () => ({ SpiderLassoScene: () => null }));
 vi.mock("@/components/overview/ChatsToOrganise", () => ({ ChatsToOrganise: () => null }));
 vi.mock("@/components/work/ArrivalsStrip", () => ({ ArrivalsStrip: () => null }));
 vi.mock("@/components/connectors/WatchSuggestionBanner", () => ({ WatchSuggestionBanner: () => null }));

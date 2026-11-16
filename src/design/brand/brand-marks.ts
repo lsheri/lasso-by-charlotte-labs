@@ -5,7 +5,7 @@
  * Rules, enforced by src/design/__tests__/brand-marks.test.ts:
  * - Only these files draw a mark (inline SVG, canvas or image). Everything else renders one of the switches below,
  *   which pick the mark from the skin.
- * - Each file tags the element it draws with data-brand-mark="lasso" | "charlotte" | "mascot". The brand guard
+ * - Each file tags the element it draws with data-brand-mark="lasso" | "charlotte". The brand guard
  *   (tests/e2e/brand-guard.spec.ts) fails on any data-brand-mark="lasso" under Charlotte.
  * - The Lasso-only components are imported only by a switch.
  *
@@ -22,11 +22,8 @@ export const DRAWINGS = {
   "src/components/layout/LassoLoopMark.tsx": "Lasso: the still loop",
   "src/components/reflect/LassoThinkingMark.tsx": "Lasso: the moving loop (canvas); also the switch to Charlotte's",
   "src/components/canvas-lab/ask-draft/AskLiveMark.tsx": "Lasso: the Ask box loop with its light; also the switch to Charlotte's",
-  "src/components/layout/LassoLogo.tsx": "Lasso: the mascots image (no screen uses it)",
   "src/design/brand/CharlotteMark.tsx": "Charlotte: the Monoline C and its reading web",
   "src/design/brand/CharlotteTile.tsx": "Charlotte: the lapel tile (icons, stories)",
-  "src/components/notebook/SpiderMark.tsx": "Mascot: the raster spider (no screen uses it)",
-  "src/components/notebook/NotebookSpider.tsx": "Mascot: the reading spider on Find it and the provenance audit",
 } as const;
 
 /** Components that choose the mark from the skin. Screens render these, never a drawing directly. */
@@ -40,7 +37,6 @@ export const SWITCHES = {
 /** Lasso-only drawings, and the only files allowed to import each. */
 export const LASSO_ONLY = {
   LassoLoopMark: ["src/components/layout/BrandLockup.tsx"],
-  LassoLogo: ["src/components/layout/Wordmark.tsx"],
 } as const;
 
 /**
@@ -89,10 +85,12 @@ export const PLACEMENTS = {
     component: "LassoThinkingMark",
     files: [
       "src/components/demo/DemoWorkboardSandbox.tsx",
+      "src/components/find-it/FindItResults.tsx",
       "src/components/home/HomeBoard.tsx",
       "src/components/reflect/AskSurface.tsx",
       "src/components/reflect/AskThinkingFoot.tsx",
       "src/components/reflect/ContextTrail.tsx",
+      "src/components/provenance/ProvenanceAudit.tsx",
       "src/components/tour/TourActs.tsx",
       "src/pages/CanvasLabPage.tsx",
     ],
