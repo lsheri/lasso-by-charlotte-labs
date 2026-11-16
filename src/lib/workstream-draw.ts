@@ -8,6 +8,7 @@
  */
 
 import { isContextFrameId } from "@/lib/context-region";
+import { WORKBOARD_FRAME_MAX_HEIGHT, WORKBOARD_FRAME_MAX_WIDTH, WORKBOARD_FRAME_MIN_HEIGHT, WORKBOARD_FRAME_MIN_WIDTH } from "@/lib/canvas-lab-shared";
 
 export type DrawPoint = { x: number; y: number };
 export type DrawRect = { x: number; y: number; width: number; height: number };
@@ -45,6 +46,20 @@ export function drawnRect(from: DrawPoint, to: DrawPoint): DrawRect {
 
 export function drawnRectUsable(rect: DrawRect): boolean {
   return rect.width >= DRAW_MIN_SIZE && rect.height >= DRAW_MIN_SIZE;
+}
+
+/**
+ * The drawn box fitted to the sizes a grouping may save at, keeping its
+ * top-left corner. Zoomed far out, a short drag covers more board than a
+ * grouping may hold; zoomed in, it covers less.
+ */
+export function fittedDrawnRect(rect: DrawRect): DrawRect {
+  return {
+    x: rect.x,
+    y: rect.y,
+    width: Math.min(WORKBOARD_FRAME_MAX_WIDTH, Math.max(WORKBOARD_FRAME_MIN_WIDTH, rect.width)),
+    height: Math.min(WORKBOARD_FRAME_MAX_HEIGHT, Math.max(WORKBOARD_FRAME_MIN_HEIGHT, rect.height)),
+  };
 }
 
 /** Fully inside, never merely touched. */

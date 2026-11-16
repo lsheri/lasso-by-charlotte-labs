@@ -25,7 +25,7 @@ import type {
 } from "@/lib/canvas-lab-shared";
 import { isSectionFrameId } from "@/lib/board-section";
 import { isRegionFill, isRegionFrameId } from "@/lib/board-region";
-import { WORKBOARD_ANCHORS, WORKBOARD_MOVE_MANY_MAX, WORKBOARD_CARD_DEFAULT_SIZE, WORKBOARD_JUDGMENT_TYPES, WORKBOARD_NODE_KINDS, WORKBOARD_RELATIONS, WORKBOARD_SHAPE_COLOURS, isWorkboardDecorationKind, parseWorkboardImageBody, parseWorkboardStickyBody, parseWorkboardTextBody, validWorkboardNodeGeometry } from "@/lib/canvas-lab-shared";
+import { WORKBOARD_ANCHORS, WORKBOARD_MOVE_MANY_MAX, WORKBOARD_CARD_DEFAULT_SIZE, WORKBOARD_FRAME_MAX_HEIGHT, WORKBOARD_FRAME_MAX_WIDTH, WORKBOARD_FRAME_MIN_HEIGHT, WORKBOARD_FRAME_MIN_WIDTH, WORKBOARD_JUDGMENT_TYPES, WORKBOARD_NODE_KINDS, WORKBOARD_RELATIONS, WORKBOARD_SHAPE_COLOURS, isWorkboardDecorationKind, parseWorkboardImageBody, parseWorkboardStickyBody, parseWorkboardTextBody, validWorkboardNodeGeometry } from "@/lib/canvas-lab-shared";
 import type { ResolvedProfile } from "@/lib/profile-resolve";
 import { validateAnswerBody } from "@/lib/answer-card";
 
@@ -292,8 +292,8 @@ export function validNodeUpdate(kind: WorkboardNodeDto["kind"], patch: Extract<W
 function validFrameGeometry(frame: { x?: number; y?: number; w?: number; h?: number }): boolean {
   const values = [frame.x, frame.y, frame.w, frame.h].filter((value): value is number => value !== undefined);
   if (!values.every(Number.isFinite)) return false;
-  if (frame.w !== undefined && (frame.w < 260 || frame.w > 2400)) return false;
-  return frame.h === undefined || (frame.h >= 220 && frame.h <= 1800);
+  if (frame.w !== undefined && (frame.w < WORKBOARD_FRAME_MIN_WIDTH || frame.w > WORKBOARD_FRAME_MAX_WIDTH)) return false;
+  return frame.h === undefined || (frame.h >= WORKBOARD_FRAME_MIN_HEIGHT && frame.h <= WORKBOARD_FRAME_MAX_HEIGHT);
 }
 
 /** W3: a region keeps its colour with or without a name. */
