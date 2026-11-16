@@ -1960,6 +1960,9 @@ export type Database = {
           org_id: string
           outcome: string | null
           owner_id: string | null
+          shared_with_firm: boolean
+          shared_with_firm_at: string | null
+          shared_with_firm_by: string | null
           term_label: string | null
           title: string
         }
@@ -1975,6 +1978,9 @@ export type Database = {
           org_id: string
           outcome?: string | null
           owner_id?: string | null
+          shared_with_firm?: boolean
+          shared_with_firm_at?: string | null
+          shared_with_firm_by?: string | null
           term_label?: string | null
           title: string
         }
@@ -1990,6 +1996,9 @@ export type Database = {
           org_id?: string
           outcome?: string | null
           owner_id?: string | null
+          shared_with_firm?: boolean
+          shared_with_firm_at?: string | null
+          shared_with_firm_by?: string | null
           term_label?: string | null
           title?: string
         }
@@ -6448,6 +6457,7 @@ export type Database = {
       is_my_profile: { Args: { p: string }; Returns: boolean }
       is_org_admin_of: { Args: { p_org: string }; Returns: boolean }
       is_org_insider: { Args: { p_org: string }; Returns: boolean }
+      org_has_firm_view: { Args: { p_org: string }; Returns: boolean }
       is_platform_admin: {
         Args: { p_min_role?: string; p_user: string }
         Returns: boolean
@@ -6456,6 +6466,10 @@ export type Database = {
       is_support_viewer_with_turns: {
         Args: { p_org: string }
         Returns: boolean
+      }
+      join_board_from_invite: {
+        Args: { p_code: string; p_engagement: string }
+        Returns: undefined
       }
       join_org_with_invite: {
         Args: { p_code: string; p_display_name: string }
@@ -6695,6 +6709,10 @@ export type Database = {
           p_tier_d_switch?: boolean
         }
         Returns: number
+      }
+      set_engagement_firm_share: {
+        Args: { p_engagement: string; p_on: boolean }
+        Returns: boolean
       }
       set_engagement_person_access: {
         Args: { p_access: string; p_engagement: string; p_profile: string }

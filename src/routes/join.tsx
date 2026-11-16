@@ -416,11 +416,9 @@ function AcceptForm({
     const memberRole = invite?.invited_role ?? "coach";
 
     if (eng) {
-      const { error: memberError } = await supabase.from("engagement_members").insert({
-        engagement_id: eng,
-        profile_id: profileId as string,
-        member_role: memberRole,
-      });
+      // 15 Nov: joining the named board is checked in the database (the invite was used by this person and made by
+      // someone on the board); a direct self-insert is no longer allowed.
+      const { error: memberError } = await supabase.rpc("join_board_from_invite", { p_code: code, p_engagement: eng });
       if (memberError) {
         setError(memberError.message);
         setPending(false);
