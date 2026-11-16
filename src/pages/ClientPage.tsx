@@ -1,19 +1,26 @@
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo, useRef } from "react";
+import { Link } from "@tanstack/react-router";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-import { MoveContainer } from "@/components/clients/MoveContainer";
+import { BrandLogo } from "@/components/connectors/BrandLogo";
 import { NewEngagementDialog } from "@/components/engagements/NewEngagementDialog";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { Button } from "@/components/ui/button";
-import { vocabFor } from "@/lib/edu-vocab";
+import { GraphiteIcon } from "@/components/notebook/icons";
 import { SectionHeader } from "@/components/notebook/SectionHeader";
-import { WorkRow } from "@/components/work/WorkRow";
+import { PeekPanel } from "@/components/peek/PeekPanel";
+import { Button } from "@/components/ui/button";
+import { sourceBrandKey } from "@/components/work/SourceMark";
 import { useProfile } from "@/hooks/use-profile";
 import { useWorkItems } from "@/hooks/use-work-items";
 import { supabase } from "@/integrations/supabase/client";
-import { bucket } from "@/lib/telemetry-shared";
+import { boardHueIndex } from "@/lib/board-hue";
+import { vocabFor } from "@/lib/edu-vocab";
+import { isCoach } from "@/lib/role-access";
 import { logEvent } from "@/lib/telemetry";
-import type { WorkItemRow } from "@/lib/work-types";
+import { bucket } from "@/lib/telemetry-shared";
+import { displayName } from "@/lib/work-item-name";
+import { orderByWorkDate, resolveWorkDate } from "@/lib/work-order";
+import { formatDate, type WorkItemRow } from "@/lib/work-types";
 
 type ClientRecord = {
   id: string;
@@ -23,21 +30,42 @@ type ClientRecord = {
   kind: "client" | "folder" | null;
   parent_id: string | null;
 };
-type ClientEngagement = { id: string; code: string | null; title: string | null };
+type FolderBoard = { id: string; title: string | null; created_at: string | null };
+type ChildFolder = { id: string; name: string };
+
+/** What the context list can narrow to. "docs" covers documents, decks and sheets. */
+export type ContextFilter = "all" | "docs" | "chats";
+const CONTEXT_FILTERS: { value: ContextFilter; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "docs", label: "Docs" },
+  { value: "chats", label: "Chats" },
+];
+
+export function matchesContextFilter(item: Pick<WorkItemRow, "type">, filter: ContextFilter): boolean {
+  if (filter === "chats") return item.type === "ai_thread";
+  if (filter === "docs") return item.type === "document" || item.type === "deck" || item.type === "sheet";
+  return true;
+}
 
 function plural(n: number, one: string, many: string): string {
   return `${n} ${n === 1 ? one : many}`;
 }
 
+function boardOf(item: WorkItemRow): string | null {
+  return item.work_item_tasks[0]?.tasks?.engagement_id ?? null;
+}
+
 /**
- * A client is now somewhere you can go, because `work_items.client_id` holds a
- * coarse claim that no engagement touches. Every read here is the ordinary
- * browser client, so row level policies decide what comes back.
+ * A folder is a table of contents, not a wall of cards (Liam, 15 Nov): the folders inside it, its boards, and the
+ * docs and chats those boards hold, as a list that opens each one in the quick view. Every read is the ordinary
+ * browser client, so row level policies decide what comes back. Moving the folder lives in the sidebar menu.
  */
 export function ClientPage({ clientId }: { clientId: string }) {
   const { data: profile } = useProfile();
   const { data: workData } = useWorkItems();
   const vocab = vocabFor(profile);
+  const [filter, setFilter] = useState<ContextFilter>("all");
+  const [peek, setPeek] = useState<WorkItemRow | null>(null);
 
   const clientQuery = useQuery({
     queryKey: ["client", clientId],
@@ -52,57 +80,72 @@ export function ClientPage({ clientId }: { clientId: string }) {
     },
   });
 
-  const engagementsQuery = useQuery({
+  const boardsQuery = useQuery({
     queryKey: ["client-engagements", clientId],
-    queryFn: async (): Promise<ClientEngagement[]> => {
+    queryFn: async (): Promise<FolderBoard[]> => {
       const { data, error } = await supabase
         .from("engagements")
-        .select("id, code, title")
+        .select("id, title, created_at")
         .eq("client_id", clientId)
-        .order("code");
+        .is("archived_at", null)
+        .order("title");
       if (error) throw error;
-      return (data ?? []) as ClientEngagement[];
+      return (data ?? []) as FolderBoard[];
+    },
+  });
+
+  const childrenQuery = useQuery({
+    queryKey: ["client-children", clientId],
+    queryFn: async (): Promise<ChildFolder[]> => {
+      const { data, error } = await supabase
+        .from("clients")
+        .select("id, name")
+        .eq("parent_id", clientId)
+        .is("archived_at", null)
+        .order("name");
+      if (error) throw error;
+      return (data ?? []) as ChildFolder[];
     },
   });
 
   const client = clientQuery.data ?? null;
-  const engagements = useMemo(() => engagementsQuery.data ?? [], [engagementsQuery.data]);
+  const boards = useMemo(() => boardsQuery.data ?? [], [boardsQuery.data]);
+  const children = useMemo(() => childrenQuery.data ?? [], [childrenQuery.data]);
+  const boardIds = useMemo(() => new Set(boards.map((board) => board.id)), [boards]);
+  const boardTitles = useMemo(() => new Map(boards.map((board) => [board.id, board.title ?? ""])), [boards]);
 
-  // No new work_items query: the page filters the list the app already holds.
-  const items = useMemo(
-    () => (workData?.items ?? []).filter((item) => item.client_id === clientId),
-    [workData, clientId],
+  // No new work_items query: the page filters the list the app already holds. Context is what sits on this
+  // folder's boards, plus anything claimed to the folder that has no board yet.
+  const context = useMemo(
+    () =>
+      orderByWorkDate(
+        (workData?.items ?? []).filter((item) => {
+          const board = boardOf(item);
+          return board ? boardIds.has(board) : item.client_id === clientId;
+        }),
+      ),
+    [workData, boardIds, clientId],
   );
+  const shown = context.filter((item) => matchesContextFilter(item, filter));
 
-  const placed = useMemo(() => items.filter((item) => item.work_item_tasks.length > 0), [items]);
-  const unplaced = useMemo(
-    () => items.filter((item) => item.work_item_tasks.length === 0),
-    [items],
-  );
-
-  const byEngagement = useMemo(() => {
-    const map = new Map<string, WorkItemRow[]>();
-    for (const item of placed) {
-      const engagementId = item.work_item_tasks[0]?.tasks?.engagement_id ?? "";
-      const list = map.get(engagementId) ?? [];
-      list.push(item);
-      map.set(engagementId, list);
+  const perBoard = useMemo(() => {
+    const map = new Map<string, { count: number; latest: string | null }>();
+    for (const item of context) {
+      const board = boardOf(item);
+      if (!board) continue;
+      const entry = map.get(board) ?? { count: 0, latest: null };
+      const when = resolveWorkDate(item).iso;
+      const newer = !entry.latest || new Date(when).getTime() > new Date(entry.latest).getTime();
+      map.set(board, { count: entry.count + 1, latest: newer ? when : entry.latest });
     }
     return map;
-  }, [placed]);
+  }, [context]);
 
-  const engagementCount = engagements.length;
-  const itemCount = items.length;
-  const unplacedCount = unplaced.length;
-
+  const unplacedCount = context.filter((item) => !boardOf(item)).length;
   const countsReady =
-    clientQuery.isSuccess &&
-    Boolean(clientQuery.data) &&
-    engagementsQuery.isSuccess &&
-    Boolean(workData);
+    clientQuery.isSuccess && Boolean(clientQuery.data) && boardsQuery.isSuccess && Boolean(workData);
 
-  // Once per client, and only once the numbers it reports are real. Firing on
-  // mount recorded zeroes, because none of the three reads had resolved yet.
+  // Once per folder, and only once the numbers it reports are real.
   const seen = useRef<string | null>(null);
   useEffect(() => {
     if (!profile?.org_id) return;
@@ -110,11 +153,11 @@ export function ClientPage({ clientId }: { clientId: string }) {
     if (seen.current === clientId) return;
     seen.current = clientId;
     logEvent("client.page_viewed", profile.org_id, {
-      engagements: bucket(engagementCount),
-      items: bucket(itemCount),
+      engagements: bucket(boards.length),
+      items: bucket(context.length),
       unplaced: bucket(unplacedCount),
     });
-  }, [profile?.org_id, clientId, countsReady, engagementCount, itemCount, unplacedCount]);
+  }, [profile?.org_id, clientId, countsReady, boards.length, context.length, unplacedCount]);
 
   if (clientQuery.isLoading) {
     return (
@@ -127,100 +170,136 @@ export function ClientPage({ clientId }: { clientId: string }) {
   if (!client) {
     return (
       <div>
-        <PageHeader title="Client" subtitle="That client is not in your workspace." />
+        <PageHeader title="Folder" subtitle="That folder is not in your workspace." />
       </div>
     );
   }
 
   const subtitle = [
-    plural(engagementCount, "engagement", "engagements"),
-    plural(itemCount, "piece of work", "pieces of work"),
-    unplacedCount > 0 ? `${unplacedCount} not in a workstream yet` : null,
+    children.length > 0 ? plural(children.length, "folder", "folders") : null,
+    plural(boards.length, vocab.engagement.toLowerCase(), vocab.engagements.toLowerCase()),
+    plural(context.length, "piece of context", "pieces of context"),
   ]
     .filter(Boolean)
     .join(" · ");
 
   return (
-    <div>
+    <div className="folder-page">
       <PageHeader
         title={client.name}
+        subtitle={subtitle}
         action={
-          <div className="flex items-center gap-3">
-            <MoveContainer
-              clientId={clientId}
-              kind={client.kind}
-              parentId={client.parent_id}
-              quickFolder={client.quick_folder}
-            />
-            <NewEngagementDialog
-              initialClientId={clientId}
-              from="client_page"
-              trigger={
-                <Button type="button" variant="outline" size="sm">
-                  {vocab.newEngagement}
-                </Button>
-              }
-            />
-          </div>
-        }
-        subtitle={
-          <>
-            {subtitle}
-            <span className="mt-1 block text-[11.5px]">
-              This is the work you can see. Other people at your firm may hold more for this client.
-            </span>
-          </>
+          <NewEngagementDialog
+            initialClientId={clientId}
+            from="client_page"
+            trigger={
+              <Button type="button" variant="outline" size="sm">
+                {vocab.newEngagement}
+              </Button>
+            }
+          />
         }
       />
 
-      <section className="mb-10">
-        <SectionHeader title="In a workstream" />
-        <div className="flex flex-col gap-6">
-          {engagements.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Nothing here yet.</p>
-          ) : (
-            engagements.map((engagement) => {
-              const rows = byEngagement.get(engagement.id) ?? [];
-              return (
-                <div key={engagement.id}>
-                  <p className="mb-2 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
-                    {[engagement.code, engagement.title].filter(Boolean).join(" · ")}
-                  </p>
-                  {rows.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">Nothing here yet.</p>
-                  ) : (
-                    <div className="nb-paper-wall">
-                      {rows.map((item) => (
-                        <WorkRow
-                          key={item.id}
-                          item={item}
-                          dense
-                          actions={null}
-                          clientLabel={client.name}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })
-          )}
-        </div>
-      </section>
-
-      {unplaced.length > 0 ? (
-        <section>
-          <SectionHeader title="Claimed but not placed" />
-          <p className="mb-3 text-[11.5px] text-muted-foreground">
-            These are yours and you have said whose they are. They still need a place in the work.
-          </p>
-          <div className="nb-paper-wall">
-            {unplaced.map((item) => (
-              <WorkRow key={item.id} item={item} dense actions={null} clientLabel={client.name} />
+      {children.length > 0 ? (
+        <section className="mb-10" aria-label="Folders">
+          <SectionHeader title="Folders" />
+          <ul className="folder-page-rows">
+            {children.map((child) => (
+              <li key={child.id}>
+                <Link to="/clients/$id" params={{ id: child.id }} className="folder-page-row">
+                  <GraphiteIcon name="folder" size={18} />
+                  <span className="truncate">{child.name}</span>
+                </Link>
+              </li>
             ))}
-          </div>
+          </ul>
         </section>
       ) : null}
+
+      <section className="mb-10" aria-label={vocab.engagements}>
+        <SectionHeader title={vocab.engagements} />
+        {boards.length === 0 ? (
+          <p className="text-sm text-muted-foreground">{vocab.noEngagements}</p>
+        ) : (
+          <ul className="folder-page-boards">
+            {boards.map((board) => {
+              const stats = perBoard.get(board.id);
+              const latest = stats?.latest ?? board.created_at;
+              return (
+                <li key={board.id}>
+                  <Link
+                    to="/engagements/$id"
+                    params={{ id: board.id }}
+                    search={{ work: undefined }}
+                    className="folder-page-board"
+                    data-board-hue={boardHueIndex(board.id)}
+                  >
+                    <span className="folder-page-board-tab" aria-hidden="true" />
+                    <span className="folder-page-board-title">{board.title}</span>
+                    <span className="folder-page-board-meta">
+                      {plural(stats?.count ?? 0, "piece", "pieces")}
+                      {latest ? ` · updated ${formatDate(latest)}` : ""}
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
+
+      <section aria-label="Context">
+        <div className="folder-page-context-head">
+          <SectionHeader title="Context" />
+          <div role="group" aria-label="Show" className="folder-page-filters">
+            {CONTEXT_FILTERS.map((choice) => (
+              <button
+                key={choice.value}
+                type="button"
+                aria-pressed={filter === choice.value}
+                onClick={() => setFilter(choice.value)}
+                className="folder-page-filter"
+              >
+                {choice.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        {shown.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            {context.length === 0 ? "Nothing here yet." : "Nothing of that kind here."}
+          </p>
+        ) : (
+          <ul className="folder-page-rows">
+            {shown.map((item) => {
+              const board = boardOf(item);
+              return (
+                <li key={item.id}>
+                  <button type="button" className="folder-page-row" onClick={() => setPeek(item)}>
+                    <BrandLogo brand={sourceBrandKey(item)} size={18} />
+                    <span className="min-w-0 flex-1 truncate">{displayName(item)}</span>
+                    <span className="folder-page-row-where">
+                      {board ? boardTitles.get(board) : "No board yet"}
+                    </span>
+                    <span className="folder-page-row-when">{formatDate(resolveWorkDate(item).iso)}</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
+
+      <PeekPanel
+        entry={peek}
+        open={peek !== null}
+        onOpenChange={(open) => {
+          if (!open) setPeek(null);
+        }}
+        canEdit={Boolean(profile) && !isCoach(profile!)}
+        viewerProfileId={profile?.id ?? null}
+      />
     </div>
   );
 }

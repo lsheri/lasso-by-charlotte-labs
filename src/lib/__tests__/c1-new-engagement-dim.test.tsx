@@ -41,6 +41,7 @@ vi.mock("@tanstack/react-query", () => ({
 // useServerFn (reached through the dialog's file capture hook) asks the router
 // for its state, so the mock has to answer useRouter as well as useNavigate.
 vi.mock("@tanstack/react-router", () => ({
+  Link: ({ children, className }: { children: React.ReactNode; className?: string }) => <a className={className}>{children}</a>,
   useNavigate: () => () => {},
   useRouter: () => ({
     state: { matches: [] },
