@@ -20,8 +20,8 @@ describe("connector wording", () => {
     );
   });
 
-  it("keeps the server's real name for Lasso, the only brand it is true for until the flip", () => {
-    expect(MCP_SERVER_NAME).toBe("Lasso by Charlotte Labs");
+  it("names the server Charlotte Labs now the switch is on", () => {
+    expect(MCP_SERVER_NAME).toBe("Charlotte Labs");
   });
 });
 
@@ -32,14 +32,15 @@ describe("walkthroughFor", () => {
     }
   });
 
-  it("under Charlotte shows no Lasso and leaves out the connector-list name", () => {
+  it("under Charlotte shows no Lasso and names the server as it now shows up", () => {
     for (const variant of WALKTHROUGH_VARIANTS) {
       const guide = walkthroughFor(variant, charlotte);
       const words = JSON.stringify({ ...guide, sections: guide.sections.map(({ video: _video, ...rest }) => rest) });
       expect(words).not.toMatch(/lasso/i);
-      expect(words).not.toContain(MCP_SERVER_NAME);
     }
     const said = walkthroughFor("personal", charlotte).sections.find((section) => section.id === "say_the_sentence");
-    expect(said?.body[1]).toBe("If nothing arrives, the connector is not set up yet, and the next section fixes that.");
+    expect(said?.body[1]).toBe(
+      'In your AI\'s connector list Charlotte shows up as "Charlotte Labs". If nothing arrives, the connector is not set up yet, and the next section fixes that.',
+    );
   });
 });

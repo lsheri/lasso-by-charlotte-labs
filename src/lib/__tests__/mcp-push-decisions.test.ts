@@ -117,7 +117,7 @@ describe("MCP-DOC-1a first Decisions document push", () => {
   });
   it("rejects an invalid document id", async () => {
     const response = await call({ ...input, lasso_document_id: "document-1" });
-    expect(response.error).toMatchObject({ code: -32602, message: "lasso_document_id does not name a Decisions document of yours in Lasso. Nothing was saved." });
+    expect(response.error).toMatchObject({ code: -32602, message: "lasso_document_id does not name a Decisions document of yours in Charlotte. Nothing was saved." });
     expect(mocks.inserts).toHaveLength(0);
   });
   it("refuses a read-only connection", async () => {

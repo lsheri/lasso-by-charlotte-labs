@@ -65,7 +65,7 @@ describe("shared setup steps", () => {
       for (const step of MCP_SIGNIN_STEPS[vendor] ?? []) expect(BANNED.test(step)).toBe(false);
     }
     expect(BANNED.test(MCP_SIGNIN_NOTE)).toBe(false);
-    expect(MCP_SERVER_NAME).toBe("Lasso by Charlotte Labs");
+    expect(MCP_SERVER_NAME).toBe("Charlotte Labs");
     expect(BANNED.test(MCP_REGENERATE_WARNING)).toBe(false);
     expect(BANNED.test(MCP_PUSH_PHRASE)).toBe(false);
     expect(BANNED.test(MCP_PUSH_BLOCKED_NOTE)).toBe(false);

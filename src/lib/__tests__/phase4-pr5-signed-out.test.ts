@@ -10,21 +10,21 @@ const PREVIEW = "id-preview--57cd51ce-f7b4-4cd0-a7d0-761453b5935b.lovable.app";
 describe("who sees Charlotte", () => {
   it("lets a signed-out visitor preview Charlotte on local and preview hosts", () => {
     for (const host of ["localhost", "127.0.0.1", PREVIEW]) {
-      expect(resolveSkin({ current: "lasso", requested: "charlotte", email: null, host })).toBe("charlotte");
-      expect(resolveSkin({ current: "charlotte", requested: null, email: null, host })).toBe("charlotte");
-      expect(resolveSkin({ current: "charlotte", requested: "lasso", email: null, host })).toBe("lasso");
+      expect(resolveSkin({ current: "lasso", requested: "charlotte", email: null, host, flipped: false })).toBe("charlotte");
+      expect(resolveSkin({ current: "charlotte", requested: null, email: null, host, flipped: false })).toBe("charlotte");
+      expect(resolveSkin({ current: "charlotte", requested: "lasso", email: null, host, flipped: false })).toBe("lasso");
     }
   });
 
   it("keeps production and the published address Lasso for signed-out visitors", () => {
     for (const host of ["lasso.charlotte-labs.com", "lasso-by-charlotte-labs.lovable.app", "evil-preview--x.lovable.app.example.com", null, undefined]) {
-      expect(resolveSkin({ current: "charlotte", requested: "charlotte", email: null, host })).toBe("lasso");
+      expect(resolveSkin({ current: "charlotte", requested: "charlotte", email: null, host, flipped: false })).toBe("lasso");
     }
   });
 
   it("still holds the D1 allow-list for signed-in accounts, on any host", () => {
-    expect(resolveSkin({ current: "lasso", requested: "charlotte", email: "pilot@example.com", host: PREVIEW })).toBe("lasso");
-    expect(resolveSkin({ current: "lasso", requested: "charlotte", email: "someone@charlotte-labs.com", host: "lasso.charlotte-labs.com" })).toBe("charlotte");
+    expect(resolveSkin({ current: "lasso", requested: "charlotte", email: "pilot@example.com", host: PREVIEW, flipped: false })).toBe("lasso");
+    expect(resolveSkin({ current: "lasso", requested: "charlotte", email: "someone@charlotte-labs.com", host: "lasso.charlotte-labs.com", flipped: false })).toBe("charlotte");
   });
 
   it("recognises only exact preview hosts", () => {
