@@ -454,9 +454,10 @@ function LabCardInner({
         ) : <LabPaper node={node} selected={selected && showStatusChrome} showOwnership={!readOnly && showStatusChrome} onEdit={onEdit} onEditCommitted={onEditCommitted} onOpenTrail={readOnly || !node.deliverable ? undefined : () => onOpen(cardRef.current?.getBoundingClientRect())} />}
         {readOnly && item?.type === 'deck' && filePreview?.kind === 'fallback' ? <div className="deck-strip-boundary"><NoPreview reason={filePreview.reason ?? 'no_text'} contextAvailable={contextAvailable} /></div> : null}
         {matchLine ? <span data-testid="reference-match-line" className="absolute bottom-1 left-2 text-xs text-muted-foreground">{matchLine}</span> : null}
-        {selected ? <Paperclip aria-hidden="true" className="canvas-lab-context-mark" /> : null}
         {madeInChat ? <span className="sr-only" data-testid="lab-card-made-in-chat">Made in the chat {madeInChat}</span> : null}
       </div>
+      {/* Outside the paper so it clips the top-left corner, clear of the card's menu and open buttons. */}
+      {selected ? <Paperclip aria-hidden="true" className="canvas-lab-context-mark" /> : null}
       {catchPending ? <Catch onComplete={onCatchComplete} /> : null}
       {readOnly ? null : (
         <div className="canvas-lab-card-bar" onPointerDown={(event) => event.stopPropagation()}>

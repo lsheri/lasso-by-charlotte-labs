@@ -1817,9 +1817,10 @@ html:has([data-testid="canvas-lab-shell"]), body:has([data-testid="canvas-lab-sh
 }
 .canvas-lab-context-mark {
   position: absolute;
-  right: calc(7px * var(--lab-inverse-zoom, 1));
-  top: calc(7px * var(--lab-inverse-zoom, 1));
-  z-index: 11;
+  left: calc(-9px * var(--lab-inverse-zoom, 1));
+  top: calc(-9px * var(--lab-inverse-zoom, 1));
+  z-index: 12;
+  box-shadow: 0 0 0 calc(2px * var(--lab-inverse-zoom, 1)) var(--nb-paper);
   width: calc(18px * var(--lab-inverse-zoom, 1));
   height: calc(18px * var(--lab-inverse-zoom, 1));
   padding: calc(3px * var(--lab-inverse-zoom, 1));
