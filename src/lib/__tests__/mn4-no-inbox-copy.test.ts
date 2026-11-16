@@ -47,6 +47,6 @@ describe("MN-4: readable copy uses All work and No board", () => {
     const signIn = readFileSync(FILES[2], "utf8");
     expect(signIn).toContain('sentTitle: "Check your email"');
     expect(signIn).toContain("We already sent one. Check your email, or ask again in a minute.");
-    expect(readFileSync(FILES[3], "utf8")).toContain("src/pages/WorkPage.tsx, All work, behind the page");
+    // FILES[3] (motion-scenes) lost its All work scene with the spider (15 Nov); the no-Inbox rule above still scans it.
   });
 });

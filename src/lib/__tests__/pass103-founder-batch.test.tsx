@@ -102,11 +102,10 @@ describe("pass 103 · workstream ordering", () => {
   });
 });
 
-describe("pass 103 · sticky cards and spider", () => {
+describe("pass 103 · sticky cards", () => {
   const page = readFileSync("src/pages/EngagementPage.tsx", "utf8");
   const note = readFileSync("src/components/engagements/EngagementNote.tsx", "utf8");
   const styles = readFileSync("src/styles.css", "utf8");
-  const spider = readFileSync("src/components/notebook/SpiderMark.tsx", "utf8");
 
   it("keeps the note component available without duplicating sharing in the header", () => {
     expect(note).toContain("onToggle");
@@ -121,14 +120,6 @@ describe("pass 103 · sticky cards and spider", () => {
     expect(panel).toContain("<EditEngagementDialog");
   });
 
-  it("wobbles once on one still frame, and holds still under reduced motion", () => {
-    expect(spider).not.toContain("lasso-spider-spin.gif");
-    expect(spider).toContain("nb-spider-wobble");
-    expect((styles.match(/@keyframes nb-spider-wobble/g) ?? []).length).toBe(1);
-    expect(styles).not.toContain(".nb-spider-anim { display: inline-block; }");
-    const reduced = styles.indexOf("@media (prefers-reduced-motion: reduce)");
-    expect(styles.slice(reduced)).toContain("animation: none !important");
-  });
 
   it("uses the shared paper note instead of the retired canvas title", () => {
     expect(styles).toContain(".nb-canvas-card-title");

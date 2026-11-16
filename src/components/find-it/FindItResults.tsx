@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState, type AnimationEvent as ReactAnima
 import "./FindItResults.css";
 
 import { GraphiteCheck } from "@/components/notebook/marks";
-import { NotebookSpider } from "@/components/notebook/NotebookSpider";
+import { LassoThinkingMark } from "@/components/reflect/LassoThinkingMark";
 import { ToneCard } from "@/components/notebook/ToneCard";
 import { Button } from "@/components/ui/button";
 import { DimmedDisabled } from "@/components/common/DimmedDisabled";
@@ -515,7 +515,7 @@ export function FindItResults({ phase, target, parent, scope, candidates, review
           {phase === "reading" ? (
             <>
               {!reduceMotion ? <ReadingLines candidates={candidates.slice(0, 14)} slots={readingSlots} /> : null}
-               <NotebookSpider size={160} reading={!reduceMotion} className="find-it-spider absolute z-10" />
+               <LassoThinkingMark kind="signature" size={72} thinking={!reduceMotion} rope={false} className="find-it-reading-mark absolute z-10" />
               <div data-testid="find-it-reading-nodes" className="absolute inset-0">
                 {candidates.slice(0, 14).map((candidate, index) => <div key={candidate.link.link_id} data-slot={readingSlots[index]} className="find-it-reading-node absolute z-10 w-[160px]" style={readingPosition(candidate.link.link_id, readingSlots[index] ?? index)}><FindItNode candidate={candidate} /></div>)}
               </div>
@@ -558,7 +558,7 @@ export function FindItResults({ phase, target, parent, scope, candidates, review
         </div>
 
         <div className="h-full min-h-0 overflow-y-auto py-3 md:hidden">
-          {phase === "reading" ? <div className="mb-3 flex items-center gap-2 font-hand text-[16px] text-green"><NotebookSpider size={24} reading={!reduceMotion} />reading {considered} conversations</div> : null}
+          {phase === "reading" ? <div className="mb-3 flex items-center gap-2 font-hand text-[16px] text-green"><LassoThinkingMark kind="signature" size={24} thinking={!reduceMotion} rope={false} />reading {considered} conversations</div> : null}
           {(phase === "reading" ? candidates.slice(0, 14) : ordered).map((candidate) => <Button key={candidate.link.link_id} type="button" variant="ghost" className={`h-12 w-full justify-start rounded-none border-b border-hairline px-1 ${statusOf(candidate, reviewed) === "discarded" ? "opacity-50" : ""}`} disabled={phase !== "settled"} onClick={() => { setSelectedId(candidate.link.link_id); setMobileDetailOpen(true); }}><span className="micro-label mr-2">CONVERSATION</span><span className="min-w-0 flex-1 truncate text-left text-[13px]">{candidateLine(candidate.item)}</span>{phase !== "reading" ? <span className="sr-only">{strengthFor(candidate)}</span> : null}</Button>)}
         </div>
       </div>

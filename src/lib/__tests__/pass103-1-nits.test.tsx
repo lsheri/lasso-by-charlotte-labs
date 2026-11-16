@@ -38,10 +38,6 @@ describe("pass 103.1 nits", () => {
     expect(src).not.toContain("claim.verification_note ?? claim.explanation");
   });
 
-  it("has no reference left to the retired spinning spider", () => {
-    const spider = readFileSync("src/components/notebook/SpiderMark.tsx", "utf8");
-    expect(spider).not.toContain("spi" + "n.gif");
-  });
 });
 
 vi.mock("@/lib/profile-resolve", () => ({

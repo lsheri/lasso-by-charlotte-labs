@@ -2,8 +2,6 @@ import { useState, type ReactNode } from "react";
 
 import { PageHeader } from "@/components/layout/PageHeader";
 import { ToneCard } from "@/components/notebook/ToneCard";
-import { NotebookSpider } from "@/components/notebook/NotebookSpider";
-import { SpiderLassoScene } from "@/components/motion/SpiderLassoScene";
 import { ChatShimmer } from "@/components/motion/ChatShimmer";
 import { MOTION_SCENES, type MotionScene } from "@/lib/motion-scenes";
 import { Button } from "@/components/ui/button";
@@ -14,8 +12,6 @@ import { Button } from "@/components/ui/button";
  */
 
 export const SCENE_VIEWS: Record<string, () => ReactNode> = {
-  "m6-spider-lasso": () => <SpiderLassoScene />,
-  "m10-notebook-spider": () => <NotebookSpider size={180} reading />,
   "find-it-shimmer": () => <ChatShimmer />,
 };
 

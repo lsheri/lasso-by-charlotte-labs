@@ -491,9 +491,6 @@ function IconsGallery() {
             with a counterphase pair offset half a cycle.
           </li>
           <li>
-            <span className="font-mono text-[11px] text-muted-foreground">8s</span> · spider wobble.
-          </li>
-          <li>
             <span className="font-mono text-[11px] text-muted-foreground">12s</span> · gap drift on
             the invisible-work strip.
           </li>
