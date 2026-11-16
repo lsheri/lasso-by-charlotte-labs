@@ -7,11 +7,11 @@ import { resolveMotion } from "@/lib/motion-registry";
 const css = readFileSync("src/styles.css", "utf8");
 
 describe("C1 board context visibility", () => {
-  it("uses only the Lasso lime token for the selected-card ring", () => {
+  it("uses only the Ask lime token for the selected-card ring", () => {
     const start = css.indexOf(".canvas-lab-card-paper::before");
     const end = css.indexOf(".canvas-lab-context-mark", start);
     const rules = css.slice(start, end);
-    expect(rules).toContain("var(--nb-lasso-green)");
+    expect(rules).toContain("var(--ask-live)");
     expect(rules).not.toContain("var(--mint)");
   });
 

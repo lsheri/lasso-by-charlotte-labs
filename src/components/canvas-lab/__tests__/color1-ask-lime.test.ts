@@ -26,9 +26,9 @@ describe("COLOR-1 Ask lime, acid elsewhere", () => {
     expect(foot).toContain("background: var(--ask-live)");
   });
 
-  it("keeps acid on selected cards and armed draw tools", () => {
+  it("keeps acid on armed draw tools; cards in context are lime (15 Nov)", () => {
     expect(tokens).toMatch(/--halo-1:#c8ff00;/);
-    expect(rule('.canvas-lab-card-paper[data-selected="true"] {')).toContain("var(--halo-1)");
+    expect(rule('.canvas-lab-card-paper[data-selected="true"] {')).toContain("var(--ask-live)");
     expect(tokens).toMatch(/--hand-live:var\(--acid-100\);/);
   });
 });
