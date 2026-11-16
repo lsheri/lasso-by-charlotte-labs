@@ -37,7 +37,6 @@ vi.mock("@/hooks/use-workboard-file-previews", () => ({ useWorkboardFilePreviews
 vi.mock("@/lib/settings-dialog-context", () => ({ useSettingsDialog: () => ({ openSettings: vi.fn() }) }));
 vi.mock("@/lib/telemetry", () => ({ logEvent: vi.fn() }));
 vi.mock("@/components/coaching/CoachingLinkNotices", () => ({ CoachingLinkNotices: () => null }));
-vi.mock("@/components/motion/SpiderLassoScene", () => ({ SpiderLassoScene: () => null }));
 vi.mock("@/components/overview/ChatsToOrganise", () => ({ ChatsToOrganise: () => null }));
 vi.mock("@/components/work/ArrivalsStrip", () => ({ ArrivalsStrip: () => null }));
 vi.mock("@/components/connectors/WatchSuggestionBanner", () => ({ WatchSuggestionBanner: () => null }));

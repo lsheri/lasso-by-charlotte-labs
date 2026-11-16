@@ -35,8 +35,6 @@ export type MotionName =
   | "comet-line"
   | "card-lifts"
   | "breathing-dots"
-  | "spider-looks-again"
-  | "spider-processes"
   | "pencil-marks"
   | "note-lands"
   | "circle-drawn"
@@ -77,8 +75,6 @@ export type MotionEventName =
   | "feedback.pinned"
   // The app is thinking.
   | "ai.thinking"
-  | "ai.working"
-  | "spider.guiding"
   | "connector.connecting"
   // Chrome. The landing hero event is not here and must not be added.
   /** Pass E2: Find it is reading the conversations it can see. */
@@ -210,18 +206,6 @@ const MOTION_EVENT_REGISTRY: Readonly<Record<MotionEventName, MotionEventEntry>>
     reduced: "Thinking…",
     promise: false,
   },
-  "ai.working": {
-    group: "thinking",
-    motion: "spider-looks-again",
-    reduced: "Working…",
-    promise: false,
-  },
-  "spider.guiding": {
-    group: "thinking",
-    motion: "spider-processes",
-    reduced: "The spider holds still",
-    promise: false,
-  },
   "connector.connecting": {
     group: "thinking",
     motion: "breathing-dots",
@@ -318,8 +302,6 @@ interface MotionDraw {
 const MOTION_CLASS: Partial<Record<MotionName, MotionDraw>> = {
   "breathing-dots": { moving: "nb-dots" },
   "card-lifts": { moving: "nb-card-lift" },
-  "spider-looks-again": { moving: "nb-spider-wobble" },
-  "spider-processes": { moving: "nb-spider-reading" },
   "pencil-marks-underline": { moving: "nb-ink-settle nb-span-pulse" },
   "trace-back": { moving: "nb-thread-draw" },
   "paper-physics-pile": { moving: "nb-paper" },

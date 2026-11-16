@@ -25,30 +25,6 @@ export type MotionScene = {
  */
 export const MOTION_SCENES: MotionScene[] = [
   {
-    id: "m6-spider-lasso",
-    name: "Spider, lassoing conversations",
-    source: "Sandbox A · M6 · Spider guide beats · 2026:1103",
-    path: "src/components/motion/SpiderLassoScene.tsx",
-    durationMs: 4200,
-    loop: "loop-with-pause",
-    pauseMs: 10000,
-    role: "background",
-    placement: ["src/pages/WorkPage.tsx, All work, behind the page"],
-  },
-  {
-    id: "m10-notebook-spider",
-    name: "Spider, reading your work",
-    source: "Sandbox A · M10 · Spider processes",
-    path: "src/components/notebook/NotebookSpider.tsx",
-    durationMs: 3000,
-    loop: "loop",
-    pauseMs: null,
-    role: "inline",
-    placement: [
-      "src/components/provenance/ProvenanceAudit.tsx — provenance audit loading state",
-    ],
-  },
-  {
     id: "find-it-shimmer",
     name: "Conversations lighting up while the page looks through them",
     source: "Pass 200 · Find it · first attempt",

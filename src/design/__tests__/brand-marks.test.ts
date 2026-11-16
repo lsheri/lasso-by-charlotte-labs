@@ -41,7 +41,7 @@ describe("brand marks are registered and tagged (Liam, 15 Nov: logo placements t
   it("every registered drawing exists and tags what it draws", () => {
     for (const path of drawings) {
       expect(existsSync(path), path).toBe(true);
-      expect(readFileSync(path, "utf8"), path).toMatch(/data-brand-mark="(lasso|charlotte|mascot)"/);
+      expect(readFileSync(path, "utf8"), path).toMatch(/data-brand-mark="(lasso|charlotte)"/);
     }
   });
 

@@ -59,7 +59,7 @@ export function BrandHeadContent({ skin }: { skin: Skin }) {
   const nonce = useRouter().options.ssr?.nonce;
   return (
     <>
-      {tags.map((tag) => createElement(Asset, { ...tag, key: `tsr-meta-${JSON.stringify(tag)}`, nonce }))}
+      {tags.map((tag) => createElement(Asset, { ...tag, key: `tsr-meta-${JSON.stringify(tag)}`, ...(nonce ? { nonce } : {}) }))}
     </>
   );
 }

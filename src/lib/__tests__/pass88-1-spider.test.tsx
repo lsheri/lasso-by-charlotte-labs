@@ -1,30 +1,16 @@
 // @vitest-environment jsdom
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 describe("spider mascot beside Ask Lasso", () => {
-  const spider = readFileSync("src/components/notebook/SpiderMark.tsx", "utf8");
   const page = readFileSync("src/pages/EngagementPage.tsx", "utf8");
   const styles = readFileSync("src/styles.css", "utf8");
 
-  it("renders one still frame, hidden from assistive tech, and carries no telemetry", () => {
-    expect(spider).toContain("lasso-spider-static.png");
-    // Pass 103 retired the animated frame: swapping frames read as a flash.
-    expect(spider).not.toContain("lasso-spider-spin.gif");
-    expect(spider).toContain("nb-spider-wobble");
-    expect(spider).toContain('alt=""');
-    expect(spider).toContain("draggable={false}");
-    expect(spider).not.toContain("logEvent");
-    expect(spider).not.toContain("logV2");
-  });
-
-  it("holds completely still under reduced motion, after the base rules", () => {
-    const base = styles.indexOf(".nb-spider-wobble");
-    const reduced = styles.indexOf("@media (prefers-reduced-motion: reduce)", base);
-    expect(base).toBeGreaterThan(-1);
-    expect(reduced).toBeGreaterThan(base);
-    expect(styles.slice(reduced)).toContain(".nb-spider-wobble");
-    expect(styles.slice(reduced)).toContain("animation: none !important");
+  it("is gone from the app, with its image and motion (Liam, 15 Nov: \"i dont want the spider anymore\")", () => {
+    expect(existsSync("src/components/notebook/SpiderMark.tsx")).toBe(false);
+    expect(existsSync("src/components/notebook/NotebookSpider.tsx")).toBe(false);
+    expect(existsSync("src/assets/lasso-spider-static.png")).toBe(false);
+    expect(styles).not.toContain("nb-spider");
   });
 
   it("leaves no Sparkle beside Ask Lasso on the engagement page", () => {
