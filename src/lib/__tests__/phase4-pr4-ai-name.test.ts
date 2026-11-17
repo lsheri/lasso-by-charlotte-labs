@@ -14,11 +14,11 @@ const noDb = {} as never;
 
 describe("the brand the server speaks as", () => {
   it("honours the skin cookie only for an allowed account (D1)", () => {
+    // After the flip the server speaks as Charlotte for everyone; the allow-list rule it used before is in skin.test.ts.
     expect(serverBrand("charlotte", "someone@charlotte-labs.com")).toBe(charlotte);
-    expect(serverBrand("charlotte", "qa.company.admin@qaprobe.test")).toBe(charlotte);
-    expect(serverBrand("charlotte", "pilot@example.com")).toBe(lasso);
-    expect(serverBrand("charlotte", null)).toBe(lasso);
-    expect(serverBrand("lasso", "someone@charlotte-labs.com")).toBe(lasso);
+    expect(serverBrand("charlotte", "pilot@example.com")).toBe(charlotte);
+    expect(serverBrand("charlotte", null)).toBe(charlotte);
+    expect(serverBrand("lasso", "someone@charlotte-labs.com")).toBe(charlotte);
   });
 
   it("reads the skin from a raw Cookie header", () => {

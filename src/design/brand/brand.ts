@@ -28,7 +28,7 @@ export function brandFor(skin: Skin): Brand {
  * replies to the AI, the sign-in client name, the email sender name and the site's default head. Icons, the share
  * image and the videos are files, swapped in the same PR as the flip.
  */
-export const BRAND_FLIPPED = false;
+export const BRAND_FLIPPED = true;
 
 /** The brand the server speaks as when no person's skin applies: Lasso until the flip, Charlotte after. */
 export function launchBrand(flipped: boolean = BRAND_FLIPPED): Brand {
