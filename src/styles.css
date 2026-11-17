@@ -1815,7 +1815,7 @@ html:has([data-testid="canvas-lab-shell"]), body:has([data-testid="canvas-lab-sh
 .canvas-lab-client-shown {
   position: absolute;
   right: 0;
-  bottom: -16px;
+  bottom: -24px;
   z-index: 10;
   max-width: 100%;
   overflow: hidden;
