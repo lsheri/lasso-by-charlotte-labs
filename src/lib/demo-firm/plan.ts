@@ -16,6 +16,25 @@ export const FRAME_W = PAD * 2 + COLS * CARD_W + (COLS - 1) * GAP;
 const FRAME_GAP = 120;
 const STICKY_W = 200;
 const STICKY_H = 140;
+/**
+ * A board with no workstreams shows the app's empty "Workstreams" box at a fixed spot (createLabFrames: x 526, y 420,
+ * 430 by 520). Sections start below it there, so the two never overlap.
+ */
+export const NO_WORKSTREAM_TOP = 1080;
+
+export function sectionTop(board: Pick<DemoBoard, "workstreams">): number {
+  return board.workstreams?.length ? 0 : NO_WORKSTREAM_TOP;
+}
+
+/** A deck's slides as the card preview reads them (document_versions.slide_map): the first string is the title. */
+export function slideMap(body: string): { slides: { title: string; lines: string[] }[] } {
+  const slides: { title: string; lines: string[] }[] = [];
+  for (const chunk of body.split(/^##\s+Slide\s+\d+\s*$/m).slice(1)) {
+    const lines = chunk.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+    if (lines.length) slides.push({ title: lines[0]!, lines: lines.slice(1, 12) });
+  }
+  return { slides };
+}
 
 export type PlannedFrame = {
   id: string;
@@ -94,6 +113,7 @@ export function planBoard(board: DemoBoard, newId: () => string, taskIdFor: (wor
 
   const frames: PlannedFrame[] = [];
   const sectionHeight = Math.max(...board.sections.map((label) => HEADER + rowsFor(occupants(label)) * (CARD_H + GAP) + PAD - GAP));
+  const top = sectionTop(board);
   board.sections.forEach((label, index) => {
     frames.push({
       id: newId(),
@@ -104,7 +124,7 @@ export function planBoard(board: DemoBoard, newId: () => string, taskIdFor: (wor
       sequenceNo: index + 1,
       ord: index,
       x: index * (FRAME_W + FRAME_GAP),
-      y: 0,
+      y: top,
       w: FRAME_W,
       h: sectionHeight,
     });
