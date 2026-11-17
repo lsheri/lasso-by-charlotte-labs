@@ -71,16 +71,15 @@ describe("Charlotte skin", () => {
 
   it("keeps body text at 4.5:1 or better on every surface", () => {
     for (const surface of SURFACES) {
-      for (const text of ["--text-primary", "--text-secondary"]) {
+      for (const text of ["--text-primary", "--text-secondary", "--text-muted"]) {
         expect(contrast(v(text), v(surface)), `${text} on ${surface}`).toBeGreaterThanOrEqual(4.5);
       }
     }
   });
 
-  it("keeps muted text, focus rings and state marks at 3:1 or better on every surface", () => {
+  it("keeps focus rings and state marks at 3:1 or better on every surface", () => {
     for (const surface of SURFACES) {
       for (const mark of [
-        "--text-muted",
         "--focus-ring",
         "--focus-ring-new",
         "--hand-ink",

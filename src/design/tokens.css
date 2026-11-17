@@ -3,7 +3,7 @@
 :root {
   --neutral-00:#ffffff; --neutral-05:#fcfcfa; --neutral-10:#f6f6f3;
   --neutral-20:#f0f0ed; --neutral-30:#e2e2dd; --neutral-40:#bcbcb6;
-  --neutral-50:#8f8f8a; --neutral-60:#5e5e5a; --neutral-80:#2b2b29;
+  --neutral-50:#8f8f8a; --neutral-55:#6c6c68; --neutral-60:#5e5e5a; --neutral-80:#2b2b29;
   --neutral-95:#0a0a0a;
 
   --acid-100:#c8ff00; --acid-60:#dcff66; --acid-20:#f0ffc2; --acid-ink:#3d4d00;
@@ -19,7 +19,8 @@
 
   --text-primary:var(--neutral-95);
   --text-secondary:var(--neutral-60);
-  --text-muted:var(--neutral-50);
+  /* A1, 17 Nov: muted text reads its own step so it passes 4.5:1 (5.13 on page, 4.87 on sunk, 4.62 on sunk-2); --neutral-50 stays for pencil lines. */
+  --text-muted:var(--neutral-55);
   --text-on-inverse:var(--neutral-05);
   --text-on-acid:var(--neutral-95);
 
