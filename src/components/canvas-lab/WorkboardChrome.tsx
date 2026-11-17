@@ -27,7 +27,9 @@ export function WorkboardHeader({ title, status, toolbar, className }: {
     <header className={cn("workboard-header relative z-20 flex h-[52px] shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-4", className)}>
       <div className="min-w-0 shrink">
         <span className="block truncate text-[13px] font-medium text-foreground">{title}</span>
-        <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-soft">{status}</span>
+        <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-soft">
+          {status}
+        </span>
       </div>
       {toolbar}
     </header>

@@ -170,7 +170,9 @@ function LabAnswerCardInner({
       {pin ? <button type="button" className="canvas-lab-answer-pin" aria-label="Take off the board" title="Take off the board" onClick={(e) => { e.stopPropagation(); onUnpin?.(node.id); }}><Pin size={14} aria-hidden="true" fill="currentColor" /></button> : null}
       <header className="flex items-baseline justify-between gap-2">
         <span className="flex items-baseline gap-2">
-          <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-soft">Answer</span>
+          <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-soft">
+            Answer
+          </span>
           {editing ? <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-foreground" data-testid="answer-editing-label">{PIN_EDIT_COPY.editing}</span> : null}
           {!canEdit && focused ? <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-soft" data-testid="answer-view-only">{PIN_EDIT_COPY.viewOnly}</span> : null}
         </span>
