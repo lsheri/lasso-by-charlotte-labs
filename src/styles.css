@@ -604,7 +604,7 @@
 }
 
 @utility micro-label-ai {
-  color: var(--nb-green);
+  color: var(--ai-voice, var(--nb-green));
 }
 
 @utility page-title {
@@ -1484,7 +1484,7 @@ html:has([data-testid="canvas-lab-shell"]), body:has([data-testid="canvas-lab-sh
   border: 1px solid color-mix(in srgb, var(--nb-pencil) 30%, transparent);
 }
 .canvas-lab-colour-block[data-selected="true"] {
-  outline: calc(2px * var(--lab-inverse-zoom, 1)) solid var(--nb-green);
+  outline: calc(2px * var(--lab-inverse-zoom, 1)) solid var(--select-ring, var(--nb-green));
   outline-offset: calc(1px * var(--lab-inverse-zoom, 1));
   cursor: grab;
 }
@@ -1863,7 +1863,7 @@ html:has([data-testid="canvas-lab-shell"]), body:has([data-testid="canvas-lab-sh
   height: 8px;
   min-height: 0;
   padding: 0;
-  border: 1.4px solid var(--nb-green);
+  border: 1.4px solid var(--handle, var(--nb-green));
   border-radius: 50%;
   background: var(--nb-paper);
   opacity: 0;
@@ -1890,8 +1890,8 @@ html:has([data-testid="canvas-lab-shell"]), body:has([data-testid="canvas-lab-sh
   pointer-events: auto;
 }
 .canvas-lab-anchor[data-active="true"] {
-  background: var(--nb-green);
-  outline-color: var(--nb-green);
+  background: var(--handle, var(--nb-green));
+  outline-color: var(--handle, var(--nb-green));
 }
 .canvas-lab-anchor:focus-visible { outline: 2px solid var(--focus-ring, var(--nb-green)); outline-offset: 2px; }
 .canvas-lab-anchor[data-side="top"] { left: 50%; top: -15px; transform: translateX(-50%) scale(var(--lab-inverse-zoom, 1)); }
@@ -1905,7 +1905,7 @@ html:has([data-testid="canvas-lab-shell"]), body:has([data-testid="canvas-lab-sh
   height: 8px;
   min-height: 0;
   padding: 0;
-  border: 1.4px solid var(--nb-green);
+  border: 1.4px solid var(--handle, var(--nb-green));
   border-radius: 1px;
   background: var(--nb-paper);
   transform: scale(var(--lab-inverse-zoom, 1));
@@ -1952,7 +1952,7 @@ html:has([data-testid="canvas-lab-shell"]), body:has([data-testid="canvas-lab-sh
 .canvas-lab-section-menu svg { width: 16px; height: 16px; }
 .canvas-lab-section-title [data-testid="section-marker-line"] { display: var(--lab-section-marker-display, block); font-size: var(--type-body); font-family: var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--nb-mid); }
 .canvas-lab-section-menu[data-visible="false"] { visibility: hidden; }
-.canvas-lab-section .canvas-lab-resize-handle { pointer-events: auto; width: 8px !important; height: 8px !important; min-width: 0 !important; min-height: 0 !important; padding: 0 !important; border: 1.4px solid var(--nb-green) !important; border-radius: 1px !important; background: var(--nb-paper) !important; }
+.canvas-lab-section .canvas-lab-resize-handle { pointer-events: auto; width: 8px !important; height: 8px !important; min-width: 0 !important; min-height: 0 !important; padding: 0 !important; border: 1.4px solid var(--handle, var(--nb-green)) !important; border-radius: 1px !important; background: var(--nb-paper) !important; }
 .canvas-lab-frame-fit { position: absolute; right: 4px; bottom: 4px; z-index: 14; width: 26px; height: 26px; min-height: 0; }
 .canvas-lab-frame-menu-trigger {
   position: absolute;
@@ -2108,7 +2108,7 @@ html:has([data-testid="canvas-lab-shell"]), body:has([data-testid="canvas-lab-sh
 .canvas-lab-drop-prompt { position: absolute; z-index: 20; display: flex; align-items: center; gap: 9px; border: 1px solid var(--nb-pencil); border-radius: var(--radius-control); background: var(--nb-paper); padding: 7px 9px; box-shadow: var(--shadow-modal); }
 .canvas-lab-drop-prompt span { color: var(--nb-mid); font-family: var(--font-hand); font-size: var(--type-lead); }
 .canvas-lab-drop-prompt button { color: var(--nb-ink); font-family: var(--font-mono); font-size: var(--type-label); text-transform: uppercase; }
-.canvas-lab-draw-rect { position: absolute; z-index: 18; pointer-events: none; border: 1.4px dashed var(--nb-green); border-radius: var(--radius-control); background: color-mix(in srgb, var(--nb-green) 8%, transparent); }
+.canvas-lab-draw-rect { position: absolute; z-index: 18; pointer-events: none; border: 1.4px dashed var(--drop-target, var(--nb-green)); border-radius: var(--radius-control); background: color-mix(in srgb, var(--drop-target, var(--nb-green)) 8%, transparent); }
 .canvas-lab-draw-name { position: absolute; z-index: 21; }
 .canvas-lab-surface[data-drawing="true"] { cursor: crosshair; }
 .canvas-lab-region-palette { position: absolute; right: 16px; top: calc(100% + 8px); z-index: 30; }
@@ -2338,7 +2338,7 @@ html:has([data-testid="canvas-lab-shell"]), body:has([data-testid="canvas-lab-sh
   padding-left: 11px;
 }
 .nb-nav-item-active .nb-nav-indent {
-  color: var(--nb-green);
+  color: var(--active-mark, var(--nb-green));
 }
 /* Pass 92: a client shelf header speaks in the micro-label voice at
    text/muted, matching Figma 12:332, so a shelf never reads as one more
@@ -2535,7 +2535,7 @@ html:has([data-testid="canvas-lab-shell"]), body:has([data-testid="canvas-lab-sh
   width: 3px;
   height: 3px;
   border-radius: 9999px;
-  background: var(--nb-green);
+  background: var(--active-mark, var(--nb-green));
 }
 @media (prefers-reduced-motion: reduce) {
   .nb-tab-active::after {
@@ -2617,7 +2617,7 @@ html:has([data-testid="canvas-lab-shell"]), body:has([data-testid="canvas-lab-sh
 }
 /* The assistant speaks in spider green. Display copy only. */
 .nb-speaker-ai {
-  color: var(--nb-green);
+  color: var(--ai-voice, var(--nb-green));
 }
 
 /* ── Baseline law, enforced inside the transcript ───────────────────────────
@@ -4156,7 +4156,7 @@ html:has([data-testid="canvas-lab-shell"]), body:has([data-testid="canvas-lab-sh
   .nb-panel-grip:hover::after,
   .nb-panel-grip:focus-visible::after,
   .nb-bench-page[data-dragging="true"] .nb-panel-grip::after {
-    background: var(--nb-green);
+    background: var(--active-mark, var(--nb-green));
     opacity: 1;
   }
 
@@ -5356,7 +5356,7 @@ html:has([data-testid="canvas-lab-shell"]), body:has([data-testid="canvas-lab-sh
 /* B4: an answer dragged from the chat reaches the board, not a preview. */
 body[data-answer-drag="true"] .canvas-lab-surface iframe { pointer-events: none; }
 body[data-answer-drag="true"] .canvas-lab-surface {
-  outline: 1.4px dashed color-mix(in oklab, var(--nb-green) 55%, transparent);
+  outline: 1.4px dashed color-mix(in oklab, var(--drop-target, var(--nb-green)) 55%, transparent);
   outline-offset: -6px;
 }
 
@@ -6879,8 +6879,8 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   cursor: grab;
 }
 [data-drop-state="over"] {
-  background: color-mix(in oklab, var(--nb-green) 14%, transparent);
-  box-shadow: inset 0 0 0 1px var(--nb-green);
+  background: color-mix(in oklab, var(--drop-target, var(--nb-green)) 14%, transparent);
+  box-shadow: inset 0 0 0 1px var(--drop-target, var(--nb-green));
   border-radius: 6px;
 }
 [data-drop-state="refused"] {
@@ -6888,7 +6888,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   opacity: 0.55;
 }
 .nb-drop-zone[data-drop-state="over"] {
-  background: color-mix(in oklab, var(--nb-green) 6%, transparent);
+  background: color-mix(in oklab, var(--drop-target, var(--nb-green)) 6%, transparent);
 }
 
 /* TV2 and TVa tour acts 1 and 2: pushed chat window and All AI Conversations mimic */
@@ -8255,7 +8255,7 @@ body:has(.lasso-decisions-source-back) [role="dialog"][data-state="open"] { z-in
 .lasso-decisions-line:hover .lasso-decisions-actions-trigger, .lasso-decisions-line:focus-within .lasso-decisions-actions-trigger { opacity: 1; }
 .lasso-decisions-actions-menu { position: absolute; top: 100%; right: 0; z-index: 3; width: 220px; max-width: calc(100vw - 32px); padding: 4px; background: var(--nb-paper); border: 1px solid var(--nb-rule); border-radius: var(--radius-control); }
 .lasso-decisions-actions-menu button { width: 100%; min-height: 44px; justify-content: flex-start; }
-.lasso-decisions-line[data-insertion="before"]::before, .lasso-decisions-line[data-insertion="after"]::after { content: ""; position: absolute; left: 0; right: 0; height: 2px; background: var(--nb-green); }
+.lasso-decisions-line[data-insertion="before"]::before, .lasso-decisions-line[data-insertion="after"]::after { content: ""; position: absolute; left: 0; right: 0; height: 2px; background: var(--drop-target, var(--nb-green)); }
 .lasso-decisions-line[data-insertion="before"]::before { top: 0; }
 .lasso-decisions-line[data-insertion="after"]::after { bottom: 0; }
 /* The existing board toast stays above the Ledger without moving its mount. */
@@ -8676,7 +8676,7 @@ footer[data-compact] [data-ask-composer-pad] { padding: 8px 8px 8px 14px; }
 .sticky-list-text { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .lift-tab { padding: 10px 6px; border-radius: var(--radius-control); writing-mode: vertical-rl; transform: rotate(180deg); font: 500 12px/1 var(--font-sans); color: var(--nb-graphite); cursor: pointer; }
 .lift-tab:hover { background: color-mix(in oklab, var(--nb-ink) 6%, transparent); }
-.lift-tab[aria-selected="true"] { background: color-mix(in oklab, var(--nb-green) 12%, transparent); color: var(--nb-green); }
+.lift-tab[aria-selected="true"] { background: color-mix(in oklab, var(--active-mark, var(--nb-green)) 12%, transparent); color: var(--active-mark, var(--nb-green)); }
 .lift-tab:focus-visible { outline: 2px solid var(--nb-graphite); outline-offset: 1px; }
 .lift-trail { padding: 14px 16px 24px; }
 .lift-trail-section + .lift-trail-section { margin-top: 18px; }
