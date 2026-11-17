@@ -51,20 +51,23 @@ export type BoardPlan = {
   links: PlannedLink[];
 };
 
+/** The fidelities work_items accepts (work_items_content_fidelity_check). */
+export const CONTENT_FIDELITIES = ["verbatim", "summary", "transcribed", "reference"] as const;
+
 /** Where each item came from, in the vocabulary real captures use. */
 export function sourceFor(vendor: DemoVendor, type: DemoItem["type"]): { source: string; sourceVendor: string | null; fidelity: string } {
   switch (vendor) {
     case "claude":
-      return { source: "mcp:claude", sourceVendor: "claude", fidelity: type === "ai_thread" ? "transcribed" : "full" };
+      return { source: "mcp:claude", sourceVendor: "claude", fidelity: type === "ai_thread" ? "transcribed" : "verbatim" };
     case "chatgpt":
-      return { source: "mcp:chatgpt", sourceVendor: "chatgpt", fidelity: type === "ai_thread" ? "transcribed" : "full" };
+      return { source: "mcp:chatgpt", sourceVendor: "chatgpt", fidelity: type === "ai_thread" ? "transcribed" : "verbatim" };
     case "granola":
       return { source: "connector:granola", sourceVendor: "granola", fidelity: "transcribed" };
     case "google_docs":
     case "google_slides":
-      return { source: "connector:googledrive", sourceVendor: "gdrive", fidelity: "full" };
+      return { source: "connector:googledrive", sourceVendor: "gdrive", fidelity: "verbatim" };
     default:
-      return { source: "upload", sourceVendor: null, fidelity: "full" };
+      return { source: "upload", sourceVendor: null, fidelity: "verbatim" };
   }
 }
 

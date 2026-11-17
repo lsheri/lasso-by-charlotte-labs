@@ -125,11 +125,34 @@ export async function seedDemoBoard(
   const orgId = await findDemoOrg(admin);
   if (!orgId) throw new Error("Create the demo firm's people first.");
   const { data: existing } = await admin.from("engagements").select("id").eq("org_id", orgId).eq("title", board.title).maybeSingle();
-  if (existing) return { items: 0, showings: 0, skipped: true };
+  if (existing) {
+    // The workboard is written after every item, so a board without one stopped part way: clear it and start again.
+    const { data: done } = await admin.from("workboards").select("id").eq("engagement_id", existing.id).maybeSingle();
+    if (done) return { items: 0, showings: 0, skipped: true };
+    await clearPartialBoard(admin, orgId, board, existing.id);
+  }
   const { profileId, userId } = await demoPeople(admin, orgId);
   for (const key of board.team) if (!profileId.has(key)) throw new Error(`${board.key}: ${key} has no demo login`);
   const partner = await actAs(demoEmail(DEMO_ADMIN));
   return { ...(await seedBoard(admin, partner, orgId, board, profileId, userId)), skipped: false };
+}
+
+/** Removes what a stopped run left of one board: its items (tagged with the board key), files, tasks, members, the board and its client. */
+async function clearPartialBoard(admin: Db, orgId: string, board: DemoBoard, engagementId: string): Promise<void> {
+  const { data: items } = await admin.from("work_items").select("id, content_ref").eq("org_id", orgId).eq("source_meta->>demo_board", board.key);
+  const paths = (items ?? []).map((row) => row.content_ref).filter((path): path is string => Boolean(path));
+  if (paths.length) await admin.storage.from("work-files").remove(paths);
+  const fail = (what: string, error: { message: string } | null) => {
+    if (error) throw new Error(`clearing ${board.key} (${what}): ${error.message}`);
+  };
+  if (items?.length) fail("work", (await admin.from("work_items").delete().in("id", items.map((row) => row.id))).error);
+  fail("client marks", (await admin.from("client_showings").delete().eq("engagement_id", engagementId)).error);
+  // The owner cannot leave a live board, so it is archived before its members go.
+  fail("archive", (await admin.from("engagements").update({ archived_at: new Date().toISOString() }).eq("id", engagementId)).error);
+  fail("members", (await admin.from("engagement_members").delete().eq("engagement_id", engagementId)).error);
+  fail("tasks", (await admin.from("tasks").delete().eq("engagement_id", engagementId)).error);
+  fail("board", (await admin.from("engagements").delete().eq("id", engagementId)).error);
+  fail("client", (await admin.from("clients").delete().eq("org_id", orgId).eq("name", board.client.name)).error);
 }
 
 /** Step 3: placing cards notified everyone on each board; the demo starts with a quiet inbox. */
@@ -198,7 +221,7 @@ async function seedBoard(
   const itemId = new Map<string, string>();
   const itemHash = new Map<string, string>();
   for (const item of board.items) {
-    const id = await seedItem(admin, orgId, item, profileId.get(item.author)!, userId.get(item.author)!);
+    const id = await seedItem(admin, orgId, board.key, item, profileId.get(item.author)!, userId.get(item.author)!);
     itemId.set(item.key, id.id);
     itemHash.set(item.key, id.hash);
     if (item.placed !== false) {
@@ -316,7 +339,7 @@ async function seedBoard(
   return { items: board.items.length, showings: showingRows.length };
 }
 
-async function seedItem(admin: Db, orgId: string, item: DemoItem, owner: string, authUser: string): Promise<{ id: string; hash: string }> {
+async function seedItem(admin: Db, orgId: string, boardKey: string, item: DemoItem, owner: string, authUser: string): Promise<{ id: string; hash: string }> {
   const { source, sourceVendor, fidelity } = sourceFor(item.vendor, item.type);
   const text = item.type === "ai_thread" ? (item.turns ?? []).map((turn) => `${turn.role}: ${turn.content}`).join("\n\n") : (item.body ?? "");
   const hash = await sha256Hex(text);
@@ -339,7 +362,10 @@ async function seedItem(admin: Db, orgId: string, item: DemoItem, owner: string,
         type: item.type,
         source,
         source_vendor: sourceVendor,
-        source_meta: item.type === "ai_thread" ? { demo_firm: true } : { filename: fileName, mime_type: "text/markdown", demo_firm: true },
+        source_meta:
+          item.type === "ai_thread"
+            ? { demo_firm: true, demo_board: boardKey }
+            : { filename: fileName, mime_type: "text/markdown", demo_firm: true, demo_board: boardKey },
         meta: item.type === "ai_thread" ? {} : { mime_type: "text/markdown" },
         content_ref: contentRef,
         content_hash: hash,
