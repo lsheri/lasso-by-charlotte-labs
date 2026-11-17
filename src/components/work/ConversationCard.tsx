@@ -118,7 +118,7 @@ export function ConversationCard({
             <CardMenu item={head} onFluency={onFluency}>
               {primaryAction}
               {actions}
-              <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{stateStamp}</span>
+              <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-soft">{stateStamp}</span>
               {pieces.map((piece) => <span key={piece.id}>{footerFor?.(piece)}</span>)}
             </CardMenu>
           </div>
@@ -135,7 +135,7 @@ export function ConversationCard({
           <CardMenu item={head} onFluency={onFluency}>
             {primaryAction}
             {actions}
-            <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{stateStamp}</span>
+            <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-soft">{stateStamp}</span>
             {pieces.map((piece) => <span key={piece.id}>{footerFor?.(piece)}</span>)}
           </CardMenu>
         )}
@@ -150,7 +150,7 @@ export function ConversationCard({
       style={{ ...wash, ...spine }}
     >
       <div className="px-3 pt-3 sm:px-4">
-        <p className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+        <p className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
           <span className="inline-flex items-center gap-1">
             <SourceMark item={head} />
             {vendor ? vendorLabel(vendor) : "Conversation"}
@@ -203,11 +203,11 @@ export function ConversationCard({
                   <span className="line-clamp-1 break-all text-[13px] text-foreground">
                     {piece.title}
                   </span>
-                  <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                  <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
                     {attachmentKindLabel(piece.source_meta?.kind)}
                   </span>
                 </span>
-                <span className="shrink-0 font-mono text-[10px] uppercase tracking-[0.08em] text-accent-deep">
+                <span className="shrink-0 font-mono text-[11px] uppercase tracking-[0.08em] text-accent-deep">
                   Open
                 </span>
               </button>
@@ -225,7 +225,7 @@ export function ConversationCard({
               <button
                 type="button"
                 onClick={() => setExpanded(true)}
-                className="w-full px-3 py-2 text-left font-mono text-[10px] uppercase tracking-[0.08em] text-accent-deep transition-opacity hover:opacity-70 sm:px-4"
+                className="w-full px-3 py-2 text-left font-mono text-[11px] uppercase tracking-[0.08em] text-accent-deep transition-opacity hover:opacity-70 sm:px-4"
               >
                 Show {hidden} more piece{hidden === 1 ? "" : "s"}
               </button>

@@ -10,7 +10,7 @@ import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { useBrandCopy } from "@/components/skin/use-skin";
 
 const footerLink =
-  "font-mono text-[9px] uppercase tracking-[0.08em] text-soft transition-colors hover:text-foreground";
+  "font-mono text-[11px] uppercase tracking-[0.08em] text-soft transition-colors hover:text-foreground";
 
 export function AppSidebar({
   userName,

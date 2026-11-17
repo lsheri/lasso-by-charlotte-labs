@@ -43,7 +43,7 @@ export function CircleMark({
         <path
           pathLength={1}
           d="M6 52C4 26 28 7 54 6C80 5 96 24 95 49C94 73 72 94 47 94C24 94 7 79 6 57C5 40 17 25 38 18"
-          stroke="var(--nb-green)"
+          stroke="var(--state-on-record, var(--nb-green))"
           strokeOpacity={0.7}
           strokeWidth="var(--nb-circle-stroke, 1.4)"
           strokeLinecap="round"

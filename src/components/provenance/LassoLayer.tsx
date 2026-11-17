@@ -118,7 +118,7 @@ export function LassoLayer({
             data-stitch-id={replay.id}
             d={inkPathD(denormalizeInk(replay.ink, width, height))}
             fill="none"
-            stroke="var(--nb-green)"
+            stroke="var(--state-on-record, var(--nb-green))"
             strokeOpacity={0.85}
             strokeWidth={3}
             strokeLinecap="round"
@@ -131,7 +131,7 @@ export function LassoLayer({
             data-testid="lasso-path"
             d={inkPathD(path)}
             fill="none"
-            stroke="var(--nb-green)"
+            stroke="var(--state-on-record, var(--nb-green))"
             strokeOpacity={0.85}
             strokeWidth={3}
             strokeLinecap="round"
@@ -143,7 +143,7 @@ export function LassoLayer({
             data-testid="lasso-ink"
             d={inkPathD(settled)}
             fill="none"
-            stroke="var(--nb-green)"
+            stroke="var(--state-on-record, var(--nb-green))"
             strokeOpacity={0.85}
             strokeWidth={3}
             strokeLinecap="round"

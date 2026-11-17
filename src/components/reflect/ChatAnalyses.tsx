@@ -480,7 +480,7 @@ export function AnalysisChips({
                   onClick={() => onPickEngagement?.(engagement.id)}
                   className="rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-foreground transition-opacity hover:opacity-85"
                 >
-                  <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                  <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
                     {engagement.code}
                   </span>{" "}
                   {engagement.title}

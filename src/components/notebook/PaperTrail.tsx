@@ -215,7 +215,7 @@ export function PaperTrail({
                   style={{
                     margin: 0,
                     fontFamily: "var(--font-mono, monospace)",
-                    fontSize: "9px",
+                    fontSize: "11px",
                     letterSpacing: "0.08em",
                     textTransform: "uppercase",
                     opacity: 0.7,
@@ -246,7 +246,7 @@ export function PaperTrail({
         {end === "letter" && shown.length > 0 ? (
           <g
             className={`nb-trail-arrow ${letterOn ? "is-on" : ""}`}
-            stroke={muted ? "var(--nb-pencil)" : "var(--nb-green)"}
+            stroke={muted ? "var(--nb-pencil)" : "var(--state-on-record, var(--nb-green))"}
             strokeWidth={1.4}
             strokeLinecap="round"
             strokeLinejoin="round"

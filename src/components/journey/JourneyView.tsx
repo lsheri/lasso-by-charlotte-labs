@@ -544,7 +544,7 @@ export function JourneySpine({
                           <p className="text-[13px] leading-snug text-foreground">
                             {stitch.quote ? `"${stitch.quote}"` : spanStatusPhrase(stitch.status)}
                           </p>
-                          <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                          <p className="mt-0.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
                             {[
                               spanStatusPhrase(stitch.status),
                               stitch.to_turn_no ? `turn ${stitch.to_turn_no}` : null,
@@ -622,7 +622,7 @@ function NodeCard({
             {node.title}
           </span>
           {last ? <GraphiteRule className="mt-1 h-[6px] w-[140px] text-muted-foreground" /> : null}
-          <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+          <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
             {[
               node.typeLabel,
               node.date ? formatDate(node.date) : null,

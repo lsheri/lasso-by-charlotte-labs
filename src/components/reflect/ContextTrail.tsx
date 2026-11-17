@@ -149,7 +149,7 @@ export function ThinkingTrail({
         </div>
       </div>
       {ask ? <AskThinkingFoot answered={ask.answered} reduced={reduced} count={shown.length} elapsed={elapsedLabel(elapsed)} /> : <div className="mt-2 flex h-5 items-center gap-2 text-[13px] text-muted-foreground">
-        <LassoThinkingMark kind="loop" size={20} className="shrink-0 text-[var(--nb-lasso-green)]" />
+        <LassoThinkingMark kind="loop" size={20} className="shrink-0 text-[var(--live,_var(--nb-lasso-green))]" />
         <span>{manifest ? finalPhase : ASK_THINKING_COPY.reading}</span>
         <span aria-hidden>·</span>
         <span className="font-mono text-[11px]">{elapsedLabel(elapsed)}</span>
@@ -286,15 +286,15 @@ export function ContextAudit({
       <Button data-testid={testId} type="button" variant="ghost" onClick={toggle} aria-expanded={open} className="h-[30px] w-full justify-start gap-2 px-0 text-left text-[13px] font-normal hover:bg-transparent">
         <span aria-hidden className={`inline-block text-[11px] text-muted-foreground transition-transform duration-200 ${open ? "rotate-90" : ""}`}>›</span>
         <span className="min-w-0 truncate" {...(v2 ? { "data-testid": "ask-receipt" } : {})}>{v2 ? v2.receipt : buttonLabel ?? "Read what went into this response"}</span>
-        {v2 ? null : <span className="font-mono text-[10.5px] text-muted-foreground">{total}</span>}
-        {closedTag ? <span className="font-mono text-[9px] uppercase text-muted-foreground" data-testid="scope-closed-tag">{closedTag}</span> : null}
+        {v2 ? null : <span className="font-mono text-[11px] text-muted-foreground">{total}</span>}
+        {closedTag ? <span className="font-mono text-[11px] uppercase text-muted-foreground" data-testid="scope-closed-tag">{closedTag}</span> : null}
       </Button>
       {open ? (
         <div className="space-y-4 pb-1 pt-3 text-[13px]">
           {manifest.scope ? <p data-testid="scope-why">{scopeWhyLine(manifest.scope, manifest.brief_included)}</p> : null}
           {readRows.length > 0 ? (
             <section data-audit-group="read">
-              <h4 className="mb-2 font-mono text-[8.5px] uppercase text-muted-foreground tracking-[0.08em]">Read</h4>
+              <h4 className="mb-2 font-mono text-[11px] uppercase text-muted-foreground tracking-[0.08em]">Read</h4>
               <div className="space-y-2">
                 {readRows.map((row) => (
                   <p key={row.key} className="flex min-w-0 items-center" data-audit-row={row.key}>
@@ -312,7 +312,7 @@ export function ContextAudit({
           ) : null}
           {manifest.brief_included || manifest.firm_checks_applied > 0 ? (
             <section data-audit-group="also-in">
-              <h4 className="mb-2 font-mono text-[8.5px] uppercase text-muted-foreground tracking-[0.08em]">Also in</h4>
+              <h4 className="mb-2 font-mono text-[11px] uppercase text-muted-foreground tracking-[0.08em]">Also in</h4>
               <div className="space-y-2">
                 {manifest.brief_included ? <p className="flex items-center"><AuditGlyph kind="brief" /><span className="ml-[9px]">The brief</span>{manifest.engagement?.name ? <span className="ml-[7px] text-[12px] text-muted-foreground">{manifest.engagement.name}</span> : null}</p> : null}
                 {manifest.firm_checks_applied > 0 ? <p className="flex items-center"><AuditGlyph kind="checks" /><span className="ml-[9px]">{manifest.firm_checks_applied} firm {manifest.firm_checks_applied === 1 ? "check" : "checks"}</span></p> : null}
@@ -321,13 +321,13 @@ export function ContextAudit({
           ) : null}
           {manifest.excluded.length > 0 ? (
             <section data-audit-group="not-read">
-              <h4 className="mb-2 font-mono text-[8.5px] uppercase text-muted-foreground tracking-[0.08em]">Not read</h4>
+              <h4 className="mb-2 font-mono text-[11px] uppercase text-muted-foreground tracking-[0.08em]">Not read</h4>
               <div className="space-y-2 opacity-[0.62]">
                 {manifest.excluded.map((entry) => <p key={`${entry.title}:${entry.reason}`} className="flex min-w-0 items-start"><span aria-hidden className="mt-[7px] h-px w-1 shrink-0 bg-current" /><span className="ml-[9px] break-words">{entry.title}<span className="text-muted-foreground"> {" - "}{entry.reason}</span></span></p>)}
               </div>
             </section>
           ) : null}
-          {manifest.assembled_at ? <p className="font-mono text-[10px] uppercase text-muted-foreground opacity-60 tracking-[0.04em]">Assembled {new Date(manifest.assembled_at).toLocaleString("en-GB")}</p> : null}
+          {manifest.assembled_at ? <p className="font-mono text-[11px] uppercase text-muted-foreground opacity-60 tracking-[0.04em]">Assembled {new Date(manifest.assembled_at).toLocaleString("en-GB")}</p> : null}
         </div>
       ) : null}
       {openItem && !readOnly ? <ThreadViewerById workItemId={openItem} onClose={() => setOpenItem(null)} /> : null}

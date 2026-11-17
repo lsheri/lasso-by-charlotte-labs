@@ -201,7 +201,7 @@ describe("Unit 6 rail and single disclosure", () => {
 
   it("AnswerRail is lime while working and hairline when done", () => {
     const css = readFileSync("src/styles.css", "utf8");
-    expect(css).toMatch(/\.nb-answer-rail \{\s*border-left: 2px solid var\(--nb-lasso-green\);\s*padding-left: 12px;/);
+    expect(css).toMatch(/\.nb-answer-rail \{\s*border-left: 2px solid var\(--live, var\(--nb-lasso-green\)\);\s*padding-left: 12px;/);
     expect(css).toContain('.nb-answer-rail[data-rail-state="done"] { border-left-color: var(--nb-line-hairline); }');
     const { rerender } = render(<AnswerRail state="working"><p>answer</p></AnswerRail>);
     expect(screen.getByTestId("answer-rail").getAttribute("data-rail-state")).toBe("working");

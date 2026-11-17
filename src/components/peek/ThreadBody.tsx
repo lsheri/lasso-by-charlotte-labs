@@ -78,10 +78,10 @@ function HighlightedContent({
         data-commented={inNote ? "true" : undefined}
         className={`rounded-[2px] text-foreground ${
           inMark
-            ? "border-b-2 border-solid border-[var(--nb-lasso-green)] bg-[var(--nb-lasso-green-wash)]"
+            ? "border-b-2 border-solid border-[var(--live,_var(--nb-lasso-green))] bg-[var(--nb-lasso-green-wash)]"
             : "bg-transparent"
         } ${
-          inNote ? "underline decoration-[var(--nb-lasso-green)] decoration-2 underline-offset-2" : ""
+          inNote ? "underline decoration-[var(--live,_var(--nb-lasso-green))] decoration-2 underline-offset-2" : ""
         }`}
       >
         {text}

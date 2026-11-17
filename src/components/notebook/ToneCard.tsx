@@ -14,14 +14,14 @@ export type CardTone = "paper" | "claim" | "record" | "attention";
 const TONE: Record<CardTone, string> = {
   paper: "bg-card border-[var(--nb-pencil)]",
   claim: "bg-[var(--nb-yellow-wash)] border-[var(--nb-yellow-edge)]",
-  record: "bg-[var(--nb-green-wash)] border-[var(--nb-green)]",
+  record: "bg-[var(--nb-green-wash)] border-[var(--state-on-record,_var(--nb-green))]",
   attention: "bg-[var(--nb-amber-wash)] border-[var(--nb-amber-edge)]",
 };
 
 const LABEL_TONE: Record<CardTone, string> = {
   paper: "text-soft",
   claim: "text-[var(--nb-yellow-ink)]",
-  record: "text-[var(--nb-green)]",
+  record: "text-[var(--state-on-record,_var(--nb-green))]",
   attention: "text-soft",
 };
 
@@ -52,7 +52,7 @@ export function ToneCard({
       {label || mark ? (
         <div className="flex items-center justify-between gap-2">
           <span
-            className={`font-mono text-[10px] uppercase tracking-[0.08em] ${LABEL_TONE[tone]}`}
+            className={`font-mono text-[11px] uppercase tracking-[0.08em] ${LABEL_TONE[tone]}`}
           >
             {label}
           </span>
@@ -70,7 +70,7 @@ export function ToneCard({
       ) : null}
 
       {meta ? (
-        <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">{meta}</span>
+        <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-soft">{meta}</span>
       ) : null}
     </div>
   );

@@ -260,7 +260,7 @@ export function PacketPage({
                       {decision.why}
                     </p>
                     {Array.isArray(decision.srcs) && decision.srcs.length > 0 ? (
-                      <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                      <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
                         {decision.srcs.length} source
                         {decision.srcs.length === 1 ? "" : "s"} in the shared work
                       </p>

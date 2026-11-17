@@ -128,7 +128,7 @@ export function AnchorPane({
     <div className="space-y-3" ref={paneRef}>
       <div>
         <p className="micro-label micro-label-structural">{anchor.title}</p>
-        <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+        <p className="mt-0.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
           {anchor.date_line}
         </p>
         <div className="mt-1.5">

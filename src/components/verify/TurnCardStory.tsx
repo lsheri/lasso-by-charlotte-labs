@@ -142,7 +142,7 @@ function TurnCardBox({
       <div className="flex items-center gap-1.5">
         <TurnMark card={card} item={item} />
         <span
-          className="micro-label truncate text-[10px] text-muted-foreground"
+          className="micro-label truncate text-[11px] text-muted-foreground"
           style={{ whiteSpace: "nowrap" }}
         >
           {card.label}

@@ -247,7 +247,7 @@ export function ShareWorkDialog({
                               {engagementDisplayTitle(row)}
                             </span>
                             {meta.length > 0 ? (
-                              <span className="mt-0.5 block truncate font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                              <span className="mt-0.5 block truncate font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
                                 {meta.join(" · ")}
                               </span>
                             ) : null}

@@ -336,7 +336,7 @@ function DecisionRow({
             className="h-2 w-2 shrink-0 rounded-full"
             style={{ backgroundColor: "var(--nb-ink-yellow)" }}
           />
-          <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+          <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
             {ORIGIN_CHIP[cls]}
           </span>
         </span>
@@ -1070,14 +1070,14 @@ function ReaderBody({ request }: { request: VerifyThreadRequest & { runId: strin
                             className="h-2 w-2 shrink-0 rounded-full"
                             style={{ backgroundColor: ink.stroke }}
                           />
-                          <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                          <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
                             {verdictPhrase(finding.fields.verdict)}
                           </span>
                         </span>
                         <span className="mt-1 block text-xs leading-snug text-foreground">
                           {finding.fields.claim_quote}
                         </span>
-                        <span className="mt-2 block font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                        <span className="mt-2 block font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
                           {VERIFY_CHECK_LABEL}
                         </span>
                         <span className="mt-0.5 block text-[11px] leading-snug text-muted-foreground">
@@ -1123,7 +1123,7 @@ function ReaderBody({ request }: { request: VerifyThreadRequest & { runId: strin
 
               {settledItems.length > 0 ? (
                 <details className="rounded-[var(--radius)] border border-border p-2">
-                  <summary className="cursor-pointer font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                  <summary className="cursor-pointer font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
                     Settled ({settledItems.length})
                   </summary>
                   <ul className="mt-2 space-y-2" data-testid="verify-settled">
@@ -1145,7 +1145,7 @@ function ReaderBody({ request }: { request: VerifyThreadRequest & { runId: strin
             <button
               type="button"
               onClick={() => setSourceOpen((open) => !open)}
-              className="w-full text-left font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground"
+              className="w-full text-left font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground"
             >
               {VERIFY_SOURCE_TITLE}
             </button>
