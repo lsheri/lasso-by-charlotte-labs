@@ -26,6 +26,13 @@ export const FEATURE_FLAGS = {
    * the docked panel on the next page load. Preview hosts are not affected.
    */
   "ask-floating": { default: true },
+  /**
+   * The firm brain (Liam, 16 Nov): every brain surface (Shown to client, Red pen, Partner read) stays hidden until
+   * it is tested. Default off. In PostHog: a person release condition on org_id = the QA workspace only, never a
+   * group flag. Server functions and database functions check access themselves, so this only hides screens.
+   * Retired in the same change that turns it on for everyone.
+   */
+  "company-brain": { default: false },
 } as const satisfies Record<string, { default: boolean }>;
 
 export type FeatureFlag = keyof typeof FEATURE_FLAGS;

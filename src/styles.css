@@ -1811,6 +1811,23 @@ html:has([data-testid="canvas-lab-shell"]), body:has([data-testid="canvas-lab-sh
 .canvas-lab-teammate-tag svg { position: absolute; inset: -1px -2px; width: 34px; height: 24px; overflow: visible; pointer-events: none; }
 .canvas-lab-teammate-tag path { fill: none; stroke: var(--nb-graphite); stroke-width: 1.2px; stroke-linecap: round; stroke-linejoin: round; }
 .canvas-lab-teammate-tag > span { position: relative; z-index: 1; pointer-events: none; }
+/* Firm brain phase 1: a quiet "Shown to client" line under a deliverable, signed-in board only. */
+.canvas-lab-client-shown {
+  position: absolute;
+  right: 0;
+  bottom: -16px;
+  z-index: 10;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--nb-graphite);
+  pointer-events: auto;
+}
 .canvas-lab-context-coronas { z-index: 0; }
 @media (prefers-reduced-motion: reduce) {
   .canvas-lab-card-paper::before { transition: none; }

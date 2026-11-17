@@ -936,6 +936,71 @@ export type Database = {
           },
         ]
       }
+      client_showings: {
+        Row: {
+          content_hash: string | null
+          created_at: string
+          engagement_id: string
+          id: string
+          marked_by: string | null
+          occasion: string | null
+          org_id: string
+          shown_on: string
+          work_item_id: string
+        }
+        Insert: {
+          content_hash?: string | null
+          created_at?: string
+          engagement_id: string
+          id?: string
+          marked_by?: string | null
+          occasion?: string | null
+          org_id: string
+          shown_on?: string
+          work_item_id: string
+        }
+        Update: {
+          content_hash?: string | null
+          created_at?: string
+          engagement_id?: string
+          id?: string
+          marked_by?: string | null
+          occasion?: string | null
+          org_id?: string
+          shown_on?: string
+          work_item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_showings_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "engagements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_showings_marked_by_fkey"
+            columns: ["marked_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_showings_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_showings_work_item_id_fkey"
+            columns: ["work_item_id"]
+            isOneToOne: false
+            referencedRelation: "work_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           archived_at: string | null
@@ -6335,6 +6400,7 @@ export type Database = {
         Args: { p_actor_profile_id?: string; p_code: string }
         Returns: number
       }
+      client_showing_actor: { Args: { p_engagement: string }; Returns: string }
       coach_can_see_item: { Args: { item: string }; Returns: boolean }
       coaches_subject: { Args: { subject: string }; Returns: boolean }
       coaching_actor: {
@@ -6484,6 +6550,15 @@ export type Database = {
           p_email?: string
           p_org_id?: string
           p_role?: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: string
+      }
+      mark_client_showing: {
+        Args: {
+          p_engagement: string
+          p_item: string
+          p_occasion?: string
+          p_shown_on?: string
         }
         Returns: string
       }
@@ -6787,6 +6862,10 @@ export type Database = {
       tier_rank: { Args: { t: string }; Returns: number }
       trigger_egress_sweep: { Args: { p_source?: string }; Returns: number }
       unarchive_container: { Args: { p_id: string }; Returns: Json }
+      unmark_client_showing: {
+        Args: { p_showing: string }
+        Returns: undefined
+      }
       unshare_engagement_coach: {
         Args: { p_coach_profile: string; p_engagement: string }
         Returns: undefined
