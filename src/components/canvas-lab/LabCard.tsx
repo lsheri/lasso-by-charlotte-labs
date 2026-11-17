@@ -12,6 +12,8 @@ import { LabCardMenu } from "@/components/canvas-lab/LabCardMenu";
 import type { CardFace } from "@/design/reference/FaceToggle";
 import { LabPaper } from "@/components/canvas-lab/LabPaper";
 import { CHAT_LINK_COPY, ChatLinkDialog } from "@/components/canvas-lab/ChatLinkDialog";
+import { ClientShownDialog } from "@/components/canvas-lab/ClientShownDialog";
+import { ClientShownLine } from "@/components/canvas-lab/ClientShownLine";
 import { brandLabel } from "@/components/connectors/BrandLogo";
 import { sourceBrandKey } from "@/components/work/SourceMark";
 import { chatLinkAction, pastedChatUrl } from "@/lib/chat-url";
@@ -62,6 +64,7 @@ export function noPreviewReasonFor(input: { hasPreview: boolean; previewable: bo
   return input.reason ?? (input.hasPreview ? 'no_text' : 'not_previewable');
 }
 import type { TeammateMark } from "@/lib/teammate-mark";
+import { CLIENT_SHOWN_COPY, type ClientShowing } from "@/lib/client-showings-shared";
 
 
 /**
@@ -130,7 +133,15 @@ function LabCardInner({
   onCatchComplete,
   grownOn,
   deckEventOrgId,
+  clientShownMarks,
+  onMarkClientShown,
+  onUnmarkClientShown,
 }: {
+  /** Firm brain phase 1: only the live signed-in board passes marks, behind company-brain. */
+  clientShownMarks?: ClientShowing[] | undefined;
+  /** Present only when the viewer may mark this deliverable (owner or editor, company workspace). */
+  onMarkClientShown?: ((input: { shownOn: string; occasion: string }) => Promise<void>) | undefined;
+  onUnmarkClientShown?: ((showing: ClientShowing) => Promise<void>) | undefined;
   /** PUSH-2c: passed straight to WorkNote; never read here. */
   grownOn?: string[] | undefined;
   /** Only the live board opts into deck controls and their existing event path. */
@@ -228,6 +239,8 @@ function LabCardInner({
   const [menuOpen, setMenuOpen] = useState(false);
   const [chatLinkOpen, setChatLinkOpen] = useState(false);
   const [renameOpen, setRenameOpen] = useState(false);
+  const [clientShownOpen, setClientShownOpen] = useState(false);
+  const canMarkClientShown = Boolean(item && onMarkClientShown && onUnmarkClientShown && !readOnly);
   const [deckExpanded, setDeckExpanded] = useState(false);
   const pastedLink = pastedChatUrl(item?.meta?.chat_url);
   const canSetChatLink = Boolean(item && onSaveChatLink && !readOnly);
@@ -462,7 +475,7 @@ function LabCardInner({
       {readOnly ? null : (
         <div className="canvas-lab-card-bar" onPointerDown={(event) => event.stopPropagation()}>
           {deckEventOrgId && boardWork?.content?.kind === 'deck' && boardWork.content.slides.length > 0 ? <DeckStrip content={boardWork.content} cardRef={cardRef} expanded={deckExpanded} onExpandedChange={setDeckExpanded} orgId={deckEventOrgId} /> : null}
-          <LabCardMenu selected={selected} canBranch={Boolean(node.workItemId) || node.kind === "chat"} local={Boolean(node.local || node.kind === "chat")} removable={(removable ?? true) && (node.kind !== "judgment" || Boolean(node.local))} open={menuOpen} onOpenChange={changeMenuOpen} cardRef={cardRef} onSelect={() => onSelect()} onOpen={() => onOpen(cardRef.current?.getBoundingClientRect())} onOpenLedger={isDecisions && onOpenLedger ? () => onOpenLedger("menu") : undefined} onBranch={onBranch} onHide={onHide} onDelete={onDelete} onTakeOutOfContext={onTakeOutOfContext} onFit={canResize ? onFit : undefined} frameChoices={structured ? frameChoices : []} currentFrame={node.frame} onMoveToFrame={structured && canResize ? onMoveToFrame : undefined} bundleToggleLabel={bundleToggleLabel} onBundleToggle={onBundleToggle} chatLinkLabel={canSetChatLink ? CHAT_LINK_COPY[chatLinkAction(item?.meta?.chat_url)] : undefined} onEditChatLink={canSetChatLink ? () => setChatLinkOpen(true) : undefined} onRename={canRename && item ? () => setRenameOpen(true) : undefined} cardFace={cardFace} onCardFaceChange={onCardFaceChange} />
+          <LabCardMenu selected={selected} canBranch={Boolean(node.workItemId) || node.kind === "chat"} local={Boolean(node.local || node.kind === "chat")} removable={(removable ?? true) && (node.kind !== "judgment" || Boolean(node.local))} open={menuOpen} onOpenChange={changeMenuOpen} cardRef={cardRef} onSelect={() => onSelect()} onOpen={() => onOpen(cardRef.current?.getBoundingClientRect())} onOpenLedger={isDecisions && onOpenLedger ? () => onOpenLedger("menu") : undefined} onBranch={onBranch} onHide={onHide} onDelete={onDelete} onTakeOutOfContext={onTakeOutOfContext} onFit={canResize ? onFit : undefined} frameChoices={structured ? frameChoices : []} currentFrame={node.frame} onMoveToFrame={structured && canResize ? onMoveToFrame : undefined} bundleToggleLabel={bundleToggleLabel} onBundleToggle={onBundleToggle} chatLinkLabel={canSetChatLink ? CHAT_LINK_COPY[chatLinkAction(item?.meta?.chat_url)] : undefined} onEditChatLink={canSetChatLink ? () => setChatLinkOpen(true) : undefined} onRename={canRename && item ? () => setRenameOpen(true) : undefined} clientShownLabel={canMarkClientShown ? ((clientShownMarks?.length ?? 0) > 0 ? CLIENT_SHOWN_COPY.menuAgain : CLIENT_SHOWN_COPY.menu) : undefined} onClientShown={canMarkClientShown ? () => setClientShownOpen(true) : undefined} cardFace={cardFace} onCardFaceChange={onCardFaceChange} />
           {canRename && item ? <RenameWorkDialog item={item} open={renameOpen} onOpenChange={setRenameOpen} /> : null}
           <Button
             type="button"
@@ -492,6 +505,8 @@ function LabCardInner({
           <span>{teammateMark.initials}</span>
         </span>
       ) : null}
+      {clientShownMarks && clientShownMarks.length > 0 && !readOnly ? <ClientShownLine marks={clientShownMarks} /> : null}
+      {canMarkClientShown && onMarkClientShown && onUnmarkClientShown ? <ClientShownDialog open={clientShownOpen} onOpenChange={setClientShownOpen} marks={clientShownMarks ?? []} onMark={onMarkClientShown} onUnmark={onUnmarkClientShown} /> : null}
       {canSetChatLink && onSaveChatLink ? <ChatLinkDialog open={chatLinkOpen} onOpenChange={setChatLinkOpen} current={pastedLink} onSave={onSaveChatLink} /> : null}
       {canResize && focused && !readOnly ? (["nw", "ne", "se", "sw"] as LabResizeCorner[]).map((corner) => <button key={corner} type="button" className="canvas-lab-resize-handle" data-corner={corner} aria-label={`Resize ${node.title} from ${corner}`} onDoubleClick={(event) => { event.stopPropagation(); onFit(); }} onPointerDown={(event) => onResizeStart(corner, event)} onKeyDown={(event) => onResizeKeyDown(corner, event)} onKeyUp={onResizeKeyUp} />) : null}
       {readOnly ? null : <CardCornerSticky count={stickyCount} onOpen={onOpenStickies} />}

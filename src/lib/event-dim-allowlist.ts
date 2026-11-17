@@ -79,6 +79,8 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "chatlib.view_changed": ["filter", "how", "selected", "vendor", "view"],
   "client.error": ["engagements", "error_name", "fingerprint", "items", "route_class", "source", "unplaced"],
   "client.page_viewed": ["engagements", "error_name", "fingerprint", "items", "route_class", "source", "unplaced"],
+  "client_showing.marked": ["has_occasion", "item_type"],
+  "client_showing.unmarked": [],
   "coach.engagement_shared": ["action", "role"],
   "coach.invite_created": ["entry", "role"],
   "coach.joined": ["role"],

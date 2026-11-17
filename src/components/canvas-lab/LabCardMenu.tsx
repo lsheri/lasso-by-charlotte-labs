@@ -34,6 +34,8 @@ export function LabCardMenu({
   chatLinkLabel,
   onEditChatLink,
   onRename,
+  clientShownLabel,
+  onClientShown,
   cardFace,
   onCardFaceChange,
 }: {
@@ -65,6 +67,9 @@ export function LabCardMenu({
   onEditChatLink?: (() => void) | undefined;
   /** WI-1: only on the owner's own work card. */
   onRename?: (() => void) | undefined;
+  /** Firm brain phase 1: only where the viewer may mark this deliverable as shown to client. */
+  clientShownLabel?: string | undefined;
+  onClientShown?: (() => void) | undefined;
   /** FACE-3: both present on the board only. */
   cardFace?: CardFace | undefined;
   onCardFaceChange?: ((face: CardFace) => void) | undefined;
@@ -102,6 +107,7 @@ export function LabCardMenu({
         {onBundleToggle && bundleToggleLabel ? <DropdownMenuItem className="canvas-lab-menu-item" onSelect={onBundleToggle}>{bundleToggleLabel}</DropdownMenuItem> : null}
         {onEditChatLink && chatLinkLabel ? <DropdownMenuItem className="canvas-lab-menu-item" onSelect={onEditChatLink}>{chatLinkLabel}</DropdownMenuItem> : null}
         {onRename ? <DropdownMenuItem className="canvas-lab-menu-item" onSelect={onRename}>Rename for others</DropdownMenuItem> : null}
+        {onClientShown && clientShownLabel ? <DropdownMenuItem className="canvas-lab-menu-item" onSelect={onClientShown}>{clientShownLabel}</DropdownMenuItem> : null}
         {onTakeOutOfContext ? <DropdownMenuItem className="canvas-lab-menu-item" onSelect={onTakeOutOfContext}>Take out of context</DropdownMenuItem> : null}
         <DropdownMenuSeparator className="canvas-lab-menu-sep" />
         {local ? (
