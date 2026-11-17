@@ -514,6 +514,10 @@ export type TelemetryEvent =
   | "board.share_opened"
   /** 15 Nov: Share with firm turned on or off. Dims: to (on | off), by_role (owner | admin). Portal registration required. */
   | "board.firm_share_changed"
+  /** 16 Nov, firm brain phase 1: a deliverable was marked shown to client. Dims: item_type (document | deck | sheet), has_occasion (true | false). Portal registration required. */
+  | "client_showing.marked"
+  /** 16 Nov, firm brain phase 1: a Shown to client mark was removed. No dims. Portal registration required. */
+  | "client_showing.unmarked"
   /**
    * T1: a traced question was saved to span_links. Dims: via (short fixed
    * code-path name) only. No ids, text, names or counts.
