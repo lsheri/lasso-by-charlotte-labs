@@ -4,7 +4,8 @@
 import { describe, expect, it } from "vitest";
 
 import { b05 } from "@/lib/demo-firm/boards/b05-st-brigid";
-import { CARD_H, CARD_W, CONTENT_FIDELITIES, planBoard, sourceFor } from "@/lib/demo-firm/plan";
+import { b30 } from "@/lib/demo-firm/boards/b30-ashbury-peak";
+import { CARD_H, CARD_W, CONTENT_FIDELITIES, NO_WORKSTREAM_TOP, planBoard, slideMap, sourceFor } from "@/lib/demo-firm/plan";
 import { DEMO_FIRM_MARKER, seedDemoBoard } from "@/lib/demo-firm/seed.server";
 import { DEMO_PEOPLE } from "@/lib/demo-firm/people";
 
@@ -45,6 +46,22 @@ describe("the layout plan", () => {
     expect(sourceFor("granola", "call")).toEqual({ source: "connector:granola", sourceVendor: "granola", fidelity: "transcribed" });
     expect(sourceFor("claude", "ai_thread").source).toBe("mcp:claude");
     expect(sourceFor("google_slides", "deck").sourceVendor).toBe("gdrive");
+  });
+
+  it("keeps sections clear of the empty Workstreams box on boards without workstreams", () => {
+    // The first look at the seeded Ashbury board showed that box sitting on the Intake section.
+    const flat = planBoard(b30, id, () => "none");
+    expect(b30.workstreams ?? []).toHaveLength(0);
+    expect(flat.frames.every((frame) => frame.y >= NO_WORKSTREAM_TOP)).toBe(true);
+    expect(plan.frames.filter((frame) => frame.kind === "custom").every((frame) => frame.y === 0)).toBe(true);
+  });
+
+  it("turns a deck's slide headings into the map its card previews", () => {
+    const map = slideMap("## Slide 1\nFund II targets $150M.\nSource: thesis.\n\n## Slide 2\nFund I returned 2.1x.");
+    expect(map.slides).toEqual([
+      { title: "Fund II targets $150M.", lines: ["Source: thesis."] },
+      { title: "Fund I returned 2.1x.", lines: [] },
+    ]);
   });
 
   it("uses only fidelities the database accepts, for every vendor and type", () => {
@@ -133,6 +150,9 @@ describe("the writer", () => {
     expect(marks).toHaveLength(board.items.reduce((sum, item) => sum + (item.shown?.length ?? 0), 0));
     expect(marks.every((row) => typeof row["content_hash"] === "string" && (row["content_hash"] as string).length === 64)).toBe(true);
     expect(of("workboard_nodes").filter((row) => row["kind"] === "sticky")).toHaveLength(board.stickies!.length);
+    const versions = of("document_versions");
+    expect(versions).toHaveLength(board.items.filter((item) => item.type === "deck").length);
+    expect(versions.every((row) => (row["slide_map"] as { slides: unknown[] }).slides.length >= 4)).toBe(true);
   });
 
   it("is scoped to one marked workspace", () => {

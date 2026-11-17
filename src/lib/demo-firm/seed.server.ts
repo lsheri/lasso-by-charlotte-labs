@@ -3,7 +3,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 
 import { DEMO_PEOPLE, demoEmail } from "./people";
-import { CARD_H, CARD_W, fileNameFor, outcomeLine, planBoard, sourceFor } from "./plan";
+import { CARD_H, CARD_W, fileNameFor, outcomeLine, planBoard, sectionTop, slideMap, sourceFor } from "./plan";
 import type { DemoBoard, DemoFirm, DemoItem } from "./types";
 
 type Db = SupabaseClient<Database>;
@@ -128,7 +128,10 @@ export async function seedDemoBoard(
   if (existing) {
     // The workboard is written after every item, so a board without one stopped part way: clear it and start again.
     const { data: done } = await admin.from("workboards").select("id").eq("engagement_id", existing.id).maybeSingle();
-    if (done) return { items: 0, showings: 0, skipped: true };
+    if (done) {
+      await repairBoard(admin, orgId, board, done.id);
+      return { items: 0, showings: 0, skipped: true };
+    }
     await clearPartialBoard(admin, orgId, board, existing.id);
   }
   const { profileId, userId } = await demoPeople(admin, orgId);
@@ -159,6 +162,13 @@ async function clearPartialBoard(admin: Db, orgId: string, board: DemoBoard, eng
 export async function finishDemoSeed(admin: Db): Promise<void> {
   const orgId = await findDemoOrg(admin);
   if (!orgId) return;
+  // Each demo person has said they use the app for work, so Home skips the first-use question.
+  const { userId } = await demoPeople(admin, orgId);
+  const rows = [...userId.values()].map((user_id) => ({ user_id, uses: ["work"], uses_declared_at: new Date().toISOString() }));
+  if (rows.length) {
+    const uses = await admin.from("people").upsert(rows, { onConflict: "user_id" });
+    if (uses.error) throw new Error(`recording uses: ${uses.error.message}`);
+  }
   const { error } = await admin.from("notifications").delete().eq("org_id", orgId);
   if (error) throw new Error(`clearing notifications: ${error.message}`);
 }
@@ -220,10 +230,12 @@ async function seedBoard(
   // Work items, their text, turns and index cards.
   const itemId = new Map<string, string>();
   const itemHash = new Map<string, string>();
+  const itemRef = new Map<string, string | null>();
   for (const item of board.items) {
     const id = await seedItem(admin, orgId, board.key, item, profileId.get(item.author)!, userId.get(item.author)!);
     itemId.set(item.key, id.id);
     itemHash.set(item.key, id.hash);
+    itemRef.set(item.key, id.contentRef);
     if (item.placed !== false) {
       const task = taskId.get(item.section) ?? defaultTask.id;
       must(await admin.from("work_item_tasks").insert({ task_id: task, work_item_id: id.id }).select("work_item_id"), `placing ${item.key}`);
@@ -300,6 +312,7 @@ async function seedBoard(
     })),
   ];
   if (nodeRows.length) must(await admin.from("workboard_nodes").insert(nodeRows).select("id"), `cards for ${board.key}`);
+  await writeSlideMaps(admin, board, itemId, itemHash, itemRef);
   const nodeOf = new Map(plan.cards.map((card) => [card.itemKey, card.nodeId]));
   if (plan.links.length) {
     must(
@@ -339,7 +352,14 @@ async function seedBoard(
   return { items: board.items.length, showings: showingRows.length };
 }
 
-async function seedItem(admin: Db, orgId: string, boardKey: string, item: DemoItem, owner: string, authUser: string): Promise<{ id: string; hash: string }> {
+async function seedItem(
+  admin: Db,
+  orgId: string,
+  boardKey: string,
+  item: DemoItem,
+  owner: string,
+  authUser: string,
+): Promise<{ id: string; hash: string; contentRef: string | null }> {
   const { source, sourceVendor, fidelity } = sourceFor(item.vendor, item.type);
   const text = item.type === "ai_thread" ? (item.turns ?? []).map((turn) => `${turn.role}: ${turn.content}`).join("\n\n") : (item.body ?? "");
   const hash = await sha256Hex(text);
@@ -414,7 +434,70 @@ async function seedItem(admin: Db, orgId: string, boardKey: string, item: DemoIt
       .select("id"),
     `index card for ${item.key}`,
   );
-  return { id: row.id, hash };
+  return { id: row.id, hash, contentRef };
+}
+
+/** Deck cards preview their first slide from document_versions.slide_map; one version per seeded deck. */
+async function writeSlideMaps(
+  admin: Db,
+  board: DemoBoard,
+  itemId: Map<string, string>,
+  itemHash: Map<string, string>,
+  itemRef: Map<string, string | null>,
+): Promise<void> {
+  const rows = board.items
+    .filter((item) => item.type === "deck" && itemRef.get(item.key))
+    .map((item) => ({
+      work_item_id: itemId.get(item.key)!,
+      version_no: 1,
+      content_ref: itemRef.get(item.key)!,
+      content_hash: itemHash.get(item.key)!,
+      slide_map: slideMap(item.body ?? ""),
+      source_event: "initial_capture",
+      origin: "upload",
+    }));
+  if (rows.length) must(await admin.from("document_versions").insert(rows).select("id"), `slides for ${board.key}`);
+}
+
+/**
+ * Brings a board seeded by an earlier version up to date, safely repeatable: moves sections below the empty
+ * Workstreams box on boards without workstreams, and adds the slide maps deck cards preview from.
+ */
+async function repairBoard(admin: Db, orgId: string, board: DemoBoard, workboardId: string): Promise<void> {
+  const top = sectionTop(board);
+  if (top > 0) {
+    const { data: frames } = await admin.from("workboard_frames").select("id, y").eq("workboard_id", workboardId);
+    const lowest = Math.min(...(frames ?? []).map((frame) => frame.y));
+    const shift = Number.isFinite(lowest) && lowest < top ? top - lowest : 0;
+    if (shift > 0) {
+      for (const frame of frames ?? []) await admin.from("workboard_frames").update({ y: frame.y + shift }).eq("id", frame.id);
+      const { data: nodes } = await admin.from("workboard_nodes").select("id, y").eq("workboard_id", workboardId);
+      for (const node of nodes ?? []) await admin.from("workboard_nodes").update({ y: node.y + shift }).eq("id", node.id);
+    }
+  }
+  const decks = board.items.filter((item) => item.type === "deck");
+  if (!decks.length) return;
+  const { data: rows } = await admin
+    .from("work_items")
+    .select("id, title, content_ref, content_hash")
+    .eq("org_id", orgId)
+    .eq("source_meta->>demo_board", board.key)
+    .eq("type", "deck");
+  const ids = (rows ?? []).map((row) => row.id);
+  if (!ids.length) return;
+  const { data: existing } = await admin.from("document_versions").select("work_item_id").in("work_item_id", ids);
+  const has = new Set((existing ?? []).map((row) => row.work_item_id));
+  const itemId = new Map<string, string>();
+  const itemHash = new Map<string, string>();
+  const itemRef = new Map<string, string | null>();
+  for (const deck of decks) {
+    const row = (rows ?? []).find((entry) => entry.title === deck.title);
+    if (!row || has.has(row.id)) continue;
+    itemId.set(deck.key, row.id);
+    itemHash.set(deck.key, row.content_hash ?? "");
+    itemRef.set(deck.key, row.content_ref);
+  }
+  await writeSlideMaps(admin, { ...board, items: decks.filter((deck) => itemId.has(deck.key)) }, itemId, itemHash, itemRef);
 }
 
 /**
