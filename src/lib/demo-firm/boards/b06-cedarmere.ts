@@ -396,6 +396,105 @@ Next 90 days: name the two leads, post care manager roles for the first six clin
       decisions: "Board approved the service line and a six-clinic start\nPayer negotiation named as the critical path",
       entities: "final readout, board pre-read, care managers, consulting psychiatrists, joint leadership, Medicare Advantage",
     },
+    {
+      key: "proposal",
+      title: "Proposal: Cedarmere integrated behavioral health service line",
+      type: "document",
+      kind: "proposal",
+      vendor: "google_docs",
+      author: "hollis",
+      section: "Weeks 1-4: Diagnostic",
+      date: "2024-04-22",
+      body: `# Proposal: integrated behavioral health service line
+
+**Prepared for:** Cedarmere Regional Health, Chief Operating Officer  **From:** Kestrel Bay Advisory  **Date:** 22 April 2024
+
+## Context
+Primary care clinicians at Cedarmere refer more patients to behavioral health every quarter, and many of those referrals are never completed. Patients wait, go elsewhere or give up. The board has asked for a service line that keeps behavioral health care inside primary care.
+
+## Objectives
+1. Find where behavioral health referrals leak and why.
+2. Design an integrated care model with collaborative care in primary care and access to psychiatry.
+3. Set out the staffing model, payer strategy and business case for board approval in August 2024.
+
+## Our approach
+### Phase 1: Diagnostic (weeks 1 to 4)
+Referral leakage analysis: referrals, completion, wait times and destination. Twelve interviews with clinicians, operational leaders and payers. Diagnostic readout at SteerCo 1.
+### Phase 2: Design (weeks 5 to 9)
+Care model and staffing options by clinic and by year. Options at SteerCo 2.
+### Phase 3: Business case (weeks 10 to 14)
+Payer strategy covering fee-for-service codes and value-based arrangements with the two largest Medicare Advantage plans. Business case and implementation roadmap.
+
+## Workstreams
+Referral leakage analysis. Care model. Staffing model. Payer strategy.
+
+## Deliverables
+Diagnostic readout. Care model and staffing options. Payer strategy. Business case, roadmap and board pre-read.
+
+## Timeline
+14 weeks from 6 May 2024, with SteerCos at weeks 4 and 9 and a final readout at week 14.
+
+## Team
+A partner half a day a week, a full-time manager, consultant and analyst.
+
+## Fees
+$340,000 fixed, expenses capped at 8%.
+
+## Assumptions and exclusions
+Inpatient psychiatric capacity, recruitment and EHR build are out of scope. We assume referral data from the EHR by week 2.
+
+## Why Kestrel Bay
+We have designed service lines inside primary care before, and we build the payer case alongside the care model rather than after it.`,
+      summary:
+        "Proposal to Cedarmere Regional Health for a 14-week design of an integrated behavioral health service line anchored in primary care. Fixed fee of $340k. Covers referral leakage, care model, staffing, payer strategy and a board business case.",
+      entities: "Cedarmere Regional Health, Chief Operating Officer, behavioral health, collaborative care, Medicare Advantage",
+      shown: [{ on: "2024-04-23", occasion: "Proposal sent to the Chief Operating Officer" }],
+    },
+    {
+      key: "cfo-checkin",
+      title: "Call: CFO check-in on payer numbers",
+      type: "call",
+      vendor: "granola",
+      author: "tanaka",
+      section: "Payer strategy",
+      date: "2024-07-15",
+      body: `# Call: CFO check-in on payer numbers
+Attendees: Mei Tanaka (Kestrel Bay), Maren Hollis (Kestrel Bay)
+
+**Mei:** Quick debrief after the CFO meeting. We still do not have the Medicare Advantage volumes by plan.
+**Maren:** The CFO is difficult and will stall on the payer numbers until the COO asks for them directly.
+**Mei:** Then the business case slips past SteerCo. The value-based scenario needs the two plans' member counts.
+**Maren:** Ask the COO to send the request this week. Meanwhile, build the fee-for-service case on the claims data we already have.
+**Mei:** Agreed. I will flag the payer contract as the critical path in the weekly update.`,
+      summary:
+        "Internal debrief after a CFO meeting. Medicare Advantage volumes by plan are still missing, which puts the business case at risk. Plan: have the COO request the data this week and build the fee-for-service case from existing claims data meanwhile.",
+      decisions: "COO to request the plan volumes this week\nBuild the fee-for-service case from existing claims data",
+      entities: "CFO, COO, Medicare Advantage, payer contract, business case",
+    },
+    {
+      key: "sponsor-chat",
+      title: "Chat: preparing the SteerCo 2 storyline",
+      type: "ai_thread",
+      vendor: "claude",
+      author: "reyes",
+      section: "Weeks 5-9: Design",
+      date: "2024-06-28",
+      turns: [
+        {
+          role: "user",
+          content:
+            "Help me order the SteerCo 2 storyline for the behavioral health care model. Dana Whitcomb, the COO, oversells to the board and then backs away from the numbers, so I want the staffing costs up front where she cannot skip them.",
+        },
+        {
+          role: "assistant",
+          content:
+            "Here is an order that puts the costs early. 1. The problem in one slide: referral completion and wait times. 2. The care model options side by side. 3. Staffing and cost for each option, by year. 4. What each option asks of payers. 5. The recommendation and the decision needed today. Leading with costs in slide 3 means every option is judged on what it takes to run.",
+        },
+      ],
+      summary:
+        "Ordering the SteerCo 2 storyline for the behavioral health care model, putting staffing costs early so each option is judged on what it takes to run. Suggested five-part flow from problem to recommendation.",
+      entities: "SteerCo 2, care model options, staffing costs, COO",
+    },
   ],
   stickies: [
     { section: "Weeks 10-14: Business case", text: "Maren: show the case with and without the payer contract on the same slide. Never hide a dependency in a footnote.", fill: "yellow" },

@@ -355,6 +355,60 @@ Not yet filed; photos still on my phone.`,
         "Unfiled store walk notes from Toronto: outerwear walls dominated by three brands, insulated jackets at C$350 to C$450, and staff aware of Evergreen through online purchases.",
       entities: "Toronto, store walk, pricing, specialty chain, competitors",
     },
+    {
+      key: "proposal",
+      title: "Proposal: Evergreen Canada market entry",
+      type: "document",
+      kind: "proposal",
+      vendor: "google_docs",
+      author: "lindqvist",
+      section: "Intake",
+      date: "2024-01-22",
+      body: `# Proposal: Canada market entry
+
+**Prepared for:** Evergreen Outdoor Co., Chief Commercial Officer  **From:** Kestrel Bay Advisory  **Date:** 22 January 2024
+
+## Context
+Canadian customers already buy from Evergreen online and pay for cross-border shipping. The board wants to know whether a proper entry would pay, which provinces to start in, and which channel mix makes sense.
+
+## Objectives
+1. Size the opportunity for outdoor apparel and footwear by province.
+2. Compare channel options and recommend one.
+3. Give the board a three-year business case it can approve in April 2024.
+
+## Our approach
+### Weeks 1 and 2
+Kickoff, data request and market sizing.
+### Weeks 3 to 5
+Competitor scan and channel options: own stores, wholesale, online with Canadian fulfillment. Findings at SteerCo 1.
+### Weeks 6 to 10
+Twelve interviews with retail buyers, logistics providers and Evergreen leaders, plus a survey of existing Canadian online customers. Entry plan and business case.
+
+## Workstreams
+Market sizing. Competitors. Channels. Customer and trade research. Business case.
+
+## Deliverables
+Market model. Competitor scan. Channel comparison. Entry plan and three-year business case.
+
+## Timeline
+10 weeks from 5 February 2024.
+
+## Team
+A partner half a day a week, a full-time manager, consultant and analyst.
+
+## Fees
+$220,000 fixed, plus expenses capped at 7%.
+
+## Assumptions and exclusions
+Store site selection, legal entity setup, tax structuring and French-language brand creative are out of scope.
+
+## Why Kestrel Bay
+We test entry decisions with the buyers and partners who would make them work.`,
+      summary:
+        "Proposal to Evergreen Outdoor Co. for a 10-week study of whether, where and how to enter Canada. Fixed fee of $220k. Covers market sizing by province, competitors, channel options, trade research and a three-year business case.",
+      entities: "Evergreen Outdoor Co., Chief Commercial Officer, Canada, market entry, wholesale, direct-to-consumer",
+      shown: [{ on: "2024-01-23", occasion: "Proposal sent to the Chief Commercial Officer" }],
+    },
   ],
   stickies: [
     { section: "Weeks 6-8", text: "Signe: recommend a sequence, not a channel. Show the alternative we rejected, with its cost.", fill: "yellow" },

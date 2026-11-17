@@ -1,3 +1,5 @@
+import type { Json } from "@/integrations/supabase/types";
+
 import type { DemoBoard, DemoItem, DemoVendor } from "./types";
 
 /**
@@ -173,6 +175,36 @@ export function planBoard(board: DemoBoard, newId: () => string, taskIdFor: (wor
     for (const target of item.informs ?? []) if (onBoard.has(target)) links.push({ fromItem: item.key, toItem: target, relation: "informed" });
   }
   return { frames, cards, stickies: plannedStickies, links };
+}
+
+export type SowFacts = { fee_text: string; fee_amount: number | null; fee_basis: "fixed" | "monthly" | null; weeks: number };
+
+/**
+ * The SOW's terms as data (work_items.meta.sow_facts on the board's "sow" item), so code can show length and past fees
+ * without a model reading prose. "$380k" is fixed, "$45k/month" monthly; anything else keeps only its text.
+ */
+export function sowFacts(board: Pick<DemoBoard, "fee" | "weeks">): SowFacts {
+  const match = /^\$(\d+(?:\.\d+)?)(k|m)?(\/month)?$/i.exec(board.fee.trim());
+  if (!match) return { fee_text: board.fee, fee_amount: null, fee_basis: null, weeks: board.weeks };
+  const scale = match[2]?.toLowerCase() === "m" ? 1_000_000 : match[2] ? 1_000 : 1;
+  return { fee_text: board.fee, fee_amount: Math.round(Number(match[1]) * scale), fee_basis: match[3] ? "monthly" : "fixed", weeks: board.weeks };
+}
+
+/** What the seed adds to an item's meta beyond its mime type: SOW terms, and the proposal kind. */
+export function itemMeta(board: Pick<DemoBoard, "fee" | "weeks">, item: Pick<DemoItem, "key" | "kind">): Record<string, Json> {
+  return {
+    ...(item.key === "sow" ? { sow_facts: sowFacts(board) } : {}),
+    ...(item.kind ? { deliverable_kind: item.kind } : {}),
+  };
+}
+
+/**
+ * Where a card added to an already seeded board goes: the next free grid slot in its frame, after the cards and
+ * stickies already inside it, and how tall the frame must be to hold it.
+ */
+export function nextSlot(frame: { x: number; y: number; h: number }, occupied: number): { x: number; y: number; frameH: number } {
+  const spot = gridIn(frame, occupied, CARD_W, CARD_H);
+  return { ...spot, frameH: Math.max(frame.h, spot.y - frame.y + CARD_H + PAD) };
 }
 
 /** The outcome as one line on the engagement, for closed boards. */

@@ -34,7 +34,7 @@ export function boardProblems(board: DemoBoard): string[] {
   const earliest = addDays(board.start, -14);
   const latest = addDays(board.start, board.weeks * 7 + 14);
 
-  if (!/^b([1-9]|[12]\d|30)$/.test(board.key)) say("key must be b1 to b30");
+  if (!/^b[1-9]\d?$/.test(board.key)) say("key must be b1 to b99");
   if (board.team.length < 2) say("team needs at least two people");
   for (const person of board.team) if (!PEOPLE.has(person)) say(`team member ${person} is not in the roster`);
   if (board.sections.length < 2) say("needs at least two sections");
@@ -42,7 +42,8 @@ export function boardProblems(board: DemoBoard): string[] {
   if (board.status === "closed" && !board.outcome) say("closed boards need an outcome");
   if (board.status === "active" && board.outcome) say("active boards have no outcome yet");
   if (board.brief.length < 120) say("brief is too short to be useful");
-  if (board.items.length < 8) say("needs at least 8 items");
+  if (board.items.length < (board.pursuit ? 3 : 8)) say(`needs at least ${board.pursuit ? 3 : 8} items`);
+  if (board.pursuit && (board.status !== "active" || board.sharedWithFirm)) say("a pursuit is active and not shared with the firm");
 
   for (const item of board.items) {
     const where = `item ${item.key}`;
@@ -71,6 +72,10 @@ export function boardProblems(board: DemoBoard): string[] {
       if (!DATE.test(showing.on) || showing.on < item.date) say(`${where}: shown before it was made`);
     }
     if (item.shown?.length && !["document", "deck", "sheet"].includes(item.type)) say(`${where}: only deliverables are shown to clients`);
+    if (item.kind === "proposal") {
+      if (item.type !== "document") say(`${where}: proposals are documents`);
+      if (!/^## Fees\s*$/m.test(item.body ?? "")) say(`${where}: proposals keep their fee under a "## Fees" heading`);
+    }
   }
   for (const item of board.items) {
     if (item.madeFrom && !keys.has(item.madeFrom)) say(`item ${item.key}: madeFrom ${item.madeFrom} does not exist`);
@@ -80,7 +85,7 @@ export function boardProblems(board: DemoBoard): string[] {
     if (!frames.has(sticky.section)) say(`sticky "${sticky.text.slice(0, 30)}": unknown section`);
   }
 
-  if (board.status === "active") {
+  if (board.status === "active" && !board.pursuit) {
     const redPen = board.items.filter((item) => item.type === "deck" && (item.unsupported?.length ?? 0) > 0);
     if (redPen.length === 0) say("active boards need a deck with planted unsupported claims");
     for (const deck of redPen) {
