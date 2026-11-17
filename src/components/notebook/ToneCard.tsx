@@ -52,7 +52,7 @@ export function ToneCard({
       {label || mark ? (
         <div className="flex items-center justify-between gap-2">
           <span
-            className={`font-mono text-[10px] uppercase tracking-[0.08em] ${LABEL_TONE[tone]}`}
+            className={`font-mono text-[11px] uppercase tracking-[0.08em] ${LABEL_TONE[tone]}`}
           >
             {label}
           </span>
@@ -70,7 +70,7 @@ export function ToneCard({
       ) : null}
 
       {meta ? (
-        <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">{meta}</span>
+        <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-soft">{meta}</span>
       ) : null}
     </div>
   );

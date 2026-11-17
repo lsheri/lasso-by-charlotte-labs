@@ -119,12 +119,12 @@ export function UpstreamPane({
                   {cited > 0 ? (
                     <span
                       data-testid={`cited-count-${item.id}`}
-                      className="mt-1 inline-block rounded-full border border-border bg-secondary px-2 py-0.5 text-[10px] text-muted-foreground"
+                      className="mt-1 inline-block rounded-full border border-border bg-secondary px-2 py-0.5 text-[11px] text-muted-foreground"
                     >
                       {cited} {cited === 1 ? "link" : "links"}
                     </span>
                   ) : null}
-                  <span className="mt-0.5 block font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                  <span className="mt-0.5 block font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
                     {item.type} · {item.date_line}
                   </span>
                 </span>
@@ -146,7 +146,7 @@ export function UpstreamPane({
                               : ""
                           }`}
                         >
-                          <p className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                          <p className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
                             {focus?.turnId === turn.id && focus.stitchId && focus.number ? (
                               <StitchBadge
                                 n={focus.number}

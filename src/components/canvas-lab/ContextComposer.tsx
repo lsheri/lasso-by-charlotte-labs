@@ -55,7 +55,7 @@ export function ContextComposer({
     <div className="w-full bg-card">
       {showInstructions ? (
         <div className="mb-2 rounded-[var(--radius-control)] border border-[var(--nb-rule)] bg-[var(--nb-grey-1)] p-2.5">
-          <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
+          <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-soft">
             Inherited from your workspace
           </span>
           <ul className="mt-1 flex list-disc flex-col gap-0.5 pl-4 nb-type-small leading-[17px] text-muted-foreground">
@@ -63,13 +63,13 @@ export function ContextComposer({
               <li key={line}>{line}</li>
             ))}
           </ul>
-          <span className="mt-2 block font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
+          <span className="mt-2 block font-mono text-[11px] uppercase tracking-[0.08em] text-soft">
             Recommended on this workboard
           </span>
           <ul className="mt-1 flex list-disc flex-col gap-0.5 pl-4 nb-type-small leading-[17px] text-muted-foreground">
             {CANVAS_INSTRUCTIONS.map((line) => <li key={line}>{line}</li>)}
           </ul>
-          <span className="mt-2 block font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
+          <span className="mt-2 block font-mono text-[11px] uppercase tracking-[0.08em] text-soft">
             Added on this workboard
           </span>
           <Textarea
@@ -90,7 +90,7 @@ export function ContextComposer({
           {context.map((node) => (
             <span
               key={node.id}
-              className="inline-flex items-center gap-1 rounded-full border border-[var(--nb-pencil)] bg-secondary px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground"
+              className="inline-flex items-center gap-1 rounded-full border border-[var(--nb-pencil)] bg-secondary px-2 py-0.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground"
             >
               {node.title.length > 28 ? `${node.title.slice(0, 25)}...` : node.title}
               <Button
@@ -133,7 +133,7 @@ export function ContextComposer({
 
       <div className="mt-2 flex flex-wrap gap-1.5" aria-label="Prompt starters">
         {PROMPT_STARTERS.map((starter) => (
-          <Button key={starter} type="button" size="sm" variant="outline" className="h-6 px-2 text-[10px]" onClick={() => setDraft(starter)}>
+          <Button key={starter} type="button" size="sm" variant="outline" className="h-6 px-2 text-[11px]" onClick={() => setDraft(starter)}>
             {starter}
           </Button>
         ))}
@@ -146,7 +146,7 @@ export function ContextComposer({
           variant="ghost"
           onClick={() => setShowInstructions((open) => !open)}
           aria-label="Instructions for this workboard"
-          className="h-7 px-2 font-mono text-[10px] uppercase tracking-[0.08em]"
+          className="h-7 px-2 font-mono text-[11px] uppercase tracking-[0.08em]"
         >
           Instructions
         </Button>

@@ -495,7 +495,7 @@ export function ConnectYourAiCard() {
           <BrandPair brands={["claude", "chatgpt"]} size={26} />
           <div className="min-w-0">
             <h3 className="text-[13px] font-medium text-foreground">{AI_TOOLS_COPY.heading}</h3>
-            <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+            <p className="mt-0.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
               {connectorStatusLine(newest)}
             </p>
           </div>

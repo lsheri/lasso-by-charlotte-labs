@@ -51,7 +51,7 @@ export function WeekRail({ items }: { items: WorkItemRow[] }) {
               <p className="text-[13px] font-medium leading-[17px] text-foreground">
                 {displayName(item)}
               </p>
-              <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+              <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
                 {workIdentityLabel(item)} · {formatDate(effectiveWorkDate(item))} ·{" "}
                 {stateWord(item)}
               </p>
@@ -62,7 +62,7 @@ export function WeekRail({ items }: { items: WorkItemRow[] }) {
       {rest > 0 ? (
         // Said plainly rather than hidden: the rail is a sample, and the whole
         // scope is one click away on the work page.
-        <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
+        <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.08em] text-soft">
           {rest} more in this scope
         </p>
       ) : null}

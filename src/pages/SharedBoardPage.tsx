@@ -61,7 +61,7 @@ export function SharedBoardPage({ token }: { token: string }) {
     <main className="flex h-dvh w-full flex-col bg-background">
       <header className="flex h-[52px] shrink-0 items-center justify-between border-b border-border bg-card px-4">
         <span className="text-[13px] font-medium text-foreground">A shared board</span>
-        <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">
+        <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-soft">
           Read only
         </span>
       </header>

@@ -366,7 +366,7 @@ function IconsGallery() {
                           <p className="text-sm font-medium text-foreground">
                             {entry.label}
                             {entry.v2 ? (
-                              <span className="ml-2 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                              <span className="ml-2 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
                                 v2
                               </span>
                             ) : null}

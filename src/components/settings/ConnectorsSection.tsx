@@ -189,7 +189,7 @@ export function ConnectorsSection({ from }: { from?: SettingsOpenFrom }) {
 
   return (
     <div>
-      <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+      <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
         {subtitle}
       </p>
 
@@ -233,7 +233,7 @@ export function ConnectorsSection({ from }: { from?: SettingsOpenFrom }) {
                 className="flex items-center justify-between rounded-[var(--radius-lg)] border border-border bg-card/50 px-4 py-3 opacity-60"
               >
                 <p className="text-[13px] text-muted-foreground">{name}</p>
-                <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
                   Coming soon
                 </span>
               </div>
@@ -320,7 +320,7 @@ function TranscriptsCard({
         <p className="truncate nb-type-small leading-[17px] text-muted-foreground">
           Recordings and transcripts already in your Drive. Uses the same connection.
         </p>
-        <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+        <p className="mt-0.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
           {busy ? "Pending" : connected ? "Ready" : "Needs Google Drive"}
         </p>
       </div>
@@ -400,7 +400,7 @@ function ConnectorCard({
         </div>
         <p className="truncate nb-type-small leading-[17px] text-muted-foreground">{description}</p>
         {exceptionalStatus ? (
-          <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+          <p className="mt-0.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
             {exceptionalStatus}
           </p>
         ) : null}
@@ -459,7 +459,7 @@ function ConnectorIdentity({ toolkit }: { toolkit: ConnectorToolkit }) {
   });
   if (!data?.identity) return null;
   return (
-    <span className="truncate font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+    <span className="truncate font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
       Connected as {data.identity}
     </span>
   );

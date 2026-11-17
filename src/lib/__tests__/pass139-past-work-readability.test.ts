@@ -143,9 +143,9 @@ describe("pass 139: metadata line hierarchy", () => {
   // Pass 142: the metadata rows moved into one shared tile.
   const tile = read("components/firm/CardMetaTile.tsx");
 
-  it("the kind tag sits in the tile, mono 10px uppercase", () => {
+  it("the kind tag sits in the tile, mono 11px uppercase (T2 type floor, was 10px)", () => {
     expect(tile).toContain("bg-[var(--nb-grey-1)]");
-    expect(tile).toContain("text-[10px] uppercase");
+    expect(tile).toContain("text-[11px] uppercase");
     expect(tile).toContain("text-[var(--nb-graphite)]");
     for (const source of [card, search]) {
       expect(source).toContain("<CardMetaTile");

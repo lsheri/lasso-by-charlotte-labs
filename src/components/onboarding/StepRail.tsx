@@ -35,8 +35,8 @@ export function StepRail({ current = 0 }: { current?: number }) {
                 <span
                   className={
                     active
-                      ? "text-[9px] font-semibold leading-none text-nb-white"
-                      : "text-[9px] font-semibold leading-none text-soft"
+                      ? "text-[11px] font-semibold leading-none text-nb-white"
+                      : "text-[11px] font-semibold leading-none text-soft"
                   }
                 >
                   {index + 1}

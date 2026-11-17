@@ -24,7 +24,7 @@ export function CoachLinkPeople() {
           >
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <p className="text-sm font-medium text-foreground">{person.subject_name}</p>
-              <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+              <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
                 {person.relation === "manager" ? "Manager" : "Outside coach"}
               </span>
             </div>
@@ -36,7 +36,7 @@ export function CoachLinkPeople() {
                   : "You see the work they map, in full."}
             </p>
             {over ? (
-              <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+              <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
                 {COACHING_COPY.accessEnded}
               </p>
             ) : null}

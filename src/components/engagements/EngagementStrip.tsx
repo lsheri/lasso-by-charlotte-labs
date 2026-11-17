@@ -174,7 +174,7 @@ export function EngagementStrip({
           }
         >
           {expanded ? (
-            <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+            <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
               The workboard
             </p>
           ) : (
@@ -194,7 +194,7 @@ export function EngagementStrip({
             size="sm"
             aria-expanded={expanded}
             onClick={() => setExpanded((value) => !value)}
-            className="shrink-0 font-mono text-[10px] uppercase tracking-[0.08em]"
+            className="shrink-0 font-mono text-[11px] uppercase tracking-[0.08em]"
           >
             {expanded ? "Collapse ↑" : "Expand ↓"}
           </Button>
@@ -219,14 +219,14 @@ export function EngagementStrip({
                     <p className="truncate text-sm font-medium text-foreground">{task.name}</p>
                     <span
                       className={cn(
-                        "shrink-0 font-mono text-[10px] uppercase tracking-[0.08em]",
+                        "shrink-0 font-mono text-[11px] uppercase tracking-[0.08em]",
                         owner === "No owner" ? "text-[var(--nb-pencil)]" : "text-muted-foreground",
                       )}
                     >
                       {owner}
                     </span>
                   </div>
-                  <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                  <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
                     {count} {count === 1 ? "piece" : "pieces"}
                     {calls > 0 ? ` · ${calls} ${calls === 1 ? "call" : "calls"}` : ""}
                   </p>
@@ -240,13 +240,13 @@ export function EngagementStrip({
                     {kinds.map((kind) => (
                       <span
                         key={kind.key}
-                        className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground"
+                        className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground"
                       >
                         {kind.count} {kind.label}
                       </span>
                     ))}
                     {quiet && (
-                      <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                      <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
                         {quiet}
                       </span>
                     )}
@@ -258,7 +258,7 @@ export function EngagementStrip({
 
           {/* Row two: shipped, three cards abreast, toned by whether they shipped. */}
           <div className="border-t border-border px-4 py-4">
-            <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+            <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
               Shipped, and what is waiting
             </p>
             <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
