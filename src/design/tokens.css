@@ -171,6 +171,21 @@
   --focus-ring:var(--focus-ring-new);
 }
 
+/* Type scale, option B "readable floor" (17 Nov 2026). Seven steps, nothing
+   below 11px. --type-* because Tailwind v4 owns --text-xs to --text-3xl.
+   small, control and lead equal Tailwind's text-xs, text-sm and text-base, so
+   those utilities already sit on the scale. A skin resizes type by setting
+   these names. Nothing reads them yet; later PRs move hand-set sizes on. */
+:root {
+  --type-label:11px;
+  --type-small:12px;
+  --type-body:13px;
+  --type-control:14px;
+  --type-lead:16px;
+  --type-title:20px;
+  --type-display:28px;
+}
+
 /* Job names. Each token names a job, not a hue, and points at the token that
    does that job today, so Lasso renders exactly as before. A skin overrides
    these names and nothing else. Declared on both :root and the app shell
