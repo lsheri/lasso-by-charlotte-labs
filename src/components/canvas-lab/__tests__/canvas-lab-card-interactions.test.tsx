@@ -27,7 +27,7 @@ describe("Canvas Lab card interaction correction", () => {
     expect(styles).toMatch(/\.canvas-lab-anchor \{[^}]*border-radius: 50%;/s);
     expect(styles).toMatch(/\.canvas-lab-anchor \{[^}]*cursor: crosshair;/s);
     expect(styles).toMatch(/\.canvas-lab-resize-handle \{[^}]*width: 8px;[^}]*height: 8px;/s);
-    expect(styles).toMatch(/\.canvas-lab-resize-handle \{[^}]*border: 1\.4px solid var\(--nb-green\);/s);
+    expect(styles).toMatch(/\.canvas-lab-resize-handle \{[^}]*border: 1\.4px solid var\(--handle, var\(--nb-green\)\);/s);
     expect(styles).toMatch(/\.canvas-lab-resize-handle \{[^}]*border-radius: 1px;/s);
     expect(styles).toMatch(/data-corner="nw"[^}]*cursor: nwse-resize;/s);
     expect(styles).toMatch(/data-corner="ne"[^}]*cursor: nesw-resize;/s);

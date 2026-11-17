@@ -256,6 +256,11 @@
   --nb-mid:var(--text-secondary);
   --nb-soft:var(--text-muted);
   --nb-green:var(--hand-ink);
+  /* C1 part 3: jobs that point at --nb-green resolve here too, or overlays fall back to the root green. */
+  --active-mark:var(--nb-green);
+  --drop-target:var(--nb-green);
+  --handle:var(--nb-green);
+  --ai-voice:var(--nb-green);
   --nb-lasso-green:var(--hand-live);
   --nb-green-wash:var(--hand-wash);
   --nb-blue:var(--action-secondary);
