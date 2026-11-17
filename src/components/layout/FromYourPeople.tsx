@@ -43,7 +43,7 @@ export function FromYourPeopleGroup({
                   <GraphiteIcon name="members" size={16} animate={false} />
                 </span>
                 <span className="truncate">{board.title}</span>
-                <span className="ml-auto shrink-0 font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{SHARE_UP_COPY.readerTag}</span>
+                <span className="ml-auto shrink-0 font-mono text-[11px] uppercase tracking-[0.08em] text-soft">{SHARE_UP_COPY.readerTag}</span>
               </Link>
             ))}
           </div>

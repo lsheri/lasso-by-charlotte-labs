@@ -94,11 +94,11 @@ export function ArrivalsStrip({ items }: { items: WorkItemRow[] }) {
               <SourceMark item={head} />
               <span className="min-w-0 max-w-[280px] truncate text-foreground">{head.title}</span>
               {isConversationGroup(entry) ? (
-                <span className="font-mono text-[10px] text-soft">
+                <span className="font-mono text-[11px] text-soft">
                   {pieces.length} pieces
                 </span>
               ) : null}
-              <span className="font-mono text-[10px] text-soft">
+              <span className="font-mono text-[11px] text-soft">
                 {workDateLabel(head, (iso) => (head.work_date ?? head.created_at_source ? formatDate(iso) : arrivalWhen(iso)))}
               </span>
               <span>{place.text}</span>

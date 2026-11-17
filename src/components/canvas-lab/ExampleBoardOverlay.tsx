@@ -64,7 +64,7 @@ export function ExampleBoardOverlay({ onClose }: { onClose: () => void }) {
     <div data-testid="canvas-lab-example" role="dialog" aria-modal="true" aria-label="Example board" className="fixed inset-0 z-[60] flex flex-col bg-[var(--nb-paper)]">
       <header className="flex h-[52px] shrink-0 items-center justify-between border-b border-border bg-card px-4">
         <div className="min-w-0">
-          <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-green">Example</span>
+          <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-green">Example</span>
           <span className="block truncate text-[13px] font-medium text-foreground">{EXAMPLE_CLIENT} / {EXAMPLE_ENGAGEMENT}</span>
         </div>
         <div className="flex items-center gap-3">
@@ -147,7 +147,7 @@ export function ExampleBoardOverlay({ onClose }: { onClose: () => void }) {
                 type="button"
                 data-testid="example-what-fed-this"
                 onClick={() => setReviewOpen(true)}
-                className="absolute z-10 border border-[var(--nb-green)] bg-card px-2 py-1 font-mono text-[9px] uppercase tracking-[0.08em] text-green"
+                className="absolute z-10 border border-[var(--nb-green)] bg-card px-2 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-green"
                 style={{ left: deck.x, top: deck.y + deck.height + 8 }}
               >
                 What fed this

@@ -227,7 +227,7 @@ export function HomeBoard() {
         }}
         toolbar={(
           <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 md:flex-nowrap">
-            <span data-testid="home-count-label" className="mr-auto basis-full whitespace-normal font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground md:basis-auto md:truncate">
+            <span data-testid="home-count-label" className="mr-auto basis-full whitespace-normal font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground md:basis-auto md:truncate">
               {countLabel}
             </span>
             <NewEngagementDialog

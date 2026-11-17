@@ -162,8 +162,8 @@
    the product. SketchRow resolves --text-sm to Tailwind's 14px instead of
    the mirror's 13px. That 1px is accepted and recorded. */
 :root {
-  --text-micro:9px;
-  --text-mini:10.5px;
+  --text-micro:11px; /* T2, 17 Nov: was 9px; the type floor is 11px */
+  --text-mini:11px; /* T2, 17 Nov: was 10.5px */
   --text-md:16px;
 
   --font-display:"Instrument Sans", ui-sans-serif, system-ui, sans-serif;

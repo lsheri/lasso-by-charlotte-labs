@@ -128,7 +128,7 @@ export function CommentComposer({
 
 export function CommentLine({ comment }: { comment: CommentDto }) {
   return (
-    <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
+    <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-soft">
       {comment.authorName} · {relativeTime(comment.createdAt)}
       {comment.edited ? " · edited" : ""}
     </span>
@@ -529,7 +529,7 @@ export function ChatNotesPanel({
                   key={highlight.id}
                   className="rounded-[var(--radius-control)] border border-border bg-card px-2.5 py-2"
                 >
-                  <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
+                  <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-soft">
                     Turn {highlight.turnNo}
                     {highlight.stale ? " · From an earlier version" : ""}
                   </span>
@@ -595,7 +595,7 @@ export function ChatNotesPanel({
                     key={highlight.id}
                     className="rounded-[var(--radius-control)] border border-border bg-card px-2.5 py-2"
                   >
-                    <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
+                    <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-soft">
                       {highlight.authorName ?? "A colleague"} · Turn {highlight.turnNo}
                       {highlight.stale ? " · From an earlier version" : ""}
                     </span>

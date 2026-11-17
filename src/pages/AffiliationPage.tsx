@@ -46,7 +46,7 @@ function Figure({ value, label }: { value: number; label: string }) {
   return (
     <div>
       <div className="text-[26px] leading-none">{value}</div>
-      <div className="mt-2 font-mono text-[9px] uppercase text-muted-foreground">
+      <div className="mt-2 font-mono text-[11px] uppercase text-muted-foreground">
         {label}
       </div>
     </div>

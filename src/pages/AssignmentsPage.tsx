@@ -60,7 +60,7 @@ export function AssignmentsPage() {
                   <span className="text-[13px] font-medium leading-[17px] text-foreground">
                     {row.name}
                   </span>
-                  <span className="font-mono text-[10px] uppercase text-soft">{row.status}</span>
+                  <span className="font-mono text-[11px] uppercase text-soft">{row.status}</span>
                 </li>
               ))}
             </ul>

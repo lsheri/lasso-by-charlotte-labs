@@ -755,7 +755,7 @@ export function WorkPage() {
       <header className="work-page-header box-border flex h-16 shrink-0 flex-wrap items-center gap-4 border-b border-[var(--nb-rule)] px-5 md:flex-nowrap">
         <div className="mr-auto min-w-0 shrink-0">
           <h1 className="whitespace-nowrap font-serif text-[19px] leading-none">All work</h1>
-          <p className="work-page-subtitle mt-1 truncate font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
+          <p className="work-page-subtitle mt-1 truncate font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
             <WorkSubtitle pieces={groupedCount(all)} unmapped={groupedCount(unmapped)} />
           </p>
         </div>
@@ -846,14 +846,14 @@ export function WorkPage() {
           </div>
         ) : error && all.length === 0 ? null : (
           <div aria-label="All work" className={`min-h-full cursor-default${gusting ? " nb-gust" : ""}`}>
-            <p className="work-source-tally min-w-0 truncate font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
+            <p className="work-source-tally min-w-0 truncate font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
               {["WHERE THIS CAME FROM", ...sourceCounts.map((row) => `${row.label} ${row.count}`)].join(" · ")}
             </p>
             <div className="work-columns">
               {columns.map(({ bucket, entries }) => (
                 <section key={bucket.key} className="min-w-0" aria-label={bucket.label}>
                   <div className="flex h-10 items-center border-b border-[var(--nb-rule)] px-3">
-                    <h2 className="flex w-full items-baseline justify-between gap-3 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground"><span className="truncate">{bucket.label}</span><span className="shrink-0 text-soft">{entries.length}</span></h2>
+                    <h2 className="flex w-full items-baseline justify-between gap-3 font-mono text-[11px] uppercase tracking-normal text-muted-foreground"><span className="truncate">{bucket.label}</span><span className="shrink-0 text-soft">{entries.length}</span></h2>
                   </div>
                   <div className="work-column-cards">
                     {entries.length === 0 ? <p className="rounded-[var(--radius-md)] border border-dashed border-pencil bg-card px-3 py-4 text-center text-[11.5px] text-soft">{columnFilter === "unmapped" ? "Nothing here with no board" : columnFilter === "all" ? "Nothing here yet." : "Nothing here"}</p> : contentWidth > 0 ? entries.map((entry) => (

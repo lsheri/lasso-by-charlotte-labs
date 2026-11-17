@@ -94,14 +94,14 @@ export function WisprCard() {
         <BrandLogo brand="wispr" size={30} />
         <div className="min-w-0 flex-1 basis-48">
           <p className="text-[13px] font-medium text-foreground">Wispr Flow</p>
-          <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+          <p className="mt-0.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
             {busy ? "Pending" : connected ? "Connected" : "Not connected"}
           </p>
           <p className="mt-1 nb-type-small leading-[17px] text-muted-foreground">
             {copy("Meetings, notes and transcripts from your calls. Read only, so Lasso never writes anything back to Wispr.")}
           </p>
           {connected && data?.identity ? (
-            <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+            <p className="mt-0.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
               Signed in as {data.identity}
             </p>
           ) : null}

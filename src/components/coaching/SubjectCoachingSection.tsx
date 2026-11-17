@@ -92,7 +92,7 @@ export function SubjectCoachingSection({
               >
                 <div className="nb-paper-body">
                   <p className="text-sm text-foreground">{entry.question}</p>
-                  <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                  <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
                     {entry.profiles?.display_name ?? "A coach"} · {noteWhen(entry.created_at)}
                   </p>
                 </div>

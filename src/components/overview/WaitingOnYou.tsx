@@ -59,7 +59,7 @@ export function WaitingOnYou() {
   return (
     <section className="mb-8" data-testid="overview-waiting">
       <div className="mb-3 flex items-baseline justify-between gap-4">
-        <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
+        <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-soft">
           Decisions waiting on you · {drafts.length}
         </span>
         <Link to="/decisions" className="nb-type-small text-accent-deep hover:underline">
@@ -107,7 +107,7 @@ export function WaitingOnYou() {
                   <button
                     type="button"
                     onClick={() => { setSourceItem(firstSrc); setSourceFocus(turn ? { turnNo: turn.turn_no, text: turn.content } : undefined); }}
-                    className="story-link max-w-full truncate font-mono text-[10px] uppercase tracking-[0.08em] text-accent-deep"
+                    className="story-link max-w-full truncate font-mono text-[11px] uppercase tracking-[0.08em] text-accent-deep"
                   >
                     {srcLabel}
                   </button>

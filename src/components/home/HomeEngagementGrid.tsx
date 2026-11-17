@@ -145,7 +145,7 @@ export function HomeEngagementGrid({
                 className="block h-full rounded-[var(--radius-control)] border border-border bg-card p-3 transition-colors hover:border-foreground/40 focus:outline-none focus:ring-2 focus:ring-ring"
               >
               <HomeBoardPreview state={previews?.get(card.id) ?? { status: "loading" }} />
-              <p className="mt-3 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
+              <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
                 {card.clientLabel ?? card.code}
               </p>
               <p className="mt-1 truncate text-[14px] leading-[1.4] text-foreground">{card.title}</p>
@@ -177,7 +177,7 @@ export function HomeEngagementGrid({
             >
               {card.shared ? <span className="home-card-tab" aria-hidden="true">Shared</span> : null}
               <HomeBoardPreview state={previews?.get(card.id) ?? { status: "loading" }} />
-              <p className="mt-3 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
+              <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
                 {card.clientLabel ?? card.code}
               </p>
               <p className="mt-1 truncate text-[14px] leading-[1.4] text-foreground">{card.title}</p>

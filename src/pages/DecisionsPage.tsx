@@ -164,7 +164,7 @@ export function DecisionsPage() {
                             className={decision.status === "confirmed" ? "absolute -left-[18px] top-2 h-2.5 w-2.5 rounded-full bg-green" : "absolute -left-[18px] top-2 h-2.5 w-2.5 rounded-full border-[1.4px] border-green bg-background"}
                             aria-hidden
                           />
-                          <p className="mb-2 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">{entryDate(decision.created_at)}</p>
+                          <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">{entryDate(decision.created_at)}</p>
                           <DecisionLogRow
                             decision={decision}
                             onOpenSource={(id, focus) => { setSourceItem(id); setSourceFocus(focus); }}
@@ -188,7 +188,7 @@ export function DecisionsPage() {
                       >
                         show earlier decisions
                       </button>
-                      <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
+                      <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
                         {hiddenCount} earlier
                       </span>
                     </div>
@@ -219,12 +219,12 @@ function DecisionRail({ counts }: { counts: ReturnType<typeof decisionCounts> })
         {stats.map(([value, caption]) => (
           <div key={caption} className="border-b border-border py-3 first:pt-0">
             <div className="font-serif text-[30px] leading-[34px] tabular-nums text-foreground">{value}</div>
-            <div className="font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">{caption}</div>
+            <div className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">{caption}</div>
           </div>
         ))}
       </div>
       <div className="rounded-[var(--radius-md)] border border-border bg-card p-4">
-        <h2 className="font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">Why the log exists</h2>
+        <h2 className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">Why the log exists</h2>
         <p className="mt-3 text-[13px] leading-[19px] text-foreground">
           A decision without its reasoning is just a fact. Six months from now, the reasoning is the part nobody can reconstruct. The log is not a record of being right, it is a record of what you knew.
         </p>

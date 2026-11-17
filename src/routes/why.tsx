@@ -94,12 +94,12 @@ function WhyPage() {
 
       <footer className="border-t border-[var(--nb-pencil)]">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-6 py-8 md:px-10">
-          <p className="font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
+          <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
             {makerLine(brand)}
           </p>
           <Link
             to="/trust"
-            className="font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+            className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
           >
             Trust &amp; data
           </Link>

@@ -14,20 +14,20 @@ export function UserCard({
     <div className="flex items-center gap-2.5">
       <span
         aria-hidden
-        className="grid size-7 shrink-0 place-items-center rounded-full border-[1.2px] border-graphite bg-card font-mono text-[9px] font-medium text-foreground"
+        className="grid size-7 shrink-0 place-items-center rounded-full border-[1.2px] border-graphite bg-card font-mono text-[11px] font-medium text-foreground"
       >
         {initialsOf(name)}
       </span>
       <div className="min-w-0 flex-1">
         <p className="truncate nb-type-small font-medium leading-4 text-foreground">{name}</p>
         <div className="flex items-center justify-between gap-2">
-          <span className="font-mono text-[9px] uppercase leading-3 tracking-[0.08em] text-soft">
+          <span className="font-mono text-[11px] uppercase leading-3 tracking-[0.08em] text-soft">
             {(role && ROLE_LABELS[role]) ?? "Engagement Mgr"}
           </span>
           <button
             type="button"
             onClick={onSignOut}
-            className="shrink-0 font-mono text-[9px] uppercase tracking-[0.08em] text-soft transition-colors hover:text-foreground"
+            className="shrink-0 font-mono text-[11px] uppercase tracking-[0.08em] text-soft transition-colors hover:text-foreground"
           >
             Sign out
           </button>

@@ -82,7 +82,7 @@ export function AskedSessions({
     <section className="mb-8 space-y-3" data-testid="asked-sessions">
       <div className="flex items-center gap-3 pb-2 pt-1">
         <span className="font-hand text-[19px] leading-none text-graphite">{copy("Asked Lasso")}</span>
-        <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">
+        <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-soft">
           {sessions.length}
         </span>
         <span className="h-px flex-1 bg-[var(--nb-rule)]" />
@@ -112,7 +112,7 @@ export function AskedSessions({
                 <span className="block truncate nb-type-small text-muted-foreground">
                   {scopeSentence(parseScope(session.context_scope), all, engagements ?? [])}
                 </span>
-                <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
                   {relative(session.updated_at)}
                 </span>
               </button>
