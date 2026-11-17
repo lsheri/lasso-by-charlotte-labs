@@ -4,7 +4,7 @@
 import { describe, expect, it } from "vitest";
 
 import { b05 } from "@/lib/demo-firm/boards/b05-st-brigid";
-import { CARD_H, CARD_W, planBoard, sourceFor } from "@/lib/demo-firm/plan";
+import { CARD_H, CARD_W, CONTENT_FIDELITIES, planBoard, sourceFor } from "@/lib/demo-firm/plan";
 import { DEMO_FIRM_MARKER, seedDemoBoard } from "@/lib/demo-firm/seed.server";
 import { DEMO_PEOPLE } from "@/lib/demo-firm/people";
 
@@ -45,6 +45,15 @@ describe("the layout plan", () => {
     expect(sourceFor("granola", "call")).toEqual({ source: "connector:granola", sourceVendor: "granola", fidelity: "transcribed" });
     expect(sourceFor("claude", "ai_thread").source).toBe("mcp:claude");
     expect(sourceFor("google_slides", "deck").sourceVendor).toBe("gdrive");
+  });
+
+  it("uses only fidelities the database accepts, for every vendor and type", () => {
+    // The first live run stopped here: "full" is not an accepted fidelity.
+    for (const vendor of ["claude", "chatgpt", "granola", "google_docs", "google_slides", "upload"] as const) {
+      for (const type of ["document", "deck", "ai_thread", "call", "sheet", "email"] as const) {
+        expect(CONTENT_FIDELITIES).toContain(sourceFor(vendor, type).fidelity);
+      }
+    }
   });
 });
 
@@ -108,6 +117,7 @@ describe("the writer", () => {
 
     const items = of("work_items");
     expect(items.every((row) => row["org_id"] === "org-demo")).toBe(true);
+    expect(items.every((row) => (row["source_meta"] as Record<string, unknown>)["demo_board"] === "b5")).toBe(true);
     expect(items.find((row) => row["title"] === "My notes: stakeholder dynamics")!["visibility"]).toBe("private");
     const loose = items.find((row) => row["title"] === "Unplaced note")!;
     expect(of("work_item_tasks").some((row) => row["work_item_id"] === loose["id"])).toBe(false);
