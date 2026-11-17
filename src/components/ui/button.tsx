@@ -5,13 +5,14 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[var(--radius-control)] text-sm font-medium cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed disabled:data-[pending]:pointer-events-auto disabled:data-[pending]:opacity-100 disabled:data-[pending]:cursor-progress [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[var(--radius-md-new)] text-sm font-medium cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed disabled:data-[pending]:pointer-events-auto disabled:data-[pending]:opacity-100 disabled:data-[pending]:cursor-progress [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
         // Ember is the one filled action per screen, warm, obvious, AA on white.
+        // Flat, no inner shadow (reference Button, decided 15 Oct): --btn-shadow is none.
         default:
-          "bg-ember text-ember-foreground shadow-[inset_0_1px_0_rgb(255_255_255/0.14),inset_0_-1px_2px_rgb(0_0_0/0.45)] hover:bg-ember-deep hover:text-ember-deep-foreground",
+          "bg-ember text-ember-foreground shadow-[var(--btn-shadow)] hover:bg-ember-deep hover:text-ember-deep-foreground",
         ink: "bg-primary text-primary-foreground shadow hover:bg-primary/90",
         destructive: "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
         outline:
@@ -23,8 +24,8 @@ const buttonVariants = cva(
       },
       size: {
         default: "h-9 px-4 py-2",
-        sm: "h-8 rounded-[var(--radius-control)] px-3 text-xs",
-        lg: "h-10 rounded-[var(--radius-control)] px-8",
+        sm: "h-8 px-3 text-xs",
+        lg: "h-10 px-8",
         icon: "h-9 w-9",
       },
     },

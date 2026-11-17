@@ -147,7 +147,7 @@ export function EvidenceCircle({ className = "" }: { className?: string }) {
       viewBox="0 0 200 44"
       preserveAspectRatio="none"
       fill="none"
-      stroke="var(--nb-green)"
+      stroke="var(--state-on-record, var(--nb-green))"
       strokeWidth={1.8}
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -890,7 +890,7 @@ export function ReadingEyes({
           <path
             key={`lens-${index}`}
             d={d}
-            fill="color-mix(in oklab, var(--nb-green) 12%, transparent)"
+            fill="color-mix(in oklab, var(--state-on-record, var(--nb-green)) 12%, transparent)"
             stroke="none"
           />
         ))}

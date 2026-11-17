@@ -43,7 +43,7 @@ export function ReadingPanel({ items }: { items: WorkItemRow[] }) {
                   ? `${vendorLabel(item.source_vendor, item.source)} · ${displayName(item)}`
                   : displayName(item)}
               </span>
-              <span className="shrink-0 font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
+              <span className="shrink-0 font-mono text-[11px] uppercase tracking-[0.08em] text-soft">
                 {workDateLabel(item)}
               </span>
             </li>

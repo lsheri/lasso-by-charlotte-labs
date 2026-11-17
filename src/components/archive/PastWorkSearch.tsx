@@ -162,7 +162,7 @@ export function PastWorkSearch() {
                         </div>
                       ) : null}
                       <p className="mt-2 text-sm">
-                        <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                        <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
                           {PAST_WORK_WHY_LABEL}
                         </span>
                         <br />
@@ -170,7 +170,7 @@ export function PastWorkSearch() {
                       </p>
                       {match.look_at ? (
                         <p className="mt-2 text-sm">
-                          <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                          <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
                             {PAST_WORK_LOOK_LABEL}
                           </span>
                           <br />
@@ -183,7 +183,7 @@ export function PastWorkSearch() {
               </ul>
             </>
           )}
-          <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+          <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
             {PAST_WORK_FOOTER_LINE}
           </p>
         </div>

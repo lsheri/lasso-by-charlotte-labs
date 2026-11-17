@@ -15,7 +15,7 @@ export function ConfirmedCalls() {
   return (
     <section className="mt-10">
       <p className="lasso-hand-voice font-hand text-[16px] text-soft">you confirm once, it travels with the work</p>
-      <h2 className="mt-1 font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
+      <h2 className="mt-1 font-mono text-[11px] uppercase tracking-[0.08em] text-soft">
         Decisions you confirmed
       </h2>
       <div className="mt-4 flex flex-wrap gap-4">
@@ -28,7 +28,7 @@ export function ConfirmedCalls() {
               {row.call_text ?? row.situation ?? "Untitled decision"}
             </p>
             {row.date_label ? (
-              <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
+              <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.08em] text-soft">
                 {row.date_label}
               </p>
             ) : null}

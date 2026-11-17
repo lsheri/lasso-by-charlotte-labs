@@ -39,16 +39,16 @@ function SceneCard({ scene }: { scene: MotionScene }) {
 
       <div>
         <h2 className="text-[13px] font-medium text-foreground">{scene.name}</h2>
-        <p className="font-mono text-[10px] text-soft">{scene.id}</p>
+        <p className="font-mono text-[11px] text-soft">{scene.id}</p>
       </div>
 
       <p className="text-[11.5px] text-muted-foreground">{scene.source}</p>
-      <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
+      <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-soft">
         {formatLoop(scene)}
       </p>
 
       <div>
-        <p className="micro-label text-[9px]">Renders in</p>
+        <p className="micro-label text-[11px]">Renders in</p>
         <ul className="mt-1 list-disc pl-4">
           {scene.placement.map((place) => (
             <li key={place} className="text-[11.5px] text-muted-foreground">

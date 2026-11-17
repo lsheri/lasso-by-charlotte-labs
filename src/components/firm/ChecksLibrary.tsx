@@ -146,7 +146,7 @@ export function ChecksLibrary({
       <SectionHeader
         title="Reusable processes"
         action={
-          <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
+          <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-soft">
             {activeCount} active
           </span>
         }
@@ -280,7 +280,7 @@ export function ChecksLibrary({
               </button>
             </div>
             <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{check.body}</p>
-            <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+            <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
               {SCOPE_WORD[check.scope]}
               {check.active ? "" : " · retired"}
             </p>

@@ -46,7 +46,7 @@ export function DeliverableKindSelect({
           </SelectContent>
         </Select>
         {suggested && value ? (
-          <span className="rounded-full bg-accent-soft px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-accent-deep">
+          <span className="rounded-full bg-accent-soft px-2 py-0.5 font-mono text-[11px] uppercase tracking-[0.08em] text-accent-deep">
             Suggested
           </span>
         ) : null}

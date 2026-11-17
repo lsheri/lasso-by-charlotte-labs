@@ -29,7 +29,7 @@ function decidedByLabel(decision: ArtifactDecision): string {
 
 function Micro({ children }: { children: ReactNode }) {
   return (
-    <p className="font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
+    <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
       {children}
     </p>
   );
@@ -37,7 +37,7 @@ function Micro({ children }: { children: ReactNode }) {
 
 function RefButtons({ refs, onOpenRef }: { refs: TurnRef[]; onOpenRef?: ((ref: TurnRef, text?: string) => void) | undefined; }) {
   if (refs.length === 0) return null;
-  return <p className="font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">{refs.map((ref, index) => <span key={`${ref.item_id}-${ref.turn_no}`}>{index ? " · " : ""}{onOpenRef ? <button type="button" className="story-link" onClick={() => onOpenRef(ref)}>turn {ref.turn_no}</button> : `turn ${ref.turn_no}`}</span>)}</p>;
+  return <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">{refs.map((ref, index) => <span key={`${ref.item_id}-${ref.turn_no}`}>{index ? " · " : ""}{onOpenRef ? <button type="button" className="story-link" onClick={() => onOpenRef(ref)}>turn {ref.turn_no}</button> : `turn ${ref.turn_no}`}</span>)}</p>;
 }
 
 function Section({

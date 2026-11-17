@@ -183,7 +183,7 @@ export function WorkstreamColumnHeader({
         ) : (
           <p className="min-w-0 flex-1 text-sm font-medium text-foreground">{task.name}</p>
         )}
-        <span className="shrink-0 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+        <span className="shrink-0 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
           {count}
         </span>
         <DropdownMenu>
@@ -196,7 +196,7 @@ export function WorkstreamColumnHeader({
           <DropdownMenuContent align="end">
             {episode ? (
               <>
-                <DropdownMenuLabel className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                <DropdownMenuLabel className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
                   Status
                 </DropdownMenuLabel>
                 {STATUS_MENU.map((option) => (
@@ -259,12 +259,12 @@ export function WorkstreamColumnHeader({
 
       <div className="flex flex-wrap items-center gap-1.5">
         {episode ? (
-          <span className="rounded-full border border-border bg-secondary px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+          <span className="rounded-full border border-border bg-secondary px-2 py-0.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
             {WORKSTREAM_STATUS_LABELS[episode.status] ?? episode.status}
           </span>
         ) : null}
         {confirmed ? (
-          <span className="rounded-full border border-border bg-secondary px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+          <span className="rounded-full border border-border bg-secondary px-2 py-0.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
             Confirmed sequence
           </span>
         ) : null}

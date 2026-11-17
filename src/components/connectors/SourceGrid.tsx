@@ -18,7 +18,7 @@ function Tile({ row, onPick }: { row: SourceRow; onPick: (id: SourceId) => void 
       </span>
       <span className="min-w-0">
         <span className={`block truncate text-sm font-medium${off ? " text-muted-foreground" : ""}`}>{row.name}</span>
-        <span className="block font-mono text-[9.5px] uppercase tracking-[0.06em] text-muted-foreground">
+        <span className="block font-mono text-[11px] uppercase tracking-[0.06em] text-muted-foreground">
           {row.ai ? (row.connected ? "Sends work here" : "Set up in Settings") : row.connected ? "Connected" : "Connect"}
         </span>
       </span>

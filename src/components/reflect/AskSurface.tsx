@@ -680,7 +680,7 @@ function HistoryTab({ ask, onTab }: { ask: AskLasso; onTab: (tab: AskTab) => voi
               }`}
             >
               {row.title ?? "Untitled"}{" "}
-              <span className="font-mono text-[10px] uppercase tracking-[0.08em]">
+              <span className="font-mono text-[11px] uppercase tracking-[0.08em]">
                 {new Date(row.created_at).toLocaleDateString()}
               </span>
             </button>
