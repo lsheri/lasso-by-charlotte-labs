@@ -54,7 +54,7 @@ export function EduEngagementsPage({ kind }: { kind: EngagementKind }) {
         ))}
       </div>
       {mine.length === 0 ? (
-        <p className="text-[11.5px] leading-[17px] text-muted-foreground">{copy.empty}</p>
+        <p className="text-(length:--type-small) leading-[17px] text-muted-foreground">{copy.empty}</p>
       ) : null}
 
       {unsorted.length > 0 ? (

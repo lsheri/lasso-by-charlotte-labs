@@ -50,7 +50,7 @@ export function SharedBoardPage({ token }: { token: string }) {
     return (
       <Shell>
         <p className="text-(length:--type-body) text-foreground">{SHARE_CLOSED_MESSAGE}</p>
-        <p className="mt-1 text-[11.5px] text-muted">
+        <p className="mt-1 text-(length:--type-small) text-muted">
           Ask the person who sent it for a new one.
         </p>
       </Shell>

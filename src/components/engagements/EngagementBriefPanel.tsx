@@ -81,7 +81,7 @@ export function EngagementBriefPanel({
             <div>
               <p className="micro-label">Brief</p>
               <p
-                className={`mt-1 whitespace-pre-wrap text-[15px] leading-relaxed ${
+                className={`mt-1 whitespace-pre-wrap text-(length:--type-lead) leading-relaxed ${
                   brief ? "text-foreground" : "text-muted-foreground"
                 }`}
               >

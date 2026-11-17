@@ -16,10 +16,10 @@ export function PortfolioPage() {
         title={EDU_VOCAB.portfolio}
         subtitle="The work you are proud of, kept in one place and still in its class or workboard."
       />
-      <p className="text-[11.5px] leading-[17px] text-muted-foreground">{PORTFOLIO_PRIVACY_LINE}</p>
+      <p className="text-(length:--type-small) leading-[17px] text-muted-foreground">{PORTFOLIO_PRIVACY_LINE}</p>
 
       {items.length === 0 ? (
-        <p className="text-[11.5px] leading-[17px] text-muted-foreground">{PORTFOLIO_EMPTY_LINE}</p>
+        <p className="text-(length:--type-small) leading-[17px] text-muted-foreground">{PORTFOLIO_EMPTY_LINE}</p>
       ) : (
         <div className="grid gap-3 md:grid-cols-2">
           {items.map((item) => {

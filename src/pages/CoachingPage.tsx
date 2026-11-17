@@ -123,14 +123,14 @@ export function CoachingPage() {
                       </span>
                     </span>
                     <span className="min-w-0">
-                      <span className="block truncate text-[11.5px] font-medium text-foreground">
+                      <span className="block truncate text-(length:--type-small) font-medium text-foreground">
                         {subject.engagement_title}
                       </span>
                       <span className="mt-0.5 block font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
                         {subject.engagement_code}
                       </span>
                     </span>
-                    <span className="min-w-0 text-[11.5px] leading-[17px] text-muted-foreground">
+                    <span className="min-w-0 text-(length:--type-small) leading-[17px] text-muted-foreground">
                       <span className="block">
                         {subject.access_level === "full_transcript"
                           ? "Full transcripts"
@@ -147,7 +147,7 @@ export function CoachingPage() {
                         </span>
                       ) : null}
                     </span>
-                    <span className="text-[11.5px] text-muted-foreground">
+                    <span className="text-(length:--type-small) text-muted-foreground">
                       {sinceLabel(subject.last_note_at)}
                     </span>
                   </button>

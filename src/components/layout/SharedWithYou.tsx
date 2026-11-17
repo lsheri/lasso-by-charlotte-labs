@@ -112,14 +112,14 @@ export function SharedWithYouShelf({ shared, pending, onHeight }: { shared: Shar
   const card = "flex min-h-[228px] min-w-0 flex-col items-start justify-between gap-4 whitespace-normal rounded-[var(--radius-control)] border-[1.5px] border-[var(--nb-shared)] bg-card p-4 text-left";
   return (
     <section ref={shelfRef} aria-label={SHARED_WITH_YOU_COPY.title} data-testid="home-shared-shelf" className="min-w-0 text-left">
-      <h2 className="font-hand text-[26px] text-[var(--nb-shared)]">{SHARED_WITH_YOU_COPY.title}</h2>
+      <h2 className="font-hand text-(length:--type-display) text-[var(--nb-shared)]">{SHARED_WITH_YOU_COPY.title}</h2>
       <p className="mt-1 text-base leading-relaxed text-muted-foreground">{SHARED_WITH_YOU_COPY.shelfNote}</p>
       <ul className="mt-4 grid list-none grid-cols-1 gap-6 p-0 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {shared.map((board) => (
           <li key={`${board.engagement_id}:${board.guest_profile_id}`} className="min-w-0">
             <Button variant="ghost" className={cn(card, "h-full w-full hover:bg-secondary")} onClick={() => openShared(board.engagement_id, "home")}>
               <span className="max-w-full break-words font-mono text-(length:--type-body) font-normal text-[var(--nb-shared)]">{SHARED_WITH_YOU_COPY.sharedLabel(board.host_org)}</span>
-              <span className="max-w-full break-words text-[19.5px] font-medium text-foreground">{board.title}</span>
+              <span className="max-w-full break-words text-(length:--type-title) font-medium text-foreground">{board.title}</span>
               <span className="text-base font-normal text-muted-foreground">{SHARED_WITH_YOU_COPY.permission(board.level)}</span>
             </Button>
           </li>
@@ -127,7 +127,7 @@ export function SharedWithYouShelf({ shared, pending, onHeight }: { shared: Shar
         {pending.map((invite) => (
           <li key={invite.invite_id} className={cn(card, "border-dashed")}>
             <span className="max-w-full break-words font-mono text-(length:--type-body) text-[var(--nb-shared)]">{SHARED_WITH_YOU_COPY.inviteLabel}</span>
-            <h3 className="max-w-full break-words text-[19.5px] font-medium text-foreground">{invite.board}</h3>
+            <h3 className="max-w-full break-words text-(length:--type-title) font-medium text-foreground">{invite.board}</h3>
             <p className="text-base leading-relaxed text-muted-foreground">{SHARED_WITH_YOU_COPY.invited(invite.invited_by)}</p>
             <Button variant="outline" disabled={busy !== null} onClick={async () => {
               setBusy(invite.invite_id);

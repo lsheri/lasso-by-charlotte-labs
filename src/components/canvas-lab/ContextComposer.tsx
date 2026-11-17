@@ -117,7 +117,7 @@ export function ContextComposer({
           ) : null}
         </div>
       ) : (
-        <p className="mb-2 font-hand text-[15px] leading-none text-[var(--nb-mid)]">
+        <p className="mb-2 font-hand text-(length:--type-lead) leading-none text-[var(--nb-mid)]">
           choose work to use as context
         </p>
       )}

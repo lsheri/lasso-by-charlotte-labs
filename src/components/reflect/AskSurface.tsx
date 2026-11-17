@@ -987,7 +987,7 @@ export function AskSurface({
             ) : (
               <>
                 <p className="micro-label micro-label-ai pr-12">{copy("Ask Lasso")}</p>
-                <h2 className="page-title mt-1 break-words text-[17px] leading-snug">
+                <h2 className="page-title mt-1 break-words text-(length:--type-lead) leading-snug">
                   {engagementTitle}
                 </h2>
                 <div className="mt-2">

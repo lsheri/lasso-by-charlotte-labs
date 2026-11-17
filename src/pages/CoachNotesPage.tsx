@@ -136,7 +136,7 @@ export function CoachNotesPage() {
                 <p className="font-serif text-[30px] leading-[36px] tabular-nums text-foreground">
                   {value}
                 </p>
-                <p className="mt-0.5 text-[11.5px] text-muted-foreground">{caption}</p>
+                <p className="mt-0.5 text-(length:--type-small) text-muted-foreground">{caption}</p>
               </div>
             ))}
           </div>

@@ -203,7 +203,7 @@ export function SessionStickies({ profileId, orgId }: { profileId: string; orgId
             style={{ backgroundColor: noteTint(index) }}
             className={`flex h-[180px] w-[220px] max-w-full flex-col justify-between rounded-[var(--radius-sm)] border border-[var(--nb-pencil)] p-3 ${noteTilt(note.id)} ${note.discussed ? "opacity-60" : ""}`}
           >
-            <p className="overflow-hidden whitespace-pre-wrap font-hand text-[18px] leading-[22px] text-foreground">
+            <p className="overflow-hidden whitespace-pre-wrap font-hand text-(length:--type-title) leading-[22px] text-foreground">
               {note.content}
             </p>
             <div className="flex items-center justify-between gap-2">
@@ -242,7 +242,7 @@ export function SessionStickies({ profileId, orgId }: { profileId: string; orgId
                 if (text) addNote.mutate(text);
               }
             }}
-            className="h-full w-full resize-none bg-transparent font-hand text-[18px] leading-[22px] text-foreground outline-none placeholder:text-soft"
+            className="h-full w-full resize-none bg-transparent font-hand text-(length:--type-title) leading-[22px] text-foreground outline-none placeholder:text-soft"
           />
           <p className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-soft">
             <span aria-hidden>+ </span>

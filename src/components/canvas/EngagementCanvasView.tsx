@@ -914,7 +914,7 @@ export function EngagementCanvasView({
         {announcement}
       </div>
       {draftCount > 0 ? (
-        <p className="font-hand text-[19px] text-graphite">
+        <p className="font-hand text-(length:--type-title) text-graphite">
           {draftCount} question{draftCount === 1 ? "" : "s"} to answer
         </p>
       ) : null}
@@ -1204,7 +1204,7 @@ export function EngagementCanvasView({
         }}
       >
         <div className="mb-3 flex items-baseline gap-2">
-          <h2 className="font-hand text-[19px]">Not in the picture yet</h2>
+          <h2 className="font-hand text-(length:--type-title)">Not in the picture yet</h2>
           <span className="font-mono text-(length:--type-label) text-muted-foreground">{view.shelf.length}</span>
         </div>
         {view.shelf.length > 0 ? (

@@ -129,7 +129,7 @@ export function DecisionsPage() {
               variant={filter === item.id ? "secondary" : "outline"}
               aria-pressed={filter === item.id}
               onClick={() => { setFilter(item.id); setShown(DECISION_PAGE_SIZE); }}
-              className="rounded-full text-[11.5px]"
+              className="rounded-full text-(length:--type-small)"
             >
               {item.label}
             </Button>

@@ -97,7 +97,7 @@ export function GroupingNamePopup({ frame, pan, zoom, viewport, portalRoot, onNa
       <input
         ref={inputRef}
         aria-label="Name this grouping"
-        className="canvas-lab-frame-name-input font-hand text-[18px] leading-none text-[var(--nb-mid)]"
+        className="canvas-lab-frame-name-input font-hand text-(length:--type-title) leading-none text-[var(--nb-mid)]"
         value={draft}
         maxLength={60}
         onChange={(event) => { setDraft(event.target.value); if (event.target.value.trim()) setError(false); }}

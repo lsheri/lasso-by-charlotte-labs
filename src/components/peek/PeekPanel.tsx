@@ -197,7 +197,7 @@ export function PeekBody({
         {!analysesInHeader ? (
           <div className="mt-2 flex items-start gap-2.5">
             <TypeIcon item={active} />
-            <h2 className="page-title flex min-w-0 flex-wrap items-center gap-1.5 break-words text-[19px] leading-snug">
+            <h2 className="page-title flex min-w-0 flex-wrap items-center gap-1.5 break-words text-(length:--type-title) leading-snug">
               <SourceMark item={active} size={15} />
               <span className="min-w-0 break-words">{displayName(active)}</span>
               <ArtifactNote item={active} />

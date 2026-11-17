@@ -155,7 +155,7 @@ export function FocusOverlay({
               {item ? <> · {formatDate(effectiveWorkDate(item))}</> : null}
             </span>
             <h1 className="page-title truncate">{item ? displayName(item) || node.title : node.title}</h1>
-            {item && viewerOwnsItem && displayName(item) !== item.title ? <p data-testid="focus-captured-as" className="truncate text-[11.5px] text-muted-foreground">Captured as {item.title}</p> : null}
+            {item && viewerOwnsItem && displayName(item) !== item.title ? <p data-testid="focus-captured-as" className="truncate text-(length:--type-small) text-muted-foreground">Captured as {item.title}</p> : null}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {!readOnly && actions.includes("Branch") ? (

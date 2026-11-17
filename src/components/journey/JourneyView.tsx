@@ -217,7 +217,7 @@ function JourneySurface({
             <ChaliceMark size={28} className="mt-1" />
             <div className="min-w-0">
               <p className="micro-label text-muted-foreground">{JOURNEY_TITLE}</p>
-              <h1 className="page-title mt-1 break-words text-[22px] leading-snug">
+              <h1 className="page-title mt-1 break-words text-(length:--type-title) leading-snug">
                 {engagementTitle}
               </h1>
             </div>
@@ -615,7 +615,7 @@ function NodeCard({
           <span
             className={
               last
-                ? "page-title block break-words text-[17px] leading-snug"
+                ? "page-title block break-words text-(length:--type-lead) leading-snug"
                 : "block break-words text-sm font-medium text-foreground"
             }
           >

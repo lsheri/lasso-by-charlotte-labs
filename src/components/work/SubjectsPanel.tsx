@@ -88,7 +88,7 @@ export function SubjectsPanel({
     <div className="space-y-6 rounded-[var(--radius)] border border-border bg-card p-4">
       <section className="space-y-3">
         <div className="flex flex-wrap items-baseline gap-3">
-          <h3 className="page-title text-[15px]">Subjects in your work</h3>
+          <h3 className="page-title text-(length:--type-lead)">Subjects in your work</h3>
           <button
             type="button"
             onClick={() => fill.mutate()}
@@ -201,7 +201,7 @@ export function SubjectsPanel({
       </section>
 
       <section className="space-y-2">
-        <h3 className="page-title text-[15px]">Where the work went next</h3>
+        <h3 className="page-title text-(length:--type-lead)">Where the work went next</h3>
         {suggestions.length === 0 ? (
           <p className="text-sm text-muted-foreground">Nothing has been linked to this yet.</p>
         ) : (
