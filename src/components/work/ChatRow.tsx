@@ -84,11 +84,11 @@ export function ChatRow({
       >
         <div className="min-w-0 flex-1">
           <p className="truncate text-[13px] leading-[18px] text-foreground">{displayName(item)}</p>
-          <p className="mt-0.5 flex min-w-0 items-center truncate font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
+          <p className="mt-0.5 flex min-w-0 items-center truncate font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
             {stamp}
           </p>
         </div>
-        <span className="shrink-0 font-mono text-[9px] uppercase tracking-[0.08em] text-soft">
+        <span className="shrink-0 font-mono text-[11px] uppercase tracking-[0.08em] text-soft">
           {when}
         </span>
       </div>

@@ -72,15 +72,15 @@ function IssuedInvites({ orgId, refreshKey }: { orgId: string; refreshKey: strin
             className="flex flex-wrap items-center justify-between gap-2 rounded-[var(--radius)] border border-border bg-card px-3 py-2"
           >
             <span className="font-mono text-xs text-foreground">{invite.code}</span>
-            <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+            <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
               {invite.invited_role}
               {invite.email ? ` · ${invite.email}` : " · open link"}
             </span>
             <span
               className={
                 invite.used_at
-                  ? "rounded-full bg-accent-soft px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-foreground"
-                  : "rounded-full bg-muted px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground"
+                  ? "rounded-full bg-accent-soft px-2 py-0.5 font-mono text-[11px] uppercase tracking-[0.08em] text-foreground"
+                  : "rounded-full bg-muted px-2 py-0.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground"
               }
             >
               {invite.used_at ? "Accepted" : "Unused"}

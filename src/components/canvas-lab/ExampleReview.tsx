@@ -53,7 +53,7 @@ export function ExampleReview({ onClose }: { onClose: () => void }) {
     <div className="fixed inset-0 z-[70] flex flex-col bg-background" data-testid="canvas-lab-example-review">
       <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
         <div className="min-w-0">
-          <p className="font-mono text-[9px] uppercase tracking-[0.08em] text-green">What fed this</p>
+          <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-green">What fed this</p>
           <h1 className="truncate font-serif text-[26px] text-foreground">{deck?.title}</h1>
         </div>
         <Button type="button" variant="ghost" onClick={onClose}>Back to the example</Button>
@@ -71,7 +71,7 @@ export function ExampleReview({ onClose }: { onClose: () => void }) {
           <ul className="mt-4 space-y-2">
             {upstream.map((node) => (
               <li key={node.id} className="border border-border bg-card p-3">
-                <p className="font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">{node.typeLabel}</p>
+                <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">{node.typeLabel}</p>
                 <p className="mt-1 text-[13px] leading-[20px] text-foreground">{node.title}</p>
                 <p className="nb-type-small leading-[17px] text-muted-foreground">{node.summary}</p>
               </li>

@@ -77,7 +77,7 @@ export function BoardDetailsContent({
     <div className="flex flex-col gap-3">
       <div>
         {client ? (
-          <p className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{client}</p>
+          <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-soft">{client}</p>
         ) : null}
         <p className="text-[13px] font-medium text-foreground">{title}</p>
         {quiet ? <p className="nb-type-small text-muted">{quiet}</p> : null}
@@ -98,7 +98,7 @@ export function BoardDetailsContent({
       ) : null}
       {people.length > 0 ? (
         <div className="flex flex-col gap-1">
-          <p className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">
+          <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-soft">
             Who has access
           </p>
           <ul className="flex flex-col gap-0.5">

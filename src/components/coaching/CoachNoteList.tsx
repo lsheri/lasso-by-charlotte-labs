@@ -154,7 +154,7 @@ export function CoachNoteList({
         return (
           <div key={note.id}>
             {isNewSince(note.created_at, lastSeen) ? (
-              <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+              <p className="mb-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
                 New
               </p>
             ) : null}

@@ -609,7 +609,7 @@ export function EngagementCanvas({
                                   Move down
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuLabel className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                                <DropdownMenuLabel className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
                                   Move to workstream
                                 </DropdownMenuLabel>
                                 {view.map((other, otherIndex) =>

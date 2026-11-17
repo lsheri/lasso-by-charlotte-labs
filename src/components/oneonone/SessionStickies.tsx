@@ -207,7 +207,7 @@ export function SessionStickies({ profileId, orgId }: { profileId: string; orgId
               {note.content}
             </p>
             <div className="flex items-center justify-between gap-2">
-              <label className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
+              <label className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.08em] text-soft">
                 <Checkbox
                   className="confirmation-tick"
                   checked={note.discussed}
@@ -219,7 +219,7 @@ export function SessionStickies({ profileId, orgId }: { profileId: string; orgId
               <button
                 type="button"
                 onClick={() => void removeNote(note.id)}
-                className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft transition-colors hover:text-foreground"
+                className="font-mono text-[11px] uppercase tracking-[0.08em] text-soft transition-colors hover:text-foreground"
               >
                 remove
               </button>
@@ -244,7 +244,7 @@ export function SessionStickies({ profileId, orgId }: { profileId: string; orgId
             }}
             className="h-full w-full resize-none bg-transparent font-hand text-[18px] leading-[22px] text-foreground outline-none placeholder:text-soft"
           />
-          <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
+          <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-soft">
             <span aria-hidden>+ </span>
             Enter to pin it
           </p>

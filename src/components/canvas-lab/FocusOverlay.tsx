@@ -149,7 +149,7 @@ export function FocusOverlay({
       <div className="focus-paper" style={originStyle}>
         <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-3">
           <div className="min-w-0">
-            <span className="flex min-w-0 items-center gap-1.5 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
+            <span className="flex min-w-0 items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
               {item ? <SourceMark item={item} size={14} disc /> : null}
               {item ? <VendorMark item={item} /> : node.typeLabel}
               {item ? <> · {formatDate(effectiveWorkDate(item))}</> : null}

@@ -419,7 +419,7 @@ export function ReflectPage({
                   <span className="block truncate text-sm text-foreground">
                     {session.title ?? "New session"}
                   </span>
-                  <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                  <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
                     {relative(session.updated_at)}
                   </span>
                 </button>

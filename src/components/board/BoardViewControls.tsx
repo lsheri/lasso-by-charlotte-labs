@@ -27,7 +27,7 @@ export function BoardViewControls({
           <Button type="button" size="icon" variant="ghost" aria-label="Zoom out" title="Zoom out" onClick={onZoomOut}>
             <GraphiteIcon name="minus" size={18} />
           </Button>
-          <Button type="button" variant="ghost" aria-label="Zoom to 100 percent" className="h-9 w-11 px-0 font-mono text-[10px] text-soft" onClick={onResetZoom}>
+          <Button type="button" variant="ghost" aria-label="Zoom to 100 percent" className="h-9 w-11 px-0 font-mono text-[11px] text-soft" onClick={onResetZoom}>
             {Math.round(zoom * 100)}%
           </Button>
           <Button type="button" size="icon" variant="ghost" aria-label="Zoom in" title="Zoom in" onClick={onZoomIn}>

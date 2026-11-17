@@ -129,7 +129,7 @@ export function SettingsShell({
         <span className="block whitespace-nowrap text-sm font-medium text-foreground">
           {section.label}
         </span>
-        <span className="mt-0.5 hidden whitespace-nowrap font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground md:block">
+        <span className="mt-0.5 hidden whitespace-nowrap font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground md:block">
           {section.hint}
         </span>
       </button>
@@ -165,7 +165,7 @@ export function SettingsShell({
           {groups.map((group, index) => (
             <div key={group.name} className="contents md:block">
               <p
-                className={`hidden px-3 pb-1 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground md:block ${
+                className={`hidden px-3 pb-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground md:block ${
                   index === 0 && ungrouped.length === 0 ? "" : "pt-3"
                 }`}
               >

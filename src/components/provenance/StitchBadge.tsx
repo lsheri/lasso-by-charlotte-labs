@@ -20,7 +20,7 @@ export function StitchBadge({
   where?: "card" | "ink" | "turn";
 }) {
   const shared =
-    "inline-flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border text-[10px] font-medium leading-none nb-stitch-badge";
+    "inline-flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border text-[11px] font-medium leading-none nb-stitch-badge";
   const style = {
     borderColor: "var(--nb-ink-yellow)",
     backgroundColor: filled ? "var(--nb-ink-yellow)" : "var(--card)",

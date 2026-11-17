@@ -83,7 +83,7 @@ function ContributorRow({
               }}
             />
           </button>
-          <p className="mt-0.5 flex flex-wrap items-center gap-1.5 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
+          <p className="mt-0.5 flex flex-wrap items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
             {isDraft ? <SuggestDot /> : null}
             <span>{relationLabel(link.relation)}</span>
             <span aria-hidden>·</span>
@@ -340,7 +340,7 @@ export function WhatFedThis({
                   <span className="block whitespace-pre-wrap font-mono text-xs leading-relaxed text-foreground">
                     {prompt.content}
                   </span>
-                  <span className="mt-1.5 block font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
+                  <span className="mt-1.5 block font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
                     {prompt.ts ? formatDate(prompt.ts) : "date unknown"} · {prompt.thread_title}
                   </span>
                 </button>

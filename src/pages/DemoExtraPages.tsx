@@ -60,7 +60,7 @@ function Shell({ title, children }: { title: string; children: ReactNode }) {
     <div className="min-h-dvh overflow-x-hidden bg-background">
       <DemoSubHeader title={title} />
       <main className="mx-auto w-full max-w-5xl px-4 pb-16 pt-8 sm:px-8">
-        <p className="font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">Demo workspace</p>
+        <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">Demo workspace</p>
         <h1 className="mt-1 font-serif text-[26px] text-foreground">{title}</h1>
         <p className="mt-1 text-[13px] text-muted-foreground">A demo workspace. Every figure is invented.</p>
         <div className="mt-6">{children}</div>
@@ -172,10 +172,10 @@ export function DemoConversationsPage() {
                 {lane.items.map((entry) => (
                   <li key={entry.item.id} className="min-w-0 rounded-[var(--radius-lg)] border border-border bg-card p-3" data-testid="demo-conversation">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
+                      <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
                         {DEMO_TOOLS.find((t) => t.key === demoToolOf(entry))?.label ?? "AI"}
                       </span>
-                      <Link to="/demo/$code" params={{ code: entry.code }} className="font-mono text-[9px] uppercase tracking-[0.08em] text-foreground underline underline-offset-2" data-testid="demo-conversation-code">
+                      <Link to="/demo/$code" params={{ code: entry.code }} className="font-mono text-[11px] uppercase tracking-[0.08em] text-foreground underline underline-offset-2" data-testid="demo-conversation-code">
                         {entry.code}
                       </Link>
                     </div>

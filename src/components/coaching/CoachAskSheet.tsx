@@ -223,7 +223,7 @@ export function CoachAskSheet({
                       <span className="block truncate text-sm text-foreground">
                         {row.subject_name}
                       </span>
-                      <span className="block truncate font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                      <span className="block truncate font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
                         {row.engagement_title}
                       </span>
                     </span>

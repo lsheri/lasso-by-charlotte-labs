@@ -170,12 +170,12 @@ function LabAnswerCardInner({
       {pin ? <button type="button" className="canvas-lab-answer-pin" aria-label="Take off the board" title="Take off the board" onClick={(e) => { e.stopPropagation(); onUnpin?.(node.id); }}><Pin size={14} aria-hidden="true" fill="currentColor" /></button> : null}
       <header className="flex items-baseline justify-between gap-2">
         <span className="flex items-baseline gap-2">
-          <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">Answer</span>
-          {editing ? <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-foreground" data-testid="answer-editing-label">{PIN_EDIT_COPY.editing}</span> : null}
-          {!canEdit && focused ? <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft" data-testid="answer-view-only">{PIN_EDIT_COPY.viewOnly}</span> : null}
+          <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-soft">Answer</span>
+          {editing ? <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-foreground" data-testid="answer-editing-label">{PIN_EDIT_COPY.editing}</span> : null}
+          {!canEdit && focused ? <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-soft" data-testid="answer-view-only">{PIN_EDIT_COPY.viewOnly}</span> : null}
         </span>
         <span className="flex items-center gap-1">
-          {asOf ? <span className="font-mono text-[9px] text-soft">{asOf}</span> : null}
+          {asOf ? <span className="font-mono text-[11px] text-soft">{asOf}</span> : null}
           {layoutEditable && onRoll && !editing ? (
             <button
               type="button"
@@ -253,12 +253,12 @@ function LabAnswerCardInner({
       {originalOpen && node.original != null ? <section className="mt-2 border-t border-border bg-muted p-2" aria-label={EDIT_COPY.original}><h3 className="mb-1 text-[13px] text-soft">{EDIT_COPY.original}</h3><MarkdownMessage content={node.original} /></section> : null}
       {pin && !editing ? <PinnedChatRow draft={pin.draft} sessionId={pin.sessionId} ownership={node.ownership} authorName={node.authorName} orgId={orgId} onOpenChange={setChatOpen} /> : null}
       <footer className="mt-2 flex items-center justify-between gap-2">
-        <span className="font-mono text-[9px] text-soft">Kept by {node.authorName ?? "you"}{node.editedAt ? <> · {node.ownership === "yours" ? EDIT_COPY.editedYou : `${EDIT_COPY.editedBy} ${node.authorName ?? "you"}`}</> : null}</span>
+        <span className="font-mono text-[11px] text-soft">Kept by {node.authorName ?? "you"}{node.editedAt ? <> · {node.ownership === "yours" ? EDIT_COPY.editedYou : `${EDIT_COPY.editedBy} ${node.authorName ?? "you"}`}</> : null}</span>
         {node.local ? (
           <button
             type="button"
             onClick={onDelete}
-            className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft hover:text-foreground"
+            className="font-mono text-[11px] uppercase tracking-[0.08em] text-soft hover:text-foreground"
           >
             Remove
           </button>

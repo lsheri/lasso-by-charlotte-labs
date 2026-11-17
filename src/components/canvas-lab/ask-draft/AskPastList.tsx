@@ -10,7 +10,7 @@ function safeStore(): Storage | null {
   try { return window.localStorage; } catch { return null; }
 }
 
-const HEADING = "font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground";
+const HEADING = "font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground";
 const ROW = "min-h-10 w-full min-w-0 truncate text-left text-sm";
 
 /** ASK-B2: answers pinned on this board, then this person's past chats. Reads only what is already loaded. */
@@ -65,9 +65,9 @@ export function AskPastList({ ask, pinned, onOpen, onJump, onUnpin, unpinned = {
               {pinnedSessions.has(row.id) ? <Pin size={13} aria-hidden="true" className="shrink-0 text-[var(--pin)]" data-testid="ask-past-pin" /> : null}
               <span className="min-w-0 flex-1 truncate">
                 {row.title ?? "Untitled"}{" "}
-                <span className="font-mono text-[10px] uppercase tracking-[0.08em]">{new Date(row.created_at).toLocaleDateString()}</span>
+                <span className="font-mono text-[11px] uppercase tracking-[0.08em]">{new Date(row.created_at).toLocaleDateString()}</span>
               </span>
-              {!pinnedSessions.has(row.id) && unpinned[row.id] ? <span className="shrink-0 font-mono text-[10px]">Was pinned</span> : null}
+              {!pinnedSessions.has(row.id) && unpinned[row.id] ? <span className="shrink-0 font-mono text-[11px]">Was pinned</span> : null}
             </button>
           ))}
         </div>

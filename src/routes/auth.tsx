@@ -619,7 +619,7 @@ function AuthPage() {
         <div className="mt-6 text-center">
           <Link
             to="/trust"
-            className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+            className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
           >
             Trust &amp; data
           </Link>

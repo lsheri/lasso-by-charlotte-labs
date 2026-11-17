@@ -215,7 +215,7 @@ export function PaperTrail({
                   style={{
                     margin: 0,
                     fontFamily: "var(--font-mono, monospace)",
-                    fontSize: "9px",
+                    fontSize: "11px",
                     letterSpacing: "0.08em",
                     textTransform: "uppercase",
                     opacity: 0.7,

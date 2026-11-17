@@ -126,7 +126,7 @@ export function DeleteWorkItemDialog({
         {sure ? (
           <div className="space-y-2">
             {boardCount > 0 ? (
-              <p className="font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
+              <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
                 On {boardCount} workboard{boardCount === 1 ? "" : "s"}
               </p>
             ) : null}
