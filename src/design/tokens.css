@@ -200,6 +200,7 @@
   --state-on-record:var(--nb-green);
   --wrap-mark:var(--nb-green);
   --selection:var(--nb-green-wash);
+  --select-ring:var(--focus-ring); /* 17 Nov: every selected object's outline; lime stays for Ask (--live) */
   --live:var(--nb-lasso-green);
   --icon-ink:currentColor;
   --icon-ink-active:var(--nb-ink);
