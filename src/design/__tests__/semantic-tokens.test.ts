@@ -63,7 +63,7 @@ describe("job-named tokens", () => {
     expect(tokens).toContain("--focus-ring:var(--focus-ring-new);");
   });
 
-  it("is read only where a Phase 3 PR wires it, with Lasso fallbacks, so Lasso looks exactly as before", () => {
+  it("is read only where a PR wires it, each read falling back to the name it replaced, so Lasso looks exactly as before", () => {
     // Reference components the app imports count as app code; the rest of src/design/ does not.
     const appRead = sourceFiles("src").filter(
       (path) =>
@@ -75,12 +75,35 @@ describe("job-named tokens", () => {
       const text = readFileSync(path, "utf8");
       return Object.keys(JOBS).some((name) => new RegExp(`var\\(${name}[,)]`).test(text));
     });
-    // PR3: the sidebar's wrap-up dot reads --wrap-mark, with --nb-green as the fallback, so Lasso is unchanged.
-    expect(readers).toEqual(["src/components/layout/SidebarNav.tsx"]);
-    const sidebar = readFileSync("src/components/layout/SidebarNav.tsx", "utf8");
-    expect(sidebar).toContain('"var(--wrap-mark, var(--nb-green))"');
-    for (const name of Object.keys(JOBS).filter((n) => n !== "--wrap-mark"))
-      expect(sidebar).not.toMatch(new RegExp(`var\\(${name}[,)]`));
+    // PR3: the sidebar's wrap-up dot reads --wrap-mark.
+    // C1 part 1 (17 Nov): Lasso's marks on the record read --state-on-record; live Ask and new-item marks inside the app read --live.
+    expect(readers.sort()).toEqual(
+      [
+        "src/components/board/BoardNewPill.tsx",
+        "src/components/layout/SidebarNav.tsx",
+        "src/components/notebook/CircleMark.tsx",
+        "src/components/notebook/PaperTrail.tsx",
+        "src/components/notebook/ToneCard.tsx",
+        "src/components/notebook/marks.tsx",
+        "src/components/peek/ThreadBody.tsx",
+        "src/components/provenance/LassoLayer.tsx",
+        "src/components/reflect/ContextTrail.tsx",
+        "src/pages/AiRecordPage.tsx",
+        "src/styles.css",
+      ].sort(),
+    );
+    // Every read names the token it replaced as its fallback (a space, or Tailwind's underscore, after the comma).
+    for (const path of readers) {
+      const text = readFileSync(path, "utf8");
+      for (const [name, value] of Object.entries(JOBS)) {
+        const reads = text.match(new RegExp(`var\\(${name}[,)][^;"\\]]{0,40}`, "g")) ?? [];
+        for (const read of reads) {
+          expect(read, `${path}: ${read}`).toMatch(
+            new RegExp(`^var\\(${name},[ _]${value.replace(/[()]/g, "\\$&")}\\)`),
+          );
+        }
+      }
+    }
   });
 
   it("sees the app's real reference imports, so the fence cannot pass on an empty list", () => {
