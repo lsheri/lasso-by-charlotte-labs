@@ -60,6 +60,7 @@
   --state-on-record:var(--ch-navy);
   --wrap-mark:var(--ch-navy);
   --selection:var(--ch-navy-wash);
+  --select-ring:var(--ch-navy);
   --live:var(--ch-lime);
   --icon-ink:currentColor;
   --icon-ink-active:var(--ch-navy);

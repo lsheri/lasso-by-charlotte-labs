@@ -1497,7 +1497,8 @@ html:has([data-testid="canvas-lab-shell"]), body:has([data-testid="canvas-lab-sh
 .canvas-lab-colour-block-edge[data-edge="left"] { left: 0; }
 .canvas-lab-colour-block-remove { position: absolute; right: 10px; top: 10px; z-index: 2; border-radius: 6px; background: var(--nb-paper); padding: 4px 7px; font-size: var(--type-label); color: var(--nb-mid); }
 .canvas-lab-text-block { z-index: 1; min-width: 80px; min-height: 24px; }
-.canvas-lab-text-block[data-selected="true"], .canvas-lab-text-block[data-empty="true"] { outline: calc(1.4px * var(--lab-inverse-zoom, 1)) dashed var(--nb-pencil); outline-offset: calc(3px * var(--lab-inverse-zoom, 1)); }
+.canvas-lab-text-block[data-empty="true"] { outline: calc(1.4px * var(--lab-inverse-zoom, 1)) dashed var(--nb-pencil); outline-offset: calc(3px * var(--lab-inverse-zoom, 1)); }
+.canvas-lab-text-block[data-selected="true"] { outline: calc(2px * var(--lab-inverse-zoom, 1)) solid var(--select-ring, var(--nb-green)); outline-offset: calc(3px * var(--lab-inverse-zoom, 1)); }
 .canvas-lab-text-block textarea { width: 100%; height: 100%; resize: none; overflow: hidden; border: 0; background: transparent; color: var(--nb-ink); font-family: var(--font-ui); line-height: 1.25; }
 .canvas-lab-text-block textarea:focus { outline: none; }
 .canvas-lab-text-block textarea::placeholder { color: var(--nb-faint); }
@@ -1768,7 +1769,7 @@ html:has([data-testid="canvas-lab-shell"]), body:has([data-testid="canvas-lab-sh
 .canvas-lab-card:not([data-size="expanded"]) .canvas-lab-paper-footer { display: none; }
 .canvas-lab-card-paper[data-focused="true"],
 .canvas-lab-card-paper[data-connect-source="true"] {
-  outline: calc(2px * var(--lab-inverse-zoom, 1)) solid var(--nb-green);
+  outline: calc(2px * var(--lab-inverse-zoom, 1)) solid var(--select-ring, var(--nb-green));
   outline-offset: calc(1px * var(--lab-inverse-zoom, 1));
 }
 /* Cards in context are Ask's reading lime (#04F85B) in every skin, so you can see what is read (Liam, 15 Nov). */
@@ -1919,7 +1920,7 @@ html:has([data-testid="canvas-lab-shell"]), body:has([data-testid="canvas-lab-sh
   border: 1px dashed var(--nb-pencil);
   border-radius: var(--radius-control);
 }
-.canvas-lab-frame[data-selected="true"] { outline: calc(2px * var(--lab-inverse-zoom, 1)) solid var(--nb-green); outline-offset: calc(1px * var(--lab-inverse-zoom, 1)); }
+.canvas-lab-frame[data-selected="true"] { outline: calc(2px * var(--lab-inverse-zoom, 1)) solid var(--select-ring, var(--nb-green)); outline-offset: calc(1px * var(--lab-inverse-zoom, 1)); }
 .canvas-lab-section { position: absolute; pointer-events: none; border: 2.5px solid transparent; border-radius: var(--radius-control); background: none; outline: none; }
 .canvas-lab-section-outline { position: absolute; inset: 0; overflow: visible; pointer-events: none; stroke: color-mix(in srgb, var(--nb-mid) 60%, transparent); }
 .canvas-lab-section-outline rect { rx: var(--radius-control); }
@@ -1943,7 +1944,7 @@ html:has([data-testid="canvas-lab-shell"]), body:has([data-testid="canvas-lab-sh
 .canvas-lab-section-title { z-index: 20; }
 .canvas-lab-section-title { position: absolute; top: -20px; left: 14px; max-width: calc((100% - 24px) / var(--lab-section-label-inverse-zoom, 1)); white-space: nowrap; overflow: hidden; display: flex; align-items: center; gap: 8px; pointer-events: auto; color: var(--nb-graphite); font-family: var(--font-serif); font-weight: 700; letter-spacing: -0.01em; font-size: 34px; line-height: 1; background: var(--lab-section-title-fill, var(--nb-paper)); border: 0; border-radius: 6px; padding: 2px 10px 3px; box-shadow: none; transition: background 120ms ease, box-shadow 120ms ease; transform-origin: left top; transform: scale(var(--lab-section-label-inverse-zoom, 1)); }
 .canvas-lab-section-title:hover { background: var(--nb-grey-1); box-shadow: 0 0 0 1px var(--nb-rule); }
-.canvas-lab-section[data-selected="true"] .canvas-lab-section-title { background: var(--nb-grey-1); box-shadow: 0 0 0 1px var(--nb-graphite); }
+.canvas-lab-section[data-selected="true"] .canvas-lab-section-title { background: var(--nb-grey-1); box-shadow: 0 0 0 2px var(--select-ring, var(--nb-green)); }
 .canvas-lab-section-title h2 { font: inherit; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .canvas-lab-section-title .canvas-lab-frame-name-input { width: min(420px, 60vw); min-width: 0; font: inherit; color: inherit; }
 .canvas-lab-section-placeholder { display: var(--lab-section-placeholder-display, inline-flex); height: auto; min-height: 0; padding: 0; font-family: var(--font-sans); font-size: calc(13px / var(--lab-section-label-inverse-zoom, 1)); color: var(--nb-soft); white-space: normal; }
@@ -5577,7 +5578,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .canvas-lab-sticky[data-fill="blue"] { --sticky-fill: var(--sticky-blue); --sticky-edge: var(--sticky-blue-edge); }
 .canvas-lab-sticky[data-fill="pink"] { --sticky-fill: var(--sticky-pink); --sticky-edge: var(--sticky-pink-edge); }
 .canvas-lab-sticky[data-fill="grey"] { --sticky-fill: var(--sticky-grey); --sticky-edge: var(--sticky-grey-edge); }
-.canvas-lab-sticky[data-selected="true"] { z-index: 40; outline: calc(2px * var(--lab-inverse-zoom, 1)) solid var(--nb-graphite); outline-offset: calc(1px * var(--lab-inverse-zoom, 1)); }
+.canvas-lab-sticky[data-selected="true"] { z-index: 40; outline: calc(2px * var(--lab-inverse-zoom, 1)) solid var(--select-ring, var(--nb-green)); outline-offset: calc(1px * var(--lab-inverse-zoom, 1)); }
 /* STICKY-2: the sticky you are dragging off the toolbar, until it lands. */
 .canvas-lab-sticky-ghost { position: fixed; z-index: 80; pointer-events: none; --sticky-fill: var(--sticky-yellow); --sticky-edge: var(--sticky-yellow-edge); background: var(--sticky-fill); border: 1px solid var(--sticky-edge); border-radius: 6px; box-shadow: 0 18px 30px -14px rgba(10,10,10,.45); transform: rotate(-3deg); opacity: .95; }
 .canvas-lab-sticky-ghost[data-fill="green"] { --sticky-fill: var(--sticky-green); --sticky-edge: var(--sticky-green-edge); }
