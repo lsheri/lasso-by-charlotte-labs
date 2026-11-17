@@ -68,7 +68,7 @@ export function AssignmentsPage() {
         );
       })}
       {(rows ?? []).length === 0 ? (
-        <p className="text-[11.5px] leading-[17px] text-muted-foreground">
+        <p className="text-(length:--type-small) leading-[17px] text-muted-foreground">
           Nothing open yet. Add one inside a class or a workboard and it will show up here.
         </p>
       ) : null}

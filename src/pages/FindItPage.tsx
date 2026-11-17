@@ -402,7 +402,7 @@ export function FindItPage() {
                       <PaperclipMark />
                       <WorkNote item={target} parent={target.type !== "ai_thread" && target.orig_conversation_id ? items.find((item) => item.type === "ai_thread" && item.orig_conversation_id === target.orig_conversation_id && item.owner_id === target.owner_id) : undefined} />
                       <div className="border-x border-b border-hairline bg-card px-3 py-2">
-                        <p className="truncate text-[11.5px] text-foreground">{targetMapped ? `${target.work_item_tasks[0]?.tasks?.engagements?.title ?? "engagement"} · ${target.work_item_tasks[0]?.tasks?.name ?? "task"}` : "not filed yet, looking across everything you have"}</p>
+                        <p className="truncate text-(length:--type-small) text-foreground">{targetMapped ? `${target.work_item_tasks[0]?.tasks?.engagements?.title ?? "engagement"} · ${target.work_item_tasks[0]?.tasks?.name ?? "task"}` : "not filed yet, looking across everything you have"}</p>
                         <p className="mt-1 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">{chats.filter((chat) => chat.work_item_tasks.some((mapped) => target.work_item_tasks.some((targetTask) => targetTask.tasks?.engagement_id === mapped.tasks?.engagement_id))).length} conversations mapped · {candidates.filter((candidate) => (reviewed[candidate.link.link_id] ?? candidate.link.status) === "confirmed").length} kept sources</p>
                       </div>
                     </div>
@@ -476,7 +476,7 @@ export function FindItPage() {
                     {running ? "Looking…" : "Find it"}
                   </Button>
                   {!target ? (
-                    <span className="text-[11.5px] text-muted-foreground">
+                    <span className="text-(length:--type-small) text-muted-foreground">
                       Choose a piece of work first.
                     </span>
                   ) : null}

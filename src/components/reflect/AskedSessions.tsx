@@ -81,7 +81,7 @@ export function AskedSessions({
   return (
     <section className="mb-8 space-y-3" data-testid="asked-sessions">
       <div className="flex items-center gap-3 pb-2 pt-1">
-        <span className="font-hand text-[19px] leading-none text-graphite">{copy("Asked Lasso")}</span>
+        <span className="font-hand text-(length:--type-title) leading-none text-graphite">{copy("Asked Lasso")}</span>
         <span className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-soft">
           {sessions.length}
         </span>

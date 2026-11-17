@@ -131,7 +131,7 @@ function ResetPasswordPage() {
             </form>
           ) : (
             <>
-              <p className="mt-3 text-[11.5px] leading-relaxed text-muted-foreground">{copy(RESET_BODY)}</p>
+              <p className="mt-3 text-(length:--type-small) leading-relaxed text-muted-foreground">{copy(RESET_BODY)}</p>
               {sent ? (
                 <p className="mt-8 text-sm text-accent-deep">{copy(RESET_SENT)}</p>
               ) : (

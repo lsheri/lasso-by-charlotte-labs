@@ -45,7 +45,7 @@ function useOwnWorkShape(profileId: string | undefined) {
 function Figure({ value, label }: { value: number; label: string }) {
   return (
     <div>
-      <div className="text-[26px] leading-none">{value}</div>
+      <div className="text-(length:--type-display) leading-none">{value}</div>
       <div className="mt-2 font-mono text-(length:--type-label) uppercase text-muted-foreground">
         {label}
       </div>

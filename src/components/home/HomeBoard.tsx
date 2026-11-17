@@ -80,7 +80,7 @@ export function ConnectToolsPrompt() {
   if (!show) return null;
   return (
     <div data-testid="home-connect-prompt" className="mx-auto mt-6 flex max-w-[780px] flex-col items-center gap-3">
-      <p className="text-[17px] leading-[1.5] text-muted-foreground">{copy(CONNECT_PROMPT_LINE)}</p>
+      <p className="text-(length:--type-lead) leading-[1.5] text-muted-foreground">{copy(CONNECT_PROMPT_LINE)}</p>
       <Button asChild type="button" variant="ink" className="h-11 px-6 text-(length:--type-lead)">
         <Link to="/connectors" onClick={() => emitClientEvent("home.connect_tools_opened", {})}>
           Connect your AI tools
@@ -103,7 +103,7 @@ export function IdeasNote({ openMailClient = openIdeasMailClient }: { openMailCl
 
   return (
     <form onSubmit={compose} className="mt-3 w-full text-left">
-      <label htmlFor="home-product-idea" className="font-mono text-[13.5px] uppercase tracking-[0.08em] text-muted-foreground">
+      <label htmlFor="home-product-idea" className="font-mono text-(length:--type-control) uppercase tracking-[0.08em] text-muted-foreground">
         Have product ideas? Drop us a note
       </label>
       <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] gap-3">
@@ -112,9 +112,9 @@ export function IdeasNote({ openMailClient = openIdeasMailClient }: { openMailCl
           value={idea}
           onChange={(event) => setIdea(event.target.value)}
           placeholder="What would make this better?"
-          className="h-[66px] min-w-0 rounded-[var(--radius-control)] border border-input bg-card px-[18px] text-[21.75px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          className="h-[66px] min-w-0 rounded-[var(--radius-control)] border border-input bg-card px-[18px] text-(length:--type-title) text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
         />
-        <Button type="submit" variant="ink" className="h-[66px] px-[30px] text-[19.5px]" disabled={!canSend}>
+        <Button type="submit" variant="ink" className="h-[66px] px-[30px] text-(length:--type-title)" disabled={!canSend}>
           Send
         </Button>
       </div>
@@ -142,7 +142,7 @@ function HomePendingInvites({ pending, onHeight }: { pending: PendingInviteRow[]
       {pending.map((invite) => <li key={invite.invite_id} className="flex min-w-0 flex-wrap items-center justify-between gap-3 rounded-[var(--radius-control)] border border-dashed border-border bg-card p-4">
         <div className="min-w-0">
           <p className="break-words font-mono text-(length:--type-body) text-[var(--nb-shared)]">{SHARED_WITH_YOU_COPY.inviteLabel}</p>
-          <h3 className="break-words text-[19.5px] text-foreground">{invite.board}</h3>
+          <h3 className="break-words text-(length:--type-title) text-foreground">{invite.board}</h3>
           <p className="text-base text-muted-foreground">{SHARED_WITH_YOU_COPY.invited(invite.invited_by)}</p>
         </div>
         <Button variant="outline" disabled={busy !== null} onClick={async () => {
@@ -256,7 +256,7 @@ export function HomeBoard() {
                 {copy("Welcome to Lasso")}
               </h1>
             </div>
-            <p className="mx-auto mt-6 max-w-[780px] text-[21.75px] leading-[1.6] text-muted-foreground">
+            <p className="mx-auto mt-6 max-w-[780px] text-(length:--type-title) leading-[1.6] text-muted-foreground">
               {copy("Every AI conversation, document and decision from your work, kept in one place that belongs to you. Nothing here was written by Lasso.")}
             </p>
             <ConnectToolsPrompt />

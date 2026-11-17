@@ -39,7 +39,7 @@ export function ArchiveSpine({
                   Past work is filed, and filed things are labelled, not
                   annotated. */}
               <header className="mb-3">
-                <h2 className="text-[15px] leading-[21px] text-foreground">
+                <h2 className="text-(length:--type-lead) leading-[21px] text-foreground">
                   {engagement || "Other work"}
                 </h2>
                 <p className="mt-1 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">

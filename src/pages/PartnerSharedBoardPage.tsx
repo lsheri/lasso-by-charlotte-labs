@@ -57,7 +57,7 @@ export function PartnerSharedBoardPage({ boardId }: { boardId: string }) {
   }
   return (
     <div className="mx-auto max-w-5xl p-6">
-      <h1 className="font-serif text-[26px] text-foreground">{board.title}</h1>
+      <h1 className="font-serif text-(length:--type-display) text-foreground">{board.title}</h1>
       <p className="mt-1 text-(length:--type-body) text-muted-foreground">{SHARED_BOARD_COPY.sharedBy(board.shared_by)}</p>
       <p className="mt-1 text-(length:--type-body) text-muted-foreground" data-testid="shared-board-live">{SHARE_UP_COPY.readerLine}</p>
       <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
