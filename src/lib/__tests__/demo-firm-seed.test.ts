@@ -96,7 +96,9 @@ describe("the writer", () => {
   it("seeds one board inside the demo workspace, keeping private and unplaced work out of reach", async () => {
     const { admin, writes, uploads } = fakeAdmin();
     const board = { ...b05, items: [...b05.items, { ...b05.items[1]!, key: "loose", title: "Unplaced note", placed: false }] };
-    const result = await seedDemoBoard(admin, board);
+    const actedAs: string[] = [];
+    const result = await seedDemoBoard(admin, board, async (email) => (actedAs.push(email), admin));
+    expect(actedAs).toEqual(["hollis@kestrelbay.test"]);
     expect(result.skipped).toBe(false);
 
     const of = (table: string) => writes.filter((write) => write.table === table).flatMap((write) => write.rows);

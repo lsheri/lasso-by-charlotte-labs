@@ -1,8 +1,8 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/integrations/supabase/types";
 
-import { demoEmail } from "./people";
+import { DEMO_PEOPLE, demoEmail } from "./people";
 import { CARD_H, CARD_W, fileNameFor, outcomeLine, planBoard, sourceFor } from "./plan";
 import type { DemoBoard, DemoFirm, DemoItem } from "./types";
 
@@ -95,15 +95,41 @@ async function demoPeople(admin: Db, orgId: string): Promise<{ profileId: Map<st
   return { profileId, userId };
 }
 
+/** Signs in as someone through a one-time link that is never emailed (generateLink only returns it). */
+export type ActAs = (email: string) => Promise<Db>;
+
+export const actAsDemoPerson: ActAs = async (email) => {
+  if (!email.endsWith("@kestrelbay.test")) throw new Error("Only demo logins can be acted as");
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const link = await supabaseAdmin.auth.admin.generateLink({ type: "magiclink", email });
+  const tokenHash = link.data.properties?.hashed_token;
+  if (link.error || !tokenHash) throw new Error(`signing in as ${email}: ${link.error?.message ?? "no link"}`);
+  const url = process.env["SUPABASE_URL"];
+  const key = process.env["SUPABASE_PUBLISHABLE_KEY"];
+  if (!url || !key) throw new Error("SUPABASE_URL or SUPABASE_PUBLISHABLE_KEY is not set");
+  const client = createClient<Database>(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+  const session = await client.auth.verifyOtp({ type: "magiclink", token_hash: tokenHash });
+  if (session.error) throw new Error(`signing in as ${email}: ${session.error.message}`);
+  return client;
+};
+
+/** The demo firm's admin partner: clients can only be added by an admin or lead, checked against the signed-in user. */
+const DEMO_ADMIN = DEMO_PEOPLE.find((person) => person.role === "admin")!.key;
+
 /** Step 2, once per board. Skips a board that is already there, so a failed run can simply be repeated. */
-export async function seedDemoBoard(admin: Db, board: DemoBoard): Promise<{ items: number; showings: number; skipped: boolean }> {
+export async function seedDemoBoard(
+  admin: Db,
+  board: DemoBoard,
+  actAs: ActAs = actAsDemoPerson,
+): Promise<{ items: number; showings: number; skipped: boolean }> {
   const orgId = await findDemoOrg(admin);
   if (!orgId) throw new Error("Create the demo firm's people first.");
   const { data: existing } = await admin.from("engagements").select("id").eq("org_id", orgId).eq("title", board.title).maybeSingle();
   if (existing) return { items: 0, showings: 0, skipped: true };
   const { profileId, userId } = await demoPeople(admin, orgId);
   for (const key of board.team) if (!profileId.has(key)) throw new Error(`${board.key}: ${key} has no demo login`);
-  return { ...(await seedBoard(admin, orgId, board, profileId, userId)), skipped: false };
+  const partner = await actAs(demoEmail(DEMO_ADMIN));
+  return { ...(await seedBoard(admin, partner, orgId, board, profileId, userId)), skipped: false };
 }
 
 /** Step 3: placing cards notified everyone on each board; the demo starts with a quiet inbox. */
@@ -116,6 +142,7 @@ export async function finishDemoSeed(admin: Db): Promise<void> {
 
 async function seedBoard(
   admin: Db,
+  partner: Db,
   orgId: string,
   board: DemoBoard,
   profileId: Map<string, string>,
@@ -123,7 +150,8 @@ async function seedBoard(
 ): Promise<{ items: number; showings: number }> {
   const owner = profileId.get(board.team[0]!)!;
   const client = must(
-    await admin.from("clients").insert({ org_id: orgId, name: board.client.name, quick_folder: false }).select("id").single(),
+    // Written as the admin partner: the database lets only an admin or lead add a client, checked on the signed-in user.
+    await partner.from("clients").insert({ org_id: orgId, name: board.client.name, quick_folder: false }).select("id").single(),
     `client ${board.client.name}`,
   );
   const engagement = must(
