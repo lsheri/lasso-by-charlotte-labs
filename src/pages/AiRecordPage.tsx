@@ -413,7 +413,7 @@ export function AiRecordPage() {
           <PasteThreadDialog trigger={<Button type="button" variant="outline" className="h-9">Add a chat</Button>} />
           {isCoach ? null : (
             <Button type="button" variant="outline" className="h-9" onClick={() => { setAskSession(null); setAskOpen(true); }}>
-              <span aria-hidden="true" className="h-3.5 w-3.5 rounded-full border-2 border-[var(--nb-lasso-green)]" />
+              <span aria-hidden="true" className="h-3.5 w-3.5 rounded-full border-2 border-[var(--live,_var(--nb-lasso-green))]" />
               {copy("Ask Lasso")}
             </Button>
           )}

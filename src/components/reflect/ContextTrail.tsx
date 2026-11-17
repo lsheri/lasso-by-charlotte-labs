@@ -149,7 +149,7 @@ export function ThinkingTrail({
         </div>
       </div>
       {ask ? <AskThinkingFoot answered={ask.answered} reduced={reduced} count={shown.length} elapsed={elapsedLabel(elapsed)} /> : <div className="mt-2 flex h-5 items-center gap-2 text-[13px] text-muted-foreground">
-        <LassoThinkingMark kind="loop" size={20} className="shrink-0 text-[var(--nb-lasso-green)]" />
+        <LassoThinkingMark kind="loop" size={20} className="shrink-0 text-[var(--live,_var(--nb-lasso-green))]" />
         <span>{manifest ? finalPhase : ASK_THINKING_COPY.reading}</span>
         <span aria-hidden>·</span>
         <span className="font-mono text-[11px]">{elapsedLabel(elapsed)}</span>

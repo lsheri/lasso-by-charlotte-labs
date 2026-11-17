@@ -2071,7 +2071,7 @@ html:has([data-testid="canvas-lab-shell"]), body:has([data-testid="canvas-lab-sh
 .canvas-lab-inline-workstream button { color: var(--nb-ink); font-family: var(--font-mono); font-size: 9px; text-transform: uppercase; }
 .canvas-lab-inline-workstream span { flex-basis: 100%; color: var(--destructive); font-family: var(--font-hand); font-size: 13px; }
 /* A kept answer: white face, lime edge, so it reads apart from work cards. */
-.canvas-lab-answer-card { display: flex; flex-direction: column; border: 1.4px solid var(--nb-lasso-green); border-radius: var(--radius-card); background: var(--nb-white); padding: 10px 12px; box-shadow: var(--shadow-card); }
+.canvas-lab-answer-card { display: flex; flex-direction: column; border: 1.4px solid var(--live, var(--nb-lasso-green)); border-radius: var(--radius-card); background: var(--nb-white); padding: 10px 12px; box-shadow: var(--shadow-card); }
 .canvas-lab-answer-card[data-focused="true"] { border-color: transparent; outline: 2.4px solid var(--neutral-95); outline-offset: -1.4px; }
 .canvas-lab-answer-pin { position: absolute; left: 50%; top: calc(-12px * var(--lab-inverse-zoom, 1)); z-index: 3; display: grid; place-items: center; width: calc(24px * var(--lab-inverse-zoom, 1)); height: calc(24px * var(--lab-inverse-zoom, 1)); margin-left: calc(-12px * var(--lab-inverse-zoom, 1)); border: 2px solid var(--nb-white); border-radius: var(--radius-pill); background: var(--pin); color: var(--nb-white); box-shadow: 0 1px 3px color-mix(in oklab, var(--neutral-95) 25%, transparent); }
 .canvas-lab-answer-pin:hover { background: color-mix(in srgb, var(--pin) 85%, var(--neutral-95)); }
@@ -5598,7 +5598,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 
 /* Unit 6: the Ask Lasso answer rail. Lime while working, hairline once done. */
 .nb-answer-rail {
-  border-left: 2px solid var(--nb-lasso-green);
+  border-left: 2px solid var(--live, var(--nb-lasso-green));
   padding-left: 12px;
   transition: border-color 420ms cubic-bezier(.22,.61,.36,1);
 }
@@ -6105,8 +6105,8 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .lb-proof-open { margin-top: 7px; border: 1px solid var(--nb-amber-edge); border-radius: var(--radius-md); background: var(--nb-amber-wash); padding: 6px 7px; }.lb-proof-open p { font-size: 15px; line-height: 1.35; }
 .lb-proof-actions { display: grid; grid-template-columns: minmax(0,1.6fr) minmax(0,1fr); gap: 6px; margin-top: 8px; }.lb-proof-actions a,.lb-proof-actions button { height: auto; min-height: 34px; white-space: normal; font-size: 14px; line-height: 1.2; text-align: center; }
 .lb-proof-source-card { animation: lb-proof-source-ring 680ms ease-out 1; }
-.nb-turn-proof-range { background: color-mix(in srgb, var(--nb-lasso-green) 8%, transparent); }
-.nb-turn-proof-range.nb-turn-lit { position: relative; border-left: 3px solid var(--nb-green) !important; background: color-mix(in srgb, var(--nb-lasso-green) 8%, transparent); }
+.nb-turn-proof-range { background: color-mix(in srgb, var(--live, var(--nb-lasso-green)) 8%, transparent); }
+.nb-turn-proof-range.nb-turn-lit { position: relative; border-left: 3px solid var(--nb-green) !important; background: color-mix(in srgb, var(--live, var(--nb-lasso-green)) 8%, transparent); }
 .nb-turn-proof-range.nb-turn-lit::before { display: block; content: attr(data-focus-label); margin: 0 0 7px; color: var(--nb-green); font-family: var(--font-mono); font-size: 9px; text-transform: uppercase; }
 .lb-turn-reader { position: absolute; z-index: 42; top: 42px; right: min(456px, 38vw); bottom: 42px; left: 24px; border: 1px solid var(--nb-graphite); background: var(--nb-white); box-shadow: var(--shadow-modal); animation: lb-reader-in 420ms var(--nb-ease) both; }
 .lb-turn-reader header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--nb-rule); padding: 12px 16px; }
@@ -8491,7 +8491,7 @@ footer[data-compact] [data-ask-composer-pad] { padding: 8px 8px 8px 14px; }
 .ask-draft-spots { position: absolute; inset: 0; z-index: 29; pointer-events: none; }
 .ask-reading-lines { position: absolute; inset: 0; z-index: 28; width: 100%; height: 100%; overflow: hidden; pointer-events: none; }
 .ask-reading-lines path { fill: none; stroke: color-mix(in srgb, var(--nb-graphite) 38%, transparent); stroke-width: 1; stroke-dasharray: 4 4; animation: ask-reading-march 900ms linear infinite; }
-.ask-reading-lines circle { fill: var(--nb-lasso-green); stroke: var(--nb-graphite); stroke-width: 1.5; }
+.ask-reading-lines circle { fill: var(--live, var(--nb-lasso-green)); stroke: var(--nb-graphite); stroke-width: 1.5; }
 @keyframes ask-reading-march { to { stroke-dashoffset: -16; } }
 @media (prefers-reduced-motion: reduce) { .ask-reading-lines path { animation: none; } .ask-reading-lines circle { display: none; } }
 .ask-draft-spots span { position: absolute; border: 1.5px dashed color-mix(in srgb, var(--lock-edge) 55%, transparent); border-radius: 14px; background: color-mix(in srgb, var(--lock-edge) 6%, transparent); transition: background-color 140ms, border-color 140ms; }
@@ -8514,7 +8514,7 @@ footer[data-compact] [data-ask-composer-pad] { padding: 8px 8px 8px 14px; }
 .ask-draft-foot:hover { background: var(--surface-sunk-2); }
 @media (prefers-reduced-motion: reduce) { .ask-draft, .ask-draft-spots span { transition: none; } }
 /* ASK-D2: preview-gated pinning. */
-.ask-draft-ghost { position: absolute; z-index: 31; width: 240px; padding: 10px 12px; transform: translate(8px, 8px); border: 1.4px solid var(--nb-lasso-green); border-radius: var(--radius-md); background: var(--nb-white); box-shadow: var(--shadow-float); font-size: 13px; color: var(--muted-foreground); pointer-events: none; }
+.ask-draft-ghost { position: absolute; z-index: 31; width: 240px; padding: 10px 12px; transform: translate(8px, 8px); border: 1.4px solid var(--live, var(--nb-lasso-green)); border-radius: var(--radius-md); background: var(--nb-white); box-shadow: var(--shadow-float); font-size: 13px; color: var(--muted-foreground); pointer-events: none; }
 .ask-draft-pinned-chat { margin-top: 8px; border-top: 1px solid var(--nb-rule); padding-top: 6px; }
 .ask-draft-pinned-chat-row { display: flex; width: 100%; align-items: center; justify-content: space-between; font-size: 12px; color: var(--foreground); }
 .ask-draft-pinned-chat-note { margin-top: 6px; font-size: 12px; color: var(--muted-foreground); }

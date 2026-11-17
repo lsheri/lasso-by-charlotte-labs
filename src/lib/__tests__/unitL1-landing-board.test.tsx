@@ -266,7 +266,9 @@ describe("Unit L1 scroll-driven landing board", () => {
       'replace(/^unconfirmed/i, "Unconfirmed").replace("14 August", "14 Aug")',
     );
     expect(css).toContain(".lb-proof-card h4 strong { font-size: 40px;");
-    expect(css).toContain("background: color-mix(in srgb, var(--nb-lasso-green) 8%, transparent)");
+    expect(css).toContain(
+      "background: color-mix(in srgb, var(--live, var(--nb-lasso-green)) 8%, transparent)",
+    );
   });
   it("shows the proof connector on story steps 6 to 8, but not step 5", () => {
     const css = readFileSync("src/styles.css", "utf8");

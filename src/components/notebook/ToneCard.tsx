@@ -14,14 +14,14 @@ export type CardTone = "paper" | "claim" | "record" | "attention";
 const TONE: Record<CardTone, string> = {
   paper: "bg-card border-[var(--nb-pencil)]",
   claim: "bg-[var(--nb-yellow-wash)] border-[var(--nb-yellow-edge)]",
-  record: "bg-[var(--nb-green-wash)] border-[var(--nb-green)]",
+  record: "bg-[var(--nb-green-wash)] border-[var(--state-on-record,_var(--nb-green))]",
   attention: "bg-[var(--nb-amber-wash)] border-[var(--nb-amber-edge)]",
 };
 
 const LABEL_TONE: Record<CardTone, string> = {
   paper: "text-soft",
   claim: "text-[var(--nb-yellow-ink)]",
-  record: "text-[var(--nb-green)]",
+  record: "text-[var(--state-on-record,_var(--nb-green))]",
   attention: "text-soft",
 };
 
