@@ -7,7 +7,7 @@ const read = (p: string) => readFileSync(p, "utf8");
 describe("pass91 label colour hierarchy", () => {
   it("declares the two label utilities on the existing tokens", () => {
     expect(styles).toMatch(/@utility micro-label-section \{\s*color: var\(--nb-soft\);/);
-    expect(styles).toMatch(/@utility micro-label-ai \{\s*color: var\(--nb-green\);/);
+    expect(styles).toMatch(/@utility micro-label-ai \{\s*color: var\(--ai-voice, var\(--nb-green\)\);/);
   });
 
   it("keeps plain micro-label grey for nested field labels", () => {

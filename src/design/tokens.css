@@ -201,6 +201,11 @@
   --wrap-mark:var(--nb-green);
   --selection:var(--nb-green-wash);
   --select-ring:var(--focus-ring); /* 17 Nov: every selected object's outline; lime stays for Ask (--live) */
+  /* C1 part 3, 17 Nov: jobs that read --nb-green and had no name. Each points at it, so nothing moves. */
+  --active-mark:var(--nb-green);
+  --drop-target:var(--nb-green);
+  --handle:var(--nb-green);
+  --ai-voice:var(--nb-green);
   --live:var(--nb-lasso-green);
   --icon-ink:currentColor;
   --icon-ink-active:var(--nb-ink);
