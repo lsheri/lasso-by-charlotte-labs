@@ -115,12 +115,12 @@ export default function RichTextEditor({ initialHtml, onChange, onDone, autoFocu
       <div role="group" aria-label={COPY.colours} className="flex flex-wrap items-center gap-1 border-l border-border pl-1">
       {PALETTE.highlight.map((colour, index) => <Button key={colour} type="button" variant="ghost" className={target} title={COPY.highlight[index]} aria-label={COPY.highlight[index]} aria-pressed={editor?.isActive("highlight", { color: colour }) ?? false} onClick={() => editor?.chain().focus().toggleHighlight({ color: colour }).run()}><span className="h-3 w-3 border border-border" style={{ backgroundColor: colour }} /></Button>)}
       {PALETTE.text.map((colour, index) => <Button key={colour} type="button" variant="ghost" className={target} title={COPY.colour[index]} aria-label={COPY.colour[index]} aria-pressed={editor?.isActive("textStyle", { color: colour }) ?? false} onClick={() => editor?.chain().focus().setColor(colour).run()}><span className="h-3 w-3 rounded-full" style={{ backgroundColor: colour }} /></Button>)}
-      <select aria-label={COPY.size} className="h-7 border border-border bg-background px-1 text-[13px] [@media(pointer:coarse)]:h-11" value={editor?.getAttributes("textStyle")['fontSize'] ?? SIZES.body} onChange={(event) => { if (Object.values(SIZES).some((size) => size === event.target.value)) editor?.chain().focus().setMark("textStyle", { fontSize: event.target.value }).run(); }}>
+      <select aria-label={COPY.size} className="h-7 border border-border bg-background px-1 text-(length:--type-body) [@media(pointer:coarse)]:h-11" value={editor?.getAttributes("textStyle")['fontSize'] ?? SIZES.body} onChange={(event) => { if (Object.values(SIZES).some((size) => size === event.target.value)) editor?.chain().focus().setMark("textStyle", { fontSize: event.target.value }).run(); }}>
         {Object.entries(SIZES).map(([key, value]) => <option key={key} value={value}>{COPY.sizes[key as keyof typeof SIZES]}</option>)}
       </select>
       </div>
     </div> : null}
     <EditorContent editor={editor} />
-    {limitReached ? <p role="status" className="mt-1 text-[13px] text-soft">{COPY.limit}</p> : null}
+    {limitReached ? <p role="status" className="mt-1 text-(length:--type-body) text-soft">{COPY.limit}</p> : null}
   </div>;
 }

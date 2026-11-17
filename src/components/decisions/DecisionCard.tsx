@@ -84,7 +84,7 @@ export function DecisionCard({
           </span>
         ) : null}
         {decision.date_label ? (
-          <span className="font-mono text-[11px] text-muted-foreground">{decision.date_label}</span>
+          <span className="font-mono text-(length:--type-label) text-muted-foreground">{decision.date_label}</span>
         ) : null}
       </div>
 
@@ -125,7 +125,7 @@ export function DecisionCard({
             <button
               type="button"
               onClick={() => onOpenSource(id, turn ? { turnNo: turn.turn_no, text: turn.content } : undefined)}
-              className="story-link max-w-full truncate font-mono text-[11px] tracking-[0.06em] text-accent-deep"
+              className="story-link max-w-full truncate font-mono text-(length:--type-label) tracking-[0.06em] text-accent-deep"
             >
               {sourceLabelFor(id)}
             </button>

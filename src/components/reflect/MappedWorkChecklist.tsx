@@ -64,7 +64,7 @@ export function MappedWorkChecklist({
                     {displayName(item)} <ArtifactNote item={item} />
                   </span>
                   <TypeBadge item={item} size="sm" className="mt-1 mr-1.5" />
-                  <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+                  <span className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
                     {formatDate(effectiveWorkDate(item))}
                   </span>
                 </span>

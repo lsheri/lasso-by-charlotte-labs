@@ -489,7 +489,7 @@ export function SidebarNav({
                             {/* A grouping, not a container: no container icon, quiet ink. */}
                             <span className="flex min-w-0 flex-1 items-center gap-1.5">
                               <span className="truncate italic">{shelf.clientId === UNMAPPED_SHELF_ID ? `No ${vocab.client.toLowerCase()}` : shelf.clientId === INTERNAL_SHELF_ID ? notInContainerLabel(vocab.client) : shelf.name}</span>
-                              <span className="font-mono text-[11px] text-muted-foreground">
+                              <span className="font-mono text-(length:--type-label) text-muted-foreground">
                                 · {shelf.engagements.length}
                               </span>
                             </span>
@@ -688,7 +688,7 @@ export function SidebarNav({
                 <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
                   <span className="truncate">{item.label}</span>
                   {unreadCount > 0 ? (
-                    <span className="font-mono text-[11px] text-soft" aria-hidden>{unreadCount}</span>
+                    <span className="font-mono text-(length:--type-label) text-soft" aria-hidden>{unreadCount}</span>
                   ) : null}
                 </span>
               </Link>
@@ -745,7 +745,7 @@ export function SidebarNav({
                   type="button"
                   data-testid="nav-collapse-all"
                   onClick={collapseAll}
-                  className="font-mono text-[11px] uppercase tracking-[0.08em] text-soft transition-colors hover:text-foreground"
+                  className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-soft transition-colors hover:text-foreground"
                 >
                   Collapse all
                 </button>
@@ -1144,7 +1144,7 @@ function NoBoardNavRow({ onNavigate }: { onNavigate?: (() => void) | undefined }
       data-testid="nav-no-board"
     >
       <span>No board</span>
-      <span className="ml-auto font-mono text-[11px] text-soft" aria-hidden>
+      <span className="ml-auto font-mono text-(length:--type-label) text-soft" aria-hidden>
         {count}
       </span>
     </Link>

@@ -212,7 +212,7 @@ export function SharedWithSection({
             type="button"
             disabled={sharingAll || busyId !== null}
             onClick={() => setConfirmAll(true)}
-            className="rounded-full border border-accent bg-accent-soft px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-accent-deep transition-opacity disabled:opacity-50"
+            className="rounded-full border border-accent bg-accent-soft px-3 py-1 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-accent-deep transition-opacity disabled:opacity-50"
           >
             {sharingAll ? "Sharing…" : `Share with all ${unshared.length} coaches`}
           </button>
@@ -251,21 +251,21 @@ export function SharedWithSection({
               <div className="min-w-0">
                 <p className="text-sm text-foreground">{coach.display_name}</p>
                 {coach.shared && line ? (
-                  <p className="mt-0.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+                  <p className="mt-0.5 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
                     {line}
                   </p>
                 ) : null}
               </div>
               {coach.shared ? (
                 <div className="flex shrink-0 items-center gap-2">
-                  <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+                  <span className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
                     {busy ? "Saving…" : "Shared"}
                   </span>
                   <button
                     type="button"
                     disabled={busy}
                     onClick={() => void toggle(coach, false)}
-                    className="rounded-full border border-border px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
+                    className="rounded-full border border-border px-3 py-1 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
                   >
                     Remove
                   </button>
@@ -278,7 +278,7 @@ export function SharedWithSection({
                     ellipse.fire("shared-with");
                     void toggle(coach, true);
                   }}
-                  className="shrink-0 rounded-full border border-accent bg-accent-soft px-4 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-accent-deep transition-opacity disabled:opacity-50"
+                  className="shrink-0 rounded-full border border-accent bg-accent-soft px-4 py-1 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-accent-deep transition-opacity disabled:opacity-50"
                 >
                   {busy ? "Saving…" : "Share"}
                 </button>
@@ -366,7 +366,7 @@ function ShipBlock({
         className="h-auto flex-col items-start gap-0 py-2"
       >
         <span>{SHIP_ACTION_LABEL}</span>
-        <span className="text-[11px] font-normal opacity-70">Empower your team</span>
+        <span className="text-(length:--type-label) font-normal opacity-70">Empower your team</span>
       </Button>
       {anchor && canShip ? (
         <ShipToFirmDialog

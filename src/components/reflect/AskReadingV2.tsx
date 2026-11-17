@@ -95,11 +95,11 @@ export function AskReadingV2({
       <style>{ASK_READING_V2_STYLES}</style>
       {statusInTitle ? null : (
         <>
-          <div className="flex items-center gap-2 text-[13px]">
+          <div className="flex items-center gap-2 text-(length:--type-body)">
             <span className="text-foreground" data-testid="ask-v2-status">
               {ASK_PHASE_LABEL[phase]}
             </span>
-            <span className="ml-auto font-mono text-[11px] tabular-nums">{elapsedLabel(elapsed)}</span>
+            <span className="ml-auto font-mono text-(length:--type-label) tabular-nums">{elapsedLabel(elapsed)}</span>
           </div>
           <div className="ask-v2-steps mt-1.5" data-testid="ask-v2-steps" data-step={step} aria-hidden>
             {[1, 2, 3].map((n) => (
@@ -111,7 +111,7 @@ export function AskReadingV2({
       {statusInTitle && phase === "writing" && manifest ? (
         // ASK-V2-FIX-3: once the answer starts, the chips fold to the done receipt's first words, one line,
         // so the answer streams in view. Measured 10 Nov: in the 295 px dock the answer began 41 px below the fold.
-        <div className="text-[12px]" data-testid="ask-v2-writing-receipt">
+        <div className="text-(length:--type-small)" data-testid="ask-v2-writing-receipt">
           {receiptLine(manifest)}
         </div>
       ) : (
@@ -125,7 +125,7 @@ export function AskReadingV2({
           </span>
         )}
         {same ? (
-          <span className="text-[12px]" data-testid="ask-v2-same">
+          <span className="text-(length:--type-small)" data-testid="ask-v2-same">
             {same}
           </span>
         ) : null}
@@ -145,7 +145,7 @@ export function AskReadingV2({
           </span>
         ))}
         {fresh ? (
-          <span className="text-[12px]" data-testid="ask-v2-fresh">
+          <span className="text-(length:--type-small)" data-testid="ask-v2-fresh">
             {fresh}
           </span>
         ) : null}

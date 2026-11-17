@@ -10,12 +10,12 @@ export function ConversationChips({ item }: { item: WorkItemRow }) {
   return (
     <>
       {kind ? (
-        <span className="mt-1 inline-block rounded-full border border-border bg-secondary px-2 py-0.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+        <span className="mt-1 inline-block rounded-full border border-border bg-secondary px-2 py-0.5 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
           {attachmentKindLabel(kind)}
         </span>
       ) : null}
       {vendor ? (
-        <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-accent-soft px-2 py-0.5 font-mono text-[11px] uppercase tracking-[0.08em] text-accent-deep">
+        <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-accent-soft px-2 py-0.5 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-accent-deep">
           <SourceMark item={item} size={11} />
           {vendorLabel(vendor)}
         </span>

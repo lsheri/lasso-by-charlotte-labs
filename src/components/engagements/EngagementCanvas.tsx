@@ -609,7 +609,7 @@ export function EngagementCanvas({
                                   Move down
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuLabel className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+                                <DropdownMenuLabel className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
                                   Move to workstream
                                 </DropdownMenuLabel>
                                 {view.map((other, otherIndex) =>
@@ -637,7 +637,7 @@ export function EngagementCanvas({
                                       onSelect={() => setRemoveTarget(item)}
                                     >
                                       <span>{REMOVE_LABEL}</span>
-                                      <span className="text-[11px] text-muted-foreground">
+                                      <span className="text-(length:--type-label) text-muted-foreground">
                                         {REMOVE_HELP}
                                       </span>
                                     </DropdownMenuItem>
@@ -707,7 +707,7 @@ export function EngagementCanvas({
           side="bottom"
           className="max-h-[85vh] overflow-y-auto border-border bg-card pb-[calc(1rem+env(safe-area-inset-bottom))]"
         >
-          <SheetTitle className="font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
+          <SheetTitle className="font-mono text-(length:--type-label) uppercase tracking-[0.12em] text-muted-foreground">
             Move to a workstream
           </SheetTitle>
           <div className="mt-3 flex flex-col gap-0.5">

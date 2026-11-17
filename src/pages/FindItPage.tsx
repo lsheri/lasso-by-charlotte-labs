@@ -76,7 +76,7 @@ const SCOPE_HELP: Record<FindScope, string> = {
 };
 
 function HelpMark({ text }: { text: string }) {
-  return <span title={text} aria-label={text} className="ml-1 inline-grid h-4 w-4 place-items-center rounded-full border border-hairline font-mono text-[11px] text-muted-foreground">i</span>;
+  return <span title={text} aria-label={text} className="ml-1 inline-grid h-4 w-4 place-items-center rounded-full border border-hairline font-mono text-(length:--type-label) text-muted-foreground">i</span>;
 }
 
 function PaperclipMark() {
@@ -94,8 +94,8 @@ function isTraceable(item: WorkItemRow): boolean {
 
 function chipClass(active: boolean): string {
   return active
-    ? "rounded-[6px] border border-[var(--nb-yellow-edge)] bg-[var(--nb-yellow-wash)] px-3 py-1.5 text-[13px] text-foreground"
-    : "rounded-[6px] border border-hairline bg-card px-3 py-1.5 text-[13px] text-muted-foreground";
+    ? "rounded-[6px] border border-[var(--nb-yellow-edge)] bg-[var(--nb-yellow-wash)] px-3 py-1.5 text-(length:--type-body) text-foreground"
+    : "rounded-[6px] border border-hairline bg-card px-3 py-1.5 text-(length:--type-body) text-muted-foreground";
 }
 
 /** The words are shown back exactly as they were found, never reworded. */
@@ -355,7 +355,7 @@ export function FindItPage() {
       />
 
       {confirmation ? (
-        <p className="lasso-hand-voice mb-5 font-hand text-[16px] text-green" role="status">
+        <p className="lasso-hand-voice mb-5 font-hand text-(length:--type-lead) text-green" role="status">
           {confirmation}
         </p>
       ) : null}
@@ -372,7 +372,7 @@ export function FindItPage() {
                 }}
                 placeholder="What are you looking for?"
                 aria-label="What are you looking for?"
-                className="h-12 font-hand text-[16px]"
+                className="h-12 font-hand text-(length:--type-lead)"
               />
             </div>
             <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -403,7 +403,7 @@ export function FindItPage() {
                       <WorkNote item={target} parent={target.type !== "ai_thread" && target.orig_conversation_id ? items.find((item) => item.type === "ai_thread" && item.orig_conversation_id === target.orig_conversation_id && item.owner_id === target.owner_id) : undefined} />
                       <div className="border-x border-b border-hairline bg-card px-3 py-2">
                         <p className="truncate text-[11.5px] text-foreground">{targetMapped ? `${target.work_item_tasks[0]?.tasks?.engagements?.title ?? "engagement"} · ${target.work_item_tasks[0]?.tasks?.name ?? "task"}` : "not filed yet, looking across everything you have"}</p>
-                        <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">{chats.filter((chat) => chat.work_item_tasks.some((mapped) => target.work_item_tasks.some((targetTask) => targetTask.tasks?.engagement_id === mapped.tasks?.engagement_id))).length} conversations mapped · {candidates.filter((candidate) => (reviewed[candidate.link.link_id] ?? candidate.link.status) === "confirmed").length} kept sources</p>
+                        <p className="mt-1 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">{chats.filter((chat) => chat.work_item_tasks.some((mapped) => target.work_item_tasks.some((targetTask) => targetTask.tasks?.engagement_id === mapped.tasks?.engagement_id))).length} conversations mapped · {candidates.filter((candidate) => (reviewed[candidate.link.link_id] ?? candidate.link.status) === "confirmed").length} kept sources</p>
                       </div>
                     </div>
                     <Button
@@ -493,7 +493,7 @@ export function FindItPage() {
                 >
                   {running ? "Looking…" : "Find it"}
                 </Button>
-                <span className="lasso-hand-voice font-hand text-[16px] text-soft">
+                <span className="lasso-hand-voice font-hand text-(length:--type-lead) text-soft">
                   {mode === "number"
                     ? "a number without its conversation is a guess"
                     : "found by what was said, not by title"}
@@ -521,15 +521,15 @@ export function FindItPage() {
                           <div className="min-w-0 flex-1">
                             {hit.tier !== "exact" &&
                             (index === 0 || searchHits.turns[index - 1]?.tier === "exact") ? (
-                              <p className="mb-2 font-hand text-[16px] text-soft">closest matches</p>
+                              <p className="mb-2 font-hand text-(length:--type-lead) text-soft">closest matches</p>
                             ) : null}
-                            <p className="text-[13px] text-foreground">
+                            <p className="text-(length:--type-body) text-foreground">
                               {hit.title}
                               {hit.vendor ? (
                                 <span className="micro-label ml-2">{hit.vendor}</span>
                               ) : null}
                             </p>
-                            <p className="mt-1 text-[13px] leading-5 text-muted-foreground">
+                            <p className="mt-1 text-(length:--type-body) leading-5 text-muted-foreground">
                               <Highlighted text={hit.excerpt} needle={searchedFor} />
                             </p>
                           </div>
@@ -551,7 +551,7 @@ export function FindItPage() {
 
                   {searchHits.conversations.length > 0 ? (
                     <div className="mt-5">
-                      <p className="font-hand text-[16px] text-soft">matched from the summary</p>
+                      <p className="font-hand text-(length:--type-lead) text-soft">matched from the summary</p>
                       <ul className="mt-2 divide-y divide-hairline border-t border-hairline">
                         {searchHits.conversations.map((hit) => (
                           <li
@@ -559,7 +559,7 @@ export function FindItPage() {
                             className="flex items-center gap-4 py-3"
                           >
                             <div className="min-w-0 flex-1">
-                              <p className="text-[13px] text-foreground">{hit.title}</p>
+                              <p className="text-(length:--type-body) text-foreground">{hit.title}</p>
                               <p className="micro-label mt-1">
                                 {[hit.vendor, hit.date ? hit.date.slice(0, 10) : null]
                                   .filter(Boolean)
@@ -591,7 +591,7 @@ export function FindItPage() {
                         {searchHits.deliverables.map((item) => (
                           <span
                             key={item.work_item_id}
-                            className="rounded-[6px] border border-hairline bg-card px-3 py-1.5 text-[13px] text-foreground"
+                            className="rounded-[6px] border border-hairline bg-card px-3 py-1.5 text-(length:--type-body) text-foreground"
                           >
                             {displayName(item)}
                           </span>
@@ -612,7 +612,7 @@ export function FindItPage() {
               ignore the rest.
             </p>
           </ToneCard>
-          <p className="lasso-hand-voice font-hand text-[16px] text-green">your coach never sees this page</p>
+          <p className="lasso-hand-voice font-hand text-(length:--type-lead) text-green">your coach never sees this page</p>
         </aside>
       </div>
 
@@ -633,7 +633,7 @@ export function FindItPage() {
                   setCanvasPhase(null);
                   setPickerOpen(false);
                 }}
-                className="block w-full truncate rounded-md px-2 py-2 text-left text-[13px] text-foreground transition-colors hover:bg-accent-soft"
+                className="block w-full truncate rounded-md px-2 py-2 text-left text-(length:--type-body) text-foreground transition-colors hover:bg-accent-soft"
               >
                 {displayName(item)}
                 <span className="ml-2 text-muted-foreground">

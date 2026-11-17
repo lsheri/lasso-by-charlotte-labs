@@ -116,16 +116,16 @@ export function CoachNoteList({
                     className="block w-full border-b border-[var(--nb-rule)] px-1 py-4 text-left"
                   >
                     <div className="flex flex-wrap items-baseline gap-3">
-                      <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+                      <span className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
                         {noteWhen(note.created_at)}
                       </span>
-                      <span className="text-[13px] text-foreground">{author}</span>
+                      <span className="text-(length:--type-body) text-foreground">{author}</span>
                     </div>
-                    <p className="mt-1.5 text-[13px] text-foreground">
+                    <p className="mt-1.5 text-(length:--type-body) text-foreground">
                       {firstLine(note.did_well)}
                     </p>
                     {where ? (
-                      <p className="mt-1 font-hand text-[16px] text-green">points at {where}</p>
+                      <p className="mt-1 font-hand text-(length:--type-lead) text-green">points at {where}</p>
                     ) : null}
                   </button>
                 );
@@ -154,7 +154,7 @@ export function CoachNoteList({
         return (
           <div key={note.id}>
             {isNewSince(note.created_at, lastSeen) ? (
-              <p className="mb-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+              <p className="mb-1 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
                 New
               </p>
             ) : null}

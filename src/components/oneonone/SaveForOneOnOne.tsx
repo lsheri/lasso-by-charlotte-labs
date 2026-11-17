@@ -213,7 +213,7 @@ export function SavedForOneOnOne({ profileId }: { profileId: string }) {
             ) : null}
             <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{note.content}</p>
             <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-              <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+              <p className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
                 {note.kind === "analysis_finding" ? "From an analysis" : "From a chat"}
                 {note.source_session_id && sessions?.[note.source_session_id]
                   ? ` · ${sessions[note.source_session_id]}`

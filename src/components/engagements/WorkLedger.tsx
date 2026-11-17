@@ -92,7 +92,7 @@ export function WorkLedger({
         <button
           type="button"
           onClick={() => setOpenNote(taskNotes[0] ?? null)}
-          className="mt-1 block font-hand text-[16px] text-green underline underline-offset-2"
+          className="mt-1 block font-hand text-(length:--type-lead) text-green underline underline-offset-2"
         >
           {newNoteLine(taskNotes.length, taskNotes[0]?.profiles?.display_name)}
         </button>
@@ -102,7 +102,7 @@ export function WorkLedger({
         {deliverables.length === 0 ? (
           <div className="rounded-lg border border-graphite bg-card p-5">
             <p className="micro-label">NOTHING SHIPPED FROM THIS YET</p>
-            <p className="mt-1 text-[13px] text-muted-foreground">
+            <p className="mt-1 text-(length:--type-body) text-muted-foreground">
               When a deliverable is mapped to this piece of work, it lands here.
             </p>
           </div>
@@ -149,7 +149,7 @@ export function WorkLedger({
                 <button
                   type="button"
                   onClick={() => setOpenNote(itemNotes[0] ?? null)}
-                  className="mt-2 block font-hand text-[16px] text-green underline underline-offset-2"
+                  className="mt-2 block font-hand text-(length:--type-lead) text-green underline underline-offset-2"
                 >
                   {line}
                 </button>
@@ -175,7 +175,7 @@ export function WorkLedger({
           )}
         </div>
 
-        <p className="text-[13px] text-muted-foreground">
+        <p className="text-(length:--type-body) text-muted-foreground">
           This is what is linked. It is not everything that happened.
         </p>
       </div>
@@ -237,7 +237,7 @@ function PendingSuggestions({ item }: { item: WorkItemRow }) {
   return (
     <div className="mt-3">
       <p className="micro-label">SUGGESTED, NOT YET CONFIRMED</p>
-      <p className="mt-1 text-[13px] text-muted-foreground">
+      <p className="mt-1 text-(length:--type-body) text-muted-foreground">
         {copy("Lasso thinks these fed this piece of work. Nothing is part of the record until you say so.")}
       </p>
       <ul className="mt-2 space-y-2">
@@ -261,7 +261,7 @@ function PendingSuggestions({ item }: { item: WorkItemRow }) {
                 </span>
               </div>
               {link.rationale ? (
-                <p className="mt-1 text-[13px] text-muted-foreground">{link.rationale}</p>
+                <p className="mt-1 text-(length:--type-body) text-muted-foreground">{link.rationale}</p>
               ) : null}
             </div>
             <div className="flex shrink-0 items-center gap-2">
@@ -269,7 +269,7 @@ function PendingSuggestions({ item }: { item: WorkItemRow }) {
                 type="button"
                 disabled={pendingId === link.id}
                 onClick={() => mutation.mutate({ linkId: link.id, action: "confirmed" })}
-                className="rounded-full border border-graphite px-3 py-1 text-[13px] text-foreground transition-colors hover:bg-card disabled:opacity-50"
+                className="rounded-full border border-graphite px-3 py-1 text-(length:--type-body) text-foreground transition-colors hover:bg-card disabled:opacity-50"
               >
                 This fed it
               </button>
@@ -277,7 +277,7 @@ function PendingSuggestions({ item }: { item: WorkItemRow }) {
                 type="button"
                 disabled={pendingId === link.id}
                 onClick={() => mutation.mutate({ linkId: link.id, action: "discarded" })}
-                className="rounded-full border border-rule px-3 py-1 text-[13px] text-muted-foreground transition-colors hover:border-graphite disabled:opacity-50"
+                className="rounded-full border border-rule px-3 py-1 text-(length:--type-body) text-muted-foreground transition-colors hover:border-graphite disabled:opacity-50"
               >
                 It didn&apos;t
               </button>

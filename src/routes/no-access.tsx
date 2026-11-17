@@ -32,7 +32,7 @@ function NoAccessPage() {
       <SessionHeader />
       <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background px-6">
         <div className="max-w-md rounded-[var(--radius-control)] border border-[var(--nb-pencil)] bg-card px-8 py-10 text-center shadow-card">
-          <div className="font-mono text-[11px] uppercase tracking-[0.24em] text-muted-foreground">
+          <div className="font-mono text-(length:--type-label) uppercase tracking-[0.24em] text-muted-foreground">
             {copy("LASSO")}
           </div>
           <h1 className="section-title mt-6">You don&apos;t have access to a workspace right now.</h1>

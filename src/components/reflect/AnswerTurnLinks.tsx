@@ -22,7 +22,7 @@ export function AnswerTurnLinks({
           size="sm"
           data-testid={index === 0 ? testId : undefined}
           onClick={() => onOpen(ref)}
-          className="h-auto min-h-8 max-w-full justify-start gap-2 rounded-full border-pencil bg-nb-white px-3 py-1.5 text-left text-[12px] font-normal text-foreground shadow-none hover:border-green hover:bg-accent-soft"
+          className="h-auto min-h-8 max-w-full justify-start gap-2 rounded-full border-pencil bg-nb-white px-3 py-1.5 text-left text-(length:--type-small) font-normal text-foreground shadow-none hover:border-green hover:bg-accent-soft"
         >
           <BrandMark className="size-4 shrink-0 text-green" px={16} />
           <span className="min-w-0 break-words">{ref.label}</span>

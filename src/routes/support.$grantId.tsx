@@ -316,7 +316,7 @@ function BoardCards({ boardId, onItem }: { boardId: string; onItem: (id: string)
               <li key={w.id}>
                 <button type="button" onClick={() => onItem(w.id)} className="w-full py-2.5 text-left text-sm">
                   <span className="block text-foreground">{w.title}</span>
-                  <span className="block text-[13px] text-muted-foreground">
+                  <span className="block text-(length:--type-body) text-muted-foreground">
                     {w.source} · {supportDate(w.captured_at)} · {w.visibility}
                   </span>
                 </button>
@@ -360,7 +360,7 @@ function WorkTab({ orgId, onItem }: { orgId: string; onItem: (id: string) => voi
           <li key={w.id}>
             <button type="button" onClick={() => onItem(w.id)} className="w-full py-2.5 text-left text-sm">
               <span className="block text-foreground">{w.title}</span>
-              <span className="block text-[13px] text-muted-foreground">
+              <span className="block text-(length:--type-body) text-muted-foreground">
                 {w.source} · {supportDate(w.captured_at)}
                 {board ? ` · ${board}` : ""}
               </span>

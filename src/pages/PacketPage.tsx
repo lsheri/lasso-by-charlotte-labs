@@ -147,7 +147,7 @@ export function PacketPage({
           What {subjectName} has chosen to share
         </p>
         {hasNewer ? (
-          <p className="mt-2 inline-block rounded-full bg-accent-soft px-3 py-1 font-mono text-[11px] tracking-[0.06em] text-foreground">
+          <p className="mt-2 inline-block rounded-full bg-accent-soft px-3 py-1 font-mono text-(length:--type-label) tracking-[0.06em] text-foreground">
             Newer material since your last visit
           </p>
         ) : null}
@@ -249,7 +249,7 @@ export function PacketPage({
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <span className="micro-label">The call</span>
                       {decision.date_label ? (
-                        <span className="font-mono text-[11px] text-muted-foreground">
+                        <span className="font-mono text-(length:--type-label) text-muted-foreground">
                           {decision.date_label}
                         </span>
                       ) : null}
@@ -260,7 +260,7 @@ export function PacketPage({
                       {decision.why}
                     </p>
                     {Array.isArray(decision.srcs) && decision.srcs.length > 0 ? (
-                      <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+                      <p className="mt-3 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
                         {decision.srcs.length} source
                         {decision.srcs.length === 1 ? "" : "s"} in the shared work
                       </p>

@@ -329,7 +329,7 @@ export function TourActArrived({ register, onComplete }: { register: Register; o
         <header className="box-border flex h-16 shrink-0 items-center gap-2 border-b border-[var(--nb-rule)] px-5">
           <div className="mr-auto min-w-0">
             <h1 className="truncate font-serif text-[19px] leading-none">{list.heading}</h1>
-            <p className="mt-1 truncate font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">{rows.length} conversations on the record · {arrivedCount} new this week</p>
+            <p className="mt-1 truncate font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">{rows.length} conversations on the record · {arrivedCount} new this week</p>
           </div>
           <Button type="button" variant="outline" className="h-9" onClick={noop}>Add a chat</Button>
           <Button type="button" variant="outline" className="h-9" onClick={noop}><span aria-hidden="true" className="h-3.5 w-3.5 rounded-full border-2 border-[var(--nb-lasso-green)]" />{copy("Ask Lasso")}</Button>
@@ -339,15 +339,15 @@ export function TourActArrived({ register, onComplete }: { register: Register; o
           <input id="tour-chat-library-search" type="search" readOnly placeholder="Search your chats" className="h-7 w-[200px] shrink-0 rounded-[var(--radius)] border border-border bg-card px-3 nb-type-small text-foreground placeholder:text-muted-foreground" />
           <span aria-hidden="true" className="h-5 w-px shrink-0 bg-[var(--nb-rule)]" />
           <div role="group" aria-label="Filter by tool" className="flex shrink-0 items-center gap-2">
-            {TOUR_TOOL_FILTERS.map((option, index) => <button key={option} type="button" aria-pressed={index === 0} onClick={noop} className={index === 0 ? "rounded-full border border-graphite bg-nb-white px-3 py-1 nb-type-small font-medium text-foreground" : "rounded-full border border-[var(--nb-pencil)] px-3 py-1 nb-type-small text-muted-foreground"}>{option}<span className="ml-1.5 font-mono text-[11px] text-soft">{index === 0 ? rows.length : rows.filter((row) => row.item.source === option.toLowerCase()).length}</span></button>)}
+            {TOUR_TOOL_FILTERS.map((option, index) => <button key={option} type="button" aria-pressed={index === 0} onClick={noop} className={index === 0 ? "rounded-full border border-graphite bg-nb-white px-3 py-1 nb-type-small font-medium text-foreground" : "rounded-full border border-[var(--nb-pencil)] px-3 py-1 nb-type-small text-muted-foreground"}>{option}<span className="ml-1.5 font-mono text-(length:--type-label) text-soft">{index === 0 ? rows.length : rows.filter((row) => row.item.source === option.toLowerCase()).length}</span></button>)}
           </div>
           <Button type="button" variant="outline" className="h-7 rounded-full" onClick={noop}>Workboards</Button>
-          <div className="ml-auto flex shrink-0 items-center gap-2"><Button type="button" variant="ghost" className="h-7 text-[13px] text-muted-foreground" onClick={noop}>{rows.length} conversations.</Button></div>
+          <div className="ml-auto flex shrink-0 items-center gap-2"><Button type="button" variant="ghost" className="h-7 text-(length:--type-body) text-muted-foreground" onClick={noop}>{rows.length} conversations.</Button></div>
         </div>
         <div className="relative min-h-0 flex-1 overflow-y-auto">
           <div className="conversation-month-stack p-5" aria-label="AI conversations by month">
             <section data-conversation-month="2026-10">
-              <div className="flex min-h-10 items-center gap-3"><h2 className="font-hand text-[19px] leading-none text-graphite">October</h2><span className="font-mono text-[11px] uppercase tracking-[0.08em] text-soft">{rows.length}</span><span className="h-px flex-1 bg-[var(--nb-rule)]" /></div>
+              <div className="flex min-h-10 items-center gap-3"><h2 className="font-hand text-[19px] leading-none text-graphite">October</h2><span className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-soft">{rows.length}</span><span className="h-px flex-1 bg-[var(--nb-rule)]" /></div>
               <ul className="conversation-month-grid" aria-label="AI conversations">
                 {rows.map((row) => <li key={row.item.id} className={row.arrived ? "tour-conversation-row is-arrived" : "tour-conversation-row"}>
                   {row.arrived ? <button type="button" className="after-arrived" onClick={noop}>

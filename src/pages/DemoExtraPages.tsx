@@ -42,7 +42,7 @@ function DemoSubHeader({ title }: { title: string }) {
       ) : (
         <Link to="/" hash="demo" className={LINK_CLASS}>Back to the demo</Link>
       )}
-      <span className="hidden min-w-0 truncate text-[13px] font-medium text-foreground sm:block">{title}</span>
+      <span className="hidden min-w-0 truncate text-(length:--type-body) font-medium text-foreground sm:block">{title}</span>
       <Link
         to="/"
         hash="pilot"
@@ -60,9 +60,9 @@ function Shell({ title, children }: { title: string; children: ReactNode }) {
     <div className="min-h-dvh overflow-x-hidden bg-background">
       <DemoSubHeader title={title} />
       <main className="mx-auto w-full max-w-5xl px-4 pb-16 pt-8 sm:px-8">
-        <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">Demo workspace</p>
+        <p className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">Demo workspace</p>
         <h1 className="mt-1 font-serif text-[26px] text-foreground">{title}</h1>
-        <p className="mt-1 text-[13px] text-muted-foreground">A demo workspace. Every figure is invented.</p>
+        <p className="mt-1 text-(length:--type-body) text-muted-foreground">A demo workspace. Every figure is invented.</p>
         <div className="mt-6">{children}</div>
       </main>
     </div>
@@ -161,25 +161,25 @@ export function DemoConversationsPage() {
       </div>
       <div className="mt-6 space-y-8">
         {query.isPending ? (
-          <p className="text-[13px] text-muted-foreground">Opening the demo.</p>
+          <p className="text-(length:--type-body) text-muted-foreground">Opening the demo.</p>
         ) : shown.length === 0 ? (
-          <p className="text-[13px] text-foreground">Nothing here for this tool.</p>
+          <p className="text-(length:--type-body) text-foreground">Nothing here for this tool.</p>
         ) : (
           lanes.map((lane) => (
             <section key={lane.key} aria-label={lane.label}>
-              <h2 className="font-hand text-[16px] text-foreground">{lane.label}</h2>
+              <h2 className="font-hand text-(length:--type-lead) text-foreground">{lane.label}</h2>
               <ul className="mt-2 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {lane.items.map((entry) => (
                   <li key={entry.item.id} className="min-w-0 rounded-[var(--radius-lg)] border border-border bg-card p-3" data-testid="demo-conversation">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+                      <span className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
                         {DEMO_TOOLS.find((t) => t.key === demoToolOf(entry))?.label ?? "AI"}
                       </span>
-                      <Link to="/demo/$code" params={{ code: entry.code }} className="font-mono text-[11px] uppercase tracking-[0.08em] text-foreground underline underline-offset-2" data-testid="demo-conversation-code">
+                      <Link to="/demo/$code" params={{ code: entry.code }} className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-foreground underline underline-offset-2" data-testid="demo-conversation-code">
                         {entry.code}
                       </Link>
                     </div>
-                    <button type="button" onClick={() => openItem(entry)} className="mt-2 block w-full min-w-0 text-left text-[13px] text-foreground hover:text-muted-foreground">
+                    <button type="button" onClick={() => openItem(entry)} className="mt-2 block w-full min-w-0 text-left text-(length:--type-body) text-foreground hover:text-muted-foreground">
                       <span className="line-clamp-2 break-words">{entry.item.title ?? "Untitled"}</span>
                     </button>
                   </li>
@@ -215,12 +215,12 @@ export function DemoSourcesPage() {
   return (
     <Shell title="Where work comes from">
       <section aria-labelledby="demo-sources-ai" className="rounded-[var(--radius-lg)] border border-border bg-card px-4 py-4">
-        <h2 id="demo-sources-ai" className="text-[13px] font-medium text-foreground">Add to Claude or ChatGPT</h2>
-        <p className="mt-1 text-[13px] text-muted-foreground">
+        <h2 id="demo-sources-ai" className="text-(length:--type-body) font-medium text-foreground">Add to Claude or ChatGPT</h2>
+        <p className="mt-1 text-(length:--type-body) text-muted-foreground">
           {copy("Add Lasso to your AI once. At the end of a working session, ask it to push the conversation to Lasso.")}
         </p>
         <div className="mt-4"><SetupSteps showSignin={false} /></div>
-        <p className="mt-4 text-[13px] text-foreground" data-testid="demo-sources-link-line">{DEMO_SOURCES_LINK_LINE}</p>
+        <p className="mt-4 text-(length:--type-body) text-foreground" data-testid="demo-sources-link-line">{DEMO_SOURCES_LINK_LINE}</p>
         <Link
           to="/"
           hash="pilot"
@@ -230,8 +230,8 @@ export function DemoSourcesPage() {
         </Link>
       </section>
       <section aria-labelledby="demo-sources-more" className="mt-6 rounded-[var(--radius-lg)] border border-border bg-card px-4 py-4">
-        <h2 id="demo-sources-more" className="text-[13px] font-medium text-foreground">Also available in a pilot</h2>
-        <ul className="mt-2 space-y-1 text-[13px] text-muted-foreground">
+        <h2 id="demo-sources-more" className="text-(length:--type-body) font-medium text-foreground">Also available in a pilot</h2>
+        <ul className="mt-2 space-y-1 text-(length:--type-body) text-muted-foreground">
           <li>Google Drive: available</li>
           <li>Gmail: available</li>
         </ul>

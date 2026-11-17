@@ -267,13 +267,13 @@ export function ContinueInAI({
           ref={menu}
           role="menu"
           style={place}
-          className="w-64 overflow-y-auto rounded-[var(--radius-control)] border border-border bg-background p-1 text-[13px] shadow-sm"
+          className="w-64 overflow-y-auto rounded-[var(--radius-control)] border border-border bg-background p-1 text-(length:--type-body) shadow-sm"
           data-testid="continue-menu"
           onPointerDown={(event) => event.stopPropagation()}
         >
           {tool ? (
             <>
-              <p className="px-2 py-1 text-[12px] text-muted-foreground">
+              <p className="px-2 py-1 text-(length:--type-small) text-muted-foreground">
                 Continue in {label} with
               </p>
               {H7_CHOICES.map((choice, index) => (
@@ -292,7 +292,7 @@ export function ContinueInAI({
             </>
           ) : (
             <>
-              <p className="px-2 py-1 text-[12px] text-muted-foreground">{H7_COPY.which}</p>
+              <p className="px-2 py-1 text-(length:--type-small) text-muted-foreground">{H7_COPY.which}</p>
               {BRANCH_TOOLS.map((option) => (
                 <button
                   key={option}

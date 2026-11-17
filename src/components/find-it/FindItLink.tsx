@@ -25,7 +25,7 @@ export function FindItLink({
     <Link
       to="/find-it"
       search={{ target: workItemId, entry: "peek" as const }}
-      className={`inline-flex items-center gap-1.5 font-hand text-[16px] text-green underline underline-offset-2 ${
+      className={`inline-flex items-center gap-1.5 font-hand text-(length:--type-lead) text-green underline underline-offset-2 ${
         revealOnHover
           ? "opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100 group-focus-within:opacity-100"
           : ""

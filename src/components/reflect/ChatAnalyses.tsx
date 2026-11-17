@@ -106,7 +106,7 @@ function DisabledReasons({ rows }: { rows: { label: string; reason: string }[] }
   return (
     <div className="mt-2 space-y-0.5">
       {rows.map((row) => (
-        <p key={row.label} className="text-[11px] text-muted-foreground">
+        <p key={row.label} className="text-(length:--type-label) text-muted-foreground">
           {row.label}: {row.reason}
         </p>
       ))}
@@ -173,7 +173,7 @@ function FirmSection({
               <AnalysisInfoPanel preset={preset} readsDetail={readsDetail} iconOnly />
             </div>
           ) : null}
-          <p className="mt-1.5 text-[11px] text-muted-foreground">
+          <p className="mt-1.5 text-(length:--type-label) text-muted-foreground">
             {firmCheckCount === 1
               ? "1 check applies to this work."
               : `${firmCheckCount} checks apply to this work. Each one runs on its own.`}
@@ -193,7 +193,7 @@ function FirmSection({
         </>
       ) : (
 
-        <p className="text-[11px] text-muted-foreground">
+        <p className="text-(length:--type-label) text-muted-foreground">
           Checks your firm writes appear here and run against your work.
           {canAuthorChecks && onAuthorCheck ? (
             <>
@@ -358,7 +358,7 @@ export function InlineAnalysisBlocks({
                   sessionId: result.sessionId,
                 })
               }
-              className="mt-2 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+              className="mt-2 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
             >
               Save for 1:1
             </button>
@@ -480,7 +480,7 @@ export function AnalysisChips({
                   onClick={() => onPickEngagement?.(engagement.id)}
                   className="rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-foreground transition-opacity hover:opacity-85"
                 >
-                  <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+                  <span className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
                     {engagement.code}
                   </span>{" "}
                   {engagement.title}

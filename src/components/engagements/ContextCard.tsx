@@ -70,7 +70,7 @@ export function ContextCard({
             </button>
           ) : null}
         </div>
-        <p className="mt-1 text-[13px] font-medium leading-[18px] text-foreground">{title}</p>
+        <p className="mt-1 text-(length:--type-body) font-medium leading-[18px] text-foreground">{title}</p>
         <p className="micro-label mt-1.5 text-[var(--nb-pencil)]">{scopeLabel}</p>
 
         {facts.length > 0 ? (

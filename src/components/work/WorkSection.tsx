@@ -52,7 +52,7 @@ export function WorkSection({
           />
           {Icon ? <Icon className="h-3.5 w-3.5 shrink-0" style={{ color }} aria-hidden /> : null}
           <span
-            className="truncate font-mono text-[11px] font-semibold uppercase tracking-[0.14em]"
+            className="truncate font-mono text-(length:--type-label) font-semibold uppercase tracking-[0.14em]"
             style={{ color }}
           >
             {label}
@@ -102,7 +102,7 @@ export function EngagementFold({
           aria-hidden
         />
         <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">{label}</span>
-        <span className="shrink-0 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+        <span className="shrink-0 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
           {count} item{count === 1 ? "" : "s"}
         </span>
       </button>

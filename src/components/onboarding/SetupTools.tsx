@@ -108,7 +108,7 @@ export function SetupTools({ tools }: { tools: ToolId[]; register?: Register }) 
                 </span>
                 <span className="after-setup-body">
                   <span className="block text-sm font-medium text-foreground">Paste a conversation</span>
-                  <span className="mt-1 block font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+                  <span className="mt-1 block font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
                     Full fidelity · works with {TOOLS.other.label.toLowerCase()}
                   </span>
                 </span>

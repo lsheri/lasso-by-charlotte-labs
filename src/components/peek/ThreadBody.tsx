@@ -358,7 +358,7 @@ export function ThreadBody({
   return (
     <div className="space-y-4">
       {!hideVendor && (item.source_vendor || model) ? (
-        <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+        <p className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
           {vendorLabel(item.source_vendor ?? meta?.vendor)}
           {model ? ` · ${model}` : ""}
         </p>
@@ -425,7 +425,7 @@ export function ThreadBody({
           const marked = !focusedRange && (liveRanges.length > 0 || noteRanges.length > 0);
           const span = summarisedSpan(turn);
           const summarisedNote = span ? (
-            <p data-testid="turn-summarised" className="mb-1 text-[11px] text-muted-foreground">
+            <p data-testid="turn-summarised" className="mb-1 text-(length:--type-label) text-muted-foreground">
               {summarisedLabel(span)}
             </p>
           ) : null;
@@ -436,7 +436,7 @@ export function ThreadBody({
           return (
           <div key={turn.id} ref={(node) => { if (node) turnRefs.current.set(turn.turn_no, node); else turnRefs.current.delete(turn.turn_no); }} data-turn-no={turn.turn_no}>
           {boundaryText ? (
-            <div data-testid="push-boundary" role="separator" aria-label={boundaryText} className="mb-4 flex items-center gap-3 text-[11px] text-muted-foreground">
+            <div data-testid="push-boundary" role="separator" aria-label={boundaryText} className="mb-4 flex items-center gap-3 text-(length:--type-label) text-muted-foreground">
               <span aria-hidden className="h-px flex-1 bg-border" />
               <span>{boundaryText}</span>
               <span aria-hidden className="h-px flex-1 bg-border" />
@@ -461,7 +461,7 @@ export function ThreadBody({
                 )}
               </div>
               {revisedLabel(turn) ? (
-                <p className="mt-1 text-[11px] text-muted-foreground">{revisedLabel(turn)}</p>
+                <p className="mt-1 text-(length:--type-label) text-muted-foreground">{revisedLabel(turn)}</p>
               ) : null}
             </div>
           ) : (
@@ -525,13 +525,13 @@ export function ThreadBody({
                     )}
                   </div>
                   {revisedLabel(turn) ? (
-                    <p className="mt-1 text-[11px] text-muted-foreground">{revisedLabel(turn)}</p>
+                    <p className="mt-1 text-(length:--type-label) text-muted-foreground">{revisedLabel(turn)}</p>
                   ) : null}
                 </div>
               );
             })()
           )}
-          {focused ? <p className="lasso-hand-voice mt-2 font-hand text-[16px] text-green">this is the turn it came from</p> : null}
+          {focused ? <p className="lasso-hand-voice mt-2 font-hand text-(length:--type-lead) text-green">this is the turn it came from</p> : null}
           </div>
           );
   }

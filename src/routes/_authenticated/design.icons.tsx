@@ -366,7 +366,7 @@ function IconsGallery() {
                           <p className="text-sm font-medium text-foreground">
                             {entry.label}
                             {entry.v2 ? (
-                              <span className="ml-2 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+                              <span className="ml-2 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
                                 v2
                               </span>
                             ) : null}
@@ -392,7 +392,7 @@ function IconsGallery() {
                       <dt className="micro-label">Used in</dt>
                       <dd className="text-foreground">{entry.usedIn}</dd>
                       <dt className="micro-label">Keyframe</dt>
-                      <dd className="font-mono text-[11px] text-muted-foreground">
+                      <dd className="font-mono text-(length:--type-label) text-muted-foreground">
                         {getIconSignature(entry.name)}
                       </dd>
                     </dl>
@@ -431,38 +431,38 @@ function IconsGallery() {
         <h3 className="mt-4 micro-label">Draws · fire once</h3>
         <ul className="mt-2 space-y-1.5 text-sm text-foreground">
           <li>
-            <span className="font-mono text-[11px] text-muted-foreground">550ms</span> ·{" "}
-            <span className="font-mono text-[11px] text-muted-foreground">dur/settle</span> · the
+            <span className="font-mono text-(length:--type-label) text-muted-foreground">550ms</span> ·{" "}
+            <span className="font-mono text-(length:--type-label) text-muted-foreground">dur/settle</span> · the
             longest duration the scale itself sanctions.
           </li>
           <li>
-            <span className="font-mono text-[11px] text-muted-foreground">600ms</span> · icon
+            <span className="font-mono text-(length:--type-label) text-muted-foreground">600ms</span> · icon
             signature move, once the redraw has landed.
           </li>
           <li>
-            <span className="font-mono text-[11px] text-muted-foreground">700ms</span> · icon redraw
+            <span className="font-mono text-(length:--type-label) text-muted-foreground">700ms</span> · icon redraw
             on hover, focus or tap. Decorative and intent-triggered.
           </li>
           <li>
-            <span className="font-mono text-[11px] text-muted-foreground">730ms</span> · firework
+            <span className="font-mono text-(length:--type-label) text-muted-foreground">730ms</span> · firework
             life on a journey node. A one-off celebration at the end of a walk, not an entrance.
           </li>
           <li>
-            <span className="font-mono text-[11px] text-muted-foreground">800ms</span> ·{" "}
-            <span className="font-mono text-[11px] text-muted-foreground">dur/draw</span> · a title
+            <span className="font-mono text-(length:--type-label) text-muted-foreground">800ms</span> ·{" "}
+            <span className="font-mono text-(length:--type-label) text-muted-foreground">dur/draw</span> · a title
             rule drawing itself.
           </li>
           <li>
-            <span className="font-mono text-[11px] text-muted-foreground">1100ms</span> · the
+            <span className="font-mono text-(length:--type-label) text-muted-foreground">1100ms</span> · the
             landing front-door rule. The first motion a visitor ever sees, paced as a slow reveal on
             purpose. Snapping it to 800ms would make the first impression 27% faster.
           </li>
           <li>
-            <span className="font-mono text-[11px] text-muted-foreground">1440ms</span> · icon mount
+            <span className="font-mono text-(length:--type-label) text-muted-foreground">1440ms</span> · icon mount
             draw-in, once per session.
           </li>
           <li>
-            <span className="font-mono text-[11px] text-muted-foreground">620ms</span> · gust ·
+            <span className="font-mono text-(length:--type-label) text-muted-foreground">620ms</span> · gust ·
             paper notes blow in and settle on arrival at /work, roughly a third of visits.
             Decorative; answers no event and carries no information.
           </li>
@@ -475,23 +475,23 @@ function IconsGallery() {
         </p>
         <ul className="mt-2 space-y-1.5 text-sm text-foreground">
           <li>
-            <span className="font-mono text-[11px] text-muted-foreground">900ms</span> · dash march,
+            <span className="font-mono text-(length:--type-label) text-muted-foreground">900ms</span> · dash march,
             on a resolving lasso and on marching ink.
           </li>
           <li>
-            <span className="font-mono text-[11px] text-muted-foreground">1200ms</span> · thinking
+            <span className="font-mono text-(length:--type-label) text-muted-foreground">1200ms</span> · thinking
             dots.
           </li>
           <li>
-            <span className="font-mono text-[11px] text-muted-foreground">1600ms</span> · reading
+            <span className="font-mono text-(length:--type-label) text-muted-foreground">1600ms</span> · reading
             eyes scanning.
           </li>
           <li>
-            <span className="font-mono text-[11px] text-muted-foreground">7s</span> · hatch breathe,
+            <span className="font-mono text-(length:--type-label) text-muted-foreground">7s</span> · hatch breathe,
             with a counterphase pair offset half a cycle.
           </li>
           <li>
-            <span className="font-mono text-[11px] text-muted-foreground">12s</span> · gap drift on
+            <span className="font-mono text-(length:--type-label) text-muted-foreground">12s</span> · gap drift on
             the invisible-work strip.
           </li>
         </ul>
@@ -503,41 +503,41 @@ function IconsGallery() {
         </p>
         <ul className="mt-2 space-y-1.5 text-sm text-foreground">
           <li>
-            <span className="font-mono text-[11px] text-muted-foreground">reading-line</span> ·{" "}
-            <span className="font-mono text-[11px] text-muted-foreground">.nb-reading-pupil</span>{" "}
+            <span className="font-mono text-(length:--type-label) text-muted-foreground">reading-line</span> ·{" "}
+            <span className="font-mono text-(length:--type-label) text-muted-foreground">.nb-reading-pupil</span>{" "}
             is the spider's eye, not a line moving down text. The motion has no counterpart
             anywhere.
           </li>
           <li>
-            <span className="font-mono text-[11px] text-muted-foreground">provenance-ribbon</span> ·{" "}
-            <span className="font-mono text-[11px] text-muted-foreground">.nb-traced-legend</span>{" "}
+            <span className="font-mono text-(length:--type-label) text-muted-foreground">provenance-ribbon</span> ·{" "}
+            <span className="font-mono text-(length:--type-label) text-muted-foreground">.nb-traced-legend</span>{" "}
             is a legend line inside JourneyView, not a ribbon.
           </li>
           <li>
-            <span className="font-mono text-[11px] text-muted-foreground">work-lands</span> · the
+            <span className="font-mono text-(length:--type-label) text-muted-foreground">work-lands</span> · the
             only downward landing in the app is{" "}
-            <span className="font-mono text-[11px] text-muted-foreground">nb-paper-land</span>,
+            <span className="font-mono text-(length:--type-label) text-muted-foreground">nb-paper-land</span>,
             which belongs to the gust, a named registry exception fired by chance rather than by
             this event.{" "}
-            <span className="font-mono text-[11px] text-muted-foreground">.nb-rise</span> moves the
+            <span className="font-mono text-(length:--type-label) text-muted-foreground">.nb-rise</span> moves the
             wrong way, upward.
           </li>
           <li>
-            <span className="font-mono text-[11px] text-muted-foreground">comet-line</span> ·
+            <span className="font-mono text-(length:--type-label) text-muted-foreground">comet-line</span> ·
             nothing in the app draws one.
           </li>
           <li>
-            <span className="font-mono text-[11px] text-muted-foreground">pencil-marks</span> ·{" "}
-            <span className="font-mono text-[11px] text-muted-foreground">.nb-mark</span> exists,
-            but <span className="font-mono text-[11px] text-muted-foreground">nav.active</span>{" "}
+            <span className="font-mono text-(length:--type-label) text-muted-foreground">pencil-marks</span> ·{" "}
+            <span className="font-mono text-(length:--type-label) text-muted-foreground">.nb-mark</span> exists,
+            but <span className="font-mono text-(length:--type-label) text-muted-foreground">nav.active</span>{" "}
             renders no SVG for a mark to be drawn on. Returning a class the surface cannot use is
             worse than returning nothing.
           </li>
           <li>
-            <span className="font-mono text-[11px] text-muted-foreground">arrows</span> ·{" "}
-            <span className="font-mono text-[11px] text-muted-foreground">.nb-journey-arrow</span>{" "}
+            <span className="font-mono text-(length:--type-label) text-muted-foreground">arrows</span> ·{" "}
+            <span className="font-mono text-(length:--type-label) text-muted-foreground">.nb-journey-arrow</span>{" "}
             only has effect nested inside{" "}
-            <span className="font-mono text-[11px] text-muted-foreground">.nb-journey</span>, so it
+            <span className="font-mono text-(length:--type-label) text-muted-foreground">.nb-journey</span>, so it
             is not a class a surface can be handed.
           </li>
         </ul>

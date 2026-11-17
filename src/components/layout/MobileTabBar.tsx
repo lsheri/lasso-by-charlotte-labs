@@ -59,7 +59,7 @@ export function MobileTabBar() {
                     <button key={item.id} type="button" aria-disabled="true" title={item.disabledReason}
                       data-nav-item={item.id} className="nb-nav-item nb-nav-item-disabled min-h-[48px] w-full text-left">
                       <GraphiteIcon name={item.icon} size={16} />
-                      <span className="flex flex-1 items-center justify-between gap-2"><span>{item.label}</span><span className="font-mono text-[12px] uppercase tracking-[0.08em]">{item.disabledReason}</span></span>
+                      <span className="flex flex-1 items-center justify-between gap-2"><span>{item.label}</span><span className="font-mono text-(length:--type-small) uppercase tracking-[0.08em]">{item.disabledReason}</span></span>
                     </button>
                   );
                   if (item.action === "openSettings") return (
@@ -126,7 +126,7 @@ export function MobileTabBar() {
           side="bottom"
           className="max-h-[85vh] overflow-y-auto border-border bg-card pb-[calc(1rem+env(safe-area-inset-bottom))]"
         >
-          <SheetTitle className="font-mono text-[13px] uppercase tracking-[0.12em] text-muted-foreground">
+          <SheetTitle className="font-mono text-(length:--type-body) uppercase tracking-[0.12em] text-muted-foreground">
             Workboards
           </SheetTitle>
           <div className="mt-3 flex flex-col gap-0.5">
@@ -159,7 +159,7 @@ export function MobileTabBar() {
           side="bottom"
           className="max-h-[85vh] overflow-y-auto border-border bg-card pb-[calc(1rem+env(safe-area-inset-bottom))]"
         >
-          <SheetTitle className="font-mono text-[13px] uppercase tracking-[0.12em] text-muted-foreground">
+          <SheetTitle className="font-mono text-(length:--type-body) uppercase tracking-[0.12em] text-muted-foreground">
             {profile?.display_name ?? "You"}
           </SheetTitle>
           {guestNav ? (

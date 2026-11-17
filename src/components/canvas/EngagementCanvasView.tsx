@@ -1122,7 +1122,7 @@ export function EngagementCanvasView({
               style={{ left: asking.x, top: asking.y, zIndex: 20 }}
               onClick={(event) => event.stopPropagation()}
             >
-              <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+              <p className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
                 {asking.relation}
               </p>
               <div className="mt-2 flex items-center gap-2">
@@ -1164,7 +1164,7 @@ export function EngagementCanvasView({
           >
             −
           </Button>
-          <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
+          <span className="font-mono text-(length:--type-label) tabular-nums text-muted-foreground">
             {Math.round(zoom * 100)}%
           </span>
           <Button
@@ -1205,7 +1205,7 @@ export function EngagementCanvasView({
       >
         <div className="mb-3 flex items-baseline gap-2">
           <h2 className="font-hand text-[19px]">Not in the picture yet</h2>
-          <span className="font-mono text-[11px] text-muted-foreground">{view.shelf.length}</span>
+          <span className="font-mono text-(length:--type-label) text-muted-foreground">{view.shelf.length}</span>
         </div>
         {view.shelf.length > 0 ? (
           <div className="flex flex-wrap gap-3">
@@ -1241,7 +1241,7 @@ export function EngagementCanvasView({
             })}
           </div>
         ) : (
-          <p className="text-[13px] text-muted-foreground">Everything here is in the picture.</p>
+          <p className="text-(length:--type-body) text-muted-foreground">Everything here is in the picture.</p>
         )}
       </div>
     </section>

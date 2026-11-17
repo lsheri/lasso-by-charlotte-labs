@@ -86,7 +86,7 @@ export function WorkDateDialog({
         />
 
         {item ? (
-          <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+          <p className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
             {workDateLabel(item)}
           </p>
         ) : null}

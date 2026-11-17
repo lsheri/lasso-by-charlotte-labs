@@ -189,7 +189,7 @@ function ConsentPage() {
   }
 
   const roleOf = (p: Profile) => ROLE_LABELS[p.role] ?? p.role;
-  const roleClass = "block truncate font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground";
+  const roleClass = "block truncate font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground";
 
   let body: React.ReactNode;
   if (view === "loading") body = <p className="text-sm text-muted-foreground">{CONSENT_COPY.loading}</p>;

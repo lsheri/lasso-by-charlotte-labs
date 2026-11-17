@@ -272,7 +272,7 @@ function SettledRow({ item }: { item: HandoffItem }) {
   const fields = item.fields as OpenCheckItem;
   const carried = typeof fields.carried_from_run_id === "string";
   return (
-    <li className="text-[11px] leading-snug text-muted-foreground opacity-70">
+    <li className="text-(length:--type-label) leading-snug text-muted-foreground opacity-70">
       <span className="block">
         {fields.claim_quote.slice(0, 80)}
         {fields.claim_quote.length > 80 ? "..." : ""}
@@ -336,13 +336,13 @@ function DecisionRow({
             className="h-2 w-2 shrink-0 rounded-full"
             style={{ backgroundColor: "var(--nb-ink-yellow)" }}
           />
-          <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+          <span className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
             {ORIGIN_CHIP[cls]}
           </span>
         </span>
         <span className="mt-1 block text-xs leading-snug text-foreground">{item.fields.call}</span>
         {cls === "model_changed" ? (
-          <span className="mt-1 block text-[11px] leading-snug text-muted-foreground">
+          <span className="mt-1 block text-(length:--type-label) leading-snug text-muted-foreground">
             {DECISIONS_CHANGED_LINE}
           </span>
         ) : null}
@@ -535,7 +535,7 @@ function PendingBody({
           <p className="micro-label text-muted-foreground">
             {isDecisions ? DECIDED_LABEL : VERIFY_THREAD_LABEL}
           </p>
-          <h1 className="page-title mt-1 break-words text-[20px] leading-snug">
+          <h1 className="page-title mt-1 break-words text-(length:--type-title) leading-snug">
             {request.itemTitle}
           </h1>
         </div>
@@ -548,7 +548,7 @@ function PendingBody({
                 setSkipped(true);
                 onSkip?.();
               }}
-              className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+              className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
             >
               Skip the story
             </button>
@@ -879,7 +879,7 @@ function ReaderBody({ request }: { request: VerifyThreadRequest & { runId: strin
           <p className="micro-label text-muted-foreground">
             {isDecisions ? DECIDED_LABEL : VERIFY_THREAD_LABEL}
           </p>
-          <h1 className="page-title mt-1 break-words text-[20px] leading-snug">
+          <h1 className="page-title mt-1 break-words text-(length:--type-title) leading-snug">
             {request.itemTitle}
           </h1>
         </div>
@@ -894,7 +894,7 @@ function ReaderBody({ request }: { request: VerifyThreadRequest & { runId: strin
               type="button"
               data-testid="verify-skip"
               onClick={() => story.skip()}
-              className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+              className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
             >
               Skip the story
             </button>
@@ -976,14 +976,14 @@ function ReaderBody({ request }: { request: VerifyThreadRequest & { runId: strin
             ) : calls.length === 0 && settledItems.length === 0 ? (
               <p
                 data-testid="decisions-thread-empty"
-                className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground"
+                className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground"
               >
                 {DECISIONS_EMPTY_LINE}
               </p>
             ) : (
               <>
                 {carriedCount > 0 && callDrafts.length > 0 ? (
-                  <p className="text-[11px] leading-snug text-muted-foreground">
+                  <p className="text-(length:--type-label) leading-snug text-muted-foreground">
                     {VERIFY_CARRY_LINE}
                   </p>
                 ) : null}
@@ -1014,7 +1014,7 @@ function ReaderBody({ request }: { request: VerifyThreadRequest & { runId: strin
                         <span className="block text-xs leading-snug text-foreground">
                           {call.fields.call}
                         </span>
-                        <span className="mt-1 block text-[11px] leading-snug text-muted-foreground">
+                        <span className="mt-1 block text-(length:--type-label) leading-snug text-muted-foreground">
                           {DECISIONS_UNTRACEABLE_LINE}
                         </span>
                       </li>
@@ -1031,14 +1031,14 @@ function ReaderBody({ request }: { request: VerifyThreadRequest & { runId: strin
           ) : findings.length === 0 && settledItems.length === 0 ? (
             <p
               data-testid="verify-thread-empty"
-              className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground"
+              className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground"
             >
               {VERIFY_THREAD_EMPTY_LINE}
             </p>
           ) : (
             <>
               {carriedCount > 0 && drafts.length > 0 ? (
-                <p className="text-[11px] leading-snug text-muted-foreground">{VERIFY_CARRY_LINE}</p>
+                <p className="text-(length:--type-label) leading-snug text-muted-foreground">{VERIFY_CARRY_LINE}</p>
               ) : null}
 
               <ol className="flex flex-col gap-2">
@@ -1070,17 +1070,17 @@ function ReaderBody({ request }: { request: VerifyThreadRequest & { runId: strin
                             className="h-2 w-2 shrink-0 rounded-full"
                             style={{ backgroundColor: ink.stroke }}
                           />
-                          <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+                          <span className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
                             {verdictPhrase(finding.fields.verdict)}
                           </span>
                         </span>
                         <span className="mt-1 block text-xs leading-snug text-foreground">
                           {finding.fields.claim_quote}
                         </span>
-                        <span className="mt-2 block font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+                        <span className="mt-2 block font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
                           {VERIFY_CHECK_LABEL}
                         </span>
-                        <span className="mt-0.5 block text-[11px] leading-snug text-muted-foreground">
+                        <span className="mt-0.5 block text-(length:--type-label) leading-snug text-muted-foreground">
                           {finding.fields.suggested_check}
                         </span>
                       </button>
@@ -1123,7 +1123,7 @@ function ReaderBody({ request }: { request: VerifyThreadRequest & { runId: strin
 
               {settledItems.length > 0 ? (
                 <details className="rounded-[var(--radius)] border border-border p-2">
-                  <summary className="cursor-pointer font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+                  <summary className="cursor-pointer font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
                     Settled ({settledItems.length})
                   </summary>
                   <ul className="mt-2 space-y-2" data-testid="verify-settled">
@@ -1145,7 +1145,7 @@ function ReaderBody({ request }: { request: VerifyThreadRequest & { runId: strin
             <button
               type="button"
               onClick={() => setSourceOpen((open) => !open)}
-              className="w-full text-left font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground"
+              className="w-full text-left font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground"
             >
               {VERIFY_SOURCE_TITLE}
             </button>
@@ -1165,18 +1165,18 @@ function ReaderBody({ request }: { request: VerifyThreadRequest & { runId: strin
                     {chatUrlLabel(sourceUrl)}
                   </a>
                 ) : (
-                  <p className="text-[11px] leading-snug text-muted-foreground">
+                  <p className="text-(length:--type-label) leading-snug text-muted-foreground">
                     {VERIFY_SOURCE_NO_LINK}
                   </p>
                 )}
                 <ol className="space-y-1">
                   {VERIFY_SOURCE_STEPS.map((step) => (
-                    <li key={step} className="text-[11px] leading-snug text-muted-foreground">
+                    <li key={step} className="text-(length:--type-label) leading-snug text-muted-foreground">
                       {step}
                     </li>
                   ))}
                 </ol>
-                <p className="text-[11px] leading-snug text-muted-foreground">{VERIFY_SOURCE_WHY}</p>
+                <p className="text-(length:--type-label) leading-snug text-muted-foreground">{VERIFY_SOURCE_WHY}</p>
               </div>
             ) : null}
           </section>
@@ -1188,7 +1188,7 @@ function ReaderBody({ request }: { request: VerifyThreadRequest & { runId: strin
             {VERIFY_LEGEND.map((entry) => (
               <li
                 key={entry.verdict}
-                className="flex items-center gap-1.5 text-[11px] leading-snug text-muted-foreground"
+                className="flex items-center gap-1.5 text-(length:--type-label) leading-snug text-muted-foreground"
               >
                 <span
                   aria-hidden

@@ -130,12 +130,12 @@ export function WorkNote({
         <div className={`flex ${headerGutter ? "canvas-card-headerrow" : "h-[18px] gap-2"} shrink-0 select-none items-center ${headerGutter ? "pr-[69px]" : ""} ${contextSelected ? "canvas-lab-context-header" : ""}`}>
           {lead ? <span className="shrink-0">{lead}</span> : null}
           {headerGutter ? <i aria-hidden="true" style={item.visibility === "unmapped" ? undefined : { backgroundColor: brandHex(brand) }} /> : <BrandLogo brand={brand} size={16} />}
-          <span className={headerGutter ? "canvas-card-source" : "min-w-0 flex-1 truncate font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground"}>{sourceLabel}</span>
-          <span className={headerGutter ? "canvas-card-date" : "shrink-0 font-mono text-[11px] uppercase tracking-[0.08em] text-soft"}>{headerGutter ? cardDate : date}</span>
+          <span className={headerGutter ? "canvas-card-source" : "min-w-0 flex-1 truncate font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground"}>{sourceLabel}</span>
+          <span className={headerGutter ? "canvas-card-date" : "shrink-0 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-soft"}>{headerGutter ? cardDate : date}</span>
           {actions ? <span className="shrink-0 select-none" onClick={(event) => event.stopPropagation()}>{actions}</span> : null}
         </div>
 
-        <p className={`${headerGutter ? "canvas-card-title" : "mt-1 truncate text-[12px] font-medium leading-[15px] text-foreground"} shrink-0 select-text ${contextSelected ? "canvas-lab-context-title" : ""}`}>{displayName(item)}</p>
+        <p className={`${headerGutter ? "canvas-card-title" : "mt-1 truncate text-(length:--type-small) font-medium leading-[15px] text-foreground"} shrink-0 select-text ${contextSelected ? "canvas-lab-context-title" : ""}`}>{displayName(item)}</p>
 
         {headerGutter ? null : isFile ? (
           <div className="ledger-work-note__file mt-1 flex min-h-0 flex-1 items-center gap-2">
@@ -143,16 +143,16 @@ export function WorkNote({
               {hasFilePreview && filePreview ? <FilePreview preview={filePreview} title={displayName(item)} onFailure={() => {}} /> : <FileText className="m-auto h-full w-5 text-muted-foreground" aria-label="Document" />}
             </div>
             <div className="min-w-0 select-text">
-              <p className="truncate text-[11px] leading-[15px] text-muted-foreground">{displayName(item)}</p>
-              <p className="truncate font-mono text-[11px] uppercase tracking-[0.08em] text-soft">{detail}</p>
+              <p className="truncate text-(length:--type-label) leading-[15px] text-muted-foreground">{displayName(item)}</p>
+              <p className="truncate font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-soft">{detail}</p>
             </div>
           </div>
         ) : (
-          <p data-summary-source={item.work_item_extracts?.some((extract) => extract.summary) || chatPreview?.summary ? "stored" : chatPreview?.firstUserTurn || chatPreview?.turns.some((turn) => turn.role.trim().toLowerCase() === "user") ? "first-turn" : "absent"} className="my-auto line-clamp-3 min-h-0 select-text text-[11px] leading-[1.45] text-muted-foreground">{summary}</p>
+          <p data-summary-source={item.work_item_extracts?.some((extract) => extract.summary) || chatPreview?.summary ? "stored" : chatPreview?.firstUserTurn || chatPreview?.turns.some((turn) => turn.role.trim().toLowerCase() === "user") ? "first-turn" : "absent"} className="my-auto line-clamp-3 min-h-0 select-text text-(length:--type-label) leading-[1.45] text-muted-foreground">{summary}</p>
         )}
 
         <div className={`flex ${headerGutter ? "canvas-card-footer" : "mt-1 h-[16px] gap-2 border-t border-hairline pt-1"} shrink-0 select-none items-center`}>
-          <span className={`min-w-0 flex-1 truncate ${headerGutter ? "canvas-card-provenance" : "text-[11px] text-muted-foreground"}`} onClick={(event) => event.stopPropagation()}>
+          <span className={`min-w-0 flex-1 truncate ${headerGutter ? "canvas-card-provenance" : "text-(length:--type-label) text-muted-foreground"}`} onClick={(event) => event.stopPropagation()}>
             {item.type === "ai_thread" || pastedChatUrl((item as WorkItemRow).meta?.chat_url) ? (
               <ChatUrlLink item={item as WorkItemRow} parent={parent} showAbsence turnCount={chatPreview?.turnCount} toolSteps={chatPreview?.toolSteps} />
             ) : sourceUrl ? (
@@ -164,7 +164,7 @@ export function WorkNote({
               <ChatUrlLink item={item as WorkItemRow} parent={parent} showAbsence turnCount={chatPreview?.turnCount} toolSteps={chatPreview?.toolSteps} />
             )}
           </span>
-          {boardTitle ? <span className={`min-w-0 truncate ${headerGutter ? "canvas-card-chip" : "rounded-[3px] border border-hairline px-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground"}`}>{boardTitle}</span> : null}
+          {boardTitle ? <span className={`min-w-0 truncate ${headerGutter ? "canvas-card-chip" : "rounded-[3px] border border-hairline px-1 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground"}`}>{boardTitle}</span> : null}
           {chips ? <span className="sr-only">{chips}</span> : null}
         </div>
         {item.visibility === "unmapped" ? <span className="work-no-board-label"><Lock className="h-3 w-3 shrink-0" aria-hidden />No board</span> : null}

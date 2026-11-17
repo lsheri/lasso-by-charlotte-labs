@@ -8,7 +8,7 @@ export function VendorGuide({ vendor }: { vendor: ImportVendor }) {
       <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-foreground">
         {meta.guide}
       </p>
-      <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+      <p className="mt-3 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
         {STEPS_VERIFIED}
       </p>
     </div>

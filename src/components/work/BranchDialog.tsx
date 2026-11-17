@@ -189,7 +189,7 @@ export function BranchDialog({
           <DialogTitle>{BRANCH_COPY.title}</DialogTitle>
           <DialogDescription>{BRANCH_COPY.helper}</DialogDescription>
         </DialogHeader>
-        <p className="truncate text-[13px] font-medium text-foreground">{displayName(source)}</p>
+        <p className="truncate text-(length:--type-body) font-medium text-foreground">{displayName(source)}</p>
         <div role="radiogroup" aria-label={BRANCH_COPY.toolLabel} className="flex flex-wrap gap-2">
           {BRANCH_TOOLS.map((id) => (
             <Button key={id} type="button" role="radio" aria-checked={tool === id} variant={tool === id ? "default" : "outline"} size="sm" onClick={() => setTool(id)}>
@@ -197,8 +197,8 @@ export function BranchDialog({
             </Button>
           ))}
         </div>
-        {primary === "download" ? <p className="text-[13px] text-muted-foreground">{copy(BRANCH_COPY.needsSignin)}</p> : null}
-        {notice ? <p role="status" className="text-[13px] text-foreground">{notice}</p> : null}
+        {primary === "download" ? <p className="text-(length:--type-body) text-muted-foreground">{copy(BRANCH_COPY.needsSignin)}</p> : null}
+        {notice ? <p role="status" className="text-(length:--type-body) text-foreground">{notice}</p> : null}
         <DialogFooter className="mt-2 gap-2">
           {primary === "download" ? (
             <>

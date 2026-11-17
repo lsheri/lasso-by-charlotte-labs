@@ -83,7 +83,7 @@ function Section({
 }) {
   return (
     <section id={id} className="border-t border-[var(--nb-pencil)] pt-8">
-      <p className="micro-label text-[11px]">{label}</p>
+      <p className="micro-label text-(length:--type-label)">{label}</p>
       <h2 className="section-title mt-2">{title}</h2>
       <div className="mt-4 space-y-3 text-sm leading-relaxed text-foreground">{children}</div>
     </section>
@@ -97,7 +97,7 @@ function TrustPage() {
       <PublicHeader current="/trust" />
       <main className="min-h-screen bg-background px-6 py-16 md:px-12">
         <div className="mx-auto max-w-2xl">
-          <p className="micro-label text-[11px]">{C.label}</p>
+          <p className="micro-label text-(length:--type-label)">{C.label}</p>
           <h1 className="page-title mt-2">{C.heading}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             {C.intro}
@@ -115,7 +115,7 @@ function TrustPage() {
                         : "grid gap-1 border-t border-[var(--nb-pencil)] px-5 py-4 sm:grid-cols-[180px_1fr] sm:gap-6"
                     }
                   >
-                    <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+                    <p className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
                       {who}
                     </p>
                     <p className="text-sm text-foreground">{what}</p>
@@ -189,7 +189,7 @@ function TrustPage() {
           <div className="mt-14 border-t border-[var(--nb-pencil)] pt-6">
             <Link
               to="/auth"
-              className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+              className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
             >
               {C.back}
             </Link>

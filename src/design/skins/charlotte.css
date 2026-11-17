@@ -217,7 +217,7 @@
 }
 [data-skin="charlotte"] [data-lasso="on"] .canvas-lab-stage[data-board-hue] > .canvas-lab-frame[data-region] > div:first-child > h2 {
   font-family:var(--font-sans);
-  font-size:13px;
+  font-size:var(--type-body);
   font-weight:600;
   color:var(--text-primary) !important;
 }

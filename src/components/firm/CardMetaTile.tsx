@@ -51,17 +51,17 @@ export function CardMetaTile({
           <span className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
             <span
               data-testid={kindTestId ?? `${testId}-kind`}
-              className="rounded-sm px-1.5 py-px font-mono text-[11px] uppercase tracking-[0.08em]"
+              className="rounded-sm px-1.5 py-px font-mono text-(length:--type-label) uppercase tracking-[0.08em]"
               style={{ backgroundColor: tint.background, color: tint.color }}
             >
               {kindTag}
             </span>
-            <span className="min-w-0 break-all font-mono text-[11px] uppercase tracking-[0.08em] text-[var(--nb-graphite)]">
+            <span className="min-w-0 break-all font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-[var(--nb-graphite)]">
               {filename}
             </span>
           </span>
           {clientLabel || engagementCode ? (
-            <span className="mt-0.5 block font-mono text-[11px] uppercase tracking-[0.08em] text-[var(--nb-soft)]">
+            <span className="mt-0.5 block font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-[var(--nb-soft)]">
               {clientLabel ?? ""}
               {clientLabel && engagementCode ? " · " : ""}
               <span className="font-semibold text-[var(--nb-green)]">{engagementCode ?? ""}</span>
@@ -75,7 +75,7 @@ export function CardMetaTile({
           <span
             aria-hidden
             data-testid={`${testId}-avatar`}
-            className="grid h-5 w-5 shrink-0 place-items-center rounded-full text-[11px] font-semibold text-[var(--nb-white)]"
+            className="grid h-5 w-5 shrink-0 place-items-center rounded-full text-(length:--type-label) font-semibold text-[var(--nb-white)]"
             style={{ backgroundColor: avatarColor }}
           >
             {initials}

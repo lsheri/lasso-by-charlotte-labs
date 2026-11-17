@@ -38,7 +38,7 @@ export function UsesChips({
           );
         })}
       </div>
-      <p className="text-[13px] text-muted-foreground">{copy(USES_COPY.age)}</p>
+      <p className="text-(length:--type-body) text-muted-foreground">{copy(USES_COPY.age)}</p>
     </fieldset>
   );
 }

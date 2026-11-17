@@ -82,7 +82,7 @@ export function FirmMetricGrid({
       <SectionHeader
         title="How the workspace is being used"
         action={
-          <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-soft">
+          <span className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-soft">
             Last {data.window_days} days
           </span>
         }

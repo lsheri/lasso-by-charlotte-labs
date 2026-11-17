@@ -84,10 +84,10 @@ export function WorkspaceKindCard() {
         <div className="space-y-1">
           <Label className="text-sm text-foreground">{WORKSPACE_KIND_COPY.label}</Label>
           <p className="text-sm text-foreground">{business ? WORKSPACE_KIND_COPY.business : WORKSPACE_KIND_COPY.individual}</p>
-          <p className="text-[13px] text-muted-foreground">
+          <p className="text-(length:--type-body) text-muted-foreground">
             {business ? WORKSPACE_KIND_COPY.businessDescription : WORKSPACE_KIND_COPY.individualDescription}
           </p>
-          {business ? <p className="text-[13px] text-muted-foreground">{WORKSPACE_KIND_COPY.toIndividualConsequence}</p> : null}
+          {business ? <p className="text-(length:--type-body) text-muted-foreground">{WORKSPACE_KIND_COPY.toIndividualConsequence}</p> : null}
         </div>
         <Button type="button" variant="outline" disabled={busy} onClick={open}>
           {business ? WORKSPACE_KIND_COPY.toIndividual : WORKSPACE_KIND_COPY.toBusiness}

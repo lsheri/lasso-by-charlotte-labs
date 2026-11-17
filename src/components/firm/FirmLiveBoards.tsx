@@ -30,7 +30,7 @@ export function FirmLiveBoards({ profileId }: { profileId: string | undefined })
             <li key={board.id} className="flex flex-col gap-1 border-b border-[var(--nb-rule)] px-1 py-3">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <span className="text-[15px] font-medium text-foreground">{board.title}</span>
-                <span className="font-mono text-[11px] text-muted-foreground">
+                <span className="font-mono text-(length:--type-label) text-muted-foreground">
                   {[board.client, board.owner, `${board.pieces} ${board.pieces === 1 ? "piece" : "pieces"}`, board.sharedAt ? `shared ${formatDate(board.sharedAt)}` : null]
                     .filter(Boolean)
                     .join(" · ")}
