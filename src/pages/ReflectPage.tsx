@@ -419,7 +419,7 @@ export function ReflectPage({
                   <span className="block truncate text-sm text-foreground">
                     {session.title ?? "New session"}
                   </span>
-                  <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                  <span className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
                     {relative(session.updated_at)}
                   </span>
                 </button>
@@ -599,7 +599,7 @@ export function ReflectPage({
                  <p className="text-xs text-muted-foreground">
                    You can answer none of these. Reflections are yours, and no coach sees a draft.
                  </p>
-                 <p className="lasso-hand-voice font-hand text-[16px] text-green">
+                 <p className="lasso-hand-voice font-hand text-(length:--type-lead) text-green">
                    answer in a sentence, not a paragraph
                  </p>
               </div>
@@ -613,10 +613,10 @@ export function ReflectPage({
               the record tone in this system, and this card is a promise about
               where an answer goes, not something already on the record. */}
           <ToneCard tone="paper" label="WHERE THIS GOES">
-            <p className="text-[13px] leading-[19px] text-foreground">
+            <p className="text-(length:--type-body) leading-[19px] text-foreground">
               Your answers become the 1:1 prep, and nothing else.
             </p>
-            <p className="mt-1 text-[12px] leading-[18px] text-muted-foreground">
+            <p className="mt-1 text-(length:--type-small) leading-[18px] text-muted-foreground">
               A coach sees a reflection only when you send it.
             </p>
           </ToneCard>

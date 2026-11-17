@@ -79,8 +79,8 @@ function Badge({
     <span
       className={
         tone === "accent"
-          ? "rounded-full bg-accent-soft px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-foreground"
-          : "rounded-full bg-muted px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground"
+          ? "rounded-full bg-accent-soft px-2 py-0.5 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-foreground"
+          : "rounded-full bg-muted px-2 py-0.5 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground"
       }
     >
       {children}
@@ -245,7 +245,7 @@ function MembersConsole() {
               />
               <div className="overflow-x-auto">
                 <div className={business ? "min-w-[700px]" : "min-w-[560px]"}>
-                  <div className={`grid ${business ? "grid-cols-[minmax(220px,1.15fr)_140px_minmax(230px,1fr)_auto]" : "grid-cols-[minmax(220px,1.15fr)_minmax(230px,1fr)_auto]"} gap-4 border-b border-border px-2 pb-2 font-mono text-[10px] uppercase tracking-[0.08em] text-soft`}>
+                  <div className={`grid ${business ? "grid-cols-[minmax(220px,1.15fr)_140px_minmax(230px,1fr)_auto]" : "grid-cols-[minmax(220px,1.15fr)_minmax(230px,1fr)_auto]"} gap-4 border-b border-border px-2 pb-2 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-soft`}>
                     <span>Name</span>
                     {business ? <span>Role</span> : null}
                     <span>What they can see</span>
@@ -257,7 +257,7 @@ function MembersConsole() {
                       className={`grid min-h-16 ${business ? "grid-cols-[minmax(220px,1.15fr)_140px_minmax(230px,1fr)_auto]" : "grid-cols-[minmax(220px,1.15fr)_minmax(230px,1fr)_auto]"} items-center gap-4 border-b border-border px-2 py-3`}
                     >
                       <div className="flex min-w-0 items-center gap-3">
-                        <span className="flex size-7 shrink-0 items-center justify-center rounded-full border border-border bg-card font-mono text-[10px] text-foreground">
+                        <span className="flex size-7 shrink-0 items-center justify-center rounded-full border border-border bg-card font-mono text-(length:--type-label) text-foreground">
                           {initials(member.display_name)}
                         </span>
                         <div className="min-w-0">

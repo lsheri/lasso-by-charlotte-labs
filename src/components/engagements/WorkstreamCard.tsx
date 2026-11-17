@@ -114,7 +114,7 @@ export function WorkstreamCard({
                 aria-label="Change status"
                 disabled={pending || !isOwner}
                 onClick={openStatusMenu}
-                className="flex items-center gap-1 rounded-full border border-border bg-secondary px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground disabled:opacity-60"
+                className="flex items-center gap-1 rounded-full border border-border bg-secondary px-2 py-0.5 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground disabled:opacity-60"
               >
                 {WORKSTREAM_STATUS_LABELS[episode.status] ?? episode.status}
                 {isOwner ? <ChevronDown className="h-3 w-3" /> : null}

@@ -129,7 +129,7 @@ export function DecisionsPage() {
               variant={filter === item.id ? "secondary" : "outline"}
               aria-pressed={filter === item.id}
               onClick={() => { setFilter(item.id); setShown(DECISION_PAGE_SIZE); }}
-              className="rounded-full text-[11.5px]"
+              className="rounded-full text-(length:--type-small)"
             >
               {item.label}
             </Button>
@@ -155,7 +155,7 @@ export function DecisionsPage() {
                 <div className="absolute bottom-0 left-[116px] top-0 w-px bg-border" aria-hidden />
                 {groups.map((group) => (
                   <div key={group.label} className="relative grid grid-cols-[92px_24px_minmax(0,1fr)]">
-                    <h2 className="pt-1 text-right font-hand text-[16px] text-muted-foreground">{group.label}</h2>
+                    <h2 className="pt-1 text-right font-hand text-(length:--type-lead) text-muted-foreground">{group.label}</h2>
                     <div />
                     <div>
                       {group.rows.map((decision) => (
@@ -164,7 +164,7 @@ export function DecisionsPage() {
                             className={decision.status === "confirmed" ? "absolute -left-[18px] top-2 h-2.5 w-2.5 rounded-full bg-green" : "absolute -left-[18px] top-2 h-2.5 w-2.5 rounded-full border-[1.4px] border-green bg-background"}
                             aria-hidden
                           />
-                          <p className="mb-2 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">{entryDate(decision.created_at)}</p>
+                          <p className="mb-2 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">{entryDate(decision.created_at)}</p>
                           <DecisionLogRow
                             decision={decision}
                             onOpenSource={(id, focus) => { setSourceItem(id); setSourceFocus(focus); }}
@@ -184,11 +184,11 @@ export function DecisionsPage() {
                       <button
                         type="button"
                         onClick={() => setShown((count) => count + DECISION_PAGE_SIZE)}
-                        className="font-hand text-[16px] text-muted-foreground underline underline-offset-4 hover:text-foreground"
+                        className="font-hand text-(length:--type-lead) text-muted-foreground underline underline-offset-4 hover:text-foreground"
                       >
                         show earlier decisions
                       </button>
-                      <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
+                      <span className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
                         {hiddenCount} earlier
                       </span>
                     </div>
@@ -219,13 +219,13 @@ function DecisionRail({ counts }: { counts: ReturnType<typeof decisionCounts> })
         {stats.map(([value, caption]) => (
           <div key={caption} className="border-b border-border py-3 first:pt-0">
             <div className="font-serif text-[30px] leading-[34px] tabular-nums text-foreground">{value}</div>
-            <div className="font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">{caption}</div>
+            <div className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">{caption}</div>
           </div>
         ))}
       </div>
       <div className="rounded-[var(--radius-md)] border border-border bg-card p-4">
-        <h2 className="font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">Why the log exists</h2>
-        <p className="mt-3 text-[13px] leading-[19px] text-foreground">
+        <h2 className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">Why the log exists</h2>
+        <p className="mt-3 text-(length:--type-body) leading-[19px] text-foreground">
           A decision without its reasoning is just a fact. Six months from now, the reasoning is the part nobody can reconstruct. The log is not a record of being right, it is a record of what you knew.
         </p>
       </div>

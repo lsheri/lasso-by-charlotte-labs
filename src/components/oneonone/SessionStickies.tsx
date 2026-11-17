@@ -138,13 +138,13 @@ export function SessionStickies({ profileId, orgId }: { profileId: string; orgId
         aria-label="When is your next 1:1"
         value={dateValue}
         onChange={(event) => setDateValue(event.target.value)}
-        className="h-8 rounded-[var(--radius-control)] border border-[var(--nb-pencil)] bg-card px-2 font-mono text-[11px] text-foreground"
+        className="h-8 rounded-[var(--radius-control)] border border-[var(--nb-pencil)] bg-card px-2 font-mono text-(length:--type-label) text-foreground"
       />
       <button
         type="button"
         disabled={createSession.isPending || !dateValue}
         onClick={() => createSession.mutate(dateValue)}
-        className="font-hand text-[16px] text-green transition-opacity hover:opacity-70 disabled:opacity-60"
+        className="font-hand text-(length:--type-lead) text-green transition-opacity hover:opacity-70 disabled:opacity-60"
       >
         {createSession.isPending ? "adding…" : "add it"}
       </button>
@@ -154,7 +154,7 @@ export function SessionStickies({ profileId, orgId }: { profileId: string; orgId
   if (list.length === 0) {
     return (
       <section className="mb-8">
-        <p className="font-hand text-[16px] text-soft">when is your next one?</p>
+        <p className="font-hand text-(length:--type-lead) text-soft">when is your next one?</p>
         <div className="mt-2">{dateField}</div>
       </section>
     );
@@ -172,7 +172,7 @@ export function SessionStickies({ profileId, orgId }: { profileId: string; orgId
         <button
           type="button"
           onClick={() => setDateOpen((open) => !open)}
-          className="font-hand text-[16px] text-green transition-opacity hover:opacity-70"
+          className="font-hand text-(length:--type-lead) text-green transition-opacity hover:opacity-70"
         >
           + new 1:1
         </button>
@@ -187,7 +187,7 @@ export function SessionStickies({ profileId, orgId }: { profileId: string; orgId
               <button
                 type="button"
                 onClick={() => setSelected(row.id)}
-                className="w-full py-2 text-left font-mono text-[11px] uppercase tracking-[0.08em] text-soft transition-colors hover:text-foreground"
+                className="w-full py-2 text-left font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-soft transition-colors hover:text-foreground"
               >
                 {sessionDateLabel(row.held_on)}
               </button>
@@ -203,11 +203,11 @@ export function SessionStickies({ profileId, orgId }: { profileId: string; orgId
             style={{ backgroundColor: noteTint(index) }}
             className={`flex h-[180px] w-[220px] max-w-full flex-col justify-between rounded-[var(--radius-sm)] border border-[var(--nb-pencil)] p-3 ${noteTilt(note.id)} ${note.discussed ? "opacity-60" : ""}`}
           >
-            <p className="overflow-hidden whitespace-pre-wrap font-hand text-[18px] leading-[22px] text-foreground">
+            <p className="overflow-hidden whitespace-pre-wrap font-hand text-(length:--type-title) leading-[22px] text-foreground">
               {note.content}
             </p>
             <div className="flex items-center justify-between gap-2">
-              <label className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
+              <label className="flex items-center gap-2 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-soft">
                 <Checkbox
                   className="confirmation-tick"
                   checked={note.discussed}
@@ -219,7 +219,7 @@ export function SessionStickies({ profileId, orgId }: { profileId: string; orgId
               <button
                 type="button"
                 onClick={() => void removeNote(note.id)}
-                className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft transition-colors hover:text-foreground"
+                className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-soft transition-colors hover:text-foreground"
               >
                 remove
               </button>
@@ -242,15 +242,15 @@ export function SessionStickies({ profileId, orgId }: { profileId: string; orgId
                 if (text) addNote.mutate(text);
               }
             }}
-            className="h-full w-full resize-none bg-transparent font-hand text-[18px] leading-[22px] text-foreground outline-none placeholder:text-soft"
+            className="h-full w-full resize-none bg-transparent font-hand text-(length:--type-title) leading-[22px] text-foreground outline-none placeholder:text-soft"
           />
-          <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
+          <p className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-soft">
             <span aria-hidden>+ </span>
             Enter to pin it
           </p>
         </div>
       </div>
-      {landed.still ? <p className="mt-2 font-hand text-[16px] text-soft">{landed.reduced}</p> : null}
+      {landed.still ? <p className="mt-2 font-hand text-(length:--type-lead) text-soft">{landed.reduced}</p> : null}
     </section>
   );
 }

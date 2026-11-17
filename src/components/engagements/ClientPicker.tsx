@@ -146,7 +146,7 @@ export function ClientPicker({
             type="button"
             disabled={pending}
             onClick={() => void (renaming ? rename() : create())}
-            className="shrink-0 rounded-full border border-border bg-card px-3 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+            className="shrink-0 rounded-full border border-border bg-card px-3 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
           >
             {renaming ? "Save" : "Add"}
           </button>
@@ -216,7 +216,7 @@ export function ClientPicker({
             <button
               type="button"
               onClick={() => setCreating(splitByKind ? "client" : "folder")}
-              className="shrink-0 rounded-full border border-border bg-card px-3 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+              className="shrink-0 rounded-full border border-border bg-card px-3 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
             >
               {`New ${vocab.client.toLowerCase()}`}
             </button>
@@ -225,7 +225,7 @@ export function ClientPicker({
             <button
               type="button"
               onClick={() => setCreating("folder")}
-              className="shrink-0 rounded-full border border-border bg-card px-3 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+              className="shrink-0 rounded-full border border-border bg-card px-3 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
             >
               New folder
             </button>

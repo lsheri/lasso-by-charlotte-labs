@@ -183,7 +183,7 @@ export function PlansPage({ search = {} }: { search?: PlansSearch }) {
             Pick the one that sounds like you. It sets up your workspace and the words in it, and
             you can change it later.
           </p>
-          <p className="mt-5 inline-flex rounded-[var(--radius-pill)] border border-rule bg-grey-1 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em]">
+          <p className="mt-5 inline-flex rounded-[var(--radius-pill)] border border-rule bg-grey-1 px-3 py-1 font-mono text-(length:--type-label) uppercase tracking-[0.08em]">
             Everything is $0 while we pilot
           </p>
         </div>
@@ -194,12 +194,12 @@ export function PlansPage({ search = {} }: { search?: PlansSearch }) {
               key={plan.name}
               className={`flex min-w-0 flex-col border border-rule border-l-[3px] bg-card p-5 ${plan.edge}`}
             >
-              <p className="font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
+              <p className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
                 {plan.forLine}
               </p>
-              <h2 className="mt-3 font-sans text-[26px] font-semibold leading-tight">{plan.name}</h2>
+              <h2 className="mt-3 font-sans text-(length:--type-display) font-semibold leading-tight">{plan.name}</h2>
               <p className="mt-5 min-h-10 text-xl font-semibold">{plan.price}</p>
-              <p className="min-h-8 font-hand text-[16px] leading-5 text-green">{plan.note}</p>
+              <p className="min-h-8 font-hand text-(length:--type-lead) leading-5 text-green">{plan.note}</p>
               {"intent" in plan ? (
                 <Button
                   asChild

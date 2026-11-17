@@ -169,7 +169,7 @@ export function ArchiveChat({
       {showResults ? (
         <div className={`mt-5 ${skipped ? "is-skipped" : ""}`} data-testid="archive-results">
           <div className="flex items-center justify-between gap-3">
-            <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+            <span className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
               {state.line ?? "FROM PAST WORK"}
             </span>
             <div className="flex items-center gap-3">
@@ -178,7 +178,7 @@ export function ArchiveChat({
                   type="button"
                   data-testid="archive-back-to-results"
                   onClick={() => closeJourney()}
-                  className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground"
+                  className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground"
                 >
                   {ARCHIVE_BACK_LABEL}
                 </button>
@@ -188,7 +188,7 @@ export function ArchiveChat({
                   type="button"
                   data-testid="archive-skip"
                   onClick={() => setSkipped(true)}
-                  className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground"
+                  className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground"
                 >
                   {ARCHIVE_SKIP_LABEL}
                 </button>
@@ -200,7 +200,7 @@ export function ArchiveChat({
                   setState(null);
                   setSkipped(false);
                 }}
-                className="font-mono text-[11px] uppercase tracking-[0.08em] text-accent-deep"
+                className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-accent-deep"
               >
                 {ARCHIVE_BROWSE_PILE_LABEL}
               </button>
@@ -231,7 +231,7 @@ export function ArchiveChat({
                   />
                   <p
                     data-testid={`archive-why-${match.work_item_id}`}
-                    className="mt-1.5 font-mono text-[12px] text-muted-foreground"
+                    className="mt-1.5 font-mono text-(length:--type-small) text-muted-foreground"
                   >
                     {ARCHIVE_WHY_PREFIX}
                     {match.why}

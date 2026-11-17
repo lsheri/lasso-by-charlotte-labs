@@ -274,7 +274,7 @@ function AuditSurface({
         <div className="flex flex-1 items-center justify-center px-4 py-10">
           <div className="flex flex-col items-center gap-[18px]">
             <LassoThinkingMark kind="signature" size={64} thinking rope={false} />
-            <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-soft">Reading the record…</span>
+            <span className="font-mono text-(length:--type-label) uppercase tracking-[0.12em] text-soft">Reading the record…</span>
           </div>
         </div>
       ) : error || !data ? (

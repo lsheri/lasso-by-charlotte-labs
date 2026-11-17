@@ -43,14 +43,14 @@ export function SharedBoardPage({ token }: { token: string }) {
   }, [expiresAt, refetch]);
 
   if (query.isPending) {
-    return <Shell>{<p className="text-[13px] text-muted">Opening the board.</p>}</Shell>;
+    return <Shell>{<p className="text-(length:--type-body) text-muted">Opening the board.</p>}</Shell>;
   }
 
   if (!query.data || query.data.status === "closed") {
     return (
       <Shell>
-        <p className="text-[13px] text-foreground">{SHARE_CLOSED_MESSAGE}</p>
-        <p className="mt-1 text-[11.5px] text-muted">
+        <p className="text-(length:--type-body) text-foreground">{SHARE_CLOSED_MESSAGE}</p>
+        <p className="mt-1 text-(length:--type-small) text-muted">
           Ask the person who sent it for a new one.
         </p>
       </Shell>
@@ -60,8 +60,8 @@ export function SharedBoardPage({ token }: { token: string }) {
   return (
     <main className="flex h-dvh w-full flex-col bg-background">
       <header className="flex h-[52px] shrink-0 items-center justify-between border-b border-border bg-card px-4">
-        <span className="text-[13px] font-medium text-foreground">A shared board</span>
-        <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">
+        <span className="text-(length:--type-body) font-medium text-foreground">A shared board</span>
+        <span className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-soft">
           Read only
         </span>
       </header>

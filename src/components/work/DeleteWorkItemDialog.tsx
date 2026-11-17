@@ -126,11 +126,11 @@ export function DeleteWorkItemDialog({
         {sure ? (
           <div className="space-y-2">
             {boardCount > 0 ? (
-              <p className="font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
+              <p className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
                 On {boardCount} workboard{boardCount === 1 ? "" : "s"}
               </p>
             ) : null}
-            <p className="text-[13px] leading-[18px] text-foreground">{title}</p>
+            <p className="text-(length:--type-body) leading-[18px] text-foreground">{title}</p>
             <label className="block nb-type-small text-muted-foreground" htmlFor="delete-work-confirm">
               {DELETE_CONFIRM_LABEL}
             </label>

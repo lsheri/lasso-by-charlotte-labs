@@ -221,7 +221,7 @@ export function ShareWorkDialog({
                         type="button"
                         disabled={groupBusy || busyGroup !== null}
                         onClick={() => setConfirmGroup({ ...group })}
-                        className="rounded-full border border-accent bg-accent-soft px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-accent-deep transition-opacity disabled:opacity-50"
+                        className="rounded-full border border-accent bg-accent-soft px-3 py-1 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-accent-deep transition-opacity disabled:opacity-50"
                       >
                         {groupBusy ? "Sharing…" : `Share all ${unshared.length} with ${firstName}`}
                       </button>
@@ -247,21 +247,21 @@ export function ShareWorkDialog({
                               {engagementDisplayTitle(row)}
                             </span>
                             {meta.length > 0 ? (
-                              <span className="mt-0.5 block truncate font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                              <span className="mt-0.5 block truncate font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
                                 {meta.join(" · ")}
                               </span>
                             ) : null}
                           </div>
                           {shared ? (
                             <div className="flex shrink-0 items-center gap-2">
-                              <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+                              <span className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
                                 {busy ? "Saving…" : "Shared"}
                               </span>
                               <button
                                 type="button"
                                 disabled={busy}
                                 onClick={() => void toggleOne(row, false)}
-                                className="rounded-full border border-border px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
+                                className="rounded-full border border-border px-3 py-1 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
                               >
                                 Remove
                               </button>
@@ -274,7 +274,7 @@ export function ShareWorkDialog({
                           ellipse.fire(group.key);
                           void toggleOne(row, true);
                         }}
-                              className="shrink-0 rounded-full border border-accent bg-accent-soft px-4 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-accent-deep transition-opacity disabled:opacity-50"
+                              className="shrink-0 rounded-full border border-accent bg-accent-soft px-4 py-1 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-accent-deep transition-opacity disabled:opacity-50"
                             >
                               {busy ? "Saving…" : "Share"}
                             </button>

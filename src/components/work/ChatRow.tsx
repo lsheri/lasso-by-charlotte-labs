@@ -83,12 +83,12 @@ export function ChatRow({
         className="flex cursor-pointer items-baseline gap-4 py-2.5 transition-colors hover:bg-secondary/40"
       >
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[13px] leading-[18px] text-foreground">{displayName(item)}</p>
-          <p className="mt-0.5 flex min-w-0 items-center truncate font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
+          <p className="truncate text-(length:--type-body) leading-[18px] text-foreground">{displayName(item)}</p>
+          <p className="mt-0.5 flex min-w-0 items-center truncate font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
             {stamp}
           </p>
         </div>
-        <span className="shrink-0 font-mono text-[9px] uppercase tracking-[0.08em] text-soft">
+        <span className="shrink-0 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-soft">
           {when}
         </span>
       </div>

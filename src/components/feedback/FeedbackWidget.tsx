@@ -98,7 +98,7 @@ export function FeedbackDialog({ trigger }: { trigger: ReactNode }) {
                     key={c}
                     type="button"
                     onClick={() => setCategory(c)}
-                    className={`rounded-full border px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] transition-colors ${
+                    className={`rounded-full border px-3 py-1 font-mono text-(length:--type-label) uppercase tracking-[0.08em] transition-colors ${
                       category === c
                         ? "border-accent-deep bg-accent-soft text-accent-deep"
                         : "border-border bg-card text-muted-foreground hover:text-foreground"
@@ -166,7 +166,7 @@ export function FeedbackWidget() {
               borderLeftWidth: "3px",
               borderLeftColor: "var(--suggest-edge)",
             }}
-            className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 font-mono text-[11px] uppercase tracking-[0.08em] text-foreground shadow-card transition-colors hover:text-foreground"
+            className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-foreground shadow-card transition-colors hover:text-foreground"
           >
             <SuggestDot />
             <MessageSquare className="h-3.5 w-3.5" aria-hidden /> Feedback

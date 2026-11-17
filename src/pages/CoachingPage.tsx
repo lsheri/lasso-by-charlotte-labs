@@ -88,7 +88,7 @@ export function CoachingPage() {
           {subjects.length > 0 ? (
             <div className="overflow-x-auto">
               <div className="min-w-[720px]">
-                <div className="grid grid-cols-[minmax(180px,1fr)_minmax(190px,1.15fr)_minmax(210px,1.2fr)_130px] gap-4 border-b border-[var(--nb-pencil)] px-2 pb-2 font-mono text-[9px] uppercase tracking-[0.08em] text-soft">
+                <div className="grid grid-cols-[minmax(180px,1fr)_minmax(190px,1.15fr)_minmax(210px,1.2fr)_130px] gap-4 border-b border-[var(--nb-pencil)] px-2 pb-2 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-soft">
                   <span>Person</span>
                   <span>Workboard</span>
                   <span>Shared with you</span>
@@ -108,29 +108,29 @@ export function CoachingPage() {
                     className="grid min-h-[76px] w-full grid-cols-[minmax(180px,1fr)_minmax(190px,1.15fr)_minmax(210px,1.2fr)_130px] items-center gap-4 border-b border-[var(--nb-pencil)] px-2 py-3 text-left transition-colors hover:bg-accent-soft"
                   >
                     <span className="flex min-w-0 items-center gap-3">
-                      <span className="flex size-9 shrink-0 items-center justify-center rounded-full border-[1.2px] border-pencil bg-card font-mono text-[10px] tracking-[0.03em] text-foreground">
+                      <span className="flex size-9 shrink-0 items-center justify-center rounded-full border-[1.2px] border-pencil bg-card font-mono text-(length:--type-label) tracking-[0.03em] text-foreground">
                         {initials(subject.subject_name)}
                       </span>
                       <span className="min-w-0">
-                        <span className="block truncate text-[13px] font-semibold text-foreground">
+                        <span className="block truncate text-(length:--type-body) font-semibold text-foreground">
                           {subject.subject_name}
                         </span>
                         {multiOrg ? (
-                          <span className="mt-0.5 block truncate font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                          <span className="mt-0.5 block truncate font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
                             {subject.org_name}
                           </span>
                         ) : null}
                       </span>
                     </span>
                     <span className="min-w-0">
-                      <span className="block truncate text-[11.5px] font-medium text-foreground">
+                      <span className="block truncate text-(length:--type-small) font-medium text-foreground">
                         {subject.engagement_title}
                       </span>
-                      <span className="mt-0.5 block font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                      <span className="mt-0.5 block font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
                         {subject.engagement_code}
                       </span>
                     </span>
-                    <span className="min-w-0 text-[11.5px] leading-[17px] text-muted-foreground">
+                    <span className="min-w-0 text-(length:--type-small) leading-[17px] text-muted-foreground">
                       <span className="block">
                         {subject.access_level === "full_transcript"
                           ? "Full transcripts"
@@ -147,7 +147,7 @@ export function CoachingPage() {
                         </span>
                       ) : null}
                     </span>
-                    <span className="text-[11.5px] text-muted-foreground">
+                    <span className="text-(length:--type-small) text-muted-foreground">
                       {sinceLabel(subject.last_note_at)}
                     </span>
                   </button>

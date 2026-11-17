@@ -97,7 +97,7 @@ export function OverviewPage() {
       <CoachingLinkNotices />
 
       <div className="mb-2">
-        <Link to="/work" className="text-[11.5px] text-accent-deep hover:underline">
+        <Link to="/work" className="text-(length:--type-small) text-accent-deep hover:underline">
           Bring work in →
         </Link>
       </div>
@@ -109,7 +109,7 @@ export function OverviewPage() {
           <SectionHeader
             title="Waiting on you"
             action={
-              <Link to="/decisions" className="text-[11.5px] text-accent-deep hover:underline">
+              <Link to="/decisions" className="text-(length:--type-small) text-accent-deep hover:underline">
                 Open Your calls
               </Link>
             }
@@ -139,7 +139,7 @@ export function OverviewPage() {
                   {reviewLabel}
                 </Button>
               </div>
-              <p className="text-[11.5px] leading-[17px] text-muted-foreground">
+              <p className="text-(length:--type-small) leading-[17px] text-muted-foreground">
                 {copy("Lasso drafted these from your conversations. Nothing goes on the record until you say so.")}
               </p>
             </div>

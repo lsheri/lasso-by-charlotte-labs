@@ -46,13 +46,13 @@ export function FirmArchive() {
         action={
           <Link
             to="/archive"
-            className="font-mono text-[10px] uppercase tracking-[0.08em] text-accent-deep hover:opacity-70"
+            className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-accent-deep hover:opacity-70"
           >
             Open the archive
           </Link>
         }
       />
-      <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
+      <p className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-soft">
         {cards.length} shipped · across {clientCount} client{clientCount === 1 ? "" : "s"} ·{" "}
         {tracedFacts} checked at source
       </p>

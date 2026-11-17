@@ -145,10 +145,10 @@ export function HomeEngagementGrid({
                 className="block h-full rounded-[var(--radius-control)] border border-border bg-card p-3 transition-colors hover:border-foreground/40 focus:outline-none focus:ring-2 focus:ring-ring"
               >
               <HomeBoardPreview state={previews?.get(card.id) ?? { status: "loading" }} />
-              <p className="mt-3 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
+              <p className="mt-3 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
                 {card.clientLabel ?? card.code}
               </p>
-              <p className="mt-1 truncate text-[14px] leading-[1.4] text-foreground">{card.title}</p>
+              <p className="mt-1 truncate text-(length:--type-control) leading-[1.4] text-foreground">{card.title}</p>
               <p className="mt-1 text-xs leading-[1.5] text-muted-foreground">
                 {demo ? null : <span data-testid={`home-card-when-${card.id}`}>{lastOpenedLabel(card.lastViewedAt)}</span>}
                 {card.workCount === null ? null : (
@@ -177,10 +177,10 @@ export function HomeEngagementGrid({
             >
               {card.shared ? <span className="home-card-tab" aria-hidden="true">Shared</span> : null}
               <HomeBoardPreview state={previews?.get(card.id) ?? { status: "loading" }} />
-              <p className="mt-3 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
+              <p className="mt-3 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
                 {card.clientLabel ?? card.code}
               </p>
-              <p className="mt-1 truncate text-[14px] leading-[1.4] text-foreground">{card.title}</p>
+              <p className="mt-1 truncate text-(length:--type-control) leading-[1.4] text-foreground">{card.title}</p>
               <p className="mt-1 text-xs leading-[1.5] text-muted-foreground">
                 <span data-testid={`home-card-when-${card.id}`}>{lastOpenedLabel(card.lastViewedAt)}</span>
                 {card.workCount === null ? null : (

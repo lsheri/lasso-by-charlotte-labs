@@ -104,7 +104,7 @@ export function OneOnOneBrief({
     >
       <header className="shrink-0 border-b border-border px-6 pb-4 pt-6">
         <p className="micro-label micro-label-section">Prepare a 1:1</p>
-        <h2 className="page-title mt-1 text-[19px] leading-snug">{scopeLabel}</h2>
+        <h2 className="page-title mt-1 text-(length:--type-title) leading-snug">{scopeLabel}</h2>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           {ONEONONE_WINDOWS.map((option) => (
             <button
@@ -113,8 +113,8 @@ export function OneOnOneBrief({
               onClick={() => setDays(option)}
               className={
                 option === days
-                  ? "rounded-full bg-accent-soft px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-accent-deep"
-                  : "rounded-full border border-border bg-card px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+                  ? "rounded-full bg-accent-soft px-3 py-1 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-accent-deep"
+                  : "rounded-full border border-border bg-card px-3 py-1 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
               }
             >
               Last {option} days

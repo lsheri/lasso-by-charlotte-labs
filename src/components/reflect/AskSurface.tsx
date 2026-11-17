@@ -156,7 +156,7 @@ export function AnswerKeepControl({
         variant="outline"
         size="sm"
         onClick={() => keep(answer, "button")}
-        className={`nb-put-on-board h-8 rounded-l-[var(--radius-md)] border-graphite bg-background px-3 font-sans text-[13px] font-normal text-foreground shadow-none hover:border-graphite hover:bg-secondary focus-visible:z-10 ${canDrag ? "rounded-r-none" : "rounded-r-[var(--radius-md)]"}`}
+        className={`nb-put-on-board h-8 rounded-l-[var(--radius-md)] border-graphite bg-background px-3 font-sans text-(length:--type-body) font-normal text-foreground shadow-none hover:border-graphite hover:bg-secondary focus-visible:z-10 ${canDrag ? "rounded-r-none" : "rounded-r-[var(--radius-md)]"}`}
       >
         <GraphiteIcon name="example-board" size={16} />
         {keepLabel ?? <>{KEEP_ANSWER_LABEL}</>}
@@ -249,8 +249,8 @@ export function AskScopeChip({
       onClick={() => ask.setPickerOpen(!ask.pickerOpen)}
       className={
         block
-          ? "flex min-h-12 w-full items-center justify-between gap-2 border-t border-border bg-secondary/50 px-4 text-left font-mono text-[11px] uppercase tracking-[0.08em] text-accent-deep"
-          : "inline-flex max-w-full items-center gap-2 rounded-full bg-accent-soft px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-accent-deep"
+          ? "flex min-h-12 w-full items-center justify-between gap-2 border-t border-border bg-secondary/50 px-4 text-left font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-accent-deep"
+          : "inline-flex max-w-full items-center gap-2 rounded-full bg-accent-soft px-3 py-1 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-accent-deep"
       }
     >
       <span className="truncate">{label}</span>
@@ -443,7 +443,7 @@ export function MessagesTab({ ask, emptyActions, statusInTitle = false }: { ask:
     return (
       <span
         aria-hidden
-        className="grid size-7 shrink-0 place-items-center rounded-full border border-mid bg-grey-1 text-[11px] font-semibold text-mid"
+        className="grid size-7 shrink-0 place-items-center rounded-full border border-mid bg-grey-1 text-(length:--type-label) font-semibold text-mid"
       >
         {viewerInitial}
       </span>
@@ -455,10 +455,10 @@ export function MessagesTab({ ask, emptyActions, statusInTitle = false }: { ask:
     const dateTime = typeof time === "string" ? time : time.toISOString();
     return (
       <span className="nb-binder-line flex min-w-0 items-baseline gap-2">
-        <span className="font-sans text-[13px] font-semibold text-ink">
+        <span className="font-sans text-(length:--type-body) font-semibold text-ink">
           {assistant ? copy("Lasso") : "You"}
         </span>
-        <time className="text-[11px] text-soft" dateTime={dateTime} suppressHydrationWarning>
+        <time className="text-(length:--type-label) text-soft" dateTime={dateTime} suppressHydrationWarning>
           {shortTime(time)}
         </time>
       </span>
@@ -654,7 +654,7 @@ function HistoryTab({ ask, onTab }: { ask: AskLasso; onTab: (tab: AskTab) => voi
           ask.newSession();
           onTab("messages");
         }}
-        className="mb-2 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+        className="mb-2 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
       >
         New session
       </button>
@@ -680,7 +680,7 @@ function HistoryTab({ ask, onTab }: { ask: AskLasso; onTab: (tab: AskTab) => voi
               }`}
             >
               {row.title ?? "Untitled"}{" "}
-              <span className="font-mono text-[10px] uppercase tracking-[0.08em]">
+              <span className="font-mono text-(length:--type-label) uppercase tracking-[0.08em]">
                 {new Date(row.created_at).toLocaleDateString()}
               </span>
             </button>
@@ -690,7 +690,7 @@ function HistoryTab({ ask, onTab }: { ask: AskLasso; onTab: (tab: AskTab) => voi
               type="button"
               aria-expanded={expanded}
               onClick={() => setExpanded((v) => !v)}
-              className="mt-1 flex min-h-11 w-full items-center gap-1.5 rounded-[var(--radius-control)] border border-border px-3 text-left font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+              className="mt-1 flex min-h-11 w-full items-center gap-1.5 rounded-[var(--radius-control)] border border-border px-3 text-left font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
             >
               <GraphiteIcon
                 name="chevron-right"
@@ -774,7 +774,7 @@ export function AskComposer({
                   index === slash.index ? "bg-secondary text-foreground" : "text-muted-foreground"
                 }`}
               >
-                <span className="mr-1.5 font-mono text-[11px] text-muted-foreground">/</span>
+                <span className="mr-1.5 font-mono text-(length:--type-label) text-muted-foreground">/</span>
                 <span className="break-words">{task.name}</span>
               </button>
             ))}
@@ -908,7 +908,7 @@ export function AskComposer({
         </div>
         {compact && scopeLine ? <AskScopeLine ask={ask} workstream={slash.chosen} /> : null}
         {ask.queued !== null ? (
-          <p className="mt-1 flex items-center gap-2 text-[12px] text-muted-foreground" data-testid="ask-queued" role="status">
+          <p className="mt-1 flex items-center gap-2 text-(length:--type-small) text-muted-foreground" data-testid="ask-queued" role="status">
             {ASK_QUEUE_COPY.waiting}
             <button type="button" className="underline underline-offset-2" onClick={() => ask.cancelQueued()}>
               {ASK_QUEUE_COPY.cancel}
@@ -987,7 +987,7 @@ export function AskSurface({
             ) : (
               <>
                 <p className="micro-label micro-label-ai pr-12">{copy("Ask Lasso")}</p>
-                <h2 className="page-title mt-1 break-words text-[17px] leading-snug">
+                <h2 className="page-title mt-1 break-words text-(length:--type-lead) leading-snug">
                   {engagementTitle}
                 </h2>
                 <div className="mt-2">

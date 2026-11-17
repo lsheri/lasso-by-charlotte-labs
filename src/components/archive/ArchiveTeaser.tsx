@@ -18,12 +18,12 @@ export function ArchiveTeaser() {
   return (
     <section data-testid="archive-teaser" className="mt-8">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+        <h2 className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
           {ARCHIVE_TEASER_LABEL}
         </h2>
         <Link
           to="/archive"
-          className="font-mono text-[11px] uppercase tracking-[0.08em] text-accent-deep"
+          className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-accent-deep"
         >
           {ARCHIVE_BROWSE_LINK}
         </Link>

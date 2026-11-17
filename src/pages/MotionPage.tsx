@@ -31,27 +31,27 @@ function SceneCard({ scene }: { scene: MotionScene }) {
         {view ? (
           <div key={replayKey}>{view()}</div>
         ) : (
-          <p className="text-[11.5px] text-muted-foreground">
+          <p className="text-(length:--type-small) text-muted-foreground">
             This scene has no preview yet.
           </p>
         )}
       </div>
 
       <div>
-        <h2 className="text-[13px] font-medium text-foreground">{scene.name}</h2>
-        <p className="font-mono text-[10px] text-soft">{scene.id}</p>
+        <h2 className="text-(length:--type-body) font-medium text-foreground">{scene.name}</h2>
+        <p className="font-mono text-(length:--type-label) text-soft">{scene.id}</p>
       </div>
 
-      <p className="text-[11.5px] text-muted-foreground">{scene.source}</p>
-      <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
+      <p className="text-(length:--type-small) text-muted-foreground">{scene.source}</p>
+      <p className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-soft">
         {formatLoop(scene)}
       </p>
 
       <div>
-        <p className="micro-label text-[9px]">Renders in</p>
+        <p className="micro-label text-(length:--type-label)">Renders in</p>
         <ul className="mt-1 list-disc pl-4">
           {scene.placement.map((place) => (
-            <li key={place} className="text-[11.5px] text-muted-foreground">
+            <li key={place} className="text-(length:--type-small) text-muted-foreground">
               {place}
             </li>
           ))}

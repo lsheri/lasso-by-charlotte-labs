@@ -217,7 +217,7 @@ function JourneySurface({
             <ChaliceMark size={28} className="mt-1" />
             <div className="min-w-0">
               <p className="micro-label text-muted-foreground">{JOURNEY_TITLE}</p>
-              <h1 className="page-title mt-1 break-words text-[22px] leading-snug">
+              <h1 className="page-title mt-1 break-words text-(length:--type-title) leading-snug">
                 {engagementTitle}
               </h1>
             </div>
@@ -232,7 +232,7 @@ function JourneySurface({
                   skippable.current = false;
                   handoff.requestHandoff(HANDOFF_AFTER_SKIP_MS);
                 }}
-                className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+                className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
               >
                 Skip the story
               </button>
@@ -400,7 +400,7 @@ export function JourneySpine({
             setOwnSkipped(true);
             onSkip?.();
           }}
-          className="absolute right-0 top-0 z-10 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+          className="absolute right-0 top-0 z-10 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
         >
           Skip the story
         </button>
@@ -541,10 +541,10 @@ export function JourneySpine({
                         }
                       >
                         <button type="button" disabled={!stitch.to_item_id || !stitch.to_turn_no} onClick={() => { if (stitch.to_item_id && stitch.to_turn_no) onOpenRef?.(stitch.to_item_id, stitch.to_turn_no, stitch.quote ?? undefined); }} className={`${spanStatusClass(stitch.status)} block w-full rounded-md px-2 py-1.5 text-left disabled:cursor-default`}>
-                          <p className="text-[13px] leading-snug text-foreground">
+                          <p className="text-(length:--type-body) leading-snug text-foreground">
                             {stitch.quote ? `"${stitch.quote}"` : spanStatusPhrase(stitch.status)}
                           </p>
-                          <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                          <p className="mt-0.5 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
                             {[
                               spanStatusPhrase(stitch.status),
                               stitch.to_turn_no ? `turn ${stitch.to_turn_no}` : null,
@@ -615,14 +615,14 @@ function NodeCard({
           <span
             className={
               last
-                ? "page-title block break-words text-[17px] leading-snug"
+                ? "page-title block break-words text-(length:--type-lead) leading-snug"
                 : "block break-words text-sm font-medium text-foreground"
             }
           >
             {node.title}
           </span>
           {last ? <GraphiteRule className="mt-1 h-[6px] w-[140px] text-muted-foreground" /> : null}
-          <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+          <p className="mt-1 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
             {[
               node.typeLabel,
               node.date ? formatDate(node.date) : null,

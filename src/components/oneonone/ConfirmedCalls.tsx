@@ -14,8 +14,8 @@ export function ConfirmedCalls() {
 
   return (
     <section className="mt-10">
-      <p className="lasso-hand-voice font-hand text-[16px] text-soft">you confirm once, it travels with the work</p>
-      <h2 className="mt-1 font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
+      <p className="lasso-hand-voice font-hand text-(length:--type-lead) text-soft">you confirm once, it travels with the work</p>
+      <h2 className="mt-1 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-soft">
         Decisions you confirmed
       </h2>
       <div className="mt-4 flex flex-wrap gap-4">
@@ -24,11 +24,11 @@ export function ConfirmedCalls() {
             key={row.id}
             className={`w-[220px] max-w-full rounded-[var(--radius-sm)] border border-[var(--nb-pencil)] bg-[var(--nb-yellow-wash)] px-3 py-3 ${TILT[index % TILT.length]}`}
           >
-            <p className="font-hand text-[16px] leading-[20px] text-foreground">
+            <p className="font-hand text-(length:--type-lead) leading-[20px] text-foreground">
               {row.call_text ?? row.situation ?? "Untitled decision"}
             </p>
             {row.date_label ? (
-              <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
+              <p className="mt-2 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-soft">
                 {row.date_label}
               </p>
             ) : null}

@@ -50,8 +50,8 @@ export function ClientsSettingCard() {
       <div className="flex items-start justify-between gap-4 rounded-[var(--radius)] border border-border bg-card px-4 py-4 shadow-card">
         <div className="space-y-1">
           <Label htmlFor="use-clients" className="text-sm text-foreground">{CLIENTS_SETTING_COPY.label}</Label>
-          <p className="text-[13px] text-muted-foreground">{CLIENTS_SETTING_COPY.description}</p>
-          {on ? <p className="text-[13px] text-muted-foreground">{CLIENTS_SETTING_COPY.offConsequence}</p> : null}
+          <p className="text-(length:--type-body) text-muted-foreground">{CLIENTS_SETTING_COPY.description}</p>
+          {on ? <p className="text-(length:--type-body) text-muted-foreground">{CLIENTS_SETTING_COPY.offConsequence}</p> : null}
         </div>
         <Switch id="use-clients" checked={on} disabled={busy} onCheckedChange={(next) => void change(next)} />
       </div>

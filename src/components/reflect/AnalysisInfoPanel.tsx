@@ -29,7 +29,7 @@ export function AnalysisInfoPanel({
         aria-label={iconOnly ? "How this works" : undefined}
         title={iconOnly ? "How this works" : undefined}
         onClick={() => setOpen((prev) => !prev)}
-        className="inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+        className="inline-flex items-center gap-1 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
       >
         <Info className="h-3 w-3" aria-hidden />
         {iconOnly ? null : "How this works"}

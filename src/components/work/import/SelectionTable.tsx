@@ -135,7 +135,7 @@ export function SelectionTable({
           </button>
           <span
             data-testid="selection-counter"
-            className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground"
+            className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground"
           >
             {selected.size} of {conversations.length} selected
           </span>
@@ -145,7 +145,7 @@ export function SelectionTable({
       <div className="max-h-[45vh] overflow-y-auto rounded-[var(--radius)] border border-border bg-card">
         <table className="w-full text-left text-sm">
           <thead className="sticky top-0 bg-secondary">
-            <tr className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+            <tr className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
               <th className="w-10 px-3 py-2" scope="col">
                 <span className="sr-only">Include</span>
               </th>
@@ -180,19 +180,19 @@ export function SelectionTable({
                   {conv.warnings.map((warning) => (
                     <span
                       key={warning}
-                      className="ml-2 inline-block rounded-full border border-border bg-secondary px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.06em] text-muted-foreground"
+                      className="ml-2 inline-block rounded-full border border-border bg-secondary px-2 py-0.5 font-mono text-(length:--type-label) uppercase tracking-[0.06em] text-muted-foreground"
                     >
                       {warning}
                     </span>
                   ))}
                 </td>
-                <td className="px-3 py-2 font-mono text-[11px] text-muted-foreground">
+                <td className="px-3 py-2 font-mono text-(length:--type-label) text-muted-foreground">
                   {rangeLabel(conv)}
                 </td>
-                <td className="px-3 py-2 font-mono text-[11px] text-muted-foreground">
+                <td className="px-3 py-2 font-mono text-(length:--type-label) text-muted-foreground">
                   {conv.turns.length}
                 </td>
-                <td className="px-3 py-2 font-mono text-[11px] text-muted-foreground">
+                <td className="px-3 py-2 font-mono text-(length:--type-label) text-muted-foreground">
                   {conv.models.join(", ") || "Not set"}
                 </td>
               </tr>

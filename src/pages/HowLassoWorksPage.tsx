@@ -48,7 +48,7 @@ function SectionBlock({
 
   return (
     <section ref={ref} className="border-t border-[var(--nb-pencil)] pt-8">
-      <p className="micro-label text-[9px]">
+      <p className="micro-label text-(length:--type-label)">
         {String(index + 1).padStart(2, "0")} · {variant === "coach" ? "Coaching" : "Your work"}
       </p>
       <h2 className="section-title mt-2">{section.title}</h2>
@@ -135,7 +135,7 @@ export function HowLassoWorksPage() {
         ))}
 
         <section className="border-t border-[var(--nb-pencil)] pt-8">
-          <p className="micro-label text-[9px]">Next</p>
+          <p className="micro-label text-(length:--type-label)">Next</p>
           <p className="mt-2 text-sm text-muted-foreground">{guide.next.note}</p>
           <Link
             to={guide.next.to as never}

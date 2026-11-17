@@ -62,8 +62,8 @@ function Chip({
     <span
       className={
         tone === "accent"
-          ? "inline-block rounded-full bg-accent-soft px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.08em] text-foreground"
-          : "inline-block rounded-full border border-pencil bg-secondary px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground"
+          ? "inline-block rounded-full bg-accent-soft px-2 py-0.5 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-foreground"
+          : "inline-block rounded-full border border-pencil bg-secondary px-2 py-0.5 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground"
       }
     >
       {children}
@@ -197,7 +197,7 @@ export function PeekBody({
         {!analysesInHeader ? (
           <div className="mt-2 flex items-start gap-2.5">
             <TypeIcon item={active} />
-            <h2 className="page-title flex min-w-0 flex-wrap items-center gap-1.5 break-words text-[19px] leading-snug">
+            <h2 className="page-title flex min-w-0 flex-wrap items-center gap-1.5 break-words text-(length:--type-title) leading-snug">
               <SourceMark item={active} size={15} />
               <span className="min-w-0 break-words">{displayName(active)}</span>
               <ArtifactNote item={active} />
@@ -209,7 +209,7 @@ export function PeekBody({
             <Chip tone="accent">The brief</Chip>
           </p>
         ) : null}
-        <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
+        <p className="mt-1 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
           {sourceLabel(active.source)} · {formatDate(effectiveWorkDate(active))}
         </p>
         <p className="mt-1">

@@ -50,14 +50,14 @@ export function LabPaper({
         <div className={cn("canvas-lab-paper-header shrink-0", selected && "canvas-lab-context-header")}>
           <span className="canvas-lab-paper-source">
             <GraphiteIcon name={nodeIcon(node)} size={13} animate={false} />
-            <span className="min-w-0 shrink overflow-hidden text-ellipsis whitespace-nowrap font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">{node.typeLabel}</span>
-            {node.deliverable ? <span className="shrink-0 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">Deliverable</span> : null}
+            <span className="min-w-0 shrink overflow-hidden text-ellipsis whitespace-nowrap font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">{node.typeLabel}</span>
+            {node.deliverable ? <span className="shrink-0 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">Deliverable</span> : null}
           </span>
-          {node.linkedItemRemovedAt ? <span className="shrink-0 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">Item deleted</span> : null}
-          {showOwnership ? <span className="shrink-0 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">{ownerLabel(node)}</span> : null}
+          {node.linkedItemRemovedAt ? <span className="shrink-0 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">Item deleted</span> : null}
+          {showOwnership ? <span className="shrink-0 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">{ownerLabel(node)}</span> : null}
         </div>
 
-        <p className={cn("canvas-lab-paper-title shrink-0 font-hand text-[16px] leading-[18px] text-foreground", selected && "canvas-lab-context-title")}>{node.title}</p>
+        <p className={cn("canvas-lab-paper-title shrink-0 font-hand text-(length:--type-lead) leading-[18px] text-foreground", selected && "canvas-lab-context-title")}>{node.title}</p>
 
         {node.local ? (
           <textarea
@@ -72,9 +72,9 @@ export function LabPaper({
           <p className={cn("canvas-lab-paper-summary nb-type-small leading-[17px] text-muted-foreground", tier === "compact" ? "line-clamp-2" : "line-clamp-3")}>{node.summary}</p>
         ) : null}
 
-        {selected ? <span className="mt-auto block font-hand text-[13px] leading-none text-[var(--nb-green)]">in context</span> : null}
+        {selected ? <span className="mt-auto block font-hand text-(length:--type-body) leading-none text-[var(--nb-green)]">in context</span> : null}
         {node.deliverable && onOpenTrail ? (
-          <button type="button" data-testid="lab-what-fed-this" aria-label={`What fed ${node.title}`} onPointerDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); onOpenTrail(); }} className={cn("mt-auto self-start font-mono text-[9px] uppercase tracking-[0.08em] text-[var(--nb-green)] underline-offset-2 hover:underline", "opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100", selected && "opacity-100")}>What fed this</button>
+          <button type="button" data-testid="lab-what-fed-this" aria-label={`What fed ${node.title}`} onPointerDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); onOpenTrail(); }} className={cn("mt-auto self-start font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-[var(--nb-green)] underline-offset-2 hover:underline", "opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100", selected && "opacity-100")}>What fed this</button>
         ) : null}
       </div>
     </div>

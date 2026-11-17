@@ -484,7 +484,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
             {/* Figma 36:1936 leads with a hand breadcrumb back to the pile, not a
                 mono identifier stamp. The code, client and term move onto the
                 trail so nothing is lost. */}
-            <p className="font-hand mb-1 text-[16px] italic text-muted-foreground">
+            <p className="font-hand mb-1 text-(length:--type-lead) italic text-muted-foreground">
               <Link to="/work" className="underline-offset-2 hover:underline">
                 All work
               </Link>
@@ -500,7 +500,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
             {sharedBy ? <p className="nb-shared-ink mt-1.5 text-base">Shared by {sharedBy}</p> : null}
             {/* Not `page-subtitle`: that utility is mono/700/uppercase, which turns
                 Figma's quiet sentence into a shouty label. */}
-            <p className="mt-1.5 text-[13px] leading-[19px] text-muted-foreground">
+            <p className="mt-1.5 text-(length:--type-body) leading-[19px] text-muted-foreground">
               <EngagementStats engagementId={engagement.id} tasks={tasksQuery.data ?? []} />
             </p>
             <DemoPresetsAdmin engagementId={engagement.id} />
@@ -525,7 +525,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
             )}
           >
             <span className="micro-label">BRIEF & COMMS</span>
-            <span className="text-[11px] italic text-muted-foreground">what were we asked for?</span>
+            <span className="text-(length:--type-label) italic text-muted-foreground">what were we asked for?</span>
             {view !== "brief" ? (
               <span
                 className={cn(
@@ -548,7 +548,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
             )}
           >
             <span className="micro-label">WORK</span>
-            <span className="text-[11px] italic text-muted-foreground">what is here, and in what order?</span>
+            <span className="text-(length:--type-label) italic text-muted-foreground">what is here, and in what order?</span>
             {view !== "work" ? (
               <span
                 className={cn(
@@ -572,7 +572,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           >
             {/* The "verify" key is historical; Canvas is the truthful label. */}
             <span className="micro-label">CANVAS</span>
-            <span className="text-[11px] italic text-muted-foreground">what fed what?</span>
+            <span className="text-(length:--type-label) italic text-muted-foreground">what fed what?</span>
             {view !== "verify" ? (
               <span
                 className={cn(
@@ -595,7 +595,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
             )}
           >
             <span className="micro-label">SHARE</span>
-            <span className="text-[11px] italic text-muted-foreground">who else can see this?</span>
+            <span className="text-(length:--type-label) italic text-muted-foreground">who else can see this?</span>
             {view !== "share" ? (
               <span
                 className={cn(
@@ -616,7 +616,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           to="/engagements/$id/canvas-lab"
           params={{ id: engagementId }}
           search={{ from: "header" }}
-          className="mb-2 shrink-0 font-hand text-[16px] text-green underline-offset-2 hover:underline md:hidden"
+          className="mb-2 shrink-0 font-hand text-(length:--type-lead) text-green underline-offset-2 hover:underline md:hidden"
         >
           Workboard
         </Link>
@@ -787,13 +787,13 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
                   <div className="rounded-lg border border-graphite bg-card p-5">
                     <p className="micro-label">WHAT IS NOT HERE YET</p>
                     {showCallsLine ? (
-                      <p className="mt-2 text-[13px] text-muted-foreground">
+                      <p className="mt-2 text-(length:--type-body) text-muted-foreground">
                         No calls or transcripts have been brought into this workboard. When they are,
                         what was asked for and what is still unanswered can be read from them.
                       </p>
                     ) : null}
                     {showBriefLine ? (
-                      <p className="mt-2 text-[13px] text-muted-foreground">
+                      <p className="mt-2 text-(length:--type-body) text-muted-foreground">
                         A document or a thread marked as the brief appears here alongside the written one.
                       </p>
                     ) : null}
@@ -804,8 +804,8 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           ) : view === "verify" ? (
             <div className="space-y-3">
               <div className="border-b border-[var(--nb-rule)] pb-3">
-                <h2 className="font-hand text-[16px] text-green">Workboard</h2>
-                <p className="text-[13px] text-muted-foreground">
+                <h2 className="font-hand text-(length:--type-lead) text-green">Workboard</h2>
+                <p className="text-(length:--type-body) text-muted-foreground">
                   Arrange this workboard&apos;s work, calls and judgment on one board. Changes save as you go.
                 </p>
                 <div className="mt-2">
@@ -835,7 +835,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
             <div className="space-y-6">
               <div className="rounded-lg border border-graphite bg-card p-6">
                 <h2 className="micro-label micro-label-section">Sharing</h2>
-                <p className="mt-2 text-[13px] text-muted-foreground">
+                <p className="mt-2 text-(length:--type-body) text-muted-foreground">
                   Sharing is managed by the firm.
                 </p>
               </div>

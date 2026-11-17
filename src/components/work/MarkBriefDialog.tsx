@@ -181,7 +181,7 @@ function ChoiceRow({
       } ${indent ? "ml-4" : ""}`}
     >
       <span className="min-w-0 truncate">{label}</span>
-      <span className="shrink-0 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+      <span className="shrink-0 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
         {selected ? "Current brief" : (note ?? "")}
       </span>
     </button>

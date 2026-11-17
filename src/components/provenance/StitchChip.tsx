@@ -89,7 +89,7 @@ export function StitchChip({
           <ChatUrlLink item={{ source_meta: { url: stitch.to_item_url } } as never} />
         ) : null}
         {stitch.asked_by_name ? (
-          <span className="text-[11px] text-muted-foreground">Asked by {stitch.asked_by_name}</span>
+          <span className="text-(length:--type-label) text-muted-foreground">Asked by {stitch.asked_by_name}</span>
         ) : null}
       </div>
     </div>

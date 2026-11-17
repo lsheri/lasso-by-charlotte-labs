@@ -29,7 +29,7 @@ export function FromYourPeopleGroup({
       <div className={headless ? "flex flex-col gap-0.5" : "mt-2 flex flex-col gap-0.5"}>
         {groups.map((group) => (
           <div key={group.sharedBy}>
-            <div className="truncate px-2 py-1 font-mono text-[13px] text-muted-foreground">{group.sharedBy}</div>
+            <div className="truncate px-2 py-1 font-mono text-(length:--type-body) text-muted-foreground">{group.sharedBy}</div>
             {group.boards.map((board) => (
               <Link
                 key={board.link_id}
@@ -43,7 +43,7 @@ export function FromYourPeopleGroup({
                   <GraphiteIcon name="members" size={16} animate={false} />
                 </span>
                 <span className="truncate">{board.title}</span>
-                <span className="ml-auto shrink-0 font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{SHARE_UP_COPY.readerTag}</span>
+                <span className="ml-auto shrink-0 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-soft">{SHARE_UP_COPY.readerTag}</span>
               </Link>
             ))}
           </div>

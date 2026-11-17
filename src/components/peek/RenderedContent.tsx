@@ -138,7 +138,7 @@ function TextPane({
       <p className="text-xs text-muted-foreground">
         Text extracted from the original file. Layout and images are not shown.
       </p>
-      <pre className="mt-2 max-h-[70vh] overflow-auto whitespace-pre-wrap rounded-[var(--radius)] border border-border bg-secondary px-4 py-3 text-[13px] leading-relaxed">
+      <pre className="mt-2 max-h-[70vh] overflow-auto whitespace-pre-wrap rounded-[var(--radius)] border border-border bg-secondary px-4 py-3 text-(length:--type-body) leading-relaxed">
         {pane.text}
       </pre>
       {onDownload ? (
@@ -372,7 +372,7 @@ function StandardRenderedContent({
     return (
       <div>
         <p className="micro-label mb-2">{shape.language ?? "code"}</p>
-        <pre className="overflow-x-auto rounded-[var(--radius)] border border-border bg-secondary px-4 py-3 font-mono text-[13px] leading-relaxed">
+        <pre className="overflow-x-auto rounded-[var(--radius)] border border-border bg-secondary px-4 py-3 font-mono text-(length:--type-body) leading-relaxed">
           <code dangerouslySetInnerHTML={{ __html: rendered }} />
         </pre>
       </div>

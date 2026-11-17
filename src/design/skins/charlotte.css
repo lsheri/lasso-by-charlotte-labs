@@ -19,6 +19,7 @@
   --ch-wash:#EEF4F8;
   --ch-muted:#55697A;
   --ch-faint:#73859A;
+  --ch-faint-text:#5c6e80; /* A1, 17 Nov: muted text, 5.06:1 on page, 4.74:1 on wash; --ch-faint stays for marks */
   --ch-navy-wash:#e7eaed; /* navy at 10% on white */
   --ch-sunk-2:#e2e6e8; /* navy at 10% on page */
   --ch-hairline:#d9dee0; /* navy at 14% on page */
@@ -32,7 +33,7 @@
 
   --text-primary:var(--ch-navy);
   --text-secondary:var(--ch-muted);
-  --text-muted:var(--ch-faint);
+  --text-muted:var(--ch-faint-text);
   --text-on-inverse:var(--ch-page);
 
   --line-hairline:var(--ch-hairline);
@@ -59,6 +60,7 @@
   --state-on-record:var(--ch-navy);
   --wrap-mark:var(--ch-navy);
   --selection:var(--ch-navy-wash);
+  --select-ring:var(--ch-navy);
   --live:var(--ch-lime);
   --icon-ink:currentColor;
   --icon-ink-active:var(--ch-navy);
@@ -100,6 +102,7 @@
   --neutral-30:var(--ch-hairline);
   --neutral-40:var(--ch-pencil);
   --neutral-50:var(--ch-faint);
+  --neutral-55:var(--ch-faint-text);
   --neutral-60:var(--ch-muted);
   --neutral-80:#24384e;
   --neutral-95:var(--ch-navy);
@@ -215,7 +218,7 @@
 }
 [data-skin="charlotte"] [data-lasso="on"] .canvas-lab-stage[data-board-hue] > .canvas-lab-frame[data-region] > div:first-child > h2 {
   font-family:var(--font-sans);
-  font-size:13px;
+  font-size:var(--type-body);
   font-weight:600;
   color:var(--text-primary) !important;
 }

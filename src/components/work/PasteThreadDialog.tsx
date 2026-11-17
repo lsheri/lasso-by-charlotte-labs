@@ -158,8 +158,8 @@ export function PasteThreadDialog({
                     onClick={() => setSource(value)}
                     className={
                       source === value
-                        ? "flex-1 rounded-[calc(var(--radius)-4px)] border border-border bg-card px-2 py-1.5 font-mono text-[11px] uppercase tracking-[0.1em] text-foreground"
-                        : "flex-1 rounded-[calc(var(--radius)-4px)] px-2 py-1.5 font-mono text-[11px] uppercase tracking-[0.1em] text-muted-foreground transition-colors hover:text-foreground"
+                        ? "flex-1 rounded-[calc(var(--radius)-4px)] border border-border bg-card px-2 py-1.5 font-mono text-(length:--type-label) uppercase tracking-[0.1em] text-foreground"
+                        : "flex-1 rounded-[calc(var(--radius)-4px)] px-2 py-1.5 font-mono text-(length:--type-label) uppercase tracking-[0.1em] text-muted-foreground transition-colors hover:text-foreground"
                     }
                   >
                     {value}

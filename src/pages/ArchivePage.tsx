@@ -103,7 +103,7 @@ export function ArchivePage() {
             <ArchiveSpine groups={groups} hidden={searching} />
           )}
         </div>
-        <p className="lasso-hand-voice mt-6 font-hand text-[16px] text-green">closed, not gone</p>
+        <p className="lasso-hand-voice mt-6 font-hand text-(length:--type-lead) text-green">closed, not gone</p>
       </section>
 
       <ArchivedSection />
@@ -113,7 +113,7 @@ export function ArchivePage() {
           ASK PAST WORK
         </h2>
 
-        <p className="mt-2 text-[13px] text-muted-foreground">
+        <p className="mt-2 text-(length:--type-body) text-muted-foreground">
           Describe what you are working on and find shipped work like it.
         </p>
         <PastWorkSearch />
@@ -121,7 +121,7 @@ export function ArchivePage() {
         {!guest && (
           <>
             <div className="my-4 border-t border-rule" />
-            <p className="text-[13px] text-muted-foreground">
+            <p className="text-(length:--type-body) text-muted-foreground">
               Or ask how the firm does something, and read the answer out of shipped work.
             </p>
             <ArchiveChat cards={cards} onResultsChange={onResultsChange} />

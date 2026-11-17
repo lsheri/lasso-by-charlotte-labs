@@ -86,22 +86,22 @@ export function ArchivedSection() {
         {ARCHIVED_SECTION_COPY.heading}
       </h2>
       {loading ? (
-        <p className="mt-2 text-[13px] text-muted-foreground">{ARCHIVED_SECTION_COPY.loading}</p>
+        <p className="mt-2 text-(length:--type-body) text-muted-foreground">{ARCHIVED_SECTION_COPY.loading}</p>
       ) : rows.length === 0 ? (
-        <p className="mt-2 text-[13px] text-muted-foreground">{ARCHIVED_SECTION_COPY.empty}</p>
+        <p className="mt-2 text-(length:--type-body) text-muted-foreground">{ARCHIVED_SECTION_COPY.empty}</p>
       ) : (
         <ul className="mt-2 divide-y divide-rule rounded-lg border border-graphite bg-card">
           {rows.map((row) => (
             <li key={`${row.kind}-${row.id}`} data-testid="archived-row" className="flex items-center gap-3 px-4 py-2.5">
               <div className="min-w-0 flex-1">
-                <p className="truncate text-[13px] text-foreground">{row.name}</p>
+                <p className="truncate text-(length:--type-body) text-foreground">{row.name}</p>
                 <p className="nb-type-small text-muted-foreground">
                   {kindLabel(row.kind)} · {ARCHIVED_SECTION_COPY.archivedAgo(daysSince(row.archivedAt))}
                 </p>
               </div>
               <button
                 type="button"
-                className="nb-pencil-cta shrink-0 rounded-md px-3 py-1 text-[13px]"
+                className="nb-pencil-cta shrink-0 rounded-md px-3 py-1 text-(length:--type-body)"
                 onClick={() => void bringBack(row)}
               >
                 {CONTAINER_ACTIONS_COPY.bringBack}

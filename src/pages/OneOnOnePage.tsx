@@ -93,7 +93,7 @@ export function OneOnOnePage() {
             <Button type="button" variant="ink" disabled aria-disabled="true">
               Send to your coach
             </Button>
-            <p className="lasso-hand-voice font-hand text-[16px] text-soft">sending comes after the pilot</p>
+            <p className="lasso-hand-voice font-hand text-(length:--type-lead) text-soft">sending comes after the pilot</p>
           </div>
         </aside>
       </div>

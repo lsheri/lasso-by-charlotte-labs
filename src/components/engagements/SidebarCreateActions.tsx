@@ -89,7 +89,7 @@ export function SidebarCreateActions({ empty, creating: creatingProp, onCreating
           type="button"
           disabled={pending}
           onClick={() => void submit()}
-          className="shrink-0 rounded-full border border-border bg-card px-3 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+          className="shrink-0 rounded-full border border-border bg-card px-3 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
         >
           Add
         </button>

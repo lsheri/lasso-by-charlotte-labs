@@ -121,7 +121,7 @@ export function useRowMenuParts({ item, onFluency, engagementId, onRemoved }: Ro
           onSelect={() => setRemoveOpen(true)}
         >
           <span>{REMOVE_LABEL}</span>
-          <span className="text-[11px] text-muted-foreground">{REMOVE_HELP}</span>
+          <span className="text-(length:--type-label) text-muted-foreground">{REMOVE_HELP}</span>
         </DropdownMenuItem>
       ) : null}
       {owned ? (

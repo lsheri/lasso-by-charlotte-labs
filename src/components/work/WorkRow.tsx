@@ -107,7 +107,7 @@ export function WorkRow({
         />}
 
         {cardWidth === undefined && contentsUnread(item.meta as never) ? (
-          <p className="mt-1 text-[11px] text-muted-foreground">{UNREAD_MARKER_LINE}</p>
+          <p className="mt-1 text-(length:--type-label) text-muted-foreground">{UNREAD_MARKER_LINE}</p>
         ) : null}
         {footer ? <div className="mt-2">{footer}</div> : null}
       </div>
@@ -173,13 +173,13 @@ export function WorkRow({
           <div className="flex flex-wrap items-center gap-1.5">
             <TypeBadge item={item} className="mt-1" size={nested ? "sm" : "md"} />
             {state === "private" ? (
-              <span className="mt-1 inline-flex items-center gap-1 rounded-full border border-border bg-secondary px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+              <span className="mt-1 inline-flex items-center gap-1 rounded-full border border-border bg-secondary px-2 py-0.5 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
                 <Lock className="h-2.5 w-2.5" aria-hidden />
                 Private
               </span>
             ) : null}
             {item.content_fidelity === "summary" ? (
-              <span className="mt-1 inline-block rounded-full border border-border bg-secondary px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+              <span className="mt-1 inline-block rounded-full border border-border bg-secondary px-2 py-0.5 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
                 Summary
               </span>
             ) : null}
@@ -198,7 +198,7 @@ export function WorkRow({
                 : ""}
             </p>
           ) : null}
-          <p className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 break-words font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+          <p className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 break-words font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
             <span>{workIdentityLabel(item)}</span>
             <span aria-hidden>·</span>
             <VendorMark item={item} />

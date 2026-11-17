@@ -30,12 +30,12 @@ function SourceRow({ source, onOpen }: { source: ContextSource; onOpen: () => vo
       >
         {source.title}
       </button>
-      <span className="shrink-0 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+      <span className="shrink-0 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
         {identity.label}
       </span>
       {source.source_vendor ? (
         <span
-          className="shrink-0 rounded-full border px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em]"
+          className="shrink-0 rounded-full border px-1.5 py-0.5 font-mono text-(length:--type-label) uppercase tracking-[0.08em]"
           style={
             vendorStyles
               ? {
@@ -67,7 +67,7 @@ export function AnswerSources({ sources }: { sources: ContextSource[] }) {
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        className="inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+        className="inline-flex items-center gap-1 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
       >
         <ChevronRight
           className={

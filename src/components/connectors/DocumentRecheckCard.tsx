@@ -40,7 +40,7 @@ export function DocumentRecheckCard() {
         className="mt-0.5"
       />
       <span className="min-w-0 flex-1">
-        <span className="block text-[13px] font-medium text-foreground">
+        <span className="block text-(length:--type-body) font-medium text-foreground">
           {copy("Let Lasso check connected documents for new versions")}
         </span>
         <span className="mt-0.5 block nb-type-small leading-[17px] text-muted-foreground">

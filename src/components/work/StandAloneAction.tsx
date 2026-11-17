@@ -41,7 +41,7 @@ export function StandAloneAction({
         event.stopPropagation();
         void set(lift);
       }}
-      className={`shrink-0 font-mono text-[9px] uppercase tracking-[0.08em] text-accent-deep transition-opacity hover:opacity-70 disabled:opacity-50 ${className}`}
+      className={`shrink-0 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-accent-deep transition-opacity hover:opacity-70 disabled:opacity-50 ${className}`}
     >
       {lift ? STAND_ALONE_LABEL : PUT_BACK_LABEL}
     </button>

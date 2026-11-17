@@ -57,9 +57,9 @@ export function PartnerSharedBoardPage({ boardId }: { boardId: string }) {
   }
   return (
     <div className="mx-auto max-w-5xl p-6">
-      <h1 className="font-serif text-[26px] text-foreground">{board.title}</h1>
-      <p className="mt-1 text-[13px] text-muted-foreground">{SHARED_BOARD_COPY.sharedBy(board.shared_by)}</p>
-      <p className="mt-1 text-[13px] text-muted-foreground" data-testid="shared-board-live">{SHARE_UP_COPY.readerLine}</p>
+      <h1 className="font-serif text-(length:--type-display) text-foreground">{board.title}</h1>
+      <p className="mt-1 text-(length:--type-body) text-muted-foreground">{SHARED_BOARD_COPY.sharedBy(board.shared_by)}</p>
+      <p className="mt-1 text-(length:--type-body) text-muted-foreground" data-testid="shared-board-live">{SHARE_UP_COPY.readerLine}</p>
       <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {(pieces.data ?? []).map((item) => (
           <WorkNote key={item.id} item={item} parent={item.type !== "ai_thread" && item.orig_conversation_id ? pieces.data?.find((candidate) => candidate.type === "ai_thread" && candidate.orig_conversation_id === item.orig_conversation_id && candidate.owner_id === item.owner_id) : undefined} />

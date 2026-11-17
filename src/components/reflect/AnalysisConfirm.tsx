@@ -262,7 +262,7 @@ export function AnalysisConfirm({
     <Dialog open onOpenChange={(next) => (next ? undefined : onCancel())}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="page-title text-[19px]">{preset.label}</DialogTitle>
+          <DialogTitle className="page-title text-(length:--type-title)">{preset.label}</DialogTitle>
           <DialogDescription>{readingLine}</DialogDescription>
         </DialogHeader>
 

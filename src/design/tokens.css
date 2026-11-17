@@ -3,7 +3,7 @@
 :root {
   --neutral-00:#ffffff; --neutral-05:#fcfcfa; --neutral-10:#f6f6f3;
   --neutral-20:#f0f0ed; --neutral-30:#e2e2dd; --neutral-40:#bcbcb6;
-  --neutral-50:#8f8f8a; --neutral-60:#5e5e5a; --neutral-80:#2b2b29;
+  --neutral-50:#8f8f8a; --neutral-55:#6c6c68; --neutral-60:#5e5e5a; --neutral-80:#2b2b29;
   --neutral-95:#0a0a0a;
 
   --acid-100:#c8ff00; --acid-60:#dcff66; --acid-20:#f0ffc2; --acid-ink:#3d4d00;
@@ -19,7 +19,8 @@
 
   --text-primary:var(--neutral-95);
   --text-secondary:var(--neutral-60);
-  --text-muted:var(--neutral-50);
+  /* A1, 17 Nov: muted text reads its own step so it passes 4.5:1 (5.13 on page, 4.87 on sunk, 4.62 on sunk-2); --neutral-50 stays for pencil lines. */
+  --text-muted:var(--neutral-55);
   --text-on-inverse:var(--neutral-05);
   --text-on-acid:var(--neutral-95);
 
@@ -162,13 +163,28 @@
    the product. SketchRow resolves --text-sm to Tailwind's 14px instead of
    the mirror's 13px. That 1px is accepted and recorded. */
 :root {
-  --text-micro:9px;
-  --text-mini:10.5px;
+  --text-micro:11px; /* T2, 17 Nov: was 9px; the type floor is 11px */
+  --text-mini:11px; /* T2, 17 Nov: was 10.5px */
   --text-md:16px;
 
   --font-display:"Instrument Sans", ui-sans-serif, system-ui, sans-serif;
 
   --focus-ring:var(--focus-ring-new);
+}
+
+/* Type scale, option B "readable floor" (17 Nov 2026). Seven steps, nothing
+   below 11px. --type-* because Tailwind v4 owns --text-xs to --text-3xl.
+   small, control and lead equal Tailwind's text-xs, text-sm and text-base, so
+   those utilities already sit on the scale. A skin resizes type by setting
+   these names. Nothing reads them yet; later PRs move hand-set sizes on. */
+:root {
+  --type-label:11px;
+  --type-small:12px;
+  --type-body:13px;
+  --type-control:14px;
+  --type-lead:16px;
+  --type-title:20px;
+  --type-display:28px;
 }
 
 /* Job names. Each token names a job, not a hue, and points at the token that
@@ -184,6 +200,7 @@
   --state-on-record:var(--nb-green);
   --wrap-mark:var(--nb-green);
   --selection:var(--nb-green-wash);
+  --select-ring:var(--focus-ring); /* 17 Nov: every selected object's outline; lime stays for Ask (--live) */
   --live:var(--nb-lasso-green);
   --icon-ink:currentColor;
   --icon-ink-active:var(--nb-ink);

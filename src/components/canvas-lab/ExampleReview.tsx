@@ -28,7 +28,7 @@ function feeders() {
 function TrailGroup({ label, rows }: { label: string; rows: { node: { id: string; title: string }; relation: string }[] }) {
   return (
     <section className="mb-4">
-      <h2 className="font-hand text-[16px] text-green">{label}</h2>
+      <h2 className="font-hand text-(length:--type-lead) text-green">{label}</h2>
       {rows.length === 0 ? (
         <p className="mt-1 nb-type-small text-muted-foreground">Nothing attached here.</p>
       ) : (
@@ -53,7 +53,7 @@ export function ExampleReview({ onClose }: { onClose: () => void }) {
     <div className="fixed inset-0 z-[70] flex flex-col bg-background" data-testid="canvas-lab-example-review">
       <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
         <div className="min-w-0">
-          <p className="font-mono text-[9px] uppercase tracking-[0.08em] text-green">What fed this</p>
+          <p className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-green">What fed this</p>
           <h1 className="truncate font-serif text-[26px] text-foreground">{deck?.title}</h1>
         </div>
         <Button type="button" variant="ghost" onClick={onClose}>Back to the example</Button>
@@ -66,13 +66,13 @@ export function ExampleReview({ onClose }: { onClose: () => void }) {
           <TrailGroup label="Decisions" rows={groups.decisions} />
         </aside>
         <main className="min-h-0 flex-1 overflow-y-auto p-5">
-          <p className="font-hand text-[16px] text-green">a sample trail, nothing here is yours</p>
-          <p className="mt-2 text-[13px] leading-[20px] text-foreground">{deck?.summary}</p>
+          <p className="font-hand text-(length:--type-lead) text-green">a sample trail, nothing here is yours</p>
+          <p className="mt-2 text-(length:--type-body) leading-[20px] text-foreground">{deck?.summary}</p>
           <ul className="mt-4 space-y-2">
             {upstream.map((node) => (
               <li key={node.id} className="border border-border bg-card p-3">
-                <p className="font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">{node.typeLabel}</p>
-                <p className="mt-1 text-[13px] leading-[20px] text-foreground">{node.title}</p>
+                <p className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">{node.typeLabel}</p>
+                <p className="mt-1 text-(length:--type-body) leading-[20px] text-foreground">{node.title}</p>
                 <p className="nb-type-small leading-[17px] text-muted-foreground">{node.summary}</p>
               </li>
             ))}

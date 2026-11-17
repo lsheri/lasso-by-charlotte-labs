@@ -38,12 +38,12 @@ export function ReadingPanel({ items }: { items: WorkItemRow[] }) {
         <ul className="mt-1 flex flex-col gap-2">
           {items.map((item) => (
             <li key={item.id} className="flex items-baseline justify-between gap-4">
-              <span className="min-w-0 truncate text-[12px] leading-[18px] text-foreground">
+              <span className="min-w-0 truncate text-(length:--type-small) leading-[18px] text-foreground">
                 {vendorLabel(item.source_vendor, item.source)
                   ? `${vendorLabel(item.source_vendor, item.source)} · ${displayName(item)}`
                   : displayName(item)}
               </span>
-              <span className="shrink-0 font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
+              <span className="shrink-0 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-soft">
                 {workDateLabel(item)}
               </span>
             </li>

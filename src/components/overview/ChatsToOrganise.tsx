@@ -51,7 +51,7 @@ function Queue({
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           {title ? (
             <div>
-              <h2 className="text-[16px] font-semibold leading-[22px] text-foreground">
+              <h2 className="text-(length:--type-lead) font-semibold leading-[22px] text-foreground">
                 {title} ({count})
               </h2>
               {note ? (
@@ -90,7 +90,7 @@ function Queue({
 
       {rest > 0 ? (
         <p
-          className="mt-3 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground"
+          className="mt-3 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground"
           data-testid={remainderTestId}
         >
           {rest} more in the pile
@@ -218,7 +218,7 @@ function SuggestionChip({
       type="button"
       disabled={disabled}
       onClick={onAccept}
-      className="inline-flex max-w-full items-center rounded-full border border-border bg-secondary px-2 py-1 text-left font-mono text-[10px] uppercase tracking-[0.06em] text-foreground transition-colors hover:border-foreground disabled:opacity-50"
+      className="inline-flex max-w-full items-center rounded-full border border-border bg-secondary px-2 py-1 text-left font-mono text-(length:--type-label) uppercase tracking-[0.06em] text-foreground transition-colors hover:border-foreground disabled:opacity-50"
       title={label}
     >
       <span className="truncate">{label}</span>

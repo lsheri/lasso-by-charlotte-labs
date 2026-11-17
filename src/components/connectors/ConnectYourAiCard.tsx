@@ -123,7 +123,7 @@ export function SetupSteps({ showSignin = true }: { showSignin?: boolean }) {
                 <ol className="mt-1.5 space-y-1.5">
                   {signinSteps.map((step, index) => (
                     <li key={step} className="flex gap-2 text-sm text-muted-foreground">
-                      <span className="font-mono text-[11px] text-accent-deep">{index + 1}</span>
+                      <span className="font-mono text-(length:--type-label) text-accent-deep">{index + 1}</span>
                       <span>{copy(step)}</span>
                     </li>
                   ))}
@@ -132,7 +132,7 @@ export function SetupSteps({ showSignin = true }: { showSignin?: boolean }) {
                 <ol className="mt-1.5 space-y-1.5">
                   {MCP_SETUP_STEPS[vendor].map((step, index) => (
                     <li key={step} className="flex gap-2 text-sm text-muted-foreground">
-                      <span className="font-mono text-[11px] text-accent-deep">{index + 1}</span>
+                      <span className="font-mono text-(length:--type-label) text-accent-deep">{index + 1}</span>
                       <span>{copy(step)}</span>
                     </li>
                   ))}
@@ -142,7 +142,7 @@ export function SetupSteps({ showSignin = true }: { showSignin?: boolean }) {
               <ol className="mt-1.5 space-y-1.5">
                 {MCP_SETUP_STEPS[vendor].map((step, index) => (
                   <li key={step} className="flex gap-2 text-sm text-muted-foreground">
-                    <span className="font-mono text-[11px] text-accent-deep">{index + 1}</span>
+                    <span className="font-mono text-(length:--type-label) text-accent-deep">{index + 1}</span>
                     <span>{copy(step)}</span>
                   </li>
                 ))}
@@ -306,7 +306,7 @@ export function ConnectionRowView({
               aria-label={AI_TOOLS_COPY.nameLabel}
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
-              className="rounded-[var(--radius)] border border-border bg-background px-2 py-1 text-[13px]"
+              className="rounded-[var(--radius)] border border-border bg-background px-2 py-1 text-(length:--type-body)"
             />
             <Button type="button" size="sm" disabled={busy} onClick={() => void handleRename()}>
               Save
@@ -325,8 +325,8 @@ export function ConnectionRowView({
         ) : (
           <>
             <span className="flex min-w-0 items-center gap-2">
-              <p className="min-w-0 truncate text-[13px] font-medium text-foreground">{name}</p>
-              <span className="shrink-0 rounded-full border border-border bg-secondary/60 px-2 py-0.5 text-[11px] text-muted-foreground">
+              <p className="min-w-0 truncate text-(length:--type-body) font-medium text-foreground">{name}</p>
+              <span className="shrink-0 rounded-full border border-border bg-secondary/60 px-2 py-0.5 text-(length:--type-label) text-muted-foreground">
                 {isSignin ? "Signed in" : "Link"}
               </span>
             </span>
@@ -494,8 +494,8 @@ export function ConnectYourAiCard() {
         <div className="flex items-center gap-3">
           <BrandPair brands={["claude", "chatgpt"]} size={26} />
           <div className="min-w-0">
-            <h3 className="text-[13px] font-medium text-foreground">{AI_TOOLS_COPY.heading}</h3>
-            <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+            <h3 className="text-(length:--type-body) font-medium text-foreground">{AI_TOOLS_COPY.heading}</h3>
+            <p className="mt-0.5 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
               {connectorStatusLine(newest)}
             </p>
           </div>
@@ -543,7 +543,7 @@ export function ConnectYourAiCard() {
                  setName(e.target.value);
                  setReplaceError(null);
                }}
-              className="min-w-0 flex-1 rounded-[var(--radius)] border border-border bg-background px-3 py-1.5 text-[13px]"
+              className="min-w-0 flex-1 rounded-[var(--radius)] border border-border bg-background px-3 py-1.5 text-(length:--type-body)"
             />
             <Button type="button" disabled={busy} onClick={() => void makeLink(name, null)}>
               {AI_TOOLS_COPY.create}

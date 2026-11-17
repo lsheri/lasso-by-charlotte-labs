@@ -16,9 +16,9 @@ const badgeVariants = cva(
         outline: "text-foreground",
         // 03 · Library · Atoms, StatusChip. Additive: no existing variant moves.
         "needs-mapping":
-          "rounded-[var(--radius-pill)] border-[var(--nb-amber-edge)] bg-[var(--nb-amber-wash)] px-2 py-px font-mono text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--nb-claim-text)]",
+          "rounded-[var(--radius-pill)] border-[var(--nb-amber-edge)] bg-[var(--nb-amber-wash)] px-2 py-px font-mono text-(length:--type-label) font-semibold uppercase tracking-[0.08em] text-[var(--nb-claim-text)]",
         private:
-          "rounded-[var(--radius-pill)] border-[var(--nb-rule)] bg-[var(--nb-paper-20)] px-2 py-px font-mono text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--nb-mid)]",
+          "rounded-[var(--radius-pill)] border-[var(--nb-rule)] bg-[var(--nb-paper-20)] px-2 py-px font-mono text-(length:--type-label) font-semibold uppercase tracking-[0.08em] text-[var(--nb-mid)]",
       },
     },
     defaultVariants: {

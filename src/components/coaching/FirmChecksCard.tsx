@@ -164,7 +164,7 @@ export function FirmChecksCard({
               ) : null}
             </div>
             <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{check.body}</p>
-            <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+            <p className="mt-2 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
               {firmCheckAppliesTo(check)}
             </p>
           </div>

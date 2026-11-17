@@ -192,7 +192,7 @@ export function CoachAskSheet({
 
         <header className="shrink-0 border-b border-border px-4 pb-2 pt-[calc(1rem+env(safe-area-inset-top))]">
           <p className="micro-label micro-label-ai pr-12">Ask</p>
-          <h2 className="page-title mt-1 break-words text-[17px] leading-snug">
+          <h2 className="page-title mt-1 break-words text-(length:--type-lead) leading-snug">
             {subject ? `${subject.subject_name} · ${subject.engagement_title}` : "Shared with you"}
           </h2>
         </header>
@@ -223,7 +223,7 @@ export function CoachAskSheet({
                       <span className="block truncate text-sm text-foreground">
                         {row.subject_name}
                       </span>
-                      <span className="block truncate font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                      <span className="block truncate font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
                         {row.engagement_title}
                       </span>
                     </span>

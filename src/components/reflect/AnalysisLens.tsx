@@ -305,7 +305,7 @@ export function AnalysisLensPanel({
       />
       <header className="shrink-0 border-b border-border px-6 pb-4 pt-6">
         <p className="micro-label micro-label-ai">{active ? active.label : "Analyse this work"}</p>
-        <h2 className="page-title mt-1 break-words text-[19px] leading-snug">{target.title}</h2>
+        <h2 className="page-title mt-1 break-words text-(length:--type-title) leading-snug">{target.title}</h2>
         <p className="mt-2 text-xs text-muted-foreground">
           {isCoach
             ? "Reads only what has been shared with you. Observations only, never a score."

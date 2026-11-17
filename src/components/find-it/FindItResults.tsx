@@ -287,7 +287,7 @@ export function FindItNode({ candidate, selected = false, status = "draft", expa
       <Button type="button" variant="ghost" onClick={onSelect} className={`w-full justify-start whitespace-normal rounded-[6px] px-3 text-left hover:bg-card ${expanded ? "h-auto min-h-[62px] py-3" : "h-[56px] py-2"}`}>
         <span className="relative min-w-0 flex-1">
           <span className="micro-label block">CONVERSATION</span>
-          <span className="mt-0.5 block truncate text-[13px] font-normal text-foreground">{candidateLine(item)}</span>
+          <span className="mt-0.5 block truncate text-(length:--type-body) font-normal text-foreground">{candidateLine(item)}</span>
           {status === "discarded" ? <RejectedStrike /> : null}
         </span>
       </Button>
@@ -296,19 +296,19 @@ export function FindItNode({ candidate, selected = false, status = "draft", expa
         <div className="px-3 pb-3">
           {link.quote ? (
             <>
-              <ToneCard tone="claim" className="gap-2 p-3"><p className="font-mono text-[13px] leading-5">{link.quote.text}</p></ToneCard>
-              <p className="mt-2 font-hand text-[16px] leading-5 text-green">why: {rationale}</p>
+              <ToneCard tone="claim" className="gap-2 p-3"><p className="font-mono text-(length:--type-body) leading-5">{link.quote.text}</p></ToneCard>
+              <p className="mt-2 font-hand text-(length:--type-lead) leading-5 text-green">why: {rationale}</p>
             </>
           ) : (
             <>
-              <p className="text-[13px] leading-5 text-foreground">{rationale}</p>
-              <p className="mt-2 font-hand text-[16px] leading-5 text-soft">no exact sentence in both, this is the model's reading of the evidence</p>
+              <p className="text-(length:--type-body) leading-5 text-foreground">{rationale}</p>
+              <p className="mt-2 font-hand text-(length:--type-lead) leading-5 text-soft">no exact sentence in both, this is the model's reading of the evidence</p>
             </>
           )}
           <div className="mt-3 flex items-center gap-4">
             <Button type="button" size="sm" onClick={onKeep}>Keep as a source</Button>
-            <Button type="button" variant="ghost" size="sm" onClick={onReject} className="h-auto p-0 font-hand text-[16px] underline decoration-pencil underline-offset-4 hover:bg-transparent">Not this one</Button>
-            {onOpen ? <Button type="button" variant="ghost" size="sm" onClick={onOpen} className="ml-auto h-auto p-0 font-hand text-[16px] text-green hover:bg-transparent">open</Button> : null}
+            <Button type="button" variant="ghost" size="sm" onClick={onReject} className="h-auto p-0 font-hand text-(length:--type-lead) underline decoration-pencil underline-offset-4 hover:bg-transparent">Not this one</Button>
+            {onOpen ? <Button type="button" variant="ghost" size="sm" onClick={onOpen} className="ml-auto h-auto p-0 font-hand text-(length:--type-lead) text-green hover:bg-transparent">open</Button> : null}
           </div>
         </div>
       ) : null}
@@ -323,7 +323,7 @@ function TargetCard({ target, parent, phase }: { target: WorkItemRow; parent?: W
   return (
     <div data-testid="find-it-target" className={`find-it-target absolute z-20 w-[250px] -translate-x-1/2 -translate-y-1/2 transition-[left] duration-[480ms] [transition-timing-function:cubic-bezier(.2,.8,.2,1)] ${phase === "reading" ? "find-it-target-reading" : "find-it-target-settled"}`}>
       <WorkNote item={target} parent={parent} dense />
-      <p className="mt-2 text-center font-hand text-[16px] text-green">{phase === "reading" ? `landed ${date}${origin ? ` from ${origin}` : ""}` : "line weight says how sure. no numbers."}</p>
+      <p className="mt-2 text-center font-hand text-(length:--type-lead) text-green">{phase === "reading" ? `landed ${date}${origin ? ` from ${origin}` : ""}` : "line weight says how sure. no numbers."}</p>
     </div>
   );
 }
@@ -415,7 +415,7 @@ function ArcCaption({ candidate, index, placement, placements }: { candidate: Fi
     return { x, baseline, clear: Array.from(placements.values()).every((card) => !rectsIntersect(rect, rectOf(card))) };
   }).find(({ clear }) => clear);
   if (!position) return null;
-  return <g data-testid="find-it-arrow-caption" className="find-it-arrow-caption"><rect x={position.x - captionWidth / 2 - 5} y={position.baseline - 15} width={captionWidth + 10} height={21} rx={4} /><text x={position.x} y={position.baseline} textAnchor="middle" className="fill-green font-hand text-[16px]">{caption}</text></g>;
+  return <g data-testid="find-it-arrow-caption" className="find-it-arrow-caption"><rect x={position.x - captionWidth / 2 - 5} y={position.baseline - 15} width={captionWidth + 10} height={21} rx={4} /><text x={position.x} y={position.baseline} textAnchor="middle" className="fill-green font-hand text-(length:--type-lead)">{caption}</text></g>;
 }
 
 export function FindItResults({ phase, target, parent, scope, candidates, reviewed, considered, reduceMotion, onChooseTarget, onReturnToForm, onReview, onKeepAll, onDone, onOpenThread }: {
@@ -502,7 +502,7 @@ export function FindItResults({ phase, target, parent, scope, candidates, review
   return (
     <section data-testid="find-it-canvas" data-phase={phase} className="find-it-canvas grid h-dvh min-h-0 snap-start grid-rows-[48px_minmax(0,1fr)] overflow-hidden bg-background" aria-label="Find it canvas">
       <header className="flex min-w-0 items-center gap-2 px-1 md:px-3">
-        <h2 className="shrink-0 font-serif text-[26px] leading-none text-foreground">Find it</h2>
+        <h2 className="shrink-0 font-serif text-(length:--type-display) leading-none text-foreground">Find it</h2>
         <span className="flex min-w-0 items-center gap-1.5 rounded-[6px] border border-hairline bg-card px-2 py-1 nb-type-small text-foreground"><SourceMark item={target} size={12} /><span className="truncate">{target.title}</span></span>
         <span className="hidden shrink-0 rounded-[6px] border border-hairline px-2 py-1 nb-type-small text-muted-foreground sm:inline">{scope === "engagement" ? "This workboard" : "Everything I have"}</span>
         <Button type="button" variant="ghost" size="sm" className="ml-auto shrink-0" onClick={onChooseTarget}>Choose something else</Button>
@@ -519,7 +519,7 @@ export function FindItResults({ phase, target, parent, scope, candidates, review
               <div data-testid="find-it-reading-nodes" className="absolute inset-0">
                 {candidates.slice(0, 14).map((candidate, index) => <div key={candidate.link.link_id} data-slot={readingSlots[index]} className="find-it-reading-node absolute z-10 w-[160px]" style={readingPosition(candidate.link.link_id, readingSlots[index] ?? index)}><FindItNode candidate={candidate} /></div>)}
               </div>
-               <p className="find-it-reading-caption absolute font-hand text-[16px] text-green">reading {considered} conversations</p>
+               <p className="find-it-reading-caption absolute font-hand text-(length:--type-lead) text-green">reading {considered} conversations</p>
             </>
           ) : (
             <div data-testid="find-it-arc" className="absolute inset-0">
@@ -547,19 +547,19 @@ export function FindItResults({ phase, target, parent, scope, candidates, review
 
           {phase !== "reading" ? (
             <footer className="absolute inset-x-0 bottom-0 z-30 flex min-w-0 items-center gap-3 border-t border-hairline bg-background/95 px-4 py-2">
-              {phase === "settled" ? <Button type="button" size="sm" disabled={unmarkedCount === 0} onClick={() => void onKeepAll()}>Keep {unmarkedCount} as sources</Button> : <p className="font-hand text-[16px] text-green">Kept {keptCount} sources</p>}
-              <p className="font-hand text-[16px] text-green">goes on the record of this deck</p>
+              {phase === "settled" ? <Button type="button" size="sm" disabled={unmarkedCount === 0} onClick={() => void onKeepAll()}>Keep {unmarkedCount} as sources</Button> : <p className="font-hand text-(length:--type-lead) text-green">Kept {keptCount} sources</p>}
+              <p className="font-hand text-(length:--type-lead) text-green">goes on the record of this deck</p>
               {phase === "settled" && unmarkedCount === 0 ? <Button type="button" size="sm" onClick={() => void onDone()}>Done</Button> : null}
               {phase === "kept" ? <Button type="button" variant="ghost" size="sm" onClick={onReturnToForm}>Look for something else</Button> : null}
-              <Button type="button" variant="ghost" size="sm" className="ml-auto font-hand text-[16px]" onClick={phase === "kept" ? onReturnToForm : onChooseTarget}>close</Button>
+              <Button type="button" variant="ghost" size="sm" className="ml-auto font-hand text-(length:--type-lead)" onClick={phase === "kept" ? onReturnToForm : onChooseTarget}>close</Button>
             </footer>
           ) : null}
          </div>
         </div>
 
         <div className="h-full min-h-0 overflow-y-auto py-3 md:hidden">
-          {phase === "reading" ? <div className="mb-3 flex items-center gap-2 font-hand text-[16px] text-green"><LassoThinkingMark kind="signature" size={24} thinking={!reduceMotion} rope={false} />reading {considered} conversations</div> : null}
-          {(phase === "reading" ? candidates.slice(0, 14) : ordered).map((candidate) => <Button key={candidate.link.link_id} type="button" variant="ghost" className={`h-12 w-full justify-start rounded-none border-b border-hairline px-1 ${statusOf(candidate, reviewed) === "discarded" ? "opacity-50" : ""}`} disabled={phase !== "settled"} onClick={() => { setSelectedId(candidate.link.link_id); setMobileDetailOpen(true); }}><span className="micro-label mr-2">CONVERSATION</span><span className="min-w-0 flex-1 truncate text-left text-[13px]">{candidateLine(candidate.item)}</span>{phase !== "reading" ? <span className="sr-only">{strengthFor(candidate)}</span> : null}</Button>)}
+          {phase === "reading" ? <div className="mb-3 flex items-center gap-2 font-hand text-(length:--type-lead) text-green"><LassoThinkingMark kind="signature" size={24} thinking={!reduceMotion} rope={false} />reading {considered} conversations</div> : null}
+          {(phase === "reading" ? candidates.slice(0, 14) : ordered).map((candidate) => <Button key={candidate.link.link_id} type="button" variant="ghost" className={`h-12 w-full justify-start rounded-none border-b border-hairline px-1 ${statusOf(candidate, reviewed) === "discarded" ? "opacity-50" : ""}`} disabled={phase !== "settled"} onClick={() => { setSelectedId(candidate.link.link_id); setMobileDetailOpen(true); }}><span className="micro-label mr-2">CONVERSATION</span><span className="min-w-0 flex-1 truncate text-left text-(length:--type-body)">{candidateLine(candidate.item)}</span>{phase !== "reading" ? <span className="sr-only">{strengthFor(candidate)}</span> : null}</Button>)}
         </div>
       </div>
 

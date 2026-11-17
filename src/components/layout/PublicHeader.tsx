@@ -27,14 +27,14 @@ export function PublicHeader({ current, cta }: { current?: "/" | "/why" | "/trus
             <Link
               key={link.to}
               to={link.to}
-              className="hidden font-mono text-[18px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground sm:inline"
+              className="hidden font-mono text-(length:--type-title) uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground sm:inline"
             >
               {copy(link.label)}
             </Link>
           ))}
           <Link
             to="/auth"
-            className="flex min-h-11 min-w-0 items-center justify-center rounded-[var(--radius)] border-2 border-accent px-3 py-2 font-mono text-[13px] uppercase tracking-[0.08em] text-accent-deep transition-colors hover:bg-accent-soft sm:px-6 sm:py-3 sm:text-[18px]"
+            className="flex min-h-11 min-w-0 items-center justify-center rounded-[var(--radius)] border-2 border-accent px-3 py-2 font-mono text-(length:--type-body) uppercase tracking-[0.08em] text-accent-deep transition-colors hover:bg-accent-soft sm:px-6 sm:py-3 sm:text-(length:--type-title)"
           >
             Sign in
           </Link>

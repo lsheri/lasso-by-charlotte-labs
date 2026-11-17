@@ -227,7 +227,7 @@ export function SourceMark({
       role="img"
       aria-label={label}
       title={label}
-      className={`inline-flex shrink-0 items-center rounded-full px-1 py-px font-mono text-[9px] font-semibold uppercase leading-none tracking-[0.06em] ${className}`}
+      className={`inline-flex shrink-0 items-center rounded-full px-1 py-px font-mono text-(length:--type-label) font-semibold uppercase leading-none tracking-[0.06em] ${className}`}
       style={{
         color: styles ? styles.color : "var(--muted-foreground)",
         backgroundColor: pillBackground,
@@ -283,7 +283,7 @@ export function VendorMark({ item }: { item: SourceItem }) {
       : null;
   if (!label || label === "mcp" || label === "manual") return null;
   return (
-    <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+    <span className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
       {label}
     </span>
   );

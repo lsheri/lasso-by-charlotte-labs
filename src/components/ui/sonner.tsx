@@ -20,7 +20,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
       toastOptions={{
         classNames: {
           toast:
-            "group toast group-[.toaster]:rounded-md group-[.toaster]:border group-[.toaster]:text-[13px] group-[.toaster]:font-medium",
+            "group toast group-[.toaster]:rounded-md group-[.toaster]:border group-[.toaster]:text-(length:--type-body) group-[.toaster]:font-medium",
           default:
             "group-[.toaster]:border-ink group-[.toaster]:bg-ink group-[.toaster]:text-nb-white",
           success:
