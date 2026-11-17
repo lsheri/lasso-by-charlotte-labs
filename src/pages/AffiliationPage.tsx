@@ -46,7 +46,7 @@ function Figure({ value, label }: { value: number; label: string }) {
   return (
     <div>
       <div className="text-[26px] leading-none">{value}</div>
-      <div className="mt-2 font-mono text-[11px] uppercase text-muted-foreground">
+      <div className="mt-2 font-mono text-(length:--type-label) uppercase text-muted-foreground">
         {label}
       </div>
     </div>
@@ -146,7 +146,7 @@ export function WhatStaysPutSection({ institutionName, sharedCount, sharingPendi
         <p className="mb-4 text-sm text-muted-foreground">
           {nothingShared && !sharingPending && !sharingFailed ? (institutionName ? `None of this reaches ${institutionName}.` : "None of this leaves your account.") : "Anything you have not placed on a shared board stays in your account."}
         </p>
-        <ul className="flex flex-col gap-1.5 text-[13px]">
+        <ul className="flex flex-col gap-1.5 text-(length:--type-body)">
           <li>The titles of your work</li>
           <li>What you asked, in every conversation</li>
           <li>Your documents and transcripts</li>
@@ -176,7 +176,7 @@ export function AffiliationContent(props: AffiliationContentProps) {
 
       {nothingShared ? null : sharing}
 
-      <p className="lasso-hand-voice font-hand text-[16px] text-green">
+      <p className="lasso-hand-voice font-hand text-(length:--type-lead) text-green">
         your record is yours, and it leaves with you
       </p>
     </>

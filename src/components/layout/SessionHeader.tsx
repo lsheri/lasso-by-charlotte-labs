@@ -48,7 +48,7 @@ export function SessionHeader() {
           <button
             type="button"
             onClick={handleSignOut}
-            className="rounded-[var(--radius)] border border-border px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+            className="rounded-[var(--radius)] border border-border px-3 py-1.5 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
           >
             Sign out
           </button>

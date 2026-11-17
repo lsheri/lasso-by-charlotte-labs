@@ -428,12 +428,12 @@ function LabCardInner({
             inHand={selected}
             headerInsetRight={deckEventOrgId && boardWork.content?.kind === 'deck' && boardWork.content.slides.length ? 86 : 60}
             actions={commentCount > 0 && onOpenComments ? (
-              <button type="button" data-testid="lab-comment-chip" aria-label={`${commentCount} ${commentCount === 1 ? "comment" : "comments"}`} onPointerDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); onOpenComments(); }} className="inline-flex items-center gap-0.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+              <button type="button" data-testid="lab-comment-chip" aria-label={`${commentCount} ${commentCount === 1 ? "comment" : "comments"}`} onPointerDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); onOpenComments(); }} className="inline-flex items-center gap-0.5 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
                 <GraphiteIcon name="messages" size={11} animate={false} />{commentCount}
               </button>
             ) : undefined}
             provenance={textFace && (item.type === "ai_thread" || pastedChatUrl(item.meta?.chat_url) || !sourceUrl) ? null :
-          <span className={`min-w-0 flex-1 truncate ${headerGutter ? "canvas-card-provenance" : "text-[11px] text-muted-foreground"}`} onClick={(event) => event.stopPropagation()}>
+          <span className={`min-w-0 flex-1 truncate ${headerGutter ? "canvas-card-provenance" : "text-(length:--type-label) text-muted-foreground"}`} onClick={(event) => event.stopPropagation()}>
             {item.type === "ai_thread" || pastedChatUrl((item as WorkItemRow).meta?.chat_url) ? (
               <ChatUrlLink item={item as WorkItemRow} parent={parent} showAbsence turnCount={chatPreview?.turnCount} toolSteps={chatPreview?.toolSteps} />
             ) : sourceUrl ? (
@@ -459,7 +459,7 @@ function LabCardInner({
              headerGutter
             openOn="doubleClick"
             actions={commentCount > 0 && onOpenComments ? (
-              <button type="button" data-testid="lab-comment-chip" aria-label={`${commentCount} ${commentCount === 1 ? "comment" : "comments"}`} onPointerDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); onOpenComments(); }} className="inline-flex items-center gap-0.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+              <button type="button" data-testid="lab-comment-chip" aria-label={`${commentCount} ${commentCount === 1 ? "comment" : "comments"}`} onPointerDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); onOpenComments(); }} className="inline-flex items-center gap-0.5 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
                 <GraphiteIcon name="messages" size={11} animate={false} />{commentCount}
               </button>
             ) : undefined}

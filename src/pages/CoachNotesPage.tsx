@@ -101,7 +101,7 @@ export function CoachNotesPage() {
               }}
             />
           )}
-          <p className="lasso-hand-voice mt-6 font-hand text-[16px] text-green">
+          <p className="lasso-hand-voice mt-6 font-hand text-(length:--type-lead) text-green">
             a conversation about the work, not about the person
           </p>
         </div>

@@ -202,7 +202,7 @@ function PendingGrant({
           <input type="checkbox" checked={conv} onChange={(e) => setConv(e.target.checked)} />
           {SUPPORT_COPY.includeConversations}
         </label>
-        <p className="mt-1 text-[13px] text-muted-foreground">{SUPPORT_COPY.conversationsHelp}</p>
+        <p className="mt-1 text-(length:--type-body) text-muted-foreground">{SUPPORT_COPY.conversationsHelp}</p>
       </div>
       {decide.error ? (
         <p className="text-sm text-destructive">{(decide.error as Error).message}</p>

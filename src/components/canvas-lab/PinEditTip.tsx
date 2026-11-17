@@ -44,9 +44,9 @@ export function usePinTip(nodeId: string, eligible: boolean): [boolean, () => vo
 
 export function PinEditTip({ onDismiss }: { onDismiss: () => void }) {
   return (
-    <div role="note" className="mt-2 flex items-center justify-between gap-2 rounded-[var(--radius-control)] border border-border bg-muted px-2 py-1.5 text-[12px] text-foreground" data-testid="pin-edit-tip" onPointerDown={(event) => event.stopPropagation()}>
+    <div role="note" className="mt-2 flex items-center justify-between gap-2 rounded-[var(--radius-control)] border border-border bg-muted px-2 py-1.5 text-(length:--type-small) text-foreground" data-testid="pin-edit-tip" onPointerDown={(event) => event.stopPropagation()}>
       <span>{PIN_TIP_COPY.text}</span>
-      <button type="button" className="shrink-0 text-[12px] underline-offset-2 hover:underline" onClick={(event) => { event.stopPropagation(); onDismiss(); }}>{PIN_TIP_COPY.ok}</button>
+      <button type="button" className="shrink-0 text-(length:--type-small) underline-offset-2 hover:underline" onClick={(event) => { event.stopPropagation(); onDismiss(); }}>{PIN_TIP_COPY.ok}</button>
     </div>
   );
 }

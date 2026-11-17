@@ -146,7 +146,7 @@ export function ChecksLibrary({
       <SectionHeader
         title="Reusable processes"
         action={
-          <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-soft">
+          <span className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-soft">
             {activeCount} active
           </span>
         }
@@ -192,7 +192,7 @@ export function ChecksLibrary({
           </p>
           {writeError ? <p className="text-xs text-destructive">{writeError}</p> : null}
           <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3">
-            <label className="cursor-pointer rounded-full border border-border bg-card px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground">
+            <label className="cursor-pointer rounded-full border border-border bg-card px-3 py-1 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground">
               Upload rules (.txt or .md)
               <input
                 ref={fileRef}
@@ -280,7 +280,7 @@ export function ChecksLibrary({
               </button>
             </div>
             <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{check.body}</p>
-            <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+            <p className="mt-2 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
               {SCOPE_WORD[check.scope]}
               {check.active ? "" : " · retired"}
             </p>

@@ -65,7 +65,7 @@ function DeliverableCard({
       </span>
       <GraphiteRule className="mt-1 h-[6px] w-[120px] text-muted-foreground" />
       <span className={`mt-1.5 block ${locked ? "nb-locked-body" : ""}`}>
-        <span className="block font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+        <span className="block font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
           {statusLabel}
         </span>
         {whereLine(row) ? (
@@ -93,7 +93,7 @@ function Section({
 }) {
   return (
     <section data-testid={testId} className="mt-8">
-      <h2 className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+      <h2 className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
         {label}
       </h2>
       <div style={{ animationDelay: `${startDelayMs}ms` }} className="nb-rule-draw">
@@ -103,7 +103,7 @@ function Section({
       {rows.length === 0 ? (
         <p
           data-testid={`${testId}-empty`}
-          className="mt-3 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground opacity-60"
+          className="mt-3 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground opacity-60"
         >
           {emptyLine}
         </p>

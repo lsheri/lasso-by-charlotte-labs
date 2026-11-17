@@ -81,7 +81,7 @@ export function ConnectToolsPrompt() {
   return (
     <div data-testid="home-connect-prompt" className="mx-auto mt-6 flex max-w-[780px] flex-col items-center gap-3">
       <p className="text-[17px] leading-[1.5] text-muted-foreground">{copy(CONNECT_PROMPT_LINE)}</p>
-      <Button asChild type="button" variant="ink" className="h-11 px-6 text-[16px]">
+      <Button asChild type="button" variant="ink" className="h-11 px-6 text-(length:--type-lead)">
         <Link to="/connectors" onClick={() => emitClientEvent("home.connect_tools_opened", {})}>
           Connect your AI tools
         </Link>
@@ -141,7 +141,7 @@ function HomePendingInvites({ pending, onHeight }: { pending: PendingInviteRow[]
     <ul className="grid gap-4">
       {pending.map((invite) => <li key={invite.invite_id} className="flex min-w-0 flex-wrap items-center justify-between gap-3 rounded-[var(--radius-control)] border border-dashed border-border bg-card p-4">
         <div className="min-w-0">
-          <p className="break-words font-mono text-[13px] text-[var(--nb-shared)]">{SHARED_WITH_YOU_COPY.inviteLabel}</p>
+          <p className="break-words font-mono text-(length:--type-body) text-[var(--nb-shared)]">{SHARED_WITH_YOU_COPY.inviteLabel}</p>
           <h3 className="break-words text-[19.5px] text-foreground">{invite.board}</h3>
           <p className="text-base text-muted-foreground">{SHARED_WITH_YOU_COPY.invited(invite.invited_by)}</p>
         </div>
@@ -227,7 +227,7 @@ export function HomeBoard() {
         }}
         toolbar={(
           <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 md:flex-nowrap">
-            <span data-testid="home-count-label" className="mr-auto basis-full whitespace-normal font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground md:basis-auto md:truncate">
+            <span data-testid="home-count-label" className="mr-auto basis-full whitespace-normal font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground md:basis-auto md:truncate">
               {countLabel}
             </span>
             <NewEngagementDialog

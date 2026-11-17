@@ -145,7 +145,7 @@ export function CoachNoteModal({
           {note.engagement_id ? (
             <div className="mt-5 rounded-[var(--radius-md)] border border-[var(--nb-rule)] bg-muted/40 px-4 py-3">
               <p className="micro-label">{scopeLabel(scope, vocab).toUpperCase()}</p>
-              <p className="mt-1 text-[13px] text-foreground">
+              <p className="mt-1 text-(length:--type-body) text-foreground">
                 {pointsAt ?? "This workboard"}
               </p>
               <Link
@@ -153,7 +153,7 @@ export function CoachNoteModal({
                 params={{ id: note.engagement_id }}
                 search={{ work: note.task_id ?? undefined }}
                 onClick={() => onOpenChange(false)}
-                className="mt-2 inline-block font-hand text-[16px] text-green underline underline-offset-2"
+                className="mt-2 inline-block font-hand text-(length:--type-lead) text-green underline underline-offset-2"
               >
                 Open the work
               </Link>
@@ -168,8 +168,8 @@ export function CoachNoteModal({
                   <div
                     className={
                       mine
-                        ? "max-w-[78%] rounded-[var(--radius-md)] border border-[var(--nb-yellow-edge)] bg-[var(--nb-yellow-wash)] px-3 py-2 text-[13px] text-foreground"
-                        : "max-w-[78%] rounded-[var(--radius-md)] border border-[var(--nb-pencil)] bg-card px-3 py-2 text-[13px] text-foreground"
+                        ? "max-w-[78%] rounded-[var(--radius-md)] border border-[var(--nb-yellow-edge)] bg-[var(--nb-yellow-wash)] px-3 py-2 text-(length:--type-body) text-foreground"
+                        : "max-w-[78%] rounded-[var(--radius-md)] border border-[var(--nb-pencil)] bg-card px-3 py-2 text-(length:--type-body) text-foreground"
                     }
                   >
                     <p className="whitespace-pre-wrap">{reply.body}</p>
@@ -185,7 +185,7 @@ export function CoachNoteModal({
               value={draft}
               placeholder="write back"
               onChange={(event) => setDraft(event.target.value)}
-              className="font-hand text-[16px] placeholder:font-hand placeholder:text-[16px]"
+              className="font-hand text-(length:--type-lead) placeholder:font-hand placeholder:text-(length:--type-lead)"
             />
             <Button
               type="button"
@@ -206,7 +206,7 @@ function Field({ label, value }: { label: string; value: string }) {
   return (
     <div>
       <p className="micro-label mb-1">{label}</p>
-      <p className="whitespace-pre-wrap text-[16px] leading-[24px] text-foreground">{value}</p>
+      <p className="whitespace-pre-wrap text-(length:--type-lead) leading-[24px] text-foreground">{value}</p>
     </div>
   );
 }

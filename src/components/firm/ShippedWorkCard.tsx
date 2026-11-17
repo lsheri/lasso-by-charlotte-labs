@@ -98,10 +98,10 @@ export function ShippedWorkCard({
             data-testid={`shipped-card-declared-${card.work_item_id}`}
             className="mt-1.5 flex flex-wrap gap-1"
           >
-            <span className="rounded-full border border-border px-2 py-0.5 text-[11px] text-muted-foreground">
+            <span className="rounded-full border border-border px-2 py-0.5 text-(length:--type-label) text-muted-foreground">
               {OUTPUT_KIND_LABELS[declared.output_kind]}
             </span>
-            <span className="rounded-full border border-border px-2 py-0.5 text-[11px] text-muted-foreground">
+            <span className="rounded-full border border-border px-2 py-0.5 text-(length:--type-label) text-muted-foreground">
               {DISPOSITION_LABELS[declared.disposition]}
             </span>
           </span>

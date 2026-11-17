@@ -118,7 +118,7 @@ export function SharedWithYouShelf({ shared, pending, onHeight }: { shared: Shar
         {shared.map((board) => (
           <li key={`${board.engagement_id}:${board.guest_profile_id}`} className="min-w-0">
             <Button variant="ghost" className={cn(card, "h-full w-full hover:bg-secondary")} onClick={() => openShared(board.engagement_id, "home")}>
-              <span className="max-w-full break-words font-mono text-[13px] font-normal text-[var(--nb-shared)]">{SHARED_WITH_YOU_COPY.sharedLabel(board.host_org)}</span>
+              <span className="max-w-full break-words font-mono text-(length:--type-body) font-normal text-[var(--nb-shared)]">{SHARED_WITH_YOU_COPY.sharedLabel(board.host_org)}</span>
               <span className="max-w-full break-words text-[19.5px] font-medium text-foreground">{board.title}</span>
               <span className="text-base font-normal text-muted-foreground">{SHARED_WITH_YOU_COPY.permission(board.level)}</span>
             </Button>
@@ -126,7 +126,7 @@ export function SharedWithYouShelf({ shared, pending, onHeight }: { shared: Shar
         ))}
         {pending.map((invite) => (
           <li key={invite.invite_id} className={cn(card, "border-dashed")}>
-            <span className="max-w-full break-words font-mono text-[13px] text-[var(--nb-shared)]">{SHARED_WITH_YOU_COPY.inviteLabel}</span>
+            <span className="max-w-full break-words font-mono text-(length:--type-body) text-[var(--nb-shared)]">{SHARED_WITH_YOU_COPY.inviteLabel}</span>
             <h3 className="max-w-full break-words text-[19.5px] font-medium text-foreground">{invite.board}</h3>
             <p className="text-base leading-relaxed text-muted-foreground">{SHARED_WITH_YOU_COPY.invited(invite.invited_by)}</p>
             <Button variant="outline" disabled={busy !== null} onClick={async () => {
@@ -168,7 +168,7 @@ export async function fetchSharedWorkPlacements(itemIds: string[]) {
 
 export function SharedWorkChips({ boards }: { boards: { id: string; title: string }[] }) {
   return boards.length > 0 ? <span className="flex min-w-0 flex-col gap-1">
-    {boards.map((board) => <span key={board.id} title={SHARED_WITH_YOU_COPY.placement(board.title)} className="h-7 max-w-full truncate rounded-[var(--radius-control)] bg-[color-mix(in_oklab,var(--nb-shared)_12%,var(--nb-paper))] px-2 py-1 text-[13px] text-[var(--nb-shared)]">{SHARED_WITH_YOU_COPY.placement(board.title)}</span>)}
+    {boards.map((board) => <span key={board.id} title={SHARED_WITH_YOU_COPY.placement(board.title)} className="h-7 max-w-full truncate rounded-[var(--radius-control)] bg-[color-mix(in_oklab,var(--nb-shared)_12%,var(--nb-paper))] px-2 py-1 text-(length:--type-body) text-[var(--nb-shared)]">{SHARED_WITH_YOU_COPY.placement(board.title)}</span>)}
   </span> : null;
 }
 
@@ -202,14 +202,14 @@ export function SharedWithYouSection({ onNavigate, children, extraPresent = fals
               openShared(b.engagement_id, "shelf");
             }}
           >
-            <span className="truncate text-[13px] text-foreground">{b.title}</span>
+            <span className="truncate text-(length:--type-body) text-foreground">{b.title}</span>
             <span className="truncate text-xs text-muted-foreground">{b.host_org}</span>
           </button>
         ))}
         {pending.map((p) => (
           <div key={p.invite_id} className="flex items-center gap-2 px-2 py-1">
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-[13px] text-foreground">{p.board}</span>
+              <span className="block truncate text-(length:--type-body) text-foreground">{p.board}</span>
               <span className="block truncate text-xs text-muted-foreground">{p.host_org}</span>
             </span>
             <button

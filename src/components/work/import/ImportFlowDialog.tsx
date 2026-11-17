@@ -221,7 +221,7 @@ export function ImportFlowDialog({
                 className="rounded-[var(--radius)] border border-border bg-card p-4 text-left shadow-card transition-colors hover:border-accent"
               >
                 <p className="text-sm font-medium text-foreground">{VENDORS[id].label}</p>
-                <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+                <p className="mt-1 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
                   {VENDORS[id].tierHint}
                 </p>
               </button>
@@ -233,7 +233,7 @@ export function ImportFlowDialog({
                   className="rounded-[var(--radius)] border border-dashed border-border bg-card p-4 text-left shadow-card transition-colors hover:border-accent"
                 >
                   <p className="text-sm font-medium text-foreground">Paste a conversation</p>
-                  <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+                  <p className="mt-1 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
                     Full fidelity · nothing to download
                   </p>
                 </button>
@@ -255,7 +255,7 @@ export function ImportFlowDialog({
                 className="flex h-40 flex-col items-center justify-center gap-2 rounded-[var(--radius)] border border-dashed border-border bg-card text-center"
               >
                 <p className="text-sm text-foreground">Drop your export here</p>
-                <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+                <p className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
                   {VENDORS[vendor].accept}
                 </p>
                 <input

@@ -9,7 +9,7 @@ export function SpanLegend() {
   return (
     <p
       data-testid="span-legend"
-      className="flex items-center gap-1.5 text-[11px] leading-snug text-muted-foreground"
+      className="flex items-center gap-1.5 text-(length:--type-label) leading-snug text-muted-foreground"
     >
       <span aria-hidden className="flex shrink-0 items-center gap-1">
         <span className="h-2 w-2 rounded-full" style={{ backgroundColor: "var(--status-exact)" }} />

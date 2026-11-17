@@ -34,7 +34,7 @@ export function PublicHeader({ current, cta }: { current?: "/" | "/why" | "/trus
           ))}
           <Link
             to="/auth"
-            className="flex min-h-11 min-w-0 items-center justify-center rounded-[var(--radius)] border-2 border-accent px-3 py-2 font-mono text-[13px] uppercase tracking-[0.08em] text-accent-deep transition-colors hover:bg-accent-soft sm:px-6 sm:py-3 sm:text-[18px]"
+            className="flex min-h-11 min-w-0 items-center justify-center rounded-[var(--radius)] border-2 border-accent px-3 py-2 font-mono text-(length:--type-body) uppercase tracking-[0.08em] text-accent-deep transition-colors hover:bg-accent-soft sm:px-6 sm:py-3 sm:text-[18px]"
           >
             Sign in
           </Link>

@@ -189,7 +189,7 @@ export function ConnectorsSection({ from }: { from?: SettingsOpenFrom }) {
 
   return (
     <div>
-      <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+      <p className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
         {subtitle}
       </p>
 
@@ -232,8 +232,8 @@ export function ConnectorsSection({ from }: { from?: SettingsOpenFrom }) {
                 key={name}
                 className="flex items-center justify-between rounded-[var(--radius-lg)] border border-border bg-card/50 px-4 py-3 opacity-60"
               >
-                <p className="text-[13px] text-muted-foreground">{name}</p>
-                <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+                <p className="text-(length:--type-body) text-muted-foreground">{name}</p>
+                <span className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
                   Coming soon
                 </span>
               </div>
@@ -242,7 +242,7 @@ export function ConnectorsSection({ from }: { from?: SettingsOpenFrom }) {
         </Category>
 
         <div className="rounded-[var(--radius-lg)] border border-border bg-card px-4 py-4">
-          <p className="text-[13px] text-foreground">No connector? Paste or upload always works.</p>
+          <p className="text-(length:--type-body) text-foreground">No connector? Paste or upload always works.</p>
           <div className="mt-1.5 flex flex-wrap items-center gap-4">
             <Link to="/work" className="text-xs font-medium text-accent-deep hover:opacity-70">
               Go to Work →
@@ -259,7 +259,7 @@ export function ConnectorsSection({ from }: { from?: SettingsOpenFrom }) {
 
         <div className="flex flex-wrap items-center gap-3 rounded-[var(--radius-lg)] border border-border bg-card px-4 py-3.5">
           <BrandPair brands={["claude", "chatgpt"]} size={22} />
-          <p className="min-w-0 flex-1 text-[13px] text-foreground">
+          <p className="min-w-0 flex-1 text-(length:--type-body) text-foreground">
             Push work here straight from Claude or ChatGPT
           </p>
           <Button type="button" variant="outline" size="sm" onClick={() => setActiveSection("mcp")}>
@@ -291,7 +291,7 @@ export function ConnectorsSection({ from }: { from?: SettingsOpenFrom }) {
         </div>
       </div>
 
-      <p className="lasso-hand-voice font-hand mt-6 text-[16px] text-green">
+      <p className="lasso-hand-voice font-hand mt-6 text-(length:--type-lead) text-green">
         connect one. see what lands. connect the rest later.
       </p>
     </div>
@@ -316,11 +316,11 @@ function TranscriptsCard({
     <div className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-border bg-card px-4 py-3">
       <BrandLogo brand="googledrive" size={20} />
       <div className="min-w-0 flex-1">
-        <p className="text-[13px] font-medium text-foreground">Call transcripts (Google Drive)</p>
+        <p className="text-(length:--type-body) font-medium text-foreground">Call transcripts (Google Drive)</p>
         <p className="truncate nb-type-small leading-[17px] text-muted-foreground">
           Recordings and transcripts already in your Drive. Uses the same connection.
         </p>
-        <p className="mt-0.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+        <p className="mt-0.5 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
           {busy ? "Pending" : connected ? "Ready" : "Needs Google Drive"}
         </p>
       </div>
@@ -395,12 +395,12 @@ function ConnectorCard({
       <BrandLogo brand={brand} size={20} />
       <div className="min-w-0 flex-1">
         <div className="flex min-w-0 items-center gap-2">
-          <p className="shrink-0 text-[13px] font-medium text-foreground">{name}</p>
+          <p className="shrink-0 text-(length:--type-body) font-medium text-foreground">{name}</p>
           {connected ? identity : null}
         </div>
         <p className="truncate nb-type-small leading-[17px] text-muted-foreground">{description}</p>
         {exceptionalStatus ? (
-          <p className="mt-0.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+          <p className="mt-0.5 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
             {exceptionalStatus}
           </p>
         ) : null}
@@ -459,7 +459,7 @@ function ConnectorIdentity({ toolkit }: { toolkit: ConnectorToolkit }) {
   });
   if (!data?.identity) return null;
   return (
-    <span className="truncate font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+    <span className="truncate font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
       Connected as {data.identity}
     </span>
   );

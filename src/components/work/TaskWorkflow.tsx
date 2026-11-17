@@ -112,7 +112,7 @@ export function TaskWorkflow({
         </p>
         <div className="flex items-center gap-3">
           {confirmed ? (
-            <span className="rounded-full border border-border bg-secondary px-2 py-0.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+            <span className="rounded-full border border-border bg-secondary px-2 py-0.5 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
               Confirmed sequence
             </span>
           ) : null}
@@ -136,7 +136,7 @@ export function TaskWorkflow({
           return (
             <li key={item.id}>
               {isNew && index === placed.length ? (
-                <p className="mb-1 mt-3 border-t border-dashed border-border pt-2 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+                <p className="mb-1 mt-3 border-t border-dashed border-border pt-2 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
                   New, not yet placed
                 </p>
               ) : null}
@@ -156,14 +156,14 @@ export function TaskWorkflow({
                 }`}
               >
                 {confirmed && !isNew ? (
-                  <span className="shrink-0 rounded-full bg-accent-soft px-2 py-0.5 font-mono text-[11px] text-accent-deep">
+                  <span className="shrink-0 rounded-full bg-accent-soft px-2 py-0.5 font-mono text-(length:--type-label) text-accent-deep">
                     {index + 1}
                   </span>
                 ) : null}
                 <TypeIcon item={item} size="sm" />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm text-foreground">{displayName(item)}</p>
-                  <p className="truncate font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+                  <p className="truncate font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
                     {workIdentityLabel(item)} · {sourceLabel(item.source)} ·{" "}
                     {formatDate(effectiveWorkDate(item))}
                   </p>

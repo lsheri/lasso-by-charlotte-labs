@@ -44,14 +44,14 @@ export function WeekRail({ items }: { items: WorkItemRow[] }) {
             key={item.id}
             className="grid grid-cols-[auto_minmax(0,1fr)] gap-2.5 border-b border-border py-3 last:border-b-0"
           >
-            <span aria-hidden className="mt-[1px] shrink-0 text-[13px] leading-[17px] text-green">
+            <span aria-hidden className="mt-[1px] shrink-0 text-(length:--type-body) leading-[17px] text-green">
               ✓
             </span>
             <div className="min-w-0">
-              <p className="text-[13px] font-medium leading-[17px] text-foreground">
+              <p className="text-(length:--type-body) font-medium leading-[17px] text-foreground">
                 {displayName(item)}
               </p>
-              <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+              <p className="mt-1 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
                 {workIdentityLabel(item)} · {formatDate(effectiveWorkDate(item))} ·{" "}
                 {stateWord(item)}
               </p>
@@ -62,7 +62,7 @@ export function WeekRail({ items }: { items: WorkItemRow[] }) {
       {rest > 0 ? (
         // Said plainly rather than hidden: the rail is a sample, and the whole
         // scope is one click away on the work page.
-        <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.08em] text-soft">
+        <p className="mt-2 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-soft">
           {rest} more in this scope
         </p>
       ) : null}

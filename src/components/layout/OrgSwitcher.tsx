@@ -51,7 +51,7 @@ export function OrgSwitcher({ profiles, active, children, header, onOpen }: { pr
       >
         <span className="min-w-0">
           <span className="block truncate text-sm font-medium text-foreground">{active?.org_name ?? "Workspace"}</span>
-          <span className="block truncate font-mono text-[12px] uppercase tracking-[0.08em] text-muted-foreground">
+          <span className="block truncate font-mono text-(length:--type-small) uppercase tracking-[0.08em] text-muted-foreground">
             {workspaceTypeLabel(active)}
           </span>
         </span>
@@ -101,7 +101,7 @@ export function OrgSwitcher({ profiles, active, children, header, onOpen }: { pr
                   }
                 >
                   <span className="min-w-0 flex-1"><span className={isActive ? "block truncate text-sm font-medium text-accent-deep" : "block truncate text-sm font-medium text-foreground/80"}>{profile.org_name}</span>
-                  <span className="block truncate font-mono text-[12px] uppercase tracking-[0.08em] text-muted-foreground">{workspaceTypeLabel(profile)}</span></span>
+                  <span className="block truncate font-mono text-(length:--type-small) uppercase tracking-[0.08em] text-muted-foreground">{workspaceTypeLabel(profile)}</span></span>
                   {isActive ? <Check className="size-4 shrink-0" aria-label="Active workspace" /> : null}
                 </DropdownMenuItem>
               );

@@ -113,8 +113,8 @@ export function OneOnOneBrief({
               onClick={() => setDays(option)}
               className={
                 option === days
-                  ? "rounded-full bg-accent-soft px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-accent-deep"
-                  : "rounded-full border border-border bg-card px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+                  ? "rounded-full bg-accent-soft px-3 py-1 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-accent-deep"
+                  : "rounded-full border border-border bg-card px-3 py-1 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
               }
             >
               Last {option} days

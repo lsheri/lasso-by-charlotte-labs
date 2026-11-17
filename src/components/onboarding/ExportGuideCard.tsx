@@ -31,7 +31,7 @@ export function ExportGuideCard({ tool }: { tool: Extract<ToolId, "gemini" | "co
               <span className="block text-sm font-medium text-foreground">
                 Bring in your {TOOLS[tool].label} history
               </span>
-              <span className="mt-0.5 block font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+              <span className="mt-0.5 block font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
                 {meta.tierHint}
               </span>
             </span>
@@ -48,7 +48,7 @@ export function ExportGuideCard({ tool }: { tool: Extract<ToolId, "gemini" | "co
           {open ? (
             <div className="mt-3 space-y-3">
               <p className="whitespace-pre-line text-sm text-muted-foreground">{meta.guide}</p>
-              <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+              <p className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
                 {STEPS_VERIFIED}
               </p>
               <ImportFlowDialog

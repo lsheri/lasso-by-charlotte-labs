@@ -73,9 +73,9 @@ export function DemoHomeWorkspace({ surface }: { surface: DemoHomeSurface }) {
     <section ref={sectionRef} aria-label="Demo workboards">
       <div ref={gridRef} className={tour.step === 1 ? "pt-28" : undefined}>
         {query.isPending ? (
-          <p className="text-[13px] text-muted-foreground">Opening the demo.</p>
+          <p className="text-(length:--type-body) text-muted-foreground">Opening the demo.</p>
         ) : cards.length === 0 ? (
-          <p className="text-[13px] text-foreground">The demo is not available right now.</p>
+          <p className="text-(length:--type-body) text-foreground">The demo is not available right now.</p>
         ) : (
           <HomeEngagementGrid
             cards={cards}
@@ -86,7 +86,7 @@ export function DemoHomeWorkspace({ surface }: { surface: DemoHomeSurface }) {
           />
         )}
       </div>
-      <p className="mt-4 text-[13px] text-muted-foreground" data-testid="demo-also-row">
+      <p className="mt-4 text-(length:--type-body) text-muted-foreground" data-testid="demo-also-row">
         Also in this workspace:{" "}
         <Link to="/demo/conversations" className="text-foreground underline underline-offset-2">All AI Conversations</Link>
         {" · "}

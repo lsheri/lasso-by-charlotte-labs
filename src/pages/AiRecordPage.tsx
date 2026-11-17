@@ -408,7 +408,7 @@ export function AiRecordPage() {
         <header className="box-border flex h-16 shrink-0 items-center gap-2 border-b border-[var(--nb-rule)] px-5">
            <div className="mr-auto min-w-0">
              <h1 className="truncate font-serif text-[19px] leading-none">All AI Conversations</h1>
-            <p className="mt-1 truncate font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">{subtitle}</p>
+            <p className="mt-1 truncate font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">{subtitle}</p>
           </div>
           <PasteThreadDialog trigger={<Button type="button" variant="outline" className="h-9">Add a chat</Button>} />
           {isCoach ? null : (
@@ -437,7 +437,7 @@ export function AiRecordPage() {
               return (
                 <button key={option} type="button" aria-pressed={on} onClick={() => chooseTool(option as ToolVendor | "all")} className={on ? "rounded-full border border-graphite bg-nb-white px-3 py-1 text-[11.5px] font-medium text-foreground" : "rounded-full border border-[var(--nb-pencil)] px-3 py-1 text-[11.5px] text-muted-foreground transition-colors hover:border-foreground"}>
                   {option === "all" ? "Everything" : option === "unknown" ? "Other" : vendorLabel(option)}
-                  <span className="ml-1.5 font-mono text-[11px] text-soft">{option === "all" ? shown.length : shown.filter((item) => vendorFromSource(item) === option).length}</span>
+                  <span className="ml-1.5 font-mono text-(length:--type-label) text-soft">{option === "all" ? shown.length : shown.filter((item) => vendorFromSource(item) === option).length}</span>
                 </button>
               );
             })}
@@ -446,18 +446,18 @@ export function AiRecordPage() {
             <PopoverTrigger asChild>
               <Button type="button" variant="outline" className="h-7 rounded-full">
                 {selectedEngagement?.code ?? (engagement === "unmapped" ? "Unmapped" : "Workboards")}
-                {engagement === "all" ? null : <span className="font-mono text-[11px] text-soft">{matchingCount}</span>}
+                {engagement === "all" ? null : <span className="font-mono text-(length:--type-label) text-soft">{matchingCount}</span>}
               </Button>
             </PopoverTrigger>
             <PopoverContent align="start" className="w-80">
               <div role="group" aria-label="Filter by workboard" className="flex flex-wrap items-center gap-2">
-                <button type="button" aria-pressed={engagement === "all"} onClick={() => chooseEngagement("all")} className={engagement === "all" ? "rounded-full border border-graphite bg-nb-white px-3 py-1 text-[11.5px] font-medium text-foreground" : "rounded-full border border-[var(--nb-pencil)] px-3 py-1 text-[11.5px] text-muted-foreground"}>Everything <span className="ml-1.5 font-mono text-[11px] text-soft">{shown.length}</span></button>
+                <button type="button" aria-pressed={engagement === "all"} onClick={() => chooseEngagement("all")} className={engagement === "all" ? "rounded-full border border-graphite bg-nb-white px-3 py-1 text-[11.5px] font-medium text-foreground" : "rounded-full border border-[var(--nb-pencil)] px-3 py-1 text-[11.5px] text-muted-foreground"}>Everything <span className="ml-1.5 font-mono text-(length:--type-label) text-soft">{shown.length}</span></button>
                 {engagementsPresent.map((entry) => (
                   <button key={entry.id} type="button" aria-pressed={engagement === entry.id} onClick={() => chooseEngagement(entry.id)} className={engagement === entry.id ? "rounded-full border border-graphite bg-nb-white px-3 py-1 text-[11.5px] font-medium text-foreground" : "rounded-full border border-[var(--nb-pencil)] px-3 py-1 text-[11.5px] text-muted-foreground"}>
-                    <span className="mr-1.5 inline-block h-2 w-2 rounded-full align-middle" style={{ background: `var(${engagementHue(entry.id)})` }} />{entry.code}<span className="ml-1.5 font-mono text-[11px] text-soft">{entry.count}</span>
+                    <span className="mr-1.5 inline-block h-2 w-2 rounded-full align-middle" style={{ background: `var(${engagementHue(entry.id)})` }} />{entry.code}<span className="ml-1.5 font-mono text-(length:--type-label) text-soft">{entry.count}</span>
                   </button>
                 ))}
-                {unmappedCount > 0 ? <button type="button" aria-pressed={engagement === "unmapped"} onClick={() => chooseEngagement("unmapped")} className={engagement === "unmapped" ? "rounded-full border border-graphite bg-nb-white px-3 py-1 text-[11.5px] font-medium text-foreground" : "rounded-full border border-[var(--nb-pencil)] px-3 py-1 text-[11.5px] text-muted-foreground"}>Unmapped <span className="ml-1.5 font-mono text-[11px] text-soft">{unmappedCount}</span></button> : null}
+                {unmappedCount > 0 ? <button type="button" aria-pressed={engagement === "unmapped"} onClick={() => chooseEngagement("unmapped")} className={engagement === "unmapped" ? "rounded-full border border-graphite bg-nb-white px-3 py-1 text-[11.5px] font-medium text-foreground" : "rounded-full border border-[var(--nb-pencil)] px-3 py-1 text-[11.5px] text-muted-foreground"}>Unmapped <span className="ml-1.5 font-mono text-(length:--type-label) text-soft">{unmappedCount}</span></button> : null}
                 {selectedEngagement ? <Button type="button" variant="ghost" size="sm" onClick={() => { if (!recursOpen) recordPanelOpen("recurs"); setRecursOpen((open) => !open); }}>{recursOpen ? "Hide analysis" : "What recurs"}</Button> : null}
               </div>
             </PopoverContent>
@@ -465,10 +465,10 @@ export function AiRecordPage() {
           <div className="ml-auto flex shrink-0 items-center gap-2">
              {!showingAskedHistory ? (
               <Popover onOpenChange={(open) => { if (open) recordPanelOpen("coverage"); }}>
-                <PopoverTrigger asChild><Button type="button" variant="ghost" className="h-7 text-[13px] text-muted-foreground">{countLine}</Button></PopoverTrigger>
+                <PopoverTrigger asChild><Button type="button" variant="ghost" className="h-7 text-(length:--type-body) text-muted-foreground">{countLine}</Button></PopoverTrigger>
                 <PopoverContent align="end" className="max-h-[70vh] w-[min(720px,calc(100vw-2rem))] overflow-y-auto">
                   <CaptureCoverage profileId={profile?.id} itemCount={threads.length} scopeLabel="your chat library" dates={threads.map((thread) => effectiveWorkDate(thread))} />
-                  <p className="lasso-hand-voice mt-6 font-hand text-[16px] text-green">{copy("nothing here was written by Lasso")}</p>
+                  <p className="lasso-hand-voice mt-6 font-hand text-(length:--type-lead) text-green">{copy("nothing here was written by Lasso")}</p>
                 </PopoverContent>
               </Popover>
             ) : null}
@@ -497,7 +497,7 @@ export function AiRecordPage() {
                        <section key={group.key} data-conversation-month={group.key} className={group.items.length === 0 ? "conversation-month-empty" : undefined}>
                          <div className="flex min-h-10 items-center gap-3">
                            <h2 className="font-hand text-[19px] leading-none text-graphite">{group.label}</h2>
-                           <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-soft">{group.items.length}</span>
+                           <span className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-soft">{group.items.length}</span>
                            <span className="h-px flex-1 bg-[var(--nb-rule)]" />
                          </div>
                          {group.items.length > 0 ? (
@@ -516,10 +516,10 @@ export function AiRecordPage() {
                                          onOpen={() => openItem(item)}
                                        />
                                        <CardMenu item={item} onFluency={(nextItem) => setLensItem(nextItem)}>
-                                         {firstEngagement(item) ? <span className="font-mono text-[11px] uppercase tracking-[0.08em]" style={{ color: `var(${engagementHue(firstEngagement(item)?.id ?? "")})` }}>{firstEngagement(item)?.code}</span> : <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-soft">UNMAPPED</span>}
-                                         {itemModel(item) ? <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-soft">{itemModel(item)}</span> : null}
-                                         <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-soft">{turnCounts?.[item.id] ?? 0} {(turnCounts?.[item.id] ?? 0) === 1 ? "turn" : "turns"}</span>
-                                         {(fed?.[item.id] ?? []).length > 0 ? <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-green">{fedPhrase(fed?.[item.id] ?? [])}</span> : null}
+                                         {firstEngagement(item) ? <span className="font-mono text-(length:--type-label) uppercase tracking-[0.08em]" style={{ color: `var(${engagementHue(firstEngagement(item)?.id ?? "")})` }}>{firstEngagement(item)?.code}</span> : <span className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-soft">UNMAPPED</span>}
+                                         {itemModel(item) ? <span className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-soft">{itemModel(item)}</span> : null}
+                                         <span className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-soft">{turnCounts?.[item.id] ?? 0} {(turnCounts?.[item.id] ?? 0) === 1 ? "turn" : "turns"}</span>
+                                         {(fed?.[item.id] ?? []).length > 0 ? <span className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-green">{fedPhrase(fed?.[item.id] ?? [])}</span> : null}
                                          <ChatUrlLink item={item} showAbsence />
                                        </CardMenu>
                                      </div>
@@ -600,7 +600,7 @@ export function AiRecordPage() {
                     <GraphiteIcon name="close" size={18} />
                   </button>
                 </div>
-                <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+                <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
                   <span>{vendorLabel(vendorFromSource(selected))}</span>
                   <span>·</span>
                   <span>
@@ -640,10 +640,10 @@ export function AiRecordPage() {
                   the product already does. The unavailable turn-level provenance
                   panel is deliberately not invented above this card. */}
               <ToneCard tone="paper" label="WHY THIS PANEL EXISTS">
-                <p className="text-[13px] leading-[19px] text-foreground">
+                <p className="text-(length:--type-body) leading-[19px] text-foreground">
                   You can always see what the AI actually read before it answered.
                 </p>
-                <p className="mt-1 text-[12px] leading-[18px] text-muted-foreground">
+                <p className="mt-1 text-(length:--type-small) leading-[18px] text-muted-foreground">
                   If a line is not in the record, it is dropped, never repaired.
                 </p>
               </ToneCard>

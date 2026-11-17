@@ -59,7 +59,7 @@ export function WaitingOnYou() {
   return (
     <section className="mb-8" data-testid="overview-waiting">
       <div className="mb-3 flex items-baseline justify-between gap-4">
-        <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-soft">
+        <span className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-soft">
           Decisions waiting on you · {drafts.length}
         </span>
         <Link to="/decisions" className="nb-type-small text-accent-deep hover:underline">
@@ -83,7 +83,7 @@ export function WaitingOnYou() {
               }`}
             >
               <div className="flex items-start justify-between gap-2">
-                <span className="font-hand text-[16px] leading-[18px] text-[var(--nb-yellow-ink)]">
+                <span className="font-hand text-(length:--type-lead) leading-[18px] text-[var(--nb-yellow-ink)]">
                   your decision
                   {row.date_label ? ` · ${row.date_label}` : ""}
                 </span>
@@ -95,11 +95,11 @@ export function WaitingOnYou() {
                 ) : null}
               </div>
 
-              <p className="text-[16px] font-medium leading-[21px] text-foreground">
+              <p className="text-(length:--type-lead) font-medium leading-[21px] text-foreground">
                 {row.call_text ?? row.situation ?? "Untitled decision"}
               </p>
               {row.situation ? (
-                <p className="text-[13px] leading-[18px] text-muted-foreground">{row.situation}</p>
+                <p className="text-(length:--type-body) leading-[18px] text-muted-foreground">{row.situation}</p>
               ) : null}
 
               {firstSrc ? (
@@ -107,7 +107,7 @@ export function WaitingOnYou() {
                   <button
                     type="button"
                     onClick={() => { setSourceItem(firstSrc); setSourceFocus(turn ? { turnNo: turn.turn_no, text: turn.content } : undefined); }}
-                    className="story-link max-w-full truncate font-mono text-[11px] uppercase tracking-[0.08em] text-accent-deep"
+                    className="story-link max-w-full truncate font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-accent-deep"
                   >
                     {srcLabel}
                   </button>
@@ -128,7 +128,7 @@ export function WaitingOnYou() {
                 </Button>
                 <button
                   type="button"
-                  className="font-hand text-[16px] text-soft transition-colors hover:text-foreground"
+                  className="font-hand text-(length:--type-lead) text-soft transition-colors hover:text-foreground"
                   onClick={() => actions.discard(row)}
                 >
                   Not a decision

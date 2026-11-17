@@ -74,7 +74,7 @@ export function DecisionLogRow({
               className="h-auto w-full max-w-[758px] justify-start whitespace-normal rounded-[var(--radius-md)] border border-border bg-grey-1 px-4 py-3 text-left hover:bg-grey-2"
             >
               <span className="block min-w-0">
-                <span className="block font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+                <span className="block font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
                   {source.heading}
                 </span>
                 {source.quote ? (
@@ -87,7 +87,7 @@ export function DecisionLogRow({
           ))}
         </div>
       ) : (
-        <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+        <p className="mb-3 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
           No source attached
         </p>
       )}
@@ -95,31 +95,31 @@ export function DecisionLogRow({
       {confirmed && !editing ? (
         <div className="flex max-w-[758px] items-start justify-between gap-5 border-y border-[var(--nb-yellow-edge)] bg-[var(--nb-yellow-wash)] px-4 py-3">
           <div className="min-w-0 flex-1">
-            <p className="text-[13px] font-semibold leading-[18px] text-foreground">
+            <p className="text-(length:--type-body) font-semibold leading-[18px] text-foreground">
               {decision.call_text || decision.situation || "Untitled decision"}
             </p>
             {decision.why?.trim() ? (
-              <p className="mt-1 font-hand text-[16px] italic leading-[20px] text-muted-foreground">
+              <p className="mt-1 font-hand text-(length:--type-lead) italic leading-[20px] text-muted-foreground">
                 {decision.why}
               </p>
             ) : null}
             {deliverable ? (
-              <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+              <p className="mt-2 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
                 {deliverable}
               </p>
             ) : null}
             <div className="mt-2 flex items-center gap-3">
-              <Button type="button" variant="link" className="h-auto p-0 font-hand text-[16px]" onClick={() => setEditing(true)}>
+              <Button type="button" variant="link" className="h-auto p-0 font-hand text-(length:--type-lead)" onClick={() => setEditing(true)}>
                 Edit reasoning
               </Button>
-              <Button type="button" variant="ghost" className="h-auto p-0 font-hand text-[16px] text-muted-foreground" onClick={() => onDiscard(decision)}>
+              <Button type="button" variant="ghost" className="h-auto p-0 font-hand text-(length:--type-lead) text-muted-foreground" onClick={() => onDiscard(decision)}>
                 Discard
               </Button>
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-1.5 pt-0.5 text-green">
             <GraphiteCheck seed={decision.id} />
-            <span className={`font-mono text-[11px] uppercase tracking-[0.08em] ${label.still ? "" : label.className}`}>
+            <span className={`font-mono text-(length:--type-label) uppercase tracking-[0.08em] ${label.still ? "" : label.className}`}>
               ON THE RECORD
             </span>
           </div>
@@ -128,18 +128,18 @@ export function DecisionLogRow({
         <div className="max-w-[758px] border border-[var(--nb-yellow-edge)] bg-[var(--nb-yellow-wash)] px-4 py-4">
           {decision.situation ? (
             <div>
-              <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">The situation</p>
-              <p className="mt-1 text-[13px] leading-[18px] text-muted-foreground">{decision.situation}</p>
+              <p className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">The situation</p>
+              <p className="mt-1 text-(length:--type-body) leading-[18px] text-muted-foreground">{decision.situation}</p>
             </div>
           ) : null}
           <div className="mt-3">
-            <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">The decision</p>
-            <p className="mt-1 text-[13px] font-semibold leading-[18px] text-foreground">
+            <p className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">The decision</p>
+            <p className="mt-1 text-(length:--type-body) font-semibold leading-[18px] text-foreground">
               {decision.call_text || decision.situation || "Untitled decision"}
             </p>
           </div>
           <label className="mt-3 block">
-            <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">Why it was the right decision</span>
+            <span className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">Why it was the right decision</span>
             <Textarea
               rows={3}
               value={reasoning}
@@ -156,18 +156,18 @@ export function DecisionLogRow({
                 onClick={() => onOpenSource(citedTurn.workItemId, citedTurn.focus)}
                 className="h-auto w-full justify-start whitespace-normal rounded-none bg-[var(--nb-ink-yellow)] px-3 py-2 text-left hover:bg-[var(--nb-ink-yellow)]"
               >
-                <span className="font-mono text-[11px] font-normal leading-[15px] text-foreground">
+                <span className="font-mono text-(length:--type-label) font-normal leading-[15px] text-foreground">
                   “{citedTurn.quote}” · {citedTurn.heading.replace(` · ${copy("Lasso drafted this")}`, "")}
                 </span>
               </Button>
-              <p className="mt-1 font-hand text-[16px] text-muted-foreground">this is the turn it came from</p>
+              <p className="mt-1 font-hand text-(length:--type-lead) text-muted-foreground">this is the turn it came from</p>
             </div>
           ) : null}
           <div className="mt-4 flex items-center gap-3">
             <Button type="button" size="sm" disabled={!reasoning.trim()} onClick={() => { onSaveReasoning(decision, reasoning); setEditing(false); }}>
               Save the reasoning
             </Button>
-            <Button type="button" variant="ghost" className="h-auto p-0 font-serif text-[13px] italic text-muted-foreground" onClick={() => onDiscard(decision)}>
+            <Button type="button" variant="ghost" className="h-auto p-0 font-serif text-(length:--type-body) italic text-muted-foreground" onClick={() => onDiscard(decision)}>
               Discard
             </Button>
             {editing ? (

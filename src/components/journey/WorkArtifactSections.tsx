@@ -29,7 +29,7 @@ function decidedByLabel(decision: ArtifactDecision): string {
 
 function Micro({ children }: { children: ReactNode }) {
   return (
-    <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+    <p className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
       {children}
     </p>
   );
@@ -37,7 +37,7 @@ function Micro({ children }: { children: ReactNode }) {
 
 function RefButtons({ refs, onOpenRef }: { refs: TurnRef[]; onOpenRef?: ((ref: TurnRef, text?: string) => void) | undefined; }) {
   if (refs.length === 0) return null;
-  return <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">{refs.map((ref, index) => <span key={`${ref.item_id}-${ref.turn_no}`}>{index ? " · " : ""}{onOpenRef ? <button type="button" className="story-link" onClick={() => onOpenRef(ref)}>turn {ref.turn_no}</button> : `turn ${ref.turn_no}`}</span>)}</p>;
+  return <p className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">{refs.map((ref, index) => <span key={`${ref.item_id}-${ref.turn_no}`}>{index ? " · " : ""}{onOpenRef ? <button type="button" className="story-link" onClick={() => onOpenRef(ref)}>turn {ref.turn_no}</button> : `turn ${ref.turn_no}`}</span>)}</p>;
 }
 
 function Section({
@@ -72,7 +72,7 @@ function Section({
 
 function Quiet({ children }: { children: ReactNode }) {
   return (
-    <p className="border-t border-border pt-2.5 font-serif text-[13px] italic text-muted-foreground">
+    <p className="border-t border-border pt-2.5 font-serif text-(length:--type-body) italic text-muted-foreground">
       {children}
     </p>
   );
@@ -100,7 +100,7 @@ export function WorkArtifactSections({
             {artifact.how_ai_was_used.map((stage, i) => (
               <li key={`${stage.stage}-${i}`}>
                 <p className="text-sm font-medium text-foreground">{stage.stage}</p>
-                <p className="mt-0.5 text-[13px] leading-snug text-foreground">
+                <p className="mt-0.5 text-(length:--type-body) leading-snug text-foreground">
                   {stage.what_happened}
                 </p>
                 <RefButtons refs={stage.turn_refs} onOpenRef={onOpenRef} />
@@ -121,7 +121,7 @@ export function WorkArtifactSections({
                   {prompt.quote}
                 </blockquote>
                 {prompt.why_it_worked ? (
-                  <p className="mt-1 text-[13px] leading-snug text-foreground">
+                  <p className="mt-1 text-(length:--type-body) leading-snug text-foreground">
                     {prompt.why_it_worked}
                   </p>
                 ) : null}
@@ -141,7 +141,7 @@ export function WorkArtifactSections({
               <li key={`${check.step}-${i}`}>
                 <p className="text-sm font-medium text-foreground">{check.step}</p>
                 {check.evidence ? (
-                  <p className="mt-0.5 text-[13px] leading-snug text-foreground">
+                  <p className="mt-0.5 text-(length:--type-body) leading-snug text-foreground">
                     {check.evidence}
                   </p>
                 ) : null}
@@ -164,7 +164,7 @@ export function WorkArtifactSections({
           <ul className="list-none space-y-3">
             {artifact.decisions.map((decision, i) => (
               <li key={`${decision.decision.slice(0, 20)}-${i}`}>
-                <p className="text-[13px] leading-snug text-foreground">{decision.decision}</p>
+                <p className="text-(length:--type-body) leading-snug text-foreground">{decision.decision}</p>
                 <Micro>{decidedByLabel(decision)}</Micro>
                 <RefButtons refs={decision.turn_refs} onOpenRef={onOpenRef} />
               </li>
@@ -179,7 +179,7 @@ export function WorkArtifactSections({
         ) : (
           <ol className="list-decimal space-y-1.5 pl-5">
             {artifact.process_steps.map((step, i) => (
-              <li key={`${i}-${step.slice(0, 20)}`} className="text-[13px] leading-snug text-foreground">
+              <li key={`${i}-${step.slice(0, 20)}`} className="text-(length:--type-body) leading-snug text-foreground">
                 {step}
               </li>
             ))}
@@ -190,7 +190,7 @@ export function WorkArtifactSections({
       <Section label={WORK_ARTIFACT_SECTIONS.gaps} index={5} drawing={drawing} startMs={startMs}>
         <ul className="list-none space-y-1.5">
           {artifact.honest_gaps.map((gap, i) => (
-            <li key={`${i}-${gap.slice(0, 20)}`} className="text-[13px] leading-snug text-muted-foreground">
+            <li key={`${i}-${gap.slice(0, 20)}`} className="text-(length:--type-body) leading-snug text-muted-foreground">
               {gap}
             </li>
           ))}

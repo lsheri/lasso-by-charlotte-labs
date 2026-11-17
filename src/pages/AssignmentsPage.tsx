@@ -57,10 +57,10 @@ export function AssignmentsPage() {
             <ul className="divide-y divide-[var(--nb-pencil)] rounded-[var(--radius-control)] border border-[var(--nb-pencil)] bg-card">
               {list.map((row) => (
                 <li key={row.id} className="flex items-center justify-between gap-3 px-3 py-2.5">
-                  <span className="text-[13px] font-medium leading-[17px] text-foreground">
+                  <span className="text-(length:--type-body) font-medium leading-[17px] text-foreground">
                     {row.name}
                   </span>
-                  <span className="font-mono text-[11px] uppercase text-soft">{row.status}</span>
+                  <span className="font-mono text-(length:--type-label) uppercase text-soft">{row.status}</span>
                 </li>
               ))}
             </ul>

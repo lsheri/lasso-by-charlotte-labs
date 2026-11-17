@@ -128,7 +128,7 @@ export function CommentComposer({
 
 export function CommentLine({ comment }: { comment: CommentDto }) {
   return (
-    <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-soft">
+    <span className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-soft">
       {comment.authorName} · {relativeTime(comment.createdAt)}
       {comment.edited ? " · edited" : ""}
     </span>
@@ -361,7 +361,7 @@ export function ChatNotesPanel({
                       onCancel={() => setEditingId(null)}
                     />
                   ) : (
-                    <p className="mt-1 text-[12px] leading-[18px] text-foreground">{thread.body}</p>
+                    <p className="mt-1 text-(length:--type-small) leading-[18px] text-foreground">{thread.body}</p>
                   )}
 
                   {thread.replies.length > 0 ? (
@@ -384,7 +384,7 @@ export function ChatNotesPanel({
                               onCancel={() => setEditingId(null)}
                             />
                           ) : (
-                            <p className="mt-1 text-[12px] leading-[18px] text-foreground">
+                            <p className="mt-1 text-(length:--type-small) leading-[18px] text-foreground">
                               {reply.body}
                             </p>
                           )}
@@ -529,11 +529,11 @@ export function ChatNotesPanel({
                   key={highlight.id}
                   className="rounded-[var(--radius-control)] border border-border bg-card px-2.5 py-2"
                 >
-                  <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-soft">
+                  <span className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-soft">
                     Turn {highlight.turnNo}
                     {highlight.stale ? " · From an earlier version" : ""}
                   </span>
-                  <p className="mt-1 line-clamp-2 text-[12px] leading-[18px] text-foreground">
+                  <p className="mt-1 line-clamp-2 text-(length:--type-small) leading-[18px] text-foreground">
                     {highlight.excerpt}
                   </p>
                   <div className="mt-1 flex items-center gap-1">
@@ -595,11 +595,11 @@ export function ChatNotesPanel({
                     key={highlight.id}
                     className="rounded-[var(--radius-control)] border border-border bg-card px-2.5 py-2"
                   >
-                    <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-soft">
+                    <span className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-soft">
                       {highlight.authorName ?? "A colleague"} · Turn {highlight.turnNo}
                       {highlight.stale ? " · From an earlier version" : ""}
                     </span>
-                    <p className="mt-1 line-clamp-2 text-[12px] leading-[18px] text-foreground">
+                    <p className="mt-1 line-clamp-2 text-(length:--type-small) leading-[18px] text-foreground">
                       {highlight.excerpt}
                     </p>
                   </li>

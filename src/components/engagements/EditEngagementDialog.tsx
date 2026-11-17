@@ -124,7 +124,7 @@ export function EditEngagementDialog({
         <button
           type="button"
           aria-label="Edit workboard"
-          className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+          className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
         >
           <Pencil className="h-3 w-3" aria-hidden /> Edit
         </button>

@@ -126,7 +126,7 @@ export function McpSetupCard({ vendor }: { vendor: McpVendor }) {
           <ol className="space-y-1.5">
             {MCP_SETUP_STEPS[vendor].map((step, index) => (
               <li key={step} className="flex gap-2 text-sm text-muted-foreground">
-                <span className="font-mono text-[11px] text-accent-deep">{index + 1}</span>
+                <span className="font-mono text-(length:--type-label) text-accent-deep">{index + 1}</span>
                 <span>{say(step)}</span>
               </li>
             ))}
@@ -159,7 +159,7 @@ export function McpSetupCard({ vendor }: { vendor: McpVendor }) {
           <ol className="space-y-1.5">
             {MCP_SETUP_STEPS[vendor].map((step, index) => (
               <li key={step} className="flex gap-2 text-sm text-muted-foreground">
-                <span className="font-mono text-[11px] text-accent-deep">{index + 1}</span>
+                <span className="font-mono text-(length:--type-label) text-accent-deep">{index + 1}</span>
                 <span>{say(step)}</span>
               </li>
             ))}

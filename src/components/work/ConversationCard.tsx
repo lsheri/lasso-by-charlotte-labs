@@ -118,7 +118,7 @@ export function ConversationCard({
             <CardMenu item={head} onFluency={onFluency}>
               {primaryAction}
               {actions}
-              <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-soft">{stateStamp}</span>
+              <span className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-soft">{stateStamp}</span>
               {pieces.map((piece) => <span key={piece.id}>{footerFor?.(piece)}</span>)}
             </CardMenu>
           </div>
@@ -135,7 +135,7 @@ export function ConversationCard({
           <CardMenu item={head} onFluency={onFluency}>
             {primaryAction}
             {actions}
-            <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-soft">{stateStamp}</span>
+            <span className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-soft">{stateStamp}</span>
             {pieces.map((piece) => <span key={piece.id}>{footerFor?.(piece)}</span>)}
           </CardMenu>
         )}
@@ -150,7 +150,7 @@ export function ConversationCard({
       style={{ ...wash, ...spine }}
     >
       <div className="px-3 pt-3 sm:px-4">
-        <p className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+        <p className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
           <span className="inline-flex items-center gap-1">
             <SourceMark item={head} />
             {vendor ? vendorLabel(vendor) : "Conversation"}
@@ -176,7 +176,7 @@ export function ConversationCard({
             {head.title}
           </span>
         </button>
-        <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+        <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
           <span>{workIdentityLabel(head)}</span>
           <span aria-hidden>·</span>
           <VendorMark item={head} />
@@ -200,14 +200,14 @@ export function ConversationCard({
               >
                 <TypeIcon item={piece} size="sm" />
                 <span className="min-w-0 flex-1">
-                  <span className="line-clamp-1 break-all text-[13px] text-foreground">
+                  <span className="line-clamp-1 break-all text-(length:--type-body) text-foreground">
                     {piece.title}
                   </span>
-                  <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+                  <span className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
                     {attachmentKindLabel(piece.source_meta?.kind)}
                   </span>
                 </span>
-                <span className="shrink-0 font-mono text-[11px] uppercase tracking-[0.08em] text-accent-deep">
+                <span className="shrink-0 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-accent-deep">
                   Open
                 </span>
               </button>
@@ -225,7 +225,7 @@ export function ConversationCard({
               <button
                 type="button"
                 onClick={() => setExpanded(true)}
-                className="w-full px-3 py-2 text-left font-mono text-[11px] uppercase tracking-[0.08em] text-accent-deep transition-opacity hover:opacity-70 sm:px-4"
+                className="w-full px-3 py-2 text-left font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-accent-deep transition-opacity hover:opacity-70 sm:px-4"
               >
                 Show {hidden} more piece{hidden === 1 ? "" : "s"}
               </button>

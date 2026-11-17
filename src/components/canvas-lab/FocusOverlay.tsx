@@ -149,7 +149,7 @@ export function FocusOverlay({
       <div className="focus-paper" style={originStyle}>
         <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-3">
           <div className="min-w-0">
-            <span className="flex min-w-0 items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+            <span className="flex min-w-0 items-center gap-1.5 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
               {item ? <SourceMark item={item} size={14} disc /> : null}
               {item ? <VendorMark item={item} /> : node.typeLabel}
               {item ? <> · {formatDate(effectiveWorkDate(item))}</> : null}
@@ -176,7 +176,7 @@ export function FocusOverlay({
               {readOnly ? (
                 filePreview && filePreview.kind !== "fallback"
                   ? <WorkboardFilePreview preview={filePreview} title={node.title} onFailure={() => undefined} />
-                  : <p className="whitespace-pre-wrap text-[13px] leading-[20px] text-foreground">{node.summary}</p>
+                  : <p className="whitespace-pre-wrap text-(length:--type-body) leading-[20px] text-foreground">{node.summary}</p>
               ) : <RenderedContent item={item} onDownload={() => void download(item)} canEdit={false} />}
               </div>
             ) : itemLoading ? (
@@ -186,9 +186,9 @@ export function FocusOverlay({
               </div>
             ) : (
               <div ref={readerRef} className="focus-paper-reader flex h-full flex-col gap-2 px-5 py-4" onMouseUp={captureSelection} onKeyUp={captureSelection}>
-                <p className="text-[13px] leading-[20px] text-foreground">{node.summary}</p>
+                <p className="text-(length:--type-body) leading-[20px] text-foreground">{node.summary}</p>
                 {node.prompt ? (
-                  <p className="text-[13px] leading-[20px] text-foreground">{node.prompt}</p>
+                  <p className="text-(length:--type-body) leading-[20px] text-foreground">{node.prompt}</p>
                 ) : null}
                 <p className="font-hand text-base leading-relaxed text-muted-foreground">
                   {COPY.unavailable}

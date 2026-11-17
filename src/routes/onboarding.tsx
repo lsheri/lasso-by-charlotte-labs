@@ -712,7 +712,7 @@ function OnboardingInner() {
             {error ? <p className="mt-3 text-sm text-destructive">{error}</p> : null}
 
             <div className="mt-6" data-testid="segment-row">
-              <p className="text-[13px] text-muted-foreground">
+              <p className="text-(length:--type-body) text-muted-foreground">
                 It helps us compare like with like, never you with anyone.
               </p>
               <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
@@ -929,10 +929,10 @@ function OnboardingInner() {
                   data-testid="key-notice"
                   className="rounded-[var(--radius)] border border-dashed border-border px-4 py-3"
                 >
-                  <p className="font-hand text-[16px] leading-snug text-foreground">
+                  <p className="font-hand text-(length:--type-lead) leading-snug text-foreground">
                     <KeyNoticeSentence institution={keyInstitution} />
                   </p>
-                  <p className="mt-1 text-[13px] text-muted-foreground">{KEY_NOTICE_COPY.body}</p>
+                  <p className="mt-1 text-(length:--type-body) text-muted-foreground">{KEY_NOTICE_COPY.body}</p>
                   <button
                     type="button"
                     onClick={removeKey}

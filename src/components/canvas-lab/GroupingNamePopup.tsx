@@ -108,7 +108,7 @@ export function GroupingNamePopup({ frame, pan, zoom, viewport, portalRoot, onNa
         }}
       />
       {error ? <span className="canvas-lab-frame-name-error font-hand">a workstream needs a name</span> : null}
-      <span className="canvas-lab-region-hint font-hand block text-[13px] text-[var(--nb-mid)]">{REGION_NAMING_LINE}</span>
+      <span className="canvas-lab-region-hint font-hand block text-(length:--type-body) text-[var(--nb-mid)]">{REGION_NAMING_LINE}</span>
     </div>,
     portalRoot,
   );

@@ -467,10 +467,10 @@ function AuthPage() {
             <p className="mt-2 text-sm text-muted-foreground">The link signs you in and picks up where you left off.</p>
             {key && !keyInvalid ? (
               <div data-testid="key-notice" className="mt-5 rounded-[var(--radius)] border border-dashed border-border px-4 py-3">
-                <p className="font-hand text-[16px] leading-snug text-foreground">
+                <p className="font-hand text-(length:--type-lead) leading-snug text-foreground">
                   <KeyNoticeSentence institution={keyCheck?.ok ? keyCheck.institution_name : null} />
                 </p>
-                <p className="mt-1 text-[13px] text-muted-foreground">{KEY_NOTICE_COPY.body}</p>
+                <p className="mt-1 text-(length:--type-body) text-muted-foreground">{KEY_NOTICE_COPY.body}</p>
               </div>
             ) : null}
             {error ? <p className="mt-4 text-sm text-destructive">{error}</p> : null}
@@ -525,10 +525,10 @@ function AuthPage() {
             ) : null}
             {key && !keyInvalid ? (
               <div data-testid="key-notice" className="mt-5 rounded-[var(--radius)] border border-dashed border-border px-4 py-3">
-                <p className="font-hand text-[16px] leading-snug text-foreground">
+                <p className="font-hand text-(length:--type-lead) leading-snug text-foreground">
                   <KeyNoticeSentence institution={keyCheck?.ok ? keyCheck.institution_name : null} />
                 </p>
-                <p className="mt-1 text-[13px] text-muted-foreground">{KEY_NOTICE_COPY.body}</p>
+                <p className="mt-1 text-(length:--type-body) text-muted-foreground">{KEY_NOTICE_COPY.body}</p>
               </div>
             ) : null}
             <div className="space-y-1.5">
@@ -619,7 +619,7 @@ function AuthPage() {
         <div className="mt-6 text-center">
           <Link
             to="/trust"
-            className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+            className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
           >
             Trust &amp; data
           </Link>

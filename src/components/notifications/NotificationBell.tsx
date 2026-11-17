@@ -99,7 +99,7 @@ export function NotificationBell({ className, side = "bottom", align = "end" }: 
       {count && (
         <span
           data-testid="notification-count"
-          className="absolute right-1 top-1 min-w-[18px] rounded-full bg-primary px-1 text-center font-mono text-[11px] leading-[18px] text-primary-foreground"
+          className="absolute right-1 top-1 min-w-[18px] rounded-full bg-primary px-1 text-center font-mono text-(length:--type-label) leading-[18px] text-primary-foreground"
         >
           {count}
         </span>

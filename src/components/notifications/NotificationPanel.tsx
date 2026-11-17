@@ -183,7 +183,7 @@ export function NotificationPanel({
     }
   }
 
-  const heading = "font-mono text-[11px] uppercase tracking-[0.22em] text-muted-foreground";
+  const heading = "font-mono text-(length:--type-label) uppercase tracking-[0.22em] text-muted-foreground";
 
   return (
     <div className="flex flex-col gap-4" data-testid="notification-panel">

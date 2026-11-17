@@ -111,7 +111,7 @@ export function EngagementDecisions({
           Decisions on this workboard · {rows.length}
         </h2>
         {rows.length > 0 ? (
-          <span className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+          <span className="flex items-center gap-2 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
             {draftCount > 0 ? <SuggestDot /> : null}
             {rows.length - draftCount} confirmed · {draftCount} awaiting you
           </span>

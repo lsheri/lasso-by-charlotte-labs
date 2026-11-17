@@ -65,7 +65,7 @@ export function EduEngagementsPage({ kind }: { kind: EngagementKind }) {
               key={row.id}
               className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-control)] border border-[var(--nb-pencil)] bg-card px-3 py-2.5"
             >
-              <span className="text-[13px] font-medium leading-[17px] text-foreground">
+              <span className="text-(length:--type-body) font-medium leading-[17px] text-foreground">
                 {engagementDisplayTitle(row)}
               </span>
               <span className="flex gap-2">

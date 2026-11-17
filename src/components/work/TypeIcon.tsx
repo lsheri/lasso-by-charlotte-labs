@@ -47,7 +47,7 @@ export function TypeBadge({
   const identity = workIdentity(item);
   const Icon = identity.icon;
   const styles = hueStyles(identity.hue);
-  const pad = size === "sm" ? "px-1.5 py-0.5 text-[11px]" : "px-2 py-0.5 text-[11px]";
+  const pad = size === "sm" ? "px-1.5 py-0.5 text-(length:--type-label)" : "px-2 py-0.5 text-(length:--type-label)";
   const glyph = size === "sm" ? "h-2.5 w-2.5" : "h-3 w-3";
   return (
     <span
@@ -82,7 +82,7 @@ export function EngagementChip({
   const styles = hueStyles(engagementHue(engagementId));
   return (
     <span
-      className="inline-flex max-w-[220px] items-center gap-1 truncate rounded-full px-2 py-0.5 font-mono text-[11px] uppercase tracking-[0.08em]"
+      className="inline-flex max-w-[220px] items-center gap-1 truncate rounded-full px-2 py-0.5 font-mono text-(length:--type-label) uppercase tracking-[0.08em]"
       style={{ backgroundColor: styles.background, color: styles.color }}
     >
       <CheckCircle2 className="h-3 w-3 shrink-0" aria-hidden />
@@ -103,7 +103,7 @@ export function VendorChip({
   const hue = vendorHue(vendor);
   if (!hue) {
     return (
-      <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+      <span className="font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
         {label}
       </span>
     );
@@ -111,7 +111,7 @@ export function VendorChip({
   const styles = hueStyles(hue);
   return (
     <span
-      className="inline-flex items-center rounded-full px-1.5 py-0.5 font-mono text-[11px] font-medium uppercase tracking-[0.08em]"
+      className="inline-flex items-center rounded-full px-1.5 py-0.5 font-mono text-(length:--type-label) font-medium uppercase tracking-[0.08em]"
       style={{ backgroundColor: styles.background, color: styles.color }}
     >
       {label}
