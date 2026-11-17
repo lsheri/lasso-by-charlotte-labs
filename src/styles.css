@@ -32,7 +32,7 @@
   .work-page { height: 100%; }
   .work-page-header { display: grid; grid-template-columns: minmax(0, 1fr) auto; height: auto; gap: 10px; padding: 16px; }
   .work-page-header > div:first-child { min-width: 0; }
-  .work-page-subtitle { overflow: visible; white-space: normal; font-size: 12px; line-height: 1.5; }
+  .work-page-subtitle { overflow: visible; white-space: normal; font-size: var(--type-small); line-height: 1.5; }
   .work-page-subtitle [data-work-subtitle="parts"] { column-gap: 16px; }
   .work-page-filters { flex-wrap: nowrap; height: auto; gap: 10px; padding: 10px 16px; overflow-x: auto; overflow-y: hidden; white-space: nowrap; }
   .work-page-filters > button, .work-page-filters > label { flex-shrink: 0; }
@@ -41,7 +41,7 @@
   .work-page button, .work-page [role="button"], .work-page-filters > label { min-width: 44px; min-height: 44px; }
   .work-page-filters > label { position: relative; padding-left: 44px; }
   .work-page-filters > label > [role="checkbox"] { position: absolute; left: 0; min-width: 44px; min-height: 44px; }
-  .work-page-filters > button { font-size: 13px; }
+  .work-page-filters > button { font-size: var(--type-body); }
   .work-page :is(button, [role="button"], [role="checkbox"]):focus-visible { outline: 2px solid var(--focus-ring, var(--nb-green)); outline-offset: -2px; }
   .work-page-content { overflow-y: auto; }
   /* Paste bar bottom is 4.5rem + safe area; its phone target is 44px tall. */
