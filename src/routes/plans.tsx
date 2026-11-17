@@ -194,7 +194,7 @@ export function PlansPage({ search = {} }: { search?: PlansSearch }) {
               key={plan.name}
               className={`flex min-w-0 flex-col border border-rule border-l-[3px] bg-card p-5 ${plan.edge}`}
             >
-              <p className="font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
+              <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
                 {plan.forLine}
               </p>
               <h2 className="mt-3 font-sans text-[26px] font-semibold leading-tight">{plan.name}</h2>

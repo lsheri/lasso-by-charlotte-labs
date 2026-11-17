@@ -251,7 +251,7 @@ export function SharedWithSection({
               <div className="min-w-0">
                 <p className="text-sm text-foreground">{coach.display_name}</p>
                 {coach.shared && line ? (
-                  <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                  <p className="mt-0.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
                     {line}
                   </p>
                 ) : null}

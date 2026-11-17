@@ -734,7 +734,7 @@ export function ConnectorPicker({
                           <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
                             {item.title}
                           </span>
-                          <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                          <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
                             Open
                           </span>
                         </button>
@@ -753,8 +753,8 @@ export function ConnectorPicker({
                           }
                           className={
                             item.isWatched
-                              ? "flex items-center gap-1 rounded-full border border-accent bg-accent-soft px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.08em] text-accent-deep transition-opacity hover:opacity-70 disabled:opacity-50"
-                              : "flex items-center gap-1 rounded-full border border-border px-2.5 py-1 text-[10px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:border-accent hover:text-foreground disabled:opacity-50"
+                              ? "flex items-center gap-1 rounded-full border border-accent bg-accent-soft px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.08em] text-accent-deep transition-opacity hover:opacity-70 disabled:opacity-50"
+                              : "flex items-center gap-1 rounded-full border border-border px-2.5 py-1 text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:border-accent hover:text-foreground disabled:opacity-50"
                           }
                         >
                           {item.isWatched ? (
@@ -801,24 +801,24 @@ export function ConnectorPicker({
                             {item.title}
                           </span>
                           {highlight.has(item.id) ? (
-                            <span className="shrink-0 rounded-full bg-accent-soft px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.08em] text-accent-deep">
+                            <span className="shrink-0 rounded-full bg-accent-soft px-2 py-0.5 font-mono text-[11px] uppercase tracking-[0.08em] text-accent-deep">
                               New
                             </span>
                           ) : null}
                           {item.hint ? (
-                            <span className="flex shrink-0 items-center gap-1 rounded-full border border-border px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
+                            <span className="flex shrink-0 items-center gap-1 rounded-full border border-border px-2 py-0.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
                               <Phone aria-hidden className="size-2.5" />
                               {item.hint}
                             </span>
                           ) : null}
                         </p>
                         {item.subtitle ? (
-                          <p className="break-words font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                          <p className="break-words font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
                             {item.subtitle}
                           </p>
                         ) : null}
                       </div>
-                      <span className="shrink-0 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                      <span className="shrink-0 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
                         {item.alreadyInLasso ? say(kind === "granola" ? GRANOLA_REFRESH_LABEL : "In Lasso") : dateLabel(item.date)}
                       </span>
                     </li>

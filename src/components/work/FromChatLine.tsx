@@ -25,7 +25,7 @@ export function VendorChip({ vendor, className = "" }: { vendor: string | null |
   return (
     <span
       data-testid="vendor-chip"
-      className={`inline-flex shrink-0 items-center rounded-full border border-border bg-secondary px-1.5 py-px font-mono text-[9px] uppercase leading-none tracking-[0.06em] text-muted-foreground ${className}`}
+      className={`inline-flex shrink-0 items-center rounded-full border border-border bg-secondary px-1.5 py-px font-mono text-[11px] uppercase leading-none tracking-[0.06em] text-muted-foreground ${className}`}
     >
       {label}
     </span>
@@ -45,7 +45,7 @@ export function FromChatLine({ item, className = "" }: { item: Item; className?:
   return (
     <p
       data-testid="from-chat-line"
-      className={`mt-1 flex items-center gap-1.5 truncate font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground ${className}`}
+      className={`mt-1 flex items-center gap-1.5 truncate font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground ${className}`}
     >
       <VendorChip vendor={item.source_vendor ?? item.source_meta?.vendor} />
       <span className="truncate">{line}</span>

@@ -27,7 +27,7 @@ function StatColumn({
 }) {
   return (
     <div className="rounded-[var(--radius)] border border-[var(--nb-pencil)] bg-card px-4 py-3.5">
-      <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">{label}</p>
+      <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-soft">{label}</p>
       {/* Instrument Serif at display size, the way the frame sets a headline
           number: light, roomy, nothing bold about it. */}
       <p className="mt-1 font-serif text-[40px] leading-[46px] tabular-nums text-foreground">

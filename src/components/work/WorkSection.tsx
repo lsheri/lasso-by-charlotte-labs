@@ -102,7 +102,7 @@ export function EngagementFold({
           aria-hidden
         />
         <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">{label}</span>
-        <span className="shrink-0 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+        <span className="shrink-0 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
           {count} item{count === 1 ? "" : "s"}
         </span>
       </button>
