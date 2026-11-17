@@ -379,6 +379,60 @@ For the next deal: start key person planning before signing, not after, and budg
       decisions: "Playbook adopted as Medrova's standard for future acquisitions\nReferral status in scheduling is the first combined feature",
       entities: "final readout, day 30, retention, customer advisory panel, back office, acquisition playbook",
     },
+    {
+      key: "proposal",
+      title: "Proposal: Project Heron integration support",
+      type: "document",
+      kind: "proposal",
+      vendor: "google_docs",
+      author: "hollis",
+      section: "Pre-announcement",
+      date: "2025-07-21",
+      body: `# Proposal: Project Heron integration support
+
+**Prepared for:** Medrova Software, Chief Executive Officer  **From:** Kestrel Bay Advisory  **Date:** 21 July 2025
+
+## Context
+Medrova is about to close its first acquisition, a 22-person referral management software company. The deal only pays off if Heron's key people stay and its top customers see the combined company as better, not just bigger. Medrova expects to buy again and wants to learn how to do this well.
+
+## Objectives
+1. Keep Heron's key people and top customers through close and the first 30 days.
+2. Run a calm, well-sequenced announcement.
+3. Leave Medrova with a playbook it can reuse on the next acquisition.
+
+## Our approach
+### Phase 1: Pre-announcement (weeks 1 to 3)
+Sequencing, key person conversations, retention offers and clean team rules until close. Integration plan and announcement sequence at SteerCo 1.
+### Phase 2: Announce and Day 1 (weeks 4 and 5)
+Communications for employees, customers, partners and investors. A Day 1 checklist run through a light integration management office.
+### Phase 3: First 30 days and hand-off (weeks 6 to 10)
+A customer advisory panel of 6 to 10 customers to shape the combined roadmap. Day 30 review, then the playbook hand-off.
+
+## Workstreams
+Pre-announcement plan. Communications sequence. Customer advisory panel. Integration management office.
+
+## Deliverables
+Integration plan. Communications sequence. Day 1 checklist. Advisory panel findings. Integration playbook.
+
+## Timeline
+10 weeks from 4 August 2025, around a target close on 2 September.
+
+## Team
+A partner half a day a week, a full-time manager and consultant.
+
+## Fees
+$210,000 fixed, expenses capped at 5%.
+
+## Assumptions and exclusions
+Legal and tax structuring, product or code integration and HR system migration are out of scope.
+
+## Why Kestrel Bay
+We focus on the people and customers who make a small acquisition worth buying, and we write down what worked so you can do it again.`,
+      summary:
+        "Proposal to Medrova Software for 10 weeks of support integrating its first acquisition, Project Heron. Fixed fee of $210k. Covers pre-announcement planning, communications, a customer advisory panel, a light integration office and a reusable playbook.",
+      entities: "Medrova Software, Project Heron, Chief Executive Officer, integration management office, customer advisory panel",
+      shown: [{ on: "2025-07-22", occasion: "Proposal sent to the Chief Executive Officer" }],
+    },
   ],
   stickies: [
     { section: "Communications sequence", text: "Partner: one page per audience, ten FAQs not fifty-five. Founder's words, not ours.", fill: "yellow" },

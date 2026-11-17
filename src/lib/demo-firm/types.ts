@@ -11,7 +11,7 @@ export type DemoPerson = {
   name: string;
   /** Workspace role: partners are admins or leads, everyone else em. */
   role: DemoRole;
-  title: "Partner" | "Principal" | "Manager" | "Consultant" | "Analyst" | "Operations";
+  title: "Partner" | "Principal" | "Manager" | "Consultant" | "Analyst" | "Operations" | "Head of Client Success";
   practice: DemoPractice;
 };
 
@@ -64,6 +64,8 @@ export type DemoItem = {
   madeFrom?: string;
   /** Item keys this one informed (an interview that fed a deck). */
   informs?: string[];
+  /** A proposal the firm wrote (meta.deliverable_kind); proposals keep their fee under a "## Fees" heading so a reader can withhold it. */
+  kind?: "proposal";
   /** Active boards' red pen decks: the exact sentences in body that no other item supports. Tests check they exist. */
   unsupported?: string[];
 };
@@ -94,6 +96,8 @@ export type DemoBoard = {
   workstreams?: string[];
   items: DemoItem[];
   stickies?: DemoSticky[];
+  /** A pursuit: an incoming opportunity with notes but no engagement work yet, so the delivery rules (item count, red pen deck) do not apply. */
+  pursuit?: boolean;
   /** Closed boards: the close-out answers. */
   outcome?: { ranToPlan: boolean; extended: boolean; lesson: string };
 };

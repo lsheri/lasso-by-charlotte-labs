@@ -313,6 +313,60 @@ Launch plan: pilot with St. Brigid employees in October, two employers in Januar
       body: `Personal working notes. Surgery chief and primary care director do not get on; keep them in separate interviews until the co-design workshop. CFO is the real decision maker.`,
       summary: "Private working notes on stakeholder dynamics. Not for the firm.",
     },
+    {
+      key: "proposal",
+      title: "Proposal: St. Brigid weight management service line",
+      type: "document",
+      kind: "proposal",
+      vendor: "google_docs",
+      author: "hollis",
+      section: "Discover",
+      date: "2025-02-17",
+      body: `# Proposal: weight management service line
+
+**Prepared for:** St. Brigid Health, Chief Strategy Officer  **From:** Kestrel Bay Advisory  **Date:** 17 February 2025
+
+## Context
+Demand for weight management care has outgrown the way St. Brigid delivers it. Bariatric surgery, endocrinology, primary care and nutrition each run their own referrals, and patients who start a GLP-1 prescription often leave the system for follow-up. Employers in the region are asking for a single offer they can contract for.
+
+## Objectives
+1. Design one patient-centered weight management service line with a single front door.
+2. Show the financial case, including employer contracts and guardrails for GLP-1 prescribing.
+3. Give the board a launch plan it can approve in July 2025.
+
+## Our approach
+### Phase 1: Discover (weeks 1 to 4)
+Map referral flows, wait times, payer mix and leakage across the four specialties. Diagnostic readout at SteerCo 1.
+### Phase 2: Diagnose and Design (weeks 5 to 10)
+Interview 20 to 25 patients and clinicians and run two co-design workshops. Develop care model options and the intake design. Options at SteerCo 2.
+### Phase 3: Deliver (weeks 11 to 16)
+Build the financial model and pricing, governance and a 6-month launch plan. Final recommendation as a board pre-read.
+
+## Workstreams
+Patient and clinician research. Care model and intake. Financial model and pricing. Launch.
+
+## Deliverables
+Diagnostic readout. Care model options. Financial model. Governance design. Launch plan and board pre-read.
+
+## Timeline
+16 weeks from 3 March 2025, with SteerCos at weeks 4, 10 and 16.
+
+## Team
+A partner half a day a week, a full-time manager, consultant and analyst.
+
+## Fees
+$380,000 fixed, plus expenses capped at 8%.
+
+## Assumptions and exclusions
+IT system build, clinical protocol authorship and recruitment are out of scope. We assume access to referral and claims data by week 2, and a named clinical lead from each specialty.
+
+## Why Kestrel Bay
+We design service lines with the clinicians who will run them, and we leave a financial model your finance team owns.`,
+      summary:
+        "Proposal to St. Brigid Health for a 16-week design of a standalone weight management service line, in four phases with four workstreams. Fixed fee of $380k. Leads with a diagnostic of referral leakage and ends with a board-ready launch plan.",
+      entities: "St. Brigid Health, Chief Strategy Officer, weight management, GLP-1, bariatric surgery, employer contracts",
+      shown: [{ on: "2025-02-18", occasion: "Proposal sent to the Chief Strategy Officer" }],
+    },
   ],
   stickies: [
     { section: "Design", text: "Partner: titles are full sentences that state the finding. Source line on every number.", fill: "yellow" },

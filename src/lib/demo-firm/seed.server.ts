@@ -1,9 +1,9 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-import type { Database } from "@/integrations/supabase/types";
+import type { Database, Json } from "@/integrations/supabase/types";
 
 import { DEMO_PEOPLE, demoEmail } from "./people";
-import { CARD_H, CARD_W, fileNameFor, outcomeLine, planBoard, sectionTop, slideMap, sourceFor } from "./plan";
+import { CARD_H, CARD_W, fileNameFor, itemMeta, nextSlot, outcomeLine, planBoard, sectionTop, slideMap, sourceFor } from "./plan";
 import type { DemoBoard, DemoFirm, DemoItem } from "./types";
 
 type Db = SupabaseClient<Database>;
@@ -232,7 +232,7 @@ async function seedBoard(
   const itemHash = new Map<string, string>();
   const itemRef = new Map<string, string | null>();
   for (const item of board.items) {
-    const id = await seedItem(admin, orgId, board.key, item, profileId.get(item.author)!, userId.get(item.author)!);
+    const id = await seedItem(admin, orgId, board.key, item, itemMeta(board, item), profileId.get(item.author)!, userId.get(item.author)!);
     itemId.set(item.key, id.id);
     itemHash.set(item.key, id.hash);
     itemRef.set(item.key, id.contentRef);
@@ -357,6 +357,7 @@ async function seedItem(
   orgId: string,
   boardKey: string,
   item: DemoItem,
+  extraMeta: Record<string, Json>,
   owner: string,
   authUser: string,
 ): Promise<{ id: string; hash: string; contentRef: string | null }> {
@@ -386,7 +387,7 @@ async function seedItem(
           item.type === "ai_thread"
             ? { demo_firm: true, demo_board: boardKey }
             : { filename: fileName, mime_type: "text/markdown", demo_firm: true, demo_board: boardKey },
-        meta: item.type === "ai_thread" ? {} : { mime_type: "text/markdown" },
+        meta: item.type === "ai_thread" ? { ...extraMeta } : { mime_type: "text/markdown", ...extraMeta },
         content_ref: contentRef,
         content_hash: hash,
         content_fidelity: fidelity,
@@ -460,10 +461,12 @@ async function writeSlideMaps(
 }
 
 /**
- * Brings a board seeded by an earlier version up to date, safely repeatable: moves sections below the empty
- * Workstreams box on boards without workstreams, and adds the slide maps deck cards preview from.
+ * Brings a board seeded by an earlier version up to date, safely repeatable: adds what the board's data gained since
+ * (see topUpBoard), moves sections below the empty Workstreams box on boards without workstreams, and adds the slide
+ * maps deck cards preview from.
  */
 async function repairBoard(admin: Db, orgId: string, board: DemoBoard, workboardId: string): Promise<void> {
+  await topUpBoard(admin, orgId, board, workboardId);
   const top = sectionTop(board);
   if (top > 0) {
     const { data: frames } = await admin.from("workboard_frames").select("id, y").eq("workboard_id", workboardId);
@@ -558,4 +561,112 @@ export async function resetDemoFirm(admin: Db): Promise<{ removed: boolean; prob
     }
   }
   return { removed: problems.length === 0, problems };
+}
+
+/**
+ * Adds what a board's data gained after it was seeded (17 Nov: past proposals, planted notes, SOW terms), matched by
+ * title so a rerun adds nothing twice: meta on existing items, new team members, and new items with their card in the
+ * next free slot of their frame, placement and client marks. A frame that needs another row grows, and whatever sits
+ * below it moves down by the same amount.
+ */
+async function topUpBoard(admin: Db, orgId: string, board: DemoBoard, workboardId: string): Promise<void> {
+  const { data: rows } = await admin.from("work_items").select("id, title, meta").eq("org_id", orgId).eq("source_meta->>demo_board", board.key);
+  const byTitle = new Map((rows ?? []).map((row) => [row.title, row]));
+  for (const item of board.items) {
+    const extra = itemMeta(board, item);
+    const row = byTitle.get(item.title);
+    const meta = (row?.meta ?? {}) as Record<string, Json>;
+    if (!row || Object.keys(extra).every((key) => key in meta)) continue;
+    const update = await admin.from("work_items").update({ meta: { ...meta, ...extra } }).eq("id", row.id);
+    if (update.error) throw new Error(`updating ${item.key}: ${update.error.message}`);
+  }
+
+  const missing = board.items.filter((item) => !byTitle.has(item.title));
+  const { data: workboard } = await admin.from("workboards").select("engagement_id").eq("id", workboardId).single();
+  if (!workboard) return;
+  const engagementId = workboard.engagement_id;
+  const { data: members } = await admin.from("engagement_members").select("profile_id").eq("engagement_id", engagementId);
+  const onBoard = new Set((members ?? []).map((row) => row.profile_id));
+  const people = missing.length || board.team.length > onBoard.size ? await demoPeople(admin, orgId) : null;
+  if (!people) return;
+  const { profileId, userId } = people;
+  const owner = profileId.get(board.team[0]!)!;
+  const joining = board.team.map((key) => profileId.get(key)).filter((id): id is string => Boolean(id) && !onBoard.has(id!));
+  if (joining.length) {
+    must(
+      await admin
+        .from("engagement_members")
+        .insert(joining.map((profile_id) => ({ engagement_id: engagementId, profile_id, member_role: "em" as const, added_by: owner })))
+        .select("profile_id"),
+      `new members of ${board.key}`,
+    );
+  }
+  if (!missing.length) return;
+
+  const { data: tasks } = await admin.from("tasks").select("id, name, is_board_default").eq("engagement_id", engagementId);
+  const defaultTask = (tasks ?? []).find((task) => task.is_board_default);
+  for (const item of missing) {
+    const author = profileId.get(item.author);
+    const authUser = userId.get(item.author);
+    if (!author || !authUser) throw new Error(`${board.key}: ${item.author} has no demo login`);
+    const seeded = await seedItem(admin, orgId, board.key, item, itemMeta(board, item), author, authUser);
+    if (item.placed !== false) {
+      const task = (tasks ?? []).find((entry) => !entry.is_board_default && entry.name === item.section) ?? defaultTask;
+      if (task) must(await admin.from("work_item_tasks").insert({ task_id: task.id, work_item_id: seeded.id }).select("work_item_id"), `placing ${item.key}`);
+
+      const { data: frames } = await admin.from("workboard_frames").select("id, label, kind, x, y, w, h").eq("workboard_id", workboardId);
+      const frame = (frames ?? []).find((entry) => entry.label === item.section);
+      const { data: nodes } = await admin.from("workboard_nodes").select("id, x, y").eq("workboard_id", workboardId);
+      if (frame) {
+        const inside = (nodes ?? []).filter((node) => node.x >= frame.x && node.x < frame.x + frame.w && node.y >= frame.y && node.y < frame.y + frame.h);
+        const slot = nextSlot(frame, inside.length);
+        const grow = slot.frameH - frame.h;
+        if (grow > 0) {
+          const bottom = frame.y + frame.h;
+          for (const below of (frames ?? []).filter((entry) => entry.y >= bottom)) {
+            await admin.from("workboard_frames").update({ y: below.y + grow }).eq("id", below.id);
+          }
+          for (const node of (nodes ?? []).filter((entry) => entry.y >= bottom)) {
+            await admin.from("workboard_nodes").update({ y: node.y + grow }).eq("id", node.id);
+          }
+          await admin.from("workboard_frames").update({ h: slot.frameH }).eq("id", frame.id);
+        }
+        must(
+          await admin
+            .from("workboard_nodes")
+            .insert({
+              workboard_id: workboardId,
+              kind: "work_item",
+              work_item_id: seeded.id,
+              client_key: `work:${seeded.id}`,
+              frame_id: frame.kind === "task" ? frame.id : null,
+              x: slot.x,
+              y: slot.y,
+              w: CARD_W,
+              h: CARD_H,
+              title: item.title,
+              body: "",
+              author_profile_id: author,
+              created_by: author,
+              updated_by: author,
+            })
+            .select("id"),
+          `card for ${item.key}`,
+        );
+      }
+    }
+    const showings = (item.shown ?? []).map((showing) => ({
+      org_id: orgId,
+      engagement_id: engagementId,
+      work_item_id: seeded.id,
+      shown_on: showing.on,
+      occasion: showing.occasion,
+      content_hash: seeded.hash,
+      marked_by: author,
+    }));
+    if (showings.length) must(await admin.from("client_showings").insert(showings).select("id"), `client marks for ${item.key}`);
+    if (item.type === "deck") {
+      await writeSlideMaps(admin, { ...board, items: [item] }, new Map([[item.key, seeded.id]]), new Map([[item.key, seeded.hash]]), new Map([[item.key, seeded.contentRef]]));
+    }
+  }
 }

@@ -348,6 +348,60 @@ Next steps: name six more product owners by January, launch teams in two waves (
       decisions: "Scale to eight persistent product teams in 2026\nPMO becomes a portfolio office running quarterly business reviews",
       entities: "pilot readout, persistent teams, account opening, releases, support calls, portfolio office, quarterly business review",
     },
+    {
+      key: "proposal",
+      title: "Proposal: Fairhaven digital product operating model",
+      type: "document",
+      kind: "proposal",
+      vendor: "google_docs",
+      author: "lindqvist",
+      section: "Weeks 1-3: Current state",
+      date: "2025-08-25",
+      body: `# Proposal: digital product operating model
+
+**Prepared for:** Fairhaven Bank, Chief Digital Officer  **From:** Kestrel Bay Advisory  **Date:** 25 August 2025
+
+## Context
+Fairhaven funds digital work one project at a time. Teams form, deliver and disband, and the bank loses what they learned. Leadership wants to try persistent product teams but needs to see the model work inside the existing budget before scaling it.
+
+## Objectives
+1. Define how Fairhaven organizes, funds and measures digital work as products.
+2. Test the model with two pilot teams.
+3. Support a scaling decision in November.
+
+## Our approach
+### Phase 1: Current state (weeks 1 to 3)
+Assess the 2025 digital portfolio, roles and funding process, with 10 to 12 interviews. Current state at SteerCo 1.
+### Phase 2: Design (weeks 4 to 6)
+Role cards for product owner, product manager, technology lead, designer and chapter roles. A persistent funding model with quarterly business reviews. Pilot teams launch in week 5.
+### Phase 3: Pilot (weeks 7 to 10)
+Coach the two pilot teams for six weeks. Pilot readout and scaling recommendation.
+
+## Workstreams
+Current-state assessment. Role design. Funding model. Pilot teams.
+
+## Deliverables
+Current-state assessment. Role cards. Funding model. Pilot readout and scaling recommendation.
+
+## Timeline
+10 weeks from 8 September 2025.
+
+## Team
+A partner half a day a week, a full-time principal and analyst.
+
+## Fees
+$240,000 fixed, expenses capped at 5%.
+
+## Assumptions and exclusions
+Vendor or core banking platform changes, compensation and grading, and hiring are out of scope.
+
+## Why Kestrel Bay
+We test operating models with real teams before asking leadership to scale them.`,
+      summary:
+        "Proposal to Fairhaven Bank for 10 weeks to move digital work from projects to persistent products, tested with two pilot teams. Fixed fee of $240k. Covers a current-state assessment, role cards, a funding model and a pilot readout.",
+      entities: "Fairhaven Bank, Chief Digital Officer, product operating model, persistent funding, pilot teams",
+      shown: [{ on: "2025-08-26", occasion: "Proposal sent to the Chief Digital Officer" }],
+    },
   ],
   stickies: [
     { section: "Pilot teams", text: "Partner: lead with the scaling decision, then one outcome number per slide. Activity counts go in the appendix.", fill: "yellow" },
