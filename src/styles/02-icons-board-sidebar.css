@@ -491,7 +491,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   background: var(--action-primary, #0a0a0a);
   color: var(--action-primary-fg, #fafaf7);
   padding: 8px 14px 8px 10px;
-  box-shadow: 0 6px 20px -8px color-mix(in srgb, #0a0a0a 45%, transparent);
+  box-shadow: var(--shadow-offline-pill);
   pointer-events: none;
 }
 .canvas-lab-offline-pill p {
@@ -1756,7 +1756,7 @@ html:has([data-testid="canvas-lab-shell"]), body:has([data-testid="canvas-lab-sh
    and it is data, never chrome. */
 .nb-sticky {
   display: block;
-  background: #fdf6c9;
+  background: var(--sticky-paper-legacy);
   border: 0;
   border-radius: var(--corner-control);
   box-shadow: var(--nb-paper-shadow-contact), var(--nb-paper-shadow-ambient);
@@ -2025,7 +2025,7 @@ html:has([data-testid="canvas-lab-shell"]), body:has([data-testid="canvas-lab-sh
   border-left: 1px solid var(--nb-rule);
 }
 .nb-col-drop {
-  background: rgb(17 20 19 / 0.03);
+  background: var(--drop-wash);
 }
 .nb-col-ghost {
   opacity: 0.85;
@@ -2065,7 +2065,7 @@ html:has([data-testid="canvas-lab-shell"]), body:has([data-testid="canvas-lab-sh
 }
 .nb-canvas-card[data-lifted="true"] {
   border-color: var(--nb-graphite);
-  box-shadow: 0 8px 24px rgb(17 20 19 / 0.14);
+  box-shadow: var(--shadow-card-lifted);
   transition: transform var(--nb-dur-enter) var(--nb-spring-base);
 }
 
@@ -2101,7 +2101,7 @@ html:has([data-testid="canvas-lab-shell"]), body:has([data-testid="canvas-lab-sh
   background: var(--nb-white);
   border: 1px solid var(--nb-graphite);
   border-radius: var(--corner-panel);
-  box-shadow: 0 12px 28px rgb(17 20 19 / 0.18);
+  box-shadow: var(--shadow-card-ghost);
   transform: translate(-50%, -50%) rotate(2deg);
 }
 

@@ -62,7 +62,9 @@ Goal (Liam, 17 Nov): "as design healthy as can be and durable for switching thin
 | #202 | G9 | styles.css split into an import index and six ordered parts in src/styles/ | No (compiled CSS byte-identical) |
 | #189 | G8 | Controls join the button at 5px; new float role 15px; long tail snaps; raw-radius count fixed to literal lengths only | Controls 1px less round; floating panels and menus settle on 15px |
 | #214 | G7, G13 | Component checklist (`docs/design/components.md`); `NativeSelect` primitive; three new ratchet counts: raw `<select>` (18), hand-built mono pills (9), Lucide files (92) | No (the How it ended dialog's selects move to NativeSelect: same size, token focus border) |
-| (this PR) | G2 | Reskin guardrail: a proof skin that never ships and a live audit that renders 11 screens under it and fails on any element that keeps Charlotte's colour, border or font (ceiling 0, canary-checked). Fixes it found: fonts were fixed at <body> and dialog mono labels never re-pointed, so type could not reskin; the dialog backdrop, --color-border and the scrim were worked out at :root and inherited frozen. New ratchets: skin-name branches (8), CSS colour literals (42) | Dialog mono labels now use Martian Mono (Charlotte's mono, as the skin always meant); the dialog backdrop takes Charlotte's navy at the same 28% |
+| #215 | G2 | Reskin guardrail: a proof skin that never ships and a live audit that renders 11 screens under it and fails on any element that keeps Charlotte's colour, border or font (ceiling 0, canary-checked). Fixes it found: fonts were fixed at <body> and dialog mono labels never re-pointed, so type could not reskin; the dialog backdrop, --color-border and the scrim were worked out at :root and inherited frozen. New ratchets: skin-name branches (8), CSS colour literals (42) | Dialog mono labels now use Martian Mono (Charlotte's mono, as the skin always meant); the dialog backdrop takes Charlotte's navy at the same 28% |
+| #216 | G2 | Brand layer: each brand names its drawn assets (mark, glyphs, kind icons, legacy default) in brand.ts; skin-name branches 8 to 0 | No |
+| (this PR) | G11 | The last 42 colour literals in styles/*.css (shadows, sticky-note paper and inks, notes and highlights, a drop wash, the demo sandbox) move into named tokens in tokens.css with identical values; ceiling 0 | No (identical values) |
 
 Every PR was checked against main with the full test suite, lint, and the design-baseline screenshots (26 screens, Charlotte, desktop and phone), and has a row in `DESIGN-DECISIONS.md`.
 
@@ -83,7 +85,7 @@ Charlotte skin size (custom properties it declares): 230 on 17 Nov, 160 after G2
 | Hand-built mono pills outside ui (added 18 Nov) | 9 | 9 |
 | Files importing Lucide (added 18 Nov) | 92 | 92 |
 | Skin-name branches (added 18 Nov) | 8 | 0 (#216) |
-| CSS colour literals (added 18 Nov) | 42 | 42 |
+| CSS colour literals (added 18 Nov) | 42 | 0 |
 | Reskin audit leaks, 11 screens (added 18 Nov) | 44 | 0 |
 
 The audit's own 16 Nov figures used a different counting script: 810 raw font sizes, 1,828 `--nb-*` reads.
