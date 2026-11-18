@@ -35,6 +35,7 @@ import {
   STATUS_MENU,
   WORKSTREAM_STATUS_LABELS,
 } from "@/lib/workstream-status";
+import { tagVariants } from "@/components/ui/tag";
 
 const TASK_LINE_PLACEHOLDER = "What is this piece of work meant to do?";
 
@@ -259,12 +260,12 @@ export function WorkstreamColumnHeader({
 
       <div className="flex flex-wrap items-center gap-1.5">
         {episode ? (
-          <span className="rounded-full border border-border bg-secondary px-2 py-0.5 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
+          <span className={tagVariants()}>
             {WORKSTREAM_STATUS_LABELS[episode.status] ?? episode.status}
           </span>
         ) : null}
         {confirmed ? (
-          <span className="rounded-full border border-border bg-secondary px-2 py-0.5 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
+          <span className={tagVariants()}>
             Confirmed sequence
           </span>
         ) : null}

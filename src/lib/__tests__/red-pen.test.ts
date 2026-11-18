@@ -69,6 +69,12 @@ describe("the red pen", () => {
     expect(usage.calls).toBe(2);
   });
 
+  it("keeps a document quote when the model also gives a turn number, which only conversations have", async () => {
+    const model = fake(claims, { results: [{ claim: 1, status: "exact", to_item_id: "sizing", to_turn_no: 0, quote: "Out-of-network leakage for specialist referrals: 38 percent" }, { claim: 2, status: "paraphrase", to_item_id: "interview", to_turn_no: 3, quote: "maybe 60 percent over two years" }] });
+    const { result } = await runRedPen(model.chat, { itemId: "deck", anchorTitle: "x", anchorText: deck, upstream, meta: undefined });
+    expect(result.claims.map((claim) => claim.grade)).toEqual(["sourced", "weak", "unsupported"]);
+  });
+
   it("drops a listed claim that is not in the deliverable", async () => {
     const model = fake(claims, { results: [] });
     const { result } = await runRedPen(model.chat, { itemId: "deck", anchorTitle: "x", anchorText: deck, upstream, meta: undefined });

@@ -24,6 +24,8 @@ import { INVITE_ADMIN_ONLY_LINE } from "@/lib/invites-shared";
 import { coachToShareWithInstead, findMemberByEmail, type MemberRow } from "@/lib/members-shared";
 import { logEvent } from "@/lib/telemetry";
 import { profileShowsAdminRole } from "@/lib/workspace-capabilities";
+import { tagVariants } from "@/components/ui/tag";
+import { cn } from "@/lib/utils";
 
 type InviteRole = "coach" | "em" | "admin";
 
@@ -79,8 +81,8 @@ function IssuedInvites({ orgId, refreshKey }: { orgId: string; refreshKey: strin
             <span
               className={
                 invite.used_at
-                  ? "rounded-full bg-accent-soft px-2 py-0.5 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-foreground"
-                  : "rounded-full bg-muted px-2 py-0.5 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground"
+                  ? cn(tagVariants({ tone: "accent" }), "text-foreground")
+                  : tagVariants({ tone: "muted" })
               }
             >
               {invite.used_at ? "Accepted" : "Unused"}

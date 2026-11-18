@@ -42,6 +42,8 @@ import {
   type ConversationGroup,
   type WorkItemRow,
 } from "@/lib/work-types";
+import { tagVariants } from "@/components/ui/tag";
+import { cn } from "@/lib/utils";
 
 export type PeekEntry = WorkItemRow | ConversationGroup;
 
@@ -62,8 +64,8 @@ function Chip({
     <span
       className={
         tone === "accent"
-          ? "inline-block rounded-full bg-accent-soft px-2 py-0.5 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-foreground"
-          : "inline-block rounded-full border border-pencil bg-secondary px-2 py-0.5 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground"
+          ? cn(tagVariants({ tone: "accent" }), "inline-block text-foreground")
+          : cn(tagVariants(), "inline-block border-pencil")
       }
     >
       {children}
