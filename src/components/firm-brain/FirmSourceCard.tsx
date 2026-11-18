@@ -13,11 +13,12 @@ export function FirmSourceCard({
   grade: "quoted" | "from_summary";
   onOpen: () => void;
 }) {
+  // A close-out lesson is the engagement's own line, not an item: nothing to open.
+  const Tag = source.type === "outcome" ? "div" : "button";
   return (
-    <button
-      type="button"
+    <Tag
+      {...(Tag === "button" ? { type: "button" as const, onClick: onOpen } : {})}
       data-firm-source={grade}
-      onClick={onOpen}
       className="flex w-full min-w-0 flex-col gap-0.5 rounded-[var(--radius)] border border-border bg-background px-3 py-2 text-left hover:border-foreground/40 focus-visible:outline-2 focus-visible:outline-offset-2"
     >
       <span className="truncate text-(length:--type-small) text-muted-foreground">{source.boardTitle}</span>
@@ -28,6 +29,6 @@ export function FirmSourceCard({
         <span>{grade === "quoted" ? FIRM_ASK_COPY.quoted : FIRM_ASK_COPY.fromSummary}</span>
         {source.shownOn ? <span data-firm-source-shown className="text-foreground">{`${FIRM_ASK_COPY.shown}, ${firmDate(source.shownOn)}`}</span> : null}
       </span>
-    </button>
+    </Tag>
   );
 }

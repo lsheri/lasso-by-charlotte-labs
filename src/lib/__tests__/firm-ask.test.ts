@@ -185,3 +185,24 @@ describe("a reply cut off at its token limit", () => {
     expect(ids('{"items": [{"id": "00000002-0000-4000-8000-000000000000", "why": "x"}]}')).toEqual(["00000002-0000-4000-8000-000000000000"]);
   });
 });
+
+describe("close-out lessons", () => {
+  // The second live run missed "what have we learned about getting client data on time": those lessons live in each
+  // engagement's close-out line, which call A could not pick.
+  it("can be picked, quoted and cited as the engagement's close-out lesson", async () => {
+    const model = fake(["outcome-b6"], {
+      claims: [{ text: "Start payer talks alongside the diagnostic.", item_id: "outcome-b6", quote: "Start payer conversations alongside the diagnostic" }],
+    });
+    const { result } = await ask(model.deps);
+    expect(result.status).toBe("answered");
+    expect(result.claims[0]).toMatchObject({ itemId: "outcome-b6", boardId: "b6", grade: "quoted" });
+    expect(result.sources["outcome-b6"]).toMatchObject({ title: "Close-out lesson", type: "outcome", boardTitle: "Behavioral health service line" });
+    expect(model.loaded).toEqual([]);
+    expect(model.seen[0]!.messages[1]!.content).toContain("CLOSE-OUT outcome-b6:");
+  });
+
+  it("are recovered from a cut-off reply too", () => {
+    const uuidCorpus = { ...corpus, boards: corpus.boards.map((board, index) => ({ ...board, id: `0000000${index}-0000-4000-8000-000000000000` })), items: [] };
+    expect(pickedIds('{"items": ["outcome-00000001-0000-4000-8000-000000000000", "outcome-0000', uuidCorpus)).toEqual(["outcome-00000001-0000-4000-8000-000000000000"]);
+  });
+});
