@@ -1,7 +1,8 @@
 /* Skin base (G2, 17 Nov 2026). Any skin (any data-skin on <html>; Lasso sets none) sets a handful of brand values
    and every role, state, category and vendor colour follows from them here:
    --skin-ink, --skin-live, --skin-page, --skin-raised, --skin-sunk, --skin-text-2, --skin-text-3, --skin-mark,
-   and six type hues (--t-talk, --t-words, --t-numbers, --t-slides, --t-visual, --t-code).
+   six type hues (--t-talk, --t-words, --t-numbers, --t-slides, --t-visual, --t-code), and the attention wash and edge
+   (--skin-attention-wash, --skin-attention-edge).
    Lime-style live colours are for fill and decoration only: --skin-live never reaches focus, text or state here.
    Lasso keeps its own hand-picked values in styles.css. A skin can still override any name here. */
 [data-skin] [data-lasso="on"],
@@ -18,6 +19,9 @@
 
   /* Worked out at :root from the old values and inherited frozen, so they are re-derived here (reskin audit, 18 Nov). */
   --nb-scrim:color-mix(in oklab, var(--skin-ink) 28%, transparent);
+  /* Attention (reskin audit, 18 Nov): the yellow wash and edge were fixed at :root; each skin now names them. */
+  --nb-yellow-wash:var(--skin-attention-wash);
+  --nb-yellow-edge:var(--skin-attention-edge);
   --color-border:var(--border);
   --color-background:var(--background);
   --color-foreground:var(--foreground);
