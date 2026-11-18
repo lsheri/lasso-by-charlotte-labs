@@ -34,7 +34,7 @@ function FeedGlyph({ item }: { item: (typeof FEEDS)[number] }) {
     return (
       <span
         aria-hidden
-        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[4px] border border-graphite/50 font-mono text-[10px] text-graphite"
+        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-(--corner-control) border border-graphite/50 font-mono text-[10px] text-graphite"
       >
         {item.name.slice(0, 1)}
       </span>

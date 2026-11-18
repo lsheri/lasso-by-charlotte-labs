@@ -51,7 +51,7 @@
   --halo-spread:3px; --halo-blur:19px;
   --halo-dim:0.1; --halo-bright:0.2; --halo-clock:6s;
   --picked-glow-dim:0.25; --picked-glow-bright:0.5;
-  --ask-mark:#8f8f8a; --ask-border:1.5px; --float-radius:15px;
+  --ask-mark:#8f8f8a; --ask-border:1.5px; --float-radius:var(--corner-float);
   /* COLOR-1: Ask's own green is the landing lime, not acid. Acid stays the highlight colour everywhere else. */
   --ask-live:#04f85b;
   --pin:var(--red-100); --pin-off:var(--neutral-60);
@@ -61,7 +61,7 @@
   --here-weight:2.5px;
 
   /* Corner roles (G8, 17 Nov): the one place corners change. Every older radius name points here. */
-  --corner-mark:2px; --corner-card:3px; --corner-button:5px; --corner-control:6px; --corner-panel:8px; --corner-pill:999px;
+  --corner-mark:2px; --corner-card:3px; --corner-button:5px; --corner-control:5px; --corner-panel:8px; --corner-float:15px; --corner-pill:999px;
   --radius-sm-new:var(--corner-mark); --radius-md-new:var(--corner-button); --radius-pill:var(--corner-pill);
 
   --shadow-flat:none;

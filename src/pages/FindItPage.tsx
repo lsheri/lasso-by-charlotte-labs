@@ -105,7 +105,7 @@ function Highlighted({ text, needle }: { text: string; needle: string }) {
   return (
     <>
       {text.slice(0, at)}
-      <mark className="rounded-[4px] bg-[var(--nb-yellow-wash)] px-0.5 text-[var(--nb-yellow-ink)]">
+      <mark className="rounded-(--corner-control) bg-[var(--nb-yellow-wash)] px-0.5 text-[var(--nb-yellow-ink)]">
         {text.slice(at, at + needle.length)}
       </mark>
       {text.slice(at + needle.length)}

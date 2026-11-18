@@ -24,7 +24,7 @@ Goal (Liam, 17 Nov): "as design healthy as can be and durable for switching thin
 | G5 | Now | Muted text fails AA | Done | #161 |
 | G6 | Now | Lime and acid rings below 3:1 | Charlotte passes (paperclip is the second cue); guarded by a test | #186 |
 | G7 | Look | App Button drifts from reference | Component done; raw `<button>` sweep open | #163 |
-| G8 | Look | Radius: 3 tokens, about 18 values | Roles in place (R1); long tail open | R1 PR |
+| G8 | Look | Radius: 3 tokens, about 18 values | Done for app surfaces | #188, R2 PR |
 | G9 | Upkeep | styles.css size, literal z-index, `!important` | Open | |
 | G10 | Upkeep | Reference components copied, not checked | Open | |
 | G11 | Look | Hex colours in components | Open | |
@@ -49,7 +49,8 @@ Goal (Liam, 17 Nov): "as design healthy as can be and durable for switching thin
 | #177 | G1, G2 | `--active-mark`, `--drop-target`, `--handle`, `--ai-voice` | No (pixel-identical) |
 | #186 | G12, G6 | Dead `.dark` theme removed; Charlotte state cues pass 1.4.11, paperclip guarded | No (pixel-identical) |
 | #187 | All | Design health ratchet and this log | No |
-| R1 PR | G8 | Corner roles `--corner-*`; every older radius name points at them; 89 exact values read a role | No (values identical) |
+| #188 | G8 | Corner roles `--corner-*`; every older radius name points at them; 89 exact values read a role | No (values identical) |
+| R2 PR | G8 | Controls join the button at 5px; new float role 15px; long tail snaps; raw-radius count fixed to literal lengths only | Controls 1px less round; floating panels and menus settle on 15px |
 
 Every PR was checked against main with the full test suite, lint, and the design-baseline screenshots (26 screens, Charlotte, desktop and phone), and has a row in `DESIGN-DECISIONS.md`.
 
@@ -58,7 +59,7 @@ Every PR was checked against main with the full test suite, lint, and the design
 | Count | 17 Nov baseline (7e13e65d) | Now |
 |---|---|---|
 | Raw font sizes | 249 | 249 |
-| Raw radii | 437 | 349 |
+| Raw radii | 437 | 15 (counting rule corrected in R2: `rounded-[var(--x)]` no longer counted) |
 | Hex in components | 76 | 76 |
 | `var(--nb-*)` reads | 1653 | 1653 |
 | Literal z-index | 183 | 183 |

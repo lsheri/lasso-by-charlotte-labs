@@ -13,7 +13,7 @@ import path from "node:path";
 export type HealthCounts = {
   /** Tailwind text-[Npx] and CSS font-size: Npx not read from a token. */
   rawFontSize: number;
-  /** Tailwind rounded-[...] and CSS border-radius: Npx. */
+  /** Tailwind rounded-[<length>] and CSS border-radius: Npx. rounded-[var(--x)] reads a token and is not counted. */
   rawRadius: number;
   /** #rrggbb or #rgb colour literals in TS and TSX. */
   hexInComponents: number;
@@ -61,7 +61,7 @@ export function measure(root = "src"): HealthCounts {
     c.rawFontSize += count(text, css ? /font-size:\s*[0-9.]+px/g : /\btext-\[[0-9.]+px\]/g);
     c.rawRadius += count(
       text,
-      css ? /border-radius:\s*[0-9.]+px/g : /\brounded(?:-[a-z]{1,2})?-\[[^\]]+\]/g,
+      css ? /border-radius:\s*[0-9.]+px/g : /\brounded(?:-[a-z]{1,2})?-\[[0-9.]+(?:px|rem|em|%)/g,
     );
     if (!css)
       c.hexInComponents += count(text, /#[0-9a-fA-F]{6}\b|#[0-9a-fA-F]{3}\b(?![0-9a-fA-F])/g);
