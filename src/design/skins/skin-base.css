@@ -8,12 +8,21 @@
 [data-skin] body:has([data-lasso="on"]) > [role="dialog"],
 [data-skin] body:has([data-lasso="on"]) > [role="alertdialog"],
 [data-skin] body:has([data-lasso="on"]) > [data-radix-popper-content-wrapper],
+[data-skin] body:has([data-lasso="on"]) > [data-skin-overlay],
 [data-skin] body:has([data-lasso="on"]) [data-sonner-toaster] {
   /* Greys mixed from the ink over the paper. */
   --skin-ink-wash:color-mix(in srgb, var(--skin-ink) 10%, var(--skin-raised));
   --skin-sunk-2:color-mix(in srgb, var(--skin-ink) 10%, var(--skin-page));
   --skin-hairline:color-mix(in srgb, var(--skin-ink) 14%, var(--skin-page));
   --skin-pencil:color-mix(in srgb, var(--skin-ink) 30%, var(--skin-page));
+
+  /* Worked out at :root from the old values and inherited frozen, so they are re-derived here (reskin audit, 18 Nov). */
+  --nb-scrim:color-mix(in oklab, var(--skin-ink) 28%, transparent);
+  --color-border:var(--border);
+  --color-background:var(--background);
+  --color-foreground:var(--foreground);
+  /* <body> sets the family once, from :root; set it again here so a skin's fonts reach every inherited line. */
+  font-family:var(--font-sans);
 
   --surface-page:var(--skin-page);
   --surface-raised:var(--skin-raised);
@@ -191,3 +200,12 @@
   --state-indigo:var(--text-secondary);
   color:var(--text-primary);
 }
+
+/* Tailwind bakes font stacks into .font-mono, .font-serif and .font-sans; styles.css re-points them inside the shell,
+   and these do the same in overlays, so a skin's type reaches dialogs, menus and toasts too (reskin audit, 18 Nov). */
+[data-skin] body:has([data-lasso="on"]) > :is([role="dialog"], [role="alertdialog"], [data-radix-popper-content-wrapper]) .font-mono,
+[data-skin] body:has([data-lasso="on"]) [data-sonner-toaster] .font-mono { font-family:var(--font-mono); }
+[data-skin] body:has([data-lasso="on"]) > :is([role="dialog"], [role="alertdialog"], [data-radix-popper-content-wrapper]) .font-serif,
+[data-skin] body:has([data-lasso="on"]) [data-sonner-toaster] .font-serif { font-family:var(--font-serif); }
+[data-skin] body:has([data-lasso="on"]) > :is([role="dialog"], [role="alertdialog"], [data-radix-popper-content-wrapper]) .font-sans,
+[data-skin] body:has([data-lasso="on"]) [data-sonner-toaster] .font-sans { font-family:var(--font-sans); }

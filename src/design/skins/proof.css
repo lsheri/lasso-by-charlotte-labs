@@ -1,0 +1,34 @@
+/* Proof skin (18 Nov 2026, design guardrail). Never shipped: src/styles.css does not import it. The reskin audit
+   (tests/e2e/reskin-audit.spec.ts) and Storybook inject it to prove a new brand needs only these values. Every value is
+   deliberately far from Charlotte's, so anything on screen that looks the same under both skins is a leak: a literal
+   colour or font, or a rule pinned with !important, that a future brand could not reach. Same selector list as
+   charlotte.css; skin-base.css derives every role from these. No em dashes. */
+[data-skin="proof"] [data-lasso="on"],
+[data-skin="proof"] body:has([data-lasso="on"]) > [role="dialog"],
+[data-skin="proof"] body:has([data-lasso="on"]) > [role="alertdialog"],
+[data-skin="proof"] body:has([data-lasso="on"]) > [data-radix-popper-content-wrapper],
+[data-skin="proof"] body:has([data-lasso="on"]) > [data-skin-overlay],
+[data-skin="proof"] body:has([data-lasso="on"]) [data-sonner-toaster] {
+  --skin-ink:#5B1A8C;
+  --skin-live:#FF7A00;
+  --skin-page:#FFF4E0;
+  --skin-raised:#FFFBF2;
+  --skin-sunk:#F1E4FF;
+  --skin-text-2:#6E3F7D;
+  --skin-text-3:#7A4A6A;
+  --skin-mark:#B08AA0;
+  --neutral-10:#FBEFE6;
+  --neutral-80:#3A1440;
+  --t-talk:#8A1F4E;
+  --t-words:#4E6A1F;
+  --t-numbers:#1F3E8A;
+  --t-slides:#8A6A1F;
+  --t-visual:#1F8A6A;
+  --t-code:#6A1F8A;
+  /* Fonts: a brand changes type too, so the proof skin swaps every family. */
+  --font-sans:Georgia, "Times New Roman", serif;
+  --font-display:Georgia, "Times New Roman", serif;
+  --font-serif:Georgia, "Times New Roman", serif;
+  --font-mono:"Courier New", Courier, monospace;
+  --font-hand:Georgia, serif;
+}

@@ -121,6 +121,7 @@ export function StickyMark({
   const id = `sm${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
   return (
     <svg
+      data-illustration=""
       className={className}
       width={size}
       height={size}
