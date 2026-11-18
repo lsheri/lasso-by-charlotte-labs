@@ -49,5 +49,26 @@ The checklist for any new or changed component in the app. It keeps a reskin che
 | `nativeSelect` | A raw `<select>` outside `src/components/ui` |
 | `handPills` | A class string outside `src/components/ui` with `rounded-full`, `font-mono` and `uppercase` |
 | `lucideFiles` | Files importing `lucide-react` |
+| `skinNameBranches` | Code that picks a look by skin name (`skin === "charlotte"`), outside `src/lib/skin.ts` |
+| `cssColorLiterals` | Colour literals in CSS declarations; tokens, masks and `var()` fallbacks do not count |
 
 Every number may only go down.
+
+## The reskin audit
+
+`tests/e2e/reskin-audit.spec.ts` is the proof that a brand change needs only skin values. It signs in as a demo person, opens the main screens (home, board, card and board menus, share dialog, proposal panel, All work, settings, firm view, and three at phone width), renders each as Charlotte and again under `src/design/skins/proof.css` (a deliberately loud test skin that never ships), and lists any element whose colour, background, border or font did not change. A planted canary proves it can see a leak. The ceiling is in `src/design/reskin-audit.json` and is 0.
+
+Run it after any change to how something looks, and before a rebrand:
+
+```
+runpane secrets exec --project lasso-by-charlotte-labs --only DEMO_FIRM_PASSWORD -- \
+  env LASSO_E2E_BASE_URL=http://127.0.0.1:3199 bunx playwright test reskin-audit --workers=1
+```
+
+It writes `test-results/reskin-audit.json` (each leak with its selector and screens) and a proof-skin screenshot per screen.
+
+## Starting a new brand
+
+1. Copy `src/design/skins/proof.css` to a new skin file and set its values: ink, live, page, raised, sunk, two text greys, a mark grey, two neutrals, six work-kind hues and the fonts. `skin-base.css` derives every role, state, category and vendor colour from them.
+2. Add the brand's name, wordmark and Ask label in `src/design/brand/brand.ts`, and its marks beside the Charlotte ones.
+3. Run the reskin audit with the new skin in place of the proof skin, then the baseline screenshots.

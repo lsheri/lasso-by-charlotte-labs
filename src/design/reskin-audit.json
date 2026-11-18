@@ -1,0 +1,4 @@
+{
+  "_note": "Distinct reskin leaks found by tests/e2e/reskin-audit.spec.ts (any element whose colour, background, border or font stays the same under the proof skin). Keep it at 0: a new leak means a brand change would miss that spot. Never raise it without a DESIGN-DECISIONS row.",
+  "leaks": 0
+}

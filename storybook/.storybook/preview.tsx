@@ -5,9 +5,11 @@ import { SkinContext } from "@/components/skin/use-skin";
 
 import "../../src/styles.css";
 // Skins come in through styles.css (Charlotte since Phase 3 PR2), the same way the app gets them.
+// The proof skin never ships: only Storybook and the reskin audit load it, to show a brand change needs only skin values.
+import "../../src/design/skins/proof.css";
 
 /** Every skin the stories can show. */
-const SKINS = ["lasso", "charlotte"] as const;
+const SKINS = ["lasso", "charlotte", "proof"] as const;
 
 /** Stories render inside the app shell's attribute, as every signed-in surface does. */
 /** Also provides the skin to React, so components that branch in code (GraphiteIcon, work kinds, the thinking mark)
@@ -22,13 +24,14 @@ function SkinFrame({ skin, children }: { skin: (typeof SKINS)[number]; children:
       data-skin={skin}
       style={{ padding: 16, background: "var(--surface-page)" }}
     >
-      <SkinContext.Provider value={skin}>{children}</SkinContext.Provider>
+      {/* The proof skin is CSS only; code that still branches by name sees Charlotte, as a new brand would today. */}
+      <SkinContext.Provider value={skin === "proof" ? "charlotte" : skin}>{children}</SkinContext.Provider>
     </div>
   );
 }
 
 const withSkin: Decorator = (Story, context) => (
-  <SkinFrame skin={context.globals["skin"] === "charlotte" ? "charlotte" : "lasso"}>
+  <SkinFrame skin={(SKINS as readonly string[]).includes(context.globals["skin"]) ? (context.globals["skin"] as (typeof SKINS)[number]) : "lasso"}>
     <Story />
   </SkinFrame>
 );
