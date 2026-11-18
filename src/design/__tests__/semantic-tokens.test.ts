@@ -17,7 +17,8 @@ const JOBS: Record<string, string> = {
 };
 
 function jobBlock(): string {
-  const start = tokens.indexOf(':root,\n[data-lasso="on"] {');
+  // The job block also covers overlays (G2, 17 Nov), so it starts with :root and the app shell.
+  const start = tokens.indexOf(':root,\n[data-lasso="on"],');
   expect(start).toBeGreaterThan(-1);
   return tokens.slice(start, tokens.indexOf("\n}", start));
 }

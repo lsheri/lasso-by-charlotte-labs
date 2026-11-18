@@ -238,37 +238,12 @@
   stroke-width: 1.5;
 }
 
-/* Overlays get the same names the app shell maps in styles.css ([data-lasso="on"] block), pointed at the Charlotte
-   values above. Lasso overlays still use the older root palette; that is a separate Lasso decision. */
+/* Overlays (dialogs, menus, toasts open at body) take Charlotte's shadcn mapping here. The older --nb-* names and the job
+   tokens reach overlays from styles.css and tokens.css, which now cover overlays as well as the app shell (G2, 17 Nov). */
 [data-skin="charlotte"] body:has([data-lasso="on"]) > [role="dialog"],
 [data-skin="charlotte"] body:has([data-lasso="on"]) > [role="alertdialog"],
 [data-skin="charlotte"] body:has([data-lasso="on"]) > [data-radix-popper-content-wrapper],
 [data-skin="charlotte"] body:has([data-lasso="on"]) [data-sonner-toaster] {
-  --nb-white:var(--surface-raised);
-  --nb-paper:var(--surface-page);
-  --nb-grey-1:var(--surface-sunk);
-  --nb-grey-2:var(--surface-sunk-2);
-  --nb-rule:var(--line-hairline);
-  --nb-line-hairline:var(--line-hairline);
-  --nb-pencil:var(--line-pencil);
-  --nb-ink:var(--text-primary);
-  --nb-graphite:var(--text-primary);
-  --nb-mid:var(--text-secondary);
-  --nb-soft:var(--text-muted);
-  --nb-green:var(--hand-ink);
-  /* C1 part 3: jobs that point at --nb-green resolve here too, or overlays fall back to the root green. */
-  --active-mark:var(--nb-green);
-  --drop-target:var(--nb-green);
-  --handle:var(--nb-green);
-  --ai-voice:var(--nb-green);
-  --nb-lasso-green:var(--hand-live);
-  --nb-green-wash:var(--hand-wash);
-  --nb-blue:var(--action-secondary);
-  --nb-amber:var(--state-yours-pending);
-  --nb-ink-yellow:var(--state-highlight);
-  --nb-shared:var(--state-shared-in);
-  --nb-ink-ember:var(--state-destructive-new);
-  --nb-danger-text:var(--state-destructive-new);
 
   --background:var(--surface-page);
   --foreground:var(--text-primary);
