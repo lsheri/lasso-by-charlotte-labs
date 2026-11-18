@@ -23,6 +23,12 @@ export type HealthCounts = {
   literalZIndex: number;
   /** !important in CSS. */
   importantRules: number;
+  /** Raw <select> in TSX outside src/components/ui. Use NativeSelect or Select. */
+  nativeSelect: number;
+  /** Class strings outside src/components/ui that build a mono pill by hand (rounded-full + font-mono + uppercase). Use chipVariants or tagVariants. */
+  handPills: number;
+  /** Files importing lucide-react. The second icon set; GraphiteIcon is the house set. */
+  lucideFiles: number;
 };
 
 const EXCLUDE = [
@@ -54,6 +60,9 @@ export function measure(root = "src"): HealthCounts {
     legacyNbReads: 0,
     literalZIndex: 0,
     importantRules: 0,
+    nativeSelect: 0,
+    handPills: 0,
+    lucideFiles: 0,
   };
   for (const file of files(root)) {
     const text = readFileSync(file, "utf8");
@@ -70,6 +79,16 @@ export function measure(root = "src"): HealthCounts {
     c.legacyNbReads += count(uses, /var\(--nb-[a-z0-9-]+/g);
     c.literalZIndex += count(text, css ? /z-index:\s*-?\d+/g : /\bz-\[-?\d+\]/g);
     if (css) c.importantRules += count(text, /!important/g);
+    if (!css) {
+      const primitive = /src\/components\/ui\//.test(file.split(path.sep).join("/"));
+      if (!primitive) {
+        c.nativeSelect += count(text, /<select\b/g);
+        c.handPills += (text.match(/["'`][^"'`\n]*\brounded-full\b[^"'`\n]*["'`]/g) ?? []).filter(
+          (literal) => /\bfont-mono\b/.test(literal) && /\buppercase\b/.test(literal),
+        ).length;
+      }
+      if (/from\s+["']lucide-react["']/.test(text)) c.lucideFiles += 1;
+    }
   }
   return c;
 }
