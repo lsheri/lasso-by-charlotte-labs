@@ -2,9 +2,10 @@
 // so it must keep a second cue: the paperclip, a navy icon on the lime disc.
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { resolvedSkin } from "@/design/skin-tokens";
 
 const css = readFileSync("src/styles.css", "utf8");
-const charlotte = readFileSync("src/design/skins/charlotte.css", "utf8");
+const charlotte = resolvedSkin("charlotte");
 const labCard = readFileSync("src/components/canvas-lab/LabCard.tsx", "utf8");
 
 function luminance(hex: string): number {
@@ -18,7 +19,6 @@ const contrast = (a: string, b: string) => {
   const [x, y] = [luminance(a), luminance(b)];
   return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
 };
-const hex = (name: string) => new RegExp(`--${name}:(#[0-9a-fA-F]{6});`).exec(charlotte)?.[1] ?? "";
 
 describe("G6: the in-context card keeps a non-colour cue", () => {
   it("renders the paperclip on every card in context", () => {
@@ -32,8 +32,9 @@ describe("G6: the in-context card keeps a non-colour cue", () => {
   });
 
   it("keeps the Charlotte paperclip at 3:1 or better against its disc", () => {
-    expect(charlotte).toContain("--text-on-acid:var(--ch-navy);");
-    expect(charlotte).toContain("--ask-live:var(--ch-lime);");
-    expect(contrast(hex("ch-navy"), hex("ch-lime"))).toBeGreaterThanOrEqual(3);
+    const [ink, disc] = [charlotte.get("--text-on-acid") ?? "", charlotte.get("--ask-live") ?? ""];
+    expect(ink).toBe(charlotte.get("--skin-ink"));
+    expect(disc).toBe(charlotte.get("--skin-live"));
+    expect(contrast(ink, disc)).toBeGreaterThanOrEqual(3);
   });
 });

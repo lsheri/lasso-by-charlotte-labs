@@ -18,7 +18,7 @@ Goal (Liam, 17 Nov): "as design healthy as can be and durable for switching thin
 | Gap | Tag | What | Status | PRs |
 |---|---|---|---|---|
 | G1 | Look | Job-name colour tokens read by nothing | In-app CSS done; TS reads open | #162, #164, #176, #177 |
-| G2 | Look | Three colour systems (`--nb-*`, new tokens, shadcn) | Shared blocks carry the mapping and derived tokens to shell and overlays; Charlotte overrides 230 to 110 | #162, #177, #190, #191, #192 |
+| G2 | Look | Three colour systems (`--nb-*`, new tokens, shadcn) | Shared blocks carry the mapping and derived tokens to shell and overlays; Charlotte now sets 18 brand values (from 230); skin-base.css maps them onto every role | #162, #177, #190, #191, #192, #197 |
 | G3 | Look | No type scale (48 sizes) | Done for app surfaces | #166, #172, #173, #174, #175 |
 | G4 | Now | Text below 10px | Done: nothing in the app below 11px | #167 |
 | G5 | Now | Muted text fails AA | Done | #161 |
@@ -56,13 +56,14 @@ Goal (Liam, 17 Nov): "as design healthy as can be and durable for switching thin
 | #193 | G11 | Sticky-mark and kind-chip colours move into tokens | No |
 | #194 | G10 | Reference parity test | No |
 | #195 | G9 | Named global layers (`--layer-*`), values unchanged | No |
+| #197 | G2 | Skin contract: Charlotte sets 18 brand values (`--skin-*`, six type hues, two ramp steps, two overlay fonts); skin-base.css maps them onto roles, job tokens, the neutral ramp and vendors | No (hairline and pencil greys may move by one colour step from rounding) |
 | #189 | G8 | Controls join the button at 5px; new float role 15px; long tail snaps; raw-radius count fixed to literal lengths only | Controls 1px less round; floating panels and menus settle on 15px |
 
 Every PR was checked against main with the full test suite, lint, and the design-baseline screenshots (26 screens, Charlotte, desktop and phone), and has a row in `DESIGN-DECISIONS.md`.
 
 ## Health counts
 
-Charlotte skin size (custom properties it declares): 230 on 17 Nov, 160 after G2 part 2, 110 after G2 part 3. The audit's target for a skin is about 20.
+Charlotte skin size (custom properties it declares): 230 on 17 Nov, 160 after G2 part 2, 110 after G2 part 3, 18 after the skin contract (#197). The audit's target for a skin was about 20. A test keeps it at 20 or fewer.
 
 
 | Count | 17 Nov baseline (7e13e65d) | Now |
