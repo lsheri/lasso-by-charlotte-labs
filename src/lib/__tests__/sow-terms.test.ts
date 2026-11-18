@@ -15,11 +15,15 @@ describe("fee parsing", () => {
     ["380k GBP", 380_000, "fixed"],
     ["$120,000 per month", 120_000, "monthly"],
     ["$2 million", 2_000_000, "fixed"],
+    ["$120,000 fixed", 120_000, "fixed"],
+    ["fixed fee of $95,000", 95_000, "fixed"],
+    ["A flat fee of £60k", 60_000, "fixed"],
+    ["$120,000 fixed fee", 120_000, "fixed"],
   ])("%s reads as %d, %s", (text, amount, basis) => {
     expect(parseFee(text)).toEqual({ fee_amount: amount, fee_basis: basis });
   });
 
-  it.each(["$300k to $350k", "time and materials", "380k", "$0", "rate card attached", "", "45,000"])(
+  it.each(["$300k to $350k", "time and materials", "380k", "$0", "rate card attached", "", "45,000", "$120,000 fixed plus expenses", "fixed"])(
     "%s keeps only its text, never a guessed amount",
     (text) => {
       expect(parseFee(text)).toEqual({ fee_amount: null, fee_basis: null });

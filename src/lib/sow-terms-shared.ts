@@ -47,8 +47,11 @@ export function canSetFees(role: string | null | undefined): boolean {
 }
 
 const SYMBOL_OR_CODE = "(?:[$£€]|USD|GBP|EUR|AUD|CAD|NZD|CHF|SGD)";
+// Basis words a SOW writes around one figure: "fixed fee of $120,000", "$120,000 fixed", "$45k per month".
+const LEAD = "(?:(?:a\\s+)?(?:fixed|flat)(?:\\s+fee)?(?:\\s+of)?\\s+)?";
+const TAIL = "(?:\\s*(?:fixed|flat)(?:\\s+fee)?|\\s*(?:\\/|per|a)\\s*month)?";
 const FEE = new RegExp(
-  `^\\s*(?:${SYMBOL_OR_CODE}\\s?)?(\\d+(?:,\\d{3})*(?:\\.\\d+)?)\\s*(k|m|thousand|million)?\\s*(?:${SYMBOL_OR_CODE})?\\s*(?:(?:\\/|per|a)\\s*month)?\\s*$`,
+  `^\\s*${LEAD}(?:${SYMBOL_OR_CODE}\\s?)?(\\d+(?:,\\d{3})*(?:\\.\\d+)?)\\s*(k|m|thousand|million)?\\s*(?:${SYMBOL_OR_CODE})?${TAIL}\\s*$`,
   "i",
 );
 const HAS_MONEY_MARK = new RegExp(`${SYMBOL_OR_CODE}|dollars?|pounds?|euros?`, "i");
