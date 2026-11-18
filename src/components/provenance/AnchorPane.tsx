@@ -149,7 +149,7 @@ export function AnchorPane({
               data-testid={`span-mark-${entry.stitch.id}`}
               onMouseEnter={() => setHovered(entry.stitch.id)}
               onMouseLeave={() => setHovered(null)}
-              className={`rounded-[3px] px-0.5 text-foreground nb-span-mark ${spanStatusClass(
+              className={`rounded-(--corner-card) px-0.5 text-foreground nb-span-mark ${spanStatusClass(
                 entry.stitch.status,
               )} ${reduceMotion ? "nb-span-pulse-static" : "nb-span-pulse"} ${
                 hovered === entry.stitch.id ? "nb-span-lit" : ""

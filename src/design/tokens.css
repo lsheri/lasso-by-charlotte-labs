@@ -60,7 +60,9 @@
   --here-rule:var(--acid-100);
   --here-weight:2.5px;
 
-  --radius-sm-new:2px; --radius-md-new:5px; --radius-pill:999px;
+  /* Corner roles (G8, 17 Nov): the one place corners change. Every older radius name points here. */
+  --corner-mark:2px; --corner-card:3px; --corner-button:5px; --corner-control:6px; --corner-panel:8px; --corner-pill:999px;
+  --radius-sm-new:var(--corner-mark); --radius-md-new:var(--corner-button); --radius-pill:var(--corner-pill);
 
   --shadow-flat:none;
   --shadow-card-new:1px 2px 3px color-mix(in oklab,var(--neutral-95) 15%,transparent);

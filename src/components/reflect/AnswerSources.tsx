@@ -17,7 +17,7 @@ function SourceRow({ source, onOpen }: { source: ContextSource; onOpen: () => vo
   return (
     <li className="flex items-center gap-2">
       <span
-        className="flex size-5 shrink-0 items-center justify-center rounded-[5px] border"
+        className="flex size-5 shrink-0 items-center justify-center rounded-(--corner-button) border"
         style={{ color: styles.color, background: styles.background, borderColor: styles.border }}
       >
         <Icon className="h-3 w-3" aria-hidden />

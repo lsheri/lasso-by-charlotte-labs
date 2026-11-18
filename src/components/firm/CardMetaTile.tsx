@@ -43,7 +43,7 @@ export function CardMetaTile({
   return (
     <span
       data-testid={testId}
-      className="mt-3 block rounded-[6px] border border-[var(--nb-rule)] bg-[var(--nb-grey-1)] px-2.5 py-2"
+      className="mt-3 block rounded-(--corner-control) border border-[var(--nb-rule)] bg-[var(--nb-grey-1)] px-2.5 py-2"
     >
       <span className="flex items-start gap-2">
         <FileFormatIcon item={fileItem as never} size={CARD_FILE_FORMAT_ICON_SIZE} />

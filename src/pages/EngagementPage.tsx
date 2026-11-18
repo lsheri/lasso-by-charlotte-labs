@@ -901,7 +901,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
               }}
             />
             {profile && ((profile.role !== "coach" && askOpen) || lensItem) ? (
-              <div className="nb-bench-rail rounded-b-[3px] rounded-t-none border border-t-0 border-[var(--nb-rule)] bg-[var(--nb-white)] p-[13px_14px] shadow-[0_3px_6px_-3px_rgb(22_24_26_/_0.2)]">
+              <div className="nb-bench-rail rounded-b-(--corner-card) rounded-t-none border border-t-0 border-[var(--nb-rule)] bg-[var(--nb-white)] p-[13px_14px] shadow-[0_3px_6px_-3px_rgb(22_24_26_/_0.2)]">
                 {profile.role !== "coach" ? (
                   // Keep Ask mounted while an analysis is shown so its conversation remains intact.
                   <div hidden={Boolean(lensItem)} className="min-h-0 flex-1">

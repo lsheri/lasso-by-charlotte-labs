@@ -762,7 +762,7 @@ export function VerifyInk({
       data-stroke={ink.stroke}
       data-dashed={ink.dashed ? "true" : "false"}
       data-bold={bold ? "true" : "false"}
-      className={`relative inline rounded-[3px] px-0.5 ${bold ? "nb-ink-bold" : ""} ${
+      className={`relative inline rounded-(--corner-card) px-0.5 ${bold ? "nb-ink-bold" : ""} ${
         active && !reducedMotion ? "nb-ink-settle nb-span-pulse" : ""
       }`}
       style={{

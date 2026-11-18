@@ -164,7 +164,7 @@ export function WorkNote({
               <ChatUrlLink item={item as WorkItemRow} parent={parent} showAbsence turnCount={chatPreview?.turnCount} toolSteps={chatPreview?.toolSteps} />
             )}
           </span>
-          {boardTitle ? <span className={`min-w-0 truncate ${headerGutter ? "canvas-card-chip" : "rounded-[3px] border border-hairline px-1 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground"}`}>{boardTitle}</span> : null}
+          {boardTitle ? <span className={`min-w-0 truncate ${headerGutter ? "canvas-card-chip" : "rounded-(--corner-card) border border-hairline px-1 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground"}`}>{boardTitle}</span> : null}
           {chips ? <span className="sr-only">{chips}</span> : null}
         </div>
         {item.visibility === "unmapped" ? <span className="work-no-board-label"><Lock className="h-3 w-3 shrink-0" aria-hidden />No board</span> : null}

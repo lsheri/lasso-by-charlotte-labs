@@ -157,7 +157,7 @@ export function ReferenceFileCard({ item, onOpen }: { item: WorkItemRow; onOpen:
             const file = event.dataTransfer.files[0];
             if (file) void add(file);
           }}
-          className={`mt-auto flex items-center justify-center rounded-[6px] border border-dashed px-2 py-3 ${over ? "border-foreground bg-secondary" : "border-border"}`}
+          className={`mt-auto flex items-center justify-center rounded-(--corner-control) border border-dashed px-2 py-3 ${over ? "border-foreground bg-secondary" : "border-border"}`}
         >
           <Button
             type="button"

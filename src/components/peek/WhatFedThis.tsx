@@ -63,7 +63,7 @@ function ContributorRow({
     >
       <div className="flex items-start gap-2.5">
         <span
-          className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-[6px] border"
+          className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-(--corner-control) border"
           style={{ color: styles.color, background: styles.background, borderColor: styles.border }}
         >
           <Icon className="h-3.5 w-3.5" aria-hidden />

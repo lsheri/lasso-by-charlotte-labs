@@ -76,7 +76,7 @@ function HighlightedContent({
         key={start}
         data-testid={inMark ? "turn-highlight" : "turn-comment-mark"}
         data-commented={inNote ? "true" : undefined}
-        className={`rounded-[2px] text-foreground ${
+        className={`rounded-(--corner-mark) text-foreground ${
           inMark
             ? "border-b-2 border-solid border-[var(--live,_var(--nb-lasso-green))] bg-[var(--nb-lasso-green-wash)]"
             : "bg-transparent"
