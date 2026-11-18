@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import type { LucideIcon } from "lucide-react";
+import type { LucideIcon } from "@/design/brand/icons";
 
 import { useBrand } from "@/components/skin/use-skin";
 import { EXHIBIT_DASH, EXHIBIT_STROKE } from "@/design/icons/charlotte";

@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Maximize2 } from "lucide-react";
+import { Maximize2 } from "@/design/brand/icons";
 import { useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";

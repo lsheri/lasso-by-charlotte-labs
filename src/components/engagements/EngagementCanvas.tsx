@@ -1,7 +1,7 @@
 import { displayName } from "@/lib/work-item-name";
 import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal } from "@/design/brand/icons";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { WorkstreamColumnHeader } from "@/components/engagements/WorkstreamColumnHeader";

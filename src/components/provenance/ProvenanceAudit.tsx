@@ -5,7 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { usePerfOpenFinish, usePerfTimerFactory } from "@/hooks/use-perf-timer";
 import { useProfile } from "@/hooks/use-profile";
 import { LassoThinkingMark } from "@/components/reflect/LassoThinkingMark";
-import { Pencil, X } from "lucide-react";
+import { Pencil, X } from "@/design/brand/icons";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 

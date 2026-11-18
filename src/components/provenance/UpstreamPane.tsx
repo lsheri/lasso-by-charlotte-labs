@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight } from "@/design/brand/icons";
 import { prefersReducedMotion } from "@/lib/motion-registry";
 import { useEffect, useState } from "react";
 

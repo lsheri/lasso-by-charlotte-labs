@@ -1,4 +1,4 @@
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal } from "@/design/brand/icons";
 import { useEffect, useRef, useState } from "react";
 import type { LabFrame, LabResizeCorner } from "@/components/canvas-lab/canvas-lab-model";
 import { Button } from "@/components/ui/button";

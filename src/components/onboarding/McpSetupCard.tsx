@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
-import { Check, Loader2 } from "lucide-react";
+import { Check, Loader2 } from "@/design/brand/icons";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";

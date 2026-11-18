@@ -1,4 +1,4 @@
-import { X } from "lucide-react";
+import { X } from "@/design/brand/icons";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { LabCard } from "@/components/canvas-lab/LabCard";

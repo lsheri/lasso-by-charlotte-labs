@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown } from "@/design/brand/icons";
 
 import { Button } from "@/components/ui/button";
 import {

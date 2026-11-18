@@ -6,7 +6,7 @@ import Highlight from "@tiptap/extension-highlight";
 import { TextStyle } from "@tiptap/extension-text-style";
 import Color from "@tiptap/extension-color";
 import Underline from "@tiptap/extension-underline";
-import { Bold, Italic, Underline as UnderlineIcon, Strikethrough, List, ListOrdered, RemoveFormatting, Heading2, Quote } from "lucide-react";
+import { Bold, Italic, Underline as UnderlineIcon, Strikethrough, List, ListOrdered, RemoveFormatting, Heading2, Quote } from "@/design/brand/icons";
 import { Button } from "@/components/ui/button";
 import { PALETTE, SIZES, RICH_TEXT_CSS, plainToRichHtml, richToPlainText, sanitizeRichHtml } from "@/lib/rich-text";
 

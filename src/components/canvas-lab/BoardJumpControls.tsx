@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "@/design/brand/icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { adjacentSection, hasPeriodSection, sectionForDate, todayDay, type JumpSection } from "@/lib/board-section";

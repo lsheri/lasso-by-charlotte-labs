@@ -1,4 +1,4 @@
-import { FileText } from "lucide-react";
+import { FileText } from "@/design/brand/icons";
 import { sourceVendorKey } from "@/components/work/SourceMark";
 import { displayName } from "@/lib/work-item-name";
 import type { WorkItemRow } from "@/lib/work-types";
