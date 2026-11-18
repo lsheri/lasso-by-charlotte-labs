@@ -1,12 +1,108 @@
-/* Skin base (G2 part 3, 17 Nov 2026). Any skin (any data-skin on <html>; Lasso sets none) gets its category colours
-   from six type hues and its surfaces, so a skin sets --t-talk, --t-words, --t-numbers, --t-slides, --t-visual,
-   --t-code and the surface and text tokens, and every region, board hue and kind colour follows. Lasso keeps its
-   own hand-picked values in styles.css. A skin can still override any name here. */
+/* Skin base (G2, 17 Nov 2026). Any skin (any data-skin on <html>; Lasso sets none) sets a handful of brand values
+   and every role, state, category and vendor colour follows from them here:
+   --skin-ink, --skin-live, --skin-page, --skin-raised, --skin-sunk, --skin-text-2, --skin-text-3, --skin-mark,
+   and six type hues (--t-talk, --t-words, --t-numbers, --t-slides, --t-visual, --t-code).
+   Lime-style live colours are for fill and decoration only: --skin-live never reaches focus, text or state here.
+   Lasso keeps its own hand-picked values in styles.css. A skin can still override any name here. */
 [data-skin] [data-lasso="on"],
 [data-skin] body:has([data-lasso="on"]) > [role="dialog"],
 [data-skin] body:has([data-lasso="on"]) > [role="alertdialog"],
 [data-skin] body:has([data-lasso="on"]) > [data-radix-popper-content-wrapper],
 [data-skin] body:has([data-lasso="on"]) [data-sonner-toaster] {
+  /* Greys mixed from the ink over the paper. */
+  --skin-ink-wash:color-mix(in srgb, var(--skin-ink) 10%, var(--skin-raised));
+  --skin-sunk-2:color-mix(in srgb, var(--skin-ink) 10%, var(--skin-page));
+  --skin-hairline:color-mix(in srgb, var(--skin-ink) 14%, var(--skin-page));
+  --skin-pencil:color-mix(in srgb, var(--skin-ink) 30%, var(--skin-page));
+
+  --surface-page:var(--skin-page);
+  --surface-raised:var(--skin-raised);
+  --surface-sunk:var(--skin-sunk);
+  --surface-sunk-2:var(--skin-sunk-2);
+  --surface-inverse:var(--skin-ink);
+
+  --text-primary:var(--skin-ink);
+  --text-secondary:var(--skin-text-2);
+  --text-muted:var(--skin-text-3);
+  --text-on-inverse:var(--skin-page);
+
+  --line-hairline:var(--skin-hairline);
+  --line-pencil:var(--skin-pencil);
+  --line-strong:var(--skin-ink);
+
+  --action-primary:var(--skin-ink);
+  --action-primary-fg:var(--skin-page);
+  --action-primary-shadow:var(--skin-ink);
+  --action-secondary:var(--skin-ink);
+  --action-secondary-underline:var(--skin-live);
+  --focus-ring-new:var(--skin-ink);
+  --focus-ring:var(--skin-ink);
+
+  --hand-ink:var(--skin-ink);
+  --hand-live:var(--skin-live);
+  --hand-wash:var(--skin-sunk);
+
+  /* Job tokens: state reads in ink, live in the live colour. */
+  --state-highlight:var(--skin-ink);
+  --state-highlight-wash:var(--skin-ink-wash);
+  --here-rule:var(--skin-ink);
+  --ask-live:var(--skin-live);
+  --state-on-record:var(--skin-ink);
+  --wrap-mark:var(--skin-ink);
+  --selection:var(--skin-ink-wash);
+  --select-ring:var(--skin-ink);
+  --live:var(--skin-live);
+  --icon-ink-active:var(--skin-ink);
+  --state-held:var(--skin-ink);
+  --state-held-ink:var(--skin-page);
+  --state-shared-in:var(--skin-ink);
+  --state-shared-wash:var(--skin-ink-wash);
+  --state-yours-pending:var(--t-words);
+  --hint-green:var(--skin-ink);
+  --text-on-acid:var(--skin-ink);
+  --nb-green-deep:var(--t-numbers);
+  --ask-mark:var(--skin-ink);
+  --halo-1:var(--skin-ink);
+  --halo-2:var(--skin-sunk);
+
+  /* Today's nine kind hues fold into the six type families. --hue-neutral stays neutral: it also means "no board". */
+  --hue-slate-blue:var(--t-talk);
+  --hue-plum:var(--t-talk);
+  --hue-cyan:var(--t-talk);
+  --hue-sand:var(--t-words);
+  --hue-indigo:var(--t-words);
+  --hue-sage:var(--t-numbers);
+  --hue-clay:var(--t-slides);
+  --hue-amber:var(--t-visual);
+  --hue-moss:var(--t-code);
+
+  /* The neutral ramp, from the paper to the ink. A skin may set --neutral-10 and --neutral-80 itself. */
+  --neutral-00:var(--skin-raised);
+  --neutral-05:var(--skin-page);
+  --neutral-10:color-mix(in srgb, var(--skin-ink) 4%, var(--skin-raised));
+  --neutral-20:var(--skin-sunk);
+  --neutral-30:var(--skin-hairline);
+  --neutral-40:var(--skin-pencil);
+  --neutral-50:var(--skin-mark);
+  --neutral-55:var(--skin-text-3);
+  --neutral-60:var(--skin-text-2);
+  --neutral-80:color-mix(in srgb, var(--skin-ink) 90%, var(--skin-raised));
+  --neutral-95:var(--skin-ink);
+
+  /* Provenance lines and tints are one quiet slate. The tools' own logos keep their colours. */
+  --vendor-claude:var(--skin-text-2);
+  --vendor-chatgpt:var(--skin-text-2);
+  --vendor-gemini:var(--skin-text-2);
+  --vendor-copilot:var(--skin-text-2);
+  --vendor-gdrive:var(--skin-text-2);
+  --vendor-granola:var(--skin-text-2);
+  --vendor-notion:var(--skin-text-2);
+  --vendor-slack:var(--skin-text-2);
+  --vendor-microsoft:var(--skin-text-2);
+  --vendor-gmail:var(--skin-text-2);
+  --vendor-unknown:var(--skin-text-2);
+
+  /* Category colours from the six type hues. */
   --kind-accent-document:var(--t-words);
   --kind-accent-deck:var(--t-slides);
   --kind-accent-sheet:var(--t-numbers);
@@ -57,4 +153,41 @@
   --kind-chip-proposal-ink:var(--t-words);
   --kind-chip-numbers-bg:color-mix(in oklab, var(--t-numbers) 8%, var(--surface-raised));
   --kind-chip-numbers-ink:var(--t-numbers);
+}
+
+/* Text inherits the ink inside the shell. Some shells (Plans) set no colour and would inherit Lasso's ink from <body>. */
+[data-skin] [data-lasso="on"] { color:var(--text-primary); }
+
+/* A sketch card's kind speaks in its family ink: the kind label, and the one accent stroke in the drawing
+   (deck highlight, sheet cell, waveform playhead). The live colour means live only. */
+[data-skin] [data-lasso="on"] [data-sketch-kind="chat"],
+[data-skin] [data-lasso="on"] [data-sketch-kind="email"],
+[data-skin] [data-lasso="on"] [data-sketch-kind="transcript"] { --sketch-acid:var(--t-talk); --sketch-kind-ink:var(--t-talk); }
+[data-skin] [data-lasso="on"] [data-sketch-kind="doc"] { --sketch-acid:var(--t-words); --sketch-kind-ink:var(--t-words); }
+[data-skin] [data-lasso="on"] [data-sketch-kind="sheet"] { --sketch-acid:var(--t-numbers); --sketch-kind-ink:var(--t-numbers); }
+[data-skin] [data-lasso="on"] [data-sketch-kind="deck"] { --sketch-acid:var(--t-slides); --sketch-kind-ink:var(--t-slides); }
+
+/* Overlays (dialogs, menus, toasts open at body) take the shadcn names from the roles. The older --nb-* names and the
+   job tokens reach overlays from styles.css and tokens.css. */
+[data-skin] body:has([data-lasso="on"]) > [role="dialog"],
+[data-skin] body:has([data-lasso="on"]) > [role="alertdialog"],
+[data-skin] body:has([data-lasso="on"]) > [data-radix-popper-content-wrapper],
+[data-skin] body:has([data-lasso="on"]) [data-sonner-toaster] {
+  --background:var(--surface-page);
+  --foreground:var(--text-primary);
+  --card:var(--surface-raised);
+  --primary:var(--action-primary);
+  --primary-foreground:var(--action-primary-fg);
+  --muted-foreground:var(--text-secondary);
+  --border:var(--line-hairline);
+  --ring:var(--focus-ring-new);
+  --destructive:var(--state-destructive-new);
+  --ember:var(--action-primary);
+  --ember-foreground:var(--action-primary-fg);
+  --electric:var(--action-secondary);
+  --accent-deep:var(--action-secondary);
+  --state-amber:var(--state-yours-pending);
+  --state-teal:var(--hand-ink);
+  --state-indigo:var(--text-secondary);
+  color:var(--text-primary);
 }

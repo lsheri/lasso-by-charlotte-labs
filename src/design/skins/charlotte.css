@@ -1,5 +1,6 @@
 /* Charlotte skin. Exhibit picks (12 Nov 2026) with the Lab glass palette: white paper, navy ink, lime only when live.
-   Overrides role tokens and the job names in tokens.css, never a hue's own name, and never --lasso-* tokens.
+   Sets about twenty brand values; skin-base.css turns them into the role, job, category and vendor tokens (G2, 17 Nov).
+   The rules below are Charlotte's own shape choices. Never a hue's own name, and never --lasso-* tokens.
    Selector: one attribute stronger than the [data-lasso="on"] remaps, on the same element, so --nb-* resolve to these values.
    Descendant (not :root) so Storybook can frame a skin inside the page; the app sets data-skin on <html>.
    Lime is 1.44:1 on white: fill and decoration only, never focus, text or state. A test in src/design/__tests__ enforces this.
@@ -12,59 +13,17 @@
 [data-skin="charlotte"] body:has([data-lasso="on"]) > [role="alertdialog"],
 [data-skin="charlotte"] body:has([data-lasso="on"]) > [data-radix-popper-content-wrapper],
 [data-skin="charlotte"] body:has([data-lasso="on"]) [data-sonner-toaster] {
-  --ch-navy:#0B2A4A;
-  --ch-lime:#04F85B;
-  --ch-page:#FAFBF9;
-  --ch-white:#FFFFFF;
-  --ch-wash:#EEF4F8;
-  --ch-muted:#55697A;
-  --ch-faint:#73859A;
-  --ch-faint-text:#5c6e80; /* A1, 17 Nov: muted text, 5.06:1 on page, 4.74:1 on wash; --ch-faint stays for marks */
-  --ch-navy-wash:#e7eaed; /* navy at 10% on white */
-  --ch-sunk-2:#e2e6e8; /* navy at 10% on page */
-  --ch-hairline:#d9dee0; /* navy at 14% on page */
-  --ch-pencil:#b2bcc4; /* navy at 30% on page */
-
-  --surface-page:var(--ch-page);
-  --surface-raised:var(--ch-white);
-  --surface-sunk:var(--ch-wash);
-  --surface-sunk-2:var(--ch-sunk-2);
-  --surface-inverse:var(--ch-navy);
-
-  --text-primary:var(--ch-navy);
-  --text-secondary:var(--ch-muted);
-  --text-muted:var(--ch-faint-text);
-  --text-on-inverse:var(--ch-page);
-
-  --line-hairline:var(--ch-hairline);
-  --line-pencil:var(--ch-pencil);
-  --line-strong:var(--ch-navy);
-
-  --action-primary:var(--ch-navy);
-  --action-primary-fg:var(--ch-page);
-  --action-primary-shadow:var(--ch-navy);
-  --action-secondary:var(--ch-navy);
-  --action-secondary-underline:var(--ch-lime);
-  --focus-ring-new:var(--ch-navy);
-  --focus-ring:var(--ch-navy); /* declared on :root in tokens.css, so it must be restated here to change */
-
-  --hand-ink:var(--ch-navy);
-  --hand-live:var(--ch-lime);
-  --hand-wash:var(--ch-wash);
-
-  --state-highlight:var(--ch-navy);
-  --state-highlight-wash:var(--ch-navy-wash);
-  --here-rule:var(--ch-navy);
-  --ask-live:var(--ch-lime);
-
-  --state-on-record:var(--ch-navy);
-  --wrap-mark:var(--ch-navy);
-  --selection:var(--ch-navy-wash);
-  --select-ring:var(--ch-navy);
-  --live:var(--ch-lime);
-  --icon-ink-active:var(--ch-navy);
-  --state-held:var(--ch-navy);
-  --state-held-ink:var(--ch-page);
+  /* Brand values. skin-base.css builds every role, state, category and vendor colour from these. */
+  --skin-ink:#0B2A4A; /* navy */
+  --skin-live:#04F85B; /* lime: live only, 1.44:1 on white */
+  --skin-page:#FAFBF9;
+  --skin-raised:#FFFFFF;
+  --skin-sunk:#EEF4F8;
+  --skin-text-2:#55697A;
+  --skin-text-3:#5c6e80; /* A1, 17 Nov: muted text, 5.06:1 on page, 4.74:1 on wash */
+  --skin-mark:#73859A; /* faint marks, not text */
+  --neutral-10:#f3f6f8;
+  --neutral-80:#24384e;
 
   /* Work-kind families (Phase 3 PR5, option B "Exhibit chart"): six muted inks, each 5.6:1 or better on page,
      raised and sunk. No green family, so green never competes with lime, which means live. */
@@ -74,70 +33,7 @@
   --t-slides:#9A4A2C;
   --t-visual:#6A3F75;
   --t-code:#3E4A57;
-  /* Today's kind hues share a family (a remap, no code change). --hue-neutral stays neutral: it also means "no board". */
-  --hue-slate-blue:var(--t-talk);
-  --hue-plum:var(--t-talk);
-  --hue-cyan:var(--t-talk);
-  --hue-sand:var(--t-words);
-  --hue-indigo:var(--t-words);
-  --hue-sage:var(--t-numbers);
-  --hue-clay:var(--t-slides);
-  --hue-amber:var(--t-visual);
-  --hue-moss:var(--t-code);
-  /* KindIcon accent hooks; Lasso leaves them unset. */
-
-  /* PR7 colour sweep (R3, 15 Nov). Names Lasso components read directly, which kept Lasso's colours under Charlotte. */
-  /* The neutral ramp, navy-tinted, so rules that name a step (toolbar ink, sketch ink tone) land on Charlotte greys. */
-  --neutral-00:var(--ch-white);
-  --neutral-05:var(--ch-page);
-  --neutral-10:#f3f6f8;
-  --neutral-20:var(--ch-wash);
-  --neutral-30:var(--ch-hairline);
-  --neutral-40:var(--ch-pencil);
-  --neutral-50:var(--ch-faint);
-  --neutral-55:var(--ch-faint-text);
-  --neutral-60:var(--ch-muted);
-  --neutral-80:#24384e;
-  --neutral-95:var(--ch-navy);
-  /* Shared with you reads navy, not orange: Charlotte has no orange. */
-  --state-shared-in:var(--ch-navy);
-  --state-shared-wash:var(--ch-navy-wash);
-  /* "Waiting on you" and the old amber slots take the words ink. */
-  --state-yours-pending:var(--t-words);
-  --hint-green:var(--ch-navy);
-  /* Ink on a lime fill (pressed toolbar toggles): navy, not Lasso near-black. */
-  --text-on-acid:var(--ch-navy);
-  --nb-green-deep:var(--t-numbers);
-  /* Ask's mark and border are navy; lime stays for the hub while reading. */
-  --ask-mark:var(--ch-navy);
-  --halo-1:var(--ch-navy);
-  --halo-2:var(--ch-wash);
-  /* Provenance lines and tints are one quiet slate. The tools' own logos keep their colours. */
-  --vendor-claude:var(--ch-muted);
-  --vendor-chatgpt:var(--ch-muted);
-  --vendor-gemini:var(--ch-muted);
-  --vendor-copilot:var(--ch-muted);
-  --vendor-gdrive:var(--ch-muted);
-  --vendor-granola:var(--ch-muted);
-  --vendor-notion:var(--ch-muted);
-  --vendor-slack:var(--ch-muted);
-  --vendor-microsoft:var(--ch-muted);
-  --vendor-gmail:var(--ch-muted);
-  --vendor-unknown:var(--ch-muted);
-  /* Drawn regions and client folder colours: each Lasso family moves to its nearest Charlotte family. Soft is the
-     ink at 7% on white, the soft edge at 22%. Charlotte has no green, so green becomes the numbers teal. */
-  /* Board hues (the sidebar colour tab): eight Charlotte inks, washes at 8% on white. */
-  /* Deliverable kind chips (Look back, firm cards): the kind's family ink on its 8% wash. */
 }
-
-/* PR7: a sketch card's kind speaks in its family ink: the kind label, and the one accent stroke in the drawing
-   (deck highlight, sheet cell, waveform playhead), which was lime on resting cards. Lime now means live only. */
-[data-skin="charlotte"] [data-lasso="on"] [data-sketch-kind="chat"],
-[data-skin="charlotte"] [data-lasso="on"] [data-sketch-kind="email"],
-[data-skin="charlotte"] [data-lasso="on"] [data-sketch-kind="transcript"] { --sketch-acid:var(--t-talk); --sketch-kind-ink:var(--t-talk); }
-[data-skin="charlotte"] [data-lasso="on"] [data-sketch-kind="doc"] { --sketch-acid:var(--t-words); --sketch-kind-ink:var(--t-words); }
-[data-skin="charlotte"] [data-lasso="on"] [data-sketch-kind="sheet"] { --sketch-acid:var(--t-numbers); --sketch-kind-ink:var(--t-numbers); }
-[data-skin="charlotte"] [data-lasso="on"] [data-sketch-kind="deck"] { --sketch-acid:var(--t-slides); --sketch-kind-ink:var(--t-slides); }
 
 /* PR7: every tool logo sits on the same white tile with a hairline, as the Google marks already do. The kind
    colour lives on the kind label, so the tile no longer carries a tint that fights the logo. */
@@ -149,13 +45,13 @@
 /* PR7: the Ask button is a secondary control like its toolbar neighbours: navy ink, a navy hairline, no glow.
    Open, it takes the navy wash. Lime appears only in the mark's hub while Lasso reads. */
 [data-skin="charlotte"] [data-lasso="on"] .canvas-lab-toolbar button.canvas-lab-ask-button[data-toolbar-control="ask"] {
-  border:1px solid color-mix(in oklab, var(--ch-navy) 25%, transparent);
+  border:1px solid color-mix(in oklab, var(--skin-ink) 25%, transparent);
   color:var(--text-primary);
 }
 [data-skin="charlotte"] [data-lasso="on"] .canvas-lab-toolbar button.canvas-lab-ask-button[data-toolbar-control="ask"][aria-pressed="true"],
 [data-skin="charlotte"] [data-lasso="on"] .canvas-lab-toolbar button.canvas-lab-ask-button[data-toolbar-control="ask"][aria-pressed="true"]:hover:not(:disabled) {
-  background:var(--ch-navy-wash);
-  border-color:var(--ch-navy);
+  background:var(--skin-ink-wash);
+  border-color:var(--skin-ink);
   box-shadow:none;
 }
 
@@ -175,9 +71,6 @@
 /* No motion in chrome (13 Nov audit): the nav catch loop does not draw under Charlotte. The live app already retired it (NAV-4). */
 [data-skin="charlotte"] [data-lasso="on"] .nav-catch { display:none; }
 
-/* Text inherits navy inside the shell. Some shells (Plans) set no colour and would inherit Lasso's ink from <body>. */
-[data-skin="charlotte"] [data-lasso="on"] { color: var(--text-primary); }
-
 /* No motion in chrome: GraphiteIcon draws its glyphs without the draw-on and signature moves.
    !important because the hover and focus rules that start them are more specific. */
 [data-skin="charlotte"] [data-lasso="on"] .nb-ico path { animation: none !important; }
@@ -187,34 +80,13 @@
   stroke-width: 1.5;
 }
 
-/* Overlays (dialogs, menus, toasts open at body) take Charlotte's shadcn mapping here. The older --nb-* names and the job
-   tokens reach overlays from styles.css and tokens.css, which now cover overlays as well as the app shell (G2, 17 Nov). */
+/* Overlays (dialogs, menus, toasts open at body) have no serif or Lasso mono under Charlotte. Their colours come from skin-base.css. */
 [data-skin="charlotte"] body:has([data-lasso="on"]) > [role="dialog"],
 [data-skin="charlotte"] body:has([data-lasso="on"]) > [role="alertdialog"],
 [data-skin="charlotte"] body:has([data-lasso="on"]) > [data-radix-popper-content-wrapper],
 [data-skin="charlotte"] body:has([data-lasso="on"]) [data-sonner-toaster] {
-
-  --background:var(--surface-page);
-  --foreground:var(--text-primary);
-  --card:var(--surface-raised);
-  --primary:var(--action-primary);
-  --primary-foreground:var(--action-primary-fg);
-  --muted-foreground:var(--text-secondary);
-  --border:var(--line-hairline);
-  --ring:var(--focus-ring-new);
-  --destructive:var(--state-destructive-new);
-
-  --ember:var(--action-primary);
-  --ember-foreground:var(--action-primary-fg);
-  --electric:var(--action-secondary);
-  --accent-deep:var(--action-secondary);
-  --state-amber:var(--state-yours-pending);
-  --state-teal:var(--hand-ink);
-  --state-indigo:var(--text-secondary);
-
   --font-serif:"Instrument Sans", ui-sans-serif, system-ui, sans-serif;
   --font-mono:"Martian Mono", ui-monospace, monospace;
-  color:var(--text-primary);
 }
 
 /* Sidebar (Phase 3 PR3, gate G4: board as a colour tab). Shape and size only; colours come from the tokens above. */
@@ -240,16 +112,6 @@
 [data-skin="charlotte"] [data-lasso="on"] .lasso-sidebar-nav .nb-nav-item[data-board-hue] > svg[data-icon="workboard"] path { display:none; }
 /* The wrap-up dot is the only wrap-up cue: a filled 6px dot, navy through --wrap-mark. */
 [data-skin="charlotte"] [data-lasso="on"] .lasso-sidebar-nav [data-wrap-mark] { width:6px; height:6px; }
-
-/* Root tokens built from other tokens (in styles.css :root, such as --sidebar: var(--nb-paper)) resolve once, at the
-   root, from Lasso's values. Restated here with the same formulas so they resolve against Charlotte's values.
-   Chart colours are left out on purpose: re-resolved, every series would turn navy. */
-[data-skin="charlotte"] [data-lasso="on"],
-[data-skin="charlotte"] body:has([data-lasso="on"]) > [role="dialog"],
-[data-skin="charlotte"] body:has([data-lasso="on"]) > [role="alertdialog"],
-[data-skin="charlotte"] body:has([data-lasso="on"]) > [data-radix-popper-content-wrapper],
-[data-skin="charlotte"] body:has([data-lasso="on"]) [data-sonner-toaster] {
-}
 
 /* PR7: the Charlotte mark fills the fixed block that hosts it. Buttons size their icons to 16px ([&_svg]:size-4),
    which shrank the toolbar's C into the block's top-left corner. */

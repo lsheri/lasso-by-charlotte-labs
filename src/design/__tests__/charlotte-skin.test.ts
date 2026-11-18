@@ -2,22 +2,9 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { resolvedSkin } from "@/design/skin-tokens";
 
 const css = readFileSync("src/design/skins/charlotte.css", "utf8");
-
-/** Every --name:value in the Charlotte block, with var(--x) resolved inside the block. */
-function tokens(): Map<string, string> {
-  const raw = new Map<string, string>();
-  for (const m of css.matchAll(/(--[a-z0-9-]+)\s*:\s*([^;]+);/g))
-    raw.set(m[1] ?? "", (m[2] ?? "").trim());
-  const resolve = (value: string, depth = 0): string => {
-    const ref = /^var\((--[a-z0-9-]+)\)$/.exec(value);
-    if (!ref || depth > 5) return value;
-    const next = raw.get(ref[1] ?? "");
-    return next === undefined ? value : resolve(next, depth + 1);
-  };
-  return new Map([...raw].map(([k, v]) => [k, resolve(v)]));
-}
 
 function luminance(hex: string): number {
   const [r = 0, g = 0, b = 0] = [1, 3, 5].map((i) => {
@@ -56,7 +43,8 @@ function sourceFiles(dir: string): string[] {
   });
 }
 
-const t = tokens();
+// Base + Charlotte, resolved: the values the app shell really shows (G2, 17 Nov).
+const t = resolvedSkin("charlotte");
 const v = (name: string) => {
   const value = t.get(name);
   expect(value, name).toMatch(/^#[0-9a-fA-F]{6}$/);
@@ -66,7 +54,12 @@ const SURFACES = ["--surface-page", "--surface-raised", "--surface-sunk"];
 
 describe("Charlotte skin", () => {
   it("overrides on the app shell, one attribute stronger than the [data-lasso] remaps", () => {
-    expect(css).toContain('[data-skin="charlotte"] [data-lasso="on"] {');
+    expect(css).toMatch(/^\[data-skin="charlotte"\] \[data-lasso="on"\],$/m);
+  });
+
+  it("sets at most 20 values; skin-base.css derives the rest", () => {
+    const first = css.slice(0, css.indexOf("}")).replace(/\/\*[\s\S]*?\*\//g, "");
+    expect(first.match(/--[a-z0-9-]+\s*:/g)?.length).toBeLessThanOrEqual(20);
   });
 
   it("keeps body text at 4.5:1 or better on every surface", () => {
@@ -104,7 +97,7 @@ describe("Charlotte skin", () => {
   });
 
   it("never puts lime on focus, text or state", () => {
-    const lime = v("--ch-lime").toLowerCase();
+    const lime = v("--skin-live").toLowerCase();
     const jobs = [...t].filter(([name]) =>
       /focus|text|state|selection|highlight|here-rule|hand-ink|wrap-mark|icon-ink/.test(name),
     );
@@ -113,7 +106,7 @@ describe("Charlotte skin", () => {
   });
 
   it("uses lime only for live and the link underline", () => {
-    const lime = v("--ch-lime").toLowerCase();
+    const lime = v("--skin-live").toLowerCase();
     const limeTokens = [...t]
       .filter(([, value]) => value.toLowerCase() === lime)
       .map(([name]) => name)
@@ -121,9 +114,9 @@ describe("Charlotte skin", () => {
     expect(limeTokens).toEqual([
       "--action-secondary-underline",
       "--ask-live",
-      "--ch-lime",
       "--hand-live",
       "--live",
+      "--skin-live",
     ]);
     // --nb-lasso-green reaches Charlotte through the shared app-shell block in styles.css (G2, 17 Nov).
   });
@@ -136,10 +129,14 @@ describe("Charlotte skin", () => {
   });
 
   it("scopes every rule to the Charlotte skin, so Lasso cannot change", () => {
-    const selectors = [...css.replace(/\/\*[\s\S]*?\*\//g, "").matchAll(/([^{}]+)\{/g)].map((m) => (m[1] ?? "").trim());
+    const selectors = [...css.replace(/\/\*[\s\S]*?\*\//g, "").matchAll(/([^{}]+)\{/g)].map((m) =>
+      (m[1] ?? "").trim(),
+    );
     expect(selectors.length).toBeGreaterThan(3);
     for (const list of selectors)
       for (const selector of topLevelParts(list))
-        expect(selector, selector).toMatch(/^\[data-skin="charlotte"\] (\[data-lasso="on"\]|body:has\(\[data-lasso="on"\]\))/);
+        expect(selector, selector).toMatch(
+          /^\[data-skin="charlotte"\] (\[data-lasso="on"\]|body:has\(\[data-lasso="on"\]\))/,
+        );
   });
 });

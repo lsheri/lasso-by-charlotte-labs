@@ -10,7 +10,16 @@ import { CHARLOTTE_KINDS } from "@/design/icons/charlotte-kinds";
 import { workIdentity } from "@/lib/work-identity";
 import type { WorkType } from "@/lib/work-types";
 
-const TYPES: WorkType[] = ["ai_thread", "document", "deck", "sheet", "call", "email", "message", "image"];
+const TYPES: WorkType[] = [
+  "ai_thread",
+  "document",
+  "deck",
+  "sheet",
+  "call",
+  "email",
+  "message",
+  "image",
+];
 const KINDS = [
   "artifact_code",
   "artifact_react",
@@ -31,9 +40,16 @@ const IDENTITIES = [
   ...TYPES.map((type) => workIdentity({ type })),
   ...KINDS.map((kind) => workIdentity({ type: "document", source_meta: { kind } as never })),
 ];
-const PROPS = { className: "h-4 w-4", style: { color: "var(--hue-sand)" }, "aria-hidden": true } as const;
+const PROPS = {
+  className: "h-4 w-4",
+  style: { color: "var(--hue-sand)" },
+  "aria-hidden": true,
+} as const;
 
-const css = readFileSync("src/design/skins/charlotte.css", "utf8");
+// Base first, then Charlotte: the skin as the shell sees it (G2, 17 Nov).
+const css =
+  readFileSync("src/design/skins/charlotte.css", "utf8") +
+  readFileSync("src/design/skins/skin-base.css", "utf8");
 function token(name: string) {
   return css.match(new RegExp(`${name}:([^;]+);`))?.[1]?.trim();
 }
@@ -90,12 +106,13 @@ describe("PR5 work kinds by skin", () => {
   });
 
   it("gives each family a colour that passes 4.5:1 on every Charlotte surface, and none is lime", () => {
-    const surfaces = [token("--ch-page")!, token("--ch-white")!, token("--ch-wash")!];
+    const surfaces = [token("--skin-page")!, token("--skin-raised")!, token("--skin-sunk")!];
     for (const family of ["talk", "words", "numbers", "slides", "visual", "code"]) {
       const value = token(`--t-${family}`);
       expect(value, family).toMatch(/^#[0-9A-Fa-f]{6}$/);
-      expect(value!.toLowerCase()).not.toBe(token("--ch-lime")!.toLowerCase());
-      for (const s of surfaces) expect(contrast(value!, s), `${family} on ${s}`).toBeGreaterThanOrEqual(4.5);
+      expect(value!.toLowerCase()).not.toBe(token("--skin-live")!.toLowerCase());
+      for (const s of surfaces)
+        expect(contrast(value!, s), `${family} on ${s}`).toBeGreaterThanOrEqual(4.5);
     }
   });
 
