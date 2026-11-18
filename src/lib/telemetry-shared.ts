@@ -520,6 +520,10 @@ export type TelemetryEvent =
   | "client_showing.unmarked"
   /** 17 Nov, firm brain: one Ask the firm question. Dims: result (answered | not_found | about_people), boards_read and sources (bucketed counts), starter (similar | went_wrong | charged | none). Never the question. Portal registration required. */
   | "firm_ask.asked"
+  /** 17 Nov, firm brain: a source in a firm answer was opened. Dims: grade (full | summary), shown (true | false). Portal registration required. */
+  | "firm_ask.source_opened"
+  /** 17 Nov, firm brain: an author or board owner kept an item out of firm answers. No dims. Portal registration required. */
+  | "firm_ask.kept_out"
   /**
    * T1: a traced question was saved to span_links. Dims: via (short fixed
    * code-path name) only. No ids, text, names or counts.

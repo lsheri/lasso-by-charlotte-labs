@@ -22,10 +22,58 @@ export const FIRM_ASK_STARTERS = ["similar", "went_wrong", "charged"] as const;
 export type FirmAskStarter = (typeof FIRM_ASK_STARTERS)[number];
 
 export const FIRM_ASK_COPY = {
+  title: "Ask the firm",
+  hint: "Have we done this before, and what did we learn? Answers come only from work shared with the firm, and every line links to its source.",
+  placeholder: "Have we worked on obesity care?",
+  inputLabel: "Question for the firm",
+  submit: "Ask",
+  pending: "Reading work shared with the firm",
+  error: "That did not work. Try again.",
   notFound: "Not found in work shared with the firm. Some engagements are not shared.",
   aboutPeople: "Ask the firm answers about work, not people. Here are the engagements that match.",
   oneSource: "This answer rests on one source.",
+  nearest: "Nearest shared work",
+  quoted: "Quoted",
+  fromSummary: "From summary",
+  shown: "Shown to client",
+  readTitle: "What it read",
+  readFull: "Read in full",
+  readSummary: "Scanned by summary",
+  weeks: (weeks: number) => `${weeks} weeks`,
+  lead: (name: string) => `Led by ${name}`,
+  previewSummary: "Only this summary is shared with the firm. The full note stays with the people on its board.",
+  keepOut: "Keep this out of firm answers",
+  keptOut: "Kept out. It will not appear in firm answers.",
+  close: "Close",
 } as const;
+
+export const FIRM_ASK_STARTER_COPY: Record<FirmAskStarter, { label: string; stem: string }> = {
+  similar: { label: "Similar engagements", stem: "Which past engagements are most like " },
+  went_wrong: { label: "What went wrong last time", stem: "What went wrong on past engagements like " },
+  charged: { label: "What we charged", stem: "What have we charged for work like " },
+};
+
+/** Starter chips this person sees: "What we charged" is for admins and leads only. */
+export function startersFor(role: string | null | undefined): FirmAskStarter[] {
+  const feeAccess = role === "admin" || role === "lead";
+  return FIRM_ASK_STARTERS.filter((starter) => starter !== "charged" || feeAccess);
+}
+
+/** Who sees the box: the company-brain flag is on, the workspace is a company, and the person is not a coach. The server checks again. */
+export function canAskTheFirm(flagOn: boolean, profile: { role?: string | null; has_firm_view?: boolean | null; org_type?: string | null } | null | undefined): boolean {
+  if (!flagOn || !profile || profile.role === "coach") return false;
+  return typeof profile.has_firm_view === "boolean" ? profile.has_firm_view : profile.org_type === "company";
+}
+
+export const FIRM_TYPE_LABELS: Record<string, string> = {
+  document: "Document",
+  deck: "Deck",
+  sheet: "Sheet",
+  call: "Call notes",
+  ai_thread: "AI chat",
+  email: "Email",
+  image: "Image",
+};
 
 /** Any money figure, so the model never sees a fee: "$380k", "$380,000", "$45k/month", "$1.2M". */
 const MONEY = /\$\s?\d[\d,]*(?:\.\d+)?(?:\s*(?:k|m|bn|million|thousand)\b)?(?:\s*(?:\/|per|a)\s*month)?/gi;
@@ -90,9 +138,33 @@ export type FirmAskResult = {
   /** Nearest shared work when nothing matched, in one line, or null. */
   nearest: string | null;
   read: { full: string[]; summary: string[] };
+  /** Labels for every item read, so the screen can show sources without another request. */
+  sources: Record<string, FirmAskSource>;
   coverage: string;
   oneSource: boolean;
 };
+
+export type FirmAskSource = {
+  title: string;
+  type: string;
+  date: string | null;
+  boardId: string;
+  boardTitle: string;
+  /** The latest "Shown to client" date, if any. */
+  shownOn: string | null;
+};
+
+/** Labels for the items read, from the corpus. */
+export function sourcesFor(corpus: FirmCorpus, itemIds: readonly string[]): Record<string, FirmAskSource> {
+  const out: Record<string, FirmAskSource> = {};
+  for (const id of itemIds) {
+    const item = corpus.items.find((entry) => entry.id === id);
+    const board = item && corpus.boards.find((entry) => entry.id === item.boardId);
+    if (!item || !board) continue;
+    out[id] = { title: item.title, type: item.type, date: item.date, boardId: board.id, boardTitle: board.title, shownOn: item.shown.at(-1)?.on ?? null };
+  }
+  return out;
+}
 
 /** What call B saw of one item: masked text for full reads, the index card for summary-only items. */
 export type ReadSource = { itemId: string; boardId: string; grade: FirmGrade; text: string };
@@ -135,4 +207,11 @@ export function factsFor(corpus: FirmCorpus, boardIds: readonly string[], canSee
     const fee = canSeeFees && typeof sow?.["fee_text"] === "string" ? sow["fee_text"] : null;
     return [{ boardId, title: board.title, client: board.client, lead: board.lead, weeks, outcome: board.outcome, fee }];
   });
+}
+
+/** "24 Jun 2025": past work needs its year. */
+export function firmDate(iso: string): string {
+  const [y, m, d] = iso.slice(0, 10).split("-").map(Number);
+  if (!y || !m || !d) return iso;
+  return new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(Date.UTC(y, m - 1, d));
 }

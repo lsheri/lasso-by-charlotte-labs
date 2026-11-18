@@ -20,6 +20,7 @@ import {
   FIRM_ASK_READ_MAX,
   holdsOpinion,
   maskFees,
+  sourcesFor,
   type FirmAskResult,
   type ReadSource,
 } from "./firm-ask-shared";
@@ -133,6 +134,7 @@ function empty(corpus: FirmCorpus, status: FirmAskResult["status"], read: readon
     facts: [],
     nearest,
     read: { full: read.filter((source) => source.grade === "full").map((source) => source.itemId), summary: read.filter((source) => source.grade === "summary").map((source) => source.itemId) },
+    sources: sourcesFor(corpus, read.map((source) => source.itemId)),
     coverage: coverageLine(corpus),
     oneSource: false,
   };

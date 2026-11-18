@@ -54,3 +54,100 @@ export const askTheFirm = createServerFn({ method: "POST" })
     });
     return result;
   });
+
+export type FirmSourcePreview = {
+  itemId: string;
+  title: string;
+  boardTitle: string;
+  type: string;
+  date: string | null;
+  /** Full: the item's text (fees withheld unless the reader has fee access). Summary: its index card only. */
+  grade: "full" | "summary";
+  text: string;
+  shownOn: string | null;
+  /** The item's author or the board's owner may keep it out of firm answers. */
+  canKeepOut: boolean;
+};
+
+type ItemInput = { item_id: string; profile_id?: string | null | undefined };
+
+function validateItem(input: ItemInput): ItemInput {
+  const itemId = typeof input?.item_id === "string" ? input.item_id.trim() : "";
+  if (!/^[0-9a-f-]{36}$/i.test(itemId)) throw new Error("Unknown source.");
+  return { item_id: itemId, profile_id: input?.profile_id ?? null };
+}
+
+/** May this person keep the item out of firm answers: its author, or the owner of the board it is placed on. */
+async function mayKeepOut(admin: import("@supabase/supabase-js").SupabaseClient<import("@/integrations/supabase/types").Database>, profileId: string, itemId: string, boardId: string): Promise<boolean> {
+  const [{ data: item }, { data: board }] = await Promise.all([
+    admin.from("work_items").select("owner_id").eq("id", itemId).maybeSingle(),
+    admin.from("engagements").select("owner_id").eq("id", boardId).maybeSingle(),
+  ]);
+  return item?.owner_id === profileId || board?.owner_id === profileId;
+}
+
+/**
+ * A read-only preview of one source in a firm answer, served by the firm reader: nothing it would not let this asker
+ * read. Summary-only items show their index card, never their body. Fees in a proposal are withheld unless the reader
+ * is an admin or lead.
+ */
+export const previewFirmSource = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(validateItem)
+  .handler(async ({ data, context }): Promise<FirmSourcePreview> => {
+    const { requireFirmMember, readFirmCorpus, readFirmItemText } = await import("./firm-corpus.server");
+    const { withoutFees } = await import("./firm-corpus-shared");
+    const { profile, supabaseAdmin } = await requireFirmMember(context.supabase, context.userId, data.profile_id);
+    const corpus = await readFirmCorpus(supabaseAdmin, profile);
+    const item = corpus.items.find((entry) => entry.id === data.item_id);
+    const board = item && corpus.boards.find((entry) => entry.id === item.boardId);
+    if (!item || !board) throw new Response("Not found", { status: 404 });
+
+    const canSeeFees = profile.role === "admin" || profile.role === "lead";
+    const body = item.grade === "full" ? await readFirmItemText(supabaseAdmin, corpus, item.id) : null;
+    const text = body !== null ? (canSeeFees ? body : withoutFees(body)) : [item.summary, item.decisions].filter(Boolean).join("\n\n");
+    const grade = body !== null ? "full" : "summary";
+
+    const { recordEvent } = await import("./telemetry.server");
+    await recordEvent(context.supabase, {
+      eventType: "firm_ask.source_opened",
+      orgId: profile.org_id,
+      userId: context.userId,
+      dims: { grade, shown: item.shown.length > 0 },
+    });
+    return {
+      itemId: item.id,
+      title: item.title,
+      boardTitle: board.title,
+      type: item.type,
+      date: item.date,
+      grade,
+      text,
+      shownOn: item.shown.at(-1)?.on ?? null,
+      canKeepOut: await mayKeepOut(supabaseAdmin, profile.id, item.id, board.id),
+    };
+  });
+
+/**
+ * "Keep this out of firm answers": sets the item's firm memory to Out. Only its author or the owner of its board may.
+ * Nothing is stored elsewhere, so it takes effect on the next question.
+ */
+export const keepOutOfFirmAnswers = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(validateItem)
+  .handler(async ({ data, context }): Promise<{ ok: true }> => {
+    const { requireFirmMember, readFirmCorpus } = await import("./firm-corpus.server");
+    const { profile, supabaseAdmin } = await requireFirmMember(context.supabase, context.userId, data.profile_id);
+    const corpus = await readFirmCorpus(supabaseAdmin, profile);
+    const item = corpus.items.find((entry) => entry.id === data.item_id);
+    if (!item || !(await mayKeepOut(supabaseAdmin, profile.id, item.id, item.boardId))) throw new Response("Forbidden", { status: 403 });
+
+    const { data: row } = await supabaseAdmin.from("work_items").select("meta").eq("id", item.id).eq("org_id", profile.org_id).maybeSingle();
+    const meta = row?.meta && typeof row.meta === "object" && !Array.isArray(row.meta) ? row.meta : {};
+    const { error } = await supabaseAdmin.from("work_items").update({ meta: { ...meta, firm_memory: "out" } }).eq("id", item.id).eq("org_id", profile.org_id);
+    if (error) throw new Error(error.message);
+
+    const { recordEvent } = await import("./telemetry.server");
+    await recordEvent(context.supabase, { eventType: "firm_ask.kept_out", orgId: profile.org_id, userId: context.userId, dims: {} });
+    return { ok: true };
+  });
