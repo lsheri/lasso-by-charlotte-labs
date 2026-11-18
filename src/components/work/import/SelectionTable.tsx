@@ -9,6 +9,8 @@ import { Label } from "@/components/ui/label";
 import type { ParsedConversation } from "@/lib/import-parsers";
 import type { ImportVendor } from "@/lib/import-vendors";
 import { useBrandCopy } from "@/components/skin/use-skin";
+import { tagVariants } from "@/components/ui/tag";
+import { cn } from "@/lib/utils";
 
 function dayOf(iso: string | null): string {
   return iso ? iso.slice(0, 10) : "";
@@ -180,7 +182,7 @@ export function SelectionTable({
                   {conv.warnings.map((warning) => (
                     <span
                       key={warning}
-                      className="ml-2 inline-block rounded-full border border-border bg-secondary px-2 py-0.5 font-mono text-(length:--type-label) uppercase tracking-[0.06em] text-muted-foreground"
+                      className={cn(tagVariants(), "ml-2 inline-block")}
                     >
                       {warning}
                     </span>

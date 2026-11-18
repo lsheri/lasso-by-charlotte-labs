@@ -48,6 +48,8 @@ import {
   type DriveTypeFilter,
 } from "@/lib/drive-scope";
 import { useBrandCopy } from "@/components/skin/use-skin";
+import { tagVariants } from "@/components/ui/tag";
+import { cn } from "@/lib/utils";
 
 /** GRANOLA-1: shown on a Granola call already in Lasso; picking it again refreshes it, keeping the old version. */
 export const GRANOLA_REFRESH_LABEL = "In Lasso · pick to refresh";
@@ -801,12 +803,12 @@ export function ConnectorPicker({
                             {item.title}
                           </span>
                           {highlight.has(item.id) ? (
-                            <span className="shrink-0 rounded-full bg-accent-soft px-2 py-0.5 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-accent-deep">
+                            <span className={cn(tagVariants({ tone: "accent" }), "shrink-0")}>
                               New
                             </span>
                           ) : null}
                           {item.hint ? (
-                            <span className="flex shrink-0 items-center gap-1 rounded-full border border-border px-2 py-0.5 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
+                            <span className={cn(tagVariants({ tone: "outline" }), "flex shrink-0 items-center gap-1")}>
                               <Phone aria-hidden className="size-2.5" />
                               {item.hint}
                             </span>

@@ -4,6 +4,8 @@ import { useState } from "react";
 import type { LabNode } from "@/components/canvas-lab/canvas-lab-model";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { tagVariants } from "@/components/ui/tag";
+import { cn } from "@/lib/utils";
 
 const WORKSPACE_INSTRUCTIONS = [
   "Write to the person who did the work.",
@@ -90,7 +92,10 @@ export function ContextComposer({
           {context.map((node) => (
             <span
               key={node.id}
-              className="inline-flex items-center gap-1 rounded-full border border-[var(--nb-pencil)] bg-secondary px-2 py-0.5 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground"
+              className={cn(
+                tagVariants(),
+                "inline-flex items-center gap-1 border-[var(--nb-pencil)]",
+              )}
             >
               {node.title.length > 28 ? `${node.title.slice(0, 25)}...` : node.title}
               <Button

@@ -5,7 +5,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { DELIVERABLE_KINDS, DELIVERABLE_KIND_LABELS, type DeliverableKind } from "@/lib/deliverable-kinds";
+import {
+  DELIVERABLE_KINDS,
+  DELIVERABLE_KIND_LABELS,
+  type DeliverableKind,
+} from "@/lib/deliverable-kinds";
+import { tagVariants } from "@/components/ui/tag";
 
 /**
  * The owner's own label for what kind of deliverable a piece of work is. Fixed
@@ -46,9 +51,7 @@ export function DeliverableKindSelect({
           </SelectContent>
         </Select>
         {suggested && value ? (
-          <span className="rounded-full bg-accent-soft px-2 py-0.5 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-accent-deep">
-            Suggested
-          </span>
+          <span className={tagVariants({ tone: "accent" })}>Suggested</span>
         ) : null}
       </div>
     </div>
