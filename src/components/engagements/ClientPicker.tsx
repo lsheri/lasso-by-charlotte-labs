@@ -11,6 +11,8 @@ import { canCreateClient } from "@/components/engagements/create-permissions";
 import { renameClient, useClients, useInvalidateClients } from "@/hooks/use-clients";
 import { useProfile } from "@/hooks/use-profile";
 import { vocabFor } from "@/lib/edu-vocab";
+import { chipVariants } from "@/components/ui/chip";
+import { cn } from "@/lib/utils";
 
 /**
  * Client is optional everywhere. Pick one, make one on the spot, or leave it
@@ -146,7 +148,7 @@ export function ClientPicker({
             type="button"
             disabled={pending}
             onClick={() => void (renaming ? rename() : create())}
-            className="shrink-0 rounded-full border border-border bg-card px-3 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+            className={cn(chipVariants(), "shrink-0 bg-card py-0")}
           >
             {renaming ? "Save" : "Add"}
           </button>
@@ -216,7 +218,7 @@ export function ClientPicker({
             <button
               type="button"
               onClick={() => setCreating(splitByKind ? "client" : "folder")}
-              className="shrink-0 rounded-full border border-border bg-card px-3 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+              className={cn(chipVariants(), "shrink-0 bg-card py-0")}
             >
               {`New ${vocab.client.toLowerCase()}`}
             </button>
@@ -225,7 +227,7 @@ export function ClientPicker({
             <button
               type="button"
               onClick={() => setCreating("folder")}
-              className="shrink-0 rounded-full border border-border bg-card px-3 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+              className={cn(chipVariants(), "shrink-0 bg-card py-0")}
             >
               New folder
             </button>

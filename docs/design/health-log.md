@@ -23,7 +23,7 @@ Goal (Liam, 17 Nov): "as design healthy as can be and durable for switching thin
 | G4 | Now | Text below 10px | Done: nothing in the app below 11px | #167 |
 | G5 | Now | Muted text fails AA | Done | #161 |
 | G6 | Now | Lime and acid rings below 3:1 | Charlotte passes (paperclip is the second cue); guarded by a test | #186 |
-| G7 | Look | App Button drifts from reference | Component done; raw `<button>` sweep open | #163 |
+| G7 | Look | App Button drifts from reference | Component done; the 15 hand-written mono chips share one style. Plain buttons already get the shared focus outline; the rest of the sweep is looks only | #163, #198 |
 | G8 | Look | Radius: 3 tokens, about 18 values | Done for app surfaces | #188, #189 |
 | G9 | Upkeep | styles.css size, literal z-index, `!important` | Global layers named; board-internal and paused-page z-index stay local; `!important` and the file split open | #195 |
 | G10 | Upkeep | Reference components copied, not checked | Done: every reference token stays declared, and the app keeps reading the 189 it shares | #194 |
@@ -57,6 +57,7 @@ Goal (Liam, 17 Nov): "as design healthy as can be and durable for switching thin
 | #194 | G10 | Reference parity test | No |
 | #195 | G9 | Named global layers (`--layer-*`), values unchanged | No |
 | #197 | G2 | Skin contract: Charlotte sets 18 brand values (`--skin-*`, six type hues, two ramp steps, two overlay fonts); skin-base.css maps them onto roles, job tokens, the neutral ramp and vendors | No (hairline and pencil greys may move by one colour step from rounding) |
+| #198 | G7 | One chip button (`chipVariants`) replaces 15 hand-written mono pills | Chosen toggles keep a 1px accent border (no 2px shift); disabled chips dim |
 | #189 | G8 | Controls join the button at 5px; new float role 15px; long tail snaps; raw-radius count fixed to literal lengths only | Controls 1px less round; floating panels and menus settle on 15px |
 
 Every PR was checked against main with the full test suite, lint, and the design-baseline screenshots (26 screens, Charlotte, desktop and phone), and has a row in `DESIGN-DECISIONS.md`.

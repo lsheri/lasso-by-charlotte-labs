@@ -16,6 +16,8 @@ import {
   parseCheckRules,
   truncationLine,
 } from "@/lib/check-rules";
+import { chipVariants } from "@/components/ui/chip";
+import { cn } from "@/lib/utils";
 
 type ReviewDraft = { key: string; title: string; body: string; error: string | null };
 
@@ -192,7 +194,7 @@ export function ChecksLibrary({
           </p>
           {writeError ? <p className="text-xs text-destructive">{writeError}</p> : null}
           <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3">
-            <label className="cursor-pointer rounded-full border border-border bg-card px-3 py-1 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground">
+            <label className={cn(chipVariants(), "cursor-pointer bg-card")}>
               Upload rules (.txt or .md)
               <input
                 ref={fileRef}

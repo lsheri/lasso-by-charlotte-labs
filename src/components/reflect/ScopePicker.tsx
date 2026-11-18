@@ -10,6 +10,7 @@ import { useWorkItems } from "@/hooks/use-work-items";
 import { supabase } from "@/integrations/supabase/client";
 import { SCOPE_MODES, type ContextScope, type ScopeMode } from "@/lib/reflect-shared";
 import { engagementDisplayCode, engagementDisplayTitle, engagementLabel } from "@/lib/clients";
+import { chipVariants } from "@/components/ui/chip";
 
 const MODE_LABEL: Record<ScopeMode, string> = {
   whole: "Whole record",
@@ -92,11 +93,7 @@ export function ScopePicker({
                 setMode(m);
                 setIds([]);
               }}
-              className={
-                m === mode
-                  ? "rounded-full bg-accent-soft px-3 py-1 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-accent-deep"
-                  : "rounded-full border border-border px-3 py-1 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
-              }
+              className={chipVariants({ tone: m === mode ? "accent" : "quiet" })}
             >
               {MODE_LABEL[m]}
             </button>

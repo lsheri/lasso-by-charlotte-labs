@@ -13,6 +13,8 @@ import { ONEONONE_WINDOWS, type OneOnOneWindow } from "@/lib/oneonone-shared";
 import { prepareOneOnOne, saveBriefToDrive } from "@/lib/oneonone.functions";
 import { logV2 } from "@/lib/telemetry-v2";
 import { useBrandCopy } from "@/components/skin/use-skin";
+import { chipVariants } from "@/components/ui/chip";
+import { cn } from "@/lib/utils";
 
 /** A brief the person owns: their work, their decisions, their questions. */
 export function OneOnOneBrief({
@@ -112,9 +114,7 @@ export function OneOnOneBrief({
               type="button"
               onClick={() => setDays(option)}
               className={
-                option === days
-                  ? "rounded-full bg-accent-soft px-3 py-1 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-accent-deep"
-                  : "rounded-full border border-border bg-card px-3 py-1 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+                option === days ? chipVariants({ tone: "accent" }) : cn(chipVariants(), "bg-card")
               }
             >
               Last {option} days

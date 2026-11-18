@@ -17,6 +17,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useProfile } from "@/hooks/use-profile";
 import { FEEDBACK_CATEGORIES, routePattern, submitFeedback } from "@/lib/feedback.functions";
+import { chipVariants } from "@/components/ui/chip";
+import { cn } from "@/lib/utils";
 
 export function FeedbackDialog({ trigger }: { trigger: ReactNode }) {
   const { data: profile } = useProfile();
@@ -98,11 +100,11 @@ export function FeedbackDialog({ trigger }: { trigger: ReactNode }) {
                     key={c}
                     type="button"
                     onClick={() => setCategory(c)}
-                    className={`rounded-full border px-3 py-1 font-mono text-(length:--type-label) uppercase tracking-[0.08em] transition-colors ${
+                    className={
                       category === c
-                        ? "border-accent-deep bg-accent-soft text-accent-deep"
-                        : "border-border bg-card text-muted-foreground hover:text-foreground"
-                    }`}
+                        ? cn(chipVariants({ tone: "accent" }), "border-accent-deep")
+                        : cn(chipVariants(), "bg-card")
+                    }
                   >
                     {c}
                   </button>

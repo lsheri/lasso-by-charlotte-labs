@@ -9,6 +9,8 @@ import type { ContainerColour } from "@/lib/container-colour";
 import { useProfile } from "@/hooks/use-profile";
 import { vocabFor } from "@/lib/edu-vocab";
 import { canCreateClient } from "@/components/engagements/create-permissions";
+import { chipVariants } from "@/components/ui/chip";
+import { cn } from "@/lib/utils";
 
 /**
  * Standing create actions in the sidebar, beside New workboard, shown
@@ -89,7 +91,7 @@ export function SidebarCreateActions({ empty, creating: creatingProp, onCreating
           type="button"
           disabled={pending}
           onClick={() => void submit()}
-          className="shrink-0 rounded-full border border-border bg-card px-3 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+          className={cn(chipVariants(), "shrink-0 bg-card py-0")}
         >
           Add
         </button>
