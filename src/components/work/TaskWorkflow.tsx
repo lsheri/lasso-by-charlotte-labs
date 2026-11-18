@@ -1,6 +1,6 @@
 import { displayName } from "@/lib/work-item-name";
 import { useState } from "react";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal } from "@/design/brand/icons";
 
 import { TypeIcon } from "@/components/work/TypeIcon";
 import {

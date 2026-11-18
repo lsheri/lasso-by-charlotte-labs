@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Lock } from "lucide-react";
+import { Lock } from "@/design/brand/icons";
 
 import { CardMenu } from "@/components/work/CardMenu";
 import { engagementDisplayTitle } from "@/lib/clients";

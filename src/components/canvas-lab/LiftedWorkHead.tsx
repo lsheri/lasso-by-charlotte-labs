@@ -1,8 +1,8 @@
-import { ExternalLink, Minimize2, MoreHorizontal } from "lucide-react";
+import { ExternalLink, Minimize2, MoreHorizontal } from "@/design/brand/icons";
 
 import { BrandLogo, brandLabel, type BrandKey } from "@/components/connectors/BrandLogo";
 import { useVendorVisible } from "@/hooks/use-vendor-display";
-import type { LucideIcon } from "lucide-react";
+import type { LucideIcon } from "@/design/brand/icons";
 
 export const LIFT_HEAD_COPY = {
   openIn: (tool: string) => `Open in ${tool}`,

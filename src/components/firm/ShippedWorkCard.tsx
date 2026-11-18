@@ -1,4 +1,4 @@
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal } from "@/design/brand/icons";
 import { useEffect, useState } from "react";
 
 import { GraphiteRule } from "@/components/notebook/marks";

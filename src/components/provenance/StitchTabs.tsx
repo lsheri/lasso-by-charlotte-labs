@@ -1,4 +1,4 @@
-import { MoreHorizontal, Plus } from "lucide-react";
+import { MoreHorizontal, Plus } from "@/design/brand/icons";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";

@@ -18,7 +18,7 @@ The checklist for any new or changed component in the app. It keeps a reskin che
 | Named layers (`--layer-*`) for anything that floats above the page | `z-[60]`, `z-index: 60` |
 | `chipVariants` / `tagVariants` combined with `cn()` | `rounded-full … font-mono … uppercase` written out |
 | `NativeSelect` for short fixed choices, `Select` for rich option rows | A raw `<select>` |
-| `GraphiteIcon` | A new Lucide import |
+| Icons from `@/design/brand/icons` (the swap layer; add a new Lucide icon there with `brandIcon`) or `GraphiteIcon` | Importing `lucide-react` directly |
 | Plain CSS specificity; for an inline style set by code or a utility a rule must sit above, `!important` with a `/* beats: <what> (<component>) */` note inside the rule | Unexplained `!important` |
 
 - **Own file.** A board control or dialog goes in its own component file, never inline in `CanvasLabPage`, because nothing renders that page in tests (AGENTS.md).
@@ -48,7 +48,7 @@ The checklist for any new or changed component in the app. It keeps a reskin che
 | `importantRules` | `!important` outside reduced-motion and print blocks, in rules with no `beats:` note |
 | `nativeSelect` | A raw `<select>` outside `src/components/ui` |
 | `handPills` | A class string outside `src/components/ui` with `rounded-full`, `font-mono` and `uppercase` |
-| `lucideFiles` | Files importing `lucide-react` |
+| `lucideFiles` | Files importing `lucide-react` directly, outside the swap layer |
 | `skinNameBranches` | Code that picks a look by skin name (`skin === "charlotte"`), outside `src/lib/skin.ts` |
 | `cssColorLiterals` | Colour literals in CSS declarations; tokens, masks and `var()` fallbacks do not count |
 
@@ -70,5 +70,5 @@ It writes `test-results/reskin-audit.json` (each leak with its selector and scre
 ## Starting a new brand
 
 1. Copy `src/design/skins/proof.css` to a new skin file and set its values: ink, live, page, raised, sunk, two text greys, a mark grey, two neutrals, the attention wash and edge, six work-kind hues and the fonts. `skin-base.css` derives every role, state, category and vendor colour from them.
-2. Add the brand's name, wordmark and Ask label in `src/design/brand/brand.ts`, and its marks beside the Charlotte ones.
+2. Add the brand's name, wordmark, Ask label and `look` (mark, glyphs, kind icons, icon set) in `src/design/brand/brand.ts`, and its marks beside the Charlotte ones. To redraw icons, add a set to `ICON_SETS` in `src/design/brand/icons.tsx` mapping the names it replaces.
 3. Run the reskin audit with the new skin in place of the proof skin, then the baseline screenshots.

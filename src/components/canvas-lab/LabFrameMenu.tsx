@@ -1,4 +1,4 @@
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal } from "@/design/brand/icons";
 import { useEffect, useRef } from "react";
 
 import { noteWorkboardBoardMenuOpened } from "@/components/canvas-lab/canvas-lab-telemetry";

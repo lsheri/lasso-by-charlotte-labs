@@ -11,7 +11,7 @@ import { suggestStructuresFn } from "@/lib/structure-suggest.functions";
 import { chunkInput, type StructureSourceKind, type SuggestedStructure } from "@/lib/structure-suggest-shared";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Hand, Menu, X } from "lucide-react";
+import { Hand, Menu, X } from "@/design/brand/icons";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type Ref } from "react";
 
 import {

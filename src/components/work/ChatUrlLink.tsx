@@ -1,4 +1,4 @@
-import { ExternalLink } from "lucide-react";
+import { ExternalLink } from "@/design/brand/icons";
 
 import { chatLinkLabel, itemChatLink } from "@/lib/chat-url";
 import { vendorColour, vendorFromChatUrl } from "@/lib/vendor-colour";

@@ -3,7 +3,7 @@ import { ownsWorkItem } from "@/lib/work-ownership";
 import { useProfile } from "@/hooks/use-profile";
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink } from "@/design/brand/icons";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 

@@ -8,7 +8,7 @@ import {
   Mic,
   Sparkles,
   type LucideIcon,
-} from "lucide-react";
+} from "@/design/brand/icons";
 
 import { supabase } from "@/integrations/supabase/client";
 import { fetchProfile } from "@/hooks/use-profile";

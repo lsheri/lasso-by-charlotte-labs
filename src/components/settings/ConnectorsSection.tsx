@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Check, MoreHorizontal } from "lucide-react";
+import { Check, MoreHorizontal } from "@/design/brand/icons";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 

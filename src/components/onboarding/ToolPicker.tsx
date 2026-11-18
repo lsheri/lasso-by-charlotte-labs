@@ -1,4 +1,4 @@
-import { Check } from "lucide-react";
+import { Check } from "@/design/brand/icons";
 
 import { TOOLS, TOOL_CATEGORIES, type ToolId } from "@/lib/onboarding-tools";
 import { ToolBadge } from "./ToolBadge";

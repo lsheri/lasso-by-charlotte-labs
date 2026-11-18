@@ -1,7 +1,7 @@
 import { SupportAccessCard } from "@/components/settings/SupportAccessCard";
 import { useProfile } from "@/hooks/use-profile";
 import { useEffect, useState } from "react";
-import { X } from "lucide-react";
+import { X } from "@/design/brand/icons";
 
 import { useSettingsDialog } from "@/lib/settings-dialog-context";
 import { SettingsShell, type SettingsSection } from "./SettingsShell";

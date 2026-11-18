@@ -1,6 +1,6 @@
 import { stableMemo } from "@/components/canvas-lab/stable-memo";
 import { lazy, Suspense, useEffect, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
-import { Pencil } from "lucide-react";
+import { Pencil } from "@/design/brand/icons";
 
 import type { LabNode, LabResizeCorner } from "@/components/canvas-lab/canvas-lab-model";
 import { Button } from "@/components/ui/button";

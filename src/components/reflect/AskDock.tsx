@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { X } from "lucide-react";
+import { X } from "@/design/brand/icons";
 
 import { AskSurface } from "@/components/reflect/AskSurface";
 import {

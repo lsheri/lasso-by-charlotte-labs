@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { Pencil } from "lucide-react";
+import { Pencil } from "@/design/brand/icons";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 

@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Sparkle } from "lucide-react";
+import { Sparkle } from "@/design/brand/icons";
 import { useState } from "react";
 import { toast } from "sonner";
 

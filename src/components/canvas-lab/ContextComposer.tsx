@@ -1,4 +1,4 @@
-import { X } from "lucide-react";
+import { X } from "@/design/brand/icons";
 import { useState } from "react";
 
 import type { LabNode } from "@/components/canvas-lab/canvas-lab-model";

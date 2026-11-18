@@ -31,7 +31,7 @@ export type HealthCounts = {
   nativeSelect: number;
   /** Class strings outside src/components/ui that build a mono pill by hand (rounded-full + font-mono + uppercase). Use chipVariants or tagVariants. */
   handPills: number;
-  /** Files importing lucide-react. The second icon set; GraphiteIcon is the house set. */
+  /** Files importing lucide-react directly. Icons come from src/design/brand/icons.tsx (the swap layer) or GraphiteIcon. */
   lucideFiles: number;
   /** Code that picks a look by skin name (skin === "charlotte"). A new brand would fall into the old branch; brand assets belong in src/design/brand. */
   skinNameBranches: number;

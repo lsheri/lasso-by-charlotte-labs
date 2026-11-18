@@ -1,6 +1,6 @@
 import { useRouterState } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare } from "@/design/brand/icons";
 import { useState, type ReactNode } from "react";
 
 import { SuggestDot } from "@/components/common/Suggested";
