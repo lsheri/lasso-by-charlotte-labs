@@ -4,7 +4,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { ChatMessage, ChatOptions, ChatResult } from "@/lib/ai.server";
-import { checkClaims, holdsOpinion, maskFees } from "@/lib/firm-ask-shared";
+import { asksAboutPeople, checkClaims, holdsOpinion, maskFees } from "@/lib/firm-ask-shared";
 import { pickedIds, runFirmAsk } from "@/lib/firm-ask.server";
 import type { FirmCorpus } from "@/lib/firm-corpus-shared";
 
@@ -128,6 +128,24 @@ describe("Ask the firm", () => {
     expect(result.status).toBe("about_people");
     expect(result.claims).toEqual([]);
     expect(result.facts.map((fact) => fact.boardId)).toEqual(["b5"]);
+  });
+
+  it("refuses a question about people in code, even when the picking call finds nothing, with no answer call", async () => {
+    const none = fake([], { claims: [] });
+    const empty = await runFirmAsk(none.deps, { corpus, question: "Who is our best person for health system work?", canSeeFees: false, meta: undefined });
+    expect(empty.result.status).toBe("about_people");
+    const picked = fake(["deck5"], { claims: [{ text: "x", item_id: "deck5", quote: "y" }] });
+    const found = await runFirmAsk(picked.deps, { corpus, question: "Who is our best person for health system work?", canSeeFees: false, meta: undefined });
+    expect(found.result.status).toBe("about_people");
+    expect(found.result.facts.map((fact) => fact.boardId)).toEqual(["b5"]);
+    expect(found.usage.calls).toBe(1);
+  });
+
+  it("tells people questions from work questions", () => {
+    for (const question of ["Who is our best person for health system work?", "Who's the strongest analyst?", "Rank our consultants on delivery", "Who are our top performers?", "Who performs best with CFOs?", "Compare the partners on revenue work"])
+      expect(asksAboutPeople(question), question).toBe(true);
+    for (const question of ["Have we done weight management work?", "What went wrong last time?", "What is our best approach to payer talks?", "Who was the client sponsor at Cedarmere?", "What have we charged for revenue work?"])
+      expect(asksAboutPeople(question), question).toBe(false);
   });
 
   it("says not found without a second call when nothing is picked, and ignores ids outside the corpus", async () => {

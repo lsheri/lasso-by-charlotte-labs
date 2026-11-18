@@ -238,6 +238,60 @@ export function parseDraft(raw: Record<string, unknown>, ctx: DraftContext): { s
   return { sections, questions, figuresRemoved };
 }
 
+/** The complete JSON object or array that opens at `start`, or null when the text ends first. */
+function balanced(text: string, start: number): string | null {
+  const open = text[start];
+  const close = open === "{" ? "}" : "]";
+  let depth = 0;
+  let inString = false;
+  for (let index = start; index < text.length; index += 1) {
+    const char = text[index]!;
+    if (inString) {
+      if (char === "\\") index += 1;
+      else if (char === '"') inString = false;
+    } else if (char === '"') inString = true;
+    else if (char === open) depth += 1;
+    else if (char === close && (depth -= 1) === 0) return text.slice(start, index + 1);
+  }
+  return null;
+}
+
+/**
+ * A draft from a reply cut off at its token limit: every section object and team list that completed, and every
+ * complete question. Whatever was cut off stays missing, so it becomes a gap rather than a guess.
+ */
+export function salvageDraft(text: string): Record<string, unknown> {
+  const sections: Record<string, unknown> = {};
+  for (const key of MODEL_SECTIONS) {
+    const match = new RegExp(`"${key}"\\s*:\\s*\\{`).exec(text);
+    const raw = match ? balanced(text, match.index + match[0].length - 1) : null;
+    if (!raw) continue;
+    try {
+      sections[key] = JSON.parse(raw);
+    } catch {
+      /* a malformed section stays a gap */
+    }
+  }
+  const out: Record<string, unknown> = { sections };
+  const team = /"team_roles"\s*:\s*\[/.exec(text);
+  const roles = team ? balanced(text, team.index + team[0].length - 1) : null;
+  if (roles) {
+    try {
+      out["team_roles"] = JSON.parse(roles);
+    } catch {
+      /* default roles */
+    }
+  }
+  out["questions"] = [...text.matchAll(/\{\s*"question"\s*:\s*"((?:[^"\\]|\\.)*)"\s*,\s*"default"\s*:\s*"((?:[^"\\]|\\.)*)"\s*\}/g)].map((match) => {
+    try {
+      return { question: JSON.parse(`"${match[1]}"`), default: JSON.parse(`"${match[2]}"`) };
+    } catch {
+      return {};
+    }
+  });
+  return out;
+}
+
 /** Sections whose text names another client, to redraft once. */
 export function namedSections(sections: readonly DraftSection[], terms: readonly NameTerm[]): ProposalSectionKey[] {
   return sections.filter((section) => section.status !== "gap" && findNames(section.body, terms).length > 0).map((section) => section.key);
