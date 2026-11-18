@@ -40,6 +40,7 @@ Return STRICT JSON and nothing else:
 
 RULES:
 - One result per claim number.
+- to_turn_no is only for conversations ("TURN n ROLE:"). For a document, deck or sheet, leave it out.
 - "exact": the record states the same fact. "paraphrase": the record says something close but not the same (a different number, a softer claim, a different scope). "unsourced": nothing in the record supports it.
 - The quote MUST be verbatim text copied from the supplied record, character for character. If you cannot quote support, the status is "unsourced" with no to_item_id and no quote.
 - NEVER invent a source or a turn number. An honest "unsourced" is always better than a guess.
@@ -49,6 +50,17 @@ RULES:
 /** Claims from a reply cut off at its token limit: every complete "text" value. */
 function salvageTexts(text: string): string[] {
   return [...text.matchAll(/"text"\s*:\s*"((?:[^"\\]|\\.)*)"/g)].map((match) => match[1]!.replace(/\\"/g, '"').replace(/\\n/g, "\n"));
+}
+
+/**
+ * The model fills to_turn_no even for documents, which have no turns; the validator would then reject a good quote.
+ * A turn number only means something on a conversation, so it is dropped for any other item.
+ */
+export function withoutDocumentTurn(answer: Record<string, unknown>, sources: readonly UpstreamRecord[]): Record<string, unknown> {
+  const item = sources.find((source) => source.id === answer["to_item_id"]);
+  if (!item || item.turns.length > 0 || !("to_turn_no" in answer)) return answer;
+  const { to_turn_no: _ignored, ...rest } = answer;
+  return rest;
 }
 
 export async function runRedPen(
@@ -98,7 +110,7 @@ export async function runRedPen(
       results = Array.isArray(raw) ? (raw.filter((entry) => entry && typeof entry === "object") as Record<string, unknown>[]) : [];
     }
     batch.forEach((claim, index) => {
-      const answer = results.find((entry) => Number(entry["claim"]) === index + 1) ?? {};
+      const answer = withoutDocumentTurn(results.find((entry) => Number(entry["claim"]) === index + 1) ?? {}, ranked);
       const checked = validateSpanClaim(answer, ranked);
       const source = checked.to_item_id ? ranked.find((item) => item.id === checked.to_item_id) : undefined;
       out.push({
