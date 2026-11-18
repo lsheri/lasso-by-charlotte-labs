@@ -75,6 +75,10 @@ export async function runRedPen(
     usage.calls += 1;
   };
   const withMeta = (surface: string) => (input.meta ? { meta: { ...input.meta, surface } } : {});
+  // A deliverable with no text has no claims; no call is spent finding that out.
+  if (!input.anchorText.trim()) {
+    return { result: { itemId: input.itemId, checkedAt: (input.now ?? new Date()).toISOString(), claims: [], sourcesRead: 0, counts: countGrades([]) }, usage };
+  }
 
   const extract = await chat(
     [

@@ -174,6 +174,8 @@ describe("the claim checks", () => {
 
   it("masks every money figure the model could see", () => {
     expect(maskFees("$380k, $380,000 fixed, $45k/month and $1.2M")).toBe("[fee], [fee] fixed, [fee] and [fee]");
+    expect(maskFees("£340,000, €1.2M, USD 90,000, 380k GBP, 45,000 dollars and £30k per month")).toBe("[fee], [fee], [fee], [fee], [fee] and [fee]");
+    expect(maskFees("12 weeks, 24 clinics, 9.6 percent, FY2025")).toBe("12 weeks, 24 clinics, 9.6 percent, FY2025");
   });
 
   it("drops a claim that repeats a masked fee or types a figure", () => {

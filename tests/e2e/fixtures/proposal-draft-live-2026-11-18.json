@@ -1,0 +1,256 @@
+{
+ "itemId": "00000000-0000-4000-8000-000000000201",
+ "title": "Proposal draft: Diabetes prevention service line (proposal)",
+ "draft": {
+  "sections": [
+   {
+    "key": "context",
+    "heading": "Context",
+    "body": "About one in three primary care adults at the client has prediabetes on paper, and almost nobody is in a program. The client has a diabetes education class at one hospital and a lifestyle pilot in three clinics that lost its funding. The two largest employers are asking what the client offers before their renewals in July. The client does not want another pilot that disappears when a grant ends.",
+    "status": "draft",
+    "sources": [
+     {
+      "kind": "fact",
+      "itemId": "item-212",
+      "itemTitle": "Intake call: Marrowfield Chief Strategy Officer",
+      "quote": "About one in three of our primary care adults has prediabetes on paper, and almost nobody is in a program."
+     },
+     {
+      "kind": "fact",
+      "itemId": "item-212",
+      "itemTitle": "Intake call: Marrowfield Chief Strategy Officer",
+      "quote": "A diabetes education class at one hospital, and a lifestyle program pilot in three clinics that ran out of funding last year."
+     },
+     {
+      "kind": "fact",
+      "itemId": "item-212",
+      "itemTitle": "Intake call: Marrowfield Chief Strategy Officer",
+      "quote": "Our two biggest employers are asking what we offer before their renewals in July."
+     },
+     {
+      "kind": "fact",
+      "itemId": "item-212",
+      "itemTitle": "Intake call: Marrowfield Chief Strategy Officer",
+      "quote": "We do not want another pilot that disappears when a grant ends."
+     }
+    ],
+    "flags": []
+   },
+   {
+    "key": "objectives",
+    "heading": "Objectives",
+    "body": "1. Show where adults with prediabetes are today across the 24 clinics, and what happens after a high A1c result.\n2. Design a care model with a primary care front door, including how the lifestyle program and medication fit together.\n3. Build an employer offer the two largest employers could contract for, with pricing the CFO can review.\n4. Give the board a launch plan it can consider in April.",
+    "status": "draft",
+    "sources": [
+     {
+      "kind": "fact",
+      "itemId": "item-719",
+      "itemTitle": "Email: Marrowfield proposal request",
+      "quote": "A diagnostic of where adults with prediabetes are today across our 24 clinics, and what happens after a high A1c result."
+     },
+     {
+      "kind": "fact",
+      "itemId": "item-719",
+      "itemTitle": "Email: Marrowfield proposal request",
+      "quote": "A care model with a primary care front door, including how the lifestyle program and medication fit together."
+     },
+     {
+      "kind": "fact",
+      "itemId": "item-719",
+      "itemTitle": "Email: Marrowfield proposal request",
+      "quote": "An employer offer our two largest employers could contract for, with pricing the CFO can review."
+     },
+     {
+      "kind": "fact",
+      "itemId": "item-719",
+      "itemTitle": "Email: Marrowfield proposal request",
+      "quote": "A launch plan for the April board."
+     }
+    ],
+    "flags": []
+   },
+   {
+    "key": "approach",
+    "heading": "Approach",
+    "body": "Phase 1: Discover (about weeks 1 to 4)\n- Map prediabetes prevalence, A1c follow-up and leakage across the clinics\n- Open employer and CFO conversations alongside the diagnostic\n- Diagnostic readout at SteerCo 1\nPhase 2: Diagnose and Design (about weeks 5 to 10)\n- Interviews with patients, clinicians and employers; co-design workshops\n- Front door and lifestyle plus medication care model options, with the clinical lead\n- Options at SteerCo 2\nPhase 3: Deliver (to the April board)\n- Employer offer and pricing, governance, launch plan\n- Final recommendation as a board pre-read",
+    "status": "draft",
+    "sources": [
+     {
+      "kind": "structure",
+      "boardId": "board-357",
+      "boardTitle": "Comprehensive weight management service line"
+     },
+     {
+      "kind": "structure",
+      "boardId": "board-905",
+      "boardTitle": "Integrated behavioral health service line"
+     },
+     {
+      "kind": "fact",
+      "itemId": "item-77",
+      "itemTitle": "Proposal brief",
+      "quote": "start in first week of January; something ready for the April board"
+     }
+    ],
+    "flags": []
+   },
+   {
+    "key": "workstreams",
+    "heading": "Workstreams",
+    "body": "1. Prediabetes diagnostic: population, A1c follow-up and what happens after a high result.\n2. Care model and primary care front door, including lifestyle program and medication.\n3. Employer offer and pricing for the two largest employers.\n4. Launch plan and governance for the April board.",
+    "status": "draft",
+    "sources": [
+     {
+      "kind": "fact",
+      "itemId": "item-719",
+      "itemTitle": "Email: Marrowfield proposal request",
+      "quote": "A diagnostic of where adults with prediabetes are today across our 24 clinics, and what happens after a high A1c result."
+     },
+     {
+      "kind": "fact",
+      "itemId": "item-719",
+      "itemTitle": "Email: Marrowfield proposal request",
+      "quote": "An employer offer our two largest employers could contract for, with pricing the CFO can review."
+     },
+     {
+      "kind": "structure",
+      "boardId": "board-357",
+      "boardTitle": "Comprehensive weight management service line"
+     }
+    ],
+    "flags": []
+   },
+   {
+    "key": "deliverables",
+    "heading": "Deliverables",
+    "body": "Diagnostic readout (SteerCo 1). Care model options with front door design (SteerCo 2). Employer offer and pricing model for CFO review. Governance design. Launch plan and final recommendation as the April board pre-read.",
+    "status": "draft",
+    "sources": [
+     {
+      "kind": "fact",
+      "itemId": "item-719",
+      "itemTitle": "Email: Marrowfield proposal request",
+      "quote": "A launch plan for the April board."
+     },
+     {
+      "kind": "structure",
+      "boardId": "board-357",
+      "boardTitle": "Comprehensive weight management service line"
+     },
+     {
+      "kind": "structure",
+      "boardId": "board-905",
+      "boardTitle": "Integrated behavioral health service line"
+     }
+    ],
+    "flags": []
+   },
+   {
+    "key": "timeline",
+    "heading": "Timeline",
+    "body": "Start in the first week of January, with a final recommendation ready for the April board. Three SteerCos, after the diagnostic, after care model options and at the final readout, as on past engagements. Total weeks and SteerCo dates to be fixed once the April board date is known.",
+    "status": "draft",
+    "sources": [
+     {
+      "kind": "fact",
+      "itemId": "item-77",
+      "itemTitle": "Proposal brief",
+      "quote": "start in first week of January; something ready for the April board"
+     },
+     {
+      "kind": "structure",
+      "boardId": "board-357",
+      "boardTitle": "Comprehensive weight management service line"
+     },
+     {
+      "kind": "structure",
+      "boardId": "board-905",
+      "boardTitle": "Integrated behavioral health service line"
+     }
+    ],
+    "flags": []
+   },
+   {
+    "key": "assumptions",
+    "heading": "Assumptions and exclusions",
+    "body": "Out of scope, as on past engagements: IT system build, clinical protocol authorship, recruitment.\nThe CMO owns the clinical model, so we assume a named clinical lead who sits in governance from the start; early clinical voice in governance unlocked design on a past engagement.\nThe CFO signs off employer pricing, so we assume CFO time early; a past employer bundle needed it two weeks sooner than planned.\nEmployer conversations start alongside the diagnostic; on a past engagement a late-scoped payer contract forced an extension.\nThe offer should be designed to be funded on an ongoing basis, not as a grant-funded pilot.",
+    "status": "draft",
+    "sources": [
+     {
+      "kind": "structure",
+      "boardId": "board-357",
+      "boardTitle": "Comprehensive weight management service line"
+     },
+     {
+      "kind": "structure",
+      "boardId": "board-905",
+      "boardTitle": "Integrated behavioral health service line"
+     },
+     {
+      "kind": "fact",
+      "itemId": "item-212",
+      "itemTitle": "Intake call: Marrowfield Chief Strategy Officer",
+      "quote": "The CFO has to sign off on the employer pricing, and the CMO owns the clinical model."
+     },
+     {
+      "kind": "fact",
+      "itemId": "item-212",
+      "itemTitle": "Intake call: Marrowfield Chief Strategy Officer",
+      "quote": "We do not want another pilot that disappears when a grant ends."
+     }
+    ],
+    "flags": []
+   },
+   {
+    "key": "fee",
+    "heading": "Fees",
+    "body": "Fee: for partner decision.",
+    "status": "draft",
+    "sources": [],
+    "flags": []
+   },
+   {
+    "key": "team",
+    "heading": "Team",
+    "body": "- Partner: to be staffed\n- Engagement lead: to be staffed\n- Consultant: to be staffed\n- Analyst: to be staffed",
+    "status": "draft",
+    "sources": [],
+    "flags": []
+   }
+  ],
+  "questions": [
+   {
+    "text": "How many patient, clinician and employer interviews?",
+    "fallback": "20 to 25, as on a past weight management engagement; a behavioral health engagement used 12."
+   },
+   {
+    "text": "Is employer pricing in scope as a built model, or advice only?",
+    "fallback": "In scope as a model the CFO can review, as on a past employer bundle, with CFO time booked two weeks earlier than before."
+   },
+   {
+    "text": "When do employer conversations start?",
+    "fallback": "Alongside the diagnostic in weeks 1 to 4, because a past payer contract scoped in week 10 led to a four-week extension."
+   },
+   {
+    "text": "How many weeks in total, given the April board date?",
+    "fallback": "16 weeks, as on a past weight management engagement, trimmed to fit the board date."
+   },
+   {
+    "text": "How much on-site time for the partner and the team?",
+    "fallback": "Partner half a day a week, manager or lead and consultant full time, as on past engagements."
+   },
+   {
+    "text": "Does the named clinical lead from the CMO's office sit on the steering group from kickoff?",
+    "fallback": "Yes, from week 1, because getting surgery a vote in governance early unlocked the design on a past engagement."
+   }
+  ],
+  "checks": {
+   "names": "passed",
+   "blocked": 0,
+   "figuresRemoved": 0,
+   "newFacts": 0
+  },
+  "precedentIds": [],
+  "createdAt": "2026-11-18T08:59:18.187Z"
+ }
+}

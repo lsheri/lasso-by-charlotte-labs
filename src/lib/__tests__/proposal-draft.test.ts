@@ -21,6 +21,8 @@ import {
   salvageDraft,
   storedDraft,
   teamSlots,
+  isEmptyDraft,
+  findNames,
   type DraftContext,
 } from "@/lib/proposal-draft-shared";
 import { runProposalDraft } from "@/lib/proposal-draft.server";
@@ -275,3 +277,78 @@ describe("the saved card", () => {
     expect(approach.body).toBe(draft.sections.find((section) => section.key === "approach")!.body);
   });
 });
+
+describe("edge cases a real firm will hit", () => {
+  it("masks names with accents and names that end in a symbol, never inside a longer word", () => {
+    const terms = [
+      { term: "Clínica São Lucas", replacement: "[CLIENT A]" },
+      { term: "A&B (UK)", replacement: "[CLIENT B]" },
+      { term: "José Núñez", replacement: "[NAME]" },
+      { term: "Brig", replacement: "[CLIENT C]" },
+    ];
+    expect(maskNames("Clínica São Lucas hired A&B (UK); José Núñez's team led it. Brigid stays.", terms)).toBe("[CLIENT A] hired [CLIENT B]; [NAME] team led it. Brigid stays.");
+    expect(findNames("work for a&b (uk) last year", terms)).toEqual(["A&B (UK)"]);
+    expect(looksLikeName("José Núñez")).toBe(true);
+  });
+
+  it("removes figures in pounds, euros and currency codes that no source states", () => {
+    const { text, removed } = checkFigures("Fees of £340,000, €1.2M, USD 90,000 or 45,000 dollars.", [intake]);
+    expect(removed).toBe(4);
+    expect(text).not.toMatch(/\d/);
+  });
+
+  it("never shows the model a fee written in pounds, euros or a currency code", async () => {
+    const pounds: FirmCorpus = { ...corpus, boards: corpus.boards.map((board) => ({ ...board, brief: "Fee was £340,000 and EUR 50k." })) };
+    const model = fakeChat({ draft: goodDraft });
+    await runProposalDraft(model.chat, { corpus: pounds, precedentIds: ["b5", "b6"], intake: "Budget around GBP 200k. 12 weeks.", brief: emptyBrief(), ownItems: new Map(), read: async (id) => (id === "sow5" ? "Fee: £380,000 fixed." : TEXT[id] ?? null), meta });
+    const sent = model.seen[0]!.messages.map((message) => message.content).join("\n");
+    expect(sent).not.toMatch(/£\s?\d|€\s?\d|\b(GBP|EUR|USD)\s?\d/);
+  });
+
+  it("drafts with no precedents and no exemplar, from the new client's notes alone", async () => {
+    const empty: FirmCorpus = { orgId: "org", boards: [], items: [] };
+    const model = fakeChat({ draft: goodDraft });
+    const { draft } = await runProposalDraft(model.chat, { corpus: empty, precedentIds: [], intake, brief: emptyBrief(), ownItems: new Map([["own1", { title: "Intake call", text: intake }]]), read, meta });
+    const sent = model.seen[0]!.messages.map((message) => message.content).join("\n");
+    expect(sent).toContain("PRECEDENTS\n(none chosen)");
+    expect(sent).toContain("EXEMPLAR\n(none");
+    expect(draft.precedentIds).toEqual([]);
+    expect(draft.sections.find((section) => section.key === "approach")!.sources.every((source) => source.kind !== "structure")).toBe(true);
+  });
+
+  it("ignores precedent ids the reader no longer returns", async () => {
+    const model = fakeChat({ draft: goodDraft });
+    const { draft } = await runProposalDraft(model.chat, { corpus, precedentIds: ["b5", "b-gone"], intake, brief: emptyBrief(), ownItems: new Map(), read, meta });
+    expect(draft.precedentIds).toEqual(["b5"]);
+  });
+
+  it("keeps the prompt bounded however long the notes are", async () => {
+    const huge = new Map([["own1", { title: "Intake call", text: "word ".repeat(40_000) }], ["own2", { title: "Email", text: "more ".repeat(40_000) }]]);
+    const model = fakeChat({ draft: goodDraft });
+    await runProposalDraft(model.chat, { corpus, precedentIds: ["b5", "b6"], intake: "x ".repeat(50_000), brief: emptyBrief(), ownItems: huge, read, meta });
+    const sent = model.seen[0]!.messages.map((message) => message.content).join("\n");
+    expect(sent.length).toBeLessThan(80_000);
+  });
+
+  it("treats a reply that is not JSON as nothing back, so it is not saved", async () => {
+    const model = { chat: async (_messages: ChatMessage[], options: ChatOptions) => reply(options.meta?.surface === "proposal_new_facts" ? "{}" : "Sorry, I cannot help with that.") };
+    const { draft } = await runProposalDraft(model.chat, { corpus, precedentIds: ["b5"], intake, brief: emptyBrief(), ownItems: new Map(), read, meta });
+    expect(isEmptyDraft(draft)).toBe(true);
+  });
+
+  it("does not crash when the model sends the wrong shapes", async () => {
+    const odd = { sections: { context: { body: 42 }, objectives: "a string", approach: { body: ["Phase 1", 7, null], sources: "none" }, timeline: null }, team_roles: "lead", questions: [{ question: 1 }, "x", null] };
+    const model = fakeChat({ draft: odd });
+    const { draft } = await runProposalDraft(model.chat, { corpus, precedentIds: ["b5"], intake, brief: emptyBrief(), ownItems: new Map(), read, meta });
+    expect(draft.sections.find((section) => section.key === "approach")).toMatchObject({ status: "draft", body: "Phase 1", sources: [] });
+    expect(draft.sections.find((section) => section.key === "context")!.status).toBe("gap");
+    expect(draft.questions).toEqual([]);
+    expect(draft.sections.find((section) => section.key === "team")!.body).toContain("Engagement lead");
+  });
+
+  it("passes a model error up without a half-made draft", async () => {
+    const model = { chat: async () => { throw new Error("timeout"); } };
+    await expect(runProposalDraft(model.chat, { corpus, precedentIds: ["b5"], intake, brief: emptyBrief(), ownItems: new Map(), read, meta })).rejects.toThrow("timeout");
+  });
+});
+
