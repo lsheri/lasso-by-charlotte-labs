@@ -43,8 +43,8 @@ export type FirmAskUsage = { costUsd: number; tokensIn: number; tokensOut: numbe
 const SELECT_SYSTEM = [
   "You pick which of a consulting firm's past work could answer a question.",
   "You are given board cards (one per engagement) and item cards (one per piece of work, under its board).",
-  `Return JSON only: {"items": [{"id": "<item id>", "why": "<six words>"}], "boards": ["<board id>"]}.`,
-  `Pick at most ${FIRM_ASK_PICK_MAX} items and 5 boards, most relevant first. Match on meaning, not only words: "obesity care" matches "weight management".`,
+  `Return JSON only, ids and nothing else: {"items": ["<item id>", "<item id>"]}.`,
+  `Pick at most ${FIRM_ASK_PICK_MAX} items, most relevant first. Match on meaning, not only words: "obesity care" matches "weight management".`,
   'An empty list is a valid answer when nothing is relevant. Never pick something only loosely related to fill the list.',
 ].join("\n");
 
@@ -98,12 +98,20 @@ export function buildAnswerMessages(corpus: FirmCorpus, question: string, read: 
   ];
 }
 
-function pickedIds(raw: Record<string, unknown>, corpus: FirmCorpus): string[] {
+const UUID_IN_TEXT = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
+
+/**
+ * The item ids call A picked, in order, known to the corpus. A reply cut off at its token limit is not valid JSON
+ * (the first live run lost every answer that way), so ids are also recovered from the raw text.
+ */
+export function pickedIds(text: string, corpus: FirmCorpus): string[] {
   const known = new Set(corpus.items.map((item) => item.id));
+  const raw = parseJsonObject(text);
   const list = Array.isArray(raw["items"]) ? raw["items"] : [];
+  const parsed = list.map((entry) => (typeof entry === "string" ? entry : entry && typeof entry === "object" ? (entry as Record<string, unknown>)["id"] : null));
+  const candidates = parsed.length ? parsed : (text.match(UUID_IN_TEXT) ?? []);
   const ids: string[] = [];
-  for (const entry of list) {
-    const id = typeof entry === "string" ? entry : entry && typeof entry === "object" ? (entry as Record<string, unknown>)["id"] : null;
+  for (const id of candidates) {
     if (typeof id === "string" && known.has(id) && !ids.includes(id)) ids.push(id);
   }
   return ids.slice(0, FIRM_ASK_PICK_MAX);
@@ -153,12 +161,12 @@ export async function runFirmAsk(deps: FirmAskDeps, input: FirmAskInput): Promis
 
   const select = await deps.chat(buildSelectMessages(corpus, question), {
     tier: "fast",
-    maxTokens: 700,
+    maxTokens: 1_500,
     responseFormat: { type: "json_object" },
     ...(input.meta ? { meta: { ...input.meta, surface: "firm_ask_select" } } : {}),
   });
   count(select);
-  const ids = pickedIds(parseJsonObject(select.text), corpus);
+  const ids = pickedIds(select.text, corpus);
   if (!ids.length) return { result: empty(corpus, "not_found"), usage };
 
   const read = await readPicked(corpus, ids, deps.loadText);
@@ -169,7 +177,7 @@ export async function runFirmAsk(deps: FirmAskDeps, input: FirmAskInput): Promis
   for (const retry of [false, true]) {
     const answer = await deps.chat(buildAnswerMessages(corpus, question, read, retry), {
       tier: "smart",
-      maxTokens: 1_200,
+      maxTokens: 2_000,
       responseFormat: { type: "json_object" },
       ...(input.meta ? { meta: { ...input.meta, surface: "firm_ask_answer" } } : {}),
     });
