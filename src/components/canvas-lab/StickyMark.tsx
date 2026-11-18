@@ -25,11 +25,31 @@ export const STICKY_MARK_PAPER: Record<
   WorkboardStickyFill,
   { top: string; bottom: string; curl: string }
 > = {
-  yellow: { top: "var(--sticky-mark-yellow-top)", bottom: "var(--sticky-mark-yellow-bottom)", curl: "var(--sticky-mark-yellow-curl)" },
-  green: { top: "var(--sticky-mark-green-top)", bottom: "var(--sticky-mark-green-bottom)", curl: "var(--sticky-mark-green-curl)" },
-  blue: { top: "var(--sticky-mark-blue-top)", bottom: "var(--sticky-mark-blue-bottom)", curl: "var(--sticky-mark-blue-curl)" },
-  pink: { top: "var(--sticky-mark-pink-top)", bottom: "var(--sticky-mark-pink-bottom)", curl: "var(--sticky-mark-pink-curl)" },
-  grey: { top: "var(--sticky-mark-grey-top)", bottom: "var(--sticky-mark-grey-bottom)", curl: "var(--sticky-mark-grey-curl)" },
+  yellow: {
+    top: "var(--sticky-mark-yellow-top)",
+    bottom: "var(--sticky-mark-yellow-bottom)",
+    curl: "var(--sticky-mark-yellow-curl)",
+  },
+  green: {
+    top: "var(--sticky-mark-green-top)",
+    bottom: "var(--sticky-mark-green-bottom)",
+    curl: "var(--sticky-mark-green-curl)",
+  },
+  blue: {
+    top: "var(--sticky-mark-blue-top)",
+    bottom: "var(--sticky-mark-blue-bottom)",
+    curl: "var(--sticky-mark-blue-curl)",
+  },
+  pink: {
+    top: "var(--sticky-mark-pink-top)",
+    bottom: "var(--sticky-mark-pink-bottom)",
+    curl: "var(--sticky-mark-pink-curl)",
+  },
+  grey: {
+    top: "var(--sticky-mark-grey-top)",
+    bottom: "var(--sticky-mark-grey-bottom)",
+    curl: "var(--sticky-mark-grey-curl)",
+  },
 };
 
 type Props = {

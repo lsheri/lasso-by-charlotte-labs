@@ -63,9 +63,14 @@ describe("PR7 hooks keep Lasso's values when unset", () => {
 
   it("kind chips fall back to the Lasso washes and inks", () => {
     expect(kindChipTint({ deliverable_kind: "deck" }, null)).toEqual({
-      background: "var(--kind-chip-deck-bg, #faf1e2)",
+      background: "var(--kind-chip-deck-bg)",
       color: "var(--kind-chip-deck-ink, var(--nb-amber))",
     });
+    // Since G11 (17 Nov) Lasso's washes are declared in tokens.css instead of written as fallbacks.
+    const tokens = readFileSync("src/design/tokens.css", "utf8");
+    expect(tokens).toContain("--kind-chip-deck-bg:#faf1e2;");
+    expect(tokens).toContain("--kind-chip-proposal-bg:#e7efe9;");
+    expect(tokens).toContain("--kind-chip-numbers-bg:#e8f0fb;");
   });
 
   it("the tool tile keeps its tinted inline style and only gains a hook attribute", () => {

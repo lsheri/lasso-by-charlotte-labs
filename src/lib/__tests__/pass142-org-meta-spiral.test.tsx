@@ -28,13 +28,13 @@ describe("pass 142: your organization", () => {
 
 describe("pass 142: metadata sub-card", () => {
   it("tints kind chips by kind, with no reds", () => {
-    expect(kindChipTint({ deliverable_kind: "deck" }, null).background).toBe("var(--kind-chip-deck-bg, #faf1e2)");
+    expect(kindChipTint({ deliverable_kind: "deck" }, null).background).toBe("var(--kind-chip-deck-bg)");
     expect(kindChipTint({ deliverable_kind: "deck" }, null).color).toBe("var(--kind-chip-deck-ink, var(--nb-amber))");
-    expect(kindChipTint({ deliverable_kind: "proposal" }, null).background).toBe("var(--kind-chip-proposal-bg, #e7efe9)");
+    expect(kindChipTint({ deliverable_kind: "proposal" }, null).background).toBe("var(--kind-chip-proposal-bg)");
     expect(kindChipTint({ deliverable_kind: "proposal" }, null).color).toBe(
       "var(--kind-chip-proposal-ink, var(--nb-green-deep))",
     );
-    expect(kindChipTint({ deliverable_kind: "model_or_budget" }, null).background).toBe("var(--kind-chip-numbers-bg, #e8f0fb)");
+    expect(kindChipTint({ deliverable_kind: "model_or_budget" }, null).background).toBe("var(--kind-chip-numbers-bg)");
     expect(kindChipTint(null, "sheet").color).toBe("var(--kind-chip-numbers-ink, var(--nb-blue))");
     expect(kindChipTint({ deliverable_kind: "memo_or_report" }, null)).toEqual({
       background: "var(--nb-grey-2)",
