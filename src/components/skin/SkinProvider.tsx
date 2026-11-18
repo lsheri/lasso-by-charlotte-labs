@@ -25,7 +25,7 @@ export function SkinProvider({ initial, children }: { initial: Skin; children: R
     });
     if (next === skin) return;
     writeSkinCookie(next);
-    if (next === "lasso") document.documentElement.removeAttribute("data-skin");
+    if (brandFor(next).look.legacyDefault) document.documentElement.removeAttribute("data-skin");
     else document.documentElement.setAttribute("data-skin", next);
     setSkin(next);
   }, [loading, email, skin]);
@@ -33,8 +33,8 @@ export function SkinProvider({ initial, children }: { initial: Skin; children: R
   // Phase 4: route heads write "... | Lasso" without knowing the skin. BrandHeadContent renames the first title on the
   // server (PR11); this catches a skin chosen after load, renaming each time the router sets it. Lasso never observes anything.
   useEffect(() => {
-    if (skin === "lasso") return;
     const brand = brandFor(skin);
+    if (brand.look.legacyDefault) return;
     const rename = () => {
       const next = brandTitle(brand, document.title);
       if (next !== document.title) document.title = next;

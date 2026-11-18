@@ -78,7 +78,7 @@ describe("skin switch", () => {
 
   it("puts no data-skin on <html> for Lasso, so the default page is unchanged", () => {
     const root = readFileSync("src/routes/__root.tsx", "utf8");
-    expect(root).toContain('data-skin={skin === "lasso" ? undefined : skin}');
+    expect(root).toContain("data-skin={brandFor(skin).look.legacyDefault ? undefined : skin}");
     expect(root).toContain("<SkinProvider initial={skin}>");
   });
 });

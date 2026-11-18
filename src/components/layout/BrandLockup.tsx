@@ -5,7 +5,7 @@
  * The loop is inlined as an SVG so the sign-in page never depends on an
  * expiring Figma asset URL or an external image fetch.
  */
-import { useBrand, useSkin } from "@/components/skin/use-skin";
+import { useBrand } from "@/components/skin/use-skin";
 import { CharlotteMark } from "@/design/brand/CharlotteMark";
 
 import { LassoLoopMark } from "./LassoLoopMark";
@@ -39,7 +39,7 @@ export function BrandLockup({
  * Lasso keeps the caller's className exactly; Charlotte sizes a fixed block to `px`, matching the class's size.
  */
 export function BrandMark({ className = "", px }: { className?: string; px: number }) {
-  if (useSkin() !== "charlotte") return <LassoLoopMark className={className} />;
+  if (useBrand().look.mark !== "charlotte") return <LassoLoopMark className={className} />;
   return (
     <span className="shrink-0" style={{ display: "block", width: px, height: px }} aria-hidden="true" data-skin-mark="charlotte">
       <CharlotteMark state="live" size={px} />

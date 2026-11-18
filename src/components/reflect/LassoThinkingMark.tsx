@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 
-import { useSkin } from "@/components/skin/use-skin";
+import { useBrand } from "@/components/skin/use-skin";
 import { CharlotteMark } from "@/design/brand/CharlotteMark";
 
 import {
@@ -248,7 +248,7 @@ function runSignature(
  * hook order inside one. Lasso renders the canvas exactly as before.
  */
 export function LassoThinkingMark(props: LassoThinkingMarkProps) {
-  return useSkin() === "charlotte" ? <CharlotteThinkingMark {...props} /> : <LassoCanvasMark {...props} />;
+  return useBrand().look.mark === "charlotte" ? <CharlotteThinkingMark {...props} /> : <LassoCanvasMark {...props} />;
 }
 
 /**

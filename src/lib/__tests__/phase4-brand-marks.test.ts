@@ -17,8 +17,11 @@ const appFiles = sourceFiles("src").filter((path) => /\.tsx?$/.test(path) && !pa
 
 describe("Phase 4 brand table", () => {
   it("names each skin once, and Charlotte's Ask control is her name alone", () => {
-    expect(brandFor("lasso")).toEqual({ name: "Lasso", wordmark: "LASSO", askLabel: "Ask Lasso" });
-    expect(brandFor("charlotte")).toEqual({ name: "Charlotte", wordmark: "CHARLOTTE", askLabel: "Charlotte" });
+    expect(brandFor("lasso")).toMatchObject({ name: "Lasso", wordmark: "LASSO", askLabel: "Ask Lasso" });
+    expect(brandFor("charlotte")).toMatchObject({ name: "Charlotte", wordmark: "CHARLOTTE", askLabel: "Charlotte" });
+    // 18 Nov brand layer: each brand names its drawn assets, so code never asks which skin it is.
+    expect(brandFor("lasso").look).toEqual({ mark: "loop", glyphs: "graphite", kindIcons: "lucide", legacyDefault: true });
+    expect(brandFor("charlotte").look).toEqual({ mark: "charlotte", glyphs: "exhibit", kindIcons: "exhibit", legacyDefault: false });
     expect(JSON.stringify(BRANDS.charlotte)).not.toMatch(/lasso/i);
   });
 });

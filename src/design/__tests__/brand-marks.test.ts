@@ -45,11 +45,12 @@ describe("brand marks are registered and tagged (Liam, 15 Nov: logo placements t
     }
   });
 
-  it("each switch exists and picks the mark from the skin", () => {
+  it("each switch exists and picks the mark from the brand's assets, never from a skin's name", () => {
     for (const [name, path] of Object.entries(SWITCHES)) {
       const src = readFileSync(path, "utf8");
       expect(src, path).toMatch(new RegExp(`export function ${name}\\b`));
-      expect(src, path).toMatch(/useSkin\(\)/);
+      expect(src, path).toMatch(/useBrand\(\)\.look\.|\blook\.(mark|glyphs|kindIcons)\b/);
+      expect(src, path).not.toMatch(/(useSkin\(\)|\bskin)\s*[!=]==?\s*["'](charlotte|lasso)["']/);
     }
   });
 

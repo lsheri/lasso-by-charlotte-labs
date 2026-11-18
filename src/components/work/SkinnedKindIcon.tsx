@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 import type { LucideIcon } from "lucide-react";
 
-import { useSkin } from "@/components/skin/use-skin";
+import { useBrand } from "@/components/skin/use-skin";
 import { EXHIBIT_DASH, EXHIBIT_STROKE } from "@/design/icons/charlotte";
 import { CHARLOTTE_KINDS, type CharlotteKindId } from "@/design/icons/charlotte-kinds";
 
@@ -19,7 +19,7 @@ export function skinnedKindIcon(Lucide: LucideIcon, kind: CharlotteKindId): Kind
   const d = PATHS.get(kind);
   if (!d) throw new Error(`No Charlotte kind glyph for ${kind}`);
   function SkinnedKindIcon(props: KindIconProps) {
-    if (useSkin() !== "charlotte") return <Lucide {...props} />;
+    if (useBrand().look.kindIcons !== "exhibit") return <Lucide {...props} />;
     return (
       <svg
         data-kind={kind}
