@@ -530,6 +530,12 @@ export type TelemetryEvent =
   | "proposal_draft.precedents_shown"
   /** 17 Nov, firm brain: the proposal owner swapped a precedent. No dims. Portal registration required. */
   | "proposal_draft.precedent_swapped"
+  /** 17 Nov, firm brain: a proposal first draft was written and saved to the board. Dims: sections, gaps, questions (bucketed counts). Portal registration required. */
+  | "proposal_draft.created"
+  /** 17 Nov, firm brain: the proposal owner confirmed one draft section. No dims. Portal registration required. */
+  | "proposal_draft.section_confirmed"
+  /** 17 Nov, firm brain: the proposal owner copied the questions for the lead. No dims. Portal registration required. */
+  | "proposal_draft.questions_copied"
   /** 17 Nov, firm brain: the red pen checked a deliverable. Dims: claims, unsupported, weak (bucketed counts). Portal registration required. */
   | "red_pen.ran"
   /** 17 Nov, firm brain: a red pen claim's source was opened. Dims: grade (sourced | weak | unsupported). Portal registration required. */

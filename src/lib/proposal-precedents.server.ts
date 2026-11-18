@@ -21,8 +21,17 @@ type Chat = (messages: ChatMessage[], options: ChatOptions) => Promise<ChatResul
 /** About 6,000 tokens of the board's own notes. */
 export const NOTES_CHARS = 24_000;
 
-/** The new board's notes, read with the person's own access: its brief, then each placed item's text or card. */
-export async function readPursuitNotes(caller: Db, engagementId: string, loadText: (itemId: string) => Promise<string | null>): Promise<string> {
+export type PursuitSource = { id: string; title: string; text: string };
+
+/**
+ * The new board's notes, read with the person's own access: its brief, then each placed item's text or card. Also
+ * returns each item read, money masked, so a draft can quote this board's own notes.
+ */
+export async function readPursuitSources(
+  caller: Db,
+  engagementId: string,
+  loadText: (itemId: string) => Promise<string | null>,
+): Promise<{ title: string; notes: string; items: PursuitSource[] }> {
   const { data: board, error } = await caller.from("engagements").select("title, brief").eq("id", engagementId).maybeSingle();
   if (error) throw new Error(error.message);
   if (!board) throw new Response("Not found", { status: 404 });
@@ -31,14 +40,23 @@ export async function readPursuitNotes(caller: Db, engagementId: string, loadTex
     .select("work_item_id, tasks!inner(engagement_id), work_items!inner(id, title, type, visibility)")
     .eq("tasks.engagement_id", engagementId)
     .neq("work_items.visibility", "private");
-  const items = ((placed ?? []) as unknown as { work_items: { id: string; title: string; type: string } }[]).map((row) => row.work_items);
+  const rows = ((placed ?? []) as unknown as { work_items: { id: string; title: string; type: string } }[]).map((row) => row.work_items);
   const parts = [`BOARD: ${board.title}`, board.brief ? `BRIEF: ${board.brief}` : ""];
-  for (const item of items) {
+  const items: PursuitSource[] = [];
+  for (const item of rows) {
     const text = await loadText(item.id);
-    if (text) parts.push(`--- ${item.type}: ${item.title}\n${text}`);
+    if (text) {
+      parts.push(`--- ${item.type}: ${item.title}\n${text}`);
+      items.push({ id: item.id, title: item.title, text: maskFees(text) });
+    }
     if (parts.join("\n\n").length > NOTES_CHARS) break;
   }
-  return maskFees(parts.filter(Boolean).join("\n\n")).slice(0, NOTES_CHARS);
+  return { title: board.title, notes: maskFees(parts.filter(Boolean).join("\n\n")).slice(0, NOTES_CHARS), items };
+}
+
+/** The new board's notes as one text, for the brief. */
+export async function readPursuitNotes(caller: Db, engagementId: string, loadText: (itemId: string) => Promise<string | null>): Promise<string> {
+  return (await readPursuitSources(caller, engagementId, loadText)).notes;
 }
 
 const BRIEF_SYSTEM = [

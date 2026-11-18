@@ -1,17 +1,23 @@
 // @vitest-environment jsdom
 // 17 Nov, firm brain PR 5: the Start a proposal panel. Notes become a brief the owner corrects; precedents show close
 // or loose with their lesson; past fees appear only for admins and leads, as a list; a swap needs no new request.
+// PR 7: the Draft button comes after the precedents; the draft opens as sections, none confirmed, with no accept-all,
+// the fee for partner decision, and the questions for the lead to copy. The saved card goes to the board.
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { ProposalDraft } from "@/lib/proposal-draft-shared";
 import type { PrecedentsResult } from "@/lib/proposal.functions";
 
-const m = vi.hoisted(() => ({ brief: vi.fn(), find: vi.fn(), logEvent: vi.fn() }));
+const m = vi.hoisted(() => ({ brief: vi.fn(), find: vi.fn(), draft: vi.fn(), latest: vi.fn(), confirm: vi.fn(), logEvent: vi.fn() }));
 vi.mock("@tanstack/react-start", () => ({ useServerFn: (fn: unknown) => fn }));
 vi.mock("@/lib/proposal.functions", () => ({
   draftProposalBrief: (...a: unknown[]) => m.brief(...a),
   findProposalPrecedents: (...a: unknown[]) => m.find(...a),
+  draftProposal: (...a: unknown[]) => m.draft(...a),
+  latestProposalDraft: (...a: unknown[]) => m.latest(...a),
+  confirmProposalSection: (...a: unknown[]) => m.confirm(...a),
 }));
 vi.mock("@/lib/firm-ask.functions", () => ({ previewFirmSource: vi.fn(), keepOutOfFirmAnswers: vi.fn() }));
 vi.mock("@/lib/telemetry", () => ({ logEvent: (...a: unknown[]) => m.logEvent(...a) }));
@@ -50,10 +56,27 @@ const found = (canSeeFees: boolean): PrecedentsResult => ({
   coverage: "Read 26 engagements shared with the firm. Some engagements are not shared.",
 });
 
-function open() {
+const draft: ProposalDraft = {
+  sections: [
+    { key: "context", heading: "Context", body: "The client wants a service line by April.", status: "draft", sources: [{ kind: "fact", itemId: "own1", itemTitle: "Intake call", quote: "a service line by April" }], flags: [] },
+    { key: "approach", heading: "Approach", body: "Phase 1: Diagnostic", status: "draft", sources: [{ kind: "structure", boardId: "b5", boardTitle: "Weight management service line" }], flags: [] },
+    { key: "deliverables", heading: "Deliverables", body: "Gap: nothing supports this yet.", status: "gap", sources: [], flags: [] },
+    { key: "fee", heading: "Fees", body: "Fee: for partner decision.", status: "draft", sources: [], flags: [] },
+  ],
+  questions: [
+    { text: "Interview count?", fallback: "20 to 25, as on a past engagement" },
+    { text: "Add CFO time in week 2?", fallback: "Yes" },
+    { text: "Phase count?", fallback: "Two" },
+  ],
+  checks: { names: "passed", blocked: 0, figuresRemoved: 0, newFacts: 0 },
+  precedentIds: ["b5", "b6"],
+  createdAt: "2026-11-17T12:00:00Z",
+};
+
+function open(onDraftSaved?: (itemId: string) => void) {
   render(
     <QueryClientProvider client={new QueryClient()}>
-      <ProposalStartPanel engagementId="00000000-0000-0000-0000-000000000031" profileId="p1" orgId="org" onClose={() => {}} />
+      <ProposalStartPanel engagementId="00000000-0000-0000-0000-000000000031" profileId="p1" orgId="org" onClose={() => {}} onDraftSaved={onDraftSaved} />
     </QueryClientProvider>,
   );
 }
@@ -62,6 +85,10 @@ beforeEach(() => {
   m.brief.mockReset();
   m.find.mockReset();
   m.logEvent.mockReset();
+  m.draft.mockReset();
+  m.latest.mockReset();
+  m.confirm.mockReset();
+  m.latest.mockResolvedValue(null);
   m.brief.mockResolvedValue({ client: "regional health system", problem: "Diabetes prevention service line", deadline: "April board", decider: "Chief Strategy Officer", size: "", outOfScope: "" });
 });
 afterEach(cleanup);
@@ -111,5 +138,43 @@ describe("Start a proposal", () => {
     fireEvent.change(screen.getAllByRole("textbox")[1]!, { target: { value: "Aerospace" } });
     fireEvent.click(screen.getByRole("button", { name: "Find precedents" }));
     await waitFor(() => expect(screen.getByText("No past engagement shared with the firm is close to this brief.")).toBeTruthy());
+  });
+
+  it("drafts after the precedents, opens every section unconfirmed with no accept-all, and puts the card on the board", async () => {
+    m.find.mockResolvedValue(found(false));
+    m.draft.mockResolvedValue({ itemId: "doc1", title: "Proposal draft: Pursuit", draft });
+    const placed = vi.fn();
+    open(placed);
+    expect(screen.queryByRole("button", { name: "Draft the proposal" })).toBeNull();
+    fireEvent.change(screen.getAllByRole("textbox")[1]!, { target: { value: "Diabetes prevention" } });
+    fireEvent.click(screen.getByRole("button", { name: "Find precedents" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Draft the proposal" }));
+    await waitFor(() => expect(document.querySelectorAll("[data-draft-section]")).toHaveLength(4));
+    expect(m.draft.mock.calls[0]![0].data.precedent_ids).toEqual(["b5", "b6"]);
+    expect(placed).toHaveBeenCalledWith("doc1");
+    expect([...document.querySelectorAll("[data-draft-section]")].every((node) => node.getAttribute("data-draft-status") !== "confirmed")).toBe(true);
+    expect(screen.queryByRole("button", { name: /accept all/i })).toBeNull();
+    expect(document.querySelector("[data-draft-status-strip]")!.textContent).toContain("4 sections not yet confirmed");
+    expect(document.querySelector("[data-draft-status-strip]")!.textContent).toContain("Fee not set");
+    expect(screen.getByText("Fee: for partner decision.")).toBeTruthy();
+    expect(screen.getByText("Name check passed. No other client's name appears.")).toBeTruthy();
+    expect(document.querySelector('[data-draft-source="structure"]')!.textContent).toBe("Structure from a past engagement: Weight management service line");
+    expect(document.querySelector('[data-draft-source="fact"]')!.textContent).toContain("a service line by April");
+  });
+
+  it("confirms one section at a time and copies the questions without sending anything", async () => {
+    m.latest.mockResolvedValue({ itemId: "doc1", title: "Proposal draft: Pursuit", draft });
+    m.confirm.mockResolvedValue({ ...draft, sections: draft.sections.map((section) => (section.key === "context" ? { ...section, status: "confirmed" } : section)) });
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { writeText } });
+    open();
+    await screen.findByText("Last draft on this board");
+    fireEvent.click(screen.getAllByRole("button", { name: "Confirm section" })[0]!);
+    await waitFor(() => expect(document.querySelector('[data-draft-section="context"]')!.getAttribute("data-draft-status")).toBe("confirmed"));
+    expect(m.confirm).toHaveBeenCalledWith({ data: { item_id: "doc1", section: "context", profile_id: "p1" } });
+    expect(document.querySelector("[data-draft-status-strip]")!.textContent).toContain("3 sections not yet confirmed");
+    fireEvent.click(screen.getByRole("button", { name: "Copy questions" }));
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith(expect.stringContaining("1. Interview count? (Default: 20 to 25, as on a past engagement)")));
+    await waitFor(() => expect(m.logEvent).toHaveBeenCalledWith("proposal_draft.questions_copied", "org", {}));
   });
 });

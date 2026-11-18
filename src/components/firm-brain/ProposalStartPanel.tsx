@@ -1,5 +1,5 @@
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,9 +14,11 @@ import {
   type Precedent,
   type ProposalBrief,
 } from "@/lib/proposal-shared";
-import { draftProposalBrief, findProposalPrecedents, type PrecedentsResult } from "@/lib/proposal.functions";
+import { DRAFT_COPY } from "@/lib/proposal-draft-shared";
+import { draftProposal, draftProposalBrief, findProposalPrecedents, latestProposalDraft, type PrecedentsResult, type ProposalDraftResult } from "@/lib/proposal.functions";
 
 import { FirmSourcePreview } from "./FirmSourcePreview";
+import { ProposalDraftView } from "./ProposalDraftView";
 
 function outcomeParts(view: { active?: boolean; ranToPlan: boolean | null; extended: boolean | null }): string[] {
   if (view.active) return [PROPOSAL_COPY.active];
@@ -108,18 +110,22 @@ function FeeList({ label, rows, onOpen }: { label: string; rows: PastFee[]; onOp
 /**
  * 17 Nov, Start a proposal step 1, as a board side panel (its own file so it can be tested: nothing renders
  * CanvasLabPage in tests). The owner reads the notes into a brief, corrects it, and sees precedents with their
- * lessons, the firm's client-shown proposals and, for admins and leads, past fees. The draft comes in a later step.
+ * lessons, the firm's client-shown proposals and, for admins and leads, past fees. The Draft button comes after the
+ * precedents, so the owner sees real past work before generated text. The saved draft is handed to the board through
+ * onDraftSaved, which places its card like any other added work.
  */
 export function ProposalStartPanel({
   engagementId,
   profileId,
   orgId,
   onClose,
+  onDraftSaved,
 }: {
   engagementId: string;
   profileId: string | null | undefined;
   orgId: string | null | undefined;
   onClose: () => void;
+  onDraftSaved?: (itemId: string) => void;
 }) {
   const readBrief = useServerFn(draftProposalBrief);
   const find = useServerFn(findProposalPrecedents);
@@ -130,6 +136,41 @@ export function ProposalStartPanel({
   const [result, setResult] = useState<PrecedentsResult | null>(null);
   const [chosen, setChosen] = useState<Precedent[]>([]);
   const [openItem, setOpenItem] = useState<string | null>(null);
+  const writeDraft = useServerFn(draftProposal);
+  const loadLatest = useServerFn(latestProposalDraft);
+  const [drafting, setDrafting] = useState(false);
+  const [saved, setSaved] = useState<ProposalDraftResult | null>(null);
+  const [reopened, setReopened] = useState(false);
+
+  useEffect(() => {
+    let live = true;
+    loadLatest({ data: { engagement_id: engagementId, profile_id: profileId ?? null } })
+      .then((latest) => {
+        if (live && latest) {
+          setSaved((current) => current ?? latest);
+          setReopened(true);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [engagementId, profileId, loadLatest]);
+
+  async function draft() {
+    setDrafting(true);
+    setFailed(false);
+    try {
+      const next = await writeDraft({ data: { engagement_id: engagementId, profile_id: profileId ?? null, brief, precedent_ids: chosen.map((view) => view.boardId) } });
+      setSaved(next);
+      setReopened(false);
+      onDraftSaved?.(next.itemId);
+    } catch {
+      setFailed(true);
+    } finally {
+      setDrafting(false);
+    }
+  }
 
   async function readNotes() {
     setReading(true);
@@ -252,6 +293,20 @@ export function ProposalStartPanel({
               <FeeList label={PROPOSAL_COPY.monthly} rows={feeRows(result.fees.monthly)} onOpen={setOpenItem} />
             </section>
           ) : null}
+
+          <section aria-label={DRAFT_COPY.draft} className="flex flex-col gap-2">
+            <p className="text-(length:--type-small) text-muted-foreground">{DRAFT_COPY.draftHint}</p>
+            <Button type="button" variant="ink" disabled={drafting} onClick={() => void draft()}>
+              {drafting ? DRAFT_COPY.drafting : DRAFT_COPY.draft}
+            </Button>
+          </section>
+        </>
+      ) : null}
+
+      {saved && !drafting ? (
+        <>
+          {reopened ? <p className="font-mono text-(length:--type-label) uppercase tracking-[0.06em] text-muted-foreground">{DRAFT_COPY.reopen}</p> : null}
+          <ProposalDraftView key={`${saved.itemId}-${saved.draft.createdAt}`} itemId={saved.itemId} draft={saved.draft} profileId={profileId} orgId={orgId} onOpen={setOpenItem} />
         </>
       ) : null}
 

@@ -4134,7 +4134,7 @@ export function CanvasLabPage({ engagementId, entryVia, openSticky }: { engageme
         {suggestApplied.length === 0 && suggestRemoval ? <p role="alert" className="text-base text-destructive">{suggestRemoval}</p> : null}
       </BoardSuggestionSurface> : null}
       {proposalAllowed ? <RedPenPanel itemId={redPenItem?.id ?? null} title={redPenItem?.title ?? ""} profileId={profile?.id} orgId={orgId} onClose={() => setRedPenItem(null)} /> : null}
-      {proposalAllowed && proposalOpen ? <ProposalStartPanel engagementId={engagementId} profileId={profile?.id} orgId={orgId} onClose={() => setProposalOpen(false)} /> : null}
+      {proposalAllowed && proposalOpen ? <ProposalStartPanel engagementId={engagementId} profileId={profile?.id} orgId={orgId} onClose={() => setProposalOpen(false)} onDraftSaved={(id) => void addWorkToBoard([id], "inbox")} /> : null}
       <p className="sr-only" aria-live="polite">{announcement}</p>
       {exampleOpen ? <ExampleBoardOverlay onClose={() => setExampleOpen(false)} /> : null}
       {canAddWork ? <AddWorkPanel open={addWorkOpen} onOpenChange={(next) => { setAddWorkOpen(next); if (!next) { setAddWorkAnchor(null); setAddWorkTarget("board"); } }} onPlace={addWorkToBoard} busy={addWorkBusy} engagementId={engagementId} /> : null}
