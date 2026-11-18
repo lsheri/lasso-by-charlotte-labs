@@ -85,12 +85,6 @@
   --hue-amber:var(--t-visual);
   --hue-moss:var(--t-code);
   /* KindIcon accent hooks; Lasso leaves them unset. */
-  --kind-accent-document:var(--t-words);
-  --kind-accent-deck:var(--t-slides);
-  --kind-accent-sheet:var(--t-numbers);
-  --kind-accent-envelope:var(--t-talk);
-  --kind-accent-code:var(--t-code);
-  --kind-accent-pen:var(--t-visual);
 
   /* PR7 colour sweep (R3, 15 Nov). Names Lasso components read directly, which kept Lasso's colours under Charlotte. */
   /* The neutral ramp, navy-tinted, so rules that name a step (toolbar ink, sketch ink tone) land on Charlotte greys. */
@@ -132,52 +126,8 @@
   --vendor-unknown:var(--ch-muted);
   /* Drawn regions and client folder colours: each Lasso family moves to its nearest Charlotte family. Soft is the
      ink at 7% on white, the soft edge at 22%. Charlotte has no green, so green becomes the numbers teal. */
-  --nb-region-green-vivid:var(--t-numbers);
-  --nb-region-green-soft:color-mix(in oklab, var(--t-numbers) 7%, var(--ch-white));
-  --nb-region-green-soft-edge:color-mix(in oklab, var(--t-numbers) 22%, var(--ch-white));
-  --nb-region-blue-vivid:var(--t-talk);
-  --nb-region-blue-soft:color-mix(in oklab, var(--t-talk) 7%, var(--ch-white));
-  --nb-region-blue-soft-edge:color-mix(in oklab, var(--t-talk) 22%, var(--ch-white));
-  --nb-region-rose-vivid:var(--t-slides);
-  --nb-region-rose-soft:color-mix(in oklab, var(--t-slides) 7%, var(--ch-white));
-  --nb-region-rose-soft-edge:color-mix(in oklab, var(--t-slides) 22%, var(--ch-white));
-  --nb-region-yellow-vivid:var(--t-words);
-  --nb-region-yellow-soft:color-mix(in oklab, var(--t-words) 7%, var(--ch-white));
-  --nb-region-yellow-soft-edge:color-mix(in oklab, var(--t-words) 22%, var(--ch-white));
-  --nb-region-lavender-vivid:var(--t-visual);
-  --nb-region-lavender-soft:color-mix(in oklab, var(--t-visual) 7%, var(--ch-white));
-  --nb-region-lavender-soft-edge:color-mix(in oklab, var(--t-visual) 22%, var(--ch-white));
-  --nb-region-slate-vivid:var(--t-code);
-  --nb-region-slate-soft:color-mix(in oklab, var(--t-code) 7%, var(--ch-white));
-  --nb-region-slate-soft-edge:color-mix(in oklab, var(--t-code) 22%, var(--ch-white));
-  --nb-region-paper-white:var(--ch-white);
-  --nb-region-paper-warm:var(--ch-page);
-  --nb-region-paper-cool:var(--ch-wash);
-  --nb-region-paper-sand:var(--ch-sunk-2);
   /* Board hues (the sidebar colour tab): eight Charlotte inks, washes at 8% on white. */
-  --board-hue-0-ink:var(--ch-faint);
-  --board-hue-0-wash:color-mix(in oklab, var(--ch-faint) 8%, var(--ch-white));
-  --board-hue-1-ink:var(--t-talk);
-  --board-hue-1-wash:color-mix(in oklab, var(--t-talk) 8%, var(--ch-white));
-  --board-hue-2-ink:var(--t-numbers);
-  --board-hue-2-wash:color-mix(in oklab, var(--t-numbers) 8%, var(--ch-white));
-  --board-hue-3-ink:var(--t-visual);
-  --board-hue-3-wash:color-mix(in oklab, var(--t-visual) 8%, var(--ch-white));
-  --board-hue-4-ink:var(--t-slides);
-  --board-hue-4-wash:color-mix(in oklab, var(--t-slides) 8%, var(--ch-white));
-  --board-hue-5-ink:var(--t-code);
-  --board-hue-5-wash:color-mix(in oklab, var(--t-code) 8%, var(--ch-white));
-  --board-hue-6-ink:var(--t-words);
-  --board-hue-6-wash:color-mix(in oklab, var(--t-words) 8%, var(--ch-white));
-  --board-hue-7-ink:var(--ch-navy);
-  --board-hue-7-wash:var(--ch-navy-wash);
   /* Deliverable kind chips (Look back, firm cards): the kind's family ink on its 8% wash. */
-  --kind-chip-deck-bg:color-mix(in oklab, var(--t-slides) 8%, var(--ch-white));
-  --kind-chip-deck-ink:var(--t-slides);
-  --kind-chip-proposal-bg:color-mix(in oklab, var(--t-words) 8%, var(--ch-white));
-  --kind-chip-proposal-ink:var(--t-words);
-  --kind-chip-numbers-bg:color-mix(in oklab, var(--t-numbers) 8%, var(--ch-white));
-  --kind-chip-numbers-ink:var(--t-numbers);
 }
 
 /* PR7: a sketch card's kind speaks in its family ink: the kind label, and the one accent stroke in the drawing
