@@ -229,3 +229,48 @@ body:has([data-lasso="on"]) [data-sonner-toaster] {
   --state-held:var(--hand-live);
   --state-held-ink:var(--text-primary);
 }
+
+/* 18 Nov 2026, design guardrail: colours that were written straight into styles/*.css, moved here as named tokens with
+   identical values, so nothing on screen moves and a skin can reach every one. Shadows, sticky-note paper, notes and
+   highlights keep their own look under any skin unless that skin sets these names. */
+:root {
+  /* Elevation */
+  --shadow-offline-pill:0 6px 20px -8px color-mix(in srgb, #0a0a0a 45%, transparent);
+  --shadow-card-lifted:0 8px 24px rgb(17 20 19 / 0.14);
+  --shadow-card-ghost:0 12px 28px rgb(17 20 19 / 0.18);
+  --shadow-note:0 1px 0 rgb(17 20 19 / 0.06);
+  --shadow-journey-node:0 6px 18px -12px rgb(0 0 0 / 0.35);
+  --shadow-hover-lift:0 6px 10px -6px rgb(22 24 26 / 0.18);
+  --shadow-sticky-ghost:0 18px 30px -14px rgba(10,10,10,.45);
+  --shadow-sticky-bar:0 12px 24px -12px rgba(0,0,0,.45);
+  --shadow-sticky-drag:0 14px 30px rgba(0,0,0,.22);
+  --shadow-sticky-card:0 18px 40px rgba(0,0,0,.2);
+  --shadow-gutter-hover:0 10px 22px -12px rgba(0, 0, 0, .4);
+  --shadow-demo-ask:0 -12px 32px rgba(22,24,26,.18);
+  /* Washes */
+  --drop-wash:rgb(17 20 19 / 0.03);
+  /* Notes and highlights */
+  --note-paper:#fdead0;
+  --note-edge:#e8bf8a;
+  --highlight-fill:#fdf0a0;
+  --highlight-fill-hover:#fbe775;
+  --highlight-edge:#e0c33a;
+  /* Sticky notes: the paper colours, the ink on them, and the white chips that sit on the paper */
+  --sticky-paper-legacy:#fdf6c9;
+  --sticky-paper-yellow:#fff8cf;
+  --sticky-paper-green:#ecfaf2;
+  --sticky-paper-blue:#e8f8f6;
+  --sticky-paper-pink:#fdeef3;
+  --sticky-paper-grey:#f5f5f2;
+  --sticky-ink:#5a4a00;
+  --sticky-corner-ink:#6b5400;
+  --sticky-drop:#d9b600;
+  --sticky-error:#9b2c22;
+  --sticky-chip:#fff;
+  --sticky-field:rgba(255,255,255,.7);
+  --sticky-field-strong:rgba(255,255,255,.8);
+  /* The public demo sandbox */
+  --demo-sidebar:#f7f5ef;
+  --demo-viewport:#f2f0ea;
+  --demo-dot:rgba(22,24,26,.13);
+}
