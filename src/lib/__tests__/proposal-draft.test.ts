@@ -178,6 +178,16 @@ describe("drafting", () => {
     expect(model.seen[0]!.options.tier).toBe("smart");
   });
 
+  it("labels the new client's notes with their item ids and makes the brief citable", async () => {
+    const model = fakeChat({ draft: { ...goodDraft, sections: { ...goodDraft.sections, objectives: { body: "Decide on a service line by June.", sources: [{ item_id: "brief", quote: "problem: service line by June" }] } } } });
+    const brief = { ...emptyBrief(), problem: "service line by June" };
+    const { draft } = await runProposalDraft(model.chat, { corpus, precedentIds: ["b5"], intake, brief, ownItems, read, meta });
+    const sent = model.seen[0]!.messages.map((message) => message.content).join("\n");
+    expect(sent).toContain("ITEM own1: Intake call");
+    expect(sent).toContain("BRIEF (item_id brief)");
+    expect(draft.sections.find((section) => section.key === "objectives")!.sources).toEqual([{ kind: "fact", itemId: "brief", itemTitle: "Proposal brief", quote: "problem: service line by June" }]);
+  });
+
   it("passes the name check, counts figures and lists the questions", async () => {
     const model = fakeChat({ draft: goodDraft });
     const { draft, usage } = await runProposalDraft(model.chat, { corpus, precedentIds: ["b5", "b6"], intake, brief: emptyBrief(), ownItems, read, meta });
