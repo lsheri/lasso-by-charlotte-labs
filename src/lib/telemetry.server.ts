@@ -76,6 +76,11 @@ export type MirrorContext = {
   /** Founder-facing pilot: only a consent-permitted raw auth user id is joinable. */
   joinablePerson?: boolean;
   personProperties?: { email?: string; signup_source?: string };
+  /**
+   * The events row's own id, sent as PostHog's uuid (18 Nov 2026). PostHog keeps one event per uuid, so a retried copy
+   * can never count twice.
+   */
+  uuid?: string;
 };
 
 const personEmails = new Map<string, string | null>();
@@ -185,6 +190,20 @@ export function contextProperties(context: MirrorContext): Record<string, unknow
   return props;
 }
 
+/**
+ * How the copy is sent: a first try that gives up after 3s, then one retry after a short pause, given 5s, when the first
+ * failed in a way a retry can fix (no answer, a timeout, a 429 or a 5xx). 18 Nov 2026: a burst of Ask the firm calls
+ * lost about one copy in ten to the single 3s try (83 answers in the ledger, 74 in PostHog).
+ */
+export const MIRROR_ATTEMPTS = [
+  { timeoutMs: 3_000, delayMs: 0 },
+  { timeoutMs: 5_000, delayMs: 250 },
+] as const;
+
+function retryable(status: number): boolean {
+  return status === 429 || status >= 500;
+}
+
 /** Content-free mirror: identity and dimensions only. Awaited so the edge runtime
  * does not cancel the request when the handler returns. Never throws. */
 export async function mirrorToPostHog(
@@ -198,34 +217,44 @@ export async function mirrorToPostHog(
     console.warn(`[telemetry] mirror skipped for ${eventType}: no actor hash (TELEMETRY_SALT?)`);
     return;
   }
-  try {
-    const response = await fetch(`${POSTHOG_HOST}/i/v0/e/`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      // A hanging analytics host must never stall a user action.
-      signal: AbortSignal.timeout(3000),
-      body: JSON.stringify({
-        api_key: POSTHOG_KEY,
-        event: eventType,
-        distinct_id: actorHash,
-        properties: {
-          ...(context ? contextProperties(context) : {}),
-          ...dims,
-          $process_person_profile: context?.anonymous !== true && context?.joinablePerson === true,
-          ...(context?.anonymous !== true && context?.joinablePerson === true && context.personProperties && Object.keys(context.personProperties).length > 0
-            ? { $set: context.personProperties } : {}),
-          ...(context?.anonymous ? {} : { $groups: { org: tenantHash } }),
-        },
-      }),
-    });
-    if (!response.ok) {
-      console.error(
-        `[telemetry] mirror failed for ${eventType}: ${response.status} ${await response.text()}`,
-      );
+  const body = JSON.stringify({
+    api_key: POSTHOG_KEY,
+    event: eventType,
+    distinct_id: actorHash,
+    ...(context?.uuid ? { uuid: context.uuid } : {}),
+    properties: {
+      ...(context ? contextProperties(context) : {}),
+      ...dims,
+      $process_person_profile: context?.anonymous !== true && context?.joinablePerson === true,
+      ...(context?.anonymous !== true && context?.joinablePerson === true && context.personProperties && Object.keys(context.personProperties).length > 0
+        ? { $set: context.personProperties } : {}),
+      ...(context?.anonymous ? {} : { $groups: { org: tenantHash } }),
+    },
+  });
+  for (let attempt = 0; attempt < MIRROR_ATTEMPTS.length; attempt += 1) {
+    const { timeoutMs, delayMs } = MIRROR_ATTEMPTS[attempt]!;
+    const last = attempt === MIRROR_ATTEMPTS.length - 1;
+    if (delayMs) await new Promise((resolve) => setTimeout(resolve, delayMs));
+    try {
+      const response = await fetch(`${POSTHOG_HOST}/i/v0/e/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        // A hanging analytics host must never stall a user action.
+        signal: AbortSignal.timeout(timeoutMs),
+        body,
+      });
+      if (response.ok) return;
+      if (last || !retryable(response.status)) {
+        console.error(`[telemetry] mirror failed for ${eventType}: ${response.status} ${await response.text()}`);
+        return;
+      }
+    } catch (e) {
+      // Analytics must never surface to the user, but it must never be silent either.
+      if (last) {
+        console.error(`[telemetry] mirror threw for ${eventType}:`, (e as Error).message);
+        return;
+      }
     }
-  } catch (e) {
-    // Analytics must never surface to the user, but it must never be silent either.
-    console.error(`[telemetry] mirror threw for ${eventType}:`, (e as Error).message);
   }
 }
 
@@ -400,6 +429,8 @@ export async function recordEvent(
     } catch {
       /* keep the "unknown" fallback */
     }
+    // One id for the row and its PostHog copy, so a retried copy is recognised as the same event.
+    const eventUuid = crypto.randomUUID();
     const { error } = await supabase.from("events").insert({
       ...stamp,
       environment,
@@ -413,7 +444,7 @@ export async function recordEvent(
       profile_id: input.profileId ?? null,
       session_id: input.sessionId ?? null,
       client_seq: input.clientSeq ?? null,
-      event_uuid: crypto.randomUUID(),
+      event_uuid: eventUuid,
       consent_tier: consent.tier,
       consent_ledger_version: consent.ledgerVersion,
       server_ts: new Date().toISOString(),
@@ -458,6 +489,7 @@ export async function recordEvent(
           partner,
           actor_kind: actorKind,
           joinablePerson,
+          uuid: eventUuid,
           ...(personProperties ? { personProperties } : {}),
           ...(accountStage ? { account_stage: accountStage } : {}),
         });
