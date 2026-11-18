@@ -17,6 +17,7 @@ export const b33: DemoBoard = {
   fee: "To be agreed",
   status: "active",
   sharedWithFirm: false,
+  situation: "deal_diligence",
   pursuit: true,
   brief:
     "Tarnhollow Capital is in exclusivity to invest in Corvane Health Staffing, which places travel nurses and allied health staff with hospitals. The deal partner wants commercial diligence before the investment committee. Harper owns the proposal; Tobi is the partner and Sami the likely lead.",
@@ -27,6 +28,8 @@ export const b33: DemoBoard = {
       key: "intake-call",
       title: "Intake call: Tarnhollow deal partner",
       type: "call",
+      method: ["stakeholder_interviews"],
+      role: "investment_partner",
       vendor: "granola",
       author: "okafor",
       section: "Intake",

@@ -8,6 +8,8 @@
  * can already open them.
  */
 
+import type { Method, Role, Situation, Stage } from "./engagement-tags";
+
 export type FirmMemory = "in" | "summary" | "out";
 
 /** What a reader may do with one item: quote it, or cite its summary only. */
@@ -84,6 +86,15 @@ export type FirmItem = {
   sowFacts: Record<string, unknown> | null;
   /** `meta.deliverable_kind`, for example "proposal". */
   kind: string | null;
+  /**
+   * The firm brain's tags (engagement-tags.ts), read the same way for every grade: a summary-only item still says how
+   * the work was done. Optional so older fixtures stay valid; the reader always sets them.
+   */
+  situation?: Situation | null;
+  methods?: Method[];
+  /** A call's job title, never a name. */
+  role?: Role | null;
+  stage?: Stage | null;
 };
 
 export type FirmCorpus = {

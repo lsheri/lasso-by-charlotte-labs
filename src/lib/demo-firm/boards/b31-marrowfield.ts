@@ -16,6 +16,7 @@ export const b31: DemoBoard = {
   fee: "To be agreed",
   status: "active",
   sharedWithFirm: false,
+  situation: "new_offering",
   pursuit: true,
   brief:
     "Marrowfield Regional Health wants a diabetes prevention service line for adults with prediabetes, built around its primary care clinics and two large employers. The Chief Strategy Officer asked for a proposal after an intake call on 16 November. Harper owns the proposal; Maren is the partner and Tiago is the likely lead.",
@@ -26,6 +27,8 @@ export const b31: DemoBoard = {
       key: "intake-call",
       title: "Intake call: Marrowfield Chief Strategy Officer",
       type: "call",
+      method: ["stakeholder_interviews"],
+      role: "chief_strategy_officer",
       vendor: "granola",
       author: "hollis",
       section: "Intake",

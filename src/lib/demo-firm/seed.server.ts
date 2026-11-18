@@ -3,7 +3,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json } from "@/integrations/supabase/types";
 
 import { DEMO_PEOPLE, demoEmail } from "./people";
-import { CARD_H, CARD_W, fileNameFor, itemMeta, nextSlot, outcomeLine, planBoard, sectionTop, slideMap, sourceFor } from "./plan";
+import { CARD_H, CARD_W, fileNameFor, nextSlot, outcomeLine, planBoard, sectionTop, seedMeta, slideMap, sourceFor } from "./plan";
 import type { DemoBoard, DemoFirm, DemoItem } from "./types";
 
 type Db = SupabaseClient<Database>;
@@ -232,7 +232,7 @@ async function seedBoard(
   const itemHash = new Map<string, string>();
   const itemRef = new Map<string, string | null>();
   for (const item of board.items) {
-    const id = await seedItem(admin, orgId, board.key, item, itemMeta(board, item), profileId.get(item.author)!, userId.get(item.author)!);
+    const id = await seedItem(admin, orgId, board.key, item, seedMeta(board, item), profileId.get(item.author)!, userId.get(item.author)!);
     itemId.set(item.key, id.id);
     itemHash.set(item.key, id.hash);
     itemRef.set(item.key, id.contentRef);
@@ -573,7 +573,7 @@ async function topUpBoard(admin: Db, orgId: string, board: DemoBoard, workboardI
   const { data: rows } = await admin.from("work_items").select("id, title, meta").eq("org_id", orgId).eq("source_meta->>demo_board", board.key);
   const byTitle = new Map((rows ?? []).map((row) => [row.title, row]));
   for (const item of board.items) {
-    const extra = itemMeta(board, item);
+    const extra = seedMeta(board, item);
     const row = byTitle.get(item.title);
     const meta = (row?.meta ?? {}) as Record<string, Json>;
     if (!row || Object.keys(extra).every((key) => key in meta)) continue;
@@ -609,7 +609,7 @@ async function topUpBoard(admin: Db, orgId: string, board: DemoBoard, workboardI
     const author = profileId.get(item.author);
     const authUser = userId.get(item.author);
     if (!author || !authUser) throw new Error(`${board.key}: ${item.author} has no demo login`);
-    const seeded = await seedItem(admin, orgId, board.key, item, itemMeta(board, item), author, authUser);
+    const seeded = await seedItem(admin, orgId, board.key, item, seedMeta(board, item), author, authUser);
     if (item.placed !== false) {
       const task = (tasks ?? []).find((entry) => !entry.is_board_default && entry.name === item.section) ?? defaultTask;
       if (task) must(await admin.from("work_item_tasks").insert({ task_id: task.id, work_item_id: seeded.id }).select("work_item_id"), `placing ${item.key}`);

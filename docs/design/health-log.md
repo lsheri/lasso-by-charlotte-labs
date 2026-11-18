@@ -66,7 +66,9 @@ Goal (Liam, 17 Nov): "as design healthy as can be and durable for switching thin
 | #216 | G2 | Brand layer: each brand names its drawn assets (mark, glyphs, kind icons, legacy default) in brand.ts; skin-name branches 8 to 0 | No |
 | #217 | G11 | The last 42 colour literals in styles/*.css (shadows, sticky-note paper and inks, notes and highlights, a drop wash, the demo sandbox) move into named tokens in tokens.css with identical values; ceiling 0 | No (identical values) |
 | #218 | G9 | `!important` policy: reduced-motion and print overrides are correct practice and stop counting (86); a rule that must beat an inline style set by code or a utility above its layer says so in a `/* beats: ... */` note, each one checked against the markup (36 tour rules beat `itemStyle`, board-hue frames beat `LabFrame`'s saved fill, the hand cursor and section handles beat Button utilities, the sidebar row menu beats its opacity utilities). Three toolbar rules lost an unneeded `!important` (computed toolbar styles identical before and after, normal and hover); one dead rule deleted. Unexplained count 215 to 29 | No |
-| (this PR) | G7 | Icon swap layer: every icon is imported from `src/design/brand/icons.tsx`, which wraps the 69 Lucide icons the app uses under their own names and asks the brand for its icon set; Lucide is Charlotte's base set, so a rebrand replaces any icon in that one file. 93 files moved over; direct Lucide imports 92 to 0, ceiling 0 | No (Lucide renders as before) |
+| #219 | G7 | Icon swap layer: every icon is imported from `src/design/brand/icons.tsx`, which wraps the 69 Lucide icons the app uses under their own names and asks the brand for its icon set; Lucide is Charlotte's base set, so a rebrand replaces any icon in that one file. 93 files moved over; direct Lucide imports 92 to 0, ceiling 0 | No (Lucide renders as before) |
+| (this PR) | G9 | `!important` policy: reduced-motion and print overrides are correct practice and stop counting (86); a rule that must beat an inline style set by code or a utility above its layer says so in a `/* beats: ... */` note, each one checked against the markup (36 tour rules beat `itemStyle`, board-hue frames beat `LabFrame`'s saved fill, the hand cursor and section handles beat Button utilities, the sidebar row menu beats its opacity utilities). Three toolbar rules lost an unneeded `!important` (computed toolbar styles identical before and after, normal and hover); one dead rule deleted. Unexplained count 215 to 29 | No |
+| (this PR) | G2 | Reskin audit widened from 11 to 23 screens (Look back, Sources, Decisions, Find it, Coaching, Members, How it ended and Red pen dialogs, and six at phone width). It found the attention yellow fixed at :root (now two skin values, --skin-attention-wash and --skin-attention-edge, Charlotte set to the same yellow) and vendor logos without a vendor mark (BrandLogo now carries data-vendor-mark). Audit back to 0 | No |
 
 Every PR was checked against main with the full test suite, lint, and the design-baseline screenshots (26 screens, Charlotte, desktop and phone), and has a row in `DESIGN-DECISIONS.md`.
 
@@ -88,7 +90,7 @@ Charlotte skin size (custom properties it declares): 230 on 17 Nov, 160 after G2
 | Files importing Lucide directly (added 18 Nov) | 92 | 0 |
 | Skin-name branches (added 18 Nov) | 8 | 0 (#216) |
 | CSS colour literals (added 18 Nov) | 42 | 0 |
-| Reskin audit leaks, 11 screens (added 18 Nov) | 44 | 0 |
+| Reskin audit leaks (11 screens from 18 Nov, 23 from 18 Nov later) | 44, then 21 on the new screens | 0 |
 
 The audit's own 16 Nov figures used a different counting script: 810 raw font sizes, 1,828 `--nb-*` reads.
 
@@ -107,4 +109,4 @@ The audit's own 16 Nov figures used a different counting script: 810 raw font si
 
 ## Open checks
 
-- **PostHog:** event names and calls are untouched by every design PR. Actions, heatmap filters or toolbar actions defined by CSS class could break, because class strings changed (for example `text-[11px]` to `text-(length:--type-label)`). Audit those selectors later.
+- **PostHog:** closed 18 Nov. Event names and calls are untouched by every design PR, and the project has no actions and no saved heatmaps, so nothing keys on a changed class string.
