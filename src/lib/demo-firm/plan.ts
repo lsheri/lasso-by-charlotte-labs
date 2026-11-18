@@ -1,5 +1,7 @@
 import type { Json } from "@/integrations/supabase/types";
 
+import type { Stage } from "@/lib/engagement-tags";
+
 import type { DemoBoard, DemoItem, DemoVendor } from "./types";
 
 /**
@@ -196,6 +198,48 @@ export function itemMeta(board: Pick<DemoBoard, "fee" | "weeks">, item: Pick<Dem
     ...(item.key === "sow" ? { sow_facts: sowFacts(board) } : {}),
     ...(item.kind ? { deliverable_kind: item.kind } : {}),
   };
+}
+
+/** Deliverables carry a stage; calls, chats and emails do not. */
+const STAGED_TYPES: readonly DemoItem["type"][] = ["document", "deck", "sheet"];
+
+/**
+ * Where a deliverable got to, read off the data so it cannot drift: anything shown to the client is shown to client,
+ * a title that says draft, v0, v1 or scratch is a draft, and everything else has been through review.
+ */
+export function stageFor(item: Pick<DemoItem, "type" | "title" | "shown">): Stage | null {
+  if (!STAGED_TYPES.includes(item.type)) return null;
+  if (item.shown?.length) return "shown_to_client";
+  return /\b(draft|v0|v1|scratch)\b/i.test(item.title) ? "draft" : "reviewed";
+}
+
+/**
+ * The one item that holds the engagement's situation. The SOW defines the engagement, so it is the SOW. A board with
+ * no SOW (a pursuit) uses its earliest placed, non-private document, then its earliest placed, non-private item of
+ * any kind; ties go to the key, so the choice never changes between runs.
+ */
+export function situationCarrier(board: Pick<DemoBoard, "items">): string | null {
+  if (board.items.some((item) => item.key === "sow")) return "sow";
+  const open = board.items
+    .filter((item) => item.placed !== false && item.visibility !== "private")
+    .sort((a, b) => a.date.localeCompare(b.date) || a.key.localeCompare(b.key));
+  return (open.find((item) => item.type === "document") ?? open[0])?.key ?? null;
+}
+
+/** The firm brain's tags on one item (engagement-tags.ts): situation on the carrier, methods, a call's role, a stage. */
+export function itemTags(board: Pick<DemoBoard, "items" | "situation">, item: DemoItem): Record<string, Json> {
+  const stage = stageFor(item);
+  return {
+    ...(situationCarrier(board) === item.key ? { situation: board.situation } : {}),
+    ...(item.method?.length ? { method: [...item.method] } : {}),
+    ...(item.type === "call" && item.role ? { call_role: item.role } : {}),
+    ...(stage ? { stage } : {}),
+  };
+}
+
+/** Everything the seed adds to an item's meta beyond its mime type. */
+export function seedMeta(board: DemoBoard, item: DemoItem): Record<string, Json> {
+  return { ...itemMeta(board, item), ...itemTags(board, item) };
 }
 
 /**

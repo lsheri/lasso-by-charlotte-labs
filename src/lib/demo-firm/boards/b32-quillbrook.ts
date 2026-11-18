@@ -16,6 +16,7 @@ export const b32: DemoBoard = {
   fee: "To be agreed",
   status: "active",
   sharedWithFirm: false,
+  situation: "integration",
   pursuit: true,
   brief:
     "Quillbrook Analytics has signed to buy a smaller reporting tool company, its first acquisition, closing in January. The founder and CEO wants help planning the first hundred days. Harper owns the proposal; Tobi is the partner and Sami the likely lead.",
@@ -26,6 +27,8 @@ export const b32: DemoBoard = {
       key: "intake-call",
       title: "Intake call: Quillbrook CEO",
       type: "call",
+      method: ["stakeholder_interviews"],
+      role: "chief_executive_officer",
       vendor: "granola",
       author: "okafor",
       section: "Intake",
