@@ -22,13 +22,13 @@ Goal (Liam, 17 Nov): "as design healthy as can be and durable for switching thin
 | G3 | Look | No type scale (48 sizes) | Done for app surfaces | #166, #172, #173, #174, #175 |
 | G4 | Now | Text below 10px | Done: nothing in the app below 11px | #167 |
 | G5 | Now | Muted text fails AA | Done | #161 |
-| G6 | Now | Lime and acid rings below 3:1 | Charlotte passes (paperclip is the second cue); guarded by a test | G12/G6 PR |
+| G6 | Now | Lime and acid rings below 3:1 | Charlotte passes (paperclip is the second cue); guarded by a test | #186 |
 | G7 | Look | App Button drifts from reference | Component done; raw `<button>` sweep open | #163 |
 | G8 | Look | Radius: 3 tokens, about 18 values | Open | |
 | G9 | Upkeep | styles.css size, literal z-index, `!important` | Open | |
 | G10 | Upkeep | Reference components copied, not checked | Open | |
 | G11 | Look | Hex colours in components | Open | |
-| G12 | Upkeep | Dead dark theme | Removed | G12/G6 PR |
+| G12 | Upkeep | Dead dark theme | Removed | #186 |
 | G13 | Upkeep | Raw spacing and inline styles | Open | |
 
 ## Design PRs, in merge order
@@ -47,17 +47,19 @@ Goal (Liam, 17 Nov): "as design healthy as can be and durable for switching thin
 | #175 | G3 | 70 off-scale Tailwind sizes snap to the scale | Small shifts on plans, home, Ask |
 | #176 | G1 | Selection is one navy outline; lime stays for Ask | Section titles and selected text blocks |
 | #177 | G1, G2 | `--active-mark`, `--drop-target`, `--handle`, `--ai-voice` | No (pixel-identical) |
+| #186 | G12, G6 | Dead `.dark` theme removed; Charlotte state cues pass 1.4.11, paperclip guarded | No (pixel-identical) |
+| (this PR) | All | Design health ratchet and this log | No |
 
 Every PR was checked against main with the full test suite, lint, and the design-baseline screenshots (26 screens, Charlotte, desktop and phone), and has a row in `DESIGN-DECISIONS.md`.
 
 ## Health counts
 
-| Count | 17 Nov baseline (7c861b3e) | Now |
+| Count | 17 Nov baseline (7e13e65d) | Now |
 |---|---|---|
 | Raw font sizes | 249 | 249 |
-| Raw radii | 436 | 436 |
+| Raw radii | 437 | 437 |
 | Hex in components | 76 | 76 |
-| `var(--nb-*)` reads | 1654 | 1654 |
+| `var(--nb-*)` reads | 1653 | 1653 |
 | Literal z-index | 183 | 183 |
 | `!important` | 215 | 215 |
 
