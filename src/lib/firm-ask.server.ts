@@ -13,6 +13,7 @@ import { parseJsonObject } from "@/lib/span-provenance.server";
 
 import { coverageLine, type FirmCorpus } from "./firm-corpus-shared";
 import {
+  asksAboutPeople,
   checkClaims,
   factsFor,
   FIRM_ASK_ITEM_CHARS,
@@ -175,11 +176,17 @@ export async function runFirmAsk(deps: FirmAskDeps, input: FirmAskInput): Promis
     ...(input.meta ? { meta: { ...input.meta, surface: "firm_ask_select" } } : {}),
   });
   count(select);
+  // A question about people is refused whatever the picking call finds; it still lists matching engagements.
+  const aboutPeople = asksAboutPeople(question);
   const ids = pickedIds(select.text, corpus);
-  if (!ids.length) return { result: empty(corpus, "not_found"), usage };
+  if (!ids.length) return { result: empty(corpus, aboutPeople ? "about_people" : "not_found"), usage };
 
   const read = await readPicked(corpus, ids, deps.loadText);
-  if (!read.length) return { result: empty(corpus, "not_found"), usage };
+  if (!read.length) return { result: empty(corpus, aboutPeople ? "about_people" : "not_found"), usage };
+  if (aboutPeople) {
+    const boards = [...new Set(read.map((source) => source.boardId))];
+    return { result: { ...empty(corpus, "about_people", read), facts: factsFor(corpus, boards, input.canSeeFees) }, usage };
+  }
 
   let parsed: Record<string, unknown> = {};
   let checked = { claims: [] as FirmAskResult["claims"], offered: 0 };

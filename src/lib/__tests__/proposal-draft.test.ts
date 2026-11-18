@@ -17,6 +17,7 @@ import {
   questionsText,
   recheckSources,
   renderProposalMarkdown,
+  salvageDraft,
   storedDraft,
   teamSlots,
   type DraftContext,
@@ -189,6 +190,37 @@ describe("drafting", () => {
     const { draft } = await runProposalDraft(model.chat, { corpus, precedentIds: ["b5"], intake, brief: emptyBrief(), ownItems, read, meta });
     expect(draft.checks.newFacts).toBe(1);
     expect(draft.sections.find((section) => section.key === "objectives")!.flags[0]).toContain("Not in the notes");
+  });
+});
+
+describe("a reply cut off at its token limit", () => {
+  it("keeps every section and question that completed, and leaves the rest as gaps", async () => {
+    const full = JSON.stringify(goodDraft);
+    const cut = full.slice(0, full.indexOf('"timeline"') + 20);
+    const salvaged = salvageDraft(cut) as { sections: Record<string, unknown> };
+    expect(Object.keys(salvaged.sections)).toEqual(["context", "objectives", "approach", "workstreams", "deliverables"]);
+
+    const withQuestions = JSON.stringify({ team_roles: ["Engagement lead"], questions: goodDraft.questions, sections: goodDraft.sections });
+    const lateCut = withQuestions.slice(0, withQuestions.indexOf('"workstreams"') + 15);
+    const late = salvageDraft(lateCut) as { team_roles: unknown; questions: unknown[] };
+    expect(late.team_roles).toEqual(["Engagement lead"]);
+    expect(late.questions).toHaveLength(3);
+  });
+
+  it("drafts from the salvaged part with the room to finish", async () => {
+    const full = JSON.stringify(goodDraft);
+    const cut = full.slice(0, full.indexOf('"timeline"') + 20);
+    const model = {
+      seen: [] as ChatOptions[],
+      chat: async (_messages: ChatMessage[], options: ChatOptions) => {
+        model.seen.push(options);
+        return options.meta?.surface === "proposal_new_facts" ? reply(JSON.stringify({ sentences: [] })) : { ...reply(cut), finishReason: "length" };
+      },
+    };
+    const { draft } = await runProposalDraft(model.chat, { corpus, precedentIds: ["b5", "b6"], intake, brief: emptyBrief(), ownItems: new Map([["own1", { title: "Intake call", text: intake }]]), read, meta });
+    expect(draft.sections.find((section) => section.key === "approach")!.status).toBe("draft");
+    expect(draft.sections.find((section) => section.key === "timeline")!.status).toBe("gap");
+    expect(model.seen[0]!.maxTokens).toBeGreaterThanOrEqual(8_000);
   });
 });
 

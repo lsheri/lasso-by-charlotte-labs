@@ -112,6 +112,26 @@ export function holdsOpinion(text: string): boolean {
   return OPINION_WORDS.some((word) => new RegExp(`\\b${word.replace(/\s+/g, "\\s+")}\\b`).test(lower));
 }
 
+const PEOPLE = "(?:person|people|consultants?|analysts?|partners?|leads?|associates?|managers?|staff|colleagues?|employees?|team members?|performers?)";
+const PEOPLE_QUESTIONS = [
+  // "Who is our best person for health work?", "Who's the strongest analyst?"
+  /\bwho(?:'s|\s+is|\s+are|\s+was|\s+were)\b.*\b(?:best|worst|strongest|weakest|top|better|worse|most\s+(?:experienced|senior|skilled|productive|reliable)|least\s+\w+)\b/i,
+  // "Rank our consultants", "compare the partners"
+  new RegExp(`\\b(?:rank|rate|score|grade|compare|judge|evaluate)\\b.*\\b${PEOPLE}\\b`, "i"),
+  // "our best consultant", "top performers"
+  new RegExp(`\\b(?:best|worst|strongest|weakest|top|bottom|underperforming)\\s+${PEOPLE}\\b`, "i"),
+  // "Who performs best?", "who delivers better"
+  /\bwho\s+(?:performs|performed|delivers|delivered|underperforms)\b/i,
+];
+
+/**
+ * A question that ranks, compares or judges people, caught in code before any model call so the refusal never
+ * depends on what the model picks. The answer model's own flag stays as a second line for questions this misses.
+ */
+export function asksAboutPeople(question: string): boolean {
+  return PEOPLE_QUESTIONS.some((pattern) => pattern.test(question));
+}
+
 export type FirmAskClaim = {
   text: string;
   itemId: string;

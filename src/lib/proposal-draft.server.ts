@@ -24,6 +24,7 @@ import {
   PROPOSAL_SECTIONS,
   QUESTIONS_MAX,
   QUESTIONS_MIN,
+  salvageDraft,
   type DraftContext,
   type DraftSection,
   type NameTerm,
@@ -35,6 +36,8 @@ type Chat = (messages: ChatMessage[], options: ChatOptions) => Promise<ChatResul
 export const EXEMPLAR_CHARS = 12_000;
 export const PACK_CHARS = 16_000;
 export const INTAKE_CHARS = 24_000;
+/** Nine sections and six questions in JSON run past 3,500 tokens; 8,000 keeps a draft near $0.13 at most. */
+export const DRAFT_MAX_TOKENS = 8_000;
 const DELIVERABLES_PER_PACK = 4;
 
 export type DraftUsage = { costUsd: number; tokensIn: number; tokensOut: number; calls: number };
@@ -110,6 +113,7 @@ RULES:
 - Facts about the new client come ONLY from the NEW CLIENT block. A precedent's facts are never facts about the new client.
 - Borrow structure from precedents and the exemplar: phases, workstreams, deliverables, timeline shape. Cite borrowed structure as { "board_id": "<the precedent's board_id>" }.
 - A stated fact cites the item it came from as { "item_id", "quote" }, with the quote copied character for character from that item.
+- Keep each section body under about 120 words. The lead fills in detail later.
 - approach is a structured outline, not prose: one line per phase, then its activities and deliverables as short dashes. The lead fills it in.
 - Put each precedent's lesson into assumptions and exclusions where it applies, citing that precedent's board_id.
 - Where nothing supports a section, set "gap": true and leave body empty. Never guess.
@@ -164,12 +168,14 @@ export async function runProposalDraft(
 
   const first = await chat(buildDraftMessages({ exemplar, packs, intake, brief: input.brief }), {
     tier: "smart",
-    maxTokens: 3_500,
+    maxTokens: DRAFT_MAX_TOKENS,
     responseFormat: { type: "json_object" },
     ...withMeta("proposal_draft"),
   });
   count(first);
-  const raw = parseJsonObject(first.text);
+  // A reply cut off at its limit keeps every section that completed; the rest become gaps.
+  const whole = parseJsonObject(first.text);
+  const raw = whole["sections"] ? whole : salvageDraft(first.text);
   const parsed = parseDraft(raw, ctx);
   let sections: DraftSection[] = parsed.sections;
   let names: ProposalDraft["checks"]["names"] = "passed";
