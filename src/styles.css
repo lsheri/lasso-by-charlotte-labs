@@ -6932,7 +6932,12 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 /* Switched on by setting data-lasso="on" on the app shell. Until then this
    block matches nothing and the app renders exactly as it does today.
    The landing page is outside the app shell and is never affected. */
-[data-lasso="on"] {
+/* The app shell and its overlays (dialogs, menus, toasts open at body) map the older names to tokens, so a skin sets only tokens. */
+[data-lasso="on"],
+body:has([data-lasso="on"]) > [role="dialog"],
+body:has([data-lasso="on"]) > [role="alertdialog"],
+body:has([data-lasso="on"]) > [data-radix-popper-content-wrapper],
+body:has([data-lasso="on"]) [data-sonner-toaster] {
   --nb-white:var(--surface-raised);
   --nb-paper:var(--surface-page);
   --nb-grey-1:var(--surface-sunk);

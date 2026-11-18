@@ -198,7 +198,11 @@
    --focus-ring already exists above and is not redeclared. Nothing reads
    these yet; PR2 moves usages onto them. */
 :root,
-[data-lasso="on"] {
+[data-lasso="on"],
+body:has([data-lasso="on"]) > [role="dialog"],
+body:has([data-lasso="on"]) > [role="alertdialog"],
+body:has([data-lasso="on"]) > [data-radix-popper-content-wrapper],
+body:has([data-lasso="on"]) [data-sonner-toaster] {
   --state-on-record:var(--nb-green);
   --wrap-mark:var(--nb-green);
   --selection:var(--nb-green-wash);
