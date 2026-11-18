@@ -25,6 +25,9 @@
   --skin-mark:#73859A; /* faint marks, not text */
   --neutral-10:#f3f6f8;
   --neutral-80:#24384e;
+  /* Attention: the soft yellow behind a nudge or a suggestion. The values the app always showed, now a brand value. */
+  --skin-attention-wash:#fff6c8;
+  --skin-attention-edge:#e4d27a;
 
   /* Work-kind families (Phase 3 PR5, option B "Exhibit chart"): six muted inks, each 5.6:1 or better on page,
      raised and sunk. No green family, so green never competes with lime, which means live. */

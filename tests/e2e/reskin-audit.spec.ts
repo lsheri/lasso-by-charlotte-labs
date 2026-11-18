@@ -36,10 +36,18 @@ const SCREENS: Screen[] = [
   { name: "settings", open: async (page) => { await page.goto("/settings", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(2_500); } },
   { name: "firm", open: async (page) => { await page.goto("/firm", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(3_000); } },
   { name: "proposal-panel", open: async (page) => { await board(page); await page.getByRole("toolbar", { name: "Board controls" }).locator('[data-toolbar-control="more"]').click(); await page.getByRole("menuitem", { name: "Start a proposal" }).click(); await page.getByTestId("proposal-start").waitFor({ timeout: 15_000 }); await page.waitForTimeout(1_000); } },
+  { name: "reflect", open: async (page) => { await page.goto("/reflect", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(3_000); } },
+  { name: "connectors", open: async (page) => { await page.goto("/connectors", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(3_000); } },
+  { name: "decisions", open: async (page) => { await page.goto("/decisions", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(3_000); } },
+  { name: "find-it", open: async (page) => { await page.goto("/find-it", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(3_000); } },
+  { name: "coaching", open: async (page) => { await page.goto("/coaching", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(3_000); } },
+  { name: "members", open: async (page) => { await page.goto("/members", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(3_000); } },
+  { name: "outcome-dialog", open: async (page) => { await board(page); await page.getByRole("toolbar", { name: "Board controls" }).locator('[data-toolbar-control="more"]').click(); await page.getByRole("menuitem", { name: "How it ended…" }).click(); await page.getByTestId("board-outcome").waitFor({ timeout: 15_000 }); await page.waitForTimeout(800); } },
+  { name: "red-pen-dialog", open: async (page) => { await board(page); const card = page.locator("[data-node-id]").first(); await card.click({ position: { x: 20, y: 60 } }); await card.getByRole("button", { name: "Card options" }).click(); const item = page.getByRole("menuitem", { name: "Red pen" }); if (await item.count()) { await item.click(); await page.getByTestId("red-pen").waitFor({ timeout: 15_000 }); await page.waitForTimeout(1_000); } else await page.keyboard.press("Escape"); } },
   { name: "board-card-menu", open: async (page) => { await board(page); const card = page.locator("[data-node-id]").first(); await card.click({ position: { x: 20, y: 60 } }); await card.getByRole("button", { name: "Card options" }).click(); await page.getByRole("menu").waitFor(); } },
 ];
 /** The same screens at phone width, where the shell, sidebar and dialogs take other shapes. */
-const PHONE_SCREENS = ["home", "board", "all-work"];
+const PHONE_SCREENS = ["home", "board", "all-work", "share-dialog", "board-more-menu", "settings"];
 
 /** Every visible element's skin-relevant styles, keyed by a readable signature, in document order. */
 async function snapshot(page: Page): Promise<Snapshot[]> {

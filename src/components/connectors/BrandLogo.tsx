@@ -251,6 +251,7 @@ export function BrandLogo({
   return (
     <svg
       role="img"
+      data-vendor-mark=""
       aria-label={label}
       viewBox="0 0 24 24"
       width={size}

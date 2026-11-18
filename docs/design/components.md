@@ -56,7 +56,7 @@ Every number may only go down.
 
 ## The reskin audit
 
-`tests/e2e/reskin-audit.spec.ts` is the proof that a brand change needs only skin values. It signs in as a demo person, opens the main screens (home, board, card and board menus, share dialog, proposal panel, All work, settings, firm view, and three at phone width), renders each as Charlotte and again under `src/design/skins/proof.css` (a deliberately loud test skin that never ships), and lists any element whose colour, background, border or font did not change. A planted canary proves it can see a leak. The ceiling is in `src/design/reskin-audit.json` and is 0.
+`tests/e2e/reskin-audit.spec.ts` is the proof that a brand change needs only skin values. It signs in as a demo person, opens the main screens (home, board, card and board menus, share, How it ended and Red pen dialogs, proposal panel, All work, settings, firm view, Look back, Sources, Decisions, Find it, Coaching, Members, and six at phone width), renders each as Charlotte and again under `src/design/skins/proof.css` (a deliberately loud test skin that never ships), and lists any element whose colour, background, border or font did not change. A planted canary proves it can see a leak. The ceiling is in `src/design/reskin-audit.json` and is 0.
 
 Run it after any change to how something looks, and before a rebrand:
 
@@ -69,6 +69,6 @@ It writes `test-results/reskin-audit.json` (each leak with its selector and scre
 
 ## Starting a new brand
 
-1. Copy `src/design/skins/proof.css` to a new skin file and set its values: ink, live, page, raised, sunk, two text greys, a mark grey, two neutrals, six work-kind hues and the fonts. `skin-base.css` derives every role, state, category and vendor colour from them.
+1. Copy `src/design/skins/proof.css` to a new skin file and set its values: ink, live, page, raised, sunk, two text greys, a mark grey, two neutrals, the attention wash and edge, six work-kind hues and the fonts. `skin-base.css` derives every role, state, category and vendor colour from them.
 2. Add the brand's name, wordmark and Ask label in `src/design/brand/brand.ts`, and its marks beside the Charlotte ones.
 3. Run the reskin audit with the new skin in place of the proof skin, then the baseline screenshots.
