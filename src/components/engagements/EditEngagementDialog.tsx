@@ -20,6 +20,8 @@ import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
 import { logEvent } from "@/lib/telemetry";
 import { ENGAGEMENT_RENAME_REFUSAL, saveOutcome } from "@/lib/save-guard";
+import { chipVariants } from "@/components/ui/chip";
+import { cn } from "@/lib/utils";
 
 export type EditableEngagement = {
   id: string;
@@ -88,8 +90,7 @@ export function EditEngagementDialog({
     // The code rides the same update as the name, so a refusal covers both.
     // A blank code is never sent: the saved one stays as it was.
     const trimmedCode = code.trim();
-    const codeField =
-      engagement.code !== undefined && trimmedCode ? { code: trimmedCode } : {};
+    const codeField = engagement.code !== undefined && trimmedCode ? { code: trimmedCode } : {};
     const result = await supabase
       .from("engagements")
       .update({
@@ -121,13 +122,13 @@ export function EditEngagementDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {trigger ?? (
-        <button
-          type="button"
-          aria-label="Edit workboard"
-          className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <Pencil className="h-3 w-3" aria-hidden /> Edit
-        </button>
+          <button
+            type="button"
+            aria-label="Edit workboard"
+            className={cn(chipVariants(), "inline-flex items-center gap-1.5 bg-card")}
+          >
+            <Pencil className="h-3 w-3" aria-hidden /> Edit
+          </button>
         )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">

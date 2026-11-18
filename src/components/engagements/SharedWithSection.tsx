@@ -35,6 +35,8 @@ import { logEvent } from "@/lib/telemetry";
 import { SHIP_ACTION_LABEL, SHIP_EMPTY_HINT } from "@/lib/shipped-work-shared";
 import { ownsWorkItem } from "@/lib/work-ownership";
 import type { WorkItemRow } from "@/lib/work-types";
+import { chipVariants } from "@/components/ui/chip";
+import { cn } from "@/lib/utils";
 
 /**
  * The roster. Every active coach in the workspace is listed by name with one
@@ -212,7 +214,7 @@ export function SharedWithSection({
             type="button"
             disabled={sharingAll || busyId !== null}
             onClick={() => setConfirmAll(true)}
-            className="rounded-full border border-accent bg-accent-soft px-3 py-1 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-accent-deep transition-opacity disabled:opacity-50"
+            className={chipVariants({ tone: "accent" })}
           >
             {sharingAll ? "Sharing…" : `Share with all ${unshared.length} coaches`}
           </button>
@@ -265,7 +267,7 @@ export function SharedWithSection({
                     type="button"
                     disabled={busy}
                     onClick={() => void toggle(coach, false)}
-                    className="rounded-full border border-border px-3 py-1 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
+                    className={chipVariants()}
                   >
                     Remove
                   </button>
@@ -278,7 +280,7 @@ export function SharedWithSection({
                     ellipse.fire("shared-with");
                     void toggle(coach, true);
                   }}
-                  className="shrink-0 rounded-full border border-accent bg-accent-soft px-4 py-1 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-accent-deep transition-opacity disabled:opacity-50"
+                  className={cn(chipVariants({ tone: "accent" }), "shrink-0 px-4")}
                 >
                   {busy ? "Saving…" : "Share"}
                 </button>
@@ -309,11 +311,13 @@ export function SharedWithSection({
       <AlertDialog open={confirmAll} onOpenChange={setConfirmAll}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Share this workboard with {unshared.length} coaches?</AlertDialogTitle>
+            <AlertDialogTitle>
+              Share this workboard with {unshared.length} coaches?
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              {unshared.map((row) => row.display_name).join(", ")} will see the work mapped into this
-              workboard. Nothing else in your workspace becomes visible, and you can take it back
-              from any of them at any time.
+              {unshared.map((row) => row.display_name).join(", ")} will see the work mapped into
+              this workboard. Nothing else in your workspace becomes visible, and you can take it
+              back from any of them at any time.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

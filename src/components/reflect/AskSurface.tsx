@@ -38,6 +38,8 @@ import { citationsFromManifest, extractTurnRefs, turnRefsFromCitations, type Tur
 import { AnswerTurnLinks } from "@/components/reflect/AnswerTurnLinks";
 import { ThreadViewerById } from "@/components/work/ThreadViewerById";
 import { useBrandCopy } from "@/components/skin/use-skin";
+import { chipVariants } from "@/components/ui/chip";
+import { cn } from "@/lib/utils";
 
 type AskComposerKeyEvent = {
   key: string;
@@ -250,7 +252,7 @@ export function AskScopeChip({
       className={
         block
           ? "flex min-h-12 w-full items-center justify-between gap-2 border-t border-border bg-secondary/50 px-4 text-left font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-accent-deep"
-          : "inline-flex max-w-full items-center gap-2 rounded-full bg-accent-soft px-3 py-1 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-accent-deep"
+          : cn(chipVariants({ tone: "accent" }), "inline-flex max-w-full items-center gap-2")
       }
     >
       <span className="truncate">{label}</span>

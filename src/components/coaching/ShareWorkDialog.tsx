@@ -38,6 +38,8 @@ import {
 } from "@/lib/coach-share-shared";
 import { engagementDisplayCode, engagementDisplayTitle } from "@/lib/clients";
 import { logEvent } from "@/lib/telemetry";
+import { chipVariants } from "@/components/ui/chip";
+import { cn } from "@/lib/utils";
 
 /**
  * Coach centred sharing. The list is built from the caller's own engagement
@@ -131,9 +133,7 @@ export function ShareWorkDialog({
       });
       toast.error(result.message ?? "That did not save.");
     } else {
-      toast.success(
-        next ? sharedSuccessLine(coach.display_name) : removalLine(coach.display_name),
-      );
+      toast.success(next ? sharedSuccessLine(coach.display_name) : removalLine(coach.display_name));
       await invalidateShares();
     }
     setBusyId(null);
@@ -221,7 +221,7 @@ export function ShareWorkDialog({
                         type="button"
                         disabled={groupBusy || busyGroup !== null}
                         onClick={() => setConfirmGroup({ ...group })}
-                        className="rounded-full border border-accent bg-accent-soft px-3 py-1 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-accent-deep transition-opacity disabled:opacity-50"
+                        className={chipVariants({ tone: "accent" })}
                       >
                         {groupBusy ? "Sharing…" : `Share all ${unshared.length} with ${firstName}`}
                       </button>
@@ -261,7 +261,7 @@ export function ShareWorkDialog({
                                 type="button"
                                 disabled={busy}
                                 onClick={() => void toggleOne(row, false)}
-                                className="rounded-full border border-border px-3 py-1 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
+                                className={chipVariants()}
                               >
                                 Remove
                               </button>
@@ -271,10 +271,10 @@ export function ShareWorkDialog({
                               type="button"
                               disabled={busy}
                               onClick={() => {
-                          ellipse.fire(group.key);
-                          void toggleOne(row, true);
-                        }}
-                              className="shrink-0 rounded-full border border-accent bg-accent-soft px-4 py-1 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-accent-deep transition-opacity disabled:opacity-50"
+                                ellipse.fire(group.key);
+                                void toggleOne(row, true);
+                              }}
+                              className={cn(chipVariants({ tone: "accent" }), "shrink-0 px-4")}
                             >
                               {busy ? "Saving…" : "Share"}
                             </button>

@@ -8,6 +8,7 @@ import type { ContextScope } from "@/lib/reflect-shared";
 import { chipShape, itemsInScope, mappedItemsForEngagement } from "@/lib/reflect-scope-shape";
 import type { WorkItemRow } from "@/lib/work-types";
 import { engagementDisplayCode, engagementLabel } from "@/lib/clients";
+import { chipVariants } from "@/components/ui/chip";
 
 /** The scope as a plain sentence, never a count of tokens or a cost. */
 export function scopeSentence(
@@ -117,11 +118,9 @@ export function WorkScopePicker({
                       new Set(mappedItemsForEngagement(all, engagement.id).map((i) => i.id)),
                     );
                   }}
-                  className={
-                    engagement.id === engagementId
-                      ? "rounded-full bg-accent-soft px-3 py-1 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-accent-deep"
-                      : "rounded-full border border-border px-3 py-1 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
-                  }
+                  className={chipVariants({
+                    tone: engagement.id === engagementId ? "accent" : "quiet",
+                  })}
                 >
                   {engagementDisplayCode(engagement) ?? "Folder"}
                 </button>
