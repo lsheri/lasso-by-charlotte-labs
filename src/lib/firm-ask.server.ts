@@ -20,6 +20,7 @@ import {
   FIRM_ASK_READ_MAX,
   holdsOpinion,
   maskFees,
+  outcomeSourceId,
   sourcesFor,
   type FirmAskResult,
   type ReadSource,
@@ -45,6 +46,7 @@ const SELECT_SYSTEM = [
   "You are given board cards (one per engagement) and item cards (one per piece of work, under its board).",
   `Return JSON only, ids and nothing else: {"items": ["<item id>", "<item id>"]}.`,
   `Pick at most ${FIRM_ASK_PICK_MAX} items, most relevant first. Match on meaning, not only words: "obesity care" matches "weight management".`,
+  "Each finished engagement has a CLOSE-OUT line with its own id: what happened and the lesson. Pick it when the question is about lessons, what went wrong or how work went.",
   'An empty list is a valid answer when nothing is relevant. Never pick something only loosely related to fill the list.',
 ].join("\n");
 
@@ -63,9 +65,10 @@ const ANSWER_SYSTEM = [
 function boardCard(corpus: FirmCorpus, boardId: string): string {
   const board = corpus.boards.find((entry) => entry.id === boardId)!;
   const brief = maskFees((board.brief ?? "").replace(/\s+/g, " ").slice(0, 600));
-  return [`BOARD ${board.id}: ${board.title}${board.client ? ` (${board.client})` : ""}`, `started ${board.startedOn}`, brief && `brief: ${brief}`, board.outcome && `outcome: ${maskFees(board.outcome)}`]
+  const head = [`BOARD ${board.id}: ${board.title}${board.client ? ` (${board.client})` : ""}`, `started ${board.startedOn}`, brief && `brief: ${brief}`]
     .filter(Boolean)
     .join(" | ");
+  return board.outcome ? `${head}\n  CLOSE-OUT ${outcomeSourceId(board.id)}: ${maskFees(board.outcome)}` : head;
 }
 
 function itemCard(item: FirmCorpus["items"][number]): string {
@@ -84,8 +87,9 @@ export function buildSelectMessages(corpus: FirmCorpus, question: string): ChatM
 
 export function buildAnswerMessages(corpus: FirmCorpus, question: string, read: readonly ReadSource[], retry: boolean): ChatMessage[] {
   const documents = read.map((source) => {
-    const item = corpus.items.find((entry) => entry.id === source.itemId)!;
     const board = corpus.boards.find((entry) => entry.id === source.boardId)!;
+    const item = corpus.items.find((entry) => entry.id === source.itemId);
+    if (!item) return `<document id="${source.itemId}" board="${board.title}" type="close-out" read="document">\n${source.text}\n</document>`;
     const mark = item.shown.length ? ` | shown to client ${item.shown[item.shown.length - 1]!.on}` : "";
     const kind = source.grade === "full" ? "document" : "index card only";
     return `<document id="${source.itemId}" board="${board.title}" type="${item.type}" date="${item.date ?? ""}"${mark ? ` mark="${mark.slice(3)}"` : ""} read="${kind}">\n${source.text}\n</document>`;
@@ -98,14 +102,14 @@ export function buildAnswerMessages(corpus: FirmCorpus, question: string, read: 
   ];
 }
 
-const UUID_IN_TEXT = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
+const UUID_IN_TEXT = /(?:outcome-)?[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
 
 /**
  * The item ids call A picked, in order, known to the corpus. A reply cut off at its token limit is not valid JSON
  * (the first live run lost every answer that way), so ids are also recovered from the raw text.
  */
 export function pickedIds(text: string, corpus: FirmCorpus): string[] {
-  const known = new Set(corpus.items.map((item) => item.id));
+  const known = new Set([...corpus.items.map((item) => item.id), ...corpus.boards.filter((board) => board.outcome).map((board) => outcomeSourceId(board.id))]);
   const raw = parseJsonObject(text);
   const list = Array.isArray(raw["items"]) ? raw["items"] : [];
   const parsed = list.map((entry) => (typeof entry === "string" ? entry : entry && typeof entry === "object" ? (entry as Record<string, unknown>)["id"] : null));
@@ -120,6 +124,11 @@ export function pickedIds(text: string, corpus: FirmCorpus): string[] {
 async function readPicked(corpus: FirmCorpus, ids: readonly string[], loadText: FirmAskDeps["loadText"]): Promise<ReadSource[]> {
   const read: ReadSource[] = [];
   for (const id of ids.slice(0, FIRM_ASK_READ_MAX)) {
+    const board = corpus.boards.find((entry) => outcomeSourceId(entry.id) === id);
+    if (board?.outcome) {
+      read.push({ itemId: id, boardId: board.id, grade: "full", text: maskFees(board.outcome) });
+      continue;
+    }
     const item = corpus.items.find((entry) => entry.id === id)!;
     if (item.grade === "full") {
       const text = await loadText(id);

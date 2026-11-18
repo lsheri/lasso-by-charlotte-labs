@@ -45,6 +45,7 @@ export const FIRM_ASK_COPY = {
   keepOut: "Keep this out of firm answers",
   keptOut: "Kept out. It will not appear in firm answers.",
   close: "Close",
+  closeOut: "Close-out lesson",
 } as const;
 
 export const FIRM_ASK_STARTER_COPY: Record<FirmAskStarter, { label: string; stem: string }> = {
@@ -73,6 +74,7 @@ export const FIRM_TYPE_LABELS: Record<string, string> = {
   ai_thread: "AI chat",
   email: "Email",
   image: "Image",
+  outcome: "Close-out",
 };
 
 /** Any money figure, so the model never sees a fee: "$380k", "$380,000", "$45k/month", "$1.2M". */
@@ -155,9 +157,22 @@ export type FirmAskSource = {
 };
 
 /** Labels for the items read, from the corpus. */
+/**
+ * An engagement's close-out line (its outcome and lesson) as a source of its own, so a lesson can be picked and cited
+ * like an item. Not an item id, so it never opens an item preview.
+ */
+export function outcomeSourceId(boardId: string): string {
+  return `outcome-${boardId}`;
+}
+
 export function sourcesFor(corpus: FirmCorpus, itemIds: readonly string[]): Record<string, FirmAskSource> {
   const out: Record<string, FirmAskSource> = {};
   for (const id of itemIds) {
+    const closed = corpus.boards.find((entry) => outcomeSourceId(entry.id) === id);
+    if (closed) {
+      out[id] = { title: FIRM_ASK_COPY.closeOut, type: "outcome", date: null, boardId: closed.id, boardTitle: closed.title, shownOn: null };
+      continue;
+    }
     const item = corpus.items.find((entry) => entry.id === id);
     const board = item && corpus.boards.find((entry) => entry.id === item.boardId);
     if (!item || !board) continue;
