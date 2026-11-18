@@ -60,7 +60,8 @@ describe("TVj act 8 zoom and preview harness", () => {
   });
 
   it("scales act 8 by a visual transform without touching layout values", () => {
-    const css = readStyles();
+    // `beats:` notes explain an !important (18 Nov policy); the rules themselves are what these checks pin.
+    const css = readStyles().replace(/\/\* beats:[^*]*\*\/\s*/g, "");
     expect(css).toContain('.tour-persistent-board[data-act="8"] .tour-board-item {');
     expect(css).toContain("scale: var(--tour-zoom);");
     expect(css).toContain('.tour-persistent-board[data-act="8"] .tour-deck-overlay { top: 6% !important; left: 46% !important; width: 51% !important; }');
