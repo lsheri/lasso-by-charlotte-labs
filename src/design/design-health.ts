@@ -21,7 +21,11 @@ export type HealthCounts = {
   legacyNbReads: number;
   /** z-index: N in CSS and z-[N] in TSX. */
   literalZIndex: number;
-  /** !important in CSS. */
+  /**
+   * !important in CSS that has no stated reason. Reduced-motion and print blocks are the accepted use (a person's
+   * setting beats everything) and are not counted; nor is a rule that names what it overrides with a `beats:` comment
+   * (an inline style set by code, or a utility it must sit above). Everything else is debt.
+   */
   importantRules: number;
   /** Raw <select> in TSX outside src/components/ui. Use NativeSelect or Select. */
   nativeSelect: number;
@@ -56,6 +60,35 @@ function files(dir: string, out: string[] = []): string[] {
 
 const count = (text: string, re: RegExp) => text.match(re)?.length ?? 0;
 
+/**
+ * !important declarations outside reduced-motion and print blocks, in rules without a `beats:` comment. Walks the braces
+ * so nested @media and @layer blocks keep their context.
+ */
+export function unjustifiedImportant(css: string): number {
+  let total = 0;
+  const stack: string[] = [];
+  let preludeStart = 0;
+  for (let i = 0; i < css.length; i += 1) {
+    const ch = css[i];
+    if (ch === "/" && css[i + 1] === "*") {
+      const end = css.indexOf("*/", i + 2);
+      i = end < 0 ? css.length : end + 1;
+      continue;
+    }
+    if (ch === "{") {
+      stack.push(css.slice(preludeStart, i));
+      preludeStart = i + 1;
+    } else if (ch === "}") {
+      const prelude = stack.pop() ?? "";
+      const body = css.slice(preludeStart, i);
+      const exempt = stack.some((p) => /prefers-reduced-motion|\bprint\b/.test(p)) || /prefers-reduced-motion|\bprint\b/.test(prelude) || /\/\*\s*beats:/.test(body);
+      if (!exempt && !body.includes("{")) total += count(body.replace(/\/\*[\s\S]*?\*\//g, ""), /!important/g);
+      preludeStart = i + 1;
+    } else if (ch === ";" && stack.length === 0) preludeStart = i + 1;
+  }
+  return total;
+}
+
 export function measure(root = "src"): HealthCounts {
   const c: HealthCounts = {
     rawFontSize: 0,
@@ -84,7 +117,7 @@ export function measure(root = "src"): HealthCounts {
     const uses = css ? text.replace(/(^|[;{\s])--[a-z0-9-]+\s*:[^;{}]*;/g, "$1") : text;
     c.legacyNbReads += count(uses, /var\(--nb-[a-z0-9-]+/g);
     c.literalZIndex += count(text, css ? /z-index:\s*-?\d+/g : /\bz-\[-?\d+\]/g);
-    if (css) c.importantRules += count(text, /!important/g);
+    if (css) c.importantRules += unjustifiedImportant(text);
     if (!css) {
       const primitive = /src\/components\/ui\//.test(file.split(path.sep).join("/"));
       if (!primitive) {

@@ -545,8 +545,8 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 [data-testid="canvas-lab-shell"] .canvas-lab-stage [role="group"][data-node-id][data-read-only="false"] :is(input, textarea, [contenteditable="true"]) { user-select: text; -webkit-user-select: text; }
 .canvas-lab-card { cursor: grab; }
 /* HAND-1: with the hand on, every press on the board pans, so everything on it shows the hand. */
-.canvas-lab-surface[data-hand="true"], .canvas-lab-surface[data-hand="true"] [data-testid="canvas-lab-stage"] * { cursor: grab !important; }
-[data-testid="canvas-lab-shell"][data-interaction="pan"] .canvas-lab-surface[data-hand="true"], [data-testid="canvas-lab-shell"][data-interaction="pan"] .canvas-lab-surface[data-hand="true"] [data-testid="canvas-lab-stage"] * { cursor: grabbing !important; }
+.canvas-lab-surface[data-hand="true"], .canvas-lab-surface[data-hand="true"] [data-testid="canvas-lab-stage"] * { /* beats: the cursor-pointer in Button and card rules, while the hand tool pans */ cursor: grab !important; }
+[data-testid="canvas-lab-shell"][data-interaction="pan"] .canvas-lab-surface[data-hand="true"], [data-testid="canvas-lab-shell"][data-interaction="pan"] .canvas-lab-surface[data-hand="true"] [data-testid="canvas-lab-stage"] * { /* beats: the cursor-pointer in Button and card rules, while panning */ cursor: grabbing !important; }
 /* HAND-1: a sideways two-finger swipe on the board never turns into the browser's back or forward. */
 .canvas-lab-surface { overscroll-behavior-x: none; }
 html:has([data-testid="canvas-lab-shell"]), body:has([data-testid="canvas-lab-shell"]) { overscroll-behavior-x: none; }
@@ -732,7 +732,6 @@ html:has([data-testid="canvas-lab-shell"]), body:has([data-testid="canvas-lab-sh
   line-height: 15px;
   color: var(--foreground);
 }
-.canvas-lab-preview-footer { display: flex !important; }
 .canvas-lab-file-preview {
   position: relative;
   min-height: 0;
@@ -1032,7 +1031,7 @@ html:has([data-testid="canvas-lab-shell"]), body:has([data-testid="canvas-lab-sh
 .canvas-lab-section-menu svg { width: 16px; height: 16px; }
 .canvas-lab-section-title [data-testid="section-marker-line"] { display: var(--lab-section-marker-display, block); font-size: var(--type-body); font-family: var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--nb-mid); }
 .canvas-lab-section-menu[data-visible="false"] { visibility: hidden; }
-.canvas-lab-section .canvas-lab-resize-handle { pointer-events: auto; width: 8px !important; height: 8px !important; min-width: 0 !important; min-height: 0 !important; padding: 0 !important; border: 1.4px solid var(--handle, var(--nb-green)) !important; border-radius: var(--corner-mark) !important; background: var(--nb-paper) !important; }
+.canvas-lab-section .canvas-lab-resize-handle { /* beats: Button size="icon" variant="ghost" utilities (LabSection) */ pointer-events: auto; width: 8px !important; height: 8px !important; min-width: 0 !important; min-height: 0 !important; padding: 0 !important; border: 1.4px solid var(--handle, var(--nb-green)) !important; border-radius: var(--corner-mark) !important; background: var(--nb-paper) !important; }
 .canvas-lab-frame-fit { position: absolute; right: 4px; bottom: 4px; z-index: 14; width: 26px; height: 26px; min-height: 0; }
 .canvas-lab-frame-menu-trigger {
   position: absolute;
@@ -1435,8 +1434,8 @@ html:has([data-testid="canvas-lab-shell"]), body:has([data-testid="canvas-lab-sh
 .nb-tree-branch .nb-nav-item[data-tree-depth] > .nb-nav-indent { display: none; }
 /* !important: these sit in the nb layer, under the trigger's own opacity utilities. */
 @media (hover: hover) {
-  .lasso-sidebar-nav [data-row-menu]:not([data-state="open"]) { opacity: 0 !important; }
-  .lasso-sidebar-nav :is([data-drag-row], .nb-nav-shelf):is(:hover, :focus-within) [data-row-menu] { opacity: 1 !important; }
+  .lasso-sidebar-nav [data-row-menu]:not([data-state="open"]) { /* beats: the trigger's opacity-60 and hover:opacity-100 utilities (SidebarItemMenu) */ opacity: 0 !important; }
+  .lasso-sidebar-nav :is([data-drag-row], .nb-nav-shelf):is(:hover, :focus-within) [data-row-menu] { /* beats: the trigger's opacity-60 and hover:opacity-100 utilities (SidebarItemMenu) */ opacity: 1 !important; }
 }
 /* A board its owner shares live with their firm: a quiet mark, still their board (Liam, 15 Nov). */
 .nb-shared-up { color: var(--nb-soft); }

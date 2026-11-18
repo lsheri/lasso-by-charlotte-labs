@@ -714,7 +714,7 @@ body:has([data-lasso="on"]) [data-sonner-toaster] {
 [data-lasso="on"] .canvas-lab-stage[data-board-hue="7"] { --board-hue-ink: var(--board-hue-7-ink); --board-hue-wash: var(--board-hue-7-wash); }
 [data-lasso="on"] .canvas-lab-stage[data-board-hue] { --region-radius: 4px; }
 /* Override the legacy frame's inline fill only on drawn regions. */
-[data-lasso="on"] .canvas-lab-stage[data-board-hue] > .canvas-lab-frame[data-region] {
+[data-lasso="on"] .canvas-lab-stage[data-board-hue] > .canvas-lab-frame[data-region] { /* beats: inline background and borderColor from a frame's saved fill (LabFrame) */
   border: 1.4px solid var(--board-hue-ink) !important;
   border-radius: var(--region-radius);
   background: var(--board-hue-wash) !important;
@@ -1166,21 +1166,21 @@ to { transform: translateX(98px); }
      tour asks you to group kept in the first two rows so they are reachable
      without scrolling. Act 8 keeps its own treatment. */
   [data-lasso="on"] .tour-persistent-board:not([data-act="8"]) { overflow-y: auto; overflow-x: hidden; }
-  [data-lasso="on"] .tour-persistent-board:not([data-act="8"]) .tour-board-item {
+  [data-lasso="on"] .tour-persistent-board:not([data-act="8"]) .tour-board-item { /* beats: inline itemStyle (TourBoard) */
     transform: none;
     width: 45% !important;
   }
-  [data-lasso="on"] .tour-persistent-board:not([data-act="8"]) .tour-board-item[data-tour-layout-id="primary-0"] { top: 2% !important; left: 3% !important; }
-  [data-lasso="on"] .tour-persistent-board:not([data-act="8"]) .tour-board-item[data-tour-layout-id="primary-1"] { top: 2% !important; left: 52% !important; }
-  [data-lasso="on"] .tour-persistent-board:not([data-act="8"]) .tour-board-item[data-tour-layout-id="primary-2"] { top: 50% !important; left: 3% !important; }
-  [data-lasso="on"] .tour-persistent-board:not([data-act="8"]) .tour-board-item[data-tour-layout-id="primary-3"] { top: 50% !important; left: 52% !important; }
-  [data-lasso="on"] .tour-persistent-board:not([data-act="8"]) .tour-board-item[data-tour-layout-id="chat-0"] { top: 98% !important; left: 3% !important; }
-  [data-lasso="on"] .tour-persistent-board:not([data-act="8"]) .tour-board-item[data-tour-layout-id="chat-1"] { top: 98% !important; left: 52% !important; }
-  [data-lasso="on"] .tour-persistent-board:not([data-act="8"]) .tour-board-item[data-tour-layout-id="whiteboard"] { top: 146% !important; left: 3% !important; }
-  [data-lasso="on"] .tour-persistent-board:not([data-act="8"]) .tour-board-item[data-tour-layout-id="deck"] { top: 146% !important; left: 52% !important; }
-  [data-lasso="on"] .tour-persistent-board:not([data-act="8"]) .tour-board-item[data-tour-layout-id="artifact"] { top: 194% !important; left: 3% !important; }
-  [data-lasso="on"] .tour-persistent-board:not([data-act="8"]) .tour-board-item[data-tour-layout-id="deliverable"] { top: 194% !important; left: 52% !important; }
-  [data-lasso="on"] .tour-persistent-board:not([data-act="8"]) .tour-board-item[data-tour-layout-id="answer"] { top: 242% !important; left: 3% !important; width: 94% !important; }
+  [data-lasso="on"] .tour-persistent-board:not([data-act="8"]) .tour-board-item[data-tour-layout-id="primary-0"] { /* beats: inline itemStyle (TourBoard) */ top: 2% !important; left: 3% !important; }
+  [data-lasso="on"] .tour-persistent-board:not([data-act="8"]) .tour-board-item[data-tour-layout-id="primary-1"] { /* beats: inline itemStyle (TourBoard) */ top: 2% !important; left: 52% !important; }
+  [data-lasso="on"] .tour-persistent-board:not([data-act="8"]) .tour-board-item[data-tour-layout-id="primary-2"] { /* beats: inline itemStyle (TourBoard) */ top: 50% !important; left: 3% !important; }
+  [data-lasso="on"] .tour-persistent-board:not([data-act="8"]) .tour-board-item[data-tour-layout-id="primary-3"] { /* beats: inline itemStyle (TourBoard) */ top: 50% !important; left: 52% !important; }
+  [data-lasso="on"] .tour-persistent-board:not([data-act="8"]) .tour-board-item[data-tour-layout-id="chat-0"] { /* beats: inline itemStyle (TourBoard) */ top: 98% !important; left: 3% !important; }
+  [data-lasso="on"] .tour-persistent-board:not([data-act="8"]) .tour-board-item[data-tour-layout-id="chat-1"] { /* beats: inline itemStyle (TourBoard) */ top: 98% !important; left: 52% !important; }
+  [data-lasso="on"] .tour-persistent-board:not([data-act="8"]) .tour-board-item[data-tour-layout-id="whiteboard"] { /* beats: inline itemStyle (TourBoard) */ top: 146% !important; left: 3% !important; }
+  [data-lasso="on"] .tour-persistent-board:not([data-act="8"]) .tour-board-item[data-tour-layout-id="deck"] { /* beats: inline itemStyle (TourBoard) */ top: 146% !important; left: 52% !important; }
+  [data-lasso="on"] .tour-persistent-board:not([data-act="8"]) .tour-board-item[data-tour-layout-id="artifact"] { /* beats: inline itemStyle (TourBoard) */ top: 194% !important; left: 3% !important; }
+  [data-lasso="on"] .tour-persistent-board:not([data-act="8"]) .tour-board-item[data-tour-layout-id="deliverable"] { /* beats: inline itemStyle (TourBoard) */ top: 194% !important; left: 52% !important; }
+  [data-lasso="on"] .tour-persistent-board:not([data-act="8"]) .tour-board-item[data-tour-layout-id="answer"] { /* beats: inline itemStyle (TourBoard) */ top: 242% !important; left: 3% !important; width: 94% !important; }
   [data-lasso="on"] .tour-persistent-board:not([data-act="8"]) .tour-reserved-slot { top: 2% !important; left: 3% !important; width: 45% !important; }
 
   /* The scattered decorations assume a wide board and only collide at 390. */
@@ -1371,10 +1371,10 @@ body:has(.lasso-decisions-ledger) .canvas-lab-undo-toast { position: fixed; z-in
 /* TOOLBAR-6: one plane; historical group styles remain for non-toolbar consumers. */
 [data-lasso="on"] .canvas-lab-floating-tools button:not([data-toolbar-control="add-work"]):not([data-toolbar-control="ask"]):not(.face-segment) {
   width: 36px; height: 36px; min-width: 36px; min-height: 36px; padding: 0;
-  background: transparent !important; color: var(--text-primary); border: 0; border-radius: var(--radius-md-new);
+  background: transparent; color: var(--text-primary); border: 0; border-radius: var(--radius-md-new);
   box-shadow: none; transform: none; transition: background var(--dur-quick) var(--ease-standard);
 }
-[data-lasso="on"] .canvas-lab-floating-tools button:not([data-toolbar-control="add-work"]):not([data-toolbar-control="ask"]):not(.face-segment):hover:not(:disabled) { background: var(--surface-sunk-2) !important; transform: none; box-shadow: none; }
+[data-lasso="on"] .canvas-lab-floating-tools button:not([data-toolbar-control="add-work"]):not([data-toolbar-control="ask"]):not(.face-segment):hover:not(:disabled) { background: var(--surface-sunk-2); transform: none; box-shadow: none; }
 [data-lasso="on"] .canvas-lab-floating-tools button:focus-visible { outline: 2px solid var(--focus-ring-new); outline-offset: 2px; }
 [data-lasso="on"] .canvas-lab-floating-tools button:disabled { opacity: .45; cursor: not-allowed; }
 /* TOOLBAR-7: the card face toggle is the one bar control allowed a container: one control, two states. */
@@ -1386,7 +1386,7 @@ body:has(.lasso-decisions-ledger) .canvas-lab-undo-toast { position: fixed; z-in
 [data-lasso="on"] .canvas-lab-floating-tools .face-segmented button.face-segment[aria-pressed="true"]:hover:not(:disabled) { background: var(--nb-graphite); color: var(--nb-paper); border-color: transparent; }
 [data-lasso="on"] .canvas-lab-floating-tools .face-segmented button.face-segment > svg { width: 16px; height: 16px; flex-shrink: 0; }
 [data-lasso="on"] .canvas-lab-floating-tools .face-segment-word { display: none; }
-[data-lasso="on"] .canvas-lab-floating-tools button:is([data-toolbar-control="grouping"], [data-toolbar-control="section"])[aria-pressed="true"] { background: var(--hand-live) !important; border: 1px solid var(--nb-graphite); color: var(--nb-ink); }
+[data-lasso="on"] .canvas-lab-floating-tools button:is([data-toolbar-control="grouping"], [data-toolbar-control="section"])[aria-pressed="true"] { background: var(--hand-live); border: 1px solid var(--nb-graphite); color: var(--nb-ink); }
 [data-lasso="on"] .canvas-lab-floating-tools button[data-toolbar-control="ask"] { width: 124px; min-width: 124px; height: 36px; min-height: 36px; padding-inline: 8px; gap: 8px; border-radius: var(--radius-md-new); }
 [data-lasso="on"] .canvas-lab-floating-tools button[data-toolbar-control="add-work"] { width: 106px; min-width: 106px; height: 36px; min-height: 36px; }
 [data-lasso="on"] .canvas-lab-floating-tools button:not([data-toolbar-control="ask"]):not(.face-segment) > svg { width: 20px; height: 20px; max-width: 20px; max-height: 20px; }

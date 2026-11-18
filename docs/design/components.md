@@ -19,7 +19,7 @@ The checklist for any new or changed component in the app. It keeps a reskin che
 | `chipVariants` / `tagVariants` combined with `cn()` | `rounded-full … font-mono … uppercase` written out |
 | `NativeSelect` for short fixed choices, `Select` for rich option rows | A raw `<select>` |
 | `GraphiteIcon` | A new Lucide import |
-| Plain CSS specificity | `!important` |
+| Plain CSS specificity; for an inline style set by code or a utility a rule must sit above, `!important` with a `/* beats: <what> (<component>) */` note inside the rule | Unexplained `!important` |
 
 - **Own file.** A board control or dialog goes in its own component file, never inline in `CanvasLabPage`, because nothing renders that page in tests (AGENTS.md).
 - **Props in, effects out.** Keep data loading and server calls at the edge (a hook, or the dialog's own server functions) and pass plain values in, so the component can be rendered in a test and a story.
@@ -45,7 +45,7 @@ The checklist for any new or changed component in the app. It keeps a reskin che
 | `hexInComponents` | Colour literals in TS and TSX |
 | `legacyNbReads` | `var(--nb-*)` uses outside the token files |
 | `literalZIndex` | `z-index: N` and `z-[N]` |
-| `importantRules` | `!important` in CSS |
+| `importantRules` | `!important` outside reduced-motion and print blocks, in rules with no `beats:` note |
 | `nativeSelect` | A raw `<select>` outside `src/components/ui` |
 | `handPills` | A class string outside `src/components/ui` with `rounded-full`, `font-mono` and `uppercase` |
 | `lucideFiles` | Files importing `lucide-react` |

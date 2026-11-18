@@ -64,7 +64,8 @@ Goal (Liam, 17 Nov): "as design healthy as can be and durable for switching thin
 | #214 | G7, G13 | Component checklist (`docs/design/components.md`); `NativeSelect` primitive; three new ratchet counts: raw `<select>` (18), hand-built mono pills (9), Lucide files (92) | No (the How it ended dialog's selects move to NativeSelect: same size, token focus border) |
 | #215 | G2 | Reskin guardrail: a proof skin that never ships and a live audit that renders 11 screens under it and fails on any element that keeps Charlotte's colour, border or font (ceiling 0, canary-checked). Fixes it found: fonts were fixed at <body> and dialog mono labels never re-pointed, so type could not reskin; the dialog backdrop, --color-border and the scrim were worked out at :root and inherited frozen. New ratchets: skin-name branches (8), CSS colour literals (42) | Dialog mono labels now use Martian Mono (Charlotte's mono, as the skin always meant); the dialog backdrop takes Charlotte's navy at the same 28% |
 | #216 | G2 | Brand layer: each brand names its drawn assets (mark, glyphs, kind icons, legacy default) in brand.ts; skin-name branches 8 to 0 | No |
-| (this PR) | G11 | The last 42 colour literals in styles/*.css (shadows, sticky-note paper and inks, notes and highlights, a drop wash, the demo sandbox) move into named tokens in tokens.css with identical values; ceiling 0 | No (identical values) |
+| #217 | G11 | The last 42 colour literals in styles/*.css (shadows, sticky-note paper and inks, notes and highlights, a drop wash, the demo sandbox) move into named tokens in tokens.css with identical values; ceiling 0 | No (identical values) |
+| (this PR) | G9 | `!important` policy: reduced-motion and print overrides are correct practice and stop counting (86); a rule that must beat an inline style set by code or a utility above its layer says so in a `/* beats: ... */` note, each one checked against the markup (36 tour rules beat `itemStyle`, board-hue frames beat `LabFrame`'s saved fill, the hand cursor and section handles beat Button utilities, the sidebar row menu beats its opacity utilities). Three toolbar rules lost an unneeded `!important` (computed toolbar styles identical before and after, normal and hover); one dead rule deleted. Unexplained count 215 to 29 | No |
 
 Every PR was checked against main with the full test suite, lint, and the design-baseline screenshots (26 screens, Charlotte, desktop and phone), and has a row in `DESIGN-DECISIONS.md`.
 
@@ -80,7 +81,7 @@ Charlotte skin size (custom properties it declares): 230 on 17 Nov, 160 after G2
 | Hex in components | 76 | 54 |
 | `var(--nb-*)` uses | 1653 | 1559 (rule corrected in G2 part 2: token declarations no longer counted) |
 | Literal z-index | 183 | 170 |
-| `!important` | 215 | 215 |
+| `!important` (unexplained; reduced-motion, print and `beats:` rules not counted from 18 Nov) | 215 | 29 |
 | Raw `<select>` outside ui (added 18 Nov) | 18 | 18 |
 | Hand-built mono pills outside ui (added 18 Nov) | 9 | 9 |
 | Files importing Lucide (added 18 Nov) | 92 | 92 |
@@ -95,6 +96,13 @@ The audit's own 16 Nov figures used a different counting script: 810 raw font si
 - Tour, demo, landing and onboarding type: fixed-height layouts clip when type grows (seen in #174). The tour is hidden from users for now.
 - Sizes above 28px (headlines) and under 8px (miniature thumbnails).
 - `src/design/reference`: mirrored byte for byte in Magic Patterns, so changes need that copy updated too.
+
+## `!important` still to explain or remove (29)
+
+- Public landing phone layout, `05-motion-and-public-pages.css` around lines 1233 to 1339 (21): each needs checking against the landing's own rules before it is removed or noted.
+- Demo phone layout, `.demo-play-group` in `02-icons-board-sidebar.css` (4).
+- App: bundled-piece card paper, `.nb-turn-lit` and `.nb-turn-proof-range` borders, `.is-skipped` animation, the board-hue region title colour (5).
+- Tour reserved slot in `06-lasso-shell.css` (3).
 
 ## Open checks
 

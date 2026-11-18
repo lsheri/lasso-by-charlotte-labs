@@ -3,7 +3,8 @@ import { describe, expect, it } from "vitest";
 import { readStyles } from "@/design/stylesheet";
 
 const page = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
-const css = readStyles();
+// `beats:` notes explain an !important (18 Nov policy); the rules themselves are what these checks pin.
+const css = readStyles().replace(/\/\* beats:[^*]*\*\/\s*/g, "");
 
 describe("HAND-1: the hand tool", () => {
   it("is a toggle in the toolbar's view group, kept until clicked again, and in the overflow menu", () => {
