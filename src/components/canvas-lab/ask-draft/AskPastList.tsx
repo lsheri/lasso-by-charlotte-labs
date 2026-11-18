@@ -1,4 +1,4 @@
-import { Pin, X } from "lucide-react";
+import { Pin, X } from "@/design/brand/icons";
 
 import type { AskLasso } from "@/components/reflect/use-ask-lasso";
 import { NbDots } from "@/components/reflect/AskSurface";

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown } from "@/design/brand/icons";
 
 import { ImportFlowDialog } from "@/components/work/import/ImportFlowDialog";
 import { Button } from "@/components/ui/button";

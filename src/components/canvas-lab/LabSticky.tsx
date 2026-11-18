@@ -16,7 +16,7 @@ import {
 import { RichTextView } from "@/components/rich-text/RichTextView";
 import { plainToRichHtml } from "@/lib/rich-text";
 import { stickyClickTypes, stickyStartsEditing, stickyTriggerEntersEdit } from "@/lib/card-click";
-import { Link2, Trash2 } from "lucide-react";
+import { Link2, Trash2 } from "@/design/brand/icons";
 
 const RichTextEditor = lazy(() => import("@/components/rich-text/RichTextEditor"));
 

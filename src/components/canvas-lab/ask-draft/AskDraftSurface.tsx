@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, useLayoutEffect, useRef, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type RefObject } from "react";
 import { displayName } from "@/lib/work-item-name";
 import { createPortal } from "react-dom";
-import { ChevronsDownUp, ChevronsUpDown, History, Pin, X } from "lucide-react";
+import { ChevronsDownUp, ChevronsUpDown, History, Pin, X } from "@/design/brand/icons";
 
 import { AskSurface } from "@/components/reflect/AskSurface";
 import type { AskLasso } from "@/components/reflect/use-ask-lasso";

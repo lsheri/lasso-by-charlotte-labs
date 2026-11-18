@@ -12,7 +12,7 @@
 import { useServerFn } from "@tanstack/react-start";
 import { isToolRole } from "@/lib/tool-steps";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, X } from "@/design/brand/icons";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { ChatUrlLink } from "@/components/work/ChatUrlLink";

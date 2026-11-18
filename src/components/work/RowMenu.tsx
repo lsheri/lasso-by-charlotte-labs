@@ -1,4 +1,4 @@
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal } from "@/design/brand/icons";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 

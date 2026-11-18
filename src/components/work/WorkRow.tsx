@@ -1,5 +1,5 @@
 import { displayName } from "@/lib/work-item-name";
-import { Lock } from "lucide-react";
+import { Lock } from "@/design/brand/icons";
 
 import { REFERENCE_INBOX_STATUS } from "@/lib/reference-file-shared";
 import { engagementDisplayTitle } from "@/lib/clients";

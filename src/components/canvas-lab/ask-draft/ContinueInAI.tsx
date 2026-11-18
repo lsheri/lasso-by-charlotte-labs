@@ -1,7 +1,7 @@
 import { openInNewTab } from "@/lib/open-tab";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight } from "@/design/brand/icons";
 
 import { BrandLogo } from "@/components/connectors/BrandLogo";
 import { useBrandCopy } from "@/components/skin/use-skin";

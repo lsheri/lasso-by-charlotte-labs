@@ -1,5 +1,5 @@
 import { stableMemo } from "@/components/canvas-lab/stable-memo";
-import { ChevronDown, ChevronUp, MoreHorizontal, Pin } from "lucide-react";
+import { ChevronDown, ChevronUp, MoreHorizontal, Pin } from "@/design/brand/icons";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { RichTextView } from "@/components/rich-text/RichTextView";
 import { plainToRichHtml } from "@/lib/rich-text";

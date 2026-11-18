@@ -2,7 +2,7 @@ import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { LoaderCircle } from "lucide-react";
+import { LoaderCircle } from "@/design/brand/icons";
 import type { StructureSourceKind, SuggestedStructure } from "@/lib/structure-suggest-shared";
 import { useBrandCopy } from "@/components/skin/use-skin";
 

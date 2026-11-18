@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, Pencil } from "lucide-react";
+import { ChevronDown, Pencil } from "@/design/brand/icons";
 
 import { EditEngagementDialog } from "@/components/engagements/EditEngagementDialog";
 import { EngagementBriefSection } from "@/components/engagements/EngagementBriefSection";

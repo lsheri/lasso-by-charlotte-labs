@@ -19,7 +19,7 @@ import {
   Table2,
   Video,
   type LucideIcon,
-} from "lucide-react";
+} from "@/design/brand/icons";
 
 import {
   LIFT_MORPH_MS,

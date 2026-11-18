@@ -1,5 +1,5 @@
 import { displayName } from "@/lib/work-item-name";
-import { ExternalLink, FileText, Lock } from "lucide-react";
+import { ExternalLink, FileText, Lock } from "@/design/brand/icons";
 
 import { WorkboardFilePreview as FilePreview } from "@/components/canvas-lab/WorkboardFilePreview";
 import { BrandLogo, brandHex, brandLabel } from "@/components/connectors/BrandLogo";

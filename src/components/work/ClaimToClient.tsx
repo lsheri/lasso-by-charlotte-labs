@@ -1,4 +1,4 @@
-import { Check } from "lucide-react";
+import { Check } from "@/design/brand/icons";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";

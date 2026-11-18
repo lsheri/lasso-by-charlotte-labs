@@ -24,6 +24,8 @@ export type BrandLook = {
   glyphs: "graphite" | "exhibit";
   /** Work-kind icons: Lucide, or the Exhibit kind glyphs. */
   kindIcons: "lucide" | "exhibit";
+  /** The icon set src/design/brand/icons.tsx draws from. Lucide is the base set; a brand can add its own there. */
+  icons: "lucide";
   /** The original default: no data-skin attribute on <html> and route heads left exactly as written. */
   legacyDefault: boolean;
 };
@@ -33,13 +35,13 @@ export const BRANDS: Record<Skin, Brand> = {
     name: "Lasso",
     wordmark: "LASSO",
     askLabel: "Ask Lasso",
-    look: { mark: "loop", glyphs: "graphite", kindIcons: "lucide", legacyDefault: true },
+    look: { mark: "loop", glyphs: "graphite", kindIcons: "lucide", icons: "lucide", legacyDefault: true },
   },
   charlotte: {
     name: "Charlotte",
     wordmark: "CHARLOTTE",
     askLabel: "Charlotte",
-    look: { mark: "charlotte", glyphs: "exhibit", kindIcons: "exhibit", legacyDefault: false },
+    look: { mark: "charlotte", glyphs: "exhibit", kindIcons: "exhibit", icons: "lucide", legacyDefault: false },
   },
 };
 

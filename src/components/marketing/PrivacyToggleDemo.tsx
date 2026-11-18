@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { CheckCircle2, FileText, Lock, MessageSquare, Table2 } from "lucide-react";
+import { CheckCircle2, FileText, Lock, MessageSquare, Table2 } from "@/design/brand/icons";
 
 import { hueStyles } from "@/lib/work-identity";
 

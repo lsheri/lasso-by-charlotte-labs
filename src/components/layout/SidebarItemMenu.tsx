@@ -1,5 +1,5 @@
 import { clientsEnabled } from "@/lib/workspace-settings";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal } from "@/design/brand/icons";
 import { useMemo, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 

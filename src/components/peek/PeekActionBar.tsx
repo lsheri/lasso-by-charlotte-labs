@@ -1,4 +1,4 @@
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal } from "@/design/brand/icons";
 
 import { PencilHatch } from "@/components/notebook/marks";
 import { useDraftDecisions } from "@/components/decisions/DraftDecisionsButton";

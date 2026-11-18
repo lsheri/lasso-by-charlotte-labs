@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { SharedWithSection, WhatGoesUpSection, WhatStaysPutSection, useSharedBoards } from "@/pages/AffiliationPage";
 import { toast } from "sonner";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal } from "@/design/brand/icons";
 
 import { Button } from "@/components/ui/button";
 import {

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Pencil } from "lucide-react";
+import { Pencil } from "@/design/brand/icons";
 import { toast } from "sonner";
 
 import { Input } from "@/components/ui/input";

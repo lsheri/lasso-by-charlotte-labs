@@ -1,4 +1,4 @@
-import { X } from "lucide-react";
+import { X } from "@/design/brand/icons";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 

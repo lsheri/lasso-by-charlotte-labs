@@ -1,4 +1,4 @@
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal } from "@/design/brand/icons";
 import { RED_PEN_COPY } from "@/lib/red-pen-shared";
 import { SOW_TERMS_COPY } from "@/lib/sow-terms-shared";
 

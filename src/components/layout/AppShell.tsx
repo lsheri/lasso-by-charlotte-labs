@@ -1,5 +1,5 @@
 import { Outlet, useNavigate } from "@tanstack/react-router";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare } from "@/design/brand/icons";
 import { useEffect } from "react";
 
 import { setClientTelemetryOrg } from "@/lib/client-telemetry";
