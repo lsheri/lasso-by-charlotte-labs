@@ -922,7 +922,7 @@ export function EngagementCanvasView({
       <div
         ref={scrollRef}
         tabIndex={0}
-        className="overflow-auto rounded-[6px] border border-[var(--nb-rule)]"
+        className="overflow-auto rounded-(--corner-control) border border-[var(--nb-rule)]"
         onKeyDown={(event) => {
           if (event.key === "+" || event.key === "=") {
             event.preventDefault();
@@ -1154,7 +1154,7 @@ export function EngagementCanvasView({
         </div>
       </div>
         {/* Quiet view controls, floating over the paper, out of the scroll flow. */}
-        <div className="absolute bottom-3 right-3 z-20 flex items-center gap-1 rounded-[6px] border border-[var(--nb-rule)] bg-card px-1 py-1 shadow-[var(--shadow-card)]">
+        <div className="absolute bottom-3 right-3 z-20 flex items-center gap-1 rounded-(--corner-control) border border-[var(--nb-rule)] bg-card px-1 py-1 shadow-[var(--shadow-card)]">
           <Button
             size="sm"
             variant="ghost"

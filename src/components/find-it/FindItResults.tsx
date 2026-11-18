@@ -283,8 +283,8 @@ export function FindItNode({ candidate, selected = false, status = "draft", expa
   const rationale = link.rationale ?? (link.quote ? "this sentence is in both" : "the work is connected");
   return (
     <DimmedDisabled dimmed={status === "discarded"} disabled={false}>
-    <div data-testid={expanded ? "find-it-detail" : "find-it-node"} data-selected={selected ? "true" : "false"} data-strength={strength} className={`nb-card-surface group/node relative rounded-[6px] bg-card shadow-none ${selected ? "shadow-[2px_2px_0_var(--nb-pencil)]" : ""} ${className}`}>
-      <Button type="button" variant="ghost" onClick={onSelect} className={`w-full justify-start whitespace-normal rounded-[6px] px-3 text-left hover:bg-card ${expanded ? "h-auto min-h-[62px] py-3" : "h-[56px] py-2"}`}>
+    <div data-testid={expanded ? "find-it-detail" : "find-it-node"} data-selected={selected ? "true" : "false"} data-strength={strength} className={`nb-card-surface group/node relative rounded-(--corner-control) bg-card shadow-none ${selected ? "shadow-[2px_2px_0_var(--nb-pencil)]" : ""} ${className}`}>
+      <Button type="button" variant="ghost" onClick={onSelect} className={`w-full justify-start whitespace-normal rounded-(--corner-control) px-3 text-left hover:bg-card ${expanded ? "h-auto min-h-[62px] py-3" : "h-[56px] py-2"}`}>
         <span className="relative min-w-0 flex-1">
           <span className="micro-label block">CONVERSATION</span>
           <span className="mt-0.5 block truncate text-(length:--type-body) font-normal text-foreground">{candidateLine(item)}</span>
@@ -503,14 +503,14 @@ export function FindItResults({ phase, target, parent, scope, candidates, review
     <section data-testid="find-it-canvas" data-phase={phase} className="find-it-canvas grid h-dvh min-h-0 snap-start grid-rows-[48px_minmax(0,1fr)] overflow-hidden bg-background" aria-label="Find it canvas">
       <header className="flex min-w-0 items-center gap-2 px-1 md:px-3">
         <h2 className="shrink-0 font-serif text-(length:--type-display) leading-none text-foreground">Find it</h2>
-        <span className="flex min-w-0 items-center gap-1.5 rounded-[6px] border border-hairline bg-card px-2 py-1 nb-type-small text-foreground"><SourceMark item={target} size={12} /><span className="truncate">{target.title}</span></span>
-        <span className="hidden shrink-0 rounded-[6px] border border-hairline px-2 py-1 nb-type-small text-muted-foreground sm:inline">{scope === "engagement" ? "This workboard" : "Everything I have"}</span>
+        <span className="flex min-w-0 items-center gap-1.5 rounded-(--corner-control) border border-hairline bg-card px-2 py-1 nb-type-small text-foreground"><SourceMark item={target} size={12} /><span className="truncate">{target.title}</span></span>
+        <span className="hidden shrink-0 rounded-(--corner-control) border border-hairline px-2 py-1 nb-type-small text-muted-foreground sm:inline">{scope === "engagement" ? "This workboard" : "Everything I have"}</span>
         <Button type="button" variant="ghost" size="sm" className="ml-auto shrink-0" onClick={onChooseTarget}>Choose something else</Button>
       </header>
 
       <div className="min-h-0 p-1 md:p-3">
         <div ref={stageShellRef} className="find-it-stage-shell relative hidden w-full overflow-hidden md:block" style={{ ["--stage-scale" as string]: String(stageMetrics.scale), ["--stage-left" as string]: `${stageMetrics.left}px` } as CanvasStyle}>
-         <div className="find-it-stage absolute left-0 top-0 overflow-hidden rounded-[8px] border border-hairline bg-background">
+         <div className="find-it-stage absolute left-0 top-0 overflow-hidden rounded-(--corner-panel) border border-hairline bg-background">
           <TargetCard target={target} parent={parent} phase={phase} />
           {phase === "reading" ? (
             <>
@@ -563,7 +563,7 @@ export function FindItResults({ phase, target, parent, scope, candidates, review
         </div>
       </div>
 
-      {mobileDetailOpen && selected && phase === "settled" ? <div className="fixed inset-0 z-50 flex items-end bg-foreground/20 md:hidden" role="dialog" aria-modal="true" aria-label="Source detail"><Button type="button" variant="ghost" className="absolute inset-0 h-full w-full rounded-none" aria-label="Close source detail" onClick={() => setMobileDetailOpen(false)} /><div className="relative z-10 max-h-[78dvh] w-full overflow-y-auto rounded-t-[8px] border border-hairline bg-background p-5 shadow-[var(--shadow-modal)]"><FindItNode candidate={selected} selected expanded status={statusOf(selected, reviewed)} onKeep={() => act("confirmed")} onReject={() => act("discarded")} onOpen={selected.item ? () => onOpenThread(selected.item?.id ?? "", selected.link.quote ? { turnNo: selected.link.quote.turn_no, text: selected.link.quote.text } : undefined) : null} /></div></div> : null}
+      {mobileDetailOpen && selected && phase === "settled" ? <div className="fixed inset-0 z-50 flex items-end bg-foreground/20 md:hidden" role="dialog" aria-modal="true" aria-label="Source detail"><Button type="button" variant="ghost" className="absolute inset-0 h-full w-full rounded-none" aria-label="Close source detail" onClick={() => setMobileDetailOpen(false)} /><div className="relative z-10 max-h-[78dvh] w-full overflow-y-auto rounded-t-(--corner-panel) border border-hairline bg-background p-5 shadow-[var(--shadow-modal)]"><FindItNode candidate={selected} selected expanded status={statusOf(selected, reviewed)} onKeep={() => act("confirmed")} onReject={() => act("discarded")} onOpen={selected.item ? () => onOpenThread(selected.item?.id ?? "", selected.link.quote ? { turnNo: selected.link.quote.turn_no, text: selected.link.quote.text } : undefined) : null} /></div></div> : null}
     </section>
   );
 }

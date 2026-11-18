@@ -94,8 +94,8 @@ function isTraceable(item: WorkItemRow): boolean {
 
 function chipClass(active: boolean): string {
   return active
-    ? "rounded-[6px] border border-[var(--nb-yellow-edge)] bg-[var(--nb-yellow-wash)] px-3 py-1.5 text-(length:--type-body) text-foreground"
-    : "rounded-[6px] border border-hairline bg-card px-3 py-1.5 text-(length:--type-body) text-muted-foreground";
+    ? "rounded-(--corner-control) border border-[var(--nb-yellow-edge)] bg-[var(--nb-yellow-wash)] px-3 py-1.5 text-(length:--type-body) text-foreground"
+    : "rounded-(--corner-control) border border-hairline bg-card px-3 py-1.5 text-(length:--type-body) text-muted-foreground";
 }
 
 /** The words are shown back exactly as they were found, never reworded. */
@@ -426,7 +426,7 @@ export function FindItPage() {
                       event.preventDefault();
                       void onDrop(Array.from(event.dataTransfer.files));
                     }}
-                    className="mt-3 grid min-h-[140px] place-items-center rounded-[8px] border border-dashed border-pencil bg-card px-6 py-8 text-center"
+                    className="mt-3 grid min-h-[140px] place-items-center rounded-(--corner-panel) border border-dashed border-pencil bg-card px-6 py-8 text-center"
                   >
                     <div>
                       <p className="text-sm text-muted-foreground">
@@ -591,7 +591,7 @@ export function FindItPage() {
                         {searchHits.deliverables.map((item) => (
                           <span
                             key={item.work_item_id}
-                            className="rounded-[6px] border border-hairline bg-card px-3 py-1.5 text-(length:--type-body) text-foreground"
+                            className="rounded-(--corner-control) border border-hairline bg-card px-3 py-1.5 text-(length:--type-body) text-foreground"
                           >
                             {displayName(item)}
                           </span>

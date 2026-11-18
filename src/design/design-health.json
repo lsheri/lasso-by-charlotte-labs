@@ -1,7 +1,7 @@
 {
   "_note": "Ceilings for design-health.test.ts. Lower a number in the same change that reduces it; never raise one without a DESIGN-DECISIONS row.",
   "rawFontSize": 249,
-  "rawRadius": 437,
+  "rawRadius": 349,
   "hexInComponents": 76,
   "legacyNbReads": 1653,
   "literalZIndex": 183,

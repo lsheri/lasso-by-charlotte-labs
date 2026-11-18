@@ -310,7 +310,7 @@
   width:4px;
   height:14px;
   margin-inline:6px;
-  border-radius:2px;
+  border-radius:var(--corner-mark);
   background:var(--board-hue-ink, var(--board-hue-0-ink));
 }
 [data-skin="charlotte"] [data-lasso="on"] .lasso-sidebar-nav .nb-nav-item[data-board-hue] > svg[data-icon="workboard"] path { display:none; }

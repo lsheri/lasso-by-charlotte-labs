@@ -36,7 +36,7 @@ export function ContextCard({
     <aside
       data-context-card
       className={cn(
-        "relative w-full rounded-[3px] border border-[var(--nb-rule)] bg-[var(--nb-white)] p-[13px_14px] shadow-[0_3px_6px_-3px_rgb(22_24_26_/_0.2)]",
+        "relative w-full rounded-(--corner-card) border border-[var(--nb-rule)] bg-[var(--nb-white)] p-[13px_14px] shadow-[0_3px_6px_-3px_rgb(22_24_26_/_0.2)]",
         panelOpen && "rounded-b-none border-b-0",
       )}
     >

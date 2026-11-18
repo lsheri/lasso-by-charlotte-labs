@@ -30,7 +30,7 @@ export function ChatShimmer({ count = 8 }: { count?: number }) {
       {Array.from({ length: count }, (_, index) => (
         <span
           key={index}
-          className="nb-chat-shimmer block h-[54px] w-[74px] rounded-[6px] border border-pencil bg-card"
+          className="nb-chat-shimmer block h-[54px] w-[74px] rounded-(--corner-control) border border-pencil bg-card"
           style={shimmerStyle(index)}
         />
       ))}

@@ -280,7 +280,7 @@ function LabImageInner({ node, selected, layoutEditable, onSelect, onContextSele
   const copy = isVideo ? BOARD_VIDEO_COPY : BOARD_IMAGE_COPY;
   const style = { left: node.x, top: node.y, width: node.width, height: node.height } satisfies CSSProperties;
   return (
-    <section data-testid={`${isVideo ? "video" : "image"}-${node.id}`} data-node-id={node.id} data-kind={node.kind} data-connecting={connecting} data-selected={selected} data-status={state.status} aria-label={copy.label} tabIndex={0} className={`canvas-lab-card absolute rounded-[2px] ${selected ? "outline outline-2 outline-offset-2 outline-primary" : ""}`} style={style} onFocus={onSelect} onPointerDown={(event) => { clickDownRef.current = { x: event.clientX, y: event.clientY }; if (!selected) onSelect(); onDragStart(event); }} onPointerCancel={() => { clickDownRef.current = null; }} onClick={(event) => {
+    <section data-testid={`${isVideo ? "video" : "image"}-${node.id}`} data-node-id={node.id} data-kind={node.kind} data-connecting={connecting} data-selected={selected} data-status={state.status} aria-label={copy.label} tabIndex={0} className={`canvas-lab-card absolute rounded-(--corner-mark) ${selected ? "outline outline-2 outline-offset-2 outline-primary" : ""}`} style={style} onFocus={onSelect} onPointerDown={(event) => { clickDownRef.current = { x: event.clientX, y: event.clientY }; if (!selected) onSelect(); onDragStart(event); }} onPointerCancel={() => { clickDownRef.current = null; }} onClick={(event) => {
       const onControl = Boolean((event.target as Element).closest("button,textarea,a,input,select,[role='menu'],[role='menuitem']"));
       if (cardBodyClickSelects({ readOnly: !onContextSelect, clickCount: event.detail, down: clickDownRef.current, up: { x: event.clientX, y: event.clientY }, onControl })) clickControllerRef.current?.click();
     }} onDoubleClick={(event) => {
@@ -293,9 +293,9 @@ function LabImageInner({ node, selected, layoutEditable, onSelect, onContextSele
       const shown = event.currentTarget.querySelector<HTMLImageElement | HTMLVideoElement>("img, video");
       onLift(event.currentTarget.getBoundingClientRect(), shown?.currentSrc || null);
     }}>
-      <div data-selected={contextSelected} data-marquee-preview={previewSelected} className="canvas-lab-card-paper h-full w-full rounded-[2px]">
+      <div data-selected={contextSelected} data-marquee-preview={previewSelected} className="canvas-lab-card-paper h-full w-full rounded-(--corner-mark)">
       {isVideo ? (
-        <div className="flex h-full w-full flex-col overflow-hidden rounded-[2px]">
+        <div className="flex h-full w-full flex-col overflow-hidden rounded-(--corner-mark)">
           <div data-testid="board-video-handle" className="flex shrink-0 cursor-grab items-center px-2 nb-type-small text-muted-foreground select-none" style={{ height: BOARD_VIDEO_HANDLE_HEIGHT }}>{BOARD_VIDEO_COPY.label}</div>
           {showSrc && state.status !== "failed" ? (
             <video data-testid="board-video-player" src={showSrc} controls preload="metadata" playsInline className="block min-h-0 w-full flex-1 bg-black object-contain" onPointerDown={(event) => { event.stopPropagation(); if (!selected) onSelect(); }} onError={() => setState({ status: "failed", url: null })} />
@@ -306,9 +306,9 @@ function LabImageInner({ node, selected, layoutEditable, onSelect, onContextSele
           )}
         </div>
       ) : showSrc ? (
-        <img src={showSrc} alt="" draggable={false} className="block h-full w-full rounded-[2px] select-none" onError={() => setState({ status: "failed", url: null })} />
+        <img src={showSrc} alt="" draggable={false} className="block h-full w-full rounded-(--corner-mark) select-none" onError={() => setState({ status: "failed", url: null })} />
       ) : (
-        <div data-testid="board-image-placeholder" className="flex h-full w-full items-center justify-center rounded-[2px] bg-muted p-2 text-center nb-type-small text-muted-foreground">
+        <div data-testid="board-image-placeholder" className="flex h-full w-full items-center justify-center rounded-(--corner-mark) bg-muted p-2 text-center nb-type-small text-muted-foreground">
           {state.status === "failed" ? <span>{BOARD_IMAGE_COPY.failed}</span> : null}
         </div>
       )}
