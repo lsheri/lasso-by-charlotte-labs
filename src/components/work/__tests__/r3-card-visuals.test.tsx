@@ -82,7 +82,7 @@ describe("R4 paper preview craft pass", () => {
 
   it("keeps every vendor treatment away from Ask Lasso lime", () => {
     const tokenLines = styles.split("\n").filter((line) => /^\s*--nb-chat-border-[^:]+:/.test(line));
-    expect(tokenLines).toHaveLength(8);
+    expect(tokenLines).toHaveLength(4); // light set only; the .dark copies went with G12 (17 Nov)
     expect(tokenLines.join("\n")).not.toContain("#04f85b");
     expect(tokenLines.join("\n")).not.toContain("var(--nb-lasso-green)");
   });
