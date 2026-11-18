@@ -25,7 +25,16 @@ type AskProfile = { id?: string | null; role?: string | null; has_firm_view?: bo
  * workspace is a company and the person is not a coach; the server checks again and refuses guests. Nothing about the
  * question is kept: the answer lives in this component's state only.
  */
-export function AskTheFirm({ profile, className }: { profile: AskProfile | null | undefined; className?: string }) {
+export function AskTheFirm({
+  profile,
+  className,
+  onResult,
+}: {
+  profile: AskProfile | null | undefined;
+  className?: string;
+  /** The firm map's answer trace: null when a new question starts, then the answer. Nothing else about the question leaves. */
+  onResult?: (result: FirmAskResult | null) => void;
+}) {
   const flagOn = useFeatureFlag("company-brain");
   const ask = useServerFn(askTheFirm);
   const [question, setQuestion] = useState("");
@@ -45,8 +54,11 @@ export function AskTheFirm({ profile, className }: { profile: AskProfile | null 
     if (text.length < 3 || pending) return;
     setPending(true);
     setFailed(false);
+    onResult?.(null);
     try {
-      setResult(await ask({ data: { question: text, starter, profile_id: profile?.id ?? null } }));
+      const answer = await ask({ data: { question: text, starter, profile_id: profile?.id ?? null } });
+      setResult(answer);
+      onResult?.(answer);
     } catch (error) {
       // A guest or someone outside a company workspace: the server says no, so the box goes away.
       if (error instanceof Response && error.status === 403) setRefused(true);
