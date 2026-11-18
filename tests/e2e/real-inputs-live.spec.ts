@@ -2,6 +2,8 @@ import { writeFileSync } from "node:fs";
 
 import { expect, test, type Browser, type Page } from "@playwright/test";
 
+import { parseFee } from "../../src/lib/sow-terms-shared";
+
 /**
  * The two inputs a real firm needs for past fees and precedents (Liam, 18 Nov: "if we demo it it must be real"):
  * a SOW's fee terms, set by an admin or lead, and how an engagement ended, set by the board's editors. Runs as demo
@@ -79,7 +81,8 @@ test("an admin reads fee terms from a SOW, and saves and removes terms on a docu
   await dialog.getByRole("button", { name: "Read from the document" }).click();
   await dialog.locator("[data-sow-terms-note], [role=alert]").first().waitFor({ timeout: 60_000 });
   report["suggested"] = { fee: await fee.inputValue(), weeks: await weeks.inputValue(), note: await dialog.locator("[data-sow-terms-note]").textContent().catch(() => null) };
-  expect(await fee.inputValue()).toBe("$120k");
+  // The suggestion copies the SOW's own words ("$120,000 fixed"), not the seed's short form, so check the amount.
+  expect(parseFee(await fee.inputValue())).toEqual({ fee_amount: 120_000, fee_basis: "fixed" });
   await dialog.getByRole("button", { name: "Cancel" }).click();
   await dialog.waitFor({ state: "hidden" });
 
