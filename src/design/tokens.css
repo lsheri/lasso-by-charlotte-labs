@@ -60,6 +60,9 @@
   --here-rule:var(--acid-100);
   --here-weight:2.5px;
 
+  /* Global layers (G9, 17 Nov): fixed surfaces that must stack across the whole app. Values are unchanged; layers
+     just above the ledger are calc(--layer-ledger + n). Board-internal and paused-page z-index values stay local. */
+  --layer-tabbar:40; --layer-backdrop:50; --layer-ledger:60; --layer-drag:80; --layer-lift:200000; --layer-drag-top:400000;
   /* Corner roles (G8, 17 Nov): the one place corners change. Every older radius name points here. */
   --corner-mark:2px; --corner-card:3px; --corner-button:5px; --corner-control:5px; --corner-panel:8px; --corner-float:15px; --corner-pill:999px;
   --radius-sm-new:var(--corner-mark); --radius-md-new:var(--corner-button); --radius-pill:var(--corner-pill);

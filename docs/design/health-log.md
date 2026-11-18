@@ -25,8 +25,8 @@ Goal (Liam, 17 Nov): "as design healthy as can be and durable for switching thin
 | G6 | Now | Lime and acid rings below 3:1 | Charlotte passes (paperclip is the second cue); guarded by a test | #186 |
 | G7 | Look | App Button drifts from reference | Component done; raw `<button>` sweep open | #163 |
 | G8 | Look | Radius: 3 tokens, about 18 values | Done for app surfaces | #188, #189 |
-| G9 | Upkeep | styles.css size, literal z-index, `!important` | Open | |
-| G10 | Upkeep | Reference components copied, not checked | Done: every reference token stays declared, and the app keeps reading the 189 it shares | G10 PR |
+| G9 | Upkeep | styles.css size, literal z-index, `!important` | Global layers named; board-internal and paused-page z-index stay local; `!important` and the file split open | G9 PR |
+| G10 | Upkeep | Reference components copied, not checked | Done: every reference token stays declared, and the app keeps reading the 189 it shares | #194 |
 | G11 | Look | Hex colours in components | Done: what is left is vendor and file-format marks, the standalone error page, the theme-color meta and a chart-library selector | #193 |
 | G12 | Upkeep | Dead dark theme | Removed | #186 |
 | G13 | Upkeep | Raw spacing and inline styles | Open | |
@@ -54,7 +54,8 @@ Goal (Liam, 17 Nov): "as design healthy as can be and durable for switching thin
 | #191 | G2 | 45 derived tokens re-resolve on shell and overlays; Charlotte drops 46 restated lines | No (Charlotte unchanged) |
 | #192 | G2 | Skin base: region, board-hue and kind colours derive from six type hues for any skin | No (Charlotte unchanged) |
 | #193 | G11 | Sticky-mark and kind-chip colours move into tokens | No |
-| G10 PR | G10 | Reference parity test | No |
+| #194 | G10 | Reference parity test | No |
+| G9 PR | G9 | Named global layers (`--layer-*`), values unchanged | No |
 | #189 | G8 | Controls join the button at 5px; new float role 15px; long tail snaps; raw-radius count fixed to literal lengths only | Controls 1px less round; floating panels and menus settle on 15px |
 
 Every PR was checked against main with the full test suite, lint, and the design-baseline screenshots (26 screens, Charlotte, desktop and phone), and has a row in `DESIGN-DECISIONS.md`.
@@ -70,7 +71,7 @@ Charlotte skin size (custom properties it declares): 230 on 17 Nov, 160 after G2
 | Raw radii | 437 | 15 (counting rule corrected in R2: `rounded-[var(--x)]` no longer counted) |
 | Hex in components | 76 | 54 |
 | `var(--nb-*)` uses | 1653 | 1559 (rule corrected in G2 part 2: token declarations no longer counted) |
-| Literal z-index | 183 | 183 |
+| Literal z-index | 183 | 170 |
 | `!important` | 215 | 215 |
 
 The audit's own 16 Nov figures used a different counting script: 810 raw font sizes, 1,828 `--nb-*` reads.
