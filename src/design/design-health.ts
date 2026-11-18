@@ -29,6 +29,10 @@ export type HealthCounts = {
   handPills: number;
   /** Files importing lucide-react. The second icon set; GraphiteIcon is the house set. */
   lucideFiles: number;
+  /** Code that picks a look by skin name (skin === "charlotte"). A new brand would fall into the old branch; brand assets belong in src/design/brand. */
+  skinNameBranches: number;
+  /** Colour literals (#hex, rgb(), hsl()) in CSS declarations outside the token and skin files. Custom-property declarations are tokens, masks are stencils and var() fallbacks never show under a skin, so none of those count. */
+  cssColorLiterals: number;
 };
 
 const EXCLUDE = [
@@ -63,6 +67,8 @@ export function measure(root = "src"): HealthCounts {
     nativeSelect: 0,
     handPills: 0,
     lucideFiles: 0,
+    skinNameBranches: 0,
+    cssColorLiterals: 0,
   };
   for (const file of files(root)) {
     const text = readFileSync(file, "utf8");
@@ -88,6 +94,17 @@ export function measure(root = "src"): HealthCounts {
         ).length;
       }
       if (/from\s+["']lucide-react["']/.test(text)) c.lucideFiles += 1;
+      if (!/src\/lib\/skin\.ts$/.test(file.split(path.sep).join("/")))
+        c.skinNameBranches += count(text, /(?:useSkin\(\)|\bskin)\s*[!=]==?\s*["'](?:charlotte|lasso)["']/g);
+    } else {
+      // Declarations only: a custom property (--x: #fff) is a token, so it is stripped first.
+      // Masks use black and transparent as a stencil, not a colour, and a var() fallback is never what a skin shows.
+      const declarations = text
+        .replace(/\/\*[\s\S]*?\*\//g, "")
+        .replace(/(^|[;{\s])--[a-z0-9-]+\s*:[^;{}]*;/g, "$1")
+        .replace(/(^|[;{\s])(?:-webkit-)?mask(?:-[a-z]+)?\s*:[^;{}]*;/g, "$1")
+        .replace(/var\(\s*--[a-z0-9-]+\s*,[^()]*(?:\([^()]*\)[^()]*)*\)/g, "var()");
+      c.cssColorLiterals += count(declarations, /:\s*[^;{}]*?(?:#[0-9a-fA-F]{3,8}\b|\brgba?\(|\bhsla?\()/g);
     }
   }
   return c;

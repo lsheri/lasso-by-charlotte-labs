@@ -12,6 +12,7 @@
 [data-skin="charlotte"] body:has([data-lasso="on"]) > [role="dialog"],
 [data-skin="charlotte"] body:has([data-lasso="on"]) > [role="alertdialog"],
 [data-skin="charlotte"] body:has([data-lasso="on"]) > [data-radix-popper-content-wrapper],
+[data-skin="charlotte"] body:has([data-lasso="on"]) > [data-skin-overlay],
 [data-skin="charlotte"] body:has([data-lasso="on"]) [data-sonner-toaster] {
   /* Brand values. skin-base.css builds every role, state, category and vendor colour from these. */
   --skin-ink:#0B2A4A; /* navy */
