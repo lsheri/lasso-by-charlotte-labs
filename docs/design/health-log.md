@@ -18,13 +18,13 @@ Goal (Liam, 17 Nov): "as design healthy as can be and durable for switching thin
 | Gap | Tag | What | Status | PRs |
 |---|---|---|---|---|
 | G1 | Look | Job-name colour tokens read by nothing | In-app CSS done; TS reads open | #162, #164, #176, #177 |
-| G2 | Look | Three colour systems (`--nb-*`, new tokens, shadcn) | Shrinking; one-block remap open | #162, #177 |
+| G2 | Look | Three colour systems (`--nb-*`, new tokens, shadcn) | Older names and job tokens reach overlays from one block; Charlotte overrides 230 to 206 | #162, #177, G2 PR |
 | G3 | Look | No type scale (48 sizes) | Done for app surfaces | #166, #172, #173, #174, #175 |
 | G4 | Now | Text below 10px | Done: nothing in the app below 11px | #167 |
 | G5 | Now | Muted text fails AA | Done | #161 |
 | G6 | Now | Lime and acid rings below 3:1 | Charlotte passes (paperclip is the second cue); guarded by a test | #186 |
 | G7 | Look | App Button drifts from reference | Component done; raw `<button>` sweep open | #163 |
-| G8 | Look | Radius: 3 tokens, about 18 values | Done for app surfaces | #188, R2 PR |
+| G8 | Look | Radius: 3 tokens, about 18 values | Done for app surfaces | #188, #189 |
 | G9 | Upkeep | styles.css size, literal z-index, `!important` | Open | |
 | G10 | Upkeep | Reference components copied, not checked | Open | |
 | G11 | Look | Hex colours in components | Open | |
@@ -50,7 +50,8 @@ Goal (Liam, 17 Nov): "as design healthy as can be and durable for switching thin
 | #186 | G12, G6 | Dead `.dark` theme removed; Charlotte state cues pass 1.4.11, paperclip guarded | No (pixel-identical) |
 | #187 | All | Design health ratchet and this log | No |
 | #188 | G8 | Corner roles `--corner-*`; every older radius name points at them; 89 exact values read a role | No (values identical) |
-| R2 PR | G8 | Controls join the button at 5px; new float role 15px; long tail snaps; raw-radius count fixed to literal lengths only | Controls 1px less round; floating panels and menus settle on 15px |
+| G2 PR | G2 | The app shell's older-name and job-token blocks cover overlays; Charlotte drops 24 duplicates | No (Charlotte unchanged; Lasso overlays now match the Lasso app) |
+| #189 | G8 | Controls join the button at 5px; new float role 15px; long tail snaps; raw-radius count fixed to literal lengths only | Controls 1px less round; floating panels and menus settle on 15px |
 
 Every PR was checked against main with the full test suite, lint, and the design-baseline screenshots (26 screens, Charlotte, desktop and phone), and has a row in `DESIGN-DECISIONS.md`.
 
