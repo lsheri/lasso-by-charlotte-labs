@@ -540,6 +540,10 @@ export type TelemetryEvent =
   | "red_pen.ran"
   /** 17 Nov, firm brain: a red pen claim's source was opened. Dims: grade (sourced | weak | unsupported). Portal registration required. */
   | "red_pen.claim_opened"
+  /** 18 Nov, firm brain: a partner or lead saved or removed a SOW's fee terms. Dims: action (saved | cleared), basis (fixed | monthly | text). Portal registration required. */
+  | "sow_terms.saved"
+  /** 18 Nov, firm brain: fee terms were read from a SOW for a person to check. Dims: fee (found | none), weeks (found | none). Portal registration required. */
+  | "sow_terms.suggested"
   /**
    * T1: a traced question was saved to span_links. Dims: via (short fixed
    * code-path name) only. No ids, text, names or counts.
